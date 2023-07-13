@@ -16,10 +16,12 @@ package google.registry.model.tld;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.domain.token.AllocationToken.TokenType.DEFAULT_PROMO;
+import static google.registry.model.tld.TldSettings.tldFromYaml;
 import static google.registry.model.tld.TldSettings.toYaml;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.persistResource;
+import static google.registry.testing.TestDataHelper.loadFile;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static org.joda.money.CurrencyUnit.USD;
 
@@ -30,11 +32,11 @@ import google.registry.model.domain.token.AllocationToken;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.testing.FakeClock;
-import google.registry.testing.TestDataHelper;
 import google.registry.tldconfig.idn.IdnTableEnum;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
@@ -42,21 +44,14 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 public class TldSettingsTest {
 
   private final FakeClock fakeClock = new FakeClock();
+  Tld tld;
 
   @RegisterExtension
   final JpaIntegrationTestExtension jpa =
       new JpaTestExtensions.Builder().withClock(fakeClock).buildIntegrationTestExtension();
 
-  @Test
-  void testSuccess_roundTripTldToTldSettingsAndBack() {
-    Tld oldTld = createTld("tld");
-    TldSettings tldSettings = new TldSettings().fromTld(oldTld);
-    Tld newTld = tm().transact(() -> tldSettings.toTld());
-    assertThat(oldTld).isEqualTo(newTld);
-  }
-
-  @Test
-  void testSuccess_tldToYaml() {
+  @BeforeEach
+  void beforeEach() {
     AllocationToken defaultToken =
         persistResource(
             new AllocationToken.Builder()
@@ -67,7 +62,7 @@ public class TldSettingsTest {
                 .setDiscountPremiums(false)
                 .setDiscountFraction(0.5)
                 .build());
-    Tld tld =
+    tld =
         createTld("tld")
             .asBuilder()
             .setDnsAPlusAaaaTtl(Duration.standardHours(1))
@@ -84,6 +79,32 @@ public class TldSettingsTest {
             .setDefaultPromoTokens(ImmutableList.of(defaultToken.createVKey()))
             .setIdnTables(ImmutableSet.of(IdnTableEnum.JA, IdnTableEnum.EXTENDED_LATIN))
             .build();
-    assertThat(toYaml(tld)).isEqualTo(TestDataHelper.loadFile(getClass(), "tld.yaml"));
+  }
+
+  @Test
+  void testSuccess_roundTripTldToTldSettingsAndBack() {
+    Tld oldTld = createTld("foo");
+    TldSettings tldSettings = new TldSettings().fromTld(oldTld);
+    Tld newTld = tm().transact(() -> tldSettings.toTld());
+    assertThat(oldTld).isEqualTo(newTld);
+  }
+
+  @Test
+  void testSuccess_toYaml() {
+    assertThat(toYaml(tld)).isEqualTo(loadFile(getClass(), "tld.yaml"));
+  }
+
+  @Test
+  void testSuccess_tldFromYaml() {
+    Tld constructedTld = tm().transact(() -> tldFromYaml(loadFile(getClass(), "tld.yaml")));
+    assertThat(constructedTld).isEqualTo(tld);
+  }
+
+  @Test
+  void testSuccess_roundTripTldToYamlAndBack() {
+    Tld oldTld = createTld("foo");
+    String yaml = toYaml(oldTld);
+    Tld newTld = tm().transact(() -> tldFromYaml(yaml));
+    assertThat(oldTld).isEqualTo(newTld);
   }
 }

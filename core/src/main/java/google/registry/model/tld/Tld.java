@@ -888,7 +888,8 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
 
     public Builder setNullableReservedListsByName(@Nullable Set<String> reservedListNames) {
       if (reservedListNames == null) {
-        return setNullReservedLists();
+        getInstance().reservedListNames = null;
+        return this;
       }
       return setReservedListsByName(reservedListNames);
     }
@@ -919,11 +920,6 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
         nameBuilder.add(reservedList.getName());
       }
       getInstance().reservedListNames = nameBuilder.build();
-      return this;
-    }
-
-    public Builder setNullReservedLists() {
-      getInstance().reservedListNames = null;
       return this;
     }
 

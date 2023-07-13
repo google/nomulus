@@ -44,6 +44,10 @@ import org.joda.time.DateTime;
 import org.joda.time.Duration;
 import org.testcontainers.shaded.org.yaml.snakeyaml.Yaml;
 
+/**
+ * A POJO that can be used to convert {@link google.registry.model.tld.Tld} objects to YAML files
+ * and YAML files to Tld object.
+ */
 public class TldSettings {
 
   public String tldStr;
@@ -252,5 +256,9 @@ public class TldSettings {
 
   public static String toYaml(Tld tld) {
     return new Yaml().dumpAsMap(fromTld(tld));
+  }
+
+  public static Tld tldFromYaml(String yaml) {
+    return new Yaml().loadAs(yaml, TldSettings.class).toTld();
   }
 }
