@@ -1,7 +1,7 @@
 // Copyright 2023 The Nomulus Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
+// you may not use tldSettings file except in compliance with the License.
 // You may obtain a copy of the License at
 //
 //     http://www.apache.org/licenses/LICENSE-2.0
@@ -21,10 +21,8 @@ import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.collect.ImmutableSortedMap.toImmutableSortedMap;
 import static com.google.common.collect.Ordering.natural;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.util.CollectionUtils.nullSafeImmutableCopy;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
-import static java.util.stream.Collectors.toSet;
 
 import com.google.common.collect.ImmutableSet;
 import google.registry.model.domain.token.AllocationToken;
@@ -35,20 +33,23 @@ import google.registry.model.tld.label.PremiumListDao;
 import google.registry.persistence.VKey;
 import google.registry.tldconfig.idn.IdnTableEnum;
 import google.registry.util.Idn;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import javax.annotation.Nullable;
 import org.joda.money.CurrencyUnit;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
+import org.testcontainers.shaded.org.yaml.snakeyaml.Yaml;
 
 public class TldSettings {
 
   public String tldStr;
   public String roidSuffix;
   public String pricingEngineClassName;
-  public Set<String> dnsWriters;
+  public List<String> dnsWriters;
   public int numDnsPublishLocks;
   public String dnsAPlusAaaaTtl;
   public String dnsNsTtl;
@@ -59,7 +60,7 @@ public class TldSettings {
   public boolean invoicingEnabled;
   public Map<String, String> tldStateTransitions;
   public String creationTime;
-  public Set<String> reservedListNames;
+  public List<String> reservedListNames;
   public String premiumListName;
   public boolean escrowEnabled;
   public boolean dnsPaused;
@@ -80,69 +81,73 @@ public class TldSettings {
   public Map<String, String> eapFeeSchedule;
   public String lordnUsername;
   public String claimsPeriodEnd;
-  public Set<String> allowedRegistrantContactIds;
-  public Set<String> allowedFullyQualifiedHostNames;
+  public List<String> allowedRegistrantContactIds;
+  public List<String> allowedFullyQualifiedHostNames;
   public List<String> defaultPromoTokens;
-  public Set<String> idnTables;
+  public List<String> idnTables;
 
-  public TldSettings fromTld(Tld tld) {
-    this.tldStr = tld.getTldStr();
-    this.roidSuffix = tld.getRoidSuffix();
-    this.pricingEngineClassName = tld.getPremiumPricingEngineClassName();
-    this.dnsWriters = tld.getDnsWriters();
-    this.numDnsPublishLocks = tld.getNumDnsPublishLocks();
-    this.dnsAPlusAaaaTtl =
+  public static TldSettings fromTld(Tld tld) {
+    TldSettings tldSettings = new TldSettings();
+    tldSettings.tldStr = tld.getTldStr();
+    tldSettings.roidSuffix = tld.getRoidSuffix();
+    tldSettings.pricingEngineClassName = tld.getPremiumPricingEngineClassName();
+    tldSettings.dnsWriters = toNullableList(tld.getDnsWriters());
+    tldSettings.numDnsPublishLocks = tld.getNumDnsPublishLocks();
+    tldSettings.dnsAPlusAaaaTtl =
         tld.getDnsAPlusAaaaTtl().isPresent() ? tld.getDnsAPlusAaaaTtl().get().toString() : "";
-    this.dnsNsTtl = tld.getDnsNsTtl().isPresent() ? tld.getDnsNsTtl().get().toString() : "";
-    this.dnsDsTtl = tld.getDnsDsTtl().isPresent() ? tld.getDnsDsTtl().get().toString() : "";
-    this.tldUnicode = tld.getTldUnicode();
-    this.driveFolderId = tld.getDriveFolderId();
-    this.tldType = tld.getTldType().name();
-    this.invoicingEnabled = tld.getInvoicingEnabled();
-    this.tldStateTransitions =
+    tldSettings.dnsNsTtl = tld.getDnsNsTtl().isPresent() ? tld.getDnsNsTtl().get().toString() : "";
+    tldSettings.dnsDsTtl = tld.getDnsDsTtl().isPresent() ? tld.getDnsDsTtl().get().toString() : "";
+    tldSettings.tldUnicode = tld.getTldUnicode();
+    tldSettings.driveFolderId = tld.getDriveFolderId();
+    tldSettings.tldType = tld.getTldType().name();
+    tldSettings.invoicingEnabled = tld.getInvoicingEnabled();
+    tldSettings.tldStateTransitions =
         tld.getTldStateTransitions().entrySet().stream()
             .collect(toMap(entry -> entry.getKey().toString(), entry -> entry.getValue().name()));
-    this.creationTime = tld.getCreationTime() != null ? tld.getCreationTime().toString() : "";
-    this.premiumListName = tld.getPremiumListName().orElse("");
-    this.escrowEnabled = tld.getEscrowEnabled();
-    this.dnsPaused = tld.getDnsPaused();
-    this.addGracePeriodLength = tld.getAddGracePeriodLength().toString();
-    this.anchorTenantAddGracePeriodLength = tld.getAnchorTenantAddGracePeriodLength().toString();
-    this.autoRenewGracePeriodLength = tld.getAutoRenewGracePeriodLength().toString();
-    this.redemptionGracePeriodLength = tld.getRedemptionGracePeriodLength().toString();
-    this.renewGracePeriodLength = tld.getRenewGracePeriodLength().toString();
-    this.transferGracePeriodLength = tld.getTransferGracePeriodLength().toString();
-    this.automaticTransferLength = tld.getAutomaticTransferLength().toString();
-    this.pendingDeleteLength = tld.getPendingDeleteLength().toString();
-    this.currency = tld.getCurrency().toString();
-    this.createBillingCost = tld.getStandardCreateCost().toString();
-    this.restoreBillingCost = tld.getStandardRestoreCost().toString();
-    this.serverStatusChangeBillingCost = tld.getServerStatusChangeCost().toString();
-    this.registryLockOrUnlockBillingCost = tld.getRegistryLockOrUnlockBillingCost().toString();
-    this.renewBillingCostTransitions =
+    tldSettings.creationTime =
+        tld.getCreationTime() != null ? tld.getCreationTime().toString() : "";
+    tldSettings.premiumListName = tld.getPremiumListName().orElse("");
+    tldSettings.escrowEnabled = tld.getEscrowEnabled();
+    tldSettings.dnsPaused = tld.getDnsPaused();
+    tldSettings.addGracePeriodLength = tld.getAddGracePeriodLength().toString();
+    tldSettings.anchorTenantAddGracePeriodLength =
+        tld.getAnchorTenantAddGracePeriodLength().toString();
+    tldSettings.autoRenewGracePeriodLength = tld.getAutoRenewGracePeriodLength().toString();
+    tldSettings.redemptionGracePeriodLength = tld.getRedemptionGracePeriodLength().toString();
+    tldSettings.renewGracePeriodLength = tld.getRenewGracePeriodLength().toString();
+    tldSettings.transferGracePeriodLength = tld.getTransferGracePeriodLength().toString();
+    tldSettings.automaticTransferLength = tld.getAutomaticTransferLength().toString();
+    tldSettings.pendingDeleteLength = tld.getPendingDeleteLength().toString();
+    tldSettings.currency = tld.getCurrency().toString();
+    tldSettings.createBillingCost = tld.getStandardCreateCost().toString();
+    tldSettings.restoreBillingCost = tld.getStandardRestoreCost().toString();
+    tldSettings.serverStatusChangeBillingCost = tld.getServerStatusChangeCost().toString();
+    tldSettings.registryLockOrUnlockBillingCost =
+        tld.getRegistryLockOrUnlockBillingCost().toString();
+    tldSettings.renewBillingCostTransitions =
         tld.getRenewBillingCostTransitions().entrySet().stream()
             .collect(
                 toMap(entry -> entry.getKey().toString(), entry -> entry.getValue().toString()));
-    this.eapFeeSchedule =
+    tldSettings.eapFeeSchedule =
         tld.getEapFeeScheduleAsMap().entrySet().stream()
             .collect(
                 toMap(entry -> entry.getKey().toString(), entry -> entry.getValue().toString()));
-    this.lordnUsername = tld.getLordnUsername();
-    this.claimsPeriodEnd = tld.getClaimsPeriodEnd().toString();
+    tldSettings.lordnUsername = tld.getLordnUsername();
+    tldSettings.claimsPeriodEnd = tld.getClaimsPeriodEnd().toString();
 
     // Not using the getters in order to preserve nullness
-    this.allowedRegistrantContactIds = tld.allowedRegistrantContactIds;
-    this.allowedFullyQualifiedHostNames = tld.allowedFullyQualifiedHostNames;
-    this.reservedListNames = tld.reservedListNames;
-    this.defaultPromoTokens =
+    tldSettings.allowedRegistrantContactIds = toNullableList(tld.allowedRegistrantContactIds);
+    tldSettings.allowedFullyQualifiedHostNames = toNullableList(tld.allowedFullyQualifiedHostNames);
+    tldSettings.reservedListNames = toNullableList(tld.reservedListNames);
+    tldSettings.defaultPromoTokens =
         tld.defaultPromoTokens == null
             ? null
             : tld.defaultPromoTokens.stream()
                 .map(vKey -> vKey.getKey().toString())
                 .collect(toList());
-    this.idnTables =
-        tld.idnTables == null ? null : tld.idnTables.stream().map(Enum::toString).collect(toSet());
-    return this;
+    tldSettings.idnTables =
+        tld.idnTables == null ? null : tld.idnTables.stream().map(Enum::toString).collect(toList());
+    return tldSettings;
   }
 
   public Tld toTld() {
@@ -170,7 +175,7 @@ public class TldSettings {
         .setTldStr(tldStr)
         .setRoidSuffix(roidSuffix)
         .setPremiumPricingEngine(pricingEngineClassName)
-        .setDnsWriters(ImmutableSet.copyOf(dnsWriters))
+        .setDnsWriters(toNullableSet(dnsWriters))
         .setNumDnsPublishLocks(numDnsPublishLocks)
         .setDnsAPlusAaaaTtl(isNullOrEmpty(dnsAPlusAaaaTtl) ? null : Duration.parse(dnsAPlusAaaaTtl))
         .setDnsNsTtl(isNullOrEmpty(dnsNsTtl) ? null : Duration.parse(dnsNsTtl))
@@ -185,7 +190,7 @@ public class TldSettings {
                         natural(),
                         DateTime::parse,
                         key -> TldState.valueOf(tldStateTransitions.get(key)))))
-        .setNullableReservedListsByName(reservedListNames)
+        .setNullableReservedListsByName(toNullableSet(reservedListNames))
         .setPremiumList(premiumList)
         .setEscrowEnabled(escrowEnabled)
         .setDnsPaused(dnsPaused)
@@ -216,8 +221,8 @@ public class TldSettings {
                         natural(), DateTime::parse, key -> Money.parse(eapFeeSchedule.get(key)))))
         .setLordnUsername(lordnUsername)
         .setClaimsPeriodEnd(DateTime.parse(claimsPeriodEnd))
-        .setAllowedRegistrantContactIds(nullSafeImmutableCopy(allowedRegistrantContactIds))
-        .setAllowedFullyQualifiedHostNames(nullSafeImmutableCopy(allowedFullyQualifiedHostNames))
+        .setAllowedRegistrantContactIds(toNullableSet(allowedRegistrantContactIds))
+        .setAllowedFullyQualifiedHostNames(toNullableSet(allowedFullyQualifiedHostNames))
         .setDefaultPromoTokens(
             defaultPromoTokens == null
                 ? null
@@ -229,5 +234,23 @@ public class TldSettings {
                 ? null
                 : idnTables.stream().map(IdnTableEnum::valueOf).collect(toImmutableSet()))
         .build();
+  }
+
+  private static ArrayList<String> toNullableList(@Nullable Set<String> set) {
+    if (set == null) {
+      return null;
+    }
+    return new ArrayList<>(set);
+  }
+
+  private static ImmutableSet<String> toNullableSet(@Nullable List<String> list) {
+    if (list == null) {
+      return null;
+    }
+    return ImmutableSet.copyOf(list);
+  }
+
+  public static String toYaml(Tld tld) {
+    return new Yaml().dumpAsMap(fromTld(tld));
   }
 }

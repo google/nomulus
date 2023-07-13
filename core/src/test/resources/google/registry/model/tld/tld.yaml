@@ -1,0 +1,50 @@
+addGracePeriodLength: PT432000S
+allowedFullyQualifiedHostNames:
+- foo
+allowedRegistrantContactIds: null
+anchorTenantAddGracePeriodLength: PT2592000S
+autoRenewGracePeriodLength: PT3888000S
+automaticTransferLength: PT432000S
+claimsPeriodEnd: 294247-01-10T04:00:54.775Z
+createBillingCost: USD 13.00
+creationTime: '1970-01-01T00:00:00.000Z'
+currency: USD
+defaultPromoTokens:
+- bbbbb
+dnsAPlusAaaaTtl: PT3600S
+dnsDsTtl: ''
+dnsNsTtl: ''
+dnsPaused: false
+dnsWriters:
+- baz
+- bang
+driveFolderId: null
+eapFeeSchedule:
+  '2000-06-02T00:00:00.000Z': USD 0.00
+  '1970-01-01T00:00:00.000Z': USD 0.00
+  '2000-06-01T00:00:00.000Z': USD 100.00
+escrowEnabled: false
+idnTables:
+- JA
+- EXTENDED_LATIN
+invoicingEnabled: false
+lordnUsername: null
+numDnsPublishLocks: 1
+pendingDeleteLength: PT432000S
+premiumListName: tld
+pricingEngineClassName: google.registry.model.pricing.StaticPremiumListPricingEngine
+redemptionGracePeriodLength: PT2592000S
+registryLockOrUnlockBillingCost: USD 0.00
+renewBillingCostTransitions:
+  '1970-01-01T00:00:00.000Z': USD 11.00
+renewGracePeriodLength: PT432000S
+reservedListNames: null
+restoreBillingCost: USD 17.00
+roidSuffix: TLD
+serverStatusChangeBillingCost: USD 19.00
+tldStateTransitions:
+  '1970-01-01T00:00:00.000Z': GENERAL_AVAILABILITY
+tldStr: tld
+tldType: REAL
+tldUnicode: tld
+transferGracePeriodLength: PT432000S
