@@ -90,6 +90,7 @@ public class TldSettings {
   public List<String> defaultPromoTokens;
   public List<String> idnTables;
 
+  /** Construct a {@link TldSettings} object from an existing {@link Tld} object. */
   public static TldSettings fromTld(Tld tld) {
     TldSettings tldSettings = new TldSettings();
     tldSettings.tldStr = tld.getTldStr();
@@ -151,9 +152,11 @@ public class TldSettings {
                 .collect(toList());
     tldSettings.idnTables =
         tld.idnTables == null ? null : tld.idnTables.stream().map(Enum::toString).collect(toList());
+
     return tldSettings;
   }
 
+  /** Construct a new {@link Tld} object from an existing {@link TldSettings} object. */
   public Tld toTld() {
     tm().assertInTransaction();
     // TODO(sarahbot@): Add a check in the new YAML update TLD command to ensure there are no
@@ -240,6 +243,16 @@ public class TldSettings {
         .build();
   }
 
+  /** Convert an existing {@link Tld} object to a String in YAML format. */
+  public static String toYaml(Tld tld) {
+    return new Yaml().dumpAsMap(fromTld(tld));
+  }
+
+  /** Convert a YAML formatted String to {@link Tld} object. */
+  public static Tld tldFromYaml(String yaml) {
+    return new Yaml().loadAs(yaml, TldSettings.class).toTld();
+  }
+
   private static ArrayList<String> toNullableList(@Nullable Set<String> set) {
     if (set == null) {
       return null;
@@ -252,13 +265,5 @@ public class TldSettings {
       return null;
     }
     return ImmutableSet.copyOf(list);
-  }
-
-  public static String toYaml(Tld tld) {
-    return new Yaml().dumpAsMap(fromTld(tld));
-  }
-
-  public static Tld tldFromYaml(String yaml) {
-    return new Yaml().loadAs(yaml, TldSettings.class).toTld();
   }
 }
