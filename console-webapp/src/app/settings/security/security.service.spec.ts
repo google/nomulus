@@ -12,39 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-.settings-security {
-  margin-top: 1.5rem;
-  h1 {
-    margin: 0;
-  }
-  &__section {
-    display: flex;
-    align-items: stretch;
-    margin-bottom: 3rem;
-    flex-wrap: wrap;
-  }
-  &__section-description {
-    flex: 1;
-    min-width: 300px;
-  }
-  &__section-form {
-    flex: 1;
-    min-width: 300px;
-    textarea {
-      min-height: 100%;
-      min-width: 100%;
-      box-sizing: border-box;
-      min-height: 100px;
-    }
-  }
-  &__actions {
-    display: flex;
-    justify-content: flex-end;
-    button {
-      margin-left: 20px;
-    }
-  }
-  &__loading {
-    margin: 2rem 0;
-  }
-}
+import { TestBed } from '@angular/core/testing';
+
+import { SecurityService } from './security.service';
+
+describe('SecurityService', () => {
+  let service: SecurityService;
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({});
+    service = TestBed.inject(SecurityService);
+  });
+
+  it('should be created', () => {
+    expect(service).toBeTruthy();
+  });
+});
