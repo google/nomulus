@@ -13,10 +13,79 @@
 // limitations under the License.
 
 import { Component } from '@angular/core';
+import { SecurityService, SecuritySettings } from './security.service';
+import { HttpErrorResponse } from '@angular/common/http';
+import { MatSnackBar } from '@angular/material/snack-bar';
 
 @Component({
   selector: 'app-security',
   templateUrl: './security.component.html',
   styleUrls: ['./security.component.less'],
+  providers: [SecurityService],
 })
-export default class SecurityComponent {}
+export default class SecurityComponent {
+  loading: boolean = false;
+  inEdit: boolean = false;
+  dataSource: SecuritySettings = {};
+
+  constructor(
+    public securityService: SecurityService,
+    private _snackBar: MatSnackBar
+  ) {
+    this.loading = true;
+    this.securityService.fetchSecurityDetails().subscribe({
+      complete: () => {
+        this.dataSource = this.securityService.securitySettings;
+        this.loading = false;
+      },
+      error: (err: HttpErrorResponse) => {
+        this._snackBar.open(err.error, undefined, {
+          duration: 1500,
+        });
+        this.loading = false;
+      },
+    });
+  }
+
+  enableEdit() {
+    this.inEdit = true;
+    this.dataSource = JSON.parse(
+      JSON.stringify(this.securityService.securitySettings)
+    );
+  }
+
+  disableEdit() {
+    this.inEdit = false;
+    this.dataSource = this.securityService.securitySettings;
+  }
+
+  createIpEntry() {
+    this.dataSource.ipAddressAllowList?.push({ value: '' });
+  }
+
+  save() {
+    this.loading = true;
+    this.securityService.saveChanges(this.dataSource).subscribe({
+      complete: () => {
+        this.loading = false;
+        this.dataSource = this.securityService.securitySettings;
+      },
+      error: (err: HttpErrorResponse) => {
+        this._snackBar.open(err.error, undefined, {
+          duration: 1500,
+        });
+      },
+    });
+    this.disableEdit();
+  }
+
+  cancel() {
+    this.dataSource = this.securityService.securitySettings;
+    this.inEdit = false;
+  }
+
+  removeIpEntry(index: number) {
+    this.dataSource.ipAddressAllowList =
+      this.dataSource.ipAddressAllowList?.filter((_, i) => i != index);
+  }
+}

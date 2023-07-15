@@ -80,11 +80,11 @@ class ContactDetailsEventsResponder {
   styleUrls: ['./contact.component.less'],
 })
 export class ContactDetailsDialogComponent {
-  onClose!: Function;
   contact: Contact;
   contactTypes = contactTypes;
   operation: Operations;
   contactIndex: number;
+  onCloseCallback: Function;
 
   constructor(
     public contactService: ContactService,
@@ -96,7 +96,7 @@ export class ContactDetailsDialogComponent {
       operation: Operations;
     }
   ) {
-    this.onClose = data.onClose;
+    this.onCloseCallback = data.onClose;
     this.contactIndex = contactService.contacts.findIndex(
       (c) => c === data.contact
     );
@@ -104,9 +104,14 @@ export class ContactDetailsDialogComponent {
     this.operation = data.operation;
   }
 
-  saveAndClose(e: any) {
+  onClose(e: MouseEvent) {
     e.preventDefault();
-    if (!e.target.checkValidity()) {
+    this.onCloseCallback.call(this);
+  }
+
+  saveAndClose(e: SubmitEvent) {
+    e.preventDefault();
+    if (!(e.target as HTMLFormElement).checkValidity()) {
       return;
     }
     let operationObservable;
@@ -122,7 +127,7 @@ export class ContactDetailsDialogComponent {
     }
 
     operationObservable.subscribe({
-      complete: this.onClose.bind(this),
+      complete: this.onCloseCallback.bind(this),
       error: (err: HttpErrorResponse) => {
         this._snackBar.open(err.statusText, undefined, {
           duration: 1500,
@@ -169,7 +174,7 @@ export default class ContactComponent {
     }
   }
 
-  openCreateNew(e: Event) {
+  openCreateNew(e: MouseEvent) {
     const newContact: Contact = {
       name: '',
       phoneNumber: '',
@@ -180,7 +185,7 @@ export default class ContactComponent {
   }
 
   openDetails(
-    e: Event,
+    e: MouseEvent,
     contact: Contact,
     operation: Operations = Operations.UPDATE
   ) {
