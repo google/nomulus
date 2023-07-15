@@ -1,7 +1,9 @@
 {
   "/console-api":
   {
-    "target": "http://localhost:8080",
-    "secure": true
+    "target": "https://domain-registry-alpha.appspot.com",
+    "secure": false,
+    "logLevel": "debug",
+    "changeOrigin": true
   }
 }
