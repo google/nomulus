@@ -15,15 +15,49 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import SecurityComponent from './security.component';
+import { SecurityService } from './security.service';
+import { BackendService } from 'src/app/shared/services/backend.service';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { MaterialModule } from 'src/app/material.module';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+import { of } from 'rxjs';
+import { FormsModule } from '@angular/forms';
 
 describe('SecurityComponent', () => {
   let component: SecurityComponent;
   let fixture: ComponentFixture<SecurityComponent>;
+  let fetchSecurityDetailsSpy: Function;
 
   beforeEach(async () => {
+    const securityServiceSpy = jasmine.createSpyObj(SecurityService, [
+      'fetchSecurityDetails',
+    ]);
+    fetchSecurityDetailsSpy =
+      securityServiceSpy.fetchSecurityDetails.and.returnValue(
+        of({ ipAddressAllowList: [{ value: '123.123.123.123' }] })
+      );
+    securityServiceSpy.securitySettings = {
+      ipAddressAllowList: [{ value: '123.123.123.123' }],
+    };
+
     await TestBed.configureTestingModule({
+      imports: [
+        HttpClientTestingModule,
+        MaterialModule,
+        BrowserAnimationsModule,
+        FormsModule,
+      ],
       declarations: [SecurityComponent],
-    }).compileComponents();
+      providers: [BackendService],
+    })
+      .overrideComponent(SecurityComponent, {
+        set: {
+          providers: [
+            { provide: SecurityService, useValue: securityServiceSpy },
+          ],
+        },
+      })
+      .compileComponents();
 
     fixture = TestBed.createComponent(SecurityComponent);
     component = fixture.componentInstance;
@@ -32,5 +66,30 @@ describe('SecurityComponent', () => {
 
   it('should create', () => {
     expect(component).toBeTruthy();
+  });
+
+  it('should call fetch spy', () => {
+    expect(fetchSecurityDetailsSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('should render ip allow list', () => {
+    component.enableEdit();
+    fixture.whenStable().then(() => {
+      fixture.detectChanges();
+      console.log(
+        fixture.nativeElement.querySelector('.settings-security__ip-allowlist')
+      );
+      expect(
+        Array.from(
+          fixture.nativeElement.querySelectorAll(
+            '.settings-security__ip-allowlist'
+          )
+        )
+      ).toHaveSize(1);
+      expect(
+        fixture.nativeElement.querySelector('.settings-security__ip-allowlist')
+          .value
+      ).toBe('123.123.123.123');
+    });
   });
 });

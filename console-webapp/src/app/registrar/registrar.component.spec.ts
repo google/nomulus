@@ -18,6 +18,8 @@ import { RegistrarComponent } from './registrar.component';
 import { BackendService } from '../shared/services/backend.service';
 import { ActivatedRoute } from '@angular/router';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+import { MaterialModule } from '../material.module';
 
 describe('RegistrarComponent', () => {
   let component: RegistrarComponent;
@@ -26,7 +28,11 @@ describe('RegistrarComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       declarations: [RegistrarComponent],
-      imports: [HttpClientTestingModule],
+      imports: [
+        HttpClientTestingModule,
+        MaterialModule,
+        BrowserAnimationsModule,
+      ],
       providers: [
         BackendService,
         { provide: ActivatedRoute, useValue: {} as ActivatedRoute },

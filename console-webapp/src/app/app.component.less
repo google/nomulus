@@ -26,7 +26,7 @@
   display: flex;
   flex-direction: column;
   height: 100%;
-  &__content-wrapper {
+  &__container {
     flex: 1;
     margin-top: -12px;
     padding-bottom: 36px;
@@ -40,7 +40,11 @@
       background: #eae1e1;
     }
   }
-  &__content {
+  &__content-wrapper {
     margin: 12px 24px;
+  }
+  &__content {
+    max-width: 1340px;
+    margin: 0 auto;
   }
 }
