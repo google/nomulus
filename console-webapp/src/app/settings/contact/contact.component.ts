@@ -80,11 +80,11 @@ class ContactDetailsEventsResponder {
   styleUrls: ['./contact.component.less'],
 })
 export class ContactDetailsDialogComponent {
-  onClose!: Function;
   contact: Contact;
   contactTypes = contactTypes;
   operation: Operations;
   contactIndex: number;
+  onCloseCallback: Function;
 
   constructor(
     public contactService: ContactService,
@@ -96,12 +96,17 @@ export class ContactDetailsDialogComponent {
       operation: Operations;
     }
   ) {
-    this.onClose = data.onClose;
+    this.onCloseCallback = data.onClose;
     this.contactIndex = contactService.contacts.findIndex(
       (c) => c === data.contact
     );
     this.contact = JSON.parse(JSON.stringify(data.contact));
     this.operation = data.operation;
+  }
+
+  onClose(e: any) {
+    e.preventDefault();
+    this.onCloseCallback.call(this);
   }
 
   saveAndClose(e: any) {
@@ -122,7 +127,7 @@ export class ContactDetailsDialogComponent {
     }
 
     operationObservable.subscribe({
-      complete: this.onClose.bind(this),
+      complete: this.onCloseCallback.bind(this),
       error: (err: HttpErrorResponse) => {
         this._snackBar.open(err.statusText, undefined, {
           duration: 1500,

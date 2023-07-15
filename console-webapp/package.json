@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "scripts": {
     "ng": "ng",
-    "start": "ng serve",
+    "start": "ng serve --proxy-config dev-proxy.config.json",
     "build": "ng build --base-href=/console/",
     "build:local": "ng build --base-href=/default/console/",
     "watch": "ng build --watch --configuration development",
