@@ -1,1 +1,83 @@
-<p>security works!</p>
+<div *ngIf="loading" class="settings-security__loading">
+  <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+</div>
+<div class="settings-security" *ngIf="!loading">
+  <div class="settings-security__section">
+    <div class="settings-security__section-description">
+      <h2>IP Allowlist</h2>
+      <p>
+        Restrict access to EPP production servers to the following IP/IPv6
+        addresses, or ranges like 1.1.1.0/24
+      </p>
+    </div>
+    <div class="settings-security__section-form">
+      <div
+        *ngIf="
+          dataSource.ipAddressAllowList &&
+          dataSource.ipAddressAllowList.length > 0
+        "
+      >
+        <div *ngFor="let item of dataSource.ipAddressAllowList; index as index">
+          <div>{{ item.value }}</div>
+          <mat-form-field>
+            <input
+              matInput
+              type="text"
+              class="settings-security__ip-allowlist"
+              [(ngModel)]="item.value"
+              [disabled]="!inEdit"
+            />
+            <button
+              *ngIf="inEdit"
+              matSuffix
+              mat-icon-button
+              aria-label="Remove"
+              (click)="removeIpEntry(index)"
+            >
+              <mat-icon>close</mat-icon>
+            </button>
+          </mat-form-field>
+        </div>
+      </div>
+      <button mat-stroked-button (click)="enableEdit(); createIpEntry()">
+        Add IP
+      </button>
+    </div>
+  </div>
+  <div class="settings-security__section">
+    <div class="settings-security__section-description">
+      <h2>SSL Certificate</h2>
+      <p>X.509 PEM certificate for EPP production access.</p>
+    </div>
+    <div class="settings-security__section-form">
+      <textarea
+        matInput
+        class="settings-security__clientCertificate"
+        [(ngModel)]="dataSource.clientCertificate"
+        [disabled]="!inEdit"
+      ></textarea>
+    </div>
+  </div>
+  <div class="settings-security__section">
+    <div class="settings-security__section-description">
+      <h2>Failover SSL Certificate</h2>
+      <p>X.509 PEM backup certificate for EPP Production Access.</p>
+    </div>
+    <div class="settings-security__section-form">
+      <textarea
+        matInput
+        [(ngModel)]="dataSource.failoverClientCertificate"
+        [disabled]="!inEdit"
+      ></textarea>
+    </div>
+  </div>
+  <div class="settings-security__actions">
+    <ng-template [ngIf]="inEdit" [ngIfElse]="inView">
+      <button mat-raised-button color="primary" (click)="save()">Save</button>
+      <button mat-stroked-button (click)="cancel()">Cancel</button>
+    </ng-template>
+    <ng-template #inView>
+      <button #elseBlock mat-raised-button (click)="enableEdit()">Edit</button>
+    </ng-template>
+  </div>
+</div>
