@@ -21,15 +21,16 @@ import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.EppExceptionSubject.assertAboutEppExceptions;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import com.google.common.collect.ImmutableMap;
 import google.registry.flows.EppException;
 import google.registry.flows.EppException.UnimplementedExtensionException;
 import google.registry.flows.EppException.UnimplementedObjectServiceException;
 import google.registry.flows.EppException.UnimplementedProtocolVersionException;
 import google.registry.flows.FlowTestCase;
+import google.registry.flows.FlowUtils.GenericXmlSyntaxErrorException;
 import google.registry.flows.TransportCredentials.BadRegistrarPasswordException;
 import google.registry.flows.session.LoginFlow.AlreadyLoggedInException;
 import google.registry.flows.session.LoginFlow.BadRegistrarIdException;
-import google.registry.flows.session.LoginFlow.PasswordChangesNotSupportedException;
 import google.registry.flows.session.LoginFlow.RegistrarAccountNotActiveException;
 import google.registry.flows.session.LoginFlow.TooManyFailedLoginsException;
 import google.registry.flows.session.LoginFlow.UnsupportedLanguageException;
@@ -61,7 +62,7 @@ public abstract class LoginFlowTestCase extends FlowTestCase<LoginFlow> {
   // Also called in subclasses.
   void doSuccessfulTest(String xmlFilename) throws Exception {
     setEppInput(xmlFilename);
-    assertTransactionalFlow(false);
+    assertTransactionalFlow(true);
     runFlowAssertResponse(loadFile("generic_success_response.xml"));
   }
 
@@ -80,7 +81,7 @@ public abstract class LoginFlowTestCase extends FlowTestCase<LoginFlow> {
   @Test
   void testSuccess_setsIsLoginResponse() throws Exception {
     setEppInput("login_valid.xml");
-    assertTransactionalFlow(false);
+    assertTransactionalFlow(true);
     EppOutput output = runFlow();
     assertThat(output.getResponse().isLoginResponse()).isTrue();
   }
@@ -118,8 +119,52 @@ public abstract class LoginFlowTestCase extends FlowTestCase<LoginFlow> {
   }
 
   @Test
-  void testFailure_newPassword() {
-    doFailingTest("login_invalid_newpw.xml", PasswordChangesNotSupportedException.class);
+  void testSetNewPassword() throws Exception {
+    assertThat(registrar.verifyPassword("foo-BAR2")).isTrue();
+    assertThat(registrar.verifyPassword("ANewPassword")).isFalse();
+    assertThat(registrar.verifyPassword("randomstring")).isFalse();
+
+    setEppInput("login_set_new_password.xml", ImmutableMap.of("NEWPW", "ANewPassword"));
+    assertTransactionalFlow(true);
+    runFlowAssertResponse(loadFile("generic_success_response.xml"));
+
+    Registrar newRegistrar = loadRegistrar("NewRegistrar");
+    assertThat(newRegistrar.verifyPassword("foo-BAR2")).isFalse();
+    assertThat(newRegistrar.verifyPassword("ANewPassword")).isTrue();
+    assertThat(registrar.verifyPassword("randomstring")).isFalse();
+  }
+
+  @Test
+  void testFailure_invalidNewPassword_tooShort() throws Exception {
+    setEppInput("login_set_new_password.xml", ImmutableMap.of("NEWPW", "5Char"));
+    EppException thrown = assertThrows(GenericXmlSyntaxErrorException.class, this::runFlow);
+    assertAboutEppExceptions().that(thrown).marshalsToXml();
+    assertThat(thrown)
+        .hasMessageThat()
+        .contains(
+            "length = '5' is not facet-valid with respect to minLength '6' for type 'pwType'");
+  }
+
+  @Test
+  void testFailure_invalidNewPassword_tooLong() throws Exception {
+    setEppInput(
+        "login_set_new_password.xml", ImmutableMap.of("NEWPW", "ThisIsMoreThan16Characters"));
+    EppException thrown = assertThrows(GenericXmlSyntaxErrorException.class, this::runFlow);
+    assertAboutEppExceptions().that(thrown).marshalsToXml();
+    assertThat(thrown)
+        .hasMessageThat()
+        .contains(
+            "length = '26' is not facet-valid with respect to maxLength '16' for type 'pwType'");
+  }
+
+  @Test
+  void testFailure_invalidNewPassword_containsInvalidCharacter() throws Exception {
+    setEppInput("login_set_new_password.xml", ImmutableMap.of("NEWPW", "TheChar&IsNotValid"));
+    EppException thrown = assertThrows(GenericXmlSyntaxErrorException.class, this::runFlow);
+    assertAboutEppExceptions().that(thrown).marshalsToXml();
+    // Just generically assert on this error message because it's a pretty broad error owing to the
+    // overall XML simply not parsing correctly.
+    assertThat(thrown).hasMessageThat().contains("Syntax error");
   }
 
   @Test
