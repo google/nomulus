@@ -29,7 +29,6 @@ import google.registry.flows.FlowTestCase;
 import google.registry.flows.TransportCredentials.BadRegistrarPasswordException;
 import google.registry.flows.session.LoginFlow.AlreadyLoggedInException;
 import google.registry.flows.session.LoginFlow.BadRegistrarIdException;
-import google.registry.flows.session.LoginFlow.PasswordChangesNotSupportedException;
 import google.registry.flows.session.LoginFlow.RegistrarAccountNotActiveException;
 import google.registry.flows.session.LoginFlow.TooManyFailedLoginsException;
 import google.registry.flows.session.LoginFlow.UnsupportedLanguageException;
@@ -61,7 +60,7 @@ public abstract class LoginFlowTestCase extends FlowTestCase<LoginFlow> {
   // Also called in subclasses.
   void doSuccessfulTest(String xmlFilename) throws Exception {
     setEppInput(xmlFilename);
-    assertTransactionalFlow(false);
+    assertTransactionalFlow(true);
     runFlowAssertResponse(loadFile("generic_success_response.xml"));
   }
 
@@ -80,10 +79,12 @@ public abstract class LoginFlowTestCase extends FlowTestCase<LoginFlow> {
   @Test
   void testSuccess_setsIsLoginResponse() throws Exception {
     setEppInput("login_valid.xml");
-    assertTransactionalFlow(false);
+    assertTransactionalFlow(true);
     EppOutput output = runFlow();
     assertThat(output.getResponse().isLoginResponse()).isTrue();
   }
+
+  // TODO: Add test here for invalid new password.
 
   @Test
   void testSuccess_suspendedRegistrar() throws Exception {
@@ -118,8 +119,17 @@ public abstract class LoginFlowTestCase extends FlowTestCase<LoginFlow> {
   }
 
   @Test
-  void testFailure_newPassword() {
-    doFailingTest("login_invalid_newpw.xml", PasswordChangesNotSupportedException.class);
+  void testSetNewPassword() throws Exception {
+    assertThat(registrar.verifyPassword("foo-BAR2")).isTrue();
+    assertThat(registrar.verifyPassword("ANewPassword")).isFalse();
+    assertThat(registrar.verifyPassword("randomstring")).isFalse();
+
+    doSuccessfulTest("login_set_new_password.xml");
+
+    Registrar newRegistrar = loadRegistrar("NewRegistrar");
+    assertThat(newRegistrar.verifyPassword("foo-BAR2")).isFalse();
+    assertThat(newRegistrar.verifyPassword("ANewPassword")).isTrue();
+    assertThat(registrar.verifyPassword("randomstring")).isFalse();
   }
 
   @Test

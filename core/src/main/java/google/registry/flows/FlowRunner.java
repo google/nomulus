@@ -72,21 +72,20 @@ public class FlowRunner {
     }
     eppMetricBuilder.setCommandNameFromFlow(flowClass.getSimpleName());
     if (!isTransactional) {
-      EppOutput eppOutput = EppOutput.create(flowProvider.get().run());
-      if (flowClass.equals(LoginFlow.class)) {
-        // In LoginFlow, registrarId isn't known until after the flow executes, so save it then.
-        eppMetricBuilder.setRegistrarId(sessionMetadata.getRegistrarId());
-      }
-      return eppOutput;
+      return EppOutput.create(flowProvider.get().run());
     }
     try {
-      return tm()
-          .transact(
+      return tm().transact(
               () -> {
                 try {
                   EppOutput output = EppOutput.create(flowProvider.get().run());
                   if (isDryRun) {
                     throw new DryRunException(output);
+                  }
+                  if (flowClass.equals(LoginFlow.class)) {
+                    // In LoginFlow, registrarId isn't known until after the flow executes, so save
+                    // it then.
+                    eppMetricBuilder.setRegistrarId(sessionMetadata.getRegistrarId());
                   }
                   return output;
                 } catch (EppException e) {

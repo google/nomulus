@@ -996,8 +996,6 @@ An EPP flow for login.
     *   Registrar is already logged in.
 *   2100
     *   Specified protocol version is not implemented.
-*   2102
-    *   In-band password changes are not supported.
 *   2103
     *   Specified extension is not implemented.
 *   2200
