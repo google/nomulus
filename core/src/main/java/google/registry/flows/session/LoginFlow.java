@@ -15,6 +15,7 @@
 package google.registry.flows.session;
 
 import static com.google.common.collect.Sets.difference;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.CollectionUtils.nullToEmpty;
 
 import com.google.common.collect.ImmutableSet;
@@ -27,11 +28,10 @@ import google.registry.flows.EppException.CommandUseErrorException;
 import google.registry.flows.EppException.ParameterValuePolicyErrorException;
 import google.registry.flows.EppException.UnimplementedExtensionException;
 import google.registry.flows.EppException.UnimplementedObjectServiceException;
-import google.registry.flows.EppException.UnimplementedOptionException;
 import google.registry.flows.ExtensionManager;
-import google.registry.flows.Flow;
 import google.registry.flows.FlowModule.RegistrarId;
 import google.registry.flows.SessionMetadata;
+import google.registry.flows.TransactionalFlow;
 import google.registry.flows.TransportCredentials;
 import google.registry.model.eppcommon.ProtocolDefinition;
 import google.registry.model.eppcommon.ProtocolDefinition.ServiceExtension;
@@ -58,11 +58,10 @@ import javax.inject.Inject;
  * @error {@link LoginFlow.AlreadyLoggedInException}
  * @error {@link BadRegistrarIdException}
  * @error {@link LoginFlow.TooManyFailedLoginsException}
- * @error {@link LoginFlow.PasswordChangesNotSupportedException}
  * @error {@link LoginFlow.RegistrarAccountNotActiveException}
  * @error {@link LoginFlow.UnsupportedLanguageException}
  */
-public class LoginFlow implements Flow {
+public class LoginFlow implements TransactionalFlow {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
@@ -134,8 +133,13 @@ public class LoginFlow implements Flow {
     if (!registrar.get().isLive()) {
       throw new RegistrarAccountNotActiveException();
     }
-    if (login.getNewPassword() != null) {  // We don't support in-band password changes.
-      throw new PasswordChangesNotSupportedException();
+    if (login.getNewPassword().isPresent()) {
+      // Load fresh from database (bypassing the cache) to ensure we don't save stale data.
+      Optional<Registrar> freshRegistrar = Registrar.loadByRegistrarId(login.getClientId());
+      if (!freshRegistrar.isPresent()) {
+        throw new BadRegistrarIdException(login.getClientId());
+      }
+      tm().put(freshRegistrar.get().asBuilder().setPassword(login.getNewPassword().get()).build());
     }
 
     // We are in!
@@ -177,13 +181,6 @@ public class LoginFlow implements Flow {
   static class UnsupportedLanguageException extends ParameterValuePolicyErrorException {
     public UnsupportedLanguageException() {
       super("Specified language is not supported");
-    }
-  }
-
-  /** In-band password changes are not supported. */
-  static class PasswordChangesNotSupportedException extends UnimplementedOptionException {
-    public PasswordChangesNotSupportedException() {
-      super("In-band password changes are not supported");
     }
   }
 }
