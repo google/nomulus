@@ -23,6 +23,7 @@ SELECT
   CASE
     WHEN requestPath = '/_dr/whois' THEN 'whois-43-queries'
     WHEN SUBSTR(requestPath, 0, 7) = '/whois/' THEN 'web-whois-queries'
+    WHEN SUBSTR(requestPath, 0, 6) = '/rdap/' THEN 'rdap-queries'
   END AS metricName,
   COUNT(requestPath) AS count
 FROM

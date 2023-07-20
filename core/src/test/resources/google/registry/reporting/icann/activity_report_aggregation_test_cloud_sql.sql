@@ -58,7 +58,8 @@ SELECT
   SUM(IF(metricName = 'srs-cont-transfer-query', count, 0)) AS srs_cont_transfer_query,
   SUM(IF(metricName = 'srs-cont-transfer-reject', count, 0)) AS srs_cont_transfer_reject,
   SUM(IF(metricName = 'srs-cont-transfer-request', count, 0)) AS srs_cont_transfer_request,
-  SUM(IF(metricName = 'srs-cont-update', count, 0)) AS srs_cont_update
+  SUM(IF(metricName = 'srs-cont-update', count, 0)) AS srs_cont_update,
+  SUM(IF(metricName = 'rdap-queries', count, 0)) AS rdap_queries
   -- Cross join a list of all TLDs against TLD-specific metrics and then
   -- filter so that only metrics with that TLD or a NULL TLD are counted
   -- towards a given TLD.
