@@ -16,7 +16,6 @@ package google.registry.sql.flyway;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
-import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
 import static com.google.common.truth.Truth8.assertThat;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -74,7 +73,7 @@ public class FlywayDeadlockTest {
   // Command that returns the git repo's root dir when executed anywhere in the repo.
   private static final String GIT_GET_ROOT_DIR_CMD = "git rev-parse --show-toplevel";
 
-  // Returns the commit hash when the current branch branches off 'main'.
+  // Returns the commit hash when the current branch branches of the main branch.
   private static final String GIT_FORK_POINT_CMD = "git merge-base origin/master HEAD";
 
   // Command template to get changed Flyways scripts, with fork-point to be filled in. This command
@@ -88,19 +87,19 @@ public class FlywayDeadlockTest {
           Pattern.compile(
               "^\\s*CREATE\\s+(UNIQUE\\s+)?INDEX\\s+"
                   + "(IF\\s+NOT\\s+EXISTS\\s+)*(public.)?((\\w+)|(\"\\w+\"))\\s+ON\\s+(ONLY\\s+)?"
-                  + "(public.)?((\\w+)|(\"\\w+\"))[^;]+;",
+                  + "(public.)?((\\w+)|(\"\\w+\"))[^;]+$",
               MULTILINE | CASE_INSENSITIVE),
           9,
           Pattern.compile(
-              "^\\s*ALTER\\s+INDEX\\s+(IF\\s+EXISTS\\s+)?(public.)?((\\w+)|(\"\\w+\"))[^;]+;",
+              "^\\s*ALTER\\s+INDEX\\s+(IF\\s+EXISTS\\s+)?(public.)?((\\w+)|(\"\\w+\"))[^;]+$",
               MULTILINE | CASE_INSENSITIVE),
           3,
           Pattern.compile(
-              "^\\s*ALTER\\s+SEQUENCE\\s+(IF\\s+EXISTS\\s+)?(public.)?((\\w+)|(\"\\w+\"))[^;]+;",
+              "^\\s*ALTER\\s+SEQUENCE\\s+(IF\\s+EXISTS\\s+)?(public.)?((\\w+)|(\"\\w+\"))[^;]+$",
               MULTILINE | CASE_INSENSITIVE),
           3,
           Pattern.compile(
-              "^\\s*ALTER\\s+TABLE\\s+(IF\\s+EXISTS\\s+|ONLY\\s+)*(public.)?((\\w+)|(\"\\w+\"))[^;]+;",
+              "^\\s*ALTER\\s+TABLE\\s+(IF\\s+EXISTS\\s+|ONLY\\s+)*(public.)?((\\w+)|(\"\\w+\"))[^;]+$",
               MULTILINE | CASE_INSENSITIVE),
           3);
 
@@ -120,15 +119,15 @@ public class FlywayDeadlockTest {
   public void testGetDdlLockedElementName_found() {
     ImmutableList<String> ddls =
         ImmutableList.of(
-            "alter table element_name ...;",
-            "ALTER table if EXISTS ONLY \"element_name\" ...;",
-            "alter index element_name \n...;",
-            "Alter sequence public.\"element_name\" ...;",
-            "create index if not exists \"index_name\" on element_name ...;",
-            "create index if not exists \"index_name\" on public.\"element_name\" ...;",
-            "create index if not exists index_name on public.element_name ...;",
-            "create index if not exists \"index_name\" on public.element_name ...;",
-            "create unique index public.index_name on public.\"element_name\" ...;");
+            "alter table element_name ...",
+            "ALTER table if EXISTS ONLY \"element_name\" ...",
+            "alter index element_name \n...",
+            "Alter sequence public.\"element_name\" ...",
+            "create index if not exists \"index_name\" on element_name ...",
+            "create index if not exists \"index_name\" on public.\"element_name\" ...",
+            "create index if not exists index_name on public.element_name ...",
+            "create index if not exists \"index_name\" on public.element_name ...",
+            "create unique index public.index_name on public.\"element_name\" ...");
     ddls.forEach(
         ddl -> {
           assertThat(getDdlLockedElementName(ddl)).hasValue("element_name");
@@ -165,16 +164,12 @@ public class FlywayDeadlockTest {
 
   static ImmutableSet<String> parseDdlScript(Path path) {
     try {
-      ImmutableList<String> sqls =
-          SQL_TEXT_SPLITTER
-              .splitToStream(
-                  readAllLines(path, UTF_8).stream()
-                      .map(line -> line.replaceAll("--.*", ""))
-                      .filter(line -> !line.isBlank())
-                      .collect(Collectors.joining()))
-              .collect(toImmutableList());
-      return sqls.stream()
-          .map(line -> line + ";")
+      return SQL_TEXT_SPLITTER
+          .splitToStream(
+              readAllLines(path, UTF_8).stream()
+                  .map(line -> line.replaceAll("--.*", ""))
+                  .filter(line -> !line.isBlank())
+                  .collect(Collectors.joining()))
           .map(FlywayDeadlockTest::getDdlLockedElementName)
           .filter(Optional::isPresent)
           .map(Optional::get)
@@ -229,7 +224,7 @@ public class FlywayDeadlockTest {
     String output = new String(process.getInputStream().readAllBytes(), UTF_8);
     String error = new String(process.getErrorStream().readAllBytes(), UTF_8);
     try {
-      process.waitFor(1, TimeUnit.MILLISECONDS);
+      process.waitFor(100, TimeUnit.MILLISECONDS);
     } catch (InterruptedException ie) {
       Thread.currentThread().interrupt();
     }

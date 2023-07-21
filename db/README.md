@@ -59,14 +59,14 @@ following steps:
     If an incremental file changes more than one schema element (table, index,
     or sequence), it MAY hit deadlocks when applied on sandbox/production where
     it'll be competing against live traffic that may also be locking said
-    elements but in a different order. The `FlywayDeadlockTest` checks this risk
-    for every new incremental file to be merged. Simply put, the test treats any
-    of the following as a changed element, and raises an error if a new file has
-    more than one changed elements:
+    elements but in a different order. The `FlywayDeadlockTest` checks for this
+    risk for every new incremental file to be merged. Simply put, the test
+    treats any of the following as a changed element, and raises an error if a
+    new file has more than one changed elements:
 
     *   A schema element (table, index, or sequence) being altered.
-    *   The table on which an index is created synchronously (i.e., not with
-        with the `concurrently` modifier). Please refer to
+    *   The table on which an index is created without the `concurrently`
+        modifier. Please refer to
         <a href="./src/test/java/google/registry/sql/flyway/FlywayDeadlockTest.java">
         the test class's javadoc</a> for more information.
 
