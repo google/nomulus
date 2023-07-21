@@ -56,7 +56,7 @@ FROM (
             -- should have negligible impact as the edge cage happens very rarely, more specifically
             -- when a cancellation happens during grace period by a registrar other than the the
             -- owning one. All the numbers here should be positive to pass ICANN validation.
-            MAX(report_amount, 0) AS amount,
+            GREATEST(report_amount, 0) AS amount,
             reporting_time AS reportingTime
             FROM EXTERNAL_QUERY("projects/domain-registry-alpha/locations/us/connections/domain-registry-alpha-sql",
             ''' SELECT history_type, history_other_registrar_id, history_registrar_id, domain_repo_id, history_revision_id FROM "DomainHistory";''') AS dh
