@@ -259,6 +259,7 @@ dependencies {
   implementation deps['org.bouncycastle:bcpkix-jdk15on']
   implementation deps['org.bouncycastle:bcprov-jdk15on']
   testImplementation deps['com.fasterxml.jackson.core:jackson-databind']
+  testImplementation deps['com.fasterxml.jackson.datatype:jackson-datatype-jdk8']
   runtime deps['org.glassfish.jaxb:jaxb-runtime']
   implementation deps['org.hibernate:hibernate-core']
   implementation deps['org.hibernate:hibernate-hikaricp']

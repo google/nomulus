@@ -299,13 +299,13 @@ class UpdateTldCommandTest extends CommandTestCase<UpdateTldCommand> {
   @Test
   void testSuccess_createBillingCostFlag() throws Exception {
     runCommandForced("--create_billing_cost=\"USD 42.42\"", "xn--q9jyb4c");
-    assertThat(Tld.get("xn--q9jyb4c").getStandardCreateCost()).isEqualTo(Money.of(USD, 42.42));
+    assertThat(Tld.get("xn--q9jyb4c").getCreateBillingCost()).isEqualTo(Money.of(USD, 42.42));
   }
 
   @Test
   void testSuccess_restoreBillingCostFlag() throws Exception {
     runCommandForced("--restore_billing_cost=\"USD 42.42\"", "xn--q9jyb4c");
-    assertThat(Tld.get("xn--q9jyb4c").getStandardRestoreCost()).isEqualTo(Money.of(USD, 42.42));
+    assertThat(Tld.get("xn--q9jyb4c").getRestoreBillingCost()).isEqualTo(Money.of(USD, 42.42));
   }
 
   @Test
@@ -330,10 +330,10 @@ class UpdateTldCommandTest extends CommandTestCase<UpdateTldCommand> {
         "--registry_lock_or_unlock_cost=\"JPY 9001\"",
         "xn--q9jyb4c");
     Tld registry = Tld.get("xn--q9jyb4c");
-    assertThat(registry.getStandardCreateCost()).isEqualTo(Money.ofMajor(JPY, 12345));
-    assertThat(registry.getStandardRestoreCost()).isEqualTo(Money.ofMajor(JPY, 67890));
+    assertThat(registry.getCreateBillingCost()).isEqualTo(Money.ofMajor(JPY, 12345));
+    assertThat(registry.getRestoreBillingCost()).isEqualTo(Money.ofMajor(JPY, 67890));
     assertThat(registry.getStandardRenewCost(START_OF_TIME)).isEqualTo(Money.ofMajor(JPY, 101112));
-    assertThat(registry.getServerStatusChangeCost()).isEqualTo(Money.ofMajor(JPY, 97865));
+    assertThat(registry.getServerStatusChangeBillingCost()).isEqualTo(Money.ofMajor(JPY, 97865));
     assertThat(registry.getRegistryLockOrUnlockBillingCost()).isEqualTo(Money.ofMajor(JPY, 9001));
   }
 

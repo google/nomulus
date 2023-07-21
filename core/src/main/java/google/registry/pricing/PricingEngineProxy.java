@@ -58,7 +58,7 @@ public final class PricingEngineProxy {
    */
   public static DomainPrices getPricesForDomainName(String domainName, DateTime priceTime) {
     String tld = getTldFromDomainName(domainName);
-    String clazz = Tld.get(tld).getPremiumPricingEngineClassName();
+    String clazz = Tld.get(tld).getPricingEngineClassName();
     PremiumPricingEngine engine = premiumPricingEngines.get(clazz);
     checkState(engine != null, "Could not load pricing engine %s for TLD %s", clazz, tld);
     return engine.getDomainPrices(domainName, priceTime);

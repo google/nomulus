@@ -127,7 +127,7 @@ public class DatabaseSnapshotTest {
       Tld updated =
           registry
               .asBuilder()
-              .setCreateBillingCost(registry.getStandardCreateCost().plus(1))
+              .setCreateBillingCost(registry.getCreateBillingCost().plus(1))
               .build();
       tm().transact(() -> tm().put(updated));
 
@@ -152,7 +152,7 @@ public class DatabaseSnapshotTest {
       Tld updated =
           registry
               .asBuilder()
-              .setCreateBillingCost(registry.getStandardCreateCost().plus(1))
+              .setCreateBillingCost(registry.getCreateBillingCost().plus(1))
               .build();
       tm().transact(() -> tm().put(updated));
 

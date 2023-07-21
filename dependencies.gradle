@@ -210,6 +210,7 @@ ext {
       'org.apache.httpcomponents:httpcore:[4.4.13,)',
       'org.apache.tomcat:tomcat-annotations-api:[8.0.5,)',
       'com.fasterxml.jackson.core:jackson-databind:[2.11.2,)',
+      'com.fasterxml.jackson.datatype:jackson-datatype-jdk8:[2.11.2,)',
       'org.flywaydb:flyway-core:[5.2.4,)',
       'org.glassfish.jaxb:jaxb-runtime:[2.3.0,)',
       'org.hamcrest:hamcrest:[2.2,)',

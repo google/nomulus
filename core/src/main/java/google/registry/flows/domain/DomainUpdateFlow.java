@@ -337,7 +337,7 @@ public final class DomainUpdateFlow implements TransactionalFlow {
                   .setReason(Reason.SERVER_STATUS)
                   .setTargetId(targetId)
                   .setRegistrarId(registrarId)
-                  .setCost(Tld.get(existingDomain.getTld()).getServerStatusChangeCost())
+                  .setCost(Tld.get(existingDomain.getTld()).getServerStatusChangeBillingCost())
                   .setEventTime(now)
                   .setBillingTime(now)
                   .setDomainHistory(historyEntry)
