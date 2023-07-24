@@ -69,7 +69,7 @@ public class AsyncTaskEnqueuerTest {
   void test_enqueueAsyncResave_success() {
     Contact contact = persistActiveContact("jd23456");
     asyncTaskEnqueuer.enqueueAsyncResave(
-        contact.createVKey(), clock.nowUtc(), clock.nowUtc().plusDays(5));
+        contact.createVKey(), clock.nowUtc(), ImmutableSortedSet.of(clock.nowUtc().plusDays(5)));
     cloudTasksHelper.assertTasksEnqueued(
         QUEUE_ASYNC_ACTIONS,
         new CloudTasksHelper.TaskMatcher()
@@ -108,7 +108,7 @@ public class AsyncTaskEnqueuerTest {
   void test_enqueueAsyncResave_ignoresTasksTooFarIntoFuture() {
     Contact contact = persistActiveContact("jd23456");
     asyncTaskEnqueuer.enqueueAsyncResave(
-        contact.createVKey(), clock.nowUtc(), clock.nowUtc().plusDays(31));
+        contact.createVKey(), clock.nowUtc(), ImmutableSortedSet.of(clock.nowUtc().plusDays(31)));
     cloudTasksHelper.assertNoTasksEnqueued(QUEUE_ASYNC_ACTIONS);
     assertLogMessage(logHandler, Level.INFO, "Ignoring async re-save");
   }
