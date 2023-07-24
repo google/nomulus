@@ -50,12 +50,6 @@ public final class AsyncTaskEnqueuer {
     this.cloudTasksUtils = cloudTasksUtils;
   }
 
-  /** Enqueues a task to asynchronously re-save an entity at some point in the future. */
-  public void enqueueAsyncResave(
-      VKey<? extends EppResource> entityToResave, DateTime now, DateTime whenToResave) {
-    enqueueAsyncResave(entityToResave, now, ImmutableSortedSet.of(whenToResave));
-  }
-
   /**
    * Enqueues a task to asynchronously re-save an entity at some point(s) in the future.
    *

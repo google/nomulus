@@ -38,6 +38,7 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.ImmutableSortedSet;
 import google.registry.batch.AsyncTaskEnqueuer;
 import google.registry.flows.EppException;
 import google.registry.flows.ExtensionManager;
@@ -286,7 +287,8 @@ public final class DomainTransferRequestFlow implements TransactionalFlow {
             .build();
     DomainHistory domainHistory = buildDomainHistory(newDomain, tld, now, period);
 
-    asyncTaskEnqueuer.enqueueAsyncResave(newDomain.createVKey(), now, automaticTransferTime);
+    asyncTaskEnqueuer.enqueueAsyncResave(
+        newDomain.createVKey(), now, ImmutableSortedSet.of(automaticTransferTime));
     tm().putAll(
             new ImmutableSet.Builder<>()
                 .add(newDomain, domainHistory, requestPollMessage)
