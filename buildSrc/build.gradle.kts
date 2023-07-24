@@ -32,7 +32,6 @@ buildscript {
 
 plugins {
   // Java static analysis plugins. Keep versions consistent with ../build.gradle
-  // id("nebula.lint") version "16.0.2"  // unsupported for kotlin
   id("net.ltgt.errorprone") version "2.0.2"
   checkstyle
   id("com.diffplug.gradle.spotless") version "3.25.0"

@@ -38,7 +38,6 @@ buildscript {
 plugins {
   // Java static analysis plugins. Keep versions consistent with
   // ./buildSrc/build.gradle
-  id 'nebula.lint' version '16.0.2'
   id 'net.ltgt.errorprone' version '2.0.2'
   id 'checkstyle'
   id 'com.github.johnrengelman.shadow' version '5.1.0'
@@ -108,9 +107,6 @@ tasks.checkLicense.dependsOn(tasks.checkBuildSrcLicense)
 tasks.build.dependsOn(tasks.checkLicense)
 
 // Provide defaults for all of the project properties.
-
-// Only do linting if the build is successful.
-gradleLint.autoLintAfterFailure = false
 
 // Paths to main and test sources.
 ext.projectRootDir = "${rootDir}"
