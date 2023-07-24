@@ -25,17 +25,32 @@ import dagger.Module;
 import dagger.Provides;
 import google.registry.config.CredentialModule.ApplicationDefaultCredential;
 import google.registry.config.RegistryConfig.Config;
+import google.registry.util.Clock;
 import google.registry.util.GoogleCredentialsBundle;
+import java.util.Random;
+import javax.inject.Named;
+import javax.inject.Singleton;
 import org.joda.time.Duration;
 
 /** Dagger module for Google Stackdriver service connection objects. */
 @Module
 public final class StackdriverModule {
 
+  private StackdriverModule() {}
+
   // We need a fake GCE zone to appease Stackdriver's resource model.
   // TODO(b/265973059): Switch to resource type "gke_container".
   private static final String SPOOFED_GCE_ZONE = "us-central1-f";
-  private static final String SPOOFED_GCE_INSTANCE = "fake-instance";
+
+  // We cannot use a static fake intance ID which is shared by all instances, because metrics might
+  // be flushed to stackdriver with delays, which lead to time inversion erros when another instance
+  // had already written a data point at a later time.
+  @Singleton
+  @Provides
+  @Named("spoofedGceInstance")
+  static String providesSpoofedGceInstanceId(Random random, Clock clock) {
+    return String.format("%s-%d", clock.nowUtc(), random.nextInt());
+  }
 
   @Provides
   static Monitoring provideMonitoring(
@@ -54,7 +69,8 @@ public final class StackdriverModule {
       Monitoring monitoringClient,
       @Config("projectId") String projectId,
       @Config("stackdriverMaxQps") int maxQps,
-      @Config("stackdriverMaxPointsPerRequest") int maxPointsPerRequest) {
+      @Config("stackdriverMaxPointsPerRequest") int maxPointsPerRequest,
+      @Named("spoofedGceInstance") String instanceId) {
     // The MonitoredResource for GAE apps is not writable (and missing fields anyway) so we just
     // use the gce_instance resource type instead.
     return new StackdriverWriter(
@@ -65,7 +81,7 @@ public final class StackdriverModule {
             .setLabels(
                 ImmutableMap.of(
                     // The "zone" field MUST be a valid GCE zone, so we fake one.
-                    "zone", SPOOFED_GCE_ZONE, "instance_id", SPOOFED_GCE_INSTANCE)),
+                    "zone", SPOOFED_GCE_ZONE, "instance_id", instanceId)),
         maxQps,
         maxPointsPerRequest);
   }
