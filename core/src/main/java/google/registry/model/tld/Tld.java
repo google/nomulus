@@ -53,6 +53,8 @@ import google.registry.model.domain.fee.Fee;
 import google.registry.model.domain.token.AllocationToken;
 import google.registry.model.domain.token.AllocationToken.TokenType;
 import google.registry.model.tld.TldYamlUtils.CreateAutoTimestampDeserializer;
+import google.registry.model.tld.TldYamlUtils.CurrencyDeserializer;
+import google.registry.model.tld.TldYamlUtils.CurrencySerializer;
 import google.registry.model.tld.TldYamlUtils.TimedTransitionPropertyMoneyDeserializer;
 import google.registry.model.tld.TldYamlUtils.TimedTransitionPropertyTldStateDeserializer;
 import google.registry.model.tld.TldYamlUtils.TokenVKeyListDeserializer;
@@ -605,6 +607,8 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
     return Optional.ofNullable(premiumListName);
   }
 
+  @JsonSerialize(using = CurrencySerializer.class)
+  @JsonDeserialize(using = CurrencyDeserializer.class)
   public CurrencyUnit getCurrency() {
     return currency;
   }

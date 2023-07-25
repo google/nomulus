@@ -40,11 +40,6 @@ import static org.joda.money.CurrencyUnit.USD;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.databind.module.SimpleModule;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator.Feature;
-import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
@@ -53,10 +48,6 @@ import google.registry.model.EntityTestCase;
 import google.registry.model.domain.token.AllocationToken;
 import google.registry.model.tld.Tld.TldNotFoundException;
 import google.registry.model.tld.Tld.TldState;
-import google.registry.model.tld.TldYamlUtils.CurrencyDeserializer;
-import google.registry.model.tld.TldYamlUtils.CurrencySerializer;
-import google.registry.model.tld.TldYamlUtils.MoneyDeserializer;
-import google.registry.model.tld.TldYamlUtils.MoneySerializer;
 import google.registry.model.tld.label.PremiumList;
 import google.registry.model.tld.label.PremiumListDao;
 import google.registry.model.tld.label.ReservedList;
@@ -66,7 +57,6 @@ import google.registry.util.SerializeUtils;
 import java.io.File;
 import java.math.BigDecimal;
 import java.util.Optional;
-import org.joda.money.CurrencyUnit;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
@@ -126,17 +116,7 @@ public final class TldTest extends EntityTestCase {
             .setIdnTables(ImmutableSet.of(IdnTableEnum.JA, IdnTableEnum.EXTENDED_LATIN))
             .build();
 
-    ObjectMapper mapper =
-        new ObjectMapper(new YAMLFactory().disable(Feature.WRITE_DOC_START_MARKER));
-    mapper.findAndRegisterModules();
-    SimpleModule module = new SimpleModule();
-    module.addSerializer(Money.class, new MoneySerializer());
-    module.addDeserializer(Money.class, new MoneyDeserializer());
-    module.addSerializer(CurrencyUnit.class, new CurrencySerializer());
-    module.addDeserializer(CurrencyUnit.class, new CurrencyDeserializer());
-    mapper.registerModule(module);
-    mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
-    mapper.registerModule(new Jdk8Module());
+    ObjectMapper mapper = TldYamlUtils.getObjectMapper();
     String yaml = mapper.writeValueAsString(existingTld);
     assertThat(yaml).isEqualTo(loadFile(getClass(), "tld.yaml"));
     Tld constructedTld = mapper.readValue(new File(filePath(getClass(), "tld.yaml")), Tld.class);
