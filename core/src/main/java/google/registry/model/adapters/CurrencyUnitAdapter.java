@@ -1,4 +1,4 @@
-// Copyright 2017 The Nomulus Authors. All Rights Reserved.
+// Copyright 2023 The Nomulus Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -22,9 +22,7 @@ import org.joda.money.CurrencyUnit;
 /** Adapter to use Joda {@link CurrencyUnit} when marshalling strings. */
 public class CurrencyUnitAdapter extends XmlAdapter<String, CurrencyUnit> {
 
-  /** Parses a string into a {@link CurrencyUnit} object. */
-  @Override
-  public CurrencyUnit unmarshal(String currency) throws UnknownCurrencyException {
+  public static CurrencyUnit convertFromString(String currency) throws UnknownCurrencyException {
     try {
       return CurrencyUnit.of(nullToEmpty(currency).trim());
     } catch (IllegalArgumentException e) {
@@ -32,10 +30,20 @@ public class CurrencyUnitAdapter extends XmlAdapter<String, CurrencyUnit> {
     }
   }
 
+  public static String convertFromCurrency(CurrencyUnit currency) {
+    return currency == null ? null : currency.toString();
+  }
+
+  /** Parses a string into a {@link CurrencyUnit} object. */
+  @Override
+  public CurrencyUnit unmarshal(String currency) throws UnknownCurrencyException {
+    return convertFromString(currency);
+  }
+
   /** Converts {@link CurrencyUnit} to a string. */
   @Override
   public String marshal(CurrencyUnit currency) {
-    return currency == null ? null : currency.toString();
+    return convertFromCurrency(currency);
   }
 
   /** Exception to throw when failing to parse a currency. */
