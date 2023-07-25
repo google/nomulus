@@ -19,9 +19,14 @@ import static com.google.common.collect.Ordering.natural;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
+import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.databind.ser.std.StdSerializer;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator.Feature;
 import google.registry.model.CreateAutoTimestamp;
 import google.registry.model.common.TimedTransitionProperty;
 import google.registry.model.domain.token.AllocationToken;
@@ -32,25 +37,26 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Optional;
 import java.util.SortedMap;
 import org.joda.money.CurrencyUnit;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
+import org.joda.time.Duration;
 
 public class TldYamlUtils {
 
-  // public static ObjectMapper getObjectMapper() {
-  //   ObjectMapper mapper =
-  //       new ObjectMapper(new YAMLFactory().disable(Feature.WRITE_DOC_START_MARKER));
-  //   mapper.findAndRegisterModules();
-  //   SimpleModule module = new SimpleModule();
-  //   module.addSerializer(Money.class, new MoneySerializer());
-  //   module.addDeserializer(Money.class, new MoneyDeserializer());
-  //   mapper.registerModule(module);
-  //   mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
-  //   mapper.registerModule(new Jdk8Module());
-  //   return mapper;
-  // }
+  public static ObjectMapper getObjectMapper() {
+    ObjectMapper mapper =
+        new ObjectMapper(new YAMLFactory().disable(Feature.WRITE_DOC_START_MARKER));
+    mapper.findAndRegisterModules();
+    SimpleModule module = new SimpleModule();
+    module.addSerializer(Money.class, new MoneySerializer());
+    module.addDeserializer(Money.class, new MoneyDeserializer());
+    mapper.registerModule(module);
+    mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+    return mapper;
+  }
 
   public static class MoneySerializer extends StdSerializer<Money> {
 
@@ -125,6 +131,48 @@ public class TldYamlUtils {
         throws IOException {
       String currencyCode = jp.readValueAs(String.class);
       return CurrencyUnit.of(currencyCode);
+    }
+  }
+
+  public static class OptionalDurationSerializer extends StdSerializer<Optional<Duration>> {
+
+    public OptionalDurationSerializer() {
+      this(null);
+    }
+
+    public OptionalDurationSerializer(Class<Optional<Duration>> t) {
+      super(t);
+    }
+
+    @Override
+    public void serialize(Optional<Duration> value, JsonGenerator gen, SerializerProvider provider)
+        throws IOException {
+      if (!value.isPresent()) {
+        gen.writeNull();
+      } else {
+        gen.writeNumber(value.get().getMillis());
+      }
+    }
+  }
+
+  public static class OptionalStringSerializer extends StdSerializer<Optional<String>> {
+
+    public OptionalStringSerializer() {
+      this(null);
+    }
+
+    public OptionalStringSerializer(Class<Optional<String>> t) {
+      super(t);
+    }
+
+    @Override
+    public void serialize(Optional<String> value, JsonGenerator gen, SerializerProvider provider)
+        throws IOException {
+      if (!value.isPresent()) {
+        gen.writeNull();
+      } else {
+        gen.writeString(value.get());
+      }
     }
   }
 

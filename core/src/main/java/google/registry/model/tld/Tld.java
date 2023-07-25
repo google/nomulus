@@ -55,6 +55,8 @@ import google.registry.model.domain.token.AllocationToken.TokenType;
 import google.registry.model.tld.TldYamlUtils.CreateAutoTimestampDeserializer;
 import google.registry.model.tld.TldYamlUtils.CurrencyDeserializer;
 import google.registry.model.tld.TldYamlUtils.CurrencySerializer;
+import google.registry.model.tld.TldYamlUtils.OptionalDurationSerializer;
+import google.registry.model.tld.TldYamlUtils.OptionalStringSerializer;
 import google.registry.model.tld.TldYamlUtils.TimedTransitionPropertyMoneyDeserializer;
 import google.registry.model.tld.TldYamlUtils.TimedTransitionPropertyTldStateDeserializer;
 import google.registry.model.tld.TldYamlUtils.TokenVKeyListDeserializer;
@@ -292,6 +294,7 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
    *
    * <p>When this field is null, the "dnsDefaultATtl" value from the config file will be used.
    */
+  @JsonSerialize(using = OptionalDurationSerializer.class)
   Duration dnsAPlusAaaaTtl;
 
   /**
@@ -299,6 +302,7 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
    *
    * <p>When this field is null, the "dnsDefaultNsTtl" value from the config file will be used.
    */
+  @JsonSerialize(using = OptionalDurationSerializer.class)
   Duration dnsNsTtl;
 
   /**
@@ -306,6 +310,7 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
    *
    * <p>When this field is null, the "dnsDefaultDsTtl" value from the config file will be used.
    */
+  @JsonSerialize(using = OptionalDurationSerializer.class)
   Duration dnsDsTtl;
   /**
    * The unicode-aware representation of the TLD associated with this {@link Tld}.
@@ -372,6 +377,7 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
    * the database should be queried for the entity with this name that has the largest revision ID.
    */
   @Column(name = "premium_list_name")
+  @JsonSerialize(using = OptionalStringSerializer.class)
   String premiumListName;
 
   /** Should RDE upload a nightly escrow deposit for this TLD? */

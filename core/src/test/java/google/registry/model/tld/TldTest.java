@@ -17,18 +17,22 @@ package google.registry.model.tld;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
 import static com.google.common.truth.Truth8.assertThat;
+import static google.registry.model.ImmutableObjectSubject.assertAboutImmutableObjects;
 import static google.registry.model.domain.token.AllocationToken.TokenType.DEFAULT_PROMO;
 import static google.registry.model.domain.token.AllocationToken.TokenType.SINGLE_USE;
 import static google.registry.model.tld.Tld.TldState.GENERAL_AVAILABILITY;
 import static google.registry.model.tld.Tld.TldState.PREDELEGATION;
 import static google.registry.model.tld.Tld.TldState.QUIET_PERIOD;
 import static google.registry.model.tld.Tld.TldState.START_DATE_SUNRISE;
+import static google.registry.model.tld.TldYamlUtils.getObjectMapper;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.newTld;
 import static google.registry.testing.DatabaseHelper.persistPremiumList;
 import static google.registry.testing.DatabaseHelper.persistReservedList;
 import static google.registry.testing.DatabaseHelper.persistResource;
+import static google.registry.testing.TestDataHelper.filePath;
+import static google.registry.testing.TestDataHelper.loadFile;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static java.math.RoundingMode.UNNECESSARY;
@@ -36,6 +40,7 @@ import static org.joda.money.CurrencyUnit.EUR;
 import static org.joda.money.CurrencyUnit.USD;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
@@ -48,11 +53,14 @@ import google.registry.model.tld.label.PremiumList;
 import google.registry.model.tld.label.PremiumListDao;
 import google.registry.model.tld.label.ReservedList;
 import google.registry.persistence.VKey;
+import google.registry.tldconfig.idn.IdnTableEnum;
 import google.registry.util.SerializeUtils;
+import java.io.File;
 import java.math.BigDecimal;
 import java.util.Optional;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
+import org.joda.time.Duration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -78,69 +86,56 @@ public final class TldTest extends EntityTestCase {
     assertThat(persisted).isEqualTo(registry);
   }
 
-  // public static ObjectMapper getObjectMapper() {
-  //   ObjectMapper mapper =
-  //       new ObjectMapper(new YAMLFactory().disable(Feature.WRITE_DOC_START_MARKER));
-  //   mapper.findAndRegisterModules();
-  //   SimpleModule module = new SimpleModule();
-  //   module.addSerializer(Money.class, new MoneySerializer());
-  //   module.addDeserializer(Money.class, new MoneyDeserializer());
-  //   mapper.registerModule(module);
-  //   mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
-  //   mapper.registerModule(new Jdk8Module());
-  //   return mapper;
-  // }
+  @Test
+  void testYaml() throws Exception {
+    fakeClock.setTo(START_OF_TIME);
+    AllocationToken defaultToken =
+        persistResource(
+            new AllocationToken.Builder()
+                .setToken("bbbbb")
+                .setTokenType(DEFAULT_PROMO)
+                .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
+                .setAllowedTlds(ImmutableSet.of("tld"))
+                .setDiscountPremiums(false)
+                .setDiscountFraction(0.5)
+                .build());
+    Tld existingTld =
+        createTld("tld")
+            .asBuilder()
+            .setDnsAPlusAaaaTtl(Duration.standardHours(1))
+            .setDnsWriters(ImmutableSet.of("baz", "bang"))
+            .setEapFeeSchedule(
+                ImmutableSortedMap.of(
+                    START_OF_TIME,
+                    Money.of(USD, 0),
+                    DateTime.parse("2000-06-01T00:00:00Z"),
+                    Money.of(USD, 100),
+                    DateTime.parse("2000-06-02T00:00:00Z"),
+                    Money.of(USD, 0)))
+            .setAllowedFullyQualifiedHostNames(ImmutableSet.of("foo"))
+            .setDefaultPromoTokens(ImmutableList.of(defaultToken.createVKey()))
+            .setIdnTables(ImmutableSet.of(IdnTableEnum.JA, IdnTableEnum.EXTENDED_LATIN))
+            .build();
 
-  // @Test
-  // void testYaml() throws Exception {
-  //   fakeClock.setTo(START_OF_TIME);
-  //   AllocationToken defaultToken =
-  //       persistResource(
-  //           new AllocationToken.Builder()
-  //               .setToken("bbbbb")
-  //               .setTokenType(DEFAULT_PROMO)
-  //               .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
-  //               .setAllowedTlds(ImmutableSet.of("tld"))
-  //               .setDiscountPremiums(false)
-  //               .setDiscountFraction(0.5)
-  //               .build());
-  //   Tld existingTld =
-  //       createTld("tld")
-  //           .asBuilder()
-  //           .setDnsAPlusAaaaTtl(Duration.standardHours(1))
-  //           .setDnsWriters(ImmutableSet.of("baz", "bang"))
-  //           .setEapFeeSchedule(
-  //               ImmutableSortedMap.of(
-  //                   START_OF_TIME,
-  //                   Money.of(USD, 0),
-  //                   DateTime.parse("2000-06-01T00:00:00Z"),
-  //                   Money.of(USD, 100),
-  //                   DateTime.parse("2000-06-02T00:00:00Z"),
-  //                   Money.of(USD, 0)))
-  //           .setAllowedFullyQualifiedHostNames(ImmutableSet.of("foo"))
-  //           .setDefaultPromoTokens(ImmutableList.of(defaultToken.createVKey()))
-  //           .setIdnTables(ImmutableSet.of(IdnTableEnum.JA, IdnTableEnum.EXTENDED_LATIN))
-  //           .build();
-  //
-  //   ObjectMapper mapper = getObjectMapper();
-  //   String yaml = mapper.writeValueAsString(existingTld);
-  //   assertThat(yaml).isEqualTo(loadFile(getClass(), "tld.yaml"));
-  //   Tld constructedTld = mapper.readValue(new File(filePath(getClass(), "tld.yaml")), Tld.class);
-  //   assertAboutImmutableObjects()
-  //       .that(constructedTld)
-  //       .isEqualExceptFields(
-  //           existingTld,
-  //           "dnsWriters",
-  //           "idnTables",
-  //           "reservedListNames",
-  //           "allowedRegistrantContactIds");
-  //   assertThat(constructedTld.dnsWriters).containsExactlyElementsIn(existingTld.dnsWriters);
-  //   assertThat(constructedTld.idnTables).containsExactlyElementsIn(existingTld.idnTables);
-  //   assertThat(constructedTld.getReservedListNames())
-  //       .containsExactlyElementsIn(existingTld.getReservedListNames());
-  //   assertThat(constructedTld.getAllowedRegistrantContactIds())
-  //       .containsExactlyElementsIn(existingTld.getAllowedRegistrantContactIds());
-  // }
+    ObjectMapper mapper = getObjectMapper();
+    String yaml = mapper.writeValueAsString(existingTld);
+    assertThat(yaml).isEqualTo(loadFile(getClass(), "tld.yaml"));
+    Tld constructedTld = mapper.readValue(new File(filePath(getClass(), "tld.yaml")), Tld.class);
+    assertAboutImmutableObjects()
+        .that(constructedTld)
+        .isEqualExceptFields(
+            existingTld,
+            "dnsWriters",
+            "idnTables",
+            "reservedListNames",
+            "allowedRegistrantContactIds");
+    assertThat(constructedTld.dnsWriters).containsExactlyElementsIn(existingTld.dnsWriters);
+    assertThat(constructedTld.idnTables).containsExactlyElementsIn(existingTld.idnTables);
+    assertThat(constructedTld.getReservedListNames())
+        .containsExactlyElementsIn(existingTld.getReservedListNames());
+    assertThat(constructedTld.getAllowedRegistrantContactIds())
+        .containsExactlyElementsIn(existingTld.getAllowedRegistrantContactIds());
+  }
 
   @Test
   void testPersistence() {
