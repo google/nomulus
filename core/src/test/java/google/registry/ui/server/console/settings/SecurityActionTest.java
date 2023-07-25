@@ -15,21 +15,17 @@
 package google.registry.ui.server.console.settings;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.testing.CertificateSamples.SAMPLE_CERT;
 import static google.registry.testing.CertificateSamples.SAMPLE_CERT2;
 import static google.registry.testing.DatabaseHelper.loadRegistrar;
-import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.SqlHelper.saveRegistrar;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 import com.google.api.client.http.HttpStatusCodes;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSetMultimap;
 import com.google.common.collect.ImmutableSortedMap;
-import com.google.common.net.InetAddresses;
 import com.google.gson.Gson;
 import google.registry.flows.certs.CertificateChecker;
 import google.registry.model.console.GlobalRole;
@@ -37,7 +33,6 @@ import google.registry.model.console.User;
 import google.registry.model.console.UserRoles;
 import google.registry.model.registrar.Registrar;
 import google.registry.persistence.transaction.JpaTestExtensions;
-import google.registry.request.Action;
 import google.registry.request.RequestModule;
 import google.registry.request.auth.AuthResult;
 import google.registry.request.auth.AuthSettings.AuthLevel;
@@ -46,8 +41,6 @@ import google.registry.request.auth.UserAuthInfo;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeResponse;
 import google.registry.ui.server.registrar.RegistrarConsoleModule;
-import google.registry.util.CidrAddressBlock;
-import google.registry.util.UtilsModule;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.StringReader;
@@ -66,7 +59,7 @@ class SecurityActionTest {
           "{\"registrarId\": \"registrarId\", \"clientCertificate\": \"%s\","
               + " \"ipAddressAllowList\": [\"192.168.1.1/32\"]}",
           SAMPLE_CERT2);
-  private static final Gson GSON = UtilsModule.provideGson();
+  private static final Gson GSON = RequestModule.provideGson();
   private final HttpServletRequest request = mock(HttpServletRequest.class);
   private final FakeClock clock = new FakeClock();
   private Registrar testRegistrar;
@@ -95,38 +88,10 @@ class SecurityActionTest {
   }
 
   @Test
-  void testSuccess_getRegistrarInfo() throws IOException {
-    persistResource(
-        testRegistrar
-            .asBuilder()
-            .setClientCertificate(SAMPLE_CERT, clock.nowUtc())
-            .setIpAddressAllowList(
-                ImmutableSet.of(
-                    CidrAddressBlock.create(InetAddresses.forString("192.168.1.1"), 32),
-                    CidrAddressBlock.create(InetAddresses.forString("2001:db8::1"), 128)))
-            .build());
-    SecurityAction action =
-        createAction(
-            Action.Method.GET,
-            AuthResult.create(
-                AuthLevel.USER,
-                UserAuthInfo.create(
-                    createUser(new UserRoles.Builder().setGlobalRole(GlobalRole.FTE).build()))),
-            testRegistrar.getRegistrarId());
-    action.run();
-    assertThat(response.getStatus()).isEqualTo(HttpStatusCodes.STATUS_CODE_OK);
-    String payload = response.getPayload().replace("\\n", "").replace("\\u003d", "=");
-    assertThat(payload).contains(SAMPLE_CERT.replace("\n", ""));
-    assertThat(payload).contains("192.168.1.1/32");
-    assertThat(payload).contains("2001:db8:0:0:0:0:0:1/128");
-  }
-
-  @Test
   void testSuccess_postRegistrarInfo() throws IOException {
     clock.setTo(DateTime.parse("2020-11-01T00:00:00Z"));
     SecurityAction action =
         createAction(
-            Action.Method.POST,
             AuthResult.create(
                 AuthLevel.USER,
                 UserAuthInfo.create(
@@ -149,20 +114,8 @@ class SecurityActionTest {
         .build();
   }
 
-  private SecurityAction createAction(
-      Action.Method method, AuthResult authResult, String registrarId) throws IOException {
-    when(request.getMethod()).thenReturn(method.toString());
-    if (method.equals(Action.Method.GET)) {
-      return new SecurityAction(
-          request,
-          authResult,
-          response,
-          GSON,
-          certificateChecker,
-          registrarAccessor,
-          registrarId,
-          Optional.empty());
-    } else {
+  private SecurityAction createAction(AuthResult authResult, String registrarId)
+      throws IOException {
       doReturn(new BufferedReader(new StringReader("{\"registrar\":" + jsonRegistrar1 + "}")))
           .when(request)
           .getReader();
@@ -170,7 +123,6 @@ class SecurityActionTest {
           RegistrarConsoleModule.provideRegistrar(
               GSON, RequestModule.provideJsonBody(request, GSON));
       return new SecurityAction(
-          request,
           authResult,
           response,
           GSON,
@@ -178,6 +130,6 @@ class SecurityActionTest {
           registrarAccessor,
           registrarId,
           maybeRegistrar);
-    }
+
   }
 }

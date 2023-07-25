@@ -25,12 +25,12 @@ import google.registry.model.console.RegistrarRole;
 import google.registry.model.console.User;
 import google.registry.model.console.UserRoles;
 import google.registry.persistence.transaction.JpaTestExtensions;
+import google.registry.request.RequestModule;
 import google.registry.request.auth.AuthResult;
 import google.registry.request.auth.AuthSettings.AuthLevel;
 import google.registry.request.auth.UserAuthInfo;
 import google.registry.testing.DatabaseHelper;
 import google.registry.testing.FakeResponse;
-import google.registry.util.UtilsModule;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -38,7 +38,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 /** Tests for {@link google.registry.ui.server.console.ConsoleDomainGetAction}. */
 public class ConsoleDomainGetActionTest {
 
-  private static final Gson GSON = UtilsModule.provideGson();
+  private static final Gson GSON = RequestModule.provideGson();
   private static final FakeResponse RESPONSE = new FakeResponse();
 
   @RegisterExtension
