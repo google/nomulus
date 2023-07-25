@@ -18,8 +18,14 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static google.registry.util.CollectionUtils.forceEmptyToNull;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.ImmutableList;
+import com.google.gson.TypeAdapter;
+import com.google.gson.stream.JsonReader;
+import com.google.gson.stream.JsonWriter;
 import google.registry.model.eppcommon.Address;
+import java.io.IOException;
 import javax.persistence.Embeddable;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * Registrar Address
@@ -52,6 +58,45 @@ public class RegistrarAddress extends Address {
       checkNotNull(instance.getCity(), "Missing city");
       checkNotNull(instance.getCountryCode(), "Missing country code");
       return super.build();
+    }
+  }
+
+  public static class RegistrarAddressAdapter extends TypeAdapter<RegistrarAddress> {
+    @Override
+    public RegistrarAddress read(JsonReader reader) throws IOException {
+      Builder builder = new Builder();
+      reader.beginObject();
+      while (reader.hasNext()) {
+        switch (reader.nextName()) {
+          case "street":
+            builder.setStreet(ImmutableList.of(reader.nextString()));
+            break;
+          case "city":
+            builder.setCity(reader.nextString());
+            break;
+          case "state":
+            builder.setState(reader.nextString());
+            break;
+          case "zip":
+            builder.setZip(reader.nextString());
+            break;
+          case "countryCode":
+            builder.setCountryCode(reader.nextString());
+            break;
+        }
+      }
+      reader.endObject();
+      return builder.build();
+    }
+
+    @Override
+    public void write(JsonWriter writer, RegistrarAddress registrarAddress) throws IOException {
+      writer.beginObject();
+      writer.name("street").value(StringUtils.join(registrarAddress.getStreet(), ""));
+      writer.name("city").value(registrarAddress.getCity());
+      writer.name("state").value(registrarAddress.getState());
+      writer.name("zip").value(registrarAddress.getZip());
+      writer.endObject();
     }
   }
 }
