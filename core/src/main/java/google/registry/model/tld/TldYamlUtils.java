@@ -19,15 +19,9 @@ import static com.google.common.collect.Ordering.natural;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
-import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.databind.ser.std.StdSerializer;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator.Feature;
-import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import google.registry.model.CreateAutoTimestamp;
 import google.registry.model.common.TimedTransitionProperty;
 import google.registry.model.domain.token.AllocationToken;
@@ -45,18 +39,18 @@ import org.joda.time.DateTime;
 
 public class TldYamlUtils {
 
-  public static ObjectMapper getObjectMapper() {
-    ObjectMapper mapper =
-        new ObjectMapper(new YAMLFactory().disable(Feature.WRITE_DOC_START_MARKER));
-    mapper.findAndRegisterModules();
-    SimpleModule module = new SimpleModule();
-    module.addSerializer(Money.class, new MoneySerializer());
-    module.addDeserializer(Money.class, new MoneyDeserializer());
-    mapper.registerModule(module);
-    mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
-    mapper.registerModule(new Jdk8Module());
-    return mapper;
-  }
+  // public static ObjectMapper getObjectMapper() {
+  //   ObjectMapper mapper =
+  //       new ObjectMapper(new YAMLFactory().disable(Feature.WRITE_DOC_START_MARKER));
+  //   mapper.findAndRegisterModules();
+  //   SimpleModule module = new SimpleModule();
+  //   module.addSerializer(Money.class, new MoneySerializer());
+  //   module.addDeserializer(Money.class, new MoneyDeserializer());
+  //   mapper.registerModule(module);
+  //   mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+  //   mapper.registerModule(new Jdk8Module());
+  //   return mapper;
+  // }
 
   public static class MoneySerializer extends StdSerializer<Money> {
 
