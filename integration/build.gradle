@@ -39,21 +39,19 @@ if (schema_version != USE_LOCAL || nomulus_version != USE_LOCAL) {
 def testUberJarName = ''
 
 dependencies {
-  gradleLint.ignore('unused-dependency') {
-    if (schema_version == USE_LOCAL) {
-      testRuntimeOnly project(path: ':db', configuration: 'schema')
-    } else {
-      testRuntimeOnly "google.registry:schema:${schema_version}"
-    }
-    if (nomulus_version == USE_LOCAL) {
-      testRuntimeOnly project(path: ':core', configuration: 'nomulus_test')
-      testUberJarName = 'nomulus-tests-alldeps.jar'
-    } else {
-      testRuntimeOnly "google.registry:nomulus_test:${nomulus_version}:public"
-      testRuntimeOnly "google.registry:nomulus_test:${nomulus_version}:alldeps"
-      testUberJarName = "nomulus_test-${nomulus_version}-alldeps.jar"
-    }
+  if (schema_version == USE_LOCAL) {
+    testRuntimeOnly project(path: ':db', configuration: 'schema')
+  } else {
+    testRuntimeOnly "google.registry:schema:${schema_version}"
   }
+  if (nomulus_version == USE_LOCAL) {
+    testRuntimeOnly project(path: ':core', configuration: 'nomulus_test')
+    testUberJarName = 'nomulus-tests-alldeps.jar'
+  } else {
+    testRuntimeOnly "google.registry:nomulus_test:${nomulus_version}:public"
+    testRuntimeOnly "google.registry:nomulus_test:${nomulus_version}:alldeps"
+    testUberJarName = "nomulus_test-${nomulus_version}-alldeps.jar"
+}
 }
 
 configurations.testRuntimeOnly.transitive = false
