@@ -992,12 +992,12 @@ An EPP flow for login.
 
 ### Errors
 
+*   2001
+    *   Generic XML syntax error that can be thrown by any flow.
 *   2002
     *   Registrar is already logged in.
 *   2100
     *   Specified protocol version is not implemented.
-*   2102
-    *   In-band password changes are not supported.
 *   2103
     *   Specified extension is not implemented.
 *   2200

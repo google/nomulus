@@ -291,8 +291,8 @@ public class EppInput extends ImmutableObject {
       return password;
     }
 
-    public String getNewPassword() {
-      return newPassword;
+    public Optional<String> getNewPassword() {
+      return Optional.ofNullable(newPassword);
     }
 
     public Options getOptions() {
