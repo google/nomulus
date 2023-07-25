@@ -18,7 +18,13 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static google.registry.util.CollectionUtils.forceEmptyToNull;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.ImmutableList;
+import com.google.gson.TypeAdapter;
+import com.google.gson.stream.JsonReader;
+import com.google.gson.stream.JsonWriter;
 import google.registry.model.eppcommon.Address;
+import java.io.IOException;
+import java.util.ArrayList;
 import javax.persistence.Embeddable;
 
 /**

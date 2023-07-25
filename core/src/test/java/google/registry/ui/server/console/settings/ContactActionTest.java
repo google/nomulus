@@ -41,7 +41,6 @@ import google.registry.request.auth.AuthSettings.AuthLevel;
 import google.registry.request.auth.UserAuthInfo;
 import google.registry.testing.FakeResponse;
 import google.registry.ui.server.registrar.RegistrarConsoleModule;
-import google.registry.util.UtilsModule;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.StringReader;
@@ -73,7 +72,7 @@ class ContactActionTest {
   private Registrar testRegistrar;
   private final HttpServletRequest request = mock(HttpServletRequest.class);
   private RegistrarPoc testRegistrarPoc;
-  private static final Gson GSON = UtilsModule.provideGson();
+  private static final Gson GSON = RequestModule.provideGson();
   private FakeResponse response;
 
   @RegisterExtension
