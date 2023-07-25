@@ -15,7 +15,6 @@
 package google.registry.ui.server.console.settings;
 
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.request.Action.Method.GET;
 import static google.registry.request.Action.Method.POST;
 
 import avro.shaded.com.google.common.collect.ImmutableList;
@@ -36,28 +35,25 @@ import google.registry.request.auth.AuthenticatedRegistrarAccessor.RegistrarAcce
 import google.registry.ui.server.registrar.JsonGetAction;
 import java.util.Optional;
 import javax.inject.Inject;
-import javax.servlet.http.HttpServletRequest;
 
 @Action(
     service = Action.Service.DEFAULT,
     path = SecurityAction.PATH,
-    method = {GET, POST},
+    method = {POST},
     auth = Auth.AUTH_PUBLIC_LOGGED_IN)
 public class SecurityAction implements JsonGetAction {
 
   static final String PATH = "/console-api/settings/security";
-  private final HttpServletRequest req;
   private final AuthResult authResult;
   private final Response response;
   private final Gson gson;
   private final String registrarId;
-  private AuthenticatedRegistrarAccessor registrarAccessor;
-  private Optional<Registrar> registrar;
-  private CertificateChecker certificateChecker;
+  private final AuthenticatedRegistrarAccessor registrarAccessor;
+  private final Optional<Registrar> registrar;
+  private final CertificateChecker certificateChecker;
 
   @Inject
   public SecurityAction(
-      HttpServletRequest req,
       AuthResult authResult,
       Response response,
       Gson gson,
@@ -65,7 +61,6 @@ public class SecurityAction implements JsonGetAction {
       AuthenticatedRegistrarAccessor registrarAccessor,
       @Parameter("registrarId") String registrarId,
       @Parameter("registrar") Optional<Registrar> registrar) {
-    this.req = req;
     this.authResult = authResult;
     this.response = response;
     this.gson = gson;
@@ -77,25 +72,6 @@ public class SecurityAction implements JsonGetAction {
 
   @Override
   public void run() {
-    if (req.getMethod().equals(GET.toString())) {
-      getHandler();
-    } else {
-      postHandler();
-    }
-  }
-
-  private void getHandler() {
-    try {
-      Registrar registrar = registrarAccessor.getRegistrar(registrarId);
-      response.setStatus(HttpStatusCodes.STATUS_CODE_OK);
-      response.setPayload(gson.toJson(registrar));
-    } catch (RegistrarAccessDeniedException e) {
-      response.setStatus(HttpStatusCodes.STATUS_CODE_FORBIDDEN);
-      response.setPayload(e.getMessage());
-    }
-  }
-
-  private void postHandler() {
     User user = authResult.userAuthInfo().get().consoleUser().get();
     if (!user.getUserRoles().hasPermission(registrarId, ConsolePermission.EDIT_REGISTRAR_DETAILS)) {
       response.setStatus(HttpStatusCodes.STATUS_CODE_FORBIDDEN);
@@ -153,17 +129,15 @@ public class SecurityAction implements JsonGetAction {
     registrarParameter
         .getClientCertificate()
         .ifPresent(
-            newClientCert -> {
-              updatedRegistrar.setClientCertificate(newClientCert, tm().getTransactionTime());
-            });
+            newClientCert ->
+                updatedRegistrar.setClientCertificate(newClientCert, tm().getTransactionTime()));
 
     registrarParameter
         .getFailoverClientCertificate()
         .ifPresent(
-            failoverCert -> {
-              updatedRegistrar.setFailoverClientCertificate(
-                  failoverCert, tm().getTransactionTime());
-            });
+            failoverCert ->
+                updatedRegistrar.setFailoverClientCertificate(
+                    failoverCert, tm().getTransactionTime()));
 
     tm().put(updatedRegistrar.build());
     response.setStatus(HttpStatusCodes.STATUS_CODE_OK);

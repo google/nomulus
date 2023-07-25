@@ -75,13 +75,4 @@ public abstract class UtilsModule {
     return new RandomStringGenerator(StringGenerator.Alphabets.DIGITS_ONLY, secureRandom);
   }
 
-  @Singleton
-  @Provides
-  public static Gson provideGson() {
-    return new GsonBuilder()
-        .registerTypeAdapter(DateTime.class, new DateTimeTypeAdapter())
-        .registerTypeAdapter(CidrAddressBlock.class, new CidrAddressBlockAdapter())
-        .excludeFieldsWithoutExposeAnnotation()
-        .create();
-  }
 }

@@ -31,21 +31,30 @@ import com.google.common.io.ByteStreams;
 import com.google.common.io.CharStreams;
 import com.google.common.net.MediaType;
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
 import com.google.protobuf.ByteString;
 import dagger.Module;
 import dagger.Provides;
+import google.registry.model.adapters.CurrencyJsonAdapter;
+import google.registry.model.registrar.RegistrarAddress;
+import google.registry.model.registrar.RegistrarAddress.RegistrarAddressAdapter;
 import google.registry.request.HttpException.BadRequestException;
 import google.registry.request.HttpException.UnsupportedMediaTypeException;
 import google.registry.request.auth.AuthResult;
 import google.registry.request.lock.LockHandler;
 import google.registry.request.lock.LockHandlerImpl;
+import google.registry.util.CidrAddressBlock;
+import google.registry.util.CidrAddressBlock.CidrAddressBlockAdapter;
+import google.registry.util.DateTimeTypeAdapter;
 import java.io.IOException;
 import java.util.Map;
 import java.util.Optional;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
+import org.joda.money.CurrencyUnit;
+import org.joda.time.DateTime;
 import org.json.simple.JSONValue;
 import org.json.simple.parser.ParseException;
 
@@ -67,6 +76,19 @@ public final class RequestModule {
     this.req = req;
     this.rsp = rsp;
     this.authResult = authResult;
+  }
+
+  @RequestScope
+  @VisibleForTesting
+  @Provides
+  public static Gson provideGson() {
+    return new GsonBuilder()
+        .registerTypeAdapter(DateTime.class, new DateTimeTypeAdapter())
+        .registerTypeAdapter(CidrAddressBlock.class, new CidrAddressBlockAdapter())
+        .registerTypeAdapter(RegistrarAddress.class, new RegistrarAddressAdapter())
+        .registerTypeAdapter(CurrencyUnit.class, new CurrencyJsonAdapter())
+        .excludeFieldsWithoutExposeAnnotation()
+        .create();
   }
 
   @Provides
