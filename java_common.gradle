@@ -70,6 +70,26 @@ configurations {
   }
 }
 
+// Custom resolution strategy to get around tricky dependency issues.
+configurations.all {
+  // jackson-core is a transitive dependency that we cannot explicity specify
+  // versions for, without triggering linter alerts. Even though the lockfiles
+  // lock it to a lower version, Gradle will first try to resolve the
+  // dependency tree based on what is available in the Maven repo before
+  // applying any dependency locks. The newer version (v2.15) of jackson-core
+  // results in a build failre for pre-7.6 Gradle versions during that stage.
+  // This custom resolution strategy will modify the dependency tree as it was
+  // being built and prevent Gradle from even trying v2.15.
+  // See: https://github.com/FasterXML/jackson-core/issues/955
+  resolutionStrategy.eachDependency { DependencyResolveDetails details ->
+    if (details.requested.group == 'com.fasterxml.jackson.core'
+            && details.requested.name == 'jackson-core'
+            && details.requested.version.startsWith('2.15')) {
+      details.useVersion '2.14.2'
+    }
+  }
+}
+
 dependencies {
     // compatibility with Java 8
     errorprone("com.google.errorprone:error_prone_core:2.3.4")
