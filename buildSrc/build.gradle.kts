@@ -32,10 +32,13 @@ buildscript {
 
 plugins {
   // Java static analysis plugins. Keep versions consistent with ../build.gradle
-  // id("nebula.lint") version "16.0.2"  // unsupported for kotlin
+
+  // We don't anticipate enabling the Gradle lint plugin because they will not support Kotlin
+  // See https://github.com/nebula-plugins/gradle-lint-plugin/issues/166
+  // id 'nebula.lint' version '16.0.2'
   id("net.ltgt.errorprone") version "2.0.2"
   checkstyle
-  id("com.diffplug.gradle.spotless") version "3.25.0"
+  id("com.diffplug.spotless") version "6.20.0"
 }
 
 checkstyle {
@@ -84,12 +87,8 @@ project.the<SourceSetContainer>()["main"].java {
   srcDir("${project.buildDir}/generated/source/apt/main")
 }
 
-// checkstyle {
-//   configDir file("../config/checkstyle")
-// }
-
 dependencies {
-  val deps = project.ext["dependencyMap"] as Map<String, String>
+  val deps = project.ext["dependencyMap"] as Map<*, *>
   val implementation by configurations
   val testImplementation by configurations
   val annotationProcessor by configurations
@@ -119,13 +118,6 @@ gradle.projectsEvaluated {
 }
 
 tasks.register("exportDependencies") {
-  val outputFileProperty = "dependencyExportFile"
-  val output = if (project.hasProperty(outputFileProperty)) {
-        PrintStream(file(project.ext.properties[outputFileProperty]))
-      } else {
-        System.out
-      }
-
   doLast {
     project.configurations.forEach {
       println("dependency is $it")

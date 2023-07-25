@@ -146,18 +146,6 @@ configurations {
   }
 }
 
-// Known issues:
-// - The (test/)compile/runtime labels are deprecated. We continue using these
-//   labels due to nebula-lint.
-//   TODO(weiminyu): switch to api/implementation labels.
-//   See https://github.com/nebula-plugins/gradle-lint-plugin/issues/130 for
-//   issue status.
-// - Nebula-lint's conflict between unused and undeclared dependency check.
-//   If an undeclared dependency is added, the unused-dependency check will flag
-//   it. For now we wrap affected dependency in gradleLint.ignore block.
-//   TODO(weiminyu): drop gradleLint.ignore block when issue is fixed.
-//   See https://github.com/nebula-plugins/gradle-lint-plugin/issues/181 for
-//   issue status.
 dependencies {
   def deps = rootProject.dependencyMap
 
@@ -203,9 +191,10 @@ dependencies {
   runtime deps['com.google.flogger:flogger-system-backend']
   implementation deps['com.google.guava:guava']
   implementation deps['com.google.protobuf:protobuf-java']
-  gradleLint.ignore('unused-dependency') {
-    implementation deps['com.google.gwt:gwt-user']
-  }
+  // Might need to add this back if we re-add nebula-lint
+  // gradleLint.ignore('unused-dependency') {
+  implementation deps['com.google.gwt:gwt-user']
+  // }
   implementation deps['com.google.cloud:google-cloud-core']
   implementation deps['com.google.cloud:google-cloud-storage']
   implementation deps['com.google.cloud:google-cloud-tasks']
@@ -618,7 +607,7 @@ compileProdJS.dependsOn soyToJS
 // Make testing artifacts available to be depended up on by other projects.
 // TODO: factor out google.registry.testing to be a separate project.
 task testJar(type: Jar) {
-  classifier = 'test'
+  archiveClassifier = 'test'
   from sourceSets.test.output
 }
 

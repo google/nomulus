@@ -143,7 +143,7 @@ public class ReportUploader extends DefaultTask {
           .getAsMap()
           .forEach(
               (type, report) -> {
-                File destination = report.getDestination();
+                File destination = report.getOutputLocation().get().getAsFile();
                 // The destination could be a file, or a directory. If it's a directory - the Report
                 // could have created multiple files - and we need to know to which one of those to
                 // link.
