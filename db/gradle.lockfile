@@ -53,6 +53,7 @@ com.google.j2objc:j2objc-annotations:1.3=checkstyle,default,deploy_jar,runtimeCl
 com.google.j2objc:j2objc-annotations:2.8=testCompileClasspath,testRuntimeClasspath
 com.google.oauth-client:google-oauth-client:1.34.1=default,deploy_jar,runtimeClasspath,testRuntimeClasspath
 com.google.protobuf:protobuf-java:3.4.0=annotationProcessor,errorprone,testAnnotationProcessor
+com.google.truth.extensions:truth-java8-extension:1.1.3=testCompileClasspath,testRuntimeClasspath
 com.google.truth:truth:1.1.3=testCompileClasspath,testRuntimeClasspath
 com.googlecode.java-diff-utils:diffutils:1.3.0=annotationProcessor,errorprone,testAnnotationProcessor
 com.puppycrawl.tools:checkstyle:8.37=checkstyle
