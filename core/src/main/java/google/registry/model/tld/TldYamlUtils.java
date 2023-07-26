@@ -52,14 +52,14 @@ public class TldYamlUtils {
    * from YAML.
    */
   public static ObjectMapper getObjectMapper() {
-    ObjectMapper mapper =
-        new ObjectMapper(new YAMLFactory().disable(Feature.WRITE_DOC_START_MARKER));
-    mapper.findAndRegisterModules();
     SimpleModule module = new SimpleModule();
     module.addSerializer(Money.class, new MoneySerializer());
     module.addDeserializer(Money.class, new MoneyDeserializer());
-    mapper.registerModule(module);
-    mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+    ObjectMapper mapper =
+        new ObjectMapper(new YAMLFactory().disable(Feature.WRITE_DOC_START_MARKER))
+            .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
+            .registerModule(module);
+    mapper.findAndRegisterModules();
     return mapper;
   }
 
@@ -157,10 +157,10 @@ public class TldYamlUtils {
     @Override
     public void serialize(Optional<Duration> value, JsonGenerator gen, SerializerProvider provider)
         throws IOException {
-      if (!value.isPresent()) {
-        gen.writeNull();
-      } else {
+      if (value.isPresent()) {
         gen.writeNumber(value.get().getMillis());
+      } else {
+        gen.writeNull();
       }
     }
   }
@@ -179,15 +179,15 @@ public class TldYamlUtils {
     @Override
     public void serialize(Optional<String> value, JsonGenerator gen, SerializerProvider provider)
         throws IOException {
-      if (!value.isPresent()) {
-        gen.writeNull();
-      } else {
+      if (value.isPresent()) {
         gen.writeString(value.get());
+      } else {
+        gen.writeNull();
       }
     }
   }
 
-  /** A custom JSON serializer for a List of {@link AllocationToken} VKeys. */
+  /** A custom JSON serializer for a list of {@link AllocationToken} VKeys. */
   public static class TokenVKeyListSerializer extends StdSerializer<List<VKey<AllocationToken>>> {
 
     public TokenVKeyListSerializer() {
@@ -210,9 +210,10 @@ public class TldYamlUtils {
     }
   }
 
-  /** A custom JSON deserializer for a List of {@link AllocationToken} VKeys. */
+  /** A custom JSON deserializer for a list of {@link AllocationToken} VKeys. */
   public static class TokenVKeyListDeserializer
       extends StdDeserializer<List<VKey<AllocationToken>>> {
+
     public TokenVKeyListDeserializer() {
       this(null);
     }
@@ -288,6 +289,7 @@ public class TldYamlUtils {
 
   /** A custom JSON deserializer for a {@link CreateAutoTimestamp}. */
   public static class CreateAutoTimestampDeserializer extends StdDeserializer<CreateAutoTimestamp> {
+
     public CreateAutoTimestampDeserializer() {
       this(null);
     }

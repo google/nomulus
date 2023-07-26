@@ -427,6 +427,8 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
 
   /** The currency unit for all costs associated with this TLD. */
   @Column(nullable = false)
+  @JsonSerialize(using = CurrencySerializer.class)
+  @JsonDeserialize(using = CurrencyDeserializer.class)
   CurrencyUnit currency = DEFAULT_CURRENCY;
 
   /** The per-year billing cost for registering a new domain name. */
@@ -613,8 +615,6 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
     return Optional.ofNullable(premiumListName);
   }
 
-  @JsonSerialize(using = CurrencySerializer.class)
-  @JsonDeserialize(using = CurrencyDeserializer.class)
   public CurrencyUnit getCurrency() {
     return currency;
   }

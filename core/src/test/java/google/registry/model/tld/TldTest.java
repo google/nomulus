@@ -85,6 +85,7 @@ public final class TldTest extends EntityTestCase {
     Tld persisted = tm().transact(() -> tm().loadByKey(Tld.createVKey(registry.tldStr)));
     assertThat(persisted).isEqualTo(registry);
   }
+
   @Test
   void testPersistence() {
     assertWithMessage("Registry not found").that(Tld.get("tld")).isNotNull();
@@ -109,10 +110,7 @@ public final class TldTest extends EntityTestCase {
             new AllocationToken.Builder()
                 .setToken("bbbbb")
                 .setTokenType(DEFAULT_PROMO)
-                .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
                 .setAllowedTlds(ImmutableSet.of("tld"))
-                .setDiscountPremiums(false)
-                .setDiscountFraction(0.5)
                 .build());
     Tld existingTld =
         createTld("tld")
@@ -145,10 +143,7 @@ public final class TldTest extends EntityTestCase {
             new AllocationToken.Builder()
                 .setToken("bbbbb")
                 .setTokenType(DEFAULT_PROMO)
-                .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
                 .setAllowedTlds(ImmutableSet.of("tld"))
-                .setDiscountPremiums(false)
-                .setDiscountFraction(0.5)
                 .build());
     Tld existingTld =
         createTld("tld")
