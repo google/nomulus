@@ -33,6 +33,7 @@ import SettingsContactComponent, {
 import { HttpClientModule } from '@angular/common/http';
 import { RegistrarComponent } from './registrar/registrar.component';
 import { RegistrarGuard } from './registrar/registrar.guard';
+import SecurityComponent from './settings/security/security.component';
 
 @NgModule({
   declarations: [
@@ -44,6 +45,7 @@ import { RegistrarGuard } from './registrar/registrar.guard';
     SettingsContactComponent,
     ContactDetailsDialogComponent,
     RegistrarComponent,
+    SecurityComponent,
   ],
   imports: [
     HttpClientModule,

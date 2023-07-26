@@ -16,6 +16,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Observable, catchError, of } from 'rxjs';
 import { Contact } from '../../settings/contact/contact.service';
+import { SecuritySettingsBackendModel } from 'src/app/settings/security/security.service';
 
 @Injectable()
 export class BackendService {
@@ -62,5 +63,29 @@ export class BackendService {
     return this.http
       .get<string[]>('/console-api/registrars')
       .pipe(catchError((err) => this.errorCatcher<string[]>(err)));
+  }
+
+  getSecuritySettings(
+    registrarId: string
+  ): Observable<SecuritySettingsBackendModel> {
+    return this.http
+      .get<SecuritySettingsBackendModel>(
+        `/console-api/settings/security?registrarId=${registrarId}`
+      )
+      .pipe(
+        catchError((err) =>
+          this.errorCatcher<SecuritySettingsBackendModel>(err)
+        )
+      );
+  }
+
+  postSecuritySettings(
+    registrarId: string,
+    securitySettings: SecuritySettingsBackendModel
+  ): Observable<SecuritySettingsBackendModel> {
+    return this.http.post<SecuritySettingsBackendModel>(
+      `/console-api/settings/security?registrarId=${registrarId}`,
+      { registrar: securitySettings }
+    );
   }
 }
