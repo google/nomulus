@@ -225,7 +225,7 @@ class CreateTldCommandTest extends CommandTestCase<CreateTldCommand> {
         "--roid_suffix=Q9JYB4C",
         "--dns_writers=VoidDnsWriter",
         "xn--q9jyb4c");
-    assertThat(Tld.get("xn--q9jyb4c").getStandardCreateCost()).isEqualTo(Money.of(USD, 42.42));
+    assertThat(Tld.get("xn--q9jyb4c").getCreateBillingCost()).isEqualTo(Money.of(USD, 42.42));
   }
 
   @Test
@@ -235,7 +235,7 @@ class CreateTldCommandTest extends CommandTestCase<CreateTldCommand> {
         "--roid_suffix=Q9JYB4C",
         "--dns_writers=VoidDnsWriter",
         "xn--q9jyb4c");
-    assertThat(Tld.get("xn--q9jyb4c").getStandardRestoreCost()).isEqualTo(Money.of(USD, 42.42));
+    assertThat(Tld.get("xn--q9jyb4c").getRestoreBillingCost()).isEqualTo(Money.of(USD, 42.42));
   }
 
   @Test
@@ -245,7 +245,8 @@ class CreateTldCommandTest extends CommandTestCase<CreateTldCommand> {
         "--roid_suffix=Q9JYB4C",
         "--dns_writers=VoidDnsWriter",
         "xn--q9jyb4c");
-    assertThat(Tld.get("xn--q9jyb4c").getServerStatusChangeCost()).isEqualTo(Money.of(USD, 42.42));
+    assertThat(Tld.get("xn--q9jyb4c").getServerStatusChangeBillingCost())
+        .isEqualTo(Money.of(USD, 42.42));
   }
 
   @Test
@@ -271,8 +272,8 @@ class CreateTldCommandTest extends CommandTestCase<CreateTldCommand> {
         "--dns_writers=VoidDnsWriter",
         "xn--q9jyb4c");
     Tld registry = Tld.get("xn--q9jyb4c");
-    assertThat(registry.getStandardCreateCost()).isEqualTo(Money.ofMajor(JPY, 12345));
-    assertThat(registry.getStandardRestoreCost()).isEqualTo(Money.ofMajor(JPY, 67890));
+    assertThat(registry.getCreateBillingCost()).isEqualTo(Money.ofMajor(JPY, 12345));
+    assertThat(registry.getRestoreBillingCost()).isEqualTo(Money.ofMajor(JPY, 67890));
     assertThat(registry.getStandardRenewCost(START_OF_TIME)).isEqualTo(Money.ofMajor(JPY, 101112));
   }
 

@@ -17,18 +17,22 @@ package google.registry.model.tld;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
 import static com.google.common.truth.Truth8.assertThat;
+import static google.registry.model.ImmutableObjectSubject.assertAboutImmutableObjects;
 import static google.registry.model.domain.token.AllocationToken.TokenType.DEFAULT_PROMO;
 import static google.registry.model.domain.token.AllocationToken.TokenType.SINGLE_USE;
 import static google.registry.model.tld.Tld.TldState.GENERAL_AVAILABILITY;
 import static google.registry.model.tld.Tld.TldState.PREDELEGATION;
 import static google.registry.model.tld.Tld.TldState.QUIET_PERIOD;
 import static google.registry.model.tld.Tld.TldState.START_DATE_SUNRISE;
+import static google.registry.model.tld.TldYamlUtils.getObjectMapper;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.newTld;
 import static google.registry.testing.DatabaseHelper.persistPremiumList;
 import static google.registry.testing.DatabaseHelper.persistReservedList;
 import static google.registry.testing.DatabaseHelper.persistResource;
+import static google.registry.testing.TestDataHelper.filePath;
+import static google.registry.testing.TestDataHelper.loadFile;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static java.math.RoundingMode.UNNECESSARY;
@@ -36,6 +40,7 @@ import static org.joda.money.CurrencyUnit.EUR;
 import static org.joda.money.CurrencyUnit.USD;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
@@ -48,11 +53,14 @@ import google.registry.model.tld.label.PremiumList;
 import google.registry.model.tld.label.PremiumListDao;
 import google.registry.model.tld.label.ReservedList;
 import google.registry.persistence.VKey;
+import google.registry.tldconfig.idn.IdnTableEnum;
 import google.registry.util.SerializeUtils;
+import java.io.File;
 import java.math.BigDecimal;
 import java.util.Optional;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
+import org.joda.time.Duration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -95,6 +103,106 @@ public final class TldTest extends EntityTestCase {
   }
 
   @Test
+  void testTldToYaml() throws Exception {
+    fakeClock.setTo(START_OF_TIME);
+    AllocationToken defaultToken =
+        persistResource(
+            new AllocationToken.Builder()
+                .setToken("bbbbb")
+                .setTokenType(DEFAULT_PROMO)
+                .setAllowedTlds(ImmutableSet.of("tld"))
+                .build());
+    Tld existingTld =
+        createTld("tld")
+            .asBuilder()
+            .setDnsAPlusAaaaTtl(Duration.standardHours(1))
+            .setDnsWriters(ImmutableSet.of("baz", "bang"))
+            .setEapFeeSchedule(
+                ImmutableSortedMap.of(
+                    START_OF_TIME,
+                    Money.of(USD, 0),
+                    DateTime.parse("2000-06-01T00:00:00Z"),
+                    Money.of(USD, 100),
+                    DateTime.parse("2000-06-02T00:00:00Z"),
+                    Money.of(USD, 0)))
+            .setAllowedFullyQualifiedHostNames(ImmutableSet.of("foo"))
+            .setDefaultPromoTokens(ImmutableList.of(defaultToken.createVKey()))
+            .setIdnTables(ImmutableSet.of(IdnTableEnum.JA, IdnTableEnum.EXTENDED_LATIN))
+            .build();
+
+    ObjectMapper mapper = getObjectMapper();
+    String yaml = mapper.writeValueAsString(existingTld);
+    assertThat(yaml).isEqualTo(loadFile(getClass(), "tld.yaml"));
+  }
+
+  @Test
+  void testYamlToTld() throws Exception {
+    fakeClock.setTo(START_OF_TIME);
+    AllocationToken defaultToken =
+        persistResource(
+            new AllocationToken.Builder()
+                .setToken("bbbbb")
+                .setTokenType(DEFAULT_PROMO)
+                .setAllowedTlds(ImmutableSet.of("tld"))
+                .build());
+    Tld existingTld =
+        createTld("tld")
+            .asBuilder()
+            .setDnsAPlusAaaaTtl(Duration.standardHours(1))
+            .setDnsWriters(ImmutableSet.of("baz", "bang"))
+            .setEapFeeSchedule(
+                ImmutableSortedMap.of(
+                    START_OF_TIME,
+                    Money.of(USD, 0),
+                    DateTime.parse("2000-06-01T00:00:00Z"),
+                    Money.of(USD, 100),
+                    DateTime.parse("2000-06-02T00:00:00Z"),
+                    Money.of(USD, 0)))
+            .setAllowedFullyQualifiedHostNames(ImmutableSet.of("foo"))
+            .setDefaultPromoTokens(ImmutableList.of(defaultToken.createVKey()))
+            .setIdnTables(ImmutableSet.of(IdnTableEnum.JA, IdnTableEnum.EXTENDED_LATIN))
+            .build();
+
+    ObjectMapper mapper = getObjectMapper();
+    Tld constructedTld = mapper.readValue(new File(filePath(getClass(), "tld.yaml")), Tld.class);
+    compareTlds(existingTld, constructedTld);
+  }
+
+  @Test
+  void testSuccess_tldYamlRoundtrip() throws Exception {
+    Tld testTld = createTld("test");
+    ObjectMapper mapper = getObjectMapper();
+    String yaml = mapper.writeValueAsString(testTld);
+    Tld constructedTld = mapper.readValue(yaml, Tld.class);
+    compareTlds(testTld, constructedTld);
+  }
+
+  // On YAML serialization/deserialization some null values may be changed to empty collections
+  void compareTlds(Tld existingTld, Tld constructedTld) {
+    assertAboutImmutableObjects()
+        .that(constructedTld)
+        .isEqualExceptFields(
+            existingTld,
+            "dnsWriters",
+            "idnTables",
+            "reservedListNames",
+            "allowedRegistrantContactIds",
+            "allowedFullyQualifiedHostNames",
+            "defaultPromoTokens");
+    assertThat(constructedTld.getDnsWriters())
+        .containsExactlyElementsIn(existingTld.getDnsWriters());
+    assertThat(constructedTld.getIdnTables()).containsExactlyElementsIn(existingTld.getIdnTables());
+    assertThat(constructedTld.getReservedListNames())
+        .containsExactlyElementsIn(existingTld.getReservedListNames());
+    assertThat(constructedTld.getAllowedRegistrantContactIds())
+        .containsExactlyElementsIn(existingTld.getAllowedRegistrantContactIds());
+    assertThat(constructedTld.getAllowedFullyQualifiedHostNames())
+        .containsExactlyElementsIn(existingTld.getAllowedFullyQualifiedHostNames());
+    assertThat(constructedTld.getDefaultPromoTokens())
+        .containsExactlyElementsIn(existingTld.getDefaultPromoTokens());
+  }
+
+  @Test
   void testFailure_registryNotFound() {
     createTld("foo");
     assertThrows(TldNotFoundException.class, () -> Tld.get("baz"));
@@ -111,17 +219,17 @@ public final class TldTest extends EntityTestCase {
   @Test
   void testSettingCreateBillingCost() {
     Tld registry = Tld.get("tld").asBuilder().setCreateBillingCost(Money.of(USD, 42)).build();
-    assertThat(registry.getStandardCreateCost()).isEqualTo(Money.of(USD, 42));
+    assertThat(registry.getCreateBillingCost()).isEqualTo(Money.of(USD, 42));
     // The default value of 17 is set in createTld().
-    assertThat(registry.getStandardRestoreCost()).isEqualTo(Money.of(USD, 17));
+    assertThat(registry.getRestoreBillingCost()).isEqualTo(Money.of(USD, 17));
   }
 
   @Test
   void testSettingRestoreBillingCost() {
     Tld registry = Tld.get("tld").asBuilder().setRestoreBillingCost(Money.of(USD, 42)).build();
     // The default value of 13 is set in createTld().
-    assertThat(registry.getStandardCreateCost()).isEqualTo(Money.of(USD, 13));
-    assertThat(registry.getStandardRestoreCost()).isEqualTo(Money.of(USD, 42));
+    assertThat(registry.getCreateBillingCost()).isEqualTo(Money.of(USD, 13));
+    assertThat(registry.getRestoreBillingCost()).isEqualTo(Money.of(USD, 42));
   }
 
   @Test
@@ -251,7 +359,7 @@ public final class TldTest extends EntityTestCase {
   void testSettingServerStatusChangeBillingCost() {
     Tld registry =
         Tld.get("tld").asBuilder().setServerStatusChangeBillingCost(Money.of(USD, 42)).build();
-    assertThat(registry.getServerStatusChangeCost()).isEqualTo(Money.of(USD, 42));
+    assertThat(registry.getServerStatusChangeBillingCost()).isEqualTo(Money.of(USD, 42));
   }
 
   @Test

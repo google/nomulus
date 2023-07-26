@@ -192,7 +192,7 @@ public final class DomainPricingLogic {
         new FeesAndCredits.Builder()
             .setCurrency(tld.getCurrency())
             .addFeeOrCredit(
-                Fee.create(tld.getStandardRestoreCost().getAmount(), FeeType.RESTORE, false));
+                Fee.create(tld.getRestoreBillingCost().getAmount(), FeeType.RESTORE, false));
     if (isExpired) {
       feesAndCredits.addFeeOrCredit(
           Fee.create(

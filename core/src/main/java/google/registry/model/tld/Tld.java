@@ -26,6 +26,10 @@ import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 import static org.joda.money.CurrencyUnit.USD;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.github.benmanes.caffeine.cache.CacheLoader;
 import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.google.common.annotations.VisibleForTesting;
@@ -48,6 +52,15 @@ import google.registry.model.domain.fee.BaseFee.FeeType;
 import google.registry.model.domain.fee.Fee;
 import google.registry.model.domain.token.AllocationToken;
 import google.registry.model.domain.token.AllocationToken.TokenType;
+import google.registry.model.tld.TldYamlUtils.CreateAutoTimestampDeserializer;
+import google.registry.model.tld.TldYamlUtils.CurrencyDeserializer;
+import google.registry.model.tld.TldYamlUtils.CurrencySerializer;
+import google.registry.model.tld.TldYamlUtils.OptionalDurationSerializer;
+import google.registry.model.tld.TldYamlUtils.OptionalStringSerializer;
+import google.registry.model.tld.TldYamlUtils.TimedTransitionPropertyMoneyDeserializer;
+import google.registry.model.tld.TldYamlUtils.TimedTransitionPropertyTldStateDeserializer;
+import google.registry.model.tld.TldYamlUtils.TokenVKeyListDeserializer;
+import google.registry.model.tld.TldYamlUtils.TokenVKeyListSerializer;
 import google.registry.model.tld.label.PremiumList;
 import google.registry.model.tld.label.ReservedList;
 import google.registry.persistence.VKey;
@@ -281,6 +294,7 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
    *
    * <p>When this field is null, the "dnsDefaultATtl" value from the config file will be used.
    */
+  @JsonSerialize(using = OptionalDurationSerializer.class)
   Duration dnsAPlusAaaaTtl;
 
   /**
@@ -288,6 +302,7 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
    *
    * <p>When this field is null, the "dnsDefaultNsTtl" value from the config file will be used.
    */
+  @JsonSerialize(using = OptionalDurationSerializer.class)
   Duration dnsNsTtl;
 
   /**
@@ -295,6 +310,7 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
    *
    * <p>When this field is null, the "dnsDefaultDsTtl" value from the config file will be used.
    */
+  @JsonSerialize(using = OptionalDurationSerializer.class)
   Duration dnsDsTtl;
   /**
    * The unicode-aware representation of the TLD associated with this {@link Tld}.
@@ -328,11 +344,13 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
 
   /** A property that transitions to different {@link TldState}s at different times. */
   @Column(nullable = false)
+  @JsonDeserialize(using = TimedTransitionPropertyTldStateDeserializer.class)
   TimedTransitionProperty<TldState> tldStateTransitions =
       TimedTransitionProperty.withInitialValue(DEFAULT_TLD_STATE);
 
   /** An automatically managed creation timestamp. */
   @Column(nullable = false)
+  @JsonDeserialize(using = CreateAutoTimestampDeserializer.class)
   CreateAutoTimestamp creationTime = CreateAutoTimestamp.create(null);
 
   /** The set of reserved list names that are applicable to this tld. */
@@ -359,6 +377,7 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
    * the database should be queried for the entity with this name that has the largest revision ID.
    */
   @Column(name = "premium_list_name")
+  @JsonSerialize(using = OptionalStringSerializer.class)
   String premiumListName;
 
   /** Should RDE upload a nightly escrow deposit for this TLD? */
@@ -408,6 +427,8 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
 
   /** The currency unit for all costs associated with this TLD. */
   @Column(nullable = false)
+  @JsonSerialize(using = CurrencySerializer.class)
+  @JsonDeserialize(using = CurrencyDeserializer.class)
   CurrencyUnit currency = DEFAULT_CURRENCY;
 
   /** The per-year billing cost for registering a new domain name. */
@@ -454,11 +475,13 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
    * renewal to ensure transfers have a cost.
    */
   @Column(nullable = false)
+  @JsonDeserialize(using = TimedTransitionPropertyMoneyDeserializer.class)
   TimedTransitionProperty<Money> renewBillingCostTransitions =
       TimedTransitionProperty.withInitialValue(DEFAULT_RENEW_BILLING_COST);
 
   /** A property that tracks the EAP fee schedule (if any) for the TLD. */
   @Column(nullable = false)
+  @JsonDeserialize(using = TimedTransitionPropertyMoneyDeserializer.class)
   TimedTransitionProperty<Money> eapFeeSchedule =
       TimedTransitionProperty.withInitialValue(DEFAULT_EAP_BILLING_COST);
 
@@ -475,6 +498,11 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
   /** An allowlist of hosts allowed to be used on domains on this TLD (ignored if empty). */
   @Nullable Set<String> allowedFullyQualifiedHostNames;
 
+  /**
+   * Indicates when the TLD is being modified using locally modified files to override the source
+   * control procedures. This field is ignored in Tld YAML files.
+   */
+  @JsonIgnore
   @Column(nullable = false)
   boolean breakglassMode = false;
 
@@ -488,6 +516,8 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
    * (ex: add a token to the list or remove a token from the list) should not be allowed without
    * resetting the entire list contents.
    */
+  @JsonSerialize(using = TokenVKeyListSerializer.class)
+  @JsonDeserialize(using = TokenVKeyListDeserializer.class)
   List<VKey<AllocationToken>> defaultPromoTokens;
 
   /** A set of allowed {@link IdnTableEnum}s for this TLD, or empty if we should use the default. */
@@ -502,6 +532,7 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
   }
 
   /** Retrieve the actual domain name representing the TLD for which this registry operates. */
+  @JsonIgnore
   public InternetDomainName getTld() {
     return InternetDomainName.from(tldStr);
   }
@@ -509,6 +540,11 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
   /** Retrieve the TLD type (real or test). */
   public TldType getTldType() {
     return tldType;
+  }
+
+  /** Retrieve whether invoicing is enabled. */
+  public boolean isInvoicingEnabled() {
+    return invoicingEnabled;
   }
 
   /**
@@ -588,7 +624,7 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
    * domain create.
    */
   @VisibleForTesting
-  public Money getStandardCreateCost() {
+  public Money getCreateBillingCost() {
     return createBillingCost;
   }
 
@@ -596,7 +632,7 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
    * Returns the add-on cost of a domain restore (the flat tld-wide fee charged in addition to one
    * year of renewal for that name).
    */
-  public Money getStandardRestoreCost() {
+  public Money getRestoreBillingCost() {
     return restoreBillingCost;
   }
 
@@ -610,7 +646,7 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
   }
 
   /** Returns the cost of a server status change (i.e. lock). */
-  public Money getServerStatusChangeCost() {
+  public Money getServerStatusChangeBillingCost() {
     return serverStatusChangeBillingCost;
   }
 
@@ -648,6 +684,7 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
   }
 
   @VisibleForTesting
+  @JsonProperty("eapFeeSchedule")
   public ImmutableSortedMap<DateTime, Money> getEapFeeScheduleAsMap() {
     return eapFeeSchedule.toValueMap();
   }
@@ -660,7 +697,7 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
     return claimsPeriodEnd;
   }
 
-  public String getPremiumPricingEngineClassName() {
+  public String getPricingEngineClassName() {
     return pricingEngineClassName;
   }
 
@@ -686,6 +723,11 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
   /** Returns the time to live for DS records. */
   public Optional<Duration> getDnsDsTtl() {
     return Optional.ofNullable(dnsDsTtl);
+  }
+
+  /** Retrieve the TLD unicode representation. */
+  public String getTldUnicode() {
+    return tldUnicode;
   }
 
   public ImmutableSet<String> getAllowedRegistrantContactIds() {
@@ -1037,13 +1079,13 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
       // All costs must be in the expected currency.
       checkArgumentNotNull(instance.getCurrency(), "Currency must be set");
       checkArgument(
-          instance.getStandardCreateCost().getCurrencyUnit().equals(instance.currency),
+          instance.getCreateBillingCost().getCurrencyUnit().equals(instance.currency),
           "Create cost must be in the tld's currency");
       checkArgument(
-          instance.getStandardRestoreCost().getCurrencyUnit().equals(instance.currency),
+          instance.getRestoreBillingCost().getCurrencyUnit().equals(instance.currency),
           "Restore cost must be in the TLD's currency");
       checkArgument(
-          instance.getServerStatusChangeCost().getCurrencyUnit().equals(instance.currency),
+          instance.getServerStatusChangeBillingCost().getCurrencyUnit().equals(instance.currency),
           "Server status change cost must be in the TLD's currency");
       checkArgument(
           instance.getRegistryLockOrUnlockBillingCost().getCurrencyUnit().equals(instance.currency),
