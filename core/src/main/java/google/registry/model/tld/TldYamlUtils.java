@@ -44,8 +44,13 @@ import org.joda.money.Money;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
 
+/** A collection of static utility classes and functions for TLD YAML conversions. */
 public class TldYamlUtils {
 
+  /**
+   * Returns an {@link ObjectMapper} object that can be used to convert a {@link Tld} object to and
+   * from YAML.
+   */
   public static ObjectMapper getObjectMapper() {
     ObjectMapper mapper =
         new ObjectMapper(new YAMLFactory().disable(Feature.WRITE_DOC_START_MARKER));
@@ -58,6 +63,7 @@ public class TldYamlUtils {
     return mapper;
   }
 
+  /** A custom JSON serializer for {@link Money}. */
   public static class MoneySerializer extends StdSerializer<Money> {
 
     public MoneySerializer() {
@@ -78,6 +84,7 @@ public class TldYamlUtils {
     }
   }
 
+  /** A custom JSON deserializer for {@link Money}. */
   public static class MoneyDeserializer extends StdDeserializer<Money> {
     public MoneyDeserializer() {
       this(null);
@@ -100,6 +107,7 @@ public class TldYamlUtils {
     }
   }
 
+  /** A custom JSON serializer for {@link CurrencyUnit}. */
   public static class CurrencySerializer extends StdSerializer<CurrencyUnit> {
 
     public CurrencySerializer() {
@@ -117,6 +125,7 @@ public class TldYamlUtils {
     }
   }
 
+  /** A custom JSON deserializer for {@link CurrencyUnit}. */
   public static class CurrencyDeserializer extends StdDeserializer<CurrencyUnit> {
     public CurrencyDeserializer() {
       this(null);
@@ -134,6 +143,7 @@ public class TldYamlUtils {
     }
   }
 
+  /** A custom JSON serializer for an Optional of a {@link Duration} object. */
   public static class OptionalDurationSerializer extends StdSerializer<Optional<Duration>> {
 
     public OptionalDurationSerializer() {
@@ -155,6 +165,7 @@ public class TldYamlUtils {
     }
   }
 
+  /** A custom JSON serializer for an Optional String. */
   public static class OptionalStringSerializer extends StdSerializer<Optional<String>> {
 
     public OptionalStringSerializer() {
@@ -176,6 +187,7 @@ public class TldYamlUtils {
     }
   }
 
+  /** A custom JSON serializer for a List of {@link AllocationToken} VKeys. */
   public static class TokenVKeyListSerializer extends StdSerializer<List<VKey<AllocationToken>>> {
 
     public TokenVKeyListSerializer() {
@@ -198,6 +210,7 @@ public class TldYamlUtils {
     }
   }
 
+  /** A custom JSON deserializer for a List of {@link AllocationToken} VKeys. */
   public static class TokenVKeyListDeserializer
       extends StdDeserializer<List<VKey<AllocationToken>>> {
     public TokenVKeyListDeserializer() {
@@ -220,6 +233,7 @@ public class TldYamlUtils {
     }
   }
 
+  /** A custom JSON deserializer for a {@link TimedTransitionProperty} of {@link TldState}. */
   public static class TimedTransitionPropertyTldStateDeserializer
       extends StdDeserializer<TimedTransitionProperty<TldState>> {
 
@@ -243,6 +257,7 @@ public class TldYamlUtils {
     }
   }
 
+  /** A custom JSON deserializer for a {@link TimedTransitionProperty} of {@link Money}. */
   public static class TimedTransitionPropertyMoneyDeserializer
       extends StdDeserializer<TimedTransitionProperty<Money>> {
 
@@ -271,6 +286,7 @@ public class TldYamlUtils {
     }
   }
 
+  /** A custom JSON deserializer for a {@link CreateAutoTimestamp}. */
   public static class CreateAutoTimestampDeserializer extends StdDeserializer<CreateAutoTimestamp> {
     public CreateAutoTimestampDeserializer() {
       this(null);

@@ -85,9 +85,24 @@ public final class TldTest extends EntityTestCase {
     Tld persisted = tm().transact(() -> tm().loadByKey(Tld.createVKey(registry.tldStr)));
     assertThat(persisted).isEqualTo(registry);
   }
+  @Test
+  void testPersistence() {
+    assertWithMessage("Registry not found").that(Tld.get("tld")).isNotNull();
+    assertThat(tm().transact(() -> tm().loadByKey(Tld.createVKey("tld"))))
+        .isEqualTo(Tld.get("tld"));
+  }
 
   @Test
-  void testYaml() throws Exception {
+  void testSerializable() {
+    ReservedList rl15 = persistReservedList("tld-reserved15", "potato,FULLY_BLOCKED");
+    Tld registry = Tld.get("tld").asBuilder().setReservedLists(rl15).build();
+    tm().transact(() -> tm().put(registry));
+    Tld persisted = tm().transact(() -> tm().loadByKey(Tld.createVKey(registry.tldStr)));
+    assertThat(SerializeUtils.serializeDeserialize(persisted)).isEqualTo(persisted);
+  }
+
+  @Test
+  void testTldToYaml() throws Exception {
     fakeClock.setTo(START_OF_TIME);
     AllocationToken defaultToken =
         persistResource(
@@ -120,7 +135,55 @@ public final class TldTest extends EntityTestCase {
     ObjectMapper mapper = getObjectMapper();
     String yaml = mapper.writeValueAsString(existingTld);
     assertThat(yaml).isEqualTo(loadFile(getClass(), "tld.yaml"));
+  }
+
+  @Test
+  void testYamlToTld() throws Exception {
+    fakeClock.setTo(START_OF_TIME);
+    AllocationToken defaultToken =
+        persistResource(
+            new AllocationToken.Builder()
+                .setToken("bbbbb")
+                .setTokenType(DEFAULT_PROMO)
+                .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
+                .setAllowedTlds(ImmutableSet.of("tld"))
+                .setDiscountPremiums(false)
+                .setDiscountFraction(0.5)
+                .build());
+    Tld existingTld =
+        createTld("tld")
+            .asBuilder()
+            .setDnsAPlusAaaaTtl(Duration.standardHours(1))
+            .setDnsWriters(ImmutableSet.of("baz", "bang"))
+            .setEapFeeSchedule(
+                ImmutableSortedMap.of(
+                    START_OF_TIME,
+                    Money.of(USD, 0),
+                    DateTime.parse("2000-06-01T00:00:00Z"),
+                    Money.of(USD, 100),
+                    DateTime.parse("2000-06-02T00:00:00Z"),
+                    Money.of(USD, 0)))
+            .setAllowedFullyQualifiedHostNames(ImmutableSet.of("foo"))
+            .setDefaultPromoTokens(ImmutableList.of(defaultToken.createVKey()))
+            .setIdnTables(ImmutableSet.of(IdnTableEnum.JA, IdnTableEnum.EXTENDED_LATIN))
+            .build();
+
+    ObjectMapper mapper = getObjectMapper();
     Tld constructedTld = mapper.readValue(new File(filePath(getClass(), "tld.yaml")), Tld.class);
+    compareTlds(existingTld, constructedTld);
+  }
+
+  @Test
+  void testSuccess_tldYamlRoundtrip() throws Exception {
+    Tld testTld = createTld("test");
+    ObjectMapper mapper = getObjectMapper();
+    String yaml = mapper.writeValueAsString(testTld);
+    Tld constructedTld = mapper.readValue(yaml, Tld.class);
+    compareTlds(testTld, constructedTld);
+  }
+
+  // On YAML serialization/deserialization some null values may be changed to empty collections
+  void compareTlds(Tld existingTld, Tld constructedTld) {
     assertAboutImmutableObjects()
         .that(constructedTld)
         .isEqualExceptFields(
@@ -128,29 +191,20 @@ public final class TldTest extends EntityTestCase {
             "dnsWriters",
             "idnTables",
             "reservedListNames",
-            "allowedRegistrantContactIds");
-    assertThat(constructedTld.dnsWriters).containsExactlyElementsIn(existingTld.dnsWriters);
-    assertThat(constructedTld.idnTables).containsExactlyElementsIn(existingTld.idnTables);
+            "allowedRegistrantContactIds",
+            "allowedFullyQualifiedHostNames",
+            "defaultPromoTokens");
+    assertThat(constructedTld.getDnsWriters())
+        .containsExactlyElementsIn(existingTld.getDnsWriters());
+    assertThat(constructedTld.getIdnTables()).containsExactlyElementsIn(existingTld.getIdnTables());
     assertThat(constructedTld.getReservedListNames())
         .containsExactlyElementsIn(existingTld.getReservedListNames());
     assertThat(constructedTld.getAllowedRegistrantContactIds())
         .containsExactlyElementsIn(existingTld.getAllowedRegistrantContactIds());
-  }
-
-  @Test
-  void testPersistence() {
-    assertWithMessage("Registry not found").that(Tld.get("tld")).isNotNull();
-    assertThat(tm().transact(() -> tm().loadByKey(Tld.createVKey("tld"))))
-        .isEqualTo(Tld.get("tld"));
-  }
-
-  @Test
-  void testSerializable() {
-    ReservedList rl15 = persistReservedList("tld-reserved15", "potato,FULLY_BLOCKED");
-    Tld registry = Tld.get("tld").asBuilder().setReservedLists(rl15).build();
-    tm().transact(() -> tm().put(registry));
-    Tld persisted = tm().transact(() -> tm().loadByKey(Tld.createVKey(registry.tldStr)));
-    assertThat(SerializeUtils.serializeDeserialize(persisted)).isEqualTo(persisted);
+    assertThat(constructedTld.getAllowedFullyQualifiedHostNames())
+        .containsExactlyElementsIn(existingTld.getAllowedFullyQualifiedHostNames());
+    assertThat(constructedTld.getDefaultPromoTokens())
+        .containsExactlyElementsIn(existingTld.getDefaultPromoTokens());
   }
 
   @Test
