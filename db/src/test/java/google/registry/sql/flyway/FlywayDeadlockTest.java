@@ -20,8 +20,9 @@ import static com.google.common.truth.Truth.assertWithMessage;
 import static com.google.common.truth.Truth8.assertThat;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.nio.file.Files.readAllLines;
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static java.util.regex.Pattern.CASE_INSENSITIVE;
-import static java.util.regex.Pattern.MULTILINE;
+import static java.util.stream.Collectors.joining;
 
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
@@ -33,10 +34,8 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -88,31 +87,33 @@ public class FlywayDeadlockTest {
               "^\\s*CREATE\\s+(UNIQUE\\s+)?INDEX\\s+"
                   + "(IF\\s+NOT\\s+EXISTS\\s+)*(public.)?((\\w+)|(\"\\w+\"))\\s+ON\\s+(ONLY\\s+)?"
                   + "(public.)?((\\w+)|(\"\\w+\"))[^;]+$",
-              MULTILINE | CASE_INSENSITIVE),
+              CASE_INSENSITIVE),
           9,
           Pattern.compile(
               "^\\s*ALTER\\s+INDEX\\s+(IF\\s+EXISTS\\s+)?(public.)?((\\w+)|(\"\\w+\"))[^;]+$",
-              MULTILINE | CASE_INSENSITIVE),
+              CASE_INSENSITIVE),
           3,
           Pattern.compile(
               "^\\s*ALTER\\s+SEQUENCE\\s+(IF\\s+EXISTS\\s+)?(public.)?((\\w+)|(\"\\w+\"))[^;]+$",
-              MULTILINE | CASE_INSENSITIVE),
+              CASE_INSENSITIVE),
           3,
           Pattern.compile(
               "^\\s*ALTER\\s+TABLE\\s+(IF\\s+EXISTS\\s+|ONLY\\s+)*(public.)?((\\w+)|(\"\\w+\"))[^;]+$",
-              MULTILINE | CASE_INSENSITIVE),
+              CASE_INSENSITIVE),
           3);
 
   @Test
   public void validateNewFlywayScripts() {
     ImmutableList<Path> newScriptPaths = findChangedFlywayScripts();
-    ImmutableList<String> errors =
+    ImmutableList<String> scriptAndLockedElements =
         newScriptPaths.stream()
             .filter(path -> parseDdlScript(path).size() > 1)
             .map(path -> String.format("%s: %s", path, parseDdlScript(path)))
             .collect(toImmutableList());
 
-    assertWithMessage("Scripts changing more than one schema elements:").that(errors).isEmpty();
+    assertWithMessage("Scripts changing more than one schema elements:")
+        .that(scriptAndLockedElements)
+        .isEmpty();
   }
 
   @Test
@@ -169,7 +170,7 @@ public class FlywayDeadlockTest {
               readAllLines(path, UTF_8).stream()
                   .map(line -> line.replaceAll("--.*", ""))
                   .filter(line -> !line.isBlank())
-                  .collect(Collectors.joining()))
+                  .collect(joining(" ")))
           .map(FlywayDeadlockTest::getDdlLockedElementName)
           .filter(Optional::isPresent)
           .map(Optional::get)
@@ -224,7 +225,7 @@ public class FlywayDeadlockTest {
     String output = new String(process.getInputStream().readAllBytes(), UTF_8);
     String error = new String(process.getErrorStream().readAllBytes(), UTF_8);
     try {
-      process.waitFor(100, TimeUnit.MILLISECONDS);
+      process.waitFor(1, SECONDS);
     } catch (InterruptedException ie) {
       Thread.currentThread().interrupt();
     }
