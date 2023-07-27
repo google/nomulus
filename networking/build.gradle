@@ -55,7 +55,7 @@ test {
 
 // Make testing artifacts available to be depended up on by other projects.
 task testJar(type: Jar) {
-  classifier = 'test'
+  archiveClassifier = 'test'
   from sourceSets.test.output
 }
 
