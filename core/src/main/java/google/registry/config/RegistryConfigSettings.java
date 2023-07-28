@@ -77,6 +77,9 @@ public class RegistryConfigSettings {
   public static class GSuite {
     public String domainName;
     public String outgoingEmailAddress;
+    // TODO(b/279671974): remove below field after migration
+    public String newOutgoingEmailAddress;
+    public String replyToEmailAddress;
     public String outgoingEmailDisplayName;
     public String adminAccountEmailAddress;
     public String supportGroupEmailAddress;
@@ -203,6 +206,8 @@ public class RegistryConfigSettings {
   public static class Misc {
     public String sheetExportId;
     public String alertRecipientEmailAddress;
+    // TODO(b/279671974): remove below field after migration
+    public String newAlertRecipientEmailAddress;
     public String spec11OutgoingEmailAddress;
     public List<String> spec11BccEmailAddresses;
     public int transientFailureRetries;

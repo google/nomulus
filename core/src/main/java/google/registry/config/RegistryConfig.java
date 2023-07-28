@@ -538,6 +538,13 @@ public final class RegistryConfig {
       return parseEmailAddress(config.gSuite.outgoingEmailAddress);
     }
 
+    // TODO(b/279671974): reuse the 'gSuiteOutgoingEmailAddress' annotation after migration
+    @Provides
+    @Config("gSuiteNewOutgoingEmailAddress")
+    public static String provideGSuiteNewOutgoingEmailAddress(RegistryConfigSettings config) {
+      return config.gSuite.newOutgoingEmailAddress;
+    }
+
     /**
      * The display name that is used on outgoing emails sent by Nomulus.
      *
@@ -547,6 +554,16 @@ public final class RegistryConfig {
     @Config("gSuiteOutgoingEmailDisplayName")
     public static String provideGSuiteOutgoingEmailDisplayName(RegistryConfigSettings config) {
       return config.gSuite.outgoingEmailDisplayName;
+    }
+
+    /**
+     * Provides the `reply-to` address for outgoing email messages. This address may be outside the
+     * GSuite domain.
+     */
+    @Provides
+    @Config("replyToEmailAddress")
+    public static InternetAddress provideReplyToEmailAddress(RegistryConfigSettings config) {
+      return parseEmailAddress(config.gSuite.replyToEmailAddress);
     }
 
     /**
@@ -857,6 +874,14 @@ public final class RegistryConfig {
     @Config("alertRecipientEmailAddress")
     public static InternetAddress provideAlertRecipientEmailAddress(RegistryConfigSettings config) {
       return parseEmailAddress(config.misc.alertRecipientEmailAddress);
+    }
+
+    // TODO(b/279671974): remove below method after migration
+    @Provides
+    @Config("newAlertRecipientEmailAddress")
+    public static InternetAddress provideNewAlertRecipientEmailAddress(
+        RegistryConfigSettings config) {
+      return parseEmailAddress(config.misc.newAlertRecipientEmailAddress);
     }
 
     /**

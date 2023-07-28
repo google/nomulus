@@ -46,6 +46,7 @@ public abstract class EmailMessage {
 
   public abstract ImmutableSet<InternetAddress> recipients();
 
+  // TODO(b/279671974): remove `from` after migration.
   public abstract InternetAddress from();
 
   public abstract ImmutableSet<InternetAddress> ccs();
