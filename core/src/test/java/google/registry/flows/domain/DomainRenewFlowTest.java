@@ -1301,12 +1301,12 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
   }
 
   @Test
-  void testFailsToRenewNonPackageDomainWithRemovePackageToken() throws Exception {
+  void testFailsToRenewNonPackageDomainWithRemoveDomainToken() throws Exception {
     persistDomain();
 
     setEppInput(
         "domain_renew_allocationtoken.xml",
-        ImmutableMap.of("DOMAIN", "example.tld", "YEARS", "2", "TOKEN", "__REMOVEPACKAGE__"));
+        ImmutableMap.of("DOMAIN", "example.tld", "YEARS", "2", "TOKEN", "__REMOVEDOMAIN__"));
 
     EppException thrown =
         assertThrows(RemovePackageTokenOnNonPackageDomainException.class, this::runFlow);
@@ -1332,7 +1332,7 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
             .build());
     setEppInput(
         "domain_renew_allocationtoken.xml",
-        ImmutableMap.of("DOMAIN", "example.tld", "YEARS", "2", "TOKEN", "__REMOVEPACKAGE__"));
+        ImmutableMap.of("DOMAIN", "example.tld", "YEARS", "2", "TOKEN", "__REMOVEDOMAIN__"));
 
     doSuccessfulTest(
         "domain_renew_response.xml",
@@ -1365,7 +1365,7 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
 
     setEppInput(
         "domain_renew_allocationtoken.xml",
-        ImmutableMap.of("DOMAIN", "example.tld", "YEARS", "2", "TOKEN", "__REMOVEPACKAGE__"));
+        ImmutableMap.of("DOMAIN", "example.tld", "YEARS", "2", "TOKEN", "__REMOVEDOMAIN__"));
 
     dryRunFlowAssertResponse(
         loadFile(

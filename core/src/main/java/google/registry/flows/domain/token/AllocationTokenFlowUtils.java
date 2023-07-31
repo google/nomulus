@@ -245,7 +245,7 @@ public class AllocationTokenFlowUtils {
     boolean domainHasPackageToken = domain.getCurrentPackageToken().isPresent();
     boolean hasRemovePackageToken =
         allocationToken.isPresent()
-            && TokenBehavior.REMOVE_PACKAGE.equals(allocationToken.get().getTokenBehavior());
+            && TokenBehavior.REMOVE_DOMAIN.equals(allocationToken.get().getTokenBehavior());
 
     if (hasRemovePackageToken && !domainHasPackageToken) {
       throw new RemovePackageTokenOnNonPackageDomainException();
@@ -257,7 +257,7 @@ public class AllocationTokenFlowUtils {
   public static Domain maybeApplyPackageRemovalToken(
       Domain domain, Optional<AllocationToken> allocationToken) {
     if (!allocationToken.isPresent()
-        || !TokenBehavior.REMOVE_PACKAGE.equals(allocationToken.get().getTokenBehavior())) {
+        || !TokenBehavior.REMOVE_DOMAIN.equals(allocationToken.get().getTokenBehavior())) {
       return domain;
     }
 
