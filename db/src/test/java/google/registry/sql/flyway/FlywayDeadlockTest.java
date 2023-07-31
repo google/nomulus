@@ -36,6 +36,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -52,6 +53,7 @@ import org.junit.jupiter.api.Test;
  * Therefore, we focus on 'alter' statements. However, 'create index' is a special case: if the
  * 'concurrently' modifier is not present, the indexed table is locked.
  */
+@Disabled() // TODO(b/223669973): breaks cloudbuild.
 public class FlywayDeadlockTest {
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
