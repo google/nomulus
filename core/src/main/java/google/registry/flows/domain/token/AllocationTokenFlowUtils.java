@@ -243,13 +243,13 @@ public class AllocationTokenFlowUtils {
       Domain domain, Optional<AllocationToken> allocationToken) throws EppException {
 
     boolean domainHasPackageToken = domain.getCurrentPackageToken().isPresent();
-    boolean hasRemovePackageToken =
+    boolean hasRemoveDomainToken =
         allocationToken.isPresent()
             && TokenBehavior.REMOVE_DOMAIN.equals(allocationToken.get().getTokenBehavior());
 
-    if (hasRemovePackageToken && !domainHasPackageToken) {
+    if (hasRemoveDomainToken && !domainHasPackageToken) {
       throw new RemoveDomainTokenOnNonPackageDomainException();
-    } else if (!hasRemovePackageToken && domainHasPackageToken) {
+    } else if (!hasRemoveDomainToken && domainHasPackageToken) {
       throw new MissingRemoveDomainTokenOnPackageDomainException();
     }
   }
