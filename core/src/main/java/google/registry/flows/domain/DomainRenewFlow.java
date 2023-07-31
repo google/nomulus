@@ -53,6 +53,8 @@ import google.registry.flows.custom.DomainRenewFlowCustomLogic.BeforeResponseRet
 import google.registry.flows.custom.DomainRenewFlowCustomLogic.BeforeSaveParameters;
 import google.registry.flows.custom.EntityChanges;
 import google.registry.flows.domain.token.AllocationTokenFlowUtils;
+import google.registry.flows.domain.token.AllocationTokenFlowUtils.MissingRemoveDomainTokenOnPackageDomainException;
+import google.registry.flows.domain.token.AllocationTokenFlowUtils.RemoveDomainTokenOnNonPackageDomainException;
 import google.registry.model.ImmutableObject;
 import google.registry.model.billing.BillingBase.Reason;
 import google.registry.model.billing.BillingEvent;
@@ -119,10 +121,8 @@ import org.joda.time.Duration;
  * @error {@link DomainFlowUtils.RegistrarMustBeActiveForThisOperationException}
  * @error {@link DomainFlowUtils.UnsupportedFeeAttributeException}
  * @error {@link DomainRenewFlow.IncorrectCurrentExpirationDateException}
- * @error {@link
- *     google.registry.flows.domain.token.AllocationTokenFlowUtils.MissingRemovePackageTokenOnPackageDomainException}
- * @error {@link
- *     google.registry.flows.domain.token.AllocationTokenFlowUtils.RemovePackageTokenOnNonPackageDomainException}
+ * @error {@link MissingRemoveDomainTokenOnPackageDomainException}
+ * @error {@link RemoveDomainTokenOnNonPackageDomainException}
  * @error {@link
  *     google.registry.flows.domain.token.AllocationTokenFlowUtils.AllocationTokenNotValidForDomainException}
  * @error {@link

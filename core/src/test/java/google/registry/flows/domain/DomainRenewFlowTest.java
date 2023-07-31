@@ -77,8 +77,8 @@ import google.registry.flows.domain.token.AllocationTokenFlowUtils.AllocationTok
 import google.registry.flows.domain.token.AllocationTokenFlowUtils.AllocationTokenNotValidForTldException;
 import google.registry.flows.domain.token.AllocationTokenFlowUtils.AlreadyRedeemedAllocationTokenException;
 import google.registry.flows.domain.token.AllocationTokenFlowUtils.InvalidAllocationTokenException;
-import google.registry.flows.domain.token.AllocationTokenFlowUtils.MissingRemovePackageTokenOnPackageDomainException;
-import google.registry.flows.domain.token.AllocationTokenFlowUtils.RemovePackageTokenOnNonPackageDomainException;
+import google.registry.flows.domain.token.AllocationTokenFlowUtils.MissingRemoveDomainTokenOnPackageDomainException;
+import google.registry.flows.domain.token.AllocationTokenFlowUtils.RemoveDomainTokenOnNonPackageDomainException;
 import google.registry.flows.exceptions.ResourceStatusProhibitsOperationException;
 import google.registry.model.billing.BillingBase.Flag;
 import google.registry.model.billing.BillingBase.Reason;
@@ -1271,12 +1271,12 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
         ImmutableMap.of("DOMAIN", "example.tld", "YEARS", "2", "TOKEN", "abc123"));
 
     EppException thrown =
-        assertThrows(MissingRemovePackageTokenOnPackageDomainException.class, this::runFlow);
+        assertThrows(MissingRemoveDomainTokenOnPackageDomainException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
   @Test
-  void testFailsToRenewPackageDomainNoRemovePackageToken() throws Exception {
+  void testFailsToRenewPackageDomainNoRemoveDomainToken() throws Exception {
     AllocationToken token =
         persistResource(
             new AllocationToken.Builder()
@@ -1296,7 +1296,7 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
     setEppInput("domain_renew.xml", ImmutableMap.of("DOMAIN", "example.tld", "YEARS", "5"));
 
     EppException thrown =
-        assertThrows(MissingRemovePackageTokenOnPackageDomainException.class, this::runFlow);
+        assertThrows(MissingRemoveDomainTokenOnPackageDomainException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
@@ -1309,12 +1309,12 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
         ImmutableMap.of("DOMAIN", "example.tld", "YEARS", "2", "TOKEN", "__REMOVEDOMAIN__"));
 
     EppException thrown =
-        assertThrows(RemovePackageTokenOnNonPackageDomainException.class, this::runFlow);
+        assertThrows(RemoveDomainTokenOnNonPackageDomainException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
   @Test
-  void testSuccesfullyAppliesRemovePackageToken() throws Exception {
+  void testSuccesfullyAppliesRemoveDomainToken() throws Exception {
     AllocationToken token =
         persistResource(
             new AllocationToken.Builder()
@@ -1346,7 +1346,7 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
   }
 
   @Test
-  void testDryRunRemovePackageToken() throws Exception {
+  void testDryRunRemoveDomainToken() throws Exception {
     AllocationToken token =
         persistResource(
             new AllocationToken.Builder()
