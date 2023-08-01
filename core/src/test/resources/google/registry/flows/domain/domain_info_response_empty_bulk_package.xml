@@ -32,10 +32,10 @@
       </domain:infData>
     </resData>
     <extension>
-      <packageToken:packageData xmlns:packageToken=
-          "urn:google:params:xml:ns:packageToken-1.0">
-        <packageToken:token>abc123</packageToken:token>
-      </packageToken:packageData>
+      <bulkToken:bulkData xmlns:bulkToken=
+          "urn:google:params:xml:ns:bulkToken-1.0">
+        <bulkToken:token></bulkToken:token>
+      </bulkToken:bulkData>
     </extension>
     <trID>
       <clTRID>ABC-12345</clTRID>

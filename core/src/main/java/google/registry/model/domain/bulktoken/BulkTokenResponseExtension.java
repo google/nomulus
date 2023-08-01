@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package google.registry.model.domain.packagetoken;
+package google.registry.model.domain.bulktoken;
 
 import google.registry.model.ImmutableObject;
 import google.registry.model.domain.token.AllocationToken;
@@ -24,18 +24,18 @@ import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 
 /**
- * An XML data object that represents a package token extension that may be present on the response
- * to EPP domain info commands.
+ * An XML data object that represents a bulk token extension that may be present on the response to
+ * EPP domain info commands.
  */
-@XmlRootElement(name = "packageData")
-public class PackageTokenResponseExtension extends ImmutableObject implements ResponseExtension {
+@XmlRootElement(name = "bulkData")
+public class BulkTokenResponseExtension extends ImmutableObject implements ResponseExtension {
 
   /** Token string of the PACKAGE token the name belongs to. */
   @XmlJavaTypeAdapter(TrimWhitespaceAdapter.class)
   String token;
 
-  public static PackageTokenResponseExtension create(Optional<VKey<AllocationToken>> tokenKey) {
-    PackageTokenResponseExtension instance = new PackageTokenResponseExtension();
+  public static BulkTokenResponseExtension create(Optional<VKey<AllocationToken>> tokenKey) {
+    BulkTokenResponseExtension instance = new BulkTokenResponseExtension();
     instance.token = "";
     if (tokenKey.isPresent()) {
       instance.token = tokenKey.get().getKey().toString();

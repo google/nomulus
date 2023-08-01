@@ -13,12 +13,11 @@
 // limitations under the License.
 
 @XmlSchema(
-    namespace = "urn:google:params:xml:ns:packageToken-1.0",
-    xmlns =
-        @XmlNs(prefix = "packageToken", namespaceURI = "urn:google:params:xml:ns:packageToken-1.0"),
+    namespace = "urn:google:params:xml:ns:bulkToken-1.0",
+    xmlns = @XmlNs(prefix = "bulkToken", namespaceURI = "urn:google:params:xml:ns:bulkToken-1.0"),
     elementFormDefault = XmlNsForm.QUALIFIED)
 @XmlAccessorType(XmlAccessType.FIELD)
-package google.registry.model.domain.packagetoken;
+package google.registry.model.domain.bulktoken;
 
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
