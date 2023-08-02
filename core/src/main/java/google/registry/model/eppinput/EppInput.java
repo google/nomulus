@@ -362,8 +362,8 @@ public class EppInput extends ImmutableObject {
 
       // Other extensions
       @XmlElementRef(type = AllocationTokenExtension.class),
-      @XmlElementRef(type = MetadataExtension.class),
       @XmlElementRef(type = BulkTokenExtension.class),
+      @XmlElementRef(type = MetadataExtension.class),
       @XmlElementRef(type = RgpUpdateExtension.class),
       @XmlElementRef(type = SecDnsCreateExtension.class),
       @XmlElementRef(type = SecDnsUpdateExtension.class)

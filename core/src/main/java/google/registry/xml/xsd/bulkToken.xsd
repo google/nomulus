@@ -18,7 +18,7 @@
 
   <complexType name="infoType"/>
 
-  <!-- Element returned in an info command response with a bulk token for a bulk pricing domain. -->
+  <!-- Element returned in an info command response with a bulk token for a domain with bulk pricing. -->
   <element name="bulkData"
       type="bulkToken:bulkDataType"/>
 

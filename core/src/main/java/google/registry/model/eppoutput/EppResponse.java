@@ -122,6 +122,7 @@ public class EppResponse extends ImmutableObject implements ResponseOrGreeting {
 
   /** Zero or more response extensions. */
   @XmlElementRefs({
+    @XmlElementRef(type = BulkTokenResponseExtension.class),
     @XmlElementRef(type = FeeCheckResponseExtensionV06.class),
     @XmlElementRef(type = FeeInfoResponseExtensionV06.class),
     @XmlElementRef(type = FeeCreateResponseExtensionV06.class),
@@ -142,7 +143,6 @@ public class EppResponse extends ImmutableObject implements ResponseOrGreeting {
     @XmlElementRef(type = FeeTransferResponseExtensionV12.class),
     @XmlElementRef(type = FeeUpdateResponseExtensionV12.class),
     @XmlElementRef(type = LaunchCheckResponseExtension.class),
-    @XmlElementRef(type = BulkTokenResponseExtension.class),
     @XmlElementRef(type = RgpInfoExtension.class),
     @XmlElementRef(type = SecDnsInfoExtension.class)
   })
