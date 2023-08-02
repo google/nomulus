@@ -17,7 +17,7 @@ package google.registry.groups;
 import com.google.api.services.gmail.Gmail;
 import dagger.Module;
 import dagger.Provides;
-import google.registry.config.CredentialModule.AdcDelegatedCredential;
+import google.registry.config.CredentialModule.GmailDelegatedCredential;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.util.GoogleCredentialsBundle;
 import javax.inject.Singleton;
@@ -29,7 +29,7 @@ public class GmailModule {
   @Provides
   @Singleton
   Gmail provideGmail(
-      @AdcDelegatedCredential GoogleCredentialsBundle credentialsBundle,
+      @GmailDelegatedCredential GoogleCredentialsBundle credentialsBundle,
       @Config("projectId") String projectId) {
     return new Gmail.Builder(
             credentialsBundle.getHttpTransport(),

@@ -33,6 +33,9 @@ gSuite:
   # https://cloud.google.com/appengine/docs/standard/java/mail/#who_can_send_mail
   outgoingEmailDisplayName: Example Registry
   outgoingEmailAddress: noreply@project-id.appspotmail.com
+  # TODO(b/279671974): reuse `outgoingEmailAddress` after migration
+  newOutgoingEmailAddress: noreply@example.com
+  replyToEmailAddress: reply-to@example.com
 
   # Email address of the admin account on the G Suite app. This is used for
   # logging in to perform administrative actions, not sending emails.
@@ -431,6 +434,9 @@ misc:
 
   # Address we send alert summary emails to.
   alertRecipientEmailAddress: email@example.com
+
+  # TODO(b/279671974): reuse `alertRecipientEmailAddress` after migration
+  newAlertRecipientEmailAddress: email@example.com
 
   # Address from which Spec 11 emails to registrars are sent. This needs
   # to be a deliverable email address to handle replies from registrars as well.

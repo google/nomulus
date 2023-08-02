@@ -20,10 +20,12 @@ import com.google.api.services.gmail.Gmail;
 import com.google.api.services.gmail.model.Message;
 import com.google.common.net.MediaType;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
+import google.registry.config.RegistryConfig.Config;
 import google.registry.util.EmailMessage;
 import google.registry.util.EmailMessage.Attachment;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.util.Properties;
 import javax.inject.Inject;
 import javax.mail.Address;
@@ -42,10 +44,24 @@ import org.apache.commons.codec.binary.Base64;
 public final class GmailClient {
 
   private final Gmail gmail;
+  private final InternetAddress outgoingEmailAddressWithUsername;
+  private final InternetAddress replyToEmailAddress;
 
   @Inject
-  GmailClient(Gmail gmail) {
+  GmailClient(
+      Gmail gmail,
+      @Config("gSuiteNewOutgoingEmailAddress") String gSuiteOutgoingEmailAddress,
+      @Config("gSuiteOutgoingEmailDisplayName") String gSuiteOutgoingEmailDisplayName,
+      @Config("replyToEmailAddress") InternetAddress replyToEmailAddress) {
+
     this.gmail = gmail;
+    this.replyToEmailAddress = replyToEmailAddress;
+    try {
+      this.outgoingEmailAddressWithUsername =
+          new InternetAddress(gSuiteOutgoingEmailAddress, gSuiteOutgoingEmailDisplayName);
+    } catch (UnsupportedEncodingException e) {
+      throw new RuntimeException(e);
+    }
   }
 
   /**
@@ -58,6 +74,7 @@ public final class GmailClient {
   public Message sendEmail(EmailMessage emailMessage) {
     Message message = toGmailMessage(toMimeMessage(emailMessage));
     try {
+      // "me" is reserved word for the authorized user of the Gmail API.
       return gmail.users().messages().send("me", message).execute();
     } catch (IOException e) {
       throw new EmailException(e);
@@ -78,11 +95,12 @@ public final class GmailClient {
     }
   }
 
-  static MimeMessage toMimeMessage(EmailMessage emailMessage) {
+  MimeMessage toMimeMessage(EmailMessage emailMessage) {
     try {
       MimeMessage msg =
           new MimeMessage(Session.getDefaultInstance(new Properties(), /* authenticator= */ null));
-      msg.setFrom(emailMessage.from());
+      msg.setFrom(this.outgoingEmailAddressWithUsername);
+      msg.setReplyTo(new InternetAddress[] {replyToEmailAddress});
       msg.addRecipients(
           RecipientType.TO, toArray(emailMessage.recipients(), InternetAddress.class));
       msg.setSubject(emailMessage.subject());

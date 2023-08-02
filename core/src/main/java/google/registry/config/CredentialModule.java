@@ -93,12 +93,55 @@ public abstract class CredentialModule {
   @AdcDelegatedCredential
   @Provides
   @Singleton
-  public static GoogleCredentialsBundle provideSelfSignedDelegatedCredential(
+  public static GoogleCredentialsBundle provideSelfSignedAdminDelegatedCredential(
       @Config("defaultCredentialOauthScopes") ImmutableList<String> defaultScopes,
       @Config("delegatedCredentialOauthScopes") ImmutableList<String> delegationScopes,
       @ApplicationDefaultCredential GoogleCredentialsBundle credentialsBundle,
       @Config("gSuiteAdminAccountEmailAddress") String gSuiteAdminAccountEmailAddress,
       @Config("tokenRefreshDelay") Duration tokenRefreshDelay,
+      Clock clock) {
+    return createSelfSignedDelegatedCredential(
+        defaultScopes,
+        delegationScopes,
+        credentialsBundle,
+        gSuiteAdminAccountEmailAddress,
+        tokenRefreshDelay,
+        clock);
+  }
+
+  /**
+   * Provides a {@link GoogleCredentialsBundle} for sending emails through Google Workspace.
+   *
+   * <p>The Workspace domain must grant delegated admin access to the default service account user
+   * (project-id@appspot.gserviceaccount.com on AppEngine) with all scopes in {@code defaultScopes}
+   * and {@code delegationScopes}. In addition, the user {@code gSuiteOutgoingEmailAddress} must
+   * have the permission to send emails.
+   */
+  @GmailDelegatedCredential
+  @Provides
+  @Singleton
+  public static GoogleCredentialsBundle provideSelfSignedGmailDelegatedCredential(
+      @Config("defaultCredentialOauthScopes") ImmutableList<String> defaultScopes,
+      @Config("delegatedCredentialOauthScopes") ImmutableList<String> delegationScopes,
+      @ApplicationDefaultCredential GoogleCredentialsBundle credentialsBundle,
+      @Config("gSuiteNewOutgoingEmailAddress") String gSuiteOutgoingEmailAddress,
+      @Config("tokenRefreshDelay") Duration tokenRefreshDelay,
+      Clock clock) {
+    return createSelfSignedDelegatedCredential(
+        defaultScopes,
+        delegationScopes,
+        credentialsBundle,
+        gSuiteOutgoingEmailAddress,
+        tokenRefreshDelay,
+        clock);
+  }
+
+  public static GoogleCredentialsBundle createSelfSignedDelegatedCredential(
+      ImmutableList<String> defaultScopes,
+      ImmutableList<String> delegationScopes,
+      GoogleCredentialsBundle credentialsBundle,
+      String gSuiteUserEmailAddress,
+      Duration tokenRefreshDelay,
       Clock clock) {
     GoogleCredentials signer = credentialsBundle.getGoogleCredentials();
 
@@ -118,7 +161,7 @@ public abstract class CredentialModule {
         DelegatedCredentials.createSelfSignedDelegatedCredential(
             (ServiceAccountSigner) signer,
             ImmutableList.<String>builder().addAll(defaultScopes).addAll(delegationScopes).build(),
-            gSuiteAdminAccountEmailAddress,
+            gSuiteUserEmailAddress,
             clock,
             tokenRefreshDelay);
     return GoogleCredentialsBundle.create(credential);
@@ -135,6 +178,15 @@ public abstract class CredentialModule {
   @Documented
   @Retention(RetentionPolicy.RUNTIME)
   public @interface GoogleWorkspaceCredential {}
+
+  /**
+   * Dagger qualifier for a credential with delegated Email-sending permission for a dasher domain
+   * (for Google Workspace) backed by the application default credential (ADC).
+   */
+  @Qualifier
+  @Documented
+  @Retention(RetentionPolicy.RUNTIME)
+  public @interface GmailDelegatedCredential {}
 
   /**
    * Dagger qualifier for a credential with delegated admin access for a dasher domain (for Google

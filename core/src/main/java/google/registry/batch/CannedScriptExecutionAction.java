@@ -71,7 +71,7 @@ public class CannedScriptExecutionAction implements Runnable {
       GmailClient gmailClient,
       @Config("projectId") String projectId,
       @Config("gSuiteDomainName") String gSuiteDomainName,
-      @Config("alertRecipientEmailAddress") InternetAddress recipientAddress) {
+      @Config("newAlertRecipientEmailAddress") InternetAddress recipientAddress) {
     this.groupsConnection = groupsConnection;
     this.gmailClient = gmailClient;
     this.gSuiteDomainName = gSuiteDomainName;
@@ -116,6 +116,8 @@ public class CannedScriptExecutionAction implements Runnable {
         try {
           Set<String> currentMembers = groupsConnection.getMembersOfGroup(groupKey);
           logger.atInfo().log("%s has %s members.", groupKey, currentMembers.size());
+          // One success is enough for validation.
+          return;
         } catch (IOException e) {
           logger.atWarning().withCause(e).log("Failed to check %s", groupKey);
         }
