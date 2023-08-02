@@ -51,7 +51,7 @@ public class EppXmlTransformer  {
           "allocate.xsd",
           "superuser.xsd",
           "allocationToken-1.0.xsd",
-          "packageToken.xsd");
+          "bulkToken.xsd");
 
   private static final XmlTransformer INPUT_TRANSFORMER =
       new XmlTransformer(SCHEMAS, EppInput.class);

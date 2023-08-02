@@ -1085,7 +1085,7 @@ class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, Domain> {
   }
 
   @Test
-  void testPackageInfoExtension_returnsPackageInfo() throws Exception {
+  void testBulkInfoExtension_returnsBulkInfo() throws Exception {
     persistTestEntities(false);
     AllocationToken token =
         persistResource(
@@ -1100,12 +1100,12 @@ class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, Domain> {
                 .build());
     domain = domain.asBuilder().setCurrentPackageToken(token.createVKey()).build();
     persistResource(domain);
-    setEppInput("domain_info_package.xml");
-    doSuccessfulTest("domain_info_response_package.xml", false);
+    setEppInput("domain_info_bulk.xml");
+    doSuccessfulTest("domain_info_response_bulk.xml", false);
   }
 
   @Test
-  void testPackageInfoExtension_returnsPackageInfoForSuperUser() throws Exception {
+  void testBulkInfoExtension_returnsBulkInfoForSuperUser() throws Exception {
     persistTestEntities(false);
     AllocationToken token =
         persistResource(
@@ -1121,23 +1121,23 @@ class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, Domain> {
     domain = domain.asBuilder().setCurrentPackageToken(token.createVKey()).build();
     persistResource(domain);
     sessionMetadata.setRegistrarId("TheRegistrar");
-    setEppInput("domain_info_package.xml");
+    setEppInput("domain_info_bulk.xml");
     EppOutput output = runFlowAsSuperuser();
     String expectedOutput =
         loadFile(
-            "domain_info_response_superuser_package.xml",
+            "domain_info_response_superuser_bulk.xml",
             updateSubstitutions(ImmutableMap.of(), "ROID", "2FF-TLD"));
     assertXmlEquals(expectedOutput, new String(marshal(output, ValidationMode.LENIENT), UTF_8));
   }
 
   @Test
-  void testPackageInfoExtension_nameNotInPackage() throws Exception {
-    setEppInput("domain_info_package.xml");
-    doSuccessfulTest("domain_info_response_empty_package.xml");
+  void testBulkInfoExtension_nameNotInBulkPackage() throws Exception {
+    setEppInput("domain_info_bulk.xml");
+    doSuccessfulTest("domain_info_response_empty_bulk_package.xml");
   }
 
   @Test
-  void testPackageInfoExtension_notCurrentSponsorRegistrar() throws Exception {
+  void testBulkInfoExtension_notCurrentSponsorRegistrar() throws Exception {
     persistTestEntities(false);
     AllocationToken token =
         persistResource(
@@ -1153,7 +1153,7 @@ class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, Domain> {
     domain = domain.asBuilder().setCurrentPackageToken(token.createVKey()).build();
     persistResource(domain);
     sessionMetadata.setRegistrarId("TheRegistrar");
-    setEppInput("domain_info_package.xml");
+    setEppInput("domain_info_bulk.xml");
     doSuccessfulTest("domain_info_response_unauthorized.xml", false);
   }
 }

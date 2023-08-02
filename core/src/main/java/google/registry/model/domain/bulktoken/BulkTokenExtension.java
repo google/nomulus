@@ -12,12 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package google.registry.model.domain.packagetoken;
+package google.registry.model.domain.bulktoken;
 
 import google.registry.model.ImmutableObject;
 import google.registry.model.eppinput.EppInput.CommandExtension;
 import javax.xml.bind.annotation.XmlRootElement;
 
-/** A package token extension that may be present on EPP domain commands. */
+/** A bulk token extension that may be present on EPP domain commands. */
 @XmlRootElement(name = "info")
-public class PackageTokenExtension extends ImmutableObject implements CommandExtension {}
+public class BulkTokenExtension extends ImmutableObject implements CommandExtension {}

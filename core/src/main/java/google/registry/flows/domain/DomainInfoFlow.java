@@ -41,10 +41,10 @@ import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainCommand.Info;
 import google.registry.model.domain.DomainCommand.Info.HostsRequest;
 import google.registry.model.domain.DomainInfoData;
+import google.registry.model.domain.bulktoken.BulkTokenExtension;
+import google.registry.model.domain.bulktoken.BulkTokenResponseExtension;
 import google.registry.model.domain.fee06.FeeInfoCommandExtensionV06;
 import google.registry.model.domain.fee06.FeeInfoResponseExtensionV06;
-import google.registry.model.domain.packagetoken.PackageTokenExtension;
-import google.registry.model.domain.packagetoken.PackageTokenResponseExtension;
 import google.registry.model.domain.rgp.GracePeriodStatus;
 import google.registry.model.domain.rgp.RgpInfoExtension;
 import google.registry.model.eppcommon.AuthInfo;
@@ -95,7 +95,7 @@ public final class DomainInfoFlow implements Flow {
 
   @Override
   public EppResponse run() throws EppException {
-    extensionManager.register(FeeInfoCommandExtensionV06.class, PackageTokenExtension.class);
+    extensionManager.register(FeeInfoCommandExtensionV06.class, BulkTokenExtension.class);
     flowCustomLogic.beforeValidation();
     validateRegistrarIsLoggedIn(registrarId);
     extensionManager.validate();
@@ -155,13 +155,13 @@ public final class DomainInfoFlow implements Flow {
     if (!gracePeriodStatuses.isEmpty()) {
       extensions.add(RgpInfoExtension.create(gracePeriodStatuses));
     }
-    Optional<PackageTokenExtension> packageInfo =
-        eppInput.getSingleExtension(PackageTokenExtension.class);
+    Optional<BulkTokenExtension> packageInfo =
+        eppInput.getSingleExtension(BulkTokenExtension.class);
     if (packageInfo.isPresent()) {
       // Package info was requested.
       if (isSuperuser || registrarId.equals(domain.getCurrentSponsorRegistrarId())) {
         // Only show package info to owning registrar or superusers
-        extensions.add(PackageTokenResponseExtension.create(domain.getCurrentPackageToken()));
+        extensions.add(BulkTokenResponseExtension.create(domain.getCurrentPackageToken()));
       }
     }
     Optional<FeeInfoCommandExtensionV06> feeInfo =

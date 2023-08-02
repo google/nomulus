@@ -7,9 +7,9 @@
       </domain:info>
     </info>
     <extension>
-      <packageToken:info
-          xmlns:packageToken=
-              "urn:google:params:xml:ns:packageToken-1.0" />
+      <bulkToken:info
+          xmlns:bulkToken=
+              "urn:google:params:xml:ns:bulkToken-1.0" />
     </extension>
     <clTRID>ABC-12345</clTRID>
   </command>

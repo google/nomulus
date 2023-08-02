@@ -23,6 +23,7 @@ import google.registry.model.ImmutableObject;
 import google.registry.model.contact.ContactInfoData;
 import google.registry.model.domain.DomainInfoData;
 import google.registry.model.domain.DomainRenewData;
+import google.registry.model.domain.bulktoken.BulkTokenResponseExtension;
 import google.registry.model.domain.fee06.FeeCheckResponseExtensionV06;
 import google.registry.model.domain.fee06.FeeCreateResponseExtensionV06;
 import google.registry.model.domain.fee06.FeeDeleteResponseExtensionV06;
@@ -43,7 +44,6 @@ import google.registry.model.domain.fee12.FeeRenewResponseExtensionV12;
 import google.registry.model.domain.fee12.FeeTransferResponseExtensionV12;
 import google.registry.model.domain.fee12.FeeUpdateResponseExtensionV12;
 import google.registry.model.domain.launch.LaunchCheckResponseExtension;
-import google.registry.model.domain.packagetoken.PackageTokenResponseExtension;
 import google.registry.model.domain.rgp.RgpInfoExtension;
 import google.registry.model.domain.secdns.SecDnsInfoExtension;
 import google.registry.model.eppcommon.Trid;
@@ -122,6 +122,7 @@ public class EppResponse extends ImmutableObject implements ResponseOrGreeting {
 
   /** Zero or more response extensions. */
   @XmlElementRefs({
+    @XmlElementRef(type = BulkTokenResponseExtension.class),
     @XmlElementRef(type = FeeCheckResponseExtensionV06.class),
     @XmlElementRef(type = FeeInfoResponseExtensionV06.class),
     @XmlElementRef(type = FeeCreateResponseExtensionV06.class),
@@ -142,7 +143,6 @@ public class EppResponse extends ImmutableObject implements ResponseOrGreeting {
     @XmlElementRef(type = FeeTransferResponseExtensionV12.class),
     @XmlElementRef(type = FeeUpdateResponseExtensionV12.class),
     @XmlElementRef(type = LaunchCheckResponseExtension.class),
-    @XmlElementRef(type = PackageTokenResponseExtension.class),
     @XmlElementRef(type = RgpInfoExtension.class),
     @XmlElementRef(type = SecDnsInfoExtension.class)
   })
