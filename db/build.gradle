@@ -179,6 +179,14 @@ dependencies {
   testImplementation project(path: ':common', configuration: 'testing')
 }
 
+test {
+  // When set, run FlywayDeadlockTest#validNewScript.
+  def deadlock_check = 'do_flyway_deadlock_check'
+  if (findProperty(deadlock_check)) {
+    systemProperty deadlock_check, findProperty(deadlock_check)
+  }
+}
+
 task generateFlywayIndex {
   def flywayBase = "$projectDir/src/main/resources/sql/flyway"
   def filenamePattern = /V(\d+)__.*\.sql/
