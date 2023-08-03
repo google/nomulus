@@ -36,8 +36,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 
 /**
  * Checks if new Flyway scripts may cause Database deadlock.
@@ -53,7 +53,6 @@ import org.junit.jupiter.api.Test;
  * Therefore, we focus on 'alter' statements. However, 'create index' is a special case: if the
  * 'concurrently' modifier is not present, the indexed table is locked.
  */
-@Disabled() // TODO(b/223669973): breaks cloudbuild.
 public class FlywayDeadlockTest {
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
@@ -104,7 +103,18 @@ public class FlywayDeadlockTest {
               CASE_INSENSITIVE),
           3);
 
+  /**
+   * Validates that new flyway scripts (if exist) do not have deadlock-inducing patterns.
+   *
+   * <p>This test may break if not invoked in a cloned Nomulus repository, therefore it is disabled
+   * by default. User can enable it by setting the {@code do_flyway_deadlock_check} system property
+   * with arbitrary non-empty value.
+   */
   @Test
+  @EnabledIfSystemProperty(
+      named = "do_flyway_deadlock_check",
+      matches = ".+",
+      disabledReason = "Not compatible with the release process on Cloud Build.")
   public void validateNewFlywayScripts() {
     ImmutableList<Path> newScriptPaths = findChangedFlywayScripts();
     ImmutableList<String> scriptAndLockedElements =
