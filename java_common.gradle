@@ -193,3 +193,10 @@ jacocoTestCoverageVerification {
     }
   }
 }
+
+project.tasks.withType(Copy) {
+  duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}
+project.tasks.withType(Jar) {
+  duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}
