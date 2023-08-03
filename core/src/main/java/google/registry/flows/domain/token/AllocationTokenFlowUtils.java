@@ -243,21 +243,21 @@ public class AllocationTokenFlowUtils {
       Domain domain, Optional<AllocationToken> allocationToken) throws EppException {
 
     boolean domainHasPackageToken = domain.getCurrentPackageToken().isPresent();
-    boolean hasRemovePackageToken =
+    boolean hasRemoveDomainToken =
         allocationToken.isPresent()
-            && TokenBehavior.REMOVE_PACKAGE.equals(allocationToken.get().getTokenBehavior());
+            && TokenBehavior.REMOVE_DOMAIN.equals(allocationToken.get().getTokenBehavior());
 
-    if (hasRemovePackageToken && !domainHasPackageToken) {
-      throw new RemovePackageTokenOnNonPackageDomainException();
-    } else if (!hasRemovePackageToken && domainHasPackageToken) {
-      throw new MissingRemovePackageTokenOnPackageDomainException();
+    if (hasRemoveDomainToken && !domainHasPackageToken) {
+      throw new RemoveDomainTokenOnNonPackageDomainException();
+    } else if (!hasRemoveDomainToken && domainHasPackageToken) {
+      throw new MissingRemoveDomainTokenOnPackageDomainException();
     }
   }
 
   public static Domain maybeApplyPackageRemovalToken(
       Domain domain, Optional<AllocationToken> allocationToken) {
     if (!allocationToken.isPresent()
-        || !TokenBehavior.REMOVE_PACKAGE.equals(allocationToken.get().getTokenBehavior())) {
+        || !TokenBehavior.REMOVE_DOMAIN.equals(allocationToken.get().getTokenBehavior())) {
       return domain;
     }
 
@@ -338,19 +338,19 @@ public class AllocationTokenFlowUtils {
     }
   }
 
-  /** The __REMOVEPACKAGE__ token is missing on a package domain command */
-  public static class MissingRemovePackageTokenOnPackageDomainException
+  /** The __REMOVEDOMAIN__ token is missing on a package domain command */
+  public static class MissingRemoveDomainTokenOnPackageDomainException
       extends AssociationProhibitsOperationException {
-    MissingRemovePackageTokenOnPackageDomainException() {
+    MissingRemoveDomainTokenOnPackageDomainException() {
       super("Domains that are inside packages cannot be explicitly renewed or transferred");
     }
   }
 
-  /** The __REMOVEPACKAGE__ token is not allowed on non package domains */
-  public static class RemovePackageTokenOnNonPackageDomainException
+  /** The __REMOVEDOMAIN__ token is not allowed on non package domains */
+  public static class RemoveDomainTokenOnNonPackageDomainException
       extends AssociationProhibitsOperationException {
-    RemovePackageTokenOnNonPackageDomainException() {
-      super("__REMOVEPACKAGE__ token is not allowed on non package domains");
+    RemoveDomainTokenOnNonPackageDomainException() {
+      super("__REMOVEDOMAIN__ token is not allowed on non package domains");
     }
   }
 }

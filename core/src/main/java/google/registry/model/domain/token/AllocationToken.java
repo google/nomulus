@@ -77,10 +77,10 @@ import org.joda.time.DateTime;
 public class AllocationToken extends UpdateAutoTimestampEntity implements Buildable {
 
   private static final long serialVersionUID = -3954475393220876903L;
-  private static final String REMOVE_PACKAGE = "__REMOVEPACKAGE__";
+  private static final String REMOVE_DOMAIN = "__REMOVEDOMAIN__";
 
   private static final ImmutableMap<String, TokenBehavior> STATIC_TOKEN_BEHAVIORS =
-      ImmutableMap.of(REMOVE_PACKAGE, TokenBehavior.REMOVE_PACKAGE);
+      ImmutableMap.of(REMOVE_DOMAIN, TokenBehavior.REMOVE_DOMAIN);
 
   // Promotions should only move forward, and ENDED / CANCELLED are terminal states.
   private static final ImmutableMultimap<TokenStatus, TokenStatus> VALID_TOKEN_STATUS_TRANSITIONS =
@@ -91,10 +91,10 @@ public class AllocationToken extends UpdateAutoTimestampEntity implements Builda
 
   private static final ImmutableMap<String, AllocationToken> BEHAVIORAL_TOKENS =
       ImmutableMap.of(
-          REMOVE_PACKAGE,
+          REMOVE_DOMAIN,
           new AllocationToken.Builder()
               .setTokenType(TokenType.UNLIMITED_USE)
-              .setToken(REMOVE_PACKAGE)
+              .setToken(REMOVE_DOMAIN)
               .build());
 
   public static Optional<AllocationToken> maybeGetStaticTokenInstance(String name) {
@@ -137,10 +137,10 @@ public class AllocationToken extends UpdateAutoTimestampEntity implements Builda
     /** No special behavior */
     DEFAULT,
     /**
-     * REMOVE_PACKAGE triggers domain removal from promotional package, bypasses DEFAULT token
-     * validations.
+     * REMOVE_DOMAIN triggers domain removal from promotional bulk (package) pricing, bypasses
+     * DEFAULT token validations.
      */
-    REMOVE_PACKAGE
+    REMOVE_DOMAIN
   }
 
   /** The status of this token with regard to any potential promotion. */
