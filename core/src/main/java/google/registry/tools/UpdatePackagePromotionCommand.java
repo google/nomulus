@@ -17,12 +17,12 @@ import static com.google.common.base.Preconditions.checkArgument;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
-import google.registry.model.domain.token.PackagePromotion;
+import google.registry.model.domain.token.BulkPricingPackage;
 import java.util.Optional;
 
 /** Command to update a PackagePromotion */
 @Parameters(separators = " =", commandDescription = "Update package promotion object(s)")
-public final class UpdatePackagePromotionCommand extends CreateOrUpdatePackagePromotionCommand {
+public final class UpdatePackagePromotionCommand extends CreateOrUpdateBulkPricingPackageCommand {
 
   @Parameter(
       names = "--clear_last_notification_sent",
@@ -32,8 +32,8 @@ public final class UpdatePackagePromotionCommand extends CreateOrUpdatePackagePr
   boolean clearLastNotificationSent;
 
   @Override
-  PackagePromotion getOldPackagePromotion(String token) {
-    Optional<PackagePromotion> oldPackage = PackagePromotion.loadByTokenString(token);
+  BulkPricingPackage getOldBulkPricingPackage(String token) {
+    Optional<BulkPricingPackage> oldPackage = BulkPricingPackage.loadByTokenString(token);
     checkArgument(oldPackage.isPresent(), "PackagePromotion with token %s does not exist", token);
     return oldPackage.get();
   }

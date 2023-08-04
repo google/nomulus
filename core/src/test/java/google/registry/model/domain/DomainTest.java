@@ -20,7 +20,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
 import static google.registry.model.EppResourceUtils.loadByForeignKey;
 import static google.registry.model.billing.BillingBase.RenewalPriceBehavior.SPECIFIED;
-import static google.registry.model.domain.token.AllocationToken.TokenType.PACKAGE;
+import static google.registry.model.domain.token.AllocationToken.TokenType.BULK;
 import static google.registry.model.domain.token.AllocationToken.TokenType.SINGLE_USE;
 import static google.registry.testing.DatabaseHelper.cloneAndSetAutoTimestamps;
 import static google.registry.testing.DatabaseHelper.createTld;
@@ -831,7 +831,7 @@ public class DomainTest {
         persistResource(
             new AllocationToken.Builder()
                 .setToken("abc123")
-                .setTokenType(PACKAGE)
+                .setTokenType(BULK)
                 .setRenewalPriceBehavior(SPECIFIED)
                 .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
                 .build());
@@ -892,7 +892,7 @@ public class DomainTest {
         persistResource(
             new AllocationToken.Builder()
                 .setToken("abc123")
-                .setTokenType(PACKAGE)
+                .setTokenType(BULK)
                 .setRenewalPriceBehavior(SPECIFIED)
                 .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
                 .build());
@@ -1061,7 +1061,7 @@ public class DomainTest {
     AllocationToken allocationToken =
         new AllocationToken.Builder()
             .setToken("abc123")
-            .setTokenType(PACKAGE)
+            .setTokenType(BULK)
             .setRenewalPriceBehavior(SPECIFIED)
             .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
             .build();
@@ -1078,7 +1078,7 @@ public class DomainTest {
         persistResource(
             new AllocationToken.Builder()
                 .setToken("abc123")
-                .setTokenType(PACKAGE)
+                .setTokenType(BULK)
                 .setRenewalPriceBehavior(SPECIFIED)
                 .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
                 .build());
