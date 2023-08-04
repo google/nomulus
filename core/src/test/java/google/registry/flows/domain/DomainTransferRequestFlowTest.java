@@ -21,7 +21,7 @@ import static com.google.common.truth.Truth8.assertThat;
 import static google.registry.batch.AsyncTaskEnqueuer.PARAM_REQUESTED_TIME;
 import static google.registry.batch.AsyncTaskEnqueuer.PARAM_RESOURCE_KEY;
 import static google.registry.batch.AsyncTaskEnqueuer.QUEUE_ASYNC_ACTIONS;
-import static google.registry.model.domain.token.AllocationToken.TokenType.PACKAGE;
+import static google.registry.model.domain.token.AllocationToken.TokenType.BULK;
 import static google.registry.model.domain.token.AllocationToken.TokenType.SINGLE_USE;
 import static google.registry.model.domain.token.AllocationToken.TokenType.UNLIMITED_USE;
 import static google.registry.model.reporting.DomainTransactionRecord.TransactionReportField.TRANSFER_SUCCESSFUL;
@@ -1343,7 +1343,7 @@ class DomainTransferRequestFlowTest
         persistResource(
             new AllocationToken.Builder()
                 .setToken("abc123")
-                .setTokenType(PACKAGE)
+                .setTokenType(BULK)
                 .setRenewalPriceBehavior(RenewalPriceBehavior.SPECIFIED)
                 .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
                 .build());
@@ -1401,7 +1401,7 @@ class DomainTransferRequestFlowTest
         persistResource(
             new AllocationToken.Builder()
                 .setToken("abc123")
-                .setTokenType(PACKAGE)
+                .setTokenType(BULK)
                 .setRenewalPriceBehavior(RenewalPriceBehavior.SPECIFIED)
                 .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
                 .build());
@@ -1458,7 +1458,7 @@ class DomainTransferRequestFlowTest
         persistResource(
             new AllocationToken.Builder()
                 .setToken("abc123")
-                .setTokenType(PACKAGE)
+                .setTokenType(BULK)
                 .setRenewalPriceBehavior(RenewalPriceBehavior.SPECIFIED)
                 .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
                 .build());
