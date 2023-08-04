@@ -20,7 +20,7 @@ import static google.registry.model.domain.token.AllocationToken.TokenStatus.CAN
 import static google.registry.model.domain.token.AllocationToken.TokenStatus.ENDED;
 import static google.registry.model.domain.token.AllocationToken.TokenStatus.NOT_STARTED;
 import static google.registry.model.domain.token.AllocationToken.TokenStatus.VALID;
-import static google.registry.model.domain.token.AllocationToken.TokenType.PACKAGE;
+import static google.registry.model.domain.token.AllocationToken.TokenType.BULK;
 import static google.registry.model.domain.token.AllocationToken.TokenType.SINGLE_USE;
 import static google.registry.model.domain.token.AllocationToken.TokenType.UNLIMITED_USE;
 import static google.registry.testing.DatabaseHelper.createTld;
@@ -222,7 +222,7 @@ public class AllocationTokenTest extends EntityTestCase {
     AllocationToken.Builder builder =
         new AllocationToken.Builder()
             .setToken("abc123")
-            .setTokenType(TokenType.PACKAGE)
+            .setTokenType(TokenType.BULK)
             .setRenewalPriceBehavior(RenewalPriceBehavior.DEFAULT);
     IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class, builder::build);
     assertThat(thrown)
@@ -235,7 +235,7 @@ public class AllocationTokenTest extends EntityTestCase {
     AllocationToken.Builder builder =
         new AllocationToken.Builder()
             .setToken("abc123")
-            .setTokenType(TokenType.PACKAGE)
+            .setTokenType(TokenType.BULK)
             .setRenewalPriceBehavior(RenewalPriceBehavior.SPECIFIED)
             .setDiscountPremiums(true);
     IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class, builder::build);
@@ -296,7 +296,7 @@ public class AllocationTokenTest extends EntityTestCase {
     Buildable.Builder<AllocationToken> builder =
         new AllocationToken.Builder()
             .setToken("foobar")
-            .setTokenType(PACKAGE)
+            .setTokenType(BULK)
             .setRenewalPriceBehavior(RenewalPriceBehavior.SPECIFIED)
             .setAllowedRegistrarIds(ImmutableSet.of("foo", "bar"));
     IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class, builder::build);

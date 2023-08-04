@@ -23,7 +23,7 @@ import google.registry.model.console.UserTest;
 import google.registry.model.contact.ContactTest;
 import google.registry.model.domain.DomainSqlTest;
 import google.registry.model.domain.token.AllocationTokenTest;
-import google.registry.model.domain.token.PackagePromotionTest;
+import google.registry.model.domain.token.BulkPricingPackageTest;
 import google.registry.model.history.ContactHistoryTest;
 import google.registry.model.history.DomainHistoryTest;
 import google.registry.model.history.HostHistoryTest;
@@ -91,7 +91,7 @@ import org.junit.runner.RunWith;
   DomainHistoryTest.class,
   HostHistoryTest.class,
   LockTest.class,
-  PackagePromotionTest.class,
+  BulkPricingPackageTest.class,
   PollMessageTest.class,
   PremiumListDaoTest.class,
   RdeRevisionTest.class,

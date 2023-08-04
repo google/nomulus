@@ -31,10 +31,10 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.shaded.com.google.common.collect.ImmutableSet;
 
-/** Unit tests for {@link PackagePromotion}. */
-public class PackagePromotionTest extends EntityTestCase {
+/** Unit tests for {@link BulkPricingPackage}. */
+public class BulkPricingPackageTest extends EntityTestCase {
 
-  public PackagePromotionTest() {
+  public BulkPricingPackageTest() {
     super(JpaEntityCoverageCheck.ENABLED);
   }
 
@@ -49,7 +49,7 @@ public class PackagePromotionTest extends EntityTestCase {
         persistResource(
             new AllocationToken.Builder()
                 .setToken("abc123")
-                .setTokenType(TokenType.PACKAGE)
+                .setTokenType(TokenType.BULK)
                 .setCreationTimeForTest(DateTime.parse("2010-11-12T05:00:00Z"))
                 .setAllowedTlds(ImmutableSet.of("foo"))
                 .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
@@ -57,23 +57,23 @@ public class PackagePromotionTest extends EntityTestCase {
                 .setDiscountFraction(1)
                 .build());
 
-    PackagePromotion packagePromotion =
-        new PackagePromotion.Builder()
+    BulkPricingPackage bulkPricingPackage =
+        new BulkPricingPackage.Builder()
             .setToken(token)
-            .setPackagePrice(Money.of(CurrencyUnit.USD, 10000))
+            .setBulkPrice(Money.of(CurrencyUnit.USD, 10000))
             .setMaxCreates(40)
             .setMaxDomains(10)
             .setNextBillingDate(DateTime.parse("2011-11-12T05:00:00Z"))
             .build();
 
-    tm().transact(() -> tm().put(packagePromotion));
+    tm().transact(() -> tm().put(bulkPricingPackage));
     assertAboutImmutableObjects()
-        .that(tm().transact(() -> PackagePromotion.loadByTokenString("abc123")).get())
-        .isEqualExceptFields(packagePromotion, "packagePromotionId");
+        .that(tm().transact(() -> BulkPricingPackage.loadByTokenString("abc123")).get())
+        .isEqualExceptFields(bulkPricingPackage, "bulkPricingId");
   }
 
   @Test
-  void testFail_tokenIsNotPackage() {
+  void testFail_tokenIsNotBulkToken() {
     AllocationToken token =
         persistResource(
             new AllocationToken.Builder()
@@ -90,14 +90,14 @@ public class PackagePromotionTest extends EntityTestCase {
             IllegalArgumentException.class,
             () ->
                 persistResource(
-                    new PackagePromotion.Builder()
+                    new BulkPricingPackage.Builder()
                         .setToken(token)
-                        .setPackagePrice(Money.of(CurrencyUnit.USD, 10000))
+                        .setBulkPrice(Money.of(CurrencyUnit.USD, 10000))
                         .setMaxCreates(40)
                         .setMaxDomains(10)
                         .setNextBillingDate(DateTime.parse("2011-11-12T05:00:00Z"))
                         .build()));
 
-    assertThat(thrown).hasMessageThat().isEqualTo("Allocation token must be a PACKAGE type");
+    assertThat(thrown).hasMessageThat().isEqualTo("Allocation token must be a BULK type");
   }
 }
