@@ -924,7 +924,7 @@ public class DomainBase extends EppResource
                               "The package token %s does not exist",
                               currentPackageToken.getKey())));
       checkArgument(
-          token.getTokenType().equals(TokenType.PACKAGE),
+          token.getTokenType().equals(TokenType.BULK),
           "The currentPackageToken must have a PACKAGE TokenType");
       getInstance().currentPackageToken = currentPackageToken;
       return thisCastToDerived();

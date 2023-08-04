@@ -18,8 +18,8 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.collect.Sets.difference;
 import static google.registry.model.billing.BillingBase.RenewalPriceBehavior.DEFAULT;
+import static google.registry.model.domain.token.AllocationToken.TokenType.BULK;
 import static google.registry.model.domain.token.AllocationToken.TokenType.DEFAULT_PROMO;
-import static google.registry.model.domain.token.AllocationToken.TokenType.PACKAGE;
 import static google.registry.model.domain.token.AllocationToken.TokenType.SINGLE_USE;
 import static google.registry.model.domain.token.AllocationToken.TokenType.UNLIMITED_USE;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
@@ -279,19 +279,20 @@ class GenerateAllocationTokensCommand implements Command {
     }
 
     if (!isNullOrEmpty(tokenStatusTransitions)) {
-      // Don't allow package tokens to be created with a scheduled end time since this could allow
-      // future domains to be attributed to the package and never be billed. Package promotion
+      // Don't allow bulk tokens to be created with a scheduled end time since this could allow
+      // future domains to be attributed to the bulk pricing package and never be billed. Bulk
       // tokens should only be scheduled to end with a brief time period before the status
       // transition occurs so that no new domains are registered using that token between when the
       // status is scheduled and when the transition occurs.
-      // TODO(@sarahbot): Create a cleaner way to handle ending packages once we actually have
+      // TODO(@sarahbot): Create a cleaner way to handle ending bulk pricing packages once we
+      // actually have
       // customers using them
       boolean hasEnding =
           tokenStatusTransitions.containsValue(TokenStatus.ENDED)
               || tokenStatusTransitions.containsValue(TokenStatus.CANCELLED);
       checkArgument(
-          !(PACKAGE.equals(tokenType) && hasEnding),
-          "PACKAGE tokens should not be generated with ENDED or CANCELLED in their transition map");
+          !(BULK.equals(tokenType) && hasEnding),
+          "BULK tokens should not be generated with ENDED or CANCELLED in their transition map");
     }
 
     if (tokenStrings != null) {

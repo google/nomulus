@@ -24,7 +24,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import google.registry.model.billing.BillingBase.RenewalPriceBehavior;
 import google.registry.model.domain.token.AllocationToken;
 import google.registry.model.domain.token.AllocationToken.TokenType;
-import google.registry.model.domain.token.PackagePromotion;
+import google.registry.model.domain.token.BulkPricingPackage;
 import java.util.Optional;
 import org.joda.money.CurrencyUnit;
 import org.joda.money.Money;
@@ -32,16 +32,16 @@ import org.joda.time.DateTime;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.shaded.com.google.common.collect.ImmutableSet;
 
-/** Unit tests for {@link google.registry.tools.CreatePackagePromotionCommand}. */
-public class CreatePackagePromotionCommandTest
-    extends CommandTestCase<CreatePackagePromotionCommand> {
+/** Unit tests for {@link CreateBulkPricingPackageCommand}. */
+public class CreateBulkPricingPackageCommandTest
+    extends CommandTestCase<CreateBulkPricingPackageCommand> {
 
   @Test
   void testSuccess() throws Exception {
     persistResource(
         new AllocationToken.Builder()
             .setToken("abc123")
-            .setTokenType(TokenType.PACKAGE)
+            .setTokenType(TokenType.BULK)
             .setCreationTimeForTest(DateTime.parse("2010-11-12T05:00:00Z"))
             .setAllowedTlds(ImmutableSet.of("foo"))
             .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
@@ -55,20 +55,20 @@ public class CreatePackagePromotionCommandTest
         "--next_billing_date=2012-03-17",
         "abc123");
 
-    Optional<PackagePromotion> packagePromotionOptional =
-        tm().transact(() -> PackagePromotion.loadByTokenString("abc123"));
-    assertThat(packagePromotionOptional).isPresent();
-    PackagePromotion packagePromotion = packagePromotionOptional.get();
-    assertThat(packagePromotion.getMaxDomains()).isEqualTo(100);
-    assertThat(packagePromotion.getMaxCreates()).isEqualTo(500);
-    assertThat(packagePromotion.getPackagePrice()).isEqualTo(Money.of(CurrencyUnit.USD, 1000));
-    assertThat(packagePromotion.getNextBillingDate())
+    Optional<BulkPricingPackage> bulkPricingPackageOptional =
+        tm().transact(() -> BulkPricingPackage.loadByTokenString("abc123"));
+    assertThat(bulkPricingPackageOptional).isPresent();
+    BulkPricingPackage bulkPricingPackage = bulkPricingPackageOptional.get();
+    assertThat(bulkPricingPackage.getMaxDomains()).isEqualTo(100);
+    assertThat(bulkPricingPackage.getMaxCreates()).isEqualTo(500);
+    assertThat(bulkPricingPackage.getBulkPrice()).isEqualTo(Money.of(CurrencyUnit.USD, 1000));
+    assertThat(bulkPricingPackage.getNextBillingDate())
         .isEqualTo(DateTime.parse("2012-03-17T00:00:00Z"));
-    assertThat(packagePromotion.getLastNotificationSent()).isEmpty();
+    assertThat(bulkPricingPackage.getLastNotificationSent()).isEmpty();
   }
 
   @Test
-  void testFailure_tokenIsNotPackageType() throws Exception {
+  void testFailure_tokenIsNotBulkType() throws Exception {
     persistResource(
         new AllocationToken.Builder()
             .setToken("abc123")
@@ -90,7 +90,7 @@ public class CreatePackagePromotionCommandTest
                     "--next_billing_date=2012-03-17T05:00:00Z",
                     "abc123"));
     assertThat(thrown.getMessage())
-        .isEqualTo("The allocation token must be of the PACKAGE token type");
+        .isEqualTo("The allocation token must be of the BULK token type");
   }
 
   @Test
@@ -107,16 +107,16 @@ public class CreatePackagePromotionCommandTest
                     "abc123"));
     assertThat(thrown.getMessage())
         .isEqualTo(
-            "An allocation token with the token String abc123 does not exist. The package token"
-                + " must be created first before it can be used to create a PackagePromotion");
+            "An allocation token with the token String abc123 does not exist. The bulk token"
+                + " must be created first before it can be used to create a BulkPricingPackage");
   }
 
   @Test
-  void testFailure_packagePromotionAlreadyExists() throws Exception {
+  void testFailure_bulkPricingPackageAlreadyExists() throws Exception {
     persistResource(
         new AllocationToken.Builder()
             .setToken("abc123")
-            .setTokenType(TokenType.PACKAGE)
+            .setTokenType(TokenType.BULK)
             .setCreationTimeForTest(DateTime.parse("2010-11-12T05:00:00Z"))
             .setAllowedTlds(ImmutableSet.of("foo"))
             .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
@@ -129,9 +129,9 @@ public class CreatePackagePromotionCommandTest
         "--price=USD 1000.00",
         "--next_billing_date=2012-03-17T05:00:00Z",
         "abc123");
-    Optional<PackagePromotion> packagePromotionOptional =
-        tm().transact(() -> PackagePromotion.loadByTokenString("abc123"));
-    assertThat(packagePromotionOptional).isPresent();
+    Optional<BulkPricingPackage> bulkPricingPackageOptional =
+        tm().transact(() -> BulkPricingPackage.loadByTokenString("abc123"));
+    assertThat(bulkPricingPackageOptional).isPresent();
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
@@ -142,7 +142,8 @@ public class CreatePackagePromotionCommandTest
                     "--price=USD 1000.00",
                     "--next_billing_date=2012-03-17T05:00:00Z",
                     "abc123"));
-    assertThat(thrown.getMessage()).isEqualTo("PackagePromotion with token abc123 already exists");
+    assertThat(thrown.getMessage())
+        .isEqualTo("BulkPricingPackage with token abc123 already exists");
   }
 
   @Test
@@ -150,7 +151,7 @@ public class CreatePackagePromotionCommandTest
     persistResource(
         new AllocationToken.Builder()
             .setToken("abc123")
-            .setTokenType(TokenType.PACKAGE)
+            .setTokenType(TokenType.BULK)
             .setCreationTimeForTest(DateTime.parse("2010-11-12T05:00:00Z"))
             .setAllowedTlds(ImmutableSet.of("foo"))
             .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
@@ -158,16 +159,16 @@ public class CreatePackagePromotionCommandTest
             .setDiscountFraction(1)
             .build());
     runCommandForced("--price=USD 1000.00", "--next_billing_date=2012-03-17", "abc123");
-    Optional<PackagePromotion> packagePromotionOptional =
-        tm().transact(() -> PackagePromotion.loadByTokenString("abc123"));
-    assertThat(packagePromotionOptional).isPresent();
-    PackagePromotion packagePromotion = packagePromotionOptional.get();
-    assertThat(packagePromotion.getMaxDomains()).isEqualTo(0);
-    assertThat(packagePromotion.getMaxCreates()).isEqualTo(0);
-    assertThat(packagePromotion.getPackagePrice()).isEqualTo(Money.of(CurrencyUnit.USD, 1000));
-    assertThat(packagePromotion.getNextBillingDate())
+    Optional<BulkPricingPackage> bulkPricingPackageOptional =
+        tm().transact(() -> BulkPricingPackage.loadByTokenString("abc123"));
+    assertThat(bulkPricingPackageOptional).isPresent();
+    BulkPricingPackage bulkPricingPackage = bulkPricingPackageOptional.get();
+    assertThat(bulkPricingPackage.getMaxDomains()).isEqualTo(0);
+    assertThat(bulkPricingPackage.getMaxCreates()).isEqualTo(0);
+    assertThat(bulkPricingPackage.getBulkPrice()).isEqualTo(Money.of(CurrencyUnit.USD, 1000));
+    assertThat(bulkPricingPackage.getNextBillingDate())
         .isEqualTo(DateTime.parse("2012-03-17T00:00:00Z"));
-    assertThat(packagePromotion.getLastNotificationSent()).isEmpty();
+    assertThat(bulkPricingPackage.getLastNotificationSent()).isEmpty();
   }
 
   @Test
@@ -175,7 +176,7 @@ public class CreatePackagePromotionCommandTest
     persistResource(
         new AllocationToken.Builder()
             .setToken("abc123")
-            .setTokenType(TokenType.PACKAGE)
+            .setTokenType(TokenType.BULK)
             .setCreationTimeForTest(DateTime.parse("2010-11-12T05:00:00Z"))
             .setAllowedTlds(ImmutableSet.of("foo"))
             .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
@@ -184,15 +185,15 @@ public class CreatePackagePromotionCommandTest
             .build());
     runCommandForced("--max_domains=100", "--max_creates=500", "--price=USD 1000.00", "abc123");
 
-    Optional<PackagePromotion> packagePromotionOptional =
-        tm().transact(() -> PackagePromotion.loadByTokenString("abc123"));
-    assertThat(packagePromotionOptional).isPresent();
-    PackagePromotion packagePromotion = packagePromotionOptional.get();
-    assertThat(packagePromotion.getMaxDomains()).isEqualTo(100);
-    assertThat(packagePromotion.getMaxCreates()).isEqualTo(500);
-    assertThat(packagePromotion.getPackagePrice()).isEqualTo(Money.of(CurrencyUnit.USD, 1000));
-    assertThat(packagePromotion.getNextBillingDate()).isEqualTo(END_OF_TIME);
-    assertThat(packagePromotion.getLastNotificationSent()).isEmpty();
+    Optional<BulkPricingPackage> bulkPricingPackageOptional =
+        tm().transact(() -> BulkPricingPackage.loadByTokenString("abc123"));
+    assertThat(bulkPricingPackageOptional).isPresent();
+    BulkPricingPackage bulkPricingPackage = bulkPricingPackageOptional.get();
+    assertThat(bulkPricingPackage.getMaxDomains()).isEqualTo(100);
+    assertThat(bulkPricingPackage.getMaxCreates()).isEqualTo(500);
+    assertThat(bulkPricingPackage.getBulkPrice()).isEqualTo(Money.of(CurrencyUnit.USD, 1000));
+    assertThat(bulkPricingPackage.getNextBillingDate()).isEqualTo(END_OF_TIME);
+    assertThat(bulkPricingPackage.getLastNotificationSent()).isEmpty();
   }
 
   @Test
@@ -200,7 +201,7 @@ public class CreatePackagePromotionCommandTest
     persistResource(
         new AllocationToken.Builder()
             .setToken("abc123")
-            .setTokenType(TokenType.PACKAGE)
+            .setTokenType(TokenType.BULK)
             .setCreationTimeForTest(DateTime.parse("2010-11-12T05:00:00Z"))
             .setAllowedTlds(ImmutableSet.of("foo"))
             .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
@@ -217,6 +218,6 @@ public class CreatePackagePromotionCommandTest
                     "--next_billing_date=2012-03-17T05:00:00Z",
                     "abc123"));
     assertThat(thrown.getMessage())
-        .isEqualTo("PackagePrice is required when creating a new package");
+        .isEqualTo("BulkPrice is required when creating a new bulk pricing package");
   }
 }

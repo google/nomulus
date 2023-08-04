@@ -23,7 +23,7 @@ import com.google.common.flogger.FluentLogger;
 import com.google.common.primitives.Ints;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.model.domain.token.AllocationToken;
-import google.registry.model.domain.token.PackagePromotion;
+import google.registry.model.domain.token.BulkPricingPackage;
 import google.registry.model.registrar.Registrar;
 import google.registry.request.Action;
 import google.registry.request.Action.Service;
@@ -35,7 +35,7 @@ import javax.inject.Inject;
 import org.joda.time.Days;
 
 /**
- * An action that checks all {@link PackagePromotion} objects for compliance with their max create
+ * An action that checks all {@link BulkPricingPackage} objects for compliance with their max create
  * limit.
  */
 @Action(
@@ -86,12 +86,12 @@ public class CheckPackagesComplianceAction implements Runnable {
   }
 
   private void checkPackages() {
-    ImmutableList<PackagePromotion> packages = tm().loadAllOf(PackagePromotion.class);
-    ImmutableMap.Builder<PackagePromotion, Long> packagesOverCreateLimitBuilder =
+    ImmutableList<BulkPricingPackage> packages = tm().loadAllOf(BulkPricingPackage.class);
+    ImmutableMap.Builder<BulkPricingPackage, Long> packagesOverCreateLimitBuilder =
         new ImmutableMap.Builder<>();
-    ImmutableMap.Builder<PackagePromotion, Long> packagesOverActiveDomainsLimitBuilder =
+    ImmutableMap.Builder<BulkPricingPackage, Long> packagesOverActiveDomainsLimitBuilder =
         new ImmutableMap.Builder<>();
-    for (PackagePromotion packagePromo : packages) {
+    for (BulkPricingPackage packagePromo : packages) {
       Long creates =
           (Long)
               tm().query(
@@ -131,13 +131,13 @@ public class CheckPackagesComplianceAction implements Runnable {
     handleActiveDomainOverage(packagesOverActiveDomainsLimitBuilder.build());
   }
 
-  private void handlePackageCreationOverage(ImmutableMap<PackagePromotion, Long> overageList) {
+  private void handlePackageCreationOverage(ImmutableMap<BulkPricingPackage, Long> overageList) {
     if (overageList.isEmpty()) {
       logger.atInfo().log("Found no packages over their create limit.");
       return;
     }
     logger.atInfo().log("Found %d packages over their create limit.", overageList.size());
-    for (PackagePromotion packagePromotion : overageList.keySet()) {
+    for (BulkPricingPackage packagePromotion : overageList.keySet()) {
       AllocationToken packageToken = tm().loadByKey(packagePromotion.getToken());
       Optional<Registrar> registrar =
           Registrar.loadByRegistrarIdCached(
@@ -159,13 +159,13 @@ public class CheckPackagesComplianceAction implements Runnable {
     }
   }
 
-  private void handleActiveDomainOverage(ImmutableMap<PackagePromotion, Long> overageList) {
+  private void handleActiveDomainOverage(ImmutableMap<BulkPricingPackage, Long> overageList) {
     if (overageList.isEmpty()) {
       logger.atInfo().log("Found no packages over their active domains limit.");
       return;
     }
     logger.atInfo().log("Found %d packages over their active domains limit.", overageList.size());
-    for (PackagePromotion packagePromotion : overageList.keySet()) {
+    for (BulkPricingPackage packagePromotion : overageList.keySet()) {
       int daysSinceLastNotification =
           packagePromotion
               .getLastNotificationSent()
@@ -188,7 +188,7 @@ public class CheckPackagesComplianceAction implements Runnable {
   }
 
   private void sendActiveDomainOverageEmail(
-      boolean warning, PackagePromotion packagePromotion, long activeDomains) {
+      boolean warning, BulkPricingPackage packagePromotion, long activeDomains) {
     String emailSubject =
         warning ? packageDomainLimitWarningEmailSubject : packageDomainLimitUpgradeEmailSubject;
     String emailTemplate =
