@@ -119,10 +119,10 @@ public class AllocationToken extends UpdateAutoTimestampEntity implements Builda
 
   /** Type of the token that indicates how and where it should be used. */
   public enum TokenType {
+    /** Token used for bulk pricing */
+    BULK,
     /** Token saved on a TLD to use if no other token is passed from the client */
     DEFAULT_PROMO,
-    /** Token used for package pricing */
-    PACKAGE,
     /** Invalid after use */
     SINGLE_USE,
     /** Do not expire after use */
@@ -344,11 +344,11 @@ public class AllocationToken extends UpdateAutoTimestampEntity implements Builda
       checkArgumentNotNull(getInstance().tokenType, "Token type must be specified");
       checkArgument(!Strings.isNullOrEmpty(getInstance().token), "Token must not be null or empty");
       checkArgument(
-          !getInstance().tokenType.equals(TokenType.PACKAGE)
+          !getInstance().tokenType.equals(TokenType.BULK)
               || getInstance().renewalPriceBehavior.equals(RenewalPriceBehavior.SPECIFIED),
           "Package tokens must have renewalPriceBehavior set to SPECIFIED");
       checkArgument(
-          !getInstance().tokenType.equals(TokenType.PACKAGE) || !getInstance().discountPremiums,
+          !getInstance().tokenType.equals(TokenType.BULK) || !getInstance().discountPremiums,
           "Package tokens cannot discount premium names");
       checkArgument(
           getInstance().domainName == null || TokenType.SINGLE_USE.equals(getInstance().tokenType),
@@ -358,7 +358,7 @@ public class AllocationToken extends UpdateAutoTimestampEntity implements Builda
               || TokenType.SINGLE_USE.equals(getInstance().tokenType),
           "Redemption history entry can only be specified for SINGLE_USE tokens");
       checkArgument(
-          getInstance().tokenType != TokenType.PACKAGE
+          getInstance().tokenType != TokenType.BULK
               || (getInstance().allowedClientIds != null
                   && getInstance().allowedClientIds.size() == 1),
           "PACKAGE tokens must have exactly one allowed client registrar");

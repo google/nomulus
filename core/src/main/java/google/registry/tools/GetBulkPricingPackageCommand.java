@@ -19,14 +19,14 @@ import static google.registry.util.PreconditionsUtils.checkArgumentPresent;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
-import google.registry.model.domain.token.PackagePromotion;
+import google.registry.model.domain.token.BulkPricingPackage;
 import java.util.List;
 
-/** Command to show a {@link PackagePromotion} object. */
-@Parameters(separators = " =", commandDescription = "Show package promotion object(s)")
-public class GetPackagePromotionCommand extends GetEppResourceCommand {
+/** Command to show a {@link BulkPricingPackage} object. */
+@Parameters(separators = " =", commandDescription = "Show bulk pricing package object(s)")
+public class GetBulkPricingPackageCommand extends GetEppResourceCommand {
 
-  @Parameter(description = "Package token(s)", required = true)
+  @Parameter(description = "Bulk pricing token(s)", required = true)
   private List<String> mainParameters;
 
   @Override
@@ -34,12 +34,12 @@ public class GetPackagePromotionCommand extends GetEppResourceCommand {
     for (String token : mainParameters) {
       tm().transact(
               () -> {
-                PackagePromotion packagePromotion =
+                BulkPricingPackage bulkPricingPackage =
                     checkArgumentPresent(
-                        PackagePromotion.loadByTokenString(token),
-                        "PackagePromotion with package token %s does not exist",
+                        BulkPricingPackage.loadByTokenString(token),
+                        "BulkPricingPackage with token %s does not exist",
                         token);
-                System.out.println(packagePromotion);
+                System.out.println(bulkPricingPackage);
               });
     }
   }

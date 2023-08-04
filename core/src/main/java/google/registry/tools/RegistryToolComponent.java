@@ -117,7 +117,7 @@ interface RegistryToolComponent {
 
   void inject(GetHostCommand command);
 
-  void inject(GetPackagePromotionCommand command);
+  void inject(GetBulkPricingPackageCommand command);
 
   void inject(GetKeyringSecretCommand command);
 

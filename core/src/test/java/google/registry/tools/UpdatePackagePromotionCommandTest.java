@@ -23,7 +23,7 @@ import com.google.common.truth.Truth;
 import google.registry.model.billing.BillingBase.RenewalPriceBehavior;
 import google.registry.model.domain.token.AllocationToken;
 import google.registry.model.domain.token.AllocationToken.TokenType;
-import google.registry.model.domain.token.PackagePromotion;
+import google.registry.model.domain.token.BulkPricingPackage;
 import java.util.Optional;
 import org.joda.money.CurrencyUnit;
 import org.joda.money.Money;
@@ -42,19 +42,19 @@ public class UpdatePackagePromotionCommandTest
         persistResource(
             new AllocationToken.Builder()
                 .setToken("abc123")
-                .setTokenType(TokenType.PACKAGE)
+                .setTokenType(TokenType.BULK)
                 .setCreationTimeForTest(DateTime.parse("2010-11-12T05:00:00Z"))
                 .setAllowedTlds(ImmutableSet.of("foo"))
                 .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
                 .setRenewalPriceBehavior(RenewalPriceBehavior.SPECIFIED)
                 .setDiscountFraction(1)
                 .build());
-    PackagePromotion packagePromotion =
-        new PackagePromotion.Builder()
+    BulkPricingPackage packagePromotion =
+        new BulkPricingPackage.Builder()
             .setToken(token)
             .setMaxDomains(100)
             .setMaxCreates(500)
-            .setPackagePrice(Money.of(CurrencyUnit.USD, 1000))
+            .setBulkPrice(Money.of(CurrencyUnit.USD, 1000))
             .setNextBillingDate(DateTime.parse("2012-11-12T05:00:00Z"))
             .setLastNotificationSent(DateTime.parse("2010-11-12T05:00:00Z"))
             .build();
@@ -71,14 +71,13 @@ public class UpdatePackagePromotionCommandTest
         "--clear_last_notification_sent",
         "abc123");
 
-    Optional<PackagePromotion> packagePromotionOptional =
-        tm().transact(() -> PackagePromotion.loadByTokenString("abc123"));
+    Optional<BulkPricingPackage> packagePromotionOptional =
+        tm().transact(() -> BulkPricingPackage.loadByTokenString("abc123"));
     assertThat(packagePromotionOptional).isPresent();
-    PackagePromotion packagePromotion = packagePromotionOptional.get();
+    BulkPricingPackage packagePromotion = packagePromotionOptional.get();
     Truth.assertThat(packagePromotion.getMaxDomains()).isEqualTo(200);
     Truth.assertThat(packagePromotion.getMaxCreates()).isEqualTo(1000);
-    Truth.assertThat(packagePromotion.getPackagePrice())
-        .isEqualTo(Money.of(CurrencyUnit.USD, 2000));
+    Truth.assertThat(packagePromotion.getBulkPrice()).isEqualTo(Money.of(CurrencyUnit.USD, 2000));
     Truth.assertThat(packagePromotion.getNextBillingDate())
         .isEqualTo(DateTime.parse("2013-03-17T00:00:00Z"));
     assertThat(packagePromotion.getLastNotificationSent()).isEmpty();
@@ -89,7 +88,7 @@ public class UpdatePackagePromotionCommandTest
     persistResource(
         new AllocationToken.Builder()
             .setToken("nullPackage")
-            .setTokenType(TokenType.PACKAGE)
+            .setTokenType(TokenType.BULK)
             .setCreationTimeForTest(DateTime.parse("2010-11-12T05:00:00Z"))
             .setAllowedTlds(ImmutableSet.of("foo"))
             .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
@@ -119,14 +118,13 @@ public class UpdatePackagePromotionCommandTest
         "--clear_last_notification_sent",
         "abc123");
 
-    Optional<PackagePromotion> packagePromotionOptional =
-        tm().transact(() -> PackagePromotion.loadByTokenString("abc123"));
+    Optional<BulkPricingPackage> packagePromotionOptional =
+        tm().transact(() -> BulkPricingPackage.loadByTokenString("abc123"));
     assertThat(packagePromotionOptional).isPresent();
-    PackagePromotion packagePromotion = packagePromotionOptional.get();
+    BulkPricingPackage packagePromotion = packagePromotionOptional.get();
     Truth.assertThat(packagePromotion.getMaxDomains()).isEqualTo(100);
     Truth.assertThat(packagePromotion.getMaxCreates()).isEqualTo(1000);
-    Truth.assertThat(packagePromotion.getPackagePrice())
-        .isEqualTo(Money.of(CurrencyUnit.USD, 2000));
+    Truth.assertThat(packagePromotion.getBulkPrice()).isEqualTo(Money.of(CurrencyUnit.USD, 2000));
     Truth.assertThat(packagePromotion.getNextBillingDate())
         .isEqualTo(DateTime.parse("2013-03-17T00:00:00Z"));
     assertThat(packagePromotion.getLastNotificationSent()).isEmpty();
@@ -141,14 +139,13 @@ public class UpdatePackagePromotionCommandTest
         "--clear_last_notification_sent",
         "abc123");
 
-    Optional<PackagePromotion> packagePromotionOptional =
-        tm().transact(() -> PackagePromotion.loadByTokenString("abc123"));
+    Optional<BulkPricingPackage> packagePromotionOptional =
+        tm().transact(() -> BulkPricingPackage.loadByTokenString("abc123"));
     assertThat(packagePromotionOptional).isPresent();
-    PackagePromotion packagePromotion = packagePromotionOptional.get();
+    BulkPricingPackage packagePromotion = packagePromotionOptional.get();
     Truth.assertThat(packagePromotion.getMaxDomains()).isEqualTo(200);
     Truth.assertThat(packagePromotion.getMaxCreates()).isEqualTo(1000);
-    Truth.assertThat(packagePromotion.getPackagePrice())
-        .isEqualTo(Money.of(CurrencyUnit.USD, 2000));
+    Truth.assertThat(packagePromotion.getBulkPrice()).isEqualTo(Money.of(CurrencyUnit.USD, 2000));
     Truth.assertThat(packagePromotion.getNextBillingDate())
         .isEqualTo(DateTime.parse("2012-11-12T05:00:00Z"));
     assertThat(packagePromotion.getLastNotificationSent()).isEmpty();
@@ -163,14 +160,13 @@ public class UpdatePackagePromotionCommandTest
         "--clear_last_notification_sent",
         "abc123");
 
-    Optional<PackagePromotion> packagePromotionOptional =
-        tm().transact(() -> PackagePromotion.loadByTokenString("abc123"));
+    Optional<BulkPricingPackage> packagePromotionOptional =
+        tm().transact(() -> BulkPricingPackage.loadByTokenString("abc123"));
     assertThat(packagePromotionOptional).isPresent();
-    PackagePromotion packagePromotion = packagePromotionOptional.get();
+    BulkPricingPackage packagePromotion = packagePromotionOptional.get();
     Truth.assertThat(packagePromotion.getMaxDomains()).isEqualTo(200);
     Truth.assertThat(packagePromotion.getMaxCreates()).isEqualTo(1000);
-    Truth.assertThat(packagePromotion.getPackagePrice())
-        .isEqualTo(Money.of(CurrencyUnit.USD, 1000));
+    Truth.assertThat(packagePromotion.getBulkPrice()).isEqualTo(Money.of(CurrencyUnit.USD, 1000));
     Truth.assertThat(packagePromotion.getNextBillingDate())
         .isEqualTo(DateTime.parse("2013-03-17T00:00:00Z"));
     assertThat(packagePromotion.getLastNotificationSent()).isEmpty();
@@ -180,14 +176,13 @@ public class UpdatePackagePromotionCommandTest
   void testSuccess_dontClearLastNotificationSent() throws Exception {
     runCommandForced("--max_domains=200", "--max_creates=1000", "--price=USD 2000.00", "abc123");
 
-    Optional<PackagePromotion> packagePromotionOptional =
-        tm().transact(() -> PackagePromotion.loadByTokenString("abc123"));
+    Optional<BulkPricingPackage> packagePromotionOptional =
+        tm().transact(() -> BulkPricingPackage.loadByTokenString("abc123"));
     assertThat(packagePromotionOptional).isPresent();
-    PackagePromotion packagePromotion = packagePromotionOptional.get();
+    BulkPricingPackage packagePromotion = packagePromotionOptional.get();
     Truth.assertThat(packagePromotion.getMaxDomains()).isEqualTo(200);
     Truth.assertThat(packagePromotion.getMaxCreates()).isEqualTo(1000);
-    Truth.assertThat(packagePromotion.getPackagePrice())
-        .isEqualTo(Money.of(CurrencyUnit.USD, 2000));
+    Truth.assertThat(packagePromotion.getBulkPrice()).isEqualTo(Money.of(CurrencyUnit.USD, 2000));
     Truth.assertThat(packagePromotion.getNextBillingDate())
         .isEqualTo(DateTime.parse("2012-11-12T05:00:00Z"));
     Truth.assertThat(packagePromotion.getLastNotificationSent().get())
