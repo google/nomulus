@@ -53,7 +53,7 @@
     <class>google.registry.model.domain.secdns.DomainDsData</class>
     <class>google.registry.model.domain.secdns.DomainDsDataHistory</class>
     <class>google.registry.model.domain.token.AllocationToken</class>
-    <class>google.registry.model.domain.token.PackagePromotion</class>
+    <class>google.registry.model.domain.token.BulkPricingPackage</class>
     <class>google.registry.model.host.HostHistory</class>
     <class>google.registry.model.host.Host</class>
     <class>google.registry.model.poll.PollMessage</class>

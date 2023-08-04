@@ -169,7 +169,7 @@ final class UpdateAllocationTokensCommand extends UpdateOrDeleteAllocationTokens
   }
 
   private AllocationToken updateToken(AllocationToken original) {
-    if (endToken && original.getTokenType().equals(TokenType.PACKAGE)) {
+    if (endToken && original.getTokenType().equals(TokenType.BULK)) {
       Long domainsInPackage =
           tm().query("SELECT COUNT(*) FROM Domain WHERE currentPackageToken = :token", Long.class)
               .setParameter("token", original.createVKey())

@@ -24,15 +24,16 @@ import com.google.common.collect.ImmutableSet;
 import google.registry.model.billing.BillingBase.RenewalPriceBehavior;
 import google.registry.model.domain.token.AllocationToken;
 import google.registry.model.domain.token.AllocationToken.TokenType;
-import google.registry.model.domain.token.PackagePromotion;
+import google.registry.model.domain.token.BulkPricingPackage;
 import org.joda.money.CurrencyUnit;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-/** Unit tests for {@link GetPackagePromotionCommand}. */
-public class GetPackagePromotionCommandTest extends CommandTestCase<GetPackagePromotionCommand> {
+/** Unit tests for {@link GetBulkPricingPackageCommand}. */
+public class GetBulkPricingPackageCommandTest
+    extends CommandTestCase<GetBulkPricingPackageCommand> {
 
   @BeforeEach
   void beforeEach() {
@@ -45,33 +46,33 @@ public class GetPackagePromotionCommandTest extends CommandTestCase<GetPackagePr
         persistResource(
             new AllocationToken.Builder()
                 .setToken("abc123")
-                .setTokenType(TokenType.PACKAGE)
+                .setTokenType(TokenType.BULK)
                 .setCreationTimeForTest(DateTime.parse("2010-11-12T05:00:00Z"))
                 .setAllowedTlds(ImmutableSet.of("foo"))
                 .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
                 .setRenewalPriceBehavior(RenewalPriceBehavior.SPECIFIED)
                 .setDiscountFraction(1)
                 .build());
-    PackagePromotion packagePromotion =
-        new PackagePromotion.Builder()
+    BulkPricingPackage bulkPricingPackage =
+        new BulkPricingPackage.Builder()
             .setToken(token)
             .setMaxDomains(100)
             .setMaxCreates(500)
-            .setPackagePrice(Money.of(CurrencyUnit.USD, 1000))
+            .setBulkPrice(Money.of(CurrencyUnit.USD, 1000))
             .setNextBillingDate(DateTime.parse("2012-11-12T05:00:00Z"))
             .setLastNotificationSent(DateTime.parse("2010-11-12T05:00:00Z"))
             .build();
-    tm().transact(() -> tm().put(packagePromotion));
+    tm().transact(() -> tm().put(bulkPricingPackage));
     runCommand("abc123");
   }
 
   @Test
-  void testSuccessMultiplePackages() throws Exception {
+  void testSuccessMultipleBulkPricingPackages() throws Exception {
     AllocationToken token =
         persistResource(
             new AllocationToken.Builder()
                 .setToken("abc123")
-                .setTokenType(TokenType.PACKAGE)
+                .setTokenType(TokenType.BULK)
                 .setCreationTimeForTest(DateTime.parse("2010-11-12T05:00:00Z"))
                 .setAllowedTlds(ImmutableSet.of("foo"))
                 .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
@@ -81,11 +82,11 @@ public class GetPackagePromotionCommandTest extends CommandTestCase<GetPackagePr
     tm().transact(
             () ->
                 tm().put(
-                        new PackagePromotion.Builder()
+                        new BulkPricingPackage.Builder()
                             .setToken(token)
                             .setMaxDomains(100)
                             .setMaxCreates(500)
-                            .setPackagePrice(Money.of(CurrencyUnit.USD, 1000))
+                            .setBulkPrice(Money.of(CurrencyUnit.USD, 1000))
                             .setNextBillingDate(DateTime.parse("2012-11-12T05:00:00Z"))
                             .setLastNotificationSent(DateTime.parse("2010-11-12T05:00:00Z"))
                             .build()));
@@ -93,7 +94,7 @@ public class GetPackagePromotionCommandTest extends CommandTestCase<GetPackagePr
         persistResource(
             new AllocationToken.Builder()
                 .setToken("123abc")
-                .setTokenType(TokenType.PACKAGE)
+                .setTokenType(TokenType.BULK)
                 .setCreationTimeForTest(DateTime.parse("2012-11-12T05:00:00Z"))
                 .setAllowedTlds(ImmutableSet.of("foo"))
                 .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
@@ -103,11 +104,11 @@ public class GetPackagePromotionCommandTest extends CommandTestCase<GetPackagePr
     tm().transact(
             () ->
                 tm().put(
-                        new PackagePromotion.Builder()
+                        new BulkPricingPackage.Builder()
                             .setToken(token2)
                             .setMaxDomains(1000)
                             .setMaxCreates(700)
-                            .setPackagePrice(Money.of(CurrencyUnit.USD, 3000))
+                            .setBulkPrice(Money.of(CurrencyUnit.USD, 3000))
                             .setNextBillingDate(DateTime.parse("2014-11-12T05:00:00Z"))
                             .setLastNotificationSent(DateTime.parse("2013-11-12T05:00:00Z"))
                             .build()));
@@ -116,12 +117,12 @@ public class GetPackagePromotionCommandTest extends CommandTestCase<GetPackagePr
   }
 
   @Test
-  void testFailure_packageDoesNotExist() {
+  void testFailure_bulkPricingPackageDoesNotExist() {
     IllegalArgumentException thrown =
         assertThrows(IllegalArgumentException.class, () -> runCommand("fakeToken"));
     assertThat(thrown)
         .hasMessageThat()
-        .isEqualTo("PackagePromotion with package token fakeToken does not exist");
+        .isEqualTo("BulkPricingPackage with token fakeToken does not exist");
   }
 
   @Test

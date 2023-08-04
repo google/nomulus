@@ -32,7 +32,7 @@ import google.registry.model.billing.BillingBase.RenewalPriceBehavior;
 import google.registry.model.contact.Contact;
 import google.registry.model.domain.token.AllocationToken;
 import google.registry.model.domain.token.AllocationToken.TokenType;
-import google.registry.model.domain.token.PackagePromotion;
+import google.registry.model.domain.token.BulkPricingPackage;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.testing.DatabaseHelper;
@@ -79,7 +79,7 @@ public class CheckPackagesComplianceActionTest {
       Logger.getLogger(CheckPackagesComplianceAction.class.getCanonicalName());
   private final SendEmailService emailService = mock(SendEmailService.class);
   private Contact contact;
-  private PackagePromotion packagePromotion;
+  private BulkPricingPackage packagePromotion;
   private SendEmailUtils sendEmailUtils;
   private ArgumentCaptor<EmailMessage> emailCaptor = ArgumentCaptor.forClass(EmailMessage.class);
 
@@ -108,7 +108,7 @@ public class CheckPackagesComplianceActionTest {
         persistResource(
             new AllocationToken.Builder()
                 .setToken("abc123")
-                .setTokenType(TokenType.PACKAGE)
+                .setTokenType(TokenType.BULK)
                 .setCreationTimeForTest(DateTime.parse("2010-11-12T05:00:00Z"))
                 .setAllowedTlds(ImmutableSet.of("foo"))
                 .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
@@ -116,11 +116,11 @@ public class CheckPackagesComplianceActionTest {
                 .setDiscountFraction(1)
                 .build());
     packagePromotion =
-        new PackagePromotion.Builder()
+        new BulkPricingPackage.Builder()
             .setToken(token)
             .setMaxDomains(3)
             .setMaxCreates(1)
-            .setPackagePrice(Money.of(CurrencyUnit.USD, 1000))
+            .setBulkPrice(Money.of(CurrencyUnit.USD, 1000))
             .setNextBillingDate(DateTime.parse("2012-11-12T05:00:00Z"))
             .setLastNotificationSent(DateTime.parse("2010-11-12T05:00:00Z"))
             .build();
@@ -200,19 +200,19 @@ public class CheckPackagesComplianceActionTest {
         persistResource(
             new AllocationToken.Builder()
                 .setToken("token")
-                .setTokenType(TokenType.PACKAGE)
+                .setTokenType(TokenType.BULK)
                 .setCreationTimeForTest(DateTime.parse("2010-11-12T05:00:00Z"))
                 .setAllowedTlds(ImmutableSet.of("foo"))
                 .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
                 .setRenewalPriceBehavior(RenewalPriceBehavior.SPECIFIED)
                 .setDiscountFraction(1)
                 .build());
-    PackagePromotion packagePromotion2 =
-        new PackagePromotion.Builder()
+    BulkPricingPackage packagePromotion2 =
+        new BulkPricingPackage.Builder()
             .setToken(token2)
             .setMaxDomains(8)
             .setMaxCreates(1)
-            .setPackagePrice(Money.of(CurrencyUnit.USD, 1000))
+            .setBulkPrice(Money.of(CurrencyUnit.USD, 1000))
             .setNextBillingDate(DateTime.parse("2012-11-12T05:00:00Z"))
             .build();
     tm().transact(() -> tm().put(packagePromotion2));
@@ -255,19 +255,19 @@ public class CheckPackagesComplianceActionTest {
         persistResource(
             new AllocationToken.Builder()
                 .setToken("token")
-                .setTokenType(TokenType.PACKAGE)
+                .setTokenType(TokenType.BULK)
                 .setCreationTimeForTest(DateTime.parse("2010-11-12T05:00:00Z"))
                 .setAllowedTlds(ImmutableSet.of("foo"))
                 .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
                 .setRenewalPriceBehavior(RenewalPriceBehavior.SPECIFIED)
                 .setDiscountFraction(1)
                 .build());
-    PackagePromotion packagePromotion2 =
-        new PackagePromotion.Builder()
+    BulkPricingPackage packagePromotion2 =
+        new BulkPricingPackage.Builder()
             .setToken(token2)
             .setMaxDomains(8)
             .setMaxCreates(1)
-            .setPackagePrice(Money.of(CurrencyUnit.USD, 1000))
+            .setBulkPrice(Money.of(CurrencyUnit.USD, 1000))
             .setNextBillingDate(DateTime.parse("2015-11-12T05:00:00Z"))
             .build();
     tm().transact(() -> tm().put(packagePromotion2));
@@ -327,19 +327,19 @@ public class CheckPackagesComplianceActionTest {
         persistResource(
             new AllocationToken.Builder()
                 .setToken("token")
-                .setTokenType(TokenType.PACKAGE)
+                .setTokenType(TokenType.BULK)
                 .setCreationTimeForTest(DateTime.parse("2010-11-12T05:00:00Z"))
                 .setAllowedTlds(ImmutableSet.of("foo"))
                 .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
                 .setRenewalPriceBehavior(RenewalPriceBehavior.SPECIFIED)
                 .setDiscountFraction(1)
                 .build());
-    PackagePromotion packagePromotion2 =
-        new PackagePromotion.Builder()
+    BulkPricingPackage packagePromotion2 =
+        new BulkPricingPackage.Builder()
             .setToken(token2)
             .setMaxDomains(8)
             .setMaxCreates(4)
-            .setPackagePrice(Money.of(CurrencyUnit.USD, 1000))
+            .setBulkPrice(Money.of(CurrencyUnit.USD, 1000))
             .setNextBillingDate(DateTime.parse("2012-11-12T05:00:00Z"))
             .build();
     tm().transact(() -> tm().put(packagePromotion2));
@@ -365,8 +365,8 @@ public class CheckPackagesComplianceActionTest {
     assertThat(emailMessage.body())
         .isEqualTo(
             String.format(DOMAIN_LIMIT_WARNING_EMAIL_BODY, 1, "abc123", "The Registrar", 1, 2));
-    PackagePromotion packageAfterCheck =
-        tm().transact(() -> PackagePromotion.loadByTokenString(token.getToken()).get());
+    BulkPricingPackage packageAfterCheck =
+        tm().transact(() -> BulkPricingPackage.loadByTokenString(token.getToken()).get());
     assertThat(packageAfterCheck.getLastNotificationSent().get()).isEqualTo(clock.nowUtc());
   }
 
@@ -390,19 +390,19 @@ public class CheckPackagesComplianceActionTest {
         persistResource(
             new AllocationToken.Builder()
                 .setToken("token")
-                .setTokenType(TokenType.PACKAGE)
+                .setTokenType(TokenType.BULK)
                 .setCreationTimeForTest(DateTime.parse("2010-11-12T05:00:00Z"))
                 .setAllowedTlds(ImmutableSet.of("foo"))
                 .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
                 .setRenewalPriceBehavior(RenewalPriceBehavior.SPECIFIED)
                 .setDiscountFraction(1)
                 .build());
-    PackagePromotion packagePromotion2 =
-        new PackagePromotion.Builder()
+    BulkPricingPackage packagePromotion2 =
+        new BulkPricingPackage.Builder()
             .setToken(token2)
             .setMaxDomains(1)
             .setMaxCreates(5)
-            .setPackagePrice(Money.of(CurrencyUnit.USD, 1000))
+            .setBulkPrice(Money.of(CurrencyUnit.USD, 1000))
             .setNextBillingDate(DateTime.parse("2012-11-12T05:00:00Z"))
             .build();
     tm().transact(() -> tm().put(packagePromotion2));
@@ -470,8 +470,8 @@ public class CheckPackagesComplianceActionTest {
             "Package with package token abc123 has exceed their max active domains limit by 1"
                 + " name(s).");
     verifyNoInteractions(emailService);
-    PackagePromotion packageAfterCheck =
-        tm().transact(() -> PackagePromotion.loadByTokenString(token.getToken()).get());
+    BulkPricingPackage packageAfterCheck =
+        tm().transact(() -> BulkPricingPackage.loadByTokenString(token.getToken()).get());
     assertThat(packageAfterCheck.getLastNotificationSent().get())
         .isEqualTo(clock.nowUtc().minusDays(5));
   }
@@ -514,8 +514,8 @@ public class CheckPackagesComplianceActionTest {
     assertThat(emailMessage.body())
         .isEqualTo(
             String.format(DOMAIN_LIMIT_WARNING_EMAIL_BODY, 1, "abc123", "The Registrar", 1, 2));
-    PackagePromotion packageAfterCheck =
-        tm().transact(() -> PackagePromotion.loadByTokenString(token.getToken()).get());
+    BulkPricingPackage packageAfterCheck =
+        tm().transact(() -> BulkPricingPackage.loadByTokenString(token.getToken()).get());
     assertThat(packageAfterCheck.getLastNotificationSent().get()).isEqualTo(clock.nowUtc());
   }
 
@@ -557,8 +557,8 @@ public class CheckPackagesComplianceActionTest {
     assertThat(emailMessage.body())
         .isEqualTo(
             String.format(DOMAIN_LIMIT_UPGRADE_EMAIL_BODY, 1, "abc123", "The Registrar", 1, 2));
-    PackagePromotion packageAfterCheck =
-        tm().transact(() -> PackagePromotion.loadByTokenString(token.getToken()).get());
+    BulkPricingPackage packageAfterCheck =
+        tm().transact(() -> BulkPricingPackage.loadByTokenString(token.getToken()).get());
     assertThat(packageAfterCheck.getLastNotificationSent().get()).isEqualTo(clock.nowUtc());
   }
 }
