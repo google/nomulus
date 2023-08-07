@@ -53,8 +53,8 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 import org.mockito.ArgumentCaptor;
 import org.testcontainers.shaded.com.google.common.collect.ImmutableSet;
 
-/** Unit tests for {@link CheckPackagesComplianceAction}. */
-public class CheckPackagesComplianceActionTest {
+/** Unit tests for {@link CheckBulkComplianceAction}. */
+public class CheckBulkComplianceActionTest {
   // This is the default creation time for test data.
   private final FakeClock clock = new FakeClock(DateTime.parse("2012-03-25TZ"));
   private static final String CREATE_LIMIT_EMAIL_SUBJECT = "create limit subject";
@@ -72,14 +72,14 @@ public class CheckPackagesComplianceActionTest {
   final JpaIntegrationTestExtension jpa =
       new JpaTestExtensions.Builder().withClock(clock).buildIntegrationTestExtension();
 
-  private CheckPackagesComplianceAction action;
+  private CheckBulkComplianceAction action;
   private AllocationToken token;
   private final TestLogHandler logHandler = new TestLogHandler();
   private final Logger loggerToIntercept =
-      Logger.getLogger(CheckPackagesComplianceAction.class.getCanonicalName());
+      Logger.getLogger(CheckBulkComplianceAction.class.getCanonicalName());
   private final SendEmailService emailService = mock(SendEmailService.class);
   private Contact contact;
-  private BulkPricingPackage packagePromotion;
+  private BulkPricingPackage bulkPricingPackage;
   private SendEmailUtils sendEmailUtils;
   private ArgumentCaptor<EmailMessage> emailCaptor = ArgumentCaptor.forClass(EmailMessage.class);
 
@@ -94,7 +94,7 @@ public class CheckPackagesComplianceActionTest {
             emailService);
     createTld("tld");
     action =
-        new CheckPackagesComplianceAction(
+        new CheckBulkComplianceAction(
             sendEmailUtils,
             clock,
             CREATE_LIMIT_EMAIL_SUBJECT,
@@ -115,7 +115,7 @@ public class CheckPackagesComplianceActionTest {
                 .setRenewalPriceBehavior(RenewalPriceBehavior.SPECIFIED)
                 .setDiscountFraction(1)
                 .build());
-    packagePromotion =
+    bulkPricingPackage =
         new BulkPricingPackage.Builder()
             .setToken(token)
             .setMaxDomains(3)
@@ -134,46 +134,48 @@ public class CheckPackagesComplianceActionTest {
   }
 
   @Test
-  void testSuccess_noPackageOverCreateLimit() {
-    tm().transact(() -> tm().put(packagePromotion));
+  void testSuccess_noBulkPackageOverCreateLimit() {
+    tm().transact(() -> tm().put(bulkPricingPackage));
     persistEppResource(
         DatabaseHelper.newDomain("foo.tld", contact)
             .asBuilder()
-            .setCurrentPackageToken(token.createVKey())
+            .setCurrentBulkToken(token.createVKey())
             .build());
 
     action.run();
     verifyNoInteractions(emailService);
     assertAboutLogs()
         .that(logHandler)
-        .hasLogAtLevelWithMessage(Level.INFO, "Found no packages over their create limit.");
+        .hasLogAtLevelWithMessage(
+            Level.INFO, "Found no bulk pricing packages over their create limit.");
   }
 
   @Test
-  void testSuccess_onePackageOverCreateLimit() throws Exception {
-    tm().transact(() -> tm().put(packagePromotion));
+  void testSuccess_oneBulkPackageOverCreateLimit() throws Exception {
+    tm().transact(() -> tm().put(bulkPricingPackage));
     // Create limit is 1, creating 2 domains to go over the limit
     persistEppResource(
         DatabaseHelper.newDomain("foo.tld", contact)
             .asBuilder()
-            .setCurrentPackageToken(token.createVKey())
+            .setCurrentBulkToken(token.createVKey())
             .build());
     persistEppResource(
         DatabaseHelper.newDomain("buzz.tld", contact)
             .asBuilder()
-            .setCurrentPackageToken(token.createVKey())
+            .setCurrentBulkToken(token.createVKey())
             .build());
 
     action.run();
     assertAboutLogs()
         .that(logHandler)
-        .hasLogAtLevelWithMessage(Level.INFO, "Found 1 packages over their create limit.");
+        .hasLogAtLevelWithMessage(
+            Level.INFO, "Found 1 bulk pricing packages over their create limit.");
     assertAboutLogs()
         .that(logHandler)
         .hasLogAtLevelWithMessage(
             Level.INFO,
-            "Package with package token abc123 has exceeded their max domain creation limit by 1"
-                + " name(s).");
+            "Bulk pricing package with bulk token abc123 has exceeded their max domain creation"
+                + " limit by 1 name(s).");
     verify(emailService).sendEmail(emailCaptor.capture());
     EmailMessage emailMessage = emailCaptor.getValue();
     assertThat(emailMessage.subject()).isEqualTo(CREATE_LIMIT_EMAIL_SUBJECT);
@@ -182,18 +184,18 @@ public class CheckPackagesComplianceActionTest {
   }
 
   @Test
-  void testSuccess_multiplePackagesOverCreateLimit() {
-    tm().transact(() -> tm().put(packagePromotion));
+  void testSuccess_multipleBulkPricingPackagesOverCreateLimit() {
+    tm().transact(() -> tm().put(bulkPricingPackage));
     // Create limit is 1, creating 2 domains to go over the limit
     persistEppResource(
         DatabaseHelper.newDomain("foo.tld", contact)
             .asBuilder()
-            .setCurrentPackageToken(token.createVKey())
+            .setCurrentBulkToken(token.createVKey())
             .build());
     persistEppResource(
         DatabaseHelper.newDomain("buzz.tld", contact)
             .asBuilder()
-            .setCurrentPackageToken(token.createVKey())
+            .setCurrentBulkToken(token.createVKey())
             .build());
 
     AllocationToken token2 =
@@ -207,7 +209,7 @@ public class CheckPackagesComplianceActionTest {
                 .setRenewalPriceBehavior(RenewalPriceBehavior.SPECIFIED)
                 .setDiscountFraction(1)
                 .build());
-    BulkPricingPackage packagePromotion2 =
+    BulkPricingPackage bulkPricingPackage2 =
         new BulkPricingPackage.Builder()
             .setToken(token2)
             .setMaxDomains(8)
@@ -215,42 +217,43 @@ public class CheckPackagesComplianceActionTest {
             .setBulkPrice(Money.of(CurrencyUnit.USD, 1000))
             .setNextBillingDate(DateTime.parse("2012-11-12T05:00:00Z"))
             .build();
-    tm().transact(() -> tm().put(packagePromotion2));
+    tm().transact(() -> tm().put(bulkPricingPackage2));
 
     persistEppResource(
         DatabaseHelper.newDomain("foo2.tld", contact)
             .asBuilder()
-            .setCurrentPackageToken(token2.createVKey())
+            .setCurrentBulkToken(token2.createVKey())
             .build());
     persistEppResource(
         DatabaseHelper.newDomain("buzz2.tld", contact)
             .asBuilder()
-            .setCurrentPackageToken(token2.createVKey())
+            .setCurrentBulkToken(token2.createVKey())
             .build());
     action.run();
     assertAboutLogs()
         .that(logHandler)
-        .hasLogAtLevelWithMessage(Level.INFO, "Found 2 packages over their create limit.");
+        .hasLogAtLevelWithMessage(
+            Level.INFO, "Found 2 bulk pricing packages over their create limit.");
 
     assertAboutLogs()
         .that(logHandler)
         .hasLogAtLevelWithMessage(
             Level.INFO,
-            "Package with package token abc123 has exceeded their max domain creation limit by 1"
-                + " name(s).");
+            "Bulk pricing package with bulk token abc123 has exceeded their max domain creation"
+                + " limit by 1 name(s).");
 
     assertAboutLogs()
         .that(logHandler)
         .hasLogAtLevelWithMessage(
             Level.INFO,
-            "Package with package token token has exceeded their max domain creation limit by 1"
-                + " name(s).");
+            "Bulk pricing package with bulk token token has exceeded their max domain creation"
+                + " limit by 1 name(s).");
     verify(emailService, times(2)).sendEmail(any(EmailMessage.class));
   }
 
   @Test
   void testSuccess_onlyChecksCurrentBillingYear() {
-    tm().transact(() -> tm().put(packagePromotion));
+    tm().transact(() -> tm().put(bulkPricingPackage));
     AllocationToken token2 =
         persistResource(
             new AllocationToken.Builder()
@@ -276,51 +279,53 @@ public class CheckPackagesComplianceActionTest {
     persistEppResource(
         DatabaseHelper.newDomain("foo.tld", contact)
             .asBuilder()
-            .setCurrentPackageToken(token2.createVKey())
+            .setCurrentBulkToken(token2.createVKey())
             .build());
     persistEppResource(
         DatabaseHelper.newDomain("buzz.tld", contact)
             .asBuilder()
-            .setCurrentPackageToken(token2.createVKey())
+            .setCurrentBulkToken(token2.createVKey())
             .build());
 
     action.run();
     assertAboutLogs()
         .that(logHandler)
-        .hasLogAtLevelWithMessage(Level.INFO, "Found no packages over their create limit.");
+        .hasLogAtLevelWithMessage(
+            Level.INFO, "Found no bulk pricing packages over their create limit.");
     verifyNoInteractions(emailService);
   }
 
   @Test
-  void testSuccess_noPackageOverActiveDomainsLimit() {
-    tm().transact(() -> tm().put(packagePromotion));
+  void testSuccess_noBulkPricingPackageOverActiveDomainsLimit() {
+    tm().transact(() -> tm().put(bulkPricingPackage));
     persistEppResource(
         DatabaseHelper.newDomain("foo.tld", contact)
             .asBuilder()
-            .setCurrentPackageToken(token.createVKey())
+            .setCurrentBulkToken(token.createVKey())
             .build());
 
     action.run();
     verifyNoInteractions(emailService);
     assertAboutLogs()
         .that(logHandler)
-        .hasLogAtLevelWithMessage(Level.INFO, "Found no packages over their active domains limit.");
+        .hasLogAtLevelWithMessage(
+            Level.INFO, "Found no bulk pricing packages over their active domains limit.");
   }
 
   @Test
-  void testSuccess_onePackageOverActiveDomainsLimit() {
-    packagePromotion = packagePromotion.asBuilder().setMaxCreates(4).setMaxDomains(1).build();
-    tm().transact(() -> tm().put(packagePromotion));
+  void testSuccess_oneBulkPricingPackageOverActiveDomainsLimit() {
+    bulkPricingPackage = bulkPricingPackage.asBuilder().setMaxCreates(4).setMaxDomains(1).build();
+    tm().transact(() -> tm().put(bulkPricingPackage));
     // Domains limit is 1, creating 2 domains to go over the limit
     persistEppResource(
         DatabaseHelper.newDomain("foo.tld", contact)
             .asBuilder()
-            .setCurrentPackageToken(token.createVKey())
+            .setCurrentBulkToken(token.createVKey())
             .build());
     persistEppResource(
         DatabaseHelper.newDomain("buzz.tld", contact)
             .asBuilder()
-            .setCurrentPackageToken(token.createVKey())
+            .setCurrentBulkToken(token.createVKey())
             .build());
 
     AllocationToken token2 =
@@ -334,7 +339,7 @@ public class CheckPackagesComplianceActionTest {
                 .setRenewalPriceBehavior(RenewalPriceBehavior.SPECIFIED)
                 .setDiscountFraction(1)
                 .build());
-    BulkPricingPackage packagePromotion2 =
+    BulkPricingPackage bulkPricingPackage2 =
         new BulkPricingPackage.Builder()
             .setToken(token2)
             .setMaxDomains(8)
@@ -342,23 +347,24 @@ public class CheckPackagesComplianceActionTest {
             .setBulkPrice(Money.of(CurrencyUnit.USD, 1000))
             .setNextBillingDate(DateTime.parse("2012-11-12T05:00:00Z"))
             .build();
-    tm().transact(() -> tm().put(packagePromotion2));
+    tm().transact(() -> tm().put(bulkPricingPackage2));
     persistEppResource(
         DatabaseHelper.newDomain("foo2.tld", contact)
             .asBuilder()
-            .setCurrentPackageToken(token2.createVKey())
+            .setCurrentBulkToken(token2.createVKey())
             .build());
 
     action.run();
     assertAboutLogs()
         .that(logHandler)
-        .hasLogAtLevelWithMessage(Level.INFO, "Found 1 packages over their active domains limit.");
+        .hasLogAtLevelWithMessage(
+            Level.INFO, "Found 1 bulk pricing packages over their active domains limit.");
     assertAboutLogs()
         .that(logHandler)
         .hasLogAtLevelWithMessage(
             Level.INFO,
-            "Package with package token abc123 has exceed their max active domains limit by 1"
-                + " name(s).");
+            "Bulk pricing package with bulk token abc123 has exceed their max active domains limit"
+                + " by 1 name(s).");
     verify(emailService).sendEmail(emailCaptor.capture());
     EmailMessage emailMessage = emailCaptor.getValue();
     assertThat(emailMessage.subject()).isEqualTo(DOMAIN_LIMIT_WARNING_EMAIL_SUBJECT);
@@ -371,19 +377,20 @@ public class CheckPackagesComplianceActionTest {
   }
 
   @Test
-  void testSuccess_multiplePackagesOverActiveDomainsLimit() {
+  void testSuccess_multipleBulkPricingPackagesOverActiveDomainsLimit() {
     tm().transact(
-            () -> tm().put(packagePromotion.asBuilder().setMaxDomains(1).setMaxCreates(4).build()));
+            () ->
+                tm().put(bulkPricingPackage.asBuilder().setMaxDomains(1).setMaxCreates(4).build()));
     // Domains limit is 1, creating 2 domains to go over the limit
     persistEppResource(
         DatabaseHelper.newDomain("foo.tld", contact)
             .asBuilder()
-            .setCurrentPackageToken(token.createVKey())
+            .setCurrentBulkToken(token.createVKey())
             .build());
     persistEppResource(
         DatabaseHelper.newDomain("buzz.tld", contact)
             .asBuilder()
-            .setCurrentPackageToken(token.createVKey())
+            .setCurrentBulkToken(token.createVKey())
             .build());
 
     AllocationToken token2 =
@@ -397,7 +404,7 @@ public class CheckPackagesComplianceActionTest {
                 .setRenewalPriceBehavior(RenewalPriceBehavior.SPECIFIED)
                 .setDiscountFraction(1)
                 .build());
-    BulkPricingPackage packagePromotion2 =
+    BulkPricingPackage bulkPricingPackage2 =
         new BulkPricingPackage.Builder()
             .setToken(token2)
             .setMaxDomains(1)
@@ -405,70 +412,73 @@ public class CheckPackagesComplianceActionTest {
             .setBulkPrice(Money.of(CurrencyUnit.USD, 1000))
             .setNextBillingDate(DateTime.parse("2012-11-12T05:00:00Z"))
             .build();
-    tm().transact(() -> tm().put(packagePromotion2));
+    tm().transact(() -> tm().put(bulkPricingPackage2));
 
     persistEppResource(
         DatabaseHelper.newDomain("foo2.tld", contact)
             .asBuilder()
-            .setCurrentPackageToken(token2.createVKey())
+            .setCurrentBulkToken(token2.createVKey())
             .build());
     persistEppResource(
         DatabaseHelper.newDomain("buzz2.tld", contact)
             .asBuilder()
-            .setCurrentPackageToken(token2.createVKey())
+            .setCurrentBulkToken(token2.createVKey())
             .build());
 
     action.run();
     assertAboutLogs()
         .that(logHandler)
-        .hasLogAtLevelWithMessage(Level.INFO, "Found 2 packages over their active domains limit.");
+        .hasLogAtLevelWithMessage(
+            Level.INFO, "Found 2 bulk pricing packages over their active domains limit.");
     assertAboutLogs()
         .that(logHandler)
         .hasLogAtLevelWithMessage(
             Level.INFO,
-            "Package with package token abc123 has exceed their max active domains limit by 1"
-                + " name(s).");
+            "Bulk pricing package with bulk token abc123 has exceed their max active domains limit"
+                + " by 1 name(s).");
     assertAboutLogs()
         .that(logHandler)
         .hasLogAtLevelWithMessage(
             Level.INFO,
-            "Package with package token token has exceed their max active domains limit by 1"
-                + " name(s).");
+            "Bulk pricing package with bulk token token has exceed their max active domains limit"
+                + " by 1 name(s).");
     verify(emailService, times(2)).sendEmail(any(EmailMessage.class));
   }
 
   @Test
-  void testSuccess_packageOverActiveDomainsLimitAlreadySentWarningEmail_DoesNotSendAgain() {
-    packagePromotion =
-        packagePromotion
+  void
+      testSuccess_bulkPricingPackageOverActiveDomainsLimitAlreadySentWarningEmail_DoesNotSendAgain() {
+    bulkPricingPackage =
+        bulkPricingPackage
             .asBuilder()
             .setMaxCreates(4)
             .setMaxDomains(1)
             .setLastNotificationSent(clock.nowUtc().minusDays(5))
             .build();
-    tm().transact(() -> tm().put(packagePromotion));
+    tm().transact(() -> tm().put(bulkPricingPackage));
     // Domains limit is 1, creating 2 domains to go over the limit
     persistEppResource(
         DatabaseHelper.newDomain("foo.tld", contact)
             .asBuilder()
-            .setCurrentPackageToken(token.createVKey())
+            .setCurrentBulkToken(token.createVKey())
             .build());
     persistEppResource(
         DatabaseHelper.newDomain("buzz.tld", contact)
             .asBuilder()
-            .setCurrentPackageToken(token.createVKey())
+            .setCurrentBulkToken(token.createVKey())
             .build());
 
     action.run();
     assertAboutLogs()
         .that(logHandler)
-        .hasLogAtLevelWithMessage(Level.INFO, "Found 1 packages over their active domains limit.");
+        .hasLogAtLevelWithMessage(
+            Level.INFO, "Found 1 bulk pricing packages over their active domains limit.");
     assertAboutLogs()
         .that(logHandler)
         .hasLogAtLevelWithMessage(
             Level.INFO,
-            "Package with package token abc123 has exceed their max active domains limit by 1"
-                + " name(s).");
+            "Bulk pricing package with bulk token abc123 has exceed their max active domains limit"
+                + " by 1 name(s).");
     verifyNoInteractions(emailService);
     BulkPricingPackage packageAfterCheck =
         tm().transact(() -> BulkPricingPackage.loadByTokenString(token.getToken()).get());
@@ -477,37 +487,39 @@ public class CheckPackagesComplianceActionTest {
   }
 
   @Test
-  void testSuccess_packageOverActiveDomainsLimitAlreadySentWarningEmailOver40DaysAgo_SendsAgain() {
-    packagePromotion =
-        packagePromotion
+  void
+      testSuccess_bulkPricingPackageOverActiveDomainsLimitAlreadySentWarningEmailOver40DaysAgo_SendsAgain() {
+    bulkPricingPackage =
+        bulkPricingPackage
             .asBuilder()
             .setMaxCreates(4)
             .setMaxDomains(1)
             .setLastNotificationSent(clock.nowUtc().minusDays(45))
             .build();
-    tm().transact(() -> tm().put(packagePromotion));
+    tm().transact(() -> tm().put(bulkPricingPackage));
     // Domains limit is 1, creating 2 domains to go over the limit
     persistEppResource(
         DatabaseHelper.newDomain("foo.tld", contact)
             .asBuilder()
-            .setCurrentPackageToken(token.createVKey())
+            .setCurrentBulkToken(token.createVKey())
             .build());
     persistEppResource(
         DatabaseHelper.newDomain("buzz.tld", contact)
             .asBuilder()
-            .setCurrentPackageToken(token.createVKey())
+            .setCurrentBulkToken(token.createVKey())
             .build());
 
     action.run();
     assertAboutLogs()
         .that(logHandler)
-        .hasLogAtLevelWithMessage(Level.INFO, "Found 1 packages over their active domains limit.");
+        .hasLogAtLevelWithMessage(
+            Level.INFO, "Found 1 bulk pricing packages over their active domains limit.");
     assertAboutLogs()
         .that(logHandler)
         .hasLogAtLevelWithMessage(
             Level.INFO,
-            "Package with package token abc123 has exceed their max active domains limit by 1"
-                + " name(s).");
+            "Bulk pricing package with bulk token abc123 has exceed their max active domains limit"
+                + " by 1 name(s).");
     verify(emailService).sendEmail(emailCaptor.capture());
     EmailMessage emailMessage = emailCaptor.getValue();
     assertThat(emailMessage.subject()).isEqualTo(DOMAIN_LIMIT_WARNING_EMAIL_SUBJECT);
@@ -520,37 +532,39 @@ public class CheckPackagesComplianceActionTest {
   }
 
   @Test
-  void testSuccess_packageOverActiveDomainsLimitAlreadySentWarning30DaysAgo_SendsUpgradeEmail() {
-    packagePromotion =
-        packagePromotion
+  void
+      testSuccess_bulkPricingPackageOverActiveDomainsLimitAlreadySentWarning30DaysAgo_SendsUpgradeEmail() {
+    bulkPricingPackage =
+        bulkPricingPackage
             .asBuilder()
             .setMaxCreates(4)
             .setMaxDomains(1)
             .setLastNotificationSent(clock.nowUtc().minusDays(31))
             .build();
-    tm().transact(() -> tm().put(packagePromotion));
+    tm().transact(() -> tm().put(bulkPricingPackage));
     // Domains limit is 1, creating 2 domains to go over the limit
     persistEppResource(
         DatabaseHelper.newDomain("foo.tld", contact)
             .asBuilder()
-            .setCurrentPackageToken(token.createVKey())
+            .setCurrentBulkToken(token.createVKey())
             .build());
     persistEppResource(
         DatabaseHelper.newDomain("buzz.tld", contact)
             .asBuilder()
-            .setCurrentPackageToken(token.createVKey())
+            .setCurrentBulkToken(token.createVKey())
             .build());
 
     action.run();
     assertAboutLogs()
         .that(logHandler)
-        .hasLogAtLevelWithMessage(Level.INFO, "Found 1 packages over their active domains limit.");
+        .hasLogAtLevelWithMessage(
+            Level.INFO, "Found 1 bulk pricing packages over their active domains limit.");
     assertAboutLogs()
         .that(logHandler)
         .hasLogAtLevelWithMessage(
             Level.INFO,
-            "Package with package token abc123 has exceed their max active domains limit by 1"
-                + " name(s).");
+            "Bulk pricing package with bulk token abc123 has exceed their max active domains limit"
+                + " by 1 name(s).");
     verify(emailService).sendEmail(emailCaptor.capture());
     EmailMessage emailMessage = emailCaptor.getValue();
     assertThat(emailMessage.subject()).isEqualTo(DOMAIN_LIMIT_UPGRADE_EMAIL_SUBJECT);

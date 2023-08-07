@@ -20,9 +20,9 @@ import com.beust.jcommander.Parameters;
 import google.registry.model.domain.token.BulkPricingPackage;
 import java.util.Optional;
 
-/** Command to update a PackagePromotion */
-@Parameters(separators = " =", commandDescription = "Update package promotion object(s)")
-public final class UpdatePackagePromotionCommand extends CreateOrUpdateBulkPricingPackageCommand {
+/** Command to update a {@link BulkPricingPackage} */
+@Parameters(separators = " =", commandDescription = "Update bulk pricing package object(s)")
+public final class UpdateBulkPricingPackageCommand extends CreateOrUpdateBulkPricingPackageCommand {
 
   @Parameter(
       names = "--clear_last_notification_sent",
@@ -33,9 +33,13 @@ public final class UpdatePackagePromotionCommand extends CreateOrUpdateBulkPrici
 
   @Override
   BulkPricingPackage getOldBulkPricingPackage(String token) {
-    Optional<BulkPricingPackage> oldPackage = BulkPricingPackage.loadByTokenString(token);
-    checkArgument(oldPackage.isPresent(), "PackagePromotion with token %s does not exist", token);
-    return oldPackage.get();
+    Optional<BulkPricingPackage> oldBulkPricingPackage =
+        BulkPricingPackage.loadByTokenString(token);
+    checkArgument(
+        oldBulkPricingPackage.isPresent(),
+        "BulkPricingPackage with token %s does not exist",
+        token);
+    return oldBulkPricingPackage.get();
   }
 
   @Override

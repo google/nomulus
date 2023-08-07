@@ -78,10 +78,10 @@ import google.registry.flows.FlowUtils.NotLoggedInException;
 import google.registry.flows.FlowUtils.UnknownCurrencyEppException;
 import google.registry.flows.ResourceFlowTestCase;
 import google.registry.flows.domain.DomainCreateFlow.AnchorTenantCreatePeriodException;
+import google.registry.flows.domain.DomainCreateFlow.BulkDomainRegisteredForTooManyYearsException;
 import google.registry.flows.domain.DomainCreateFlow.MustHaveSignedMarksInCurrentPhaseException;
 import google.registry.flows.domain.DomainCreateFlow.NoGeneralRegistrationsInCurrentPhaseException;
 import google.registry.flows.domain.DomainCreateFlow.NoTrademarkedRegistrationsBeforeSunriseException;
-import google.registry.flows.domain.DomainCreateFlow.PackageDomainRegisteredForTooManyYearsException;
 import google.registry.flows.domain.DomainCreateFlow.RenewalPriceInfo;
 import google.registry.flows.domain.DomainCreateFlow.SignedMarksOnlyDuringSunriseException;
 import google.registry.flows.domain.DomainFlowTmchUtils.FoundMarkExpiredException;
@@ -3696,12 +3696,12 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
                 .put("EXDATE", "2000-04-03T22:00:00.0Z")
                 .build()));
     Domain domain = reloadResourceByForeignKey();
-    assertThat(domain.getCurrentPackageToken()).isPresent();
-    assertThat(domain.getCurrentPackageToken()).hasValue(token.createVKey());
+    assertThat(domain.getCurrentBulkToken()).isPresent();
+    assertThat(domain.getCurrentBulkToken()).hasValue(token.createVKey());
   }
 
   @Test
-  void testFailure_packageToken_registrationTooLong() throws Exception {
+  void testFailure_bulkToken_registrationTooLong() throws Exception {
     persistResource(
         new AllocationToken.Builder()
             .setToken("abc123")
@@ -3715,10 +3715,10 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
         "domain_create_allocationtoken.xml",
         ImmutableMap.of("DOMAIN", "example.tld", "YEARS", "2"));
     EppException thrown =
-        assertThrows(PackageDomainRegisteredForTooManyYearsException.class, this::runFlow);
+        assertThrows(BulkDomainRegisteredForTooManyYearsException.class, this::runFlow);
     assertThat(thrown)
         .hasMessageThat()
         .isEqualTo(
-            "The package token abc123 cannot be used to register names for longer than 1 year.");
+            "The bulk token abc123 cannot be used to register names for longer than 1 year.");
   }
 }

@@ -1349,7 +1349,7 @@ class DomainTransferRequestFlowTest
                 .build());
     domain =
         persistResource(
-            domain.asBuilder().setCurrentPackageToken(allocationToken.createVKey()).build());
+            domain.asBuilder().setCurrentBulkToken(allocationToken.createVKey()).build());
     DateTime now = clock.nowUtc();
 
     setEppInput("domain_transfer_request.xml");
@@ -1407,7 +1407,7 @@ class DomainTransferRequestFlowTest
                 .build());
     domain =
         persistResource(
-            domain.asBuilder().setCurrentPackageToken(allocationToken.createVKey()).build());
+            domain.asBuilder().setCurrentBulkToken(allocationToken.createVKey()).build());
     DateTime now = clock.nowUtc();
 
     setEppInput("domain_transfer_request.xml");
@@ -1464,7 +1464,7 @@ class DomainTransferRequestFlowTest
                 .build());
     domain =
         persistResource(
-            domain.asBuilder().setCurrentPackageToken(allocationToken.createVKey()).build());
+            domain.asBuilder().setCurrentBulkToken(allocationToken.createVKey()).build());
 
     doSuccessfulSuperuserExtensionTest(
         "domain_transfer_request_superuser_extension.xml",

@@ -267,8 +267,12 @@ public class DomainBase extends EppResource
   @Enumerated(EnumType.STRING)
   LordnPhase lordnPhase = LordnPhase.NONE;
 
-  /** The {@link AllocationToken} for the package this domain is currently a part of. */
-  @Nullable VKey<AllocationToken> currentPackageToken;
+  /**
+   * The {@link AllocationToken} for the bulk pricing package this domain is currently a part of.
+   */
+  @Nullable
+  @Column(name = "current_package_token")
+  VKey<AllocationToken> currentBulkToken;
 
   public LordnPhase getLordnPhase() {
     return lordnPhase;
@@ -302,8 +306,8 @@ public class DomainBase extends EppResource
     return smdId;
   }
 
-  public Optional<VKey<AllocationToken>> getCurrentPackageToken() {
-    return Optional.ofNullable(currentPackageToken);
+  public Optional<VKey<AllocationToken>> getCurrentBulkToken() {
+    return Optional.ofNullable(currentBulkToken);
   }
 
   /**
@@ -478,7 +482,7 @@ public class DomainBase extends EppResource
               // events.
               .setAutorenewBillingEvent(transferData.getServerApproveAutorenewEvent())
               .setAutorenewPollMessage(transferData.getServerApproveAutorenewPollMessage())
-              .setCurrentPackageToken(null);
+              .setCurrentBulkToken(null);
       if (transferData.getTransferPeriod().getValue() == 1) {
         // Set the grace period using a key to the pre-scheduled transfer billing event.  Not using
         // GracePeriod.forBillingEvent() here in order to avoid the actual fetch.
@@ -910,23 +914,22 @@ public class DomainBase extends EppResource
       return thisCastToDerived();
     }
 
-    public B setCurrentPackageToken(@Nullable VKey<AllocationToken> currentPackageToken) {
-      if (currentPackageToken == null) {
-        getInstance().currentPackageToken = currentPackageToken;
+    public B setCurrentBulkToken(@Nullable VKey<AllocationToken> currentBulkToken) {
+      if (currentBulkToken == null) {
+        getInstance().currentBulkToken = currentBulkToken;
         return thisCastToDerived();
       }
       AllocationToken token =
-          tm().transact(() -> tm().loadByKeyIfPresent(currentPackageToken))
+          tm().transact(() -> tm().loadByKeyIfPresent(currentBulkToken))
               .orElseThrow(
                   () ->
                       new IllegalArgumentException(
                           String.format(
-                              "The package token %s does not exist",
-                              currentPackageToken.getKey())));
+                              "The bulk token %s does not exist", currentBulkToken.getKey())));
       checkArgument(
           token.getTokenType().equals(TokenType.BULK),
-          "The currentPackageToken must have a PACKAGE TokenType");
-      getInstance().currentPackageToken = currentPackageToken;
+          "The currentBulkToken must have a BULK TokenType");
+      getInstance().currentBulkToken = currentBulkToken;
       return thisCastToDerived();
     }
   }
