@@ -42,7 +42,7 @@ public class RegistryConfigSettings {
   public SslCertificateValidation sslCertificateValidation;
   public ContactHistory contactHistory;
   public DnsUpdate dnsUpdate;
-  public PackageMonitoring packageMonitoring;
+  public BulkPackageMonitoring bulkPackageMonitoring;
 
   /** Configuration options that apply to the entire GCP project. */
   public static class GcpProject {
@@ -253,13 +253,13 @@ public class RegistryConfigSettings {
     public String registryCcEmail;
   }
 
-  /** Configuration for package compliance monitoring. */
-  public static class PackageMonitoring {
-    public String packageCreateLimitEmailSubject;
-    public String packageCreateLimitEmailBody;
-    public String packageDomainLimitWarningEmailSubject;
-    public String packageDomainLimitWarningEmailBody;
-    public String packageDomainLimitUpgradeEmailSubject;
-    public String packageDomainLimitUpgradeEmailBody;
+  /** Configuration for bulk package compliance monitoring. */
+  public static class BulkPackageMonitoring {
+    public String bulkPackageCreateLimitEmailSubject;
+    public String bulkPackageCreateLimitEmailBody;
+    public String bulkPackageDomainLimitWarningEmailSubject;
+    public String bulkPackageDomainLimitWarningEmailBody;
+    public String bulkPackageDomainLimitUpgradeEmailSubject;
+    public String bulkPackageDomainLimitUpgradeEmailBody;
   }
 }

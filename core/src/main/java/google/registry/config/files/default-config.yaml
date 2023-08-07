@@ -559,55 +559,55 @@ sslCertificateValidation:
     - secp256r1
     - secp384r1
 
-# Configuration options for the package compliance monitoring
-packageMonitoring:
-  # Email subject text to notify tech support that a package has exceeded the limit for domain creates
-  packageCreateLimitEmailSubject: "ACTION REQUIRED: Package needs to be upgraded"
-  # Email body text template notify support that a package has exceeded the limit for domain creates
-  packageCreateLimitEmailBody: >
+# Configuration options for the bulk package compliance monitoring
+bulkPackageMonitoring:
+  # Email subject text to notify tech support that a bulk pricing package has exceeded the limit for domain creates
+  bulkPackageCreateLimitEmailSubject: "ACTION REQUIRED: Bulk pricing package needs to be upgraded"
+  # Email body text template notify support that a bulk pricing package has exceeded the limit for domain creates
+  bulkPackageCreateLimitEmailBody: >
     Dear Support,
     
-    A package has exceeded its max create limit and needs to be upgraded to the 
+    A bulk pricing package has exceeded its max create limit and needs to be upgraded to the 
     next tier.
     
-    Package ID: %1$s
-    Package Token: %2$s
+    Bulk Pricing ID: %1$s
+    Bulk Token: %2$s
     Registrar: %3$s
     Current Max Create Limit: %4$s
     Creates Completed: %5$s
 
-  # Email subject text to notify support that a package has exceeded the limit
+  # Email subject text to notify support that a bulk pricing package has exceeded the limit
   # for current active domains and a warning needs to be sent
-  packageDomainLimitWarningEmailSubject: "ACTION REQUIRED: Package has exceeded the domain limit - send warning"
-  # Email body text template to inform support that a package has exceeded the
-  # limit for active domains and a warning needs to be sent that the package
+  bulkPackageDomainLimitWarningEmailSubject: "ACTION REQUIRED: Bulk pricing package has exceeded the domain limit - send warning"
+  # Email body text template to inform support that a bulk pricing package has exceeded the
+  # limit for active domains and a warning needs to be sent that the bulk pricing package
   # will be upgraded in 30 days
-  packageDomainLimitWarningEmailBody: >
+  bulkPackageDomainLimitWarningEmailBody: >
     Dear Support,
     
-    A package has exceeded its max domain limit. Please send a warning to the 
-    registrar that their package will be upgraded to the next tier in 30 days if 
+    A bulk pricing package has exceeded its max domain limit. Please send a warning to the 
+    registrar that their bulk pricing package will be upgraded to the next tier in 30 days if 
     the number of active domains does not return below the limit.
     
-    Package ID: %1$s
-    Package Token: %2$s
+    Bulk Pricing ID: %1$s
+    Bulk Token: %2$s
     Registrar: %3$s
     Active Domain Limit: %4$s
     Current Active Domains: %5$s
 
-  # Email subject text to notify support that a package has exceeded the limit
+  # Email subject text to notify support that a bulk pricing package has exceeded the limit
   # for current active domains for more than 30 days and needs to be upgraded
-  packageDomainLimitUpgradeEmailSubject: "ACTION REQUIRED: Package has exceeded the domain limit - upgrade package"
-  # Email body text template to inform support that a package has exceeded the
+  bulkPackageDomainLimitUpgradeEmailSubject: "ACTION REQUIRED: Bulk pricing package has exceeded the domain limit - upgrade package"
+  # Email body text template to inform support that a bulk pricing package has exceeded the
   # limit for active domains for more than 30 days and needs to be upgraded
-  packageDomainLimitUpgradeEmailBody: >
+  bulkPackageDomainLimitUpgradeEmailBody: >
     Dear Support,
     
-    A package has exceeded its max domain limit for over 30 days and needs to be 
+    A bulk pricing package has exceeded its max domain limit for over 30 days and needs to be 
     upgraded to the next tier.
     
-    Package ID: %1$s
-    Package Token: %2$s
+    Bulk Pricing ID: %1$s
+    Bulk Token: %2$s
     Registrar: %3$s
     Active Domain Limit: %4$s
     Current Active Domains: %5$s
