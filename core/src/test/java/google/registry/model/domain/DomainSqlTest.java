@@ -152,7 +152,7 @@ public class DomainSqlTest {
   }
 
   @Test
-  void testDomainBasePersistenceWithCurrentPackageToken() {
+  void testDomainBasePersistenceWithCurrentBulkToken() {
     persistResource(allocationToken);
     domain = domain.asBuilder().setCurrentBulkToken(allocationToken.createVKey()).build();
     persistDomain();

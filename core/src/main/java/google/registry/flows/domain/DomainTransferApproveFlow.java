@@ -172,7 +172,7 @@ public final class DomainTransferApproveFlow implements TransactionalFlow {
                                 Tld.get(tldStr),
                                 targetId,
                                 transferData.getTransferRequestTime(),
-                                // When removing a domain from a package it should return to the
+                                // When removing a domain from bulk pricing it should return to the
                                 // default recurrence billing behavior so the existing recurrence
                                 // billing event should not be passed in.
                                 hasBulkToken ? null : existingBillingRecurrence)

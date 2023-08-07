@@ -1249,7 +1249,7 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
   }
 
   @Test
-  void testFailsPackageDomainInvalidAllocationToken() throws Exception {
+  void testFailsBulkPricingDomainInvalidAllocationToken() throws Exception {
     AllocationToken token =
         persistResource(
             new AllocationToken.Builder()
@@ -1273,7 +1273,7 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
   }
 
   @Test
-  void testFailsToRenewPackageDomainNoRemoveDomainToken() throws Exception {
+  void testFailsToRenewBulkPricingDomainNoRemoveDomainToken() throws Exception {
     AllocationToken token =
         persistResource(
             new AllocationToken.Builder()
@@ -1295,7 +1295,7 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
   }
 
   @Test
-  void testFailsToRenewNonPackageDomainWithRemoveDomainToken() throws Exception {
+  void testFailsToRenewNonBulkPricingDomainWithRemoveDomainToken() throws Exception {
     persistDomain();
 
     setEppInput(
@@ -1330,7 +1330,7 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
         2,
         ImmutableMap.of("DOMAIN", "example.tld", "EXDATE", "2002-04-03T22:00:00Z"));
 
-    // We still need to verify that package token is removed as it's not being tested as a part of
+    // We still need to verify that the bulk token is removed as it's not being tested as a part of
     // doSuccessfulTest
     Domain domain = reloadResourceByForeignKey();
     Truth8.assertThat(domain.getCurrentBulkToken()).isEmpty();

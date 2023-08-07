@@ -155,12 +155,12 @@ public final class DomainInfoFlow implements Flow {
     if (!gracePeriodStatuses.isEmpty()) {
       extensions.add(RgpInfoExtension.create(gracePeriodStatuses));
     }
-    Optional<BulkTokenExtension> packageInfo =
+    Optional<BulkTokenExtension> bulkPricingInfo =
         eppInput.getSingleExtension(BulkTokenExtension.class);
-    if (packageInfo.isPresent()) {
-      // Package info was requested.
+    if (bulkPricingInfo.isPresent()) {
+      // Bulk pricing info was requested.
       if (isSuperuser || registrarId.equals(domain.getCurrentSponsorRegistrarId())) {
-        // Only show package info to owning registrar or superusers
+        // Only show bulk pricing info to owning registrar or superusers
         extensions.add(BulkTokenResponseExtension.create(domain.getCurrentBulkToken()));
       }
     }
