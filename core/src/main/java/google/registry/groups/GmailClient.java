@@ -16,17 +16,21 @@ package google.registry.groups;
 
 import static com.google.common.collect.Iterables.toArray;
 
+import com.google.api.client.http.HttpResponseException;
 import com.google.api.services.gmail.Gmail;
 import com.google.api.services.gmail.model.Message;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.net.MediaType;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.util.EmailMessage;
 import google.registry.util.EmailMessage.Attachment;
+import google.registry.util.Retrier;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.Properties;
+import java.util.function.Predicate;
 import javax.inject.Inject;
 import javax.mail.Address;
 import javax.mail.BodyPart;
@@ -38,23 +42,25 @@ import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeBodyPart;
 import javax.mail.internet.MimeMessage;
 import javax.mail.internet.MimeMultipart;
-import org.apache.commons.codec.binary.Base64;
 
 /** Sends {@link EmailMessage EmailMessages} through Google Workspace using {@link Gmail}. */
 public final class GmailClient {
 
   private final Gmail gmail;
+  private final Retrier retrier;
   private final InternetAddress outgoingEmailAddressWithUsername;
   private final InternetAddress replyToEmailAddress;
 
   @Inject
   GmailClient(
       Gmail gmail,
+      Retrier retrier,
       @Config("gSuiteNewOutgoingEmailAddress") String gSuiteOutgoingEmailAddress,
       @Config("gSuiteOutgoingEmailDisplayName") String gSuiteOutgoingEmailDisplayName,
       @Config("replyToEmailAddress") InternetAddress replyToEmailAddress) {
 
     this.gmail = gmail;
+    this.retrier = retrier;
     this.replyToEmailAddress = replyToEmailAddress;
     try {
       this.outgoingEmailAddressWithUsername =
@@ -73,12 +79,11 @@ public final class GmailClient {
   @CanIgnoreReturnValue
   public Message sendEmail(EmailMessage emailMessage) {
     Message message = toGmailMessage(toMimeMessage(emailMessage));
-    try {
-      // "me" is reserved word for the authorized user of the Gmail API.
-      return gmail.users().messages().send("me", message).execute();
-    } catch (IOException e) {
-      throw new EmailException(e);
-    }
+    // Unlike other Cloud APIs such as GCS and SecretManager, Gmail does not retry on errors.
+    return retrier.callWithRetry(
+        // "me" is reserved word for the authorized user of the Gmail API.
+        () -> this.gmail.users().messages().send("me", message).execute(),
+        RetriableGmailExceptionPredicate.INSTANCE);
   }
 
   static Message toGmailMessage(MimeMessage message) {
@@ -86,10 +91,7 @@ public final class GmailClient {
       ByteArrayOutputStream buffer = new ByteArrayOutputStream();
       message.writeTo(buffer);
       byte[] rawMessageBytes = buffer.toByteArray();
-      String encodedEmail = Base64.encodeBase64URLSafeString(rawMessageBytes);
-      Message gmailMessage = new Message();
-      gmailMessage.setRaw(encodedEmail);
-      return gmailMessage;
+      return new Message().encodeRaw(rawMessageBytes);
     } catch (MessagingException | IOException e) {
       throw new EmailException(e);
     }
@@ -133,6 +135,43 @@ public final class GmailClient {
 
     public EmailException(Throwable cause) {
       super(cause);
+    }
+  }
+
+  /**
+   * Determines if a Gmail API exception may be retried.
+   *
+   * <p>See <a href="https://developers.google.com/gmail/api/guides/handle-errors">online doc</a>
+   * for details.
+   */
+  static class RetriableGmailExceptionPredicate implements Predicate<Throwable> {
+
+    static RetriableGmailExceptionPredicate INSTANCE = new RetriableGmailExceptionPredicate();
+
+    private static final int USAGE_LIMIT_EXCEEDED = 403;
+    private static final int TOO_MANY_REQUESTS = 429;
+    private static final int BACKEND_ERROR = 500;
+
+    private static final ImmutableSet<String> TRANSIENT_OVERAGE_REASONS =
+        ImmutableSet.of("userRateLimitExceeded", "rateLimitExceeded");
+
+    @Override
+    public boolean test(Throwable e) {
+      if (e instanceof HttpResponseException) {
+        return testHttpResponse((HttpResponseException) e);
+      }
+      return true;
+    }
+
+    private boolean testHttpResponse(HttpResponseException e) {
+      int statusCode = e.getStatusCode();
+      if (statusCode == TOO_MANY_REQUESTS || statusCode == BACKEND_ERROR) {
+        return true;
+      }
+      if (statusCode == USAGE_LIMIT_EXCEEDED) {
+        return TRANSIENT_OVERAGE_REASONS.contains(e.getStatusMessage());
+      }
+      return false;
     }
   }
 }
