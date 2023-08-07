@@ -154,9 +154,9 @@ public final class DomainTransferApproveFlow implements TransactionalFlow {
         tm().loadByKey(existingDomain.getAutorenewBillingEvent());
     HistoryEntryId domainHistoryId = createHistoryEntryId(existingDomain);
     historyBuilder.setRevisionId(domainHistoryId.getRevisionId());
-    boolean hasPackageToken = existingDomain.getCurrentPackageToken().isPresent();
+    boolean hasBulkToken = existingDomain.getCurrentBulkToken().isPresent();
     Money renewalPrice =
-        hasPackageToken ? null : existingBillingRecurrence.getRenewalPrice().orElse(null);
+        hasBulkToken ? null : existingBillingRecurrence.getRenewalPrice().orElse(null);
     Optional<BillingEvent> billingEvent =
         transferData.getTransferPeriod().getValue() == 0
             ? Optional.empty()
@@ -175,7 +175,7 @@ public final class DomainTransferApproveFlow implements TransactionalFlow {
                                 // When removing a domain from a package it should return to the
                                 // default recurrence billing behavior so the existing recurrence
                                 // billing event should not be passed in.
-                                hasPackageToken ? null : existingBillingRecurrence)
+                                hasBulkToken ? null : existingBillingRecurrence)
                             .getRenewCost())
                     .setEventTime(now)
                     .setBillingTime(now.plus(Tld.get(tldStr).getTransferGracePeriodLength()))
@@ -213,7 +213,7 @@ public final class DomainTransferApproveFlow implements TransactionalFlow {
             .setRegistrarId(gainingRegistrarId)
             .setEventTime(newExpirationTime)
             .setRenewalPriceBehavior(
-                hasPackageToken
+                hasBulkToken
                     ? RenewalPriceBehavior.DEFAULT
                     : existingBillingRecurrence.getRenewalPriceBehavior())
             .setRenewalPrice(renewalPrice)
@@ -258,9 +258,9 @@ public final class DomainTransferApproveFlow implements TransactionalFlow {
                     .orElseGet(ImmutableSet::of))
             .setLastEppUpdateTime(now)
             .setLastEppUpdateRegistrarId(registrarId)
-            // Even if the existing domain had a package token, that package token should be removed
+            // Even if the existing domain had a bulk token, that bulk token should be removed
             // on transfer
-            .setCurrentPackageToken(null)
+            .setCurrentBulkToken(null)
             .build();
 
     Tld tld = Tld.get(existingDomain.getTld());
