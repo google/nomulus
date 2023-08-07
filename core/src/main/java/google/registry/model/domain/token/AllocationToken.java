@@ -137,8 +137,8 @@ public class AllocationToken extends UpdateAutoTimestampEntity implements Builda
     /** No special behavior */
     DEFAULT,
     /**
-     * REMOVE_DOMAIN triggers domain removal from promotional bulk (package) pricing, bypasses
-     * DEFAULT token validations.
+     * REMOVE_DOMAIN triggers domain removal from a bulk pricing package, bypasses DEFAULT token
+     * validations.
      */
     REMOVE_DOMAIN
   }
@@ -346,10 +346,10 @@ public class AllocationToken extends UpdateAutoTimestampEntity implements Builda
       checkArgument(
           !getInstance().tokenType.equals(TokenType.BULK)
               || getInstance().renewalPriceBehavior.equals(RenewalPriceBehavior.SPECIFIED),
-          "Package tokens must have renewalPriceBehavior set to SPECIFIED");
+          "Bulk tokens must have renewalPriceBehavior set to SPECIFIED");
       checkArgument(
           !getInstance().tokenType.equals(TokenType.BULK) || !getInstance().discountPremiums,
-          "Package tokens cannot discount premium names");
+          "Bulk tokens cannot discount premium names");
       checkArgument(
           getInstance().domainName == null || TokenType.SINGLE_USE.equals(getInstance().tokenType),
           "Domain name can only be specified for SINGLE_USE tokens");
@@ -361,7 +361,7 @@ public class AllocationToken extends UpdateAutoTimestampEntity implements Builda
           getInstance().tokenType != TokenType.BULK
               || (getInstance().allowedClientIds != null
                   && getInstance().allowedClientIds.size() == 1),
-          "PACKAGE tokens must have exactly one allowed client registrar");
+          "BULK tokens must have exactly one allowed client registrar");
       checkArgument(
           getInstance().discountFraction > 0 || !getInstance().discountPremiums,
           "Discount premiums can only be specified along with a discount fraction");

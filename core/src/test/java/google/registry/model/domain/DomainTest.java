@@ -812,7 +812,7 @@ public class DomainTest {
   }
 
   @Test
-  void testClone_removesPackageFromTransferredDomain() {
+  void testClone_removesBulkTokenFromTransferredDomain() {
     // If the transfer implicitly succeeded, the expiration time should be extended even if it
     // hadn't already expired
     DateTime now = DateTime.now(UTC);
@@ -876,7 +876,7 @@ public class DomainTest {
   }
 
   @Test
-  void testClone_doesNotRemovePackageForPendingTransfer() {
+  void testClone_doesNotRemoveBulkTokenForPendingTransfer() {
     // Pending transfers shouldn't affect the expiration time
     DateTime now = DateTime.now(UTC);
     DateTime transferExpirationTime = now.plusDays(1);
@@ -1043,7 +1043,7 @@ public class DomainTest {
   }
 
   @Test
-  void testFail_currentBulkTokenWrongPackageType() {
+  void testFail_currentBulkTokenWrongTokenType() {
     AllocationToken allocationToken =
         persistResource(
             new AllocationToken.Builder().setToken("abc123").setTokenType(SINGLE_USE).build());
@@ -1073,7 +1073,7 @@ public class DomainTest {
   }
 
   @Test
-  void testSuccess_removeCurrentPackageToken() {
+  void testSuccess_removeCurrentBulkToken() {
     AllocationToken allocationToken =
         persistResource(
             new AllocationToken.Builder()

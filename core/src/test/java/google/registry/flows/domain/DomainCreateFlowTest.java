@@ -3673,7 +3673,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
   }
 
   @Test
-  void testSuccess_packageToken_addsTokenToDomain() throws Exception {
+  void testSuccess_bulkToken_addsTokenToDomain() throws Exception {
     AllocationToken token =
         persistResource(
             new AllocationToken.Builder()
