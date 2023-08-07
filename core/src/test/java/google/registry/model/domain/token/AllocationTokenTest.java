@@ -218,7 +218,7 @@ public class AllocationTokenTest extends EntityTestCase {
   }
 
   @Test
-  void testFail_packageTokenNotSpecifiedRenewalBehavior() {
+  void testFail_bulkTokenNotSpecifiedRenewalBehavior() {
     AllocationToken.Builder builder =
         new AllocationToken.Builder()
             .setToken("abc123")
@@ -227,11 +227,11 @@ public class AllocationTokenTest extends EntityTestCase {
     IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class, builder::build);
     assertThat(thrown)
         .hasMessageThat()
-        .isEqualTo("Package tokens must have renewalPriceBehavior set to SPECIFIED");
+        .isEqualTo("Bulk tokens must have renewalPriceBehavior set to SPECIFIED");
   }
 
   @Test
-  void testFail_packageTokenDiscountPremium() {
+  void testFail_bulkTokenDiscountPremium() {
     AllocationToken.Builder builder =
         new AllocationToken.Builder()
             .setToken("abc123")
@@ -239,7 +239,7 @@ public class AllocationTokenTest extends EntityTestCase {
             .setRenewalPriceBehavior(RenewalPriceBehavior.SPECIFIED)
             .setDiscountPremiums(true);
     IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class, builder::build);
-    assertThat(thrown).hasMessageThat().isEqualTo("Package tokens cannot discount premium names");
+    assertThat(thrown).hasMessageThat().isEqualTo("Bulk tokens cannot discount premium names");
   }
 
   @Test
@@ -292,7 +292,7 @@ public class AllocationTokenTest extends EntityTestCase {
   }
 
   @Test
-  void testBuild_onlyOneClientInPackage() {
+  void testBuild_onlyOneClientInBulkPricingPackage() {
     Buildable.Builder<AllocationToken> builder =
         new AllocationToken.Builder()
             .setToken("foobar")
@@ -302,7 +302,7 @@ public class AllocationTokenTest extends EntityTestCase {
     IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class, builder::build);
     assertThat(thrown)
         .hasMessageThat()
-        .isEqualTo("PACKAGE tokens must have exactly one allowed client registrar");
+        .isEqualTo("BULK tokens must have exactly one allowed client registrar");
   }
 
   @Test

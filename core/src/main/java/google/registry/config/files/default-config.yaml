@@ -553,12 +553,12 @@ sslCertificateValidation:
     - secp256r1
     - secp384r1
 
-# Configuration options for the bulk package compliance monitoring
-bulkPackageMonitoring:
+# Configuration options for the bulk pricing package compliance monitoring
+bulkPricingPackageMonitoring:
   # Email subject text to notify tech support that a bulk pricing package has exceeded the limit for domain creates
-  bulkPackageCreateLimitEmailSubject: "ACTION REQUIRED: Bulk pricing package needs to be upgraded"
+  bulkPricingPackageCreateLimitEmailSubject: "ACTION REQUIRED: Bulk pricing package needs to be upgraded"
   # Email body text template notify support that a bulk pricing package has exceeded the limit for domain creates
-  bulkPackageCreateLimitEmailBody: >
+  bulkPricingPackageCreateLimitEmailBody: >
     Dear Support,
     
     A bulk pricing package has exceeded its max create limit and needs to be upgraded to the 
@@ -572,11 +572,11 @@ bulkPackageMonitoring:
 
   # Email subject text to notify support that a bulk pricing package has exceeded the limit
   # for current active domains and a warning needs to be sent
-  bulkPackageDomainLimitWarningEmailSubject: "ACTION REQUIRED: Bulk pricing package has exceeded the domain limit - send warning"
+  bulkPricingPackageDomainLimitWarningEmailSubject: "ACTION REQUIRED: Bulk pricing package has exceeded the domain limit - send warning"
   # Email body text template to inform support that a bulk pricing package has exceeded the
   # limit for active domains and a warning needs to be sent that the bulk pricing package
   # will be upgraded in 30 days
-  bulkPackageDomainLimitWarningEmailBody: >
+  bulkPricingPackageDomainLimitWarningEmailBody: >
     Dear Support,
     
     A bulk pricing package has exceeded its max domain limit. Please send a warning to the 
@@ -591,10 +591,10 @@ bulkPackageMonitoring:
 
   # Email subject text to notify support that a bulk pricing package has exceeded the limit
   # for current active domains for more than 30 days and needs to be upgraded
-  bulkPackageDomainLimitUpgradeEmailSubject: "ACTION REQUIRED: Bulk pricing package has exceeded the domain limit - upgrade package"
+  bulkPricingPackageDomainLimitUpgradeEmailSubject: "ACTION REQUIRED: Bulk pricing package has exceeded the domain limit - upgrade package"
   # Email body text template to inform support that a bulk pricing package has exceeded the
   # limit for active domains for more than 30 days and needs to be upgraded
-  bulkPackageDomainLimitUpgradeEmailBody: >
+  bulkPricingPackageDomainLimitUpgradeEmailBody: >
     Dear Support,
     
     A bulk pricing package has exceeded its max domain limit for over 30 days and needs to be 

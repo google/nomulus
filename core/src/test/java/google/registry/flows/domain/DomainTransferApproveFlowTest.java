@@ -382,7 +382,7 @@ class DomainTransferApproveFlowTest
   }
 
   @Test
-  void testDryRun_PackageDomain() throws Exception {
+  void testDryRun_bulkPricingDomain() throws Exception {
     AllocationToken allocationToken =
         persistResource(
             new AllocationToken.Builder()
@@ -410,7 +410,7 @@ class DomainTransferApproveFlowTest
   }
 
   @Test
-  void testSuccess_removesPackageToken() throws Exception {
+  void testSuccess_removesBulkToken() throws Exception {
     AllocationToken allocationToken =
         persistResource(
             new AllocationToken.Builder()
