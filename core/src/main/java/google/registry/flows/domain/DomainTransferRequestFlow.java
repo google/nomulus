@@ -201,7 +201,7 @@ public final class DomainTransferRequestFlow implements TransactionalFlow {
     Optional<FeesAndCredits> feesAndCredits;
     if (period.getValue() == 0) {
       feesAndCredits = Optional.empty();
-    } else if (!existingDomain.getCurrentPackageToken().isPresent()) {
+    } else if (!existingDomain.getCurrentBulkToken().isPresent()) {
       feesAndCredits =
           Optional.of(pricingLogic.getTransferPrice(tld, targetId, now, existingBillingRecurrence));
     } else {

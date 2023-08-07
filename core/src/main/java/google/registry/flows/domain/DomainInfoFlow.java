@@ -161,7 +161,7 @@ public final class DomainInfoFlow implements Flow {
       // Package info was requested.
       if (isSuperuser || registrarId.equals(domain.getCurrentSponsorRegistrarId())) {
         // Only show package info to owning registrar or superusers
-        extensions.add(BulkTokenResponseExtension.create(domain.getCurrentPackageToken()));
+        extensions.add(BulkTokenResponseExtension.create(domain.getCurrentBulkToken()));
       }
     }
     Optional<FeeInfoCommandExtensionV06> feeInfo =
