@@ -77,8 +77,8 @@ import google.registry.flows.domain.token.AllocationTokenFlowUtils.AllocationTok
 import google.registry.flows.domain.token.AllocationTokenFlowUtils.AllocationTokenNotValidForTldException;
 import google.registry.flows.domain.token.AllocationTokenFlowUtils.AlreadyRedeemedAllocationTokenException;
 import google.registry.flows.domain.token.AllocationTokenFlowUtils.InvalidAllocationTokenException;
-import google.registry.flows.domain.token.AllocationTokenFlowUtils.MissingRemoveDomainTokenOnPackageDomainException;
-import google.registry.flows.domain.token.AllocationTokenFlowUtils.RemoveDomainTokenOnNonPackageDomainException;
+import google.registry.flows.domain.token.AllocationTokenFlowUtils.MissingRemoveDomainTokenOnBulkPricingDomainException;
+import google.registry.flows.domain.token.AllocationTokenFlowUtils.RemoveDomainTokenOnNonBulkPricingDomainException;
 import google.registry.flows.exceptions.ResourceStatusProhibitsOperationException;
 import google.registry.model.billing.BillingBase.Flag;
 import google.registry.model.billing.BillingBase.Reason;
@@ -1261,17 +1261,14 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
                 .build());
     persistDomain();
     persistResource(
-        reloadResourceByForeignKey()
-            .asBuilder()
-            .setCurrentPackageToken(token.createVKey())
-            .build());
+        reloadResourceByForeignKey().asBuilder().setCurrentBulkToken(token.createVKey()).build());
 
     setEppInput(
         "domain_renew_allocationtoken.xml",
         ImmutableMap.of("DOMAIN", "example.tld", "YEARS", "2", "TOKEN", "abc123"));
 
     EppException thrown =
-        assertThrows(MissingRemoveDomainTokenOnPackageDomainException.class, this::runFlow);
+        assertThrows(MissingRemoveDomainTokenOnBulkPricingDomainException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
@@ -1288,15 +1285,12 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
                 .build());
     persistDomain();
     persistResource(
-        reloadResourceByForeignKey()
-            .asBuilder()
-            .setCurrentPackageToken(token.createVKey())
-            .build());
+        reloadResourceByForeignKey().asBuilder().setCurrentBulkToken(token.createVKey()).build());
 
     setEppInput("domain_renew.xml", ImmutableMap.of("DOMAIN", "example.tld", "YEARS", "5"));
 
     EppException thrown =
-        assertThrows(MissingRemoveDomainTokenOnPackageDomainException.class, this::runFlow);
+        assertThrows(MissingRemoveDomainTokenOnBulkPricingDomainException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
@@ -1309,7 +1303,7 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
         ImmutableMap.of("DOMAIN", "example.tld", "YEARS", "2", "TOKEN", "__REMOVEDOMAIN__"));
 
     EppException thrown =
-        assertThrows(RemoveDomainTokenOnNonPackageDomainException.class, this::runFlow);
+        assertThrows(RemoveDomainTokenOnNonBulkPricingDomainException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
@@ -1326,10 +1320,7 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
                 .build());
     persistDomain(SPECIFIED, Money.of(USD, 2));
     persistResource(
-        reloadResourceByForeignKey()
-            .asBuilder()
-            .setCurrentPackageToken(token.createVKey())
-            .build());
+        reloadResourceByForeignKey().asBuilder().setCurrentBulkToken(token.createVKey()).build());
     setEppInput(
         "domain_renew_allocationtoken.xml",
         ImmutableMap.of("DOMAIN", "example.tld", "YEARS", "2", "TOKEN", "__REMOVEDOMAIN__"));
@@ -1342,7 +1333,7 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
     // We still need to verify that package token is removed as it's not being tested as a part of
     // doSuccessfulTest
     Domain domain = reloadResourceByForeignKey();
-    Truth8.assertThat(domain.getCurrentPackageToken()).isEmpty();
+    Truth8.assertThat(domain.getCurrentBulkToken()).isEmpty();
   }
 
   @Test
@@ -1358,10 +1349,7 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
                 .build());
     persistDomain(SPECIFIED, Money.of(USD, 2));
     persistResource(
-        reloadResourceByForeignKey()
-            .asBuilder()
-            .setCurrentPackageToken(token.createVKey())
-            .build());
+        reloadResourceByForeignKey().asBuilder().setCurrentBulkToken(token.createVKey()).build());
 
     setEppInput(
         "domain_renew_allocationtoken.xml",

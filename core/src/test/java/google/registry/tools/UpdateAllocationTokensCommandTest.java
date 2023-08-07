@@ -371,7 +371,7 @@ class UpdateAllocationTokensCommandTest extends CommandTestCase<UpdateAllocation
   }
 
   @Test
-  void testUpdateStatusTransitions_endPackageTokenWithActiveDomainsFails() throws Exception {
+  void testUpdateStatusTransitions_endBulkTokenWithActiveDomainsFails() throws Exception {
     DateTime now = fakeClock.nowUtc();
     AllocationToken token =
         persistResource(
@@ -390,7 +390,7 @@ class UpdateAllocationTokensCommandTest extends CommandTestCase<UpdateAllocation
     persistResource(
         persistActiveDomain("example.tld")
             .asBuilder()
-            .setCurrentPackageToken(token.createVKey())
+            .setCurrentBulkToken(token.createVKey())
             .build());
     IllegalArgumentException thrown =
         assertThrows(
@@ -406,8 +406,8 @@ class UpdateAllocationTokensCommandTest extends CommandTestCase<UpdateAllocation
     assertThat(thrown)
         .hasMessageThat()
         .isEqualTo(
-            "Package token token can not end its promotion because it still has 1 domains in the"
-                + " package");
+            "Bulk token token can not end its promotion because it still has 1 domains in the"
+                + " promotion");
   }
 
   @Test

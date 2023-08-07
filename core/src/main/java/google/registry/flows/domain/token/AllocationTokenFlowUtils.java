@@ -242,19 +242,19 @@ public class AllocationTokenFlowUtils {
   public static void verifyTokenAllowedOnDomain(
       Domain domain, Optional<AllocationToken> allocationToken) throws EppException {
 
-    boolean domainHasPackageToken = domain.getCurrentPackageToken().isPresent();
+    boolean domainHasBulkToken = domain.getCurrentBulkToken().isPresent();
     boolean hasRemoveDomainToken =
         allocationToken.isPresent()
             && TokenBehavior.REMOVE_DOMAIN.equals(allocationToken.get().getTokenBehavior());
 
-    if (hasRemoveDomainToken && !domainHasPackageToken) {
-      throw new RemoveDomainTokenOnNonPackageDomainException();
-    } else if (!hasRemoveDomainToken && domainHasPackageToken) {
-      throw new MissingRemoveDomainTokenOnPackageDomainException();
+    if (hasRemoveDomainToken && !domainHasBulkToken) {
+      throw new RemoveDomainTokenOnNonBulkPricingDomainException();
+    } else if (!hasRemoveDomainToken && domainHasBulkToken) {
+      throw new MissingRemoveDomainTokenOnBulkPricingDomainException();
     }
   }
 
-  public static Domain maybeApplyPackageRemovalToken(
+  public static Domain maybeApplyBulkPricingRemovalToken(
       Domain domain, Optional<AllocationToken> allocationToken) {
     if (!allocationToken.isPresent()
         || !TokenBehavior.REMOVE_DOMAIN.equals(allocationToken.get().getTokenBehavior())) {
@@ -274,10 +274,10 @@ public class AllocationTokenFlowUtils {
     tm().getEntityManager().flush();
     tm().getEntityManager().clear();
 
-    // Remove current package token
+    // Remove current bulk token
     return domain
         .asBuilder()
-        .setCurrentPackageToken(null)
+        .setCurrentBulkToken(null)
         .setAutorenewBillingEvent(newBillingRecurrence.createVKey())
         .build();
   }
@@ -338,19 +338,19 @@ public class AllocationTokenFlowUtils {
     }
   }
 
-  /** The __REMOVEDOMAIN__ token is missing on a package domain command */
-  public static class MissingRemoveDomainTokenOnPackageDomainException
+  /** The __REMOVEDOMAIN__ token is missing on a bulk pricing domain command */
+  public static class MissingRemoveDomainTokenOnBulkPricingDomainException
       extends AssociationProhibitsOperationException {
-    MissingRemoveDomainTokenOnPackageDomainException() {
-      super("Domains that are inside packages cannot be explicitly renewed or transferred");
+    MissingRemoveDomainTokenOnBulkPricingDomainException() {
+      super("Domains that are inside bulk pricing cannot be explicitly renewed or transferred");
     }
   }
 
-  /** The __REMOVEDOMAIN__ token is not allowed on non package domains */
-  public static class RemoveDomainTokenOnNonPackageDomainException
+  /** The __REMOVEDOMAIN__ token is not allowed on non bulk pricing domains */
+  public static class RemoveDomainTokenOnNonBulkPricingDomainException
       extends AssociationProhibitsOperationException {
-    RemoveDomainTokenOnNonPackageDomainException() {
-      super("__REMOVEDOMAIN__ token is not allowed on non package domains");
+    RemoveDomainTokenOnNonBulkPricingDomainException() {
+      super("__REMOVEDOMAIN__ token is not allowed on non bulk pricing domains");
     }
   }
 }
