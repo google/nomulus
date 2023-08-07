@@ -344,7 +344,7 @@ class UpdateAllocationTokensCommandTest extends CommandTestCase<UpdateAllocation
   }
 
   @Test
-  void testUpdateStatusTransitions_endPackageTokenNoDomains() throws Exception {
+  void testUpdateStatusTransitions_endBulkTokenNoDomains() throws Exception {
     DateTime now = fakeClock.nowUtc();
     AllocationToken token =
         persistResource(

@@ -48,12 +48,12 @@ public class CheckBulkComplianceAction implements Runnable {
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
   private final SendEmailUtils sendEmailUtils;
   private final Clock clock;
-  private final String bulkPackageCreateLimitEmailSubject;
-  private final String bulkPackageDomainLimitWarningEmailSubject;
-  private final String bulkPackageDomainLimitUpgradeEmailSubject;
-  private final String bulkPackageCreateLimitEmailBody;
-  private final String bulkPackageDomainLimitWarningEmailBody;
-  private final String bulkPackageDomainLimitUpgradeEmailBody;
+  private final String bulkPricingPackageCreateLimitEmailSubject;
+  private final String bulkPricingPackageDomainLimitWarningEmailSubject;
+  private final String bulkPricingPackageDomainLimitUpgradeEmailSubject;
+  private final String bulkPricingPackageCreateLimitEmailBody;
+  private final String bulkPricingPackageDomainLimitWarningEmailBody;
+  private final String bulkPricingPackageDomainLimitUpgradeEmailBody;
   private final String registrySupportEmail;
   private static final int THIRTY_DAYS = 30;
   private static final int FORTY_DAYS = 40;
@@ -62,25 +62,31 @@ public class CheckBulkComplianceAction implements Runnable {
   public CheckBulkComplianceAction(
       SendEmailUtils sendEmailUtils,
       Clock clock,
-      @Config("bulkPackageCreateLimitEmailSubject") String bulkPackageCreateLimitEmailSubject,
-      @Config("bulkPackageDomainLimitWarningEmailSubject")
-          String bulkPackageDomainLimitWarningEmailSubject,
-      @Config("bulkPackageDomainLimitUpgradeEmailSubject")
-          String bulkPackageDomainLimitUpgradeEmailSubject,
-      @Config("bulkPackageCreateLimitEmailBody") String bulkPackageCreateLimitEmailBody,
-      @Config("bulkPackageDomainLimitWarningEmailBody")
-          String bulkPackageDomainLimitWarningEmailBody,
-      @Config("bulkPackageDomainLimitUpgradeEmailBody")
-          String bulkPackageDomainLimitUpgradeEmailBody,
+      @Config("bulkPricingPackageCreateLimitEmailSubject")
+          String bulkPricingPackageCreateLimitEmailSubject,
+      @Config("bulkPricingPackageDomainLimitWarningEmailSubject")
+          String bulkPricingPackageDomainLimitWarningEmailSubject,
+      @Config("bulkPricingPackageDomainLimitUpgradeEmailSubject")
+          String bulkPricingPackageDomainLimitUpgradeEmailSubject,
+      @Config("bulkPricingPackageCreateLimitEmailBody")
+          String bulkPricingPackageCreateLimitEmailBody,
+      @Config("bulkPricingPackageDomainLimitWarningEmailBody")
+          String bulkPricingPackageDomainLimitWarningEmailBody,
+      @Config("bulkPricingPackageDomainLimitUpgradeEmailBody")
+          String bulkPricingPackageDomainLimitUpgradeEmailBody,
       @Config("registrySupportEmail") String registrySupportEmail) {
     this.sendEmailUtils = sendEmailUtils;
     this.clock = clock;
-    this.bulkPackageCreateLimitEmailSubject = bulkPackageCreateLimitEmailSubject;
-    this.bulkPackageDomainLimitWarningEmailSubject = bulkPackageDomainLimitWarningEmailSubject;
-    this.bulkPackageDomainLimitUpgradeEmailSubject = bulkPackageDomainLimitUpgradeEmailSubject;
-    this.bulkPackageCreateLimitEmailBody = bulkPackageCreateLimitEmailBody;
-    this.bulkPackageDomainLimitWarningEmailBody = bulkPackageDomainLimitWarningEmailBody;
-    this.bulkPackageDomainLimitUpgradeEmailBody = bulkPackageDomainLimitUpgradeEmailBody;
+    this.bulkPricingPackageCreateLimitEmailSubject = bulkPricingPackageCreateLimitEmailSubject;
+    this.bulkPricingPackageDomainLimitWarningEmailSubject =
+        bulkPricingPackageDomainLimitWarningEmailSubject;
+    this.bulkPricingPackageDomainLimitUpgradeEmailSubject =
+        bulkPricingPackageDomainLimitUpgradeEmailSubject;
+    this.bulkPricingPackageCreateLimitEmailBody = bulkPricingPackageCreateLimitEmailBody;
+    this.bulkPricingPackageDomainLimitWarningEmailBody =
+        bulkPricingPackageDomainLimitWarningEmailBody;
+    this.bulkPricingPackageDomainLimitUpgradeEmailBody =
+        bulkPricingPackageDomainLimitUpgradeEmailBody;
     this.registrySupportEmail = registrySupportEmail;
   }
 
@@ -153,13 +159,14 @@ public class CheckBulkComplianceAction implements Runnable {
       if (registrar.isPresent()) {
         String body =
             String.format(
-                bulkPackageCreateLimitEmailBody,
+                bulkPricingPackageCreateLimitEmailBody,
                 bulkPricingPackage.getId(),
                 bulkToken.getToken(),
                 registrar.get().getRegistrarName(),
                 bulkPricingPackage.getMaxCreates(),
                 overageList.get(bulkPricingPackage));
-        sendNotification(bulkToken, bulkPackageCreateLimitEmailSubject, body, registrar.get());
+        sendNotification(
+            bulkToken, bulkPricingPackageCreateLimitEmailSubject, body, registrar.get());
       } else {
         throw new IllegalStateException(
             String.format("Could not find registrar for bulk token %s", bulkToken));
@@ -200,10 +207,12 @@ public class CheckBulkComplianceAction implements Runnable {
       boolean warning, BulkPricingPackage bulkPricingPackage, long activeDomains) {
     String emailSubject =
         warning
-            ? bulkPackageDomainLimitWarningEmailSubject
-            : bulkPackageDomainLimitUpgradeEmailSubject;
+            ? bulkPricingPackageDomainLimitWarningEmailSubject
+            : bulkPricingPackageDomainLimitUpgradeEmailSubject;
     String emailTemplate =
-        warning ? bulkPackageDomainLimitWarningEmailBody : bulkPackageDomainLimitUpgradeEmailBody;
+        warning
+            ? bulkPricingPackageDomainLimitWarningEmailBody
+            : bulkPricingPackageDomainLimitUpgradeEmailBody;
     AllocationToken bulkToken = tm().loadByKey(bulkPricingPackage.getToken());
     Optional<Registrar> registrar =
         Registrar.loadByRegistrarIdCached(

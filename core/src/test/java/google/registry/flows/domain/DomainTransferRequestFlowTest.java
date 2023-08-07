@@ -1329,7 +1329,7 @@ class DomainTransferRequestFlowTest
   }
 
   @Test
-  void testSuccess_specifiedRenewalPrice_notCarriedOverForPackageName() throws Exception {
+  void testSuccess_specifiedRenewalPrice_notCarriedOverForBulkPricingName() throws Exception {
     setupDomain("example", "tld");
     persistResource(Tld.get("tld").asBuilder().build());
     domain = loadByEntity(domain);
@@ -1388,7 +1388,7 @@ class DomainTransferRequestFlowTest
   }
 
   @Test
-  void testSuccess_defaultRenewalPrice_carriedOverForPackageName() throws Exception {
+  void testSuccess_defaultRenewalPrice_carriedOverForBulkPricingName() throws Exception {
     setupDomain("example", "tld");
     persistResource(Tld.get("tld").asBuilder().build());
     domain = loadByEntity(domain);
@@ -1445,7 +1445,7 @@ class DomainTransferRequestFlowTest
   }
 
   @Test
-  void testSuccess_packageName_zeroPeriod() throws Exception {
+  void testSuccess_bulkPricingName_zeroPeriod() throws Exception {
     setupDomain("example", "tld");
     persistResource(Tld.get("tld").asBuilder().build());
     domain = loadByEntity(domain);

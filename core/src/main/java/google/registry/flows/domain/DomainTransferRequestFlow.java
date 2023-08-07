@@ -205,7 +205,8 @@ public final class DomainTransferRequestFlow implements TransactionalFlow {
       feesAndCredits =
           Optional.of(pricingLogic.getTransferPrice(tld, targetId, now, existingBillingRecurrence));
     } else {
-      // If existing domain is in a package, calculate the transfer price with default renewal price
+      // If existing domain is in a bulk pricing package, calculate the transfer price with default
+      // renewal price
       // behavior
       feesAndCredits =
           period.getValue() == 0
