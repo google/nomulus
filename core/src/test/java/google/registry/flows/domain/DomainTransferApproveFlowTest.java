@@ -398,8 +398,7 @@ class DomainTransferApproveFlowTest
             .setRenewalPriceBehavior(RenewalPriceBehavior.SPECIFIED)
             .setRenewalPrice(Money.of(USD, new BigDecimal("10.00")))
             .build());
-    persistResource(
-        domain.asBuilder().setCurrentPackageToken(allocationToken.createVKey()).build());
+    persistResource(domain.asBuilder().setCurrentBulkToken(allocationToken.createVKey()).build());
     clock.advanceOneMilli();
     setEppInput("domain_transfer_approve_wildcard.xml", ImmutableMap.of("DOMAIN", "example.tld"));
     dryRunFlowAssertResponse(loadFile("domain_transfer_approve_response.xml"));
@@ -427,8 +426,7 @@ class DomainTransferApproveFlowTest
             .setRenewalPriceBehavior(RenewalPriceBehavior.SPECIFIED)
             .setRenewalPrice(Money.of(USD, new BigDecimal("10.00")))
             .build());
-    persistResource(
-        domain.asBuilder().setCurrentPackageToken(allocationToken.createVKey()).build());
+    persistResource(domain.asBuilder().setCurrentBulkToken(allocationToken.createVKey()).build());
     clock.advanceOneMilli();
     setEppInput("domain_transfer_approve_wildcard.xml", ImmutableMap.of("DOMAIN", "example.tld"));
     DateTime now = clock.nowUtc();
@@ -460,7 +458,7 @@ class DomainTransferApproveFlowTest
             .setRenewalPriceBehavior(RenewalPriceBehavior.SPECIFIED)
             .setRenewalPrice(Money.of(USD, new BigDecimal("10.00")))
             .build());
-    assertThat(domain.getCurrentPackageToken()).isEmpty();
+    assertThat(domain.getCurrentBulkToken()).isEmpty();
     assertThat(domain.getCurrentSponsorRegistrarId()).isEqualTo("NewRegistrar");
     assertThat(loadByKey(domain.getAutorenewBillingEvent()).getRenewalPriceBehavior())
         .isEqualTo(RenewalPriceBehavior.DEFAULT);
