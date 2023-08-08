@@ -205,6 +205,7 @@ public class RegistryConfigSettings {
   /** Miscellaneous configuration that doesn't quite fit in anywhere else. */
   public static class Misc {
     public String sheetExportId;
+    public boolean isEmailSendingEnabled;
     public String alertRecipientEmailAddress;
     // TODO(b/279671974): remove below field after migration
     public String newAlertRecipientEmailAddress;

@@ -432,6 +432,9 @@ misc:
   # to. Leave this null to disable syncing.
   sheetExportId: null
 
+  # Whether emails may be sent. For Prod and Sandbox this should be true.
+  isEmailSendingEnabled: false
+
   # Address we send alert summary emails to.
   alertRecipientEmailAddress: email@example.com
 

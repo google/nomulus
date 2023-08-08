@@ -19,12 +19,19 @@ import static com.google.common.net.MediaType.PLAIN_TEXT_UTF_8;
 import static com.google.common.truth.Truth.assertThat;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import com.google.api.client.http.HttpResponseException;
 import com.google.api.services.gmail.Gmail;
+import com.google.api.services.gmail.Gmail.Users;
+import com.google.api.services.gmail.Gmail.Users.Messages;
+import com.google.api.services.gmail.Gmail.Users.Messages.Send;
 import com.google.api.services.gmail.model.Message;
 import google.registry.groups.GmailClient.RetriableGmailExceptionPredicate;
 import google.registry.util.EmailMessage;
@@ -37,7 +44,6 @@ import javax.mail.Part;
 import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
 import javax.mail.internet.MimeMultipart;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -52,17 +58,45 @@ public class GmailClientTest {
 
   @Mock private Gmail gmail;
   @Mock private HttpResponseException httpResponseException;
-  private GmailClient gmailClient;
 
-  @BeforeEach
-  public void setup() throws Exception {
-    gmailClient =
-        new GmailClient(
-            gmail,
-            new Retrier(new SystemSleeper(), 3),
-            "from@example.com",
-            "My sender",
-            new InternetAddress("replyTo@example.com"));
+  private GmailClient getGmailClient(boolean isExternalEmailAllowed) throws Exception {
+    return new GmailClient(
+        gmail,
+        new Retrier(new SystemSleeper(), 3),
+        isExternalEmailAllowed,
+        "from@example.com",
+        "My sender",
+        new InternetAddress("replyTo@example.com"));
+  }
+
+  @Test
+  public void sendEmail_sentWhenAllowed() throws Exception {
+    EmailMessage message =
+        EmailMessage.create(
+            "subject",
+            "body",
+            new InternetAddress("from@example.com"),
+            new InternetAddress("to@example.com"));
+    Send gSend = mock(Send.class);
+    Messages gMessages = mock(Messages.class);
+    Users gUsers = mock(Users.class);
+    when(gmail.users()).thenReturn(gUsers);
+    when(gUsers.messages()).thenReturn(gMessages);
+    when(gMessages.send(anyString(), any())).thenReturn(gSend);
+    getGmailClient(true).sendEmail(message);
+    verify(gmail, times(1)).users();
+  }
+
+  @Test
+  public void sendEmail_notSentWhenNotAllowed() throws Exception {
+    EmailMessage message =
+        EmailMessage.create(
+            "subject",
+            "body",
+            new InternetAddress("from@example.com"),
+            new InternetAddress("to@example.com"));
+    getGmailClient(false).sendEmail(message);
+    verifyNoInteractions(gmail);
   }
 
   @Test
@@ -86,7 +120,7 @@ public class GmailClientTest {
                     .setContentType(CSV_UTF_8)
                     .build())
             .build();
-    MimeMessage mimeMessage = gmailClient.toMimeMessage(emailMessage);
+    MimeMessage mimeMessage = getGmailClient(true).toMimeMessage(emailMessage);
     assertThat(mimeMessage.getFrom()).asList().containsExactly(fromAddr);
     assertThat(mimeMessage.getRecipients(RecipientType.TO)).asList().containsExactly(toAddr);
     assertThat(mimeMessage.getRecipients(RecipientType.CC)).asList().containsExactly(ccAddr);

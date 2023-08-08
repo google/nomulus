@@ -158,6 +158,12 @@ public final class RegistryConfig {
       return config.registryPolicy.contactAndHostRoidSuffix;
     }
 
+    @Provides
+    @Config("isEmailSendingEnabled")
+    public static boolean provideIsEmailSendingEnabled(RegistryConfigSettings config) {
+      return config.misc.isEmailSendingEnabled;
+    }
+
     /**
      * The e-mail address for questions about integrating with the registry. Used in the
      * "contact-us" section of the registrar console.

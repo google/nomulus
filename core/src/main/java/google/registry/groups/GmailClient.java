@@ -14,14 +14,15 @@
 
 package google.registry.groups;
 
+import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.collect.Iterables.toArray;
 
 import com.google.api.client.http.HttpResponseException;
 import com.google.api.services.gmail.Gmail;
 import com.google.api.services.gmail.model.Message;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.flogger.FluentLogger;
 import com.google.common.net.MediaType;
-import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.util.EmailMessage;
 import google.registry.util.EmailMessage.Attachment;
@@ -46,8 +47,11 @@ import javax.mail.internet.MimeMultipart;
 /** Sends {@link EmailMessage EmailMessages} through Google Workspace using {@link Gmail}. */
 public final class GmailClient {
 
+  private static final FluentLogger logger = FluentLogger.forEnclosingClass();
+
   private final Gmail gmail;
   private final Retrier retrier;
+  private final boolean isEmailSendingEnabled;
   private final InternetAddress outgoingEmailAddressWithUsername;
   private final InternetAddress replyToEmailAddress;
 
@@ -55,12 +59,14 @@ public final class GmailClient {
   GmailClient(
       Gmail gmail,
       Retrier retrier,
+      @Config("isEmailSendingEnabled") boolean isEmailSendingEnabled,
       @Config("gSuiteNewOutgoingEmailAddress") String gSuiteOutgoingEmailAddress,
       @Config("gSuiteOutgoingEmailDisplayName") String gSuiteOutgoingEmailDisplayName,
       @Config("replyToEmailAddress") InternetAddress replyToEmailAddress) {
 
     this.gmail = gmail;
     this.retrier = retrier;
+    this.isEmailSendingEnabled = isEmailSendingEnabled;
     this.replyToEmailAddress = replyToEmailAddress;
     try {
       this.outgoingEmailAddressWithUsername =
@@ -76,11 +82,22 @@ public final class GmailClient {
    * <p>If the sender as specified by {@link EmailMessage#from} differs from the caller's identity,
    * the caller must have delegated `send` authority to the sender.
    */
-  @CanIgnoreReturnValue
-  public Message sendEmail(EmailMessage emailMessage) {
+  public void sendEmail(EmailMessage emailMessage) {
+    if (!isEmailSendingEnabled) {
+      logger.atInfo().log(
+          String.format(
+              "Email with subject %s would have been sent to recipients %s",
+              emailMessage.subject().substring(0, Math.min(emailMessage.subject().length(), 15)),
+              String.join(
+                  " , ",
+                  emailMessage.recipients().stream()
+                      .map(ia -> ia.toString())
+                      .collect(toImmutableSet()))));
+      return;
+    }
     Message message = toGmailMessage(toMimeMessage(emailMessage));
     // Unlike other Cloud APIs such as GCS and SecretManager, Gmail does not retry on errors.
-    return retrier.callWithRetry(
+    retrier.callWithRetry(
         // "me" is reserved word for the authorized user of the Gmail API.
         () -> this.gmail.users().messages().send("me", message).execute(),
         RetriableGmailExceptionPredicate.INSTANCE);
