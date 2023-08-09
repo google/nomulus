@@ -16,6 +16,7 @@ package google.registry.tools;
 
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.createTlds;
+import static google.registry.testing.TestDataHelper.loadFile;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.beust.jcommander.ParameterException;
@@ -28,6 +29,7 @@ class GetTldCommandTest extends CommandTestCase<GetTldCommand> {
   void testSuccess() throws Exception {
     createTld("xn--q9jyb4c");
     runCommand("xn--q9jyb4c");
+    assertInStdout(loadFile(getClass(), "tld.yaml"));
   }
 
   @Test
