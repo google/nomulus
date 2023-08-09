@@ -211,6 +211,7 @@ public class Registrar extends UpdateAutoTimestampEntity implements Buildable, J
    */
   @Id
   @Column(nullable = false)
+  @Expose
   String registrarId;
 
   /**
@@ -225,6 +226,7 @@ public class Registrar extends UpdateAutoTimestampEntity implements Buildable, J
    *     Registrars</a>
    */
   @Column(nullable = false)
+  @Expose
   String registrarName;
 
   /** The type of this registrar. */
@@ -240,7 +242,7 @@ public class Registrar extends UpdateAutoTimestampEntity implements Buildable, J
   Set<String> allowedTlds;
 
   /** Host name of WHOIS server. */
-  String whoisServer;
+  @Expose String whoisServer;
 
   /** Base URLs for the registrar's RDAP servers. */
   Set<String> rdapBaseUrls;
@@ -304,6 +306,7 @@ public class Registrar extends UpdateAutoTimestampEntity implements Buildable, J
         name = "countryCode",
         column = @Column(name = "localized_address_country_code"))
   })
+  @Expose
   RegistrarAddress localizedAddress;
 
   /**
@@ -323,13 +326,13 @@ public class Registrar extends UpdateAutoTimestampEntity implements Buildable, J
   RegistrarAddress internationalizedAddress;
 
   /** Voice number. */
-  String phoneNumber;
+  @Expose String phoneNumber;
 
   /** Fax number. */
-  String faxNumber;
+  @Expose String faxNumber;
 
   /** Email address. */
-  String emailAddress;
+  @Expose String emailAddress;
 
   // External IDs.
 
@@ -345,7 +348,7 @@ public class Registrar extends UpdateAutoTimestampEntity implements Buildable, J
    * @see <a href="http://www.iana.org/assignments/registrar-ids/registrar-ids.txt">Registrar
    *     IDs</a>
    */
-  @Nullable Long ianaIdentifier;
+  @Expose @Nullable Long ianaIdentifier;
 
   /** Purchase Order number used for invoices in external billing system, if applicable. */
   @Nullable String poNumber;
@@ -361,7 +364,7 @@ public class Registrar extends UpdateAutoTimestampEntity implements Buildable, J
   @Nullable Map<CurrencyUnit, String> billingAccountMap;
 
   /** URL of registrar's website. */
-  String url;
+  @Expose String url;
 
   /**
    * ICANN referral email address.
@@ -369,7 +372,7 @@ public class Registrar extends UpdateAutoTimestampEntity implements Buildable, J
    * <p>This value is specified in the initial registrar contact. It can't be edited in the web GUI,
    * and it must be specified when the registrar account is created.
    */
-  String icannReferralEmail;
+  @Expose String icannReferralEmail;
 
   /** Id of the folder in drive used to publish information for this registrar. */
   String driveFolderId;
