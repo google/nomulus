@@ -19,10 +19,6 @@ import static com.google.common.base.Preconditions.checkArgument;
 import com.google.common.collect.AbstractSequentialIterator;
 import com.google.common.flogger.FluentLogger;
 import com.google.common.net.InetAddresses;
-import com.google.gson.TypeAdapter;
-import com.google.gson.stream.JsonReader;
-import com.google.gson.stream.JsonWriter;
-import java.io.IOException;
 import java.io.Serializable;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -481,19 +477,11 @@ public class CidrAddressBlock implements Iterable<InetAddress>, Serializable {
     return getCidrString(ip, netmask);
   }
 
-  public static class CidrAddressBlockAdapter extends TypeAdapter<CidrAddressBlock> {
-    @Override
-    public CidrAddressBlock read(JsonReader reader) throws IOException {
-      String stringValue = reader.nextString();
-      if (stringValue.equals("null")) {
-        return null;
-      }
-      return new CidrAddressBlock(stringValue);
-    }
+  public static class CidrAddressBlockAdapter extends StringBaseTypeAdapter<CidrAddressBlock> {
 
     @Override
-    public void write(JsonWriter writer, CidrAddressBlock cidrAddressBlock) throws IOException {
-      writer.value(cidrAddressBlock.toString());
+    protected CidrAddressBlock fromString(String stringValue) {
+      return new CidrAddressBlock(stringValue);
     }
   }
 }
