@@ -242,7 +242,7 @@ public class Registrar extends UpdateAutoTimestampEntity implements Buildable, J
   @Expose Set<String> allowedTlds;
 
   /** Host name of WHOIS server. */
-  String whoisServer;
+  @Expose String whoisServer;
 
   /** Base URLs for the registrar's RDAP servers. */
   Set<String> rdapBaseUrls;
@@ -326,10 +326,10 @@ public class Registrar extends UpdateAutoTimestampEntity implements Buildable, J
   RegistrarAddress internationalizedAddress;
 
   /** Voice number. */
-  String phoneNumber;
+  @Expose String phoneNumber;
 
   /** Fax number. */
-  String faxNumber;
+  @Expose String faxNumber;
 
   /** Email address. */
   @Expose String emailAddress;
@@ -364,7 +364,7 @@ public class Registrar extends UpdateAutoTimestampEntity implements Buildable, J
   @Expose @Nullable Map<CurrencyUnit, String> billingAccountMap;
 
   /** URL of registrar's website. */
-  String url;
+  @Expose String url;
 
   /**
    * ICANN referral email address.
