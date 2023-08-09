@@ -27,14 +27,13 @@ import static google.registry.testing.DatabaseHelper.persistActiveHost;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.net.MediaType;
+import google.registry.groups.GmailClient;
 import google.registry.model.domain.Domain;
 import google.registry.model.host.Host;
 import google.registry.persistence.transaction.JpaTestExtensions;
@@ -42,7 +41,6 @@ import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationT
 import google.registry.reporting.spec11.soy.Spec11EmailSoyInfo;
 import google.registry.testing.DatabaseHelper;
 import google.registry.util.EmailMessage;
-import google.registry.util.SendEmailService;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
@@ -51,10 +49,14 @@ import javax.mail.internet.InternetAddress;
 import org.joda.time.LocalDate;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.mockito.ArgumentCaptor;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 /** Unit tests for {@link Spec11EmailUtils}. */
+@ExtendWith(MockitoExtension.class)
 class Spec11EmailUtilsTest {
 
   private static final ImmutableList<String> FAKE_RESOURCES = ImmutableList.of("foo");
@@ -98,9 +100,8 @@ class Spec11EmailUtilsTest {
   final JpaIntegrationTestExtension jpa =
       new JpaTestExtensions.Builder().buildIntegrationTestExtension();
 
-  private SendEmailService emailService;
+  @Mock private GmailClient gmailClient;
   private Spec11EmailUtils emailUtils;
-  private Spec11RegistrarThreatMatchesParser parser;
   private ArgumentCaptor<EmailMessage> contentCaptor;
   private final LocalDate date = new LocalDate(2018, 7, 15);
 
@@ -109,13 +110,10 @@ class Spec11EmailUtilsTest {
 
   @BeforeEach
   void beforeEach() throws Exception {
-    emailService = mock(SendEmailService.class);
-    parser = mock(Spec11RegistrarThreatMatchesParser.class);
-    when(parser.getRegistrarThreatMatches(date)).thenReturn(sampleThreatMatches());
     contentCaptor = ArgumentCaptor.forClass(EmailMessage.class);
     emailUtils =
         new Spec11EmailUtils(
-            emailService,
+            gmailClient,
             new InternetAddress("my-receiver@test.com"),
             new InternetAddress("abuse@test.com"),
             ImmutableList.of(
@@ -138,7 +136,7 @@ class Spec11EmailUtilsTest {
         "Super Cool Registry Monthly Threat Detector [2018-07-15]",
         sampleThreatMatches());
     // We inspect individual parameters because Message doesn't implement equals().
-    verify(emailService, times(3)).sendEmail(contentCaptor.capture());
+    verify(gmailClient, times(3)).sendEmail(contentCaptor.capture());
     List<EmailMessage> capturedContents = contentCaptor.getAllValues();
     validateMessage(
         capturedContents.get(0),
@@ -176,7 +174,7 @@ class Spec11EmailUtilsTest {
         "Super Cool Registry Daily Threat Detector [2018-07-15]",
         sampleThreatMatches());
     // We inspect individual parameters because Message doesn't implement equals().
-    verify(emailService, times(3)).sendEmail(contentCaptor.capture());
+    verify(gmailClient, times(3)).sendEmail(contentCaptor.capture());
     List<EmailMessage> capturedMessages = contentCaptor.getAllValues();
     validateMessage(
         capturedMessages.get(0),
@@ -217,7 +215,7 @@ class Spec11EmailUtilsTest {
         "Super Cool Registry Monthly Threat Detector [2018-07-15]",
         sampleThreatMatches());
     // We inspect individual parameters because Message doesn't implement equals().
-    verify(emailService, times(2)).sendEmail(contentCaptor.capture());
+    verify(gmailClient, times(2)).sendEmail(contentCaptor.capture());
     List<EmailMessage> capturedContents = contentCaptor.getAllValues();
     validateMessage(
         capturedContents.get(0),
@@ -250,7 +248,7 @@ class Spec11EmailUtilsTest {
         "Super Cool Registry Monthly Threat Detector [2018-07-15]",
         sampleThreatMatches());
     // We inspect individual parameters because Message doesn't implement equals().
-    verify(emailService, times(3)).sendEmail(contentCaptor.capture());
+    verify(gmailClient, times(3)).sendEmail(contentCaptor.capture());
     List<EmailMessage> capturedContents = contentCaptor.getAllValues();
     validateMessage(
         capturedContents.get(0),
@@ -289,7 +287,7 @@ class Spec11EmailUtilsTest {
     doThrow(new RuntimeException(new MessagingException("expected")))
         .doNothing()
         .doNothing()
-        .when(emailService)
+        .when(gmailClient)
         .sendEmail(contentCaptor.capture());
     RuntimeException thrown =
         assertThrows(
@@ -305,7 +303,7 @@ class Spec11EmailUtilsTest {
         .isEqualTo("Emailing Spec11 reports failed, first exception:");
     assertThat(thrown).hasCauseThat().hasMessageThat().isEqualTo("expected");
     // Verify we sent an e-mail alert
-    verify(emailService, times(3)).sendEmail(contentCaptor.capture());
+    verify(gmailClient, times(3)).sendEmail(contentCaptor.capture());
     List<EmailMessage> capturedMessages = contentCaptor.getAllValues();
     validateMessage(
         capturedMessages.get(0),
@@ -338,7 +336,7 @@ class Spec11EmailUtilsTest {
   @Test
   void testSuccess_sendAlertEmail() throws Exception {
     emailUtils.sendAlertEmail("Spec11 Pipeline Alert: 2018-07", "Alert!");
-    verify(emailService).sendEmail(contentCaptor.capture());
+    verify(gmailClient).sendEmail(contentCaptor.capture());
     validateMessage(
         contentCaptor.getValue(),
         "abuse@test.com",
@@ -363,7 +361,7 @@ class Spec11EmailUtilsTest {
         Spec11EmailSoyInfo.MONTHLY_SPEC_11_EMAIL,
         "Super Cool Registry Monthly Threat Detector [2018-07-15]",
         sampleThreatMatches());
-    verify(emailService, times(3)).sendEmail(contentCaptor.capture());
+    verify(gmailClient, times(3)).sendEmail(contentCaptor.capture());
     assertThat(contentCaptor.getAllValues().get(0).recipients())
         .containsExactly(new InternetAddress("johndoe@theregistrar.com"));
   }
