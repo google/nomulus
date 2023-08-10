@@ -66,7 +66,7 @@ public class Spec11EmailUtils {
   @Inject
   Spec11EmailUtils(
       GmailClient gmailClient,
-      @Config("alertRecipientEmailAddress") InternetAddress alertRecipientAddress,
+      @Config("newAlertRecipientEmailAddress") InternetAddress alertRecipientAddress,
       @Config("spec11OutgoingEmailAddress") InternetAddress spec11OutgoingEmailAddress,
       @Config("spec11BccEmailAddresses") ImmutableList<InternetAddress> spec11BccEmailAddresses,
       @Config("spec11WebResources") ImmutableList<String> spec11WebResources,
