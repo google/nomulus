@@ -14,10 +14,13 @@
 
 package google.registry.tools;
 
+import static google.registry.model.tld.TldYamlUtils.getObjectMapper;
 import static google.registry.model.tld.Tlds.assertTldsExist;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import google.registry.model.tld.Tld;
 import java.util.List;
 
@@ -31,9 +34,10 @@ final class GetTldCommand implements Command {
   private List<String> mainParameters;
 
   @Override
-  public void run() {
+  public void run() throws JsonProcessingException {
+    ObjectMapper mapper = getObjectMapper();
     for (String tld : assertTldsExist(mainParameters)) {
-      System.out.println(Tld.get(tld));
+      System.out.println(mapper.writeValueAsString(Tld.get(tld)));
     }
   }
 }
