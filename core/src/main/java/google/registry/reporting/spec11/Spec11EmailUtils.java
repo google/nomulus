@@ -31,12 +31,12 @@ import com.google.template.soy.tofu.SoyTofu;
 import com.google.template.soy.tofu.SoyTofu.Renderer;
 import google.registry.beam.spec11.ThreatMatch;
 import google.registry.config.RegistryConfig.Config;
+import google.registry.groups.GmailClient;
 import google.registry.model.domain.Domain;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarPoc;
 import google.registry.reporting.spec11.soy.Spec11EmailSoyInfo;
 import google.registry.util.EmailMessage;
-import google.registry.util.SendEmailService;
 import java.util.List;
 import java.util.Map;
 import javax.inject.Inject;
@@ -56,8 +56,7 @@ public class Spec11EmailUtils {
                   Spec11EmailSoyInfo.getInstance().getFileName()))
           .build()
           .compileToTofu();
-
-  private final SendEmailService emailService;
+  private final GmailClient gmailClient;
   private final InternetAddress outgoingEmailAddress;
   private final ImmutableList<InternetAddress> spec11BccEmailAddresses;
   private final InternetAddress alertRecipientAddress;
@@ -66,13 +65,13 @@ public class Spec11EmailUtils {
 
   @Inject
   Spec11EmailUtils(
-      SendEmailService emailService,
+      GmailClient gmailClient,
       @Config("alertRecipientEmailAddress") InternetAddress alertRecipientAddress,
       @Config("spec11OutgoingEmailAddress") InternetAddress spec11OutgoingEmailAddress,
       @Config("spec11BccEmailAddresses") ImmutableList<InternetAddress> spec11BccEmailAddresses,
       @Config("spec11WebResources") ImmutableList<String> spec11WebResources,
       @Config("registryName") String registryName) {
-    this.emailService = emailService;
+    this.gmailClient = gmailClient;
     this.outgoingEmailAddress = spec11OutgoingEmailAddress;
     this.spec11BccEmailAddresses = spec11BccEmailAddresses;
     this.alertRecipientAddress = alertRecipientAddress;
@@ -151,7 +150,7 @@ public class Spec11EmailUtils {
       String subject,
       RegistrarThreatMatches registrarThreatMatches)
       throws MessagingException {
-    emailService.sendEmail(
+    gmailClient.sendEmail(
         EmailMessage.newBuilder()
             .setSubject(subject)
             .setBody(getContent(date, soyTemplateInfo, registrarThreatMatches))
@@ -191,7 +190,7 @@ public class Spec11EmailUtils {
   /** Sends an e-mail indicating the state of the spec11 pipeline, with a given subject and body. */
   void sendAlertEmail(String subject, String body) {
     try {
-      emailService.sendEmail(
+      gmailClient.sendEmail(
           EmailMessage.newBuilder()
               .setFrom(outgoingEmailAddress)
               .addRecipient(alertRecipientAddress)
