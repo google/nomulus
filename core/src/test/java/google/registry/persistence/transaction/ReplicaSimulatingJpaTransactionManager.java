@@ -50,18 +50,8 @@ public class ReplicaSimulatingJpaTransactionManager implements JpaTransactionMan
   }
 
   @Override
-  public EntityManager getStandaloneEntityManager() {
-    return delegate.getStandaloneEntityManager();
-  }
-
-  @Override
   public EntityManager getEntityManager() {
     return delegate.getEntityManager();
-  }
-
-  @Override
-  public JpaTransactionManager setDatabaseSnapshot(String snapshotId) {
-    return delegate.setDatabaseSnapshot(snapshotId);
   }
 
   @Override
