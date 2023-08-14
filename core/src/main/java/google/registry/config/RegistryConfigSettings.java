@@ -115,6 +115,7 @@ public class RegistryConfigSettings {
 
   /** Configuration for Hibernate. */
   public static class Hibernate {
+    public boolean perTransactionIsolation;
     public String connectionIsolation;
     public String logSqlQueries;
     public String hikariConnectionTimeout;

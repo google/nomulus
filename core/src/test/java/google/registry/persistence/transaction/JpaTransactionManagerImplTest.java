@@ -16,6 +16,8 @@ package google.registry.persistence.transaction;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.truth.Truth.assertThat;
+import static google.registry.persistence.PersistenceModule.TransactionIsolationLevel.TRANSACTION_READ_UNCOMMITTED;
+import static google.registry.persistence.PersistenceModule.TransactionIsolationLevel.TRANSACTION_REPEATABLE_READ;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.assertDetachedFromEntityManager;
 import static google.registry.testing.DatabaseHelper.existsInDb;
@@ -81,7 +83,7 @@ class JpaTransactionManagerImplTest {
           .buildUnitTestExtension();
 
   @Test
-  void transact_succeeds() {
+  void transact_success() {
     assertPersonEmpty();
     assertCompanyEmpty();
     tm().transact(
@@ -89,12 +91,46 @@ class JpaTransactionManagerImplTest {
               insertPerson(10);
               insertCompany("Foo");
               insertCompany("Bar");
+              tm().assertTransactionIsolationLevel(tm().getDefaultTransactionIsolationLevel());
             });
     assertPersonCount(1);
     assertPersonExist(10);
     assertCompanyCount(2);
     assertCompanyExist("Foo");
     assertCompanyExist("Bar");
+  }
+
+  @Test
+  void transact_setIsolationLevel() {
+    tm().transact(
+            () -> {
+              tm().assertTransactionIsolationLevel(TRANSACTION_READ_UNCOMMITTED);
+              return null;
+            },
+            TRANSACTION_READ_UNCOMMITTED);
+    // Make sure that we can start a new transaction on the same thread with a different isolation
+    // level.
+    tm().transact(
+            () -> {
+              tm().assertTransactionIsolationLevel(TRANSACTION_REPEATABLE_READ);
+              return null;
+            },
+            TRANSACTION_REPEATABLE_READ);
+  }
+
+  @Test
+  void transact_nestedTransactions() {
+    // Unit tests always allows for per-transaction isolation level (and therefore throws when a
+    // nested transaction is detected).
+    IllegalArgumentException e =
+        assertThrows(
+            IllegalArgumentException.class,
+            () ->
+                tm().transact(
+                        () -> {
+                          tm().transact(() -> {});
+                        }));
+    assertThat(e).hasMessageThat().isEqualTo("Nested transaction detected");
   }
 
   @Test
@@ -606,19 +642,19 @@ class JpaTransactionManagerImplTest {
     verify(spyJpaTm, times(3)).delete(theEntityKey);
   }
 
-  private void insertPerson(int age) {
+  private static void insertPerson(int age) {
     tm().getEntityManager()
         .createNativeQuery(String.format("INSERT INTO Person (age) VALUES (%d)", age))
         .executeUpdate();
   }
 
-  private void insertCompany(String name) {
+  private static void insertCompany(String name) {
     tm().getEntityManager()
         .createNativeQuery(String.format("INSERT INTO Company (name) VALUES ('%s')", name))
         .executeUpdate();
   }
 
-  private void assertPersonExist(int age) {
+  private static void assertPersonExist(int age) {
     tm().transact(
             () -> {
               EntityManager em = tm().getEntityManager();
@@ -631,7 +667,7 @@ class JpaTransactionManagerImplTest {
             });
   }
 
-  private void assertCompanyExist(String name) {
+  private static void assertCompanyExist(String name) {
     tm().transact(
             () -> {
               String maybeName =
@@ -644,23 +680,23 @@ class JpaTransactionManagerImplTest {
             });
   }
 
-  private void assertPersonCount(int count) {
+  private static void assertPersonCount(int count) {
     assertThat(countTable("Person")).isEqualTo(count);
   }
 
-  private void assertCompanyCount(int count) {
+  private static void assertCompanyCount(int count) {
     assertThat(countTable("Company")).isEqualTo(count);
   }
 
-  private void assertPersonEmpty() {
+  private static void assertPersonEmpty() {
     assertPersonCount(0);
   }
 
-  private void assertCompanyEmpty() {
+  private static void assertCompanyEmpty() {
     assertCompanyCount(0);
   }
 
-  private int countTable(String tableName) {
+  private static int countTable(String tableName) {
     return tm().transact(
             () -> {
               BigInteger colCount =

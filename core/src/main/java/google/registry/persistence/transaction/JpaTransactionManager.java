@@ -14,6 +14,7 @@
 
 package google.registry.persistence.transaction;
 
+import google.registry.persistence.PersistenceModule.TransactionIsolationLevel;
 import google.registry.persistence.VKey;
 import java.util.function.Supplier;
 import javax.persistence.EntityManager;
@@ -56,8 +57,8 @@ public interface JpaTransactionManager extends TransactionManager {
   /**
    * Creates a JPA SQL query for the given query string and result class.
    *
-   * <p>This is a convenience method for the longer <code>
-   * jpaTm().getEntityManager().createQuery(...)</code>.
+   * <p>This is a convenience method for the longer {@code
+   * jpaTm().getEntityManager().createQuery(...)}.
    */
   <T> TypedQuery<T> query(String sqlString, Class<T> resultClass);
 
@@ -67,8 +68,8 @@ public interface JpaTransactionManager extends TransactionManager {
   /**
    * Creates a JPA SQL query for the given query string.
    *
-   * <p>This is a convenience method for the longer <code>
-   * jpaTm().getEntityManager().createQuery(...)</code>.
+   * <p>This is a convenience method for the longer {@code
+   * jpaTm().getEntityManager().createQuery(...)}.
    *
    * <p>Note that while this method can legally be used for queries that return results, <u>it
    * should not be</u>, as it does not correctly detach entities as must be done for nomulus model
@@ -79,8 +80,20 @@ public interface JpaTransactionManager extends TransactionManager {
   /** Executes the work in a transaction with no retries and returns the result. */
   <T> T transactNoRetry(Supplier<T> work);
 
+  /**
+   * Executes the work in a transaction at the given {@link TransactionIsolationLevel} with no
+   * retries and returns the result.
+   */
+  <T> T transactNoRetry(Supplier<T> work, TransactionIsolationLevel isolationLevel);
+
   /** Executes the work in a transaction with no retries. */
   void transactNoRetry(Runnable work);
+
+  /**
+   * Executes the work in a transaction at the given {@link TransactionIsolationLevel} with no
+   * retries.
+   */
+  void transactNoRetry(Runnable work, TransactionIsolationLevel isolationLevel);
 
   /** Deletes the entity by its id, throws exception if the entity is not deleted. */
   <T> void assertDelete(VKey<T> key);
@@ -99,4 +112,13 @@ public interface JpaTransactionManager extends TransactionManager {
   static Query setQueryFetchSize(Query query, int fetchSize) {
     return query.setHint("org.hibernate.fetchSize", fetchSize);
   }
+
+  /** Return the default {@link TransactionIsolationLevel} specified via the config file. */
+  TransactionIsolationLevel getDefaultTransactionIsolationLevel();
+
+  /** Return the {@link TransactionIsolationLevel} used in the current transaction. */
+  TransactionIsolationLevel getCurrentTransactionIsolationLevel();
+
+  /** Asserts that the current transaction runs at the given level. */
+  void assertTransactionIsolationLevel(TransactionIsolationLevel expectedLevel);
 }

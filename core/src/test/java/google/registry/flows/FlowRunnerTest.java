@@ -17,6 +17,7 @@ package google.registry.flows;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
 import static com.google.common.truth.Truth8.assertThat;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.TestDataHelper.loadFile;
 import static google.registry.testing.TestLogHandlerUtils.findFirstLogMessageByPrefix;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
@@ -35,6 +36,7 @@ import google.registry.model.eppcommon.Trid;
 import google.registry.model.eppoutput.EppOutput.ResponseOrGreeting;
 import google.registry.model.eppoutput.EppResponse;
 import google.registry.monitoring.whitebox.EppMetric;
+import google.registry.persistence.PersistenceModule.TransactionIsolationLevel;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.testing.FakeClock;
@@ -46,7 +48,6 @@ import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
-import org.mockito.Mockito;
 
 /** Unit tests for {@link FlowRunner}. */
 class FlowRunnerTest {
@@ -78,6 +79,21 @@ class FlowRunnerTest {
     }
   }
 
+  static class TestTransactionalFlow implements TransactionalFlow {
+    private final Optional<TransactionIsolationLevel> isolationLevel;
+
+    TestTransactionalFlow(Optional<TransactionIsolationLevel> isolationLevel) {
+      this.isolationLevel = isolationLevel;
+    }
+
+    @Override
+    public ResponseOrGreeting run() {
+      tm().assertTransactionIsolationLevel(
+              isolationLevel.orElse(tm().getDefaultTransactionIsolationLevel()));
+      return mock(EppResponse.class);
+    }
+  }
+
   @BeforeEach
   void beforeEach() {
     JdkLoggerConfig.getConfig(FlowRunner.class).addHandler(handler);
@@ -90,23 +106,37 @@ class FlowRunnerTest {
     flowRunner.isDryRun = false;
     flowRunner.isSuperuser = false;
     flowRunner.isTransactional = false;
+    flowRunner.isolationLevelOverride = Optional.empty();
     flowRunner.sessionMetadata =
         new StatelessRequestSessionMetadata("TheRegistrar", ImmutableSet.of());
     flowRunner.trid = Trid.create("client-123", "server-456");
-    flowRunner.flowReporter = Mockito.mock(FlowReporter.class);
+    flowRunner.flowReporter = mock(FlowReporter.class);
   }
 
   @Test
   void testRun_nonTransactionalCommand_setsCommandNameOnMetric() throws Exception {
-    flowRunner.isTransactional = true;
     flowRunner.run(eppMetricBuilder);
     assertThat(eppMetricBuilder.build().getCommandName()).hasValue("TestCommand");
   }
 
   @Test
   void testRun_transactionalCommand_setsCommandNameOnMetric() throws Exception {
+    flowRunner.isTransactional = true;
+    flowRunner.flowClass = TestTransactionalFlow.class;
+    flowRunner.flowProvider = () -> new TestTransactionalFlow(Optional.empty());
     flowRunner.run(eppMetricBuilder);
-    assertThat(eppMetricBuilder.build().getCommandName()).hasValue("TestCommand");
+    assertThat(eppMetricBuilder.build().getCommandName()).hasValue("TestTransactional");
+  }
+
+  @Test
+  void testRun_transactionalCommand_isolationLevelOverride() throws Exception {
+    flowRunner.isTransactional = true;
+    flowRunner.isolationLevelOverride =
+        Optional.of(TransactionIsolationLevel.TRANSACTION_READ_UNCOMMITTED);
+    flowRunner.flowClass = TestTransactionalFlow.class;
+    flowRunner.flowProvider = () -> new TestTransactionalFlow(flowRunner.isolationLevelOverride);
+    flowRunner.run(eppMetricBuilder);
+    assertThat(eppMetricBuilder.build().getCommandName()).hasValue("TestTransactional");
   }
 
   @Test
