@@ -60,11 +60,6 @@ public class ReplicaSimulatingJpaTransactionManager implements JpaTransactionMan
   }
 
   @Override
-  public JpaTransactionManager setDatabaseSnapshot(String snapshotId) {
-    return delegate.setDatabaseSnapshot(snapshotId);
-  }
-
-  @Override
   public <T> TypedQuery<T> query(String sqlString, Class<T> resultClass) {
     return delegate.query(sqlString, resultClass);
   }

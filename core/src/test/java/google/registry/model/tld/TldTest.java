@@ -134,7 +134,6 @@ public final class TldTest extends EntityTestCase {
     assertThat(yaml).isEqualTo(loadFile(getClass(), "tld.yaml"));
   }
 
-  // TODO (sarahbot): re-enable this test after we figure out why it fails in presubmits.
   @Test
   void testYamlToTld() throws Exception {
     fakeClock.setTo(START_OF_TIME);
