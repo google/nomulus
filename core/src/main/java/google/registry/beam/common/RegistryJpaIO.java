@@ -122,6 +122,7 @@ public final class RegistryJpaIO {
   @AutoValue
   public abstract static class Read<R, T> extends PTransform<PBegin, PCollection<T>> {
 
+    private static final long serialVersionUID = 6906842877429561700L;
     public static final String DEFAULT_NAME = "RegistryJpaIO.Read";
 
     abstract String name();
@@ -133,9 +134,6 @@ public final class RegistryJpaIO {
     @Nullable
     abstract Coder<T> coder();
 
-    @Nullable
-    abstract String snapshotId();
-
     abstract Builder<R, T> toBuilder();
 
     @Override
@@ -145,8 +143,7 @@ public final class RegistryJpaIO {
           input
               .apply("Starting " + name(), Create.of((Void) null))
               .apply(
-                  "Run query for " + name(),
-                  ParDo.of(new QueryRunner<>(query(), resultMapper(), snapshotId())));
+                  "Run query for " + name(), ParDo.of(new QueryRunner<>(query(), resultMapper())));
       if (coder() != null) {
         output = output.setCoder(coder());
       }
@@ -165,18 +162,6 @@ public final class RegistryJpaIO {
       return toBuilder().coder(coder).build();
     }
 
-    /**
-     * Specifies the database snapshot to use for this query.
-     *
-     * <p>This feature is <em>Postgresql-only</em>. User is responsible for keeping the snapshot
-     * available until all JVM workers have started using it by calling {@link
-     * JpaTransactionManager#setDatabaseSnapshot}.
-     */
-    // TODO(b/193662898): vendor-independent support for richer transaction semantics.
-    public Read<R, T> withSnapshot(@Nullable String snapshotId) {
-      return toBuilder().snapshotId(snapshotId).build();
-    }
-
     static <R, T> Builder<R, T> builder() {
       return new AutoValue_RegistryJpaIO_Read.Builder<R, T>().name(DEFAULT_NAME);
     }
@@ -191,8 +176,6 @@ public final class RegistryJpaIO {
       abstract Builder<R, T> resultMapper(SerializableFunction<R, T> mapper);
 
       abstract Builder<R, T> coder(Coder<T> coder);
-
-      abstract Builder<R, T> snapshotId(@Nullable String sharedSnapshotId);
 
       abstract Read<R, T> build();
 
@@ -214,27 +197,20 @@ public final class RegistryJpaIO {
     }
 
     static class QueryRunner<R, T> extends DoFn<Void, T> {
+
+      private static final long serialVersionUID = 7293891513058653334L;
       private final RegistryQuery<R> query;
       private final SerializableFunction<R, T> resultMapper;
-      // java.util.Optional is not serializable. Use of Guava Optional is discouraged.
-      @Nullable private final String snapshotId;
 
-      QueryRunner(
-          RegistryQuery<R> query,
-          SerializableFunction<R, T> resultMapper,
-          @Nullable String snapshotId) {
+      QueryRunner(RegistryQuery<R> query, SerializableFunction<R, T> resultMapper) {
         this.query = query;
         this.resultMapper = resultMapper;
-        this.snapshotId = snapshotId;
       }
 
       @ProcessElement
       public void processElement(OutputReceiver<T> outputReceiver) {
         tm().transactNoRetry(
                 () -> {
-                  if (snapshotId != null) {
-                    tm().setDatabaseSnapshot(snapshotId);
-                  }
                   query.stream().map(resultMapper::apply).forEach(outputReceiver::output);
                 });
       }
@@ -256,8 +232,8 @@ public final class RegistryJpaIO {
   @AutoValue
   public abstract static class Write<T> extends PTransform<PCollection<T>, PCollection<Void>> {
 
+    private static final long serialVersionUID = -4023583243078410323L;
     public static final String DEFAULT_NAME = "RegistryJpaIO.Write";
-
     public static final int DEFAULT_BATCH_SIZE = 1;
 
     public abstract String name();
@@ -321,6 +297,8 @@ public final class RegistryJpaIO {
 
   /** Writes a batch of entities to a SQL database through a {@link JpaTransactionManager}. */
   private static class SqlBatchWriter<T> extends DoFn<KV<ShardedKey<Integer>, Iterable<T>>, Void> {
+
+    private static final long serialVersionUID = -7519944406319472690L;
     private final Counter counter;
     private final SerializableFunction<T, Object> jpaConverter;
 
@@ -337,7 +315,7 @@ public final class RegistryJpaIO {
     private void actuallyProcessElement(@Element KV<ShardedKey<Integer>, Iterable<T>> kv) {
       ImmutableList<Object> entities =
           Streams.stream(kv.getValue())
-              .map(this.jpaConverter::apply)
+              .map(jpaConverter::apply)
               // TODO(b/177340730): post migration delete the line below.
               .filter(Objects::nonNull)
               .collect(ImmutableList.toImmutableList());
@@ -373,7 +351,7 @@ public final class RegistryJpaIO {
     }
 
     /** Returns this entity's primary key field(s) in a string. */
-    private String toEntityKeyString(Object entity) {
+    private static String toEntityKeyString(Object entity) {
       try {
         return tm().transact(
                 () ->

@@ -109,13 +109,6 @@ PRESUBMITS = {
         "System.(out|err).println is only allowed in tools/ packages. Please "
         "use a logger instead.",
 
-    # PostgreSQLContainer instantiation must specify docker tag
-    # TODO(b/204572437): Fix the pattern to pass DatabaseSnapshotTest.java
-    PresubmitCheck(
-        r"[\s\S]*new\s+PostgreSQLContainer(<[\s\S]*>)?\(\s*\)[\s\S]*",
-        "java", {"DatabaseSnapshotTest.java"}):
-      "PostgreSQLContainer instantiation must specify docker tag.",
-
     # Various Soy linting checks
     PresubmitCheck(
         r".* (/\*)?\* {?@param ",

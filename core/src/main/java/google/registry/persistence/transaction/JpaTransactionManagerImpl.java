@@ -110,22 +110,6 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
   }
 
   @Override
-  public JpaTransactionManager setDatabaseSnapshot(String snapshotId) {
-    // Postgresql-specific: 'set transaction' command must be called inside a transaction
-    assertInTransaction();
-
-    EntityManager entityManager = getEntityManager();
-    // Isolation is hardcoded to REPEATABLE READ, as specified by parent's Javadoc.
-    entityManager
-        .createNativeQuery("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ")
-        .executeUpdate();
-    entityManager
-        .createNativeQuery(String.format("SET TRANSACTION SNAPSHOT '%s'", snapshotId))
-        .executeUpdate();
-    return this;
-  }
-
-  @Override
   public <T> TypedQuery<T> query(String sqlString, Class<T> resultClass) {
     return new DetachingTypedQuery<>(getEntityManager().createQuery(sqlString, resultClass));
   }
