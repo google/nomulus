@@ -28,6 +28,8 @@ import google.registry.flows.session.LoginFlow;
 import google.registry.model.eppcommon.Trid;
 import google.registry.model.eppoutput.EppOutput;
 import google.registry.monitoring.whitebox.EppMetric;
+import google.registry.persistence.PersistenceModule.TransactionIsolationLevel;
+import java.util.Optional;
 import javax.inject.Inject;
 import javax.inject.Provider;
 
@@ -42,6 +44,7 @@ public class FlowRunner {
   @Inject TransportCredentials credentials;
   @Inject EppRequestSource eppRequestSource;
   @Inject Provider<Flow> flowProvider;
+  @Inject Optional<TransactionIsolationLevel> isolationLevelOverride;
   @Inject Class<? extends Flow> flowClass;
   @Inject @InputXml byte[] inputXmlBytes;
   @Inject @DryRun boolean isDryRun;
@@ -91,7 +94,8 @@ public class FlowRunner {
                 } catch (EppException e) {
                   throw new EppRuntimeException(e);
                 }
-              });
+              },
+              isolationLevelOverride.orElse(null));
     } catch (DryRunException e) {
       return e.output;
     } catch (EppRuntimeException e) {

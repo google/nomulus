@@ -18,6 +18,7 @@ import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import google.registry.model.ImmutableObject;
+import google.registry.persistence.PersistenceModule.TransactionIsolationLevel;
 import google.registry.persistence.VKey;
 import java.util.NoSuchElementException;
 import java.util.Optional;
@@ -49,8 +50,17 @@ public interface TransactionManager {
   /** Executes the work in a transaction and returns the result. */
   <T> T transact(Supplier<T> work);
 
+  /**
+   * Executes the work in a transaction at the given {@link TransactionIsolationLevel} and returns
+   * the result.
+   */
+  <T> T transact(Supplier<T> work, TransactionIsolationLevel isolationLevel);
+
   /** Executes the work in a transaction. */
   void transact(Runnable work);
+
+  /** Executes the work in a transaction at the given {@link TransactionIsolationLevel}. */
+  void transact(Runnable work, TransactionIsolationLevel isolationLevel);
 
   /** Returns the time associated with the start of this particular transaction attempt. */
   DateTime getTransactionTime();
