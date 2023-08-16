@@ -30,6 +30,7 @@ import google.registry.keyring.KeyringModule;
 import google.registry.keyring.api.DummyKeyringModule;
 import google.registry.keyring.api.KeyModule;
 import google.registry.keyring.secretmanager.SecretManagerKeyringModule;
+import google.registry.model.ModelModule;
 import google.registry.persistence.PersistenceModule;
 import google.registry.persistence.PersistenceModule.NomulusToolJpaTm;
 import google.registry.persistence.PersistenceModule.ReadOnlyReplicaJpaTm;
@@ -63,6 +64,7 @@ import javax.inject.Singleton;
       CloudTasksUtilsModule.class,
       DummyKeyringModule.class,
       DnsUpdateWriterModule.class,
+      ModelModule.class,
       GsonModule.class,
       KeyModule.class,
       KeyringModule.class,

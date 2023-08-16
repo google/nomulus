@@ -20,10 +20,17 @@ import static google.registry.testing.TestDataHelper.loadFile;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.beust.jcommander.ParameterException;
+import google.registry.model.EntityYamlUtils;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link GetTldCommand}. */
 class GetTldCommandTest extends CommandTestCase<GetTldCommand> {
+
+  @BeforeEach
+  void beforeEach() {
+    command.objectMapper = EntityYamlUtils.createObjectMapper();
+  }
 
   @Test
   void testSuccess() throws Exception {
