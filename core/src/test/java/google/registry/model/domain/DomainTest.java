@@ -1053,7 +1053,7 @@ public class DomainTest {
             () -> domain.asBuilder().setCurrentBulkToken(allocationToken.createVKey()).build());
     assertThat(thrown)
         .hasMessageThat()
-        .isEqualTo("The currentBulkToken must have a BULK TokenType");
+        .isEqualTo("The currentBulkToken must have a BULK_PRICING TokenType");
   }
 
   @Test
