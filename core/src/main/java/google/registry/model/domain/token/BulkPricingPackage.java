@@ -141,13 +141,16 @@ public class BulkPricingPackage extends ImmutableObject implements Buildable {
       checkArgumentNotNull(getInstance().token, "Allocation token must be specified");
       AllocationToken allocationToken = tm().transact(() -> tm().loadByKey(getInstance().token));
       checkArgument(
-          allocationToken.tokenType == TokenType.BULK, "Allocation token must be a BULK type");
+          allocationToken.tokenType == TokenType.BULK_PRICING,
+          "Allocation token must be a BULK_PRICING type");
       return super.build();
     }
 
     public Builder setToken(AllocationToken token) {
       checkArgumentNotNull(token, "Allocation token must not be null");
-      checkArgument(token.tokenType == TokenType.BULK, "Allocation token must be a BULK type");
+      checkArgument(
+          token.tokenType == TokenType.BULK_PRICING,
+          "Allocation token must be a BULK_PRICING type");
       getInstance().token = token.createVKey();
       return this;
     }

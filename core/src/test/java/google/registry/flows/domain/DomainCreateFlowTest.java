@@ -26,7 +26,7 @@ import static google.registry.model.billing.BillingBase.RenewalPriceBehavior.DEF
 import static google.registry.model.billing.BillingBase.RenewalPriceBehavior.NONPREMIUM;
 import static google.registry.model.billing.BillingBase.RenewalPriceBehavior.SPECIFIED;
 import static google.registry.model.domain.fee.Fee.FEE_EXTENSION_URIS;
-import static google.registry.model.domain.token.AllocationToken.TokenType.BULK;
+import static google.registry.model.domain.token.AllocationToken.TokenType.BULK_PRICING;
 import static google.registry.model.domain.token.AllocationToken.TokenType.DEFAULT_PROMO;
 import static google.registry.model.domain.token.AllocationToken.TokenType.SINGLE_USE;
 import static google.registry.model.domain.token.AllocationToken.TokenType.UNLIMITED_USE;
@@ -3678,7 +3678,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
         persistResource(
             new AllocationToken.Builder()
                 .setToken("abc123")
-                .setTokenType(BULK)
+                .setTokenType(BULK_PRICING)
                 .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
                 .setAllowedTlds(ImmutableSet.of("tld"))
                 .setRenewalPriceBehavior(SPECIFIED)
@@ -3705,7 +3705,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     persistResource(
         new AllocationToken.Builder()
             .setToken("abc123")
-            .setTokenType(BULK)
+            .setTokenType(BULK_PRICING)
             .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
             .setAllowedTlds(ImmutableSet.of("tld"))
             .setRenewalPriceBehavior(SPECIFIED)

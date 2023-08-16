@@ -41,7 +41,7 @@ public class CreateBulkPricingPackageCommandTest
     persistResource(
         new AllocationToken.Builder()
             .setToken("abc123")
-            .setTokenType(TokenType.BULK)
+            .setTokenType(TokenType.BULK_PRICING)
             .setCreationTimeForTest(DateTime.parse("2010-11-12T05:00:00Z"))
             .setAllowedTlds(ImmutableSet.of("foo"))
             .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
@@ -90,7 +90,7 @@ public class CreateBulkPricingPackageCommandTest
                     "--next_billing_date=2012-03-17T05:00:00Z",
                     "abc123"));
     assertThat(thrown.getMessage())
-        .isEqualTo("The allocation token must be of the BULK token type");
+        .isEqualTo("The allocation token must be of the BULK_PRICING token type");
   }
 
   @Test
@@ -116,7 +116,7 @@ public class CreateBulkPricingPackageCommandTest
     persistResource(
         new AllocationToken.Builder()
             .setToken("abc123")
-            .setTokenType(TokenType.BULK)
+            .setTokenType(TokenType.BULK_PRICING)
             .setCreationTimeForTest(DateTime.parse("2010-11-12T05:00:00Z"))
             .setAllowedTlds(ImmutableSet.of("foo"))
             .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
@@ -151,7 +151,7 @@ public class CreateBulkPricingPackageCommandTest
     persistResource(
         new AllocationToken.Builder()
             .setToken("abc123")
-            .setTokenType(TokenType.BULK)
+            .setTokenType(TokenType.BULK_PRICING)
             .setCreationTimeForTest(DateTime.parse("2010-11-12T05:00:00Z"))
             .setAllowedTlds(ImmutableSet.of("foo"))
             .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
@@ -176,7 +176,7 @@ public class CreateBulkPricingPackageCommandTest
     persistResource(
         new AllocationToken.Builder()
             .setToken("abc123")
-            .setTokenType(TokenType.BULK)
+            .setTokenType(TokenType.BULK_PRICING)
             .setCreationTimeForTest(DateTime.parse("2010-11-12T05:00:00Z"))
             .setAllowedTlds(ImmutableSet.of("foo"))
             .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
@@ -201,7 +201,7 @@ public class CreateBulkPricingPackageCommandTest
     persistResource(
         new AllocationToken.Builder()
             .setToken("abc123")
-            .setTokenType(TokenType.BULK)
+            .setTokenType(TokenType.BULK_PRICING)
             .setCreationTimeForTest(DateTime.parse("2010-11-12T05:00:00Z"))
             .setAllowedTlds(ImmutableSet.of("foo"))
             .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))

@@ -74,8 +74,8 @@ abstract class CreateOrUpdateBulkPricingPackageCommand extends MutatingCommand {
             + " created first before it can be used to create a BulkPricingPackage",
         token);
     checkArgument(
-        allocationToken.get().getTokenType().equals(TokenType.BULK),
-        "The allocation token must be of the BULK token type");
+        allocationToken.get().getTokenType().equals(TokenType.BULK_PRICING),
+        "The allocation token must be of the BULK_PRICING token type");
     return allocationToken.get();
   }
 

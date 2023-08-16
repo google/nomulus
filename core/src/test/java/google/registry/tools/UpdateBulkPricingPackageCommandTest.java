@@ -42,7 +42,7 @@ public class UpdateBulkPricingPackageCommandTest
         persistResource(
             new AllocationToken.Builder()
                 .setToken("abc123")
-                .setTokenType(TokenType.BULK)
+                .setTokenType(TokenType.BULK_PRICING)
                 .setCreationTimeForTest(DateTime.parse("2010-11-12T05:00:00Z"))
                 .setAllowedTlds(ImmutableSet.of("foo"))
                 .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
@@ -88,7 +88,7 @@ public class UpdateBulkPricingPackageCommandTest
     persistResource(
         new AllocationToken.Builder()
             .setToken("nullPackage")
-            .setTokenType(TokenType.BULK)
+            .setTokenType(TokenType.BULK_PRICING)
             .setCreationTimeForTest(DateTime.parse("2010-11-12T05:00:00Z"))
             .setAllowedTlds(ImmutableSet.of("foo"))
             .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
