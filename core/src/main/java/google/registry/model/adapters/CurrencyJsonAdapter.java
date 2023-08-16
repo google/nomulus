@@ -14,26 +14,17 @@
 
 package google.registry.model.adapters;
 
-import com.google.gson.TypeAdapter;
-import com.google.gson.stream.JsonReader;
-import com.google.gson.stream.JsonWriter;
 import google.registry.model.adapters.CurrencyUnitAdapter.UnknownCurrencyException;
+import google.registry.util.StringBaseTypeAdapter;
 import java.io.IOException;
 import org.joda.money.CurrencyUnit;
 
-public class CurrencyJsonAdapter extends TypeAdapter<CurrencyUnit> {
+public class CurrencyJsonAdapter extends StringBaseTypeAdapter<CurrencyUnit> {
 
   @Override
-  public void write(JsonWriter out, CurrencyUnit value) throws IOException {
-    String currency = CurrencyUnitAdapter.convertFromCurrency(value);
-    out.value(currency);
-  }
-
-  @Override
-  public CurrencyUnit read(JsonReader in) throws IOException {
-    String currency = in.nextString();
+  protected CurrencyUnit fromString(String stringValue) throws IOException {
     try {
-      return CurrencyUnitAdapter.convertFromString(currency);
+      return CurrencyUnitAdapter.convertFromString(stringValue);
     } catch (UnknownCurrencyException e) {
       throw new IOException("Unknown currency");
     }

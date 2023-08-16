@@ -21,7 +21,7 @@ import static google.registry.request.RequestParameters.extractRequiredParameter
 
 import com.google.common.collect.ImmutableSet;
 import com.google.gson.Gson;
-import com.google.gson.JsonObject;
+import com.google.gson.JsonElement;
 import dagger.Module;
 import dagger.Provides;
 import google.registry.model.registrar.Registrar;
@@ -172,15 +172,8 @@ public final class RegistrarConsoleModule {
   @Provides
   @Parameter("contacts")
   public static Optional<ImmutableSet<RegistrarPoc>> provideContacts(
-      Gson gson, @OptionalJsonPayload Optional<JsonObject> payload) {
-
-    if (payload.isPresent() && payload.get().has("contacts")) {
-      return Optional.of(
-          ImmutableSet.copyOf(
-              gson.fromJson(payload.get().get("contacts").getAsJsonArray(), RegistrarPoc[].class)));
-    }
-
-    return Optional.empty();
+      Gson gson, @OptionalJsonPayload Optional<JsonElement> payload) {
+    return payload.map(s -> ImmutableSet.copyOf(gson.fromJson(s, RegistrarPoc[].class)));
   }
 
   @Provides
@@ -192,11 +185,7 @@ public final class RegistrarConsoleModule {
   @Provides
   @Parameter("registrar")
   public static Optional<Registrar> provideRegistrar(
-      Gson gson, @OptionalJsonPayload Optional<JsonObject> payload) {
-    if (payload.isPresent() && payload.get().has("registrar")) {
-      return Optional.of(gson.fromJson(payload.get().get("registrar"), Registrar.class));
-    }
-
-    return Optional.empty();
+      Gson gson, @OptionalJsonPayload Optional<JsonElement> payload) {
+    return payload.map(s -> gson.fromJson(s, Registrar.class));
   }
 }
