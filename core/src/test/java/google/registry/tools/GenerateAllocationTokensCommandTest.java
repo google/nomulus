@@ -379,8 +379,8 @@ class GenerateAllocationTokensCommandTest extends CommandTestCase<GenerateAlloca
     assertThat(thrown)
         .hasMessageThat()
         .isEqualTo(
-            "Invalid value for -t parameter. Allowed values:[BULK, DEFAULT_PROMO, SINGLE_USE,"
-                + " UNLIMITED_USE]");
+            "Invalid value for -t parameter. Allowed values:[BULK_PRICING, DEFAULT_PROMO, PACKAGE,"
+                + " SINGLE_USE, UNLIMITED_USE]");
   }
 
   @Test
@@ -408,14 +408,14 @@ class GenerateAllocationTokensCommandTest extends CommandTestCase<GenerateAlloca
                         "--number",
                         "999",
                         "--type",
-                        "BULK",
+                        "BULK_PRICING",
                         String.format(
                             "--token_status_transitions=\"%s=NOT_STARTED,%s=VALID,%s=ENDED\"",
                             START_OF_TIME, fakeClock.nowUtc(), fakeClock.nowUtc().plusDays(1)))))
         .hasMessageThat()
         .isEqualTo(
-            "BULK tokens should not be generated with ENDED or CANCELLED in their transition"
-                + " map");
+            "BULK_PRICING tokens should not be generated with ENDED or CANCELLED in their"
+                + " transition map");
   }
 
   @Test

@@ -20,7 +20,7 @@ import static google.registry.flows.domain.DomainTransferFlowTestCase.persistWit
 import static google.registry.model.billing.BillingBase.RenewalPriceBehavior.DEFAULT;
 import static google.registry.model.billing.BillingBase.RenewalPriceBehavior.NONPREMIUM;
 import static google.registry.model.billing.BillingBase.RenewalPriceBehavior.SPECIFIED;
-import static google.registry.model.domain.token.AllocationToken.TokenType.BULK;
+import static google.registry.model.domain.token.AllocationToken.TokenType.BULK_PRICING;
 import static google.registry.model.domain.token.AllocationToken.TokenType.DEFAULT_PROMO;
 import static google.registry.model.domain.token.AllocationToken.TokenType.SINGLE_USE;
 import static google.registry.model.domain.token.AllocationToken.TokenType.UNLIMITED_USE;
@@ -1254,7 +1254,7 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
         persistResource(
             new AllocationToken.Builder()
                 .setToken("abc123")
-                .setTokenType(BULK)
+                .setTokenType(BULK_PRICING)
                 .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
                 .setAllowedTlds(ImmutableSet.of("tld"))
                 .setRenewalPriceBehavior(SPECIFIED)
@@ -1278,7 +1278,7 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
         persistResource(
             new AllocationToken.Builder()
                 .setToken("abc123")
-                .setTokenType(BULK)
+                .setTokenType(BULK_PRICING)
                 .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
                 .setAllowedTlds(ImmutableSet.of("tld"))
                 .setRenewalPriceBehavior(SPECIFIED)
@@ -1313,7 +1313,7 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
         persistResource(
             new AllocationToken.Builder()
                 .setToken("abc123")
-                .setTokenType(BULK)
+                .setTokenType(BULK_PRICING)
                 .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
                 .setAllowedTlds(ImmutableSet.of("tld"))
                 .setRenewalPriceBehavior(SPECIFIED)
@@ -1342,7 +1342,7 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
         persistResource(
             new AllocationToken.Builder()
                 .setToken("abc123")
-                .setTokenType(BULK)
+                .setTokenType(BULK_PRICING)
                 .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
                 .setAllowedTlds(ImmutableSet.of("tld"))
                 .setRenewalPriceBehavior(SPECIFIED)
