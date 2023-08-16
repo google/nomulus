@@ -20,14 +20,11 @@ import static google.registry.testing.TestDataHelper.loadFile;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.beust.jcommander.ParameterException;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link GetTldCommand}. */
 class GetTldCommandTest extends CommandTestCase<GetTldCommand> {
 
-  // TODO (sarahbot): re-enable this test after we figure out why it fails during RC build.
-  @Disabled
   @Test
   void testSuccess() throws Exception {
     createTld("xn--q9jyb4c");

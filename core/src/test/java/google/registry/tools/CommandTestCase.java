@@ -80,11 +80,12 @@ public abstract class CommandTestCase<C extends Command> {
     RegistryToolEnvironment.UNITTEST.setup(systemPropertyExtension);
     command = newCommandInstance();
 
-    // Capture standard output/error.
+    // Capture standard output/error. Use a single-byte encoding to emulate platforms where default
+    // charset is not UTF_8.
     oldStdout = System.out;
-    System.setOut(new PrintStream(new OutputSplitter(System.out, stdout)));
+    System.setOut(new PrintStream(new OutputSplitter(System.out, stdout), false, "US-ASCII"));
     oldStderr = System.err;
-    System.setErr(new PrintStream(new OutputSplitter(System.err, stderr)));
+    System.setErr(new PrintStream(new OutputSplitter(System.err, stderr), false, "US-ASCII"));
   }
 
   @AfterEach
