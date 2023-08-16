@@ -928,7 +928,7 @@ public class DomainBase extends EppResource
                               "The bulk token %s does not exist", currentBulkToken.getKey())));
       checkArgument(
           token.getTokenType().equals(TokenType.BULK_PRICING),
-          "The currentBulkToken must have a BULK TokenType");
+          "The currentBulkToken must have a BULK_PRICING TokenType");
       getInstance().currentBulkToken = currentBulkToken;
       return thisCastToDerived();
     }
