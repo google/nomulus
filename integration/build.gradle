@@ -77,6 +77,10 @@ task extractSqlIntegrationTestSuite (type: Copy) {
   }
   into unpackedTestDir
   includeEmptyDirs = false
+
+  if (nomulus_version == USE_LOCAL) {
+    dependsOn ':core:testUberJar'
+  }
 }
 
 // TODO(weiminyu): inherit from FilteringTest (defined in :core).

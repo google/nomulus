@@ -31,10 +31,10 @@ import static google.registry.testing.DatabaseHelper.newTld;
 import static google.registry.testing.DatabaseHelper.persistPremiumList;
 import static google.registry.testing.DatabaseHelper.persistReservedList;
 import static google.registry.testing.DatabaseHelper.persistResource;
-import static google.registry.testing.TestDataHelper.filePath;
 import static google.registry.testing.TestDataHelper.loadFile;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
+import static google.registry.util.ResourceUtils.readResourceBytes;
 import static java.math.RoundingMode.UNNECESSARY;
 import static org.joda.money.CurrencyUnit.EUR;
 import static org.joda.money.CurrencyUnit.USD;
@@ -55,14 +55,12 @@ import google.registry.model.tld.label.ReservedList;
 import google.registry.persistence.VKey;
 import google.registry.tldconfig.idn.IdnTableEnum;
 import google.registry.util.SerializeUtils;
-import java.io.File;
 import java.math.BigDecimal;
 import java.util.Optional;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link Tld}. */
@@ -137,7 +135,6 @@ public final class TldTest extends EntityTestCase {
   }
 
   // TODO (sarahbot): re-enable this test after we figure out why it fails in presubmits.
-  @Disabled
   @Test
   void testYamlToTld() throws Exception {
     fakeClock.setTo(START_OF_TIME);
@@ -167,7 +164,8 @@ public final class TldTest extends EntityTestCase {
             .build();
 
     ObjectMapper mapper = getObjectMapper();
-    Tld constructedTld = mapper.readValue(new File(filePath(getClass(), "tld.yaml")), Tld.class);
+    Tld constructedTld =
+        mapper.readValue(readResourceBytes(getClass(), "tld.yaml").openBufferedStream(), Tld.class);
     compareTlds(existingTld, constructedTld);
   }
 
