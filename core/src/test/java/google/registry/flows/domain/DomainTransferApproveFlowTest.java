@@ -17,7 +17,7 @@ package google.registry.flows.domain;
 import static com.google.common.collect.MoreCollectors.onlyElement;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
-import static google.registry.model.domain.token.AllocationToken.TokenType.BULK;
+import static google.registry.model.domain.token.AllocationToken.TokenType.BULK_PRICING;
 import static google.registry.model.domain.token.AllocationToken.TokenType.SINGLE_USE;
 import static google.registry.model.domain.token.AllocationToken.TokenType.UNLIMITED_USE;
 import static google.registry.model.reporting.DomainTransactionRecord.TransactionReportField.NET_ADDS_4_YR;
@@ -387,7 +387,7 @@ class DomainTransferApproveFlowTest
         persistResource(
             new AllocationToken.Builder()
                 .setToken("abc123")
-                .setTokenType(BULK)
+                .setTokenType(BULK_PRICING)
                 .setRenewalPriceBehavior(RenewalPriceBehavior.SPECIFIED)
                 .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
                 .build());
@@ -415,7 +415,7 @@ class DomainTransferApproveFlowTest
         persistResource(
             new AllocationToken.Builder()
                 .setToken("abc123")
-                .setTokenType(BULK)
+                .setTokenType(BULK_PRICING)
                 .setRenewalPriceBehavior(RenewalPriceBehavior.SPECIFIED)
                 .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
                 .build());

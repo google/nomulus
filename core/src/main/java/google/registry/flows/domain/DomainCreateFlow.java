@@ -405,7 +405,7 @@ public final class DomainCreateFlow implements TransactionalFlow {
                     : hasClaimsNotice ? LordnPhase.CLAIMS : LordnPhase.NONE);
     Domain domain = domainBuilder.build();
     if (allocationToken.isPresent()
-        && allocationToken.get().getTokenType().equals(TokenType.BULK)) {
+        && allocationToken.get().getTokenType().equals(TokenType.BULK_PRICING)) {
       if (years > 1) {
         throw new BulkDomainRegisteredForTooManyYearsException(allocationToken.get().getToken());
       }

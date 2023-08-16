@@ -18,7 +18,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.collect.Sets.difference;
 import static google.registry.model.billing.BillingBase.RenewalPriceBehavior.DEFAULT;
-import static google.registry.model.domain.token.AllocationToken.TokenType.BULK;
+import static google.registry.model.domain.token.AllocationToken.TokenType.BULK_PRICING;
 import static google.registry.model.domain.token.AllocationToken.TokenType.DEFAULT_PROMO;
 import static google.registry.model.domain.token.AllocationToken.TokenType.SINGLE_USE;
 import static google.registry.model.domain.token.AllocationToken.TokenType.UNLIMITED_USE;
@@ -290,8 +290,9 @@ class GenerateAllocationTokensCommand implements Command {
           tokenStatusTransitions.containsValue(TokenStatus.ENDED)
               || tokenStatusTransitions.containsValue(TokenStatus.CANCELLED);
       checkArgument(
-          !(BULK.equals(tokenType) && hasEnding),
-          "BULK tokens should not be generated with ENDED or CANCELLED in their transition map");
+          !(BULK_PRICING.equals(tokenType) && hasEnding),
+          "BULK_PRICING tokens should not be generated with ENDED or CANCELLED in their transition"
+              + " map");
     }
 
     if (tokenStrings != null) {

@@ -22,7 +22,7 @@ import static google.registry.model.domain.token.AllocationToken.TokenStatus.CAN
 import static google.registry.model.domain.token.AllocationToken.TokenStatus.ENDED;
 import static google.registry.model.domain.token.AllocationToken.TokenStatus.NOT_STARTED;
 import static google.registry.model.domain.token.AllocationToken.TokenStatus.VALID;
-import static google.registry.model.domain.token.AllocationToken.TokenType.BULK;
+import static google.registry.model.domain.token.AllocationToken.TokenType.BULK_PRICING;
 import static google.registry.model.domain.token.AllocationToken.TokenType.SINGLE_USE;
 import static google.registry.model.domain.token.AllocationToken.TokenType.UNLIMITED_USE;
 import static google.registry.testing.DatabaseHelper.createTld;
@@ -350,7 +350,7 @@ class UpdateAllocationTokensCommandTest extends CommandTestCase<UpdateAllocation
         persistResource(
             new AllocationToken.Builder()
                 .setToken("token")
-                .setTokenType(BULK)
+                .setTokenType(BULK_PRICING)
                 .setRenewalPriceBehavior(SPECIFIED)
                 .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
                 .setTokenStatusTransitions(
@@ -377,7 +377,7 @@ class UpdateAllocationTokensCommandTest extends CommandTestCase<UpdateAllocation
         persistResource(
             new AllocationToken.Builder()
                 .setToken("token")
-                .setTokenType(BULK)
+                .setTokenType(BULK_PRICING)
                 .setRenewalPriceBehavior(SPECIFIED)
                 .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
                 .setTokenStatusTransitions(
