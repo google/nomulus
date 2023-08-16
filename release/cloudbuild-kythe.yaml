@@ -1,8 +1,3 @@
-# To run the build locally, install cloud-build-local first.
-# See: https://cloud.google.com/cloud-build/docs/build-debug-locally
-# In the root of a nomulus source tree, run:
-# cloud-build-local --config=cloudbuild-kythe.yaml --dryrun=false \
-#   --substitutions _KYTHE_VERSION=[kythe_version],COMMIT_SHA=[hash] ..
 # This will download kythe version ${kythe_version} (must be higher than
 # v0.0.39 and build a ${hash}.kzip file for Kythe to enable cross referencing.
 #

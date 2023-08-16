@@ -1,10 +1,3 @@
-# To run the build locally, install cloud-build-local first.
-# Then run:
-# cloud-build-local --config=cloudbuild-deploy.yaml --dryrun=false \
-# --substitutions=TAG_NAME=[TAG],_ENV=[ENV] ..
-#
-# This will deploy the GAE config files and save the deployed tags in GCS.
-#
 # To manually trigger a build on GCB, run:
 # gcloud builds submit --config=cloudbuild-deploy.yaml \
 # --substitutions=TAG_NAME=[TAG],_ENV=[ENV] ..

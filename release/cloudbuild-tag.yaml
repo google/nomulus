@@ -1,7 +1,3 @@
-# To run the build locally, install cloud-build-local first.
-# Then run:
-# cloud-build-local --config=cloudbuild-tag.yaml --dryrun=false --substitutions \
-#   TAG_NAME=[TAG],_IMAGE=[IMAGE] ..
 # This will add a "live" tag to the image in gcr.io/[PROJECT_ID]/[IMAGE]:[TAG].
 # The PROJECT_ID is the current project name that gcloud uses.
 #

@@ -1,6 +1,3 @@
-# To run the build locally, install cloud-build-local first.
-# Then run:
-# cloud-build-local --config=cloudbuild-sync.yaml --dryrun=false --substitutions TAG_NAME=[TAG] ..
 # This will sync the folder gs://[PROJECT_ID]-deploy/[TAG] to gs://[PROJECT_ID]-deploy/live.
 # The PROJECT_ID is the current project name that gcloud uses.
 #

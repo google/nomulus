@@ -1,9 +1,3 @@
-# To run the build locally, install cloud-build-local first.
-# You will need access to a private registry, so be sure to install the docker
-# credential helper.
-# See: https://cloud.google.com/cloud-build/docs/build-debug-locally
-# Then run:
-# cloud-build-local --config=cloudbuild-proxy.yaml --dryrun=false --substitutions TAG_NAME=[TAG] ..
 # This will create a docker image named gcr.io/[PROJECT_ID]/proxy:[TAG] locally.
 # The PROJECT_ID is the current project name that gcloud uses.
 #

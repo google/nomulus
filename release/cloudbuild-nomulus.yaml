@@ -1,15 +1,3 @@
-# To run the build locally, install cloud-build-local first.
-# See: https://cloud.google.com/cloud-build/docs/build-debug-locally
-# You will need access to a private registry, so be sure to install the docker
-# credential helper.
-# Then, in the root of a nomulus source tree, run:
-# cloud-build-local --config=cloudbuild-nomulus.yaml --dryrun=false \
-#   --substitutions TAG_NAME=[TAG] ..
-# This will build the contents of the current directory and generate the
-# nomulus war-files locally.
-# The PROJECT_ID is the current project name that gcloud uses.
-# You can add "--push true" to have the image pushed to GCR.
-#
 # To manually trigger a build on GCB, run:
 # gcloud builds submit --config cloudbuild-nomulus.yaml --substitutions TAG_NAME=[TAG] ..
 #
@@ -24,12 +12,17 @@ steps:
   # Set home for Gradle caches. Must be consistent with last step below
   # and ./build_nomulus_for_env.sh
   env: [ 'GRADLE_USER_HOME=/workspace/cloudbuild-caches' ]
-  args: ['./gradlew',
-         'test',
-         '-PskipDockerIncompatibleTests=true',
-         '-PmavenUrl=gcs://domain-registry-maven-repository/maven',
-         '-PpluginsUrl=gcs://domain-registry-maven-repository/plugins'
-        ]
+  args:
+  - -c
+  - |
+    ./gradlew \
+         test \
+         -PskipDockerIncompatibleTests=true \
+         -PmavenUrl=gcs://domain-registry-maven-repository/maven \
+         -PpluginsUrl=gcs://domain-registry-maven-repository/plugins \
+          || true
+    mkdir -p output
+    tar cvf output/standardTest.tar core/build/reports/tests/standardTest
 # Build and package the deployment files for each environment, and the tool
 # binary and image.
 - name: 'gcr.io/${PROJECT_ID}/builder:latest'

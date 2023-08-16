@@ -2,11 +2,6 @@
 # '_ENV' variable is the same as the golden schema in the current release for
 # that environment.
 #
-# To run the build locally, install cloud-build-local first.
-# Then run:
-# cloud-build-local --config=cloudbuild-schema-verify.yaml --dryrun=false \
-# --substitutions=_ENV=[ENV] ..
-#
 # To manually trigger a build on GCB, run:
 # gcloud builds submit --config=cloudbuild-schema-verify.yaml \
 # --substitutions=_ENV=[ENV] ..

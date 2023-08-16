@@ -1,11 +1,3 @@
-# To run the build locally, install cloud-build-local first.
-# You will need access to a private registry, so be sure to install the docker
-# credential helper.
-# See: https://cloud.google.com/cloud-build/docs/build-debug-locally
-# Then run:
-# cloud-build-local --config=cloudbuild-release.yaml --dryrun=false \
-#   --substitutions TAG_NAME=[TAG],_INTERNAL_REPO_URL=[URL] ..
-#
 # To manually trigger a build on GCB, run:
 # gcloud builds submit --config cloudbuild-release.yaml --substitutions \
 #   TAG_NAME=[TAG],_INTERNAL_REPO_URL=[URL] ..

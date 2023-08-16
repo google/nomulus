@@ -1,8 +1,3 @@
-# To run the build locally, install cloud-build-local first.
-# See: https://cloud.google.com/cloud-build/docs/build-debug-locally
-# In the root of a nomulus source tree, run:
-# cloud-build-local --config=cloudbuild-dev-resource.yaml --dryrun=false ..
-#
 # This will compile javadoc for the FOSS version of the code base and replace
 # the content at gs://${PROJECT_ID}-javadoc with the it. The compiled javadoc
 # can then be accesssed at https://storage.googleapis.com/${PROJECT_ID}-javadoc

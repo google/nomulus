@@ -1,8 +1,3 @@
-# To run the build locally, install cloud-build-local first.
-# Then run:
-# cloud-build-local --config=cloudbuild-schema-deploy.yaml --dryrun=false \
-# --substitutions=TAG_NAME=[TAG],_ENV=[ENV] ..
-#
 # This will deploy Cloud SQL schema release with tag value ${TAG_NAME} to
 # the environment specified by ${_ENV}.
 #
