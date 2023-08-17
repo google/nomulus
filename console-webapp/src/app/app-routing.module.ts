@@ -24,10 +24,12 @@ import SettingsUsersComponent from './settings/users/users.component';
 import SettingsSecurityComponent from './settings/security/security.component';
 import { RegistrarGuard } from './registrar/registrar.guard';
 import { RegistrarComponent } from './registrar/registrar.component';
+import { EmptyRegistrar } from './registrar/emptyRegistrar.component';
 
 const routes: Routes = [
   { path: '', redirectTo: '/home', pathMatch: 'full' },
   { path: 'registrars', component: RegistrarComponent },
+  { path: 'empty-registrar', component: EmptyRegistrar },
   { path: 'home', component: HomeComponent, canActivate: [RegistrarGuard] },
   { path: 'tlds', component: TldsComponent, canActivate: [RegistrarGuard] },
   {
@@ -62,7 +64,7 @@ const routes: Routes = [
       },
       {
         path: 'registrars',
-        component: SettingsRegistrarsComponent,
+        component: RegistrarComponent,
       },
     ],
   },

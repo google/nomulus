@@ -1,4 +1,4 @@
-// Copyright 2022 The Nomulus Authors. All Rights Reserved.
+// Copyright 2023 The Nomulus Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,26 +13,24 @@
 // limitations under the License.
 
 import { Component } from '@angular/core';
-import { RegistrarService } from './registrar/registrar.service';
-import { Router } from '@angular/router';
-import { GlobalLoaderService } from './shared/services/globalLoader.service';
+import { ActivatedRoute, Router } from '@angular/router';
+import { RegistrarService } from './registrar.service';
 
 @Component({
-  selector: 'app-root',
-  templateUrl: './app.component.html',
-  styleUrls: ['./app.component.scss'],
+  selector: 'app-empty-registrar',
+  templateUrl: './emptyRegistrar.component.html',
+  styleUrls: ['./emptyRegistrar.component.scss'],
 })
-export class AppComponent {
-  renderRouter: boolean = true;
+export class EmptyRegistrar {
   constructor(
+    private route: ActivatedRoute,
     protected registrarService: RegistrarService,
-    protected globalLoader: GlobalLoaderService
+    private router: Router
   ) {
-    registrarService.activeRegistrarIdChange.subscribe(() => {
-      this.renderRouter = false;
-      setTimeout(() => {
-        this.renderRouter = true;
-      }, 400);
+    registrarService.activeRegistrarIdChange.subscribe((newRegistrarId) => {
+      if (newRegistrarId) {
+        this.router.navigate([this.route.snapshot.paramMap.get('nextUrl')]);
+      }
     });
   }
 }
