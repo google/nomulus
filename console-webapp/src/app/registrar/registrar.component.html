@@ -3,15 +3,17 @@
     {{ registrarService.activeRegistrarId === "" ? "Select" : "Switch" }}
     registrar:
   </h4>
-  <mat-form-field>
-    <mat-label>Registrar</mat-label>
-    <mat-select [(ngModel)]="registrarService.activeRegistrarId">
-      <mat-option
-        *ngFor="let registrar of registrarService.registrars"
-        [value]="registrar"
-      >
-        {{ registrar }}
-      </mat-option>
-    </mat-select>
-  </mat-form-field>
+  <div class="console-app__registrar-selector"> 
+    <mat-form-field  appearance="fill">
+      <mat-label>Registrar</mat-label>
+      <mat-select [(ngModel)]="registrarService.activeRegistrarId">
+        <mat-option
+          *ngFor="let registrar of registrarService.registrars"
+          [value]="registrar"
+        >
+          {{ registrar }}
+        </mat-option>
+      </mat-select>
+    </mat-form-field>
+  </div>
 </div>
