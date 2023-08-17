@@ -12,17 +12,12 @@ steps:
   # Set home for Gradle caches. Must be consistent with last step below
   # and ./build_nomulus_for_env.sh
   env: [ 'GRADLE_USER_HOME=/workspace/cloudbuild-caches' ]
-  args:
-  - -c
-  - |
-    ./gradlew \
-         test \
-         -PskipDockerIncompatibleTests=true \
-         -PmavenUrl=gcs://domain-registry-maven-repository/maven \
-         -PpluginsUrl=gcs://domain-registry-maven-repository/plugins \
-          || true
-    mkdir -p output
-    tar cvf output/standardTest.tar core/build/reports/tests/standardTest
+  args: ['./gradlew',
+         'test',
+         '-PskipDockerIncompatibleTests=true',
+         '-PmavenUrl=gcs://domain-registry-maven-repository/maven',
+         '-PpluginsUrl=gcs://domain-registry-maven-repository/plugins'
+        ]
 # Build and package the deployment files for each environment, and the tool
 # binary and image.
 - name: 'gcr.io/${PROJECT_ID}/builder:latest'
