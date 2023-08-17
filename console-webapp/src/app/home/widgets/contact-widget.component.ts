@@ -15,8 +15,9 @@
 import { Component } from '@angular/core';
 
 @Component({
-  selector: 'app-registrars',
-  templateUrl: './registrars.component.html',
-  styleUrls: ['./registrars.component.scss'],
+  selector: '[app-contact-widget]',
+  templateUrl: './contact-widget.component.html',
 })
-export default class RegistrarsComponent {}
+export class ContactWidgetComponent {
+  constructor() {}
+}

@@ -44,6 +44,7 @@ import { CdkMenuModule } from '@angular/cdk/menu';
 import { DialogModule } from '@angular/cdk/dialog';
 import { MatSidenavModule } from '@angular/material/sidenav';
 import { MatSnackBarModule } from '@angular/material/snack-bar';
+import {MatPaginatorModule} from '@angular/material/paginator';
 
 @NgModule({
   exports: [
@@ -79,6 +80,7 @@ import { MatSnackBarModule } from '@angular/material/snack-bar';
     OverlayModule,
     DialogModule,
     MatSnackBarModule,
+    MatPaginatorModule
   ],
 })
 export class MaterialModule {}

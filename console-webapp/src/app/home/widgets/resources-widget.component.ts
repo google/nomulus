@@ -1,4 +1,4 @@
-// Copyright 2022 The Nomulus Authors. All Rights Reserved.
+// Copyright 2023 The Nomulus Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,20 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-.console-app {
-    &__home {
-        margin-top: 1rem;
-    }
-    &__home-widgets {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-        grid-gap: 20px;
+import { Component } from '@angular/core';
 
-        mat-card {
-            height: 100%;
-            h1 {
-                margin-top: 1rem;
-            }
-        }
-    }
+@Component({
+  selector: '[app-resources-widget]',
+  templateUrl: './resources-widget.component.html',
+})
+export class ResourcesWidgetComponent {
+  constructor() {}
 }

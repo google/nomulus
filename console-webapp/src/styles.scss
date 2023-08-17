@@ -11,6 +11,8 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+@use "@angular/material" as mat;
+@import "app/registrar/registrar-selector.component.scss";
 
 html,
 body {
@@ -19,4 +21,43 @@ body {
 body {
   margin: 0;
   font-family: Roboto, "Helvetica Neue", sans-serif;
+}
+
+.text-center {
+  text-align: center;
+}
+
+.console-app {
+  &__widget {
+    display: flex;
+    gap: 10px;
+    &-wrapper__wide {
+      grid-column: span 2;
+    }
+    &-link {
+      padding: 0 !important;
+      text-align: left;
+      margin-bottom: .5rem;
+    }
+    &-title {
+      color: var(--primary) !important;
+    }
+    &-icon {
+      font-size: 4rem;
+      line-height: 4rem;
+      height: 4rem !important;
+      width: 4rem !important;
+    }
+    &_left {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    &_right {
+      flex: 1;
+      border-left: 1px solid var(--secondary);
+      padding-left: 20px;
+    }
+  }
 }

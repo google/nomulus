@@ -14,7 +14,7 @@
 
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { RegistrarComponent } from './registrar.component';
+import { RegistrarComponent } from './registrarsTable.component';
 import { BackendService } from '../shared/services/backend.service';
 import { ActivatedRoute } from '@angular/router';
 import { HttpClientTestingModule } from '@angular/common/http/testing';

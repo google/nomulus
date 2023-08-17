@@ -37,6 +37,18 @@
     justify-content: flex-start;
     margin: 2rem 0;
   }
+  &__empty-contacts {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+  }
+  &__empty-contacts-icon {
+    width: 4rem;
+    height: 4rem;
+    font-size: 4rem;
+    margin-top: 1.5rem;
+  }
 }
 .contact-details {
   &__input {

@@ -18,51 +18,56 @@ import { TldsComponent } from './tlds/tlds.component';
 import { HomeComponent } from './home/home.component';
 import { SettingsComponent } from './settings/settings.component';
 import SettingsContactComponent from './settings/contact/contact.component';
-import SettingsRegistrarsComponent from './settings/registrars/registrars.component';
 import SettingsWhoisComponent from './settings/whois/whois.component';
 import SettingsUsersComponent from './settings/users/users.component';
 import SettingsSecurityComponent from './settings/security/security.component';
 import { RegistrarGuard } from './registrar/registrar.guard';
-import { RegistrarComponent } from './registrar/registrar.component';
+import { RegistrarComponent } from './registrar/registrarsTable.component';
+import { EmptyRegistrar } from './registrar/emptyRegistrar.component';
 
 const routes: Routes = [
   { path: '', redirectTo: '/home', pathMatch: 'full' },
   { path: 'registrars', component: RegistrarComponent },
+  { path: 'empty-registrar', component: EmptyRegistrar },
   { path: 'home', component: HomeComponent, canActivate: [RegistrarGuard] },
   { path: 'tlds', component: TldsComponent, canActivate: [RegistrarGuard] },
   {
     path: 'settings',
     component: SettingsComponent,
-    canActivate: [RegistrarGuard],
     children: [
       {
         path: '',
-        redirectTo: 'contact',
+        redirectTo: 'registrars',
         pathMatch: 'full',
       },
       {
         path: 'contact',
         component: SettingsContactComponent,
+        canActivate: [RegistrarGuard],
       },
       {
         path: 'whois',
         component: SettingsWhoisComponent,
+        canActivate: [RegistrarGuard],
       },
       {
         path: 'security',
         component: SettingsSecurityComponent,
+        canActivate: [RegistrarGuard],
       },
       {
         path: 'epp-password',
         component: SettingsSecurityComponent,
+        canActivate: [RegistrarGuard],
       },
       {
         path: 'users',
         component: SettingsUsersComponent,
+        canActivate: [RegistrarGuard],
       },
       {
         path: 'registrars',
-        component: SettingsRegistrarsComponent,
+        component: RegistrarComponent,
       },
     ],
   },

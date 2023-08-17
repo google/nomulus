@@ -1,21 +1,13 @@
-<h3>Recent Activity</h3>
-<table
-  mat-table
-  [dataSource]="dataSource"
-  class="mat-elevation-z8 console-home__activity"
->
-  <ng-container
-    *ngFor="let column of columns"
-    [matColumnDef]="column.columnDef"
-  >
-    <th mat-header-cell *matHeaderCellDef>
-      {{ column.header }}
-    </th>
-    <td mat-cell *matCellDef="let row">
-      {{ column.cell(row) }}
-    </td>
-  </ng-container>
-
-  <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-  <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
-</table>
+<div class="console-app__home">
+  <h1>Welcome to the Google Registry Console</h1>
+  <div class="console-app__home-widgets">
+    <div app-domains-widget class="console-app__widget-wrapper__wide"></div>
+    <div app-contact-widget class="console-app__widget-wrapper__wide"></div>
+    <div app-tlds-widget></div>
+    <div app-promotions-widget class="console-app__widget-wrapper__wide"></div>
+    <div app-promotions-widget class="console-app__widget-wrapper__wide"></div>
+    <div app-resources-widget></div>
+    <div app-billing-widget></div>
+    <div app-epp-widget></div>
+  </div>
+</div>
