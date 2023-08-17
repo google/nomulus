@@ -18,7 +18,7 @@
       </mat-nav-list>
     </mat-sidenav>
     <mat-sidenav-content class="console-app__content-wrapper">
-      <div class="console-app__content">
+      <div class="console-app__content" *ngIf="renderRouter">
         <router-outlet></router-outlet>
       </div>
     </mat-sidenav-content>

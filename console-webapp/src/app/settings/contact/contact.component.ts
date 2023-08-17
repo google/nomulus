@@ -158,7 +158,7 @@ export default class ContactComponent {
   }
 
   public get groupedData() {
-    return this.contactService.contacts.reduce((acc, contact) => {
+    return this.contactService.contacts?.reduce((acc, contact) => {
       contact.types.forEach((type) => {
         acc
           .find((group: GroupedContacts) => group.value === type)

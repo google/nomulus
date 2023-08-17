@@ -13,10 +13,25 @@
 // limitations under the License.
 
 import { Component } from '@angular/core';
+import { RegistrarService } from './registrar/registrar.service';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-root',
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.scss'],
 })
-export class AppComponent {}
+export class AppComponent {
+  renderRouter: boolean = true;
+  constructor(
+    protected registrarService: RegistrarService,
+    private router: Router
+  ) {
+    registrarService.activeRegistrarIdChange.subscribe(() => {
+      this.renderRouter = false;
+      setTimeout(() => {
+        this.renderRouter = true;
+      }, 400);
+    });
+  }
+}

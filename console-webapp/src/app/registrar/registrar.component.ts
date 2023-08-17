@@ -22,24 +22,15 @@ import { ActivatedRoute, Router } from '@angular/router';
   styleUrls: ['./registrar.component.scss'],
 })
 export class RegistrarComponent {
-  private lastActiveRegistrarId: string;
-
-  constructor(
-    private route: ActivatedRoute,
-    protected registrarService: RegistrarService,
-    private router: Router
-  ) {
-    this.lastActiveRegistrarId = registrarService.activeRegistrarId;
-  }
-
-  ngDoCheck() {
-    if (
-      this.registrarService.activeRegistrarId &&
-      this.registrarService.activeRegistrarId !== this.lastActiveRegistrarId &&
-      this.route.snapshot.paramMap.get('nextUrl')
-    ) {
-      this.lastActiveRegistrarId = this.registrarService.activeRegistrarId;
-      this.router.navigate([this.route.snapshot.paramMap.get('nextUrl')]);
-    }
-  }
+  protected displayedColumns: string[] = [
+    'registrarId',
+    'registrarName',
+    'allowedTlds',
+    'emailAddress',
+    'ianaIdentifier',
+    'billingAccountMap',
+    'icannReferralEmail',
+    'registryLockAllowed',
+  ];
+  constructor(protected registrarService: RegistrarService) {}
 }

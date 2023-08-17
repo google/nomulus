@@ -12,23 +12,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Injectable } from '@angular/core';
-import { Router, RouterStateSnapshot } from '@angular/router';
+import { Component } from '@angular/core';
+import { ActivatedRoute, Router } from '@angular/router';
 import { RegistrarService } from './registrar.service';
 
-@Injectable({
-  providedIn: 'root',
+@Component({
+  selector: 'app-empty-registrar',
+  templateUrl: './emptyRegistrar.component.html',
+  styleUrls: ['./emptyRegistrar.component.scss'],
 })
-export class RegistrarGuard {
+export class EmptyRegistrar {
   constructor(
-    private router: Router,
-    private registrarService: RegistrarService
-  ) {}
-
-  canActivate(state: RouterStateSnapshot): Promise<boolean> | boolean {
-    if (this.registrarService.activeRegistrarId) {
-      return true;
-    }
-    return this.router.navigate([`/empty-registrar`, { nextUrl: state.url }]);
+    private route: ActivatedRoute,
+    protected registrarService: RegistrarService,
+    private router: Router
+  ) {
+    registrarService.activeRegistrarIdChange.subscribe((newRegistrarId) => {
+      if (newRegistrarId) {
+        this.router.navigate([this.route.snapshot.paramMap.get('nextUrl')]);
+      }
+    });
   }
 }
