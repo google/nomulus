@@ -15,12 +15,27 @@
 import { Injectable } from '@angular/core';
 import { BackendService } from '../shared/services/backend.service';
 
+interface Address {
+  street: string[];
+  city: string;
+  countryCode: string;
+}
+export interface Registrar {
+  billingAccountMap: object;
+  driveFolderId: string;
+  ianaIdentifier: number;
+  icannReferralEmail: string;
+  localizedAddress: Address;
+  registrarId: string;
+  registrarName: string;
+  registryLockAllowed: boolean;
+}
 @Injectable({
   providedIn: 'root',
 })
 export class RegistrarService {
   activeRegistrarId: string = '';
-  registrars: string[] = [];
+  registrars: Registrar[] = [];
   constructor(private backend: BackendService) {
     this.backend.getRegistrars().subscribe((r) => {
       this.registrars = r;

@@ -1,17 +1,18 @@
-@use '@angular/material' as mat;
-
 .console-app {
   &__registrar {
     display: flex;
     justify-content: center;
-    align-items: center;
-    margin-top: 1rem;
+    align-items: baseline;
+    // Fix for angular v15 label issue
+    // https://github.com/angular/components/issues/26579
+    .mat-mdc-floating-label {
+      display: inline !important;
+    }
+    .mat-mdc-select-arrow-wrapper {
+      transform: translateY(0) !important;
+    }
   }
   &__title {
     margin-right: 1rem;
   }
-  &__registrar-selector {
-    @include mat.all-component-densities(-2);
-    background: red;
-  } 
 }

@@ -1,4 +1,4 @@
-// Copyright 2022 The Nomulus Authors. All Rights Reserved.
+// Copyright 2023 The Nomulus Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,14 +11,12 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-@use "@angular/material" as mat;
-@import "app/registrar/registrar.component.scss";
 
-html,
-body {
-  height: 100%;
-}
-body {
-  margin: 0;
-  font-family: Roboto, "Helvetica Neue", sans-serif;
-}
+import { Component } from '@angular/core';
+
+@Component({
+  selector: 'app-empty-registrar',
+  templateUrl: './emptyRegistrar.component.html',
+  styleUrls: ['./emptyRegistrar.component.scss'],
+})
+export class EmptyRegistrar {}

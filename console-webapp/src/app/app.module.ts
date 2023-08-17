@@ -34,6 +34,8 @@ import { HttpClientModule } from '@angular/common/http';
 import { RegistrarComponent } from './registrar/registrar.component';
 import { RegistrarGuard } from './registrar/registrar.guard';
 import SecurityComponent from './settings/security/security.component';
+import { MAT_FORM_FIELD_DEFAULT_OPTIONS } from '@angular/material/form-field';
+import { EmptyRegistrar } from './registrar/emptyRegistrar.component';
 
 @NgModule({
   declarations: [
@@ -46,6 +48,7 @@ import SecurityComponent from './settings/security/security.component';
     ContactDetailsDialogComponent,
     RegistrarComponent,
     SecurityComponent,
+    EmptyRegistrar,
   ],
   imports: [
     HttpClientModule,
@@ -55,7 +58,16 @@ import SecurityComponent from './settings/security/security.component';
     AppRoutingModule,
     BrowserAnimationsModule,
   ],
-  providers: [BackendService, RegistrarGuard],
+  providers: [
+    BackendService,
+    RegistrarGuard,
+    {
+      provide: MAT_FORM_FIELD_DEFAULT_OPTIONS,
+      useValue: {
+        subscriptSizing: 'dynamic',
+      },
+    },
+  ],
   bootstrap: [AppComponent],
 })
 export class AppModule {}
