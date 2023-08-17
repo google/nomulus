@@ -20,7 +20,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 @Component({
   selector: 'app-security',
   templateUrl: './security.component.html',
-  styleUrls: ['./security.component.less'],
+  styleUrls: ['./security.component.scss'],
   providers: [SecurityService],
 })
 export default class SecurityComponent {
