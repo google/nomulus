@@ -116,12 +116,9 @@ class SecurityActionTest {
 
   private SecurityAction createAction(AuthResult authResult, String registrarId)
       throws IOException {
-      doReturn(new BufferedReader(new StringReader("{\"registrar\":" + jsonRegistrar1 + "}")))
-          .when(request)
-          .getReader();
-      Optional<Registrar> maybeRegistrar =
-          RegistrarConsoleModule.provideRegistrar(
-              GSON, RequestModule.provideJsonBody(request, GSON));
+    doReturn(new BufferedReader(new StringReader(jsonRegistrar1))).when(request).getReader();
+    Optional<Registrar> maybeRegistrar =
+        RegistrarConsoleModule.provideRegistrar(GSON, RequestModule.provideJsonBody(request, GSON));
       return new SecurityAction(
           authResult,
           response,

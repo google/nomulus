@@ -12,11 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Injectable } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
-import { Observable, catchError, of } from 'rxjs';
-import { Contact } from '../../settings/contact/contact.service';
+import { Injectable } from '@angular/core';
+import { catchError, Observable, of } from 'rxjs';
 import { SecuritySettingsBackendModel } from 'src/app/settings/security/security.service';
+
+import { Contact } from '../../settings/contact/contact.service';
 
 @Injectable()
 export class BackendService {
@@ -55,7 +56,7 @@ export class BackendService {
   ): Observable<Contact[]> {
     return this.http.post<Contact[]>(
       `/console-api/settings/contacts?registrarId=${registrarId}`,
-      { contacts }
+      contacts
     );
   }
 
@@ -85,7 +86,7 @@ export class BackendService {
   ): Observable<SecuritySettingsBackendModel> {
     return this.http.post<SecuritySettingsBackendModel>(
       `/console-api/settings/security?registrarId=${registrarId}`,
-      { registrar: securitySettings }
+      securitySettings
     );
   }
 }

@@ -251,9 +251,7 @@ class RegistrarsActionTest {
           passcodeGenerator);
     } else {
       try {
-        doReturn(
-                new BufferedReader(
-                    new StringReader("{\"registrar\":" + registrarParamMap.toString() + "}")))
+        doReturn(new BufferedReader(new StringReader(registrarParamMap.toString())))
             .when(request)
             .getReader();
       } catch (IOException e) {
