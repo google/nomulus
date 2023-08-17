@@ -1,8 +1,3 @@
-# To run the build locally, install cloud-build-local first.
-# Then run:
-# cloud-build-local --config=cloudbuild-renew-prober-certs.yaml --dryrun=false \
-# --substitutions=_ENV=[ENV] ..
-#
 # This will generate a new SSL certificate and apply it to the probers in the
 # environment specified by ${_ENV}.
 #
