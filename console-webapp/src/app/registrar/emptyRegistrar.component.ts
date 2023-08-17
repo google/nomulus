@@ -13,33 +13,32 @@
 // limitations under the License.
 
 import { Component } from '@angular/core';
-import { RegistrarService } from './registrar.service';
 import { ActivatedRoute, Router } from '@angular/router';
+import { RegistrarService } from './registrar.service';
+import { Subscription } from 'rxjs';
 
 @Component({
-  selector: 'app-registrar',
-  templateUrl: './registrar.component.html',
-  styleUrls: ['./registrar.component.scss'],
+  selector: 'app-empty-registrar',
+  templateUrl: './emptyRegistrar.component.html',
+  styleUrls: ['./emptyRegistrar.component.scss'],
 })
-export class RegistrarComponent {
-  private lastActiveRegistrarId: string;
+export class EmptyRegistrar {
+  private registrarIdChangeSubscription?: Subscription;
 
   constructor(
     private route: ActivatedRoute,
     protected registrarService: RegistrarService,
     private router: Router
   ) {
-    this.lastActiveRegistrarId = registrarService.activeRegistrarId;
+    this.registrarIdChangeSubscription =
+      registrarService.activeRegistrarIdChange.subscribe((newRegistrarId) => {
+        if (newRegistrarId) {
+          this.router.navigate([this.route.snapshot.paramMap.get('nextUrl')]);
+        }
+      });
   }
 
-  ngDoCheck() {
-    if (
-      this.registrarService.activeRegistrarId &&
-      this.registrarService.activeRegistrarId !== this.lastActiveRegistrarId &&
-      this.route.snapshot.paramMap.get('nextUrl')
-    ) {
-      this.lastActiveRegistrarId = this.registrarService.activeRegistrarId;
-      this.router.navigate([this.route.snapshot.paramMap.get('nextUrl')]);
-    }
+  ngOnDestroy() {
+    this.registrarIdChangeSubscription?.unsubscribe();
   }
 }

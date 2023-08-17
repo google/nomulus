@@ -31,9 +31,20 @@ import SettingsContactComponent, {
   ContactDetailsDialogComponent,
 } from './settings/contact/contact.component';
 import { HttpClientModule } from '@angular/common/http';
-import { RegistrarComponent } from './registrar/registrar.component';
+import { RegistrarComponent } from './registrar/registrarsTable.component';
 import { RegistrarGuard } from './registrar/registrar.guard';
 import SecurityComponent from './settings/security/security.component';
+import { MAT_FORM_FIELD_DEFAULT_OPTIONS } from '@angular/material/form-field';
+import { EmptyRegistrar } from './registrar/emptyRegistrar.component';
+import { RegistrarSelectorComponent } from './registrar/registrar-selector.component';
+import { GlobalLoaderService } from './shared/services/globalLoader.service';
+import { ContactWidgetComponent } from './home/widgets/contact-widget.component';
+import { PromotionsWidgetComponent } from './home/widgets/promotions-widget.component';
+import { TldsWidgetComponent } from './home/widgets/tlds-widget.component';
+import { ResourcesWidgetComponent } from './home/widgets/resources-widget.component';
+import { EppWidgetComponent } from './home/widgets/epp-widget.component';
+import { BillingWidgetComponent } from './home/widgets/billing-widget.component';
+import { DomainsWidgetComponent } from './home/widgets/domains-widget.component';
 
 @NgModule({
   declarations: [
@@ -46,6 +57,15 @@ import SecurityComponent from './settings/security/security.component';
     ContactDetailsDialogComponent,
     RegistrarComponent,
     SecurityComponent,
+    EmptyRegistrar,
+    RegistrarSelectorComponent,
+    ContactWidgetComponent,
+    DomainsWidgetComponent,
+    PromotionsWidgetComponent,
+    TldsWidgetComponent,
+    ResourcesWidgetComponent,
+    EppWidgetComponent,
+    BillingWidgetComponent,
   ],
   imports: [
     HttpClientModule,
@@ -55,7 +75,17 @@ import SecurityComponent from './settings/security/security.component';
     AppRoutingModule,
     BrowserAnimationsModule,
   ],
-  providers: [BackendService, RegistrarGuard],
+  providers: [
+    GlobalLoaderService,
+    BackendService,
+    RegistrarGuard,
+    {
+      provide: MAT_FORM_FIELD_DEFAULT_OPTIONS,
+      useValue: {
+        subscriptSizing: 'dynamic',
+      },
+    },
+  ],
   bootstrap: [AppComponent],
 })
 export class AppModule {}
