@@ -19,7 +19,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 @Component({
   selector: 'app-registrar',
   templateUrl: './registrar.component.html',
-  styleUrls: ['./registrar.component.less'],
+  styleUrls: ['./registrar.component.scss'],
 })
 export class RegistrarComponent {
   private lastActiveRegistrarId: string;

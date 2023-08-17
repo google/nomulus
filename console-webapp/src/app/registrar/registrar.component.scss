@@ -1,3 +1,5 @@
+@use '@angular/material' as mat;
+
 .console-app {
   &__registrar {
     display: flex;
@@ -8,4 +10,8 @@
   &__title {
     margin-right: 1rem;
   }
+  &__registrar-selector {
+    @include mat.all-component-densities(-2);
+    background: red;
+  } 
 }

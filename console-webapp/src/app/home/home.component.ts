@@ -196,7 +196,7 @@ const MOCK_DATA: ActivityRecord[] = [
 @Component({
   selector: 'app-home',
   templateUrl: './home.component.html',
-  styleUrls: ['./home.component.less'],
+  styleUrls: ['./home.component.scss'],
 })
 export class HomeComponent {
   columns = [
