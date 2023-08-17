@@ -14,16 +14,59 @@
 
 import { Injectable } from '@angular/core';
 import { BackendService } from '../shared/services/backend.service';
+import { Subject } from 'rxjs';
+import {
+  GlobalLoader,
+  GlobalLoaderService,
+} from '../shared/services/globalLoader.service';
+
+interface Address {
+  street?: string[];
+  city?: string;
+  countryCode?: string;
+  zip?: string;
+  state?: string;
+}
+
+export interface Registrar {
+  allowedTlds?: string[];
+  ipAddressAllowList?: string[];
+  emailAddress?: string;
+  billingAccountMap?: object;
+  driveFolderId?: string;
+  ianaIdentifier?: number;
+  icannReferralEmail?: string;
+  localizedAddress?: Address;
+  registrarId: string;
+  registrarName: string;
+  registryLockAllowed?: boolean;
+}
 
 @Injectable({
   providedIn: 'root',
 })
-export class RegistrarService {
+export class RegistrarService implements GlobalLoader {
   activeRegistrarId: string = '';
-  registrars: string[] = [];
-  constructor(private backend: BackendService) {
+  registrars: Registrar[] = [];
+  activeRegistrarIdChange: Subject<string> = new Subject<string>();
+
+  constructor(
+    private backend: BackendService,
+    private globalLoader: GlobalLoaderService
+  ) {
     this.backend.getRegistrars().subscribe((r) => {
+      this.globalLoader.stopGlobalLoader(this);
       this.registrars = r;
     });
+    this.globalLoader.startGlobalLoader(this);
+  }
+
+  public updateRegistrar(registrarId: string) {
+    this.activeRegistrarId = registrarId;
+    this.activeRegistrarIdChange.next(registrarId);
+  }
+
+  loadingTimeout() {
+    // TODO: Decide what to do when timeout happens
   }
 }

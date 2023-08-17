@@ -11,3 +11,21 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
+.console-app {
+  &__home {
+    margin-top: 1rem;
+  }
+  &__home-widgets {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    grid-gap: 20px;
+
+    mat-card {
+      height: 100%;
+      h1 {
+        margin-top: 1rem;
+      }
+    }
+  }
+}
