@@ -12,25 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { Component } from '@angular/core';
 
-import RegistrarsComponent from './registrars.component';
-
-describe('RegistrarsComponent', () => {
-  let component: RegistrarsComponent;
-  let fixture: ComponentFixture<RegistrarsComponent>;
-
-  beforeEach(async () => {
-    await TestBed.configureTestingModule({
-      declarations: [RegistrarsComponent],
-    }).compileComponents();
-
-    fixture = TestBed.createComponent(RegistrarsComponent);
-    component = fixture.componentInstance;
-    fixture.detectChanges();
-  });
-
-  it('should create', () => {
-    expect(component).toBeTruthy();
-  });
-});
+@Component({
+  selector: '[app-tlds-widget]',
+  templateUrl: './tlds-widget.component.html',
+})
+export class TldsWidgetComponent {
+  constructor() {}
+}
