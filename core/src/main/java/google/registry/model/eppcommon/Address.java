@@ -20,6 +20,7 @@ import static google.registry.util.CollectionUtils.nullToEmptyImmutableCopy;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
+import com.google.gson.annotations.Expose;
 import google.registry.model.Buildable;
 import google.registry.model.ImmutableObject;
 import google.registry.model.JsonMapBuilder;
@@ -87,6 +88,7 @@ public class Address extends ImmutableObject implements Jsonifiable, UnsafeSeria
    */
   @XmlJavaTypeAdapter(NormalizedStringAdapter.class)
   @Transient
+  @Expose
   protected List<String> street;
 
   @XmlTransient @IgnoredInDiffableMap protected String streetLine1;
@@ -96,18 +98,22 @@ public class Address extends ImmutableObject implements Jsonifiable, UnsafeSeria
   @XmlTransient @IgnoredInDiffableMap protected String streetLine3;
 
   @XmlJavaTypeAdapter(NormalizedStringAdapter.class)
+  @Expose
   protected String city;
 
   @XmlElement(name = "sp")
   @XmlJavaTypeAdapter(NormalizedStringAdapter.class)
+  @Expose
   protected String state;
 
   @XmlElement(name = "pc")
   @XmlJavaTypeAdapter(CollapsedStringAdapter.class)
+  @Expose
   protected String zip;
 
   @XmlElement(name = "cc")
   @XmlJavaTypeAdapter(CollapsedStringAdapter.class)
+  @Expose
   protected String countryCode;
 
   public ImmutableList<String> getStreet() {

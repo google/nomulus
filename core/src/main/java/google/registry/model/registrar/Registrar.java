@@ -211,6 +211,7 @@ public class Registrar extends UpdateAutoTimestampEntity implements Buildable, J
    */
   @Id
   @Column(nullable = false)
+  @Expose
   String registrarId;
 
   /**
@@ -224,6 +225,7 @@ public class Registrar extends UpdateAutoTimestampEntity implements Buildable, J
    * @see <a href="http://www.icann.org/registrar-reports/accredited-list.html">ICANN-Accredited
    *     Registrars</a>
    */
+  @Expose
   @Column(nullable = false)
   String registrarName;
 
@@ -237,7 +239,7 @@ public class Registrar extends UpdateAutoTimestampEntity implements Buildable, J
   State state;
 
   /** The set of TLDs which this registrar is allowed to access. */
-  Set<String> allowedTlds;
+  @Expose Set<String> allowedTlds;
 
   /** Host name of WHOIS server. */
   String whoisServer;
@@ -287,6 +289,7 @@ public class Registrar extends UpdateAutoTimestampEntity implements Buildable, J
    * unrestricted UTF-8.
    */
   @Embedded
+  @Expose
   @AttributeOverrides({
     @AttributeOverride(
         name = "streetLine1",
@@ -329,7 +332,7 @@ public class Registrar extends UpdateAutoTimestampEntity implements Buildable, J
   String faxNumber;
 
   /** Email address. */
-  String emailAddress;
+  @Expose String emailAddress;
 
   // External IDs.
 
@@ -345,7 +348,7 @@ public class Registrar extends UpdateAutoTimestampEntity implements Buildable, J
    * @see <a href="http://www.iana.org/assignments/registrar-ids/registrar-ids.txt">Registrar
    *     IDs</a>
    */
-  @Nullable Long ianaIdentifier;
+  @Expose @Nullable Long ianaIdentifier;
 
   /** Purchase Order number used for invoices in external billing system, if applicable. */
   @Nullable String poNumber;
@@ -358,7 +361,7 @@ public class Registrar extends UpdateAutoTimestampEntity implements Buildable, J
    * accessed by {@link #getBillingAccountMap}, a sorted map is returned to guarantee deterministic
    * behavior when serializing the map, for display purpose for instance.
    */
-  @Nullable Map<CurrencyUnit, String> billingAccountMap;
+  @Expose @Nullable Map<CurrencyUnit, String> billingAccountMap;
 
   /** URL of registrar's website. */
   String url;
@@ -369,10 +372,10 @@ public class Registrar extends UpdateAutoTimestampEntity implements Buildable, J
    * <p>This value is specified in the initial registrar contact. It can't be edited in the web GUI,
    * and it must be specified when the registrar account is created.
    */
-  String icannReferralEmail;
+  @Expose String icannReferralEmail;
 
   /** Id of the folder in drive used to publish information for this registrar. */
-  String driveFolderId;
+  @Expose String driveFolderId;
 
   // Metadata.
 
@@ -400,7 +403,7 @@ public class Registrar extends UpdateAutoTimestampEntity implements Buildable, J
   boolean contactsRequireSyncing = true;
 
   /** Whether or not registry lock is allowed for this registrar. */
-  boolean registryLockAllowed = false;
+  @Expose boolean registryLockAllowed = false;
 
   public String getRegistrarId() {
     return registrarId;

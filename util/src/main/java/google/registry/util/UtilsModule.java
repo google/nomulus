@@ -14,19 +14,15 @@
 
 package google.registry.util;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import dagger.Binds;
 import dagger.Module;
 import dagger.Provides;
-import google.registry.util.CidrAddressBlock.CidrAddressBlockAdapter;
 import java.security.NoSuchAlgorithmException;
 import java.security.ProviderException;
 import java.security.SecureRandom;
 import java.util.Random;
 import javax.inject.Named;
 import javax.inject.Singleton;
-import org.joda.time.DateTime;
 
 /** Dagger module to provide instances of various utils classes. */
 @Module
@@ -75,13 +71,4 @@ public abstract class UtilsModule {
     return new RandomStringGenerator(StringGenerator.Alphabets.DIGITS_ONLY, secureRandom);
   }
 
-  @Singleton
-  @Provides
-  public static Gson provideGson() {
-    return new GsonBuilder()
-        .registerTypeAdapter(DateTime.class, new DateTimeTypeAdapter())
-        .registerTypeAdapter(CidrAddressBlock.class, new CidrAddressBlockAdapter())
-        .excludeFieldsWithoutExposeAnnotation()
-        .create();
-  }
 }
