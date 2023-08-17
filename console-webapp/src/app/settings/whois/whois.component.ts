@@ -17,6 +17,6 @@ import { Component } from '@angular/core';
 @Component({
   selector: 'app-whois',
   templateUrl: './whois.component.html',
-  styleUrls: ['./whois.component.less'],
+  styleUrls: ['./whois.component.scss'],
 })
 export default class WhoisComponent {}
