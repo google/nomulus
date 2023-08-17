@@ -29,6 +29,6 @@ export class RegistrarGuard {
     if (this.registrarService.activeRegistrarId) {
       return true;
     }
-    return this.router.navigate([`/registrars`, { nextUrl: state.url }]);
+    return this.router.navigate([`/empty-registrar`, { nextUrl: state.url }]);
   }
 }

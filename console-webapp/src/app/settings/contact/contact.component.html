@@ -2,6 +2,12 @@
   <mat-progress-bar mode="indeterminate"></mat-progress-bar>
 </div>
 <div *ngIf="!loading">
+  <div class="contact__empty-contacts" *ngIf="(groupedData || []).length === 0">
+    <mat-icon class="contact__empty-contacts-icon secondary-text"
+      >apps_outage</mat-icon
+    >
+    <h1>No contacts found</h1>
+  </div>
   <div *ngFor="let group of groupedData">
     <div class="contact__cards-wrapper" *ngIf="group.contacts.length">
       <h3>{{ group.label }}s</h3>

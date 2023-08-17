@@ -13,24 +13,31 @@
 // limitations under the License.
 
 import { Component } from '@angular/core';
-import { RegistrarService } from './registrar.service';
 import { ActivatedRoute, Router } from '@angular/router';
+import { RegistrarService } from './registrar.service';
+import { Subscription } from 'rxjs';
 
 @Component({
-  selector: 'app-registrar',
-  templateUrl: './registrar.component.html',
-  styleUrls: ['./registrar.component.scss'],
+  selector: 'app-empty-registrar',
+  templateUrl: './emptyRegistrar.component.html',
+  styleUrls: ['./emptyRegistrar.component.scss'],
 })
-export class RegistrarComponent {
-  protected displayedColumns: string[] = [
-    'registrarId',
-    'registrarName',
-    'allowedTlds',
-    'emailAddress',
-    'ianaIdentifier',
-    'billingAccountMap',
-    'icannReferralEmail',
-    'registryLockAllowed',
-  ];
-  constructor(protected registrarService: RegistrarService) {}
+export class EmptyRegistrar {
+  private navigate?: Subscription;
+
+  constructor(
+    private route: ActivatedRoute,
+    protected registrarService: RegistrarService,
+    private router: Router
+  ) {
+    this.navigate = registrarService.activeRegistrarIdChange.subscribe((newRegistrarId) => {
+      if (newRegistrarId) {
+       this.router.navigate([this.route.snapshot.paramMap.get('nextUrl')]);
+      }
+    });
+  }
+
+  ngOnDestroy() {
+    this.navigate?.unsubscribe();
+  }
 }

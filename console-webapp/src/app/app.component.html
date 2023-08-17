@@ -12,13 +12,13 @@
         <a mat-list-item [routerLink]="'/settings'" routerLinkActive="active">
           Settings
         </a>
-        <a mat-list-item [routerLink]="'/registrars'" routerLinkActive="active">
-          Select Registrar
-        </a>
       </mat-nav-list>
     </mat-sidenav>
     <mat-sidenav-content class="console-app__content-wrapper">
-      <div class="console-app__content">
+      <div *ngIf="globalLoader.isLoading" class="console-app__global-spinner">
+        <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+      </div>
+      <div class="console-app__content" *ngIf="renderRouter">
         <router-outlet></router-outlet>
       </div>
     </mat-sidenav-content>
