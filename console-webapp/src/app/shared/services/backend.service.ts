@@ -18,6 +18,7 @@ import { catchError, Observable, of } from 'rxjs';
 import { SecuritySettingsBackendModel } from 'src/app/settings/security/security.service';
 
 import { Contact } from '../../settings/contact/contact.service';
+import { Registrar } from '../../registrar/registrar.service';
 
 @Injectable()
 export class BackendService {
@@ -60,10 +61,10 @@ export class BackendService {
     );
   }
 
-  getRegistrars(): Observable<string[]> {
+  getRegistrars(): Observable<Registrar[]> {
     return this.http
-      .get<string[]>('/console-api/registrars')
-      .pipe(catchError((err) => this.errorCatcher<string[]>(err)));
+      .get<Registrar[]>('/console-api/registrars')
+      .pipe(catchError((err) => this.errorCatcher<Registrar[]>(err)));
   }
 
   getSecuritySettings(

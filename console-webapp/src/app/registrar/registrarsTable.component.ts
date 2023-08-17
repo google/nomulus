@@ -13,10 +13,23 @@
 // limitations under the License.
 
 import { Component } from '@angular/core';
+import { RegistrarService } from './registrar.service';
 
 @Component({
-  selector: 'app-registrars',
-  templateUrl: './registrars.component.html',
-  styleUrls: ['./registrars.component.scss'],
+  selector: 'app-registrar',
+  templateUrl: './registrarsTable.component.html',
+  styleUrls: ['./registrarsTable.component.scss'],
 })
-export default class RegistrarsComponent {}
+export class RegistrarComponent {
+  protected displayedColumns: string[] = [
+    'registrarId',
+    'registrarName',
+    'allowedTlds',
+    'emailAddress',
+    'ianaIdentifier',
+    'billingAccountMap',
+    'icannReferralEmail',
+    'registryLockAllowed',
+  ];
+  constructor(protected registrarService: RegistrarService) {}
+}
