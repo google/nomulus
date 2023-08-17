@@ -30,10 +30,12 @@ import google.registry.keyring.KeyringModule;
 import google.registry.keyring.api.DummyKeyringModule;
 import google.registry.keyring.api.KeyModule;
 import google.registry.keyring.secretmanager.SecretManagerKeyringModule;
+import google.registry.model.ModelModule;
 import google.registry.persistence.PersistenceModule;
 import google.registry.persistence.PersistenceModule.NomulusToolJpaTm;
 import google.registry.persistence.PersistenceModule.ReadOnlyReplicaJpaTm;
 import google.registry.persistence.transaction.JpaTransactionManager;
+import google.registry.privileges.secretmanager.SecretManagerModule;
 import google.registry.rde.RdeModule;
 import google.registry.request.Modules.GsonModule;
 import google.registry.request.Modules.UrlConnectionServiceModule;
@@ -66,13 +68,14 @@ import javax.inject.Singleton;
       GsonModule.class,
       KeyModule.class,
       KeyringModule.class,
-      SecretManagerKeyringModule.class,
       LocalCredentialModule.class,
+      ModelModule.class,
       PersistenceModule.class,
       RdeModule.class,
       RegistryToolDataflowModule.class,
       RequestFactoryModule.class,
-      google.registry.privileges.secretmanager.SecretManagerModule.class,
+      SecretManagerKeyringModule.class,
+      SecretManagerModule.class,
       UrlConnectionServiceModule.class,
       UrlFetchServiceModule.class,
       UserServiceModule.class,

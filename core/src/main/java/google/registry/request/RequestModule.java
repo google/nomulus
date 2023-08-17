@@ -32,7 +32,7 @@ import com.google.common.io.CharStreams;
 import com.google.common.net.MediaType;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.google.gson.JsonObject;
+import com.google.gson.JsonElement;
 import com.google.protobuf.ByteString;
 import dagger.Module;
 import dagger.Provides;
@@ -263,11 +263,10 @@ public final class RequestModule {
 
   @Provides
   @OptionalJsonPayload
-  public static Optional<JsonObject> provideJsonBody(HttpServletRequest req, Gson gson) {
+  public static Optional<JsonElement> provideJsonBody(HttpServletRequest req, Gson gson) {
     try {
-      JsonObject body = gson.fromJson(req.getReader(), JsonObject.class);
-      return Optional.of(body);
-    } catch (Exception e) {
+      return Optional.of(gson.fromJson(req.getReader(), JsonElement.class));
+    } catch (IOException e) {
       return Optional.empty();
     }
   }

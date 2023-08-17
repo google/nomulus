@@ -12,21 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package google.registry.model.adapters;
+package google.registry.model;
 
-import google.registry.model.adapters.CurrencyUnitAdapter.UnknownCurrencyException;
-import google.registry.util.StringBaseTypeAdapter;
-import java.io.IOException;
-import org.joda.money.CurrencyUnit;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import dagger.Module;
+import dagger.Provides;
 
-public class CurrencyJsonAdapter extends StringBaseTypeAdapter<CurrencyUnit> {
+/** Dagger module for the entity (model) classes. */
+@Module
+public final class ModelModule {
 
-  @Override
-  protected CurrencyUnit fromString(String stringValue) throws IOException {
-    try {
-      return CurrencyUnitAdapter.convertFromString(stringValue);
-    } catch (UnknownCurrencyException e) {
-      throw new IOException("Unknown currency");
-    }
+  /** Returns an {@link ObjectMapper} object that can be used to convert an entity to/from YAML. */
+  @Provides
+  public static ObjectMapper provideObjectMapper() {
+    return EntityYamlUtils.createObjectMapper();
   }
 }

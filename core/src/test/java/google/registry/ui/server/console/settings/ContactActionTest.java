@@ -238,8 +238,7 @@ class ContactActionTest {
     if (method.equals(Action.Method.GET)) {
       return new ContactAction(request, authResult, response, GSON, registrarId, Optional.empty());
     } else {
-      when(request.getReader())
-          .thenReturn(new BufferedReader(new StringReader("{\"contacts\":" + contacts + "}")));
+      when(request.getReader()).thenReturn(new BufferedReader(new StringReader(contacts)));
       Optional<ImmutableSet<RegistrarPoc>> maybeContacts =
           RegistrarConsoleModule.provideContacts(
               GSON, RequestModule.provideJsonBody(request, GSON));
