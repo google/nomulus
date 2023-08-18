@@ -32,21 +32,6 @@ public interface JpaTransactionManager extends TransactionManager {
   EntityManager getStandaloneEntityManager();
 
   /**
-   * Specifies a database snapshot exported by another transaction to use in the current
-   * transaction.
-   *
-   * <p>This is a Postgresql-specific feature. This method must be called before any other SQL
-   * commands in a transaction.
-   *
-   * <p>To support large queries, transaction isolation level is fixed at the REPEATABLE_READ to
-   * avoid exhausting predicate locks at the SERIALIZABLE level.
-   *
-   * @see google.registry.beam.common.DatabaseSnapshot
-   */
-  // TODO(b/193662898): vendor-independent support for richer transaction semantics.
-  JpaTransactionManager setDatabaseSnapshot(String snapshotId);
-
-  /**
    * Returns the {@link EntityManager} for the current request.
    *
    * <p>The returned instance is closed when the current transaction completes.
@@ -56,8 +41,8 @@ public interface JpaTransactionManager extends TransactionManager {
   /**
    * Creates a JPA SQL query for the given query string and result class.
    *
-   * <p>This is a convenience method for the longer <code>
-   * jpaTm().getEntityManager().createQuery(...)</code>.
+   * <p>This is a convenience method for the longer {@code
+   * jpaTm().getEntityManager().createQuery(...)}.
    */
   <T> TypedQuery<T> query(String sqlString, Class<T> resultClass);
 
@@ -67,8 +52,8 @@ public interface JpaTransactionManager extends TransactionManager {
   /**
    * Creates a JPA SQL query for the given query string.
    *
-   * <p>This is a convenience method for the longer <code>
-   * jpaTm().getEntityManager().createQuery(...)</code>.
+   * <p>This is a convenience method for the longer {@code
+   * jpaTm().getEntityManager().createQuery(...)}.
    *
    * <p>Note that while this method can legally be used for queries that return results, <u>it
    * should not be</u>, as it does not correctly detach entities as must be done for nomulus model
