@@ -123,7 +123,9 @@ public class AllocationToken extends UpdateAutoTimestampEntity implements Builda
     BULK_PRICING,
     /** Token saved on a TLD to use if no other token is passed from the client */
     DEFAULT_PROMO,
-    /** Token used for package pricing - DEPRECATED */
+    /** This is the old name for what is now BULK_PRICING. */
+    // TODO(sarahbot@): Remove this type once all tokens of this type have been scrubbed from the
+    // database
     @Deprecated
     PACKAGE,
     /** Invalid after use */
