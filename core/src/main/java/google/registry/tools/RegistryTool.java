@@ -33,6 +33,7 @@ public final class RegistryTool {
           .put("canonicalize_labels", CanonicalizeLabelsCommand.class)
           .put("check_domain", CheckDomainCommand.class)
           .put("check_domain_claims", CheckDomainClaimsCommand.class)
+          .put("configure_tld", ConfigureTldCommand.class)
           .put("convert_idn", ConvertIdnCommand.class)
           .put("count_domains", CountDomainsCommand.class)
           .put("create_anchor_tenant", CreateAnchorTenantCommand.class)

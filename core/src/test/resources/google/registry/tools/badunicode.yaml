@@ -1,10 +1,10 @@
-tldStr: "tld"
+tldStr: "badunicode"
 roidSuffix: "TLD"
 pricingEngineClassName: "google.registry.model.pricing.StaticPremiumListPricingEngine"
 dnsWriters:
 - "VoidDnsWriter"
 numDnsPublishLocks: 1
-dnsAPlusAaaaTtl: 900
+dnsAPlusAaaaTtl: null
 dnsNsTtl: null
 dnsDsTtl: null
 tldUnicode: "tld"
