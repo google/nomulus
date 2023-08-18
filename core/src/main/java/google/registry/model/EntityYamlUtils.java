@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-package google.registry.model.tld;
+package google.registry.model;
 
 import static com.google.common.collect.ImmutableSortedMap.toImmutableSortedMap;
 import static com.google.common.collect.Ordering.natural;
@@ -27,7 +27,6 @@ import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.databind.ser.std.StdSerializer;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator.Feature;
-import google.registry.model.CreateAutoTimestamp;
 import google.registry.model.common.TimedTransitionProperty;
 import google.registry.model.domain.token.AllocationToken;
 import google.registry.model.tld.Tld.TldState;
@@ -44,14 +43,13 @@ import org.joda.money.Money;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
 
-/** A collection of static utility classes and functions for TLD YAML conversions. */
-public class TldYamlUtils {
+/** A collection of static utility classes/functions to convert entities to/from YAML files. */
+public class EntityYamlUtils {
 
   /**
-   * Returns an {@link ObjectMapper} object that can be used to convert a {@link Tld} object to and
-   * from YAML.
+   * Returns a new {@link ObjectMapper} object that can be used to convert an entity to/from YAML.
    */
-  public static ObjectMapper getObjectMapper() {
+  public static ObjectMapper createObjectMapper() {
     SimpleModule module = new SimpleModule();
     module.addSerializer(Money.class, new MoneySerializer());
     module.addDeserializer(Money.class, new MoneyDeserializer());
@@ -86,6 +84,7 @@ public class TldYamlUtils {
 
   /** A custom JSON deserializer for {@link Money}. */
   public static class MoneyDeserializer extends StdDeserializer<Money> {
+
     public MoneyDeserializer() {
       this(null);
     }
@@ -127,6 +126,7 @@ public class TldYamlUtils {
 
   /** A custom JSON deserializer for {@link CurrencyUnit}. */
   public static class CurrencyDeserializer extends StdDeserializer<CurrencyUnit> {
+
     public CurrencyDeserializer() {
       this(null);
     }
