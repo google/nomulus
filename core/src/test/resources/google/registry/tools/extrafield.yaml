@@ -1,13 +1,13 @@
-tldStr: "tld"
-roidSuffix: "TLD"
+tldStr: "extrafield"
+roidSuffix: "EXTRAFIELD"
 pricingEngineClassName: "google.registry.model.pricing.StaticPremiumListPricingEngine"
 dnsWriters:
 - "VoidDnsWriter"
 numDnsPublishLocks: 1
-dnsAPlusAaaaTtl: 900
+dnsAPlusAaaaTtl: null
 dnsNsTtl: null
 dnsDsTtl: null
-tldUnicode: "tld"
+tldUnicode: "extrafield"
 driveFolderId: "driveFolder"
 tldType: "REAL"
 invoicingEnabled: false
@@ -53,3 +53,4 @@ eapFeeSchedule:
   "1970-01-01T00:00:00.000Z":
     currency: "USD"
     amount: 0.00
+extraField: "hello"

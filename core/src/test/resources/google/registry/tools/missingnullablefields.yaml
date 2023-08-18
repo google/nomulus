@@ -1,18 +1,15 @@
-tldStr: "tld"
-roidSuffix: "TLD"
+tldStr: "missingnullablefields"
+roidSuffix: "missingnullablefields"
 pricingEngineClassName: "google.registry.model.pricing.StaticPremiumListPricingEngine"
 dnsWriters:
 - "VoidDnsWriter"
-numDnsPublishLocks: 1
-dnsAPlusAaaaTtl: 900
+dnsAPlusAaaaTtl: null
 dnsNsTtl: null
 dnsDsTtl: null
-tldUnicode: "tld"
+tldUnicode: "missingnullablefields"
 driveFolderId: "driveFolder"
 tldType: "REAL"
 invoicingEnabled: false
-tldStateTransitions:
-  "1970-01-01T00:00:00.000Z": "GENERAL_AVAILABILITY"
 creationTime: "2022-09-01T00:00:00.000Z"
 reservedListNames: []
 premiumListName: "tld"
@@ -26,7 +23,6 @@ renewGracePeriodLength: 432000000
 transferGracePeriodLength: 432000000
 automaticTransferLength: 432000000
 pendingDeleteLength: 432000000
-currency: "USD"
 createBillingCost:
   currency: "USD"
   amount: 25.00
