@@ -141,7 +141,8 @@ public class GenerateSpec11ReportAction implements Runnable {
                     jobId,
                     ReportingModule.PARAM_DATE,
                     date.toString()),
-                Duration.standardMinutes(ReportingModule.ENQUEUE_DELAY_MINUTES)));
+                // TODO(b/296582836): mitigating retry problem. Remove `+10` when bug is fixed.
+                Duration.standardMinutes(ReportingModule.ENQUEUE_DELAY_MINUTES + 10)));
       }
       response.setStatus(SC_OK);
       response.setPayload(String.format("Launched Spec11 pipeline: %s", jobId));
