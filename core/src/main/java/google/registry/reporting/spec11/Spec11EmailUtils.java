@@ -90,6 +90,7 @@ public class Spec11EmailUtils {
       ImmutableSet<RegistrarThreatMatches> registrarThreatMatchesSet) {
     ImmutableMap.Builder<RegistrarThreatMatches, Throwable> failedMatchesBuilder =
         ImmutableMap.builder();
+    int numRegistrarsEmailed = 0;
     for (RegistrarThreatMatches registrarThreatMatches : registrarThreatMatchesSet) {
       RegistrarThreatMatches filteredMatches = filterOutNonPublishedMatches(registrarThreatMatches);
       if (!filteredMatches.threatMatches().isEmpty()) {
@@ -97,11 +98,13 @@ public class Spec11EmailUtils {
           // Handle exceptions individually per registrar so that one failed email doesn't prevent
           // the rest from being sent.
           emailRegistrar(date, soyTemplateInfo, subject, filteredMatches);
+          numRegistrarsEmailed++;
         } catch (Throwable e) {
           failedMatchesBuilder.put(registrarThreatMatches, getRootCause(e));
         }
       }
     }
+    logger.atInfo().log("Emailed daily diffs to %s registrars.", numRegistrarsEmailed);
     ImmutableMap<RegistrarThreatMatches, Throwable> failedMatches = failedMatchesBuilder.build();
     if (!failedMatches.isEmpty()) {
       ImmutableList<Map.Entry<RegistrarThreatMatches, Throwable>> failedMatchesList =
