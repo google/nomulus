@@ -16,11 +16,16 @@ package google.registry.tools;
 
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.createTlds;
+import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.TestDataHelper.loadFile;
+import static org.joda.money.CurrencyUnit.USD;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.beust.jcommander.ParameterException;
 import google.registry.model.EntityYamlUtils;
+import google.registry.model.tld.Tld;
+import org.joda.money.Money;
+import org.joda.time.Duration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -34,8 +39,14 @@ class GetTldCommandTest extends CommandTestCase<GetTldCommand> {
 
   @Test
   void testSuccess() throws Exception {
-    createTld("xn--q9jyb4c");
-    runCommand("xn--q9jyb4c");
+    Tld tld = createTld("tld");
+    persistResource(
+        tld.asBuilder()
+            .setDnsAPlusAaaaTtl(Duration.millis(900))
+            .setDriveFolderId("driveFolder")
+            .setCreateBillingCost(Money.of(USD, 25))
+            .build());
+    runCommand("tld");
     assertInStdout(loadFile(getClass(), "tld.yaml"));
   }
 

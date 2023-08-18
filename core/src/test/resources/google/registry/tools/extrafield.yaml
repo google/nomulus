@@ -1,0 +1,56 @@
+tldStr: "extrafield"
+roidSuffix: "EXTRAFIELD"
+pricingEngineClassName: "google.registry.model.pricing.StaticPremiumListPricingEngine"
+dnsWriters:
+- "VoidDnsWriter"
+numDnsPublishLocks: 1
+dnsAPlusAaaaTtl: null
+dnsNsTtl: null
+dnsDsTtl: null
+tldUnicode: "extrafield"
+driveFolderId: "driveFolder"
+tldType: "REAL"
+invoicingEnabled: false
+tldStateTransitions:
+  "1970-01-01T00:00:00.000Z": "GENERAL_AVAILABILITY"
+creationTime: "2022-09-01T00:00:00.000Z"
+reservedListNames: []
+premiumListName: "tld"
+escrowEnabled: false
+dnsPaused: false
+addGracePeriodLength: 432000000
+anchorTenantAddGracePeriodLength: 2592000000
+autoRenewGracePeriodLength: 3888000000
+redemptionGracePeriodLength: 2592000000
+renewGracePeriodLength: 432000000
+transferGracePeriodLength: 432000000
+automaticTransferLength: 432000000
+pendingDeleteLength: 432000000
+currency: "USD"
+createBillingCost:
+  currency: "USD"
+  amount: 25.00
+restoreBillingCost:
+  currency: "USD"
+  amount: 17.00
+serverStatusChangeBillingCost:
+  currency: "USD"
+  amount: 19.00
+registryLockOrUnlockBillingCost:
+  currency: "USD"
+  amount: 0.00
+renewBillingCostTransitions:
+  "1970-01-01T00:00:00.000Z":
+    currency: "USD"
+    amount: 11.00
+lordnUsername: null
+claimsPeriodEnd: "294247-01-10T04:00:54.775Z"
+allowedRegistrantContactIds: []
+allowedFullyQualifiedHostNames: []
+defaultPromoTokens: []
+idnTables: []
+eapFeeSchedule:
+  "1970-01-01T00:00:00.000Z":
+    currency: "USD"
+    amount: 0.00
+extraField: "hello"

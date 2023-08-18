@@ -7,17 +7,17 @@ automaticTransferLength: 432000000
 claimsPeriodEnd: "294247-01-10T04:00:54.775Z"
 createBillingCost:
   currency: "USD"
-  amount: 13.00
+  amount: 25.00
 creationTime: "2022-09-01T00:00:00.000Z"
 currency: "USD"
 defaultPromoTokens: []
-dnsAPlusAaaaTtl: null
+dnsAPlusAaaaTtl: 900
 dnsDsTtl: null
 dnsNsTtl: null
 dnsPaused: false
 dnsWriters:
 - "VoidDnsWriter"
-driveFolderId: null
+driveFolderId: "driveFolder"
 eapFeeSchedule:
   "1970-01-01T00:00:00.000Z":
     currency: "USD"
@@ -28,7 +28,7 @@ invoicingEnabled: false
 lordnUsername: null
 numDnsPublishLocks: 1
 pendingDeleteLength: 432000000
-premiumListName: "xn--q9jyb4c"
+premiumListName: "tld"
 pricingEngineClassName: "google.registry.model.pricing.StaticPremiumListPricingEngine"
 redemptionGracePeriodLength: 2592000000
 registryLockOrUnlockBillingCost:
@@ -43,13 +43,13 @@ reservedListNames: []
 restoreBillingCost:
   currency: "USD"
   amount: 17.00
-roidSuffix: "Q9JYB4C"
+roidSuffix: "TLD"
 serverStatusChangeBillingCost:
   currency: "USD"
   amount: 19.00
 tldStateTransitions:
   "1970-01-01T00:00:00.000Z": "GENERAL_AVAILABILITY"
-tldStr: "xn--q9jyb4c"
+tldStr: "tld"
 tldType: "REAL"
-tldUnicode: "みんな"
+tldUnicode: "tld"
 transferGracePeriodLength: 432000000
