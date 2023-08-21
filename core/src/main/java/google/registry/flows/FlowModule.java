@@ -35,6 +35,8 @@ import google.registry.model.eppoutput.EppResponse;
 import google.registry.model.eppoutput.Result;
 import google.registry.model.host.HostHistory;
 import google.registry.model.reporting.HistoryEntry;
+import google.registry.persistence.IsolationLevel;
+import google.registry.persistence.PersistenceModule.TransactionIsolationLevel;
 import java.lang.annotation.Documented;
 import java.util.Optional;
 import javax.inject.Qualifier;
@@ -137,6 +139,14 @@ public class FlowModule {
 
   @Provides
   @FlowScope
+  Optional<TransactionIsolationLevel> provideIsolationLevelOverride(
+      Class<? extends Flow> flowClass) {
+    return Optional.ofNullable(flowClass.getAnnotation(IsolationLevel.class))
+        .map(IsolationLevel::value);
+  }
+
+  @Provides
+  @FlowScope
   @Superuser
   boolean provideIsSuperuser() {
     return isSuperuser;
@@ -166,7 +176,7 @@ public class FlowModule {
   @FlowScope
   @RegistrarId
   static String provideRegistrarId(SessionMetadata sessionMetadata) {
-    // Treat a missing registrarId as null so we can always inject a non-null value. All we do with
+    // Treat a missing registrarId as null, so we can always inject a non-null value. All we do with
     // the registrarId is log it (as "") or detect its absence, both of which work fine with empty.
     return Strings.nullToEmpty(sessionMetadata.getRegistrarId());
   }

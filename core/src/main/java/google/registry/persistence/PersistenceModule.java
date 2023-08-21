@@ -27,9 +27,9 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 
 import com.google.auth.oauth2.GoogleCredentials;
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Ascii;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
-import com.google.common.flogger.FluentLogger;
 import dagger.BindsOptionalOf;
 import dagger.Module;
 import dagger.Provides;
@@ -65,7 +65,6 @@ import org.hibernate.cfg.Environment;
 /** Dagger module class for the persistence layer. */
 @Module
 public abstract class PersistenceModule {
-  private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
   // This name must be the same as the one defined in persistence.xml.
   public static final String PERSISTENCE_UNIT_NAME = "nomulus";
@@ -166,12 +165,10 @@ public abstract class PersistenceModule {
     // Override the default minimum which is tuned for the Registry server. A worker VM should
     // release all connections if it no longer interacts with the database.
     overrides.put(HIKARI_MINIMUM_IDLE, "0");
-    /**
-     * Disable Hikari's maxPoolSize limit check by setting it to an absurdly large number. The
-     * effective (and desirable) limit is the number of pipeline threads on the pipeline worker,
-     * which can be configured using pipeline options. See {@link RegistryPipelineOptions} for more
-     * information.
-     */
+    // Disable Hikari's maxPoolSize limit check by setting it to an absurdly large number. The
+    // effective (and desirable) limit is the number of pipeline threads on the pipeline worker,
+    // which can be configured using pipeline options. See {@link RegistryPipelineOptions} for more
+    // information.
     overrides.put(HIKARI_MAXIMUM_POOL_SIZE, String.valueOf(Integer.MAX_VALUE));
     instanceConnectionNameOverride
         .map(Provider::get)
@@ -303,7 +300,7 @@ public abstract class PersistenceModule {
 
   private static EntityManagerFactory create(Map<String, String> properties) {
     // If there are no annotated classes, we can create the EntityManagerFactory from the generic
-    // method.  Otherwise we have to use a more tailored approach.  Note that this adds to the set
+    // method.  Otherwise, we have to use a more tailored approach.  Note that this adds to the set
     // of annotated classes defined in the configuration, it does not override them.
     EntityManagerFactory emf =
         Persistence.createEntityManagerFactory(
@@ -322,8 +319,7 @@ public abstract class PersistenceModule {
       overrides.put(Environment.USER, credential.login());
       overrides.put(Environment.PASS, credential.password());
     } catch (Throwable e) {
-      // TODO(b/184631990): after SQL becomes primary, throw an exception to fail fast
-      logger.atSevere().withCause(e).log("Failed to get SQL credential from Secret Manager.");
+      throw new RuntimeException("Failed to get SQL credential from Secret Manager.", e);
     }
   }
 
@@ -340,11 +336,13 @@ public abstract class PersistenceModule {
     TRANSACTION_SERIALIZABLE;
 
     private final int value;
+    private final String mode;
 
     TransactionIsolationLevel() {
       try {
         // name() is final in parent class (Enum.java), therefore safe to call in constructor.
         value = Connection.class.getField(name()).getInt(null);
+        mode = name().substring(12).replace('_', ' ');
       } catch (Exception e) {
         throw new IllegalStateException(
             String.format(
@@ -355,6 +353,14 @@ public abstract class PersistenceModule {
 
     public final int getValue() {
       return value;
+    }
+
+    public final String getMode() {
+      return mode;
+    }
+
+    public static TransactionIsolationLevel fromMode(String mode) {
+      return valueOf(String.format("TRANSACTION_%s", Ascii.toUpperCase(mode.replace(' ', '_'))));
     }
   }
 

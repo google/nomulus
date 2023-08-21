@@ -1547,6 +1547,11 @@ public final class RegistryConfig {
     return CONFIG_SETTINGS.get().hibernate.connectionIsolation;
   }
 
+  /** Returns true if per-transaction isolation level is enabled. */
+  public static boolean getHibernatePerTransactionIsolationEnabled() {
+    return CONFIG_SETTINGS.get().hibernate.perTransactionIsolation;
+  }
+
   /** Returns true if hibernate.show_sql is enabled. */
   public static String getHibernateLogSqlQueries() {
     return CONFIG_SETTINGS.get().hibernate.logSqlQueries;

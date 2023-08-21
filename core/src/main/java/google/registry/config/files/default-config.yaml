@@ -189,6 +189,12 @@ registryPolicy:
   sunriseDomainCreateDiscount: 0.15
 
 hibernate:
+  # Make it possible to specify the isolation level for each transaction. If set
+  # to true, nested transactions will throw an exception. If set to false, a
+  # transaction with the isolation override specified will still execute at the
+  # default level (specified below).
+  perTransactionIsolation: false
+
   # Make 'SERIALIZABLE' the default isolation level to ensure correctness.
   #
   # Entities that are never involved in multi-table transactions may use optimistic
@@ -479,7 +485,7 @@ keyring:
 
 # Configuration options relevant to the "nomulus" registry tool.
 registryTool:
-  # OAuth client Id used by the tool.
+  # OAuth client ID used by the tool.
   clientId: YOUR_CLIENT_ID
   # OAuth client secret used by the tool.
   clientSecret: YOUR_CLIENT_SECRET
