@@ -26,6 +26,7 @@ import google.registry.model.ImmutableObject;
 import google.registry.model.JsonMapBuilder;
 import google.registry.model.Jsonifiable;
 import google.registry.model.UnsafeSerializable;
+import google.registry.tools.GsonUtils.GsonPostProcessable;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -55,7 +56,8 @@ import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 @XmlTransient
 @Embeddable
 @MappedSuperclass
-public class Address extends ImmutableObject implements Jsonifiable, UnsafeSerializable {
+public class Address extends ImmutableObject
+    implements Jsonifiable, UnsafeSerializable, GsonPostProcessable {
 
   /**
    * At most three lines of addresses parsed from XML elements.
@@ -152,6 +154,16 @@ public class Address extends ImmutableObject implements Jsonifiable, UnsafeSeria
     return new Builder<>(clone(this));
   }
 
+  @Override
+  public void postProcess() {
+    if (street == null || street.isEmpty()) {
+      return;
+    }
+    streetLine1 = street.get(0);
+    streetLine2 = street.size() >= 2 ? street.get(1) : null;
+    streetLine3 = street.size() >= 3 ? street.get(2) : null;
+  }
+
   /** A builder for constructing {@link Address}. */
   public static class Builder<T extends Address> extends Buildable.Builder<T> {
 
@@ -228,11 +240,6 @@ public class Address extends ImmutableObject implements Jsonifiable, UnsafeSeria
    */
   @SuppressWarnings("unused")
   void afterUnmarshal(Unmarshaller unmarshaller, Object parent) {
-    if (street == null || street.isEmpty()) {
-      return;
-    }
-    streetLine1 = street.get(0);
-    streetLine2 = street.size() >= 2 ? street.get(1) : null;
-    streetLine3 = street.size() >= 3 ? street.get(2) : null;
+    postProcess();
   }
 }

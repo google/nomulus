@@ -131,7 +131,7 @@ public class ContactAction implements JsonGetAction {
             oldContacts,
             Collections.singletonMap(
                 "contacts",
-                contacts.get().stream().map(c -> c.toJsonMap()).collect(toImmutableList())));
+                contacts.get().stream().map(RegistrarPoc::toJsonMap).collect(toImmutableList())));
     try {
       RegistrarSettingsAction.checkContactRequirements(oldContacts, updatedContacts);
     } catch (FormException e) {
