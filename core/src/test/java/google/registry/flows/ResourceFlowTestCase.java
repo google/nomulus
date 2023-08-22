@@ -72,7 +72,8 @@ public abstract class ResourceFlowTestCase<F extends Flow, R extends EppResource
 
   @Nullable
   protected R reloadResourceByForeignKey(DateTime now) throws Exception {
-    return loadByForeignKey(getResourceClass(), getUniqueIdFromCommand(), now).orElse(null);
+    return tm().transact(
+            () -> loadByForeignKey(getResourceClass(), getUniqueIdFromCommand(), now).orElse(null));
   }
 
   @Nullable
@@ -87,13 +88,17 @@ public abstract class ResourceFlowTestCase<F extends Flow, R extends EppResource
     return refreshedResource;
   }
 
-  private ResourceCommand.SingleResourceCommand getResourceCommand() throws Exception {
-    return (ResourceCommand.SingleResourceCommand)
-        ((ResourceCommandWrapper) eppLoader.getEpp().getCommandWrapper().getCommand())
-            .getResourceCommand();
+  private ResourceCommand.SingleResourceCommand getResourceCommand() {
+    try {
+      return (ResourceCommand.SingleResourceCommand)
+          ((ResourceCommandWrapper) eppLoader.getEpp().getCommandWrapper().getCommand())
+              .getResourceCommand();
+    } catch (EppException e) {
+      throw new RuntimeException(e);
+    }
   }
 
-  protected String getUniqueIdFromCommand() throws Exception {
+  protected String getUniqueIdFromCommand() {
     return getResourceCommand().getTargetId();
   }
 

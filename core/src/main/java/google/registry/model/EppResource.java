@@ -403,7 +403,7 @@ public abstract class EppResource extends UpdateAutoTimestampEntity implements B
   public static ImmutableMap<VKey<? extends EppResource>, EppResource> loadCached(
       Iterable<VKey<? extends EppResource>> keys) {
     if (!RegistryConfig.isEppResourceCachingEnabled()) {
-      return tm().transact(() -> tm().loadByKeys(keys));
+      return tm().loadByKeys(keys);
     }
     return ImmutableMap.copyOf(cacheEppResources.getAll(keys));
   }

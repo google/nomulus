@@ -18,7 +18,6 @@ import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static google.registry.config.RegistryConfig.getEppResourceCachingDuration;
 import static google.registry.config.RegistryConfig.getEppResourceMaxCachedEntries;
-import static google.registry.persistence.transaction.TransactionManagerFactory.replicaTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import com.github.benmanes.caffeine.cache.CacheLoader;
@@ -35,7 +34,6 @@ import google.registry.model.contact.Contact;
 import google.registry.model.domain.Domain;
 import google.registry.model.host.Host;
 import google.registry.persistence.VKey;
-import google.registry.persistence.transaction.JpaTransactionManager;
 import google.registry.util.NonFinalForTesting;
 import java.time.Duration;
 import java.util.Collection;
@@ -83,11 +81,11 @@ public final class ForeignKeyUtils {
    * active at or after the specified moment in time.
    *
    * <p>The returned map will omit any foreign keys for which the {@link EppResource} doesn't exist
-   * or has been soft deleted.
+   * or has been soft-deleted.
    */
   public static <E extends EppResource> ImmutableMap<String, VKey<E>> load(
       Class<E> clazz, Collection<String> foreignKeys, final DateTime now) {
-    return load(clazz, foreignKeys, false).entrySet().stream()
+    return load(clazz, foreignKeys).entrySet().stream()
         .filter(e -> now.isBefore(e.getValue().deletionTime()))
         .collect(toImmutableMap(Entry::getKey, e -> VKey.create(clazz, e.getValue().repoId())));
   }
@@ -106,25 +104,21 @@ public final class ForeignKeyUtils {
    * to duplicate keys.
    */
   private static <E extends EppResource> ImmutableMap<String, MostRecentResource> load(
-      Class<E> clazz, Collection<String> foreignKeys, boolean useReplicaTm) {
+      Class<E> clazz, Collection<String> foreignKeys) {
     String fkProperty = RESOURCE_TYPE_TO_FK_PROPERTY.get(clazz);
-    JpaTransactionManager tmToUse = useReplicaTm ? replicaTm() : tm();
-    return tmToUse.transact(
-        () ->
-            tmToUse
-                .query(
-                    ("SELECT %fkProperty%, repoId, deletionTime FROM %entity% WHERE (%fkProperty%,"
-                            + " deletionTime) IN (SELECT %fkProperty%, MAX(deletionTime) FROM"
-                            + " %entity% WHERE %fkProperty% IN (:fks) GROUP BY %fkProperty%)")
-                        .replace("%fkProperty%", fkProperty)
-                        .replace("%entity%", clazz.getSimpleName()),
-                    Object[].class)
-                .setParameter("fks", foreignKeys)
-                .getResultStream()
-                .collect(
-                    toImmutableMap(
-                        row -> (String) row[0],
-                        row -> MostRecentResource.create((String) row[1], (DateTime) row[2]))));
+    return tm().query(
+            ("SELECT %fkProperty%, repoId, deletionTime FROM %entity% WHERE (%fkProperty%,"
+                    + " deletionTime) IN (SELECT %fkProperty%, MAX(deletionTime) FROM"
+                    + " %entity% WHERE %fkProperty% IN (:fks) GROUP BY %fkProperty%)")
+                .replace("%fkProperty%", fkProperty)
+                .replace("%entity%", clazz.getSimpleName()),
+            Object[].class)
+        .setParameter("fks", foreignKeys)
+        .getResultStream()
+        .collect(
+            toImmutableMap(
+                row -> (String) row[0],
+                row -> MostRecentResource.create((String) row[1], (DateTime) row[2])));
   }
 
   private static final CacheLoader<VKey<? extends EppResource>, Optional<MostRecentResource>>
@@ -148,7 +142,7 @@ public final class ForeignKeyUtils {
               ImmutableList<String> foreignKeys =
                   Streams.stream(keys).map(key -> (String) key.getKey()).collect(toImmutableList());
               ImmutableMap<String, MostRecentResource> existingKeys =
-                  ForeignKeyUtils.load(clazz, foreignKeys, true);
+                  ForeignKeyUtils.load(clazz, foreignKeys);
               // The above map only contains keys that exist in the database, so we re-add the
               // missing ones with Optional.empty() values for caching.
               return Maps.asMap(
@@ -198,7 +192,7 @@ public final class ForeignKeyUtils {
    * that are active at or after the specified moment in time, using the cache if enabled.
    *
    * <p>The returned map will omit any keys for which the {@link EppResource} doesn't exist or has
-   * been soft deleted.
+   * been soft-deleted.
    *
    * <p>Don't use the cached version of this method unless you really need it for performance
    * reasons, and are OK with the trade-offs in loss of transactional consistency.

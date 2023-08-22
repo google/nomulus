@@ -39,7 +39,7 @@ public final class TmchCrl extends CrossTldSingleton {
 
   /** Returns the singleton instance of this entity, without memoization. */
   public static Optional<TmchCrl> get() {
-    return tm().transact(() -> tm().loadSingleton(TmchCrl.class));
+    return tm().loadSingleton(TmchCrl.class);
   }
 
   /**

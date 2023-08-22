@@ -214,7 +214,7 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
               new CacheLoader<String, Tld>() {
                 @Override
                 public Tld load(final String tld) {
-                  return tm().transact(() -> tm().loadByKeyIfPresent(createVKey(tld))).orElse(null);
+                  return tm().loadByKeyIfPresent(createVKey(tld)).orElse(null);
                 }
 
                 @Override
@@ -222,7 +222,7 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
                   ImmutableMap<String, VKey<Tld>> keysMap =
                       toMap(ImmutableSet.copyOf(tlds), Tld::createVKey);
                   Map<VKey<? extends Tld>, Tld> entities =
-                      tm().transact(() -> tm().loadByKeysIfPresent(keysMap.values()));
+                      tm().loadByKeysIfPresent(keysMap.values());
                   return Maps.transformEntries(keysMap, (k, v) -> entities.getOrDefault(v, null));
                 }
               });
@@ -1027,24 +1027,21 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
     }
 
     public Builder setDefaultPromoTokens(ImmutableList<VKey<AllocationToken>> promoTokens) {
-      tm().transact(
-              () -> {
-                for (VKey<AllocationToken> tokenKey : promoTokens) {
-                  AllocationToken token = tm().loadByKey(tokenKey);
-                  checkArgument(
-                      token.getTokenType().equals(TokenType.DEFAULT_PROMO),
-                      String.format(
-                          "Token %s has an invalid token type of %s. DefaultPromoTokens must be of"
-                              + " the type DEFAULT_PROMO",
-                          token.getToken(), token.getTokenType()));
-                  checkArgument(
-                      token.getAllowedTlds().contains(getInstance().tldStr),
-                      String.format(
-                          "The token %s is not valid for this TLD. The valid TLDs for it are %s",
-                          token.getToken(), token.getAllowedTlds()));
-                }
-                getInstance().defaultPromoTokens = promoTokens;
-              });
+      for (VKey<AllocationToken> tokenKey : promoTokens) {
+        AllocationToken token = tm().loadByKey(tokenKey);
+        checkArgument(
+            token.getTokenType().equals(TokenType.DEFAULT_PROMO),
+            String.format(
+                "Token %s has an invalid token type of %s. DefaultPromoTokens must be of"
+                    + " the type DEFAULT_PROMO",
+                token.getToken(), token.getTokenType()));
+        checkArgument(
+            token.getAllowedTlds().contains(getInstance().tldStr),
+            String.format(
+                "The token %s is not valid for this TLD. The valid TLDs for it are %s",
+                token.getToken(), token.getAllowedTlds()));
+      }
+      getInstance().defaultPromoTokens = promoTokens;
       return this;
     }
 

@@ -31,7 +31,7 @@ public class ReservedListDao {
   public static void save(ReservedList reservedList) {
     checkArgumentNotNull(reservedList, "Must specify reservedList");
     logger.atInfo().log("Saving reserved list %s to Cloud SQL.", reservedList.getName());
-    tm().transact(() -> tm().insert(reservedList));
+    tm().insert(reservedList);
     logger.atInfo().log(
         "Saved reserved list %s with %d entries to Cloud SQL.",
         reservedList.getName(), reservedList.getReservedListEntries().size());
@@ -47,15 +47,13 @@ public class ReservedListDao {
    * exists.
    */
   public static Optional<ReservedList> getLatestRevision(String reservedListName) {
-    return tm().transact(
-            () ->
-                tm().query(
-                        "FROM ReservedList WHERE revisionId IN "
-                            + "(SELECT MAX(revisionId) FROM ReservedList WHERE name = :name)",
-                        ReservedList.class)
-                    .setParameter("name", reservedListName)
-                    .getResultStream()
-                    .findFirst());
+    return tm().query(
+            "FROM ReservedList WHERE revisionId IN "
+                + "(SELECT MAX(revisionId) FROM ReservedList WHERE name = :name)",
+            ReservedList.class)
+        .setParameter("name", reservedListName)
+        .getResultStream()
+        .findFirst();
   }
 
   /**

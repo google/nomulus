@@ -153,10 +153,7 @@ public final class EppResourceUtils {
     if (key == null) {
       return Optional.empty();
     }
-    T resource =
-        useCache
-            ? EppResource.loadCached(key)
-            : tm().transact(() -> tm().loadByKeyIfPresent(key).orElse(null));
+    T resource = useCache ? EppResource.loadCached(key) : tm().loadByKeyIfPresent(key).orElse(null);
     if (resource == null || isAtOrAfter(now, resource.getDeletionTime())) {
       return Optional.empty();
     }
@@ -381,7 +378,7 @@ public final class EppResourceUtils {
    * @param now the logical time of the check
    */
   public static boolean isLinked(VKey<? extends EppResource> key, DateTime now) {
-    return getLinkedDomainKeys(key, now, 1).size() > 0;
+    return !getLinkedDomainKeys(key, now, 1).isEmpty();
   }
 
   private EppResourceUtils() {}

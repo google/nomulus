@@ -33,12 +33,10 @@ public final class IdService {
    * <p>The generated IDs are project-wide unique.
    */
   public static long allocateId() {
-    return tm().transact(
-            () ->
-                (BigInteger)
-                    tm().getEntityManager()
-                        .createNativeQuery("SELECT nextval('project_wide_unique_id_seq')")
-                        .getSingleResult())
+    return ((BigInteger)
+            tm().getEntityManager()
+                .createNativeQuery("SELECT nextval('project_wide_unique_id_seq')")
+                .getSingleResult())
         .longValue();
   }
 }

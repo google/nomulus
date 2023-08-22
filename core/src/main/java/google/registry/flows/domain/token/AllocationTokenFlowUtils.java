@@ -181,8 +181,7 @@ public class AllocationTokenFlowUtils {
       return maybeTokenEntity.get();
     }
 
-    maybeTokenEntity =
-        tm().transact(() -> tm().loadByKeyIfPresent(VKey.create(AllocationToken.class, token)));
+    maybeTokenEntity = tm().loadByKeyIfPresent(VKey.create(AllocationToken.class, token));
 
     if (!maybeTokenEntity.isPresent()) {
       throw new InvalidAllocationTokenException();

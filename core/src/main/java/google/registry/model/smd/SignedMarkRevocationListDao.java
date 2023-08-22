@@ -27,20 +27,17 @@ public class SignedMarkRevocationListDao {
 
   /** Loads the {@link SignedMarkRevocationList}. */
   static SignedMarkRevocationList load() {
+    Long revisionId =
+        tm().query("SELECT MAX(revisionId) FROM SignedMarkRevocationList", Long.class)
+            .getSingleResult();
     Optional<SignedMarkRevocationList> smdrl =
-        tm().transact(
-                () -> {
-                  Long revisionId =
-                      tm().query("SELECT MAX(revisionId) FROM SignedMarkRevocationList", Long.class)
-                          .getSingleResult();
-                  return tm().query(
-                          "FROM SignedMarkRevocationList smrl LEFT JOIN FETCH smrl.revokes "
-                              + "WHERE smrl.revisionId = :revisionId",
-                          SignedMarkRevocationList.class)
-                      .setParameter("revisionId", revisionId)
-                      .getResultStream()
-                      .findFirst();
-                });
+        tm().query(
+                "FROM SignedMarkRevocationList smrl LEFT JOIN FETCH smrl.revokes "
+                    + "WHERE smrl.revisionId = :revisionId",
+                SignedMarkRevocationList.class)
+            .setParameter("revisionId", revisionId)
+            .getResultStream()
+            .findFirst();
     return smdrl.orElseGet(() -> SignedMarkRevocationList.create(START_OF_TIME, ImmutableMap.of()));
   }
 

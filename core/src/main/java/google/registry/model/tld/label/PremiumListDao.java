@@ -169,15 +169,12 @@ public class PremiumListDao {
   }
 
   private static Optional<PremiumList> getLatestRevisionUncached(String premiumListName) {
-    return tm().transact(
-            () ->
-                tm().query(
-                        "FROM PremiumList WHERE name = :name ORDER BY revisionId DESC",
-                        PremiumList.class)
-                    .setParameter("name", premiumListName)
-                    .setMaxResults(1)
-                    .getResultStream()
-                    .findFirst());
+    return tm().query(
+            "FROM PremiumList WHERE name = :name ORDER BY revisionId DESC", PremiumList.class)
+        .setParameter("name", premiumListName)
+        .setMaxResults(1)
+        .getResultStream()
+        .findFirst();
   }
 
   /**
@@ -200,17 +197,15 @@ public class PremiumListDao {
    * retrieval so it should only be done in a cached context.
    */
   static Optional<BigDecimal> getPriceForLabelUncached(RevisionIdAndLabel revisionIdAndLabel) {
-    return tm().transact(
-            () ->
-                tm().query(
-                        "SELECT pe.price FROM PremiumEntry pe WHERE pe.revisionId = :revisionId"
-                            + " AND pe.domainLabel = :label",
-                        BigDecimal.class)
-                    .setParameter("revisionId", revisionIdAndLabel.revisionId())
-                    .setParameter("label", revisionIdAndLabel.label())
-                    .setMaxResults(1)
-                    .getResultStream()
-                    .findFirst());
+    return tm().query(
+            "SELECT pe.price FROM PremiumEntry pe WHERE pe.revisionId = :revisionId"
+                + " AND pe.domainLabel = :label",
+            BigDecimal.class)
+        .setParameter("revisionId", revisionIdAndLabel.revisionId())
+        .setParameter("label", revisionIdAndLabel.label())
+        .setMaxResults(1)
+        .getResultStream()
+        .findFirst();
   }
 
   /**

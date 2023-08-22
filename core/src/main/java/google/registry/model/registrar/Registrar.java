@@ -374,7 +374,7 @@ public class Registrar extends UpdateAutoTimestampEntity implements Buildable, J
    */
   @Expose String icannReferralEmail;
 
-  /** Id of the folder in drive used to publish information for this registrar. */
+  /** ID of the folder in drive used to publish information for this registrar. */
   @Expose String driveFolderId;
 
   // Metadata.
@@ -936,7 +936,7 @@ public class Registrar extends UpdateAutoTimestampEntity implements Buildable, J
 
   /** Loads all registrar entities directly from the database. */
   public static Iterable<Registrar> loadAll() {
-    return tm().transact(() -> tm().loadAllOf(Registrar.class));
+    return tm().loadAllOf(Registrar.class);
   }
 
   /** Loads all registrar entities using an in-memory cache. */
@@ -954,7 +954,7 @@ public class Registrar extends UpdateAutoTimestampEntity implements Buildable, J
   /** Loads and returns a registrar entity by its id directly from the database. */
   public static Optional<Registrar> loadByRegistrarId(String registrarId) {
     checkArgument(!Strings.isNullOrEmpty(registrarId), "registrarId must be specified");
-    return tm().transact(() -> tm().loadByKeyIfPresent(createVKey(registrarId)));
+    return tm().loadByKeyIfPresent(createVKey(registrarId));
   }
 
   /**

@@ -394,7 +394,7 @@ public final class DatabaseHelper {
     // prevent breaking some hard-coded flow tests. IDs in tests are allocated in a strictly
     // increasing sequence, if we don't pad out the ID here, we would have to renumber hundreds of
     // unit tests.
-    allocateId();
+    tm().transact(() -> allocateId());
     PremiumListDao.save(premiumList);
     maybeAdvanceClock();
     return premiumList;
@@ -437,10 +437,11 @@ public final class DatabaseHelper {
     return registry;
   }
 
-  public static void deleteTld(String tld) {
-    deleteResource(Tld.get(tld));
-    disallowRegistrarAccess("TheRegistrar", tld);
-    disallowRegistrarAccess("NewRegistrar", tld);
+  public static void deleteTld(String tldStr) {
+    Tld tld = tm().transact(() -> Tld.get(tldStr));
+    deleteResource(tld);
+    disallowRegistrarAccess("TheRegistrar", tldStr);
+    disallowRegistrarAccess("NewRegistrar", tldStr);
   }
 
   /**
@@ -476,14 +477,24 @@ public final class DatabaseHelper {
     Registrar registrar = loadRegistrar(registrarId);
     if (!registrar.getAllowedTlds().contains(tld)) {
       persistResource(
-          registrar.asBuilder().setAllowedTlds(union(registrar.getAllowedTlds(), tld)).build());
+          (Supplier<Registrar>)
+              () ->
+                  registrar
+                      .asBuilder()
+                      .setAllowedTlds(union(registrar.getAllowedTlds(), tld))
+                      .build());
     }
   }
 
   public static void disallowRegistrarAccess(String registrarId, String tld) {
     Registrar registrar = loadRegistrar(registrarId);
     persistResource(
-        registrar.asBuilder().setAllowedTlds(difference(registrar.getAllowedTlds(), tld)).build());
+        (Supplier<Registrar>)
+            () ->
+                registrar
+                    .asBuilder()
+                    .setAllowedTlds(difference(registrar.getAllowedTlds(), tld))
+                    .build());
   }
 
   private static DomainTransferData.Builder createDomainTransferDataBuilder(
@@ -964,12 +975,12 @@ public final class DatabaseHelper {
 
   /** Returns a newly allocated, globally unique domain repoId of the format HEX-TLD. */
   public static String generateNewDomainRoid(String tld) {
-    return createDomainRepoId(allocateId(), tld);
+    return tm().transact(() -> createDomainRepoId(allocateId(), tld));
   }
 
   /** Returns a newly allocated, globally unique contact/host repoId of the format HEX_TLD-ROID. */
   public static String generateNewContactHostRoid() {
-    return createRepoId(allocateId(), getContactAndHostRoidSuffix());
+    return createRepoId(tm().transact(() -> allocateId()), getContactAndHostRoidSuffix());
   }
 
   /** Persists an object in the DB for tests. */
@@ -979,7 +990,14 @@ public final class DatabaseHelper {
         .isNotInstanceOf(Buildable.Builder.class);
     tm().transact(() -> tm().put(resource));
     maybeAdvanceClock();
+    // Need a new transaction as the time has changed, and that the resource has been detached.
     return tm().transact(() -> tm().loadByEntity(resource));
+  }
+
+  /* Retrive a resource from a transaction, then persist it. */
+  public static <R extends ImmutableObject> R persistResource(final Supplier<R> work) {
+    R resource = tm().transact(work);
+    return persistResource(resource);
   }
 
   /** Persists the specified resources to the DB. */
@@ -1160,10 +1178,12 @@ public final class DatabaseHelper {
 
   /** Loads and returns the registrar with the given client ID, or throws IAE if not present. */
   public static Registrar loadRegistrar(String registrarId) {
-    return checkArgumentPresent(
-        Registrar.loadByRegistrarId(registrarId),
-        "Error in tests: Registrar %s does not exist",
-        registrarId);
+    return tm().transact(
+            () ->
+                checkArgumentPresent(
+                    Registrar.loadByRegistrarId(registrarId),
+                    "Error in tests: Registrar %s does not exist",
+                    registrarId));
   }
 
   /**

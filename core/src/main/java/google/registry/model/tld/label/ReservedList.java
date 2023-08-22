@@ -199,13 +199,11 @@ public final class ReservedList
   public synchronized ImmutableMap<String, ReservedListEntry> getReservedListEntries() {
     if (reservedListMap == null) {
       reservedListMap =
-          tm().transact(
-                  () ->
-                      tm()
-                          .createQueryComposer(ReservedListEntry.class)
-                          .where("revisionId", EQ, revisionId)
-                          .stream()
-                          .collect(toImmutableMap(ReservedListEntry::getDomainLabel, e -> e)));
+          tm()
+              .createQueryComposer(ReservedListEntry.class)
+              .where("revisionId", EQ, revisionId)
+              .stream()
+              .collect(toImmutableMap(ReservedListEntry::getDomainLabel, e -> e));
     }
     return ImmutableMap.copyOf(nullToEmpty(reservedListMap));
   }

@@ -916,7 +916,7 @@ public class DomainBase extends EppResource
         return thisCastToDerived();
       }
       AllocationToken token =
-          tm().transact(() -> tm().loadByKeyIfPresent(currentPackageToken))
+          tm().loadByKeyIfPresent(currentPackageToken)
               .orElseThrow(
                   () ->
                       new IllegalArgumentException(

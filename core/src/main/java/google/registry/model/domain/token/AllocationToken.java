@@ -307,12 +307,8 @@ public class AllocationToken extends UpdateAutoTimestampEntity implements Builda
                     public Map<VKey<AllocationToken>, Optional<AllocationToken>> loadAll(
                         Iterable<? extends VKey<AllocationToken>> keys) {
                       ImmutableSet<VKey<AllocationToken>> keySet = ImmutableSet.copyOf(keys);
-                      return tm().transact(
-                              () ->
-                                  keySet.stream()
-                                      .collect(
-                                          toImmutableMap(
-                                              key -> key, key -> tm().loadByKeyIfPresent(key))));
+                      return keySet.stream()
+                          .collect(toImmutableMap(key -> key, key -> tm().loadByKeyIfPresent(key)));
                     }
                   });
 

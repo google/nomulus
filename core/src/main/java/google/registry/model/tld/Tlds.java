@@ -55,19 +55,15 @@ public final class Tlds {
    */
   private static Supplier<ImmutableMap<String, TldType>> createFreshCache() {
     return memoizeWithShortExpiration(
-        () ->
-            tm().transact(
-                    () -> {
-                      EntityManager entityManager = tm().getEntityManager();
-                      Stream<?> resultStream =
-                          entityManager
-                              .createQuery("SELECT tldStr, tldType FROM Tld")
-                              .getResultStream();
-                      return resultStream
-                          .map(e -> ((Object[]) e))
-                          .map(e -> Maps.immutableEntry((String) e[0], ((TldType) e[1])))
-                          .collect(entriesToImmutableMap());
-                    }));
+        () -> {
+          EntityManager entityManager = tm().getEntityManager();
+          Stream<?> resultStream =
+              entityManager.createQuery("SELECT tldStr, tldType FROM Tld").getResultStream();
+          return resultStream
+              .map(e -> (Object[]) e)
+              .map(e -> Maps.immutableEntry((String) e[0], (TldType) e[1]))
+              .collect(entriesToImmutableMap());
+        });
   }
 
   /** Manually reset the static cache backing the methods on this class. */
