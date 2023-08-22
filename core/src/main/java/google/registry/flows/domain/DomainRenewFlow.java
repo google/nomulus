@@ -30,7 +30,7 @@ import static google.registry.flows.domain.DomainFlowUtils.validateFeeChallenge;
 import static google.registry.flows.domain.DomainFlowUtils.validateRegistrationPeriod;
 import static google.registry.flows.domain.DomainFlowUtils.verifyRegistrarIsActive;
 import static google.registry.flows.domain.DomainFlowUtils.verifyUnitIsYears;
-import static google.registry.flows.domain.token.AllocationTokenFlowUtils.maybeApplyPackageRemovalToken;
+import static google.registry.flows.domain.token.AllocationTokenFlowUtils.maybeApplyBulkPricingRemovalToken;
 import static google.registry.flows.domain.token.AllocationTokenFlowUtils.verifyTokenAllowedOnDomain;
 import static google.registry.model.reporting.HistoryEntry.Type.DOMAIN_RENEW;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
@@ -53,8 +53,8 @@ import google.registry.flows.custom.DomainRenewFlowCustomLogic.BeforeResponseRet
 import google.registry.flows.custom.DomainRenewFlowCustomLogic.BeforeSaveParameters;
 import google.registry.flows.custom.EntityChanges;
 import google.registry.flows.domain.token.AllocationTokenFlowUtils;
-import google.registry.flows.domain.token.AllocationTokenFlowUtils.MissingRemoveDomainTokenOnPackageDomainException;
-import google.registry.flows.domain.token.AllocationTokenFlowUtils.RemoveDomainTokenOnNonPackageDomainException;
+import google.registry.flows.domain.token.AllocationTokenFlowUtils.MissingRemoveDomainTokenOnBulkPricingDomainException;
+import google.registry.flows.domain.token.AllocationTokenFlowUtils.RemoveDomainTokenOnNonBulkPricingDomainException;
 import google.registry.model.ImmutableObject;
 import google.registry.model.billing.BillingBase.Reason;
 import google.registry.model.billing.BillingEvent;
@@ -121,8 +121,8 @@ import org.joda.time.Duration;
  * @error {@link DomainFlowUtils.RegistrarMustBeActiveForThisOperationException}
  * @error {@link DomainFlowUtils.UnsupportedFeeAttributeException}
  * @error {@link DomainRenewFlow.IncorrectCurrentExpirationDateException}
- * @error {@link MissingRemoveDomainTokenOnPackageDomainException}
- * @error {@link RemoveDomainTokenOnNonPackageDomainException}
+ * @error {@link MissingRemoveDomainTokenOnBulkPricingDomainException}
+ * @error {@link RemoveDomainTokenOnNonBulkPricingDomainException}
  * @error {@link
  *     google.registry.flows.domain.token.AllocationTokenFlowUtils.AllocationTokenNotValidForDomainException}
  * @error {@link
@@ -194,7 +194,7 @@ public final class DomainRenewFlow implements TransactionalFlow {
     verifyRenewAllowed(authInfo, existingDomain, command, allocationToken);
 
     // If client passed an applicable static token this updates the domain
-    existingDomain = maybeApplyPackageRemovalToken(existingDomain, allocationToken);
+    existingDomain = maybeApplyBulkPricingRemovalToken(existingDomain, allocationToken);
 
     int years = command.getPeriod().getValue();
     DateTime newExpirationTime =
@@ -328,7 +328,7 @@ public final class DomainRenewFlow implements TransactionalFlow {
       checkHasBillingAccount(registrarId, existingDomain.getTld());
     }
     verifyUnitIsYears(command.getPeriod());
-    // We only allow __REMOVE_PACKAGE__ token on promo package domains for now
+    // We only allow __REMOVE_PACKAGE__ token on bulk pricing domains for now
     verifyTokenAllowedOnDomain(existingDomain, allocationToken);
     // If the date they specify doesn't match the expiration, fail. (This is an idempotence check).
     if (!command.getCurrentExpirationDate().equals(

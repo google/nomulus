@@ -16,23 +16,23 @@ package google.registry.tools;
 import static com.google.common.base.Preconditions.checkArgument;
 
 import com.beust.jcommander.Parameters;
-import google.registry.model.domain.token.PackagePromotion;
+import google.registry.model.domain.token.BulkPricingPackage;
 import org.jetbrains.annotations.Nullable;
 
-/** Command to create a PackagePromotion */
+/** Command to create a {@link BulkPricingPackage} */
 @Parameters(
     separators = " =",
     commandDescription =
-        "Create new package promotion object(s) for registrars to register multiple names under"
-            + " one contractual annual package price using a package allocation token")
-public final class CreatePackagePromotionCommand extends CreateOrUpdatePackagePromotionCommand {
+        "Create new bulk pricing package object(s) for registrars to register multiple names under"
+            + " one contractual annual bulk price using a bulk pricing allocation token")
+public final class CreateBulkPricingPackageCommand extends CreateOrUpdateBulkPricingPackageCommand {
 
   @Nullable
   @Override
-  PackagePromotion getOldPackagePromotion(String tokenString) {
+  BulkPricingPackage getOldBulkPricingPackage(String tokenString) {
     checkArgument(
-        !PackagePromotion.loadByTokenString(tokenString).isPresent(),
-        "PackagePromotion with token %s already exists",
+        !BulkPricingPackage.loadByTokenString(tokenString).isPresent(),
+        "BulkPricingPackage with token %s already exists",
         tokenString);
     return null;
   }

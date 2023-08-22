@@ -200,7 +200,7 @@ public class Domain extends DomainBase implements ForeignKeyedEppResource {
           .setStatusValues(domainBase.getStatusValues())
           .setTransferData(domainBase.getTransferData())
           .setLordnPhase(domainBase.getLordnPhase())
-          .setCurrentPackageToken(domainBase.getCurrentPackageToken().orElse(null));
+          .setCurrentBulkToken(domainBase.getCurrentBulkToken().orElse(null));
     }
   }
 }

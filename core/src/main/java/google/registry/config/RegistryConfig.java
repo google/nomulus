@@ -1371,41 +1371,45 @@ public final class RegistryConfig {
     }
 
     @Provides
-    @Config("packageCreateLimitEmailSubject")
-    public static String providePackageCreateLimitEmailSubject(RegistryConfigSettings config) {
-      return config.packageMonitoring.packageCreateLimitEmailSubject;
-    }
-
-    @Provides
-    @Config("packageCreateLimitEmailBody")
-    public static String providePackageCreateLimitEmailBody(RegistryConfigSettings config) {
-      return config.packageMonitoring.packageCreateLimitEmailBody;
-    }
-
-    @Provides
-    @Config("packageDomainLimitWarningEmailSubject")
-    public static String providePackageDomainLimitWarningEmailSubject(
+    @Config("bulkPricingPackageCreateLimitEmailSubject")
+    public static String provideBulkPricingPackageCreateLimitEmailSubject(
         RegistryConfigSettings config) {
-      return config.packageMonitoring.packageDomainLimitWarningEmailSubject;
+      return config.bulkPricingPackageMonitoring.bulkPricingPackageCreateLimitEmailSubject;
     }
 
     @Provides
-    @Config("packageDomainLimitWarningEmailBody")
-    public static String providePackageDomainLimitWarningEmailBody(RegistryConfigSettings config) {
-      return config.packageMonitoring.packageDomainLimitWarningEmailBody;
-    }
-
-    @Provides
-    @Config("packageDomainLimitUpgradeEmailSubject")
-    public static String providePackageDomainLimitUpgradeEmailSubject(
+    @Config("bulkPricingPackageCreateLimitEmailBody")
+    public static String provideBulkPricingPackageCreateLimitEmailBody(
         RegistryConfigSettings config) {
-      return config.packageMonitoring.packageDomainLimitUpgradeEmailSubject;
+      return config.bulkPricingPackageMonitoring.bulkPricingPackageCreateLimitEmailBody;
     }
 
     @Provides
-    @Config("packageDomainLimitUpgradeEmailBody")
-    public static String providePackageDomainLimitUpgradeEmailBody(RegistryConfigSettings config) {
-      return config.packageMonitoring.packageDomainLimitUpgradeEmailBody;
+    @Config("bulkPricingPackageDomainLimitWarningEmailSubject")
+    public static String provideBulkPricingPackageDomainLimitWarningEmailSubject(
+        RegistryConfigSettings config) {
+      return config.bulkPricingPackageMonitoring.bulkPricingPackageDomainLimitWarningEmailSubject;
+    }
+
+    @Provides
+    @Config("bulkPricingPackageDomainLimitWarningEmailBody")
+    public static String provideBulkPricingPackageDomainLimitWarningEmailBody(
+        RegistryConfigSettings config) {
+      return config.bulkPricingPackageMonitoring.bulkPricingPackageDomainLimitWarningEmailBody;
+    }
+
+    @Provides
+    @Config("bulkPricingPackageDomainLimitUpgradeEmailSubject")
+    public static String provideBulkPricingPackageDomainLimitUpgradeEmailSubject(
+        RegistryConfigSettings config) {
+      return config.bulkPricingPackageMonitoring.bulkPricingPackageDomainLimitUpgradeEmailSubject;
+    }
+
+    @Provides
+    @Config("bulkPricingPackageDomainLimitUpgradeEmailBody")
+    public static String provideBulkPricingPackageDomainLimitUpgradeEmailBody(
+        RegistryConfigSettings config) {
+      return config.bulkPricingPackageMonitoring.bulkPricingPackageDomainLimitUpgradeEmailBody;
     }
 
     private static String formatComments(String text) {

@@ -17,7 +17,7 @@ package google.registry.flows.domain;
 import static com.google.common.collect.MoreCollectors.onlyElement;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
-import static google.registry.model.domain.token.AllocationToken.TokenType.PACKAGE;
+import static google.registry.model.domain.token.AllocationToken.TokenType.BULK_PRICING;
 import static google.registry.model.domain.token.AllocationToken.TokenType.SINGLE_USE;
 import static google.registry.model.domain.token.AllocationToken.TokenType.UNLIMITED_USE;
 import static google.registry.model.reporting.DomainTransactionRecord.TransactionReportField.NET_ADDS_4_YR;
@@ -382,12 +382,12 @@ class DomainTransferApproveFlowTest
   }
 
   @Test
-  void testDryRun_PackageDomain() throws Exception {
+  void testDryRun_bulkPricingDomain() throws Exception {
     AllocationToken allocationToken =
         persistResource(
             new AllocationToken.Builder()
                 .setToken("abc123")
-                .setTokenType(PACKAGE)
+                .setTokenType(BULK_PRICING)
                 .setRenewalPriceBehavior(RenewalPriceBehavior.SPECIFIED)
                 .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
                 .build());
@@ -398,8 +398,7 @@ class DomainTransferApproveFlowTest
             .setRenewalPriceBehavior(RenewalPriceBehavior.SPECIFIED)
             .setRenewalPrice(Money.of(USD, new BigDecimal("10.00")))
             .build());
-    persistResource(
-        domain.asBuilder().setCurrentPackageToken(allocationToken.createVKey()).build());
+    persistResource(domain.asBuilder().setCurrentBulkToken(allocationToken.createVKey()).build());
     clock.advanceOneMilli();
     setEppInput("domain_transfer_approve_wildcard.xml", ImmutableMap.of("DOMAIN", "example.tld"));
     dryRunFlowAssertResponse(loadFile("domain_transfer_approve_response.xml"));
@@ -411,12 +410,12 @@ class DomainTransferApproveFlowTest
   }
 
   @Test
-  void testSuccess_removesPackageToken() throws Exception {
+  void testSuccess_removesBulkToken() throws Exception {
     AllocationToken allocationToken =
         persistResource(
             new AllocationToken.Builder()
                 .setToken("abc123")
-                .setTokenType(PACKAGE)
+                .setTokenType(BULK_PRICING)
                 .setRenewalPriceBehavior(RenewalPriceBehavior.SPECIFIED)
                 .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
                 .build());
@@ -427,8 +426,7 @@ class DomainTransferApproveFlowTest
             .setRenewalPriceBehavior(RenewalPriceBehavior.SPECIFIED)
             .setRenewalPrice(Money.of(USD, new BigDecimal("10.00")))
             .build());
-    persistResource(
-        domain.asBuilder().setCurrentPackageToken(allocationToken.createVKey()).build());
+    persistResource(domain.asBuilder().setCurrentBulkToken(allocationToken.createVKey()).build());
     clock.advanceOneMilli();
     setEppInput("domain_transfer_approve_wildcard.xml", ImmutableMap.of("DOMAIN", "example.tld"));
     DateTime now = clock.nowUtc();
@@ -460,7 +458,7 @@ class DomainTransferApproveFlowTest
             .setRenewalPriceBehavior(RenewalPriceBehavior.SPECIFIED)
             .setRenewalPrice(Money.of(USD, new BigDecimal("10.00")))
             .build());
-    assertThat(domain.getCurrentPackageToken()).isEmpty();
+    assertThat(domain.getCurrentBulkToken()).isEmpty();
     assertThat(domain.getCurrentSponsorRegistrarId()).isEqualTo("NewRegistrar");
     assertThat(loadByKey(domain.getAutorenewBillingEvent()).getRenewalPriceBehavior())
         .isEqualTo(RenewalPriceBehavior.DEFAULT);

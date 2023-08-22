@@ -26,8 +26,8 @@ import static google.registry.model.billing.BillingBase.RenewalPriceBehavior.DEF
 import static google.registry.model.billing.BillingBase.RenewalPriceBehavior.NONPREMIUM;
 import static google.registry.model.billing.BillingBase.RenewalPriceBehavior.SPECIFIED;
 import static google.registry.model.domain.fee.Fee.FEE_EXTENSION_URIS;
+import static google.registry.model.domain.token.AllocationToken.TokenType.BULK_PRICING;
 import static google.registry.model.domain.token.AllocationToken.TokenType.DEFAULT_PROMO;
-import static google.registry.model.domain.token.AllocationToken.TokenType.PACKAGE;
 import static google.registry.model.domain.token.AllocationToken.TokenType.SINGLE_USE;
 import static google.registry.model.domain.token.AllocationToken.TokenType.UNLIMITED_USE;
 import static google.registry.model.eppcommon.StatusValue.PENDING_DELETE;
@@ -78,10 +78,10 @@ import google.registry.flows.FlowUtils.NotLoggedInException;
 import google.registry.flows.FlowUtils.UnknownCurrencyEppException;
 import google.registry.flows.ResourceFlowTestCase;
 import google.registry.flows.domain.DomainCreateFlow.AnchorTenantCreatePeriodException;
+import google.registry.flows.domain.DomainCreateFlow.BulkDomainRegisteredForTooManyYearsException;
 import google.registry.flows.domain.DomainCreateFlow.MustHaveSignedMarksInCurrentPhaseException;
 import google.registry.flows.domain.DomainCreateFlow.NoGeneralRegistrationsInCurrentPhaseException;
 import google.registry.flows.domain.DomainCreateFlow.NoTrademarkedRegistrationsBeforeSunriseException;
-import google.registry.flows.domain.DomainCreateFlow.PackageDomainRegisteredForTooManyYearsException;
 import google.registry.flows.domain.DomainCreateFlow.RenewalPriceInfo;
 import google.registry.flows.domain.DomainCreateFlow.SignedMarksOnlyDuringSunriseException;
 import google.registry.flows.domain.DomainFlowTmchUtils.FoundMarkExpiredException;
@@ -3673,12 +3673,12 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
   }
 
   @Test
-  void testSuccess_packageToken_addsTokenToDomain() throws Exception {
+  void testSuccess_bulkToken_addsTokenToDomain() throws Exception {
     AllocationToken token =
         persistResource(
             new AllocationToken.Builder()
                 .setToken("abc123")
-                .setTokenType(PACKAGE)
+                .setTokenType(BULK_PRICING)
                 .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
                 .setAllowedTlds(ImmutableSet.of("tld"))
                 .setRenewalPriceBehavior(SPECIFIED)
@@ -3696,16 +3696,16 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
                 .put("EXDATE", "2000-04-03T22:00:00.0Z")
                 .build()));
     Domain domain = reloadResourceByForeignKey();
-    assertThat(domain.getCurrentPackageToken()).isPresent();
-    assertThat(domain.getCurrentPackageToken()).hasValue(token.createVKey());
+    assertThat(domain.getCurrentBulkToken()).isPresent();
+    assertThat(domain.getCurrentBulkToken()).hasValue(token.createVKey());
   }
 
   @Test
-  void testFailure_packageToken_registrationTooLong() throws Exception {
+  void testFailure_bulkToken_registrationTooLong() throws Exception {
     persistResource(
         new AllocationToken.Builder()
             .setToken("abc123")
-            .setTokenType(PACKAGE)
+            .setTokenType(BULK_PRICING)
             .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
             .setAllowedTlds(ImmutableSet.of("tld"))
             .setRenewalPriceBehavior(SPECIFIED)
@@ -3715,10 +3715,10 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
         "domain_create_allocationtoken.xml",
         ImmutableMap.of("DOMAIN", "example.tld", "YEARS", "2"));
     EppException thrown =
-        assertThrows(PackageDomainRegisteredForTooManyYearsException.class, this::runFlow);
+        assertThrows(BulkDomainRegisteredForTooManyYearsException.class, this::runFlow);
     assertThat(thrown)
         .hasMessageThat()
         .isEqualTo(
-            "The package token abc123 cannot be used to register names for longer than 1 year.");
+            "The bulk token abc123 cannot be used to register names for longer than 1 year.");
   }
 }

@@ -169,18 +169,18 @@ final class UpdateAllocationTokensCommand extends UpdateOrDeleteAllocationTokens
   }
 
   private AllocationToken updateToken(AllocationToken original) {
-    if (endToken && original.getTokenType().equals(TokenType.PACKAGE)) {
-      Long domainsInPackage =
-          tm().query("SELECT COUNT(*) FROM Domain WHERE currentPackageToken = :token", Long.class)
+    if (endToken && original.getTokenType().equals(TokenType.BULK_PRICING)) {
+      Long domainsInBulkPackage =
+          tm().query("SELECT COUNT(*) FROM Domain WHERE currentBulkToken = :token", Long.class)
               .setParameter("token", original.createVKey())
               .getSingleResult();
 
       checkArgument(
-          domainsInPackage == 0,
-          "Package token %s can not end its promotion because it still has %s domains in the"
-              + " package",
+          domainsInBulkPackage == 0,
+          "Bulk token %s can not end its promotion because it still has %s domains in the"
+              + " promotion",
           original.getToken(),
-          domainsInPackage);
+          domainsInBulkPackage);
     }
     AllocationToken.Builder builder = original.asBuilder();
     Optional.ofNullable(allowedClientIds)

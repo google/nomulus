@@ -20,7 +20,7 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import com.beust.jcommander.Parameter;
 import google.registry.model.domain.token.AllocationToken;
 import google.registry.model.domain.token.AllocationToken.TokenType;
-import google.registry.model.domain.token.PackagePromotion;
+import google.registry.model.domain.token.BulkPricingPackage;
 import google.registry.persistence.VKey;
 import java.util.Date;
 import java.util.List;
@@ -29,39 +29,40 @@ import javax.annotation.Nullable;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
 
-/** Shared base class for commands to create or update a PackagePromotion object. */
-abstract class CreateOrUpdatePackagePromotionCommand extends MutatingCommand {
+/** Shared base class for commands to create or update a {@link BulkPricingPackage} object. */
+abstract class CreateOrUpdateBulkPricingPackageCommand extends MutatingCommand {
 
-  @Parameter(description = "Allocation token String of the package token", required = true)
+  @Parameter(description = "Allocation token String of the bulk token", required = true)
   List<String> mainParameters;
 
   @Nullable
   @Parameter(
       names = {"-d", "--max_domains"},
-      description = "Maximum concurrent active domains allowed in the package")
+      description = "Maximum concurrent active domains allowed in the bulk pricing package")
   Integer maxDomains;
 
   @Nullable
   @Parameter(
       names = {"-c", "--max_creates"},
-      description = "Maximum domain creations allowed in the package each year")
+      description = "Maximum domain creations allowed in the bulk pricing package each year")
   Integer maxCreates;
 
   @Nullable
   @Parameter(
       names = {"-p", "--price"},
-      description = "Annual price of the package")
+      description = "Annual price of the bulk pricing package")
   Money price;
 
   @Nullable
   @Parameter(
       names = "--next_billing_date",
-      description = "The next date that the package should be billed for its annual fee")
+      description =
+          "The next date that the bulk pricing package should be billed for its annual fee")
   Date nextBillingDate;
 
-  /** Returns the existing PackagePromotion or null if it does not exist. */
+  /** Returns the existing BulkPricingPackage or null if it does not exist. */
   @Nullable
-  abstract PackagePromotion getOldPackagePromotion(String token);
+  abstract BulkPricingPackage getOldBulkPricingPackage(String token);
 
   /** Returns the allocation token object. */
   AllocationToken getAndCheckAllocationToken(String token) {
@@ -69,12 +70,12 @@ abstract class CreateOrUpdatePackagePromotionCommand extends MutatingCommand {
         tm().transact(() -> tm().loadByKeyIfPresent(VKey.create(AllocationToken.class, token)));
     checkArgument(
         allocationToken.isPresent(),
-        "An allocation token with the token String %s does not exist. The package token must be"
-            + " created first before it can be used to create a PackagePromotion",
+        "An allocation token with the token String %s does not exist. The bulk token must be"
+            + " created first before it can be used to create a BulkPricingPackage",
         token);
     checkArgument(
-        allocationToken.get().getTokenType().equals(TokenType.PACKAGE),
-        "The allocation token must be of the PACKAGE token type");
+        allocationToken.get().getTokenType().equals(TokenType.BULK_PRICING),
+        "The allocation token must be of the BULK_PRICING token type");
     return allocationToken.get();
   }
 
@@ -88,21 +89,21 @@ abstract class CreateOrUpdatePackagePromotionCommand extends MutatingCommand {
     for (String token : mainParameters) {
       tm().transact(
               () -> {
-                PackagePromotion oldPackage = getOldPackagePromotion(token);
+                BulkPricingPackage oldBulkPricingPackage = getOldBulkPricingPackage(token);
                 checkArgument(
-                    oldPackage != null || price != null,
-                    "PackagePrice is required when creating a new package");
+                    oldBulkPricingPackage != null || price != null,
+                    "BulkPrice is required when creating a new bulk pricing package");
 
                 AllocationToken allocationToken = getAndCheckAllocationToken(token);
 
-                PackagePromotion.Builder builder =
-                    (oldPackage == null)
-                        ? new PackagePromotion.Builder().setToken(allocationToken)
-                        : oldPackage.asBuilder();
+                BulkPricingPackage.Builder builder =
+                    (oldBulkPricingPackage == null)
+                        ? new BulkPricingPackage.Builder().setToken(allocationToken)
+                        : oldBulkPricingPackage.asBuilder();
 
                 Optional.ofNullable(maxDomains).ifPresent(builder::setMaxDomains);
                 Optional.ofNullable(maxCreates).ifPresent(builder::setMaxCreates);
-                Optional.ofNullable(price).ifPresent(builder::setPackagePrice);
+                Optional.ofNullable(price).ifPresent(builder::setBulkPrice);
                 Optional.ofNullable(nextBillingDate)
                     .ifPresent(
                         nextBillingDate ->
@@ -110,8 +111,8 @@ abstract class CreateOrUpdatePackagePromotionCommand extends MutatingCommand {
                 if (clearLastNotificationSent()) {
                   builder.setLastNotificationSent(null);
                 }
-                PackagePromotion newPackage = builder.build();
-                stageEntityChange(oldPackage, newPackage);
+                BulkPricingPackage newBUlkPricingPackage = builder.build();
+                stageEntityChange(oldBulkPricingPackage, newBUlkPricingPackage);
               });
     }
   }

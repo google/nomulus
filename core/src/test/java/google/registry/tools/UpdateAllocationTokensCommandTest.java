@@ -22,7 +22,7 @@ import static google.registry.model.domain.token.AllocationToken.TokenStatus.CAN
 import static google.registry.model.domain.token.AllocationToken.TokenStatus.ENDED;
 import static google.registry.model.domain.token.AllocationToken.TokenStatus.NOT_STARTED;
 import static google.registry.model.domain.token.AllocationToken.TokenStatus.VALID;
-import static google.registry.model.domain.token.AllocationToken.TokenType.PACKAGE;
+import static google.registry.model.domain.token.AllocationToken.TokenType.BULK_PRICING;
 import static google.registry.model.domain.token.AllocationToken.TokenType.SINGLE_USE;
 import static google.registry.model.domain.token.AllocationToken.TokenType.UNLIMITED_USE;
 import static google.registry.testing.DatabaseHelper.createTld;
@@ -344,13 +344,13 @@ class UpdateAllocationTokensCommandTest extends CommandTestCase<UpdateAllocation
   }
 
   @Test
-  void testUpdateStatusTransitions_endPackageTokenNoDomains() throws Exception {
+  void testUpdateStatusTransitions_endBulkTokenNoDomains() throws Exception {
     DateTime now = fakeClock.nowUtc();
     AllocationToken token =
         persistResource(
             new AllocationToken.Builder()
                 .setToken("token")
-                .setTokenType(PACKAGE)
+                .setTokenType(BULK_PRICING)
                 .setRenewalPriceBehavior(SPECIFIED)
                 .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
                 .setTokenStatusTransitions(
@@ -371,13 +371,13 @@ class UpdateAllocationTokensCommandTest extends CommandTestCase<UpdateAllocation
   }
 
   @Test
-  void testUpdateStatusTransitions_endPackageTokenWithActiveDomainsFails() throws Exception {
+  void testUpdateStatusTransitions_endBulkTokenWithActiveDomainsFails() throws Exception {
     DateTime now = fakeClock.nowUtc();
     AllocationToken token =
         persistResource(
             new AllocationToken.Builder()
                 .setToken("token")
-                .setTokenType(PACKAGE)
+                .setTokenType(BULK_PRICING)
                 .setRenewalPriceBehavior(SPECIFIED)
                 .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
                 .setTokenStatusTransitions(
@@ -390,7 +390,7 @@ class UpdateAllocationTokensCommandTest extends CommandTestCase<UpdateAllocation
     persistResource(
         persistActiveDomain("example.tld")
             .asBuilder()
-            .setCurrentPackageToken(token.createVKey())
+            .setCurrentBulkToken(token.createVKey())
             .build());
     IllegalArgumentException thrown =
         assertThrows(
@@ -406,8 +406,8 @@ class UpdateAllocationTokensCommandTest extends CommandTestCase<UpdateAllocation
     assertThat(thrown)
         .hasMessageThat()
         .isEqualTo(
-            "Package token token can not end its promotion because it still has 1 domains in the"
-                + " package");
+            "Bulk token token can not end its promotion because it still has 1 domains in the"
+                + " promotion");
   }
 
   @Test

@@ -20,8 +20,8 @@ import static google.registry.flows.domain.DomainTransferFlowTestCase.persistWit
 import static google.registry.model.billing.BillingBase.RenewalPriceBehavior.DEFAULT;
 import static google.registry.model.billing.BillingBase.RenewalPriceBehavior.NONPREMIUM;
 import static google.registry.model.billing.BillingBase.RenewalPriceBehavior.SPECIFIED;
+import static google.registry.model.domain.token.AllocationToken.TokenType.BULK_PRICING;
 import static google.registry.model.domain.token.AllocationToken.TokenType.DEFAULT_PROMO;
-import static google.registry.model.domain.token.AllocationToken.TokenType.PACKAGE;
 import static google.registry.model.domain.token.AllocationToken.TokenType.SINGLE_USE;
 import static google.registry.model.domain.token.AllocationToken.TokenType.UNLIMITED_USE;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
@@ -77,8 +77,8 @@ import google.registry.flows.domain.token.AllocationTokenFlowUtils.AllocationTok
 import google.registry.flows.domain.token.AllocationTokenFlowUtils.AllocationTokenNotValidForTldException;
 import google.registry.flows.domain.token.AllocationTokenFlowUtils.AlreadyRedeemedAllocationTokenException;
 import google.registry.flows.domain.token.AllocationTokenFlowUtils.InvalidAllocationTokenException;
-import google.registry.flows.domain.token.AllocationTokenFlowUtils.MissingRemoveDomainTokenOnPackageDomainException;
-import google.registry.flows.domain.token.AllocationTokenFlowUtils.RemoveDomainTokenOnNonPackageDomainException;
+import google.registry.flows.domain.token.AllocationTokenFlowUtils.MissingRemoveDomainTokenOnBulkPricingDomainException;
+import google.registry.flows.domain.token.AllocationTokenFlowUtils.RemoveDomainTokenOnNonBulkPricingDomainException;
 import google.registry.flows.exceptions.ResourceStatusProhibitsOperationException;
 import google.registry.model.billing.BillingBase.Flag;
 import google.registry.model.billing.BillingBase.Reason;
@@ -1249,59 +1249,53 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
   }
 
   @Test
-  void testFailsPackageDomainInvalidAllocationToken() throws Exception {
+  void testFailsBulkPricingDomainInvalidAllocationToken() throws Exception {
     AllocationToken token =
         persistResource(
             new AllocationToken.Builder()
                 .setToken("abc123")
-                .setTokenType(PACKAGE)
+                .setTokenType(BULK_PRICING)
                 .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
                 .setAllowedTlds(ImmutableSet.of("tld"))
                 .setRenewalPriceBehavior(SPECIFIED)
                 .build());
     persistDomain();
     persistResource(
-        reloadResourceByForeignKey()
-            .asBuilder()
-            .setCurrentPackageToken(token.createVKey())
-            .build());
+        reloadResourceByForeignKey().asBuilder().setCurrentBulkToken(token.createVKey()).build());
 
     setEppInput(
         "domain_renew_allocationtoken.xml",
         ImmutableMap.of("DOMAIN", "example.tld", "YEARS", "2", "TOKEN", "abc123"));
 
     EppException thrown =
-        assertThrows(MissingRemoveDomainTokenOnPackageDomainException.class, this::runFlow);
+        assertThrows(MissingRemoveDomainTokenOnBulkPricingDomainException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
   @Test
-  void testFailsToRenewPackageDomainNoRemoveDomainToken() throws Exception {
+  void testFailsToRenewBulkPricingDomainNoRemoveDomainToken() throws Exception {
     AllocationToken token =
         persistResource(
             new AllocationToken.Builder()
                 .setToken("abc123")
-                .setTokenType(PACKAGE)
+                .setTokenType(BULK_PRICING)
                 .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
                 .setAllowedTlds(ImmutableSet.of("tld"))
                 .setRenewalPriceBehavior(SPECIFIED)
                 .build());
     persistDomain();
     persistResource(
-        reloadResourceByForeignKey()
-            .asBuilder()
-            .setCurrentPackageToken(token.createVKey())
-            .build());
+        reloadResourceByForeignKey().asBuilder().setCurrentBulkToken(token.createVKey()).build());
 
     setEppInput("domain_renew.xml", ImmutableMap.of("DOMAIN", "example.tld", "YEARS", "5"));
 
     EppException thrown =
-        assertThrows(MissingRemoveDomainTokenOnPackageDomainException.class, this::runFlow);
+        assertThrows(MissingRemoveDomainTokenOnBulkPricingDomainException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
   @Test
-  void testFailsToRenewNonPackageDomainWithRemoveDomainToken() throws Exception {
+  void testFailsToRenewNonBulkPricingDomainWithRemoveDomainToken() throws Exception {
     persistDomain();
 
     setEppInput(
@@ -1309,7 +1303,7 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
         ImmutableMap.of("DOMAIN", "example.tld", "YEARS", "2", "TOKEN", "__REMOVEDOMAIN__"));
 
     EppException thrown =
-        assertThrows(RemoveDomainTokenOnNonPackageDomainException.class, this::runFlow);
+        assertThrows(RemoveDomainTokenOnNonBulkPricingDomainException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
@@ -1319,17 +1313,14 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
         persistResource(
             new AllocationToken.Builder()
                 .setToken("abc123")
-                .setTokenType(PACKAGE)
+                .setTokenType(BULK_PRICING)
                 .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
                 .setAllowedTlds(ImmutableSet.of("tld"))
                 .setRenewalPriceBehavior(SPECIFIED)
                 .build());
     persistDomain(SPECIFIED, Money.of(USD, 2));
     persistResource(
-        reloadResourceByForeignKey()
-            .asBuilder()
-            .setCurrentPackageToken(token.createVKey())
-            .build());
+        reloadResourceByForeignKey().asBuilder().setCurrentBulkToken(token.createVKey()).build());
     setEppInput(
         "domain_renew_allocationtoken.xml",
         ImmutableMap.of("DOMAIN", "example.tld", "YEARS", "2", "TOKEN", "__REMOVEDOMAIN__"));
@@ -1339,10 +1330,10 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
         2,
         ImmutableMap.of("DOMAIN", "example.tld", "EXDATE", "2002-04-03T22:00:00Z"));
 
-    // We still need to verify that package token is removed as it's not being tested as a part of
+    // We still need to verify that the bulk token is removed as it's not being tested as a part of
     // doSuccessfulTest
     Domain domain = reloadResourceByForeignKey();
-    Truth8.assertThat(domain.getCurrentPackageToken()).isEmpty();
+    Truth8.assertThat(domain.getCurrentBulkToken()).isEmpty();
   }
 
   @Test
@@ -1351,17 +1342,14 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
         persistResource(
             new AllocationToken.Builder()
                 .setToken("abc123")
-                .setTokenType(PACKAGE)
+                .setTokenType(BULK_PRICING)
                 .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
                 .setAllowedTlds(ImmutableSet.of("tld"))
                 .setRenewalPriceBehavior(SPECIFIED)
                 .build());
     persistDomain(SPECIFIED, Money.of(USD, 2));
     persistResource(
-        reloadResourceByForeignKey()
-            .asBuilder()
-            .setCurrentPackageToken(token.createVKey())
-            .build());
+        reloadResourceByForeignKey().asBuilder().setCurrentBulkToken(token.createVKey()).build());
 
     setEppInput(
         "domain_renew_allocationtoken.xml",

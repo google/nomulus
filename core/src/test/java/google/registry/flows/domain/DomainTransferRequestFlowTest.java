@@ -21,7 +21,7 @@ import static com.google.common.truth.Truth8.assertThat;
 import static google.registry.batch.AsyncTaskEnqueuer.PARAM_REQUESTED_TIME;
 import static google.registry.batch.AsyncTaskEnqueuer.PARAM_RESOURCE_KEY;
 import static google.registry.batch.AsyncTaskEnqueuer.QUEUE_ASYNC_ACTIONS;
-import static google.registry.model.domain.token.AllocationToken.TokenType.PACKAGE;
+import static google.registry.model.domain.token.AllocationToken.TokenType.BULK_PRICING;
 import static google.registry.model.domain.token.AllocationToken.TokenType.SINGLE_USE;
 import static google.registry.model.domain.token.AllocationToken.TokenType.UNLIMITED_USE;
 import static google.registry.model.reporting.DomainTransactionRecord.TransactionReportField.TRANSFER_SUCCESSFUL;
@@ -1329,7 +1329,7 @@ class DomainTransferRequestFlowTest
   }
 
   @Test
-  void testSuccess_specifiedRenewalPrice_notCarriedOverForPackageName() throws Exception {
+  void testSuccess_specifiedRenewalPrice_notCarriedOverForBulkPricingName() throws Exception {
     setupDomain("example", "tld");
     persistResource(Tld.get("tld").asBuilder().build());
     domain = loadByEntity(domain);
@@ -1343,13 +1343,13 @@ class DomainTransferRequestFlowTest
         persistResource(
             new AllocationToken.Builder()
                 .setToken("abc123")
-                .setTokenType(PACKAGE)
+                .setTokenType(BULK_PRICING)
                 .setRenewalPriceBehavior(RenewalPriceBehavior.SPECIFIED)
                 .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
                 .build());
     domain =
         persistResource(
-            domain.asBuilder().setCurrentPackageToken(allocationToken.createVKey()).build());
+            domain.asBuilder().setCurrentBulkToken(allocationToken.createVKey()).build());
     DateTime now = clock.nowUtc();
 
     setEppInput("domain_transfer_request.xml");
@@ -1388,7 +1388,7 @@ class DomainTransferRequestFlowTest
   }
 
   @Test
-  void testSuccess_defaultRenewalPrice_carriedOverForPackageName() throws Exception {
+  void testSuccess_defaultRenewalPrice_carriedOverForBulkPricingName() throws Exception {
     setupDomain("example", "tld");
     persistResource(Tld.get("tld").asBuilder().build());
     domain = loadByEntity(domain);
@@ -1401,13 +1401,13 @@ class DomainTransferRequestFlowTest
         persistResource(
             new AllocationToken.Builder()
                 .setToken("abc123")
-                .setTokenType(PACKAGE)
+                .setTokenType(BULK_PRICING)
                 .setRenewalPriceBehavior(RenewalPriceBehavior.SPECIFIED)
                 .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
                 .build());
     domain =
         persistResource(
-            domain.asBuilder().setCurrentPackageToken(allocationToken.createVKey()).build());
+            domain.asBuilder().setCurrentBulkToken(allocationToken.createVKey()).build());
     DateTime now = clock.nowUtc();
 
     setEppInput("domain_transfer_request.xml");
@@ -1445,7 +1445,7 @@ class DomainTransferRequestFlowTest
   }
 
   @Test
-  void testSuccess_packageName_zeroPeriod() throws Exception {
+  void testSuccess_bulkPricingName_zeroPeriod() throws Exception {
     setupDomain("example", "tld");
     persistResource(Tld.get("tld").asBuilder().build());
     domain = loadByEntity(domain);
@@ -1458,13 +1458,13 @@ class DomainTransferRequestFlowTest
         persistResource(
             new AllocationToken.Builder()
                 .setToken("abc123")
-                .setTokenType(PACKAGE)
+                .setTokenType(BULK_PRICING)
                 .setRenewalPriceBehavior(RenewalPriceBehavior.SPECIFIED)
                 .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
                 .build());
     domain =
         persistResource(
-            domain.asBuilder().setCurrentPackageToken(allocationToken.createVKey()).build());
+            domain.asBuilder().setCurrentBulkToken(allocationToken.createVKey()).build());
 
     doSuccessfulSuperuserExtensionTest(
         "domain_transfer_request_superuser_extension.xml",

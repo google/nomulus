@@ -20,7 +20,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
 import static google.registry.model.EppResourceUtils.loadByForeignKey;
 import static google.registry.model.billing.BillingBase.RenewalPriceBehavior.SPECIFIED;
-import static google.registry.model.domain.token.AllocationToken.TokenType.PACKAGE;
+import static google.registry.model.domain.token.AllocationToken.TokenType.BULK_PRICING;
 import static google.registry.model.domain.token.AllocationToken.TokenType.SINGLE_USE;
 import static google.registry.testing.DatabaseHelper.cloneAndSetAutoTimestamps;
 import static google.registry.testing.DatabaseHelper.createTld;
@@ -812,7 +812,7 @@ public class DomainTest {
   }
 
   @Test
-  void testClone_removesPackageFromTransferredDomain() {
+  void testClone_removesBulkTokenFromTransferredDomain() {
     // If the transfer implicitly succeeded, the expiration time should be extended even if it
     // hadn't already expired
     DateTime now = DateTime.now(UTC);
@@ -831,7 +831,7 @@ public class DomainTest {
         persistResource(
             new AllocationToken.Builder()
                 .setToken("abc123")
-                .setTokenType(PACKAGE)
+                .setTokenType(BULK_PRICING)
                 .setRenewalPriceBehavior(SPECIFIED)
                 .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
                 .build());
@@ -841,13 +841,13 @@ public class DomainTest {
                 .asBuilder()
                 .setRegistrationExpirationTime(previousExpiration)
                 .setTransferData(transferData)
-                .setCurrentPackageToken(allocationToken.createVKey())
+                .setCurrentBulkToken(allocationToken.createVKey())
                 .build());
 
-    assertThat(domain.getCurrentPackageToken()).isPresent();
+    assertThat(domain.getCurrentBulkToken()).isPresent();
     Domain clonedDomain = domain.cloneProjectedAtTime(now);
     assertThat(clonedDomain.getRegistrationExpirationTime()).isEqualTo(newExpiration);
-    assertThat(clonedDomain.getCurrentPackageToken()).isEmpty();
+    assertThat(clonedDomain.getCurrentBulkToken()).isEmpty();
   }
 
   @Test
@@ -876,7 +876,7 @@ public class DomainTest {
   }
 
   @Test
-  void testClone_doesNotRemovePackageForPendingTransfer() {
+  void testClone_doesNotRemoveBulkTokenForPendingTransfer() {
     // Pending transfers shouldn't affect the expiration time
     DateTime now = DateTime.now(UTC);
     DateTime transferExpirationTime = now.plusDays(1);
@@ -892,7 +892,7 @@ public class DomainTest {
         persistResource(
             new AllocationToken.Builder()
                 .setToken("abc123")
-                .setTokenType(PACKAGE)
+                .setTokenType(BULK_PRICING)
                 .setRenewalPriceBehavior(SPECIFIED)
                 .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
                 .build());
@@ -902,12 +902,12 @@ public class DomainTest {
                 .asBuilder()
                 .setRegistrationExpirationTime(previousExpiration)
                 .setTransferData(transferData)
-                .setCurrentPackageToken(allocationToken.createVKey())
+                .setCurrentBulkToken(allocationToken.createVKey())
                 .build());
 
     Domain clonedDomain = domain.cloneProjectedAtTime(now);
     assertThat(clonedDomain.getRegistrationExpirationTime()).isEqualTo(previousExpiration);
-    assertThat(clonedDomain.getCurrentPackageToken().get()).isEqualTo(allocationToken.createVKey());
+    assertThat(clonedDomain.getCurrentBulkToken().get()).isEqualTo(allocationToken.createVKey());
   }
 
   @Test
@@ -1043,48 +1043,48 @@ public class DomainTest {
   }
 
   @Test
-  void testFail_currentPackageTokenWrongPackageType() {
+  void testFail_currentBulkTokenWrongTokenType() {
     AllocationToken allocationToken =
         persistResource(
             new AllocationToken.Builder().setToken("abc123").setTokenType(SINGLE_USE).build());
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
-            () -> domain.asBuilder().setCurrentPackageToken(allocationToken.createVKey()).build());
+            () -> domain.asBuilder().setCurrentBulkToken(allocationToken.createVKey()).build());
     assertThat(thrown)
         .hasMessageThat()
-        .isEqualTo("The currentPackageToken must have a PACKAGE TokenType");
+        .isEqualTo("The currentBulkToken must have a BULK_PRICING TokenType");
   }
 
   @Test
-  void testFailure_packageTokenDoesNotExist() {
+  void testFailure_bulkTokenDoesNotExist() {
     AllocationToken allocationToken =
         new AllocationToken.Builder()
             .setToken("abc123")
-            .setTokenType(PACKAGE)
+            .setTokenType(BULK_PRICING)
             .setRenewalPriceBehavior(SPECIFIED)
             .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
             .build();
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
-            () -> domain.asBuilder().setCurrentPackageToken(allocationToken.createVKey()).build());
-    assertThat(thrown).hasMessageThat().isEqualTo("The package token abc123 does not exist");
+            () -> domain.asBuilder().setCurrentBulkToken(allocationToken.createVKey()).build());
+    assertThat(thrown).hasMessageThat().isEqualTo("The bulk token abc123 does not exist");
   }
 
   @Test
-  void testSuccess_removeCurrentPackageToken() {
+  void testSuccess_removeCurrentBulkToken() {
     AllocationToken allocationToken =
         persistResource(
             new AllocationToken.Builder()
                 .setToken("abc123")
-                .setTokenType(PACKAGE)
+                .setTokenType(BULK_PRICING)
                 .setRenewalPriceBehavior(SPECIFIED)
                 .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
                 .build());
-    domain = domain.asBuilder().setCurrentPackageToken(allocationToken.createVKey()).build();
-    assertThat(domain.getCurrentPackageToken().get()).isEqualTo(allocationToken.createVKey());
-    domain = domain.asBuilder().setCurrentPackageToken(null).build();
-    assertThat(domain.getCurrentPackageToken()).isEmpty();
+    domain = domain.asBuilder().setCurrentBulkToken(allocationToken.createVKey()).build();
+    assertThat(domain.getCurrentBulkToken().get()).isEqualTo(allocationToken.createVKey());
+    domain = domain.asBuilder().setCurrentBulkToken(null).build();
+    assertThat(domain.getCurrentBulkToken()).isEmpty();
   }
 }

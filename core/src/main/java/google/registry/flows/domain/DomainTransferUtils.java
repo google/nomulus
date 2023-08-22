@@ -146,7 +146,7 @@ public final class DomainTransferUtils {
     return builder
         .add(
             createGainingClientAutorenewEvent(
-                existingDomain.getCurrentPackageToken().isPresent()
+                existingDomain.getCurrentBulkToken().isPresent()
                     ? existingBillingRecurrence
                         .asBuilder()
                         .setRenewalPriceBehavior(RenewalPriceBehavior.DEFAULT)

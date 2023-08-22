@@ -119,9 +119,14 @@ public class AllocationToken extends UpdateAutoTimestampEntity implements Builda
 
   /** Type of the token that indicates how and where it should be used. */
   public enum TokenType {
+    /** Token used for bulk pricing */
+    BULK_PRICING,
     /** Token saved on a TLD to use if no other token is passed from the client */
     DEFAULT_PROMO,
-    /** Token used for package pricing */
+    /** This is the old name for what is now BULK_PRICING. */
+    // TODO(sarahbot@): Remove this type once all tokens of this type have been scrubbed from the
+    // database
+    @Deprecated
     PACKAGE,
     /** Invalid after use */
     SINGLE_USE,
@@ -137,8 +142,8 @@ public class AllocationToken extends UpdateAutoTimestampEntity implements Builda
     /** No special behavior */
     DEFAULT,
     /**
-     * REMOVE_DOMAIN triggers domain removal from promotional bulk (package) pricing, bypasses
-     * DEFAULT token validations.
+     * REMOVE_DOMAIN triggers domain removal from a bulk pricing package, bypasses DEFAULT token
+     * validations.
      */
     REMOVE_DOMAIN
   }
@@ -344,12 +349,13 @@ public class AllocationToken extends UpdateAutoTimestampEntity implements Builda
       checkArgumentNotNull(getInstance().tokenType, "Token type must be specified");
       checkArgument(!Strings.isNullOrEmpty(getInstance().token), "Token must not be null or empty");
       checkArgument(
-          !getInstance().tokenType.equals(TokenType.PACKAGE)
+          !getInstance().tokenType.equals(TokenType.BULK_PRICING)
               || getInstance().renewalPriceBehavior.equals(RenewalPriceBehavior.SPECIFIED),
-          "Package tokens must have renewalPriceBehavior set to SPECIFIED");
+          "Bulk tokens must have renewalPriceBehavior set to SPECIFIED");
       checkArgument(
-          !getInstance().tokenType.equals(TokenType.PACKAGE) || !getInstance().discountPremiums,
-          "Package tokens cannot discount premium names");
+          !getInstance().tokenType.equals(TokenType.BULK_PRICING)
+              || !getInstance().discountPremiums,
+          "Bulk tokens cannot discount premium names");
       checkArgument(
           getInstance().domainName == null || TokenType.SINGLE_USE.equals(getInstance().tokenType),
           "Domain name can only be specified for SINGLE_USE tokens");
@@ -358,10 +364,10 @@ public class AllocationToken extends UpdateAutoTimestampEntity implements Builda
               || TokenType.SINGLE_USE.equals(getInstance().tokenType),
           "Redemption history entry can only be specified for SINGLE_USE tokens");
       checkArgument(
-          getInstance().tokenType != TokenType.PACKAGE
+          getInstance().tokenType != TokenType.BULK_PRICING
               || (getInstance().allowedClientIds != null
                   && getInstance().allowedClientIds.size() == 1),
-          "PACKAGE tokens must have exactly one allowed client registrar");
+          "BULK_PRICING tokens must have exactly one allowed client registrar");
       checkArgument(
           getInstance().discountFraction > 0 || !getInstance().discountPremiums,
           "Discount premiums can only be specified along with a discount fraction");

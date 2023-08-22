@@ -17,7 +17,7 @@ package google.registry.model.domain;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.ImmutableObjectSubject.assertAboutImmutableObjects;
 import static google.registry.model.domain.token.AllocationToken.TokenStatus.NOT_STARTED;
-import static google.registry.model.domain.token.AllocationToken.TokenType.PACKAGE;
+import static google.registry.model.domain.token.AllocationToken.TokenType.BULK_PRICING;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.insertInDb;
@@ -131,7 +131,7 @@ public class DomainSqlTest {
     allocationToken =
         new AllocationToken.Builder()
             .setToken("abc123Unlimited")
-            .setTokenType(PACKAGE)
+            .setTokenType(BULK_PRICING)
             .setCreationTimeForTest(DateTime.parse("2010-11-12T05:00:00Z"))
             .setAllowedTlds(ImmutableSet.of("dev", "app"))
             .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
@@ -152,9 +152,9 @@ public class DomainSqlTest {
   }
 
   @Test
-  void testDomainBasePersistenceWithCurrentPackageToken() {
+  void testDomainBasePersistenceWithCurrentBulkToken() {
     persistResource(allocationToken);
-    domain = domain.asBuilder().setCurrentPackageToken(allocationToken.createVKey()).build();
+    domain = domain.asBuilder().setCurrentBulkToken(allocationToken.createVKey()).build();
     persistDomain();
     assertEqualDomainExcept(loadByKey(domain.createVKey()));
   }

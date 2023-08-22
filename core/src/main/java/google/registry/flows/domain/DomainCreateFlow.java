@@ -152,7 +152,7 @@ import org.joda.time.Duration;
  * @error {@link DomainCreateFlow.MustHaveSignedMarksInCurrentPhaseException}
  * @error {@link DomainCreateFlow.NoGeneralRegistrationsInCurrentPhaseException}
  * @error {@link DomainCreateFlow.NoTrademarkedRegistrationsBeforeSunriseException}
- * @error {@link DomainCreateFlow.PackageDomainRegisteredForTooManyYearsException}
+ * @error {@link BulkDomainRegisteredForTooManyYearsException}
  * @error {@link DomainCreateFlow.SignedMarksOnlyDuringSunriseException}
  * @error {@link DomainFlowTmchUtils.NoMarksFoundMatchingDomainException}
  * @error {@link DomainFlowTmchUtils.FoundMarkNotYetValidException}
@@ -405,12 +405,11 @@ public final class DomainCreateFlow implements TransactionalFlow {
                     : hasClaimsNotice ? LordnPhase.CLAIMS : LordnPhase.NONE);
     Domain domain = domainBuilder.build();
     if (allocationToken.isPresent()
-        && allocationToken.get().getTokenType().equals(TokenType.PACKAGE)) {
+        && allocationToken.get().getTokenType().equals(TokenType.BULK_PRICING)) {
       if (years > 1) {
-        throw new PackageDomainRegisteredForTooManyYearsException(allocationToken.get().getToken());
+        throw new BulkDomainRegisteredForTooManyYearsException(allocationToken.get().getToken());
       }
-      domain =
-          domain.asBuilder().setCurrentPackageToken(allocationToken.get().createVKey()).build();
+      domain = domain.asBuilder().setCurrentBulkToken(allocationToken.get().createVKey()).build();
     }
     DomainHistory domainHistory =
         buildDomainHistory(domain, tld, now, period, tld.getAddGracePeriodLength());
@@ -763,13 +762,12 @@ public final class DomainCreateFlow implements TransactionalFlow {
     }
   }
 
-  /** Package domain registered for too many years. */
-  static class PackageDomainRegisteredForTooManyYearsException extends CommandUseErrorException {
-    public PackageDomainRegisteredForTooManyYearsException(String token) {
+  /** Bulk pricing domain registered for too many years. */
+  static class BulkDomainRegisteredForTooManyYearsException extends CommandUseErrorException {
+    public BulkDomainRegisteredForTooManyYearsException(String token) {
       super(
           String.format(
-              "The package token %s cannot be used to register names for longer than 1 year.",
-              token));
+              "The bulk token %s cannot be used to register names for longer than 1 year.", token));
     }
   }
 }

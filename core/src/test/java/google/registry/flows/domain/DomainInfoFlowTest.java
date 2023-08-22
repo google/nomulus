@@ -1091,14 +1091,14 @@ class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, Domain> {
         persistResource(
             new AllocationToken.Builder()
                 .setToken("abc123")
-                .setTokenType(TokenType.PACKAGE)
+                .setTokenType(TokenType.BULK_PRICING)
                 .setCreationTimeForTest(DateTime.parse("2010-11-12T05:00:00Z"))
                 .setAllowedTlds(ImmutableSet.of("foo"))
                 .setAllowedRegistrarIds(ImmutableSet.of("NewRegistrar"))
                 .setRenewalPriceBehavior(RenewalPriceBehavior.SPECIFIED)
                 .setDiscountFraction(1)
                 .build());
-    domain = domain.asBuilder().setCurrentPackageToken(token.createVKey()).build();
+    domain = domain.asBuilder().setCurrentBulkToken(token.createVKey()).build();
     persistResource(domain);
     setEppInput("domain_info_bulk.xml");
     doSuccessfulTest("domain_info_response_bulk.xml", false);
@@ -1111,14 +1111,14 @@ class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, Domain> {
         persistResource(
             new AllocationToken.Builder()
                 .setToken("abc123")
-                .setTokenType(TokenType.PACKAGE)
+                .setTokenType(TokenType.BULK_PRICING)
                 .setCreationTimeForTest(DateTime.parse("2010-11-12T05:00:00Z"))
                 .setAllowedTlds(ImmutableSet.of("foo"))
                 .setAllowedRegistrarIds(ImmutableSet.of("NewRegistrar"))
                 .setRenewalPriceBehavior(RenewalPriceBehavior.SPECIFIED)
                 .setDiscountFraction(1)
                 .build());
-    domain = domain.asBuilder().setCurrentPackageToken(token.createVKey()).build();
+    domain = domain.asBuilder().setCurrentBulkToken(token.createVKey()).build();
     persistResource(domain);
     sessionMetadata.setRegistrarId("TheRegistrar");
     setEppInput("domain_info_bulk.xml");
@@ -1143,14 +1143,14 @@ class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, Domain> {
         persistResource(
             new AllocationToken.Builder()
                 .setToken("abc123")
-                .setTokenType(TokenType.PACKAGE)
+                .setTokenType(TokenType.BULK_PRICING)
                 .setCreationTimeForTest(DateTime.parse("2010-11-12T05:00:00Z"))
                 .setAllowedTlds(ImmutableSet.of("foo"))
                 .setAllowedRegistrarIds(ImmutableSet.of("NewRegistrar"))
                 .setRenewalPriceBehavior(RenewalPriceBehavior.SPECIFIED)
                 .setDiscountFraction(1)
                 .build());
-    domain = domain.asBuilder().setCurrentPackageToken(token.createVKey()).build();
+    domain = domain.asBuilder().setCurrentBulkToken(token.createVKey()).build();
     persistResource(domain);
     sessionMetadata.setRegistrarId("TheRegistrar");
     setEppInput("domain_info_bulk.xml");
