@@ -27,6 +27,7 @@ import com.google.common.flogger.FluentLogger;
 import com.google.common.io.ByteStreams;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.gcs.GcsUtils;
+import google.registry.groups.GmailClient;
 import google.registry.model.common.Cursor;
 import google.registry.model.common.Cursor.CursorType;
 import google.registry.model.tld.Tld;
@@ -41,7 +42,6 @@ import google.registry.request.lock.LockHandler;
 import google.registry.util.Clock;
 import google.registry.util.EmailMessage;
 import google.registry.util.Retrier;
-import google.registry.util.SendEmailService;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Map;
@@ -87,8 +87,12 @@ public final class IcannReportingUploadAction implements Runnable {
   @Inject Retrier retrier;
   @Inject Response response;
   @Inject @Config("gSuiteOutgoingEmailAddress") InternetAddress sender;
-  @Inject @Config("alertRecipientEmailAddress") InternetAddress recipient;
-  @Inject SendEmailService emailService;
+
+  @Inject
+  @Config("newAlertRecipientEmailAddress")
+  InternetAddress recipient;
+
+  @Inject GmailClient gmailClient;
   @Inject Clock clock;
   @Inject LockHandler lockHandler;
 
@@ -293,7 +297,7 @@ public final class IcannReportingUploadAction implements Runnable {
                     (e) ->
                         String.format("%s - %s", e.getKey(), e.getValue() ? "SUCCESS" : "FAILURE"))
                 .collect(Collectors.joining("\n")));
-    emailService.sendEmail(EmailMessage.create(subject, body, recipient, sender));
+    gmailClient.sendEmail(EmailMessage.create(subject, body, recipient, sender));
   }
 
   private byte[] readBytesFromGcs(BlobId reportFilename) throws IOException {
