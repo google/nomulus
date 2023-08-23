@@ -31,6 +31,7 @@ import com.google.cloud.storage.BlobId;
 import com.google.cloud.storage.contrib.nio.testing.LocalStorageHelper;
 import com.google.common.testing.TestLogHandler;
 import google.registry.gcs.GcsUtils;
+import google.registry.groups.GmailClient;
 import google.registry.model.common.Cursor;
 import google.registry.model.common.Cursor.CursorType;
 import google.registry.model.tld.Tld;
@@ -43,7 +44,6 @@ import google.registry.testing.FakeResponse;
 import google.registry.testing.FakeSleeper;
 import google.registry.util.EmailMessage;
 import google.registry.util.Retrier;
-import google.registry.util.SendEmailService;
 import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -63,7 +63,7 @@ class IcannReportingUploadActionTest {
   private static final byte[] PAYLOAD_SUCCESS = "test,csv\n13,37".getBytes(UTF_8);
   private static final byte[] PAYLOAD_FAIL = "ahah,csv\n12,34".getBytes(UTF_8);
   private final IcannHttpReporter mockReporter = mock(IcannHttpReporter.class);
-  private final SendEmailService emailService = mock(SendEmailService.class);
+  private final GmailClient gmailClient = mock(GmailClient.class);
   private final FakeResponse response = new FakeResponse();
   private final GcsUtils gcsUtils = new GcsUtils(LocalStorageHelper.getOptions());
   private final TestLogHandler logHandler = new TestLogHandler();
@@ -77,7 +77,7 @@ class IcannReportingUploadActionTest {
     action.gcsUtils = gcsUtils;
     action.retrier = new Retrier(new FakeSleeper(new FakeClock()), 3);
     action.reportingBucket = "basin";
-    action.emailService = emailService;
+    action.gmailClient = gmailClient;
     action.sender = new InternetAddress("sender@example.com");
     action.recipient = new InternetAddress("recipient@example.com");
     action.response = response;
@@ -127,7 +127,7 @@ class IcannReportingUploadActionTest {
     verify(mockReporter).send(PAYLOAD_SUCCESS, "tld-transactions-200606.csv");
 
     verifyNoMoreInteractions(mockReporter);
-    verify(emailService)
+    verify(gmailClient)
         .sendEmail(
             EmailMessage.create(
                 "ICANN Monthly report upload summary: 3/4 succeeded",
@@ -162,7 +162,7 @@ class IcannReportingUploadActionTest {
     verify(mockReporter).send(PAYLOAD_SUCCESS, "tld-transactions-200512.csv");
 
     verifyNoMoreInteractions(mockReporter);
-    verify(emailService)
+    verify(gmailClient)
         .sendEmail(
             EmailMessage.create(
                 "ICANN Monthly report upload summary: 2/2 succeeded",
@@ -191,7 +191,7 @@ class IcannReportingUploadActionTest {
     IcannReportingUploadAction action = createAction();
     action.run();
     verifyNoMoreInteractions(mockReporter);
-    verifyNoMoreInteractions(emailService);
+    verifyNoMoreInteractions(gmailClient);
   }
 
   @Test
@@ -206,7 +206,7 @@ class IcannReportingUploadActionTest {
     verify(mockReporter).send(PAYLOAD_SUCCESS, "foo-transactions-200606.csv");
     verify(mockReporter, times(2)).send(PAYLOAD_SUCCESS, "tld-transactions-200606.csv");
     verifyNoMoreInteractions(mockReporter);
-    verify(emailService)
+    verify(gmailClient)
         .sendEmail(
             EmailMessage.create(
                 "ICANN Monthly report upload summary: 3/4 succeeded",
@@ -266,7 +266,7 @@ class IcannReportingUploadActionTest {
     verify(mockReporter).send(PAYLOAD_SUCCESS, "foo-transactions-200606.csv");
     verify(mockReporter).send(PAYLOAD_SUCCESS, "tld-transactions-200606.csv");
     verifyNoMoreInteractions(mockReporter);
-    verify(emailService)
+    verify(gmailClient)
         .sendEmail(
             EmailMessage.create(
                 "ICANN Monthly report upload summary: 3/4 succeeded",
@@ -336,7 +336,7 @@ class IcannReportingUploadActionTest {
     verify(mockReporter).send(PAYLOAD_SUCCESS, "tld-transactions-200606.csv");
     verifyNoMoreInteractions(mockReporter);
 
-    verify(emailService)
+    verify(gmailClient)
         .sendEmail(
             EmailMessage.create(
                 "ICANN Monthly report upload summary: 3/4 succeeded",

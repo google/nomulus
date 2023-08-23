@@ -29,6 +29,7 @@ import com.google.common.net.MediaType;
 import google.registry.batch.CloudTasksUtils;
 import google.registry.bigquery.BigqueryJobFailureException;
 import google.registry.config.RegistryConfig.Config;
+import google.registry.groups.GmailClient;
 import google.registry.reporting.icann.IcannReportingModule.ReportType;
 import google.registry.request.Action;
 import google.registry.request.Action.Service;
@@ -37,7 +38,6 @@ import google.registry.request.Response;
 import google.registry.request.auth.Auth;
 import google.registry.util.EmailMessage;
 import google.registry.util.Retrier;
-import google.registry.util.SendEmailService;
 import java.util.Optional;
 import javax.inject.Inject;
 import javax.mail.internet.InternetAddress;
@@ -83,8 +83,12 @@ public final class IcannReportingStagingAction implements Runnable {
   @Inject Retrier retrier;
   @Inject Response response;
   @Inject @Config("gSuiteOutgoingEmailAddress") InternetAddress sender;
-  @Inject @Config("alertRecipientEmailAddress") InternetAddress recipient;
-  @Inject SendEmailService emailService;
+
+  @Inject
+  @Config("newAlertRecipientEmailAddress")
+  InternetAddress recipient;
+
+  @Inject GmailClient gmailClient;
   @Inject CloudTasksUtils cloudTasksUtils;
 
   @Inject IcannReportingStagingAction() {}
@@ -103,7 +107,7 @@ public final class IcannReportingStagingAction implements Runnable {
             stager.createAndUploadManifest(subdir, manifestedFiles);
 
             logger.atInfo().log("Completed staging %d report files.", manifestedFiles.size());
-            emailService.sendEmail(
+            gmailClient.sendEmail(
                 EmailMessage.newBuilder()
                     .setSubject("ICANN Monthly report staging summary [SUCCESS]")
                     .setBody(
@@ -130,7 +134,7 @@ public final class IcannReportingStagingAction implements Runnable {
           },
           BigqueryJobFailureException.class);
     } catch (Throwable e) {
-      emailService.sendEmail(
+      gmailClient.sendEmail(
           EmailMessage.create(
               "ICANN Monthly report staging summary [FAILURE]",
               String.format(

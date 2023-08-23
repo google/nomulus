@@ -25,6 +25,7 @@ import com.google.cloud.tasks.v2.HttpMethod;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import google.registry.bigquery.BigqueryJobFailureException;
+import google.registry.groups.GmailClient;
 import google.registry.reporting.icann.IcannReportingModule.ReportType;
 import google.registry.request.HttpException.BadRequestException;
 import google.registry.testing.CloudTasksHelper;
@@ -34,7 +35,6 @@ import google.registry.testing.FakeResponse;
 import google.registry.testing.FakeSleeper;
 import google.registry.util.EmailMessage;
 import google.registry.util.Retrier;
-import google.registry.util.SendEmailService;
 import java.util.Optional;
 import javax.mail.internet.InternetAddress;
 import org.joda.time.DateTime;
@@ -65,7 +65,7 @@ class IcannReportingStagingActionTest {
     action.retrier = new Retrier(new FakeSleeper(new FakeClock()), 3);
     action.sender = new InternetAddress("sender@example.com");
     action.recipient = new InternetAddress("recipient@example.com");
-    action.emailService = mock(SendEmailService.class);
+    action.gmailClient = mock(GmailClient.class);
     action.cloudTasksUtils = cloudTasksHelper.getTestCloudTasksUtils();
 
     when(stager.stageReports(yearMonth, subdir, ReportType.ACTIVITY))
@@ -89,7 +89,7 @@ class IcannReportingStagingActionTest {
     action.run();
     verify(stager).stageReports(yearMonth, subdir, ReportType.ACTIVITY);
     verify(stager).createAndUploadManifest(subdir, ImmutableList.of("a", "b"));
-    verify(action.emailService)
+    verify(action.gmailClient)
         .sendEmail(
             EmailMessage.create(
                 "ICANN Monthly report staging summary [SUCCESS]",
@@ -105,7 +105,7 @@ class IcannReportingStagingActionTest {
     verify(stager).stageReports(yearMonth, subdir, ReportType.ACTIVITY);
     verify(stager).stageReports(yearMonth, subdir, ReportType.TRANSACTIONS);
     verify(stager).createAndUploadManifest(subdir, ImmutableList.of("a", "b", "c", "d"));
-    verify(action.emailService)
+    verify(action.gmailClient)
         .sendEmail(
             EmailMessage.create(
                 "ICANN Monthly report staging summary [SUCCESS]",
@@ -124,7 +124,7 @@ class IcannReportingStagingActionTest {
     verify(stager, times(2)).stageReports(yearMonth, subdir, ReportType.ACTIVITY);
     verify(stager, times(2)).stageReports(yearMonth, subdir, ReportType.TRANSACTIONS);
     verify(stager).createAndUploadManifest(subdir, ImmutableList.of("a", "b", "c", "d"));
-    verify(action.emailService)
+    verify(action.gmailClient)
         .sendEmail(
             EmailMessage.create(
                 "ICANN Monthly report staging summary [SUCCESS]",
@@ -147,7 +147,7 @@ class IcannReportingStagingActionTest {
         .hasMessageThat()
         .isEqualTo("BigqueryJobFailureException: Expected failure");
     verify(stager, times(3)).stageReports(yearMonth, subdir, ReportType.ACTIVITY);
-    verify(action.emailService)
+    verify(action.gmailClient)
         .sendEmail(
             EmailMessage.create(
                 "ICANN Monthly report staging summary [FAILURE]",
