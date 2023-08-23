@@ -93,8 +93,7 @@ class GenerateSpec11ReportActionTest extends BeamActionTestBase {
             .scheduleTime(
                 clock
                     .nowUtc()
-                    // TODO(b/296582836): mitigating retry problem. Remove `+10` when bug is fixed.
-                    .plus(Duration.standardMinutes(ReportingModule.ENQUEUE_DELAY_MINUTES + 10))));
+                    .plus(Duration.standardMinutes(ReportingModule.ENQUEUE_DELAY_MINUTES))));
   }
 
   @Test

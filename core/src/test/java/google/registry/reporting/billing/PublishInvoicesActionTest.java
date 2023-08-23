@@ -16,9 +16,9 @@ package google.registry.reporting.billing;
 
 import static com.google.common.truth.Truth.assertThat;
 import static javax.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
-import static javax.servlet.http.HttpServletResponse.SC_NOT_MODIFIED;
 import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
 import static javax.servlet.http.HttpServletResponse.SC_OK;
+import static javax.servlet.http.HttpServletResponse.SC_SERVICE_UNAVAILABLE;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -101,7 +101,7 @@ class PublishInvoicesActionTest {
   void testJobIndeterminate_returnsRetriableResponse() {
     expectedJob.setCurrentState("JOB_STATE_RUNNING");
     uploadAction.run();
-    assertThat(response.getStatus()).isEqualTo(SC_NOT_MODIFIED);
+    assertThat(response.getStatus()).isEqualTo(SC_SERVICE_UNAVAILABLE);
   }
 
   @Test

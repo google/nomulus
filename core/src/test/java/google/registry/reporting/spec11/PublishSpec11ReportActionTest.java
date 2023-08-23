@@ -19,9 +19,9 @@ import static google.registry.reporting.spec11.Spec11RegistrarThreatMatchesParse
 import static google.registry.reporting.spec11.Spec11RegistrarThreatMatchesParserTest.getMatchB;
 import static google.registry.reporting.spec11.Spec11RegistrarThreatMatchesParserTest.sampleThreatMatches;
 import static javax.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
-import static javax.servlet.http.HttpServletResponse.SC_NOT_MODIFIED;
 import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
 import static javax.servlet.http.HttpServletResponse.SC_OK;
+import static javax.servlet.http.HttpServletResponse.SC_SERVICE_UNAVAILABLE;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -134,7 +134,7 @@ class PublishSpec11ReportActionTest {
   void testJobIndeterminate_returnsRetriableResponse() {
     expectedJob.setCurrentState("JOB_STATE_RUNNING");
     publishAction.run();
-    assertThat(response.getStatus()).isEqualTo(SC_NOT_MODIFIED);
+    assertThat(response.getStatus()).isEqualTo(SC_SERVICE_UNAVAILABLE);
     verifyNoMoreInteractions(emailUtils);
   }
 

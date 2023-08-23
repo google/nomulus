@@ -17,9 +17,9 @@ package google.registry.reporting.billing;
 import static google.registry.reporting.ReportingModule.PARAM_YEAR_MONTH;
 import static google.registry.request.Action.Method.POST;
 import static javax.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
-import static javax.servlet.http.HttpServletResponse.SC_NOT_MODIFIED;
 import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
 import static javax.servlet.http.HttpServletResponse.SC_OK;
+import static javax.servlet.http.HttpServletResponse.SC_SERVICE_UNAVAILABLE;
 
 import com.google.api.services.dataflow.Dataflow;
 import com.google.api.services.dataflow.model.Job;
@@ -111,7 +111,7 @@ public class PublishInvoicesAction implements Runnable {
           break;
         default:
           logger.atInfo().log("Job in non-terminal state %s, retrying:", state);
-          response.setStatus(SC_NOT_MODIFIED);
+          response.setStatus(SC_SERVICE_UNAVAILABLE);
           break;
       }
     } catch (IOException e) {
