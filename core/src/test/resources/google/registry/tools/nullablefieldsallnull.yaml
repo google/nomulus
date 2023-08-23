@@ -1,21 +1,21 @@
-tldStr: "badunicode"
-roidSuffix: "TLD"
-pricingEngineClassName: "google.registry.model.pricing.StaticPremiumListPricingEngine"
+tldStr: "nullablefieldsallnull"
+roidSuffix: "NULLABLEFIELDSALLNULL"
+pricingEngineClassName: null
 dnsWriters:
 - "VoidDnsWriter"
 numDnsPublishLocks: 1
 dnsAPlusAaaaTtl: null
 dnsNsTtl: null
 dnsDsTtl: null
-tldUnicode: "tld"
-driveFolderId: "driveFolder"
+tldUnicode: "nullablefieldsallnull"
+driveFolderId: null
 tldType: "REAL"
 invoicingEnabled: false
 tldStateTransitions:
   "1970-01-01T00:00:00.000Z": "GENERAL_AVAILABILITY"
 creationTime: "2022-09-01T00:00:00.000Z"
-reservedListNames: []
-premiumListName: "test"
+reservedListNames: null
+premiumListName: null
 escrowEnabled: false
 dnsPaused: false
 addGracePeriodLength: 432000000
@@ -45,10 +45,10 @@ renewBillingCostTransitions:
     amount: 11.00
 lordnUsername: null
 claimsPeriodEnd: "294247-01-10T04:00:54.775Z"
-allowedRegistrantContactIds: []
-allowedFullyQualifiedHostNames: []
-defaultPromoTokens: []
-idnTables: []
+allowedRegistrantContactIds: null
+allowedFullyQualifiedHostNames: null
+defaultPromoTokens: null
+idnTables: null
 eapFeeSchedule:
   "1970-01-01T00:00:00.000Z":
     currency: "USD"

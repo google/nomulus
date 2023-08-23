@@ -1,13 +1,13 @@
-tldStr: "badunicode"
-roidSuffix: "TLD"
+tldStr: "1tld"
+roidSuffix: "1TLD"
 pricingEngineClassName: "google.registry.model.pricing.StaticPremiumListPricingEngine"
 dnsWriters:
 - "VoidDnsWriter"
 numDnsPublishLocks: 1
-dnsAPlusAaaaTtl: null
+dnsAPlusAaaaTtl: 900
 dnsNsTtl: null
 dnsDsTtl: null
-tldUnicode: "tld"
+tldUnicode: "1tld"
 driveFolderId: "driveFolder"
 tldType: "REAL"
 invoicingEnabled: false
@@ -15,7 +15,7 @@ tldStateTransitions:
   "1970-01-01T00:00:00.000Z": "GENERAL_AVAILABILITY"
 creationTime: "2022-09-01T00:00:00.000Z"
 reservedListNames: []
-premiumListName: "test"
+premiumListName: null
 escrowEnabled: false
 dnsPaused: false
 addGracePeriodLength: 432000000

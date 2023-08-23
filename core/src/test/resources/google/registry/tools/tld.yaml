@@ -28,7 +28,7 @@ invoicingEnabled: false
 lordnUsername: null
 numDnsPublishLocks: 1
 pendingDeleteLength: 432000000
-premiumListName: "tld"
+premiumListName: "test"
 pricingEngineClassName: "google.registry.model.pricing.StaticPremiumListPricingEngine"
 redemptionGracePeriodLength: 2592000000
 registryLockOrUnlockBillingCost:
