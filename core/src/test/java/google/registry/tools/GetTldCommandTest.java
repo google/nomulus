@@ -16,6 +16,7 @@ package google.registry.tools;
 
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.createTlds;
+import static google.registry.testing.DatabaseHelper.persistPremiumList;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.TestDataHelper.loadFile;
 import static org.joda.money.CurrencyUnit.USD;
@@ -24,6 +25,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import com.beust.jcommander.ParameterException;
 import google.registry.model.EntityYamlUtils;
 import google.registry.model.tld.Tld;
+import google.registry.model.tld.label.PremiumList;
 import org.joda.money.Money;
 import org.joda.time.Duration;
 import org.junit.jupiter.api.BeforeEach;
@@ -40,11 +42,13 @@ class GetTldCommandTest extends CommandTestCase<GetTldCommand> {
   @Test
   void testSuccess() throws Exception {
     Tld tld = createTld("tld");
+    PremiumList premiumList = persistPremiumList("test", USD, "silver,USD 50", "gold,USD 80");
     persistResource(
         tld.asBuilder()
             .setDnsAPlusAaaaTtl(Duration.millis(900))
             .setDriveFolderId("driveFolder")
             .setCreateBillingCost(Money.of(USD, 25))
+            .setPremiumList(premiumList)
             .build());
     runCommand("tld");
     assertInStdout(loadFile(getClass(), "tld.yaml"));

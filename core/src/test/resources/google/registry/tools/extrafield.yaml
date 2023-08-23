@@ -15,7 +15,7 @@ tldStateTransitions:
   "1970-01-01T00:00:00.000Z": "GENERAL_AVAILABILITY"
 creationTime: "2022-09-01T00:00:00.000Z"
 reservedListNames: []
-premiumListName: "tld"
+premiumListName: null
 escrowEnabled: false
 dnsPaused: false
 addGracePeriodLength: 432000000
