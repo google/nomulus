@@ -88,6 +88,33 @@ public class ConfigureTldCommandTest extends CommandTestCase<ConfigureTldCommand
   }
 
   @Test
+  void testSuccess_outOfOrderFieldsOnCreate() throws Exception {
+    File tldFile = tmpDir.resolve("outoforderfields.yaml").toFile();
+    Files.asCharSink(tldFile, UTF_8).write(loadFile(getClass(), "outoforderfields.yaml"));
+    runCommandForced("--input=" + tldFile);
+    Tld tld = Tld.get("outoforderfields");
+    // Cannot test that created TLD converted to YAML is equal to original YAML since the created
+    // TLD's YAML will contain the fields in the correct order
+    assertThat(tld).isNotNull();
+    assertThat(tld.getDriveFolderId()).isEqualTo("driveFolder");
+    assertThat(tld.getCreateBillingCost()).isEqualTo(Money.of(USD, 25));
+    assertThat(tld.getPremiumListName().get()).isEqualTo("test");
+  }
+
+  @Test
+  void testSuccess_outOfOrderFieldsOnUpdate() throws Exception {
+    Tld tld = createTld("outoforderfields");
+    assertThat(tld.getCreateBillingCost()).isEqualTo(Money.of(USD, 13));
+    File tldFile = tmpDir.resolve("outoforderfields.yaml").toFile();
+    Files.asCharSink(tldFile, UTF_8).write(loadFile(getClass(), "outoforderfields.yaml"));
+    runCommandForced("--input=" + tldFile);
+    Tld updatedTld = Tld.get("outoforderfields");
+    // Cannot test that created TLD converted to YAML is equal to original YAML since the created
+    // TLD's YAML will contain the fields in the correct order
+    assertThat(updatedTld.getCreateBillingCost()).isEqualTo(Money.of(USD, 25));
+  }
+
+  @Test
   void testFailure_fileMissingNullableFieldsOnCreate() throws Exception {
     File tldFile = tmpDir.resolve("missingnullablefields.yaml").toFile();
     Files.asCharSink(tldFile, UTF_8).write(loadFile(getClass(), "missingnullablefields.yaml"));

@@ -25,7 +25,6 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.collect.ImmutableSortedSet;
 import com.google.common.collect.Sets;
-import com.google.inject.Inject;
 import google.registry.model.tld.Tld;
 import google.registry.model.tld.label.PremiumList;
 import google.registry.model.tld.label.PremiumListDao;
@@ -40,6 +39,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import javax.inject.Inject;
 import javax.inject.Named;
 import org.joda.money.CurrencyUnit;
 import org.joda.money.Money;
@@ -72,8 +72,24 @@ public class ConfigureTldCommand extends MutatingCommand {
   @Override
   protected void init() throws Exception {
     String name = convertFilePathToName(inputFile);
-    Yaml yaml = new Yaml();
-    Map<String, Object> tldData = yaml.load(Files.newBufferedReader(inputFile));
+    Map<String, Object> tldData = new Yaml().load(Files.newBufferedReader(inputFile));
+    checkForMissingFields(tldData);
+    checkArgument(!Character.isDigit(name.charAt(0)), "TLDs cannot begin with a number");
+    checkArgument(
+        tldData.get("tldStr").equals(name),
+        "The input file name must match the name of the TLD it represents");
+    checkArgument(
+        tldData.get("tldUnicode").equals(Idn.toUnicode(name)),
+        "The value for tldUnicode must equal the unicode representation of the TLD name");
+    Tld oldTld = getTlds().contains(name) ? Tld.get(name) : null;
+    Tld newTld = mapper.readValue(inputFile.toFile(), Tld.class);
+    checkPremiumList(newTld);
+    checkDnsWriters(newTld);
+    checkCurrency(newTld);
+    stageEntityChange(oldTld, newTld);
+  }
+
+  private void checkForMissingFields(Map<String, Object> tldData) {
     Set<String> tldFields =
         Arrays.stream(Tld.class.getDeclaredFields())
             .map(Field::getName)
@@ -89,19 +105,6 @@ public class ConfigureTldCommand extends MutatingCommand {
         missingFields.isEmpty(),
         String.format(
             "The input file is missing data for the following fields: %s", missingFields));
-    checkArgument(!Character.isDigit(name.charAt(0)), "TLDs cannot begin with a number");
-    checkArgument(
-        tldData.get("tldStr").equals(name),
-        "The input file name must match the name of the TLD it represents");
-    checkArgument(
-        tldData.get("tldUnicode").equals(Idn.toUnicode(name)),
-        "The value for tldUnicode must equal the unicode representation of the TLD name");
-    Tld oldTld = getTlds().contains(name) ? Tld.get(name) : null;
-    Tld newTld = mapper.readValue(inputFile.toFile(), Tld.class);
-    checkPremiumList(newTld);
-    checkDnsWriters(newTld);
-    checkCurrency(newTld);
-    stageEntityChange(oldTld, newTld);
   }
 
   private void checkPremiumList(Tld newTld) {
