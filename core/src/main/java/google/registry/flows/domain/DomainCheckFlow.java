@@ -80,6 +80,7 @@ import google.registry.model.eppoutput.EppResponse.ResponseExtension;
 import google.registry.model.reporting.IcannReportingTypes.ActivityReportField;
 import google.registry.model.tld.Tld;
 import google.registry.model.tld.Tld.TldState;
+import google.registry.model.tld.Tlds;
 import google.registry.model.tld.label.ReservationType;
 import google.registry.persistence.VKey;
 import google.registry.pricing.PricingEngineProxy;
@@ -156,8 +157,9 @@ public final class DomainCheckFlow implements Flow {
         new ImmutableMap.Builder<>();
     // Only check that the registrar has access to a TLD the first time it is encountered
     Set<String> seenTlds = new HashSet<>();
+    ImmutableSet<String> allTlds = tm().transact(() -> Tlds.getTlds());
     for (String domainName : ImmutableSet.copyOf(domainNames)) {
-      InternetDomainName parsedDomain = validateDomainName(domainName);
+      InternetDomainName parsedDomain = validateDomainName(domainName, allTlds);
       validateDomainNameWithIdnTables(parsedDomain);
       // This validation is moderately expensive, so cache the results.
       parsedDomainsBuilder.put(domainName, parsedDomain);

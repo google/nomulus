@@ -23,6 +23,7 @@ import static google.registry.model.domain.token.AllocationToken.TokenType.UNLIM
 import static google.registry.model.eppoutput.CheckData.DomainCheck.create;
 import static google.registry.model.tld.Tld.TldState.PREDELEGATION;
 import static google.registry.model.tld.Tld.TldState.START_DATE_SUNRISE;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.createTlds;
 import static google.registry.testing.DatabaseHelper.loadRegistrar;
@@ -86,6 +87,7 @@ import google.registry.model.tld.Tld.TldState;
 import google.registry.model.tld.label.ReservedList;
 import google.registry.testing.DatabaseHelper;
 import java.math.BigDecimal;
+import java.util.function.Supplier;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
@@ -101,11 +103,13 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
 
   private static ReservedList createReservedList() {
     persistResource(
-        new AllocationToken.Builder()
-            .setDomainName("anchor.tld")
-            .setToken("2fooBAR")
-            .setTokenType(SINGLE_USE)
-            .build());
+        (Supplier<AllocationToken>)
+            () ->
+                new AllocationToken.Builder()
+                    .setDomainName("anchor.tld")
+                    .setToken("2fooBAR")
+                    .setTokenType(SINGLE_USE)
+                    .build());
     return persistReservedList(
         "tld-reserved",
         "allowedinsunrise,ALLOWED_IN_SUNRISE",
@@ -119,7 +123,9 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
   @BeforeEach
   void initCheckTest() {
     createTld("tld", TldState.QUIET_PERIOD);
-    persistResource(Tld.get("tld").asBuilder().setReservedLists(createReservedList()).build());
+    Tld tld = tm().transact(() -> Tld.get("tld"));
+    ReservedList reservedList = createReservedList();
+    persistResource((Supplier<Tld>) () -> tld.asBuilder().setReservedLists(reservedList).build());
   }
 
   @Test
@@ -822,7 +828,7 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
     runFlowAssertResponse(loadFile("domain_check_fee_response_v06.xml"));
   }
 
-  private void setUpDefaultToken() {
+  private static void setUpDefaultToken() {
     AllocationToken defaultToken =
         persistResource(
             new AllocationToken.Builder()

@@ -29,15 +29,8 @@ public final class IdnLabelValidator {
   private static final ImmutableSet<IdnTableEnum> DEFAULT_IDN_TABLES =
       ImmutableSet.of(EXTENDED_LATIN, JA);
 
-  /**
-   * Returns name of first matching {@link IdnTable} if domain label is valid for the given TLD.
-   *
-   * <p>A label is valid if it is considered valid by at least one configured IDN table for that
-   * TLD. If no match is found, an absent value is returned.
-   */
-  public Optional<String> findValidIdnTableForTld(String label, String tldStr) {
+  public Optional<String> findValidIdnTableForTld(String label, Tld tld) {
     String unicodeString = Idn.toUnicode(label);
-    Tld tld = Tld.get(tldStr); // uses the cache
     ImmutableSet<IdnTableEnum> idnTablesForTld = tld.getIdnTables();
     ImmutableSet<IdnTableEnum> idnTables =
         idnTablesForTld.isEmpty() ? DEFAULT_IDN_TABLES : idnTablesForTld;
@@ -47,5 +40,15 @@ public final class IdnLabelValidator {
       }
     }
     return Optional.empty();
+  }
+
+  /**
+   * Returns name of first matching {@link IdnTable} if domain label is valid for the given TLD.
+   *
+   * <p>A label is valid if it is considered valid by at least one configured IDN table for that
+   * TLD. If no match is found, an absent value is returned.
+   */
+  public Optional<String> findValidIdnTableForTld(String label, String tldStr) {
+    return findValidIdnTableForTld(label, Tld.get(tldStr));
   }
 }

@@ -22,6 +22,7 @@ import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static com.google.common.collect.ImmutableSetMultimap.toImmutableSetMultimap;
 import static com.google.common.collect.Iterables.any;
+import static com.google.common.collect.Iterables.get;
 import static com.google.common.collect.Sets.difference;
 import static com.google.common.collect.Sets.intersection;
 import static com.google.common.collect.Sets.union;
@@ -127,6 +128,7 @@ import google.registry.model.reporting.HistoryEntry.HistoryEntryId;
 import google.registry.model.tld.Tld;
 import google.registry.model.tld.Tld.TldState;
 import google.registry.model.tld.Tld.TldType;
+import google.registry.model.tld.Tlds;
 import google.registry.model.tld.label.ReservationType;
 import google.registry.model.tld.label.ReservedList;
 import google.registry.model.tmch.ClaimsList;
@@ -195,7 +197,7 @@ public class DomainFlowUtils {
    *
    * @see #validateDomainNameWithIdnTables(InternetDomainName)
    */
-  public static InternetDomainName validateDomainName(String name) throws EppException {
+  public static InternetDomainName validateDomainName(String name, ImmutableSet<String> tlds) throws EppException {
     if (!ALLOWED_CHARS.matchesAllOf(name)) {
       throw new BadDomainNameCharacterException();
     }
@@ -208,10 +210,10 @@ public class DomainFlowUtils {
     }
     validateFirstLabel(parts.get(0));
     InternetDomainName domainName = InternetDomainName.from(name);
-    if (getTlds().contains(domainName.toString())) {
+    if (tlds.contains(domainName.toString())) {
       throw new DomainNameExistsAsTldException();
     }
-    Optional<InternetDomainName> tldParsed = findTldForName(domainName);
+    Optional<InternetDomainName> tldParsed = findTldForName(domainName, tlds);
     if (!tldParsed.isPresent()) {
       throw new TldDoesNotExistException(domainName.parent().toString());
     }
@@ -219,6 +221,10 @@ public class DomainFlowUtils {
       throw new BadDomainNamePartsCountException();
     }
     return domainName;
+  }
+
+  public static InternetDomainName validateDomainName(String name) throws EppException {
+    return validateDomainName(name, getTlds());
   }
 
   private static void validateFirstLabel(String firstLabel) throws EppException {

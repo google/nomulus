@@ -116,6 +116,17 @@ public final class Tlds {
     return tlds;
   }
 
+  public static Optional<InternetDomainName> findTldForName(InternetDomainName domainName,
+      ImmutableSet<String> tlds
+      ) {
+    while (domainName.hasParent()) {
+      domainName = domainName.parent();
+      if (tlds.contains(domainName.toString())) {
+        return Optional.of(domainName);
+      }
+    }
+    return Optional.empty();
+  }
   /**
    * Returns TLD which the domain name or hostname falls under, no matter how many levels of
    * sublabels there are.
@@ -128,14 +139,7 @@ public final class Tlds {
    * @return TLD or absent if {@code domainName} has no labels under an authoritative TLD
    */
   public static Optional<InternetDomainName> findTldForName(InternetDomainName domainName) {
-    ImmutableSet<String> tlds = getTlds();
-    while (domainName.hasParent()) {
-      domainName = domainName.parent();
-      if (tlds.contains(domainName.toString())) {
-        return Optional.of(domainName);
-      }
-    }
-    return Optional.empty();
+    return findTldForName(domainName, getTlds());
   }
 
   /**

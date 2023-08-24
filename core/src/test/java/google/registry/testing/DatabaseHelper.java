@@ -350,7 +350,7 @@ public final class DatabaseHelper {
   }
 
   public static ReservedList persistReservedList(ReservedList reservedList) {
-    ReservedListDao.save(reservedList);
+    tm().transact(() -> ReservedListDao.save(reservedList));
     maybeAdvanceClock();
     return reservedList;
   }
