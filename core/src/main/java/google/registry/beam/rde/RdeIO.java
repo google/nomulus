@@ -274,10 +274,7 @@ public class RdeIO {
                 PendingDeposit key = input.getKey();
                 Tld tld = Tld.get(key.tld());
                 Optional<Cursor> cursor =
-                    tm().transact(
-                            () ->
-                                tm().loadByKeyIfPresent(
-                                        Cursor.createScopedVKey(key.cursor(), tld)));
+                    tm().loadByKeyIfPresent(Cursor.createScopedVKey(key.cursor(), tld));
                 DateTime position = getCursorTimeOrStartOfTime(cursor);
                 checkState(key.interval() != null, "Interval must be present");
                 DateTime newPosition = key.watermark().plus(key.interval());

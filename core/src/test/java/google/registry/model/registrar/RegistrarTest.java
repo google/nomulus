@@ -507,11 +507,14 @@ class RegistrarTest extends EntityTestCase {
   @Test
   void testSuccess_setAllowedTldsUncached() {
     assertThat(
-            registrar
-                .asBuilder()
-                .setAllowedTldsUncached(ImmutableSet.of("xn--q9jyb4c"))
-                .build()
-                .getAllowedTlds())
+            tm().transact(
+                    () -> {
+                      return registrar
+                          .asBuilder()
+                          .setAllowedTldsUncached(ImmutableSet.of("xn--q9jyb4c"))
+                          .build()
+                          .getAllowedTlds();
+                    }))
         .containsExactly("xn--q9jyb4c");
   }
 
@@ -524,9 +527,12 @@ class RegistrarTest extends EntityTestCase {
 
   @Test
   void testFailure_setAllowedTldsUncached_nonexistentTld() {
-    assertThrows(
-        IllegalArgumentException.class,
-        () -> registrar.asBuilder().setAllowedTldsUncached(ImmutableSet.of("bad")));
+    tm().transact(
+            () -> {
+              assertThrows(
+                  IllegalArgumentException.class,
+                  () -> registrar.asBuilder().setAllowedTldsUncached(ImmutableSet.of("bad")));
+            });
   }
 
   @Test
@@ -614,11 +620,14 @@ class RegistrarTest extends EntityTestCase {
 
       // Test that the uncached version works
       assertThat(
-              registrar
-                  .asBuilder()
-                  .setAllowedTldsUncached(ImmutableSet.of("newtld"))
-                  .build()
-                  .getAllowedTlds())
+              tm().transact(
+                      () -> {
+                        return registrar
+                            .asBuilder()
+                            .setAllowedTldsUncached(ImmutableSet.of("newtld"))
+                            .build()
+                            .getAllowedTlds();
+                      }))
           .containsExactly("newtld");
 
       // Test that the "regular" cached version fails. If this doesn't throw - then we changed how
