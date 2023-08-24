@@ -35,6 +35,7 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 import com.google.cloud.tasks.v2.HttpMethod;
 import com.google.common.collect.ImmutableSet;
+import google.registry.groups.GmailClient;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.RegistryLock;
 import google.registry.model.host.Host;
@@ -48,7 +49,6 @@ import google.registry.testing.FakeClock;
 import google.registry.testing.FakeResponse;
 import google.registry.tools.DomainLockUtils;
 import google.registry.util.EmailMessage;
-import google.registry.util.SendEmailService;
 import google.registry.util.StringGenerator.Alphabets;
 import java.util.Optional;
 import javax.mail.internet.InternetAddress;
@@ -85,7 +85,7 @@ public class RelockDomainActionTest {
 
   private Domain domain;
   private RegistryLock oldLock;
-  @Mock private SendEmailService sendEmailService;
+  @Mock private GmailClient gmailClient;
   private RelockDomainAction action;
 
   @BeforeEach
@@ -107,7 +107,7 @@ public class RelockDomainActionTest {
 
   @AfterEach
   void afterEach() {
-    verifyNoMoreInteractions(sendEmailService);
+    verifyNoMoreInteractions(gmailClient);
   }
 
   @Test
@@ -260,7 +260,7 @@ public class RelockDomainActionTest {
                 ImmutableSet.of(new InternetAddress("Marla.Singer.RegistryLock@crr.com")))
             .setFrom(new InternetAddress("outgoing@example.com"))
             .build();
-    verify(sendEmailService).sendEmail(expectedEmail);
+    verify(gmailClient).sendEmail(expectedEmail);
   }
 
   private void assertNonTransientFailureEmail(String exceptionMessage) throws Exception {
@@ -294,7 +294,7 @@ public class RelockDomainActionTest {
             .setRecipients(recipients)
             .setFrom(new InternetAddress("outgoing@example.com"))
             .build();
-    verify(sendEmailService).sendEmail(expectedEmail);
+    verify(gmailClient).sendEmail(expectedEmail);
   }
 
   private void assertTaskEnqueued(int numAttempts) {
@@ -328,7 +328,7 @@ public class RelockDomainActionTest {
         alertRecipientAddress,
         gSuiteOutgoingAddress,
         "support@example.com",
-        sendEmailService,
+        gmailClient,
         domainLockUtils,
         response);
   }
