@@ -26,6 +26,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.flogger.FluentLogger;
 import com.google.common.net.MediaType;
 import google.registry.config.RegistryConfig.Config;
+import google.registry.groups.GmailClient;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.RegistryLock;
 import google.registry.model.eppcommon.StatusValue;
@@ -40,7 +41,6 @@ import google.registry.request.auth.Auth;
 import google.registry.tools.DomainLockUtils;
 import google.registry.util.DateTimeUtils;
 import google.registry.util.EmailMessage;
-import google.registry.util.SendEmailService;
 import java.util.Optional;
 import javax.inject.Inject;
 import javax.mail.internet.AddressException;
@@ -84,7 +84,7 @@ public class RelockDomainAction implements Runnable {
   private final InternetAddress alertRecipientAddress;
   private final InternetAddress gSuiteOutgoingEmailAddress;
   private final String supportEmail;
-  private final SendEmailService sendEmailService;
+  private final GmailClient gmailClient;
   private final DomainLockUtils domainLockUtils;
   private final Response response;
 
@@ -92,10 +92,10 @@ public class RelockDomainAction implements Runnable {
   public RelockDomainAction(
       @Parameter(OLD_UNLOCK_REVISION_ID_PARAM) long oldUnlockRevisionId,
       @Parameter(PREVIOUS_ATTEMPTS_PARAM) int previousAttempts,
-      @Config("alertRecipientEmailAddress") InternetAddress alertRecipientAddress,
+      @Config("newAlertRecipientEmailAddress") InternetAddress alertRecipientAddress,
       @Config("gSuiteOutgoingEmailAddress") InternetAddress gSuiteOutgoingEmailAddress,
       @Config("supportEmail") String supportEmail,
-      SendEmailService sendEmailService,
+      GmailClient gmailClient,
       DomainLockUtils domainLockUtils,
       Response response) {
     this.oldUnlockRevisionId = oldUnlockRevisionId;
@@ -103,7 +103,7 @@ public class RelockDomainAction implements Runnable {
     this.alertRecipientAddress = alertRecipientAddress;
     this.gSuiteOutgoingEmailAddress = gSuiteOutgoingEmailAddress;
     this.supportEmail = supportEmail;
-    this.sendEmailService = sendEmailService;
+    this.gmailClient = gmailClient;
     this.domainLockUtils = domainLockUtils;
     this.response = response;
   }
@@ -215,7 +215,7 @@ public class RelockDomainAction implements Runnable {
             oldLock.getDomainName(),
             t.getMessage(),
             supportEmail);
-    sendEmailService.sendEmail(
+    gmailClient.sendEmail(
         EmailMessage.newBuilder()
             .setFrom(gSuiteOutgoingEmailAddress)
             .setBody(body)
@@ -245,7 +245,7 @@ public class RelockDomainAction implements Runnable {
     String body =
         String.format(RELOCK_SUCCESS_EMAIL_TEMPLATE, oldLock.getDomainName(), supportEmail);
 
-    sendEmailService.sendEmail(
+    gmailClient.sendEmail(
         EmailMessage.newBuilder()
             .setFrom(gSuiteOutgoingEmailAddress)
             .setBody(body)
@@ -264,7 +264,7 @@ public class RelockDomainAction implements Runnable {
             .addAll(getEmailRecipients(oldLock.getRegistrarId()))
             .add(alertRecipientAddress)
             .build();
-    sendEmailService.sendEmail(
+    gmailClient.sendEmail(
         EmailMessage.newBuilder()
             .setFrom(gSuiteOutgoingEmailAddress)
             .setBody(body)
@@ -274,7 +274,7 @@ public class RelockDomainAction implements Runnable {
   }
 
   private void sendUnknownRevisionIdAlertEmail() {
-    sendEmailService.sendEmail(
+    gmailClient.sendEmail(
         EmailMessage.newBuilder()
             .setFrom(gSuiteOutgoingEmailAddress)
             .setBody(String.format(RELOCK_UNKNOWN_ID_FAILURE_EMAIL_TEMPLATE, oldUnlockRevisionId))

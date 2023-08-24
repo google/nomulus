@@ -31,6 +31,7 @@ import com.google.common.flogger.FluentLogger;
 import com.google.gson.Gson;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.flows.domain.DomainFlowUtils;
+import google.registry.groups.GmailClient;
 import google.registry.model.domain.RegistryLock;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarPoc;
@@ -46,7 +47,6 @@ import google.registry.request.auth.UserAuthInfo;
 import google.registry.security.JsonResponseHelper;
 import google.registry.tools.DomainLockUtils;
 import google.registry.util.EmailMessage;
-import google.registry.util.SendEmailService;
 import java.net.URISyntaxException;
 import java.util.Map;
 import java.util.Optional;
@@ -83,7 +83,7 @@ public class RegistryLockPostAction implements Runnable, JsonActionRunner.JsonAc
   private final JsonActionRunner jsonActionRunner;
   private final AuthResult authResult;
   private final AuthenticatedRegistrarAccessor registrarAccessor;
-  private final SendEmailService sendEmailService;
+  private final GmailClient gmailClient;
   private final DomainLockUtils domainLockUtils;
   private final InternetAddress gSuiteOutgoingEmailAddress;
 
@@ -93,14 +93,14 @@ public class RegistryLockPostAction implements Runnable, JsonActionRunner.JsonAc
       JsonActionRunner jsonActionRunner,
       AuthResult authResult,
       AuthenticatedRegistrarAccessor registrarAccessor,
-      SendEmailService sendEmailService,
+      GmailClient gmailClient,
       DomainLockUtils domainLockUtils,
       @Config("gSuiteOutgoingEmailAddress") InternetAddress gSuiteOutgoingEmailAddress) {
     this.req = req;
     this.jsonActionRunner = jsonActionRunner;
     this.authResult = authResult;
     this.registrarAccessor = registrarAccessor;
-    this.sendEmailService = sendEmailService;
+    this.gmailClient = gmailClient;
     this.domainLockUtils = domainLockUtils;
     this.gSuiteOutgoingEmailAddress = gSuiteOutgoingEmailAddress;
   }
@@ -168,7 +168,7 @@ public class RegistryLockPostAction implements Runnable, JsonActionRunner.JsonAc
       ImmutableList<InternetAddress> recipients =
           ImmutableList.of(new InternetAddress(userEmail, true));
       String action = isLock ? "lock" : "unlock";
-      sendEmailService.sendEmail(
+      gmailClient.sendEmail(
           EmailMessage.newBuilder()
               .setBody(body)
               .setSubject(String.format("Registry %s verification", action))

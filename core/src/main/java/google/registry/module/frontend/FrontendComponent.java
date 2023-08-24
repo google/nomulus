@@ -23,6 +23,7 @@ import google.registry.config.RegistryConfig.ConfigModule;
 import google.registry.flows.ServerTridProviderModule;
 import google.registry.flows.custom.CustomLogicFactoryModule;
 import google.registry.groups.DirectoryModule;
+import google.registry.groups.GmailModule;
 import google.registry.groups.GroupsModule;
 import google.registry.groups.GroupssettingsModule;
 import google.registry.keyring.KeyringModule;
@@ -54,6 +55,7 @@ import javax.inject.Singleton;
       DirectoryModule.class,
       DummyKeyringModule.class,
       FrontendRequestComponentModule.class,
+      GmailModule.class,
       GroupsModule.class,
       GroupssettingsModule.class,
       GsonModule.class,

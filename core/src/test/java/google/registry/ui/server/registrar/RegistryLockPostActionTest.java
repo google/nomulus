@@ -33,6 +33,7 @@ import com.google.appengine.api.users.User;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import google.registry.groups.GmailClient;
 import google.registry.model.console.RegistrarRole;
 import google.registry.model.console.UserRoles;
 import google.registry.model.domain.Domain;
@@ -54,7 +55,6 @@ import google.registry.testing.DeterministicStringGenerator;
 import google.registry.testing.FakeClock;
 import google.registry.tools.DomainLockUtils;
 import google.registry.util.EmailMessage;
-import google.registry.util.SendEmailService;
 import google.registry.util.StringGenerator.Alphabets;
 import java.util.Map;
 import java.util.Optional;
@@ -97,7 +97,7 @@ final class RegistryLockPostActionTest {
   private Domain domain;
   private RegistryLockPostAction action;
 
-  @Mock SendEmailService emailService;
+  @Mock GmailClient gmailClient;
   @Mock HttpServletRequest mockRequest;
   @Mock HttpServletResponse mockResponse;
 
@@ -510,12 +510,12 @@ final class RegistryLockPostActionTest {
   private void assertFailureWithMessage(Map<String, ?> response, String message) {
     assertThat(response)
         .containsExactly("status", "ERROR", "results", ImmutableList.of(), "message", message);
-    verifyNoMoreInteractions(emailService);
+    verifyNoMoreInteractions(gmailClient);
   }
 
   private void verifyEmail(String recipient) throws Exception {
     ArgumentCaptor<EmailMessage> emailCaptor = ArgumentCaptor.forClass(EmailMessage.class);
-    verify(emailService).sendEmail(emailCaptor.capture());
+    verify(gmailClient).sendEmail(emailCaptor.capture());
     EmailMessage sentMessage = emailCaptor.getValue();
     assertThat(sentMessage.subject()).matches("Registry (un)?lock verification");
     assertThat(sentMessage.body()).matches(EMAIL_MESSAGE_TEMPLATE);
@@ -545,7 +545,7 @@ final class RegistryLockPostActionTest {
         jsonActionRunner,
         authResult,
         registrarAccessor,
-        emailService,
+        gmailClient,
         domainLockUtils,
         outgoingAddress);
   }
