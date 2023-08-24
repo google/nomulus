@@ -90,6 +90,8 @@ interface RegistryToolComponent {
 
   void inject(CheckDomainCommand command);
 
+  void inject(ConfigureTldCommand command);
+
   void inject(CountDomainsCommand command);
 
   void inject(CreateAnchorTenantCommand command);
