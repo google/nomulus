@@ -167,12 +167,17 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
   public <T> T transactNoRetry(
       Supplier<T> work, @Nullable TransactionIsolationLevel isolationLevel) {
     if (inTransaction()) {
-      if (getHibernatePerTransactionIsolationEnabled()) {
-        throw new IllegalStateException("Nested transaction detected");
-      } else {
-        logger.atWarning().log("Nested transaction detected");
-        return work.get();
+      if (isolationLevel != null && getHibernatePerTransactionIsolationEnabled()) {
+        TransactionIsolationLevel enclosingLevel = getCurrentTransactionIsolationLevel();
+        if (isolationLevel != enclosingLevel) {
+          throw new IllegalStateException(
+              String.format(
+                  "Isolation level conflict detected in nested transactions.\n"
+                      + "Enclosing transaction: %s\nCurrent transaction: %s",
+                  enclosingLevel, isolationLevel));
+        }
       }
+      return work.get();
     }
     TransactionInfo txnInfo = transactionInfo.get();
     txnInfo.entityManager = emf.createEntityManager();

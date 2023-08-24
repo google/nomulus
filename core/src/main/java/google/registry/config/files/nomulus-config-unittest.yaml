@@ -28,4 +28,4 @@ misc:
   transientFailureRetries: 3
 
 hibernate:
-  perTransactionIsolation: false
+  perTransactionIsolation: true
