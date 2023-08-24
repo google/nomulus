@@ -114,17 +114,18 @@ interface RegistryToolComponent {
 
   void inject(GenerateEscrowDepositCommand command);
 
+  void inject(GetBulkPricingPackageCommand command);
+
   void inject(GetContactCommand command);
 
   void inject(GetDomainCommand command);
 
   void inject(GetHostCommand command);
-
-  void inject(GetBulkPricingPackageCommand command);
-
   void inject(GetKeyringSecretCommand command);
 
   void inject(GetSqlCredentialCommand command);
+
+  void inject(GetTldCommand command);
 
   void inject(GhostrydeCommand command);
 
