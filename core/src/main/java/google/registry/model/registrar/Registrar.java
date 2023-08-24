@@ -19,7 +19,6 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Strings.emptyToNull;
 import static com.google.common.base.Strings.nullToEmpty;
-import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.collect.ImmutableSortedSet.toImmutableSortedSet;
 import static com.google.common.collect.Sets.immutableEnumSet;
@@ -49,7 +48,6 @@ import com.google.common.collect.ImmutableSortedSet;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Range;
 import com.google.common.collect.Sets;
-import com.google.common.collect.Streams;
 import com.google.gson.annotations.Expose;
 import com.google.re2j.Pattern;
 import google.registry.model.Buildable;
@@ -556,7 +554,7 @@ public class Registrar extends UpdateAutoTimestampEntity implements Buildable, J
    * address.
    */
   public ImmutableSortedSet<RegistrarPoc> getContacts() {
-    return Streams.stream(getContactsIterable())
+    return getContactPocs().stream()
         .filter(Objects::nonNull)
         .collect(toImmutableSortedSet(CONTACT_EMAIL_COMPARATOR));
   }
@@ -566,7 +564,7 @@ public class Registrar extends UpdateAutoTimestampEntity implements Buildable, J
    * their email address.
    */
   public ImmutableSortedSet<RegistrarPoc> getContactsOfType(final RegistrarPoc.Type type) {
-    return Streams.stream(getContactsIterable())
+    return getContactPocs().stream()
         .filter(Objects::nonNull)
         .filter((@Nullable RegistrarPoc contact) -> contact.getTypes().contains(type))
         .collect(toImmutableSortedSet(CONTACT_EMAIL_COMPARATOR));
@@ -580,13 +578,13 @@ public class Registrar extends UpdateAutoTimestampEntity implements Buildable, J
     return getContacts().stream().filter(RegistrarPoc::getVisibleInDomainWhoisAsAbuse).findFirst();
   }
 
-  private Iterable<RegistrarPoc> getContactsIterable() {
+  private ImmutableSet<RegistrarPoc> getContactPocs() {
     return tm().transact(
             () ->
                 tm().query("FROM RegistrarPoc WHERE registrarId = :registrarId", RegistrarPoc.class)
                     .setParameter("registrarId", registrarId)
                     .getResultStream()
-                    .collect(toImmutableList()));
+                    .collect(toImmutableSet()));
   }
 
   @Override
@@ -732,8 +730,7 @@ public class Registrar extends UpdateAutoTimestampEntity implements Buildable, J
               .map(Tld::createVKey)
               .collect(toImmutableSet());
       Set<VKey<Tld>> missingTldKeys =
-          Sets.difference(
-              newTldKeys, tm().transact(() -> tm().loadByKeysIfPresent(newTldKeys)).keySet());
+          Sets.difference(newTldKeys, tm().loadByKeysIfPresent(newTldKeys).keySet());
       checkArgument(missingTldKeys.isEmpty(), "Trying to set nonexistent TLDs: %s", missingTldKeys);
       getInstance().allowedTlds = ImmutableSortedSet.copyOf(allowedTlds);
       return this;
