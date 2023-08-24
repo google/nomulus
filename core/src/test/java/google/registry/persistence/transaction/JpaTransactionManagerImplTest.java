@@ -16,6 +16,7 @@ package google.registry.persistence.transaction;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.truth.Truth.assertThat;
+import static google.registry.persistence.PersistenceModule.TransactionIsolationLevel.TRANSACTION_READ_COMMITTED;
 import static google.registry.persistence.PersistenceModule.TransactionIsolationLevel.TRANSACTION_READ_UNCOMMITTED;
 import static google.registry.persistence.PersistenceModule.TransactionIsolationLevel.TRANSACTION_REPEATABLE_READ;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
@@ -126,25 +127,122 @@ class JpaTransactionManagerImplTest {
   }
 
   @Test
-  void transact_nestedTransactions() {
-    // Unit tests always allows for per-transaction isolation level (and therefore throws when a
-    // nested transaction is detected).
-    if (RegistryConfig.getHibernatePerTransactionIsolationEnabled()) {
-      IllegalArgumentException e =
-          assertThrows(
-              IllegalArgumentException.class,
-              () ->
-                  tm().transact(
-                          () -> {
-                            tm().transact(() -> {});
-                          }));
-      assertThat(e).hasMessageThat().isEqualTo("Nested transaction detected");
-    } else {
-      tm().transact(
-              () -> {
-                tm().transact(() -> {});
-              });
+  void transact_nestedTransactions_perTransactionIsolationLevelEnabled() {
+    if (!RegistryConfig.getHibernatePerTransactionIsolationEnabled()) {
+      return;
     }
+    // Nested transactions allowed (both at the default isolation level).
+    tm().transact(
+            () -> {
+              tm().assertTransactionIsolationLevel(tm().getDefaultTransactionIsolationLevel());
+              tm().transact(
+                      () -> {
+                        tm().assertTransactionIsolationLevel(
+                                tm().getDefaultTransactionIsolationLevel());
+                      });
+            });
+    // Nested transactions allowed (enclosed transaction does not have an override, using the
+    // enclosing transaction's level).
+    tm().transact(
+            () -> {
+              tm().assertTransactionIsolationLevel(TRANSACTION_READ_UNCOMMITTED);
+              tm().transact(
+                      () -> {
+                        tm().assertTransactionIsolationLevel(TRANSACTION_READ_UNCOMMITTED);
+                      });
+            },
+            TRANSACTION_READ_UNCOMMITTED);
+    // Nested transactions allowed (Both have the same override).
+    tm().transact(
+            () -> {
+              tm().assertTransactionIsolationLevel(TRANSACTION_REPEATABLE_READ);
+              tm().transact(
+                      () -> {
+                        tm().assertTransactionIsolationLevel(TRANSACTION_REPEATABLE_READ);
+                      },
+                      TRANSACTION_REPEATABLE_READ);
+            },
+            TRANSACTION_REPEATABLE_READ);
+    // Nested transactions disallowed (enclosed transaction has an override that conflicts from the
+    // default).
+    IllegalStateException e =
+        assertThrows(
+            IllegalStateException.class,
+            () ->
+                tm().transact(
+                        () -> {
+                          tm().transact(() -> {}, TRANSACTION_READ_COMMITTED);
+                        }));
+    assertThat(e).hasMessageThat().contains("conflict detected");
+    // Nested transactions disallowed (conflicting overrides).
+    e =
+        assertThrows(
+            IllegalStateException.class,
+            () ->
+                tm().transact(
+                        () -> {
+                          tm().transact(() -> {}, TRANSACTION_READ_COMMITTED);
+                        },
+                        TRANSACTION_REPEATABLE_READ));
+    assertThat(e).hasMessageThat().contains("conflict detected");
+  }
+
+  @Test
+  void transact_nestedTransactions_perTransactionIsolationLevelDisabled() {
+    if (RegistryConfig.getHibernatePerTransactionIsolationEnabled()) {
+      return;
+    }
+    tm().transact(
+            () -> {
+              tm().assertTransactionIsolationLevel(tm().getDefaultTransactionIsolationLevel());
+              tm().transact(
+                      () -> {
+                        tm().assertTransactionIsolationLevel(
+                                tm().getDefaultTransactionIsolationLevel());
+                      });
+            });
+    tm().transact(
+            () -> {
+              tm().assertTransactionIsolationLevel(tm().getDefaultTransactionIsolationLevel());
+              tm().transact(
+                      () -> {
+                        tm().assertTransactionIsolationLevel(
+                                tm().getDefaultTransactionIsolationLevel());
+                      });
+            },
+            TRANSACTION_READ_UNCOMMITTED);
+    tm().transact(
+            () -> {
+              tm().assertTransactionIsolationLevel(tm().getDefaultTransactionIsolationLevel());
+              tm().transact(
+                      () -> {
+                        tm().assertTransactionIsolationLevel(
+                                tm().getDefaultTransactionIsolationLevel());
+                      },
+                      TRANSACTION_READ_UNCOMMITTED);
+            });
+    tm().transact(
+            () -> {
+              tm().assertTransactionIsolationLevel(tm().getDefaultTransactionIsolationLevel());
+              tm().transact(
+                      () -> {
+                        tm().assertTransactionIsolationLevel(
+                                tm().getDefaultTransactionIsolationLevel());
+                      },
+                      TRANSACTION_READ_UNCOMMITTED);
+            },
+            TRANSACTION_READ_UNCOMMITTED);
+    tm().transact(
+            () -> {
+              tm().assertTransactionIsolationLevel(tm().getDefaultTransactionIsolationLevel());
+              tm().transact(
+                      () -> {
+                        tm().assertTransactionIsolationLevel(
+                                tm().getDefaultTransactionIsolationLevel());
+                      },
+                      TRANSACTION_READ_COMMITTED);
+            },
+            TRANSACTION_READ_UNCOMMITTED);
   }
 
   @Test
