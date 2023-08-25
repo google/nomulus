@@ -15,11 +15,11 @@
 package google.registry.model.tmch;
 
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.common.truth.Truth8.assertThat;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableMap;
-import com.google.common.truth.Truth8;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationWithCoverageExtension;
 import google.registry.testing.FakeClock;
@@ -113,17 +113,21 @@ public class ClaimsListDaoTest {
     tm().transact(() -> tm().insert(claimsList));
     ClaimsList fromDatabase = ClaimsListDao.get();
     // At first, we haven't loaded any entries
-    assertThat(fromDatabase.claimKeyCache.getIfPresent("label1")).isNull();
-    Truth8.assertThat(fromDatabase.getClaimKey("label1")).hasValue("key1");
+    assertThat(tm().transact(() -> fromDatabase.claimKeyCache.getIfPresent("label1"))).isNull();
+    assertThat(tm().transact(() -> fromDatabase.getClaimKey("label1"))).hasValue("key1");
     // After retrieval, the key exists
-    Truth8.assertThat(fromDatabase.claimKeyCache.getIfPresent("label1")).hasValue("key1");
-    assertThat(fromDatabase.claimKeyCache.getIfPresent("label2")).isNull();
+    assertThat(tm().transact(() -> fromDatabase.claimKeyCache.getIfPresent("label1")))
+        .hasValue("key1");
+    assertThat(tm().transact(() -> fromDatabase.claimKeyCache.getIfPresent("label2"))).isNull();
     // Loading labels-to-keys should still work
-    assertThat(fromDatabase.getLabelsToKeys()).containsExactly("label1", "key1", "label2", "key2");
+    assertThat(tm().transact(() -> fromDatabase.getLabelsToKeys()))
+        .containsExactly("label1", "key1", "label2", "key2");
     // We should also cache nonexistent values
-    assertThat(fromDatabase.claimKeyCache.getIfPresent("nonexistent")).isNull();
-    Truth8.assertThat(fromDatabase.getClaimKey("nonexistent")).isEmpty();
-    Truth8.assertThat(fromDatabase.claimKeyCache.getIfPresent("nonexistent")).isEmpty();
+    assertThat(tm().transact(() -> fromDatabase.claimKeyCache.getIfPresent("nonexistent")))
+        .isNull();
+    assertThat(tm().transact(() -> fromDatabase.getClaimKey("nonexistent"))).isEmpty();
+    assertThat(tm().transact(() -> fromDatabase.claimKeyCache.getIfPresent("nonexistent")))
+        .isEmpty();
   }
 
   private void assertClaimsListEquals(ClaimsList left, ClaimsList right) {

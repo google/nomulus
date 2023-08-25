@@ -17,6 +17,7 @@ package google.registry.tmch;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -41,7 +42,8 @@ class TmchDnlActionTest extends TmchActionTestCase {
 
   @Test
   void testDnl() throws Exception {
-    assertThat(ClaimsListDao.get().getClaimKey("xn----7sbejwbn3axu3d")).isEmpty();
+    assertThat(tm().transact(() -> ClaimsListDao.get().getClaimKey("xn----7sbejwbn3axu3d")))
+        .isEmpty();
     when(httpUrlConnection.getInputStream())
         .thenReturn(new ByteArrayInputStream(TmchTestData.loadBytes("dnl/dnl-latest.csv").read()))
         .thenReturn(new ByteArrayInputStream(TmchTestData.loadBytes("dnl/dnl-latest.sig").read()));
@@ -54,8 +56,8 @@ class TmchDnlActionTest extends TmchActionTestCase {
     ClaimsList claimsList = ClaimsListDao.get();
     assertThat(claimsList.getTmdbGenerationTime())
         .isEqualTo(DateTime.parse("2013-11-24T23:15:37.4Z"));
-    assertThat(claimsList.getClaimKey("xn----7sbejwbn3axu3d"))
+    assertThat(tm().transact(() -> claimsList.getClaimKey("xn----7sbejwbn3axu3d")))
         .hasValue("2013112500/7/4/8/dIHW0DiuybvhdP8kIz");
-    assertThat(claimsList.getClaimKey("lolcat")).isEmpty();
+    assertThat(tm().transact(() -> claimsList.getClaimKey("lolcat"))).isEmpty();
   }
 }

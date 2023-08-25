@@ -206,13 +206,11 @@ public class ClaimsList extends ImmutableObject {
     if (labelsToKeys != null) {
       return Optional.ofNullable(labelsToKeys.get(label));
     }
-    return tm().transact(
-            () ->
-                tm().createQueryComposer(ClaimsEntry.class)
-                    .where("revisionId", EQ, revisionId)
-                    .where("domainLabel", EQ, label)
-                    .first()
-                    .map(ClaimsEntry::getClaimKey));
+    return tm().createQueryComposer(ClaimsEntry.class)
+        .where("revisionId", EQ, revisionId)
+        .where("domainLabel", EQ, label)
+        .first()
+        .map(ClaimsEntry::getClaimKey);
   }
 
   public static ClaimsList create(

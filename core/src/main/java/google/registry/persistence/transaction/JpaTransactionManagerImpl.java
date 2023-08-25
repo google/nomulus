@@ -159,6 +159,11 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
   }
 
   @Override
+  public <T> T reTransact(Supplier<T> work) {
+    return transact(work);
+  }
+
+  @Override
   public <T> T transact(Supplier<T> work) {
     return transact(work, null);
   }
@@ -227,6 +232,11 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
           return null;
         },
         isolationLevel);
+  }
+
+  @Override
+  public void reTransact(Runnable work) {
+    transact(work);
   }
 
   @Override
