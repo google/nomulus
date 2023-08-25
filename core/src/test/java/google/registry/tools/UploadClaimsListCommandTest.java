@@ -16,6 +16,7 @@ package google.registry.tools;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import google.registry.model.tmch.ClaimsList;
@@ -46,11 +47,11 @@ class UploadClaimsListCommandTest extends CommandTestCase<UploadClaimsListComman
     ClaimsList claimsList = ClaimsListDao.get();
     assertThat(claimsList.getTmdbGenerationTime())
         .isEqualTo(DateTime.parse("2012-08-16T00:00:00.0Z"));
-    assertThat(claimsList.getClaimKey("example"))
+    assertThat(tm().transact(() -> claimsList.getClaimKey("example")))
         .hasValue("2013041500/2/6/9/rJ1NrDO92vDsAzf7EQzgjX4R0000000001");
-    assertThat(claimsList.getClaimKey("another-example"))
+    assertThat(tm().transact(() -> claimsList.getClaimKey("another-example")))
         .hasValue("2013041500/6/A/5/alJAqG2vI2BmCv5PfUvuDkf40000000002");
-    assertThat(claimsList.getClaimKey("anotherexample"))
+    assertThat(tm().transact(() -> claimsList.getClaimKey("anotherexample")))
         .hasValue("2013041500/A/C/7/rHdC4wnrWRvPY6nneCVtQhFj0000000003");
   }
 

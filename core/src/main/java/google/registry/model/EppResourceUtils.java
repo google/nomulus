@@ -156,7 +156,9 @@ public final class EppResourceUtils {
     T resource =
         useCache
             ? EppResource.loadCached(key)
-            : tm().transact(() -> tm().loadByKeyIfPresent(key).orElse(null));
+            // This transaction is buried very deeply inside many outer nested calls, hence merits
+            // the use of reTransact() for now pending a substantial refactoring.
+            : tm().reTransact(() -> tm().loadByKeyIfPresent(key).orElse(null));
     if (resource == null || isAtOrAfter(now, resource.getDeletionTime())) {
       return Optional.empty();
     }

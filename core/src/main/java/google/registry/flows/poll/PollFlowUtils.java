@@ -30,13 +30,12 @@ public final class PollFlowUtils {
 
   /** Returns the number of poll messages for the given registrar that are not in the future. */
   public static int getPollMessageCount(String registrarId, DateTime now) {
-    return tm().transact(() -> createPollMessageQuery(registrarId, now).count()).intValue();
+    return (int) createPollMessageQuery(registrarId, now).count();
   }
 
   /** Returns the first (by event time) poll message not in the future for this registrar. */
   public static Optional<PollMessage> getFirstPollMessage(String registrarId, DateTime now) {
-    return tm().transact(
-            () -> createPollMessageQuery(registrarId, now).orderBy("eventTime").first());
+    return createPollMessageQuery(registrarId, now).orderBy("eventTime").first();
   }
 
   /**
