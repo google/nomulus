@@ -36,6 +36,7 @@ import com.google.common.collect.ImmutableSetMultimap;
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.truth.Truth;
 import google.registry.flows.certs.CertificateChecker;
+import google.registry.groups.GmailClient;
 import google.registry.model.registrar.RegistrarPoc;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
@@ -50,7 +51,6 @@ import google.registry.testing.CloudTasksHelper;
 import google.registry.testing.FakeClock;
 import google.registry.ui.server.SendEmailUtils;
 import google.registry.util.EmailMessage;
-import google.registry.util.SendEmailService;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import javax.mail.internet.InternetAddress;
@@ -82,7 +82,7 @@ public abstract class RegistrarSettingsActionTestCase {
 
   @Mock HttpServletRequest req;
   @Mock HttpServletResponse rsp;
-  @Mock SendEmailService emailService;
+  @Mock GmailClient gmailClient;
 
   final RegistrarSettingsAction action = new RegistrarSettingsAction();
   private final StringWriter writer = new StringWriter();
@@ -110,7 +110,7 @@ public abstract class RegistrarSettingsActionTestCase {
             getGSuiteOutgoingEmailAddress(),
             getGSuiteOutgoingEmailDisplayName(),
             ImmutableList.of("notification@test.example", "notification2@test.example"),
-            emailService);
+            gmailClient);
     action.registrarConsoleMetrics = new RegistrarConsoleMetrics();
     action.authResult =
         AuthResult.create(
@@ -172,7 +172,7 @@ public abstract class RegistrarSettingsActionTestCase {
   /** Verifies that the original contact of TheRegistrar is among those notified of a change. */
   void verifyNotificationEmailsSent() throws Exception {
     ArgumentCaptor<EmailMessage> captor = ArgumentCaptor.forClass(EmailMessage.class);
-    verify(emailService).sendEmail(captor.capture());
+    verify(gmailClient).sendEmail(captor.capture());
     Truth.assertThat(captor.getValue().recipients())
         .containsExactly(
             new InternetAddress("notification@test.example"),

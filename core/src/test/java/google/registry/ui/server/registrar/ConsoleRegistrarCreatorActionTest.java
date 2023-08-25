@@ -29,6 +29,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSetMultimap;
 import google.registry.config.RegistryEnvironment;
+import google.registry.groups.GmailClient;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarAddress;
 import google.registry.model.registrar.RegistrarPoc;
@@ -47,7 +48,6 @@ import google.registry.testing.SystemPropertyExtension;
 import google.registry.testing.UserServiceExtension;
 import google.registry.ui.server.SendEmailUtils;
 import google.registry.util.EmailMessage;
-import google.registry.util.SendEmailService;
 import java.util.Optional;
 import javax.mail.internet.InternetAddress;
 import javax.servlet.http.HttpServletRequest;
@@ -79,7 +79,7 @@ final class ConsoleRegistrarCreatorActionTest {
   private final User user = new User("marla.singer@example.com", "gmail.com", "12345");
 
   @Mock HttpServletRequest request;
-  @Mock SendEmailService emailService;
+  @Mock GmailClient gmailClient;
 
   @BeforeEach
   void beforeEach() throws Exception {
@@ -99,7 +99,7 @@ final class ConsoleRegistrarCreatorActionTest {
             new InternetAddress("outgoing@registry.example"),
             "UnitTest Registry",
             ImmutableList.of("notification@test.example", "notification2@test.example"),
-            emailService);
+            gmailClient);
     action.logoFilename = "logo.png";
     action.productName = "Nomulus";
 
@@ -183,7 +183,7 @@ final class ConsoleRegistrarCreatorActionTest {
         .contains("<h1>Successfully created Registrar myclientid</h1>");
 
     ArgumentCaptor<EmailMessage> contentCaptor = ArgumentCaptor.forClass(EmailMessage.class);
-    verify(emailService).sendEmail(contentCaptor.capture());
+    verify(gmailClient).sendEmail(contentCaptor.capture());
     EmailMessage emailMessage = contentCaptor.getValue();
     assertThat(emailMessage.subject()).isEqualTo("Registrar myclientid created in unittest");
     assertThat(emailMessage.body())

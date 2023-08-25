@@ -32,6 +32,7 @@ import com.google.common.collect.ImmutableSortedMap;
 import google.registry.batch.SendExpiringCertificateNotificationEmailAction.CertificateType;
 import google.registry.batch.SendExpiringCertificateNotificationEmailAction.RegistrarInfo;
 import google.registry.flows.certs.CertificateChecker;
+import google.registry.groups.GmailClient;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarAddress;
 import google.registry.model.registrar.RegistrarPoc;
@@ -41,7 +42,6 @@ import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationT
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeResponse;
 import google.registry.util.SelfSignedCaCertificate;
-import google.registry.util.SendEmailService;
 import java.security.cert.X509Certificate;
 import java.util.Optional;
 import javax.annotation.Nullable;
@@ -75,7 +75,7 @@ class SendExpiringCertificateNotificationEmailActionTest {
       new JpaTestExtensions.Builder().buildIntegrationTestExtension();
 
   private final FakeClock clock = new FakeClock(DateTime.parse("2021-05-24T20:21:22Z"));
-  private final SendEmailService sendEmailService = mock(SendEmailService.class);
+  private final GmailClient sendEmailService = mock(GmailClient.class);
   private CertificateChecker certificateChecker;
   private SendExpiringCertificateNotificationEmailAction action;
   private Registrar sampleRegistrar;

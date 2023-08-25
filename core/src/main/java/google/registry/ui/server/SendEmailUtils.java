@@ -20,8 +20,8 @@ import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.flogger.FluentLogger;
 import google.registry.config.RegistryConfig.Config;
+import google.registry.groups.GmailClient;
 import google.registry.util.EmailMessage;
-import google.registry.util.SendEmailService;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Stream;
@@ -38,7 +38,7 @@ public class SendEmailUtils {
 
   private final InternetAddress gSuiteOutgoingEmailAddress;
   private final String gSuiteOutgoingEmailDisplayName;
-  private final SendEmailService emailService;
+  private final GmailClient gmailClient;
   private final ImmutableList<String> registrarChangesNotificationEmailAddresses;
 
   @Inject
@@ -47,10 +47,10 @@ public class SendEmailUtils {
       @Config("gSuiteOutgoingEmailDisplayName") String gSuiteOutgoingEmailDisplayName,
       @Config("registrarChangesNotificationEmailAddresses")
           ImmutableList<String> registrarChangesNotificationEmailAddresses,
-      SendEmailService emailService) {
+      GmailClient gmailClient) {
     this.gSuiteOutgoingEmailAddress = gSuiteOutgoingEmailAddress;
     this.gSuiteOutgoingEmailDisplayName = gSuiteOutgoingEmailDisplayName;
-    this.emailService = emailService;
+    this.gmailClient = gmailClient;
     this.registrarChangesNotificationEmailAddresses = registrarChangesNotificationEmailAddresses;
   }
 
@@ -109,7 +109,7 @@ public class SendEmailUtils {
               "Could not send email to %s with subject '%s'.", bcc, subject);
         }
       }
-      emailService.sendEmail(emailMessage.build());
+      gmailClient.sendEmail(emailMessage.build());
       return true;
     } catch (Throwable t) {
       logger.atSevere().withCause(t).log(

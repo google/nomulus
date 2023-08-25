@@ -50,6 +50,7 @@ import google.registry.dns.DnsMetrics.ActionStatus;
 import google.registry.dns.DnsMetrics.CommitStatus;
 import google.registry.dns.DnsMetrics.PublishStatus;
 import google.registry.dns.writer.DnsWriter;
+import google.registry.groups.GmailClient;
 import google.registry.model.domain.Domain;
 import google.registry.model.tld.Tld;
 import google.registry.persistence.transaction.JpaTestExtensions;
@@ -63,7 +64,6 @@ import google.registry.testing.FakeLockHandler;
 import google.registry.testing.FakeResponse;
 import google.registry.testing.Lazies;
 import google.registry.util.EmailMessage;
-import google.registry.util.SendEmailService;
 import java.util.Set;
 import javax.mail.internet.InternetAddress;
 import org.joda.time.DateTime;
@@ -90,7 +90,7 @@ public class PublishDnsUpdatesActionTest {
   private InternetAddress outgoingRegistry;
   private Lazy<InternetAddress> registrySupportEmail;
   private Lazy<InternetAddress> registryCcEmail;
-  private final SendEmailService emailService = mock(SendEmailService.class);
+  private final GmailClient emailService = mock(GmailClient.class);
 
   @BeforeEach
   void beforeEach() throws Exception {

@@ -31,6 +31,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSetMultimap;
 import google.registry.config.RegistryEnvironment;
+import google.registry.groups.GmailClient;
 import google.registry.model.tld.Tld;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
@@ -47,7 +48,6 @@ import google.registry.testing.SystemPropertyExtension;
 import google.registry.testing.UserServiceExtension;
 import google.registry.ui.server.SendEmailUtils;
 import google.registry.util.EmailMessage;
-import google.registry.util.SendEmailService;
 import java.util.Optional;
 import javax.mail.internet.InternetAddress;
 import javax.servlet.http.HttpServletRequest;
@@ -79,7 +79,7 @@ public final class ConsoleOteSetupActionTest {
   private final User user = new User("marla.singer@example.com", "gmail.com", "12345");
 
   @Mock HttpServletRequest request;
-  @Mock SendEmailService emailService;
+  @Mock GmailClient gmailClient;
 
   @BeforeEach
   void beforeEach() throws Exception {
@@ -99,7 +99,7 @@ public final class ConsoleOteSetupActionTest {
             new InternetAddress("outgoing@registry.example"),
             "UnitTest Registry",
             ImmutableList.of("notification@test.example", "notification2@test.example"),
-            emailService);
+            gmailClient);
     action.logoFilename = "logo.png";
     action.productName = "Nomulus";
     action.clientId = Optional.empty();
@@ -158,7 +158,7 @@ public final class ConsoleOteSetupActionTest {
     assertThat(response.getPayload())
         .contains("<h1>OT&E successfully created for registrar myclientid!</h1>");
     ArgumentCaptor<EmailMessage> contentCaptor = ArgumentCaptor.forClass(EmailMessage.class);
-    verify(emailService).sendEmail(contentCaptor.capture());
+    verify(gmailClient).sendEmail(contentCaptor.capture());
     EmailMessage emailMessage = contentCaptor.getValue();
     assertThat(emailMessage.subject())
         .isEqualTo("OT&E for registrar myclientid created in unittest");

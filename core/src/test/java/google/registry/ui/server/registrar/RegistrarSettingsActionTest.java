@@ -65,7 +65,7 @@ class RegistrarSettingsActionTest extends RegistrarSettingsActionTestCase {
     verify(rsp, never()).setStatus(anyInt());
     verifyNotificationEmailsSent();
     ArgumentCaptor<EmailMessage> contentCaptor = ArgumentCaptor.forClass(EmailMessage.class);
-    verify(emailService).sendEmail(contentCaptor.capture());
+    verify(gmailClient).sendEmail(contentCaptor.capture());
     assertThat(contentCaptor.getValue().body()).isEqualTo(expectedEmailBody);
     cloudTasksHelper.assertTasksEnqueued(
         "sheet",
