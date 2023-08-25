@@ -123,7 +123,7 @@ public class ConfigureTldCommandTest extends CommandTestCase<ConfigureTldCommand
     assertThat(thrown.getMessage())
         .isEqualTo(
             "The input file is missing data for the following fields: [tldStateTransitions,"
-                + " premiumListName, numDnsPublishLocks, currency]");
+                + " premiumListName, currency, numDnsPublishLocks]");
   }
 
   @Test
@@ -141,7 +141,7 @@ public class ConfigureTldCommandTest extends CommandTestCase<ConfigureTldCommand
     assertThat(thrown.getMessage())
         .isEqualTo(
             "The input file is missing data for the following fields: [tldStateTransitions,"
-                + " premiumListName, numDnsPublishLocks, currency]");
+                + " premiumListName, currency, numDnsPublishLocks]");
   }
 
   @Test

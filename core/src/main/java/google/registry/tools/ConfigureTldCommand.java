@@ -19,18 +19,20 @@ import static google.registry.util.ListNamingUtils.convertFilePathToName;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
-import com.google.common.collect.ImmutableSortedSet;
 import com.google.common.collect.Sets;
+import com.google.common.collect.Sets.SetView;
 import google.registry.model.tld.Tld;
 import google.registry.model.tld.label.PremiumList;
 import google.registry.model.tld.label.PremiumListDao;
 import google.registry.tools.params.PathParameter;
 import google.registry.util.Idn;
 import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
@@ -92,12 +94,13 @@ public class ConfigureTldCommand extends MutatingCommand {
   private void checkForMissingFields(Map<String, Object> tldData) {
     Set<String> tldFields =
         Arrays.stream(Tld.class.getDeclaredFields())
+            .filter(field -> !Modifier.isStatic(field.getModifiers()))
+            .filter(field -> field.getAnnotation(JsonIgnore.class) == null)
             .map(Field::getName)
             .collect(Collectors.toSet());
-    tldFields.removeAll(ImmutableSet.of("breakglassMode", "$jacocoData", "CACHE"));
     Set<String> missingFields = new HashSet<>();
     for (String field : tldFields) {
-      if (!field.startsWith("DEFAULT") && !tldData.keySet().contains(field)) {
+      if (!tldData.containsKey(field)) {
         missingFields.add(field);
       }
     }
@@ -121,8 +124,7 @@ public class ConfigureTldCommand extends MutatingCommand {
 
   private void checkDnsWriters(Tld newTld) {
     ImmutableSet<String> dnsWriters = newTld.getDnsWriters();
-    ImmutableSortedSet<String> invalidDnsWriters =
-        ImmutableSortedSet.copyOf(Sets.difference(dnsWriters, validDnsWriterNames));
+    SetView<String> invalidDnsWriters = Sets.difference(dnsWriters, validDnsWriterNames);
     Preconditions.checkArgument(
         invalidDnsWriters.isEmpty(), "Invalid DNS writer name(s) specified: %s", invalidDnsWriters);
   }

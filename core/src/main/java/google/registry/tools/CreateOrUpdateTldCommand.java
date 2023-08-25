@@ -25,8 +25,8 @@ import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
-import com.google.common.collect.ImmutableSortedSet;
 import com.google.common.collect.Sets;
+import com.google.common.collect.Sets.SetView;
 import google.registry.model.pricing.StaticPremiumListPricingEngine;
 import google.registry.model.tld.Tld;
 import google.registry.model.tld.Tld.TldState;
@@ -409,8 +409,7 @@ abstract class CreateOrUpdateTldCommand extends MutatingCommand {
 
       if (dnsWriters != null) {
         ImmutableSet<String> dnsWritersSet = ImmutableSet.copyOf(dnsWriters);
-        ImmutableSortedSet<String> invalidDnsWriters =
-            ImmutableSortedSet.copyOf(Sets.difference(dnsWritersSet, validDnsWriterNames));
+        SetView<String> invalidDnsWriters = Sets.difference(dnsWritersSet, validDnsWriterNames);
         checkArgument(
             invalidDnsWriters.isEmpty(),
             "Invalid DNS writer name(s) specified: %s",
