@@ -21,12 +21,14 @@ import static google.registry.model.domain.token.AllocationToken.TokenStatus.NOT
 import static google.registry.model.domain.token.AllocationToken.TokenStatus.VALID;
 import static google.registry.model.domain.token.AllocationToken.TokenType.SINGLE_USE;
 import static google.registry.model.domain.token.AllocationToken.TokenType.UNLIMITED_USE;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.EppExceptionSubject.assertAboutEppExceptions;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static org.joda.time.DateTimeZone.UTC;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -89,14 +91,18 @@ class AllocationTokenFlowUtilsTest {
                 .build());
     when(allocationTokenExtension.getAllocationToken()).thenReturn("tokeN");
     assertThat(
-            flowUtils
-                .verifyAllocationTokenCreateIfPresent(
-                    createCommand("blah.tld"),
-                    Tld.get("tld"),
-                    "TheRegistrar",
-                    DateTime.now(UTC),
-                    Optional.of(allocationTokenExtension))
-                .get())
+            tm().transact(
+                    () ->
+                        assertDoesNotThrow(
+                            () ->
+                                flowUtils
+                                    .verifyAllocationTokenCreateIfPresent(
+                                        createCommand("blah.tld"),
+                                        Tld.get("tld"),
+                                        "TheRegistrar",
+                                        DateTime.now(UTC),
+                                        Optional.of(allocationTokenExtension))
+                                    .get())))
         .isEqualTo(token);
   }
 
@@ -111,15 +117,19 @@ class AllocationTokenFlowUtilsTest {
                 .build());
     when(allocationTokenExtension.getAllocationToken()).thenReturn("tokeN");
     assertThat(
-            flowUtils
-                .verifyAllocationTokenIfPresent(
-                    DatabaseHelper.newDomain("blah.tld"),
-                    Tld.get("tld"),
-                    "TheRegistrar",
-                    DateTime.now(UTC),
-                    CommandName.RENEW,
-                    Optional.of(allocationTokenExtension))
-                .get())
+            tm().transact(
+                    () ->
+                        assertDoesNotThrow(
+                            () ->
+                                flowUtils
+                                    .verifyAllocationTokenIfPresent(
+                                        DatabaseHelper.newDomain("blah.tld"),
+                                        Tld.get("tld"),
+                                        "TheRegistrar",
+                                        DateTime.now(UTC),
+                                        CommandName.RENEW,
+                                        Optional.of(allocationTokenExtension))
+                                    .get())))
         .isEqualTo(token);
   }
 
@@ -130,15 +140,19 @@ class AllocationTokenFlowUtilsTest {
             new AllocationToken.Builder().setToken("tokeN").setTokenType(SINGLE_USE).build());
     when(allocationTokenExtension.getAllocationToken()).thenReturn("tokeN");
     assertThat(
-            flowUtils
-                .verifyAllocationTokenIfPresent(
-                    DatabaseHelper.newDomain("blah.tld"),
-                    Tld.get("tld"),
-                    "TheRegistrar",
-                    DateTime.now(UTC),
-                    CommandName.RENEW,
-                    Optional.of(allocationTokenExtension))
-                .get())
+            tm().transact(
+                    () ->
+                        assertDoesNotThrow(
+                            () ->
+                                flowUtils
+                                    .verifyAllocationTokenIfPresent(
+                                        DatabaseHelper.newDomain("blah.tld"),
+                                        Tld.get("tld"),
+                                        "TheRegistrar",
+                                        DateTime.now(UTC),
+                                        CommandName.RENEW,
+                                        Optional.of(allocationTokenExtension))
+                                    .get())))
         .isEqualTo(token);
   }
 
@@ -156,15 +170,17 @@ class AllocationTokenFlowUtilsTest {
   void test_validateTokenCreate_failsOnNullToken() {
     assertAboutEppExceptions()
         .that(
-            assertThrows(
-                InvalidAllocationTokenException.class,
-                () ->
-                    flowUtils.verifyAllocationTokenCreateIfPresent(
-                        createCommand("blah.tld"),
-                        Tld.get("tld"),
-                        "TheRegistrar",
-                        DateTime.now(UTC),
-                        Optional.of(allocationTokenExtension))))
+            tm().transact(
+                    () ->
+                        assertThrows(
+                            InvalidAllocationTokenException.class,
+                            () ->
+                                flowUtils.verifyAllocationTokenCreateIfPresent(
+                                    createCommand("blah.tld"),
+                                    Tld.get("tld"),
+                                    "TheRegistrar",
+                                    DateTime.now(UTC),
+                                    Optional.of(allocationTokenExtension)))))
         .marshalsToXml();
   }
 
@@ -172,16 +188,18 @@ class AllocationTokenFlowUtilsTest {
   void test_validateTokenExistingDomain_failsOnNullToken() {
     assertAboutEppExceptions()
         .that(
-            assertThrows(
-                InvalidAllocationTokenException.class,
-                () ->
-                    flowUtils.verifyAllocationTokenIfPresent(
-                        DatabaseHelper.newDomain("blah.tld"),
-                        Tld.get("tld"),
-                        "TheRegistrar",
-                        DateTime.now(UTC),
-                        CommandName.RENEW,
-                        Optional.of(allocationTokenExtension))))
+            tm().transact(
+                    () ->
+                        assertThrows(
+                            InvalidAllocationTokenException.class,
+                            () ->
+                                flowUtils.verifyAllocationTokenIfPresent(
+                                    DatabaseHelper.newDomain("blah.tld"),
+                                    Tld.get("tld"),
+                                    "TheRegistrar",
+                                    DateTime.now(UTC),
+                                    CommandName.RENEW,
+                                    Optional.of(allocationTokenExtension)))))
         .marshalsToXml();
   }
 
@@ -193,15 +211,17 @@ class AllocationTokenFlowUtilsTest {
         new AllocationToken.Builder().setToken("tokeN").setTokenType(SINGLE_USE).build());
     when(allocationTokenExtension.getAllocationToken()).thenReturn("tokeN");
     Exception thrown =
-        assertThrows(
-            IllegalStateException.class,
-            () ->
-                failingFlowUtils.verifyAllocationTokenCreateIfPresent(
-                    createCommand("blah.tld"),
-                    Tld.get("tld"),
-                    "TheRegistrar",
-                    DateTime.now(UTC),
-                    Optional.of(allocationTokenExtension)));
+        tm().transact(
+                () ->
+                    assertThrows(
+                        IllegalStateException.class,
+                        () ->
+                            failingFlowUtils.verifyAllocationTokenCreateIfPresent(
+                                createCommand("blah.tld"),
+                                Tld.get("tld"),
+                                "TheRegistrar",
+                                DateTime.now(UTC),
+                                Optional.of(allocationTokenExtension))));
     assertThat(thrown).hasMessageThat().isEqualTo("failed for tests");
   }
 
@@ -213,16 +233,18 @@ class AllocationTokenFlowUtilsTest {
         new AllocationToken.Builder().setToken("tokeN").setTokenType(SINGLE_USE).build());
     when(allocationTokenExtension.getAllocationToken()).thenReturn("tokeN");
     Exception thrown =
-        assertThrows(
-            IllegalStateException.class,
-            () ->
-                failingFlowUtils.verifyAllocationTokenIfPresent(
-                    DatabaseHelper.newDomain("blah.tld"),
-                    Tld.get("tld"),
-                    "TheRegistrar",
-                    DateTime.now(UTC),
-                    CommandName.RENEW,
-                    Optional.of(allocationTokenExtension)));
+        tm().transact(
+                () ->
+                    assertThrows(
+                        IllegalStateException.class,
+                        () ->
+                            failingFlowUtils.verifyAllocationTokenIfPresent(
+                                DatabaseHelper.newDomain("blah.tld"),
+                                Tld.get("tld"),
+                                "TheRegistrar",
+                                DateTime.now(UTC),
+                                CommandName.RENEW,
+                                Optional.of(allocationTokenExtension))));
     assertThat(thrown).hasMessageThat().isEqualTo("failed for tests");
   }
 
@@ -341,14 +363,17 @@ class AllocationTokenFlowUtilsTest {
     persistResource(
         new AllocationToken.Builder().setToken("tokeN").setTokenType(SINGLE_USE).build());
     assertThat(
-            flowUtils
-                .checkDomainsWithToken(
-                    ImmutableList.of(
-                        InternetDomainName.from("blah.tld"), InternetDomainName.from("blah2.tld")),
-                    "tokeN",
-                    "TheRegistrar",
-                    DateTime.now(UTC))
-                .domainCheckResults())
+            tm().transact(
+                    () ->
+                        flowUtils
+                            .checkDomainsWithToken(
+                                ImmutableList.of(
+                                    InternetDomainName.from("blah.tld"),
+                                    InternetDomainName.from("blah2.tld")),
+                                "tokeN",
+                                "TheRegistrar",
+                                DateTime.now(UTC))
+                            .domainCheckResults()))
         .containsExactlyEntriesIn(
             ImmutableMap.of(
                 InternetDomainName.from("blah.tld"), "", InternetDomainName.from("blah2.tld"), ""))
@@ -366,14 +391,17 @@ class AllocationTokenFlowUtilsTest {
             .setRedemptionHistoryId(historyEntryId)
             .build());
     assertThat(
-            flowUtils
-                .checkDomainsWithToken(
-                    ImmutableList.of(
-                        InternetDomainName.from("blah.tld"), InternetDomainName.from("blah2.tld")),
-                    "tokeN",
-                    "TheRegistrar",
-                    DateTime.now(UTC))
-                .domainCheckResults())
+            tm().transact(
+                    () ->
+                        flowUtils
+                            .checkDomainsWithToken(
+                                ImmutableList.of(
+                                    InternetDomainName.from("blah.tld"),
+                                    InternetDomainName.from("blah2.tld")),
+                                "tokeN",
+                                "TheRegistrar",
+                                DateTime.now(UTC))
+                            .domainCheckResults()))
         .containsExactlyEntriesIn(
             ImmutableMap.of(
                 InternetDomainName.from("blah.tld"),
@@ -393,12 +421,15 @@ class AllocationTokenFlowUtilsTest {
         assertThrows(
             IllegalStateException.class,
             () ->
-                failingFlowUtils.checkDomainsWithToken(
-                    ImmutableList.of(
-                        InternetDomainName.from("blah.tld"), InternetDomainName.from("blah2.tld")),
-                    "tokeN",
-                    "TheRegistrar",
-                    DateTime.now(UTC)));
+                tm().transact(
+                        () ->
+                            failingFlowUtils.checkDomainsWithToken(
+                                ImmutableList.of(
+                                    InternetDomainName.from("blah.tld"),
+                                    InternetDomainName.from("blah2.tld")),
+                                "tokeN",
+                                "TheRegistrar",
+                                DateTime.now(UTC))));
     assertThat(thrown).hasMessageThat().isEqualTo("failed for tests");
   }
 
@@ -409,14 +440,17 @@ class AllocationTokenFlowUtilsTest {
     AllocationTokenFlowUtils customResultFlowUtils =
         new AllocationTokenFlowUtils(new CustomResultAllocationTokenCustomLogic());
     assertThat(
-            customResultFlowUtils
-                .checkDomainsWithToken(
-                    ImmutableList.of(
-                        InternetDomainName.from("blah.tld"), InternetDomainName.from("bunny.tld")),
-                    "tokeN",
-                    "TheRegistrar",
-                    DateTime.now(UTC))
-                .domainCheckResults())
+            tm().transact(
+                    () ->
+                        customResultFlowUtils
+                            .checkDomainsWithToken(
+                                ImmutableList.of(
+                                    InternetDomainName.from("blah.tld"),
+                                    InternetDomainName.from("bunny.tld")),
+                                "tokeN",
+                                "TheRegistrar",
+                                DateTime.now(UTC))
+                            .domainCheckResults()))
         .containsExactlyEntriesIn(
             ImmutableMap.of(
                 InternetDomainName.from("blah.tld"),
@@ -444,16 +478,18 @@ class AllocationTokenFlowUtilsTest {
   private void assertValidateExistingDomainThrowsEppException(Class<? extends EppException> clazz) {
     assertAboutEppExceptions()
         .that(
-            assertThrows(
-                clazz,
-                () ->
-                    flowUtils.verifyAllocationTokenIfPresent(
-                        DatabaseHelper.newDomain("blah.tld"),
-                        Tld.get("tld"),
-                        "TheRegistrar",
-                        DateTime.now(UTC),
-                        CommandName.RENEW,
-                        Optional.of(allocationTokenExtension))))
+            tm().transact(
+                    () ->
+                        assertThrows(
+                            clazz,
+                            () ->
+                                flowUtils.verifyAllocationTokenIfPresent(
+                                    DatabaseHelper.newDomain("blah.tld"),
+                                    Tld.get("tld"),
+                                    "TheRegistrar",
+                                    DateTime.now(UTC),
+                                    CommandName.RENEW,
+                                    Optional.of(allocationTokenExtension)))))
         .marshalsToXml();
   }
 
