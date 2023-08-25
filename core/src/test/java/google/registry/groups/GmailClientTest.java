@@ -61,7 +61,7 @@ public class GmailClientTest {
 
   private GmailClient getGmailClient(boolean isExternalEmailAllowed) throws Exception {
     return new GmailClient(
-        gmail,
+        () -> gmail,
         new Retrier(new SystemSleeper(), 3),
         isExternalEmailAllowed,
         "from@example.com",

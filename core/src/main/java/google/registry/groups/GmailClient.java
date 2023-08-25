@@ -23,6 +23,7 @@ import com.google.api.services.gmail.model.Message;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.flogger.FluentLogger;
 import com.google.common.net.MediaType;
+import dagger.Lazy;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.util.EmailMessage;
 import google.registry.util.EmailMessage.Attachment;
@@ -49,7 +50,7 @@ public final class GmailClient {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
-  private final Gmail gmail;
+  private final Lazy<Gmail> gmail;
   private final Retrier retrier;
   private final boolean isEmailSendingEnabled;
   private final InternetAddress outgoingEmailAddressWithUsername;
@@ -57,7 +58,7 @@ public final class GmailClient {
 
   @Inject
   GmailClient(
-      Gmail gmail,
+      Lazy<Gmail> gmail,
       Retrier retrier,
       @Config("isEmailSendingEnabled") boolean isEmailSendingEnabled,
       @Config("gSuiteNewOutgoingEmailAddress") String gSuiteOutgoingEmailAddress,
@@ -99,7 +100,7 @@ public final class GmailClient {
     // Unlike other Cloud APIs such as GCS and SecretManager, Gmail does not retry on errors.
     retrier.callWithRetry(
         // "me" is reserved word for the authorized user of the Gmail API.
-        () -> this.gmail.users().messages().send("me", message).execute(),
+        () -> this.gmail.get().users().messages().send("me", message).execute(),
         RetriableGmailExceptionPredicate.INSTANCE);
   }
 
