@@ -51,8 +51,8 @@ import google.registry.flows.ExtensionManager;
 import google.registry.flows.FlowModule.RegistrarId;
 import google.registry.flows.FlowModule.Superuser;
 import google.registry.flows.FlowModule.TargetId;
+import google.registry.flows.MutatingFlow;
 import google.registry.flows.SessionMetadata;
-import google.registry.flows.TransactionalFlow;
 import google.registry.flows.annotations.ReportingSpec;
 import google.registry.flows.custom.DomainDeleteFlowCustomLogic;
 import google.registry.flows.custom.DomainDeleteFlowCustomLogic.AfterValidationParameters;
@@ -115,7 +115,7 @@ import org.joda.time.Duration;
  * @error {@link DomainFlowUtils.NotAuthorizedForTldException}
  */
 @ReportingSpec(ActivityReportField.DOMAIN_DELETE)
-public final class DomainDeleteFlow implements TransactionalFlow {
+public final class DomainDeleteFlow implements MutatingFlow {
 
   private static final ImmutableSet<StatusValue> DISALLOWED_STATUSES = ImmutableSet.of(
       StatusValue.CLIENT_DELETE_PROHIBITED,

@@ -28,10 +28,10 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.net.InternetDomainName;
 import google.registry.flows.EppException;
 import google.registry.flows.ExtensionManager;
-import google.registry.flows.Flow;
 import google.registry.flows.FlowModule.RegistrarId;
 import google.registry.flows.FlowModule.Superuser;
 import google.registry.flows.FlowModule.TargetId;
+import google.registry.flows.TransactionalFlow;
 import google.registry.flows.annotations.ReportingSpec;
 import google.registry.flows.custom.DomainInfoFlowCustomLogic;
 import google.registry.flows.custom.DomainInfoFlowCustomLogic.AfterValidationParameters;
@@ -76,7 +76,7 @@ import org.joda.time.DateTime;
  * @error {@link DomainFlowUtils.TransfersAreAlwaysForOneYearException}
  */
 @ReportingSpec(ActivityReportField.DOMAIN_INFO)
-public final class DomainInfoFlow implements Flow {
+public final class DomainInfoFlow implements TransactionalFlow {
 
   @Inject ExtensionManager extensionManager;
   @Inject ResourceCommand resourceCommand;
@@ -120,14 +120,12 @@ public final class DomainInfoFlow implements Flow {
             .setLastEppUpdateTime(domain.getLastEppUpdateTime())
             .setRegistrationExpirationTime(domain.getRegistrationExpirationTime())
             .setLastTransferTime(domain.getLastTransferTime())
-            .setRegistrant(
-                tm().transact(() -> tm().loadByKey(domain.getRegistrant())).getContactId());
+            .setRegistrant(tm().loadByKey(domain.getRegistrant()).getContactId());
     // If authInfo is non-null, then the caller is authorized to see the full information since we
     // will have already verified the authInfo is valid.
     if (registrarId.equals(domain.getCurrentSponsorRegistrarId()) || authInfo.isPresent()) {
       infoBuilder
-          .setContacts(
-              tm().transact(() -> loadForeignKeyedDesignatedContacts(domain.getContacts())))
+          .setContacts(loadForeignKeyedDesignatedContacts(domain.getContacts()))
           .setSubordinateHosts(
               hostsRequest.requestSubordinate() ? domain.getSubordinateHosts() : null)
           .setCreationRegistrarId(domain.getCreationRegistrarId())
@@ -178,7 +176,7 @@ public final class DomainInfoFlow implements Flow {
           pricingLogic,
           Optional.empty(),
           false,
-          tm().transact(() -> tm().loadByKey(domain.getAutorenewBillingEvent())));
+          tm().loadByKey(domain.getAutorenewBillingEvent()));
       extensions.add(builder.build());
     }
     return extensions.build();

@@ -23,9 +23,9 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import com.google.common.collect.ImmutableSet;
 import google.registry.flows.EppException;
 import google.registry.flows.ExtensionManager;
-import google.registry.flows.Flow;
 import google.registry.flows.FlowModule.RegistrarId;
 import google.registry.flows.FlowModule.TargetId;
+import google.registry.flows.TransactionalFlow;
 import google.registry.flows.annotations.ReportingSpec;
 import google.registry.model.domain.Domain;
 import google.registry.model.eppcommon.StatusValue;
@@ -50,7 +50,7 @@ import org.joda.time.DateTime;
  * @error {@link HostFlowUtils.HostNameNotPunyCodedException}
  */
 @ReportingSpec(ActivityReportField.HOST_INFO)
-public final class HostInfoFlow implements Flow {
+public final class HostInfoFlow implements TransactionalFlow {
 
   @Inject ExtensionManager extensionManager;
   @Inject @RegistrarId String registrarId;
@@ -77,8 +77,7 @@ public final class HostInfoFlow implements Flow {
     // there is no superordinate domain, the host's own values for these fields will be correct.
     if (host.isSubordinate()) {
       Domain superordinateDomain =
-          tm().transact(
-                  () -> tm().loadByKey(host.getSuperordinateDomain()).cloneProjectedAtTime(now));
+          tm().loadByKey(host.getSuperordinateDomain()).cloneProjectedAtTime(now);
       hostInfoDataBuilder
           .setCurrentSponsorRegistrarId(superordinateDomain.getCurrentSponsorRegistrarId())
           .setLastTransferTime(host.computeLastTransferTime(superordinateDomain));

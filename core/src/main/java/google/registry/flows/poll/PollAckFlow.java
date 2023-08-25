@@ -31,7 +31,7 @@ import google.registry.flows.EppException.RequiredParameterMissingException;
 import google.registry.flows.ExtensionManager;
 import google.registry.flows.FlowModule.PollMessageId;
 import google.registry.flows.FlowModule.RegistrarId;
-import google.registry.flows.TransactionalFlow;
+import google.registry.flows.MutatingFlow;
 import google.registry.model.eppoutput.EppResponse;
 import google.registry.model.poll.MessageQueueInfo;
 import google.registry.model.poll.PollMessage;
@@ -55,7 +55,7 @@ import org.joda.time.DateTime;
  * @error {@link PollAckFlow.MissingMessageIdException}
  * @error {@link PollAckFlow.NotAuthorizedToAckMessageException}
  */
-public final class PollAckFlow implements TransactionalFlow {
+public final class PollAckFlow implements MutatingFlow {
 
   @Inject ExtensionManager extensionManager;
   @Inject @RegistrarId String registrarId;

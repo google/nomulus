@@ -78,6 +78,8 @@ public class FlowRunner {
       return EppOutput.create(flowProvider.get().run());
     }
     try {
+      // TODO(mcilwain/weiminyu): Use transactReadOnly() here for TransactionalFlow and transact()
+      //                          for MutatingFlow.
       return tm().transact(
               () -> {
                 try {

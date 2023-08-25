@@ -23,8 +23,8 @@ import com.google.common.collect.ImmutableSet;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.flows.EppException;
 import google.registry.flows.ExtensionManager;
-import google.registry.flows.Flow;
 import google.registry.flows.FlowModule.RegistrarId;
+import google.registry.flows.TransactionalFlow;
 import google.registry.flows.annotations.ReportingSpec;
 import google.registry.model.contact.Contact;
 import google.registry.model.contact.ContactCommand.Check;
@@ -45,7 +45,7 @@ import javax.inject.Inject;
  * @error {@link google.registry.flows.FlowUtils.NotLoggedInException}
  */
 @ReportingSpec(ActivityReportField.CONTACT_CHECK)
-public final class ContactCheckFlow implements Flow {
+public final class ContactCheckFlow implements TransactionalFlow {
 
   @Inject ResourceCommand resourceCommand;
   @Inject @RegistrarId String registrarId;

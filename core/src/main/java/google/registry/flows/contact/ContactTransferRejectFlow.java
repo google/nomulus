@@ -30,7 +30,7 @@ import google.registry.flows.EppException;
 import google.registry.flows.ExtensionManager;
 import google.registry.flows.FlowModule.RegistrarId;
 import google.registry.flows.FlowModule.TargetId;
-import google.registry.flows.TransactionalFlow;
+import google.registry.flows.MutatingFlow;
 import google.registry.flows.annotations.ReportingSpec;
 import google.registry.model.contact.Contact;
 import google.registry.model.contact.ContactHistory;
@@ -59,7 +59,7 @@ import org.joda.time.DateTime;
  * @error {@link google.registry.flows.exceptions.NotPendingTransferException}
  */
 @ReportingSpec(ActivityReportField.CONTACT_TRANSFER_REJECT)
-public final class ContactTransferRejectFlow implements TransactionalFlow {
+public final class ContactTransferRejectFlow implements MutatingFlow {
 
   @Inject ExtensionManager extensionManager;
   @Inject Optional<AuthInfo> authInfo;

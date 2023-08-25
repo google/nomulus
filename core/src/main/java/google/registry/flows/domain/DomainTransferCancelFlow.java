@@ -37,7 +37,7 @@ import google.registry.flows.ExtensionManager;
 import google.registry.flows.FlowModule.RegistrarId;
 import google.registry.flows.FlowModule.Superuser;
 import google.registry.flows.FlowModule.TargetId;
-import google.registry.flows.TransactionalFlow;
+import google.registry.flows.MutatingFlow;
 import google.registry.flows.annotations.ReportingSpec;
 import google.registry.model.billing.BillingRecurrence;
 import google.registry.model.domain.Domain;
@@ -74,7 +74,7 @@ import org.joda.time.DateTime;
  * @error {@link DomainFlowUtils.NotAuthorizedForTldException}
  */
 @ReportingSpec(ActivityReportField.DOMAIN_TRANSFER_CANCEL)
-public final class DomainTransferCancelFlow implements TransactionalFlow {
+public final class DomainTransferCancelFlow implements MutatingFlow {
 
   @Inject ExtensionManager extensionManager;
   @Inject Optional<AuthInfo> authInfo;
