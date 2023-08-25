@@ -183,11 +183,13 @@ public final class DomainCheckFlow implements Flow {
     Optional<AllocationTokenDomainCheckResults> tokenDomainCheckResults =
         allocationTokenExtension.map(
             tokenExtension ->
-                allocationTokenFlowUtils.checkDomainsWithToken(
-                    ImmutableList.copyOf(parsedDomains.values()),
-                    tokenExtension.getAllocationToken(),
-                    registrarId,
-                    now));
+                tm().transact(
+                        () ->
+                            allocationTokenFlowUtils.checkDomainsWithToken(
+                                ImmutableList.copyOf(parsedDomains.values()),
+                                tokenExtension.getAllocationToken(),
+                                registrarId,
+                                now)));
 
     ImmutableList.Builder<DomainCheck> checksBuilder = new ImmutableList.Builder<>();
     ImmutableSet.Builder<String> availableDomains = new ImmutableSet.Builder<>();
