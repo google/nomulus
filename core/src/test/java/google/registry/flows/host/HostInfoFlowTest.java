@@ -82,7 +82,7 @@ class HostInfoFlowTest extends ResourceFlowTestCase<HostInfoFlow, Host> {
   @Test
   void testSuccess() throws Exception {
     persistHost();
-    assertTransactionalFlow(false);
+    assertMutatingFlow(false);
     // Check that the persisted host info was returned.
     runFlowAssertResponse(
         loadFile("host_info_response.xml"),
@@ -100,7 +100,7 @@ class HostInfoFlowTest extends ResourceFlowTestCase<HostInfoFlow, Host> {
             .asBuilder()
             .addNameserver(persistHost().createVKey())
             .build());
-    assertTransactionalFlow(false);
+    assertMutatingFlow(false);
     // Check that the persisted host info was returned.
     runFlowAssertResponse(
         loadFile("host_info_response_linked.xml"),
@@ -131,7 +131,7 @@ class HostInfoFlowTest extends ResourceFlowTestCase<HostInfoFlow, Host> {
             .build());
     // we shouldn't have two active hosts with the same hostname
     deleteResource(firstHost);
-    assertTransactionalFlow(false);
+    assertMutatingFlow(false);
     runFlowAssertResponse(
         loadFile("host_info_response_superordinate_clientid.xml"),
         // We use a different roid scheme than the samples so ignore it.

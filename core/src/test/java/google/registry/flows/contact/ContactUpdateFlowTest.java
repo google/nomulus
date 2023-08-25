@@ -53,7 +53,7 @@ class ContactUpdateFlowTest extends ResourceFlowTestCase<ContactUpdateFlow, Cont
 
   private void doSuccessfulTest() throws Exception {
     clock.advanceOneMilli();
-    assertTransactionalFlow(true);
+    assertMutatingFlow(true);
     runFlowAssertResponse(loadFile("generic_success_response.xml"));
     Contact contact = reloadResourceByForeignKey();
     // Check that the contact was updated. This value came from the xml.

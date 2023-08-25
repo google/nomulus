@@ -43,9 +43,9 @@ import google.registry.config.RegistryConfig.Config;
 import google.registry.flows.EppException;
 import google.registry.flows.EppException.ParameterValuePolicyErrorException;
 import google.registry.flows.ExtensionManager;
-import google.registry.flows.Flow;
 import google.registry.flows.FlowModule.RegistrarId;
 import google.registry.flows.FlowModule.Superuser;
+import google.registry.flows.TransactionalFlow;
 import google.registry.flows.annotations.ReportingSpec;
 import google.registry.flows.custom.DomainCheckFlowCustomLogic;
 import google.registry.flows.custom.DomainCheckFlowCustomLogic.BeforeResponseParameters;
@@ -121,7 +121,7 @@ import org.joda.time.DateTime;
  * @error {@link OnlyCheckedNamesCanBeFeeCheckedException}
  */
 @ReportingSpec(ActivityReportField.DOMAIN_CHECK)
-public final class DomainCheckFlow implements Flow {
+public final class DomainCheckFlow implements TransactionalFlow {
 
   @Inject ResourceCommand resourceCommand;
   @Inject ExtensionManager extensionManager;
@@ -382,17 +382,13 @@ public final class DomainCheckFlow implements Flow {
 
   private ImmutableMap<String, BillingRecurrence> loadRecurrencesForDomains(
       ImmutableMap<String, Domain> domainObjs) {
-    return tm().transact(
-            () -> {
-              ImmutableMap<VKey<? extends BillingRecurrence>, BillingRecurrence> recurrences =
-                  tm().loadByKeys(
-                          domainObjs.values().stream()
-                              .map(Domain::getAutorenewBillingEvent)
-                              .collect(toImmutableSet()));
-              return ImmutableMap.copyOf(
-                  Maps.transformValues(
-                      domainObjs, d -> recurrences.get(d.getAutorenewBillingEvent())));
-            });
+    ImmutableMap<VKey<? extends BillingRecurrence>, BillingRecurrence> recurrences =
+        tm().loadByKeys(
+                domainObjs.values().stream()
+                    .map(Domain::getAutorenewBillingEvent)
+                    .collect(toImmutableSet()));
+    return ImmutableMap.copyOf(
+        Maps.transformValues(domainObjs, d -> recurrences.get(d.getAutorenewBillingEvent())));
   }
 
   /**

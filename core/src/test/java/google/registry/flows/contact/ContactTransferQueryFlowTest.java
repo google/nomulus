@@ -53,7 +53,7 @@ class ContactTransferQueryFlowTest
     setEppInput(commandFilename);
     eppLoader.replaceAll("JD1234-REP", contact.getRepoId());
     // Setup done; run the test.
-    assertTransactionalFlow(false);
+    assertMutatingFlow(false);
     runFlowAssertResponse(loadFile(expectedXmlFilename));
     assertAboutContacts().that(reloadResourceByForeignKey(clock.nowUtc().minusDays(1)))
         .hasOneHistoryEntryEachOfTypes(HistoryEntry.Type.CONTACT_TRANSFER_REQUEST);
@@ -64,7 +64,7 @@ class ContactTransferQueryFlowTest
     setEppInput(commandFilename);
     eppLoader.replaceAll("JD1234-REP", contact.getRepoId());
     // Setup done; run the test.
-    assertTransactionalFlow(false);
+    assertMutatingFlow(false);
     runFlow();
   }
 

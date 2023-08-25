@@ -109,7 +109,7 @@ public final class ForeignKeyUtils {
       Class<E> clazz, Collection<String> foreignKeys, boolean useReplicaTm) {
     String fkProperty = RESOURCE_TYPE_TO_FK_PROPERTY.get(clazz);
     JpaTransactionManager tmToUse = useReplicaTm ? replicaTm() : tm();
-    return tmToUse.transact(
+    return tmToUse.reTransact(
         () ->
             tmToUse
                 .query(

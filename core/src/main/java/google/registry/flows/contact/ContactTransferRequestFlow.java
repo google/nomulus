@@ -33,7 +33,7 @@ import google.registry.flows.EppException;
 import google.registry.flows.ExtensionManager;
 import google.registry.flows.FlowModule.RegistrarId;
 import google.registry.flows.FlowModule.TargetId;
-import google.registry.flows.TransactionalFlow;
+import google.registry.flows.MutatingFlow;
 import google.registry.flows.annotations.ReportingSpec;
 import google.registry.flows.exceptions.AlreadyPendingTransferException;
 import google.registry.flows.exceptions.ObjectAlreadySponsoredException;
@@ -72,7 +72,7 @@ import org.joda.time.Duration;
  * @error {@link google.registry.flows.exceptions.ResourceStatusProhibitsOperationException}
  */
 @ReportingSpec(ActivityReportField.CONTACT_TRANSFER_REQUEST)
-public final class ContactTransferRequestFlow implements TransactionalFlow {
+public final class ContactTransferRequestFlow implements MutatingFlow {
 
   private static final ImmutableSet<StatusValue> DISALLOWED_STATUSES =
       ImmutableSet.of(

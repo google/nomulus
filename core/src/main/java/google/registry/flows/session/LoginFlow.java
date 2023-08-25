@@ -30,8 +30,8 @@ import google.registry.flows.EppException.UnimplementedExtensionException;
 import google.registry.flows.EppException.UnimplementedObjectServiceException;
 import google.registry.flows.ExtensionManager;
 import google.registry.flows.FlowModule.RegistrarId;
+import google.registry.flows.MutatingFlow;
 import google.registry.flows.SessionMetadata;
-import google.registry.flows.TransactionalFlow;
 import google.registry.flows.TransportCredentials;
 import google.registry.model.eppcommon.ProtocolDefinition;
 import google.registry.model.eppcommon.ProtocolDefinition.ServiceExtension;
@@ -62,7 +62,7 @@ import javax.inject.Inject;
  * @error {@link LoginFlow.RegistrarAccountNotActiveException}
  * @error {@link LoginFlow.UnsupportedLanguageException}
  */
-public class LoginFlow implements TransactionalFlow {
+public class LoginFlow implements MutatingFlow {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 

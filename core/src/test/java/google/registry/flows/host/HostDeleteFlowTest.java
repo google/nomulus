@@ -77,7 +77,7 @@ class HostDeleteFlowTest extends ResourceFlowTestCase<HostDeleteFlow, Host> {
   void testSuccess() throws Exception {
     persistActiveHost("ns1.example.tld");
     clock.advanceOneMilli();
-    assertTransactionalFlow(true);
+    assertMutatingFlow(true);
     runFlowAssertResponse(loadFile("host_delete_response.xml"));
     assertSqlDeleteSuccess();
   }
@@ -87,7 +87,7 @@ class HostDeleteFlowTest extends ResourceFlowTestCase<HostDeleteFlow, Host> {
     setEppInput("host_delete_no_cltrid.xml", ImmutableMap.of("HOSTNAME", "ns1.example.tld"));
     persistActiveHost("ns1.example.tld");
     clock.advanceOneMilli();
-    assertTransactionalFlow(true);
+    assertMutatingFlow(true);
     runFlowAssertResponse(loadFile("host_delete_response_no_cltrid.xml"));
     assertSqlDeleteSuccess();
   }

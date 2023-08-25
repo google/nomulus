@@ -69,7 +69,7 @@ class ContactTransferApproveFlowTest
     // Setup done; run the test.
     contact = reloadResourceByForeignKey();
     TransferData originalTransferData = contact.getTransferData();
-    assertTransactionalFlow(true);
+    assertMutatingFlow(true);
     runFlowAssertResponse(loadFile(expectedXmlFilename));
 
     // Transfer should have succeeded. Verify correct fields were set.
@@ -120,7 +120,7 @@ class ContactTransferApproveFlowTest
   private void doFailingTest(String commandFilename) throws Exception {
     setEppInput(commandFilename);
     // Setup done; run the test.
-    assertTransactionalFlow(true);
+    assertMutatingFlow(true);
     runFlow();
   }
 

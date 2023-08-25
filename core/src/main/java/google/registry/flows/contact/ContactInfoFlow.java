@@ -22,10 +22,10 @@ import static google.registry.model.EppResourceUtils.isLinked;
 import com.google.common.collect.ImmutableSet;
 import google.registry.flows.EppException;
 import google.registry.flows.ExtensionManager;
-import google.registry.flows.Flow;
 import google.registry.flows.FlowModule.RegistrarId;
 import google.registry.flows.FlowModule.Superuser;
 import google.registry.flows.FlowModule.TargetId;
+import google.registry.flows.TransactionalFlow;
 import google.registry.flows.annotations.ReportingSpec;
 import google.registry.model.contact.Contact;
 import google.registry.model.contact.ContactInfoData;
@@ -51,7 +51,7 @@ import org.joda.time.DateTime;
  * @error {@link google.registry.flows.ResourceFlowUtils.ResourceNotOwnedException}
  */
 @ReportingSpec(ActivityReportField.CONTACT_INFO)
-public final class ContactInfoFlow implements Flow {
+public final class ContactInfoFlow implements TransactionalFlow {
 
   @Inject ExtensionManager extensionManager;
   @Inject Clock clock;

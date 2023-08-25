@@ -145,14 +145,14 @@ public abstract class FlowTestCase<F extends Flow> {
     sessionMetadata.setRegistrarId(registrarId);
   }
 
-  public void assertTransactionalFlow(boolean isTransactional) throws Exception {
+  public void assertMutatingFlow(boolean isMutating) throws Exception {
     Class<? extends Flow> flowClass = FlowPicker.getFlowClass(eppLoader.getEpp());
-    if (isTransactional) {
-      assertThat(flowClass).isAssignableTo(TransactionalFlow.class);
+    if (isMutating) {
+      assertThat(flowClass).isAssignableTo(MutatingFlow.class);
     } else {
       // There's no "isNotAssignableTo" in Truth.
-      assertWithMessage(flowClass.getSimpleName() + " implements TransactionalFlow")
-          .that(TransactionalFlow.class.isAssignableFrom(flowClass))
+      assertWithMessage(flowClass.getSimpleName() + " implements MutatingFlow")
+          .that(MutatingFlow.class.isAssignableFrom(flowClass))
           .isFalse();
     }
   }

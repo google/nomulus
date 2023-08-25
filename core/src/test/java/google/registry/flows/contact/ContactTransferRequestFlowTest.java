@@ -78,7 +78,7 @@ class ContactTransferRequestFlowTest
     DateTime afterTransfer = clock.nowUtc().plus(getContactAutomaticTransferLength());
 
     // Setup done; run the test.
-    assertTransactionalFlow(true);
+    assertMutatingFlow(true);
     runFlowAssertResponse(loadFile(expectedXmlFilename));
 
     // Transfer should have been requested. Verify correct fields were set.
@@ -140,7 +140,7 @@ class ContactTransferRequestFlowTest
   private void doFailingTest(String commandFilename) throws Exception {
     setEppInput(commandFilename);
     // Setup done; run the test.
-    assertTransactionalFlow(true);
+    assertMutatingFlow(true);
     runFlow();
   }
 

@@ -200,7 +200,7 @@ class DomainTransferApproveFlowTest
     assertThat(getPollMessages(domain, "TheRegistrar", clock.nowUtc().plusMonths(1))).hasSize(1);
     // Setup done; run the test.
     DomainTransferData originalTransferData = domain.getTransferData();
-    assertTransactionalFlow(true);
+    assertMutatingFlow(true);
     runFlowAssertResponse(loadFile(expectedXmlFilename));
     // Transfer should have succeeded. Verify correct fields were set.
     domain = reloadResourceByForeignKey();
@@ -364,7 +364,7 @@ class DomainTransferApproveFlowTest
   private void doFailingTest(String commandFilename) throws Exception {
     setEppLoader(commandFilename);
     // Setup done; run the test.
-    assertTransactionalFlow(true);
+    assertMutatingFlow(true);
     runFlow();
   }
 

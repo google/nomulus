@@ -428,7 +428,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
       UserPrivileges userPrivileges,
       Map<String, String> substitutions)
       throws Exception {
-    assertTransactionalFlow(true);
+    assertMutatingFlow(true);
     runFlowAssertResponse(
         CommitMode.LIVE, userPrivileges, loadFile(responseXmlFile, substitutions));
     assertSuccessfulCreate(domainTld, ImmutableSet.of());
@@ -613,7 +613,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     createTld("foo.tld");
     setEppInput("domain_create_with_tld.xml", ImmutableMap.of("TLD", "foo.tld"));
     persistContactsAndHosts("foo.tld");
-    assertTransactionalFlow(true);
+    assertMutatingFlow(true);
     String expectedResponseXml =
         loadFile("domain_create_response.xml", ImmutableMap.of("DOMAIN", "example.foo.tld"));
     runFlowAssertResponse(CommitMode.LIVE, UserPrivileges.NORMAL, expectedResponseXml);

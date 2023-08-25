@@ -35,7 +35,7 @@ import google.registry.flows.EppException.RequiredParameterMissingException;
 import google.registry.flows.ExtensionManager;
 import google.registry.flows.FlowModule.RegistrarId;
 import google.registry.flows.FlowModule.TargetId;
-import google.registry.flows.TransactionalFlow;
+import google.registry.flows.MutatingFlow;
 import google.registry.flows.annotations.ReportingSpec;
 import google.registry.flows.exceptions.ResourceAlreadyExistsForThisClientException;
 import google.registry.flows.exceptions.ResourceCreateContentionException;
@@ -78,7 +78,7 @@ import org.joda.time.DateTime;
  * @error {@link UnexpectedExternalHostIpException}
  */
 @ReportingSpec(ActivityReportField.HOST_CREATE)
-public final class HostCreateFlow implements TransactionalFlow {
+public final class HostCreateFlow implements MutatingFlow {
 
   @Inject ResourceCommand resourceCommand;
   @Inject ExtensionManager extensionManager;

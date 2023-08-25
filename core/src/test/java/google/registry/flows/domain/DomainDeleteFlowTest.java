@@ -152,7 +152,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
                 .setAutorenewPollMessage(autorenewPollMessage.createVKey())
                 .build());
 
-    assertTransactionalFlow(true);
+    assertMutatingFlow(true);
   }
 
   private void createReferencedEntities(DateTime expirationTime) throws Exception {
@@ -217,7 +217,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
                 .setAutorenewBillingEvent(autorenewBillingEvent.createVKey())
                 .setAutorenewPollMessage(autorenewPollMessage.createVKey())
                 .build());
-    assertTransactionalFlow(true);
+    assertMutatingFlow(true);
   }
 
   private void assertAutorenewClosedAndCancellationCreatedFor(

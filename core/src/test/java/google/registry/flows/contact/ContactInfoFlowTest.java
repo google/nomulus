@@ -109,7 +109,7 @@ class ContactInfoFlowTest extends ResourceFlowTestCase<ContactInfoFlow, Contact>
   void testSuccess() throws Exception {
     persistContact(true);
     // Check that the persisted contact info was returned.
-    assertTransactionalFlow(false);
+    assertMutatingFlow(false);
     runFlowAssertResponse(
         loadFile("contact_info_response.xml"),
         // We use a different roid scheme than the samples so ignore it.
@@ -123,7 +123,7 @@ class ContactInfoFlowTest extends ResourceFlowTestCase<ContactInfoFlow, Contact>
     createTld("foobar");
     persistResource(DatabaseHelper.newDomain("example.foobar", persistContact(true)));
     // Check that the persisted contact info was returned.
-    assertTransactionalFlow(false);
+    assertMutatingFlow(false);
     runFlowAssertResponse(
         loadFile("contact_info_response_linked.xml"),
         // We use a different roid scheme than the samples so ignore it.
@@ -137,7 +137,7 @@ class ContactInfoFlowTest extends ResourceFlowTestCase<ContactInfoFlow, Contact>
     setEppInput("contact_info_no_authinfo.xml");
     persistContact(true);
     // Check that the persisted contact info was returned.
-    assertTransactionalFlow(false);
+    assertMutatingFlow(false);
     runFlowAssertResponse(
         loadFile("contact_info_response.xml"),
         // We use a different roid scheme than the samples so ignore it.
@@ -151,7 +151,7 @@ class ContactInfoFlowTest extends ResourceFlowTestCase<ContactInfoFlow, Contact>
     setRegistrarIdForFlow("NewRegistrar");
     persistContact(true);
     // Check that the persisted contact info was returned.
-    assertTransactionalFlow(false);
+    assertMutatingFlow(false);
     ResourceNotOwnedException thrown = assertThrows(ResourceNotOwnedException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
@@ -162,7 +162,7 @@ class ContactInfoFlowTest extends ResourceFlowTestCase<ContactInfoFlow, Contact>
     setEppInput("contact_info_no_authinfo.xml");
     persistContact(true);
     // Check that the persisted contact info was returned.
-    assertTransactionalFlow(false);
+    assertMutatingFlow(false);
     runFlowAssertResponse(
         CommitMode.LIVE,
         UserPrivileges.SUPERUSER,
@@ -178,7 +178,7 @@ class ContactInfoFlowTest extends ResourceFlowTestCase<ContactInfoFlow, Contact>
     setRegistrarIdForFlow("NewRegistrar");
     persistContact(true);
     // Check that the persisted contact info was returned.
-    assertTransactionalFlow(false);
+    assertMutatingFlow(false);
     runFlowAssertResponse(
         CommitMode.LIVE,
         UserPrivileges.SUPERUSER,

@@ -81,7 +81,7 @@ class HostCreateFlowTest extends ResourceFlowTestCase<HostCreateFlow, Host> {
 
   private void doSuccessfulTest() throws Exception {
     clock.advanceOneMilli();
-    assertTransactionalFlow(true);
+    assertMutatingFlow(true);
     runFlowAssertResponse(loadFile("host_create_response.xml"));
     Host host = reloadResourceByForeignKey();
     // Check that the host was created and persisted with a history entry.

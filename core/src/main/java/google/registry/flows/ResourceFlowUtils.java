@@ -72,17 +72,12 @@ public final class ResourceFlowUtils {
    */
   public static <R extends EppResource> void checkLinkedDomains(
       final String targetId, final DateTime now, final Class<R> resourceClass) throws EppException {
-    EppException failfastException =
-        tm().transact(
-                () -> {
-                  VKey<R> key = ForeignKeyUtils.load(resourceClass, targetId, now);
-                  if (key == null) {
-                    return new ResourceDoesNotExistException(resourceClass, targetId);
-                  }
-                  return isLinked(key, now) ? new ResourceToDeleteIsReferencedException() : null;
-                });
-    if (failfastException != null) {
-      throw failfastException;
+    VKey<R> key = ForeignKeyUtils.load(resourceClass, targetId, now);
+    if (key == null) {
+      throw new ResourceDoesNotExistException(resourceClass, targetId);
+    }
+    if (isLinked(key, now)) {
+      throw new ResourceToDeleteIsReferencedException();
     }
   }
 
@@ -169,7 +164,7 @@ public final class ResourceFlowUtils {
       throw new BadAuthInfoForResourceException();
     }
     // Check the authInfo against the contact.
-    verifyAuthInfo(authInfo, tm().transact(() -> tm().loadByKey(foundContact.get())));
+    verifyAuthInfo(authInfo, tm().loadByKey(foundContact.get()));
   }
 
   /** Check that the given {@link AuthInfo} is valid for the given contact. */

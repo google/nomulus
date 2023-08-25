@@ -20,7 +20,6 @@ import static com.google.common.collect.Sets.difference;
 import static com.google.common.collect.Sets.union;
 import static google.registry.config.RegistryConfig.getEppResourceCachingDuration;
 import static google.registry.config.RegistryConfig.getEppResourceMaxCachedEntries;
-import static google.registry.persistence.transaction.TransactionManagerFactory.replicaTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.CollectionUtils.nullToEmpty;
 import static google.registry.util.CollectionUtils.nullToEmptyImmutableCopy;
@@ -358,13 +357,13 @@ public abstract class EppResource extends UpdateAutoTimestampEntity implements B
 
         @Override
         public EppResource load(VKey<? extends EppResource> key) {
-          return replicaTm().transact(() -> replicaTm().loadByKey(key));
+          return tm().reTransact(() -> tm().loadByKey(key));
         }
 
         @Override
         public Map<VKey<? extends EppResource>, EppResource> loadAll(
             Iterable<? extends VKey<? extends EppResource>> keys) {
-          return replicaTm().transact(() -> replicaTm().loadByKeys(keys));
+          return tm().reTransact(() -> tm().loadByKeys(keys));
         }
       };
 
@@ -403,7 +402,7 @@ public abstract class EppResource extends UpdateAutoTimestampEntity implements B
   public static ImmutableMap<VKey<? extends EppResource>, EppResource> loadCached(
       Iterable<VKey<? extends EppResource>> keys) {
     if (!RegistryConfig.isEppResourceCachingEnabled()) {
-      return tm().transact(() -> tm().loadByKeys(keys));
+      return tm().reTransact(() -> tm().loadByKeys(keys));
     }
     return ImmutableMap.copyOf(cacheEppResources.getAll(keys));
   }
@@ -416,7 +415,7 @@ public abstract class EppResource extends UpdateAutoTimestampEntity implements B
    */
   public static <T extends EppResource> T loadCached(VKey<T> key) {
     if (!RegistryConfig.isEppResourceCachingEnabled()) {
-      return tm().transact(() -> tm().loadByKey(key));
+      return tm().reTransact(() -> tm().loadByKey(key));
     }
     // Safe to cast because loading a Key<T> returns an entity of type T.
     @SuppressWarnings("unchecked")

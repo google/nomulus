@@ -163,7 +163,7 @@ class DomainRestoreRequestFlowTest extends ResourceFlowTestCase<DomainRestoreReq
     setEppInput("domain_update_restore_request.xml", ImmutableMap.of("DOMAIN", "example.tld"));
     DateTime expirationTime = clock.nowUtc().plusYears(5).plusDays(45);
     persistPendingDeleteDomain(expirationTime);
-    assertTransactionalFlow(true);
+    assertMutatingFlow(true);
     // Double check that we see a poll message in the future for when the delete happens.
     assertThat(getPollMessages("TheRegistrar", clock.nowUtc().plusMonths(1))).hasSize(1);
     runFlowAssertResponse(loadFile("generic_success_response.xml"));
@@ -231,7 +231,7 @@ class DomainRestoreRequestFlowTest extends ResourceFlowTestCase<DomainRestoreReq
     DateTime expirationTime = clock.nowUtc().minusDays(20);
     DateTime newExpirationTime = expirationTime.plusYears(1);
     persistPendingDeleteDomain(expirationTime);
-    assertTransactionalFlow(true);
+    assertMutatingFlow(true);
     // Double check that we see a poll message in the future for when the delete happens.
     assertThat(getPollMessages("TheRegistrar", clock.nowUtc().plusMonths(1))).hasSize(1);
     runFlowAssertResponse(loadFile("generic_success_response.xml"));

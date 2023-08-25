@@ -483,7 +483,7 @@ class DomainTransferRequestFlowTest
     Tld registry = Tld.get(domain.getTld());
     DateTime implicitTransferTime = clock.nowUtc().plus(registry.getAutomaticTransferLength());
     // Setup done; run the test.
-    assertTransactionalFlow(true);
+    assertMutatingFlow(true);
     runFlowAssertResponse(loadFile(expectedXmlFilename, substitutions));
     // Transfer should have been requested.
     domain = reloadResourceByForeignKey();
@@ -583,7 +583,7 @@ class DomainTransferRequestFlowTest
     // the transfer timeline 3 days later by adjusting the implicit transfer time here.
     DateTime implicitTransferTime = clock.nowUtc().plus(expectedAutomaticTransferLength);
     // Setup done; run the test.
-    assertTransactionalFlow(true);
+    assertMutatingFlow(true);
     runFlowAssertResponse(
         CommitMode.LIVE, UserPrivileges.SUPERUSER, loadFile(expectedXmlFilename, substitutions));
 
@@ -634,7 +634,7 @@ class DomainTransferRequestFlowTest
     // Replace the ROID in the xml file with the one generated in our test.
     eppLoader.replaceAll("JD1234-REP", contact.getRepoId());
     // Setup done; run the test.
-    assertTransactionalFlow(true);
+    assertMutatingFlow(true);
     runFlow(CommitMode.LIVE, userPrivileges);
   }
 
@@ -1741,7 +1741,7 @@ class DomainTransferRequestFlowTest
         "domain_transfer_request_wildcard.xml",
         ImmutableMap.of("YEARS", "1", "DOMAIN", "--invalid", "EXDATE", "2002-09-08T22:00:00.0Z"));
     eppLoader.replaceAll("JD1234-REP", contact.getRepoId());
-    assertTransactionalFlow(true);
+    assertMutatingFlow(true);
     ResourceDoesNotExistException thrown =
         assertThrows(
             ResourceDoesNotExistException.class,
