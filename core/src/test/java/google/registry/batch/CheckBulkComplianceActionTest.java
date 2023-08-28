@@ -28,6 +28,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.testing.TestLogHandler;
+import google.registry.groups.GmailClient;
 import google.registry.model.billing.BillingBase.RenewalPriceBehavior;
 import google.registry.model.contact.Contact;
 import google.registry.model.domain.token.AllocationToken;
@@ -39,7 +40,6 @@ import google.registry.testing.DatabaseHelper;
 import google.registry.testing.FakeClock;
 import google.registry.ui.server.SendEmailUtils;
 import google.registry.util.EmailMessage;
-import google.registry.util.SendEmailService;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.mail.internet.InternetAddress;
@@ -77,7 +77,7 @@ public class CheckBulkComplianceActionTest {
   private final TestLogHandler logHandler = new TestLogHandler();
   private final Logger loggerToIntercept =
       Logger.getLogger(CheckBulkComplianceAction.class.getCanonicalName());
-  private final SendEmailService emailService = mock(SendEmailService.class);
+  private final GmailClient gmailClient = mock(GmailClient.class);
   private Contact contact;
   private BulkPricingPackage bulkPricingPackage;
   private SendEmailUtils sendEmailUtils;
@@ -91,7 +91,7 @@ public class CheckBulkComplianceActionTest {
             new InternetAddress("outgoing@registry.example"),
             "UnitTest Registry",
             ImmutableList.of("notification@test.example", "notification2@test.example"),
-            emailService);
+            gmailClient);
     createTld("tld");
     action =
         new CheckBulkComplianceAction(
@@ -143,7 +143,7 @@ public class CheckBulkComplianceActionTest {
             .build());
 
     action.run();
-    verifyNoInteractions(emailService);
+    verifyNoInteractions(gmailClient);
     assertAboutLogs()
         .that(logHandler)
         .hasLogAtLevelWithMessage(
@@ -176,7 +176,7 @@ public class CheckBulkComplianceActionTest {
             Level.INFO,
             "Bulk pricing package with bulk token abc123 has exceeded their max domain creation"
                 + " limit by 1 name(s).");
-    verify(emailService).sendEmail(emailCaptor.capture());
+    verify(gmailClient).sendEmail(emailCaptor.capture());
     EmailMessage emailMessage = emailCaptor.getValue();
     assertThat(emailMessage.subject()).isEqualTo(CREATE_LIMIT_EMAIL_SUBJECT);
     assertThat(emailMessage.body())
@@ -248,7 +248,7 @@ public class CheckBulkComplianceActionTest {
             Level.INFO,
             "Bulk pricing package with bulk token token has exceeded their max domain creation"
                 + " limit by 1 name(s).");
-    verify(emailService, times(2)).sendEmail(any(EmailMessage.class));
+    verify(gmailClient, times(2)).sendEmail(any(EmailMessage.class));
   }
 
   @Test
@@ -292,7 +292,7 @@ public class CheckBulkComplianceActionTest {
         .that(logHandler)
         .hasLogAtLevelWithMessage(
             Level.INFO, "Found no bulk pricing packages over their create limit.");
-    verifyNoInteractions(emailService);
+    verifyNoInteractions(gmailClient);
   }
 
   @Test
@@ -305,7 +305,7 @@ public class CheckBulkComplianceActionTest {
             .build());
 
     action.run();
-    verifyNoInteractions(emailService);
+    verifyNoInteractions(gmailClient);
     assertAboutLogs()
         .that(logHandler)
         .hasLogAtLevelWithMessage(
@@ -365,7 +365,7 @@ public class CheckBulkComplianceActionTest {
             Level.INFO,
             "Bulk pricing package with bulk token abc123 has exceed their max active domains limit"
                 + " by 1 name(s).");
-    verify(emailService).sendEmail(emailCaptor.capture());
+    verify(gmailClient).sendEmail(emailCaptor.capture());
     EmailMessage emailMessage = emailCaptor.getValue();
     assertThat(emailMessage.subject()).isEqualTo(DOMAIN_LIMIT_WARNING_EMAIL_SUBJECT);
     assertThat(emailMessage.body())
@@ -442,7 +442,7 @@ public class CheckBulkComplianceActionTest {
             Level.INFO,
             "Bulk pricing package with bulk token token has exceed their max active domains limit"
                 + " by 1 name(s).");
-    verify(emailService, times(2)).sendEmail(any(EmailMessage.class));
+    verify(gmailClient, times(2)).sendEmail(any(EmailMessage.class));
   }
 
   @Test
@@ -479,7 +479,7 @@ public class CheckBulkComplianceActionTest {
             Level.INFO,
             "Bulk pricing package with bulk token abc123 has exceed their max active domains limit"
                 + " by 1 name(s).");
-    verifyNoInteractions(emailService);
+    verifyNoInteractions(gmailClient);
     BulkPricingPackage packageAfterCheck =
         tm().transact(() -> BulkPricingPackage.loadByTokenString(token.getToken()).get());
     assertThat(packageAfterCheck.getLastNotificationSent().get())
@@ -520,7 +520,7 @@ public class CheckBulkComplianceActionTest {
             Level.INFO,
             "Bulk pricing package with bulk token abc123 has exceed their max active domains limit"
                 + " by 1 name(s).");
-    verify(emailService).sendEmail(emailCaptor.capture());
+    verify(gmailClient).sendEmail(emailCaptor.capture());
     EmailMessage emailMessage = emailCaptor.getValue();
     assertThat(emailMessage.subject()).isEqualTo(DOMAIN_LIMIT_WARNING_EMAIL_SUBJECT);
     assertThat(emailMessage.body())
@@ -565,7 +565,7 @@ public class CheckBulkComplianceActionTest {
             Level.INFO,
             "Bulk pricing package with bulk token abc123 has exceed their max active domains limit"
                 + " by 1 name(s).");
-    verify(emailService).sendEmail(emailCaptor.capture());
+    verify(gmailClient).sendEmail(emailCaptor.capture());
     EmailMessage emailMessage = emailCaptor.getValue();
     assertThat(emailMessage.subject()).isEqualTo(DOMAIN_LIMIT_UPGRADE_EMAIL_SUBJECT);
     assertThat(emailMessage.body())

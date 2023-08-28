@@ -45,6 +45,7 @@ import google.registry.dns.DnsMetrics.ActionStatus;
 import google.registry.dns.DnsMetrics.CommitStatus;
 import google.registry.dns.DnsMetrics.PublishStatus;
 import google.registry.dns.writer.DnsWriter;
+import google.registry.groups.GmailClient;
 import google.registry.model.domain.Domain;
 import google.registry.model.host.Host;
 import google.registry.model.registrar.Registrar;
@@ -61,7 +62,6 @@ import google.registry.request.lock.LockHandler;
 import google.registry.util.Clock;
 import google.registry.util.DomainNameUtils;
 import google.registry.util.EmailMessage;
-import google.registry.util.SendEmailService;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Callable;
@@ -112,7 +112,7 @@ public final class PublishDnsUpdatesAction implements Runnable, Callable<Void> {
   private final Clock clock;
   private final CloudTasksUtils cloudTasksUtils;
   private final Response response;
-  private final SendEmailService sendEmailService;
+  private final GmailClient gmailClient;
   private final String dnsUpdateFailEmailSubjectText;
   private final String dnsUpdateFailEmailBodyText;
   private final String dnsUpdateFailRegistryName;
@@ -143,12 +143,12 @@ public final class PublishDnsUpdatesAction implements Runnable, Callable<Void> {
       LockHandler lockHandler,
       Clock clock,
       CloudTasksUtils cloudTasksUtils,
-      SendEmailService sendEmailService,
+      GmailClient gmailClient,
       Response response) {
     this.dnsWriterProxy = dnsWriterProxy;
     this.dnsMetrics = dnsMetrics;
     this.timeout = timeout;
-    this.sendEmailService = sendEmailService;
+    this.gmailClient = gmailClient;
     this.retryCount = retryCount;
     this.dnsWriter = dnsWriter;
     this.enqueuedTime = enqueuedTime;
@@ -303,7 +303,7 @@ public final class PublishDnsUpdatesAction implements Runnable, Callable<Void> {
               .map(PublishDnsUpdatesAction::emailToInternetAddress)
               .collect(toImmutableList());
 
-      sendEmailService.sendEmail(
+      gmailClient.sendEmail(
           EmailMessage.newBuilder()
               .setBody(body)
               .setSubject(dnsUpdateFailEmailSubjectText)

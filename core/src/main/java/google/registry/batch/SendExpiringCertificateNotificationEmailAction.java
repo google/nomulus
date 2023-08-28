@@ -31,6 +31,7 @@ import com.google.common.flogger.FluentLogger;
 import com.google.common.net.MediaType;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.flows.certs.CertificateChecker;
+import google.registry.groups.GmailClient;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarPoc;
 import google.registry.model.registrar.RegistrarPoc.Type;
@@ -38,7 +39,6 @@ import google.registry.request.Action;
 import google.registry.request.Response;
 import google.registry.request.auth.Auth;
 import google.registry.util.EmailMessage;
-import google.registry.util.SendEmailService;
 import java.util.Date;
 import java.util.Optional;
 import javax.inject.Inject;
@@ -72,7 +72,7 @@ public class SendExpiringCertificateNotificationEmailAction implements Runnable 
 
   private final CertificateChecker certificateChecker;
   private final String expirationWarningEmailBodyText;
-  private final SendEmailService sendEmailService;
+  private final GmailClient gmailClient;
   private final String expirationWarningEmailSubjectText;
   private final InternetAddress gSuiteOutgoingEmailAddress;
   private final Response response;
@@ -82,12 +82,12 @@ public class SendExpiringCertificateNotificationEmailAction implements Runnable 
       @Config("expirationWarningEmailBodyText") String expirationWarningEmailBodyText,
       @Config("expirationWarningEmailSubjectText") String expirationWarningEmailSubjectText,
       @Config("gSuiteOutgoingEmailAddress") InternetAddress gSuiteOutgoingEmailAddress,
-      SendEmailService sendEmailService,
+      GmailClient gmailClient,
       CertificateChecker certificateChecker,
       Response response) {
     this.certificateChecker = certificateChecker;
     this.expirationWarningEmailSubjectText = expirationWarningEmailSubjectText;
-    this.sendEmailService = sendEmailService;
+    this.gmailClient = gmailClient;
     this.gSuiteOutgoingEmailAddress = gSuiteOutgoingEmailAddress;
     this.expirationWarningEmailBodyText = expirationWarningEmailBodyText;
     this.response = response;
@@ -173,7 +173,7 @@ public class SendExpiringCertificateNotificationEmailAction implements Runnable 
             registrar.getRegistrarName());
         return false;
       }
-      sendEmailService.sendEmail(
+      gmailClient.sendEmail(
           EmailMessage.newBuilder()
               .setFrom(gSuiteOutgoingEmailAddress)
               .setSubject(expirationWarningEmailSubjectText)
