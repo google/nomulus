@@ -44,7 +44,7 @@ import google.registry.flows.ExtensionManager;
 import google.registry.flows.FlowModule.RegistrarId;
 import google.registry.flows.FlowModule.Superuser;
 import google.registry.flows.FlowModule.TargetId;
-import google.registry.flows.TransactionalFlow;
+import google.registry.flows.MutatingFlow;
 import google.registry.flows.annotations.ReportingSpec;
 import google.registry.flows.custom.DomainRenewFlowCustomLogic;
 import google.registry.flows.custom.DomainRenewFlowCustomLogic.AfterValidationParameters;
@@ -137,7 +137,7 @@ import org.joda.time.Duration;
  *     google.registry.flows.domain.token.AllocationTokenFlowUtils.AlreadyRedeemedAllocationTokenException}
  */
 @ReportingSpec(ActivityReportField.DOMAIN_RENEW)
-public final class DomainRenewFlow implements TransactionalFlow {
+public final class DomainRenewFlow implements MutatingFlow {
 
   private static final ImmutableSet<StatusValue> RENEW_DISALLOWED_STATUSES = ImmutableSet.of(
       StatusValue.CLIENT_RENEW_PROHIBITED,

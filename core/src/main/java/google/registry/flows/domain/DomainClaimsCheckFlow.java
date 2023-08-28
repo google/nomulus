@@ -23,7 +23,6 @@ import static google.registry.flows.domain.DomainFlowUtils.validateDomainNameWit
 import static google.registry.flows.domain.DomainFlowUtils.verifyClaimsPeriodNotEnded;
 import static google.registry.flows.domain.DomainFlowUtils.verifyNotInPredelegation;
 import static google.registry.model.domain.launch.LaunchPhase.CLAIMS;
-import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -32,9 +31,9 @@ import google.registry.config.RegistryConfig.Config;
 import google.registry.flows.EppException;
 import google.registry.flows.EppException.CommandUseErrorException;
 import google.registry.flows.ExtensionManager;
-import google.registry.flows.Flow;
 import google.registry.flows.FlowModule.RegistrarId;
 import google.registry.flows.FlowModule.Superuser;
+import google.registry.flows.TransactionalFlow;
 import google.registry.flows.annotations.ReportingSpec;
 import google.registry.model.domain.DomainCommand.Check;
 import google.registry.model.domain.launch.LaunchCheckExtension;
@@ -68,7 +67,7 @@ import org.joda.time.DateTime;
  * @error {@link DomainClaimsCheckNotAllowedWithAllocationTokens}
  */
 @ReportingSpec(ActivityReportField.DOMAIN_CHECK) // Claims check is a special domain check.
-public final class DomainClaimsCheckFlow implements Flow {
+public final class DomainClaimsCheckFlow implements TransactionalFlow {
 
   @Inject ExtensionManager extensionManager;
   @Inject EppInput eppInput;
@@ -109,8 +108,7 @@ public final class DomainClaimsCheckFlow implements Flow {
           verifyClaimsPeriodNotEnded(tld, now);
         }
       }
-      Optional<String> claimKey =
-          tm().transact(() -> ClaimsListDao.get().getClaimKey(parsedDomain.parts().get(0)));
+      Optional<String> claimKey = ClaimsListDao.get().getClaimKey(parsedDomain.parts().get(0));
       launchChecksBuilder.add(
           LaunchCheck.create(
               LaunchCheckName.create(claimKey.isPresent(), domainName), claimKey.orElse(null)));

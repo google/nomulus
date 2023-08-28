@@ -21,10 +21,10 @@ import static google.registry.flows.domain.DomainTransferUtils.createTransferRes
 
 import google.registry.flows.EppException;
 import google.registry.flows.ExtensionManager;
-import google.registry.flows.Flow;
 import google.registry.flows.FlowModule.RegistrarId;
 import google.registry.flows.FlowModule.TargetId;
 import google.registry.flows.ResourceFlowUtils;
+import google.registry.flows.TransactionalFlow;
 import google.registry.flows.annotations.ReportingSpec;
 import google.registry.flows.exceptions.NoTransferHistoryToQueryException;
 import google.registry.flows.exceptions.NotAuthorizedToViewTransferException;
@@ -56,7 +56,7 @@ import org.joda.time.DateTime;
  * @error {@link google.registry.flows.exceptions.NotAuthorizedToViewTransferException}
  */
 @ReportingSpec(ActivityReportField.DOMAIN_TRANSFER_QUERY)
-public final class DomainTransferQueryFlow implements Flow {
+public final class DomainTransferQueryFlow implements TransactionalFlow {
 
   @Inject ExtensionManager extensionManager;
   @Inject Optional<AuthInfo> authInfo;

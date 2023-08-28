@@ -30,7 +30,7 @@ class HelloFlowTest extends FlowTestCase<HelloFlow> {
   @Test
   void testHello() throws Exception {
     setEppInput("hello.xml");
-    assertTransactionalFlow(false);
+    assertMutatingFlow(false);
     runFlowAssertResponse(
         loadFile(
             "greeting.xml", ImmutableMap.of("DATE", clock.nowUtc().toString(dateTimeNoMillis()))));

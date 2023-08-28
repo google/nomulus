@@ -89,7 +89,7 @@ class DomainTransferRejectFlowTest
     assertThat(getPollMessages("NewRegistrar", clock.nowUtc().plusMonths(1))).hasSize(1);
     assertThat(getPollMessages("TheRegistrar", clock.nowUtc().plusMonths(1))).hasSize(1);
     // Setup done; run the test.
-    assertTransactionalFlow(true);
+    assertMutatingFlow(true);
     DateTime originalExpirationTime = domain.getRegistrationExpirationTime();
     ImmutableSet<GracePeriod> originalGracePeriods = domain.getGracePeriods();
     TransferData originalTransferData = domain.getTransferData();
@@ -152,7 +152,7 @@ class DomainTransferRejectFlowTest
     // Replace the ROID in the xml file with the one generated in our test.
     eppLoader.replaceAll("JD1234-REP", contact.getRepoId());
     // Setup done; run the test.
-    assertTransactionalFlow(true);
+    assertMutatingFlow(true);
     runFlow();
   }
 

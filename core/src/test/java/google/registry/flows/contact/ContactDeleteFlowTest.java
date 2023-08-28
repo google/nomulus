@@ -78,7 +78,7 @@ class ContactDeleteFlowTest extends ResourceFlowTestCase<ContactDeleteFlow, Cont
   void testSuccess() throws Exception {
     persistActiveContact(getUniqueIdFromCommand());
     clock.advanceOneMilli();
-    assertTransactionalFlow(true);
+    assertMutatingFlow(true);
     runFlowAssertResponse(loadFile("contact_delete_response.xml"));
     assertSqlDeleteSuccess();
   }
@@ -94,7 +94,7 @@ class ContactDeleteFlowTest extends ResourceFlowTestCase<ContactDeleteFlow, Cont
                 clock.nowUtc())
             .getTransferData();
     clock.advanceOneMilli();
-    assertTransactionalFlow(true);
+    assertMutatingFlow(true);
     runFlowAssertResponse(loadFile("contact_delete_response.xml"));
     assertSqlDeleteSuccess(Type.CONTACT_DELETE, Type.CONTACT_TRANSFER_REQUEST);
     Contact softDeletedContact = reloadResourceByForeignKey(clock.nowUtc().minusMillis(1));
@@ -130,7 +130,7 @@ class ContactDeleteFlowTest extends ResourceFlowTestCase<ContactDeleteFlow, Cont
     setEppInput("contact_delete_no_cltrid.xml");
     persistActiveContact(getUniqueIdFromCommand());
     clock.advanceOneMilli();
-    assertTransactionalFlow(true);
+    assertMutatingFlow(true);
     runFlowAssertResponse(loadFile("contact_delete_response_no_cltrid.xml"));
     assertSqlDeleteSuccess();
   }

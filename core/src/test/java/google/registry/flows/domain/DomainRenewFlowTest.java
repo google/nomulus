@@ -250,7 +250,7 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
       RenewalPriceBehavior renewalPriceBehavior,
       @Nullable Money renewalPrice)
       throws Exception {
-    assertTransactionalFlow(true);
+    assertMutatingFlow(true);
     DateTime currentExpiration = reloadResourceByForeignKey().getRegistrationExpirationTime();
     DateTime newExpiration = currentExpiration.plusYears(renewalYears);
     runFlowAssertResponse(

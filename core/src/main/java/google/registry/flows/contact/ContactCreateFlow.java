@@ -28,7 +28,7 @@ import google.registry.flows.EppException;
 import google.registry.flows.ExtensionManager;
 import google.registry.flows.FlowModule.RegistrarId;
 import google.registry.flows.FlowModule.TargetId;
-import google.registry.flows.TransactionalFlow;
+import google.registry.flows.MutatingFlow;
 import google.registry.flows.annotations.ReportingSpec;
 import google.registry.flows.exceptions.ResourceAlreadyExistsForThisClientException;
 import google.registry.flows.exceptions.ResourceCreateContentionException;
@@ -54,7 +54,7 @@ import org.joda.time.DateTime;
  * @error {@link ContactFlowUtils.DeclineContactDisclosureFieldDisallowedPolicyException}
  */
 @ReportingSpec(ActivityReportField.CONTACT_CREATE)
-public final class ContactCreateFlow implements TransactionalFlow {
+public final class ContactCreateFlow implements MutatingFlow {
 
   @Inject ResourceCommand resourceCommand;
   @Inject ExtensionManager extensionManager;

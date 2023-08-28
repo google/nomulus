@@ -63,7 +63,7 @@ class ContactTransferCancelFlowTest
     // Setup done; run the test.
     contact = reloadResourceByForeignKey();
     TransferData originalTransferData = contact.getTransferData();
-    assertTransactionalFlow(true);
+    assertMutatingFlow(true);
     runFlowAssertResponse(loadFile(expectedXmlFilename));
 
     // Transfer should have been cancelled. Verify correct fields were set.
@@ -104,7 +104,7 @@ class ContactTransferCancelFlowTest
   private void doFailingTest(String commandFilename) throws Exception {
     this.setEppInput(commandFilename);
     // Setup done; run the test.
-    assertTransactionalFlow(true);
+    assertMutatingFlow(true);
     runFlow();
   }
 

@@ -58,7 +58,7 @@ public class DomainClaimsCheckFlowTest extends ResourceFlowTestCase<DomainClaims
   }
 
   protected void doSuccessfulTest(String expectedXmlFilename) throws Exception {
-    assertTransactionalFlow(false);
+    assertMutatingFlow(false);
     assertNoHistory(); // Checks don't create a history event.
     assertNoBillingEvents(); // Checks are always free.
     runFlowAssertResponse(loadFile(expectedXmlFilename));
@@ -152,7 +152,7 @@ public class DomainClaimsCheckFlowTest extends ResourceFlowTestCase<DomainClaims
         ImmutableMap.of("example2", "2013041500/2/6/9/rJ1NrDO92vDsAzf7EQzgjX4R0000000001"));
     persistResource(
         loadRegistrar("TheRegistrar").asBuilder().setAllowedTlds(ImmutableSet.of()).build());
-    assertTransactionalFlow(false);
+    assertMutatingFlow(false);
     assertNoHistory(); // Checks don't create a history event.
     assertNoBillingEvents(); // Checks are always free.
     runFlowAssertResponse(

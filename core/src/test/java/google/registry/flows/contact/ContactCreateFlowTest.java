@@ -44,7 +44,7 @@ class ContactCreateFlowTest extends ResourceFlowTestCase<ContactCreateFlow, Cont
   }
 
   private void doSuccessfulTest() throws Exception {
-    assertTransactionalFlow(true);
+    assertMutatingFlow(true);
     runFlowAssertResponse(loadFile("contact_create_response.xml"));
     // Check that the contact was created and persisted with a history entry.
     Contact contact = reloadResourceByForeignKey();

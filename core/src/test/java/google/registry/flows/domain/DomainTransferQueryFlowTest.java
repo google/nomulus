@@ -55,7 +55,7 @@ class DomainTransferQueryFlowTest
     // Replace the ROID in the xml file with the one generated in our test.
     eppLoader.replaceAll("JD1234-REP", contact.getRepoId());
     // Setup done; run the test.
-    assertTransactionalFlow(false);
+    assertMutatingFlow(false);
     runFlowAssertResponse(loadFile(expectedXmlFilename));
     assertAboutDomains()
         .that(domain)
@@ -76,7 +76,7 @@ class DomainTransferQueryFlowTest
     // Replace the ROID in the xml file with the one generated in our test.
     eppLoader.replaceAll("JD1234-REP", contact.getRepoId());
     // Setup done; run the test.
-    assertTransactionalFlow(false);
+    assertMutatingFlow(false);
     runFlow();
   }
 

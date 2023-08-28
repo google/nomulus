@@ -67,7 +67,7 @@ import google.registry.flows.ExtensionManager;
 import google.registry.flows.FlowModule.RegistrarId;
 import google.registry.flows.FlowModule.Superuser;
 import google.registry.flows.FlowModule.TargetId;
-import google.registry.flows.TransactionalFlow;
+import google.registry.flows.MutatingFlow;
 import google.registry.flows.annotations.ReportingSpec;
 import google.registry.flows.custom.DomainCreateFlowCustomLogic;
 import google.registry.flows.custom.DomainCreateFlowCustomLogic.BeforeResponseParameters;
@@ -210,7 +210,7 @@ import org.joda.time.Duration;
  * @error {@link DomainPricingLogic.AllocationTokenInvalidForPremiumNameException}
  */
 @ReportingSpec(ActivityReportField.DOMAIN_CREATE)
-public final class DomainCreateFlow implements TransactionalFlow {
+public final class DomainCreateFlow implements MutatingFlow {
 
   /** Anchor tenant creates should always be for 2 years, since they get 2 years free. */
   private static final int ANCHOR_TENANT_CREATE_VALID_YEARS = 2;

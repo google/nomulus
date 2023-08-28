@@ -32,7 +32,7 @@ import google.registry.flows.ExtensionManager;
 import google.registry.flows.FlowModule.RegistrarId;
 import google.registry.flows.FlowModule.Superuser;
 import google.registry.flows.FlowModule.TargetId;
-import google.registry.flows.TransactionalFlow;
+import google.registry.flows.MutatingFlow;
 import google.registry.flows.annotations.ReportingSpec;
 import google.registry.model.contact.Contact;
 import google.registry.model.contact.ContactHistory;
@@ -63,7 +63,7 @@ import org.joda.time.DateTime;
  * @error {@link google.registry.flows.exceptions.ResourceToDeleteIsReferencedException}
  */
 @ReportingSpec(ActivityReportField.CONTACT_DELETE)
-public final class ContactDeleteFlow implements TransactionalFlow {
+public final class ContactDeleteFlow implements MutatingFlow {
 
   private static final ImmutableSet<StatusValue> DISALLOWED_STATUSES =
       ImmutableSet.of(

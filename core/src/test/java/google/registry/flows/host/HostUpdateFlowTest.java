@@ -160,7 +160,7 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, Host> {
 
   private Host doSuccessfulTest(boolean isSuperuser) throws Exception {
     clock.advanceOneMilli();
-    assertTransactionalFlow(true);
+    assertMutatingFlow(true);
     runFlowAssertResponse(
         CommitMode.LIVE,
         isSuperuser ? UserPrivileges.SUPERUSER : UserPrivileges.NORMAL,

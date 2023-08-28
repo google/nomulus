@@ -116,7 +116,7 @@ class DomainTransferCancelFlowTest
     clock.advanceOneMilli();
 
     // Setup done; run the test.
-    assertTransactionalFlow(true);
+    assertMutatingFlow(true);
     DateTime originalExpirationTime = domain.getRegistrationExpirationTime();
     ImmutableSet<GracePeriod> originalGracePeriods = domain.getGracePeriods();
     DomainTransferData originalTransferData = domain.getTransferData();
@@ -190,7 +190,7 @@ class DomainTransferCancelFlowTest
     // Replace the ROID in the xml file with the one generated in our test.
     eppLoader.replaceAll("JD1234-REP", contact.getRepoId());
     // Setup done; run the test.
-    assertTransactionalFlow(true);
+    assertMutatingFlow(true);
     runFlow();
   }
 

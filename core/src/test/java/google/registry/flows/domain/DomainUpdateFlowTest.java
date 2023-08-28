@@ -203,7 +203,7 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
   }
 
   private void doSuccessfulTest(String expectedXmlFilename) throws Exception {
-    assertTransactionalFlow(true);
+    assertMutatingFlow(true);
     runFlowAssertResponse(loadFile(expectedXmlFilename));
     Domain domain = reloadResourceByForeignKey();
     // Check that the domain was updated. These values came from the xml.
@@ -341,7 +341,7 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
             .setRegistrant(contacts.get(3).getContactKey())
             .build());
     clock.advanceOneMilli();
-    assertTransactionalFlow(true);
+    assertMutatingFlow(true);
     runFlowAssertResponse(loadFile("generic_success_response.xml"));
     Domain domain = reloadResourceByForeignKey();
     assertAboutDomains().that(domain).hasOneHistoryEntryEachOfTypes(DOMAIN_CREATE, DOMAIN_UPDATE);
@@ -407,7 +407,7 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
                         .createVKey()))
             .build());
     clock.advanceOneMilli();
-    assertTransactionalFlow(true);
+    assertMutatingFlow(true);
     runFlowAssertResponse(loadFile("generic_success_response.xml"));
     domain = reloadResourceByForeignKey();
     assertThat(domain.getNameservers()).containsExactly(addedHost.createVKey());
@@ -490,7 +490,7 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
             .asBuilder()
             .setDsData(originalDsData)
             .build());
-    assertTransactionalFlow(true);
+    assertMutatingFlow(true);
     clock.advanceOneMilli();
     runFlowAssertResponse(loadFile("generic_success_response.xml"));
     Domain resource = reloadResourceByForeignKey();

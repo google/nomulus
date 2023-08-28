@@ -62,7 +62,7 @@ public abstract class LoginFlowTestCase extends FlowTestCase<LoginFlow> {
   // Also called in subclasses.
   void doSuccessfulTest(String xmlFilename) throws Exception {
     setEppInput(xmlFilename);
-    assertTransactionalFlow(true);
+    assertMutatingFlow(true);
     runFlowAssertResponse(loadFile("generic_success_response.xml"));
   }
 
@@ -81,7 +81,7 @@ public abstract class LoginFlowTestCase extends FlowTestCase<LoginFlow> {
   @Test
   void testSuccess_setsIsLoginResponse() throws Exception {
     setEppInput("login_valid.xml");
-    assertTransactionalFlow(true);
+    assertMutatingFlow(true);
     EppOutput output = runFlow();
     assertThat(output.getResponse().isLoginResponse()).isTrue();
   }
@@ -125,7 +125,7 @@ public abstract class LoginFlowTestCase extends FlowTestCase<LoginFlow> {
     assertThat(registrar.verifyPassword("randomstring")).isFalse();
 
     setEppInput("login_set_new_password.xml", ImmutableMap.of("NEWPW", "ANewPassword"));
-    assertTransactionalFlow(true);
+    assertMutatingFlow(true);
     runFlowAssertResponse(loadFile("generic_success_response.xml"));
 
     Registrar newRegistrar = loadRegistrar("NewRegistrar");

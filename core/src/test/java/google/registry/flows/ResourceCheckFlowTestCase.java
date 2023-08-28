@@ -30,7 +30,7 @@ public abstract class ResourceCheckFlowTestCase<F extends Flow, R extends EppRes
     extends ResourceFlowTestCase<F, R> {
 
   protected void doCheckTest(CheckData.Check... expected) throws Exception {
-    assertTransactionalFlow(false);
+    assertMutatingFlow(false);
     assertThat(((CheckData) runFlow().getResponse().getResponseData().get(0)).getChecks())
         .containsExactlyElementsIn(expected);
     assertNoHistory();  // Checks don't create a history event.

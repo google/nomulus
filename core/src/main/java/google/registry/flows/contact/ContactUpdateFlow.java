@@ -33,7 +33,7 @@ import google.registry.flows.ExtensionManager;
 import google.registry.flows.FlowModule.RegistrarId;
 import google.registry.flows.FlowModule.Superuser;
 import google.registry.flows.FlowModule.TargetId;
-import google.registry.flows.TransactionalFlow;
+import google.registry.flows.MutatingFlow;
 import google.registry.flows.annotations.ReportingSpec;
 import google.registry.flows.exceptions.ResourceHasClientUpdateProhibitedException;
 import google.registry.model.contact.Contact;
@@ -66,7 +66,7 @@ import org.joda.time.DateTime;
  * @error {@link ContactFlowUtils.DeclineContactDisclosureFieldDisallowedPolicyException}
  */
 @ReportingSpec(ActivityReportField.CONTACT_UPDATE)
-public final class ContactUpdateFlow implements TransactionalFlow {
+public final class ContactUpdateFlow implements MutatingFlow {
 
   /**
    * Note that CLIENT_UPDATE_PROHIBITED is intentionally not in this list. This is because it
