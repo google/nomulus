@@ -170,6 +170,7 @@ public class RegistryConfigSettings {
   /** Configuration for monthly invoices. */
   public static class Billing {
     public List<String> invoiceEmailRecipients;
+    public String invoiceReplyToEmailAddress;
     public String invoiceFilePrefix;
   }
 
