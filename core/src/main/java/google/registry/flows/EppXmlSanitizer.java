@@ -165,6 +165,9 @@ public class EppXmlSanitizer {
     xmlInputFactory.setProperty(XMLInputFactory.IS_COALESCING, true);
     // Preserve Name Space information.
     xmlInputFactory.setProperty(XMLInputFactory.IS_NAMESPACE_AWARE, true);
+    // Prevent XXE attacks.
+    xmlInputFactory.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, false);
+    xmlInputFactory.setProperty(XMLInputFactory.SUPPORT_DTD, false);
     return xmlInputFactory;
   }
 }

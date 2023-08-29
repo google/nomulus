@@ -111,6 +111,10 @@ public class TmchXmlSignature {
     dbf.setSchema(SCHEMA);
     dbf.setAttribute("http://apache.org/xml/features/validation/schema/normalized-value", false);
     dbf.setNamespaceAware(true);
+    // Disable DTDs
+    dbf.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+    dbf.setXIncludeAware(false); // disable XML Inclusions
+    dbf.setExpandEntityReferences(false); // disable expand entity reference nodes
     return dbf.newDocumentBuilder().parse(input);
   }
 
