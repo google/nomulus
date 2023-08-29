@@ -328,7 +328,7 @@ public final class DomainRenewFlow implements MutatingFlow {
       checkHasBillingAccount(registrarId, existingDomain.getTld());
     }
     verifyUnitIsYears(command.getPeriod());
-    // We only allow __REMOVE_PACKAGE__ token on bulk pricing domains for now
+    // We only allow __REMOVEDOMAIN__ token on bulk pricing domains for now
     verifyTokenAllowedOnDomain(existingDomain, allocationToken);
     // If the date they specify doesn't match the expiration, fail. (This is an idempotence check).
     if (!command.getCurrentExpirationDate().equals(

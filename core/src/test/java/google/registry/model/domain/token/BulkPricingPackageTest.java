@@ -23,6 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import google.registry.model.EntityTestCase;
 import google.registry.model.billing.BillingBase.RenewalPriceBehavior;
+import google.registry.model.domain.fee.FeeQueryCommandExtensionItem.CommandName;
 import google.registry.model.domain.token.AllocationToken.TokenType;
 import org.joda.money.CurrencyUnit;
 import org.joda.money.Money;
@@ -54,6 +55,7 @@ public class BulkPricingPackageTest extends EntityTestCase {
                 .setAllowedTlds(ImmutableSet.of("foo"))
                 .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
                 .setRenewalPriceBehavior(RenewalPriceBehavior.SPECIFIED)
+                .setAllowedEppActions(ImmutableSet.of(CommandName.CREATE))
                 .setDiscountFraction(1)
                 .build());
 

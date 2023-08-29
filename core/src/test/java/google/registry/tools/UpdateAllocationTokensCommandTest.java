@@ -352,6 +352,7 @@ class UpdateAllocationTokensCommandTest extends CommandTestCase<UpdateAllocation
                 .setToken("token")
                 .setTokenType(BULK_PRICING)
                 .setRenewalPriceBehavior(SPECIFIED)
+                .setAllowedEppActions(ImmutableSet.of(CommandName.CREATE))
                 .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
                 .setTokenStatusTransitions(
                     ImmutableSortedMap.<DateTime, TokenStatus>naturalOrder()
@@ -379,6 +380,7 @@ class UpdateAllocationTokensCommandTest extends CommandTestCase<UpdateAllocation
                 .setToken("token")
                 .setTokenType(BULK_PRICING)
                 .setRenewalPriceBehavior(SPECIFIED)
+                .setAllowedEppActions(ImmutableSet.of(CommandName.CREATE))
                 .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
                 .setTokenStatusTransitions(
                     ImmutableSortedMap.<DateTime, TokenStatus>naturalOrder()

@@ -354,6 +354,10 @@ public class AllocationToken extends UpdateAutoTimestampEntity implements Builda
           "Bulk tokens must have renewalPriceBehavior set to SPECIFIED");
       checkArgument(
           !getInstance().tokenType.equals(TokenType.BULK_PRICING)
+              || ImmutableSet.of(CommandName.CREATE).equals(getInstance().allowedEppActions),
+          "Bulk tokens may only be valid for CREATE actions");
+      checkArgument(
+          !getInstance().tokenType.equals(TokenType.BULK_PRICING)
               || !getInstance().discountPremiums,
           "Bulk tokens cannot discount premium names");
       checkArgument(

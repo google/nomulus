@@ -52,6 +52,7 @@ import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingRecurrence;
 import google.registry.model.contact.Contact;
 import google.registry.model.domain.DesignatedContact.Type;
+import google.registry.model.domain.fee.FeeQueryCommandExtensionItem.CommandName;
 import google.registry.model.domain.launch.LaunchNotice;
 import google.registry.model.domain.rgp.GracePeriodStatus;
 import google.registry.model.domain.secdns.DomainDsData;
@@ -833,6 +834,7 @@ public class DomainTest {
                 .setToken("abc123")
                 .setTokenType(BULK_PRICING)
                 .setRenewalPriceBehavior(SPECIFIED)
+                .setAllowedEppActions(ImmutableSet.of(CommandName.CREATE))
                 .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
                 .build());
     domain =
@@ -894,6 +896,7 @@ public class DomainTest {
                 .setToken("abc123")
                 .setTokenType(BULK_PRICING)
                 .setRenewalPriceBehavior(SPECIFIED)
+                .setAllowedEppActions(ImmutableSet.of(CommandName.CREATE))
                 .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
                 .build());
     domain =
@@ -1063,6 +1066,7 @@ public class DomainTest {
             .setToken("abc123")
             .setTokenType(BULK_PRICING)
             .setRenewalPriceBehavior(SPECIFIED)
+            .setAllowedEppActions(ImmutableSet.of(CommandName.CREATE))
             .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
             .build();
     IllegalArgumentException thrown =
@@ -1080,6 +1084,7 @@ public class DomainTest {
                 .setToken("abc123")
                 .setTokenType(BULK_PRICING)
                 .setRenewalPriceBehavior(SPECIFIED)
+                .setAllowedEppActions(ImmutableSet.of(CommandName.CREATE))
                 .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
                 .build());
     domain = domain.asBuilder().setCurrentBulkToken(allocationToken.createVKey()).build();
