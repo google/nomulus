@@ -153,6 +153,14 @@ public class EppMessage {
     xpath = XPathFactory.newInstance().newXPath();
     xpath.setNamespaceContext(new EppNamespaceContext());
     docBuilderFactory.setNamespaceAware(true);
+    try {
+      //Disable DTDs
+      docBuilderFactory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+    } catch (ParserConfigurationException e) {
+      throw new RuntimeException("Error configuring DocumentBuilderFactory", e);
+    }
+    docBuilderFactory.setXIncludeAware(false); //disable XML Inclusions
+    docBuilderFactory.setExpandEntityReferences(false); // disable expand entity reference nodes
 
     String path = "./xsd/";
     StreamSource[] sources;
