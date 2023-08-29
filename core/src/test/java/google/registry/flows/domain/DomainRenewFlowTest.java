@@ -1258,14 +1258,22 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
                 .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
                 .setAllowedTlds(ImmutableSet.of("tld"))
                 .setRenewalPriceBehavior(SPECIFIED)
+                .setAllowedEppActions(ImmutableSet.of(CommandName.CREATE))
                 .build());
     persistDomain();
     persistResource(
         reloadResourceByForeignKey().asBuilder().setCurrentBulkToken(token.createVKey()).build());
 
+    persistResource(
+        new AllocationToken.Builder()
+            .setToken("token")
+            .setTokenType(SINGLE_USE)
+            .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
+            .build());
+
     setEppInput(
         "domain_renew_allocationtoken.xml",
-        ImmutableMap.of("DOMAIN", "example.tld", "YEARS", "2", "TOKEN", "abc123"));
+        ImmutableMap.of("DOMAIN", "example.tld", "YEARS", "2", "TOKEN", "token"));
 
     EppException thrown =
         assertThrows(MissingRemoveDomainTokenOnBulkPricingDomainException.class, this::runFlow);
@@ -1282,6 +1290,7 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
                 .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
                 .setAllowedTlds(ImmutableSet.of("tld"))
                 .setRenewalPriceBehavior(SPECIFIED)
+                .setAllowedEppActions(ImmutableSet.of(CommandName.CREATE))
                 .build());
     persistDomain();
     persistResource(
@@ -1317,6 +1326,7 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
                 .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
                 .setAllowedTlds(ImmutableSet.of("tld"))
                 .setRenewalPriceBehavior(SPECIFIED)
+                .setAllowedEppActions(ImmutableSet.of(CommandName.CREATE))
                 .build());
     persistDomain(SPECIFIED, Money.of(USD, 2));
     persistResource(
@@ -1346,6 +1356,7 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
                 .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
                 .setAllowedTlds(ImmutableSet.of("tld"))
                 .setRenewalPriceBehavior(SPECIFIED)
+                .setAllowedEppActions(ImmutableSet.of(CommandName.CREATE))
                 .build());
     persistDomain(SPECIFIED, Money.of(USD, 2));
     persistResource(

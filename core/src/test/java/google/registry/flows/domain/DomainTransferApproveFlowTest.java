@@ -73,6 +73,7 @@ import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.GracePeriod;
 import google.registry.model.domain.Period;
 import google.registry.model.domain.Period.Unit;
+import google.registry.model.domain.fee.FeeQueryCommandExtensionItem.CommandName;
 import google.registry.model.domain.rgp.GracePeriodStatus;
 import google.registry.model.domain.token.AllocationToken;
 import google.registry.model.domain.token.AllocationToken.TokenStatus;
@@ -390,6 +391,7 @@ class DomainTransferApproveFlowTest
                 .setTokenType(BULK_PRICING)
                 .setRenewalPriceBehavior(RenewalPriceBehavior.SPECIFIED)
                 .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
+                .setAllowedEppActions(ImmutableSet.of(CommandName.CREATE))
                 .build());
     domain = reloadResourceByForeignKey();
     persistResource(
@@ -417,6 +419,7 @@ class DomainTransferApproveFlowTest
                 .setToken("abc123")
                 .setTokenType(BULK_PRICING)
                 .setRenewalPriceBehavior(RenewalPriceBehavior.SPECIFIED)
+                .setAllowedEppActions(ImmutableSet.of(CommandName.CREATE))
                 .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
                 .build());
     domain = reloadResourceByForeignKey();
