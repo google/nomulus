@@ -125,6 +125,9 @@ public class GmailClientTest {
     assertThat(mimeMessage.getRecipients(RecipientType.TO)).asList().containsExactly(toAddr);
     assertThat(mimeMessage.getRecipients(RecipientType.CC)).asList().containsExactly(ccAddr);
     assertThat(mimeMessage.getRecipients(RecipientType.BCC)).asList().containsExactly(bccAddr);
+    assertThat(mimeMessage.getReplyTo())
+        .asList()
+        .containsExactly(new InternetAddress("replyTo@example.com"));
     assertThat(mimeMessage.getSubject()).isEqualTo("My subject");
     assertThat(mimeMessage.getContent()).isInstanceOf(MimeMultipart.class);
     MimeMultipart parts = (MimeMultipart) mimeMessage.getContent();
@@ -135,6 +138,23 @@ public class GmailClientTest {
     assertThat(attachment.getContentType()).startsWith(CSV_UTF_8.toString());
     assertThat(attachment.getContentType()).endsWith("name=filename");
     assertThat(attachment.getContent()).isEqualTo("foo,bar\nbaz,qux");
+  }
+
+  @Test
+  public void toMimeMessage_overrideReplyToAddr() throws Exception {
+    InternetAddress fromAddr = new InternetAddress("from@example.com", "My sender");
+    InternetAddress toAddr = new InternetAddress("to@example.com");
+    InternetAddress replyToAddr = new InternetAddress("some-addr@another.com");
+    EmailMessage emailMessage =
+        EmailMessage.newBuilder()
+            .setFrom(fromAddr)
+            .setRecipients(ImmutableList.of(toAddr))
+            .setReplyToEmailAddress(replyToAddr)
+            .setSubject("My subject")
+            .setBody("My body")
+            .build();
+    MimeMessage mimeMessage = getGmailClient(true).toMimeMessage(emailMessage);
+    assertThat(mimeMessage.getReplyTo()).asList().containsExactly(replyToAddr);
   }
 
   @Test

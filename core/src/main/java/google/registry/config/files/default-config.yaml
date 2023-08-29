@@ -382,6 +382,8 @@ icannReporting:
 
 billing:
   invoiceEmailRecipients: []
+  # Optional return address that overrides the default.
+  invoiceReplyToEmailAddress: null
   invoiceFilePrefix: REG-INV
 
 rde:

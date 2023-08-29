@@ -724,6 +724,18 @@ public final class RegistryConfig {
     }
 
     /**
+     * Returns an optional return email address that overrides the default {@code reply-to} address
+     * in outgoing invoicing email messages.
+     */
+    @Provides
+    @Config("invoiceReplyToEmailAddress")
+    public static Optional<InternetAddress> provideInvoiceReplyToEmailAddress(
+        RegistryConfigSettings config) {
+      return Optional.ofNullable(config.billing.invoiceReplyToEmailAddress)
+          .map(RegistryConfig::parseEmailAddress);
+    }
+
+    /**
      * Returns the file prefix for the invoice CSV file.
      *
      * @see google.registry.beam.billing.InvoicingPipeline

@@ -23,12 +23,13 @@ import com.google.common.io.CharStreams;
 import com.google.common.net.MediaType;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.gcs.GcsUtils;
+import google.registry.groups.GmailClient;
 import google.registry.reporting.billing.BillingModule.InvoiceDirectoryPrefix;
 import google.registry.util.EmailMessage;
 import google.registry.util.EmailMessage.Attachment;
-import google.registry.util.SendEmailService;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.Optional;
 import javax.inject.Inject;
 import javax.mail.internet.InternetAddress;
 import org.joda.time.YearMonth;
@@ -36,11 +37,12 @@ import org.joda.time.YearMonth;
 /** Utility functions for sending emails involving monthly invoices. */
 public class BillingEmailUtils {
 
-  private final SendEmailService emailService;
+  private final GmailClient gmailClient;
   private final YearMonth yearMonth;
   private final InternetAddress outgoingEmailAddress;
   private final InternetAddress alertRecipientAddress;
   private final ImmutableList<InternetAddress> invoiceEmailRecipients;
+  private final Optional<InternetAddress> replyToEmailAddress;
   private final String billingBucket;
   private final String invoiceFilePrefix;
   private final String invoiceDirectoryPrefix;
@@ -48,20 +50,22 @@ public class BillingEmailUtils {
 
   @Inject
   BillingEmailUtils(
-      SendEmailService emailService,
+      GmailClient gmailClient,
       YearMonth yearMonth,
       @Config("gSuiteOutgoingEmailAddress") InternetAddress outgoingEmailAddress,
       @Config("alertRecipientEmailAddress") InternetAddress alertRecipientAddress,
       @Config("invoiceEmailRecipients") ImmutableList<InternetAddress> invoiceEmailRecipients,
+      @Config("invoiceReplyToEmailAddress") Optional<InternetAddress> replyToEmailAddress,
       @Config("billingBucket") String billingBucket,
       @Config("invoiceFilePrefix") String invoiceFilePrefix,
       @InvoiceDirectoryPrefix String invoiceDirectoryPrefix,
       GcsUtils gcsUtils) {
-    this.emailService = emailService;
+    this.gmailClient = gmailClient;
     this.yearMonth = yearMonth;
     this.outgoingEmailAddress = outgoingEmailAddress;
     this.alertRecipientAddress = alertRecipientAddress;
     this.invoiceEmailRecipients = invoiceEmailRecipients;
+    this.replyToEmailAddress = replyToEmailAddress;
     this.billingBucket = billingBucket;
     this.invoiceFilePrefix = invoiceFilePrefix;
     this.invoiceDirectoryPrefix = invoiceDirectoryPrefix;
@@ -74,13 +78,14 @@ public class BillingEmailUtils {
       String invoiceFile = String.format("%s-%s.csv", invoiceFilePrefix, yearMonth);
       BlobId invoiceFilename = BlobId.of(billingBucket, invoiceDirectoryPrefix + invoiceFile);
       try (InputStream in = gcsUtils.openInputStream(invoiceFilename)) {
-        emailService.sendEmail(
+        gmailClient.sendEmail(
             EmailMessage.newBuilder()
                 .setSubject(String.format("Domain Registry invoice data %s", yearMonth))
                 .setBody(
                     String.format("Attached is the %s invoice for the domain registry.", yearMonth))
                 .setFrom(outgoingEmailAddress)
                 .setRecipients(invoiceEmailRecipients)
+                .setReplyToEmailAddress(replyToEmailAddress)
                 .setAttachment(
                     Attachment.newBuilder()
                         .setContent(CharStreams.toString(new InputStreamReader(in, UTF_8)))
@@ -100,7 +105,7 @@ public class BillingEmailUtils {
   /** Sends an e-mail to the provided alert e-mail address indicating a billing failure. */
   void sendAlertEmail(String body) {
     try {
-      emailService.sendEmail(
+      gmailClient.sendEmail(
           EmailMessage.newBuilder()
               .setSubject(String.format("Billing Pipeline Alert: %s", yearMonth))
               .setBody(body)

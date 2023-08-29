@@ -120,7 +120,8 @@ public final class GmailClient {
       MimeMessage msg =
           new MimeMessage(Session.getDefaultInstance(new Properties(), /* authenticator= */ null));
       msg.setFrom(this.outgoingEmailAddressWithUsername);
-      msg.setReplyTo(new InternetAddress[] {replyToEmailAddress});
+      msg.setReplyTo(
+          new InternetAddress[] {emailMessage.replyToEmailAddress().orElse(replyToEmailAddress)});
       msg.addRecipients(
           RecipientType.TO, toArray(emailMessage.recipients(), InternetAddress.class));
       msg.setSubject(emailMessage.subject());

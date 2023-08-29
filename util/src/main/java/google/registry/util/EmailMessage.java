@@ -49,6 +49,9 @@ public abstract class EmailMessage {
   // TODO(b/279671974): remove `from` after migration.
   public abstract InternetAddress from();
 
+  /** Optional return email address that overrides the default. */
+  public abstract Optional<InternetAddress> replyToEmailAddress();
+
   public abstract ImmutableSet<InternetAddress> ccs();
 
   public abstract ImmutableSet<InternetAddress> bccs();
@@ -68,6 +71,10 @@ public abstract class EmailMessage {
     public abstract Builder setRecipients(Collection<InternetAddress> recipients);
 
     public abstract Builder setFrom(InternetAddress from);
+
+    public abstract Builder setReplyToEmailAddress(InternetAddress replyToEmailAddress);
+
+    public abstract Builder setReplyToEmailAddress(Optional<InternetAddress> replyToEmailAddress);
 
     public abstract Builder setBccs(Collection<InternetAddress> bccs);
 
