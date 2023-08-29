@@ -209,7 +209,7 @@ public class CheckBulkComplianceActionTest {
                 .setAllowedTlds(ImmutableSet.of("foo"))
                 .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
                 .setRenewalPriceBehavior(RenewalPriceBehavior.SPECIFIED)
-                .setAllowedEppActions(com.google.common.collect.ImmutableSet.of(CommandName.CREATE))
+                .setAllowedEppActions(ImmutableSet.of(CommandName.CREATE))
                 .setDiscountFraction(1)
                 .build());
     BulkPricingPackage bulkPricingPackage2 =
@@ -266,7 +266,7 @@ public class CheckBulkComplianceActionTest {
                 .setAllowedTlds(ImmutableSet.of("foo"))
                 .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
                 .setRenewalPriceBehavior(RenewalPriceBehavior.SPECIFIED)
-                .setAllowedEppActions(com.google.common.collect.ImmutableSet.of(CommandName.CREATE))
+                .setAllowedEppActions(ImmutableSet.of(CommandName.CREATE))
                 .setDiscountFraction(1)
                 .build());
     BulkPricingPackage packagePromotion2 =
@@ -341,7 +341,7 @@ public class CheckBulkComplianceActionTest {
                 .setAllowedTlds(ImmutableSet.of("foo"))
                 .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
                 .setRenewalPriceBehavior(RenewalPriceBehavior.SPECIFIED)
-                .setAllowedEppActions(com.google.common.collect.ImmutableSet.of(CommandName.CREATE))
+                .setAllowedEppActions(ImmutableSet.of(CommandName.CREATE))
                 .setDiscountFraction(1)
                 .build());
     BulkPricingPackage bulkPricingPackage2 =
@@ -407,7 +407,7 @@ public class CheckBulkComplianceActionTest {
                 .setAllowedTlds(ImmutableSet.of("foo"))
                 .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
                 .setRenewalPriceBehavior(RenewalPriceBehavior.SPECIFIED)
-                .setAllowedEppActions(com.google.common.collect.ImmutableSet.of(CommandName.CREATE))
+                .setAllowedEppActions(ImmutableSet.of(CommandName.CREATE))
                 .setDiscountFraction(1)
                 .build());
     BulkPricingPackage bulkPricingPackage2 =
