@@ -158,6 +158,7 @@ import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.GracePeriod;
 import google.registry.model.domain.fee.BaseFee.FeeType;
 import google.registry.model.domain.fee.Fee;
+import google.registry.model.domain.fee.FeeQueryCommandExtensionItem.CommandName;
 import google.registry.model.domain.launch.LaunchNotice;
 import google.registry.model.domain.rgp.GracePeriodStatus;
 import google.registry.model.domain.secdns.DomainDsData;
@@ -3681,6 +3682,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
                 .setTokenType(BULK_PRICING)
                 .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
                 .setAllowedTlds(ImmutableSet.of("tld"))
+                .setAllowedEppActions(ImmutableSet.of(CommandName.CREATE))
                 .setRenewalPriceBehavior(SPECIFIED)
                 .build());
     persistContactsAndHosts();
@@ -3707,6 +3709,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
             .setToken("abc123")
             .setTokenType(BULK_PRICING)
             .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
+            .setAllowedEppActions(ImmutableSet.of(CommandName.CREATE))
             .setAllowedTlds(ImmutableSet.of("tld"))
             .setRenewalPriceBehavior(SPECIFIED)
             .build());

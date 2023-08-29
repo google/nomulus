@@ -223,6 +223,7 @@ public class AllocationTokenTest extends EntityTestCase {
         new AllocationToken.Builder()
             .setToken("abc123")
             .setTokenType(TokenType.BULK_PRICING)
+            .setAllowedEppActions(ImmutableSet.of(CommandName.CREATE))
             .setRenewalPriceBehavior(RenewalPriceBehavior.DEFAULT);
     IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class, builder::build);
     assertThat(thrown)
@@ -231,11 +232,39 @@ public class AllocationTokenTest extends EntityTestCase {
   }
 
   @Test
+  void testFail_bulkTokenMultipleEppActions() {
+    AllocationToken.Builder builder =
+        new AllocationToken.Builder()
+            .setToken("abc123")
+            .setTokenType(TokenType.BULK_PRICING)
+            .setAllowedEppActions(ImmutableSet.of(CommandName.CREATE, CommandName.RESTORE))
+            .setRenewalPriceBehavior(RenewalPriceBehavior.SPECIFIED);
+    IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class, builder::build);
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo("Bulk tokens may only be valid for CREATE actions");
+  }
+
+  @Test
+  void testFail_bulkTokenNullEppActions() {
+    AllocationToken.Builder builder =
+        new AllocationToken.Builder()
+            .setToken("abc123")
+            .setTokenType(TokenType.BULK_PRICING)
+            .setRenewalPriceBehavior(RenewalPriceBehavior.SPECIFIED);
+    IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class, builder::build);
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo("Bulk tokens may only be valid for CREATE actions");
+  }
+
+  @Test
   void testFail_bulkTokenDiscountPremium() {
     AllocationToken.Builder builder =
         new AllocationToken.Builder()
             .setToken("abc123")
             .setTokenType(TokenType.BULK_PRICING)
+            .setAllowedEppActions(ImmutableSet.of(CommandName.CREATE))
             .setRenewalPriceBehavior(RenewalPriceBehavior.SPECIFIED)
             .setDiscountPremiums(true);
     IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class, builder::build);
@@ -297,6 +326,7 @@ public class AllocationTokenTest extends EntityTestCase {
         new AllocationToken.Builder()
             .setToken("foobar")
             .setTokenType(BULK_PRICING)
+            .setAllowedEppActions(ImmutableSet.of(CommandName.CREATE))
             .setRenewalPriceBehavior(RenewalPriceBehavior.SPECIFIED)
             .setAllowedRegistrarIds(ImmutableSet.of("foo", "bar"));
     IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class, builder::build);

@@ -105,6 +105,7 @@ import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.GracePeriod;
 import google.registry.model.domain.Period;
 import google.registry.model.domain.Period.Unit;
+import google.registry.model.domain.fee.FeeQueryCommandExtensionItem.CommandName;
 import google.registry.model.domain.rgp.GracePeriodStatus;
 import google.registry.model.domain.token.AllocationToken;
 import google.registry.model.domain.token.AllocationToken.TokenStatus;
@@ -1345,6 +1346,7 @@ class DomainTransferRequestFlowTest
                 .setToken("abc123")
                 .setTokenType(BULK_PRICING)
                 .setRenewalPriceBehavior(RenewalPriceBehavior.SPECIFIED)
+                .setAllowedEppActions(ImmutableSet.of(CommandName.CREATE))
                 .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
                 .build());
     domain =
@@ -1403,6 +1405,7 @@ class DomainTransferRequestFlowTest
                 .setToken("abc123")
                 .setTokenType(BULK_PRICING)
                 .setRenewalPriceBehavior(RenewalPriceBehavior.SPECIFIED)
+                .setAllowedEppActions(ImmutableSet.of(CommandName.CREATE))
                 .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
                 .build());
     domain =
@@ -1460,6 +1463,7 @@ class DomainTransferRequestFlowTest
                 .setToken("abc123")
                 .setTokenType(BULK_PRICING)
                 .setRenewalPriceBehavior(RenewalPriceBehavior.SPECIFIED)
+                .setAllowedEppActions(ImmutableSet.of(CommandName.CREATE))
                 .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
                 .build());
     domain =
