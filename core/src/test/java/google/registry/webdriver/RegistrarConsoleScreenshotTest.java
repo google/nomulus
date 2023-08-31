@@ -18,6 +18,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static google.registry.persistence.transaction.JpaTransactionManagerExtension.makeRegistrar2;
 import static google.registry.persistence.transaction.JpaTransactionManagerExtension.makeRegistrarContact2;
 import static google.registry.persistence.transaction.JpaTransactionManagerExtension.makeRegistrarContact3;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.server.Fixture.BASIC;
 import static google.registry.server.Route.route;
 import static google.registry.testing.DatabaseHelper.createTld;
@@ -172,13 +173,15 @@ class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
     driver.diffPage("contact_view");
 
     RegistrarPoc contact =
-        loadRegistrar("TheRegistrar").getContacts().stream()
-            .filter(c -> "johndoe@theregistrar.com".equals(c.getEmailAddress()))
-            .findFirst()
-            .get();
-          assertThat(contact.verifyRegistryLockPassword("password")).isTrue();
-          assertThat(contact.getRegistryLockEmailAddress())
-              .isEqualTo(Optional.of("johndoe.registrylock@example.com"));
+        tm().transact(
+                () ->
+                    loadRegistrar("TheRegistrar").getContacts().stream()
+                        .filter(c -> "johndoe@theregistrar.com".equals(c.getEmailAddress()))
+                        .findFirst()
+                        .get());
+    assertThat(contact.verifyRegistryLockPassword("password")).isTrue();
+    assertThat(contact.getRegistryLockEmailAddress())
+        .isEqualTo(Optional.of("johndoe.registrylock@example.com"));
   }
 
   @RetryingTest(3)

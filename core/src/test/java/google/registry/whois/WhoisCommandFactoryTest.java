@@ -20,6 +20,7 @@ import static google.registry.testing.DatabaseHelper.newHost;
 import static google.registry.testing.DatabaseHelper.newTld;
 import static google.registry.testing.DatabaseHelper.persistNewRegistrar;
 import static google.registry.testing.DatabaseHelper.persistResource;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.net.InternetDomainName;
@@ -93,12 +94,17 @@ class WhoisCommandFactoryTest {
 
   @Test
   void testNonCached_NameserverLookupByHostCommand() throws Exception {
-    WhoisResponse response =
-        noncachedFactory
-            .nameserverLookupByHost(InternetDomainName.from("ns.example.tld"))
-            .executeQuery(clock.nowUtc());
-    assertThat(response.getResponse(false, "").plainTextOutput())
-        .contains("Registrar: The Registrar");
+    tm().transact(
+            () -> {
+              WhoisResponse response =
+                  assertDoesNotThrow(
+                      () ->
+                          noncachedFactory
+                              .nameserverLookupByHost(InternetDomainName.from("ns.example.tld"))
+                              .executeQuery(clock.nowUtc()));
+              assertThat(response.getResponse(false, "").plainTextOutput())
+                  .contains("Registrar: The Registrar");
+            });
 
     // Note that we can't use persistResource() for these as that clears the cache.
     tm().transact(
@@ -107,22 +113,33 @@ class WhoisCommandFactoryTest {
                         host.asBuilder()
                             .setPersistedCurrentSponsorRegistrarId("OtherRegistrar")
                             .build()));
-    response =
-        noncachedFactory
-            .nameserverLookupByHost(InternetDomainName.from("ns.example.tld"))
-            .executeQuery(clock.nowUtc());
-    assertThat(response.getResponse(false, "").plainTextOutput())
-        .contains("Registrar: OtherRegistrar name");
+
+    tm().transact(
+            () -> {
+              WhoisResponse response =
+                  assertDoesNotThrow(
+                      () ->
+                          noncachedFactory
+                              .nameserverLookupByHost(InternetDomainName.from("ns.example.tld"))
+                              .executeQuery(clock.nowUtc()));
+              assertThat(response.getResponse(false, "").plainTextOutput())
+                  .contains("Registrar: OtherRegistrar name");
+            });
   }
 
   @Test
   void testCached_NameserverLookupByHostCommand() throws Exception {
-    WhoisResponse response =
-        cachedFactory
-            .nameserverLookupByHost(InternetDomainName.from("ns.example.tld"))
-            .executeQuery(clock.nowUtc());
-    assertThat(response.getResponse(false, "").plainTextOutput())
-        .contains("Registrar: The Registrar");
+    tm().transact(
+            () -> {
+              WhoisResponse response =
+                  assertDoesNotThrow(
+                      () ->
+                          cachedFactory
+                              .nameserverLookupByHost(InternetDomainName.from("ns.example.tld"))
+                              .executeQuery(clock.nowUtc()));
+              assertThat(response.getResponse(false, "").plainTextOutput())
+                  .contains("Registrar: The Registrar");
+            });
 
     tm().transact(
             () ->
@@ -130,23 +147,36 @@ class WhoisCommandFactoryTest {
                         host.asBuilder()
                             .setPersistedCurrentSponsorRegistrarId("OtherRegistrar")
                             .build()));
-    response =
-        cachedFactory
-            .nameserverLookupByHost(InternetDomainName.from("ns.example.tld"))
-            .executeQuery(clock.nowUtc());
-    assertThat(response.getResponse(false, "").plainTextOutput())
-        .contains("Registrar: The Registrar");
+
+    tm().transact(
+            () -> {
+              WhoisResponse response =
+                  assertDoesNotThrow(
+                      () ->
+                          cachedFactory
+                              .nameserverLookupByHost(InternetDomainName.from("ns.example.tld"))
+                              .executeQuery(clock.nowUtc()));
+              assertThat(response.getResponse(false, "").plainTextOutput())
+                  .contains("Registrar: The Registrar");
+            });
   }
 
   @Test
   void testNonCached_DomainLookupCommand() throws Exception {
-    WhoisResponse response =
-        noncachedFactory
-            .domainLookup(InternetDomainName.from("example.tld"), true, "REDACTED")
-            .executeQuery(clock.nowUtc());
-    assertThat(response.getResponse(false, "").plainTextOutput())
-        .contains("Registrar: The Registrar");
+    tm().transact(
+            () -> {
+              WhoisResponse response =
+                  assertDoesNotThrow(
+                      () ->
+                          noncachedFactory
+                              .domainLookup(
+                                  InternetDomainName.from("example.tld"), true, "REDACTED")
+                              .executeQuery(clock.nowUtc()));
+              assertThat(response.getResponse(false, "").plainTextOutput())
+                  .contains("Registrar: The Registrar");
+            });
 
+    // Note that we can't use persistResource() for these as that clears the cache.
     tm().transact(
             () ->
                 tm().put(
@@ -154,23 +184,37 @@ class WhoisCommandFactoryTest {
                             .asBuilder()
                             .setPersistedCurrentSponsorRegistrarId("OtherRegistrar")
                             .build()));
-    response =
-        noncachedFactory
-            .domainLookup(InternetDomainName.from("example.tld"), true, "REDACTED")
-            .executeQuery(clock.nowUtc());
-    assertThat(response.getResponse(false, "").plainTextOutput())
-        .contains("Registrar: OtherRegistrar name");
+
+    tm().transact(
+            () -> {
+              WhoisResponse response =
+                  assertDoesNotThrow(
+                      () ->
+                          noncachedFactory
+                              .domainLookup(
+                                  InternetDomainName.from("example.tld"), true, "REDACTED")
+                              .executeQuery(clock.nowUtc()));
+              assertThat(response.getResponse(false, "").plainTextOutput())
+                  .contains("Registrar: OtherRegistrar name");
+            });
   }
 
   @Test
   void testCached_DomainLookupCommand() throws Exception {
-    WhoisResponse response =
-        cachedFactory
-            .domainLookup(InternetDomainName.from("example.tld"), true, "REDACTED")
-            .executeQuery(clock.nowUtc());
-    assertThat(response.getResponse(false, "").plainTextOutput())
-        .contains("Registrar: The Registrar");
+    tm().transact(
+            () -> {
+              WhoisResponse response =
+                  assertDoesNotThrow(
+                      () ->
+                          cachedFactory
+                              .domainLookup(
+                                  InternetDomainName.from("example.tld"), true, "REDACTED")
+                              .executeQuery(clock.nowUtc()));
+              assertThat(response.getResponse(false, "").plainTextOutput())
+                  .contains("Registrar: The Registrar");
+            });
 
+    // Note that we can't use persistResource() for these as that clears the cache.
     tm().transact(
             () ->
                 tm().put(
@@ -178,40 +222,81 @@ class WhoisCommandFactoryTest {
                             .asBuilder()
                             .setPersistedCurrentSponsorRegistrarId("OtherRegistrar")
                             .build()));
-    response =
-        cachedFactory
-            .domainLookup(InternetDomainName.from("example.tld"), true, "REDACTED")
-            .executeQuery(clock.nowUtc());
-    assertThat(response.getResponse(false, "").plainTextOutput())
-        .contains("Registrar: The Registrar");
+
+    tm().transact(
+            () -> {
+              WhoisResponse response =
+                  assertDoesNotThrow(
+                      () ->
+                          cachedFactory
+                              .domainLookup(
+                                  InternetDomainName.from("example.tld"), true, "REDACTED")
+                              .executeQuery(clock.nowUtc()));
+              assertThat(response.getResponse(false, "").plainTextOutput())
+                  .contains("Registrar: The Registrar");
+            });
   }
 
   @Test
   void testNonCached_RegistrarLookupCommand() throws Exception {
-    WhoisResponse response =
-        noncachedFactory.registrarLookup("OtherRegistrar").executeQuery(clock.nowUtc());
-    assertThat(response.getResponse(false, "").plainTextOutput())
-        .contains("Phone Number: +1.2223334444");
+    tm().transact(
+            () -> {
+              WhoisResponse response =
+                  assertDoesNotThrow(
+                      () ->
+                          noncachedFactory
+                              .registrarLookup("OtherRegistrar")
+                              .executeQuery(clock.nowUtc()));
+              assertThat(response.getResponse(false, "").plainTextOutput())
+                  .contains("Phone Number: +1.2223334444");
+            });
 
+    // Note that we can't use persistResource() for these as that clears the cache.
     tm().transact(
             () -> tm().put(otherRegistrar.asBuilder().setPhoneNumber("+1.2345677890").build()));
-    response = noncachedFactory.registrarLookup("OtherRegistrar").executeQuery(clock.nowUtc());
-    assertThat(response.getResponse(false, "").plainTextOutput())
-        .contains("Phone Number: +1.2345677890");
+
+    tm().transact(
+            () -> {
+              WhoisResponse response =
+                  assertDoesNotThrow(
+                      () ->
+                          noncachedFactory
+                              .registrarLookup("OtherRegistrar")
+                              .executeQuery(clock.nowUtc()));
+              assertThat(response.getResponse(false, "").plainTextOutput())
+                  .contains("Phone Number: +1.2345677890");
+            });
   }
 
   @Test
   void testCached_RegistrarLookupCommand() throws Exception {
-    WhoisResponse response =
-        cachedFactory.registrarLookup("OtherRegistrar").executeQuery(clock.nowUtc());
-    assertThat(response.getResponse(false, "").plainTextOutput())
-        .contains("Phone Number: +1.2223334444");
+    tm().transact(
+            () -> {
+              WhoisResponse response =
+                  assertDoesNotThrow(
+                      () ->
+                          cachedFactory
+                              .registrarLookup("OtherRegistrar")
+                              .executeQuery(clock.nowUtc()));
+              assertThat(response.getResponse(false, "").plainTextOutput())
+                  .contains("Phone Number: +1.2223334444");
+            });
 
+    // Note that we can't use persistResource() for these as that clears the cache.
     tm().transact(
             () -> tm().put(otherRegistrar.asBuilder().setPhoneNumber("+1.2345677890").build()));
-    response = cachedFactory.registrarLookup("OtherRegistrar").executeQuery(clock.nowUtc());
-    assertThat(response.getResponse(false, "").plainTextOutput())
-        .contains("Phone Number: +1.2223334444");
+
+    tm().transact(
+            () -> {
+              WhoisResponse response =
+                  assertDoesNotThrow(
+                      () ->
+                          cachedFactory
+                              .registrarLookup("OtherRegistrar")
+                              .executeQuery(clock.nowUtc()));
+              assertThat(response.getResponse(false, "").plainTextOutput())
+                  .contains("Phone Number: +1.2223334444");
+            });
   }
 
   @Test
@@ -222,20 +307,22 @@ class WhoisCommandFactoryTest {
         noncachedFactory
             .nameserverLookupByIp(InetAddress.getByName("1.2.3.4"))
             .executeQuery(clock.nowUtc());
-    assertThat(response.getResponse(false, "").plainTextOutput())
+    assertThat(tm().transact(() -> response.getResponse(false, "")).plainTextOutput())
         .contains("Registrar: The Registrar");
 
+    // Note that we can't use persistResource() for these as that clears the cache.
     tm().transact(
             () ->
                 tm().put(
                         host.asBuilder()
                             .setPersistedCurrentSponsorRegistrarId("OtherRegistrar")
                             .build()));
-    response =
+
+    WhoisResponse response2 =
         noncachedFactory
             .nameserverLookupByIp(InetAddress.getByName("1.2.3.4"))
             .executeQuery(clock.nowUtc());
-    assertThat(response.getResponse(false, "").plainTextOutput())
+    assertThat(tm().transact(() -> response2.getResponse(false, "")).plainTextOutput())
         .contains("Registrar: OtherRegistrar");
   }
 }
