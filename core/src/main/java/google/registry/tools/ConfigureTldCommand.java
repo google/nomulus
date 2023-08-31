@@ -21,6 +21,7 @@ import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.base.CharMatcher;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
@@ -75,7 +76,18 @@ public class ConfigureTldCommand extends MutatingCommand {
   protected void init() throws Exception {
     String name = convertFilePathToName(inputFile);
     Map<String, Object> tldData = new Yaml().load(Files.newBufferedReader(inputFile));
+    checkName(name, tldData);
     checkForMissingFields(tldData);
+    Tld oldTld = getTlds().contains(name) ? Tld.get(name) : null;
+    Tld newTld = mapper.readValue(inputFile.toFile(), Tld.class);
+    checkPremiumList(newTld);
+    checkDnsWriters(newTld);
+    checkCurrency(newTld);
+    stageEntityChange(oldTld, newTld);
+  }
+
+  private void checkName(String name, Map<String, Object> tldData) {
+    checkArgument(CharMatcher.ascii().matchesAllOf(name), "A TLD name must be in plain ASCII");
     checkArgument(!Character.isDigit(name.charAt(0)), "TLDs cannot begin with a number");
     checkArgument(
         tldData.get("tldStr").equals(name),
@@ -83,12 +95,6 @@ public class ConfigureTldCommand extends MutatingCommand {
     checkArgument(
         tldData.get("tldUnicode").equals(Idn.toUnicode(name)),
         "The value for tldUnicode must equal the unicode representation of the TLD name");
-    Tld oldTld = getTlds().contains(name) ? Tld.get(name) : null;
-    Tld newTld = mapper.readValue(inputFile.toFile(), Tld.class);
-    checkPremiumList(newTld);
-    checkDnsWriters(newTld);
-    checkCurrency(newTld);
-    stageEntityChange(oldTld, newTld);
   }
 
   private void checkForMissingFields(Map<String, Object> tldData) {

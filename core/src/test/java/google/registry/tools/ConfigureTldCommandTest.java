@@ -30,6 +30,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException;
+import com.google.common.base.Ascii;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.io.Files;
@@ -203,6 +204,93 @@ public class ConfigureTldCommandTest extends CommandTestCase<ConfigureTldCommand
     assertThat(thrown.getMessage())
         .isEqualTo(
             "The value for tldUnicode must equal the unicode representation of the TLD name");
+  }
+
+  @Test
+  void testFailure_tldUpperCase() throws Exception {
+    String name = "TLD";
+    File tldFile = tmpDir.resolve("TLD.yaml").toFile();
+    Files.asCharSink(tldFile, UTF_8)
+        .write(
+            loadFile(
+                getClass(),
+                "wildcard.yaml",
+                ImmutableMap.of(
+                    "TLDSTR", name, "TLDUNICODE", name, "ROIDSUFFIX", Ascii.toUpperCase(name))));
+    IllegalArgumentException thrown =
+        assertThrows(IllegalArgumentException.class, () -> runCommandForced("--input=" + tldFile));
+    assertThat(thrown.getMessage())
+        .isEqualTo(
+            "The value for tldUnicode must equal the unicode representation of the TLD name");
+  }
+
+  @Test
+  void testSuccess_asciiNameWithOptionalPunycode() throws Exception {
+    String name = "xn--q9jyb4c";
+    File tldFile = tmpDir.resolve(name + ".yaml").toFile();
+    String fileContents =
+        loadFile(
+            getClass(),
+            "wildcard.yaml",
+            ImmutableMap.of(
+                "TLDSTR",
+                "\"" + name + "\"",
+                "TLDUNICODE",
+                "\"みんな\"",
+                "ROIDSUFFIX",
+                "\"Q9JYB4C\""));
+    Files.asCharSink(tldFile, UTF_8).write(fileContents);
+    runCommandForced("--input=" + tldFile);
+    Tld tld = Tld.get(name);
+    assertThat(tld).isNotNull();
+    assertThat(tld.getDriveFolderId()).isEqualTo("driveFolder");
+    assertThat(tld.getCreateBillingCost()).isEqualTo(Money.of(USD, 25));
+    String yaml = objectMapper.writeValueAsString(tld);
+    assertThat(yaml).isEqualTo(fileContents);
+  }
+
+  @Test
+  void testFailure_punycodeDoesNotMatch() throws Exception {
+    String name = "xn--q9jyb4c";
+    File tldFile = tmpDir.resolve(name + ".yaml").toFile();
+    String fileContents =
+        loadFile(
+            getClass(),
+            "wildcard.yaml",
+            ImmutableMap.of(
+                "TLDSTR",
+                "\"" + name + "\"",
+                "TLDUNICODE",
+                "\"yoyo\"",
+                "ROIDSUFFIX",
+                "\"Q9JYB4C\""));
+    Files.asCharSink(tldFile, UTF_8).write(fileContents);
+    IllegalArgumentException thrown =
+        assertThrows(IllegalArgumentException.class, () -> runCommandForced("--input=" + tldFile));
+    assertThat(thrown.getMessage())
+        .isEqualTo(
+            "The value for tldUnicode must equal the unicode representation of the TLD name");
+  }
+
+  @Test
+  void testFailure_punycodeName() throws Exception {
+    String name = "みんな";
+    File tldFile = tmpDir.resolve(name + ".yaml").toFile();
+    String fileContents =
+        loadFile(
+            getClass(),
+            "wildcard.yaml",
+            ImmutableMap.of(
+                "TLDSTR",
+                "\"" + name + "\"",
+                "TLDUNICODE",
+                "\"みんな\"",
+                "ROIDSUFFIX",
+                "\"Q9JYB4C\""));
+    Files.asCharSink(tldFile, UTF_8).write(fileContents);
+    IllegalArgumentException thrown =
+        assertThrows(IllegalArgumentException.class, () -> runCommandForced("--input=" + tldFile));
+    assertThat(thrown.getMessage()).isEqualTo("A TLD name must be in plain ASCII");
   }
 
   @Test
