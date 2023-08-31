@@ -2544,11 +2544,13 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
   private void doFailingTest_invalidRegistrarState(State registrarState) {
     persistContactsAndHosts();
     persistResource(
-        Registrar.loadByRegistrarId("TheRegistrar")
-            .get()
-            .asBuilder()
-            .setState(registrarState)
-            .build());
+        tm().transact(
+                () ->
+                    Registrar.loadByRegistrarId("TheRegistrar")
+                        .get()
+                        .asBuilder()
+                        .setState(registrarState)
+                        .build()));
     EppException thrown =
         assertThrows(RegistrarMustBeActiveForThisOperationException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();

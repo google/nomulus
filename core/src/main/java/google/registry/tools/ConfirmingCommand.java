@@ -14,7 +14,9 @@
 
 package google.registry.tools;
 
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.tools.CommandUtilities.promptForYes;
+import static org.apache.commons.lang3.exception.ExceptionUtils.rethrow;
 
 import com.beust.jcommander.Parameter;
 import com.google.common.base.Strings;
@@ -29,20 +31,46 @@ public abstract class ConfirmingCommand implements Command {
 
   @Override
   public final void run() throws Exception {
-    if (checkExecutionState()) {
-      init();
-      printLineIfNotEmpty(prompt());
-      if (dontRunCommand()) {
-        // This typically happens when all of the work is accomplished inside of prompt(), so do
-        // nothing further.
-        return;
-      } else if (force || promptForYes("Perform this command?")) {
-        System.out.println("Running ... ");
-        System.out.println(execute());
-        printLineIfNotEmpty(postExecute());
-      } else {
-        System.out.println("Command aborted.");
-      }
+    if (!checkExecutionState()) {
+      return;
+    }
+
+    tm().transact(
+            () -> {
+              try {
+                init();
+                printLineIfNotEmpty(prompt());
+              } catch (Exception e) {
+                rethrow(e);
+              }
+            });
+
+    if (dontRunCommand()) {
+      // This typically happens when all of the work is accomplished inside of
+      // prompt(), so do
+      // nothing further.
+      return;
+    } else if (force || promptForYes("Perform this command?")) {
+      System.out.println("Running ... ");
+      tm().transact(
+              () -> {
+                try {
+                  System.out.println(execute());
+                } catch (Exception e) {
+                  rethrow(e);
+                }
+              });
+
+      tm().transact(
+              () -> {
+                try {
+                  printLineIfNotEmpty(postExecute());
+                } catch (Exception e) {
+                  rethrow(e);
+                }
+              });
+    } else {
+      System.out.println("Command aborted.");
     }
   }
 

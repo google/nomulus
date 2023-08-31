@@ -64,7 +64,7 @@ public final class UpdateRegistrarRdapBaseUrlsAction implements Runnable {
   @Override
   public void run() {
     ImmutableMap<String, String> ianaIdsToUrls = getIanaIdsToUrls();
-    tm().transact(() -> processAllRegistrars(ianaIdsToUrls));
+    processAllRegistrars(ianaIdsToUrls);
   }
 
   private void processAllRegistrars(ImmutableMap<String, String> ianaIdsToUrls) {

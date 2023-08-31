@@ -59,6 +59,9 @@ public @interface Action {
   /** HTTP methods that request processor should allow. */
   Method[] method() default Method.GET;
 
+  /** Whether to create a wrapping DB transaction around the execution of the action. */
+  boolean transactional() default true;
+
   /**
    * Indicates request processor should print "OK" to the HTTP client on success.
    *

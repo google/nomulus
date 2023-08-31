@@ -579,7 +579,7 @@ public class Registrar extends UpdateAutoTimestampEntity implements Buildable, J
   }
 
   private ImmutableSet<RegistrarPoc> getContactPocs() {
-    return tm().transact(
+    return tm().reTransact(
             () ->
                 tm().query("FROM RegistrarPoc WHERE registrarId = :registrarId", RegistrarPoc.class)
                     .setParameter("registrarId", registrarId)
@@ -933,7 +933,7 @@ public class Registrar extends UpdateAutoTimestampEntity implements Buildable, J
 
   /** Loads all registrar entities directly from the database. */
   public static Iterable<Registrar> loadAll() {
-    return tm().transact(() -> tm().loadAllOf(Registrar.class));
+    return tm().loadAllOf(Registrar.class);
   }
 
   /** Loads all registrar entities using an in-memory cache. */
@@ -951,7 +951,7 @@ public class Registrar extends UpdateAutoTimestampEntity implements Buildable, J
   /** Loads and returns a registrar entity by its id directly from the database. */
   public static Optional<Registrar> loadByRegistrarId(String registrarId) {
     checkArgument(!Strings.isNullOrEmpty(registrarId), "registrarId must be specified");
-    return tm().transact(() -> tm().loadByKeyIfPresent(createVKey(registrarId)));
+    return tm().reTransact(() -> tm().loadByKeyIfPresent(createVKey(registrarId)));
   }
 
   /**
