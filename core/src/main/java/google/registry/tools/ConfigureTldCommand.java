@@ -13,7 +13,8 @@
 // limitations under the License.
 package google.registry.tools;
 
-import static com.google.common.flogger.util.Checks.checkArgument;
+import static com.google.common.base.Preconditions.checkArgument;
+import static google.registry.model.tld.Tld.Builder.ROID_SUFFIX_PATTERN;
 import static google.registry.model.tld.Tlds.getTlds;
 import static google.registry.util.ListNamingUtils.convertFilePathToName;
 
@@ -22,7 +23,6 @@ import com.beust.jcommander.Parameters;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.CharMatcher;
-import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.collect.Sets;
@@ -95,6 +95,10 @@ public class ConfigureTldCommand extends MutatingCommand {
     checkArgument(
         tldData.get("tldUnicode").equals(Idn.toUnicode(name)),
         "The value for tldUnicode must equal the unicode representation of the TLD name");
+    checkArgument(
+        ROID_SUFFIX_PATTERN.matcher((CharSequence) tldData.get("roidSuffix")).matches(),
+        "ROID suffix must be in format %s",
+        ROID_SUFFIX_PATTERN.pattern());
   }
 
   private void checkForMissingFields(Map<String, Object> tldData) {
@@ -112,8 +116,8 @@ public class ConfigureTldCommand extends MutatingCommand {
     }
     checkArgument(
         missingFields.isEmpty(),
-        String.format(
-            "The input file is missing data for the following fields: %s", missingFields));
+        "The input file is missing data for the following fields: %s",
+        missingFields);
   }
 
   private void checkPremiumList(Tld newTld) {
@@ -122,7 +126,8 @@ public class ConfigureTldCommand extends MutatingCommand {
     Optional<PremiumList> premiumList = PremiumListDao.getLatestRevision(premiumListName.get());
     checkArgument(
         premiumList.isPresent(),
-        String.format("The premium list with the name %s does not exist", premiumListName.get()));
+        "The premium list with the name %s does not exist",
+        premiumListName.get());
     checkArgument(
         premiumList.get().getCurrency().equals(newTld.getCurrency()),
         "The premium list must use the TLD's currency");
@@ -131,7 +136,7 @@ public class ConfigureTldCommand extends MutatingCommand {
   private void checkDnsWriters(Tld newTld) {
     ImmutableSet<String> dnsWriters = newTld.getDnsWriters();
     SetView<String> invalidDnsWriters = Sets.difference(dnsWriters, validDnsWriterNames);
-    Preconditions.checkArgument(
+    checkArgument(
         invalidDnsWriters.isEmpty(), "Invalid DNS writer name(s) specified: %s", invalidDnsWriters);
   }
 

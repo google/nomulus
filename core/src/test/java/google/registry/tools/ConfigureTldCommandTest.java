@@ -294,6 +294,22 @@ public class ConfigureTldCommandTest extends CommandTestCase<ConfigureTldCommand
   }
 
   @Test
+  void testFailure_invalidRoidSuffix() throws Exception {
+    String name = "tld";
+    File tldFile = tmpDir.resolve("tld.yaml").toFile();
+    Files.asCharSink(tldFile, UTF_8)
+        .write(
+            loadFile(
+                getClass(),
+                "wildcard.yaml",
+                ImmutableMap.of(
+                    "TLDSTR", name, "TLDUNICODE", name, "ROIDSUFFIX", "TLLLLLLLLLLLLLLLLLLLLLLD")));
+    IllegalArgumentException thrown =
+        assertThrows(IllegalArgumentException.class, () -> runCommandForced("--input=" + tldFile));
+    assertThat(thrown.getMessage()).isEqualTo("ROID suffix must be in format ^[A-Z\\d_]{1,8}$");
+  }
+
+  @Test
   void testFailure_invalidIdnTable() throws Exception {
     File tldFile = tmpDir.resolve("badidn.yaml").toFile();
     Files.asCharSink(tldFile, UTF_8).write(loadFile(getClass(), "badidn.yaml"));

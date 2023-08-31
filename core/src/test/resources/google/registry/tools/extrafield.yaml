@@ -43,7 +43,7 @@ reservedListNames: []
 restoreBillingCost:
   currency: "USD"
   amount: 17.00
-roidSuffix: "EXTRAFIELD"
+roidSuffix: "EXTRA"
 serverStatusChangeBillingCost:
   currency: "USD"
   amount: 19.00

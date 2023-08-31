@@ -40,7 +40,7 @@ reservedListNames: []
 restoreBillingCost:
   currency: "USD"
   amount: 17.00
-roidSuffix: "missingnullablefields"
+roidSuffix: "NONULLS"
 serverStatusChangeBillingCost:
   currency: "USD"
   amount: 19.00

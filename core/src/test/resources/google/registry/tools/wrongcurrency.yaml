@@ -1,5 +1,5 @@
 tldStr: "wrongcurrency"
-roidSuffix: "WRONGCURRENCY"
+roidSuffix: "WRONGCUR"
 pricingEngineClassName: "google.registry.model.pricing.StaticPremiumListPricingEngine"
 dnsWriters:
 - "VoidDnsWriter"
