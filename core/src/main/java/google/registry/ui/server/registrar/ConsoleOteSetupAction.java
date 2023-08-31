@@ -53,7 +53,9 @@ import javax.inject.Named;
     service = Action.Service.DEFAULT,
     path = ConsoleOteSetupAction.PATH,
     method = {Method.POST, Method.GET},
-    auth = Auth.AUTH_PUBLIC_LEGACY)
+    auth = Auth.AUTH_PUBLIC_LEGACY,
+    transactional = false // Needs to explicitly run more than one transaction sequentially.
+    )
 public final class ConsoleOteSetupAction extends HtmlAction {
 
   public static final String PATH = "/registrar-ote-setup";
