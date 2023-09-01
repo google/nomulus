@@ -12,20 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Component, EventEmitter, Output } from '@angular/core';
+import { Component } from '@angular/core';
 
 @Component({
-  selector: 'app-header',
-  templateUrl: './header.component.html',
-  styleUrls: ['./header.component.scss'],
+  selector: '[app-billing-widget]',
+  templateUrl: './billing-widget.component.html',
 })
-export class HeaderComponent {
-  private isNavOpen = false;
-
-  @Output() toggleNavOpen = new EventEmitter<boolean>();
-
-  toggleNavPane() {
-    this.isNavOpen = !this.isNavOpen;
-    this.toggleNavOpen.emit(this.isNavOpen);
-  }
+export class BillingWidgetComponent {
+  constructor() {}
 }

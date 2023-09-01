@@ -12,11 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-html,
-body {
-  height: 100%;
-}
-body {
-  margin: 0;
-  font-family: Roboto, "Helvetica Neue", sans-serif;
+.console-app {
+  &__home {
+    margin-top: 1rem;
+  }
+  &__home-widgets {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    grid-gap: 20px;
+
+    mat-card {
+      height: 100%;
+      h1 {
+        margin-top: 1rem;
+      }
+    }
+  }
 }

@@ -13,10 +13,25 @@
 // limitations under the License.
 
 import { Component } from '@angular/core';
+import { RegistrarService } from './registrar/registrar.service';
+import { GlobalLoaderService } from './shared/services/globalLoader.service';
 
 @Component({
   selector: 'app-root',
   templateUrl: './app.component.html',
-  styleUrls: ['./app.component.less'],
+  styleUrls: ['./app.component.scss'],
 })
-export class AppComponent {}
+export class AppComponent {
+  renderRouter: boolean = true;
+  constructor(
+    protected registrarService: RegistrarService,
+    protected globalLoader: GlobalLoaderService
+  ) {
+    registrarService.activeRegistrarIdChange.subscribe(() => {
+      this.renderRouter = false;
+      setTimeout(() => {
+        this.renderRouter = true;
+      }, 400);
+    });
+  }
+}

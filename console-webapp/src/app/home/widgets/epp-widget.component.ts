@@ -15,8 +15,9 @@
 import { Component } from '@angular/core';
 
 @Component({
-  selector: 'app-registrars',
-  templateUrl: './registrars.component.html',
-  styleUrls: ['./registrars.component.less'],
+  selector: '[app-epp-widget]',
+  templateUrl: './epp-widget.component.html',
 })
-export default class RegistrarsComponent {}
+export class EppWidgetComponent {
+  constructor() {}
+}

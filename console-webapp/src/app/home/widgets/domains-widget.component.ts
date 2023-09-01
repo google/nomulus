@@ -12,6 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-.spacer {
-  flex: 1;
+import { Component } from '@angular/core';
+
+@Component({
+  selector: '[app-domains-widget]',
+  templateUrl: './domains-widget.component.html',
+})
+export class DomainsWidgetComponent {
+  constructor() {}
 }

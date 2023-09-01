@@ -77,7 +77,7 @@ class ContactDetailsEventsResponder {
 @Component({
   selector: 'app-contact-details-dialog',
   templateUrl: 'contact-details.component.html',
-  styleUrls: ['./contact.component.less'],
+  styleUrls: ['./contact.component.scss'],
 })
 export class ContactDetailsDialogComponent {
   contact: Contact;
@@ -140,7 +140,7 @@ export class ContactDetailsDialogComponent {
 @Component({
   selector: 'app-contact',
   templateUrl: './contact.component.html',
-  styleUrls: ['./contact.component.less'],
+  styleUrls: ['./contact.component.scss'],
 })
 export default class ContactComponent {
   loading: boolean = false;
@@ -158,7 +158,7 @@ export default class ContactComponent {
   }
 
   public get groupedData() {
-    return this.contactService.contacts.reduce((acc, contact) => {
+    return this.contactService.contacts?.reduce((acc, contact) => {
       contact.types.forEach((type) => {
         acc
           .find((group: GroupedContacts) => group.value === type)
