@@ -49,6 +49,7 @@ import javax.persistence.EntityManager;
 import javax.persistence.Id;
 import javax.persistence.IdClass;
 import javax.persistence.OptimisticLockException;
+import javax.persistence.PersistenceException;
 import javax.persistence.RollbackException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -353,7 +354,11 @@ class JpaTransactionManagerImplTest {
     tm().transact(() -> tm().insert(theEntity));
     assertThat(existsInDb(theEntity)).isTrue();
     assertThat(loadByKey(theEntityKey)).isEqualTo(theEntity);
-    assertThrows(RollbackException.class, () -> tm().transact(() -> tm().insert(theEntity)));
+    assertThat(
+            assertThrows(
+                    PersistenceException.class, () -> tm().transact(() -> tm().insert(theEntity)))
+                .getCause())
+        .isInstanceOf(RollbackException.class);
   }
 
   @Test
@@ -389,7 +394,8 @@ class JpaTransactionManagerImplTest {
   void saveAllNew_rollsBackWhenFailure() {
     moreEntities.forEach(entity -> assertThat(tm().transact(() -> tm().exists(entity))).isFalse());
     insertInDb(moreEntities.get(0));
-    assertThrows(RollbackException.class, () -> insertInDb(moreEntities));
+    assertThat(assertThrows(PersistenceException.class, () -> insertInDb(moreEntities)).getCause())
+        .isInstanceOf(RollbackException.class);
     assertThat(tm().transact(() -> tm().exists(moreEntities.get(0)))).isTrue();
     assertThat(tm().transact(() -> tm().exists(moreEntities.get(1)))).isFalse();
     assertThat(tm().transact(() -> tm().exists(moreEntities.get(2)))).isFalse();

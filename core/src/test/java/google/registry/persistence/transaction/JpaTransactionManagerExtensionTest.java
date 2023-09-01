@@ -64,8 +64,9 @@ public class JpaTransactionManagerExtensionTest {
     TestEntity testEntity = new TestEntity("foo", "bar");
     assertThat(
             assertThrows(
-                PersistenceException.class,
-                () -> replicaTm().transact(() -> replicaTm().put(testEntity))))
+                    PersistenceException.class,
+                    () -> replicaTm().transact(() -> replicaTm().put(testEntity)))
+                .getCause())
         .hasMessageThat()
         .isEqualTo("Error while committing the transaction");
   }
