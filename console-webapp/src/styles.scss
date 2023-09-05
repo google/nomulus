@@ -31,6 +31,10 @@ body {
   &__widget {
     display: flex;
     gap: 10px;
+    > a {
+      text-decoration: none;
+      color: initial;
+    }
     &-wrapper__wide {
       grid-column: span 2;
     }

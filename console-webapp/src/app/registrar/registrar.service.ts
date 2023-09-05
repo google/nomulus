@@ -66,6 +66,12 @@ export class RegistrarService implements GlobalLoader {
     this.activeRegistrarIdChange.next(registrarId);
   }
 
+  public get registrar(): Registrar {
+    return this.registrars.filter(
+      (r) => r.registrarId === this.activeRegistrarId
+    )[0];
+  }
+
   loadingTimeout() {
     // TODO: Decide what to do when timeout happens
   }
