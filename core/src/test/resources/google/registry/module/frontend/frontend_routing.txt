@@ -5,6 +5,7 @@ PATH                               CLASS                         METHODS  OK AUT
 /console-api/settings/contacts     ContactAction                 GET,POST n  API,LEGACY   USER PUBLIC
 /console-api/settings/security     SecurityAction                POST     n  API,LEGACY   USER PUBLIC
 /console-api/settings/whois-fields WhoisRegistrarFieldsAction    POST     n  API,LEGACY   USER PUBLIC
+/console-api/userdata              ConsoleUserDataAction         GET      n  API,LEGACY   USER PUBLIC
 /registrar                         ConsoleUiAction               GET      n  API,LEGACY   NONE PUBLIC
 /registrar-create                  ConsoleRegistrarCreatorAction POST,GET n  API,LEGACY   NONE PUBLIC
 /registrar-ote-setup               ConsoleOteSetupAction         POST,GET n  API,LEGACY   NONE PUBLIC

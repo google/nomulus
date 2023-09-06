@@ -26,6 +26,7 @@ import google.registry.request.RequestComponentBuilder;
 import google.registry.request.RequestModule;
 import google.registry.request.RequestScope;
 import google.registry.ui.server.console.ConsoleDomainGetAction;
+import google.registry.ui.server.console.ConsoleUserDataAction;
 import google.registry.ui.server.console.RegistrarsAction;
 import google.registry.ui.server.console.settings.ContactAction;
 import google.registry.ui.server.console.settings.SecurityAction;
@@ -52,28 +53,29 @@ import google.registry.ui.server.registrar.RegistryLockVerifyAction;
       WhiteboxModule.class,
     })
 interface FrontendRequestComponent {
+  ConsoleDomainGetAction consoleDomainGetAction();
+
   ConsoleOteSetupAction consoleOteSetupAction();
   ConsoleRegistrarCreatorAction consoleRegistrarCreatorAction();
   ConsoleUiAction consoleUiAction();
+
+  ConsoleUserDataAction consoleUserDataAction();
+
+  ContactAction contactAction();
+
   EppTlsAction eppTlsAction();
   FlowComponent.Builder flowComponentBuilder();
   OteStatusAction oteStatusAction();
+
+  RegistrarsAction registrarsAction();
+
   RegistrarSettingsAction registrarSettingsAction();
 
   RegistryLockGetAction registryLockGetAction();
 
   RegistryLockPostAction registryLockPostAction();
-
   RegistryLockVerifyAction registryLockVerifyAction();
-
-  ConsoleDomainGetAction consoleDomainGetAction();
-
-  ContactAction contactAction();
-
-  RegistrarsAction registrarsAction();
-
   SecurityAction securityAction();
-
   WhoisRegistrarFieldsAction whoisRegistrarFieldsAction();
 
   @Subcomponent.Builder
