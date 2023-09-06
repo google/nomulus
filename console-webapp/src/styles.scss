@@ -31,6 +31,13 @@ body {
   &__widget {
     display: flex;
     gap: 10px;
+    > a {
+      text-decoration: none;
+      color: initial;
+    }
+    > a[href=""] {
+      cursor: not-allowed;
+    }
     &-wrapper__wide {
       grid-column: span 2;
     }
