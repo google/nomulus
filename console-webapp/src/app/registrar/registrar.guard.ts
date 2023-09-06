@@ -13,7 +13,8 @@
 // limitations under the License.
 
 import { Injectable } from '@angular/core';
-import { Router, RouterStateSnapshot } from '@angular/router';
+import { ActivatedRouteSnapshot, Router } from '@angular/router';
+
 import { RegistrarService } from './registrar.service';
 
 @Injectable({
@@ -25,10 +26,12 @@ export class RegistrarGuard {
     private registrarService: RegistrarService
   ) {}
 
-  canActivate(state: RouterStateSnapshot): Promise<boolean> | boolean {
+  canActivate(state: ActivatedRouteSnapshot): Promise<boolean> | boolean {
     if (this.registrarService.activeRegistrarId) {
       return true;
     }
-    return this.router.navigate([`/empty-registrar`, { nextUrl: state.url }]);
+    // Get the full URL including any nested children (skip the initial '#/')
+    const nextUrl = location.hash.split('/').splice(1).join('/');
+    return this.router.navigate([`/empty-registrar`, { nextUrl: nextUrl }]);
   }
 }
