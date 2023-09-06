@@ -39,7 +39,7 @@ describe('RegistrarGuard', () => {
 
   it('should not be able to activate when activeRegistrarId is empty', () => {
     guard = TestBed.inject(RegistrarGuard);
-    const res = guard.canActivate(dummyRoute);
+    const res = guard.canActivate();
     expect(res).toBeFalsy();
   });
 
@@ -48,14 +48,14 @@ describe('RegistrarGuard', () => {
       useValue: { activeRegistrarId: 'value' },
     });
     guard = TestBed.inject(RegistrarGuard);
-    const res = guard.canActivate(dummyRoute);
+    const res = guard.canActivate();
     expect(res).toBeTrue();
   });
 
   it('should navigate to registrars when activeRegistrarId is empty', () => {
     const dummyRoute = { url: '/value' } as RouterStateSnapshot;
     guard = TestBed.inject(RegistrarGuard);
-    guard.canActivate(dummyRoute);
+    guard.canActivate();
     expect(routeSpy.navigate).toHaveBeenCalledOnceWith([
       '/registrars',
       { nextUrl: '/value' },
