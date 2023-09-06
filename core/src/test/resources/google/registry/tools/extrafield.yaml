@@ -43,13 +43,14 @@ reservedListNames: []
 restoreBillingCost:
   currency: "USD"
   amount: 17.00
-roidSuffix: "TLD"
+roidSuffix: "EXTRA"
 serverStatusChangeBillingCost:
   currency: "USD"
   amount: 19.00
 tldStateTransitions:
   "1970-01-01T00:00:00.000Z": "GENERAL_AVAILABILITY"
-tldStr: "tld"
+tldStr: "extrafield"
 tldType: "REAL"
-tldUnicode: "tld"
+tldUnicode: "extrafield"
 transferGracePeriodLength: 432000000
+extraField: "hello"

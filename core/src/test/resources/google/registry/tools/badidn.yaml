@@ -23,7 +23,8 @@ eapFeeSchedule:
     currency: "USD"
     amount: 0.00
 escrowEnabled: false
-idnTables: []
+idnTables:
+- "foo"
 invoicingEnabled: false
 lordnUsername: null
 numDnsPublishLocks: 1
@@ -43,13 +44,13 @@ reservedListNames: []
 restoreBillingCost:
   currency: "USD"
   amount: 17.00
-roidSuffix: "TLD"
+roidSuffix: "BADIDN"
 serverStatusChangeBillingCost:
   currency: "USD"
   amount: 19.00
 tldStateTransitions:
   "1970-01-01T00:00:00.000Z": "GENERAL_AVAILABILITY"
-tldStr: "tld"
+tldStr: "badidn"
 tldType: "REAL"
-tldUnicode: "tld"
+tldUnicode: "badidn"
 transferGracePeriodLength: 432000000

@@ -632,7 +632,7 @@ class CreateTldCommandTest extends CommandTestCase<CreateTldCommand> {
                     "xn--q9jyb4c", "--roid_suffix=Q9JYB4C", "--dns_writers=Invalid,Deadbeef"));
     assertThat(thrown)
         .hasMessageThat()
-        .contains("Invalid DNS writer name(s) specified: [Deadbeef, Invalid]");
+        .contains("Invalid DNS writer name(s) specified: [Invalid, Deadbeef]");
   }
 
   @Test
