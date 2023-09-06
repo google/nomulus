@@ -19,6 +19,7 @@ import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static google.registry.config.RegistryConfig.getHibernatePerTransactionIsolationEnabled;
+import static google.registry.persistence.transaction.DatabaseException.tryWrapAndThrow;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 import static java.util.AbstractMap.SimpleEntry;
 import static java.util.stream.Collectors.joining;
@@ -213,6 +214,7 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
       } catch (Throwable rollbackException) {
         logger.atSevere().withCause(rollbackException).log("Rollback failed; suppressing error.");
       }
+      tryWrapAndThrow(e);
       throw e;
     } finally {
       txnInfo.clear();
