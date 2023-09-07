@@ -37,6 +37,7 @@ class CreateRegistrarGroupsCommandTest extends CommandTestCase<CreateRegistrarGr
 
   @Test
   void test_createGroupsForTwoRegistrars() throws Exception {
+    command.printStream = System.out;
     runCommandForced("NewRegistrar", "TheRegistrar");
     verify(connection)
         .sendPostRequest(

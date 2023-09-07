@@ -34,6 +34,7 @@ import google.registry.model.reporting.HistoryEntryDao;
 import google.registry.persistence.VKey;
 import google.registry.testing.DatabaseHelper;
 import google.registry.tools.CommandTestCase;
+import java.io.PrintStream;
 import org.joda.money.CurrencyUnit;
 import org.joda.money.Money;
 import org.junit.jupiter.api.BeforeEach;
@@ -59,6 +60,7 @@ public class CreateCancellationsForBillingEventsCommandTest
             fakeClock.nowUtc(),
             fakeClock.nowUtc().plusYears(2));
     billingEventToCancel = createBillingEvent();
+    command.printStream = System.out;
   }
 
   @Test
@@ -97,8 +99,10 @@ public class CreateCancellationsForBillingEventsCommandTest
   @Test
   void testAlreadyCancelled() throws Exception {
     // multiple runs / cancellations should be a no-op
+    command.printStream = new PrintStream(tmpDir.resolve("test.txt").toFile());
     runCommandForced(String.valueOf(billingEventToCancel.getId()));
     assertBillingEventCancelled();
+    command.printStream = System.out;
     runCommandForced(String.valueOf(billingEventToCancel.getId()));
     assertBillingEventCancelled();
     assertThat(DatabaseHelper.loadAllOf(BillingCancellation.class)).hasSize(1);

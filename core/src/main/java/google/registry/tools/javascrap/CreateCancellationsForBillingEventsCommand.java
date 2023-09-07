@@ -70,14 +70,14 @@ public class CreateCancellationsForBillingEventsCommand extends ConfirmingComman
               }
             });
     billingEventsToCancel = billingEventsBuilder.build();
-    System.out.printf("Found %d BillingEvent(s) to cancel\n", billingEventsToCancel.size());
+    printStream.printf("Found %d BillingEvent(s) to cancel\n", billingEventsToCancel.size());
     ImmutableSet<Long> missingIds = missingIdsBuilder.build();
     if (!missingIds.isEmpty()) {
-      System.out.printf("Missing BillingEvent(s) for IDs %s\n", missingIds);
+      printStream.printf("Missing BillingEvent(s) for IDs %s\n", missingIds);
     }
     ImmutableSet<Long> alreadyCancelledIds = alreadyCancelledIdsBuilder.build();
     if (!alreadyCancelledIds.isEmpty()) {
-      System.out.printf(
+      printStream.printf(
           "The following BillingEvent IDs were already cancelled: %s\n", alreadyCancelledIds);
     }
   }
@@ -96,7 +96,7 @@ public class CreateCancellationsForBillingEventsCommand extends ConfirmingComman
           tm().transact(
                   () -> {
                     if (alreadyCancelled(billingEvent)) {
-                      System.out.printf(
+                      printStream.printf(
                           "BillingEvent %d already cancelled, this is unexpected.\n",
                           billingEvent.getId());
                       return 0;
@@ -111,7 +111,7 @@ public class CreateCancellationsForBillingEventsCommand extends ConfirmingComman
                                 .setReason(BillingBase.Reason.ERROR)
                                 .setTargetId(billingEvent.getTargetId())
                                 .build());
-                    System.out.printf(
+                    printStream.printf(
                         "Added BillingCancellation for BillingEvent with ID %d\n",
                         billingEvent.getId());
                     return 1;

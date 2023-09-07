@@ -68,6 +68,7 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
             2048,
             ImmutableSet.of("secp256r1", "secp384r1"),
             fakeClock);
+    command.printStream = System.out;
   }
 
   @Test
