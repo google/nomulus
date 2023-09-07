@@ -198,7 +198,7 @@ public abstract class CommandTestCase<C extends Command> {
   }
 
   void assertInStderr(String... expected) {
-    String stderror = new String(stderr.toByteArray(), UTF_8);
+    String stderror = getStderrAsString();
     for (String line : expected) {
       assertThat(stderror).contains(line);
     }

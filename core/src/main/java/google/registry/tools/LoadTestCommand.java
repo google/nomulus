@@ -14,6 +14,8 @@
 
 package google.registry.tools;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import com.google.common.collect.ImmutableMap;
@@ -21,6 +23,8 @@ import com.google.common.net.MediaType;
 import google.registry.loadtest.LoadTestAction;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.tld.Tlds;
+import java.io.PrintStream;
+import java.io.UnsupportedEncodingException;
 
 /** Command to initiate a load-test. */
 @Parameters(separators = " =", commandDescription = "Run a load test.")
@@ -78,6 +82,16 @@ class LoadTestCommand extends ConfirmingCommand implements CommandWithConnection
 
   private ServiceConnection connection;
 
+  PrintStream errorPrintStream;
+
+  protected LoadTestCommand() {
+    try {
+      errorPrintStream = new PrintStream(System.err, false, UTF_8.name());
+    } catch (UnsupportedEncodingException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
   @Override
   public void setConnection(ServiceConnection connection) {
     this.connection = connection;
@@ -86,21 +100,26 @@ class LoadTestCommand extends ConfirmingCommand implements CommandWithConnection
   @Override
   protected boolean checkExecutionState() {
     if (RegistryToolEnvironment.get() == RegistryToolEnvironment.PRODUCTION) {
-      System.err.println("You may not run a load test against production.");
+      printError("You may not run a load test against production.");
       return false;
     }
 
     // Check validity of TLD and Client Id.
     if (!Tlds.getTlds().contains(tld)) {
-      System.err.printf("No such TLD: %s\n", tld);
+      printError(String.format("No such TLD: %s\n", tld));
       return false;
     }
     if (!Registrar.loadByRegistrarId(clientId).isPresent()) {
-      System.err.printf("No such client: %s\n", clientId);
+      printError(String.format("No such client: %s\n", clientId));
       return false;
     }
 
     return true;
+  }
+
+  private void printError(String errorMessage) {
+    errorPrintStream.println(errorMessage);
+    errorPrintStream.close();
   }
 
   @Override
@@ -112,7 +131,7 @@ class LoadTestCommand extends ConfirmingCommand implements CommandWithConnection
 
   @Override
   protected String execute() throws Exception {
-    System.err.println("Initiating load test...");
+    printError("Initiating load test...");
 
     ImmutableMap<String, Object> params = new ImmutableMap.Builder<String, Object>()
         .put("tld", tld)

@@ -71,7 +71,7 @@ public abstract class LockOrUnlockDomainCommand extends ConfirmingCommand {
     }
     String duplicates = Joiner.on(", ").join(findDuplicates(mainParameters));
     checkArgument(duplicates.isEmpty(), "Duplicate domain arguments found: '%s'", duplicates);
-    System.out.println(
+    printStream.println(
         "== ENSURE THAT YOU HAVE AUTHENTICATED THE REGISTRAR BEFORE RUNNING THIS COMMAND ==");
   }
 

@@ -53,6 +53,7 @@ class DeleteAllocationTokensCommandTest extends CommandTestCase<DeleteAllocation
     preNot2 = persistToken("prefix8ZZZhs8", null, false);
     othrRed = persistToken("h97987sasdfhh", null, true);
     othrNot = persistToken("asdgfho7HASDS", null, false);
+    command.printStream = System.out;
   }
 
   @Test
