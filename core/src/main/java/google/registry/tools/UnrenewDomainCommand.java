@@ -24,6 +24,7 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static google.registry.util.DateTimeUtils.isBeforeOrAt;
 import static google.registry.util.DateTimeUtils.leapSafeSubtractYears;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
@@ -42,6 +43,8 @@ import google.registry.model.poll.PollMessage;
 import google.registry.model.reporting.HistoryEntry.Type;
 import google.registry.util.Clock;
 import google.registry.util.NonFinalForTesting;
+import java.io.PrintStream;
+import java.io.UnsupportedEncodingException;
 import java.util.List;
 import java.util.Optional;
 import javax.inject.Inject;
@@ -76,7 +79,7 @@ class UnrenewDomainCommand extends ConfirmingCommand {
           StatusValue.SERVER_UPDATE_PROHIBITED);
 
   @Override
-  protected void init() {
+  protected void init() throws UnsupportedEncodingException {
     checkArgument(period >= 1 && period <= 9, "Period must be in the range 1-9");
     DateTime now = clock.nowUtc();
     ImmutableSet.Builder<String> domainsNonexistentBuilder = new ImmutableSet.Builder<>();
@@ -116,21 +119,27 @@ class UnrenewDomainCommand extends ConfirmingCommand {
             && domainsDeleting.isEmpty()
             && domainsWithDisallowedStatuses.isEmpty()
             && domainsExpiringTooSoon.isEmpty());
+
+    PrintStream errorPrintStream = new PrintStream(System.err, false, UTF_8.name());
     if (foundInvalidDomains) {
-      System.err.print("Found domains that cannot be unrenewed for the following reasons:\n\n");
+      errorPrintStream.print(
+          "Found domains that cannot be unrenewed for the following reasons:\n\n");
     }
     if (!domainsNonexistent.isEmpty()) {
-      System.err.printf("Domains that don't exist: %s\n\n", domainsNonexistent);
+      errorPrintStream.printf("Domains that don't exist: %s\n\n", domainsNonexistent);
     }
     if (!domainsDeleting.isEmpty()) {
-      System.err.printf("Domains that are deleted or pending delete: %s\n\n", domainsDeleting);
+      errorPrintStream.printf(
+          "Domains that are deleted or pending delete: %s\n\n", domainsDeleting);
     }
     if (!domainsWithDisallowedStatuses.isEmpty()) {
-      System.err.printf("Domains with disallowed statuses: %s\n\n", domainsWithDisallowedStatuses);
+      errorPrintStream.printf(
+          "Domains with disallowed statuses: %s\n\n", domainsWithDisallowedStatuses);
     }
     if (!domainsExpiringTooSoon.isEmpty()) {
-      System.err.printf("Domains expiring too soon: %s\n\n", domainsExpiringTooSoon);
+      errorPrintStream.printf("Domains expiring too soon: %s\n\n", domainsExpiringTooSoon);
     }
+    errorPrintStream.close();
     checkArgument(!foundInvalidDomains, "Aborting because some domains cannot be unrenewed");
   }
 
@@ -154,7 +163,7 @@ class UnrenewDomainCommand extends ConfirmingCommand {
   protected String execute() {
     for (String domainName : mainParameters) {
       tm().transact(() -> unrenewDomain(domainName));
-      System.out.printf("Unrenewed %s\n", domainName);
+      printStream.printf("Unrenewed %s\n", domainName);
     }
     return "Successfully unrenewed all domains.";
   }

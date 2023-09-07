@@ -61,6 +61,7 @@ class UniformRapidSuspensionCommandTest
         ImmutableSet.of(
             DomainDsData.create(1, 2, 3, new HexBinaryAdapter().unmarshal("dead")),
             DomainDsData.create(4, 5, 6, new HexBinaryAdapter().unmarshal("beef")));
+    command.printStream = System.out;
   }
 
   private void persistDomainWithHosts(

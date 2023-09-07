@@ -85,7 +85,7 @@ final class DeleteAllocationTokensCommand extends UpdateOrDeleteAllocationTokens
     if (!dryRun) {
       tm().delete(tokensToDelete);
     }
-    System.out.printf(
+    printStream.printf(
         "%s tokens: %s\n",
         dryRun ? "Would delete" : "Deleted",
         JOINER.join(tokensToDelete.stream().map(VKey::getKey).sorted().collect(toImmutableList())));

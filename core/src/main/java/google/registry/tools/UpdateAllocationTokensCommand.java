@@ -208,7 +208,7 @@ final class UpdateAllocationTokensCommand extends UpdateOrDeleteAllocationTokens
     if (!dryRun) {
       tm().putAll(batch);
     }
-    System.out.printf(
+    printStream.printf(
         "%s tokens: %s\n",
         dryRun ? "Would update" : "Updated",
         JOINER.join(

@@ -37,6 +37,8 @@ class LoadTestCommandTest extends CommandTestCase<LoadTestCommand> {
     command.setConnection(connection);
     createTld("example");
     persistNewRegistrar("acme", "ACME", Registrar.Type.REAL, 99L);
+    command.printStream = System.out;
+    command.errorPrintStream = System.err;
   }
 
   @Test
