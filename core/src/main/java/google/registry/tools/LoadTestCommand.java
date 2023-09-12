@@ -14,7 +14,6 @@
 
 package google.registry.tools;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
@@ -23,8 +22,6 @@ import com.google.common.net.MediaType;
 import google.registry.loadtest.LoadTestAction;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.tld.Tlds;
-import java.io.PrintStream;
-import java.io.UnsupportedEncodingException;
 
 /** Command to initiate a load-test. */
 @Parameters(separators = " =", commandDescription = "Run a load test.")
@@ -82,16 +79,6 @@ class LoadTestCommand extends ConfirmingCommand implements CommandWithConnection
 
   private ServiceConnection connection;
 
-  PrintStream errorPrintStream;
-
-  protected LoadTestCommand() {
-    try {
-      errorPrintStream = new PrintStream(System.err, false, UTF_8.name());
-    } catch (UnsupportedEncodingException e) {
-      throw new RuntimeException(e);
-    }
-  }
-
   @Override
   public void setConnection(ServiceConnection connection) {
     this.connection = connection;
@@ -119,7 +106,6 @@ class LoadTestCommand extends ConfirmingCommand implements CommandWithConnection
 
   private void printError(String errorMessage) {
     errorPrintStream.println(errorMessage);
-    errorPrintStream.close();
   }
 
   @Override

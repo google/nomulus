@@ -24,7 +24,6 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static google.registry.util.DateTimeUtils.isBeforeOrAt;
 import static google.registry.util.DateTimeUtils.leapSafeSubtractYears;
-import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
@@ -43,7 +42,6 @@ import google.registry.model.poll.PollMessage;
 import google.registry.model.reporting.HistoryEntry.Type;
 import google.registry.util.Clock;
 import google.registry.util.NonFinalForTesting;
-import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
 import java.util.List;
 import java.util.Optional;
@@ -120,7 +118,6 @@ class UnrenewDomainCommand extends ConfirmingCommand {
             && domainsWithDisallowedStatuses.isEmpty()
             && domainsExpiringTooSoon.isEmpty());
 
-    PrintStream errorPrintStream = new PrintStream(System.err, false, UTF_8.name());
     if (foundInvalidDomains) {
       errorPrintStream.print(
           "Found domains that cannot be unrenewed for the following reasons:\n\n");
@@ -139,7 +136,6 @@ class UnrenewDomainCommand extends ConfirmingCommand {
     if (!domainsExpiringTooSoon.isEmpty()) {
       errorPrintStream.printf("Domains expiring too soon: %s\n\n", domainsExpiringTooSoon);
     }
-    errorPrintStream.close();
     checkArgument(!foundInvalidDomains, "Aborting because some domains cannot be unrenewed");
   }
 

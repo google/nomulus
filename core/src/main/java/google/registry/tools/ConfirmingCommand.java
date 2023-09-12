@@ -31,10 +31,12 @@ public abstract class ConfirmingCommand implements Command {
   boolean force;
 
   public PrintStream printStream;
+  public PrintStream errorPrintStream;
 
   protected ConfirmingCommand() {
     try {
       printStream = new PrintStream(System.out, false, UTF_8.name());
+      errorPrintStream = new PrintStream(System.err, false, UTF_8.name());
     } catch (UnsupportedEncodingException e) {
       throw new RuntimeException(e);
     }
@@ -58,6 +60,7 @@ public abstract class ConfirmingCommand implements Command {
       }
     }
     printStream.close();
+    errorPrintStream.close();
   }
 
   /** Run any pre-execute command checks and return true if they all pass. */
