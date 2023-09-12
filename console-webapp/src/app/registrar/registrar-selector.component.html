@@ -8,9 +8,9 @@
       >
         <mat-option
           *ngFor="let registrar of registrarService.registrars"
-          [value]="registrar.registrarName"
+          [value]="registrar.registrarId"
         >
-          {{ registrar.registrarName }}
+          {{ registrar.registrarId }}
         </mat-option>
       </mat-select>
     </mat-form-field>
