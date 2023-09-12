@@ -11,3 +11,36 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
+.settings-whois {
+  margin-top: 1.5rem;
+  & .section {
+    display: flex;
+    flex-wrap: wrap;
+  }
+  & .section-description {
+    display: inline-block;
+    min-width: 200px;
+  }
+  & .section-form {
+    display: inline-block;
+    min-width: 300px;
+    input {
+      white-space: nowrap;
+      min-width: 100%;
+    }
+    & .disabled-input {
+      border: 0;
+    }
+  }
+  & .loading {
+    margin: 2rem 0;
+  }
+  & .actions {
+    display: flex;
+    justify-content: flex-end;
+    button {
+      margin-left: 20px;
+    }
+  }
+}

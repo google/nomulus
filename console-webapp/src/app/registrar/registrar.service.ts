@@ -13,15 +13,16 @@
 // limitations under the License.
 
 import { Injectable } from '@angular/core';
-import { BackendService } from '../shared/services/backend.service';
 import { Observable, Subject, tap } from 'rxjs';
+
+import { BackendService } from '../shared/services/backend.service';
 import {
   GlobalLoader,
   GlobalLoaderService,
 } from '../shared/services/globalLoader.service';
 import { MatSnackBar } from '@angular/material/snack-bar';
 
-interface Address {
+export interface Address {
   street?: string[];
   city?: string;
   countryCode?: string;
@@ -31,16 +32,20 @@ interface Address {
 
 export interface Registrar {
   allowedTlds?: string[];
-  ipAddressAllowList?: string[];
-  emailAddress?: string;
   billingAccountMap?: object;
   driveFolderId?: string;
+  emailAddress?: string;
+  faxNumber?: string;
   ianaIdentifier?: number;
   icannReferralEmail?: string;
+  ipAddressAllowList?: string[];
   localizedAddress?: Address;
+  phoneNumber?: string;
   registrarId: string;
   registrarName: string;
   registryLockAllowed?: boolean;
+  url?: string;
+  whoisServer?: string;
 }
 
 @Injectable({

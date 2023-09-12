@@ -1,1 +1,226 @@
-<p>whois works!</p>
+<div class="settings-whois">
+  <h2>WHOIS settings</h2>
+  <h3>
+    General registrar information for your WHOIS record. This information is
+    always visible in WHOIS.
+  </h3>
+  <div *ngIf="loading" class="loading">
+    <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+  </div>
+  <div class="section">
+    <div class="section-description">
+      <h3>Name:</h3>
+    </div>
+    <div class="section-form">
+      <input
+        matInput
+        type="text"
+        [(ngModel)]="registrar.registrarName"
+        disabled
+        class="disabled-input"
+      />
+    </div>
+  </div>
+  <div class="section">
+    <div class="section-description">
+      <h3>IANA Identifier:</h3>
+    </div>
+    <div class="section-form">
+      <input
+        matInput
+        type="text"
+        [(ngModel)]="registrar.ianaIdentifier"
+        disabled
+        class="disabled-input"
+      />
+    </div>
+  </div>
+  <div class="section">
+    <div class="section-description">
+      <h3>ICANN Referral Email:</h3>
+    </div>
+    <div class="section-form">
+      <input
+        matInput
+        type="text"
+        [(ngModel)]="registrar.icannReferralEmail"
+        disabled
+        class="disabled-input"
+      />
+    </div>
+  </div>
+  <div class="section">
+    <div class="section-description">
+      <h3>WHOIS server:</h3>
+    </div>
+    <div class="section-form">
+      <input
+        matInput
+        type="text"
+        [(ngModel)]="registrar.whoisServer"
+        [disabled]="!inEdit"
+        [class.disabled-input]="!inEdit"
+      />
+    </div>
+  </div>
+  <div class="section">
+    <div class="section-description">
+      <h3>Referral URL:</h3>
+    </div>
+    <div class="section-form">
+      <input
+        matInput
+        type="text"
+        [(ngModel)]="registrar.url"
+        [disabled]="!inEdit"
+        [class.disabled-input]="!inEdit"
+      />
+    </div>
+  </div>
+  <div class="section">
+    <div class="section-description">
+      <h3>Email:</h3>
+    </div>
+    <div class="section-form">
+      <input
+        matInput
+        type="text"
+        [(ngModel)]="registrar.emailAddress"
+        [disabled]="!inEdit"
+        [class.disabled-input]="!inEdit"
+      />
+    </div>
+  </div>
+  <div class="section">
+    <div class="section-description">
+      <h3>Phone::</h3>
+    </div>
+    <div class="section-form">
+      <input
+        matInput
+        type="text"
+        [(ngModel)]="registrar.phoneNumber"
+        [disabled]="!inEdit"
+        [class.disabled-input]="!inEdit"
+      />
+    </div>
+  </div>
+  <div class="section">
+    <div class="section-description">
+      <h3>Fax:</h3>
+    </div>
+    <div class="section-form">
+      <input
+        matInput
+        type="text"
+        [(ngModel)]="registrar.faxNumber"
+        [disabled]="!inEdit"
+        [class.disabled-input]="!inEdit"
+      />
+    </div>
+  </div>
+  <div class="section">
+    <div class="section-description">
+      <h3>Street Address Line 1:</h3>
+    </div>
+    <div class="section-form">
+      <input
+        *ngIf="registrar.localizedAddress?.street"
+        matInput
+        type="text"
+        [(ngModel)]="(registrar.localizedAddress?.street)![0]"
+        [disabled]="!inEdit"
+        [class.disabled-input]="!inEdit"
+      />
+    </div>
+  </div>
+  <div class="section">
+    <div class="section-description"><h3>Street Address Line 2:</h3></div>
+    <div class="section-form">
+      <input
+        *ngIf="registrar.localizedAddress?.street"
+        matInput
+        type="text"
+        [(ngModel)]="(registrar.localizedAddress?.street)![1]"
+        [disabled]="!inEdit"
+        [class.disabled-input]="!inEdit"
+      />
+    </div>
+  </div>
+  <div class="section">
+    <div class="section-description"><h3>Street Address Line 3:</h3></div>
+    <div class="section-form">
+      <input
+        *ngIf="registrar.localizedAddress?.street"
+        matInput
+        type="text"
+        [(ngModel)]="(registrar.localizedAddress?.street)![2]"
+        [disabled]="!inEdit"
+        [class.disabled-input]="!inEdit"
+      />
+    </div>
+  </div>
+  <div class="section">
+    <div class="section-description">
+      <h3>City:</h3>
+    </div>
+    <div class="section-form">
+      <input
+        *ngIf="registrar.localizedAddress"
+        matInput
+        type="text"
+        [(ngModel)]="registrar.localizedAddress.city"
+        [disabled]="!inEdit"
+        [class.disabled-input]="!inEdit"
+      />
+    </div>
+  </div>
+  <div class="section">
+    <div class="section-description">
+      <h3>State/Region:</h3>
+    </div>
+    <div class="section-form">
+      <input
+        *ngIf="registrar.localizedAddress"
+        matInput
+        type="text"
+        [(ngModel)]="registrar.localizedAddress.state"
+        [disabled]="!inEdit"
+        [class.disabled-input]="!inEdit"
+      />
+    </div>
+  </div>
+  <div class="section">
+    <div class="section-description">
+      <h3>Country Code:</h3>
+    </div>
+    <div class="section-form">
+      <input
+        *ngIf="registrar.localizedAddress"
+        matInput
+        type="text"
+        [(ngModel)]="registrar.localizedAddress.countryCode"
+        [disabled]="!inEdit"
+        [class.disabled-input]="!inEdit"
+      />
+    </div>
+  </div>
+  <div class="actions">
+    <ng-template [ngIf]="inEdit" [ngIfElse]="inView">
+      <button
+        class="actions-save"
+        mat-raised-button
+        color="primary"
+        (click)="save()"
+      >
+        Save
+      </button>
+      <button class="actions-cancel" mat-stroked-button (click)="cancel()">
+        Cancel
+      </button>
+    </ng-template>
+    <ng-template #inView>
+      <button #elseBlock mat-raised-button (click)="enableEdit()">Edit</button>
+    </ng-template>
+  </div>
+</div>
