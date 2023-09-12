@@ -179,6 +179,7 @@ public class UnrenewDomainCommandTest extends CommandTestCase<UnrenewDomainComma
 
   @Test
   void test_varietyOfInvalidDomains_displaysErrors() {
+    command.errorPrintStream = System.err;
     DateTime now = fakeClock.nowUtc();
     persistResource(
         DatabaseHelper.newDomain("deleting.tld")

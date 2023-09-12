@@ -362,13 +362,11 @@ abstract class CreateOrUpdateTldCommand extends MutatingCommand {
       if (!renewBillingCostTransitions.isEmpty()) {
         // TODO(b/20764952): need invoicing support for multiple renew billing costs.
         if (renewBillingCostTransitions.size() > 1) {
-          try (PrintStream errorPrintStream = new PrintStream(System.err, false, UTF_8.name())) {
-            errorPrintStream.println(
-                "----------------------\n"
-                    + "WARNING: Do not set multiple renew cost transitions "
-                    + "until b/20764952 is fixed.\n"
-                    + "----------------------\n");
-          }
+          errorPrintStream.println(
+              "----------------------\n"
+                  + "WARNING: Do not set multiple renew cost transitions "
+                  + "until b/20764952 is fixed.\n"
+                  + "----------------------\n");
         }
         builder.setRenewBillingCostTransitions(renewBillingCostTransitions);
       }
