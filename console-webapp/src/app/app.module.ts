@@ -45,6 +45,7 @@ import { ResourcesWidgetComponent } from './home/widgets/resources-widget.compon
 import { EppWidgetComponent } from './home/widgets/epp-widget.component';
 import { BillingWidgetComponent } from './home/widgets/billing-widget.component';
 import { DomainsWidgetComponent } from './home/widgets/domains-widget.component';
+import { SettingsWidgetComponent } from './home/widgets/settings-widget.component';
 
 @NgModule({
   declarations: [
@@ -66,6 +67,7 @@ import { DomainsWidgetComponent } from './home/widgets/domains-widget.component'
     ResourcesWidgetComponent,
     EppWidgetComponent,
     BillingWidgetComponent,
+    SettingsWidgetComponent,
   ],
   imports: [
     HttpClientModule,

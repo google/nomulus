@@ -17,8 +17,10 @@
           dataSource.ipAddressAllowList.length > 0
         "
       >
-        <div *ngFor="let item of dataSource.ipAddressAllowList; index as index">
-          <div>{{ item.value }}</div>
+        <div
+          *ngFor="let item of dataSource.ipAddressAllowList; index as index"
+          class="settings-security__ipRecord"
+        >
           <mat-form-field>
             <input
               matInput
