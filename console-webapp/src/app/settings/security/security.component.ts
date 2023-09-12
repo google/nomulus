@@ -13,9 +13,15 @@
 // limitations under the License.
 
 import { Component } from '@angular/core';
-import { SecurityService, SecuritySettings } from './security.service';
+import {
+  SecurityService,
+  SecuritySettings,
+  apiToUiConverter,
+} from './security.service';
 import { HttpErrorResponse } from '@angular/common/http';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { RegistrarService } from 'src/app/registrar/registrar.service';
+import { switchMap } from 'rxjs';
 
 @Component({
   selector: 'app-security',
@@ -30,33 +36,19 @@ export default class SecurityComponent {
 
   constructor(
     public securityService: SecurityService,
-    private _snackBar: MatSnackBar
+    private _snackBar: MatSnackBar,
+    public registrarService: RegistrarService
   ) {
-    this.loading = true;
-    this.securityService.fetchSecurityDetails().subscribe({
-      complete: () => {
-        this.dataSource = this.securityService.securitySettings;
-        this.loading = false;
-      },
-      error: (err: HttpErrorResponse) => {
-        this._snackBar.open(err.error, undefined, {
-          duration: 1500,
-        });
-        this.loading = false;
-      },
-    });
+    this.dataSource = apiToUiConverter(this.registrarService.registrar);
   }
 
   enableEdit() {
     this.inEdit = true;
-    this.dataSource = JSON.parse(
-      JSON.stringify(this.securityService.securitySettings)
-    );
   }
 
-  disableEdit() {
+  cancel() {
     this.inEdit = false;
-    this.dataSource = this.securityService.securitySettings;
+    this.resetDataSource();
   }
 
   createIpEntry() {
@@ -68,7 +60,7 @@ export default class SecurityComponent {
     this.securityService.saveChanges(this.dataSource).subscribe({
       complete: () => {
         this.loading = false;
-        this.dataSource = this.securityService.securitySettings;
+        this.resetDataSource();
       },
       error: (err: HttpErrorResponse) => {
         this._snackBar.open(err.error, undefined, {
@@ -76,16 +68,15 @@ export default class SecurityComponent {
         });
       },
     });
-    this.disableEdit();
-  }
-
-  cancel() {
-    this.dataSource = this.securityService.securitySettings;
-    this.inEdit = false;
+    this.cancel();
   }
 
   removeIpEntry(index: number) {
     this.dataSource.ipAddressAllowList =
       this.dataSource.ipAddressAllowList?.filter((_, i) => i != index);
+  }
+
+  resetDataSource() {
+    this.dataSource = apiToUiConverter(this.registrarService.registrar);
   }
 }
