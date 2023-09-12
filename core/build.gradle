@@ -894,7 +894,7 @@ task runTestServer(dependsOn: copyJsFilesForTestServer, type: JavaExec) {
  *
  *   ./gradlew test -P testFilter=*.FooBar,google.registry.tools.ShellCommandTest
  */
-class FilteringTest extends Test {
+abstract class FilteringTest extends Test {
 
   FilteringTest() {
     useJUnitPlatform();
