@@ -210,8 +210,8 @@ allprojects {
     gradle.projectsEvaluated {
       tasks.withType(JavaCompile) {
         options.fork = true
-        options.forkOptions.javaHome =
-          file("${System.env.REAL_JAVA_HOME}")
+        options.forkOptions.executable =
+          file("${System.env.JAVA_HOME}/bin/javac")
       }
     }
   }
