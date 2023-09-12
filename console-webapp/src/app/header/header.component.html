@@ -3,7 +3,9 @@
     <button mat-icon-button aria-label="Open menu" (click)="toggleNavPane()">
       <mat-icon>menu</mat-icon>
     </button>
-    <span>Google Registry</span>
+    <span>
+      <a [routerLink]="'/home'" routerLinkActive="active"> Google Registry </a>
+    </span>
     <span class="spacer"></span>
     <app-registrar-selector />
     <button mat-icon-button aria-label="Open FAQ">
