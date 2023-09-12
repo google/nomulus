@@ -47,6 +47,7 @@ import { BillingWidgetComponent } from './home/widgets/billing-widget.component'
 import { DomainsWidgetComponent } from './home/widgets/domains-widget.component';
 import { SettingsWidgetComponent } from './home/widgets/settings-widget.component';
 import { UserDataService } from './shared/services/userData.service';
+import WhoisComponent from './settings/whois/whois.component';
 
 @NgModule({
   declarations: [
@@ -69,6 +70,7 @@ import { UserDataService } from './shared/services/userData.service';
     SettingsWidgetComponent,
     TldsComponent,
     TldsWidgetComponent,
+    WhoisComponent,
   ],
   imports: [
     AppRoutingModule,

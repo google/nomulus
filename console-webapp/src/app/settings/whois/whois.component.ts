@@ -12,13 +12,66 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { HttpErrorResponse } from '@angular/common/http';
 import { Component } from '@angular/core';
+import { MatSnackBar } from '@angular/material/snack-bar';
+import {
+  Registrar,
+  RegistrarService,
+} from 'src/app/registrar/registrar.service';
+
+import { WhoisService } from './whois.service';
 
 @Component({
   selector: 'app-whois',
   templateUrl: './whois.component.html',
   styleUrls: ['./whois.component.scss'],
+  providers: [WhoisService],
 })
 export default class WhoisComponent {
   public static PATH = 'whois';
+  loading = false;
+  inEdit = false;
+  registrar: Registrar;
+
+  constructor(
+    public whoisService: WhoisService,
+    public registrarService: RegistrarService,
+    private _snackBar: MatSnackBar
+  ) {
+    this.registrar = JSON.parse(
+      JSON.stringify(this.registrarService.registrar)
+    );
+  }
+
+  enableEdit() {
+    this.inEdit = true;
+  }
+
+  cancel() {
+    this.inEdit = false;
+    this.resetDataSource();
+  }
+
+  save() {
+    this.loading = true;
+    this.whoisService.saveChanges(this.registrar).subscribe({
+      complete: () => {
+        this.loading = false;
+        this.resetDataSource();
+      },
+      error: (err: HttpErrorResponse) => {
+        this._snackBar.open(err.error, undefined, {
+          duration: 1500,
+        });
+      },
+    });
+    this.cancel();
+  }
+
+  resetDataSource() {
+    this.registrar = JSON.parse(
+      JSON.stringify(this.registrarService.registrar)
+    );
+  }
 }
