@@ -93,7 +93,7 @@ public class RegistrarsAction implements JsonGetAction {
       return;
     }
     ImmutableList<Registrar> registrars =
-        Streams.stream(Registrar.loadAllCached())
+        Streams.stream(Registrar.loadAll())
             .filter(r -> r.getType() == Registrar.Type.REAL)
             .collect(ImmutableList.toImmutableList());
 

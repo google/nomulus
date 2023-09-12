@@ -129,7 +129,7 @@ export class ContactDetailsDialogComponent {
     operationObservable.subscribe({
       complete: this.onCloseCallback.bind(this),
       error: (err: HttpErrorResponse) => {
-        this._snackBar.open(err.statusText, undefined, {
+        this._snackBar.open(err.error, undefined, {
           duration: 1500,
         });
       },
@@ -148,7 +148,8 @@ export default class ContactComponent {
     private dialog: MatDialog,
     private bottomSheet: MatBottomSheet,
     private breakpointObserver: BreakpointObserver,
-    public contactService: ContactService
+    public contactService: ContactService,
+    private _snackBar: MatSnackBar
   ) {
     // TODO: Refactor to registrarId service
     this.loading = true;
@@ -170,7 +171,13 @@ export default class ContactComponent {
 
   deleteContact(contact: Contact) {
     if (confirm(`Please confirm contact ${contact.name} delete`)) {
-      this.contactService.deleteContact(contact).subscribe();
+      this.contactService.deleteContact(contact).subscribe({
+        error: (err: HttpErrorResponse) => {
+          this._snackBar.open(err.error, undefined, {
+            duration: 1500,
+          });
+        },
+      });
     }
   }
 

@@ -14,7 +14,7 @@
 
 import { Injectable } from '@angular/core';
 import { BackendService } from '../shared/services/backend.service';
-import { Subject } from 'rxjs';
+import { Observable, Subject, tap } from 'rxjs';
 import {
   GlobalLoader,
   GlobalLoaderService,
@@ -54,11 +54,16 @@ export class RegistrarService implements GlobalLoader {
     private backend: BackendService,
     private globalLoader: GlobalLoaderService
   ) {
-    this.backend.getRegistrars().subscribe((r) => {
+    this.loadRegistrars().subscribe((r) => {
       this.globalLoader.stopGlobalLoader(this);
-      this.registrars = r;
     });
     this.globalLoader.startGlobalLoader(this);
+  }
+
+  public get registrar(): Registrar {
+    return this.registrars.filter(
+      (r) => r.registrarId === this.activeRegistrarId
+    )[0];
   }
 
   public updateRegistrar(registrarId: string) {
@@ -66,10 +71,14 @@ export class RegistrarService implements GlobalLoader {
     this.activeRegistrarIdChange.next(registrarId);
   }
 
-  public get registrar(): Registrar {
-    return this.registrars.filter(
-      (r) => r.registrarId === this.activeRegistrarId
-    )[0];
+  public loadRegistrars(): Observable<Registrar[]> {
+    return this.backend.getRegistrars().pipe(
+      tap((registrars) => {
+        if (registrars) {
+          this.registrars = registrars;
+        }
+      })
+    );
   }
 
   loadingTimeout() {

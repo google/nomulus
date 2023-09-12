@@ -12,12 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-.console-app {
-  &__logo {
-    color: inherit;
-    text-decoration: none;
-  }
-}
-.spacer {
-  flex: 1;
+import { Component } from '@angular/core';
+
+@Component({
+  selector: '[app-settings-widget]',
+  templateUrl: './settings-widget.component.html',
+})
+export class SettingsWidgetComponent {
+  constructor() {}
 }
