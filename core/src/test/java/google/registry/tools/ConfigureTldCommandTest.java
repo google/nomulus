@@ -14,14 +14,17 @@
 package google.registry.tools;
 
 import static com.google.common.truth.Truth.assertThat;
+import static google.registry.model.EntityYamlUtils.createObjectMapper;
 import static google.registry.model.domain.token.AllocationToken.TokenType.DEFAULT_PROMO;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.persistPremiumList;
 import static google.registry.testing.DatabaseHelper.persistResource;
+import static google.registry.testing.LogsSubject.assertAboutLogs;
 import static google.registry.testing.TestDataHelper.loadFile;
 import static google.registry.tldconfig.idn.IdnTableEnum.EXTENDED_LATIN;
 import static google.registry.tldconfig.idn.IdnTableEnum.JA;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.logging.Level.INFO;
 import static org.joda.money.CurrencyUnit.JPY;
 import static org.joda.money.CurrencyUnit.USD;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -34,12 +37,13 @@ import com.google.common.base.Ascii;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.io.Files;
-import google.registry.model.EntityYamlUtils;
+import com.google.common.testing.TestLogHandler;
 import google.registry.model.domain.token.AllocationToken;
 import google.registry.model.tld.Tld;
 import google.registry.model.tld.label.PremiumList;
 import google.registry.model.tld.label.PremiumListDao;
 import java.io.File;
+import java.util.logging.Logger;
 import org.joda.money.Money;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
@@ -50,13 +54,16 @@ import org.testcontainers.shaded.com.google.common.collect.ImmutableMap;
 public class ConfigureTldCommandTest extends CommandTestCase<ConfigureTldCommand> {
 
   PremiumList premiumList;
-  ObjectMapper objectMapper = EntityYamlUtils.createObjectMapper();
+  ObjectMapper objectMapper = createObjectMapper();
+  private final TestLogHandler logHandler = new TestLogHandler();
+  private final Logger logger = Logger.getLogger(ConfigureTldCommand.class.getCanonicalName());
 
   @BeforeEach
   void beforeEach() {
     command.mapper = objectMapper;
     premiumList = persistPremiumList("test", USD, "silver,USD 50", "gold,USD 80");
     command.validDnsWriterNames = ImmutableSet.of("VoidDnsWriter", "FooDnsWriter");
+    logger.addHandler(logHandler);
   }
 
   private void testTldConfiguredSuccessfully(Tld tld, String filename)
@@ -87,6 +94,19 @@ public class ConfigureTldCommandTest extends CommandTestCase<ConfigureTldCommand
     Tld updatedTld = Tld.get("tld");
     assertThat(updatedTld.getCreateBillingCost()).isEqualTo(Money.of(USD, 25));
     testTldConfiguredSuccessfully(updatedTld, "tld.yaml");
+  }
+
+  @Test
+  void testSuccess_noDiff() throws Exception {
+    Tld tld = createTld("tld");
+    ObjectMapper mapper = createObjectMapper();
+    String yaml = mapper.writeValueAsString(tld);
+    File tldFile = tmpDir.resolve("tld.yaml").toFile();
+    Files.asCharSink(tldFile, UTF_8).write(yaml);
+    runCommandForced("--input=" + tldFile);
+    assertAboutLogs()
+        .that(logHandler)
+        .hasLogAtLevelWithMessage(INFO, "TLD YAML file contains no new changes");
   }
 
   @Test

@@ -27,6 +27,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.collect.Sets;
 import com.google.common.collect.Sets.SetView;
+import com.google.common.flogger.FluentLogger;
 import google.registry.model.tld.Tld;
 import google.registry.model.tld.label.PremiumList;
 import google.registry.model.tld.label.PremiumListDao;
@@ -53,6 +54,8 @@ import org.yaml.snakeyaml.Yaml;
 @Parameters(separators = " =", commandDescription = "Create or update TLD using YAML")
 public class ConfigureTldCommand extends MutatingCommand {
 
+  private static final FluentLogger logger = FluentLogger.forEnclosingClass();
+
   @Parameter(
       names = {"-i", "--input"},
       description = "Filename of TLD YAML file.",
@@ -65,6 +68,9 @@ public class ConfigureTldCommand extends MutatingCommand {
   @Inject
   @Named("dnsWriterNames")
   Set<String> validDnsWriterNames;
+
+  /** Indicates if the passed in file contains new changes to the TLD */
+  boolean newDiff = false;
 
   // TODO(sarahbot@): Add a breakglass setting to this tool to indicate when a TLD has been modified
   // outside of source control
@@ -80,10 +86,24 @@ public class ConfigureTldCommand extends MutatingCommand {
     checkForMissingFields(tldData);
     Tld oldTld = getTlds().contains(name) ? Tld.get(name) : null;
     Tld newTld = mapper.readValue(inputFile.toFile(), Tld.class);
+    if (oldTld != null && oldTld.equals(newTld)) {
+      return;
+    }
+    newDiff = true;
     checkPremiumList(newTld);
     checkDnsWriters(newTld);
     checkCurrency(newTld);
     stageEntityChange(oldTld, newTld);
+  }
+
+  @Override
+  protected boolean dontRunCommand() {
+    if (!newDiff) {
+      logger.atInfo().log("TLD YAML file contains no new changes");
+      return true;
+    }
+    // Don't run the command if there is no new diff
+    return false;
   }
 
   private void checkName(String name, Map<String, Object> tldData) {

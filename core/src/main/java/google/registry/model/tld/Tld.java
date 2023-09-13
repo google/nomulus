@@ -19,6 +19,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.collect.Maps.toMap;
 import static google.registry.config.RegistryConfig.getSingletonCacheRefreshDuration;
+import static google.registry.model.EntityYamlUtils.createObjectMapper;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.CollectionUtils.nullToEmptyImmutableCopy;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
@@ -28,6 +29,8 @@ import static org.joda.money.CurrencyUnit.USD;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.github.benmanes.caffeine.cache.CacheLoader;
@@ -123,6 +126,24 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
   public static final Money DEFAULT_RESTORE_BILLING_COST = Money.of(USD, 100);
   public static final Money DEFAULT_SERVER_STATUS_CHANGE_BILLING_COST = Money.of(USD, 20);
   public static final Money DEFAULT_REGISTRY_LOCK_OR_UNLOCK_BILLING_COST = Money.of(USD, 0);
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (!(o instanceof Tld)) {
+      return false;
+    }
+    ObjectMapper mapper = createObjectMapper();
+    try {
+      String thisYaml = mapper.writeValueAsString(this);
+      String otherYaml = mapper.writeValueAsString(o);
+      return thisYaml.equals(otherYaml);
+    } catch (JsonProcessingException e) {
+      throw new RuntimeException(e);
+    }
+  }
 
   /** The type of TLD, which determines things like backups and escrow policy. */
   public enum TldType {
