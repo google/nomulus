@@ -27,6 +27,10 @@ import static google.registry.beam.rde.RdePipeline.TupleTags.REVISION_ID;
 import static google.registry.beam.rde.RdePipeline.TupleTags.SUPERORDINATE_DOMAINS;
 import static google.registry.model.reporting.HistoryEntryDao.RESOURCE_TYPES_TO_HISTORY_TYPES;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+import static google.registry.util.SafeSerializationUtils.safeDeserializeCollection;
+import static google.registry.util.SafeSerializationUtils.serializeCollection;
+import static google.registry.util.SerializeUtils.decodeBase64;
+import static google.registry.util.SerializeUtils.encodeBase64;
 import static org.apache.beam.sdk.values.TypeDescriptors.kvs;
 
 import com.google.common.collect.ImmutableList;
@@ -65,11 +69,7 @@ import google.registry.rde.PendingDeposit.PendingDepositCoder;
 import google.registry.rde.RdeMarshaller;
 import google.registry.util.UtilsModule;
 import google.registry.xml.ValidationMode;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.HashSet;
 import javax.inject.Inject;
@@ -658,14 +658,8 @@ public class RdePipeline implements Serializable {
    */
   @SuppressWarnings("unchecked")
   static ImmutableSet<PendingDeposit> decodePendingDeposits(String encodedPendingDeposits) {
-    try (ObjectInputStream ois =
-        new ObjectInputStream(
-            new ByteArrayInputStream(
-                BaseEncoding.base64Url().omitPadding().decode(encodedPendingDeposits)))) {
-      return (ImmutableSet<PendingDeposit>) ois.readObject();
-    } catch (IOException | ClassNotFoundException e) {
-      throw new IllegalArgumentException("Unable to parse encoded pending deposit map.", e);
-    }
+    return ImmutableSet.copyOf(
+        safeDeserializeCollection(PendingDeposit.class, decodeBase64(encodedPendingDeposits)));
   }
 
   /**
@@ -674,12 +668,7 @@ public class RdePipeline implements Serializable {
    */
   public static String encodePendingDeposits(ImmutableSet<PendingDeposit> pendingDeposits)
       throws IOException {
-    try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
-      ObjectOutputStream oos = new ObjectOutputStream(baos);
-      oos.writeObject(pendingDeposits);
-      oos.flush();
-      return BaseEncoding.base64Url().omitPadding().encode(baos.toByteArray());
-    }
+    return encodeBase64(serializeCollection(pendingDeposits));
   }
 
   public static void main(String[] args) throws IOException, ClassNotFoundException {

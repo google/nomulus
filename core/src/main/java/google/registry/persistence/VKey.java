@@ -16,6 +16,8 @@ package google.registry.persistence;
 
 import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
+import static google.registry.util.SafeSerializationUtils.safeDeserialize;
+import static google.registry.util.SerializeUtils.decodeBase64;
 import static java.util.function.Function.identity;
 
 import com.google.common.base.Joiner;
@@ -97,7 +99,7 @@ public class VKey<T> extends ImmutableObject implements Serializable {
       throw new IllegalArgumentException(
           String.format("\"%s\" missing from the string: %s", LOOKUP_KEY, keyString));
     }
-    return VKey.create(classType, SerializeUtils.parse(Serializable.class, kvs.get(LOOKUP_KEY)));
+    return VKey.create(classType, safeDeserialize(decodeBase64((kvs.get(LOOKUP_KEY)))));
   }
 
   /** Returns the type of the entity. */
