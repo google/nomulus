@@ -63,7 +63,6 @@ public class ConfigureTldCommandTest extends CommandTestCase<ConfigureTldCommand
     command.mapper = objectMapper;
     premiumList = persistPremiumList("test", USD, "silver,USD 50", "gold,USD 80");
     command.validDnsWriterNames = ImmutableSet.of("VoidDnsWriter", "FooDnsWriter");
-    logger.addHandler(logHandler);
   }
 
   private void testTldConfiguredSuccessfully(Tld tld, String filename)
@@ -98,6 +97,7 @@ public class ConfigureTldCommandTest extends CommandTestCase<ConfigureTldCommand
 
   @Test
   void testSuccess_noDiff() throws Exception {
+    logger.addHandler(logHandler);
     Tld tld = createTld("tld");
     ObjectMapper mapper = createObjectMapper();
     String yaml = mapper.writeValueAsString(tld);
