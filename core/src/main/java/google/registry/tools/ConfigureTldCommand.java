@@ -86,7 +86,7 @@ public class ConfigureTldCommand extends MutatingCommand {
     checkForMissingFields(tldData);
     Tld oldTld = getTlds().contains(name) ? Tld.get(name) : null;
     Tld newTld = mapper.readValue(inputFile.toFile(), Tld.class);
-    if (oldTld != null && oldTld.equals(newTld)) {
+    if (oldTld != null && oldTld.equalYaml(newTld)) {
       return;
     }
     newDiff = true;
@@ -102,7 +102,6 @@ public class ConfigureTldCommand extends MutatingCommand {
       logger.atInfo().log("TLD YAML file contains no new changes");
       return true;
     }
-    // Don't run the command if there is no new diff
     return false;
   }
 

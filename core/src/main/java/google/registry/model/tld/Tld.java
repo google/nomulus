@@ -127,18 +127,14 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
   public static final Money DEFAULT_SERVER_STATUS_CHANGE_BILLING_COST = Money.of(USD, 20);
   public static final Money DEFAULT_REGISTRY_LOCK_OR_UNLOCK_BILLING_COST = Money.of(USD, 0);
 
-  @Override
-  public boolean equals(Object o) {
-    if (this == o) {
+  public boolean equalYaml(Tld tldToCompare) {
+    if (this == tldToCompare) {
       return true;
-    }
-    if (!(o instanceof Tld)) {
-      return false;
     }
     ObjectMapper mapper = createObjectMapper();
     try {
       String thisYaml = mapper.writeValueAsString(this);
-      String otherYaml = mapper.writeValueAsString(o);
+      String otherYaml = mapper.writeValueAsString(tldToCompare);
       return thisYaml.equals(otherYaml);
     } catch (JsonProcessingException e) {
       throw new RuntimeException(e);
