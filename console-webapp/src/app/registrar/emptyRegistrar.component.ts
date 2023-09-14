@@ -14,8 +14,9 @@
 
 import { Component } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { RegistrarService } from './registrar.service';
 import { Subscription } from 'rxjs';
+
+import { RegistrarService } from './registrar.service';
 
 @Component({
   selector: 'app-empty-registrar',
