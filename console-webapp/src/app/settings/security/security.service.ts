@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import { Injectable } from '@angular/core';
-import { tap } from 'rxjs';
+import { switchMap } from 'rxjs';
 import { RegistrarService } from 'src/app/registrar/registrar.service';
 import { BackendService } from 'src/app/shared/services/backend.service';
 
@@ -61,16 +61,6 @@ export class SecurityService {
     private registrarService: RegistrarService
   ) {}
 
-  fetchSecurityDetails() {
-    return this.backend
-      .getSecuritySettings(this.registrarService.activeRegistrarId)
-      .pipe(
-        tap((securitySettings: SecuritySettingsBackendModel) => {
-          this.securitySettings = apiToUiConverter(securitySettings);
-        })
-      );
-  }
-
   saveChanges(newSecuritySettings: SecuritySettings) {
     return this.backend
       .postSecuritySettings(
@@ -78,8 +68,8 @@ export class SecurityService {
         uiToApiConverter(newSecuritySettings)
       )
       .pipe(
-        tap((_) => {
-          this.securitySettings = newSecuritySettings;
+        switchMap(() => {
+          return this.registrarService.loadRegistrars();
         })
       );
   }

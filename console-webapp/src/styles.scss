@@ -44,7 +44,7 @@ body {
     &-link {
       padding: 0 !important;
       text-align: left;
-      margin-bottom: 0.5rem;
+      height: 20px !important;
     }
     &-title {
       color: var(--primary) !important;
@@ -65,6 +65,10 @@ body {
       flex: 1;
       border-left: 1px solid var(--secondary);
       padding-left: 20px;
+      .secondary-text {
+        margin-bottom: 0.3rem;
+        font-size: 0.8rem;
+      }
     }
   }
 }
