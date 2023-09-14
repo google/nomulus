@@ -16,6 +16,7 @@ package google.registry.flows;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
 import static google.registry.request.RequestParameters.extractOptionalHeader;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
@@ -33,6 +34,7 @@ import google.registry.request.Header;
 import google.registry.util.CidrAddressBlock;
 import google.registry.util.ProxyHttpHeaders;
 import java.net.InetAddress;
+import java.security.MessageDigest;
 import java.util.Optional;
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
@@ -137,8 +139,16 @@ public class TlsCredentials implements TransportCredentials {
       throw new MissingRegistrarCertificateException();
     }
     // Check if the certificate hash is equal to the one on file for the registrar.
-    if (!clientCertificateHash.equals(registrar.getClientCertificateHash())
-        && !clientCertificateHash.equals(registrar.getFailoverClientCertificateHash())) {
+    byte[] certBytes = clientCertificateHash.get().getBytes(UTF_8);
+    if (!MessageDigest.isEqual(
+            certBytes,
+            registrar.getClientCertificateHash().map(x -> x.getBytes(UTF_8)).orElse(null))
+        && !MessageDigest.isEqual(
+            certBytes,
+            registrar
+                .getFailoverClientCertificateHash()
+                .map(x -> x.getBytes(UTF_8))
+                .orElse(null))) {
       logger.atWarning().log(
           "Non-matching certificate hash (%s) for %s, wanted either %s or %s.",
           clientCertificateHash,
