@@ -67,7 +67,12 @@ public final class SafeObjectInputStream extends ObjectInputStream {
   protected Class<?> resolveClass(ObjectStreamClass desc)
       throws ClassNotFoundException, IOException {
     String clazz = desc.getName();
-    if (isJavaPlatformClass(clazz) || isNomulusClass(clazz)) {
+    if (isNomulusClass(clazz)) {
+      return checkNotArrayOrContainer(super.resolveClass(desc));
+    }
+    // TODO(b/297587959): after upgrading to Java 11, consider replace if-block below with
+    // `checkNotArrayOrContainer(ClassLoader.getPlatformClassLoader().resolveClass(desc))`
+    if (isJavaPlatformClass(clazz)) {
       return checkNotArrayOrContainer(super.resolveClass(desc));
     }
     throw new ClassNotFoundException(clazz + " not found or not allowed in deserialization.");

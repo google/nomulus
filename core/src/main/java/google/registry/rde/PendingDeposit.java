@@ -101,17 +101,20 @@ public abstract class PendingDeposit implements Serializable {
   PendingDeposit() {}
 
   /**
-   * Specifies that {@link SerializedForm} should be used for serialization. This method is
-   * package-protected so that {@link AutoValue_PendingDeposit} inherits this behavior.
+   * Specifies that {@link SerializedForm} be used for @code SafeObjectInputStream}-compatible
+   * custom-serialization of {@link AutoValue_PendingDeposit the AutoValue implementation class}.
+   *
+   * <p>This method is package-protected so that the AutoValue implementation class inherits this
+   * behavior.
    */
   Object writeReplace() throws ObjectStreamException {
     return new SerializedForm(this);
   }
 
   /**
-   * Proxy for the (de)serialization of {@link PendingDeposit}. It allows leveraging of the {@link
-   * PendingDepositCoder} (which avoids the third-party joda-time classes) for safe deserialization.
-   * See {@link #writeReplace}.
+   * Proxy for custom-serialization of {@link PendingDeposit}. This is necessary because the actual
+   * class to be (de)serialized is the generated AutoValue implementation. See also {@link
+   * #writeReplace}.
    */
   private static class SerializedForm implements Serializable {
 
@@ -142,9 +145,9 @@ public abstract class PendingDeposit implements Serializable {
   /**
    * A deterministic coder for {@link PendingDeposit} used during a GroupBy transform.
    *
-   * <p>We cannot use a {@code SerializableCoder} directly for two reasons: it does not guarantee
-   * determinism, which is required by GroupBy; and the Joda-time classes are not allowed by {@link
-   * google.registry.util.SafeObjectInputStream}.
+   * <p>We cannot use a {@code SerializableCoder} directly for two reasons: the default
+   * serialization does not guarantee determinism, which is required by GroupBy; and the Joda-time
+   * classes are not allowed by {@code SafeObjectInputStream}.
    */
   public static class PendingDepositCoder extends AtomicCoder<PendingDeposit> {
 

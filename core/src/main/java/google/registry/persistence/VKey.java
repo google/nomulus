@@ -99,7 +99,7 @@ public class VKey<T> extends ImmutableObject implements Serializable {
       throw new IllegalArgumentException(
           String.format("\"%s\" missing from the string: %s", LOOKUP_KEY, keyString));
     }
-    return VKey.create(classType, safeDeserialize(decodeBase64((kvs.get(LOOKUP_KEY)))));
+    return VKey.create(classType, safeDeserialize(decodeBase64(kvs.get(LOOKUP_KEY))));
   }
 
   /** Returns the type of the entity. */

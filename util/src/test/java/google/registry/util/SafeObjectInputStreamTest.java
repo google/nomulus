@@ -26,13 +26,14 @@ import java.io.ByteArrayInputStream;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
+import org.joda.time.Duration;
 import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link SafeObjectInputStream}. */
 public class SafeObjectInputStreamTest {
 
   @Test
-  void javaNonArrayNonContainerSuccess() throws Exception {
+  void javaUnitarySuccess() throws Exception {
     String orig = "some string";
     try (SafeObjectInputStream sois =
         new SafeObjectInputStream(new ByteArrayInputStream(serialize(orig)))) {
@@ -41,7 +42,7 @@ public class SafeObjectInputStreamTest {
   }
 
   @Test
-  void javaContainerFailure() throws Exception {
+  void javaCollectionFailure() throws Exception {
     ArrayList<String> orig = newArrayList("a");
     try (SafeObjectInputStream sois =
         new SafeObjectInputStream(new ByteArrayInputStream(serialize(orig)))) {
@@ -69,7 +70,16 @@ public class SafeObjectInputStreamTest {
   }
 
   @Test
-  void nonJavaListFailure() throws Exception {
+  void nonJavaUnitaryFailure() throws Exception {
+    Serializable orig = Duration.millis(1);
+    try (SafeObjectInputStream sois =
+        new SafeObjectInputStream(new ByteArrayInputStream(serialize(orig)))) {
+      assertThrows(ClassNotFoundException.class, () -> sois.readObject());
+    }
+  }
+
+  @Test
+  void nonJavaCollectionFailure() throws Exception {
     ImmutableList<String> orig = ImmutableList.of("a");
     try (SafeObjectInputStream sois =
         new SafeObjectInputStream(new ByteArrayInputStream(serialize(orig)))) {
