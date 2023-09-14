@@ -32,6 +32,9 @@ export class RegistrarGuard {
     }
     // Get the full URL including any nested children (skip the initial '#/')
     const nextUrl = location.hash.split('#/')[1];
+    if (nextUrl == null) {
+      return true;
+    }
     return this.router.navigate([`/empty-registrar`, { nextUrl }]);
   }
 }
