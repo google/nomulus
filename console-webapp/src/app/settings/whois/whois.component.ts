@@ -19,4 +19,6 @@ import { Component } from '@angular/core';
   templateUrl: './whois.component.html',
   styleUrls: ['./whois.component.scss'],
 })
-export default class WhoisComponent {}
+export default class WhoisComponent {
+  public static PATH = 'whois';
+}

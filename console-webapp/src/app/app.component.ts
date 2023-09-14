@@ -14,6 +14,7 @@
 
 import { Component } from '@angular/core';
 import { RegistrarService } from './registrar/registrar.service';
+import { UserDataService } from './shared/services/userData.service';
 import { GlobalLoaderService } from './shared/services/globalLoader.service';
 
 @Component({
@@ -25,6 +26,7 @@ export class AppComponent {
   renderRouter: boolean = true;
   constructor(
     protected registrarService: RegistrarService,
+    protected userDataService: UserDataService,
     protected globalLoader: GlobalLoaderService
   ) {
     registrarService.activeRegistrarIdChange.subscribe(() => {

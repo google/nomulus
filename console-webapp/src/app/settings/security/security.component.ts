@@ -29,6 +29,8 @@ import { RegistrarService } from 'src/app/registrar/registrar.service';
   providers: [SecurityService],
 })
 export default class SecurityComponent {
+  public static PATH = 'security';
+
   loading: boolean = false;
   inEdit: boolean = false;
   dataSource: SecuritySettings = {};
