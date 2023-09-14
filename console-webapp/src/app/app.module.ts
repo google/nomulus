@@ -46,6 +46,7 @@ import { EppWidgetComponent } from './home/widgets/epp-widget.component';
 import { BillingWidgetComponent } from './home/widgets/billing-widget.component';
 import { DomainsWidgetComponent } from './home/widgets/domains-widget.component';
 import { SettingsWidgetComponent } from './home/widgets/settings-widget.component';
+import { UserDataService } from './shared/services/userData.service';
 
 @NgModule({
   declarations: [
@@ -81,6 +82,7 @@ import { SettingsWidgetComponent } from './home/widgets/settings-widget.componen
     BackendService,
     GlobalLoaderService,
     RegistrarGuard,
+    UserDataService,
     {
       provide: MAT_FORM_FIELD_DEFAULT_OPTIONS,
       useValue: {

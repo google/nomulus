@@ -15,6 +15,8 @@
 import { Component } from '@angular/core';
 import { RegistrarService } from './registrar/registrar.service';
 import { GlobalLoaderService } from './shared/services/globalLoader.service';
+import { UserDataService } from './shared/services/userData.service';
+import { MatSnackBar } from '@angular/material/snack-bar';
 
 @Component({
   selector: 'app-root',
@@ -25,13 +27,25 @@ export class AppComponent {
   renderRouter: boolean = true;
   constructor(
     protected registrarService: RegistrarService,
-    protected globalLoader: GlobalLoaderService
+    protected userDataService: UserDataService,
+    protected globalLoader: GlobalLoaderService,
+    private _snackBar: MatSnackBar
   ) {
     registrarService.activeRegistrarIdChange.subscribe(() => {
       this.renderRouter = false;
       setTimeout(() => {
         this.renderRouter = true;
       }, 400);
+    });
+    userDataService.getUserData().subscribe(() => {
+      this.globalLoader.stopGlobalLoader(this);
+    });
+    this.globalLoader.startGlobalLoader(this);
+  }
+
+  loadingTimeout() {
+    this._snackBar.open('Timeout loading user data', undefined, {
+      duration: 1500,
     });
   }
 }

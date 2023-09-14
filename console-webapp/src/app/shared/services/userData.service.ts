@@ -12,13 +12,28 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Component } from '@angular/core';
-import { UserDataService } from 'src/app/shared/services/userData.service';
+import { Injectable } from '@angular/core';
+import { Observable, tap } from 'rxjs';
+import { BackendService } from './backend.service';
 
-@Component({
-  selector: '[app-resources-widget]',
-  templateUrl: './resources-widget.component.html',
+export interface UserData {
+  isAdmin: boolean;
+  globalRole: string;
+  technicalDocsUrl: string;
+}
+
+@Injectable({
+  providedIn: 'root',
 })
-export class ResourcesWidgetComponent {
-  constructor(public userDataService: UserDataService) {}
+export class UserDataService {
+  public userData?: UserData;
+  constructor(private backend: BackendService) {}
+
+  getUserData(): Observable<UserData> {
+    return this.backend.getUserData().pipe(
+      tap((userData: UserData) => {
+        this.userData = userData;
+      })
+    );
+  }
 }
