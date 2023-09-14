@@ -10,11 +10,21 @@
         </h4>
       </div>
       <div class="console-app__widget_right">
-        <button mat-button color="primary" class="console-app__widget-link">
+        <button
+          mat-button
+          color="primary"
+          class="console-app__widget-link"
+          (click)="openContactsPage()"
+        >
           Contact Information
         </button>
         <p class="secondary-text">Manage Primary, Technical, etc contacts.</p>
-        <button mat-button color="primary" class="console-app__widget-link">
+        <button
+          mat-button
+          color="primary"
+          class="console-app__widget-link"
+          (click)="openSecPage()"
+        >
           Security
         </button>
         <p class="secondary-text">
@@ -28,7 +38,12 @@
           User Management
         </button>
         <p class="secondary-text">Create and manage console user accounts</p>
-        <button mat-button color="primary" class="console-app__widget-link">
+        <button
+          mat-button
+          color="primary"
+          class="console-app__widget-link"
+          (click)="openRegistrarsPage()"
+        >
           Registrar Management
         </button>
         <p class="secondary-text">Create and manage registrar accounts</p>

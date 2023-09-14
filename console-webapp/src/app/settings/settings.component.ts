@@ -20,4 +20,6 @@ import { Component, ViewEncapsulation } from '@angular/core';
   styleUrls: ['./settings.component.scss'],
   encapsulation: ViewEncapsulation.None,
 })
-export class SettingsComponent {}
+export class SettingsComponent {
+  public static PATH = 'settings';
+}

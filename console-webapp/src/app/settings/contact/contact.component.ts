@@ -143,6 +143,8 @@ export class ContactDetailsDialogComponent {
   styleUrls: ['./contact.component.scss'],
 })
 export default class ContactComponent {
+  public static PATH = 'contact';
+
   loading: boolean = false;
   constructor(
     private dialog: MatDialog,

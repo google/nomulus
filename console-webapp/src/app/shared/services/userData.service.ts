@@ -12,13 +12,28 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Component } from '@angular/core';
+import { Injectable } from '@angular/core';
+import { Observable, tap } from 'rxjs';
+import { BackendService } from './backend.service';
 
-@Component({
-  selector: 'app-users',
-  templateUrl: './users.component.html',
-  styleUrls: ['./users.component.scss'],
+export interface UserData {
+  isAdmin: boolean;
+  globalRole: string;
+  technicalDocsUrl: string;
+}
+
+@Injectable({
+  providedIn: 'root',
 })
-export default class UsersComponent {
-  public static PATH = 'users';
+export class UserDataService {
+  public userData?: UserData;
+  constructor(private backend: BackendService) {}
+
+  getUserData(): Observable<UserData> {
+    return this.backend.getUserData().pipe(
+      tap((userData: UserData) => {
+        this.userData = userData;
+      })
+    );
+  }
 }

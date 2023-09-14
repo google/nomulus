@@ -13,11 +13,32 @@
 // limitations under the License.
 
 import { Component } from '@angular/core';
+import { Router } from '@angular/router';
+import { RegistrarComponent } from 'src/app/registrar/registrarsTable.component';
+import ContactComponent from 'src/app/settings/contact/contact.component';
+import SecurityComponent from 'src/app/settings/security/security.component';
+import { SettingsComponent } from 'src/app/settings/settings.component';
 
 @Component({
   selector: '[app-settings-widget]',
   templateUrl: './settings-widget.component.html',
 })
 export class SettingsWidgetComponent {
-  constructor() {}
+  constructor(private router: Router) {}
+
+  openRegistrarsPage() {
+    this.navigate(RegistrarComponent.PATH);
+  }
+
+  openSecPage() {
+    this.navigate(SecurityComponent.PATH);
+  }
+
+  openContactsPage() {
+    this.navigate(ContactComponent.PATH);
+  }
+
+  private navigate(route: string) {
+    this.router.navigate([SettingsComponent.PATH, route]);
+  }
 }

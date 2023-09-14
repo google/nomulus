@@ -24,6 +24,10 @@ import SettingsSecurityComponent from './settings/security/security.component';
 import { RegistrarGuard } from './registrar/registrar.guard';
 import { RegistrarComponent } from './registrar/registrarsTable.component';
 import { EmptyRegistrar } from './registrar/emptyRegistrar.component';
+import ContactComponent from './settings/contact/contact.component';
+import WhoisComponent from './settings/whois/whois.component';
+import SecurityComponent from './settings/security/security.component';
+import UsersComponent from './settings/users/users.component';
 
 const routes: Routes = [
   { path: '', redirectTo: '/home', pathMatch: 'full' },
@@ -32,7 +36,7 @@ const routes: Routes = [
   { path: 'home', component: HomeComponent, canActivate: [RegistrarGuard] },
   { path: 'tlds', component: TldsComponent, canActivate: [RegistrarGuard] },
   {
-    path: 'settings',
+    path: SettingsComponent.PATH,
     component: SettingsComponent,
     children: [
       {
@@ -41,32 +45,27 @@ const routes: Routes = [
         pathMatch: 'full',
       },
       {
-        path: 'contact',
+        path: ContactComponent.PATH,
         component: SettingsContactComponent,
         canActivate: [RegistrarGuard],
       },
       {
-        path: 'whois',
+        path: WhoisComponent.PATH,
         component: SettingsWhoisComponent,
         canActivate: [RegistrarGuard],
       },
       {
-        path: 'security',
+        path: SecurityComponent.PATH,
         component: SettingsSecurityComponent,
         canActivate: [RegistrarGuard],
       },
       {
-        path: 'epp-password',
-        component: SettingsSecurityComponent,
-        canActivate: [RegistrarGuard],
-      },
-      {
-        path: 'users',
+        path: UsersComponent.PATH,
         component: SettingsUsersComponent,
         canActivate: [RegistrarGuard],
       },
       {
-        path: 'registrars',
+        path: RegistrarComponent.PATH,
         component: RegistrarComponent,
       },
     ],

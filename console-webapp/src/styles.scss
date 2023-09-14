@@ -45,15 +45,16 @@ body {
       padding: 0 !important;
       text-align: left;
       height: 20px !important;
+      min-width: auto !important;
     }
     &-title {
       color: var(--primary) !important;
     }
     &-icon {
-      font-size: 4rem;
-      line-height: 4rem;
-      height: 4rem !important;
-      width: 4rem !important;
+      font-size: 5rem;
+      line-height: 5rem;
+      height: 5rem !important;
+      width: 5rem !important;
     }
     &_left {
       flex: 1;
