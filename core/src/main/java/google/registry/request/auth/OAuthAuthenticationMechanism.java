@@ -26,6 +26,7 @@ import com.google.appengine.api.users.User;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.flogger.FluentLogger;
 import google.registry.config.RegistryConfig.Config;
+import google.registry.config.RegistryEnvironment;
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
 
@@ -80,7 +81,10 @@ public class OAuthAuthenticationMechanism implements AuthenticationMechanism {
     // Assume that, if a bearer token is found, it's what OAuthService will use to attempt
     // authentication. This is not technically guaranteed by the contract of OAuthService; see
     // OAuthTokenInfo for more information.
-    String rawAccessToken = header.substring(BEARER_PREFIX.length());
+    String rawAccessToken =
+        RegistryEnvironment.get() == RegistryEnvironment.PRODUCTION
+            ? "Raw token redacted in prod"
+            : header.substring(BEARER_PREFIX.length());
 
     // Get the OAuth information. The various oauthService method calls use a single cached
     // authentication result, so we can call them one by one.
