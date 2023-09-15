@@ -69,8 +69,7 @@ public class EntityYamlUtils {
   }
 
   /**
-   * A custom serializer for String Set to sort the order and make YAML generation
-   * deterministic.
+   * A custom serializer for String Set to sort the order and make YAML generation deterministic.
    */
   public static class SortedSetSerializer extends StdSerializer<Set<String>> {
     public SortedSetSerializer() {
@@ -95,9 +94,7 @@ public class EntityYamlUtils {
     }
   }
 
-  /**
-   * A custom serializer for Enum Set to sort the order and make YAML generation deterministic.
-   */
+  /** A custom serializer for Enum Set to sort the order and make YAML generation deterministic. */
   public static class SortedEnumSetSerializer extends StdSerializer<Set<Enum>> {
     public SortedEnumSetSerializer() {
       this(null);
