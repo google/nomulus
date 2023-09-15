@@ -87,25 +87,21 @@ class LoadTestCommand extends ConfirmingCommand implements CommandWithConnection
   @Override
   protected boolean checkExecutionState() {
     if (RegistryToolEnvironment.get() == RegistryToolEnvironment.PRODUCTION) {
-      printError("You may not run a load test against production.");
+      errorPrintStream.println("You may not run a load test against production.");
       return false;
     }
 
     // Check validity of TLD and Client Id.
     if (!Tlds.getTlds().contains(tld)) {
-      printError(String.format("No such TLD: %s\n", tld));
+      errorPrintStream.printf("No such TLD: %s\n", tld);
       return false;
     }
     if (!Registrar.loadByRegistrarId(clientId).isPresent()) {
-      printError(String.format("No such client: %s\n", clientId));
+      errorPrintStream.printf("No such client: %s\n", clientId);
       return false;
     }
 
     return true;
-  }
-
-  private void printError(String errorMessage) {
-    errorPrintStream.println(errorMessage);
   }
 
   @Override
@@ -117,7 +113,7 @@ class LoadTestCommand extends ConfirmingCommand implements CommandWithConnection
 
   @Override
   protected String execute() throws Exception {
-    printError("Initiating load test...");
+    errorPrintStream.println("Initiating load test...");
 
     ImmutableMap<String, Object> params = new ImmutableMap.Builder<String, Object>()
         .put("tld", tld)

@@ -19,7 +19,6 @@ import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static google.registry.tools.UpdateOrDeleteAllocationTokensCommand.getTokenKeys;
 import static google.registry.util.CollectionUtils.findDuplicates;
 import static google.registry.util.DomainNameUtils.canonicalizeHostname;
-import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.beust.jcommander.Parameter;
 import com.google.common.base.Joiner;
@@ -40,7 +39,6 @@ import google.registry.tools.params.OptionalStringParameter;
 import google.registry.tools.params.StringListParameter;
 import google.registry.tools.params.TransitionListParameter.BillingCostTransitions;
 import google.registry.tools.params.TransitionListParameter.TldStateTransitions;
-import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
 import java.util.List;
@@ -478,12 +476,10 @@ abstract class CreateOrUpdateTldCommand extends MutatingCommand {
       String errMsg = String.format("The reserved list(s) %s cannot be applied to the tld %s",
           Joiner.on(", ").join(invalidNames),
           tld);
-      try (PrintStream errorPrintStream = new PrintStream(System.err, false, UTF_8.name())) {
-        if (overrideReservedListRules) {
-          errorPrintStream.println("Error overridden: " + errMsg);
-        } else {
-          throw new IllegalArgumentException(errMsg);
-        }
+      if (overrideReservedListRules) {
+        errorPrintStream.println("Error overridden: " + errMsg);
+      } else {
+        throw new IllegalArgumentException(errMsg);
       }
     }
   }

@@ -1048,6 +1048,7 @@ class UpdateTldCommandTest extends CommandTestCase<UpdateTldCommand> {
 
   @Test
   void testSuccess_setCommonAndReservedListFromOtherTld_withOverride() throws Exception {
+    command.errorPrintStream = System.err;
     runReservedListsTestOverride("common_abuse,tld_banned");
     String errMsg =
         "Error overridden: The reserved list(s) tld_banned "
