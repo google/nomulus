@@ -69,7 +69,7 @@ public class EntityYamlUtils {
   }
 
   /**
-   * A custom JSON serializer for String Set to sort the order and make YAML generation
+   * A custom serializer for String Set to sort the order and make YAML generation
    * deterministic.
    */
   public static class SortedSetSerializer extends StdSerializer<Set<String>> {
@@ -86,7 +86,7 @@ public class EntityYamlUtils {
         throws IOException {
       ImmutableSortedSet<String> sorted =
           value.stream()
-              .collect(toImmutableSortedSet(String::compareTo)); // sort the entries into new list
+              .collect(toImmutableSortedSet(String::compareTo)); // sort the entries into a new set
       g.writeStartArray();
       for (String entry : sorted) {
         g.writeString(entry);
@@ -96,7 +96,7 @@ public class EntityYamlUtils {
   }
 
   /**
-   * A custom JSON serializer for Enum Set to sort the order and make YAML generation deterministic.
+   * A custom serializer for Enum Set to sort the order and make YAML generation deterministic.
    */
   public static class SortedEnumSetSerializer extends StdSerializer<Set<Enum>> {
     public SortedEnumSetSerializer() {
@@ -113,7 +113,7 @@ public class EntityYamlUtils {
       ImmutableSortedSet<String> sorted =
           value.stream()
               .map(Enum::name)
-              .collect(toImmutableSortedSet(String::compareTo)); // sort the entries into new list
+              .collect(toImmutableSortedSet(String::compareTo)); // sort the entries into a new set
       g.writeStartArray();
       for (String entry : sorted) {
         g.writeString(entry);
