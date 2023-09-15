@@ -14,6 +14,9 @@
 
 package google.registry.util;
 
+import static com.google.common.collect.ImmutableSet.toImmutableSet;
+
+import com.google.common.collect.ImmutableSet;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
@@ -36,7 +39,8 @@ import java.util.Map;
  *       malicious code in the static initialization block or the deserialization code path (e.g.,
  *       the {@code readObject} method) is deserialized, such code will be executed. For Nomulus,
  *       this risk comes from third-party dependencies. To counter this risk, this class only allows
- *       core Java and Nomulus (google.registry.**) classes, and forbid third-party dependencies.
+ *       Nomulus (google.registry.**) classes and specific core Java classes, and forbid others
+ *       including third-party dependencies.
  *   <li>CPU-targeting denial-of-service attacks. Containers and arrays may be used to construct
  *       object graphs that require enormous amount of computation during deserialization and/or
  *       during invocations of methods such as {@code hashCode} or {@code equals}, taking minutes or
@@ -59,6 +63,15 @@ import java.util.Map;
  */
 public final class SafeObjectInputStream extends ObjectInputStream {
 
+  /**
+   * Core Java classes allowed in deserialization. Add new classes as needed but do not add
+   * third-party classes.
+   */
+  private static final ImmutableSet<String> ALLOWED_CORE_JAVA_CLASSES =
+      ImmutableSet.of(String.class, Byte.class, Short.class, Integer.class, Long.class).stream()
+          .map(Class::getName)
+          .collect(toImmutableSet());
+
   public SafeObjectInputStream(InputStream in) throws IOException {
     super(in);
   }
@@ -67,12 +80,7 @@ public final class SafeObjectInputStream extends ObjectInputStream {
   protected Class<?> resolveClass(ObjectStreamClass desc)
       throws ClassNotFoundException, IOException {
     String clazz = desc.getName();
-    if (isNomulusClass(clazz)) {
-      return checkNotArrayOrContainer(super.resolveClass(desc));
-    }
-    // TODO(b/297587959): after upgrading to Java 11, consider replace if-block below with
-    // `checkNotArrayOrContainer(ClassLoader.getPlatformClassLoader().resolveClass(desc))`
-    if (isJavaPlatformClass(clazz)) {
+    if (isNomulusClass(clazz) || ALLOWED_CORE_JAVA_CLASSES.contains(clazz)) {
       return checkNotArrayOrContainer(super.resolveClass(desc));
     }
     throw new ClassNotFoundException(clazz + " not found or not allowed in deserialization.");
@@ -83,10 +91,6 @@ public final class SafeObjectInputStream extends ObjectInputStream {
       throw new ClassNotFoundException(clazz.getName() + " not allowed as non-root object.");
     }
     return clazz;
-  }
-
-  private boolean isJavaPlatformClass(String clazz) {
-    return clazz.startsWith("java.");
   }
 
   private boolean isNomulusClass(String clazz) {
