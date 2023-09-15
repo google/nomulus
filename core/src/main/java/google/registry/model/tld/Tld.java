@@ -53,6 +53,8 @@ import google.registry.model.EntityYamlUtils.CurrencyDeserializer;
 import google.registry.model.EntityYamlUtils.CurrencySerializer;
 import google.registry.model.EntityYamlUtils.OptionalDurationSerializer;
 import google.registry.model.EntityYamlUtils.OptionalStringSerializer;
+import google.registry.model.EntityYamlUtils.SortedEnumSetSerializer;
+import google.registry.model.EntityYamlUtils.SortedSetSerializer;
 import google.registry.model.EntityYamlUtils.TimedTransitionPropertyMoneyDeserializer;
 import google.registry.model.EntityYamlUtils.TimedTransitionPropertyTldStateDeserializer;
 import google.registry.model.EntityYamlUtils.TokenVKeyListDeserializer;
@@ -272,6 +274,7 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
    * <p>All entries of this list must be valid keys for the map of {@code DnsWriter}s injected by
    * {@code @Inject Map<String, DnsWriter>}
    */
+  @JsonSerialize(using = SortedSetSerializer.class)
   @Column(nullable = false)
   Set<String> dnsWriters;
 
@@ -371,6 +374,7 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
   CreateAutoTimestamp creationTime = CreateAutoTimestamp.create(null);
 
   /** The set of reserved list names that are applicable to this tld. */
+  @JsonSerialize(using = SortedSetSerializer.class)
   @Column(name = "reserved_list_names")
   Set<String> reservedListNames;
 
@@ -510,10 +514,14 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
   DateTime claimsPeriodEnd = END_OF_TIME;
 
   /** An allowlist of clients allowed to be used on domains on this TLD (ignored if empty). */
-  @Nullable Set<String> allowedRegistrantContactIds;
+  @Nullable
+  @JsonSerialize(using = SortedSetSerializer.class)
+  Set<String> allowedRegistrantContactIds;
 
   /** An allowlist of hosts allowed to be used on domains on this TLD (ignored if empty). */
-  @Nullable Set<String> allowedFullyQualifiedHostNames;
+  @Nullable
+  @JsonSerialize(using = SortedSetSerializer.class)
+  Set<String> allowedFullyQualifiedHostNames;
 
   /**
    * Indicates when the TLD is being modified using locally modified files to override the source
@@ -538,6 +546,7 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
   List<VKey<AllocationToken>> defaultPromoTokens;
 
   /** A set of allowed {@link IdnTableEnum}s for this TLD, or empty if we should use the default. */
+  @JsonSerialize(using = SortedEnumSetSerializer.class)
   Set<IdnTableEnum> idnTables;
 
   public String getTldStr() {

@@ -23,6 +23,7 @@ import static google.registry.testing.LogsSubject.assertAboutLogs;
 import static google.registry.testing.TestDataHelper.loadFile;
 import static google.registry.tldconfig.idn.IdnTableEnum.EXTENDED_LATIN;
 import static google.registry.tldconfig.idn.IdnTableEnum.JA;
+import static google.registry.tldconfig.idn.IdnTableEnum.UNCONFUSABLE_LATIN;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.logging.Level.INFO;
 import static org.joda.money.CurrencyUnit.JPY;
@@ -98,10 +99,17 @@ public class ConfigureTldCommandTest extends CommandTestCase<ConfigureTldCommand
   @Test
   void testSuccess_noDiff() throws Exception {
     logger.addHandler(logHandler);
-    Tld tld = createTld("tld");
+    Tld tld = createTld("idns");
+    tld =
+        persistResource(
+            tld.asBuilder()
+                .setIdnTables(ImmutableSet.of(JA, UNCONFUSABLE_LATIN, EXTENDED_LATIN))
+                .setAllowedFullyQualifiedHostNames(
+                    ImmutableSet.of("zeta", "alpha", "gamma", "beta"))
+                .build());
     ObjectMapper mapper = createObjectMapper();
     String yaml = mapper.writeValueAsString(tld);
-    File tldFile = tmpDir.resolve("tld.yaml").toFile();
+    File tldFile = tmpDir.resolve("idns.yaml").toFile();
     Files.asCharSink(tldFile, UTF_8).write(yaml);
     runCommandForced("--input=" + tldFile);
     assertAboutLogs()
