@@ -107,10 +107,8 @@ public class ConfigureTldCommandTest extends CommandTestCase<ConfigureTldCommand
                 .setAllowedFullyQualifiedHostNames(
                     ImmutableSet.of("zeta", "alpha", "gamma", "beta"))
                 .build());
-    ObjectMapper mapper = createObjectMapper();
-    String yaml = mapper.writeValueAsString(tld);
     File tldFile = tmpDir.resolve("idns.yaml").toFile();
-    Files.asCharSink(tldFile, UTF_8).write(yaml);
+    Files.asCharSink(tldFile, UTF_8).write(loadFile(getClass(), "idns.yaml"));
     runCommandForced("--input=" + tldFile);
     assertAboutLogs()
         .that(logHandler)
