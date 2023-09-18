@@ -499,8 +499,10 @@ comes in at the exact millisecond that the domain would have expired.
     *   Resource status prohibits this operation.
     *   The allocation token is not currently valid.
 *   2305
-    *   The __REMOVEDOMAIN__ token is missing on a bulk pricing domain command
-    *   The __REMOVEDOMAIN__ token is not allowed on non bulk pricing domains
+    *   The __REMOVE_BULK_PRICING__ token is missing on a bulk pricing domain
+        command
+    *   The __REMOVE_BULK_PRICING__ token is not allowed on non bulk pricing
+        domains
     *   The allocation token is not valid for this domain.
     *   The allocation token is not valid for this registrar.
     *   The allocation token is not valid for this TLD.

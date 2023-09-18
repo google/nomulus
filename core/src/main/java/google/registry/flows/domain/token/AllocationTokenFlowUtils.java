@@ -243,21 +243,21 @@ public class AllocationTokenFlowUtils {
       Domain domain, Optional<AllocationToken> allocationToken) throws EppException {
 
     boolean domainHasBulkToken = domain.getCurrentBulkToken().isPresent();
-    boolean hasRemoveDomainToken =
+    boolean hasRemoveBulkPricingToken =
         allocationToken.isPresent()
-            && TokenBehavior.REMOVE_DOMAIN.equals(allocationToken.get().getTokenBehavior());
+            && TokenBehavior.REMOVE_BULK_PRICING.equals(allocationToken.get().getTokenBehavior());
 
-    if (hasRemoveDomainToken && !domainHasBulkToken) {
-      throw new RemoveDomainTokenOnNonBulkPricingDomainException();
-    } else if (!hasRemoveDomainToken && domainHasBulkToken) {
-      throw new MissingRemoveDomainTokenOnBulkPricingDomainException();
+    if (hasRemoveBulkPricingToken && !domainHasBulkToken) {
+      throw new RemoveBulkPricingTokenOnNonBulkPricingDomainException();
+    } else if (!hasRemoveBulkPricingToken && domainHasBulkToken) {
+      throw new MissingRemoveBulkPricingTokenOnBulkPricingDomainException();
     }
   }
 
   public static Domain maybeApplyBulkPricingRemovalToken(
       Domain domain, Optional<AllocationToken> allocationToken) {
     if (!allocationToken.isPresent()
-        || !TokenBehavior.REMOVE_DOMAIN.equals(allocationToken.get().getTokenBehavior())) {
+        || !TokenBehavior.REMOVE_BULK_PRICING.equals(allocationToken.get().getTokenBehavior())) {
       return domain;
     }
 
@@ -338,19 +338,19 @@ public class AllocationTokenFlowUtils {
     }
   }
 
-  /** The __REMOVEDOMAIN__ token is missing on a bulk pricing domain command */
-  public static class MissingRemoveDomainTokenOnBulkPricingDomainException
+  /** The __REMOVE_BULK_PRICING__ token is missing on a bulk pricing domain command */
+  public static class MissingRemoveBulkPricingTokenOnBulkPricingDomainException
       extends AssociationProhibitsOperationException {
-    MissingRemoveDomainTokenOnBulkPricingDomainException() {
+    MissingRemoveBulkPricingTokenOnBulkPricingDomainException() {
       super("Domains that are inside bulk pricing cannot be explicitly renewed or transferred");
     }
   }
 
-  /** The __REMOVEDOMAIN__ token is not allowed on non bulk pricing domains */
-  public static class RemoveDomainTokenOnNonBulkPricingDomainException
+  /** The __REMOVE_BULK_PRICING__ token is not allowed on non bulk pricing domains */
+  public static class RemoveBulkPricingTokenOnNonBulkPricingDomainException
       extends AssociationProhibitsOperationException {
-    RemoveDomainTokenOnNonBulkPricingDomainException() {
-      super("__REMOVEDOMAIN__ token is not allowed on non bulk pricing domains");
+    RemoveBulkPricingTokenOnNonBulkPricingDomainException() {
+      super("__REMOVE_BULK_PRICING__ token is not allowed on non bulk pricing domains");
     }
   }
 }
