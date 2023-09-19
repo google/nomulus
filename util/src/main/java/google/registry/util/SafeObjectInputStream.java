@@ -40,7 +40,12 @@ import java.util.Map;
  *       the {@code readObject} method) is deserialized, such code will be executed. For Nomulus,
  *       this risk comes from third-party dependencies. To counter this risk, this class only allows
  *       Nomulus (google.registry.**) classes and specific core Java classes, and forbid others
- *       including third-party dependencies.
+ *       including third-party dependencies. (As a side note, this class does not use allow lists
+ *       for Nomulus or third-party classes because it is infeasible in practice. Super classes of
+ *       the instance being deserialized must be resolved, and therefore must be on the allow list;
+ *       same for the field types of the instance. The allow list for the Joda {@code DateTime}
+ *       class alone would have more than 10 classes. Generated classes, e.g., by AutoValue, present
+ *       another problem: their real names are not meant to be a concern to the user).
  *   <li>CPU-targeting denial-of-service attacks. Containers and arrays may be used to construct
  *       object graphs that require enormous amount of computation during deserialization and/or
  *       during invocations of methods such as {@code hashCode} or {@code equals}, taking minutes or

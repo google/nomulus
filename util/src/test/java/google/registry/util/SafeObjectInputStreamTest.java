@@ -64,13 +64,14 @@ public class SafeObjectInputStreamTest {
     int[] orig = new int[] {1};
     try (SafeObjectInputStream sois =
         new SafeObjectInputStream(new ByteArrayInputStream(serialize(orig)))) {
-      // For array, The ClassNotFoundException thrown by us may be converted to something else.
+      // For array, the parent class converts ClassNotFoundException in an undocumented way. Safer
+      // to catch Exception than the one thrown by the current JVM.
       assertThrows(Exception.class, () -> sois.readObject());
     }
   }
 
   @Test
-  void nonJavaUnitaryFailure() throws Exception {
+  void nonJavaNonNomulusUnitaryFailure() throws Exception {
     Serializable orig = Duration.millis(1);
     try (SafeObjectInputStream sois =
         new SafeObjectInputStream(new ByteArrayInputStream(serialize(orig)))) {

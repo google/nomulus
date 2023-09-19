@@ -40,6 +40,12 @@ import org.joda.time.Duration;
  * Container representing a single RDE or BRDA XML escrow deposit that needs to be created.
  *
  * <p>There are some {@code @Nullable} fields here because Optionals aren't Serializable.
+ *
+ * <p>Note that this class is serialized in two ways: by Beam pipelines using custom serialization
+ * mechanism and the {@code Coder} API, and by Java serialization when passed as command-line
+ * arguments (see {@code RdePipeline#decodePendingDeposits}). The latter requires safe
+ * deserialization because the data crosses credential boundaries (See {@code
+ * SafeObjectInputStream}).
  */
 @AutoValue
 public abstract class PendingDeposit implements Serializable {
@@ -106,6 +112,9 @@ public abstract class PendingDeposit implements Serializable {
    *
    * <p>This method is package-protected so that the AutoValue implementation class inherits this
    * behavior.
+   *
+   * <p>This method leverages {@link PendingDepositCoder} to serializes an instance. However, it is
+   * not invoked in Beam pipelines.
    */
   Object writeReplace() throws ObjectStreamException {
     return new SerializedForm(this);
@@ -115,6 +124,9 @@ public abstract class PendingDeposit implements Serializable {
    * Proxy for custom-serialization of {@link PendingDeposit}. This is necessary because the actual
    * class to be (de)serialized is the generated AutoValue implementation. See also {@link
    * #writeReplace}.
+   *
+   * <p>This class leverages {@link PendingDepositCoder} to safely deserializes an instance.
+   * However, it is not used in Beam pipelines.
    */
   private static class SerializedForm implements Serializable {
 
@@ -146,8 +158,9 @@ public abstract class PendingDeposit implements Serializable {
    * A deterministic coder for {@link PendingDeposit} used during a GroupBy transform.
    *
    * <p>We cannot use a {@code SerializableCoder} directly for two reasons: the default
-   * serialization does not guarantee determinism, which is required by GroupBy; and the Joda-time
-   * classes are not allowed by {@code SafeObjectInputStream}.
+   * serialization does not guarantee determinism, which is required by GroupBy in Beam; and the
+   * default deserialization is not robust against deserialization-based attacks (See {@code
+   * SafeObjectInputStream} for more information).
    */
   public static class PendingDepositCoder extends AtomicCoder<PendingDeposit> {
 
