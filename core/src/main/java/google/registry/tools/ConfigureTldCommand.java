@@ -63,6 +63,14 @@ public class ConfigureTldCommand extends MutatingCommand {
       required = true)
   Path inputFile;
 
+  @Parameter(
+      names = {"-b", "--breakglass"},
+      description =
+          "Sets the breakglass field on the TLD to true, preventing Cloud Build from overwriting"
+              + " these new changes until the TLD configuration file stored internally matches the"
+              + " configuration in the database.")
+  boolean breakglass;
+
   @Inject ObjectMapper mapper;
 
   @Inject
@@ -71,12 +79,6 @@ public class ConfigureTldCommand extends MutatingCommand {
 
   /** Indicates if the passed in file contains new changes to the TLD */
   boolean newDiff = false;
-
-  // TODO(sarahbot@): Add a breakglass setting to this tool to indicate when a TLD has been modified
-  // outside of source control
-
-  // TODO(sarahbot@): Add a check for diffs between passed in file and current TLD and exit if there
-  // is no diff. Treat nulls and empty sets as the same value.
 
   @Override
   protected void init() throws Exception {
@@ -93,6 +95,9 @@ public class ConfigureTldCommand extends MutatingCommand {
     checkPremiumList(newTld);
     checkDnsWriters(newTld);
     checkCurrency(newTld);
+    if (breakglass) {
+      newTld = newTld.asBuilder().setBreakglassMode(true).build();
+    }
     stageEntityChange(oldTld, newTld);
   }
 
@@ -100,6 +105,9 @@ public class ConfigureTldCommand extends MutatingCommand {
   protected boolean dontRunCommand() {
     if (!newDiff) {
       logger.atInfo().log("TLD YAML file contains no new changes");
+      checkArgument(
+          !breakglass,
+          "Breakglass mode can only be set when making new changes to a TLD configuration");
       return true;
     }
     return false;

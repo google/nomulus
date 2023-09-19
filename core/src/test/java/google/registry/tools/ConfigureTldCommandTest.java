@@ -473,4 +473,22 @@ public class ConfigureTldCommandTest extends CommandTestCase<ConfigureTldCommand
         assertThrows(IllegalArgumentException.class, () -> runCommandForced("--input=" + tldFile));
     assertThat(thrown.getMessage()).isEqualTo("The premium list must use the TLD's currency");
   }
+
+  // @Test
+  // void testFailure_breakglassNoChanges() throws Exception {
+  //   Tld tld = createTld("idns");
+  //   tld =
+  //       persistResource(
+  //           tld.asBuilder()
+  //               .setIdnTables(ImmutableSet.of(JA, UNCONFUSABLE_LATIN, EXTENDED_LATIN))
+  //               .setAllowedFullyQualifiedHostNames(
+  //                   ImmutableSet.of("zeta", "alpha", "gamma", "beta"))
+  //               .build());
+  //   File tldFile = tmpDir.resolve("idns.yaml").toFile();
+  //   Files.asCharSink(tldFile, UTF_8).write(loadFile(getClass(), "idns.yaml"));
+  //   IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class, () ->
+  // runCommandForced("--input=" + tldFile, "-b"));
+  //   assertThat(thrown.getMessage()).isEqualTo("Breakglass mode can only be set when making new
+  // changes to a TLD configuration");
+  // }
 }
