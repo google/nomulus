@@ -78,7 +78,7 @@ final class CreateDomainCommand extends CreateOrUpdateDomainCommand {
         Money createCost = prices.getCreateCost();
         currency = createCost.getCurrencyUnit().getCode();
         cost = createCost.multipliedBy(period).getAmount().toString();
-        System.out.printf(
+        printStream.printf(
             "NOTE: %s is premium at %s per year; sending total cost for %d year(s) of %s %s.\n",
             domain, createCost, period, currency, cost);
       }

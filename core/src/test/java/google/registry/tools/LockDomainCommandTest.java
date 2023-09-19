@@ -50,6 +50,7 @@ class LockDomainCommandTest extends CommandTestCase<LockDomainCommand> {
             new DeterministicStringGenerator(Alphabets.BASE_58),
             "adminreg",
             new CloudTasksHelper(fakeClock).getTestCloudTasksUtils());
+    command.printStream = System.out;
   }
 
   @Test

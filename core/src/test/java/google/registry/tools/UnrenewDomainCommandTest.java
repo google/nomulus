@@ -55,6 +55,7 @@ public class UnrenewDomainCommandTest extends CommandTestCase<UnrenewDomainComma
     createTld("tld");
     fakeClock.setTo(DateTime.parse("2016-12-06T13:55:01Z"));
     command.clock = fakeClock;
+    command.printStream = System.out;
   }
 
   @Test
@@ -178,6 +179,7 @@ public class UnrenewDomainCommandTest extends CommandTestCase<UnrenewDomainComma
 
   @Test
   void test_varietyOfInvalidDomains_displaysErrors() {
+    command.errorPrintStream = System.err;
     DateTime now = fakeClock.nowUtc();
     persistResource(
         DatabaseHelper.newDomain("deleting.tld")

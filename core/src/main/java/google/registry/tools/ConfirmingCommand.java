@@ -15,9 +15,12 @@
 package google.registry.tools;
 
 import static google.registry.tools.CommandUtilities.promptForYes;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.beust.jcommander.Parameter;
 import com.google.common.base.Strings;
+import java.io.PrintStream;
+import java.io.UnsupportedEncodingException;
 
 /** A {@link Command} that implements a confirmation step before executing. */
 public abstract class ConfirmingCommand implements Command {
@@ -27,23 +30,37 @@ public abstract class ConfirmingCommand implements Command {
       description = "Do not prompt before executing")
   boolean force;
 
+  public PrintStream printStream;
+  public PrintStream errorPrintStream;
+
+  protected ConfirmingCommand() {
+    try {
+      printStream = new PrintStream(System.out, false, UTF_8.name());
+      errorPrintStream = new PrintStream(System.err, false, UTF_8.name());
+    } catch (UnsupportedEncodingException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
   @Override
   public final void run() throws Exception {
     if (checkExecutionState()) {
       init();
-      printLineIfNotEmpty(prompt());
+      printLineIfNotEmpty(prompt(), printStream);
       if (dontRunCommand()) {
         // This typically happens when all of the work is accomplished inside of prompt(), so do
         // nothing further.
         return;
       } else if (force || promptForYes("Perform this command?")) {
-        System.out.println("Running ... ");
-        System.out.println(execute());
-        printLineIfNotEmpty(postExecute());
+        printStream.println("Running ... ");
+        printStream.println(execute());
+        printLineIfNotEmpty(postExecute(), printStream);
       } else {
-        System.out.println("Command aborted.");
+        printStream.println("Command aborted.");
       }
     }
+    printStream.close();
+    errorPrintStream.close();
   }
 
   /** Run any pre-execute command checks and return true if they all pass. */
@@ -76,9 +93,9 @@ public abstract class ConfirmingCommand implements Command {
   }
 
   /** Prints the provided text with a trailing newline, if text is not null or empty. */
-  private static void printLineIfNotEmpty(String text) {
+  private static void printLineIfNotEmpty(String text, PrintStream printStream) {
     if (!Strings.isNullOrEmpty(text)) {
-      System.out.println(text);
+      printStream.println(text);
     }
   }
 }

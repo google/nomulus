@@ -39,6 +39,7 @@ import google.registry.tools.params.OptionalStringParameter;
 import google.registry.tools.params.StringListParameter;
 import google.registry.tools.params.TransitionListParameter.BillingCostTransitions;
 import google.registry.tools.params.TransitionListParameter.TldStateTransitions;
+import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -233,12 +234,11 @@ abstract class CreateOrUpdateTldCommand extends MutatingCommand {
 
   @Nullable
   @Parameter(
-    names = {"--num_dns_publish_locks"},
-    description =
-        "The number of publish locks we allow in parallel for DNS updates under this tld "
-            + "(1 for TLD-wide locks)",
-    arity = 1
-  )
+      names = {"--num_dns_publish_locks"},
+      description =
+          "The number of publish locks we allow in parallel for DNS updates under this tld "
+              + "(1 for TLD-wide locks)",
+      arity = 1)
   Integer numDnsPublishShards;
 
   @Nullable
@@ -301,7 +301,7 @@ abstract class CreateOrUpdateTldCommand extends MutatingCommand {
   protected abstract void initTldCommand();
 
   @Override
-  protected final void init() {
+  protected final void init() throws UnsupportedEncodingException {
     assertAllowedEnvironment();
     initTldCommand();
     String duplicates = Joiner.on(", ").join(findDuplicates(mainParameters));
@@ -360,7 +360,7 @@ abstract class CreateOrUpdateTldCommand extends MutatingCommand {
       if (!renewBillingCostTransitions.isEmpty()) {
         // TODO(b/20764952): need invoicing support for multiple renew billing costs.
         if (renewBillingCostTransitions.size() > 1) {
-          System.err.println(
+          errorPrintStream.println(
               "----------------------\n"
                   + "WARNING: Do not set multiple renew cost transitions "
                   + "until b/20764952 is fixed.\n"
@@ -463,7 +463,8 @@ abstract class CreateOrUpdateTldCommand extends MutatingCommand {
     }
   }
 
-  private void checkReservedListValidityForTld(String tld, Set<String> reservedListNames) {
+  private void checkReservedListValidityForTld(String tld, Set<String> reservedListNames)
+      throws UnsupportedEncodingException {
     ImmutableList.Builder<String> builder = new ImmutableList.Builder<>();
     for (String reservedListName : reservedListNames) {
       if (!reservedListName.startsWith("common_") && !reservedListName.startsWith(tld + "_")) {
@@ -476,7 +477,7 @@ abstract class CreateOrUpdateTldCommand extends MutatingCommand {
           Joiner.on(", ").join(invalidNames),
           tld);
       if (overrideReservedListRules) {
-        System.err.println("Error overridden: " + errMsg);
+        errorPrintStream.println("Error overridden: " + errMsg);
       } else {
         throw new IllegalArgumentException(errMsg);
       }
