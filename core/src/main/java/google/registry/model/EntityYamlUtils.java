@@ -14,6 +14,7 @@
 package google.registry.model;
 
 import static com.google.common.collect.ImmutableSortedMap.toImmutableSortedMap;
+import static com.google.common.collect.ImmutableSortedSet.toImmutableSortedSet;
 import static com.google.common.collect.Ordering.natural;
 
 import com.fasterxml.jackson.core.JsonGenerator;
@@ -29,6 +30,7 @@ import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.databind.ser.std.StdSerializer;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator.Feature;
+import com.google.common.collect.ImmutableSortedSet;
 import google.registry.model.common.TimedTransitionProperty;
 import google.registry.model.domain.token.AllocationToken;
 import google.registry.model.tld.Tld.TldState;
@@ -39,6 +41,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.SortedMap;
 import org.joda.money.CurrencyUnit;
 import org.joda.money.Money;
@@ -63,6 +66,57 @@ public class EntityYamlUtils {
             .registerModule(module);
     mapper.findAndRegisterModules();
     return mapper;
+  }
+
+  /**
+   * A custom serializer for String Set to sort the order and make YAML generation deterministic.
+   */
+  public static class SortedSetSerializer extends StdSerializer<Set<String>> {
+    public SortedSetSerializer() {
+      this(null);
+    }
+
+    public SortedSetSerializer(Class<Set<String>> t) {
+      super(t);
+    }
+
+    @Override
+    public void serialize(Set<String> value, JsonGenerator g, SerializerProvider provider)
+        throws IOException {
+      ImmutableSortedSet<String> sorted =
+          value.stream()
+              .collect(toImmutableSortedSet(String::compareTo)); // sort the entries into a new set
+      g.writeStartArray();
+      for (String entry : sorted) {
+        g.writeString(entry);
+      }
+      g.writeEndArray();
+    }
+  }
+
+  /** A custom serializer for Enum Set to sort the order and make YAML generation deterministic. */
+  public static class SortedEnumSetSerializer extends StdSerializer<Set<Enum>> {
+    public SortedEnumSetSerializer() {
+      this(null);
+    }
+
+    public SortedEnumSetSerializer(Class<Set<Enum>> t) {
+      super(t);
+    }
+
+    @Override
+    public void serialize(Set<Enum> value, JsonGenerator g, SerializerProvider provider)
+        throws IOException {
+      ImmutableSortedSet<String> sorted =
+          value.stream()
+              .map(Enum::name)
+              .collect(toImmutableSortedSet(String::compareTo)); // sort the entries into a new set
+      g.writeStartArray();
+      for (String entry : sorted) {
+        g.writeString(entry);
+      }
+      g.writeEndArray();
+    }
   }
 
   /** A custom JSON serializer for {@link Money}. */

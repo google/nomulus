@@ -19,6 +19,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.collect.Maps.toMap;
 import static google.registry.config.RegistryConfig.getSingletonCacheRefreshDuration;
+import static google.registry.model.EntityYamlUtils.createObjectMapper;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.CollectionUtils.nullToEmptyImmutableCopy;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
@@ -28,6 +29,8 @@ import static org.joda.money.CurrencyUnit.USD;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.github.benmanes.caffeine.cache.CacheLoader;
@@ -50,6 +53,8 @@ import google.registry.model.EntityYamlUtils.CurrencyDeserializer;
 import google.registry.model.EntityYamlUtils.CurrencySerializer;
 import google.registry.model.EntityYamlUtils.OptionalDurationSerializer;
 import google.registry.model.EntityYamlUtils.OptionalStringSerializer;
+import google.registry.model.EntityYamlUtils.SortedEnumSetSerializer;
+import google.registry.model.EntityYamlUtils.SortedSetSerializer;
 import google.registry.model.EntityYamlUtils.TimedTransitionPropertyMoneyDeserializer;
 import google.registry.model.EntityYamlUtils.TimedTransitionPropertyTldStateDeserializer;
 import google.registry.model.EntityYamlUtils.TokenVKeyListDeserializer;
@@ -123,6 +128,20 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
   public static final Money DEFAULT_RESTORE_BILLING_COST = Money.of(USD, 100);
   public static final Money DEFAULT_SERVER_STATUS_CHANGE_BILLING_COST = Money.of(USD, 20);
   public static final Money DEFAULT_REGISTRY_LOCK_OR_UNLOCK_BILLING_COST = Money.of(USD, 0);
+
+  public boolean equalYaml(Tld tldToCompare) {
+    if (this == tldToCompare) {
+      return true;
+    }
+    ObjectMapper mapper = createObjectMapper();
+    try {
+      String thisYaml = mapper.writeValueAsString(this);
+      String otherYaml = mapper.writeValueAsString(tldToCompare);
+      return thisYaml.equals(otherYaml);
+    } catch (JsonProcessingException e) {
+      throw new RuntimeException(e);
+    }
+  }
 
   /** The type of TLD, which determines things like backups and escrow policy. */
   public enum TldType {
@@ -255,6 +274,7 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
    * <p>All entries of this list must be valid keys for the map of {@code DnsWriter}s injected by
    * {@code @Inject Map<String, DnsWriter>}
    */
+  @JsonSerialize(using = SortedSetSerializer.class)
   @Column(nullable = false)
   Set<String> dnsWriters;
 
@@ -354,6 +374,7 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
   CreateAutoTimestamp creationTime = CreateAutoTimestamp.create(null);
 
   /** The set of reserved list names that are applicable to this tld. */
+  @JsonSerialize(using = SortedSetSerializer.class)
   @Column(name = "reserved_list_names")
   Set<String> reservedListNames;
 
@@ -493,10 +514,14 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
   DateTime claimsPeriodEnd = END_OF_TIME;
 
   /** An allowlist of clients allowed to be used on domains on this TLD (ignored if empty). */
-  @Nullable Set<String> allowedRegistrantContactIds;
+  @Nullable
+  @JsonSerialize(using = SortedSetSerializer.class)
+  Set<String> allowedRegistrantContactIds;
 
   /** An allowlist of hosts allowed to be used on domains on this TLD (ignored if empty). */
-  @Nullable Set<String> allowedFullyQualifiedHostNames;
+  @Nullable
+  @JsonSerialize(using = SortedSetSerializer.class)
+  Set<String> allowedFullyQualifiedHostNames;
 
   /**
    * Indicates when the TLD is being modified using locally modified files to override the source
@@ -521,6 +546,7 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
   List<VKey<AllocationToken>> defaultPromoTokens;
 
   /** A set of allowed {@link IdnTableEnum}s for this TLD, or empty if we should use the default. */
+  @JsonSerialize(using = SortedEnumSetSerializer.class)
   Set<IdnTableEnum> idnTables;
 
   public String getTldStr() {

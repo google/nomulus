@@ -1,6 +1,9 @@
 addGracePeriodLength: 432000000
 allowedFullyQualifiedHostNames:
-- "foo"
+- "beta"
+- "zeta"
+- "alpha"
+- "gamma"
 allowedRegistrantContactIds: []
 anchorTenantAddGracePeriodLength: 2592000000
 autoRenewGracePeriodLength: 3888000000
@@ -9,37 +12,30 @@ claimsPeriodEnd: "294247-01-10T04:00:54.775Z"
 createBillingCost:
   currency: "USD"
   amount: 13.00
-creationTime: "1970-01-01T00:00:00.000Z"
+creationTime: "2022-09-01T00:00:00.000Z"
 currency: "USD"
-defaultPromoTokens:
-- "bbbbb"
-dnsAPlusAaaaTtl: 3600000
+defaultPromoTokens: []
+dnsAPlusAaaaTtl: null
 dnsDsTtl: null
 dnsNsTtl: null
 dnsPaused: false
 dnsWriters:
-- "bang"
-- "baz"
+- "VoidDnsWriter"
 driveFolderId: null
 eapFeeSchedule:
   "1970-01-01T00:00:00.000Z":
-    currency: "USD"
-    amount: 0.00
-  "2000-06-01T00:00:00.000Z":
-    currency: "USD"
-    amount: 100.00
-  "2000-06-02T00:00:00.000Z":
     currency: "USD"
     amount: 0.00
 escrowEnabled: false
 idnTables:
 - "EXTENDED_LATIN"
 - "JA"
+- "UNCONFUSABLE_LATIN"
 invoicingEnabled: false
 lordnUsername: null
 numDnsPublishLocks: 1
 pendingDeleteLength: 432000000
-premiumListName: "tld"
+premiumListName: "idns"
 pricingEngineClassName: "google.registry.model.pricing.StaticPremiumListPricingEngine"
 redemptionGracePeriodLength: 2592000000
 registryLockOrUnlockBillingCost:
@@ -54,13 +50,13 @@ reservedListNames: []
 restoreBillingCost:
   currency: "USD"
   amount: 17.00
-roidSuffix: "TLD"
+roidSuffix: "IDNS"
 serverStatusChangeBillingCost:
   currency: "USD"
   amount: 19.00
 tldStateTransitions:
   "1970-01-01T00:00:00.000Z": "GENERAL_AVAILABILITY"
-tldStr: "tld"
+tldStr: "idns"
 tldType: "REAL"
-tldUnicode: "tld"
+tldUnicode: "idns"
 transferGracePeriodLength: 432000000
