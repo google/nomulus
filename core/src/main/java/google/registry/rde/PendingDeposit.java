@@ -107,7 +107,7 @@ public abstract class PendingDeposit implements Serializable {
   PendingDeposit() {}
 
   /**
-   * Specifies that {@link SerializedForm} be used for @code SafeObjectInputStream}-compatible
+   * Specifies that {@link SerializedForm} be used for {@code SafeObjectInputStream}-compatible
    * custom-serialization of {@link AutoValue_PendingDeposit the AutoValue implementation class}.
    *
    * <p>This method is package-protected so that the AutoValue implementation class inherits this
@@ -130,7 +130,7 @@ public abstract class PendingDeposit implements Serializable {
    */
   private static class SerializedForm implements Serializable {
 
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 3141095605225904433L;
 
     private PendingDeposit value;
 
