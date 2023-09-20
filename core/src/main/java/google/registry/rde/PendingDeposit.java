@@ -14,18 +14,23 @@
 
 package google.registry.rde;
 
+import static com.google.common.base.Preconditions.checkState;
+
 import com.google.auto.value.AutoValue;
 import google.registry.model.common.Cursor.CursorType;
 import google.registry.model.rde.RdeMode;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.ObjectStreamException;
 import java.io.OutputStream;
 import java.io.Serializable;
+import java.util.Optional;
 import javax.annotation.Nullable;
 import org.apache.beam.sdk.coders.AtomicCoder;
 import org.apache.beam.sdk.coders.BooleanCoder;
 import org.apache.beam.sdk.coders.NullableCoder;
-import org.apache.beam.sdk.coders.SerializableCoder;
 import org.apache.beam.sdk.coders.StringUtf8Coder;
 import org.apache.beam.sdk.coders.VarIntCoder;
 import org.joda.time.DateTime;
@@ -35,6 +40,12 @@ import org.joda.time.Duration;
  * Container representing a single RDE or BRDA XML escrow deposit that needs to be created.
  *
  * <p>There are some {@code @Nullable} fields here because Optionals aren't Serializable.
+ *
+ * <p>Note that this class is serialized in two ways: by Beam pipelines using custom serialization
+ * mechanism and the {@code Coder} API, and by Java serialization when passed as command-line
+ * arguments (see {@code RdePipeline#decodePendingDeposits}). The latter requires safe
+ * deserialization because the data crosses credential boundaries (See {@code
+ * SafeObjectInputStream}).
  */
 @AutoValue
 public abstract class PendingDeposit implements Serializable {
@@ -96,10 +107,60 @@ public abstract class PendingDeposit implements Serializable {
   PendingDeposit() {}
 
   /**
+   * Specifies that {@link SerializedForm} be used for {@code SafeObjectInputStream}-compatible
+   * custom-serialization of {@link AutoValue_PendingDeposit the AutoValue implementation class}.
+   *
+   * <p>This method is package-protected so that the AutoValue implementation class inherits this
+   * behavior.
+   *
+   * <p>This method leverages {@link PendingDepositCoder} to serializes an instance. However, it is
+   * not invoked in Beam pipelines.
+   */
+  Object writeReplace() throws ObjectStreamException {
+    return new SerializedForm(this);
+  }
+
+  /**
+   * Proxy for custom-serialization of {@link PendingDeposit}. This is necessary because the actual
+   * class to be (de)serialized is the generated AutoValue implementation. See also {@link
+   * #writeReplace}.
+   *
+   * <p>This class leverages {@link PendingDepositCoder} to safely deserializes an instance.
+   * However, it is not used in Beam pipelines.
+   */
+  private static class SerializedForm implements Serializable {
+
+    private static final long serialVersionUID = 3141095605225904433L;
+
+    private PendingDeposit value;
+
+    private SerializedForm(PendingDeposit value) {
+      this.value = value;
+    }
+
+    private void writeObject(ObjectOutputStream os) throws IOException {
+      checkState(value != null, "Non-null value expected for serialization.");
+      PendingDepositCoder.INSTANCE.encode(value, os);
+    }
+
+    private void readObject(ObjectInputStream is) throws IOException, ClassNotFoundException {
+      checkState(value == null, "Non-null value unexpected for deserialization.");
+      this.value = PendingDepositCoder.INSTANCE.decode(is);
+    }
+
+    @SuppressWarnings("unused")
+    private Object readResolve() throws ObjectStreamException {
+      return this.value;
+    }
+  }
+
+  /**
    * A deterministic coder for {@link PendingDeposit} used during a GroupBy transform.
    *
-   * <p>We cannot use a {@link SerializableCoder} directly because it does not guarantee
-   * determinism, which is required by GroupBy.
+   * <p>We cannot use a {@code SerializableCoder} directly for two reasons: the default
+   * serialization does not guarantee determinism, which is required by GroupBy in Beam; and the
+   * default deserialization is not robust against deserialization-based attacks (See {@code
+   * SafeObjectInputStream} for more information).
    */
   public static class PendingDepositCoder extends AtomicCoder<PendingDeposit> {
 
@@ -117,10 +178,15 @@ public abstract class PendingDeposit implements Serializable {
     public void encode(PendingDeposit value, OutputStream outStream) throws IOException {
       BooleanCoder.of().encode(value.manual(), outStream);
       StringUtf8Coder.of().encode(value.tld(), outStream);
-      SerializableCoder.of(DateTime.class).encode(value.watermark(), outStream);
-      SerializableCoder.of(RdeMode.class).encode(value.mode(), outStream);
-      NullableCoder.of(SerializableCoder.of(CursorType.class)).encode(value.cursor(), outStream);
-      NullableCoder.of(SerializableCoder.of(Duration.class)).encode(value.interval(), outStream);
+      StringUtf8Coder.of().encode(value.watermark().toString(), outStream);
+      StringUtf8Coder.of().encode(value.mode().name(), outStream);
+      NullableCoder.of(StringUtf8Coder.of())
+          .encode(
+              Optional.ofNullable(value.cursor()).map(CursorType::name).orElse(null), outStream);
+      NullableCoder.of(StringUtf8Coder.of())
+          .encode(
+              Optional.ofNullable(value.interval()).map(Duration::toString).orElse(null),
+              outStream);
       NullableCoder.of(StringUtf8Coder.of()).encode(value.directoryWithTrailingSlash(), outStream);
       NullableCoder.of(VarIntCoder.of()).encode(value.revision(), outStream);
     }
@@ -130,10 +196,14 @@ public abstract class PendingDeposit implements Serializable {
       return new AutoValue_PendingDeposit(
           BooleanCoder.of().decode(inStream),
           StringUtf8Coder.of().decode(inStream),
-          SerializableCoder.of(DateTime.class).decode(inStream),
-          SerializableCoder.of(RdeMode.class).decode(inStream),
-          NullableCoder.of(SerializableCoder.of(CursorType.class)).decode(inStream),
-          NullableCoder.of(SerializableCoder.of(Duration.class)).decode(inStream),
+          DateTime.parse(StringUtf8Coder.of().decode(inStream)),
+          RdeMode.valueOf(StringUtf8Coder.of().decode(inStream)),
+          Optional.ofNullable(NullableCoder.of(StringUtf8Coder.of()).decode(inStream))
+              .map(CursorType::valueOf)
+              .orElse(null),
+          Optional.ofNullable(NullableCoder.of(StringUtf8Coder.of()).decode(inStream))
+              .map(Duration::parse)
+              .orElse(null),
           NullableCoder.of(StringUtf8Coder.of()).decode(inStream),
           NullableCoder.of(VarIntCoder.of()).decode(inStream));
     }

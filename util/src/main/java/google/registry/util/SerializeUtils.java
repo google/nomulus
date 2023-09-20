@@ -74,10 +74,20 @@ public final class SerializeUtils {
 
   private SerializeUtils() {}
 
+  /** Encodes a byte array as a URL-safe string. */
+  public static String encodeBase64(byte[] bytes) {
+    return Base64.encodeBase64URLSafeString(bytes);
+  }
+
+  /** Turns a string encoded by {@link #encodeBase64} back into a byte array. */
+  public static byte[] decodeBase64(String objectString) {
+    return Base64.decodeBase64(objectString);
+  }
+
   /** Turns an object into an encoded string that can be used safely as a URI query parameter. */
   public static String stringify(Serializable object) {
     checkNotNull(object, "Object cannot be null");
-    return Base64.encodeBase64URLSafeString(SerializeUtils.serialize(object));
+    return encodeBase64(SerializeUtils.serialize(object));
   }
 
   /** Turns a string encoded by stringify() into an object. */
@@ -86,6 +96,6 @@ public final class SerializeUtils {
     checkNotNull(type, "Class type is not specified");
     checkNotNull(objectString, "Object string cannot be null");
 
-    return SerializeUtils.deserialize(type, Base64.decodeBase64(objectString));
+    return SerializeUtils.deserialize(type, decodeBase64(objectString));
   }
 }
