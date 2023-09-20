@@ -78,7 +78,13 @@ public class ConfigureTldCommand extends MutatingCommand {
   Set<String> validDnsWriterNames;
 
   /** Indicates if the passed in file contains new changes to the TLD */
-  boolean newDiff = false;
+  boolean newDiff = true;
+
+  /**
+   * Indicates that the existing TLD is currently in breakglass mode and should not be modified
+   * unless the breakglass mode is set
+   */
+  boolean oldTldInBreakglass = false;
 
   @Override
   protected void init() throws Exception {
@@ -88,13 +94,30 @@ public class ConfigureTldCommand extends MutatingCommand {
     checkForMissingFields(tldData);
     Tld oldTld = getTlds().contains(name) ? Tld.get(name) : null;
     Tld newTld = mapper.readValue(inputFile.toFile(), Tld.class);
-    if (oldTld != null && oldTld.equalYaml(newTld)) {
+    if (oldTld != null) {
+      oldTldInBreakglass = oldTld.getBreakglassMode();
+      newDiff = !oldTld.equalYaml(newTld);
+    }
+
+    if (!newDiff && !oldTldInBreakglass) {
+      // Don't construct a new object if there is no new diff
       return;
     }
-    newDiff = true;
+
+    if (oldTldInBreakglass && !breakglass) {
+      checkArgument(
+          !newDiff,
+          "Changes can not be applied since TLD is in breakglass mode but the breakglass flag was"
+              + " not used");
+      // if there are no new diffs, then the YAML file has caught up to the database and the
+      // breakglass mode should be removed
+      logger.atInfo().log("Breakglass mode removed from TLD: %s", name);
+    }
+
     checkPremiumList(newTld);
     checkDnsWriters(newTld);
     checkCurrency(newTld);
+    // Set the new TLD to breakglass mode
     if (breakglass) {
       newTld = newTld.asBuilder().setBreakglassMode(true).build();
     }
@@ -104,9 +127,13 @@ public class ConfigureTldCommand extends MutatingCommand {
   @Override
   protected boolean dontRunCommand() {
     if (!newDiff) {
+      if (oldTldInBreakglass && !breakglass) {
+        // Run command to remove breakglass mode
+        return false;
+      }
       logger.atInfo().log("TLD YAML file contains no new changes");
       checkArgument(
-          !breakglass,
+          !breakglass || oldTldInBreakglass,
           "Breakglass mode can only be set when making new changes to a TLD configuration");
       return true;
     }
