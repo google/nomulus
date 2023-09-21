@@ -21,6 +21,7 @@ import { Registrar, RegistrarService } from './registrar.service';
   styleUrls: ['./registrarsTable.component.scss'],
 })
 export class RegistrarComponent {
+  public static PATH = 'registrars';
   columns = [
     {
       columnDef: 'registrarId',

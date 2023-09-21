@@ -19,6 +19,7 @@ import {
   GlobalLoader,
   GlobalLoaderService,
 } from '../shared/services/globalLoader.service';
+import { MatSnackBar } from '@angular/material/snack-bar';
 
 interface Address {
   street?: string[];
@@ -52,7 +53,8 @@ export class RegistrarService implements GlobalLoader {
 
   constructor(
     private backend: BackendService,
-    private globalLoader: GlobalLoaderService
+    private globalLoader: GlobalLoaderService,
+    private _snackBar: MatSnackBar
   ) {
     this.loadRegistrars().subscribe((r) => {
       this.globalLoader.stopGlobalLoader(this);
@@ -82,6 +84,8 @@ export class RegistrarService implements GlobalLoader {
   }
 
   loadingTimeout() {
-    // TODO: Decide what to do when timeout happens
+    this._snackBar.open('Timeout loading registrars', undefined, {
+      duration: 1500,
+    });
   }
 }

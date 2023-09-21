@@ -19,4 +19,6 @@ import { Component } from '@angular/core';
   templateUrl: './users.component.html',
   styleUrls: ['./users.component.scss'],
 })
-export default class UsersComponent {}
+export default class UsersComponent {
+  public static PATH = 'users';
+}

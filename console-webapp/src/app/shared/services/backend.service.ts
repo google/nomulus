@@ -19,6 +19,7 @@ import { SecuritySettingsBackendModel } from 'src/app/settings/security/security
 
 import { Contact } from '../../settings/contact/contact.service';
 import { Registrar } from '../../registrar/registrar.service';
+import { UserData } from './userData.service';
 
 @Injectable()
 export class BackendService {
@@ -89,5 +90,11 @@ export class BackendService {
       `/console-api/settings/security?registrarId=${registrarId}`,
       securitySettings
     );
+  }
+
+  getUserData(): Observable<UserData> {
+    return this.http
+      .get<UserData>(`/console-api/userdata`)
+      .pipe(catchError((err) => this.errorCatcher<UserData>(err)));
   }
 }
