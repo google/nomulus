@@ -2,7 +2,7 @@
   <app-header (toggleNavOpen)="sidenav.toggle()"></app-header>
   <mat-sidenav-container class="console-app__container">
     <mat-sidenav #sidenav class="console-app__sidebar">
-      <mat-nav-list>
+      <mat-nav-list (click)="sidenav.close()">
         <a mat-list-item [routerLink]="'/home'" routerLinkActive="active">
           Home page
         </a>
