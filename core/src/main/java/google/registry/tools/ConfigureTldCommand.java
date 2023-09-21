@@ -81,8 +81,8 @@ public class ConfigureTldCommand extends MutatingCommand {
   boolean newDiff = true;
 
   /**
-   * Indicates that the existing TLD is currently in breakglass mode and should not be modified
-   * unless the breakglass mode is set
+   * Indicates if the existing TLD is currently in breakglass mode and should not be modified unless
+   * the breakglass flag is used
    */
   boolean oldTldInBreakglass = false;
 
@@ -117,7 +117,7 @@ public class ConfigureTldCommand extends MutatingCommand {
     checkPremiumList(newTld);
     checkDnsWriters(newTld);
     checkCurrency(newTld);
-    // Set the new TLD to breakglass mode
+    // Set the new TLD to breakglass mode if breakglass flag was used
     if (breakglass) {
       newTld = newTld.asBuilder().setBreakglassMode(true).build();
     }
@@ -176,7 +176,9 @@ public class ConfigureTldCommand extends MutatingCommand {
 
   private void checkPremiumList(Tld newTld) {
     Optional<String> premiumListName = newTld.getPremiumListName();
-    if (!premiumListName.isPresent()) return;
+    if (!premiumListName.isPresent()) {
+      return;
+    }
     Optional<PremiumList> premiumList = PremiumListDao.getLatestRevision(premiumListName.get());
     checkArgument(
         premiumList.isPresent(),

@@ -102,13 +102,11 @@ public class ConfigureTldCommandTest extends CommandTestCase<ConfigureTldCommand
   @Test
   void testSuccess_noDiff() throws Exception {
     Tld tld = createTld("idns");
-    tld =
-        persistResource(
-            tld.asBuilder()
-                .setIdnTables(ImmutableSet.of(JA, UNCONFUSABLE_LATIN, EXTENDED_LATIN))
-                .setAllowedFullyQualifiedHostNames(
-                    ImmutableSet.of("zeta", "alpha", "gamma", "beta"))
-                .build());
+    persistResource(
+        tld.asBuilder()
+            .setIdnTables(ImmutableSet.of(JA, UNCONFUSABLE_LATIN, EXTENDED_LATIN))
+            .setAllowedFullyQualifiedHostNames(ImmutableSet.of("zeta", "alpha", "gamma", "beta"))
+            .build());
     File tldFile = tmpDir.resolve("idns.yaml").toFile();
     Files.asCharSink(tldFile, UTF_8).write(loadFile(getClass(), "idns.yaml"));
     runCommandForced("--input=" + tldFile);
@@ -477,15 +475,13 @@ public class ConfigureTldCommandTest extends CommandTestCase<ConfigureTldCommand
   }
 
   @Test
-  void testFailure_breakglassNoChanges() throws Exception {
+  void testFailure_breakglassFlag_NoChanges() throws Exception {
     Tld tld = createTld("idns");
-    tld =
-        persistResource(
-            tld.asBuilder()
-                .setIdnTables(ImmutableSet.of(JA, UNCONFUSABLE_LATIN, EXTENDED_LATIN))
-                .setAllowedFullyQualifiedHostNames(
-                    ImmutableSet.of("zeta", "alpha", "gamma", "beta"))
-                .build());
+    persistResource(
+        tld.asBuilder()
+            .setIdnTables(ImmutableSet.of(JA, UNCONFUSABLE_LATIN, EXTENDED_LATIN))
+            .setAllowedFullyQualifiedHostNames(ImmutableSet.of("zeta", "alpha", "gamma", "beta"))
+            .build());
     File tldFile = tmpDir.resolve("idns.yaml").toFile();
     Files.asCharSink(tldFile, UTF_8).write(loadFile(getClass(), "idns.yaml"));
     IllegalArgumentException thrown =
@@ -526,14 +522,12 @@ public class ConfigureTldCommandTest extends CommandTestCase<ConfigureTldCommand
   @Test
   void testSuccess_NoDiffNoBreakglassFlag_endsBreakglassMode() throws Exception {
     Tld tld = createTld("idns");
-    tld =
-        persistResource(
-            tld.asBuilder()
-                .setIdnTables(ImmutableSet.of(JA, UNCONFUSABLE_LATIN, EXTENDED_LATIN))
-                .setAllowedFullyQualifiedHostNames(
-                    ImmutableSet.of("zeta", "alpha", "gamma", "beta"))
-                .setBreakglassMode(true)
-                .build());
+    persistResource(
+        tld.asBuilder()
+            .setIdnTables(ImmutableSet.of(JA, UNCONFUSABLE_LATIN, EXTENDED_LATIN))
+            .setAllowedFullyQualifiedHostNames(ImmutableSet.of("zeta", "alpha", "gamma", "beta"))
+            .setBreakglassMode(true)
+            .build());
     File tldFile = tmpDir.resolve("idns.yaml").toFile();
     Files.asCharSink(tldFile, UTF_8).write(loadFile(getClass(), "idns.yaml"));
     runCommandForced("--input=" + tldFile);
@@ -547,14 +541,12 @@ public class ConfigureTldCommandTest extends CommandTestCase<ConfigureTldCommand
   @Test
   void testSuccess_noDiffBreakglassFlag_continuesBreakglassMode() throws Exception {
     Tld tld = createTld("idns");
-    tld =
-        persistResource(
-            tld.asBuilder()
-                .setIdnTables(ImmutableSet.of(JA, UNCONFUSABLE_LATIN, EXTENDED_LATIN))
-                .setAllowedFullyQualifiedHostNames(
-                    ImmutableSet.of("zeta", "alpha", "gamma", "beta"))
-                .setBreakglassMode(true)
-                .build());
+    persistResource(
+        tld.asBuilder()
+            .setIdnTables(ImmutableSet.of(JA, UNCONFUSABLE_LATIN, EXTENDED_LATIN))
+            .setAllowedFullyQualifiedHostNames(ImmutableSet.of("zeta", "alpha", "gamma", "beta"))
+            .setBreakglassMode(true)
+            .build());
     File tldFile = tmpDir.resolve("idns.yaml").toFile();
     Files.asCharSink(tldFile, UTF_8).write(loadFile(getClass(), "idns.yaml"));
     runCommandForced("--input=" + tldFile, "-b");
