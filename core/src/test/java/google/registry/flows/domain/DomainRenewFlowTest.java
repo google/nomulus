@@ -77,8 +77,8 @@ import google.registry.flows.domain.token.AllocationTokenFlowUtils.AllocationTok
 import google.registry.flows.domain.token.AllocationTokenFlowUtils.AllocationTokenNotValidForTldException;
 import google.registry.flows.domain.token.AllocationTokenFlowUtils.AlreadyRedeemedAllocationTokenException;
 import google.registry.flows.domain.token.AllocationTokenFlowUtils.InvalidAllocationTokenException;
-import google.registry.flows.domain.token.AllocationTokenFlowUtils.MissingRemoveDomainTokenOnBulkPricingDomainException;
-import google.registry.flows.domain.token.AllocationTokenFlowUtils.RemoveDomainTokenOnNonBulkPricingDomainException;
+import google.registry.flows.domain.token.AllocationTokenFlowUtils.MissingRemoveBulkPricingTokenOnBulkPricingDomainException;
+import google.registry.flows.domain.token.AllocationTokenFlowUtils.RemoveBulkPricingTokenOnNonBulkPricingDomainException;
 import google.registry.flows.exceptions.ResourceStatusProhibitsOperationException;
 import google.registry.model.billing.BillingBase.Flag;
 import google.registry.model.billing.BillingBase.Reason;
@@ -1276,12 +1276,13 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
         ImmutableMap.of("DOMAIN", "example.tld", "YEARS", "2", "TOKEN", "token"));
 
     EppException thrown =
-        assertThrows(MissingRemoveDomainTokenOnBulkPricingDomainException.class, this::runFlow);
+        assertThrows(
+            MissingRemoveBulkPricingTokenOnBulkPricingDomainException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
   @Test
-  void testFailsToRenewBulkPricingDomainNoRemoveDomainToken() throws Exception {
+  void testFailsToRenewBulkPricingDomainNoRemoveBulkPricingToken() throws Exception {
     AllocationToken token =
         persistResource(
             new AllocationToken.Builder()
@@ -1299,25 +1300,26 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
     setEppInput("domain_renew.xml", ImmutableMap.of("DOMAIN", "example.tld", "YEARS", "5"));
 
     EppException thrown =
-        assertThrows(MissingRemoveDomainTokenOnBulkPricingDomainException.class, this::runFlow);
+        assertThrows(
+            MissingRemoveBulkPricingTokenOnBulkPricingDomainException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
   @Test
-  void testFailsToRenewNonBulkPricingDomainWithRemoveDomainToken() throws Exception {
+  void testFailsToRenewNonBulkPricingDomainWithRemoveBulkPricingToken() throws Exception {
     persistDomain();
 
     setEppInput(
         "domain_renew_allocationtoken.xml",
-        ImmutableMap.of("DOMAIN", "example.tld", "YEARS", "2", "TOKEN", "__REMOVEDOMAIN__"));
+        ImmutableMap.of("DOMAIN", "example.tld", "YEARS", "2", "TOKEN", "__REMOVE_BULK_PRICING__"));
 
     EppException thrown =
-        assertThrows(RemoveDomainTokenOnNonBulkPricingDomainException.class, this::runFlow);
+        assertThrows(RemoveBulkPricingTokenOnNonBulkPricingDomainException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
   @Test
-  void testSuccesfullyAppliesRemoveDomainToken() throws Exception {
+  void testSuccesfullyAppliesRemoveBulkPricingToken() throws Exception {
     AllocationToken token =
         persistResource(
             new AllocationToken.Builder()
@@ -1333,7 +1335,7 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
         reloadResourceByForeignKey().asBuilder().setCurrentBulkToken(token.createVKey()).build());
     setEppInput(
         "domain_renew_allocationtoken.xml",
-        ImmutableMap.of("DOMAIN", "example.tld", "YEARS", "2", "TOKEN", "__REMOVEDOMAIN__"));
+        ImmutableMap.of("DOMAIN", "example.tld", "YEARS", "2", "TOKEN", "__REMOVE_BULK_PRICING__"));
 
     doSuccessfulTest(
         "domain_renew_response.xml",
@@ -1347,7 +1349,7 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
   }
 
   @Test
-  void testDryRunRemoveDomainToken() throws Exception {
+  void testDryRunRemoveBulkPricingToken() throws Exception {
     AllocationToken token =
         persistResource(
             new AllocationToken.Builder()
@@ -1364,7 +1366,7 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
 
     setEppInput(
         "domain_renew_allocationtoken.xml",
-        ImmutableMap.of("DOMAIN", "example.tld", "YEARS", "2", "TOKEN", "__REMOVEDOMAIN__"));
+        ImmutableMap.of("DOMAIN", "example.tld", "YEARS", "2", "TOKEN", "__REMOVE_BULK_PRICING__"));
 
     dryRunFlowAssertResponse(
         loadFile(
