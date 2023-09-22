@@ -63,6 +63,14 @@ public class ConfigureTldCommand extends MutatingCommand {
       required = true)
   Path inputFile;
 
+  @Parameter(
+      names = {"-b", "--breakglass"},
+      description =
+          "Sets the breakglass field on the TLD to true, preventing Cloud Build from overwriting"
+              + " these new changes until the TLD configuration file stored internally matches the"
+              + " configuration in the database.")
+  boolean breakglass;
+
   @Inject ObjectMapper mapper;
 
   @Inject
@@ -70,13 +78,13 @@ public class ConfigureTldCommand extends MutatingCommand {
   Set<String> validDnsWriterNames;
 
   /** Indicates if the passed in file contains new changes to the TLD */
-  boolean newDiff = false;
+  boolean newDiff = true;
 
-  // TODO(sarahbot@): Add a breakglass setting to this tool to indicate when a TLD has been modified
-  // outside of source control
-
-  // TODO(sarahbot@): Add a check for diffs between passed in file and current TLD and exit if there
-  // is no diff. Treat nulls and empty sets as the same value.
+  /**
+   * Indicates if the existing TLD is currently in breakglass mode and should not be modified unless
+   * the breakglass flag is used
+   */
+  boolean oldTldInBreakglass = false;
 
   @Override
   protected void init() throws Exception {
@@ -86,20 +94,47 @@ public class ConfigureTldCommand extends MutatingCommand {
     checkForMissingFields(tldData);
     Tld oldTld = getTlds().contains(name) ? Tld.get(name) : null;
     Tld newTld = mapper.readValue(inputFile.toFile(), Tld.class);
-    if (oldTld != null && oldTld.equalYaml(newTld)) {
+    if (oldTld != null) {
+      oldTldInBreakglass = oldTld.getBreakglassMode();
+      newDiff = !oldTld.equalYaml(newTld);
+    }
+
+    if (!newDiff && !oldTldInBreakglass) {
+      // Don't construct a new object if there is no new diff
       return;
     }
-    newDiff = true;
+
+    if (oldTldInBreakglass && !breakglass) {
+      checkArgument(
+          !newDiff,
+          "Changes can not be applied since TLD is in breakglass mode but the breakglass flag was"
+              + " not used");
+      // if there are no new diffs, then the YAML file has caught up to the database and the
+      // breakglass mode should be removed
+      logger.atInfo().log("Breakglass mode removed from TLD: %s", name);
+    }
+
     checkPremiumList(newTld);
     checkDnsWriters(newTld);
     checkCurrency(newTld);
+    // Set the new TLD to breakglass mode if breakglass flag was used
+    if (breakglass) {
+      newTld = newTld.asBuilder().setBreakglassMode(true).build();
+    }
     stageEntityChange(oldTld, newTld);
   }
 
   @Override
   protected boolean dontRunCommand() {
     if (!newDiff) {
+      if (oldTldInBreakglass && !breakglass) {
+        // Run command to remove breakglass mode
+        return false;
+      }
       logger.atInfo().log("TLD YAML file contains no new changes");
+      checkArgument(
+          !breakglass || oldTldInBreakglass,
+          "Breakglass mode can only be set when making new changes to a TLD configuration");
       return true;
     }
     return false;
@@ -141,7 +176,9 @@ public class ConfigureTldCommand extends MutatingCommand {
 
   private void checkPremiumList(Tld newTld) {
     Optional<String> premiumListName = newTld.getPremiumListName();
-    if (!premiumListName.isPresent()) return;
+    if (!premiumListName.isPresent()) {
+      return;
+    }
     Optional<PremiumList> premiumList = PremiumListDao.getLatestRevision(premiumListName.get());
     checkArgument(
         premiumList.isPresent(),
