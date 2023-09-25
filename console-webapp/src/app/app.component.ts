@@ -12,10 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Component } from '@angular/core';
+import { Component, ViewChild } from '@angular/core';
 import { RegistrarService } from './registrar/registrar.service';
 import { UserDataService } from './shared/services/userData.service';
 import { GlobalLoaderService } from './shared/services/globalLoader.service';
+import { NavigationEnd, Router } from '@angular/router';
+import { MatSidenav } from '@angular/material/sidenav';
 
 @Component({
   selector: 'app-root',
@@ -24,16 +26,29 @@ import { GlobalLoaderService } from './shared/services/globalLoader.service';
 })
 export class AppComponent {
   renderRouter: boolean = true;
+
+  @ViewChild('sidenav')
+  sidenav!: MatSidenav;
+
   constructor(
     protected registrarService: RegistrarService,
     protected userDataService: UserDataService,
-    protected globalLoader: GlobalLoaderService
+    protected globalLoader: GlobalLoaderService,
+    protected router: Router
   ) {
     registrarService.activeRegistrarIdChange.subscribe(() => {
       this.renderRouter = false;
       setTimeout(() => {
         this.renderRouter = true;
       }, 400);
+    });
+  }
+
+  ngAfterViewInit() {
+    this.router.events.subscribe((event) => {
+      if (event instanceof NavigationEnd) {
+        this.sidenav.close();
+      }
     });
   }
 }
