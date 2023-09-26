@@ -1,0 +1,14 @@
+  apiVersion: cloud-build-notifiers/v1
+  kind: GoogleChatNotifier
+  metadata:
+    name: nomulus-cloudbuild-googlechat-notifier
+  spec:
+    notification:
+      filter: has(build.build_trigger_id) && build.status in [Build.Status.FAILURE, Build.Status.TIMEOUT]
+      delivery:
+        webhookUrl:
+          secretRef: webhook-url
+    secrets:
+    - name: webhook-url
+      value: projects/_project_id_/secrets/Chat-Webhook-CloudBuildNotifications/versions/latest
+
