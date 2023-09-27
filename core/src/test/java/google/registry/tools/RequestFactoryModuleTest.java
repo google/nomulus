@@ -64,7 +64,7 @@ public class RequestFactoryModuleTest {
     RegistryConfig.CONFIG_SETTINGS.get().gcpProject.isLocal = true;
     try {
       HttpRequestFactory factory =
-          RequestFactoryModule.provideHttpRequestFactory(credentialsBundle, "client-id");
+          RequestFactoryModule.provideHttpRequestFactory(credentialsBundle, "client-id", false);
       HttpRequestInitializer initializer = factory.getInitializer();
       assertThat(initializer).isNotNull();
       HttpRequest request = factory.buildGetRequest(new GenericUrl("http://localhost"));
@@ -97,13 +97,22 @@ public class RequestFactoryModuleTest {
     boolean origIsLocal = RegistryConfig.CONFIG_SETTINGS.get().gcpProject.isLocal;
     RegistryConfig.CONFIG_SETTINGS.get().gcpProject.isLocal = false;
     try {
+      // With OAuth header.
       HttpRequestFactory factory =
-          RequestFactoryModule.provideHttpRequestFactory(credentialsBundle, "clientId");
+          RequestFactoryModule.provideHttpRequestFactory(credentialsBundle, "clientId", true);
       HttpRequest request = factory.buildGetRequest(new GenericUrl("http://localhost"));
       assertThat(request.getHeaders().get("Proxy-Authorization")).isEqualTo("Bearer oidc.token");
       assertThat(request.getConnectTimeout()).isEqualTo(REQUEST_TIMEOUT_MS);
       assertThat(request.getReadTimeout()).isEqualTo(REQUEST_TIMEOUT_MS);
       verify(httpRequestInitializer).initialize(request);
+      verifyNoMoreInteractions(httpRequestInitializer);
+      // NO OAuth header.
+      factory =
+          RequestFactoryModule.provideHttpRequestFactory(credentialsBundle, "clientId", false);
+      request = factory.buildGetRequest(new GenericUrl("http://localhost"));
+      assertThat(request.getHeaders().get("Proxy-Authorization")).isEqualTo("Bearer oidc.token");
+      assertThat(request.getConnectTimeout()).isEqualTo(REQUEST_TIMEOUT_MS);
+      assertThat(request.getReadTimeout()).isEqualTo(REQUEST_TIMEOUT_MS);
       verifyNoMoreInteractions(httpRequestInitializer);
     } finally {
       RegistryConfig.CONFIG_SETTINGS.get().gcpProject.isLocal = origIsLocal;

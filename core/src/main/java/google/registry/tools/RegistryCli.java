@@ -43,11 +43,19 @@ final class RegistryCli implements CommandRunner {
   // The environment parameter is parsed twice: once here, and once with {@link
   // RegistryToolEnvironment#parseFromArgs} in the {@link RegistryTool#main} function.
   //
-  // The flag names must be in sync between the two, and also - this is ugly and we should feel bad.
+  // The flag names must be in sync between the two, and also - this is ugly, and we should feel
+  // bad.
   @Parameter(
       names = {"-e", "--environment"},
       description = "Sets the default environment to run the command.")
   private RegistryToolEnvironment environment = RegistryToolEnvironment.PRODUCTION;
+
+  @Parameter(
+      names = "--oauth",
+      description =
+          "Turn on OAuth-based authentication, the usage of which is to be deprecated. Use"
+              + "`create_user` to create an Admin user that allows for OIDC-based authentication.")
+  private boolean oAuth = false;
 
   @Parameter(
       names = {"-c", "--commands"},
@@ -55,22 +63,21 @@ final class RegistryCli implements CommandRunner {
   private boolean showAllCommands;
 
   @Parameter(
-      names = {"--credential"},
+      names = "--credential",
       description =
           "Name of a JSON file containing credential information used by the tool. "
               + "If not set, credentials saved by running `nomulus login' will be used.")
   private String credentialJson = null;
 
   @Parameter(
-      names = {"--sql_access_info"},
+      names = "--sql_access_info",
       description =
           "Name of a file containing space-separated SQL access info used when deploying "
               + "Beam pipelines")
   private String sqlAccessInfoFile = null;
 
   // Do not make this final - compile-time constant inlining may interfere with JCommander.
-  @ParametersDelegate
-  private LoggingParameters loggingParams = new LoggingParameters();
+  @ParametersDelegate private LoggingParameters loggingParams = new LoggingParameters();
 
   RegistryToolComponent component;
 
@@ -105,7 +112,8 @@ final class RegistryCli implements CommandRunner {
     jcommander.setProgramName(programName);
 
     // Create all command instances. It would be preferrable to do this in the constructor, but
-    // JCommander mutates the command instances and doesn't reset them so we have to do it for every
+    // JCommander mutates the command instances and doesn't reset them, so we have to do it for
+    // every
     // run.
     try {
       for (Map.Entry<String, ? extends Class<? extends Command>> entry : commands.entrySet()) {
@@ -161,6 +169,7 @@ final class RegistryCli implements CommandRunner {
         DaggerRegistryToolComponent.builder()
             .credentialFilePath(credentialJson)
             .sqlAccessInfoFile(sqlAccessInfoFile)
+            .addOAuthHeader(oAuth)
             .build();
 
     // JCommander stores sub-commands as nested JCommander objects containing a list of user objects
