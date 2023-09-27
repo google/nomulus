@@ -130,7 +130,7 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
   public static final Money DEFAULT_REGISTRY_LOCK_OR_UNLOCK_BILLING_COST = Money.of(USD, 0);
 
   public boolean equalYaml(Tld tldToCompare) {
-    if (this == tldToCompare) {
+    if (this.equals(tldToCompare)) {
       return true;
     }
     ObjectMapper mapper = createObjectMapper();
