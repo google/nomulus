@@ -123,6 +123,7 @@ interface RegistryToolComponent {
   void inject(GetDomainCommand command);
 
   void inject(GetHostCommand command);
+
   void inject(GetKeyringSecretCommand command);
 
   void inject(GetSqlCredentialCommand command);
@@ -189,6 +190,9 @@ interface RegistryToolComponent {
 
     @BindsInstance
     Builder sqlAccessInfoFile(@Nullable @Config("sqlAccessInfoFile") String sqlAccessInfoFile);
+
+    @BindsInstance
+    Builder addOAuthHeader(@Config("addOauthHeader") boolean addOauthHeader);
 
     RegistryToolComponent build();
   }
