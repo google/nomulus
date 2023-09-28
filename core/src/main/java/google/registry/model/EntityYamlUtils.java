@@ -201,6 +201,24 @@ public class EntityYamlUtils {
     }
   }
 
+  /** A custom JSON serializer for a {@link Duration} object. */
+  public static class DurationSerializer extends StdSerializer<Duration> {
+
+    public DurationSerializer() {
+      this(null);
+    }
+
+    public DurationSerializer(Class<Duration> t) {
+      super(t);
+    }
+
+    @Override
+    public void serialize(Duration value, JsonGenerator gen, SerializerProvider provider)
+        throws IOException {
+      gen.writeString(value.toString());
+    }
+  }
+
   /** A custom JSON serializer for an Optional of a {@link Duration} object. */
   public static class OptionalDurationSerializer extends StdSerializer<Optional<Duration>> {
 
@@ -216,7 +234,7 @@ public class EntityYamlUtils {
     public void serialize(Optional<Duration> value, JsonGenerator gen, SerializerProvider provider)
         throws IOException {
       if (value.isPresent()) {
-        gen.writeNumber(value.get().getMillis());
+        gen.writeString(value.get().toString());
       } else {
         gen.writeNull();
       }

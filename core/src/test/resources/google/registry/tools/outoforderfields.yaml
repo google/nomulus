@@ -5,13 +5,13 @@ reservedListNames: []
 dnsPaused: false
 tldType: "REAL"
 escrowEnabled: false
-anchorTenantAddGracePeriodLength: 2592000000
+anchorTenantAddGracePeriodLength: "PT2592000S"
 dnsNsTtl: null
 tldStr: "outoforderfields"
 roidSuffix: "TLD"
 dnsWriters:
 - "VoidDnsWriter"
-dnsAPlusAaaaTtl: 900
+dnsAPlusAaaaTtl: "PT900S"
 dnsDsTtl: null
 tldUnicode: "outoforderfields"
 driveFolderId: "driveFolder"
@@ -19,13 +19,13 @@ invoicingEnabled: false
 tldStateTransitions:
   "1970-01-01T00:00:00.000Z": "GENERAL_AVAILABILITY"
 premiumListName: "test"
-addGracePeriodLength: 432000000
-autoRenewGracePeriodLength: 3888000000
-redemptionGracePeriodLength: 2592000000
-renewGracePeriodLength: 432000000
-transferGracePeriodLength: 432000000
-automaticTransferLength: 432000000
-pendingDeleteLength: 432000000
+addGracePeriodLength: "PT2592000S"
+autoRenewGracePeriodLength: "PT2592000S"
+redemptionGracePeriodLength: "PT2592000S"
+renewGracePeriodLength: "PT2592000S"
+transferGracePeriodLength: "PT2592000S"
+automaticTransferLength: "PT2592000S"
+pendingDeleteLength: "PT2592000S"
 currency: "USD"
 createBillingCost:
   currency: "USD"

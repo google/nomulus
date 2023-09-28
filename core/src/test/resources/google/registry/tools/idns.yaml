@@ -1,13 +1,13 @@
-addGracePeriodLength: 432000000
+addGracePeriodLength: "PT432000S"
 allowedFullyQualifiedHostNames:
 - "beta"
 - "zeta"
 - "alpha"
 - "gamma"
 allowedRegistrantContactIds: []
-anchorTenantAddGracePeriodLength: 2592000000
-autoRenewGracePeriodLength: 3888000000
-automaticTransferLength: 432000000
+anchorTenantAddGracePeriodLength: "PT2592000S"
+autoRenewGracePeriodLength: "PT3888000S"
+automaticTransferLength: "PT432000S"
 claimsPeriodEnd: "294247-01-10T04:00:54.775Z"
 createBillingCost:
   currency: "USD"
@@ -34,10 +34,10 @@ idnTables:
 invoicingEnabled: false
 lordnUsername: null
 numDnsPublishLocks: 1
-pendingDeleteLength: 432000000
+pendingDeleteLength: "PT432000S"
 premiumListName: "idns"
 pricingEngineClassName: "google.registry.model.pricing.StaticPremiumListPricingEngine"
-redemptionGracePeriodLength: 2592000000
+redemptionGracePeriodLength: "PT2592000S"
 registryLockOrUnlockBillingCost:
   currency: "USD"
   amount: 0.00
@@ -45,7 +45,7 @@ renewBillingCostTransitions:
   "1970-01-01T00:00:00.000Z":
     currency: "USD"
     amount: 11.00
-renewGracePeriodLength: 432000000
+renewGracePeriodLength: "PT432000S"
 reservedListNames: []
 restoreBillingCost:
   currency: "USD"
@@ -59,4 +59,4 @@ tldStateTransitions:
 tldStr: "idns"
 tldType: "REAL"
 tldUnicode: "idns"
-transferGracePeriodLength: 432000000
+transferGracePeriodLength: "PT432000S"
