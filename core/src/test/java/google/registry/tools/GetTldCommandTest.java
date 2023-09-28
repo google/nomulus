@@ -45,7 +45,7 @@ class GetTldCommandTest extends CommandTestCase<GetTldCommand> {
     PremiumList premiumList = persistPremiumList("test", USD, "silver,USD 50", "gold,USD 80");
     persistResource(
         tld.asBuilder()
-            .setDnsAPlusAaaaTtl(Duration.standardSeconds(900))
+            .setDnsAPlusAaaaTtl(Duration.standardMinutes(15))
             .setDriveFolderId("driveFolder")
             .setCreateBillingCost(Money.of(USD, 25))
             .setPremiumList(premiumList)
