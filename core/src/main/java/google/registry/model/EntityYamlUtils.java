@@ -58,13 +58,13 @@ public class EntityYamlUtils {
     SimpleModule module = new SimpleModule();
     module.addSerializer(Money.class, new MoneySerializer());
     module.addDeserializer(Money.class, new MoneyDeserializer());
+    module.addSerializer(Duration.class, new DurationSerializer());
     ObjectMapper mapper =
         JsonMapper.builder(new YAMLFactory().disable(Feature.WRITE_DOC_START_MARKER))
             .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
             .enable(MapperFeature.SORT_PROPERTIES_ALPHABETICALLY)
-            .build()
-            .registerModule(module);
-    mapper.findAndRegisterModules();
+            .build();
+    mapper.findAndRegisterModules().registerModule(module);
     return mapper;
   }
 

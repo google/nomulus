@@ -51,7 +51,6 @@ import google.registry.model.CreateAutoTimestamp;
 import google.registry.model.EntityYamlUtils.CreateAutoTimestampDeserializer;
 import google.registry.model.EntityYamlUtils.CurrencyDeserializer;
 import google.registry.model.EntityYamlUtils.CurrencySerializer;
-import google.registry.model.EntityYamlUtils.DurationSerializer;
 import google.registry.model.EntityYamlUtils.OptionalDurationSerializer;
 import google.registry.model.EntityYamlUtils.OptionalStringSerializer;
 import google.registry.model.EntityYamlUtils.SortedEnumSetSerializer;
@@ -417,42 +416,34 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
    * amount of time following creation.
    */
   @Column(nullable = false)
-  @JsonSerialize(using = DurationSerializer.class)
   Duration addGracePeriodLength = DEFAULT_ADD_GRACE_PERIOD;
 
   /** The length of the anchor tenant add grace period for this TLD. */
   @Column(nullable = false)
-  @JsonSerialize(using = DurationSerializer.class)
   Duration anchorTenantAddGracePeriodLength = DEFAULT_ANCHOR_TENANT_ADD_GRACE_PERIOD;
 
   /** The length of the autorenew grace period for this TLD. */
   @Column(nullable = false)
-  @JsonSerialize(using = DurationSerializer.class)
   Duration autoRenewGracePeriodLength = DEFAULT_AUTO_RENEW_GRACE_PERIOD;
 
   /** The length of the redemption grace period for this TLD. */
   @Column(nullable = false)
-  @JsonSerialize(using = DurationSerializer.class)
   Duration redemptionGracePeriodLength = DEFAULT_REDEMPTION_GRACE_PERIOD;
 
   /** The length of the renew grace period for this TLD. */
   @Column(nullable = false)
-  @JsonSerialize(using = DurationSerializer.class)
   Duration renewGracePeriodLength = DEFAULT_RENEW_GRACE_PERIOD;
 
   /** The length of the transfer grace period for this TLD. */
   @Column(nullable = false)
-  @JsonSerialize(using = DurationSerializer.class)
   Duration transferGracePeriodLength = DEFAULT_TRANSFER_GRACE_PERIOD;
 
   /** The length of time before a transfer is automatically approved for this TLD. */
   @Column(nullable = false)
-  @JsonSerialize(using = DurationSerializer.class)
   Duration automaticTransferLength = DEFAULT_AUTOMATIC_TRANSFER_LENGTH;
 
   /** The length of time a domain spends in the non-redeemable pending delete phase for this TLD. */
   @Column(nullable = false)
-  @JsonSerialize(using = DurationSerializer.class)
   Duration pendingDeleteLength = DEFAULT_PENDING_DELETE_LENGTH;
 
   /** The currency unit for all costs associated with this TLD. */
