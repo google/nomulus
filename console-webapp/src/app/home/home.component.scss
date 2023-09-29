@@ -29,4 +29,9 @@
       }
     }
   }
+  @media (max-width: 510px) {
+    .console-app__widget-wrapper__wide {
+      grid-column: initial;
+    }
+  }
 }

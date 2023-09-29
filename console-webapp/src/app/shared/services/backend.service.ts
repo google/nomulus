@@ -95,7 +95,7 @@ export class BackendService {
 
   getUserData(): Observable<UserData> {
     return this.http
-      .get<UserData>(`/console-api/userdata`)
+      .get<UserData>('/console-api/userdata')
       .pipe(catchError((err) => this.errorCatcher<UserData>(err)));
   }
 

@@ -17,6 +17,21 @@
     color: inherit;
     text-decoration: none;
   }
+  &__header {
+    @media (max-width: 599px) {
+      .mat-toolbar {
+        padding: 0;
+      }
+      .console-app__logo {
+        font-size: 16px;
+      }
+      button {
+        padding-left: 0;
+        padding-right: 0;
+        width: 30px;
+      }
+    }
+  }
 }
 .spacer {
   flex: 1;

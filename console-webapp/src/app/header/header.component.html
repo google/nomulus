@@ -1,24 +1,30 @@
-<p>
+<p class="console-app__header">
   <mat-toolbar color="primary">
     <button mat-icon-button aria-label="Open menu" (click)="toggleNavPane()">
       <mat-icon>menu</mat-icon>
     </button>
-    <span>
-      <a
-        [routerLink]="'/home'"
-        routerLinkActive="active"
-        class="console-app__logo"
-      >
-        Google Registry
-      </a>
-    </span>
+    <a
+      [routerLink]="'/home'"
+      routerLinkActive="active"
+      class="console-app__logo"
+    >
+      Google Registry
+    </a>
     <span class="spacer"></span>
     <app-registrar-selector />
     <button mat-icon-button aria-label="Open FAQ">
       <mat-icon>question_mark</mat-icon>
     </button>
-    <button mat-icon-button aria-label="Open user info">
+    <button
+      mat-icon-button
+      [matMenuTriggerFor]="menu"
+      #menuTrigger
+      aria-label="Open user info"
+    >
       <mat-icon>person</mat-icon>
     </button>
+    <mat-menu #menu="matMenu">
+      <button mat-menu-item (click)="logOut()">Log out</button>
+    </mat-menu>
   </mat-toolbar>
 </p>

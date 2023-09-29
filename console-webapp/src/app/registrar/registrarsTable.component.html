@@ -1,22 +1,21 @@
 <div class="console-app__registrars">
-  <table
-    mat-table
-    [dataSource]="registrarService.registrars"
+  <mat-table
+    [dataSource]="dataSource"
     class="mat-elevation-z8"
+    class="console-app__registrars-table"
+    matSort
   >
     <ng-container
       *ngFor="let column of columns"
       [matColumnDef]="column.columnDef"
     >
-      <th mat-header-cell *matHeaderCellDef>
-        {{ column.header }}
-      </th>
-      <td mat-cell *matCellDef="let row" [innerHTML]="column.cell(row)"></td>
+      <mat-header-cell *matHeaderCellDef> {{ column.header }} </mat-header-cell>
+      <mat-cell *matCellDef="let row" [innerHTML]="column.cell(row)"></mat-cell>
     </ng-container>
+    <mat-header-row *matHeaderRowDef="displayedColumns"></mat-header-row>
+    <mat-row *matRowDef="let row; columns: displayedColumns"></mat-row>
+  </mat-table>
 
-    <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-    <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
-  </table>
   <mat-paginator
     class="mat-elevation-z8"
     [pageSizeOptions]="[5, 10, 20]"

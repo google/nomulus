@@ -1,5 +1,27 @@
 .console-app {
+  $min-width: 756px;
+
   &__registrars {
     margin-top: 1.5rem;
+    width: 100%;
+    overflow: auto;
+  }
+
+  &__registrars-table {
+    min-width: $min-width !important;
+  }
+
+  .mat-mdc-paginator {
+    min-width: $min-width !important;
+  }
+
+  .mat-column {
+    &-driveId {
+      min-width: 200px;
+      word-break: break-all;
+    }
+    &-registryLockAllowed {
+      max-width: 80px;
+    }
   }
 }

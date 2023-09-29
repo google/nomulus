@@ -1,7 +1,7 @@
 <h3 mat-dialog-title>Contact details</h3>
 <div mat-dialog-content>
   <form (ngSubmit)="saveAndClose($event)">
-    <div>
+    <p>
       <mat-form-field class="contact-details__input">
         <mat-label>Name: </mat-label>
         <input
@@ -11,9 +11,9 @@
           [ngModelOptions]="{ standalone: true }"
         />
       </mat-form-field>
-    </div>
+    </p>
 
-    <div>
+    <p>
       <mat-form-field class="contact-details__input">
         <mat-label>Primary account email: </mat-label>
         <input
@@ -25,9 +25,9 @@
           [ngModelOptions]="{ standalone: true }"
         />
       </mat-form-field>
-    </div>
+    </p>
 
-    <div>
+    <p>
       <mat-form-field class="contact-details__input">
         <mat-label>Phone: </mat-label>
         <input
@@ -36,9 +36,9 @@
           [ngModelOptions]="{ standalone: true }"
         />
       </mat-form-field>
-    </div>
+    </p>
 
-    <div>
+    <p>
       <mat-form-field class="contact-details__input">
         <mat-label>Fax: </mat-label>
         <input
@@ -47,7 +47,7 @@
           [ngModelOptions]="{ standalone: true }"
         />
       </mat-form-field>
-    </div>
+    </p>
 
     <div class="contact-details__group">
       <label>Contact type:</label>
