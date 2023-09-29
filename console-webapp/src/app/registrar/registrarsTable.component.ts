@@ -12,16 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Component } from '@angular/core';
+import { Component, ViewChild, ViewEncapsulation } from '@angular/core';
 import { Registrar, RegistrarService } from './registrar.service';
+import { MatPaginator } from '@angular/material/paginator';
+import { MatSort } from '@angular/material/sort';
+import { MatTableDataSource } from '@angular/material/table';
 
 @Component({
   selector: 'app-registrar',
   templateUrl: './registrarsTable.component.html',
   styleUrls: ['./registrarsTable.component.scss'],
+  encapsulation: ViewEncapsulation.None,
 })
 export class RegistrarComponent {
   public static PATH = 'registrars';
+  dataSource: MatTableDataSource<Registrar>;
   columns = [
     {
       columnDef: 'registrarId',
@@ -72,5 +77,18 @@ export class RegistrarComponent {
     },
   ];
   displayedColumns = this.columns.map((c) => c.columnDef);
-  constructor(protected registrarService: RegistrarService) {}
+
+  @ViewChild(MatPaginator) paginator!: MatPaginator;
+  @ViewChild(MatSort) sort!: MatSort;
+
+  constructor(protected registrarService: RegistrarService) {
+    this.dataSource = new MatTableDataSource<Registrar>(
+      registrarService.registrars
+    );
+  }
+
+  ngAfterViewInit() {
+    this.dataSource.paginator = this.paginator;
+    this.dataSource.sort = this.sort;
+  }
 }

@@ -28,4 +28,8 @@ export class HeaderComponent {
     this.isNavOpen = !this.isNavOpen;
     this.toggleNavOpen.emit(this.isNavOpen);
   }
+
+  logOut() {
+    window.open('/console?gcp-iap-mode=CLEAR_LOGIN_COOKIE', '_self');
+  }
 }
