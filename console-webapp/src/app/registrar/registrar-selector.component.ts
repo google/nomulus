@@ -12,14 +12,35 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { RegistrarService } from './registrar.service';
+import { BreakpointObserver } from '@angular/cdk/layout';
+import { distinctUntilChanged } from 'rxjs';
+
+const BREAKPOINT = '(max-width: 599px)';
 
 @Component({
   selector: 'app-registrar-selector',
   templateUrl: './registrar-selector.component.html',
   styleUrls: ['./registrar-selector.component.scss'],
 })
-export class RegistrarSelectorComponent {
-  constructor(protected registrarService: RegistrarService) {}
+export class RegistrarSelectorComponent implements OnInit {
+  protected isMobile: boolean = false;
+
+  readonly breakpoint$ = this.breakpointObserver
+    .observe([BREAKPOINT])
+    .pipe(distinctUntilChanged());
+
+  constructor(
+    protected registrarService: RegistrarService,
+    protected breakpointObserver: BreakpointObserver
+  ) {}
+
+  ngOnInit(): void {
+    this.breakpoint$.subscribe(() => this.breakpointChanged());
+  }
+
+  private breakpointChanged() {
+    this.isMobile = this.breakpointObserver.isMatched(BREAKPOINT);
+  }
 }

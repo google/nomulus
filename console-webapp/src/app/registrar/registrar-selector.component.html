@@ -1,5 +1,14 @@
 <div class="console-app__registrar">
-  <div>
+  <button
+    mat-button
+    [routerLink]="'/settings/registrars'"
+    routerLinkActive="active"
+    *ngIf="isMobile; else desktop"
+  >
+    {{ registrarService.activeRegistrarId || "Select registrar" }}
+    <mat-icon>open_in_new</mat-icon>
+  </button>
+  <ng-template #desktop>
     <mat-form-field class="mat-form-field-density-5" appearance="fill">
       <mat-label>Registrar</mat-label>
       <mat-select
@@ -14,5 +23,5 @@
         </mat-option>
       </mat-select>
     </mat-form-field>
-  </div>
+  </ng-template>
 </div>
