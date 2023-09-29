@@ -20,6 +20,7 @@ import { SecuritySettingsBackendModel } from 'src/app/settings/security/security
 import { Contact } from '../../settings/contact/contact.service';
 import { Registrar } from '../../registrar/registrar.service';
 import { UserData } from './userData.service';
+import { WhoisRegistrarFields } from 'src/app/settings/whois/whois.service';
 
 @Injectable()
 export class BackendService {
@@ -96,5 +97,14 @@ export class BackendService {
     return this.http
       .get<UserData>(`/console-api/userdata`)
       .pipe(catchError((err) => this.errorCatcher<UserData>(err)));
+  }
+
+  postWhoisRegistrarFields(
+    whoisRegistrarFields: WhoisRegistrarFields
+  ): Observable<WhoisRegistrarFields> {
+    return this.http.post<WhoisRegistrarFields>(
+      '/console-api/settings/whois-fields',
+      whoisRegistrarFields
+    );
   }
 }
