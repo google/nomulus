@@ -1,0 +1,59 @@
+# This will sync the Tld configurations in the internal repo with the Tld objects in the database.
+#
+# To manually trigger a build on GCB, run:
+# gcloud builds submit --config cloudbuild-tld-sync.yaml --substitutions \
+#   TAG_NAME=[TAG],_INTERNAL_REPO_URL=[URL] ..
+#
+# To trigger a build automatically, follow the instructions below and add a trigger:
+# https://cloud.google.com/cloud-build/docs/running-builds/automate-builds
+#
+# This pipeline prepares a release. The pipeline should be run against the Nomulus public repo on
+# GitHub. It builds the builder and base images, and hard codes the sha256 hashes of the resulting
+# images in the merged code base (internal + public) , which is tagged and pushed into the release
+# repo. Actual release artifacts are built from the release repo, ensuring reproducibility.
+steps:
+# Check out the internal repo.
+- name: 'gcr.io/cloud-builders/git'
+  entrypoint: /bin/bash
+  args:
+  - -c
+  - |
+    set -e
+    git clone https://gerrit.googlesource.com/gcompute-tools
+    ./gcompute-tools/git-cookie-authdaemon
+    git clone ${_INTERNAL_REPO_URL} nomulus-internal
+# Download and decrypt the nomulus tool credential
+- name: 'gcr.io/$PROJECT_ID/builder:latest'
+  volumes:
+  - name: 'secrets'
+    path: '/secrets'
+  entrypoint: /bin/bash
+  args:
+  - -c
+  - |
+    set -e
+    gcloud secrets versions access latest \
+      --secret nomulus-tool-cloudbuild-credential \
+      > /secrets/cloud_sql_credential.json
+# Fetch the config file for example Tld from alpha
+- name: 'gcr.io/$PROJECT_ID/nomulus-tool:latest'
+  volumes:
+  - name: 'tld'
+    path: '/tld'
+  args:
+  - -e
+  - alpha
+  - --credential
+  - /secrets/cloud_sql_credential.json
+  - get_tld
+  - example \
+    > /tld/example.yaml
+# The tarballs and jars to upload to GCS.
+artifacts:
+  objects:
+    location: 'gs://${PROJECT_ID}-tld-sync/${TAG_NAME}'
+    paths:
+    - 'tld/example.yaml'
+timeout: 7200s
+options:
+  machineType: 'E2_HIGHCPU_32'
