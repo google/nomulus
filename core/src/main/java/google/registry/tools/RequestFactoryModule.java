@@ -42,7 +42,8 @@ final class RequestFactoryModule {
   @Provides
   static HttpRequestFactory provideHttpRequestFactory(
       @ApplicationDefaultCredential GoogleCredentialsBundle credentialsBundle,
-      @Config("oauthClientId") String oauthClientId) {
+      @Config("oauthClientId") String oauthClientId,
+      @Config("addOauthHeader") boolean addOauthHeader) {
     if (RegistryConfig.areServersLocal()) {
       return new NetHttpTransport()
           .createRequestFactory(
@@ -54,8 +55,10 @@ final class RequestFactoryModule {
       return new NetHttpTransport()
           .createRequestFactory(
               request -> {
-                // Use the standard credential initializer to set the Authorization header
-                credentialsBundle.getHttpRequestInitializer().initialize(request);
+                if (addOauthHeader) {
+                  // Use the standard credential initializer to set the Authorization header
+                  credentialsBundle.getHttpRequestInitializer().initialize(request);
+                }
                 // Set OIDC token as the alternative bearer token.
                 request
                     .getHeaders()
