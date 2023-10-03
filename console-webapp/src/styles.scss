@@ -44,11 +44,12 @@ body {
     &-link {
       padding: 0 !important;
       text-align: left;
-      height: 20px !important;
       min-width: auto !important;
+      height: min-content !important;
     }
     &-title {
       color: var(--primary) !important;
+      text-align: center;
     }
     &-icon {
       font-size: 5rem;
