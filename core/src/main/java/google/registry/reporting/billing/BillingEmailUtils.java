@@ -53,7 +53,7 @@ public class BillingEmailUtils {
       GmailClient gmailClient,
       YearMonth yearMonth,
       @Config("gSuiteOutgoingEmailAddress") InternetAddress outgoingEmailAddress,
-      @Config("alertRecipientEmailAddress") InternetAddress alertRecipientAddress,
+      @Config("newAlertRecipientEmailAddress") InternetAddress alertRecipientAddress,
       @Config("invoiceEmailRecipients") ImmutableList<InternetAddress> invoiceEmailRecipients,
       @Config("invoiceReplyToEmailAddress") Optional<InternetAddress> replyToEmailAddress,
       @Config("billingBucket") String billingBucket,

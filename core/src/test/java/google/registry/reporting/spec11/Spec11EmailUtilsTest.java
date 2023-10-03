@@ -26,6 +26,8 @@ import static google.registry.testing.DatabaseHelper.loadByEntity;
 import static google.registry.testing.DatabaseHelper.persistActiveHost;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -41,11 +43,13 @@ import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationT
 import google.registry.reporting.spec11.soy.Spec11EmailSoyInfo;
 import google.registry.testing.DatabaseHelper;
 import google.registry.util.EmailMessage;
+import google.registry.util.Sleeper;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
 import javax.mail.MessagingException;
 import javax.mail.internet.InternetAddress;
+import org.joda.time.Duration;
 import org.joda.time.LocalDate;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -101,6 +105,8 @@ class Spec11EmailUtilsTest {
       new JpaTestExtensions.Builder().buildIntegrationTestExtension();
 
   @Mock private GmailClient gmailClient;
+  @Mock private Sleeper sleeper;
+  private Duration emailThrottleDuration = Duration.millis(1);
   private Spec11EmailUtils emailUtils;
   private ArgumentCaptor<EmailMessage> contentCaptor;
   private final LocalDate date = new LocalDate(2018, 7, 15);
@@ -114,6 +120,8 @@ class Spec11EmailUtilsTest {
     emailUtils =
         new Spec11EmailUtils(
             gmailClient,
+            sleeper,
+            emailThrottleDuration,
             new InternetAddress("my-receiver@test.com"),
             new InternetAddress("abuse@test.com"),
             ImmutableList.of(
@@ -126,6 +134,19 @@ class Spec11EmailUtilsTest {
     aDomain = persistDomainWithHost("a.com", host);
     bDomain = persistDomainWithHost("b.com", host);
     persistDomainWithHost("c.com", host);
+  }
+
+  @Test
+  void testSuccess_sleepsBetweenSending() throws Exception {
+    emailUtils.emailSpec11Reports(
+        date,
+        Spec11EmailSoyInfo.MONTHLY_SPEC_11_EMAIL,
+        "Super Cool Registry Monthly Threat Detector [2018-07-15]",
+        sampleThreatMatches());
+    // We inspect individual parameters because Message doesn't implement equals().
+    verify(gmailClient, times(3)).sendEmail(any(EmailMessage.class));
+    // Sleep once between two reports sent in a tight loop. No sleep before the final alert message.
+    verify(sleeper, times(1)).sleep(same(emailThrottleDuration));
   }
 
   @Test
