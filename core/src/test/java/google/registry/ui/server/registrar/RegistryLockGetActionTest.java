@@ -40,7 +40,6 @@ import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.request.Action.Method;
 import google.registry.request.auth.AuthResult;
-import google.registry.request.auth.AuthSettings.AuthLevel;
 import google.registry.request.auth.AuthenticatedRegistrarAccessor;
 import google.registry.request.auth.UserAuthInfo;
 import google.registry.testing.FakeClock;
@@ -75,7 +74,7 @@ final class RegistryLockGetActionTest {
   void beforeEach() {
     user = userFromRegistrarPoc(makeRegistrarContact3());
     fakeClock.setTo(DateTime.parse("2000-06-08T22:00:00.0Z"));
-    authResult = AuthResult.create(AuthLevel.USER, UserAuthInfo.create(user, false));
+    authResult = AuthResult.createUser(UserAuthInfo.create(user, false));
     accessor =
         AuthenticatedRegistrarAccessor.createForTesting(
             ImmutableSetMultimap.of(
@@ -109,7 +108,7 @@ final class RegistryLockGetActionTest {
                     .build())
             .build();
 
-    action.authResult = AuthResult.create(AuthLevel.USER, UserAuthInfo.create(consoleUser));
+    action.authResult = AuthResult.createUser(UserAuthInfo.create(consoleUser));
     action.run();
     assertThat(response.getStatus()).isEqualTo(HttpStatusCodes.STATUS_CODE_OK);
     assertThat(GSON.fromJson(response.getPayload(), Map.class))
@@ -336,7 +335,7 @@ final class RegistryLockGetActionTest {
     persistResource(makeRegistrar2().asBuilder().setRegistryLockAllowed(false).build());
     // disallow the other user
     persistResource(makeRegistrarContact2().asBuilder().setLoginEmailAddress(null).build());
-    authResult = AuthResult.create(AuthLevel.USER, UserAuthInfo.create(user, true));
+    authResult = AuthResult.createUser(UserAuthInfo.create(user, true));
     accessor =
         AuthenticatedRegistrarAccessor.createForTesting(
             ImmutableSetMultimap.of(
@@ -364,7 +363,7 @@ final class RegistryLockGetActionTest {
   void testSuccess_linkedToLoginContactEmail() {
     // Note that the email address is case-insensitive.
     user = new User("marla.singer@crr.com", "crr.com", user.getUserId());
-    authResult = AuthResult.create(AuthLevel.USER, UserAuthInfo.create(user, false));
+    authResult = AuthResult.createUser(UserAuthInfo.create(user, false));
     action =
         new RegistryLockGetAction(
             Method.GET, response, accessor, authResult, Optional.of("TheRegistrar"));

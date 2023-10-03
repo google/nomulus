@@ -15,8 +15,6 @@
 package google.registry.request.auth;
 
 import com.google.common.collect.ImmutableList;
-import google.registry.flows.EppTlsAction;
-import google.registry.flows.TlsCredentials;
 import google.registry.request.auth.AuthSettings.AuthLevel;
 import google.registry.request.auth.AuthSettings.AuthMethod;
 import google.registry.request.auth.AuthSettings.UserPolicy;
@@ -48,30 +46,18 @@ public enum Auth {
    * Allows anyone to access, as long as they are logged in.
    *
    * <p>This is used by legacy registrar console programmatic endpoints (those that extend {@link
-   * JsonGetAction}, which are accessed via XHR requests sent from a logged-in user when performing
+   * JsonGetAction}), which are accessed via XHR requests sent from a logged-in user when performing
    * actions on the console.
    */
   AUTH_PUBLIC_LOGGED_IN(
       ImmutableList.of(AuthMethod.API, AuthMethod.LEGACY), AuthLevel.USER, UserPolicy.PUBLIC),
 
   /**
-   * Allows any client to access, as long as they are logged in via API-based authentication
-   * mechanisms.
+   * Allows only the app or admins to access.
    *
-   * <p>This is used by the proxy to access Nomulus endpoints. The proxy service account does NOT
-   * have admin privileges. For EPP, we handle client authentication within {@link EppTlsAction},
-   * using {@link TlsCredentials}. For WHOIS, anyone connecting to the proxy can access.
-   *
-   * <p>Note that the proxy service account DOES need to be allow-listed in the {@code
-   * auth.allowedServiceAccountEmails} field in the config YAML file in order for OIDC-based
-   * authentication to pass.
-   */
-  AUTH_API_PUBLIC(ImmutableList.of(AuthMethod.API), AuthLevel.APP, UserPolicy.PUBLIC),
-
-  /**
-   * Allows only admins to access.
-   *
-   * <p>This applies to the majority of the endpoints.
+   * <p>This applies to the majority of the endpoints. For APP level authentication to work, the
+   * associated service account needs to be allowlisted in the {@code
+   * auth.allowedServiceAccountEmails} field in the config YAML file.
    */
   AUTH_API_ADMIN(ImmutableList.of(AuthMethod.API), AuthLevel.APP, UserPolicy.ADMIN);
 

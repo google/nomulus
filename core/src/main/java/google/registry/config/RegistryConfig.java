@@ -1175,44 +1175,6 @@ public final class RegistryConfig {
     }
 
     /**
-     * Provides the OAuth scopes that authentication logic should detect on access tokens.
-     *
-     * <p>This list should be a superset of the required OAuth scope set provided below. Note that
-     * ideally, this setting would not be required and all scopes on an access token would be
-     * detected automatically, but that is not the case due to the way {@code OAuthService} works.
-     *
-     * <p>This is an independent setting from the required OAuth scopes (below) to support use cases
-     * where certain actions require some additional scope (e.g. access to a user's Google Drive)
-     * but that scope shouldn't be required for authentication alone; in that case the Drive scope
-     * would be specified only for this setting, allowing that action to check for its presence.
-     */
-    @Provides
-    @Config("availableOauthScopes")
-    public static ImmutableSet<String> provideAvailableOauthScopes(RegistryConfigSettings config) {
-      return ImmutableSet.copyOf(config.auth.availableOauthScopes);
-    }
-
-    /**
-     * Provides the OAuth scopes that are required for authenticating successfully.
-     *
-     * <p>This set contains the scopes which must be present to authenticate a user. It should be a
-     * subset of the scopes we request from the OAuth interface, provided above.
-     *
-     * <p>If we feel the need, we could define additional fixed scopes, similar to the Java remote
-     * API, which requires at least one of:
-     *
-     * <ul>
-     *   <li>{@code https://www.googleapis.com/auth/appengine.apis}
-     *   <li>{@code https://www.googleapis.com/auth/cloud-platform}
-     * </ul>
-     */
-    @Provides
-    @Config("requiredOauthScopes")
-    public static ImmutableSet<String> provideRequiredOauthScopes(RegistryConfigSettings config) {
-      return ImmutableSet.copyOf(config.auth.requiredOauthScopes);
-    }
-
-    /**
      * Provides service account email addresses allowed to authenticate with the app at {@link
      * google.registry.request.auth.AuthSettings.AuthLevel#APP} level.
      */
@@ -1221,13 +1183,6 @@ public final class RegistryConfig {
     public static ImmutableSet<String> provideAllowedServiceAccountEmails(
         RegistryConfigSettings config) {
       return ImmutableSet.copyOf(config.auth.allowedServiceAccountEmails);
-    }
-
-    /** Provides the allowed OAuth client IDs (could be multibinding). */
-    @Provides
-    @Config("allowedOauthClientIds")
-    public static ImmutableSet<String> provideAllowedOauthClientIds(RegistryConfigSettings config) {
-      return ImmutableSet.copyOf(config.auth.allowedOauthClientIds);
     }
 
     @Provides

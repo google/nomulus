@@ -60,7 +60,8 @@ public class RequestAuthenticator {
     if (auth.minimumLevel() == APP && !authResult.isAuthenticated()) {
       logger.atWarning().log("Not authorized; no authentication found.");
       return Optional.empty();
-    } else if (auth.minimumLevel() == USER && authResult.authLevel() != USER) {
+    }
+    if (auth.minimumLevel() == USER && authResult.authLevel() != USER) {
       logger.atWarning().log("Not authorized; no authenticated user.");
       return Optional.empty();
     }
@@ -78,15 +79,15 @@ public class RequestAuthenticator {
    * Attempts to authenticate the user, according to the settings of the action.
    *
    * @param auth the auth settings of the action, which determine what authentication is allowed
-   * @param req the {@link HttpServletRequest}; some authentication mechanisms use HTTP headers
+   * @param req the {@link HttpServletRequest}
    * @return an authentication result; if no authentication was made, returns NOT_AUTHENTICATED
    */
-  private AuthResult authenticate(AuthSettings auth, HttpServletRequest req) {
+  AuthResult authenticate(AuthSettings auth, HttpServletRequest req) {
     checkAuthConfig(auth);
     for (AuthMethod authMethod : auth.methods()) {
       AuthResult authResult;
       switch (authMethod) {
-          // API-based user authentication mechanisms, such as OAuth and OIDC.
+          // API-based user authentication mechanisms, such as OIDC.
         case API:
           for (AuthenticationMechanism authMechanism : apiAuthenticationMechanisms) {
             authResult = authMechanism.authenticate(req);
@@ -113,10 +114,9 @@ public class RequestAuthenticator {
 
   /** Validates an AuthSettings object, checking for invalid setting combinations. */
   static void checkAuthConfig(AuthSettings auth) {
-    ImmutableList<AuthMethod> authMethods = ImmutableList.copyOf(auth.methods());
-    checkArgument(!authMethods.isEmpty(), "Must specify at least one auth method");
+    checkArgument(!auth.methods().isEmpty(), "Must specify at least one auth method");
     checkArgument(
-        Ordering.explicit(AuthMethod.API, AuthMethod.LEGACY).isStrictlyOrdered(authMethods),
+        Ordering.explicit(AuthMethod.API, AuthMethod.LEGACY).isStrictlyOrdered(auth.methods()),
         "Auth methods must be unique and strictly in order - API, LEGACY");
     checkArgument(
         (auth.minimumLevel() != NONE) || (auth.userPolicy() != ADMIN),

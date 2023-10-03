@@ -18,9 +18,6 @@ import static com.google.common.truth.Truth.assertThat;
 import static google.registry.tools.RequestFactoryModule.REQUEST_TIMEOUT_MS;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import com.google.api.client.http.GenericUrl;
@@ -35,6 +32,7 @@ import com.google.auth.oauth2.UserCredentials;
 import google.registry.config.RegistryConfig;
 import google.registry.testing.SystemPropertyExtension;
 import google.registry.util.GoogleCredentialsBundle;
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -50,7 +48,6 @@ public class RequestFactoryModuleTest {
   final SystemPropertyExtension systemPropertyExtension = new SystemPropertyExtension();
 
   @Mock public GoogleCredentialsBundle credentialsBundle;
-  @Mock public HttpRequestInitializer httpRequestInitializer;
 
   @BeforeEach
   void beforeEach() {
@@ -64,12 +61,11 @@ public class RequestFactoryModuleTest {
     RegistryConfig.CONFIG_SETTINGS.get().gcpProject.isLocal = true;
     try {
       HttpRequestFactory factory =
-          RequestFactoryModule.provideHttpRequestFactory(credentialsBundle, "client-id", false);
+          RequestFactoryModule.provideHttpRequestFactory(credentialsBundle, "client-id");
       HttpRequestInitializer initializer = factory.getInitializer();
       assertThat(initializer).isNotNull();
       HttpRequest request = factory.buildGetRequest(new GenericUrl("http://localhost"));
       initializer.initialize(request);
-      verifyNoInteractions(httpRequestInitializer);
     } finally {
       RegistryConfig.CONFIG_SETTINGS.get().gcpProject.isLocal = origIsLocal;
     }
@@ -77,7 +73,6 @@ public class RequestFactoryModuleTest {
 
   @Test
   void test_provideHttpRequestFactory_remote() throws Exception {
-    when(credentialsBundle.getHttpRequestInitializer()).thenReturn(httpRequestInitializer);
     // Mock the request/response to/from the OIDC server requesting an ID token
     UserCredentials mockUserCredentials = mock(UserCredentials.class);
     when(credentialsBundle.getGoogleCredentials()).thenReturn(mockUserCredentials);
@@ -97,23 +92,15 @@ public class RequestFactoryModuleTest {
     boolean origIsLocal = RegistryConfig.CONFIG_SETTINGS.get().gcpProject.isLocal;
     RegistryConfig.CONFIG_SETTINGS.get().gcpProject.isLocal = false;
     try {
-      // With OAuth header.
       HttpRequestFactory factory =
-          RequestFactoryModule.provideHttpRequestFactory(credentialsBundle, "clientId", true);
+          RequestFactoryModule.provideHttpRequestFactory(credentialsBundle, "clientId");
       HttpRequest request = factory.buildGetRequest(new GenericUrl("http://localhost"));
-      assertThat(request.getHeaders().get("Proxy-Authorization")).isEqualTo("Bearer oidc.token");
+      @SuppressWarnings("unchecked")
+      List<String> authHeaders = (List<String>) request.getHeaders().get("Authorization");
+      assertThat(authHeaders.size()).isEqualTo(1);
+      assertThat(authHeaders.get(0)).isEqualTo("Bearer oidc.token");
       assertThat(request.getConnectTimeout()).isEqualTo(REQUEST_TIMEOUT_MS);
       assertThat(request.getReadTimeout()).isEqualTo(REQUEST_TIMEOUT_MS);
-      verify(httpRequestInitializer).initialize(request);
-      verifyNoMoreInteractions(httpRequestInitializer);
-      // No OAuth header.
-      factory =
-          RequestFactoryModule.provideHttpRequestFactory(credentialsBundle, "clientId", false);
-      request = factory.buildGetRequest(new GenericUrl("http://localhost"));
-      assertThat(request.getHeaders().get("Proxy-Authorization")).isEqualTo("Bearer oidc.token");
-      assertThat(request.getConnectTimeout()).isEqualTo(REQUEST_TIMEOUT_MS);
-      assertThat(request.getReadTimeout()).isEqualTo(REQUEST_TIMEOUT_MS);
-      verifyNoMoreInteractions(httpRequestInitializer);
     } finally {
       RegistryConfig.CONFIG_SETTINGS.get().gcpProject.isLocal = origIsLocal;
     }

@@ -16,8 +16,7 @@ package google.registry.request.auth;
 
 import static com.google.common.base.Strings.emptyToNull;
 import static com.google.common.base.Strings.nullToEmpty;
-import static google.registry.request.auth.AuthSettings.AuthLevel.NONE;
-import static google.registry.request.auth.AuthSettings.AuthLevel.USER;
+import static google.registry.request.auth.AuthResult.NOT_AUTHENTICATED;
 import static google.registry.security.XsrfTokenManager.P_CSRF_TOKEN;
 import static google.registry.security.XsrfTokenManager.X_CSRF_TOKEN;
 
@@ -49,15 +48,14 @@ public class LegacyAuthenticationMechanism implements AuthenticationMechanism {
   @Override
   public AuthResult authenticate(HttpServletRequest request) {
     if (!userService.isUserLoggedIn()) {
-      return AuthResult.create(NONE);
+      return NOT_AUTHENTICATED;
     }
 
     if (!SAFE_METHODS.contains(request.getMethod()) && !validateXsrf(request)) {
-      return AuthResult.create(NONE);
+      return NOT_AUTHENTICATED;
     }
 
-    return AuthResult.create(
-        USER,
+    return AuthResult.createUser(
         UserAuthInfo.create(userService.getCurrentUser(), userService.isUserAdmin()));
   }
 
