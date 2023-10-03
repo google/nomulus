@@ -134,16 +134,16 @@ takes a couple of minutes.
 ### Setup Nomulus
 
 After terraform completes, it outputs some information, among which is the
-client id of the service account created for the proxy. This needs to be added
-to the Nomulus configuration file so that Nomulus accepts traffic from the
+email address of the service account created for the proxy. This needs to be
+added to the Nomulus configuration file so that Nomulus accepts traffic from the
 proxy. Edit the following section in
 `java/google/registry/config/files/nomulus-config-<env>.yaml` and redeploy
 Nomulus:
 
 ```yaml
-oAuth:
-  allowedOauthClientIds:
-    - <client_id>
+auth:
+  allowedServiceAccountEmails:
+    - <email address>
 ```
 
 ### Setup nameservers
@@ -304,15 +304,15 @@ $  gcloud iam service-accounts keys create proxy-key.json --iam-account \
 
 A `proxy-key.json` file will be created inside the current working directory.
 
-The `client_id` inside the key file needs to be added to the Nomulus
+The service account email address needs to be added to the Nomulus
 configuration file so that Nomulus accepts the OAuth tokens generated for this
 service account. Add its value to
 `java/google/registry/config/files/nomulus-config-<env>.yaml`:
 
 ```yaml
-oAuth:
-  allowedOauthClientIds:
-    - <client_id>
+auth:
+  allowedServiceAccountEmails:
+    - <email address>
 ```
 
 Redeploy Nomulus for the change to take effect.

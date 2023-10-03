@@ -304,24 +304,6 @@ caching:
 # Note: Only allowedServiceAccountEmails and oauthClientId should be configured.
 # Other fields are related to OAuth-based authentication and will be removed.
 auth:
-  # Deprecated: Use OIDC-based auth instead. This field is for OAuth-based auth.
-  # OAuth scopes to detect on access tokens. Superset of requiredOauthScopes.
-  availableOauthScopes:
-  - https://www.googleapis.com/auth/userinfo.email
-
-  # Deprecated: Use OIDC-based auth instead. This field is for OAuth-based auth.
-  # OAuth scopes required for authenticating. Subset of availableOauthScopes.
-  requiredOauthScopes:
-  - https://www.googleapis.com/auth/userinfo.email
-
-  # Deprecated: Use OIDC-based auth instead. This field is for OAuth-based auth.
-  # OAuth client IDs that are allowed to authenticate and communicate with
-  # backend services, e.g. nomulus tool, EPP proxy, etc. The value in
-  # registryTool.clientId field should be included in this list. Client IDs are
-  # typically of the format
-  # numbers-alphanumerics.apps.googleusercontent.com
-  allowedOauthClientIds: []
-
   # Service accounts (e.g. default service account, account used by Cloud
   # Scheduler) allowed to send authenticated requests.
   allowedServiceAccountEmails:

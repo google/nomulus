@@ -27,7 +27,6 @@ import google.registry.model.console.UserRoles;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.request.RequestModule;
 import google.registry.request.auth.AuthResult;
-import google.registry.request.auth.AuthSettings.AuthLevel;
 import google.registry.request.auth.UserAuthInfo;
 import google.registry.testing.DatabaseHelper;
 import google.registry.testing.FakeResponse;
@@ -55,8 +54,7 @@ public class ConsoleDomainGetActionTest {
   void testSuccess_fullJsonRepresentation() {
     ConsoleDomainGetAction action =
         createAction(
-            AuthResult.create(
-                AuthLevel.USER,
+            AuthResult.createUser(
                 UserAuthInfo.create(
                     createUser(
                         new UserRoles.Builder()
@@ -85,7 +83,8 @@ public class ConsoleDomainGetActionTest {
 
   @Test
   void testFailure_appAuth() {
-    ConsoleDomainGetAction action = createAction(AuthResult.create(AuthLevel.APP), "exists.tld");
+    ConsoleDomainGetAction action =
+        createAction(AuthResult.createApp("service@registry.example"), "exists.tld");
     action.run();
     assertThat(RESPONSE.getStatus()).isEqualTo(HttpStatusCodes.STATUS_CODE_UNAUTHORIZED);
   }
@@ -94,8 +93,7 @@ public class ConsoleDomainGetActionTest {
   void testFailure_wrongTypeOfUser() {
     ConsoleDomainGetAction action =
         createAction(
-            AuthResult.create(
-                AuthLevel.USER,
+            AuthResult.createUser(
                 UserAuthInfo.create(mock(com.google.appengine.api.users.User.class), false)),
             "exists.tld");
     action.run();
@@ -106,8 +104,7 @@ public class ConsoleDomainGetActionTest {
   void testFailure_noAccessToRegistrar() {
     ConsoleDomainGetAction action =
         createAction(
-            AuthResult.create(
-                AuthLevel.USER, UserAuthInfo.create(createUser(new UserRoles.Builder().build()))),
+            AuthResult.createUser(UserAuthInfo.create(createUser(new UserRoles.Builder().build()))),
             "exists.tld");
     action.run();
     assertThat(RESPONSE.getStatus()).isEqualTo(HttpStatusCodes.STATUS_CODE_NOT_FOUND);
@@ -117,8 +114,7 @@ public class ConsoleDomainGetActionTest {
   void testFailure_nonexistentDomain() {
     ConsoleDomainGetAction action =
         createAction(
-            AuthResult.create(
-                AuthLevel.USER,
+            AuthResult.createUser(
                 UserAuthInfo.create(createUser(new UserRoles.Builder().setIsAdmin(true).build()))),
             "nonexistent.tld");
     action.run();

@@ -33,7 +33,6 @@ import google.registry.model.registrar.Registrar;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.request.RequestModule;
 import google.registry.request.auth.AuthResult;
-import google.registry.request.auth.AuthSettings.AuthLevel;
 import google.registry.request.auth.AuthenticatedRegistrarAccessor;
 import google.registry.request.auth.AuthenticatedRegistrarAccessor.Role;
 import google.registry.request.auth.UserAuthInfo;
@@ -127,8 +126,7 @@ public class WhoisRegistrarFieldsActionTest {
   void testFailure_noAccessToRegistrar() throws Exception {
     Registrar newRegistrar = Registrar.loadByRegistrarIdCached("NewRegistrar").get();
     AuthResult onlyTheRegistrar =
-        AuthResult.create(
-            AuthLevel.USER,
+        AuthResult.createUser(
             UserAuthInfo.create(
                 new User.Builder()
                     .setEmailAddress("email@email.example")
@@ -147,8 +145,7 @@ public class WhoisRegistrarFieldsActionTest {
   }
 
   private AuthResult defaultUserAuth() {
-    return AuthResult.create(
-        AuthLevel.USER,
+    return AuthResult.createUser(
         UserAuthInfo.create(
             new User.Builder()
                 .setEmailAddress("email@email.example")

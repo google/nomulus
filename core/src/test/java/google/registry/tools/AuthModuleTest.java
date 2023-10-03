@@ -72,7 +72,7 @@ class AuthModuleTest {
                 }
               })
           // We need to set the following fields because they are checked when
-          // Credential#setRefreshToken is called. However they are not actually persisted in the
+          // Credential#setRefreshToken is called. However, they are not actually persisted in the
           // DataStore and not actually used in tests.
           .setJsonFactory(new GsonFactory())
           .setTransport(new NetHttpTransport())
@@ -104,7 +104,7 @@ class AuthModuleTest {
         AuthModule.provideClientScopeQualifier("client-id", ImmutableList.of("foo", "bar"));
 
     // If we change the way we encode client id and scopes, this assertion will break.  That's
-    // probably ok and you can just change the text.  The things you have to be aware of are:
+    // probably ok, and you can just change the text.  The things you have to be aware of are:
     // - Names in the new encoding should have a low risk of collision with the old encoding.
     // - Changing the encoding will force all OAuth users of the nomulus tool to do a new login
     //   (existing credentials will not be used).
@@ -155,7 +155,7 @@ class AuthModuleTest {
         AuthModule.provideClientScopeQualifier(AuthModule.provideClientId(clientSecrets), scopes));
   }
 
-  private GoogleClientSecrets getSecrets() {
+  private static GoogleClientSecrets getSecrets() {
     return new GoogleClientSecrets()
         .setInstalled(
             AuthModule.provideDefaultInstalledDetails()
@@ -166,7 +166,8 @@ class AuthModuleTest {
   @Test
   void test_provideLocalCredentialJson() {
     String credentialJson =
-        AuthModule.provideLocalCredentialJson(this::getSecrets, this::getCredential, null);
+        AuthModule.provideLocalCredentialJson(
+            AuthModuleTest::getSecrets, this::getCredential, null);
     Map<String, String> jsonMap =
         new Gson().fromJson(credentialJson, new TypeToken<Map<String, String>>() {}.getType());
     assertThat(jsonMap.get("type")).isEqualTo("authorized_user");
@@ -182,7 +183,7 @@ class AuthModuleTest {
     Files.write(credentialFile.toPath(), "{some_field: some_value}".getBytes(UTF_8));
     String credentialJson =
         AuthModule.provideLocalCredentialJson(
-            this::getSecrets, this::getCredential, credentialFile.getCanonicalPath());
+            AuthModuleTest::getSecrets, this::getCredential, credentialFile.getCanonicalPath());
     assertThat(credentialJson).isEqualTo("{some_field: some_value}");
   }
 

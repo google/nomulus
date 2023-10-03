@@ -58,9 +58,6 @@ public class RegistryConfigSettings {
 
   /** Configuration options for authenticating users. */
   public static class Auth {
-    public List<String> availableOauthScopes;
-    public List<String> requiredOauthScopes;
-    public List<String> allowedOauthClientIds;
     public List<String> allowedServiceAccountEmails;
     public String oauthClientId;
   }

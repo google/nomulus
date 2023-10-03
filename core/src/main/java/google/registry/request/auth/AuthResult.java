@@ -14,7 +14,9 @@
 
 package google.registry.request.auth;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Preconditions.checkArgument;
+import static google.registry.request.auth.AuthSettings.AuthLevel.APP;
+import static google.registry.request.auth.AuthSettings.AuthLevel.USER;
 
 import com.google.auto.value.AutoValue;
 import google.registry.request.auth.AuthSettings.AuthLevel;
@@ -22,8 +24,8 @@ import java.util.Optional;
 import javax.annotation.Nullable;
 
 /**
- * Results of authentication for a given HTTP request, as emitted by an
- * {@link AuthenticationMechanism}.
+ * Results of authentication for a given HTTP request, as emitted by an {@link
+ * AuthenticationMechanism}.
  */
 @AutoValue
 public abstract class AuthResult {
@@ -32,6 +34,10 @@ public abstract class AuthResult {
 
   /** Information about the authenticated user, if there is one. */
   public abstract Optional<UserAuthInfo> userAuthInfo();
+
+  /** Service account email of the authenticated app, if there is one. */
+  @SuppressWarnings("unused") // The service account will be logged upon successful login.
+  public abstract Optional<String> appServiceAccount();
 
   public boolean isAuthenticated() {
     return authLevel() != AuthLevel.NONE;
@@ -47,15 +53,27 @@ public abstract class AuthResult {
         .orElse("<logged-out user>");
   }
 
-  public static AuthResult create(AuthLevel authLevel) {
-    return new AutoValue_AuthResult(authLevel, Optional.empty());
+  public static AuthResult createApp(String email) {
+    return create(APP, null, email);
   }
 
-  public static AuthResult create(AuthLevel authLevel, @Nullable UserAuthInfo userAuthInfo) {
-    if (authLevel == AuthLevel.USER) {
-      checkNotNull(userAuthInfo);
-    }
-    return new AutoValue_AuthResult(authLevel, Optional.ofNullable(userAuthInfo));
+  public static AuthResult createUser(UserAuthInfo userAuthInfo) {
+    return create(USER, userAuthInfo, null);
+  }
+
+  private static AuthResult create(
+      AuthLevel authLevel, @Nullable UserAuthInfo userAuthInfo, @Nullable String email) {
+    checkArgument(
+        userAuthInfo == null || email == null,
+        "User auth info and service account email cannot be specificed at the same time");
+    checkArgument(
+        authLevel != USER || userAuthInfo != null,
+        "User auth info must be specified for auth level USER");
+    checkArgument(
+        authLevel != APP || email != null,
+        "Service account email must be specified for auth level APP");
+    return new AutoValue_AuthResult(
+        authLevel, Optional.ofNullable(userAuthInfo), Optional.ofNullable(email));
   }
 
   /**
@@ -67,5 +85,5 @@ public abstract class AuthResult {
    * returns NOT_AUTHENTICATED in this case, as opposed to absent() if authentication failed and was
    * required. So as a return from an authorization check, this can be treated as a success.
    */
-  public static final AuthResult NOT_AUTHENTICATED = create(AuthLevel.NONE);
+  public static final AuthResult NOT_AUTHENTICATED = create(AuthLevel.NONE, null, null);
 }
