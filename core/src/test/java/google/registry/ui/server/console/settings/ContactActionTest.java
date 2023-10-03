@@ -37,7 +37,6 @@ import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.request.Action;
 import google.registry.request.RequestModule;
 import google.registry.request.auth.AuthResult;
-import google.registry.request.auth.AuthSettings.AuthLevel;
 import google.registry.request.auth.UserAuthInfo;
 import google.registry.testing.FakeResponse;
 import google.registry.ui.server.registrar.RegistrarConsoleModule;
@@ -103,8 +102,7 @@ class ContactActionTest {
     ContactAction action =
         createAction(
             Action.Method.GET,
-            AuthResult.create(
-                AuthLevel.USER,
+            AuthResult.createUser(
                 UserAuthInfo.create(
                     createUser(new UserRoles.Builder().setGlobalRole(GlobalRole.FTE).build()))),
             testRegistrar.getRegistrarId(),
@@ -121,8 +119,7 @@ class ContactActionTest {
     ContactAction action =
         createAction(
             Action.Method.GET,
-            AuthResult.create(
-                AuthLevel.USER,
+            AuthResult.createUser(
                 UserAuthInfo.create(
                     createUser(new UserRoles.Builder().setGlobalRole(GlobalRole.FTE).build()))),
             testRegistrar.getRegistrarId(),
@@ -137,8 +134,7 @@ class ContactActionTest {
     ContactAction action =
         createAction(
             Action.Method.POST,
-            AuthResult.create(
-                AuthLevel.USER,
+            AuthResult.createUser(
                 UserAuthInfo.create(
                     createUser(new UserRoles.Builder().setGlobalRole(GlobalRole.FTE).build()))),
             testRegistrar.getRegistrarId(),
@@ -160,8 +156,7 @@ class ContactActionTest {
     ContactAction action =
         createAction(
             Action.Method.POST,
-            AuthResult.create(
-                AuthLevel.USER,
+            AuthResult.createUser(
                 UserAuthInfo.create(
                     createUser(new UserRoles.Builder().setGlobalRole(GlobalRole.FTE).build()))),
             testRegistrar.getRegistrarId(),
@@ -186,8 +181,7 @@ class ContactActionTest {
     ContactAction action =
         createAction(
             Action.Method.POST,
-            AuthResult.create(
-                AuthLevel.USER,
+            AuthResult.createUser(
                 UserAuthInfo.create(
                     createUser(new UserRoles.Builder().setGlobalRole(GlobalRole.FTE).build()))),
             testRegistrar.getRegistrarId(),
@@ -208,8 +202,7 @@ class ContactActionTest {
     ContactAction action =
         createAction(
             Action.Method.POST,
-            AuthResult.create(
-                AuthLevel.USER,
+            AuthResult.createUser(
                 UserAuthInfo.create(
                     createUser(
                         new UserRoles.Builder()

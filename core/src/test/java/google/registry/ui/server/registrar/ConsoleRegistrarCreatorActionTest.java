@@ -37,7 +37,6 @@ import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.request.Action.Method;
 import google.registry.request.auth.AuthResult;
-import google.registry.request.auth.AuthSettings.AuthLevel;
 import google.registry.request.auth.AuthenticatedRegistrarAccessor;
 import google.registry.request.auth.UserAuthInfo;
 import google.registry.security.XsrfTokenManager;
@@ -93,7 +92,7 @@ final class ConsoleRegistrarCreatorActionTest {
             ImmutableSetMultimap.of("unused", AuthenticatedRegistrarAccessor.Role.ADMIN));
     action.userService = UserServiceFactory.getUserService();
     action.xsrfTokenManager = new XsrfTokenManager(new FakeClock(), action.userService);
-    action.authResult = AuthResult.create(AuthLevel.USER, UserAuthInfo.create(user, false));
+    action.authResult = AuthResult.createUser(UserAuthInfo.create(user, false));
     action.sendEmailUtils =
         new SendEmailUtils(
             new InternetAddress("outgoing@registry.example"),

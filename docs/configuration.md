@@ -114,7 +114,7 @@ the Nomulus system should have its own client id. Multiple installations of the
 `nomulus` tool application can share the same client id for the same
 environment.
 
-There are three steps to configuration.
+There are two steps to configuration.
 
 *   **Create the client id in App Engine:** Go to your project's
     ["Credentials" page](https://console.developers.google.com/apis/credentials)
