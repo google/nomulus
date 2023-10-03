@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Component, ViewChild } from '@angular/core';
+import { AfterViewInit, Component, ViewChild } from '@angular/core';
 import { RegistrarService } from './registrar/registrar.service';
 import { UserDataService } from './shared/services/userData.service';
 import { GlobalLoaderService } from './shared/services/globalLoader.service';
@@ -24,7 +24,7 @@ import { MatSidenav } from '@angular/material/sidenav';
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.scss'],
 })
-export class AppComponent {
+export class AppComponent implements AfterViewInit {
   renderRouter: boolean = true;
 
   @ViewChild('sidenav')
