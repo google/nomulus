@@ -22,6 +22,8 @@ import java.util.Optional;
 @AutoValue
 public abstract class UserAuthInfo {
 
+  public abstract Optional<google.registry.model.console.User> consoleUser();
+
   /** User object from the AppEngine Users API. */
   public abstract Optional<User> appEngineUser();
 
@@ -33,11 +35,6 @@ public abstract class UserAuthInfo {
    * the App Engine product qualify as an "admin".
    */
   public abstract boolean isUserAdmin();
-
-  public abstract Optional<google.registry.model.console.User> consoleUser();
-
-  /** Used by the OAuth authentication mechanism (only) to return information about the session. */
-  public abstract Optional<OAuthTokenInfo> oauthTokenInfo();
 
   public String getEmailAddress() {
     return appEngineUser()
@@ -51,20 +48,12 @@ public abstract class UserAuthInfo {
         .orElseGet(() -> consoleUser().get().getEmailAddress());
   }
 
-  public static UserAuthInfo create(
-      User user, boolean isUserAdmin) {
-    return new AutoValue_UserAuthInfo(
-        Optional.of(user), isUserAdmin, Optional.empty(), Optional.empty());
-  }
-
-  public static UserAuthInfo create(
-      User user, boolean isUserAdmin, OAuthTokenInfo oauthTokenInfo) {
-    return new AutoValue_UserAuthInfo(
-        Optional.of(user), isUserAdmin, Optional.empty(), Optional.of(oauthTokenInfo));
+  public static UserAuthInfo create(User user, boolean isUserAdmin) {
+    return new AutoValue_UserAuthInfo(Optional.empty(), Optional.of(user), isUserAdmin);
   }
 
   public static UserAuthInfo create(google.registry.model.console.User user) {
     return new AutoValue_UserAuthInfo(
-        Optional.empty(), user.getUserRoles().isAdmin(), Optional.of(user), Optional.empty());
+        Optional.of(user), Optional.empty(), user.getUserRoles().isAdmin());
   }
 }

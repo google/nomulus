@@ -14,7 +14,7 @@
 
 package google.registry.tools;
 
-import static com.google.common.net.HttpHeaders.PROXY_AUTHORIZATION;
+import static com.google.common.net.HttpHeaders.AUTHORIZATION;
 
 import com.google.api.client.http.HttpRequestFactory;
 import com.google.api.client.http.javanet.NetHttpTransport;
@@ -42,8 +42,7 @@ final class RequestFactoryModule {
   @Provides
   static HttpRequestFactory provideHttpRequestFactory(
       @ApplicationDefaultCredential GoogleCredentialsBundle credentialsBundle,
-      @Config("oauthClientId") String oauthClientId,
-      @Config("addOauthHeader") boolean addOauthHeader) {
+      @Config("oauthClientId") String oauthClientId) {
     if (RegistryConfig.areServersLocal()) {
       return new NetHttpTransport()
           .createRequestFactory(
@@ -55,15 +54,11 @@ final class RequestFactoryModule {
       return new NetHttpTransport()
           .createRequestFactory(
               request -> {
-                if (addOauthHeader) {
-                  // Use the standard credential initializer to set the Authorization header
-                  credentialsBundle.getHttpRequestInitializer().initialize(request);
-                }
-                // Set OIDC token as the alternative bearer token.
+                // Set OIDC token as the bearer token.
                 request
                     .getHeaders()
                     .set(
-                        PROXY_AUTHORIZATION,
+                        AUTHORIZATION,
                         "Bearer "
                             + OidcTokenUtils.createOidcToken(credentialsBundle, oauthClientId));
                 // GAE request times out after 10 min, so here we set the timeout to 10 min. This is

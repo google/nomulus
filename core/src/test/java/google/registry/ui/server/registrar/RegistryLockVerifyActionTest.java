@@ -43,7 +43,6 @@ import google.registry.model.tld.Tld;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.request.auth.AuthResult;
-import google.registry.request.auth.AuthSettings.AuthLevel;
 import google.registry.request.auth.UserAuthInfo;
 import google.registry.security.XsrfTokenManager;
 import google.registry.testing.CloudTasksHelper;
@@ -132,7 +131,7 @@ final class RegistryLockVerifyActionTest {
 
   @Test
   void testSuccess_adminLock_createsOnlyHistoryEntry() {
-    action.authResult = AuthResult.create(AuthLevel.USER, UserAuthInfo.create(user, true));
+    action.authResult = AuthResult.createUser(UserAuthInfo.create(user, true));
     saveRegistryLock(createLock().asBuilder().isSuperuser(true).build());
 
     action.run();
@@ -332,7 +331,7 @@ final class RegistryLockVerifyActionTest {
                 stringGenerator, "adminreg", cloudTasksHelper.getTestCloudTasksUtils()),
             lockVerificationCode,
             isLock);
-    authResult = AuthResult.create(AuthLevel.USER, UserAuthInfo.create(user, false));
+    authResult = AuthResult.createUser(UserAuthInfo.create(user, false));
     action.req = request;
     action.response = response;
     action.authResult = authResult;
