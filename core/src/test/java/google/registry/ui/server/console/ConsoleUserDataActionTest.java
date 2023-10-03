@@ -24,7 +24,6 @@ import google.registry.model.console.UserRoles;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.request.RequestModule;
 import google.registry.request.auth.AuthResult;
-import google.registry.request.auth.AuthSettings.AuthLevel;
 import google.registry.request.auth.UserAuthInfo;
 import google.registry.testing.FakeResponse;
 import java.io.IOException;
@@ -50,8 +49,7 @@ class ConsoleUserDataActionTest {
             .setUserRoles(new UserRoles.Builder().setGlobalRole(GlobalRole.FTE).build())
             .build();
 
-    ConsoleUserDataAction action =
-        createAction(AuthResult.create(AuthLevel.USER, UserAuthInfo.create(user)));
+    ConsoleUserDataAction action = createAction(AuthResult.createUser(UserAuthInfo.create(user)));
     action.run();
     assertThat(response.getStatus()).isEqualTo(HttpStatusCodes.STATUS_CODE_OK);
     Map jsonObject = GSON.fromJson(response.getPayload(), Map.class);
@@ -63,8 +61,7 @@ class ConsoleUserDataActionTest {
   void testFailure_notAConsoleUser() throws IOException {
     ConsoleUserDataAction action =
         createAction(
-            AuthResult.create(
-                AuthLevel.USER,
+            AuthResult.createUser(
                 UserAuthInfo.create(
                     new com.google.appengine.api.users.User(
                         "JohnDoe@theregistrar.com", "theregistrar.com"),

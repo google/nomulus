@@ -18,7 +18,6 @@ import static com.google.common.net.HttpHeaders.AUTHORIZATION;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.request.auth.AuthModule.BEARER_PREFIX;
 import static google.registry.request.auth.AuthModule.IAP_HEADER_NAME;
-import static google.registry.request.auth.AuthModule.PROXY_HEADER_NAME;
 import static google.registry.testing.DatabaseHelper.insertInDb;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -92,9 +91,8 @@ public class OidcTokenAuthenticationMechanismTest {
 
   @Test
   void testAuthResultBypass() {
-    OidcTokenAuthenticationMechanism.setAuthResultForTesting(AuthResult.create(AuthLevel.APP));
-    assertThat(authenticationMechanism.authenticate(null))
-        .isEqualTo(AuthResult.create(AuthLevel.APP));
+    OidcTokenAuthenticationMechanism.setAuthResultForTesting(AuthResult.NOT_AUTHENTICATED);
+    assertThat(authenticationMechanism.authenticate(null)).isEqualTo(AuthResult.NOT_AUTHENTICATED);
   }
 
   @Test
@@ -169,16 +167,10 @@ public class OidcTokenAuthenticationMechanismTest {
   void testRegular_tokenExtractor() throws Exception {
     useRegularOidcMechanism();
     // The token does not have the "Bearer " prefix.
-    when(request.getHeader(PROXY_HEADER_NAME)).thenReturn(rawToken);
+    when(request.getHeader(AUTHORIZATION)).thenReturn(rawToken);
     assertThat(authenticationMechanism.tokenExtractor.extract(request)).isNull();
 
     // The token is in the correct format.
-    when(request.getHeader(PROXY_HEADER_NAME))
-        .thenReturn(String.format("%s%s", BEARER_PREFIX, rawToken));
-    assertThat(authenticationMechanism.tokenExtractor.extract(request)).isEqualTo(rawToken);
-
-    // The token is in the correct format, and under the alternative header.
-    when(request.getHeader(PROXY_HEADER_NAME)).thenReturn(null);
     when(request.getHeader(AUTHORIZATION))
         .thenReturn(String.format("%s%s", BEARER_PREFIX, rawToken));
     assertThat(authenticationMechanism.tokenExtractor.extract(request)).isEqualTo(rawToken);

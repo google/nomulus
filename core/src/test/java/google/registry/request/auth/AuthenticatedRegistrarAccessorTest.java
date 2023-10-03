@@ -15,6 +15,7 @@
 package google.registry.request.auth;
 
 import static com.google.common.truth.Truth.assertThat;
+import static google.registry.request.auth.AuthResult.NOT_AUTHENTICATED;
 import static google.registry.request.auth.AuthenticatedRegistrarAccessor.Role.ADMIN;
 import static google.registry.request.auth.AuthenticatedRegistrarAccessor.Role.OWNER;
 import static google.registry.testing.DatabaseHelper.loadRegistrar;
@@ -40,7 +41,6 @@ import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.Registrar.State;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
-import google.registry.request.auth.AuthSettings.AuthLevel;
 import google.registry.request.auth.AuthenticatedRegistrarAccessor.RegistrarAccessDeniedException;
 import google.registry.util.JdkLoggerConfig;
 import java.util.Optional;
@@ -75,7 +75,7 @@ class AuthenticatedRegistrarAccessorTest {
 
   private static final AuthResult USER = createAuthResult(false);
   private static final AuthResult GAE_ADMIN = createAuthResult(true);
-  private static final AuthResult NO_USER = AuthResult.create(AuthLevel.NONE);
+  private static final AuthResult NO_USER = NOT_AUTHENTICATED;
   private static final Optional<String> SUPPORT_GROUP = Optional.of("support@registry.example");
   /** Registrar ID of a REAL registrar with a RegistrarContact for USER and GAE_ADMIN. */
   private static final String REGISTRAR_ID_WITH_CONTACT = "TheRegistrar";
@@ -94,8 +94,7 @@ class AuthenticatedRegistrarAccessorTest {
    * @param isAdmin if true, the user is an administrator for the app-engine project.
    */
   private static AuthResult createAuthResult(boolean isAdmin) {
-    return AuthResult.create(
-        AuthLevel.USER,
+    return AuthResult.createUser(
         UserAuthInfo.create(new User("johndoe@theregistrar.com", "theregistrar.com"), isAdmin));
   }
 
@@ -295,8 +294,7 @@ class AuthenticatedRegistrarAccessorTest {
   void testGetRegistrarForUser_inContacts_isNotAdmin_caseInsensitive() throws Exception {
     expectGetRegistrarSuccess(
         REGISTRAR_ID_WITH_CONTACT,
-        AuthResult.create(
-            AuthLevel.USER,
+        AuthResult.createUser(
             UserAuthInfo.create(new User("JohnDoe@theregistrar.com", "theregistrar.com"), false)),
         "user JohnDoe@theregistrar.com has [OWNER] access to registrar TheRegistrar");
     verify(lazyGroupsConnection).get();
@@ -421,7 +419,7 @@ class AuthenticatedRegistrarAccessorTest {
             .setUserRoles(
                 new UserRoles.Builder().setIsAdmin(true).setGlobalRole(GlobalRole.FTE).build())
             .build();
-    AuthResult authResult = AuthResult.create(AuthLevel.USER, UserAuthInfo.create(consoleUser));
+    AuthResult authResult = AuthResult.createUser(UserAuthInfo.create(consoleUser));
     AuthenticatedRegistrarAccessor registrarAccessor =
         new AuthenticatedRegistrarAccessor(
             authResult, ADMIN_REGISTRAR_ID, SUPPORT_GROUP, lazyGroupsConnection);
@@ -446,7 +444,7 @@ class AuthenticatedRegistrarAccessorTest {
             .setEmailAddress("email@email.com")
             .setUserRoles(new UserRoles.Builder().setGlobalRole(GlobalRole.SUPPORT_AGENT).build())
             .build();
-    AuthResult authResult = AuthResult.create(AuthLevel.USER, UserAuthInfo.create(consoleUser));
+    AuthResult authResult = AuthResult.createUser(UserAuthInfo.create(consoleUser));
     AuthenticatedRegistrarAccessor registrarAccessor =
         new AuthenticatedRegistrarAccessor(
             authResult, ADMIN_REGISTRAR_ID, SUPPORT_GROUP, lazyGroupsConnection);
@@ -471,7 +469,7 @@ class AuthenticatedRegistrarAccessorTest {
                             RegistrarRole.ACCOUNT_MANAGER))
                     .build())
             .build();
-    AuthResult authResult = AuthResult.create(AuthLevel.USER, UserAuthInfo.create(consoleUser));
+    AuthResult authResult = AuthResult.createUser(UserAuthInfo.create(consoleUser));
     AuthenticatedRegistrarAccessor registrarAccessor =
         new AuthenticatedRegistrarAccessor(
             authResult, ADMIN_REGISTRAR_ID, SUPPORT_GROUP, lazyGroupsConnection);

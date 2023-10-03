@@ -38,7 +38,6 @@ import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.request.Action;
 import google.registry.request.RequestModule;
 import google.registry.request.auth.AuthResult;
-import google.registry.request.auth.AuthSettings.AuthLevel;
 import google.registry.request.auth.UserAuthInfo;
 import google.registry.testing.DeterministicStringGenerator;
 import google.registry.testing.FakeResponse;
@@ -108,8 +107,7 @@ class RegistrarsActionTest {
     RegistrarsAction action =
         createAction(
             Action.Method.GET,
-            AuthResult.create(
-                AuthLevel.USER,
+            AuthResult.createUser(
                 UserAuthInfo.create(
                     createUser(
                         new UserRoles.Builder().setGlobalRole(GlobalRole.SUPPORT_LEAD).build()))));
@@ -129,8 +127,7 @@ class RegistrarsActionTest {
     RegistrarsAction action =
         createAction(
             Action.Method.GET,
-            AuthResult.create(
-                AuthLevel.USER,
+            AuthResult.createUser(
                 UserAuthInfo.create(
                     createUser(new UserRoles.Builder().setGlobalRole(GlobalRole.FTE).build()))));
     action.run();
@@ -151,8 +148,7 @@ class RegistrarsActionTest {
     RegistrarsAction action =
         createAction(
             Action.Method.POST,
-            AuthResult.create(
-                AuthLevel.USER,
+            AuthResult.createUser(
                 UserAuthInfo.create(createUser(new UserRoles.Builder().setIsAdmin(true).build()))));
     action.run();
     assertThat(response.getStatus()).isEqualTo(HttpStatusCodes.STATUS_CODE_OK);
@@ -180,8 +176,7 @@ class RegistrarsActionTest {
               RegistrarsAction action =
                   createAction(
                       Action.Method.POST,
-                      AuthResult.create(
-                          AuthLevel.USER,
+                      AuthResult.createUser(
                           UserAuthInfo.create(
                               createUser(new UserRoles.Builder().setIsAdmin(true).build()))));
               action.run();
@@ -200,8 +195,7 @@ class RegistrarsActionTest {
     RegistrarsAction action =
         createAction(
             Action.Method.POST,
-            AuthResult.create(
-                AuthLevel.USER,
+            AuthResult.createUser(
                 UserAuthInfo.create(createUser(new UserRoles.Builder().setIsAdmin(true).build()))));
     action.run();
     assertThat(response.getStatus()).isEqualTo(HttpStatusCodes.STATUS_CODE_BAD_REQUEST);
@@ -215,8 +209,7 @@ class RegistrarsActionTest {
     RegistrarsAction action =
         createAction(
             Action.Method.GET,
-            AuthResult.create(
-                AuthLevel.USER,
+            AuthResult.createUser(
                 UserAuthInfo.create(
                     createUser(
                         new UserRoles.Builder()

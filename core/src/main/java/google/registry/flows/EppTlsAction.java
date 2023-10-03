@@ -29,7 +29,7 @@ import javax.servlet.http.HttpSession;
     service = Action.Service.DEFAULT,
     path = "/_dr/epp",
     method = Method.POST,
-    auth = Auth.AUTH_API_PUBLIC)
+    auth = Auth.AUTH_API_ADMIN)
 public class EppTlsAction implements Runnable {
 
   @Inject @Payload byte[] inputXmlBytes;

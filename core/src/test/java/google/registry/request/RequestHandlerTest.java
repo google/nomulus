@@ -20,6 +20,7 @@ import static google.registry.request.Action.Method.GET;
 import static google.registry.request.Action.Method.POST;
 import static google.registry.request.auth.Auth.AUTH_API_ADMIN;
 import static google.registry.request.auth.Auth.AUTH_PUBLIC;
+import static google.registry.request.auth.AuthResult.NOT_AUTHENTICATED;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -228,7 +229,7 @@ public final class RequestHandlerTest {
     when(req.getMethod()).thenReturn("GET");
     when(req.getRequestURI()).thenReturn("/bumblebee");
     when(requestAuthenticator.authorize(AUTH_PUBLIC.authSettings(), req))
-        .thenReturn(Optional.of(AuthResult.create(AuthLevel.NONE)));
+        .thenReturn(Optional.of(NOT_AUTHENTICATED));
 
     handler.handleRequest(req, rsp);
 
@@ -242,7 +243,7 @@ public final class RequestHandlerTest {
     when(req.getMethod()).thenReturn("POST");
     when(req.getRequestURI()).thenReturn("/bumblebee");
     when(requestAuthenticator.authorize(AUTH_PUBLIC.authSettings(), req))
-        .thenReturn(Optional.of(AuthResult.create(AuthLevel.NONE)));
+        .thenReturn(Optional.of(NOT_AUTHENTICATED));
 
     handler.handleRequest(req, rsp);
 
@@ -255,7 +256,7 @@ public final class RequestHandlerTest {
     when(req.getMethod()).thenReturn("GET");
     when(req.getRequestURI()).thenReturn("/bumblebee/hive");
     when(requestAuthenticator.authorize(AUTH_PUBLIC.authSettings(), req))
-        .thenReturn(Optional.of(AuthResult.create(AuthLevel.NONE)));
+        .thenReturn(Optional.of(NOT_AUTHENTICATED));
 
     handler.handleRequest(req, rsp);
 
@@ -268,7 +269,7 @@ public final class RequestHandlerTest {
     when(req.getMethod()).thenReturn("POST");
     when(req.getRequestURI()).thenReturn("/sloth");
     when(requestAuthenticator.authorize(AUTH_PUBLIC.authSettings(), req))
-        .thenReturn(Optional.of(AuthResult.create(AuthLevel.NONE)));
+        .thenReturn(Optional.of(NOT_AUTHENTICATED));
 
     handler.handleRequest(req, rsp);
 
@@ -284,7 +285,7 @@ public final class RequestHandlerTest {
     when(req.getMethod()).thenReturn("POST");
     when(req.getRequestURI()).thenReturn("/sloth/nest");
     when(requestAuthenticator.authorize(AUTH_PUBLIC.authSettings(), req))
-        .thenReturn(Optional.of(AuthResult.create(AuthLevel.NONE)));
+        .thenReturn(Optional.of(NOT_AUTHENTICATED));
 
     handler.handleRequest(req, rsp);
 
@@ -296,7 +297,7 @@ public final class RequestHandlerTest {
     when(req.getMethod()).thenReturn("GET");
     when(req.getRequestURI()).thenReturn("/fail");
     when(requestAuthenticator.authorize(AUTH_PUBLIC.authSettings(), req))
-        .thenReturn(Optional.of(AuthResult.create(AuthLevel.NONE)));
+        .thenReturn(Optional.of(NOT_AUTHENTICATED));
 
     handler.handleRequest(req, rsp);
 
@@ -311,7 +312,7 @@ public final class RequestHandlerTest {
     when(req.getMethod()).thenReturn("GET");
     when(req.getRequestURI()).thenReturn("/failAtConstruction");
     when(requestAuthenticator.authorize(AUTH_PUBLIC.authSettings(), req))
-        .thenReturn(Optional.of(AuthResult.create(AuthLevel.NONE)));
+        .thenReturn(Optional.of(NOT_AUTHENTICATED));
 
     handler.handleRequest(req, rsp);
 
@@ -324,7 +325,7 @@ public final class RequestHandlerTest {
     when(req.getMethod()).thenReturn("GET");
     when(req.getRequestURI()).thenReturn("/bogus");
     when(requestAuthenticator.authorize(AUTH_PUBLIC.authSettings(), req))
-        .thenReturn(Optional.of(AuthResult.create(AuthLevel.NONE)));
+        .thenReturn(Optional.of(NOT_AUTHENTICATED));
 
     handler.handleRequest(req, rsp);
 
@@ -336,7 +337,7 @@ public final class RequestHandlerTest {
     when(req.getMethod()).thenReturn("POST");
     when(req.getRequestURI()).thenReturn("/fail");
     when(requestAuthenticator.authorize(AUTH_PUBLIC.authSettings(), req))
-        .thenReturn(Optional.of(AuthResult.create(AuthLevel.NONE)));
+        .thenReturn(Optional.of(NOT_AUTHENTICATED));
 
     handler.handleRequest(req, rsp);
 
@@ -348,7 +349,7 @@ public final class RequestHandlerTest {
     when(req.getMethod()).thenReturn("FIREAWAY");
     when(req.getRequestURI()).thenReturn("/fail");
     when(requestAuthenticator.authorize(AUTH_PUBLIC.authSettings(), req))
-        .thenReturn(Optional.of(AuthResult.create(AuthLevel.NONE)));
+        .thenReturn(Optional.of(NOT_AUTHENTICATED));
 
     handler.handleRequest(req, rsp);
 
@@ -364,7 +365,7 @@ public final class RequestHandlerTest {
     when(req.getMethod()).thenReturn("get");
     when(req.getRequestURI()).thenReturn("/bumblebee");
     when(requestAuthenticator.authorize(AUTH_PUBLIC.authSettings(), req))
-        .thenReturn(Optional.of(AuthResult.create(AuthLevel.NONE)));
+        .thenReturn(Optional.of(NOT_AUTHENTICATED));
 
     handler.handleRequest(req, rsp);
 
@@ -386,7 +387,7 @@ public final class RequestHandlerTest {
     when(req.getMethod()).thenReturn("POST");
     when(req.getRequestURI()).thenReturn("/safe-sloth");
     when(requestAuthenticator.authorize(AUTH_PUBLIC.authSettings(), req))
-        .thenReturn(Optional.of(AuthResult.create(AuthLevel.NONE)));
+        .thenReturn(Optional.of(NOT_AUTHENTICATED));
 
     handler.handleRequest(req, rsp);
 
@@ -399,7 +400,7 @@ public final class RequestHandlerTest {
     when(req.getMethod()).thenReturn("GET");
     when(req.getRequestURI()).thenReturn("/safe-sloth");
     when(requestAuthenticator.authorize(AUTH_PUBLIC.authSettings(), req))
-        .thenReturn(Optional.of(AuthResult.create(AuthLevel.NONE)));
+        .thenReturn(Optional.of(NOT_AUTHENTICATED));
 
     handler.handleRequest(req, rsp);
 
@@ -412,7 +413,7 @@ public final class RequestHandlerTest {
     when(req.getMethod()).thenReturn("GET");
     when(req.getRequestURI()).thenReturn("/auth/none");
     when(requestAuthenticator.authorize(AUTH_PUBLIC.authSettings(), req))
-        .thenReturn(Optional.of(AuthResult.create(AuthLevel.NONE)));
+        .thenReturn(Optional.of(NOT_AUTHENTICATED));
 
     handler.handleRequest(req, rsp);
 
@@ -440,8 +441,7 @@ public final class RequestHandlerTest {
     when(req.getMethod()).thenReturn("GET");
     when(req.getRequestURI()).thenReturn("/auth/adminUser");
     when(requestAuthenticator.authorize(AUTH_API_ADMIN.authSettings(), req))
-        .thenReturn(
-            Optional.of(AuthResult.create(AuthLevel.USER, UserAuthInfo.create(testUser, true))));
+        .thenReturn(Optional.of(AuthResult.createUser(UserAuthInfo.create(testUser, true))));
 
     handler.handleRequest(req, rsp);
 
@@ -449,7 +449,6 @@ public final class RequestHandlerTest {
     assertThat(providedAuthResult.authLevel()).isEqualTo(AuthLevel.USER);
     assertThat(providedAuthResult.userAuthInfo()).isPresent();
     assertThat(providedAuthResult.userAuthInfo().get().appEngineUser()).hasValue(testUser);
-    assertThat(providedAuthResult.userAuthInfo().get().oauthTokenInfo()).isEmpty();
     assertMetric("/auth/adminUser", GET, AuthLevel.USER, true);
   }
 }

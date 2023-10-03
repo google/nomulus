@@ -1,5 +1,5 @@
 PATH                               CLASS                         METHODS  OK AUTH_METHODS MIN  USER_POLICY
-/_dr/epp                           EppTlsAction                  POST     n  API          APP  PUBLIC
+/_dr/epp                           EppTlsAction                  POST     n  API          APP  ADMIN
 /console-api/domain                ConsoleDomainGetAction        GET      n  API,LEGACY   USER PUBLIC
 /console-api/registrars            RegistrarsAction              GET,POST n  API,LEGACY   USER PUBLIC
 /console-api/settings/contacts     ContactAction                 GET,POST n  API,LEGACY   USER PUBLIC
