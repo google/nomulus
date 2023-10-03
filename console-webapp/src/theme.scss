@@ -17,20 +17,9 @@ $theme-accent: mat.define-palette(mat.$pink-palette, A200, A100, A400);
 // The warn palette is optional (defaults to red).
 $theme-warn: mat.define-palette(mat.$red-palette);
 
-// Create the theme object. A theme consists of configurations for individual
-// theming systems such as "color" or "typography".
-$theme: mat.define-light-theme(
-  (
-    color: (
-      primary: $theme-primary,
-      accent: $theme-accent,
-      warn: $theme-warn,
-    ),
-    density: 0,
-  )
-);
-
-/** Application specific section **/
+/** 
+** Application specific section - Global styles and mixins
+**/
 
 @mixin form-field-density($density) {
   $field-typography: mat.define-typography-config(
@@ -46,19 +35,6 @@ $theme: mat.define-light-theme(
   @include form-field-density(-5);
 }
 
-$foreground: map.merge($theme, mat.$light-theme-foreground-palette);
-
-// Access and define a class with secondary color exposed
-.secondary-text {
-  color: map.get($foreground, "secondary-text");
-}
-
-:root {
-  --primary: #{mat.get-color-from-palette($theme-primary, 500)};
-  --secondary: #{map.get($foreground, "secondary-text")};
-}
-
-@include mat.all-component-themes($theme);
 @import "@angular/material/theming";
 
 // Define application specific typography settings, font-family, etc
@@ -67,3 +43,61 @@ $typography-configuration: mat-typography-config(
 );
 
 @include angular-material-typography($typography-configuration);
+
+/** 
+** Light theme
+**/
+$light-theme: mat.define-light-theme(
+  (
+    color: (
+      primary: $theme-primary,
+      accent: $theme-accent,
+      warn: $theme-warn,
+    ),
+    density: 0,
+  )
+);
+
+// Access and define a class with secondary color exposed
+.secondary-text {
+  color: map.get(mat.$light-theme-foreground-palette, "secondary-text");
+}
+
+:root {
+  --text: #{map.get(mat.$light-theme-foreground-palette, "base")};
+  --primary: #{mat.get-color-from-palette($theme-primary, 500)};
+  --secondary: #{map.get(mat.$light-theme-foreground-palette, "secondary-text")};
+}
+
+@include mat.all-component-themes($light-theme);
+
+/** 
+** Dark theme
+**/
+$dark-theme: mat.define-dark-theme(
+  (
+    color: (
+      primary: mat.define-palette(mat.$pink-palette),
+      accent: mat.define-palette(mat.$blue-grey-palette),
+    ),
+    density: 0,
+  )
+);
+
+@mixin _apply-dark-mode-colors() {
+  @include mat.all-component-colors($dark-theme);
+
+  .secondary-text {
+    color: map.get(mat.$dark-theme-foreground-palette, "secondary-text");
+  }
+
+  :root {
+    --text: #{map.get(mat.$dark-theme-foreground-palette, "base")};
+    --primary: #{mat.get-color-from-palette(mat.$pink-palette, 500)};
+    --secondary: #{map.get(mat.$dark-theme-background-palette, "secondary-text")};
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  @include _apply-dark-mode-colors();
+}
