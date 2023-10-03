@@ -15,14 +15,12 @@
 package google.registry.ui.server.console;
 
 import static com.google.common.truth.Truth.assertThat;
-import static org.mockito.Mockito.mock;
 
 import com.google.api.client.http.HttpStatusCodes;
 import com.google.gson.Gson;
 import google.registry.model.console.GlobalRole;
 import google.registry.model.console.User;
 import google.registry.model.console.UserRoles;
-import google.registry.model.registrar.RegistrarPoc;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.request.RequestModule;
 import google.registry.request.auth.AuthResult;
@@ -31,15 +29,12 @@ import google.registry.request.auth.UserAuthInfo;
 import google.registry.testing.FakeResponse;
 import java.io.IOException;
 import java.util.Map;
-import javax.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Tests for {@link google.registry.ui.server.console.ConsoleUserDataAction}. */
 class ConsoleUserDataActionTest {
 
-  private final HttpServletRequest request = mock(HttpServletRequest.class);
-  private RegistrarPoc testRegistrarPoc;
   private static final Gson GSON = RequestModule.provideGson();
   private FakeResponse response = new FakeResponse();
 
