@@ -51,13 +51,6 @@ final class RegistryCli implements CommandRunner {
   private RegistryToolEnvironment environment = RegistryToolEnvironment.PRODUCTION;
 
   @Parameter(
-      names = "--oauth",
-      description =
-          "Turn on OAuth-based authentication, the usage of which is to be deprecated. Use"
-              + " `create_user` to create an Admin user that allows for OIDC-based authentication.")
-  private boolean oAuth = false;
-
-  @Parameter(
       names = {"-c", "--commands"},
       description = "Returns all command names.")
   private boolean showAllCommands;
@@ -168,7 +161,6 @@ final class RegistryCli implements CommandRunner {
         DaggerRegistryToolComponent.builder()
             .credentialFilePath(credentialJson)
             .sqlAccessInfoFile(sqlAccessInfoFile)
-            .addOAuthHeader(oAuth)
             .build();
 
     // JCommander stores sub-commands as nested JCommander objects containing a list of user objects

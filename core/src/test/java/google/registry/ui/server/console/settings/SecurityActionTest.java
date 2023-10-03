@@ -35,7 +35,6 @@ import google.registry.model.registrar.Registrar;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.request.RequestModule;
 import google.registry.request.auth.AuthResult;
-import google.registry.request.auth.AuthSettings.AuthLevel;
 import google.registry.request.auth.AuthenticatedRegistrarAccessor;
 import google.registry.request.auth.UserAuthInfo;
 import google.registry.testing.FakeClock;
@@ -92,8 +91,7 @@ class SecurityActionTest {
     clock.setTo(DateTime.parse("2020-11-01T00:00:00Z"));
     SecurityAction action =
         createAction(
-            AuthResult.create(
-                AuthLevel.USER,
+            AuthResult.createUser(
                 UserAuthInfo.create(
                     createUser(new UserRoles.Builder().setGlobalRole(GlobalRole.FTE).build()))),
             testRegistrar.getRegistrarId());

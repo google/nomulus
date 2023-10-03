@@ -191,9 +191,6 @@ interface RegistryToolComponent {
     @BindsInstance
     Builder sqlAccessInfoFile(@Nullable @Config("sqlAccessInfoFile") String sqlAccessInfoFile);
 
-    @BindsInstance
-    Builder addOAuthHeader(@Config("addOauthHeader") boolean addOauthHeader);
-
     RegistryToolComponent build();
   }
 }

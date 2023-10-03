@@ -44,7 +44,6 @@ import google.registry.request.JsonActionRunner;
 import google.registry.request.JsonResponse;
 import google.registry.request.ResponseImpl;
 import google.registry.request.auth.AuthResult;
-import google.registry.request.auth.AuthSettings.AuthLevel;
 import google.registry.request.auth.AuthenticatedRegistrarAccessor;
 import google.registry.request.auth.UserAuthInfo;
 import google.registry.testing.CloudTasksHelper;
@@ -113,8 +112,7 @@ public abstract class RegistrarSettingsActionTestCase {
             gmailClient);
     action.registrarConsoleMetrics = new RegistrarConsoleMetrics();
     action.authResult =
-        AuthResult.create(
-            AuthLevel.USER,
+        AuthResult.createUser(
             UserAuthInfo.create(new User("user@email.com", "email.com", "12345"), false));
     action.certificateChecker =
         new CertificateChecker(

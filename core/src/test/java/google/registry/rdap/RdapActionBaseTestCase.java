@@ -28,7 +28,6 @@ import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.request.Actions;
 import google.registry.request.auth.AuthResult;
-import google.registry.request.auth.AuthSettings.AuthLevel;
 import google.registry.request.auth.UserAuthInfo;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeResponse;
@@ -48,13 +47,11 @@ abstract class RdapActionBaseTestCase<A extends RdapActionBase> {
       new JpaTestExtensions.Builder().buildIntegrationTestExtension();
 
   protected static final AuthResult AUTH_RESULT =
-      AuthResult.create(
-          AuthLevel.USER,
+      AuthResult.createUser(
           UserAuthInfo.create(new User("rdap.user@user.com", "gmail.com", "12345"), false));
 
   protected static final AuthResult AUTH_RESULT_ADMIN =
-      AuthResult.create(
-          AuthLevel.USER,
+      AuthResult.createUser(
           UserAuthInfo.create(new User("rdap.admin@google.com", "gmail.com", "12345"), true));
 
   protected FakeResponse response = new FakeResponse();

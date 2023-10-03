@@ -16,13 +16,15 @@ package google.registry.security;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import com.google.appengine.api.users.User;
+import com.google.appengine.api.users.UserService;
 import com.google.common.base.Splitter;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.testing.FakeClock;
-import google.registry.testing.FakeUserService;
 import org.joda.time.Duration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -37,14 +39,16 @@ class XsrfTokenManagerTest {
 
   private final User testUser = new User("test@example.com", "test@example.com");
   private final FakeClock clock = new FakeClock(START_OF_TIME);
-  private final FakeUserService userService = new FakeUserService();
+  private final UserService userService = mock(UserService.class);
   private final XsrfTokenManager xsrfTokenManager = new XsrfTokenManager(clock, userService);
 
   private String token;
 
   @BeforeEach
   void beforeEach() {
-    userService.setUser(testUser, false);
+    when(userService.isUserLoggedIn()).thenReturn(true);
+    when(userService.getCurrentUser()).thenReturn(testUser);
+    when(userService.isUserAdmin()).thenReturn(false);
     token = xsrfTokenManager.generateToken(testUser.getEmail());
   }
 

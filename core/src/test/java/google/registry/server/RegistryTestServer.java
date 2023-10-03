@@ -84,7 +84,7 @@ public final class RegistryTestServer {
 
   private final TestServer server;
 
-  /** @see TestServer#TestServer(HostAndPort, ImmutableMap, ImmutableList, ImmutableList) */
+  /** @see TestServer#TestServer(HostAndPort, ImmutableMap, ImmutableList) */
   public RegistryTestServer(HostAndPort address) {
     server = new TestServer(address, RUNFILES, ROUTES);
   }
@@ -104,7 +104,7 @@ public final class RegistryTestServer {
     server.stop();
   }
 
-  /** @see TestServer#getUrl(java.lang.String) */
+  /** @see TestServer#getUrl(String) */
   public URL getUrl(String path) {
     return server.getUrl(path);
   }
