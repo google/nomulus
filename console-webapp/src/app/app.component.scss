@@ -37,7 +37,7 @@
       background-color: transparent;
     }
     .active {
-      background: #eae1e1;
+      background-color: var(--secondary);
     }
   }
   &__content-wrapper {
