@@ -14,22 +14,23 @@
 
 package google.registry.rdap;
 
+import static com.google.api.client.http.HttpStatusCodes.STATUS_CODE_OK;
+import static com.google.common.net.HttpHeaders.ACCEPT_ENCODING;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
-import com.google.api.client.http.GenericUrl;
-import com.google.api.client.http.HttpRequest;
-import com.google.api.client.http.HttpResponse;
-import com.google.api.client.http.HttpTransport;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.flogger.FluentLogger;
-import com.google.common.io.ByteStreams;
 import google.registry.model.registrar.Registrar;
 import google.registry.request.Action;
+import google.registry.request.UrlConnectionService;
+import google.registry.request.UrlConnectionUtils;
 import google.registry.request.auth.Auth;
-import java.io.IOException;
+import google.registry.util.UrlConnectionException;
 import java.io.StringReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import javax.inject.Inject;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
@@ -41,9 +42,9 @@ import org.apache.commons.csv.CSVRecord;
  * <p>This will update ALL the REAL registrars. If a REAL registrar doesn't have an RDAP entry in
  * MoSAPI, we'll delete any BaseUrls it has.
  *
- * <p>The ICANN base website that provides this information can be found at
- * https://www.iana.org/assignments/registrar-ids/registrar-ids.xhtml. The provided CSV endpoint
- * requires no authentication.
+ * <p>The ICANN base website that provides this information can be found at <a
+ * href=https://www.iana.org/assignments/registrar-ids/registrar-ids.xhtml>here</a>. The provided
+ * CSV endpoint requires no authentication.
  */
 @Action(
     service = Action.Service.BACKEND,
@@ -52,11 +53,11 @@ import org.apache.commons.csv.CSVRecord;
     auth = Auth.AUTH_API_ADMIN)
 public final class UpdateRegistrarRdapBaseUrlsAction implements Runnable {
 
-  private static final GenericUrl RDAP_IDS_URL =
-      new GenericUrl("https://www.iana.org/assignments/registrar-ids/registrar-ids-1.csv");
+  private static final String RDAP_IDS_URL =
+      "https://www.iana.org/assignments/registrar-ids/registrar-ids-1.csv";
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
-  @Inject HttpTransport httpTransport;
+  @Inject UrlConnectionService urlConnectionService;
 
   @Inject
   UpdateRegistrarRdapBaseUrlsAction() {}
@@ -67,7 +68,7 @@ public final class UpdateRegistrarRdapBaseUrlsAction implements Runnable {
     tm().transact(() -> processAllRegistrars(ianaIdsToUrls));
   }
 
-  private void processAllRegistrars(ImmutableMap<String, String> ianaIdsToUrls) {
+  private static void processAllRegistrars(ImmutableMap<String, String> ianaIdsToUrls) {
     int nonUpdatedRegistrars = 0;
     for (Registrar registrar : Registrar.loadAll()) {
       // Only update REAL registrars
@@ -98,18 +99,21 @@ public final class UpdateRegistrarRdapBaseUrlsAction implements Runnable {
   private ImmutableMap<String, String> getIanaIdsToUrls() {
     CSVParser csv;
     try {
-      HttpRequest request = httpTransport.createRequestFactory().buildGetRequest(RDAP_IDS_URL);
-      // AppEngine might insert accept-encodings for us if we use the default gzip, so remove it
-      request.getHeaders().setAcceptEncoding(null);
-      HttpResponse response = request.execute();
-      String csvString = new String(ByteStreams.toByteArray(response.getContent()), UTF_8);
+      HttpURLConnection connection = urlConnectionService.createConnection(new URL(RDAP_IDS_URL));
+      // Explictly set the accepted encoding, as we know Brotli causes us problems when talking to
+      // ICANN.
+      connection.setRequestProperty(ACCEPT_ENCODING, "gzip");
+      if (connection.getResponseCode() != STATUS_CODE_OK) {
+        throw new UrlConnectionException("Failed to load RDAP base URLs from ICANN", connection);
+      }
+      String csvString = new String(UrlConnectionUtils.getResponseBytes(connection), UTF_8);
       csv =
           CSVFormat.Builder.create(CSVFormat.DEFAULT)
               .setHeader()
               .setSkipHeaderRecord(true)
               .build()
               .parse(new StringReader(csvString));
-    } catch (IOException e) {
+    } catch (Exception e) {
       throw new RuntimeException("Error when retrieving RDAP base URL CSV file", e);
     }
     ImmutableMap.Builder<String, String> result = new ImmutableMap.Builder<>();

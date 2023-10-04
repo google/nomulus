@@ -14,20 +14,18 @@
 
 package google.registry.request;
 
-import com.google.api.client.extensions.appengine.http.UrlFetchTransport;
 import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport;
-import com.google.api.client.http.HttpTransport;
 import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.JsonFactory;
 import com.google.api.client.json.gson.GsonFactory;
-import com.google.appengine.api.urlfetch.URLFetchService;
-import com.google.appengine.api.urlfetch.URLFetchServiceFactory;
 import com.google.appengine.api.users.UserService;
 import com.google.appengine.api.users.UserServiceFactory;
 import dagger.Module;
 import dagger.Provides;
 import java.net.HttpURLConnection;
 import javax.inject.Singleton;
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLContext;
 
 /** Dagger modules for App Engine services and other vendor classes. */
 public final class Modules {
@@ -37,18 +35,16 @@ public final class Modules {
   public static final class UrlConnectionServiceModule {
     @Provides
     static UrlConnectionService provideUrlConnectionService() {
-      return url -> (HttpURLConnection) url.openConnection();
-    }
-  }
-
-  /** Dagger module for {@link URLFetchService}. */
-  @Module
-  public static final class UrlFetchServiceModule {
-    private static final URLFetchService fetchService = URLFetchServiceFactory.getURLFetchService();
-
-    @Provides
-    static URLFetchService provideUrlFetchService() {
-      return fetchService;
+      return url -> {
+        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+        if (connection instanceof HttpsURLConnection) {
+          HttpsURLConnection httpsConnection = (HttpsURLConnection) connection;
+          SSLContext tls13Context = SSLContext.getInstance("TLSv1.3");
+          tls13Context.init(null, null, null);
+          httpsConnection.setSSLSocketFactory(tls13Context.getSocketFactory());
+        }
+        return connection;
+      };
     }
   }
 
@@ -69,17 +65,6 @@ public final class Modules {
     @Provides
     static JsonFactory provideJsonFactory() {
       return GsonFactory.getDefaultInstance();
-    }
-  }
-
-  /** Dagger module that causes the App Engine's URL fetcher to be used for Google APIs requests. */
-  @Module
-  public static final class UrlFetchTransportModule {
-    private static final UrlFetchTransport HTTP_TRANSPORT = new UrlFetchTransport();
-
-    @Provides
-    static HttpTransport provideHttpTransport() {
-      return HTTP_TRANSPORT;
     }
   }
 

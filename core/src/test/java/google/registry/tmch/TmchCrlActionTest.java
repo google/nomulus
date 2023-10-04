@@ -56,7 +56,8 @@ class TmchCrlActionTest extends TmchActionTestCase {
                 readResourceBytes(TmchCertificateAuthority.class, "icann-tmch-pilot.crl").read()));
     newTmchCrlAction(TmchCaMode.PILOT).run();
     verify(httpUrlConnection).getInputStream();
-    assertThat(connectedUrls).containsExactly(new URL("https://sloth.lol/tmch.crl"));
+    assertThat(urlConnectionService.getConnectedUrls())
+        .containsExactly(new URL("https://sloth.lol/tmch.crl"));
   }
 
   @Test

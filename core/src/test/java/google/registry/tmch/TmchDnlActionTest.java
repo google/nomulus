@@ -49,7 +49,10 @@ class TmchDnlActionTest extends TmchActionTestCase {
         .thenReturn(new ByteArrayInputStream(TmchTestData.loadBytes("dnl/dnl-latest.sig").read()));
     newTmchDnlAction().run();
     verify(httpUrlConnection, times(2)).getInputStream();
-    assertThat(connectedUrls.stream().map(URL::toString).collect(toImmutableList()))
+    assertThat(
+            urlConnectionService.getConnectedUrls().stream()
+                .map(URL::toString)
+                .collect(toImmutableList()))
         .containsExactly(MARKSDB_URL + "/dnl/dnl-latest.csv", MARKSDB_URL + "/dnl/dnl-latest.sig");
 
     // Make sure the contents of testdata/dnl-latest.csv got inserted into the database.
