@@ -50,7 +50,10 @@ class TmchSmdrlActionTest extends TmchActionTestCase {
         .thenReturn(new ByteArrayInputStream(loadBytes("smdrl/smdrl-latest.sig").read()));
     newTmchSmdrlAction().run();
     verify(httpUrlConnection, times(2)).getInputStream();
-    assertThat(connectedUrls.stream().map(URL::toString).collect(toImmutableList()))
+    assertThat(
+            urlConnectionService.getConnectedUrls().stream()
+                .map(URL::toString)
+                .collect(toImmutableList()))
         .containsExactly(
             MARKSDB_URL + "/smdrl/smdrl-latest.csv", MARKSDB_URL + "/smdrl/smdrl-latest.sig");
     smdrl = SignedMarkRevocationList.get();

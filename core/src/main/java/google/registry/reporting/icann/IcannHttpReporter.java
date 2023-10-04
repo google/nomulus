@@ -14,33 +14,31 @@
 
 package google.registry.reporting.icann;
 
+import static com.google.api.client.http.HttpStatusCodes.STATUS_CODE_BAD_REQUEST;
+import static com.google.api.client.http.HttpStatusCodes.STATUS_CODE_OK;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.net.MediaType.CSV_UTF_8;
 import static google.registry.model.tld.Tlds.assertTldExists;
-import static java.nio.charset.StandardCharsets.UTF_8;
 
-import com.google.api.client.http.ByteArrayContent;
-import com.google.api.client.http.GenericUrl;
-import com.google.api.client.http.HttpHeaders;
-import com.google.api.client.http.HttpRequest;
-import com.google.api.client.http.HttpResponse;
-import com.google.api.client.http.HttpResponseException;
-import com.google.api.client.http.HttpStatusCodes;
-import com.google.api.client.http.HttpTransport;
+import com.google.api.client.http.HttpMethods;
 import com.google.common.base.Ascii;
 import com.google.common.base.Splitter;
 import com.google.common.flogger.FluentLogger;
-import com.google.common.io.BaseEncoding;
-import com.google.common.io.ByteStreams;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.keyring.api.KeyModule.Key;
 import google.registry.reporting.icann.IcannReportingModule.ReportType;
+import google.registry.request.UrlConnectionService;
+import google.registry.request.UrlConnectionUtils;
 import google.registry.xjc.XjcXmlTransformer;
 import google.registry.xjc.iirdea.XjcIirdeaResponseElement;
 import google.registry.xjc.iirdea.XjcIirdeaResult;
 import google.registry.xml.XmlException;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.security.GeneralSecurityException;
 import java.util.List;
 import javax.inject.Inject;
 import org.joda.time.YearMonth;
@@ -62,78 +60,64 @@ public class IcannHttpReporter {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
-  @Inject HttpTransport httpTransport;
-  @Inject @Key("icannReportingPassword") String password;
-  @Inject @Config("icannTransactionsReportingUploadUrl") String icannTransactionsUrl;
-  @Inject @Config("icannActivityReportingUploadUrl") String icannActivityUrl;
-  @Inject IcannHttpReporter() {}
+  @Inject UrlConnectionService urlConnectionService;
+
+  @Inject
+  @Key("icannReportingPassword")
+  String password;
+
+  @Inject
+  @Config("icannTransactionsReportingUploadUrl")
+  String icannTransactionsUrl;
+
+  @Inject
+  @Config("icannActivityReportingUploadUrl")
+  String icannActivityUrl;
+
+  @Inject
+  IcannHttpReporter() {}
 
   /** Uploads {@code reportBytes} to ICANN, returning whether or not it succeeded. */
-  public boolean send(byte[] reportBytes, String reportFilename) throws XmlException, IOException {
+  public boolean send(byte[] reportBytes, String reportFilename)
+      throws GeneralSecurityException, XmlException, IOException {
     validateReportFilename(reportFilename);
-    GenericUrl uploadUrl = new GenericUrl(makeUrl(reportFilename));
-    HttpRequest request =
-        httpTransport
-            .createRequestFactory()
-            .buildPutRequest(uploadUrl, new ByteArrayContent(CSV_UTF_8.toString(), reportBytes));
-
-    HttpHeaders headers = request.getHeaders();
-    headers.setBasicAuthentication(getTld(reportFilename) + "_ry", password);
-    headers.setContentType(CSV_UTF_8.toString());
-    request.setHeaders(headers);
-    request.setFollowRedirects(false);
-    request.setThrowExceptionOnExecuteError(false);
-
-    HttpResponse response = null;
+    URL uploadUrl = makeUrl(reportFilename);
     logger.atInfo().log(
-        "Sending report to %s with content length %d.",
-        uploadUrl, request.getContent().getLength());
-    boolean success = true;
+        "Sending report to %s with content length %d.", uploadUrl, reportBytes.length);
+    HttpURLConnection connection = urlConnectionService.createConnection(uploadUrl);
+    connection.setRequestMethod(HttpMethods.PUT);
+    UrlConnectionUtils.setBasicAuth(connection, getTld(reportFilename) + "_ry", password);
+    UrlConnectionUtils.setPayload(connection, reportBytes, CSV_UTF_8.toString());
+    connection.setInstanceFollowRedirects(false);
+
+    int responseCode;
+    byte[] content;
     try {
-      response = request.execute();
-      // Only responses with a 200 or 400 status have a body. For everything else, throw so that
-      // the caller catches it and prints the stack trace.
-      if (response.getStatusCode() != HttpStatusCodes.STATUS_CODE_OK
-          && response.getStatusCode() != HttpStatusCodes.STATUS_CODE_BAD_REQUEST) {
-        throw new HttpResponseException(response);
+      responseCode = connection.getResponseCode();
+      // Only responses with a 200 or 400 status have a body. For everything else, we can return
+      // false early.
+      if (responseCode != STATUS_CODE_OK && responseCode != STATUS_CODE_BAD_REQUEST) {
+        logger.atWarning().log("Connection to ICANN server failed", connection);
+        return false;
       }
-      byte[] content;
-      try {
-        content = ByteStreams.toByteArray(response.getContent());
-      } finally {
-        response.getContent().close();
-      }
-      logger.atInfo().log(
-          "Received response code %d\n\n"
-              + "Response headers: %s\n\n"
-              + "Response content in UTF-8: %s\n\n"
-              + "Response content in HEX: %s",
-          response.getStatusCode(),
-          response.getHeaders(),
-          new String(content, UTF_8),
-          BaseEncoding.base16().encode(content));
-      // For reasons unclear at the moment, when we parse the response content using UTF-8 we get
-      // garbled texts. Since we know that an HTTP 200 response can only contain a result code of
-      // 1000 (i. e. success), there is no need to parse it.
-      if (response.getStatusCode() == HttpStatusCodes.STATUS_CODE_BAD_REQUEST) {
-        success = false;
-        XjcIirdeaResult result = parseResult(content);
-        logger.atWarning().log(
-            "PUT rejected, status code %s:\n%s\n%s",
-            result.getCode().getValue(), result.getMsg(), result.getDescription());
-      }
+      content = UrlConnectionUtils.getResponseBytes(connection);
     } finally {
-      if (response != null) {
-        response.disconnect();
-      } else {
-        success = false;
-        logger.atWarning().log("Received null response from ICANN server at %s", uploadUrl);
-      }
+      connection.disconnect();
     }
-    return success;
+    // We know that an HTTP 200 response can only contain a result code of
+    // 1000 (i. e. success), there is no need to parse it.
+    // See: https://tools.ietf.org/html/draft-lozano-icann-registry-interfaces-13#page-16
+    if (responseCode != STATUS_CODE_OK) {
+      XjcIirdeaResult result = parseResult(content);
+      logger.atWarning().log(
+          "PUT rejected, status code %s:\n%s\n%s",
+          result.getCode().getValue(), result.getMsg(), result.getDescription());
+      return false;
+    }
+    return true;
   }
 
-  private XjcIirdeaResult parseResult(byte[] content) throws XmlException {
+  private static XjcIirdeaResult parseResult(byte[] content) throws XmlException {
     XjcIirdeaResponseElement response =
         XjcXmlTransformer.unmarshal(
             XjcIirdeaResponseElement.class, new ByteArrayInputStream(content));
@@ -141,7 +125,7 @@ public class IcannHttpReporter {
   }
 
   /** Verifies a given report filename matches the pattern tld-reportType-yyyyMM.csv. */
-  private void validateReportFilename(String filename) {
+  private static void validateReportFilename(String filename) {
     checkArgument(
         filename.matches("[a-z0-9.\\-]+-((activity)|(transactions))-[0-9]{6}\\.csv"),
         "Expected file format: tld-reportType-yyyyMM.csv, got %s instead",
@@ -149,12 +133,12 @@ public class IcannHttpReporter {
     assertTldExists(getTld(filename));
   }
 
-  private String getTld(String filename) {
+  private static String getTld(String filename) {
     // Extract the TLD, up to second-to-last hyphen in the filename (works with international TLDs)
     return filename.substring(0, filename.lastIndexOf('-', filename.lastIndexOf('-') - 1));
   }
 
-  private String makeUrl(String filename) {
+  private URL makeUrl(String filename) throws MalformedURLException {
     // Filename is in the format tld-reportType-yearMonth.csv
     String tld = getTld(filename);
     // Remove the tld- prefix and csv suffix
@@ -164,7 +148,7 @@ public class IcannHttpReporter {
     // Re-add hyphen between year and month, because ICANN is inconsistent between filename and URL
     String yearMonth =
         YearMonth.parse(elements.get(1), DateTimeFormat.forPattern("yyyyMM")).toString("yyyy-MM");
-    return String.format("%s/%s/%s", getUrlPrefix(reportType), tld, yearMonth);
+    return new URL(String.format("%s/%s/%s", getUrlPrefix(reportType), tld, yearMonth));
   }
 
   private String getUrlPrefix(ReportType reportType) {
