@@ -231,7 +231,6 @@ final class RegistryLockPostActionTest {
     google.registry.model.console.User consoleUser =
         new google.registry.model.console.User.Builder()
             .setEmailAddress("johndoe@theregistrar.com")
-            .setGaiaId("gaiaId")
             .setUserRoles(
                 new UserRoles.Builder()
                     .setRegistrarRoles(
@@ -252,7 +251,6 @@ final class RegistryLockPostActionTest {
     google.registry.model.console.User consoleUser =
         new google.registry.model.console.User.Builder()
             .setEmailAddress("johndoe@theregistrar.com")
-            .setGaiaId("gaiaId")
             .setUserRoles(new UserRoles.Builder().setIsAdmin(true).build())
             .build();
     AuthResult consoleAuthResult =
@@ -447,7 +445,6 @@ final class RegistryLockPostActionTest {
     google.registry.model.console.User consoleUser =
         new google.registry.model.console.User.Builder()
             .setEmailAddress("johndoe@theregistrar.com")
-            .setGaiaId("gaiaId")
             .setUserRoles(
                 new UserRoles.Builder()
                     .setRegistrarRoles(

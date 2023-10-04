@@ -109,7 +109,6 @@ class SecurityActionTest {
   private User createUser(UserRoles userRoles) {
     return new User.Builder()
         .setEmailAddress("email@email.com")
-        .setGaiaId("TestUserId")
         .setUserRoles(userRoles)
         .build();
   }

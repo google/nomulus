@@ -61,7 +61,6 @@ public class OidcTokenAuthenticationMechanismTest {
   private final User user =
       new User.Builder()
           .setEmailAddress(email)
-          .setGaiaId(gaiaId)
           .setUserRoles(
               new UserRoles.Builder().setIsAdmin(true).setGlobalRole(GlobalRole.FTE).build())
           .build();
@@ -141,7 +140,6 @@ public class OidcTokenAuthenticationMechanismTest {
     User serviceUser =
         new User.Builder()
             .setEmailAddress("service@email.test")
-            .setGaiaId("service-gaia-id")
             .setUserRoles(
                 new UserRoles.Builder().setIsAdmin(true).setGlobalRole(GlobalRole.FTE).build())
             .build();
