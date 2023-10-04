@@ -756,7 +756,6 @@
        id  bigserial not null,
         update_timestamp timestamptz,
         email_address text not null,
-        gaia_id text,
         registry_lock_password_hash text,
         registry_lock_password_salt text,
         global_role text not null,
@@ -852,7 +851,6 @@ create index reservedlist_name_idx on "ReservedList" (name);
 create index spec11threatmatch_registrar_id_idx on "Spec11ThreatMatch" (registrar_id);
 create index spec11threatmatch_tld_idx on "Spec11ThreatMatch" (tld);
 create index spec11threatmatch_check_date_idx on "Spec11ThreatMatch" (check_date);
-create index user_gaia_id_idx on "User" (gaia_id);
 create index user_email_address_idx on "User" (email_address);
 
     alter table if exists "DelegationSignerData" 

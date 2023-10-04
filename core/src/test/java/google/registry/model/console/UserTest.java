@@ -30,10 +30,9 @@ public class UserTest extends EntityTestCase {
   }
 
   @Test
-  void testPersistence_lookupByGaiaId() {
+  void testPersistence_lookupByEmail() {
     User user =
         new User.Builder()
-            .setGaiaId("gaiaId")
             .setEmailAddress("email@email.com")
             .setUserRoles(
                 new UserRoles.Builder().setGlobalRole(GlobalRole.FTE).setIsAdmin(true).build())
@@ -43,10 +42,11 @@ public class UserTest extends EntityTestCase {
             () -> {
               assertAboutImmutableObjects()
                   .that(
-                      tm().query("FROM User WHERE gaiaId = 'gaiaId'", User.class).getSingleResult())
+                      tm().query("FROM User WHERE emailAddress = 'email@email.com'", User.class)
+                          .getSingleResult())
                   .isEqualExceptFields(user, "id", "updateTimestamp");
               assertThat(
-                      tm().query("FROM User WHERE gaiaId = 'badGaiaId'", User.class)
+                      tm().query("FROM User WHERE emailAddress = 'nobody@email.com'", User.class)
                           .getResultList())
                   .isEmpty();
             });
@@ -55,9 +55,6 @@ public class UserTest extends EntityTestCase {
   @Test
   void testFailure_badInputs() {
     User.Builder builder = new User.Builder();
-    assertThat(assertThrows(IllegalArgumentException.class, () -> builder.setGaiaId(null)))
-        .hasMessageThat()
-        .isEqualTo("Gaia ID cannot be null or empty");
     assertThat(assertThrows(IllegalArgumentException.class, () -> builder.setEmailAddress("")))
         .hasMessageThat()
         .isEqualTo("Provided email  is not a valid email address");
@@ -72,7 +69,7 @@ public class UserTest extends EntityTestCase {
     assertThat(assertThrows(IllegalArgumentException.class, () -> builder.setUserRoles(null)))
         .hasMessageThat()
         .isEqualTo("User roles cannot be null");
-    
+
     assertThat(assertThrows(IllegalArgumentException.class, builder::build))
         .hasMessageThat()
         .isEqualTo("Email address cannot be null");
@@ -99,7 +96,6 @@ public class UserTest extends EntityTestCase {
 
     User user =
         new User.Builder()
-            .setGaiaId("gaiaId")
             .setEmailAddress("email@email.com")
             .setUserRoles(new UserRoles.Builder().setGlobalRole(GlobalRole.FTE).build())
             .build();

@@ -61,7 +61,7 @@ import org.junit.runner.RunWith;
  * and have at least one test method that persists a JPA entity declared in persistence.xml.
  *
  * <p>Note that with {@link JpaIntegrationWithCoverageExtension}, each method starts with an empty
- * database. Therefore this is not the right place for verifying backwards data compatibility in
+ * database. Therefore, this is not the right place for verifying backwards data compatibility in
  * end-to-end functional tests.
  *
  * <p>As of April 2020, none of the before/after annotations ({@code BeforeClass} and {@code
@@ -107,7 +107,9 @@ import org.junit.runner.RunWith;
   // AfterSuiteTest must be the last entry. See class javadoc for details.
   AfterSuiteTest.class
 })
-public class SqlIntegrationTestSuite {
+public final class SqlIntegrationTestSuite {
+
+  private SqlIntegrationTestSuite() {}
 
   @BeforeAll // Not yet supported in JUnit 5. Called through BeforeSuiteTest.
   public static void initJpaEntityCoverage() {

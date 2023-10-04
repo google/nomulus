@@ -226,7 +226,6 @@ class ContactActionTest {
   private User createUser(UserRoles userRoles) {
     return new User.Builder()
         .setEmailAddress("email@email.com")
-        .setGaiaId("gaiaId")
         .setUserRoles(userRoles)
         .build();
   }

@@ -30,13 +30,11 @@ public class UserDaoTest extends EntityTestCase {
     User user1 =
         new User.Builder()
             .setEmailAddress("email@email.com")
-            .setGaiaId("gaiaId")
             .setUserRoles(new UserRoles.Builder().setGlobalRole(GlobalRole.SUPPORT_AGENT).build())
             .build();
     User user2 =
         new User.Builder()
             .setEmailAddress("foo@bar.com")
-            .setGaiaId("otherId")
             .setUserRoles(new UserRoles.Builder().setGlobalRole(GlobalRole.SUPPORT_AGENT).build())
             .build();
     UserDao.saveUser(user1);
@@ -54,7 +52,6 @@ public class UserDaoTest extends EntityTestCase {
     User user =
         new User.Builder()
             .setEmailAddress("email@email.com")
-            .setGaiaId("gaiaId")
             .setUserRoles(new UserRoles.Builder().setGlobalRole(GlobalRole.SUPPORT_AGENT).build())
             .build();
     UserDao.saveUser(user);
@@ -71,13 +68,11 @@ public class UserDaoTest extends EntityTestCase {
     User user1 =
         new User.Builder()
             .setEmailAddress("email@email.com")
-            .setGaiaId("gaiaId")
             .setUserRoles(new UserRoles.Builder().setGlobalRole(GlobalRole.SUPPORT_AGENT).build())
             .build();
     User user2 =
         new User.Builder()
             .setEmailAddress("email@email.com")
-            .setGaiaId("otherId")
             .setUserRoles(new UserRoles.Builder().setGlobalRole(GlobalRole.SUPPORT_AGENT).build())
             .build();
     UserDao.saveUser(user1);

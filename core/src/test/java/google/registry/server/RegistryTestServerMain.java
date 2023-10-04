@@ -144,7 +144,6 @@ public final class RegistryTestServerMain {
     User user =
         new User.Builder()
             .setEmailAddress(loginEmail)
-            .setGaiaId("123457890")
             .setUserRoles(userRoles)
             .setRegistryLockPassword("registryLockPassword")
             .build();
