@@ -26,7 +26,7 @@ import com.google.api.client.googleapis.auth.oauth2.GoogleClientSecrets;
 import com.google.api.client.http.GenericUrl;
 import com.google.api.client.http.HttpRequest;
 import com.google.api.client.http.javanet.NetHttpTransport;
-import com.google.api.client.json.jackson2.JacksonFactory;
+import com.google.api.client.json.gson.GsonFactory;
 import com.google.api.client.util.store.AbstractDataStoreFactory;
 import com.google.api.client.util.store.DataStore;
 import com.google.common.collect.ImmutableList;
@@ -74,7 +74,7 @@ class AuthModuleTest {
           // We need to set the following fields because they are checked when
           // Credential#setRefreshToken is called. However they are not actually persisted in the
           // DataStore and not actually used in tests.
-          .setJsonFactory(new JacksonFactory())
+          .setJsonFactory(new GsonFactory())
           .setTransport(new NetHttpTransport())
           .setTokenServerUrl(new GenericUrl("https://accounts.google.com/o/oauth2/token"))
           .setClientAuthentication(new ClientParametersAuthentication(CLIENT_ID, CLIENT_SECRET))
@@ -146,7 +146,7 @@ class AuthModuleTest {
   private Credential getCredential() {
     // Reconstruct the entire dependency graph, injecting FakeDataStoreFactory and credential
     // parameters.
-    JacksonFactory jsonFactory = new JacksonFactory();
+    GsonFactory jsonFactory = new GsonFactory();
     GoogleClientSecrets clientSecrets = getSecrets();
     ImmutableList<String> scopes = ImmutableList.of("scope1");
     return AuthModule.provideCredential(

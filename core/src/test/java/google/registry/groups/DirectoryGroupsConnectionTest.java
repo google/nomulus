@@ -34,7 +34,7 @@ import com.google.api.client.http.HttpTransport;
 import com.google.api.client.http.LowLevelHttpRequest;
 import com.google.api.client.http.LowLevelHttpResponse;
 import com.google.api.client.json.Json;
-import com.google.api.client.json.jackson2.JacksonFactory;
+import com.google.api.client.json.gson.GsonFactory;
 import com.google.api.client.testing.http.HttpTesting;
 import com.google.api.client.testing.http.MockHttpTransport;
 import com.google.api.client.testing.http.MockLowLevelHttpRequest;
@@ -300,6 +300,6 @@ class DirectoryGroupsConnectionTest {
     HttpRequest request = transport.createRequestFactory()
         .buildGetRequest(HttpTesting.SIMPLE_GENERIC_URL)
         .setThrowExceptionOnExecuteError(false);
-    return GoogleJsonResponseException.from(new JacksonFactory(), request.execute());
+    return GoogleJsonResponseException.from(new GsonFactory(), request.execute());
   }
 }
