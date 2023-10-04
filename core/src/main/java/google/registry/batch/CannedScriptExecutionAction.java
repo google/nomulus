@@ -14,26 +14,20 @@
 
 package google.registry.batch;
 
-import static com.google.common.collect.ImmutableList.toImmutableList;
+import static google.registry.request.Action.Method.GET;
 import static google.registry.request.Action.Method.POST;
-import static google.registry.util.RegistrarUtils.normalizeRegistrarId;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Streams;
 import com.google.common.flogger.FluentLogger;
-import google.registry.config.RegistryConfig.Config;
-import google.registry.groups.GmailClient;
-import google.registry.groups.GroupsConnection;
-import google.registry.model.registrar.Registrar;
-import google.registry.model.registrar.RegistrarPoc;
 import google.registry.request.Action;
+import google.registry.request.Parameter;
+import google.registry.request.Response;
+import google.registry.request.UrlConnectionService;
+import google.registry.request.UrlConnectionUtils;
 import google.registry.request.auth.Auth;
-import google.registry.util.EmailMessage;
-import java.io.IOException;
-import java.util.Set;
+import java.net.URL;
 import javax.inject.Inject;
-import javax.mail.internet.AddressException;
-import javax.mail.internet.InternetAddress;
+import javax.net.ssl.HttpsURLConnection;
 
 /**
  * Action that executes a canned script specified by the caller.
@@ -50,88 +44,45 @@ import javax.mail.internet.InternetAddress;
 @Action(
     service = Action.Service.BACKEND,
     path = "/_dr/task/executeCannedScript",
-    method = POST,
+    method = {POST, GET},
     automaticallyPrintOk = true,
     auth = Auth.AUTH_API_ADMIN)
 public class CannedScriptExecutionAction implements Runnable {
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
-  private final GroupsConnection groupsConnection;
-  private final GmailClient gmailClient;
-
-  private final InternetAddress senderAddress;
-
-  private final InternetAddress recipientAddress;
-
-  private final String gSuiteDomainName;
+  @Inject UrlConnectionService urlConnectionService;
+  @Inject Response response;
 
   @Inject
-  CannedScriptExecutionAction(
-      GroupsConnection groupsConnection,
-      GmailClient gmailClient,
-      @Config("projectId") String projectId,
-      @Config("gSuiteDomainName") String gSuiteDomainName,
-      @Config("newAlertRecipientEmailAddress") InternetAddress recipientAddress) {
-    this.groupsConnection = groupsConnection;
-    this.gmailClient = gmailClient;
-    this.gSuiteDomainName = gSuiteDomainName;
-    try {
-      this.senderAddress = new InternetAddress(String.format("%s@%s", projectId, gSuiteDomainName));
-    } catch (AddressException e) {
-      throw new RuntimeException(e);
-    }
-    this.recipientAddress = recipientAddress;
-    logger.atInfo().log("Sender:%s; Recipient: %s.", this.senderAddress, this.recipientAddress);
-  }
+  @Parameter("url")
+  String url;
+
+  @Inject
+  CannedScriptExecutionAction() {}
 
   @Override
   public void run() {
+    Integer responseCode = null;
+    String responseContent = null;
     try {
-      // Invoke canned scripts here.
-      checkGroupApi();
-      EmailMessage message = createEmail();
-      this.gmailClient.sendEmail(message);
-      logger.atInfo().log("Finished running scripts.");
-    } catch (Throwable t) {
-      logger.atWarning().withCause(t).log("Error executing scripts.");
-      throw new RuntimeException("Execution failed.");
-    }
-  }
-
-  // Checks if Directory and GroupSettings still work after GWorkspace changes.
-  void checkGroupApi() {
-    ImmutableList<Registrar> registrars =
-        Streams.stream(Registrar.loadAllCached())
-            .filter(registrar -> registrar.isLive() && registrar.getType() == Registrar.Type.REAL)
-            .collect(toImmutableList());
-    logger.atInfo().log("Found %s registrars.", registrars.size());
-    for (Registrar registrar : registrars) {
-      for (final RegistrarPoc.Type type : RegistrarPoc.Type.values()) {
-        String groupKey =
-            String.format(
-                "%s-%s-contacts@%s",
-                normalizeRegistrarId(registrar.getRegistrarId()),
-                type.getDisplayName(),
-                gSuiteDomainName);
-        try {
-          Set<String> currentMembers = groupsConnection.getMembersOfGroup(groupKey);
-          logger.atInfo().log("%s has %s members.", groupKey, currentMembers.size());
-          // One success is enough for validation.
-          return;
-        } catch (IOException e) {
-          logger.atWarning().withCause(e).log("Failed to check %s", groupKey);
-        }
+      logger.atInfo().log("Connecting to: %s", url);
+      HttpsURLConnection connection =
+          (HttpsURLConnection) urlConnectionService.createConnection(new URL(url));
+      responseCode = connection.getResponseCode();
+      logger.atInfo().log("Code: %d", responseCode);
+      logger.atInfo().log("Headers: %s", connection.getHeaderFields());
+      responseContent = new String(UrlConnectionUtils.getResponseBytes(connection), UTF_8);
+      logger.atInfo().log("Response: %s", responseContent);
+    } catch (Exception e) {
+      logger.atWarning().withCause(e).log("Connection to %s failed", url);
+      throw new RuntimeException(e);
+    } finally {
+      if (responseCode != null) {
+        response.setStatus(responseCode);
+      }
+      if (responseContent != null) {
+        response.setPayload(responseContent);
       }
     }
-    logger.atInfo().log("Finished checking GroupApis.");
-  }
-
-  EmailMessage createEmail() {
-    return EmailMessage.newBuilder()
-        .setFrom(senderAddress)
-        .setSubject("Test: Please ignore<eom>.")
-        .setRecipients(ImmutableList.of(recipientAddress))
-        .setBody("Sent from Nomulus through Google Workspace.")
-        .build();
   }
 }

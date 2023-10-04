@@ -14,25 +14,23 @@
 
 package google.registry.rde;
 
-import static com.google.appengine.api.urlfetch.FetchOptions.Builder.validateCertificate;
-import static com.google.appengine.api.urlfetch.HTTPMethod.PUT;
-import static com.google.common.io.BaseEncoding.base64;
-import static com.google.common.net.HttpHeaders.AUTHORIZATION;
-import static com.google.common.net.HttpHeaders.CONTENT_TYPE;
+import static com.google.api.client.http.HttpStatusCodes.STATUS_CODE_BAD_REQUEST;
+import static com.google.api.client.http.HttpStatusCodes.STATUS_CODE_OK;
+import static google.registry.request.UrlConnectionUtils.getResponseBytes;
+import static google.registry.request.UrlConnectionUtils.setBasicAuth;
+import static google.registry.request.UrlConnectionUtils.setPayload;
 import static google.registry.util.DomainNameUtils.canonicalizeHostname;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
-import static javax.servlet.http.HttpServletResponse.SC_OK;
 
-import com.google.appengine.api.urlfetch.HTTPHeader;
-import com.google.appengine.api.urlfetch.HTTPRequest;
+import com.google.api.client.http.HttpMethods;
 import com.google.appengine.api.urlfetch.HTTPResponse;
-import com.google.appengine.api.urlfetch.URLFetchService;
 import com.google.common.flogger.FluentLogger;
+import com.google.common.net.MediaType;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.keyring.api.KeyModule.Key;
 import google.registry.request.HttpException.InternalServerErrorException;
-import google.registry.util.Retrier;
+import google.registry.request.UrlConnectionService;
+import google.registry.util.UrlConnectionException;
 import google.registry.xjc.XjcXmlTransformer;
 import google.registry.xjc.iirdea.XjcIirdeaResponseElement;
 import google.registry.xjc.iirdea.XjcIirdeaResult;
@@ -40,10 +38,11 @@ import google.registry.xjc.rdeheader.XjcRdeHeader;
 import google.registry.xjc.rdereport.XjcRdeReportReport;
 import google.registry.xml.XmlException;
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
-import java.net.SocketTimeoutException;
 import java.net.URL;
-import java.util.Arrays;
+import java.security.GeneralSecurityException;
 import javax.inject.Inject;
 
 /**
@@ -59,49 +58,47 @@ public class RdeReporter {
    * @see <a href="http://tools.ietf.org/html/draft-lozano-icann-registry-interfaces-05#section-4">
    *     ICANN Registry Interfaces - Interface details</a>
    */
-  private static final String REPORT_MIME = "text/xml";
+  private static final MediaType MEDIA_TYPE = MediaType.XML_UTF_8;
 
-  @Inject Retrier retrier;
-  @Inject URLFetchService urlFetchService;
+  @Inject UrlConnectionService urlConnectionService;
 
   @Inject @Config("rdeReportUrlPrefix") String reportUrlPrefix;
   @Inject @Key("icannReportingPassword") String password;
   @Inject RdeReporter() {}
 
   /** Uploads {@code reportBytes} to ICANN. */
-  public void send(byte[] reportBytes) throws XmlException {
-    XjcRdeReportReport report = XjcXmlTransformer.unmarshal(
-        XjcRdeReportReport.class, new ByteArrayInputStream(reportBytes));
+  public void send(byte[] reportBytes) throws XmlException, GeneralSecurityException, IOException {
+    XjcRdeReportReport report =
+        XjcXmlTransformer.unmarshal(
+            XjcRdeReportReport.class, new ByteArrayInputStream(reportBytes));
     XjcRdeHeader header = report.getHeader().getValue();
 
     // Send a PUT request to ICANN's HTTPS server.
     URL url = makeReportUrl(header.getTld(), report.getId());
     String username = header.getTld() + "_ry";
-    String token = base64().encode(String.format("%s:%s", username, password).getBytes(UTF_8));
-    final HTTPRequest req = new HTTPRequest(url, PUT, validateCertificate().setDeadline(60d));
-    req.addHeader(new HTTPHeader(CONTENT_TYPE, REPORT_MIME));
-    req.addHeader(new HTTPHeader(AUTHORIZATION, "Basic " + token));
-    req.setPayload(reportBytes);
     logger.atInfo().log("Sending report:\n%s", new String(reportBytes, UTF_8));
-    HTTPResponse rsp =
-        retrier.callWithRetry(
-            () -> {
-              HTTPResponse rsp1 = urlFetchService.fetch(req);
-              int responseCode = rsp1.getResponseCode();
-              if (responseCode != SC_OK && responseCode != SC_BAD_REQUEST) {
-                logger.atSevere().log(
-                    "Failure when trying to PUT RDE report to ICANN server: %d\n%s",
-                    responseCode, Arrays.toString(rsp1.getContent()));
-                throw new RuntimeException("Error uploading deposits to ICANN");
-              }
-              return rsp1;
-            },
-            SocketTimeoutException.class);
+    HttpURLConnection connection = urlConnectionService.createConnection(url);
+    connection.setRequestMethod(HttpMethods.PUT);
+    setBasicAuth(connection, username, password);
+    setPayload(connection, reportBytes, MEDIA_TYPE.toString());
+    int responseCode;
+    byte[] responseBytes;
 
-    // Ensure the XML response is valid. The EPP result code would not be 1000 if we get an
-    // SC_BAD_REQUEST as the HTTP response code.
-    XjcIirdeaResult result = parseResult(rsp.getContent());
-    if (result.getCode().getValue() != 1000) {
+    try {
+      responseCode = connection.getResponseCode();
+      if (responseCode != STATUS_CODE_OK && responseCode != STATUS_CODE_BAD_REQUEST) {
+        logger.atWarning().log("Connection to RDE report server failed: %d", responseCode);
+        throw new UrlConnectionException("PUT failed", connection);
+      }
+      responseBytes = getResponseBytes(connection);
+    } finally {
+      connection.disconnect();
+    }
+
+    // We know that an HTTP 200 response can only contain a result code of
+    // 1000 (i. e. success), there is no need to parse it.
+    if (responseCode != STATUS_CODE_OK) {
+      XjcIirdeaResult result = parseResult(responseBytes);
       logger.atWarning().log(
           "Rejected when trying to PUT RDE report to ICANN server: %d %s\n%s",
           result.getCode().getValue(), result.getMsg(), result.getDescription());
@@ -116,10 +113,11 @@ public class RdeReporter {
    *     href="http://tools.ietf.org/html/draft-lozano-icann-registry-interfaces-05#section-4.1">
    *     ICANN Registry Interfaces - IIRDEA Result Object</a>
    */
-  private XjcIirdeaResult parseResult(byte[] responseBytes) throws XmlException {
+  private static XjcIirdeaResult parseResult(byte[] responseBytes) throws XmlException {
     logger.atInfo().log("Received response:\n%s", new String(responseBytes, UTF_8));
-    XjcIirdeaResponseElement response = XjcXmlTransformer.unmarshal(
-        XjcIirdeaResponseElement.class, new ByteArrayInputStream(responseBytes));
+    XjcIirdeaResponseElement response =
+        XjcXmlTransformer.unmarshal(
+            XjcIirdeaResponseElement.class, new ByteArrayInputStream(responseBytes));
     return response.getResult();
   }
 
