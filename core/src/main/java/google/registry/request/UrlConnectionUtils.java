@@ -27,15 +27,20 @@ import com.google.common.io.ByteStreams;
 import com.google.common.net.MediaType;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URLConnection;
 import java.util.Random;
 
-/** Utilities for common functionality relating to {@link java.net.URLConnection}s. */
-public class UrlConnectionUtils {
+/** Utilities for common functionality relating to {@link URLConnection}s. */
+public final class UrlConnectionUtils {
+
+  private UrlConnectionUtils() {}
 
   /** Retrieves the response from the given connection as a byte array. */
   public static byte[] getResponseBytes(URLConnection connection) throws IOException {
-    return ByteStreams.toByteArray(connection.getInputStream());
+    try (InputStream is = connection.getInputStream()) {
+      return ByteStreams.toByteArray(is);
+    }
   }
 
   /** Sets auth on the given connection with the given username/password. */
