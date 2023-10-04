@@ -1115,7 +1115,6 @@ CREATE TABLE public."TmchCrl" (
 CREATE TABLE public."User" (
     id bigint NOT NULL,
     email_address text NOT NULL,
-    gaia_id text,
     registry_lock_password_hash text,
     registry_lock_password_salt text,
     global_role text NOT NULL,
@@ -2133,13 +2132,6 @@ CREATE INDEX spec11threatmatch_tld_idx ON public."Spec11ThreatMatch" USING btree
 --
 
 CREATE INDEX user_email_address_idx ON public."User" USING btree (email_address);
-
-
---
--- Name: user_gaia_id_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX user_gaia_id_idx ON public."User" USING btree (gaia_id);
 
 
 --

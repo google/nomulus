@@ -417,7 +417,6 @@ class AuthenticatedRegistrarAccessorTest {
   void testConsoleUser_admin() {
     google.registry.model.console.User consoleUser =
         new google.registry.model.console.User.Builder()
-            .setGaiaId("gaiaId")
             .setEmailAddress("email@email.com")
             .setUserRoles(
                 new UserRoles.Builder().setIsAdmin(true).setGlobalRole(GlobalRole.FTE).build())
@@ -444,7 +443,6 @@ class AuthenticatedRegistrarAccessorTest {
     // not admins
     google.registry.model.console.User consoleUser =
         new google.registry.model.console.User.Builder()
-            .setGaiaId("gaiaId")
             .setEmailAddress("email@email.com")
             .setUserRoles(new UserRoles.Builder().setGlobalRole(GlobalRole.SUPPORT_AGENT).build())
             .build();
@@ -462,7 +460,6 @@ class AuthenticatedRegistrarAccessorTest {
     // Registrar employees should have OWNER access to their registrars
     google.registry.model.console.User consoleUser =
         new google.registry.model.console.User.Builder()
-            .setGaiaId("gaiaId")
             .setEmailAddress("email@email.com")
             .setUserRoles(
                 new UserRoles.Builder()

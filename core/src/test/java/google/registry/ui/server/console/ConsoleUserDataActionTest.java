@@ -47,7 +47,6 @@ class ConsoleUserDataActionTest {
     User user =
         new User.Builder()
             .setEmailAddress("email@email.com")
-            .setGaiaId("gaiaId")
             .setUserRoles(new UserRoles.Builder().setGlobalRole(GlobalRole.FTE).build())
             .build();
 
