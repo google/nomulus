@@ -39,7 +39,6 @@ import google.registry.privileges.secretmanager.SecretManagerModule;
 import google.registry.rde.RdeModule;
 import google.registry.request.Modules.GsonModule;
 import google.registry.request.Modules.UrlConnectionServiceModule;
-import google.registry.request.Modules.UrlFetchServiceModule;
 import google.registry.request.Modules.UserServiceModule;
 import google.registry.tools.AuthModule.LocalCredentialModule;
 import google.registry.util.UtilsModule;
@@ -77,7 +76,6 @@ import javax.inject.Singleton;
       SecretManagerKeyringModule.class,
       SecretManagerModule.class,
       UrlConnectionServiceModule.class,
-      UrlFetchServiceModule.class,
       UserServiceModule.class,
       UtilsModule.class,
       VoidDnsWriterModule.class,

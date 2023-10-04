@@ -44,6 +44,12 @@ public class BatchModule {
   public static final String PARAM_FAST = "fast";
 
   @Provides
+  @Parameter("url")
+  static String provideUrl(HttpServletRequest req) {
+    return extractRequiredParameter(req, "url");
+  }
+
+  @Provides
   @Parameter("jobName")
   static Optional<String> provideJobName(HttpServletRequest req) {
     return extractOptionalParameter(req, "jobName");

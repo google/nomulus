@@ -16,6 +16,7 @@ package google.registry.testing;
 
 import static org.mockito.Mockito.when;
 
+import com.google.common.collect.ImmutableList;
 import google.registry.request.UrlConnectionService;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -42,5 +43,9 @@ public class FakeUrlConnectionService implements UrlConnectionService {
     connectedUrls.add(url);
     when(mockConnection.getURL()).thenReturn(url);
     return mockConnection;
+  }
+
+  public ImmutableList<URL> getConnectedUrls() {
+    return ImmutableList.copyOf(connectedUrls);
   }
 }
