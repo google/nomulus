@@ -165,7 +165,7 @@ class Spec11EmailUtilsTest {
         "the.registrar@example.com",
         ImmutableList.of("abuse@test.com", "bcc@test.com"),
         "Super Cool Registry Monthly Threat Detector [2018-07-15]",
-        String.format(MONTHLY_EMAIL_FORMAT, "<tr><td>a.com</td><td>MALWARE</td></tr>"),
+        String.format(MONTHLY_EMAIL_FORMAT, "<tr><td>a[.]com</td><td>MALWARE</td></tr>"),
         Optional.of(MediaType.HTML_UTF_8));
     validateMessage(
         capturedContents.get(1),
@@ -175,7 +175,7 @@ class Spec11EmailUtilsTest {
         "Super Cool Registry Monthly Threat Detector [2018-07-15]",
         String.format(
             MONTHLY_EMAIL_FORMAT,
-            "<tr><td>b.com</td><td>MALWARE</td></tr><tr><td>c.com</td><td>MALWARE</td></tr>"),
+            "<tr><td>b[.]com</td><td>MALWARE</td></tr><tr><td>c[.]com</td><td>MALWARE</td></tr>"),
         Optional.of(MediaType.HTML_UTF_8));
     validateMessage(
         capturedContents.get(2),
@@ -203,7 +203,7 @@ class Spec11EmailUtilsTest {
         "the.registrar@example.com",
         ImmutableList.of("abuse@test.com", "bcc@test.com"),
         "Super Cool Registry Daily Threat Detector [2018-07-15]",
-        String.format(DAILY_EMAIL_FORMAT, "<tr><td>a.com</td><td>MALWARE</td></tr>"),
+        String.format(DAILY_EMAIL_FORMAT, "<tr><td>a[.]com</td><td>MALWARE</td></tr>"),
         Optional.of(MediaType.HTML_UTF_8));
     validateMessage(
         capturedMessages.get(1),
@@ -213,7 +213,7 @@ class Spec11EmailUtilsTest {
         "Super Cool Registry Daily Threat Detector [2018-07-15]",
         String.format(
             DAILY_EMAIL_FORMAT,
-            "<tr><td>b.com</td><td>MALWARE</td></tr><tr><td>c.com</td><td>MALWARE</td></tr>"),
+            "<tr><td>b[.]com</td><td>MALWARE</td></tr><tr><td>c[.]com</td><td>MALWARE</td></tr>"),
         Optional.of(MediaType.HTML_UTF_8));
     validateMessage(
         capturedMessages.get(2),
@@ -244,7 +244,7 @@ class Spec11EmailUtilsTest {
         "new.registrar@example.com",
         ImmutableList.of("abuse@test.com", "bcc@test.com"),
         "Super Cool Registry Monthly Threat Detector [2018-07-15]",
-        String.format(MONTHLY_EMAIL_FORMAT, "<tr><td>c.com</td><td>MALWARE</td></tr>"),
+        String.format(MONTHLY_EMAIL_FORMAT, "<tr><td>c[.]com</td><td>MALWARE</td></tr>"),
         Optional.of(MediaType.HTML_UTF_8));
     validateMessage(
         capturedContents.get(1),
@@ -277,7 +277,7 @@ class Spec11EmailUtilsTest {
         "the.registrar@example.com",
         ImmutableList.of("abuse@test.com", "bcc@test.com"),
         "Super Cool Registry Monthly Threat Detector [2018-07-15]",
-        String.format(MONTHLY_EMAIL_FORMAT, "<tr><td>a.com</td><td>MALWARE</td></tr>"),
+        String.format(MONTHLY_EMAIL_FORMAT, "<tr><td>a[.]com</td><td>MALWARE</td></tr>"),
         Optional.of(MediaType.HTML_UTF_8));
     validateMessage(
         capturedContents.get(1),
@@ -287,7 +287,7 @@ class Spec11EmailUtilsTest {
         "Super Cool Registry Monthly Threat Detector [2018-07-15]",
         String.format(
             MONTHLY_EMAIL_FORMAT,
-            "<tr><td>b.com</td><td>MALWARE</td></tr><tr><td>c.com</td><td>MALWARE</td></tr>"),
+            "<tr><td>b[.]com</td><td>MALWARE</td></tr><tr><td>c[.]com</td><td>MALWARE</td></tr>"),
         Optional.of(MediaType.HTML_UTF_8));
     validateMessage(
         capturedContents.get(2),
@@ -332,7 +332,7 @@ class Spec11EmailUtilsTest {
         "the.registrar@example.com",
         ImmutableList.of("abuse@test.com", "bcc@test.com"),
         "Super Cool Registry Monthly Threat Detector [2018-07-15]",
-        String.format(MONTHLY_EMAIL_FORMAT, "<tr><td>a.com</td><td>MALWARE</td></tr>"),
+        String.format(MONTHLY_EMAIL_FORMAT, "<tr><td>a[.]com</td><td>MALWARE</td></tr>"),
         Optional.of(MediaType.HTML_UTF_8));
     validateMessage(
         capturedMessages.get(1),
@@ -342,7 +342,7 @@ class Spec11EmailUtilsTest {
         "Super Cool Registry Monthly Threat Detector [2018-07-15]",
         String.format(
             MONTHLY_EMAIL_FORMAT,
-            "<tr><td>b.com</td><td>MALWARE</td></tr><tr><td>c.com</td><td>MALWARE</td></tr>"),
+            "<tr><td>b[.]com</td><td>MALWARE</td></tr><tr><td>c[.]com</td><td>MALWARE</td></tr>"),
         Optional.of(MediaType.HTML_UTF_8));
     validateMessage(
         capturedMessages.get(2),
