@@ -208,6 +208,7 @@ public class RegistryConfigSettings {
   public static class Misc {
     public String sheetExportId;
     public boolean isEmailSendingEnabled;
+    public int emailThrottleSeconds;
     public String alertRecipientEmailAddress;
     // TODO(b/279671974): remove below field after migration
     public String newAlertRecipientEmailAddress;

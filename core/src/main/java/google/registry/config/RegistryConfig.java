@@ -880,6 +880,17 @@ public final class RegistryConfig {
     }
 
     /**
+     * Returns the desired delay between outgoing emails when sending in bulk.
+     *
+     * <p>Gmail apparently has unpublished limits on peak throughput over short period.
+     */
+    @Provides
+    @Config("emailThrottleDuration")
+    public static Duration provideEmailThrottleSeconds(RegistryConfigSettings config) {
+      return Duration.standardSeconds(config.misc.emailThrottleSeconds);
+    }
+
+    /**
      * Returns the email address we send various alert e-mails to.
      *
      * <p>This allows us to easily verify the success or failure of periodic tasks by passively
