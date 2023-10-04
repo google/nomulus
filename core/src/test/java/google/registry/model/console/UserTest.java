@@ -15,8 +15,6 @@
 package google.registry.model.console;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.model.ImmutableObjectSubject.assertAboutImmutableObjects;
-import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import google.registry.model.EntityTestCase;
@@ -30,34 +28,8 @@ public class UserTest extends EntityTestCase {
   }
 
   @Test
-  void testPersistence_lookupByGaiaId() {
-    User user =
-        new User.Builder()
-            .setGaiaId("gaiaId")
-            .setEmailAddress("email@email.com")
-            .setUserRoles(
-                new UserRoles.Builder().setGlobalRole(GlobalRole.FTE).setIsAdmin(true).build())
-            .build();
-    tm().transact(() -> tm().put(user));
-    tm().transact(
-            () -> {
-              assertAboutImmutableObjects()
-                  .that(
-                      tm().query("FROM User WHERE gaiaId = 'gaiaId'", User.class).getSingleResult())
-                  .isEqualExceptFields(user, "id", "updateTimestamp");
-              assertThat(
-                      tm().query("FROM User WHERE gaiaId = 'badGaiaId'", User.class)
-                          .getResultList())
-                  .isEmpty();
-            });
-  }
-
-  @Test
   void testFailure_badInputs() {
     User.Builder builder = new User.Builder();
-    assertThat(assertThrows(IllegalArgumentException.class, () -> builder.setGaiaId(null)))
-        .hasMessageThat()
-        .isEqualTo("Gaia ID cannot be null or empty");
     assertThat(assertThrows(IllegalArgumentException.class, () -> builder.setEmailAddress("")))
         .hasMessageThat()
         .isEqualTo("Provided email  is not a valid email address");
@@ -99,7 +71,6 @@ public class UserTest extends EntityTestCase {
 
     User user =
         new User.Builder()
-            .setGaiaId("gaiaId")
             .setEmailAddress("email@email.com")
             .setUserRoles(new UserRoles.Builder().setGlobalRole(GlobalRole.FTE).build())
             .build();

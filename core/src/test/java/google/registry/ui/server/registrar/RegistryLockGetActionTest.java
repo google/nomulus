@@ -101,7 +101,6 @@ final class RegistryLockGetActionTest {
     google.registry.model.console.User consoleUser =
         new google.registry.model.console.User.Builder()
             .setEmailAddress("johndoe@theregistrar.com")
-            .setGaiaId("gaiaId")
             .setUserRoles(
                 new UserRoles.Builder()
                     .setRegistrarRoles(
