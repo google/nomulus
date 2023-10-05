@@ -2,7 +2,7 @@
 #
 # To manually trigger a build on GCB, run:
 # gcloud builds submit --config cloudbuild-tld-sync.yaml --substitutions \
-#   TAG_NAME=[TAG],_INTERNAL_REPO_URL=[URL] ..
+#   _INTERNAL_REPO_URL=[URL] ..
 #
 # To trigger a build automatically, follow the instructions below and add a trigger:
 # https://cloud.google.com/cloud-build/docs/running-builds/automate-builds
@@ -24,9 +24,6 @@ steps:
     git clone ${_INTERNAL_REPO_URL} nomulus-internal
 # Download and decrypt the nomulus tool credential
 - name: 'gcr.io/$PROJECT_ID/builder:latest'
-  volumes:
-  - name: 'secrets'
-    path: '/secrets'
   entrypoint: /bin/bash
   args:
   - -c
@@ -34,26 +31,13 @@ steps:
     set -e
     gcloud secrets versions access latest \
       --secret nomulus-tool-cloudbuild-credential \
-      > /secrets/cloud_sql_credential.json
-# Fetch the config file for example Tld from alpha
-- name: 'gcr.io/$PROJECT_ID/nomulus-tool:latest'
-  volumes:
-  - name: 'tld'
-    path: '/tld'
+      > nomulus_tool_credential.json
+# Configure the Tlds for the environment using the stored configuration files
+- name: 'gcr.io/$PROJECT_ID/tld_updater:latest'
   args:
-  - -e
-  - alpha
-  - --credential
-  - /secrets/cloud_sql_credential.json
-  - get_tld
-  - example \
-    > /tld/example.yaml
-# The tarballs and jars to upload to GCS.
-artifacts:
-  objects:
-    location: 'gs://${PROJECT_ID}-tld-sync/${TAG_NAME}'
-    paths:
-    - 'tld/example.yaml'
+  - ./nomulus_tool_credential.json
+  - nomulus-internal/core/src/main/java/google/registry/config/files/tld/
+
 timeout: 7200s
 options:
   machineType: 'E2_HIGHCPU_32'
