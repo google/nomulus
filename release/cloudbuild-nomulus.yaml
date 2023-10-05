@@ -91,6 +91,35 @@ steps:
       --format="get(digest)" --filter="tags = ${TAG_NAME}")
     sed -i s/'prober_cert_updater:latest'/prober_cert_updater@$digest/g \
       release/cloudbuild-renew-prober-certs-*.yaml
+# Build the tld_updater image and upload it to GCR. This image extends
+# from the `builder` and the nomulus.jar built earlier.
+- name: 'gcr.io/cloud-builders/docker'
+  entrypoint: /bin/bash
+  args:
+  - -c
+  - |
+    set -e
+    # The nomulus jar is not under the working dir. Must be copied over. 
+    cp ../../output/nomulus.jar .
+    docker build -t gcr.io/${PROJECT_ID}/tld_updater:${TAG_NAME} \
+      --build-arg TAG_NAME=${TAG_NAME} --build-arg PROJECT_ID=${PROJECT_ID} .
+    docker tag gcr.io/${PROJECT_ID}/tld_updater:${TAG_NAME} \
+      gcr.io/${PROJECT_ID}/tld_updater:latest
+    docker push gcr.io/${PROJECT_ID}/tld_updater:latest
+    docker push gcr.io/${PROJECT_ID}/tld_updater:${TAG_NAME}
+  dir: 'release/tld-updater/'
+# Update the tld_updater image digest in relevant GCB files.
+- name: 'gcr.io/${PROJECT_ID}/builder:latest'
+  entrypoint: /bin/bash
+  args:
+  - -c
+  - |
+    set -e
+    digest=$(gcloud container images list-tags \
+      gcr.io/${PROJECT_ID}/tld_updater \
+      --format="get(digest)" --filter="tags = ${TAG_NAME}")
+    sed -i s/'tld_updater:latest'/tld_updater@$digest/g \
+      release/cloudbuild-renew-tld-sync-*.yaml
 # Build and stage Dataflow Flex templates.
 - name: 'gcr.io/${PROJECT_ID}/builder:latest'
   entrypoint: /bin/bash
