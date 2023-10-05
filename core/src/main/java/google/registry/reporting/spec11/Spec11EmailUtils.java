@@ -171,7 +171,7 @@ public class Spec11EmailUtils {
     gmailClient.sendEmail(
         EmailMessage.newBuilder()
             .setSubject(subject)
-            .setBody(getContent(date, soyTemplateInfo, registrarThreatMatches))
+            .setBody(getEmailBody(date, soyTemplateInfo, registrarThreatMatches))
             .setContentType(MediaType.HTML_UTF_8)
             .setFrom(outgoingEmailAddress)
             .addRecipient(getEmailAddressForRegistrar(registrarThreatMatches.clientId()))
@@ -179,7 +179,7 @@ public class Spec11EmailUtils {
             .build());
   }
 
-  private String getContent(
+  private String getEmailBody(
       LocalDate date,
       SoyTemplateInfo soyTemplateInfo,
       RegistrarThreatMatches registrarThreatMatches) {
@@ -190,7 +190,7 @@ public class Spec11EmailUtils {
             .map(
                 threatMatch ->
                     ImmutableMap.of(
-                        "domainName", threatMatch.domainName(),
+                        "domainName", toEmailSafeString(threatMatch.domainName()),
                         "threatType", threatMatch.threatType()))
             .collect(toImmutableList());
 
@@ -203,6 +203,12 @@ public class Spec11EmailUtils {
             "resources", spec11WebResources);
     renderer.setData(data);
     return renderer.render();
+  }
+
+  // Mutates a known bad domain to pass spam checks by Email sender and clients, as suggested by
+  // the Gmail abuse-detection team.
+  private String toEmailSafeString(String knownUnsafeDomain) {
+    return knownUnsafeDomain.replace(".", "[.]");
   }
 
   /** Sends an e-mail indicating the state of the spec11 pipeline, with a given subject and body. */
