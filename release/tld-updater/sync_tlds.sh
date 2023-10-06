@@ -15,7 +15,7 @@
 
 set -e
 if [ "$#" -ne 2 ]; then
-  echo "Expecting three parameters in order: tools_credential config_file_directory"
+  echo "Expecting two parameters in order: tools_credential config_file_directory"
   exit 1
 fi
 
@@ -29,5 +29,5 @@ for FILE in ${config_file_directory}/sandbox/*; do
   echo $FILE
   java -jar /nomulus.jar -e sandbox \
   --credential "${tools_credential}" \
-  configure_tld -i $FILE
+  configure_tld -i $FILE --force
 done
