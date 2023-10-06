@@ -13,6 +13,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# Sync the TLD configuration files from the internal repo with the Tld object
+# in the database. Loops through the Tld configuration files and runs the configure_tld command
+# with the file.
+
+# - tools_credential: The credential (.json) needed to run the nomulus command.
+# - config_file_directory: The internal directory storing the TLD config files.
+
 set -e
 if [ "$#" -ne 2 ]; then
   echo "Expecting two parameters in order: tools_credential config_file_directory"

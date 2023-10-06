@@ -7,10 +7,6 @@
 # To trigger a build automatically, follow the instructions below and add a trigger:
 # https://cloud.google.com/cloud-build/docs/running-builds/automate-builds
 #
-# This pipeline prepares a release. The pipeline should be run against the Nomulus public repo on
-# GitHub. It builds the builder and base images, and hard codes the sha256 hashes of the resulting
-# images in the merged code base (internal + public) , which is tagged and pushed into the release
-# repo. Actual release artifacts are built from the release repo, ensuring reproducibility.
 steps:
 # Check out the internal repo.
 - name: 'gcr.io/cloud-builders/git'
@@ -32,7 +28,7 @@ steps:
     gcloud secrets versions access latest \
       --secret nomulus-tool-cloudbuild-credential \
       > nomulus_tool_credential.json
-# Configure the Tlds for the environment using the stored configuration files
+# Configure the TLDs using the stored configuration files in the internal repo
 - name: 'gcr.io/$PROJECT_ID/tld_updater:latest'
   args:
   - ./nomulus_tool_credential.json
