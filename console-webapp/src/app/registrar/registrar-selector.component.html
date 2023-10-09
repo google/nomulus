@@ -13,7 +13,9 @@
       <mat-label>Registrar</mat-label>
       <mat-select
         [ngModel]="registrarService.activeRegistrarId"
-        (selectionChange)="registrarService.updateRegistrar($event.value)"
+        (selectionChange)="
+          registrarService.updateSelectedRegistrar($event.value)
+        "
       >
         <mat-option
           *ngFor="let registrar of registrarService.registrars"

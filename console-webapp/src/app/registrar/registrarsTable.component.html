@@ -1,10 +1,34 @@
 <div class="console-app__registrars">
+  <mat-form-field class="console-app__registrars-filter">
+    <mat-label>Search</mat-label>
+    <input
+      matInput
+      (keyup)="applyFilter($event)"
+      placeholder="..."
+      type="search"
+    />
+    <mat-icon matPrefix>search</mat-icon>
+  </mat-form-field>
   <mat-table
     [dataSource]="dataSource"
     class="mat-elevation-z8"
     class="console-app__registrars-table"
     matSort
   >
+    <ng-container matColumnDef="edit">
+      <mat-header-cell *matHeaderCellDef></mat-header-cell>
+      <mat-cell *matCellDef="let row">
+        <button
+          mat-icon-button
+          color="primary"
+          aria-label="Edit registrar"
+          (click)="openDetails($event, row)"
+        >
+          <mat-icon>edit</mat-icon>
+        </button>
+      </mat-cell>
+    </ng-container>
+
     <ng-container
       *ngFor="let column of columns"
       [matColumnDef]="column.columnDef"
@@ -13,7 +37,10 @@
       <mat-cell *matCellDef="let row" [innerHTML]="column.cell(row)"></mat-cell>
     </ng-container>
     <mat-header-row *matHeaderRowDef="displayedColumns"></mat-header-row>
-    <mat-row *matRowDef="let row; columns: displayedColumns"></mat-row>
+    <mat-row
+      *matRowDef="let row; columns: displayedColumns"
+      (click)="registrarService.updateSelectedRegistrar(row.registrarId)"
+    ></mat-row>
   </mat-table>
 
   <mat-paginator
@@ -21,4 +48,7 @@
     [pageSizeOptions]="[5, 10, 20]"
     showFirstLastButtons
   ></mat-paginator>
+  <app-registrar-details-wrapper
+    #registrarDetailsView
+  ></app-registrar-details-wrapper>
 </div>

@@ -17,6 +17,7 @@ import { Registrar, RegistrarService } from './registrar.service';
 import { MatPaginator } from '@angular/material/paginator';
 import { MatSort } from '@angular/material/sort';
 import { MatTableDataSource } from '@angular/material/table';
+import { RegistrarDetailsWrapperComponent } from './registrarDetails.component';
 
 @Component({
   selector: 'app-registrar',
@@ -76,10 +77,12 @@ export class RegistrarComponent {
       cell: (record: Registrar) => `${record.driveFolderId || ''}`,
     },
   ];
-  displayedColumns = this.columns.map((c) => c.columnDef);
+  displayedColumns = ['edit'].concat(this.columns.map((c) => c.columnDef));
 
   @ViewChild(MatPaginator) paginator!: MatPaginator;
   @ViewChild(MatSort) sort!: MatSort;
+  @ViewChild('registrarDetailsView')
+  detailsComponentWrapper!: RegistrarDetailsWrapperComponent;
 
   constructor(protected registrarService: RegistrarService) {
     this.dataSource = new MatTableDataSource<Registrar>(
@@ -90,5 +93,15 @@ export class RegistrarComponent {
   ngAfterViewInit() {
     this.dataSource.paginator = this.paginator;
     this.dataSource.sort = this.sort;
+  }
+
+  openDetails(event: MouseEvent, registrar: Registrar) {
+    event.stopPropagation();
+    this.detailsComponentWrapper.open(registrar);
+  }
+
+  applyFilter(event: Event) {
+    const filterValue = (event.target as HTMLInputElement).value;
+    this.dataSource.filter = filterValue.trim().toLowerCase();
   }
 }
