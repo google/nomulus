@@ -7,6 +7,11 @@
     overflow: auto;
   }
 
+  &__registrars-filter {
+    min-width: $min-width !important;
+    width: 100%;
+  }
+
   &__registrars-table {
     min-width: $min-width !important;
   }
@@ -16,6 +21,10 @@
   }
 
   .mat-column {
+    &-edit {
+      max-width: 55px;
+      padding-left: 5px;
+    }
     &-driveId {
       min-width: 200px;
       word-break: break-all;
