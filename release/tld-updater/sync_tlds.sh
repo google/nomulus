@@ -17,24 +17,25 @@
 # in the database. Loops through the Tld configuration files and runs the configure_tld command
 # with the file.
 
+# - env: The Nomulus environment, production, sandbox, etc.
 # - tools_credential: The credential (.json) needed to run the nomulus command.
 # - config_file_directory: The internal directory storing the TLD config files.
 
 set -e
-if [ "$#" -ne 2 ]; then
-  echo "Expecting two parameters in order: tools_credential config_file_directory"
+if [ "$#" -ne 3 ]; then
+  echo "Expecting three parameters in order: env tools_credential config_file_directory"
   exit 1
 fi
 
-tools_credential="${1}"
-config_file_directory="${2}"
+nomulus_env="${1}"
+tools_credential="${2}"
+config_file_directory="${3}"
 
 echo ${config_file_directory}
 
-#TODO(sarahbot@): Add command to sync production files once sandbox is working
-for FILE in ${config_file_directory}/sandbox/*; do
+for FILE in ${config_file_directory}/${nomulus_env}/*; do
   echo $FILE
-  java -jar /nomulus.jar -e sandbox \
+  java -jar /nomulus.jar -e "${nomulus_env}" \
   --credential "${tools_credential}" \
   configure_tld -i $FILE --force
 done
