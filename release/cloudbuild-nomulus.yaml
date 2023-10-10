@@ -119,7 +119,7 @@ steps:
       gcr.io/${PROJECT_ID}/tld_updater \
       --format="get(digest)" --filter="tags = ${TAG_NAME}")
     sed -i s/'tld_updater:latest'/tld_updater@$digest/g \
-      release/cloudbuild-renew-tld-sync-*.yaml
+      release/cloudbuild-tld-sync-*.yaml
 # Build and stage Dataflow Flex templates.
 - name: 'gcr.io/${PROJECT_ID}/builder:latest'
   entrypoint: /bin/bash
