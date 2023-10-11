@@ -45,7 +45,6 @@ import google.registry.request.JsonActionRunner;
 import google.registry.request.JsonResponse;
 import google.registry.request.ResponseImpl;
 import google.registry.request.auth.AuthResult;
-import google.registry.request.auth.AuthSettings.AuthLevel;
 import google.registry.request.auth.AuthenticatedRegistrarAccessor;
 import google.registry.request.auth.AuthenticatedRegistrarAccessor.Role;
 import google.registry.request.auth.UserAuthInfo;
@@ -115,8 +114,7 @@ final class RegistryLockPostActionTest {
     when(mockRequest.getServerName()).thenReturn("registrarconsole.tld");
 
     action =
-        createAction(
-            AuthResult.create(AuthLevel.USER, UserAuthInfo.create(userWithLockPermission, false)));
+        createAction(AuthResult.createUser(UserAuthInfo.create(userWithLockPermission, false)));
   }
 
   @Test
@@ -154,9 +152,7 @@ final class RegistryLockPostActionTest {
     saveRegistryLock(
         createLock().asBuilder().isSuperuser(true).setLockCompletionTime(clock.nowUtc()).build());
     persistResource(domain.asBuilder().setStatusValues(REGISTRY_LOCK_STATUSES).build());
-    action =
-        createAction(
-            AuthResult.create(AuthLevel.USER, UserAuthInfo.create(userWithoutPermission, true)));
+    action = createAction(AuthResult.createUser(UserAuthInfo.create(userWithoutPermission, true)));
     Map<String, ?> response = action.handleJsonRequest(unlockRequest());
     // we should still email the admin user's email address
     assertSuccess(response, "unlock", "johndoe@theregistrar.com");
@@ -166,8 +162,7 @@ final class RegistryLockPostActionTest {
   void testSuccess_linkedToLoginEmail() throws Exception {
     userWithLockPermission = new User("Marla.Singer@crr.com", "crr.com");
     action =
-        createAction(
-            AuthResult.create(AuthLevel.USER, UserAuthInfo.create(userWithLockPermission, false)));
+        createAction(AuthResult.createUser(UserAuthInfo.create(userWithLockPermission, false)));
     Map<String, ?> response = action.handleJsonRequest(lockRequest());
     assertSuccess(response, "lock", "Marla.Singer.RegistryLock@crr.com");
   }
@@ -205,18 +200,14 @@ final class RegistryLockPostActionTest {
   @Test
   void testSuccess_adminUser() throws Exception {
     // Admin user should be able to lock/unlock regardless -- and we use the admin user's email
-    action =
-        createAction(
-            AuthResult.create(AuthLevel.USER, UserAuthInfo.create(userWithoutPermission, true)));
+    action = createAction(AuthResult.createUser(UserAuthInfo.create(userWithoutPermission, true)));
     Map<String, ?> response = action.handleJsonRequest(lockRequest());
     assertSuccess(response, "lock", "johndoe@theregistrar.com");
   }
 
   @Test
   void testSuccess_adminUser_doesNotRequirePassword() throws Exception {
-    action =
-        createAction(
-            AuthResult.create(AuthLevel.USER, UserAuthInfo.create(userWithoutPermission, true)));
+    action = createAction(AuthResult.createUser(UserAuthInfo.create(userWithoutPermission, true)));
     Map<String, ?> response =
         action.handleJsonRequest(
             ImmutableMap.of(
@@ -239,8 +230,7 @@ final class RegistryLockPostActionTest {
                     .build())
             .setRegistryLockPassword("hi")
             .build();
-    AuthResult consoleAuthResult =
-        AuthResult.create(AuthLevel.USER, UserAuthInfo.create(consoleUser));
+    AuthResult consoleAuthResult = AuthResult.createUser(UserAuthInfo.create(consoleUser));
     action = createAction(consoleAuthResult);
     Map<String, ?> response = action.handleJsonRequest(lockRequest());
     assertSuccess(response, "lock", "johndoe@theregistrar.com");
@@ -253,8 +243,7 @@ final class RegistryLockPostActionTest {
             .setEmailAddress("johndoe@theregistrar.com")
             .setUserRoles(new UserRoles.Builder().setIsAdmin(true).build())
             .build();
-    AuthResult consoleAuthResult =
-        AuthResult.create(AuthLevel.USER, UserAuthInfo.create(consoleUser));
+    AuthResult consoleAuthResult = AuthResult.createUser(UserAuthInfo.create(consoleUser));
     action = createAction(consoleAuthResult);
     Map<String, Object> requestMapWithoutPassword =
         ImmutableMap.of(
@@ -286,7 +275,7 @@ final class RegistryLockPostActionTest {
   @Test
   void testFailure_unauthorizedRegistrarId() {
     AuthResult authResult =
-        AuthResult.create(AuthLevel.USER, UserAuthInfo.create(userWithLockPermission, false));
+        AuthResult.createUser(UserAuthInfo.create(userWithLockPermission, false));
     action = createAction(authResult, ImmutableSet.of("TheRegistrar"));
     Map<String, ?> response =
         action.handleJsonRequest(
@@ -358,9 +347,7 @@ final class RegistryLockPostActionTest {
 
   @Test
   void testFailure_notEnabledForRegistrarPoc() {
-    action =
-        createAction(
-            AuthResult.create(AuthLevel.USER, UserAuthInfo.create(userWithoutPermission, false)));
+    action = createAction(AuthResult.createUser(UserAuthInfo.create(userWithoutPermission, false)));
     Map<String, ?> response =
         action.handleJsonRequest(
             ImmutableMap.of(
@@ -453,8 +440,7 @@ final class RegistryLockPostActionTest {
                     .build())
             .setRegistryLockPassword("hi")
             .build();
-    AuthResult consoleAuthResult =
-        AuthResult.create(AuthLevel.USER, UserAuthInfo.create(consoleUser));
+    AuthResult consoleAuthResult = AuthResult.createUser(UserAuthInfo.create(consoleUser));
     action = createAction(consoleAuthResult);
     Map<String, ?> response =
         action.handleJsonRequest(

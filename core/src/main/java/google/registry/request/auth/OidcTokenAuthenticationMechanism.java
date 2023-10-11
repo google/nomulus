@@ -14,8 +14,6 @@
 
 package google.registry.request.auth;
 
-import static google.registry.request.auth.AuthSettings.AuthLevel.APP;
-
 import com.google.api.client.json.webtoken.JsonWebSignature;
 import com.google.auth.oauth2.TokenVerifier;
 import com.google.common.annotations.VisibleForTesting;
@@ -97,12 +95,11 @@ public abstract class OidcTokenAuthenticationMechanism implements Authentication
     }
     Optional<User> maybeUser = UserDao.loadUser(email);
     if (maybeUser.isPresent()) {
-      return AuthResult.create(AuthLevel.USER, UserAuthInfo.create(maybeUser.get()));
+      return AuthResult.createUser(UserAuthInfo.create(maybeUser.get()));
     }
-    // TODO: implement caching so we don't have to look up the database for every request.
     logger.atInfo().log("No end user found for email address %s", email);
     if (serviceAccountEmails.stream().anyMatch(e -> e.equals(email))) {
-      return AuthResult.create(APP);
+      return AuthResult.createApp(email);
     }
     logger.atInfo().log("No service account found for email address %s", email);
     logger.atWarning().log(
@@ -153,15 +150,8 @@ public abstract class OidcTokenAuthenticationMechanism implements Authentication
    *
    * <p>If the endpoint is not behind IAP, we can try to authenticate the OIDC token supplied in the
    * request header directly. Ideally we would like all endpoints to be behind IAP, but being able
-   * to authenticate the token directly provides us with the flexibility to do away with OAuth-based
-   * {@link OAuthAuthenticationMechanism} that is tied to App Engine runtime without having to turn
-   * on IAP, which is an all-or-nothing switch for each GAE service (i.e. no way to turn it on only
-   * for certain GAE endpoints).
-   *
-   * <p>Note that this mechanism will try to first extract the token under the "proxy-authorization"
-   * header, before trying "authorization". This is because currently the GAE OAuth service always
-   * uses "authorization", and we would like to provide a way for both auth mechanisms to be working
-   * at the same time for the same request.
+   * to authenticate the token directly provides us with some extra flexibility that comes in handy,
+   * at least during the migration to GKE.
    *
    * @see <a href=https://datatracker.ietf.org/doc/html/rfc6750>Bearer Token Usage</a>
    */
