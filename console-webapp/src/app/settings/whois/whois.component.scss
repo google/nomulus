@@ -24,14 +24,14 @@
     display: flex;
     flex-wrap: wrap;
     margin-bottom: 5px;
-    min-width: 450px;
+    min-width: 400px;
     width: 50%;
     max-width: 50%;
   }
   &__section-description {
     display: inline-block;
     margin-block-start: 1em;
-    min-width: 150px;
+    width: 160px;
   }
   &__section-form {
     display: inline-block;
