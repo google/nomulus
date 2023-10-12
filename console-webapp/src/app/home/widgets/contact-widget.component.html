@@ -5,21 +5,31 @@
         <mat-icon class="console-app__widget-icon">call</mat-icon>
         <h1 class="console-app__widget-title">Contact Support</h1>
         <h4 class="secondary-text text-center">
-          View Google Registry support email and phone information
+          Let us know if you have any questions
         </h4>
       </div>
       <div class="console-app__widget_right">
-        <button mat-button color="primary" class="console-app__widget-link">
+        <button
+          mat-button
+          color="primary"
+          class="console-app__widget-link-noclick"
+        >
           Give us a Call
         </button>
         <p class="secondary-text">
-          Call Google Registry support at <b>+1 (404) 978 8419</b>
+          Call {{ userDataService.userData?.productName }} support at
+          <b>{{ userDataService.userData?.supportPhoneNumber }}</b>
         </p>
-        <button mat-button color="primary" class="console-app__widget-link">
+        <button
+          mat-button
+          color="primary"
+          class="console-app__widget-link-noclick"
+        >
           Send us an Email
         </button>
         <p class="secondary-text">
-          Email Google Registry at <b>support@google.com</b>
+          Email {{ userDataService.userData?.productName }} at
+          <b>{{ userDataService.userData?.supportEmail }}</b>
         </p>
       </div>
     </div>

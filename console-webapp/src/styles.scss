@@ -47,6 +47,13 @@ body {
       min-width: auto !important;
       height: min-content !important;
     }
+    &-link-noclick {
+      padding: 0 !important;
+      text-align: left;
+      min-width: auto !important;
+      height: min-content !important;
+      cursor: default !important;
+    }
     &-title {
       color: var(--primary) !important;
       text-align: center;

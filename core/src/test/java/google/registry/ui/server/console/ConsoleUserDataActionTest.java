@@ -54,7 +54,19 @@ class ConsoleUserDataActionTest {
     assertThat(response.getStatus()).isEqualTo(HttpStatusCodes.STATUS_CODE_OK);
     Map jsonObject = GSON.fromJson(response.getPayload(), Map.class);
     assertThat(jsonObject)
-        .containsExactly("isAdmin", false, "technicalDocsUrl", "test", "globalRole", "FTE");
+        .containsExactly(
+            "isAdmin",
+            false,
+            "technicalDocsUrl",
+            "test",
+            "globalRole",
+            "FTE",
+            "productName",
+            "Nomulus",
+            "supportPhoneNumber",
+            "+1 (212) 867 5309",
+            "supportEmail",
+            "support@example.com");
   }
 
   @Test
@@ -71,6 +83,7 @@ class ConsoleUserDataActionTest {
   }
 
   private ConsoleUserDataAction createAction(AuthResult authResult) throws IOException {
-    return new ConsoleUserDataAction(authResult, response, "test");
+    return new ConsoleUserDataAction(
+        authResult, response, "Nomulus", "support@example.com", "+1 (212) 867 5309", "test");
   }
 }
