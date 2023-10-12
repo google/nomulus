@@ -48,6 +48,7 @@ import { DomainsWidgetComponent } from './home/widgets/domains-widget.component'
 import { SettingsWidgetComponent } from './home/widgets/settings-widget.component';
 import { UserDataService } from './shared/services/userData.service';
 import WhoisComponent from './settings/whois/whois.component';
+import { SnackBarModule } from './snackbar.module';
 
 @NgModule({
   declarations: [
@@ -79,6 +80,7 @@ import WhoisComponent from './settings/whois/whois.component';
     FormsModule,
     HttpClientModule,
     MaterialModule,
+    SnackBarModule,
   ],
   providers: [
     BackendService,

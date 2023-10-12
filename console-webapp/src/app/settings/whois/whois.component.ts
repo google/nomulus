@@ -61,9 +61,8 @@ export default class WhoisComponent {
         this.resetDataSource();
       },
       error: (err: HttpErrorResponse) => {
-        this._snackBar.open(err.error, undefined, {
-          duration: 1500,
-        });
+        this._snackBar.open(err.error);
+        this.loading = false;
       },
     });
     this.cancel();
