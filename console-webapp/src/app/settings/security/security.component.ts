@@ -64,9 +64,7 @@ export default class SecurityComponent {
         this.resetDataSource();
       },
       error: (err: HttpErrorResponse) => {
-        this._snackBar.open(err.error, undefined, {
-          duration: 1500,
-        });
+        this._snackBar.open(err.error);
       },
     });
     this.cancel();

@@ -89,8 +89,6 @@ export class RegistrarService implements GlobalLoader {
   }
 
   loadingTimeout() {
-    this._snackBar.open('Timeout loading registrars', undefined, {
-      duration: 1500,
-    });
+    this._snackBar.open('Timeout loading registrars');
   }
 }

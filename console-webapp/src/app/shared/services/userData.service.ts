@@ -49,8 +49,6 @@ export class UserDataService implements GlobalLoader {
   }
 
   loadingTimeout() {
-    this._snackBar.open('Timeout loading user data', undefined, {
-      duration: 1500,
-    });
+    this._snackBar.open('Timeout loading user data');
   }
 }

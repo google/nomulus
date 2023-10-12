@@ -17,6 +17,7 @@ package google.registry.request;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.net.MediaType.PLAIN_TEXT_UTF_8;
 import static javax.servlet.http.HttpServletResponse.SC_FORBIDDEN;
+import static javax.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 import static javax.servlet.http.HttpServletResponse.SC_METHOD_NOT_ALLOWED;
 import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
 
@@ -162,6 +163,9 @@ public class RequestHandler<C> {
     } catch (HttpException e) {
       e.send(rsp);
       success = false;
+    } catch (Exception e) {
+      rsp.setStatus(SC_INTERNAL_SERVER_ERROR);
+      rsp.getWriter().write("Internal server error, please try again later");
     } finally {
       requestMetrics.record(
           new Duration(startTime, clock.nowUtc()),

@@ -129,9 +129,7 @@ export class ContactDetailsDialogComponent {
     operationObservable.subscribe({
       complete: this.onCloseCallback.bind(this),
       error: (err: HttpErrorResponse) => {
-        this._snackBar.open(err.error, undefined, {
-          duration: 1500,
-        });
+        this._snackBar.open(err.error);
       },
     });
   }
@@ -175,9 +173,7 @@ export default class ContactComponent {
     if (confirm(`Please confirm contact ${contact.name} delete`)) {
       this.contactService.deleteContact(contact).subscribe({
         error: (err: HttpErrorResponse) => {
-          this._snackBar.open(err.error, undefined, {
-            duration: 1500,
-          });
+          this._snackBar.open(err.error);
         },
       });
     }
