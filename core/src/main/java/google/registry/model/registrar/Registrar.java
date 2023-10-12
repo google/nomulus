@@ -200,7 +200,11 @@ public class Registrar extends UpdateAutoTimestampEntity implements Buildable, J
 
   /** A caching {@link Supplier} of a registrarId to {@link Registrar} map. */
   private static final Supplier<ImmutableMap<String, Registrar>> CACHE_BY_REGISTRAR_ID =
-      memoizeWithShortExpiration(() -> Maps.uniqueIndex(loadAll(), Registrar::getRegistrarId));
+      memoizeWithShortExpiration(
+          () ->
+              Maps.uniqueIndex(
+                  tm().reTransact(() -> tm().loadAllOf(Registrar.class)),
+                  Registrar::getRegistrarId));
 
   /**
    * Unique registrar client id. Must conform to "clIDType" as defined in RFC5730.

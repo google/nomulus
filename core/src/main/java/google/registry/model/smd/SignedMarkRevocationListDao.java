@@ -28,7 +28,7 @@ public class SignedMarkRevocationListDao {
   /** Loads the {@link SignedMarkRevocationList}. */
   static SignedMarkRevocationList load() {
     Optional<SignedMarkRevocationList> smdrl =
-        tm().transact(
+        tm().reTransact(
                 () -> {
                   Long revisionId =
                       tm().query("SELECT MAX(revisionId) FROM SignedMarkRevocationList", Long.class)

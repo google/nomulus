@@ -305,14 +305,14 @@ public class AllocationToken extends UpdateAutoTimestampEntity implements Builda
                   new CacheLoader<VKey<AllocationToken>, Optional<AllocationToken>>() {
                     @Override
                     public Optional<AllocationToken> load(VKey<AllocationToken> key) {
-                      return tm().transact(() -> tm().loadByKeyIfPresent(key));
+                      return tm().reTransact(() -> tm().loadByKeyIfPresent(key));
                     }
 
                     @Override
                     public Map<VKey<AllocationToken>, Optional<AllocationToken>> loadAll(
                         Iterable<? extends VKey<AllocationToken>> keys) {
                       ImmutableSet<VKey<AllocationToken>> keySet = ImmutableSet.copyOf(keys);
-                      return tm().transact(
+                      return tm().reTransact(
                               () ->
                                   keySet.stream()
                                       .collect(

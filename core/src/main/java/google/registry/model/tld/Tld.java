@@ -233,7 +233,8 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
               new CacheLoader<String, Tld>() {
                 @Override
                 public Tld load(final String tld) {
-                  return tm().transact(() -> tm().loadByKeyIfPresent(createVKey(tld))).orElse(null);
+                  return tm().reTransact(() -> tm().loadByKeyIfPresent(createVKey(tld)))
+                      .orElse(null);
                 }
 
                 @Override
@@ -241,7 +242,7 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
                   ImmutableMap<String, VKey<Tld>> keysMap =
                       toMap(ImmutableSet.copyOf(tlds), Tld::createVKey);
                   Map<VKey<? extends Tld>, Tld> entities =
-                      tm().transact(() -> tm().loadByKeysIfPresent(keysMap.values()));
+                      tm().reTransact(() -> tm().loadByKeysIfPresent(keysMap.values()));
                   return Maps.transformEntries(keysMap, (k, v) -> entities.getOrDefault(v, null));
                 }
               });

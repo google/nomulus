@@ -56,7 +56,7 @@ public final class Tlds {
   private static Supplier<ImmutableMap<String, TldType>> createFreshCache() {
     return memoizeWithShortExpiration(
         () ->
-            tm().transact(
+            tm().reTransact(
                     () -> {
                       EntityManager entityManager = tm().getEntityManager();
                       Stream<?> resultStream =
