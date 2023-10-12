@@ -17,7 +17,6 @@ package google.registry.ui.server.console.settings;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.request.Action.Method.POST;
 
-import avro.shaded.com.google.common.collect.ImmutableList;
 import com.google.api.client.http.HttpStatusCodes;
 import com.google.gson.Gson;
 import google.registry.flows.certs.CertificateChecker;
@@ -103,41 +102,30 @@ public class SecurityAction implements JsonGetAction {
             .asBuilder()
             .setIpAddressAllowList(registrarParameter.getIpAddressAllowList());
 
-    boolean hasInvalidCerts =
-        ImmutableList.of(
-                registrarParameter.getClientCertificate(),
-                registrarParameter.getFailoverClientCertificate())
-            .stream()
-            .filter(Optional::isPresent)
-            .map(Optional::get)
-            .anyMatch(
-                cert -> {
-                  try {
-                    certificateChecker.validateCertificate(cert);
-                    return false;
-                  } catch (InsecureCertificateException e) {
-                    return true;
-                  }
-                });
-
-    if (hasInvalidCerts) {
+    try {
+      if (!savedRegistrar
+          .getClientCertificate()
+          .equals(registrarParameter.getClientCertificate())) {
+        if (registrarParameter.getClientCertificate().isPresent()) {
+          String newClientCert = registrarParameter.getClientCertificate().get();
+          certificateChecker.validateCertificate(newClientCert);
+          updatedRegistrar.setClientCertificate(newClientCert, tm().getTransactionTime());
+        }
+      }
+      if (!savedRegistrar
+          .getFailoverClientCertificate()
+          .equals(registrarParameter.getFailoverClientCertificate())) {
+        if (registrarParameter.getFailoverClientCertificate().isPresent()) {
+          String newFailoverCert = registrarParameter.getFailoverClientCertificate().get();
+          certificateChecker.validateCertificate(newFailoverCert);
+          updatedRegistrar.setFailoverClientCertificate(newFailoverCert, tm().getTransactionTime());
+        }
+      }
+    } catch (InsecureCertificateException e) {
       response.setStatus(HttpStatusCodes.STATUS_CODE_BAD_REQUEST);
-      response.setPayload("Insecure Certificate in parameter");
+      response.setPayload("Invalid certificate in parameter");
       return;
     }
-
-    registrarParameter
-        .getClientCertificate()
-        .ifPresent(
-            newClientCert ->
-                updatedRegistrar.setClientCertificate(newClientCert, tm().getTransactionTime()));
-
-    registrarParameter
-        .getFailoverClientCertificate()
-        .ifPresent(
-            failoverCert ->
-                updatedRegistrar.setFailoverClientCertificate(
-                    failoverCert, tm().getTransactionTime()));
 
     tm().put(updatedRegistrar.build());
     response.setStatus(HttpStatusCodes.STATUS_CODE_OK);
