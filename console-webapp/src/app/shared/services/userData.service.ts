@@ -19,8 +19,11 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { GlobalLoader, GlobalLoaderService } from './globalLoader.service';
 
 export interface UserData {
-  isAdmin: boolean;
   globalRole: string;
+  isAdmin: boolean;
+  productName: string;
+  supportEmail: string;
+  supportPhoneNumber: string;
   technicalDocsUrl: string;
 }
 

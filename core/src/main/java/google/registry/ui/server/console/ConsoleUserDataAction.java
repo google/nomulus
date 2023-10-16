@@ -40,15 +40,24 @@ public class ConsoleUserDataAction implements JsonGetAction {
 
   private final AuthResult authResult;
   private final Response response;
+  private final String productName;
+  private final String supportPhoneNumber;
+  private final String supportEmail;
   private final String technicalDocsUrl;
 
   @Inject
   public ConsoleUserDataAction(
       AuthResult authResult,
       Response response,
+      @Config("productName") String productName,
+      @Config("supportEmail") String supportEmail,
+      @Config("supportPhoneNumber") String supportPhoneNumber,
       @Config("technicalDocsUrl") String technicalDocsUrl) {
     this.response = response;
     this.authResult = authResult;
+    this.productName = productName;
+    this.supportEmail = supportEmail;
+    this.supportPhoneNumber = supportPhoneNumber;
     this.technicalDocsUrl = technicalDocsUrl;
   }
 
@@ -74,6 +83,10 @@ public class ConsoleUserDataAction implements JsonGetAction {
                 // auth checks.
                 "isAdmin", user.getUserRoles().isAdmin(),
                 "globalRole", user.getUserRoles().getGlobalRole(),
+                // Include static contact resources in this call to minimize round trips
+                "productName", productName,
+                "supportEmail", supportEmail,
+                "supportPhoneNumber", supportPhoneNumber,
                 // Is used by UI to construct a link to registry resources
                 "technicalDocsUrl", technicalDocsUrl));
 

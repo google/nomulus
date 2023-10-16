@@ -47,6 +47,10 @@ body {
       min-width: auto !important;
       height: min-content !important;
     }
+    &-section-header {
+      font-weight: 500;
+      color: var(--primary) !important;
+    }
     &-title {
       color: var(--primary) !important;
       text-align: center;
