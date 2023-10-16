@@ -166,6 +166,7 @@ public class RequestHandler<C> {
     } catch (Exception e) {
       rsp.setStatus(SC_INTERNAL_SERVER_ERROR);
       rsp.getWriter().write("Internal server error, please try again later");
+      logger.atSevere().withCause(e).log("Encountered internal server error");
     } finally {
       requestMetrics.record(
           new Duration(startTime, clock.nowUtc()),
