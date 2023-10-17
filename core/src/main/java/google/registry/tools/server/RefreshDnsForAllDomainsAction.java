@@ -19,6 +19,7 @@ import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.Iterables.getLast;
 import static google.registry.dns.DnsUtils.requestDomainDnsRefresh;
 import static google.registry.model.tld.Tlds.assertTldsExist;
+import static google.registry.persistence.PersistenceModule.TransactionIsolationLevel.TRANSACTION_REPEATABLE_READ;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.request.RequestParameters.PARAM_TLDS;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
@@ -82,13 +83,16 @@ public class RefreshDnsForAllDomainsAction implements Runnable {
   public void run() {
     assertTldsExist(tlds);
     checkArgument(batchSize > 0, "Must specify a positive number for batch size");
-    int smearMinutes = tm().transact(this::calculateSmearMinutes);
+    int smearMinutes = tm().transact(this::calculateSmearMinutes, TRANSACTION_REPEATABLE_READ);
 
     ImmutableList<String> domainsBatch;
     @Nullable String lastInPreviousBatch = null;
     do {
       Optional<String> lastInPreviousBatchOpt = Optional.ofNullable(lastInPreviousBatch);
-      domainsBatch = tm().transact(() -> refreshBatch(lastInPreviousBatchOpt, smearMinutes));
+      domainsBatch =
+          tm().transact(
+                  () -> refreshBatch(lastInPreviousBatchOpt, smearMinutes),
+                  TRANSACTION_REPEATABLE_READ);
       lastInPreviousBatch = domainsBatch.isEmpty() ? null : getLast(domainsBatch);
     } while (domainsBatch.size() == batchSize);
   }
