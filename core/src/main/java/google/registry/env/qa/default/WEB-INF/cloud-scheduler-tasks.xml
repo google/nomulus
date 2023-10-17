@@ -59,13 +59,4 @@
     </description>
     <schedule>7 3 * * *</schedule>
   </task>
-
-  <task>
-    <url><![CDATA[/_dr/task/wipeOutCloudSql]]></url>
-    <name>wipeOutCloudSql</name>
-    <description>
-      This job runs an action that deletes all data in Cloud SQL.
-    </description>
-    <schedule>7 3 * * 6</schedule>
-  </task>
 </entries>
