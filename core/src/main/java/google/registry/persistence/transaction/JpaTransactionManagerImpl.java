@@ -18,7 +18,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
-import static google.registry.config.RegistryConfig.getHibernatePerTransactionIsolationEnabled;
+import static google.registry.config.RegistryConfig.getHibernateDisableNestedTransactions;
 import static google.registry.persistence.transaction.DatabaseException.tryWrapAndThrow;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 import static java.util.AbstractMap.SimpleEntry;
@@ -52,7 +52,7 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.Supplier;
+import java.util.concurrent.Callable;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import javax.annotation.Nullable;
@@ -138,21 +138,26 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
   }
 
   @Override
-  public void assertTransactionIsolationLevel(TransactionIsolationLevel expectedLevel) {
-    assertInTransaction();
-    TransactionIsolationLevel currentLevel = getCurrentTransactionIsolationLevel();
-    if (currentLevel != expectedLevel) {
-      throw new IllegalStateException(
-          String.format(
-              "Current transaction isolation level (%s) is not as expected (%s)",
-              currentLevel, expectedLevel));
+  public <T> T reTransact(Callable<T> work) {
+    // This prevents inner transaction from retrying, thus avoiding a cascade retry effect.
+    if (inTransaction()) {
+      return transactNoRetry(work, null);
     }
+    return retrier.callWithRetry(
+        () -> transactNoRetry(work, null), JpaRetries::isFailedTxnRetriable);
   }
 
   @Override
-  public <T> T transact(Supplier<T> work, TransactionIsolationLevel isolationLevel) {
-    // This prevents inner transaction from retrying, thus avoiding a cascade retry effect.
+  public <T> T transact(Callable<T> work, TransactionIsolationLevel isolationLevel) {
     if (inTransaction()) {
+      String message =
+          "Nested transaction detected. Try refactoring to avoid nested"
+              + "transactions. If unachieveable, use reTransact() in nested transactions";
+      if (getHibernateDisableNestedTransactions()) {
+        throw new IllegalStateException(message);
+      }
+      logger.atWarning().log(message);
+      // This prevents inner transaction from retrying, thus avoiding a cascade retry effect.
       return transactNoRetry(work, isolationLevel);
     }
     return retrier.callWithRetry(
@@ -160,30 +165,35 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
   }
 
   @Override
-  public <T> T reTransact(Supplier<T> work) {
-    return transact(work);
-  }
-
-  @Override
-  public <T> T transact(Supplier<T> work) {
+  public <T> T transact(Callable<T> work) {
     return transact(work, null);
   }
 
-  @Override
   public <T> T transactNoRetry(
-      Supplier<T> work, @Nullable TransactionIsolationLevel isolationLevel) {
+      Callable<T> work, @Nullable TransactionIsolationLevel isolationLevel) {
     if (inTransaction()) {
-      if (isolationLevel != null && getHibernatePerTransactionIsolationEnabled()) {
-        TransactionIsolationLevel enclosingLevel = getCurrentTransactionIsolationLevel();
-        if (isolationLevel != enclosingLevel) {
-          throw new IllegalStateException(
-              String.format(
-                  "Isolation level conflict detected in nested transactions.\n"
-                      + "Enclosing transaction: %s\nCurrent transaction: %s",
-                  enclosingLevel, isolationLevel));
+      // This check will no longer be necessary when the transact() method always throws
+      // inside a nested transaction, as the only way to pass a non-null isolation level
+      // is by calling the transact() method (and its variants), which would have already
+      // thrown before calling transactNoRetry().
+      //
+      // For now, we still need it, so we don't accidentially call a nested transact() with an
+      // isolation level override. This buys us time to deteced nested transact() calls and either
+      // remove them or change the call site to reTransact().
+      if (isolationLevel != null) {
+        throw new IllegalStateException(
+            "Transaction isolation level cannot be specified for nested transactions");
+      }
+      try {
+        return work.call();
+      } catch (Exception | Error e) {
+        tryWrapAndThrow(e);
+        if (e instanceof RuntimeException) {
+          throw (RuntimeException) e;
+        } else {
+          throw new RuntimeException(e);
         }
       }
-      return work.get();
     }
     TransactionInfo txnInfo = transactionInfo.get();
     txnInfo.entityManager = emf.createEntityManager();
@@ -191,22 +201,19 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
     try {
       txn.begin();
       txnInfo.start(clock);
-      if (isolationLevel != null) {
-        if (getHibernatePerTransactionIsolationEnabled()) {
-          getEntityManager()
-              .createNativeQuery(
-                  String.format("SET TRANSACTION ISOLATION LEVEL %s", isolationLevel.getMode()))
-              .executeUpdate();
-          logger.atInfo().log("Running transaction at %s", isolationLevel);
-        } else {
-          logger.atWarning().log(
-              "Per-transaction isolation level disabled, but %s was requested", isolationLevel);
-        }
+      if (isolationLevel != null && isolationLevel != getDefaultTransactionIsolationLevel()) {
+        getEntityManager()
+            .createNativeQuery(
+                String.format("SET TRANSACTION ISOLATION LEVEL %s", isolationLevel.getMode()))
+            .executeUpdate();
+        logger.atInfo().log(
+            "Override transaction isolation level from %s to %s",
+            getDefaultTransactionIsolationLevel(), isolationLevel);
       }
-      T result = work.get();
+      T result = work.call();
       txn.commit();
       return result;
-    } catch (RuntimeException | Error e) {
+    } catch (Exception | Error e) {
       // Error is unchecked!
       try {
         txn.rollback();
@@ -215,19 +222,18 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
         logger.atSevere().withCause(rollbackException).log("Rollback failed; suppressing error.");
       }
       tryWrapAndThrow(e);
-      throw e;
+      if (e instanceof RuntimeException) {
+        throw (RuntimeException) e;
+      } else {
+        throw new RuntimeException(e);
+      }
     } finally {
       txnInfo.clear();
     }
   }
 
   @Override
-  public <T> T transactNoRetry(Supplier<T> work) {
-    return transactNoRetry(work, null);
-  }
-
-  @Override
-  public void transact(Runnable work, TransactionIsolationLevel isolationLevel) {
+  public void transact(ThrowableRunnable work, TransactionIsolationLevel isolationLevel) {
     transact(
         () -> {
           work.run();
@@ -237,28 +243,17 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
   }
 
   @Override
-  public void reTransact(Runnable work) {
-    transact(work);
-  }
-
-  @Override
-  public void transact(Runnable work) {
+  public void transact(ThrowableRunnable work) {
     transact(work, null);
   }
 
   @Override
-  public void transactNoRetry(Runnable work, TransactionIsolationLevel isolationLevel) {
-    transactNoRetry(
+  public void reTransact(ThrowableRunnable work) {
+    reTransact(
         () -> {
           work.run();
           return null;
-        },
-        isolationLevel);
-  }
-
-  @Override
-  public void transactNoRetry(Runnable work) {
-    transactNoRetry(work, null);
+        });
   }
 
   @Override
