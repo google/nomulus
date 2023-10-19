@@ -25,9 +25,10 @@ import com.google.common.base.Strings;
 import com.google.common.flogger.FluentLogger;
 import google.registry.model.ImmutableObject;
 import google.registry.persistence.VKey;
+import google.registry.persistence.transaction.TransactionManager.ThrowableRunnable;
 import java.io.Serializable;
 import java.util.Optional;
-import java.util.function.Supplier;
+import java.util.concurrent.Callable;
 import javax.annotation.Nullable;
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -184,7 +185,7 @@ public class Lock extends ImmutableObject implements Serializable {
   public static Optional<Lock> acquire(
       String resourceName, @Nullable String tld, Duration leaseLength) {
     String scope = tld != null ? tld : GLOBAL;
-    Supplier<AcquireResult> lockAcquirer =
+    Callable<AcquireResult> lockAcquirer =
         () -> {
           DateTime now = tm().getTransactionTime();
 
@@ -221,7 +222,7 @@ public class Lock extends ImmutableObject implements Serializable {
   /** Release the lock. */
   public void release() {
     // Just use the default clock because we aren't actually doing anything that will use the clock.
-    Supplier<Void> lockReleaser =
+    ThrowableRunnable lockReleaser =
         () -> {
           // To release a lock, check that no one else has already obtained it and if not
           // delete it. If the lock in the database was different, then this lock is gone already;
@@ -246,7 +247,6 @@ public class Lock extends ImmutableObject implements Serializable {
             logger.atInfo().log(
                 "Not deleting lock: %s - someone else has it: %s", lockId, loadedLock);
           }
-          return null;
         };
     tm().transact(lockReleaser);
   }
