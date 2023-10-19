@@ -62,7 +62,7 @@ class DatabaseException extends PersistenceException {
    * <p>If the {@code original Throwable} has at least one {@link SQLException} in its chain of
    * causes, a {@link DatabaseException} is thrown; otherwise this does nothing.
    */
-  static void tryWrapAndThrow(Throwable original) {
+  static void throwIfSqlException(Throwable original) {
     Throwable t = original;
     do {
       if (t instanceof SQLException) {

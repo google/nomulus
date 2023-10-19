@@ -31,7 +31,6 @@ import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.testing.TestLogHandler;
-import google.registry.config.RegistryConfig;
 import google.registry.flows.certs.CertificateChecker;
 import google.registry.model.eppcommon.Trid;
 import google.registry.model.eppoutput.EppOutput.ResponseOrGreeting;
@@ -89,8 +88,8 @@ class FlowRunnerTest {
 
     @Override
     public ResponseOrGreeting run() {
-      tm().assertTransactionIsolationLevel(
-              isolationLevel.orElse(tm().getDefaultTransactionIsolationLevel()));
+      assertThat(tm().getCurrentTransactionIsolationLevel())
+          .isEqualTo(isolationLevel.orElse(tm().getDefaultTransactionIsolationLevel()));
       return mock(EppResponse.class);
     }
   }
@@ -136,10 +135,8 @@ class FlowRunnerTest {
         Optional.of(TransactionIsolationLevel.TRANSACTION_READ_UNCOMMITTED);
     flowRunner.flowClass = TestTransactionalFlow.class;
     flowRunner.flowProvider = () -> new TestTransactionalFlow(flowRunner.isolationLevelOverride);
-    if (RegistryConfig.getHibernatePerTransactionIsolationEnabled()) {
-      flowRunner.run(eppMetricBuilder);
-      assertThat(eppMetricBuilder.build().getCommandName()).hasValue("TestTransactional");
-    }
+    flowRunner.run(eppMetricBuilder);
+    assertThat(eppMetricBuilder.build().getCommandName()).hasValue("TestTransactional");
   }
 
   @Test

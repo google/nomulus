@@ -209,7 +209,7 @@ public final class RegistryJpaIO {
 
       @ProcessElement
       public void processElement(OutputReceiver<T> outputReceiver) {
-        tm().transactNoRetry(
+        tm().transact(
                 () -> {
                   query.stream().map(resultMapper::apply).forEach(outputReceiver::output);
                 });
