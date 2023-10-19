@@ -28,6 +28,7 @@ import static google.registry.testing.TestDataHelper.fileClassPath;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -36,6 +37,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import google.registry.config.RegistryConfig;
 import google.registry.model.ImmutableObject;
+import google.registry.persistence.PersistenceModule.TransactionIsolationLevel;
 import google.registry.persistence.VKey;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaUnitTestExtension;
 import google.registry.testing.DatabaseHelper;
@@ -43,7 +45,6 @@ import google.registry.testing.FakeClock;
 import java.io.Serializable;
 import java.math.BigInteger;
 import java.util.NoSuchElementException;
-import java.util.function.Supplier;
 import javax.persistence.Entity;
 import javax.persistence.EntityManager;
 import javax.persistence.Id;
@@ -53,6 +54,8 @@ import javax.persistence.PersistenceException;
 import javax.persistence.RollbackException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
+import org.junit.jupiter.api.function.Executable;
+import org.mockito.MockedStatic;
 
 /**
  * Unit tests for SQL only APIs defined in {@link JpaTransactionManagerImpl}. Note that the tests
@@ -94,7 +97,7 @@ class JpaTransactionManagerImplTest {
               insertPerson(10);
               insertCompany("Foo");
               insertCompany("Bar");
-              tm().assertTransactionIsolationLevel(tm().getDefaultTransactionIsolationLevel());
+              assertTransactionIsolationLevel(tm().getDefaultTransactionIsolationLevel());
             });
     assertPersonCount(1);
     assertPersonExist(10);
@@ -105,145 +108,98 @@ class JpaTransactionManagerImplTest {
 
   @Test
   void transact_setIsolationLevel() {
+    // If not specified, run at the default isolation level.
     tm().transact(
-            () -> {
-              tm().assertTransactionIsolationLevel(
-                      RegistryConfig.getHibernatePerTransactionIsolationEnabled()
-                          ? TRANSACTION_READ_UNCOMMITTED
-                          : tm().getDefaultTransactionIsolationLevel());
-              return null;
-            },
+            () -> assertTransactionIsolationLevel(tm().getDefaultTransactionIsolationLevel()),
+            null);
+    tm().transact(
+            () -> assertTransactionIsolationLevel(TRANSACTION_READ_UNCOMMITTED),
             TRANSACTION_READ_UNCOMMITTED);
-    // Make sure that we can start a new transaction on the same thread with a different isolation
-    // level.
+    // Make sure that we can start a new transaction on the same thread at a different level.
     tm().transact(
-            () -> {
-              tm().assertTransactionIsolationLevel(
-                      RegistryConfig.getHibernatePerTransactionIsolationEnabled()
-                          ? TRANSACTION_REPEATABLE_READ
-                          : tm().getDefaultTransactionIsolationLevel());
-              return null;
-            },
+            () -> assertTransactionIsolationLevel(TRANSACTION_REPEATABLE_READ),
             TRANSACTION_REPEATABLE_READ);
   }
 
   @Test
-  void transact_nestedTransactions_perTransactionIsolationLevelEnabled() {
-    if (!RegistryConfig.getHibernatePerTransactionIsolationEnabled()) {
-      return;
-    }
-    // Nested transactions allowed (both at the default isolation level).
-    tm().transact(
-            () -> {
-              tm().assertTransactionIsolationLevel(tm().getDefaultTransactionIsolationLevel());
-              tm().transact(
-                      () -> {
-                        tm().assertTransactionIsolationLevel(
+  void transact_nestedTransactions_disabled() {
+    try (MockedStatic<RegistryConfig> config = mockStatic(RegistryConfig.class)) {
+      config.when(RegistryConfig::getHibernateDisableNestedTransactions).thenReturn(true);
+      // transact() not allowed in nested transactions.
+      IllegalStateException thrown =
+          assertThrows(
+              IllegalStateException.class,
+              () ->
+                  tm().transact(
+                          () -> {
+                            assertTransactionIsolationLevel(
                                 tm().getDefaultTransactionIsolationLevel());
-                      });
-            });
-    // Nested transactions allowed (enclosed transaction does not have an override, using the
-    // enclosing transaction's level).
-    tm().transact(
-            () -> {
-              tm().assertTransactionIsolationLevel(TRANSACTION_READ_UNCOMMITTED);
-              tm().transact(
-                      () -> {
-                        tm().assertTransactionIsolationLevel(TRANSACTION_READ_UNCOMMITTED);
-                      });
-            },
-            TRANSACTION_READ_UNCOMMITTED);
-    // Nested transactions allowed (Both have the same override).
-    tm().transact(
-            () -> {
-              tm().assertTransactionIsolationLevel(TRANSACTION_REPEATABLE_READ);
-              tm().transact(
-                      () -> {
-                        tm().assertTransactionIsolationLevel(TRANSACTION_REPEATABLE_READ);
-                      },
-                      TRANSACTION_REPEATABLE_READ);
-            },
-            TRANSACTION_REPEATABLE_READ);
-    // Nested transactions disallowed (enclosed transaction has an override that conflicts from the
-    // default).
-    IllegalStateException e =
-        assertThrows(
-            IllegalStateException.class,
-            () ->
-                tm().transact(
-                        () -> {
-                          tm().transact(() -> {}, TRANSACTION_READ_COMMITTED);
-                        }));
-    assertThat(e).hasMessageThat().contains("conflict detected");
-    // Nested transactions disallowed (conflicting overrides).
-    e =
-        assertThrows(
-            IllegalStateException.class,
-            () ->
-                tm().transact(
-                        () -> {
-                          tm().transact(() -> {}, TRANSACTION_READ_COMMITTED);
-                        },
-                        TRANSACTION_REPEATABLE_READ));
-    assertThat(e).hasMessageThat().contains("conflict detected");
+                            tm().transact(() -> null);
+                          }));
+      assertThat(thrown).hasMessageThat().contains("Nested transaction detected");
+      // reTransact() allowed in nested transactions.
+      tm().transact(
+              () -> {
+                assertTransactionIsolationLevel(tm().getDefaultTransactionIsolationLevel());
+                tm().reTransact(
+                        () ->
+                            assertTransactionIsolationLevel(
+                                tm().getDefaultTransactionIsolationLevel()));
+              });
+      // reTransact() respects enclosing transaction's isolation level.
+      tm().transact(
+              () -> {
+                assertTransactionIsolationLevel(TRANSACTION_READ_UNCOMMITTED);
+                tm().reTransact(
+                        () -> assertTransactionIsolationLevel(TRANSACTION_READ_UNCOMMITTED));
+              },
+              TRANSACTION_READ_UNCOMMITTED);
+    }
   }
 
   @Test
-  void transact_nestedTransactions_perTransactionIsolationLevelDisabled() {
-    if (RegistryConfig.getHibernatePerTransactionIsolationEnabled()) {
-      return;
+  void transact_nestedTransactions_enabled() {
+    try (MockedStatic<RegistryConfig> config = mockStatic(RegistryConfig.class)) {
+      config.when(RegistryConfig::getHibernateDisableNestedTransactions).thenReturn(false);
+      // transact() allowed in nested transactions.
+      tm().transact(
+              () -> {
+                assertTransactionIsolationLevel(tm().getDefaultTransactionIsolationLevel());
+                tm().reTransact(
+                        () ->
+                            assertTransactionIsolationLevel(
+                                tm().getDefaultTransactionIsolationLevel()));
+              });
+      // transact() not allowed in nested transactions if isolation level is specified.
+      IllegalStateException thrown =
+          assertThrows(
+              IllegalStateException.class,
+              () ->
+                  tm().transact(
+                          () -> {
+                            assertTransactionIsolationLevel(
+                                tm().getDefaultTransactionIsolationLevel());
+                            tm().transact(() -> null, TRANSACTION_READ_COMMITTED);
+                          }));
+      assertThat(thrown).hasMessageThat().contains("cannot be specified");
+      // reTransact() allowed in nested transactions.
+      tm().transact(
+              () -> {
+                assertTransactionIsolationLevel(tm().getDefaultTransactionIsolationLevel());
+                tm().reTransact(
+                        () ->
+                            assertTransactionIsolationLevel(
+                                tm().getDefaultTransactionIsolationLevel()));
+              });
+      // reTransact() respects enclosing transaction's isolation level.
+      tm().transact(
+              () -> {
+                assertTransactionIsolationLevel(TRANSACTION_READ_UNCOMMITTED);
+                tm().reTransact(
+                        () -> assertTransactionIsolationLevel(TRANSACTION_READ_UNCOMMITTED));
+              },
+              TRANSACTION_READ_UNCOMMITTED);
     }
-    tm().transact(
-            () -> {
-              tm().assertTransactionIsolationLevel(tm().getDefaultTransactionIsolationLevel());
-              tm().transact(
-                      () -> {
-                        tm().assertTransactionIsolationLevel(
-                                tm().getDefaultTransactionIsolationLevel());
-                      });
-            });
-    tm().transact(
-            () -> {
-              tm().assertTransactionIsolationLevel(tm().getDefaultTransactionIsolationLevel());
-              tm().transact(
-                      () -> {
-                        tm().assertTransactionIsolationLevel(
-                                tm().getDefaultTransactionIsolationLevel());
-                      });
-            },
-            TRANSACTION_READ_UNCOMMITTED);
-    tm().transact(
-            () -> {
-              tm().assertTransactionIsolationLevel(tm().getDefaultTransactionIsolationLevel());
-              tm().transact(
-                      () -> {
-                        tm().assertTransactionIsolationLevel(
-                                tm().getDefaultTransactionIsolationLevel());
-                      },
-                      TRANSACTION_READ_UNCOMMITTED);
-            });
-    tm().transact(
-            () -> {
-              tm().assertTransactionIsolationLevel(tm().getDefaultTransactionIsolationLevel());
-              tm().transact(
-                      () -> {
-                        tm().assertTransactionIsolationLevel(
-                                tm().getDefaultTransactionIsolationLevel());
-                      },
-                      TRANSACTION_READ_UNCOMMITTED);
-            },
-            TRANSACTION_READ_UNCOMMITTED);
-    tm().transact(
-            () -> {
-              tm().assertTransactionIsolationLevel(tm().getDefaultTransactionIsolationLevel());
-              tm().transact(
-                      () -> {
-                        tm().assertTransactionIsolationLevel(
-                                tm().getDefaultTransactionIsolationLevel());
-                      },
-                      TRANSACTION_READ_COMMITTED);
-            },
-            TRANSACTION_READ_UNCOMMITTED);
   }
 
   @Test
@@ -299,32 +255,55 @@ class JpaTransactionManagerImplTest {
         OptimisticLockException.class,
         () -> spyJpaTm.transact(() -> spyJpaTm.delete(theEntityKey)));
     verify(spyJpaTm, times(3)).delete(theEntityKey);
-    Supplier<Runnable> supplier =
-        () -> {
-          Runnable work = () -> spyJpaTm.delete(theEntityKey);
-          work.run();
-          return null;
-        };
-    assertThrows(OptimisticLockException.class, () -> spyJpaTm.transact(supplier));
+    assertThrows(
+        OptimisticLockException.class,
+        () -> spyJpaTm.transact(() -> spyJpaTm.delete(theEntityKey)));
     verify(spyJpaTm, times(6)).delete(theEntityKey);
   }
 
   @Test
-  void transactNoRetry_doesNotRetryOptimisticLockException() {
-    JpaTransactionManager spyJpaTm = spy(tm());
-    doThrow(OptimisticLockException.class).when(spyJpaTm).delete(any(VKey.class));
-    spyJpaTm.transactNoRetry(() -> spyJpaTm.insert(theEntity));
-    assertThrows(
-        OptimisticLockException.class,
-        () -> spyJpaTm.transactNoRetry(() -> spyJpaTm.delete(theEntityKey)));
-    verify(spyJpaTm, times(1)).delete(theEntityKey);
-    Supplier<Runnable> supplier =
+  void transactNoRetry_nested() {
+    JpaTransactionManagerImpl tm = (JpaTransactionManagerImpl) tm();
+    // Calling transactNoRetry() without an isolation level override inside a transaction is fine.
+    tm.transact(
         () -> {
-          Runnable work = () -> spyJpaTm.delete(theEntityKey);
-          work.run();
+          tm.transactNoRetry(
+              () -> {
+                assertTransactionIsolationLevel(tm.getDefaultTransactionIsolationLevel());
+                return null;
+              },
+              null);
+        });
+    // Calling transactNoRetry() with an isolation level override inside a transaction is not
+    // allowed.
+    IllegalStateException thrown =
+        assertThrows(
+            IllegalStateException.class,
+            () -> tm.transact(() -> tm.transactNoRetry(() -> null, TRANSACTION_READ_UNCOMMITTED)));
+    assertThat(thrown).hasMessageThat().contains("cannot be specified");
+  }
+
+  @Test
+  void transactNoRetry_doesNotRetryOptimisticLockException() {
+    JpaTransactionManagerImpl spyJpaTm = spy((JpaTransactionManagerImpl) tm());
+    doThrow(OptimisticLockException.class).when(spyJpaTm).delete(any(VKey.class));
+    spyJpaTm.transactNoRetry(
+        () -> {
+          spyJpaTm.insert(theEntity);
           return null;
-        };
-    assertThrows(OptimisticLockException.class, () -> spyJpaTm.transactNoRetry(supplier));
+        },
+        null);
+    Executable transaction =
+        () ->
+            spyJpaTm.transactNoRetry(
+                () -> {
+                  spyJpaTm.delete(theEntityKey);
+                  return null;
+                },
+                null);
+    assertThrows(OptimisticLockException.class, transaction);
+    verify(spyJpaTm, times(1)).delete(theEntityKey);
+    assertThrows(OptimisticLockException.class, transaction);
     verify(spyJpaTm, times(2)).delete(theEntityKey);
   }
 
@@ -338,13 +317,8 @@ class JpaTransactionManagerImplTest {
     assertThrows(
         RuntimeException.class, () -> spyJpaTm.transact(() -> spyJpaTm.delete(theEntityKey)));
     verify(spyJpaTm, times(3)).delete(theEntityKey);
-    Supplier<Runnable> supplier =
-        () -> {
-          Runnable work = () -> spyJpaTm.delete(theEntityKey);
-          work.run();
-          return null;
-        };
-    assertThrows(RuntimeException.class, () -> spyJpaTm.transact(supplier));
+    assertThrows(
+        RuntimeException.class, () -> spyJpaTm.transact(() -> spyJpaTm.delete(theEntityKey)));
     verify(spyJpaTm, times(6)).delete(theEntityKey);
   }
 
@@ -740,20 +714,13 @@ class JpaTransactionManagerImplTest {
     doThrow(OptimisticLockException.class).when(spyJpaTm).delete(any(VKey.class));
     spyJpaTm.transact(() -> spyJpaTm.insert(theEntity));
 
-    Supplier<Runnable> supplier =
-        () -> {
-          Runnable work = () -> spyJpaTm.delete(theEntityKey);
-          work.run();
-          return null;
-        };
-
     assertThrows(
         OptimisticLockException.class,
         () ->
             spyJpaTm.transact(
                 () -> {
                   spyJpaTm.exists(theEntity);
-                  spyJpaTm.transact(supplier);
+                  spyJpaTm.transact(() -> spyJpaTm.delete(theEntityKey));
                 }));
 
     verify(spyJpaTm, times(3)).exists(theEntity);
@@ -812,6 +779,17 @@ class JpaTransactionManagerImplTest {
 
   private static void assertCompanyEmpty() {
     assertCompanyCount(0);
+  }
+
+  private static void assertTransactionIsolationLevel(TransactionIsolationLevel expectedLevel) {
+    tm().assertInTransaction();
+    TransactionIsolationLevel currentLevel = tm().getCurrentTransactionIsolationLevel();
+    if (currentLevel != expectedLevel) {
+      throw new IllegalStateException(
+          String.format(
+              "Current transaction isolation level (%s) is not as expected (%s)",
+              currentLevel, expectedLevel));
+    }
   }
 
   private static int countTable(String tableName) {
