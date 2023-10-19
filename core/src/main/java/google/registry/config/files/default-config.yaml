@@ -189,11 +189,13 @@ registryPolicy:
   sunriseDomainCreateDiscount: 0.15
 
 hibernate:
-  # Make it possible to specify the isolation level for each transaction. If set
-  # to true, nested transactions will throw an exception. If set to false, a
-  # transaction with the isolation override specified will still execute at the
-  # default level (specified below).
-  perTransactionIsolation: true
+  # If set to false, calls to tm().transact() cannot be nested. If set to false,
+  # Nested calls to tm().transact() are allowed, as long as they do not specify
+  # a transaction isolation level override. These nested transactions should
+  # either be refactored to non-nested transactions, or changed to
+  # tm().reTransact(), which explicitly allows nested transactions, but does not
+  # allow setting an isolation level override.
+  allowNestedTransactions: true
 
   # Make 'SERIALIZABLE' the default isolation level to ensure correctness.
   #
