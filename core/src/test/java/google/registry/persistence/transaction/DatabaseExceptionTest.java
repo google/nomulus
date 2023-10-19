@@ -18,7 +18,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
 import static google.registry.persistence.transaction.DatabaseException.getSqlError;
 import static google.registry.persistence.transaction.DatabaseException.getSqlExceptionDetails;
-import static google.registry.persistence.transaction.DatabaseException.tryWrapAndThrow;
+import static google.registry.persistence.transaction.DatabaseException.throwIfSqlException;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -99,13 +99,13 @@ public class DatabaseExceptionTest {
   @Test
   void tryWrapAndThrow_notSQLException() {
     RuntimeException orig = new RuntimeException(new Exception());
-    tryWrapAndThrow(orig);
+    throwIfSqlException(orig);
   }
 
   @Test
   void tryWrapAndThrow_hasSQLException() {
     Throwable orig = new Throwable(new SQLException());
-    assertThrows(DatabaseException.class, () -> tryWrapAndThrow(orig));
+    assertThrows(DatabaseException.class, () -> throwIfSqlException(orig));
   }
 
   @Test

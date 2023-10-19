@@ -14,6 +14,9 @@
 
 package google.registry.persistence.transaction;
 
+import static com.google.common.base.Throwables.throwIfUnchecked;
+import static google.registry.persistence.transaction.DatabaseException.throwIfSqlException;
+
 import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -21,7 +24,7 @@ import google.registry.model.ImmutableObject;
 import google.registry.persistence.PersistenceModule.TransactionIsolationLevel;
 import google.registry.persistence.VKey;
 import java.util.Optional;
-import java.util.function.Supplier;
+import java.util.concurrent.Callable;
 import java.util.stream.Stream;
 import javax.persistence.EntityManager;
 import javax.persistence.Query;
@@ -61,11 +64,6 @@ public class ReplicaSimulatingJpaTransactionManager implements JpaTransactionMan
   }
 
   @Override
-  public void assertTransactionIsolationLevel(TransactionIsolationLevel expectedLevel) {
-    delegate.assertTransactionIsolationLevel(expectedLevel);
-  }
-
-  @Override
   public EntityManager getStandaloneEntityManager() {
     return delegate.getStandaloneEntityManager();
   }
@@ -101,9 +99,15 @@ public class ReplicaSimulatingJpaTransactionManager implements JpaTransactionMan
   }
 
   @Override
-  public <T> T transact(Supplier<T> work, TransactionIsolationLevel isolationLevel) {
-    if (delegate.inTransaction()) {
-      return work.get();
+  public <T> T transact(Callable<T> work, TransactionIsolationLevel isolationLevel) {
+    if (inTransaction()) {
+      try {
+        return work.call();
+      } catch (Throwable e) {
+        throwIfSqlException(e);
+        throwIfUnchecked(e);
+        throw new RuntimeException(e);
+      }
     }
     return delegate.transact(
         () -> {
@@ -111,33 +115,23 @@ public class ReplicaSimulatingJpaTransactionManager implements JpaTransactionMan
               .getEntityManager()
               .createNativeQuery("SET TRANSACTION READ ONLY")
               .executeUpdate();
-          return work.get();
+          return work.call();
         },
         isolationLevel);
   }
 
   @Override
-  public <T> T reTransact(Supplier<T> work) {
+  public <T> T reTransact(Callable<T> work) {
     return transact(work);
   }
 
   @Override
-  public <T> T transact(Supplier<T> work) {
+  public <T> T transact(Callable<T> work) {
     return transact(work, null);
   }
 
   @Override
-  public <T> T transactNoRetry(Supplier<T> work, TransactionIsolationLevel isolationLevel) {
-    return transact(work, isolationLevel);
-  }
-
-  @Override
-  public <T> T transactNoRetry(Supplier<T> work) {
-    return transactNoRetry(work, null);
-  }
-
-  @Override
-  public void transact(Runnable work, TransactionIsolationLevel isolationLevel) {
+  public void transact(ThrowingRunnable work, TransactionIsolationLevel isolationLevel) {
     transact(
         () -> {
           work.run();
@@ -147,23 +141,13 @@ public class ReplicaSimulatingJpaTransactionManager implements JpaTransactionMan
   }
 
   @Override
-  public void reTransact(Runnable work) {
+  public void reTransact(ThrowingRunnable work) {
     transact(work);
   }
 
   @Override
-  public void transact(Runnable work) {
+  public void transact(ThrowingRunnable work) {
     transact(work, null);
-  }
-
-  @Override
-  public void transactNoRetry(Runnable work, TransactionIsolationLevel isolationLevel) {
-    transact(work, isolationLevel);
-  }
-
-  @Override
-  public void transactNoRetry(Runnable work) {
-    transactNoRetry(work, null);
   }
 
   @Override

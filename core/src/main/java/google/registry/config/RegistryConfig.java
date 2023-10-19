@@ -1548,9 +1548,9 @@ public final class RegistryConfig {
     return CONFIG_SETTINGS.get().hibernate.connectionIsolation;
   }
 
-  /** Returns true if per-transaction isolation level is enabled. */
-  public static boolean getHibernatePerTransactionIsolationEnabled() {
-    return CONFIG_SETTINGS.get().hibernate.perTransactionIsolation;
+  /** Returns true if nested calls to {@code tm().transact()} is allowed. */
+  public static boolean getHibernateAllowNestedTransactions() {
+    return CONFIG_SETTINGS.get().hibernate.allowNestedTransactions;
   }
 
   /** Returns true if hibernate.show_sql is enabled. */
