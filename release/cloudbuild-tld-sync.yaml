@@ -1,0 +1,45 @@
+# This will sync the Tld configurations in the internal repo with the Tld objects in the database.
+#
+# To manually trigger a build on GCB, run:
+# gcloud builds submit --config cloudbuild-tld-sync.yaml --substitutions \
+#   _INTERNAL_REPO_URL=[URL] ..
+#
+# To trigger a build automatically, follow the instructions below and add a trigger:
+# https://cloud.google.com/cloud-build/docs/running-builds/automate-builds
+#
+# Note that the release process hardens the tags and variables in this file:
+# - The 'latest' tag on docker images will be replaced by their image digests.
+# - The ${_ENV} pattern will be replaced by the actual environment name.
+# Please refer to ./cloudbuild-release.yaml for more details.
+#
+steps:
+# Check out the internal repo.
+- name: 'gcr.io/cloud-builders/git'
+  entrypoint: /bin/bash
+  args:
+  - -c
+  - |
+    set -e
+    git clone https://gerrit.googlesource.com/gcompute-tools
+    ./gcompute-tools/git-cookie-authdaemon
+    git clone ${_INTERNAL_REPO_URL} nomulus-internal
+# Download and decrypt the nomulus tool credential
+- name: 'gcr.io/$PROJECT_ID/builder:latest'
+  entrypoint: /bin/bash
+  args:
+  - -c
+  - |
+    set -e
+    gcloud secrets versions access latest \
+      --secret nomulus-tool-cloudbuild-credential \
+      > nomulus_tool_credential.json
+# Configure the TLDs using the stored configuration files in the internal repo
+- name: 'gcr.io/$PROJECT_ID/tld_updater:latest'
+  args:
+  - ${_ENV}
+  - ./nomulus_tool_credential.json
+  - nomulus-internal/core/src/main/java/google/registry/config/files/tld/
+
+timeout: 7200s
+options:
+  machineType: 'E2_HIGHCPU_32'
