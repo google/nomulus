@@ -14,28 +14,27 @@
 
 package google.registry.reporting.icann;
 
-import static com.google.common.net.MediaType.CSV_UTF_8;
-import static com.google.common.net.MediaType.PLAIN_TEXT_UTF_8;
+import static com.google.api.client.http.HttpStatusCodes.STATUS_CODE_BAD_REQUEST;
+import static com.google.api.client.http.HttpStatusCodes.STATUS_CODE_OK;
+import static com.google.api.client.http.HttpStatusCodes.STATUS_CODE_SERVER_ERROR;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
-import com.google.api.client.http.HttpResponseException;
-import com.google.api.client.http.HttpStatusCodes;
-import com.google.api.client.http.LowLevelHttpRequest;
-import com.google.api.client.http.LowLevelHttpResponse;
-import com.google.api.client.testing.http.MockHttpTransport;
-import com.google.api.client.testing.http.MockLowLevelHttpRequest;
-import com.google.api.client.testing.http.MockLowLevelHttpResponse;
-import com.google.api.client.util.Base64;
 import com.google.api.client.util.StringUtils;
+import com.google.common.io.BaseEncoding;
 import com.google.common.io.ByteSource;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
-import java.io.IOException;
-import java.util.List;
-import java.util.Map;
+import google.registry.testing.FakeUrlConnectionService;
+import java.io.ByteArrayOutputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -46,103 +45,75 @@ class IcannHttpReporterTest {
   private static final ByteSource IIRDEA_GOOD_XML = ReportingTestData.loadBytes("iirdea_good.xml");
   private static final ByteSource IIRDEA_BAD_XML = ReportingTestData.loadBytes("iirdea_bad.xml");
   private static final byte[] FAKE_PAYLOAD = "test,csv\n1,2".getBytes(UTF_8);
+  private static final IcannHttpReporter reporter = new IcannHttpReporter();
 
-  private MockLowLevelHttpRequest mockRequest;
+  private final HttpURLConnection connection = mock(HttpURLConnection.class);
+  private final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+  private final FakeUrlConnectionService urlConnectionService =
+      new FakeUrlConnectionService(connection);
 
   @RegisterExtension
   final JpaIntegrationTestExtension jpa =
       new JpaTestExtensions.Builder().buildIntegrationTestExtension();
 
-  private MockHttpTransport createMockTransport(
-      int statusCode, final ByteSource iirdeaResponse) {
-    return new MockHttpTransport() {
-      @Override
-      public LowLevelHttpRequest buildRequest(String method, String url) {
-        mockRequest =
-            new MockLowLevelHttpRequest() {
-              @Override
-              public LowLevelHttpResponse execute() throws IOException {
-                MockLowLevelHttpResponse response = new MockLowLevelHttpResponse();
-                response.setStatusCode(statusCode);
-                response.setContentType(PLAIN_TEXT_UTF_8.toString());
-                response.setContent(iirdeaResponse.read());
-                return response;
-              }
-            };
-        mockRequest.setUrl(url);
-        return mockRequest;
-      }
-    };
-  }
-
-  private MockHttpTransport createMockTransport(final ByteSource iirdeaResponse) {
-    return createMockTransport(HttpStatusCodes.STATUS_CODE_OK, iirdeaResponse);
-  }
-
   @BeforeEach
-  void beforeEach() {
+  void beforeEach() throws Exception {
     createTld("test");
     createTld("xn--abc123");
-  }
-
-  private IcannHttpReporter createReporter() {
-    IcannHttpReporter reporter = new IcannHttpReporter();
-    reporter.httpTransport = createMockTransport(IIRDEA_GOOD_XML);
+    when(connection.getOutputStream()).thenReturn(outputStream);
+    when(connection.getResponseCode()).thenReturn(STATUS_CODE_OK);
+    when(connection.getInputStream()).thenReturn(IIRDEA_GOOD_XML.openBufferedStream());
+    reporter.urlConnectionService = urlConnectionService;
     reporter.password = "fakePass";
     reporter.icannTransactionsUrl = "https://fake-transactions.url";
     reporter.icannActivityUrl = "https://fake-activity.url";
-    return reporter;
   }
 
   @Test
   void testSuccess() throws Exception {
-    IcannHttpReporter reporter = createReporter();
-    reporter.send(FAKE_PAYLOAD, "test-transactions-201706.csv");
+    assertThat(reporter.send(FAKE_PAYLOAD, "test-transactions-201706.csv")).isTrue();
 
-    assertThat(mockRequest.getUrl()).isEqualTo("https://fake-transactions.url/test/2017-06");
-    Map<String, List<String>> headers = mockRequest.getHeaders();
+    assertThat(urlConnectionService.getConnectedUrls())
+        .containsExactly(new URL("https://fake-transactions.url/test/2017-06"));
     String userPass = "test_ry:fakePass";
     String expectedAuth =
-        String.format("Basic %s", Base64.encodeBase64String(StringUtils.getBytesUtf8(userPass)));
-    assertThat(headers.get("authorization")).containsExactly(expectedAuth);
-    assertThat(headers.get("content-type")).containsExactly(CSV_UTF_8.toString());
+        String.format("Basic %s", BaseEncoding.base64().encode(StringUtils.getBytesUtf8(userPass)));
+    verify(connection).setRequestProperty("Authorization", expectedAuth);
+    verify(connection).setRequestProperty("Content-Type", "text/csv; charset=utf-8");
+    assertThat(outputStream.toByteArray()).isEqualTo(FAKE_PAYLOAD);
   }
 
   @Test
   void testSuccess_internationalTld() throws Exception {
-    IcannHttpReporter reporter = createReporter();
-    reporter.send(FAKE_PAYLOAD, "xn--abc123-transactions-201706.csv");
+    assertThat(reporter.send(FAKE_PAYLOAD, "xn--abc123-transactions-201706.csv")).isTrue();
 
-    assertThat(mockRequest.getUrl()).isEqualTo("https://fake-transactions.url/xn--abc123/2017-06");
-    Map<String, List<String>> headers = mockRequest.getHeaders();
+    assertThat(urlConnectionService.getConnectedUrls())
+        .containsExactly(new URL("https://fake-transactions.url/xn--abc123/2017-06"));
     String userPass = "xn--abc123_ry:fakePass";
     String expectedAuth =
-        String.format("Basic %s", Base64.encodeBase64String(StringUtils.getBytesUtf8(userPass)));
-    assertThat(headers.get("authorization")).containsExactly(expectedAuth);
-    assertThat(headers.get("content-type")).containsExactly(CSV_UTF_8.toString());
+        String.format("Basic %s", BaseEncoding.base64().encode(StringUtils.getBytesUtf8(userPass)));
+    verify(connection).setRequestProperty("Authorization", expectedAuth);
+    verify(connection).setRequestProperty("Content-Type", "text/csv; charset=utf-8");
+    assertThat(outputStream.toByteArray()).isEqualTo(FAKE_PAYLOAD);
   }
 
   @Test
   void testFail_BadIirdeaResponse() throws Exception {
-    IcannHttpReporter reporter = createReporter();
-    reporter.httpTransport =
-        createMockTransport(HttpStatusCodes.STATUS_CODE_BAD_REQUEST, IIRDEA_BAD_XML);
+    when(connection.getInputStream()).thenReturn(IIRDEA_BAD_XML.openBufferedStream());
+    when(connection.getResponseCode()).thenReturn(STATUS_CODE_BAD_REQUEST);
     assertThat(reporter.send(FAKE_PAYLOAD, "test-transactions-201706.csv")).isFalse();
+    verify(connection).getInputStream();
   }
 
   @Test
-  void testFail_transportException() {
-    IcannHttpReporter reporter = createReporter();
-    reporter.httpTransport =
-        createMockTransport(HttpStatusCodes.STATUS_CODE_FORBIDDEN, ByteSource.empty());
-    assertThrows(
-        HttpResponseException.class,
-        () -> reporter.send(FAKE_PAYLOAD, "test-transactions-201706.csv"));
+  void testFail_OtherBadHttpResponse() throws Exception {
+    when(connection.getResponseCode()).thenReturn(STATUS_CODE_SERVER_ERROR);
+    assertThat(reporter.send(FAKE_PAYLOAD, "test-transactions-201706.csv")).isFalse();
+    verify(connection, times(0)).getInputStream();
   }
 
   @Test
   void testFail_invalidFilename_nonSixDigitYearMonth() {
-    IcannHttpReporter reporter = createReporter();
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
@@ -156,7 +127,6 @@ class IcannHttpReporterTest {
 
   @Test
   void testFail_invalidFilename_notActivityOrTransactions() {
-    IcannHttpReporter reporter = createReporter();
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
@@ -169,7 +139,6 @@ class IcannHttpReporterTest {
 
   @Test
   void testFail_invalidFilename_invalidTldName() {
-    IcannHttpReporter reporter = createReporter();
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
@@ -183,7 +152,6 @@ class IcannHttpReporterTest {
 
   @Test
   void testFail_invalidFilename_tldDoesntExist() {
-    IcannHttpReporter reporter = createReporter();
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
