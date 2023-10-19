@@ -14,6 +14,7 @@
 
 package google.registry.ui.server.registrar;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static google.registry.request.RequestParameters.extractBooleanParameter;
 import static google.registry.request.RequestParameters.extractOptionalIntParameter;
 import static google.registry.request.RequestParameters.extractOptionalParameter;
@@ -28,6 +29,7 @@ import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarPoc;
 import google.registry.request.OptionalJsonPayload;
 import google.registry.request.Parameter;
+import google.registry.ui.server.console.ConsoleDomainListAction.DomainListRequest;
 import java.util.Optional;
 import javax.servlet.http.HttpServletRequest;
 
@@ -187,5 +189,13 @@ public final class RegistrarConsoleModule {
   public static Optional<Registrar> provideRegistrar(
       Gson gson, @OptionalJsonPayload Optional<JsonElement> payload) {
     return payload.map(s -> gson.fromJson(s, Registrar.class));
+  }
+
+  @Provides
+  @Parameter("domainListRequest")
+  public static DomainListRequest provideDomainListRequest(
+      Gson gson, @OptionalJsonPayload Optional<JsonElement> payload) {
+    checkArgument(payload.isPresent(), "DomainListRequest must be provided");
+    return gson.fromJson(payload.get(), DomainListRequest.class);
   }
 }
