@@ -43,6 +43,7 @@ public class RegistryConfigSettings {
   public ContactHistory contactHistory;
   public DnsUpdate dnsUpdate;
   public BulkPricingPackageMonitoring bulkPricingPackageMonitoring;
+  public Bsa bsa;
 
   /** Configuration options that apply to the entire GCP project. */
   public static class GcpProject {
@@ -260,5 +261,12 @@ public class RegistryConfigSettings {
     public String bulkPricingPackageDomainLimitWarningEmailBody;
     public String bulkPricingPackageDomainLimitUpgradeEmailSubject;
     public String bulkPricingPackageDomainLimitUpgradeEmailBody;
+  }
+
+  /** Configurations for integration with Brand Safety Alliance (BSA) API. */
+  public static class Bsa {
+    public String authUrl;
+    public int authTokenExpirySeconds;
+    public Map<String, String> dataUrls;
   }
 }
