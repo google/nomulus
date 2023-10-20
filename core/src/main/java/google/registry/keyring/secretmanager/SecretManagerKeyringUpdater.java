@@ -24,6 +24,7 @@ import static google.registry.keyring.secretmanager.SecretManagerKeyring.PublicK
 import static google.registry.keyring.secretmanager.SecretManagerKeyring.PublicKeyLabel.RDE_RECEIVER_PUBLIC;
 import static google.registry.keyring.secretmanager.SecretManagerKeyring.PublicKeyLabel.RDE_SIGNING_PUBLIC;
 import static google.registry.keyring.secretmanager.SecretManagerKeyring.PublicKeyLabel.RDE_STAGING_PUBLIC;
+import static google.registry.keyring.secretmanager.SecretManagerKeyring.StringKeyLabel.BSA_API_KEY;
 import static google.registry.keyring.secretmanager.SecretManagerKeyring.StringKeyLabel.ICANN_REPORTING_PASSWORD_STRING;
 import static google.registry.keyring.secretmanager.SecretManagerKeyring.StringKeyLabel.JSON_CREDENTIAL_STRING;
 import static google.registry.keyring.secretmanager.SecretManagerKeyring.StringKeyLabel.MARKSDB_DNL_LOGIN_STRING;
@@ -122,6 +123,10 @@ public final class SecretManagerKeyringUpdater {
 
   public SecretManagerKeyringUpdater setJsonCredential(String credential) {
     return setString(credential, JSON_CREDENTIAL_STRING);
+  }
+
+  public SecretManagerKeyringUpdater setBsaApiKey(String credential) {
+    return setString(credential, BSA_API_KEY);
   }
 
   /**
