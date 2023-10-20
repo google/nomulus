@@ -151,6 +151,9 @@ public interface Keyring extends AutoCloseable {
    */
   String getJsonCredential();
 
+  /** Returns the API_KEY for authentication with the BSA portal. */
+  String getBsaApiKey();
+
   // Don't throw so try-with-resources works better.
   @Override
   void close();
