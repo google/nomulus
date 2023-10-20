@@ -70,4 +70,8 @@ public enum IdnTableEnum {
       throw new RuntimeException(e);  // should never happen
     }
   }
+
+  public static IdnTableEnum fromIdnTableName(String idnTableName) {
+    return IdnTableEnum.valueOf(Ascii.toUpperCase(idnTableName));
+  }
 }

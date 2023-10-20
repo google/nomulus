@@ -84,7 +84,7 @@ public final class IdnTable {
    * Returns true if the given label is valid for this IDN table. A label is considered valid if all
    * of its codepoints are in the IDN table.
    */
-  boolean isValidLabel(String label) {
+  public boolean isValidLabel(String label) {
     final int length = label.length();
     for (int i = 0; i < length; ) {
       int codepoint = label.codePointAt(i);
