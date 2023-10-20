@@ -153,6 +153,11 @@ public final class InMemoryKeyring implements Keyring {
     return jsonCredential;
   }
 
+  @Override
+  public String getBsaApiKey() {
+    return "TODO";
+  }
+
   /** Does nothing. */
   @Override
   public void close() {}

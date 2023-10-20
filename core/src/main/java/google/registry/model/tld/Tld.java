@@ -777,6 +777,11 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
     return breakglassMode;
   }
 
+  @JsonIgnore // TODO: ?
+  public boolean isEnrolledWithBsa() {
+    return false;
+  }
+
   @Override
   public Builder asBuilder() {
     return new Builder(clone(this));

@@ -48,4 +48,10 @@ public final class IdnLabelValidator {
     }
     return Optional.empty();
   }
+
+  /** Returns the names of the IDN tables supported by a {@code tld}. */
+  public ImmutableSet<IdnTableEnum> getIdnTablesForTld(Tld tld) {
+    ImmutableSet<IdnTableEnum> idnTablesForTld = tld.getIdnTables();
+    return idnTablesForTld.isEmpty() ? DEFAULT_IDN_TABLES : idnTablesForTld;
+  }
 }

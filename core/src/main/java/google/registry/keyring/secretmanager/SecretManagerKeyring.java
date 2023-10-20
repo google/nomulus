@@ -64,7 +64,8 @@ public class SecretManagerKeyring implements Keyring {
     MARKSDB_LORDN_PASSWORD_STRING,
     MARKSDB_SMDRL_LOGIN_STRING,
     RDE_SSH_CLIENT_PRIVATE_STRING,
-    RDE_SSH_CLIENT_PUBLIC_STRING;
+    RDE_SSH_CLIENT_PUBLIC_STRING,
+    BSA_API_KEY;
 
     String getLabel() {
       return UPPER_UNDERSCORE.to(LOWER_HYPHEN, name());
@@ -147,6 +148,11 @@ public class SecretManagerKeyring implements Keyring {
   @Override
   public String getJsonCredential() {
     return getString(StringKeyLabel.JSON_CREDENTIAL_STRING);
+  }
+
+  @Override
+  public String getBsaApiKey() {
+    return getString(StringKeyLabel.BSA_API_KEY);
   }
 
   /** No persistent resources are maintained for this Keyring implementation. */

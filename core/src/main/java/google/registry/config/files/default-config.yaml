@@ -598,3 +598,14 @@ bulkPricingPackageMonitoring:
     Registrar: %3$s
     Active Domain Limit: %4$s
     Current Active Domains: %5$s
+
+# Configurations for integration with Brand Safety Alliance (BSA) API
+bsa:
+  # Http endpoint for acquiring Auth tokens.
+  authUrl: "https://"
+  # Auth token expiry.
+  authTokenExpirySeconds: 1800
+  # Http endpoints for downloading data
+  dataUrls:
+    "BLOCK": "https://"
+    "BLOCK_PLUS": "https://"
