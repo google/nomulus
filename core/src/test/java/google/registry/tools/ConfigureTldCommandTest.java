@@ -41,6 +41,7 @@ import com.google.common.io.Files;
 import com.google.common.testing.TestLogHandler;
 import google.registry.model.domain.token.AllocationToken;
 import google.registry.model.tld.Tld;
+import google.registry.model.tld.Tld.TldNotFoundException;
 import google.registry.model.tld.label.PremiumList;
 import google.registry.model.tld.label.PremiumListDao;
 import java.io.File;
@@ -569,5 +570,24 @@ public class ConfigureTldCommandTest extends CommandTestCase<ConfigureTldCommand
         .isEqualTo(
             "Changes can not be applied since TLD is in breakglass mode but the breakglass flag"
                 + " was not used");
+  }
+
+  @Test
+  void testSuccess_dryRunOnCreate_noChanges() throws Exception {
+    File tldFile = tmpDir.resolve("tld.yaml").toFile();
+    Files.asCharSink(tldFile, UTF_8).write(loadFile(getClass(), "tld.yaml"));
+    runCommandForced("--input=" + tldFile, "--dryrun");
+    assertThrows(TldNotFoundException.class, () -> Tld.get("tld"));
+  }
+
+  @Test
+  void testSuccess_dryRunOnUpdate_noChanges() throws Exception {
+    Tld tld = createTld("tld");
+    assertThat(tld.getCreateBillingCost()).isEqualTo(Money.of(USD, 13));
+    File tldFile = tmpDir.resolve("tld.yaml").toFile();
+    Files.asCharSink(tldFile, UTF_8).write(loadFile(getClass(), "tld.yaml"));
+    runCommandForced("--input=" + tldFile, "-d");
+    Tld notUpdatedTld = Tld.get("tld");
+    assertThat(notUpdatedTld.getCreateBillingCost()).isEqualTo(Money.of(USD, 13));
   }
 }

@@ -71,6 +71,11 @@ public class ConfigureTldCommand extends MutatingCommand {
               + " configuration in the database.")
   boolean breakglass;
 
+  @Parameter(
+      names = {"-d", "--dryrun"},
+      description = "Does not execute the entity mutation")
+  boolean dryrun;
+
   @Inject ObjectMapper mapper;
 
   @Inject
@@ -126,6 +131,9 @@ public class ConfigureTldCommand extends MutatingCommand {
 
   @Override
   protected boolean dontRunCommand() {
+    if (dryrun) {
+      return true;
+    }
     if (!newDiff) {
       if (oldTldInBreakglass && !breakglass) {
         // Run command to remove breakglass mode
