@@ -148,6 +148,8 @@ public final class NordnVerifyAction implements Runnable {
       return log;
     } catch (IOException e) {
       throw new IOException(String.format("Error connecting to MarksDB at URL %s", url), e);
+    } finally {
+      connection.disconnect();
     }
   }
 }
