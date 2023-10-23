@@ -47,6 +47,7 @@ import google.registry.request.auth.UserAuthInfo;
 import google.registry.security.JsonResponseHelper;
 import google.registry.tools.DomainLockUtils;
 import google.registry.util.EmailMessage;
+import google.registry.util.PasswordUtils.HashAlgorithm;
 import java.net.URISyntaxException;
 import java.util.Map;
 import java.util.Optional;
@@ -126,6 +127,7 @@ public class RegistryLockPostAction implements Runnable, JsonActionRunner.JsonAc
               .userAuthInfo()
               .orElseThrow(() -> new ForbiddenException("User is not logged in"));
 
+      // TODO: Move this line to the transaction below during nested transaction refactoring.
       String userEmail = verifyPasswordAndGetEmail(userAuthInfo, postInput);
       tm().transact(
               () -> {
@@ -208,6 +210,7 @@ public class RegistryLockPostAction implements Runnable, JsonActionRunner.JsonAc
       throws RegistrarAccessDeniedException {
     // Verify that the user can access the registrar, that the user has
     // registry lock enabled, and that the user provided a correct password
+
     Registrar registrar =
         getRegistrarAndVerifyLockAccess(registrarAccessor, postInput.registrarId, false);
     RegistrarPoc registrarPoc =
@@ -220,6 +223,19 @@ public class RegistryLockPostAction implements Runnable, JsonActionRunner.JsonAc
     checkArgument(
         registrarPoc.verifyRegistryLockPassword(postInput.password),
         "Incorrect registry lock password for contact");
+    if (registrarPoc.getCurrentHashAlgorithm(postInput.password).orElse(null)
+        != HashAlgorithm.SCRYPT) {
+      logger.atInfo().log("Rehashing existing registry lock password with Scrypt.");
+      tm().transact(
+              () -> {
+                tm().update(
+                        tm().loadByEntity(registrarPoc)
+                            .asBuilder()
+                            .setAllowedToSetRegistryLockPassword(true)
+                            .setRegistryLockPassword(postInput.password)
+                            .build());
+              });
+    }
     return registrarPoc
         .getRegistryLockEmailAddress()
         .orElseThrow(
