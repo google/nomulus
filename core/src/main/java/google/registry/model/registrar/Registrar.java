@@ -60,6 +60,8 @@ import google.registry.model.tld.Tld;
 import google.registry.model.tld.Tld.TldType;
 import google.registry.persistence.VKey;
 import google.registry.util.CidrAddressBlock;
+import google.registry.util.PasswordUtils;
+import google.registry.util.PasswordUtils.HashAlgorithm;
 import java.security.cert.CertificateParsingException;
 import java.util.Comparator;
 import java.util.List;
@@ -97,7 +99,7 @@ import org.joda.time.DateTime;
     column = @Column(nullable = false, name = "lastUpdateTime"))
 public class Registrar extends UpdateAutoTimestampEntity implements Buildable, Jsonifiable {
 
-  /** Represents the type of a registrar entity. */
+  /** Represents the type of registrar entity. */
   public enum Type {
     /** A real-world, third-party registrar. Should have non-null IANA and billing account IDs. */
     REAL(Objects::nonNull),
@@ -376,7 +378,7 @@ public class Registrar extends UpdateAutoTimestampEntity implements Buildable, J
    */
   @Expose String icannReferralEmail;
 
-  /** Id of the folder in drive used to publish information for this registrar. */
+  /** ID of the folder in drive used to publish information for this registrar. */
   @Expose String driveFolderId;
 
   // Metadata.
@@ -639,7 +641,11 @@ public class Registrar extends UpdateAutoTimestampEntity implements Buildable, J
   }
 
   public boolean verifyPassword(String password) {
-    return hashPassword(password, salt).equals(passwordHash);
+    return getCurrentHashAlgorithm(password).isPresent();
+  }
+
+  public Optional<HashAlgorithm> getCurrentHashAlgorithm(String password) {
+    return PasswordUtils.verifyPassword(password, passwordHash, salt);
   }
 
   public String getPhonePasscode() {
@@ -861,8 +867,9 @@ public class Registrar extends UpdateAutoTimestampEntity implements Buildable, J
       checkArgument(
           Range.closed(6, 16).contains(nullToEmpty(password).length()),
           "Password must be 6-16 characters long.");
-      getInstance().salt = base64().encode(SALT_SUPPLIER.get());
-      getInstance().passwordHash = hashPassword(password, getInstance().salt);
+      byte[] salt = SALT_SUPPLIER.get();
+      getInstance().salt = base64().encode(salt);
+      getInstance().passwordHash = hashPassword(password, salt);
       return this;
     }
 

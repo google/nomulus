@@ -25,6 +25,7 @@ import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 import google.registry.model.Buildable;
 import google.registry.model.UpdateAutoTimestampEntity;
 import google.registry.persistence.VKey;
+import google.registry.util.PasswordUtils;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -84,8 +85,9 @@ public class User extends UpdateAutoTimestampEntity implements Buildable {
         || isNullOrEmpty(registryLockPasswordHash)) {
       return false;
     }
-    return hashPassword(registryLockPassword, registryLockPasswordSalt)
-        .equals(registryLockPasswordHash);
+    return PasswordUtils.verifyPassword(
+            registryLockPassword, registryLockPasswordHash, registryLockPasswordSalt)
+        != null;
   }
 
   /**
@@ -154,9 +156,9 @@ public class User extends UpdateAutoTimestampEntity implements Buildable {
           !getInstance().hasRegistryLockPassword(), "User already has a password, remove it first");
       checkArgument(
           !isNullOrEmpty(registryLockPassword), "Registry lock password was null or empty");
-      getInstance().registryLockPasswordSalt = base64().encode(SALT_SUPPLIER.get());
-      getInstance().registryLockPasswordHash =
-          hashPassword(registryLockPassword, getInstance().registryLockPasswordSalt);
+      byte[] salt = SALT_SUPPLIER.get();
+      getInstance().registryLockPasswordSalt = base64().encode(salt);
+      getInstance().registryLockPasswordHash = hashPassword(registryLockPassword, salt);
       return this;
     }
   }
