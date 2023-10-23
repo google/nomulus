@@ -60,6 +60,8 @@ import google.registry.model.tld.Tld;
 import google.registry.model.tld.Tld.TldType;
 import google.registry.persistence.VKey;
 import google.registry.util.CidrAddressBlock;
+import google.registry.util.PasswordUtils;
+import google.registry.util.PasswordUtils.HashAlgorithm;
 import java.security.cert.CertificateParsingException;
 import java.util.Comparator;
 import java.util.List;
@@ -639,7 +641,11 @@ public class Registrar extends UpdateAutoTimestampEntity implements Buildable, J
   }
 
   public boolean verifyPassword(String password) {
-    return hashPassword(password, salt).equals(passwordHash);
+    return getCurrentHashAlgorithm(password) != null;
+  }
+
+  public HashAlgorithm getCurrentHashAlgorithm(String password) {
+    return PasswordUtils.verifyPassword(password, passwordHash, salt);
   }
 
   public String getPhonePasscode() {
@@ -861,8 +867,9 @@ public class Registrar extends UpdateAutoTimestampEntity implements Buildable, J
       checkArgument(
           Range.closed(6, 16).contains(nullToEmpty(password).length()),
           "Password must be 6-16 characters long.");
-      getInstance().salt = base64().encode(SALT_SUPPLIER.get());
-      getInstance().passwordHash = hashPassword(password, getInstance().salt);
+      byte[] salt = SALT_SUPPLIER.get();
+      getInstance().salt = base64().encode(salt);
+      getInstance().passwordHash = hashPassword(password, salt);
       return this;
     }
 
