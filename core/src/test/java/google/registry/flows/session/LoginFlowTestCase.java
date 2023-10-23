@@ -14,11 +14,15 @@
 
 package google.registry.flows.session;
 
+import static com.google.common.io.BaseEncoding.base64;
 import static com.google.common.truth.Truth.assertThat;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.deleteResource;
 import static google.registry.testing.DatabaseHelper.loadRegistrar;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.EppExceptionSubject.assertAboutEppExceptions;
+import static google.registry.util.PasswordUtils.HashAlgorithm.SCRYPT;
+import static google.registry.util.PasswordUtils.HashAlgorithm.SHA256;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableMap;
@@ -38,6 +42,7 @@ import google.registry.model.eppoutput.EppOutput;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.Registrar.State;
 import google.registry.testing.DatabaseHelper;
+import google.registry.util.PasswordUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -184,6 +189,31 @@ public abstract class LoginFlowTestCase extends FlowTestCase<LoginFlow> {
   void testFailure_disabledRegistrar() {
     persistResource(getRegistrarBuilder().setState(State.DISABLED).build());
     doFailingTest("login_valid.xml", RegistrarAccountNotActiveException.class);
+  }
+
+  @Test
+  void testSuccess_sha256Password() throws Exception {
+    String password = "foo-BAR2";
+    tm().transact(
+            () -> {
+              // The salt is not exposed by Registrar (nor should it be), so we query it
+              // directly.
+              String encodedSalt =
+                  tm().query("SELECT salt FROM Registrar WHERE registrarId = :id", String.class)
+                      .setParameter("id", registrar.getRegistrarId())
+                      .getSingleResult();
+              byte[] salt = base64().decode(encodedSalt);
+              String newHash = PasswordUtils.hashPassword(password, salt, SHA256);
+              // Set password directly, as the Java method would have used Scrypt.
+              tm().query("UPDATE Registrar SET passwordHash = :hash WHERE registrarId = :id")
+                  .setParameter("id", registrar.getRegistrarId())
+                  .setParameter("hash", newHash)
+                  .executeUpdate();
+            });
+    assertThat(loadRegistrar("NewRegistrar").getCurrentHashAlgorithm(password)).isEqualTo(SHA256);
+    doSuccessfulTest("login_valid.xml");
+    // Verifies that after successfully login, the password is re-hased with Scrypt.
+    assertThat(loadRegistrar("NewRegistrar").getCurrentHashAlgorithm(password)).isEqualTo(SCRYPT);
   }
 
   @Test
