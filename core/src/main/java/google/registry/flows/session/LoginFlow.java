@@ -41,6 +41,7 @@ import google.registry.model.eppinput.EppInput.Options;
 import google.registry.model.eppinput.EppInput.Services;
 import google.registry.model.eppoutput.EppResponse;
 import google.registry.model.registrar.Registrar;
+import google.registry.util.PasswordUtils.HashAlgorithm;
 import java.util.Optional;
 import java.util.Set;
 import javax.inject.Inject;
@@ -134,13 +135,23 @@ public class LoginFlow implements MutatingFlow {
     if (!registrar.get().isLive()) {
       throw new RegistrarAccountNotActiveException();
     }
-    if (login.getNewPassword().isPresent()) {
+
+    if (login.getNewPassword().isPresent()
+        || registrar.get().getCurrentHashAlgorithm(login.getPassword()) != HashAlgorithm.SCRYPT) {
+      String newPassword =
+          login
+              .getNewPassword()
+              .orElseGet(
+                  () -> {
+                    logger.atInfo().log("Rehashing existing registrar password with Scrypt");
+                    return login.getPassword();
+                  });
       // Load fresh from database (bypassing the cache) to ensure we don't save stale data.
       Optional<Registrar> freshRegistrar = Registrar.loadByRegistrarId(login.getClientId());
       if (!freshRegistrar.isPresent()) {
         throw new BadRegistrarIdException(login.getClientId());
       }
-      tm().put(freshRegistrar.get().asBuilder().setPassword(login.getNewPassword().get()).build());
+      tm().put(freshRegistrar.get().asBuilder().setPassword(newPassword).build());
     }
 
     // We are in!
