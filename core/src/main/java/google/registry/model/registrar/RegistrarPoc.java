@@ -37,6 +37,8 @@ import google.registry.model.Jsonifiable;
 import google.registry.model.UnsafeSerializable;
 import google.registry.model.registrar.RegistrarPoc.RegistrarPocId;
 import google.registry.persistence.VKey;
+import google.registry.util.PasswordUtils;
+import google.registry.util.PasswordUtils.HashAlgorithm;
 import java.io.Serializable;
 import java.util.Map;
 import java.util.Optional;
@@ -240,8 +242,12 @@ public class RegistrarPoc extends ImmutableObject implements Jsonifiable, Unsafe
         || isNullOrEmpty(registryLockPasswordHash)) {
       return false;
     }
-    return hashPassword(registryLockPassword, registryLockPasswordSalt)
-        .equals(registryLockPasswordHash);
+    return getCurrentHashAlgorithm(registryLockPassword).isPresent();
+  }
+
+  public Optional<HashAlgorithm> getCurrentHashAlgorithm(String registryLockPassword) {
+    return PasswordUtils.verifyPassword(
+        registryLockPassword, registryLockPasswordHash, registryLockPasswordSalt);
   }
 
   /**
@@ -436,9 +442,9 @@ public class RegistrarPoc extends ImmutableObject implements Jsonifiable, Unsafe
           "Not allowed to set registry lock password for this contact");
       checkArgument(
           !isNullOrEmpty(registryLockPassword), "Registry lock password was null or empty");
-      getInstance().registryLockPasswordSalt = base64().encode(SALT_SUPPLIER.get());
-      getInstance().registryLockPasswordHash =
-          hashPassword(registryLockPassword, getInstance().registryLockPasswordSalt);
+      byte[] salt = SALT_SUPPLIER.get();
+      getInstance().registryLockPasswordSalt = base64().encode(salt);
+      getInstance().registryLockPasswordHash = hashPassword(registryLockPassword, salt);
       getInstance().allowedToSetRegistryLockPassword = false;
       return this;
     }

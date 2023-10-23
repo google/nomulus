@@ -16,13 +16,16 @@ package google.registry.util;
 
 import static com.google.common.io.BaseEncoding.base64;
 import static com.google.common.truth.Truth.assertThat;
+import static google.registry.util.PasswordUtils.HashAlgorithm.SCRYPT;
+import static google.registry.util.PasswordUtils.HashAlgorithm.SHA256;
 import static google.registry.util.PasswordUtils.SALT_SUPPLIER;
 import static google.registry.util.PasswordUtils.hashPassword;
+import static google.registry.util.PasswordUtils.verifyPassword;
 
 import java.util.Arrays;
 import org.junit.jupiter.api.Test;
 
-/** Unit tests for {@link google.registry.util.PasswordUtils}. */
+/** Unit tests for {@link PasswordUtils}. */
 final class PasswordUtilsTest {
 
   @Test
@@ -36,12 +39,40 @@ final class PasswordUtilsTest {
 
   @Test
   void testHash() {
-    String salt = base64().encode(SALT_SUPPLIER.get());
+    byte[] salt = SALT_SUPPLIER.get();
     String password = "mySuperSecurePassword";
     String hashedPassword = hashPassword(password, salt);
     assertThat(hashedPassword).isEqualTo(hashPassword(password, salt));
     assertThat(hashedPassword).isNotEqualTo(hashPassword(password + "a", salt));
-    String secondSalt = base64().encode(SALT_SUPPLIER.get());
+    byte[] secondSalt = SALT_SUPPLIER.get();
     assertThat(hashedPassword).isNotEqualTo(hashPassword(password, secondSalt));
+  }
+
+  @Test
+  void testVerify_scrypt_default() {
+    byte[] salt = SALT_SUPPLIER.get();
+    String password = "mySuperSecurePassword";
+    String hashedPassword = hashPassword(password, salt);
+    assertThat(hashedPassword).isEqualTo(hashPassword(password, salt, SCRYPT));
+    assertThat(verifyPassword(password, hashedPassword, base64().encode(salt)).get())
+        .isEqualTo(SCRYPT);
+  }
+
+  @Test
+  void testVerify_sha256() {
+    byte[] salt = SALT_SUPPLIER.get();
+    String password = "mySuperSecurePassword";
+    String hashedPassword = hashPassword(password, salt, SHA256);
+    assertThat(verifyPassword(password, hashedPassword, base64().encode(salt)).get())
+        .isEqualTo(SHA256);
+  }
+
+  @Test
+  void testVerify_failure() {
+    byte[] salt = SALT_SUPPLIER.get();
+    String password = "mySuperSecurePassword";
+    String hashedPassword = hashPassword(password, salt);
+    assertThat(verifyPassword(password + "a", hashedPassword, base64().encode(salt)).isEmpty())
+        .isTrue();
   }
 }
