@@ -21,11 +21,14 @@ import com.google.gson.TypeAdapterFactory;
 import com.google.gson.reflect.TypeToken;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonWriter;
+import google.registry.model.adapters.ClassProcessingTypeAdapterFactory;
 import google.registry.model.adapters.CurrencyJsonAdapter;
+import google.registry.model.adapters.SerializableJsonTypeAdapter;
 import google.registry.util.CidrAddressBlock;
 import google.registry.util.CidrAddressBlock.CidrAddressBlockAdapter;
 import google.registry.util.DateTimeTypeAdapter;
 import java.io.IOException;
+import java.io.Serializable;
 import org.joda.money.CurrencyUnit;
 import org.joda.time.DateTime;
 
@@ -69,9 +72,11 @@ public class GsonUtils {
 
   public static Gson provideGson() {
     return new GsonBuilder()
-        .registerTypeAdapter(DateTime.class, new DateTimeTypeAdapter())
         .registerTypeAdapter(CidrAddressBlock.class, new CidrAddressBlockAdapter())
         .registerTypeAdapter(CurrencyUnit.class, new CurrencyJsonAdapter())
+        .registerTypeAdapter(DateTime.class, new DateTimeTypeAdapter())
+        .registerTypeAdapter(Serializable.class, new SerializableJsonTypeAdapter())
+        .registerTypeAdapterFactory(new ClassProcessingTypeAdapterFactory())
         .registerTypeAdapterFactory(new GsonPostProcessableTypeAdapterFactory())
         .excludeFieldsWithoutExposeAnnotation()
         .create();
