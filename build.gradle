@@ -60,7 +60,7 @@ dependencyLocking {
 }
 
 node {
-  download = true
+  download = false
   version = "16.14.0"
   npmVersion = "6.14.11"
 }
