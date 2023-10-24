@@ -57,7 +57,7 @@ public class VKey<T> extends ImmutableObject implements Serializable {
   // The primary key for the referenced entity.
   @Expose Serializable key;
 
-  Class<? extends T> kind;
+  @Expose Class<? extends T> kind;
 
   @SuppressWarnings("unused")
   VKey() {}
