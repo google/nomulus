@@ -8,6 +8,5 @@ PATH                              CLASS                         METHODS  OK AUTH
 /_dr/admin/list/tlds              ListTldsAction                GET,POST n  API          APP ADMIN
 /_dr/admin/verifyOte              VerifyOteAction               POST     n  API          APP ADMIN
 /_dr/epptool                      EppToolAction                 POST     n  API          APP ADMIN
-/_dr/loadtest                     LoadTestAction                POST     y  API          APP ADMIN
 /_dr/task/generateZoneFiles       GenerateZoneFilesAction       POST     n  API          APP ADMIN
 /_dr/task/refreshDnsForAllDomains RefreshDnsForAllDomainsAction GET      n  API          APP ADMIN

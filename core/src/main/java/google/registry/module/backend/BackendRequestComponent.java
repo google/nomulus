@@ -19,14 +19,12 @@ import dagger.Subcomponent;
 import google.registry.batch.BatchModule;
 import google.registry.batch.CannedScriptExecutionAction;
 import google.registry.batch.DeleteExpiredDomainsAction;
-import google.registry.batch.DeleteLoadTestDataAction;
 import google.registry.batch.DeleteProberDataAction;
 import google.registry.batch.ExpandBillingRecurrencesAction;
 import google.registry.batch.RelockDomainAction;
 import google.registry.batch.ResaveAllEppResourcesPipelineAction;
 import google.registry.batch.ResaveEntityAction;
 import google.registry.batch.SendExpiringCertificateNotificationEmailAction;
-import google.registry.batch.WipeOutCloudSqlAction;
 import google.registry.batch.WipeOutContactHistoryPiiAction;
 import google.registry.cron.CronModule;
 import google.registry.cron.TldFanoutAction;
@@ -110,8 +108,6 @@ interface BackendRequestComponent {
 
   DeleteExpiredDomainsAction deleteExpiredDomainsAction();
 
-  DeleteLoadTestDataAction deleteLoadTestDataAction();
-
   DeleteProberDataAction deleteProberDataAction();
 
   ExpandBillingRecurrencesAction expandBillingRecurrencesAction();
@@ -177,8 +173,6 @@ interface BackendRequestComponent {
   TmchSmdrlAction tmchSmdrlAction();
 
   UpdateRegistrarRdapBaseUrlsAction updateRegistrarRdapBaseUrlsAction();
-
-  WipeOutCloudSqlAction wipeOutCloudSqlAction();
 
   WipeOutContactHistoryPiiAction wipeOutContactHistoryPiiAction();
 

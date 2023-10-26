@@ -20,8 +20,6 @@ import google.registry.dns.DnsModule;
 import google.registry.flows.EppToolAction;
 import google.registry.flows.EppToolAction.EppToolModule;
 import google.registry.flows.FlowComponent;
-import google.registry.loadtest.LoadTestAction;
-import google.registry.loadtest.LoadTestModule;
 import google.registry.monitoring.whitebox.WhiteboxModule;
 import google.registry.request.RequestComponentBuilder;
 import google.registry.request.RequestModule;
@@ -44,7 +42,6 @@ import google.registry.tools.server.VerifyOteAction;
     modules = {
       DnsModule.class,
       EppToolModule.class,
-      LoadTestModule.class,
       RequestModule.class,
       ToolsServerModule.class,
       WhiteboxModule.class,
@@ -60,7 +57,6 @@ interface ToolsRequestComponent {
   ListRegistrarsAction listRegistrarsAction();
   ListReservedListsAction listReservedListsAction();
   ListTldsAction listTldsAction();
-  LoadTestAction loadTestAction();
   RefreshDnsForAllDomainsAction refreshDnsForAllDomainsAction();
   VerifyOteAction verifyOteAction();
 
