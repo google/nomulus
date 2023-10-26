@@ -73,7 +73,7 @@ export class RegistrarService implements GlobalLoader {
     )[0];
   }
 
-  public updateRegistrar(registrarId: string) {
+  public updateSelectedRegistrar(registrarId: string) {
     this.activeRegistrarId = registrarId;
     this.activeRegistrarIdChange.next(registrarId);
   }

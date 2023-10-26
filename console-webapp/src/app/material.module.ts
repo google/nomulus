@@ -45,6 +45,7 @@ import { DialogModule } from '@angular/cdk/dialog';
 import { MatSidenavModule } from '@angular/material/sidenav';
 import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatPaginatorModule } from '@angular/material/paginator';
+import { MatChipsModule } from '@angular/material/chips';
 
 @NgModule({
   exports: [
@@ -81,6 +82,7 @@ import { MatPaginatorModule } from '@angular/material/paginator';
     DialogModule,
     MatSnackBarModule,
     MatPaginatorModule,
+    MatChipsModule,
   ],
 })
 export class MaterialModule {}

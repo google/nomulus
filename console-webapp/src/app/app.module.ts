@@ -49,6 +49,10 @@ import { SettingsWidgetComponent } from './home/widgets/settings-widget.componen
 import { UserDataService } from './shared/services/userData.service';
 import WhoisComponent from './settings/whois/whois.component';
 import { SnackBarModule } from './snackbar.module';
+import {
+  RegistrarDetailsComponent,
+  RegistrarDetailsWrapperComponent,
+} from './registrar/registrarDetails.component';
 
 @NgModule({
   declarations: [
@@ -63,6 +67,8 @@ import { SnackBarModule } from './snackbar.module';
     HomeComponent,
     PromotionsWidgetComponent,
     RegistrarComponent,
+    RegistrarDetailsComponent,
+    RegistrarDetailsWrapperComponent,
     RegistrarSelectorComponent,
     ResourcesWidgetComponent,
     SecurityComponent,
