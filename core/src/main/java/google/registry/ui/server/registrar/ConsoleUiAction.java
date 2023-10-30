@@ -41,7 +41,10 @@ import java.util.Optional;
 import javax.inject.Inject;
 
 /** Action that serves Registrar Console single HTML page (SPA). */
-@Action(service = Action.Service.DEFAULT, path = ConsoleUiAction.PATH, auth = Auth.AUTH_PUBLIC)
+@Action(
+    service = Action.Service.DEFAULT,
+    path = ConsoleUiAction.PATH,
+    auth = Auth.AUTH_PUBLIC_LEGACY)
 public final class ConsoleUiAction extends HtmlAction {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
