@@ -63,7 +63,7 @@ import org.joda.money.CurrencyUnit;
     service = Service.DEFAULT,
     path = ConsoleRegistrarCreatorAction.PATH,
     method = {Method.POST, Method.GET},
-    auth = Auth.AUTH_PUBLIC)
+    auth = Auth.AUTH_PUBLIC_LEGACY)
 public final class ConsoleRegistrarCreatorAction extends HtmlAction {
 
   private static final int PASSWORD_LENGTH = 16;
