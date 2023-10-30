@@ -28,6 +28,7 @@ import com.google.common.base.Ascii;
 import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
 import dagger.Module;
@@ -1388,6 +1389,24 @@ public final class RegistryConfig {
     public static String provideBulkPricingPackageDomainLimitUpgradeEmailBody(
         RegistryConfigSettings config) {
       return config.bulkPricingPackageMonitoring.bulkPricingPackageDomainLimitUpgradeEmailBody;
+    }
+
+    @Provides
+    @Config("bsaAuthUrl")
+    public static String provideBsaAuthUrl(RegistryConfigSettings config) {
+      return config.bsa.authUrl;
+    }
+
+    @Provides
+    @Config("bsaAuthTokenExpiry")
+    public static Duration provideBsaAuthTokenExpiry(RegistryConfigSettings config) {
+      return Duration.standardSeconds(config.bsa.authTokenExpirySeconds);
+    }
+
+    @Provides
+    @Config("bsaDataUrls")
+    public static ImmutableMap<String, String> provideBsaDataUrls(RegistryConfigSettings config) {
+      return ImmutableMap.copyOf(config.bsa.dataUrls);
     }
 
     private static String formatComments(String text) {
