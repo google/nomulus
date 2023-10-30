@@ -39,7 +39,7 @@ import javax.persistence.PersistenceException;
  * <p>See the {@code logging.properties} files in the {@code env} package for the specific Hibernate
  * classes that have logging suppressed.
  */
-class DatabaseException extends PersistenceException {
+public class DatabaseException extends PersistenceException {
 
   private transient String cachedMessage;
 
