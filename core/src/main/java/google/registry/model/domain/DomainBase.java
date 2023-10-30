@@ -128,14 +128,14 @@ public class DomainBase extends EppResource
   String tld;
 
   /** References to hosts that are the nameservers for the domain. */
-  @Expose @Transient Set<VKey<Host>> nsHosts;
+  @Transient Set<VKey<Host>> nsHosts;
 
   /** Contacts. */
-  @Expose VKey<Contact> adminContact;
+  VKey<Contact> adminContact;
 
-  @Expose VKey<Contact> billingContact;
-  @Expose VKey<Contact> techContact;
-  @Expose VKey<Contact> registrantContact;
+  VKey<Contact> billingContact;
+  VKey<Contact> techContact;
+  VKey<Contact> registrantContact;
 
   /** Authorization info (aka transfer secret) of the domain. */
   @Embedded

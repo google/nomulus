@@ -30,6 +30,7 @@ import google.registry.request.OptionalJsonPayload;
 import google.registry.request.Parameter;
 import java.util.Optional;
 import javax.servlet.http.HttpServletRequest;
+import org.joda.time.DateTime;
 
 /** Dagger module for the Registrar Console parameters. */
 @Module
@@ -187,5 +188,29 @@ public final class RegistrarConsoleModule {
   public static Optional<Registrar> provideRegistrar(
       Gson gson, @OptionalJsonPayload Optional<JsonElement> payload) {
     return payload.map(s -> gson.fromJson(s, Registrar.class));
+  }
+
+  @Provides
+  @Parameter("checkpointTime")
+  public static Optional<DateTime> provideCheckpointTime(HttpServletRequest req) {
+    return extractOptionalParameter(req, "checkpointTime").map(DateTime::parse);
+  }
+
+  @Provides
+  @Parameter("pageNumber")
+  public static Optional<Integer> providePageNumber(HttpServletRequest req) {
+    return extractOptionalIntParameter(req, "pageNumber");
+  }
+
+  @Provides
+  @Parameter("resultsPerPage")
+  public static Optional<Integer> provideResultsPerPage(HttpServletRequest req) {
+    return extractOptionalIntParameter(req, "resultsPerPage");
+  }
+
+  @Provides
+  @Parameter("totalResults")
+  public static Optional<Long> provideTotalResults(HttpServletRequest req) {
+    return extractOptionalParameter(req, "totalResults").map(Long::valueOf);
   }
 }

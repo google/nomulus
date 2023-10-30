@@ -66,12 +66,12 @@ public class ConsoleDomainGetActionTest {
     assertThat(RESPONSE.getStatus()).isEqualTo(HttpStatusCodes.STATUS_CODE_OK);
     assertThat(RESPONSE.getPayload())
         .isEqualTo(
-            "{\"domainName\":\"exists.tld\",\"adminContact\":{\"key\":\"3-ROID\"},\"techContact\":"
-                + "{\"key\":\"3-ROID\"},\"registrantContact\":{\"key\":\"3-ROID\"},\"registrationExpirationTime\":"
-                + "\"294247-01-10T04:00:54.775Z\",\"lastTransferTime\":\"null\",\"repoId\":\"2-TLD\","
-                + "\"currentSponsorRegistrarId\":\"TheRegistrar\",\"creationRegistrarId\":\"TheRegistrar\","
-                + "\"creationTime\":{\"creationTime\":\"1970-01-01T00:00:00.000Z\"},\"lastEppUpdateTime\":\"null\","
-                + "\"statuses\":[\"INACTIVE\"]}");
+            "{\"domainName\":\"exists.tld\",\"registrationExpirationTime\":"
+                + "\"294247-01-10T04:00:54.775Z\",\"lastTransferTime\":\"null\",\"repoId\":"
+                + "\"2-TLD\",\"currentSponsorRegistrarId\":\"TheRegistrar\",\"creationRegistrarId\""
+                + ":\"TheRegistrar\",\"creationTime\":{\"creationTime\":"
+                + "\"1970-01-01T00:00:00.000Z\"},\"lastEppUpdateTime\":\"null\",\"statuses\":"
+                + "[\"INACTIVE\"]}");
   }
 
   @Test
