@@ -22,6 +22,12 @@
     <include path="/*.html" expiration="1d"/>
   </static-files>
 
+  <!-- Enable external traffic to go through VPC, required for static ip -->
+  <vpc-access-connector>
+    <name>projects/domain-registry-sandbox/locations/us-central1/connectors/appengine-connector</name>
+    <egress-setting>all-traffic</egress-setting>
+  </vpc-access-connector>
+
   <!-- Prevent uncaught servlet errors from leaking a stack trace. -->
   <static-error-handlers>
     <handler file="error.html"/>
