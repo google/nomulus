@@ -13,7 +13,12 @@
           Create a Domain
         </button>
         <p class="secondary-text">Register a new domain name</p>
-        <button mat-button color="primary" class="console-app__widget-link">
+        <button
+          mat-button
+          color="primary"
+          class="console-app__widget-link"
+          (click)="openDomainsPage()"
+        >
           View DUMs
         </button>
         <p class="secondary-text">
