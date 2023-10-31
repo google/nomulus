@@ -13,11 +13,17 @@
 // limitations under the License.
 
 import { Component } from '@angular/core';
+import { Router } from '@angular/router';
+import { DomainListComponent } from 'src/app/domains/domainList.component';
 
 @Component({
   selector: '[app-domains-widget]',
   templateUrl: './domains-widget.component.html',
 })
 export class DomainsWidgetComponent {
-  constructor() {}
+  constructor(private router: Router) {}
+
+  openDomainsPage() {
+    this.router.navigate([DomainListComponent.PATH]);
+  }
 }
