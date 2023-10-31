@@ -26,7 +26,6 @@ import google.registry.batch.RelockDomainAction;
 import google.registry.batch.ResaveAllEppResourcesPipelineAction;
 import google.registry.batch.ResaveEntityAction;
 import google.registry.batch.SendExpiringCertificateNotificationEmailAction;
-import google.registry.batch.WipeOutCloudSqlAction;
 import google.registry.batch.WipeOutContactHistoryPiiAction;
 import google.registry.cron.CronModule;
 import google.registry.cron.TldFanoutAction;
@@ -177,8 +176,6 @@ interface BackendRequestComponent {
   TmchSmdrlAction tmchSmdrlAction();
 
   UpdateRegistrarRdapBaseUrlsAction updateRegistrarRdapBaseUrlsAction();
-
-  WipeOutCloudSqlAction wipeOutCloudSqlAction();
 
   WipeOutContactHistoryPiiAction wipeOutContactHistoryPiiAction();
 
