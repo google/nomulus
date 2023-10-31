@@ -28,6 +28,7 @@ import ContactComponent from './settings/contact/contact.component';
 import WhoisComponent from './settings/whois/whois.component';
 import SecurityComponent from './settings/security/security.component';
 import UsersComponent from './settings/users/users.component';
+import { DomainListComponent } from './domains/domainList.component';
 
 const routes: Routes = [
   { path: '', redirectTo: '/home', pathMatch: 'full' },
@@ -35,6 +36,11 @@ const routes: Routes = [
   { path: 'empty-registrar', component: EmptyRegistrar },
   { path: 'home', component: HomeComponent, canActivate: [RegistrarGuard] },
   { path: 'tlds', component: TldsComponent, canActivate: [RegistrarGuard] },
+  {
+    path: DomainListComponent.PATH,
+    component: DomainListComponent,
+    canActivate: [RegistrarGuard],
+  },
   {
     path: SettingsComponent.PATH,
     component: SettingsComponent,
