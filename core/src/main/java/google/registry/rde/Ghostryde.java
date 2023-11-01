@@ -44,10 +44,9 @@ import org.joda.time.DateTime;
 /**
  * Utility class for reading and writing data in the ghostryde container format.
  *
- * <p>Whenever we stage sensitive data to cloud storage (like XML RDE deposit data), we
- * <a href="http://youtu.be/YPNJjL9iznY">GHOST RYDE IT</a> first to keep it safe from the prying
- * eyes of anyone with access to the <a href="https://cloud.google.com/console">Google Cloud
- * Console</a>.
+ * <p>Whenever we stage sensitive data to cloud storage (like XML RDE deposit data), we <a
+ * href="http://youtu.be/YPNJjL9iznY">GHOST RYDE IT</a> first to keep it safe from the prying eyes
+ * of anyone with access to the <a href="https://cloud.google.com/console">Google Cloud Console</a>.
  *
  * <p>The encryption is similar to the "regular" RyDE RDE deposit file encryption. The main
  * difference (and the reason we had to create a custom encryption) is that the RDE deposit has a
@@ -63,35 +62,37 @@ import org.joda.time.DateTime;
  *
  * <p>Here's how you write a file:
  *
- * <pre>   {@code
+ * <pre>{@code
  * File in = new File("lol.txt");
  * File out = new File("lol.txt.ghostryde");
  * File lengthOut = new File("lol.length.ghostryde");
  * try (OutputStream output = new FileOutputStream(out);
  *     OutputStream lengthOutput = new FileOutputStream(lengthOut);
  *     OutputStream ghostrydeEncoder = Ghostryde.encoder(output, publicKey, lengthOut);
- *     InputStream input = new FileInputStream(in)) &lbrace;
- *   ByteStreams.copy(input, ghostrydeEncoder);
- * &rbrace;}</pre>
+ *     InputStream input = new FileInputStream(in)) {
+ *       ByteStreams.copy(input, ghostrydeEncoder);
+ *     }
+ * }</pre>
  *
  * <p>Here's how you read a file:
  *
- * <pre>   {@code
+ * <pre>{@code
  * File in = new File("lol.txt.ghostryde");
  * File out = new File("lol.txt");
  * Ghostryde ghost = new Ghostryde(1024);
  * try (InputStream fileInput = new FileInputStream(in);
  *     InputStream ghostrydeDecoder = new Ghostryde.decoder(fileInput, privateKey);
- *     OutputStream fileOutput = new FileOutputStream(out)) &lbrace;
- *   ByteStreams.copy(ghostryderDecoder, fileOutput);
- * &rbrace;}</pre>
+ *     OutputStream fileOutput = new FileOutputStream(out)) {
+ *       ByteStreams.copy(ghostryderDecoder, fileOutput);
+ *     }
+ * }</pre>
  *
  * <h2>Simple API</h2>
  *
  * <p>If you're writing test code or are certain your data can fit in memory, you might find these
  * static methods more convenient:
  *
- * <pre>   {@code
+ * <pre>{@code
  * byte[] data = "hello kitty".getBytes(UTF_8);
  * byte[] blob = Ghostryde.encode(data, publicKey);
  * byte[] result = Ghostryde.decode(blob, privateKey);

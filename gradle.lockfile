@@ -3,6 +3,7 @@
 # This file is expected to be part of source control.
 com.google.code.findbugs:jsr305:3.0.2=checkstyle
 com.google.errorprone:error_prone_annotations:2.7.1=checkstyle
+com.google.errorprone:javac:9+181-r4173-1=errorproneJavac
 com.google.guava:failureaccess:1.0.1=checkstyle
 com.google.guava:guava:31.0.1-jre=checkstyle
 com.google.guava:listenablefuture:9999.0-empty-to-avoid-conflict-with-guava=checkstyle
@@ -23,4 +24,4 @@ org.ow2.asm:asm-commons:9.5=jacocoAnt
 org.ow2.asm:asm-tree:9.5=jacocoAnt
 org.ow2.asm:asm:9.5=jacocoAnt
 org.reflections:reflections:0.10.2=checkstyle
-empty=errorprone,errorproneJavac,shadow
+empty=errorprone,shadow

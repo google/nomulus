@@ -225,7 +225,7 @@ public class SafeBrowsingTransforms {
             new JSONObject(
                 CharStreams.toString(
                     new InputStreamReader(response.getEntity().getContent(), UTF_8)));
-        logger.atInfo().log("Got response: %s", responseBody.toString());
+        logger.atInfo().log("Got response: %s", responseBody);
         if (responseBody.length() == 0) {
           logger.atInfo().log("Response was empty, no threats detected.");
         } else {

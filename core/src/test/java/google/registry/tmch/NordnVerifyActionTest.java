@@ -101,6 +101,7 @@ class NordnVerifyActionTest {
   }
 
   @Test
+  @SuppressWarnings("DirectInvocationOnMock")
   void testSuccess_sendHttpRequest_urlIsCorrect() throws Exception {
     action.run();
     assertThat(httpUrlConnection.getURL()).isEqualTo(new URL("http://127.0.0.1/blobio"));

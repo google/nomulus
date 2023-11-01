@@ -147,7 +147,7 @@ public class Result extends ImmutableObject {
       this.msgLang = "en";  // All of our messages are English.
     }
 
-    /** @return true iff the response code is in the 1xxx category, representing success. */
+    /** Returns true iff the response code is in the 1xxx category, representing success. */
     public boolean isSuccess() {
       return code < 2000;
     }

@@ -97,7 +97,7 @@ public class IcannHttpReporter {
       // Only responses with a 200 or 400 status have a body. For everything else, we can return
       // false early.
       if (responseCode != STATUS_CODE_OK && responseCode != STATUS_CODE_BAD_REQUEST) {
-        logger.atWarning().log("Connection to ICANN server failed", connection);
+        logger.atWarning().log("Connection to ICANN server failed: %s", connection);
         return false;
       }
       content = UrlConnectionUtils.getResponseBytes(connection);
