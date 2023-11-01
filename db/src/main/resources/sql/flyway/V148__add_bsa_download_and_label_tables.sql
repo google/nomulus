@@ -12,14 +12,6 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 
-CREATE TABLE "BsaDomainInUse" (
-    label text not null,
-    tld text not null,
-    creation_time timestamptz not null,
-    reason text not null,
-    primary key (label, tld)
-);
-
 CREATE TABLE "BsaDownload" (
     job_id  bigserial not null,
     block_list_checksums text not null,
@@ -37,9 +29,3 @@ CREATE TABLE "BsaLabel" (
 
 CREATE INDEX IDXthwx7norw3h81t13ab6w8hje
     ON "BsaDownload" (creation_time, stage);
-
-ALTER TABLE IF EXISTS "BsaDomainInUse"
-    ADD CONSTRAINT FKbsadomaininuse2label
-    FOREIGN KEY (label)
-    REFERENCES "BsaLabel" (label)
-    ON DELETE CASCADE;
