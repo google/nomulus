@@ -36,7 +36,7 @@ plugins {
   // We don't anticipate enabling the Gradle lint plugin because they will not support Kotlin
   // See https://github.com/nebula-plugins/gradle-lint-plugin/issues/166
   // id 'nebula.lint' version '16.0.2'
-  id("net.ltgt.errorprone") version "2.0.2"
+  id("net.ltgt.errorprone") version "3.1.0"
   checkstyle
   id("com.diffplug.spotless") version "6.20.0"
 }

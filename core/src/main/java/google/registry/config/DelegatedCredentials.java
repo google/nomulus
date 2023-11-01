@@ -112,7 +112,6 @@ public class DelegatedCredentials extends GoogleCredentials {
    * @param clock Used for setting token expiration times.
    * @param tokenRefreshDelay The lifetime of each token. Should not exceed one hour according to
    *     GCP recommendations.
-   * @return
    */
   static DelegatedCredentials createSelfSignedDelegatedCredential(
       ServiceAccountSigner signer,
@@ -197,7 +196,9 @@ public class DelegatedCredentials extends GoogleCredentials {
     String accessToken = validateString(responseData, "access_token", PARSE_ERROR_PREFIX);
     int expiresInSeconds = validateInt32(responseData, "expires_in", PARSE_ERROR_PREFIX);
     long expiresAtMilliseconds = clock.nowUtc().getMillis() + expiresInSeconds * 1000L;
-    return new AccessToken(accessToken, new Date(expiresAtMilliseconds));
+    @SuppressWarnings("JavaUtilDate")
+    AccessToken token = new AccessToken(accessToken, new Date(expiresAtMilliseconds));
+    return token;
   }
 
   String createAssertion(JsonFactory jsonFactory, long currentTime) throws IOException {

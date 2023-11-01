@@ -317,6 +317,14 @@
       // "Apache License, Version 2.0".
       "moduleLicense": null,
       "moduleName": "com.squareup.okio:okio"
+    },
+    {
+      "moduleLicense": "(GPL-2.0-only WITH Classpath-exception-2.0)",
+      "moduleName": "io.github.eisop:dataflow-errorprone"
+    },
+    {
+      "moduleLicense": "GNU General Public License, version 2 (GPL2), with the classpath exception",
+      "moduleName": "io.github.eisop:dataflow-errorprone"
     }
   ]
 }

@@ -88,10 +88,8 @@ public class BsaLabelUtilsTest {
     when(replicaTm.loadByKey(any())).thenReturn(new BsaLabel("abc", fakeClock.nowUtc()));
     try {
       assertThat(isLabelBlocked("abc")).isTrue();
-      /**
-       * If test fails, check and fix cache expiry in the config file. Do not increase the duration
-       * on the line below without proper discussion.
-       */
+      // If test fails, check and fix cache expiry in the config file. Do not increase the duration
+      // on the line below without proper discussion.
       fakeClock.advanceBy(standardMinutes(1).plus(millis(1)));
       assertThat(isLabelBlocked("abc")).isTrue();
       verify(replicaTm, times(2)).loadByKey(any());

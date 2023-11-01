@@ -37,7 +37,11 @@ public class JsonResponse {
     this.response = rsp;
   }
 
-  /** @see Response#setStatus */
+  /**
+   * Sets the status.
+   *
+   * @see Response#setStatus
+   */
   public void setStatus(int status) {
     response.setStatus(status);
   }
@@ -54,12 +58,20 @@ public class JsonResponse {
     response.setPayload(JSON_SAFETY_PREFIX + toJSONString(checkNotNull(responseMap)));
   }
 
-  /** @see Response#setHeader */
+  /**
+   * Sets the header.
+   *
+   * @see Response#setHeader
+   */
   public void setHeader(String header, String value) {
     response.setHeader(header, value);
   }
 
-  /** @see Response#setDateHeader */
+  /**
+   * Sets the date header.
+   *
+   * <p>see Response#setDateHeader
+   */
   public void setDateHeader(String header, DateTime timestamp) {
     response.setDateHeader(header, timestamp);
   }

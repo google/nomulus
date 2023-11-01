@@ -122,6 +122,7 @@ public class HostBase extends EppResource {
 
   @Deprecated
   @Override
+  @SuppressWarnings("InlineMeSuggester")
   public HostBase cloneProjectedAtTime(DateTime now) {
     return this;
   }
