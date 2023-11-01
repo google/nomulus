@@ -29,9 +29,11 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.flogger.FluentLogger;
+import com.google.common.io.ByteStreams;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Map;
 import java.util.Optional;
 import java.util.regex.Matcher;
@@ -181,7 +183,8 @@ public class FlywayDeadlockTest {
           .splitToStream(
               readAllLines(path, UTF_8).stream()
                   .map(line -> line.replaceAll("--.*", ""))
-                  .filter(line -> !line.isBlank())
+                  // TODO: Use line.isBlank() one we are on Java 17.
+                  .filter(line -> !line.trim().isEmpty())
                   .collect(joining(" ")))
           .map(FlywayDeadlockTest::getDdlLockedElementName)
           .filter(Optional::isPresent)
@@ -211,7 +214,8 @@ public class FlywayDeadlockTest {
               .splitToList(executeShellCommand(changedScriptsCommand, Optional.of(rootDir)))
               .stream()
               .map(pathStr -> rootDir + File.separator + pathStr)
-              .map(Path::of)
+              // TODO: Use Path::of once we are on Java 17.
+              .map(path -> Paths.get(path))
               .collect(toImmutableList());
       if (changedPaths.isEmpty()) {
         logger.atInfo().log("There are no schema changes.");
@@ -234,8 +238,9 @@ public class FlywayDeadlockTest {
         new ProcessBuilder(SHELL_COMMAND_SPLITTER.splitToList(command).toArray(new String[0]));
     workingDir.map(File::new).ifPresent(processBuilder::directory);
     Process process = processBuilder.start();
-    String output = new String(process.getInputStream().readAllBytes(), UTF_8);
-    String error = new String(process.getErrorStream().readAllBytes(), UTF_8);
+    // TODO:Use InputStream.readAllBytes() once we are on Java 17.
+    String output = new String(ByteStreams.toByteArray(process.getInputStream()), UTF_8);
+    String error = new String(ByteStreams.toByteArray(process.getErrorStream()), UTF_8);
     try {
       process.waitFor(1, SECONDS);
     } catch (InterruptedException ie) {

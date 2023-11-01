@@ -116,14 +116,14 @@ import org.joda.time.DateTime;
  * <p>The pipeline is broadly divided into two parts -- creating the {@link DepositFragment}s, and
  * processing them.
  *
- * <h1>Creating {@link DepositFragment}</h1>
+ * <h2>Creating {@link DepositFragment}</h2>
  *
- * <h2>{@link Registrar}</h2>
+ * <h3>{@link Registrar}</h3>
  *
  * Non-test registrar entities are loaded from Cloud SQL and marshalled into deposit fragments. They
  * are <b>NOT</b> rewound to the watermark.
  *
- * <h2>{@link EppResource}</h2>
+ * <h3>{@link EppResource}</h3>
  *
  * All EPP resources are loaded from the corresponding {@link HistoryEntry}, which has the resource
  * embedded. In general, we find most recent history entry before watermark and filter out the ones
@@ -158,7 +158,7 @@ import org.joda.time.DateTime;
  * watermark to the domain at watermark. We then proceed to create the (pending deposit: deposit
  * fragment) pair for subordinate hosts using the added domain information.
  *
- * <h1>Processing {@link DepositFragment}</h1>
+ * <h2>Processing {@link DepositFragment}</h2>
  *
  * The (pending deposit: deposit fragment) pairs from different resources are combined and grouped
  * by pending deposit. For each pending deposit, all the relevant deposit fragments are written into

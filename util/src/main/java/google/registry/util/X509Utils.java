@@ -46,6 +46,7 @@ import java.util.NoSuchElementException;
 import java.util.Optional;
 import javax.annotation.Nullable;
 import javax.annotation.Tainted;
+import org.joda.time.DateTimeComparator;
 
 /** X.509 Public Key Infrastructure (PKI) helper functions. */
 public final class X509Utils {
@@ -169,12 +170,15 @@ public final class X509Utils {
   public static void verifyCrl(
       X509Certificate rootCert, @Nullable X509CRL oldCrl, @Tainted X509CRL newCrl, Date now)
       throws GeneralSecurityException {
-    if (oldCrl != null && newCrl.getThisUpdate().before(oldCrl.getThisUpdate())) {
-      throw new CRLException(String.format(
-          "New CRL is more out of date than our current CRL. %s < %s\n%s",
-          newCrl.getThisUpdate(), oldCrl.getThisUpdate(), newCrl));
+    if (oldCrl != null
+        && DateTimeComparator.getInstance().compare(newCrl.getThisUpdate(), oldCrl.getThisUpdate())
+            < 0) {
+      throw new CRLException(
+          String.format(
+              "New CRL is more out of date than our current CRL. %s < %s\n%s",
+              newCrl.getThisUpdate(), oldCrl.getThisUpdate(), newCrl));
     }
-    if (newCrl.getNextUpdate().before(now)) {
+    if (DateTimeComparator.getInstance().compare(newCrl.getNextUpdate(), now) < 0) {
       throw new CRLException("CRL has expired.\n" + newCrl);
     }
     newCrl.verify(rootCert.getPublicKey());
