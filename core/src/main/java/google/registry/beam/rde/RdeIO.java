@@ -144,6 +144,7 @@ public class RdeIO {
       this.marshaller = new RdeMarshaller(validationMode);
     }
 
+    @SuppressWarnings("unused")
     @Setup
     public void setup() {
       Security.addProvider(new BouncyCastleProvider());

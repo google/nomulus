@@ -86,7 +86,7 @@ public class MetricsCollector {
       String responseName,
       ResponseType status,
       long latency) {
-    latencyMs.record(latency, protocolName, requestName, responseName, status.name());
+    latencyMs.record((double) latency, protocolName, requestName, responseName, status.name());
     responsesCounter.increment(protocolName, requestName, responseName, status.name());
   }
 }

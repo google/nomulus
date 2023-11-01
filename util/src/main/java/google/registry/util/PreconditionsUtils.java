@@ -50,6 +50,7 @@ public class PreconditionsUtils {
   }
 
   /** Checks if the provided Optional is present, returns its value if so, and throws IAE if not. */
+  @SuppressWarnings("NullableOptional")
   public static <T> T checkArgumentPresent(@Nullable Optional<T> reference) {
     checkArgumentNotNull(reference);
     checkArgument(reference.isPresent());
@@ -57,6 +58,7 @@ public class PreconditionsUtils {
   }
 
   /** Checks if the provided Optional is present, returns its value if so, and throws IAE if not. */
+  @SuppressWarnings("NullableOptional")
   public static <T> T checkArgumentPresent(
       @Nullable Optional<T> reference, @Nullable Object errorMessage) {
     checkArgumentNotNull(reference, errorMessage);
@@ -65,6 +67,7 @@ public class PreconditionsUtils {
   }
 
   /** Checks if the provided Optional is present, returns its value if so, and throws IAE if not. */
+  @SuppressWarnings("NullableOptional")
   public static <T> T checkArgumentPresent(
       @Nullable Optional<T> reference,
       @Nullable String errorMessageTemplate,

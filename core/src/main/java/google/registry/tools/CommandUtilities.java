@@ -46,6 +46,8 @@ class CommandUtilities {
     }
   }
 
+  // TODO: change Strings.repeat("-", n) to "-".repeat(n) once we are on Java 17 runtime.
+  @SuppressWarnings("InlineMeInliner")
   static String addHeader(String header, String body) {
     return String.format("%s:\n%s\n%s", header, Strings.repeat("-", header.length() + 1), body);
   }

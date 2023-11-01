@@ -96,7 +96,7 @@ public class BackendMetrics extends BaseMetrics {
   @NonFinalForTesting
   public void responseReceived(
       String protocol, String certHash, FullHttpResponse response, Duration latency) {
-    latencyMs.record(latency.getMillis(), protocol, certHash);
+    latencyMs.record((double) latency.getMillis(), protocol, certHash);
     responseBytes.record(response.content().readableBytes(), protocol, certHash);
     responsesCounter.increment(protocol, certHash, response.status().toString());
   }

@@ -264,7 +264,7 @@ public final class ReservedList
     DomainLabelMetrics.recordReservedListCheckOutcome(
         tldStr,
         metricMatchesBuilder.build(),
-        DateTime.now(UTC).getMillis() - startTime.getMillis());
+        (DateTime.now(UTC).getMillis() - startTime.getMillis()));
     return entries;
   }
 

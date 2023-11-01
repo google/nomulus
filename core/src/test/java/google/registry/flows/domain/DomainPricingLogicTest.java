@@ -57,7 +57,6 @@ import google.registry.testing.FakeClock;
 import google.registry.testing.FakeHttpSession;
 import google.registry.util.Clock;
 import java.util.Optional;
-import javax.inject.Inject;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
@@ -73,10 +72,10 @@ public class DomainPricingLogicTest {
   final JpaIntegrationTestExtension jpa =
       new JpaTestExtensions.Builder().buildIntegrationTestExtension();
 
-  @Inject Clock clock = new FakeClock(DateTime.parse("2023-05-13T00:00:00.000Z"));
+  Clock clock = new FakeClock(DateTime.parse("2023-05-13T00:00:00.000Z"));
   @Mock EppInput eppInput;
   SessionMetadata sessionMetadata;
-  @Mock FlowMetadata flowMetadata;
+  FlowMetadata flowMetadata = null;
   Tld tld;
   Domain domain;
 
