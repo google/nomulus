@@ -57,6 +57,7 @@ public final class ResourceTransferUtils {
   public static TransferResponse createTransferResponse(
       EppResource eppResource, TransferData transferData) {
     assertIsContactOrDomain(eppResource);
+    @SuppressWarnings("NonCanonicalType")
     TransferResponse.Builder<? extends TransferResponse, ?> builder;
     if (eppResource instanceof Contact) {
       builder = new ContactTransferResponse.Builder().setContactId(eppResource.getForeignKey());

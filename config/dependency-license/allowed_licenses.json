@@ -307,6 +307,14 @@
     },
     {
       "moduleLicense": "The W3C Software License"
+    },
+    {
+      "moduleLicense": "(GPL-2.0-only WITH Classpath-exception-2.0)",
+      "moduleName": "io.github.eisop:dataflow-errorprone"
+    },
+    {
+      "moduleLicense": "GNU General Public License, version 2 (GPL2), with the classpath exception",
+      "moduleName": "io.github.eisop:dataflow-errorprone"
     }
   ]
 }

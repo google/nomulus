@@ -18,6 +18,7 @@ import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.truth.Truth.assertWithMessage;
 import static google.registry.testing.DatabaseHelper.insertSimpleResources;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.testcontainers.containers.PostgreSQLContainer.POSTGRESQL_PORT;
 
 import com.google.common.base.Charsets;
@@ -171,7 +172,8 @@ public abstract class JpaTransactionManagerExtension
       File tempSqlFile = File.createTempFile("tempSqlFile", ".sql");
       tempSqlFile.deleteOnExit();
       exporter.export(extraEntityClasses, tempSqlFile);
-      executeSql(Files.readString(tempSqlFile.toPath()));
+      // TODO: Use Files.readString() once we upgrade to Java 17 runtime.
+      executeSql(new String(Files.readAllBytes(tempSqlFile.toPath()), UTF_8));
     }
     assertReasonableNumDbConnections();
     emf = createEntityManagerFactory(getJpaProperties());

@@ -109,6 +109,7 @@ public class DatabaseExceptionTest {
   }
 
   @Test
+  @SuppressWarnings("ReturnValueIgnored")
   void getMessage_cachedMessageReused() {
     SQLException sqlException = mock(SQLException.class);
     DatabaseException databaseException = new DatabaseException(sqlException);

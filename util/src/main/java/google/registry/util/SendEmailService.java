@@ -66,14 +66,13 @@ public class SendEmailService {
     if (!ALLOWED_ENVS.contains(
         Ascii.toUpperCase(System.getProperty("google.registry.environment", "UNITTEST")))) {
       logger.atInfo().log(
-          String.format(
-              "Email with subject %s would have been sent to recipients %s",
-              emailMessage.subject().substring(0, Math.min(emailMessage.subject().length(), 15)),
-              String.join(
-                  " , ",
-                  emailMessage.recipients().stream()
-                      .map(ia -> ia.toString())
-                      .collect(toImmutableSet()))));
+          "Email with subject %s would have been sent to recipients %s",
+          emailMessage.subject().substring(0, Math.min(emailMessage.subject().length(), 15)),
+          String.join(
+              " , ",
+              emailMessage.recipients().stream()
+                  .map(ia -> ia.toString())
+                  .collect(toImmutableSet())));
     } else {
       retrier.callWithRetry(
           () -> {
