@@ -86,8 +86,6 @@ final class JSchSshSession implements Closeable {
   /**
    * Opens a new SFTP channel over this SSH session.
    *
-   * @throws JSchException
-   * @throws SftpException
    * @see JSchSftpChannel
    */
   public JSchSftpChannel openSftpChannel() throws JSchException, SftpException {

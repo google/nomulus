@@ -403,7 +403,7 @@ class CertificateCheckerTest {
     // Invalid curve
     KeyPairGenerator keyGen = KeyPairGenerator.getInstance("EC");
     AlgorithmParameters apParam = AlgorithmParameters.getInstance("EC");
-    apParam.init(new ECGenParameterSpec("secp128r1"));
+    apParam.init(new ECGenParameterSpec("secp521r1"));
     ECParameterSpec spec = apParam.getParameterSpec(ECParameterSpec.class);
     keyGen.initialize(spec, new SecureRandom());
     X509Certificate certificate =

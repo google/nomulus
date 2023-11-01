@@ -39,7 +39,6 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.HttpResponseStatus;
-import org.w3c.dom.Document;
 
 /**
  * Mock Server Superclass whose subclasses implement specific behaviors we expect blackbox server to
@@ -137,7 +136,6 @@ public class TestServer {
 
   private static class EppHandler extends ChannelDuplexHandler {
 
-    Document doc;
     private ChannelPromise future;
 
     @Override
@@ -157,7 +155,7 @@ public class TestServer {
       // LengthFieldBasedFrameDecoder.
 
       try {
-        doc = EppMessage.byteArrayToXmlDoc(messageBytes);
+        EppMessage.byteArrayToXmlDoc(messageBytes);
         ChannelFuture unusedFuture = future.setSuccess();
       } catch (FailureException e) {
         ChannelFuture unusedFuture = future.setFailure(e);

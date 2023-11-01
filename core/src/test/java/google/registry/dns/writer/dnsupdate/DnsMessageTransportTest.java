@@ -59,6 +59,7 @@ class DnsMessageTransportTest {
   private DnsMessageTransport resolver;
 
   @BeforeEach
+  @SuppressWarnings("AddressSelection")
   void beforeEach() throws Exception {
     simpleQuery =
         Message.newQuery(Record.newRecord(Name.fromString("example.com."), Type.A, DClass.IN));

@@ -35,6 +35,7 @@ import google.registry.request.auth.AuthenticatedRegistrarAccessor.RegistrarAcce
 import google.registry.request.auth.AuthenticatedRegistrarAccessor.Role;
 import google.registry.ui.server.SoyTemplateUtils;
 import google.registry.ui.soy.registrar.ConsoleSoyInfo;
+import java.util.Map;
 import google.registry.util.RegistryEnvironment;
 import java.util.HashMap;
 import java.util.Optional;
@@ -92,7 +93,7 @@ public final class ConsoleUiAction extends HtmlAction {
   ConsoleUiAction() {}
 
   @Override
-  public void runAfterLogin(HashMap<String, Object> data) {
+  public void runAfterLogin(Map<String, Object> data) {
     SoyMapData soyMapData = new SoyMapData();
     data.forEach((key, value) -> soyMapData.put(key, value));
 

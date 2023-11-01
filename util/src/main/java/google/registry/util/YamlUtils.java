@@ -86,7 +86,8 @@ public final class YamlUtils {
   @SuppressWarnings("unchecked")
   private static Map<String, Object> mergeMaps(
       Map<String, Object> defaultMap, Map<String, Object> customMap) {
-    for (String key : defaultMap.keySet()) {
+    for (Map.Entry<String, Object> e : defaultMap.entrySet()) {
+      String key = e.getKey();
       if (!customMap.containsKey(key)) {
         continue;
       }
@@ -99,7 +100,7 @@ public final class YamlUtils {
       } else {
         newValue = customMap.get(key);
       }
-      defaultMap.put(key, newValue);
+      e.setValue(newValue);
     }
     return defaultMap;
   }

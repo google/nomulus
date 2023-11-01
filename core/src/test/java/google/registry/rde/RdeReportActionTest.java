@@ -66,6 +66,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link RdeReportAction}. */
+@SuppressWarnings("DirectInvocationOnMock") // FakeUrlConnectionService mocks the getURL() method.
 public class RdeReportActionTest {
 
   private static final ByteSource REPORT_XML = RdeTestData.loadBytes("report.xml");

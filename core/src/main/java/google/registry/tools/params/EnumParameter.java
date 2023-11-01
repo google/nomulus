@@ -16,10 +16,11 @@ package google.registry.tools.params;
 
 import google.registry.util.TypeUtils.TypeInstantiator;
 
-/** Base class for Enum-based parameters.
+/**
+ * Base class for Enum-based parameters.
  *
  * <p>This is not necessary for single-value Enum parameters (i.e. arity = 1) as JCommander natively
- * supports them, but is necessary for variable-arity ({@code List&lt;Enum&gt;}) parameters.
+ * supports them, but is necessary for variable-arity ({@code List<Enum>}) parameters.
  */
 public abstract class EnumParameter<T extends Enum<T>> extends ParameterConverterValidator<T> {
 

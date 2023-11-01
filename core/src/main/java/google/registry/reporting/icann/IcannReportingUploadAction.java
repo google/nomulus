@@ -145,7 +145,7 @@ public final class IcannReportingUploadAction implements Runnable {
                   + " exist.",
               cursorType, tldStr, filename, gcsFilename.getName(), gcsFilename.getBucket());
       if (clock.nowUtc().dayOfMonth().get() == 1) {
-        logger.atInfo().log(logMessage + " This report may not have been staged yet.");
+        logger.atInfo().log("%s This report may not have been staged yet.", logMessage);
       } else {
         logger.atSevere().log(logMessage);
       }

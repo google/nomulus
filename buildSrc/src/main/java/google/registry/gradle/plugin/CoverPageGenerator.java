@@ -35,7 +35,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 /**
- * Creates the files for a web-page summary of a given {@Link ProjectData}.
+ * Creates the files for a web-page summary of a given {@link ProjectData}.
  *
  * <p>The main job of this class is rendering a tailored cover page that includes information about
  * the project and any task that ran.
