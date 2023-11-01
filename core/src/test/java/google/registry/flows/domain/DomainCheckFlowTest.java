@@ -1073,6 +1073,30 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
   }
 
   @Test
+  void testFeeExtension_existingPremiumDomain_withNonPremiumRenewalBehavior_renewPriceOnly()
+      throws Exception {
+    createTld("example");
+    persistBillingRecurrenceForDomain(persistActiveDomain("rich.example"), NONPREMIUM, null);
+    setEppInput("domain_check_fee_premium_v06_renew_only.xml");
+    runFlowAssertResponse(
+        loadFile(
+            "domain_check_fee_response_domain_exists_v06_renew_only.xml",
+            ImmutableMap.of("RENEWPRICE", "11.00")));
+  }
+
+  @Test
+  void testFeeExtension_existingPremiumDomain_withNonPremiumRenewalBehavior_transferPriceOnly()
+      throws Exception {
+    createTld("example");
+    persistBillingRecurrenceForDomain(persistActiveDomain("rich.example"), NONPREMIUM, null);
+    setEppInput("domain_check_fee_premium_v06_transfer_only.xml");
+    runFlowAssertResponse(
+        loadFile(
+            "domain_check_fee_response_domain_exists_v06_transfer_only.xml",
+            ImmutableMap.of("RENEWPRICE", "11.00")));
+  }
+
+  @Test
   void testFeeExtension_existingPremiumDomain_withSpecifiedRenewalBehavior() throws Exception {
     createTld("example");
     persistBillingRecurrenceForDomain(
@@ -1203,6 +1227,18 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
     createTld("example");
     setEppInput("domain_check_fee_premium_v12.xml");
     runFlowAssertResponse(loadFile("domain_check_fee_premium_response_v12.xml"));
+  }
+
+  @Test
+  void testFeeExtension_premiumLabels_v12_specifiedPriceRenewal_renewPriceOnly() throws Exception {
+    createTld("example");
+    persistBillingRecurrenceForDomain(
+        persistActiveDomain("rich.example"), SPECIFIED, Money.of(USD, new BigDecimal("27.74")));
+    setEppInput("domain_check_fee_premium_v12_renew_only.xml");
+    runFlowAssertResponse(
+        loadFile(
+            "domain_check_fee_premium_response_v12_renew_only.xml",
+            ImmutableMap.of("RENEWPRICE", "27.74")));
   }
 
   @Test

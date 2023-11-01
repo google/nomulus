@@ -1,0 +1,33 @@
+domain_check_fee_premium_response_v12.xml<epp xmlns="urn:ietf:params:xml:ns:epp-1.0">
+  <response>
+    <result code="1000">
+      <msg>Command completed successfully</msg>
+    </result>
+    <resData>
+      <domain:chkData xmlns:domain="urn:ietf:params:xml:ns:domain-1.0">
+        <domain:cd>
+          <domain:name avail="false">rich.example</domain:name>
+          <domain:reason>In use</domain:reason>
+        </domain:cd>
+      </domain:chkData>
+    </resData>
+    <extension>
+      <fee:chkData xmlns:fee="urn:ietf:params:xml:ns:fee-0.12"
+       xmlns:domain="urn:ietf:params:xml:ns:domain-1.0">
+        <fee:cd>
+          <fee:object>
+            <domain:name>rich.example</domain:name>
+          </fee:object>
+          <fee:command name="renew">
+            <fee:period unit="y">1</fee:period>
+            <fee:fee description="renew">%RENEWPRICE%</fee:fee>
+          </fee:command>
+        </fee:cd>
+      </fee:chkData>
+    </extension>
+    <trID>
+      <clTRID>ABC-12345</clTRID>
+      <svTRID>server-trid</svTRID>
+    </trID>
+  </response>
+</epp>
