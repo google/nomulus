@@ -45,7 +45,7 @@ import google.registry.ui.soy.registrar.FormsSoyInfo;
 import google.registry.ui.soy.registrar.RegistrarCreateConsoleSoyInfo;
 import google.registry.util.RegistryEnvironment;
 import google.registry.util.StringGenerator;
-import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
@@ -108,7 +108,7 @@ public final class ConsoleRegistrarCreatorAction extends HtmlAction {
   @Inject ConsoleRegistrarCreatorAction() {}
 
   @Override
-  public void runAfterLogin(HashMap<String, Object> data) {
+  public void runAfterLogin(Map<String, Object> data) {
     if (!registrarAccessor.isAdmin()) {
       response.setStatus(SC_FORBIDDEN);
       response.setPayload(
@@ -165,7 +165,7 @@ public final class ConsoleRegistrarCreatorAction extends HtmlAction {
     }
   }
 
-  private void runPost(HashMap<String, Object> data) {
+  private void runPost(Map<String, Object> data) {
     try {
       checkPresent(clientId, "clientId");
       checkPresent(name, "name");
@@ -263,7 +263,7 @@ public final class ConsoleRegistrarCreatorAction extends HtmlAction {
     }
   }
 
-  private void runGet(HashMap<String, Object> data) {
+  private void runGet(Map<String, Object> data) {
     // set the values to pre-fill, if given
     data.put("clientId", clientId.orElse(null));
     data.put("name", name.orElse(null));

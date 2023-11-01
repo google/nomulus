@@ -39,6 +39,7 @@ import google.registry.xml.XmlException;
 import google.registry.xml.XmlFragmentMarshaller;
 import java.io.ByteArrayOutputStream;
 import java.io.Serializable;
+import java.io.UnsupportedEncodingException;
 import java.util.Collection;
 import javax.annotation.concurrent.NotThreadSafe;
 import javax.xml.bind.JAXBElement;
@@ -84,14 +85,16 @@ public final class RdeMarshaller implements Serializable {
     ByteArrayOutputStream os = new ByteArrayOutputStream();
     try {
       XjcXmlTransformer.marshal(deposit, os, UTF_8, validationMode);
-    } catch (XmlException e) {
+      // TODO: Call StandardCharset.UTF_8 instead once we are one Java 17 runtime.
+      String rdeDocument = os.toString("UTF-8");
+      String marker = "<rde:contents>\n";
+      int startOfContents = rdeDocument.indexOf(marker);
+      verify(startOfContents > 0, "Bad RDE document:\n%s", rdeDocument);
+      return rdeDocument.substring(0, startOfContents + marker.length());
+    } catch (XmlException | UnsupportedEncodingException e) {
       throw new RuntimeException(e);
     }
-    String rdeDocument = os.toString();
-    String marker = "<rde:contents>\n";
-    int startOfContents = rdeDocument.indexOf(marker);
-    verify(startOfContents > 0, "Bad RDE document:\n%s", rdeDocument);
-    return rdeDocument.substring(0, startOfContents + marker.length());
+
   }
 
   /** Returns bottom-portion of XML document. */

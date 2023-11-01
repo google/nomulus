@@ -38,7 +38,6 @@ public final class FakeServletInputStream extends ServletInputStream {
   /**
    * Use a {@link ByteSource} as input for the servlet. Be sure to call {@link #close} after
    * your servlet runs so the resource opened via {@code bytes} gets closed.
-   * @throws IOException
    */
   public FakeServletInputStream(ByteSource bytes) throws IOException {
     this.input = bytes.openStream();

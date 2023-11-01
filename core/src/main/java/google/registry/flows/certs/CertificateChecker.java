@@ -42,9 +42,10 @@ import org.bouncycastle.openssl.jcajce.JcaMiscPEMGenerator;
 import org.bouncycastle.util.io.pem.PemObjectGenerator;
 import org.bouncycastle.util.io.pem.PemWriter;
 import org.joda.time.DateTime;
+import org.joda.time.DateTimeComparator;
 import org.joda.time.Days;
 
-/** An utility to check that a given certificate meets our requirements */
+/** A utility to check that a given certificate meets our requirements */
 public class CertificateChecker {
 
   private final ImmutableSortedMap<DateTime, Integer> maxValidityLengthSchedule;
@@ -162,9 +163,9 @@ public class CertificateChecker {
 
     // Check if currently in validity period
     Date now = clock.nowUtc().toDate();
-    if (certificate.getNotAfter().before(now)) {
+    if (DateTimeComparator.getInstance().compare(certificate.getNotAfter(), now) < 0) {
       violations.add(CertificateViolation.EXPIRED);
-    } else if (certificate.getNotBefore().after(now)) {
+    } else if (DateTimeComparator.getInstance().compare(certificate.getNotBefore(), now) > 0) {
       violations.add(CertificateViolation.NOT_YET_VALID);
     }
 
@@ -231,8 +232,8 @@ public class CertificateChecker {
     X509Certificate certificate = getCertificate(certificateStr);
     DateTime now = clock.nowUtc();
     // expiration date is one day after lastValidDate
-    Date lastValidDate = certificate.getNotAfter();
-    if (lastValidDate.before(now.toDate())) {
+    DateTime lastValidDate = new DateTime(certificate.getNotAfter());
+    if (lastValidDate.isBefore(now)) {
       return false;
     }
     /*
@@ -242,12 +243,11 @@ public class CertificateChecker {
      *    2) client has received notification but the interval between now and
      *    lastExpiringNotificationSentDate is greater than expirationWarningIntervalDays.
      */
-    return !lastValidDate.after(now.plusDays(expirationWarningDays).toDate())
+    return !lastValidDate.isAfter(now.plusDays(expirationWarningDays))
         && (lastExpiringNotificationSentDate.equals(START_OF_TIME)
             || !lastExpiringNotificationSentDate
                 .plusDays(expirationWarningIntervalDays)
-                .toDate()
-                .after(now.toDate()));
+                .isAfter(now));
   }
 
   private String getViolationDisplayMessage(CertificateViolation certificateViolation) {

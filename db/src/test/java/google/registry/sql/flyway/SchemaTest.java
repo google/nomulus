@@ -124,7 +124,7 @@ class SchemaTest {
                 sqlContainer.getJdbcUrl(), sqlContainer.getUsername(), sqlContainer.getPassword())
             .load();
     flyway.migrate();
-    logger.atInfo().log("Base schema version: %s", flyway.info().current().getVersion().toString());
+    logger.atInfo().log("Base schema version: %s", flyway.info().current().getVersion());
 
     // Deploy latest scripts from resources directory.
     flyway =
@@ -135,8 +135,7 @@ class SchemaTest {
             .load();
     flyway.migrate();
     flyway.validate();
-    logger.atInfo().log(
-        "Latest schema version: %s", flyway.info().current().getVersion().toString());
+    logger.atInfo().log("Latest schema version: %s", flyway.info().current().getVersion());
   }
 
   private static String[] getSchemaDumpCommand(String username, String dbName) {

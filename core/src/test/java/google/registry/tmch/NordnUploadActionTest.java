@@ -237,6 +237,7 @@ class NordnUploadActionTest {
     assertThat(domain.getLordnPhase()).isEqualTo(LordnPhase.NONE);
   }
 
+  @SuppressWarnings("DirectInvocationOnMock")
   private void testRun(String phase, String domain1, String domain2, String csv) throws Exception {
     action.phase = phase;
     action.run();
@@ -248,7 +249,8 @@ class NordnUploadActionTest {
     verify(httpUrlConnection).setRequestMethod("POST");
     assertThat(httpUrlConnection.getURL())
         .isEqualTo(new URL("http://127.0.0.1/LORDN/tld/" + phase));
-    assertThat(connectionOutputStream.toString(UTF_8)).contains(csv);
+    // TODO: use toString(StandardCharsets.UTF_8) once we upgrade to Java 17.
+    assertThat(connectionOutputStream.toString("UTF-8")).contains(csv);
     verifyColumnCleared(domain1);
     verifyColumnCleared(domain2);
     cloudTasksHelper.assertTasksEnqueued(

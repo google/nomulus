@@ -29,7 +29,7 @@ buildscript {
 
   dependencies {
     classpath 'com.google.cloud.tools:appengine-gradle-plugin:2.4.1'
-    classpath 'net.ltgt.gradle:gradle-errorprone-plugin:2.0.2'
+    classpath 'net.ltgt.gradle:gradle-errorprone-plugin:3.1.0'
     classpath 'org.sonatype.aether:aether-api:1.13.1'
     classpath 'org.sonatype.aether:aether-impl:1.13.1'
   }
@@ -41,9 +41,9 @@ plugins {
 
   // Re-enable when compatible with Gradle 8
   // id 'nebula.lint' version '16.0.2'
-  id 'net.ltgt.errorprone' version '2.0.2'
+  id 'net.ltgt.errorprone' version '3.1.0'
   id 'checkstyle'
-  id 'com.github.johnrengelman.shadow' version '5.1.0'
+  id 'com.github.johnrengelman.shadow' version '8.1.1'
 
   // NodeJs plugin
   id "com.github.node-gradle.node" version "3.0.1"
@@ -307,17 +307,13 @@ subprojects {
 
   afterEvaluate {
     if (rootProject.enableDependencyLocking.toBoolean()
-        && project.name != 'integration'
-        && project.name != 'java8compatibility') {
+        && project.name != 'integration') {
       // The ':integration' project runs server/schema integration tests using
       // dynamically specified jars with no transitive dependency. Therefore
       // dependency-locking does not make sense. Furthermore, during
       // evaluation it resolves the 'testRuntimeOnly' configuration, making it
       // immutable. Locking activation would trigger an invalid operation
       // exception.
-      //
-      // The ':java8compatibility' project is test-only. Its source does not go
-      // into production.
       //
       // For all other projects, due to problem with the gradle-license-report
       // plugin, the dependencyLicenseReport configuration must opt out of
@@ -362,9 +358,13 @@ subprojects {
 
   apply from: "${rootDir.path}/java_common.gradle"
 
-  if (project.name != 'docs') {
+  if (!rootProject.enableCrossReferencing.toBoolean()) {
     compileJava {
-      // TODO: Remove this once we migrate off AppEngine.
+      // TODO: Remove this once we migrate off of AppEngine.
+      options.release = 8
+    }
+    compileTestJava {
+      // TODO: Remove this once we migrate off of AppEngine.
       options.release = 8
     }
   }

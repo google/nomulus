@@ -99,8 +99,6 @@ PROPERTIES = [
              'If true, show all test output in near-realtime.',
              'false',
              bool),
-    Property('flowDocsFile',
-             'Output filename for the flowDocsTool command.'),
     Property('enableDependencyLocking',
              'Enables dependency locking.',
              'true',

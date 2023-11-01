@@ -14,15 +14,13 @@
 
 package google.registry.flows;
 
+import dagger.Binds;
 import dagger.Module;
-import dagger.Provides;
 
 /** Dagger module for the server Trid provider. */
 @Module
-public class ServerTridProviderModule {
+public abstract class ServerTridProviderModule {
 
-  @Provides
-  static ServerTridProvider provideServerTridProvider(ServerTridProviderImpl defaultProvider) {
-    return defaultProvider;
-  }
+  @Binds
+  abstract ServerTridProvider provideServerTridProvider(ServerTridProviderImpl defaultProvider);
 }
