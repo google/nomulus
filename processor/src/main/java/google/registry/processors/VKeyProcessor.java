@@ -53,8 +53,6 @@ import javax.persistence.Converter;
 @SupportedSourceVersion(SourceVersion.RELEASE_8)
 public class VKeyProcessor extends AbstractProcessor {
 
-  private static final String CONVERTER_CLASS_NAME_TEMP = "VKeyConverter_%s";
-
   private static final String VKEY_TYPE_METHOD_NAME = "value";
 
   @Override
@@ -78,7 +76,7 @@ public class VKeyProcessor extends AbstractProcessor {
                               .collect(toImmutableList());
                       checkState(
                           actualAnnotations.size() == 1,
-                          "% can have only one @WithVKey annotation",
+                          "%s can have only one @WithVKey annotation",
                           simpleTypeName);
                       TypeName keyType = null;
                       for (Map.Entry<? extends ExecutableElement, ? extends AnnotationValue> entry :
@@ -100,7 +98,7 @@ public class VKeyProcessor extends AbstractProcessor {
                       try {
                         createJavaFile(
                                 getPackageName(annotatedTypeElement),
-                                String.format(CONVERTER_CLASS_NAME_TEMP, simpleTypeName),
+                                String.format("VKeyConverter_%s", simpleTypeName),
                                 TypeName.get(entityType),
                                 keyType)
                             .writeTo(processingEnv.getFiler());

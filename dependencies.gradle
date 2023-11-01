@@ -193,7 +193,8 @@ ext {
       'org.junit.jupiter:junit-jupiter-params:[5.6.2,)',
       'org.junit.platform:junit-platform-runner:[1.6.2,)',
       'org.junit.platform:junit-platform-suite-api:[1.6.2,)',
-      'org.junit-pioneer:junit-pioneer:[0.7.0,)',
+      // TODO: remove the exclusive upper bound once we are on Java 17 runtime.
+      'org.junit-pioneer:junit-pioneer:[0.7.0,2.0.0[',
       'org.apache.avro:avro:[1.8.2,)',
       'org.apache.beam:beam-runners-core-construction-java:[2.37.0,)',
       'org.apache.beam:beam-runners-direct-java:[2.37.0,)',

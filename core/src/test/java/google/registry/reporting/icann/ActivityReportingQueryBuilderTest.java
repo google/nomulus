@@ -26,6 +26,7 @@ class ActivityReportingQueryBuilderTest {
 
   private final YearMonth yearMonth = new YearMonth(2017, 9);
 
+  @SuppressWarnings("NonCanonicalType")
   private ActivityReportingQueryBuilder createQueryBuilder(String datasetName) {
     return new ActivityReportingQueryBuilder(
         "domain-registry-alpha",

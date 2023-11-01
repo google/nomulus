@@ -873,7 +873,11 @@ public class Registrar extends UpdateAutoTimestampEntity implements Buildable, J
       return this;
     }
 
-    /** @throws IllegalArgumentException if provided passcode is not 5-digit numeric */
+    /**
+     * Set the phone passcode.
+     *
+     * @throws IllegalArgumentException if provided passcode is not 5-digit numeric
+     */
     public Builder setPhonePasscode(String phonePasscode) {
       checkArgument(
           phonePasscode == null || PHONE_PASSCODE_PATTERN.matcher(phonePasscode).matches(),

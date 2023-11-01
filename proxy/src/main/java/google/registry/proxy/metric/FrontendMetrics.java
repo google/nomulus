@@ -109,6 +109,6 @@ public class FrontendMetrics extends BaseMetrics {
 
   @NonFinalForTesting
   public void responseSent(String protocol, String certHash, Duration latency) {
-    latencyMs.record(latency.getMillis(), protocol, certHash);
+    latencyMs.record((double) latency.getMillis(), protocol, certHash);
   }
 }

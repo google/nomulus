@@ -72,7 +72,7 @@ final class PasswordUtilsTest {
     byte[] salt = SALT_SUPPLIER.get();
     String password = "mySuperSecurePassword";
     String hashedPassword = hashPassword(password, salt);
-    assertThat(verifyPassword(password + "a", hashedPassword, base64().encode(salt)).isEmpty())
-        .isTrue();
+    assertThat(verifyPassword(password + "a", hashedPassword, base64().encode(salt)).isPresent())
+        .isFalse();
   }
 }

@@ -120,7 +120,7 @@ public class DomainBase extends EppResource
    * from (creationTime, deletionTime) there can only be one domain in the database with this name.
    * However, there can be many domains with the same name and non-overlapping lifetimes.
    *
-   * @invariant domainName == domainName.toLowerCase(Locale.ENGLISH)
+   * <p>Invariant: domainName == domainName.toLowerCase(Locale.ENGLISH)
    */
   @Expose String domainName;
 

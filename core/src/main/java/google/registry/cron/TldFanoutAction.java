@@ -53,7 +53,7 @@ import javax.inject.Inject;
 /**
  * Action for fanning out cron tasks shared by TLD.
  *
- * <h3>Parameters Reference</h3>
+ * <h2>Parameters Reference</h2>
  *
  * <ul>
  *   <li>{@code endpoint} (Required) URL path of servlet to launch. This may contain pathargs.
@@ -68,7 +68,7 @@ import javax.inject.Inject;
  *       task.
  * </ul>
  *
- * <h3>Patharg Reference</h3>
+ * <h2>Patharg Reference</h2>
  *
  * <p>The following values may be specified inside the "endpoint" param.
  *

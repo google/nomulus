@@ -63,7 +63,7 @@ public interface RegistryPipelineOptions extends GcpOptions {
   }
 
   /**
-   * Validates the GCP project and Registry environment settings in {@code option}. If project is
+   * Validates the GCP project and Registry environment settings in {@code options}. If project is
    * undefined, it is set according to the Registry environment; if project is defined but
    * inconsistent with the Registry environment, an {@link IllegalArgumentException} will be thrown.
    *

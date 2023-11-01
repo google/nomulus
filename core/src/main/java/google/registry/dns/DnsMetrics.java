@@ -245,12 +245,9 @@ public class DnsMetrics {
 
     if (batchSize > 0) {
       normalizedProcessingTimePerCommitDist.record(
-          (double) processingDuration.getMillis() / batchSize,
-          tld, status.name(), dnsWriter);
+          processingDuration.getMillis() / batchSize, tld, status.name(), dnsWriter);
       normalizedProcessingTimePerItemDist.record(
-          (double) processingDuration.getMillis() / batchSize,
-          batchSize,
-          tld, status.name(), dnsWriter);
+          processingDuration.getMillis() / batchSize, batchSize, tld, status.name(), dnsWriter);
     }
 
     totalBatchSizePerCommitDist.record(batchSize, tld, status.name(), dnsWriter);

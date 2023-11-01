@@ -24,7 +24,7 @@ import google.registry.config.RegistryConfig.Config;
 /**
  * Dagger module for the whois package.
  *
- * <h3>Dependencies</h3>
+ * <h2>Dependencies</h2>
  *
  * <ul>
  *   <li>{@link google.registry.request.RequestModule RequestModule}
