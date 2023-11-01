@@ -71,8 +71,8 @@ configurations {
 }
 
 dependencies {
-    // compatibility with Java 8
-    errorprone("com.google.errorprone:error_prone_core:2.3.4")
+    // compatibility with Java 17
+    errorprone("com.google.errorprone:error_prone_core:2.23.0")
 }
 
 test {
@@ -109,27 +109,37 @@ tasks.withType(Test).configureEach {
 }
 
 tasks.withType(JavaCompile).configureEach {
-    // The -Werror flag causes Intellij to fail on deprecated api use.
-    // Allow IDE user to turn off this flag by specifying a Gradle VM
-    // option from inside the IDE.
-    if (System.getProperty('no_werror') != 'true' &&
-        // The core project throws an warning about Gradle annotation processor
-        // not compatible with Java source version > 8. Re-assess once the
-        // warning is fixed.
-        getProject().name != 'core') {
-      options.compilerArgs << "-Werror"
-    }
-    options.errorprone.disableWarningsInGeneratedCode = true
-    options.errorprone.errorproneArgumentProviders.add([
-            asArguments: {
-                return ['-XepExcludedPaths:.*/build/generated/.*']
-            }] as CommandLineArgumentProvider)
-    // Disable features currently incompatible with Java 12
-    if ((JavaVersion.current().majorVersion as Integer) > 11) {
-      // This check is broken in Java 12.
-      // See https://github.com/google/error-prone/issues/1257
-      options.errorprone.errorproneArgs=['-Xep:Finally:OFF']
-    }
+  // The -Werror flag causes Intellij to fail on deprecated api use.
+  // Allow IDE user to turn off this flag by specifying a Gradle VM
+  // option from inside the IDE.
+  if (System.getProperty('no_werror') != 'true') {
+    options.compilerArgs << "-Werror"
+  }
+  if (name.equals('compileTestJava')) {
+    // Allow unused methods in tests.
+    options.errorprone.disable("UnusedMethod")
+    // Allow unused variables in tests.
+    options.errorprone.disable("UnusedVariable")
+  }
+  // Allow using non-constant strings in log.
+  options.errorprone.disable("FloggerLogString")
+  // Allow using @error in javadoc.
+  options.errorprone.disable("InvalidBlockTag")
+  // Allow creating format string as single-use variables.
+  options.errorprone.disable("InlineFormatString")
+  // TODO: enable this check once we fix all existing violations.
+  options.errorprone.disable("NullableOptional")
+  // Allow implicit cast from long to double.
+  options.errorprone.disable("LongDoubleConversion")
+  // Allow import of commonly-used names such as "Type".
+  options.errorprone.disable("BadImport")
+  // TODO: enable this once we are on Java 17 runtime.
+  options.errorprone.disable("InlineMeInliner")
+  options.errorprone.disableWarningsInGeneratedCode = true
+  options.errorprone.errorproneArgumentProviders.add([
+          asArguments: {
+            return ['-XepExcludedPaths:.*/build/generated/.*']
+          }] as CommandLineArgumentProvider)
 }
 
 compileJava { options.encoding = "UTF-8" }

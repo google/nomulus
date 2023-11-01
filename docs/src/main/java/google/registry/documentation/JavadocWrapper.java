@@ -23,14 +23,12 @@ import com.sun.tools.javac.file.JavacFileManager;
 import com.sun.tools.javac.util.Context;
 import java.io.File;
 import java.util.Collection;
-import java.util.EnumMap;
-import java.util.Map;
 import javax.tools.StandardLocation;
 import jdk.javadoc.doclet.DocletEnvironment;
 import jdk.javadoc.internal.tool.AccessKind;
 import jdk.javadoc.internal.tool.JavadocTool;
 import jdk.javadoc.internal.tool.Messager;
-import jdk.javadoc.internal.tool.ToolOption;
+import jdk.javadoc.internal.tool.ToolOptions;
 
 /**
  * Wrapper class to simplify calls to the javadoc system and hide internal details. An instance
@@ -103,7 +101,7 @@ public final class JavadocWrapper {
       JavadocTool javadocTool = JavadocTool.make0(context);
 
       // Set up javadoc tool options.
-      Map<ToolOption, Object> options = new EnumMap<>(ToolOption.class);
+      ToolOptions options = new ToolOptions(context);
       options.put(ToolOption.SHOW_PACKAGES, ACCESS_KIND);
       options.put(ToolOption.SHOW_TYPES, ACCESS_KIND);
       options.put(ToolOption.SHOW_MEMBERS, ACCESS_KIND);

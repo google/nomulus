@@ -36,6 +36,8 @@ import javax.inject.Provider;
 /** Run a flow, either transactionally or not, with logging and retrying as needed. */
 public class FlowRunner {
 
+  // TODO: Remove suppression after we move to Java 17 runtime.
+  @SuppressWarnings("InlineMeInliner")
   private static final String COMMAND_LOG_FORMAT = "EPP Command" + Strings.repeat("\n\t%s", 8);
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();

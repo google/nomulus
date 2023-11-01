@@ -27,7 +27,7 @@ import google.registry.request.auth.Auth;
 import google.registry.tools.DomainLockUtils;
 import google.registry.ui.server.SoyTemplateUtils;
 import google.registry.ui.soy.registrar.RegistryLockVerificationSoyInfo;
-import java.util.HashMap;
+import java.util.Map;
 import javax.inject.Inject;
 
 /** Action that allows for verification of registry lock / unlock requests */
@@ -63,7 +63,7 @@ public final class RegistryLockVerifyAction extends HtmlAction {
   }
 
   @Override
-  public void runAfterLogin(HashMap<String, Object> data) {
+  public void runAfterLogin(Map<String, Object> data) {
     try {
       boolean isAdmin = authResult.userAuthInfo().get().isUserAdmin();
       final RegistryLock resultLock;

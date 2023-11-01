@@ -49,13 +49,11 @@ public final class SystemInfo {
   /**
    * Returns {@code true} if system command can be run from path.
    *
-   * <p><b>Warning:</b> The command is actually run! So there could be side-effects. You might
-   * need to specify a version flag or something. Return code is ignored.
+   * <p><b>Warning:</b> The command is actually run! So there could be side-effects. You might need
+   * to specify a version flag or something. Return code is ignored.
    *
-   * <p>This result is a memoized. If multiple therads try to get the same result at once, the
-   * heavy lifting will only be performed by the first thread and the rest will wait.
-   *
-   * @throws ExecutionException
+   * <p>This result is a memoized. If multiple therads try to get the same result at once, the heavy
+   * lifting will only be performed by the first thread and the rest will wait.
    */
   public static boolean hasCommand(String cmd) throws ExecutionException {
     return hasCommandCache.get(cmd);

@@ -239,9 +239,9 @@ public class DnsMetrics {
     int batchSize = numberOfDomains + numberOfHosts;
 
     processingTimePerCommitDist.record(
-        processingDuration.getMillis(), tld, status.name(), dnsWriter);
+        (double) processingDuration.getMillis(), tld, status.name(), dnsWriter);
     processingTimePerItemDist.record(
-        processingDuration.getMillis(), batchSize, tld, status.name(), dnsWriter);
+        (double) processingDuration.getMillis(), batchSize, tld, status.name(), dnsWriter);
 
     if (batchSize > 0) {
       normalizedProcessingTimePerCommitDist.record(

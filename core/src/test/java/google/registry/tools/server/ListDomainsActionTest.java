@@ -63,7 +63,7 @@ class ListDomainsActionTest extends ListActionTestCase {
   @Test
   void testRun_noParameters() {
     action.tlds = ImmutableSet.of("foo");
-    testRunSuccess(action, null, null, null);
+    testRunSuccess(action, Optional.empty(), Optional.empty(), Optional.empty());
   }
 
   @Test
