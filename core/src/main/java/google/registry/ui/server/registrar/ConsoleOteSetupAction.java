@@ -35,7 +35,7 @@ import google.registry.ui.server.SoyTemplateUtils;
 import google.registry.ui.soy.registrar.OteSetupConsoleSoyInfo;
 import google.registry.util.RegistryEnvironment;
 import google.registry.util.StringGenerator;
-import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -90,7 +90,7 @@ public final class ConsoleOteSetupAction extends HtmlAction {
   ConsoleOteSetupAction() {}
 
   @Override
-  public void runAfterLogin(HashMap<String, Object> data) {
+  public void runAfterLogin(Map<String, Object> data) {
     checkState(
         !RegistryEnvironment.get().equals(PRODUCTION), "Can't create OT&E in prod");
 
@@ -122,7 +122,7 @@ public final class ConsoleOteSetupAction extends HtmlAction {
     return PATH;
   }
 
-  private void runPost(HashMap<String, Object> data) {
+  private void runPost(Map<String, Object> data) {
     try {
       checkState(clientId.isPresent() && email.isPresent(), "Must supply clientId and email");
 
@@ -162,7 +162,7 @@ public final class ConsoleOteSetupAction extends HtmlAction {
     }
   }
 
-  private void runGet(HashMap<String, Object> data) {
+  private void runGet(Map<String, Object> data) {
     // set the values to pre-fill, if given
     data.put("baseClientId", clientId.orElse(null));
     data.put("contactEmail", email.orElse(null));

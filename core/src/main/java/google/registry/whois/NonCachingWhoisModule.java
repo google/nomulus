@@ -21,7 +21,7 @@ import google.registry.config.RegistryConfig.Config;
 /**
  * Whois module for systems that require that we not cache EPP resources (e.g. the nomulus tool).
  *
- * <h3>Dependencies</h3>
+ * <h2>Dependencies</h2>
  *
  * <ul>
  *   <li>{@link google.registry.request.RequestModule RequestModule}

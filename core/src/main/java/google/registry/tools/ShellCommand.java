@@ -200,10 +200,9 @@ public class ShellCommand implements Command {
     private void encapsulatedRun(String[] args) throws Exception {
       PrintStream orgOut = System.out;
       PrintStream orgErr = System.err;
-      try (PrintStream newOut =
-              new PrintStream(new EncapsulatingOutputStream(System.out, "out: "));
-          PrintStream newErr =
-              new PrintStream(new EncapsulatingOutputStream(System.out, "err: "))) {
+      PrintStream newOut = new PrintStream(new EncapsulatingOutputStream(System.out, "out: "));
+      PrintStream newErr = new PrintStream(new EncapsulatingOutputStream(System.out, "err: "));
+      try {
         System.setOut(newOut);
         System.setErr(newErr);
         runner.run(args);
