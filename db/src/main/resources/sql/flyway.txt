@@ -145,4 +145,5 @@ V144__drop_database_migration_state_schedule_table.sql
 V145__add_breakglass_mode_to_tld_table.sql
 V146__last_update_time_via_epp.sql
 V147__drop_gaia_id_from_user.sql
-V148__add_bsa_tables.sql
+V148__add_bsa_download_and_label_tables.sql
+V149__add_bsa_domain_in_use_table.sql
