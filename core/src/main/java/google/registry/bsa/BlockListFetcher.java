@@ -117,10 +117,10 @@ public class BlockListFetcher {
     private String readChecksum() throws IOException {
       StringBuilder checksum = new StringBuilder();
       char ch;
-      while ((ch = peekInputStream()) != (char) -1 && !Character.isWhitespace(ch)) {
+      while ((ch = peekInputStream()) != Character.MAX_VALUE && !Character.isWhitespace(ch)) {
         checksum.append((char) inputStream.read());
       }
-      while ((ch = peekInputStream()) != (char) -1 && Character.isWhitespace(ch)) {
+      while ((ch = peekInputStream()) != Character.MAX_VALUE && Character.isWhitespace(ch)) {
         inputStream.read();
       }
       return checksum.toString();

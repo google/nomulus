@@ -264,8 +264,6 @@ public class DomainFlowUtils {
   /**
    * Verifies that the {@code domainLabel} is not blocked by any BSA block label for the given
    * {@code tld} at the specified time.
-   *
-   * @throws DomainLabelBlockedByBsaException
    */
   public static void verifyNotBlockedByBsa(String domainLabel, Tld tld, DateTime now)
       throws DomainLabelBlockedByBsaException {

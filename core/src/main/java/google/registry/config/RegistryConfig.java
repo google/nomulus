@@ -252,7 +252,11 @@ public final class RegistryConfig {
       return projectId + "-zonefiles";
     }
 
-    /** @see RegistryConfig#getDatabaseRetention() */
+    /**
+     * Returns the length of time before commit logs should be deleted from the database.
+     *
+     * @see RegistryConfig#getDatabaseRetention()
+     */
     @Provides
     @Config("databaseRetention")
     public static Duration provideDatabaseRetention() {
@@ -281,7 +285,11 @@ public final class RegistryConfig {
       return projectId + "-icann-brda";
     }
 
-    /** @see google.registry.rde.BrdaCopyAction */
+    /**
+     * Returns the day of the week on which BRDA deposits should be made.
+     *
+     * @see google.registry.rde.BrdaCopyAction
+     */
     @Provides
     @Config("brdaDayOfWeek")
     public static int provideBrdaDayOfWeek() {

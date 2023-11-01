@@ -84,9 +84,7 @@ public abstract class DownloadSchedule {
               BsaDownload bsaDownload = tm().loadByKey(BsaDownload.vKey(jobId()));
               verify(
                   bsaDownload.getStage().equals(DownloadStage.DOWNLOAD_BLOCK_LISTS),
-                  "Invalid invocation. May only invoke during the DOWNLOAD stage.",
-                  bsaDownload.getStage(),
-                  stage);
+                  "Invalid invocation. May only invoke during the DOWNLOAD stage.");
               bsaDownload.setStage(stage);
               bsaDownload.setChecksums(checksums);
               tm().put(bsaDownload);

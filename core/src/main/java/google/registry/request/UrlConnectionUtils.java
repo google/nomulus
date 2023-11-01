@@ -68,7 +68,7 @@ public final class UrlConnectionUtils {
   /** Checks whether {@code bytes} are GZIP encoded. */
   public static boolean isGZipped(byte[] bytes) {
     // See GzipOutputStream.writeHeader()
-    return (bytes.length > 2 && bytes[0] == (byte) (GZIPInputStream.GZIP_MAGIC))
+    return (bytes.length > 2 && bytes[0] == (byte) GZIPInputStream.GZIP_MAGIC)
         && (bytes[1] == (byte) (GZIPInputStream.GZIP_MAGIC >> 8));
   }
 

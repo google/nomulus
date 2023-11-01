@@ -120,7 +120,7 @@ class TldsTest {
         Tld.get("foo")
             .asBuilder()
             .setTldType(TldType.TEST)
-            .setBsaEnrollStartTime(Optional.of(fakeClock.nowUtc().minus(1)))
+            .setBsaEnrollStartTime(Optional.of(fakeClock.nowUtc().minusMillis(1)))
             .build());
     assertThat(hasActiveBsaEnrollment(fakeClock.nowUtc())).isFalse();
   }
@@ -131,7 +131,7 @@ class TldsTest {
     persistResource(
         Tld.get("foo")
             .asBuilder()
-            .setBsaEnrollStartTime(Optional.of(fakeClock.nowUtc().minus(1)))
+            .setBsaEnrollStartTime(Optional.of(fakeClock.nowUtc().minusMillis(1)))
             .build());
     assertThat(hasActiveBsaEnrollment(fakeClock.nowUtc())).isTrue();
   }
