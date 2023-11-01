@@ -582,10 +582,7 @@ class SendExpiringCertificateNotificationEmailActionTest {
     String registrarId = "registrarid";
     String emailBody =
         action.getEmailBody(
-            registrarName,
-            certificateType,
-            DateTime.parse(certExpirationDateStr).toDate(),
-            registrarId);
+            registrarName, certificateType, DateTime.parse(certExpirationDateStr), registrarId);
     assertThat(emailBody).contains(registrarName);
     assertThat(emailBody).contains(certificateType.getDisplayName());
     assertThat(emailBody).contains(certExpirationDateStr);
@@ -614,7 +611,7 @@ class SendExpiringCertificateNotificationEmailActionTest {
             IllegalArgumentException.class,
             () ->
                 action.getEmailBody(
-                    "good registrar", null, DateTime.parse("2021-06-15").toDate(), "registrarId"));
+                    "good registrar", null, DateTime.parse("2021-06-15"), "registrarId"));
     assertThat(thrown).hasMessageThat().contains("Certificate type cannot be null");
   }
 
@@ -627,7 +624,7 @@ class SendExpiringCertificateNotificationEmailActionTest {
                 action.getEmailBody(
                     "good registrar",
                     CertificateType.FAILOVER,
-                    DateTime.parse("2021-06-15").toDate(),
+                    DateTime.parse("2021-06-15"),
                     null));
     assertThat(thrown).hasMessageThat().contains("Registrar Id cannot be null");
   }

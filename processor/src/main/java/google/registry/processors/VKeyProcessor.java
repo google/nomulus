@@ -78,7 +78,7 @@ public class VKeyProcessor extends AbstractProcessor {
                               .collect(toImmutableList());
                       checkState(
                           actualAnnotations.size() == 1,
-                          "% can have only one @WithVKey annotation",
+                          "%s can have only one @WithVKey annotation",
                           simpleTypeName);
                       TypeName keyType = null;
                       for (Map.Entry<? extends ExecutableElement, ? extends AnnotationValue> entry :

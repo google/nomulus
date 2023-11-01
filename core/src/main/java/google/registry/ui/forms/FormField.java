@@ -75,7 +75,7 @@ import javax.annotation.concurrent.Immutable;
  * <p>This class provides <b>full type-safety</b> <i>if and only if</i> you statically initialize
  * your FormField objects and write a unit test that causes the class to be loaded.
  *
- * <h3>Exception Handling</h3>
+ * <h2>Exception Handling</h2>
  *
  * <p>When values passed to {@link #convert} or {@link #extract} don't meet the contract, {@link
  * FormFieldException} will be thrown, which provides the field name and a short error message

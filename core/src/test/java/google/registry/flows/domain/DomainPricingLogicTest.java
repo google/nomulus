@@ -35,7 +35,6 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.collect.Iterables;
 import google.registry.flows.EppException;
-import google.registry.flows.FlowMetadata;
 import google.registry.flows.HttpSessionMetadata;
 import google.registry.flows.SessionMetadata;
 import google.registry.flows.custom.DomainPricingCustomLogic;
@@ -57,7 +56,6 @@ import google.registry.testing.FakeClock;
 import google.registry.testing.FakeHttpSession;
 import google.registry.util.Clock;
 import java.util.Optional;
-import javax.inject.Inject;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
@@ -73,10 +71,9 @@ public class DomainPricingLogicTest {
   final JpaIntegrationTestExtension jpa =
       new JpaTestExtensions.Builder().buildIntegrationTestExtension();
 
-  @Inject Clock clock = new FakeClock(DateTime.parse("2023-05-13T00:00:00.000Z"));
+  Clock clock = new FakeClock(DateTime.parse("2023-05-13T00:00:00.000Z"));
   @Mock EppInput eppInput;
   SessionMetadata sessionMetadata;
-  @Mock FlowMetadata flowMetadata;
   Tld tld;
   Domain domain;
 
@@ -85,8 +82,7 @@ public class DomainPricingLogicTest {
     createTld("example");
     sessionMetadata = new HttpSessionMetadata(new FakeHttpSession());
     domainPricingLogic =
-        new DomainPricingLogic(
-            new DomainPricingCustomLogic(eppInput, sessionMetadata, flowMetadata));
+        new DomainPricingLogic(new DomainPricingCustomLogic(eppInput, sessionMetadata, null));
     tld =
         persistResource(
             Tld.get("example")
