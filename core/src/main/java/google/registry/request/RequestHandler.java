@@ -42,10 +42,11 @@ import org.joda.time.Duration;
  * <p>This class creates an HTTP request processor from a Dagger component. It routes requests from
  * your servlet to an {@link Action @Action} annotated handler class.
  *
- * <h3>Component Definition</h3>
+ * <h2>Component Definition</h2>
  *
- * <p>Action instances are supplied on a per-request basis by invoking the methods on {@code C}.
- * For example:
+ * <p>Action instances are supplied on a per-request basis by invoking the methods on {@code C}. For
+ * example:
+ *
  * <pre>
  * {@literal @Component}
  * interface ServerComponent {
@@ -53,12 +54,13 @@ import org.joda.time.Duration;
  * }</pre>
  *
  * <p>The rules for component methods are as follows:
+ *
  * <ol>
- * <li>Methods whose raw return type does not implement {@code Runnable} will be ignored
- * <li>Methods whose raw return type does not have an {@code @Action} annotation are ignored
+ *   <li>Methods whose raw return type does not implement {@code Runnable} will be ignored
+ *   <li>Methods whose raw return type does not have an {@code @Action} annotation are ignored
  * </ol>
  *
- * <h3>Security Features</h3>
+ * <h2>Security Features</h2>
  *
  * @param <C> request component type
  */

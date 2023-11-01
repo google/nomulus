@@ -39,7 +39,6 @@ import google.registry.request.Action;
 import google.registry.request.Response;
 import google.registry.request.auth.Auth;
 import google.registry.util.EmailMessage;
-import java.util.Date;
 import java.util.Optional;
 import javax.inject.Inject;
 import javax.mail.internet.AddressException;
@@ -160,12 +159,11 @@ public class SendExpiringCertificateNotificationEmailAction implements Runnable 
     try {
       ImmutableSet<InternetAddress> recipients = getEmailAddresses(registrar, Type.TECH);
       ImmutableSet<InternetAddress> ccs = getEmailAddresses(registrar, Type.ADMIN);
-      Date expirationDate = certificateChecker.getCertificate(certificate.get()).getNotAfter();
+      DateTime expirationDate =
+          new DateTime(certificateChecker.getCertificate(certificate.get()).getNotAfter());
       logger.atInfo().log(
           " %s SSL certificate of registrar '%s' will expire on %s.",
-          certificateType.getDisplayName(),
-          registrar.getRegistrarName(),
-          expirationDate.toString());
+          certificateType.getDisplayName(), registrar.getRegistrarName(), expirationDate);
       if (recipients.isEmpty() && ccs.isEmpty()) {
         logger.atWarning().log(
             "Registrar %s contains no TECH nor ADMIN email addresses to receive notification"
@@ -302,7 +300,7 @@ public class SendExpiringCertificateNotificationEmailAction implements Runnable 
   @VisibleForTesting
   @SuppressWarnings("lgtm[java/dereferenced-value-may-be-null]")
   String getEmailBody(
-      String registrarName, CertificateType type, Date expirationDate, String registrarId) {
+      String registrarName, CertificateType type, DateTime expirationDate, String registrarId) {
     checkArgumentNotNull(expirationDate, "Expiration date cannot be null");
     checkArgumentNotNull(type, "Certificate type cannot be null");
     checkArgumentNotNull(registrarId, "Registrar Id cannot be null");
@@ -310,7 +308,7 @@ public class SendExpiringCertificateNotificationEmailAction implements Runnable 
         expirationWarningEmailBodyText,
         registrarName,
         type.getDisplayName(),
-        DATE_FORMATTER.print(new DateTime(expirationDate)),
+        DATE_FORMATTER.print(expirationDate),
         registrarId);
   }
 

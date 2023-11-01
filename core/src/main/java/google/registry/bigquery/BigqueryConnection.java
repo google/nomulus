@@ -144,7 +144,8 @@ public class BigqueryConnection implements AutoCloseable {
     public Builder setPollInterval(Duration pollInterval) {
       checkArgument(
           !pollInterval.isShorterThan(MIN_POLL_INTERVAL),
-          "poll interval must be at least %ldms", MIN_POLL_INTERVAL.getMillis());
+          "poll interval must be at least %s ms",
+          MIN_POLL_INTERVAL.getMillis());
       instance.pollInterval = pollInterval;
       return this;
     }
@@ -216,7 +217,7 @@ public class BigqueryConnection implements AutoCloseable {
       }
 
       public Builder timeToLive(Duration duration) {
-        this.table.setExpirationTime(new DateTime(UTC).plus(duration).getMillis());
+        this.table.setExpirationTime(DateTime.now(UTC).plus(duration).getMillis());
         return this;
       }
 
@@ -556,7 +557,6 @@ public class BigqueryConnection implements AutoCloseable {
   /**
    * Launch a job, but do not wait for it to complete.
    *
-   * @throws BigqueryJobFailureException
    */
   private Job launchJob(Job job, @Nullable AbstractInputStreamContent data) {
     verify(job.getStatus() == null);
@@ -572,7 +572,6 @@ public class BigqueryConnection implements AutoCloseable {
   /**
    * Synchronously waits for a job to complete that's already been launched.
    *
-   * @throws BigqueryJobFailureException
    */
   private Job waitForJob(Job job) {
     verify(job.getStatus() != null);
@@ -591,7 +590,6 @@ public class BigqueryConnection implements AutoCloseable {
   /**
    * Checks completed job for errors.
    *
-   * @throws BigqueryJobFailureException
    */
   private static Job checkJob(Job job) {
     verify(job.getStatus() != null);

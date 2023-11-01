@@ -80,6 +80,7 @@ public class BsaDomainRefresh {
     return this;
   }
 
+  @SuppressWarnings("AmbiguousMethodReference")
   VKey<BsaDomainRefresh> vKey() {
     return vKey(this);
   }
@@ -104,6 +105,7 @@ public class BsaDomainRefresh {
     return Objects.hashCode(jobId, creationTime, updateTime, stage);
   }
 
+  @SuppressWarnings("AmbiguousMethodReference")
   static VKey vKey(BsaDomainRefresh bsaDomainRefresh) {
     return VKey.create(BsaDomainRefresh.class, bsaDomainRefresh.jobId);
   }

@@ -77,6 +77,7 @@ class GenerateZoneFilesActionTest {
     testGenerate("tldCustomTtl.zone");
   }
 
+  @SuppressWarnings("AddressSelection")
   void testGenerate(String goldenFileName) throws Exception {
     DateTime now = DateTime.now(DateTimeZone.UTC).withTimeAtStartOfDay();
 
