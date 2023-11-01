@@ -190,6 +190,8 @@ import google.registry.tmch.SmdrlCsvParser;
 import google.registry.tmch.TmchData;
 import google.registry.tmch.TmchTestData;
 import google.registry.xml.ValidationMode;
+import java.io.BufferedReader;
+import java.io.StringReader;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
@@ -2762,7 +2764,11 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
 
   @Test
   void testFail_startDateSunriseRegistration_revokedSignedMark() throws Exception {
-    SmdrlCsvParser.parse(TmchTestData.loadFile("smd/smdrl.csv").lines().collect(toImmutableList()))
+    SmdrlCsvParser.parse(
+            // TODO: Use String.lines() once we are on Java 17.
+            new BufferedReader(new StringReader(TmchTestData.loadFile("smd/smdrl.csv")))
+                .lines()
+                .collect(toImmutableList()))
         .save();
     createTld("tld", START_DATE_SUNRISE);
     clock.setTo(SMD_VALID_TIME);
@@ -2788,8 +2794,11 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     if (labels.isEmpty()) {
       return;
     }
+    // TODO: Use String.lines() once we are on Java 17.
     SmdrlCsvParser.parse(
-            TmchTestData.loadFile("idn/idn_smdrl.csv").lines().collect(toImmutableList()))
+            new BufferedReader(new StringReader(TmchTestData.loadFile("idn/idn_smdrl.csv")))
+                .lines()
+                .collect(toImmutableList()))
         .save();
     createTld("tld", START_DATE_SUNRISE);
     clock.setTo(SMD_VALID_TIME);

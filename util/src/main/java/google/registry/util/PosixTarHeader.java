@@ -172,6 +172,7 @@ public final class PosixTarHeader {
   }
 
   /** Returns the modified time as a UTC {@link DateTime} object. */
+  @SuppressWarnings("JodaDateTimeConstants")
   public DateTime getMtime() {
     return new DateTime(Long.parseLong(extractField(136, 12).trim(), 8) * MILLIS_PER_SECOND, UTC);
   }
@@ -332,7 +333,7 @@ public final class PosixTarHeader {
       setMode(DEFAULT_MODE);
       setUid(DEFAULT_UID);
       setGid(DEFAULT_GID);
-      setMtime(new DateTime(UTC));
+      setMtime(DateTime.now(UTC));
       setType(DEFAULT_TYPE);
       setMagic();
       setVersion();
@@ -417,6 +418,7 @@ public final class PosixTarHeader {
      * epoch in UTC time. Because {@link DateTime} has millisecond precision, it gets rounded down
      * (floor) to the second.
      */
+    @SuppressWarnings("JodaDateTimeConstants")
     public Builder setMtime(DateTime mtime) {
       checkNotNull(mtime, "mtime");
       setField("mtime", 136, 12, String.format("%011o", mtime.getMillis() / MILLIS_PER_SECOND));

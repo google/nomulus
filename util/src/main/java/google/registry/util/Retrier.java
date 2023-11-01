@@ -159,7 +159,7 @@ public class Retrier implements Serializable {
         failureReporter.beforeRetry(e, failures, attempts);
         try {
           // Wait 100ms on the first attempt, doubling on each subsequent attempt.
-          sleeper.sleep(Duration.millis(pow(2, failures) * 100));
+          sleeper.sleep(Duration.millis(pow(2, failures) * 100L));
         } catch (InterruptedException e2) {
           // Since we're not rethrowing InterruptedException, set the interrupt state on the thread
           // so the next blocking operation will know to abort the thread.

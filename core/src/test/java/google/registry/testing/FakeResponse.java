@@ -24,6 +24,7 @@ import com.google.common.net.MediaType;
 import google.registry.request.Response;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import javax.servlet.http.Cookie;
 import org.joda.time.DateTime;
@@ -92,7 +93,7 @@ public final class FakeResponse implements Response {
     cookies.add(cookie);
   }
 
-  public ArrayList<Cookie> getCookies() {
+  public List<Cookie> getCookies() {
     return cookies;
   }
 
