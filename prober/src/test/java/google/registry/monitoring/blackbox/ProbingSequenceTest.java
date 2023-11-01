@@ -54,6 +54,7 @@ import org.mockito.Mockito;
  * UnrecoverableStateException}, using mocks of the steps or actions, as the sequences are run using
  * the main thread (with {@link EmbeddedChannel}).
  */
+@SuppressWarnings("DoNotMockAutoValue")
 class ProbingSequenceTest {
 
   private static final String PROTOCOL_NAME = "PROTOCOL";

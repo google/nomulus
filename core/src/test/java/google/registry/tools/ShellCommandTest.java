@@ -241,22 +241,22 @@ class ShellCommandTest {
   }
 
   @Test
-  void testEncapsulatedOutputStream_basicFuncionality() {
+  void testEncapsulatedOutputStream_basicFuncionality() throws Exception {
     ByteArrayOutputStream backing = new ByteArrayOutputStream();
     try (PrintStream out =
         new PrintStream(new ShellCommand.EncapsulatingOutputStream(backing, "out: "))) {
       out.println("first line");
       out.print("second line\ntrailing data");
     }
-    assertThat(backing.toString())
+    assertThat(backing.toString("UTF-8"))
         .isEqualTo("out: first line\nout: second line\nout: trailing data\n");
   }
 
   @Test
-  void testEncapsulatedOutputStream_emptyStream() {
+  void testEncapsulatedOutputStream_emptyStream() throws Exception {
     ByteArrayOutputStream backing = new ByteArrayOutputStream();
     new PrintStream(new ShellCommand.EncapsulatingOutputStream(backing, "out: ")).close();
-    assertThat(backing.toString()).isEqualTo("");
+    assertThat(backing.toString("UTF-8")).isEqualTo("");
   }
 
   @Test
@@ -275,8 +275,8 @@ class ShellCommandTest {
     shellCommand.encapsulateOutput = true;
 
     shellCommand.run();
-    assertThat(stderr.toString()).isEmpty();
-    assertThat(stdout.toString())
+    assertThat(stderr.toString("UTF-8")).isEmpty();
+    assertThat(stdout.toString("UTF-8"))
         .isEqualTo(
             "RUNNING \"command1\"\n"
                 + "out: first line\nerr: second line\nerr: surprise!\nout: fragmented line\n"
@@ -295,8 +295,8 @@ class ShellCommandTest {
             });
     shellCommand.encapsulateOutput = true;
     shellCommand.run();
-    assertThat(stderr.toString()).isEmpty();
-    assertThat(stdout.toString())
+    assertThat(stderr.toString("UTF-8")).isEmpty();
+    assertThat(stdout.toString("UTF-8"))
         .isEqualTo(
             "RUNNING \"command1\"\n"
                 + "out: first line\n"
@@ -316,8 +316,8 @@ class ShellCommandTest {
             "do something");
     shellCommand.encapsulateOutput = true;
     shellCommand.run();
-    assertThat(stderr.toString()).isEmpty();
-    assertThat(stdout.toString())
+    assertThat(stderr.toString("UTF-8")).isEmpty();
+    assertThat(stdout.toString("UTF-8"))
         .isEqualTo("RUNNING \"do\" \"something\"\nout: first line\nSUCCESS\n");
   }
 

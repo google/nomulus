@@ -14,7 +14,6 @@
 
 package google.registry.persistence.transaction;
 
-import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -25,12 +24,12 @@ import google.registry.persistence.transaction.JpaTestExtensions.JpaUnitTestExte
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.logging.Level;
-import java.util.logging.LogManager;
 import java.util.logging.Logger;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
@@ -39,6 +38,8 @@ import org.junit.jupiter.api.extension.RegisterExtension;
  *
  * <p>Please refer to the class javadoc of {@link DatabaseException} for more information.
  */
+@Disabled // TODO: re-enable test class after upgrading to Java 17.
+// LogManager.updateConfiguration() is only supported in Java 9 and later.
 public class HibernateLoggingSuppressionTest {
 
   private static final String LOG_SUPPRESSION_TARGET =
@@ -73,6 +74,7 @@ public class HibernateLoggingSuppressionTest {
   void suppressHibernateLogs() throws IOException {
     try (ByteArrayInputStream additionalProperties =
         new ByteArrayInputStream(LOGGING_PROPERTIES_LINE.getBytes(UTF_8))) {
+      /*
       LogManager.getLogManager()
           .updateConfiguration(
               additionalProperties,
@@ -84,12 +86,14 @@ public class HibernateLoggingSuppressionTest {
                     checkArgument(o == null, "Cannot override old value in this test");
                     return n;
                   });
+      */
     }
   }
 
   void revertSuppressionOfHibernateLogs() throws IOException {
     try (ByteArrayInputStream additionalProperties =
         new ByteArrayInputStream(LOGGING_PROPERTIES_LINE.getBytes(UTF_8))) {
+      /*
       LogManager.getLogManager()
           .updateConfiguration(
               additionalProperties,
@@ -100,6 +104,7 @@ public class HibernateLoggingSuppressionTest {
                     }
                     return null;
                   });
+       */
     }
   }
 

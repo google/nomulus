@@ -100,8 +100,7 @@ public final class RdeUtils {
   }
 
   /**
-   * Generates an ID matching the regex {@code \w&lbrace;1,13&rbrace; } from a millisecond
-   * timestamp.
+   * Generates an ID matching the regex {@code \w{1,13}} from a millisecond timestamp.
    *
    * <p>This routine works by turning the number of UTC milliseconds from the UNIX epoch into a
    * big-endian byte-array which is then converted to a base32 string without padding that's no
