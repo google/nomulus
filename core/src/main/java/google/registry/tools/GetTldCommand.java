@@ -40,10 +40,12 @@ final class GetTldCommand implements Command {
 
   @Override
   public void run() throws JsonProcessingException, UnsupportedEncodingException {
-    try (PrintStream printStream = new PrintStream(System.out, false, UTF_8.name())) {
-      for (String tld : assertTldsExist(mainParameters)) {
+    // Don't use try-with-resources to manage standard output streams, closing the stream will
+    // cause subsequent output to standard output or standard error to be lost
+    // See: https://errorprone.info/bugpattern/ClosingStandardOutputStreams
+    PrintStream printStream = new PrintStream(System.out, false, UTF_8.name());
+    for (String tld : assertTldsExist(mainParameters)) {
         printStream.println(objectMapper.writeValueAsString(Tld.get(tld)));
       }
-    }
   }
 }

@@ -282,7 +282,7 @@ class CreateTldCommandTest extends CommandTestCase<CreateTldCommand> {
     runCommandForced("co.uk", "--roid_suffix=COUK", "--dns_writers=VoidDnsWriter");
 
     Tld registry = Tld.get("co.uk");
-    assertThat(registry.getTldState(new DateTime())).isEqualTo(PREDELEGATION);
+    assertThat(registry.getTldState(DateTime.now(UTC))).isEqualTo(PREDELEGATION);
     assertThat(registry.getAddGracePeriodLength()).isEqualTo(Tld.DEFAULT_ADD_GRACE_PERIOD);
     assertThat(registry.getRedemptionGracePeriodLength())
         .isEqualTo(Tld.DEFAULT_REDEMPTION_GRACE_PERIOD);

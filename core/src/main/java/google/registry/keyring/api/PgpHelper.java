@@ -104,9 +104,12 @@ public final class PgpHelper {
     PGPPublicKey publicKey = lookupPublicKey(publics, query, want);
     PGPPrivateKey privateKey;
     try {
-      PGPSecretKey secret = verifyNotNull(privates.getSecretKey(publicKey.getKeyID()),
-          "Keyring missing private key associated with public key id: %x (query '%s')",
-          publicKey.getKeyID(), query);
+      PGPSecretKey secret =
+          verifyNotNull(
+              privates.getSecretKey(publicKey.getKeyID()),
+              "Keyring missing private key associated with public key id: %s (query %s)",
+              publicKey.getKeyID(),
+              query);
       // We do not support putting a password on the private key so we're just going to
       // put char[0] here.
       privateKey = secret.extractPrivateKey(

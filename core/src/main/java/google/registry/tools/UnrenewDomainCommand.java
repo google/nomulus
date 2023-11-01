@@ -39,7 +39,7 @@ import google.registry.model.domain.Period;
 import google.registry.model.domain.Period.Unit;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.poll.PollMessage;
-import google.registry.model.reporting.HistoryEntry.Type;
+import google.registry.model.reporting.HistoryEntry;
 import google.registry.util.Clock;
 import google.registry.util.NonFinalForTesting;
 import java.io.UnsupportedEncodingException;
@@ -192,7 +192,7 @@ class UnrenewDomainCommand extends ConfirmingCommand {
             .setDomain(domain)
             .setModificationTime(now)
             .setBySuperuser(true)
-            .setType(Type.SYNTHETIC)
+            .setType(HistoryEntry.Type.SYNTHETIC)
             .setRegistrarId(domain.getCurrentSponsorRegistrarId())
             .setReason("Domain unrenewal")
             .setPeriod(Period.create(period, Unit.YEARS))

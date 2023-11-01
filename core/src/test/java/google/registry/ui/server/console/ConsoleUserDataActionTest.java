@@ -32,7 +32,7 @@ import google.registry.testing.FakeConsoleApiParams;
 import google.registry.testing.FakeResponse;
 import google.registry.ui.server.registrar.ConsoleApiParams;
 import java.io.IOException;
-import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import javax.servlet.http.Cookie;
@@ -63,7 +63,7 @@ class ConsoleUserDataActionTest {
         createAction(
             Optional.of(FakeConsoleApiParams.get(Optional.of(authResult))), Action.Method.GET);
     action.run();
-    ArrayList<Cookie> cookies = ((FakeResponse) consoleApiParams.response()).getCookies();
+    List<Cookie> cookies = ((FakeResponse) consoleApiParams.response()).getCookies();
     assertThat(cookies.stream().map(cookie -> cookie.getName()).collect(toImmutableList()))
         .containsExactly("X-CSRF-Token");
   }

@@ -26,7 +26,6 @@ import google.registry.model.OteAccountBuilder;
 import google.registry.model.OteStats;
 import google.registry.model.OteStats.StatType;
 import google.registry.model.registrar.Registrar;
-import google.registry.model.registrar.Registrar.Type;
 import google.registry.request.Action;
 import google.registry.request.JsonActionRunner;
 import google.registry.request.auth.Auth;
@@ -83,7 +82,7 @@ public final class OteStatusAction implements Runnable, JsonActionRunner.JsonAct
       Registrar oteRegistrar = registrarAccessor.getRegistrar(oteClientId);
       verifyOteAccess(baseClientId);
       checkArgument(
-          Type.OTE.equals(oteRegistrar.getType()),
+          Registrar.Type.OTE.equals(oteRegistrar.getType()),
           "Registrar with ID %s is not an OT&E registrar",
           oteClientId);
 
