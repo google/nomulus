@@ -195,7 +195,9 @@ final class RdapObjectClasses {
    * <p>Not part of the spec, but seems convenient.
    */
   private abstract static class RdapObjectBase extends ReplyPayloadBase {
-    @JsonableElement final ObjectClassName objectClassName;
+    @SuppressWarnings("unused")
+    @JsonableElement
+    final ObjectClassName objectClassName;
 
     @JsonableElement abstract Optional<String> handle();
     @JsonableElement abstract ImmutableList<PublicId> publicIds();

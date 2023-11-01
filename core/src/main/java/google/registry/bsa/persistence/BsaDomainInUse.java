@@ -84,7 +84,10 @@ public class BsaDomainInUse {
 
   static class BsaDomainInUseId implements Serializable {
 
+    @SuppressWarnings("unused")
     private String label;
+
+    @SuppressWarnings("unused")
     private String tld;
 
     // For Hibernate

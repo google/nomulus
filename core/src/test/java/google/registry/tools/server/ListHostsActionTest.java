@@ -37,11 +37,7 @@ class ListHostsActionTest extends ListActionTestCase {
 
   @Test
   void testRun_noParameters() {
-    testRunSuccess(
-        action,
-        null,
-        null,
-        null);
+    testRunSuccess(action, Optional.empty(), Optional.empty(), Optional.empty());
   }
 
   @Test
