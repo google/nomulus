@@ -16,5 +16,9 @@ package google.registry.bsa;
 
 /** The processing stages of a download. */
 public enum DownloadStage {
-  DOWNLOAD;
+  DOWNLOAD,
+  MAKE_DIFF,
+  DONE,
+  NOP,
+  CHECKSUMS_NOT_MATCH;
 }
