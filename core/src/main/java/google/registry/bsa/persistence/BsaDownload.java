@@ -90,13 +90,13 @@ public class BsaDownload {
     return creationTime.getTimestamp();
   }
 
-  BsaDownload setBlockListChecksums(ImmutableMap<BlockList, String> checksums) {
+  BsaDownload setChecksums(ImmutableMap<BlockList, String> checksums) {
     blockListChecksums =
         CSV_JOINER.withKeyValueSeparator("=").join(ImmutableSortedMap.copyOf(checksums));
     return this;
   }
 
-  ImmutableMap<BlockList, String> getChecksums() {
+  public ImmutableMap<BlockList, String> getChecksums() {
     if (blockListChecksums.isEmpty()) {
       return ImmutableMap.of();
     }

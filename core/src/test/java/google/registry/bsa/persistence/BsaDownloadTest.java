@@ -59,7 +59,7 @@ public class BsaDownloadTest {
     BsaDownload job = new BsaDownload();
     assertThat(job.getChecksums()).isEmpty();
     ImmutableMap<BlockList, String> checksums = ImmutableMap.of(BLOCK, "a", BLOCK_PLUS, "b");
-    job.setBlockListChecksums(checksums);
+    job.setChecksums(checksums);
     assertThat(job.getChecksums()).isEqualTo(checksums);
     assertThat(job.blockListChecksums).isEqualTo("BLOCK=a,BLOCK_PLUS=b");
   }
