@@ -124,6 +124,60 @@ CREATE TABLE public."BillingRecurrence" (
 
 
 --
+-- Name: BsaDomainInUse; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public."BsaDomainInUse" (
+    label text NOT NULL,
+    tld text NOT NULL,
+    creation_time timestamp with time zone NOT NULL,
+    reason text NOT NULL
+);
+
+
+--
+-- Name: BsaDownload; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public."BsaDownload" (
+    job_id bigint NOT NULL,
+    block_list_checksums text NOT NULL,
+    creation_time timestamp with time zone NOT NULL,
+    stage text NOT NULL,
+    update_timestamp timestamp with time zone
+);
+
+
+--
+-- Name: BsaDownload_job_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public."BsaDownload_job_id_seq"
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: BsaDownload_job_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public."BsaDownload_job_id_seq" OWNED BY public."BsaDownload".job_id;
+
+
+--
+-- Name: BsaLabel; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public."BsaLabel" (
+    label text NOT NULL,
+    creation_time timestamp with time zone NOT NULL
+);
+
+
+--
 -- Name: ClaimsEntry; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -1156,6 +1210,13 @@ CREATE SEQUENCE public.project_wide_unique_id_seq
 
 
 --
+-- Name: BsaDownload job_id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."BsaDownload" ALTER COLUMN job_id SET DEFAULT nextval('public."BsaDownload_job_id_seq"'::regclass);
+
+
+--
 -- Name: ClaimsList revision_id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -1255,6 +1316,30 @@ ALTER TABLE ONLY public."BillingEvent"
 
 ALTER TABLE ONLY public."BillingRecurrence"
     ADD CONSTRAINT "BillingRecurrence_pkey" PRIMARY KEY (billing_recurrence_id);
+
+
+--
+-- Name: BsaDomainInUse BsaDomainInUse_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."BsaDomainInUse"
+    ADD CONSTRAINT "BsaDomainInUse_pkey" PRIMARY KEY (label, tld);
+
+
+--
+-- Name: BsaDownload BsaDownload_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."BsaDownload"
+    ADD CONSTRAINT "BsaDownload_pkey" PRIMARY KEY (job_id);
+
+
+--
+-- Name: BsaLabel BsaLabel_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."BsaLabel"
+    ADD CONSTRAINT "BsaLabel_pkey" PRIMARY KEY (label);
 
 
 --
@@ -1845,6 +1930,13 @@ CREATE INDEX idxj1mtx98ndgbtb1bkekahms18w ON public."GracePeriod" USING btree (d
 --
 
 CREATE INDEX idxj77pfwhui9f0i7wjq6lmibovj ON public."HostHistory" USING btree (host_name);
+
+
+--
+-- Name: idxj874kw19bgdnkxo1rue45jwlw; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idxj874kw19bgdnkxo1rue45jwlw ON public."BsaDownload" USING btree (creation_time);
 
 
 --
@@ -2620,6 +2712,14 @@ ALTER TABLE ONLY public."RegistrarPoc"
 
 ALTER TABLE ONLY public."DomainHistoryHost"
     ADD CONSTRAINT fka9woh3hu8gx5x0vly6bai327n FOREIGN KEY (domain_history_domain_repo_id, domain_history_history_revision_id) REFERENCES public."DomainHistory"(domain_repo_id, history_revision_id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: BsaDomainInUse fkbsadomaininuse2label; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."BsaDomainInUse"
+    ADD CONSTRAINT fkbsadomaininuse2label FOREIGN KEY (label) REFERENCES public."BsaLabel"(label) ON DELETE CASCADE;
 
 
 --
