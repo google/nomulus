@@ -37,7 +37,13 @@ public class BsaDomainInUse {
   @Enumerated(EnumType.STRING)
   Reason reason;
 
-  /** Creation time of this record. This field is for information only. */
+  /**
+   * Creation time of this record, which is the most recent time when the domain was detected to be
+   * in use wrt BSA. It may be during the processing of a download, or during some other job that
+   * refreshes the state.
+   *
+   * <p>This field is for information only.
+   */
   @SuppressWarnings("unused")
   @Column(nullable = false)
   CreateAutoTimestamp createTime = CreateAutoTimestamp.create(null);
