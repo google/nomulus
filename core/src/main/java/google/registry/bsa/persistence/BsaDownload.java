@@ -69,6 +69,10 @@ public class BsaDownload {
     return jobId;
   }
 
+  /**
+   * Returns the starting time of this job as a string, which can be used as folder name on GCS when
+   * storing download data.
+   */
   public String getJobName() {
     return creationTime.getTimestamp().toString();
   }
