@@ -64,14 +64,14 @@ final class GetKeyringSecretCommand implements Command {
       case BRDA_SIGNING_PUBLIC_KEY:
         out.write(KeySerializer.serializePublicKey(keyring.getBrdaSigningKey().getPublicKey()));
         break;
+      case BSA_API_KEY:
+        out.write(KeySerializer.serializeString(keyring.getBsaApiKey()));
+        break;
       case ICANN_REPORTING_PASSWORD:
         out.write(KeySerializer.serializeString(keyring.getIcannReportingPassword()));
         break;
       case SAFE_BROWSING_API_KEY:
         out.write(KeySerializer.serializeString(keyring.getSafeBrowsingAPIKey()));
-        break;
-      case JSON_CREDENTIAL:
-        out.write(KeySerializer.serializeString(keyring.getJsonCredential()));
         break;
       case MARKSDB_DNL_LOGIN_AND_PASSWORD:
         out.write(KeySerializer.serializeString(keyring.getMarksdbDnlLoginAndPassword()));

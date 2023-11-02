@@ -51,16 +51,16 @@ public class SecretManagerKeyringUpdaterTest {
     updater
         .setMarksdbDnlLoginAndPassword(secretPrefix + "marksdb")
         .setIcannReportingPassword(secretPrefix + "icann")
-        .setJsonCredential(secretPrefix + "json")
+        .setBsaApiKey(secretPrefix + "bsa")
         .update();
 
     assertThat(keyring.getMarksdbDnlLoginAndPassword()).isEqualTo(secretPrefix + "marksdb");
     assertThat(keyring.getIcannReportingPassword()).isEqualTo(secretPrefix + "icann");
-    assertThat(keyring.getJsonCredential()).isEqualTo(secretPrefix + "json");
+    assertThat(keyring.getBsaApiKey()).isEqualTo(secretPrefix + "bsa");
 
     verifyPersistedSecret("marksdb-dnl-login-string", secretPrefix + "marksdb");
     verifyPersistedSecret("icann-reporting-password-string", secretPrefix + "icann");
-    verifyPersistedSecret("json-credential-string", secretPrefix + "json");
+    verifyPersistedSecret("bsa-api-key-string", secretPrefix + "bsa");
   }
 
   @Test
@@ -94,12 +94,12 @@ public class SecretManagerKeyringUpdaterTest {
   }
 
   @Test
-  void jsonCredential() {
-    String secret = "jsonCredential";
-    updater.setJsonCredential(secret).update();
+  void bsaApiKey() {
+    String secret = "bsaApiKey";
+    updater.setBsaApiKey(secret).update();
 
-    assertThat(keyring.getJsonCredential()).isEqualTo(secret);
-    verifyPersistedSecret("json-credential-string", secret);
+    assertThat(keyring.getBsaApiKey()).isEqualTo(secret);
+    verifyPersistedSecret("bsa-api-key-string", secret);
   }
 
   @Test
