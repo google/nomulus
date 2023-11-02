@@ -35,5 +35,4 @@ PATH                                               CLASS                        
 /_dr/task/tmchDnl                                  TmchDnlAction                                  POST     y  API          APP ADMIN
 /_dr/task/tmchSmdrl                                TmchSmdrlAction                                POST     y  API          APP ADMIN
 /_dr/task/updateRegistrarRdapBaseUrls              UpdateRegistrarRdapBaseUrlsAction              GET      y  API          APP ADMIN
-/_dr/task/wipeOutCloudSql                          WipeOutCloudSqlAction                          GET      n  API          APP ADMIN
 /_dr/task/wipeOutContactHistoryPii                 WipeOutContactHistoryPiiAction                 GET      n  API          APP ADMIN

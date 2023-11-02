@@ -1,0 +1,17 @@
+<epp xmlns="urn:ietf:params:xml:ns:epp-1.0">
+  <command>
+    <delete>
+      <domain:delete
+       xmlns:domain="urn:ietf:params:xml:ns:domain-1.0">
+        <domain:name>%DOMAIN%</domain:name>
+      </domain:delete>
+    </delete>
+    <extension>
+      <metadata:metadata xmlns:metadata="urn:google:params:xml:ns:metadata-1.0">
+        <metadata:reason>Non-renewing domain has reached expiration date.</metadata:reason>
+        <metadata:requestedByRegistrar>false</metadata:requestedByRegistrar>
+      </metadata:metadata>
+    </extension>
+    <clTRID>ABC-12345</clTRID>
+  </command>
+</epp>
