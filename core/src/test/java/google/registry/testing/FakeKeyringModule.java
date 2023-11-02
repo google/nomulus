@@ -132,6 +132,11 @@ public final class FakeKeyringModule {
       }
 
       @Override
+      public String getBsaApiKey() {
+        return "TODO";
+      }
+
+      @Override
       public String getIcannReportingPassword() {
         return ICANN_REPORTING_PASSWORD;
       }
