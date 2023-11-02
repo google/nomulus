@@ -27,5 +27,4 @@ CREATE TABLE "BsaLabel" (
     primary key (label)
 );
 
-CREATE INDEX IDXthwx7norw3h81t13ab6w8hje
-    ON "BsaDownload" (creation_time, stage);
+CREATE INDEX IDXj874kw19bgdnkxo1rue45jwlw on "BsaDownload" (creation_time);

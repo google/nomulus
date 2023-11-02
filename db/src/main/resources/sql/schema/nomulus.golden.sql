@@ -1933,6 +1933,13 @@ CREATE INDEX idxj77pfwhui9f0i7wjq6lmibovj ON public."HostHistory" USING btree (h
 
 
 --
+-- Name: idxj874kw19bgdnkxo1rue45jwlw; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idxj874kw19bgdnkxo1rue45jwlw ON public."BsaDownload" USING btree (creation_time);
+
+
+--
 -- Name: idxjny8wuot75b5e6p38r47wdawu; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -2140,13 +2147,6 @@ CREATE INDEX idxsu1nam10cjes9keobapn5jvxj ON public."DomainHistory" USING btree 
 --
 
 CREATE INDEX idxsudwswtwqnfnx2o1hx4s0k0g5 ON public."ContactHistory" USING btree (history_modification_time);
-
-
---
--- Name: idxthwx7norw3h81t13ab6w8hje; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idxthwx7norw3h81t13ab6w8hje ON public."BsaDownload" USING btree (creation_time, stage);
 
 
 --
