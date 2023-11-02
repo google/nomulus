@@ -64,11 +64,11 @@ final class UpdateKeyringSecretCommand implements Command {
         throw new IllegalArgumentException(
             "Can't update BRDA_SIGNING_PUBLIC_KEY directly."
             + " Must update public and private keys together using BRDA_SIGNING_KEY_PAIR.");
+      case BSA_API_KEY:
+        secretManagerKeyringUpdater.setBsaApiKey(deserializeString(input));
+        break;
       case ICANN_REPORTING_PASSWORD:
         secretManagerKeyringUpdater.setIcannReportingPassword(deserializeString(input));
-        break;
-      case JSON_CREDENTIAL:
-        secretManagerKeyringUpdater.setJsonCredential(deserializeString(input));
         break;
       case MARKSDB_DNL_LOGIN_AND_PASSWORD:
         secretManagerKeyringUpdater.setMarksdbDnlLoginAndPassword(deserializeString(input));

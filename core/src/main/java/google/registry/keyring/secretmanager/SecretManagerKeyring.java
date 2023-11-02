@@ -58,14 +58,13 @@ public class SecretManagerKeyring implements Keyring {
   /** Key labels for string secrets. */
   enum StringKeyLabel {
     SAFE_BROWSING_API_KEY,
+    BSA_API_KEY_STRING,
     ICANN_REPORTING_PASSWORD_STRING,
-    JSON_CREDENTIAL_STRING,
     MARKSDB_DNL_LOGIN_STRING,
     MARKSDB_LORDN_PASSWORD_STRING,
     MARKSDB_SMDRL_LOGIN_STRING,
     RDE_SSH_CLIENT_PRIVATE_STRING,
-    RDE_SSH_CLIENT_PUBLIC_STRING,
-    BSA_API_KEY;
+    RDE_SSH_CLIENT_PUBLIC_STRING;
 
     String getLabel() {
       return UPPER_UNDERSCORE.to(LOWER_HYPHEN, name());
@@ -144,15 +143,9 @@ public class SecretManagerKeyring implements Keyring {
     return getString(StringKeyLabel.MARKSDB_SMDRL_LOGIN_STRING);
   }
 
-  // TODO(b/237305940): remove this method and all supports, including entry in secretmanager
-  @Override
-  public String getJsonCredential() {
-    return getString(StringKeyLabel.JSON_CREDENTIAL_STRING);
-  }
-
   @Override
   public String getBsaApiKey() {
-    return getString(StringKeyLabel.BSA_API_KEY);
+    return getString(StringKeyLabel.BSA_API_KEY_STRING);
   }
 
   /** No persistent resources are maintained for this Keyring implementation. */

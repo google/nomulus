@@ -55,7 +55,7 @@ public final class FakeKeyringModule {
   private static final String MARKSDB_DNL_LOGIN_AND_PASSWORD = "dnl:yolo";
   private static final String MARKSDB_LORDN_PASSWORD = "yolo";
   private static final String MARKSDB_SMDRL_LOGIN_AND_PASSWORD = "smdrl:yolo";
-  private static final String JSON_CREDENTIAL = "json123";
+  private static final String BSA_API_KEY = "bsaapikey";
 
   @Provides
   public Keyring get() {
@@ -127,13 +127,8 @@ public final class FakeKeyringModule {
       }
 
       @Override
-      public String getJsonCredential() {
-        return JSON_CREDENTIAL;
-      }
-
-      @Override
       public String getBsaApiKey() {
-        return "TODO";
+        return BSA_API_KEY;
       }
 
       @Override
