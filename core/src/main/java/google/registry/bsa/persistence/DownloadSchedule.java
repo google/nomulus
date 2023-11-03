@@ -30,11 +30,32 @@ public abstract class DownloadSchedule {
 
   public abstract DownloadStage stage();
 
+  /** The most recently job that ended in the {@code DONE} stage. */
   public abstract Optional<CompletedJob> latestCompleted();
 
-  static DownloadSchedule of(BsaDownload currentJob, Optional<CompletedJob> latestCompleted) {
+  /**
+   * Returns true if download should be processed even if the checksums show that it has not changed
+   * from the previous one.
+   */
+  abstract boolean forceDownload();
+
+  static DownloadSchedule of(BsaDownload currentJob) {
     return new AutoValue_DownloadSchedule(
-        currentJob.getJobId(), currentJob.getJobName(), currentJob.getStage(), latestCompleted);
+        currentJob.getJobId(),
+        currentJob.getJobName(),
+        currentJob.getStage(),
+        Optional.empty(),
+        /* forceDownload= */ true);
+  }
+
+  static DownloadSchedule of(
+      BsaDownload currentJob, CompletedJob latestCompleted, boolean forceDownload) {
+    return new AutoValue_DownloadSchedule(
+        currentJob.getJobId(),
+        currentJob.getJobName(),
+        currentJob.getStage(),
+        Optional.of(latestCompleted),
+        /* forceDownload= */ forceDownload);
   }
 
   /** Information about a completed BSA download job. */

@@ -18,6 +18,10 @@ package google.registry.bsa;
 public enum DownloadStage {
   DOWNLOAD,
   MAKE_DIFF,
+  APPLY_DIFF,
+  START_UPLOADING,
+  UPLOAD_DOMAINS_IN_USE,
+  FINISH_UPLOADING,
   DONE,
   NOP,
   CHECKSUMS_NOT_MATCH;
