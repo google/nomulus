@@ -14,12 +14,14 @@
 
 package google.registry.bsa.persistence;
 
+import static com.google.common.base.Verify.verify;
 import static google.registry.bsa.DownloadStage.CHECKSUMS_NOT_MATCH;
 import static google.registry.bsa.DownloadStage.DONE;
 import static google.registry.bsa.DownloadStage.NOP;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+import static org.joda.time.Duration.standardSeconds;
 
-import com.google.common.base.Verify;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import google.registry.bsa.persistence.DownloadSchedule.CompletedJob;
 import google.registry.util.Clock;
@@ -27,14 +29,40 @@ import java.util.Optional;
 import javax.inject.Inject;
 import org.joda.time.Duration;
 
+/**
+ * Assigns work for each cron invocation of the BSA Download job.
+ *
+ * <p>The download job is invoked at a divisible fraction of the desired data freshness to
+ * accommodate potential retries. E.g., for 30-minute data freshness with up to two retries on
+ * error, the cron schedule for the job should be set to 10 minutes.
+ *
+ * <p>The processing of each BSA download progresses through multiple stages as described in {@code
+ * DownloadStage} until it reaches one of the terminal stages. Each stage is check-pointed on
+ * completion, therefore if an invocation fails mid-process, the next invocation will skip the
+ * completed stages. No new downloads will start as long as the most recent one is still being
+ * processed.
+ *
+ * <p>When a new download is scheduled, the block list checksums from the most recent completed job
+ * is included. If the new checksums match the previous ones, the download may be skipped and the
+ * job should terminate in the {@code NOP} stage. However, if the checksums have stayed unchanged
+ * for longer than the user-provided {@code maxNopInterval}, the download will be processed.
+ *
+ * <p>The BSA downloads contains server-provided checksums. If they do not match the checksums
+ * generated on Nomulus' side, the download is skipped and the job should terminate in the {@code
+ * CHECKSUMS_NOT_MATCH} stage.
+ */
 public final class DownloadScheduler {
 
+  private static final Duration CRON_JITTER = standardSeconds(5);
+
   private final Duration downloadInterval;
+  private final Duration maxNopInterval;
   private final Clock clock;
 
   @Inject
-  DownloadScheduler(Duration downloadInterval, Clock clock) {
+  DownloadScheduler(Duration downloadInterval, Duration maxNopInterval, Clock clock) {
     this.downloadInterval = downloadInterval;
+    this.maxNopInterval = maxNopInterval;
     this.clock = clock;
   }
 
@@ -43,30 +71,47 @@ public final class DownloadScheduler {
             () -> {
               ImmutableList<BsaDownload> recentJobs = loadRecentProcessedJobs();
               if (recentJobs.isEmpty()) {
-                return scheduleNewJob();
+                // No jobs initiated ever.
+                return scheduleNewJob(Optional.empty());
               }
               BsaDownload mostRecent = recentJobs.get(0);
               if (mostRecent.getStage().equals(DONE)) {
-                return mostRecent.getCreationTime().plus(downloadInterval).isBefore(clock.nowUtc())
-                    ? scheduleNewJob()
-                    : Optional.<DownloadSchedule>empty();
+                return isTimeAgain(mostRecent, downloadInterval)
+                    ? scheduleNewJob(Optional.of(mostRecent))
+                    : Optional.empty();
               } else if (recentJobs.size() == 1) {
-                return scheduleNewJob();
+                // First job ever, still in progress
+                return Optional.of(DownloadSchedule.of(recentJobs.get(0)));
               } else {
+                // Job in progress, with completed previous jobs.
                 BsaDownload prev = recentJobs.get(1);
-                Verify.verify(prev.getStage().equals(DONE), "Unexpectedly found two ongoing jobs.");
+                verify(prev.getStage().equals(DONE), "Unexpectedly found two ongoing jobs.");
                 return Optional.of(
-                    DownloadSchedule.of(mostRecent, Optional.of(CompletedJob.of(prev))));
+                    DownloadSchedule.of(
+                        mostRecent,
+                        CompletedJob.of(prev),
+                        isTimeAgain(mostRecent, maxNopInterval)));
               }
             });
   }
 
-  Optional<DownloadSchedule> scheduleNewJob() {
-    BsaDownload job = new BsaDownload();
-    tm().insert(job);
-    return Optional.of(DownloadSchedule.of(job, Optional.empty()));
+  private boolean isTimeAgain(BsaDownload mostRecent, Duration interval) {
+    return mostRecent.getCreationTime().plus(interval).minus(CRON_JITTER).isBefore(clock.nowUtc());
   }
 
+  private Optional<DownloadSchedule> scheduleNewJob(Optional<BsaDownload> prevJob) {
+    BsaDownload job = new BsaDownload();
+    tm().insert(job);
+    return Optional.of(
+        prevJob
+            .map(
+                prev ->
+                    DownloadSchedule.of(
+                        job, CompletedJob.of(prev), isTimeAgain(prev, maxNopInterval)))
+            .orElseGet(() -> DownloadSchedule.of(job)));
+  }
+
+  @VisibleForTesting
   ImmutableList<BsaDownload> loadRecentProcessedJobs() {
     return ImmutableList.copyOf(
         tm().getEntityManager()
