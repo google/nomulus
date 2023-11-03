@@ -34,12 +34,14 @@ public abstract class FeeQueryCommandExtensionItem extends ImmutableObject {
 
   /** The name of a command that might have an associated fee. */
   public enum CommandName {
-    UNKNOWN,
-    CREATE,
-    RENEW,
-    TRANSFER,
-    RESTORE,
-    UPDATE;
+    UNKNOWN(false),
+    CREATE(false),
+    RENEW(true),
+    TRANSFER(true),
+    RESTORE(true),
+    UPDATE(false);
+
+    private final boolean loadDomainForCheck;
 
     public static CommandName parseKnownCommand(String string) {
       try {
@@ -51,6 +53,14 @@ public abstract class FeeQueryCommandExtensionItem extends ImmutableObject {
             "Invalid EPP action name. Valid actions are CREATE, RENEW, TRANSFER, RESTORE, and"
                 + " UPDATE");
       }
+    }
+
+    CommandName(boolean loadDomainForCheck) {
+      this.loadDomainForCheck = loadDomainForCheck;
+    }
+
+    public boolean shouldLoadDomainForCheck() {
+      return this.loadDomainForCheck;
     }
   }
 

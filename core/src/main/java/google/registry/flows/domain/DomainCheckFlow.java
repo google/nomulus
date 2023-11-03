@@ -66,7 +66,6 @@ import google.registry.model.domain.DomainCommand.Check;
 import google.registry.model.domain.fee.FeeCheckCommandExtension;
 import google.registry.model.domain.fee.FeeCheckCommandExtensionItem;
 import google.registry.model.domain.fee.FeeCheckResponseExtensionItem;
-import google.registry.model.domain.fee.FeeQueryCommandExtensionItem.CommandName;
 import google.registry.model.domain.fee06.FeeCheckCommandExtensionV06;
 import google.registry.model.domain.launch.LaunchCheckExtension;
 import google.registry.model.domain.token.AllocationToken;
@@ -272,7 +271,7 @@ public final class DomainCheckFlow implements TransactionalFlow {
     ImmutableList.Builder<FeeCheckResponseExtensionItem> responseItems =
         new ImmutableList.Builder<>();
     ImmutableMap<String, Domain> domainObjs =
-        loadDomainsForRestoreChecks(feeCheck, domainNames, existingDomains);
+        loadDomainsForChecks(feeCheck, domainNames, existingDomains);
     ImmutableMap<String, BillingRecurrence> recurrences = loadRecurrencesForDomains(domainObjs);
 
     for (FeeCheckCommandExtensionItem feeCheckItem : feeCheck.getItems()) {
@@ -335,17 +334,20 @@ public final class DomainCheckFlow implements TransactionalFlow {
   }
 
   /**
-   * Loads and returns all existing domains that are having restore fees checked.
+   * Loads and returns all existing domains that are having restore/renew/transfer fees checked.
    *
-   * <p>This is necessary so that we can check their expiration dates to determine if a one-year
-   * renewal is part of the cost of a restore.
+   * <p>These need to be loaded for renews and transfers because there could be a relevant {@link
+   * google.registry.model.billing.BillingBase.RenewalPriceBehavior} on the {@link
+   * BillingRecurrence} affecting the price. They also need to be loaded for restores so that we can
+   * check their expiration dates to determine if a one-year renewal is part of the cost of a
+   * restore.
    *
    * <p>This may be resource-intensive for large checks of many restore fees, but those are
    * comparatively rare, and we are at least using an in-memory cache. Also, this will get a lot
    * nicer in Cloud SQL when we can SELECT just the fields we want rather than having to load the
    * entire entity.
    */
-  private ImmutableMap<String, Domain> loadDomainsForRestoreChecks(
+  private ImmutableMap<String, Domain> loadDomainsForChecks(
       FeeCheckCommandExtension<?, ?> feeCheck,
       ImmutableMap<String, InternetDomainName> domainNames,
       ImmutableMap<String, VKey<Domain>> existingDomains) {
@@ -354,18 +356,18 @@ public final class DomainCheckFlow implements TransactionalFlow {
       // The V06 fee extension supports specifying the command fees to check on a per-domain basis.
       restoreCheckDomains =
           feeCheck.getItems().stream()
-              .filter(fc -> fc.getCommandName() == CommandName.RESTORE)
+              .filter(fc -> fc.getCommandName().shouldLoadDomainForCheck())
               .map(FeeCheckCommandExtensionItem::getDomainName)
               .distinct()
               .collect(toImmutableList());
     } else if (feeCheck.getItems().stream()
-        .anyMatch(fc -> fc.getCommandName() == CommandName.RESTORE)) {
+        .anyMatch(fc -> fc.getCommandName().shouldLoadDomainForCheck())) {
       // The more recent fee extension versions support specifying the command fees to check only on
       // the overall domain check, not per-domain.
       restoreCheckDomains = ImmutableList.copyOf(domainNames.keySet());
     } else {
-      // Fall-through case for more recent fee extension versions when the restore fee isn't being
-      // checked.
+      // Fall-through case for more recent fee extension versions when the restore/renew/transfer
+      // fees aren't being checked.
       restoreCheckDomains = ImmutableList.of();
     }
 

@@ -1,0 +1,18 @@
+<epp xmlns="urn:ietf:params:xml:ns:epp-1.0">
+  <command>
+    <check>
+      <domain:check xmlns:domain="urn:ietf:params:xml:ns:domain-1.0">
+        <domain:name>rich.example</domain:name>
+      </domain:check>
+    </check>
+    <extension>
+      <fee:check xmlns:fee="urn:ietf:params:xml:ns:fee-0.6">
+        <fee:domain>
+          <fee:name>rich.example</fee:name>
+          <fee:command>renew</fee:command>
+        </fee:domain>
+      </fee:check>
+    </extension>
+    <clTRID>ABC-12345</clTRID>
+  </command>
+</epp>
