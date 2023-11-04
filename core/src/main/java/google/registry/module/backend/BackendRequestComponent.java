@@ -27,6 +27,7 @@ import google.registry.batch.ResaveAllEppResourcesPipelineAction;
 import google.registry.batch.ResaveEntityAction;
 import google.registry.batch.SendExpiringCertificateNotificationEmailAction;
 import google.registry.batch.WipeOutContactHistoryPiiAction;
+import google.registry.bsa.BsaDownloadAction;
 import google.registry.cron.CronModule;
 import google.registry.cron.TldFanoutAction;
 import google.registry.dns.DnsModule;
@@ -100,6 +101,8 @@ import google.registry.tmch.TmchSmdrlAction;
       WhiteboxModule.class,
     })
 interface BackendRequestComponent {
+
+  BsaDownloadAction bsaDownloadAction();
 
   BrdaCopyAction brdaCopyAction();
 

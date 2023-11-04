@@ -27,6 +27,7 @@ import google.registry.bsa.DownloadStage;
 import google.registry.model.CreateAutoTimestamp;
 import google.registry.model.UpdateAutoTimestamp;
 import google.registry.persistence.VKey;
+import java.util.Locale;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
@@ -78,7 +79,7 @@ public class BsaDownload {
    * storing download data.
    */
   public String getJobName() {
-    return getCreationTime().toString();
+    return getCreationTime().toString().toLowerCase(Locale.ROOT).replace(":", "");
   }
 
   public DownloadStage getStage() {
