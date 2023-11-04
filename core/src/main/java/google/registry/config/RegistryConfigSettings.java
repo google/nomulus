@@ -266,6 +266,10 @@ public class RegistryConfigSettings {
 
   /** Configurations for integration with Brand Safety Alliance (BSA) API. */
   public static class Bsa {
+    public String bsaChecksumAlgorithm;
+    public int bsaLockLeaseExpiryMinutes;
+    public int bsaDownloadIntervalMinutes;
+    public int bsaMaxNopIntervalHours;
     public String authUrl;
     public int authTokenExpirySeconds;
     public Map<String, String> dataUrls;
