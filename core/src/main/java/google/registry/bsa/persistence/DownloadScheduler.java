@@ -24,6 +24,7 @@ import static org.joda.time.Duration.standardSeconds;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import google.registry.bsa.persistence.DownloadSchedule.CompletedJob;
+import google.registry.config.RegistryConfig.Config;
 import google.registry.util.Clock;
 import java.util.Optional;
 import javax.inject.Inject;
@@ -61,7 +62,10 @@ public final class DownloadScheduler {
   private final Clock clock;
 
   @Inject
-  DownloadScheduler(Duration downloadInterval, Duration maxNopInterval, Clock clock) {
+  DownloadScheduler(
+      @Config("bsaDownloadInterval") Duration downloadInterval,
+      @Config("bsaMaxNopInterval") Duration maxNopInterval,
+      Clock clock) {
     this.downloadInterval = downloadInterval;
     this.maxNopInterval = maxNopInterval;
     this.clock = clock;

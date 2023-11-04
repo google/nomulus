@@ -609,6 +609,15 @@ bulkPricingPackageMonitoring:
 
 # Configurations for integration with Brand Safety Alliance (BSA) API
 bsa:
+  # Algorithm for calculating block list checksums
+  bsaChecksumAlgorithm: SHA-256
+  # The time allotted to every BSA cron job.
+  bsaLockLeaseExpiryMinutes: 30
+  # Desired time between successive downloads.
+  bsaDownloadIntervalMinutes: 30
+  # Max time period during which downloads can be skipped because checksums have
+  # not changed from the previous one.
+  bsaMaxNopIntervalHours: 24
   # Http endpoint for acquiring Auth tokens.
   authUrl: "https://"
   # Auth token expiry.
