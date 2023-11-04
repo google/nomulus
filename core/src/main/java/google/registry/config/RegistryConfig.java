@@ -14,6 +14,8 @@
 
 package google.registry.config;
 
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Strings.isNullOrEmpty;
 import static com.google.common.base.Suppliers.memoize;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.ImmutableSortedMap.toImmutableSortedMap;
@@ -1389,6 +1391,39 @@ public final class RegistryConfig {
     public static String provideBulkPricingPackageDomainLimitUpgradeEmailBody(
         RegistryConfigSettings config) {
       return config.bulkPricingPackageMonitoring.bulkPricingPackageDomainLimitUpgradeEmailBody;
+    }
+
+    @Provides
+    @Config("bsaGcsBucket")
+    public static String provideBsaGcsBucket(@Config("projectId") String projectId) {
+      return projectId + "-bsa";
+    }
+
+    @Provides
+    @Config("bsaChecksumAlgorithm")
+    public static String provideBsaChecksumAlgorithm(RegistryConfigSettings config) {
+      checkArgument(!isNullOrEmpty(config.bsa.bsaChecksumAlgorithm), "bsaChecksumAlgorithm");
+      return config.bsa.bsaChecksumAlgorithm;
+    }
+
+    @Provides
+    @Config("bsaLockLeaseExpiry")
+    public static Duration provideBsaLockLeaseExpiry(RegistryConfigSettings config) {
+      return Duration.standardMinutes(config.bsa.bsaLockLeaseExpiryMinutes);
+    }
+
+    /** Returns the desired interval between successive BSA downloads. */
+    @Provides
+    @Config("bsaDownloadInterval")
+    public static Duration provideBsaDownloadInterval(RegistryConfigSettings config) {
+      return Duration.standardMinutes(config.bsa.bsaDownloadIntervalMinutes);
+    }
+
+    /** Returns the maximum period when BSA downloads can be skipped due to the checksum-based. */
+    @Provides
+    @Config("bsaMaxNopInterval")
+    public static Duration provideBsaMaxNopInterval(RegistryConfigSettings config) {
+      return Duration.standardHours(config.bsa.bsaMaxNopIntervalHours);
     }
 
     @Provides
