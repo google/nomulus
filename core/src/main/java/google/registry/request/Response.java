@@ -15,6 +15,7 @@
 package google.registry.request;
 
 import com.google.common.net.MediaType;
+import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletResponse;
 import org.joda.time.DateTime;
 
@@ -51,4 +52,11 @@ public interface Response {
    * @see HttpServletResponse#setDateHeader(String, long)
    */
   void setDateHeader(String header, DateTime timestamp);
+
+  /**
+   * Adds a cookie to the response
+   *
+   * @see HttpServletResponse#addCookie(Cookie)
+   */
+  void addCookie(Cookie cookie);
 }
