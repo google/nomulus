@@ -21,12 +21,10 @@ import com.google.common.collect.ImmutableMap;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.model.console.User;
 import google.registry.request.Action;
-import google.registry.request.Response;
 import google.registry.request.auth.Auth;
-import google.registry.request.auth.AuthResult;
-import google.registry.request.auth.UserAuthInfo;
-import google.registry.ui.server.registrar.JsonGetAction;
+import google.registry.ui.server.registrar.RegistrarConsoleModule.ConsoleApiParams;
 import javax.inject.Inject;
+import javax.servlet.http.Cookie;
 import org.json.JSONObject;
 
 @Action(
@@ -34,12 +32,11 @@ import org.json.JSONObject;
     path = ConsoleUserDataAction.PATH,
     method = {GET},
     auth = Auth.AUTH_PUBLIC_LOGGED_IN)
-public class ConsoleUserDataAction implements JsonGetAction {
+public class ConsoleUserDataAction extends ConsoleApiAction {
 
   public static final String PATH = "/console-api/userdata";
 
-  private final AuthResult authResult;
-  private final Response response;
+  private final ConsoleApiParams consoleApiParams;
   private final String productName;
   private final String supportPhoneNumber;
   private final String supportEmail;
@@ -47,14 +44,13 @@ public class ConsoleUserDataAction implements JsonGetAction {
 
   @Inject
   public ConsoleUserDataAction(
-      AuthResult authResult,
-      Response response,
+      ConsoleApiParams consoleApiParams,
       @Config("productName") String productName,
       @Config("supportEmail") String supportEmail,
       @Config("supportPhoneNumber") String supportPhoneNumber,
       @Config("technicalDocsUrl") String technicalDocsUrl) {
-    this.response = response;
-    this.authResult = authResult;
+    super(consoleApiParams);
+    this.consoleApiParams = consoleApiParams;
     this.productName = productName;
     this.supportEmail = supportEmail;
     this.supportPhoneNumber = supportPhoneNumber;
@@ -62,13 +58,15 @@ public class ConsoleUserDataAction implements JsonGetAction {
   }
 
   @Override
-  public void run() {
-    UserAuthInfo authInfo = authResult.userAuthInfo().get();
-    if (!authInfo.consoleUser().isPresent()) {
-      response.setStatus(HttpStatusCodes.STATUS_CODE_UNAUTHORIZED);
-      return;
-    }
-    User user = authInfo.consoleUser().get();
+  protected void getHandler(User user) {
+    // As this is a first GET request we use it as an opportunity to set a XSRF cookie
+    // for angular to read - https://angular.io/guide/http-security-xsrf-protection
+    consoleApiParams
+        .getRsp()
+        .addCookie(
+            new Cookie(
+                consoleApiParams.getXsrfTokenManager().X_CSRF_TOKEN,
+                consoleApiParams.getXsrfTokenManager().generateToken(user.getEmailAddress())));
 
     JSONObject json =
         new JSONObject(
@@ -90,7 +88,7 @@ public class ConsoleUserDataAction implements JsonGetAction {
                 // Is used by UI to construct a link to registry resources
                 "technicalDocsUrl", technicalDocsUrl));
 
-    response.setPayload(json.toString());
-    response.setStatus(HttpStatusCodes.STATUS_CODE_OK);
+    consoleApiParams.getRsp().setPayload(json.toString());
+    consoleApiParams.getRsp().setStatus(HttpStatusCodes.STATUS_CODE_OK);
   }
 }
