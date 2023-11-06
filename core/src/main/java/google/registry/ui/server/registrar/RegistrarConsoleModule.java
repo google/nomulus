@@ -28,6 +28,10 @@ import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarPoc;
 import google.registry.request.OptionalJsonPayload;
 import google.registry.request.Parameter;
+import google.registry.request.RequestScope;
+import google.registry.request.Response;
+import google.registry.request.auth.AuthResult;
+import google.registry.security.XsrfTokenManager;
 import java.util.Optional;
 import javax.servlet.http.HttpServletRequest;
 import org.joda.time.DateTime;
@@ -35,8 +39,17 @@ import org.joda.time.DateTime;
 /** Dagger module for the Registrar Console parameters. */
 @Module
 public final class RegistrarConsoleModule {
-
   static final String PARAM_CLIENT_ID = "clientId";
+
+  @Provides
+  @RequestScope
+  ConsoleApiParams provideConsoleApiParams(
+      HttpServletRequest request,
+      Response response,
+      AuthResult authResult,
+      XsrfTokenManager xsrfTokenManager) {
+    return ConsoleApiParams.create(request, response, authResult, xsrfTokenManager);
+  }
 
   @Provides
   @Parameter(PARAM_CLIENT_ID)

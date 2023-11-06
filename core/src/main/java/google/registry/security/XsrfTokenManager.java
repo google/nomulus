@@ -34,7 +34,7 @@ import org.joda.time.Duration;
 /** Helper class for generating and validate XSRF tokens. */
 public final class XsrfTokenManager {
 
-  /** HTTP header used for transmitting XSRF tokens. */
+  /** HTTP header or cookie name used for transmitting XSRF tokens. */
   public static final String X_CSRF_TOKEN = "X-CSRF-Token";
 
   /** POST parameter used for transmitting XSRF tokens. */

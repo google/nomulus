@@ -17,6 +17,7 @@ package google.registry.request;
 import com.google.common.net.MediaType;
 import java.io.IOException;
 import javax.inject.Inject;
+import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletResponse;
 import org.joda.time.DateTime;
 
@@ -57,5 +58,10 @@ public final class ResponseImpl implements Response {
   @Override
   public void setDateHeader(String header, DateTime timestamp) {
     rsp.setDateHeader(header, timestamp.getMillis());
+  }
+
+  @Override
+  public void addCookie(Cookie cookie) {
+    rsp.addCookie(cookie);
   }
 }

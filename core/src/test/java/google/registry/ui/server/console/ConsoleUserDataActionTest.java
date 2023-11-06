@@ -14,7 +14,9 @@
 
 package google.registry.ui.server.console;
 
+import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.truth.Truth.assertThat;
+import static org.mockito.Mockito.when;
 
 import com.google.api.client.http.HttpStatusCodes;
 import com.google.gson.Gson;
@@ -22,12 +24,18 @@ import google.registry.model.console.GlobalRole;
 import google.registry.model.console.User;
 import google.registry.model.console.UserRoles;
 import google.registry.persistence.transaction.JpaTestExtensions;
+import google.registry.request.Action;
 import google.registry.request.RequestModule;
 import google.registry.request.auth.AuthResult;
 import google.registry.request.auth.UserAuthInfo;
+import google.registry.testing.FakeConsoleApiParams;
 import google.registry.testing.FakeResponse;
+import google.registry.ui.server.registrar.ConsoleApiParams;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Map;
+import java.util.Optional;
+import javax.servlet.http.Cookie;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
@@ -35,11 +43,30 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 class ConsoleUserDataActionTest {
 
   private static final Gson GSON = RequestModule.provideGson();
-  private FakeResponse response = new FakeResponse();
+
+  private ConsoleApiParams consoleApiParams;
 
   @RegisterExtension
   final JpaTestExtensions.JpaIntegrationTestExtension jpa =
       new JpaTestExtensions.Builder().buildIntegrationTestExtension();
+
+  @Test
+  void testSuccess_hasXSRFCookie() throws IOException {
+    User user =
+        new User.Builder()
+            .setEmailAddress("email@email.com")
+            .setUserRoles(new UserRoles.Builder().setGlobalRole(GlobalRole.FTE).build())
+            .build();
+
+    AuthResult authResult = AuthResult.createUser(UserAuthInfo.create(user));
+    ConsoleUserDataAction action =
+        createAction(
+            Optional.of(FakeConsoleApiParams.get(Optional.of(authResult))), Action.Method.GET);
+    action.run();
+    ArrayList<Cookie> cookies = ((FakeResponse) consoleApiParams.response()).getCookies();
+    assertThat(cookies.stream().map(cookie -> cookie.getName()).collect(toImmutableList()))
+        .containsExactly("X-CSRF-Token");
+  }
 
   @Test
   void testSuccess_getContactInfo() throws IOException {
@@ -49,10 +76,15 @@ class ConsoleUserDataActionTest {
             .setUserRoles(new UserRoles.Builder().setGlobalRole(GlobalRole.FTE).build())
             .build();
 
-    ConsoleUserDataAction action = createAction(AuthResult.createUser(UserAuthInfo.create(user)));
+    AuthResult authResult = AuthResult.createUser(UserAuthInfo.create(user));
+    ConsoleUserDataAction action =
+        createAction(
+            Optional.of(FakeConsoleApiParams.get(Optional.of(authResult))), Action.Method.GET);
     action.run();
-    assertThat(response.getStatus()).isEqualTo(HttpStatusCodes.STATUS_CODE_OK);
-    Map jsonObject = GSON.fromJson(response.getPayload(), Map.class);
+    assertThat(((FakeResponse) consoleApiParams.response()).getStatus())
+        .isEqualTo(HttpStatusCodes.STATUS_CODE_OK);
+    Map jsonObject =
+        GSON.fromJson(((FakeResponse) consoleApiParams.response()).getPayload(), Map.class);
     assertThat(jsonObject)
         .containsExactly(
             "isAdmin",
@@ -71,19 +103,18 @@ class ConsoleUserDataActionTest {
 
   @Test
   void testFailure_notAConsoleUser() throws IOException {
-    ConsoleUserDataAction action =
-        createAction(
-            AuthResult.createUser(
-                UserAuthInfo.create(
-                    new com.google.appengine.api.users.User(
-                        "JohnDoe@theregistrar.com", "theregistrar.com"),
-                    false)));
+    ConsoleUserDataAction action = createAction(Optional.empty(), Action.Method.GET);
     action.run();
-    assertThat(response.getStatus()).isEqualTo(HttpStatusCodes.STATUS_CODE_UNAUTHORIZED);
+    assertThat(((FakeResponse) consoleApiParams.response()).getStatus())
+        .isEqualTo(HttpStatusCodes.STATUS_CODE_UNAUTHORIZED);
   }
 
-  private ConsoleUserDataAction createAction(AuthResult authResult) throws IOException {
+  private ConsoleUserDataAction createAction(
+      Optional<ConsoleApiParams> maybeConsoleApiParams, Action.Method method) throws IOException {
+    consoleApiParams =
+        maybeConsoleApiParams.orElseGet(() -> FakeConsoleApiParams.get(Optional.empty()));
+    when(consoleApiParams.request().getMethod()).thenReturn(method.toString());
     return new ConsoleUserDataAction(
-        authResult, response, "Nomulus", "support@example.com", "+1 (212) 867 5309", "test");
+        consoleApiParams, "Nomulus", "support@example.com", "+1 (212) 867 5309", "test");
   }
 }
