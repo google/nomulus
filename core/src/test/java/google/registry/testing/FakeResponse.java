@@ -22,8 +22,10 @@ import static java.util.Collections.unmodifiableMap;
 import com.google.common.base.Throwables;
 import com.google.common.net.MediaType;
 import google.registry.request.Response;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import javax.servlet.http.Cookie;
 import org.joda.time.DateTime;
 
 /** Fake implementation of {@link Response} for testing. */
@@ -35,6 +37,8 @@ public final class FakeResponse implements Response {
   private final Map<String, Object> headers = new HashMap<>();
   private boolean wasMutuallyExclusiveResponseSet;
   private String lastResponseStackTrace;
+
+  private ArrayList<Cookie> cookies = new ArrayList<>();
 
   public int getStatus() {
     return status;
@@ -81,6 +85,15 @@ public final class FakeResponse implements Response {
   @Override
   public void setDateHeader(String header, DateTime timestamp) {
     headers.put(checkNotNull(header), checkNotNull(timestamp));
+  }
+
+  @Override
+  public void addCookie(Cookie cookie) {
+    cookies.add(cookie);
+  }
+
+  public ArrayList<Cookie> getCookies() {
+    return cookies;
   }
 
   private void checkResponsePerformedOnce() {
