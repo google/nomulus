@@ -58,13 +58,25 @@ public class RefreshDnsForAllDomainsAction implements Runnable {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
+  /** The number of DNS updates to enqueue per transaction. */
   private static final int DEFAULT_BATCH_SIZE = 250;
+
+  /**
+   * The default number of DNS updates it is safe to execute per minute.
+   *
+   * <p>This is mostly a guess based on existing system performance, but the point is to be on the
+   * safe side and not cause contention with ongoing DNS updates from clients.
+   */
+  private static final int DEFAULT_REFRESH_QPS = 7;
 
   private final Response response;
   private final ImmutableSet<String> tlds;
 
   // Recommended value for batch size is between 200 and 500
   private final int batchSize;
+
+  private final int refreshQps;
+
   private final Random random;
 
   @Inject
@@ -72,10 +84,12 @@ public class RefreshDnsForAllDomainsAction implements Runnable {
       Response response,
       @Parameter(PARAM_TLDS) ImmutableSet<String> tlds,
       @Parameter("batchSize") Optional<Integer> batchSize,
+      @Parameter("refreshQps") Optional<Integer> refreshQps,
       Random random) {
     this.response = response;
     this.tlds = tlds;
     this.batchSize = batchSize.orElse(DEFAULT_BATCH_SIZE);
+    this.refreshQps = refreshQps.orElse(DEFAULT_REFRESH_QPS);
     this.random = random;
   }
 
@@ -83,7 +97,7 @@ public class RefreshDnsForAllDomainsAction implements Runnable {
   public void run() {
     assertTldsExist(tlds);
     checkArgument(batchSize > 0, "Must specify a positive number for batch size");
-    int smearMinutes = tm().transact(this::calculateSmearMinutes, TRANSACTION_REPEATABLE_READ);
+    Duration smear = tm().transact(this::calculateSmear, TRANSACTION_REPEATABLE_READ);
 
     ImmutableList<String> domainsBatch;
     @Nullable String lastInPreviousBatch = null;
@@ -91,8 +105,7 @@ public class RefreshDnsForAllDomainsAction implements Runnable {
       Optional<String> lastInPreviousBatchOpt = Optional.ofNullable(lastInPreviousBatch);
       domainsBatch =
           tm().transact(
-                  () -> refreshBatch(lastInPreviousBatchOpt, smearMinutes),
-                  TRANSACTION_REPEATABLE_READ);
+                  () -> refreshBatch(lastInPreviousBatchOpt, smear), TRANSACTION_REPEATABLE_READ);
       lastInPreviousBatch = domainsBatch.isEmpty() ? null : getLast(domainsBatch);
     } while (domainsBatch.size() == batchSize);
   }
@@ -101,7 +114,7 @@ public class RefreshDnsForAllDomainsAction implements Runnable {
    * Calculates the number of smear minutes to enqueue refreshes so that the DNS queue does not get
    * overloaded.
    */
-  private int calculateSmearMinutes() {
+  private Duration calculateSmear() {
     Long activeDomains =
         tm().query(
                 "SELECT COUNT(*) FROM Domain WHERE tld IN (:tlds) AND deletionTime = :endOfTime",
@@ -109,7 +122,7 @@ public class RefreshDnsForAllDomainsAction implements Runnable {
             .setParameter("tlds", tlds)
             .setParameter("endOfTime", END_OF_TIME)
             .getSingleResult();
-    return Math.max(activeDomains.intValue() / 1000, 1);
+    return Duration.standardSeconds(Math.max(activeDomains / refreshQps, 1));
   }
 
   private ImmutableList<String> getBatch(Optional<String> lastInPreviousBatch) {
@@ -127,11 +140,12 @@ public class RefreshDnsForAllDomainsAction implements Runnable {
   }
 
   @VisibleForTesting
-  ImmutableList<String> refreshBatch(Optional<String> lastInPreviousBatch, int smearMinutes) {
+  ImmutableList<String> refreshBatch(Optional<String> lastInPreviousBatch, Duration smear) {
     ImmutableList<String> domainBatch = getBatch(lastInPreviousBatch);
     try {
       // Smear the task execution time over the next N minutes.
-      requestDomainDnsRefresh(domainBatch, Duration.standardMinutes(random.nextInt(smearMinutes)));
+      requestDomainDnsRefresh(
+          domainBatch, Duration.standardSeconds(random.nextInt((int) smear.getStandardSeconds())));
     } catch (Throwable t) {
       logger.atSevere().withCause(t).log("Error while enqueuing DNS refresh batch");
       response.setStatus(HttpStatus.SC_OK);
