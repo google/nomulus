@@ -1146,7 +1146,8 @@ CREATE TABLE public."Tld" (
     dns_ds_ttl interval,
     dns_ns_ttl interval,
     idn_tables text[],
-    breakglass_mode boolean DEFAULT false NOT NULL
+    breakglass_mode boolean DEFAULT false NOT NULL,
+    bsa_enroll_start_time timestamp with time zone
 );
 
 
