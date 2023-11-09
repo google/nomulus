@@ -1192,6 +1192,12 @@ public final class RegistryConfig {
       return config.auth.oauthClientId;
     }
 
+    @Provides
+    @Config("fallbackOauthClientId")
+    public static String provideFallbackOauthClientId(RegistryConfigSettings config) {
+      return config.auth.fallbackOauthClientId;
+    }
+
     /**
      * Provides the OAuth scopes required for accessing Google APIs using the default credential.
      */
