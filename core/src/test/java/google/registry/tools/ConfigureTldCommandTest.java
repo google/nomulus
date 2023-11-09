@@ -16,6 +16,7 @@ package google.registry.tools;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.EntityYamlUtils.createObjectMapper;
 import static google.registry.model.domain.token.AllocationToken.TokenType.DEFAULT_PROMO;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.persistPremiumList;
 import static google.registry.testing.DatabaseHelper.persistResource;
@@ -47,6 +48,8 @@ import google.registry.model.tld.label.PremiumListDao;
 import java.io.File;
 import java.util.logging.Logger;
 import org.joda.money.Money;
+import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -98,6 +101,20 @@ public class ConfigureTldCommandTest extends CommandTestCase<ConfigureTldCommand
     assertThat(updatedTld.getCreateBillingCost()).isEqualTo(Money.of(USD, 25));
     testTldConfiguredSuccessfully(updatedTld, "tld.yaml");
     assertThat(updatedTld.getBreakglassMode()).isFalse();
+    assertThat(tld.getBsaEnrollStartTime()).isNull();
+  }
+
+  @Test
+  void testSuccess_updateTld_bsaTimeUnaffected() throws Exception {
+    Tld tld = createTld("tld");
+    DateTime bsaStartTime = DateTime.now(DateTimeZone.UTC);
+    tm().transact(() -> tm().put(tld.asBuilder().setBsaEnrollStartTime(bsaStartTime).build()));
+    File tldFile = tmpDir.resolve("tld.yaml").toFile();
+    Files.asCharSink(tldFile, UTF_8).write(loadFile(getClass(), "tld.yaml"));
+    runCommandForced("--input=" + tldFile);
+    // TODO(11/30/2023): uncomment below two lines
+    // Tld updatedTld = Tld.get("tld");
+    // assertThat(tld.getBsaEnrollStartTime()).isEqualTo(bsaStartTime);
   }
 
   @Test

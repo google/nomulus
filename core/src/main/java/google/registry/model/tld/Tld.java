@@ -550,6 +550,10 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
   @JsonSerialize(using = SortedEnumSetSerializer.class)
   Set<IdnTableEnum> idnTables;
 
+  // TODO(11/30/2023): uncomment below two lines
+  // /** The start time of this TLD's enrollment in the BSA program, if applicable. */
+  // @JsonIgnore @Nullable DateTime bsaEnrollStartTime;
+
   public String getTldStr() {
     return tldStr;
   }
@@ -567,6 +571,15 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
   /** Retrieve the TLD type (real or test). */
   public TldType getTldType() {
     return tldType;
+  }
+
+  /** Returns the time when this TLD was enrolled in the Brand Safety Alliance (BSA) program. */
+  @JsonIgnore // Annotation can be removed once we add the field and annotate it.
+  @Nullable
+  public DateTime getBsaEnrollStartTime() {
+    // TODO(11/30/2023): uncomment below.
+    // return this.bsaEnrollStartTime;
+    return null;
   }
 
   /** Retrieve whether invoicing is enabled. */
@@ -939,6 +952,7 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
     }
 
     public Builder setReservedListsByName(Set<String> reservedListNames) {
+      // TODO(b/309175133): forbid if enrolled with BSA
       checkArgument(reservedListNames != null, "reservedListNames must not be null");
       ImmutableSet.Builder<ReservedList> builder = new ImmutableSet.Builder<>();
       for (String reservedListName : reservedListNames) {
@@ -958,6 +972,7 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
     }
 
     public Builder setReservedLists(Set<ReservedList> reservedLists) {
+      // TODO(b/309175133): forbid if enrolled with BSA
       checkArgumentNotNull(reservedLists, "reservedLists must not be null");
       ImmutableSet.Builder<String> nameBuilder = new ImmutableSet.Builder<>();
       for (ReservedList reservedList : reservedLists) {
@@ -1076,12 +1091,20 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
     }
 
     public Builder setIdnTables(ImmutableSet<IdnTableEnum> idnTables) {
+      // TODO(b/309175133): forbid if enrolled with BSA.
       getInstance().idnTables = idnTables;
       return this;
     }
 
     public Builder setBreakglassMode(boolean breakglassMode) {
       getInstance().breakglassMode = breakglassMode;
+      return this;
+    }
+
+    public Builder setBsaEnrollStartTime(DateTime enrollTime) {
+      // TODO(b/309175133): forbid if enrolled with BSA
+      // TODO(11/30/2023): uncomment below line
+      // getInstance().bsaEnrollStartTime = enrollTime;
       return this;
     }
 
