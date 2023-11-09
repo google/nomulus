@@ -55,6 +55,9 @@ public class AuthModule {
   @Qualifier
   @interface RegularOidc {}
 
+  @Qualifier
+  @interface RegularOidcFallback {}
+
   @Provides
   @IapOidc
   @Singleton
@@ -68,6 +71,14 @@ public class AuthModule {
   @RegularOidc
   @Singleton
   TokenVerifier provideRegularTokenVerifier(@Config("oauthClientId") String clientId) {
+    return TokenVerifier.newBuilder().setAudience(clientId).setIssuer(REGULAR_ISSUER_URL).build();
+  }
+
+  @Provides
+  @RegularOidcFallback
+  @Singleton
+  TokenVerifier provideFallbackRegularTokenVerifier(
+      @Config("fallbackOauthClientId") String clientId) {
     return TokenVerifier.newBuilder().setAudience(clientId).setIssuer(REGULAR_ISSUER_URL).build();
   }
 
