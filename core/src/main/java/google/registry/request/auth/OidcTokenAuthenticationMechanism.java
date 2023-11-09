@@ -53,6 +53,8 @@ public abstract class OidcTokenAuthenticationMechanism implements Authentication
 
   protected final TokenVerifier tokenVerifier;
 
+  protected final Optional<TokenVerifier> fallbackTokenVerifier;
+
   protected final TokenExtractor tokenExtractor;
 
   private final ImmutableSet<String> serviceAccountEmails;
@@ -60,9 +62,11 @@ public abstract class OidcTokenAuthenticationMechanism implements Authentication
   protected OidcTokenAuthenticationMechanism(
       ImmutableSet<String> serviceAccountEmails,
       TokenVerifier tokenVerifier,
+      @Nullable TokenVerifier fallbackTokenVerifier,
       TokenExtractor tokenExtractor) {
     this.serviceAccountEmails = serviceAccountEmails;
     this.tokenVerifier = tokenVerifier;
+    this.fallbackTokenVerifier = Optional.ofNullable(fallbackTokenVerifier);
     this.tokenExtractor = tokenExtractor;
   }
 
@@ -77,7 +81,7 @@ public abstract class OidcTokenAuthenticationMechanism implements Authentication
     if (rawIdToken == null) {
       return AuthResult.NOT_AUTHENTICATED;
     }
-    JsonWebSignature token;
+    JsonWebSignature token = null;
     try {
       token = tokenVerifier.verify(rawIdToken);
     } catch (Exception e) {
@@ -86,8 +90,25 @@ public abstract class OidcTokenAuthenticationMechanism implements Authentication
           RegistryEnvironment.get().equals(RegistryEnvironment.PRODUCTION)
               ? "Raw token redacted in prod"
               : rawIdToken);
-      return AuthResult.NOT_AUTHENTICATED;
     }
+
+    if (token == null) {
+      if (fallbackTokenVerifier.isPresent()) {
+        try {
+          token = fallbackTokenVerifier.get().verify(rawIdToken);
+        } catch (Exception e) {
+          logger.atInfo().withCause(e).log(
+              "Failed OIDC fallback verification attempt:\n%s",
+              RegistryEnvironment.get().equals(RegistryEnvironment.PRODUCTION)
+                  ? "Raw token redacted in prod"
+                  : rawIdToken);
+          return AuthResult.NOT_AUTHENTICATED;
+        }
+      } else {
+        return AuthResult.NOT_AUTHENTICATED;
+      }
+    }
+
     String email = (String) token.getPayload().get("email");
     if (email == null) {
       logger.atWarning().log("No email address from the OIDC token:\n%s", token.getPayload());
@@ -141,7 +162,7 @@ public abstract class OidcTokenAuthenticationMechanism implements Authentication
         @Config("allowedServiceAccountEmails") ImmutableSet<String> serviceAccountEmails,
         @IapOidc TokenVerifier tokenVerifier,
         @IapOidc TokenExtractor tokenExtractor) {
-      super(serviceAccountEmails, tokenVerifier, tokenExtractor);
+      super(serviceAccountEmails, tokenVerifier, null, tokenExtractor);
     }
   }
 
@@ -161,8 +182,9 @@ public abstract class OidcTokenAuthenticationMechanism implements Authentication
     protected RegularOidcAuthenticationMechanism(
         @Config("allowedServiceAccountEmails") ImmutableSet<String> serviceAccountEmails,
         @RegularOidc TokenVerifier tokenVerifier,
+        @RegularOidc TokenVerifier fallbackTokenVerifier,
         @RegularOidc TokenExtractor tokenExtractor) {
-      super(serviceAccountEmails, tokenVerifier, tokenExtractor);
+      super(serviceAccountEmails, tokenVerifier, fallbackTokenVerifier, tokenExtractor);
     }
   }
 }

@@ -321,6 +321,10 @@ auth:
   # the same as this one.
   oauthClientId: iap-oauth-clientid
 
+  # Same as above, but serve as a fallback, so we can switch the client ID of
+  # the proxy without downtime.
+  fallbackOauthClientId: fallback-oauth-clientid
+
 credentialOAuth:
   # OAuth scopes required for accessing Google APIs using the default
   # credential.
