@@ -61,6 +61,7 @@ public class RegistryConfigSettings {
   public static class Auth {
     public List<String> allowedServiceAccountEmails;
     public String oauthClientId;
+    public String fallbackOauthClientId;
   }
 
   /** Configuration options for accessing Google APIs. */

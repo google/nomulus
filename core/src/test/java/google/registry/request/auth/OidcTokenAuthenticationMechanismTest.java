@@ -19,7 +19,6 @@ import static com.google.common.truth.Truth.assertThat;
 import static google.registry.request.auth.AuthModule.BEARER_PREFIX;
 import static google.registry.request.auth.AuthModule.IAP_HEADER_NAME;
 import static google.registry.testing.DatabaseHelper.insertInDb;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -70,7 +69,7 @@ public class OidcTokenAuthenticationMechanismTest {
 
   private AuthResult authResult;
   private OidcTokenAuthenticationMechanism authenticationMechanism =
-      new OidcTokenAuthenticationMechanism(serviceAccounts, tokenVerifier, e -> rawToken) {};
+      new OidcTokenAuthenticationMechanism(serviceAccounts, tokenVerifier, null, e -> rawToken) {};
 
   @RegisterExtension
   public final JpaTestExtensions.JpaUnitTestExtension jpaExtension =
@@ -78,7 +77,7 @@ public class OidcTokenAuthenticationMechanismTest {
 
   @BeforeEach
   void beforeEach() throws Exception {
-    when(tokenVerifier.verify(eq(rawToken))).thenReturn(jwt);
+    when(tokenVerifier.verify(rawToken)).thenReturn(jwt);
     payload.setEmail(email);
     payload.setSubject(gaiaId);
     insertInDb(user);
@@ -98,16 +97,28 @@ public class OidcTokenAuthenticationMechanismTest {
   @Test
   void testAuthenticate_noTokenFromRequest() {
     authenticationMechanism =
-        new OidcTokenAuthenticationMechanism(serviceAccounts, tokenVerifier, e -> null) {};
+        new OidcTokenAuthenticationMechanism(serviceAccounts, tokenVerifier, null, e -> null) {};
     authResult = authenticationMechanism.authenticate(request);
     assertThat(authResult).isEqualTo(AuthResult.NOT_AUTHENTICATED);
   }
 
   @Test
   void testAuthenticate_invalidToken() throws Exception {
-    when(tokenVerifier.verify(eq(rawToken))).thenThrow(new VerificationException("Bad token"));
+    when(tokenVerifier.verify(rawToken)).thenThrow(new VerificationException("Bad token"));
     authResult = authenticationMechanism.authenticate(request);
     assertThat(authResult).isEqualTo(AuthResult.NOT_AUTHENTICATED);
+  }
+
+  @Test
+  void testAuthenticate_fallbackVerifier() throws Exception {
+    TokenVerifier fallbackVerifier = mock(TokenVerifier.class);
+    when(tokenVerifier.verify(rawToken)).thenThrow(new VerificationException("Bad token"));
+    when(fallbackVerifier.verify(rawToken)).thenReturn(jwt);
+    authenticationMechanism =
+        new OidcTokenAuthenticationMechanism(
+            serviceAccounts, tokenVerifier, fallbackVerifier, e -> rawToken) {};
+    authResult = authenticationMechanism.authenticate(request);
+    assertThat(authResult.isAuthenticated()).isEqualTo(true);
   }
 
   @Test
