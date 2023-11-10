@@ -32,7 +32,12 @@ import google.registry.util.Clock;
 import javax.inject.Inject;
 import org.joda.time.DateTime;
 
-/** Checks labels' validity wrt Idn in TLDs. */
+/**
+ * Checks labels' validity wrt Idns in TLDs enrolled with BSA.
+ *
+ * <p>Each instance takes a snapshot of the TLDs at instantiation time, and should be limited to the
+ * Request scope.
+ */
 public class IdnChecker {
   private static final IdnLabelValidator IDN_LABEL_VALIDATOR = new IdnLabelValidator();
 
@@ -41,7 +46,7 @@ public class IdnChecker {
 
   @Inject
   IdnChecker(Clock clock) {
-    this.idnToTlds = getIdnToTldMap(clock);
+    this.idnToTlds = getIdnToTldMap(clock.nowUtc());
     allTlds = idnToTlds.values().stream().flatMap(ImmutableSet::stream).collect(toImmutableSet());
   }
 
@@ -83,15 +88,15 @@ public class IdnChecker {
     return Sets.difference(allTlds, getSupportingTlds(idnTables));
   }
 
-  private static boolean isEnrolledWithBsa(Tld tld, Clock clock) {
+  private static boolean isEnrolledWithBsa(Tld tld, DateTime now) {
     DateTime enrollTime = tld.getBsaEnrollStartTime();
-    return enrollTime != null && enrollTime.isBefore(clock.nowUtc());
+    return enrollTime != null && enrollTime.isBefore(now);
   }
 
-  private static ImmutableMap<IdnTableEnum, ImmutableSet<Tld>> getIdnToTldMap(Clock clock) {
+  private static ImmutableMap<IdnTableEnum, ImmutableSet<Tld>> getIdnToTldMap(DateTime now) {
     ImmutableMultimap.Builder<IdnTableEnum, Tld> idnToTldMap = new ImmutableMultimap.Builder();
     Tlds.getTldEntitiesOfType(TldType.REAL).stream()
-        .filter(tld -> isEnrolledWithBsa(tld, clock))
+        .filter(tld -> isEnrolledWithBsa(tld, now))
         .forEach(
             tld -> {
               for (IdnTableEnum idn : IDN_LABEL_VALIDATOR.getIdnTablesForTld(tld)) {

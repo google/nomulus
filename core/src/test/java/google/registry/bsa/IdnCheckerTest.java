@@ -31,6 +31,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @ExtendWith(MockitoExtension.class)
 public class IdnCheckerTest {
 
+  @Mock Tld jaonly;
   @Mock Tld jandelatin;
   @Mock Tld strictlatin;
   IdnChecker idnChecker;
@@ -41,7 +42,7 @@ public class IdnCheckerTest {
         new IdnChecker(
             ImmutableMap.of(
                 JA,
-                ImmutableSet.of(jandelatin),
+                ImmutableSet.of(jandelatin, jaonly),
                 EXTENDED_LATIN,
                 ImmutableSet.of(jandelatin),
                 UNCONFUSABLE_LATIN,
@@ -75,8 +76,15 @@ public class IdnCheckerTest {
   }
 
   @Test
-  void getSupportingTlds_success() {
-    assertThat(idnChecker.getSupportingTlds(ImmutableSet.of("JA"))).containsExactly(jandelatin);
+  void getSupportingTlds_singleTld_success() {
+    assertThat(idnChecker.getSupportingTlds(ImmutableSet.of("EXTENDED_LATIN")))
+        .containsExactly(jandelatin);
+  }
+
+  @Test
+  void getSupportingTlds_multiTld_success() {
+    assertThat(idnChecker.getSupportingTlds(ImmutableSet.of("JA")))
+        .containsExactly(jandelatin, jaonly);
   }
 
   @Test
