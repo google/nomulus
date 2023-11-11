@@ -75,6 +75,8 @@ public final class DownloadScheduler {
    * Returns a {@link DownloadSchedule} instance that describes the work to be performed by an
    * invocation of the download action, if applicable; or {@link Optional#empty} when there is
    * nothing to do.
+   *
+   * <p>For an interrupted job, work will resume from the {@link DownloadSchedule#stage}.
    */
   public Optional<DownloadSchedule> schedule() {
     return tm().transact(

@@ -75,7 +75,7 @@ public class BlockListFetcher {
         try (InputStream errorStream = connection.getErrorStream()) {
           errorDetails = new String(ByteStreams.toByteArray(errorStream), UTF_8);
         } catch (Exception e) {
-          // ignore
+          errorDetails = "Failed to retrieve error message: " + e.getMessage();
         }
         throw new BsaException(
             String.format(

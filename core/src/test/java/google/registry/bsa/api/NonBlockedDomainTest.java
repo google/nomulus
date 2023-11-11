@@ -27,16 +27,21 @@ class NonBlockedDomainTest {
 
   @BeforeEach
   void setup() {
-    unit = NonBlockedDomain.of("buy", "app", Reason.REGISTERED);
+    unit = NonBlockedDomain.of("buy.app", Reason.REGISTERED);
   }
 
   @Test
   void serialize_success() {
-    assertThat(unit.serialize()).isEqualTo("buy,app,REGISTERED");
+    assertThat(unit.serialize()).isEqualTo("buy.app,REGISTERED");
   }
 
   @Test
   void deserialize_success() {
-    assertThat(NonBlockedDomain.deserialize("buy,app,REGISTERED")).isEqualTo(unit);
+    assertThat(NonBlockedDomain.deserialize("buy.app,REGISTERED")).isEqualTo(unit);
+  }
+
+  @Test
+  void alt_of() {
+    assertThat(NonBlockedDomain.of("buy", "app", Reason.REGISTERED)).isEqualTo(unit);
   }
 }

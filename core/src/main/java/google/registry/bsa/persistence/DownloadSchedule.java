@@ -26,12 +26,15 @@ import com.google.common.collect.ImmutableMap;
 import google.registry.bsa.BlockList;
 import google.registry.bsa.DownloadStage;
 import java.util.Optional;
+import org.joda.time.DateTime;
 
 /** Information needed when handling a download from BSA. */
 @AutoValue
 public abstract class DownloadSchedule {
 
   abstract long jobId();
+
+  abstract DateTime jobCreationTime();
 
   public abstract String jobName();
 
@@ -89,6 +92,7 @@ public abstract class DownloadSchedule {
   static DownloadSchedule of(BsaDownload currentJob) {
     return new AutoValue_DownloadSchedule(
         currentJob.getJobId(),
+        currentJob.getCreationTime(),
         currentJob.getJobName(),
         currentJob.getStage(),
         Optional.empty(),
@@ -99,6 +103,7 @@ public abstract class DownloadSchedule {
       BsaDownload currentJob, CompletedJob latestCompleted, boolean alwaysDownload) {
     return new AutoValue_DownloadSchedule(
         currentJob.getJobId(),
+        currentJob.getCreationTime(),
         currentJob.getJobName(),
         currentJob.getStage(),
         Optional.of(latestCompleted),
