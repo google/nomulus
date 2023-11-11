@@ -20,6 +20,7 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import static org.joda.time.DateTimeZone.UTC;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import google.registry.bsa.api.NonBlockedDomain;
 import google.registry.bsa.persistence.BsaDomainInUse.Reason;
 import google.registry.persistence.transaction.DatabaseException;
 import google.registry.persistence.transaction.JpaTestExtensions;
@@ -32,7 +33,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 /** Unit tests for {@link BsaDomainInUse}. */
 public class BsaDomainInUseTest {
 
-  protected FakeClock fakeClock = new FakeClock(DateTime.now(UTC));
+  FakeClock fakeClock = new FakeClock(DateTime.now(UTC));
 
   @RegisterExtension
   final JpaIntegrationWithCoverageExtension jpa =
@@ -70,5 +71,19 @@ public class BsaDomainInUseTest {
                             () -> tm().put(new BsaDomainInUse("label", "tld", Reason.REGISTERED)))))
         .hasMessageThat()
         .contains("violates foreign key constraint");
+  }
+
+  @Test
+  void reason_convertibleToApiClass() {
+    for (BsaDomainInUse.Reason reason : BsaDomainInUse.Reason.values()) {
+      try {
+        NonBlockedDomain.Reason.valueOf(reason.name());
+      } catch (IllegalArgumentException e) {
+        throw new IllegalArgumentException(
+            String.format(
+                "Missing enum name [%s] in %s",
+                reason.name(), BsaDomainInUse.Reason.class.getName()));
+      }
+    }
   }
 }

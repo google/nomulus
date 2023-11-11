@@ -618,6 +618,9 @@ bsa:
   # Max time period during which downloads can be skipped because checksums have
   # not changed from the previous one.
   bsaMaxNopIntervalHours: 24
+  # Number of BSA labels to process in a single DB transaction.
+  bsaLabelTxnBatchSize: 500
+
   # Http endpoint for acquiring Auth tokens.
   authUrl: "https://"
   # Auth token expiry.
