@@ -12,65 +12,90 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package google.registry.bsa;
+package google.registry.bsa.api;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static javax.servlet.http.HttpServletResponse.SC_ACCEPTED;
 import static javax.servlet.http.HttpServletResponse.SC_OK;
 
 import com.google.api.client.http.HttpMethods;
-import com.google.common.collect.ImmutableMap;
+import com.google.common.flogger.FluentLogger;
 import com.google.common.io.ByteStreams;
-import google.registry.bsa.api.BsaCredential;
-import google.registry.bsa.api.BsaException;
+import com.google.common.net.MediaType;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.request.UrlConnectionService;
+import google.registry.request.UrlConnectionUtils;
 import google.registry.util.Retrier;
-import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URL;
 import java.security.GeneralSecurityException;
-import java.util.function.BiConsumer;
 import javax.inject.Inject;
 import javax.net.ssl.HttpsURLConnection;
 
-/** Fetches data from the BSA API. */
-public class BlockListFetcher {
+/**
+ * Sends order processing reports to BSA.
+ *
+ * <p>Senders are responsible for keeping payloads at reasonable sizes.
+ */
+public class BsaReportSender {
+
+  private static final FluentLogger logger = FluentLogger.forEnclosingClass();
+
+  private static final MediaType CONTENT_TYPE = MediaType.JSON_UTF_8;
 
   private final UrlConnectionService urlConnectionService;
   private final BsaCredential credential;
+  private final String orderStatusUrl;
+  private final String addUnblockableDomainsUrl;
+  private final String removeUnblockableDomainsUrl;
 
-  private final ImmutableMap<String, String> blockListUrls;
   private final Retrier retrier;
 
   @Inject
-  BlockListFetcher(
+  BsaReportSender(
       UrlConnectionService urlConnectionService,
       BsaCredential credential,
-      @Config("bsaDataUrls") ImmutableMap<String, String> blockListUrls,
+      @Config("bsaOrderStatusUrl") String orderStatusUrl,
+      @Config("bsaAddUnblockableDomainsUrl") String addUnblockableDomainsUrl,
+      @Config("bsaRemoveUnblockableDomainsUrl") String removeUnblockableDomainsUrl,
       Retrier retrier) {
     this.urlConnectionService = urlConnectionService;
     this.credential = credential;
-    this.blockListUrls = blockListUrls;
+    this.orderStatusUrl = orderStatusUrl;
+    this.addUnblockableDomainsUrl = addUnblockableDomainsUrl;
+    this.removeUnblockableDomainsUrl = removeUnblockableDomainsUrl;
     this.retrier = retrier;
   }
 
-  LazyBlockList fetch(BlockList blockList) {
-    // TODO: use more informative exceptions to describe retriable errors
-    return retrier.callWithRetry(
-        () -> tryFetch(blockList),
+  public void sendOrderStatusReport(String payload) {
+    retrier.callWithRetry(
+        () -> trySendData(this.orderStatusUrl, payload),
         e -> e instanceof BsaException && ((BsaException) e).isRetriable());
   }
 
-  LazyBlockList tryFetch(BlockList blockList) {
+  public void addUnblockableDomainsUpdates(String payload) {
+    retrier.callWithRetry(
+        () -> trySendData(this.addUnblockableDomainsUrl, payload),
+        e -> e instanceof BsaException && ((BsaException) e).isRetriable());
+  }
+
+  public void removeUnblockableDomainsUpdates(String payload) {
+    retrier.callWithRetry(
+        () -> trySendData(this.removeUnblockableDomainsUrl, payload),
+        e -> e instanceof BsaException && ((BsaException) e).isRetriable());
+  }
+
+  Void trySendData(String urlString, String payload) {
     try {
+      URL url = new URL(urlString);
       HttpsURLConnection connection =
-          (HttpsURLConnection)
-              urlConnectionService.createConnection(
-                  new java.net.URL(blockListUrls.get(blockList.name())));
-      connection.setRequestMethod(HttpMethods.GET);
+          (HttpsURLConnection) urlConnectionService.createConnection(url);
+      connection.setRequestMethod(HttpMethods.POST);
       connection.setRequestProperty("Authorization", "Bearer " + credential.getAuthToken());
+      UrlConnectionUtils.setPayload(connection, payload.getBytes(UTF_8), CONTENT_TYPE.toString());
       int code = connection.getResponseCode();
-      if (code != SC_OK) {
+      if (code != SC_OK && code != SC_ACCEPTED) {
         String errorDetails = "";
         try (InputStream errorStream = connection.getErrorStream()) {
           errorDetails = new String(ByteStreams.toByteArray(errorStream), UTF_8);
@@ -85,46 +110,17 @@ public class BlockListFetcher {
                 code, connection.getResponseMessage(), errorDetails),
             /* retriable= */ true);
       }
-      return new LazyBlockList(blockList, connection);
+      try (InputStream errorStream = connection.getInputStream()) {
+        String responseMessage = new String(ByteStreams.toByteArray(errorStream), UTF_8);
+        logger.atInfo().log("Received response: [%s]", responseMessage);
+      } catch (Exception e) {
+        logger.atInfo().withCause(e).log("Failed to retrieve response message.");
+      }
+      return null;
     } catch (IOException e) {
       throw new BsaException(e, /* retriable= */ true);
     } catch (GeneralSecurityException e) {
       throw new BsaException(e, /* retriable= */ false);
-    }
-  }
-
-  static class LazyBlockList implements Closeable {
-
-    private final BlockList blockList;
-
-    private final HttpsURLConnection connection;
-
-    LazyBlockList(BlockList blockList, HttpsURLConnection connection) {
-      this.blockList = blockList;
-      this.connection = connection;
-    }
-
-    BlockList getName() {
-      return blockList;
-    }
-
-    String peekChecksum() {
-      return "TODO"; // Depends on BSA impl: header or first line of file
-    }
-
-    void consumeAll(BiConsumer<byte[], Integer> consumer) throws IOException {
-      try (InputStream inputStream = connection.getInputStream()) {
-        byte[] buffer = new byte[1024];
-        int bytesRead;
-        while ((bytesRead = inputStream.read(buffer)) != -1) {
-          consumer.accept(buffer, bytesRead);
-        }
-      }
-    }
-
-    @Override
-    public void close() {
-      connection.disconnect();
     }
   }
 }
