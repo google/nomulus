@@ -42,10 +42,14 @@ public abstract class Label {
 
   public static Label deserialize(String text) {
     List<String> items = SPLITTER.splitToList(text);
-    return of(
-        items.get(0),
-        LabelType.valueOf(items.get(1)),
-        ImmutableSet.copyOf(items.subList(2, items.size())));
+    try {
+      return of(
+          items.get(0),
+          LabelType.valueOf(items.get(1)),
+          ImmutableSet.copyOf(items.subList(2, items.size())));
+    } catch (NumberFormatException ne) {
+      throw new IllegalArgumentException(text);
+    }
   }
 
   public static Label of(String label, LabelType type, ImmutableSet<String> idnTables) {
@@ -53,7 +57,7 @@ public abstract class Label {
   }
 
   public enum LabelType {
-    ADD,
+    CREATE,
     NEW_ORDER_ASSOCIATION,
     DELETE;
   }
