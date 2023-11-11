@@ -15,7 +15,6 @@
 package google.registry.bsa;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Verify.verify;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.collect.Maps.newHashMap;
@@ -198,25 +197,32 @@ class BsaDiffCreator {
     }
 
     Stream<Label> getLabels() {
-      return Stream.concat(
-          newAndRemaining.asMap().entrySet().stream()
-              .filter(e -> e.getValue().size() > 1 || !e.getValue().contains(ORDER_ID_SENTINEL))
-              .map(
-                  entry -> {
-                    verify(!entry.getValue().isEmpty(), "Unexpected empty set");
-                    LabelType labelType =
-                        entry.getValue().contains(ORDER_ID_SENTINEL)
-                            ? LabelType.NEW_ORDER_ASSOCIATION
-                            : LabelType.CREATE;
-                    return Label.of(
-                        entry.getKey(),
-                        labelType,
-                        idnChecker.getAllValidIdns(entry.getKey()).stream()
-                            .map(IdnTableEnum::name)
-                            .collect(toImmutableSet()));
-                  }),
-          Sets.difference(deleted.keySet(), newAndRemaining.keySet()).stream()
-              .map(label -> Label.of(label, LabelType.DELETE, ImmutableSet.of())));
+      return Stream.of(
+              newAndRemaining.asMap().entrySet().stream()
+                  .filter(e -> e.getValue().size() > 1 || !e.getValue().contains(ORDER_ID_SENTINEL))
+                  .filter(entry -> entry.getValue().contains(ORDER_ID_SENTINEL))
+                  .map(
+                      entry ->
+                          Label.of(
+                              entry.getKey(),
+                              LabelType.NEW_ORDER_ASSOCIATION,
+                              idnChecker.getAllValidIdns(entry.getKey()).stream()
+                                  .map(IdnTableEnum::name)
+                                  .collect(toImmutableSet()))),
+              newAndRemaining.asMap().entrySet().stream()
+                  .filter(e -> e.getValue().size() > 1 || !e.getValue().contains(ORDER_ID_SENTINEL))
+                  .filter(entry -> !entry.getValue().contains(ORDER_ID_SENTINEL))
+                  .map(
+                      entry ->
+                          Label.of(
+                              entry.getKey(),
+                              LabelType.CREATE,
+                              idnChecker.getAllValidIdns(entry.getKey()).stream()
+                                  .map(IdnTableEnum::name)
+                                  .collect(toImmutableSet()))),
+              Sets.difference(deleted.keySet(), newAndRemaining.keySet()).stream()
+                  .map(label -> Label.of(label, LabelType.DELETE, ImmutableSet.of())))
+          .flatMap(x -> x);
     }
   }
 

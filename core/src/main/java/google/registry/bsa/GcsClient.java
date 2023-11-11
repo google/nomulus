@@ -40,9 +40,16 @@ import javax.inject.Inject;
 /** Stores and accesses BSA-related data, including original downloads and processed data. */
 public class GcsClient {
 
+  // Intermediate data files:
   static final String LABELS_DIFF_FILE = "labels_diff.csv";
-  public static final String DOMAINS_IN_USE_FILE = "domains_in_use.csv";
-  public static final String ORDERS_DIFF_FILE = "orders_diff.csv";
+  static final String UNBLOCKABLE_DOMAINS_FILE = "unblockable_domains.csv";
+  static final String ORDERS_DIFF_FILE = "orders_diff.csv";
+
+  // Logged report data sent to BSA.
+  static final String IN_PROGRESS_ORDERS_REPORT = "in_progress_orders.json";
+  static final String COMPLETED_ORDERS_REPORT = "completed_orders.json";
+  static final String UNBLOCKABLE_DOMAINS_REPORT = "unblockable_domains.json";
+
   private final GcsUtils gcsUtils;
   private final String bucketName;
 
@@ -134,17 +141,44 @@ public class GcsClient {
     }
   }
 
-  Stream<NonBlockedDomain> readNonBlockedDomains(String jobName) {
-    BlobId blobId = getBlobId(jobName, DOMAINS_IN_USE_FILE);
+  Stream<NonBlockedDomain> readUnblockableDomains(String jobName) {
+    BlobId blobId = getBlobId(jobName, UNBLOCKABLE_DOMAINS_FILE);
     return readStream(blobId).map(NonBlockedDomain::deserialize);
   }
 
-  void writeNonBlockedDomains(String jobName, Stream<NonBlockedDomain> unblockables) {
-    BlobId blobId = getBlobId(jobName, DOMAINS_IN_USE_FILE);
+  void writeUnblockableDomains(String jobName, Stream<NonBlockedDomain> unblockables) {
+    BlobId blobId = getBlobId(jobName, UNBLOCKABLE_DOMAINS_FILE);
     try (BufferedWriter gcsWriter = getWriter(blobId)) {
       unblockables
           .map(NonBlockedDomain::serialize)
           .forEach(line -> writeWithNewline(gcsWriter, line));
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  void logInProgressOrderReport(String jobName, Stream<String> lines) {
+    BlobId blobId = getBlobId(jobName, IN_PROGRESS_ORDERS_REPORT);
+    try (BufferedWriter gcsWriter = getWriter(blobId)) {
+      lines.forEach(line -> writeWithNewline(gcsWriter, line));
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  void logCompletedOrderReport(String jobName, Stream<String> lines) {
+    BlobId blobId = getBlobId(jobName, COMPLETED_ORDERS_REPORT);
+    try (BufferedWriter gcsWriter = getWriter(blobId)) {
+      lines.forEach(line -> writeWithNewline(gcsWriter, line));
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  void logUnblockableDomainsReport(String jobName, Stream<String> lines) {
+    BlobId blobId = getBlobId(jobName, UNBLOCKABLE_DOMAINS_REPORT);
+    try (BufferedWriter gcsWriter = getWriter(blobId)) {
+      lines.forEach(line -> writeWithNewline(gcsWriter, line));
     } catch (IOException e) {
       throw new RuntimeException(e);
     }

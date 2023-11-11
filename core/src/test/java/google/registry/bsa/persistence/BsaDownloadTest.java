@@ -33,7 +33,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 /** Unit test for {@link BsaDownload}. */
 public class BsaDownloadTest {
 
-  protected FakeClock fakeClock = new FakeClock(DateTime.now(UTC));
+  FakeClock fakeClock = new FakeClock(DateTime.now(UTC));
 
   @RegisterExtension
   final JpaIntegrationWithCoverageExtension jpa =
