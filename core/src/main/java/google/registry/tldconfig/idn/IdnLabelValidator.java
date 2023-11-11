@@ -38,14 +38,18 @@ public final class IdnLabelValidator {
   public Optional<String> findValidIdnTableForTld(String label, String tldStr) {
     String unicodeString = Idn.toUnicode(label);
     Tld tld = Tld.get(tldStr); // uses the cache
-    ImmutableSet<IdnTableEnum> idnTablesForTld = tld.getIdnTables();
-    ImmutableSet<IdnTableEnum> idnTables =
-        idnTablesForTld.isEmpty() ? DEFAULT_IDN_TABLES : idnTablesForTld;
+    ImmutableSet<IdnTableEnum> idnTables = getIdnTablesForTld(tld);
     for (IdnTableEnum idnTable : idnTables) {
       if (idnTable.getTable().isValidLabel(unicodeString)) {
         return Optional.of(idnTable.getTable().getName());
       }
     }
     return Optional.empty();
+  }
+
+  /** Returns the names of the IDN tables supported by a {@code tld}. */
+  public ImmutableSet<IdnTableEnum> getIdnTablesForTld(Tld tld) {
+    ImmutableSet<IdnTableEnum> idnTablesForTld = tld.getIdnTables();
+    return idnTablesForTld.isEmpty() ? DEFAULT_IDN_TABLES : idnTablesForTld;
   }
 }

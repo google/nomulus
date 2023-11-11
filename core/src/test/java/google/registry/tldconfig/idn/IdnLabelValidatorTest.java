@@ -14,11 +14,14 @@
 
 package google.registry.tldconfig.idn;
 
+import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.persistResource;
 
 import com.google.common.collect.ImmutableSet;
+import google.registry.model.tld.Tld;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import org.junit.jupiter.api.Test;
@@ -117,5 +120,25 @@ class IdnLabelValidatorTest {
     assertThat(idnLabelValidator.findValidIdnTableForTld("abcdefghæ", "tld")).isPresent();
     // Extended Latin shouldn't include Japanese characters
     assertThat(idnLabelValidator.findValidIdnTableForTld("みんな", "tld")).isEmpty();
+  }
+
+  @Test
+  void testGetIdnTablesForTld_custom() {
+    persistResource(
+        createTld("tld")
+            .asBuilder()
+            .setIdnTables(ImmutableSet.of(IdnTableEnum.EXTENDED_LATIN))
+            .build());
+    Tld tld = tm().transact(() -> tm().loadByKey(Tld.createVKey("tld")));
+    assertThat(idnLabelValidator.getIdnTablesForTld(tld))
+        .containsExactly(IdnTableEnum.EXTENDED_LATIN);
+  }
+
+  @Test
+  void testGetIdnTablesForTld_default() {
+    persistResource(createTld("tld").asBuilder().build());
+    Tld tld = tm().transact(() -> tm().loadByKey(Tld.createVKey("tld")));
+    assertThat(idnLabelValidator.getIdnTablesForTld(tld))
+        .containsExactly(IdnTableEnum.EXTENDED_LATIN, IdnTableEnum.JA);
   }
 }
