@@ -15,16 +15,23 @@
 package google.registry.bsa;
 
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.common.truth.Truth8.assertThat;
 import static org.mockito.Mockito.when;
 
 import com.google.cloud.storage.BlobId;
 import com.google.cloud.storage.contrib.nio.testing.LocalStorageHelper;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import google.registry.bsa.BlockListFetcher.LazyBlockList;
+import google.registry.bsa.api.Label;
+import google.registry.bsa.api.Label.LabelType;
+import google.registry.bsa.api.Order;
+import google.registry.bsa.api.Order.OrderType;
 import google.registry.gcs.GcsUtils;
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.stream.Stream;
 import javax.net.ssl.HttpsURLConnection;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -45,18 +52,45 @@ class GcsClientTest {
   @BeforeEach
   void setup() throws Exception {
     gcsClient = new GcsClient(gcsUtils, "my-bucket", "SHA-256");
-    lazyBlockList = new LazyBlockList(BlockList.BLOCK, connection);
-    when(connection.getInputStream())
-        .thenReturn(new ByteArrayInputStream("somedata\n".getBytes(StandardCharsets.UTF_8)));
   }
 
   @Test
-  void saveAndChecksumBlockList_success() {
+  void saveAndChecksumBlockList_success() throws Exception {
+    lazyBlockList = new LazyBlockList(BlockList.BLOCK, connection);
+    when(connection.getInputStream())
+        .thenReturn(new ByteArrayInputStream("somedata\n".getBytes(StandardCharsets.UTF_8)));
+
     ImmutableMap<BlockList, String> checksums =
         gcsClient.saveAndChecksumBlockList("some-name", ImmutableList.of(lazyBlockList));
     assertThat(gcsUtils.existsAndNotEmpty(BlobId.of("my-bucket", "some-name/BLOCK.csv"))).isTrue();
     assertThat(checksums)
         .containsExactly(
             BlockList.BLOCK, "0737c8e591c68b93feccde50829aca86a80137547d8cfbe96bab6b20f8580c63");
+    assertThat(gcsClient.readBlockList("some-name", BlockList.BLOCK)).containsExactly("somedata");
+  }
+
+  @Test
+  void readWrite_noData() throws Exception {
+    gcsClient.writeOrderDiffs("job", Stream.of());
+    assertThat(gcsClient.readOrderDiffs("job")).isEmpty();
+  }
+
+  @Test
+  void readWriteOrderDiffs_success() throws Exception {
+    ImmutableList<Order> orders =
+        ImmutableList.of(Order.of(1, OrderType.CREATE), Order.of(2, OrderType.DELETE));
+    gcsClient.writeOrderDiffs("job", orders.stream());
+    assertThat(gcsClient.readOrderDiffs("job")).containsExactlyElementsIn(orders);
+  }
+
+  @Test
+  void readWriteLabelDiffs_success() throws Exception {
+    ImmutableList<Label> labels =
+        ImmutableList.of(
+            Label.of("1", LabelType.CREATE.CREATE, ImmutableSet.of()),
+            Label.of("2", LabelType.NEW_ORDER_ASSOCIATION, ImmutableSet.of("JA")),
+            Label.of("3", LabelType.DELETE, ImmutableSet.of("JA", "EXTENDED_LATIN")));
+    gcsClient.writeLabelDiffs("job", labels.stream());
+    assertThat(gcsClient.readLabelDiffs("job")).containsExactlyElementsIn(labels);
   }
 }
