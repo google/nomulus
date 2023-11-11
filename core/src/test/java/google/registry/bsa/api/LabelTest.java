@@ -28,16 +28,23 @@ class LabelTest {
 
   @BeforeEach
   void setup() {
-    label = Label.of("buy", LabelType.ADD, ImmutableSet.of("JA", "EXTENDED_LATIN"));
+    label = Label.of("buy", LabelType.CREATE, ImmutableSet.of("JA", "EXTENDED_LATIN"));
   }
 
   @Test
   void serialize_success() {
-    assertThat(label.serialize()).isEqualTo("buy,ADD,EXTENDED_LATIN,JA");
+    assertThat(label.serialize()).isEqualTo("buy,CREATE,EXTENDED_LATIN,JA");
   }
 
   @Test
   void deserialize_success() {
-    assertThat(Label.deserialize("buy,ADD,EXTENDED_LATIN,JA")).isEqualTo(label);
+    assertThat(Label.deserialize("buy,CREATE,EXTENDED_LATIN,JA")).isEqualTo(label);
+  }
+
+  @Test
+  void emptyIdns() {
+    label = Label.of("buy", LabelType.CREATE, ImmutableSet.of());
+    assertThat(label.serialize()).isEqualTo("buy,CREATE");
+    assertThat(Label.deserialize("buy,CREATE")).isEqualTo(label);
   }
 }

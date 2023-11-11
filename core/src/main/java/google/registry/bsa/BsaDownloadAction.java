@@ -22,7 +22,9 @@ import static javax.servlet.http.HttpServletResponse.SC_OK;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.flogger.FluentLogger;
+import dagger.Lazy;
 import google.registry.bsa.BlockListFetcher.LazyBlockList;
+import google.registry.bsa.BsaDiffCreator.BsaDiff;
 import google.registry.bsa.persistence.DownloadSchedule;
 import google.registry.bsa.persistence.DownloadScheduler;
 import google.registry.request.Action;
@@ -44,7 +46,9 @@ public class BsaDownloadAction implements Runnable {
 
   private final DownloadScheduler downloadScheduler;
   private final BlockListFetcher blockListFetcher;
+  private final BsaDiffCreator diffCreator;
   private final GcsClient gcsClient;
+  private final Lazy<IdnChecker> lazyIdnChecker;
   private final BsaLock bsaLock;
   private final Response response;
 
@@ -52,12 +56,16 @@ public class BsaDownloadAction implements Runnable {
   BsaDownloadAction(
       DownloadScheduler downloadScheduler,
       BlockListFetcher blockListFetcher,
+      BsaDiffCreator diffCreator,
       GcsClient gcsClient,
+      Lazy<IdnChecker> lazyIdnChecker,
       BsaLock bsaLock,
       Response response) {
     this.downloadScheduler = downloadScheduler;
     this.blockListFetcher = blockListFetcher;
+    this.diffCreator = diffCreator;
     this.gcsClient = gcsClient;
+    this.lazyIdnChecker = lazyIdnChecker;
     this.bsaLock = bsaLock;
     this.response = response;
   }
@@ -113,7 +121,11 @@ public class BsaDownloadAction implements Runnable {
         }
         // Fall through
       case MAKE_DIFF:
-        // TODO(11/30/2023): fill out the rest stages.
+        BsaDiff diff = diffCreator.createDiff(schedule, lazyIdnChecker.get());
+        gcsClient.writeOrderDiffs(schedule.jobName(), diff.getOrders());
+        gcsClient.writeLabelDiffs(schedule.jobName(), diff.getLabels());
+        schedule.updateJobStage(DownloadStage.APPLY_DIFF);
+        // Fall through
       case APPLY_DIFF:
       case START_UPLOADING:
       case UPLOAD_DOMAINS_IN_USE:
