@@ -39,7 +39,11 @@ public abstract class Order {
 
   public static Order deserialize(String text) {
     List<String> items = SPLITTER.splitToList(text);
-    return of(Long.valueOf(items.get(0)), OrderType.valueOf(items.get(1)));
+    try {
+      return of(Long.valueOf(items.get(0)), OrderType.valueOf(items.get(1)));
+    } catch (NumberFormatException ne) {
+      throw new IllegalArgumentException(text);
+    }
   }
 
   public static Order of(long orderId, OrderType orderType) {
