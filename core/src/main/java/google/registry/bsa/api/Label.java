@@ -53,7 +53,7 @@ public abstract class Label {
   }
 
   public enum LabelType {
-    ADD,
+    CREATE,
     NEW_ORDER_ASSOCIATION,
     DELETE;
   }
