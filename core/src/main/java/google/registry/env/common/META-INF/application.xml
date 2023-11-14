@@ -33,6 +33,12 @@ encoding="UTF-8"?>
   </module>
   <module>
     <web>
+      <web-uri>bsa</web-uri>
+      <context-root>bsa</context-root>
+    </web>
+  </module>
+  <module>
+    <web>
       <web-uri>tools</web-uri>
       <context-root>tools</context-root>
     </web>

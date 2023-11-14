@@ -2,7 +2,7 @@
 <appengine-web-app xmlns="http://appengine.google.com/ns/1.0">
 
   <runtime>java17</runtime>
-  <service>backend</service>
+  <service>bsa</service>
   <app-engine-apis>true</app-engine-apis>
   <sessions-enabled>true</sessions-enabled>
   <instance-class>B4</instance-class>
@@ -15,15 +15,14 @@
     <property name="java.util.logging.config.file"
               value="WEB-INF/logging.properties"/>
     <property name="google.registry.environment"
-              value="qa"/>
+              value="local"/>
+    <property name="appengine.generated.dir"
+              value="/tmp/domain-registry-appengine-generated/local/"/>
   </system-properties>
 
   <static-files>
-    <include path="/*.html" expiration="1h"/>
+    <include path="/*.html">
+      <http-header name="Cache-Control" value="max-age=0,must-revalidate" />
+    </include>
   </static-files>
-
-  <!-- Prevent uncaught servlet errors from leaking a stack trace. -->
-  <static-error-handlers>
-    <handler file="error.html"/>
-  </static-error-handlers>
 </appengine-web-app>

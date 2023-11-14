@@ -46,7 +46,7 @@ else
     -PmavenUrl="${gcs_prefix}"/maven \
     -PpluginsUrl="${gcs_prefix}"/plugins
 
-  for service in default pubapi backend tools
+  for service in default pubapi backend bsa tools
   do
     mv services/"${service}"/build/staged-app "${dest}/${service}"
   done

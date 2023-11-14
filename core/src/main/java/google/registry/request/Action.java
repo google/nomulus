@@ -30,10 +30,12 @@ public @interface Action {
 
   /** App Engine services supported by the request processor. */
   enum Service {
+    BSA("bsa"),
     DEFAULT("default"),
     TOOLS("tools"),
     BACKEND("backend"),
     PUBAPI("pubapi");
+
 
     private final String serviceId;
 

@@ -1,13 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <appengine-web-app xmlns="http://appengine.google.com/ns/1.0">
 
-  <runtime>java17</runtime>
-  <service>backend</service>
-  <app-engine-apis>true</app-engine-apis>
+  <runtime>java8</runtime>
+  <service>bsa</service>
+  <!--app-engine-apis>true</app-engine-apis-->
+  <threadsafe>true</threadsafe>
   <sessions-enabled>true</sessions-enabled>
-  <instance-class>B4</instance-class>
+  <instance-class>B4_1G</instance-class>
   <basic-scaling>
-    <max-instances>10</max-instances>
+    <max-instances>100</max-instances>
     <idle-timeout>10m</idle-timeout>
   </basic-scaling>
 
@@ -15,11 +16,11 @@
     <property name="java.util.logging.config.file"
               value="WEB-INF/logging.properties"/>
     <property name="google.registry.environment"
-              value="qa"/>
+              value="production"/>
   </system-properties>
 
   <static-files>
-    <include path="/*.html" expiration="1h"/>
+    <include path="/*.html" expiration="1d"/>
   </static-files>
 
   <!-- Prevent uncaught servlet errors from leaking a stack trace. -->
