@@ -347,6 +347,7 @@ subprojects {
 
   def services = [':services:default',
                   ':services:backend',
+                  ':services:bsa',
                   ':services:tools',
                   ':services:pubapi']
 

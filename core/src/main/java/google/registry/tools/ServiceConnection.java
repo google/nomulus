@@ -170,6 +170,8 @@ public class ServiceConnection {
         return RegistryConfig.getToolsServer();
       case BACKEND:
         return RegistryConfig.getBackendServer();
+      case BSA:
+        return RegistryConfig.getBsaServer();
       case PUBAPI:
         return RegistryConfig.getPubapiServer();
     }

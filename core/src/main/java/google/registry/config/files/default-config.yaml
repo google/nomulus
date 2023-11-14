@@ -20,8 +20,10 @@ gcpProject:
   # URLs of the services for the project.
   defaultServiceUrl: https://default.example.com
   backendServiceUrl: https://backend.example.com
+  bsaServiceUrl: https://bsa.example.com
   toolsServiceUrl: https://tools.example.com
   pubapiServiceUrl: https://pubapi.example.com
+
 
 gSuite:
   # Publicly accessible domain name of the running G Suite instance.
