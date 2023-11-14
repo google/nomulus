@@ -66,6 +66,14 @@ sized to support not just the normal ongoing DNS load but also the load incurred
 by MapReduces, both scheduled (such as RDE) and on-demand (asynchronous
 contact/host deletion).
 
+#### BSA service
+
+The bsa service is responsible for business logic behind Nomulus and BSA 
+functionality. Requests to the backend service are handled by the `BsaServlet`, 
+which provides all of the endpoints exposed in `BsaRequestComponent`. These 
+include tasks for downloading, processing and uploading BSA data.
+
+
 #### Tools service
 
 The tools service is responsible for servicing requests from the `nomulus`
