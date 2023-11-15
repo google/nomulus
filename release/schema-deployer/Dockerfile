@@ -30,8 +30,7 @@ FROM gcr.io/${PROJECT_ID}/builder:${TAG_NAME}
 COPY deploy_sql_schema.sh /usr/local/bin/
 RUN \
   FLYWAY_MAVEN=https://repo1.maven.org/maven2/org/flywaydb/flyway-commandline \
-  && FLYWAY_VERSION=$(curl ${FLYWAY_MAVEN}/maven-metadata.xml \
-                       | grep -oP "<release>\K.*(?=</release>)") \
+  && FLYWAY_VERSION="9.22.3" \
   && echo "Downloading Flyway-commandline-${FLYWAY_VERSION}" \
   && mkdir -p /flyway \
   && curl -L ${FLYWAY_MAVEN}/${FLYWAY_VERSION}/flyway-commandline-${FLYWAY_VERSION}.tar.gz \
