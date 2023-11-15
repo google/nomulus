@@ -19,6 +19,7 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 
 import com.google.api.client.http.HttpStatusCodes;
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Ascii;
 import com.google.gson.Gson;
 import com.google.gson.annotations.Expose;
 import google.registry.model.CreateAutoTimestamp;
@@ -33,6 +34,7 @@ import google.registry.ui.server.registrar.JsonGetAction;
 import java.util.List;
 import java.util.Optional;
 import javax.inject.Inject;
+import javax.persistence.TypedQuery;
 import org.joda.time.DateTime;
 
 /** Returns a (paginated) list of domains for a particular registrar. */
@@ -49,6 +51,8 @@ public class ConsoleDomainListAction implements JsonGetAction {
   private static final String DOMAIN_QUERY_TEMPLATE =
       "FROM Domain WHERE currentSponsorRegistrarId = :registrarId AND deletionTime >"
           + " :deletedAfterTime AND creationTime <= :createdBeforeTime";
+  private static final String SEARCH_TERM_QUERY = " AND LOWER(domainName) LIKE :searchTerm";
+  private static final String ORDER_BY_STATEMENT = " ORDER BY creationTime DESC";
 
   private final AuthResult authResult;
   private final Response response;
@@ -58,6 +62,7 @@ public class ConsoleDomainListAction implements JsonGetAction {
   private final int pageNumber;
   private final int resultsPerPage;
   private final Optional<Long> totalResults;
+  private final Optional<String> searchTerm;
 
   @Inject
   public ConsoleDomainListAction(
@@ -68,7 +73,8 @@ public class ConsoleDomainListAction implements JsonGetAction {
       @Parameter("checkpointTime") Optional<DateTime> checkpointTime,
       @Parameter("pageNumber") Optional<Integer> pageNumber,
       @Parameter("resultsPerPage") Optional<Integer> resultsPerPage,
-      @Parameter("totalResults") Optional<Long> totalResults) {
+      @Parameter("totalResults") Optional<Long> totalResults,
+      @Parameter("searchTerm") Optional<String> searchTerm) {
     this.authResult = authResult;
     this.response = response;
     this.gson = gson;
@@ -77,6 +83,7 @@ public class ConsoleDomainListAction implements JsonGetAction {
     this.pageNumber = pageNumber.orElse(0);
     this.resultsPerPage = resultsPerPage.orElse(DEFAULT_RESULTS_PER_PAGE);
     this.totalResults = totalResults;
+    this.searchTerm = searchTerm;
   }
 
   @Override
@@ -110,13 +117,13 @@ public class ConsoleDomainListAction implements JsonGetAction {
     long actualTotalResults =
         totalResults.orElseGet(
             () ->
-                tm().query("SELECT COUNT(*) " + DOMAIN_QUERY_TEMPLATE, Long.class)
+                createCountQuery()
                     .setParameter("registrarId", registrarId)
                     .setParameter("createdBeforeTime", checkpointTimestamp)
                     .setParameter("deletedAfterTime", checkpoint)
                     .getSingleResult());
     List<Domain> domains =
-        tm().query(DOMAIN_QUERY_TEMPLATE + " ORDER BY creationTime DESC", Domain.class)
+        createDomainQuery()
             .setParameter("registrarId", registrarId)
             .setParameter("createdBeforeTime", checkpointTimestamp)
             .setParameter("deletedAfterTime", checkpoint)
@@ -125,6 +132,26 @@ public class ConsoleDomainListAction implements JsonGetAction {
             .getResultList();
     response.setPayload(gson.toJson(new DomainListResult(domains, checkpoint, actualTotalResults)));
     response.setStatus(HttpStatusCodes.STATUS_CODE_OK);
+  }
+
+  /** Creates the query to get the total number of matching domains, interpolating as necessary. */
+  private TypedQuery<Long> createCountQuery() {
+    String queryString = "SELECT COUNT(*) " + DOMAIN_QUERY_TEMPLATE;
+    if (searchTerm.isPresent() && !searchTerm.get().isEmpty()) {
+      return tm().query(queryString + SEARCH_TERM_QUERY, Long.class)
+          .setParameter("searchTerm", String.format("%%%s%%", Ascii.toLowerCase(searchTerm.get())));
+    }
+    return tm().query(queryString, Long.class);
+  }
+
+  /** Creates the query to retrieve the matching domains themselves, interpolating as necessary. */
+  private TypedQuery<Domain> createDomainQuery() {
+    if (searchTerm.isPresent() && !searchTerm.get().isEmpty()) {
+      return tm().query(
+              DOMAIN_QUERY_TEMPLATE + SEARCH_TERM_QUERY + ORDER_BY_STATEMENT, Domain.class)
+          .setParameter("searchTerm", String.format("%%%s%%", Ascii.toLowerCase(searchTerm.get())));
+    }
+    return tm().query(DOMAIN_QUERY_TEMPLATE + ORDER_BY_STATEMENT, Domain.class);
   }
 
   private void writeBadRequest(String message) {

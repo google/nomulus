@@ -226,4 +226,10 @@ public final class RegistrarConsoleModule {
   public static Optional<Long> provideTotalResults(HttpServletRequest req) {
     return extractOptionalParameter(req, "totalResults").map(Long::valueOf);
   }
+
+  @Provides
+  @Parameter("searchTerm")
+  public static Optional<String> provideSearchTerm(HttpServletRequest req) {
+    return extractOptionalParameter(req, "searchTerm");
+  }
 }
