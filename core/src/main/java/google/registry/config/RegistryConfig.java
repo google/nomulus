@@ -1459,6 +1459,15 @@ public final class RegistryConfig {
   }
 
   /**
+   * Returns the address of the Nomulus app bsa HTTP server.
+   *
+   * <p>This is used by the {@code nomulus} tool to connect to the App Engine remote API.
+   */
+  public static URL getBsaServer() {
+    return makeUrl(CONFIG_SETTINGS.get().gcpProject.bsaServiceUrl);
+  }
+
+  /**
    * Returns the address of the Nomulus app tools HTTP server.
    *
    * <p>This is used by the {@code nomulus} tool to connect to the App Engine remote API.

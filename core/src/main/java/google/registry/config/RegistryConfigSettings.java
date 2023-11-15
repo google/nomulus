@@ -53,6 +53,7 @@ public class RegistryConfigSettings {
     public boolean isLocal;
     public String defaultServiceUrl;
     public String backendServiceUrl;
+    public String bsaServiceUrl;
     public String toolsServiceUrl;
     public String pubapiServiceUrl;
   }
