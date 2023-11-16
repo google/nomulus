@@ -138,6 +138,7 @@ public final class GmailClient {
         BodyPart attachmentPart = new MimeBodyPart();
         attachmentPart.setContent(attachment.content(), attachment.contentType().toString());
         attachmentPart.setFileName(attachment.filename());
+        attachmentPart.setDisposition(MimeBodyPart.ATTACHMENT);
         multipart.addBodyPart(attachmentPart);
       }
       msg.addRecipients(RecipientType.BCC, toArray(emailMessage.bccs(), Address.class));
