@@ -112,9 +112,8 @@ public class ConfigureTldCommandTest extends CommandTestCase<ConfigureTldCommand
     File tldFile = tmpDir.resolve("tld.yaml").toFile();
     Files.asCharSink(tldFile, UTF_8).write(loadFile(getClass(), "tld.yaml"));
     runCommandForced("--input=" + tldFile);
-    // TODO(11/30/2023): uncomment below two lines
-    // Tld updatedTld = Tld.get("tld");
-    // assertThat(tld.getBsaEnrollStartTime()).isEqualTo(bsaStartTime);
+    Tld updatedTld = Tld.get("tld");
+    assertThat(updatedTld.getBsaEnrollStartTime()).isEqualTo(bsaStartTime);
   }
 
   @Test

@@ -17,7 +17,6 @@ package google.registry.bsa;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.collect.Maps.transformValues;
 
-import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.ImmutableSet;
@@ -47,14 +46,6 @@ public class IdnChecker {
   @Inject
   IdnChecker(Clock clock) {
     this.idnToTlds = getIdnToTldMap(clock.nowUtc());
-    allTlds = idnToTlds.values().stream().flatMap(ImmutableSet::stream).collect(toImmutableSet());
-  }
-
-  // TODO(11/30/2023): Remove below when new Tld schema is deployed and the `getBsaEnrollStartTime`
-  // method is no longer hardcoded.
-  @VisibleForTesting
-  IdnChecker(ImmutableMap<IdnTableEnum, ImmutableSet<Tld>> idnToTlds) {
-    this.idnToTlds = idnToTlds;
     allTlds = idnToTlds.values().stream().flatMap(ImmutableSet::stream).collect(toImmutableSet());
   }
 
