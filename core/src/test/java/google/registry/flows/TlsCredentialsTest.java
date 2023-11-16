@@ -27,6 +27,7 @@ import static org.mockito.Mockito.when;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
+import com.google.common.net.InetAddresses;
 import google.registry.flows.TlsCredentials.BadRegistrarIpAddressException;
 import google.registry.flows.TlsCredentials.MissingRegistrarCertificateException;
 import google.registry.flows.TlsCredentials.RegistrarCertificateNotConfiguredException;
@@ -71,7 +72,11 @@ final class TlsCredentialsTest {
   @Test
   void testClientCertificateAndHash_missing() {
     TlsCredentials tls =
-        new TlsCredentials(true, Optional.empty(), Optional.of("192.168.1.1"), certificateChecker);
+        new TlsCredentials(
+            true,
+            Optional.empty(),
+            Optional.of(InetAddresses.forString("192.168.1.1")),
+            certificateChecker);
     persistResource(
         loadRegistrar("TheRegistrar")
             .asBuilder()
@@ -83,10 +88,13 @@ final class TlsCredentialsTest {
   }
 
   @Test
-  void test_missingIpAddress_doesntAllowAccess() {
+  void test_wrongIpAddress_doesntAllowAccess() {
     TlsCredentials tls =
         new TlsCredentials(
-            false, Optional.of("certHash"), Optional.of("127.0.0.1"), certificateChecker);
+            false,
+            Optional.of("certHash"),
+            Optional.of(InetAddresses.forString("127.0.0.1")),
+            certificateChecker);
     persistResource(
         loadRegistrar("TheRegistrar")
             .asBuilder()
@@ -105,10 +113,32 @@ final class TlsCredentialsTest {
   }
 
   @Test
+  void test_missingIpAddress_doesntAllowAccess() {
+    TlsCredentials tls =
+        new TlsCredentials(false, Optional.of("certHash"), Optional.empty(), certificateChecker);
+    persistResource(
+        loadRegistrar("TheRegistrar")
+            .asBuilder()
+            .setClientCertificate(SAMPLE_CERT, clock.nowUtc())
+            .setIpAddressAllowList(ImmutableSet.of(CidrAddressBlock.create("3.5.8.13")))
+            .build());
+
+    BadRegistrarIpAddressException thrown =
+        assertThrows(
+            BadRegistrarIpAddressException.class,
+            () -> tls.validate(Registrar.loadByRegistrarId("TheRegistrar").get(), "password"));
+
+    assertThat(thrown).hasMessageThat().isEqualTo("Registrar IP address is missing");
+  }
+
+  @Test
   void testClientCertificate_notConfigured() {
     TlsCredentials tls =
         new TlsCredentials(
-            true, Optional.of("hash"), Optional.of("192.168.1.1"), certificateChecker);
+            true,
+            Optional.of("hash"),
+            Optional.of(InetAddresses.forString("192.168.1.1")),
+            certificateChecker);
     persistResource(loadRegistrar("TheRegistrar").asBuilder().build());
     assertThrows(
         RegistrarCertificateNotConfiguredException.class,
@@ -119,7 +149,10 @@ final class TlsCredentialsTest {
   void test_validateCertificateHash_canBeConfiguredToBypassCerts() throws Exception {
     TlsCredentials tls =
         new TlsCredentials(
-            false, Optional.of("certHash"), Optional.of("192.168.1.1"), certificateChecker);
+            false,
+            Optional.of("certHash"),
+            Optional.of(InetAddresses.forString("192.168.1.1")),
+            certificateChecker);
     persistResource(
         loadRegistrar("TheRegistrar")
             .asBuilder()
@@ -134,7 +167,10 @@ final class TlsCredentialsTest {
   void test_validateCertificateHash_passWithFailOverCerticate() throws Exception {
     TlsCredentials tls =
         new TlsCredentials(
-            false, Optional.of(SAMPLE_CERT_HASH), Optional.of("192.168.1.1"), certificateChecker);
+            false,
+            Optional.of(SAMPLE_CERT_HASH),
+            Optional.of(InetAddresses.forString("192.168.1.1")),
+            certificateChecker);
     persistResource(
         loadRegistrar("TheRegistrar")
             .asBuilder()
