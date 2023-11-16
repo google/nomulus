@@ -550,9 +550,8 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
   @JsonSerialize(using = SortedEnumSetSerializer.class)
   Set<IdnTableEnum> idnTables;
 
-  // TODO(11/30/2023): uncomment below two lines
-  // /** The start time of this TLD's enrollment in the BSA program, if applicable. */
-  // @JsonIgnore @Nullable DateTime bsaEnrollStartTime;
+  /** The start time of this TLD's enrollment in the BSA program, if applicable. */
+  @JsonIgnore @Nullable DateTime bsaEnrollStartTime;
 
   public String getTldStr() {
     return tldStr;
@@ -574,12 +573,10 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
   }
 
   /** Returns the time when this TLD was enrolled in the Brand Safety Alliance (BSA) program. */
-  @JsonIgnore // Annotation can be removed once we add the field and annotate it.
+  @JsonIgnore
   @Nullable
   public DateTime getBsaEnrollStartTime() {
-    // TODO(11/30/2023): uncomment below.
-    // return this.bsaEnrollStartTime;
-    return null;
+    return this.bsaEnrollStartTime;
   }
 
   /** Retrieve whether invoicing is enabled. */
@@ -1103,8 +1100,7 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
 
     public Builder setBsaEnrollStartTime(DateTime enrollTime) {
       // TODO(b/309175133): forbid if enrolled with BSA
-      // TODO(11/30/2023): uncomment below line
-      // getInstance().bsaEnrollStartTime = enrollTime;
+      getInstance().bsaEnrollStartTime = enrollTime;
       return this;
     }
 
