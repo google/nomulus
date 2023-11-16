@@ -138,6 +138,7 @@ public class GmailClientTest {
     assertThat(attachment.getContentType()).startsWith(CSV_UTF_8.toString());
     assertThat(attachment.getContentType()).endsWith("name=filename");
     assertThat(attachment.getContent()).isEqualTo("foo,bar\nbaz,qux");
+    assertThat(attachment.getDisposition()).isEqualTo("attachment");
   }
 
   @Test
