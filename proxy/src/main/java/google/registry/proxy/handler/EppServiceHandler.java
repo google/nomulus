@@ -124,6 +124,7 @@ public class EppServiceHandler extends HttpsRelayServiceHandler {
         .headers()
         .set(ProxyHttpHeaders.CERTIFICATE_HASH, sslClientCertificateHash)
         .set(ProxyHttpHeaders.IP_ADDRESS, clientAddress)
+        .set(ProxyHttpHeaders.FALLBACK_IP_ADDRESS, clientAddress)
         .set(HttpHeaderNames.CONTENT_TYPE, EPP_CONTENT_TYPE)
         .set(HttpHeaderNames.ACCEPT, EPP_CONTENT_TYPE);
     return request;

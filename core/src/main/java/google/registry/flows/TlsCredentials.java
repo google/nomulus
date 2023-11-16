@@ -26,6 +26,7 @@ import com.google.common.net.InetAddresses;
 import dagger.Module;
 import dagger.Provides;
 import google.registry.config.RegistryConfig.Config;
+import google.registry.config.RegistryEnvironment;
 import google.registry.flows.EppException.AuthenticationErrorException;
 import google.registry.flows.certs.CertificateChecker;
 import google.registry.flows.certs.CertificateChecker.InsecureCertificateException;
@@ -66,11 +67,11 @@ public class TlsCredentials implements TransportCredentials {
   public TlsCredentials(
       @Config("requireSslCertificates") boolean requireSslCertificates,
       @Header(ProxyHttpHeaders.CERTIFICATE_HASH) Optional<String> clientCertificateHash,
-      @Header(ProxyHttpHeaders.IP_ADDRESS) Optional<String> clientAddress,
+      Optional<InetAddress> clientInetAddr,
       CertificateChecker certificateChecker) {
     this.requireSslCertificates = requireSslCertificates;
     this.clientCertificateHash = clientCertificateHash;
-    this.clientInetAddr = clientAddress.map(TlsCredentials::parseInetAddress);
+    this.clientInetAddr = clientInetAddr;
     this.certificateChecker = certificateChecker;
   }
 
@@ -104,18 +105,25 @@ public class TlsCredentials implements TransportCredentials {
     }
     // In the rare unexpected case that the client inet address wasn't passed along at all, then
     // by default deny access.
-    if (clientInetAddr.isPresent()) {
-      for (CidrAddressBlock cidrAddressBlock : ipAddressAllowList) {
-        if (cidrAddressBlock.contains(clientInetAddr.get())) {
-          // IP address is in allow list; return early.
-          return;
-        }
+    if (!clientInetAddr.isPresent()) {
+      logger.atWarning().log(
+          "Authentication error: Missing IP address for registrar %s.", registrar.getRegistrarId());
+      throw new BadRegistrarIpAddressException(clientInetAddr);
+    }
+    for (CidrAddressBlock cidrAddressBlock : ipAddressAllowList) {
+      if (cidrAddressBlock.contains(clientInetAddr.get())) {
+        // IP address is in allow list; return early.
+        return;
       }
     }
-    logger.atInfo().log(
+    logger.atWarning().log(
         "Authentication error: IP address %s is not allow-listed for registrar %s; allow list is:"
             + " %s",
-        clientInetAddr, registrar.getRegistrarId(), ipAddressAllowList);
+        clientInetAddr,
+        registrar.getRegistrarId(),
+        RegistryEnvironment.get() == RegistryEnvironment.PRODUCTION
+            ? "redacted in production"
+            : ipAddressAllowList);
     throw new BadRegistrarIpAddressException(clientInetAddr);
   }
 
@@ -232,7 +240,7 @@ public class TlsCredentials implements TransportCredentials {
               ? String.format(
                   "Registrar IP address %s is not in stored allow list",
                   clientInetAddr.get().getHostAddress())
-              : "Registrar IP address is not in stored allow list");
+              : "Registrar IP address is missing");
     }
   }
 
@@ -249,9 +257,14 @@ public class TlsCredentials implements TransportCredentials {
     }
 
     @Provides
-    @Header(ProxyHttpHeaders.IP_ADDRESS)
-    static Optional<String> provideIpAddress(HttpServletRequest req) {
-      return extractOptionalHeader(req, ProxyHttpHeaders.IP_ADDRESS);
+    static Optional<InetAddress> provideIpAddress(HttpServletRequest req) {
+      Optional<String> clientAddress = extractOptionalHeader(req, ProxyHttpHeaders.IP_ADDRESS);
+      Optional<String> fallbackClientAddress =
+          extractOptionalHeader(req, ProxyHttpHeaders.IP_ADDRESS);
+      Optional<InetAddress> clientInetAddr = clientAddress.map(TlsCredentials::parseInetAddress);
+      return clientInetAddr.isPresent()
+          ? clientInetAddr
+          : fallbackClientAddress.map(TlsCredentials::parseInetAddress);
     }
   }
 }
