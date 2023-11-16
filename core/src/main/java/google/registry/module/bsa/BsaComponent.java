@@ -19,9 +19,14 @@ import dagger.Component;
 import dagger.Lazy;
 import google.registry.config.CredentialModule;
 import google.registry.config.RegistryConfig.ConfigModule;
+import google.registry.keyring.KeyringModule;
+import google.registry.keyring.secretmanager.SecretManagerKeyringModule;
 import google.registry.module.bsa.BsaRequestComponent.BsaRequestComponentModule;
 import google.registry.monitoring.whitebox.StackdriverModule;
+import google.registry.persistence.PersistenceModule;
+import google.registry.privileges.secretmanager.SecretManagerModule;
 import google.registry.request.Modules.GsonModule;
+import google.registry.request.Modules.UrlConnectionServiceModule;
 import google.registry.request.Modules.UserServiceModule;
 import google.registry.request.auth.AuthModule;
 import google.registry.util.UtilsModule;
@@ -31,13 +36,18 @@ import javax.inject.Singleton;
 @Component(
     modules = {
       AuthModule.class,
-      UtilsModule.class,
-      UserServiceModule.class,
-      GsonModule.class,
+      BsaRequestComponentModule.class,
       ConfigModule.class,
-      StackdriverModule.class,
       CredentialModule.class,
-      BsaRequestComponentModule.class
+      GsonModule.class,
+      PersistenceModule.class,
+      KeyringModule.class,
+      SecretManagerKeyringModule.class,
+      SecretManagerModule.class,
+      StackdriverModule.class,
+      UrlConnectionServiceModule.class,
+      UserServiceModule.class,
+      UtilsModule.class
     })
 interface BsaComponent {
   BsaRequestHandler requestHandler();
