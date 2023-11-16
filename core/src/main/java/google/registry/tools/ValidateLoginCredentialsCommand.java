@@ -23,6 +23,7 @@ import static google.registry.util.X509Utils.loadCertificate;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
+import com.google.common.net.InetAddresses;
 import google.registry.flows.TlsCredentials;
 import google.registry.flows.certs.CertificateChecker;
 import google.registry.model.registrar.Registrar;
@@ -85,7 +86,7 @@ final class ValidateLoginCredentialsCommand implements Command {
     new TlsCredentials(
             true,
             Optional.ofNullable(clientCertificateHash),
-            Optional.ofNullable(clientIpAddress),
+            Optional.ofNullable(InetAddresses.forString(clientIpAddress)),
             certificateChecker)
         .validate(registrar, password);
     checkState(
