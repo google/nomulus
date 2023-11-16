@@ -32,7 +32,7 @@ import java.util.Optional;
 import javax.inject.Inject;
 
 @Action(
-    service = Action.Service.BACKEND,
+    service = Action.Service.BSA,
     path = BsaDownloadAction.PATH,
     method = POST,
     auth = Auth.AUTH_API_ADMIN)
