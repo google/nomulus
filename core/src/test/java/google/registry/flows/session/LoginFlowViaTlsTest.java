@@ -30,6 +30,7 @@ import google.registry.flows.certs.CertificateChecker;
 import google.registry.model.registrar.Registrar;
 import google.registry.testing.CertificateSamples;
 import google.registry.util.CidrAddressBlock;
+import java.net.InetAddress;
 import java.util.Optional;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.Test;
@@ -42,10 +43,14 @@ public class LoginFlowViaTlsTest extends LoginFlowTestCase {
       Optional.of(CertificateSamples.SAMPLE_CERT3_HASH);
   private static final Optional<String> BAD_CERT_HASH =
       Optional.of(CertificateSamples.SAMPLE_CERT2_HASH);
-  private static final Optional<String> GOOD_IP = Optional.of("192.168.1.1");
-  private static final Optional<String> BAD_IP = Optional.of("1.1.1.1");
-  private static final Optional<String> GOOD_IPV6 = Optional.of("2001:db8::1");
-  private static final Optional<String> BAD_IPV6 = Optional.of("2001:db8::2");
+  private static final Optional<InetAddress> GOOD_IP =
+      Optional.of(InetAddresses.forString("192.168.1.1"));
+  private static final Optional<InetAddress> BAD_IP =
+      Optional.of(InetAddresses.forString("1.1.1.1"));
+  private static final Optional<InetAddress> GOOD_IPV6 =
+      Optional.of(InetAddresses.forString("2001:db8::1"));
+  private static final Optional<InetAddress> BAD_IPV6 =
+      Optional.of(InetAddresses.forString("2001:db8::2"));
   private final CertificateChecker certificateChecker =
       new CertificateChecker(
           ImmutableSortedMap.of(START_OF_TIME, 825, DateTime.parse("2020-09-01T00:00:00Z"), 398),
@@ -59,8 +64,7 @@ public class LoginFlowViaTlsTest extends LoginFlowTestCase {
   protected Registrar.Builder getRegistrarBuilder() {
     return super.getRegistrarBuilder()
         .setClientCertificate(GOOD_CERT.get(), DateTime.now(UTC))
-        .setIpAddressAllowList(
-            ImmutableList.of(CidrAddressBlock.create(InetAddresses.forString(GOOD_IP.get()), 32)));
+        .setIpAddressAllowList(ImmutableList.of(CidrAddressBlock.create(GOOD_IP.get(), 32)));
   }
 
   @Test
@@ -129,7 +133,7 @@ public class LoginFlowViaTlsTest extends LoginFlowTestCase {
                     CidrAddressBlock.create(InetAddresses.forString("192.168.1.1"), 32),
                     CidrAddressBlock.create(InetAddresses.forString("2001:db8::1"), 128)))
             .build());
-    credentials = new TlsCredentials(true, GOOD_CERT_HASH, GOOD_CERT, certificateChecker);
+    credentials = new TlsCredentials(true, GOOD_CERT_HASH, Optional.empty(), certificateChecker);
     doFailingTest("login_valid.xml", BadRegistrarIpAddressException.class);
   }
 

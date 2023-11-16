@@ -30,6 +30,7 @@ import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
+import com.google.common.net.InetAddresses;
 import com.google.common.testing.TestLogHandler;
 import google.registry.flows.certs.CertificateChecker;
 import google.registry.model.eppcommon.Trid;
@@ -186,7 +187,10 @@ class FlowRunnerTest {
   void testRun_loggingStatement_tlsCredentials() throws Exception {
     flowRunner.credentials =
         new TlsCredentials(
-            true, Optional.of("abc123def"), Optional.of("127.0.0.1"), certificateChecker);
+            true,
+            Optional.of("abc123def"),
+            Optional.of(InetAddresses.forString("127.0.0.1")),
+            certificateChecker);
     flowRunner.run(eppMetricBuilder);
     assertThat(Splitter.on("\n\t").split(findFirstLogMessageByPrefix(handler, "EPP Command\n\t")))
         .contains("TlsCredentials{clientCertificateHash=abc123def," + " clientAddress=/127.0.0.1}");
