@@ -27,7 +27,6 @@ import static org.joda.time.Duration.standardDays;
 import static org.joda.time.Duration.standardMinutes;
 import static org.joda.time.Duration.standardSeconds;
 
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import google.registry.bsa.BlockList;
@@ -85,7 +84,7 @@ public class DownloadSchedulerTest {
     assertThat(schedule.latestCompleted()).isEmpty();
     assertThat(schedule.jobName()).isEqualTo(fakeClock.nowUtc().toString());
     assertThat(schedule.stage()).isEqualTo(DownloadStage.DOWNLOAD);
-    assertThat(schedule.forceDownload()).isTrue();
+    assertThat(schedule.alwaysDownload()).isTrue();
   }
 
   @Test
@@ -98,7 +97,7 @@ public class DownloadSchedulerTest {
     assertThat(schedule.jobName()).isEqualTo(inProgressJob.getJobName());
     assertThat(schedule.stage()).isEqualTo(MAKE_DIFF);
     assertThat(schedule.latestCompleted()).isEmpty();
-    assertThat(schedule.forceDownload()).isTrue();
+    assertThat(schedule.alwaysDownload()).isTrue();
   }
 
   @Test
@@ -111,7 +110,7 @@ public class DownloadSchedulerTest {
     assertThat(schedule.jobId()).isEqualTo(inProgressJob.jobId);
     assertThat(schedule.jobName()).isEqualTo(inProgressJob.getJobName());
     assertThat(schedule.stage()).isEqualTo(MAKE_DIFF);
-    assertThat(schedule.forceDownload()).isFalse();
+    assertThat(schedule.alwaysDownload()).isFalse();
     assertThat(schedule.latestCompleted()).isPresent();
     CompletedJob lastCompleted = schedule.latestCompleted().get();
     assertThat(lastCompleted.jobName()).isEqualTo(completed.getJobName());
@@ -132,7 +131,7 @@ public class DownloadSchedulerTest {
     assertThat(scheduleOptional).isPresent();
     DownloadSchedule schedule = scheduleOptional.get();
     assertThat(schedule.stage()).isEqualTo(DOWNLOAD);
-    assertThat(schedule.forceDownload()).isFalse();
+    assertThat(schedule.alwaysDownload()).isFalse();
     assertThat(schedule.latestCompleted()).isPresent();
     CompletedJob completedJob = schedule.latestCompleted().get();
     assertThat(completedJob.jobName()).isEqualTo(completed.getJobName());
@@ -140,13 +139,13 @@ public class DownloadSchedulerTest {
   }
 
   @Test
-  void doneJob_newSchedule_forceDownload() {
+  void doneJob_newSchedule_alwaysDownload() {
     insertOneJobAndAdvanceClock(DONE);
     fakeClock.advanceBy(MAX_NOP_INTERVAL);
     Optional<DownloadSchedule> scheduleOptional = scheduler.schedule();
     assertThat(scheduleOptional).isPresent();
     DownloadSchedule schedule = scheduleOptional.get();
-    assertThat(schedule.forceDownload()).isTrue();
+    assertThat(schedule.alwaysDownload()).isTrue();
   }
 
   @Test
@@ -183,11 +182,8 @@ public class DownloadSchedulerTest {
 
   @Test
   void loadRecentProcessedJobs_oneDoneJob() {
-    BsaDownload job = new BsaDownload();
-    job.setStage(DownloadStage.DONE);
-    tm().transact(() -> tm().insert(job));
-    ImmutableList<BsaDownload> downloads = tm().transact(() -> scheduler.loadRecentProcessedJobs());
-    assertThat(downloads).containsExactly(job);
+    BsaDownload job = insertOneJobAndAdvanceClock(DONE);
+    assertThat(tm().transact(() -> scheduler.loadRecentProcessedJobs())).containsExactly(job);
   }
 
   @Test

@@ -53,6 +53,7 @@ import org.joda.time.Duration;
  */
 public final class DownloadScheduler {
 
+  /** Allows a new download to proceed if the cron job fires a little early due to NTP drift. */
   private static final Duration CRON_JITTER = standardSeconds(5);
 
   private final Duration downloadInterval;
@@ -66,18 +67,23 @@ public final class DownloadScheduler {
     this.clock = clock;
   }
 
+  /**
+   * Returns a {@link DownloadSchedule} instance that describes the work to be performed by an
+   * invocation of the download action, if applicable; or {@link Optional#empty} when there is
+   * nothing to do.
+   */
   public Optional<DownloadSchedule> schedule() {
     return tm().transact(
             () -> {
               ImmutableList<BsaDownload> recentJobs = loadRecentProcessedJobs();
               if (recentJobs.isEmpty()) {
                 // No jobs initiated ever.
-                return scheduleNewJob(Optional.empty());
+                return Optional.of(scheduleNewJob(Optional.empty()));
               }
               BsaDownload mostRecent = recentJobs.get(0);
               if (mostRecent.getStage().equals(DONE)) {
                 return isTimeAgain(mostRecent, downloadInterval)
-                    ? scheduleNewJob(Optional.of(mostRecent))
+                    ? Optional.of(scheduleNewJob(Optional.of(mostRecent)))
                     : Optional.empty();
               } else if (recentJobs.size() == 1) {
                 // First job ever, still in progress
@@ -99,16 +105,17 @@ public final class DownloadScheduler {
     return mostRecent.getCreationTime().plus(interval).minus(CRON_JITTER).isBefore(clock.nowUtc());
   }
 
-  private Optional<DownloadSchedule> scheduleNewJob(Optional<BsaDownload> prevJob) {
+  /**
+   * Adds a new {@link BsaDownload} to the database and returns a {@link DownloadSchedule} for it.
+   */
+  private DownloadSchedule scheduleNewJob(Optional<BsaDownload> prevJob) {
     BsaDownload job = new BsaDownload();
     tm().insert(job);
-    return Optional.of(
-        prevJob
-            .map(
-                prev ->
-                    DownloadSchedule.of(
-                        job, CompletedJob.of(prev), isTimeAgain(prev, maxNopInterval)))
-            .orElseGet(() -> DownloadSchedule.of(job)));
+    return prevJob
+        .map(
+            prev ->
+                DownloadSchedule.of(job, CompletedJob.of(prev), isTimeAgain(prev, maxNopInterval)))
+        .orElseGet(() -> DownloadSchedule.of(job));
   }
 
   @VisibleForTesting
