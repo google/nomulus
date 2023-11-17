@@ -15,6 +15,7 @@
 package google.registry.bsa.persistence;
 
 import com.google.common.base.Objects;
+import google.registry.bsa.api.NonBlockedDomain;
 import google.registry.bsa.persistence.BsaDomainInUse.BsaDomainInUseId;
 import google.registry.model.CreateAutoTimestamp;
 import google.registry.persistence.VKey;
@@ -57,6 +58,18 @@ public class BsaDomainInUse {
     this.reason = reason;
   }
 
+  /**
+   * Returns the equivalent {@link NonBlockedDomain} instance, for use by communication with the BSA
+   * API.
+   */
+  NonBlockedDomain toNonBlockedDomain() {
+    return NonBlockedDomain.of(label, tld, NonBlockedDomain.Reason.valueOf(reason.name()));
+  }
+
+  VKey<BsaDomainInUse> toVkey() {
+    return vKey(this.label, this.tld);
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) {
@@ -77,6 +90,12 @@ public class BsaDomainInUse {
     return Objects.hashCode(label, tld, reason, createTime);
   }
 
+  static BsaDomainInUse of(String domainName, Reason reason) {
+    int dotPos = domainName.lastIndexOf('.');
+    return new BsaDomainInUse(
+        domainName.substring(0, dotPos), domainName.substring(dotPos + 1), reason);
+  }
+
   enum Reason {
     REGISTERED,
     RESERVED;
@@ -93,6 +112,23 @@ public class BsaDomainInUse {
     BsaDomainInUseId(String label, String tld) {
       this.label = label;
       this.tld = tld;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+      if (this == o) {
+        return true;
+      }
+      if (!(o instanceof BsaDomainInUseId)) {
+        return false;
+      }
+      BsaDomainInUseId that = (BsaDomainInUseId) o;
+      return Objects.equal(label, that.label) && Objects.equal(tld, that.tld);
+    }
+
+    @Override
+    public int hashCode() {
+      return Objects.hashCode(label, tld);
     }
   }
 
