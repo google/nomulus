@@ -53,6 +53,7 @@ abstract class CreateOrUpdateReservedListCommandTestCase<
         .write("sdfgagmsdgs,sdfgsd\nasdf234tafgs,asdfaw\n\n");
     reservedTermsPath = reservedTermsFile.getPath();
     invalidReservedTermsPath = invalidReservedTermsFile.getPath();
+    command.printStream = System.out;
   }
 
   @Test
