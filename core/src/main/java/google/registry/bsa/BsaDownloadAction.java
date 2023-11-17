@@ -16,7 +16,9 @@ package google.registry.bsa;
 
 import static google.registry.bsa.BlockList.BLOCK;
 import static google.registry.bsa.BlockList.BLOCK_PLUS;
+import static google.registry.bsa.persistence.LabelDiffs.applyLabelDiff;
 import static google.registry.request.Action.Method.POST;
+import static google.registry.util.BatchedStreams.batch;
 import static javax.servlet.http.HttpServletResponse.SC_OK;
 
 import com.google.common.collect.ImmutableList;
@@ -25,12 +27,15 @@ import com.google.common.flogger.FluentLogger;
 import dagger.Lazy;
 import google.registry.bsa.BlockListFetcher.LazyBlockList;
 import google.registry.bsa.BsaDiffCreator.BsaDiff;
+import google.registry.bsa.api.Label;
 import google.registry.bsa.persistence.DownloadSchedule;
 import google.registry.bsa.persistence.DownloadScheduler;
 import google.registry.request.Action;
 import google.registry.request.Response;
 import google.registry.request.auth.Auth;
+import google.registry.util.Clock;
 import java.util.Optional;
+import java.util.stream.Stream;
 import javax.inject.Inject;
 
 @Action(
@@ -43,6 +48,7 @@ public class BsaDownloadAction implements Runnable {
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
   static final String PATH = "/_dr/task/bsaDownload";
+  static final int DB_TXN_BATCH_SIZE = 500;
 
   private final DownloadScheduler downloadScheduler;
   private final BlockListFetcher blockListFetcher;
@@ -50,6 +56,7 @@ public class BsaDownloadAction implements Runnable {
   private final GcsClient gcsClient;
   private final Lazy<IdnChecker> lazyIdnChecker;
   private final BsaLock bsaLock;
+  private final Clock clock;
   private final Response response;
 
   @Inject
@@ -60,6 +67,7 @@ public class BsaDownloadAction implements Runnable {
       GcsClient gcsClient,
       Lazy<IdnChecker> lazyIdnChecker,
       BsaLock bsaLock,
+      Clock clock,
       Response response) {
     this.downloadScheduler = downloadScheduler;
     this.blockListFetcher = blockListFetcher;
@@ -67,6 +75,7 @@ public class BsaDownloadAction implements Runnable {
     this.gcsClient = gcsClient;
     this.lazyIdnChecker = lazyIdnChecker;
     this.bsaLock = bsaLock;
+    this.clock = clock;
     this.response = response;
   }
 
@@ -89,6 +98,7 @@ public class BsaDownloadAction implements Runnable {
       logger.atInfo().log("Nothing to do.");
       return null;
     }
+    BsaDiff diff = null;
     DownloadSchedule schedule = scheduleOptional.get();
     switch (schedule.stage()) {
       case DOWNLOAD:
@@ -121,12 +131,25 @@ public class BsaDownloadAction implements Runnable {
         }
         // Fall through
       case MAKE_DIFF:
-        BsaDiff diff = diffCreator.createDiff(schedule, lazyIdnChecker.get());
+        diff = diffCreator.createDiff(schedule, lazyIdnChecker.get());
         gcsClient.writeOrderDiffs(schedule.jobName(), diff.getOrders());
         gcsClient.writeLabelDiffs(schedule.jobName(), diff.getLabels());
         schedule.updateJobStage(DownloadStage.APPLY_DIFF);
         // Fall through
       case APPLY_DIFF:
+        try (Stream<Label> labels =
+            diff != null ? diff.getLabels() : gcsClient.readLabelDiffs(schedule.jobName())) {
+          Stream<ImmutableList<Label>> batches = batch(labels, DB_TXN_BATCH_SIZE);
+          gcsClient.writeNonBlockedDomains(
+              schedule.jobName(),
+              batches
+                  .map(
+                      batch ->
+                          applyLabelDiff(batch, lazyIdnChecker.get(), schedule, clock.nowUtc()))
+                  .flatMap(ImmutableList::stream));
+        }
+        schedule.updateJobStage(DownloadStage.START_UPLOADING);
+        // Fall through
       case START_UPLOADING:
       case UPLOAD_DOMAINS_IN_USE:
       case FINISH_UPLOADING:

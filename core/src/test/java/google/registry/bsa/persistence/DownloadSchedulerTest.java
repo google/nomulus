@@ -43,12 +43,12 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link DownloadScheduler} */
-public class DownloadSchedulerTest {
+class DownloadSchedulerTest {
 
   static final Duration DOWNLOAD_INTERVAL = standardMinutes(30);
   static final Duration MAX_NOP_INTERVAL = standardDays(1);
 
-  protected FakeClock fakeClock = new FakeClock(DateTime.parse("2023-11-09T02:08:57.880Z"));
+  FakeClock fakeClock = new FakeClock(DateTime.parse("2023-11-09T02:08:57.880Z"));
 
   @RegisterExtension
   final JpaIntegrationWithCoverageExtension jpa =
@@ -93,6 +93,7 @@ public class DownloadSchedulerTest {
     assertThat(scheduleOptional).isPresent();
     DownloadSchedule schedule = scheduleOptional.get();
     assertThat(schedule.jobId()).isEqualTo(inProgressJob.jobId);
+    assertThat(schedule.jobCreationTime()).isEqualTo(inProgressJob.getCreationTime());
     assertThat(schedule.jobName()).isEqualTo(inProgressJob.getJobName());
     assertThat(schedule.stage()).isEqualTo(MAKE_DIFF);
     assertThat(schedule.latestCompleted()).isEmpty();
@@ -107,6 +108,7 @@ public class DownloadSchedulerTest {
     assertThat(scheduleOptional).isPresent();
     DownloadSchedule schedule = scheduleOptional.get();
     assertThat(schedule.jobId()).isEqualTo(inProgressJob.jobId);
+    assertThat(schedule.jobCreationTime()).isEqualTo(inProgressJob.getCreationTime());
     assertThat(schedule.jobName()).isEqualTo(inProgressJob.getJobName());
     assertThat(schedule.stage()).isEqualTo(MAKE_DIFF);
     assertThat(schedule.alwaysDownload()).isFalse();

@@ -25,9 +25,7 @@ import java.util.List;
  */
 @AutoValue
 public abstract class NonBlockedDomain {
-  abstract String label();
-
-  abstract String tld();
+  abstract String domainName();
 
   abstract Reason reason();
 
@@ -38,19 +36,24 @@ public abstract class NonBlockedDomain {
     INVALID;
   }
 
-  static final Joiner JOINER = Joiner.on(',');
-  static final Splitter SPLITTER = Splitter.on(',');
+  static final Joiner DOMAIN_JOINER = Joiner.on('.');
+  static final Joiner PROPERTY_JOINER = Joiner.on(',');
+  static final Splitter PROPERTY_SPLITTER = Splitter.on(',');
 
   public String serialize() {
-    return JOINER.join(label(), tld(), reason().name());
+    return PROPERTY_JOINER.join(domainName(), reason().name());
   }
 
   public static NonBlockedDomain deserialize(String text) {
-    List<String> items = SPLITTER.splitToList(text);
-    return of(items.get(0), items.get(1), Reason.INVALID.valueOf(items.get(2)));
+    List<String> items = PROPERTY_SPLITTER.splitToList(text);
+    return of(items.get(0), Reason.INVALID.valueOf(items.get(1)));
+  }
+
+  public static NonBlockedDomain of(String domainName, Reason reason) {
+    return new AutoValue_NonBlockedDomain(domainName, reason);
   }
 
   public static NonBlockedDomain of(String label, String tld, Reason reason) {
-    return new AutoValue_NonBlockedDomain(label, tld, reason);
+    return of(DOMAIN_JOINER.join(label, tld), reason);
   }
 }

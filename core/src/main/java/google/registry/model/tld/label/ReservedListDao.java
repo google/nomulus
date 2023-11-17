@@ -47,7 +47,7 @@ public class ReservedListDao {
    * exists.
    */
   public static Optional<ReservedList> getLatestRevision(String reservedListName) {
-    return tm().transact(
+    return tm().reTransact(
             () ->
                 tm().query(
                         "FROM ReservedList WHERE revisionId IN "
