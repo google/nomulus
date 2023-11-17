@@ -65,8 +65,12 @@ public class BsaDownload {
 
   BsaDownload() {}
 
-  public long getJobId() {
+  long getJobId() {
     return jobId;
+  }
+
+  DateTime getCreationTime() {
+    return creationTime.getTimestamp();
   }
 
   /**
@@ -74,7 +78,7 @@ public class BsaDownload {
    * storing download data.
    */
   public String getJobName() {
-    return creationTime.getTimestamp().toString();
+    return getCreationTime().toString();
   }
 
   public DownloadStage getStage() {
@@ -86,11 +90,7 @@ public class BsaDownload {
     return this;
   }
 
-  DateTime getCreationTime() {
-    return creationTime.getTimestamp();
-  }
-
-  BsaDownload setBlockListChecksums(ImmutableMap<BlockList, String> checksums) {
+  BsaDownload setChecksums(ImmutableMap<BlockList, String> checksums) {
     blockListChecksums =
         CSV_JOINER.withKeyValueSeparator("=").join(ImmutableSortedMap.copyOf(checksums));
     return this;
