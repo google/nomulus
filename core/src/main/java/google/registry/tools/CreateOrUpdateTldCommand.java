@@ -463,8 +463,7 @@ abstract class CreateOrUpdateTldCommand extends MutatingCommand {
     }
   }
 
-  private void checkReservedListValidityForTld(String tld, Set<String> reservedListNames)
-      throws UnsupportedEncodingException {
+  private void checkReservedListValidityForTld(String tld, Set<String> reservedListNames) {
     ImmutableList.Builder<String> builder = new ImmutableList.Builder<>();
     for (String reservedListName : reservedListNames) {
       if (!reservedListName.startsWith("common_") && !reservedListName.startsWith(tld + "_")) {

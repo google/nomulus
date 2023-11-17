@@ -130,8 +130,8 @@ class UpdateReservedListCommandTest
     command.init();
 
     assertThat(command.prompt()).contains("Update reserved list for xn--q9jyb4c_common-reserved?");
-    assertThat(command.prompt()).contains("Old list: [(helicopter,FULLY_BLOCKED)]");
-    assertThat(command.prompt())
-        .contains("New list: [(baddies,FULLY_BLOCKED), (ford,FULLY_BLOCKED # random comment)]");
+    assertThat(command.prompt()).contains("helicopter: helicopter,FULLY_BLOCKED -> null");
+    assertThat(command.prompt()).contains("baddies: null -> baddies,FULLY_BLOCKED");
+    assertThat(command.prompt()).contains("ford: null -> ford,FULLY_BLOCKED # random comment");
   }
 }
