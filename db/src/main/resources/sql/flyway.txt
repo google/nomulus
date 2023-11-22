@@ -148,3 +148,4 @@ V147__drop_gaia_id_from_user.sql
 V148__add_bsa_download_and_label_tables.sql
 V149__add_bsa_domain_in_use_table.sql
 V150__add_tld_bsa_enroll_date.sql
+V151__add_bsa_unblockable_domain_table.sql
