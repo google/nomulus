@@ -21,6 +21,7 @@ import { Contact } from '../../settings/contact/contact.service';
 import { Registrar } from '../../registrar/registrar.service';
 import { UserData } from './userData.service';
 import { WhoisRegistrarFields } from 'src/app/settings/whois/whois.service';
+import { DomainListResult } from 'src/app/domains/domainList.service';
 
 @Injectable()
 export class BackendService {
@@ -61,6 +62,31 @@ export class BackendService {
       `/console-api/settings/contacts?registrarId=${registrarId}`,
       contacts
     );
+  }
+
+  getDomains(
+    registrarId: string,
+    checkpointTime?: string,
+    pageNumber?: number,
+    resultsPerPage?: number,
+    totalResults?: number
+  ): Observable<DomainListResult> {
+    var url = `/console-api/domain-list?registrarId=${registrarId}`;
+    if (checkpointTime) {
+      url += `&checkpointTime=${checkpointTime}`;
+    }
+    if (pageNumber) {
+      url += `&pageNumber=${pageNumber}`;
+    }
+    if (resultsPerPage) {
+      url += `&resultsPerPage=${resultsPerPage}`;
+    }
+    if (totalResults) {
+      url += `&totalResults=${totalResults}`;
+    }
+    return this.http
+      .get<DomainListResult>(url)
+      .pipe(catchError((err) => this.errorCatcher<DomainListResult>(err)));
   }
 
   getRegistrars(): Observable<Registrar[]> {

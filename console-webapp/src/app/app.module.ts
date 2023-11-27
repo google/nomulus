@@ -53,6 +53,7 @@ import {
   RegistrarDetailsComponent,
   RegistrarDetailsWrapperComponent,
 } from './registrar/registrarDetails.component';
+import { DomainListComponent } from './domains/domainList.component';
 
 @NgModule({
   declarations: [
@@ -60,6 +61,7 @@ import {
     BillingWidgetComponent,
     ContactDetailsDialogComponent,
     ContactWidgetComponent,
+    DomainListComponent,
     DomainsWidgetComponent,
     EmptyRegistrar,
     EppWidgetComponent,
