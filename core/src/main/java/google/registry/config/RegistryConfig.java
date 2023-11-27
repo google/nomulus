@@ -14,6 +14,8 @@
 
 package google.registry.config;
 
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Strings.isNullOrEmpty;
 import static com.google.common.base.Suppliers.memoize;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.ImmutableSortedMap.toImmutableSortedMap;
@@ -1398,6 +1400,45 @@ public final class RegistryConfig {
     }
 
     @Provides
+    @Config("bsaGcsBucket")
+    public static String provideBsaGcsBucket(@Config("projectId") String projectId) {
+      return projectId + "-bsa";
+    }
+
+    @Provides
+    @Config("bsaChecksumAlgorithm")
+    public static String provideBsaChecksumAlgorithm(RegistryConfigSettings config) {
+      checkArgument(!isNullOrEmpty(config.bsa.bsaChecksumAlgorithm), "bsaChecksumAlgorithm");
+      return config.bsa.bsaChecksumAlgorithm;
+    }
+
+    @Provides
+    @Config("bsaLockLeaseExpiry")
+    public static Duration provideBsaLockLeaseExpiry(RegistryConfigSettings config) {
+      return Duration.standardMinutes(config.bsa.bsaLockLeaseExpiryMinutes);
+    }
+
+    /** Returns the desired interval between successive BSA downloads. */
+    @Provides
+    @Config("bsaDownloadInterval")
+    public static Duration provideBsaDownloadInterval(RegistryConfigSettings config) {
+      return Duration.standardMinutes(config.bsa.bsaDownloadIntervalMinutes);
+    }
+
+    /** Returns the maximum period when BSA downloads can be skipped due to the checksum-based. */
+    @Provides
+    @Config("bsaMaxNopInterval")
+    public static Duration provideBsaMaxNopInterval(RegistryConfigSettings config) {
+      return Duration.standardHours(config.bsa.bsaMaxNopIntervalHours);
+    }
+
+    @Provides
+    @Config("bsaLabelTxnBatchSize")
+    public static int provideBsaLabelTxnBatchSize(RegistryConfigSettings config) {
+      return config.bsa.bsaLabelTxnBatchSize;
+    }
+
+    @Provides
     @Config("bsaAuthUrl")
     public static String provideBsaAuthUrl(RegistryConfigSettings config) {
       return config.bsa.authUrl;
@@ -1413,6 +1454,31 @@ public final class RegistryConfig {
     @Config("bsaDataUrls")
     public static ImmutableMap<String, String> provideBsaDataUrls(RegistryConfigSettings config) {
       return ImmutableMap.copyOf(config.bsa.dataUrls);
+    }
+
+    /** Provides the BSA Http endpoint for reporting order processing status. */
+    @Provides
+    @Config("bsaOrderStatusUrl")
+    public static String provideBsaOrderStatusUrls(RegistryConfigSettings config) {
+      return config.bsa.orderStatusUrl;
+    }
+
+    /** Provides the BSA Http endpoint for reporting new unblockable domains. */
+    @Provides
+    @Config("bsaAddUnblockableDomainsUrl")
+    public static String provideBsaAddUnblockableDomainsUrls(RegistryConfigSettings config) {
+      return String.format(
+          "%s?%s",
+          config.bsa.unblockableDomainsUrl, config.bsa.unblockableDomainActions.get("ADD"));
+    }
+
+    /** Provides the BSA Http endpoint for reporting domains that have become blockable. */
+    @Provides
+    @Config("bsaRemoveUnblockableDomainsUrl")
+    public static String provideBsaRemoveUnblockableDomainsUrls(RegistryConfigSettings config) {
+      return String.format(
+          "%s?%s",
+          config.bsa.unblockableDomainsUrl, config.bsa.unblockableDomainActions.get("REMOVE"));
     }
 
     private static String formatComments(String text) {
