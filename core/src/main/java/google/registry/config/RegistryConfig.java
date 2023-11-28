@@ -14,8 +14,6 @@
 
 package google.registry.config;
 
-import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Strings.isNullOrEmpty;
 import static com.google.common.base.Suppliers.memoize;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.ImmutableSortedMap.toImmutableSortedMap;
@@ -1408,7 +1406,6 @@ public final class RegistryConfig {
     @Provides
     @Config("bsaChecksumAlgorithm")
     public static String provideBsaChecksumAlgorithm(RegistryConfigSettings config) {
-      checkArgument(!isNullOrEmpty(config.bsa.bsaChecksumAlgorithm), "bsaChecksumAlgorithm");
       return config.bsa.bsaChecksumAlgorithm;
     }
 
@@ -1425,7 +1422,10 @@ public final class RegistryConfig {
       return Duration.standardMinutes(config.bsa.bsaDownloadIntervalMinutes);
     }
 
-    /** Returns the maximum period when BSA downloads can be skipped due to the checksum-based. */
+    /**
+     * Returns the maximum period when a BSA download can be skipped due to the checksum-based
+     * equality check with the previous download.
+     */
     @Provides
     @Config("bsaMaxNopInterval")
     public static Duration provideBsaMaxNopInterval(RegistryConfigSettings config) {
