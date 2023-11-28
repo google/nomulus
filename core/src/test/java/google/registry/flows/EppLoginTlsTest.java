@@ -23,6 +23,7 @@ import static google.registry.util.X509Utils.getCertificateHash;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
+import com.google.common.net.InetAddresses;
 import google.registry.flows.certs.CertificateChecker;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
@@ -66,7 +67,7 @@ class EppLoginTlsTest extends EppTestCase {
         new TlsCredentials(
             true,
             Optional.ofNullable(clientCertificateHash),
-            Optional.of("192.168.1.100:54321"),
+            Optional.of(InetAddresses.forString("192.168.1.100")),
             certificateChecker));
   }
 

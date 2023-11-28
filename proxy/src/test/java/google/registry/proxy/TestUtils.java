@@ -100,7 +100,8 @@ public final class TestUtils {
         .set(HttpHeaderNames.CONTENT_TYPE, "application/epp+xml")
         .set("accept", "application/epp+xml")
         .set(ProxyHttpHeaders.CERTIFICATE_HASH, sslClientCertificateHash)
-        .set(ProxyHttpHeaders.IP_ADDRESS, clientAddress);
+        .set(ProxyHttpHeaders.IP_ADDRESS, clientAddress)
+        .set(ProxyHttpHeaders.FALLBACK_IP_ADDRESS, clientAddress);
     if (cookies.length != 0) {
       request.headers().set("cookie", ClientCookieEncoder.STRICT.encode(cookies));
     }

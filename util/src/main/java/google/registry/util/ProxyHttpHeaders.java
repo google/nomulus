@@ -19,22 +19,8 @@ import com.google.common.net.HttpHeaders;
 /** Utility class of HTTP header names used for HTTP calls between Nomulus and the proxy. */
 public final class ProxyHttpHeaders {
 
-  /**
-   * HTTP header name used to pass a full SSL certificate from the proxy to Nomulus.
-   *
-   * <p>This header contains the SSL certificate encoded to a string. It is used to pass the client
-   * certificate used for login to Nomulus for validation.
-   */
-  public static final String FULL_CERTIFICATE = "X-SSL-Full-Certificate";
-
   /** HTTP header name used to pass the certificate hash from the proxy to Nomulus. */
   public static final String CERTIFICATE_HASH = "X-SSL-Certificate";
-
-  /**
-   * HTTP header name passed from Nomulus to proxy to indicate that a client has successfully logged
-   * in.
-   */
-  public static final String LOGGED_IN = "Logged-In";
 
   /**
    * HTTP header name passed from Nomulus to proxy to indicate that an EPP session should be closed.
@@ -42,7 +28,16 @@ public final class ProxyHttpHeaders {
   public static final String EPP_SESSION = "Epp-Session";
 
   /** HTTP header name used to pass the client IP address from the proxy to Nomulus. */
-  public static final String IP_ADDRESS = HttpHeaders.X_FORWARDED_FOR;
+  public static final String IP_ADDRESS = "Nomulus-Client-Address";
+
+  /**
+   * Fallback HTTP header name used to pass the client IP address from the proxy to Nomulus.
+   *
+   * <p>Note that Java 17's servlet implementation (at least on App Engine) injects some seemingly
+   * unrelated addresses into this header. We only use this as a fallback so the proxy can
+   * transition to use the above header that should not be interfered with.
+   */
+  public static final String FALLBACK_IP_ADDRESS = HttpHeaders.X_FORWARDED_FOR;
 
   private ProxyHttpHeaders() {}
 }

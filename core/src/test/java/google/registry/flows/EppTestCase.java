@@ -43,7 +43,6 @@ import google.registry.persistence.VKey;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeHttpSession;
 import google.registry.testing.FakeResponse;
-import google.registry.util.ProxyHttpHeaders;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -126,10 +125,6 @@ public class EppTestCase {
       setUpSession();
       FakeResponse response = executeXmlCommand(input);
 
-      // Check that the logged-in header was added to the response
-      assertThat(response.getHeaders())
-          .isEqualTo(ImmutableMap.of(ProxyHttpHeaders.LOGGED_IN, "true"));
-
       verifyAndReturnOutput(response.getPayload(), expectedOutput, inputFilename, outputFilename);
     }
 
@@ -145,10 +140,6 @@ public class EppTestCase {
       String expectedOutput = loadFile(EppTestCase.class, outputFilename, outputSubstitutions);
       setUpSession();
       FakeResponse response = executeXmlCommand(input);
-
-      // Checks that the Logged-In header is not in the response. If testing the login command, use
-      // assertLoginCommandAndResponse instead of this method.
-      assertThat(response.getHeaders()).doesNotContainEntry(ProxyHttpHeaders.LOGGED_IN, "true");
 
       return verifyAndReturnOutput(
           response.getPayload(), expectedOutput, inputFilename, outputFilename);
