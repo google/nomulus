@@ -277,6 +277,5 @@ public class RegistryConfigSettings {
     public Map<String, String> dataUrls;
     public String orderStatusUrl;
     public String unblockableDomainsUrl;
-    public Map<String, String> unblockableDomainActions;
   }
 }

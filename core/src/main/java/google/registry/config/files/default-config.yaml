@@ -621,7 +621,3 @@ bsa:
   orderStatusUrl: "https://"
   # Http endpoint for reporting changes in the set of unblockable domains.
   unblockableDomainsUrl: "https://"
-  # Action parameter to be appended to the `unblockableDomainsUrl`
-  unblockableDomainActions:
-    "ADD": "action=add"
-    "REMOVE": "action=remove"

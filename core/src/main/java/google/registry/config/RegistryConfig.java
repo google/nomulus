@@ -1467,18 +1467,14 @@ public final class RegistryConfig {
     @Provides
     @Config("bsaAddUnblockableDomainsUrl")
     public static String provideBsaAddUnblockableDomainsUrls(RegistryConfigSettings config) {
-      return String.format(
-          "%s?%s",
-          config.bsa.unblockableDomainsUrl, config.bsa.unblockableDomainActions.get("ADD"));
+      return String.format("%s?%s", config.bsa.unblockableDomainsUrl, "action=add");
     }
 
     /** Provides the BSA Http endpoint for reporting domains that have become blockable. */
     @Provides
     @Config("bsaRemoveUnblockableDomainsUrl")
     public static String provideBsaRemoveUnblockableDomainsUrls(RegistryConfigSettings config) {
-      return String.format(
-          "%s?%s",
-          config.bsa.unblockableDomainsUrl, config.bsa.unblockableDomainActions.get("REMOVE"));
+      return String.format("%s?%s", config.bsa.unblockableDomainsUrl, "action=remove");
     }
 
     private static String formatComments(String text) {
