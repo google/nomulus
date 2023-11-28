@@ -88,11 +88,26 @@ public class BsaDomainInUse {
     private String tld;
 
     // For Hibernate
+    @SuppressWarnings("unused")
     BsaDomainInUseId() {}
 
     BsaDomainInUseId(String label, String tld) {
       this.label = label;
       this.tld = tld;
+    }
+
+    @Override
+    public boolean equals(Object other) {
+      if (other instanceof BsaDomainInUseId) {
+        BsaDomainInUseId otherId = (BsaDomainInUseId) other;
+        return Objects.equal(otherId.label, label) && Objects.equal(otherId.tld, tld);
+      }
+      return false;
+    }
+
+    @Override
+    public int hashCode() {
+      return Objects.hashCode(label, tld);
     }
   }
 
