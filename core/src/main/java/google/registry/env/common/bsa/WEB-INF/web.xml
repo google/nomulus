@@ -15,8 +15,8 @@
 
   <!-- Test action -->
   <servlet-mapping>
-    <servlet-name>backend-servlet</servlet-name>
-    <url-pattern>/_dr/task/bsa</url-pattern>
+    <servlet-name>bsa-servlet</servlet-name>
+    <url-pattern>/_dr/task/bsaDownload</url-pattern>
   </servlet-mapping>
 
   <!-- Security config -->
