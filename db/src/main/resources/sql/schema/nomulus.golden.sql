@@ -178,6 +178,18 @@ CREATE TABLE public."BsaLabel" (
 
 
 --
+-- Name: BsaUnblockableDomain; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public."BsaUnblockableDomain" (
+    label text NOT NULL,
+    tld text NOT NULL,
+    creation_time timestamp with time zone NOT NULL,
+    reason text NOT NULL
+);
+
+
+--
 -- Name: ClaimsEntry; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -1341,6 +1353,14 @@ ALTER TABLE ONLY public."BsaDownload"
 
 ALTER TABLE ONLY public."BsaLabel"
     ADD CONSTRAINT "BsaLabel_pkey" PRIMARY KEY (label);
+
+
+--
+-- Name: BsaUnblockableDomain BsaUnblockableDomain_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."BsaUnblockableDomain"
+    ADD CONSTRAINT "BsaUnblockableDomain_pkey" PRIMARY KEY (label, tld);
 
 
 --
@@ -2721,6 +2741,14 @@ ALTER TABLE ONLY public."DomainHistoryHost"
 
 ALTER TABLE ONLY public."BsaDomainInUse"
     ADD CONSTRAINT fkbsadomaininuse2label FOREIGN KEY (label) REFERENCES public."BsaLabel"(label) ON DELETE CASCADE;
+
+
+--
+-- Name: BsaUnblockableDomain fkbsaunblockabledomainlabel; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."BsaUnblockableDomain"
+    ADD CONSTRAINT fkbsaunblockabledomainlabel FOREIGN KEY (label) REFERENCES public."BsaLabel"(label) ON DELETE CASCADE;
 
 
 --
