@@ -85,13 +85,19 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
   // EntityManagerFactory is thread safe.
   private final EntityManagerFactory emf;
   private final Clock clock;
+  private final boolean readOnly;
 
   private static final ThreadLocal<TransactionInfo> transactionInfo =
       ThreadLocal.withInitial(TransactionInfo::new);
 
-  public JpaTransactionManagerImpl(EntityManagerFactory emf, Clock clock) {
+  public JpaTransactionManagerImpl(EntityManagerFactory emf, Clock clock, boolean readOnly) {
     this.emf = emf;
     this.clock = clock;
+    this.readOnly = readOnly;
+  }
+
+  public JpaTransactionManagerImpl(EntityManagerFactory emf, Clock clock) {
+    this(emf, clock, false);
   }
 
   @Override
@@ -200,6 +206,10 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
     try {
       txn.begin();
       txnInfo.start(clock);
+      if (readOnly) {
+        getEntityManager().createNativeQuery("SET TRANSACTION READ ONLY").executeUpdate();
+        logger.atInfo().log("Using read-only SQL replica");
+      }
       if (isolationLevel != null && isolationLevel != getDefaultTransactionIsolationLevel()) {
         getEntityManager()
             .createNativeQuery(

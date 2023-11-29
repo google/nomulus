@@ -20,6 +20,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static google.registry.persistence.PersistenceModule.TransactionIsolationLevel.TRANSACTION_READ_COMMITTED;
 import static google.registry.persistence.PersistenceModule.TransactionIsolationLevel.TRANSACTION_READ_UNCOMMITTED;
 import static google.registry.persistence.PersistenceModule.TransactionIsolationLevel.TRANSACTION_REPEATABLE_READ;
+import static google.registry.persistence.transaction.TransactionManagerFactory.replicaTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.assertDetachedFromEntityManager;
 import static google.registry.testing.DatabaseHelper.existsInDb;
@@ -105,6 +106,44 @@ class JpaTransactionManagerImplTest {
     assertCompanyCount(2);
     assertCompanyExist("Foo");
     assertCompanyExist("Bar");
+  }
+
+  @Test
+  void transact_replica_failureOnWrite() {
+    assertPersonEmpty();
+    assertCompanyEmpty();
+    DatabaseException thrown =
+        assertThrows(
+            DatabaseException.class,
+            () ->
+                replicaTm()
+                    .transact(
+                        () -> {
+                          insertPerson(10);
+                        }));
+    assertThat(thrown)
+        .hasMessageThat()
+        .contains("cannot execute INSERT in a read-only transaction");
+  }
+
+  @Test
+  void transact_replica_successOnRead() {
+    assertPersonEmpty();
+    assertCompanyEmpty();
+    tm().transact(
+            () -> {
+              insertPerson(10);
+            });
+    replicaTm()
+        .transact(
+            () -> {
+              EntityManager em = replicaTm().getEntityManager();
+              Integer maybeAge =
+                  (Integer)
+                      em.createNativeQuery("SELECT age FROM Person WHERE age = 10")
+                          .getSingleResult();
+              assertThat(maybeAge).isEqualTo(10);
+            });
   }
 
   @Test
