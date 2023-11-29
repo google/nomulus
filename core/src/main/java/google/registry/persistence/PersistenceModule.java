@@ -266,8 +266,8 @@ public abstract class PersistenceModule {
     replicaInstanceConnectionName.ifPresent(
         name -> overrides.put(HIKARI_DS_CLOUD_SQL_INSTANCE, name));
     overrides.put(
-        Environment.ISOLATION, TransactionIsolationLevel.TRANSACTION_REPEATABLE_READ.name());
-    return new JpaTransactionManagerImpl(create(overrides), clock);
+        Environment.ISOLATION, TransactionIsolationLevel.TRANSACTION_READ_UNCOMMITTED.name());
+    return new JpaTransactionManagerImpl(create(overrides), clock, true);
   }
 
   @Provides
@@ -282,8 +282,8 @@ public abstract class PersistenceModule {
     replicaInstanceConnectionName.ifPresent(
         name -> overrides.put(HIKARI_DS_CLOUD_SQL_INSTANCE, name));
     overrides.put(
-        Environment.ISOLATION, TransactionIsolationLevel.TRANSACTION_REPEATABLE_READ.name());
-    return new JpaTransactionManagerImpl(create(overrides), clock);
+        Environment.ISOLATION, TransactionIsolationLevel.TRANSACTION_READ_UNCOMMITTED.name());
+    return new JpaTransactionManagerImpl(create(overrides), clock, true);
   }
 
   /** Constructs the {@link EntityManagerFactory} instance. */

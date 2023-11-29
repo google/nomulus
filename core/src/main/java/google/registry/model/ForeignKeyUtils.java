@@ -165,10 +165,11 @@ public final class ForeignKeyUtils {
    * foreign keys should not use this cache.
    *
    * <p>Note that here the key of the {@link LoadingCache} is of type {@code VKey<? extends
-   * EppResource>}, but they are not legal {VKey}s to {@link EppResource}s, whose keys are the SQL
-   * primary keys, i.e. the {@code repoId}s. Instead, their keys are the foreign keys used to query
-   * the database. We use {@link VKey} here because it is a convenient composite class that contains
-   * both the resource type and the foreign key, which are needed to for the query and caching.
+   * EppResource>}, but they are not legal {@link VKey}s to {@link EppResource}s, whose keys are the
+   * SQL primary keys, i.e. the {@code repoId}s. Instead, their keys are the foreign keys used to
+   * query the database. We use {@link VKey} here because it is a convenient composite class that
+   * contains both the resource type and the foreign key, which are needed to for the query and
+   * caching.
    *
    * <p>Also note that the value type of this cache is {@link Optional} because the foreign keys in
    * question are coming from external commands, and thus don't necessarily represent entities in
