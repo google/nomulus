@@ -219,10 +219,10 @@ public abstract class JpaTransactionManagerExtension
       recreateSchema();
     }
     JpaTransactionManagerImpl txnManager = new JpaTransactionManagerImpl(emf, clock);
+    JpaTransactionManagerImpl readOnlyTxnManager = new JpaTransactionManagerImpl(emf, clock, true);
     cachedTm = TransactionManagerFactory.tm();
     TransactionManagerFactory.setJpaTm(Suppliers.ofInstance(txnManager));
-    TransactionManagerFactory.setReplicaJpaTm(
-        Suppliers.ofInstance(new ReplicaSimulatingJpaTransactionManager(txnManager)));
+    TransactionManagerFactory.setReplicaJpaTm(Suppliers.ofInstance(readOnlyTxnManager));
     // Reset SQL Sequence based id allocation so that ids are deterministic in tests.
     TransactionManagerFactory.tm()
         .transact(

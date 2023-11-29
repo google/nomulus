@@ -20,6 +20,7 @@ import static com.google.common.collect.Sets.difference;
 import static com.google.common.collect.Sets.union;
 import static google.registry.config.RegistryConfig.getEppResourceCachingDuration;
 import static google.registry.config.RegistryConfig.getEppResourceMaxCachedEntries;
+import static google.registry.persistence.transaction.TransactionManagerFactory.replicaTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.CollectionUtils.nullToEmpty;
 import static google.registry.util.CollectionUtils.nullToEmptyImmutableCopy;
@@ -357,13 +358,13 @@ public abstract class EppResource extends UpdateAutoTimestampEntity implements B
 
         @Override
         public EppResource load(VKey<? extends EppResource> key) {
-          return tm().reTransact(() -> tm().loadByKey(key));
+          return replicaTm().reTransact(() -> replicaTm().loadByKey(key));
         }
 
         @Override
         public Map<VKey<? extends EppResource>, EppResource> loadAll(
             Iterable<? extends VKey<? extends EppResource>> keys) {
-          return tm().reTransact(() -> tm().loadByKeys(keys));
+          return replicaTm().reTransact(() -> replicaTm().loadByKeys(keys));
         }
       };
 
