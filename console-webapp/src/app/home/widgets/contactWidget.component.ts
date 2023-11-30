@@ -13,11 +13,12 @@
 // limitations under the License.
 
 import { Component } from '@angular/core';
+import { UserDataService } from 'src/app/shared/services/userData.service';
 
 @Component({
-  selector: '[app-promotions-widget]',
-  templateUrl: './promotions-widget.component.html',
+  selector: '[app-contact-widget]',
+  templateUrl: './contactWidget.component.html',
 })
-export class PromotionsWidgetComponent {
-  constructor() {}
+export class ContactWidgetComponent {
+  constructor(public userDataService: UserDataService) {}
 }

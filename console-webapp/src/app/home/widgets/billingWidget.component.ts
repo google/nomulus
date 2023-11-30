@@ -13,11 +13,25 @@
 // limitations under the License.
 
 import { Component } from '@angular/core';
+import { RegistrarService } from 'src/app/registrar/registrar.service';
 
 @Component({
-  selector: '[app-epp-widget]',
-  templateUrl: './epp-widget.component.html',
+  selector: '[app-billing-widget]',
+  templateUrl: './billingWidget.component.html',
 })
-export class EppWidgetComponent {
-  constructor() {}
+export class BillingWidgetComponent {
+  constructor(public registrarService: RegistrarService) {}
+
+  public get driveFolderUrl(): string {
+    if (this.registrarService?.registrar.driveFolderId) {
+      return `https://drive.google.com/drive/folders/${this.registrarService?.registrar.driveFolderId}`;
+    }
+    return '';
+  }
+
+  openBillingDetails(e: MouseEvent) {
+    if (!this.driveFolderUrl) {
+      e.preventDefault();
+    }
+  }
 }

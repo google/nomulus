@@ -14,7 +14,7 @@
 
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { RegistrarSelectorComponent } from './registrar-selector.component';
+import { RegistrarSelectorComponent } from './registrarSelector.component';
 
 describe('RegistrarSelectorComponent', () => {
   let component: RegistrarSelectorComponent;

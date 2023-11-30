@@ -15,9 +15,9 @@
 import { Component } from '@angular/core';
 
 @Component({
-  selector: '[app-tlds-widget]',
-  templateUrl: './tlds-widget.component.html',
+  selector: '[app-epp-widget]',
+  templateUrl: './eppWidget.component.html',
 })
-export class TldsWidgetComponent {
+export class EppWidgetComponent {
   constructor() {}
 }
