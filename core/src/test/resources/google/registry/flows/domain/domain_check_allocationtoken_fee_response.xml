@@ -41,6 +41,27 @@
           <fee:period unit="y">1</fee:period>
           <fee:class>reserved</fee:class>
         </fee:cd>
+        <fee:cd>
+          <fee:name>example1.tld</fee:name>
+          <fee:currency>USD</fee:currency>
+          <fee:command>renew</fee:command>
+          <fee:period unit="y">1</fee:period>
+          <fee:class>token-not-supported</fee:class>
+        </fee:cd>
+        <fee:cd>
+          <fee:name>example2.example</fee:name>
+          <fee:currency>USD</fee:currency>
+          <fee:command>renew</fee:command>
+          <fee:period unit="y">1</fee:period>
+          <fee:class>token-not-supported</fee:class>
+        </fee:cd>
+        <fee:cd>
+          <fee:name>reserved.tld</fee:name>
+          <fee:currency>USD</fee:currency>
+          <fee:command>renew</fee:command>
+          <fee:period unit="y">1</fee:period>
+          <fee:class>token-not-supported</fee:class>
+        </fee:cd>
       </fee:chkData>
     </extension>
     <trID>
