@@ -17,7 +17,8 @@ import { Registrar, RegistrarService } from './registrar.service';
 import { MatPaginator } from '@angular/material/paginator';
 import { MatSort } from '@angular/material/sort';
 import { MatTableDataSource } from '@angular/material/table';
-import { RegistrarDetailsWrapperComponent } from './registrarDetails.component';
+import { RegistrarDetailsComponent } from './registrarDetails.component';
+import { DialogBottomSheetWrapper } from '../shared/components/dialogBottomSheet.component';
 
 @Component({
   selector: 'app-registrar',
@@ -82,7 +83,7 @@ export class RegistrarComponent {
   @ViewChild(MatPaginator) paginator!: MatPaginator;
   @ViewChild(MatSort) sort!: MatSort;
   @ViewChild('registrarDetailsView')
-  detailsComponentWrapper!: RegistrarDetailsWrapperComponent;
+  detailsComponentWrapper!: DialogBottomSheetWrapper;
 
   constructor(protected registrarService: RegistrarService) {
     this.dataSource = new MatTableDataSource<Registrar>(
@@ -97,7 +98,10 @@ export class RegistrarComponent {
 
   openDetails(event: MouseEvent, registrar: Registrar) {
     event.stopPropagation();
-    this.detailsComponentWrapper.open(registrar);
+    this.detailsComponentWrapper.open<RegistrarDetailsComponent>(
+      RegistrarDetailsComponent,
+      { registrar }
+    );
   }
 
   applyFilter(event: Event) {

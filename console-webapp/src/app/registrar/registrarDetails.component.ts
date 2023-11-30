@@ -12,61 +12,38 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Component, Injector } from '@angular/core';
+import { Component } from '@angular/core';
 import { Registrar, RegistrarService } from './registrar.service';
-import { BreakpointObserver } from '@angular/cdk/layout';
-import {
-  MAT_BOTTOM_SHEET_DATA,
-  MatBottomSheet,
-  MatBottomSheetRef,
-} from '@angular/material/bottom-sheet';
-import {
-  MAT_DIALOG_DATA,
-  MatDialog,
-  MatDialogRef,
-} from '@angular/material/dialog';
 import { MatChipInputEvent } from '@angular/material/chips';
+import { DialogBottomSheetContent } from '../shared/components/dialogBottomSheet.component';
 
-const MOBILE_LAYOUT_BREAKPOINT = '(max-width: 599px)';
+type RegistrarDetailsParams = {
+  close: Function;
+  data: {
+    registrar: Registrar;
+  };
+};
 
 @Component({
   selector: 'app-registrar-details',
   templateUrl: './registrarDetails.component.html',
   styleUrls: ['./registrarDetails.component.scss'],
 })
-export class RegistrarDetailsComponent {
+export class RegistrarDetailsComponent implements DialogBottomSheetContent {
   registrarInEdit!: Registrar;
-  private elementRef:
-    | MatBottomSheetRef<RegistrarDetailsComponent>
-    | MatDialogRef<RegistrarDetailsComponent>;
+  params?: RegistrarDetailsParams;
 
-  constructor(
-    protected registrarService: RegistrarService,
-    private injector: Injector
-  ) {
-    // We only inject one, either Dialog or Bottom Sheet data
-    // so one of the injectors is expected to fail
-    try {
-      var params = this.injector.get(MAT_DIALOG_DATA);
-      this.elementRef = this.injector.get(MatDialogRef);
-    } catch (e) {
-      var params = this.injector.get(MAT_BOTTOM_SHEET_DATA);
-      this.elementRef = this.injector.get(MatBottomSheetRef);
-    }
-    this.registrarInEdit = JSON.parse(JSON.stringify(params.registrar));
+  constructor(protected registrarService: RegistrarService) {}
+
+  init(params: RegistrarDetailsParams) {
+    this.params = params;
+    this.registrarInEdit = JSON.parse(
+      JSON.stringify(this.params.data.registrar)
+    );
   }
 
-  onCancel(e: MouseEvent) {
-    if (this.elementRef instanceof MatBottomSheetRef) {
-      this.elementRef.dismiss();
-    } else if (this.elementRef instanceof MatDialogRef) {
-      this.elementRef.close();
-    }
-  }
-
-  saveAndClose(e: MouseEvent) {
-    // TODO: Implement save call to API
-    this.onCancel(e);
+  saveAndClose() {
+    this.params?.close();
   }
 
   addTLD(e: MatChipInputEvent) {
@@ -80,26 +57,5 @@ export class RegistrarDetailsComponent {
     this.registrarInEdit.allowedTlds = this.registrarInEdit.allowedTlds?.filter(
       (v) => v != tld
     );
-  }
-}
-
-@Component({
-  selector: 'app-registrar-details-wrapper',
-  template: '',
-})
-export class RegistrarDetailsWrapperComponent {
-  constructor(
-    private dialog: MatDialog,
-    private bottomSheet: MatBottomSheet,
-    protected breakpointObserver: BreakpointObserver
-  ) {}
-
-  open(registrar: Registrar) {
-    const config = { data: { registrar } };
-    if (this.breakpointObserver.isMatched(MOBILE_LAYOUT_BREAKPOINT)) {
-      this.bottomSheet.open(RegistrarDetailsComponent, config);
-    } else {
-      this.dialog.open(RegistrarDetailsComponent, config);
-    }
   }
 }

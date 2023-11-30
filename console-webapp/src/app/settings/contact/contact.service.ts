@@ -45,7 +45,7 @@ export class ContactService {
     return this.backend
       .getContacts(this.registrarService.activeRegistrarId)
       .pipe(
-        tap((contacts) => {
+        tap((contacts = []) => {
           this.contacts = contacts;
         })
       );

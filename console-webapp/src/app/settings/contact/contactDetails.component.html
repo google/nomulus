@@ -1,5 +1,5 @@
 <h3 mat-dialog-title>Contact details</h3>
-<div mat-dialog-content>
+<div mat-dialog-content *ngIf="contact">
   <form (ngSubmit)="saveAndClose($event)">
     <p>
       <mat-form-field class="contact-details__input">
@@ -97,7 +97,7 @@
       >
     </section>
     <mat-dialog-actions>
-      <button mat-button (click)="onClose($event)">Cancel</button>
+      <button mat-button (click)="close()">Cancel</button>
       <button type="submit" mat-button>Save</button>
     </mat-dialog-actions>
   </form>
