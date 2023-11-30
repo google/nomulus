@@ -45,7 +45,7 @@ import org.joda.money.Money;
  * {@link PremiumList} object in SQL, and caching these entries so that future lookups can be
  * quicker.
  */
-public class PremiumListDao {
+public final class PremiumListDao {
 
   /**
    * In-memory cache for premium lists.
@@ -102,7 +102,7 @@ public class PremiumListDao {
   /**
    * Returns the most recent revision of the PremiumList with the specified name, if it exists.
    *
-   * <p>Note that this does not load <code>PremiumList.labelsToPrices</code>! If you need to check
+   * <p>Note that this does not load {@code PremiumList.labelsToPrices}! If you need to check
    * prices, use {@link #getPremiumPrice}.
    */
   public static Optional<PremiumList> getLatestRevision(String premiumListName) {
@@ -169,7 +169,7 @@ public class PremiumListDao {
   }
 
   private static Optional<PremiumList> getLatestRevisionUncached(String premiumListName) {
-    return tm().transact(
+    return tm().reTransact(
             () ->
                 tm().query(
                         "FROM PremiumList WHERE name = :name ORDER BY revisionId DESC",
@@ -197,10 +197,10 @@ public class PremiumListDao {
 
   /**
    * Loads the price for the given revisionId + label combination. Note that this does a database
-   * retrieval so it should only be done in a cached context.
+   * retrieval, so it should only be done in a cached context.
    */
   static Optional<BigDecimal> getPriceForLabelUncached(RevisionIdAndLabel revisionIdAndLabel) {
-    return tm().transact(
+    return tm().reTransact(
             () ->
                 tm().query(
                         "SELECT pe.price FROM PremiumEntry pe WHERE pe.revisionId = :revisionId"

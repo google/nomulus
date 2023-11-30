@@ -65,7 +65,7 @@ public class ClaimsListDao {
    * doesn't exist.
    */
   private static ClaimsList getUncached() {
-    return tm().transact(
+    return tm().reTransact(
             () -> {
               Long revisionId =
                   tm().query("SELECT MAX(revisionId) FROM ClaimsList", Long.class)
