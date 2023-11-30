@@ -66,6 +66,8 @@ class UpdateReservedListCommandTest
     assertThat(ReservedList.get("xn--q9jyb4c_common-reserved")).isPresent();
     ReservedList reservedList = ReservedList.get("xn--q9jyb4c_common-reserved").get();
     assertThat(reservedList.getShouldPublish()).isFalse();
+    assertInStdout("Update reserved list for xn--q9jyb4c_common-reserved?");
+    assertInStdout("shouldPublish: true -> false");
   }
 
   @Test
@@ -85,6 +87,10 @@ class UpdateReservedListCommandTest
     assertThat(reservedList.getReservationInList("baddies")).hasValue(FULLY_BLOCKED);
     assertThat(reservedList.getReservationInList("ford")).hasValue(FULLY_BLOCKED);
     assertThat(reservedList.getReservationInList("helicopter")).isEmpty();
+    assertInStdout("Update reserved list for xn--q9jyb4c_common-reserved?");
+    assertInStdout("helicopter: helicopter,FULLY_BLOCKED -> null");
+    assertInStdout("baddies: null -> baddies,FULLY_BLOCKED");
+    assertInStdout("ford: null -> ford,FULLY_BLOCKED # random comment");
   }
 
   @Test
@@ -127,11 +133,13 @@ class UpdateReservedListCommandTest
     // CreateOrUpdateReservedListCommandTestCases.java
     UpdateReservedListCommand command = new UpdateReservedListCommand();
     command.input = Paths.get(reservedTermsPath);
+    command.shouldPublish = false;
     command.init();
 
     assertThat(command.prompt()).contains("Update reserved list for xn--q9jyb4c_common-reserved?");
-    assertThat(command.prompt()).contains("Old list: [(helicopter,FULLY_BLOCKED)]");
-    assertThat(command.prompt())
-        .contains("New list: [(baddies,FULLY_BLOCKED), (ford,FULLY_BLOCKED # random comment)]");
+    assertThat(command.prompt()).contains("shouldPublish: true -> false");
+    assertThat(command.prompt()).contains("helicopter: helicopter,FULLY_BLOCKED -> null");
+    assertThat(command.prompt()).contains("baddies: null -> baddies,FULLY_BLOCKED");
+    assertThat(command.prompt()).contains("ford: null -> ford,FULLY_BLOCKED # random comment");
   }
 }

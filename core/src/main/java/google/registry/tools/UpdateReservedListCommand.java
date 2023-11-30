@@ -14,6 +14,7 @@
 
 package google.registry.tools;
 
+import static google.registry.util.DiffUtils.prettyPrintEntityDeepDiff;
 import static google.registry.util.ListNamingUtils.convertFilePathToName;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -46,17 +47,27 @@ final class UpdateReservedListCommand extends CreateOrUpdateReservedListCommand 
             .setReservedListMapFromLines(allLines)
             .setShouldPublish(shouldPublish);
     reservedList = updated.build();
-    // only call stageEntityChange if there are changes in entries
-
-    if (!existingReservedList
-        .getReservedListEntries()
-        .equals(reservedList.getReservedListEntries())) {
-      return String.format(
-          "Update reserved list for %s?\nOld list: %s\n New list: %s",
-          name,
-          outputReservedListEntries(existingReservedList),
-          outputReservedListEntries(reservedList));
+    boolean shouldPublishChanged =
+        existingReservedList.getShouldPublish() != reservedList.getShouldPublish();
+    boolean reservedListEntriesChanged =
+        !existingReservedList
+            .getReservedListEntries()
+            .equals(reservedList.getReservedListEntries());
+    if (!shouldPublishChanged && !reservedListEntriesChanged) {
+      return "No entity changes to apply.";
     }
-    return "No entity changes to apply.";
+    String result = String.format("Update reserved list for %s?\n", name);
+    if (shouldPublishChanged) {
+      result +=
+          String.format(
+              "shouldPublish: %s -> %s\n",
+              existingReservedList.getShouldPublish(), reservedList.getShouldPublish());
+    }
+    if (reservedListEntriesChanged) {
+      result +=
+          prettyPrintEntityDeepDiff(
+              existingReservedList.getReservedListEntries(), reservedList.getReservedListEntries());
+    }
+    return result;
   }
 }
