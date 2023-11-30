@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Component, Inject } from '@angular/core';
+import { Component, Injector, ViewChild } from '@angular/core';
 import {
   MatDialog,
   MAT_DIALOG_DATA,
@@ -27,6 +27,10 @@ import { Contact, ContactService } from './contact.service';
 import { BreakpointObserver } from '@angular/cdk/layout';
 import { HttpErrorResponse } from '@angular/common/http';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import {
+  DialogBottomSheetContent,
+  DialogBottomSheetWrapper,
+} from 'src/app/shared/components/dialogBottomSheet.component';
 
 enum Operations {
   DELETE,
@@ -39,6 +43,14 @@ interface GroupedContacts {
   label: string;
   contacts: Array<Contact>;
 }
+
+type ContactDetailsParams = {
+  onClose: Function;
+  data: {
+    contact: Contact;
+    operation: Operations;
+  };
+};
 
 let isMobile: boolean;
 
@@ -79,45 +91,41 @@ class ContactDetailsEventsResponder {
   templateUrl: 'contact-details.component.html',
   styleUrls: ['./contact.component.scss'],
 })
-export class ContactDetailsDialogComponent {
-  contact: Contact;
+export class ContactDetailsDialogComponent implements DialogBottomSheetContent {
+  contact?: Contact;
   contactTypes = contactTypes;
-  operation: Operations;
-  contactIndex: number;
-  onCloseCallback: Function;
+  contactIndex?: number;
+
+  params?: ContactDetailsParams;
 
   constructor(
     public contactService: ContactService,
-    private _snackBar: MatSnackBar,
-    @Inject(isMobile ? MAT_BOTTOM_SHEET_DATA : MAT_DIALOG_DATA)
-    public data: {
-      onClose: Function;
-      contact: Contact;
-      operation: Operations;
-    }
-  ) {
-    this.onCloseCallback = data.onClose;
-    this.contactIndex = contactService.contacts.findIndex(
-      (c) => c === data.contact
+    private _snackBar: MatSnackBar
+  ) {}
+
+  init(params: ContactDetailsParams) {
+    this.params = params;
+    this.contactIndex = this.contactService.contacts.findIndex(
+      (c) => c === params.data.contact
     );
-    this.contact = JSON.parse(JSON.stringify(data.contact));
-    this.operation = data.operation;
+    this.contact = JSON.parse(JSON.stringify(params.data.contact));
   }
 
-  onClose(e: MouseEvent) {
-    e.preventDefault();
-    this.onCloseCallback.call(this);
+  onClose() {
+    this.params?.onClose();
   }
 
   saveAndClose(e: SubmitEvent) {
     e.preventDefault();
+    if (!this.contact || this.contactIndex === undefined) return;
     if (!(e.target as HTMLFormElement).checkValidity()) {
       return;
     }
+    const operation = this.params?.data.operation;
     let operationObservable;
-    if (this.operation === Operations.ADD) {
+    if (operation === Operations.ADD) {
       operationObservable = this.contactService.addContact(this.contact);
-    } else if (this.operation === Operations.UPDATE) {
+    } else if (operation === Operations.UPDATE) {
       operationObservable = this.contactService.updateContact(
         this.contactIndex,
         this.contact
@@ -127,7 +135,7 @@ export class ContactDetailsDialogComponent {
     }
 
     operationObservable.subscribe({
-      complete: this.onCloseCallback.bind(this),
+      complete: () => this.onClose(),
       error: (err: HttpErrorResponse) => {
         this._snackBar.open(err.error);
       },
@@ -143,11 +151,11 @@ export class ContactDetailsDialogComponent {
 export default class ContactComponent {
   public static PATH = 'contact';
 
+  @ViewChild('contactDetailsWrapper')
+  detailsComponentWrapper!: DialogBottomSheetWrapper;
+
   loading: boolean = false;
   constructor(
-    private dialog: MatDialog,
-    private bottomSheet: MatBottomSheet,
-    private breakpointObserver: BreakpointObserver,
     public contactService: ContactService,
     private _snackBar: MatSnackBar
   ) {
@@ -195,20 +203,9 @@ export default class ContactComponent {
     operation: Operations = Operations.UPDATE
   ) {
     e.preventDefault();
-    // TODO: handle orientation change
-    isMobile = this.breakpointObserver.isMatched('(max-width: 599px)');
-    const responder = new ContactDetailsEventsResponder();
-    const config = { data: { onClose: responder.onClose, contact, operation } };
-
-    if (isMobile) {
-      const bottomSheetRef = this.bottomSheet.open(
-        ContactDetailsDialogComponent,
-        config
-      );
-      responder.setRef(bottomSheetRef);
-    } else {
-      const dialogRef = this.dialog.open(ContactDetailsDialogComponent, config);
-      responder.setRef(dialogRef);
-    }
+    this.detailsComponentWrapper.open<ContactDetailsDialogComponent>(
+      ContactDetailsDialogComponent,
+      { contact, operation }
+    );
   }
 }
