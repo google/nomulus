@@ -13,25 +13,12 @@
 // limitations under the License.
 
 import { Component } from '@angular/core';
-import { RegistrarService } from 'src/app/registrar/registrar.service';
+import { UserDataService } from 'src/app/shared/services/userData.service';
 
 @Component({
-  selector: '[app-billing-widget]',
-  templateUrl: './billing-widget.component.html',
+  selector: '[app-resources-widget]',
+  templateUrl: './resourcesWidget.component.html',
 })
-export class BillingWidgetComponent {
-  constructor(public registrarService: RegistrarService) {}
-
-  public get driveFolderUrl(): string {
-    if (this.registrarService?.registrar.driveFolderId) {
-      return `https://drive.google.com/drive/folders/${this.registrarService?.registrar.driveFolderId}`;
-    }
-    return '';
-  }
-
-  openBillingDetails(e: MouseEvent) {
-    if (!this.driveFolderUrl) {
-      e.preventDefault();
-    }
-  }
+export class ResourcesWidgetComponent {
+  constructor(public userDataService: UserDataService) {}
 }

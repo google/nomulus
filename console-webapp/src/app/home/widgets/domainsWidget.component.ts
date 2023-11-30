@@ -18,7 +18,7 @@ import { DomainListComponent } from 'src/app/domains/domainList.component';
 
 @Component({
   selector: '[app-domains-widget]',
-  templateUrl: './domains-widget.component.html',
+  templateUrl: './domainsWidget.component.html',
 })
 export class DomainsWidgetComponent {
   constructor(private router: Router) {}

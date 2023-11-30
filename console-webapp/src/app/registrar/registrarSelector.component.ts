@@ -21,8 +21,8 @@ const MOBILE_LAYOUT_BREAKPOINT = '(max-width: 599px)';
 
 @Component({
   selector: 'app-registrar-selector',
-  templateUrl: './registrar-selector.component.html',
-  styleUrls: ['./registrar-selector.component.scss'],
+  templateUrl: './registrarSelector.component.html',
+  styleUrls: ['./registrarSelector.component.scss'],
 })
 export class RegistrarSelectorComponent implements OnInit {
   protected isMobile: boolean = false;

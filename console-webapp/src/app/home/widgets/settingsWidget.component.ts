@@ -21,7 +21,7 @@ import { SettingsComponent } from 'src/app/settings/settings.component';
 
 @Component({
   selector: '[app-settings-widget]',
-  templateUrl: './settings-widget.component.html',
+  templateUrl: './settingsWidget.component.html',
 })
 export class SettingsWidgetComponent {
   constructor(private router: Router) {}

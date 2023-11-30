@@ -76,7 +76,7 @@ class ContactDetailsEventsResponder {
 
 @Component({
   selector: 'app-contact-details-dialog',
-  templateUrl: 'contact-details.component.html',
+  templateUrl: 'contactDetails.component.html',
   styleUrls: ['./contact.component.scss'],
 })
 export class ContactDetailsDialogComponent {
