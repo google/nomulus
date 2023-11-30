@@ -1,7 +1,7 @@
-<div class="registrarDetails">
+<div class="registrarDetails" *ngIf="registrarInEdit">
   <h3 mat-dialog-title>Edit Registrar: {{ registrarInEdit.registrarId }}</h3>
   <div mat-dialog-content>
-    <form (ngSubmit)="saveAndClose($event)">
+    <form (ngSubmit)="saveAndClose()">
       <mat-form-field class="registrarDetails__input">
         <mat-label>Registry Lock:</mat-label>
         <mat-select
@@ -32,7 +32,7 @@
         />
       </mat-form-field>
       <mat-dialog-actions>
-        <button mat-button (click)="onCancel($event)">Cancel</button>
+        <button mat-button (click)="this.params?.onClose()">Cancel</button>
         <button type="submit" mat-button color="primary">Save</button>
       </mat-dialog-actions>
     </form>
