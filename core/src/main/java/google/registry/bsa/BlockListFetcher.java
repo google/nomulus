@@ -25,6 +25,7 @@ import google.registry.bsa.api.BsaException;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.request.UrlConnectionService;
 import google.registry.util.Retrier;
+import java.io.BufferedInputStream;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
@@ -99,31 +100,65 @@ public class BlockListFetcher {
 
     private final HttpsURLConnection connection;
 
-    LazyBlockList(BlockList blockList, HttpsURLConnection connection) {
+    private final BufferedInputStream inputStream;
+    private final String checksum;
+
+    LazyBlockList(BlockList blockList, HttpsURLConnection connection) throws IOException {
       this.blockList = blockList;
       this.connection = connection;
+      this.inputStream = new BufferedInputStream(connection.getInputStream());
+      this.checksum = readChecksum();
+    }
+
+    /** Reads the BSA-generated checksum, which is the first line of the input. */
+    private String readChecksum() throws IOException {
+      if (blockList.equals(BlockList.BLOCK)) {
+        return "TODO"; // Depends on BSA impl: header or first line of file
+      } else {
+        StringBuilder checksum = new StringBuilder();
+        char ch;
+        while ((ch = peekInputStream()) != (char) -1 && !Character.isWhitespace(ch)) {
+          checksum.append((char) inputStream.read());
+        }
+        while ((ch = peekInputStream()) != (char) -1 && Character.isWhitespace(ch)) {
+          inputStream.read();
+        }
+        return checksum.toString();
+      }
+    }
+
+    char peekInputStream() throws IOException {
+      inputStream.mark(1);
+      int byteValue = inputStream.read();
+      inputStream.reset();
+      return (char) byteValue;
     }
 
     BlockList getName() {
       return blockList;
     }
 
-    String peekChecksum() {
-      return "TODO"; // Depends on BSA impl: header or first line of file
+    String checksum() {
+      return checksum;
     }
 
     void consumeAll(BiConsumer<byte[], Integer> consumer) throws IOException {
-      try (InputStream inputStream = connection.getInputStream()) {
-        byte[] buffer = new byte[1024];
-        int bytesRead;
-        while ((bytesRead = inputStream.read(buffer)) != -1) {
-          consumer.accept(buffer, bytesRead);
-        }
+      byte[] buffer = new byte[1024];
+      int bytesRead;
+      while ((bytesRead = inputStream.read(buffer)) != -1) {
+        consumer.accept(buffer, bytesRead);
       }
     }
 
     @Override
     public void close() {
+      if (inputStream != null) {
+        try {
+          inputStream.close();
+        } catch (IOException e) {
+          // Fall through to close the connection.
+        }
+      }
       connection.disconnect();
     }
   }

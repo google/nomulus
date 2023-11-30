@@ -18,7 +18,7 @@ import static com.google.common.base.Verify.verify;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.collect.Sets.difference;
-import static google.registry.flows.domain.DomainFlowUtils.isReserved;
+import static google.registry.bsa.ReservedDomainsUtils.isReservedDomain;
 import static google.registry.persistence.PersistenceModule.TransactionIsolationLevel.TRANSACTION_REPEATABLE_READ;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static java.util.stream.Collectors.groupingBy;
@@ -29,7 +29,6 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.flogger.FluentLogger;
 import com.google.common.flogger.LazyArgs;
-import com.google.common.net.InternetDomainName;
 import google.registry.bsa.IdnChecker;
 import google.registry.bsa.api.Label;
 import google.registry.bsa.api.Label.LabelType;
@@ -69,8 +68,8 @@ public final class LabelDiffs {
      * miss concurrent creations. Although we can correct them later, it is not a good user
      * experience.
      */
-    // TODO(01/15/24): consider bulk-insert in native query if too slow. (Average throughput is
-    // about 2.5 second per 500-label batch with current Cloud SQL settings).
+    // TODO(01/15/24): Move this down into the main transaction. Not point doing it here if we use
+    // cache in DomainCreateFlow.
     tm().transact(
             () ->
                 tm().putAll(
@@ -154,7 +153,7 @@ public final class LabelDiffs {
 
     ImmutableSet<String> reservedDomainNames =
         difference(validDomainNames, registeredDomainNames).stream()
-            .filter(LabelDiffs::isReservedDomain)
+            .filter(domain -> isReservedDomain(domain, now))
             .collect(toImmutableSet());
     for (String domain : reservedDomainNames) {
       nonBlockedDomains.add(NonBlockedDomain.of(domain, Reason.RESERVED));
@@ -174,9 +173,5 @@ public final class LabelDiffs {
 
   static Stream<String> getValidTldsForLabel(Label label, IdnChecker idnChecker) {
     return idnChecker.getSupportingTlds(label.idnTables()).stream().map(Tld::getTldStr);
-  }
-
-  static boolean isReservedDomain(String domain) {
-    return isReserved(InternetDomainName.from(domain), /* isSunrise= */ false);
   }
 }

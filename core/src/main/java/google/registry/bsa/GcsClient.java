@@ -23,6 +23,7 @@ import google.registry.bsa.BlockListFetcher.LazyBlockList;
 import google.registry.bsa.api.Label;
 import google.registry.bsa.api.NonBlockedDomain;
 import google.registry.bsa.api.Order;
+import google.registry.bsa.api.UnblockableDomainChange;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.gcs.GcsUtils;
 import java.io.BufferedOutputStream;
@@ -44,6 +45,7 @@ public class GcsClient {
   static final String LABELS_DIFF_FILE = "labels_diff.csv";
   static final String UNBLOCKABLE_DOMAINS_FILE = "unblockable_domains.csv";
   static final String ORDERS_DIFF_FILE = "orders_diff.csv";
+  static final String REFRESH_CHANGE_FILE = "refresh_change.csv";
 
   // Logged report data sent to BSA.
   static final String IN_PROGRESS_ORDERS_REPORT = "in_progress_orders.json";
@@ -151,6 +153,22 @@ public class GcsClient {
     try (BufferedWriter gcsWriter = getWriter(blobId)) {
       unblockables
           .map(NonBlockedDomain::serialize)
+          .forEach(line -> writeWithNewline(gcsWriter, line));
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  Stream<UnblockableDomainChange> readRefreshChanges(String jobName) {
+    BlobId blobId = getBlobId(jobName, UNBLOCKABLE_DOMAINS_FILE);
+    return readStream(blobId).map(UnblockableDomainChange::deserialize);
+  }
+
+  void writeRefreshChanges(String jobName, Stream<UnblockableDomainChange> changes) {
+    BlobId blobId = getBlobId(jobName, REFRESH_CHANGE_FILE);
+    try (BufferedWriter gcsWriter = getWriter(blobId)) {
+      changes
+          .map(UnblockableDomainChange::serialize)
           .forEach(line -> writeWithNewline(gcsWriter, line));
     } catch (IOException e) {
       throw new RuntimeException(e);

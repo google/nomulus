@@ -15,8 +15,7 @@
 package google.registry.bsa.api;
 
 import com.google.auto.value.AutoValue;
-import com.google.common.base.Joiner;
-import com.google.common.base.Splitter;
+import google.registry.bsa.StringifyUtils;
 import java.util.List;
 
 /**
@@ -37,17 +36,13 @@ public abstract class NonBlockedDomain {
     INVALID;
   }
 
-  static final Joiner DOMAIN_JOINER = Joiner.on('.');
-  static final Joiner PROPERTY_JOINER = Joiner.on(',');
-  static final Splitter PROPERTY_SPLITTER = Splitter.on(',');
-
   public String serialize() {
-    return PROPERTY_JOINER.join(domainName(), reason().name());
+    return StringifyUtils.PROPERTY_JOINER.join(domainName(), reason().name());
   }
 
   public static NonBlockedDomain deserialize(String text) {
-    List<String> items = PROPERTY_SPLITTER.splitToList(text);
-    return of(items.get(0), Reason.INVALID.valueOf(items.get(1)));
+    List<String> items = StringifyUtils.PROPERTY_SPLITTER.splitToList(text);
+    return of(items.get(0), Reason.valueOf(items.get(1)));
   }
 
   public static NonBlockedDomain of(String domainName, Reason reason) {
@@ -55,6 +50,6 @@ public abstract class NonBlockedDomain {
   }
 
   public static NonBlockedDomain of(String label, String tld, Reason reason) {
-    return of(DOMAIN_JOINER.join(label, tld), reason);
+    return of(StringifyUtils.DOMAIN_JOINER.join(label, tld), reason);
   }
 }
