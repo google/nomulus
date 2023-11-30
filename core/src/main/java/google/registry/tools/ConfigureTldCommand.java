@@ -122,6 +122,12 @@ public class ConfigureTldCommand extends MutatingCommand {
     checkPremiumList(newTld);
     checkDnsWriters(newTld);
     checkCurrency(newTld);
+    // bsaEnrollStartTime only exists in DB. Need to carry it over to the new instance.
+    Optional<DateTime> bsaEnrollTime =
+        Optional.ofNullable(oldTld).flatMap(Tld::getBsaEnrollStartTime);
+    if (bsaEnrollTime.isPresent()) {
+      newTld = newTld.asBuilder().setBsaEnrollStartTime(bsaEnrollTime).build();
+    }
     // Set the new TLD to breakglass mode if breakglass flag was used
     if (breakglass) {
       newTld = newTld.asBuilder().setBreakglassMode(true).build();

@@ -15,38 +15,65 @@
 package google.registry.bsa;
 
 import static com.google.common.truth.Truth.assertThat;
+import static google.registry.testing.DatabaseHelper.createTld;
+import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.tldconfig.idn.IdnTableEnum.EXTENDED_LATIN;
 import static google.registry.tldconfig.idn.IdnTableEnum.JA;
 import static google.registry.tldconfig.idn.IdnTableEnum.UNCONFUSABLE_LATIN;
 
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import google.registry.model.tld.Tld;
+import google.registry.persistence.transaction.JpaTestExtensions;
+import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationWithCoverageExtension;
+import google.registry.testing.FakeClock;
+import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
-@ExtendWith(MockitoExtension.class)
+/** Unit tests for {@link IdnChecker}. */
 public class IdnCheckerTest {
 
-  @Mock Tld jaonly;
-  @Mock Tld jandelatin;
-  @Mock Tld strictlatin;
+  FakeClock fakeClock = new FakeClock();
+
+  @RegisterExtension
+  final JpaIntegrationWithCoverageExtension jpa =
+      new JpaTestExtensions.Builder().withClock(fakeClock).buildIntegrationWithCoverageExtension();
+
+  Tld jaonly;
+  Tld jandelatin;
+  Tld strictlatin;
   IdnChecker idnChecker;
 
   @BeforeEach
   void setup() {
-    idnChecker =
-        new IdnChecker(
-            ImmutableMap.of(
-                JA,
-                ImmutableSet.of(jandelatin, jaonly),
-                EXTENDED_LATIN,
-                ImmutableSet.of(jandelatin),
-                UNCONFUSABLE_LATIN,
-                ImmutableSet.of(strictlatin)));
+    jaonly = createTld("jaonly");
+    jandelatin = createTld("jandelatin");
+    strictlatin = createTld("strictlatin");
+
+    jaonly =
+        persistResource(
+            jaonly
+                .asBuilder()
+                .setBsaEnrollStartTime(Optional.of(fakeClock.nowUtc()))
+                .setIdnTables(ImmutableSet.of(JA))
+                .build());
+    jandelatin =
+        persistResource(
+            jandelatin
+                .asBuilder()
+                .setBsaEnrollStartTime(Optional.of(fakeClock.nowUtc()))
+                .setIdnTables(ImmutableSet.of(JA, EXTENDED_LATIN))
+                .build());
+    strictlatin =
+        persistResource(
+            strictlatin
+                .asBuilder()
+                .setBsaEnrollStartTime(Optional.of(fakeClock.nowUtc()))
+                .setIdnTables(ImmutableSet.of(UNCONFUSABLE_LATIN))
+                .build());
+    fakeClock.advanceOneMilli();
+    idnChecker = new IdnChecker(fakeClock);
   }
 
   @Test
