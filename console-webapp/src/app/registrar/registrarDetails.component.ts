@@ -82,24 +82,3 @@ export class RegistrarDetailsComponent {
     );
   }
 }
-
-@Component({
-  selector: 'app-registrar-details-wrapper',
-  template: '',
-})
-export class RegistrarDetailsWrapperComponent {
-  constructor(
-    private dialog: MatDialog,
-    private bottomSheet: MatBottomSheet,
-    protected breakpointObserver: BreakpointObserver
-  ) {}
-
-  open(registrar: Registrar) {
-    const config = { data: { registrar } };
-    if (this.breakpointObserver.isMatched(MOBILE_LAYOUT_BREAKPOINT)) {
-      this.bottomSheet.open(RegistrarDetailsComponent, config);
-    } else {
-      this.dialog.open(RegistrarDetailsComponent, config);
-    }
-  }
-}

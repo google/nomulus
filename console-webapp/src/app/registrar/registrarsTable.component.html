@@ -1,5 +1,5 @@
 <div class="console-app__registrars">
-  <mat-form-field class="console-app__registrars-filter">
+    <mat-form-field class="console-app__registrars-filter">
     <mat-label>Search</mat-label>
     <input
       matInput
@@ -48,7 +48,7 @@
     [pageSizeOptions]="[5, 10, 20]"
     showFirstLastButtons
   ></mat-paginator>
-  <app-registrar-details-wrapper
+  <app-dialog-bottom-sheet-wrapper
     #registrarDetailsView
-  ></app-registrar-details-wrapper>
+  ></app-dialog-bottom-sheet-wrapper>
 </div>

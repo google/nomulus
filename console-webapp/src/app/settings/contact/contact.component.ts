@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Component, Inject } from '@angular/core';
+import { Component, Injector, ViewChild } from '@angular/core';
 import {
   MatDialog,
   MAT_DIALOG_DATA,
@@ -27,6 +27,7 @@ import { Contact, ContactService } from './contact.service';
 import { BreakpointObserver } from '@angular/cdk/layout';
 import { HttpErrorResponse } from '@angular/common/http';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { DialogBottomSheetWrapper } from 'src/app/shared/components/dialogBottomSheet.component';
 
 enum Operations {
   DELETE,
@@ -84,19 +85,26 @@ export class ContactDetailsDialogComponent {
   contactTypes = contactTypes;
   operation: Operations;
   contactIndex: number;
-  onCloseCallback: Function;
+  private elementRef:
+    | MatBottomSheetRef<ContactDetailsDialogComponent>
+    | MatDialogRef<ContactDetailsDialogComponent>;
 
   constructor(
     public contactService: ContactService,
     private _snackBar: MatSnackBar,
-    @Inject(isMobile ? MAT_BOTTOM_SHEET_DATA : MAT_DIALOG_DATA)
-    public data: {
-      onClose: Function;
+    private injector: Injector
+  ) {
+    var data: {
       contact: Contact;
       operation: Operations;
+    };
+    try {
+      data = this.injector.get(MAT_DIALOG_DATA);
+      this.elementRef = this.injector.get(MatDialogRef);
+    } catch (e) {
+      data = this.injector.get(MAT_BOTTOM_SHEET_DATA);
+      this.elementRef = this.injector.get(MatBottomSheetRef);
     }
-  ) {
-    this.onCloseCallback = data.onClose;
     this.contactIndex = contactService.contacts.findIndex(
       (c) => c === data.contact
     );
@@ -104,9 +112,12 @@ export class ContactDetailsDialogComponent {
     this.operation = data.operation;
   }
 
-  onClose(e: MouseEvent) {
-    e.preventDefault();
-    this.onCloseCallback.call(this);
+  onClose(e?: MouseEvent) {
+    if (this.elementRef instanceof MatBottomSheetRef) {
+      this.elementRef.dismiss();
+    } else if (this.elementRef instanceof MatDialogRef) {
+      this.elementRef.close();
+    }
   }
 
   saveAndClose(e: SubmitEvent) {
@@ -127,7 +138,7 @@ export class ContactDetailsDialogComponent {
     }
 
     operationObservable.subscribe({
-      complete: this.onCloseCallback.bind(this),
+      complete: () => this.onClose(),
       error: (err: HttpErrorResponse) => {
         this._snackBar.open(err.error);
       },
@@ -142,6 +153,9 @@ export class ContactDetailsDialogComponent {
 })
 export default class ContactComponent {
   public static PATH = 'contact';
+
+  @ViewChild('contactDetailsWrapper')
+  detailsComponentWrapper!: DialogBottomSheetWrapper;
 
   loading: boolean = false;
   constructor(
@@ -195,20 +209,9 @@ export default class ContactComponent {
     operation: Operations = Operations.UPDATE
   ) {
     e.preventDefault();
-    // TODO: handle orientation change
-    isMobile = this.breakpointObserver.isMatched('(max-width: 599px)');
-    const responder = new ContactDetailsEventsResponder();
-    const config = { data: { onClose: responder.onClose, contact, operation } };
-
-    if (isMobile) {
-      const bottomSheetRef = this.bottomSheet.open(
-        ContactDetailsDialogComponent,
-        config
-      );
-      responder.setRef(bottomSheetRef);
-    } else {
-      const dialogRef = this.dialog.open(ContactDetailsDialogComponent, config);
-      responder.setRef(dialogRef);
-    }
+    this.detailsComponentWrapper.open<ContactDetailsDialogComponent>(
+      ContactDetailsDialogComponent,
+      { contact, operation }
+    );
   }
 }
