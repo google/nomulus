@@ -119,4 +119,54 @@ class BlockListFetcherTest {
     }
     verify(connection, times(1)).disconnect();
   }
+
+  @Test
+  void lazyBlockPlus_success() throws Exception {
+    setupMocks();
+    when(connection.getInputStream())
+        .thenReturn(new ByteArrayInputStream("checksum\ndata\n".getBytes(StandardCharsets.UTF_8)));
+    when(connection.getResponseCode()).thenReturn(SC_OK);
+    try (LazyBlockList lazyBlockList = fetcher.tryFetch(BlockList.BLOCK_PLUS)) {
+      assertThat(readBlockData(lazyBlockList)).isEqualTo("data\n");
+      assertThat(lazyBlockList.checksum()).isEqualTo("checksum");
+    }
+    verify(connection, times(1)).disconnect();
+  }
+
+  @Test
+  void lazyBlockPlus_checksum_cr() throws Exception {
+    setupMocks();
+    when(connection.getInputStream())
+        .thenReturn(new ByteArrayInputStream("checksum\rdata\n".getBytes(StandardCharsets.UTF_8)));
+    when(connection.getResponseCode()).thenReturn(SC_OK);
+    try (LazyBlockList lazyBlockList = fetcher.tryFetch(BlockList.BLOCK_PLUS)) {
+      assertThat(readBlockData(lazyBlockList)).isEqualTo("data\n");
+      assertThat(lazyBlockList.checksum()).isEqualTo("checksum");
+    }
+    verify(connection, times(1)).disconnect();
+  }
+
+  @Test
+  void lazyBlockPlus_checksum_crnl() throws Exception {
+    setupMocks();
+    when(connection.getInputStream())
+        .thenReturn(
+            new ByteArrayInputStream("checksum\r\ndata\n".getBytes(StandardCharsets.UTF_8)));
+    when(connection.getResponseCode()).thenReturn(SC_OK);
+    try (LazyBlockList lazyBlockList = fetcher.tryFetch(BlockList.BLOCK_PLUS)) {
+      assertThat(readBlockData(lazyBlockList)).isEqualTo("data\n");
+      assertThat(lazyBlockList.checksum()).isEqualTo("checksum");
+    }
+    verify(connection, times(1)).disconnect();
+  }
+
+  private String readBlockData(LazyBlockList lazyBlockList) throws Exception {
+    StringBuilder sb = new StringBuilder();
+    lazyBlockList.consumeAll(
+        (buffer, length) -> {
+          String snippet = new String(buffer, 0, length, StandardCharsets.UTF_8);
+          sb.append(snippet);
+        });
+    return sb.toString();
+  }
 }

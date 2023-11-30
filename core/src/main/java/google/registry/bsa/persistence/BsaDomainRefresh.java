@@ -108,10 +108,11 @@ public class BsaDomainRefresh {
     return VKey.create(BsaDomainRefresh.class, bsaDomainRefresh.jobId);
   }
 
-  enum Stage {
+  public enum Stage {
     MAKE_DIFF,
     APPLY_DIFF,
     REPORT_REMOVALS,
-    REPORT_ADDITIONS;
+    REPORT_ADDITIONS,
+    DONE;
   }
 }

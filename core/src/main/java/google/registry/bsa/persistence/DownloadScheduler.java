@@ -26,8 +26,10 @@ import com.google.common.collect.ImmutableList;
 import google.registry.bsa.persistence.DownloadSchedule.CompletedJob;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.util.Clock;
+import java.util.Objects;
 import java.util.Optional;
 import javax.inject.Inject;
+import org.joda.time.DateTime;
 import org.joda.time.Duration;
 
 /**
@@ -107,6 +109,16 @@ public final class DownloadScheduler {
             });
   }
 
+  Optional<DateTime> latestCompletedJobTime() {
+    return tm().transact(
+            () -> {
+              return loadRecentProcessedJobs().stream()
+                  .filter(job -> Objects.equals(job.getStage(), DONE))
+                  .map(BsaDownload::getCreationTime)
+                  .findFirst();
+            });
+  }
+
   private boolean isTimeAgain(BsaDownload mostRecent, Duration interval) {
     return mostRecent.getCreationTime().plus(interval).minus(CRON_JITTER).isBefore(clock.nowUtc());
   }
@@ -129,7 +141,8 @@ public final class DownloadScheduler {
     return ImmutableList.copyOf(
         tm().getEntityManager()
             .createQuery(
-                "FROM BsaDownload WHERE stage NOT IN :nop_stages ORDER BY creationTime DESC")
+                "FROM BsaDownload WHERE stage NOT IN :nop_stages ORDER BY creationTime DESC",
+                BsaDownload.class)
             .setParameter("nop_stages", ImmutableList.of(CHECKSUMS_NOT_MATCH, NOP))
             .setMaxResults(2)
             .getResultList());

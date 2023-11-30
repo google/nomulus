@@ -101,6 +101,7 @@ public class BsaDownloadAction implements Runnable {
         logger.atInfo().log("Job is being executed by another worker.");
       }
     } catch (Throwable throwable) {
+      // TODO(12/31/2023): consider sending an alert email.
       logger.atWarning().withCause(throwable).log("Failed to update block lists.");
     }
     // Always return OK. Let the next cron job retry.
@@ -120,7 +121,7 @@ public class BsaDownloadAction implements Runnable {
         try (LazyBlockList block = blockListFetcher.fetch(BLOCK);
             LazyBlockList blockPlus = blockListFetcher.fetch(BLOCK_PLUS)) {
           ImmutableMap<BlockList, String> fetchedChecksums =
-              ImmutableMap.of(BLOCK, block.peekChecksum(), BLOCK_PLUS, blockPlus.peekChecksum());
+              ImmutableMap.of(BLOCK, block.checksum(), BLOCK_PLUS, blockPlus.checksum());
           ImmutableMap<BlockList, String> prevChecksums =
               schedule
                   .latestCompleted()
@@ -142,7 +143,10 @@ public class BsaDownloadAction implements Runnable {
           //   schedule.updateJobStage(DownloadStage.CHECKSUMS_NOT_MATCH);
           //   return null;
           // }
+          logger.atInfo().log("Fetched checksums: %s", fetchedChecksums);
+          logger.atInfo().log("Calculated checksums: %s", actualChecksum);
           schedule.updateJobStage(DownloadStage.MAKE_DIFF, actualChecksum);
+          return null;
         }
         // Fall through
       case MAKE_DIFF:
