@@ -2565,11 +2565,34 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
   }
 
   @Test
+  void testSuccess_bsaLabelMatch_notEnrolled() throws Exception {
+    persistResource(Tld.get("tld").asBuilder().setBsaEnrollStartTime(null).build());
+    persistBsaLabel("example", clock.nowUtc());
+    persistContactsAndHosts();
+    doSuccessfulTest();
+  }
+
+  @Test
+  void testSuccess_bsaLabelMatch_notEnrolledYet() throws Exception {
+    persistResource(
+        Tld.get("tld").asBuilder().setBsaEnrollStartTime(clock.nowUtc().plusSeconds(1)).build());
+    persistBsaLabel("example", clock.nowUtc());
+    persistContactsAndHosts();
+    doSuccessfulTest();
+  }
+
+  @Test
   void testFailure_blockedByBsa() {
+    persistResource(
+        Tld.get("tld").asBuilder().setBsaEnrollStartTime(clock.nowUtc().minusSeconds(1)).build());
     persistBsaLabel("example", clock.nowUtc());
     persistContactsAndHosts();
     EppException thrown = assertThrows(DomainLabelBlockedByBsaException.class, this::runFlow);
-    assertAboutEppExceptions().that(thrown).marshalsToXml();
+    assertAboutEppExceptions()
+        .that(thrown)
+        .marshalsToXml()
+        .and()
+        .hasMessage("Domain label is blocked by the Brand Safety Alliance");
   }
 
   @Test

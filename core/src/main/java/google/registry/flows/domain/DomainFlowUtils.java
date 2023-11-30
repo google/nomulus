@@ -260,9 +260,18 @@ public class DomainFlowUtils {
     return idnTableName.get();
   }
 
-  public static void verifyNotBlockedByBsa(InternetDomainName domainName)
+  /**
+   * Verifies that the {@code domainLabel} is not blocked by any BSA block label for the given
+   * {@code tld} at the specified time.
+   *
+   * @throws DomainLabelBlockedByBsaException
+   */
+  public static void verifyNotBlockedByBsa(String domainLabel, Tld tld, DateTime now)
       throws DomainLabelBlockedByBsaException {
-    if (BsaLabel.isLabelBlocked(domainName.parts().get(0))) {
+    if (tld.getBsaEnrollStartTime() == null || tld.getBsaEnrollStartTime().isAfter(now)) {
+      return;
+    }
+    if (BsaLabel.isLabelBlocked(domainLabel)) {
       throw new DomainLabelBlockedByBsaException();
     }
   }
@@ -1751,9 +1760,10 @@ public class DomainFlowUtils {
     }
   }
 
-  static class DomainLabelBlockedByBsaException extends ParameterValuePolicyErrorException {
+  /** Domain label is blocked by the Brand Safety Alliance. */
+  static class DomainLabelBlockedByBsaException extends AuthorizationErrorException {
     public DomainLabelBlockedByBsaException() {
-      super("Domain label is blocked by the Brand Safety Alliance.");
+      super("Domain label is blocked by the Brand Safety Alliance");
     }
   }
 }
