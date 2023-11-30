@@ -40,6 +40,7 @@ import static google.registry.flows.domain.DomainFlowUtils.verifyClaimsNoticeIfA
 import static google.registry.flows.domain.DomainFlowUtils.verifyClaimsPeriodNotEnded;
 import static google.registry.flows.domain.DomainFlowUtils.verifyLaunchPhaseMatchesRegistryPhase;
 import static google.registry.flows.domain.DomainFlowUtils.verifyNoCodeMarks;
+import static google.registry.flows.domain.DomainFlowUtils.verifyNotBlockedByBsa;
 import static google.registry.flows.domain.DomainFlowUtils.verifyNotReserved;
 import static google.registry.flows.domain.DomainFlowUtils.verifyPremiumNameIsNotBlocked;
 import static google.registry.flows.domain.DomainFlowUtils.verifyRegistrarIsActive;
@@ -251,6 +252,7 @@ public final class DomainCreateFlow implements MutatingFlow {
     verifyResourceDoesNotExist(Domain.class, targetId, now, registrarId);
     // Validate that this is actually a legal domain name on a TLD that the registrar has access to.
     InternetDomainName domainName = validateDomainName(command.getDomainName());
+    verifyNotBlockedByBsa(domainName);
     String domainLabel = domainName.parts().get(0);
     Tld tld = Tld.get(domainName.parent().toString());
     validateCreateCommandContactsAndNameservers(command, tld, domainName);

@@ -63,6 +63,7 @@ import com.google.common.collect.Multimaps;
 import com.google.common.collect.Sets;
 import com.google.common.collect.Streams;
 import com.google.common.net.InternetDomainName;
+import google.registry.bsa.persistence.BsaLabel;
 import google.registry.flows.EppException;
 import google.registry.flows.EppException.AssociationProhibitsOperationException;
 import google.registry.flows.EppException.AuthorizationErrorException;
@@ -257,6 +258,13 @@ public class DomainFlowUtils {
       throw new InvalidIdnDomainLabelException();
     }
     return idnTableName.get();
+  }
+
+  public static void verifyNotBlockedByBsa(InternetDomainName domainName)
+      throws DomainLabelBlockedByBsaException {
+    if (BsaLabel.isLabelBlocked(domainName.parts().get(0))) {
+      throw new DomainLabelBlockedByBsaException();
+    }
   }
 
   /** Returns whether a given domain create request is for a valid anchor tenant. */
@@ -1740,6 +1748,12 @@ public class DomainFlowUtils {
   static class RegistrarMustBeActiveForThisOperationException extends AuthorizationErrorException {
     public RegistrarMustBeActiveForThisOperationException() {
       super("Registrar must be active in order to perform this operation");
+    }
+  }
+
+  static class DomainLabelBlockedByBsaException extends ParameterValuePolicyErrorException {
+    public DomainLabelBlockedByBsaException() {
+      super("Domain label is blocked by the Brand Safety Alliance.");
     }
   }
 }
