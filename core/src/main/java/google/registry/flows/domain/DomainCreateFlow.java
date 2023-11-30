@@ -169,6 +169,7 @@ import org.joda.time.Duration;
  * @error {@link DomainFlowUtils.CurrencyUnitMismatchException}
  * @error {@link DomainFlowUtils.CurrencyValueScaleException}
  * @error {@link DomainFlowUtils.DashesInThirdAndFourthException}
+ * @error {@link DomainFlowUtils.DomainLabelBlockedByBsaException}
  * @error {@link DomainFlowUtils.DomainLabelTooLongException}
  * @error {@link DomainFlowUtils.DomainReservedException}
  * @error {@link DomainFlowUtils.DuplicateContactForRoleException}
@@ -252,7 +253,6 @@ public final class DomainCreateFlow implements MutatingFlow {
     verifyResourceDoesNotExist(Domain.class, targetId, now, registrarId);
     // Validate that this is actually a legal domain name on a TLD that the registrar has access to.
     InternetDomainName domainName = validateDomainName(command.getDomainName());
-    verifyNotBlockedByBsa(domainName);
     String domainLabel = domainName.parts().get(0);
     Tld tld = Tld.get(domainName.parent().toString());
     validateCreateCommandContactsAndNameservers(command, tld, domainName);
@@ -330,6 +330,7 @@ public final class DomainCreateFlow implements MutatingFlow {
               .verifySignedMarks(launchCreate.get().getSignedMarks(), domainLabel, now)
               .getId();
     }
+    verifyNotBlockedByBsa(domainLabel, tld, now);
     flowCustomLogic.afterValidation(
         DomainCreateFlowCustomLogic.AfterValidationParameters.newBuilder()
             .setDomainName(domainName)
