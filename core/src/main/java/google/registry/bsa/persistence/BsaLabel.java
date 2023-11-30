@@ -14,6 +14,8 @@
 
 package google.registry.bsa.persistence;
 
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+
 import com.google.common.base.Objects;
 import google.registry.persistence.VKey;
 import javax.persistence.Column;
@@ -75,5 +77,10 @@ final class BsaLabel {
 
   static VKey<BsaLabel> vKey(String label) {
     return VKey.create(BsaLabel.class, label);
+  }
+
+  /** Checks if the {@code domainLabel} (the leading `part` of a domain name) is blocked by BSA. */
+  public static boolean isLabelBlocked(String domainLabel) {
+    return tm().loadByKeyIfPresent(vKey(domainLabel)).isPresent();
   }
 }
