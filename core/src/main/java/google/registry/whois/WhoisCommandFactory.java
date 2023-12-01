@@ -48,8 +48,12 @@ public class WhoisCommandFactory {
 
   /** Returns a new {@link WhoisCommand} to perform a domain lookup on the specified domain name. */
   public WhoisCommand domainLookup(
-      InternetDomainName domainName, boolean fullOutput, String whoisRedactedEmailText) {
-    return new DomainLookupCommand(domainName, fullOutput, cached, whoisRedactedEmailText);
+      InternetDomainName domainName,
+      boolean fullOutput,
+      String whoisRedactedEmailText,
+      String domainBlockedByBsaTemplate) {
+    return new DomainLookupCommand(
+        domainName, fullOutput, cached, whoisRedactedEmailText, domainBlockedByBsaTemplate);
   }
 
   /**

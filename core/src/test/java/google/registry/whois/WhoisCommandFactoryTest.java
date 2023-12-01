@@ -142,7 +142,7 @@ class WhoisCommandFactoryTest {
   void testNonCached_DomainLookupCommand() throws Exception {
     WhoisResponse response =
         noncachedFactory
-            .domainLookup(InternetDomainName.from("example.tld"), true, "REDACTED")
+            .domainLookup(InternetDomainName.from("example.tld"), true, "REDACTED", "TODO")
             .executeQuery(clock.nowUtc());
     assertThat(response.getResponse(false, "").plainTextOutput())
         .contains("Registrar: The Registrar");
@@ -156,7 +156,7 @@ class WhoisCommandFactoryTest {
                             .build()));
     response =
         noncachedFactory
-            .domainLookup(InternetDomainName.from("example.tld"), true, "REDACTED")
+            .domainLookup(InternetDomainName.from("example.tld"), true, "REDACTED", "TODO")
             .executeQuery(clock.nowUtc());
     assertThat(response.getResponse(false, "").plainTextOutput())
         .contains("Registrar: OtherRegistrar name");
@@ -166,7 +166,7 @@ class WhoisCommandFactoryTest {
   void testCached_DomainLookupCommand() throws Exception {
     WhoisResponse response =
         cachedFactory
-            .domainLookup(InternetDomainName.from("example.tld"), true, "REDACTED")
+            .domainLookup(InternetDomainName.from("example.tld"), true, "REDACTED", "TODO")
             .executeQuery(clock.nowUtc());
     assertThat(response.getResponse(false, "").plainTextOutput())
         .contains("Registrar: The Registrar");
@@ -180,7 +180,7 @@ class WhoisCommandFactoryTest {
                             .build()));
     response =
         cachedFactory
-            .domainLookup(InternetDomainName.from("example.tld"), true, "REDACTED")
+            .domainLookup(InternetDomainName.from("example.tld"), true, "REDACTED", "TODO")
             .executeQuery(clock.nowUtc());
     assertThat(response.getResponse(false, "").plainTextOutput())
         .contains("Registrar: The Registrar");

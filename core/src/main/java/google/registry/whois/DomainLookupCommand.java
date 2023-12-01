@@ -14,34 +14,58 @@
 
 package google.registry.whois;
 
+import static com.google.common.base.Preconditions.checkNotNull;
 import static google.registry.model.EppResourceUtils.loadByForeignKey;
 import static google.registry.model.EppResourceUtils.loadByForeignKeyCached;
+import static google.registry.model.tld.Tlds.findTldForName;
+import static google.registry.model.tld.Tlds.getTlds;
+import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.net.InternetDomainName;
 import google.registry.model.domain.Domain;
 import java.util.Optional;
 import org.joda.time.DateTime;
 
 /** Represents a WHOIS lookup on a domain name (i.e. SLD). */
-public class DomainLookupCommand extends DomainOrHostLookupCommand {
+public class DomainLookupCommand implements WhoisCommand {
+
+  private static final String ERROR_PREFIX = "Domain";
+
+  @VisibleForTesting final InternetDomainName domainName;
 
   private final boolean fullOutput;
   private final boolean cached;
   private final String whoisRedactedEmailText;
+  private final String domainBlockedByBsaTemplate;
 
   public DomainLookupCommand(
       InternetDomainName domainName,
       boolean fullOutput,
       boolean cached,
-      String whoisRedactedEmailText) {
-    super(domainName, "Domain");
+      String whoisRedactedEmailText,
+      String domainBlockedByBsaTemplate) {
+    this.domainName = checkNotNull(domainName, "domainOrHostName");
     this.fullOutput = fullOutput;
     this.cached = cached;
     this.whoisRedactedEmailText = whoisRedactedEmailText;
+    this.domainBlockedByBsaTemplate = domainBlockedByBsaTemplate;
   }
 
   @Override
-  protected Optional<WhoisResponse> getResponse(InternetDomainName domainName, DateTime now) {
+  public final WhoisResponse executeQuery(final DateTime now) throws WhoisException {
+    Optional<InternetDomainName> tld = findTldForName(domainName);
+    // Google Registry Policy: Do not return records under TLDs for which we're not authoritative.
+    if (tld.isPresent() && getTlds().contains(tld.get().toString())) {
+      final Optional<WhoisResponse> response = getResponse(domainName, now);
+      if (response.isPresent()) {
+        return response.get();
+      }
+    }
+    throw new WhoisException(now, SC_NOT_FOUND, ERROR_PREFIX + " not found.");
+  }
+
+  private Optional<WhoisResponse> getResponse(InternetDomainName domainName, DateTime now) {
     Optional<Domain> domainResource =
         cached
             ? loadByForeignKeyCached(Domain.class, domainName.toString(), now)
