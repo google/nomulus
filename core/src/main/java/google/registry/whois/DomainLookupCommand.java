@@ -23,7 +23,10 @@ import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.net.InternetDomainName;
+import google.registry.flows.domain.DomainFlowUtils;
+import google.registry.flows.domain.DomainFlowUtils.DomainLabelBlockedByBsaException;
 import google.registry.model.domain.Domain;
+import google.registry.model.tld.Tld;
 import java.util.Optional;
 import org.joda.time.DateTime;
 
@@ -60,6 +63,15 @@ public class DomainLookupCommand implements WhoisCommand {
       final Optional<WhoisResponse> response = getResponse(domainName, now);
       if (response.isPresent()) {
         return response.get();
+      }
+      Tld tldEntity = Tld.get(tld.get().toString());
+      try {
+        DomainFlowUtils.verifyNotBlockedByBsa(
+            domainName.parts().get(0), Tld.get(tld.get().toString()), now);
+      } catch (DomainLabelBlockedByBsaException e) {
+        // "%domain-name% is defined in default-config.yaml
+        throw new WhoisException(
+            now, SC_NOT_FOUND, String.format(domainBlockedByBsaTemplate, domainName.toString()));
       }
     }
     throw new WhoisException(now, SC_NOT_FOUND, ERROR_PREFIX + " not found.");

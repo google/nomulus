@@ -1758,7 +1758,7 @@ public class DomainFlowUtils {
   }
 
   /** Domain label is blocked by the Brand Safety Alliance. */
-  static class DomainLabelBlockedByBsaException extends AuthorizationErrorException {
+  public static class DomainLabelBlockedByBsaException extends AuthorizationErrorException {
     public DomainLabelBlockedByBsaException() {
       super("Domain label is blocked by the Brand Safety Alliance");
     }
