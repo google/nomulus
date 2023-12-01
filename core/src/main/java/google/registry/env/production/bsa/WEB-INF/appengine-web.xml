@@ -19,6 +19,12 @@
               value="production"/>
   </system-properties>
 
+  <!-- Enable external traffic to go through VPC, required for static ip -->
+  <vpc-access-connector>
+    <name>projects/domain-registry/locations/us-central1/connectors/appengine-connector</name>
+    <egress-setting>all-traffic</egress-setting>
+  </vpc-access-connector>
+
   <static-files>
     <include path="/*.html" expiration="1d"/>
   </static-files>
