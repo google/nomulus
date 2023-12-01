@@ -130,6 +130,12 @@ registryPolicy:
     unlawful behavior. We reserve the right to restrict or deny your access to
     the WHOIS database, and may modify these terms at any time.
 
+  # BSA blocked domain name template.
+  domainBlockedByBsaTemplate: |
+    Domain Name: %domain-name%
+    >>> This name is not available for registration.
+    >>> This name has been blocked by a GlobalBlock service.
+
   # RDAP Terms of Service text displayed at the /rdap/help/tos endpoint.
   rdapTos: >
     By querying our Domain Database as part of the RDAP pilot program (RDAP

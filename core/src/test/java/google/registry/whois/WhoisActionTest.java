@@ -91,7 +91,7 @@ public class WhoisActionTest {
     whoisAction.input = new StringReader(input);
     whoisAction.response = response;
     whoisAction.whoisReader =
-        new WhoisReader(WhoisCommandFactory.createCached(), "Please contact registrar");
+        new WhoisReader(WhoisCommandFactory.createCached(), "Please contact registrar", "TODO");
     whoisAction.whoisMetrics = new WhoisMetrics();
     whoisAction.metricBuilder = WhoisMetric.builderForRequest(clock);
     whoisAction.disclaimer =
