@@ -350,7 +350,6 @@ An EPP flow that creates a new domain resource.
     *   The allocation token is invalid.
     *   Only a tool can pass a metadata extension.
     *   Registrar is not authorized to access this TLD.
-    *   Domain label is blocked by the Brand Safety Alliance.
     *   Registrar is missing the billing account map for this currency type.
     *   Registrar must be active in order to perform this operation.
 *   2302
@@ -385,6 +384,7 @@ An EPP flow that creates a new domain resource.
     *   The requested fees cannot be provided in the requested currency.
     *   Non-IDN domain names cannot contain hyphens in the third or fourth
         position.
+    *   Domain label is blocked by the Brand Safety Alliance.
     *   Domain labels cannot be longer than 63 characters.
     *   More than one contact for a given role is not allowed.
     *   No part of a domain name can be empty.
