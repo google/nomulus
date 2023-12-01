@@ -75,14 +75,17 @@ class WhoisReader {
 
   private final WhoisCommandFactory commandFactory;
   private final String whoisRedactedEmailText;
+  private final String domainBlockedByBsaTemplate;
 
   /** Creates a new WhoisReader that extracts its command from the specified Reader. */
   @Inject
   WhoisReader(
       @Config("whoisCommandFactory") WhoisCommandFactory commandFactory,
-      @Config("whoisRedactedEmailText") String whoisRedactedEmailText) {
+      @Config("whoisRedactedEmailText") String whoisRedactedEmailText,
+      @Config("domainBlockedByBsaTemplate") String domainBlockedByBsaTemplate) {
     this.commandFactory = commandFactory;
     this.whoisRedactedEmailText = whoisRedactedEmailText;
+    this.domainBlockedByBsaTemplate = domainBlockedByBsaTemplate;
   }
 
   /**
@@ -124,7 +127,8 @@ class WhoisReader {
         return commandFactory.domainLookup(
             InternetDomainName.from(canonicalizeHostname(tokens.get(1))),
             fullOutput,
-            whoisRedactedEmailText);
+            whoisRedactedEmailText,
+            domainBlockedByBsaTemplate);
       } catch (IllegalArgumentException iae) {
         // If we can't interpret the argument as a host name, then return an error.
         throw new WhoisException(now, SC_BAD_REQUEST, String.format(
@@ -202,7 +206,8 @@ class WhoisReader {
         // (SLD) and we should do a domain lookup on it.
         if (targetName.parent().equals(tld.get())) {
           logger.atInfo().log("Attempting domain lookup using %s as a domain name.", targetName);
-          return commandFactory.domainLookup(targetName, fullOutput, whoisRedactedEmailText);
+          return commandFactory.domainLookup(
+              targetName, fullOutput, whoisRedactedEmailText, domainBlockedByBsaTemplate);
         }
 
         // The target is more than one level above the TLD, so we'll assume it's a nameserver.
