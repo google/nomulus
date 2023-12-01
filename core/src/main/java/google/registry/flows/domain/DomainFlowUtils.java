@@ -268,10 +268,7 @@ public class DomainFlowUtils {
    */
   public static void verifyNotBlockedByBsa(String domainLabel, Tld tld, DateTime now)
       throws DomainLabelBlockedByBsaException {
-    if (tld.getBsaEnrollStartTime() == null || tld.getBsaEnrollStartTime().isAfter(now)) {
-      return;
-    }
-    if (BsaLabel.isLabelBlocked(domainLabel)) {
+    if (Tld.isEnrolledWithBsa(tld, now) && BsaLabel.isLabelBlocked(domainLabel)) {
       throw new DomainLabelBlockedByBsaException();
     }
   }
