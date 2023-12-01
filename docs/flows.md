@@ -350,7 +350,6 @@ An EPP flow that creates a new domain resource.
     *   The allocation token is invalid.
     *   Only a tool can pass a metadata extension.
     *   Registrar is not authorized to access this TLD.
-    *   Domain label is blocked by the Brand Safety Alliance.
     *   Registrar is missing the billing account map for this currency type.
     *   Registrar must be active in order to perform this operation.
 *   2302
