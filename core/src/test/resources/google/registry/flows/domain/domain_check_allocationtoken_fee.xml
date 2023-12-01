@@ -34,6 +34,24 @@
           <fee:command>create</fee:command>
           <fee:period unit="y">1</fee:period>
         </fee:domain>
+        <fee:domain>
+          <fee:name>example1.tld</fee:name>
+          <fee:currency>USD</fee:currency>
+          <fee:command>renew</fee:command>
+          <fee:period unit="y">1</fee:period>
+        </fee:domain>
+        <fee:domain>
+          <fee:name>example2.example</fee:name>
+          <fee:currency>USD</fee:currency>
+          <fee:command>renew</fee:command>
+          <fee:period unit="y">1</fee:period>
+        </fee:domain>
+        <fee:domain>
+          <fee:name>reserved.tld</fee:name>
+          <fee:currency>USD</fee:currency>
+          <fee:command>renew</fee:command>
+          <fee:period unit="y">1</fee:period>
+        </fee:domain>
       </fee:check>
     </extension>
     <clTRID>ABC-12345</clTRID>

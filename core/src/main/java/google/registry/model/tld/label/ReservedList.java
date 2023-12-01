@@ -199,7 +199,7 @@ public final class ReservedList
   public synchronized ImmutableMap<String, ReservedListEntry> getReservedListEntries() {
     if (reservedListMap == null) {
       reservedListMap =
-          tm().transact(
+          tm().reTransact(
                   () ->
                       tm()
                           .createQueryComposer(ReservedListEntry.class)

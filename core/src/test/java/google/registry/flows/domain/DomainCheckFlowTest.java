@@ -340,6 +340,7 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
         new AllocationToken.Builder()
             .setToken("abc123")
             .setTokenType(UNLIMITED_USE)
+            .setAllowedEppActions(ImmutableSet.of(CommandName.CREATE))
             .setDiscountFraction(0.5)
             .setDiscountYears(2)
             .setTokenStatusTransitions(
@@ -364,6 +365,7 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
             .setTokenType(UNLIMITED_USE)
             .setDiscountFraction(0.5)
             .setDiscountYears(2)
+            .setAllowedEppActions(ImmutableSet.of(CommandName.CREATE))
             .setTokenStatusTransitions(
                 ImmutableSortedMap.<DateTime, TokenStatus>naturalOrder()
                     .put(START_OF_TIME, TokenStatus.NOT_STARTED)
