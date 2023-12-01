@@ -132,7 +132,7 @@ registryPolicy:
 
   # BSA blocked domain name template.
   domainBlockedByBsaTemplate: |
-    Domain Name: %domain-name%
+    Domain Name: %s
     >>> This name is not available for registration.
     >>> This name has been blocked by a GlobalBlock service.
 
