@@ -256,9 +256,9 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
     return VKey.create(Tld.class, tldStr);
   }
 
-  /** Checks if {@code tld} is/was/will be enrolled with BSA at the given {@code time}. */
-  public static boolean isEnrolledWithBsa(Tld tld, DateTime time) {
-    return tld.getBsaEnrollStartTime().orElse(END_OF_TIME).isBefore(time);
+  /** Checks if {@code tld} is enrolled with BSA. */
+  public static boolean isEnrolledWithBsa(Tld tld, DateTime now) {
+    return tld.getBsaEnrollStartTime().orElse(END_OF_TIME).isBefore(now);
   }
 
   /**
@@ -555,7 +555,14 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
   @JsonSerialize(using = SortedEnumSetSerializer.class)
   Set<IdnTableEnum> idnTables;
 
-  /** The start time of this TLD's enrollment in the BSA program, if applicable. */
+  /**
+   * The start time of this TLD's enrollment in the BSA program, if applicable.
+   *
+   * <p>This property is excluded from source-based configuration and is managed directly in the
+   * database.
+   */
+  // TODO(b/309175410): implement setup and cleanup procedure for joining or leaving BSA, and see
+  // if it can be integrated with the ConfigTldCommand.
   @JsonIgnore @Nullable DateTime bsaEnrollStartTime;
 
   public String getTldStr() {

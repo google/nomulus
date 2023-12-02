@@ -122,7 +122,8 @@ public class ConfigureTldCommand extends MutatingCommand {
     checkPremiumList(newTld);
     checkDnsWriters(newTld);
     checkCurrency(newTld);
-    // bsaEnrollStartTime only exists in DB. Need to carry it over to the new instance.
+    // bsaEnrollStartTime only exists in DB. Need to carry it over to the updated copy. See Tld.java
+    // for more information.
     Optional<DateTime> bsaEnrollTime =
         Optional.ofNullable(oldTld).flatMap(Tld::getBsaEnrollStartTime);
     if (bsaEnrollTime.isPresent()) {
