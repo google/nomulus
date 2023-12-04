@@ -47,7 +47,8 @@ export class DomainListService {
   retrieveDomains(
     pageNumber?: number,
     resultsPerPage?: number,
-    totalResults?: number
+    totalResults?: number,
+    searchTerm?: string
   ) {
     return this.backendService
       .getDomains(
@@ -55,7 +56,8 @@ export class DomainListService {
         this.checkpointTime,
         pageNumber,
         resultsPerPage,
-        totalResults
+        totalResults,
+        searchTerm
       )
       .pipe(
         tap((domainListResult: DomainListResult) => {

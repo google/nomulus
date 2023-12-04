@@ -18,6 +18,7 @@ import { BackendService } from '../shared/services/backend.service';
 import { MatPaginator, PageEvent } from '@angular/material/paginator';
 import { RegistrarService } from '../registrar/registrar.service';
 import { Domain, DomainListService } from './domainList.service';
+import { Subject, debounceTime } from 'rxjs';
 
 @Component({
   selector: 'app-domain-list',
@@ -27,6 +28,7 @@ import { Domain, DomainListService } from './domainList.service';
 })
 export class DomainListComponent {
   public static PATH = 'domain-list';
+  private readonly DEBOUNCE_MS = 1000;
 
   displayedColumns: string[] = [
     'domainName',
@@ -37,6 +39,9 @@ export class DomainListComponent {
 
   dataSource: MatTableDataSource<Domain> = new MatTableDataSource();
   isLoading = true;
+
+  searchTermSubject = new Subject<string>();
+  searchTerm?: string;
 
   pageNumber?: number;
   resultsPerPage = 50;
@@ -52,13 +57,28 @@ export class DomainListComponent {
 
   ngOnInit() {
     this.dataSource.paginator = this.paginator;
+    // Don't spam the server unnecessarily while the user is typing
+    this.searchTermSubject
+      .pipe(debounceTime(this.DEBOUNCE_MS))
+      .subscribe((searchTermValue) => {
+        this.reloadData();
+      });
     this.reloadData();
+  }
+
+  ngOnDestroy() {
+    this.searchTermSubject.complete();
   }
 
   reloadData() {
     this.isLoading = true;
     this.domainListService
-      .retrieveDomains(this.pageNumber, this.resultsPerPage, this.totalResults)
+      .retrieveDomains(
+        this.pageNumber,
+        this.resultsPerPage,
+        this.totalResults,
+        this.searchTerm
+      )
       .subscribe((domainListResult) => {
         this.dataSource.data = domainListResult.domains;
         this.totalResults = domainListResult.totalResults;
@@ -66,10 +86,8 @@ export class DomainListComponent {
       });
   }
 
-  /** TODO: the backend will need to accept a filter string. */
-  applyFilter(event: KeyboardEvent) {
-    // const filterValue = (event.target as HTMLInputElement).value;
-    this.reloadData();
+  sendInput() {
+    this.searchTermSubject.next(this.searchTerm!);
   }
 
   onPageChange(event: PageEvent) {

@@ -1,7 +1,13 @@
 <div class="console-domains">
   <mat-form-field>
     <mat-label>Filter</mat-label>
-    <input matInput (keyup)="applyFilter($event)" #input />
+    <input
+      type="search"
+      matInput
+      (input)="sendInput()"
+      [(ngModel)]="searchTerm"
+      #input
+    />
   </mat-form-field>
 
   <div *ngIf="isLoading; else domains_content" class="console-domains__loading">

@@ -69,7 +69,8 @@ export class BackendService {
     checkpointTime?: string,
     pageNumber?: number,
     resultsPerPage?: number,
-    totalResults?: number
+    totalResults?: number,
+    searchTerm?: string
   ): Observable<DomainListResult> {
     var url = `/console-api/domain-list?registrarId=${registrarId}`;
     if (checkpointTime) {
@@ -83,6 +84,9 @@ export class BackendService {
     }
     if (totalResults) {
       url += `&totalResults=${totalResults}`;
+    }
+    if (searchTerm) {
+      url += `&searchTerm=${searchTerm}`;
     }
     return this.http
       .get<DomainListResult>(url)
