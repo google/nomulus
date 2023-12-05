@@ -62,7 +62,8 @@ class UpdatePremiumListCommand extends CreateOrUpdatePremiumListCommand {
           name, existingList, updatedPremiumList);
     } else {
       return String.format(
-          "Keep the premium list the same for %s?\n List Contents: %s", name, existingList);
+          "This update contains no changes to the premium list for %s.\n List Contents: %s",
+          name, existingList);
     }
   }
 
