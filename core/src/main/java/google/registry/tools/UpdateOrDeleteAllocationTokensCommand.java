@@ -67,9 +67,12 @@ abstract class UpdateOrDeleteAllocationTokensCommand extends ConfirmingCommand {
       checkArgument(!prefix.isEmpty(), "Provided prefix should not be blank");
       return tm().transact(
               () ->
-                  tm().loadAllOf(AllocationToken.class).stream()
-                      .filter(token -> token.getToken().startsWith(prefix))
-                      .map(AllocationToken::createVKey)
+                  tm().query(
+                          "SELECT token FROM AllocationToken WHERE token LIKE :prefix",
+                          String.class)
+                      .setParameter("prefix", String.format("%s%%", prefix))
+                      .getResultStream()
+                      .map(token -> VKey.create(AllocationToken.class, token))
                       .collect(toImmutableList()));
     }
   }
