@@ -14,6 +14,7 @@
 
 package google.registry.request;
 
+import static com.google.api.client.http.HttpStatusCodes.STATUS_CODE_OK;
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.io.BaseEncoding.base64;
 import static com.google.common.net.HttpHeaders.AUTHORIZATION;
@@ -28,6 +29,7 @@ import com.google.common.net.MediaType;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.HttpURLConnection;
 import java.net.URLConnection;
 import java.util.Random;
 
@@ -36,26 +38,37 @@ public final class UrlConnectionUtils {
 
   private UrlConnectionUtils() {}
 
-  /** Retrieves the response from the given connection as a byte array. */
-  public static byte[] getResponseBytes(URLConnection connection) throws IOException {
-    try (InputStream is = connection.getInputStream()) {
+  /**
+   * Retrieves the response from the given connection as a byte array.
+   *
+   * <p>Note that in the event the response code is not 200, we use the error stream as any payload
+   * is included there.
+   *
+   * @see HttpURLConnection#getErrorStream()
+   */
+  public static byte[] getResponseBytes(HttpURLConnection connection) throws IOException {
+    int responseCode = connection.getResponseCode();
+    try (InputStream is =
+        responseCode == STATUS_CODE_OK
+            ? connection.getInputStream()
+            : connection.getErrorStream()) {
       return ByteStreams.toByteArray(is);
     }
   }
 
   /** Sets auth on the given connection with the given username/password. */
-  public static void setBasicAuth(URLConnection connection, String username, String password) {
+  public static void setBasicAuth(HttpURLConnection connection, String username, String password) {
     setBasicAuth(connection, String.format("%s:%s", username, password));
   }
 
   /** Sets auth on the given connection with the given string, formatted "username:password". */
-  public static void setBasicAuth(URLConnection connection, String usernameAndPassword) {
+  public static void setBasicAuth(HttpURLConnection connection, String usernameAndPassword) {
     String token = base64().encode(usernameAndPassword.getBytes(UTF_8));
     connection.setRequestProperty(AUTHORIZATION, "Basic " + token);
   }
 
   /** Sets the given byte[] payload on the given connection with a particular content type. */
-  public static void setPayload(URLConnection connection, byte[] bytes, String contentType)
+  public static void setPayload(HttpURLConnection connection, byte[] bytes, String contentType)
       throws IOException {
     connection.setRequestProperty(CONTENT_TYPE, contentType);
     connection.setDoOutput(true);
@@ -72,7 +85,7 @@ public final class UrlConnectionUtils {
    * @see <a href="http://www.ietf.org/rfc/rfc2388.txt">RFC2388 - Returning Values from Forms</a>
    */
   public static void setPayloadMultipart(
-      URLConnection connection,
+      HttpURLConnection connection,
       String name,
       String filename,
       MediaType contentType,
