@@ -74,7 +74,8 @@ class UpdatePremiumListCommandTest<C extends UpdatePremiumListCommand>
     command.inputFile = Paths.get(tmpFile.getPath());
     command.name = TLD_TEST;
     command.prompt();
-    assertThat(command.prompt()).contains("Keep the premium list the same for prime?");
+    assertThat(command.prompt())
+        .contains("This update contains no changes to the premium list for prime.");
   }
 
   @Test
