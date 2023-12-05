@@ -99,10 +99,10 @@ class IcannHttpReporterTest {
 
   @Test
   void testFail_BadIirdeaResponse() throws Exception {
-    when(connection.getInputStream()).thenReturn(IIRDEA_BAD_XML.openBufferedStream());
     when(connection.getResponseCode()).thenReturn(STATUS_CODE_BAD_REQUEST);
+    when(connection.getErrorStream()).thenReturn(IIRDEA_BAD_XML.openBufferedStream());
     assertThat(reporter.send(FAKE_PAYLOAD, "test-transactions-201706.csv")).isFalse();
-    verify(connection).getInputStream();
+    verify(connection).getErrorStream();
   }
 
   @Test
