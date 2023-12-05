@@ -68,6 +68,16 @@ class UpdatePremiumListCommandTest<C extends UpdatePremiumListCommand>
   }
 
   @Test
+  void commandPrompt_successStageNoChange() throws Exception {
+    File tmpFile = tmpDir.resolve(String.format("%s.txt", TLD_TEST)).toFile();
+    UpdatePremiumListCommand command = new UpdatePremiumListCommand();
+    command.inputFile = Paths.get(tmpFile.getPath());
+    command.name = TLD_TEST;
+    command.prompt();
+    assertThat(command.prompt()).contains("Keep the premium list the same for prime?");
+  }
+
+  @Test
   void commandRun_successUpdateList() throws Exception {
     File tmpFile = tmpDir.resolve(String.format("%s.txt", TLD_TEST)).toFile();
     String newPremiumListData = "eth,USD 9999";
@@ -81,6 +91,18 @@ class UpdatePremiumListCommandTest<C extends UpdatePremiumListCommand>
     assertThat(PremiumListDao.loadAllPremiumEntries(TLD_TEST))
         .comparingElementsUsing(immutableObjectCorrespondence("revisionId"))
         .containsExactly(PremiumEntry.create(0L, new BigDecimal("9999.00"), "eth"));
+  }
+
+  @Test
+  void commandRun_successNoChange() throws Exception {
+    File tmpFile = tmpDir.resolve(String.format("%s.txt", TLD_TEST)).toFile();
+
+    UpdatePremiumListCommand command = new UpdatePremiumListCommand();
+    command.inputFile = Paths.get(tmpFile.getPath());
+    runCommandForced("--name=" + TLD_TEST, "--input=" + command.inputFile);
+
+    assertThat(PremiumListDao.loadAllPremiumEntries(TLD_TEST))
+        .containsExactly(PremiumEntry.create(0L, new BigDecimal("9090.00"), "doge"));
   }
 
   @Test
@@ -168,5 +190,20 @@ class UpdatePremiumListCommandTest<C extends UpdatePremiumListCommand>
     assertThat(thrown)
         .hasMessageThat()
         .isEqualTo("Could not update premium list random3 because it doesn't exist");
+  }
+
+  @Test
+  void commandDryRun_noChangesMade() throws Exception {
+    File tmpFile = tmpDir.resolve(String.format("%s.txt", TLD_TEST)).toFile();
+    String newPremiumListData = "eth,USD 9999";
+    Files.asCharSink(tmpFile, UTF_8).write(newPremiumListData);
+
+    UpdatePremiumListCommand command = new UpdatePremiumListCommand();
+    command.inputFile = Paths.get(tmpFile.getPath());
+    runCommandForced("--name=" + TLD_TEST, "--input=" + command.inputFile, "--dryrun");
+
+    assertThat(PremiumListDao.loadAllPremiumEntries(TLD_TEST))
+        .comparingElementsUsing(immutableObjectCorrespondence("revisionId"))
+        .containsExactly(PremiumEntry.create(0L, new BigDecimal("9090.00"), "doge"));
   }
 }
