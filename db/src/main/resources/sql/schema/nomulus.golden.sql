@@ -136,6 +136,37 @@ CREATE TABLE public."BsaDomainInUse" (
 
 
 --
+-- Name: BsaDomainRefresh; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public."BsaDomainRefresh" (
+    job_id bigint NOT NULL,
+    creation_time timestamp with time zone NOT NULL,
+    stage text NOT NULL,
+    update_timestamp timestamp with time zone
+);
+
+
+--
+-- Name: BsaDomainRefresh_job_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public."BsaDomainRefresh_job_id_seq"
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: BsaDomainRefresh_job_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public."BsaDomainRefresh_job_id_seq" OWNED BY public."BsaDomainRefresh".job_id;
+
+
+--
 -- Name: BsaDownload; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -1223,6 +1254,13 @@ CREATE SEQUENCE public.project_wide_unique_id_seq
 
 
 --
+-- Name: BsaDomainRefresh job_id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."BsaDomainRefresh" ALTER COLUMN job_id SET DEFAULT nextval('public."BsaDomainRefresh_job_id_seq"'::regclass);
+
+
+--
 -- Name: BsaDownload job_id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -1337,6 +1375,14 @@ ALTER TABLE ONLY public."BillingRecurrence"
 
 ALTER TABLE ONLY public."BsaDomainInUse"
     ADD CONSTRAINT "BsaDomainInUse_pkey" PRIMARY KEY (label, tld);
+
+
+--
+-- Name: BsaDomainRefresh BsaDomainRefresh_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."BsaDomainRefresh"
+    ADD CONSTRAINT "BsaDomainRefresh_pkey" PRIMARY KEY (job_id);
 
 
 --
