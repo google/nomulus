@@ -31,9 +31,9 @@ import java.nio.file.Files;
 class UpdatePremiumListCommand extends CreateOrUpdatePremiumListCommand {
 
   @Parameter(
-      names = {"-d", "--dryrun"},
+      names = {"-d", "--dry_run"},
       description = "Does not execute the entity mutation")
-  boolean dryrun;
+  boolean dryRun;
 
   // indicates if there is a new change made by this command
   private boolean newChange = false;
@@ -69,6 +69,6 @@ class UpdatePremiumListCommand extends CreateOrUpdatePremiumListCommand {
 
   @Override
   protected boolean dontRunCommand() {
-    return dryrun || !newChange;
+    return dryRun || !newChange;
   }
 }

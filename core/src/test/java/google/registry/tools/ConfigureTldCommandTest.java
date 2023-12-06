@@ -593,7 +593,7 @@ public class ConfigureTldCommandTest extends CommandTestCase<ConfigureTldCommand
   void testSuccess_dryRunOnCreate_noChanges() throws Exception {
     File tldFile = tmpDir.resolve("tld.yaml").toFile();
     Files.asCharSink(tldFile, UTF_8).write(loadFile(getClass(), "tld.yaml"));
-    runCommandForced("--input=" + tldFile, "--dryrun");
+    runCommandForced("--input=" + tldFile, "--dry_run");
     assertThrows(TldNotFoundException.class, () -> Tld.get("tld"));
   }
 

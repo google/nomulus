@@ -72,9 +72,9 @@ public class ConfigureTldCommand extends MutatingCommand {
   boolean breakglass;
 
   @Parameter(
-      names = {"-d", "--dryrun"},
+      names = {"-d", "--dry_run"},
       description = "Does not execute the entity mutation")
-  boolean dryrun;
+  boolean dryRun;
 
   @Inject ObjectMapper mapper;
 
@@ -131,7 +131,7 @@ public class ConfigureTldCommand extends MutatingCommand {
 
   @Override
   protected boolean dontRunCommand() {
-    if (dryrun) {
+    if (dryRun) {
       return true;
     }
     if (!newDiff) {
