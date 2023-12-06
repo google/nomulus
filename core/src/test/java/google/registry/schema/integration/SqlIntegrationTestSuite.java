@@ -17,6 +17,7 @@ package google.registry.schema.integration;
 import static com.google.common.truth.Truth.assert_;
 
 import google.registry.bsa.persistence.BsaDomainInUseTest;
+import google.registry.bsa.persistence.BsaDomainRefreshTest;
 import google.registry.bsa.persistence.BsaDownloadTest;
 import google.registry.bsa.persistence.BsaLabelTest;
 import google.registry.model.billing.BillingBaseTest;
@@ -86,6 +87,7 @@ import org.junit.runner.RunWith;
   AllocationTokenTest.class,
   BillingBaseTest.class,
   BsaDomainInUseTest.class,
+  BsaDomainRefreshTest.class,
   BsaDownloadTest.class,
   BsaLabelTest.class,
   BulkPricingPackageTest.class,

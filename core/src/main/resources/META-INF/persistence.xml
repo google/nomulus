@@ -38,6 +38,7 @@
 
     <mapping-file>META-INF/orm.xml</mapping-file>
 
+    <class>google.registry.bsa.persistence.BsaDomainRefresh</class>
     <class>google.registry.bsa.persistence.BsaDownload</class>
     <class>google.registry.bsa.persistence.BsaLabel</class>
     <class>google.registry.bsa.persistence.BsaDomainInUse</class>
