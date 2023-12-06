@@ -49,7 +49,7 @@ public final class UrlConnectionUtils {
     int responseCode = connection.getResponseCode();
     try (InputStream is =
         responseCode < 400 ? connection.getInputStream() : connection.getErrorStream()) {
-      return ByteStreams.toByteArray(is);
+      return is == null ? new byte[]{} : ByteStreams.toByteArray(is);
     }
   }
 
