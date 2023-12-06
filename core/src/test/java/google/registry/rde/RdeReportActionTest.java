@@ -263,7 +263,7 @@ public class RdeReportActionTest {
   @Test
   void testRunWithLock_badRequest_throws500WithErrorInfo() throws Exception {
     when(httpUrlConnection.getResponseCode()).thenReturn(STATUS_CODE_BAD_REQUEST);
-    when(httpUrlConnection.getInputStream()).thenReturn(IIRDEA_BAD_XML.openBufferedStream());
+    when(httpUrlConnection.getErrorStream()).thenReturn(IIRDEA_BAD_XML.openBufferedStream());
     InternalServerErrorException thrown =
         assertThrows(
             InternalServerErrorException.class,

@@ -108,6 +108,8 @@ class NordnUploadActionTest {
   void beforeEach() throws Exception {
     when(httpUrlConnection.getInputStream())
         .thenReturn(new ByteArrayInputStream("Success".getBytes(UTF_8)));
+    when(httpUrlConnection.getErrorStream())
+        .thenReturn(new ByteArrayInputStream("Failure".getBytes(UTF_8)));
     when(httpUrlConnection.getResponseCode()).thenReturn(SC_ACCEPTED);
     when(httpUrlConnection.getHeaderField(LOCATION)).thenReturn("http://trololol");
     when(httpUrlConnection.getOutputStream()).thenReturn(connectionOutputStream);
