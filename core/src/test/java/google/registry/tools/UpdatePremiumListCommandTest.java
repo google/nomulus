@@ -63,7 +63,6 @@ class UpdatePremiumListCommandTest<C extends UpdatePremiumListCommand>
     UpdatePremiumListCommand command = new UpdatePremiumListCommand();
     command.inputFile = Paths.get(tmpFile.getPath());
     command.name = TLD_TEST;
-    command.prompt();
     assertThat(command.prompt()).contains("Update premium list for prime?");
   }
 
@@ -73,7 +72,6 @@ class UpdatePremiumListCommandTest<C extends UpdatePremiumListCommand>
     UpdatePremiumListCommand command = new UpdatePremiumListCommand();
     command.inputFile = Paths.get(tmpFile.getPath());
     command.name = TLD_TEST;
-    command.prompt();
     assertThat(command.prompt())
         .contains("This update contains no changes to the premium list for prime.");
   }
@@ -201,7 +199,7 @@ class UpdatePremiumListCommandTest<C extends UpdatePremiumListCommand>
 
     UpdatePremiumListCommand command = new UpdatePremiumListCommand();
     command.inputFile = Paths.get(tmpFile.getPath());
-    runCommandForced("--name=" + TLD_TEST, "--input=" + command.inputFile, "--dryrun");
+    runCommandForced("--name=" + TLD_TEST, "--input=" + command.inputFile, "--dry_run");
 
     assertThat(PremiumListDao.loadAllPremiumEntries(TLD_TEST))
         .comparingElementsUsing(immutableObjectCorrespondence("revisionId"))
