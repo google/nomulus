@@ -256,6 +256,11 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
     return VKey.create(Tld.class, tldStr);
   }
 
+  /** Checks if {@code tld} is enrolled with BSA. */
+  public static boolean isEnrolledWithBsa(Tld tld, DateTime now) {
+    return tld.getBsaEnrollStartTime().orElse(END_OF_TIME).isBefore(now);
+  }
+
   /**
    * The name of the pricing engine that this TLD uses.
    *
@@ -550,9 +555,15 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
   @JsonSerialize(using = SortedEnumSetSerializer.class)
   Set<IdnTableEnum> idnTables;
 
-  // TODO(11/30/2023): uncomment below two lines
-  // /** The start time of this TLD's enrollment in the BSA program, if applicable. */
-  // @JsonIgnore @Nullable DateTime bsaEnrollStartTime;
+  /**
+   * The start time of this TLD's enrollment in the BSA program, if applicable.
+   *
+   * <p>This property is excluded from source-based configuration and is managed directly in the
+   * database.
+   */
+  // TODO(b/309175410): implement setup and cleanup procedure for joining or leaving BSA, and see
+  // if it can be integrated with the ConfigTldCommand.
+  @JsonIgnore @Nullable DateTime bsaEnrollStartTime;
 
   public String getTldStr() {
     return tldStr;
@@ -574,12 +585,9 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
   }
 
   /** Returns the time when this TLD was enrolled in the Brand Safety Alliance (BSA) program. */
-  @JsonIgnore // Annotation can be removed once we add the field and annotate it.
-  @Nullable
-  public DateTime getBsaEnrollStartTime() {
-    // TODO(11/30/2023): uncomment below.
-    // return this.bsaEnrollStartTime;
-    return null;
+  @JsonIgnore
+  public Optional<DateTime> getBsaEnrollStartTime() {
+    return Optional.ofNullable(this.bsaEnrollStartTime);
   }
 
   /** Retrieve whether invoicing is enabled. */
@@ -1101,10 +1109,9 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
       return this;
     }
 
-    public Builder setBsaEnrollStartTime(DateTime enrollTime) {
+    public Builder setBsaEnrollStartTime(Optional<DateTime> enrollTime) {
       // TODO(b/309175133): forbid if enrolled with BSA
-      // TODO(11/30/2023): uncomment below line
-      // getInstance().bsaEnrollStartTime = enrollTime;
+      getInstance().bsaEnrollStartTime = enrollTime.orElse(null);
       return this;
     }
 

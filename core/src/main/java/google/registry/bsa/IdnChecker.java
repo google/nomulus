@@ -16,8 +16,8 @@ package google.registry.bsa;
 
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.collect.Maps.transformValues;
+import static google.registry.model.tld.Tld.isEnrolledWithBsa;
 
-import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.ImmutableSet;
@@ -50,14 +50,6 @@ public class IdnChecker {
     allTlds = idnToTlds.values().stream().flatMap(ImmutableSet::stream).collect(toImmutableSet());
   }
 
-  // TODO(11/30/2023): Remove below when new Tld schema is deployed and the `getBsaEnrollStartTime`
-  // method is no longer hardcoded.
-  @VisibleForTesting
-  IdnChecker(ImmutableMap<IdnTableEnum, ImmutableSet<Tld>> idnToTlds) {
-    this.idnToTlds = idnToTlds;
-    allTlds = idnToTlds.values().stream().flatMap(ImmutableSet::stream).collect(toImmutableSet());
-  }
-
   /** Returns all IDNs in which the {@code label} is valid. */
   ImmutableSet<IdnTableEnum> getAllValidIdns(String label) {
     return idnToTlds.keySet().stream()
@@ -86,11 +78,6 @@ public class IdnChecker {
    */
   public SetView<Tld> getForbiddingTlds(ImmutableSet<String> idnTables) {
     return Sets.difference(allTlds, getSupportingTlds(idnTables));
-  }
-
-  private static boolean isEnrolledWithBsa(Tld tld, DateTime now) {
-    DateTime enrollTime = tld.getBsaEnrollStartTime();
-    return enrollTime != null && enrollTime.isBefore(now);
   }
 
   private static ImmutableMap<IdnTableEnum, ImmutableSet<Tld>> getIdnToTldMap(DateTime now) {
