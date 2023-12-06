@@ -78,8 +78,8 @@ steps:
       grep -e "^backend\|^default\|^bsa\|^pubapi\|^tools" |\
       while read line; do echo "${TAG_NAME},$line"; done | tee "$local_map"
     num_versions=$(cat "$local_map" | wc -l)
-    if [ "$num_versions" -ne 4 ]; then
-      echo "Expecting exactly four active services. Found $num_versions"
+    if [ "$num_versions" -ne 5 ]; then
+      echo "Expecting exactly five active services. Found $num_versions"
       exit 1
     fi
     gsutil cp "$local_map" gs://$PROJECT_ID-deployed-tags/nomulus.${_ENV}.tmp
