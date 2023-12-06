@@ -50,6 +50,8 @@ public final class UrlConnectionUtils {
     try (InputStream is =
         responseCode < 400 ? connection.getInputStream() : connection.getErrorStream()) {
       return ByteStreams.toByteArray(is);
+    } catch (NullPointerException e) {
+      return new byte[] {};
     }
   }
 
