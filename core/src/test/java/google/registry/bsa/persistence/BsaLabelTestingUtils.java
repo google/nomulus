@@ -19,9 +19,9 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import org.joda.time.DateTime;
 
 /** Testing utils for users of {@link BsaLabel}. */
-public final class BsaLabelUtils {
+public final class BsaLabelTestingUtils {
 
-  private BsaLabelUtils() {}
+  private BsaLabelTestingUtils() {}
 
   public static void persistBsaLabel(String domainLabel, DateTime creationTime) {
     tm().transact(() -> tm().put(new BsaLabel(domainLabel, creationTime)));
