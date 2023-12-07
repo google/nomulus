@@ -25,11 +25,13 @@ import static com.google.common.collect.Iterables.any;
 import static com.google.common.collect.Sets.difference;
 import static com.google.common.collect.Sets.intersection;
 import static com.google.common.collect.Sets.union;
+import static google.registry.bsa.persistence.BsaLabelUtils.isLabelBlocked;
 import static google.registry.model.domain.Domain.MAX_REGISTRATION_YEARS;
 import static google.registry.model.tld.Tld.TldState.GENERAL_AVAILABILITY;
 import static google.registry.model.tld.Tld.TldState.PREDELEGATION;
 import static google.registry.model.tld.Tld.TldState.QUIET_PERIOD;
 import static google.registry.model.tld.Tld.TldState.START_DATE_SUNRISE;
+import static google.registry.model.tld.Tld.isEnrolledWithBsa;
 import static google.registry.model.tld.Tlds.findTldForName;
 import static google.registry.model.tld.Tlds.getTlds;
 import static google.registry.model.tld.label.ReservationType.ALLOWED_IN_SUNRISE;
@@ -63,7 +65,6 @@ import com.google.common.collect.Multimaps;
 import com.google.common.collect.Sets;
 import com.google.common.collect.Streams;
 import com.google.common.net.InternetDomainName;
-import google.registry.bsa.persistence.BsaLabel;
 import google.registry.flows.EppException;
 import google.registry.flows.EppException.AssociationProhibitsOperationException;
 import google.registry.flows.EppException.AuthorizationErrorException;
@@ -268,7 +269,7 @@ public class DomainFlowUtils {
    */
   public static void verifyNotBlockedByBsa(String domainLabel, Tld tld, DateTime now)
       throws DomainLabelBlockedByBsaException {
-    if (Tld.isEnrolledWithBsa(tld, now) && BsaLabel.isLabelBlocked(domainLabel)) {
+    if (isEnrolledWithBsa(tld, now) && isLabelBlocked(domainLabel)) {
       throw new DomainLabelBlockedByBsaException();
     }
   }

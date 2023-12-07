@@ -44,12 +44,12 @@ public class BsaLabelTest {
 
   @Test
   void isLabelBlocked_no() {
-    assertThat(tm().transact(() -> BsaLabel.isLabelBlocked("abc"))).isFalse();
+    assertThat(tm().transact(() -> BsaLabelUtils.isLabelBlocked("abc"))).isFalse();
   }
 
   @Test
   void isLabelBlocked_yes() {
     tm().transact(() -> tm().put(new BsaLabel("abc", fakeClock.nowUtc())));
-    assertThat(tm().transact(() -> BsaLabel.isLabelBlocked("abc"))).isTrue();
+    assertThat(tm().transact(() -> BsaLabelUtils.isLabelBlocked("abc"))).isTrue();
   }
 }
