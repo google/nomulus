@@ -14,7 +14,6 @@
 
 package google.registry.reporting.icann;
 
-import static com.google.api.client.http.HttpStatusCodes.STATUS_CODE_BAD_REQUEST;
 import static com.google.api.client.http.HttpStatusCodes.STATUS_CODE_OK;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.net.MediaType.CSV_UTF_8;
@@ -38,6 +37,7 @@ import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
 import java.util.List;
 import javax.inject.Inject;
@@ -90,29 +90,30 @@ public class IcannHttpReporter {
     UrlConnectionUtils.setPayload(connection, reportBytes, CSV_UTF_8.toString());
     connection.setInstanceFollowRedirects(false);
 
-    int responseCode;
-    byte[] content;
+    int responseCode = 0;
+    byte[] content = null;
     try {
       responseCode = connection.getResponseCode();
-      // Only responses with a 200 or 400 status have a body. For everything else, we can return
-      // false early.
-      if (responseCode != STATUS_CODE_OK && responseCode != STATUS_CODE_BAD_REQUEST) {
-        logger.atWarning().log("Connection to ICANN server failed", connection);
+      content = UrlConnectionUtils.getResponseBytes(connection);
+      if (responseCode != STATUS_CODE_OK) {
+        XjcIirdeaResult result = parseResult(content);
+        logger.atWarning().log(
+            "PUT rejected, status code %s:\n%s\n%s",
+            result.getCode().getValue(), result.getMsg(), result.getDescription());
         return false;
       }
-      content = UrlConnectionUtils.getResponseBytes(connection);
+    } catch (IOException e) {
+      logger.atWarning().withCause(e).log(
+          "Connection to ICANN server failed with responseCode %s and connection %s",
+          responseCode == 0 ? "not available" : responseCode, connection);
+      return false;
+    } catch (XmlException e) {
+      logger.atWarning().withCause(e).log(
+          "Failed to parse ICANN response with responseCode %s and content %s",
+          responseCode, new String(content, StandardCharsets.UTF_8));
+      return false;
     } finally {
       connection.disconnect();
-    }
-    // We know that an HTTP 200 response can only contain a result code of
-    // 1000 (i. e. success), there is no need to parse it.
-    // See: https://tools.ietf.org/html/draft-lozano-icann-registry-interfaces-13#page-16
-    if (responseCode != STATUS_CODE_OK) {
-      XjcIirdeaResult result = parseResult(content);
-      logger.atWarning().log(
-          "PUT rejected, status code %s:\n%s\n%s",
-          result.getCode().getValue(), result.getMsg(), result.getDescription());
-      return false;
     }
     return true;
   }
@@ -164,4 +165,5 @@ public class IcannHttpReporter {
                 reportType));
     }
   }
+
 }
