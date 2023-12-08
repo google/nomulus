@@ -49,15 +49,14 @@ import { SettingsWidgetComponent } from './home/widgets/settingsWidget.component
 import { UserDataService } from './shared/services/userData.service';
 import WhoisComponent from './settings/whois/whois.component';
 import { SnackBarModule } from './snackbar.module';
-import {
-  RegistrarDetailsComponent,
-  RegistrarDetailsWrapperComponent,
-} from './registrar/registrarDetails.component';
+import { RegistrarDetailsComponent } from './registrar/registrarDetails.component';
 import { DomainListComponent } from './domains/domainList.component';
+import { DialogBottomSheetWrapper } from './shared/components/dialogBottomSheet.component';
 
 @NgModule({
   declarations: [
     AppComponent,
+    DialogBottomSheetWrapper,
     BillingWidgetComponent,
     ContactDetailsDialogComponent,
     ContactWidgetComponent,
@@ -70,7 +69,6 @@ import { DomainListComponent } from './domains/domainList.component';
     PromotionsWidgetComponent,
     RegistrarComponent,
     RegistrarDetailsComponent,
-    RegistrarDetailsWrapperComponent,
     RegistrarSelectorComponent,
     ResourcesWidgetComponent,
     SecurityComponent,
