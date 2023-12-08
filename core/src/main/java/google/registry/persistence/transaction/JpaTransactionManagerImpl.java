@@ -33,6 +33,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Streams;
 import com.google.common.flogger.FluentLogger;
 import com.google.common.flogger.StackSize;
+import google.registry.config.RegistryEnvironment;
 import google.registry.model.ImmutableObject;
 import google.registry.persistence.JpaRetries;
 import google.registry.persistence.PersistenceModule.TransactionIsolationLevel;
@@ -164,7 +165,10 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
       if (!getHibernateAllowNestedTransactions()) {
         throw new IllegalStateException(NESTED_TRANSACTION_MESSAGE);
       }
-      logger.atWarning().withStackTrace(StackSize.MEDIUM).log(NESTED_TRANSACTION_MESSAGE);
+      if (RegistryEnvironment.get() != RegistryEnvironment.PRODUCTION
+          && RegistryEnvironment.get() != RegistryEnvironment.UNITTEST) {
+        logger.atWarning().withStackTrace(StackSize.MEDIUM).log(NESTED_TRANSACTION_MESSAGE);
+      }
       // This prevents inner transaction from retrying, thus avoiding a cascade retry effect.
       return transactNoRetry(work, isolationLevel);
     }
