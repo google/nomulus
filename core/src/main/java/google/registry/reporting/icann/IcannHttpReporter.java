@@ -90,30 +90,34 @@ public class IcannHttpReporter {
     UrlConnectionUtils.setPayload(connection, reportBytes, CSV_UTF_8.toString());
     connection.setInstanceFollowRedirects(false);
 
-    int responseCode;
-    byte[] content;
+    int responseCode = 0;
+    byte[] content = null;
     try {
       responseCode = connection.getResponseCode();
       // Only responses with a 200 or 400 status have a body. For everything else, we can return
       // false early.
       if (responseCode != STATUS_CODE_OK && responseCode != STATUS_CODE_BAD_REQUEST) {
         logger.atWarning().log("Connection to ICANN server failed", connection);
-        return false;
       }
       content = UrlConnectionUtils.getResponseBytes(connection);
     } finally {
+      // We know that an HTTP 200 response can only contain a result code of
+      // 1000 (i. e. success), there is no need to parse it.
+      // See: https://tools.ietf.org/html/draft-lozano-icann-registry-interfaces-13#page-16
+      if (responseCode != STATUS_CODE_OK) {
+        try {
+          XjcIirdeaResult result = parseResult(content);
+          logger.atWarning().log(
+              "PUT rejected, status code %s:\n%s\n%s",
+              result.getCode().getValue(), result.getMsg(), result.getDescription());
+        } catch (Exception e) {
+          // ignore
+        }
+        return false;
+      }
       connection.disconnect();
     }
-    // We know that an HTTP 200 response can only contain a result code of
-    // 1000 (i. e. success), there is no need to parse it.
-    // See: https://tools.ietf.org/html/draft-lozano-icann-registry-interfaces-13#page-16
-    if (responseCode != STATUS_CODE_OK) {
-      XjcIirdeaResult result = parseResult(content);
-      logger.atWarning().log(
-          "PUT rejected, status code %s:\n%s\n%s",
-          result.getCode().getValue(), result.getMsg(), result.getDescription());
-      return false;
-    }
+
     return true;
   }
 
