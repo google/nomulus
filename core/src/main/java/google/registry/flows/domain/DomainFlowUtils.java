@@ -1761,6 +1761,7 @@ public class DomainFlowUtils {
   /** Domain label is blocked by the Brand Safety Alliance. */
   static class DomainLabelBlockedByBsaException extends ParameterValuePolicyErrorException {
     public DomainLabelBlockedByBsaException() {
+      // TODO(b/309174065): finalize the exception message.
       super("Domain label is blocked by the Brand Safety Alliance");
     }
   }

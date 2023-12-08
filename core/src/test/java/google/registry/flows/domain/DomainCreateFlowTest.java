@@ -2614,7 +2614,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
                     .build()),
             ValidationMode.STRICT);
     assertThat(new String(responseXmlBytes, StandardCharsets.UTF_8))
-        .contains("Domain label is blocked by the Brand Safety Alliance");
+        .isEqualTo(loadFile("domain_create_blocked_by_bsa.xml"));
   }
 
   @Test

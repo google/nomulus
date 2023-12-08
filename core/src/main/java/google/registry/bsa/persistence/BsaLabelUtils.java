@@ -43,6 +43,7 @@ public final class BsaLabelUtils {
         @Override
         public Map<VKey<BsaLabel>, Optional<BsaLabel>> loadAll(
             Iterable<? extends VKey<BsaLabel>> keys) {
+          // TODO(b/309173359): need this for DomainCheckFlow
           throw new UnsupportedOperationException(
               "LoadAll not supported by the BsaLabel cache loader.");
         }
