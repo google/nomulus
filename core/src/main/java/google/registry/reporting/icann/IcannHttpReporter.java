@@ -14,7 +14,6 @@
 
 package google.registry.reporting.icann;
 
-import static com.google.api.client.http.HttpStatusCodes.STATUS_CODE_BAD_REQUEST;
 import static com.google.api.client.http.HttpStatusCodes.STATUS_CODE_OK;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.net.MediaType.CSV_UTF_8;
@@ -29,15 +28,12 @@ import google.registry.keyring.api.KeyModule.Key;
 import google.registry.reporting.icann.IcannReportingModule.ReportType;
 import google.registry.request.UrlConnectionService;
 import google.registry.request.UrlConnectionUtils;
-import google.registry.xjc.XjcXmlTransformer;
-import google.registry.xjc.iirdea.XjcIirdeaResponseElement;
-import google.registry.xjc.iirdea.XjcIirdeaResult;
 import google.registry.xml.XmlException;
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
 import java.util.List;
 import javax.inject.Inject;
@@ -57,6 +53,7 @@ import org.joda.time.format.DateTimeFormat;
  *     Reporting Specification</a>
  */
 public class IcannHttpReporter {
+  private static final String NO_CONTENT_MSG = "Response Content Not Available";
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
@@ -90,38 +87,25 @@ public class IcannHttpReporter {
     UrlConnectionUtils.setPayload(connection, reportBytes, CSV_UTF_8.toString());
     connection.setInstanceFollowRedirects(false);
 
-    int responseCode;
-    byte[] content;
+    int responseCode = 0;
+    byte[] content = null;
     try {
       responseCode = connection.getResponseCode();
-      // Only responses with a 200 or 400 status have a body. For everything else, we can return
-      // false early.
-      if (responseCode != STATUS_CODE_OK && responseCode != STATUS_CODE_BAD_REQUEST) {
-        logger.atWarning().log("Connection to ICANN server failed", connection);
-        return false;
-      }
       content = UrlConnectionUtils.getResponseBytes(connection);
+      if (responseCode != STATUS_CODE_OK) {
+        throw new IcannUploadFailedException("Status code not ok");
+      }
+    } catch (IOException | IcannUploadFailedException e) {
+      logger.atWarning().withCause(e).log(
+          "Connection to ICANN server failed",
+          responseCode,
+          content == null ? NO_CONTENT_MSG : new String(content, StandardCharsets.UTF_8));
+
+      return false;
     } finally {
       connection.disconnect();
     }
-    // We know that an HTTP 200 response can only contain a result code of
-    // 1000 (i. e. success), there is no need to parse it.
-    // See: https://tools.ietf.org/html/draft-lozano-icann-registry-interfaces-13#page-16
-    if (responseCode != STATUS_CODE_OK) {
-      XjcIirdeaResult result = parseResult(content);
-      logger.atWarning().log(
-          "PUT rejected, status code %s:\n%s\n%s",
-          result.getCode().getValue(), result.getMsg(), result.getDescription());
-      return false;
-    }
     return true;
-  }
-
-  private static XjcIirdeaResult parseResult(byte[] content) throws XmlException {
-    XjcIirdeaResponseElement response =
-        XjcXmlTransformer.unmarshal(
-            XjcIirdeaResponseElement.class, new ByteArrayInputStream(content));
-    return response.getResult();
   }
 
   /** Verifies a given report filename matches the pattern tld-reportType-yyyyMM.csv. */
@@ -162,6 +146,12 @@ public class IcannHttpReporter {
             String.format(
                 "Received invalid reportTypes! Expected ACTIVITY or TRANSACTIONS, got %s.",
                 reportType));
+    }
+  }
+
+  private static class IcannUploadFailedException extends RuntimeException {
+    IcannUploadFailedException(String reason) {
+      super(reason);
     }
   }
 }
