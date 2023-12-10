@@ -31,8 +31,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
-/** Unit tests for {@link IdnChecker}. */
-public class IdnCheckerTest {
+class IdnCheckerTest {
 
   FakeClock fakeClock = new FakeClock();
 
