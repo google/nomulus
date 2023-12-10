@@ -100,10 +100,6 @@ public class ConfigureTldCommand extends MutatingCommand {
     Tld oldTld = getTlds().contains(name) ? Tld.get(name) : null;
     Tld newTld = mapper.readValue(inputFile.toFile(), Tld.class);
     if (oldTld != null) {
-      if (oldTld.getBsaEnrollStartTime() != null) {
-        // bsaEnrollStartTime is not set by config files. Must copy the old value.
-        newTld = newTld.asBuilder().setBsaEnrollStartTime(oldTld.getBsaEnrollStartTime()).build();
-      }
       oldTldInBreakglass = oldTld.getBreakglassMode();
       newDiff = !oldTld.equalYaml(newTld);
     }
