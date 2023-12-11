@@ -42,6 +42,7 @@ import google.registry.model.tld.label.ReservedListDao;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationWithCoverageExtension;
 import google.registry.testing.FakeClock;
+import java.util.Optional;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -74,7 +75,7 @@ class LabelDiffsTest {
             () ->
                 tm().put(
                         tld.asBuilder()
-                            .setBsaEnrollStartTime(START_OF_TIME)
+                            .setBsaEnrollStartTime(Optional.of(START_OF_TIME))
                             .setIdnTables(ImmutableSet.of(UNCONFUSABLE_LATIN))
                             .build()));
     app = tm().transact(() -> tm().loadByEntity(tld));
