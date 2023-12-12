@@ -18,6 +18,7 @@ import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.io.BaseEncoding.base16;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
+import static google.registry.bsa.persistence.BsaLabelTestingUtils.persistBsaLabel;
 import static google.registry.flows.FlowTestCase.UserPrivileges.SUPERUSER;
 import static google.registry.model.billing.BillingBase.Flag.ANCHOR_TENANT;
 import static google.registry.model.billing.BillingBase.Flag.RESERVED;
@@ -30,6 +31,7 @@ import static google.registry.model.domain.token.AllocationToken.TokenType.BULK_
 import static google.registry.model.domain.token.AllocationToken.TokenType.DEFAULT_PROMO;
 import static google.registry.model.domain.token.AllocationToken.TokenType.SINGLE_USE;
 import static google.registry.model.domain.token.AllocationToken.TokenType.UNLIMITED_USE;
+import static google.registry.model.eppcommon.EppXmlTransformer.marshal;
 import static google.registry.model.eppcommon.StatusValue.PENDING_DELETE;
 import static google.registry.model.eppcommon.StatusValue.SERVER_HOLD;
 import static google.registry.model.tld.Tld.TldState.GENERAL_AVAILABILITY;
@@ -96,6 +98,7 @@ import google.registry.flows.domain.DomainFlowUtils.ClaimsPeriodEndedException;
 import google.registry.flows.domain.DomainFlowUtils.CurrencyUnitMismatchException;
 import google.registry.flows.domain.DomainFlowUtils.CurrencyValueScaleException;
 import google.registry.flows.domain.DomainFlowUtils.DashesInThirdAndFourthException;
+import google.registry.flows.domain.DomainFlowUtils.DomainLabelBlockedByBsaException;
 import google.registry.flows.domain.DomainFlowUtils.DomainLabelTooLongException;
 import google.registry.flows.domain.DomainFlowUtils.DomainNameExistsAsTldException;
 import google.registry.flows.domain.DomainFlowUtils.DomainReservedException;
@@ -165,6 +168,9 @@ import google.registry.model.domain.secdns.DomainDsData;
 import google.registry.model.domain.token.AllocationToken;
 import google.registry.model.domain.token.AllocationToken.RegistrationBehavior;
 import google.registry.model.domain.token.AllocationToken.TokenStatus;
+import google.registry.model.eppcommon.Trid;
+import google.registry.model.eppoutput.EppOutput;
+import google.registry.model.eppoutput.EppResponse;
 import google.registry.model.poll.PendingActionNotificationResponse.DomainPendingActionNotificationResponse;
 import google.registry.model.poll.PollMessage;
 import google.registry.model.registrar.Registrar;
@@ -183,7 +189,9 @@ import google.registry.tmch.LordnTaskUtils.LordnPhase;
 import google.registry.tmch.SmdrlCsvParser;
 import google.registry.tmch.TmchData;
 import google.registry.tmch.TmchTestData;
+import google.registry.xml.ValidationMode;
 import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.Optional;
 import javax.annotation.Nullable;
@@ -2560,6 +2568,53 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     persistContactsAndHosts();
     EppException thrown = assertThrows(exception, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
+  }
+
+  @Test
+  void testSuccess_bsaLabelMatch_notEnrolled() throws Exception {
+    persistResource(Tld.get("tld").asBuilder().setBsaEnrollStartTime(Optional.empty()).build());
+    persistBsaLabel("example", clock.nowUtc());
+    persistContactsAndHosts();
+    doSuccessfulTest();
+  }
+
+  @Test
+  void testSuccess_bsaLabelMatch_notEnrolledYet() throws Exception {
+    persistResource(
+        Tld.get("tld")
+            .asBuilder()
+            .setBsaEnrollStartTime(Optional.of(clock.nowUtc().plusSeconds(1)))
+            .build());
+    persistBsaLabel("example", clock.nowUtc());
+    persistContactsAndHosts();
+    doSuccessfulTest();
+  }
+
+  @Test
+  void testFailure_blockedByBsa() throws Exception {
+    persistResource(
+        Tld.get("tld")
+            .asBuilder()
+            .setBsaEnrollStartTime(Optional.of(clock.nowUtc().minusSeconds(1)))
+            .build());
+    persistBsaLabel("example", clock.nowUtc());
+    persistContactsAndHosts();
+    EppException thrown = assertThrows(DomainLabelBlockedByBsaException.class, this::runFlow);
+    assertAboutEppExceptions()
+        .that(thrown)
+        .marshalsToXml()
+        .and()
+        .hasMessage("Domain label is blocked by the Brand Safety Alliance");
+    byte[] responseXmlBytes =
+        marshal(
+            EppOutput.create(
+                new EppResponse.Builder()
+                    .setTrid(Trid.create(null, "server-trid"))
+                    .setResult(thrown.getResult())
+                    .build()),
+            ValidationMode.STRICT);
+    assertThat(new String(responseXmlBytes, StandardCharsets.UTF_8))
+        .isEqualTo(loadFile("domain_create_blocked_by_bsa.xml"));
   }
 
   @Test

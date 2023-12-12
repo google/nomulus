@@ -25,11 +25,13 @@ import static com.google.common.collect.Iterables.any;
 import static com.google.common.collect.Sets.difference;
 import static com.google.common.collect.Sets.intersection;
 import static com.google.common.collect.Sets.union;
+import static google.registry.bsa.persistence.BsaLabelUtils.isLabelBlocked;
 import static google.registry.model.domain.Domain.MAX_REGISTRATION_YEARS;
 import static google.registry.model.tld.Tld.TldState.GENERAL_AVAILABILITY;
 import static google.registry.model.tld.Tld.TldState.PREDELEGATION;
 import static google.registry.model.tld.Tld.TldState.QUIET_PERIOD;
 import static google.registry.model.tld.Tld.TldState.START_DATE_SUNRISE;
+import static google.registry.model.tld.Tld.isEnrolledWithBsa;
 import static google.registry.model.tld.Tlds.findTldForName;
 import static google.registry.model.tld.Tlds.getTlds;
 import static google.registry.model.tld.label.ReservationType.ALLOWED_IN_SUNRISE;
@@ -257,6 +259,19 @@ public class DomainFlowUtils {
       throw new InvalidIdnDomainLabelException();
     }
     return idnTableName.get();
+  }
+
+  /**
+   * Verifies that the {@code domainLabel} is not blocked by any BSA block label for the given
+   * {@code tld} at the specified time.
+   *
+   * @throws DomainLabelBlockedByBsaException
+   */
+  public static void verifyNotBlockedByBsa(String domainLabel, Tld tld, DateTime now)
+      throws DomainLabelBlockedByBsaException {
+    if (isEnrolledWithBsa(tld, now) && isLabelBlocked(domainLabel)) {
+      throw new DomainLabelBlockedByBsaException();
+    }
   }
 
   /** Returns whether a given domain create request is for a valid anchor tenant. */
@@ -1740,6 +1755,14 @@ public class DomainFlowUtils {
   static class RegistrarMustBeActiveForThisOperationException extends AuthorizationErrorException {
     public RegistrarMustBeActiveForThisOperationException() {
       super("Registrar must be active in order to perform this operation");
+    }
+  }
+
+  /** Domain label is blocked by the Brand Safety Alliance. */
+  static class DomainLabelBlockedByBsaException extends ParameterValuePolicyErrorException {
+    public DomainLabelBlockedByBsaException() {
+      // TODO(b/309174065): finalize the exception message.
+      super("Domain label is blocked by the Brand Safety Alliance");
     }
   }
 }

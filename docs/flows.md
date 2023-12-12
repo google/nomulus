@@ -384,6 +384,7 @@ An EPP flow that creates a new domain resource.
     *   The requested fees cannot be provided in the requested currency.
     *   Non-IDN domain names cannot contain hyphens in the third or fourth
         position.
+    *   Domain label is blocked by the Brand Safety Alliance.
     *   Domain labels cannot be longer than 63 characters.
     *   More than one contact for a given role is not allowed.
     *   No part of a domain name can be empty.

@@ -40,6 +40,7 @@ import static google.registry.flows.domain.DomainFlowUtils.verifyClaimsNoticeIfA
 import static google.registry.flows.domain.DomainFlowUtils.verifyClaimsPeriodNotEnded;
 import static google.registry.flows.domain.DomainFlowUtils.verifyLaunchPhaseMatchesRegistryPhase;
 import static google.registry.flows.domain.DomainFlowUtils.verifyNoCodeMarks;
+import static google.registry.flows.domain.DomainFlowUtils.verifyNotBlockedByBsa;
 import static google.registry.flows.domain.DomainFlowUtils.verifyNotReserved;
 import static google.registry.flows.domain.DomainFlowUtils.verifyPremiumNameIsNotBlocked;
 import static google.registry.flows.domain.DomainFlowUtils.verifyRegistrarIsActive;
@@ -168,6 +169,7 @@ import org.joda.time.Duration;
  * @error {@link DomainFlowUtils.CurrencyUnitMismatchException}
  * @error {@link DomainFlowUtils.CurrencyValueScaleException}
  * @error {@link DomainFlowUtils.DashesInThirdAndFourthException}
+ * @error {@link DomainFlowUtils.DomainLabelBlockedByBsaException}
  * @error {@link DomainFlowUtils.DomainLabelTooLongException}
  * @error {@link DomainFlowUtils.DomainReservedException}
  * @error {@link DomainFlowUtils.DuplicateContactForRoleException}
@@ -328,6 +330,7 @@ public final class DomainCreateFlow implements MutatingFlow {
               .verifySignedMarks(launchCreate.get().getSignedMarks(), domainLabel, now)
               .getId();
     }
+    verifyNotBlockedByBsa(domainLabel, tld, now);
     flowCustomLogic.afterValidation(
         DomainCreateFlowCustomLogic.AfterValidationParameters.newBuilder()
             .setDomainName(domainName)

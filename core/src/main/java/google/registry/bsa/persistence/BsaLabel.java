@@ -28,7 +28,7 @@ import org.joda.time.DateTime;
  * <p>The label is valid (wrt IDN) in at least one TLD.
  */
 @Entity
-public final class BsaLabel {
+final class BsaLabel {
 
   @Id String label;
 
@@ -52,7 +52,7 @@ public final class BsaLabel {
   }
 
   /** Returns the label to be blocked. */
-  public String getLabel() {
+  String getLabel() {
     return label;
   }
 

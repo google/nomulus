@@ -41,4 +41,15 @@ public class BsaLabelTest {
     assertThat(persisted.getLabel()).isEqualTo("label");
     assertThat(persisted.creationTime).isEqualTo(fakeClock.nowUtc());
   }
+
+  @Test
+  void isLabelBlocked_no() {
+    assertThat(tm().transact(() -> BsaLabelUtils.isLabelBlocked("abc"))).isFalse();
+  }
+
+  @Test
+  void isLabelBlocked_yes() {
+    tm().transact(() -> tm().put(new BsaLabel("abc", fakeClock.nowUtc())));
+    assertThat(tm().transact(() -> BsaLabelUtils.isLabelBlocked("abc"))).isTrue();
+  }
 }
