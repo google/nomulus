@@ -173,10 +173,10 @@ public final class NordnUploadAction implements Runnable {
                   String header =
                       String.format("1,%s,%d\n%s\n", clock.nowUtc(), domains.size(), columns);
                   try {
-                    URL url =
+                    URL urlToVerify =
                         uploadCsvToLordn(String.format("/LORDN/%s/%s", tld, phase), header + csv);
                     tm().updateAll(newDomains.build());
-                    return Optional.of(url);
+                    return Optional.of(urlToVerify);
                   } catch (IOException | GeneralSecurityException e) {
                     throw new RuntimeException(e);
                   }
