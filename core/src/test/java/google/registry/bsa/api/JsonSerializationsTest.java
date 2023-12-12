@@ -20,8 +20,8 @@ import static google.registry.bsa.api.JsonSerializations.toInProgressOrdersRepor
 import static google.registry.bsa.api.JsonSerializations.toUnblockableDomainsReport;
 
 import com.google.common.base.Joiner;
-import google.registry.bsa.api.NonBlockedDomain.Reason;
-import google.registry.bsa.api.Order.OrderType;
+import google.registry.bsa.api.BlockOrder.OrderType;
+import google.registry.bsa.api.UnblockableDomain.Reason;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.shaded.com.google.common.collect.ImmutableList;
@@ -44,7 +44,7 @@ class JsonSerializationsTest {
                     "    \"status\": \"ActivationInProgress\"",
                     "  }",
                     "]"));
-    assertThat(toInProgressOrdersReport(Stream.of(Order.of(1, OrderType.CREATE))))
+    assertThat(toInProgressOrdersReport(Stream.of(BlockOrder.of(1, OrderType.CREATE))))
         .hasValue(expected);
   }
 
@@ -66,7 +66,7 @@ class JsonSerializationsTest {
                     "]"));
     assertThat(
             toInProgressOrdersReport(
-                Stream.of(Order.of(1, OrderType.CREATE), Order.of(2, OrderType.DELETE))))
+                Stream.of(BlockOrder.of(1, OrderType.CREATE), BlockOrder.of(2, OrderType.DELETE))))
         .hasValue(expected);
   }
 
@@ -82,7 +82,7 @@ class JsonSerializationsTest {
                     "    \"status\": \"Active\"",
                     "  }",
                     "]"));
-    assertThat(toCompletedOrdersReport(Stream.of(Order.of(1, OrderType.CREATE))))
+    assertThat(toCompletedOrdersReport(Stream.of(BlockOrder.of(1, OrderType.CREATE))))
         .hasValue(expected);
   }
 
@@ -104,13 +104,13 @@ class JsonSerializationsTest {
                     "]"));
     assertThat(
             toCompletedOrdersReport(
-                Stream.of(Order.of(1, OrderType.CREATE), Order.of(2, OrderType.DELETE))))
+                Stream.of(BlockOrder.of(1, OrderType.CREATE), BlockOrder.of(2, OrderType.DELETE))))
         .hasValue(expected);
   }
 
   @Test
   void toJson_UnblockableDomains_empty() {
-    assertThat(toUnblockableDomainsReport(Stream.<NonBlockedDomain>of())).isEmpty();
+    assertThat(toUnblockableDomainsReport(Stream.<UnblockableDomain>of())).isEmpty();
   }
 
   @Test
@@ -134,10 +134,10 @@ class JsonSerializationsTest {
     assertThat(
             toUnblockableDomainsReport(
                 Stream.of(
-                    NonBlockedDomain.of("a.ing", Reason.REGISTERED),
-                    NonBlockedDomain.of("b.app", Reason.INVALID),
-                    NonBlockedDomain.of("c.dev", Reason.RESERVED),
-                    NonBlockedDomain.of("d.page", Reason.REGISTERED))))
+                    UnblockableDomain.of("a.ing", Reason.REGISTERED),
+                    UnblockableDomain.of("b.app", Reason.INVALID),
+                    UnblockableDomain.of("c.dev", Reason.RESERVED),
+                    UnblockableDomain.of("d.page", Reason.REGISTERED))))
         .hasValue(expected);
   }
 }

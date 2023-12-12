@@ -271,7 +271,8 @@ public class RegistryConfigSettings {
     public int bsaLockLeaseExpiryMinutes;
     public int bsaDownloadIntervalMinutes;
     public int bsaMaxNopIntervalHours;
-    public int bsaLabelTxnBatchSize;
+    public int bsaTxnBatchSize;
+    public int domainTxnMaxDurationSeconds;
     public String authUrl;
     public int authTokenExpirySeconds;
     public Map<String, String> dataUrls;

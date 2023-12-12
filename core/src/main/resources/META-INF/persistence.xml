@@ -41,7 +41,7 @@
     <class>google.registry.bsa.persistence.BsaDomainRefresh</class>
     <class>google.registry.bsa.persistence.BsaDownload</class>
     <class>google.registry.bsa.persistence.BsaLabel</class>
-    <class>google.registry.bsa.persistence.BsaDomainInUse</class>
+    <class>google.registry.bsa.persistence.BsaUnblockableDomain</class>
     <class>google.registry.model.billing.BillingCancellation</class>
     <class>google.registry.model.billing.BillingEvent</class>
     <class>google.registry.model.billing.BillingRecurrence</class>

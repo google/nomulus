@@ -17,12 +17,20 @@ package google.registry.bsa.persistence;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.bsa.persistence.Queries.deleteBsaLabelByLabels;
-import static google.registry.bsa.persistence.Queries.queryBsaDomainInUseByLabels;
 import static google.registry.bsa.persistence.Queries.queryBsaLabelByLabels;
+import static google.registry.bsa.persistence.Queries.queryBsaUnblockableDomainByLabels;
+import static google.registry.bsa.persistence.Queries.queryLivesDomains;
+import static google.registry.bsa.persistence.Queries.queryUnblockablesByNames;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+import static google.registry.testing.DatabaseHelper.createTlds;
+import static google.registry.testing.DatabaseHelper.newDomain;
+import static google.registry.testing.DatabaseHelper.persistDomainAsDeleted;
+import static google.registry.testing.DatabaseHelper.persistNewRegistrar;
+import static google.registry.testing.DatabaseHelper.persistResource;
 
 import com.google.common.collect.ImmutableList;
-import google.registry.bsa.persistence.BsaDomainInUse.Reason;
+import com.google.common.collect.ImmutableSet;
+import google.registry.bsa.persistence.BsaUnblockableDomain.Reason;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationWithCoverageExtension;
 import google.registry.testing.FakeClock;
@@ -51,37 +59,37 @@ class QueriesTest {
                           new BsaLabel("label3", fakeClock.nowUtc())));
               tm().putAll(
                       ImmutableList.of(
-                          BsaDomainInUse.of("label1.app", Reason.REGISTERED),
-                          BsaDomainInUse.of("label1.dev", Reason.RESERVED),
-                          BsaDomainInUse.of("label2.page", Reason.REGISTERED),
-                          BsaDomainInUse.of("label3.app", Reason.REGISTERED)));
+                          BsaUnblockableDomain.of("label1.app", Reason.REGISTERED),
+                          BsaUnblockableDomain.of("label1.dev", Reason.RESERVED),
+                          BsaUnblockableDomain.of("label2.page", Reason.REGISTERED),
+                          BsaUnblockableDomain.of("label3.app", Reason.REGISTERED)));
             });
   }
 
   @Test
-  void queryBsaDomainInUseByLabels_oneLabel() {
+  void queryBsaUnblockableDomainByLabels_oneLabel() {
     assertThat(
             tm().transact(
                     () ->
-                        queryBsaDomainInUseByLabels(ImmutableList.of("label1"))
-                            .map(BsaDomainInUse::toVkey)
+                        queryBsaUnblockableDomainByLabels(ImmutableList.of("label1"))
+                            .map(BsaUnblockableDomain::toVkey)
                             .collect(toImmutableList())))
         .containsExactly(
-            BsaDomainInUse.vKey("label1", "app"), BsaDomainInUse.vKey("label1", "dev"));
+            BsaUnblockableDomain.vKey("label1", "app"), BsaUnblockableDomain.vKey("label1", "dev"));
   }
 
   @Test
-  void queryBsaDomainInUseByLabels_twoLabels() {
+  void queryBsaUnblockableDomainByLabels_twoLabels() {
     assertThat(
             tm().transact(
                     () ->
-                        queryBsaDomainInUseByLabels(ImmutableList.of("label1", "label2"))
-                            .map(BsaDomainInUse::toVkey)
+                        queryBsaUnblockableDomainByLabels(ImmutableList.of("label1", "label2"))
+                            .map(BsaUnblockableDomain::toVkey)
                             .collect(toImmutableList())))
         .containsExactly(
-            BsaDomainInUse.vKey("label1", "app"),
-            BsaDomainInUse.vKey("label1", "dev"),
-            BsaDomainInUse.vKey("label2", "page"));
+            BsaUnblockableDomain.vKey("label1", "app"),
+            BsaUnblockableDomain.vKey("label1", "dev"),
+            BsaUnblockableDomain.vKey("label2", "page"));
   }
 
   @Test
@@ -115,11 +123,12 @@ class QueriesTest {
     assertThat(
             tm().transact(
                     () ->
-                        tm().loadAllOfStream(BsaDomainInUse.class)
-                            .map(BsaDomainInUse::toVkey)
+                        tm().loadAllOfStream(BsaUnblockableDomain.class)
+                            .map(BsaUnblockableDomain::toVkey)
                             .collect(toImmutableList())))
         .containsExactly(
-            BsaDomainInUse.vKey("label2", "page"), BsaDomainInUse.vKey("label3", "app"));
+            BsaUnblockableDomain.vKey("label2", "page"),
+            BsaUnblockableDomain.vKey("label3", "app"));
   }
 
   @Test
@@ -131,9 +140,66 @@ class QueriesTest {
     assertThat(
             tm().transact(
                     () ->
-                        tm().loadAllOfStream(BsaDomainInUse.class)
-                            .map(BsaDomainInUse::toVkey)
+                        tm().loadAllOfStream(BsaUnblockableDomain.class)
+                            .map(BsaUnblockableDomain::toVkey)
                             .collect(toImmutableList())))
-        .containsExactly(BsaDomainInUse.vKey("label3", "app"));
+        .containsExactly(BsaUnblockableDomain.vKey("label3", "app"));
+  }
+
+  private void setupUnblockableDomains() {
+    tm().transact(
+            () ->
+                tm().insertAll(
+                        ImmutableList.of(
+                            new BsaLabel("a", fakeClock.nowUtc()),
+                            new BsaLabel("b", fakeClock.nowUtc()))));
+    BsaUnblockableDomain a1 = new BsaUnblockableDomain("a", "tld1", Reason.RESERVED);
+    BsaUnblockableDomain b1 = new BsaUnblockableDomain("b", "tld1", Reason.REGISTERED);
+    BsaUnblockableDomain a2 = new BsaUnblockableDomain("a", "tld2", Reason.REGISTERED);
+    tm().transact(() -> tm().insertAll(ImmutableList.of(a1, b1, a2)));
+  }
+
+  @Test
+  void queryUnblockablesByNames_singleName_found() {
+    setupUnblockableDomains();
+    assertThat(tm().transact(() -> queryUnblockablesByNames(ImmutableSet.of("a.tld1"))))
+        .containsExactly("a.tld1");
+  }
+
+  @Test
+  void queryUnblockablesByNames_singleName_notFound() {
+    setupUnblockableDomains();
+    assertThat(tm().transact(() -> queryUnblockablesByNames(ImmutableSet.of("c.tld3")))).isEmpty();
+  }
+
+  @Test
+  void queryUnblockablesByNames_multipleNames() {
+    setupUnblockableDomains();
+    assertThat(
+            tm().transact(
+                    () -> queryUnblockablesByNames(ImmutableSet.of("a.tld1", "b.tld1", "c.tld3"))))
+        .containsExactly("a.tld1", "b.tld1");
+  }
+
+  @Test
+  void queryLivesDomains_onlyLiveDomainsReturned() {
+    DateTime testStartTime = fakeClock.nowUtc();
+    createTlds("tld");
+    persistNewRegistrar("TheRegistrar");
+    // time 0:
+    persistResource(
+        newDomain("d1.tld").asBuilder().setCreationTimeForTest(fakeClock.nowUtc()).build());
+    // time 0, deletion time 1
+    persistDomainAsDeleted(
+        newDomain("will-delete.tld").asBuilder().setCreationTimeForTest(fakeClock.nowUtc()).build(),
+        fakeClock.nowUtc().plusMillis(1));
+    fakeClock.advanceOneMilli();
+    // time 1
+    persistResource(
+        newDomain("d2.tld").asBuilder().setCreationTimeForTest(fakeClock.nowUtc()).build());
+    fakeClock.advanceOneMilli();
+    // Now is time 2
+    assertThat(tm().transact(() -> queryLivesDomains(testStartTime, fakeClock.nowUtc())))
+        .containsExactly("d1.tld", "d2.tld");
   }
 }

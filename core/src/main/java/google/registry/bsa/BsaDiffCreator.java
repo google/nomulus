@@ -31,10 +31,10 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
-import google.registry.bsa.api.Label;
-import google.registry.bsa.api.Label.LabelType;
-import google.registry.bsa.api.Order;
-import google.registry.bsa.api.Order.OrderType;
+import google.registry.bsa.api.BlockLabel;
+import google.registry.bsa.api.BlockLabel.LabelType;
+import google.registry.bsa.api.BlockOrder;
+import google.registry.bsa.api.BlockOrder.OrderType;
 import google.registry.bsa.persistence.DownloadSchedule;
 import google.registry.bsa.persistence.DownloadSchedule.CompletedJob;
 import google.registry.tldconfig.idn.IdnTableEnum;
@@ -146,7 +146,7 @@ class BsaDiffCreator {
   }
 
   Stream<Line> loadBlockLists(String jobName) {
-    return Stream.of(BlockList.values())
+    return Stream.of(BlockListType.values())
         .map(blockList -> gcsClient.readBlockList(jobName, blockList))
         .flatMap(x -> x)
         .filter(line -> !line.startsWith(BSA_CSV_HEADER))
@@ -187,23 +187,23 @@ class BsaDiffCreator {
       this.idnChecker = idnChecker;
     }
 
-    Stream<Order> getOrders() {
+    Stream<BlockOrder> getOrders() {
       return Stream.concat(
           newAndRemaining.values().stream()
               .filter(value -> !Objects.equals(ORDER_ID_SENTINEL, value))
               .distinct()
-              .map(id -> Order.of(id, OrderType.CREATE)),
-          deleted.values().stream().distinct().map(id -> Order.of(id, OrderType.DELETE)));
+              .map(id -> BlockOrder.of(id, OrderType.CREATE)),
+          deleted.values().stream().distinct().map(id -> BlockOrder.of(id, OrderType.DELETE)));
     }
 
-    Stream<Label> getLabels() {
+    Stream<BlockLabel> getLabels() {
       return Stream.of(
               newAndRemaining.asMap().entrySet().stream()
                   .filter(e -> e.getValue().size() > 1 || !e.getValue().contains(ORDER_ID_SENTINEL))
                   .filter(entry -> entry.getValue().contains(ORDER_ID_SENTINEL))
                   .map(
                       entry ->
-                          Label.of(
+                          BlockLabel.of(
                               entry.getKey(),
                               LabelType.NEW_ORDER_ASSOCIATION,
                               idnChecker.getAllValidIdns(entry.getKey()).stream()
@@ -214,14 +214,14 @@ class BsaDiffCreator {
                   .filter(entry -> !entry.getValue().contains(ORDER_ID_SENTINEL))
                   .map(
                       entry ->
-                          Label.of(
+                          BlockLabel.of(
                               entry.getKey(),
                               LabelType.CREATE,
                               idnChecker.getAllValidIdns(entry.getKey()).stream()
                                   .map(IdnTableEnum::name)
                                   .collect(toImmutableSet()))),
               Sets.difference(deleted.keySet(), newAndRemaining.keySet()).stream()
-                  .map(label -> Label.of(label, LabelType.DELETE, ImmutableSet.of())))
+                  .map(label -> BlockLabel.of(label, LabelType.DELETE, ImmutableSet.of())))
           .flatMap(x -> x);
     }
   }

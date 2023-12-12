@@ -16,10 +16,10 @@ package google.registry.bsa.persistence;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
-import static google.registry.bsa.DownloadStage.CHECKSUMS_NOT_MATCH;
+import static google.registry.bsa.DownloadStage.CHECKSUMS_DO_NOT_MATCH;
 import static google.registry.bsa.DownloadStage.DONE;
-import static google.registry.bsa.DownloadStage.DOWNLOAD;
-import static google.registry.bsa.DownloadStage.MAKE_DIFF;
+import static google.registry.bsa.DownloadStage.DOWNLOAD_BLOCK_LISTS;
+import static google.registry.bsa.DownloadStage.MAKE_ORDER_AND_LABEL_DIFF;
 import static google.registry.bsa.DownloadStage.NOP;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static org.joda.time.Duration.standardDays;
@@ -28,8 +28,9 @@ import static org.joda.time.Duration.standardSeconds;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
-import google.registry.bsa.BlockList;
+import google.registry.bsa.BlockListType;
 import google.registry.bsa.DownloadStage;
+import google.registry.bsa.RefreshStage;
 import google.registry.bsa.persistence.DownloadSchedule.CompletedJob;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationWithCoverageExtension;
@@ -63,7 +64,7 @@ class DownloadSchedulerTest {
 
   @AfterEach
   void dbCheck() {
-    ImmutableSet<DownloadStage> terminalStages = ImmutableSet.of(DONE, NOP, CHECKSUMS_NOT_MATCH);
+    ImmutableSet<DownloadStage> terminalStages = ImmutableSet.of(DONE, NOP, CHECKSUMS_DO_NOT_MATCH);
     assertThat(
             tm().transact(
                     () ->
@@ -82,20 +83,20 @@ class DownloadSchedulerTest {
     DownloadSchedule schedule = scheduleOptional.get();
     assertThat(schedule.latestCompleted()).isEmpty();
     assertThat(schedule.jobName()).isEqualTo("2023-11-09t020857.880z");
-    assertThat(schedule.stage()).isEqualTo(DownloadStage.DOWNLOAD);
+    assertThat(schedule.stage()).isEqualTo(DownloadStage.DOWNLOAD_BLOCK_LISTS);
     assertThat(schedule.alwaysDownload()).isTrue();
   }
 
   @Test
   void oneInProgressJob() {
-    BsaDownload inProgressJob = insertOneJobAndAdvanceClock(MAKE_DIFF);
+    BsaDownload inProgressJob = insertOneJobAndAdvanceClock(MAKE_ORDER_AND_LABEL_DIFF);
     Optional<DownloadSchedule> scheduleOptional = scheduler.schedule();
     assertThat(scheduleOptional).isPresent();
     DownloadSchedule schedule = scheduleOptional.get();
     assertThat(schedule.jobId()).isEqualTo(inProgressJob.jobId);
     assertThat(schedule.jobCreationTime()).isEqualTo(inProgressJob.getCreationTime());
     assertThat(schedule.jobName()).isEqualTo(inProgressJob.getJobName());
-    assertThat(schedule.stage()).isEqualTo(MAKE_DIFF);
+    assertThat(schedule.stage()).isEqualTo(MAKE_ORDER_AND_LABEL_DIFF);
     assertThat(schedule.latestCompleted()).isEmpty();
     assertThat(schedule.alwaysDownload()).isTrue();
   }
@@ -103,14 +104,14 @@ class DownloadSchedulerTest {
   @Test
   void oneInProgressJobOneCompletedJob() {
     BsaDownload completed = insertOneJobAndAdvanceClock(DONE);
-    BsaDownload inProgressJob = insertOneJobAndAdvanceClock(MAKE_DIFF);
+    BsaDownload inProgressJob = insertOneJobAndAdvanceClock(MAKE_ORDER_AND_LABEL_DIFF);
     Optional<DownloadSchedule> scheduleOptional = scheduler.schedule();
     assertThat(scheduleOptional).isPresent();
     DownloadSchedule schedule = scheduleOptional.get();
     assertThat(schedule.jobId()).isEqualTo(inProgressJob.jobId);
     assertThat(schedule.jobCreationTime()).isEqualTo(inProgressJob.getCreationTime());
     assertThat(schedule.jobName()).isEqualTo(inProgressJob.getJobName());
-    assertThat(schedule.stage()).isEqualTo(MAKE_DIFF);
+    assertThat(schedule.stage()).isEqualTo(MAKE_ORDER_AND_LABEL_DIFF);
     assertThat(schedule.alwaysDownload()).isFalse();
     assertThat(schedule.latestCompleted()).isPresent();
     CompletedJob lastCompleted = schedule.latestCompleted().get();
@@ -131,7 +132,7 @@ class DownloadSchedulerTest {
     Optional<DownloadSchedule> scheduleOptional = scheduler.schedule();
     assertThat(scheduleOptional).isPresent();
     DownloadSchedule schedule = scheduleOptional.get();
-    assertThat(schedule.stage()).isEqualTo(DOWNLOAD);
+    assertThat(schedule.stage()).isEqualTo(DOWNLOAD_BLOCK_LISTS);
     assertThat(schedule.alwaysDownload()).isFalse();
     assertThat(schedule.latestCompleted()).isPresent();
     CompletedJob completedJob = schedule.latestCompleted().get();
@@ -165,26 +166,26 @@ class DownloadSchedulerTest {
 
   @Test
   void loadRecentProcessedJobs_noneExists() {
-    assertThat(tm().transact(() -> scheduler.loadRecentProcessedJobs())).isEmpty();
+    assertThat(tm().transact(() -> scheduler.fetchTwoMostRecentDownloads())).isEmpty();
   }
 
   @Test
   void loadRecentProcessedJobs_nopJobsOnly() {
     insertOneJobAndAdvanceClock(DownloadStage.NOP);
-    insertOneJobAndAdvanceClock(DownloadStage.CHECKSUMS_NOT_MATCH);
-    assertThat(tm().transact(() -> scheduler.loadRecentProcessedJobs())).isEmpty();
+    insertOneJobAndAdvanceClock(DownloadStage.CHECKSUMS_DO_NOT_MATCH);
+    assertThat(tm().transact(() -> scheduler.fetchTwoMostRecentDownloads())).isEmpty();
   }
 
   @Test
   void loadRecentProcessedJobs_oneInProgressJob() {
-    BsaDownload job = insertOneJobAndAdvanceClock(MAKE_DIFF);
-    assertThat(tm().transact(() -> scheduler.loadRecentProcessedJobs())).containsExactly(job);
+    BsaDownload job = insertOneJobAndAdvanceClock(MAKE_ORDER_AND_LABEL_DIFF);
+    assertThat(tm().transact(() -> scheduler.fetchTwoMostRecentDownloads())).containsExactly(job);
   }
 
   @Test
   void loadRecentProcessedJobs_oneDoneJob() {
     BsaDownload job = insertOneJobAndAdvanceClock(DONE);
-    assertThat(tm().transact(() -> scheduler.loadRecentProcessedJobs())).containsExactly(job);
+    assertThat(tm().transact(() -> scheduler.fetchTwoMostRecentDownloads())).containsExactly(job);
   }
 
   @Test
@@ -193,17 +194,35 @@ class DownloadSchedulerTest {
     insertOneJobAndAdvanceClock(DownloadStage.DONE);
     BsaDownload completed = insertOneJobAndAdvanceClock(DownloadStage.DONE);
     insertOneJobAndAdvanceClock(DownloadStage.NOP);
-    insertOneJobAndAdvanceClock(DownloadStage.CHECKSUMS_NOT_MATCH);
-    BsaDownload inprogress = insertOneJobAndAdvanceClock(DownloadStage.APPLY_DIFF);
-    assertThat(tm().transact(() -> scheduler.loadRecentProcessedJobs()))
+    insertOneJobAndAdvanceClock(DownloadStage.CHECKSUMS_DO_NOT_MATCH);
+    BsaDownload inprogress = insertOneJobAndAdvanceClock(DownloadStage.APPLY_ORDER_AND_LABEL_DIFF);
+    assertThat(tm().transact(() -> scheduler.fetchTwoMostRecentDownloads()))
         .containsExactly(inprogress, completed)
         .inOrder();
+  }
+
+  @Test
+  void ongoingRefresh_noNewSchedule() {
+    insertOneJobAndAdvanceClock(DONE);
+    tm().transact(() -> tm().insert(new BsaDomainRefresh()));
+    fakeClock.advanceBy(DOWNLOAD_INTERVAL);
+    Optional<DownloadSchedule> scheduleOptional = scheduler.schedule();
+    assertThat(scheduleOptional).isEmpty();
+  }
+
+  @Test
+  void doneRefresh_noNewSchedule() {
+    insertOneJobAndAdvanceClock(DONE);
+    tm().transact(() -> tm().insert(new BsaDomainRefresh().setStage(RefreshStage.DONE)));
+    fakeClock.advanceBy(DOWNLOAD_INTERVAL);
+    Optional<DownloadSchedule> scheduleOptional = scheduler.schedule();
+    assertThat(scheduleOptional).isPresent();
   }
 
   private BsaDownload insertOneJobAndAdvanceClock(DownloadStage stage) {
     BsaDownload job = new BsaDownload();
     job.setStage(stage);
-    job.setChecksums(ImmutableMap.of(BlockList.BLOCK, "1", BlockList.BLOCK_PLUS, "2"));
+    job.setChecksums(ImmutableMap.of(BlockListType.BLOCK, "1", BlockListType.BLOCK_PLUS, "2"));
     tm().transact(() -> tm().insert(job));
     fakeClock.advanceOneMilli();
     return job;

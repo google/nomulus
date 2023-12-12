@@ -22,7 +22,6 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
-import com.google.common.collect.Sets.SetView;
 import google.registry.model.tld.Tld;
 import google.registry.model.tld.Tld.TldType;
 import google.registry.model.tld.Tlds;
@@ -76,8 +75,8 @@ public class IdnChecker {
    *
    * @param idnTables String names of {@link IdnTableEnum} values
    */
-  public SetView<Tld> getForbiddingTlds(ImmutableSet<String> idnTables) {
-    return Sets.difference(allTlds, getSupportingTlds(idnTables));
+  public ImmutableSet<Tld> getForbiddingTlds(ImmutableSet<String> idnTables) {
+    return Sets.difference(allTlds, getSupportingTlds(idnTables)).immutableCopy();
   }
 
   private static ImmutableMap<IdnTableEnum, ImmutableSet<Tld>> getIdnToTldMap(DateTime now) {

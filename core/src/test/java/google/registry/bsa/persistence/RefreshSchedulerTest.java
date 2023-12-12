@@ -16,12 +16,16 @@ package google.registry.bsa.persistence;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
+import static google.registry.bsa.RefreshStage.APPLY_CHANGES;
+import static google.registry.bsa.RefreshStage.DONE;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
-import google.registry.bsa.persistence.BsaDomainRefresh.Stage;
+import google.registry.bsa.DownloadStage;
+import google.registry.bsa.RefreshStage;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationWithCoverageExtension;
 import google.registry.testing.FakeClock;
+import java.util.Optional;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -44,46 +48,93 @@ public class RefreshSchedulerTest {
   }
 
   @Test
-  void schedule_firstJobEver() {
-    RefreshSchedule schedule = scheduler.schedule();
+  void schedule_noPrevRefresh_noPrevDownload() {
+    Optional<RefreshSchedule> scheduleOptional = scheduler.schedule();
+    assertThat(scheduleOptional).isEmpty();
+  }
+
+  @Test
+  void schedule_noPrevRefresh_withOngoingPrevDownload() {
+    tm().transact(() -> tm().insert(new BsaDownload()));
+    Optional<RefreshSchedule> scheduleOptional = scheduler.schedule();
+    assertThat(scheduleOptional).isEmpty();
+  }
+
+  @Test
+  void schedule_NoPreviousRefresh_withCompletedPrevDownload() {
+    tm().transact(() -> tm().insert(new BsaDownload().setStage(DownloadStage.DONE)));
+    DateTime downloadTime = fakeClock.nowUtc();
+    fakeClock.advanceOneMilli();
+
+    Optional<RefreshSchedule> scheduleOptional = scheduler.schedule();
+    assertThat(scheduleOptional).isPresent();
+    RefreshSchedule schedule = scheduleOptional.get();
+
     assertThat(schedule.jobCreationTime()).isEqualTo(fakeClock.nowUtc());
-    assertThat(schedule.stage()).isEqualTo(Stage.MAKE_DIFF);
-    assertThat(schedule.prevJobCreationTime()).isEmpty();
+    assertThat(schedule.stage()).isEqualTo(RefreshStage.CHECK_FOR_CHANGES);
+    assertThat(schedule.prevRefreshTime()).isEqualTo(downloadTime);
   }
 
   @Test
-  void schedule_latestJobComplete() {
-    tm().transact(() -> tm().insert(new BsaDomainRefresh().setStage(Stage.DONE)));
-    DateTime latestCompletedJobTime = fakeClock.nowUtc();
+  void schedule_firstRefreshOngoing() {
+    tm().transact(() -> tm().insert(new BsaDownload().setStage(DownloadStage.DONE)));
+    DateTime downloadTime = fakeClock.nowUtc();
     fakeClock.advanceOneMilli();
-    RefreshSchedule schedule = scheduler.schedule();
+
+    tm().transact(() -> tm().insert(new BsaDomainRefresh().setStage(APPLY_CHANGES)));
+    DateTime refreshStartTime = fakeClock.nowUtc();
+    fakeClock.advanceOneMilli();
+
+    Optional<RefreshSchedule> scheduleOptional = scheduler.schedule();
+    assertThat(scheduleOptional).isPresent();
+    RefreshSchedule schedule = scheduleOptional.get();
+
+    assertThat(schedule.jobCreationTime()).isEqualTo(refreshStartTime);
+    assertThat(schedule.stage()).isEqualTo(APPLY_CHANGES);
+    assertThat(schedule.prevRefreshTime()).isEqualTo(downloadTime);
+  }
+
+  @Test
+  void schedule_firstRefreshDone() {
+    tm().transact(() -> tm().insert(new BsaDomainRefresh().setStage(DONE)));
+    DateTime prevRefreshStartTime = fakeClock.nowUtc();
+    fakeClock.advanceOneMilli();
+
+    Optional<RefreshSchedule> scheduleOptional = scheduler.schedule();
+    assertThat(scheduleOptional).isPresent();
+    RefreshSchedule schedule = scheduleOptional.get();
+
     assertThat(schedule.jobCreationTime()).isEqualTo(fakeClock.nowUtc());
-    assertThat(schedule.stage()).isEqualTo(Stage.MAKE_DIFF);
-    assertThat(schedule.prevJobCreationTime()).hasValue(latestCompletedJobTime);
+    assertThat(schedule.stage()).isEqualTo(RefreshStage.CHECK_FOR_CHANGES);
+    assertThat(schedule.prevRefreshTime()).isEqualTo(prevRefreshStartTime);
   }
 
   @Test
-  void schedule_firstEverJobIncomplete() {
-    tm().transact(() -> tm().insert(new BsaDomainRefresh().setStage(Stage.APPLY_DIFF)));
-    DateTime ongoingJobTime = fakeClock.nowUtc();
+  void schedule_ongoingRefreshWithPrevCompletion() {
+    tm().transact(() -> tm().insert(new BsaDomainRefresh().setStage(DONE)));
+    DateTime prevRefreshStartTime = fakeClock.nowUtc();
     fakeClock.advanceOneMilli();
-    RefreshSchedule schedule = scheduler.schedule();
-    assertThat(schedule.jobCreationTime()).isEqualTo(ongoingJobTime);
-    assertThat(schedule.stage()).isEqualTo(Stage.APPLY_DIFF);
-    assertThat(schedule.prevJobCreationTime()).isEmpty();
+    tm().transact(() -> tm().insert(new BsaDomainRefresh().setStage(APPLY_CHANGES)));
+    DateTime ongoingRefreshStartTime = fakeClock.nowUtc();
+    fakeClock.advanceOneMilli();
+
+    Optional<RefreshSchedule> scheduleOptional = scheduler.schedule();
+    assertThat(scheduleOptional).isPresent();
+    RefreshSchedule schedule = scheduleOptional.get();
+
+    assertThat(schedule.jobCreationTime()).isEqualTo(ongoingRefreshStartTime);
+    assertThat(schedule.stage()).isEqualTo(APPLY_CHANGES);
+    assertThat(schedule.prevRefreshTime()).isEqualTo(prevRefreshStartTime);
   }
 
   @Test
-  void schedule_incompleteJobAfterCompletedOnes() {
-    tm().transact(() -> tm().insert(new BsaDomainRefresh().setStage(Stage.DONE)));
-    DateTime latestCompletedJobTime = fakeClock.nowUtc();
+  void schedule_blockedByOngoingDownload() {
+    tm().transact(() -> tm().insert(new BsaDomainRefresh().setStage(DONE)));
     fakeClock.advanceOneMilli();
-    tm().transact(() -> tm().insert(new BsaDomainRefresh().setStage(Stage.APPLY_DIFF)));
-    DateTime ongoingJobTime = fakeClock.nowUtc();
+    tm().transact(() -> tm().insert(new BsaDownload()));
     fakeClock.advanceOneMilli();
-    RefreshSchedule schedule = scheduler.schedule();
-    assertThat(schedule.jobCreationTime()).isEqualTo(ongoingJobTime);
-    assertThat(schedule.stage()).isEqualTo(Stage.APPLY_DIFF);
-    assertThat(schedule.prevJobCreationTime()).hasValue(latestCompletedJobTime);
+
+    Optional<RefreshSchedule> scheduleOptional = scheduler.schedule();
+    assertThat(scheduleOptional).isEmpty();
   }
 }

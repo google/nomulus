@@ -17,18 +17,18 @@ package google.registry.bsa.api;
 import static com.google.common.truth.Truth.assertThat;
 
 import com.google.common.collect.ImmutableSet;
-import google.registry.bsa.api.Label.LabelType;
+import google.registry.bsa.api.BlockLabel.LabelType;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-/** Unit tests for {@link Label}. */
-class LabelTest {
+/** Unit tests for {@link BlockLabel}. */
+class BlockLabelTest {
 
-  Label label;
+  BlockLabel label;
 
   @BeforeEach
   void setup() {
-    label = Label.of("buy", LabelType.CREATE, ImmutableSet.of("JA", "EXTENDED_LATIN"));
+    label = BlockLabel.of("buy", LabelType.CREATE, ImmutableSet.of("JA", "EXTENDED_LATIN"));
   }
 
   @Test
@@ -38,13 +38,13 @@ class LabelTest {
 
   @Test
   void deserialize_success() {
-    assertThat(Label.deserialize("buy,CREATE,EXTENDED_LATIN,JA")).isEqualTo(label);
+    assertThat(BlockLabel.deserialize("buy,CREATE,EXTENDED_LATIN,JA")).isEqualTo(label);
   }
 
   @Test
   void emptyIdns() {
-    label = Label.of("buy", LabelType.CREATE, ImmutableSet.of());
+    label = BlockLabel.of("buy", LabelType.CREATE, ImmutableSet.of());
     assertThat(label.serialize()).isEqualTo("buy,CREATE");
-    assertThat(Label.deserialize("buy,CREATE")).isEqualTo(label);
+    assertThat(BlockLabel.deserialize("buy,CREATE")).isEqualTo(label);
   }
 }

@@ -35,7 +35,7 @@ public final class BatchedStreams {
    *
    * <p>Closing the returned stream does not close the original stream.
    */
-  public static <T> Stream<ImmutableList<T>> batch(Stream<T> stream, int batchSize) {
+  public static <T> Stream<ImmutableList<T>> toBatches(Stream<T> stream, int batchSize) {
     checkArgument(batchSize > 0, "batchSize must be a positive integer.");
     return stream(
         transform(partition(stream.iterator(), min(MAX_BATCH, batchSize)), ImmutableList::copyOf));

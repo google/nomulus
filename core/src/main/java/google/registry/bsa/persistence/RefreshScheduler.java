@@ -14,16 +14,16 @@
 
 package google.registry.bsa.persistence;
 
+import static google.registry.bsa.persistence.DownloadScheduler.fetchMostRecentDownload;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static org.joda.time.Duration.standardSeconds;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
-import google.registry.bsa.persistence.BsaDomainRefresh.Stage;
 import google.registry.util.Clock;
-import java.util.Objects;
 import java.util.Optional;
 import javax.inject.Inject;
+import org.joda.time.DateTime;
 import org.joda.time.Duration;
 
 /** Assigns work for each cron invocation of domain refresh job. */
@@ -39,36 +39,62 @@ public class RefreshScheduler {
     this.clock = clock;
   }
 
-  public RefreshSchedule schedule() {
+  public Optional<RefreshSchedule> schedule() {
     return tm().transact(
             () -> {
-              ImmutableList<BsaDomainRefresh> prevJobs = loadRecentJobs();
-              if (prevJobs.isEmpty()) {
-                return scheduleNewJob(Optional.empty());
+              ImmutableList<BsaDomainRefresh> recentJobs = fetchMostRecentRefreshes();
+              Optional<BsaDownload> mostRecentDownload = fetchMostRecentDownload();
+              if (mostRecentDownload.isPresent() && !mostRecentDownload.get().isDone()) {
+                // Ongoing download exists. Must wait it out.
+                return Optional.empty();
               }
-              if (Objects.equals(prevJobs.get(0).getStage(), Stage.DONE)) {
-                return scheduleNewJob(Optional.of(prevJobs.get(0)));
-              } else if (prevJobs.size() == 1) {
-                return RefreshSchedule.of(prevJobs.get(0), Optional.empty());
+              if (recentJobs.size() > 1) {
+                BsaDomainRefresh mostRecent = recentJobs.get(0);
+                if (mostRecent.isDone()) {
+                  return Optional.of(scheduleNewJob(mostRecent.getCreationTime()));
+                } else {
+                  return Optional.of(
+                      rescheduleOngoingJob(mostRecent, recentJobs.get(1).getCreationTime()));
+                }
+              }
+              if (recentJobs.size() == 1 && recentJobs.get(0).isDone()) {
+                return Optional.of(scheduleNewJob(recentJobs.get(0).getCreationTime()));
+              }
+              // No previously completed refreshes. Need start time of a completed download as
+              // lower bound of refresh checks.
+              if (!mostRecentDownload.isPresent()) {
+                return Optional.empty();
+              }
+
+              DateTime prevDownloadTime = mostRecentDownload.get().getCreationTime();
+              if (recentJobs.isEmpty()) {
+                return Optional.of(scheduleNewJob(prevDownloadTime));
               } else {
-                return RefreshSchedule.of(
-                    prevJobs.get(0), Optional.of(prevJobs.get(1).getCreationTime()));
+                return Optional.of(rescheduleOngoingJob(recentJobs.get(0), prevDownloadTime));
               }
             });
   }
 
-  RefreshSchedule scheduleNewJob(Optional<BsaDomainRefresh> prevJob) {
+  RefreshSchedule scheduleNewJob(DateTime prevRefreshTime) {
     BsaDomainRefresh newJob = new BsaDomainRefresh();
     tm().insert(newJob);
-    return RefreshSchedule.of(newJob, prevJob.map(BsaDomainRefresh::getCreationTime));
+    return RefreshSchedule.of(newJob, prevRefreshTime);
+  }
+
+  RefreshSchedule rescheduleOngoingJob(BsaDomainRefresh ongoingJob, DateTime prevJobStartTime) {
+    return RefreshSchedule.of(ongoingJob, prevJobStartTime);
   }
 
   @VisibleForTesting
-  ImmutableList<BsaDomainRefresh> loadRecentJobs() {
+  static ImmutableList<BsaDomainRefresh> fetchMostRecentRefreshes() {
     return ImmutableList.copyOf(
         tm().getEntityManager()
             .createQuery("FROM BsaDomainRefresh ORDER BY creationTime DESC", BsaDomainRefresh.class)
             .setMaxResults(2)
             .getResultList());
+  }
+
+  static Optional<BsaDomainRefresh> fetchMostRecentRefresh() {
+    return fetchMostRecentRefreshes().stream().findFirst();
   }
 }

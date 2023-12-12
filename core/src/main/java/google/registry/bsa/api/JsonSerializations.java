@@ -25,19 +25,19 @@ import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.Lists;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import google.registry.bsa.api.Order.OrderType;
+import google.registry.bsa.api.BlockOrder.OrderType;
 import java.util.Locale;
 import java.util.Optional;
 import java.util.stream.Stream;
 
-/** Helpers for generating {@link Order} and {@link NonBlockedDomain} reports. */
+/** Helpers for generating {@link BlockOrder} and {@link UnblockableDomain} reports. */
 public final class JsonSerializations {
 
   private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 
   private JsonSerializations() {}
 
-  public static Optional<String> toInProgressOrdersReport(Stream<Order> orders) {
+  public static Optional<String> toInProgressOrdersReport(Stream<BlockOrder> orders) {
     ImmutableList<ImmutableMap<String, Object>> maps =
         orders.map(JsonSerializations::asInProgressOrder).collect(toImmutableList());
     if (maps.isEmpty()) {
@@ -46,7 +46,7 @@ public final class JsonSerializations {
     return Optional.of(GSON.toJson(maps));
   }
 
-  public static Optional<String> toCompletedOrdersReport(Stream<Order> orders) {
+  public static Optional<String> toCompletedOrdersReport(Stream<BlockOrder> orders) {
     ImmutableList<ImmutableMap<String, Object>> maps =
         orders.map(JsonSerializations::asCompletedOrder).collect(toImmutableList());
     if (maps.isEmpty()) {
@@ -55,13 +55,13 @@ public final class JsonSerializations {
     return Optional.of(GSON.toJson(maps));
   }
 
-  public static Optional<String> toUnblockableDomainsReport(Stream<NonBlockedDomain> domains) {
+  public static Optional<String> toUnblockableDomainsReport(Stream<UnblockableDomain> domains) {
     ImmutableMultimap<String, String> reasonToNames =
         ImmutableMultimap.copyOf(
             domains.collect(
                 toMultimap(
                     domain -> domain.reason().name().toLowerCase(Locale.ROOT),
-                    NonBlockedDomain::domainName,
+                    UnblockableDomain::domainName,
                     () -> newListMultimap(newTreeMap(), Lists::newArrayList))));
 
     if (reasonToNames.isEmpty()) {
@@ -70,13 +70,21 @@ public final class JsonSerializations {
     return Optional.of(GSON.toJson(reasonToNames.asMap()));
   }
 
-  private static ImmutableMap<String, Object> asInProgressOrder(Order order) {
+  public static Optional<String> toUnblockableDomainsRemovalReport(Stream<String> domainNames) {
+    ImmutableList<String> domainsList = domainNames.collect(toImmutableList());
+    if (domainsList.isEmpty()) {
+      return Optional.empty();
+    }
+    return Optional.of(GSON.toJson(domainsList));
+  }
+
+  private static ImmutableMap<String, Object> asInProgressOrder(BlockOrder order) {
     String status =
         order.orderType().equals(OrderType.CREATE) ? "ActivationInProgress" : "ReleaseInProgress";
     return ImmutableMap.of("blockOrderId", order.orderId(), "status", status);
   }
 
-  private static ImmutableMap<String, Object> asCompletedOrder(Order order) {
+  private static ImmutableMap<String, Object> asCompletedOrder(BlockOrder order) {
     String status = order.orderType().equals(OrderType.CREATE) ? "Active" : "Closed";
     return ImmutableMap.of("blockOrderId", order.orderId(), "status", status);
   }

@@ -14,15 +14,32 @@
 
 package google.registry.bsa;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
+import java.util.List;
 
-/** Helpers for string serialization of Java objects. */
-public class StringifyUtils {
+/** Helpers for domain name manipulation and string serialization of Java objects. */
+public class BsaStringUtils {
 
   public static final Joiner DOMAIN_JOINER = Joiner.on('.');
   public static final Joiner PROPERTY_JOINER = Joiner.on(',');
+  public static final Splitter DOMAIN_SPLITTER = Splitter.on('.');
   public static final Splitter PROPERTY_SPLITTER = Splitter.on(',');
+  public static final Splitter LINE_SPLITTER = Splitter.on('\n');
 
-  private StringifyUtils() {}
+  public static String getLabelInDomain(String domainName) {
+    List<String> parts = DOMAIN_SPLITTER.limit(1).splitToList(domainName);
+    checkArgument(!parts.isEmpty(), "Not a valid domain: [%s]", domainName);
+    return parts.get(0);
+  }
+
+  public static String getTldInDomain(String domainName) {
+    List<String> parts = DOMAIN_SPLITTER.splitToList(domainName);
+    checkArgument(parts.size() == 2, "Not a valid domain: [%s]", domainName);
+    return parts.get(1);
+  }
+
+  private BsaStringUtils() {}
 }

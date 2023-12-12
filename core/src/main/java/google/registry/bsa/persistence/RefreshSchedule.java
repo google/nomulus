@@ -14,9 +14,12 @@
 
 package google.registry.bsa.persistence;
 
+import static com.google.common.base.Verify.verify;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+
 import com.google.auto.value.AutoValue;
-import google.registry.bsa.persistence.BsaDomainRefresh.Stage;
-import java.util.Optional;
+import com.google.errorprone.annotations.CanIgnoreReturnValue;
+import google.registry.bsa.RefreshStage;
 import org.joda.time.DateTime;
 
 /** Information needed when handling a domain refresh. */
@@ -29,12 +32,29 @@ public abstract class RefreshSchedule {
 
   public abstract String jobName();
 
-  public abstract Stage stage();
+  public abstract RefreshStage stage();
 
   /** The most recent job that ended in the {@code DONE} stage. */
-  public abstract Optional<DateTime> prevJobCreationTime();
+  public abstract DateTime prevRefreshTime();
 
-  static RefreshSchedule of(BsaDomainRefresh job, Optional<DateTime> prevJobCreationTime) {
+  /** Updates the current job to the new stage. */
+  @CanIgnoreReturnValue
+  public RefreshSchedule updateJobStage(RefreshStage stage) {
+    return tm().transact(
+            () -> {
+              BsaDomainRefresh bsaRefresh = tm().loadByKey(BsaDomainRefresh.vKey(jobId()));
+              verify(
+                  stage.compareTo(bsaRefresh.getStage()) > 0,
+                  "Invalid new stage [%s]. Must move forward from [%s]",
+                  bsaRefresh.getStage(),
+                  stage);
+              bsaRefresh.setStage(stage);
+              tm().put(bsaRefresh);
+              return of(bsaRefresh, prevRefreshTime());
+            });
+  }
+
+  static RefreshSchedule of(BsaDomainRefresh job, DateTime prevJobCreationTime) {
     return new AutoValue_RefreshSchedule(
         job.getJobId(),
         job.getCreationTime(),

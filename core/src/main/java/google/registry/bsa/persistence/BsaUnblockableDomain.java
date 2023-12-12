@@ -14,9 +14,14 @@
 
 package google.registry.bsa.persistence;
 
+import static com.google.common.base.Verify.verify;
+import static google.registry.bsa.BsaStringUtils.DOMAIN_JOINER;
+import static google.registry.bsa.BsaStringUtils.DOMAIN_SPLITTER;
+
 import com.google.common.base.Objects;
-import google.registry.bsa.api.NonBlockedDomain;
-import google.registry.bsa.persistence.BsaDomainInUse.BsaDomainInUseId;
+import com.google.common.collect.ImmutableList;
+import google.registry.bsa.api.UnblockableDomain;
+import google.registry.bsa.persistence.BsaUnblockableDomain.BsaUnblockableDomainId;
 import google.registry.model.CreateAutoTimestamp;
 import google.registry.persistence.VKey;
 import java.io.Serializable;
@@ -29,8 +34,8 @@ import javax.persistence.IdClass;
 
 /** A domain matching a BSA label but is in use (registered or reserved), so cannot be blocked. */
 @Entity
-@IdClass(BsaDomainInUseId.class)
-public class BsaDomainInUse {
+@IdClass(BsaUnblockableDomainId.class)
+class BsaUnblockableDomain {
   @Id String label;
   @Id String tld;
 
@@ -50,23 +55,27 @@ public class BsaDomainInUse {
   CreateAutoTimestamp createTime = CreateAutoTimestamp.create(null);
 
   // For Hibernate
-  BsaDomainInUse() {}
+  BsaUnblockableDomain() {}
 
-  public BsaDomainInUse(String label, String tld, Reason reason) {
+  BsaUnblockableDomain(String label, String tld, Reason reason) {
     this.label = label;
     this.tld = tld;
     this.reason = reason;
   }
 
-  /**
-   * Returns the equivalent {@link NonBlockedDomain} instance, for use by communication with the BSA
-   * API.
-   */
-  NonBlockedDomain toNonBlockedDomain() {
-    return NonBlockedDomain.of(label, tld, NonBlockedDomain.Reason.valueOf(reason.name()));
+  String domainName() {
+    return DOMAIN_JOINER.join(label, tld);
   }
 
-  VKey<BsaDomainInUse> toVkey() {
+  /**
+   * Returns the equivalent {@link UnblockableDomain} instance, for use by communication with the
+   * BSA API.
+   */
+  UnblockableDomain toUnblockableDomain() {
+    return UnblockableDomain.of(label, tld, UnblockableDomain.Reason.valueOf(reason.name()));
+  }
+
+  VKey<BsaUnblockableDomain> toVkey() {
     return vKey(this.label, this.tld);
   }
 
@@ -75,10 +84,10 @@ public class BsaDomainInUse {
     if (this == o) {
       return true;
     }
-    if (!(o instanceof BsaDomainInUse)) {
+    if (!(o instanceof BsaUnblockableDomain)) {
       return false;
     }
-    BsaDomainInUse that = (BsaDomainInUse) o;
+    BsaUnblockableDomain that = (BsaUnblockableDomain) o;
     return Objects.equal(label, that.label)
         && Objects.equal(tld, that.tld)
         && reason == that.reason
@@ -90,10 +99,20 @@ public class BsaDomainInUse {
     return Objects.hashCode(label, tld, reason, createTime);
   }
 
-  static BsaDomainInUse of(String domainName, Reason reason) {
-    int dotPos = domainName.lastIndexOf('.');
-    return new BsaDomainInUse(
-        domainName.substring(0, dotPos), domainName.substring(dotPos + 1), reason);
+  static BsaUnblockableDomain of(String domainName, Reason reason) {
+    ImmutableList<String> parts = ImmutableList.copyOf(DOMAIN_SPLITTER.splitToList(domainName));
+    verify(parts.size() == 2, "Invalid domain name: %s", domainName);
+    return new BsaUnblockableDomain(parts.get(0), parts.get(1), reason);
+  }
+
+  static VKey<BsaUnblockableDomain> vKey(String domainName) {
+    ImmutableList<String> parts = ImmutableList.copyOf(DOMAIN_SPLITTER.splitToList(domainName));
+    verify(parts.size() == 2, "Invalid domain name: %s", domainName);
+    return vKey(parts.get(0), parts.get(1));
+  }
+
+  static VKey<BsaUnblockableDomain> vKey(String label, String tld) {
+    return VKey.create(BsaUnblockableDomain.class, new BsaUnblockableDomainId(label, tld));
   }
 
   enum Reason {
@@ -101,15 +120,15 @@ public class BsaDomainInUse {
     RESERVED;
   }
 
-  static class BsaDomainInUseId implements Serializable {
+  static class BsaUnblockableDomainId implements Serializable {
 
     private String label;
     private String tld;
 
-    // For Hibernate
-    BsaDomainInUseId() {}
+    @SuppressWarnings("unused") // For Hibernate
+    BsaUnblockableDomainId() {}
 
-    BsaDomainInUseId(String label, String tld) {
+    BsaUnblockableDomainId(String label, String tld) {
       this.label = label;
       this.tld = tld;
     }
@@ -119,10 +138,10 @@ public class BsaDomainInUse {
       if (this == o) {
         return true;
       }
-      if (!(o instanceof BsaDomainInUseId)) {
+      if (!(o instanceof BsaUnblockableDomainId)) {
         return false;
       }
-      BsaDomainInUseId that = (BsaDomainInUseId) o;
+      BsaUnblockableDomainId that = (BsaUnblockableDomainId) o;
       return Objects.equal(label, that.label) && Objects.equal(tld, that.tld);
     }
 
@@ -130,9 +149,5 @@ public class BsaDomainInUse {
     public int hashCode() {
       return Objects.hashCode(label, tld);
     }
-  }
-
-  static VKey<BsaDomainInUse> vKey(String label, String tld) {
-    return VKey.create(BsaDomainInUse.class, new BsaDomainInUseId(label, tld));
   }
 }
