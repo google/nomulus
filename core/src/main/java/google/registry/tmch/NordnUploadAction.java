@@ -53,6 +53,7 @@ import java.net.URL;
 import java.security.GeneralSecurityException;
 import java.security.SecureRandom;
 import java.util.List;
+import java.util.Optional;
 import java.util.Random;
 import javax.inject.Inject;
 import org.joda.time.Duration;
@@ -126,55 +127,62 @@ public final class NordnUploadAction implements Runnable {
         phase.equals(PARAM_LORDN_PHASE_SUNRISE) || phase.equals(PARAM_LORDN_PHASE_CLAIMS),
         "Invalid phase specified to NordnUploadAction: %s.",
         phase);
-    tm().transact(
-            () -> {
-              // Note here that we load all domains pending Nordn in one batch, which should not
-              // be a problem for the rate of domain registration that we see. If we anticipate
-              // a peak in claims during TLD launch (sunrise is NOT first-come-first-serve, so
-              // there should be no expectation of a peak during it), we can consider temporarily
-              // increasing the frequency of Nordn upload to reduce the size of each batch.
-              //
-              // We did not further divide the domains into smaller batches because the
-              // read-upload-write operation per small batch needs to be inside a single
-              // transaction to prevent race conditions, and running several uploads in rapid
-              // sucession will likely overwhelm the MarksDB upload server, which recommands a
-              // maximum upload frequency of every 3 hours.
-              //
-              // See:
-              // https://datatracker.ietf.org/doc/html/draft-ietf-regext-tmch-func-spec-01#section-5.2.3.3
-              List<Domain> domains =
-                  tm().createQueryComposer(Domain.class)
-                      .where("lordnPhase", EQ, LordnPhase.valueOf(Ascii.toUpperCase(phase)))
-                      .where("tld", EQ, tld)
-                      .orderBy("creationTime")
-                      .list();
-              if (domains.isEmpty()) {
-                return;
-              }
-              StringBuilder csv = new StringBuilder();
-              ImmutableList.Builder<Domain> newDomains = new ImmutableList.Builder<>();
+    Optional<URL> uploadUrl =
+        tm().transact(
+                () -> {
+                  // Note here that we load all domains pending Nordn in one batch, which should not
+                  // be a problem for the rate of domain registration that we see. If we anticipate
+                  // a peak in claims during TLD launch (sunrise is NOT first-come-first-serve, so
+                  // there should be no expectation of a peak during it), we can consider
+                  // temporarily increasing the frequency of Nordn upload to reduce the size of each
+                  // batch.
+                  //
+                  // We did not further divide the domains into smaller batches because the
+                  // read-upload-write operation per small batch needs to be inside a single
+                  // transaction to prevent race conditions, and running several uploads in rapid
+                  // succession will likely overwhelm the MarksDB upload server, which recommends a
+                  // maximum upload frequency of every 3 hours.
+                  //
+                  // See:
+                  // https://datatracker.ietf.org/doc/html/draft-ietf-regext-tmch-func-spec-01#section-5.2.3.3
+                  List<Domain> domains =
+                      tm().createQueryComposer(Domain.class)
+                          .where("lordnPhase", EQ, LordnPhase.valueOf(Ascii.toUpperCase(phase)))
+                          .where("tld", EQ, tld)
+                          .orderBy("creationTime")
+                          .list();
+                  if (domains.isEmpty()) {
+                    return Optional.empty();
+                  }
+                  StringBuilder csv = new StringBuilder();
+                  ImmutableList.Builder<Domain> newDomains = new ImmutableList.Builder<>();
 
-              domains.forEach(
-                  domain -> {
-                    if (phase.equals(PARAM_LORDN_PHASE_SUNRISE)) {
-                      csv.append(getCsvLineForSunriseDomain(domain)).append('\n');
-                    } else {
-                      csv.append(getCsvLineForClaimsDomain(domain)).append('\n');
-                    }
-                    Domain newDomain = domain.asBuilder().setLordnPhase(LordnPhase.NONE).build();
-                    newDomains.add(newDomain);
-                  });
-              String columns =
-                  phase.equals(PARAM_LORDN_PHASE_SUNRISE) ? COLUMNS_SUNRISE : COLUMNS_CLAIMS;
-              String header =
-                  String.format("1,%s,%d\n%s\n", clock.nowUtc(), domains.size(), columns);
-              try {
-                uploadCsvToLordn(String.format("/LORDN/%s/%s", tld, phase), header + csv);
-              } catch (IOException | GeneralSecurityException e) {
-                throw new RuntimeException(e);
-              }
-              tm().updateAll(newDomains.build());
-            });
+                  domains.forEach(
+                      domain -> {
+                        if (phase.equals(PARAM_LORDN_PHASE_SUNRISE)) {
+                          csv.append(getCsvLineForSunriseDomain(domain)).append('\n');
+                        } else {
+                          csv.append(getCsvLineForClaimsDomain(domain)).append('\n');
+                        }
+                        Domain newDomain =
+                            domain.asBuilder().setLordnPhase(LordnPhase.NONE).build();
+                        newDomains.add(newDomain);
+                      });
+                  String columns =
+                      phase.equals(PARAM_LORDN_PHASE_SUNRISE) ? COLUMNS_SUNRISE : COLUMNS_CLAIMS;
+                  String header =
+                      String.format("1,%s,%d\n%s\n", clock.nowUtc(), domains.size(), columns);
+                  try {
+                    URL url =
+                        uploadCsvToLordn(String.format("/LORDN/%s/%s", tld, phase), header + csv);
+                    tm().updateAll(newDomains.build());
+                    return Optional.of(url);
+                  } catch (IOException | GeneralSecurityException e) {
+                    throw new RuntimeException(e);
+                  }
+                });
+    uploadUrl.ifPresent(
+        url -> cloudTasksUtils.enqueue(NordnVerifyAction.QUEUE, makeVerifyTask(url)));
   }
 
   /**
@@ -186,7 +194,7 @@ public final class NordnUploadAction implements Runnable {
    * @see <a href="http://tools.ietf.org/html/draft-lozano-tmch-func-spec-08#section-6.3">TMCH
    *     functional specifications - LORDN File</a>
    */
-  private void uploadCsvToLordn(String urlPath, String csvData)
+  private URL uploadCsvToLordn(String urlPath, String csvData)
       throws IOException, GeneralSecurityException {
     String url = tmchMarksdbUrl + urlPath;
     logger.atInfo().log(
@@ -222,7 +230,7 @@ public final class NordnUploadAction implements Runnable {
                 actionLogId),
             connection);
       }
-      cloudTasksUtils.enqueue(NordnVerifyAction.QUEUE, makeVerifyTask(new URL(location)));
+      return new URL(location);
     } catch (IOException e) {
       throw new IOException(String.format("Error connecting to MarksDB at URL %s", url), e);
     } finally {
