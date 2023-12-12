@@ -127,7 +127,7 @@ public final class NordnUploadAction implements Runnable {
         phase.equals(PARAM_LORDN_PHASE_SUNRISE) || phase.equals(PARAM_LORDN_PHASE_CLAIMS),
         "Invalid phase specified to NordnUploadAction: %s.",
         phase);
-    Optional<URL> verifyUrl =
+    Optional<URL> uploadUrl =
         tm().transact(
                 () -> {
                   // Note here that we load all domains pending Nordn in one batch, which should not
@@ -181,7 +181,7 @@ public final class NordnUploadAction implements Runnable {
                     throw new RuntimeException(e);
                   }
                 });
-    verifyUrl.ifPresent(
+    uploadUrl.ifPresent(
         url -> cloudTasksUtils.enqueue(NordnVerifyAction.QUEUE, makeVerifyTask(url)));
   }
 
