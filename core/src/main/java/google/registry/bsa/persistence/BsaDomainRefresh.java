@@ -14,9 +14,11 @@
 
 package google.registry.bsa.persistence;
 
-import static google.registry.bsa.persistence.BsaDomainRefresh.Stage.MAKE_DIFF;
+import static google.registry.bsa.RefreshStage.CHECK_FOR_CHANGES;
+import static google.registry.bsa.RefreshStage.DONE;
 
 import com.google.common.base.Objects;
+import google.registry.bsa.RefreshStage;
 import google.registry.model.CreateAutoTimestamp;
 import google.registry.model.UpdateAutoTimestamp;
 import google.registry.persistence.VKey;
@@ -37,7 +39,7 @@ import org.joda.time.DateTime;
  * change status when the IDN tables change, and will be handled by a separate tool when it happens.
  */
 @Entity
-public class BsaDomainRefresh {
+class BsaDomainRefresh {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -51,7 +53,7 @@ public class BsaDomainRefresh {
 
   @Column(nullable = false)
   @Enumerated(EnumType.STRING)
-  Stage stage = MAKE_DIFF;
+  RefreshStage stage = CHECK_FOR_CHANGES;
 
   BsaDomainRefresh() {}
 
@@ -67,21 +69,25 @@ public class BsaDomainRefresh {
    * Returns the starting time of this job as a string, which can be used as folder name on GCS when
    * storing download data.
    */
-  public String getJobName() {
-    return "refresh-" + getCreationTime().toString();
+  String getJobName() {
+    return getCreationTime().toString() + "-refresh";
   }
 
-  public Stage getStage() {
+  boolean isDone() {
+    return java.util.Objects.equals(stage, DONE);
+  }
+
+  RefreshStage getStage() {
     return this.stage;
   }
 
-  BsaDomainRefresh setStage(Stage stage) {
-    this.stage = stage;
+  BsaDomainRefresh setStage(RefreshStage refreshStage) {
+    this.stage = refreshStage;
     return this;
   }
 
   VKey<BsaDomainRefresh> vKey() {
-    return vKey(this);
+    return vKey(jobId);
   }
 
   @Override
@@ -104,15 +110,7 @@ public class BsaDomainRefresh {
     return Objects.hashCode(jobId, creationTime, updateTime, stage);
   }
 
-  static VKey vKey(BsaDomainRefresh bsaDomainRefresh) {
-    return VKey.create(BsaDomainRefresh.class, bsaDomainRefresh.jobId);
-  }
-
-  public enum Stage {
-    MAKE_DIFF,
-    APPLY_DIFF,
-    REPORT_REMOVALS,
-    REPORT_ADDITIONS,
-    DONE;
+  static VKey<BsaDomainRefresh> vKey(long jobId) {
+    return VKey.create(BsaDomainRefresh.class, jobId);
   }
 }

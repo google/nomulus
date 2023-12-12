@@ -16,10 +16,10 @@ package google.registry.schema.integration;
 
 import static com.google.common.truth.Truth.assert_;
 
-import google.registry.bsa.persistence.BsaDomainInUseTest;
 import google.registry.bsa.persistence.BsaDomainRefreshTest;
 import google.registry.bsa.persistence.BsaDownloadTest;
 import google.registry.bsa.persistence.BsaLabelTest;
+import google.registry.bsa.persistence.BsaUnblockableDomainTest;
 import google.registry.model.billing.BillingBaseTest;
 import google.registry.model.common.CursorTest;
 import google.registry.model.common.DnsRefreshRequestTest;
@@ -86,10 +86,10 @@ import org.junit.runner.RunWith;
   BeforeSuiteTest.class,
   AllocationTokenTest.class,
   BillingBaseTest.class,
-  BsaDomainInUseTest.class,
   BsaDomainRefreshTest.class,
   BsaDownloadTest.class,
   BsaLabelTest.class,
+  BsaUnblockableDomainTest.class,
   BulkPricingPackageTest.class,
   ClaimsListDaoTest.class,
   ContactHistoryTest.class,

@@ -19,12 +19,11 @@ import static google.registry.bsa.BlockList.BLOCK_PLUS;
 import static google.registry.bsa.api.JsonSerializations.toCompletedOrdersReport;
 import static google.registry.bsa.api.JsonSerializations.toInProgressOrdersReport;
 import static google.registry.bsa.api.JsonSerializations.toUnblockableDomainsReport;
-import static google.registry.bsa.persistence.LabelDiffs.applyLabelDiff;
+import static google.registry.bsa.persistence.LabelDiffUpdates.applyLabelDiff;
 import static google.registry.request.Action.Method.POST;
 import static google.registry.util.BatchedStreams.batch;
 import static javax.servlet.http.HttpServletResponse.SC_OK;
 
-import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.flogger.FluentLogger;
@@ -33,8 +32,8 @@ import google.registry.bsa.BlockListFetcher.LazyBlockList;
 import google.registry.bsa.BsaDiffCreator.BsaDiff;
 import google.registry.bsa.api.BsaReportSender;
 import google.registry.bsa.api.Label;
-import google.registry.bsa.api.NonBlockedDomain;
 import google.registry.bsa.api.Order;
+import google.registry.bsa.api.UnblockableDomain;
 import google.registry.bsa.persistence.DownloadSchedule;
 import google.registry.bsa.persistence.DownloadScheduler;
 import google.registry.config.RegistryConfig.Config;
@@ -42,6 +41,7 @@ import google.registry.request.Action;
 import google.registry.request.Response;
 import google.registry.request.auth.Auth;
 import google.registry.util.Clock;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Stream;
 import javax.inject.Inject;
@@ -57,8 +57,6 @@ public class BsaDownloadAction implements Runnable {
 
   static final String PATH = "/_dr/task/bsaDownload";
 
-  private static final Splitter LINE_SPLITTER = Splitter.on('\n');
-
   private final DownloadScheduler downloadScheduler;
   private final BlockListFetcher blockListFetcher;
   private final BsaDiffCreator diffCreator;
@@ -67,7 +65,7 @@ public class BsaDownloadAction implements Runnable {
   private final Lazy<IdnChecker> lazyIdnChecker;
   private final BsaLock bsaLock;
   private final Clock clock;
-  private final int labelTxnBatchSize;
+  private final int transactionBatchSize;
   private final Response response;
 
   @Inject
@@ -80,7 +78,7 @@ public class BsaDownloadAction implements Runnable {
       Lazy<IdnChecker> lazyIdnChecker,
       BsaLock bsaLock,
       Clock clock,
-      @Config("bsaLabelTxnBatchSize") int labelTxnBatchSize,
+      @Config("bsaTxnBatchSize") int transactionBatchSize,
       Response response) {
     this.downloadScheduler = downloadScheduler;
     this.blockListFetcher = blockListFetcher;
@@ -90,7 +88,7 @@ public class BsaDownloadAction implements Runnable {
     this.lazyIdnChecker = lazyIdnChecker;
     this.bsaLock = bsaLock;
     this.clock = clock;
-    this.labelTxnBatchSize = labelTxnBatchSize;
+    this.transactionBatchSize = transactionBatchSize;
     this.response = response;
   }
 
@@ -117,7 +115,7 @@ public class BsaDownloadAction implements Runnable {
     BsaDiff diff = null;
     DownloadSchedule schedule = scheduleOptional.get();
     switch (schedule.stage()) {
-      case DOWNLOAD:
+      case DOWNLOAD_BLOCK_LISTS:
         try (LazyBlockList block = blockListFetcher.fetch(BLOCK);
             LazyBlockList blockPlus = blockListFetcher.fetch(BLOCK_PLUS)) {
           ImmutableMap<BlockList, String> fetchedChecksums =
@@ -127,38 +125,42 @@ public class BsaDownloadAction implements Runnable {
                   .latestCompleted()
                   .map(DownloadSchedule.CompletedJob::checksums)
                   .orElseGet(ImmutableMap::of);
-          // TODO(11/30/2023): uncomment below block when BSA checksums are available.
-          // if (!schedule.forceDownload() && Objects.equals(fetchedChecksums, prevChecksums)) {
-          //   schedule.updateJobStage(DownloadStage.NOP, fetchedChecksums);
-          //   return null;
-          // }
+          boolean checksumsMatch = Objects.equals(fetchedChecksums, prevChecksums);
+          if (!schedule.alwaysDownload() && checksumsMatch) {
+            logger.atInfo().log(
+                "Skipping download b/c block list checksums have not changed: [%s]",
+                fetchedChecksums);
+            schedule.updateJobStage(DownloadStage.NOP, fetchedChecksums);
+            return null;
+          } else if (checksumsMatch) {
+            logger.atInfo().log(
+                "Checksums match but download anyway: elapsed time since last download exceeds"
+                    + " configured limit.");
+          }
           ImmutableMap<BlockList, String> actualChecksum =
               gcsClient.saveAndChecksumBlockList(
                   schedule.jobName(), ImmutableList.of(block, blockPlus));
-          // TODO(11/30/2023): uncomment below block when BSA checksums are available.
-          // if (!Objects.equals(fetchedChecksums, actualChecksum)) {
-          //   logger.atSevere().log(
-          //       "Mismatching checksums: BSA's is [%s], ours is [%s]",
-          //       fetchedChecksums, actualChecksum);
-          //   schedule.updateJobStage(DownloadStage.CHECKSUMS_NOT_MATCH);
-          //   return null;
-          // }
-          logger.atInfo().log("Fetched checksums: %s", fetchedChecksums);
-          logger.atInfo().log("Calculated checksums: %s", actualChecksum);
-          schedule.updateJobStage(DownloadStage.MAKE_DIFF, actualChecksum);
-          return null;
+          if (!Objects.equals(fetchedChecksums, actualChecksum)) {
+            logger.atSevere().log(
+                "Inlined checksums do not match those calculated by us. Theirs: [%s]; ours: [%s]",
+                fetchedChecksums, actualChecksum);
+            schedule.updateJobStage(DownloadStage.CHECKSUMS_DO_NOT_MATCH);
+            // TODO(01/15/24): add email alert.
+            return null;
+          }
+          schedule.updateJobStage(DownloadStage.MAKE_ORDER_AND_LABEL_DIFF, actualChecksum);
         }
         // Fall through
-      case MAKE_DIFF:
+      case MAKE_ORDER_AND_LABEL_DIFF:
         diff = diffCreator.createDiff(schedule, lazyIdnChecker.get());
         gcsClient.writeOrderDiffs(schedule.jobName(), diff.getOrders());
         gcsClient.writeLabelDiffs(schedule.jobName(), diff.getLabels());
-        schedule.updateJobStage(DownloadStage.APPLY_DIFF);
+        schedule.updateJobStage(DownloadStage.APPLY_ORDER_AND_LABEL_DIFF);
         // Fall through
-      case APPLY_DIFF:
+      case APPLY_ORDER_AND_LABEL_DIFF:
         try (Stream<Label> labels =
             diff != null ? diff.getLabels() : gcsClient.readLabelDiffs(schedule.jobName())) {
-          Stream<ImmutableList<Label>> batches = batch(labels, labelTxnBatchSize);
+          Stream<ImmutableList<Label>> batches = batch(labels, transactionBatchSize);
           gcsClient.writeUnblockableDomains(
               schedule.jobName(),
               batches
@@ -167,25 +169,25 @@ public class BsaDownloadAction implements Runnable {
                           applyLabelDiff(batch, lazyIdnChecker.get(), schedule, clock.nowUtc()))
                   .flatMap(ImmutableList::stream));
         }
-        schedule.updateJobStage(DownloadStage.START_UPLOADING);
+        schedule.updateJobStage(DownloadStage.REPORT_START_OF_ORDER_PROCESSING);
         // Fall through
-      case START_UPLOADING:
+      case REPORT_START_OF_ORDER_PROCESSING:
         try (Stream<Order> orders = gcsClient.readOrderDiffs(schedule.jobName())) {
           // We expect that all order instances and the json string can fit in memory.
           Optional<String> report = toInProgressOrdersReport(orders);
           if (report.isPresent()) {
             // Log report data
             gcsClient.logInProgressOrderReport(
-                schedule.jobName(), LINE_SPLITTER.splitToStream(report.get()));
+                schedule.jobName(), BsaStringUtils.LINE_SPLITTER.splitToStream(report.get()));
             bsaReportSender.sendOrderStatusReport(report.get());
           } else {
             logger.atInfo().log("No new or deleted orders in this round.");
           }
         }
-        schedule.updateJobStage(DownloadStage.UPLOAD_DOMAINS_IN_USE);
+        schedule.updateJobStage(DownloadStage.UPLOAD_UNBLOCKABLE_DOMAINS_FOR_NEW_ORDERS);
         // Fall through
-      case UPLOAD_DOMAINS_IN_USE:
-        try (Stream<NonBlockedDomain> unblockables =
+      case UPLOAD_UNBLOCKABLE_DOMAINS_FOR_NEW_ORDERS:
+        try (Stream<UnblockableDomain> unblockables =
             gcsClient.readUnblockableDomains(schedule.jobName())) {
           /* The number of unblockable domains may be huge in theory (label x ~50 tlds), but in
            *  practice should be relatively small (tens of thousands?). Batches can be introduced
@@ -193,24 +195,23 @@ public class BsaDownloadAction implements Runnable {
            */
           Optional<String> report = toUnblockableDomainsReport(unblockables);
           if (report.isPresent()) {
-            gcsClient.logUnblockableDomainsReport(
-                schedule.jobName(), LINE_SPLITTER.splitToStream(report.get()));
+            gcsClient.logAddedUnblockableDomainsReport(
+                schedule.jobName(), BsaStringUtils.LINE_SPLITTER.splitToStream(report.get()));
             // During downloads, unblockable domains are only added, not removed.
             bsaReportSender.addUnblockableDomainsUpdates(report.get());
           } else {
             logger.atInfo().log("No changes in the set of unblockable domains in this round.");
           }
         }
-        schedule.updateJobStage(DownloadStage.FINISH_UPLOADING);
+        schedule.updateJobStage(DownloadStage.REPORT_END_OF_ORDER_PROCESSING);
         // Fall through
-      case FINISH_UPLOADING:
+      case REPORT_END_OF_ORDER_PROCESSING:
         try (Stream<Order> orders = gcsClient.readOrderDiffs(schedule.jobName())) {
           // Orders are expected to be few, so the report can be kept in memory.
           Optional<String> report = toCompletedOrdersReport(orders);
           if (report.isPresent()) {
-            // Log report data
             gcsClient.logCompletedOrderReport(
-                schedule.jobName(), LINE_SPLITTER.splitToStream(report.get()));
+                schedule.jobName(), BsaStringUtils.LINE_SPLITTER.splitToStream(report.get()));
             bsaReportSender.sendOrderStatusReport(report.get());
           }
         }
@@ -218,7 +219,7 @@ public class BsaDownloadAction implements Runnable {
         return null;
       case DONE:
       case NOP:
-      case CHECKSUMS_NOT_MATCH:
+      case CHECKSUMS_DO_NOT_MATCH:
         logger.atWarning().log("Unexpectedly reached the %s stage.", schedule.stage());
         break;
     }

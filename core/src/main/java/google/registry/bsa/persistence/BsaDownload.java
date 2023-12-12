@@ -15,7 +15,8 @@
 package google.registry.bsa.persistence;
 
 import static com.google.common.collect.ImmutableMap.toImmutableMap;
-import static google.registry.bsa.DownloadStage.DOWNLOAD;
+import static google.registry.bsa.DownloadStage.DONE;
+import static google.registry.bsa.DownloadStage.DOWNLOAD_BLOCK_LISTS;
 
 import com.google.common.base.Joiner;
 import com.google.common.base.Objects;
@@ -42,7 +43,7 @@ import org.joda.time.DateTime;
 /** Records of ongoing and completed download jobs. */
 @Entity
 @Table(indexes = {@Index(columnList = "creationTime")})
-public class BsaDownload {
+class BsaDownload {
 
   private static final Joiner CSV_JOINER = Joiner.on(',');
   private static final Splitter CSV_SPLITTER = Splitter.on(',');
@@ -62,7 +63,7 @@ public class BsaDownload {
 
   @Column(nullable = false)
   @Enumerated(EnumType.STRING)
-  DownloadStage stage = DOWNLOAD;
+  DownloadStage stage = DOWNLOAD_BLOCK_LISTS;
 
   BsaDownload() {}
 
@@ -80,12 +81,16 @@ public class BsaDownload {
    * <p>The returned value should be a valid GCS folder name, consisting of only lower case
    * alphanumerics, underscore, hyphen and dot.
    */
-  public String getJobName() {
+  String getJobName() {
     // Return a value based on job start time, which is unique.
     return getCreationTime().toString().toLowerCase(Locale.ROOT).replace(":", "");
   }
 
-  public DownloadStage getStage() {
+  boolean isDone() {
+    return java.util.Objects.equals(stage, DONE);
+  }
+
+  DownloadStage getStage() {
     return this.stage;
   }
 

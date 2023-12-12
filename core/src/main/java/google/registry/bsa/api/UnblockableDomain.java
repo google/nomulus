@@ -14,8 +14,11 @@
 
 package google.registry.bsa.api;
 
+import static google.registry.bsa.BsaStringUtils.DOMAIN_JOINER;
+import static google.registry.bsa.BsaStringUtils.PROPERTY_JOINER;
+import static google.registry.bsa.BsaStringUtils.PROPERTY_SPLITTER;
+
 import com.google.auto.value.AutoValue;
-import google.registry.bsa.StringifyUtils;
 import java.util.List;
 
 /**
@@ -24,7 +27,7 @@ import java.util.List;
  */
 // TODO(1/15/2024): rename to UnblockableDomain.
 @AutoValue
-public abstract class NonBlockedDomain {
+public abstract class UnblockableDomain {
   abstract String domainName();
 
   abstract Reason reason();
@@ -37,19 +40,19 @@ public abstract class NonBlockedDomain {
   }
 
   public String serialize() {
-    return StringifyUtils.PROPERTY_JOINER.join(domainName(), reason().name());
+    return PROPERTY_JOINER.join(domainName(), reason().name());
   }
 
-  public static NonBlockedDomain deserialize(String text) {
-    List<String> items = StringifyUtils.PROPERTY_SPLITTER.splitToList(text);
+  public static UnblockableDomain deserialize(String text) {
+    List<String> items = PROPERTY_SPLITTER.splitToList(text);
     return of(items.get(0), Reason.valueOf(items.get(1)));
   }
 
-  public static NonBlockedDomain of(String domainName, Reason reason) {
-    return new AutoValue_NonBlockedDomain(domainName, reason);
+  public static UnblockableDomain of(String domainName, Reason reason) {
+    return new AutoValue_UnblockableDomain(domainName, reason);
   }
 
-  public static NonBlockedDomain of(String label, String tld, Reason reason) {
-    return of(StringifyUtils.DOMAIN_JOINER.join(label, tld), reason);
+  public static UnblockableDomain of(String label, String tld, Reason reason) {
+    return of(DOMAIN_JOINER.join(label, tld), reason);
   }
 }

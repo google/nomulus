@@ -32,8 +32,8 @@ import com.google.common.flogger.LazyArgs;
 import google.registry.bsa.IdnChecker;
 import google.registry.bsa.api.Label;
 import google.registry.bsa.api.Label.LabelType;
-import google.registry.bsa.api.NonBlockedDomain;
-import google.registry.bsa.api.NonBlockedDomain.Reason;
+import google.registry.bsa.api.UnblockableDomain;
+import google.registry.bsa.api.UnblockableDomain.Reason;
 import google.registry.model.ForeignKeyUtils;
 import google.registry.model.domain.Domain;
 import google.registry.model.tld.Tld;
@@ -41,14 +41,14 @@ import java.util.Map;
 import java.util.stream.Stream;
 import org.joda.time.DateTime;
 
-/** Helpers for updating the BSA labels in the database according to the latest download. */
-public final class LabelDiffs {
+/** Applies the BSA label diffs from the latest BSA download. */
+public final class LabelDiffUpdates {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
   private static final Joiner DOMAIN_JOINER = Joiner.on('.');
 
-  private LabelDiffs() {}
+  private LabelDiffUpdates() {}
 
   /**
    * Applies the label diffs to the database and collects matching domains that are in use
@@ -56,41 +56,37 @@ public final class LabelDiffs {
    *
    * @return A collection of domains in use
    */
-  public static ImmutableList<NonBlockedDomain> applyLabelDiff(
+  public static ImmutableList<UnblockableDomain> applyLabelDiff(
       ImmutableList<Label> labels, IdnChecker idnChecker, DownloadSchedule schedule, DateTime now) {
-    ImmutableList.Builder<NonBlockedDomain> nonBlockedDomains = new ImmutableList.Builder<>();
+    ImmutableList.Builder<UnblockableDomain> nonBlockedDomains = new ImmutableList.Builder<>();
     ImmutableMap<LabelType, ImmutableList<Label>> labelsByType =
         ImmutableMap.copyOf(
-            labels.stream().collect(groupingBy(Label::labelType, toImmutableList())));
-
-    /**
-     * New BsaLabels must be committed before unblockable domains are tallied. Otherwise we will
-     * miss concurrent creations. Although we can correct them later, it is not a good user
-     * experience.
-     */
-    // TODO(01/15/24): Move this down into the main transaction. Not point doing it here if we use
-    // cache in DomainCreateFlow.
-    tm().transact(
-            () ->
-                tm().putAll(
-                        labelsByType.getOrDefault(LabelType.CREATE, ImmutableList.of()).stream()
-                            .map(label -> new BsaLabel(label.label(), schedule.jobCreationTime()))
-                            .collect(toImmutableList())),
-            TRANSACTION_REPEATABLE_READ);
+            labels.stream()
+                .filter(label -> isValidInAtLeastOneTld(label, idnChecker))
+                .collect(groupingBy(Label::labelType, toImmutableList())));
 
     tm().transact(
             () -> {
               for (Map.Entry<LabelType, ImmutableList<Label>> entry : labelsByType.entrySet()) {
                 switch (entry.getKey()) {
                   case CREATE:
+                    // With current Cloud SQL, label upsert throughput is about 250/second. If
+                    // better performance is needed, consider bulk insert in native SQL.
+                    tm().putAll(
+                            entry.getValue().stream()
+                                .map(
+                                    label ->
+                                        new BsaLabel(label.label(), schedule.jobCreationTime()))
+                                .collect(toImmutableList()));
+                    // May not find all unblockables due to race condition: DomainCreateFlow uses
+                    // cached BsaLabels. Eventually will be consistent.
                     nonBlockedDomains.addAll(
-                        tallyNonBlockedDomainsForNewLabels(
-                            entry.getValue(), idnChecker, schedule, now));
+                        tallyUnblockableDomainsForNewLabels(entry.getValue(), idnChecker, now));
                     break;
                   case DELETE:
                     ImmutableSet<String> deletedLabels =
                         entry.getValue().stream().map(Label::label).collect(toImmutableSet());
-                    // Delete labels in DB. Also cascade-delete BsaDomainInUse.
+                    // Delete labels in DB. Also cascade-delete BsaUnblockableDomain.
                     int nDeleted = Queries.deleteBsaLabelByLabels(deletedLabels);
                     if (nDeleted != deletedLabels.size()) {
                       logger.atSevere().log(
@@ -111,13 +107,13 @@ public final class LabelDiffs {
                         LazyArgs.lazy(() -> difference(affectedLabels, labelsInDb)));
 
                     // Reuse registered and reserved names that are already computed.
-                    Queries.queryBsaDomainInUseByLabels(affectedLabels)
-                        .map(BsaDomainInUse::toNonBlockedDomain)
+                    Queries.queryBsaUnblockableDomainByLabels(affectedLabels)
+                        .map(BsaUnblockableDomain::toUnblockableDomain)
                         .forEach(nonBlockedDomains::add);
 
                     for (Label label : entry.getValue()) {
                       getInvalidTldsForLabel(label, idnChecker)
-                          .map(tld -> NonBlockedDomain.of(label.label(), tld, Reason.INVALID))
+                          .map(tld -> UnblockableDomain.of(label.label(), tld, Reason.INVALID))
                           .forEach(nonBlockedDomains::add);
                     }
                     break;
@@ -129,13 +125,13 @@ public final class LabelDiffs {
     return nonBlockedDomains.build();
   }
 
-  static ImmutableList<NonBlockedDomain> tallyNonBlockedDomainsForNewLabels(
-      ImmutableList<Label> labels, IdnChecker idnChecker, DownloadSchedule schedule, DateTime now) {
-    ImmutableList.Builder<NonBlockedDomain> nonBlockedDomains = new ImmutableList.Builder<>();
+  static ImmutableList<UnblockableDomain> tallyUnblockableDomainsForNewLabels(
+      ImmutableList<Label> labels, IdnChecker idnChecker, DateTime now) {
+    ImmutableList.Builder<UnblockableDomain> nonBlockedDomains = new ImmutableList.Builder<>();
 
     for (Label label : labels) {
       getInvalidTldsForLabel(label, idnChecker)
-          .map(tld -> NonBlockedDomain.of(label.label(), tld, Reason.INVALID))
+          .map(tld -> UnblockableDomain.of(label.label(), tld, Reason.INVALID))
           .forEach(nonBlockedDomains::add);
     }
 
@@ -147,8 +143,8 @@ public final class LabelDiffs {
     ImmutableSet<String> registeredDomainNames =
         ImmutableSet.copyOf(ForeignKeyUtils.load(Domain.class, validDomainNames, now).keySet());
     for (String domain : registeredDomainNames) {
-      nonBlockedDomains.add(NonBlockedDomain.of(domain, Reason.REGISTERED));
-      tm().put(BsaDomainInUse.of(domain, BsaDomainInUse.Reason.REGISTERED));
+      nonBlockedDomains.add(UnblockableDomain.of(domain, Reason.REGISTERED));
+      tm().put(BsaUnblockableDomain.of(domain, BsaUnblockableDomain.Reason.REGISTERED));
     }
 
     ImmutableSet<String> reservedDomainNames =
@@ -156,8 +152,8 @@ public final class LabelDiffs {
             .filter(domain -> isReservedDomain(domain, now))
             .collect(toImmutableSet());
     for (String domain : reservedDomainNames) {
-      nonBlockedDomains.add(NonBlockedDomain.of(domain, Reason.RESERVED));
-      tm().put(BsaDomainInUse.of(domain, BsaDomainInUse.Reason.RESERVED));
+      nonBlockedDomains.add(UnblockableDomain.of(domain, Reason.RESERVED));
+      tm().put(BsaUnblockableDomain.of(domain, BsaUnblockableDomain.Reason.RESERVED));
     }
     return nonBlockedDomains.build();
   }
@@ -173,5 +169,9 @@ public final class LabelDiffs {
 
   static Stream<String> getValidTldsForLabel(Label label, IdnChecker idnChecker) {
     return idnChecker.getSupportingTlds(label.idnTables()).stream().map(Tld::getTldStr);
+  }
+
+  static boolean isValidInAtLeastOneTld(Label label, IdnChecker idnChecker) {
+    return getValidTldsForLabel(label, idnChecker).findAny().isPresent();
   }
 }

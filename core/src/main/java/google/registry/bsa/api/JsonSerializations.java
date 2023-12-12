@@ -30,7 +30,7 @@ import java.util.Locale;
 import java.util.Optional;
 import java.util.stream.Stream;
 
-/** Helpers for generating {@link Order} and {@link NonBlockedDomain} reports. */
+/** Helpers for generating {@link Order} and {@link UnblockableDomain} reports. */
 public final class JsonSerializations {
 
   private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
@@ -55,19 +55,27 @@ public final class JsonSerializations {
     return Optional.of(GSON.toJson(maps));
   }
 
-  public static Optional<String> toUnblockableDomainsReport(Stream<NonBlockedDomain> domains) {
+  public static Optional<String> toUnblockableDomainsReport(Stream<UnblockableDomain> domains) {
     ImmutableMultimap<String, String> reasonToNames =
         ImmutableMultimap.copyOf(
             domains.collect(
                 toMultimap(
                     domain -> domain.reason().name().toLowerCase(Locale.ROOT),
-                    NonBlockedDomain::domainName,
+                    UnblockableDomain::domainName,
                     () -> newListMultimap(newTreeMap(), Lists::newArrayList))));
 
     if (reasonToNames.isEmpty()) {
       return Optional.empty();
     }
     return Optional.of(GSON.toJson(reasonToNames.asMap()));
+  }
+
+  public static Optional<String> toUnblockableDomainsRemovalReport(Stream<String> domainNames) {
+    ImmutableList<String> domainsList = domainNames.collect(toImmutableList());
+    if (domainsList.isEmpty()) {
+      return Optional.empty();
+    }
+    return Optional.of(GSON.toJson(domainsList));
   }
 
   private static ImmutableMap<String, Object> asInProgressOrder(Order order) {

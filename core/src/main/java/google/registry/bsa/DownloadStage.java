@@ -17,20 +17,27 @@ package google.registry.bsa;
 /** The processing stages of a download. */
 public enum DownloadStage {
   /** Downloads BSA block list files. */
-  DOWNLOAD,
-  /** Generates block list diffs with the previous download. */
-  MAKE_DIFF,
-  /** Applies the label diffs to the database tables. */
-  APPLY_DIFF,
+  DOWNLOAD_BLOCK_LISTS,
+  /**
+   * Generates block list diffs against the previous download. The diffs consist of a stream of
+   * {@link google.registry.bsa.api.Order orders} and a stream of {@link
+   * google.registry.bsa.api.Label labels}.
+   */
+  MAKE_ORDER_AND_LABEL_DIFF,
+  /** Applies the diffs to the database. */
+  APPLY_ORDER_AND_LABEL_DIFF,
   /**
    * Makes a REST API call to BSA endpoint, declaring that processing starts for new orders in the
    * diffs.
    */
-  START_UPLOADING,
-  /** Makes a REST API call to BSA endpoint, sending the domains that cannot be blocked. */
-  UPLOAD_DOMAINS_IN_USE,
+  REPORT_START_OF_ORDER_PROCESSING,
+  /**
+   * Makes a REST API call to BSA endpoint, uploading unblockable domains that match labels in the
+   * diff.
+   */
+  UPLOAD_UNBLOCKABLE_DOMAINS_FOR_NEW_ORDERS,
   /** Makes a REST API call to BSA endpoint, declaring the completion of order processing. */
-  FINISH_UPLOADING,
+  REPORT_END_OF_ORDER_PROCESSING,
   /** The terminal stage after processing succeeds. */
   DONE,
   /**
@@ -42,5 +49,5 @@ public enum DownloadStage {
    * The terminal stage indicating that the downloads are not processed because their BSA-generated
    * checksums do not match those calculated by us.
    */
-  CHECKSUMS_NOT_MATCH;
+  CHECKSUMS_DO_NOT_MATCH;
 }

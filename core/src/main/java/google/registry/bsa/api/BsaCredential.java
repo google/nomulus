@@ -14,13 +14,13 @@
 
 package google.registry.bsa.api;
 
+import static google.registry.request.UrlConnectionUtils.getResponseBytes;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static javax.servlet.http.HttpServletResponse.SC_OK;
 
 import com.google.api.client.http.HttpMethods;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.flogger.FluentLogger;
-import com.google.common.io.ByteStreams;
 import com.google.gson.Gson;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.keyring.api.Keyring;
@@ -28,25 +28,36 @@ import google.registry.request.UrlConnectionService;
 import google.registry.request.UrlConnectionUtils;
 import google.registry.util.Clock;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.Reader;
 import java.net.URL;
 import java.security.GeneralSecurityException;
 import java.util.Map;
 import javax.annotation.Nullable;
+import javax.annotation.concurrent.ThreadSafe;
 import javax.inject.Inject;
 import javax.net.ssl.HttpsURLConnection;
 import org.joda.time.Duration;
 import org.joda.time.Instant;
 
-/** Self-refreshing credential for accessing the BSA API. */
+/**
+ * A credential for accessing the BSA API.
+ *
+ * <p>Fetches on-demand an auth token from BSA's auth http endpoint and caches it for repeated use
+ * until the token expires (expiry set by BSA and recorded in the configuration file). An expired
+ * token is refreshed only when requested. Token refreshing is blocking but thread-safe.
+ *
+ * <p>The token-fetching request authenticates itself with an API key, which is stored in the Secret
+ * Manager.
+ */
+@ThreadSafe
 public class BsaCredential {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
+  /** Content type of the auth http request. */
   private static final String CONTENT_TYPE = "application/x-www-form-urlencoded";
+  /** Template of the auth http request's payload. User must provide an API key. */
   private static final String AUTH_REQ_BODY_TEMPLATE = "apiKey=%s&space=BSA";
+  /** The variable name for the auth token in the returned json response. */
   public static final String ID_TOKEN = "id_token";
 
   private final UrlConnectionService urlConnectionService;
@@ -79,7 +90,7 @@ public class BsaCredential {
   /**
    * Returns the auth token for accessing the BSA API.
    *
-   * <p>This method refreshes the token if it is expired.
+   * <p>This method refreshes the token if it is expired, and is thread-safe..
    */
   public String getAuthToken() {
     try {
@@ -109,6 +120,7 @@ public class BsaCredential {
   String fetchNewAuthToken() throws IOException, GeneralSecurityException {
     String payload = String.format(AUTH_REQ_BODY_TEMPLATE, keyring.getBsaApiKey());
     URL url = new URL(authUrl);
+    logger.atInfo().log("Fetching auth token from %s", url);
     HttpsURLConnection connection = null;
     try {
       connection = (HttpsURLConnection) urlConnectionService.createConnection(url);
@@ -116,11 +128,9 @@ public class BsaCredential {
       UrlConnectionUtils.setPayload(connection, payload.getBytes(UTF_8), CONTENT_TYPE);
       int code = connection.getResponseCode();
       if (code != SC_OK) {
-        String errorDetails = "";
-        try (InputStream errorStream = connection.getErrorStream()) {
-          errorDetails = new String(ByteStreams.toByteArray(errorStream), UTF_8);
-        } catch (NullPointerException e) {
-          // No error message.
+        String errorDetails;
+        try {
+          errorDetails = new String(getResponseBytes(connection), UTF_8);
         } catch (Exception e) {
           errorDetails = "Failed to retrieve error message: " + e.getMessage();
         }
@@ -130,16 +140,16 @@ public class BsaCredential {
                 code, connection.getResponseMessage(), errorDetails),
             /* retriable= */ true);
       }
-
-      try (Reader payloadReader = new InputStreamReader(connection.getInputStream(), UTF_8)) {
-        @SuppressWarnings("unchecked")
-        String idToken =
-            new Gson().fromJson(payloadReader, Map.class).getOrDefault(ID_TOKEN, "").toString();
-        if (idToken.isEmpty()) {
-          throw new BsaException("Response missing ID token", /* retriable= */ false);
-        }
-        return idToken;
+      @SuppressWarnings("unchecked")
+      String idToken =
+          new Gson()
+              .fromJson(new String(getResponseBytes(connection), UTF_8), Map.class)
+              .getOrDefault(ID_TOKEN, "")
+              .toString();
+      if (idToken.isEmpty()) {
+        throw new BsaException("Response missing ID token", /* retriable= */ false);
       }
+      return idToken;
     } finally {
       if (connection != null) {
         connection.disconnect();

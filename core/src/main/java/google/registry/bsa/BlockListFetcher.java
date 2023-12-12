@@ -19,6 +19,7 @@ import static javax.servlet.http.HttpServletResponse.SC_OK;
 
 import com.google.api.client.http.HttpMethods;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.flogger.FluentLogger;
 import com.google.common.io.ByteStreams;
 import google.registry.bsa.api.BsaCredential;
 import google.registry.bsa.api.BsaException;
@@ -29,6 +30,7 @@ import java.io.BufferedInputStream;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URL;
 import java.security.GeneralSecurityException;
 import java.util.function.BiConsumer;
 import javax.inject.Inject;
@@ -36,6 +38,7 @@ import javax.net.ssl.HttpsURLConnection;
 
 /** Fetches data from the BSA API. */
 public class BlockListFetcher {
+  private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
   private final UrlConnectionService urlConnectionService;
   private final BsaCredential credential;
@@ -64,10 +67,10 @@ public class BlockListFetcher {
 
   LazyBlockList tryFetch(BlockList blockList) {
     try {
+      URL dataUrl = new URL(blockListUrls.get(blockList.name()));
+      logger.atInfo().log("Downloading from  %s", dataUrl);
       HttpsURLConnection connection =
-          (HttpsURLConnection)
-              urlConnectionService.createConnection(
-                  new java.net.URL(blockListUrls.get(blockList.name())));
+          (HttpsURLConnection) urlConnectionService.createConnection(dataUrl);
       connection.setRequestMethod(HttpMethods.GET);
       connection.setRequestProperty("Authorization", "Bearer " + credential.getAuthToken());
       int code = connection.getResponseCode();
@@ -112,19 +115,15 @@ public class BlockListFetcher {
 
     /** Reads the BSA-generated checksum, which is the first line of the input. */
     private String readChecksum() throws IOException {
-      if (blockList.equals(BlockList.BLOCK)) {
-        return "TODO"; // Depends on BSA impl: header or first line of file
-      } else {
-        StringBuilder checksum = new StringBuilder();
-        char ch;
-        while ((ch = peekInputStream()) != (char) -1 && !Character.isWhitespace(ch)) {
-          checksum.append((char) inputStream.read());
-        }
-        while ((ch = peekInputStream()) != (char) -1 && Character.isWhitespace(ch)) {
-          inputStream.read();
-        }
-        return checksum.toString();
+      StringBuilder checksum = new StringBuilder();
+      char ch;
+      while ((ch = peekInputStream()) != (char) -1 && !Character.isWhitespace(ch)) {
+        checksum.append((char) inputStream.read());
       }
+      while ((ch = peekInputStream()) != (char) -1 && Character.isWhitespace(ch)) {
+        inputStream.read();
+      }
+      return checksum.toString();
     }
 
     char peekInputStream() throws IOException {

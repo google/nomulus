@@ -21,8 +21,8 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import google.registry.bsa.BlockListFetcher.LazyBlockList;
 import google.registry.bsa.api.Label;
-import google.registry.bsa.api.NonBlockedDomain;
 import google.registry.bsa.api.Order;
+import google.registry.bsa.api.UnblockableDomain;
 import google.registry.bsa.api.UnblockableDomainChange;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.gcs.GcsUtils;
@@ -43,14 +43,15 @@ public class GcsClient {
 
   // Intermediate data files:
   static final String LABELS_DIFF_FILE = "labels_diff.csv";
-  static final String UNBLOCKABLE_DOMAINS_FILE = "unblockable_domains.csv";
   static final String ORDERS_DIFF_FILE = "orders_diff.csv";
-  static final String REFRESH_CHANGE_FILE = "refresh_change.csv";
+  static final String UNBLOCKABLE_DOMAINS_FILE = "unblockable_domains.csv";
+  static final String REFRESHED_UNBLOCKABLE_DOMAINS_FILE = "refreshed_unblockable_domains.csv";
 
   // Logged report data sent to BSA.
   static final String IN_PROGRESS_ORDERS_REPORT = "in_progress_orders.json";
   static final String COMPLETED_ORDERS_REPORT = "completed_orders.json";
-  static final String UNBLOCKABLE_DOMAINS_REPORT = "unblockable_domains.json";
+  static final String ADDED_UNBLOCKABLE_DOMAINS_REPORT = "added_unblockable_domains.json";
+  static final String REMOVED_UNBLOCKABLE_DOMAINS_REPORT = "removed_unblockable_domains.json";
 
   private final GcsUtils gcsUtils;
   private final String bucketName;
@@ -143,16 +144,16 @@ public class GcsClient {
     }
   }
 
-  Stream<NonBlockedDomain> readUnblockableDomains(String jobName) {
+  Stream<UnblockableDomain> readUnblockableDomains(String jobName) {
     BlobId blobId = getBlobId(jobName, UNBLOCKABLE_DOMAINS_FILE);
-    return readStream(blobId).map(NonBlockedDomain::deserialize);
+    return readStream(blobId).map(UnblockableDomain::deserialize);
   }
 
-  void writeUnblockableDomains(String jobName, Stream<NonBlockedDomain> unblockables) {
+  void writeUnblockableDomains(String jobName, Stream<UnblockableDomain> unblockables) {
     BlobId blobId = getBlobId(jobName, UNBLOCKABLE_DOMAINS_FILE);
     try (BufferedWriter gcsWriter = getWriter(blobId)) {
       unblockables
-          .map(NonBlockedDomain::serialize)
+          .map(UnblockableDomain::serialize)
           .forEach(line -> writeWithNewline(gcsWriter, line));
     } catch (IOException e) {
       throw new RuntimeException(e);
@@ -165,7 +166,7 @@ public class GcsClient {
   }
 
   void writeRefreshChanges(String jobName, Stream<UnblockableDomainChange> changes) {
-    BlobId blobId = getBlobId(jobName, REFRESH_CHANGE_FILE);
+    BlobId blobId = getBlobId(jobName, REFRESHED_UNBLOCKABLE_DOMAINS_FILE);
     try (BufferedWriter gcsWriter = getWriter(blobId)) {
       changes
           .map(UnblockableDomainChange::serialize)
@@ -193,8 +194,17 @@ public class GcsClient {
     }
   }
 
-  void logUnblockableDomainsReport(String jobName, Stream<String> lines) {
-    BlobId blobId = getBlobId(jobName, UNBLOCKABLE_DOMAINS_REPORT);
+  void logAddedUnblockableDomainsReport(String jobName, Stream<String> lines) {
+    BlobId blobId = getBlobId(jobName, ADDED_UNBLOCKABLE_DOMAINS_REPORT);
+    try (BufferedWriter gcsWriter = getWriter(blobId)) {
+      lines.forEach(line -> writeWithNewline(gcsWriter, line));
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  void logRemovedUnblockableDomainsReport(String jobName, Stream<String> lines) {
+    BlobId blobId = getBlobId(jobName, REMOVED_UNBLOCKABLE_DOMAINS_REPORT);
     try (BufferedWriter gcsWriter = getWriter(blobId)) {
       lines.forEach(line -> writeWithNewline(gcsWriter, line));
     } catch (IOException e) {

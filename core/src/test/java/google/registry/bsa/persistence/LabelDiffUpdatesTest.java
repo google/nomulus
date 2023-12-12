@@ -16,7 +16,7 @@ package google.registry.bsa.persistence;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
-import static google.registry.bsa.persistence.LabelDiffs.applyLabelDiff;
+import static google.registry.bsa.persistence.LabelDiffUpdates.applyLabelDiff;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
@@ -32,8 +32,8 @@ import com.google.common.collect.Sets;
 import google.registry.bsa.IdnChecker;
 import google.registry.bsa.api.Label;
 import google.registry.bsa.api.Label.LabelType;
-import google.registry.bsa.api.NonBlockedDomain;
-import google.registry.bsa.persistence.BsaDomainInUse.Reason;
+import google.registry.bsa.api.UnblockableDomain;
+import google.registry.bsa.persistence.BsaUnblockableDomain.Reason;
 import google.registry.model.tld.Tld;
 import google.registry.model.tld.label.ReservationType;
 import google.registry.model.tld.label.ReservedList;
@@ -51,9 +51,9 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-/** Unit tests for {@link LabelDiffs}. */
+/** Unit tests for {@link LabelDiffUpdates}. */
 @ExtendWith(MockitoExtension.class)
-class LabelDiffsTest {
+class LabelDiffUpdatesTest {
 
   FakeClock fakeClock = new FakeClock(DateTime.parse("2023-11-09T02:08:57.880Z"));
 
@@ -69,7 +69,7 @@ class LabelDiffsTest {
   Tld page;
 
   @BeforeEach
-  void setupTld() {
+  void setup() {
     Tld tld = createTld("app");
     tm().transact(
             () ->
@@ -88,18 +88,20 @@ class LabelDiffsTest {
     tm().transact(
             () -> {
               tm().insert(new BsaLabel("label", fakeClock.nowUtc()));
-              tm().insert(new BsaDomainInUse("label", "app", Reason.REGISTERED));
+              tm().insert(new BsaUnblockableDomain("label", "app", Reason.REGISTERED));
             });
+    when(idnChecker.getSupportingTlds(any())).thenReturn(ImmutableSet.of(app));
 
-    ImmutableList<NonBlockedDomain> nonBlockedDomains =
+    ImmutableList<UnblockableDomain> unblockableDomains =
         applyLabelDiff(
             ImmutableList.of(Label.of("label", LabelType.DELETE, ImmutableSet.of())),
             idnChecker,
             schedule,
             fakeClock.nowUtc());
-    assertThat(nonBlockedDomains).isEmpty();
+    assertThat(unblockableDomains).isEmpty();
     assertThat(tm().transact(() -> tm().loadByKeyIfPresent(BsaLabel.vKey("label")))).isEmpty();
-    assertThat(tm().transact(() -> tm().loadByKeyIfPresent(BsaDomainInUse.vKey("label", "app"))))
+    assertThat(
+            tm().transact(() -> tm().loadByKeyIfPresent(BsaUnblockableDomain.vKey("label", "app"))))
         .isEmpty();
   }
 
@@ -108,23 +110,25 @@ class LabelDiffsTest {
     tm().transact(
             () -> {
               tm().insert(new BsaLabel("label", fakeClock.nowUtc()));
-              tm().insert(new BsaDomainInUse("label", "app", Reason.REGISTERED));
+              tm().insert(new BsaUnblockableDomain("label", "app", Reason.REGISTERED));
             });
+    when(idnChecker.getSupportingTlds(any())).thenReturn(ImmutableSet.of(app));
     when(idnChecker.getForbiddingTlds(any()))
-        .thenReturn(Sets.difference(ImmutableSet.of(dev), ImmutableSet.of()));
+        .thenReturn(Sets.difference(ImmutableSet.of(dev), ImmutableSet.of()).immutableCopy());
 
-    ImmutableList<NonBlockedDomain> nonBlockedDomains =
+    ImmutableList<UnblockableDomain> unblockableDomains =
         applyLabelDiff(
             ImmutableList.of(Label.of("label", LabelType.NEW_ORDER_ASSOCIATION, ImmutableSet.of())),
             idnChecker,
             schedule,
             fakeClock.nowUtc());
-    assertThat(nonBlockedDomains)
+    assertThat(unblockableDomains)
         .containsExactly(
-            NonBlockedDomain.of("label.app", NonBlockedDomain.Reason.REGISTERED),
-            NonBlockedDomain.of("label.dev", NonBlockedDomain.Reason.INVALID));
+            UnblockableDomain.of("label.app", UnblockableDomain.Reason.REGISTERED),
+            UnblockableDomain.of("label.dev", UnblockableDomain.Reason.INVALID));
     assertThat(tm().transact(() -> tm().loadByKeyIfPresent(BsaLabel.vKey("label")))).isPresent();
-    assertThat(tm().transact(() -> tm().loadByKeyIfPresent(BsaDomainInUse.vKey("label", "app"))))
+    assertThat(
+            tm().transact(() -> tm().loadByKeyIfPresent(BsaUnblockableDomain.vKey("label", "app"))))
         .isPresent();
   }
 
@@ -145,27 +149,30 @@ class LabelDiffsTest {
     tm().transact(() -> tm().put(page.asBuilder().setReservedLists(reservedList).build()));
 
     when(idnChecker.getForbiddingTlds(any()))
-        .thenReturn(Sets.difference(ImmutableSet.of(dev), ImmutableSet.of()));
+        .thenReturn(Sets.difference(ImmutableSet.of(dev), ImmutableSet.of()).immutableCopy());
     when(idnChecker.getSupportingTlds(any())).thenReturn(ImmutableSet.of(app, page));
     when(schedule.jobCreationTime()).thenReturn(fakeClock.nowUtc());
 
-    ImmutableList<NonBlockedDomain> nonBlockedDomains =
+    ImmutableList<UnblockableDomain> unblockableDomains =
         applyLabelDiff(
             ImmutableList.of(Label.of("label", LabelType.CREATE, ImmutableSet.of())),
             idnChecker,
             schedule,
             fakeClock.nowUtc());
-    assertThat(nonBlockedDomains)
+    assertThat(unblockableDomains)
         .containsExactly(
-            NonBlockedDomain.of("label.app", NonBlockedDomain.Reason.REGISTERED),
-            NonBlockedDomain.of("label.page", NonBlockedDomain.Reason.RESERVED),
-            NonBlockedDomain.of("label.dev", NonBlockedDomain.Reason.INVALID));
+            UnblockableDomain.of("label.app", UnblockableDomain.Reason.REGISTERED),
+            UnblockableDomain.of("label.page", UnblockableDomain.Reason.RESERVED),
+            UnblockableDomain.of("label.dev", UnblockableDomain.Reason.INVALID));
     assertThat(tm().transact(() -> tm().loadByKeyIfPresent(BsaLabel.vKey("label")))).isPresent();
-    assertThat(tm().transact(() -> tm().loadByKey(BsaDomainInUse.vKey("label", "app")).reason))
+    assertThat(
+            tm().transact(() -> tm().loadByKey(BsaUnblockableDomain.vKey("label", "app")).reason))
         .isEqualTo(Reason.REGISTERED);
-    assertThat(tm().transact(() -> tm().loadByKey(BsaDomainInUse.vKey("label", "page")).reason))
+    assertThat(
+            tm().transact(() -> tm().loadByKey(BsaUnblockableDomain.vKey("label", "page")).reason))
         .isEqualTo(Reason.RESERVED);
-    assertThat(tm().transact(() -> tm().loadByKeyIfPresent(BsaDomainInUse.vKey("label", "dev"))))
+    assertThat(
+            tm().transact(() -> tm().loadByKeyIfPresent(BsaUnblockableDomain.vKey("label", "dev"))))
         .isEmpty();
   }
 }

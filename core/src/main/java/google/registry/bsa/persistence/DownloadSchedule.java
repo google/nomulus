@@ -16,8 +16,8 @@ package google.registry.bsa.persistence;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Verify.verify;
-import static google.registry.bsa.DownloadStage.CHECKSUMS_NOT_MATCH;
-import static google.registry.bsa.DownloadStage.MAKE_DIFF;
+import static google.registry.bsa.DownloadStage.CHECKSUMS_DO_NOT_MATCH;
+import static google.registry.bsa.DownloadStage.MAKE_ORDER_AND_LABEL_DIFF;
 import static google.registry.bsa.DownloadStage.NOP;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
@@ -68,24 +68,29 @@ public abstract class DownloadSchedule {
    * Updates the current job to the new stage and sets the checksums of the downloaded files.
    *
    * <p>This method may only be invoked during the {@code DOWNLOAD} stage, and the target stage must
-   * be one of {@code MAKE_DIFF}, {@code NOP}, or {@code CHECKSUMS_NOT_MATCH}.
+   * be one of {@code MAKE_DIFF}, {@code CHECK_FOR_STALE_UNBLOCKABLES}, {@code NOP}, or {@code
+   * CHECKSUMS_NOT_MATCH}.
    */
-  public void updateJobStage(DownloadStage stage, ImmutableMap<BlockList, String> checksums) {
+  public DownloadSchedule updateJobStage(
+      DownloadStage stage, ImmutableMap<BlockList, String> checksums) {
     checkArgument(
-        stage.equals(MAKE_DIFF) || stage.equals(NOP) || stage.equals(CHECKSUMS_NOT_MATCH),
+        stage.equals(MAKE_ORDER_AND_LABEL_DIFF)
+            || stage.equals(NOP)
+            || stage.equals(CHECKSUMS_DO_NOT_MATCH),
         "Invalid stage [%s]",
         stage);
-    tm().transact(
+    return tm().transact(
             () -> {
               BsaDownload bsaDownload = tm().loadByKey(BsaDownload.vKey(jobId()));
               verify(
-                  bsaDownload.getStage().equals(DownloadStage.DOWNLOAD),
+                  bsaDownload.getStage().equals(DownloadStage.DOWNLOAD_BLOCK_LISTS),
                   "Invalid invocation. May only invoke during the DOWNLOAD stage.",
                   bsaDownload.getStage(),
                   stage);
               bsaDownload.setStage(stage);
               bsaDownload.setChecksums(checksums);
               tm().put(bsaDownload);
+              return of(bsaDownload);
             });
   }
 

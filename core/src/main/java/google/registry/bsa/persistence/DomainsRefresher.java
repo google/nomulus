@@ -14,28 +14,40 @@
 
 package google.registry.bsa.persistence;
 
+import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
+import static google.registry.bsa.ReservedDomainsUtils.getAllReservedNames;
 import static google.registry.bsa.ReservedDomainsUtils.isReservedDomain;
+import static google.registry.bsa.persistence.Queries.queryLivesDomains;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+import static java.util.stream.Collectors.groupingBy;
 
-import com.google.common.base.Joiner;
+import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import com.google.common.collect.Sets.SetView;
-import google.registry.bsa.api.NonBlockedDomain;
-import google.registry.bsa.api.NonBlockedDomain.Reason;
+import com.google.common.collect.Streams;
+import google.registry.bsa.BsaStringUtils;
+import google.registry.bsa.api.UnblockableDomain;
+import google.registry.bsa.api.UnblockableDomain.Reason;
 import google.registry.bsa.api.UnblockableDomainChange;
 import google.registry.model.ForeignKeyUtils;
 import google.registry.model.domain.Domain;
-import google.registry.util.DateTimeUtils;
+import google.registry.util.BatchedStreams;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Optional;
+import java.util.stream.Stream;
 import org.joda.time.DateTime;
+import org.joda.time.Duration;
 
 /**
- * Rechecks {@link BsaDomainInUse the registered/reserved domain names} in the database for changes.
+ * Rechecks {@link BsaUnblockableDomain the registered/reserved domain names} in the database for
+ * changes.
  *
  * <p>A registered/reserved domain name may change status in the following cases:
  *
@@ -66,16 +78,36 @@ import org.joda.time.DateTime;
  * <p>Since BSA has separate endpoints for receiving blockability changes, removals must be sent
  * before additions.
  */
-public class DomainsRefresher {
+public final class DomainsRefresher {
 
-  private static final Joiner DOMAIN_JOINER = Joiner.on('.');
+  private final DateTime prevRefreshStartTime;
+  private final int transactionBatchSize;
+  private final DateTime now;
 
-  static final int QUERY_BATCH_SIZE = 500;
+  public DomainsRefresher(
+      DateTime prevRefreshStartTime,
+      DateTime now,
+      Duration domainTxnMaxDuration,
+      int transactionBatchSize) {
+    this.prevRefreshStartTime = prevRefreshStartTime.minus(domainTxnMaxDuration);
+    this.now = now;
+    this.transactionBatchSize = transactionBatchSize;
+  }
 
-  private final DownloadSchedule schedule;
+  public ImmutableList<UnblockableDomainChange> checkForBlockabilityChanges() {
+    ImmutableList<UnblockableDomainChange> downgrades = refreshStaleUnblockables();
+    ImmutableList<UnblockableDomainChange> upgrades = getNewUnblockables();
 
-  DomainsRefresher(DownloadSchedule schedule) {
-    this.schedule = schedule;
+    ImmutableSet<String> upgradedDomains =
+        upgrades.stream().map(UnblockableDomainChange::domainName).collect(toImmutableSet());
+    ImmutableList<UnblockableDomainChange> trueDowngrades =
+        downgrades.stream()
+            .filter(c -> !upgradedDomains.contains(c.domainName()))
+            .collect(toImmutableList());
+    return new ImmutableList.Builder<UnblockableDomainChange>()
+        .addAll(upgrades)
+        .addAll(trueDowngrades)
+        .build();
   }
 
   /**
@@ -89,88 +121,138 @@ public class DomainsRefresher {
    */
   public ImmutableList<UnblockableDomainChange> refreshStaleUnblockables() {
     ImmutableList.Builder<UnblockableDomainChange> changes = new ImmutableList.Builder<>();
-    ImmutableList<BsaDomainInUse> batch;
-    Optional<BsaDomainInUse> lastRead = Optional.empty();
+    ImmutableList<BsaUnblockableDomain> batch;
+    Optional<BsaUnblockableDomain> lastRead = Optional.empty();
     do {
-      batch = batchReadUnblockables(lastRead, QUERY_BATCH_SIZE);
+      batch = Queries.batchReadUnblockables(lastRead, transactionBatchSize);
       if (!batch.isEmpty()) {
         lastRead = Optional.of(batch.get(batch.size() - 1));
-        changes.addAll(recheckStaleDomainsBatch(batch, schedule.jobCreationTime()));
+        changes.addAll(recheckStaleDomainsBatch(batch));
       }
-    } while (batch.size() == QUERY_BATCH_SIZE);
+    } while (batch.size() == transactionBatchSize);
     return changes.build();
   }
 
-  public void detectNewUnblockables() {}
+  ImmutableSet<UnblockableDomainChange> recheckStaleDomainsBatch(
+      ImmutableList<BsaUnblockableDomain> domains) {
+    ImmutableMap<String, BsaUnblockableDomain> nameToEntity =
+        domains.stream().collect(toImmutableMap(BsaUnblockableDomain::domainName, d -> d));
 
-  ImmutableList<UnblockableDomainChange> recheckStaleDomainsBatch(
-      ImmutableList<BsaDomainInUse> domains, DateTime now) {
-    ImmutableMap<String, BsaDomainInUse> registered =
+    ImmutableSet<String> prevRegistered =
         domains.stream()
-            .filter(d -> d.reason.equals(BsaDomainInUse.Reason.REGISTERED))
-            .collect(toImmutableMap(d -> DOMAIN_JOINER.join(d.label, d.tld), d -> d));
-    ImmutableSet<String> stillRegistered =
-        registered.isEmpty()
-            ? ImmutableSet.of()
-            : ImmutableSet.copyOf(
-                ForeignKeyUtils.load(Domain.class, registered.keySet(), now).keySet());
-    SetView<String> noLongerRegistered = Sets.difference(registered.keySet(), stillRegistered);
+            .filter(d -> d.reason.equals(BsaUnblockableDomain.Reason.REGISTERED))
+            .map(BsaUnblockableDomain::domainName)
+            .collect(toImmutableSet());
+    ImmutableSet<String> currRegistered =
+        ImmutableSet.copyOf(
+            ForeignKeyUtils.load(Domain.class, nameToEntity.keySet(), now).keySet());
+    SetView<String> noLongerRegistered = Sets.difference(prevRegistered, currRegistered);
+    SetView<String> newlyRegistered = Sets.difference(currRegistered, prevRegistered);
 
-    ImmutableMap<String, BsaDomainInUse> reserved =
+    ImmutableSet<String> prevReserved =
         domains.stream()
-            .filter(d -> d.reason.equals(BsaDomainInUse.Reason.RESERVED))
-            .collect(toImmutableMap(d -> DOMAIN_JOINER.join(d.label, d.tld), d -> d));
-    ImmutableSet<String> stillReserved =
-        reserved.keySet().stream()
+            .filter(d -> d.reason.equals(BsaUnblockableDomain.Reason.RESERVED))
+            .map(BsaUnblockableDomain::domainName)
+            .collect(toImmutableSet());
+    ImmutableSet<String> currReserved =
+        nameToEntity.keySet().stream()
             .filter(domain -> isReservedDomain(domain, now))
             .collect(toImmutableSet());
-    SetView<String> noLongerReserved = Sets.difference(reserved.keySet(), stillReserved);
+    SetView<String> noLongerReserved = Sets.difference(prevReserved, currReserved);
 
-    ImmutableList.Builder<UnblockableDomainChange> changes = new ImmutableList.Builder<>();
-    for (String domainName : noLongerReserved) {
-      BsaDomainInUse domain = reserved.get(domainName);
-      changes.add(
-          UnblockableDomainChange.of(
-              NonBlockedDomain.of(domain.label, domain.tld, Reason.valueOf(domain.reason.name())),
-              registered.containsKey(domainName)
-                  ? Optional.of(Reason.REGISTERED)
-                  : Optional.empty()));
+    ImmutableSet.Builder<UnblockableDomainChange> changes = new ImmutableSet.Builder<>();
+    // Newly registered: reserved -> registered
+    for (String domainName : newlyRegistered) {
+      BsaUnblockableDomain domain = nameToEntity.get(domainName);
+      UnblockableDomain unblockable =
+          UnblockableDomain.of(domain.label, domain.tld, Reason.valueOf(domain.reason.name()));
+      changes.add(UnblockableDomainChange.ofChanged(unblockable, Reason.REGISTERED));
     }
+    // No longer registered: registered -> reserved/NONE
     for (String domainName : noLongerRegistered) {
-      BsaDomainInUse domain = registered.get(domainName);
+      BsaUnblockableDomain domain = nameToEntity.get(domainName);
+      UnblockableDomain unblockable =
+          UnblockableDomain.of(domain.label, domain.tld, Reason.valueOf(domain.reason.name()));
       changes.add(
-          UnblockableDomainChange.of(
-              NonBlockedDomain.of(domain.label, domain.tld, Reason.valueOf(domain.reason.name())),
-              reserved.containsKey(domainName) ? Optional.of(Reason.RESERVED) : Optional.empty()));
+          currReserved.contains(domainName)
+              ? UnblockableDomainChange.ofChanged(unblockable, Reason.RESERVED)
+              : UnblockableDomainChange.ofDeleted(unblockable));
+    }
+    // No longer reserved: reserved -> registered/None (the former duplicates with newly-registered)
+    for (String domainName : noLongerReserved) {
+      BsaUnblockableDomain domain = nameToEntity.get(domainName);
+      UnblockableDomain unblockable =
+          UnblockableDomain.of(domain.label, domain.tld, Reason.valueOf(domain.reason.name()));
+      if (!currRegistered.contains(domainName)) {
+        changes.add(UnblockableDomainChange.ofDeleted(unblockable));
+      }
     }
     return changes.build();
   }
 
-  void detectNewUnblockableDomains() {}
-
-  private ImmutableSet<String> getDomainsCreatedSince(RefreshSchedule schedule) {
-    ImmutableSet<String> candidates =
-        ImmutableSet.copyOf(
-            tm().getEntityManager()
-                .createQuery(
-                    "SELECT domainName FROM Domain WHERE creationTime >= :time ", String.class)
-                .setParameter(
-                    "time", schedule.prevJobCreationTime().orElse(DateTimeUtils.START_OF_TIME))
-                .getResultList());
-    return ImmutableSet.copyOf(
-        ForeignKeyUtils.load(Domain.class, candidates, schedule.jobCreationTime()).keySet());
+  public ImmutableList<UnblockableDomainChange> getNewUnblockables() {
+    ImmutableSet<String> newCreated = getNewlyCreatedUnblockables(prevRefreshStartTime, now);
+    ImmutableSet<String> newReserved = getNewlyReservedUnblockables(now, transactionBatchSize);
+    SetView<String> reservedNotCreated = Sets.difference(newReserved, newCreated);
+    return Streams.concat(
+            newCreated.stream()
+                .map(name -> UnblockableDomain.of(name, Reason.REGISTERED))
+                .map(UnblockableDomainChange::ofNew),
+            reservedNotCreated.stream()
+                .map(name -> UnblockableDomain.of(name, Reason.RESERVED))
+                .map(UnblockableDomainChange::ofNew))
+        .collect(toImmutableList());
   }
 
-  private static ImmutableList<BsaDomainInUse> batchReadUnblockables(
-      Optional<BsaDomainInUse> exclusiveStartFrom, int batchSize) {
-    return ImmutableList.copyOf(
-        tm().getEntityManager()
-            .createQuery(
-                "FROM BsaDomainInUse d WHERE d.label > :label OR (d.label = :label AND d.tld >"
-                    + " :tld) ORDER BY d.tld, d.label ")
-            .setParameter("label", exclusiveStartFrom.map(d -> d.label).orElse(""))
-            .setParameter("tld", exclusiveStartFrom.map(d -> d.tld).orElse(""))
-            .setMaxResults(batchSize)
-            .getResultList());
+  static ImmutableSet<String> getNewlyCreatedUnblockables(
+      DateTime prevRefreshStartTime, DateTime now) {
+    ImmutableSet<String> liveDomains = queryLivesDomains(prevRefreshStartTime, now);
+    return getUnblockedDomainNames(liveDomains);
+  }
+
+  static ImmutableSet<String> getNewlyReservedUnblockables(DateTime now, int batchSize) {
+    Stream<String> allReserved = getAllReservedNames(now);
+    return BatchedStreams.batch(allReserved, batchSize)
+        .map(DomainsRefresher::getUnblockedDomainNames)
+        .flatMap(ImmutableSet::stream)
+        .collect(toImmutableSet());
+  }
+
+  static ImmutableSet<String> getUnblockedDomainNames(ImmutableCollection<String> domainNames) {
+    Map<String, List<String>> labelToNames =
+        domainNames.stream().collect(groupingBy(BsaStringUtils::getLabelInDomain));
+    ImmutableSet<String> bsaLabels =
+        Queries.queryBsaLabelByLabels(ImmutableSet.copyOf(labelToNames.keySet()))
+            .map(BsaLabel::getLabel)
+            .collect(toImmutableSet());
+    return labelToNames.entrySet().stream()
+        .filter(entry -> !bsaLabels.contains(entry.getKey()))
+        .map(Entry::getValue)
+        .flatMap(List::stream)
+        .collect(toImmutableSet());
+  }
+
+  public void applyUnblockableChanges(ImmutableList<UnblockableDomainChange> changes) {
+    ImmutableMap<String, ImmutableSet<UnblockableDomainChange>> changesByType =
+        ImmutableMap.copyOf(
+            changes.stream()
+                .collect(
+                    groupingBy(
+                        change -> change.isDelete() ? "remove" : "change", toImmutableSet())));
+    tm().transact(
+            () -> {
+              if (changesByType.containsKey("remove")) {
+                tm().delete(
+                        changesByType.get("remove").stream()
+                            .map(c -> BsaUnblockableDomain.vKey(c.domainName()))
+                            .collect(toImmutableSet()));
+              }
+              if (changesByType.containsKey("change")) {
+                tm().putAll(
+                        changesByType.get("change").stream()
+                            .map(UnblockableDomainChange::newValue)
+                            .collect(toImmutableSet()));
+              }
+            });
   }
 }

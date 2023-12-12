@@ -1,2 +1,3 @@
 PATH                  CLASS             METHODS OK AUTH_METHODS MIN USER_POLICY
 /_dr/task/bsaDownload BsaDownloadAction POST    n  API          APP ADMIN
+/_dr/task/bsaRefresh  BsaRefreshAction  POST    n  API          APP ADMIN
