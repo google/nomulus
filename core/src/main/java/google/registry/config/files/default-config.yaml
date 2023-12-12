@@ -624,8 +624,12 @@ bsa:
   # Max time period during which downloads can be skipped because checksums have
   # not changed from the previous one.
   bsaMaxNopIntervalHours: 24
-  # Number of BSA labels to process in a single DB transaction.
-  bsaLabelTxnBatchSize: 500
+  # A very lax upper bound of the time it takes to execute a transaction that
+  # mutates a domain. Please See `BsaRefreshAction` for use case.
+  domainTxnMaxDurationSeconds: 60
+  # Number of entities (labels and unblockable domains) to process in a single
+  # DB transaction.
+  bsaTxnBatchSize: 1000
 
   # Http endpoint for acquiring Auth tokens.
   authUrl: "https://"

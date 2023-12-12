@@ -16,6 +16,7 @@ package google.registry.bsa;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.mockito.Mockito.when;
 
 import com.google.cloud.storage.BlobId;
@@ -24,13 +25,12 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import google.registry.bsa.BlockListFetcher.LazyBlockList;
-import google.registry.bsa.api.Label;
-import google.registry.bsa.api.Label.LabelType;
-import google.registry.bsa.api.Order;
-import google.registry.bsa.api.Order.OrderType;
+import google.registry.bsa.api.BlockLabel;
+import google.registry.bsa.api.BlockLabel.LabelType;
+import google.registry.bsa.api.BlockOrder;
+import google.registry.bsa.api.BlockOrder.OrderType;
 import google.registry.gcs.GcsUtils;
 import java.io.ByteArrayInputStream;
-import java.nio.charset.StandardCharsets;
 import java.util.stream.Stream;
 import javax.net.ssl.HttpsURLConnection;
 import org.junit.jupiter.api.BeforeEach;
@@ -56,17 +56,19 @@ class GcsClientTest {
 
   @Test
   void saveAndChecksumBlockList_success() throws Exception {
-    lazyBlockList = new LazyBlockList(BlockList.BLOCK, connection);
-    when(connection.getInputStream())
-        .thenReturn(new ByteArrayInputStream("somedata\n".getBytes(StandardCharsets.UTF_8)));
+    String payload = "somedata\n";
+    String payloadChecksum = "0737c8e591c68b93feccde50829aca86a80137547d8cfbe96bab6b20f8580c63";
 
-    ImmutableMap<BlockList, String> checksums =
+    when(connection.getInputStream())
+        .thenReturn(new ByteArrayInputStream(("bsa-checksum\n" + payload).getBytes(UTF_8)));
+    lazyBlockList = new LazyBlockList(BlockListType.BLOCK, connection);
+
+    ImmutableMap<BlockListType, String> checksums =
         gcsClient.saveAndChecksumBlockList("some-name", ImmutableList.of(lazyBlockList));
     assertThat(gcsUtils.existsAndNotEmpty(BlobId.of("my-bucket", "some-name/BLOCK.csv"))).isTrue();
-    assertThat(checksums)
-        .containsExactly(
-            BlockList.BLOCK, "0737c8e591c68b93feccde50829aca86a80137547d8cfbe96bab6b20f8580c63");
-    assertThat(gcsClient.readBlockList("some-name", BlockList.BLOCK)).containsExactly("somedata");
+    assertThat(checksums).containsExactly(BlockListType.BLOCK, payloadChecksum);
+    assertThat(gcsClient.readBlockList("some-name", BlockListType.BLOCK))
+        .containsExactly("somedata");
   }
 
   @Test
@@ -77,19 +79,19 @@ class GcsClientTest {
 
   @Test
   void readWriteOrderDiffs_success() throws Exception {
-    ImmutableList<Order> orders =
-        ImmutableList.of(Order.of(1, OrderType.CREATE), Order.of(2, OrderType.DELETE));
+    ImmutableList<BlockOrder> orders =
+        ImmutableList.of(BlockOrder.of(1, OrderType.CREATE), BlockOrder.of(2, OrderType.DELETE));
     gcsClient.writeOrderDiffs("job", orders.stream());
     assertThat(gcsClient.readOrderDiffs("job")).containsExactlyElementsIn(orders);
   }
 
   @Test
   void readWriteLabelDiffs_success() throws Exception {
-    ImmutableList<Label> labels =
+    ImmutableList<BlockLabel> labels =
         ImmutableList.of(
-            Label.of("1", LabelType.CREATE.CREATE, ImmutableSet.of()),
-            Label.of("2", LabelType.NEW_ORDER_ASSOCIATION, ImmutableSet.of("JA")),
-            Label.of("3", LabelType.DELETE, ImmutableSet.of("JA", "EXTENDED_LATIN")));
+            BlockLabel.of("1", LabelType.CREATE.CREATE, ImmutableSet.of()),
+            BlockLabel.of("2", LabelType.NEW_ORDER_ASSOCIATION, ImmutableSet.of("JA")),
+            BlockLabel.of("3", LabelType.DELETE, ImmutableSet.of("JA", "EXTENDED_LATIN")));
     gcsClient.writeLabelDiffs("job", labels.stream());
     assertThat(gcsClient.readLabelDiffs("job")).containsExactlyElementsIn(labels);
   }

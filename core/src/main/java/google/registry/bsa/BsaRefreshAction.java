@@ -14,34 +14,45 @@
 
 package google.registry.bsa;
 
+import static google.registry.bsa.BsaStringUtils.LINE_SPLITTER;
 import static google.registry.request.Action.Method.POST;
 import static javax.servlet.http.HttpServletResponse.SC_OK;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.flogger.FluentLogger;
+import google.registry.bsa.api.BsaReportSender;
+import google.registry.bsa.api.JsonSerializations;
 import google.registry.bsa.api.UnblockableDomainChange;
 import google.registry.bsa.persistence.DomainsRefresher;
 import google.registry.bsa.persistence.RefreshSchedule;
 import google.registry.bsa.persistence.RefreshScheduler;
+import google.registry.config.RegistryConfig.Config;
 import google.registry.request.Action;
 import google.registry.request.Response;
 import google.registry.request.auth.Auth;
+import google.registry.util.BatchedStreams;
 import google.registry.util.Clock;
+import java.util.Optional;
+import java.util.stream.Stream;
 import javax.inject.Inject;
+import org.joda.time.Duration;
 
 @Action(
     service = Action.Service.BSA,
-    path = BsaDownloadAction.PATH,
+    path = BsaRefreshAction.PATH,
     method = POST,
     auth = Auth.AUTH_API_ADMIN)
 public class BsaRefreshAction implements Runnable {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
-  static final String PATH = "/_dr/task/bsaDownload";
+  static final String PATH = "/_dr/task/bsaRefresh";
 
   private final RefreshScheduler scheduler;
-  private final DomainsRefresher refresher;
+  private final GcsClient gcsClient;
+  private final BsaReportSender bsaReportSender;
+  private final int transactionBatchSize;
+  private final Duration domainTxnMaxDuration;
   private final BsaLock bsaLock;
   private final Clock clock;
   private final Response response;
@@ -49,12 +60,18 @@ public class BsaRefreshAction implements Runnable {
   @Inject
   BsaRefreshAction(
       RefreshScheduler scheduler,
-      DomainsRefresher refresher,
+      GcsClient gcsClient,
+      BsaReportSender bsaReportSender,
+      @Config("bsaTxnBatchSize") int transactionBatchSize,
+      @Config("domainTxnMaxDuration") Duration domainTxnMaxDuration,
       BsaLock bsaLock,
       Clock clock,
       Response response) {
     this.scheduler = scheduler;
-    this.refresher = refresher;
+    this.gcsClient = gcsClient;
+    this.bsaReportSender = bsaReportSender;
+    this.transactionBatchSize = transactionBatchSize;
+    this.domainTxnMaxDuration = domainTxnMaxDuration;
     this.bsaLock = bsaLock;
     this.clock = clock;
     this.response = response;
@@ -70,29 +87,81 @@ public class BsaRefreshAction implements Runnable {
       // TODO(12/31/2023): consider sending an alert email.
       logger.atWarning().withCause(throwable).log("Failed to update block lists.");
     }
-    // Always return OK. Let the next cron job retry.
+    // Always return OK. No need to use a retrier on `runWithinLock`. Its individual steps are
+    // implicitly retried. If action fails, the next cron will continue at checkpoint.
     response.setStatus(SC_OK);
   }
 
+  /** Executes the refresh action while holding the BSA lock. */
   Void runWithinLock() {
-    RefreshSchedule schedule = scheduler.schedule();
+    Optional<RefreshSchedule> maybeSchedule = scheduler.schedule();
+    if (!maybeSchedule.isPresent()) {
+      logger.atInfo().log("No completed downloads yet. Exiting.");
+      return null;
+    }
+    RefreshSchedule schedule = maybeSchedule.get();
+    DomainsRefresher refresher =
+        new DomainsRefresher(
+            schedule.prevRefreshTime(), clock.nowUtc(), domainTxnMaxDuration, transactionBatchSize);
     switch (schedule.stage()) {
-      case MAKE_DIFF:
-        ImmutableList<UnblockableDomainChange> staleUnblockables =
-            refresher.refreshStaleUnblockables();
-
+      case CHECK_FOR_CHANGES:
+        ImmutableList<UnblockableDomainChange> blockabilityChanges =
+            refresher.checkForBlockabilityChanges();
+        if (blockabilityChanges.isEmpty()) {
+          logger.atInfo().log("No change to Unblockable domains found.");
+          schedule.updateJobStage(RefreshStage.DONE);
+          return null;
+        }
+        gcsClient.writeRefreshChanges(schedule.jobName(), blockabilityChanges.stream());
+        schedule.updateJobStage(RefreshStage.APPLY_CHANGES);
         // Fall through
-      case APPLY_DIFF:
+      case APPLY_CHANGES:
+        try (Stream<UnblockableDomainChange> changes =
+            gcsClient.readRefreshChanges(schedule.jobName())) {
+          BatchedStreams.toBatches(changes, 500).forEach(refresher::applyUnblockableChanges);
+        }
+        schedule.updateJobStage(RefreshStage.UPLOAD_REMOVALS);
         // Fall through
-      case REPORT_REMOVALS:
+      case UPLOAD_REMOVALS:
+        try (Stream<UnblockableDomainChange> changes =
+            gcsClient.readRefreshChanges(schedule.jobName())) {
+          Optional<String> report =
+              JsonSerializations.toUnblockableDomainsRemovalReport(
+                  changes
+                      .filter(UnblockableDomainChange::isDelete)
+                      .map(UnblockableDomainChange::domainName));
+          if (report.isPresent()) {
+            gcsClient.logRemovedUnblockableDomainsReport(
+                schedule.jobName(), LINE_SPLITTER.splitToStream(report.get()));
+            bsaReportSender.removeUnblockableDomainsUpdates(report.get());
+          } else {
+            logger.atInfo().log("No Unblockable domains to remove.");
+          }
+        }
+        schedule.updateJobStage(RefreshStage.UPLOAD_ADDITIONS);
         // Fall through
-      case REPORT_ADDITIONS:
+      case UPLOAD_ADDITIONS:
+        try (Stream<UnblockableDomainChange> changes =
+            gcsClient.readRefreshChanges(schedule.jobName())) {
+          Optional<String> report =
+              JsonSerializations.toUnblockableDomainsReport(
+                  changes
+                      .filter(UnblockableDomainChange::AddOrChange)
+                      .map(UnblockableDomainChange::newValue));
+          if (report.isPresent()) {
+            gcsClient.logRemovedUnblockableDomainsReport(
+                schedule.jobName(), LINE_SPLITTER.splitToStream(report.get()));
+            bsaReportSender.removeUnblockableDomainsUpdates(report.get());
+          } else {
+            logger.atInfo().log("No new Unblockable domains to add.");
+          }
+        }
+        schedule.updateJobStage(RefreshStage.DONE);
         break;
       case DONE:
         logger.atInfo().log("Unexpectedly reaching the `DONE` stage.");
-        return null;
+        break;
     }
-
     return null;
   }
 }

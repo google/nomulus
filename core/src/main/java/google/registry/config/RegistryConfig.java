@@ -1445,9 +1445,15 @@ public final class RegistryConfig {
     }
 
     @Provides
-    @Config("bsaLabelTxnBatchSize")
-    public static int provideBsaLabelTxnBatchSize(RegistryConfigSettings config) {
-      return config.bsa.bsaLabelTxnBatchSize;
+    @Config("bsaTxnBatchSize")
+    public static int provideBsaTxnBatchSize(RegistryConfigSettings config) {
+      return config.bsa.bsaTxnBatchSize;
+    }
+
+    @Provides
+    @Config("domainTxnMaxDuration")
+    public static Duration provideDomainTxnMaxDuration(RegistryConfigSettings config) {
+      return Duration.standardSeconds(config.bsa.domainTxnMaxDurationSeconds);
     }
 
     @Provides

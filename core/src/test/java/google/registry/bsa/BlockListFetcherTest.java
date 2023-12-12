@@ -15,6 +15,7 @@
 package google.registry.bsa;
 
 import static com.google.common.truth.Truth.assertThat;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static javax.servlet.http.HttpServletResponse.SC_OK;
 import static org.junit.Assert.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
@@ -32,7 +33,6 @@ import google.registry.util.SystemSleeper;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.net.URL;
-import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
 import javax.net.ssl.HttpsURLConnection;
 import org.junit.jupiter.api.BeforeEach;
@@ -66,11 +66,14 @@ class BlockListFetcherTest {
   }
 
   @Test
-  void tryFetch_success() throws Exception {
+  void tryFetch_bsaChecksumFetched() throws Exception {
     setupMocks();
     when(connection.getResponseCode()).thenReturn(SC_OK);
-    LazyBlockList download = fetcher.tryFetch(BlockList.BLOCK);
-    assertThat(download.getName()).isEqualTo(BlockList.BLOCK);
+    when(connection.getInputStream())
+        .thenReturn(new ByteArrayInputStream("bsa-checksum\ndata".getBytes(UTF_8)));
+    LazyBlockList download = fetcher.tryFetch(BlockListType.BLOCK);
+    assertThat(download.getName()).isEqualTo(BlockListType.BLOCK);
+    assertThat(download.checksum()).isEqualTo("bsa-checksum");
     verify(connection, times(1)).setRequestMethod("GET");
     verify(connection, times(1)).setRequestProperty("Authorization", "Bearer authToken");
   }
@@ -80,7 +83,8 @@ class BlockListFetcherTest {
     setupMocks();
     when(connection.getResponseCode()).thenReturn(201);
     assertThat(
-            assertThrows(BsaException.class, () -> fetcher.tryFetch(BlockList.BLOCK)).isRetriable())
+            assertThrows(BsaException.class, () -> fetcher.tryFetch(BlockListType.BLOCK))
+                .isRetriable())
         .isTrue();
   }
 
@@ -89,7 +93,8 @@ class BlockListFetcherTest {
     setupMocks();
     when(connection.getResponseCode()).thenThrow(new IOException());
     assertThat(
-            assertThrows(BsaException.class, () -> fetcher.tryFetch(BlockList.BLOCK)).isRetriable())
+            assertThrows(BsaException.class, () -> fetcher.tryFetch(BlockListType.BLOCK))
+                .isRetriable())
         .isTrue();
   }
 
@@ -98,21 +103,22 @@ class BlockListFetcherTest {
     when(connectionService.createConnection(any(URL.class)))
         .thenThrow(new GeneralSecurityException());
     assertThat(
-            assertThrows(BsaException.class, () -> fetcher.tryFetch(BlockList.BLOCK)).isRetriable())
+            assertThrows(BsaException.class, () -> fetcher.tryFetch(BlockListType.BLOCK))
+                .isRetriable())
         .isFalse();
   }
 
   @Test
-  void lazyBlock_success() throws Exception {
+  void lazyBlock_blockListFetched() throws Exception {
     setupMocks();
     when(connection.getInputStream())
-        .thenReturn(new ByteArrayInputStream("data".getBytes(StandardCharsets.UTF_8)));
+        .thenReturn(new ByteArrayInputStream("bsa-checksum\ndata".getBytes(UTF_8)));
     when(connection.getResponseCode()).thenReturn(SC_OK);
-    try (LazyBlockList download = fetcher.tryFetch(BlockList.BLOCK)) {
+    try (LazyBlockList download = fetcher.tryFetch(BlockListType.BLOCK)) {
       StringBuilder sb = new StringBuilder();
       download.consumeAll(
           (buffer, length) -> {
-            String snippet = new String(buffer, 0, length, StandardCharsets.UTF_8);
+            String snippet = new String(buffer, 0, length, UTF_8);
             sb.append(snippet);
           });
       assertThat(sb.toString()).isEqualTo("data");
@@ -124,9 +130,9 @@ class BlockListFetcherTest {
   void lazyBlockPlus_success() throws Exception {
     setupMocks();
     when(connection.getInputStream())
-        .thenReturn(new ByteArrayInputStream("checksum\ndata\n".getBytes(StandardCharsets.UTF_8)));
+        .thenReturn(new ByteArrayInputStream("checksum\ndata\n".getBytes(UTF_8)));
     when(connection.getResponseCode()).thenReturn(SC_OK);
-    try (LazyBlockList lazyBlockList = fetcher.tryFetch(BlockList.BLOCK_PLUS)) {
+    try (LazyBlockList lazyBlockList = fetcher.tryFetch(BlockListType.BLOCK_PLUS)) {
       assertThat(readBlockData(lazyBlockList)).isEqualTo("data\n");
       assertThat(lazyBlockList.checksum()).isEqualTo("checksum");
     }
@@ -137,9 +143,9 @@ class BlockListFetcherTest {
   void lazyBlockPlus_checksum_cr() throws Exception {
     setupMocks();
     when(connection.getInputStream())
-        .thenReturn(new ByteArrayInputStream("checksum\rdata\n".getBytes(StandardCharsets.UTF_8)));
+        .thenReturn(new ByteArrayInputStream("checksum\rdata\n".getBytes(UTF_8)));
     when(connection.getResponseCode()).thenReturn(SC_OK);
-    try (LazyBlockList lazyBlockList = fetcher.tryFetch(BlockList.BLOCK_PLUS)) {
+    try (LazyBlockList lazyBlockList = fetcher.tryFetch(BlockListType.BLOCK_PLUS)) {
       assertThat(readBlockData(lazyBlockList)).isEqualTo("data\n");
       assertThat(lazyBlockList.checksum()).isEqualTo("checksum");
     }
@@ -150,10 +156,9 @@ class BlockListFetcherTest {
   void lazyBlockPlus_checksum_crnl() throws Exception {
     setupMocks();
     when(connection.getInputStream())
-        .thenReturn(
-            new ByteArrayInputStream("checksum\r\ndata\n".getBytes(StandardCharsets.UTF_8)));
+        .thenReturn(new ByteArrayInputStream("checksum\r\ndata\n".getBytes(UTF_8)));
     when(connection.getResponseCode()).thenReturn(SC_OK);
-    try (LazyBlockList lazyBlockList = fetcher.tryFetch(BlockList.BLOCK_PLUS)) {
+    try (LazyBlockList lazyBlockList = fetcher.tryFetch(BlockListType.BLOCK_PLUS)) {
       assertThat(readBlockData(lazyBlockList)).isEqualTo("data\n");
       assertThat(lazyBlockList.checksum()).isEqualTo("checksum");
     }
@@ -164,7 +169,7 @@ class BlockListFetcherTest {
     StringBuilder sb = new StringBuilder();
     lazyBlockList.consumeAll(
         (buffer, length) -> {
-          String snippet = new String(buffer, 0, length, StandardCharsets.UTF_8);
+          String snippet = new String(buffer, 0, length, UTF_8);
           sb.append(snippet);
         });
     return sb.toString();

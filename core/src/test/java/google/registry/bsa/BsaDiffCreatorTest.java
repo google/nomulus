@@ -28,10 +28,10 @@ import google.registry.bsa.BsaDiffCreator.BsaDiff;
 import google.registry.bsa.BsaDiffCreator.Canonicals;
 import google.registry.bsa.BsaDiffCreator.LabelOrderPair;
 import google.registry.bsa.BsaDiffCreator.Line;
-import google.registry.bsa.api.Label;
-import google.registry.bsa.api.Label.LabelType;
-import google.registry.bsa.api.Order;
-import google.registry.bsa.api.Order.OrderType;
+import google.registry.bsa.api.BlockLabel;
+import google.registry.bsa.api.BlockLabel.LabelType;
+import google.registry.bsa.api.BlockOrder;
+import google.registry.bsa.api.BlockOrder.OrderType;
 import google.registry.bsa.persistence.DownloadSchedule;
 import google.registry.bsa.persistence.DownloadSchedule.CompletedJob;
 import google.registry.tldconfig.idn.IdnTableEnum;
@@ -57,9 +57,9 @@ class BsaDiffCreatorTest {
   @Test
   void firstDiff() {
     when(idnChecker.getAllValidIdns(anyString())).thenReturn(ImmutableSet.of(IdnTableEnum.JA));
-    when(gcsClient.readBlockList("first", BlockList.BLOCK))
+    when(gcsClient.readBlockList("first", BlockListType.BLOCK))
         .thenReturn(Stream.of("domainLabel,orderIDs", "test1,1;2", "test2,3", "test3,1;4"));
-    when(gcsClient.readBlockList(anyString(), eq(BlockList.BLOCK_PLUS)))
+    when(gcsClient.readBlockList(anyString(), eq(BlockListType.BLOCK_PLUS)))
         .thenAnswer((ignore) -> Stream.of());
     diffCreator = new BsaDiffCreator(gcsClient);
     when(schedule.jobName()).thenReturn("first");
@@ -67,23 +67,23 @@ class BsaDiffCreatorTest {
     BsaDiff diff = diffCreator.createDiff(schedule, idnChecker);
     assertThat(diff.getLabels())
         .containsExactly(
-            Label.of("test1", LabelType.CREATE, ImmutableSet.of("JA")),
-            Label.of("test2", LabelType.CREATE, ImmutableSet.of("JA")),
-            Label.of("test3", LabelType.CREATE, ImmutableSet.of("JA")));
+            BlockLabel.of("test1", LabelType.CREATE, ImmutableSet.of("JA")),
+            BlockLabel.of("test2", LabelType.CREATE, ImmutableSet.of("JA")),
+            BlockLabel.of("test3", LabelType.CREATE, ImmutableSet.of("JA")));
     assertThat(diff.getOrders())
         .containsExactly(
-            Order.of(1, OrderType.CREATE),
-            Order.of(2, OrderType.CREATE),
-            Order.of(3, OrderType.CREATE),
-            Order.of(4, OrderType.CREATE));
+            BlockOrder.of(1, OrderType.CREATE),
+            BlockOrder.of(2, OrderType.CREATE),
+            BlockOrder.of(3, OrderType.CREATE),
+            BlockOrder.of(4, OrderType.CREATE));
   }
 
   @Test
   void firstDiff_labelMultipleOccurrences() {
     when(idnChecker.getAllValidIdns(anyString())).thenReturn(ImmutableSet.of(IdnTableEnum.JA));
-    when(gcsClient.readBlockList("first", BlockList.BLOCK))
+    when(gcsClient.readBlockList("first", BlockListType.BLOCK))
         .thenReturn(Stream.of("domainLabel,orderIDs", "test1,1;2", "test2,3", "test3,1;4"));
-    when(gcsClient.readBlockList("first", BlockList.BLOCK_PLUS))
+    when(gcsClient.readBlockList("first", BlockListType.BLOCK_PLUS))
         .thenReturn(Stream.of("domainLabel,orderIDs", "test1,5"));
     diffCreator = new BsaDiffCreator(gcsClient);
     when(schedule.jobName()).thenReturn("first");
@@ -91,25 +91,25 @@ class BsaDiffCreatorTest {
     BsaDiff diff = diffCreator.createDiff(schedule, idnChecker);
     assertThat(diff.getLabels())
         .containsExactly(
-            Label.of("test1", LabelType.CREATE, ImmutableSet.of("JA")),
-            Label.of("test2", LabelType.CREATE, ImmutableSet.of("JA")),
-            Label.of("test3", LabelType.CREATE, ImmutableSet.of("JA")));
+            BlockLabel.of("test1", LabelType.CREATE, ImmutableSet.of("JA")),
+            BlockLabel.of("test2", LabelType.CREATE, ImmutableSet.of("JA")),
+            BlockLabel.of("test3", LabelType.CREATE, ImmutableSet.of("JA")));
     assertThat(diff.getOrders())
         .containsExactly(
-            Order.of(1, OrderType.CREATE),
-            Order.of(2, OrderType.CREATE),
-            Order.of(3, OrderType.CREATE),
-            Order.of(4, OrderType.CREATE),
-            Order.of(5, OrderType.CREATE));
+            BlockOrder.of(1, OrderType.CREATE),
+            BlockOrder.of(2, OrderType.CREATE),
+            BlockOrder.of(3, OrderType.CREATE),
+            BlockOrder.of(4, OrderType.CREATE),
+            BlockOrder.of(5, OrderType.CREATE));
   }
 
   @Test
   void unchanged() {
-    when(gcsClient.readBlockList("first", BlockList.BLOCK))
+    when(gcsClient.readBlockList("first", BlockListType.BLOCK))
         .thenReturn(Stream.of("domainLabel,orderIDs", "test1,1;2", "test2,3", "test3,1;4"));
-    when(gcsClient.readBlockList("second", BlockList.BLOCK))
+    when(gcsClient.readBlockList("second", BlockListType.BLOCK))
         .thenReturn(Stream.of("domainLabel,orderIDs", "test1,1;2", "test2,3", "test3,1;4"));
-    when(gcsClient.readBlockList(anyString(), eq(BlockList.BLOCK_PLUS)))
+    when(gcsClient.readBlockList(anyString(), eq(BlockListType.BLOCK_PLUS)))
         .thenAnswer((ignore) -> Stream.of());
     diffCreator = new BsaDiffCreator(gcsClient);
     when(schedule.jobName()).thenReturn("second");
@@ -122,10 +122,10 @@ class BsaDiffCreatorTest {
 
   @Test
   void allRemoved() {
-    when(gcsClient.readBlockList("first", BlockList.BLOCK))
+    when(gcsClient.readBlockList("first", BlockListType.BLOCK))
         .thenReturn(Stream.of("domainLabel,orderIDs", "test1,1;2", "test2,3", "test3,1;4"));
-    when(gcsClient.readBlockList("second", BlockList.BLOCK)).thenReturn(Stream.of());
-    when(gcsClient.readBlockList(anyString(), eq(BlockList.BLOCK_PLUS)))
+    when(gcsClient.readBlockList("second", BlockListType.BLOCK)).thenReturn(Stream.of());
+    when(gcsClient.readBlockList(anyString(), eq(BlockListType.BLOCK_PLUS)))
         .thenAnswer((ignore) -> Stream.of());
     diffCreator = new BsaDiffCreator(gcsClient);
     when(schedule.jobName()).thenReturn("second");
@@ -134,25 +134,25 @@ class BsaDiffCreatorTest {
     BsaDiff diff = diffCreator.createDiff(schedule, idnChecker);
     assertThat(diff.getLabels())
         .containsExactly(
-            Label.of("test1", LabelType.DELETE, ImmutableSet.of()),
-            Label.of("test2", LabelType.DELETE, ImmutableSet.of()),
-            Label.of("test3", LabelType.DELETE, ImmutableSet.of()));
+            BlockLabel.of("test1", LabelType.DELETE, ImmutableSet.of()),
+            BlockLabel.of("test2", LabelType.DELETE, ImmutableSet.of()),
+            BlockLabel.of("test3", LabelType.DELETE, ImmutableSet.of()));
     assertThat(diff.getOrders())
         .containsExactly(
-            Order.of(1, OrderType.DELETE),
-            Order.of(2, OrderType.DELETE),
-            Order.of(3, OrderType.DELETE),
-            Order.of(4, OrderType.DELETE));
+            BlockOrder.of(1, OrderType.DELETE),
+            BlockOrder.of(2, OrderType.DELETE),
+            BlockOrder.of(3, OrderType.DELETE),
+            BlockOrder.of(4, OrderType.DELETE));
   }
 
   @Test
   void existingLabelNewOrder() {
     when(idnChecker.getAllValidIdns(anyString())).thenReturn(ImmutableSet.of(IdnTableEnum.JA));
-    when(gcsClient.readBlockList("first", BlockList.BLOCK))
+    when(gcsClient.readBlockList("first", BlockListType.BLOCK))
         .thenReturn(Stream.of("domainLabel,orderIDs", "test1,1;2", "test2,3", "test3,1;4"));
-    when(gcsClient.readBlockList("second", BlockList.BLOCK))
+    when(gcsClient.readBlockList("second", BlockListType.BLOCK))
         .thenReturn(Stream.of("domainLabel,orderIDs", "test1,1;2;5", "test2,3", "test3,1;4"));
-    when(gcsClient.readBlockList(anyString(), eq(BlockList.BLOCK_PLUS)))
+    when(gcsClient.readBlockList(anyString(), eq(BlockListType.BLOCK_PLUS)))
         .thenAnswer((ignore) -> Stream.of());
     diffCreator = new BsaDiffCreator(gcsClient);
     when(schedule.jobName()).thenReturn("second");
@@ -160,19 +160,20 @@ class BsaDiffCreatorTest {
     when(schedule.latestCompleted()).thenReturn(Optional.of(completedJob));
     BsaDiff diff = diffCreator.createDiff(schedule, idnChecker);
     assertThat(diff.getLabels())
-        .containsExactly(Label.of("test1", LabelType.NEW_ORDER_ASSOCIATION, ImmutableSet.of("JA")));
-    assertThat(diff.getOrders()).containsExactly(Order.of(5, OrderType.CREATE));
+        .containsExactly(
+            BlockLabel.of("test1", LabelType.NEW_ORDER_ASSOCIATION, ImmutableSet.of("JA")));
+    assertThat(diff.getOrders()).containsExactly(BlockOrder.of(5, OrderType.CREATE));
   }
 
   @Test
   void newLabelNewOrder() {
     when(idnChecker.getAllValidIdns(anyString())).thenReturn(ImmutableSet.of(IdnTableEnum.JA));
-    when(gcsClient.readBlockList("first", BlockList.BLOCK))
+    when(gcsClient.readBlockList("first", BlockListType.BLOCK))
         .thenReturn(Stream.of("domainLabel,orderIDs", "test1,1;2", "test2,3", "test3,1;4"));
-    when(gcsClient.readBlockList("second", BlockList.BLOCK))
+    when(gcsClient.readBlockList("second", BlockListType.BLOCK))
         .thenReturn(
             Stream.of("domainLabel,orderIDs", "test1,1;2", "test2,3", "test3,1;4", "test4,5"));
-    when(gcsClient.readBlockList(anyString(), eq(BlockList.BLOCK_PLUS)))
+    when(gcsClient.readBlockList(anyString(), eq(BlockListType.BLOCK_PLUS)))
         .thenAnswer((ignore) -> Stream.of());
     diffCreator = new BsaDiffCreator(gcsClient);
     when(schedule.jobName()).thenReturn("second");
@@ -180,17 +181,17 @@ class BsaDiffCreatorTest {
     when(schedule.latestCompleted()).thenReturn(Optional.of(completedJob));
     BsaDiff diff = diffCreator.createDiff(schedule, idnChecker);
     assertThat(diff.getLabels())
-        .containsExactly(Label.of("test4", LabelType.CREATE, ImmutableSet.of("JA")));
-    assertThat(diff.getOrders()).containsExactly(Order.of(5, OrderType.CREATE));
+        .containsExactly(BlockLabel.of("test4", LabelType.CREATE, ImmutableSet.of("JA")));
+    assertThat(diff.getOrders()).containsExactly(BlockOrder.of(5, OrderType.CREATE));
   }
 
   @Test
   void removeOrderOnly() {
-    when(gcsClient.readBlockList("first", BlockList.BLOCK))
+    when(gcsClient.readBlockList("first", BlockListType.BLOCK))
         .thenReturn(Stream.of("domainLabel,orderIDs", "test1,1;2", "test2,3", "test3,1;4"));
-    when(gcsClient.readBlockList("second", BlockList.BLOCK))
+    when(gcsClient.readBlockList("second", BlockListType.BLOCK))
         .thenReturn(Stream.of("domainLabel,orderIDs", "test1,1;2", "test2,3", "test3,1"));
-    when(gcsClient.readBlockList(anyString(), eq(BlockList.BLOCK_PLUS)))
+    when(gcsClient.readBlockList(anyString(), eq(BlockListType.BLOCK_PLUS)))
         .thenAnswer((ignore) -> Stream.of());
     diffCreator = new BsaDiffCreator(gcsClient);
     when(schedule.jobName()).thenReturn("second");
@@ -198,16 +199,16 @@ class BsaDiffCreatorTest {
     when(schedule.latestCompleted()).thenReturn(Optional.of(completedJob));
     BsaDiff diff = diffCreator.createDiff(schedule, idnChecker);
     assertThat(diff.getLabels()).isEmpty();
-    assertThat(diff.getOrders()).containsExactly(Order.of(4, OrderType.DELETE));
+    assertThat(diff.getOrders()).containsExactly(BlockOrder.of(4, OrderType.DELETE));
   }
 
   @Test
   void removeOrderOnly_multiLabelOrder() {
-    when(gcsClient.readBlockList("first", BlockList.BLOCK))
+    when(gcsClient.readBlockList("first", BlockListType.BLOCK))
         .thenReturn(Stream.of("domainLabel,orderIDs", "test1,1;2", "test2,3", "test3,1;4"));
-    when(gcsClient.readBlockList("second", BlockList.BLOCK))
+    when(gcsClient.readBlockList("second", BlockListType.BLOCK))
         .thenReturn(Stream.of("domainLabel,orderIDs", "test1,2", "test2,3", "test3,4"));
-    when(gcsClient.readBlockList(anyString(), eq(BlockList.BLOCK_PLUS)))
+    when(gcsClient.readBlockList(anyString(), eq(BlockListType.BLOCK_PLUS)))
         .thenAnswer((ignore) -> Stream.of());
     diffCreator = new BsaDiffCreator(gcsClient);
     when(schedule.jobName()).thenReturn("second");
@@ -215,16 +216,16 @@ class BsaDiffCreatorTest {
     when(schedule.latestCompleted()).thenReturn(Optional.of(completedJob));
     BsaDiff diff = diffCreator.createDiff(schedule, idnChecker);
     assertThat(diff.getLabels()).isEmpty();
-    assertThat(diff.getOrders()).containsExactly(Order.of(1, OrderType.DELETE));
+    assertThat(diff.getOrders()).containsExactly(BlockOrder.of(1, OrderType.DELETE));
   }
 
   @Test
   void removeLabelAndOrder() {
-    when(gcsClient.readBlockList("first", BlockList.BLOCK))
+    when(gcsClient.readBlockList("first", BlockListType.BLOCK))
         .thenReturn(Stream.of("domainLabel,orderIDs", "test1,1;2", "test2,3", "test3,1;4"));
-    when(gcsClient.readBlockList("second", BlockList.BLOCK))
+    when(gcsClient.readBlockList("second", BlockListType.BLOCK))
         .thenReturn(Stream.of("domainLabel,orderIDs", "test1,1;2", "test3,1;4"));
-    when(gcsClient.readBlockList(anyString(), eq(BlockList.BLOCK_PLUS)))
+    when(gcsClient.readBlockList(anyString(), eq(BlockListType.BLOCK_PLUS)))
         .thenAnswer((ignore) -> Stream.of());
     diffCreator = new BsaDiffCreator(gcsClient);
     when(schedule.jobName()).thenReturn("second");
@@ -232,17 +233,17 @@ class BsaDiffCreatorTest {
     when(schedule.latestCompleted()).thenReturn(Optional.of(completedJob));
     BsaDiff diff = diffCreator.createDiff(schedule, idnChecker);
     assertThat(diff.getLabels())
-        .containsExactly(Label.of("test2", LabelType.DELETE, ImmutableSet.of()));
-    assertThat(diff.getOrders()).containsExactly(Order.of(3, OrderType.DELETE));
+        .containsExactly(BlockLabel.of("test2", LabelType.DELETE, ImmutableSet.of()));
+    assertThat(diff.getOrders()).containsExactly(BlockOrder.of(3, OrderType.DELETE));
   }
 
   @Test
   void removeLabelAndOrder_multi() {
-    when(gcsClient.readBlockList("first", BlockList.BLOCK))
+    when(gcsClient.readBlockList("first", BlockListType.BLOCK))
         .thenReturn(Stream.of("domainLabel,orderIDs", "test1,1;2", "test2,3", "test3,1;4"));
-    when(gcsClient.readBlockList("second", BlockList.BLOCK))
+    when(gcsClient.readBlockList("second", BlockListType.BLOCK))
         .thenReturn(Stream.of("domainLabel,orderIDs", "test2,3"));
-    when(gcsClient.readBlockList(anyString(), eq(BlockList.BLOCK_PLUS)))
+    when(gcsClient.readBlockList(anyString(), eq(BlockListType.BLOCK_PLUS)))
         .thenAnswer((ignore) -> Stream.of());
     diffCreator = new BsaDiffCreator(gcsClient);
     when(schedule.jobName()).thenReturn("second");
@@ -251,13 +252,13 @@ class BsaDiffCreatorTest {
     BsaDiff diff = diffCreator.createDiff(schedule, idnChecker);
     assertThat(diff.getLabels())
         .containsExactly(
-            Label.of("test1", LabelType.DELETE, ImmutableSet.of()),
-            Label.of("test3", LabelType.DELETE, ImmutableSet.of()));
+            BlockLabel.of("test1", LabelType.DELETE, ImmutableSet.of()),
+            BlockLabel.of("test3", LabelType.DELETE, ImmutableSet.of()));
     assertThat(diff.getOrders())
         .containsExactly(
-            Order.of(1, OrderType.DELETE),
-            Order.of(2, OrderType.DELETE),
-            Order.of(4, OrderType.DELETE));
+            BlockOrder.of(1, OrderType.DELETE),
+            BlockOrder.of(2, OrderType.DELETE),
+            BlockOrder.of(4, OrderType.DELETE));
   }
 
   @Test

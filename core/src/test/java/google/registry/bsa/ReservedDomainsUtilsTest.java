@@ -15,7 +15,7 @@
 package google.registry.bsa;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.bsa.ReservedDomainsUtils.enumerateReservedDomains;
+import static google.registry.bsa.ReservedDomainsUtils.getAllReservedDomainsInTld;
 import static google.registry.model.tld.Tld.TldState.GENERAL_AVAILABILITY;
 import static google.registry.model.tld.Tld.TldState.START_DATE_SUNRISE;
 import static google.registry.model.tld.label.ReservationType.ALLOWED_IN_SUNRISE;
@@ -108,20 +108,20 @@ class ReservedDomainsUtilsTest {
 
   @Test
   void enumerateReservedDomain_in_sunrise() {
-    assertThat(enumerateReservedDomains(Tld.get("tld"), fakeClock.nowUtc()))
+    assertThat(getAllReservedDomainsInTld(Tld.get("tld"), fakeClock.nowUtc()))
         .containsExactly("specific.tld", "anchor.tld", "fully.tld");
   }
 
   @Test
   void enumerateReservedDomain_after_sunrise() {
     fakeClock.advanceOneMilli();
-    assertThat(enumerateReservedDomains(Tld.get("tld"), fakeClock.nowUtc()))
+    assertThat(getAllReservedDomainsInTld(Tld.get("tld"), fakeClock.nowUtc()))
         .containsExactly("sunrise.tld", "name.tld", "specific.tld", "anchor.tld", "fully.tld");
   }
 
   @Test
   void enumerateReservedDomain_multiple_lists() {
-    assertThat(enumerateReservedDomains(Tld.get("tld2"), fakeClock.nowUtc()))
+    assertThat(getAllReservedDomainsInTld(Tld.get("tld2"), fakeClock.nowUtc()))
         .containsExactly(
             "somethingelse.tld2",
             "sunrise.tld2",

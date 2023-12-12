@@ -16,18 +16,18 @@ package google.registry.bsa.api;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import google.registry.bsa.api.NonBlockedDomain.Reason;
+import google.registry.bsa.api.UnblockableDomain.Reason;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-/** Unit tests for {@link NonBlockedDomain}. */
-class NonBlockedDomainTest {
+/** Unit tests for {@link UnblockableDomain}. */
+class UnblockableDomainTest {
 
-  NonBlockedDomain unit;
+  UnblockableDomain unit;
 
   @BeforeEach
   void setup() {
-    unit = NonBlockedDomain.of("buy.app", Reason.REGISTERED);
+    unit = UnblockableDomain.of("buy.app", Reason.REGISTERED);
   }
 
   @Test
@@ -37,11 +37,11 @@ class NonBlockedDomainTest {
 
   @Test
   void deserialize_success() {
-    assertThat(NonBlockedDomain.deserialize("buy.app,REGISTERED")).isEqualTo(unit);
+    assertThat(UnblockableDomain.deserialize("buy.app,REGISTERED")).isEqualTo(unit);
   }
 
   @Test
   void alt_of() {
-    assertThat(NonBlockedDomain.of("buy", "app", Reason.REGISTERED)).isEqualTo(unit);
+    assertThat(UnblockableDomain.of("buy", "app", Reason.REGISTERED)).isEqualTo(unit);
   }
 }

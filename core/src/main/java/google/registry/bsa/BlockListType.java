@@ -12,31 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package google.registry.bsa.api;
+package google.registry.bsa;
 
-import static com.google.common.truth.Truth.assertThat;
-
-import google.registry.bsa.api.Order.OrderType;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
-/** Unit tests for {@link Order}. */
-class OrderTest {
-
-  Order order;
-
-  @BeforeEach
-  void setup() {
-    order = Order.of(123, OrderType.CREATE);
-  }
-
-  @Test
-  void serialize_success() {
-    assertThat(order.serialize()).isEqualTo("123,CREATE");
-  }
-
-  @Test
-  void deserialize_success() {
-    assertThat(Order.deserialize("123,CREATE")).isEqualTo(order);
-  }
+/**
+ * The product types of the block lists, which determines the http endpoint that serves the data.
+ */
+public enum BlockListType {
+  BLOCK,
+  BLOCK_PLUS;
 }

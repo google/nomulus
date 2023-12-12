@@ -19,6 +19,7 @@ import static javax.servlet.http.HttpServletResponse.SC_OK;
 
 import com.google.api.client.http.HttpMethods;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.flogger.FluentLogger;
 import com.google.common.io.ByteStreams;
 import google.registry.bsa.api.BsaCredential;
 import google.registry.bsa.api.BsaException;
@@ -29,6 +30,7 @@ import java.io.BufferedInputStream;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URL;
 import java.security.GeneralSecurityException;
 import java.util.function.BiConsumer;
 import javax.inject.Inject;
@@ -36,6 +38,7 @@ import javax.net.ssl.HttpsURLConnection;
 
 /** Fetches data from the BSA API. */
 public class BlockListFetcher {
+  private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
   private final UrlConnectionService urlConnectionService;
   private final BsaCredential credential;
@@ -55,19 +58,19 @@ public class BlockListFetcher {
     this.retrier = retrier;
   }
 
-  LazyBlockList fetch(BlockList blockList) {
+  LazyBlockList fetch(BlockListType blockListType) {
     // TODO: use more informative exceptions to describe retriable errors
     return retrier.callWithRetry(
-        () -> tryFetch(blockList),
+        () -> tryFetch(blockListType),
         e -> e instanceof BsaException && ((BsaException) e).isRetriable());
   }
 
-  LazyBlockList tryFetch(BlockList blockList) {
+  LazyBlockList tryFetch(BlockListType blockListType) {
     try {
+      URL dataUrl = new URL(blockListUrls.get(blockListType.name()));
+      logger.atInfo().log("Downloading from  %s", dataUrl);
       HttpsURLConnection connection =
-          (HttpsURLConnection)
-              urlConnectionService.createConnection(
-                  new java.net.URL(blockListUrls.get(blockList.name())));
+          (HttpsURLConnection) urlConnectionService.createConnection(dataUrl);
       connection.setRequestMethod(HttpMethods.GET);
       connection.setRequestProperty("Authorization", "Bearer " + credential.getAuthToken());
       int code = connection.getResponseCode();
@@ -86,7 +89,7 @@ public class BlockListFetcher {
                 code, connection.getResponseMessage(), errorDetails),
             /* retriable= */ true);
       }
-      return new LazyBlockList(blockList, connection);
+      return new LazyBlockList(blockListType, connection);
     } catch (IOException e) {
       throw new BsaException(e, /* retriable= */ true);
     } catch (GeneralSecurityException e) {
@@ -96,15 +99,15 @@ public class BlockListFetcher {
 
   static class LazyBlockList implements Closeable {
 
-    private final BlockList blockList;
+    private final BlockListType blockListType;
 
     private final HttpsURLConnection connection;
 
     private final BufferedInputStream inputStream;
     private final String checksum;
 
-    LazyBlockList(BlockList blockList, HttpsURLConnection connection) throws IOException {
-      this.blockList = blockList;
+    LazyBlockList(BlockListType blockListType, HttpsURLConnection connection) throws IOException {
+      this.blockListType = blockListType;
       this.connection = connection;
       this.inputStream = new BufferedInputStream(connection.getInputStream());
       this.checksum = readChecksum();
@@ -112,19 +115,15 @@ public class BlockListFetcher {
 
     /** Reads the BSA-generated checksum, which is the first line of the input. */
     private String readChecksum() throws IOException {
-      if (blockList.equals(BlockList.BLOCK)) {
-        return "TODO"; // Depends on BSA impl: header or first line of file
-      } else {
-        StringBuilder checksum = new StringBuilder();
-        char ch;
-        while ((ch = peekInputStream()) != (char) -1 && !Character.isWhitespace(ch)) {
-          checksum.append((char) inputStream.read());
-        }
-        while ((ch = peekInputStream()) != (char) -1 && Character.isWhitespace(ch)) {
-          inputStream.read();
-        }
-        return checksum.toString();
+      StringBuilder checksum = new StringBuilder();
+      char ch;
+      while ((ch = peekInputStream()) != (char) -1 && !Character.isWhitespace(ch)) {
+        checksum.append((char) inputStream.read());
       }
+      while ((ch = peekInputStream()) != (char) -1 && Character.isWhitespace(ch)) {
+        inputStream.read();
+      }
+      return checksum.toString();
     }
 
     char peekInputStream() throws IOException {
@@ -134,8 +133,8 @@ public class BlockListFetcher {
       return (char) byteValue;
     }
 
-    BlockList getName() {
-      return blockList;
+    BlockListType getName() {
+      return blockListType;
     }
 
     String checksum() {
