@@ -93,6 +93,14 @@
         primary key (label, tld)
     );
 
+    create table "BsaDomainRefresh" (
+       job_id  bigserial not null,
+        creation_time timestamptz not null,
+        stage text not null,
+        update_timestamp timestamptz,
+        primary key (job_id)
+    );
+
     create table "BsaDownload" (
        job_id  bigserial not null,
         block_list_checksums text not null,
