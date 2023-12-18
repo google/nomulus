@@ -202,6 +202,23 @@ class RegistrarTest extends EntityTestCase {
   }
 
   @Test
+  void testFailure_duplicateIanaId() {
+    persistResource(
+        registrar.asBuilder().setRegistrarId("registrar1").setIanaIdentifier(10L).build());
+
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () ->
+                registrar.asBuilder().setRegistrarId("registrar2").setIanaIdentifier(10L).build());
+
+    assertThat(thrown)
+        .hasMessageThat()
+        .contains(
+            "Rejected attempt to create a registrar with ianaId that's already in the system");
+  }
+
+  @Test
   void testSetCertificateHash_alsoSetsHash() {
     registrar = registrar.asBuilder().setClientCertificate(null, fakeClock.nowUtc()).build();
     fakeClock.advanceOneMilli();
