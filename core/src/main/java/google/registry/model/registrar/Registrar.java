@@ -22,6 +22,7 @@ import static com.google.common.base.Strings.nullToEmpty;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.collect.ImmutableSortedSet.toImmutableSortedSet;
 import static com.google.common.collect.Sets.immutableEnumSet;
+import static com.google.common.collect.Streams.stream;
 import static com.google.common.io.BaseEncoding.base64;
 import static google.registry.config.RegistryConfig.getDefaultRegistrarWhoisServer;
 import static google.registry.model.CacheUtils.memoizeWithShortExpiration;
@@ -794,6 +795,24 @@ public class Registrar extends UpdateAutoTimestampEntity implements Buildable, J
       }
     }
 
+    // Making sure there's no registrar with the same ianaId already in the system
+    private static boolean isNotADuplicateIanaId(
+        Iterable<Registrar> registrars, Registrar newInstance) {
+      // Return early if newly build registrar is not type REAL or ianaId is
+      // reserved by ICANN - https://www.iana.org/assignments/registrar-ids/registrar-ids.xhtml
+      if (!Type.REAL.equals(newInstance.type)
+          || ImmutableSet.of(1L, 8L).contains(newInstance.ianaIdentifier)) {
+        return true;
+      }
+
+      return stream(registrars)
+          .filter(registrar -> Type.REAL.equals(registrar.getType()))
+          .filter(registrar -> !Objects.equals(newInstance.registrarId, registrar.getRegistrarId()))
+          .noneMatch(
+              registrar ->
+                  Objects.equals(newInstance.ianaIdentifier, registrar.getIanaIdentifier()));
+    }
+
     public Builder setContactsRequireSyncing(boolean contactsRequireSyncing) {
       getInstance().contactsRequireSyncing = contactsRequireSyncing;
       return this;
@@ -911,6 +930,15 @@ public class Registrar extends UpdateAutoTimestampEntity implements Buildable, J
           String.format(
               "Supplied IANA ID is not valid for %s registrar type: %s",
               getInstance().type, getInstance().ianaIdentifier));
+
+      // We do not allow creating Real registrars with IANA ID that's already in the system
+      // b/315007360 - for more details
+      checkArgument(
+          isNotADuplicateIanaId(loadAllCached(), getInstance()),
+          String.format(
+              "Rejected attempt to create a registrar with ianaId that's already in the system -"
+                  + " %s",
+              getInstance().ianaIdentifier));
 
       // In order to grant access to real TLDs, the registrar must have a corresponding billing
       // account ID for that TLD's billing currency.
