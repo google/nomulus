@@ -15,7 +15,7 @@
 package google.registry.whois;
 
 import static com.google.common.base.Preconditions.checkNotNull;
-import static google.registry.flows.domain.DomainFlowUtils.verifyNotBlockedByBsa;
+import static google.registry.flows.domain.DomainFlowUtils.isBlockedByBsa;
 import static google.registry.model.EppResourceUtils.loadByForeignKey;
 import static google.registry.model.EppResourceUtils.loadByForeignKeyCached;
 import static google.registry.model.tld.Tlds.findTldForName;
@@ -25,7 +25,6 @@ import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.net.InternetDomainName;
-import google.registry.flows.domain.DomainFlowUtils.DomainLabelBlockedByBsaException;
 import google.registry.model.domain.Domain;
 import google.registry.model.tld.Tld;
 import java.util.Optional;
@@ -64,24 +63,16 @@ public class DomainLookupCommand implements WhoisCommand {
       final Optional<WhoisResponse> response = getResponse(domainName, now);
       if (response.isPresent()) {
         return response.get();
-      } else if (isBlockedByBsa(domainName, tld.get().toString(), now)) {
+      }
+
+      String label = domainName.parts().get(0);
+      String tldStr = tld.get().toString();
+      if (tm().transact(() -> isBlockedByBsa(label, Tld.get(tldStr), now))) {
         throw new WhoisException(
             now, SC_NOT_FOUND, String.format(domainBlockedByBsaTemplate, domainName));
       }
     }
     throw new WhoisException(now, SC_NOT_FOUND, ERROR_PREFIX + " not found.");
-  }
-
-  private boolean isBlockedByBsa(InternetDomainName domainName, String tld, DateTime now) {
-    return tm().transact(
-            () -> {
-              try {
-                verifyNotBlockedByBsa(domainName.parts().get(0), Tld.get(tld), now);
-                return false;
-              } catch (DomainLabelBlockedByBsaException e) {
-                return true;
-              }
-            });
   }
 
   private Optional<WhoisResponse> getResponse(InternetDomainName domainName, DateTime now) {

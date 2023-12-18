@@ -269,9 +269,13 @@ public class DomainFlowUtils {
    */
   public static void verifyNotBlockedByBsa(String domainLabel, Tld tld, DateTime now)
       throws DomainLabelBlockedByBsaException {
-    if (isEnrolledWithBsa(tld, now) && isLabelBlocked(domainLabel)) {
+    if (isBlockedByBsa(domainLabel, tld, now)) {
       throw new DomainLabelBlockedByBsaException();
     }
+  }
+
+  public static boolean isBlockedByBsa(String domainLabel, Tld tld, DateTime now) {
+    return isEnrolledWithBsa(tld, now) && isLabelBlocked(domainLabel);
   }
 
   /** Returns whether a given domain create request is for a valid anchor tenant. */
@@ -1759,7 +1763,7 @@ public class DomainFlowUtils {
   }
 
   /** Domain label is blocked by the Brand Safety Alliance. */
-  public static class DomainLabelBlockedByBsaException extends ParameterValuePolicyErrorException {
+  static class DomainLabelBlockedByBsaException extends ParameterValuePolicyErrorException {
     public DomainLabelBlockedByBsaException() {
       // TODO(b/309174065): finalize the exception message.
       super("Domain label is blocked by the Brand Safety Alliance");
