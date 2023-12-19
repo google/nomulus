@@ -46,6 +46,7 @@ import google.registry.model.tld.Tld.TldNotFoundException;
 import google.registry.model.tld.label.PremiumList;
 import google.registry.model.tld.label.PremiumListDao;
 import java.io.File;
+import java.math.BigDecimal;
 import java.util.Optional;
 import java.util.logging.Logger;
 import org.joda.money.Money;
@@ -88,6 +89,19 @@ public class ConfigureTldCommandTest extends CommandTestCase<ConfigureTldCommand
     assertThat(tld.getDriveFolderId()).isEqualTo("driveFolder");
     assertThat(tld.getCreateBillingCost()).isEqualTo(Money.of(USD, 25));
     testTldConfiguredSuccessfully(tld, "tld.yaml");
+    assertThat(tld.getBreakglassMode()).isFalse();
+  }
+
+  @Test
+  void testSuccess_createNewTldJPY() throws Exception {
+    File tldFile = tmpDir.resolve("jpy.yaml").toFile();
+    Files.asCharSink(tldFile, UTF_8).write(loadFile(getClass(), "jpy.yaml"));
+    runCommandForced("--input=" + tldFile);
+    Tld tld = Tld.get("jpy");
+    assertThat(tld).isNotNull();
+    assertThat(tld.getDriveFolderId()).isEqualTo("driveFolder");
+    assertThat(tld.getCreateBillingCost()).isEqualTo(Money.of(JPY, new BigDecimal("250")));
+    testTldConfiguredSuccessfully(tld, "jpy.yaml");
     assertThat(tld.getBreakglassMode()).isFalse();
   }
 
