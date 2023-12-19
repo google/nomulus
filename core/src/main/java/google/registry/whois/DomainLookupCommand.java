@@ -23,7 +23,9 @@ import static google.registry.model.tld.Tlds.getTlds;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
 
+import com.google.auto.value.AutoValue;
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Verify;
 import com.google.common.net.InternetDomainName;
 import google.registry.model.domain.Domain;
 import google.registry.model.tld.Tld;
@@ -58,21 +60,33 @@ public class DomainLookupCommand implements WhoisCommand {
   @Override
   public final WhoisResponse executeQuery(final DateTime now) throws WhoisException {
     Optional<InternetDomainName> tld = findTldForName(domainName);
-    // Google Registry Policy: Do not return records under TLDs for which we're not authoritative.
-    if (tld.isPresent() && getTlds().contains(tld.get().toString())) {
-      final Optional<WhoisResponse> response = getResponse(domainName, now);
-      if (response.isPresent()) {
-        return response.get();
-      }
+    // Transact here so that `getResponse` and `isBlockedByBsa` are covered by one transaction.
+    // Must pass the exceptions outside to throw.
+    ResponseOrException result =
+        tm().transact(
+                () -> {
+                  // Google Registry Policy: Do not return records under TLDs for which we're not
+                  // authoritative.
+                  if (tld.isPresent() && getTlds().contains(tld.get().toString())) {
+                    final Optional<WhoisResponse> response = getResponse(domainName, now);
+                    if (response.isPresent()) {
+                      return ResponseOrException.of(response.get());
+                    }
 
-      String label = domainName.parts().get(0);
-      String tldStr = tld.get().toString();
-      if (tm().transact(() -> isBlockedByBsa(label, Tld.get(tldStr), now))) {
-        throw new WhoisException(
-            now, SC_NOT_FOUND, String.format(domainBlockedByBsaTemplate, domainName));
-      }
-    }
-    throw new WhoisException(now, SC_NOT_FOUND, ERROR_PREFIX + " not found.");
+                    String label = domainName.parts().get(0);
+                    String tldStr = tld.get().toString();
+                    if (isBlockedByBsa(label, Tld.get(tldStr), now)) {
+                      return ResponseOrException.of(
+                          new WhoisException(
+                              now,
+                              SC_NOT_FOUND,
+                              String.format(domainBlockedByBsaTemplate, domainName)));
+                    }
+                  }
+                  return ResponseOrException.of(
+                      new WhoisException(now, SC_NOT_FOUND, ERROR_PREFIX + " not found."));
+                });
+    return result.returnOrThrow();
   }
 
   private Optional<WhoisResponse> getResponse(InternetDomainName domainName, DateTime now) {
@@ -82,5 +96,30 @@ public class DomainLookupCommand implements WhoisCommand {
             : loadByForeignKey(Domain.class, domainName.toString(), now);
     return domainResource.map(
         domain -> new DomainWhoisResponse(domain, fullOutput, whoisRedactedEmailText, now));
+  }
+
+  @AutoValue
+  abstract static class ResponseOrException {
+
+    abstract Optional<WhoisResponse> whoisResponse();
+
+    abstract Optional<WhoisException> exception();
+
+    WhoisResponse returnOrThrow() throws WhoisException {
+      Verify.verify(
+          whoisResponse().isPresent() || exception().isPresent(),
+          "Response and exception must not both be missing.");
+      return whoisResponse().orElseThrow(() -> exception().get());
+    }
+
+    static ResponseOrException of(WhoisResponse response) {
+      return new AutoValue_DomainLookupCommand_ResponseOrException(
+          Optional.of(response), Optional.empty());
+    }
+
+    static ResponseOrException of(WhoisException exception) {
+      return new AutoValue_DomainLookupCommand_ResponseOrException(
+          Optional.empty(), Optional.of(exception));
+    }
   }
 }
