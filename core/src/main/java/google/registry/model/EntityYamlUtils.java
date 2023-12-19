@@ -359,7 +359,7 @@ public class EntityYamlUtils {
                       key ->
                           Money.of(
                               CurrencyUnit.of(valueMap.get(key).get("currency").toString()),
-                              (double) valueMap.get(key).get("amount")))));
+                              new BigDecimal(String.valueOf(valueMap.get(key).get("amount")))))));
     }
   }
 
