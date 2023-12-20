@@ -24,6 +24,7 @@ import {
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import SecurityComponent from './security.component';
 import { BackendService } from 'src/app/shared/services/backend.service';
+import { MatSnackBar } from '@angular/material/snack-bar';
 
 describe('SecurityService', () => {
   const uiMockData: SecuritySettings = {
@@ -43,7 +44,7 @@ describe('SecurityService', () => {
     TestBed.configureTestingModule({
       imports: [HttpClientTestingModule],
       declarations: [SecurityComponent],
-      providers: [SecurityService, BackendService],
+      providers: [MatSnackBar, SecurityService, BackendService],
     });
     service = TestBed.inject(SecurityService);
   });

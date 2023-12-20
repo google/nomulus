@@ -15,6 +15,10 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { DomainListComponent } from './domainList.component';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { MaterialModule } from '../material.module';
+import { BackendService } from '../shared/services/backend.service';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 describe('DomainListComponent', () => {
   let component: DomainListComponent;
@@ -23,6 +27,12 @@ describe('DomainListComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       declarations: [DomainListComponent],
+      imports: [
+        HttpClientTestingModule,
+        MaterialModule,
+        BrowserAnimationsModule,
+      ],
+      providers: [BackendService],
     }).compileComponents();
 
     fixture = TestBed.createComponent(DomainListComponent);

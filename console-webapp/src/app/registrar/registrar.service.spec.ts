@@ -17,6 +17,7 @@ import { TestBed } from '@angular/core/testing';
 import { RegistrarService } from './registrar.service';
 import { BackendService } from '../shared/services/backend.service';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { MatSnackBar } from '@angular/material/snack-bar';
 
 describe('RegistrarService', () => {
   let service: RegistrarService;
@@ -24,7 +25,7 @@ describe('RegistrarService', () => {
   beforeEach(() => {
     TestBed.configureTestingModule({
       imports: [HttpClientTestingModule],
-      providers: [BackendService],
+      providers: [BackendService, MatSnackBar],
     });
     service = TestBed.inject(RegistrarService);
   });
