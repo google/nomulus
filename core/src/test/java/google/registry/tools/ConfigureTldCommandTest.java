@@ -100,6 +100,7 @@ public class ConfigureTldCommandTest extends CommandTestCase<ConfigureTldCommand
     Tld tld = Tld.get("jpy");
     assertThat(tld).isNotNull();
     assertThat(tld.getCreateBillingCost()).isEqualTo(Money.of(JPY, new BigDecimal("250")));
+    assertThat(tld.getEapFeeFor(DateTime.now()).getCost()).isEqualTo(new BigDecimal(0));
     testTldConfiguredSuccessfully(tld, "jpy.yaml");
   }
 
