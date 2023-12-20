@@ -102,8 +102,6 @@ interface RegistryToolComponent {
 
   void inject(CreateRegistrarCommand command);
 
-  void inject(CreateTldCommand command);
-
   void inject(EncryptEscrowDepositCommand command);
 
   void inject(EnqueuePollMessageCommand command);
@@ -161,8 +159,6 @@ interface RegistryToolComponent {
   void inject(UpdateKeyringSecretCommand command);
 
   void inject(UpdateRegistrarCommand command);
-
-  void inject(UpdateTldCommand command);
 
   void inject(ValidateEscrowDepositCommand command);
 
