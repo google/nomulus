@@ -349,7 +349,7 @@ public class EntityYamlUtils {
     @Override
     public TimedTransitionProperty<Money> deserialize(JsonParser jp, DeserializationContext context)
         throws IOException {
-      SortedMap<String, LinkedHashMap> valueMap = jp.readValueAs(SortedMap.class);
+      SortedMap<String, LinkedHashMap<String, Object>> valueMap = jp.readValueAs(SortedMap.class);
       return TimedTransitionProperty.fromValueMap(
           valueMap.keySet().stream()
               .collect(
