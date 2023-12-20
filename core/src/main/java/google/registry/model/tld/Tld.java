@@ -296,7 +296,7 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
    * this procedure to change this value:
    *
    * <ol>
-   *   <li>Pause the DNS queue via {@link google.registry.tools.UpdateTldCommand}
+   *   <li>Pause the DNS queue via {@link google.registry.tools.ConfigureTldCommand}
    *   <li>Change this number
    *   <li>Let the Tld caches expire (currently 5 minutes) and drain the DNS publish queue
    *   <li>Unpause the DNS queue
