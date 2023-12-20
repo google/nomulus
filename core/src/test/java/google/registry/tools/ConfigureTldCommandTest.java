@@ -99,10 +99,8 @@ public class ConfigureTldCommandTest extends CommandTestCase<ConfigureTldCommand
     runCommandForced("--input=" + tldFile);
     Tld tld = Tld.get("jpy");
     assertThat(tld).isNotNull();
-    assertThat(tld.getDriveFolderId()).isEqualTo("driveFolder");
     assertThat(tld.getCreateBillingCost()).isEqualTo(Money.of(JPY, new BigDecimal("250")));
     testTldConfiguredSuccessfully(tld, "jpy.yaml");
-    assertThat(tld.getBreakglassMode()).isFalse();
   }
 
   @Test
