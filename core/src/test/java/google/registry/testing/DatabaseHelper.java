@@ -778,7 +778,7 @@ public final class DatabaseHelper {
 
   /** Persists and returns a {@link Registrar} with the specified registrarId. */
   public static Registrar persistNewRegistrar(String registrarId) {
-    return persistNewRegistrar(registrarId, registrarId + " name", Registrar.Type.REAL, 100L);
+    return persistNewRegistrar(registrarId, registrarId + " name", Registrar.Type.REAL, 8L);
   }
 
   /** Persists and returns a list of {@link Registrar}s with the specified registrarIds. */
