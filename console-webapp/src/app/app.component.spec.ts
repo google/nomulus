@@ -17,11 +17,14 @@ import { RouterTestingModule } from '@angular/router/testing';
 import { AppComponent } from './app.component';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { MaterialModule } from './material.module';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { BackendService } from './shared/services/backend.service';
 
 describe('AppComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [RouterTestingModule, MaterialModule, BrowserAnimationsModule],
+      imports: [HttpClientTestingModule, RouterTestingModule, MaterialModule, BrowserAnimationsModule],
+      providers: [BackendService],
       declarations: [AppComponent],
     }).compileComponents();
   });

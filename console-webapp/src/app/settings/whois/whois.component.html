@@ -13,12 +13,7 @@
     </div>
     <div class="settings-whois__section-form">
       <mat-form-field>
-        <input
-          matInput
-          type="text"
-          [(ngModel)]="registrar.registrarName"
-          disabled
-        />
+        <input matInput type="text" [(ngModel)]="registrar.registrarName" disabled />
       </mat-form-field>
     </div>
   </div>
@@ -133,9 +128,8 @@
         <h3>Address Line 1:</h3>
       </div>
       <div class="settings-whois__section-form">
-        <mat-form-field>
+        <mat-form-field *ngIf="registrar.localizedAddress?.street">
           <input
-            *ngIf="registrar.localizedAddress?.street"
             matInput
             type="text"
             [(ngModel)]="(registrar.localizedAddress?.street)![0]"
@@ -149,9 +143,8 @@
         <h3>City:</h3>
       </div>
       <div class="settings-whois__section-form">
-        <mat-form-field>
+        <mat-form-field *ngIf="registrar.localizedAddress">
           <input
-            *ngIf="registrar.localizedAddress"
             matInput
             type="text"
             [(ngModel)]="registrar.localizedAddress.city"
@@ -167,9 +160,8 @@
         <h3>Address Line 2:</h3>
       </div>
       <div class="settings-whois__section-form">
-        <mat-form-field>
+        <mat-form-field *ngIf="registrar.localizedAddress?.street">
           <input
-            *ngIf="registrar.localizedAddress?.street"
             matInput
             type="text"
             [(ngModel)]="(registrar.localizedAddress?.street)![1]"
@@ -183,9 +175,8 @@
         <h3>State/Region:</h3>
       </div>
       <div class="settings-whois__section-form">
-        <mat-form-field>
+        <mat-form-field *ngIf="registrar.localizedAddress">
           <input
-            *ngIf="registrar.localizedAddress"
             matInput
             type="text"
             [(ngModel)]="registrar.localizedAddress.state"
@@ -201,9 +192,8 @@
         <h3>Address Line 3:</h3>
       </div>
       <div class="settings-whois__section-form">
-        <mat-form-field>
+        <mat-form-field *ngIf="registrar.localizedAddress?.street">
           <input
-            *ngIf="registrar.localizedAddress?.street"
             matInput
             type="text"
             [(ngModel)]="(registrar.localizedAddress?.street)![2]"
@@ -217,9 +207,8 @@
         <h3>Country Code:</h3>
       </div>
       <div class="settings-whois__section-form">
-        <mat-form-field>
+        <mat-form-field *ngIf="registrar.localizedAddress">
           <input
-            *ngIf="registrar.localizedAddress"
             matInput
             type="text"
             [(ngModel)]="registrar.localizedAddress.countryCode"

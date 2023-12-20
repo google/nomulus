@@ -15,19 +15,21 @@
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 
 import SecurityComponent from './security.component';
-import { SecurityService } from './security.service';
+import { SecurityService, SecuritySettingsBackendModel, apiToUiConverter } from './security.service';
 import { BackendService } from 'src/app/shared/services/backend.service';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { MaterialModule } from 'src/app/material.module';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { of } from 'rxjs';
 import { FormsModule } from '@angular/forms';
+import { Registrar, RegistrarService } from 'src/app/registrar/registrar.service';
 
 describe('SecurityComponent', () => {
   let component: SecurityComponent;
   let fixture: ComponentFixture<SecurityComponent>;
   let fetchSecurityDetailsSpy: Function;
   let saveSpy: Function;
+  let dummyRegistrarService: RegistrarService;
 
   beforeEach(async () => {
     const securityServiceSpy = jasmine.createSpyObj(SecurityService, [
@@ -40,9 +42,7 @@ describe('SecurityComponent', () => {
 
     saveSpy = securityServiceSpy.saveChanges;
 
-    securityServiceSpy.securitySettings = {
-      ipAddressAllowList: [{ value: '123.123.123.123' }],
-    };
+    dummyRegistrarService = { registrar: { ipAddressAllowList: ['123.123.123.123'] } } as RegistrarService;
 
     await TestBed.configureTestingModule({
       imports: [
@@ -52,7 +52,7 @@ describe('SecurityComponent', () => {
         FormsModule,
       ],
       declarations: [SecurityComponent],
-      providers: [BackendService],
+      providers: [BackendService, { provide: RegistrarService, useValue: dummyRegistrarService }],
     })
       .overrideComponent(SecurityComponent, {
         set: {
@@ -70,10 +70,6 @@ describe('SecurityComponent', () => {
 
   it('should create', () => {
     expect(component).toBeTruthy();
-  });
-
-  it('should call fetch spy', () => {
-    expect(fetchSecurityDetailsSpy).toHaveBeenCalledTimes(1);
   });
 
   it('should render ip allow list', waitForAsync(() => {
@@ -121,17 +117,12 @@ describe('SecurityComponent', () => {
   });
 
   it('should create temporary data structure', () => {
-    expect(component.dataSource).toBe(
-      component.securityService.securitySettings
-    );
-    component.enableEdit();
-    expect(component.dataSource).not.toBe(
-      component.securityService.securitySettings
-    );
+    expect(component.dataSource).toEqual(apiToUiConverter(dummyRegistrarService.registrar));
+    component.removeIpEntry(0);
+    expect(component.dataSource).toEqual({ ipAddressAllowList: [] });
+    expect(dummyRegistrarService.registrar).toEqual({ ipAddressAllowList: ['123.123.123.123'] } as Registrar);
     component.cancel();
-    expect(component.dataSource).toBe(
-      component.securityService.securitySettings
-    );
+    expect(component.dataSource).toEqual(apiToUiConverter(dummyRegistrarService.registrar));
   });
 
   it('should call save', waitForAsync(async () => {

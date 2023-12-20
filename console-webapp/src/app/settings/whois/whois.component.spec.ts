@@ -15,6 +15,11 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import WhoisComponent from './whois.component';
+import { MaterialModule } from 'src/app/material.module';
+import { BackendService } from 'src/app/shared/services/backend.service';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { RegistrarService } from 'src/app/registrar/registrar.service';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 describe('WhoisComponent', () => {
   let component: WhoisComponent;
@@ -23,7 +28,10 @@ describe('WhoisComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       declarations: [WhoisComponent],
-    }).compileComponents();
+      imports: [HttpClientTestingModule, MaterialModule, BrowserAnimationsModule],
+      providers: [BackendService,  { provide: RegistrarService, useValue: { registrar: {} } }],
+    })
+    .compileComponents();
 
     fixture = TestBed.createComponent(WhoisComponent);
     component = fixture.componentInstance;
