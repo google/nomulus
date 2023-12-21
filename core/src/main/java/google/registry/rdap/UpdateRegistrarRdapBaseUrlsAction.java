@@ -69,7 +69,7 @@ public final class UpdateRegistrarRdapBaseUrlsAction implements Runnable {
   public void run() {
     try {
       ImmutableMap<String, String> ianaIdsToUrls = getIanaIdsToUrls();
-      tm().transact(() -> processAllRegistrars(ianaIdsToUrls));
+      processAllRegistrars(ianaIdsToUrls);
     } catch (Exception e) {
       throw new InternalServerErrorException("Error when retrieving RDAP base URL CSV file", e);
     }

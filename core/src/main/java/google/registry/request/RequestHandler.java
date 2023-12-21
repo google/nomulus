@@ -16,6 +16,7 @@ package google.registry.request;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.net.MediaType.PLAIN_TEXT_UTF_8;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static javax.servlet.http.HttpServletResponse.SC_FORBIDDEN;
 import static javax.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 import static javax.servlet.http.HttpServletResponse.SC_METHOD_NOT_ALLOWED;
@@ -155,7 +156,12 @@ public class RequestHandler<C> {
     boolean success = true;
     DateTime startTime = clock.nowUtc();
     try {
-      route.get().instantiator().apply(component).run();
+      Runnable action = route.get().instantiator().apply(component);
+      if (route.get().action().transactional()) {
+        tm().transact(action::run);
+      } else {
+        action.run();
+      }
       if (route.get().action().automaticallyPrintOk()) {
         rsp.setContentType(PLAIN_TEXT_UTF_8.toString());
         rsp.getWriter().write("OK\n");

@@ -14,6 +14,7 @@
 
 package google.registry.tools;
 
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.tools.CommandUtilities.promptForYes;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -44,20 +45,26 @@ public abstract class ConfirmingCommand implements Command {
 
   @Override
   public final void run() throws Exception {
-    if (checkExecutionState()) {
-      init();
-      printLineIfNotEmpty(prompt(), printStream);
-      if (dontRunCommand()) {
-        // This typically happens when all of the work is accomplished inside of prompt(), so do
-        // nothing further.
-        return;
-      } else if (force || promptForYes("Perform this command?")) {
-        printStream.println("Running ... ");
-        printStream.println(execute());
-        printLineIfNotEmpty(postExecute(), printStream);
-      } else {
-        printStream.println("Command aborted.");
-      }
+    if (!checkExecutionState()) {
+      return;
+    }
+
+    tm().transact(
+            () -> {
+              init();
+              printLineIfNotEmpty(prompt(), printStream);
+            });
+
+    if (dontRunCommand()) {
+      // This typically happens when all the work is accomplished inside of prompt(), so do
+      // nothing further.
+      return;
+    } else if (force || promptForYes("Perform this command?")) {
+      printStream.println("Running ... ");
+      tm().transact(() -> printStream.println(execute()));
+      tm().transact(() -> printLineIfNotEmpty(postExecute(), printStream));
+    } else {
+      printStream.println("Command aborted.");
     }
     printStream.close();
     errorPrintStream.close();

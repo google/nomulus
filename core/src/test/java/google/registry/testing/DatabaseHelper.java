@@ -977,9 +977,9 @@ public final class DatabaseHelper {
     assertWithMessage("Attempting to persist a Builder is almost certainly an error in test code")
         .that(resource)
         .isNotInstanceOf(Buildable.Builder.class);
-    tm().transact(() -> tm().put(resource));
+    tm().reTransact(() -> tm().put(resource));
     maybeAdvanceClock();
-    return tm().transact(() -> tm().loadByEntity(resource));
+    return tm().reTransact(() -> tm().loadByEntity(resource));
   }
 
   /** Persists the specified resources to the DB. */
@@ -1161,7 +1161,7 @@ public final class DatabaseHelper {
   /** Loads and returns the registrar with the given client ID, or throws IAE if not present. */
   public static Registrar loadRegistrar(String registrarId) {
     return checkArgumentPresent(
-        Registrar.loadByRegistrarId(registrarId),
+        tm().reTransact(() -> Registrar.loadByRegistrarId(registrarId)),
         "Error in tests: Registrar %s does not exist",
         registrarId);
   }

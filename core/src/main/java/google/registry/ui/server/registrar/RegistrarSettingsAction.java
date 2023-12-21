@@ -78,7 +78,9 @@ import org.joda.time.DateTime;
     service = Action.Service.DEFAULT,
     path = RegistrarSettingsAction.PATH,
     method = Action.Method.POST,
-    auth = Auth.AUTH_PUBLIC_LOGGED_IN)
+    auth = Auth.AUTH_PUBLIC_LOGGED_IN,
+    transactional = false // Needs to explicitly run more than one transaction sequentially.
+    )
 public class RegistrarSettingsAction implements Runnable, JsonActionRunner.JsonAction {
 
   public static final String PATH = "/registrar-settings";
@@ -157,9 +159,9 @@ public class RegistrarSettingsAction implements Runnable, JsonActionRunner.JsonA
     try {
       switch (op) {
         case "update":
-          return update(args, registrarId).toJsonResponse();
+          return update(args, registrarId);
         case "read":
-          return read(registrarId).toJsonResponse();
+          return read(registrarId);
         default:
           throw new IllegalArgumentException("Unknown or unsupported operation: " + op);
       }
@@ -215,8 +217,11 @@ public class RegistrarSettingsAction implements Runnable, JsonActionRunner.JsonA
     }
   }
 
-  private RegistrarResult read(String registrarId) {
-    return RegistrarResult.create("Success", loadRegistrarUnchecked(registrarId));
+  private Map<String, Object> read(String registrarId) {
+    return tm().transact(
+            () ->
+                RegistrarResult.create("Success", loadRegistrarUnchecked(registrarId))
+                    .toJsonResponse());
   }
 
   private Registrar loadRegistrarUnchecked(String registrarId) {
@@ -227,15 +232,19 @@ public class RegistrarSettingsAction implements Runnable, JsonActionRunner.JsonA
     }
   }
 
-  private RegistrarResult update(final Map<String, ?> args, String registrarId) {
+  private Map<String, Object> update(final Map<String, ?> args, String registrarId) {
     // Email the updates
     sendExternalUpdatesIfNecessary(tm().transact(() -> saveUpdates(args, registrarId)));
     // Reload the result outside the transaction to get the most recent version
-    return RegistrarResult.create("Saved " + registrarId, loadRegistrarUnchecked(registrarId));
+    return tm().transact(
+            () ->
+                RegistrarResult.create("Saved " + registrarId, loadRegistrarUnchecked(registrarId))
+                    .toJsonResponse());
   }
 
   /** Saves the updates and returns info needed for the update email */
   private EmailInfo saveUpdates(final Map<String, ?> args, String registrarId) {
+    tm().assertInTransaction();
     // We load the registrar here rather than outside the transaction - to make
     // sure we have the latest version. This one is loaded inside the transaction, so it's
     // guaranteed to not change before we update it.

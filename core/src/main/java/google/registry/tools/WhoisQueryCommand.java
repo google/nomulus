@@ -14,6 +14,8 @@
 
 package google.registry.tools;
 
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import com.google.common.base.Joiner;
@@ -43,6 +45,8 @@ final class WhoisQueryCommand implements Command {
 
   @Override
   public void run() {
-    System.out.println(whois.lookup(Joiner.on(' ').join(mainParameters), unicode, fullOutput));
+    System.out.println(
+        tm().transact(
+                () -> whois.lookup(Joiner.on(' ').join(mainParameters), unicode, fullOutput)));
   }
 }

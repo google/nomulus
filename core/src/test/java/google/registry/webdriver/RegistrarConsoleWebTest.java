@@ -15,6 +15,7 @@
 package google.registry.webdriver;
 
 import static com.google.common.truth.Truth.assertThat;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.server.Fixture.BASIC;
 import static google.registry.server.Route.route;
 import static google.registry.testing.DatabaseHelper.loadRegistrar;
@@ -176,7 +177,8 @@ public class RegistrarConsoleWebTest extends WebDriverTestCase {
   void testContactSettingsView() throws Throwable {
     driver.get(server.getUrl("/registrar#contact-settings"));
     driver.waitForDisplayedElement(By.id("reg-app-btn-add"));
-    ImmutableList<RegistrarPoc> contacts = loadRegistrar("TheRegistrar").getContacts().asList();
+    ImmutableList<RegistrarPoc> contacts =
+        tm().transact(() -> loadRegistrar("TheRegistrar").getContacts().asList());
     for (RegistrarPoc contact : contacts) {
       assertEltTextPresent(By.id("contacts[0].name"), contact.getName());
       assertEltTextPresent(By.id("contacts[0].emailAddress"), contact.getEmailAddress());

@@ -89,12 +89,9 @@ public class DeleteLoadTestDataAction implements Runnable {
         !RegistryEnvironment.get().equals(PRODUCTION),
         "This action is not safe to run on PRODUCTION.");
 
-    tm().transact(
-            () -> {
-              LOAD_TEST_REGISTRARS.forEach(this::deletePollMessages);
-              tm().loadAllOfStream(Contact.class).forEach(this::deleteContact);
-              tm().loadAllOfStream(Host.class).forEach(this::deleteHost);
-            });
+    LOAD_TEST_REGISTRARS.forEach(this::deletePollMessages);
+    tm().loadAllOfStream(Contact.class).forEach(this::deleteContact);
+    tm().loadAllOfStream(Host.class).forEach(this::deleteHost);
   }
 
   private void deletePollMessages(String registrarId) {

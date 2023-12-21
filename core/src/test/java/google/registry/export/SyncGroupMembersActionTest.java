@@ -69,7 +69,7 @@ public class SyncGroupMembersActionTest {
     action.gSuiteDomainName = "domain-registry.example";
     action.response = response;
     action.retrier = new Retrier(new FakeSleeper(new FakeClock()), 3);
-    action.run();
+    tm().transact(action::run);
   }
 
   @Test
@@ -182,7 +182,11 @@ public class SyncGroupMembersActionTest {
         "hexadecimal@snow.fall",
         Role.MEMBER);
     verify(response).setStatus(SC_OK);
-    assertThat(Iterables.filter(Registrar.loadAll(), Registrar::getContactsRequireSyncing))
+    assertThat(
+            tm().transact(
+                    () ->
+                        Iterables.filter(
+                            Registrar.loadAll(), Registrar::getContactsRequireSyncing)))
         .isEmpty();
   }
 
