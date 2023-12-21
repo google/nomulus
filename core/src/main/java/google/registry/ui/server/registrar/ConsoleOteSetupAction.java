@@ -15,8 +15,8 @@
 package google.registry.ui.server.registrar;
 
 import static com.google.common.base.Preconditions.checkState;
-import static google.registry.config.RegistryEnvironment.PRODUCTION;
 import static google.registry.ui.server.SoyTemplateUtils.CSS_RENAMING_MAP_SUPPLIER;
+import static google.registry.util.RegistryEnvironment.PRODUCTION;
 import static javax.servlet.http.HttpServletResponse.SC_FORBIDDEN;
 
 import com.google.common.base.Ascii;
@@ -24,7 +24,6 @@ import com.google.common.base.Supplier;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.flogger.FluentLogger;
 import com.google.template.soy.tofu.SoyTofu;
-import google.registry.config.RegistryEnvironment;
 import google.registry.model.OteAccountBuilder;
 import google.registry.request.Action;
 import google.registry.request.Action.Method;
@@ -34,6 +33,7 @@ import google.registry.request.auth.AuthenticatedRegistrarAccessor;
 import google.registry.ui.server.SendEmailUtils;
 import google.registry.ui.server.SoyTemplateUtils;
 import google.registry.ui.soy.registrar.OteSetupConsoleSoyInfo;
+import google.registry.util.RegistryEnvironment;
 import google.registry.util.StringGenerator;
 import java.util.HashMap;
 import java.util.Optional;

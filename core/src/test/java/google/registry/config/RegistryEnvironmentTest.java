@@ -14,6 +14,7 @@
 
 package google.registry.config;
 
+import google.registry.util.RegistryEnvironment;
 import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link RegistryEnvironment}. */

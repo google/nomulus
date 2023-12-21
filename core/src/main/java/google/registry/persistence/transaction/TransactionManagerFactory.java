@@ -20,10 +20,10 @@ import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 import com.google.appengine.api.utils.SystemProperty;
 import com.google.appengine.api.utils.SystemProperty.Environment.Value;
 import com.google.common.base.Suppliers;
-import google.registry.config.RegistryEnvironment;
 import google.registry.persistence.DaggerPersistenceComponent;
 import google.registry.tools.RegistryToolEnvironment;
 import google.registry.util.NonFinalForTesting;
+import google.registry.util.RegistryEnvironment;
 import java.util.function.Supplier;
 
 /** Factory class to create {@link TransactionManager} instance. */

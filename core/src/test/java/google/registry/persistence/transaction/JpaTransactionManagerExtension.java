@@ -105,6 +105,7 @@ public abstract class JpaTransactionManagerExtension
   // reused between test methods if the requested schema remains the same.
   private static EntityManagerFactory emf;
   // Hash of the ORM entity names in the current schema in the test db.
+
   private static int emfEntityHash;
 
   private JpaTransactionManager cachedTm;
