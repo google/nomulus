@@ -22,6 +22,7 @@ import static java.nio.charset.StandardCharsets.US_ASCII;
 import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
 import com.google.common.flogger.FluentLogger;
+import com.google.common.primitives.Bytes;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
@@ -68,15 +69,22 @@ public final class PasswordUtils {
             .digest((new String(password, US_ASCII) + base64().encode(salt)).getBytes(US_ASCII));
       }
     },
+
     /**
      * Memory-hard hashing algorithm, preferred over SHA-256.
+     *
+     * <p>Note that in tests, we simply concatenate the password and salt which is much faster and
+     * reduces the overall test run time by a half. Our tests are not verifying that SCRYPT is
+     * implemented correctly anyway.
      *
      * @see <a href="https://en.wikipedia.org/wiki/Scrypt">Scrypt</a>
      */
     SCRYPT {
       @Override
       byte[] hash(byte[] password, byte[] salt) {
-        return SCrypt.generate(password, salt, 32768, 8, 1, 256);
+        return RegistryEnvironment.get() == RegistryEnvironment.UNITTEST
+            ? Bytes.concat(password, salt)
+            : SCrypt.generate(password, salt, 32768, 8, 1, 256);
       }
     };
 

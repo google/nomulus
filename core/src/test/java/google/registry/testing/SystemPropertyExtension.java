@@ -17,7 +17,7 @@ package google.registry.testing;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 
-import google.registry.config.SystemPropertySetter;
+import google.registry.util.SystemPropertySetter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;

@@ -14,9 +14,9 @@
 
 package google.registry.beam.common;
 
-import google.registry.config.RegistryEnvironment;
 import google.registry.persistence.PersistenceModule.JpaTransactionManagerType;
 import google.registry.persistence.PersistenceModule.TransactionIsolationLevel;
+import google.registry.util.RegistryEnvironment;
 import java.util.Objects;
 import javax.annotation.Nullable;
 import org.apache.beam.sdk.extensions.gcp.options.GcpOptions;

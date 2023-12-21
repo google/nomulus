@@ -18,8 +18,8 @@ import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 import static google.registry.util.PreconditionsUtils.checkArgumentPresent;
 
 import com.beust.jcommander.Parameters;
-import google.registry.config.RegistryEnvironment;
 import google.registry.model.registrar.Registrar;
+import google.registry.util.RegistryEnvironment;
 import javax.annotation.Nullable;
 
 /** Command to update a Registrar. */
