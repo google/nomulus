@@ -14,7 +14,7 @@
 
 package google.registry.dns;
 
-import static google.registry.config.RegistryEnvironment.PRODUCTION;
+import static google.registry.util.RegistryEnvironment.PRODUCTION;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.monitoring.metrics.DistributionFitter;
@@ -24,7 +24,7 @@ import com.google.monitoring.metrics.FibonacciFitter;
 import com.google.monitoring.metrics.IncrementableMetric;
 import com.google.monitoring.metrics.LabelDescriptor;
 import com.google.monitoring.metrics.MetricRegistryImpl;
-import google.registry.config.RegistryEnvironment;
+import google.registry.util.RegistryEnvironment;
 import javax.inject.Inject;
 import org.joda.time.Duration;
 

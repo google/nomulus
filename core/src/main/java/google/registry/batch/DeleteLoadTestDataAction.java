@@ -17,15 +17,14 @@ package google.registry.batch;
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static google.registry.batch.BatchModule.PARAM_DRY_RUN;
-import static google.registry.config.RegistryEnvironment.PRODUCTION;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.request.Action.Method.POST;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
+import static google.registry.util.RegistryEnvironment.PRODUCTION;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.flogger.FluentLogger;
-import google.registry.config.RegistryEnvironment;
 import google.registry.flows.poll.PollFlowUtils;
 import google.registry.model.EppResource;
 import google.registry.model.EppResourceUtils;
@@ -40,6 +39,7 @@ import google.registry.request.Action;
 import google.registry.request.Parameter;
 import google.registry.request.auth.Auth;
 import google.registry.util.Clock;
+import google.registry.util.RegistryEnvironment;
 import javax.inject.Inject;
 
 /**
