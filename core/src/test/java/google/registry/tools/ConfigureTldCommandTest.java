@@ -29,6 +29,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.logging.Level.INFO;
 import static org.joda.money.CurrencyUnit.JPY;
 import static org.joda.money.CurrencyUnit.USD;
+import static org.joda.time.DateTimeZone.UTC;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -51,7 +52,6 @@ import java.util.Optional;
 import java.util.logging.Logger;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
-import org.joda.time.DateTimeZone;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -100,7 +100,7 @@ public class ConfigureTldCommandTest extends CommandTestCase<ConfigureTldCommand
     Tld tld = Tld.get("jpy");
     assertThat(tld).isNotNull();
     assertThat(tld.getCreateBillingCost()).isEqualTo(Money.of(JPY, new BigDecimal("250")));
-    assertThat(tld.getEapFeeFor(DateTime.now()).getCost()).isEqualTo(new BigDecimal(0));
+    assertThat(tld.getEapFeeFor(DateTime.now(UTC)).getCost()).isEqualTo(new BigDecimal(0));
     testTldConfiguredSuccessfully(tld, "jpy.yaml");
   }
 
@@ -121,7 +121,7 @@ public class ConfigureTldCommandTest extends CommandTestCase<ConfigureTldCommand
   @Test
   void testSuccess_updateTld_existingBsaTimeCarriedOver() throws Exception {
     Tld tld = createTld("tld");
-    DateTime bsaStartTime = DateTime.now(DateTimeZone.UTC);
+    DateTime bsaStartTime = DateTime.now(UTC);
     persistResource(tld.asBuilder().setBsaEnrollStartTime(Optional.of(bsaStartTime)).build());
     File tldFile = tmpDir.resolve("tld.yaml").toFile();
     Files.asCharSink(tldFile, UTF_8).write(loadFile(getClass(), "tld.yaml"));
