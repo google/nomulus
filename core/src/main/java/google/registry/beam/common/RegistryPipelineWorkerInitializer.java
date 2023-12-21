@@ -19,10 +19,10 @@ import static google.registry.beam.common.RegistryPipelineOptions.toRegistryPipe
 import com.google.auto.service.AutoService;
 import com.google.common.flogger.FluentLogger;
 import dagger.Lazy;
-import google.registry.config.RegistryEnvironment;
-import google.registry.config.SystemPropertySetter;
 import google.registry.persistence.transaction.JpaTransactionManager;
 import google.registry.persistence.transaction.TransactionManagerFactory;
+import google.registry.util.RegistryEnvironment;
+import google.registry.util.SystemPropertySetter;
 import org.apache.beam.sdk.harness.JvmInitializer;
 import org.apache.beam.sdk.options.PipelineOptions;
 

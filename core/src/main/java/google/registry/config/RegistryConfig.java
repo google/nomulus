@@ -36,6 +36,7 @@ import dagger.Provides;
 import google.registry.dns.ReadDnsRefreshRequestsAction;
 import google.registry.model.common.DnsRefreshRequest;
 import google.registry.persistence.transaction.JpaTransactionManager;
+import google.registry.util.RegistryEnvironment;
 import google.registry.util.YamlUtils;
 import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;

@@ -27,7 +27,6 @@ import com.google.common.flogger.FluentLogger;
 import com.google.template.soy.data.SoyMapData;
 import com.google.template.soy.tofu.SoyTofu;
 import google.registry.config.RegistryConfig.Config;
-import google.registry.config.RegistryEnvironment;
 import google.registry.request.Action;
 import google.registry.request.Parameter;
 import google.registry.request.auth.Auth;
@@ -36,6 +35,7 @@ import google.registry.request.auth.AuthenticatedRegistrarAccessor.RegistrarAcce
 import google.registry.request.auth.AuthenticatedRegistrarAccessor.Role;
 import google.registry.ui.server.SoyTemplateUtils;
 import google.registry.ui.soy.registrar.ConsoleSoyInfo;
+import google.registry.util.RegistryEnvironment;
 import java.util.HashMap;
 import java.util.Optional;
 import javax.inject.Inject;

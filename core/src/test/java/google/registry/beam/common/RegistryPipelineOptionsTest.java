@@ -18,10 +18,10 @@ import static com.google.common.truth.Truth.assertThat;
 import static google.registry.beam.common.RegistryPipelineOptions.validateRegistryPipelineOptions;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import google.registry.config.RegistryEnvironment;
 import google.registry.persistence.PersistenceModule.JpaTransactionManagerType;
 import google.registry.persistence.PersistenceModule.TransactionIsolationLevel;
 import google.registry.testing.SystemPropertyExtension;
+import google.registry.util.RegistryEnvironment;
 import org.apache.beam.sdk.options.PipelineOptionsFactory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
