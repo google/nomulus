@@ -44,9 +44,9 @@ public class CidrAddressBlock implements Iterable<InetAddress>, Serializable {
   /**
    * Wrapper class around a logger instance for {@link CidrAddressBlock}.
    *
-   * <p>We don't want to have a static instance of {@link Logger} in {@link CidrAddressBlock},
+   * <p>We don't want to have a static instance of {@link FluentLogger} in {@link CidrAddressBlock},
    * because that can cause a race condition, since the logging subsystem might not yet be
-   * initialized. With this wrapper, the {@link Logger} will be initialized on first use.
+   * initialized. With this wrapper, the {@link FluentLogger} will be initialized on first use.
    */
   static class CidrAddressBlockLogger {
     private static final FluentLogger logger = FluentLogger.forEnclosingClass();

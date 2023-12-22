@@ -82,7 +82,7 @@ public class HostFlowUtils {
       InternetDomainName hostName, DateTime now) throws EppException {
     Optional<InternetDomainName> tld = findTldForName(hostName);
     if (!tld.isPresent()) {
-      // This is an host on a TLD we don't run, therefore obviously external, so we are done.
+      // This is a host on a TLD we don't run, therefore obviously external, so we are done.
       return Optional.empty();
     }
     // This is a subordinate host

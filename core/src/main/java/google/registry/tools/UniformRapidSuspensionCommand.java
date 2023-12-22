@@ -233,7 +233,7 @@ final class UniformRapidSuspensionCommand extends MutatingEppToolCommand {
   }
 
   private ImmutableList<ImmutableMap<String, Object>> getExistingDsData(Domain domain) {
-    ImmutableList.Builder<ImmutableMap<String, Object>> dsDataJsons = new ImmutableList.Builder();
+    ImmutableList.Builder<ImmutableMap<String, Object>> dsDataJsons = new ImmutableList.Builder<>();
     HexBinaryAdapter hexBinaryAdapter = new HexBinaryAdapter();
     for (DomainDsData dsData : domain.getDsData()) {
       dsDataJsons.add(
@@ -251,11 +251,12 @@ final class UniformRapidSuspensionCommand extends MutatingEppToolCommand {
     if (undo) {
       return "";
     }
-    StringBuilder undoBuilder = new StringBuilder("UNDO COMMAND:\n\n)")
-        .append("nomulus -e ")
-        .append(RegistryToolEnvironment.get())
-        .append(" uniform_rapid_suspension --undo --domain_name ")
-        .append(domainName);
+    StringBuilder undoBuilder =
+        new StringBuilder("UNDO COMMAND:\n\n")
+            .append("nomulus -e ")
+            .append(RegistryToolEnvironment.get())
+            .append(" uniform_rapid_suspension --undo --domain_name ")
+            .append(domainName);
     if (!existingNameservers.isEmpty()) {
       undoBuilder.append(" --hosts ").append(Joiner.on(',').join(existingNameservers));
     }
