@@ -18,20 +18,21 @@ import dagger.Module;
 import dagger.Subcomponent;
 import google.registry.bsa.BsaDownloadAction;
 import google.registry.bsa.BsaRefreshAction;
+import google.registry.bsa.UploadBsaUnavailableDomainsAction;
+import google.registry.request.Modules.UrlConnectionServiceModule;
 import google.registry.request.RequestComponentBuilder;
 import google.registry.request.RequestModule;
 import google.registry.request.RequestScope;
 
 @RequestScope
-@Subcomponent(
-    modules = {
-      RequestModule.class,
-    })
+@Subcomponent(modules = {RequestModule.class, UrlConnectionServiceModule.class})
 interface BsaRequestComponent {
 
   BsaDownloadAction bsaDownloadAction();
 
   BsaRefreshAction bsaRefreshAction();
+
+  UploadBsaUnavailableDomainsAction uploadBsaUnavailableDomains();
 
   @Subcomponent.Builder
   abstract class Builder implements RequestComponentBuilder<BsaRequestComponent> {

@@ -33,6 +33,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
 import dagger.Module;
 import dagger.Provides;
+import google.registry.bsa.UploadBsaUnavailableDomainsAction;
 import google.registry.dns.ReadDnsRefreshRequestsAction;
 import google.registry.model.common.DnsRefreshRequest;
 import google.registry.persistence.transaction.JpaTransactionManager;
@@ -268,6 +269,18 @@ public final class RegistryConfig {
     @Config("domainListsGcsBucket")
     public static String provideDomainListsGcsBucket(@Config("projectId") String projectId) {
       return projectId + "-domain-lists";
+    }
+
+    /**
+     * The GCS bucket for exporting lists of unavailable names for the BSA.
+     *
+     * @see UploadBsaUnavailableDomainsAction
+     */
+    @Provides
+    @Config("bsaUnavailableDomainsGcsBucket")
+    public static String provideBsaUnavailableNamesGcsBucket(
+        @Config("projectId") String projectId) {
+      return projectId + "-bsa-unavailable-domains";
     }
 
     /**
@@ -1493,6 +1506,12 @@ public final class RegistryConfig {
     @Config("bsaRemoveUnblockableDomainsUrl")
     public static String provideBsaRemoveUnblockableDomainsUrls(RegistryConfigSettings config) {
       return String.format("%s?%s", config.bsa.unblockableDomainsUrl, "action=remove");
+    }
+
+    @Provides
+    @Config("bsaUploadUnavailableDomainsUrl")
+    public static String provideBsaUploadUnavailableDomainsUrl(RegistryConfigSettings config) {
+      return config.bsa.uploadUnavailableDomainsUrl;
     }
 
     private static String formatComments(String text) {
