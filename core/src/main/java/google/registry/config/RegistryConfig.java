@@ -271,6 +271,18 @@ public final class RegistryConfig {
     }
 
     /**
+     * The GCS bucket for exporting lists of unavailable names for the BSA.
+     *
+     * @see google.registry.bsa.UploadBsaUnavailableDomains
+     */
+    @Provides
+    @Config("bsaUnavailableDomainsGcsBucket")
+    public static String provideBsaUnavailableNamesGcsBucket(
+        @Config("projectId") String projectId) {
+      return projectId + "-bsa-unavailable-domains";
+    }
+
+    /**
      * Returns the Google Cloud Storage bucket for staging BRDA escrow deposits.
      *
      * @see google.registry.rde.PendingDepositChecker

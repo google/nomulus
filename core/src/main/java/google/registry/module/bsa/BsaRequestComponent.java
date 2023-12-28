@@ -17,6 +17,7 @@ package google.registry.module.bsa;
 import dagger.Module;
 import dagger.Subcomponent;
 import google.registry.bsa.PlaceholderAction;
+import google.registry.bsa.UploadBsaUnavailableDomains;
 import google.registry.request.RequestComponentBuilder;
 import google.registry.request.RequestModule;
 import google.registry.request.RequestScope;
@@ -29,6 +30,8 @@ import google.registry.request.RequestScope;
 interface BsaRequestComponent {
 
   PlaceholderAction bsaAction();
+
+  UploadBsaUnavailableDomains uploadBsaUnavailableDomains();
 
   @Subcomponent.Builder
   abstract class Builder implements RequestComponentBuilder<BsaRequestComponent> {
