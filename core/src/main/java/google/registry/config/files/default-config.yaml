@@ -643,3 +643,5 @@ bsa:
   orderStatusUrl: "https://"
   # Http endpoint for reporting changes in the set of unblockable domains.
   unblockableDomainsUrl: "https://"
+  # API endpoint for uploading the list of unavailable domain names.
+  uploadUnavailableDomainsUrl: "https://"
