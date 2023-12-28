@@ -63,15 +63,13 @@ public final class ReservedList
     extends BaseDomainLabelList<ReservationType, ReservedList.ReservedListEntry> {
 
   /**
-   * Mapping from domain name to its reserved list info.
+   * Mapping from domain label to its reserved list info.
    *
    * <p>This field requires special treatment since we want to lazy load it. We have to remove it
    * from the immutability contract so we can modify it after construction and we have to handle the
    * database processing on our own so we can detach it after load.
    */
-  @Insignificant
-  @Transient
-  Map<String, ReservedListEntry> reservedListMap;
+  @Insignificant @Transient Map<String, ReservedListEntry> reservedListMap;
 
   @Column(nullable = false)
   boolean shouldPublish = true;
@@ -269,7 +267,7 @@ public final class ReservedList
   }
 
   /** Loads and returns the reserved lists with the given names, skipping those that don't exist. */
-  private static ImmutableSet<ReservedList> loadReservedLists(
+  public static ImmutableSet<ReservedList> loadReservedLists(
       ImmutableSet<String> reservedListNames) {
     return cache.getAll(reservedListNames).values().stream()
         .filter(Optional::isPresent)
