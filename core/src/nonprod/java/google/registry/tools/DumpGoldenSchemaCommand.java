@@ -16,6 +16,7 @@ package google.registry.tools;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
+import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Path;
@@ -61,13 +62,15 @@ public class DumpGoldenSchemaCommand extends PostgresqlCommand {
     String databaseName = postgresContainer.getDatabaseName();
     Container.ExecResult result =
         postgresContainer.execInContainer(getSchemaDumpCommand(userName, databaseName));
-    System.out.println(">> Exec in container " + result);
+
     if (result.getExitCode() != 0) {
       throw new RuntimeException(result.toString());
     }
+
+    postgresContainer.execInContainer("cp", CONTAINER_MOUNT_POINT_TMP, CONTAINER_MOUNT_POINT);
     result =
-        postgresContainer.execInContainer("cp", CONTAINER_MOUNT_POINT_TMP, CONTAINER_MOUNT_POINT);
-    System.out.println(">> Exec in container " + result);
+        postgresContainer.execInContainer("ls", "-la", "/tmp");
+    System.out.println(result);
     if (result.getExitCode() != 0) {
       throw new RuntimeException(result.toString());
     }
