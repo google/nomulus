@@ -15,7 +15,7 @@
 package google.registry.bsa.persistence;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.bsa.BsaTransactions.*;
+import static google.registry.bsa.BsaTransactions.bsaTransact;
 import static google.registry.bsa.persistence.BsaLabelTestingUtils.persistBsaLabel;
 import static google.registry.model.tld.label.ReservationType.RESERVED_FOR_SPECIFIC_USE;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;

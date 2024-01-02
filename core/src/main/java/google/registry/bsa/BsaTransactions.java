@@ -23,7 +23,7 @@ import java.util.concurrent.Callable;
 /**
  * Helpers for executing JPA transactions for BSA processing.
  *
- * <p>All mutating transactions for BSA may be executed at the {@link TRANSACTION_REPEATABLE_READ}
+ * <p>All mutating transactions for BSA may be executed at the {@code TRANSACTION_REPEATABLE_READ}
  * level.
  */
 public final class BsaTransactions {
