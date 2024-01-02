@@ -16,6 +16,8 @@ package google.registry.whois;
 
 import static com.google.common.net.MediaType.PLAIN_TEXT_UTF_8;
 import static com.google.common.truth.Truth.assertThat;
+import static google.registry.bsa.persistence.BsaLabelTestingUtils.persistBsaLabel;
+import static google.registry.model.registrar.Registrar.State.ACTIVE;
 import static google.registry.testing.DatabaseHelper.createTlds;
 import static google.registry.testing.DatabaseHelper.loadRegistrar;
 import static google.registry.testing.DatabaseHelper.persistResource;
@@ -45,6 +47,7 @@ import google.registry.testing.FullFieldsTestEntityHelper;
 import google.registry.whois.WhoisMetrics.WhoisMetric;
 import java.io.IOException;
 import java.io.Reader;
+import java.util.Optional;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
 import org.junit.jupiter.api.BeforeEach;
@@ -74,7 +77,8 @@ class WhoisHttpActionTest {
     whoisAction.requestPath = WhoisHttpAction.PATH + pathInfo;
     whoisAction.response = response;
     whoisAction.whoisReader =
-        new WhoisReader(WhoisCommandFactory.createCached(), "Please contact registrar");
+        new WhoisReader(
+            WhoisCommandFactory.createCached(), "Please contact registrar", "Blocked by BSA: %s");
     whoisAction.whoisMetrics = new WhoisMetrics();
     whoisAction.metricBuilder = WhoisMetric.builderForRequest(clock);
     whoisAction.disclaimer =
@@ -212,6 +216,51 @@ class WhoisHttpActionTest {
     newWhoisHttpAction("cat.みんな").run();
     assertThat(response.getStatus()).isEqualTo(200);
     assertThat(response.getPayload()).contains("Domain Name: cat.みんな\r\n");
+  }
+
+  @Test
+  void testRun_domainQuery_registeredDomainUnaffectedByBsa() {
+    persistResource(
+        Tld.get("lol")
+            .asBuilder()
+            .setBsaEnrollStartTime(Optional.of(clock.nowUtc().minusDays(1)))
+            .build());
+    persistBsaLabel("cat", clock.nowUtc());
+
+    Registrar registrar = persistResource(makeRegistrar("evilregistrar", "Yes Virginia", ACTIVE));
+    persistResource(
+        makeDomain(
+            "cat.lol",
+            persistResource(
+                FullFieldsTestEntityHelper.makeContact(
+                    "5372808-ERL", "Goblin Market", "lol@cat.lol")),
+            persistResource(
+                FullFieldsTestEntityHelper.makeContact(
+                    "5372808-IRL", "Santa Claus", "BOFH@cat.lol")),
+            persistResource(
+                FullFieldsTestEntityHelper.makeContact("5372808-TRL", "The Raven", "bog@cat.lol")),
+            persistResource(FullFieldsTestEntityHelper.makeHost("ns1.cat.lol", "1.2.3.4")),
+            persistResource(
+                FullFieldsTestEntityHelper.makeHost("ns2.cat.lol", "bad:f00d:cafe::15:beef")),
+            registrar));
+    persistSimpleResources(makeRegistrarPocs(registrar));
+    newWhoisHttpAction("domain cat.lol\r\n").run();
+    assertThat(response.getStatus()).isEqualTo(200);
+    assertThat(response.getPayload()).isEqualTo(loadFile("whois_action_domain.txt"));
+  }
+
+  @Test
+  void testRun_domainQuery_unregisteredDomainShowBsaMessage() {
+    persistResource(
+        Tld.get("lol")
+            .asBuilder()
+            .setBsaEnrollStartTime(Optional.of(clock.nowUtc().minusDays(1)))
+            .build());
+    persistBsaLabel("cat", clock.nowUtc());
+
+    newWhoisHttpAction("domain cat.lol\r\n").run();
+    assertThat(response.getStatus()).isEqualTo(404);
+    assertThat(response.getPayload()).isEqualTo(loadFile("whois_action_domain_blocked_by_bsa.txt"));
   }
 
   @Test

@@ -49,28 +49,29 @@ class WhoisReaderTest {
   @SuppressWarnings({"TypeParameterUnusedInFormals", "unchecked"})
   <T> T readCommand(String commandStr) throws Exception {
     return (T)
-        new WhoisReader(WhoisCommandFactory.createCached(), "Please contact registrar")
+        new WhoisReader(
+                WhoisCommandFactory.createCached(), "Please contact registrar", "Blocked by BSA")
             .readCommand(new StringReader(commandStr), false, clock.nowUtc());
   }
 
   void assertLoadsExampleTld(String commandString) throws Exception {
     DomainLookupCommand command = readCommand(commandString);
-    assertThat(command.domainOrHostName.toString()).isEqualTo("example.tld");
+    assertThat(command.domainName.toString()).isEqualTo("example.tld");
   }
 
   void assertLoadsIDN(String commandString) throws Exception {
     DomainLookupCommand command = readCommand(commandString);
-    assertThat(command.domainOrHostName.toString()).isEqualTo("xn--mgbh0fb.xn--kgbechtv");
+    assertThat(command.domainName.toString()).isEqualTo("xn--mgbh0fb.xn--kgbechtv");
   }
 
   void assertLoadsExampleNs(String commandString) throws Exception {
     NameserverLookupByHostCommand command = readCommand(commandString);
-    assertThat(command.domainOrHostName.toString()).isEqualTo("ns.example.tld");
+    assertThat(command.hostName.toString()).isEqualTo("ns.example.tld");
   }
 
   void assertLoadsIDNNs(String commandString) throws Exception {
     NameserverLookupByHostCommand command = readCommand(commandString);
-    assertThat(command.domainOrHostName.toString()).isEqualTo("ns.xn--mgbh0fb.xn--kgbechtv");
+    assertThat(command.hostName.toString()).isEqualTo("ns.xn--mgbh0fb.xn--kgbechtv");
   }
 
   void assertNsLookup(String commandString, String expectedIpAddress) throws Exception {
@@ -173,8 +174,8 @@ class WhoisReaderTest {
   @Test
   void testDeepNameserverLookup() throws Exception {
     NameserverLookupByHostCommand command = readCommand("ns.foo.bar.baz.example.tld\r\n");
-    assertThat(command.domainOrHostName.toString()).isEqualTo("ns.foo.bar.baz.example.tld");
-    assertThat(command.domainOrHostName.toString()).isEqualTo("ns.foo.bar.baz.example.tld");
+    assertThat(command.hostName.toString()).isEqualTo("ns.foo.bar.baz.example.tld");
+    assertThat(command.hostName.toString()).isEqualTo("ns.foo.bar.baz.example.tld");
   }
 
   @Test

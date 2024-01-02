@@ -1045,6 +1045,17 @@ public final class RegistryConfig {
     }
 
     /**
+     * Message template for whois response when queried domain is blocked by BSA.
+     *
+     * @see google.registry.whois.WhoisResponse
+     */
+    @Provides
+    @Config("domainBlockedByBsaTemplate")
+    public static String provideDomainBlockedByBsaTemplate(RegistryConfigSettings config) {
+      return config.registryPolicy.domainBlockedByBsaTemplate;
+    }
+
+    /**
      * Maximum QPS for the Google Cloud Monitoring V3 (aka Stackdriver) API. The QPS limit can be
      * adjusted by contacting Cloud Support.
      *

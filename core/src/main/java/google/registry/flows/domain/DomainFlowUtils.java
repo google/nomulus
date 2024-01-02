@@ -269,9 +269,13 @@ public class DomainFlowUtils {
    */
   public static void verifyNotBlockedByBsa(String domainLabel, Tld tld, DateTime now)
       throws DomainLabelBlockedByBsaException {
-    if (isEnrolledWithBsa(tld, now) && isLabelBlocked(domainLabel)) {
+    if (isBlockedByBsa(domainLabel, tld, now)) {
       throw new DomainLabelBlockedByBsaException();
     }
+  }
+
+  public static boolean isBlockedByBsa(String domainLabel, Tld tld, DateTime now) {
+    return isEnrolledWithBsa(tld, now) && isLabelBlocked(domainLabel);
   }
 
   /** Returns whether a given domain create request is for a valid anchor tenant. */

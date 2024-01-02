@@ -105,6 +105,7 @@ public class RegistryConfigSettings {
     public String reservedTermsExportDisclaimer;
     public String whoisRedactedEmailText;
     public String whoisDisclaimer;
+    public String domainBlockedByBsaTemplate;
     public String rdapTos;
     public String rdapTosStaticUrl;
     public String registryName;
