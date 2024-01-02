@@ -66,6 +66,7 @@ public class DumpGoldenSchemaCommand extends PostgresqlCommand {
     }
     result =
         postgresContainer.execInContainer("cp", CONTAINER_MOUNT_POINT_TMP, CONTAINER_MOUNT_POINT);
+    System.out.println(">> Exec in container " + result);
     if (result.getExitCode() != 0) {
       throw new RuntimeException(result.toString());
     }
