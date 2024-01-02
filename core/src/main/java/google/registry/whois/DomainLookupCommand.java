@@ -60,29 +60,31 @@ public class DomainLookupCommand implements WhoisCommand {
   @Override
   public final WhoisResponse executeQuery(final DateTime now) throws WhoisException {
     Optional<InternetDomainName> tld = findTldForName(domainName);
-    // Transact here so that `getResponse` and `isBlockedByBsa` are covered by one transaction.
+    // Google Registry Policy: Do not return records under TLDs for which we're not
+    // authoritative.
+    if (!tld.isPresent() || !getTlds().contains(tld.get().toString())) {
+      throw new WhoisException(now, SC_NOT_FOUND, ERROR_PREFIX + " not found.");
+    }
+    // Include `getResponse` and `isBlockedByBsa` in one transaction to reduce latency.
     // Must pass the exceptions outside to throw.
     ResponseOrException result =
         tm().transact(
                 () -> {
-                  // Google Registry Policy: Do not return records under TLDs for which we're not
-                  // authoritative.
-                  if (tld.isPresent() && getTlds().contains(tld.get().toString())) {
-                    final Optional<WhoisResponse> response = getResponse(domainName, now);
-                    if (response.isPresent()) {
-                      return ResponseOrException.of(response.get());
-                    }
-
-                    String label = domainName.parts().get(0);
-                    String tldStr = tld.get().toString();
-                    if (isBlockedByBsa(label, Tld.get(tldStr), now)) {
-                      return ResponseOrException.of(
-                          new WhoisException(
-                              now,
-                              SC_NOT_FOUND,
-                              String.format(domainBlockedByBsaTemplate, domainName)));
-                    }
+                  final Optional<WhoisResponse> response = getResponse(domainName, now);
+                  if (response.isPresent()) {
+                    return ResponseOrException.of(response.get());
                   }
+
+                  String label = domainName.parts().get(0);
+                  String tldStr = tld.get().toString();
+                  if (isBlockedByBsa(label, Tld.get(tldStr), now)) {
+                    return ResponseOrException.of(
+                        new WhoisException(
+                            now,
+                            SC_NOT_FOUND,
+                            String.format(domainBlockedByBsaTemplate, domainName)));
+                  }
+
                   return ResponseOrException.of(
                       new WhoisException(now, SC_NOT_FOUND, ERROR_PREFIX + " not found."));
                 });
