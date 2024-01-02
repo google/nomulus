@@ -16,6 +16,7 @@ package google.registry.model.tld;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
+import static google.registry.model.tld.Tlds.hasActiveBsaEnrollment;
 import static google.registry.testing.DatabaseHelper.createTlds;
 import static google.registry.testing.DatabaseHelper.newTld;
 import static google.registry.testing.DatabaseHelper.persistResource;
@@ -25,15 +26,20 @@ import com.google.common.net.InternetDomainName;
 import google.registry.model.tld.Tld.TldType;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
+import google.registry.testing.FakeClock;
+import google.registry.util.Clock;
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link Tlds}. */
 class TldsTest {
 
+  Clock fakeClock = new FakeClock();
+
   @RegisterExtension
   final JpaIntegrationTestExtension jpa =
-      new JpaTestExtensions.Builder().buildIntegrationTestExtension();
+      new JpaTestExtensions.Builder().withClock(fakeClock).buildIntegrationTestExtension();
 
   private void initTestTlds() {
     createTlds("foo", "a.b.c"); // Test a multipart tld.
@@ -88,5 +94,45 @@ class TldsTest {
     assertThat(Tlds.findTldForName(InternetDomainName.from("x.y.b.c"))).isEmpty();
     // Substring tld matches aren't considered.
     assertThat(Tlds.findTldForName(InternetDomainName.from("example.barfoo"))).isEmpty();
+  }
+
+  @Test
+  void testHasActiveBsaEnrollment_noneEnrolled() {
+    initTestTlds();
+    assertThat(hasActiveBsaEnrollment(fakeClock.nowUtc())).isFalse();
+  }
+
+  @Test
+  void testHasActiveBsaEnrollment_enrolledInTheFuture() {
+    initTestTlds();
+    persistResource(
+        Tld.get("foo")
+            .asBuilder()
+            .setBsaEnrollStartTime(Optional.of(fakeClock.nowUtc().plusSeconds(1)))
+            .build());
+    assertThat(hasActiveBsaEnrollment(fakeClock.nowUtc())).isFalse();
+  }
+
+  @Test
+  void testHasActiveBsaEnrollment_enrolledIsTestTld() {
+    initTestTlds();
+    persistResource(
+        Tld.get("foo")
+            .asBuilder()
+            .setTldType(TldType.TEST)
+            .setBsaEnrollStartTime(Optional.of(fakeClock.nowUtc().minus(1)))
+            .build());
+    assertThat(hasActiveBsaEnrollment(fakeClock.nowUtc())).isFalse();
+  }
+
+  @Test
+  void testHasActiveBsaEnrollment_enrolled() {
+    initTestTlds();
+    persistResource(
+        Tld.get("foo")
+            .asBuilder()
+            .setBsaEnrollStartTime(Optional.of(fakeClock.nowUtc().minus(1)))
+            .build());
+    assertThat(hasActiveBsaEnrollment(fakeClock.nowUtc())).isTrue();
   }
 }

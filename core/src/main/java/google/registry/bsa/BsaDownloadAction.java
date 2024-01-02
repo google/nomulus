@@ -37,6 +37,7 @@ import google.registry.bsa.api.UnblockableDomain;
 import google.registry.bsa.persistence.DownloadSchedule;
 import google.registry.bsa.persistence.DownloadScheduler;
 import google.registry.config.RegistryConfig.Config;
+import google.registry.model.tld.Tlds;
 import google.registry.request.Action;
 import google.registry.request.Response;
 import google.registry.request.auth.Auth;
@@ -108,6 +109,11 @@ public class BsaDownloadAction implements Runnable {
   }
 
   Void runWithinLock() {
+    // Cannot enroll new TLDs after download starts. This may change if b/309175410 is fixed.
+    if (!Tlds.hasActiveBsaEnrollment(clock.nowUtc())) {
+      logger.atInfo().log("No TLDs enrolled with BSA. Quitting.");
+      return null;
+    }
     Optional<DownloadSchedule> scheduleOptional = downloadScheduler.schedule();
     if (!scheduleOptional.isPresent()) {
       logger.atInfo().log("Nothing to do.");
@@ -138,6 +144,7 @@ public class BsaDownloadAction implements Runnable {
                 "Checksums match but download anyway: elapsed time since last download exceeds"
                     + " configured limit.");
           }
+          // When downloading, always fetch both lists so that whole data set is in one GCS folder.
           ImmutableMap<BlockListType, String> actualChecksum =
               gcsClient.saveAndChecksumBlockList(
                   schedule.jobName(), ImmutableList.of(block, blockPlus));

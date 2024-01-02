@@ -27,6 +27,7 @@ import google.registry.bsa.persistence.DomainsRefresher;
 import google.registry.bsa.persistence.RefreshSchedule;
 import google.registry.bsa.persistence.RefreshScheduler;
 import google.registry.config.RegistryConfig.Config;
+import google.registry.model.tld.Tlds;
 import google.registry.request.Action;
 import google.registry.request.Response;
 import google.registry.request.auth.Auth;
@@ -94,6 +95,11 @@ public class BsaRefreshAction implements Runnable {
 
   /** Executes the refresh action while holding the BSA lock. */
   Void runWithinLock() {
+    // Cannot enroll new TLDs after download starts. This may change if b/309175410 is fixed.
+    if (!Tlds.hasActiveBsaEnrollment(clock.nowUtc())) {
+      logger.atInfo().log("No TLDs enrolled with BSA. Quitting.");
+      return null;
+    }
     Optional<RefreshSchedule> maybeSchedule = scheduler.schedule();
     if (!maybeSchedule.isPresent()) {
       logger.atInfo().log("No completed downloads yet. Exiting.");

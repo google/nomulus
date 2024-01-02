@@ -104,6 +104,7 @@ public class BsaReportSender {
         } catch (Exception e) {
           errorDetails = "Failed to retrieve error message: " + e.getMessage();
         }
+        // TODO(b/318404541): sanitize errorDetails to prevent log injection attack.
         throw new BsaException(
             String.format(
                 "Status code: [%s], error: [%s], details: [%s]",
