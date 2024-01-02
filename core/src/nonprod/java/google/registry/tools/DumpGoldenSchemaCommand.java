@@ -61,6 +61,7 @@ public class DumpGoldenSchemaCommand extends PostgresqlCommand {
     String databaseName = postgresContainer.getDatabaseName();
     Container.ExecResult result =
         postgresContainer.execInContainer(getSchemaDumpCommand(userName, databaseName));
+    System.out.println(">> Exec in container " + result);
     if (result.getExitCode() != 0) {
       throw new RuntimeException(result.toString());
     }
