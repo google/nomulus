@@ -213,6 +213,7 @@ dependencies {
   implementation deps['com.jcraft:jsch']
   testImplementation deps['com.thoughtworks.qdox:qdox']
   implementation deps['com.zaxxer:HikariCP']
+  implementation deps['com.squareup.okhttp3:okhttp']
   implementation deps['dnsjava:dnsjava']
   runtime deps['guru.nidi:graphviz-java-all-j2v8']
   testImplementation deps['io.github.classgraph:classgraph']
