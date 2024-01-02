@@ -64,9 +64,7 @@ public final class LabelDiffUpdates {
     ImmutableList.Builder<UnblockableDomain> nonBlockedDomains = new ImmutableList.Builder<>();
     ImmutableMap<LabelType, ImmutableList<BlockLabel>> labelsByType =
         ImmutableMap.copyOf(
-            labels.stream()
-                .filter(label -> isValidInAtLeastOneTld(label, idnChecker))
-                .collect(groupingBy(BlockLabel::labelType, toImmutableList())));
+            labels.stream().collect(groupingBy(BlockLabel::labelType, toImmutableList())));
 
     tm().transact(
             () -> {
@@ -74,10 +72,11 @@ public final class LabelDiffUpdates {
                   labelsByType.entrySet()) {
                 switch (entry.getKey()) {
                   case CREATE:
-                    // With current Cloud SQL, label upsert throughput is about 250/second. If
+                    // With current Cloud SQL, label upsert throughput is about 200/second. If
                     // better performance is needed, consider bulk insert in native SQL.
                     tm().putAll(
                             entry.getValue().stream()
+                                .filter(label -> isValidInAtLeastOneTld(label, idnChecker))
                                 .map(
                                     label ->
                                         new BsaLabel(label.label(), schedule.jobCreationTime()))
@@ -89,7 +88,10 @@ public final class LabelDiffUpdates {
                     break;
                   case DELETE:
                     ImmutableSet<String> deletedLabels =
-                        entry.getValue().stream().map(BlockLabel::label).collect(toImmutableSet());
+                        entry.getValue().stream()
+                            .filter(label -> isValidInAtLeastOneTld(label, idnChecker))
+                            .map(BlockLabel::label)
+                            .collect(toImmutableSet());
                     // Delete labels in DB. Also cascade-delete BsaUnblockableDomain.
                     int nDeleted = Queries.deleteBsaLabelByLabels(deletedLabels);
                     if (nDeleted != deletedLabels.size()) {
@@ -100,7 +102,10 @@ public final class LabelDiffUpdates {
                     break;
                   case NEW_ORDER_ASSOCIATION:
                     ImmutableSet<String> affectedLabels =
-                        entry.getValue().stream().map(BlockLabel::label).collect(toImmutableSet());
+                        entry.getValue().stream()
+                            .filter(label -> isValidInAtLeastOneTld(label, idnChecker))
+                            .map(BlockLabel::label)
+                            .collect(toImmutableSet());
                     ImmutableSet<String> labelsInDb =
                         Queries.queryBsaLabelByLabels(affectedLabels)
                             .map(BsaLabel::getLabel)
