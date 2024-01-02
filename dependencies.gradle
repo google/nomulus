@@ -143,8 +143,8 @@ ext {
       'com.google.errorprone:error_prone_annotations:[2.7.1,)',
       'com.google.flogger:flogger-system-backend:[0.7.4,)',
       'com.google.flogger:flogger:[0.7.4,)',
-      'com.google.guava:guava-testlib:[32.1.1-jre,)',
-      'com.google.guava:guava:[32.1.1-jre,)',
+      'com.google.guava:guava-testlib:[33.0.0-jre,)',
+      'com.google.guava:guava:[33.0.0-jre,)',
       'com.google.gwt:gwt-user:[2.9.0,)',
       'com.google.http-client:google-http-client-appengine:[1.39.0,)',
       'com.google.http-client:google-http-client-jackson2:[1.39.0,)',
@@ -168,6 +168,7 @@ ext {
       'com.jcraft:jsch:[0.1.55,)',
       'commons-codec:commons-codec:[1.15,)',
       'com.squareup:javapoet:[1.13.0,)',
+      'com.squareup.okhttp3:okhttp:[4.10.0,4.99.0]', // Don't use v5 which is in alpha yet.
       'com.sun.activation:javax.activation:[1.2.0,)',
       'com.sun.xml.bind:jaxb-impl:[2.3.3,)',
       'com.sun.xml.bind:jaxb-osgi:[2.3.3,)',
