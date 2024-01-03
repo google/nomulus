@@ -16,7 +16,6 @@ package google.registry.tools;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
-import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Path;
@@ -68,8 +67,7 @@ public class DumpGoldenSchemaCommand extends PostgresqlCommand {
     }
 
     postgresContainer.execInContainer("cp", CONTAINER_MOUNT_POINT_TMP, CONTAINER_MOUNT_POINT);
-    result =
-        postgresContainer.execInContainer("ls", "-la", "/tmp");
+    result = postgresContainer.execInContainer("ls", "-la", "/tmp");
     System.out.println(result);
     if (result.getExitCode() != 0) {
       throw new RuntimeException(result.toString());
@@ -77,11 +75,18 @@ public class DumpGoldenSchemaCommand extends PostgresqlCommand {
   }
 
   @Override
-  protected void onContainerCreate() throws IOException {
+  protected void onContainerCreate() {
     // open the output file for write so we can mount it.
-    // new FileOutputStream(output.toFile()).close();
-    // postgresContainer.withFileSystemBind(
-    //     output.toString(), CONTAINER_MOUNT_POINT, BindMode.READ_WRITE);
+    try {
+      new FileOutputStream(output.toFile()).close();
+      postgresContainer.withFileSystemBind(
+          output.toString(), CONTAINER_MOUNT_POINT, BindMode.READ_WRITE);
+      ProcessBuilder pb2 = new ProcessBuilder("ls", "-la", output.toString());
+      pb2.inheritIO();
+      pb2.start();
+    } catch (Exception e) {
+      System.out.println(">> Exception = " + e.getMessage());
+    }
   }
 
   private static String[] getSchemaDumpCommand(String username, String dbName) {
