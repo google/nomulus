@@ -59,6 +59,7 @@ public abstract class PostgresqlCommand implements Command {
   private boolean initializeDatabase() {
     // Start PostgreSQL if requested.
     if (startPostgresql) {
+      System.out.println(">> startPostgresql = ");
       // Complain if the user has also specified either --db_host or --db_port.
       if (databaseHost != null || databasePort != null) {
         System.err.println(DB_OPTIONS_CLASH);
@@ -72,9 +73,11 @@ public abstract class PostgresqlCommand implements Command {
               .withDatabaseName(DB_NAME)
               .withUsername(DB_USERNAME)
               .withPassword(DB_PASSWORD);
+      System.out.println(">> PSQL Container = " + postgresContainer);
       try {
         onContainerCreate();
       } catch (Exception e) {
+        System.out.println(">> onContainerCreate exception = " + e.getMessage());
         logger.atSevere().withCause(e).log("Error in container callback hook.");
         return false;
       }
