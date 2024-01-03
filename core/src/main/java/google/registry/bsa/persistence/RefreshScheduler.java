@@ -16,28 +16,18 @@ package google.registry.bsa.persistence;
 
 import static google.registry.bsa.persistence.DownloadScheduler.fetchMostRecentDownload;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static org.joda.time.Duration.standardSeconds;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
-import google.registry.util.Clock;
 import java.util.Optional;
 import javax.inject.Inject;
 import org.joda.time.DateTime;
-import org.joda.time.Duration;
 
 /** Assigns work for each cron invocation of domain refresh job. */
 public class RefreshScheduler {
 
-  /** Allows a new download to proceed if the cron job fires a little early due to NTP drift. */
-  private static final Duration CRON_JITTER = standardSeconds(5);
-
-  private final Clock clock;
-
   @Inject
-  RefreshScheduler(Clock clock) {
-    this.clock = clock;
-  }
+  RefreshScheduler() {}
 
   public Optional<RefreshSchedule> schedule() {
     return tm().transact(

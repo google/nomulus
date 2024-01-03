@@ -15,6 +15,7 @@
 package google.registry.bsa;
 
 import static google.registry.bsa.BsaStringUtils.LINE_SPLITTER;
+import static google.registry.request.Action.Method.GET;
 import static google.registry.request.Action.Method.POST;
 import static javax.servlet.http.HttpServletResponse.SC_OK;
 
@@ -41,7 +42,7 @@ import org.joda.time.Duration;
 @Action(
     service = Action.Service.BSA,
     path = BsaRefreshAction.PATH,
-    method = POST,
+    method = {GET, POST},
     auth = Auth.AUTH_API_ADMIN)
 public class BsaRefreshAction implements Runnable {
 

@@ -44,7 +44,7 @@ public class RefreshSchedulerTest {
 
   @BeforeEach
   void setup() {
-    scheduler = new RefreshScheduler(fakeClock);
+    scheduler = new RefreshScheduler();
   }
 
   @Test

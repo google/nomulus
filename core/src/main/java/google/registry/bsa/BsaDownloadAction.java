@@ -20,6 +20,7 @@ import static google.registry.bsa.api.JsonSerializations.toCompletedOrdersReport
 import static google.registry.bsa.api.JsonSerializations.toInProgressOrdersReport;
 import static google.registry.bsa.api.JsonSerializations.toUnblockableDomainsReport;
 import static google.registry.bsa.persistence.LabelDiffUpdates.applyLabelDiff;
+import static google.registry.request.Action.Method.GET;
 import static google.registry.request.Action.Method.POST;
 import static google.registry.util.BatchedStreams.toBatches;
 import static javax.servlet.http.HttpServletResponse.SC_OK;
@@ -50,7 +51,7 @@ import javax.inject.Inject;
 @Action(
     service = Action.Service.BSA,
     path = BsaDownloadAction.PATH,
-    method = POST,
+    method = {GET, POST},
     auth = Auth.AUTH_API_ADMIN)
 public class BsaDownloadAction implements Runnable {
 
