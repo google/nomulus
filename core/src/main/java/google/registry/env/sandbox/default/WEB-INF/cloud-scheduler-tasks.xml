@@ -162,4 +162,14 @@
     </description>
     <schedule>0 15 * * 1</schedule>
   </task>
+
+  <task>
+    <url><![CDATA[/_dr/task/bsaDownload]]></url>
+    <name>bsaDownload</name>
+    <description>
+      Downloads the BSA block lists and processes the changes.
+    </description>
+    <!-- Runs every hour. -->
+    <schedule>0 * * * *</schedule>
+  </task>
 </entries>
