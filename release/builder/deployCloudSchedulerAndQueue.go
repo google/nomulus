@@ -67,6 +67,7 @@ type Task struct {
 	Description string `xml:"description"`
 	Schedule    string `xml:"schedule"`
 	Name        string `xml:"name"`
+	Service 		string `xml:"service"`
 }
 
 type QueuesSyncManager struct {
@@ -180,13 +181,18 @@ func (manager TasksSyncManager) getArgs(task Task, operationType string) []strin
 	}
 	description = strings.ReplaceAll(description, "\n", " ")
 
+	var service = "backend"
+	if task.Service != "backend" && task.Service != "" {
+		service = task.Service
+	}
+
 	return []string{
 		"--project", projectName,
 		"scheduler", "jobs", operationType,
 		"http", task.Name,
 		"--location", GcpLocation,
 		"--schedule", task.Schedule,
-		"--uri", fmt.Sprintf("https://backend-dot-%s.appspot.com%s", projectName, strings.TrimSpace(task.URL)),
+		"--uri", fmt.Sprintf("https://%s-dot-%s.appspot.com%s", service, projectName, strings.TrimSpace(task.URL)),
 		"--description", description,
 		"--http-method", "get",
 		"--oidc-service-account-email", getCloudSchedulerServiceAccountEmail(),
@@ -313,7 +319,7 @@ func getExistingEntries(cmd *exec.Cmd) ExistingEntries {
 func main() {
 	if len(os.Args) < 4 || os.Args[1] == "" || os.Args[2] == "" || os.Args[3] == "" {
 		panic("Error - Invalid Parameters.\n" +
-			"Required params: 1 - Nomulu config YAML path; 2 - config XML path; 3 - project name;")
+			"Required params: 1 - Nomulus config YAML path; 2 - config XML path; 3 - project name;")
 	}
 	// Nomulus YAML config file path, used to extract OAuth client ID.
 	nomulusConfigFileLocation := os.Args[1]
