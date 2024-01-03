@@ -76,14 +76,19 @@ public class DumpGoldenSchemaCommand extends PostgresqlCommand {
 
   @Override
   protected void onContainerCreate() {
+    System.out.println(">> onContainerCreate");
     // open the output file for write so we can mount it.
     try {
+      ProcessBuilder pb1 = new ProcessBuilder("ls", "-la", output.toString());
+      pb1.inheritIO();
+      pb1.start();
       new FileOutputStream(output.toFile()).close();
-      postgresContainer.withFileSystemBind(
-          output.toString(), CONTAINER_MOUNT_POINT, BindMode.READ_WRITE);
       ProcessBuilder pb2 = new ProcessBuilder("ls", "-la", output.toString());
       pb2.inheritIO();
       pb2.start();
+      postgresContainer.withFileSystemBind(
+          output.toString(), CONTAINER_MOUNT_POINT, BindMode.READ_WRITE);
+
     } catch (Exception e) {
       System.out.println(">> Exception = " + e.getMessage());
     }
