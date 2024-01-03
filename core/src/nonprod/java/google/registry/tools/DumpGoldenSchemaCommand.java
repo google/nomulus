@@ -67,7 +67,7 @@ public class DumpGoldenSchemaCommand extends PostgresqlCommand {
       throw new RuntimeException(result.toString());
     }
 
-    postgresContainer.execInContainer("cp", CONTAINER_MOUNT_POINT_TMP, CONTAINER_MOUNT_POINT);
+    // postgresContainer.execInContainer("cp", CONTAINER_MOUNT_POINT_TMP, CONTAINER_MOUNT_POINT);
     result =
         postgresContainer.execInContainer("ls", "-la", "/tmp");
     System.out.println(result);
@@ -81,7 +81,7 @@ public class DumpGoldenSchemaCommand extends PostgresqlCommand {
     // open the output file for write so we can mount it.
     new FileOutputStream(output.toFile()).close();
     postgresContainer.withFileSystemBind(
-        output.toString(), CONTAINER_MOUNT_POINT, BindMode.READ_WRITE);
+        output.toString(), CONTAINER_MOUNT_POINT_TMP, BindMode.READ_WRITE);
   }
 
   private static String[] getSchemaDumpCommand(String username, String dbName) {
