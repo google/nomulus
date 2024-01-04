@@ -49,7 +49,7 @@ public class PathParameter extends ParameterConverterValidator<Path> {
     public void validate(String name, String value) throws ParameterException {
       super.validate(name, value);
       Path file = convert(value).toAbsolutePath();
-      System.out.println(">> OutputFile 1");
+      System.out.println(">> OutputFile 1 = " + name + " " + value);
       if (Files.exists(file)) {
         System.out.println(">> OutputFile exist");
         if (Files.isDirectory(file)) {
