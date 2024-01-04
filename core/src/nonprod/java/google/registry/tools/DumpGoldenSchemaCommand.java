@@ -38,6 +38,7 @@ public class DumpGoldenSchemaCommand extends PostgresqlCommand {
 
   // Temporary workaround to fix permission issues on certain Linux distro (e. g. Arch Linux).
   private static final String CONTAINER_MOUNT_POINT_TMP = "/tmpfs/tmp/pg_dump.tmp";
+  
   @Parameter(
       names = {"--output", "-o"},
       description = "Output file",
