@@ -16,12 +16,14 @@ package google.registry.flows;
 
 import static com.google.common.base.Strings.nullToEmpty;
 import static com.google.common.net.HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN;
+import static google.registry.flows.domain.DomainFlowUtils.isBlockedByBsa;
 import static google.registry.flows.domain.DomainFlowUtils.validateDomainName;
 import static google.registry.flows.domain.DomainFlowUtils.validateDomainNameWithIdnTables;
 import static google.registry.flows.domain.DomainFlowUtils.verifyNotInPredelegation;
 import static google.registry.model.tld.label.ReservationType.getTypeOfHighestSeverity;
 import static google.registry.model.tld.label.ReservedList.getReservationTypes;
 import static google.registry.monitoring.whitebox.CheckApiMetric.Availability.AVAILABLE;
+import static google.registry.monitoring.whitebox.CheckApiMetric.Availability.BSA_BLOCKED;
 import static google.registry.monitoring.whitebox.CheckApiMetric.Availability.REGISTERED;
 import static google.registry.monitoring.whitebox.CheckApiMetric.Availability.RESERVED;
 import static google.registry.monitoring.whitebox.CheckApiMetric.Status.INVALID_NAME;
@@ -126,13 +128,25 @@ public class CheckApiAction implements Runnable {
 
       boolean isRegistered = checkExists(domainString, now);
       Optional<String> reservedError = Optional.empty();
+      boolean isBsaBlocked = false;
       boolean isReserved = false;
       if (!isRegistered) {
         reservedError = checkReserved(domainName);
         isReserved = reservedError.isPresent();
       }
-      Availability availability = isRegistered ? REGISTERED : (isReserved ? RESERVED : AVAILABLE);
-      String errorMsg = isRegistered ? "In use" : (isReserved ? reservedError.get() : null);
+      if (!isRegistered && !isReserved) {
+        isBsaBlocked = isBlockedByBsa(domainName.parts().get(0), tld, clock.nowUtc());
+      }
+      Availability availability =
+          isRegistered
+              ? REGISTERED
+              : (isReserved ? RESERVED : (isBsaBlocked ? BSA_BLOCKED : AVAILABLE));
+      String errorMsg =
+          isRegistered
+              ? "In use"
+              : (isReserved
+                  ? reservedError.get()
+                  : (isBsaBlocked ? "Blocked by the Brand Safety Alliance" : null));
 
       ImmutableMap.Builder<String, Object> responseBuilder = new ImmutableMap.Builder<>();
       metricBuilder.status(SUCCESS).availability(availability);

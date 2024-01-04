@@ -45,6 +45,7 @@ public abstract class CheckApiMetric {
   public enum Availability {
     RESERVED("reserved"),
     REGISTERED("registered"),
+    BSA_BLOCKED("blocked"),
     AVAILABLE("available");
 
     private final String displayLabel;
