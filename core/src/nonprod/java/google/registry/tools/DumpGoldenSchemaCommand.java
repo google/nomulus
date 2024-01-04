@@ -65,9 +65,6 @@ public class DumpGoldenSchemaCommand extends PostgresqlCommand {
       throw new RuntimeException(result.toString());
     }
     postgresContainer.copyFileFromContainer(CONTAINER_MOUNT_POINT, output.toString());
-    if (result.getExitCode() != 0) {
-      throw new RuntimeException(result.toString());
-    }
   }
 
   @Override
