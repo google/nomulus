@@ -69,6 +69,7 @@ public class DumpGoldenSchemaCommand extends PostgresqlCommand {
     postgresContainer.execInContainer("cp", CONTAINER_MOUNT_POINT_TMP, CONTAINER_MOUNT_POINT);
     result = postgresContainer.execInContainer("ls", "-la", "/tmp");
     System.out.println(result);
+    postgresContainer.copyFileFromContainer(CONTAINER_MOUNT_POINT_TMP, output.toString());
     if (result.getExitCode() != 0) {
       throw new RuntimeException(result.toString());
     }
@@ -77,20 +78,20 @@ public class DumpGoldenSchemaCommand extends PostgresqlCommand {
   @Override
   protected void onContainerCreate() {
     // open the output file for write so we can mount it.
-    System.out.println(">> onContainerCreate");
-    try {
-      System.out.println(">> onContainerCreate 1 ");
-      new FileOutputStream(output.toFile()).close();
-      System.out.println(">> onContainerCreate 2 ");
-      postgresContainer.addFileSystemBind(
-          output.toString(), CONTAINER_MOUNT_POINT, BindMode.READ_WRITE);
-      System.out.println(">> onContainerCreate 3 ");
-      ProcessBuilder pb2 = new ProcessBuilder("ls", "-la", output.toString());
-      pb2.inheritIO();
-      pb2.start();
-    } catch (Exception e) {
-      System.out.println(">> Exception = " + e.getMessage());
-    }
+    // System.out.println(">> onContainerCreate");
+    // try {
+    //   System.out.println(">> onContainerCreate 1 ");
+    //   new FileOutputStream(output.toFile()).close();
+    //   System.out.println(">> onContainerCreate 2 ");
+    //   postgresContainer.addFileSystemBind(
+    //       output.toString(), CONTAINER_MOUNT_POINT, BindMode.READ_WRITE);
+    //   System.out.println(">> onContainerCreate 3 ");
+    //   ProcessBuilder pb2 = new ProcessBuilder("ls", "-la", output.toString());
+    //   pb2.inheritIO();
+    //   pb2.start();
+    // } catch (Exception e) {
+    //   System.out.println(">> Exception = " + e.getMessage());
+    // }
   }
 
   private static String[] getSchemaDumpCommand(String username, String dbName) {
