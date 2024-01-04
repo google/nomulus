@@ -22,7 +22,6 @@ import static google.registry.bsa.DownloadStage.DOWNLOAD;
 import static google.registry.bsa.DownloadStage.MAKE_DIFF;
 import static google.registry.bsa.DownloadStage.NOP;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static org.joda.time.DateTimeZone.UTC;
 import static org.joda.time.Duration.standardDays;
 import static org.joda.time.Duration.standardMinutes;
 import static org.joda.time.Duration.standardSeconds;
@@ -49,7 +48,7 @@ public class DownloadSchedulerTest {
   static final Duration DOWNLOAD_INTERVAL = standardMinutes(30);
   static final Duration MAX_NOP_INTERVAL = standardDays(1);
 
-  protected FakeClock fakeClock = new FakeClock(DateTime.now(UTC));
+  protected FakeClock fakeClock = new FakeClock(DateTime.parse("2023-11-09T02:08:57.880Z"));
 
   @RegisterExtension
   final JpaIntegrationWithCoverageExtension jpa =
@@ -82,7 +81,7 @@ public class DownloadSchedulerTest {
     assertThat(scheduleOptional).isPresent();
     DownloadSchedule schedule = scheduleOptional.get();
     assertThat(schedule.latestCompleted()).isEmpty();
-    assertThat(schedule.jobName()).isEqualTo(fakeClock.nowUtc().toString());
+    assertThat(schedule.jobName()).isEqualTo("2023-11-09t020857.880z");
     assertThat(schedule.stage()).isEqualTo(DownloadStage.DOWNLOAD);
     assertThat(schedule.alwaysDownload()).isTrue();
   }

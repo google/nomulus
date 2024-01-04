@@ -14,6 +14,13 @@
 
 package google.registry.bsa.persistence;
 
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Verify.verify;
+import static google.registry.bsa.DownloadStage.CHECKSUMS_NOT_MATCH;
+import static google.registry.bsa.DownloadStage.MAKE_DIFF;
+import static google.registry.bsa.DownloadStage.NOP;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+
 import com.google.auto.value.AutoValue;
 import com.google.common.collect.ImmutableMap;
 import google.registry.bsa.BlockList;
@@ -37,7 +44,47 @@ public abstract class DownloadSchedule {
    * Returns true if download should be processed even if the checksums show that it has not changed
    * from the previous one.
    */
-  abstract boolean alwaysDownload();
+  public abstract boolean alwaysDownload();
+
+  /** Updates the current job to the new stage. */
+  public void updateJobStage(DownloadStage stage) {
+    tm().transact(
+            () -> {
+              BsaDownload bsaDownload = tm().loadByKey(BsaDownload.vKey(jobId()));
+              verify(
+                  stage.compareTo(bsaDownload.getStage()) > 0,
+                  "Invalid new stage [%s]. Must move forward from [%s]",
+                  bsaDownload.getStage(),
+                  stage);
+              bsaDownload.setStage(stage);
+              tm().put(bsaDownload);
+            });
+  }
+
+  /**
+   * Updates the current job to the new stage and sets the checksums of the downloaded files.
+   *
+   * <p>This method may only be invoked during the {@code DOWNLOAD} stage, and the target stage must
+   * be one of {@code MAKE_DIFF}, {@code NOP}, or {@code CHECKSUMS_NOT_MATCH}.
+   */
+  public void updateJobStage(DownloadStage stage, ImmutableMap<BlockList, String> checksums) {
+    checkArgument(
+        stage.equals(MAKE_DIFF) || stage.equals(NOP) || stage.equals(CHECKSUMS_NOT_MATCH),
+        "Invalid stage [%s]",
+        stage);
+    tm().transact(
+            () -> {
+              BsaDownload bsaDownload = tm().loadByKey(BsaDownload.vKey(jobId()));
+              verify(
+                  bsaDownload.getStage().equals(DownloadStage.DOWNLOAD),
+                  "Invalid invocation. May only invoke during the DOWNLOAD stage.",
+                  bsaDownload.getStage(),
+                  stage);
+              bsaDownload.setStage(stage);
+              bsaDownload.setChecksums(checksums);
+              tm().put(bsaDownload);
+            });
+  }
 
   static DownloadSchedule of(BsaDownload currentJob) {
     return new AutoValue_DownloadSchedule(
