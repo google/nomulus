@@ -18,6 +18,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
 import static google.registry.model.tld.Tld.TldState.PREDELEGATION;
 import static google.registry.monitoring.whitebox.CheckApiMetric.Availability.AVAILABLE;
+import static google.registry.monitoring.whitebox.CheckApiMetric.Availability.BSA_BLOCKED;
 import static google.registry.monitoring.whitebox.CheckApiMetric.Availability.REGISTERED;
 import static google.registry.monitoring.whitebox.CheckApiMetric.Availability.RESERVED;
 import static google.registry.monitoring.whitebox.CheckApiMetric.Tier.PREMIUM;
@@ -26,8 +27,10 @@ import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistReservedList;
 import static google.registry.testing.DatabaseHelper.persistResource;
+import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static org.mockito.Mockito.verify;
 
+import google.registry.bsa.persistence.BsaLabelTestingUtils;
 import google.registry.model.tld.Tld;
 import google.registry.monitoring.whitebox.CheckApiMetric;
 import google.registry.monitoring.whitebox.CheckApiMetric.Availability;
@@ -38,6 +41,7 @@ import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationT
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeResponse;
 import java.util.Map;
+import java.util.Optional;
 import org.joda.time.DateTime;
 import org.json.simple.JSONValue;
 import org.junit.jupiter.api.BeforeEach;
@@ -281,6 +285,21 @@ class CheckApiActionTest {
             "reason", "Reserved; alloc. token required");
 
     verifySuccessMetric(PREMIUM, RESERVED);
+  }
+
+  @Test
+  void testSuccess_blockedByBsa() {
+    BsaLabelTestingUtils.persistBsaLabel("rich", START_OF_TIME);
+    persistResource(
+        Tld.get("example").asBuilder().setBsaEnrollStartTime(Optional.of(START_OF_TIME)).build());
+    assertThat(getCheckResponse("rich.example"))
+        .containsExactly(
+            "tier", "premium",
+            "status", "success",
+            "available", false,
+            "reason", "Blocked by the Brand Safety Alliance");
+
+    verifySuccessMetric(PREMIUM, BSA_BLOCKED);
   }
 
   private void verifySuccessMetric(Tier tier, Availability availability) {
