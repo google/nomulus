@@ -17,6 +17,8 @@ package google.registry.rdap;
 import static com.google.api.client.http.HttpStatusCodes.STATUS_CODE_OK;
 import static com.google.common.net.HttpHeaders.ACCEPT_ENCODING;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+import static google.registry.request.UrlConnectionUtils.gUnzipBytes;
+import static google.registry.request.UrlConnectionUtils.isGZipped;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.collect.ImmutableMap;
@@ -115,7 +117,9 @@ public final class UpdateRegistrarRdapBaseUrlsAction implements Runnable {
       if (connection.getResponseCode() != STATUS_CODE_OK) {
         throw new UrlConnectionException("Failed to load RDAP base URLs from ICANN", connection);
       }
-      csvString = new String(UrlConnectionUtils.getResponseBytes(connection), UTF_8);
+      byte[] responseBytes = UrlConnectionUtils.getResponseBytes(connection);
+      csvString =
+          new String(isGZipped(responseBytes) ? gUnzipBytes(responseBytes) : responseBytes, UTF_8);
     } finally {
       connection.disconnect();
     }
