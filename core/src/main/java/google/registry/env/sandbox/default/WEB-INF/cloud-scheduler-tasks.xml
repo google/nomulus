@@ -166,6 +166,7 @@
   <task>
     <url><![CDATA[/_dr/task/bsaDownload]]></url>
     <name>bsaDownload</name>
+    <service>bsa</service>
     <description>
       Downloads the BSA block lists and processes the changes.
     </description>
