@@ -49,14 +49,19 @@ public class PathParameter extends ParameterConverterValidator<Path> {
     public void validate(String name, String value) throws ParameterException {
       super.validate(name, value);
       Path file = convert(value).toAbsolutePath();
+      System.out.println(">> OutputFile 1");
       if (Files.exists(file)) {
+        System.out.println(">> OutputFile exist");
         if (Files.isDirectory(file)) {
           throw new ParameterException(String.format("%s is a directory: %s", name, file));
         }
         if (!Files.isWritable(file)) {
+          System.out.println(">> OutputFile not writable");
           throw new ParameterException(String.format("%s not writable: %s", name, file));
         }
+        System.out.println(">> OutputFile exist nothing thrown 1");
       } else {
+        System.out.println(">> OutputFile doesn't exist");
         Path dir = file.getParent();
         if (!Files.exists(dir)) {
           throw new ParameterException(String.format("%s parent dir doesn't exist: %s", name, dir));
@@ -64,6 +69,7 @@ public class PathParameter extends ParameterConverterValidator<Path> {
         if (!Files.isDirectory(dir)) {
           throw new ParameterException(String.format("%s parent is non-directory: %s", name, dir));
         }
+        System.out.println(">> OutputFile exist nothing thrown 2");
       }
     }
   }
