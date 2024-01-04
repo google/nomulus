@@ -24,6 +24,7 @@ import static org.joda.time.Duration.standardSeconds;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import google.registry.bsa.persistence.DownloadSchedule.CompletedJob;
+import google.registry.config.RegistryConfig.Config;
 import google.registry.util.Clock;
 import java.util.Optional;
 import javax.inject.Inject;
@@ -61,7 +62,10 @@ public final class DownloadScheduler {
   private final Clock clock;
 
   @Inject
-  DownloadScheduler(Duration downloadInterval, Duration maxNopInterval, Clock clock) {
+  DownloadScheduler(
+      @Config("bsaDownloadInterval") Duration downloadInterval,
+      @Config("bsaMaxNopInterval") Duration maxNopInterval,
+      Clock clock) {
     this.downloadInterval = downloadInterval;
     this.maxNopInterval = maxNopInterval;
     this.clock = clock;
@@ -71,6 +75,8 @@ public final class DownloadScheduler {
    * Returns a {@link DownloadSchedule} instance that describes the work to be performed by an
    * invocation of the download action, if applicable; or {@link Optional#empty} when there is
    * nothing to do.
+   *
+   * <p>For an interrupted job, work will resume from the {@link DownloadSchedule#stage}.
    */
   public Optional<DownloadSchedule> schedule() {
     return tm().transact(

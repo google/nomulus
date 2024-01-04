@@ -28,7 +28,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 /** Unit tests for {@link BsaLabel}. */
 public class BsaLabelTest {
 
-  protected FakeClock fakeClock = new FakeClock(DateTime.now(UTC));
+  FakeClock fakeClock = new FakeClock(DateTime.now(UTC));
 
   @RegisterExtension
   final JpaIntegrationWithCoverageExtension jpa =
