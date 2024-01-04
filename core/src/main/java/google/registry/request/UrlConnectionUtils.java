@@ -25,12 +25,15 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import com.google.common.base.Strings;
 import com.google.common.io.ByteStreams;
 import com.google.common.net.MediaType;
+import java.io.ByteArrayInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URLConnection;
 import java.util.Random;
+import java.util.zip.GZIPInputStream;
+import org.apache.commons.compress.utils.IOUtils;
 
 /** Utilities for common functionality relating to {@link URLConnection}s. */
 public final class UrlConnectionUtils {
@@ -53,6 +56,20 @@ public final class UrlConnectionUtils {
     } catch (NullPointerException e) {
       return new byte[] {};
     }
+  }
+
+  /** Decodes compressed data in GZIP format. */
+  public static byte[] gUnzipBytes(byte[] bytes) throws IOException {
+    try (GZIPInputStream inputStream = new GZIPInputStream(new ByteArrayInputStream(bytes))) {
+      return IOUtils.toByteArray(inputStream);
+    }
+  }
+
+  /** Checks whether bytestream is GZIP encoded. */
+  public static boolean isGZipped(byte[] bytes) {
+    // See GzipOutputStream.writeHeader()
+    return (bytes.length > 2 && bytes[0] == (byte) (GZIPInputStream.GZIP_MAGIC))
+        && (bytes[1] == (byte) (GZIPInputStream.GZIP_MAGIC >> 8));
   }
 
   /** Sets auth on the given connection with the given username/password. */
