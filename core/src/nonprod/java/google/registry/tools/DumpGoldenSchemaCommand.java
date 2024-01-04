@@ -34,10 +34,10 @@ import org.testcontainers.containers.Container;
 public class DumpGoldenSchemaCommand extends PostgresqlCommand {
 
   // The mount point in the container.
-  private static final String CONTAINER_MOUNT_POINT = "/tmpfs/tmp/pg_dump.out";
+  private static final String CONTAINER_MOUNT_POINT = "/tmp/pg_dump.out";
 
   // Temporary workaround to fix permission issues on certain Linux distro (e. g. Arch Linux).
-  private static final String CONTAINER_MOUNT_POINT_TMP = "/tmpfs/tmp/pg_dump.tmp";
+  private static final String CONTAINER_MOUNT_POINT_TMP = "/tmp/pg_dump.tmp";
   
   @Parameter(
       names = {"--output", "-o"},
