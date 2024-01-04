@@ -18,6 +18,7 @@ import static com.google.common.base.Strings.emptyToNull;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
+import static google.registry.bsa.persistence.BsaLabelUtils.getBlockedLabels;
 import static google.registry.flows.FlowUtils.validateRegistrarIsLoggedIn;
 import static google.registry.flows.ResourceFlowUtils.verifyTargetIdCount;
 import static google.registry.flows.domain.DomainFlowUtils.checkAllowedAccessToTld;
@@ -34,6 +35,7 @@ import static google.registry.model.tld.Tld.TldState.START_DATE_SUNRISE;
 import static google.registry.model.tld.label.ReservationType.getTypeOfHighestSeverity;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
+import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -83,9 +85,12 @@ import google.registry.model.tld.label.ReservationType;
 import google.registry.persistence.VKey;
 import google.registry.pricing.PricingEngineProxy;
 import google.registry.util.Clock;
+import java.util.Collection;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 import javax.inject.Inject;
 import org.joda.time.DateTime;
 
@@ -177,6 +182,12 @@ public final class DomainCheckFlow implements TransactionalFlow {
             .build());
     ImmutableMap<String, VKey<Domain>> existingDomains =
         ForeignKeyUtils.load(Domain.class, domainNames, now);
+    // Check block labels only when there are unregistered domains, since "In use" goes before
+    // "Blocked by BSA".
+    ImmutableSet<InternetDomainName> bsaBlockedDomainNames =
+        existingDomains.size() == parsedDomains.size()
+            ? ImmutableSet.of()
+            : getBsaBlockedDomains(parsedDomains.values());
     Optional<AllocationTokenExtension> allocationTokenExtension =
         eppInput.getSingleExtension(AllocationTokenExtension.class);
     Optional<AllocationTokenDomainCheckResults> tokenDomainCheckResults =
@@ -203,6 +214,7 @@ public final class DomainCheckFlow implements TransactionalFlow {
           getMessageForCheck(
               parsedDomains.get(domainName),
               existingDomains,
+              bsaBlockedDomainNames,
               domainCheckResults,
               tldStates,
               allocationToken);
@@ -234,6 +246,7 @@ public final class DomainCheckFlow implements TransactionalFlow {
   private Optional<String> getMessageForCheck(
       InternetDomainName domainName,
       ImmutableMap<String, VKey<Domain>> existingDomains,
+      ImmutableSet<InternetDomainName> bsaBlockedDomains,
       ImmutableMap<InternetDomainName, String> tokenCheckResults,
       ImmutableMap<String, TldState> tldStates,
       Optional<AllocationToken> allocationToken) {
@@ -251,7 +264,18 @@ public final class DomainCheckFlow implements TransactionalFlow {
         }
       }
     }
-    return Optional.ofNullable(emptyToNull(tokenCheckResults.get(domainName)));
+    Optional<String> tokenResult =
+        Optional.ofNullable(emptyToNull(tokenCheckResults.get(domainName)));
+    if (tokenResult.isPresent()) {
+      return tokenResult;
+    }
+    if (bsaBlockedDomains.contains(domainName)) {
+      // TODO(weiminyu): extract to a constant for here and CheckApiAction.
+      // Excerpt from BSA's custom message. Max len 32 chars by EPP XML schema.
+      return Optional.of("Blocked by a GlobalBlock service");
+    } else {
+      return Optional.empty();
+    }
   }
 
   /** Handle the fee check extension. */
@@ -413,6 +437,21 @@ public final class DomainCheckFlow implements TransactionalFlow {
     }
     // If this version of the fee extension is nameless, use the full list of domains.
     return availabilityCheckDomains;
+  }
+
+  static ImmutableSet<InternetDomainName> getBsaBlockedDomains(
+      ImmutableCollection<InternetDomainName> parsedDomains) {
+    Map<String, ImmutableList<InternetDomainName>> labelToDomainNames =
+        parsedDomains.stream()
+            .collect(
+                Collectors.groupingBy(
+                    parsedDomain -> parsedDomain.parts().get(0), toImmutableList()));
+    ImmutableSet<String> blockedLabels =
+        getBlockedLabels(ImmutableList.copyOf(labelToDomainNames.keySet()));
+    labelToDomainNames.keySet().retainAll(blockedLabels);
+    return labelToDomainNames.values().stream()
+        .flatMap(Collection::stream)
+        .collect(toImmutableSet());
   }
 
   /** By server policy, fee check names must be listed in the availability check. */

@@ -14,6 +14,9 @@
 
 package google.registry.bsa.persistence;
 
+import static com.google.common.collect.ImmutableList.toImmutableList;
+import static com.google.common.collect.ImmutableMap.toImmutableMap;
+import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static google.registry.config.RegistryConfig.getEppResourceCachingDuration;
 import static google.registry.config.RegistryConfig.getEppResourceMaxCachedEntries;
 import static google.registry.model.CacheUtils.newCacheBuilder;
@@ -22,10 +25,15 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import com.github.benmanes.caffeine.cache.CacheLoader;
 import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.ImmutableCollection;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import google.registry.persistence.VKey;
 import java.time.Duration;
 import java.util.Map;
 import java.util.Optional;
+import org.apache.commons.lang3.stream.Streams;
 
 /** Helpers for {@link BsaLabel}. */
 public final class BsaLabelUtils {
@@ -43,9 +51,11 @@ public final class BsaLabelUtils {
         @Override
         public Map<VKey<BsaLabel>, Optional<BsaLabel>> loadAll(
             Iterable<? extends VKey<BsaLabel>> keys) {
-          // TODO(b/309173359): need this for DomainCheckFlow
-          throw new UnsupportedOperationException(
-              "LoadAll not supported by the BsaLabel cache loader.");
+          ImmutableMap<VKey<? extends BsaLabel>, BsaLabel> existingLabels =
+              replicaTm().reTransact(() -> replicaTm().loadByKeysIfPresent(keys));
+          return Streams.of(keys)
+              .collect(
+                  toImmutableMap(key -> key, key -> Optional.ofNullable(existingLabels.get(key))));
         }
       };
 
@@ -83,5 +93,16 @@ public final class BsaLabelUtils {
   /** Checks if the {@code domainLabel} (the leading `part` of a domain name) is blocked by BSA. */
   public static boolean isLabelBlocked(String domainLabel) {
     return cacheBsaLabels.get(BsaLabel.vKey(domainLabel)).isPresent();
+  }
+
+  /** Returns the elements in {@code domainLabels} that are blocked by BSA. */
+  public static ImmutableSet<String> getBlockedLabels(ImmutableCollection<String> domainLabels) {
+    ImmutableList<VKey<BsaLabel>> queriedLabels =
+        domainLabels.stream().map(BsaLabel::vKey).collect(toImmutableList());
+    return cacheBsaLabels.getAll(queriedLabels).values().stream()
+        .filter(Optional::isPresent)
+        .map(Optional::get)
+        .map(BsaLabel::getLabel)
+        .collect(toImmutableSet());
   }
 }
