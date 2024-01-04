@@ -27,6 +27,7 @@ import google.registry.bsa.DownloadStage;
 import google.registry.model.CreateAutoTimestamp;
 import google.registry.model.UpdateAutoTimestamp;
 import google.registry.persistence.VKey;
+import java.util.Locale;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
@@ -74,11 +75,14 @@ public class BsaDownload {
   }
 
   /**
-   * Returns the starting time of this job as a string, which can be used as folder name on GCS when
-   * storing download data.
+   * Returns a unique name of the job.
+   *
+   * <p>The returned value should be a valid GCS folder name, consisting of only lower case
+   * alphanumerics, underscore, hyphen and dot.
    */
   public String getJobName() {
-    return getCreationTime().toString();
+    // Return a value based on job start time, which is unique.
+    return getCreationTime().toString().toLowerCase(Locale.ROOT).replace(":", "");
   }
 
   public DownloadStage getStage() {
