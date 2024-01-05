@@ -72,6 +72,24 @@ public class ConfigureTldCommand extends MutatingCommand {
   boolean breakglass;
 
   @Parameter(
+      names = {"--end_breakglass"},
+      description =
+          "Sets the breakglass field on the TLD to false, indicating that whatever changes made to"
+              + " the TLD should be overwritten by the internal config file on the next TLD sync."
+              + " If this flag is not used to end breakglass mode, breakglass mode will also end"
+              + " automatically if the configuration file stored internally is updated to match"
+              + " the current state of the TLD.")
+  boolean endBreakglass;
+
+  @Parameter(
+      names = {"--build_environment"},
+      description =
+          "DO NOT USE THIS FLAG ON THE COMMAND LINE! This flag indicates the command is being run"
+              + " by the build environment tools. This flag should never be used by a human user"
+              + " from the command line.")
+  boolean buildEnv;
+
+  @Parameter(
       names = {"-d", "--dry_run"},
       description = "Does not execute the entity mutation")
   boolean dryRun;
@@ -93,6 +111,15 @@ public class ConfigureTldCommand extends MutatingCommand {
 
   @Override
   protected void init() throws Exception {
+    checkArgument(
+        !breakglass || !endBreakglass,
+        "The --breakglass and --end_breakglass flags cannot be set at the same time");
+    if (RegistryToolEnvironment.get().equals(RegistryToolEnvironment.PRODUCTION)) {
+      checkArgument(
+          buildEnv || breakglass || endBreakglass,
+          "Either the --breakglass, --end_breakglass or --build_environment flag must be used when"
+              + " running the configure_tld command on Production");
+    }
     String name = convertFilePathToName(inputFile);
     Map<String, Object> tldData = new Yaml().load(Files.newBufferedReader(inputFile));
     checkName(name, tldData);
@@ -109,9 +136,14 @@ public class ConfigureTldCommand extends MutatingCommand {
       return;
     }
 
+    checkArgument(
+        !endBreakglass || oldTldInBreakglass,
+        "The --end_breakglass flag cannot be used because the TLD is not currently in breakglass"
+            + " mode");
+
     if (oldTldInBreakglass && !breakglass) {
       checkArgument(
-          !newDiff,
+          !newDiff || endBreakglass,
           "Changes can not be applied since TLD is in breakglass mode but the breakglass flag was"
               + " not used");
       // if there are no new diffs, then the YAML file has caught up to the database and the

@@ -603,6 +603,67 @@ public class ConfigureTldCommandTest extends CommandTestCase<ConfigureTldCommand
   }
 
   @Test
+  void testFailure_breakglassAndEndBreakglass() throws Exception {
+    createTld("tld");
+    File tldFile = tmpDir.resolve("tld.yaml").toFile();
+    Files.asCharSink(tldFile, UTF_8).write(loadFile(getClass(), "tld.yaml"));
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> runCommandForced("--input=" + tldFile, "-b", "--end_breakglass"));
+    assertThat(thrown.getMessage())
+        .isEqualTo("The --breakglass and --end_breakglass flags cannot be set at the same time");
+  }
+
+  @Test
+  void testFailure_endBreakglass_notInBreakglass() throws Exception {
+    createTld("tld");
+    File tldFile = tmpDir.resolve("tld.yaml").toFile();
+    Files.asCharSink(tldFile, UTF_8).write(loadFile(getClass(), "tld.yaml"));
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> runCommandForced("--input=" + tldFile, "--end_breakglass"));
+    assertThat(thrown.getMessage())
+        .isEqualTo(
+            "The --end_breakglass flag cannot be used because the TLD is not currently in"
+                + " breakglass mode");
+  }
+
+  @Test
+  void testSuccess_endBreakglassFlag_endsBreakglassMode() throws Exception {
+    Tld tld = createTld("tld");
+    assertThat(tld.getCreateBillingCost()).isEqualTo(Money.of(USD, 13));
+    persistResource(tld.asBuilder().setBreakglassMode(true).build());
+    File tldFile = tmpDir.resolve("tld.yaml").toFile();
+    Files.asCharSink(tldFile, UTF_8).write(loadFile(getClass(), "tld.yaml"));
+    runCommandForced("--input=" + tldFile, "--end_breakglass");
+    Tld updatedTld = Tld.get("tld");
+    assertThat(updatedTld.getCreateBillingCost()).isEqualTo(Money.of(USD, 25));
+    testTldConfiguredSuccessfully(updatedTld, "tld.yaml");
+    assertThat(updatedTld.getBreakglassMode()).isFalse();
+  }
+
+  @Test
+  void testSuccess_noDiffEndBreakglassFlag_endsBreakglassMode() throws Exception {
+    Tld tld = createTld("idns");
+    persistResource(
+        tld.asBuilder()
+            .setIdnTables(ImmutableSet.of(JA, UNCONFUSABLE_LATIN, EXTENDED_LATIN))
+            .setAllowedFullyQualifiedHostNames(ImmutableSet.of("zeta", "alpha", "gamma", "beta"))
+            .setBreakglassMode(true)
+            .build());
+    File tldFile = tmpDir.resolve("idns.yaml").toFile();
+    Files.asCharSink(tldFile, UTF_8).write(loadFile(getClass(), "idns.yaml"));
+    runCommandForced("--input=" + tldFile, "--end_breakglass");
+    Tld updatedTld = Tld.get("idns");
+    assertThat(updatedTld.getBreakglassMode()).isFalse();
+    assertAboutLogs()
+        .that(logHandler)
+        .hasLogAtLevelWithMessage(INFO, "Breakglass mode removed from TLD: idns");
+  }
+
+  @Test
   void testSuccess_dryRunOnCreate_noChanges() throws Exception {
     File tldFile = tmpDir.resolve("tld.yaml").toFile();
     Files.asCharSink(tldFile, UTF_8).write(loadFile(getClass(), "tld.yaml"));
@@ -619,5 +680,47 @@ public class ConfigureTldCommandTest extends CommandTestCase<ConfigureTldCommand
     runCommandForced("--input=" + tldFile, "-d");
     Tld notUpdatedTld = Tld.get("tld");
     assertThat(notUpdatedTld.getCreateBillingCost()).isEqualTo(Money.of(USD, 13));
+  }
+
+  @Test
+  void testFailure_runCommandOnProduction_noFlag() throws Exception {
+    createTld("tld");
+    File tldFile = tmpDir.resolve("tld.yaml").toFile();
+    Files.asCharSink(tldFile, UTF_8).write(loadFile(getClass(), "tld.yaml"));
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () ->
+                runCommandInEnvironment(RegistryToolEnvironment.PRODUCTION, "--input=" + tldFile));
+    assertThat(thrown.getMessage())
+        .isEqualTo(
+            "Either the --breakglass, --end_breakglass or --build_environment flag must be used"
+                + " when running the configure_tld command on Production");
+  }
+
+  @Test
+  void testSuccess_runCommandOnProduction_breakglassFlag() throws Exception {
+    createTld("tld");
+    File tldFile = tmpDir.resolve("tld.yaml").toFile();
+    Files.asCharSink(tldFile, UTF_8).write(loadFile(getClass(), "tld.yaml"));
+    runCommandInEnvironment(
+        RegistryToolEnvironment.PRODUCTION, "--input=" + tldFile, "--breakglass", "-f");
+    Tld updatedTld = Tld.get("tld");
+    assertThat(updatedTld.getCreateBillingCost()).isEqualTo(Money.of(USD, 25));
+    testTldConfiguredSuccessfully(updatedTld, "tld.yaml");
+    assertThat(updatedTld.getBreakglassMode()).isTrue();
+  }
+
+  @Test
+  void testSuccess_runCommandOnProduction_buildEnvFlag() throws Exception {
+    createTld("tld");
+    File tldFile = tmpDir.resolve("tld.yaml").toFile();
+    Files.asCharSink(tldFile, UTF_8).write(loadFile(getClass(), "tld.yaml"));
+    runCommandInEnvironment(
+        RegistryToolEnvironment.PRODUCTION, "--input=" + tldFile, "--build_environment", "-f");
+    Tld updatedTld = Tld.get("tld");
+    assertThat(updatedTld.getCreateBillingCost()).isEqualTo(Money.of(USD, 25));
+    testTldConfiguredSuccessfully(updatedTld, "tld.yaml");
+    assertThat(updatedTld.getBreakglassMode()).isFalse();
   }
 }
