@@ -15,18 +15,20 @@
 package google.registry.bsa.persistence;
 
 import static com.google.common.collect.ImmutableMap.toImmutableMap;
-import static google.registry.bsa.DownloadStage.DOWNLOAD;
+import static google.registry.bsa.DownloadStage.DONE;
+import static google.registry.bsa.DownloadStage.DOWNLOAD_BLOCK_LISTS;
 
 import com.google.common.base.Joiner;
 import com.google.common.base.Objects;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSortedMap;
-import google.registry.bsa.BlockList;
+import google.registry.bsa.BlockListType;
 import google.registry.bsa.DownloadStage;
 import google.registry.model.CreateAutoTimestamp;
 import google.registry.model.UpdateAutoTimestamp;
 import google.registry.persistence.VKey;
+import java.util.Locale;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
@@ -41,7 +43,7 @@ import org.joda.time.DateTime;
 /** Records of ongoing and completed download jobs. */
 @Entity
 @Table(indexes = {@Index(columnList = "creationTime")})
-public class BsaDownload {
+class BsaDownload {
 
   private static final Joiner CSV_JOINER = Joiner.on(',');
   private static final Splitter CSV_SPLITTER = Splitter.on(',');
@@ -61,7 +63,7 @@ public class BsaDownload {
 
   @Column(nullable = false)
   @Enumerated(EnumType.STRING)
-  DownloadStage stage = DOWNLOAD;
+  DownloadStage stage = DOWNLOAD_BLOCK_LISTS;
 
   BsaDownload() {}
 
@@ -74,14 +76,21 @@ public class BsaDownload {
   }
 
   /**
-   * Returns the starting time of this job as a string, which can be used as folder name on GCS when
-   * storing download data.
+   * Returns a unique name of the job.
+   *
+   * <p>The returned value should be a valid GCS folder name, consisting of only lower case
+   * alphanumerics, underscore, hyphen and dot.
    */
-  public String getJobName() {
-    return getCreationTime().toString();
+  String getJobName() {
+    // Return a value based on job start time, which is unique.
+    return getCreationTime().toString().toLowerCase(Locale.ROOT).replace(":", "");
   }
 
-  public DownloadStage getStage() {
+  boolean isDone() {
+    return java.util.Objects.equals(stage, DONE);
+  }
+
+  DownloadStage getStage() {
     return this.stage;
   }
 
@@ -90,19 +99,20 @@ public class BsaDownload {
     return this;
   }
 
-  BsaDownload setChecksums(ImmutableMap<BlockList, String> checksums) {
+  BsaDownload setChecksums(ImmutableMap<BlockListType, String> checksums) {
     blockListChecksums =
         CSV_JOINER.withKeyValueSeparator("=").join(ImmutableSortedMap.copyOf(checksums));
     return this;
   }
 
-  ImmutableMap<BlockList, String> getChecksums() {
+  ImmutableMap<BlockListType, String> getChecksums() {
     if (blockListChecksums.isEmpty()) {
       return ImmutableMap.of();
     }
     return CSV_SPLITTER.withKeyValueSeparator('=').split(blockListChecksums).entrySet().stream()
         .collect(
-            toImmutableMap(entry -> BlockList.valueOf(entry.getKey()), entry -> entry.getValue()));
+            toImmutableMap(
+                entry -> BlockListType.valueOf(entry.getKey()), entry -> entry.getValue()));
   }
 
   @Override

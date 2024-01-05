@@ -44,7 +44,7 @@ final class BsaLabel {
   DateTime creationTime;
 
   // For Hibernate.
-  BsaLabel() {}
+  private BsaLabel() {}
 
   BsaLabel(String label, DateTime creationTime) {
     this.label = label;

@@ -1,0 +1,3 @@
+PATH                  CLASS             METHODS  OK AUTH_METHODS MIN USER_POLICY
+/_dr/task/bsaDownload BsaDownloadAction GET,POST n  API          APP ADMIN
+/_dr/task/bsaRefresh  BsaRefreshAction  GET,POST n  API          APP ADMIN

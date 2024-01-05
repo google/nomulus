@@ -15,14 +15,14 @@
 package google.registry.bsa.persistence;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.bsa.BlockList.BLOCK;
-import static google.registry.bsa.BlockList.BLOCK_PLUS;
-import static google.registry.bsa.DownloadStage.DOWNLOAD;
+import static google.registry.bsa.BlockListType.BLOCK;
+import static google.registry.bsa.BlockListType.BLOCK_PLUS;
+import static google.registry.bsa.DownloadStage.DOWNLOAD_BLOCK_LISTS;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static org.joda.time.DateTimeZone.UTC;
 
 import com.google.common.collect.ImmutableMap;
-import google.registry.bsa.BlockList;
+import google.registry.bsa.BlockListType;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationWithCoverageExtension;
 import google.registry.testing.FakeClock;
@@ -33,7 +33,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 /** Unit test for {@link BsaDownload}. */
 public class BsaDownloadTest {
 
-  protected FakeClock fakeClock = new FakeClock(DateTime.now(UTC));
+  FakeClock fakeClock = new FakeClock(DateTime.now(UTC));
 
   @RegisterExtension
   final JpaIntegrationWithCoverageExtension jpa =
@@ -44,7 +44,7 @@ public class BsaDownloadTest {
     BsaDownload persisted = tm().transact(() -> tm().getEntityManager().merge(new BsaDownload()));
     assertThat(persisted.jobId).isNotNull();
     assertThat(persisted.creationTime.getTimestamp()).isEqualTo(fakeClock.nowUtc());
-    assertThat(persisted.stage).isEqualTo(DOWNLOAD);
+    assertThat(persisted.stage).isEqualTo(DOWNLOAD_BLOCK_LISTS);
   }
 
   @Test
@@ -58,7 +58,7 @@ public class BsaDownloadTest {
   void checksums() {
     BsaDownload job = new BsaDownload();
     assertThat(job.getChecksums()).isEmpty();
-    ImmutableMap<BlockList, String> checksums = ImmutableMap.of(BLOCK, "a", BLOCK_PLUS, "b");
+    ImmutableMap<BlockListType, String> checksums = ImmutableMap.of(BLOCK, "a", BLOCK_PLUS, "b");
     job.setChecksums(checksums);
     assertThat(job.getChecksums()).isEqualTo(checksums);
     assertThat(job.blockListChecksums).isEqualTo("BLOCK=a,BLOCK_PLUS=b");

@@ -20,7 +20,8 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import static org.joda.time.DateTimeZone.UTC;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import google.registry.bsa.persistence.BsaDomainInUse.Reason;
+import google.registry.bsa.api.UnblockableDomain;
+import google.registry.bsa.persistence.BsaUnblockableDomain.Reason;
 import google.registry.persistence.transaction.DatabaseException;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationWithCoverageExtension;
@@ -29,10 +30,10 @@ import org.joda.time.DateTime;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
-/** Unit tests for {@link BsaDomainInUse}. */
-public class BsaDomainInUseTest {
+/** Unit tests for {@link BsaUnblockableDomain}. */
+public class BsaUnblockableDomainTest {
 
-  protected FakeClock fakeClock = new FakeClock(DateTime.now(UTC));
+  FakeClock fakeClock = new FakeClock(DateTime.now(UTC));
 
   @RegisterExtension
   final JpaIntegrationWithCoverageExtension jpa =
@@ -41,9 +42,9 @@ public class BsaDomainInUseTest {
   @Test
   void persist() {
     tm().transact(() -> tm().put(new BsaLabel("label", fakeClock.nowUtc())));
-    tm().transact(() -> tm().put(new BsaDomainInUse("label", "tld", Reason.REGISTERED)));
-    BsaDomainInUse persisted =
-        tm().transact(() -> tm().loadByKey(BsaDomainInUse.vKey("label", "tld")));
+    tm().transact(() -> tm().put(new BsaUnblockableDomain("label", "tld", Reason.REGISTERED)));
+    BsaUnblockableDomain persisted =
+        tm().transact(() -> tm().loadByKey(BsaUnblockableDomain.vKey("label", "tld")));
     assertThat(persisted.label).isEqualTo("label");
     assertThat(persisted.tld).isEqualTo("tld");
     assertThat(persisted.reason).isEqualTo(Reason.REGISTERED);
@@ -52,11 +53,13 @@ public class BsaDomainInUseTest {
   @Test
   void cascadeDeletion() {
     tm().transact(() -> tm().put(new BsaLabel("label", fakeClock.nowUtc())));
-    tm().transact(() -> tm().put(new BsaDomainInUse("label", "tld", Reason.REGISTERED)));
-    assertThat(tm().transact(() -> tm().loadByKeyIfPresent(BsaDomainInUse.vKey("label", "tld"))))
+    tm().transact(() -> tm().put(new BsaUnblockableDomain("label", "tld", Reason.REGISTERED)));
+    assertThat(
+            tm().transact(() -> tm().loadByKeyIfPresent(BsaUnblockableDomain.vKey("label", "tld"))))
         .isPresent();
     tm().transact(() -> tm().delete(BsaLabel.vKey("label")));
-    assertThat(tm().transact(() -> tm().loadByKeyIfPresent(BsaDomainInUse.vKey("label", "tld"))))
+    assertThat(
+            tm().transact(() -> tm().loadByKeyIfPresent(BsaUnblockableDomain.vKey("label", "tld"))))
         .isEmpty();
   }
 
@@ -67,8 +70,25 @@ public class BsaDomainInUseTest {
                 DatabaseException.class,
                 () ->
                     tm().transact(
-                            () -> tm().put(new BsaDomainInUse("label", "tld", Reason.REGISTERED)))))
+                            () ->
+                                tm().put(
+                                        new BsaUnblockableDomain(
+                                            "label", "tld", Reason.REGISTERED)))))
         .hasMessageThat()
         .contains("violates foreign key constraint");
+  }
+
+  @Test
+  void reason_convertibleToApiClass() {
+    for (BsaUnblockableDomain.Reason reason : BsaUnblockableDomain.Reason.values()) {
+      try {
+        UnblockableDomain.Reason.valueOf(reason.name());
+      } catch (IllegalArgumentException e) {
+        throw new IllegalArgumentException(
+            String.format(
+                "Missing enum name [%s] in %s",
+                reason.name(), BsaUnblockableDomain.Reason.class.getName()));
+      }
+    }
   }
 }

@@ -14,32 +14,27 @@
 
 package google.registry.bsa;
 
-import static javax.servlet.http.HttpServletResponse.SC_OK;
-
-import google.registry.request.Action;
-import google.registry.request.Action.Service;
-import google.registry.request.Response;
-import google.registry.request.auth.Auth;
+import google.registry.config.RegistryConfig.Config;
+import google.registry.request.lock.LockHandler;
+import java.util.concurrent.Callable;
 import javax.inject.Inject;
+import org.joda.time.Duration;
 
-@Action(
-    service = Service.BSA,
-    path = PlaceholderAction.PATH,
-    method = Action.Method.GET,
-    auth = Auth.AUTH_API_ADMIN)
-public class PlaceholderAction implements Runnable {
-  private final Response response;
+/** Helper for guarding all BSA related work with a common lock. */
+public class BsaLock {
 
-  static final String PATH = "/_dr/task/bsaDownload";
+  private static final String LOCK_NAME = "all-bsa-jobs";
+
+  private final LockHandler lockHandler;
+  private final Duration leaseExpiry;
 
   @Inject
-  public PlaceholderAction(Response response) {
-    this.response = response;
+  BsaLock(LockHandler lockHandler, @Config("bsaLockLeaseExpiry") Duration leaseExpiry) {
+    this.lockHandler = lockHandler;
+    this.leaseExpiry = leaseExpiry;
   }
 
-  @Override
-  public void run() {
-    response.setStatus(SC_OK);
-    response.setPayload("Hello World");
+  boolean executeWithLock(Callable<Void> callable) {
+    return lockHandler.executeWithLocks(callable, null, leaseExpiry, LOCK_NAME);
   }
 }

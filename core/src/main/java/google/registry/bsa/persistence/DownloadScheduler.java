@@ -15,18 +15,22 @@
 package google.registry.bsa.persistence;
 
 import static com.google.common.base.Verify.verify;
-import static google.registry.bsa.DownloadStage.CHECKSUMS_NOT_MATCH;
+import static google.registry.bsa.DownloadStage.CHECKSUMS_DO_NOT_MATCH;
 import static google.registry.bsa.DownloadStage.DONE;
 import static google.registry.bsa.DownloadStage.NOP;
+import static google.registry.bsa.persistence.RefreshScheduler.fetchMostRecentRefresh;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static org.joda.time.Duration.standardSeconds;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import google.registry.bsa.persistence.DownloadSchedule.CompletedJob;
+import google.registry.config.RegistryConfig.Config;
 import google.registry.util.Clock;
+import java.util.Objects;
 import java.util.Optional;
 import javax.inject.Inject;
+import org.joda.time.DateTime;
 import org.joda.time.Duration;
 
 /**
@@ -61,7 +65,10 @@ public final class DownloadScheduler {
   private final Clock clock;
 
   @Inject
-  DownloadScheduler(Duration downloadInterval, Duration maxNopInterval, Clock clock) {
+  DownloadScheduler(
+      @Config("bsaDownloadInterval") Duration downloadInterval,
+      @Config("bsaMaxNopInterval") Duration maxNopInterval,
+      Clock clock) {
     this.downloadInterval = downloadInterval;
     this.maxNopInterval = maxNopInterval;
     this.clock = clock;
@@ -71,26 +78,33 @@ public final class DownloadScheduler {
    * Returns a {@link DownloadSchedule} instance that describes the work to be performed by an
    * invocation of the download action, if applicable; or {@link Optional#empty} when there is
    * nothing to do.
+   *
+   * <p>For an interrupted job, work will resume from the {@link DownloadSchedule#stage}.
    */
   public Optional<DownloadSchedule> schedule() {
     return tm().transact(
             () -> {
-              ImmutableList<BsaDownload> recentJobs = loadRecentProcessedJobs();
-              if (recentJobs.isEmpty()) {
-                // No jobs initiated ever.
+              ImmutableList<BsaDownload> recentDownloads = fetchTwoMostRecentDownloads();
+              Optional<BsaDomainRefresh> mostRecentRefresh = fetchMostRecentRefresh();
+              if (mostRecentRefresh.isPresent() && !mostRecentRefresh.get().isDone()) {
+                // Ongoing refresh. Wait it out.
+                return Optional.empty();
+              }
+              if (recentDownloads.isEmpty()) {
+                // No downloads initiated ever.
                 return Optional.of(scheduleNewJob(Optional.empty()));
               }
-              BsaDownload mostRecent = recentJobs.get(0);
+              BsaDownload mostRecent = recentDownloads.get(0);
               if (mostRecent.getStage().equals(DONE)) {
                 return isTimeAgain(mostRecent, downloadInterval)
                     ? Optional.of(scheduleNewJob(Optional.of(mostRecent)))
                     : Optional.empty();
-              } else if (recentJobs.size() == 1) {
+              } else if (recentDownloads.size() == 1) {
                 // First job ever, still in progress
-                return Optional.of(DownloadSchedule.of(recentJobs.get(0)));
+                return Optional.of(DownloadSchedule.of(recentDownloads.get(0)));
               } else {
                 // Job in progress, with completed previous jobs.
-                BsaDownload prev = recentJobs.get(1);
+                BsaDownload prev = recentDownloads.get(1);
                 verify(prev.getStage().equals(DONE), "Unexpectedly found two ongoing jobs.");
                 return Optional.of(
                     DownloadSchedule.of(
@@ -98,6 +112,16 @@ public final class DownloadScheduler {
                         CompletedJob.of(prev),
                         isTimeAgain(mostRecent, maxNopInterval)));
               }
+            });
+  }
+
+  Optional<DateTime> latestCompletedJobTime() {
+    return tm().transact(
+            () -> {
+              return fetchTwoMostRecentDownloads().stream()
+                  .filter(job -> Objects.equals(job.getStage(), DONE))
+                  .map(BsaDownload::getCreationTime)
+                  .findFirst();
             });
   }
 
@@ -118,14 +142,25 @@ public final class DownloadScheduler {
         .orElseGet(() -> DownloadSchedule.of(job));
   }
 
+  /**
+   * Fetches up to two most recent downloads, ordered by time in descending order. The first one may
+   * be ongoing, and the second one (if exists) must be completed.
+   *
+   * <p>Jobs that do not download the data are ignored.
+   */
   @VisibleForTesting
-  ImmutableList<BsaDownload> loadRecentProcessedJobs() {
+  static ImmutableList<BsaDownload> fetchTwoMostRecentDownloads() {
     return ImmutableList.copyOf(
         tm().getEntityManager()
             .createQuery(
-                "FROM BsaDownload WHERE stage NOT IN :nop_stages ORDER BY creationTime DESC")
-            .setParameter("nop_stages", ImmutableList.of(CHECKSUMS_NOT_MATCH, NOP))
+                "FROM BsaDownload WHERE stage NOT IN :nop_stages ORDER BY creationTime DESC",
+                BsaDownload.class)
+            .setParameter("nop_stages", ImmutableList.of(CHECKSUMS_DO_NOT_MATCH, NOP))
             .setMaxResults(2)
             .getResultList());
+  }
+
+  static Optional<BsaDownload> fetchMostRecentDownload() {
+    return fetchTwoMostRecentDownloads().stream().findFirst();
   }
 }

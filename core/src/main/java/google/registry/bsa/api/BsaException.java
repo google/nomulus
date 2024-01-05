@@ -12,10 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package google.registry.bsa;
+package google.registry.bsa.api;
 
-/** Identifiers of the BSA lists with blocking labels. */
-public enum BlockList {
-  BLOCK,
-  BLOCK_PLUS;
+public class BsaException extends RuntimeException {
+
+  private final boolean retriable;
+
+  public BsaException(Throwable cause, boolean retriable) {
+    super(cause);
+    this.retriable = retriable;
+  }
+
+  public BsaException(String message, boolean retriable) {
+    super(message);
+    this.retriable = retriable;
+  }
+
+  public boolean isRetriable() {
+    return this.retriable;
+  }
 }

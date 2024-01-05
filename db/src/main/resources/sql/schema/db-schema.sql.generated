@@ -85,14 +85,6 @@
         primary key (billing_recurrence_id)
     );
 
-    create table "BsaDomainInUse" (
-       label text not null,
-        tld text not null,
-        creation_time timestamptz not null,
-        reason text not null,
-        primary key (label, tld)
-    );
-
     create table "BsaDomainRefresh" (
        job_id  bigserial not null,
         creation_time timestamptz not null,
@@ -114,6 +106,14 @@
        label text not null,
         creation_time timestamptz not null,
         primary key (label)
+    );
+
+    create table "BsaUnblockableDomain" (
+       label text not null,
+        tld text not null,
+        creation_time timestamptz not null,
+        reason text not null,
+        primary key (label, tld)
     );
 
     create table "ClaimsEntry" (
