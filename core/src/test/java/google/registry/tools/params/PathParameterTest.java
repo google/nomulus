@@ -141,7 +141,11 @@ class PathParameterTest {
   @Test
   void testOutputFileValidate_notWritable_throws() throws Exception {
     Path file = Files.createFile(tmpDir.resolve("newFile.dat"));
+    System.out.println(">> Before");
+    PathParameter.runScript(new String[]{"/bin/bash", "-c", "ls -la " + tmpDir.toString()});
     Files.setPosixFilePermissions(file, PosixFilePermissions.fromString("r--------"));
+    System.out.println(">> after");
+    PathParameter.runScript(new String[]{"/bin/bash", "-c", "ls -la " + tmpDir.toString()});
     ParameterException thrown =
         assertThrows(ParameterException.class, () -> outputFile.validate("input", file.toString()));
     assertThat(thrown).hasMessageThat().contains("not writable");
