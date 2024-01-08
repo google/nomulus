@@ -32,6 +32,7 @@ import static google.registry.monitoring.whitebox.CheckApiMetric.Status.SUCCESS;
 import static google.registry.monitoring.whitebox.CheckApiMetric.Status.UNKNOWN_ERROR;
 import static google.registry.monitoring.whitebox.CheckApiMetric.Tier.PREMIUM;
 import static google.registry.monitoring.whitebox.CheckApiMetric.Tier.STANDARD;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.pricing.PricingEngineProxy.isDomainPremium;
 import static google.registry.util.DomainNameUtils.canonicalizeHostname;
 import static org.json.simple.JSONValue.toJSONString;
@@ -57,7 +58,6 @@ import google.registry.request.Parameter;
 import google.registry.request.RequestParameters;
 import google.registry.request.Response;
 import google.registry.request.auth.Auth;
-import google.registry.util.Clock;
 import java.util.Map;
 import java.util.Optional;
 import javax.inject.Inject;
@@ -81,7 +81,6 @@ public class CheckApiAction implements Runnable {
   String domain;
 
   @Inject Response response;
-  @Inject Clock clock;
   @Inject CheckApiMetric.Builder metricBuilder;
   @Inject CheckApiMetrics checkApiMetrics;
 
@@ -109,6 +108,20 @@ public class CheckApiAction implements Runnable {
     try {
       domainString = canonicalizeHostname(nullToEmpty(domain));
       domainName = validateDomainName(domainString);
+      return tm().transact(() -> checkDomainName(domainName));
+    } catch (IllegalArgumentException | EppException e) {
+      metricBuilder.status(INVALID_NAME);
+      return fail("Must supply a valid domain name on an authoritative TLD");
+    }
+  }
+
+  private Map<String, Object> checkDomainName(InternetDomainName domainName) {
+    tm().assertInTransaction();
+
+    String domainString;
+    try {
+      domainString = canonicalizeHostname(nullToEmpty(domain));
+      domainName = validateDomainName(domainString);
     } catch (IllegalArgumentException | EppException e) {
       metricBuilder.status(INVALID_NAME);
       return fail("Must supply a valid domain name on an authoritative TLD");
@@ -117,7 +130,7 @@ public class CheckApiAction implements Runnable {
       // Throws an EppException with a reasonable error message which will be sent back to caller.
       validateDomainNameWithIdnTables(domainName);
 
-      DateTime now = clock.nowUtc();
+      DateTime now = tm().getTransactionTime();
       Tld tld = Tld.get(domainName.parent().toString());
       try {
         verifyNotInPredelegation(tld, now);
@@ -135,7 +148,7 @@ public class CheckApiAction implements Runnable {
         isReserved = reservedError.isPresent();
       }
       if (!isRegistered && !isReserved) {
-        isBsaBlocked = isBlockedByBsa(domainName.parts().get(0), tld, clock.nowUtc());
+        isBsaBlocked = isBlockedByBsa(domainName.parts().get(0), tld, now);
       }
       Availability availability =
           isRegistered

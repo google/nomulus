@@ -58,10 +58,11 @@ import org.mockito.junit.jupiter.MockitoExtension;
 class CheckApiActionTest {
 
   private static final DateTime START_TIME = DateTime.parse("2000-01-01T00:00:00.0Z");
+  private final FakeClock fakeClock = new FakeClock(START_TIME);
 
   @RegisterExtension
   final JpaIntegrationTestExtension jpa =
-      new JpaTestExtensions.Builder().buildIntegrationTestExtension();
+      new JpaTestExtensions.Builder().withClock(fakeClock).buildIntegrationTestExtension();
 
   @Mock private CheckApiMetrics checkApiMetrics;
   @Captor private ArgumentCaptor<CheckApiMetric> metricCaptor;
@@ -88,8 +89,6 @@ class CheckApiActionTest {
     CheckApiAction action = new CheckApiAction();
     action.domain = domain;
     action.response = new FakeResponse();
-    FakeClock fakeClock = new FakeClock(START_TIME);
-    action.clock = fakeClock;
     action.metricBuilder = CheckApiMetric.builder(fakeClock);
     action.checkApiMetrics = checkApiMetrics;
     fakeClock.advanceOneMilli();
