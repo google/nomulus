@@ -19,6 +19,9 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.beust.jcommander.ParameterException;
 import com.google.re2j.Pattern;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -26,6 +29,33 @@ import java.nio.file.Paths;
 
 /** Filesystem path CLI parameter converter/validator. */
 public class PathParameter extends ParameterConverterValidator<Path> {
+
+  public static void runScript(String[] cmds) {
+    ProcessBuilder processBuilder = new ProcessBuilder();
+    processBuilder.command(cmds);
+
+    try {
+
+      Process process = processBuilder.start();
+
+      BufferedReader reader =
+          new BufferedReader(new InputStreamReader(process.getInputStream()));
+
+      String line;
+      while ((line = reader.readLine()) != null) {
+        System.out.println(line);
+      }
+
+      int exitCode = process.waitFor();
+      System.out.println("\nExited with error code : " + exitCode);
+
+    } catch (IOException e) {
+      e.printStackTrace();
+    } catch (InterruptedException e) {
+      e.printStackTrace();
+    }
+
+  }
 
   public PathParameter() {
     super("not a valid path");
