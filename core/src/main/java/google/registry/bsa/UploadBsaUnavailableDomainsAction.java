@@ -187,6 +187,8 @@ public class UploadBsaUnavailableDomainsAction implements Runnable {
             .filter(tld -> isEnrolledWithBsa(tld, runTime))
             .collect(toImmutableSet());
 
+    logger.atInfo().log("Getting unavailable domains in TLDs: %s ...", bsaEnabledTlds);
+
     ImmutableSortedSet.Builder<String> unavailableDomains =
         new ImmutableSortedSet.Builder<>(Ordering.natural());
     for (Tld tld : bsaEnabledTlds) {
@@ -211,7 +213,9 @@ public class UploadBsaUnavailableDomainsAction implements Runnable {
                 "tlds", bsaEnabledTlds.stream().map(Tld::getTldStr).collect(toImmutableSet()))
             .setParameter("now", runTime)
             .getResultList());
-    return unavailableDomains.build();
+    ImmutableSortedSet<String> result = unavailableDomains.build();
+    logger.atInfo().log("Found %d total unavailable domains.", result.size());
+    return result;
   }
 
   private static String toDomain(String domainLabel, Tld tld) {
