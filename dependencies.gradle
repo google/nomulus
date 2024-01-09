@@ -101,8 +101,8 @@ ext {
       // Dependencies with dynamic versions start from here.
       'args4j:args4j:[2.0.26,)',
       'com.google.api:gax:[1.66.0,)',
-      'com.google.api.grpc:proto-google-cloud-secretmanager-v1:[1.4.0,)',
-      'com.google.api.grpc:proto-google-cloud-tasks-v2:[1.33.2,)',
+      'com.google.api.grpc:proto-google-cloud-secretmanager-v1:[1.4.0, 2.23.0]!!)',
+      'com.google.api.grpc:proto-google-cloud-tasks-v2:[1.33.2, 2.23.0]!!)',
       'com.google.api.grpc:proto-google-common-protos:[2.1.0,)',
 
       // Excluding versions 2.0 from google-api-client because they're
@@ -132,7 +132,7 @@ ext {
       'com.google.cloud.sql:postgres-socket-factory:[1.2.1,)',
       'com.google.cloud:google-cloud-core:[1.94.3,)',
       'com.google.cloud:google-cloud-core-http:[1.94.3,)',
-      'com.google.cloud:google-cloud-secretmanager:[1.4.0,)',
+      'com.google.cloud:google-cloud-secretmanager:[1.4.0, 2.23.0]!!)',
       'com.google.cloud:google-cloud-storage:[1.113.12, 2.22.6]!!',
       'com.google.cloud:google-cloud-nio:[0.123.4, 0.126.19]!!',
       'com.google.cloud:google-cloud-tasks:[1.33.2,)',
@@ -143,8 +143,8 @@ ext {
       'com.google.errorprone:error_prone_annotations:[2.7.1,)',
       'com.google.flogger:flogger-system-backend:[0.7.4,)',
       'com.google.flogger:flogger:[0.7.4,)',
-      'com.google.guava:guava-testlib:[32.1.1-jre,)',
-      'com.google.guava:guava:[32.1.1-jre,)',
+      'com.google.guava:guava-testlib:[33.0.0-jre,)',
+      'com.google.guava:guava:[33.0.0-jre,)',
       'com.google.gwt:gwt-user:[2.9.0,)',
       'com.google.http-client:google-http-client-appengine:[1.39.0,)',
       'com.google.http-client:google-http-client-jackson2:[1.39.0,)',
@@ -168,6 +168,7 @@ ext {
       'com.jcraft:jsch:[0.1.55,)',
       'commons-codec:commons-codec:[1.15,)',
       'com.squareup:javapoet:[1.13.0,)',
+      'com.squareup.okhttp3:okhttp:[4.10.0,4.99.0]!!', // Don't use v5 which is in alpha yet.
       'com.sun.activation:javax.activation:[1.2.0,)',
       'com.sun.xml.bind:jaxb-impl:[2.3.3,)',
       'com.sun.xml.bind:jaxb-osgi:[2.3.3,)',
@@ -193,7 +194,7 @@ ext {
       'org.junit.jupiter:junit-jupiter-params:[5.6.2,)',
       'org.junit.platform:junit-platform-runner:[1.6.2,)',
       'org.junit.platform:junit-platform-suite-api:[1.6.2,)',
-      'org.junit-pioneer:junit-pioneer:[0.7.0,)',
+      'org.junit-pioneer:junit-pioneer:[0.7.0, 2.0.0[',
       'org.apache.avro:avro:[1.8.2,)',
       'org.apache.beam:beam-runners-core-construction-java:[2.37.0,)',
       'org.apache.beam:beam-runners-direct-java:[2.37.0,)',
