@@ -72,6 +72,24 @@ public class ConfigureTldCommand extends MutatingCommand {
   boolean breakglass;
 
   @Parameter(
+      names = {"--end_breakglass"},
+      description =
+          "Sets the breakglass field on the TLD to false, indicating that whatever changes made to"
+              + " the TLD should be overwritten by the internal config file on the next TLD sync."
+              + " If this flag is not used to end breakglass mode, breakglass mode will also end"
+              + " automatically if the configuration file stored internally is updated to match"
+              + " the current state of the TLD.")
+  boolean endBreakglass;
+
+  @Parameter(
+      names = {"--build_environment"},
+      description =
+          "DO NOT USE THIS FLAG ON THE COMMAND LINE! This flag indicates the command is being run"
+              + " by the build environment tools. This flag should never be used by a human user"
+              + " from the command line.")
+  boolean buildEnv;
+
+  @Parameter(
       names = {"-d", "--dry_run"},
       description = "Does not execute the entity mutation")
   boolean dryRun;
