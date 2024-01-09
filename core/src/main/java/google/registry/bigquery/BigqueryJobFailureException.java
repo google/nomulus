@@ -72,7 +72,7 @@ public final class BigqueryJobFailureException extends RuntimeException {
   /**
    * Returns a short error code describing why this job failed.
    *
-   * <h3>Sample Reasons</h3>
+   * <p>Sample Reasons:
    *
    * <ul>
    *   <li>{@code "duplicate"}: The table you're trying to create already exists.
@@ -80,8 +80,8 @@ public final class BigqueryJobFailureException extends RuntimeException {
    *   <li>{@code "unknown"}: Non-Bigquery errors.
    * </ul>
    *
-   * @see <a href="https://cloud.google.com/bigquery/troubleshooting-errors">
-   *     Troubleshooting Errors</a>
+   * @see <a href="https://cloud.google.com/bigquery/troubleshooting-errors">Troubleshooting
+   *     Errors</a>
    */
   public String getReason() {
     if (jobStatus != null) {

@@ -363,8 +363,8 @@ public class CloudDnsWriter extends BaseDnsWriter {
    * <p>This call should be used in conjunction with {@link #getResourceRecordsForDomains} in a
    * get-and-set retry loop.
    *
-   * <p>See {@link "<a href="https://cloud.google.com/dns/troubleshooting">Troubleshoot Cloud
-   * DNS</a>"} for a list of errors produced by the Google Cloud DNS API.
+   * <p>See <a href="https://cloud.google.com/dns/troubleshooting">Troubleshoot Cloud DNS</a> for a
+   * list of errors produced by the Google Cloud DNS API.
    *
    * @throws ZoneStateException if the operation could not be completely successfully because the
    *     records to delete do not exist, already exist or have been modified with different

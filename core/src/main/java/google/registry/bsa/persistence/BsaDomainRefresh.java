@@ -86,6 +86,7 @@ class BsaDomainRefresh {
     return this;
   }
 
+  @SuppressWarnings("AmbiguousMethodReference")
   VKey<BsaDomainRefresh> vKey() {
     return vKey(jobId);
   }

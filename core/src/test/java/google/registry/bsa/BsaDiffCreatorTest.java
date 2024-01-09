@@ -48,8 +48,14 @@ class BsaDiffCreatorTest {
 
   @Mock GcsClient gcsClient;
 
-  @Mock DownloadSchedule schedule;
-  @Mock CompletedJob completedJob;
+  @SuppressWarnings("DoNotMockAutoValue")
+  @Mock
+  DownloadSchedule schedule;
+
+  @SuppressWarnings("DoNotMockAutoValue")
+  @Mock
+  CompletedJob completedJob;
+
   @Mock IdnChecker idnChecker;
 
   BsaDiffCreator diffCreator;

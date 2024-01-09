@@ -102,7 +102,7 @@ public abstract class HtmlAction implements Runnable {
     runAfterLogin(data);
   }
 
-  public abstract void runAfterLogin(HashMap<String, Object> data);
+  public abstract void runAfterLogin(Map<String, Object> data);
 
   public abstract String getPath();
 }

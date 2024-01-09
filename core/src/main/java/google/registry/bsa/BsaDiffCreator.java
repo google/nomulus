@@ -70,7 +70,7 @@ class BsaDiffCreator {
   BsaDiff createDiff(DownloadSchedule schedule, IdnChecker idnChecker) {
     String currentJobName = schedule.jobName();
     Optional<String> previousJobName = schedule.latestCompleted().map(CompletedJob::jobName);
-    /**
+    /*
      * Memory usage is a concern when creating a diff, when the newest download needs to be held in
      * memory in its entirety. The top-grade AppEngine VM has 3GB of memory, leaving less than 1.5GB
      * to application memory footprint after subtracting overheads due to copying garbage collection
@@ -92,7 +92,7 @@ class BsaDiffCreator {
     try (Stream<Line> currentStream = loadBlockLists(currentJobName);
         Stream<Line> previousStream =
             previousJobName.map(this::loadBlockLists).orElseGet(Stream::of)) {
-      /**
+      /*
        * Load current label/order pairs into a multimap, which will contain both new labels and
        * those that stay on when processing is done.
        */
@@ -123,7 +123,7 @@ class BsaDiffCreator {
                   toMultimap(
                       LabelOrderPair::label, LabelOrderPair::orderId, this::listBackedMultiMap));
 
-      /**
+      /*
        * Labels in `newAndRemaining`:
        *
        * <ul>
@@ -245,7 +245,7 @@ class BsaDiffCreator {
 
     abstract Long orderId();
 
-    static <K, V> LabelOrderPair of(String key, Long value) {
+    static LabelOrderPair of(String key, Long value) {
       return new AutoValue_BsaDiffCreator_LabelOrderPair(key, value);
     }
   }

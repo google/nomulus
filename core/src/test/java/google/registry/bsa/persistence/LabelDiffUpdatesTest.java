@@ -62,7 +62,10 @@ class LabelDiffUpdatesTest {
       new JpaTestExtensions.Builder().withClock(fakeClock).buildIntegrationWithCoverageExtension();
 
   @Mock IdnChecker idnChecker;
-  @Mock DownloadSchedule schedule;
+
+  @SuppressWarnings("DoNotMockAutoValue")
+  @Mock
+  DownloadSchedule schedule;
 
   Tld app;
   Tld dev;
