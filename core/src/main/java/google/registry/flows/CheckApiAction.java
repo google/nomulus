@@ -16,12 +16,14 @@ package google.registry.flows;
 
 import static com.google.common.base.Strings.nullToEmpty;
 import static com.google.common.net.HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN;
+import static google.registry.flows.domain.DomainFlowUtils.isBlockedByBsa;
 import static google.registry.flows.domain.DomainFlowUtils.validateDomainName;
 import static google.registry.flows.domain.DomainFlowUtils.validateDomainNameWithIdnTables;
 import static google.registry.flows.domain.DomainFlowUtils.verifyNotInPredelegation;
 import static google.registry.model.tld.label.ReservationType.getTypeOfHighestSeverity;
 import static google.registry.model.tld.label.ReservedList.getReservationTypes;
 import static google.registry.monitoring.whitebox.CheckApiMetric.Availability.AVAILABLE;
+import static google.registry.monitoring.whitebox.CheckApiMetric.Availability.BSA_BLOCKED;
 import static google.registry.monitoring.whitebox.CheckApiMetric.Availability.REGISTERED;
 import static google.registry.monitoring.whitebox.CheckApiMetric.Availability.RESERVED;
 import static google.registry.monitoring.whitebox.CheckApiMetric.Status.INVALID_NAME;
@@ -30,6 +32,7 @@ import static google.registry.monitoring.whitebox.CheckApiMetric.Status.SUCCESS;
 import static google.registry.monitoring.whitebox.CheckApiMetric.Status.UNKNOWN_ERROR;
 import static google.registry.monitoring.whitebox.CheckApiMetric.Tier.PREMIUM;
 import static google.registry.monitoring.whitebox.CheckApiMetric.Tier.STANDARD;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.pricing.PricingEngineProxy.isDomainPremium;
 import static google.registry.util.DomainNameUtils.canonicalizeHostname;
 import static org.json.simple.JSONValue.toJSONString;
@@ -55,7 +58,6 @@ import google.registry.request.Parameter;
 import google.registry.request.RequestParameters;
 import google.registry.request.Response;
 import google.registry.request.auth.Auth;
-import google.registry.util.Clock;
 import java.util.Map;
 import java.util.Optional;
 import javax.inject.Inject;
@@ -79,7 +81,6 @@ public class CheckApiAction implements Runnable {
   String domain;
 
   @Inject Response response;
-  @Inject Clock clock;
   @Inject CheckApiMetric.Builder metricBuilder;
   @Inject CheckApiMetrics checkApiMetrics;
 
@@ -107,6 +108,20 @@ public class CheckApiAction implements Runnable {
     try {
       domainString = canonicalizeHostname(nullToEmpty(domain));
       domainName = validateDomainName(domainString);
+      return tm().transact(() -> checkDomainName(domainName));
+    } catch (IllegalArgumentException | EppException e) {
+      metricBuilder.status(INVALID_NAME);
+      return fail("Must supply a valid domain name on an authoritative TLD");
+    }
+  }
+
+  private Map<String, Object> checkDomainName(InternetDomainName domainName) {
+    tm().assertInTransaction();
+
+    String domainString;
+    try {
+      domainString = canonicalizeHostname(nullToEmpty(domain));
+      domainName = validateDomainName(domainString);
     } catch (IllegalArgumentException | EppException e) {
       metricBuilder.status(INVALID_NAME);
       return fail("Must supply a valid domain name on an authoritative TLD");
@@ -115,7 +130,7 @@ public class CheckApiAction implements Runnable {
       // Throws an EppException with a reasonable error message which will be sent back to caller.
       validateDomainNameWithIdnTables(domainName);
 
-      DateTime now = clock.nowUtc();
+      DateTime now = tm().getTransactionTime();
       Tld tld = Tld.get(domainName.parent().toString());
       try {
         verifyNotInPredelegation(tld, now);
@@ -126,13 +141,25 @@ public class CheckApiAction implements Runnable {
 
       boolean isRegistered = checkExists(domainString, now);
       Optional<String> reservedError = Optional.empty();
+      boolean isBsaBlocked = false;
       boolean isReserved = false;
       if (!isRegistered) {
         reservedError = checkReserved(domainName);
         isReserved = reservedError.isPresent();
       }
-      Availability availability = isRegistered ? REGISTERED : (isReserved ? RESERVED : AVAILABLE);
-      String errorMsg = isRegistered ? "In use" : (isReserved ? reservedError.get() : null);
+      if (!isRegistered && !isReserved) {
+        isBsaBlocked = isBlockedByBsa(domainName.parts().get(0), tld, now);
+      }
+      Availability availability =
+          isRegistered
+              ? REGISTERED
+              : (isReserved ? RESERVED : (isBsaBlocked ? BSA_BLOCKED : AVAILABLE));
+      String errorMsg =
+          isRegistered
+              ? "In use"
+              : (isReserved
+                  ? reservedError.get()
+                  : (isBsaBlocked ? "Blocked by the Brand Safety Alliance" : null));
 
       ImmutableMap.Builder<String, Object> responseBuilder = new ImmutableMap.Builder<>();
       metricBuilder.status(SUCCESS).availability(availability);
