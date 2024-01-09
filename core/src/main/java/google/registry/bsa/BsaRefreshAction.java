@@ -153,7 +153,7 @@ public class BsaRefreshAction implements Runnable {
           Optional<String> report =
               JsonSerializations.toUnblockableDomainsReport(
                   changes
-                      .filter(UnblockableDomainChange::AddOrChange)
+                      .filter(UnblockableDomainChange::isAddOrChange)
                       .map(UnblockableDomainChange::newValue));
           if (report.isPresent()) {
             gcsClient.logRemovedUnblockableDomainsReport(
