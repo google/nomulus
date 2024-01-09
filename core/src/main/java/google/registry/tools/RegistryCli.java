@@ -218,12 +218,20 @@ final class RegistryCli implements CommandRunner {
 
     // Reset the JPA transaction manager after every command to avoid a situation where a test can
     // interfere with other tests
-    JpaTransactionManager cachedJpaTm = tm();
-    TransactionManagerFactory.setJpaTm(() -> component.nomulusToolJpaTransactionManager().get());
-    TransactionManagerFactory.setReplicaJpaTm(
-        () -> component.nomulusToolReplicaJpaTransactionManager().get());
-    command.run();
-    TransactionManagerFactory.setJpaTm(() -> cachedJpaTm);
+    try {
+      JpaTransactionManager cachedJpaTm = tm();
+      TransactionManagerFactory.setJpaTm(() -> component.nomulusToolJpaTransactionManager().get());
+      TransactionManagerFactory.setReplicaJpaTm(
+          () -> component.nomulusToolReplicaJpaTransactionManager().get());
+      command.run();
+      TransactionManagerFactory.setJpaTm(() -> cachedJpaTm);
+    } catch (Exception e) {
+      System.err.printf(
+          "Could not get tool transaction manager; try running nomulus -e %s logout "
+              + "and then nomulus -e %s login.\n",
+          environment.name().toLowerCase(), environment.name().toLowerCase());
+      throw e;
+    }
   }
 
   void setEnvironment(RegistryToolEnvironment environment) {
