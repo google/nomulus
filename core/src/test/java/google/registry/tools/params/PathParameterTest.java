@@ -38,6 +38,8 @@ class PathParameterTest {
 
   private final PathParameter vanilla = new PathParameter();
 
+  private static final Boolean isRoot = "root".equals(System.getProperty("user.name"));
+
   @Test
   void testConvert_etcPasswd_returnsPath() {
     assertThat((Object) vanilla.convert("/etc/passwd")).isEqualTo(Paths.get("/etc/passwd"));
@@ -105,9 +107,15 @@ class PathParameterTest {
   void testInputFileValidate_unreadableFile_throws() throws Exception {
     Path file = Files.createFile(tmpDir.resolve("tmpfile.txt"));
     Files.setPosixFilePermissions(file, PosixFilePermissions.fromString("-w-------"));
-    ParameterException thrown =
-        assertThrows(ParameterException.class, () -> inputFile.validate("input", file.toString()));
-    assertThat(thrown).hasMessageThat().contains("not readable");
+    // This test doesn't take into account the fact that root user has access to read/write the
+    // file even if posix permissions disallow it.
+    // For the environmnent that run strictly under root, we will ignore the test results.
+    if (!isRoot) {
+      ParameterException thrown =
+          assertThrows(
+              ParameterException.class, () -> inputFile.validate("input", file.toString()));
+      assertThat(thrown).hasMessageThat().contains("not readable");
+    }
   }
 
   // =========================== Test OutputFile Validate ========================================
@@ -142,9 +150,15 @@ class PathParameterTest {
   void testOutputFileValidate_notWritable_throws() throws Exception {
     Path file = Files.createFile(tmpDir.resolve("newFile.dat"));
     Files.setPosixFilePermissions(file, PosixFilePermissions.fromString("r--------"));
-    ParameterException thrown =
-        assertThrows(ParameterException.class, () -> outputFile.validate("input", file.toString()));
-    assertThat(thrown).hasMessageThat().contains("not writable");
+    // This test doesn't take into account the fact that root user has access to read/write the
+    // file even if posix permissions disallow it.
+    // For the environmnent that run strictly under root, we will ignore the test results.
+    if (!isRoot) {
+      ParameterException thrown =
+          assertThrows(
+              ParameterException.class, () -> outputFile.validate("input", file.toString()));
+      assertThat(thrown).hasMessageThat().contains("not writable");
+    }
   }
 
   @Test
