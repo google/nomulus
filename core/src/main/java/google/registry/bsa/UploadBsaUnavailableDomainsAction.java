@@ -18,7 +18,9 @@ import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static google.registry.model.tld.Tld.isEnrolledWithBsa;
 import static google.registry.model.tld.Tlds.getTldEntitiesOfType;
 import static google.registry.model.tld.label.ReservedList.loadReservedLists;
+import static google.registry.persistence.PersistenceModule.TransactionIsolationLevel.TRANSACTION_REPEATABLE_READ;
 import static google.registry.persistence.transaction.TransactionManagerFactory.replicaTm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.request.Action.Method.POST;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 
@@ -104,11 +106,19 @@ public class UploadBsaUnavailableDomainsAction implements Runnable {
 
   @Override
   public void run() {
+    // TODO(mcilwain): Implement a date Cursor, have the cronjob run frequently, and short-circuit
+    //                 the run if the daily upload is already completed.
     DateTime runTime = clock.nowUtc();
+    // TODO(mcilwain): Batch this.
     String unavailableDomains =
-        Joiner.on("\n").join(replicaTm().transact(() -> getUnavailableDomains(runTime)));
-    uploadToGcs(unavailableDomains, runTime);
-    uploadToBsa(unavailableDomains, runTime);
+        Joiner.on("\n")
+            .join(tm().transact(() -> getUnavailableDomains(runTime), TRANSACTION_REPEATABLE_READ));
+    if (unavailableDomains.isEmpty()) {
+      logger.atWarning().log("No unavailable domains found; terminating.");
+    } else {
+      uploadToGcs(unavailableDomains, runTime);
+      uploadToBsa(unavailableDomains, runTime);
+    }
   }
 
   /** Uploads the unavailable domains list to GCS in the unavailable domains bucket. */
@@ -187,7 +197,9 @@ public class UploadBsaUnavailableDomainsAction implements Runnable {
             .filter(tld -> isEnrolledWithBsa(tld, runTime))
             .collect(toImmutableSet());
 
-    logger.atInfo().log("Getting unavailable domains in TLDs: %s ...", bsaEnabledTlds);
+    logger.atInfo().log(
+        "Getting unavailable domains in TLDs: %s ...",
+        bsaEnabledTlds.stream().map(Tld::getTldStr).collect(toImmutableSet()));
 
     ImmutableSortedSet.Builder<String> unavailableDomains =
         new ImmutableSortedSet.Builder<>(Ordering.natural());
