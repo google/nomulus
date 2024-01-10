@@ -16,11 +16,9 @@ package google.registry.tools;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Path;
 import org.flywaydb.core.Flyway;
-import org.testcontainers.containers.BindMode;
 import org.testcontainers.containers.Container;
 
 /**
@@ -35,9 +33,6 @@ public class DumpGoldenSchemaCommand extends PostgresqlCommand {
 
   // The mount point in the container.
   private static final String CONTAINER_MOUNT_POINT = "/tmp/pg_dump.out";
-
-  // Temporary workaround to fix permission issues on certain Linux distro (e. g. Arch Linux).
-  // private static final String CONTAINER_MOUNT_POINT_TMP = "/tmp/pg_dump.tmp";
 
   @Parameter(
       names = {"--output", "-o"},
@@ -65,14 +60,6 @@ public class DumpGoldenSchemaCommand extends PostgresqlCommand {
       throw new RuntimeException(result.toString());
     }
     postgresContainer.copyFileFromContainer(CONTAINER_MOUNT_POINT, output.toString());
-  }
-
-  @Override
-  protected void onContainerCreate() throws IOException {
-    // open the output file for write so we can mount it.
-    // new FileOutputStream(output.toFile()).close();
-    // postgresContainer.withFileSystemBind(
-    //     output.toString(), CONTAINER_MOUNT_POINT, BindMode.READ_WRITE);
   }
 
   private static String[] getSchemaDumpCommand(String username, String dbName) {
