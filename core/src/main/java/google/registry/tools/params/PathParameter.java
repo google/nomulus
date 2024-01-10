@@ -19,9 +19,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.beust.jcommander.ParameterException;
 import com.google.re2j.Pattern;
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -29,33 +26,6 @@ import java.nio.file.Paths;
 
 /** Filesystem path CLI parameter converter/validator. */
 public class PathParameter extends ParameterConverterValidator<Path> {
-
-  public static void runScript(String[] cmds) {
-    ProcessBuilder processBuilder = new ProcessBuilder();
-    processBuilder.command(cmds);
-
-    try {
-
-      Process process = processBuilder.start();
-
-      BufferedReader reader =
-          new BufferedReader(new InputStreamReader(process.getInputStream()));
-
-      String line;
-      while ((line = reader.readLine()) != null) {
-        System.out.println(line);
-      }
-
-      int exitCode = process.waitFor();
-      System.out.println("\nExited with error code : " + exitCode);
-
-    } catch (IOException e) {
-      e.printStackTrace();
-    } catch (InterruptedException e) {
-      e.printStackTrace();
-    }
-
-  }
 
   public PathParameter() {
     super("not a valid path");
@@ -79,19 +49,14 @@ public class PathParameter extends ParameterConverterValidator<Path> {
     public void validate(String name, String value) throws ParameterException {
       super.validate(name, value);
       Path file = convert(value).toAbsolutePath();
-      System.out.println(">> Path = " + file.toString() + " name " + name);
       if (Files.exists(file)) {
-        System.out.println(">> Exists ");
         if (Files.isDirectory(file)) {
           throw new ParameterException(String.format("%s is a directory: %s", name, file));
         }
-        runScript(new String[]{"/bin/bash", "-c", "ls -la " + file});
         if (!Files.isWritable(file)) {
           throw new ParameterException(String.format("%s not writable: %s", name, file));
         }
-        System.out.println(">> Nothing thrown 1");
       } else {
-        System.out.println(">> Doesn't exist ");
         Path dir = file.getParent();
         if (!Files.exists(dir)) {
           throw new ParameterException(String.format("%s parent dir doesn't exist: %s", name, dir));
@@ -99,7 +64,6 @@ public class PathParameter extends ParameterConverterValidator<Path> {
         if (!Files.isDirectory(dir)) {
           throw new ParameterException(String.format("%s parent is non-directory: %s", name, dir));
         }
-        System.out.println(">> Nothing thrown 2 ");
       }
     }
   }
