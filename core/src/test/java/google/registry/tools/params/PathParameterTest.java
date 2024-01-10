@@ -110,9 +110,10 @@ class PathParameterTest {
     // This test doesn't take into account the fact that root user has access to read/write the
     // file even if posix permissions disallow it.
     // For the environmnent that run strictly under root, we will ignore the test results.
-    if(!isRoot) {
+    if (!isRoot) {
       ParameterException thrown =
-          assertThrows(ParameterException.class, () -> inputFile.validate("input", file.toString()));
+          assertThrows(
+              ParameterException.class, () -> inputFile.validate("input", file.toString()));
       assertThat(thrown).hasMessageThat().contains("not readable");
     }
   }
@@ -152,9 +153,10 @@ class PathParameterTest {
     // This test doesn't take into account the fact that root user has access to read/write the
     // file even if posix permissions disallow it.
     // For the environmnent that run strictly under root, we will ignore the test results.
-    if(!isRoot) {
+    if (!isRoot) {
       ParameterException thrown =
-          assertThrows(ParameterException.class, () -> outputFile.validate("input", file.toString()));
+          assertThrows(
+              ParameterException.class, () -> outputFile.validate("input", file.toString()));
       assertThat(thrown).hasMessageThat().contains("not writable");
     }
   }
