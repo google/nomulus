@@ -173,4 +173,15 @@
     <!-- Runs every hour. -->
     <schedule>0 * * * *</schedule>
   </task>
+
+  <task>
+    <url><![CDATA[/_dr/task/uploadBsaUnavailableNames]]></url>
+    <name>uploadBsaUnavailableNames</name>
+    <description>
+      This job uploads all unavailable domain names (those registered and
+      reserved) to the BSA.
+    </description>
+    <service>bsa</service>
+    <schedule>23 8,20 * * *</schedule>
+  </task>
 </entries>
