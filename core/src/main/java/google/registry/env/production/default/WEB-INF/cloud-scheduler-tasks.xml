@@ -275,6 +275,17 @@
   </task>
 
   <task>
+    <url><![CDATA[/_dr/task/bsaDownload]]></url>
+    <name>bsaDownload</name>
+    <service>bsa</service>
+    <description>
+      Downloads the BSA block list and processes the changes.
+    </description>
+    <!-- Runs every hour. -->
+    <schedule>0 * * * *</schedule>
+  </task>
+
+  <task>
     <url><![CDATA[/_dr/task/uploadBsaUnavailableNames]]></url>
     <name>uploadBsaUnavailableNames</name>
     <description>
