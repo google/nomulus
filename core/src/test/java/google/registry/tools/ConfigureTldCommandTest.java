@@ -506,7 +506,7 @@ public class ConfigureTldCommandTest extends CommandTestCase<ConfigureTldCommand
   }
 
   @Test
-  void testFailure_breakglassFlag_NoChanges() throws Exception {
+  void testFailure_breakGlassFlag_NoChanges() throws Exception {
     Tld tld = createTld("idns");
     persistResource(
         tld.asBuilder()
@@ -520,16 +520,16 @@ public class ConfigureTldCommandTest extends CommandTestCase<ConfigureTldCommand
             IllegalArgumentException.class, () -> runCommandForced("--input=" + tldFile, "-b"));
     assertThat(thrown.getMessage())
         .isEqualTo(
-            "Breakglass mode can only be set when making new changes to a TLD configuration");
+            "Break glass mode can only be set when making new changes to a TLD configuration");
   }
 
   @Test
-  void testSuccess_breakglassFlag_startsBreakglassMode() throws Exception {
+  void testSuccess_breakGlassFlag_startsBreakGlassMode() throws Exception {
     Tld tld = createTld("tld");
     assertThat(tld.getCreateBillingCost()).isEqualTo(Money.of(USD, 13));
     File tldFile = tmpDir.resolve("tld.yaml").toFile();
     Files.asCharSink(tldFile, UTF_8).write(loadFile(getClass(), "tld.yaml"));
-    runCommandForced("--input=" + tldFile, "--breakglass");
+    runCommandForced("--input=" + tldFile, "--break_glass");
     Tld updatedTld = Tld.get("tld");
     assertThat(updatedTld.getCreateBillingCost()).isEqualTo(Money.of(USD, 25));
     testTldConfiguredSuccessfully(updatedTld, "tld.yaml");
@@ -537,13 +537,13 @@ public class ConfigureTldCommandTest extends CommandTestCase<ConfigureTldCommand
   }
 
   @Test
-  void testSuccess_breakglassFlag_continuesBreakglassMode() throws Exception {
+  void testSuccess_breaklassFlag_continuesBreakGlassMode() throws Exception {
     Tld tld = createTld("tld");
     assertThat(tld.getCreateBillingCost()).isEqualTo(Money.of(USD, 13));
     persistResource(tld.asBuilder().setBreakglassMode(true).build());
     File tldFile = tmpDir.resolve("tld.yaml").toFile();
     Files.asCharSink(tldFile, UTF_8).write(loadFile(getClass(), "tld.yaml"));
-    runCommandForced("--input=" + tldFile, "--breakglass");
+    runCommandForced("--input=" + tldFile, "--break_glass");
     Tld updatedTld = Tld.get("tld");
     assertThat(updatedTld.getCreateBillingCost()).isEqualTo(Money.of(USD, 25));
     testTldConfiguredSuccessfully(updatedTld, "tld.yaml");
@@ -551,7 +551,7 @@ public class ConfigureTldCommandTest extends CommandTestCase<ConfigureTldCommand
   }
 
   @Test
-  void testSuccess_NoDiffNoBreakglassFlag_endsBreakglassMode() throws Exception {
+  void testSuccess_NoDiffNoBreakGlassFlag_endsBreakGlassMode() throws Exception {
     Tld tld = createTld("idns");
     persistResource(
         tld.asBuilder()
@@ -566,11 +566,11 @@ public class ConfigureTldCommandTest extends CommandTestCase<ConfigureTldCommand
     assertThat(updatedTld.getBreakglassMode()).isFalse();
     assertAboutLogs()
         .that(logHandler)
-        .hasLogAtLevelWithMessage(INFO, "Breakglass mode removed from TLD: idns");
+        .hasLogAtLevelWithMessage(INFO, "Break glass mode removed from TLD: idns");
   }
 
   @Test
-  void testSuccess_noDiffBreakglassFlag_continuesBreakglassMode() throws Exception {
+  void testSuccess_noDiffBreakGlassFlag_continuesBreakGlassMode() throws Exception {
     Tld tld = createTld("idns");
     persistResource(
         tld.asBuilder()
@@ -589,7 +589,7 @@ public class ConfigureTldCommandTest extends CommandTestCase<ConfigureTldCommand
   }
 
   @Test
-  void testFailure_noBreakglassFlag_inBreakglassMode() throws Exception {
+  void testFailure_noBreakGlassFlag_inBreakGlassMode() throws Exception {
     Tld tld = createTld("tld");
     persistResource(tld.asBuilder().setBreakglassMode(true).build());
     File tldFile = tmpDir.resolve("tld.yaml").toFile();
@@ -598,7 +598,7 @@ public class ConfigureTldCommandTest extends CommandTestCase<ConfigureTldCommand
         assertThrows(IllegalArgumentException.class, () -> runCommandForced("--input=" + tldFile));
     assertThat(thrown.getMessage())
         .isEqualTo(
-            "Changes can not be applied since TLD is in breakglass mode but the breakglass flag"
+            "Changes can not be applied since TLD is in break glass mode but the --break_glass flag"
                 + " was not used");
   }
 
