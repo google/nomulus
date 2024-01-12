@@ -16,14 +16,23 @@ package google.registry.bsa.persistence;
 
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
+import google.registry.util.Clock;
 import org.joda.time.DateTime;
+import org.joda.time.Duration;
 
-/** Testing utils for users of {@link BsaLabel}. */
-public final class BsaLabelTestingUtils {
+/** Exposes BSA persistence entities and tools to test classes. */
+public final class BsaTestingUtils {
 
-  private BsaLabelTestingUtils() {}
+  public static final Duration DEFAULT_DOWNLOAD_INTERVAL = Duration.standardHours(1);
+  public static final Duration DEFAULT_NOP_INTERVAL = Duration.standardDays(1);
+
+  private BsaTestingUtils() {}
 
   public static void persistBsaLabel(String domainLabel, DateTime creationTime) {
     tm().transact(() -> tm().put(new BsaLabel(domainLabel, creationTime)));
+  }
+
+  public static DownloadScheduler createDownloadScheduler(Clock clock) {
+    return new DownloadScheduler(DEFAULT_DOWNLOAD_INTERVAL, DEFAULT_NOP_INTERVAL, clock);
   }
 }
