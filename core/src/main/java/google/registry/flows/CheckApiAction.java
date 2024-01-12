@@ -159,7 +159,7 @@ public class CheckApiAction implements Runnable {
               ? "In use"
               : (isReserved
                   ? reservedError.get()
-                  : (isBsaBlocked ? "Blocked by the Brand Safety Alliance" : null));
+                  : (isBsaBlocked ? "Blocked by a GlobalBlock service" : null));
 
       ImmutableMap.Builder<String, Object> responseBuilder = new ImmutableMap.Builder<>();
       metricBuilder.status(SUCCESS).availability(availability);

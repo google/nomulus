@@ -296,7 +296,7 @@ class CheckApiActionTest {
             "tier", "premium",
             "status", "success",
             "available", false,
-            "reason", "Blocked by the Brand Safety Alliance");
+            "reason", "Blocked by a GlobalBlock service");
 
     verifySuccessMetric(PREMIUM, BSA_BLOCKED);
   }
