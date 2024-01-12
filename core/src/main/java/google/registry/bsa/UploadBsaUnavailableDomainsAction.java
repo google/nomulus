@@ -21,6 +21,7 @@ import static google.registry.model.tld.label.ReservedList.loadReservedLists;
 import static google.registry.persistence.PersistenceModule.TransactionIsolationLevel.TRANSACTION_REPEATABLE_READ;
 import static google.registry.persistence.transaction.TransactionManagerFactory.replicaTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+import static google.registry.request.Action.Method.GET;
 import static google.registry.request.Action.Method.POST;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 
@@ -70,7 +71,7 @@ import org.joda.time.DateTime;
 @Action(
     service = Service.BSA,
     path = "/_dr/task/uploadBsaUnavailableNames",
-    method = POST,
+    method = {GET, POST},
     auth = Auth.AUTH_API_ADMIN)
 public class UploadBsaUnavailableDomainsAction implements Runnable {
 
