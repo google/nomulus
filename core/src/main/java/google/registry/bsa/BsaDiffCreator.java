@@ -206,9 +206,7 @@ class BsaDiffCreator {
                           BlockLabel.of(
                               entry.getKey(),
                               LabelType.NEW_ORDER_ASSOCIATION,
-                              idnChecker.getAllValidIdns(entry.getKey()).stream()
-                                  .map(IdnTableEnum::name)
-                                  .collect(toImmutableSet()))),
+                              getAllValidIdnNames(entry.getKey()))),
               newAndRemaining.asMap().entrySet().stream()
                   .filter(e -> e.getValue().size() > 1 || !e.getValue().contains(ORDER_ID_SENTINEL))
                   .filter(entry -> !entry.getValue().contains(ORDER_ID_SENTINEL))
@@ -217,12 +215,16 @@ class BsaDiffCreator {
                           BlockLabel.of(
                               entry.getKey(),
                               LabelType.CREATE,
-                              idnChecker.getAllValidIdns(entry.getKey()).stream()
-                                  .map(IdnTableEnum::name)
-                                  .collect(toImmutableSet()))),
+                              getAllValidIdnNames(entry.getKey()))),
               Sets.difference(deleted.keySet(), newAndRemaining.keySet()).stream()
-                  .map(label -> BlockLabel.of(label, LabelType.DELETE, ImmutableSet.of())))
+                  .map(label -> BlockLabel.of(label, LabelType.DELETE, getAllValidIdnNames(label))))
           .flatMap(x -> x);
+    }
+
+    ImmutableSet<String> getAllValidIdnNames(String label) {
+      return idnChecker.getAllValidIdns(label).stream()
+          .map(IdnTableEnum::name)
+          .collect(toImmutableSet());
     }
   }
 

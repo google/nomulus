@@ -15,8 +15,8 @@
 package google.registry.bsa.persistence;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.bsa.persistence.BsaLabelTestingUtils.persistBsaLabel;
 import static google.registry.bsa.persistence.BsaLabelUtils.isLabelBlocked;
+import static google.registry.bsa.persistence.BsaTestingUtils.persistBsaLabel;
 import static google.registry.persistence.transaction.TransactionManagerFactory.replicaTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.setJpaTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.setReplicaJpaTm;
