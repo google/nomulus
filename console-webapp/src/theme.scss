@@ -35,15 +35,6 @@ $theme-warn: mat.define-palette(mat.$red-palette);
   @include form-field-density(-5);
 }
 
-@import "@angular/material/theming";
-
-// Define application specific typography settings, font-family, etc
-$typography-configuration: mat-typography-config(
-  $font-family: 'Roboto, "Helvetica Neue", sans-serif',
-);
-
-@include angular-material-typography($typography-configuration);
-
 /** 
 ** Light theme
 **/
