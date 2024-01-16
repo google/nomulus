@@ -22,7 +22,7 @@ apt-get upgrade -y
 # Install GPG2 (in case it was not included)
 apt-get install gnupg2 -y
 # Install Java
-apt-get install openjdk-11-jdk-headless -y
+apt-get install openjdk-17-jdk-headless -y
 # Install Python
 apt-get install python3 -y
 # As of March 2021 python3 is at v3.6. Get pip then install dataclasses
