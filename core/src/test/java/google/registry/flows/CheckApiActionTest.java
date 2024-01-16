@@ -288,7 +288,7 @@ class CheckApiActionTest {
 
   @Test
   void testSuccess_blockedByBsa() {
-    BsaTestingUtils.persistBsaLabel("rich", START_OF_TIME);
+    BsaTestingUtils.persistBsaLabel("rich");
     persistResource(
         Tld.get("example").asBuilder().setBsaEnrollStartTime(Optional.of(START_OF_TIME)).build());
     assertThat(getCheckResponse("rich.example"))

@@ -51,12 +51,13 @@ public final class ReservedDomainsUtils {
         .flatMap(ImmutableSet::stream);
   }
 
-  /** Returns */
+  /** Returns all reserved domains in a given {@code tld} as of {@code now}. */
   static ImmutableSet<String> getAllReservedDomainsInTld(Tld tld, DateTime now) {
     return tld.getReservedListNames().stream()
         .map(ReservedList::get)
         .filter(Optional::isPresent)
         .map(Optional::get)
+        .filter(ReservedList::getShouldPublish)
         .map(ReservedList::getReservedListEntries)
         .map(Map::keySet)
         .flatMap(Set::stream)

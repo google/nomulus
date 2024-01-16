@@ -19,7 +19,9 @@ import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static google.registry.bsa.ReservedDomainsUtils.getAllReservedNames;
 import static google.registry.bsa.ReservedDomainsUtils.isReservedDomain;
-import static google.registry.bsa.persistence.Queries.queryLivesDomains;
+import static google.registry.bsa.persistence.Queries.queryNewlyCreatedDomains;
+import static google.registry.model.tld.Tld.isEnrolledWithBsa;
+import static google.registry.model.tld.Tlds.getTldEntitiesOfType;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static java.util.stream.Collectors.groupingBy;
 
@@ -36,6 +38,8 @@ import google.registry.bsa.api.UnblockableDomain.Reason;
 import google.registry.bsa.api.UnblockableDomainChange;
 import google.registry.model.ForeignKeyUtils;
 import google.registry.model.domain.Domain;
+import google.registry.model.tld.Tld;
+import google.registry.model.tld.Tld.TldType;
 import google.registry.util.BatchedStreams;
 import java.util.List;
 import java.util.Map;
@@ -206,7 +210,13 @@ public final class DomainsRefresher {
 
   static ImmutableSet<String> getNewlyCreatedUnblockables(
       DateTime prevRefreshStartTime, DateTime now) {
-    ImmutableSet<String> liveDomains = queryLivesDomains(prevRefreshStartTime, now);
+    ImmutableSet<String> bsaEnabledTlds =
+        getTldEntitiesOfType(TldType.REAL).stream()
+            .filter(tld -> isEnrolledWithBsa(tld, now))
+            .map(Tld::getTldStr)
+            .collect(toImmutableSet());
+    ImmutableSet<String> liveDomains =
+        queryNewlyCreatedDomains(bsaEnabledTlds, prevRefreshStartTime, now);
     return getUnblockedDomainNames(liveDomains);
   }
 

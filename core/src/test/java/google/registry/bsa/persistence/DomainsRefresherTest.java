@@ -16,6 +16,8 @@ package google.registry.bsa.persistence;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.bsa.BsaTransactions.bsaTransact;
+import static google.registry.bsa.ReservedDomainsTestingUtils.addReservedListsToTld;
+import static google.registry.bsa.ReservedDomainsTestingUtils.createReservedList;
 import static google.registry.bsa.persistence.BsaTestingUtils.persistBsaLabel;
 import static google.registry.model.tld.label.ReservationType.RESERVED_FOR_SPECIFIC_USE;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
@@ -24,15 +26,11 @@ import static google.registry.testing.DatabaseHelper.newDomain;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.ImmutableList;
 import google.registry.bsa.api.UnblockableDomain;
 import google.registry.bsa.api.UnblockableDomainChange;
 import google.registry.bsa.persistence.BsaUnblockableDomain.Reason;
 import google.registry.model.tld.Tld;
-import google.registry.model.tld.label.ReservedList;
-import google.registry.model.tld.label.ReservedList.ReservedListEntry;
-import google.registry.model.tld.label.ReservedListDao;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationWithCoverageExtension;
 import google.registry.testing.FakeClock;
@@ -44,7 +42,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link DomainsRefresher}. */
-public class DomainRefresherTest {
+public class DomainsRefresherTest {
 
   FakeClock fakeClock = new FakeClock(DateTime.parse("2023-11-09T02:08:57.880Z"));
 
@@ -66,8 +64,8 @@ public class DomainRefresherTest {
   }
 
   @Test
-  void staleUnblockableRemoved_wasRegistered() {
-    persistBsaLabel("label", fakeClock.nowUtc().minus(Duration.standardDays(1)));
+  void registeredUnblockable_removed_afterDomainIsDeleted() {
+    persistBsaLabel("label");
     tm().transact(() -> tm().insert(BsaUnblockableDomain.of("label.tld", Reason.REGISTERED)));
     assertThat(bsaTransact(refresher::refreshStaleUnblockables))
         .containsExactly(
@@ -76,8 +74,8 @@ public class DomainRefresherTest {
   }
 
   @Test
-  void staleUnblockableRemoved_wasReserved() {
-    persistBsaLabel("label", fakeClock.nowUtc().minus(Duration.standardDays(1)));
+  void reservedUnblockable_removed_whenReservedLabelIsRemoved() {
+    persistBsaLabel("label");
     tm().transact(() -> tm().insert(BsaUnblockableDomain.of("label.tld", Reason.RESERVED)));
     assertThat(bsaTransact(refresher::refreshStaleUnblockables))
         .containsExactly(
@@ -86,9 +84,9 @@ public class DomainRefresherTest {
   }
 
   @Test
-  void newUnblockableAdded_isRegistered() {
+  void regsiteredUnblockable_added_whenDomainIsAdded() {
     persistResource(newDomain("label.tld"));
-    persistBsaLabel("label", fakeClock.nowUtc().minus(Duration.standardDays(1)));
+    persistBsaLabel("label");
     assertThat(bsaTransact(refresher::getNewUnblockables))
         .containsExactly(
             UnblockableDomainChange.ofNew(
@@ -96,9 +94,10 @@ public class DomainRefresherTest {
   }
 
   @Test
-  void newUnblockableAdded_isReserved() {
-    persistBsaLabel("label", fakeClock.nowUtc().minus(Duration.standardDays(1)));
-    setReservedList("label");
+  void reservedUnblockable_added_whenReservedLabelIsAdded() {
+    persistBsaLabel("label");
+    createReservedList("reservedList", "label", RESERVED_FOR_SPECIFIC_USE);
+    addReservedListsToTld("tld", ImmutableList.of("reservedList"));
     assertThat(bsaTransact(refresher::getNewUnblockables))
         .containsExactly(
             UnblockableDomainChange.ofNew(
@@ -106,9 +105,10 @@ public class DomainRefresherTest {
   }
 
   @Test
-  void staleUnblockableDowngraded_registeredToReserved() {
-    persistBsaLabel("label", fakeClock.nowUtc().minus(Duration.standardDays(1)));
-    setReservedList("label");
+  void registeredUnblockable_changedToReserved_whenDomainIsDeletedButLabelIsReserved() {
+    persistBsaLabel("label");
+    createReservedList("reservedList", "label", RESERVED_FOR_SPECIFIC_USE);
+    addReservedListsToTld("tld", ImmutableList.of("reservedList"));
     tm().transact(() -> tm().insert(BsaUnblockableDomain.of("label.tld", Reason.REGISTERED)));
 
     assertThat(bsaTransact(refresher::refreshStaleUnblockables))
@@ -119,8 +119,8 @@ public class DomainRefresherTest {
   }
 
   @Test
-  void staleUnblockableUpgraded_reservedToRegisteredButNotReserved() {
-    persistBsaLabel("label", fakeClock.nowUtc().minus(Duration.standardDays(1)));
+  void reservedUnblockableUpgraded_changedToRegistered_whenDomainIsCreatedButNoLongerReserved() {
+    persistBsaLabel("label");
     tm().transact(() -> tm().insert(BsaUnblockableDomain.of("label.tld", Reason.RESERVED)));
 
     persistResource(newDomain("label.tld"));
@@ -132,9 +132,10 @@ public class DomainRefresherTest {
   }
 
   @Test
-  void staleUnblockableUpgraded_wasReserved_isReservedAndRegistered() {
-    persistBsaLabel("label", fakeClock.nowUtc().minus(Duration.standardDays(1)));
-    setReservedList("label");
+  void reservedUnblockableUpgraded_changedToRegistered_whenDomainIsCreatedAndStillReserved() {
+    persistBsaLabel("label");
+    createReservedList("reservedList", "label", RESERVED_FOR_SPECIFIC_USE);
+    addReservedListsToTld("tld", ImmutableList.of("reservedList"));
     tm().transact(() -> tm().insert(BsaUnblockableDomain.of("label.tld", Reason.RESERVED)));
 
     persistResource(newDomain("label.tld"));
@@ -143,20 +144,5 @@ public class DomainRefresherTest {
             UnblockableDomainChange.ofChanged(
                 UnblockableDomain.of("label.tld", UnblockableDomain.Reason.RESERVED),
                 UnblockableDomain.Reason.REGISTERED));
-  }
-
-  private void setReservedList(String label) {
-    ImmutableMap<String, ReservedListEntry> reservedNameMap =
-        ImmutableMap.of(label, ReservedListEntry.create(label, RESERVED_FOR_SPECIFIC_USE, ""));
-
-    ReservedListDao.save(
-        new ReservedList.Builder()
-            .setName("testlist")
-            .setCreationTimestamp(fakeClock.nowUtc())
-            .setShouldPublish(false)
-            .setReservedListMap(reservedNameMap)
-            .build());
-    persistResource(
-        Tld.get("tld").asBuilder().setReservedListsByName(ImmutableSet.of("testlist")).build());
   }
 }

@@ -22,8 +22,6 @@ import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import google.registry.model.CreateAutoTimestamp;
-import google.registry.model.ForeignKeyUtils;
-import google.registry.model.domain.Domain;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -99,14 +97,18 @@ class Queries {
     return ImmutableSet.copyOf(tm().getEntityManager().createNativeQuery(sql).getResultList());
   }
 
-  static ImmutableSet<String> queryLivesDomains(DateTime minCreationTime, DateTime now) {
-    ImmutableSet<String> candidates =
-        ImmutableSet.copyOf(
-            tm().getEntityManager()
-                .createQuery(
-                    "SELECT domainName FROM Domain WHERE creationTime >= :time ", String.class)
-                .setParameter("time", CreateAutoTimestamp.create(minCreationTime))
-                .getResultList());
-    return ImmutableSet.copyOf(ForeignKeyUtils.load(Domain.class, candidates, now).keySet());
+  static ImmutableSet<String> queryNewlyCreatedDomains(
+      ImmutableCollection<String> tlds, DateTime minCreationTime, DateTime now) {
+    return ImmutableSet.copyOf(
+        tm().getEntityManager()
+            .createQuery(
+                "SELECT domainName FROM Domain WHERE creationTime >= :minCreationTime "
+                    + "AND deletionTime > :now "
+                    + "AND tld in (:tlds)",
+                String.class)
+            .setParameter("minCreationTime", CreateAutoTimestamp.create(minCreationTime))
+            .setParameter("now", now)
+            .setParameter("tlds", tlds)
+            .getResultList());
   }
 }
