@@ -286,6 +286,18 @@
   </task>
 
   <task>
+    <url><![CDATA[/_dr/task/bsaRefresh]]></url>
+    <name>bsaRefresh</name>
+    <service>bsa</service>
+    <description>
+      Checks for changes in registered domains and reserved labels, and updates
+      the unblockable domains list.
+    </description>
+    <!-- Runs every 30 minutes. -->
+    <schedule>15,45 * * * *</schedule>
+  </task>
+
+  <task>
     <url><![CDATA[/_dr/task/uploadBsaUnavailableNames]]></url>
     <name>uploadBsaUnavailableNames</name>
     <description>
