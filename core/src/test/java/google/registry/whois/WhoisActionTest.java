@@ -16,7 +16,7 @@ package google.registry.whois;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
-import static google.registry.bsa.persistence.BsaLabelTestingUtils.persistBsaLabel;
+import static google.registry.bsa.persistence.BsaTestingUtils.persistBsaLabel;
 import static google.registry.model.EppResourceUtils.loadByForeignKeyCached;
 import static google.registry.model.registrar.Registrar.State.ACTIVE;
 import static google.registry.model.registrar.Registrar.Type.PDT;

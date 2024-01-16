@@ -128,6 +128,7 @@ class BsaDiffCreatorTest {
 
   @Test
   void allRemoved() {
+    when(idnChecker.getAllValidIdns(anyString())).thenReturn(ImmutableSet.of(IdnTableEnum.JA));
     when(gcsClient.readBlockList("first", BlockListType.BLOCK))
         .thenReturn(Stream.of("domainLabel,orderIDs", "test1,1;2", "test2,3", "test3,1;4"));
     when(gcsClient.readBlockList("second", BlockListType.BLOCK)).thenReturn(Stream.of());
@@ -140,9 +141,9 @@ class BsaDiffCreatorTest {
     BsaDiff diff = diffCreator.createDiff(schedule, idnChecker);
     assertThat(diff.getLabels())
         .containsExactly(
-            BlockLabel.of("test1", LabelType.DELETE, ImmutableSet.of()),
-            BlockLabel.of("test2", LabelType.DELETE, ImmutableSet.of()),
-            BlockLabel.of("test3", LabelType.DELETE, ImmutableSet.of()));
+            BlockLabel.of("test1", LabelType.DELETE, ImmutableSet.of("JA")),
+            BlockLabel.of("test2", LabelType.DELETE, ImmutableSet.of("JA")),
+            BlockLabel.of("test3", LabelType.DELETE, ImmutableSet.of("JA")));
     assertThat(diff.getOrders())
         .containsExactly(
             BlockOrder.of(1, OrderType.DELETE),
@@ -227,6 +228,7 @@ class BsaDiffCreatorTest {
 
   @Test
   void removeLabelAndOrder() {
+    when(idnChecker.getAllValidIdns(anyString())).thenReturn(ImmutableSet.of(IdnTableEnum.JA));
     when(gcsClient.readBlockList("first", BlockListType.BLOCK))
         .thenReturn(Stream.of("domainLabel,orderIDs", "test1,1;2", "test2,3", "test3,1;4"));
     when(gcsClient.readBlockList("second", BlockListType.BLOCK))
@@ -239,12 +241,13 @@ class BsaDiffCreatorTest {
     when(schedule.latestCompleted()).thenReturn(Optional.of(completedJob));
     BsaDiff diff = diffCreator.createDiff(schedule, idnChecker);
     assertThat(diff.getLabels())
-        .containsExactly(BlockLabel.of("test2", LabelType.DELETE, ImmutableSet.of()));
+        .containsExactly(BlockLabel.of("test2", LabelType.DELETE, ImmutableSet.of("JA")));
     assertThat(diff.getOrders()).containsExactly(BlockOrder.of(3, OrderType.DELETE));
   }
 
   @Test
   void removeLabelAndOrder_multi() {
+    when(idnChecker.getAllValidIdns(anyString())).thenReturn(ImmutableSet.of(IdnTableEnum.JA));
     when(gcsClient.readBlockList("first", BlockListType.BLOCK))
         .thenReturn(Stream.of("domainLabel,orderIDs", "test1,1;2", "test2,3", "test3,1;4"));
     when(gcsClient.readBlockList("second", BlockListType.BLOCK))
@@ -258,8 +261,8 @@ class BsaDiffCreatorTest {
     BsaDiff diff = diffCreator.createDiff(schedule, idnChecker);
     assertThat(diff.getLabels())
         .containsExactly(
-            BlockLabel.of("test1", LabelType.DELETE, ImmutableSet.of()),
-            BlockLabel.of("test3", LabelType.DELETE, ImmutableSet.of()));
+            BlockLabel.of("test1", LabelType.DELETE, ImmutableSet.of("JA")),
+            BlockLabel.of("test3", LabelType.DELETE, ImmutableSet.of("JA")));
     assertThat(diff.getOrders())
         .containsExactly(
             BlockOrder.of(1, OrderType.DELETE),

@@ -18,7 +18,7 @@ import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.io.BaseEncoding.base16;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
-import static google.registry.bsa.persistence.BsaLabelTestingUtils.persistBsaLabel;
+import static google.registry.bsa.persistence.BsaTestingUtils.persistBsaLabel;
 import static google.registry.flows.FlowTestCase.UserPrivileges.SUPERUSER;
 import static google.registry.model.billing.BillingBase.Flag.ANCHOR_TENANT;
 import static google.registry.model.billing.BillingBase.Flag.RESERVED;

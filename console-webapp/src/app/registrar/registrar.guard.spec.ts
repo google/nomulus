@@ -15,18 +15,23 @@
 import { TestBed } from '@angular/core/testing';
 
 import { RegistrarGuard } from './registrar.guard';
-import { Router, RouterStateSnapshot } from '@angular/router';
+import {
+  ActivatedRouteSnapshot,
+  Router,
+  RouterStateSnapshot,
+} from '@angular/router';
 import { RegistrarService } from './registrar.service';
 
 describe('RegistrarGuard', () => {
   let guard: RegistrarGuard;
   let dummyRegistrarService: RegistrarService;
   let routeSpy: Router;
-  let dummyRoute: RouterStateSnapshot = {} as RouterStateSnapshot;
+  let dummyRoute: RouterStateSnapshot;
 
   beforeEach(() => {
     routeSpy = jasmine.createSpyObj<Router>('Router', ['navigate']);
     dummyRegistrarService = { activeRegistrarId: '' } as RegistrarService;
+    dummyRoute = { url: '/value' } as RouterStateSnapshot;
 
     TestBed.configureTestingModule({
       providers: [
@@ -39,7 +44,7 @@ describe('RegistrarGuard', () => {
 
   it('should not be able to activate when activeRegistrarId is empty', () => {
     guard = TestBed.inject(RegistrarGuard);
-    const res = guard.canActivate();
+    const res = guard.canActivate(new ActivatedRouteSnapshot(), dummyRoute);
     expect(res).toBeFalsy();
   });
 
@@ -48,17 +53,16 @@ describe('RegistrarGuard', () => {
       useValue: { activeRegistrarId: 'value' },
     });
     guard = TestBed.inject(RegistrarGuard);
-    const res = guard.canActivate();
+    const res = guard.canActivate(new ActivatedRouteSnapshot(), dummyRoute);
     expect(res).toBeTrue();
   });
 
-  it('should navigate to registrars when activeRegistrarId is empty', () => {
-    const dummyRoute = { url: '/value' } as RouterStateSnapshot;
+  it('should navigate to empty-registrar screen when activeRegistrarId is empty', () => {
     guard = TestBed.inject(RegistrarGuard);
-    guard.canActivate();
+    guard.canActivate(new ActivatedRouteSnapshot(), dummyRoute);
     expect(routeSpy.navigate).toHaveBeenCalledOnceWith([
-      '/registrars',
-      { nextUrl: '/value' },
+      '/empty-registrar',
+      { nextUrl: dummyRoute.url },
     ]);
   });
 });

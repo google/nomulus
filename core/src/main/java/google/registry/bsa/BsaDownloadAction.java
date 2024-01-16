@@ -162,6 +162,7 @@ public class BsaDownloadAction implements Runnable {
         // Fall through
       case MAKE_ORDER_AND_LABEL_DIFF:
         diff = diffCreator.createDiff(schedule, lazyIdnChecker.get());
+        // TODO(weiminyu): log the diff stats
         gcsClient.writeOrderDiffs(schedule.jobName(), diff.getOrders());
         gcsClient.writeLabelDiffs(schedule.jobName(), diff.getLabels());
         schedule.updateJobStage(DownloadStage.APPLY_ORDER_AND_LABEL_DIFF);

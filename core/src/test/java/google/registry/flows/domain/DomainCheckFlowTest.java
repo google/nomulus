@@ -44,6 +44,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.collect.Ordering;
+import google.registry.bsa.persistence.BsaTestingUtils;
 import google.registry.flows.EppException;
 import google.registry.flows.FlowUtils.NotLoggedInException;
 import google.registry.flows.FlowUtils.UnknownCurrencyEppException;
@@ -153,6 +154,37 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
     persistActiveDomain("example1.tld");
     doCheckTest(
         create(false, "example1.tld", "In use"),
+        create(true, "example2.tld", null),
+        create(true, "example3.tld", null));
+  }
+
+  @Test
+  void testSuccess_bsaBlocked_otherwiseAvailable_blocked() throws Exception {
+    BsaTestingUtils.persistBsaLabel("example1", clock.nowUtc());
+    doCheckTest(
+        create(false, "example1.tld", "Blocked by a GlobalBlock service"),
+        create(true, "example2.tld", null),
+        create(true, "example3.tld", null));
+  }
+
+  @Test
+  void testSuccess_bsaBlocked_alsoRegistered_registered() throws Exception {
+    BsaTestingUtils.persistBsaLabel("example1", clock.nowUtc());
+    persistActiveDomain("example1.tld");
+    doCheckTest(
+        create(false, "example1.tld", "In use"),
+        create(true, "example2.tld", null),
+        create(true, "example3.tld", null));
+  }
+
+  @Test
+  void testSuccess_bsaBlocked_alsoReserved_reserved() throws Exception {
+    BsaTestingUtils.persistBsaLabel("reserved", clock.nowUtc());
+    BsaTestingUtils.persistBsaLabel("allowedinsunrise", clock.nowUtc());
+    setEppInput("domain_check_one_tld_reserved.xml");
+    doCheckTest(
+        create(false, "reserved.tld", "Reserved"),
+        create(false, "allowedinsunrise.tld", "Reserved"),
         create(true, "example2.tld", null),
         create(true, "example3.tld", null));
   }

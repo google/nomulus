@@ -30,7 +30,7 @@ import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static org.mockito.Mockito.verify;
 
-import google.registry.bsa.persistence.BsaLabelTestingUtils;
+import google.registry.bsa.persistence.BsaTestingUtils;
 import google.registry.model.tld.Tld;
 import google.registry.monitoring.whitebox.CheckApiMetric;
 import google.registry.monitoring.whitebox.CheckApiMetric.Availability;
@@ -288,7 +288,7 @@ class CheckApiActionTest {
 
   @Test
   void testSuccess_blockedByBsa() {
-    BsaLabelTestingUtils.persistBsaLabel("rich", START_OF_TIME);
+    BsaTestingUtils.persistBsaLabel("rich", START_OF_TIME);
     persistResource(
         Tld.get("example").asBuilder().setBsaEnrollStartTime(Optional.of(START_OF_TIME)).build());
     assertThat(getCheckResponse("rich.example"))
@@ -296,7 +296,7 @@ class CheckApiActionTest {
             "tier", "premium",
             "status", "success",
             "available", false,
-            "reason", "Blocked by the Brand Safety Alliance");
+            "reason", "Blocked by a GlobalBlock service");
 
     verifySuccessMetric(PREMIUM, BSA_BLOCKED);
   }
