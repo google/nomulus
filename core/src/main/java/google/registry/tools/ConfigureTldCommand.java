@@ -105,6 +105,12 @@ public class ConfigureTldCommand extends MutatingCommand {
 
   @Override
   protected void init() throws Exception {
+    if (RegistryToolEnvironment.get().equals(RegistryToolEnvironment.PRODUCTION)) {
+      checkArgument(
+          buildEnv || breakGlass != null,
+          "Either the --break_glass or --build_environment flag must be used when"
+              + " running the configure_tld command on Production");
+    }
     String name = convertFilePathToName(inputFile);
     Map<String, Object> tldData = new Yaml().load(Files.newBufferedReader(inputFile));
     checkName(name, tldData);
