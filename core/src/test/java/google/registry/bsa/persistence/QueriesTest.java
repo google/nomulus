@@ -16,6 +16,7 @@ package google.registry.bsa.persistence;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.truth.Truth.assertThat;
+import static google.registry.bsa.BsaTransactions.bsaQuery;
 import static google.registry.bsa.persistence.Queries.deleteBsaLabelByLabels;
 import static google.registry.bsa.persistence.Queries.queryBsaLabelByLabels;
 import static google.registry.bsa.persistence.Queries.queryBsaUnblockableDomainByLabels;
@@ -200,10 +201,10 @@ class QueriesTest {
     fakeClock.advanceOneMilli();
     // Now is time 2
     assertThat(
-            tm().transact(
-                    () ->
-                        queryNewlyCreatedDomains(
-                            ImmutableList.of("tld"), testStartTime, fakeClock.nowUtc())))
+            bsaQuery(
+                () ->
+                    queryNewlyCreatedDomains(
+                        ImmutableList.of("tld"), testStartTime, fakeClock.nowUtc())))
         .containsExactly("d1.tld", "d2.tld");
   }
 
@@ -218,10 +219,10 @@ class QueriesTest {
         newDomain("d2.tld2").asBuilder().setCreationTimeForTest(fakeClock.nowUtc()).build());
     fakeClock.advanceOneMilli();
     assertThat(
-            tm().transact(
-                    () ->
-                        queryNewlyCreatedDomains(
-                            ImmutableList.of("tld"), testStartTime, fakeClock.nowUtc())))
+            bsaQuery(
+                () ->
+                    queryNewlyCreatedDomains(
+                        ImmutableList.of("tld"), testStartTime, fakeClock.nowUtc())))
         .containsExactly("d1.tld");
   }
 }

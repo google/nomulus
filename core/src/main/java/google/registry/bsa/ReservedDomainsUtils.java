@@ -19,6 +19,7 @@ import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static google.registry.bsa.BsaStringUtils.DOMAIN_JOINER;
 import static google.registry.flows.domain.DomainFlowUtils.isReserved;
 import static google.registry.model.tld.Tlds.findTldForName;
+import static google.registry.model.tld.label.ReservedList.loadReservedLists;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.net.InternetDomainName;
@@ -53,11 +54,7 @@ public final class ReservedDomainsUtils {
 
   /** Returns all reserved domains in a given {@code tld} as of {@code now}. */
   static ImmutableSet<String> getAllReservedDomainsInTld(Tld tld, DateTime now) {
-    return tld.getReservedListNames().stream()
-        .map(ReservedList::get)
-        .filter(Optional::isPresent)
-        .map(Optional::get)
-        .filter(ReservedList::getShouldPublish)
+    return loadReservedLists(tld.getReservedListNames()).stream()
         .map(ReservedList::getReservedListEntries)
         .map(Map::keySet)
         .flatMap(Set::stream)

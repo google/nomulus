@@ -624,9 +624,18 @@ bsa:
   # Max time period during which downloads can be skipped because checksums have
   # not changed from the previous one.
   bsaMaxNopIntervalHours: 24
-  # A very lax upper bound of the time it takes to execute a transaction that
-  # mutates a domain. Please See `BsaRefreshAction` for use case.
-  domainTxnMaxDurationSeconds: 60
+  # A very lax upper bound of the lag between a domain-creating transaction's
+  # recorded and actual commit time. In Nomulus, a domain's creation time is the
+  # start time of the transaction, while the domain is only visible after the
+  # transaction commits. Let `l` represents this lag, then at any point of time
+  # `t`, a query of domains by creation time is only guaranteed to find those
+  # created before `t - l`. Please See `BsaRefreshAction` for use case.
+  #
+  # The value below is decided by finding the longest domain-creation EPP
+  # request over the past 3 months (60 seconds, which is much longer than the
+  # transaction time), and add to it the maximum allowed replication lag (30
+  # seconds).
+  domainCreateTxnCommitTimeLagSeconds: 90
   # Number of entities (labels and unblockable domains) to process in a single
   # DB transaction.
   bsaTxnBatchSize: 1000

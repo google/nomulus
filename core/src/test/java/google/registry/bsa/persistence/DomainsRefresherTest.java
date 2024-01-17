@@ -15,7 +15,6 @@
 package google.registry.bsa.persistence;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.bsa.BsaTransactions.bsaTransact;
 import static google.registry.bsa.ReservedDomainsTestingUtils.addReservedListsToTld;
 import static google.registry.bsa.ReservedDomainsTestingUtils.createReservedList;
 import static google.registry.bsa.persistence.BsaTestingUtils.persistBsaLabel;
@@ -67,7 +66,7 @@ public class DomainsRefresherTest {
   void registeredUnblockable_removed_afterDomainIsDeleted() {
     persistBsaLabel("label");
     tm().transact(() -> tm().insert(BsaUnblockableDomain.of("label.tld", Reason.REGISTERED)));
-    assertThat(bsaTransact(refresher::refreshStaleUnblockables))
+    assertThat(refresher.refreshStaleUnblockables())
         .containsExactly(
             UnblockableDomainChange.ofDeleted(
                 UnblockableDomain.of("label.tld", UnblockableDomain.Reason.REGISTERED)));
@@ -77,7 +76,7 @@ public class DomainsRefresherTest {
   void reservedUnblockable_removed_whenReservedLabelIsRemoved() {
     persistBsaLabel("label");
     tm().transact(() -> tm().insert(BsaUnblockableDomain.of("label.tld", Reason.RESERVED)));
-    assertThat(bsaTransact(refresher::refreshStaleUnblockables))
+    assertThat(refresher.refreshStaleUnblockables())
         .containsExactly(
             UnblockableDomainChange.ofDeleted(
                 UnblockableDomain.of("label.tld", UnblockableDomain.Reason.RESERVED)));
@@ -87,7 +86,7 @@ public class DomainsRefresherTest {
   void regsiteredUnblockable_added_whenDomainIsAdded() {
     persistResource(newDomain("label.tld"));
     persistBsaLabel("label");
-    assertThat(bsaTransact(refresher::getNewUnblockables))
+    assertThat(refresher.getNewUnblockables())
         .containsExactly(
             UnblockableDomainChange.ofNew(
                 UnblockableDomain.of("label.tld", UnblockableDomain.Reason.REGISTERED)));
@@ -98,7 +97,7 @@ public class DomainsRefresherTest {
     persistBsaLabel("label");
     createReservedList("reservedList", "label", RESERVED_FOR_SPECIFIC_USE);
     addReservedListsToTld("tld", ImmutableList.of("reservedList"));
-    assertThat(bsaTransact(refresher::getNewUnblockables))
+    assertThat(refresher.getNewUnblockables())
         .containsExactly(
             UnblockableDomainChange.ofNew(
                 UnblockableDomain.of("label.tld", UnblockableDomain.Reason.RESERVED)));
@@ -111,7 +110,7 @@ public class DomainsRefresherTest {
     addReservedListsToTld("tld", ImmutableList.of("reservedList"));
     tm().transact(() -> tm().insert(BsaUnblockableDomain.of("label.tld", Reason.REGISTERED)));
 
-    assertThat(bsaTransact(refresher::refreshStaleUnblockables))
+    assertThat(refresher.refreshStaleUnblockables())
         .containsExactly(
             UnblockableDomainChange.ofChanged(
                 UnblockableDomain.of("label.tld", UnblockableDomain.Reason.REGISTERED),
@@ -124,7 +123,7 @@ public class DomainsRefresherTest {
     tm().transact(() -> tm().insert(BsaUnblockableDomain.of("label.tld", Reason.RESERVED)));
 
     persistResource(newDomain("label.tld"));
-    assertThat(bsaTransact(refresher::refreshStaleUnblockables))
+    assertThat(refresher.refreshStaleUnblockables())
         .containsExactly(
             UnblockableDomainChange.ofChanged(
                 UnblockableDomain.of("label.tld", UnblockableDomain.Reason.RESERVED),
@@ -139,7 +138,7 @@ public class DomainsRefresherTest {
     tm().transact(() -> tm().insert(BsaUnblockableDomain.of("label.tld", Reason.RESERVED)));
 
     persistResource(newDomain("label.tld"));
-    assertThat(bsaTransact(refresher::refreshStaleUnblockables))
+    assertThat(refresher.refreshStaleUnblockables())
         .containsExactly(
             UnblockableDomainChange.ofChanged(
                 UnblockableDomain.of("label.tld", UnblockableDomain.Reason.RESERVED),

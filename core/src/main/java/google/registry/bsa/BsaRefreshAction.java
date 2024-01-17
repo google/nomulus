@@ -65,7 +65,7 @@ public class BsaRefreshAction implements Runnable {
       GcsClient gcsClient,
       BsaReportSender bsaReportSender,
       @Config("bsaTxnBatchSize") int transactionBatchSize,
-      @Config("domainTxnMaxDuration") Duration domainTxnMaxDuration,
+      @Config("domainCreateTxnCommitTimeLag") Duration domainTxnMaxDuration,
       BsaLock bsaLock,
       Clock clock,
       Response response) {

@@ -1472,9 +1472,9 @@ public final class RegistryConfig {
     }
 
     @Provides
-    @Config("domainTxnMaxDuration")
-    public static Duration provideDomainTxnMaxDuration(RegistryConfigSettings config) {
-      return Duration.standardSeconds(config.bsa.domainTxnMaxDurationSeconds);
+    @Config("domainCreateTxnCommitTimeLag")
+    public static Duration provideDomainCreateTxnCommitTimeLag(RegistryConfigSettings config) {
+      return Duration.standardSeconds(config.bsa.domainCreateTxnCommitTimeLagSeconds);
     }
 
     @Provides
