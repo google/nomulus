@@ -638,14 +638,16 @@ public class ConfigureTldCommandTest extends CommandTestCase<ConfigureTldCommand
     persistResource(
         tld.asBuilder()
             .setIdnTables(ImmutableSet.of(JA, UNCONFUSABLE_LATIN, EXTENDED_LATIN))
-            .setAllowedFullyQualifiedHostNames(ImmutableSet.of("zeta", "alpha", "gamma", "beta"))
+            .setAllowedFullyQualifiedHostNames(ImmutableSet.of("beta", "zeta", "alpha", "gamma"))
             .setBreakglassMode(true)
             .build());
     File tldFile = tmpDir.resolve("idns.yaml").toFile();
     Files.asCharSink(tldFile, UTF_8).write(loadFile(getClass(), "idns.yaml"));
+    // This update contains no diffs from whats in the config file
     runCommandForced("--input=" + tldFile, "--break_glass=false");
     Tld updatedTld = Tld.get("idns");
     assertThat(updatedTld.getBreakglassMode()).isFalse();
+    testTldConfiguredSuccessfully(updatedTld, "idns.yaml");
     assertAboutLogs()
         .that(logHandler)
         .hasLogAtLevelWithMessage(INFO, "Break glass mode removed from TLD: idns");
