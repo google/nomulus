@@ -517,7 +517,8 @@ public class ConfigureTldCommandTest extends CommandTestCase<ConfigureTldCommand
     Files.asCharSink(tldFile, UTF_8).write(loadFile(getClass(), "idns.yaml"));
     IllegalArgumentException thrown =
         assertThrows(
-            IllegalArgumentException.class, () -> runCommandForced("--input=" + tldFile, "-b"));
+            IllegalArgumentException.class,
+            () -> runCommandForced("--input=" + tldFile, "-b=true"));
     assertThat(thrown.getMessage())
         .isEqualTo(
             "Break glass mode can only be set when making new changes to a TLD configuration");
@@ -529,7 +530,7 @@ public class ConfigureTldCommandTest extends CommandTestCase<ConfigureTldCommand
     assertThat(tld.getCreateBillingCost()).isEqualTo(Money.of(USD, 13));
     File tldFile = tmpDir.resolve("tld.yaml").toFile();
     Files.asCharSink(tldFile, UTF_8).write(loadFile(getClass(), "tld.yaml"));
-    runCommandForced("--input=" + tldFile, "--break_glass");
+    runCommandForced("--input=" + tldFile, "--break_glass=true");
     Tld updatedTld = Tld.get("tld");
     assertThat(updatedTld.getCreateBillingCost()).isEqualTo(Money.of(USD, 25));
     testTldConfiguredSuccessfully(updatedTld, "tld.yaml");
@@ -543,7 +544,7 @@ public class ConfigureTldCommandTest extends CommandTestCase<ConfigureTldCommand
     persistResource(tld.asBuilder().setBreakglassMode(true).build());
     File tldFile = tmpDir.resolve("tld.yaml").toFile();
     Files.asCharSink(tldFile, UTF_8).write(loadFile(getClass(), "tld.yaml"));
-    runCommandForced("--input=" + tldFile, "--break_glass");
+    runCommandForced("--input=" + tldFile, "--break_glass=true");
     Tld updatedTld = Tld.get("tld");
     assertThat(updatedTld.getCreateBillingCost()).isEqualTo(Money.of(USD, 25));
     testTldConfiguredSuccessfully(updatedTld, "tld.yaml");
@@ -580,7 +581,7 @@ public class ConfigureTldCommandTest extends CommandTestCase<ConfigureTldCommand
             .build());
     File tldFile = tmpDir.resolve("idns.yaml").toFile();
     Files.asCharSink(tldFile, UTF_8).write(loadFile(getClass(), "idns.yaml"));
-    runCommandForced("--input=" + tldFile, "-b");
+    runCommandForced("--input=" + tldFile, "-b=true");
     Tld updatedTld = Tld.get("idns");
     assertThat(updatedTld.getBreakglassMode()).isTrue();
     assertAboutLogs()
@@ -600,6 +601,54 @@ public class ConfigureTldCommandTest extends CommandTestCase<ConfigureTldCommand
         .isEqualTo(
             "Changes can not be applied since TLD is in break glass mode but the --break_glass flag"
                 + " was not used");
+  }
+
+  @Test
+  void testFailure_breakGlassFlagFalse_notInBreakGlass() throws Exception {
+    createTld("tld");
+    File tldFile = tmpDir.resolve("tld.yaml").toFile();
+    Files.asCharSink(tldFile, UTF_8).write(loadFile(getClass(), "tld.yaml"));
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> runCommandForced("--input=" + tldFile, "--break_glass=false"));
+    assertThat(thrown.getMessage())
+        .isEqualTo(
+            "The --break_glass flag cannot be set to false to end break glass mode because the TLD"
+                + " is not currently in break glass mode");
+  }
+
+  @Test
+  void testSuccess_breakGlassFlagFalse_endsBreakGlassMode() throws Exception {
+    Tld tld = createTld("tld");
+    assertThat(tld.getCreateBillingCost()).isEqualTo(Money.of(USD, 13));
+    persistResource(tld.asBuilder().setBreakglassMode(true).build());
+    File tldFile = tmpDir.resolve("tld.yaml").toFile();
+    Files.asCharSink(tldFile, UTF_8).write(loadFile(getClass(), "tld.yaml"));
+    runCommandForced("--break_glass=false", "--input=" + tldFile);
+    Tld updatedTld = Tld.get("tld");
+    assertThat(updatedTld.getCreateBillingCost()).isEqualTo(Money.of(USD, 25));
+    testTldConfiguredSuccessfully(updatedTld, "tld.yaml");
+    assertThat(updatedTld.getBreakglassMode()).isFalse();
+  }
+
+  @Test
+  void testSuccess_noDiffBreakGlassFlagFalse_endsBreakGlassMode() throws Exception {
+    Tld tld = createTld("idns");
+    persistResource(
+        tld.asBuilder()
+            .setIdnTables(ImmutableSet.of(JA, UNCONFUSABLE_LATIN, EXTENDED_LATIN))
+            .setAllowedFullyQualifiedHostNames(ImmutableSet.of("zeta", "alpha", "gamma", "beta"))
+            .setBreakglassMode(true)
+            .build());
+    File tldFile = tmpDir.resolve("idns.yaml").toFile();
+    Files.asCharSink(tldFile, UTF_8).write(loadFile(getClass(), "idns.yaml"));
+    runCommandForced("--input=" + tldFile, "--break_glass=false");
+    Tld updatedTld = Tld.get("idns");
+    assertThat(updatedTld.getBreakglassMode()).isFalse();
+    assertAboutLogs()
+        .that(logHandler)
+        .hasLogAtLevelWithMessage(INFO, "Break glass mode removed from TLD: idns");
   }
 
   @Test
