@@ -122,7 +122,7 @@ public class ConfigureTldCommand extends MutatingCommand {
     }
 
     checkArgument(
-        oldTldInBreakGlass || breakGlass == null || breakGlass,
+        oldTldInBreakGlass || !Boolean.FALSE.equals(breakGlass),
         "The --break_glass flag cannot be set to false to end break glass mode because the TLD is"
             + " not currently in break glass mode");
 
@@ -132,7 +132,8 @@ public class ConfigureTldCommand extends MutatingCommand {
           "Changes can not be applied since TLD is in break glass mode but the --break_glass flag"
               + " was not used");
       // if there are no new diffs, then the YAML file has caught up to the database and the
-      // break glass mode should be removed. Also remove the break glass mode the break glass flag
+      // break glass mode should be removed. Also remove the break glass mode if the break glass
+      // flag
       // was set to false.
       logger.atInfo().log("Break glass mode removed from TLD: %s", name);
     }
