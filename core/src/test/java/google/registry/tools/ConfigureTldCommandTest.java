@@ -538,7 +538,7 @@ public class ConfigureTldCommandTest extends CommandTestCase<ConfigureTldCommand
   }
 
   @Test
-  void testSuccess_breaklassFlag_continuesBreakGlassMode() throws Exception {
+  void testSuccess_breakGlassFlag_continuesBreakGlassMode() throws Exception {
     Tld tld = createTld("tld");
     assertThat(tld.getCreateBillingCost()).isEqualTo(Money.of(USD, 13));
     persistResource(tld.asBuilder().setBreakglassMode(true).build());
