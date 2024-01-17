@@ -133,8 +133,7 @@ public class ConfigureTldCommand extends MutatingCommand {
               + " was not used");
       // if there are no new diffs, then the YAML file has caught up to the database and the
       // break glass mode should be removed. Also remove the break glass mode if the break glass
-      // flag
-      // was set to false.
+      // flag was set to false.
       logger.atInfo().log("Break glass mode removed from TLD: %s", name);
     }
 
@@ -163,7 +162,7 @@ public class ConfigureTldCommand extends MutatingCommand {
     if (!newDiff) {
       if (oldTldInBreakGlass && (breakGlass == null || !breakGlass)) {
         // Run command to remove break glass mode if there is no break glass flag or if the break
-        // glass flag is false
+        // glass flag is false.
         return false;
       }
       logger.atInfo().log("TLD YAML file contains no new changes");
