@@ -131,7 +131,7 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
     return emf.createEntityManager();
   }
 
-  @Deprecated // This method is misleading. Use the static `em` method.
+  @Deprecated // See Javadoc of interface method.
   @Override
   public EntityManager getEntityManager() {
     EntityManager entityManager = transactionInfo.get().entityManager;
@@ -158,7 +158,7 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
     return getEntityManager().createQuery(sqlString);
   }
 
-  @Deprecated // This method is misleading. Use the static `isInTransaction` method.
+  @Deprecated // See Javadoc of instance method.
   @Override
   public boolean inTransaction() {
     return transactionInfo.get().inTransaction;
