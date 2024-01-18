@@ -42,8 +42,7 @@ class Queries {
   static Stream<BsaUnblockableDomain> queryBsaUnblockableDomainByLabels(
       ImmutableCollection<String> labels) {
     return ((Stream<?>)
-            em()
-                .createQuery("FROM BsaUnblockableDomain WHERE label in (:labels)")
+            em().createQuery("FROM BsaUnblockableDomain WHERE label in (:labels)")
                 .setParameter("labels", labels)
                 .getResultStream())
         .map(Queries::detach)
@@ -52,8 +51,7 @@ class Queries {
 
   static Stream<BsaLabel> queryBsaLabelByLabels(ImmutableCollection<String> labels) {
     return ((Stream<?>)
-            em()
-                .createQuery("FROM BsaLabel where label in (:labels)")
+            em().createQuery("FROM BsaLabel where label in (:labels)")
                 .setParameter("labels", labels)
                 .getResultStream())
         .map(Queries::detach)
@@ -61,8 +59,7 @@ class Queries {
   }
 
   static int deleteBsaLabelByLabels(ImmutableCollection<String> labels) {
-    return em()
-        .createQuery("DELETE FROM BsaLabel where label IN (:deleted_labels)")
+    return em().createQuery("DELETE FROM BsaLabel where label IN (:deleted_labels)")
         .setParameter("deleted_labels", labels)
         .executeUpdate();
   }
@@ -72,8 +69,7 @@ class Queries {
     return ImmutableList.copyOf(
         bsaQuery(
             () ->
-                em()
-                    .createQuery(
+                em().createQuery(
                         "FROM BsaUnblockableDomain d WHERE d.label > :label OR (d.label = :label"
                             + " AND d.tld >  :tld) ORDER BY d.tld, d.label ")
                     .setParameter("label", lastRead.map(d -> d.label).orElse(""))
@@ -103,8 +99,7 @@ class Queries {
   static ImmutableSet<String> queryNewlyCreatedDomains(
       ImmutableCollection<String> tlds, DateTime minCreationTime, DateTime now) {
     return ImmutableSet.copyOf(
-        em()
-            .createQuery(
+        em().createQuery(
                 "SELECT domainName FROM Domain WHERE creationTime >= :minCreationTime "
                     + "AND deletionTime > :now "
                     + "AND tld in (:tlds)",
