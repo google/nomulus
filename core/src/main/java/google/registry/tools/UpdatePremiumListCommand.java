@@ -35,6 +35,17 @@ class UpdatePremiumListCommand extends CreateOrUpdatePremiumListCommand {
       description = "Does not execute the entity mutation")
   boolean dryRun;
 
+  @Parameter(
+      names = {"--build_environment"},
+      description =
+          "DO NOT USE THIS FLAG ON THE COMMAND LINE! This flag indicates the command is being run"
+              + " by the build environment tools. This flag should never be used by a human user"
+              + " from the command line.")
+  boolean buildEnv;
+
+  // TODO(sarahbot): Add break glass handling to this command and require buildEnv or breakGlass in
+  // production environment
+
   // indicates if there is a new change made by this command
   private boolean newChange = false;
 

@@ -142,4 +142,14 @@ class UpdateReservedListCommandTest
     assertThat(command.prompt()).contains("baddies: null -> baddies,FULLY_BLOCKED");
     assertThat(command.prompt()).contains("ford: null -> ford,FULLY_BLOCKED # random comment");
   }
+
+  @Test
+  void testSuccess_dryRun() throws Exception {
+    runCommandForced("--input=" + reservedTermsPath, "--dry_run");
+    assertThat(command.prompt()).contains("Update reserved list for xn--q9jyb4c_common-reserved?");
+    assertThat(ReservedList.get("xn--q9jyb4c_common-reserved")).isPresent();
+    ReservedList reservedList = ReservedList.get("xn--q9jyb4c_common-reserved").get();
+    assertThat(reservedList.getReservedListEntries()).hasSize(1);
+    assertThat(reservedList.getReservationInList("helicopter")).hasValue(FULLY_BLOCKED);
+  }
 }
