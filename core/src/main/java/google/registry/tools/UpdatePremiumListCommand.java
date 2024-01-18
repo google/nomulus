@@ -46,7 +46,7 @@ class UpdatePremiumListCommand extends CreateOrUpdatePremiumListCommand {
   // TODO(sarahbot): Add break glass handling to this command and require buildEnv or breakGlass in
   // production environment
 
-  // indicates if there is a new change made by this command
+  // Indicates if there is a new change made by this command
   private boolean newChange = false;
 
   @Override
