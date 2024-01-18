@@ -147,7 +147,10 @@ public class ConfigureTldCommand extends MutatingCommand {
     if (bsaEnrollTime.isPresent()) {
       newTld = newTld.asBuilder().setBsaEnrollStartTime(bsaEnrollTime).build();
     }
-    // Set the new TLD to break glass mode if break glass flag was used
+    // Set the new TLD to break glass mode if break glass flag was used. Note that the break glass
+    // mode does not need to be set to false if the --break_glass flag was set to false since the
+    // field already defaults to false. Break glass mode will also automatically turn off if there
+    // is no new diff and the --break_glass flag is null.
     if (Boolean.TRUE.equals(breakGlass)) {
       newTld = newTld.asBuilder().setBreakglassMode(true).build();
     }
