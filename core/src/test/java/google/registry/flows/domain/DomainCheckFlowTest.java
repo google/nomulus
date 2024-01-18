@@ -14,6 +14,7 @@
 
 package google.registry.flows.domain;
 
+import static google.registry.bsa.persistence.BsaTestingUtils.persistBsaLabel;
 import static google.registry.model.billing.BillingBase.RenewalPriceBehavior.DEFAULT;
 import static google.registry.model.billing.BillingBase.RenewalPriceBehavior.NONPREMIUM;
 import static google.registry.model.billing.BillingBase.RenewalPriceBehavior.SPECIFIED;
@@ -44,7 +45,6 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.collect.Ordering;
-import google.registry.bsa.persistence.BsaTestingUtils;
 import google.registry.flows.EppException;
 import google.registry.flows.FlowUtils.NotLoggedInException;
 import google.registry.flows.FlowUtils.UnknownCurrencyEppException;
@@ -160,7 +160,7 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
 
   @Test
   void testSuccess_bsaBlocked_otherwiseAvailable_blocked() throws Exception {
-    BsaTestingUtils.persistBsaLabel("example1", clock.nowUtc());
+    persistBsaLabel("example1");
     doCheckTest(
         create(false, "example1.tld", "Blocked by a GlobalBlock service"),
         create(true, "example2.tld", null),
@@ -169,7 +169,7 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
 
   @Test
   void testSuccess_bsaBlocked_alsoRegistered_registered() throws Exception {
-    BsaTestingUtils.persistBsaLabel("example1", clock.nowUtc());
+    persistBsaLabel("example1");
     persistActiveDomain("example1.tld");
     doCheckTest(
         create(false, "example1.tld", "In use"),
@@ -179,8 +179,8 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
 
   @Test
   void testSuccess_bsaBlocked_alsoReserved_reserved() throws Exception {
-    BsaTestingUtils.persistBsaLabel("reserved", clock.nowUtc());
-    BsaTestingUtils.persistBsaLabel("allowedinsunrise", clock.nowUtc());
+    persistBsaLabel("reserved");
+    persistBsaLabel("allowedinsunrise");
     setEppInput("domain_check_one_tld_reserved.xml");
     doCheckTest(
         create(false, "reserved.tld", "Reserved"),

@@ -206,12 +206,10 @@ public class UploadBsaUnavailableDomainsAction implements Runnable {
         new ImmutableSortedSet.Builder<>(Ordering.natural());
     for (Tld tld : bsaEnabledTlds) {
       for (ReservedList reservedList : loadReservedLists(tld.getReservedListNames())) {
-        if (reservedList.getShouldPublish()) {
           unavailableDomains.addAll(
               reservedList.getReservedListEntries().keySet().stream()
                   .map(label -> toDomain(label, tld))
                   .collect(toImmutableSet()));
-        }
       }
     }
 

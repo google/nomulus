@@ -174,7 +174,7 @@ public class WhoisActionTest {
             .asBuilder()
             .setBsaEnrollStartTime(Optional.of(clock.nowUtc().minusDays(1)))
             .build());
-    persistBsaLabel("cat", clock.nowUtc());
+    persistBsaLabel("cat");
 
     Registrar registrar = persistResource(makeRegistrar("evilregistrar", "Yes Virginia", ACTIVE));
     persistResource(makeDomainWithRegistrar(registrar));
@@ -191,7 +191,7 @@ public class WhoisActionTest {
             .asBuilder()
             .setBsaEnrollStartTime(Optional.of(clock.nowUtc().minusDays(1)))
             .build());
-    persistBsaLabel("cat", clock.nowUtc());
+    persistBsaLabel("cat");
 
     newWhoisAction("domain cat.lol\r\n").run();
     assertThat(response.getStatus()).isEqualTo(200);

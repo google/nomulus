@@ -50,7 +50,7 @@ public class BsaLabelUtilsTest {
 
   @Test
   void isLabelBlocked_yes() {
-    persistBsaLabel("abc", fakeClock.nowUtc());
+    persistBsaLabel("abc");
     assertThat(isLabelBlocked("abc")).isTrue();
   }
 

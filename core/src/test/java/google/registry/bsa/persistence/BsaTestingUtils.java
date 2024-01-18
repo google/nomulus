@@ -26,10 +26,13 @@ public final class BsaTestingUtils {
   public static final Duration DEFAULT_DOWNLOAD_INTERVAL = Duration.standardHours(1);
   public static final Duration DEFAULT_NOP_INTERVAL = Duration.standardDays(1);
 
+  /** An arbitrary point of time used as BsaLabels' creation time. */
+  public static final DateTime BSA_LABEL_CREATION_TIME = DateTime.parse("2023-12-31T00:00:00Z");
+
   private BsaTestingUtils() {}
 
-  public static void persistBsaLabel(String domainLabel, DateTime creationTime) {
-    tm().transact(() -> tm().put(new BsaLabel(domainLabel, creationTime)));
+  public static void persistBsaLabel(String domainLabel) {
+    tm().transact(() -> tm().put(new BsaLabel(domainLabel, BSA_LABEL_CREATION_TIME)));
   }
 
   public static DownloadScheduler createDownloadScheduler(Clock clock) {

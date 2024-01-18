@@ -16,14 +16,13 @@ package google.registry.bsa.persistence;
 
 import static com.google.common.base.Verify.verify;
 import static google.registry.bsa.BsaStringUtils.DOMAIN_SPLITTER;
-import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+import static google.registry.bsa.BsaTransactions.bsaQuery;
+import static google.registry.persistence.transaction.JpaTransactionManagerImpl.em;
 
 import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import google.registry.model.CreateAutoTimestamp;
-import google.registry.model.ForeignKeyUtils;
-import google.registry.model.domain.Domain;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -36,15 +35,14 @@ class Queries {
   private Queries() {}
 
   private static Object detach(Object obj) {
-    tm().getEntityManager().detach(obj);
+    em().detach(obj);
     return obj;
   }
 
   static Stream<BsaUnblockableDomain> queryBsaUnblockableDomainByLabels(
       ImmutableCollection<String> labels) {
     return ((Stream<?>)
-            tm().getEntityManager()
-                .createQuery("FROM BsaUnblockableDomain WHERE label in (:labels)")
+            em().createQuery("FROM BsaUnblockableDomain WHERE label in (:labels)")
                 .setParameter("labels", labels)
                 .getResultStream())
         .map(Queries::detach)
@@ -53,8 +51,7 @@ class Queries {
 
   static Stream<BsaLabel> queryBsaLabelByLabels(ImmutableCollection<String> labels) {
     return ((Stream<?>)
-            tm().getEntityManager()
-                .createQuery("FROM BsaLabel where label in (:labels)")
+            em().createQuery("FROM BsaLabel where label in (:labels)")
                 .setParameter("labels", labels)
                 .getResultStream())
         .map(Queries::detach)
@@ -62,8 +59,7 @@ class Queries {
   }
 
   static int deleteBsaLabelByLabels(ImmutableCollection<String> labels) {
-    return tm().getEntityManager()
-        .createQuery("DELETE FROM BsaLabel where label IN (:deleted_labels)")
+    return em().createQuery("DELETE FROM BsaLabel where label IN (:deleted_labels)")
         .setParameter("deleted_labels", labels)
         .executeUpdate();
   }
@@ -71,14 +67,15 @@ class Queries {
   static ImmutableList<BsaUnblockableDomain> batchReadUnblockables(
       Optional<BsaUnblockableDomain> lastRead, int batchSize) {
     return ImmutableList.copyOf(
-        tm().getEntityManager()
-            .createQuery(
-                "FROM BsaUnblockableDomain d WHERE d.label > :label OR (d.label = :label AND d.tld"
-                    + " >  :tld) ORDER BY d.tld, d.label ")
-            .setParameter("label", lastRead.map(d -> d.label).orElse(""))
-            .setParameter("tld", lastRead.map(d -> d.tld).orElse(""))
-            .setMaxResults(batchSize)
-            .getResultList());
+        bsaQuery(
+            () ->
+                em().createQuery(
+                        "FROM BsaUnblockableDomain d WHERE d.label > :label OR (d.label = :label"
+                            + " AND d.tld >  :tld) ORDER BY d.tld, d.label ")
+                    .setParameter("label", lastRead.map(d -> d.label).orElse(""))
+                    .setParameter("tld", lastRead.map(d -> d.tld).orElse(""))
+                    .setMaxResults(batchSize)
+                    .getResultList()));
   }
 
   static ImmutableSet<String> queryUnblockablesByNames(ImmutableSet<String> domains) {
@@ -96,17 +93,20 @@ class Queries {
             "SELECT CONCAT(d.label, '.', d.tld) FROM \"BsaUnblockableDomain\" d "
                 + "WHERE (d.label, d.tld) IN (%s)",
             labelTldParis);
-    return ImmutableSet.copyOf(tm().getEntityManager().createNativeQuery(sql).getResultList());
+    return ImmutableSet.copyOf(em().createNativeQuery(sql).getResultList());
   }
 
-  static ImmutableSet<String> queryLivesDomains(DateTime minCreationTime, DateTime now) {
-    ImmutableSet<String> candidates =
-        ImmutableSet.copyOf(
-            tm().getEntityManager()
-                .createQuery(
-                    "SELECT domainName FROM Domain WHERE creationTime >= :time ", String.class)
-                .setParameter("time", CreateAutoTimestamp.create(minCreationTime))
-                .getResultList());
-    return ImmutableSet.copyOf(ForeignKeyUtils.load(Domain.class, candidates, now).keySet());
+  static ImmutableSet<String> queryNewlyCreatedDomains(
+      ImmutableCollection<String> tlds, DateTime minCreationTime, DateTime now) {
+    return ImmutableSet.copyOf(
+        em().createQuery(
+                "SELECT domainName FROM Domain WHERE creationTime >= :minCreationTime "
+                    + "AND deletionTime > :now "
+                    + "AND tld in (:tlds)",
+                String.class)
+            .setParameter("minCreationTime", CreateAutoTimestamp.create(minCreationTime))
+            .setParameter("now", now)
+            .setParameter("tlds", tlds)
+            .getResultList());
   }
 }

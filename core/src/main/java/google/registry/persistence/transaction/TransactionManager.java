@@ -36,7 +36,14 @@ public interface TransactionManager {
    *
    * <p>Note that this function is kept for backward compatibility. We will review the use case
    * later when adding the cloud sql implementation.
+   *
+   * @deprecated Use the static {@link JpaTransactionManagerImpl#isInTransaction()} method for now.
+   *     In current implementation the entity manager is obtained from a static {@code ThreadLocal}
+   *     object that is set up by the outermost {@link #transact} call. As an instance method, this
+   *     method gives the illusion that the call site has control over which database instance to
+   *     use.
    */
+  @Deprecated // See Javadoc above.
   boolean inTransaction();
 
   /**

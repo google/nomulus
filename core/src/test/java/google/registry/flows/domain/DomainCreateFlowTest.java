@@ -2575,7 +2575,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
   @Test
   void testSuccess_bsaLabelMatch_notEnrolled() throws Exception {
     persistResource(Tld.get("tld").asBuilder().setBsaEnrollStartTime(Optional.empty()).build());
-    persistBsaLabel("example", clock.nowUtc());
+    persistBsaLabel("example");
     persistContactsAndHosts();
     doSuccessfulTest();
   }
@@ -2587,7 +2587,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
             .asBuilder()
             .setBsaEnrollStartTime(Optional.of(clock.nowUtc().plusSeconds(1)))
             .build());
-    persistBsaLabel("example", clock.nowUtc());
+    persistBsaLabel("example");
     persistContactsAndHosts();
     doSuccessfulTest();
   }
@@ -2599,7 +2599,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
             .asBuilder()
             .setBsaEnrollStartTime(Optional.of(clock.nowUtc().minusSeconds(1)))
             .build());
-    persistBsaLabel("example", clock.nowUtc());
+    persistBsaLabel("example");
     persistContactsAndHosts();
     EppException thrown = assertThrows(DomainLabelBlockedByBsaException.class, this::runFlow);
     assertAboutEppExceptions()

@@ -17,9 +17,14 @@ package google.registry.bsa.persistence;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
+import static google.registry.bsa.BsaTransactions.bsaQuery;
 import static google.registry.bsa.ReservedDomainsUtils.getAllReservedNames;
 import static google.registry.bsa.ReservedDomainsUtils.isReservedDomain;
-import static google.registry.bsa.persistence.Queries.queryLivesDomains;
+import static google.registry.bsa.persistence.Queries.batchReadUnblockables;
+import static google.registry.bsa.persistence.Queries.queryBsaLabelByLabels;
+import static google.registry.bsa.persistence.Queries.queryNewlyCreatedDomains;
+import static google.registry.model.tld.Tld.isEnrolledWithBsa;
+import static google.registry.model.tld.Tlds.getTldEntitiesOfType;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static java.util.stream.Collectors.groupingBy;
 
@@ -36,6 +41,8 @@ import google.registry.bsa.api.UnblockableDomain.Reason;
 import google.registry.bsa.api.UnblockableDomainChange;
 import google.registry.model.ForeignKeyUtils;
 import google.registry.model.domain.Domain;
+import google.registry.model.tld.Tld;
+import google.registry.model.tld.Tld.TldType;
 import google.registry.util.BatchedStreams;
 import java.util.List;
 import java.util.Map;
@@ -124,7 +131,7 @@ public final class DomainsRefresher {
     ImmutableList<BsaUnblockableDomain> batch;
     Optional<BsaUnblockableDomain> lastRead = Optional.empty();
     do {
-      batch = Queries.batchReadUnblockables(lastRead, transactionBatchSize);
+      batch = batchReadUnblockables(lastRead, transactionBatchSize);
       if (!batch.isEmpty()) {
         lastRead = Optional.of(batch.get(batch.size() - 1));
         changes.addAll(recheckStaleDomainsBatch(batch));
@@ -191,22 +198,33 @@ public final class DomainsRefresher {
   }
 
   public ImmutableList<UnblockableDomainChange> getNewUnblockables() {
-    ImmutableSet<String> newCreated = getNewlyCreatedUnblockables(prevRefreshStartTime, now);
-    ImmutableSet<String> newReserved = getNewlyReservedUnblockables(now, transactionBatchSize);
-    SetView<String> reservedNotCreated = Sets.difference(newReserved, newCreated);
-    return Streams.concat(
-            newCreated.stream()
-                .map(name -> UnblockableDomain.of(name, Reason.REGISTERED))
-                .map(UnblockableDomainChange::ofNew),
-            reservedNotCreated.stream()
-                .map(name -> UnblockableDomain.of(name, Reason.RESERVED))
-                .map(UnblockableDomainChange::ofNew))
-        .collect(toImmutableList());
+    return bsaQuery(
+        () -> {
+          // TODO(weiminyu): both methods below use `queryBsaLabelByLabels`. Should combine.
+          ImmutableSet<String> newCreated = getNewlyCreatedUnblockables(prevRefreshStartTime, now);
+          ImmutableSet<String> newReserved =
+              getNewlyReservedUnblockables(now, transactionBatchSize);
+          SetView<String> reservedNotCreated = Sets.difference(newReserved, newCreated);
+          return Streams.concat(
+                  newCreated.stream()
+                      .map(name -> UnblockableDomain.of(name, Reason.REGISTERED))
+                      .map(UnblockableDomainChange::ofNew),
+                  reservedNotCreated.stream()
+                      .map(name -> UnblockableDomain.of(name, Reason.RESERVED))
+                      .map(UnblockableDomainChange::ofNew))
+              .collect(toImmutableList());
+        });
   }
 
   static ImmutableSet<String> getNewlyCreatedUnblockables(
       DateTime prevRefreshStartTime, DateTime now) {
-    ImmutableSet<String> liveDomains = queryLivesDomains(prevRefreshStartTime, now);
+    ImmutableSet<String> bsaEnabledTlds =
+        getTldEntitiesOfType(TldType.REAL).stream()
+            .filter(tld -> isEnrolledWithBsa(tld, now))
+            .map(Tld::getTldStr)
+            .collect(toImmutableSet());
+    ImmutableSet<String> liveDomains =
+        queryNewlyCreatedDomains(bsaEnabledTlds, prevRefreshStartTime, now);
     return getUnblockedDomainNames(liveDomains);
   }
 
@@ -222,7 +240,7 @@ public final class DomainsRefresher {
     Map<String, List<String>> labelToNames =
         domainNames.stream().collect(groupingBy(BsaStringUtils::getLabelInDomain));
     ImmutableSet<String> bsaLabels =
-        Queries.queryBsaLabelByLabels(ImmutableSet.copyOf(labelToNames.keySet()))
+        queryBsaLabelByLabels(ImmutableSet.copyOf(labelToNames.keySet()))
             .map(BsaLabel::getLabel)
             .collect(toImmutableSet());
     return labelToNames.entrySet().stream()

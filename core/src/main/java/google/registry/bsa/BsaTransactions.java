@@ -14,7 +14,10 @@
 
 package google.registry.bsa;
 
+import static com.google.common.base.Verify.verify;
 import static google.registry.persistence.PersistenceModule.TransactionIsolationLevel.TRANSACTION_REPEATABLE_READ;
+import static google.registry.persistence.transaction.JpaTransactionManagerImpl.isInTransaction;
+import static google.registry.persistence.transaction.TransactionManagerFactory.replicaTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
@@ -23,19 +26,23 @@ import java.util.concurrent.Callable;
 /**
  * Helpers for executing JPA transactions for BSA processing.
  *
- * <p>All mutating transactions for BSA may be executed at the {@code TRANSACTION_REPEATABLE_READ}
- * level.
+ * <p>All mutating transactions for BSA are executed at the {@code TRANSACTION_REPEATABLE_READ}
+ * level since the global {@link BsaLock} ensures there is a single writer at any time.
+ *
+ * <p>All domain and label queries can use the replica since all processing are snapshot based.
  */
 public final class BsaTransactions {
 
   @CanIgnoreReturnValue
   public static <T> T bsaTransact(Callable<T> work) {
+    verify(!isInTransaction(), "May only be used for top-level transactions.");
     return tm().transact(work, TRANSACTION_REPEATABLE_READ);
   }
 
   @CanIgnoreReturnValue
   public static <T> T bsaQuery(Callable<T> work) {
-    return tm().transact(work, TRANSACTION_REPEATABLE_READ);
+    verify(!isInTransaction(), "May only be used for top-level transactions.");
+    return replicaTm().transact(work, TRANSACTION_REPEATABLE_READ);
   }
 
   private BsaTransactions() {}

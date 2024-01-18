@@ -16,10 +16,11 @@ package google.registry.bsa.persistence;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.truth.Truth.assertThat;
+import static google.registry.bsa.BsaTransactions.bsaQuery;
 import static google.registry.bsa.persistence.Queries.deleteBsaLabelByLabels;
 import static google.registry.bsa.persistence.Queries.queryBsaLabelByLabels;
 import static google.registry.bsa.persistence.Queries.queryBsaUnblockableDomainByLabels;
-import static google.registry.bsa.persistence.Queries.queryLivesDomains;
+import static google.registry.bsa.persistence.Queries.queryNewlyCreatedDomains;
 import static google.registry.bsa.persistence.Queries.queryUnblockablesByNames;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.createTlds;
@@ -182,7 +183,7 @@ class QueriesTest {
   }
 
   @Test
-  void queryLivesDomains_onlyLiveDomainsReturned() {
+  void queryNewlyCreatedDomains_onlyLiveDomainsReturned() {
     DateTime testStartTime = fakeClock.nowUtc();
     createTlds("tld");
     persistNewRegistrar("TheRegistrar");
@@ -199,7 +200,29 @@ class QueriesTest {
         newDomain("d2.tld").asBuilder().setCreationTimeForTest(fakeClock.nowUtc()).build());
     fakeClock.advanceOneMilli();
     // Now is time 2
-    assertThat(tm().transact(() -> queryLivesDomains(testStartTime, fakeClock.nowUtc())))
+    assertThat(
+            bsaQuery(
+                () ->
+                    queryNewlyCreatedDomains(
+                        ImmutableList.of("tld"), testStartTime, fakeClock.nowUtc())))
         .containsExactly("d1.tld", "d2.tld");
+  }
+
+  @Test
+  void queryNewlyCreatedDomains_onlyDomainsInRequestedTldsReturned() {
+    DateTime testStartTime = fakeClock.nowUtc();
+    createTlds("tld", "tld2");
+    persistNewRegistrar("TheRegistrar");
+    persistResource(
+        newDomain("d1.tld").asBuilder().setCreationTimeForTest(fakeClock.nowUtc()).build());
+    persistResource(
+        newDomain("d2.tld2").asBuilder().setCreationTimeForTest(fakeClock.nowUtc()).build());
+    fakeClock.advanceOneMilli();
+    assertThat(
+            bsaQuery(
+                () ->
+                    queryNewlyCreatedDomains(
+                        ImmutableList.of("tld"), testStartTime, fakeClock.nowUtc())))
+        .containsExactly("d1.tld");
   }
 }
