@@ -97,11 +97,11 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
   }
 
   /**
-   * Returns the {@link EntityManager} for the current database session.
+   * Returns the {@link EntityManager} for the current database transaction.
    *
    * <p>This method must be call from inside a transaction.
    */
-  public static EntityManager getJpaEntityManager() {
+  public static EntityManager em() {
     EntityManager entityManager = transactionInfo.get().entityManager;
     if (entityManager == null) {
       throw new PersistenceException(
