@@ -14,13 +14,13 @@
 
 package google.registry.bsa;
 
+import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
+import static com.google.common.collect.Iterables.getLast;
 import static google.registry.model.tld.Tld.isEnrolledWithBsa;
 import static google.registry.model.tld.Tlds.getTldEntitiesOfType;
 import static google.registry.model.tld.label.ReservedList.loadReservedLists;
-import static google.registry.persistence.PersistenceModule.TransactionIsolationLevel.TRANSACTION_REPEATABLE_READ;
 import static google.registry.persistence.transaction.TransactionManagerFactory.replicaTm;
-import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.request.Action.Method.GET;
 import static google.registry.request.Action.Method.POST;
 import static java.nio.charset.StandardCharsets.US_ASCII;
@@ -28,6 +28,7 @@ import static java.nio.charset.StandardCharsets.US_ASCII;
 import com.google.api.client.http.HttpStatusCodes;
 import com.google.cloud.storage.BlobId;
 import com.google.common.base.Joiner;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedSet;
 import com.google.common.collect.Ordering;
@@ -49,8 +50,10 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
+import java.util.Optional;
 import java.util.zip.GZIPOutputStream;
 import javax.inject.Inject;
+import javax.persistence.TypedQuery;
 import okhttp3.MediaType;
 import okhttp3.MultipartBody;
 import okhttp3.OkHttpClient;
@@ -76,6 +79,8 @@ import org.joda.time.DateTime;
 public class UploadBsaUnavailableDomainsAction implements Runnable {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
+
+  private static final int BATCH_SIZE = 50000;
 
   Clock clock;
 
@@ -110,10 +115,7 @@ public class UploadBsaUnavailableDomainsAction implements Runnable {
     // TODO(mcilwain): Implement a date Cursor, have the cronjob run frequently, and short-circuit
     //                 the run if the daily upload is already completed.
     DateTime runTime = clock.nowUtc();
-    // TODO(mcilwain): Batch this.
-    String unavailableDomains =
-        Joiner.on("\n")
-            .join(tm().transact(() -> getUnavailableDomains(runTime), TRANSACTION_REPEATABLE_READ));
+    String unavailableDomains = Joiner.on("\n").join(getUnavailableDomains(runTime));
     if (unavailableDomains.isEmpty()) {
       logger.atWarning().log("No unavailable domains found; terminating.");
     } else {
@@ -193,6 +195,7 @@ public class UploadBsaUnavailableDomainsAction implements Runnable {
   }
 
   private ImmutableSortedSet<String> getUnavailableDomains(DateTime runTime) {
+    // Get list of TLDs to process.
     ImmutableSet<Tld> bsaEnabledTlds =
         getTldEntitiesOfType(TldType.REAL).stream()
             .filter(tld -> isEnrolledWithBsa(tld, runTime))
@@ -204,26 +207,56 @@ public class UploadBsaUnavailableDomainsAction implements Runnable {
 
     ImmutableSortedSet.Builder<String> unavailableDomains =
         new ImmutableSortedSet.Builder<>(Ordering.natural());
-    for (Tld tld : bsaEnabledTlds) {
-      for (ReservedList reservedList : loadReservedLists(tld.getReservedListNames())) {
-          unavailableDomains.addAll(
-              reservedList.getReservedListEntries().keySet().stream()
-                  .map(label -> toDomain(label, tld))
-                  .collect(toImmutableSet()));
-      }
-    }
 
-    unavailableDomains.addAll(
-        replicaTm()
-            .query(
-                "SELECT domainName FROM Domain "
-                    + "WHERE tld IN :tlds "
-                    + "AND deletionTime > :now ",
-                String.class)
-            .setParameter(
-                "tlds", bsaEnabledTlds.stream().map(Tld::getTldStr).collect(toImmutableSet()))
-            .setParameter("now", runTime)
-            .getResultList());
+    // Add domains on reserved lists to unavailable names list.
+    replicaTm()
+        .transact(
+            () -> {
+              for (Tld tld : bsaEnabledTlds) {
+                for (ReservedList reservedList : loadReservedLists(tld.getReservedListNames())) {
+                  unavailableDomains.addAll(
+                      reservedList.getReservedListEntries().keySet().stream()
+                          .map(label -> toDomain(label, tld))
+                          .collect(toImmutableSet()));
+                }
+              }
+            });
+
+    // Add existing domains to unavailable names list, in batches so as to not time out on replica.
+    ImmutableSet<String> tldNames =
+        bsaEnabledTlds.stream().map(Tld::getTldStr).collect(toImmutableSet());
+    ImmutableList<String> domainsBatch;
+    Optional<String> lastDomain = Optional.empty();
+    do {
+      final Optional<String> lastDomainCopy = lastDomain;
+      domainsBatch =
+          replicaTm()
+              .transact(
+                  () -> {
+                    String sql =
+                        String.format(
+                            "SELECT domainName FROM Domain "
+                                + "WHERE tld IN :tlds "
+                                + "AND deletionTime > :now "
+                                + "%s ORDER BY domainName ASC",
+                            lastDomainCopy.isPresent()
+                                ? "AND domainName > :lastInPreviousBatch"
+                                : "");
+                    TypedQuery<String> query =
+                        replicaTm()
+                            .query(sql, String.class)
+                            .setParameter("tlds", tldNames)
+                            .setParameter("now", runTime);
+                    lastDomainCopy.ifPresent(l -> query.setParameter("lastInPreviousBatch", l));
+                    return query
+                        .setMaxResults(BATCH_SIZE)
+                        .getResultStream()
+                        .collect(toImmutableList());
+                  });
+      unavailableDomains.addAll(domainsBatch);
+      lastDomain = Optional.ofNullable(domainsBatch.isEmpty() ? null : getLast(domainsBatch));
+    } while (domainsBatch.size() == BATCH_SIZE);
+
     ImmutableSortedSet<String> result = unavailableDomains.build();
     logger.atInfo().log("Found %d total unavailable domains.", result.size());
     return result;
