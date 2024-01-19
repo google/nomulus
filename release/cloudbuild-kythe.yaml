@@ -29,6 +29,12 @@ steps:
     mv $${JAVA_HOME}/bin/javac $${JAVA_HOME}/bin/javac.real
     cp ./kythe/extractors/javac-wrapper.sh $${JAVA_HOME}/bin/javac
     export JAVAC_EXTRACTOR_JAR="$${PWD}/kythe/extractors/javac_extractor.jar"
+    jvmopts="--add-exports=jdk.compiler/com.sun.tools.javac.main=ALL-UNNAMED"
+    jvmopts="$${jvmopts} --add-exports=jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED"
+    jvmopts="$${jvmopts} --add-exports=jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED"
+    jvmopts="$${jvmopts} --add-exports=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED"
+    jvmopts="$${jvmopts} --add-exports=jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED"
+    export KYTHE_JAVA_RUNTIME_OPTIONS=$${jvmopts}
     export KYTHE_VNAMES="$${PWD}/vnames.json"
     export KYTHE_ROOT_DIRECTORY="$${PWD}"
     export KYTHE_OUTPUT_DIRECTORY="$${PWD}/kythe_output"
