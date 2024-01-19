@@ -64,12 +64,24 @@ public class ConfigureTldCommand extends MutatingCommand {
   Path inputFile;
 
   @Parameter(
-      names = {"-b", "--breakglass"},
+      names = {"-b", "--break_glass"},
       description =
-          "Sets the breakglass field on the TLD to true, preventing Cloud Build from overwriting"
-              + " these new changes until the TLD configuration file stored internally matches the"
-              + " configuration in the database.")
-  boolean breakglass;
+          "Sets the breakGlass field on the TLD which prevents Cloud Build from overwriting new"
+              + " TLD changes until the TLD configuration file stored internally matches the"
+              + " configuration in the database. Setting this flag to false will indicate that"
+              + " break glass mode should be turned off and any locally made changes to the"
+              + " database should be overwritten by the internally stored configurations on the"
+              + " next scheduled TLD sync.",
+      arity = 1)
+  Boolean breakGlass;
+
+  @Parameter(
+      names = {"--build_environment"},
+      description =
+          "DO NOT USE THIS FLAG ON THE COMMAND LINE! This flag indicates the command is being run"
+              + " by the build environment tools. This flag should never be used by a human user"
+              + " from the command line.")
+  boolean buildEnv;
 
   @Parameter(
       names = {"-d", "--dry_run"},
@@ -86,10 +98,10 @@ public class ConfigureTldCommand extends MutatingCommand {
   boolean newDiff = true;
 
   /**
-   * Indicates if the existing TLD is currently in breakglass mode and should not be modified unless
-   * the breakglass flag is used
+   * Indicates if the existing TLD is currently in break glass mode and should not be modified
+   * unless the --break_glass flag is used
    */
-  boolean oldTldInBreakglass = false;
+  boolean oldTldInBreakGlass = false;
 
   @Override
   protected void init() throws Exception {
@@ -100,23 +112,29 @@ public class ConfigureTldCommand extends MutatingCommand {
     Tld oldTld = getTlds().contains(name) ? Tld.get(name) : null;
     Tld newTld = mapper.readValue(inputFile.toFile(), Tld.class);
     if (oldTld != null) {
-      oldTldInBreakglass = oldTld.getBreakglassMode();
+      oldTldInBreakGlass = oldTld.getBreakglassMode();
       newDiff = !oldTld.equalYaml(newTld);
     }
 
-    if (!newDiff && !oldTldInBreakglass) {
+    if (!newDiff && !oldTldInBreakGlass) {
       // Don't construct a new object if there is no new diff
       return;
     }
 
-    if (oldTldInBreakglass && !breakglass) {
+    checkArgument(
+        oldTldInBreakGlass || !Boolean.FALSE.equals(breakGlass),
+        "The --break_glass flag cannot be set to false to end break glass mode because the TLD is"
+            + " not currently in break glass mode");
+
+    if (oldTldInBreakGlass && !Boolean.TRUE.equals(breakGlass)) {
       checkArgument(
-          !newDiff,
-          "Changes can not be applied since TLD is in breakglass mode but the breakglass flag was"
-              + " not used");
+          !newDiff || breakGlass != null,
+          "Changes can not be applied since TLD is in break glass mode but the --break_glass flag"
+              + " was not used");
       // if there are no new diffs, then the YAML file has caught up to the database and the
-      // breakglass mode should be removed
-      logger.atInfo().log("Breakglass mode removed from TLD: %s", name);
+      // break glass mode should be removed. Also remove the break glass mode if the break glass
+      // flag was set to false.
+      logger.atInfo().log("Break glass mode removed from TLD: %s", name);
     }
 
     checkPremiumList(newTld);
@@ -129,8 +147,11 @@ public class ConfigureTldCommand extends MutatingCommand {
     if (bsaEnrollTime.isPresent()) {
       newTld = newTld.asBuilder().setBsaEnrollStartTime(bsaEnrollTime).build();
     }
-    // Set the new TLD to breakglass mode if breakglass flag was used
-    if (breakglass) {
+    // Set the new TLD to break glass mode if break glass flag was used. Note that the break glass
+    // mode does not need to be set to false if the --break_glass flag was set to false since the
+    // field already defaults to false. Break glass mode will also automatically turn off if there
+    // is no new diff and the --break_glass flag is null.
+    if (Boolean.TRUE.equals(breakGlass)) {
       newTld = newTld.asBuilder().setBreakglassMode(true).build();
     }
     stageEntityChange(oldTld, newTld);
@@ -142,14 +163,15 @@ public class ConfigureTldCommand extends MutatingCommand {
       return true;
     }
     if (!newDiff) {
-      if (oldTldInBreakglass && !breakglass) {
-        // Run command to remove breakglass mode
+      if (oldTldInBreakGlass && (breakGlass == null || !breakGlass)) {
+        // Run command to remove break glass mode if there is no break glass flag or if the break
+        // glass flag is false.
         return false;
       }
       logger.atInfo().log("TLD YAML file contains no new changes");
       checkArgument(
-          !breakglass || oldTldInBreakglass,
-          "Breakglass mode can only be set when making new changes to a TLD configuration");
+          breakGlass == null || oldTldInBreakGlass,
+          "Break glass mode can only be set when making new changes to a TLD configuration");
       return true;
     }
     return false;
