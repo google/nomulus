@@ -211,6 +211,30 @@ allprojects {
         options.fork = true
         options.forkOptions.executable =
           file("${System.env.JAVA_HOME}/bin/javac")
+        options.compilerArgs = ["--add-exports",
+                                "jdk.compiler/com.sun.tools.javac.main=ALL-UNNAMED",
+                                "--add-exports",
+                                "jdk.compiler/com.sun.tools.javac.comp=ALL-UNNAMED",
+                                "--add-exports",
+                                "jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED",
+                                "--add-exports",
+                                "jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED",
+                                "--add-exports",
+                                "jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED",
+                                "--add-exports",
+                                "jdk.compiler/com.sun.tools.javac.processing=ALL-UNNAMED",
+                                "--add-exports",
+                                "jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED",
+                                "--add-exports",
+                                "jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED"]
+        options.forkOptions.jvmArgs = ["-J--add-exports=jdk.compiler/com.sun.tools.javac.main=ALL-UNNAMED",
+                                       "-J--add-exports=jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED",
+                                       "-J--add-exports=jdk.compiler/com.sun.tools.javac.comp=ALL-UNNAMED",
+                                       "-J--add-exports=jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED",
+                                       "-J--add-exports=jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED",
+                                       "-J--add-exports=jdk.compiler/com.sun.tools.javac.processing=ALL-UNNAMED",
+                                       "-J--add-exports=jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED",
+                                       "-J--add-exports=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED"]
       }
     }
   }
