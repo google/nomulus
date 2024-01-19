@@ -28,9 +28,9 @@ import java.util.List;
 // TODO(1/15/2024): rename to UnblockableDomain.
 @AutoValue
 public abstract class UnblockableDomain {
-  abstract String domainName();
+  public abstract String domainName();
 
-  abstract Reason reason();
+  public abstract Reason reason();
 
   /** Reasons why a valid domain name cannot be blocked. */
   public enum Reason {

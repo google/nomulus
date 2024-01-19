@@ -14,8 +14,11 @@
 
 package google.registry.bsa.persistence;
 
+import static com.google.common.collect.ImmutableList.toImmutableList;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
+import com.google.common.collect.ImmutableList;
+import google.registry.bsa.api.UnblockableDomain;
 import google.registry.util.Clock;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
@@ -35,7 +38,21 @@ public final class BsaTestingUtils {
     tm().transact(() -> tm().put(new BsaLabel(domainLabel, BSA_LABEL_CREATION_TIME)));
   }
 
+  public static void persistUnblockableDomain(UnblockableDomain unblockableDomain) {
+    tm().transact(() -> tm().put(BsaUnblockableDomain.of(unblockableDomain)));
+  }
+
   public static DownloadScheduler createDownloadScheduler(Clock clock) {
     return new DownloadScheduler(DEFAULT_DOWNLOAD_INTERVAL, DEFAULT_NOP_INTERVAL, clock);
+  }
+
+  public static RefreshScheduler createRefreshScheduler() {
+    return new RefreshScheduler();
+  }
+
+  public static ImmutableList<UnblockableDomain> queryUnblockableDomains() {
+    return tm().transact(() -> tm().loadAllOf(BsaUnblockableDomain.class)).stream()
+        .map(BsaUnblockableDomain::toUnblockableDomain)
+        .collect(toImmutableList());
   }
 }

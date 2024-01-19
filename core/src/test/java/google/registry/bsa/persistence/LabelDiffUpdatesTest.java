@@ -16,6 +16,8 @@ package google.registry.bsa.persistence;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
+import static google.registry.bsa.ReservedDomainsTestingUtils.addReservedListsToTld;
+import static google.registry.bsa.ReservedDomainsTestingUtils.createReservedList;
 import static google.registry.bsa.persistence.LabelDiffUpdates.applyLabelDiff;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.createTld;
@@ -26,7 +28,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import google.registry.bsa.IdnChecker;
@@ -36,9 +37,6 @@ import google.registry.bsa.api.UnblockableDomain;
 import google.registry.bsa.persistence.BsaUnblockableDomain.Reason;
 import google.registry.model.tld.Tld;
 import google.registry.model.tld.label.ReservationType;
-import google.registry.model.tld.label.ReservedList;
-import google.registry.model.tld.label.ReservedList.ReservedListEntry;
-import google.registry.model.tld.label.ReservedListDao;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationWithCoverageExtension;
 import google.registry.testing.FakeClock;
@@ -139,18 +137,8 @@ class LabelDiffUpdatesTest {
   @Test
   void applyLabelDiffs_newLabel() {
     persistActiveDomain("label.app");
-    ReservedListDao.save(
-        new ReservedList.Builder()
-            .setReservedListMap(
-                ImmutableMap.of(
-                    "label",
-                    ReservedListEntry.create(
-                        "label", ReservationType.RESERVED_FOR_SPECIFIC_USE, null)))
-            .setName("page_reserved")
-            .setCreationTimestamp(fakeClock.nowUtc())
-            .build());
-    ReservedList reservedList = ReservedList.get("page_reserved").get();
-    tm().transact(() -> tm().put(page.asBuilder().setReservedLists(reservedList).build()));
+    createReservedList("page_reserved", "label", ReservationType.RESERVED_FOR_SPECIFIC_USE);
+    addReservedListsToTld("page", ImmutableList.of("page_reserved"));
 
     when(idnChecker.getForbiddingTlds(any()))
         .thenReturn(Sets.difference(ImmutableSet.of(dev), ImmutableSet.of()).immutableCopy());

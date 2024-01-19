@@ -18,6 +18,7 @@ import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static google.registry.bsa.BsaTransactions.bsaQuery;
+import static google.registry.bsa.BsaTransactions.bsaTransact;
 import static google.registry.bsa.ReservedDomainsUtils.getAllReservedNames;
 import static google.registry.bsa.ReservedDomainsUtils.isReservedDomain;
 import static google.registry.bsa.persistence.Queries.batchReadUnblockables;
@@ -244,7 +245,7 @@ public final class DomainsRefresher {
             .map(BsaLabel::getLabel)
             .collect(toImmutableSet());
     return labelToNames.entrySet().stream()
-        .filter(entry -> !bsaLabels.contains(entry.getKey()))
+        .filter(entry -> bsaLabels.contains(entry.getKey()))
         .map(Entry::getValue)
         .flatMap(List::stream)
         .collect(toImmutableSet());
@@ -257,20 +258,21 @@ public final class DomainsRefresher {
                 .collect(
                     groupingBy(
                         change -> change.isDelete() ? "remove" : "change", toImmutableSet())));
-    tm().transact(
-            () -> {
-              if (changesByType.containsKey("remove")) {
-                tm().delete(
-                        changesByType.get("remove").stream()
-                            .map(c -> BsaUnblockableDomain.vKey(c.domainName()))
-                            .collect(toImmutableSet()));
-              }
-              if (changesByType.containsKey("change")) {
-                tm().putAll(
-                        changesByType.get("change").stream()
-                            .map(UnblockableDomainChange::newValue)
-                            .collect(toImmutableSet()));
-              }
-            });
+    bsaTransact(
+        () -> {
+          if (changesByType.containsKey("remove")) {
+            tm().delete(
+                    changesByType.get("remove").stream()
+                        .map(c -> BsaUnblockableDomain.vKey(c.domainName()))
+                        .collect(toImmutableSet()));
+          }
+          if (changesByType.containsKey("change")) {
+            tm().putAll(
+                    changesByType.get("change").stream()
+                        .map(UnblockableDomainChange::newValue)
+                        .map(BsaUnblockableDomain::of)
+                        .collect(toImmutableSet()));
+          }
+        });
   }
 }

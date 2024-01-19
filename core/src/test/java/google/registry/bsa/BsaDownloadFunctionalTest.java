@@ -118,15 +118,8 @@ class BsaDownloadFunctionalTest {
         gcsClient.readBlockList(downloadJob, BlockListType.BLOCK_PLUS)) {
       assertThat(blockListFile).containsExactly(BSA_CSV_HEADER, "abc,2", "def,3");
     }
-    ImmutableList<String> persistedLabels =
-        ImmutableList.copyOf(
-            tm().transact(
-                    () ->
-                        tm().getEntityManager()
-                            .createNativeQuery("SELECT label from \"BsaLabel\"")
-                            .getResultList()));
     // TODO(weiminyu): check intermediate files
-    assertThat(persistedLabels).containsExactly("abc", "def");
+    assertThat(getPersistedLabels()).containsExactly("abc", "def");
   }
 
   @Test

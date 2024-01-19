@@ -21,6 +21,7 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
+import google.registry.persistence.transaction.TransactionManager.ThrowingRunnable;
 import java.util.concurrent.Callable;
 
 /**
@@ -37,6 +38,11 @@ public final class BsaTransactions {
   public static <T> T bsaTransact(Callable<T> work) {
     verify(!isInTransaction(), "May only be used for top-level transactions.");
     return tm().transact(work, TRANSACTION_REPEATABLE_READ);
+  }
+
+  public static void bsaTransact(ThrowingRunnable work) {
+    verify(!isInTransaction(), "May only be used for top-level transactions.");
+    tm().transact(work, TRANSACTION_REPEATABLE_READ);
   }
 
   @CanIgnoreReturnValue

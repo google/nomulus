@@ -105,6 +105,10 @@ class BsaUnblockableDomain {
     return new BsaUnblockableDomain(parts.get(0), parts.get(1), reason);
   }
 
+  static BsaUnblockableDomain of(UnblockableDomain unblockable) {
+    return of(unblockable.domainName(), Reason.valueOf(unblockable.reason().name()));
+  }
+
   static VKey<BsaUnblockableDomain> vKey(String domainName) {
     ImmutableList<String> parts = ImmutableList.copyOf(DOMAIN_SPLITTER.splitToList(domainName));
     verify(parts.size() == 2, "Invalid domain name: %s", domainName);

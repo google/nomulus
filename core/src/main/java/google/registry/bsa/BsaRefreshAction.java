@@ -54,7 +54,7 @@ public class BsaRefreshAction implements Runnable {
   private final GcsClient gcsClient;
   private final BsaReportSender bsaReportSender;
   private final int transactionBatchSize;
-  private final Duration domainTxnMaxDuration;
+  private final Duration domainCreateTxnCommitTimeLag;
   private final BsaLock bsaLock;
   private final Clock clock;
   private final Response response;
@@ -65,7 +65,7 @@ public class BsaRefreshAction implements Runnable {
       GcsClient gcsClient,
       BsaReportSender bsaReportSender,
       @Config("bsaTxnBatchSize") int transactionBatchSize,
-      @Config("domainCreateTxnCommitTimeLag") Duration domainTxnMaxDuration,
+      @Config("domainCreateTxnCommitTimeLag") Duration domainCreateTxnCommitTimeLag,
       BsaLock bsaLock,
       Clock clock,
       Response response) {
@@ -73,7 +73,7 @@ public class BsaRefreshAction implements Runnable {
     this.gcsClient = gcsClient;
     this.bsaReportSender = bsaReportSender;
     this.transactionBatchSize = transactionBatchSize;
-    this.domainTxnMaxDuration = domainTxnMaxDuration;
+    this.domainCreateTxnCommitTimeLag = domainCreateTxnCommitTimeLag;
     this.bsaLock = bsaLock;
     this.clock = clock;
     this.response = response;
@@ -109,7 +109,10 @@ public class BsaRefreshAction implements Runnable {
     RefreshSchedule schedule = maybeSchedule.get();
     DomainsRefresher refresher =
         new DomainsRefresher(
-            schedule.prevRefreshTime(), clock.nowUtc(), domainTxnMaxDuration, transactionBatchSize);
+            schedule.prevRefreshTime(),
+            clock.nowUtc(),
+            domainCreateTxnCommitTimeLag,
+            transactionBatchSize);
     switch (schedule.stage()) {
       case CHECK_FOR_CHANGES:
         ImmutableList<UnblockableDomainChange> blockabilityChanges =
@@ -158,7 +161,7 @@ public class BsaRefreshAction implements Runnable {
           if (report.isPresent()) {
             gcsClient.logRemovedUnblockableDomainsReport(
                 schedule.jobName(), LINE_SPLITTER.splitToStream(report.get()));
-            bsaReportSender.removeUnblockableDomainsUpdates(report.get());
+            bsaReportSender.addUnblockableDomainsUpdates(report.get());
           } else {
             logger.atInfo().log("No new Unblockable domains to add.");
           }
