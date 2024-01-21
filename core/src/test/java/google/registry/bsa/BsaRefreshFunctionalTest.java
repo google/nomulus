@@ -31,7 +31,10 @@ import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 
 import com.google.cloud.storage.contrib.nio.testing.LocalStorageHelper;
 import com.google.common.collect.ImmutableList;
@@ -58,8 +61,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.RegisterExtension;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Captor;
+import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -82,8 +84,6 @@ class BsaRefreshFunctionalTest {
       new JpaTestExtensions.Builder().withClock(fakeClock).buildIntegrationWithCoverageExtension();
 
   @Mock BsaReportSender bsaReportSender;
-
-  @Captor ArgumentCaptor<String> uploadYamlCaptor;
 
   private GcsClient gcsClient;
   private Response response;
@@ -141,20 +141,25 @@ class BsaRefreshFunctionalTest {
     assertThat(queryUnblockableDomains()).containsExactly(newUnblockable);
     assertThat(gcsClient.readRefreshChanges(jobName))
         .containsExactly(UnblockableDomainChange.ofNew(newUnblockable));
-    verify(bsaReportSender, Mockito.never()).removeUnblockableDomainsUpdates(anyString());
-    verify(bsaReportSender, Mockito.times(1))
-        .addUnblockableDomainsUpdates(uploadYamlCaptor.capture());
-    assertThat(uploadYamlCaptor.getValue())
-        .isEqualTo("{\n" + "  \"reserved\": [\n" + "    \"blocked1.app\"\n" + "  ]\n" + "}");
+    verify(bsaReportSender, never()).removeUnblockableDomainsUpdates(anyString());
+    verify(bsaReportSender, times(1))
+        .addUnblockableDomainsUpdates("{\n  \"reserved\": [\n    \"blocked1.app\"\n  ]\n}");
   }
 
   @Test
   void newRegisteredDomain_addedAsUnblockable() throws Exception {
     persistActiveDomain("blocked1.dev", fakeClock.nowUtc());
     persistActiveDomain("dummy.dev", fakeClock.nowUtc());
+    String jobName = getRefreshJobName(fakeClock.nowUtc());
     action.run();
-    assertThat(queryUnblockableDomains())
-        .containsExactly(UnblockableDomain.of("blocked1.dev", Reason.REGISTERED));
+    UnblockableDomain newUnblockable = UnblockableDomain.of("blocked1.dev", Reason.REGISTERED);
+    assertThat(queryUnblockableDomains()).containsExactly(newUnblockable);
+    assertThat(gcsClient.readRefreshChanges(jobName))
+        .containsExactly(UnblockableDomainChange.ofNew(newUnblockable));
+
+    verify(bsaReportSender, never()).removeUnblockableDomainsUpdates(anyString());
+    verify(bsaReportSender, times(1))
+        .addUnblockableDomainsUpdates("{\n  \"registered\": [\n    \"blocked1.dev\"\n  ]\n}");
   }
 
   @Test
@@ -166,8 +171,18 @@ class BsaRefreshFunctionalTest {
     fakeClock.advanceOneMilli();
     deleteTestDomain(domain, fakeClock.nowUtc());
     fakeClock.advanceOneMilli();
+
+    String jobName = getRefreshJobName(fakeClock.nowUtc());
+    Mockito.reset(bsaReportSender);
     action.run();
     assertThat(queryUnblockableDomains()).isEmpty();
+    assertThat(gcsClient.readRefreshChanges(jobName))
+        .containsExactly(
+            UnblockableDomainChange.ofDeleted(
+                UnblockableDomain.of("blocked1.dev", Reason.REGISTERED)));
+
+    verify(bsaReportSender, never()).addUnblockableDomainsUpdates(anyString());
+    verify(bsaReportSender, times(1)).removeUnblockableDomainsUpdates("[\n  \"blocked1.dev\"\n]");
   }
 
   @Test
@@ -179,18 +194,18 @@ class BsaRefreshFunctionalTest {
         .containsExactly(UnblockableDomain.of("blocked1.app", Reason.RESERVED));
     fakeClock.advanceOneMilli();
     removeReservedDomainFromList(RESERVED_LIST_NAME, ImmutableSet.of("blocked1"));
+
+    String jobName = getRefreshJobName(fakeClock.nowUtc());
+    Mockito.reset(bsaReportSender);
     action.run();
     assertThat(queryUnblockableDomains()).isEmpty();
-  }
+    assertThat(gcsClient.readRefreshChanges(jobName))
+        .containsExactly(
+            UnblockableDomainChange.ofDeleted(
+                UnblockableDomain.of("blocked1.app", Reason.RESERVED)));
 
-  @Test
-  void newRegisteredAndReservedDomain_addedAsRegisteredUnblockable() throws Exception {
-    addReservedDomainToList(
-        RESERVED_LIST_NAME, ImmutableMap.of("blocked1", RESERVED_FOR_SPECIFIC_USE));
-    persistActiveDomain("blocked1.app", fakeClock.nowUtc());
-    action.run();
-    assertThat(queryUnblockableDomains())
-        .containsExactly(UnblockableDomain.of("blocked1.app", Reason.REGISTERED));
+    verify(bsaReportSender, never()).addUnblockableDomainsUpdates(anyString());
+    verify(bsaReportSender, times(1)).removeUnblockableDomainsUpdates("[\n  \"blocked1.app\"\n]");
   }
 
   @Test
@@ -204,9 +219,61 @@ class BsaRefreshFunctionalTest {
     fakeClock.advanceOneMilli();
     deleteTestDomain(domain, fakeClock.nowUtc());
     fakeClock.advanceOneMilli();
+
+    String jobName = getRefreshJobName(fakeClock.nowUtc());
+    Mockito.reset(bsaReportSender);
     action.run();
     assertThat(queryUnblockableDomains())
         .containsExactly(UnblockableDomain.of("blocked1.app", Reason.RESERVED));
+    assertThat(gcsClient.readRefreshChanges(jobName))
+        .containsExactly(
+            UnblockableDomainChange.ofChanged(
+                UnblockableDomain.of("blocked1.app", Reason.REGISTERED), Reason.RESERVED));
+    InOrder inOrder = Mockito.inOrder(bsaReportSender);
+    inOrder.verify(bsaReportSender).removeUnblockableDomainsUpdates("[\n  \"blocked1.app\"\n]");
+    inOrder
+        .verify(bsaReportSender)
+        .addUnblockableDomainsUpdates("{\n  \"reserved\": [\n    \"blocked1.app\"\n  ]\n}");
+  }
+
+  @Test
+  void reservedUblockable_becomesRegistered_changeToRegisterd() throws Exception {
+    addReservedDomainToList(
+        RESERVED_LIST_NAME, ImmutableMap.of("blocked1", RESERVED_FOR_SPECIFIC_USE));
+    action.run();
+    assertThat(queryUnblockableDomains())
+        .containsExactly(UnblockableDomain.of("blocked1.app", Reason.RESERVED));
+    fakeClock.advanceOneMilli();
+    persistActiveDomain("blocked1.app", fakeClock.nowUtc());
+    fakeClock.advanceOneMilli();
+
+    Mockito.reset(bsaReportSender);
+    String jobName = getRefreshJobName(fakeClock.nowUtc());
+    action.run();
+    UnblockableDomain changed = UnblockableDomain.of("blocked1.app", Reason.REGISTERED);
+    assertThat(queryUnblockableDomains()).containsExactly(changed);
+    assertThat(gcsClient.readRefreshChanges(jobName))
+        .containsExactly(
+            UnblockableDomainChange.ofChanged(
+                UnblockableDomain.of("blocked1.app", Reason.RESERVED), Reason.REGISTERED));
+    InOrder inOrder = Mockito.inOrder(bsaReportSender);
+    inOrder.verify(bsaReportSender).removeUnblockableDomainsUpdates("[\n  \"blocked1.app\"\n]");
+    inOrder
+        .verify(bsaReportSender)
+        .addUnblockableDomainsUpdates("{\n  \"registered\": [\n    \"blocked1.app\"\n  ]\n}");
+  }
+
+  @Test
+  void newRegisteredAndReservedDomain_addedAsRegisteredUnblockable() throws Exception {
+    addReservedDomainToList(
+        RESERVED_LIST_NAME, ImmutableMap.of("blocked1", RESERVED_FOR_SPECIFIC_USE));
+    persistActiveDomain("blocked1.app", fakeClock.nowUtc());
+    String jobName = getRefreshJobName(fakeClock.nowUtc());
+    action.run();
+    UnblockableDomain newUnblockable = UnblockableDomain.of("blocked1.app", Reason.REGISTERED);
+    assertThat(queryUnblockableDomains()).containsExactly(newUnblockable);
+    assertThat(gcsClient.readRefreshChanges(jobName))
+        .containsExactly(UnblockableDomainChange.ofNew(newUnblockable));
   }
 
   @Test
@@ -220,9 +287,14 @@ class BsaRefreshFunctionalTest {
     fakeClock.advanceOneMilli();
     removeReservedDomainFromList(RESERVED_LIST_NAME, ImmutableSet.of("blocked1"));
     fakeClock.advanceOneMilli();
+
+    Mockito.reset(bsaReportSender);
+    String jobName = getRefreshJobName(fakeClock.nowUtc());
     action.run();
     assertThat(queryUnblockableDomains())
         .containsExactly(UnblockableDomain.of("blocked1.app", Reason.REGISTERED));
+    assertThat(gcsClient.readRefreshChanges(jobName)).isEmpty();
+    verifyNoInteractions(bsaReportSender);
   }
 
   @Test
@@ -235,23 +307,13 @@ class BsaRefreshFunctionalTest {
     addReservedDomainToList(
         RESERVED_LIST_NAME, ImmutableMap.of("blocked1", RESERVED_FOR_SPECIFIC_USE));
     fakeClock.advanceOneMilli();
-    action.run();
-    assertThat(queryUnblockableDomains())
-        .containsExactly(UnblockableDomain.of("blocked1.app", Reason.REGISTERED));
-  }
 
-  @Test
-  void reservedUblockable_becomesRegistered_changeToRegisterd() throws Exception {
-    addReservedDomainToList(
-        RESERVED_LIST_NAME, ImmutableMap.of("blocked1", RESERVED_FOR_SPECIFIC_USE));
-    action.run();
-    assertThat(queryUnblockableDomains())
-        .containsExactly(UnblockableDomain.of("blocked1.app", Reason.RESERVED));
-    fakeClock.advanceOneMilli();
-    persistActiveDomain("blocked1.app", fakeClock.nowUtc());
-    fakeClock.advanceOneMilli();
+    Mockito.reset(bsaReportSender);
+    String jobName = getRefreshJobName(fakeClock.nowUtc());
     action.run();
     assertThat(queryUnblockableDomains())
         .containsExactly(UnblockableDomain.of("blocked1.app", Reason.REGISTERED));
+    assertThat(gcsClient.readRefreshChanges(jobName)).isEmpty();
+    verifyNoInteractions(bsaReportSender);
   }
 }

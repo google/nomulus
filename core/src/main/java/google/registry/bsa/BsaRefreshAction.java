@@ -117,12 +117,13 @@ public class BsaRefreshAction implements Runnable {
       case CHECK_FOR_CHANGES:
         ImmutableList<UnblockableDomainChange> blockabilityChanges =
             refresher.checkForBlockabilityChanges();
+        // Always write even if no change. Easier for manual inspection of GCS bucket.
+        gcsClient.writeRefreshChanges(schedule.jobName(), blockabilityChanges.stream());
         if (blockabilityChanges.isEmpty()) {
           logger.atInfo().log("No change to Unblockable domains found.");
           schedule.updateJobStage(RefreshStage.DONE);
           return null;
         }
-        gcsClient.writeRefreshChanges(schedule.jobName(), blockabilityChanges.stream());
         schedule.updateJobStage(RefreshStage.APPLY_CHANGES);
         // Fall through
       case APPLY_CHANGES:
@@ -135,10 +136,12 @@ public class BsaRefreshAction implements Runnable {
       case UPLOAD_REMOVALS:
         try (Stream<UnblockableDomainChange> changes =
             gcsClient.readRefreshChanges(schedule.jobName())) {
+          // Unblockables with changes in REASON are removed then added back. That is why they are
+          // included in this stage.
           Optional<String> report =
               JsonSerializations.toUnblockableDomainsRemovalReport(
                   changes
-                      .filter(UnblockableDomainChange::isDelete)
+                      .filter(UnblockableDomainChange::isChangeOrDelete)
                       .map(UnblockableDomainChange::domainName));
           if (report.isPresent()) {
             gcsClient.logRemovedUnblockableDomainsReport(
@@ -156,7 +159,7 @@ public class BsaRefreshAction implements Runnable {
           Optional<String> report =
               JsonSerializations.toUnblockableDomainsReport(
                   changes
-                      .filter(UnblockableDomainChange::isAddOrChange)
+                      .filter(UnblockableDomainChange::isNewOrChange)
                       .map(UnblockableDomainChange::newValue));
           if (report.isPresent()) {
             gcsClient.logRemovedUnblockableDomainsReport(

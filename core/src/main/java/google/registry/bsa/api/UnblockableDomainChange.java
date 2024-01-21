@@ -52,12 +52,16 @@ public abstract class UnblockableDomainChange {
     return UnblockableDomain.of(unblockable().domainName(), newReason().get());
   }
 
-  public boolean isAddOrChange() {
+  public boolean isNewOrChange() {
     return newReason().isPresent();
   }
 
+  public boolean isChangeOrDelete() {
+    return !isNew();
+  }
+
   public boolean isDelete() {
-    return !this.isAddOrChange();
+    return !this.isNewOrChange();
   }
 
   public boolean isNew() {
