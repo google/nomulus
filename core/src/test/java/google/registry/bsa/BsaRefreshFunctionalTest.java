@@ -280,7 +280,7 @@ class BsaRefreshFunctionalTest {
   void registeredAndReservedUnblockable_noLongerReserved_noChange() throws Exception {
     addReservedDomainToList(
         RESERVED_LIST_NAME, ImmutableMap.of("blocked1", RESERVED_FOR_SPECIFIC_USE));
-    Domain domain = persistActiveDomain("blocked1.app", fakeClock.nowUtc());
+    persistActiveDomain("blocked1.app", fakeClock.nowUtc());
     action.run();
     assertThat(queryUnblockableDomains())
         .containsExactly(UnblockableDomain.of("blocked1.app", Reason.REGISTERED));
@@ -299,7 +299,7 @@ class BsaRefreshFunctionalTest {
 
   @Test
   void registeredUblockable_becomesReserved_noChange() throws Exception {
-    Domain domain = persistActiveDomain("blocked1.app", fakeClock.nowUtc());
+    persistActiveDomain("blocked1.app", fakeClock.nowUtc());
     action.run();
     assertThat(queryUnblockableDomains())
         .containsExactly(UnblockableDomain.of("blocked1.app", Reason.REGISTERED));
