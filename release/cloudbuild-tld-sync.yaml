@@ -34,7 +34,7 @@ steps:
       --secret nomulus-tool-cloudbuild-credential \
       > nomulus_tool_credential.json
 # Configure the TLDs using the stored configuration files in the internal repo
-- name: 'gcr.io/$PROJECT_ID/tld_updater:latest'
+- name: 'gcr.io/$PROJECT_ID/db_object_updater:latest'
   args:
   - ${_ENV}
   - ./nomulus_tool_credential.json

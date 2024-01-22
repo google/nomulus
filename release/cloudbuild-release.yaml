@@ -139,9 +139,9 @@ steps:
       gcloud container images list-tags \
       gcr.io/${PROJECT_ID}/prober_cert_updater \
       --format='get(digest)' --filter='tags = ${TAG_NAME}')
-     tld_updater_digest=$( \
+     db_object_updater_digest=$( \
       gcloud container images list-tags \
-      gcr.io/${PROJECT_ID}/tld_updater \
+      gcr.io/${PROJECT_ID}/db_object_updater \
       --format='get(digest)' --filter='tags = ${TAG_NAME}')
     sed -i s/builder:latest/builder@$builder_digest/g \
       release/cloudbuild-schema-deploy.yaml
