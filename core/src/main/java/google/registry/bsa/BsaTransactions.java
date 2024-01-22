@@ -48,7 +48,8 @@ public final class BsaTransactions {
   @CanIgnoreReturnValue
   public static <T> T bsaQuery(Callable<T> work) {
     verify(!isInTransaction(), "May only be used for top-level transactions.");
-    return replicaTm().transact(work, TRANSACTION_REPEATABLE_READ);
+    // TRANSACTION_REPEATABLE_READ is default on replica.
+    return replicaTm().transact(work);
   }
 
   private BsaTransactions() {}
