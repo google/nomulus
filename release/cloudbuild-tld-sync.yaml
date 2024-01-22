@@ -39,6 +39,7 @@ steps:
   - ${_ENV}
   - ./nomulus_tool_credential.json
   - nomulus-internal/core/src/main/java/google/registry/config/files/tld/
+  - configure_tld
 
 timeout: 7200s
 options:
