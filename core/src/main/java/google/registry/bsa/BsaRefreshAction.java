@@ -54,7 +54,7 @@ public class BsaRefreshAction implements Runnable {
   private final GcsClient gcsClient;
   private final BsaReportSender bsaReportSender;
   private final int transactionBatchSize;
-  private final Duration domainTxnMaxDuration;
+  private final Duration domainCreateTxnCommitTimeLag;
   private final BsaLock bsaLock;
   private final Clock clock;
   private final Response response;
@@ -65,7 +65,7 @@ public class BsaRefreshAction implements Runnable {
       GcsClient gcsClient,
       BsaReportSender bsaReportSender,
       @Config("bsaTxnBatchSize") int transactionBatchSize,
-      @Config("domainCreateTxnCommitTimeLag") Duration domainTxnMaxDuration,
+      @Config("domainCreateTxnCommitTimeLag") Duration domainCreateTxnCommitTimeLag,
       BsaLock bsaLock,
       Clock clock,
       Response response) {
@@ -73,7 +73,7 @@ public class BsaRefreshAction implements Runnable {
     this.gcsClient = gcsClient;
     this.bsaReportSender = bsaReportSender;
     this.transactionBatchSize = transactionBatchSize;
-    this.domainTxnMaxDuration = domainTxnMaxDuration;
+    this.domainCreateTxnCommitTimeLag = domainCreateTxnCommitTimeLag;
     this.bsaLock = bsaLock;
     this.clock = clock;
     this.response = response;
@@ -109,17 +109,21 @@ public class BsaRefreshAction implements Runnable {
     RefreshSchedule schedule = maybeSchedule.get();
     DomainsRefresher refresher =
         new DomainsRefresher(
-            schedule.prevRefreshTime(), clock.nowUtc(), domainTxnMaxDuration, transactionBatchSize);
+            schedule.prevRefreshTime(),
+            clock.nowUtc(),
+            domainCreateTxnCommitTimeLag,
+            transactionBatchSize);
     switch (schedule.stage()) {
       case CHECK_FOR_CHANGES:
         ImmutableList<UnblockableDomainChange> blockabilityChanges =
             refresher.checkForBlockabilityChanges();
+        // Always write even if no change. Easier for manual inspection of GCS bucket.
+        gcsClient.writeRefreshChanges(schedule.jobName(), blockabilityChanges.stream());
         if (blockabilityChanges.isEmpty()) {
           logger.atInfo().log("No change to Unblockable domains found.");
           schedule.updateJobStage(RefreshStage.DONE);
           return null;
         }
-        gcsClient.writeRefreshChanges(schedule.jobName(), blockabilityChanges.stream());
         schedule.updateJobStage(RefreshStage.APPLY_CHANGES);
         // Fall through
       case APPLY_CHANGES:
@@ -132,10 +136,12 @@ public class BsaRefreshAction implements Runnable {
       case UPLOAD_REMOVALS:
         try (Stream<UnblockableDomainChange> changes =
             gcsClient.readRefreshChanges(schedule.jobName())) {
+          // Unblockables with changes in REASON are removed then added back. That is why they are
+          // included in this stage.
           Optional<String> report =
               JsonSerializations.toUnblockableDomainsRemovalReport(
                   changes
-                      .filter(UnblockableDomainChange::isDelete)
+                      .filter(UnblockableDomainChange::isChangeOrDelete)
                       .map(UnblockableDomainChange::domainName));
           if (report.isPresent()) {
             gcsClient.logRemovedUnblockableDomainsReport(
@@ -153,12 +159,12 @@ public class BsaRefreshAction implements Runnable {
           Optional<String> report =
               JsonSerializations.toUnblockableDomainsReport(
                   changes
-                      .filter(UnblockableDomainChange::isAddOrChange)
+                      .filter(UnblockableDomainChange::isNewOrChange)
                       .map(UnblockableDomainChange::newValue));
           if (report.isPresent()) {
             gcsClient.logRemovedUnblockableDomainsReport(
                 schedule.jobName(), LINE_SPLITTER.splitToStream(report.get()));
-            bsaReportSender.removeUnblockableDomainsUpdates(report.get());
+            bsaReportSender.addUnblockableDomainsUpdates(report.get());
           } else {
             logger.atInfo().log("No new Unblockable domains to add.");
           }

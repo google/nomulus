@@ -161,7 +161,7 @@ public class GcsClient {
   }
 
   Stream<UnblockableDomainChange> readRefreshChanges(String jobName) {
-    BlobId blobId = getBlobId(jobName, UNBLOCKABLE_DOMAINS_FILE);
+    BlobId blobId = getBlobId(jobName, REFRESHED_UNBLOCKABLE_DOMAINS_FILE);
     return readStream(blobId).map(UnblockableDomainChange::deserialize);
   }
 

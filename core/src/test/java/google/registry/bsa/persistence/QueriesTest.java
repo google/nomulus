@@ -209,6 +209,32 @@ class QueriesTest {
   }
 
   @Test
+  void queryNewlyCreatedDomains_onlyDomainsAfterMinCreationTimeReturned() {
+    DateTime testStartTime = fakeClock.nowUtc();
+    createTlds("tld");
+    persistNewRegistrar("TheRegistrar");
+    // time 0:
+    persistResource(
+        newDomain("d1.tld").asBuilder().setCreationTimeForTest(fakeClock.nowUtc()).build());
+    // time 0, deletion time 1
+    persistDomainAsDeleted(
+        newDomain("will-delete.tld").asBuilder().setCreationTimeForTest(fakeClock.nowUtc()).build(),
+        fakeClock.nowUtc().plusMillis(1));
+    fakeClock.advanceOneMilli();
+    // time 1
+    persistResource(
+        newDomain("d2.tld").asBuilder().setCreationTimeForTest(fakeClock.nowUtc()).build());
+    fakeClock.advanceOneMilli();
+    // Now is time 2, ask for domains created since time 1
+    assertThat(
+            bsaQuery(
+                () ->
+                    queryNewlyCreatedDomains(
+                        ImmutableList.of("tld"), testStartTime.plusMillis(1), fakeClock.nowUtc())))
+        .containsExactly("d2.tld");
+  }
+
+  @Test
   void queryNewlyCreatedDomains_onlyDomainsInRequestedTldsReturned() {
     DateTime testStartTime = fakeClock.nowUtc();
     createTlds("tld", "tld2");

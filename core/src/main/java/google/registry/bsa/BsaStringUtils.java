@@ -30,7 +30,7 @@ public class BsaStringUtils {
   public static final Splitter LINE_SPLITTER = Splitter.on('\n');
 
   public static String getLabelInDomain(String domainName) {
-    List<String> parts = DOMAIN_SPLITTER.limit(1).splitToList(domainName);
+    List<String> parts = DOMAIN_SPLITTER.splitToList(domainName);
     checkArgument(!parts.isEmpty(), "Not a valid domain: [%s]", domainName);
     return parts.get(0);
   }

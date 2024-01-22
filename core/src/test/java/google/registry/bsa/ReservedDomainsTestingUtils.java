@@ -62,4 +62,43 @@ public final class ReservedDomainsTestingUtils {
             .build();
     persistResource(tld.asBuilder().setReservedListsByName(reservedLists).build());
   }
+
+  public static void addReservedDomainToList(
+      String listName, ImmutableMap<String, ReservationType> reservedLabels) {
+    ImmutableMap<String, ReservedListEntry> existingEntries =
+        ReservedList.get(listName).get().getReservedListEntries();
+    ImmutableMap<String, ReservedListEntry> newEntries =
+        ImmutableMap.copyOf(
+            Maps.transformEntries(
+                reservedLabels, (key, value) -> ReservedListEntry.create(key, value, "")));
+
+    ReservedListDao.save(
+        new ReservedList.Builder()
+            .setName(listName)
+            .setCreationTimestamp(START_OF_TIME)
+            .setShouldPublish(true)
+            .setReservedListMap(
+                new ImmutableMap.Builder<String, ReservedListEntry>()
+                    .putAll(existingEntries)
+                    .putAll(newEntries)
+                    .buildKeepingLast())
+            .build());
+  }
+
+  public static void removeReservedDomainFromList(
+      String listName, ImmutableSet<String> removedLabels) {
+    ImmutableMap<String, ReservedListEntry> existingEntries =
+        ReservedList.get(listName).get().getReservedListEntries();
+    ImmutableMap<String, ReservedListEntry> newEntries =
+        ImmutableMap.copyOf(
+            Maps.filterEntries(existingEntries, entry -> !removedLabels.contains(entry.getKey())));
+
+    ReservedListDao.save(
+        new ReservedList.Builder()
+            .setName(listName)
+            .setCreationTimestamp(START_OF_TIME)
+            .setShouldPublish(true)
+            .setReservedListMap(newEntries)
+            .build());
+  }
 }
