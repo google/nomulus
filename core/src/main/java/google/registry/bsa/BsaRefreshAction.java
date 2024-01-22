@@ -162,7 +162,7 @@ public class BsaRefreshAction implements Runnable {
                       .filter(UnblockableDomainChange::isNewOrChange)
                       .map(UnblockableDomainChange::newValue));
           if (report.isPresent()) {
-            gcsClient.logRemovedUnblockableDomainsReport(
+            gcsClient.logAddedUnblockableDomainsReport(
                 schedule.jobName(), LINE_SPLITTER.splitToStream(report.get()));
             bsaReportSender.addUnblockableDomainsUpdates(report.get());
           } else {
