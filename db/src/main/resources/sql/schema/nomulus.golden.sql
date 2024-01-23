@@ -124,18 +124,6 @@ CREATE TABLE public."BillingRecurrence" (
 
 
 --
--- Name: BsaDomainInUse; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public."BsaDomainInUse" (
-    label text NOT NULL,
-    tld text NOT NULL,
-    creation_time timestamp with time zone NOT NULL,
-    reason text NOT NULL
-);
-
-
---
 -- Name: BsaDomainRefresh; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -1367,14 +1355,6 @@ ALTER TABLE ONLY public."BillingEvent"
 
 ALTER TABLE ONLY public."BillingRecurrence"
     ADD CONSTRAINT "BillingRecurrence_pkey" PRIMARY KEY (billing_recurrence_id);
-
-
---
--- Name: BsaDomainInUse BsaDomainInUse_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public."BsaDomainInUse"
-    ADD CONSTRAINT "BsaDomainInUse_pkey" PRIMARY KEY (label, tld);
 
 
 --
@@ -2779,14 +2759,6 @@ ALTER TABLE ONLY public."RegistrarPoc"
 
 ALTER TABLE ONLY public."DomainHistoryHost"
     ADD CONSTRAINT fka9woh3hu8gx5x0vly6bai327n FOREIGN KEY (domain_history_domain_repo_id, domain_history_history_revision_id) REFERENCES public."DomainHistory"(domain_repo_id, history_revision_id) DEFERRABLE INITIALLY DEFERRED;
-
-
---
--- Name: BsaDomainInUse fkbsadomaininuse2label; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public."BsaDomainInUse"
-    ADD CONSTRAINT fkbsadomaininuse2label FOREIGN KEY (label) REFERENCES public."BsaLabel"(label) ON DELETE CASCADE;
 
 
 --
