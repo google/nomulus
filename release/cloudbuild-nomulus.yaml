@@ -119,7 +119,7 @@ steps:
       gcr.io/${PROJECT_ID}/db_object_updater \
       --format="get(digest)" --filter="tags = ${TAG_NAME}")
     sed -i s/'db_object_updater:latest'/db_object_updater@$digest/g \
-      release/cloudbuild-tld-sync-*.yaml
+      release/cloudbuild-sync-db-objects-*.yaml
 # Build and stage Dataflow Flex templates.
 - name: 'gcr.io/${PROJECT_ID}/builder:latest'
   entrypoint: /bin/bash
@@ -190,7 +190,7 @@ artifacts:
     - 'release/cloudbuild-renew-prober-certs-*.yaml'
     - 'release/cloudbuild-schema-deploy-*.yaml'
     - 'release/cloudbuild-schema-verify-*.yaml'
-    - 'release/cloudbuild-tld-sync-*.yaml'
+    - 'release/cloudbuild-sync-db-objects-*.yaml'
 
 timeout: 7200s
 options:

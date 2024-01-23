@@ -150,7 +150,7 @@ steps:
     sed -i s/builder:latest/builder@$builder_digest/g \
       release/cloudbuild-renew-prober-certs.yaml
     sed -i s/builder:latest/builder@$builder_digest/g \
-      release/cloudbuild-tld-sync.yaml
+      release/cloudbuild-sync-db-objects.yaml
     sed -i s/schema_deployer:latest/schema_deployer@$schema_deployer_digest/g \
       release/cloudbuild-schema-deploy.yaml
     sed -i s/schema_verifier:latest/schema_verifier@$schema_verifier_digest/g \
@@ -163,8 +163,8 @@ steps:
         > release/cloudbuild-schema-verify-${environment}.yaml
       sed s/'$${_ENV}'/${environment}/g release/cloudbuild-renew-prober-certs.yaml \
         > release/cloudbuild-renew-prober-certs-${environment}.yaml
-      sed s/'$${_ENV}'/${environment}/g release/cloudbuild-tld-sync.yaml \
-        > release/cloudbuild-tld-sync-${environment}.yaml
+      sed s/'$${_ENV}'/${environment}/g release/cloudbuild-sync-db-objects.yaml \
+        > release/cloudbuild-sync-db-objects-${environment}.yaml
     done
 # Upload the gradle binary to GCS if it does not exist and point URL in gradle wrapper to it.
 - name: 'gcr.io/cloud-builders/gsutil'
