@@ -35,7 +35,8 @@ nomulus_command="${4}"
 
 echo ${config_file_directory}
 
-for FILE in ${config_file_directory}/${nomulus_env}/*; do
+#for FILE in ${config_file_directory}/${nomulus_env}/*; do
+for FILE in ${config_file_directory}/sandbox/*; do
   echo $FILE
   java -jar /nomulus.jar -e "${nomulus_env}" \
   --credential "${tools_credential}" \
