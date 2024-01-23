@@ -142,4 +142,51 @@ class UpdateReservedListCommandTest
     assertThat(command.prompt()).contains("baddies: null -> baddies,FULLY_BLOCKED");
     assertThat(command.prompt()).contains("ford: null -> ford,FULLY_BLOCKED # random comment");
   }
+
+  @Test
+  void testSuccess_dryRun() throws Exception {
+    runCommandForced("--input=" + reservedTermsPath, "--dry_run");
+    assertThat(command.prompt()).contains("Update reserved list for xn--q9jyb4c_common-reserved?");
+    assertThat(ReservedList.get("xn--q9jyb4c_common-reserved")).isPresent();
+    ReservedList reservedList = ReservedList.get("xn--q9jyb4c_common-reserved").get();
+    assertThat(reservedList.getReservedListEntries()).hasSize(1);
+    assertThat(reservedList.getReservationInList("helicopter")).hasValue(FULLY_BLOCKED);
+  }
+
+  // TODO(sarahbot): uncomment once go/r3pr/2292 is deployed
+  // @Test
+  // void testFailure_runCommandOnProduction_noFlag() throws Exception {
+  //   IllegalArgumentException thrown =
+  //       assertThrows(
+  //           IllegalArgumentException.class,
+  //           () ->
+  //               runCommandInEnvironment(
+  //                   RegistryToolEnvironment.PRODUCTION,
+  //                   "--name=xn--q9jyb4c_common-reserved",
+  //                   "--input=" + reservedTermsPath));
+  //   assertThat(thrown.getMessage())
+  //       .isEqualTo(
+  //           "The --build_environment flag must be used when running update_reserved_list in"
+  //               + " production");
+  // }
+  //
+  // @Test
+  // void testSuccess_runCommandOnProduction_buildEnvFlag() throws Exception {
+  //   runCommandInEnvironment(
+  //       RegistryToolEnvironment.PRODUCTION,
+  //       "--name=xn--q9jyb4c_common-reserved",
+  //       "--input=" + reservedTermsPath,
+  //       "--build_environment",
+  //       "-f");
+  //   assertThat(ReservedList.get("xn--q9jyb4c_common-reserved")).isPresent();
+  //   ReservedList reservedList = ReservedList.get("xn--q9jyb4c_common-reserved").get();
+  //   assertThat(reservedList.getReservedListEntries()).hasSize(2);
+  //   assertThat(reservedList.getReservationInList("baddies")).hasValue(FULLY_BLOCKED);
+  //   assertThat(reservedList.getReservationInList("ford")).hasValue(FULLY_BLOCKED);
+  //   assertThat(reservedList.getReservationInList("helicopter")).isEmpty();
+  //   assertInStdout("Update reserved list for xn--q9jyb4c_common-reserved?");
+  //   assertInStdout("helicopter: helicopter,FULLY_BLOCKED -> null");
+  //   assertInStdout("baddies: null -> baddies,FULLY_BLOCKED");
+  //   assertInStdout("ford: null -> ford,FULLY_BLOCKED # random comment");
+  // }
 }

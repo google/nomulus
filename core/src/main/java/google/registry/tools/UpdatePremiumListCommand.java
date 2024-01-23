@@ -35,11 +35,24 @@ class UpdatePremiumListCommand extends CreateOrUpdatePremiumListCommand {
       description = "Does not execute the entity mutation")
   boolean dryRun;
 
-  // indicates if there is a new change made by this command
+  @Parameter(
+      names = {"--build_environment"},
+      description =
+          "DO NOT USE THIS FLAG ON THE COMMAND LINE! This flag indicates the command is being run"
+              + " by the build environment tools. This flag should never be used by a human user"
+              + " from the command line.")
+  boolean buildEnv;
+
+  // Indicates if there is a new change made by this command
   private boolean newChange = false;
 
   @Override
   protected String prompt() throws Exception {
+    // TODO(sarahbot): uncomment once go/r3pr/2292 is deployed
+    // checkArgument(
+    //     !RegistryToolEnvironment.get().equals(RegistryToolEnvironment.PRODUCTION) || buildEnv,
+    //     "The --build_environment flag must be used when running update_premium_list in
+    // production");
     name = Strings.isNullOrEmpty(name) ? convertFilePathToName(inputFile) : name;
     PremiumList existingList =
         PremiumListDao.getLatestRevision(name)
