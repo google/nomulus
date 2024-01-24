@@ -671,4 +671,46 @@ public class ConfigureTldCommandTest extends CommandTestCase<ConfigureTldCommand
     Tld notUpdatedTld = Tld.get("tld");
     assertThat(notUpdatedTld.getCreateBillingCost()).isEqualTo(Money.of(USD, 13));
   }
+
+  @Test
+  void testFailure_runCommandOnProduction_noFlag() throws Exception {
+    createTld("tld");
+    File tldFile = tmpDir.resolve("tld.yaml").toFile();
+    Files.asCharSink(tldFile, UTF_8).write(loadFile(getClass(), "tld.yaml"));
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () ->
+                runCommandInEnvironment(RegistryToolEnvironment.PRODUCTION, "--input=" + tldFile));
+    assertThat(thrown.getMessage())
+        .isEqualTo(
+            "Either the --break_glass or --build_environment flag must be used when running the"
+                + " configure_tld command on Production");
+  }
+
+  @Test
+  void testSuccess_runCommandOnProduction_breakGlassFlag() throws Exception {
+    createTld("tld");
+    File tldFile = tmpDir.resolve("tld.yaml").toFile();
+    Files.asCharSink(tldFile, UTF_8).write(loadFile(getClass(), "tld.yaml"));
+    runCommandInEnvironment(
+        RegistryToolEnvironment.PRODUCTION, "--input=" + tldFile, "--break_glass=true", "-f");
+    Tld updatedTld = Tld.get("tld");
+    assertThat(updatedTld.getCreateBillingCost()).isEqualTo(Money.of(USD, 25));
+    testTldConfiguredSuccessfully(updatedTld, "tld.yaml");
+    assertThat(updatedTld.getBreakglassMode()).isTrue();
+  }
+
+  @Test
+  void testSuccess_runCommandOnProduction_buildEnvFlag() throws Exception {
+    createTld("tld");
+    File tldFile = tmpDir.resolve("tld.yaml").toFile();
+    Files.asCharSink(tldFile, UTF_8).write(loadFile(getClass(), "tld.yaml"));
+    runCommandInEnvironment(
+        RegistryToolEnvironment.PRODUCTION, "--input=" + tldFile, "--build_environment", "-f");
+    Tld updatedTld = Tld.get("tld");
+    assertThat(updatedTld.getCreateBillingCost()).isEqualTo(Money.of(USD, 25));
+    testTldConfiguredSuccessfully(updatedTld, "tld.yaml");
+    assertThat(updatedTld.getBreakglassMode()).isFalse();
+  }
 }
