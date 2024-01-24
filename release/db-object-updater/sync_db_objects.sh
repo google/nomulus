@@ -35,11 +35,9 @@ nomulus_command="${4}"
 
 echo ${config_file_directory}
 
-#TODO(sarahbot@): Add the --build_environment flag once go/r3pr/2292 and go/r3pr/2277 are deployed
-#for FILE in ${config_file_directory}/${nomulus_env}/*; do
-for FILE in ${config_file_directory}/sandbox/*; do
+for FILE in ${config_file_directory}/${nomulus_env}/*; do
   echo $FILE
   java -jar /nomulus.jar -e "${nomulus_env}" \
   --credential "${tools_credential}" \
-  "${nomulus_command}" -i $FILE --force
+  "${nomulus_command}" -i $FILE --force --build_environment
 done
