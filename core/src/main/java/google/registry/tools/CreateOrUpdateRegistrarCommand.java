@@ -292,8 +292,8 @@ abstract class CreateOrUpdateRegistrarCommand extends MutatingCommand {
       }
       if (!isNullOrEmpty(email)) {
         builder.setEmailAddress(email);
-      } else if (!isNullOrEmpty(
-          icannReferralEmail)) { // fall back to ICANN referral email if present
+      } else if (!isNullOrEmpty(icannReferralEmail) && oldRegistrar == null) {
+        // On creates, fall back to ICANN referral email (if present).
         builder.setEmailAddress(icannReferralEmail);
       }
       if (url != null) {
