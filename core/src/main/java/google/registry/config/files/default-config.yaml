@@ -381,6 +381,7 @@ billing:
   # Optional return address that overrides the default.
   invoiceReplyToEmailAddress: null
   invoiceFilePrefix: REG-INV
+  billingInvoiceOriginUrl: https://billing-origin-url/
 
 rde:
   # URL prefix of ICANN's server to upload RDE reports to. Nomulus adds /TLD/ID
