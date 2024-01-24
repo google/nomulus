@@ -722,6 +722,17 @@ public final class RegistryConfig {
     }
 
     /**
+     * Returns origin part of the URL of the billing invoice file
+     *
+     * @see google.registry.beam.billing.InvoicingPipeline
+     */
+    @Provides
+    @Config("billingInvoiceOriginUrl")
+    public static String provideBillingInvoiceOriginUrl(RegistryConfigSettings config) {
+      return config.billing.billingInvoiceOriginUrl;
+    }
+
+    /**
      * Returns whether or not we should publish invoices to partners automatically by default.
      *
      * @see google.registry.reporting.billing.BillingModule

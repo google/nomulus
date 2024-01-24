@@ -21,17 +21,11 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
-import com.google.cloud.storage.BlobId;
 import com.google.common.collect.ImmutableList;
 import com.google.common.net.MediaType;
-import google.registry.gcs.GcsUtils;
 import google.registry.groups.GmailClient;
 import google.registry.util.EmailMessage;
-import google.registry.util.EmailMessage.Attachment;
-import java.io.ByteArrayInputStream;
-import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 import javax.mail.MessagingException;
 import javax.mail.internet.InternetAddress;
@@ -45,16 +39,11 @@ class BillingEmailUtilsTest {
 
   private GmailClient gmailClient;
   private BillingEmailUtils emailUtils;
-  private GcsUtils gcsUtils;
   private ArgumentCaptor<EmailMessage> contentCaptor;
 
   @BeforeEach
   void beforeEach() throws Exception {
     gmailClient = mock(GmailClient.class);
-    gcsUtils = mock(GcsUtils.class);
-    when(gcsUtils.openInputStream(BlobId.of("test-bucket", "results/REG-INV-2017-10.csv")))
-        .thenReturn(
-            new ByteArrayInputStream("test,data\nhello,world".getBytes(StandardCharsets.UTF_8)));
     contentCaptor = ArgumentCaptor.forClass(EmailMessage.class);
 
     emailUtils = getEmailUtils(Optional.of(new InternetAddress("reply-to@test.com")));
@@ -70,10 +59,9 @@ class BillingEmailUtilsTest {
         ImmutableList.of(
             new InternetAddress("hello@world.com"), new InternetAddress("hola@mundo.com")),
         replyToAddress,
-        "test-bucket",
         "REG-INV",
-        "results/",
-        gcsUtils);
+        "www.google.com/",
+        "results/");
   }
 
   @Test
@@ -89,14 +77,11 @@ class BillingEmailUtilsTest {
                 ImmutableList.of(
                     new InternetAddress("hello@world.com"), new InternetAddress("hola@mundo.com")))
             .setSubject("Domain Registry invoice data 2017-10")
-            .setBody("Attached is the 2017-10 invoice for the domain registry.")
+            .setBody(
+                "<p>Use the following link to download 2017-10 invoice for the domain registry -"
+                    + " <a href=\"www.google.com/results/REG-INV-2017-10.csv\">invoice</a>.</p>")
             .setReplyToEmailAddress(new InternetAddress("reply-to@test.com"))
-            .setAttachment(
-                Attachment.newBuilder()
-                    .setContent("test,data\nhello,world")
-                    .setContentType(MediaType.CSV_UTF_8)
-                    .setFilename("REG-INV-2017-10.csv")
-                    .build())
+            .setContentType(MediaType.HTML_UTF_8)
             .build();
     assertThat(emailMessage).isEqualTo(expectedContent);
   }
