@@ -118,6 +118,14 @@ public class GcsUtils implements Serializable {
     storage().delete(blobId);
   }
 
+  /** Update file content type on existing GCS file */
+  public void updateContentType(BlobId blobId, String contentType) throws StorageException {
+    if (existsAndNotEmpty(blobId)) {
+      Blob blob = storage().get(blobId);
+      blob.toBuilder().setContentType(contentType).build().update();
+    }
+  }
+
   /**
    * Returns a list of all object names within a bucket for a given prefix.
    *

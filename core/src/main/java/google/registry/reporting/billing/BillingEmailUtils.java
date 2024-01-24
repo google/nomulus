@@ -15,20 +15,17 @@
 package google.registry.reporting.billing;
 
 import static com.google.common.base.Throwables.getRootCause;
-import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.cloud.storage.BlobId;
+import com.google.cloud.storage.StorageException;
 import com.google.common.collect.ImmutableList;
-import com.google.common.io.CharStreams;
+import com.google.common.flogger.FluentLogger;
 import com.google.common.net.MediaType;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.gcs.GcsUtils;
 import google.registry.groups.GmailClient;
 import google.registry.reporting.billing.BillingModule.InvoiceDirectoryPrefix;
 import google.registry.util.EmailMessage;
-import google.registry.util.EmailMessage.Attachment;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.util.Optional;
 import javax.inject.Inject;
 import javax.mail.internet.InternetAddress;
@@ -37,6 +34,7 @@ import org.joda.time.YearMonth;
 /** Utility functions for sending emails involving monthly invoices. */
 public class BillingEmailUtils {
 
+  private static final FluentLogger logger = FluentLogger.forEnclosingClass();
   private final GmailClient gmailClient;
   private final YearMonth yearMonth;
   private final InternetAddress outgoingEmailAddress;
@@ -46,6 +44,7 @@ public class BillingEmailUtils {
   private final String billingBucket;
   private final String invoiceFilePrefix;
   private final String invoiceDirectoryPrefix;
+  private final String billingInvoiceOriginUrl;
   private final GcsUtils gcsUtils;
 
   @Inject
@@ -58,6 +57,7 @@ public class BillingEmailUtils {
       @Config("invoiceReplyToEmailAddress") Optional<InternetAddress> replyToEmailAddress,
       @Config("billingBucket") String billingBucket,
       @Config("invoiceFilePrefix") String invoiceFilePrefix,
+      @Config("billingInvoiceOriginUrl") String billingInvoiceOriginUrl,
       @InvoiceDirectoryPrefix String invoiceDirectoryPrefix,
       GcsUtils gcsUtils) {
     this.gmailClient = gmailClient;
@@ -69,31 +69,36 @@ public class BillingEmailUtils {
     this.billingBucket = billingBucket;
     this.invoiceFilePrefix = invoiceFilePrefix;
     this.invoiceDirectoryPrefix = invoiceDirectoryPrefix;
+    this.billingInvoiceOriginUrl = billingInvoiceOriginUrl;
     this.gcsUtils = gcsUtils;
   }
 
   /** Sends an e-mail to all expected recipients with an attached overall invoice from GCS. */
-  void emailOverallInvoice() {
+  public void emailOverallInvoice() {
     try {
       String invoiceFile = String.format("%s-%s.csv", invoiceFilePrefix, yearMonth);
+      String fileUrl = billingInvoiceOriginUrl + invoiceDirectoryPrefix + invoiceFile;
       BlobId invoiceFilename = BlobId.of(billingBucket, invoiceDirectoryPrefix + invoiceFile);
-      try (InputStream in = gcsUtils.openInputStream(invoiceFilename)) {
-        gmailClient.sendEmail(
-            EmailMessage.newBuilder()
-                .setSubject(String.format("Domain Registry invoice data %s", yearMonth))
-                .setBody(
-                    String.format("Attached is the %s invoice for the domain registry.", yearMonth))
-                .setFrom(outgoingEmailAddress)
-                .setRecipients(invoiceEmailRecipients)
-                .setReplyToEmailAddress(replyToEmailAddress)
-                .setAttachment(
-                    Attachment.newBuilder()
-                        .setContent(CharStreams.toString(new InputStreamReader(in, UTF_8)))
-                        .setContentType(MediaType.CSV_UTF_8)
-                        .setFilename(invoiceFile)
-                        .build())
-                .build());
+      try {
+        gcsUtils.updateContentType(invoiceFilename, "text/csv");
+      } catch (StorageException e) {
+        // We want to continue with email anyway, it just will be less convenient for billing team
+        // to process the file.
+        logger.atWarning().withCause(e).log("Failed to update invoice file type");
       }
+      gmailClient.sendEmail(
+          EmailMessage.newBuilder()
+              .setSubject(String.format("Domain Registry invoice data %s", yearMonth))
+              .setBody(
+                  String.format(
+                      "<p>Use the following link to download %s invoice for the domain registry -"
+                          + " <a href=\"%s\">invoice</a>.</p>",
+                      yearMonth, fileUrl))
+              .setFrom(outgoingEmailAddress)
+              .setRecipients(invoiceEmailRecipients)
+              .setReplyToEmailAddress(replyToEmailAddress)
+              .setContentType(MediaType.HTML_UTF_8)
+              .build());
     } catch (Throwable e) {
       // Strip one layer, because callWithRetry wraps in a RuntimeException
       sendAlertEmail(
