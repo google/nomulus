@@ -40,37 +40,22 @@ where:
     show   show the effect of the formatting as unified diff"
 
 SCRIPT_DIR="$(realpath $(dirname $0))"
-JAR_NAME="google-java-format-1.8-all-deps.jar"
+JAR_NAME="google-java-format-1.19.2-all-deps.jar"
 
 # Make sure we have a valid python interpreter.
 if [ -z "$PYTHON" ]; then
-  echo "You must specify the name of a python3 interpreter in the PYTHON" \
+  echo "You must specify the name of a Python interpreter in the PYTHON" \
        "environment variable."
   exit 1
 elif ! "$PYTHON" -c ''; then
-  echo "Invalid python interpreter: $PYTHON"
+  echo "Invalid Python interpreter: $PYTHON"
   exit 1
 fi
 
-# Locate the java binary.
-if [ -n "$JAVA_HOME" ]; then
-  JAVA_BIN="$JAVA_HOME/bin/java"
-  if [ ! -x "$JAVA_BIN" ]; then
-    echo "No java binary found in JAVA_HOME (JAVA_HOME is $JAVA_HOME)"
-    exit 1
-  fi
-else
-  # Use java from the path.
-  JAVA_BIN="$(which java)" || JAVA_BIN=""
-  if [ -z "$JAVA_BIN" ]; then
-    echo "JAVA_HOME is not defined and java was not found on the path"
-    exit 1
-  fi
-fi
-
-if ! "$JAVA_BIN" -version 2>&1 | grep 'version "11\.' >/dev/null; then
-  echo "Bad java version.  Requires java 11, got:"
-  "$JAVA_BIN" -version
+# Make sure we have a valid JRE binary
+if [ -z "$JAVA" ]; then
+  echo "You must specify the name of a JRE binary in the JAVA" \
+       "environment variable."
   exit 1
 fi
 
@@ -80,7 +65,7 @@ function runGoogleJavaFormatAgainstDiffs() {
 
   git diff -U0 "$forkPoint" | \
       "${PYTHON}" "${SCRIPT_DIR}/google-java-format-diff.py" \
-          --java-binary "$JAVA_BIN" \
+          --java-binary "$JAVA" \
           --google-java-format-jar "${SCRIPT_DIR}/${JAR_NAME}" \
           -p1 "$@" | \
       tee gjf.out
