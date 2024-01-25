@@ -15,10 +15,8 @@
 package google.registry.ui.server.registrar;
 
 import static com.google.common.collect.ImmutableSetMultimap.toImmutableSetMultimap;
-import static com.google.common.io.BaseEncoding.base64;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.EppResourceUtils.loadByForeignKey;
-import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.loadRegistrar;
 import static google.registry.testing.DatabaseHelper.persistResource;
@@ -27,8 +25,6 @@ import static google.registry.testing.SqlHelper.getRegistryLockByVerificationCod
 import static google.registry.testing.SqlHelper.saveRegistryLock;
 import static google.registry.tools.LockOrUnlockDomainCommand.REGISTRY_LOCK_STATUSES;
 import static google.registry.ui.server.registrar.RegistryLockGetActionTest.userFromRegistrarPoc;
-import static google.registry.util.PasswordUtils.HashAlgorithm.SCRYPT;
-import static google.registry.util.PasswordUtils.HashAlgorithm.SHA256;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
@@ -42,9 +38,6 @@ import google.registry.model.console.RegistrarRole;
 import google.registry.model.console.UserRoles;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.RegistryLock;
-import google.registry.model.registrar.RegistrarPoc;
-import google.registry.model.registrar.RegistrarPoc.RegistrarPocId;
-import google.registry.persistence.VKey;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.persistence.transaction.JpaTransactionManagerExtension;
@@ -61,7 +54,6 @@ import google.registry.testing.DeterministicStringGenerator;
 import google.registry.testing.FakeClock;
 import google.registry.tools.DomainLockUtils;
 import google.registry.util.EmailMessage;
-import google.registry.util.PasswordUtils;
 import google.registry.util.StringGenerator.Alphabets;
 import java.util.Map;
 import java.util.Optional;
@@ -128,48 +120,6 @@ final class RegistryLockPostActionTest {
   @Test
   void testSuccess_lock() throws Exception {
     Map<String, ?> response = action.handleJsonRequest(lockRequest());
-    assertSuccess(response, "lock", "Marla.Singer.RegistryLock@crr.com");
-  }
-
-  @Test
-  void testSuccess_lock_sha256Password() throws Exception {
-    tm().transact(
-            () -> {
-              // The salt is not exposed by RegistrarPoc (nor should it be), so we query
-              // it directly.
-              String encodedSalt =
-                  tm().query(
-                          "SELECT registryLockPasswordSalt FROM RegistrarPoc "
-                              + "WHERE emailAddress = :email "
-                              + "AND registrarId = :registrarId",
-                          String.class)
-                      .setParameter("email", "Marla.Singer@crr.com")
-                      .setParameter("registrarId", "TheRegistrar")
-                      .getSingleResult();
-              byte[] salt = base64().decode(encodedSalt);
-              String newHash = PasswordUtils.hashPassword("hi", salt, SHA256);
-              // Set password directly, as the Java method would have used Scrypt.
-              tm().query("UPDATE RegistrarPoc SET registryLockPasswordHash = :hash")
-                  .setParameter("hash", newHash)
-                  .executeUpdate();
-            });
-    RegistrarPoc registrarPoc =
-        tm().transact(
-                () ->
-                    tm().loadByKey(
-                            VKey.create(
-                                RegistrarPoc.class,
-                                new RegistrarPocId("Marla.Singer@crr.com", "TheRegistrar"))));
-    assertThat(registrarPoc.getCurrentHashAlgorithm("hi").get()).isEqualTo(SHA256);
-    Map<String, ?> response = action.handleJsonRequest(lockRequest());
-    RegistrarPoc updatedRegistrarPoc =
-        tm().transact(
-                () ->
-                    tm().loadByKey(
-                            VKey.create(
-                                RegistrarPoc.class,
-                                new RegistrarPocId("Marla.Singer@crr.com", "TheRegistrar"))));
-    assertThat(updatedRegistrarPoc.getCurrentHashAlgorithm("hi").get()).isEqualTo(SCRYPT);
     assertSuccess(response, "lock", "Marla.Singer.RegistryLock@crr.com");
   }
 
