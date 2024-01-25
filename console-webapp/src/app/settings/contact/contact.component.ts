@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Component, ViewChild } from '@angular/core';
+import { Component, ViewChild, computed } from '@angular/core';
 import { Contact, ContactService } from './contact.service';
 import { HttpErrorResponse } from '@angular/common/http';
 import { MatSnackBar } from '@angular/material/snack-bar';
@@ -70,9 +70,9 @@ export class ContactDetailsDialogComponent implements DialogBottomSheetContent {
 
   init(params: ContactDetailsParams) {
     this.params = params;
-    this.contactIndex = this.contactService.contacts.findIndex(
-      (c) => c === params.data.contact
-    );
+    this.contactIndex = this.contactService
+      .contacts()
+      .findIndex((c) => c === params.data.contact);
     this.contact = JSON.parse(JSON.stringify(params.data.contact));
   }
 
@@ -115,6 +115,16 @@ export class ContactDetailsDialogComponent implements DialogBottomSheetContent {
 })
 export default class ContactComponent {
   public static PATH = 'contact';
+  public groupedContacts = computed(() => {
+    return this.contactService.contacts().reduce((acc, contact) => {
+      contact.types.forEach((type) => {
+        acc
+          .find((group: GroupedContacts) => group.value === type)
+          ?.contacts.push(contact);
+      });
+      return acc;
+    }, JSON.parse(JSON.stringify(contactTypes)));
+  });
 
   @ViewChild('contactDetailsWrapper')
   detailsComponentWrapper!: DialogBottomSheetWrapper;
@@ -129,17 +139,6 @@ export default class ContactComponent {
     this.contactService.fetchContacts().subscribe(() => {
       this.loading = false;
     });
-  }
-
-  public get groupedData() {
-    return this.contactService.contacts?.reduce((acc, contact) => {
-      contact.types.forEach((type) => {
-        acc
-          .find((group: GroupedContacts) => group.value === type)
-          ?.contacts.push(contact);
-      });
-      return acc;
-    }, JSON.parse(JSON.stringify(contactTypes)));
   }
 
   deleteContact(contact: Contact) {

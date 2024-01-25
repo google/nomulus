@@ -34,7 +34,7 @@ export class RegistrarGuard {
     _: ActivatedRouteSnapshot,
     state: RouterStateSnapshot
   ): Promise<boolean> | boolean {
-    if (this.registrarService.activeRegistrarId) {
+    if (this.registrarService.registrarId()) {
       return true;
     }
     return this.router.navigate([

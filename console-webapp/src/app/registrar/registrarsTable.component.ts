@@ -87,7 +87,7 @@ export class RegistrarComponent {
 
   constructor(protected registrarService: RegistrarService) {
     this.dataSource = new MatTableDataSource<Registrar>(
-      registrarService.registrars
+      registrarService.registrars()
     );
   }
 
