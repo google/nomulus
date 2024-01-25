@@ -40,7 +40,7 @@ export default class SecurityComponent {
     private _snackBar: MatSnackBar,
     public registrarService: RegistrarService
   ) {
-    this.dataSource = apiToUiConverter(this.registrarService.registrar);
+    this.dataSource = apiToUiConverter(this.registrarService.registrar());
   }
 
   enableEdit() {
@@ -76,6 +76,6 @@ export default class SecurityComponent {
   }
 
   resetDataSource() {
-    this.dataSource = apiToUiConverter(this.registrarService.registrar);
+    this.dataSource = apiToUiConverter(this.registrarService.registrar());
   }
 }

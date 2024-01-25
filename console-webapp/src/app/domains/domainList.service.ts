@@ -52,7 +52,7 @@ export class DomainListService {
   ) {
     return this.backendService
       .getDomains(
-        this.registrarService.activeRegistrarId,
+        this.registrarService.registrarId(),
         this.checkpointTime,
         pageNumber,
         resultsPerPage,

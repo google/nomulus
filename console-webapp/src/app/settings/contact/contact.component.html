@@ -1,41 +1,46 @@
-<div *ngIf="loading" class="contact__loading">
+@if (loading) {
+<div class="contact__loading">
   <mat-progress-bar mode="indeterminate"></mat-progress-bar>
 </div>
-<div *ngIf="!loading">
-  <div
-    class="contact__empty-contacts"
-    *ngIf="contactService.contacts.length === 0"
-  >
-    <mat-icon class="contact__empty-contacts-icon secondary-text"
-      >apps_outage</mat-icon
+} @else {
+<div>
+  @if (contactService.contacts.length === 0) {
+    <div
+      class="contact__empty-contacts"
+      *ngIf="contactService.contacts.length === 0"
     >
-    <h1>No contacts found</h1>
-  </div>
-  <div *ngFor="let group of groupedData">
-    <div class="contact__cards-wrapper" *ngIf="group.contacts.length">
-      <h3>{{ group.label }}s</h3>
-      <mat-divider></mat-divider>
-      <div class="contact__cards">
-        <mat-card class="contact__card" *ngFor="let contact of group.contacts">
-          <mat-card-title>{{ contact.name }}</mat-card-title>
-          <p *ngIf="contact.phoneNumber">{{ contact.phoneNumber }}</p>
-          <p *ngIf="contact.emailAddress">{{ contact.emailAddress }}</p>
-          <mat-card-actions class="contact__card-actions">
-            <button
-              mat-button
-              color="primary"
-              (click)="openDetails($event, contact)"
-            >
-              <mat-icon>edit</mat-icon>Edit
-            </button>
-            <button mat-button color="accent" (click)="deleteContact(contact)">
-              <mat-icon>delete</mat-icon>Delete
-            </button>
-          </mat-card-actions>
-        </mat-card>
-      </div>
+      <mat-icon class="contact__empty-contacts-icon secondary-text"
+        >apps_outage</mat-icon
+      >
+      <h1>No contacts found</h1>
     </div>
-  </div>
+  } @else {
+    @for (group of groupedContacts(); track group.emailAddress) {
+      <div class="contact__cards-wrapper">
+        <h3>{{ group.label }}s</h3>
+        <mat-divider></mat-divider>
+        <div class="contact__cards">
+          <mat-card class="contact__card" *ngFor="let contact of group.contacts">
+            <mat-card-title>{{ contact.name }}</mat-card-title>
+            <p *ngIf="contact.phoneNumber">{{ contact.phoneNumber }}</p>
+            <p *ngIf="contact.emailAddress">{{ contact.emailAddress }}</p>
+            <mat-card-actions class="contact__card-actions">
+              <button
+                mat-button
+                color="primary"
+                (click)="openDetails($event, contact)"
+              >
+                <mat-icon>edit</mat-icon>Edit
+              </button>
+              <button mat-button color="accent" (click)="deleteContact(contact)">
+                <mat-icon>delete</mat-icon>Delete
+              </button>
+            </mat-card-actions>
+          </mat-card>
+        </div>
+      </div>
+    }
+  }
   <div class="contact__actions">
     <button mat-raised-button color="primary" (click)="openCreateNew($event)">
       <mat-icon>add</mat-icon>Create a Contact
@@ -45,3 +50,4 @@
     #contactDetailsWrapper
   ></app-dialog-bottom-sheet-wrapper>
 </div>
+}

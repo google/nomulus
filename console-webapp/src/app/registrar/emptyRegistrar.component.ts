@@ -12,9 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Component } from '@angular/core';
+import { Component, effect } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { Subscription } from 'rxjs';
 
 import { RegistrarService } from './registrar.service';
 
@@ -24,22 +23,15 @@ import { RegistrarService } from './registrar.service';
   styleUrls: ['./emptyRegistrar.component.scss'],
 })
 export class EmptyRegistrar {
-  private registrarIdChangeSubscription?: Subscription;
-
   constructor(
     private route: ActivatedRoute,
     protected registrarService: RegistrarService,
     private router: Router
   ) {
-    this.registrarIdChangeSubscription =
-      registrarService.activeRegistrarIdChange.subscribe((newRegistrarId) => {
-        if (newRegistrarId) {
-          this.router.navigate([this.route.snapshot.paramMap.get('nextUrl')]);
-        }
-      });
-  }
-
-  ngOnDestroy() {
-    this.registrarIdChangeSubscription?.unsubscribe();
+    effect(() => {
+      if (registrarService.registrarId()) {
+        this.router.navigate([this.route.snapshot.paramMap.get('nextUrl')]);
+      }
+    });
   }
 }
