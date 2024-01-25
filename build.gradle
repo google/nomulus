@@ -504,6 +504,9 @@ def createGetBuildSrcDirectDepsTask(outputFileName) {
 rootProject.ext {
   invokeJavaDiffFormatScript = { action ->
     def javaHome = project.findProperty('org.gradle.java.home')
+    if (javaHome == null) {
+      javaHome = '/usr/bin/jvm/java-17-openjdk-amd64'
+    }
     println("Running the formatting tool with JDK at $javaHome")
     def scriptDir = rootDir.path.endsWith('buildSrc')
             ? "${rootDir}/../java-format"
