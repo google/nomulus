@@ -295,7 +295,7 @@ class BsaRefreshFunctionalTest {
     action.run();
     assertThat(queryUnblockableDomains())
         .containsExactly(UnblockableDomain.of("blocked1.app", Reason.REGISTERED));
-    // Verify that refresh changes are not written to GCS (404: file does not exist)
+    // Verify that refresh change file does not exist (404 error) since there is no change.
     assertThat(
             assertThrows(
                 UncheckedIOException.class, () -> gcsClient.readRefreshChanges(jobName).findAny()))
@@ -320,7 +320,7 @@ class BsaRefreshFunctionalTest {
     action.run();
     assertThat(queryUnblockableDomains())
         .containsExactly(UnblockableDomain.of("blocked1.app", Reason.REGISTERED));
-    // Verify that refresh changes are not written to GCS (404: file does not exist)
+    // Verify that refresh change file does not exist (404 error) since there is no change.
     assertThat(
             assertThrows(
                 UncheckedIOException.class, () -> gcsClient.readRefreshChanges(jobName).findAny()))
