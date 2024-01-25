@@ -37,5 +37,5 @@ for FILE in ${config_file_directory}/${nomulus_env}/*; do
   echo $FILE
   java -jar /nomulus.jar -e "${nomulus_env}" \
   --credential "${tools_credential}" \
-  configure_tld -i $FILE --force
+  configure_tld -i $FILE --force --build_environment
 done
