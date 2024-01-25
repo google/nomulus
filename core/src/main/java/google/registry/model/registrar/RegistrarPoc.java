@@ -38,7 +38,6 @@ import google.registry.model.UnsafeSerializable;
 import google.registry.model.registrar.RegistrarPoc.RegistrarPocId;
 import google.registry.persistence.VKey;
 import google.registry.util.PasswordUtils;
-import google.registry.util.PasswordUtils.HashAlgorithm;
 import java.io.Serializable;
 import java.util.Map;
 import java.util.Optional;
@@ -242,10 +241,6 @@ public class RegistrarPoc extends ImmutableObject implements Jsonifiable, Unsafe
         || isNullOrEmpty(registryLockPasswordHash)) {
       return false;
     }
-    return getCurrentHashAlgorithm(registryLockPassword).isPresent();
-  }
-
-  public Optional<HashAlgorithm> getCurrentHashAlgorithm(String registryLockPassword) {
     return PasswordUtils.verifyPassword(
         registryLockPassword, registryLockPasswordHash, registryLockPasswordSalt);
   }

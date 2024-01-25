@@ -86,8 +86,7 @@ public class User extends UpdateAutoTimestampEntity implements Buildable {
       return false;
     }
     return PasswordUtils.verifyPassword(
-            registryLockPassword, registryLockPasswordHash, registryLockPasswordSalt)
-        .isPresent();
+        registryLockPassword, registryLockPasswordHash, registryLockPasswordSalt);
   }
 
   /**

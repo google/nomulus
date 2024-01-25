@@ -62,7 +62,6 @@ import google.registry.model.tld.Tld.TldType;
 import google.registry.persistence.VKey;
 import google.registry.util.CidrAddressBlock;
 import google.registry.util.PasswordUtils;
-import google.registry.util.PasswordUtils.HashAlgorithm;
 import java.security.cert.CertificateParsingException;
 import java.util.Comparator;
 import java.util.List;
@@ -642,10 +641,6 @@ public class Registrar extends UpdateAutoTimestampEntity implements Buildable, J
   }
 
   public boolean verifyPassword(String password) {
-    return getCurrentHashAlgorithm(password).isPresent();
-  }
-
-  public Optional<HashAlgorithm> getCurrentHashAlgorithm(String password) {
     return PasswordUtils.verifyPassword(password, passwordHash, salt);
   }
 
