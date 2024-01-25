@@ -19,19 +19,19 @@
 
 # - env: The Nomulus environment, production, sandbox, etc.
 # - tools_credential: The credential (.json) needed to run the nomulus command.
-# - config_file_directory: The internal directory storing the TLD config files.
 # - nomulus_command: The nomulus command to run.
+# - config_file_directory: The internal directory storing the TLD config files.
 
 set -e
 if [ "$#" -ne 4 ]; then
-  echo "Expecting four parameters in order: env tools_credential config_file_directory nomulus_command"
+  echo "Expecting four parameters in order: env tools_credential nomulus_command config_file_directory"
   exit 1
 fi
 
 nomulus_env="${1}"
 tools_credential="${2}"
-config_file_directory="${3}"
-nomulus_command="${4}"
+nomulus_command="${3}"
+config_file_directory="${4}"
 
 echo ${config_file_directory}
 
