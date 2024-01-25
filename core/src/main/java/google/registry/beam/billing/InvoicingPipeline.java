@@ -163,7 +163,12 @@ public class InvoicingPipeline implements Serializable {
     }
   }
 
-  /** Saves the billing events to a single overall invoice CSV file. */
+  /**
+   * Saves the billing events to a single overall invoice CSV file. TextIO always produces the file
+   * of type text/plain, which we then update to desired text/csv before sending an email to billing
+   * team {@link google.registry.reporting.billing.BillingEmailUtils#emailOverallInvoice()
+   * emailOverallInvoice}
+   */
   static void saveInvoiceCsv(
       PCollection<google.registry.beam.billing.BillingEvent> billingEvents,
       InvoicingPipelineOptions options) {

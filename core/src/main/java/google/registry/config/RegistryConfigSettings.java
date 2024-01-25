@@ -173,6 +173,7 @@ public class RegistryConfigSettings {
     public List<String> invoiceEmailRecipients;
     public String invoiceReplyToEmailAddress;
     public String invoiceFilePrefix;
+    public String billingInvoiceOriginUrl;
   }
 
   /** Configuration for Registry Data Escrow (RDE). */
