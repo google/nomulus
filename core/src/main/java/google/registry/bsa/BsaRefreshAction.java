@@ -117,13 +117,12 @@ public class BsaRefreshAction implements Runnable {
       case CHECK_FOR_CHANGES:
         ImmutableList<UnblockableDomainChange> blockabilityChanges =
             refresher.checkForBlockabilityChanges();
-        // Always write even if no change. Easier for manual inspection of GCS bucket.
-        gcsClient.writeRefreshChanges(schedule.jobName(), blockabilityChanges.stream());
         if (blockabilityChanges.isEmpty()) {
           logger.atInfo().log("No change to Unblockable domains found.");
           schedule.updateJobStage(RefreshStage.DONE);
           return null;
         }
+        gcsClient.writeRefreshChanges(schedule.jobName(), blockabilityChanges.stream());
         schedule.updateJobStage(RefreshStage.APPLY_CHANGES);
         // Fall through
       case APPLY_CHANGES:
