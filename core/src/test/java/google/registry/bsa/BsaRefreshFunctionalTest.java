@@ -30,6 +30,7 @@ import static google.registry.testing.DatabaseHelper.deleteTestDomain;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -54,6 +55,7 @@ import google.registry.request.Response;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeLockHandler;
 import google.registry.testing.FakeResponse;
+import java.io.UncheckedIOException;
 import java.util.Optional;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
@@ -293,7 +295,12 @@ class BsaRefreshFunctionalTest {
     action.run();
     assertThat(queryUnblockableDomains())
         .containsExactly(UnblockableDomain.of("blocked1.app", Reason.REGISTERED));
-    assertThat(gcsClient.readRefreshChanges(jobName)).isEmpty();
+    // Verify that refresh change file does not exist (404 error) since there is no change.
+    assertThat(
+            assertThrows(
+                UncheckedIOException.class, () -> gcsClient.readRefreshChanges(jobName).findAny()))
+        .hasMessageThat()
+        .contains("404");
     verifyNoInteractions(bsaReportSender);
   }
 
@@ -313,7 +320,12 @@ class BsaRefreshFunctionalTest {
     action.run();
     assertThat(queryUnblockableDomains())
         .containsExactly(UnblockableDomain.of("blocked1.app", Reason.REGISTERED));
-    assertThat(gcsClient.readRefreshChanges(jobName)).isEmpty();
+    // Verify that refresh change file does not exist (404 error) since there is no change.
+    assertThat(
+            assertThrows(
+                UncheckedIOException.class, () -> gcsClient.readRefreshChanges(jobName).findAny()))
+        .hasMessageThat()
+        .contains("404");
     verifyNoInteractions(bsaReportSender);
   }
 }
