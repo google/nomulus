@@ -23,8 +23,10 @@ export class BillingWidgetComponent {
   constructor(public registrarService: RegistrarService) {}
 
   public get driveFolderUrl(): string {
-    if (this.registrarService?.registrar.driveFolderId) {
-      return `https://drive.google.com/drive/folders/${this.registrarService?.registrar.driveFolderId}`;
+    if (this.registrarService.registrar()?.driveFolderId) {
+      return `https://drive.google.com/drive/folders/${
+        this.registrarService.registrar()?.driveFolderId
+      }`;
     }
     return '';
   }

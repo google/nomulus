@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Injectable } from '@angular/core';
+import { Injectable, signal } from '@angular/core';
 import { Observable, tap } from 'rxjs';
 import { RegistrarService } from 'src/app/registrar/registrar.service';
 import { BackendService } from 'src/app/shared/services/backend.service';
@@ -33,7 +33,7 @@ export interface Contact {
   providedIn: 'root',
 })
 export class ContactService {
-  contacts: Contact[] = [];
+  contacts = signal<Contact[]>([]);
 
   constructor(
     private backend: BackendService,
@@ -42,39 +42,37 @@ export class ContactService {
 
   // TODO: Come up with a better handling for registrarId
   fetchContacts(): Observable<Contact[]> {
-    return this.backend
-      .getContacts(this.registrarService.activeRegistrarId)
-      .pipe(
-        tap((contacts = []) => {
-          this.contacts = contacts;
-        })
-      );
+    return this.backend.getContacts(this.registrarService.registrarId()).pipe(
+      tap((contacts = []) => {
+        this.contacts.set(contacts);
+      })
+    );
   }
 
   saveContacts(contacts: Contact[]): Observable<Contact[]> {
     return this.backend
-      .postContacts(this.registrarService.activeRegistrarId, contacts)
+      .postContacts(this.registrarService.registrarId(), contacts)
       .pipe(
         tap((_) => {
-          this.contacts = contacts;
+          this.contacts.set(contacts);
         })
       );
   }
 
   updateContact(index: number, contact: Contact) {
-    const newContacts = this.contacts.map((c, i) =>
+    const newContacts = this.contacts().map((c, i) =>
       i === index ? contact : c
     );
     return this.saveContacts(newContacts);
   }
 
   addContact(contact: Contact) {
-    const newContacts = this.contacts.concat([contact]);
+    const newContacts = this.contacts().concat([contact]);
     return this.saveContacts(newContacts);
   }
 
   deleteContact(contact: Contact) {
-    const newContacts = this.contacts.filter((c) => c !== contact);
+    const newContacts = this.contacts().filter((c) => c !== contact);
     return this.saveContacts(newContacts);
   }
 }

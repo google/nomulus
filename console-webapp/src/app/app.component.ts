@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { AfterViewInit, Component, ViewChild } from '@angular/core';
+import { AfterViewInit, Component, ViewChild, effect } from '@angular/core';
 import { RegistrarService } from './registrar/registrar.service';
 import { UserDataService } from './shared/services/userData.service';
 import { GlobalLoaderService } from './shared/services/globalLoader.service';
@@ -36,11 +36,13 @@ export class AppComponent implements AfterViewInit {
     protected globalLoader: GlobalLoaderService,
     protected router: Router
   ) {
-    registrarService.activeRegistrarIdChange.subscribe(() => {
-      this.renderRouter = false;
-      setTimeout(() => {
-        this.renderRouter = true;
-      }, 400);
+    effect(() => {
+      if (registrarService.registrarId()) {
+        this.renderRouter = false;
+        setTimeout(() => {
+          this.renderRouter = true;
+        }, 400);
+      }
     });
   }
 
