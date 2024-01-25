@@ -87,7 +87,7 @@ PRESUBMITS = {
     PresubmitCheck(
         r".*Copyright 20\d{2} The Nomulus Authors\. All Rights Reserved\.",
         ("java", "js", "soy", "sql", "py", "sh", "gradle", "ts"), {
-            ".git", "/build/", "/generated/", "/generated_tests/",
+            ".git", "/build/", "/bin/generated-sources/", "/bin/generated-test-sources/",
             "node_modules/", "LoggerConfig.java", "registrar_bin.",
             "registrar_dbg.", "google-java-format-diff.py",
             "nomulus.golden.sql", "soyutils_usegoog.js", "javascript/checks.js"

@@ -48,6 +48,10 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @ExtendWith(MockitoExtension.class)
 public class UploadBsaUnavailableDomainsActionTest {
 
+  private static final String BUCKET = "domain-registry-bsa";
+
+  private static final String API_URL = "https://upload.test/bsa";
+
   private final FakeClock clock = new FakeClock(DateTime.parse("2024-02-02T02:02:02Z"));
 
   @RegisterExtension
@@ -62,9 +66,7 @@ public class UploadBsaUnavailableDomainsActionTest {
 
   private final GcsUtils gcsUtils = new GcsUtils(LocalStorageHelper.getOptions());
 
-  private final String BUCKET = "domain-registry-bsa";
 
-  private final String API_URL = "https://upload.test/bsa";
 
   private final FakeResponse response = new FakeResponse();
 

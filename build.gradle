@@ -382,16 +382,8 @@ subprojects {
 
   apply from: "${rootDir.path}/java_common.gradle"
 
-  if (!rootProject.enableCrossReferencing.toBoolean()) {
-    compileJava {
-      // TODO: Remove this once we migrate off of AppEngine.
-      options.release = 8
-    }
-    compileTestJava {
-      // TODO: Remove this once we migrate off of AppEngine.
-      options.release = 8
-    }
-  }
+  sourceCompatibility = JavaVersion.VERSION_17
+  targetCompatibility = JavaVersion.VERSION_17
 
   project.tasks.test.dependsOn runPresubmits
 
