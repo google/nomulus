@@ -151,3 +151,4 @@ V150__add_tld_bsa_enroll_date.sql
 V151__add_bsa_unblockable_domain_table.sql
 V152__add_bsa_domain_refresh_table.sql
 V153__drop_bsa_domain_in_use_table.sql
+V154__add_create_billing_cost_transitions_to_tld.sql
