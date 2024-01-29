@@ -1178,7 +1178,8 @@ CREATE TABLE public."Tld" (
     dns_ns_ttl interval,
     idn_tables text[],
     breakglass_mode boolean DEFAULT false NOT NULL,
-    bsa_enroll_start_time timestamp with time zone
+    bsa_enroll_start_time timestamp with time zone,
+    create_billing_cost_transitions public.hstore
 );
 
 
