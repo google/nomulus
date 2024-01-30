@@ -225,6 +225,23 @@ public final class TldTest extends EntityTestCase {
   }
 
   @Test
+  void testSetCreateBillingCostTransitions() {
+    ImmutableSortedMap<DateTime, Money> createCostTransitions =
+        ImmutableSortedMap.of(
+            START_OF_TIME,
+            Money.of(USD, 8),
+            fakeClock.nowUtc(),
+            Money.of(USD, 1),
+            fakeClock.nowUtc().plusMonths(1),
+            Money.of(USD, 2),
+            fakeClock.nowUtc().plusMonths(2),
+            Money.of(USD, 3));
+    Tld registry =
+        Tld.get("tld").asBuilder().setCreateBillingCostTransitions(createCostTransitions).build();
+    assertThat(registry.getCreateBillingCostTransitions()).isEqualTo(createCostTransitions);
+  }
+
+  @Test
   void testSettingRestoreBillingCost() {
     Tld registry = Tld.get("tld").asBuilder().setRestoreBillingCost(Money.of(USD, 42)).build();
     // The default value of 13 is set in createTld().

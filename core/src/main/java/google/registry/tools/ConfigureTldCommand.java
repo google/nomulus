@@ -15,6 +15,7 @@ package google.registry.tools;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static google.registry.model.tld.Tld.Builder.ROID_SUFFIX_PATTERN;
+import static google.registry.model.tld.Tld.DEFAULT_CREATE_BILLING_COST;
 import static google.registry.model.tld.Tlds.getTlds;
 import static google.registry.util.ListNamingUtils.convertFilePathToName;
 
@@ -28,6 +29,7 @@ import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.collect.Sets;
 import com.google.common.collect.Sets.SetView;
 import com.google.common.flogger.FluentLogger;
+import google.registry.model.common.TimedTransitionProperty;
 import google.registry.model.tld.Tld;
 import google.registry.model.tld.label.PremiumList;
 import google.registry.model.tld.label.PremiumListDao;
@@ -114,8 +116,15 @@ public class ConfigureTldCommand extends MutatingCommand {
     String name = convertFilePathToName(inputFile);
     Map<String, Object> tldData = new Yaml().load(Files.newBufferedReader(inputFile));
     checkName(name, tldData);
-    checkForMissingFields(tldData);
     Tld oldTld = getTlds().contains(name) ? Tld.get(name) : null;
+    if (!tldData.containsKey("createBillingCostTransitions")) {
+      tldData.put(
+          "createBillingCostTransitions",
+          oldTld != null
+              ? oldTld.getCreateBillingCostTransitions()
+              : TimedTransitionProperty.withInitialValue(DEFAULT_CREATE_BILLING_COST).toValueMap());
+    }
+    checkForMissingFields(tldData);
     Tld newTld = mapper.readValue(inputFile.toFile(), Tld.class);
     if (oldTld != null) {
       oldTldInBreakGlass = oldTld.getBreakglassMode();
