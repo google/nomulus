@@ -48,15 +48,13 @@ steps:
   - ./nomulus_tool_credential.json
   - update_premium_list
   - nomulus-internal/core/src/main/java/google/registry/config/files/premium/
-#TODO(sarahbot@): Uncomment out reserved lists step once go/r3pr/2292 is deployed and
-#kokoro presubmit tests are added for reserved lists
 # Configure the reserved lists using the stored configuration files in the internal repo
-#- name: 'gcr.io/$PROJECT_ID/db_object_updater:latest'
-#  args:
-#  - ${_ENV}
-#  - ./nomulus_tool_credential.json
-#  - update_reserved_list
-#  - nomulus-internal/core/src/main/java/google/registry/config/files/reserved/
+- name: 'gcr.io/$PROJECT_ID/db_object_updater:latest'
+  args:
+  - ${_ENV}
+  - ./nomulus_tool_credential.json
+  - update_reserved_list
+  - nomulus-internal/core/src/main/java/google/registry/config/files/reserved/
 
 timeout: 7200s
 options:
