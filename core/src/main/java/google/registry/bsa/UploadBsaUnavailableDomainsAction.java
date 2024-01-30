@@ -80,7 +80,7 @@ public class UploadBsaUnavailableDomainsAction implements Runnable {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
-  private static final int BATCH_SIZE = 50000;
+  private static final int BATCH_SIZE = 40000;
 
   Clock clock;
 
