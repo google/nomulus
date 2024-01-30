@@ -17,6 +17,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
 import static google.registry.model.EntityYamlUtils.createObjectMapper;
 import static google.registry.model.domain.token.AllocationToken.TokenType.DEFAULT_PROMO;
+import static google.registry.model.tld.Tld.DEFAULT_CREATE_BILLING_COST;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.persistPremiumList;
 import static google.registry.testing.DatabaseHelper.persistResource;
@@ -25,6 +26,7 @@ import static google.registry.testing.TestDataHelper.loadFile;
 import static google.registry.tldconfig.idn.IdnTableEnum.EXTENDED_LATIN;
 import static google.registry.tldconfig.idn.IdnTableEnum.JA;
 import static google.registry.tldconfig.idn.IdnTableEnum.UNCONFUSABLE_LATIN;
+import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.logging.Level.INFO;
 import static org.joda.money.CurrencyUnit.JPY;
@@ -39,6 +41,7 @@ import com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException;
 import com.google.common.base.Ascii;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.io.Files;
 import com.google.common.testing.TestLogHandler;
 import google.registry.model.domain.token.AllocationToken;
@@ -171,6 +174,18 @@ public class ConfigureTldCommandTest extends CommandTestCase<ConfigureTldCommand
     // Cannot test that created TLD converted to YAML is equal to original YAML since the created
     // TLD's YAML will contain the fields in the correct order
     assertThat(updatedTld.getCreateBillingCost()).isEqualTo(Money.of(USD, 25));
+  }
+
+  @Test
+  void testSuccess_fileMissingCreateBillingCostTransitions() throws Exception {
+    Tld tld = createTld("nocreatecostmap");
+    assertThat(tld.getCreateBillingCost()).isEqualTo(Money.of(USD, 13));
+    File tldFile = tmpDir.resolve("nocreatecostmap.yaml").toFile();
+    Files.asCharSink(tldFile, UTF_8).write(loadFile(getClass(), "nocreatecostmap.yaml"));
+    runCommandForced("--input=" + tldFile);
+    Tld updatedTld = Tld.get("nocreatecostmap");
+    assertThat(updatedTld.getCreateBillingCostTransitions())
+        .isEqualTo(ImmutableSortedMap.of(START_OF_TIME, DEFAULT_CREATE_BILLING_COST));
   }
 
   @Test
