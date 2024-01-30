@@ -637,10 +637,12 @@ class UpdateRegistrarCommandTest extends CommandTestCase<UpdateRegistrarCommand>
 
   @Test
   void testSuccess_setIcannEmail() throws Exception {
-    runCommand("--icann_referral_email=foo@bar.test", "--force", "TheRegistrar");
     Registrar registrar = loadRegistrar("TheRegistrar");
-    assertThat(registrar.getIcannReferralEmail()).isEqualTo("foo@bar.test");
-    assertThat(registrar.getEmailAddress()).isEqualTo("foo@bar.test");
+    assertThat(registrar.getEmailAddress()).isEqualTo("the.registrar@example.com");
+    runCommand("--icann_referral_email=foo@bar.test", "--force", "TheRegistrar");
+    Registrar updatedRegistrar = loadRegistrar("TheRegistrar");
+    assertThat(updatedRegistrar.getIcannReferralEmail()).isEqualTo("foo@bar.test");
+    assertThat(updatedRegistrar.getEmailAddress()).isEqualTo("the.registrar@example.com");
   }
 
   @Test
