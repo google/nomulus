@@ -1,7 +1,8 @@
-# This will sync the Tld configurations in the internal repo with the Tld objects in the database.
+# This will sync the configuration files in the internal repo with their
+# corresponding objects in the database.
 #
 # To manually trigger a build on GCB, run:
-# gcloud builds submit --config cloudbuild-tld-sync.yaml --substitutions \
+# gcloud builds submit --config cloudbuild-sync-db-objects.yaml --substitutions \
 #   _INTERNAL_REPO_URL=[URL] ..
 #
 # To trigger a build automatically, follow the instructions below and add a trigger:
@@ -34,11 +35,26 @@ steps:
       --secret nomulus-tool-cloudbuild-credential \
       > nomulus_tool_credential.json
 # Configure the TLDs using the stored configuration files in the internal repo
-- name: 'gcr.io/$PROJECT_ID/tld_updater:latest'
+- name: 'gcr.io/$PROJECT_ID/db_object_updater:latest'
   args:
   - ${_ENV}
   - ./nomulus_tool_credential.json
+  - configure_tld
   - nomulus-internal/core/src/main/java/google/registry/config/files/tld/
+# Configure the premium lists using the stored configuration files in the internal repo
+- name: 'gcr.io/$PROJECT_ID/db_object_updater:latest'
+  args:
+  - ${_ENV}
+  - ./nomulus_tool_credential.json
+  - update_premium_list
+  - nomulus-internal/core/src/main/java/google/registry/config/files/premium/
+# Configure the reserved lists using the stored configuration files in the internal repo
+- name: 'gcr.io/$PROJECT_ID/db_object_updater:latest'
+  args:
+  - ${_ENV}
+  - ./nomulus_tool_credential.json
+  - update_reserved_list
+  - nomulus-internal/core/src/main/java/google/registry/config/files/reserved/
 
 timeout: 7200s
 options:

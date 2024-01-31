@@ -17,6 +17,6 @@ ARG TAG_NAME
 FROM gcr.io/${PROJECT_ID}/builder:${TAG_NAME}
 
 COPY nomulus.jar /
-COPY sync_tlds.sh /usr/local/bin
+COPY sync_db_objects.sh /usr/local/bin
 
-ENTRYPOINT [ "bash", "sync_tlds.sh" ]
+ENTRYPOINT [ "bash", "sync_db_objects.sh" ]
