@@ -14,6 +14,7 @@
 
 package google.registry.tools;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static google.registry.util.DiffUtils.prettyPrintEntityDeepDiff;
 import static google.registry.util.ListNamingUtils.convertFilePathToName;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -47,11 +48,10 @@ final class UpdateReservedListCommand extends CreateOrUpdateReservedListCommand 
 
   @Override
   protected String prompt() throws Exception {
-    // TODO(sarahbot): uncomment once go/r3pr/2292 is deployed
-    // checkArgument(
-    //     !RegistryToolEnvironment.get().equals(RegistryToolEnvironment.PRODUCTION) || buildEnv,
-    //     "The --build_environment flag must be used when running update_reserved_list in"
-    //         + " production");
+    checkArgument(
+        !RegistryToolEnvironment.get().equals(RegistryToolEnvironment.PRODUCTION) || buildEnv,
+        "The --build_environment flag must be used when running update_reserved_list in"
+            + " production");
     name = Strings.isNullOrEmpty(name) ? convertFilePathToName(input) : name;
     ReservedList existingReservedList =
         ReservedList.get(name)
