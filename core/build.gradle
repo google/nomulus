@@ -776,7 +776,7 @@ if (environment == 'alpha') {
             gs://${gcpProject}-deploy/live/beam/${metaDataBaseName} \
             --image-gcr-path ${imageName}:live \
             --sdk-language JAVA \
-            --flex-template-base-image JAVA11 \
+            --flex-template-base-image JAVA17 \
             --metadata-file ${projectDir}/src/main/resources/${metaData} \
             --jar ${uberJarName} \
             --env FLEX_TEMPLATE_JAVA_MAIN_CLASS=${mainClass} \
