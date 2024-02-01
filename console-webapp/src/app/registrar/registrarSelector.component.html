@@ -5,20 +5,20 @@
     routerLinkActive="active"
     *ngIf="isMobile; else desktop"
   >
-    {{ registrarService.activeRegistrarId || "Select registrar" }}
+    {{ registrarService.registrarId() || "Select registrar" }}
     <mat-icon>open_in_new</mat-icon>
   </button>
   <ng-template #desktop>
     <mat-form-field class="mat-form-field-density-5" appearance="fill">
       <mat-label>Registrar</mat-label>
       <mat-select
-        [ngModel]="registrarService.activeRegistrarId"
+        [ngModel]="registrarService.registrarId()"
         (selectionChange)="
           registrarService.updateSelectedRegistrar($event.value)
         "
       >
         <mat-option
-          *ngFor="let registrar of registrarService.registrars"
+          *ngFor="let registrar of registrarService.registrars()"
           [value]="registrar.registrarId"
         >
           {{ registrar.registrarId }}

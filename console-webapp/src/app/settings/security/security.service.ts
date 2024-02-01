@@ -64,7 +64,7 @@ export class SecurityService {
   saveChanges(newSecuritySettings: SecuritySettings) {
     return this.backend
       .postSecuritySettings(
-        this.registrarService.activeRegistrarId,
+        this.registrarService.registrarId(),
         uiToApiConverter(newSecuritySettings)
       )
       .pipe(

@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Injectable } from '@angular/core';
-import { Observable, Subject, tap } from 'rxjs';
+import { Injectable, computed, signal } from '@angular/core';
+import { Observable, tap } from 'rxjs';
 
 import { BackendService } from '../shared/services/backend.service';
 import {
@@ -52,9 +52,11 @@ export interface Registrar {
   providedIn: 'root',
 })
 export class RegistrarService implements GlobalLoader {
-  activeRegistrarId: string = '';
-  registrars: Registrar[] = [];
-  activeRegistrarIdChange: Subject<string> = new Subject<string>();
+  registrarId = signal<string>('');
+  registrars = signal<Registrar[]>([]);
+  registrar = computed<Registrar | undefined>(() =>
+    this.registrars().find((r) => r.registrarId === this.registrarId())
+  );
 
   constructor(
     private backend: BackendService,
@@ -67,22 +69,15 @@ export class RegistrarService implements GlobalLoader {
     this.globalLoader.startGlobalLoader(this);
   }
 
-  public get registrar(): Registrar {
-    return this.registrars.filter(
-      (r) => r.registrarId === this.activeRegistrarId
-    )[0];
-  }
-
   public updateSelectedRegistrar(registrarId: string) {
-    this.activeRegistrarId = registrarId;
-    this.activeRegistrarIdChange.next(registrarId);
+    this.registrarId.set(registrarId);
   }
 
   public loadRegistrars(): Observable<Registrar[]> {
     return this.backend.getRegistrars().pipe(
       tap((registrars) => {
         if (registrars) {
-          this.registrars = registrars;
+          this.registrars.set(registrars);
         }
       })
     );
