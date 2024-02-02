@@ -206,39 +206,38 @@ class UpdatePremiumListCommandTest<C extends UpdatePremiumListCommand>
         .containsExactly(PremiumEntry.create(0L, new BigDecimal("9090.00"), "doge"));
   }
 
-  // TODO(sarahbot): uncomment once go/r3pr/2292 is deployed
-  // @Test
-  // void testFailure_runCommandOnProduction_noFlag() throws Exception {
-  //   File tmpFile = tmpDir.resolve(String.format("%s.txt", TLD_TEST)).toFile();
-  //   String newPremiumListData = "eth,USD 9999";
-  //   Files.asCharSink(tmpFile, UTF_8).write(newPremiumListData);
-  //   IllegalArgumentException thrown =
-  //       assertThrows(
-  //           IllegalArgumentException.class,
-  //           () ->
-  //               runCommandInEnvironment(
-  //                   RegistryToolEnvironment.PRODUCTION,
-  //                   "--name=" + TLD_TEST,
-  //                   "--input=" + Paths.get(tmpFile.getPath())));
-  //   assertThat(thrown.getMessage())
-  //       .isEqualTo(
-  //           "The --build_environment flag must be used when running update_premium_list in"
-  //               + " production");
-  // }
-  //
-  // @Test
-  // void testSuccess_runCommandOnProduction_buildEnvFlag() throws Exception {
-  //   File tmpFile = tmpDir.resolve(String.format("%s.txt", TLD_TEST)).toFile();
-  //   String newPremiumListData = "eth,USD 9999";
-  //   Files.asCharSink(tmpFile, UTF_8).write(newPremiumListData);
-  //   runCommandInEnvironment(
-  //       RegistryToolEnvironment.PRODUCTION,
-  //       "--name=" + TLD_TEST,
-  //       "--input=" + Paths.get(tmpFile.getPath()),
-  //       "--build_environment",
-  //       "-f");
-  //   assertThat(PremiumListDao.loadAllPremiumEntries(TLD_TEST))
-  //       .comparingElementsUsing(immutableObjectCorrespondence("revisionId"))
-  //       .containsExactly(PremiumEntry.create(0L, new BigDecimal("9999.00"), "eth"));
-  // }
+  @Test
+  void testFailure_runCommandOnProduction_noFlag() throws Exception {
+    File tmpFile = tmpDir.resolve(String.format("%s.txt", TLD_TEST)).toFile();
+    String newPremiumListData = "eth,USD 9999";
+    Files.asCharSink(tmpFile, UTF_8).write(newPremiumListData);
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () ->
+                runCommandInEnvironment(
+                    RegistryToolEnvironment.PRODUCTION,
+                    "--name=" + TLD_TEST,
+                    "--input=" + Paths.get(tmpFile.getPath())));
+    assertThat(thrown.getMessage())
+        .isEqualTo(
+            "The --build_environment flag must be used when running update_premium_list in"
+                + " production");
+  }
+
+  @Test
+  void testSuccess_runCommandOnProduction_buildEnvFlag() throws Exception {
+    File tmpFile = tmpDir.resolve(String.format("%s.txt", TLD_TEST)).toFile();
+    String newPremiumListData = "eth,USD 9999";
+    Files.asCharSink(tmpFile, UTF_8).write(newPremiumListData);
+    runCommandInEnvironment(
+        RegistryToolEnvironment.PRODUCTION,
+        "--name=" + TLD_TEST,
+        "--input=" + Paths.get(tmpFile.getPath()),
+        "--build_environment",
+        "-f");
+    assertThat(PremiumListDao.loadAllPremiumEntries(TLD_TEST))
+        .comparingElementsUsing(immutableObjectCorrespondence("revisionId"))
+        .containsExactly(PremiumEntry.create(0L, new BigDecimal("9999.00"), "eth"));
+  }
 }

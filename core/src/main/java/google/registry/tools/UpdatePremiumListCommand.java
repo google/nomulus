@@ -48,11 +48,9 @@ class UpdatePremiumListCommand extends CreateOrUpdatePremiumListCommand {
 
   @Override
   protected String prompt() throws Exception {
-    // TODO(sarahbot): uncomment once go/r3pr/2292 is deployed
-    // checkArgument(
-    //     !RegistryToolEnvironment.get().equals(RegistryToolEnvironment.PRODUCTION) || buildEnv,
-    //     "The --build_environment flag must be used when running update_premium_list in
-    // production");
+    checkArgument(
+        !RegistryToolEnvironment.get().equals(RegistryToolEnvironment.PRODUCTION) || buildEnv,
+        "The --build_environment flag must be used when running update_premium_list in production");
     name = Strings.isNullOrEmpty(name) ? convertFilePathToName(inputFile) : name;
     PremiumList existingList =
         PremiumListDao.getLatestRevision(name)
