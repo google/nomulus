@@ -1,4 +1,4 @@
-// Copyright 2023 The Nomulus Authors. All Rights Reserved.
+// Copyright 2024 The Nomulus Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,35 +12,37 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Component, OnInit } from '@angular/core';
+import { Component, computed, effect, signal } from '@angular/core';
 import { RegistrarService } from './registrar.service';
-import { BreakpointObserver } from '@angular/cdk/layout';
-import { distinctUntilChanged } from 'rxjs';
-
-const MOBILE_LAYOUT_BREAKPOINT = '(max-width: 599px)';
 
 @Component({
   selector: 'app-registrar-selector',
   templateUrl: './registrarSelector.component.html',
   styleUrls: ['./registrarSelector.component.scss'],
 })
-export class RegistrarSelectorComponent implements OnInit {
-  protected isMobile: boolean = false;
+export class RegistrarSelectorComponent {
+  registrarInput = signal<string>(this.registrarService.registrarId());
+  filteredOptions?: string[];
+  allRegistrarIds = computed(() =>
+    this.registrarService.registrars().map((r) => r.registrarId)
+  );
 
-  readonly breakpoint$ = this.breakpointObserver
-    .observe([MOBILE_LAYOUT_BREAKPOINT])
-    .pipe(distinctUntilChanged());
-
-  constructor(
-    protected registrarService: RegistrarService,
-    protected breakpointObserver: BreakpointObserver
-  ) {}
-
-  ngOnInit(): void {
-    this.breakpoint$.subscribe(() => this.breakpointChanged());
+  constructor(protected registrarService: RegistrarService) {
+    effect(() => {
+      const filterValue = this.registrarInput().toLowerCase();
+      this.filteredOptions = this.allRegistrarIds().filter((option) =>
+        option.toLowerCase().includes(filterValue)
+      );
+    });
+    this.onSelect(registrarService.registrarId());
   }
 
-  private breakpointChanged() {
-    this.isMobile = this.breakpointObserver.isMatched(MOBILE_LAYOUT_BREAKPOINT);
+  onSelect(registrarId: string) {
+    this.registrarService.updateSelectedRegistrar(registrarId);
+
+    // We reset the list of options after selection, so that user doesn't have to clear it out
+    setTimeout(() => {
+      this.filteredOptions = this.allRegistrarIds();
+    }, 10);
   }
 }

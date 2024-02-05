@@ -1,0 +1,31 @@
+.console-app__contact {
+  max-width: 616px;
+  section {
+    margin-bottom: 40px;
+  }
+  &-required {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  &-submit {
+    margin: 30px 0;
+  }
+
+  &-controls {
+    display: flex;
+    align-items: center;
+    margin: 20px 0;
+  }
+
+  mat-card {
+    margin-bottom: 30px;
+  }
+
+  mat-form-field {
+    display: block;
+    width: 100%;
+    margin-bottom: 30px;
+  }
+}
