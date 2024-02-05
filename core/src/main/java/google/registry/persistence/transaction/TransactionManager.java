@@ -64,6 +64,18 @@ public interface TransactionManager {
   <T> T transact(Callable<T> work, TransactionIsolationLevel isolationLevel);
 
   /**
+   * Executes the work in a transaction at the given {@link TransactionIsolationLevel} and returns
+   * the result, without retrying upon retryable exceptions.
+   *
+   * <p>This method should only be used when the transaction contains side effects that are not
+   * rolled back by the transaction manager, for example in {@link
+   * google.registry.beam.common.RegistryJpaIO} where the results from a query are streamed to the
+   * next transformation inside a transaction, as the result stream has to materialize to a list
+   * outside a transaction and doing so would greatly affect the parallelism of the pipeline.
+   */
+  <T> T transactNoRetry(Callable<T> work, TransactionIsolationLevel isolationLevel);
+
+  /**
    * Executes the work in a (potentially wrapped) transaction and returns the result.
    *
    * <p>Calls to this method are typically going to be in inner functions, that are called either as

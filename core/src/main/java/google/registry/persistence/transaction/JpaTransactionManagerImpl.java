@@ -203,6 +203,7 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
     return transact(work, null);
   }
 
+  @Override
   public <T> T transactNoRetry(
       Callable<T> work, @Nullable TransactionIsolationLevel isolationLevel) {
     if (inTransaction()) {
