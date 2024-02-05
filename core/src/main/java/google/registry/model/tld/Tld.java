@@ -470,10 +470,11 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
       })
   Money createBillingCost = DEFAULT_CREATE_BILLING_COST;
 
+  // TODO(sarahbot@): Make this field not null and add a default value once field is populated on
+  // all existing TLDs
   /** A property that transitions to different create billing costs at different times. */
   @JsonDeserialize(using = TimedTransitionPropertyMoneyDeserializer.class)
-  TimedTransitionProperty<Money> createBillingCostTransitions =
-      TimedTransitionProperty.withInitialValue(DEFAULT_CREATE_BILLING_COST);
+  TimedTransitionProperty<Money> createBillingCostTransitions;
 
   /** The one-time billing cost for restoring a domain name from the redemption grace period. */
   @Type(type = JodaMoneyType.TYPE_NAME)
@@ -1157,7 +1158,10 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
       // here to catch cases where we loaded an invalid TimedTransitionProperty from the database
       // and cloned it into a new builder, to block re-building a Tld in an invalid state.
       instance.tldStateTransitions.checkValidity();
-      instance.createBillingCostTransitions.checkValidity();
+      // TODO(sarahbot@): Remove null check when createBillingCostTransitions field is made not-null
+      if (instance.createBillingCostTransitions != null) {
+        instance.createBillingCostTransitions.checkValidity();
+      }
       instance.renewBillingCostTransitions.checkValidity();
       instance.eapFeeSchedule.checkValidity();
       // All costs must be in the expected currency.
