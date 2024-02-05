@@ -1,4 +1,4 @@
-// Copyright 2023 The Nomulus Authors. All Rights Reserved.
+// Copyright 2024 The Nomulus Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,12 +13,14 @@
 // limitations under the License.
 
 import { Component } from '@angular/core';
-import { UserDataService } from 'src/app/shared/services/userData.service';
+import { UserDataService } from '../shared/services/userData.service';
 
 @Component({
-  selector: '[app-contact-widget]',
-  templateUrl: './contactWidget.component.html',
+  selector: 'app-resources',
+  templateUrl: './resources.component.html',
+  styleUrls: ['./resources.component.scss'],
 })
-export class ContactWidgetComponent {
-  constructor(public userDataService: UserDataService) {}
+export class ResourcesComponent {
+  public static PATH = 'resources';
+  constructor(protected userDataService: UserDataService) {}
 }

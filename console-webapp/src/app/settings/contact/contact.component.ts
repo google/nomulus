@@ -1,4 +1,4 @@
-// Copyright 2023 The Nomulus Authors. All Rights Reserved.
+// Copyright 2024 The Nomulus Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Component, ViewChild, computed } from '@angular/core';
+import { Component, ViewChild, computed, effect } from '@angular/core';
 import { Contact, ContactService } from './contact.service';
 import { HttpErrorResponse } from '@angular/common/http';
 import { MatSnackBar } from '@angular/material/snack-bar';
@@ -20,17 +20,12 @@ import {
   DialogBottomSheetContent,
   DialogBottomSheetWrapper,
 } from 'src/app/shared/components/dialogBottomSheet.component';
+import { MatTableDataSource } from '@angular/material/table';
 
 enum Operations {
   DELETE,
   ADD,
   UPDATE,
-}
-
-interface GroupedContacts {
-  value: string;
-  label: string;
-  contacts: Array<Contact>;
 }
 
 type ContactDetailsParams = {
@@ -41,15 +36,15 @@ type ContactDetailsParams = {
   };
 };
 
-const contactTypes: Array<GroupedContacts> = [
-  { value: 'ADMIN', label: 'Primary contact', contacts: [] },
-  { value: 'ABUSE', label: 'Abuse contact', contacts: [] },
-  { value: 'BILLING', label: 'Billing contact', contacts: [] },
-  { value: 'LEGAL', label: 'Legal contact', contacts: [] },
-  { value: 'MARKETING', label: 'Marketing contact', contacts: [] },
-  { value: 'TECH', label: 'Technical contact', contacts: [] },
-  { value: 'WHOIS', label: 'WHOIS-Inquiry contact', contacts: [] },
-];
+const typeToTextMap: { [key: string]: any }  = {
+  'ADMIN': 'Primary contact',
+  'ABUSE': 'Abuse contact',
+  'BILLING': 'Billing contact',
+  'LEGAL': 'Legal contact',
+  'MARKETING': 'Marketing contact',
+  'TECH': 'Technical contact',
+  'WHOIS': 'WHOIS-Inquiry contact',
+}
 
 @Component({
   selector: 'app-contact-details-dialog',
@@ -58,7 +53,6 @@ const contactTypes: Array<GroupedContacts> = [
 })
 export class ContactDetailsDialogComponent implements DialogBottomSheetContent {
   contact?: Contact;
-  contactTypes = contactTypes;
   contactIndex?: number;
 
   params?: ContactDetailsParams;
@@ -73,7 +67,7 @@ export class ContactDetailsDialogComponent implements DialogBottomSheetContent {
     this.contactIndex = this.contactService
       .contacts()
       .findIndex((c) => c === params.data.contact);
-    this.contact = JSON.parse(JSON.stringify(params.data.contact));
+    this.contact = structuredClone(params.data.contact);
   }
 
   close() {
@@ -115,16 +109,36 @@ export class ContactDetailsDialogComponent implements DialogBottomSheetContent {
 })
 export default class ContactComponent {
   public static PATH = 'contact';
-  public groupedContacts = computed(() => {
-    return this.contactService.contacts().reduce((acc, contact) => {
-      contact.types.forEach((contactType) => {
-        acc
-          .find((group: GroupedContacts) => group.value === contactType)
-          ?.contacts.push(contact);
-      });
-      return acc;
-    }, JSON.parse(JSON.stringify(contactTypes)));
-  });
+  dataSource: MatTableDataSource<Contact> = new MatTableDataSource<Contact>([]);
+  columns = [
+    {
+      columnDef: 'name',
+      header: 'Name',
+      cell: (contact: Contact) => `
+        <div class="contact__name-column">
+          <div class="contact__name-column-title">${contact.name}</div>
+          <div class="contact__name-column-roles">${contact.types.map((t)=> typeToTextMap[t]).join(" • ")}</div>
+          </div>
+      `,
+    },
+    {
+      columnDef: 'emailAddress',
+      header: 'Email',
+      cell: (contact: Contact) => `${contact.emailAddress || ''}`
+    },
+    {
+      columnDef: 'phoneNumber',
+      header: 'Phone',
+      cell: (contact: Contact) => `${contact.phoneNumber || ''}`
+    },
+    {
+      columnDef: 'faxNumber',
+      header: 'Fax',
+      cell: (contact: Contact) => `${contact.faxNumber || ''}`
+    },
+  ];
+  displayedColumns = this.columns.map((c) => c.columnDef);
+
 
   @ViewChild('contactDetailsWrapper')
   detailsComponentWrapper!: DialogBottomSheetWrapper;
@@ -134,11 +148,17 @@ export default class ContactComponent {
     public contactService: ContactService,
     private _snackBar: MatSnackBar
   ) {
-    // TODO: Refactor to registrarId service
     this.loading = true;
     this.contactService.fetchContacts().subscribe(() => {
       this.loading = false;
     });
+    effect(() => {
+      if(this.contactService.contacts().length) {
+        this.dataSource = new MatTableDataSource<Contact>(
+          this.contactService.contacts()
+        );
+      } 
+    })
   }
 
   deleteContact(contact: Contact) {
@@ -151,15 +171,15 @@ export default class ContactComponent {
     }
   }
 
-  openCreateNew(e: MouseEvent) {
-    const newContact: Contact = {
-      name: '',
-      phoneNumber: '',
-      emailAddress: '',
-      types: [contactTypes[0].value],
-    };
-    this.openDetails(e, newContact, Operations.ADD);
-  }
+  // openCreateNew(e: MouseEvent) {
+  //   const newContact: Contact = {
+  //     name: '',
+  //     phoneNumber: '',
+  //     emailAddress: '',
+  //     types: [contactTypes[0].value],
+  //   };
+  //   this.openDetails(e, newContact, Operations.ADD);
+  // }
 
   openDetails(
     e: MouseEvent,

@@ -1,4 +1,4 @@
-// Copyright 2023 The Nomulus Authors. All Rights Reserved.
+// Copyright 2024 The Nomulus Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,14 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Injectable, signal } from '@angular/core';
+import { Injectable, effect, signal } from '@angular/core';
 import { Observable, tap } from 'rxjs';
 import { RegistrarService } from 'src/app/registrar/registrar.service';
 import { BackendService } from 'src/app/shared/services/backend.service';
 
 export interface Contact {
   name: string;
-  phoneNumber: string;
+  phoneNumber?: string;
   emailAddress: string;
   registrarId?: string;
   faxNumber?: string;
@@ -28,6 +28,8 @@ export interface Contact {
   visibleInWhoisAsTech?: boolean;
   visibleInDomainWhoisAsAbuse?: boolean;
 }
+
+const mockContacts = [{"name":"test","emailAddress":"test@google.com","registrarId":"contacts-alpha","phoneNumber":"+1.2125650000","types":["ADMIN", "BILLING"],"visibleInWhoisAsAdmin":true,"visibleInWhoisAsTech":true,"visibleInDomainWhoisAsAbuse":true},{"name":"Test test","emailAddress":"testtest@google.com","registrarId":"contacts-alpha","types":["ADMIN"],"visibleInWhoisAsAdmin":false,"visibleInWhoisAsTech":false,"visibleInDomainWhoisAsAbuse":false},{"name":"nobody","emailAddress":"nobody@google.com","registrarId":"contacts-alpha","types":["ADMIN"],"visibleInWhoisAsAdmin":false,"visibleInWhoisAsTech":false,"visibleInDomainWhoisAsAbuse":false}];
 
 @Injectable({
   providedIn: 'root',
@@ -40,11 +42,15 @@ export class ContactService {
     private registrarService: RegistrarService
   ) {}
 
-  // TODO: Come up with a better handling for registrarId
   fetchContacts(): Observable<Contact[]> {
     return this.backend.getContacts(this.registrarService.registrarId()).pipe(
       tap((contacts = []) => {
-        this.contacts.set(contacts);
+        if(contacts.length) {
+          this.contacts.set(contacts);
+        } else {
+          // TODO: REMOVE
+          this.contacts.set(mockContacts);
+        }
       })
     );
   }

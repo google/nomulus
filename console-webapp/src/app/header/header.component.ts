@@ -1,4 +1,4 @@
-// Copyright 2023 The Nomulus Authors. All Rights Reserved.
+// Copyright 2024 The Nomulus Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,6 +13,7 @@
 // limitations under the License.
 
 import { Component, EventEmitter, Output } from '@angular/core';
+import { BreakPointObserverService } from '../shared/services/breakPoint.service';
 
 @Component({
   selector: 'app-header',
@@ -21,6 +22,8 @@ import { Component, EventEmitter, Output } from '@angular/core';
 })
 export class HeaderComponent {
   private isNavOpen = false;
+
+  constructor(protected breakpointObserver: BreakPointObserverService) {}
 
   @Output() toggleNavOpen = new EventEmitter<boolean>();
 

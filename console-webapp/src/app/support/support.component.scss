@@ -1,0 +1,16 @@
+.console-app {
+    &__support {
+        &-passcode {
+            color: #1E8E3E;
+        }
+        > * {
+            margin-bottom: 20px;
+        }
+        .secondary-text {
+            margin-bottom: 50px;
+        }
+        h2 {
+            margin-bottom: 30px;
+        }
+    }
+}

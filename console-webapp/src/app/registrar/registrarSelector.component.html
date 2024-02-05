@@ -1,29 +1,28 @@
 <div class="console-app__registrar">
-  <button
-    mat-button
-    [routerLink]="'/settings/registrars'"
-    routerLinkActive="active"
-    *ngIf="isMobile; else desktop"
+  <mat-form-field
+    class="example-full-width"
+    class="mat-form-field-density-5"
+    appearance="outline"
   >
-    {{ registrarService.registrarId() || "Select registrar" }}
-    <mat-icon>open_in_new</mat-icon>
-  </button>
-  <ng-template #desktop>
-    <mat-form-field class="mat-form-field-density-5" appearance="fill">
-      <mat-label>Registrar</mat-label>
-      <mat-select
-        [ngModel]="registrarService.registrarId()"
-        (selectionChange)="
-          registrarService.updateSelectedRegistrar($event.value)
-        "
-      >
-        <mat-option
-          *ngFor="let registrar of registrarService.registrars()"
-          [value]="registrar.registrarId"
-        >
-          {{ registrar.registrarId }}
-        </mat-option>
-      </mat-select>
-    </mat-form-field>
-  </ng-template>
+    <mat-label>Registrar</mat-label>
+    <input
+      type="text"
+      placeholder=""
+      aria-label="Select Registrar"
+      matInput
+      [ngModel]="registrarInput()"
+      (ngModelChange)="registrarInput.set($event)"
+      [ngModelOptions]="{ standalone: true }"
+      [matAutocomplete]="auto"
+    />
+    <mat-autocomplete
+      autoActiveFirstOption
+      #auto="matAutocomplete"
+      (optionSelected)="onSelect($event.option.value)"
+    >
+      @for (registrarId of filteredOptions; track registrarId) {
+      <mat-option [value]="registrarId">{{ registrarId }}</mat-option>
+      }
+    </mat-autocomplete>
+  </mat-form-field>
 </div>

@@ -1,4 +1,4 @@
-// Copyright 2023 The Nomulus Authors. All Rights Reserved.
+// Copyright 2024 The Nomulus Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,30 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-.contact {
-  &__cards-wrapper {
-    margin-top: 22px;
-  }
-  &__card {
-    width: 400px;
-    padding: 15px;
-  }
-  &__card-actions {
-    padding: 0;
-  }
-  &__loading {
-    margin: 2rem 0;
-  }
-  &__cards {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 20px;
-    margin-top: 20px;
-  }
-  &__actions {
-    display: flex;
-    justify-content: flex-start;
-    margin: 2rem 0;
+.console-app {
+  &__contacts {
+    margin-top: 30px; 
   }
   &__empty-contacts {
     display: flex;
@@ -48,23 +27,5 @@
     height: 4rem;
     font-size: 4rem;
     margin-top: 1.5rem;
-  }
-}
-.contact-details {
-  &__input {
-    width: 100%;
-  }
-  &__group {
-    margin: 20px 0;
-    display: flex;
-    align-items: baseline;
-  }
-  &__group-content {
-    display: flex;
-    flex-wrap: wrap;
-    max-width: 450px;
-    * {
-      min-width: 200px;
-    }
   }
 }

@@ -1,4 +1,4 @@
-// Copyright 2023 The Nomulus Authors. All Rights Reserved.
+// Copyright 2024 The Nomulus Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,25 +16,27 @@
   &__logo {
     color: inherit;
     text-decoration: none;
+    margin-left: -10px;
+  }
+  &__menu-btn {
+    width: 25px;
+    height: 25px;
+    padding: 0;
   }
   &__header {
     margin-top: 0;
-    margin-bottom: 10px;
-    @media (max-width: 599px) {
-      .mat-toolbar {
-        padding: 0;
-      }
-      .console-app__logo {
-        font-size: 16px;
-      }
-      button {
-        padding-left: 0;
-        padding-right: 0;
-        width: 30px;
-      }
+    margin-bottom: 15px;
+
+    .mat-toolbar {
+      background: transparent;
+      margin-bottom: 10px;
+    }
+
+    @media (max-width: 480px) {
+    }
+
+    &-user-icon {
+      margin-left: 20px;
     }
   }
-}
-.spacer {
-  flex: 1;
 }

@@ -1,4 +1,7 @@
 <div class="console-app__registrars">
+  <div>
+    <h1>Registrars</h1>
+  </div>
   <mat-form-field class="console-app__registrars-filter">
     <mat-label>Search</mat-label>
     <input
@@ -11,24 +14,10 @@
   </mat-form-field>
   <mat-table
     [dataSource]="dataSource"
-    class="mat-elevation-z8"
+    class="mat-elevation-z0"
     class="console-app__registrars-table"
     matSort
   >
-    <ng-container matColumnDef="edit">
-      <mat-header-cell *matHeaderCellDef></mat-header-cell>
-      <mat-cell *matCellDef="let row">
-        <button
-          mat-icon-button
-          color="primary"
-          aria-label="Edit registrar"
-          (click)="openDetails($event, row)"
-        >
-          <mat-icon>edit</mat-icon>
-        </button>
-      </mat-cell>
-    </ng-container>
-
     <ng-container
       *ngFor="let column of columns"
       [matColumnDef]="column.columnDef"
@@ -39,12 +28,12 @@
     <mat-header-row *matHeaderRowDef="displayedColumns"></mat-header-row>
     <mat-row
       *matRowDef="let row; columns: displayedColumns"
-      (click)="registrarService.updateSelectedRegistrar(row.registrarId)"
+      (click)="openDetails(row.registrarId)"
     ></mat-row>
   </mat-table>
 
   <mat-paginator
-    class="mat-elevation-z8"
+    class="mat-elevation-z0"
     [pageSizeOptions]="[5, 10, 20]"
     showFirstLastButtons
   ></mat-paginator>

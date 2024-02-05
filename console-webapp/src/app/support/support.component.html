@@ -1,0 +1,17 @@
+<div class="console-app__support">
+    <h1>Support</h1>
+    <p class="text-xl">Our support team can assist you with any technical or operational questions you may have regarding our registry services.</p>
+    <mat-divider></mat-divider>
+    <h2>Email</h2>
+    <p class="text-l">For help with OT&E sandbox and certification, or new technical requirements for any of our new TLD launches.</p>
+    <a class="text-l" href="mailto:{{ userDataService.userData?.supportEmail }}">{{ userDataService.userData?.supportEmail || 'TODO_REMOVE@gmail.com' }}</a>
+    <p class="text-l">For general purpose questions once you are integrated with our registry system. If the issue is urgent, please put "Urgent" in the email title.</p>
+    <a class="text-l" href="mailto:{{ userDataService.userData?.supportEmail }}">{{ userDataService.userData?.supportEmail  || 'TODO_REMOVE@gmail.com' }}</a>
+    <p class="secondary-text">Note: You may receive occasional service announcements via registrar-announcement&#64;google.com. You will not be able to reply to those messages.</p>
+    <h2>Phone</h2>
+    <p class="text-l">For general support inquiries 24/7:</p>
+    <a class="text-l" href="tel:{{ userDataService.userData?.supportPhoneNumber }}">{{userDataService.userData?.supportPhoneNumber || '123123123'}}</a>
+    <p class="text-l">Your telephone passcode:</p>
+    <p class="text-l console-app__support-passcode">5555</p>
+    <p class="secondary-text">Note: Please be ready with your account name and telephone passcode when contacting us by phone.</p>
+</div>

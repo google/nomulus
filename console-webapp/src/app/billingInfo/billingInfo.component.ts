@@ -1,4 +1,4 @@
-// Copyright 2023 The Nomulus Authors. All Rights Reserved.
+// Copyright 2024 The Nomulus Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,27 +12,27 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Component } from '@angular/core';
-import { RegistrarService } from 'src/app/registrar/registrar.service';
+import { Component, computed } from '@angular/core';
+import { RegistrarService } from '../registrar/registrar.service';
 
 @Component({
-  selector: '[app-billing-widget]',
-  templateUrl: './billingWidget.component.html',
+  selector: 'app-billingInfo',
+  templateUrl: './billingInfo.component.html',
+  styleUrls: ['./billingInfo.component.scss'],
 })
-export class BillingWidgetComponent {
-  constructor(public registrarService: RegistrarService) {}
+export class BillingInfoComponent {
+  public static PATH = 'billingInfo';
+  constructor(public registrarService: RegistrarService) { }
 
-  public get driveFolderUrl(): string {
+  driveFolderUrl = computed<string>(() => {
     if (this.registrarService.registrar()?.driveFolderId) {
-      return `https://drive.google.com/drive/folders/${
-        this.registrarService.registrar()?.driveFolderId
-      }`;
+      return `https://drive.google.com/drive/folders/${this.registrarService.registrar()?.driveFolderId}`;
     }
     return '';
-  }
+  });
 
   openBillingDetails(e: MouseEvent) {
-    if (!this.driveFolderUrl) {
+    if (!this.driveFolderUrl()) {
       e.preventDefault();
     }
   }

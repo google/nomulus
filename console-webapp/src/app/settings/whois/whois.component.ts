@@ -1,4 +1,4 @@
-// Copyright 2023 The Nomulus Authors. All Rights Reserved.
+// Copyright 2024 The Nomulus Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -32,16 +32,14 @@ export default class WhoisComponent {
   public static PATH = 'whois';
   loading = false;
   inEdit = false;
-  registrar: Registrar;
+  registrar: Registrar | undefined;
 
   constructor(
     public whoisService: WhoisService,
     public registrarService: RegistrarService,
     private _snackBar: MatSnackBar
   ) {
-    this.registrar = JSON.parse(
-      JSON.stringify(this.registrarService.registrar)
-    );
+    this.registrar = structuredClone(this.registrarService.registrar());
   }
 
   enableEdit() {
@@ -54,6 +52,8 @@ export default class WhoisComponent {
   }
 
   save() {
+    if (!this.registrar) return; // Nothing to save
+
     this.loading = true;
     this.whoisService.saveChanges(this.registrar).subscribe({
       complete: () => {
@@ -69,8 +69,6 @@ export default class WhoisComponent {
   }
 
   resetDataSource() {
-    this.registrar = JSON.parse(
-      JSON.stringify(this.registrarService.registrar)
-    );
+    this.registrar = structuredClone(this.registrarService.registrar());
   }
 }
