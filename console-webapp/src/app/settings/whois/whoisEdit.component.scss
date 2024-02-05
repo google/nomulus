@@ -1,0 +1,19 @@
+.console-app__whois-edit {
+  max-width: 616px;
+
+  &-controls {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin: 20px 0;
+    button {
+      flex-shrink: 0;
+    }
+  }
+
+  mat-form-field {
+    display: block;
+    width: 100%;
+    margin-bottom: 30px;
+  }
+}

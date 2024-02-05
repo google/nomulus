@@ -1,4 +1,4 @@
-// Copyright 2023 The Nomulus Authors. All Rights Reserved.
+// Copyright 2024 The Nomulus Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,14 +13,16 @@
 // limitations under the License.
 
 import { Injectable } from '@angular/core';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { Observable, tap } from 'rxjs';
 import { BackendService } from './backend.service';
-import { MatSnackBar } from '@angular/material/snack-bar';
 import { GlobalLoader, GlobalLoaderService } from './globalLoader.service';
 
 export interface UserData {
   globalRole: string;
   isAdmin: boolean;
+  // TODO: provide passcode from back-end
+  passcode?: string;
   productName: string;
   supportEmail: string;
   supportPhoneNumber: string;
@@ -31,7 +33,7 @@ export interface UserData {
   providedIn: 'root',
 })
 export class UserDataService implements GlobalLoader {
-  public userData?: UserData;
+  public userData!: UserData;
   constructor(
     private backend: BackendService,
     protected globalLoader: GlobalLoaderService,

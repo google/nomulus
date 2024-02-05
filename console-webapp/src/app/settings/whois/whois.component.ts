@@ -1,4 +1,4 @@
-// Copyright 2023 The Nomulus Authors. All Rights Reserved.
+// Copyright 2024 The Nomulus Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,13 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { HttpErrorResponse } from '@angular/common/http';
-import { Component } from '@angular/core';
-import { MatSnackBar } from '@angular/material/snack-bar';
-import {
-  Registrar,
-  RegistrarService,
-} from 'src/app/registrar/registrar.service';
+import { Component, computed } from '@angular/core';
+import { RegistrarService } from 'src/app/registrar/registrar.service';
 
 import { WhoisService } from './whois.service';
 
@@ -26,51 +21,29 @@ import { WhoisService } from './whois.service';
   selector: 'app-whois',
   templateUrl: './whois.component.html',
   styleUrls: ['./whois.component.scss'],
-  providers: [WhoisService],
 })
 export default class WhoisComponent {
   public static PATH = 'whois';
-  loading = false;
-  inEdit = false;
-  registrar: Registrar;
+  formattedAddress = computed(() => {
+    let result = '';
+    const registrar = this.registrarService.registrar();
+    if (registrar?.localizedAddress?.street) {
+      result += `${registrar?.localizedAddress?.street?.join(' ')} `;
+    }
+    if (registrar?.localizedAddress?.city) {
+      result += `${registrar?.localizedAddress?.city} `;
+    }
+    if (registrar?.localizedAddress?.state) {
+      result += `${registrar?.localizedAddress?.state} `;
+    }
+    if (registrar?.localizedAddress?.street) {
+      result += registrar?.localizedAddress?.countryCode;
+    }
+    return result;
+  });
 
   constructor(
     public whoisService: WhoisService,
-    public registrarService: RegistrarService,
-    private _snackBar: MatSnackBar
-  ) {
-    this.registrar = JSON.parse(
-      JSON.stringify(this.registrarService.registrar)
-    );
-  }
-
-  enableEdit() {
-    this.inEdit = true;
-  }
-
-  cancel() {
-    this.inEdit = false;
-    this.resetDataSource();
-  }
-
-  save() {
-    this.loading = true;
-    this.whoisService.saveChanges(this.registrar).subscribe({
-      complete: () => {
-        this.loading = false;
-        this.resetDataSource();
-      },
-      error: (err: HttpErrorResponse) => {
-        this._snackBar.open(err.error);
-        this.loading = false;
-      },
-    });
-    this.cancel();
-  }
-
-  resetDataSource() {
-    this.registrar = JSON.parse(
-      JSON.stringify(this.registrarService.registrar)
-    );
-  }
+    public registrarService: RegistrarService
+  ) {}
 }

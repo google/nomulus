@@ -1,4 +1,4 @@
-// Copyright 2022 The Nomulus Authors. All Rights Reserved.
+// Copyright 2024 The Nomulus Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,7 +20,8 @@ body {
 }
 body {
   margin: 0;
-  font-family: Roboto, "Helvetica Neue", sans-serif;
+  font-family: "Google Sans", Roboto, Helvetica, Arial, sans-serif,
+    "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol" !important;
 }
 
 .text-center {
@@ -28,54 +29,45 @@ body {
 }
 
 .console-app {
-  &__widget {
-    display: flex;
-    gap: 10px;
-    > a {
-      text-decoration: none;
-      color: initial;
+  .mat-headline-4 {
+    margin-top: 6px;
+    margin-bottom: 24px;
+  }
+  .spacer {
+    flex: 1;
+  }
+  h1 {
+    margin-bottom: 24px;
+  }
+  a {
+    text-decoration: none;
+    color: #1a73e8;
+  }
+  mat-list-item {
+    height: auto !important;
+    min-height: 48px;
+    padding: 10px 0;
+    --list-item-title-width: 140px;
+    h2 {
+      margin: 13px 0;
     }
-    > a[href=""] {
-      cursor: not-allowed;
+    .console-app__list-key {
+      font-weight: bold;
+      width: var(--list-item-title-width);
+      display: inline-block;
+      font-size: 14px;
+      white-space: pre-line;
+      color: #202124;
+      flex-shrink: 0;
     }
-    &-wrapper__wide {
-      grid-column: span 2;
-    }
-    &-link {
-      padding: 0 !important;
-      text-align: left;
-      min-width: auto !important;
-      height: min-content !important;
-    }
-    &-section-header {
-      font-weight: 500;
-      color: var(--primary) !important;
-    }
-    &-title {
-      color: var(--primary) !important;
-      text-align: center;
-    }
-    &-icon {
+    .console-app__list-value {
+      font-size: 14px;
+      white-space: pre-line;
+      word-break: break-all;
       color: var(--text);
-      font-size: 5rem;
-      line-height: 5rem;
-      height: 5rem !important;
-      width: 5rem !important;
     }
-    &_left {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-    }
-    &_right {
-      flex: 1;
-      border-left: 1px solid var(--secondary);
-      padding-left: 20px;
-      .secondary-text {
-        margin-bottom: 0.3rem;
-        font-size: 0.8rem;
-      }
-    }
+  }
+  .mat-mdc-list-item-unscoped-content {
+    display: flex;
   }
 }

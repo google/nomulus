@@ -1,4 +1,4 @@
-// Copyright 2023 The Nomulus Authors. All Rights Reserved.
+// Copyright 2024 The Nomulus Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,13 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Component, ViewChild } from '@angular/core';
-import { MatTableDataSource } from '@angular/material/table';
-import { BackendService } from '../shared/services/backend.service';
+import { HttpErrorResponse } from '@angular/common/http';
+import { Component, ViewChild, effect } from '@angular/core';
 import { MatPaginator, PageEvent } from '@angular/material/paginator';
-import { RegistrarService } from '../registrar/registrar.service';
-import { Domain, DomainListService } from './domainList.service';
+import { MatSnackBar } from '@angular/material/snack-bar';
+import { MatTableDataSource } from '@angular/material/table';
 import { Subject, debounceTime } from 'rxjs';
+import { RegistrarService } from '../registrar/registrar.service';
+import { BackendService } from '../shared/services/backend.service';
+import { Domain, DomainListService } from './domainList.service';
 
 @Component({
   selector: 'app-domain-list',
@@ -45,15 +47,22 @@ export class DomainListComponent {
 
   pageNumber?: number;
   resultsPerPage = 50;
-  totalResults?: number;
+  totalResults?: number = 0;
 
   @ViewChild(MatPaginator, { static: true }) paginator!: MatPaginator;
 
   constructor(
     private backendService: BackendService,
     private domainListService: DomainListService,
-    private registrarService: RegistrarService
-  ) {}
+    private registrarService: RegistrarService,
+    private _snackBar: MatSnackBar
+  ) {
+    effect(() => {
+      if (this.registrarService.registrarId()) {
+        this.reloadData();
+      }
+    });
+  }
 
   ngOnInit() {
     this.dataSource.paginator = this.paginator;
@@ -63,7 +72,6 @@ export class DomainListComponent {
       .subscribe((searchTermValue) => {
         this.reloadData();
       });
-    this.reloadData();
   }
 
   ngOnDestroy() {
@@ -79,10 +87,16 @@ export class DomainListComponent {
         this.totalResults,
         this.searchTerm
       )
-      .subscribe((domainListResult) => {
-        this.dataSource.data = domainListResult.domains;
-        this.totalResults = domainListResult.totalResults;
-        this.isLoading = false;
+      .subscribe({
+        error: (err: HttpErrorResponse) => {
+          this._snackBar.open(err.message);
+          this.isLoading = false;
+        },
+        next: (domainListResult) => {
+          this.dataSource.data = (domainListResult || {}).domains;
+          this.totalResults = (domainListResult || {}).totalResults || 0;
+          this.isLoading = false;
+        },
       });
   }
 

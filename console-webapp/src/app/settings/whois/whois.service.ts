@@ -1,4 +1,4 @@
-// Copyright 2023 The Nomulus Authors. All Rights Reserved.
+// Copyright 2024 The Nomulus Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,21 +14,17 @@
 
 import { Injectable } from '@angular/core';
 import { switchMap } from 'rxjs';
-import { Address, RegistrarService } from 'src/app/registrar/registrar.service';
+import {
+  RegistrarService,
+  WhoisRegistrarFields,
+} from 'src/app/registrar/registrar.service';
 import { BackendService } from 'src/app/shared/services/backend.service';
 
-export interface WhoisRegistrarFields {
-  ianaIdentifier?: number;
-  icannReferralEmail?: string;
-  localizedAddress?: Address;
-  registrarId?: string;
-  url?: string;
-  whoisServer?: string;
-}
-
-@Injectable()
+@Injectable({
+  providedIn: 'root',
+})
 export class WhoisService {
-  whoisRegistrarFields: WhoisRegistrarFields = {};
+  editing: boolean = false;
 
   constructor(
     private backend: BackendService,

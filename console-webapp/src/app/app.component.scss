@@ -1,4 +1,4 @@
-// Copyright 2023 The Nomulus Authors. All Rights Reserved.
+// Copyright 2024 The Nomulus Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,8 +13,8 @@
 // limitations under the License.
 
 :host {
-  font-family: Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji",
-    "Segoe UI Emoji", "Segoe UI Symbol" !important;
+  font-family: "Google Sans", Roboto, Helvetica, Arial, sans-serif,
+    "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol" !important;
   font-size: 14px;
   color: #333;
   box-sizing: border-box;
@@ -26,26 +26,18 @@
   display: flex;
   flex-direction: column;
   height: 100%;
+  background: #fff;
   &__container {
     flex: 1;
-    margin-top: -12px;
     padding-bottom: 36px;
+    background: transparent;
   }
   &__sidebar {
-    min-width: 300px;
-    a::before {
-      background-color: transparent;
-    }
-    .active {
-      background-color: var(--secondary);
-    }
-  }
-  &__content-wrapper {
-    margin: 12px 24px;
+    min-width: 240px;
+    border: 0;
   }
   &__content {
-    max-width: 1340px;
-    margin: 0 auto;
+    padding: 0 16px;
   }
   &__global-spinner {
     margin-bottom: 2rem;

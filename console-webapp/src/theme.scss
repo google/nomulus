@@ -1,5 +1,46 @@
 @use "sass:map";
+@use "sass:math";
 @use "@angular/material" as mat;
+
+$secondary-color: #80868b;
+$border-color: #dadce0;
+$hue-undefined: "undefined";
+$blue-palette: (
+  50: #e8f0fe,
+  100: #d2e3fc,
+  200: #aecbfa,
+  300: #8ab4f8,
+  400: #669df6,
+  500: #4285f4,
+  600: #1a73e8,
+  700: #1967d2,
+  800: #185abc,
+  900: #174ea6,
+  A100: $hue-undefined,
+  A200: $hue-undefined,
+  A400: $hue-undefined,
+  A700: $hue-undefined,
+  contrast: (
+    50: #174ea6,
+    100: #174ea6,
+    200: #174ea6,
+    300: #174ea6,
+    400: #174ea6,
+    500: white,
+    600: white,
+    700: white,
+    800: white,
+    900: white,
+    A100: $hue-undefined,
+    A200: $hue-undefined,
+    A400: $hue-undefined,
+    A700: $hue-undefined,
+  ),
+);
+
+@function rem($valueInPixels, $rootbase: 16px) {
+  @return math.div($valueInPixels, $rootbase) * 1rem;
+}
 
 /** Copied from docs section **/
 
@@ -8,12 +49,6 @@
 // Be sure that you only ever include this mixin once!
 @include mat.core();
 
-// Define the palettes for your theme using the Material Design palettes available in palette.scss
-// (imported above). For each palette, you can optionally specify a default, lighter, and darker
-// hue. Available color palettes: https://material.io/design/color/
-$theme-primary: mat.define-palette(mat.$indigo-palette);
-$theme-accent: mat.define-palette(mat.$pink-palette, A200, A100, A400);
-
 // The warn palette is optional (defaults to red).
 $theme-warn: mat.define-palette(mat.$red-palette);
 
@@ -21,6 +56,64 @@ $theme-warn: mat.define-palette(mat.$red-palette);
 ** Application specific section - Global styles and mixins
 **/
 
+$theme-primary: mat.define-palette($blue-palette);
+
+$typographyConfig: mat.define-typography-config(
+  $headline-1:
+    mat.define-typography-level(
+      rem(29px),
+      rem(36px),
+      500,
+      "Google Sans",
+      normal
+    ),
+  $headline-4:
+    mat.define-typography-level(
+      rem(28px),
+      rem(36px),
+      500,
+      "Google Sans",
+      normal
+    ),
+  $headline-5:
+    mat.define-typography-level(
+      rem(20px),
+      rem(28px),
+      400,
+      "Google Sans",
+      normal
+    ),
+  $headline-6:
+    mat.define-typography-level(rem(16px), rem(2px), 500, "Google Sans", normal),
+  $body-1:
+    mat.define-typography-level(
+      rem(16px),
+      rem(24px),
+      400,
+      "Google Sans Text",
+      normal
+    ),
+  $body-2:
+    mat.define-typography-level(
+      rem(14px),
+      rem(20px),
+      400,
+      "Google Sans Text",
+      normal
+    ),
+  $caption:
+    mat.define-typography-level(
+      rem(14px),
+      rem(24px),
+      400,
+      "Google Sans",
+      0.15px
+    ),
+  $overline:
+    mat.define-typography-level(rem(14px), rem(20px), 500, "Google Sans", 0.5px),
+);
+
+@include mat.typography-hierarchy($typographyConfig);
 @mixin form-field-density($density) {
   $field-typography: mat.define-typography-config(
     $body-1: mat.define-typography-level(12px, 24px, 400),
@@ -42,53 +135,42 @@ $light-theme: mat.define-light-theme(
   (
     color: (
       primary: $theme-primary,
-      accent: $theme-accent,
+      accent: $theme-primary,
       warn: $theme-warn,
     ),
     density: 0,
+    typography: $typographyConfig,
   )
 );
 
 // Access and define a class with secondary color exposed
 .secondary-text {
-  color: map.get(mat.$light-theme-foreground-palette, "secondary-text");
+  color: $secondary-color;
+}
+
+.text-xl {
+  font-size: 18px;
+}
+.text-l {
+  font-size: 16px;
+}
+
+mat-row:nth-child(odd) {
+  background-color: var(--lightest-highlight);
+}
+
+mat-row:hover {
+  background-color: $border-color;
 }
 
 :root {
-  --text: #{map.get(mat.$light-theme-foreground-palette, "base")};
-  --primary: #{mat.get-color-from-palette($theme-primary, 500)};
-  --secondary: #{map.get(mat.$light-theme-foreground-palette, "secondary-text")};
+  --text: #5f6368;
+  --primary: #{mat.get-color-from-palette($blue-palette, 500)};
+  --lightest: #{mat.get-color-from-palette($blue-palette, 100)};
+  --light-highlight: #e8eaed;
+  --lightest-highlight: #f8f9fa;
+  --secondary: #{$secondary-color};
+  --border: #{$border-color};
 }
 
 @include mat.all-component-themes($light-theme);
-
-/** 
-** Dark theme
-**/
-$dark-theme: mat.define-dark-theme(
-  (
-    color: (
-      primary: mat.define-palette(mat.$pink-palette),
-      accent: mat.define-palette(mat.$blue-grey-palette),
-    ),
-    density: 0,
-  )
-);
-
-@mixin _apply-dark-mode-colors() {
-  @include mat.all-component-colors($dark-theme);
-
-  .secondary-text {
-    color: map.get(mat.$dark-theme-foreground-palette, "secondary-text");
-  }
-
-  :root {
-    --text: #{map.get(mat.$dark-theme-foreground-palette, "base")};
-    --primary: #{mat.get-color-from-palette(mat.$pink-palette, 500)};
-    --secondary: #{map.get(mat.$dark-theme-background-palette, "secondary-text")};
-  }
-}
-
-@media (prefers-color-scheme: dark) {
-  @include _apply-dark-mode-colors();
-}

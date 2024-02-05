@@ -1,0 +1,22 @@
+.console-app {
+  &__support {
+    max-width: 616px;
+    &-passcode {
+      color: #1e8e3e;
+    }
+    p {
+      margin: 20px 0;
+    }
+    a {
+      margin-bottom: 30px;
+      display: inline-block;
+    }
+    mat-divider {
+      margin-bottom: 30px;
+    }
+    .secondary-text {
+      margin-bottom: 50px;
+      margin-top: -20px;
+    }
+  }
+}

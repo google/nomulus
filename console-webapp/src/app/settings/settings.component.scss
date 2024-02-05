@@ -1,4 +1,4 @@
-// Copyright 2023 The Nomulus Authors. All Rights Reserved.
+// Copyright 2024 The Nomulus Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,6 +13,9 @@
 // limitations under the License.
 
 .console-settings {
+  > mat-divider {
+    margin-bottom: 40px;
+  }
   .mdc-tab {
     &.active-link {
       border-bottom: 2px solid var(--primary);
