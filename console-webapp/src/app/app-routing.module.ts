@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import { NgModule } from '@angular/core';
-import { RouterModule, Routes } from '@angular/router';
+import { Route, RouterModule, Routes } from '@angular/router';
 import { TldsComponent } from './tlds/tlds.component';
 import { HomeComponent } from './home/home.component';
 import { SettingsComponent } from './settings/settings.component';
@@ -21,60 +21,82 @@ import SettingsContactComponent from './settings/contact/contact.component';
 import SettingsWhoisComponent from './settings/whois/whois.component';
 import SettingsUsersComponent from './settings/users/users.component';
 import SettingsSecurityComponent from './settings/security/security.component';
-import { RegistrarGuard } from './registrar/registrar.guard';
 import { RegistrarComponent } from './registrar/registrarsTable.component';
-import { EmptyRegistrar } from './registrar/emptyRegistrar.component';
 import ContactComponent from './settings/contact/contact.component';
 import WhoisComponent from './settings/whois/whois.component';
 import SecurityComponent from './settings/security/security.component';
 import UsersComponent from './settings/users/users.component';
 import { DomainListComponent } from './domains/domainList.component';
+import { RegistrarDetailsComponent } from './registrar/registrarDetails.component';
 
-const routes: Routes = [
+export interface RouteWithIcon extends Route {
+  iconName?: string;
+}
+
+export const routes: RouteWithIcon[] = [
   { path: '', redirectTo: '/home', pathMatch: 'full' },
   { path: 'registrars', component: RegistrarComponent },
-  { path: 'empty-registrar', component: EmptyRegistrar },
-  { path: 'home', component: HomeComponent, canActivate: [RegistrarGuard] },
-  { path: 'tlds', component: TldsComponent, canActivate: [RegistrarGuard] },
+  {
+    path: 'home',
+    component: HomeComponent,
+    title: 'Dashboard',
+    iconName: 'view_comfy_alt',
+  },
+  // { path: 'tlds', component: TldsComponent, title: "TLDs", iconName: "event_list" },
   {
     path: DomainListComponent.PATH,
     component: DomainListComponent,
-    canActivate: [RegistrarGuard],
+    title: 'Domains',
+    iconName: 'view_list',
   },
   {
     path: SettingsComponent.PATH,
     component: SettingsComponent,
+    title: 'Settings',
+    iconName: 'settings',
     children: [
       {
         path: '',
-        redirectTo: 'registrars',
+        redirectTo: ContactComponent.PATH,
         pathMatch: 'full',
       },
       {
         path: ContactComponent.PATH,
         component: SettingsContactComponent,
-        canActivate: [RegistrarGuard],
+        title: 'Contacts',
       },
       {
         path: WhoisComponent.PATH,
         component: SettingsWhoisComponent,
-        canActivate: [RegistrarGuard],
+        title: 'WHOIS Info',
       },
       {
         path: SecurityComponent.PATH,
         component: SettingsSecurityComponent,
-        canActivate: [RegistrarGuard],
+        title: 'Security',
       },
       {
         path: UsersComponent.PATH,
         component: SettingsUsersComponent,
-        canActivate: [RegistrarGuard],
-      },
-      {
-        path: RegistrarComponent.PATH,
-        component: RegistrarComponent,
+        title: 'Users',
       },
     ],
+  },
+  // {
+  //   path: DomainListComponent.PATH,
+  //   component: DomainListComponent,
+  //   title: "EPP Console",
+  //   iconName: "upgrade"
+  // },
+  {
+    path: RegistrarComponent.PATH,
+    component: RegistrarComponent,
+    title: 'Registrars',
+    iconName: 'account_circle',
+  },
+  {
+    path: RegistrarDetailsComponent.PATH,
+    component: RegistrarDetailsComponent,
   },
 ];
 

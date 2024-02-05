@@ -28,6 +28,11 @@ body {
 }
 
 .console-app {
+  h1 {
+    margin-top: 10px;
+    font-weight: 500;
+    font-size: 24px;
+  }
   &__widget {
     display: flex;
     gap: 10px;

@@ -19,6 +19,7 @@ import { MatSort } from '@angular/material/sort';
 import { MatTableDataSource } from '@angular/material/table';
 import { RegistrarDetailsComponent } from './registrarDetails.component';
 import { DialogBottomSheetWrapper } from '../shared/components/dialogBottomSheet.component';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-registrar',
@@ -78,14 +79,17 @@ export class RegistrarComponent {
       cell: (record: Registrar) => `${record.driveFolderId || ''}`,
     },
   ];
-  displayedColumns = ['edit'].concat(this.columns.map((c) => c.columnDef));
+  displayedColumns = this.columns.map((c) => c.columnDef);
 
   @ViewChild(MatPaginator) paginator!: MatPaginator;
   @ViewChild(MatSort) sort!: MatSort;
   @ViewChild('registrarDetailsView')
   detailsComponentWrapper!: DialogBottomSheetWrapper;
 
-  constructor(protected registrarService: RegistrarService) {
+  constructor(
+    protected registrarService: RegistrarService,
+    private router: Router
+  ) {
     this.dataSource = new MatTableDataSource<Registrar>(
       registrarService.registrars()
     );
@@ -96,12 +100,8 @@ export class RegistrarComponent {
     this.dataSource.sort = this.sort;
   }
 
-  openDetails(event: MouseEvent, registrar: Registrar) {
-    event.stopPropagation();
-    this.detailsComponentWrapper.open<RegistrarDetailsComponent>(
-      RegistrarDetailsComponent,
-      { registrar }
-    );
+  openDetails(registrarId: string) {
+    this.router.navigate(['registrars/', registrarId]);
   }
 
   applyFilter(event: Event) {

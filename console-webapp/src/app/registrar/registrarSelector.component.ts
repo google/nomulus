@@ -12,35 +12,30 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Component, OnInit } from '@angular/core';
+import { Component, effect, signal } from '@angular/core';
 import { RegistrarService } from './registrar.service';
-import { BreakpointObserver } from '@angular/cdk/layout';
-import { distinctUntilChanged } from 'rxjs';
-
-const MOBILE_LAYOUT_BREAKPOINT = '(max-width: 599px)';
 
 @Component({
   selector: 'app-registrar-selector',
   templateUrl: './registrarSelector.component.html',
   styleUrls: ['./registrarSelector.component.scss'],
 })
-export class RegistrarSelectorComponent implements OnInit {
-  protected isMobile: boolean = false;
+export class RegistrarSelectorComponent {
+  registrarInput = signal<string>('');
+  filteredOptions?: string[];
 
-  readonly breakpoint$ = this.breakpointObserver
-    .observe([MOBILE_LAYOUT_BREAKPOINT])
-    .pipe(distinctUntilChanged());
-
-  constructor(
-    protected registrarService: RegistrarService,
-    protected breakpointObserver: BreakpointObserver
-  ) {}
-
-  ngOnInit(): void {
-    this.breakpoint$.subscribe(() => this.breakpointChanged());
+  constructor(protected registrarService: RegistrarService) {
+    effect(() => {
+      const filterValue = this.registrarInput().toLowerCase();
+      this.filteredOptions = this.registrarService
+        .registrars()
+        .map((r) => r.registrarId)
+        .filter((option) => option.toLowerCase().includes(filterValue));
+    });
   }
 
-  private breakpointChanged() {
-    this.isMobile = this.breakpointObserver.isMatched(MOBILE_LAYOUT_BREAKPOINT);
+  onSelect(registrarId: string) {
+    this.registrarService.updateSelectedRegistrar(registrarId);
+    this.registrarInput.set('');
   }
 }
