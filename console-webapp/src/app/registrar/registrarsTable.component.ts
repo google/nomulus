@@ -1,4 +1,4 @@
-// Copyright 2023 The Nomulus Authors. All Rights Reserved.
+// Copyright 2024 The Nomulus Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,12 +13,60 @@
 // limitations under the License.
 
 import { Component, ViewChild, ViewEncapsulation } from '@angular/core';
-import { Registrar, RegistrarService } from './registrar.service';
 import { MatPaginator } from '@angular/material/paginator';
 import { MatSort } from '@angular/material/sort';
 import { MatTableDataSource } from '@angular/material/table';
-import { RegistrarDetailsComponent } from './registrarDetails.component';
-import { DialogBottomSheetWrapper } from '../shared/components/dialogBottomSheet.component';
+import { Router } from '@angular/router';
+import { Registrar, RegistrarService } from './registrar.service';
+
+export const columns = [
+  {
+    columnDef: 'registrarId',
+    header: 'Registrar Id',
+    cell: (record: Registrar) => `${record.registrarId || ''}`,
+    hiddenOnDetailsCard: true,
+  },
+  {
+    columnDef: 'registrarName',
+    header: 'Name',
+    cell: (record: Registrar) => `${record.registrarName || ''}`,
+    hiddenOnDetailsCard: true,
+  },
+  {
+    columnDef: 'allowedTlds',
+    header: 'TLDs',
+    cell: (record: Registrar) => `${(record.allowedTlds || []).join(', ')}`,
+  },
+  {
+    columnDef: 'emailAddress',
+    header: 'Username',
+    cell: (record: Registrar) => `${record.emailAddress || ''}`,
+  },
+  {
+    columnDef: 'ianaIdentifier',
+    header: 'IANA ID',
+    cell: (record: Registrar) => `${record.ianaIdentifier || ''}`,
+  },
+  {
+    columnDef: 'billingAccountMap',
+    header: 'Billing Accounts',
+    cell: (record: Registrar) =>
+      // @ts-ignore - completely legit line, but TS keeps complaining
+      `${Object.entries(record.billingAccountMap).reduce((acc, [key, val]) => {
+        return `${acc}${key}=${val}<br/>`;
+      }, '')}`,
+  },
+  {
+    columnDef: 'registryLockAllowed',
+    header: 'Registry Lock',
+    cell: (record: Registrar) => `${record.registryLockAllowed}`,
+  },
+  {
+    columnDef: 'driveId',
+    header: 'Drive ID',
+    cell: (record: Registrar) => `${record.driveFolderId || ''}`,
+  },
+];
 
 @Component({
   selector: 'app-registrar',
@@ -29,63 +77,17 @@ import { DialogBottomSheetWrapper } from '../shared/components/dialogBottomSheet
 export class RegistrarComponent {
   public static PATH = 'registrars';
   dataSource: MatTableDataSource<Registrar>;
-  columns = [
-    {
-      columnDef: 'registrarId',
-      header: 'Registrar Id',
-      cell: (record: Registrar) => `${record.registrarId || ''}`,
-    },
-    {
-      columnDef: 'registrarName',
-      header: 'Name',
-      cell: (record: Registrar) => `${record.registrarName || ''}`,
-    },
-    {
-      columnDef: 'allowedTlds',
-      header: 'TLDs',
-      cell: (record: Registrar) => `${(record.allowedTlds || []).join(', ')}`,
-    },
-    {
-      columnDef: 'emailAddress',
-      header: 'Username',
-      cell: (record: Registrar) => `${record.emailAddress || ''}`,
-    },
-    {
-      columnDef: 'ianaIdentifier',
-      header: 'IANA ID',
-      cell: (record: Registrar) => `${record.ianaIdentifier || ''}`,
-    },
-    {
-      columnDef: 'billingAccountMap',
-      header: 'Billing Accounts',
-      cell: (record: Registrar) =>
-        // @ts-ignore - completely legit line, but TS keeps complaining
-        `${Object.entries(record.billingAccountMap).reduce(
-          (acc, [key, val]) => {
-            return `${acc}${key}=${val}<br/>`;
-          },
-          ''
-        )}`,
-    },
-    {
-      columnDef: 'registryLockAllowed',
-      header: 'Registry Lock',
-      cell: (record: Registrar) => `${record.registryLockAllowed}`,
-    },
-    {
-      columnDef: 'driveId',
-      header: 'Drive ID',
-      cell: (record: Registrar) => `${record.driveFolderId || ''}`,
-    },
-  ];
-  displayedColumns = ['edit'].concat(this.columns.map((c) => c.columnDef));
+  columns = columns;
+
+  displayedColumns = this.columns.map((c) => c.columnDef);
 
   @ViewChild(MatPaginator) paginator!: MatPaginator;
   @ViewChild(MatSort) sort!: MatSort;
-  @ViewChild('registrarDetailsView')
-  detailsComponentWrapper!: DialogBottomSheetWrapper;
 
-  constructor(protected registrarService: RegistrarService) {
+  constructor(
+    protected registrarService: RegistrarService,
+    private router: Router
+  ) {
     this.dataSource = new MatTableDataSource<Registrar>(
       registrarService.registrars()
     );
@@ -96,16 +98,15 @@ export class RegistrarComponent {
     this.dataSource.sort = this.sort;
   }
 
-  openDetails(event: MouseEvent, registrar: Registrar) {
-    event.stopPropagation();
-    this.detailsComponentWrapper.open<RegistrarDetailsComponent>(
-      RegistrarDetailsComponent,
-      { registrar }
-    );
+  openDetails(registrarId: string) {
+    this.router.navigate(['registrars/', registrarId], {
+      queryParamsHandling: 'merge',
+    });
   }
 
   applyFilter(event: Event) {
     const filterValue = (event.target as HTMLInputElement).value;
+    // TODO: consider filteing out only by registrar name
     this.dataSource.filter = filterValue.trim().toLowerCase();
   }
 }

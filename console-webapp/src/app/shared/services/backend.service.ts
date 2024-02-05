@@ -1,4 +1,4 @@
-// Copyright 2023 The Nomulus Authors. All Rights Reserved.
+// Copyright 2024 The Nomulus Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,14 +14,16 @@
 
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { catchError, Observable, of } from 'rxjs';
+import { Observable, catchError, of, throwError } from 'rxjs';
 import { SecuritySettingsBackendModel } from 'src/app/settings/security/security.service';
 
-import { Contact } from '../../settings/contact/contact.service';
-import { Registrar } from '../../registrar/registrar.service';
-import { UserData } from './userData.service';
-import { WhoisRegistrarFields } from 'src/app/settings/whois/whois.service';
 import { DomainListResult } from 'src/app/domains/domainList.service';
+import {
+  Registrar,
+  WhoisRegistrarFields,
+} from '../../registrar/registrar.service';
+import { Contact } from '../../settings/contact/contact.service';
+import { UserData } from './userData.service';
 
 @Injectable()
 export class BackendService {
@@ -42,8 +44,11 @@ export class BackendService {
       );
     }
 
-    //   return throwError(() => {throw "Failed"});
-    return of(<Type>mockData);
+    if (mockData) {
+      return of(<Type>mockData);
+    } else {
+      return throwError(() => error);
+    }
   }
 
   getContacts(registrarId: string): Observable<Contact[]> {
@@ -97,6 +102,12 @@ export class BackendService {
     return this.http
       .get<Registrar[]>('/console-api/registrars')
       .pipe(catchError((err) => this.errorCatcher<Registrar[]>(err)));
+  }
+
+  postRegistrar(registrar: Registrar): Observable<Registrar> {
+    return this.http
+      .post<Registrar>('/console-api/registrar', registrar)
+      .pipe(catchError((err) => this.errorCatcher<Registrar>(err)));
   }
 
   getSecuritySettings(

@@ -1,4 +1,4 @@
-// Copyright 2023 The Nomulus Authors. All Rights Reserved.
+// Copyright 2024 The Nomulus Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,71 +13,68 @@
 // limitations under the License.
 
 import { NgModule } from '@angular/core';
-import { BrowserModule } from '@angular/platform-browser';
 import { FormsModule } from '@angular/forms';
+import { BrowserModule } from '@angular/platform-browser';
 
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
-import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { MaterialModule } from './material.module';
 
 import { BackendService } from './shared/services/backend.service';
 
-import { HomeComponent } from './home/home.component';
-import { TldsComponent } from './tlds/tlds.component';
-import { HeaderComponent } from './header/header.component';
-import { SettingsComponent } from './settings/settings.component';
-import SettingsContactComponent, {
-  ContactDetailsDialogComponent,
-} from './settings/contact/contact.component';
 import { HttpClientModule } from '@angular/common/http';
-import { RegistrarComponent } from './registrar/registrarsTable.component';
-import { RegistrarGuard } from './registrar/registrar.guard';
-import SecurityComponent from './settings/security/security.component';
 import { MAT_FORM_FIELD_DEFAULT_OPTIONS } from '@angular/material/form-field';
-import { EmptyRegistrar } from './registrar/emptyRegistrar.component';
-import { RegistrarSelectorComponent } from './registrar/registrarSelector.component';
-import { GlobalLoaderService } from './shared/services/globalLoader.service';
-import { ContactWidgetComponent } from './home/widgets/contactWidget.component';
-import { PromotionsWidgetComponent } from './home/widgets/promotionsWidget.component';
-import { TldsWidgetComponent } from './home/widgets/tldsWidget.component';
-import { ResourcesWidgetComponent } from './home/widgets/resourcesWidget.component';
-import { EppWidgetComponent } from './home/widgets/eppWidget.component';
-import { BillingWidgetComponent } from './home/widgets/billingWidget.component';
-import { DomainsWidgetComponent } from './home/widgets/domainsWidget.component';
-import { SettingsWidgetComponent } from './home/widgets/settingsWidget.component';
-import { UserDataService } from './shared/services/userData.service';
-import WhoisComponent from './settings/whois/whois.component';
-import { SnackBarModule } from './snackbar.module';
-import { RegistrarDetailsComponent } from './registrar/registrarDetails.component';
+import { BillingInfoComponent } from './billingInfo/billingInfo.component';
 import { DomainListComponent } from './domains/domainList.component';
-import { DialogBottomSheetWrapper } from './shared/components/dialogBottomSheet.component';
+import { HeaderComponent } from './header/header.component';
+import { HomeComponent } from './home/home.component';
+import { NavigationComponent } from './navigation/navigation.component';
+import { RegistrarDetailsComponent } from './registrar/registrarDetails.component';
+import { RegistrarSelectorComponent } from './registrar/registrarSelector.component';
+import { RegistrarComponent } from './registrar/registrarsTable.component';
+import { ResourcesComponent } from './resources/resources.component';
+import SettingsContactComponent from './settings/contact/contact.component';
+import { ContactDetailsComponent } from './settings/contact/contactDetails.component';
+import SecurityComponent from './settings/security/security.component';
+import SecurityEditComponent from './settings/security/securityEdit.component';
+import { SettingsComponent } from './settings/settings.component';
+import WhoisComponent from './settings/whois/whois.component';
+import WhoisEditComponent from './settings/whois/whoisEdit.component';
+import { NotificationsComponent } from './shared/components/notifications/notifications.component';
+import { SelectedRegistrarWrapper } from './shared/components/selectedRegistrarWrapper/selectedRegistrarWrapper.component';
+import { LocationBackDirective } from './shared/directives/locationBack.directive';
+import { BreakPointObserverService } from './shared/services/breakPoint.service';
+import { GlobalLoaderService } from './shared/services/globalLoader.service';
+import { UserDataService } from './shared/services/userData.service';
+import { SnackBarModule } from './snackbar.module';
+import { SupportComponent } from './support/support.component';
+import { TldsComponent } from './tlds/tlds.component';
 
 @NgModule({
   declarations: [
     AppComponent,
-    DialogBottomSheetWrapper,
-    BillingWidgetComponent,
-    ContactDetailsDialogComponent,
-    ContactWidgetComponent,
+    BillingInfoComponent,
+    ContactDetailsComponent,
     DomainListComponent,
-    DomainsWidgetComponent,
-    EmptyRegistrar,
-    EppWidgetComponent,
     HeaderComponent,
     HomeComponent,
-    PromotionsWidgetComponent,
+    LocationBackDirective,
+    NavigationComponent,
+    NotificationsComponent,
     RegistrarComponent,
     RegistrarDetailsComponent,
     RegistrarSelectorComponent,
-    ResourcesWidgetComponent,
+    ResourcesComponent,
     SecurityComponent,
+    SecurityEditComponent,
+    SelectedRegistrarWrapper,
     SettingsComponent,
     SettingsContactComponent,
-    SettingsWidgetComponent,
+    SupportComponent,
     TldsComponent,
-    TldsWidgetComponent,
     WhoisComponent,
+    WhoisEditComponent,
   ],
   imports: [
     AppRoutingModule,
@@ -90,8 +87,8 @@ import { DialogBottomSheetWrapper } from './shared/components/dialogBottomSheet.
   ],
   providers: [
     BackendService,
+    BreakPointObserverService,
     GlobalLoaderService,
-    RegistrarGuard,
     UserDataService,
     {
       provide: MAT_FORM_FIELD_DEFAULT_OPTIONS,

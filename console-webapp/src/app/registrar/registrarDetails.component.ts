@@ -1,4 +1,4 @@
-// Copyright 2023 The Nomulus Authors. All Rights Reserved.
+// Copyright 2024 The Nomulus Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,38 +12,51 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Component } from '@angular/core';
-import { Registrar, RegistrarService } from './registrar.service';
+import { HttpErrorResponse } from '@angular/common/http';
+import { Component, OnInit } from '@angular/core';
 import { MatChipInputEvent } from '@angular/material/chips';
-import { DialogBottomSheetContent } from '../shared/components/dialogBottomSheet.component';
-
-type RegistrarDetailsParams = {
-  close: Function;
-  data: {
-    registrar: Registrar;
-  };
-};
+import { MatSnackBar } from '@angular/material/snack-bar';
+import { ActivatedRoute, ParamMap, Router } from '@angular/router';
+import { Subscription } from 'rxjs';
+import { Registrar, RegistrarService } from './registrar.service';
+import { RegistrarComponent, columns } from './registrarsTable.component';
 
 @Component({
   selector: 'app-registrar-details',
   templateUrl: './registrarDetails.component.html',
   styleUrls: ['./registrarDetails.component.scss'],
 })
-export class RegistrarDetailsComponent implements DialogBottomSheetContent {
+export class RegistrarDetailsComponent implements OnInit {
+  public static PATH = 'registrars/:id';
+  inEdit: boolean = false;
   registrarInEdit!: Registrar;
-  params?: RegistrarDetailsParams;
+  registrarNotFound: boolean = false;
+  columns = columns.filter((c) => !c.hiddenOnDetailsCard);
+  private subscription!: Subscription;
 
-  constructor(protected registrarService: RegistrarService) {}
+  constructor(
+    protected registrarService: RegistrarService,
+    private route: ActivatedRoute,
+    private _snackBar: MatSnackBar,
+    private router: Router
+  ) {}
 
-  init(params: RegistrarDetailsParams) {
-    this.params = params;
-    this.registrarInEdit = JSON.parse(
-      JSON.stringify(this.params.data.registrar)
-    );
-  }
-
-  saveAndClose() {
-    this.params?.close();
+  ngOnInit(): void {
+    this.subscription = this.route.paramMap.subscribe((params: ParamMap) => {
+      this.registrarInEdit = structuredClone(
+        this.registrarService
+          .registrars()
+          .filter((r) => r.registrarId === params.get('id'))[0]
+      );
+      if (!this.registrarInEdit) {
+        this._snackBar.open(
+          `Registrar with id ${params.get('id')} is not available`
+        );
+        this.registrarNotFound = true;
+      } else {
+        this.registrarNotFound = false;
+      }
+    });
   }
 
   addTLD(e: MatChipInputEvent) {
@@ -57,5 +70,23 @@ export class RegistrarDetailsComponent implements DialogBottomSheetContent {
     this.registrarInEdit.allowedTlds = this.registrarInEdit.allowedTlds?.filter(
       (v) => v != tld
     );
+  }
+
+  saveAndClose() {
+    this.registrarService.saveRegistrar(this.registrarInEdit).subscribe({
+      complete: () => {
+        this.router.navigate([RegistrarComponent.PATH], {
+          queryParamsHandling: 'merge',
+        });
+      },
+      error: (err: HttpErrorResponse) => {
+        this._snackBar.open(err.error);
+      },
+    });
+    this.inEdit = false;
+  }
+
+  ngOnDestroy() {
+    this.subscription.unsubscribe();
   }
 }

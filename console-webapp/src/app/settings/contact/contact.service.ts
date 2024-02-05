@@ -1,4 +1,4 @@
-// Copyright 2023 The Nomulus Authors. All Rights Reserved.
+// Copyright 2024 The Nomulus Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,39 +17,90 @@ import { Observable, tap } from 'rxjs';
 import { RegistrarService } from 'src/app/registrar/registrar.service';
 import { BackendService } from 'src/app/shared/services/backend.service';
 
+export type contactType =
+  | 'ADMIN'
+  | 'ABUSE'
+  | 'BILLING'
+  | 'LEGAL'
+  | 'MARKETING'
+  | 'TECH'
+  | 'WHOIS';
+
+type contactTypesToUserFriendlyTypes = { [type in contactType]: string };
+
+export const contactTypeToTextMap: contactTypesToUserFriendlyTypes = {
+  ADMIN: 'Primary contact',
+  ABUSE: 'Abuse contact',
+  BILLING: 'Billing contact',
+  LEGAL: 'Legal contact',
+  MARKETING: 'Marketing contact',
+  TECH: 'Technical contact',
+  WHOIS: 'WHOIS-Inquiry contact',
+};
+
+type UserFriendlyType = (typeof contactTypeToTextMap)[contactType];
+
 export interface Contact {
   name: string;
-  phoneNumber: string;
+  phoneNumber?: string;
   emailAddress: string;
   registrarId?: string;
   faxNumber?: string;
-  types: Array<string>;
+  types: Array<contactType>;
   visibleInWhoisAsAdmin?: boolean;
   visibleInWhoisAsTech?: boolean;
   visibleInDomainWhoisAsAbuse?: boolean;
+}
+
+export interface ViewReadyContact extends Contact {
+  userFriendlyTypes: Array<UserFriendlyType>;
+}
+
+export function contactTypeToViewReadyContact(c: Contact): ViewReadyContact {
+  return {
+    ...c,
+    userFriendlyTypes: c.types?.map((cType) => contactTypeToTextMap[cType]),
+  };
 }
 
 @Injectable({
   providedIn: 'root',
 })
 export class ContactService {
-  contacts = signal<Contact[]>([]);
+  contacts = signal<ViewReadyContact[]>([]);
+  contactInEdit!: ViewReadyContact;
+  isContactDetailsView: boolean = false;
+  isContactNewView: boolean = false;
 
   constructor(
     private backend: BackendService,
     private registrarService: RegistrarService
   ) {}
 
-  // TODO: Come up with a better handling for registrarId
+  setEditableContact(contact?: Contact) {
+    this.contactInEdit = contactTypeToViewReadyContact(
+      contact
+        ? contact
+        : {
+            emailAddress: '',
+            name: '',
+            types: ['ADMIN'],
+            faxNumber: '',
+            phoneNumber: '',
+            registrarId: '',
+          }
+    );
+  }
+
   fetchContacts(): Observable<Contact[]> {
     return this.backend.getContacts(this.registrarService.registrarId()).pipe(
-      tap((contacts = []) => {
-        this.contacts.set(contacts);
+      tap((contacts) => {
+        this.contacts.set(contacts.map(contactTypeToViewReadyContact));
       })
     );
   }
 
-  saveContacts(contacts: Contact[]): Observable<Contact[]> {
+  saveContacts(contacts: ViewReadyContact[]): Observable<Contact[]> {
     return this.backend
       .postContacts(this.registrarService.registrarId(), contacts)
       .pipe(
@@ -59,19 +110,19 @@ export class ContactService {
       );
   }
 
-  updateContact(index: number, contact: Contact) {
+  updateContact(index: number, contact: ViewReadyContact) {
     const newContacts = this.contacts().map((c, i) =>
       i === index ? contact : c
     );
     return this.saveContacts(newContacts);
   }
 
-  addContact(contact: Contact) {
+  addContact(contact: ViewReadyContact) {
     const newContacts = this.contacts().concat([contact]);
     return this.saveContacts(newContacts);
   }
 
-  deleteContact(contact: Contact) {
+  deleteContact(contact: ViewReadyContact) {
     const newContacts = this.contacts().filter((c) => c !== contact);
     return this.saveContacts(newContacts);
   }

@@ -1,0 +1,128 @@
+<div class="console-app__whois-edit" *ngIf="registrarInEdit">
+  <button
+    mat-icon-button
+    class="console-app__whois-edit-back"
+    aria-label="Back to whois view"
+    (click)="whoisService.editing = false"
+  >
+    <mat-icon>arrow_back</mat-icon>
+  </button>
+
+  <div class="console-app__whois-edit-controls">
+    <span>
+      General registrar information for your WHOIS record. This information is
+      always visible in WHOIS.
+    </span>
+    <div class="spacer"></div>
+  </div>
+
+  <div class="console-app__whois-edit">
+    <h1>Personal info</h1>
+
+    <form (ngSubmit)="save($event)">
+      <mat-form-field appearance="outline">
+        <mat-label>Email: </mat-label>
+        <input
+          matInput
+          type="email"
+          [(ngModel)]="registrarInEdit.emailAddress"
+          [ngModelOptions]="{ standalone: true }"
+        />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Phone: </mat-label>
+        <input
+          matInput
+          type="text"
+          [(ngModel)]="registrarInEdit.phoneNumber"
+          [ngModelOptions]="{ standalone: true }"
+        />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Fax: </mat-label>
+        <input
+          matInput
+          type="text"
+          [(ngModel)]="registrarInEdit.faxNumber"
+          [ngModelOptions]="{ standalone: true }"
+        />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Street Address: </mat-label>
+        <input
+          matInput
+          type="text"
+          [ngModelOptions]="{ standalone: true }"
+          [(ngModel)]="registrarInEdit.localizedAddress.street![1]"
+        />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>City: </mat-label>
+        <input
+          matInput
+          type="text"
+          [ngModelOptions]="{ standalone: true }"
+          [(ngModel)]="(registrarInEdit.localizedAddress || {}).city"
+        />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>State or Province: </mat-label>
+        <input
+          matInput
+          type="text"
+          [ngModelOptions]="{ standalone: true }"
+          [(ngModel)]="(registrarInEdit.localizedAddress || {}).state"
+        />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Country: </mat-label>
+        <input
+          matInput
+          type="text"
+          [ngModelOptions]="{ standalone: true }"
+          [(ngModel)]="(registrarInEdit.localizedAddress || {}).countryCode"
+        />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Postal code: </mat-label>
+        <input
+          matInput
+          type="text"
+          [ngModelOptions]="{ standalone: true }"
+          [(ngModel)]="(registrarInEdit.localizedAddress || {}).zip"
+        />
+      </mat-form-field>
+
+      <h1>Technical info</h1>
+
+      <mat-form-field appearance="outline">
+        <mat-label>WHOIS server: </mat-label>
+        <input
+          matInput
+          type="text"
+          [(ngModel)]="registrarInEdit.whoisServer"
+          [ngModelOptions]="{ standalone: true }"
+        />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Referral URL: </mat-label>
+        <input
+          matInput
+          type="text"
+          [(ngModel)]="registrarInEdit.url"
+          [ngModelOptions]="{ standalone: true }"
+        />
+      </mat-form-field>
+
+      <button mat-flat-button color="primary" type="submit">Save</button>
+    </form>
+  </div>
+</div>

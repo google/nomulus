@@ -1,4 +1,4 @@
-// Copyright 2023 The Nomulus Authors. All Rights Reserved.
+// Copyright 2024 The Nomulus Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,13 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Component } from '@angular/core';
-import { UserDataService } from 'src/app/shared/services/userData.service';
+import { Location } from '@angular/common';
+import { Directive, HostListener } from '@angular/core';
 
-@Component({
-  selector: '[app-contact-widget]',
-  templateUrl: './contactWidget.component.html',
+@Directive({
+  selector: '[backButton]',
 })
-export class ContactWidgetComponent {
-  constructor(public userDataService: UserDataService) {}
+export class LocationBackDirective {
+  constructor(private location: Location) {}
+
+  @HostListener('click')
+  onClick() {
+    this.location.back();
+  }
 }

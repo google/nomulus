@@ -1,4 +1,4 @@
-// Copyright 2023 The Nomulus Authors. All Rights Reserved.
+// Copyright 2024 The Nomulus Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,41 +13,13 @@
 // limitations under the License.
 
 .settings-security {
-  margin-top: 1.5rem;
-  h1 {
-    margin: 0;
+  max-width: 616px;
+  mat-card {
+    margin-bottom: 40px;
   }
-  &__ipRecord {
-    margin-bottom: 1rem;
-  }
-  &__section {
+  &__section-header {
     display: flex;
-    align-items: stretch;
-    margin-bottom: 3rem;
-    flex-wrap: wrap;
-  }
-  &__section-description {
-    flex: 1;
-    min-width: 300px;
-  }
-  &__section-form {
-    flex: 1;
-    min-width: 300px;
-    textarea {
-      min-height: 100%;
-      min-width: 100%;
-      box-sizing: border-box;
-      min-height: 100px;
-    }
-  }
-  &__actions {
-    display: flex;
-    justify-content: flex-end;
-    button {
-      margin-left: 20px;
-    }
-  }
-  &__loading {
-    margin: 2rem 0;
+    justify-content: space-between;
+    align-items: center;
   }
 }

@@ -1,48 +1,40 @@
-@if (loading) {
-<div class="contact__loading">
-  <mat-progress-bar mode="indeterminate"></mat-progress-bar>
-</div>
+@if(contactService.isContactDetailsView || contactService.isContactNewView) {
+<app-contact-details></app-contact-details>
 } @else {
-<div>
+<div class="console-app__contacts-controls">
+  <button
+    mat-flat-button
+    color="primary"
+    (click)="openNewContact()"
+    aria-label="Add new contact"
+  >
+    <mat-icon>add</mat-icon>
+    Add new contact
+  </button>
+</div>
+<div class="console-app__contacts">
   @if (contactService.contacts().length === 0) {
-  <div class="contact__empty-contacts">
-    <mat-icon class="contact__empty-contacts-icon secondary-text"
+  <div class="console-app__empty-contacts">
+    <mat-icon class="console-app__empty-contacts-icon secondary-text"
       >apps_outage</mat-icon
     >
     <h1>No contacts found</h1>
   </div>
-  } @else { @for (group of groupedContacts(); track group.emailAddress) {
-  <div class="contact__cards-wrapper">
-    <h3>{{ group.label }}s</h3>
-    <mat-divider></mat-divider>
-    <div class="contact__cards">
-      <mat-card class="contact__card" *ngFor="let contact of group.contacts">
-        <mat-card-title>{{ contact.name }}</mat-card-title>
-        <p *ngIf="contact.phoneNumber">{{ contact.phoneNumber }}</p>
-        <p *ngIf="contact.emailAddress">{{ contact.emailAddress }}</p>
-        <mat-card-actions class="contact__card-actions">
-          <button
-            mat-button
-            color="primary"
-            (click)="openDetails($event, contact)"
-          >
-            <mat-icon>edit</mat-icon>Edit
-          </button>
-          <button mat-button color="accent" (click)="deleteContact(contact)">
-            <mat-icon>delete</mat-icon>Delete
-          </button>
-        </mat-card-actions>
-      </mat-card>
-    </div>
-  </div>
-  } }
-  <div class="contact__actions">
-    <button mat-raised-button color="primary" (click)="openCreateNew($event)">
-      <mat-icon>add</mat-icon>Create a Contact
-    </button>
-  </div>
-  <app-dialog-bottom-sheet-wrapper
-    #contactDetailsWrapper
-  ></app-dialog-bottom-sheet-wrapper>
+  } @else {
+  <mat-table [dataSource]="dataSource" class="mat-elevation-z0">
+    <ng-container
+      *ngFor="let column of columns"
+      [matColumnDef]="column.columnDef"
+    >
+      <mat-header-cell *matHeaderCellDef> {{ column.header }} </mat-header-cell>
+      <mat-cell *matCellDef="let row" [innerHTML]="column.cell(row)"></mat-cell>
+    </ng-container>
+    <mat-header-row *matHeaderRowDef="displayedColumns"></mat-header-row>
+    <mat-row
+      *matRowDef="let row; columns: displayedColumns"
+      (click)="openDetails(row)"
+    ></mat-row>
+  </mat-table>
+  }
 </div>
 }

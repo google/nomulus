@@ -1,244 +1,105 @@
-<div class="settings-whois">
-  <h2>WHOIS settings</h2>
-  <h3>
-    General registrar information for your WHOIS record. This information is
-    always visible in WHOIS.
-  </h3>
-  <div *ngIf="loading" class="settings-whois__loading">
-    <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+@if(whoisService.editing) {
+<app-whois-edit></app-whois-edit>
+} @else {
+<div class="console-app__whois">
+  <div class="console-app__whois-controls">
+    <span>
+      General registrar information for your WHOIS record. This information is
+      always visible in WHOIS.
+    </span>
+    <div class="spacer"></div>
+    <button
+      mat-flat-button
+      color="primary"
+      aria-label="Edit WHOIS record"
+      (click)="whoisService.editing = true"
+    >
+      <mat-icon>edit</mat-icon>
+      Edit
+    </button>
   </div>
-  <div class="settings-whois__section">
-    <div class="settings-whois__section-description">
-      <h3>Name:</h3>
-    </div>
-    <div class="settings-whois__section-form">
-      <mat-form-field>
-        <input
-          matInput
-          type="text"
-          [(ngModel)]="registrar.registrarName"
-          disabled
-        />
-      </mat-form-field>
-    </div>
-  </div>
-  <div class="settings-whois__section">
-    <div class="settings-whois__section-description">
-      <h3>IANA Identifier:</h3>
-    </div>
-    <div class="settings-whois__section-form">
-      <mat-form-field>
-        <input
-          matInput
-          type="text"
-          [(ngModel)]="registrar.ianaIdentifier"
-          disabled
-        />
-      </mat-form-field>
-    </div>
-  </div>
-  <div class="settings-whois__section">
-    <div class="settings-whois__section-description">
-      <h3>ICANN Referral Email:</h3>
-    </div>
-    <div class="settings-whois__section-form">
-      <mat-form-field>
-        <input
-          matInput
-          type="email"
-          [(ngModel)]="registrar.icannReferralEmail"
-          disabled
-        />
-      </mat-form-field>
-    </div>
-  </div>
-  <div class="settings-whois__section">
-    <div class="settings-whois__section-description">
-      <h3>WHOIS server:</h3>
-    </div>
-    <div class="settings-whois__section-form">
-      <mat-form-field>
-        <input
-          matInput
-          type="text"
-          [(ngModel)]="registrar.whoisServer"
-          [disabled]="!inEdit"
-        />
-      </mat-form-field>
-    </div>
-  </div>
-  <div class="settings-whois__section">
-    <div class="settings-whois__section-description">
-      <h3>Referral URL:</h3>
-    </div>
-    <div class="settings-whois__section-form">
-      <mat-form-field>
-        <input
-          matInput
-          type="text"
-          [(ngModel)]="registrar.url"
-          [disabled]="!inEdit"
-        />
-      </mat-form-field>
-    </div>
-  </div>
-  <div class="settings-whois__section">
-    <div class="settings-whois__section-description">
-      <h3>Email:</h3>
-    </div>
-    <div class="settings-whois__section-form">
-      <mat-form-field>
-        <input
-          matInput
-          type="email"
-          [(ngModel)]="registrar.emailAddress"
-          [disabled]="!inEdit"
-        />
-      </mat-form-field>
-    </div>
-  </div>
-  <div class="settings-whois__section">
-    <div class="settings-whois__section-description">
-      <h3>Phone::</h3>
-    </div>
-    <div class="settings-whois__section-form">
-      <mat-form-field>
-        <input
-          matInput
-          type="text"
-          [(ngModel)]="registrar.phoneNumber"
-          [disabled]="!inEdit"
-        />
-      </mat-form-field>
-    </div>
-  </div>
-  <div class="settings-whois__section">
-    <div class="settings-whois__section-description">
-      <h3>Fax:</h3>
-    </div>
-    <div class="settings-whois__section-form">
-      <mat-form-field>
-        <input
-          matInput
-          type="text"
-          [(ngModel)]="registrar.faxNumber"
-          [disabled]="!inEdit"
-        />
-      </mat-form-field>
-    </div>
-  </div>
-  <div class="settings-whois__section">
-    <div class="settings-whois__section-address">
-      <div class="settings-whois__section-description">
-        <h3>Address Line 1:</h3>
-      </div>
-      <div class="settings-whois__section-form">
-        <mat-form-field *ngIf="registrar.localizedAddress?.street">
-          <input
-            matInput
-            type="text"
-            [(ngModel)]="(registrar.localizedAddress?.street)![0]"
-            [disabled]="!inEdit"
-          />
-        </mat-form-field>
-      </div>
-    </div>
-    <div class="settings-whois__section-address">
-      <div class="settings-whois__section-description">
-        <h3>City:</h3>
-      </div>
-      <div class="settings-whois__section-form">
-        <mat-form-field *ngIf="registrar.localizedAddress">
-          <input
-            matInput
-            type="text"
-            [(ngModel)]="registrar.localizedAddress.city"
-            [disabled]="!inEdit"
-          />
-        </mat-form-field>
-      </div>
-    </div>
-  </div>
-  <div class="settings-whois__section">
-    <div class="settings-whois__section-address">
-      <div class="settings-whois__section-description">
-        <h3>Address Line 2:</h3>
-      </div>
-      <div class="settings-whois__section-form">
-        <mat-form-field *ngIf="registrar.localizedAddress?.street">
-          <input
-            matInput
-            type="text"
-            [(ngModel)]="(registrar.localizedAddress?.street)![1]"
-            [disabled]="!inEdit"
-          />
-        </mat-form-field>
-      </div>
-    </div>
-    <div class="settings-whois__section-address">
-      <div class="settings-whois__section-description">
-        <h3>State/Region:</h3>
-      </div>
-      <div class="settings-whois__section-form">
-        <mat-form-field *ngIf="registrar.localizedAddress">
-          <input
-            matInput
-            type="text"
-            [(ngModel)]="registrar.localizedAddress.state"
-            [disabled]="!inEdit"
-          />
-        </mat-form-field>
-      </div>
-    </div>
-  </div>
-  <div class="settings-whois__section">
-    <div class="settings-whois__section-address">
-      <div class="settings-whois__section-description">
-        <h3>Address Line 3:</h3>
-      </div>
-      <div class="settings-whois__section-form">
-        <mat-form-field *ngIf="registrar.localizedAddress?.street">
-          <input
-            matInput
-            type="text"
-            [(ngModel)]="(registrar.localizedAddress?.street)![2]"
-            [disabled]="!inEdit"
-          />
-        </mat-form-field>
-      </div>
-    </div>
-    <div class="settings-whois__section-address">
-      <div class="settings-whois__section-description">
-        <h3>Country Code:</h3>
-      </div>
-      <div class="settings-whois__section-form">
-        <mat-form-field *ngIf="registrar.localizedAddress">
-          <input
-            matInput
-            type="text"
-            [(ngModel)]="registrar.localizedAddress.countryCode"
-            [disabled]="!inEdit"
-          />
-        </mat-form-field>
-      </div>
-    </div>
-  </div>
-  <div class="settings-whois__actions">
-    <ng-template [ngIf]="inEdit" [ngIfElse]="inView">
-      <button
-        class="actions-save"
-        mat-raised-button
-        color="primary"
-        (click)="save()"
-      >
-        Save
-      </button>
-      <button class="actions-cancel" mat-stroked-button (click)="cancel()">
-        Cancel
-      </button>
-    </ng-template>
-    <ng-template #inView>
-      <button #elseBlock mat-raised-button (click)="enableEdit()">Edit</button>
-    </ng-template>
-  </div>
+
+  <mat-card appearance="outlined">
+    <mat-card-content>
+      <mat-list role="list">
+        <mat-list-item role="listitem">
+          <h2>Personal Info</h2>
+        </mat-list-item>
+        <mat-divider></mat-divider>
+        <mat-list-item role="listitem">
+          <span class="console-app__list-key">Company name</span>
+          <span class="console-app__list-value">{{
+            registrarService.registrar()?.registrarName
+          }}</span>
+        </mat-list-item>
+        <mat-divider></mat-divider>
+        <mat-list-item role="listitem">
+          <span class="console-app__list-key">Referral email</span>
+          <span class="console-app__list-value">{{
+            registrarService.registrar()?.emailAddress
+          }}</span>
+        </mat-list-item>
+        <mat-divider></mat-divider>
+        <mat-list-item role="listitem">
+          <span class="console-app__list-key">Phone</span>
+          <span class="console-app__list-value">{{
+            registrarService.registrar()?.phoneNumber
+          }}</span>
+        </mat-list-item>
+        <mat-divider></mat-divider>
+        <mat-list-item role="listitem">
+          <span class="console-app__list-key">Fax</span>
+          <span class="console-app__list-value">{{
+            registrarService.registrar()?.faxNumber
+          }}</span>
+        </mat-list-item>
+        <mat-divider></mat-divider>
+        <mat-list-item role="listitem">
+          <span class="console-app__list-key">Address</span>
+          <span class="console-app__list-value">{{ formattedAddress() }}</span>
+        </mat-list-item>
+      </mat-list>
+    </mat-card-content>
+  </mat-card>
+
+  <mat-card appearance="outlined">
+    <mat-card-content>
+      <mat-list role="list">
+        <mat-list-item role="listitem">
+          <h2>Technical Info</h2>
+        </mat-list-item>
+        <mat-divider></mat-divider>
+        <mat-list-item role="listitem">
+          <span class="console-app__list-key">IANA Identifier</span>
+          <span class="console-app__list-value">{{
+            registrarService.registrar()?.ianaIdentifier
+          }}</span>
+        </mat-list-item>
+        <mat-divider></mat-divider>
+        <mat-list-item role="listitem">
+          <div>
+            <span class="console-app__list-key">ICANN Referral Email</span>
+            <span class="console-app__list-value">{{
+              registrarService.registrar()?.icannReferralEmail
+            }}</span>
+          </div>
+        </mat-list-item>
+        <mat-divider></mat-divider>
+        <mat-list-item role="listitem">
+          <span class="console-app__list-key">WHOIS server</span>
+          <span class="console-app__list-value">{{
+            registrarService.registrar()?.whoisServer
+          }}</span>
+        </mat-list-item>
+        <mat-divider></mat-divider>
+        <mat-list-item role="listitem">
+          <span class="console-app__list-key">Referral URL</span>
+          <span class="console-app__list-value">{{
+            registrarService.registrar()?.url
+          }}</span>
+        </mat-list-item>
+      </mat-list>
+    </mat-card-content>
+  </mat-card>
 </div>
+}
