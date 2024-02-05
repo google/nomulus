@@ -209,10 +209,18 @@ public final class RegistryJpaIO {
 
       @ProcessElement
       public void processElement(OutputReceiver<T> outputReceiver) {
-        tm().transact(
+        // Note the use of no-retry transaction here. The results from the query are streamed to the
+        // output receiver inside the transaction, which cannot be rolled back in case of a retry,
+        // which in turn results in duplicate elements. If we try to pass the results to the output
+        // receiver outside the transaction, they have to be materialized into a list containing all
+        // the elements (without resorting to manual pagination) and greatly decrease the
+        // parallelism of the pipeline.
+        tm().transactNoRetry(
                 () -> {
                   query.stream().map(resultMapper::apply).forEach(outputReceiver::output);
-                });
+                  return null;
+                },
+                null);
       }
     }
   }
