@@ -12,12 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Component, ViewEncapsulation } from '@angular/core';
+import { Component } from '@angular/core';
+import { BreakPointObserverService } from '../shared/services/breakPoint.service';
 
 @Component({
   selector: 'app-home',
   templateUrl: './home.component.html',
   styleUrls: ['./home.component.scss'],
-  encapsulation: ViewEncapsulation.None,
 })
-export class HomeComponent {}
+export class HomeComponent {
+  constructor(protected breakPointObserverService: BreakPointObserverService) {}
+}

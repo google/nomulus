@@ -1,0 +1,16 @@
+<div class="console-app__notifications">
+  @for (notification of mockNotifications; track notification.id) {
+  <div class="console-app__notification">
+    <div class="console-app__notification-content">
+      <button mat-mini-fab color="primary" disabled>
+        <mat-icon mat-mini-fab color="primary"> calendar_month </mat-icon>
+      </button>
+      <h4>{{ notification.text }}</h4>
+    </div>
+
+    <button mat-icon-button>
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+  }
+</div>

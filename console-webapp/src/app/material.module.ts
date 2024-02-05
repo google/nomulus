@@ -46,6 +46,7 @@ import { MatSidenavModule } from '@angular/material/sidenav';
 import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatPaginatorModule } from '@angular/material/paginator';
 import { MatChipsModule } from '@angular/material/chips';
+import { MatAutocompleteModule } from '@angular/material/autocomplete';
 
 @NgModule({
   exports: [
@@ -83,6 +84,7 @@ import { MatChipsModule } from '@angular/material/chips';
     MatSnackBarModule,
     MatPaginatorModule,
     MatChipsModule,
+    MatAutocompleteModule,
   ],
 })
 export class MaterialModule {}

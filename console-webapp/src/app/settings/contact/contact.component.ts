@@ -73,7 +73,7 @@ export class ContactDetailsDialogComponent implements DialogBottomSheetContent {
     this.contactIndex = this.contactService
       .contacts()
       .findIndex((c) => c === params.data.contact);
-    this.contact = JSON.parse(JSON.stringify(params.data.contact));
+    this.contact = structuredClone(params.data.contact);
   }
 
   close() {
@@ -123,7 +123,7 @@ export default class ContactComponent {
           ?.contacts.push(contact);
       });
       return acc;
-    }, JSON.parse(JSON.stringify(contactTypes)));
+    }, structuredClone(contactTypes));
   });
 
   @ViewChild('contactDetailsWrapper')

@@ -12,38 +12,32 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { Registrar, RegistrarService } from './registrar.service';
 import { MatChipInputEvent } from '@angular/material/chips';
-import { DialogBottomSheetContent } from '../shared/components/dialogBottomSheet.component';
-
-type RegistrarDetailsParams = {
-  close: Function;
-  data: {
-    registrar: Registrar;
-  };
-};
+import { ActivatedRoute, ParamMap } from '@angular/router';
+import { columns } from './registrarsTable.component';
 
 @Component({
   selector: 'app-registrar-details',
   templateUrl: './registrarDetails.component.html',
   styleUrls: ['./registrarDetails.component.scss'],
 })
-export class RegistrarDetailsComponent implements DialogBottomSheetContent {
+export class RegistrarDetailsComponent implements OnInit {
+  public static PATH = 'registrars/:id';
+  inEdit: boolean = false;
   registrarInEdit!: Registrar;
-  params?: RegistrarDetailsParams;
+  columns = columns.filter(c => !c.hiddenOnDetailsCard);
 
-  constructor(protected registrarService: RegistrarService) {}
+  constructor(
+    protected registrarService: RegistrarService,
+    private route: ActivatedRoute
+  ) {}
 
-  init(params: RegistrarDetailsParams) {
-    this.params = params;
-    this.registrarInEdit = JSON.parse(
-      JSON.stringify(this.params.data.registrar)
-    );
-  }
-
-  saveAndClose() {
-    this.params?.close();
+  ngOnInit(): void {
+    this.route.paramMap.subscribe((params: ParamMap) => {
+      this.registrarInEdit = structuredClone(this.registrarService.registrars().filter(r => r.registrarId === params.get("id"))[0]);
+    });
   }
 
   addTLD(e: MatChipInputEvent) {
@@ -57,5 +51,9 @@ export class RegistrarDetailsComponent implements DialogBottomSheetContent {
     this.registrarInEdit.allowedTlds = this.registrarInEdit.allowedTlds?.filter(
       (v) => v != tld
     );
+  }
+
+  saveAndClose() {
+    
   }
 }

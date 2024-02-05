@@ -13,25 +13,23 @@
 // limitations under the License.
 
 .console-app {
-  &__home {
-    margin-top: 1rem;
-  }
   &__home-widgets {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-    grid-gap: 20px;
-    grid-auto-flow: dense;
-
+    display: flex;
+    gap: 1rem;
+    h3 {
+      padding: 0;
+      margin: 0;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
     mat-card {
-      height: 100%;
-      h1 {
-        margin-top: 1rem;
-      }
+      flex: 1;
     }
   }
-  @media (max-width: 510px) {
-    .console-app__widget-wrapper__wide {
-      grid-column: initial;
+  &__home_tablet {
+    .console-app__home-widgets {
+      flex-direction: column;
     }
   }
 }

@@ -16,8 +16,9 @@ import { AfterViewInit, Component, ViewChild, effect } from '@angular/core';
 import { RegistrarService } from './registrar/registrar.service';
 import { UserDataService } from './shared/services/userData.service';
 import { GlobalLoaderService } from './shared/services/globalLoader.service';
-import { NavigationEnd, Router } from '@angular/router';
 import { MatSidenav } from '@angular/material/sidenav';
+import { BreakPointObserverService } from './shared/services/breakPoint.service';
+import { NavigationEnd, Router } from '@angular/router';
 
 @Component({
   selector: 'app-root',
@@ -27,14 +28,15 @@ import { MatSidenav } from '@angular/material/sidenav';
 export class AppComponent implements AfterViewInit {
   renderRouter: boolean = true;
 
-  @ViewChild('sidenav')
+  @ViewChild(MatSidenav)
   sidenav!: MatSidenav;
 
   constructor(
     protected registrarService: RegistrarService,
     protected userDataService: UserDataService,
     protected globalLoader: GlobalLoaderService,
-    protected router: Router
+    protected breakpointObserver: BreakPointObserverService,
+    private router: Router
   ) {
     effect(() => {
       if (registrarService.registrarId()) {
@@ -49,8 +51,18 @@ export class AppComponent implements AfterViewInit {
   ngAfterViewInit() {
     this.router.events.subscribe((event) => {
       if (event instanceof NavigationEnd) {
-        this.sidenav.close();
+        if (this.breakpointObserver.isMobileView()) {
+          this.sidenav.close();
+        }
       }
     });
+  }
+
+  toggleSidenav() {
+    if (this.sidenav.opened) {
+      this.sidenav.close();
+    } else {
+      this.sidenav.open();
+    }
   }
 }

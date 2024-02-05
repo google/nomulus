@@ -11,7 +11,7 @@
     >
     <h1>No contacts found</h1>
   </div>
-  } @else { @for (group of groupedContacts(); track group.emailAddress) {
+  } @else { @for (group of groupedContacts(); track group.value) {
   <div class="contact__cards-wrapper">
     <h3>{{ group.label }}s</h3>
     <mat-divider></mat-divider>

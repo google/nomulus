@@ -32,52 +32,42 @@ import SettingsContactComponent, {
 } from './settings/contact/contact.component';
 import { HttpClientModule } from '@angular/common/http';
 import { RegistrarComponent } from './registrar/registrarsTable.component';
-import { RegistrarGuard } from './registrar/registrar.guard';
 import SecurityComponent from './settings/security/security.component';
 import { MAT_FORM_FIELD_DEFAULT_OPTIONS } from '@angular/material/form-field';
-import { EmptyRegistrar } from './registrar/emptyRegistrar.component';
 import { RegistrarSelectorComponent } from './registrar/registrarSelector.component';
 import { GlobalLoaderService } from './shared/services/globalLoader.service';
-import { ContactWidgetComponent } from './home/widgets/contactWidget.component';
-import { PromotionsWidgetComponent } from './home/widgets/promotionsWidget.component';
-import { TldsWidgetComponent } from './home/widgets/tldsWidget.component';
-import { ResourcesWidgetComponent } from './home/widgets/resourcesWidget.component';
-import { EppWidgetComponent } from './home/widgets/eppWidget.component';
-import { BillingWidgetComponent } from './home/widgets/billingWidget.component';
-import { DomainsWidgetComponent } from './home/widgets/domainsWidget.component';
-import { SettingsWidgetComponent } from './home/widgets/settingsWidget.component';
 import { UserDataService } from './shared/services/userData.service';
 import WhoisComponent from './settings/whois/whois.component';
 import { SnackBarModule } from './snackbar.module';
 import { RegistrarDetailsComponent } from './registrar/registrarDetails.component';
 import { DomainListComponent } from './domains/domainList.component';
 import { DialogBottomSheetWrapper } from './shared/components/dialogBottomSheet.component';
+import { NavigationComponent } from './navigation/navigation.component';
+import { BreakPointObserverService } from './shared/services/breakPoint.service';
+import { NotificationsComponent } from './shared/components/notifications/notifications.component';
+import { SelectedRegistrarWrapper } from './shared/components/selectedRegistrarWrapper/selectedRegistrarWrapper.component';
+import { LocationBackDirective } from './shared/directives/locationBack.directive';
 
 @NgModule({
   declarations: [
+    LocationBackDirective,
+    NavigationComponent,
     AppComponent,
     DialogBottomSheetWrapper,
-    BillingWidgetComponent,
     ContactDetailsDialogComponent,
-    ContactWidgetComponent,
     DomainListComponent,
-    DomainsWidgetComponent,
-    EmptyRegistrar,
-    EppWidgetComponent,
     HeaderComponent,
     HomeComponent,
-    PromotionsWidgetComponent,
     RegistrarComponent,
     RegistrarDetailsComponent,
     RegistrarSelectorComponent,
-    ResourcesWidgetComponent,
     SecurityComponent,
     SettingsComponent,
     SettingsContactComponent,
-    SettingsWidgetComponent,
     TldsComponent,
-    TldsWidgetComponent,
     WhoisComponent,
+    NotificationsComponent,
+    SelectedRegistrarWrapper,
   ],
   imports: [
     AppRoutingModule,
@@ -89,9 +79,9 @@ import { DialogBottomSheetWrapper } from './shared/components/dialogBottomSheet.
     SnackBarModule,
   ],
   providers: [
+    BreakPointObserverService,
     BackendService,
     GlobalLoaderService,
-    RegistrarGuard,
     UserDataService,
     {
       provide: MAT_FORM_FIELD_DEFAULT_OPTIONS,

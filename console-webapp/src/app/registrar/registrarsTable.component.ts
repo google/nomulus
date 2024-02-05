@@ -17,28 +17,22 @@ import { Registrar, RegistrarService } from './registrar.service';
 import { MatPaginator } from '@angular/material/paginator';
 import { MatSort } from '@angular/material/sort';
 import { MatTableDataSource } from '@angular/material/table';
-import { RegistrarDetailsComponent } from './registrarDetails.component';
 import { DialogBottomSheetWrapper } from '../shared/components/dialogBottomSheet.component';
+import { Router } from '@angular/router';
 
-@Component({
-  selector: 'app-registrar',
-  templateUrl: './registrarsTable.component.html',
-  styleUrls: ['./registrarsTable.component.scss'],
-  encapsulation: ViewEncapsulation.None,
-})
-export class RegistrarComponent {
-  public static PATH = 'registrars';
-  dataSource: MatTableDataSource<Registrar>;
-  columns = [
+
+export const columns = [
     {
       columnDef: 'registrarId',
       header: 'Registrar Id',
       cell: (record: Registrar) => `${record.registrarId || ''}`,
+      hiddenOnDetailsCard: true
     },
     {
       columnDef: 'registrarName',
       header: 'Name',
       cell: (record: Registrar) => `${record.registrarName || ''}`,
+      hiddenOnDetailsCard: true
     },
     {
       columnDef: 'allowedTlds',
@@ -78,14 +72,29 @@ export class RegistrarComponent {
       cell: (record: Registrar) => `${record.driveFolderId || ''}`,
     },
   ];
-  displayedColumns = ['edit'].concat(this.columns.map((c) => c.columnDef));
+
+@Component({
+  selector: 'app-registrar',
+  templateUrl: './registrarsTable.component.html',
+  styleUrls: ['./registrarsTable.component.scss'],
+  encapsulation: ViewEncapsulation.None,
+})
+export class RegistrarComponent {
+  public static PATH = 'registrars';
+  dataSource: MatTableDataSource<Registrar>;
+  columns = columns;
+  
+  displayedColumns = this.columns.map((c) => c.columnDef);
 
   @ViewChild(MatPaginator) paginator!: MatPaginator;
   @ViewChild(MatSort) sort!: MatSort;
   @ViewChild('registrarDetailsView')
   detailsComponentWrapper!: DialogBottomSheetWrapper;
 
-  constructor(protected registrarService: RegistrarService) {
+  constructor(
+    protected registrarService: RegistrarService,
+    private router: Router
+  ) {
     this.dataSource = new MatTableDataSource<Registrar>(
       registrarService.registrars()
     );
@@ -96,12 +105,8 @@ export class RegistrarComponent {
     this.dataSource.sort = this.sort;
   }
 
-  openDetails(event: MouseEvent, registrar: Registrar) {
-    event.stopPropagation();
-    this.detailsComponentWrapper.open<RegistrarDetailsComponent>(
-      RegistrarDetailsComponent,
-      { registrar }
-    );
+  openDetails(registrarId: string) {
+    this.router.navigate(['registrars/', registrarId]);
   }
 
   applyFilter(event: Event) {

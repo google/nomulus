@@ -13,6 +13,7 @@
 // limitations under the License.
 
 import { Component, EventEmitter, Output } from '@angular/core';
+import { BreakPointObserverService } from '../shared/services/breakPoint.service';
 
 @Component({
   selector: 'app-header',
@@ -21,6 +22,8 @@ import { Component, EventEmitter, Output } from '@angular/core';
 })
 export class HeaderComponent {
   private isNavOpen = false;
+
+  constructor(protected breakpointObserver: BreakPointObserverService) {}
 
   @Output() toggleNavOpen = new EventEmitter<boolean>();
 

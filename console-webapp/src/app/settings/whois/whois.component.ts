@@ -32,16 +32,14 @@ export default class WhoisComponent {
   public static PATH = 'whois';
   loading = false;
   inEdit = false;
-  registrar: Registrar;
+  registrar: Registrar|undefined;
 
   constructor(
     public whoisService: WhoisService,
     public registrarService: RegistrarService,
     private _snackBar: MatSnackBar
   ) {
-    this.registrar = JSON.parse(
-      JSON.stringify(this.registrarService.registrar)
-    );
+    this.registrar = structuredClone(this.registrarService.registrar());
   }
 
   enableEdit() {
@@ -54,6 +52,8 @@ export default class WhoisComponent {
   }
 
   save() {
+    if(!this.registrar) return; // Nothing to save
+
     this.loading = true;
     this.whoisService.saveChanges(this.registrar).subscribe({
       complete: () => {
@@ -69,8 +69,6 @@ export default class WhoisComponent {
   }
 
   resetDataSource() {
-    this.registrar = JSON.parse(
-      JSON.stringify(this.registrarService.registrar)
-    );
+    this.registrar = structuredClone(this.registrarService.registrar());
   }
 }

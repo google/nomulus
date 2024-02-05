@@ -1,0 +1,23 @@
+.console-app {
+  &__notifications {
+    margin-bottom: 40px;
+  }
+  &__notification {
+    padding: 20px;
+    background-color: var(--lightest);
+    border-radius: 10px;
+    margin-bottom: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    &-content {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    h4 {
+      margin: 0;
+      padding: 0;
+    }
+  }
+}
