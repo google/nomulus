@@ -1,4 +1,4 @@
-// Copyright 2022 The Nomulus Authors. All Rights Reserved.
+// Copyright 2024 The Nomulus Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,7 +20,8 @@ body {
 }
 body {
   margin: 0;
-  font-family: Roboto, "Helvetica Neue", sans-serif;
+  font-family: "Google Sans", Roboto, Helvetica, Arial, sans-serif,
+    "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol" !important;
 }
 
 .text-center {
@@ -28,6 +29,14 @@ body {
 }
 
 .console-app {
+  h1 {
+    margin-top: 10px;
+    font-weight: 500;
+    font-size: 24px;
+  }
+  .spacer {
+    flex: 1;
+  }
   &__widget {
     display: flex;
     gap: 10px;

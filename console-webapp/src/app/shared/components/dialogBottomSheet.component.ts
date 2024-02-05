@@ -1,4 +1,4 @@
-// Copyright 2023 The Nomulus Authors. All Rights Reserved.
+// Copyright 2024 The Nomulus Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ import {
 } from '@angular/material/bottom-sheet';
 import { MatDialog, MatDialogRef } from '@angular/material/dialog';
 
-const MOBILE_LAYOUT_BREAKPOINT = '(max-width: 599px)';
+const MOBILE_LAYOUT_BREAKPOINT = '(max-width: 480px)';
 
 export interface DialogBottomSheetContent {
   init(data: Object): void;
@@ -29,7 +29,7 @@ export interface DialogBottomSheetContent {
 
 /**
  * Wraps up a child component in an Angular Material Dalog for desktop or a Bottom Sheet
- * component for mobile depending on a screen resolution, with Breaking Point being 599px.
+ * component for mobile depending on a screen resolution, with Breaking Point being 480px.
  * Child component is required to implement @see DialogBottomSheetContent interface
  */
 @Component({

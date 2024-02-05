@@ -1,4 +1,4 @@
-// Copyright 2023 The Nomulus Authors. All Rights Reserved.
+// Copyright 2024 The Nomulus Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -73,7 +73,7 @@ export class ContactDetailsDialogComponent implements DialogBottomSheetContent {
     this.contactIndex = this.contactService
       .contacts()
       .findIndex((c) => c === params.data.contact);
-    this.contact = JSON.parse(JSON.stringify(params.data.contact));
+    this.contact = structuredClone(params.data.contact);
   }
 
   close() {
@@ -123,7 +123,7 @@ export default class ContactComponent {
           ?.contacts.push(contact);
       });
       return acc;
-    }, JSON.parse(JSON.stringify(contactTypes)));
+    }, structuredClone(contactTypes));
   });
 
   @ViewChild('contactDetailsWrapper')

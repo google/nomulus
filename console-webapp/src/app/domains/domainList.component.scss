@@ -1,0 +1,21 @@
+.console-app {
+  $min-width: 756px;
+
+  &__domains {
+    width: 100%;
+    overflow: auto;
+  }
+
+  &__domains-filter {
+    min-width: $min-width !important;
+    width: 100%;
+  }
+
+  &__domains-table {
+    min-width: $min-width !important;
+  }
+
+  .mat-mdc-paginator {
+    min-width: $min-width !important;
+  }
+}

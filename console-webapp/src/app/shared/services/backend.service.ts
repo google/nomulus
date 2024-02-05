@@ -1,4 +1,4 @@
-// Copyright 2023 The Nomulus Authors. All Rights Reserved.
+// Copyright 2024 The Nomulus Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -97,6 +97,12 @@ export class BackendService {
     return this.http
       .get<Registrar[]>('/console-api/registrars')
       .pipe(catchError((err) => this.errorCatcher<Registrar[]>(err)));
+  }
+
+  postRegistrar(registrar: Registrar): Observable<Registrar> {
+    return this.http
+      .post<Registrar>('/console-api/registrar', registrar)
+      .pipe(catchError((err) => this.errorCatcher<Registrar>(err)));
   }
 
   getSecuritySettings(

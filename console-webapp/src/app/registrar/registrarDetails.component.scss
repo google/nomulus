@@ -1,8 +1,28 @@
-.registrarDetails {
-  min-width: 30vw;
-
-  &__input {
-    display: block;
-    margin-top: 0.5rem;
+.console-app {
+  &__registrar-view {
+    &-key {
+      font-weight: bold;
+      width: 150px;
+      display: inline-block;
+      font-size: 14px;
+    }
+    &-value {
+      font-size: 14px;
+    }
+    &-controls {
+      display: flex;
+      align-items: center;
+      margin: 20px 0;
+    }
+  }
+  &__registrar-view-content {
+    max-width: 616px;
+    mat-divider:last-child {
+      display: none;
+    }
+    mat-form-field {
+      margin-bottom: 20px;
+      width: 100%;
+    }
   }
 }

@@ -1,40 +1,100 @@
-<div class="registrarDetails" *ngIf="registrarInEdit">
-  <h3 mat-dialog-title>Edit Registrar: {{ registrarInEdit.registrarId }}</h3>
-  <div mat-dialog-content>
+<div class="console-app__registrar-view">
+  <div>
+    <h1>Registrars</h1>
+  </div>
+  <mat-divider></mat-divider>
+  <div class="console-app__registrar-view-content">
+    <div class="console-app__registrar-view-controls">
+      <button mat-icon-button aria-label="Back to registrars list" backButton>
+        <mat-icon>arrow_back</mat-icon>
+      </button>
+      <div class="spacer"></div>
+      @if(!inEdit) {
+      <button
+        mat-flat-button
+        color="primary"
+        aria-label="Edit Registrar"
+        (click)="inEdit = true"
+      >
+        <mat-icon>edit</mat-icon>
+        Edit
+      </button>
+      <button mat-icon-button aria-label="Delete Registrar">
+        <mat-icon>delete</mat-icon>
+      </button>
+      }
+    </div>
+    <h2>{{ registrarInEdit.registrarId }}</h2>
+    <h3 *ngIf="registrarInEdit.registrarName !== registrarInEdit.registrarId">
+      {{ registrarInEdit.registrarName }}
+    </h3>
+    @if(inEdit) {
     <form (ngSubmit)="saveAndClose()">
-      <mat-form-field class="registrarDetails__input">
-        <mat-label>Registry Lock:</mat-label>
-        <mat-select
-          [(ngModel)]="registrarInEdit.registryLockAllowed"
-          name="registryLockAllowed"
-        >
-          <mat-option [value]="true">True</mat-option>
-          <mat-option [value]="false">False</mat-option>
-        </mat-select>
-      </mat-form-field>
-      <mat-form-field class="registrarDetails__input">
-        <mat-label>Onboarded TLDs: </mat-label>
-        <mat-chip-grid #chipGrid aria-label="Enter TLD">
-          <mat-chip-row
-            *ngFor="let tld of registrarInEdit.allowedTlds"
-            (removed)="removeTLD(tld)"
+      <div>
+        <mat-form-field appearance="outline">
+          <mat-label>Registry Lock:</mat-label>
+          <mat-select
+            [(ngModel)]="registrarInEdit.registryLockAllowed"
+            name="registryLockAllowed"
           >
-            {{ tld }}
-            <button matChipRemove aria-label="'remove ' + tld">
-              <mat-icon>cancel</mat-icon>
-            </button>
-          </mat-chip-row>
-        </mat-chip-grid>
-        <input
-          placeholder="New tld..."
-          [matChipInputFor]="chipGrid"
-          (matChipInputTokenEnd)="addTLD($event)"
-        />
-      </mat-form-field>
-      <mat-dialog-actions>
-        <button mat-button (click)="this.params?.close()">Cancel</button>
-        <button type="submit" mat-button color="primary">Save</button>
-      </mat-dialog-actions>
+            <mat-option [value]="true">True</mat-option>
+            <mat-option [value]="false">False</mat-option>
+          </mat-select>
+        </mat-form-field>
+      </div>
+      <div>
+        <mat-form-field appearance="outline">
+          <mat-label>Onboarded TLDs: </mat-label>
+          <mat-chip-grid #chipGrid aria-label="Enter TLD">
+            <mat-chip-row
+              *ngFor="let tld of registrarInEdit.allowedTlds"
+              (removed)="removeTLD(tld)"
+            >
+              {{ tld }}
+              <button matChipRemove aria-label="'remove ' + tld">
+                <mat-icon>cancel</mat-icon>
+              </button>
+            </mat-chip-row>
+          </mat-chip-grid>
+          <input
+            placeholder="New tld..."
+            [matChipInputFor]="chipGrid"
+            (matChipInputTokenEnd)="addTLD($event)"
+          />
+        </mat-form-field>
+      </div>
     </form>
+    <button
+      mat-flat-button
+      color="primary"
+      aria-label="Edit Registrar"
+      (click)="saveAndClose()"
+    >
+      Save
+    </button>
+    } @else {
+    <mat-card appearance="outlined">
+      <mat-card-content>
+        <mat-list role="list">
+          <mat-list-item role="listitem">
+            <h4>Registrar details</h4>
+          </mat-list-item>
+          <mat-divider></mat-divider>
+          @for (column of columns; track column.columnDef) {
+          <mat-list-item role="listitem">
+            <span class="console-app__registrar-view-key"
+              >{{ column.header }}
+            </span>
+            <span
+              class="console-app__registrar-view-value"
+              [innerHTML]="column.cell(registrarInEdit).replace('<br/>', ' ')"
+            ></span>
+          </mat-list-item>
+          <mat-divider></mat-divider>
+          }
+        </mat-list>
+      </mat-card-content>
+    </mat-card>
+    }
   </div>
 </div>

@@ -1,4 +1,4 @@
-// Copyright 2023 The Nomulus Authors. All Rights Reserved.
+// Copyright 2024 The Nomulus Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,11 +13,16 @@
 // limitations under the License.
 
 import { Component } from '@angular/core';
+import { Router } from '@angular/router';
+import { RouteWithIcon, routes } from '../app-routing.module';
+import { NestedTreeControl } from '@angular/cdk/tree';
+import { MatTreeNestedDataSource } from '@angular/material/tree';
 
 @Component({
-  selector: '[app-promotions-widget]',
-  templateUrl: './promotionsWidget.component.html',
+  selector: 'app-resources',
+  templateUrl: './resources.component.html',
+  styleUrls: ['./resources.component.scss'],
 })
-export class PromotionsWidgetComponent {
-  constructor() {}
+export class ResourcesComponent {
+  public static PATH = 'resources';
 }
