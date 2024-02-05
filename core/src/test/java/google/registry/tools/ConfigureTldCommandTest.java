@@ -177,7 +177,7 @@ public class ConfigureTldCommandTest extends CommandTestCase<ConfigureTldCommand
 
   @Test
   void testSuccess_fileMissingCreateBillingCostTransitions() throws Exception {
-    Tld tld = createTld("nocreatecostmap");
+    createTld("nocreatecostmap");
     File tldFile = tmpDir.resolve("nocreatecostmap.yaml").toFile();
     Files.asCharSink(tldFile, UTF_8).write(loadFile(getClass(), "nocreatecostmap.yaml"));
     runCommandForced("--input=" + tldFile);
