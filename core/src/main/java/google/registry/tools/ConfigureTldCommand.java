@@ -42,6 +42,7 @@ import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -155,6 +156,14 @@ public class ConfigureTldCommand extends MutatingCommand {
     checkPremiumList(newTld);
     checkDnsWriters(newTld);
     checkCurrency(newTld);
+    // TODO(sarahbot@): Remove this once the createBillingCost field is removed
+    checkArgument(
+        Objects.equals(
+            TimedTransitionProperty.fromValueMap(newTld.getCreateBillingCostTransitions())
+                .getValueAtTime(DateTime.now()),
+            newTld.getCreateBillingCost()),
+        "The createBillingCostTransitions map must have the same current cost as the"
+            + " createBillingCost field");
     // bsaEnrollStartTime only exists in DB. Need to carry it over to the updated copy. See Tld.java
     // for more information.
     Optional<DateTime> bsaEnrollTime =

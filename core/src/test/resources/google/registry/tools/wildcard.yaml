@@ -11,7 +11,7 @@ createBillingCost:
 createBillingCostTransitions:
   "1970-01-01T00:00:00.000Z":
     currency: "USD"
-    amount: 8.00
+    amount: 25.00
 creationTime: "2022-09-01T00:00:00.000Z"
 currency: "USD"
 defaultPromoTokens: []

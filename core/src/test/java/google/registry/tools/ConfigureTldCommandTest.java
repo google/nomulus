@@ -187,6 +187,19 @@ public class ConfigureTldCommandTest extends CommandTestCase<ConfigureTldCommand
   }
 
   @Test
+  void testFailure_billingCostTransitionsDoesNotMatchCreateCost() throws Exception {
+    createTld("diffcostmap");
+    File tldFile = tmpDir.resolve("diffcostmap.yaml").toFile();
+    Files.asCharSink(tldFile, UTF_8).write(loadFile(getClass(), "diffcostmap.yaml"));
+    IllegalArgumentException thrown =
+        assertThrows(IllegalArgumentException.class, () -> runCommandForced("--input=" + tldFile));
+    assertThat(thrown.getMessage())
+        .isEqualTo(
+            "The createBillingCostTransitions map must have the same current cost as the"
+                + " createBillingCost field");
+  }
+
+  @Test
   void testFailure_fileMissingNullableFieldsOnCreate() throws Exception {
     File tldFile = tmpDir.resolve("missingnullablefields.yaml").toFile();
     Files.asCharSink(tldFile, UTF_8).write(loadFile(getClass(), "missingnullablefields.yaml"));
