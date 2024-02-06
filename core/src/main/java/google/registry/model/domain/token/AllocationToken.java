@@ -22,6 +22,7 @@ import static google.registry.model.domain.token.AllocationToken.TokenStatus.CAN
 import static google.registry.model.domain.token.AllocationToken.TokenStatus.ENDED;
 import static google.registry.model.domain.token.AllocationToken.TokenStatus.NOT_STARTED;
 import static google.registry.model.domain.token.AllocationToken.TokenStatus.VALID;
+import static google.registry.model.domain.token.AllocationToken.TokenType.ALLOW_BSA;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.CollectionUtils.forceEmptyToNull;
 import static google.registry.util.CollectionUtils.nullToEmptyImmutableCopy;
@@ -132,6 +133,16 @@ public class AllocationToken extends UpdateAutoTimestampEntity implements Builda
     SINGLE_USE,
     /** Do not expire after use */
     UNLIMITED_USE,
+    /**
+     * Allows bypassing the BSA check during domain creation, otherwise has the same semantics as
+     * {@link #SINGLE_USE}.
+     */
+    ALLOW_BSA;
+
+    /** Returns true if token should be invalidated after use. */
+    public boolean isOneTimeUse() {
+      return this.equals(SINGLE_USE) || this.equals(ALLOW_BSA);
+    }
   }
 
   /**
@@ -361,12 +372,11 @@ public class AllocationToken extends UpdateAutoTimestampEntity implements Builda
               || !getInstance().discountPremiums,
           "Bulk tokens cannot discount premium names");
       checkArgument(
-          getInstance().domainName == null || TokenType.SINGLE_USE.equals(getInstance().tokenType),
-          "Domain name can only be specified for SINGLE_USE tokens");
+          getInstance().domainName == null || getInstance().tokenType.isOneTimeUse(),
+          "Domain name can only be specified for SINGLE_USE or ALLOW_BSA tokens");
       checkArgument(
-          getInstance().redemptionHistoryId == null
-              || TokenType.SINGLE_USE.equals(getInstance().tokenType),
-          "Redemption history entry can only be specified for SINGLE_USE tokens");
+          getInstance().redemptionHistoryId == null || getInstance().tokenType.isOneTimeUse(),
+          "Redemption history entry can only be specified for SINGLE_USE or ALLOW_BSA tokens");
       checkArgument(
           getInstance().tokenType != TokenType.BULK_PRICING
               || (getInstance().allowedClientIds != null
@@ -378,6 +388,9 @@ public class AllocationToken extends UpdateAutoTimestampEntity implements Builda
       checkArgument(
           getInstance().discountFraction > 0 || getInstance().discountYears == 1,
           "Discount years can only be specified along with a discount fraction");
+      if (getInstance().getTokenType().equals(ALLOW_BSA)) {
+        checkArgumentNotNull(getInstance().domainName, "ALLOW_BSA tokens must be tied to a domain");
+      }
       if (getInstance().registrationBehavior.equals(RegistrationBehavior.ANCHOR_TENANT)) {
         checkArgumentNotNull(
             getInstance().domainName, "ANCHOR_TENANT tokens must be tied to a domain");

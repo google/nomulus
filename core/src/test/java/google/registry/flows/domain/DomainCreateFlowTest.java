@@ -27,6 +27,7 @@ import static google.registry.model.billing.BillingBase.RenewalPriceBehavior.DEF
 import static google.registry.model.billing.BillingBase.RenewalPriceBehavior.NONPREMIUM;
 import static google.registry.model.billing.BillingBase.RenewalPriceBehavior.SPECIFIED;
 import static google.registry.model.domain.fee.Fee.FEE_EXTENSION_URIS;
+import static google.registry.model.domain.token.AllocationToken.TokenType.ALLOW_BSA;
 import static google.registry.model.domain.token.AllocationToken.TokenType.BULK_PRICING;
 import static google.registry.model.domain.token.AllocationToken.TokenType.DEFAULT_PROMO;
 import static google.registry.model.domain.token.AllocationToken.TokenType.SINGLE_USE;
@@ -253,6 +254,14 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
                 persistReservedList("global-list", "resdom,FULLY_BLOCKED"))
             .build());
     persistClaimsList(ImmutableMap.of("example-one", CLAIMS_KEY, "test-validate", CLAIMS_KEY));
+  }
+
+  private void enrollTldInBsa() {
+    persistResource(
+        Tld.get("tld")
+            .asBuilder()
+            .setBsaEnrollStartTime(Optional.of(clock.nowUtc().minusSeconds(1)))
+            .build());
   }
 
   /**
@@ -2593,12 +2602,92 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
   }
 
   @Test
-  void testFailure_blockedByBsa() throws Exception {
+  void testSuccess_blockedByBsa_hasAllowBsaToken() throws Exception {
+    enrollTldInBsa();
+    allocationToken =
+        persistResource(
+            new AllocationToken.Builder()
+                .setToken("abc123")
+                .setTokenType(ALLOW_BSA)
+                .setDomainName("example.tld")
+                .build());
+    persistBsaLabel("example");
+    persistContactsAndHosts();
+    setEppInput(
+        "domain_create_allocationtoken.xml",
+        ImmutableMap.of("DOMAIN", "example.tld", "YEARS", "2"));
+    runFlow();
+    assertSuccessfulCreate("tld", ImmutableSet.of(), allocationToken);
+  }
+
+  @Test
+  void testSuccess_blockedByBsa_reservedDomain_viaAllocationTokenExtension() throws Exception {
+    enrollTldInBsa();
+    allocationToken =
+        persistResource(
+            new AllocationToken.Builder()
+                .setToken("abc123")
+                .setTokenType(ALLOW_BSA)
+                .setDomainName("resdom.tld")
+                .build());
+    persistBsaLabel("resdom");
+    setEppInput(
+        "domain_create_allocationtoken.xml", ImmutableMap.of("DOMAIN", "resdom.tld", "YEARS", "2"));
+    persistContactsAndHosts();
+    runFlowAssertResponse(
+        loadFile("domain_create_response.xml", ImmutableMap.of("DOMAIN", "resdom.tld")));
+    assertSuccessfulCreate("tld", ImmutableSet.of(RESERVED), allocationToken);
+    assertNoLordn();
+    assertAllocationTokenWasRedeemed("abc123");
+  }
+
+  @Test
+  void testSuccess_blockedByBsa_quietPeriod_skipTldStateCheckWithToken() throws Exception {
+    enrollTldInBsa();
+    AllocationToken token =
+        persistResource(
+            new AllocationToken.Builder()
+                .setToken("abc123")
+                .setTokenType(ALLOW_BSA)
+                .setRegistrationBehavior(RegistrationBehavior.BYPASS_TLD_STATE)
+                .setDomainName("example.tld")
+                .build());
+    persistContactsAndHosts();
+    persistBsaLabel("example");
+    setEppInput(
+        "domain_create_allocationtoken.xml",
+        ImmutableMap.of("DOMAIN", "example.tld", "YEARS", "2"));
     persistResource(
         Tld.get("tld")
             .asBuilder()
-            .setBsaEnrollStartTime(Optional.of(clock.nowUtc().minusSeconds(1)))
+            .setTldStateTransitions(ImmutableSortedMap.of(START_OF_TIME, QUIET_PERIOD))
             .build());
+    runFlow();
+    assertSuccessfulCreate("tld", ImmutableSet.of(), token);
+  }
+
+  @Test
+  void testSuccess_blockedByBsa_anchorTenant() throws Exception {
+    enrollTldInBsa();
+    allocationToken =
+        persistResource(
+            new AllocationToken.Builder()
+                .setToken("abcDEF23456")
+                .setTokenType(ALLOW_BSA)
+                .setDomainName("anchor.tld")
+                .build());
+    setEppInput("domain_create_anchor_allocationtoken.xml");
+    persistContactsAndHosts();
+    persistBsaLabel("anchor");
+    runFlowAssertResponse(loadFile("domain_create_anchor_response.xml"));
+    assertSuccessfulCreate("tld", ImmutableSet.of(ANCHOR_TENANT), allocationToken);
+    assertNoLordn();
+    assertAllocationTokenWasRedeemed("abcDEF23456");
+  }
+
+  @Test
+  void testFailure_blockedByBsa() throws Exception {
+    enrollTldInBsa();
     persistBsaLabel("example");
     persistContactsAndHosts();
     EppException thrown = assertThrows(DomainLabelBlockedByBsaException.class, this::runFlow);
@@ -2618,6 +2707,41 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     assertThat(new String(responseXmlBytes, StandardCharsets.UTF_8))
         .isEqualTo(loadFile("domain_create_blocked_by_bsa.xml"));
   }
+
+  @Test
+  void testFailure_blockedByBsa_hasWrongToken() throws Exception {
+    enrollTldInBsa();
+    allocationToken =
+        persistResource(
+            new AllocationToken.Builder()
+                .setToken("abc123")
+                .setTokenType(SINGLE_USE)
+                .setRegistrationBehavior(RegistrationBehavior.BYPASS_TLD_STATE)
+                .setDomainName("example.tld")
+                .build());
+    persistBsaLabel("example");
+    persistContactsAndHosts();
+    setEppInput(
+        "domain_create_allocationtoken.xml",
+        ImmutableMap.of("DOMAIN", "example.tld", "YEARS", "2"));
+    EppException thrown = assertThrows(DomainLabelBlockedByBsaException.class, this::runFlow);
+    assertAboutEppExceptions()
+        .that(thrown)
+        .marshalsToXml()
+        .and()
+        .hasMessage("Domain label is blocked by the Brand Safety Alliance");
+    byte[] responseXmlBytes =
+        marshal(
+            EppOutput.create(
+                new EppResponse.Builder()
+                    .setTrid(Trid.create(null, "server-trid"))
+                    .setResult(thrown.getResult())
+                    .build()),
+            ValidationMode.STRICT);
+    assertThat(new String(responseXmlBytes, StandardCharsets.UTF_8))
+        .isEqualTo(loadFile("domain_create_blocked_by_bsa.xml"));
+  }
+
 
   @Test
   void testFailure_uppercase() {

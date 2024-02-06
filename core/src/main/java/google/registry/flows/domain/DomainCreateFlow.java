@@ -27,6 +27,7 @@ import static google.registry.flows.domain.DomainFlowUtils.cloneAndLinkReference
 import static google.registry.flows.domain.DomainFlowUtils.createFeeCreateResponse;
 import static google.registry.flows.domain.DomainFlowUtils.getReservationTypes;
 import static google.registry.flows.domain.DomainFlowUtils.isAnchorTenant;
+import static google.registry.flows.domain.DomainFlowUtils.isBypassBsaCreate;
 import static google.registry.flows.domain.DomainFlowUtils.isReserved;
 import static google.registry.flows.domain.DomainFlowUtils.isValidReservedCreate;
 import static google.registry.flows.domain.DomainFlowUtils.validateCreateCommandContactsAndNameservers;
@@ -330,7 +331,9 @@ public final class DomainCreateFlow implements MutatingFlow {
               .verifySignedMarks(launchCreate.get().getSignedMarks(), domainLabel, now)
               .getId();
     }
-    verifyNotBlockedByBsa(domainLabel, tld, now);
+    if (!isBypassBsaCreate(domainName, allocationToken)) {
+      verifyNotBlockedByBsa(domainLabel, tld, now);
+    }
     flowCustomLogic.afterValidation(
         DomainCreateFlowCustomLogic.AfterValidationParameters.newBuilder()
             .setDomainName(domainName)
@@ -421,8 +424,7 @@ public final class DomainCreateFlow implements MutatingFlow {
           createNameCollisionOneTimePollMessage(targetId, domainHistory, registrarId, now));
     }
     entitiesToSave.add(domain, domainHistory);
-    if (allocationToken.isPresent()
-        && TokenType.SINGLE_USE.equals(allocationToken.get().getTokenType())) {
+    if (allocationToken.isPresent() && allocationToken.get().getTokenType().isOneTimeUse()) {
       entitiesToSave.add(
           allocationTokenFlowUtils.redeemToken(
               allocationToken.get(), domainHistory.getHistoryEntryId()));

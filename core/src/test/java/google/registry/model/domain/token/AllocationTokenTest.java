@@ -20,6 +20,7 @@ import static google.registry.model.domain.token.AllocationToken.TokenStatus.CAN
 import static google.registry.model.domain.token.AllocationToken.TokenStatus.ENDED;
 import static google.registry.model.domain.token.AllocationToken.TokenStatus.NOT_STARTED;
 import static google.registry.model.domain.token.AllocationToken.TokenStatus.VALID;
+import static google.registry.model.domain.token.AllocationToken.TokenType.ALLOW_BSA;
 import static google.registry.model.domain.token.AllocationToken.TokenType.BULK_PRICING;
 import static google.registry.model.domain.token.AllocationToken.TokenType.SINGLE_USE;
 import static google.registry.model.domain.token.AllocationToken.TokenType.UNLIMITED_USE;
@@ -246,6 +247,18 @@ public class AllocationTokenTest extends EntityTestCase {
   }
 
   @Test
+  void testBuild_allowBsa_missingDomain() {
+    createTld("tld");
+    // ALLOW_BSA requires a domain
+    AllocationToken.Builder token =
+        new AllocationToken.Builder().setToken("abc").setTokenType(ALLOW_BSA);
+    assertThat(assertThrows(IllegalArgumentException.class, () -> token.build()))
+        .hasMessageThat()
+        .isEqualTo("ALLOW_BSA tokens must be tied to a domain");
+    token.setDomainName("example.tld").build();
+  }
+
+  @Test
   void testFail_bulkTokenNullEppActions() {
     AllocationToken.Builder builder =
         new AllocationToken.Builder()
@@ -317,7 +330,7 @@ public class AllocationTokenTest extends EntityTestCase {
     IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class, builder::build);
     assertThat(thrown)
         .hasMessageThat()
-        .isEqualTo("Domain name can only be specified for SINGLE_USE tokens");
+        .isEqualTo("Domain name can only be specified for SINGLE_USE or ALLOW_BSA tokens");
   }
 
   @Test
@@ -347,7 +360,8 @@ public class AllocationTokenTest extends EntityTestCase {
     IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class, builder::build);
     assertThat(thrown)
         .hasMessageThat()
-        .isEqualTo("Redemption history entry can only be specified for SINGLE_USE tokens");
+        .isEqualTo(
+            "Redemption history entry can only be specified for SINGLE_USE or ALLOW_BSA tokens");
   }
 
   @Test

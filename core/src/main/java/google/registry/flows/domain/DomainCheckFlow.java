@@ -26,6 +26,7 @@ import static google.registry.flows.domain.DomainFlowUtils.checkHasBillingAccoun
 import static google.registry.flows.domain.DomainFlowUtils.getReservationTypes;
 import static google.registry.flows.domain.DomainFlowUtils.handleFeeRequest;
 import static google.registry.flows.domain.DomainFlowUtils.isAnchorTenant;
+import static google.registry.flows.domain.DomainFlowUtils.isBypassBsaCreate;
 import static google.registry.flows.domain.DomainFlowUtils.isReserved;
 import static google.registry.flows.domain.DomainFlowUtils.isValidReservedCreate;
 import static google.registry.flows.domain.DomainFlowUtils.validateDomainName;
@@ -269,13 +270,12 @@ public final class DomainCheckFlow implements TransactionalFlow {
     if (tokenResult.isPresent()) {
       return tokenResult;
     }
-    if (bsaBlockedDomains.contains(domainName)) {
-      // TODO(weiminyu): extract to a constant for here and CheckApiAction.
-      // Excerpt from BSA's custom message. Max len 32 chars by EPP XML schema.
-      return Optional.of("Blocked by a GlobalBlock service");
-    } else {
+    if (isBypassBsaCreate(domainName, allocationToken) || !bsaBlockedDomains.contains(domainName)) {
       return Optional.empty();
     }
+    // TODO(weiminyu): extract to a constant for here and CheckApiAction.
+    // Excerpt from BSA's custom message. Max len 32 chars by EPP XML schema.
+    return Optional.of("Blocked by a GlobalBlock service");
   }
 
   /** Handle the fee check extension. */

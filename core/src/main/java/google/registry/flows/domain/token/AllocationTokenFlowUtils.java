@@ -36,7 +36,6 @@ import google.registry.model.domain.fee.FeeQueryCommandExtensionItem.CommandName
 import google.registry.model.domain.token.AllocationToken;
 import google.registry.model.domain.token.AllocationToken.TokenBehavior;
 import google.registry.model.domain.token.AllocationToken.TokenStatus;
-import google.registry.model.domain.token.AllocationToken.TokenType;
 import google.registry.model.domain.token.AllocationTokenExtension;
 import google.registry.model.reporting.HistoryEntry.HistoryEntryId;
 import google.registry.model.tld.Tld;
@@ -105,8 +104,7 @@ public class AllocationTokenFlowUtils {
   /** Redeems a SINGLE_USE {@link AllocationToken}, returning the redeemed copy. */
   public AllocationToken redeemToken(AllocationToken token, HistoryEntryId redemptionHistoryId) {
     checkArgument(
-        TokenType.SINGLE_USE.equals(token.getTokenType()),
-        "Only SINGLE_USE tokens can be marked as redeemed");
+        token.getTokenType().isOneTimeUse(), "Only SINGLE_USE tokens can be marked as redeemed");
     return token.asBuilder().setRedemptionHistoryId(redemptionHistoryId).build();
   }
 
