@@ -42,7 +42,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /** Tests for {@link UpdateRecurrenceCommand}. */
-public class UpdateBillingRecurrenceCommandTest extends CommandTestCase<UpdateRecurrenceCommand> {
+public class UpdateRecurrenceCommandTest extends CommandTestCase<UpdateRecurrenceCommand> {
 
   @BeforeEach
   void beforeEach() {

@@ -66,8 +66,6 @@ public class UploadBsaUnavailableDomainsActionTest {
 
   private final GcsUtils gcsUtils = new GcsUtils(LocalStorageHelper.getOptions());
 
-
-
   private final FakeResponse response = new FakeResponse();
 
   @BeforeEach
