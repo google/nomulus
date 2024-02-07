@@ -20,8 +20,8 @@ import static google.registry.model.domain.token.AllocationToken.TokenStatus.CAN
 import static google.registry.model.domain.token.AllocationToken.TokenStatus.ENDED;
 import static google.registry.model.domain.token.AllocationToken.TokenStatus.NOT_STARTED;
 import static google.registry.model.domain.token.AllocationToken.TokenStatus.VALID;
-import static google.registry.model.domain.token.AllocationToken.TokenType.ALLOW_BSA;
 import static google.registry.model.domain.token.AllocationToken.TokenType.BULK_PRICING;
+import static google.registry.model.domain.token.AllocationToken.TokenType.REGISTER_BSA;
 import static google.registry.model.domain.token.AllocationToken.TokenType.SINGLE_USE;
 import static google.registry.model.domain.token.AllocationToken.TokenType.UNLIMITED_USE;
 import static google.registry.testing.DatabaseHelper.createTld;
@@ -247,14 +247,14 @@ public class AllocationTokenTest extends EntityTestCase {
   }
 
   @Test
-  void testBuild_allowBsa_missingDomain() {
+  void testBuild_registerBsa_missingDomain() {
     createTld("tld");
-    // ALLOW_BSA requires a domain
+    // REGISTER_BSA requires a domain
     AllocationToken.Builder token =
-        new AllocationToken.Builder().setToken("abc").setTokenType(ALLOW_BSA);
+        new AllocationToken.Builder().setToken("abc").setTokenType(REGISTER_BSA);
     assertThat(assertThrows(IllegalArgumentException.class, () -> token.build()))
         .hasMessageThat()
-        .isEqualTo("ALLOW_BSA tokens must be tied to a domain");
+        .isEqualTo("REGISTER_BSA tokens must be tied to a domain");
     token.setDomainName("example.tld").build();
   }
 
@@ -330,7 +330,7 @@ public class AllocationTokenTest extends EntityTestCase {
     IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class, builder::build);
     assertThat(thrown)
         .hasMessageThat()
-        .isEqualTo("Domain name can only be specified for SINGLE_USE or ALLOW_BSA tokens");
+        .isEqualTo("Domain name can only be specified for SINGLE_USE or REGISTER_BSA tokens");
   }
 
   @Test
@@ -361,7 +361,7 @@ public class AllocationTokenTest extends EntityTestCase {
     assertThat(thrown)
         .hasMessageThat()
         .isEqualTo(
-            "Redemption history entry can only be specified for SINGLE_USE or ALLOW_BSA tokens");
+            "Redemption history entry can only be specified for SINGLE_USE or REGISTER_BSA tokens");
   }
 
   @Test

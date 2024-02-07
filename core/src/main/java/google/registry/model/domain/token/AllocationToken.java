@@ -22,7 +22,7 @@ import static google.registry.model.domain.token.AllocationToken.TokenStatus.CAN
 import static google.registry.model.domain.token.AllocationToken.TokenStatus.ENDED;
 import static google.registry.model.domain.token.AllocationToken.TokenStatus.NOT_STARTED;
 import static google.registry.model.domain.token.AllocationToken.TokenStatus.VALID;
-import static google.registry.model.domain.token.AllocationToken.TokenType.ALLOW_BSA;
+import static google.registry.model.domain.token.AllocationToken.TokenType.REGISTER_BSA;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.CollectionUtils.forceEmptyToNull;
 import static google.registry.util.CollectionUtils.nullToEmptyImmutableCopy;
@@ -121,27 +121,36 @@ public class AllocationToken extends UpdateAutoTimestampEntity implements Builda
   /** Type of the token that indicates how and where it should be used. */
   public enum TokenType {
     /** Token used for bulk pricing */
-    BULK_PRICING,
+    BULK_PRICING(/* isOneTimeUse= */ false),
     /** Token saved on a TLD to use if no other token is passed from the client */
-    DEFAULT_PROMO,
+    DEFAULT_PROMO(/* isOneTimeUse= */ false),
     /** This is the old name for what is now BULK_PRICING. */
     // TODO(sarahbot@): Remove this type once all tokens of this type have been scrubbed from the
     // database
     @Deprecated
-    PACKAGE,
+    PACKAGE(/* isOneTimeUse= */ false),
     /** Invalid after use */
-    SINGLE_USE,
+    SINGLE_USE(/* isOneTimeUse= */ true),
     /** Do not expire after use */
-    UNLIMITED_USE,
+    UNLIMITED_USE(/* isOneTimeUse= */ false),
     /**
      * Allows bypassing the BSA check during domain creation, otherwise has the same semantics as
      * {@link #SINGLE_USE}.
+     *
+     * <p>This token applies to a single domain only. If the domain is not blocked by BSA at the
+     * redemption time this token is processed like {@code SINGLE_USE}, as mentioned above.
      */
-    ALLOW_BSA;
+    REGISTER_BSA(/* isOneTimeUse= */ true);
+
+    private final boolean isOneTimeUse;
+
+    private TokenType(boolean isOneTimeUse) {
+      this.isOneTimeUse = isOneTimeUse;
+    }
 
     /** Returns true if token should be invalidated after use. */
     public boolean isOneTimeUse() {
-      return this.equals(SINGLE_USE) || this.equals(ALLOW_BSA);
+      return this.isOneTimeUse;
     }
   }
 
@@ -373,10 +382,10 @@ public class AllocationToken extends UpdateAutoTimestampEntity implements Builda
           "Bulk tokens cannot discount premium names");
       checkArgument(
           getInstance().domainName == null || getInstance().tokenType.isOneTimeUse(),
-          "Domain name can only be specified for SINGLE_USE or ALLOW_BSA tokens");
+          "Domain name can only be specified for SINGLE_USE or REGISTER_BSA tokens");
       checkArgument(
           getInstance().redemptionHistoryId == null || getInstance().tokenType.isOneTimeUse(),
-          "Redemption history entry can only be specified for SINGLE_USE or ALLOW_BSA tokens");
+          "Redemption history entry can only be specified for SINGLE_USE or REGISTER_BSA tokens");
       checkArgument(
           getInstance().tokenType != TokenType.BULK_PRICING
               || (getInstance().allowedClientIds != null
@@ -388,8 +397,9 @@ public class AllocationToken extends UpdateAutoTimestampEntity implements Builda
       checkArgument(
           getInstance().discountFraction > 0 || getInstance().discountYears == 1,
           "Discount years can only be specified along with a discount fraction");
-      if (getInstance().getTokenType().equals(ALLOW_BSA)) {
-        checkArgumentNotNull(getInstance().domainName, "ALLOW_BSA tokens must be tied to a domain");
+      if (getInstance().getTokenType().equals(REGISTER_BSA)) {
+        checkArgumentNotNull(
+            getInstance().domainName, "REGISTER_BSA tokens must be tied to a domain");
       }
       if (getInstance().registrationBehavior.equals(RegistrationBehavior.ANCHOR_TENANT)) {
         checkArgumentNotNull(

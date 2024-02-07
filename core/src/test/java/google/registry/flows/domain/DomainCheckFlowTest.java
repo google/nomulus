@@ -18,8 +18,8 @@ import static google.registry.bsa.persistence.BsaTestingUtils.persistBsaLabel;
 import static google.registry.model.billing.BillingBase.RenewalPriceBehavior.DEFAULT;
 import static google.registry.model.billing.BillingBase.RenewalPriceBehavior.NONPREMIUM;
 import static google.registry.model.billing.BillingBase.RenewalPriceBehavior.SPECIFIED;
-import static google.registry.model.domain.token.AllocationToken.TokenType.ALLOW_BSA;
 import static google.registry.model.domain.token.AllocationToken.TokenType.DEFAULT_PROMO;
+import static google.registry.model.domain.token.AllocationToken.TokenType.REGISTER_BSA;
 import static google.registry.model.domain.token.AllocationToken.TokenType.SINGLE_USE;
 import static google.registry.model.domain.token.AllocationToken.TokenType.UNLIMITED_USE;
 import static google.registry.model.eppoutput.CheckData.DomainCheck.create;
@@ -197,7 +197,7 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
     persistResource(
         new AllocationToken.Builder()
             .setToken("abc123")
-            .setTokenType(ALLOW_BSA)
+            .setTokenType(REGISTER_BSA)
             .setDomainName("example1.tld")
             .build());
     doCheckTest(

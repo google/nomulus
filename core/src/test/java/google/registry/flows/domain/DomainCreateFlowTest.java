@@ -27,9 +27,9 @@ import static google.registry.model.billing.BillingBase.RenewalPriceBehavior.DEF
 import static google.registry.model.billing.BillingBase.RenewalPriceBehavior.NONPREMIUM;
 import static google.registry.model.billing.BillingBase.RenewalPriceBehavior.SPECIFIED;
 import static google.registry.model.domain.fee.Fee.FEE_EXTENSION_URIS;
-import static google.registry.model.domain.token.AllocationToken.TokenType.ALLOW_BSA;
 import static google.registry.model.domain.token.AllocationToken.TokenType.BULK_PRICING;
 import static google.registry.model.domain.token.AllocationToken.TokenType.DEFAULT_PROMO;
+import static google.registry.model.domain.token.AllocationToken.TokenType.REGISTER_BSA;
 import static google.registry.model.domain.token.AllocationToken.TokenType.SINGLE_USE;
 import static google.registry.model.domain.token.AllocationToken.TokenType.UNLIMITED_USE;
 import static google.registry.model.eppcommon.EppXmlTransformer.marshal;
@@ -2602,13 +2602,13 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
   }
 
   @Test
-  void testSuccess_blockedByBsa_hasAllowBsaToken() throws Exception {
+  void testSuccess_blockedByBsa_hasRegisterBsaToken() throws Exception {
     enrollTldInBsa();
     allocationToken =
         persistResource(
             new AllocationToken.Builder()
                 .setToken("abc123")
-                .setTokenType(ALLOW_BSA)
+                .setTokenType(REGISTER_BSA)
                 .setDomainName("example.tld")
                 .build());
     persistBsaLabel("example");
@@ -2627,7 +2627,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
         persistResource(
             new AllocationToken.Builder()
                 .setToken("abc123")
-                .setTokenType(ALLOW_BSA)
+                .setTokenType(REGISTER_BSA)
                 .setDomainName("resdom.tld")
                 .build());
     persistBsaLabel("resdom");
@@ -2648,7 +2648,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
         persistResource(
             new AllocationToken.Builder()
                 .setToken("abc123")
-                .setTokenType(ALLOW_BSA)
+                .setTokenType(REGISTER_BSA)
                 .setRegistrationBehavior(RegistrationBehavior.BYPASS_TLD_STATE)
                 .setDomainName("example.tld")
                 .build());
@@ -2673,7 +2673,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
         persistResource(
             new AllocationToken.Builder()
                 .setToken("abcDEF23456")
-                .setTokenType(ALLOW_BSA)
+                .setTokenType(REGISTER_BSA)
                 .setDomainName("anchor.tld")
                 .build());
     setEppInput("domain_create_anchor_allocationtoken.xml");

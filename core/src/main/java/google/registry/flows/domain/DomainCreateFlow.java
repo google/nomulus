@@ -27,7 +27,7 @@ import static google.registry.flows.domain.DomainFlowUtils.cloneAndLinkReference
 import static google.registry.flows.domain.DomainFlowUtils.createFeeCreateResponse;
 import static google.registry.flows.domain.DomainFlowUtils.getReservationTypes;
 import static google.registry.flows.domain.DomainFlowUtils.isAnchorTenant;
-import static google.registry.flows.domain.DomainFlowUtils.isBypassBsaCreate;
+import static google.registry.flows.domain.DomainFlowUtils.isRegisterBsaCreate;
 import static google.registry.flows.domain.DomainFlowUtils.isReserved;
 import static google.registry.flows.domain.DomainFlowUtils.isValidReservedCreate;
 import static google.registry.flows.domain.DomainFlowUtils.validateCreateCommandContactsAndNameservers;
@@ -331,7 +331,7 @@ public final class DomainCreateFlow implements MutatingFlow {
               .verifySignedMarks(launchCreate.get().getSignedMarks(), domainLabel, now)
               .getId();
     }
-    if (!isBypassBsaCreate(domainName, allocationToken)) {
+    if (!isRegisterBsaCreate(domainName, allocationToken)) {
       verifyNotBlockedByBsa(domainLabel, tld, now);
     }
     flowCustomLogic.afterValidation(

@@ -26,7 +26,7 @@ import static google.registry.flows.domain.DomainFlowUtils.checkHasBillingAccoun
 import static google.registry.flows.domain.DomainFlowUtils.getReservationTypes;
 import static google.registry.flows.domain.DomainFlowUtils.handleFeeRequest;
 import static google.registry.flows.domain.DomainFlowUtils.isAnchorTenant;
-import static google.registry.flows.domain.DomainFlowUtils.isBypassBsaCreate;
+import static google.registry.flows.domain.DomainFlowUtils.isRegisterBsaCreate;
 import static google.registry.flows.domain.DomainFlowUtils.isReserved;
 import static google.registry.flows.domain.DomainFlowUtils.isValidReservedCreate;
 import static google.registry.flows.domain.DomainFlowUtils.validateDomainName;
@@ -270,7 +270,8 @@ public final class DomainCheckFlow implements TransactionalFlow {
     if (tokenResult.isPresent()) {
       return tokenResult;
     }
-    if (isBypassBsaCreate(domainName, allocationToken) || !bsaBlockedDomains.contains(domainName)) {
+    if (isRegisterBsaCreate(domainName, allocationToken)
+        || !bsaBlockedDomains.contains(domainName)) {
       return Optional.empty();
     }
     // TODO(weiminyu): extract to a constant for here and CheckApiAction.

@@ -380,7 +380,7 @@ class GenerateAllocationTokensCommandTest extends CommandTestCase<GenerateAlloca
         .hasMessageThat()
         .isEqualTo(
             "Invalid value for -t parameter. Allowed values:[BULK_PRICING, DEFAULT_PROMO, PACKAGE,"
-                + " SINGLE_USE, UNLIMITED_USE, ALLOW_BSA]");
+                + " SINGLE_USE, UNLIMITED_USE, REGISTER_BSA]");
   }
 
   @Test

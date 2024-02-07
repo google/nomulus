@@ -27,7 +27,7 @@ import static com.google.common.collect.Sets.intersection;
 import static com.google.common.collect.Sets.union;
 import static google.registry.bsa.persistence.BsaLabelUtils.isLabelBlocked;
 import static google.registry.model.domain.Domain.MAX_REGISTRATION_YEARS;
-import static google.registry.model.domain.token.AllocationToken.TokenType.ALLOW_BSA;
+import static google.registry.model.domain.token.AllocationToken.TokenType.REGISTER_BSA;
 import static google.registry.model.tld.Tld.TldState.GENERAL_AVAILABILITY;
 import static google.registry.model.tld.Tld.TldState.PREDELEGATION;
 import static google.registry.model.tld.Tld.TldState.QUIET_PERIOD;
@@ -313,10 +313,10 @@ public class DomainFlowUtils {
   }
 
   /** Returns whether a given domain create request may bypass the BSA block check. */
-  public static boolean isBypassBsaCreate(
+  public static boolean isRegisterBsaCreate(
       InternetDomainName domainName, Optional<AllocationToken> token) {
     return token.isPresent()
-        && token.get().getTokenType().equals(ALLOW_BSA)
+        && token.get().getTokenType().equals(REGISTER_BSA)
         && token.get().getDomainName().isPresent()
         && token.get().getDomainName().get().equals(domainName.toString());
   }
