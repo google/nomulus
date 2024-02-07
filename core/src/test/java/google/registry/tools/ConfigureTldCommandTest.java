@@ -72,6 +72,7 @@ public class ConfigureTldCommandTest extends CommandTestCase<ConfigureTldCommand
     command.mapper = objectMapper;
     premiumList = persistPremiumList("test", USD, "silver,USD 50", "gold,USD 80");
     command.validDnsWriterNames = ImmutableSet.of("VoidDnsWriter", "FooDnsWriter");
+    command.clock = fakeClock;
     logger.addHandler(logHandler);
   }
 
@@ -209,6 +210,20 @@ public class ConfigureTldCommandTest extends CommandTestCase<ConfigureTldCommand
         .isEqualTo(
             "The input file is missing data for the following fields: [tldStateTransitions,"
                 + " premiumListName, currency, numDnsPublishLocks]");
+  }
+
+  @Test
+  void testSuccess_addCreateBillingCostTransitions() throws Exception {
+    createTld("costmap");
+    File tldFile = tmpDir.resolve("costmap.yaml").toFile();
+    Files.asCharSink(tldFile, UTF_8).write(loadFile(getClass(), "costmap.yaml"));
+    runCommandForced("--input=" + tldFile);
+    Tld updatedTld = Tld.get("costmap");
+    ImmutableSortedMap<DateTime, Money> costTransitions =
+        updatedTld.getCreateBillingCostTransitions();
+    assertThat(costTransitions.size()).isEqualTo(3);
+    assertThat(costTransitions.get(START_OF_TIME)).isEqualTo(Money.of(USD, 13));
+    assertThat(costTransitions.get(START_OF_TIME.plusYears(26))).isEqualTo(Money.of(USD, 14));
   }
 
   @Test

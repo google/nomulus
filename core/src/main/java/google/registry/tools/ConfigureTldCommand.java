@@ -14,8 +14,8 @@
 package google.registry.tools;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static google.registry.model.tld.Tld.Builder.ROID_SUFFIX_PATTERN;
-import static google.registry.model.tld.Tld.DEFAULT_CREATE_BILLING_COST;
 import static google.registry.model.tld.Tlds.getTlds;
 import static google.registry.util.ListNamingUtils.convertFilePathToName;
 
@@ -34,6 +34,7 @@ import google.registry.model.tld.Tld;
 import google.registry.model.tld.label.PremiumList;
 import google.registry.model.tld.label.PremiumListDao;
 import google.registry.tools.params.PathParameter;
+import google.registry.util.Clock;
 import google.registry.util.Idn;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
@@ -46,6 +47,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import javax.inject.Inject;
 import javax.inject.Named;
 import org.joda.money.CurrencyUnit;
@@ -93,6 +95,8 @@ public class ConfigureTldCommand extends MutatingCommand {
 
   @Inject ObjectMapper mapper;
 
+  @Inject Clock clock;
+
   @Inject
   @Named("dnsWriterNames")
   Set<String> validDnsWriterNames;
@@ -118,14 +122,10 @@ public class ConfigureTldCommand extends MutatingCommand {
     Map<String, Object> tldData = new Yaml().load(Files.newBufferedReader(inputFile));
     checkName(name, tldData);
     Tld oldTld = getTlds().contains(name) ? Tld.get(name) : null;
-    if (!tldData.containsKey("createBillingCostTransitions")) {
-      tldData.put(
-          "createBillingCostTransitions",
-          oldTld != null
-              ? oldTld.getCreateBillingCostTransitions()
-              : TimedTransitionProperty.withInitialValue(DEFAULT_CREATE_BILLING_COST).toValueMap());
-    }
-    checkForMissingFields(tldData);
+
+    checkForMissingFields(
+        Stream.concat(tldData.keySet().stream(), Stream.of("createBillingCostTransitions"))
+            .collect(toImmutableSet()));
     Tld newTld = mapper.readValue(inputFile.toFile(), Tld.class);
     if (oldTld != null) {
       oldTldInBreakGlass = oldTld.getBreakglassMode();
@@ -160,7 +160,7 @@ public class ConfigureTldCommand extends MutatingCommand {
     checkArgument(
         Objects.equals(
             TimedTransitionProperty.fromValueMap(newTld.getCreateBillingCostTransitions())
-                .getValueAtTime(DateTime.now()),
+                .getValueAtTime(clock.nowUtc()),
             newTld.getCreateBillingCost()),
         "The createBillingCostTransitions map must have the same current cost as the"
             + " createBillingCost field");
@@ -216,7 +216,7 @@ public class ConfigureTldCommand extends MutatingCommand {
         ROID_SUFFIX_PATTERN.pattern());
   }
 
-  private void checkForMissingFields(Map<String, Object> tldData) {
+  private void checkForMissingFields(ImmutableSet<String> keySet) {
     Set<String> tldFields =
         Arrays.stream(Tld.class.getDeclaredFields())
             .filter(field -> !Modifier.isStatic(field.getModifiers()))
@@ -225,7 +225,7 @@ public class ConfigureTldCommand extends MutatingCommand {
             .collect(Collectors.toSet());
     Set<String> missingFields = new HashSet<>();
     for (String field : tldFields) {
-      if (!tldData.containsKey(field)) {
+      if (!keySet.contains(field)) {
         missingFields.add(field);
       }
     }

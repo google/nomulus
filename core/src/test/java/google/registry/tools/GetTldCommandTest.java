@@ -56,7 +56,7 @@ class GetTldCommandTest extends CommandTestCase<GetTldCommand> {
                     START_OF_TIME,
                     Money.of(USD, 8),
                     DateTime.parse("2020-01-01T00:00:00Z"),
-                    Money.of(USD, 15)))
+                    Money.of(USD, 25)))
             .setPremiumList(premiumList)
             .build());
     runCommand("tld");
