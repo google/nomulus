@@ -19,6 +19,7 @@ import static google.registry.model.billing.BillingBase.RenewalPriceBehavior.DEF
 import static google.registry.model.billing.BillingBase.RenewalPriceBehavior.NONPREMIUM;
 import static google.registry.model.billing.BillingBase.RenewalPriceBehavior.SPECIFIED;
 import static google.registry.model.domain.token.AllocationToken.TokenType.DEFAULT_PROMO;
+import static google.registry.model.domain.token.AllocationToken.TokenType.REGISTER_BSA;
 import static google.registry.model.domain.token.AllocationToken.TokenType.SINGLE_USE;
 import static google.registry.model.domain.token.AllocationToken.TokenType.UNLIMITED_USE;
 import static google.registry.model.eppoutput.CheckData.DomainCheck.create;
@@ -187,6 +188,40 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
         create(false, "allowedinsunrise.tld", "Reserved"),
         create(true, "example2.tld", null),
         create(true, "example3.tld", null));
+  }
+
+  @Test
+  void testSuccess_bsaBlocked_createAllowedWithToken() throws Exception {
+    persistBsaLabel("example1");
+    setEppInput("domain_check_allocationtoken.xml");
+    persistResource(
+        new AllocationToken.Builder()
+            .setToken("abc123")
+            .setTokenType(REGISTER_BSA)
+            .setDomainName("example1.tld")
+            .build());
+    doCheckTest(
+        create(true, "example1.tld", null),
+        create(false, "example2.tld", "Alloc token invalid for domain"),
+        create(false, "reserved.tld", "Reserved"),
+        create(false, "specificuse.tld", "Reserved; alloc. token required"));
+  }
+
+  @Test
+  void testSuccess_bsaBlocked_withIrrelevantTokenType() throws Exception {
+    persistBsaLabel("example1");
+    setEppInput("domain_check_allocationtoken.xml");
+    persistResource(
+        new AllocationToken.Builder()
+            .setToken("abc123")
+            .setTokenType(SINGLE_USE)
+            .setDomainName("example1.tld")
+            .build());
+    doCheckTest(
+        create(false, "example1.tld", "Blocked by a GlobalBlock service"),
+        create(false, "example2.tld", "Alloc token invalid for domain"),
+        create(false, "reserved.tld", "Reserved"),
+        create(false, "specificuse.tld", "Reserved; alloc. token required"));
   }
 
   @Test

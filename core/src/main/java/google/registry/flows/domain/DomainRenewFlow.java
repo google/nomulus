@@ -73,7 +73,6 @@ import google.registry.model.domain.fee.FeeTransformResponseExtension;
 import google.registry.model.domain.metadata.MetadataExtension;
 import google.registry.model.domain.rgp.GracePeriodStatus;
 import google.registry.model.domain.token.AllocationToken;
-import google.registry.model.domain.token.AllocationToken.TokenType;
 import google.registry.model.domain.token.AllocationTokenExtension;
 import google.registry.model.eppcommon.AuthInfo;
 import google.registry.model.eppcommon.StatusValue;
@@ -258,8 +257,7 @@ public final class DomainRenewFlow implements MutatingFlow {
     ImmutableSet.Builder<ImmutableObject> entitiesToSave = new ImmutableSet.Builder<>();
     entitiesToSave.add(
         newDomain, domainHistory, explicitRenewEvent, newAutorenewEvent, newAutorenewPollMessage);
-    if (allocationToken.isPresent()
-        && TokenType.SINGLE_USE.equals(allocationToken.get().getTokenType())) {
+    if (allocationToken.isPresent() && allocationToken.get().getTokenType().isOneTimeUse()) {
       entitiesToSave.add(
           allocationTokenFlowUtils.redeemToken(
               allocationToken.get(), domainHistory.getHistoryEntryId()));

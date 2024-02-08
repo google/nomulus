@@ -27,6 +27,7 @@ import static com.google.common.collect.Sets.intersection;
 import static com.google.common.collect.Sets.union;
 import static google.registry.bsa.persistence.BsaLabelUtils.isLabelBlocked;
 import static google.registry.model.domain.Domain.MAX_REGISTRATION_YEARS;
+import static google.registry.model.domain.token.AllocationToken.TokenType.REGISTER_BSA;
 import static google.registry.model.tld.Tld.TldState.GENERAL_AVAILABILITY;
 import static google.registry.model.tld.Tld.TldState.PREDELEGATION;
 import static google.registry.model.tld.Tld.TldState.QUIET_PERIOD;
@@ -265,9 +266,14 @@ public class DomainFlowUtils {
    * Verifies that the {@code domainLabel} is not blocked by any BSA block label for the given
    * {@code tld} at the specified time.
    */
-  public static void verifyNotBlockedByBsa(String domainLabel, Tld tld, DateTime now)
+  public static void verifyNotBlockedByBsa(
+      InternetDomainName domainName,
+      Tld tld,
+      DateTime now,
+      Optional<AllocationToken> allocationToken)
       throws DomainLabelBlockedByBsaException {
-    if (isBlockedByBsa(domainLabel, tld, now)) {
+    if (!isRegisterBsaCreate(domainName, allocationToken)
+        && isBlockedByBsa(domainName.parts().get(0), tld, now)) {
       throw new DomainLabelBlockedByBsaException();
     }
   }
@@ -307,6 +313,15 @@ public class DomainFlowUtils {
     // is for this domain.
     return getReservationTypes(domainName).contains(RESERVED_FOR_SPECIFIC_USE)
         && token.isPresent()
+        && token.get().getDomainName().isPresent()
+        && token.get().getDomainName().get().equals(domainName.toString());
+  }
+
+  /** Returns whether a given domain create request may bypass the BSA block check. */
+  public static boolean isRegisterBsaCreate(
+      InternetDomainName domainName, Optional<AllocationToken> token) {
+    return token.isPresent()
+        && token.get().getTokenType().equals(REGISTER_BSA)
         && token.get().getDomainName().isPresent()
         && token.get().getDomainName().get().equals(domainName.toString());
   }

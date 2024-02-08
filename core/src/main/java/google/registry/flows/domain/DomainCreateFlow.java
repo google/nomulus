@@ -330,7 +330,7 @@ public final class DomainCreateFlow implements MutatingFlow {
               .verifySignedMarks(launchCreate.get().getSignedMarks(), domainLabel, now)
               .getId();
     }
-    verifyNotBlockedByBsa(domainLabel, tld, now);
+    verifyNotBlockedByBsa(domainName, tld, now, allocationToken);
     flowCustomLogic.afterValidation(
         DomainCreateFlowCustomLogic.AfterValidationParameters.newBuilder()
             .setDomainName(domainName)
@@ -421,8 +421,7 @@ public final class DomainCreateFlow implements MutatingFlow {
           createNameCollisionOneTimePollMessage(targetId, domainHistory, registrarId, now));
     }
     entitiesToSave.add(domain, domainHistory);
-    if (allocationToken.isPresent()
-        && TokenType.SINGLE_USE.equals(allocationToken.get().getTokenType())) {
+    if (allocationToken.isPresent() && allocationToken.get().getTokenType().isOneTimeUse()) {
       entitiesToSave.add(
           allocationTokenFlowUtils.redeemToken(
               allocationToken.get(), domainHistory.getHistoryEntryId()));

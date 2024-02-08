@@ -18,7 +18,6 @@ import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.collect.Iterables.partition;
 import static com.google.common.collect.Streams.stream;
-import static google.registry.model.domain.token.AllocationToken.TokenType.SINGLE_USE;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import com.beust.jcommander.Parameter;
@@ -78,7 +77,7 @@ final class DeleteAllocationTokensCommand extends UpdateOrDeleteAllocationTokens
     ImmutableSet<VKey<AllocationToken>> tokensToDelete =
         tm().loadByKeys(batch).values().stream()
             .filter(t -> withDomains || !t.getDomainName().isPresent())
-            .filter(t -> SINGLE_USE.equals(t.getTokenType()))
+            .filter(t -> t.getTokenType().isOneTimeUse())
             .filter(t -> !t.isRedeemed())
             .map(AllocationToken::createVKey)
             .collect(toImmutableSet());
