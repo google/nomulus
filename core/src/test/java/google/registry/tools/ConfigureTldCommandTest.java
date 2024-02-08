@@ -188,6 +188,33 @@ public class ConfigureTldCommandTest extends CommandTestCase<ConfigureTldCommand
   }
 
   @Test
+  void testSuccess_fileMissingCreateBillingCostTransitionsRevertsToBasicConstructedMap()
+      throws Exception {
+    ImmutableSortedMap<DateTime, Money> createCostTransitions =
+        ImmutableSortedMap.of(
+            START_OF_TIME,
+            Money.of(USD, 8),
+            fakeClock.nowUtc(),
+            Money.of(USD, 1),
+            fakeClock.nowUtc().plusMonths(1),
+            Money.of(USD, 2),
+            fakeClock.nowUtc().plusMonths(2),
+            Money.of(USD, 3));
+    Tld tld =
+        createTld("nocreatecostmap")
+            .asBuilder()
+            .setCreateBillingCostTransitions(createCostTransitions)
+            .build();
+    assertThat(tld.getCreateBillingCostTransitions().size()).isEqualTo(4);
+    File tldFile = tmpDir.resolve("nocreatecostmap.yaml").toFile();
+    Files.asCharSink(tldFile, UTF_8).write(loadFile(getClass(), "nocreatecostmap.yaml"));
+    runCommandForced("--input=" + tldFile);
+    Tld updatedTld = Tld.get("nocreatecostmap");
+    assertThat(updatedTld.getCreateBillingCostTransitions())
+        .isEqualTo(ImmutableSortedMap.of(START_OF_TIME, Money.of(USD, 25)));
+  }
+
+  @Test
   void testFailure_billingCostTransitionsDoesNotMatchCreateCost() throws Exception {
     createTld("diffcostmap");
     File tldFile = tmpDir.resolve("diffcostmap.yaml").toFile();
