@@ -74,6 +74,7 @@ import google.registry.tldconfig.idn.IdnTableEnum;
 import google.registry.util.Idn;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
@@ -458,6 +459,8 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
   @JsonDeserialize(using = CurrencyDeserializer.class)
   CurrencyUnit currency = DEFAULT_CURRENCY;
 
+  // TODO(sarahbot@): Remove this field and make createBillingCostTransitions not-null once all TLDs
+  // are populated with a create cost transition map
   /** The per-year billing cost for registering a new domain name. */
   @Type(type = JodaMoneyType.TYPE_NAME)
   @Columns(
@@ -466,6 +469,12 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
         @Column(name = "create_billing_cost_currency")
       })
   Money createBillingCost = DEFAULT_CREATE_BILLING_COST;
+
+  // TODO(sarahbot@): Make this field not null and add a default value once field is populated on
+  // all existing TLDs
+  /** A property that transitions to different create billing costs at different times. */
+  @JsonDeserialize(using = TimedTransitionPropertyMoneyDeserializer.class)
+  TimedTransitionProperty<Money> createBillingCostTransitions;
 
   /** The one-time billing cost for restoring a domain name from the redemption grace period. */
   @Type(type = JodaMoneyType.TYPE_NAME)
@@ -674,6 +683,13 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
   @VisibleForTesting
   public Money getCreateBillingCost() {
     return createBillingCost;
+  }
+
+  public ImmutableSortedMap<DateTime, Money> getCreateBillingCostTransitions() {
+    return Objects.requireNonNullElseGet(
+            createBillingCostTransitions,
+            () -> TimedTransitionProperty.withInitialValue(getCreateBillingCost()))
+        .toValueMap();
   }
 
   /**
@@ -959,6 +975,17 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
       return this;
     }
 
+    public Builder setCreateBillingCostTransitions(
+        ImmutableSortedMap<DateTime, Money> createCostsMap) {
+      checkArgumentNotNull(createCostsMap, "Create billing costs map cannot be null");
+      checkArgument(
+          createCostsMap.values().stream().allMatch(Money::isPositiveOrZero),
+          "Create billing cost cannot be negative");
+      getInstance().createBillingCostTransitions =
+          TimedTransitionProperty.fromValueMap(createCostsMap);
+      return this;
+    }
+
     public Builder setReservedListsByName(Set<String> reservedListNames) {
       // TODO(b/309175133): forbid if enrolled with BSA
       checkArgument(reservedListNames != null, "reservedListNames must not be null");
@@ -1131,6 +1158,10 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
       // here to catch cases where we loaded an invalid TimedTransitionProperty from the database
       // and cloned it into a new builder, to block re-building a Tld in an invalid state.
       instance.tldStateTransitions.checkValidity();
+      // TODO(sarahbot@): Remove null check when createBillingCostTransitions field is made not-null
+      if (instance.createBillingCostTransitions != null) {
+        instance.createBillingCostTransitions.checkValidity();
+      }
       instance.renewBillingCostTransitions.checkValidity();
       instance.eapFeeSchedule.checkValidity();
       // All costs must be in the expected currency.

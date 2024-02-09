@@ -46,6 +46,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
 import google.registry.dns.writer.VoidDnsWriter;
 import google.registry.model.EntityTestCase;
+import google.registry.model.common.TimedTransitionProperty;
 import google.registry.model.domain.token.AllocationToken;
 import google.registry.model.tld.Tld.TldNotFoundException;
 import google.registry.model.tld.Tld.TldState;
@@ -149,6 +150,8 @@ public final class TldTest extends EntityTestCase {
             .asBuilder()
             .setDnsAPlusAaaaTtl(Duration.standardHours(1))
             .setDnsWriters(ImmutableSet.of("baz", "bang"))
+            .setCreateBillingCostTransitions(
+                TimedTransitionProperty.withInitialValue(Money.of(USD, 13)).toValueMap())
             .setEapFeeSchedule(
                 ImmutableSortedMap.of(
                     START_OF_TIME,
@@ -170,7 +173,12 @@ public final class TldTest extends EntityTestCase {
 
   @Test
   void testSuccess_tldYamlRoundtrip() throws Exception {
-    Tld testTld = createTld("test");
+    Tld testTld =
+        createTld("test")
+            .asBuilder()
+            .setCreateBillingCostTransitions(
+                TimedTransitionProperty.withInitialValue(Money.of(USD, 8)).toValueMap())
+            .build();
     ObjectMapper mapper = createObjectMapper();
     String yaml = mapper.writeValueAsString(testTld);
     Tld constructedTld = mapper.readValue(yaml, Tld.class);
@@ -222,6 +230,46 @@ public final class TldTest extends EntityTestCase {
     assertThat(registry.getCreateBillingCost()).isEqualTo(Money.of(USD, 42));
     // The default value of 17 is set in createTld().
     assertThat(registry.getRestoreBillingCost()).isEqualTo(Money.of(USD, 17));
+  }
+
+  @Test
+  void testSetCreateBillingCostTransitions() {
+    ImmutableSortedMap<DateTime, Money> createCostTransitions =
+        ImmutableSortedMap.of(
+            START_OF_TIME,
+            Money.of(USD, 8),
+            fakeClock.nowUtc(),
+            Money.of(USD, 1),
+            fakeClock.nowUtc().plusMonths(1),
+            Money.of(USD, 2),
+            fakeClock.nowUtc().plusMonths(2),
+            Money.of(USD, 3));
+    Tld registry =
+        Tld.get("tld").asBuilder().setCreateBillingCostTransitions(createCostTransitions).build();
+    assertThat(registry.getCreateBillingCostTransitions()).isEqualTo(createCostTransitions);
+  }
+
+  @Test
+  void testSetCreateBillingCostTransitionsNegativeCost() throws Exception {
+    ImmutableSortedMap<DateTime, Money> createCostTransitions =
+        ImmutableSortedMap.of(
+            START_OF_TIME,
+            Money.of(USD, 8),
+            fakeClock.nowUtc(),
+            Money.of(USD, 1),
+            fakeClock.nowUtc().plusMonths(1),
+            Money.of(USD, -2),
+            fakeClock.nowUtc().plusMonths(2),
+            Money.of(USD, 3));
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () ->
+                Tld.get("tld")
+                    .asBuilder()
+                    .setCreateBillingCostTransitions(createCostTransitions)
+                    .build());
+    assertThat(thrown.getMessage()).isEqualTo("Create billing cost cannot be negative");
   }
 
   @Test
