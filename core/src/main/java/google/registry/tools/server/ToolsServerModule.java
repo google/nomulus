@@ -77,12 +77,6 @@ public class ToolsServerModule {
   }
 
   @Provides
-  @Parameter("batchSize")
-  static Optional<Integer> provideBatchSize(HttpServletRequest req) {
-    return extractOptionalIntParameter(req, "batchSize");
-  }
-
-  @Provides
   @Parameter("refreshQps")
   static Optional<Integer> provideRefreshQps(HttpServletRequest req) {
     return extractOptionalIntParameter(req, "refreshQps");

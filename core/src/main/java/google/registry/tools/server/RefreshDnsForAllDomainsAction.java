@@ -21,6 +21,7 @@ import static google.registry.dns.DnsUtils.requestDomainDnsRefresh;
 import static google.registry.model.tld.Tlds.assertTldsExist;
 import static google.registry.persistence.PersistenceModule.TransactionIsolationLevel.TRANSACTION_REPEATABLE_READ;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+import static google.registry.request.RequestParameters.PARAM_BATCH_SIZE;
 import static google.registry.request.RequestParameters.PARAM_TLDS;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
 
@@ -83,7 +84,7 @@ public class RefreshDnsForAllDomainsAction implements Runnable {
   RefreshDnsForAllDomainsAction(
       Response response,
       @Parameter(PARAM_TLDS) ImmutableSet<String> tlds,
-      @Parameter("batchSize") Optional<Integer> batchSize,
+      @Parameter(PARAM_BATCH_SIZE) Optional<Integer> batchSize,
       @Parameter("refreshQps") Optional<Integer> refreshQps,
       Random random) {
     this.response = response;

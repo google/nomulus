@@ -93,11 +93,7 @@ class DeleteProberDataActionTest {
   }
 
   private void resetAction() {
-    action = new DeleteProberDataAction();
-    action.isDryRun = false;
-    action.tlds = ImmutableSet.of();
-    action.registryAdminRegistrarId = "TheRegistrar";
-    // RegistryEnvironment.SANDBOX.setup(systemPropertyExtension);
+    action = new DeleteProberDataAction(false, ImmutableSet.of(), Optional.empty(), "TheRegistrar");
   }
 
   @AfterEach
@@ -116,6 +112,19 @@ class DeleteProberDataActionTest {
     assertAllExist(tldEntities);
     assertAllExist(exampleEntities);
     assertAllExist(notTestEntities);
+    assertAllAbsent(ibEntities);
+    assertAllAbsent(oaEntities);
+  }
+
+  @Test
+  void test_deletesAllInBatches() throws Exception {
+    // Persist 40 domains
+    Set<ImmutableObject> ibEntities = persistLotsOfDomains("ib-any.test");
+    Set<ImmutableObject> oaEntities = persistLotsOfDomains("oa-canary.test");
+    // Create action with batch size of 3
+    DeleteProberDataAction batchedAction =
+        new DeleteProberDataAction(false, ImmutableSet.of(), Optional.of(3), "TheRegistrar");
+    batchedAction.run();
     assertAllAbsent(ibEntities);
     assertAllAbsent(oaEntities);
   }
