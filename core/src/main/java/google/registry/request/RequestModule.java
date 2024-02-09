@@ -18,6 +18,8 @@ import static com.google.common.net.MediaType.JSON_UTF_8;
 import static google.registry.dns.PublishDnsUpdatesAction.CLOUD_TASKS_RETRY_HEADER;
 import static google.registry.model.tld.Tlds.assertTldExists;
 import static google.registry.model.tld.Tlds.assertTldsExist;
+import static google.registry.request.RequestParameters.PARAM_BATCH_SIZE;
+import static google.registry.request.RequestParameters.extractOptionalIntParameter;
 import static google.registry.request.RequestParameters.extractRequiredHeader;
 import static google.registry.request.RequestParameters.extractRequiredParameter;
 import static google.registry.request.RequestParameters.extractSetOfParameters;
@@ -89,6 +91,12 @@ public final class RequestModule {
     ImmutableSet<String> tlds = extractSetOfParameters(req, RequestParameters.PARAM_TLDS);
     assertTldsExist(tlds);
     return tlds;
+  }
+
+  @Provides
+  @Parameter(PARAM_BATCH_SIZE)
+  static Optional<Integer> provideBatchSize(HttpServletRequest req) {
+    return extractOptionalIntParameter(req, PARAM_BATCH_SIZE);
   }
 
   @Provides

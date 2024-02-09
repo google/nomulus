@@ -38,6 +38,11 @@ public final class RequestParameters {
   public static final String PARAM_TLDS = "tlds";
 
   /**
+   * The standardized request parameter name used by any action taking a configurable batch size.
+   */
+  public static final String PARAM_BATCH_SIZE = "batchSize";
+
+  /**
    * Returns first GET or POST parameter associated with {@code name}.
    *
    * <p>For example, assume {@code name} is "bar". The following request URIs would cause this
