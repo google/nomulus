@@ -15,6 +15,7 @@
 package google.registry.ui.server.console;
 
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+import static google.registry.ui.server.registrar.RegistrarConsoleModule.PARAM_DOMAIN;
 
 import com.google.api.client.http.HttpStatusCodes;
 import com.google.gson.Gson;
@@ -51,7 +52,7 @@ public class ConsoleDomainGetAction implements JsonGetAction {
       AuthResult authResult,
       Response response,
       Gson gson,
-      @Parameter("domain") String paramDomain) {
+      @Parameter(PARAM_DOMAIN) String paramDomain) {
     this.authResult = authResult;
     this.response = response;
     this.gson = gson;

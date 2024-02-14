@@ -19,6 +19,8 @@ import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.ui.server.SoyTemplateUtils.CSS_RENAMING_MAP_SUPPLIER;
+import static google.registry.ui.server.registrar.RegistrarConsoleModule.PARAM_CLIENT_ID;
+import static google.registry.ui.server.registrar.RegistrarConsoleModule.PARAM_NAME;
 import static javax.servlet.http.HttpServletResponse.SC_FORBIDDEN;
 
 import com.google.common.base.Ascii;
@@ -85,8 +87,15 @@ public final class ConsoleRegistrarCreatorAction extends HtmlAction {
   @Inject SendEmailUtils sendEmailUtils;
   @Inject @Named("base58StringGenerator") StringGenerator passwordGenerator;
   @Inject @Named("digitOnlyStringGenerator") StringGenerator passcodeGenerator;
-  @Inject @Parameter("clientId") Optional<String> clientId;
-  @Inject @Parameter("name") Optional<String> name;
+
+  @Inject
+  @Parameter(PARAM_CLIENT_ID)
+  Optional<String> clientId;
+
+  @Inject
+  @Parameter(PARAM_NAME)
+  Optional<String> name;
+
   @Inject @Parameter("billingAccount") Optional<String> billingAccount;
   @Inject @Parameter("ianaId") Optional<Integer> ianaId;
   @Inject @Parameter("referralEmail") Optional<String> referralEmail;

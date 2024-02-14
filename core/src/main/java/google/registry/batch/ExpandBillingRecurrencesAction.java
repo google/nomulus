@@ -15,10 +15,10 @@
 package google.registry.batch;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static google.registry.batch.BatchModule.PARAM_DRY_RUN;
 import static google.registry.beam.BeamUtils.createJobName;
 import static google.registry.model.common.Cursor.CursorType.RECURRING_BILLING;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+import static google.registry.request.RequestParameters.PARAM_DRY_RUN;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static javax.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 import static javax.servlet.http.HttpServletResponse.SC_OK;
