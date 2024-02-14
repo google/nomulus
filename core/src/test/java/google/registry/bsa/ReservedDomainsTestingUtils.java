@@ -43,7 +43,6 @@ public final class ReservedDomainsTestingUtils {
         new ReservedList.Builder()
             .setName(listName)
             .setCreationTimestamp(START_OF_TIME)
-            .setShouldPublish(true)
             .setReservedListMap(entries)
             .build());
   }
@@ -76,7 +75,6 @@ public final class ReservedDomainsTestingUtils {
         new ReservedList.Builder()
             .setName(listName)
             .setCreationTimestamp(START_OF_TIME)
-            .setShouldPublish(true)
             .setReservedListMap(
                 new ImmutableMap.Builder<String, ReservedListEntry>()
                     .putAll(existingEntries)
@@ -97,7 +95,6 @@ public final class ReservedDomainsTestingUtils {
         new ReservedList.Builder()
             .setName(listName)
             .setCreationTimestamp(START_OF_TIME)
-            .setShouldPublish(true)
             .setReservedListMap(newEntries)
             .build());
   }
