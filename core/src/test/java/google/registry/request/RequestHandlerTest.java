@@ -199,7 +199,7 @@ public final class RequestHandlerTest {
   void beforeEach() throws Exception {
     // Initialize here, not inline, so that we pick up the mocked UserService.
     handler =
-        RequestHandler.createForTest(
+        RequestHandler.create(
             Component.class,
             () ->
                 new Builder() {

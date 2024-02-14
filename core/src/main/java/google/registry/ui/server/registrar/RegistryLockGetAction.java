@@ -52,7 +52,7 @@ import javax.inject.Inject;
 import org.joda.time.DateTime;
 
 /**
- * Servlet that allows for getting locks for a particular registrar.
+ * Action that allows for getting locks for a particular registrar.
  *
  * <p>Note: at the moment we have no mechanism for JSON GET/POSTs in the same class or at the same
  * URL, which is why this is distinct from the {@link RegistryLockPostAction}.
@@ -90,7 +90,7 @@ public final class RegistryLockGetAction implements JsonGetAction {
       Response response,
       AuthenticatedRegistrarAccessor registrarAccessor,
       AuthResult authResult,
-      @Parameter(PARAM_CLIENT_ID) Optional<String> paramClientId) {
+      @Parameter("consoleClientId") Optional<String> paramClientId) {
     this.method = method;
     this.response = response;
     this.registrarAccessor = registrarAccessor;
