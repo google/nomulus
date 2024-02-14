@@ -31,8 +31,8 @@ class ListReservedListsActionTest extends ListActionTestCase {
 
   @BeforeEach
   void beforeEach() {
-    ReservedList rl1 = persistReservedList("xn--q9jyb4c-published", true, "blah,FULLY_BLOCKED");
-    ReservedList rl2 = persistReservedList("xn--q9jyb4c-private", false, "dugong,FULLY_BLOCKED");
+    ReservedList rl1 = persistReservedList("xn--q9jyb4c-published", "blah,FULLY_BLOCKED");
+    ReservedList rl2 = persistReservedList("xn--q9jyb4c-private", "dugong,FULLY_BLOCKED");
     createTld("xn--q9jyb4c");
     persistResource(Tld.get("xn--q9jyb4c").asBuilder().setReservedLists(rl1, rl2).build());
     action = new ListReservedListsAction();
@@ -53,13 +53,13 @@ class ListReservedListsActionTest extends ListActionTestCase {
   void testRun_withParameters() {
     testRunSuccess(
         action,
-        Optional.of("shouldPublish"),
+        Optional.of("revisionId"),
         Optional.empty(),
         Optional.empty(),
-        "^name\\s+shouldPublish\\s*$",
+        "^name\\s+revisionId\\s*$",
         "^-+\\s+-+\\s*$",
-        "^xn--q9jyb4c-private\\s+false\\s*$",
-        "^xn--q9jyb4c-published\\s+true\\s*$");
+        "^xn--q9jyb4c-private\\s+2\\s*$",
+        "^xn--q9jyb4c-published\\s+1\\s*$");
   }
 
   @Test
@@ -71,8 +71,8 @@ class ListReservedListsActionTest extends ListActionTestCase {
         Optional.empty(),
         "^name\\s+.*shouldPublish.*",
         "^-+\\s+-+",
-        "^xn--q9jyb4c-private\\s+.*false",
-        "^xn--q9jyb4c-published\\s+.*true");
+        "^xn--q9jyb4c-private\\s+.*",
+        "^xn--q9jyb4c-published\\s+.*");
   }
 
   @Test

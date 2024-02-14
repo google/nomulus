@@ -73,7 +73,6 @@ public class UploadBsaUnavailableDomainsActionTest {
     ReservedList reservedList =
         persistReservedList(
             "tld-reserved_list",
-            true,
             "tine,FULLY_BLOCKED",
             "flagrant,NAME_COLLISION",
             "jimmy,RESERVED_FOR_SPECIFIC_USE");

@@ -45,7 +45,6 @@ class ExportUtilsTest {
         "snow,FULLY_BLOCKED");
     ReservedList rl3 = persistReservedList(
         "tld-reserved3",
-        false,
         "tine,FULLY_BLOCKED");
     createTld("tld");
     persistResource(Tld.get("tld").asBuilder().setReservedLists(rl1, rl2, rl3).build());
