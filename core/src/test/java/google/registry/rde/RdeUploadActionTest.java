@@ -40,7 +40,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
-import com.google.appengine.api.utils.SystemProperty;
 import com.google.cloud.storage.BlobId;
 import com.google.cloud.storage.contrib.nio.testing.LocalStorageHelper;
 import com.google.common.io.ByteSource;
@@ -184,9 +183,6 @@ public class RdeUploadActionTest {
 
   @BeforeEach
   void beforeEach() throws Exception {
-    // Force "development" mode so we don't try to really connect to GCS.
-    SystemProperty.environment.set(SystemProperty.Environment.Value.Development);
-
     createTld("tld");
     gcsUtils.createFromBytes(GHOSTRYDE_FILE, Ghostryde.encode(DEPOSIT_XML.read(), encryptKey));
     gcsUtils.createFromBytes(GHOSTRYDE_R1_FILE, Ghostryde.encode(DEPOSIT_XML.read(), encryptKey));

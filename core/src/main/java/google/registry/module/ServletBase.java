@@ -14,7 +14,6 @@
 
 package google.registry.module;
 
-import com.google.appengine.api.LifecycleManager;
 import com.google.common.flogger.FluentLogger;
 import com.google.monitoring.metrics.MetricReporter;
 import dagger.Lazy;
@@ -46,25 +45,26 @@ public class ServletBase extends HttpServlet {
   public void init() {
     Security.addProvider(new BouncyCastleProvider());
 
-    // If metric reporter failed to instantiate for any reason (bad keyring, bad json credential,
-    // etc), we log the error but keep the main thread running. Also the shutdown hook will only be
-    // registered if metric reporter starts up correctly.
+    // If the metric reporter failed to instantiate for any reason (bad keyring, bad json
+    // credential, etc.), we log the error but keep the main thread running. Also, the shutdown hook
+    // will only be registered if the metric reporter starts up correctly.
     try {
       metricReporter.get().startAsync().awaitRunning(java.time.Duration.ofSeconds(10));
       logger.atInfo().log("Started up MetricReporter.");
-      LifecycleManager.getInstance()
-          .setShutdownHook(
-              () -> {
-                try {
-                  metricReporter
-                      .get()
-                      .stopAsync()
-                      .awaitTerminated(java.time.Duration.ofSeconds(10));
-                  logger.atInfo().log("Shut down MetricReporter.");
-                } catch (TimeoutException e) {
-                  logger.atSevere().withCause(e).log("Failed to stop MetricReporter.");
-                }
-              });
+      Runtime.getRuntime()
+          .addShutdownHook(
+              new Thread(
+                  () -> {
+                    try {
+                      metricReporter
+                          .get()
+                          .stopAsync()
+                          .awaitTerminated(java.time.Duration.ofSeconds(10));
+                      logger.atInfo().log("Shut down MetricReporter.");
+                    } catch (TimeoutException e) {
+                      logger.atSevere().withCause(e).log("Failed to stop MetricReporter.");
+                    }
+                  }));
     } catch (Exception e) {
       logger.atSevere().withCause(e).log("Failed to initialize MetricReporter.");
     }

@@ -24,8 +24,8 @@ import com.google.common.collect.ImmutableSortedSet;
 import com.google.common.flogger.FluentLogger;
 import com.google.common.util.concurrent.UncheckedExecutionException;
 import google.registry.model.server.Lock;
-import google.registry.util.AppEngineTimeLimiter;
 import google.registry.util.Clock;
+import google.registry.util.TimeLimiter;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
@@ -82,7 +82,7 @@ public class LockHandlerImpl implements LockHandler {
     DateTime startTime = clock.nowUtc();
     String sanitizedTld = Strings.emptyToNull(tld);
     try {
-      return AppEngineTimeLimiter.create()
+      return TimeLimiter.create()
           .callWithTimeout(
               new LockingCallable(callable, lockAcquirer, sanitizedTld, leaseLength, lockNames),
               leaseLength.minus(LOCK_TIMEOUT_FUDGE).getMillis(),
