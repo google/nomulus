@@ -37,16 +37,15 @@ class UpdateReservedListCommandTest
 
   @BeforeEach
   void beforeEach() {
-    populateInitialReservedListInDatabase(true);
+    populateInitialReservedListInDatabase();
   }
 
-  private void populateInitialReservedListInDatabase(boolean shouldPublish) {
+  private void populateInitialReservedListInDatabase() {
     persistReservedList(
         new ReservedList.Builder()
             .setName("xn--q9jyb4c_common-reserved")
             .setReservedListMapFromLines(ImmutableList.of("helicopter,FULLY_BLOCKED"))
             .setCreationTimestamp(START_OF_TIME)
-            .setShouldPublish(shouldPublish)
             .build());
   }
 
@@ -58,25 +57,6 @@ class UpdateReservedListCommandTest
   @Test
   void testSuccess_unspecifiedNameDefaultsToFileName() throws Exception {
     runSuccessfulUpdateTest("--input=" + reservedTermsPath);
-  }
-
-  @Test
-  void testSuccess_shouldPublish_setToFalseCorrectly() throws Exception {
-    runSuccessfulUpdateTest("--input=" + reservedTermsPath, "--should_publish=false");
-    assertThat(ReservedList.get("xn--q9jyb4c_common-reserved")).isPresent();
-    ReservedList reservedList = ReservedList.get("xn--q9jyb4c_common-reserved").get();
-    assertThat(reservedList.getShouldPublish()).isFalse();
-    assertInStdout("Update reserved list for xn--q9jyb4c_common-reserved?");
-    assertInStdout("shouldPublish: true -> false");
-  }
-
-  @Test
-  void testSuccess_shouldPublish_doesntOverrideFalseIfNotSpecified() throws Exception {
-    populateInitialReservedListInDatabase(false);
-    runCommandForced("--input=" + reservedTermsPath);
-    assertThat(ReservedList.get("xn--q9jyb4c_common-reserved")).isPresent();
-    ReservedList reservedList = ReservedList.get("xn--q9jyb4c_common-reserved").get();
-    assertThat(reservedList.getShouldPublish()).isFalse();
   }
 
   private void runSuccessfulUpdateTest(String... args) throws Exception {
@@ -133,11 +113,9 @@ class UpdateReservedListCommandTest
     // CreateOrUpdateReservedListCommandTestCases.java
     UpdateReservedListCommand command = new UpdateReservedListCommand();
     command.input = Paths.get(reservedTermsPath);
-    command.shouldPublish = false;
     command.init();
 
     assertThat(command.prompt()).contains("Update reserved list for xn--q9jyb4c_common-reserved?");
-    assertThat(command.prompt()).contains("shouldPublish: true -> false");
     assertThat(command.prompt()).contains("helicopter: helicopter,FULLY_BLOCKED -> null");
     assertThat(command.prompt()).contains("baddies: null -> baddies,FULLY_BLOCKED");
     assertThat(command.prompt()).contains("ford: null -> ford,FULLY_BLOCKED # random comment");
