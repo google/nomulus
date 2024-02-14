@@ -53,12 +53,10 @@ final class CreateReservedListCommand extends CreateOrUpdateReservedListCommand 
     }
     DateTime now = DateTime.now(UTC);
     List<String> allLines = Files.readAllLines(input, UTF_8);
-    boolean shouldPublish = this.shouldPublish == null || this.shouldPublish;
     reservedList =
         new ReservedList.Builder()
             .setName(name)
             .setReservedListMapFromLines(allLines)
-            .setShouldPublish(shouldPublish)
             .setCreationTimestamp(now)
             .build();
 

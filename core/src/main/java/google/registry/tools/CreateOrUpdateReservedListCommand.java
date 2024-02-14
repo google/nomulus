@@ -44,14 +44,6 @@ public abstract class CreateOrUpdateReservedListCommand extends ConfirmingComman
       required = true)
   Path input;
 
-  @Nullable
-  @Parameter(
-      names = "--should_publish",
-      description =
-          "Whether the list is published to the concatenated list on Drive (defaults to true).",
-      arity = 1)
-  Boolean shouldPublish;
-
   ReservedList reservedList;
 
   @Override
