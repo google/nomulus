@@ -95,7 +95,7 @@ public class RequestHandler<C> {
   }
 
   /** Creates a new RequestHandler with an explicit component class for test purposes. */
-  public static <C> RequestHandler<C> createForTest(
+  public static <C> RequestHandler<C> create(
       Class<C> component,
       Provider<? extends RequestComponentBuilder<C>> requestComponentBuilderProvider,
       RequestAuthenticator requestAuthenticator) {
