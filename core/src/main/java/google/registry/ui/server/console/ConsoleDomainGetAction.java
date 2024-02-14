@@ -51,7 +51,7 @@ public class ConsoleDomainGetAction implements JsonGetAction {
       AuthResult authResult,
       Response response,
       Gson gson,
-      @Parameter("domain") String paramDomain) {
+      @Parameter("consoleDomain") String paramDomain) {
     this.authResult = authResult;
     this.response = response;
     this.gson = gson;

@@ -75,7 +75,7 @@ public final class ConsoleOteSetupAction extends HtmlAction {
   StringGenerator passwordGenerator;
 
   @Inject
-  @Parameter("clientId")
+  @Parameter("consoleClientId")
   Optional<String> clientId;
 
   @Inject

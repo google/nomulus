@@ -325,6 +325,71 @@
     {
       "moduleLicense": "GNU General Public License, version 2 (GPL2), with the classpath exception",
       "moduleName": "io.github.eisop:dataflow-errorprone"
+    },
+    {
+      // "Apache License, Version 2.0".
+      "moduleLicense": null,
+      "moduleVersion": "3.0.0",
+      "moduleName": "com.squareup.okio:okio-bom"
+    },
+    {
+      // "Apache License, Version 2.0".
+      "moduleLicense": null,
+      "moduleVersion": "3.4.0",
+      "moduleName": "com.squareup.okio:okio-fakefilesystem"
+    },
+    {
+      // "Apache License, Version 2.0".
+      "moduleLicense": null,
+      "moduleVersion": "4.9.3",
+      "moduleName": "com.squareup.wire:wire-runtime"
+    },
+    {
+      // "Apache License, Version 2.0".
+      "moduleLicense": null,
+      "moduleVersion": "4.8.0",
+      "moduleName": "com.squareup.wire:wire-schema"
+    },
+    {
+      // "Apache License, Version 2.0".
+      "moduleLicense": null,
+      "moduleVersion": "1.15.1",
+      "moduleName": "com.squareup:kotlinpoet"
+    },
+    {
+      "moduleLicense": "Apache License Version 2.0",
+      "moduleVersion": "3.0.0.M2",
+      "moduleName": "io.apicurio:apicurio-registry-protobuf-schema-utilities"
+    },
+    {
+      // "Apache License, Version 2.0".
+      "moduleLicense": null,
+      "moduleVersion": "1.4.0",
+      "moduleName": "org.jetbrains.kotlin:kotlin-bom"
+    },
+    {
+      // "Apache License, Version 2.0".
+      "moduleLicense": null,
+      "moduleVersion": "1.9.20",
+      "moduleName": "org.jetbrains.kotlin:kotlin-stdlib-common"
+    },
+    {
+      // "Apache License, Version 2.0".
+      "moduleLicense": null,
+      "moduleVersion": "1.5.2",
+      "moduleName": "org.jetbrains.kotlinx:kotlinx-coroutines-core"
+    },
+    {
+      // "Apache License, Version 2.0".
+      "moduleLicense": null,
+      "moduleVersion": "0.4.0",
+      "moduleName": "org.jetbrains.kotlinx:kotlinx-datetime"
+    },
+    {
+      // "Apache License, Version 2.0".
+      "moduleLicense": null,
+      "moduleVersion": "1.0.1",
+      "moduleName": "org.jetbrains.kotlinx:kotlinx-serialization-core"
     }
   ]
 }

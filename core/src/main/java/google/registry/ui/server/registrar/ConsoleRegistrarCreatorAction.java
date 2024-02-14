@@ -85,8 +85,15 @@ public final class ConsoleRegistrarCreatorAction extends HtmlAction {
   @Inject SendEmailUtils sendEmailUtils;
   @Inject @Named("base58StringGenerator") StringGenerator passwordGenerator;
   @Inject @Named("digitOnlyStringGenerator") StringGenerator passcodeGenerator;
-  @Inject @Parameter("clientId") Optional<String> clientId;
-  @Inject @Parameter("name") Optional<String> name;
+
+  @Inject
+  @Parameter("consoleClientId")
+  Optional<String> clientId;
+
+  @Inject
+  @Parameter("consoleName")
+  Optional<String> name;
+
   @Inject @Parameter("billingAccount") Optional<String> billingAccount;
   @Inject @Parameter("ianaId") Optional<Integer> ianaId;
   @Inject @Parameter("referralEmail") Optional<String> referralEmail;
