@@ -40,7 +40,6 @@ import org.joda.time.DateTime;
 @Module
 public class BatchModule {
 
-  public static final String PARAM_DRY_RUN = "dryRun";
   public static final String PARAM_FAST = "fast";
 
   @Provides
@@ -137,11 +136,5 @@ public class BatchModule {
   @Parameter(PARAM_FAST)
   static boolean provideIsFast(HttpServletRequest req) {
     return extractBooleanParameter(req, PARAM_FAST);
-  }
-
-  @Provides
-  @Parameter(PARAM_DRY_RUN)
-  static boolean provideIsDryRun(HttpServletRequest req) {
-    return extractBooleanParameter(req, PARAM_DRY_RUN);
   }
 }

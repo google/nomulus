@@ -16,6 +16,7 @@ package google.registry.ui.server.registrar;
 
 import static com.google.common.base.Preconditions.checkState;
 import static google.registry.ui.server.SoyTemplateUtils.CSS_RENAMING_MAP_SUPPLIER;
+import static google.registry.ui.server.registrar.RegistrarConsoleModule.PARAM_CLIENT_ID;
 import static google.registry.util.RegistryEnvironment.PRODUCTION;
 import static javax.servlet.http.HttpServletResponse.SC_FORBIDDEN;
 
@@ -75,7 +76,7 @@ public final class ConsoleOteSetupAction extends HtmlAction {
   StringGenerator passwordGenerator;
 
   @Inject
-  @Parameter("clientId")
+  @Parameter(PARAM_CLIENT_ID)
   Optional<String> clientId;
 
   @Inject

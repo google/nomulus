@@ -31,7 +31,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 /**
- * Servlet that wraps a servlet and delegates request execution to a queue.
+ * RegistryServlet that wraps a servlet and delegates request execution to a queue.
  *
  * @see TestServer
  */

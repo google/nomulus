@@ -16,9 +16,9 @@ package google.registry.batch;
 
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
-import static google.registry.batch.BatchModule.PARAM_DRY_RUN;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.request.Action.Method.POST;
+import static google.registry.request.RequestParameters.PARAM_DRY_RUN;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
 import static google.registry.util.RegistryEnvironment.PRODUCTION;
 

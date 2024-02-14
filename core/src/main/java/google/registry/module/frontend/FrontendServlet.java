@@ -18,7 +18,7 @@ import com.google.monitoring.metrics.MetricReporter;
 import dagger.Lazy;
 import google.registry.module.ServletBase;
 
-/** Servlet that should handle all requests to our "default" App Engine module. */
+/** RegistryServlet that should handle all requests to our "default" App Engine module. */
 public final class FrontendServlet extends ServletBase {
 
   private static final FrontendComponent component = DaggerFrontendComponent.create();

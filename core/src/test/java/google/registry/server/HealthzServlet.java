@@ -22,7 +22,7 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-/** Servlet for responding to {@code /healthz} requests. */
+/** RegistryServlet for responding to {@code /healthz} requests. */
 public final class HealthzServlet extends HttpServlet {
 
   @Override

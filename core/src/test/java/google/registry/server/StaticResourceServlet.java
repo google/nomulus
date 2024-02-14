@@ -36,7 +36,7 @@ import javax.servlet.http.HttpServletResponse;
 import org.mortbay.jetty.servlet.ServletHolder;
 
 /**
- * Servlet for serving static resources on a Jetty development server path prefix.
+ * RegistryServlet for serving static resources on a Jetty development server path prefix.
  *
  * <p>This servlet can serve either a single file or the contents of a directory.
  *

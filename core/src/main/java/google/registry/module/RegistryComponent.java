@@ -12,63 +12,97 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package google.registry.module.tools;
+package google.registry.module;
 
 import com.google.monitoring.metrics.MetricReporter;
 import dagger.Component;
 import dagger.Lazy;
+import dagger.Module;
+import dagger.Provides;
+import google.registry.batch.BatchModule;
+import google.registry.bigquery.BigqueryModule;
 import google.registry.config.CloudTasksUtilsModule;
 import google.registry.config.CredentialModule;
 import google.registry.config.RegistryConfig.ConfigModule;
+import google.registry.dns.writer.VoidDnsWriterModule;
 import google.registry.export.DriveModule;
+import google.registry.export.sheet.SheetsServiceModule;
 import google.registry.flows.ServerTridProviderModule;
 import google.registry.flows.custom.CustomLogicFactoryModule;
 import google.registry.groups.DirectoryModule;
+import google.registry.groups.GmailModule;
 import google.registry.groups.GroupsModule;
 import google.registry.groups.GroupssettingsModule;
 import google.registry.keyring.KeyringModule;
 import google.registry.keyring.api.DummyKeyringModule;
 import google.registry.keyring.api.KeyModule;
 import google.registry.keyring.secretmanager.SecretManagerKeyringModule;
-import google.registry.module.tools.ToolsRequestComponent.ToolsRequestComponentModule;
+import google.registry.module.RegistryComponent.RegistryModule;
+import google.registry.module.RequestComponent.RequestComponentModule;
 import google.registry.monitoring.whitebox.StackdriverModule;
+import google.registry.persistence.PersistenceModule;
 import google.registry.privileges.secretmanager.SecretManagerModule;
+import google.registry.rde.JSchModule;
 import google.registry.request.Modules.GsonModule;
 import google.registry.request.Modules.NetHttpTransportModule;
+import google.registry.request.Modules.UrlConnectionServiceModule;
 import google.registry.request.Modules.UserServiceModule;
+import google.registry.request.RequestHandler;
 import google.registry.request.auth.AuthModule;
+import google.registry.request.auth.RequestAuthenticator;
+import google.registry.ui.ConsoleDebug.ConsoleConfigModule;
 import google.registry.util.UtilsModule;
+import javax.inject.Provider;
 import javax.inject.Singleton;
 
-/** Dagger component with instance lifetime for "tools" App Engine module. */
+/** Dagger component with instance lifetime. */
 @Singleton
 @Component(
     modules = {
       AuthModule.class,
+      RequestComponentModule.class,
+      BatchModule.class,
+      BigqueryModule.class,
+      CloudTasksUtilsModule.class,
       ConfigModule.class,
+      ConsoleConfigModule.class,
       CredentialModule.class,
       CustomLogicFactoryModule.class,
-      CloudTasksUtilsModule.class,
       DirectoryModule.class,
-      DummyKeyringModule.class,
       DriveModule.class,
+      DummyKeyringModule.class,
+      GmailModule.class,
       GroupsModule.class,
       GroupssettingsModule.class,
       GsonModule.class,
+      JSchModule.class,
       KeyModule.class,
       KeyringModule.class,
       NetHttpTransportModule.class,
+      PersistenceModule.class,
+      RegistryModule.class,
       SecretManagerKeyringModule.class,
       SecretManagerModule.class,
       ServerTridProviderModule.class,
+      SheetsServiceModule.class,
       StackdriverModule.class,
-      ToolsRequestComponentModule.class,
+      UrlConnectionServiceModule.class,
       UserServiceModule.class,
-      UtilsModule.class
-
+      UtilsModule.class,
+      VoidDnsWriterModule.class,
     })
-interface ToolsComponent {
-  ToolsRequestHandler requestHandler();
+interface RegistryComponent {
+  RequestHandler<RequestComponent> requestHandler();
 
   Lazy<MetricReporter> metricReporter();
+
+  @Module
+  class RegistryModule {
+    @Provides
+    static RequestHandler<RequestComponent> provideRequestHandler(
+        Provider<RequestComponent.Builder> componentProvider,
+        RequestAuthenticator requestAuthenticator) {
+      return RequestHandler.create(RequestComponent.class, componentProvider, requestAuthenticator);
+    }
+  }
 }

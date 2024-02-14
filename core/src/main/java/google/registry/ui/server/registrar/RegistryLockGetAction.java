@@ -52,7 +52,7 @@ import javax.inject.Inject;
 import org.joda.time.DateTime;
 
 /**
- * Servlet that allows for getting locks for a particular registrar.
+ * RegistryServlet that allows for getting locks for a particular registrar.
  *
  * <p>Note: at the moment we have no mechanism for JSON GET/POSTs in the same class or at the same
  * URL, which is why this is distinct from the {@link RegistryLockPostAction}.

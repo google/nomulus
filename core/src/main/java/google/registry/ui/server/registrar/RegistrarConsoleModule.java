@@ -39,7 +39,7 @@ import org.joda.time.DateTime;
 /** Dagger module for the Registrar Console parameters. */
 @Module
 public final class RegistrarConsoleModule {
-  static final String PARAM_CLIENT_ID = "clientId";
+  static final String PARAM_CLIENT_ID = "consoleClientId";
 
   @Provides
   @RequestScope
@@ -76,7 +76,7 @@ public final class RegistrarConsoleModule {
   }
 
   @Provides
-  @Parameter("name")
+  @Parameter("console_name")
   static Optional<String> provideOptionalName(HttpServletRequest req) {
     return extractOptionalParameter(req, "name");
   }
@@ -178,7 +178,7 @@ public final class RegistrarConsoleModule {
   }
 
   @Provides
-  @Parameter("domain")
+  @Parameter("console_domain")
   static String provideDomain(HttpServletRequest req) {
     return extractRequiredParameter(req, "domain");
   }

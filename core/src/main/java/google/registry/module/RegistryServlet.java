@@ -1,4 +1,4 @@
-// Copyright 2018 The Nomulus Authors. All Rights Reserved.
+// Copyright 2024 The Nomulus Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,20 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package google.registry.module.pubapi;
+package google.registry.module;
 
 import com.google.monitoring.metrics.MetricReporter;
 import dagger.Lazy;
-import google.registry.module.ServletBase;
+import google.registry.request.RequestHandler;
 
-/** RegistryServlet that should handle all requests to our "default" App Engine module. */
-public final class PubApiServlet extends ServletBase {
-
-  private static final PubApiComponent component = DaggerPubApiComponent.create();
-  private static final PubApiRequestHandler requestHandler = component.requestHandler();
+public class RegistryServlet extends ServletBase {
+  private static final RegistryComponent component = DaggerRegistryComponent.create();
+  private static final RequestHandler<RequestComponent> requestHandler = component.requestHandler();
   private static final Lazy<MetricReporter> metricReporter = component.metricReporter();
 
-  public PubApiServlet() {
+  public RegistryServlet() {
     super(requestHandler, metricReporter);
   }
 }
