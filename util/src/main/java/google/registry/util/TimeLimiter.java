@@ -16,12 +16,11 @@ package google.registry.util;
 
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.SimpleTimeLimiter;
-import com.google.common.util.concurrent.TimeLimiter;
 import java.util.List;
 import java.util.concurrent.AbstractExecutorService;
 import java.util.concurrent.TimeUnit;
 
-public class AppEngineTimeLimiter {
+public class TimeLimiter {
 
   private static class NewRequestThreadExecutorService extends AbstractExecutorService {
 
@@ -56,7 +55,7 @@ public class AppEngineTimeLimiter {
     }
   }
 
-  public static TimeLimiter create() {
+  public static com.google.common.util.concurrent.TimeLimiter create() {
     return SimpleTimeLimiter.create(new NewRequestThreadExecutorService());
   }
 }

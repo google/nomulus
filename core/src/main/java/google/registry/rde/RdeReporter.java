@@ -23,7 +23,6 @@ import static google.registry.util.DomainNameUtils.canonicalizeHostname;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.api.client.http.HttpMethods;
-import com.google.appengine.api.urlfetch.HTTPResponse;
 import com.google.common.flogger.FluentLogger;
 import com.google.common.net.MediaType;
 import google.registry.config.RegistryConfig.Config;
@@ -107,7 +106,7 @@ public class RdeReporter {
   }
 
   /**
-   * Unmarshals IIRDEA XML result object from {@link HTTPResponse} payload.
+   * Unmarshall IIRDEA XML result object from HTTP response payload.
    *
    * @see <a
    *     href="http://tools.ietf.org/html/draft-lozano-icann-registry-interfaces-05#section-4.1">

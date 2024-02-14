@@ -55,7 +55,6 @@ import javax.inject.Singleton;
 @Singleton
 @Component(
     modules = {
-      AppEngineAdminApiModule.class,
       AuthModule.class,
       BatchModule.class,
       BigqueryModule.class,
