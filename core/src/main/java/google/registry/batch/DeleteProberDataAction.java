@@ -94,12 +94,23 @@ public class DeleteProberDataAction implements Runnable {
   //
   // Note: creationTime must be compared to a Java object (CreateAutoTimestamp) but deletionTime can
   // be compared directly to the SQL timestamp (it's a DateTime)
-  private static final String DOMAIN_QUERY_STRING =
+
+  // The dry run query orders the results and compares the last in previous batch to progress
+  // through the result set.
+  private static final String DRYRUN_DOMAIN_QUERY_STRING =
       "FROM Domain d WHERE d.tld IN :tlds AND d.domainName NOT LIKE 'nic.%%' AND"
           + " (d.subordinateHosts IS EMPTY OR d.subordinateHosts IS NULL) AND d.creationTime <"
           + " :creationTimeCutoff AND ((d.creationTime <= :nowAutoTimestamp AND d.deletionTime >"
           + " :now) OR d.deletionTime < :nowMinusSoftDeleteDelay) %s ORDER BY"
           + " d.repoId ASC";
+
+  // This query does not need to sort the results between batches since the domains will be deleted
+  // in each batch, they will not be returned in the next result set.
+  private static final String DOMAIN_QUERY_STRING =
+      "FROM Domain d WHERE d.tld IN :tlds AND d.domainName NOT LIKE 'nic.%%' AND"
+          + " (d.subordinateHosts IS EMPTY OR d.subordinateHosts IS NULL) AND d.creationTime <"
+          + " :creationTimeCutoff AND ((d.creationTime <= :nowAutoTimestamp AND d.deletionTime >"
+          + " :now) OR d.deletionTime < :nowMinusSoftDeleteDelay)";
 
   /** Number of domains to retrieve and delete per SQL transaction. */
   private static final int DEFAULT_BATCH_SIZE = 1000;
@@ -176,19 +187,23 @@ public class DeleteProberDataAction implements Runnable {
       AtomicInteger hardDeletedDomains,
       Optional<String> lastInPreviousBatch,
       DateTime now) {
+    String queryString =
+        isDryRun
+            ? String.format(
+                DRYRUN_DOMAIN_QUERY_STRING,
+                lastInPreviousBatch.isPresent() ? "AND d.repoId > :lastInPreviousBatch" : "")
+            : DOMAIN_QUERY_STRING;
     TypedQuery<Domain> query =
-        tm().query(
-                String.format(
-                    DOMAIN_QUERY_STRING,
-                    lastInPreviousBatch.isPresent() ? "AND d.repoId > :lastInPreviousBatch" : ""),
-                Domain.class)
+        tm().query(queryString, Domain.class)
             .setParameter("tlds", deletableTlds)
             .setParameter(
                 "creationTimeCutoff", CreateAutoTimestamp.create(now.minus(DOMAIN_USED_DURATION)))
             .setParameter("nowMinusSoftDeleteDelay", now.minus(SOFT_DELETE_DELAY))
             .setParameter("nowAutoTimestamp", CreateAutoTimestamp.create(now))
             .setParameter("now", now);
-    lastInPreviousBatch.ifPresent(l -> query.setParameter("lastInPreviousBatch", l));
+    if (lastInPreviousBatch.isPresent() && isDryRun) {
+      query.setParameter("lastInPreviousBatch", lastInPreviousBatch.get());
+    }
     ImmutableList<Domain> domainList =
         query.setMaxResults(batchSize).getResultStream().collect(toImmutableList());
       ImmutableList.Builder<String> domainRepoIdsToHardDelete = new ImmutableList.Builder<>();
