@@ -60,38 +60,21 @@ final class UpdateReservedListCommand extends CreateOrUpdateReservedListCommand 
                     new IllegalArgumentException(
                         String.format(
                             "Could not update reserved list %s because it doesn't exist.", name)));
-    boolean shouldPublish =
-        this.shouldPublish == null ? existingReservedList.getShouldPublish() : this.shouldPublish;
     List<String> allLines = Files.readAllLines(input, UTF_8);
     ReservedList.Builder updated =
-        existingReservedList
-            .asBuilder()
-            .setReservedListMapFromLines(allLines)
-            .setShouldPublish(shouldPublish);
+        existingReservedList.asBuilder().setReservedListMapFromLines(allLines);
     reservedList = updated.build();
-    boolean shouldPublishChanged =
-        existingReservedList.getShouldPublish() != reservedList.getShouldPublish();
     boolean reservedListEntriesChanged =
         !existingReservedList
             .getReservedListEntries()
             .equals(reservedList.getReservedListEntries());
-    if (!shouldPublishChanged && !reservedListEntriesChanged) {
+    if (!reservedListEntriesChanged) {
       newChange = false;
       return "No entity changes to apply.";
     }
-    String result = String.format("Update reserved list for %s?\n", name);
-    if (shouldPublishChanged) {
-      result +=
-          String.format(
-              "shouldPublish: %s -> %s\n",
-              existingReservedList.getShouldPublish(), reservedList.getShouldPublish());
-    }
-    if (reservedListEntriesChanged) {
-      result +=
-          prettyPrintEntityDeepDiff(
-              existingReservedList.getReservedListEntries(), reservedList.getReservedListEntries());
-    }
-    return result;
+    return String.format("Update reserved list for %s?\n", name)
+        + prettyPrintEntityDeepDiff(
+            existingReservedList.getReservedListEntries(), reservedList.getReservedListEntries());
   }
 
   @Override

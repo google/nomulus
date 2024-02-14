@@ -51,6 +51,6 @@ class ExportUtilsTest {
     persistResource(Tld.get("tld").asBuilder().setReservedLists(rl1, rl2, rl3).build());
     // Should not contain jimmy, tine, or oval.
     assertThat(new ExportUtils("# This is a disclaimer.").exportReservedTerms(Tld.get("tld")))
-        .isEqualTo("# This is a disclaimer.\ncat\nlol\nsnow\n");
+        .isEqualTo("# This is a disclaimer.\ncat\nlol\nsnow\ntine\n");
   }
 }
