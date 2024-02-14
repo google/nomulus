@@ -300,7 +300,6 @@ public final class TldTest extends EntityTestCase {
                 .setName("tld-reserved15")
                 .setReservedListMapFromLines(
                     ImmutableList.of("potato,FULLY_BLOCKED", "phone,FULLY_BLOCKED"))
-                .setShouldPublish(true)
                 .setCreationTimestamp(fakeClock.nowUtc())
                 .build());
     ReservedList rl16 =
@@ -309,7 +308,6 @@ public final class TldTest extends EntityTestCase {
                 .setName("tld-reserved16")
                 .setReservedListMapFromLines(
                     ImmutableList.of("port,FULLY_BLOCKED", "manteau,FULLY_BLOCKED"))
-                .setShouldPublish(true)
                 .setCreationTimestamp(fakeClock.nowUtc())
                 .build());
     Tld registry1 =
@@ -347,7 +345,6 @@ public final class TldTest extends EntityTestCase {
                 .setName("tld-reserved5")
                 .setReservedListMapFromLines(
                     ImmutableList.of("potato,FULLY_BLOCKED", "phone,FULLY_BLOCKED"))
-                .setShouldPublish(true)
                 .setCreationTimestamp(fakeClock.nowUtc())
                 .build());
     ReservedList rl6 =
@@ -356,7 +353,6 @@ public final class TldTest extends EntityTestCase {
                 .setName("tld-reserved6")
                 .setReservedListMapFromLines(
                     ImmutableList.of("port,FULLY_BLOCKED", "manteau,FULLY_BLOCKED"))
-                .setShouldPublish(true)
                 .setCreationTimestamp(fakeClock.nowUtc())
                 .build());
     Tld r = Tld.get("tld").asBuilder().setReservedLists(ImmutableSet.of(rl5, rl6)).build();
@@ -372,7 +368,6 @@ public final class TldTest extends EntityTestCase {
             .setName("tld-reserved15")
             .setReservedListMapFromLines(
                 ImmutableList.of("potato,FULLY_BLOCKED", "phone,FULLY_BLOCKED"))
-            .setShouldPublish(true)
             .setCreationTimestamp(fakeClock.nowUtc())
             .build());
     persistReservedList(
@@ -380,7 +375,6 @@ public final class TldTest extends EntityTestCase {
             .setName("tld-reserved16")
             .setReservedListMapFromLines(
                 ImmutableList.of("port,FULLY_BLOCKED", "manteau,FULLY_BLOCKED"))
-            .setShouldPublish(true)
             .setCreationTimestamp(fakeClock.nowUtc())
             .build());
     Tld r =
