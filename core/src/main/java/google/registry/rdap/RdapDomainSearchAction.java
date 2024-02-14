@@ -342,7 +342,7 @@ public class RdapDomainSearchAction extends RdapSearchActionBase {
               Host.class,
               partialStringQuery.getInitialString(),
               shouldIncludeDeleted() ? START_OF_TIME : getRequestTime());
-      return (!host.isPresent()
+      return (host.isEmpty()
               || !desiredRegistrar.get().equals(host.get().getPersistedCurrentSponsorRegistrarId()))
           ? ImmutableList.of()
           : ImmutableList.of(host.get().createVKey());

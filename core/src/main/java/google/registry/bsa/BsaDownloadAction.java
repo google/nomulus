@@ -116,7 +116,7 @@ public class BsaDownloadAction implements Runnable {
       return null;
     }
     Optional<DownloadSchedule> scheduleOptional = downloadScheduler.schedule();
-    if (!scheduleOptional.isPresent()) {
+    if (scheduleOptional.isEmpty()) {
       logger.atInfo().log("Nothing to do.");
       return null;
     }

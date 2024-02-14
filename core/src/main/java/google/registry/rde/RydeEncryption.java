@@ -161,7 +161,7 @@ final class RydeEncryption {
               .filter(ciphertext -> ciphertext.getKeyID() == privateKey.getKeyID())
               .findAny();
       // If we can't find one with our key ID, then we can't decrypt the file!
-      if (!cyphertext.isPresent()) {
+      if (cyphertext.isEmpty()) {
         String keyIds =
             PgpUtils.stream(ciphertextList, PGPPublicKeyEncryptedData.class)
                 .map(ciphertext -> Long.toHexString(ciphertext.getKeyID()))

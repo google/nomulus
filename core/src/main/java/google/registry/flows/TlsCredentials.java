@@ -105,7 +105,7 @@ public class TlsCredentials implements TransportCredentials {
     }
     // In the rare unexpected case that the client inet address wasn't passed along at all, then
     // by default deny access.
-    if (!clientInetAddr.isPresent()) {
+    if (clientInetAddr.isEmpty()) {
       logger.atWarning().log(
           "Authentication error: Missing IP address for registrar %s.", registrar.getRegistrarId());
       throw new BadRegistrarIpAddressException(clientInetAddr);
@@ -129,8 +129,8 @@ public class TlsCredentials implements TransportCredentials {
 
   @VisibleForTesting
   void validateCertificateHash(Registrar registrar) throws AuthenticationErrorException {
-    if (!registrar.getClientCertificateHash().isPresent()
-        && !registrar.getFailoverClientCertificateHash().isPresent()) {
+    if (registrar.getClientCertificateHash().isEmpty()
+        && registrar.getFailoverClientCertificateHash().isEmpty()) {
       if (requireSslCertificates) {
         throw new RegistrarCertificateNotConfiguredException();
       } else {
@@ -140,7 +140,7 @@ public class TlsCredentials implements TransportCredentials {
       }
     }
     // Check that the request included the certificate hash
-    if (!clientCertificateHash.isPresent()) {
+    if (clientCertificateHash.isEmpty()) {
       logger.atInfo().log(
           "Request from registrar %s did not include X-SSL-Certificate.",
           registrar.getRegistrarId());

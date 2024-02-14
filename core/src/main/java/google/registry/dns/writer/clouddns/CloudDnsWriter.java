@@ -128,7 +128,7 @@ public class CloudDnsWriter extends BaseDnsWriter {
     // Return early if no DNS records should be published.
     // desiredRecordsBuilder is populated with an empty set to indicate that all existing records
     // should be deleted.
-    if (!domain.isPresent() || !domain.get().shouldPublishToDns()) {
+    if (domain.isEmpty() || !domain.get().shouldPublishToDns()) {
       desiredRecords.put(absoluteDomainName, ImmutableSet.of());
       return;
     }
@@ -192,7 +192,7 @@ public class CloudDnsWriter extends BaseDnsWriter {
     Optional<Host> host = loadByForeignKey(Host.class, hostName, clock.nowUtc());
 
     // Return early if the host is deleted.
-    if (!host.isPresent()) {
+    if (host.isEmpty()) {
       desiredRecords.put(absoluteHostName, ImmutableSet.of());
       return;
     }
@@ -247,7 +247,7 @@ public class CloudDnsWriter extends BaseDnsWriter {
     Optional<InternetDomainName> tld = Tlds.findTldForName(host);
 
     // Host not managed by our registry, no need to update DNS.
-    if (!tld.isPresent()) {
+    if (tld.isEmpty()) {
       logger.atSevere().log("publishHost called for invalid host '%s'.", hostName);
       return;
     }

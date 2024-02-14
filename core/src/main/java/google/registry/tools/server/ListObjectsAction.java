@@ -139,7 +139,7 @@ public abstract class ListObjectsAction<T extends ImmutableObject> implements Ru
   private ImmutableSet<String> getFieldsToUse(ImmutableSet<T> objects) {
     // Get the list of fields from the received parameter.
     List<String> fieldsToUse;
-    if ((fields == null) || !fields.isPresent()) {
+    if ((fields == null) || fields.isEmpty()) {
       fieldsToUse = new ArrayList<>();
     } else {
       fieldsToUse = Splitter.on(',').splitToList(fields.get());

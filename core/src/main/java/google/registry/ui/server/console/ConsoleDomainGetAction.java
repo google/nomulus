@@ -60,12 +60,12 @@ public class ConsoleDomainGetAction implements JsonGetAction {
 
   @Override
   public void run() {
-    if (!authResult.isAuthenticated() || !authResult.userAuthInfo().isPresent()) {
+    if (!authResult.isAuthenticated() || authResult.userAuthInfo().isEmpty()) {
       response.setStatus(HttpStatusCodes.STATUS_CODE_UNAUTHORIZED);
       return;
     }
     UserAuthInfo authInfo = authResult.userAuthInfo().get();
-    if (!authInfo.consoleUser().isPresent()) {
+    if (authInfo.consoleUser().isEmpty()) {
       response.setStatus(HttpStatusCodes.STATUS_CODE_UNAUTHORIZED);
       return;
     }
@@ -75,7 +75,7 @@ public class ConsoleDomainGetAction implements JsonGetAction {
                 () ->
                     EppResourceUtils.loadByForeignKeyCached(
                         Domain.class, paramDomain, tm().getTransactionTime()));
-    if (!possibleDomain.isPresent()) {
+    if (possibleDomain.isEmpty()) {
       response.setStatus(HttpStatusCodes.STATUS_CODE_NOT_FOUND);
       return;
     }

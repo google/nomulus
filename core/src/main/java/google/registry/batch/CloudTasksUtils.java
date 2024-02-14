@@ -207,7 +207,7 @@ public class CloudTasksUtils implements Serializable {
       Service service,
       Multimap<String, String> params,
       Optional<Integer> jitterSeconds) {
-    if (!jitterSeconds.isPresent() || jitterSeconds.get() <= 0) {
+    if (jitterSeconds.isEmpty() || jitterSeconds.get() <= 0) {
       return createTask(path, method, service, params);
     }
     return createTaskWithDelay(

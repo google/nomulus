@@ -251,11 +251,6 @@ class DomainTransferRequestFlowTest
                 .build());
   }
 
-  /** Implements the missing Optional.stream function that is added in Java 9. */
-  private static <T> Stream<T> optionalToStream(Optional<T> optional) {
-    return optional.map(Stream::of).orElseGet(Stream::empty);
-  }
-
   private void assertHistoryEntriesContainBillingEventsAndGracePeriods(
       DateTime expectedExpirationTime,
       DateTime implicitTransferTime,
@@ -314,7 +309,7 @@ class DomainTransferRequestFlowTest
     ImmutableSet<BillingBase> expectedBillingBases =
         Streams.concat(
                 Stream.of(losingClientAutorenew, gainingClientAutorenew),
-                optionalToStream(optionalTransferBillingEvent))
+                optionalTransferBillingEvent.stream())
             .collect(toImmutableSet());
     assertBillingEvents(Sets.union(expectedBillingBases, extraBillingBases));
     // Assert that the domain's TransferData server-approve billing events match the above.
@@ -331,8 +326,7 @@ class DomainTransferRequestFlowTest
     // Assert that the full set of server-approve billing events is exactly the extra ones plus
     // the transfer billing event (if present) and the gaining client autorenew.
     ImmutableSet<BillingBase> expectedServeApproveBillingBases =
-        Streams.concat(
-                Stream.of(gainingClientAutorenew), optionalToStream(optionalTransferBillingEvent))
+        Streams.concat(Stream.of(gainingClientAutorenew), optionalTransferBillingEvent.stream())
             .collect(toImmutableSet());
     assertBillingEventsEqual(
         Iterables.filter(

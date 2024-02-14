@@ -101,7 +101,7 @@ public final class RdapModule {
   @Provides
   static RdapAuthorization provideRdapAuthorization(
       AuthResult authResult, AuthenticatedRegistrarAccessor registrarAccessor) {
-    if (!authResult.userAuthInfo().isPresent()) {
+    if (authResult.userAuthInfo().isEmpty()) {
       return RdapAuthorization.PUBLIC_AUTHORIZATION;
     }
     UserAuthInfo userAuthInfo = authResult.userAuthInfo().get();

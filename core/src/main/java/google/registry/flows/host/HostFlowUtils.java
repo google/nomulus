@@ -81,7 +81,7 @@ public class HostFlowUtils {
   public static Optional<Domain> lookupSuperordinateDomain(
       InternetDomainName hostName, DateTime now) throws EppException {
     Optional<InternetDomainName> tld = findTldForName(hostName);
-    if (!tld.isPresent()) {
+    if (tld.isEmpty()) {
       // This is an host on a TLD we don't run, therefore obviously external, so we are done.
       return Optional.empty();
     }
@@ -91,7 +91,7 @@ public class HostFlowUtils {
             .skip(hostName.parts().size() - (tld.get().parts().size() + 1))
             .collect(joining("."));
     Optional<Domain> superordinateDomain = loadByForeignKey(Domain.class, domainName, now);
-    if (!superordinateDomain.isPresent() || !isActive(superordinateDomain.get(), now)) {
+    if (superordinateDomain.isEmpty() || !isActive(superordinateDomain.get(), now)) {
       throw new SuperordinateDomainDoesNotExistException(domainName);
     }
     return superordinateDomain;

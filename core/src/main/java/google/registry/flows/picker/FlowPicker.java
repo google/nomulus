@@ -148,23 +148,25 @@ public class FlowPicker {
    * <p>This provider must be tried before {@link #RESOURCE_CRUD_FLOW_PROVIDER}. Otherwise, the
    * regular domain update flow will match first.
    */
-  private static final FlowProvider DOMAIN_RESTORE_FLOW_PROVIDER = new FlowProvider() {
-    @Override
-    Class<? extends Flow> get(
-        EppInput eppInput, InnerCommand innerCommand, ResourceCommand resourceCommand) {
-      if (!(resourceCommand instanceof DomainCommand.Update)) {
-        return null;
-      }
-      Optional<RgpUpdateExtension> rgpUpdateExtension =
-          eppInput.getSingleExtension(RgpUpdateExtension.class);
-      if (!rgpUpdateExtension.isPresent()) {
-        return null;
-      }
-      // Restore command with an op of "report" is not currently supported.
-      return (rgpUpdateExtension.get().getRestoreCommand().getRestoreOp() == RestoreOp.REQUEST)
-          ? DomainRestoreRequestFlow.class
-          : UnimplementedRestoreFlow.class;
-    }};
+  private static final FlowProvider DOMAIN_RESTORE_FLOW_PROVIDER =
+      new FlowProvider() {
+        @Override
+        Class<? extends Flow> get(
+            EppInput eppInput, InnerCommand innerCommand, ResourceCommand resourceCommand) {
+          if (!(resourceCommand instanceof DomainCommand.Update)) {
+            return null;
+          }
+          Optional<RgpUpdateExtension> rgpUpdateExtension =
+              eppInput.getSingleExtension(RgpUpdateExtension.class);
+          if (rgpUpdateExtension.isEmpty()) {
+            return null;
+          }
+          // Restore command with an op of "report" is not currently supported.
+          return (rgpUpdateExtension.get().getRestoreCommand().getRestoreOp() == RestoreOp.REQUEST)
+              ? DomainRestoreRequestFlow.class
+              : UnimplementedRestoreFlow.class;
+        }
+      };
 
   /**
    * The claims check flow is keyed on the type of the {@link ResourceCommand} and on having the
@@ -180,7 +182,7 @@ public class FlowPicker {
           }
           Optional<LaunchCheckExtension> launchCheck =
               eppInput.getSingleExtension(LaunchCheckExtension.class);
-          if (!launchCheck.isPresent()
+          if (launchCheck.isEmpty()
               || CheckType.AVAILABILITY.equals(launchCheck.get().getCheckType())) {
             // We don't distinguish between registry phases for "avail", so don't bother checking
             // phase.

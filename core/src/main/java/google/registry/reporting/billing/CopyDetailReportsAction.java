@@ -104,7 +104,7 @@ public final class CopyDetailReportsAction implements Runnable {
       // TODO(larryruili): Determine a safer way of enforcing this.
       String registrarId = Iterables.get(Splitter.on('_').split(detailReportName), 3);
       Optional<Registrar> registrar = Registrar.loadByRegistrarId(registrarId);
-      if (!registrar.isPresent()) {
+      if (registrar.isEmpty()) {
         logger.atWarning().log(
             "Registrar %s not found in database for file '%s'.", registrar, detailReportName);
         continue;

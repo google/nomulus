@@ -123,7 +123,7 @@ public class LoginFlow implements MutatingFlow {
       serviceExtensionUrisBuilder.add(uri);
     }
     Optional<Registrar> registrar = Registrar.loadByRegistrarIdCached(login.getClientId());
-    if (!registrar.isPresent()) {
+    if (registrar.isEmpty()) {
       throw new BadRegistrarIdException(login.getClientId());
     }
 
@@ -155,7 +155,7 @@ public class LoginFlow implements MutatingFlow {
                   });
       // Load fresh from database (bypassing the cache) to ensure we don't save stale data.
       Optional<Registrar> freshRegistrar = Registrar.loadByRegistrarId(login.getClientId());
-      if (!freshRegistrar.isPresent()) {
+      if (freshRegistrar.isEmpty()) {
         throw new BadRegistrarIdException(login.getClientId());
       }
       tm().put(freshRegistrar.get().asBuilder().setPassword(newPassword).build());

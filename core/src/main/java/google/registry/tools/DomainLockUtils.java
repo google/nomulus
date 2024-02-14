@@ -102,7 +102,7 @@ public final class DomainLockUtils {
               RegistryLock lock = getByVerificationCode(verificationCode);
 
               checkArgument(
-                  !lock.getLockCompletionTime().isPresent(),
+                  lock.getLockCompletionTime().isEmpty(),
                   "Domain %s is already locked",
                   lock.getDomainName());
 
@@ -129,7 +129,7 @@ public final class DomainLockUtils {
                   DateTime now = tm().getTransactionTime();
                   RegistryLock previousLock = getByVerificationCode(verificationCode);
                   checkArgument(
-                      !previousLock.getUnlockCompletionTime().isPresent(),
+                      previousLock.getUnlockCompletionTime().isEmpty(),
                       "Domain %s is already unlocked",
                       previousLock.getDomainName());
 
@@ -298,7 +298,7 @@ public final class DomainLockUtils {
       checkArgument(
           lock.isLocked(), "Lock object for domain %s is not currently locked", domainName);
       checkArgument(
-          !lock.getUnlockRequestTime().isPresent() || lock.isUnlockRequestExpired(now),
+          lock.getUnlockRequestTime().isEmpty() || lock.isUnlockRequestExpired(now),
           "A pending unlock action already exists for %s",
           domainName);
       checkArgument(

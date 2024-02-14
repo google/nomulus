@@ -109,7 +109,7 @@ public class ContactAction implements JsonGetAction {
       return;
     }
 
-    if (!contacts.isPresent()) {
+    if (contacts.isEmpty()) {
       response.setStatus(HttpStatusCodes.STATUS_CODE_BAD_REQUEST);
       response.setPayload(gson.toJson("Contacts parameter is not present"));
       return;

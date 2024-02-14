@@ -66,7 +66,7 @@ public final class PollRequestFlow implements TransactionalFlow {
     // Return the oldest message from the queue.
     DateTime now = tm().getTransactionTime();
     Optional<PollMessage> maybePollMessage = getFirstPollMessage(registrarId, now);
-    if (!maybePollMessage.isPresent()) {
+    if (maybePollMessage.isEmpty()) {
       return responseBuilder.setResultFromCode(SUCCESS_WITH_NO_MESSAGES).build();
     }
     PollMessage pollMessage = maybePollMessage.get();

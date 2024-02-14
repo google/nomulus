@@ -181,7 +181,7 @@ class WebDriverScreenDiffer implements ScreenDiffer {
             .setIsSizeDifferent(false)
             .setNumDiffPixels(totalPixels);
 
-    if (!maybeGoldenImage.isPresent()) {
+    if (maybeGoldenImage.isEmpty()) {
       return commonBuilder.setIsMissingGoldenImage(true).build();
     }
     BufferedImage goldenImage = maybeGoldenImage.get();

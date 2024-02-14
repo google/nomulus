@@ -62,7 +62,7 @@ final class GetAllocationTokenCommand implements Command {
       if (loadedTokens.containsKey(token)) {
         AllocationToken loadedToken = loadedTokens.get(token);
         System.out.println(loadedToken.toString());
-        if (!loadedToken.getRedemptionHistoryId().isPresent()) {
+        if (loadedToken.getRedemptionHistoryId().isEmpty()) {
           System.out.printf("Token %s was not redeemed.\n", token);
         } else {
           VKey<Domain> domainKey =

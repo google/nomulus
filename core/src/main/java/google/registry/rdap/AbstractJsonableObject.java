@@ -387,7 +387,7 @@ abstract class AbstractJsonableObject implements Jsonable {
    */
   static void verifyAllowedJsonKeyName(String name, @Nullable Member member, Class<?> clazz) {
     Optional<ImmutableSet<String>> allowedFieldNames = getNameRestriction(clazz);
-    if (!allowedFieldNames.isPresent()) {
+    if (allowedFieldNames.isEmpty()) {
       return;
     }
     checkState(
@@ -416,7 +416,7 @@ abstract class AbstractJsonableObject implements Jsonable {
       // We ignore any Optional that are empty, as if they didn't exist at all
       if (object instanceof Optional) {
         Optional<?> optional = (Optional<?>) object;
-        if (!optional.isPresent()) {
+        if (optional.isEmpty()) {
           return;
         }
         object = optional.get();

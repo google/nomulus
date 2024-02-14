@@ -352,7 +352,7 @@ public final class RdeStagingAction implements Runnable {
   }
 
   private ImmutableSetMultimap<String, PendingDeposit> getManualPendingDeposits() {
-    if (!directory.isPresent()) {
+    if (directory.isEmpty()) {
       throw new BadRequestException("Directory parameter required in manual operation");
     }
     if (directory.get().startsWith("/")) {

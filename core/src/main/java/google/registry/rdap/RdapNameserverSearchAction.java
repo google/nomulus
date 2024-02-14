@@ -175,7 +175,7 @@ public class RdapNameserverSearchAction extends RdapSearchActionBase {
       RdapSearchPattern partialStringQuery) {
     Optional<Domain> domain =
         loadByForeignKeyCached(Domain.class, partialStringQuery.getSuffix(), getRequestTime());
-    if (!domain.isPresent()) {
+    if (domain.isEmpty()) {
       // Don't allow wildcards with suffixes which are not domains we manage. That would risk a
       // table scan in many easily foreseeable cases. The user might ask for ns*.zombo.com,
       // forcing us to query for all hosts beginning with ns, then filter for those ending in

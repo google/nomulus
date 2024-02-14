@@ -219,7 +219,7 @@ public final class RegistryLock extends UpdateAutoTimestampEntity implements Bui
 
   /** Returns true iff the lock was requested &gt;= 1 hour ago and has not been verified. */
   public boolean isLockRequestExpired(DateTime now) {
-    return !getLockCompletionTime().isPresent()
+    return getLockCompletionTime().isEmpty()
         && isBeforeOrAt(getLockRequestTime(), now.minusHours(1));
   }
 
@@ -227,7 +227,7 @@ public final class RegistryLock extends UpdateAutoTimestampEntity implements Bui
   public boolean isUnlockRequestExpired(DateTime now) {
     Optional<DateTime> unlockRequestTimestamp = getUnlockRequestTime();
     return unlockRequestTimestamp.isPresent()
-        && !getUnlockCompletionTime().isPresent()
+        && getUnlockCompletionTime().isEmpty()
         && isBeforeOrAt(unlockRequestTimestamp.get(), now.minusHours(1));
   }
 

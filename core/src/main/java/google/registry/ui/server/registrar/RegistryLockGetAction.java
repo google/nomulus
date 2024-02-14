@@ -210,11 +210,11 @@ public final class RegistryLockGetAction implements JsonGetAction {
         .put(DOMAIN_NAME_PARAM, lock.getDomainName())
         .put(LOCKED_TIME_PARAM, lock.getLockCompletionTime().map(DateTime::toString).orElse(""))
         .put(LOCKED_BY_PARAM, lock.isSuperuser() ? "admin" : lock.getRegistrarPocId())
-        .put(IS_LOCK_PENDING_PARAM, !lock.getLockCompletionTime().isPresent())
+        .put(IS_LOCK_PENDING_PARAM, lock.getLockCompletionTime().isEmpty())
         .put(
             IS_UNLOCK_PENDING_PARAM,
             lock.getUnlockRequestTime().isPresent()
-                && !lock.getUnlockCompletionTime().isPresent()
+                && lock.getUnlockCompletionTime().isEmpty()
                 && !lock.isUnlockRequestExpired(now))
         .put(USER_CAN_UNLOCK_PARAM, isAdmin || !lock.isSuperuser())
         .build();

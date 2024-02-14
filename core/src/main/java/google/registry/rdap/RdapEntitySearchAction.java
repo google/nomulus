@@ -121,7 +121,7 @@ public class RdapEntitySearchAction extends RdapSearchActionBase {
 
     // Check the subtype.
     Subtype subtype;
-    if (!subtypeParam.isPresent() || subtypeParam.get().equalsIgnoreCase("all")) {
+    if (subtypeParam.isEmpty() || subtypeParam.get().equalsIgnoreCase("all")) {
       subtype = Subtype.ALL;
     } else if (subtypeParam.get().equalsIgnoreCase("contacts")) {
       subtype = Subtype.CONTACTS;
@@ -133,7 +133,7 @@ public class RdapEntitySearchAction extends RdapSearchActionBase {
 
     CursorType cursorType;
     Optional<String> cursorQueryString;
-    if (!cursorString.isPresent()) {
+    if (cursorString.isEmpty()) {
       cursorType = CursorType.NONE;
       cursorQueryString = Optional.empty();
     } else {

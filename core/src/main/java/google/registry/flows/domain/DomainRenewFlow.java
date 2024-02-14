@@ -182,7 +182,7 @@ public final class DomainRenewFlow implements MutatingFlow {
             CommandName.RENEW,
             eppInput.getSingleExtension(AllocationTokenExtension.class));
     boolean defaultTokenUsed = false;
-    if (!allocationToken.isPresent()) {
+    if (allocationToken.isEmpty()) {
       allocationToken =
           DomainFlowUtils.checkForDefaultToken(
               tld, existingDomain.getDomainName(), CommandName.RENEW, registrarId, now);

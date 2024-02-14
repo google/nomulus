@@ -138,7 +138,7 @@ public final class RdeUploadAction implements Runnable, EscrowTask {
   public void runWithLock(final DateTime watermark) throws Exception {
     // If a prefix is not provided,try to determine the prefix. This should only happen when the RDE
     // upload cron job runs to catch up any un-retried (i. e. expected) RDE failures.
-    if (!prefix.isPresent()) {
+    if (prefix.isEmpty()) {
       prefix = Optional.of(findMostRecentPrefixForWatermark(watermark, bucket, tld, gcsUtils));
     }
     logger.atInfo().log("Verifying readiness to upload the RDE deposit.");

@@ -132,7 +132,7 @@ public class RequestHandler<C> {
     }
     String path = req.getRequestURI();
     Optional<Route> route = router.route(path);
-    if (!route.isPresent()) {
+    if (route.isEmpty()) {
       logger.atInfo().log("No action found for: %s", path);
       rsp.sendError(SC_NOT_FOUND);
       return;
@@ -144,7 +144,7 @@ public class RequestHandler<C> {
     }
     Optional<AuthResult> authResult =
         requestAuthenticator.authorize(route.get().action().auth().authSettings(), req);
-    if (!authResult.isPresent()) {
+    if (authResult.isEmpty()) {
       rsp.sendError(SC_FORBIDDEN, "Not authorized");
       return;
     }

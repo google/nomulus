@@ -276,7 +276,7 @@ public final class DomainCreateFlow implements MutatingFlow {
             now,
             eppInput.getSingleExtension(AllocationTokenExtension.class));
     boolean defaultTokenUsed = false;
-    if (!allocationToken.isPresent()) {
+    if (allocationToken.isEmpty()) {
       allocationToken =
           DomainFlowUtils.checkForDefaultToken(
               tld, command.getDomainName(), CommandName.CREATE, registrarId, now);
@@ -519,7 +519,7 @@ public final class DomainCreateFlow implements MutatingFlow {
     if (behavior.equals(RegistrationBehavior.BYPASS_TLD_STATE)
         || behavior.equals(RegistrationBehavior.ANCHOR_TENANT)) {
       // Non-trademarked names with the state check bypassed are always available
-      if (!claimsList.getClaimKey(domainLabel).isPresent()) {
+      if (claimsList.getClaimKey(domainLabel).isEmpty()) {
         return;
       }
       if (!currentState.equals(START_DATE_SUNRISE)) {

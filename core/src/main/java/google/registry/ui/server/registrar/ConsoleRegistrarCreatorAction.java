@@ -233,7 +233,7 @@ public final class ConsoleRegistrarCreatorAction extends HtmlAction {
       tm().transact(
               () -> {
                 checkState(
-                    !Registrar.loadByRegistrarId(registrar.getRegistrarId()).isPresent(),
+                    Registrar.loadByRegistrarId(registrar.getRegistrarId()).isEmpty(),
                     "Registrar with client ID %s already exists",
                     registrar.getRegistrarId());
                 tm().putAll(registrar, contact);

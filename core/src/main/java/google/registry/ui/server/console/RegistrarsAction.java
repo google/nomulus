@@ -107,7 +107,7 @@ public class RegistrarsAction implements JsonGetAction {
       return;
     }
 
-    if (!registrar.isPresent()) {
+    if (registrar.isEmpty()) {
       response.setStatus(HttpStatusCodes.STATUS_CODE_BAD_REQUEST);
       response.setPayload(gson.toJson("'registrar' parameter is not present"));
       return;
@@ -164,7 +164,7 @@ public class RegistrarsAction implements JsonGetAction {
       tm().transact(
               () -> {
                 checkArgument(
-                    !Registrar.loadByRegistrarId(registrar.getRegistrarId()).isPresent(),
+                    Registrar.loadByRegistrarId(registrar.getRegistrarId()).isEmpty(),
                     "Registrar with registrarId %s already exists",
                     registrar.getRegistrarId());
                 tm().putAll(registrar, contact);

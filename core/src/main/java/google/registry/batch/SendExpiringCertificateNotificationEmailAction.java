@@ -151,7 +151,7 @@ public class SendExpiringCertificateNotificationEmailAction implements Runnable 
       DateTime lastExpiringCertNotificationSentDate,
       CertificateType certificateType,
       Optional<String> certificate) {
-    if (!certificate.isPresent()
+    if (certificate.isEmpty()
         || !certificateChecker.shouldReceiveExpiringNotification(
             lastExpiringCertNotificationSentDate, certificate.get())) {
       return false;
