@@ -50,6 +50,7 @@ import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.persistence.TypedQuery;
 import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
 import org.joda.time.Duration;
 
 /**
@@ -97,7 +98,7 @@ public class DeleteProberDataAction implements Runnable {
       "FROM Domain d WHERE d.tld IN :tlds AND d.domainName NOT LIKE 'nic.%%' AND"
           + " (d.subordinateHosts IS EMPTY OR d.subordinateHosts IS NULL) AND d.creationTime <"
           + " :creationTimeCutoff AND ((d.creationTime <= :nowAutoTimestamp AND d.deletionTime >"
-          + " current_timestamp()) OR d.deletionTime < :nowMinusSoftDeleteDelay) %s ORDER BY"
+          + " :now) OR d.deletionTime < :nowMinusSoftDeleteDelay) %s ORDER BY"
           + " d.repoId ASC";
 
   /** Number of domains to retrieve and delete per SQL transaction. */
@@ -147,6 +148,7 @@ public class DeleteProberDataAction implements Runnable {
     AtomicInteger hardDeletedDomains = new AtomicInteger();
     ImmutableList<Domain> domainsBatch;
     @Nullable String lastInPreviousBatch = null;
+    DateTime now = DateTime.now(DateTimeZone.UTC);
     do {
       Optional<String> lastInPreviousBatchOpt = Optional.ofNullable(lastInPreviousBatch);
       domainsBatch =
@@ -156,7 +158,8 @@ public class DeleteProberDataAction implements Runnable {
                           deletableTlds,
                           softDeletedDomains,
                           hardDeletedDomains,
-                          lastInPreviousBatchOpt));
+                          lastInPreviousBatchOpt,
+                          now));
       lastInPreviousBatch = domainsBatch.isEmpty() ? null : getLast(domainsBatch).getRepoId();
     } while (domainsBatch.size() == batchSize);
     logger.atInfo().log(
@@ -171,8 +174,8 @@ public class DeleteProberDataAction implements Runnable {
       ImmutableSet<String> deletableTlds,
       AtomicInteger softDeletedDomains,
       AtomicInteger hardDeletedDomains,
-      Optional<String> lastInPreviousBatch) {
-    DateTime now = tm().getTransactionTime();
+      Optional<String> lastInPreviousBatch,
+      DateTime now) {
     TypedQuery<Domain> query =
         tm().query(
                 String.format(
@@ -183,7 +186,8 @@ public class DeleteProberDataAction implements Runnable {
             .setParameter(
                 "creationTimeCutoff", CreateAutoTimestamp.create(now.minus(DOMAIN_USED_DURATION)))
             .setParameter("nowMinusSoftDeleteDelay", now.minus(SOFT_DELETE_DELAY))
-            .setParameter("nowAutoTimestamp", CreateAutoTimestamp.create(now));
+            .setParameter("nowAutoTimestamp", CreateAutoTimestamp.create(now))
+            .setParameter("now", now);
     lastInPreviousBatch.ifPresent(l -> query.setParameter("lastInPreviousBatch", l));
     ImmutableList<Domain> domainList =
         query.setMaxResults(batchSize).getResultStream().collect(toImmutableList());
