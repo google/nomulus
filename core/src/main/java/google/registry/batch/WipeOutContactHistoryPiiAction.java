@@ -14,8 +14,8 @@
 
 package google.registry.batch;
 
-import static google.registry.batch.BatchModule.PARAM_DRY_RUN;
 import static google.registry.beam.BeamUtils.createJobName;
+import static google.registry.request.RequestParameters.PARAM_DRY_RUN;
 import static javax.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 import static javax.servlet.http.HttpServletResponse.SC_OK;
 
