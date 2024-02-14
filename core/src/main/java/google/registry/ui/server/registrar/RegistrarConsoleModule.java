@@ -52,13 +52,13 @@ public final class RegistrarConsoleModule {
   }
 
   @Provides
-  @Parameter(PARAM_CLIENT_ID)
+  @Parameter("consoleClientId")
   static Optional<String> provideOptionalClientId(HttpServletRequest req) {
     return extractOptionalParameter(req, PARAM_CLIENT_ID);
   }
 
   @Provides
-  @Parameter(PARAM_CLIENT_ID)
+  @Parameter("consoleClientId")
   static String provideClientId(HttpServletRequest req) {
     return extractRequiredParameter(req, PARAM_CLIENT_ID);
   }
@@ -76,7 +76,7 @@ public final class RegistrarConsoleModule {
   }
 
   @Provides
-  @Parameter("name")
+  @Parameter("consoleName")
   static Optional<String> provideOptionalName(HttpServletRequest req) {
     return extractOptionalParameter(req, "name");
   }
@@ -178,7 +178,7 @@ public final class RegistrarConsoleModule {
   }
 
   @Provides
-  @Parameter("domain")
+  @Parameter("consoleDomain")
   static String provideDomain(HttpServletRequest req) {
     return extractRequiredParameter(req, "domain");
   }

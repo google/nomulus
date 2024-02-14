@@ -71,12 +71,6 @@ public class ToolsServerModule {
   }
 
   @Provides
-  @Parameter("jobId")
-  String provideJobId(HttpServletRequest req) {
-    return extractRequiredParameter(req, "jobId");
-  }
-
-  @Provides
   @Parameter("batchSize")
   static Optional<Integer> provideBatchSize(HttpServletRequest req) {
     return extractOptionalIntParameter(req, "batchSize");

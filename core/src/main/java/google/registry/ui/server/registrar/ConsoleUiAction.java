@@ -17,7 +17,6 @@ package google.registry.ui.server.registrar;
 import static google.registry.request.auth.AuthenticatedRegistrarAccessor.Role.ADMIN;
 import static google.registry.request.auth.AuthenticatedRegistrarAccessor.Role.OWNER;
 import static google.registry.ui.server.SoyTemplateUtils.CSS_RENAMING_MAP_SUPPLIER;
-import static google.registry.ui.server.registrar.RegistrarConsoleModule.PARAM_CLIENT_ID;
 import static javax.servlet.http.HttpServletResponse.SC_FORBIDDEN;
 import static javax.servlet.http.HttpServletResponse.SC_SERVICE_UNAVAILABLE;
 
@@ -85,7 +84,7 @@ public final class ConsoleUiAction extends HtmlAction {
   boolean enabled;
 
   @Inject
-  @Parameter(PARAM_CLIENT_ID)
+  @Parameter("consoleClientId")
   Optional<String> paramClientId;
 
   @Inject

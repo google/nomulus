@@ -45,4 +45,5 @@ include 'services:backend'
 include 'services:bsa'
 include 'services:tools'
 include 'services:pubapi'
-include "console-webapp"
+include 'console-webapp'
+include 'jetty'
