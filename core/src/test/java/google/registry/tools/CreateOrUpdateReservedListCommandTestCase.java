@@ -97,12 +97,10 @@ abstract class CreateOrUpdateReservedListCommandTestCase<
   ReservedList createCloudSqlReservedList(
       String name,
       DateTime creationTime,
-      boolean shouldPublish,
       ImmutableMap<String, ReservedListEntry> labelsToEntries) {
     return new ReservedList.Builder()
         .setName(name)
         .setCreationTimestamp(creationTime)
-        .setShouldPublish(shouldPublish)
         .setReservedListMap(labelsToEntries)
         .build();
   }

@@ -57,27 +57,6 @@ class CreateReservedListCommandTest
   }
 
   @Test
-  void testSuccess_shouldPublishDefaultsToTrue() throws Exception {
-    runCommandForced("--input=" + reservedTermsPath);
-    assertThat(ReservedList.get("xn--q9jyb4c_common-reserved")).isPresent();
-    assertThat(ReservedList.get("xn--q9jyb4c_common-reserved").get().getShouldPublish()).isTrue();
-  }
-
-  @Test
-  void testSuccess_shouldPublishSetToTrue_works() throws Exception {
-    runCommandForced("--input=" + reservedTermsPath, "--should_publish=true");
-    assertThat(ReservedList.get("xn--q9jyb4c_common-reserved")).isPresent();
-    assertThat(ReservedList.get("xn--q9jyb4c_common-reserved").get().getShouldPublish()).isTrue();
-  }
-
-  @Test
-  void testSuccess_shouldPublishSetToFalse_works() throws Exception {
-    runCommandForced("--input=" + reservedTermsPath, "--should_publish=false");
-    assertThat(ReservedList.get("xn--q9jyb4c_common-reserved")).isPresent();
-    assertThat(ReservedList.get("xn--q9jyb4c_common-reserved").get().getShouldPublish()).isFalse();
-  }
-
-  @Test
   void testFailure_reservedListWithThatNameAlreadyExists() {
     ReservedList rl = persistReservedList("xn--q9jyb4c_foo", "jones,FULLY_BLOCKED");
     persistResource(Tld.get("xn--q9jyb4c").asBuilder().setReservedLists(rl).build());
