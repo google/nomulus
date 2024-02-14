@@ -71,6 +71,7 @@ public final class ReservedList
    */
   @Insignificant @Transient Map<String, ReservedListEntry> reservedListMap;
 
+  // TODO(b/321053918): Remove this field once the column is removed from the database
   @Column(nullable = false)
   boolean shouldPublish = true;
 
@@ -178,14 +179,6 @@ public final class ReservedList
   /** Determines whether the ReservedList is in use on any Registry */
   public boolean isInUse() {
     return !getReferencingTlds().isEmpty();
-  }
-
-  /**
-   * Returns whether this reserved list is included in the concatenated list of reserved terms
-   * published to Google Drive for viewing by registrars.
-   */
-  public boolean getShouldPublish() {
-    return shouldPublish;
   }
 
   /**
@@ -327,11 +320,6 @@ public final class ReservedList
 
     public Builder setReservedListMap(ImmutableMap<String, ReservedListEntry> reservedListMap) {
       getInstance().reservedListMap = reservedListMap;
-      return this;
-    }
-
-    public Builder setShouldPublish(boolean shouldPublish) {
-      getInstance().shouldPublish = shouldPublish;
       return this;
     }
 

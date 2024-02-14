@@ -52,7 +52,6 @@ public class ReservedListDaoTest {
         new ReservedList.Builder()
             .setName("testlist")
             .setCreationTimestamp(fakeClock.nowUtc())
-            .setShouldPublish(false)
             .setReservedListMap(testReservations)
             .build();
   }
@@ -102,7 +101,6 @@ public class ReservedListDaoTest {
     assertThat(persistedList.getRevisionId()).isNotNull();
     assertThat(persistedList.getCreationTimestamp()).isEqualTo(fakeClock.nowUtc());
     assertThat(persistedList.getName()).isEqualTo("testlist");
-    assertThat(persistedList.getShouldPublish()).isFalse();
     assertThat(persistedList.getReservedListEntries()).containsExactlyEntriesIn(testReservations);
   }
 
@@ -112,7 +110,6 @@ public class ReservedListDaoTest {
         new ReservedList.Builder()
             .setName("testlist")
             .setCreationTimestamp(fakeClock.nowUtc())
-            .setShouldPublish(false)
             .setReservedListMap(
                 ImmutableMap.of(
                     "old",
@@ -124,7 +121,6 @@ public class ReservedListDaoTest {
     assertThat(persistedList.getRevisionId()).isNotNull();
     assertThat(persistedList.getCreationTimestamp()).isEqualTo(fakeClock.nowUtc());
     assertThat(persistedList.getName()).isEqualTo("testlist");
-    assertThat(persistedList.getShouldPublish()).isFalse();
     assertThat(persistedList.getReservedListEntries()).containsExactlyEntriesIn(testReservations);
   }
 }
