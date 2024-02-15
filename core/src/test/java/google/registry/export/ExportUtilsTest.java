@@ -48,7 +48,7 @@ class ExportUtilsTest {
         "tine,FULLY_BLOCKED");
     createTld("tld");
     persistResource(Tld.get("tld").asBuilder().setReservedLists(rl1, rl2, rl3).build());
-    // Should not contain jimmy, tine, or oval.
+    // Should not contain jimmy or oval.
     assertThat(new ExportUtils("# This is a disclaimer.").exportReservedTerms(Tld.get("tld")))
         .isEqualTo("# This is a disclaimer.\ncat\nlol\nsnow\ntine\n");
   }
