@@ -121,7 +121,7 @@ public abstract class RdapSearchActionBase extends RdapActionBase {
    */
   protected boolean shouldBeVisible(EppResource eppResource) {
     return isAuthorized(eppResource)
-        && (!registrarParam.isPresent()
+        && (registrarParam.isEmpty()
             || registrarParam.get().equals(eppResource.getPersistedCurrentSponsorRegistrarId()));
   }
 
@@ -135,7 +135,7 @@ public abstract class RdapSearchActionBase extends RdapActionBase {
    */
   protected boolean shouldBeVisible(Registrar registrar) {
     return isAuthorized(registrar)
-        && (!registrarParam.isPresent() || registrarParam.get().equals(registrar.getRegistrarId()));
+        && (registrarParam.isEmpty() || registrarParam.get().equals(registrar.getRegistrarId()));
   }
 
   /**

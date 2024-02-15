@@ -75,7 +75,7 @@ public final class ContactTransferQueryFlow implements TransactionalFlow {
     }
     // Note that the authorization info on the command (if present) has already been verified. If
     // it's present, then the other checks are unnecessary.
-    if (!authInfo.isPresent()
+    if (authInfo.isEmpty()
         && !registrarId.equals(contact.getTransferData().getGainingRegistrarId())
         && !registrarId.equals(contact.getTransferData().getLosingRegistrarId())) {
       throw new NotAuthorizedToViewTransferException();

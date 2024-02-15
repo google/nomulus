@@ -28,8 +28,7 @@ public class CreateUserCommand extends CreateOrUpdateUserCommand {
   @Nullable
   @Override
   User getExistingUser(String email) {
-    checkArgument(
-        !UserDao.loadUser(email).isPresent(), "A user with email %s already exists", email);
+    checkArgument(UserDao.loadUser(email).isEmpty(), "A user with email %s already exists", email);
     return null;
   }
 }

@@ -64,7 +64,7 @@ public class RdapDomainAction extends RdapActionBase {
             Domain.class,
             pathSearchString,
             shouldIncludeDeleted() ? START_OF_TIME : rdapJsonFormatter.getRequestTime());
-    if (!domain.isPresent() || !isAuthorized(domain.get())) {
+    if (domain.isEmpty() || !isAuthorized(domain.get())) {
       // RFC7480 5.3 - if the server wishes to respond that it doesn't have data satisfying the
       // query, it MUST reply with 404 response code.
       //

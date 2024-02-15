@@ -113,11 +113,11 @@ public class CreateGroupsAction implements Runnable {
   }
 
   private Registrar initAndLoadRegistrar() {
-    if (!clientId.isPresent()) {
+    if (clientId.isEmpty()) {
       respondToBadRequest("Error creating Google Groups, missing parameter: clientId");
     }
     Optional<Registrar> registrar = Registrar.loadByRegistrarId(clientId.get());
-    if (!registrar.isPresent()) {
+    if (registrar.isEmpty()) {
       respondToBadRequest(String.format(
           "Error creating Google Groups; could not find registrar with id %s", clientId.get()));
     }

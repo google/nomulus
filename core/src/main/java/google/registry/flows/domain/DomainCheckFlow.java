@@ -219,7 +219,7 @@ public final class DomainCheckFlow implements TransactionalFlow {
               domainCheckResults,
               tldStates,
               allocationToken);
-      boolean isAvailable = !message.isPresent();
+      boolean isAvailable = message.isEmpty();
       checksBuilder.add(DomainCheck.create(isAvailable, domainName, message.orElse(null)));
       if (isAvailable) {
         availableDomains.add(domainName);
@@ -289,7 +289,7 @@ public final class DomainCheckFlow implements TransactionalFlow {
       throws EppException {
     Optional<FeeCheckCommandExtension> feeCheckOpt =
         eppInput.getSingleExtension(FeeCheckCommandExtension.class);
-    if (!feeCheckOpt.isPresent()) {
+    if (feeCheckOpt.isEmpty()) {
       return ImmutableList.of(); // No fee checks were requested.
     }
     FeeCheckCommandExtension<?, ?> feeCheck = feeCheckOpt.get();

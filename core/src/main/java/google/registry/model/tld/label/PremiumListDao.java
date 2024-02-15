@@ -115,7 +115,7 @@ public final class PremiumListDao {
    */
   public static Optional<Money> getPremiumPrice(String premiumListName, String label) {
     Optional<PremiumList> maybeLoadedList = getLatestRevision(premiumListName);
-    if (!maybeLoadedList.isPresent()) {
+    if (maybeLoadedList.isEmpty()) {
       return Optional.empty();
     }
     PremiumList loadedList = maybeLoadedList.get();

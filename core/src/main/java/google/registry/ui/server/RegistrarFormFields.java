@@ -360,7 +360,7 @@ public final class RegistrarFormFields {
       return ImmutableList.of();
     }
     Optional<List<Map<String, ?>>> contactsAsMaps = CONTACTS_AS_MAPS.extractUntyped(args);
-    if (!contactsAsMaps.isPresent()) {
+    if (contactsAsMaps.isEmpty()) {
       return ImmutableList.of();
     }
     ImmutableList.Builder<RegistrarPoc.Builder> result = new ImmutableList.Builder<>();

@@ -67,7 +67,7 @@ public abstract class HtmlAction implements Runnable {
     response.setHeader(X_FRAME_OPTIONS, "SAMEORIGIN"); // Disallow iframing.
     response.setHeader("X-Ui-Compatible", "IE=edge"); // Ask IE not to be silly.
 
-    if (!authResult.userAuthInfo().isPresent()) {
+    if (authResult.userAuthInfo().isEmpty()) {
       response.setStatus(SC_MOVED_TEMPORARILY);
       String location;
       try {

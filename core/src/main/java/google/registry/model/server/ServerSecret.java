@@ -46,7 +46,7 @@ public class ServerSecret extends CrossTldSingleton {
               // Make sure we're in a transaction and attempt to load any existing secret, then
               // create it if it's absent.
               Optional<ServerSecret> secret = tm().loadSingleton(ServerSecret.class);
-              if (!secret.isPresent()) {
+              if (secret.isEmpty()) {
                 secret = Optional.of(create(UUID.randomUUID()));
                 tm().insert(secret.get());
               }

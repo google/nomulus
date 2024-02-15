@@ -122,7 +122,7 @@ public final class ResourceFlowUtils {
   /** Check that the given AuthInfo is present for a resource being transferred. */
   public static void verifyAuthInfoPresentForResourceTransfer(Optional<AuthInfo> authInfo)
       throws EppException {
-    if (!authInfo.isPresent()) {
+    if (authInfo.isEmpty()) {
       throw new MissingTransferRequestAuthInfoException();
     }
   }
@@ -160,7 +160,7 @@ public final class ResourceFlowUtils {
         domain.getReferencedContacts().stream()
             .filter(key -> key.getKey().equals(authRepoId))
             .findFirst();
-    if (!foundContact.isPresent()) {
+    if (foundContact.isEmpty()) {
       throw new BadAuthInfoForResourceException();
     }
     // Check the authInfo against the contact.

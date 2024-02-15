@@ -2742,7 +2742,6 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
         .isEqualTo(loadFile("domain_create_blocked_by_bsa.xml"));
   }
 
-
   @Test
   void testFailure_uppercase() {
     doFailingDomainNameTest("Example.tld", BadDomainNameCharacterException.class);

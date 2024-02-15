@@ -86,7 +86,7 @@ public final class PollAckFlow implements MutatingFlow {
     // it as if it doesn't exist yet. Same for if the message ID year isn't the same as the actual
     // poll message's event time (that means they're passing in an old already-acked ID).
     Optional<PollMessage> maybePollMessage = tm().loadByKeyIfPresent(pollMessageKey);
-    if (!maybePollMessage.isPresent()
+    if (maybePollMessage.isEmpty()
         || !isBeforeOrAt(maybePollMessage.get().getEventTime(), now)
         || !makePollMessageExternalId(maybePollMessage.get()).equals(messageId)) {
       throw new MessageDoesNotExistException(messageId);

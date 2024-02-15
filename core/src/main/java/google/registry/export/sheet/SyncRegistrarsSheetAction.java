@@ -112,11 +112,11 @@ public class SyncRegistrarsSheetAction implements Runnable {
   @Override
   public void run() {
     final Optional<String> sheetId = Optional.ofNullable(idParam.orElse(idConfig.orElse(null)));
-    if (!sheetId.isPresent()) {
+    if (sheetId.isEmpty()) {
       Result.MISSINGNO.send(response, null);
       return;
     }
-    if (!idParam.isPresent()) {
+    if (idParam.isEmpty()) {
       if (!syncRegistrarsSheet.wereRegistrarsModified()) {
         Result.NOTMODIFIED.send(response, null);
         return;

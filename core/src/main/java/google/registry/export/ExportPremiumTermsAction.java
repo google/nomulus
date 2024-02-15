@@ -115,7 +115,7 @@ public class ExportPremiumTermsAction implements Runnable {
           "Skipping premium terms export for TLD %s because Drive folder isn't specified.", tldStr);
       return Optional.of("Skipping export because no Drive folder is associated with this TLD");
     }
-    if (!tld.getPremiumListName().isPresent()) {
+    if (tld.getPremiumListName().isEmpty()) {
       logger.atInfo().log("No premium terms to export for TLD '%s'.", tldStr);
       return Optional.of("No premium lists configured");
     }

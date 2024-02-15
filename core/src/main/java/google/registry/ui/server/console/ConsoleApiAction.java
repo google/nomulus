@@ -35,7 +35,7 @@ public abstract class ConsoleApiAction implements Runnable {
   @Override
   public final void run() {
     // Shouldn't be even possible because of Auth annotations on the various implementing classes
-    if (!consoleApiParams.authResult().userAuthInfo().get().consoleUser().isPresent()) {
+    if (consoleApiParams.authResult().userAuthInfo().get().consoleUser().isEmpty()) {
       consoleApiParams.response().setStatus(HttpStatusCodes.STATUS_CODE_UNAUTHORIZED);
       return;
     }
@@ -62,7 +62,7 @@ public abstract class ConsoleApiAction implements Runnable {
         Arrays.stream(consoleApiParams.request().getCookies())
             .filter(c -> XsrfTokenManager.X_CSRF_TOKEN.equals(c.getName()))
             .findFirst();
-    if (!maybeCookie.isPresent()
+    if (maybeCookie.isEmpty()
         || !consoleApiParams.xsrfTokenManager().validateToken(maybeCookie.get().getValue())) {
       consoleApiParams.response().setStatus(HttpStatusCodes.STATUS_CODE_UNAUTHORIZED);
       return false;

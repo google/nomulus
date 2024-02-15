@@ -182,7 +182,7 @@ public class AllocationTokenFlowUtils {
     maybeTokenEntity =
         tm().transact(() -> tm().loadByKeyIfPresent(VKey.create(AllocationToken.class, token)));
 
-    if (!maybeTokenEntity.isPresent()) {
+    if (maybeTokenEntity.isEmpty()) {
       throw new InvalidAllocationTokenException();
     }
     if (maybeTokenEntity.get().isRedeemed()) {
@@ -199,7 +199,7 @@ public class AllocationTokenFlowUtils {
       DateTime now,
       Optional<AllocationTokenExtension> extension)
       throws EppException {
-    if (!extension.isPresent()) {
+    if (extension.isEmpty()) {
       return Optional.empty();
     }
     AllocationToken tokenEntity = loadToken(extension.get().getAllocationToken());
@@ -222,7 +222,7 @@ public class AllocationTokenFlowUtils {
       CommandName commandName,
       Optional<AllocationTokenExtension> extension)
       throws EppException {
-    if (!extension.isPresent()) {
+    if (extension.isEmpty()) {
       return Optional.empty();
     }
     AllocationToken tokenEntity = loadToken(extension.get().getAllocationToken());
@@ -254,7 +254,7 @@ public class AllocationTokenFlowUtils {
 
   public static Domain maybeApplyBulkPricingRemovalToken(
       Domain domain, Optional<AllocationToken> allocationToken) {
-    if (!allocationToken.isPresent()
+    if (allocationToken.isEmpty()
         || !TokenBehavior.REMOVE_BULK_PRICING.equals(allocationToken.get().getTokenBehavior())) {
       return domain;
     }

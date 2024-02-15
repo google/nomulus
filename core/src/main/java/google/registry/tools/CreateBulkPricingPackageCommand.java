@@ -31,7 +31,7 @@ public final class CreateBulkPricingPackageCommand extends CreateOrUpdateBulkPri
   @Override
   BulkPricingPackage getOldBulkPricingPackage(String tokenString) {
     checkArgument(
-        !BulkPricingPackage.loadByTokenString(tokenString).isPresent(),
+        BulkPricingPackage.loadByTokenString(tokenString).isEmpty(),
         "BulkPricingPackage with token %s already exists",
         tokenString);
     return null;

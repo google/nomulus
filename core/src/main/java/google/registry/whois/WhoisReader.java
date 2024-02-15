@@ -196,7 +196,7 @@ class WhoisReader {
         // We don't know at this point whether we have a domain name or a host name. We have to
         // search through our configured TLDs to see if there's one that prefixes the name.
         Optional<InternetDomainName> tld = findTldForName(targetName);
-        if (!tld.isPresent()) {
+        if (tld.isEmpty()) {
           // This target is not under any configured TLD, so just try it as a registrar name.
           logger.atInfo().log("Attempting registrar lookup using %s as a registrar.", arg1);
           return commandFactory.registrarLookup(arg1);

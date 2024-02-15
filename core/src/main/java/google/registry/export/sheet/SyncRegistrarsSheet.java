@@ -63,7 +63,7 @@ class SyncRegistrarsSheet {
   boolean wereRegistrarsModified() {
     Optional<Cursor> cursor =
         tm().transact(() -> tm().loadByKeyIfPresent(Cursor.createGlobalVKey(SYNC_REGISTRAR_SHEET)));
-    DateTime lastUpdateTime = !cursor.isPresent() ? START_OF_TIME : cursor.get().getCursorTime();
+    DateTime lastUpdateTime = cursor.isEmpty() ? START_OF_TIME : cursor.get().getCursorTime();
     for (Registrar registrar : Registrar.loadAllCached()) {
       if (DateTimeUtils.isAtOrAfter(registrar.getLastUpdateTime(), lastUpdateTime)) {
         return true;

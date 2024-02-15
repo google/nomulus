@@ -102,7 +102,7 @@ public class BsaRefreshAction implements Runnable {
       return null;
     }
     Optional<RefreshSchedule> maybeSchedule = scheduler.schedule();
-    if (!maybeSchedule.isPresent()) {
+    if (maybeSchedule.isEmpty()) {
       logger.atInfo().log("No completed downloads yet. Exiting.");
       return null;
     }

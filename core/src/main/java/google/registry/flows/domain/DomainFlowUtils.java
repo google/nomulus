@@ -215,7 +215,7 @@ public class DomainFlowUtils {
       throw new DomainNameExistsAsTldException();
     }
     Optional<InternetDomainName> tldParsed = findTldForName(domainName);
-    if (!tldParsed.isPresent()) {
+    if (tldParsed.isEmpty()) {
       throw new TldDoesNotExistException(domainName.parent().toString());
     }
     if (domainName.parts().size() != tldParsed.get().parts().size() + 1) {
@@ -256,7 +256,7 @@ public class DomainFlowUtils {
     Optional<String> idnTableName =
         IDN_LABEL_VALIDATOR.findValidIdnTableForTld(
             domainName.parts().get(0), domainName.parent().toString());
-    if (!idnTableName.isPresent()) {
+    if (idnTableName.isEmpty()) {
       throw new InvalidIdnDomainLabelException();
     }
     return idnTableName.get();
@@ -368,7 +368,7 @@ public class DomainFlowUtils {
       }
       ImmutableList<DomainDsData> invalidDigestTypes =
           dsData.stream()
-              .filter(ds -> !DigestType.fromWireValue(ds.getDigestType()).isPresent())
+              .filter(ds -> DigestType.fromWireValue(ds.getDigestType()).isEmpty())
               .collect(toImmutableList());
       if (!invalidDigestTypes.isEmpty()) {
         throw new InvalidDsRecordException(
@@ -816,7 +816,7 @@ public class DomainFlowUtils {
       FeesAndCredits feesAndCredits,
       boolean defaultTokenUsed)
       throws EppException {
-    if (feesAndCredits.hasAnyPremiumFees() && !feeCommand.isPresent()) {
+    if (feesAndCredits.hasAnyPremiumFees() && feeCommand.isEmpty()) {
       throw new FeesRequiredForPremiumNameException();
     }
     validateFeesAckedIfPresent(feeCommand, feesAndCredits, defaultTokenUsed);
@@ -837,7 +837,7 @@ public class DomainFlowUtils {
     // Check for the case where a fee command extension was required but not provided.
     // This only happens when the total fees are non-zero and include custom fees requiring the
     // extension.
-    if (!feeCommand.isPresent()) {
+    if (feeCommand.isEmpty()) {
       if (!feesAndCredits.getEapCost().isZero()) {
         throw new FeesRequiredDuringEarlyAccessProgramException(feesAndCredits.getEapCost());
       }
@@ -1049,7 +1049,7 @@ public class DomainFlowUtils {
   /** Validate the secDNS extension, if present. */
   static Optional<SecDnsCreateExtension> validateSecDnsExtension(
       Optional<SecDnsCreateExtension> secDnsCreate) throws EppException {
-    if (!secDnsCreate.isPresent()) {
+    if (secDnsCreate.isEmpty()) {
       return Optional.empty();
     }
     if (secDnsCreate.get().getDsData() == null) {

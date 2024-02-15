@@ -81,9 +81,7 @@ final class CreateRegistrarCommand extends CreateOrUpdateRegistrarCommand
           clientId);
     }
     checkState(
-        !Registrar.loadByRegistrarId(clientId).isPresent(),
-        "Registrar %s already exists",
-        clientId);
+        Registrar.loadByRegistrarId(clientId).isEmpty(), "Registrar %s already exists", clientId);
     List<Registrar> collisions =
         Streams.stream(Registrar.loadAll())
             .filter(registrar -> normalizeRegistrarId(registrar.getRegistrarId()).equals(clientId))

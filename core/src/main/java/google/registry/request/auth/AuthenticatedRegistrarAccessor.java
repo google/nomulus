@@ -262,7 +262,7 @@ public class AuthenticatedRegistrarAccessor {
       Lazy<GroupsConnection> lazyGroupsConnection,
       String userEmail,
       Optional<String> gSuiteSupportGroupEmailAddress) {
-    if (!gSuiteSupportGroupEmailAddress.isPresent()) {
+    if (gSuiteSupportGroupEmailAddress.isEmpty()) {
       return false;
     }
     try {
@@ -282,7 +282,7 @@ public class AuthenticatedRegistrarAccessor {
       AuthResult authResult,
       Optional<String> gSuiteSupportGroupEmailAddress,
       Lazy<GroupsConnection> lazyGroupsConnection) {
-    if (!authResult.userAuthInfo().isPresent()) {
+    if (authResult.userAuthInfo().isEmpty()) {
       return false;
     }
 
@@ -300,7 +300,7 @@ public class AuthenticatedRegistrarAccessor {
   /** Returns a map of registrar IDs to roles for all registrars that the user has access to. */
   private static ImmutableSetMultimap<String, Role> createRoleMap(
       AuthResult authResult, boolean isAdmin, String registryAdminRegistrarId) {
-    if (!authResult.userAuthInfo().isPresent()) {
+    if (authResult.userAuthInfo().isEmpty()) {
       return ImmutableSetMultimap.of();
     }
     ImmutableSetMultimap.Builder<String, Role> builder = new ImmutableSetMultimap.Builder<>();

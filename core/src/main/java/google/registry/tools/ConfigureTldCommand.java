@@ -237,7 +237,7 @@ public class ConfigureTldCommand extends MutatingCommand {
 
   private void checkPremiumList(Tld newTld) {
     Optional<String> premiumListName = newTld.getPremiumListName();
-    if (!premiumListName.isPresent()) {
+    if (premiumListName.isEmpty()) {
       return;
     }
     Optional<PremiumList> premiumList = PremiumListDao.getLatestRevision(premiumListName.get());

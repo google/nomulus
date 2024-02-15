@@ -69,7 +69,7 @@ public class WhoisRegistrarFieldsAction implements JsonGetAction {
 
   @Override
   public void run() {
-    if (!registrar.isPresent()) {
+    if (registrar.isEmpty()) {
       response.setStatus(HttpStatusCodes.STATUS_CODE_BAD_REQUEST);
       response.setPayload(gson.toJson("'registrar' parameter is not present"));
       return;

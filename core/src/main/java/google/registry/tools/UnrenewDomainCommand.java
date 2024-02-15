@@ -93,8 +93,7 @@ class UnrenewDomainCommand extends ConfirmingCommand {
         continue;
       }
       Optional<Domain> domain = loadByForeignKey(Domain.class, domainName, now);
-      if (!domain.isPresent()
-          || domain.get().getStatusValues().contains(StatusValue.PENDING_DELETE)) {
+      if (domain.isEmpty() || domain.get().getStatusValues().contains(StatusValue.PENDING_DELETE)) {
         domainsDeletingBuilder.add(domainName);
         continue;
       }

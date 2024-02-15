@@ -96,7 +96,7 @@ class LoadTestCommand extends ConfirmingCommand implements CommandWithConnection
       errorPrintStream.printf("No such TLD: %s\n", tld);
       return false;
     }
-    if (!Registrar.loadByRegistrarId(clientId).isPresent()) {
+    if (Registrar.loadByRegistrarId(clientId).isEmpty()) {
       errorPrintStream.printf("No such client: %s\n", clientId);
       return false;
     }

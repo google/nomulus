@@ -539,7 +539,7 @@ public class DomainBase extends EppResource
     for (GracePeriod gracePeriod : almostBuilt.getGracePeriods()) {
       if (isBeforeOrAt(gracePeriod.getExpirationTime(), now)) {
         builder.removeGracePeriod(gracePeriod);
-        if (!newLastEppUpdateTime.isPresent()
+        if (newLastEppUpdateTime.isEmpty()
             || isBeforeOrAt(newLastEppUpdateTime.get(), gracePeriod.getExpirationTime())) {
           newLastEppUpdateTime = Optional.of(gracePeriod.getExpirationTime());
         }

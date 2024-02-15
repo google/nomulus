@@ -77,7 +77,7 @@ public class SecurityAction implements JsonGetAction {
       return;
     }
 
-    if (!registrar.isPresent()) {
+    if (registrar.isEmpty()) {
       response.setStatus(HttpStatusCodes.STATUS_CODE_BAD_REQUEST);
       response.setPayload(gson.toJson("'registrar' parameter is not present"));
       return;

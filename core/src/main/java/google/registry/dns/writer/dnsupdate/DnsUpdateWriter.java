@@ -157,7 +157,7 @@ public class DnsUpdateWriter extends BaseDnsWriter {
     Optional<InternetDomainName> tld = Tlds.findTldForName(host);
 
     // host not managed by our registry, no need to update DNS.
-    if (!tld.isPresent()) {
+    if (tld.isEmpty()) {
       return;
     }
 

@@ -66,7 +66,7 @@ public class RdapNameserverAction extends RdapActionBase {
             Host.class,
             pathSearchString,
             shouldIncludeDeleted() ? START_OF_TIME : getRequestTime());
-    if (!host.isPresent() || !isAuthorized(host.get())) {
+    if (host.isEmpty() || !isAuthorized(host.get())) {
       // RFC7480 5.3 - if the server wishes to respond that it doesn't have data satisfying the
       // query, it MUST reply with 404 response code.
       //

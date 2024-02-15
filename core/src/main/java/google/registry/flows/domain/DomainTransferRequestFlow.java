@@ -201,7 +201,7 @@ public final class DomainTransferRequestFlow implements MutatingFlow {
     Optional<FeesAndCredits> feesAndCredits;
     if (period.getValue() == 0) {
       feesAndCredits = Optional.empty();
-    } else if (!existingDomain.getCurrentBulkToken().isPresent()) {
+    } else if (existingDomain.getCurrentBulkToken().isEmpty()) {
       feesAndCredits =
           Optional.of(pricingLogic.getTransferPrice(tld, targetId, now, existingBillingRecurrence));
     } else {

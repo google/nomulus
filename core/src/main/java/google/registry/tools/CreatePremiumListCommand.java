@@ -47,7 +47,7 @@ public class CreatePremiumListCommand extends CreateOrUpdatePremiumListCommand {
     currency = CurrencyUnit.of(currencyUnit);
     name = Strings.isNullOrEmpty(name) ? convertFilePathToName(inputFile) : name;
     checkArgument(
-        !PremiumListDao.getLatestRevision(name).isPresent(),
+        PremiumListDao.getLatestRevision(name).isEmpty(),
         "A premium list already exists by this name");
     if (!override) {
       assertTldExists(

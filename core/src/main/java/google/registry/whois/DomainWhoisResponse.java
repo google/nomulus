@@ -146,7 +146,7 @@ final class DomainWhoisResponse extends WhoisResponseImpl {
     /** Emit the contact entry of the given type. */
     DomainEmitter emitContact(
         String contactType, Optional<VKey<Contact>> contact, boolean preferUnicode) {
-      if (!contact.isPresent()) {
+      if (contact.isEmpty()) {
         return this;
       }
       // If we refer to a contact that doesn't exist, that's a bug. It means referential integrity

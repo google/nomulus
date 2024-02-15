@@ -52,7 +52,7 @@ public class RefreshScheduler {
               }
               // No previously completed refreshes. Need start time of a completed download as
               // lower bound of refresh checks.
-              if (!mostRecentDownload.isPresent()) {
+              if (mostRecentDownload.isEmpty()) {
                 return Optional.empty();
               }
 

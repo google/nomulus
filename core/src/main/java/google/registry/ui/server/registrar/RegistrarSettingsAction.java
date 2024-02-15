@@ -383,7 +383,7 @@ public class RegistrarSettingsAction implements Runnable, JsonActionRunner.JsonA
    */
   private boolean validateCertificate(
       Optional<String> existingCertificate, String certificateString) {
-    if (!existingCertificate.isPresent() || !existingCertificate.get().equals(certificateString)) {
+    if (existingCertificate.isEmpty() || !existingCertificate.get().equals(certificateString)) {
       try {
         certificateChecker.validateCertificate(certificateString);
       } catch (InsecureCertificateException e) {
@@ -514,7 +514,7 @@ public class RegistrarSettingsAction implements Runnable, JsonActionRunner.JsonA
     }
     // If there was a domain WHOIS abuse contact in the old set, the new set must have one.
     if (getDomainWhoisVisibleAbuseContact(existingContacts).isPresent()
-        && !domainWhoisAbuseContact.isPresent()) {
+        && domainWhoisAbuseContact.isEmpty()) {
       throw new ContactRequirementException(
           "An abuse contact visible in domain WHOIS query must be designated");
     }
@@ -569,7 +569,7 @@ public class RegistrarSettingsAction implements Runnable, JsonActionRunner.JsonA
                           updatedContact ->
                               updatedContact.getEmailAddress().equals(contact.getEmailAddress()))
                       .findFirst();
-              if (!updatedContactOptional.isPresent()) {
+              if (updatedContactOptional.isEmpty()) {
                 throw new FormException(
                     String.format(
                         "Cannot delete the contact %s that has registry lock enabled",

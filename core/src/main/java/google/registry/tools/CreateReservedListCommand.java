@@ -47,8 +47,7 @@ final class CreateReservedListCommand extends CreateOrUpdateReservedListCommand 
   @Override
   protected String prompt() throws Exception {
     name = Strings.isNullOrEmpty(name) ? convertFilePathToName(input) : name;
-    checkArgument(
-        !ReservedList.get(name).isPresent(), "A reserved list already exists by this name");
+    checkArgument(ReservedList.get(name).isEmpty(), "A reserved list already exists by this name");
     if (!override) {
       validateListName(name);
     }
