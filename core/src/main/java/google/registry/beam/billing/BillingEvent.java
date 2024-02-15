@@ -21,26 +21,21 @@ import google.registry.reporting.billing.BillingModule;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.Serializable;
 import java.util.regex.Pattern;
 import org.apache.beam.sdk.coders.AtomicCoder;
 import org.apache.beam.sdk.coders.Coder;
+import org.apache.beam.sdk.coders.DoubleCoder;
+import org.apache.beam.sdk.coders.NullableCoder;
 import org.apache.beam.sdk.coders.StringUtf8Coder;
+import org.apache.beam.sdk.coders.VarIntCoder;
+import org.apache.beam.sdk.coders.VarLongCoder;
 import org.joda.time.DateTime;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
 
-/**
- * A POJO representing a single billable event, parsed from a {@code SchemaAndRecord}.
- *
- * <p>This is a trivially serializable class that allows Beam to transform the results of a Cloud
- * SQL query into a standard Java representation, giving us the type guarantees and ease of
- * manipulation Cloud SQL lacks.
- */
+/** A POJO representing a single billable event, parsed from a {@code SchemaAndRecord}. */
 @AutoValue
-public abstract class BillingEvent implements Serializable {
-
-  private static final long serialVersionUID = -3593088371541450077L;
+public abstract class BillingEvent {
 
   private static final DateTimeFormatter DATE_TIME_FORMATTER =
       DateTimeFormat.forPattern("yyyy-MM-dd HH:mm:ss zzz");
@@ -85,7 +80,7 @@ public abstract class BillingEvent implements Serializable {
   /** Returns the tld this event was generated for. */
   abstract String tld();
 
-  /** Returns the billable action this event was generated for (i.e. RENEW, CREATE, TRANSFER...) */
+  /** Returns the billable action this event was generated for (i.e., RENEW, CREATE, TRANSFER...) */
   abstract String action();
 
   /** Returns the fully qualified domain name this event was generated for. */
@@ -97,7 +92,7 @@ public abstract class BillingEvent implements Serializable {
   /** Returns the number of years this billing event is made out for. */
   abstract int years();
 
-  /** Returns the 3-letter currency code for the billing event (i.e. USD or JPY.) */
+  /** Returns the 3-letter currency code for the billing event (i.e., USD or JPY.) */
   abstract String currency();
 
   /** Returns the cost associated with this billing event. */
@@ -203,9 +198,7 @@ public abstract class BillingEvent implements Serializable {
 
   /** Key for each {@code BillingEvent}, when aggregating for the overall invoice. */
   @AutoValue
-  abstract static class InvoiceGroupingKey implements Serializable {
-
-    private static final long serialVersionUID = -151561764235256205L;
+  abstract static class InvoiceGroupingKey {
 
     private static final ImmutableList<String> INVOICE_HEADERS =
         ImmutableList.of(
@@ -277,8 +270,14 @@ public abstract class BillingEvent implements Serializable {
 
     /** Coder that provides deterministic (de)serialization for {@code InvoiceGroupingKey}. */
     static class InvoiceGroupingKeyCoder extends AtomicCoder<InvoiceGroupingKey> {
+      private static final Coder<String> stringCoder = StringUtf8Coder.of();
+      private static final InvoiceGroupingKeyCoder INSTANCE = new InvoiceGroupingKeyCoder();
 
-      private static final long serialVersionUID = 6680701524304107547L;
+      public static InvoiceGroupingKeyCoder of() {
+        return INSTANCE;
+      }
+
+      private InvoiceGroupingKeyCoder() {}
 
       @Override
       public void encode(InvoiceGroupingKey value, OutputStream outStream) throws IOException {
@@ -295,7 +294,6 @@ public abstract class BillingEvent implements Serializable {
 
       @Override
       public InvoiceGroupingKey decode(InputStream inStream) throws IOException {
-        Coder<String> stringCoder = StringUtf8Coder.of();
         return new AutoValue_BillingEvent_InvoiceGroupingKey(
             stringCoder.decode(inStream),
             stringCoder.decode(inStream),
@@ -306,6 +304,57 @@ public abstract class BillingEvent implements Serializable {
             stringCoder.decode(inStream),
             stringCoder.decode(inStream));
       }
+    }
+  }
+
+  static class BillingEventCoder extends AtomicCoder<BillingEvent> {
+    private static final Coder<String> stringCoder = StringUtf8Coder.of();
+    private static final Coder<Integer> integerCoder = VarIntCoder.of();
+    private static final Coder<Long> longCoder = VarLongCoder.of();
+    private static final Coder<Double> doubleCoder = DoubleCoder.of();
+    private static final BillingEventCoder INSTANCE = new BillingEventCoder();
+
+    static NullableCoder<BillingEvent> ofNullable() {
+      return NullableCoder.of(INSTANCE);
+    }
+
+    private BillingEventCoder() {}
+
+    @Override
+    public void encode(BillingEvent value, OutputStream outStream) throws IOException {
+      longCoder.encode(value.id(), outStream);
+      stringCoder.encode(DATE_TIME_FORMATTER.print(value.billingTime()), outStream);
+      stringCoder.encode(DATE_TIME_FORMATTER.print(value.eventTime()), outStream);
+      stringCoder.encode(value.registrarId(), outStream);
+      stringCoder.encode(value.billingId(), outStream);
+      stringCoder.encode(value.poNumber(), outStream);
+      stringCoder.encode(value.tld(), outStream);
+      stringCoder.encode(value.action(), outStream);
+      stringCoder.encode(value.domain(), outStream);
+      stringCoder.encode(value.repositoryId(), outStream);
+      integerCoder.encode(value.years(), outStream);
+      stringCoder.encode(value.currency(), outStream);
+      doubleCoder.encode(value.amount(), outStream);
+      stringCoder.encode(value.flags(), outStream);
+    }
+
+    @Override
+    public BillingEvent decode(InputStream inStream) throws IOException {
+      return new AutoValue_BillingEvent(
+          longCoder.decode(inStream),
+          DATE_TIME_FORMATTER.parseDateTime(stringCoder.decode(inStream)),
+          DATE_TIME_FORMATTER.parseDateTime(stringCoder.decode(inStream)),
+          stringCoder.decode(inStream),
+          stringCoder.decode(inStream),
+          stringCoder.decode(inStream),
+          stringCoder.decode(inStream),
+          stringCoder.decode(inStream),
+          stringCoder.decode(inStream),
+          stringCoder.decode(inStream),
+          integerCoder.decode(inStream),
+          stringCoder.decode(inStream),
+          doubleCoder.decode(inStream),
+          stringCoder.decode(inStream));
     }
   }
 }

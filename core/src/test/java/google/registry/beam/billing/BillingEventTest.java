@@ -16,12 +16,14 @@ package google.registry.beam.billing;
 
 import static com.google.common.truth.Truth.assertThat;
 
+import google.registry.beam.billing.BillingEvent.BillingEventCoder;
 import google.registry.beam.billing.BillingEvent.InvoiceGroupingKey;
 import google.registry.beam.billing.BillingEvent.InvoiceGroupingKey.InvoiceGroupingKeyCoder;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import org.apache.beam.sdk.coders.NullableCoder;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.junit.jupiter.api.BeforeEach;
@@ -120,11 +122,20 @@ class BillingEventTest {
   @Test
   void testInvoiceGroupingKeyCoder_deterministicSerialization() throws IOException {
     InvoiceGroupingKey invoiceKey = event.getInvoiceGroupingKey();
-    InvoiceGroupingKeyCoder coder = new InvoiceGroupingKeyCoder();
+    InvoiceGroupingKeyCoder coder = InvoiceGroupingKeyCoder.of();
     ByteArrayOutputStream outStream = new ByteArrayOutputStream();
     coder.encode(invoiceKey, outStream);
     InputStream inStream = new ByteArrayInputStream(outStream.toByteArray());
     assertThat(coder.decode(inStream)).isEqualTo(invoiceKey);
+  }
+
+  @Test
+  void testBillingEventCoder_deterministicSerialization() throws IOException {
+    NullableCoder<BillingEvent> coder = BillingEventCoder.ofNullable();
+    ByteArrayOutputStream outStream = new ByteArrayOutputStream();
+    coder.encode(event, outStream);
+    InputStream inStream = new ByteArrayInputStream(outStream.toByteArray());
+    assertThat(coder.decode(inStream)).isEqualTo(event);
   }
 
   @Test
