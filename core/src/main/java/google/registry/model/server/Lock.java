@@ -19,7 +19,6 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import static google.registry.util.DateTimeUtils.isAtOrAfter;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 
-import com.google.auto.value.AutoValue;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Strings;
 import com.google.common.flogger.FluentLogger;
@@ -129,26 +128,11 @@ public class Lock extends ImmutableObject implements Serializable {
     return String.format("%s-%s", scope, resourceName);
   }
 
-  @AutoValue
-  abstract static class AcquireResult {
-    public abstract DateTime transactionTime();
-
-    @Nullable
-    public abstract Lock existingLock();
-
-    @Nullable
-    public abstract Lock newLock();
-
-    public abstract LockState lockState();
-
-    public static AcquireResult create(
-        DateTime transactionTime,
-        @Nullable Lock existingLock,
-        @Nullable Lock newLock,
-        LockState lockState) {
-      return new AutoValue_Lock_AcquireResult(transactionTime, existingLock, newLock, lockState);
-    }
-  }
+  record AcquireResult(
+      DateTime transactionTime,
+      @Nullable Lock existingLock,
+      @Nullable Lock newLock,
+      LockState lockState) {}
 
   private static void logAcquireResult(AcquireResult acquireResult) {
     try {
@@ -204,13 +188,13 @@ public class Lock extends ImmutableObject implements Serializable {
             lockState = LockState.TIMED_OUT;
           } else {
             lockState = LockState.IN_USE;
-            return AcquireResult.create(now, lock, null, lockState);
+            return new AcquireResult(now, lock, null, lockState);
           }
 
           Lock newLock = create(resourceName, scope, now, leaseLength);
           tm().put(newLock);
 
-          return AcquireResult.create(now, lock, newLock, lockState);
+          return new AcquireResult(now, lock, newLock, lockState);
         };
     AcquireResult acquireResult = tm().transact(lockAcquirer);
 
