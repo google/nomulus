@@ -18,6 +18,7 @@ import dagger.Module;
 import dagger.Subcomponent;
 import google.registry.bsa.BsaDownloadAction;
 import google.registry.bsa.BsaRefreshAction;
+import google.registry.bsa.BsaValidateAction;
 import google.registry.bsa.UploadBsaUnavailableDomainsAction;
 import google.registry.request.Modules.UrlConnectionServiceModule;
 import google.registry.request.RequestComponentBuilder;
@@ -31,6 +32,8 @@ interface BsaRequestComponent {
   BsaDownloadAction bsaDownloadAction();
 
   BsaRefreshAction bsaRefreshAction();
+
+  BsaValidateAction bsaValidateAction();
 
   UploadBsaUnavailableDomainsAction uploadBsaUnavailableDomains();
 
