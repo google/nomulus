@@ -46,9 +46,9 @@ public final class ExportUtils {
                   () ->
                       new IllegalStateException(
                           String.format("Reserved list %s does not exist", reservedListName)));
-        for (ReservedListEntry entry : reservedList.getReservedListEntries().values()) {
-          reservedTerms.add(entry.getDomainLabel());
-        }
+      for (ReservedListEntry entry : reservedList.getReservedListEntries().values()) {
+        reservedTerms.add(entry.getDomainLabel());
+      }
     }
     Joiner.on("\n").appendTo(termsBuilder, reservedTerms);
     return termsBuilder.append("\n").toString();
