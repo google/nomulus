@@ -52,7 +52,7 @@ import org.joda.time.DateTime;
 final class UpdateAllocationTokensCommand extends UpdateOrDeleteAllocationTokensCommand {
 
   @Parameter(
-      names = {"--allowed_client_ids"},
+      names = {"-c", "--allowed_client_ids"},
       description =
           "Comma-separated list of allowed client IDs. Use the empty string to clear the "
               + "existing list.",
@@ -60,7 +60,7 @@ final class UpdateAllocationTokensCommand extends UpdateOrDeleteAllocationTokens
   private List<String> allowedClientIds;
 
   @Parameter(
-      names = {"--allowed_tlds"},
+      names = {"-t", "--allowed_tlds"},
       description =
           "Comma-separated list of allowed TLDs. Use the empty string to clear the "
               + "existing list.",
@@ -91,7 +91,7 @@ final class UpdateAllocationTokensCommand extends UpdateOrDeleteAllocationTokens
   private Boolean discountPremiums;
 
   @Parameter(
-      names = {"--discount_years"},
+      names = {"-y", "--discount_years"},
       description = "The number of years the discount applies for. Default is 1, max value is 10.")
   private Integer discountYears;
 
