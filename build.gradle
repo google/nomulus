@@ -383,8 +383,9 @@ subprojects {
   apply from: "${rootDir.path}/java_common.gradle"
 
   // When changing Java version here, be sure to update BEAM Java runtime:
-  // in core/build.gradle, search for `flex-template-base-image` and update
-  // the parameter value.
+  // search for `flex-template-base-image` and update the parameter value.
+  // There are at least two instances, one in core/build.gradle, one in
+  // release/stage_beam_pipeline.sh
   sourceCompatibility = JavaVersion.VERSION_17
   targetCompatibility = JavaVersion.VERSION_17
 
