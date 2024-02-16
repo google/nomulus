@@ -61,7 +61,19 @@ public interface TransactionManager {
    * Executes the work in a transaction at the given {@link TransactionIsolationLevel} and returns
    * the result.
    */
-  <T> T transact(Callable<T> work, TransactionIsolationLevel isolationLevel);
+  <T> T transact(TransactionIsolationLevel isolationLevel, Callable<T> work);
+
+  /**
+   * Executes the work in a transaction and returns the result, without retrying upon retryable
+   * exceptions.
+   *
+   * <p>This method should only be used when the transaction contains side effects that are not
+   * rolled back by the transaction manager, for example in {@link
+   * google.registry.beam.common.RegistryJpaIO} where the results from a query are streamed to the
+   * next transformation inside a transaction, as the result stream has to materialize to a list
+   * outside a transaction and doing so would greatly affect the parallelism of the pipeline.
+   */
+  <T> T transactNoRetry(Callable<T> work);
 
   /**
    * Executes the work in a transaction at the given {@link TransactionIsolationLevel} and returns
@@ -73,7 +85,7 @@ public interface TransactionManager {
    * next transformation inside a transaction, as the result stream has to materialize to a list
    * outside a transaction and doing so would greatly affect the parallelism of the pipeline.
    */
-  <T> T transactNoRetry(Callable<T> work, TransactionIsolationLevel isolationLevel);
+  <T> T transactNoRetry(TransactionIsolationLevel isolationLevel, Callable<T> work);
 
   /**
    * Executes the work in a (potentially wrapped) transaction and returns the result.
@@ -95,7 +107,7 @@ public interface TransactionManager {
   void transact(ThrowingRunnable work);
 
   /** Executes the work in a transaction at the given {@link TransactionIsolationLevel}. */
-  void transact(ThrowingRunnable work, TransactionIsolationLevel isolationLevel);
+  void transact(TransactionIsolationLevel isolationLevel, ThrowingRunnable work);
 
   /**
    * Executes the work in a (potentially wrapped) transaction and returns the result.

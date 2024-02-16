@@ -219,8 +219,7 @@ public final class RegistryJpaIO {
                 () -> {
                   query.stream().map(resultMapper::apply).forEach(outputReceiver::output);
                   return null;
-                },
-                null);
+                });
       }
     }
   }

@@ -97,7 +97,7 @@ public class RefreshDnsForAllDomainsAction implements Runnable {
   public void run() {
     assertTldsExist(tlds);
     checkArgument(batchSize > 0, "Must specify a positive number for batch size");
-    Duration smear = tm().transact(this::calculateSmear, TRANSACTION_REPEATABLE_READ);
+    Duration smear = tm().transact(TRANSACTION_REPEATABLE_READ, this::calculateSmear);
 
     ImmutableList<String> domainsBatch;
     @Nullable String lastInPreviousBatch = null;
@@ -105,7 +105,7 @@ public class RefreshDnsForAllDomainsAction implements Runnable {
       Optional<String> lastInPreviousBatchOpt = Optional.ofNullable(lastInPreviousBatch);
       domainsBatch =
           tm().transact(
-                  () -> refreshBatch(lastInPreviousBatchOpt, smear), TRANSACTION_REPEATABLE_READ);
+                  TRANSACTION_REPEATABLE_READ, () -> refreshBatch(lastInPreviousBatchOpt, smear));
       lastInPreviousBatch = domainsBatch.isEmpty() ? null : getLast(domainsBatch);
     } while (domainsBatch.size() == batchSize);
   }
