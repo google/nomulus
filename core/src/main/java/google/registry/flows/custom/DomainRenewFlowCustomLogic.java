@@ -14,6 +14,7 @@
 
 package google.registry.flows.custom;
 
+import com.google.auto.value.AutoBuilder;
 import com.google.auto.value.AutoValue;
 import com.google.common.collect.ImmutableList;
 import google.registry.flows.EppException;
@@ -81,30 +82,23 @@ public class DomainRenewFlowCustomLogic extends BaseFlowCustomLogic {
   }
 
   /** A class to encapsulate parameters for a call to {@link #afterValidation}. */
-  @AutoValue
-  public abstract static class AfterValidationParameters extends ImmutableObject {
-
-    public abstract Domain existingDomain();
-
-    public abstract int years();
-
-    public abstract DateTime now();
+  public record AfterValidationParameters(Domain existingDomain, int years, DateTime now) {
 
     public static Builder newBuilder() {
-      return new AutoValue_DomainRenewFlowCustomLogic_AfterValidationParameters.Builder();
+      return new AutoBuilder_DomainRenewFlowCustomLogic_AfterValidationParameters_Builder();
     }
 
     /** Builder for {@link AfterValidationParameters}. */
-    @AutoValue.Builder
-    public abstract static class Builder {
+    @AutoBuilder
+    public interface Builder {
 
-      public abstract Builder setExistingDomain(Domain existingDomain);
+      Builder setExistingDomain(Domain existingDomain);
 
-      public abstract Builder setYears(int years);
+      Builder setYears(int years);
 
-      public abstract Builder setNow(DateTime now);
+      Builder setNow(DateTime now);
 
-      public abstract AfterValidationParameters build();
+      AfterValidationParameters build();
     }
   }
 
