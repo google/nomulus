@@ -20,7 +20,6 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
-import com.google.common.base.Strings;
 import com.google.common.io.ByteStreams;
 import google.registry.keyring.api.Keyring;
 import google.registry.testing.BouncyCastleProviderExtension;
@@ -54,7 +53,7 @@ public class GhostrydeTest {
     return Stream.of(
             "hi",
             "(◕‿◕)",
-            Strings.repeat("Fanatics have their dreams, wherewith they weave\n", 1000),
+            "Fanatics have their dreams, wherewith they weave\n".repeat(1000),
             "\0yolo",
             "")
         .map(Arguments::of);

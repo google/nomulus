@@ -173,8 +173,7 @@ public abstract class JpaTransactionManagerExtension
       File tempSqlFile = File.createTempFile("tempSqlFile", ".sql");
       tempSqlFile.deleteOnExit();
       exporter.export(extraEntityClasses, tempSqlFile);
-      // TODO: Use Files.readString() once we upgrade to Java 17 runtime.
-      executeSql(new String(Files.readAllBytes(tempSqlFile.toPath()), UTF_8));
+      executeSql(Files.readString(tempSqlFile.toPath(), UTF_8));
     }
     assertReasonableNumDbConnections();
     emf = createEntityManagerFactory(getJpaProperties());

@@ -22,7 +22,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 
-import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.net.MediaType;
 import google.registry.model.tld.Tld.TldType;
@@ -51,7 +50,7 @@ public class ListDomainsCommandTest extends ListObjectsCommandTestCase<ListDomai
   @Test
   @MockitoSettings(strictness = Strictness.LENIENT)
   void test_tldsParamTooLong() {
-    String tldsParam = "--tlds=foo,bar" + Strings.repeat(",baz", 300);
+    String tldsParam = "--tlds=foo,bar" + ",baz".repeat(300);
     IllegalArgumentException thrown =
         assertThrows(IllegalArgumentException.class, () -> runCommand(tldsParam));
     assertThat(thrown)

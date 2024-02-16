@@ -71,19 +71,20 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 class NordnUploadActionTest {
 
   private static final String CLAIMS_CSV =
-      "1,2010-05-04T10:11:12.000Z,2\n"
-          + "roid,domain-name,notice-id,registrar-id,registration-datetime,ack-datetime,"
-          + "application-datetime\n"
-          + "6-TLD,claims-landrush2.tld,landrush2tcn,88888,2010-05-03T10:11:12.000Z,"
-          + "2010-05-03T08:11:12.000Z\n"
-          + "8-TLD,claims-landrush1.tld,landrush1tcn,99999,2010-05-04T10:11:12.000Z,"
-          + "2010-05-04T09:11:12.000Z\n";
+      """
+          1,2010-05-04T10:11:12.000Z,2
+          roid,domain-name,notice-id,registrar-id,registration-datetime,ack-datetime,application-datetime
+          6-TLD,claims-landrush2.tld,landrush2tcn,88888,2010-05-03T10:11:12.000Z,2010-05-03T08:11:12.000Z
+          8-TLD,claims-landrush1.tld,landrush1tcn,99999,2010-05-04T10:11:12.000Z,2010-05-04T09:11:12.000Z
+          """;
 
   private static final String SUNRISE_CSV =
-      "1,2010-05-04T10:11:12.000Z,2\n"
-          + "roid,domain-name,SMD-id,registrar-id,registration-datetime,application-datetime\n"
-          + "2-TLD,sunrise2.tld,new-smdid,88888,2010-05-01T10:11:12.000Z\n"
-          + "4-TLD,sunrise1.tld,my-smdid,99999,2010-05-02T10:11:12.000Z\n";
+      """
+          1,2010-05-04T10:11:12.000Z,2
+          roid,domain-name,SMD-id,registrar-id,registration-datetime,application-datetime
+          2-TLD,sunrise2.tld,new-smdid,88888,2010-05-01T10:11:12.000Z
+          4-TLD,sunrise1.tld,my-smdid,99999,2010-05-02T10:11:12.000Z
+          """;
 
   private static final String LOCATION_URL = "http://trololol";
 
@@ -249,8 +250,7 @@ class NordnUploadActionTest {
     verify(httpUrlConnection).setRequestMethod("POST");
     assertThat(httpUrlConnection.getURL())
         .isEqualTo(new URL("http://127.0.0.1/LORDN/tld/" + phase));
-    // TODO: use toString(StandardCharsets.UTF_8) once we upgrade to Java 17.
-    assertThat(connectionOutputStream.toString("UTF-8")).contains(csv);
+    assertThat(connectionOutputStream.toString(UTF_8)).contains(csv);
     verifyColumnCleared(domain1);
     verifyColumnCleared(domain2);
     cloudTasksHelper.assertTasksEnqueued(

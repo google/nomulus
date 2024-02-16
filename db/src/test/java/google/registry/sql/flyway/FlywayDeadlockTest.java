@@ -29,11 +29,9 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.flogger.FluentLogger;
-import com.google.common.io.ByteStreams;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Map;
 import java.util.Optional;
 import java.util.regex.Matcher;
@@ -143,10 +141,7 @@ public class FlywayDeadlockTest {
             "create index if not exists index_name on public.element_name ...",
             "create index if not exists \"index_name\" on public.element_name ...",
             "create unique index public.index_name on public.\"element_name\" ...");
-    ddls.forEach(
-        ddl -> {
-          assertThat(getDdlLockedElementName(ddl)).hasValue("element_name");
-        });
+    ddls.forEach(ddl -> assertThat(getDdlLockedElementName(ddl)).hasValue("element_name"));
   }
 
   @Test
@@ -160,10 +155,7 @@ public class FlywayDeadlockTest {
             "drop table element_name ...;",
             "drop sequence element_name ...;",
             "drop INDEX element_name ...;");
-    ddls.forEach(
-        ddl -> {
-          assertThat(getDdlLockedElementName(ddl)).isEmpty();
-        });
+    ddls.forEach(ddl -> assertThat(getDdlLockedElementName(ddl)).isEmpty());
   }
 
   static Optional<String> getDdlLockedElementName(String ddl) {
@@ -183,8 +175,7 @@ public class FlywayDeadlockTest {
           .splitToStream(
               readAllLines(path, UTF_8).stream()
                   .map(line -> line.replaceAll("--.*", ""))
-                  // TODO: Use line.isBlank() one we are on Java 17.
-                  .filter(line -> !line.trim().isEmpty())
+                  .filter(line -> !line.isBlank())
                   .collect(joining(" ")))
           .map(FlywayDeadlockTest::getDdlLockedElementName)
           .filter(Optional::isPresent)
@@ -214,8 +205,7 @@ public class FlywayDeadlockTest {
               .splitToList(executeShellCommand(changedScriptsCommand, Optional.of(rootDir)))
               .stream()
               .map(pathStr -> rootDir + File.separator + pathStr)
-              // TODO: Use Path::of once we are on Java 17.
-              .map(path -> Paths.get(path))
+              .map(Path::of)
               .collect(toImmutableList());
       if (changedPaths.isEmpty()) {
         logger.atInfo().log("There are no schema changes.");
@@ -238,9 +228,8 @@ public class FlywayDeadlockTest {
         new ProcessBuilder(SHELL_COMMAND_SPLITTER.splitToList(command).toArray(new String[0]));
     workingDir.map(File::new).ifPresent(processBuilder::directory);
     Process process = processBuilder.start();
-    // TODO:Use InputStream.readAllBytes() once we are on Java 17.
-    String output = new String(ByteStreams.toByteArray(process.getInputStream()), UTF_8);
-    String error = new String(ByteStreams.toByteArray(process.getErrorStream()), UTF_8);
+    String output = new String(process.getInputStream().readAllBytes(), UTF_8);
+    String error = new String(process.getErrorStream().readAllBytes(), UTF_8);
     try {
       process.waitFor(1, SECONDS);
     } catch (InterruptedException ie) {

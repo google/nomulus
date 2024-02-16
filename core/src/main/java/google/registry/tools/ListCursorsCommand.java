@@ -19,7 +19,6 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
-import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
 import google.registry.model.common.Cursor;
 import google.registry.model.common.Cursor.CursorType;
@@ -64,7 +63,7 @@ final class ListCursorsCommand implements Command {
         tm().transact(() -> tm().loadByKeysIfPresent(cursorKeys.values()));
     if (!cursorKeys.isEmpty()) {
       String header = String.format(OUTPUT_FMT, "TLD", "Cursor Time", "Last Update Time");
-      System.out.printf("%s\n%s\n", header, Strings.repeat("-", header.length()));
+      System.out.printf("%s\n%s\n", header, "-".repeat(header.length()));
       cursorKeys.entrySet().stream()
           .map(e -> renderLine(e.getKey(), Optional.ofNullable(cursors.get(e.getValue()))))
           .sorted()

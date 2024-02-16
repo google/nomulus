@@ -133,8 +133,6 @@ tasks.withType(JavaCompile).configureEach {
   options.errorprone.disable("LongDoubleConversion")
   // Allow import of commonly-used names such as "Type".
   options.errorprone.disable("BadImport")
-  // TODO: enable this once we are on Java 17 runtime.
-  options.errorprone.disable("InlineMeInliner")
   options.errorprone.disableWarningsInGeneratedCode = true
   options.errorprone.errorproneArgumentProviders.add([
           asArguments: {

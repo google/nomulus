@@ -14,7 +14,6 @@
 
 package google.registry.ui.server.registrar;
 
-import static com.google.common.base.Strings.repeat;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.testing.DatabaseHelper.loadRegistrar;
 
@@ -98,7 +97,7 @@ class WhoisSettingsTest extends RegistrarSettingsActionTestCase {
             .setFaxNumber("+1.2125650001")
             .setLocalizedAddress(
                 new RegistrarAddress.Builder()
-                    .setStreet(ImmutableList.of("76 Ninth Avenue", repeat("lol", 200)))
+                    .setStreet(ImmutableList.of("76 Ninth Avenue", "lol".repeat(200)))
                     .setCity("New York")
                     .setState("NY")
                     .setZip("10009")

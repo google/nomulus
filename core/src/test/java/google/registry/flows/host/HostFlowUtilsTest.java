@@ -18,7 +18,6 @@ import static com.google.common.truth.Truth.assertThat;
 import static google.registry.flows.host.HostFlowUtils.validateHostName;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import com.google.common.base.Strings;
 import google.registry.flows.host.HostFlowUtils.HostNameNotLowerCaseException;
 import google.registry.flows.host.HostFlowUtils.HostNameNotNormalizedException;
 import google.registry.flows.host.HostFlowUtils.HostNameNotPunyCodedException;
@@ -61,8 +60,7 @@ class HostFlowUtilsTest {
   @Test
   void test_validateHostName_hostNameTooLong() {
     assertThrows(
-        HostNameTooLongException.class,
-        () -> validateHostName(Strings.repeat("na", 200) + ".wat.man"));
+        HostNameTooLongException.class, () -> validateHostName("na".repeat(200) + ".wat.man"));
   }
 
   @Test

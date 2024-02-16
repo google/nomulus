@@ -41,7 +41,6 @@ import static google.registry.util.DateTimeUtils.END_OF_TIME;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.cloud.tasks.v2.HttpMethod;
-import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.net.InetAddresses;
@@ -1274,7 +1273,7 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, Host> {
   void testFailure_renameToTooLong() throws Exception {
     // Host names can be max 253 chars.
     String suffix = ".example.tld";
-    String tooLong = Strings.repeat("a", 254 - suffix.length()) + suffix;
+    String tooLong = "a".repeat(254 - suffix.length()) + suffix;
     doFailingHostNameTest(tooLong, HostNameTooLongException.class);
   }
 
