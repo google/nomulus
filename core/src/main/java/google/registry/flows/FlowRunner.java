@@ -81,6 +81,7 @@ public class FlowRunner {
       // TODO(mcilwain/weiminyu): Use transactReadOnly() here for TransactionalFlow and transact()
       //                          for MutatingFlow.
       return tm().transact(
+              isolationLevelOverride.orElse(null),
               () -> {
                 try {
                   EppOutput output = EppOutput.create(flowProvider.get().run());
@@ -96,8 +97,7 @@ public class FlowRunner {
                 } catch (EppException e) {
                   throw new EppRuntimeException(e);
                 }
-              },
-              isolationLevelOverride.orElse(null));
+              });
     } catch (DryRunException e) {
       return e.output;
     } catch (EppRuntimeException e) {

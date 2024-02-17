@@ -67,6 +67,7 @@ public final class LabelDiffUpdates {
             labels.stream().collect(groupingBy(BlockLabel::labelType, toImmutableList())));
 
     tm().transact(
+            TRANSACTION_REPEATABLE_READ,
             () -> {
               for (Map.Entry<LabelType, ImmutableList<BlockLabel>> entry :
                   labelsByType.entrySet()) {
@@ -128,8 +129,7 @@ public final class LabelDiffUpdates {
                     break;
                 }
               }
-            },
-            TRANSACTION_REPEATABLE_READ);
+            });
     logger.atInfo().log("Processed %s of labels.", labels.size());
     return nonBlockedDomains.build();
   }

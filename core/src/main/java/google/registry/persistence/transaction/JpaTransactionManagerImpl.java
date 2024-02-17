@@ -175,14 +175,14 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
   public <T> T reTransact(Callable<T> work) {
     // This prevents inner transaction from retrying, thus avoiding a cascade retry effect.
     if (inTransaction()) {
-      return transactNoRetry(work, null);
+      return transactNoRetry(null, work);
     }
     return retrier.callWithRetry(
-        () -> transactNoRetry(work, null), JpaRetries::isFailedTxnRetriable);
+        () -> transactNoRetry(null, work), JpaRetries::isFailedTxnRetriable);
   }
 
   @Override
-  public <T> T transact(Callable<T> work, TransactionIsolationLevel isolationLevel) {
+  public <T> T transact(TransactionIsolationLevel isolationLevel, Callable<T> work) {
     if (inTransaction()) {
       if (!getHibernateAllowNestedTransactions()) {
         throw new IllegalStateException(NESTED_TRANSACTION_MESSAGE);
@@ -192,20 +192,25 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
         logger.atWarning().withStackTrace(StackSize.MEDIUM).log(NESTED_TRANSACTION_MESSAGE);
       }
       // This prevents inner transaction from retrying, thus avoiding a cascade retry effect.
-      return transactNoRetry(work, isolationLevel);
+      return transactNoRetry(isolationLevel, work);
     }
     return retrier.callWithRetry(
-        () -> transactNoRetry(work, isolationLevel), JpaRetries::isFailedTxnRetriable);
+        () -> transactNoRetry(isolationLevel, work), JpaRetries::isFailedTxnRetriable);
   }
 
   @Override
   public <T> T transact(Callable<T> work) {
-    return transact(work, null);
+    return transact(null, work);
+  }
+
+  @Override
+  public <T> T transactNoRetry(Callable<T> work) {
+    return transactNoRetry(null, work);
   }
 
   @Override
   public <T> T transactNoRetry(
-      Callable<T> work, @Nullable TransactionIsolationLevel isolationLevel) {
+      @Nullable TransactionIsolationLevel isolationLevel, Callable<T> work) {
     if (inTransaction()) {
       // This check will no longer be necessary when the transact() method always throws
       // inside a nested transaction, as the only way to pass a non-null isolation level
@@ -266,18 +271,18 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
   }
 
   @Override
-  public void transact(ThrowingRunnable work, TransactionIsolationLevel isolationLevel) {
+  public void transact(TransactionIsolationLevel isolationLevel, ThrowingRunnable work) {
     transact(
+        isolationLevel,
         () -> {
           work.run();
           return null;
-        },
-        isolationLevel);
+        });
   }
 
   @Override
   public void transact(ThrowingRunnable work) {
-    transact(work, null);
+    transact(null, work);
   }
 
   @Override

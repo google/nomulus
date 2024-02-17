@@ -37,12 +37,12 @@ public final class BsaTransactions {
   @CanIgnoreReturnValue
   public static <T> T bsaTransact(Callable<T> work) {
     verify(!isInTransaction(), "May only be used for top-level transactions.");
-    return tm().transact(work, TRANSACTION_REPEATABLE_READ);
+    return tm().transact(TRANSACTION_REPEATABLE_READ, work);
   }
 
   public static void bsaTransact(ThrowingRunnable work) {
     verify(!isInTransaction(), "May only be used for top-level transactions.");
-    tm().transact(work, TRANSACTION_REPEATABLE_READ);
+    tm().transact(TRANSACTION_REPEATABLE_READ, work);
   }
 
   @CanIgnoreReturnValue
