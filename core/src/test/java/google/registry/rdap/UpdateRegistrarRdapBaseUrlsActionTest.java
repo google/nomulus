@@ -30,6 +30,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarAddress;
+import google.registry.model.registrar.RegistrarBase;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.request.HttpException.InternalServerErrorException;
@@ -91,7 +92,7 @@ public final class UpdateRegistrarRdapBaseUrlsActionTest {
   }
 
   private static void persistRegistrar(
-      String registrarId, Long ianaId, Registrar.Type type, String... rdapBaseUrls) {
+      String registrarId, Long ianaId, RegistrarBase.Type type, String... rdapBaseUrls) {
     persistSimpleResource(
         new Registrar.Builder()
             .setRegistrarId(registrarId)
