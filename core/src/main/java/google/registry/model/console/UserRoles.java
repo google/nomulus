@@ -21,6 +21,8 @@ import com.google.common.collect.ImmutableMap;
 import google.registry.model.Buildable;
 import google.registry.model.ImmutableObject;
 import java.util.Map;
+import javax.persistence.Access;
+import javax.persistence.AccessType;
 import javax.persistence.Column;
 import javax.persistence.Embeddable;
 import javax.persistence.EnumType;
@@ -32,6 +34,7 @@ import javax.persistence.Enumerated;
  * <p>See <a href="https://go/nomulus-console-authz">go/nomulus-console-authz</a> for more
  * information.
  */
+@Access(AccessType.FIELD)
 @Embeddable
 public class UserRoles extends ImmutableObject implements Buildable {
 
