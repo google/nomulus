@@ -130,6 +130,20 @@
         primary key (revision_id)
     );
 
+    create table "ConsoleEppActionHistory" (
+       history_revision_id int8 not null,
+        history_date_time timestamptz not null,
+        history_method text not null,
+        history_request_body text,
+        history_type text not null,
+        history_url text not null,
+        history_entry_class text not null,
+        repo_id text not null,
+        revision_id int8 not null,
+        history_acting_user text,
+        primary key (history_revision_id)
+    );
+
     create table "Contact" (
        repo_id text not null,
         update_timestamp timestamptz,
@@ -663,6 +677,88 @@
         primary key (email_address, registrar_id)
     );
 
+    create table "RegistrarPocUpdateHistory" (
+       history_revision_id int8 not null,
+        history_date_time timestamptz not null,
+        history_method text not null,
+        history_request_body text,
+        history_type text not null,
+        history_url text not null,
+        email_address text not null,
+        registrar_id text not null,
+        allowed_to_set_registry_lock_password boolean not null,
+        fax_number text,
+        login_email_address text,
+        name text,
+        phone_number text,
+        registry_lock_email_address text,
+        registry_lock_password_hash text,
+        registry_lock_password_salt text,
+        types text[],
+        visible_in_domain_whois_as_abuse boolean not null,
+        visible_in_whois_as_admin boolean not null,
+        visible_in_whois_as_tech boolean not null,
+        history_acting_user text,
+        primary key (history_revision_id)
+    );
+
+    create table "RegistrarUpdateHistory" (
+       history_revision_id int8 not null,
+        history_date_time timestamptz not null,
+        history_method text not null,
+        history_request_body text,
+        history_type text not null,
+        history_url text not null,
+        allowed_tlds text[],
+        billing_account_map hstore,
+        block_premium_names boolean not null,
+        client_certificate text,
+        client_certificate_hash text,
+        contacts_require_syncing boolean not null,
+        creation_time timestamptz not null,
+        drive_folder_id text,
+        email_address text,
+        failover_client_certificate text,
+        failover_client_certificate_hash text,
+        fax_number text,
+        iana_identifier int8,
+        icann_referral_email text,
+        i18n_address_city text,
+        i18n_address_country_code text,
+        i18n_address_state text,
+        i18n_address_street_line1 text,
+        i18n_address_street_line2 text,
+        i18n_address_street_line3 text,
+        i18n_address_zip text,
+        ip_address_allow_list text[],
+        last_certificate_update_time timestamptz,
+        last_expiring_cert_notification_sent_date timestamptz,
+        last_expiring_failover_cert_notification_sent_date timestamptz,
+        localized_address_city text,
+        localized_address_country_code text,
+        localized_address_state text,
+        localized_address_street_line1 text,
+        localized_address_street_line2 text,
+        localized_address_street_line3 text,
+        localized_address_zip text,
+        password_hash text,
+        phone_number text,
+        phone_passcode text,
+        po_number text,
+        rdap_base_urls text[],
+        registrar_name text not null,
+        registry_lock_allowed boolean not null,
+        password_salt text,
+        state text,
+        type text not null,
+        url text,
+        whois_server text,
+        update_timestamp timestamptz,
+        registrar_id text not null,
+        history_acting_user text,
+        primary key (history_revision_id)
+    );
+
     create table "RegistryLock" (
        revision_id  bigserial not null,
         last_update_time timestamptz not null,
@@ -796,6 +892,25 @@
         registrar_roles hstore,
         primary key (id)
     );
+
+    create table "UserUpdateHistory" (
+       history_revision_id int8 not null,
+        history_date_time timestamptz not null,
+        history_method text not null,
+        history_request_body text,
+        history_type text not null,
+        history_url text not null,
+        user_id int8 not null,
+        email_address text not null,
+        registry_lock_password_hash text,
+        registry_lock_password_salt text,
+        global_role text not null,
+        is_admin boolean not null,
+        registrar_roles hstore,
+        update_timestamp timestamptz,
+        history_acting_user text,
+        primary key (history_revision_id)
+    );
 create index allocation_token_domain_name_idx on "AllocationToken" (domain_name);
 create index IDX9g3s7mjv1yn4t06nqid39whss on "AllocationToken" (token_type);
 create index IDXtmlqd31dpvvd2g1h9i7erw6aj on "AllocationToken" (redemption_domain_repo_id);
@@ -819,6 +934,9 @@ create index IDXp3usbtvk0v1m14i5tdp4xnxgc on "BillingRecurrence" (recurrence_end
 create index IDXp0pxi708hlu4n40qhbtihge8x on "BillingRecurrence" (recurrence_last_expansion);
 create index IDXjny8wuot75b5e6p38r47wdawu on "BillingRecurrence" (recurrence_time_of_year);
 create index IDXj874kw19bgdnkxo1rue45jwlw on "BsaDownload" (creation_time);
+create index IDXcclyb3n5gbex8u8m9fjlujitw on "ConsoleEppActionHistory" (history_acting_user);
+create index IDX6y67d6wsffmr6jcxax5ghwqhd on "ConsoleEppActionHistory" (repo_id);
+create index IDXiahqo1d1fqdfknywmj2xbxl7t on "ConsoleEppActionHistory" (revision_id);
 create index IDX3y752kr9uh4kh6uig54vemx0l on "Contact" (creation_time);
 create index IDXtm415d6fe1rr35stm33s5mg18 on "Contact" (current_sponsor_registrar_id);
 create index IDXn1f711wicdnooa2mqb7g1m55o on "Contact" (deletion_time);
@@ -876,6 +994,11 @@ create index premiumlist_name_idx on "PremiumList" (name);
 create index registrar_name_idx on "Registrar" (registrar_name);
 create index registrar_iana_identifier_idx on "Registrar" (iana_identifier);
 create index registrarpoc_login_email_idx on "RegistrarPoc" (login_email_address);
+create index IDXrn6posxkx58de1cp09g5257cw on "RegistrarPocUpdateHistory" (history_acting_user);
+create index IDXr1cxua6it0rxgt9tpyugspxk on "RegistrarPocUpdateHistory" (email_address);
+create index IDXfr24wvpg8qalwqy4pni7evrpj on "RegistrarPocUpdateHistory" (registrar_id);
+create index IDXm6k18dusy2lfi5y81k8g256sa on "RegistrarUpdateHistory" (history_acting_user);
+create index IDX3d1mucv7axrhud8w8jl4vsu62 on "RegistrarUpdateHistory" (registrar_id);
 create index idx_registry_lock_verification_code on "RegistryLock" (verification_code);
 create index idx_registry_lock_registrar_id on "RegistryLock" (registrar_id);
 
@@ -886,6 +1009,16 @@ create index spec11threatmatch_registrar_id_idx on "Spec11ThreatMatch" (registra
 create index spec11threatmatch_tld_idx on "Spec11ThreatMatch" (tld);
 create index spec11threatmatch_check_date_idx on "Spec11ThreatMatch" (check_date);
 create index user_email_address_idx on "User" (email_address);
+
+    alter table if exists "User" 
+       add constraint UK_seshmd8qn3lcffsjw5j8wnbnd unique (email_address);
+create index IDXbjacjlm8ianc4kxxvamnu94k5 on "UserUpdateHistory" (history_acting_user);
+create index IDX5yqacw829y5bm6f7eajsq1cts on "UserUpdateHistory" (email_address);
+
+    alter table if exists "ConsoleEppActionHistory" 
+       add constraint FKb686b9os2nsjpv930npa4r3b4 
+       foreign key (history_acting_user) 
+       references "User" (email_address);
 
     alter table if exists "DelegationSignerData" 
        add constraint FKtr24j9v14ph2mfuw2gsmt12kq 
@@ -922,6 +1055,16 @@ create index user_email_address_idx on "User" (email_address);
        foreign key (domain_repo_id, domain_history_revision_id) 
        references "DomainHistory";
 
+    alter table if exists "RegistrarPocUpdateHistory" 
+       add constraint FKftpbwctxtkc1i0njc0tdcaa2g 
+       foreign key (history_acting_user) 
+       references "User" (email_address);
+
+    alter table if exists "RegistrarUpdateHistory" 
+       add constraint FKsr7w342s7x5s5jvdti2axqeq8 
+       foreign key (history_acting_user) 
+       references "User" (email_address);
+
     alter table if exists "RegistryLock" 
        add constraint FK2lhcwpxlnqijr96irylrh1707 
        foreign key (relock_revision_id) 
@@ -931,3 +1074,8 @@ create index user_email_address_idx on "User" (email_address);
        add constraint FK5ivlhvs3121yx2li5tqh54u4 
        foreign key (revision_id) 
        references "SignedMarkRevocationList";
+
+    alter table if exists "UserUpdateHistory" 
+       add constraint FK1s7bopbl3pwrhv3jkkofnv3o0 
+       foreign key (history_acting_user) 
+       references "User" (email_address);

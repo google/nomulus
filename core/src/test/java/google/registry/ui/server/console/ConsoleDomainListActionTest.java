@@ -16,6 +16,7 @@ package google.registry.ui.server.console;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.truth.Truth.assertThat;
+import static google.registry.testing.DatabaseHelper.createAdminUser;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistDomainAsDeleted;
@@ -24,9 +25,6 @@ import com.google.api.client.http.HttpStatusCodes;
 import com.google.common.collect.Iterables;
 import com.google.gson.Gson;
 import google.registry.model.EppResourceUtils;
-import google.registry.model.console.GlobalRole;
-import google.registry.model.console.User;
-import google.registry.model.console.UserRoles;
 import google.registry.model.domain.Domain;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.request.auth.AuthResult;
@@ -232,12 +230,7 @@ public class ConsoleDomainListActionTest {
       @Nullable String searchTerm) {
     response = new FakeResponse();
     AuthResult authResult =
-        AuthResult.createUser(
-            UserAuthInfo.create(
-                new User.Builder()
-                    .setEmailAddress("email@email.example")
-                    .setUserRoles(new UserRoles.Builder().setGlobalRole(GlobalRole.FTE).build())
-                    .build()));
+        AuthResult.createUser(UserAuthInfo.create(createAdminUser("email@email.example")));
     return new ConsoleDomainListAction(
         authResult,
         response,

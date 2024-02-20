@@ -72,6 +72,10 @@ import google.registry.model.billing.BillingCancellation;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingRecurrence;
 import google.registry.model.common.DnsRefreshRequest;
+import google.registry.model.console.GlobalRole;
+import google.registry.model.console.User;
+import google.registry.model.console.UserDao;
+import google.registry.model.console.UserRoles;
 import google.registry.model.contact.Contact;
 import google.registry.model.contact.ContactAuthInfo;
 import google.registry.model.contact.ContactHistory;
@@ -91,8 +95,9 @@ import google.registry.model.host.Host;
 import google.registry.model.poll.PollMessage;
 import google.registry.model.pricing.StaticPremiumListPricingEngine;
 import google.registry.model.registrar.Registrar;
-import google.registry.model.registrar.Registrar.State;
 import google.registry.model.registrar.RegistrarAddress;
+import google.registry.model.registrar.RegistrarBase;
+import google.registry.model.registrar.RegistrarBase.State;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.reporting.HistoryEntryDao;
 import google.registry.model.tld.Tld;
@@ -751,7 +756,7 @@ public final class DatabaseHelper {
   public static Registrar persistNewRegistrar(
       String registrarId,
       String registrarName,
-      Registrar.Type type,
+      RegistrarBase.Type type,
       @Nullable Long ianaIdentifier) {
     return persistSimpleResource(
         new Registrar.Builder()
@@ -1008,6 +1013,22 @@ public final class DatabaseHelper {
             });
     maybeAdvanceClock();
     return tm().transact(() -> tm().loadByEntity(resource));
+  }
+
+  /** Creates and persists an admin {@link User} with the given email address. */
+  public static User createAdminUser(String emailAddress) {
+    Optional<User> existingUser = UserDao.loadUser(emailAddress);
+    if (existingUser.isPresent()) {
+      return existingUser.get();
+    }
+    User user =
+        new User.Builder()
+            .setEmailAddress(emailAddress)
+            .setUserRoles(
+                new UserRoles.Builder().setGlobalRole(GlobalRole.FTE).setIsAdmin(true).build())
+            .build();
+    tm().transact(() -> tm().put(user));
+    return UserDao.loadUser(emailAddress).get();
   }
 
   /** Returns all the history entries that are parented off the given EppResource. */

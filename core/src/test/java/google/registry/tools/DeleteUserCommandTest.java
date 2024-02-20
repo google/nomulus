@@ -17,10 +17,9 @@ package google.registry.tools;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertThrows;
 
-import google.registry.model.console.GlobalRole;
 import google.registry.model.console.User;
 import google.registry.model.console.UserDao;
-import google.registry.model.console.UserRoles;
+import google.registry.testing.DatabaseHelper;
 import org.junit.jupiter.api.Test;
 
 /** Tests for {@link DeleteUserCommand}. */
@@ -28,13 +27,7 @@ public class DeleteUserCommandTest extends CommandTestCase<DeleteUserCommand> {
 
   @Test
   void testSuccess_deletesUser() throws Exception {
-    User user =
-        new User.Builder()
-            .setEmailAddress("email@example.test")
-            .setUserRoles(
-                new UserRoles.Builder().setGlobalRole(GlobalRole.FTE).setIsAdmin(true).build())
-            .build();
-    UserDao.saveUser(user);
+    User user = DatabaseHelper.createAdminUser("email@example.test");
     assertThat(UserDao.loadUser("email@example.test")).isPresent();
     runCommandForced("--email", "email@example.test");
     assertThat(UserDao.loadUser("email@example.test")).isEmpty();
