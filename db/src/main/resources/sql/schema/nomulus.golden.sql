@@ -1212,6 +1212,29 @@ CREATE TABLE public."User" (
 
 
 --
+-- Name: UserUpdateHistory; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public."UserUpdateHistory" (
+    history_revision_id bigint NOT NULL,
+    history_date_time timestamp with time zone NOT NULL,
+    history_method text NOT NULL,
+    history_request_body text,
+    history_type text NOT NULL,
+    history_url text NOT NULL,
+    user_id bigint NOT NULL,
+    email_address text NOT NULL,
+    registry_lock_password_hash text,
+    registry_lock_password_salt text,
+    global_role text NOT NULL,
+    is_admin boolean NOT NULL,
+    registrar_roles public.hstore,
+    update_timestamp timestamp with time zone,
+    history_acting_user text
+);
+
+
+--
 -- Name: User_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
@@ -1647,6 +1670,14 @@ ALTER TABLE ONLY public."TmchCrl"
 
 
 --
+-- Name: UserUpdateHistory UserUpdateHistory_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."UserUpdateHistory"
+    ADD CONSTRAINT "UserUpdateHistory_pkey" PRIMARY KEY (history_revision_id);
+
+
+--
 -- Name: User User_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1778,6 +1809,13 @@ CREATE INDEX idx5yfbr88439pxw0v3j86c74fp8 ON public."BillingEvent" USING btree (
 
 
 --
+-- Name: idx5yqacw829y5bm6f7eajsq1cts; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx5yqacw829y5bm6f7eajsq1cts ON public."UserUpdateHistory" USING btree (email_address);
+
+
+--
 -- Name: idx67qwkjtlq5q8dv6egtrtnhqi7; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -1894,6 +1932,13 @@ CREATE INDEX idxbgfmveqa7e5hn689koikwn70r ON public."BillingEvent" USING btree (
 --
 
 CREATE INDEX idxbgssjudpm428mrv0xfpvgifps ON public."GracePeriod" USING btree (billing_event_id);
+
+
+--
+-- Name: idxbjacjlm8ianc4kxxvamnu94k5; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idxbjacjlm8ianc4kxxvamnu94k5 ON public."UserUpdateHistory" USING btree (history_acting_user);
 
 
 --
@@ -2272,6 +2317,14 @@ CREATE INDEX spec11threatmatch_tld_idx ON public."Spec11ThreatMatch" USING btree
 --
 
 CREATE INDEX user_email_address_idx ON public."User" USING btree (email_address);
+
+
+--
+-- Name: UserUpdateHistory fk1s7bopbl3pwrhv3jkkofnv3o0; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."UserUpdateHistory"
+    ADD CONSTRAINT fk1s7bopbl3pwrhv3jkkofnv3o0 FOREIGN KEY (history_acting_user) REFERENCES public."User"(email_address);
 
 
 --

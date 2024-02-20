@@ -796,6 +796,25 @@
         registrar_roles hstore,
         primary key (id)
     );
+
+    create table "UserUpdateHistory" (
+       history_revision_id int8 not null,
+        history_date_time timestamptz not null,
+        history_method text not null,
+        history_request_body text,
+        history_type text not null,
+        history_url text not null,
+        user_id int8 not null,
+        email_address text not null,
+        registry_lock_password_hash text,
+        registry_lock_password_salt text,
+        global_role text not null,
+        is_admin boolean not null,
+        registrar_roles hstore,
+        update_timestamp timestamptz,
+        history_acting_user text,
+        primary key (history_revision_id)
+    );
 create index allocation_token_domain_name_idx on "AllocationToken" (domain_name);
 create index IDX9g3s7mjv1yn4t06nqid39whss on "AllocationToken" (token_type);
 create index IDXtmlqd31dpvvd2g1h9i7erw6aj on "AllocationToken" (redemption_domain_repo_id);
@@ -887,6 +906,11 @@ create index spec11threatmatch_tld_idx on "Spec11ThreatMatch" (tld);
 create index spec11threatmatch_check_date_idx on "Spec11ThreatMatch" (check_date);
 create index user_email_address_idx on "User" (email_address);
 
+    alter table if exists "User" 
+       add constraint UK_seshmd8qn3lcffsjw5j8wnbnd unique (email_address);
+create index IDXbjacjlm8ianc4kxxvamnu94k5 on "UserUpdateHistory" (history_acting_user);
+create index IDX5yqacw829y5bm6f7eajsq1cts on "UserUpdateHistory" (email_address);
+
     alter table if exists "DelegationSignerData" 
        add constraint FKtr24j9v14ph2mfuw2gsmt12kq 
        foreign key (domain_repo_id) 
@@ -931,3 +955,8 @@ create index user_email_address_idx on "User" (email_address);
        add constraint FK5ivlhvs3121yx2li5tqh54u4 
        foreign key (revision_id) 
        references "SignedMarkRevocationList";
+
+    alter table if exists "UserUpdateHistory" 
+       add constraint FK1s7bopbl3pwrhv3jkkofnv3o0 
+       foreign key (history_acting_user) 
+       references "User" (email_address);
