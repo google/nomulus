@@ -50,6 +50,7 @@ import google.registry.model.domain.Domain;
 import google.registry.model.host.Host;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarPoc;
+import google.registry.model.registrar.RegistrarPocBase;
 import google.registry.model.tld.Tld;
 import google.registry.request.Action;
 import google.registry.request.Action.Service;
@@ -298,7 +299,7 @@ public final class PublishDnsUpdatesAction implements Runnable, Callable<Void> {
 
       ImmutableList<InternetAddress> recipients =
           registrar.get().getContacts().stream()
-              .filter(c -> c.getTypes().contains(RegistrarPoc.Type.ADMIN))
+              .filter(c -> c.getTypes().contains(RegistrarPocBase.Type.ADMIN))
               .map(RegistrarPoc::getEmailAddress)
               .map(PublishDnsUpdatesAction::emailToInternetAddress)
               .collect(toImmutableList());

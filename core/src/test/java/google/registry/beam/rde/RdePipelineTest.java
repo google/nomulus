@@ -69,7 +69,7 @@ import google.registry.model.rde.RdeMode;
 import google.registry.model.rde.RdeRevision;
 import google.registry.model.rde.RdeRevision.RdeRevisionId;
 import google.registry.model.registrar.Registrar;
-import google.registry.model.registrar.Registrar.State;
+import google.registry.model.registrar.RegistrarBase.State;
 import google.registry.model.reporting.DomainTransactionRecord;
 import google.registry.model.reporting.DomainTransactionRecord.TransactionReportField;
 import google.registry.model.reporting.HistoryEntry;

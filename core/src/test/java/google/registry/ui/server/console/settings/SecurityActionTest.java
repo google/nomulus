@@ -28,15 +28,13 @@ import com.google.common.collect.ImmutableSetMultimap;
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.gson.Gson;
 import google.registry.flows.certs.CertificateChecker;
-import google.registry.model.console.GlobalRole;
-import google.registry.model.console.User;
-import google.registry.model.console.UserRoles;
 import google.registry.model.registrar.Registrar;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.request.RequestModule;
 import google.registry.request.auth.AuthResult;
 import google.registry.request.auth.AuthenticatedRegistrarAccessor;
 import google.registry.request.auth.UserAuthInfo;
+import google.registry.testing.DatabaseHelper;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeResponse;
 import google.registry.ui.server.registrar.RegistrarConsoleModule;
@@ -92,8 +90,7 @@ class SecurityActionTest {
     SecurityAction action =
         createAction(
             AuthResult.createUser(
-                UserAuthInfo.create(
-                    createUser(new UserRoles.Builder().setGlobalRole(GlobalRole.FTE).build()))),
+                UserAuthInfo.create(DatabaseHelper.createAdminUser("email@email.com"))),
             testRegistrar.getRegistrarId());
     action.run();
     assertThat(response.getStatus()).isEqualTo(HttpStatusCodes.STATUS_CODE_OK);
@@ -102,13 +99,6 @@ class SecurityActionTest {
         .isEqualTo("GNd6ZP8/n91t9UTnpxR8aH7aAW4+CpvufYx9ViGbcMY");
     assertThat(r.getIpAddressAllowList().get(0).getIp()).isEqualTo("192.168.1.1");
     assertThat(r.getIpAddressAllowList().get(0).getNetmask()).isEqualTo(32);
-  }
-
-  private User createUser(UserRoles userRoles) {
-    return new User.Builder()
-        .setEmailAddress("email@email.com")
-        .setUserRoles(userRoles)
-        .build();
   }
 
   private SecurityAction createAction(AuthResult authResult, String registrarId)
@@ -124,6 +114,5 @@ class SecurityActionTest {
           registrarAccessor,
           registrarId,
           maybeRegistrar);
-
   }
 }

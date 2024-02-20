@@ -20,14 +20,13 @@ import static org.mockito.Mockito.when;
 
 import com.google.api.client.http.HttpStatusCodes;
 import com.google.gson.Gson;
-import google.registry.model.console.GlobalRole;
 import google.registry.model.console.User;
-import google.registry.model.console.UserRoles;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.request.Action;
 import google.registry.request.RequestModule;
 import google.registry.request.auth.AuthResult;
 import google.registry.request.auth.UserAuthInfo;
+import google.registry.testing.DatabaseHelper;
 import google.registry.testing.FakeConsoleApiParams;
 import google.registry.testing.FakeResponse;
 import google.registry.ui.server.registrar.ConsoleApiParams;
@@ -52,12 +51,7 @@ class ConsoleUserDataActionTest {
 
   @Test
   void testSuccess_hasXSRFCookie() throws IOException {
-    User user =
-        new User.Builder()
-            .setEmailAddress("email@email.com")
-            .setUserRoles(new UserRoles.Builder().setGlobalRole(GlobalRole.FTE).build())
-            .build();
-
+    User user = DatabaseHelper.createAdminUser("email@email.com");
     AuthResult authResult = AuthResult.createUser(UserAuthInfo.create(user));
     ConsoleUserDataAction action =
         createAction(
@@ -70,12 +64,7 @@ class ConsoleUserDataActionTest {
 
   @Test
   void testSuccess_getContactInfo() throws IOException {
-    User user =
-        new User.Builder()
-            .setEmailAddress("email@email.com")
-            .setUserRoles(new UserRoles.Builder().setGlobalRole(GlobalRole.FTE).build())
-            .build();
-
+    User user = DatabaseHelper.createAdminUser("email@email.com");
     AuthResult authResult = AuthResult.createUser(UserAuthInfo.create(user));
     ConsoleUserDataAction action =
         createAction(
@@ -88,7 +77,7 @@ class ConsoleUserDataActionTest {
     assertThat(jsonObject)
         .containsExactly(
             "isAdmin",
-            false,
+            true,
             "technicalDocsUrl",
             "test",
             "globalRole",
