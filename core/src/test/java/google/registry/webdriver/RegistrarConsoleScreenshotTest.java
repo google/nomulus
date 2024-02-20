@@ -31,7 +31,7 @@ import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import com.google.common.collect.ImmutableMap;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.RegistryLock;
-import google.registry.model.registrar.Registrar.State;
+import google.registry.model.registrar.RegistrarBase.State;
 import google.registry.model.registrar.RegistrarPoc;
 import google.registry.module.frontend.FrontendServlet;
 import google.registry.server.RegistryTestServer;
