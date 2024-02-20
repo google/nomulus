@@ -22,10 +22,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 
-import google.registry.model.console.GlobalRole;
-import google.registry.model.console.User;
 import google.registry.model.console.UserDao;
-import google.registry.model.console.UserRoles;
+import google.registry.testing.DatabaseHelper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -41,13 +39,7 @@ public class DeleteUserCommandTest extends CommandTestCase<DeleteUserCommand> {
 
   @Test
   void testSuccess_deletesUser() throws Exception {
-    User user =
-        new User.Builder()
-            .setEmailAddress("email@example.test")
-            .setUserRoles(
-                new UserRoles.Builder().setGlobalRole(GlobalRole.FTE).setIsAdmin(true).build())
-            .build();
-    UserDao.saveUser(user);
+    DatabaseHelper.createAdminUser("email@example.test");
     assertThat(UserDao.loadUser("email@example.test")).isPresent();
     runCommandForced("--email", "email@example.test");
     assertThat(UserDao.loadUser("email@example.test")).isEmpty();

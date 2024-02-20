@@ -20,6 +20,7 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import google.registry.model.EntityTestCase;
+import google.registry.testing.DatabaseHelper;
 import org.junit.jupiter.api.Test;
 
 /** Tests for {@link User}. */
@@ -31,13 +32,7 @@ public class UserTest extends EntityTestCase {
 
   @Test
   void testPersistence_lookupByEmail() {
-    User user =
-        new User.Builder()
-            .setEmailAddress("email@email.com")
-            .setUserRoles(
-                new UserRoles.Builder().setGlobalRole(GlobalRole.FTE).setIsAdmin(true).build())
-            .build();
-    tm().transact(() -> tm().put(user));
+    User user = DatabaseHelper.createAdminUser("email@email.com");
     tm().transact(
             () -> {
               assertAboutImmutableObjects()

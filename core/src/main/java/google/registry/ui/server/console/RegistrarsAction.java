@@ -27,7 +27,7 @@ import com.google.gson.Gson;
 import google.registry.model.console.ConsolePermission;
 import google.registry.model.console.User;
 import google.registry.model.registrar.Registrar;
-import google.registry.model.registrar.Registrar.State;
+import google.registry.model.registrar.RegistrarBase.State;
 import google.registry.model.registrar.RegistrarPoc;
 import google.registry.request.Action;
 import google.registry.request.Parameter;

@@ -25,7 +25,6 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSetMultimap;
 import com.google.common.collect.Maps;
 import com.google.gson.Gson;
-import google.registry.model.console.GlobalRole;
 import google.registry.model.console.RegistrarRole;
 import google.registry.model.console.User;
 import google.registry.model.console.UserRoles;
@@ -146,11 +145,7 @@ public class WhoisRegistrarFieldsActionTest {
 
   private AuthResult defaultUserAuth() {
     return AuthResult.createUser(
-        UserAuthInfo.create(
-            new User.Builder()
-                .setEmailAddress("email@email.example")
-                .setUserRoles(new UserRoles.Builder().setGlobalRole(GlobalRole.FTE).build())
-                .build()));
+        UserAuthInfo.create(DatabaseHelper.createAdminUser("email@email.example")));
   }
 
   private WhoisRegistrarFieldsAction createAction() throws IOException {

@@ -31,6 +31,7 @@ import com.google.common.collect.ImmutableSet;
 import google.registry.flows.certs.CertificateChecker;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarAddress;
+import google.registry.model.registrar.RegistrarBase;
 import google.registry.tools.params.KeyValueMapParameter.CurrencyUnitToStringMap;
 import google.registry.tools.params.OptionalLongParameter;
 import google.registry.tools.params.OptionalPhoneNumberParameter;
@@ -59,16 +60,12 @@ abstract class CreateOrUpdateRegistrarCommand extends MutatingCommand {
   @Parameter(description = "Client identifier of the registrar account", required = true)
   List<String> mainParameters;
 
-  @Parameter(
-      names = "--registrar_type",
-      description = "Type of the registrar")
-  Registrar.Type registrarType;
+  @Parameter(names = "--registrar_type", description = "Type of the registrar")
+  RegistrarBase.Type registrarType;
 
   @Nullable
-  @Parameter(
-      names = "--registrar_state",
-      description = "Initial state of the registrar")
-  Registrar.State registrarState;
+  @Parameter(names = "--registrar_state", description = "Initial state of the registrar")
+  RegistrarBase.State registrarState;
 
   @Parameter(
       names = "--allowed_tlds",

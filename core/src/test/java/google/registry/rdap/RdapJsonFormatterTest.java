@@ -39,6 +39,7 @@ import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.host.Host;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarPoc;
+import google.registry.model.registrar.RegistrarPocBase;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.transfer.DomainTransferData;
 import google.registry.model.transfer.TransferStatus;
@@ -259,7 +260,7 @@ class RdapJsonFormatterTest {
             .setEmailAddress("babydoe@example.com")
             .setPhoneNumber("+1.2125551217")
             .setFaxNumber("+1.2125551218")
-            .setTypes(ImmutableSet.of(RegistrarPoc.Type.ADMIN))
+            .setTypes(ImmutableSet.of(RegistrarPocBase.Type.ADMIN))
             .setVisibleInWhoisAsAdmin(false)
             .setVisibleInWhoisAsTech(false)
             .build(),
@@ -268,7 +269,7 @@ class RdapJsonFormatterTest {
             .setName("John Doe")
             .setEmailAddress("johndoe@example.com")
             .setFaxNumber("+1.2125551213")
-            .setTypes(ImmutableSet.of(RegistrarPoc.Type.ADMIN))
+            .setTypes(ImmutableSet.of(RegistrarPocBase.Type.ADMIN))
             .setVisibleInWhoisAsAdmin(false)
             .setVisibleInWhoisAsTech(true)
             .build(),
@@ -277,7 +278,7 @@ class RdapJsonFormatterTest {
             .setName("Jane Doe")
             .setEmailAddress("janedoe@example.com")
             .setPhoneNumber("+1.2125551215")
-            .setTypes(ImmutableSet.of(RegistrarPoc.Type.TECH, RegistrarPoc.Type.ADMIN))
+            .setTypes(ImmutableSet.of(RegistrarPocBase.Type.TECH, RegistrarPocBase.Type.ADMIN))
             .setVisibleInWhoisAsAdmin(true)
             .setVisibleInWhoisAsTech(false)
             .build(),
@@ -287,7 +288,7 @@ class RdapJsonFormatterTest {
             .setEmailAddress("playdoe@example.com")
             .setPhoneNumber("+1.2125551217")
             .setFaxNumber("+1.2125551218")
-            .setTypes(ImmutableSet.of(RegistrarPoc.Type.BILLING))
+            .setTypes(ImmutableSet.of(RegistrarPocBase.Type.BILLING))
             .setVisibleInWhoisAsAdmin(true)
             .setVisibleInWhoisAsTech(true)
             .build());
