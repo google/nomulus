@@ -90,7 +90,8 @@ PRESUBMITS = {
             ".git", "/build/", "/bin/generated-sources/", "/bin/generated-test-sources/",
             "node_modules/", "LoggerConfig.java", "registrar_bin.",
             "registrar_dbg.", "google-java-format-diff.py",
-            "nomulus.golden.sql", "soyutils_usegoog.js", "javascript/checks.js"
+            "nomulus.golden.sql", "soyutils_usegoog.js", "javascript/checks.js",
+            "/src/main/generated", "/src/test/generated"
         }, REQUIRED):
         "File did not include the license header.",
 
@@ -285,7 +286,6 @@ def get_files():
 
 
 if __name__ == "__main__":
-  print('python version is %s' % sys.version)
   failed = False
   for file in get_files():
     error_messages = []
