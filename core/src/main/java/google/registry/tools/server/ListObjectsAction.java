@@ -239,8 +239,7 @@ public abstract class ListObjectsAction<T extends ImmutableObject> implements Ru
       lines.add(rowFormatter.apply(headerRow));
 
       // Add a row of separator lines (column names mapping to '-' * column width).
-      Map<String, String> separatorRow =
-          Maps.transformValues(columnWidths, width -> Strings.repeat("-", width));
+      Map<String, String> separatorRow = Maps.transformValues(columnWidths, "-"::repeat);
       lines.add(rowFormatter.apply(separatorRow));
     }
 

@@ -17,7 +17,6 @@ package google.registry.flows;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.xml.XmlTransformer.prettyPrint;
 
-import com.google.common.base.Strings;
 import com.google.common.flogger.FluentLogger;
 import google.registry.flows.FlowModule.DryRun;
 import google.registry.flows.FlowModule.InputXml;
@@ -36,7 +35,7 @@ import javax.inject.Provider;
 /** Run a flow, either transactionally or not, with logging and retrying as needed. */
 public class FlowRunner {
 
-  private static final String COMMAND_LOG_FORMAT = "EPP Command" + Strings.repeat("\n\t%s", 8);
+  private static final String COMMAND_LOG_FORMAT = "EPP Command" + "\n\t%s".repeat(8);
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 

@@ -30,7 +30,6 @@ import static google.registry.testing.EppExceptionSubject.assertAboutEppExceptio
 import static google.registry.testing.HostSubject.assertAboutHosts;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import google.registry.flows.EppException;
@@ -259,7 +258,7 @@ class HostCreateFlowTest extends ResourceFlowTestCase<HostCreateFlow, Host> {
 
   @Test
   void testFailure_longHostName() {
-    setEppHostCreateInputWithIps("a" + Strings.repeat(".labelpart", 25) + ".tld");
+    setEppHostCreateInputWithIps("a" + ".labelpart".repeat(25) + ".tld");
     EppException thrown = assertThrows(HostNameTooLongException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }

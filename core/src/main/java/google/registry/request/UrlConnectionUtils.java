@@ -22,7 +22,6 @@ import static com.google.common.net.HttpHeaders.CONTENT_LENGTH;
 import static com.google.common.net.HttpHeaders.CONTENT_TYPE;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
-import com.google.common.base.Strings;
 import com.google.common.io.ByteStreams;
 import com.google.common.net.MediaType;
 import java.io.ByteArrayInputStream;
@@ -133,6 +132,6 @@ public final class UrlConnectionUtils {
     random.nextBytes(rand);
     // Boundary strings can be up to 70 characters long, so use 30 hyphens plus 32 random digits.
     // See https://tools.ietf.org/html/rfc2046#section-5.1.1
-    return Strings.repeat("-", 30) + base64().encode(rand);
+    return "-".repeat(30) + base64().encode(rand);
   }
 }

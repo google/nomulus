@@ -73,8 +73,7 @@ final class GcpProjectConnectionTest {
       ByteArrayOutputStream output = new ByteArrayOutputStream();
       getStreamingContent().writeTo(output);
       output.close();
-      // TODO: use toString(StandardCharsets.UTF_8) once we upgrade to Java 17.
-      return output.toString("UTF-8");
+      return output.toString(UTF_8);
     }
   }
 
