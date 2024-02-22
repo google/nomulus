@@ -21,7 +21,6 @@ import static org.apache.http.HttpStatus.SC_INTERNAL_SERVER_ERROR;
 import static org.apache.http.HttpStatus.SC_OK;
 import static org.joda.time.DateTimeZone.UTC;
 
-import com.google.auto.value.AutoValue;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -125,7 +124,7 @@ public class SendExpiringCertificateNotificationEmailAction implements Runnable 
     return Streams.stream(Registrar.loadAllCached())
         .map(
             registrar ->
-                RegistrarInfo.create(
+                new RegistrarInfo(
                     registrar,
                     registrar.getClientCertificate().isPresent()
                         && certificateChecker.shouldReceiveExpiringNotification(
@@ -333,19 +332,6 @@ public class SendExpiringCertificateNotificationEmailAction implements Runnable 
     }
   }
 
-  @AutoValue
-  public abstract static class RegistrarInfo {
-
-    static RegistrarInfo create(
-        Registrar registrar, boolean isCertExpiring, boolean isFailOverCertExpiring) {
-      return new AutoValue_SendExpiringCertificateNotificationEmailAction_RegistrarInfo(
-          registrar, isCertExpiring, isFailOverCertExpiring);
-    }
-
-    public abstract Registrar registrar();
-
-    public abstract boolean isCertExpiring();
-
-    public abstract boolean isFailOverCertExpiring();
-  }
+  record RegistrarInfo(
+      Registrar registrar, boolean isCertExpiring, boolean isFailOverCertExpiring) {}
 }

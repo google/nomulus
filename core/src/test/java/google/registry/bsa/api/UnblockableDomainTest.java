@@ -27,7 +27,7 @@ class UnblockableDomainTest {
 
   @BeforeEach
   void setup() {
-    unit = UnblockableDomain.of("buy.app", Reason.REGISTERED);
+    unit = new UnblockableDomain("buy.app", Reason.REGISTERED);
   }
 
   @Test

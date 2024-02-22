@@ -14,25 +14,21 @@
 
 package google.registry.flows;
 
-import com.google.auto.value.AutoValue;
-import google.registry.model.ImmutableObject;
+import com.google.auto.value.AutoBuilder;
 
 /** Object to hold metadata specific to a particular execution of a flow. */
-@AutoValue
-public abstract class FlowMetadata extends ImmutableObject {
-
-  public abstract boolean isSuperuser();
+public record FlowMetadata(boolean isSuperuser) {
 
   public static Builder newBuilder() {
-    return new AutoValue_FlowMetadata.Builder();
+    return new AutoBuilder_FlowMetadata_Builder();
   }
 
   /** Builder for {@link FlowMetadata} */
-  @AutoValue.Builder
-  public abstract static class Builder {
+  @AutoBuilder
+  public interface Builder {
 
-    public abstract Builder setSuperuser(boolean isSuperuser);
+    Builder setIsSuperuser(boolean isSuperuser);
 
-    public abstract FlowMetadata build();
+    FlowMetadata build();
   }
 }

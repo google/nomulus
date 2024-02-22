@@ -69,7 +69,7 @@ public class DomainsRefresherTest {
     assertThat(refresher.refreshStaleUnblockables())
         .containsExactly(
             UnblockableDomainChange.ofDeleted(
-                UnblockableDomain.of("label.tld", UnblockableDomain.Reason.REGISTERED)));
+                new UnblockableDomain("label.tld", UnblockableDomain.Reason.REGISTERED)));
   }
 
   @Test
@@ -79,7 +79,7 @@ public class DomainsRefresherTest {
     assertThat(refresher.refreshStaleUnblockables())
         .containsExactly(
             UnblockableDomainChange.ofDeleted(
-                UnblockableDomain.of("label.tld", UnblockableDomain.Reason.RESERVED)));
+                new UnblockableDomain("label.tld", UnblockableDomain.Reason.RESERVED)));
   }
 
   @Test
@@ -89,7 +89,7 @@ public class DomainsRefresherTest {
     assertThat(refresher.getNewUnblockables())
         .containsExactly(
             UnblockableDomainChange.ofNew(
-                UnblockableDomain.of("label.tld", UnblockableDomain.Reason.REGISTERED)));
+                new UnblockableDomain("label.tld", UnblockableDomain.Reason.REGISTERED)));
   }
 
   @Test
@@ -100,7 +100,7 @@ public class DomainsRefresherTest {
     assertThat(refresher.getNewUnblockables())
         .containsExactly(
             UnblockableDomainChange.ofNew(
-                UnblockableDomain.of("label.tld", UnblockableDomain.Reason.RESERVED)));
+                new UnblockableDomain("label.tld", UnblockableDomain.Reason.RESERVED)));
   }
 
   @Test
@@ -113,7 +113,7 @@ public class DomainsRefresherTest {
     assertThat(refresher.refreshStaleUnblockables())
         .containsExactly(
             UnblockableDomainChange.ofChanged(
-                UnblockableDomain.of("label.tld", UnblockableDomain.Reason.REGISTERED),
+                new UnblockableDomain("label.tld", UnblockableDomain.Reason.REGISTERED),
                 UnblockableDomain.Reason.RESERVED));
   }
 
@@ -126,7 +126,7 @@ public class DomainsRefresherTest {
     assertThat(refresher.refreshStaleUnblockables())
         .containsExactly(
             UnblockableDomainChange.ofChanged(
-                UnblockableDomain.of("label.tld", UnblockableDomain.Reason.RESERVED),
+                new UnblockableDomain("label.tld", UnblockableDomain.Reason.RESERVED),
                 UnblockableDomain.Reason.REGISTERED));
   }
 
@@ -141,7 +141,7 @@ public class DomainsRefresherTest {
     assertThat(refresher.refreshStaleUnblockables())
         .containsExactly(
             UnblockableDomainChange.ofChanged(
-                UnblockableDomain.of("label.tld", UnblockableDomain.Reason.RESERVED),
+                new UnblockableDomain("label.tld", UnblockableDomain.Reason.RESERVED),
                 UnblockableDomain.Reason.REGISTERED));
   }
 }

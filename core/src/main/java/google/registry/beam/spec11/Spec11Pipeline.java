@@ -17,7 +17,6 @@ package google.registry.beam.spec11;
 import static com.google.common.base.Preconditions.checkArgument;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
-import com.google.auto.value.AutoValue;
 import com.google.common.collect.ImmutableSet;
 import dagger.Component;
 import dagger.Module;
@@ -199,7 +198,7 @@ public class Spec11Pipeline implements Serializable {
                     (KV<DomainNameInfo, ThreatMatch> kv) ->
                         KV.of(
                             kv.getKey().registrarId(),
-                            EmailAndThreatMatch.create(
+                            new EmailAndThreatMatch(
                                 kv.getKey().registrarEmailAddress(), kv.getValue()))))
         .apply("Group by registrar client ID", GroupByKey.create())
         .apply(
@@ -281,15 +280,5 @@ public class Spec11Pipeline implements Serializable {
     Spec11Pipeline spec11Pipeline();
   }
 
-  @AutoValue
-  abstract static class EmailAndThreatMatch implements Serializable {
-
-    abstract String email();
-
-    abstract ThreatMatch threatMatch();
-
-    static EmailAndThreatMatch create(String email, ThreatMatch threatMatch) {
-      return new AutoValue_Spec11Pipeline_EmailAndThreatMatch(email, threatMatch);
-    }
-  }
+  record EmailAndThreatMatch(String email, ThreatMatch threatMatch) implements Serializable {}
 }

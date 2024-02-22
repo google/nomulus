@@ -239,10 +239,10 @@ public final class DomainsRefresher {
 
     Streams.concat(
             newCreated.stream()
-                .map(name -> UnblockableDomain.of(name, Reason.REGISTERED))
+                .map(name -> new UnblockableDomain(name, Reason.REGISTERED))
                 .map(UnblockableDomainChange::ofNew),
             reservedNotCreated.stream()
-                .map(name -> UnblockableDomain.of(name, Reason.RESERVED))
+                .map(name -> new UnblockableDomain(name, Reason.RESERVED))
                 .map(UnblockableDomainChange::ofNew))
         .forEach(changes::add);
     return changes.build();
