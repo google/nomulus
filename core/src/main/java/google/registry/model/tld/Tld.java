@@ -696,7 +696,9 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
     if (createBillingCostTransitions == null) {
       return false;
     }
-    return createBillingCostTransitions.equals(newTld.getCreateBillingCostTransitions());
+    return createBillingCostTransitions
+        .toValueMap()
+        .equals(newTld.getCreateBillingCostTransitions());
   }
 
   /**
