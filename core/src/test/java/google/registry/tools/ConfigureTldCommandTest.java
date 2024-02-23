@@ -140,6 +140,8 @@ public class ConfigureTldCommandTest extends CommandTestCase<ConfigureTldCommand
         tld.asBuilder()
             .setIdnTables(ImmutableSet.of(JA, UNCONFUSABLE_LATIN, EXTENDED_LATIN))
             .setAllowedFullyQualifiedHostNames(ImmutableSet.of("zeta", "alpha", "gamma", "beta"))
+            .setCreateBillingCostTransitions(
+                ImmutableSortedMap.of(START_OF_TIME, Money.of(USD, 13)))
             .build());
     File tldFile = tmpDir.resolve("idns.yaml").toFile();
     Files.asCharSink(tldFile, UTF_8).write(loadFile(getClass(), "idns.yaml"));
@@ -147,6 +149,22 @@ public class ConfigureTldCommandTest extends CommandTestCase<ConfigureTldCommand
     assertAboutLogs()
         .that(logHandler)
         .hasLogAtLevelWithMessage(INFO, "TLD YAML file contains no new changes");
+  }
+
+  @Test
+  void testSuccess_addCreateCostTransitions_hasDiff() throws Exception {
+    Tld tld = createTld("idns");
+    persistResource(
+        tld.asBuilder()
+            .setIdnTables(ImmutableSet.of(JA, UNCONFUSABLE_LATIN, EXTENDED_LATIN))
+            .setAllowedFullyQualifiedHostNames(ImmutableSet.of("zeta", "alpha", "gamma", "beta"))
+            .build());
+    File tldFile = tmpDir.resolve("idns.yaml").toFile();
+    Files.asCharSink(tldFile, UTF_8).write(loadFile(getClass(), "idns.yaml"));
+    runCommandForced("--input=" + tldFile);
+    Tld updatedTld = Tld.get("idns");
+    testTldConfiguredSuccessfully(updatedTld, "idns.yaml");
+    assertThat(tld.compareCreateBillingCostTransitions(updatedTld)).isFalse();
   }
 
   @Test
@@ -580,6 +598,8 @@ public class ConfigureTldCommandTest extends CommandTestCase<ConfigureTldCommand
         tld.asBuilder()
             .setIdnTables(ImmutableSet.of(JA, UNCONFUSABLE_LATIN, EXTENDED_LATIN))
             .setAllowedFullyQualifiedHostNames(ImmutableSet.of("zeta", "alpha", "gamma", "beta"))
+            .setCreateBillingCostTransitions(
+                ImmutableSortedMap.of(START_OF_TIME, Money.of(USD, 13)))
             .build());
     File tldFile = tmpDir.resolve("idns.yaml").toFile();
     Files.asCharSink(tldFile, UTF_8).write(loadFile(getClass(), "idns.yaml"));
@@ -626,6 +646,8 @@ public class ConfigureTldCommandTest extends CommandTestCase<ConfigureTldCommand
         tld.asBuilder()
             .setIdnTables(ImmutableSet.of(JA, UNCONFUSABLE_LATIN, EXTENDED_LATIN))
             .setAllowedFullyQualifiedHostNames(ImmutableSet.of("zeta", "alpha", "gamma", "beta"))
+            .setCreateBillingCostTransitions(
+                ImmutableSortedMap.of(START_OF_TIME, Money.of(USD, 13)))
             .setBreakglassMode(true)
             .build());
     File tldFile = tmpDir.resolve("idns.yaml").toFile();
@@ -645,6 +667,8 @@ public class ConfigureTldCommandTest extends CommandTestCase<ConfigureTldCommand
         tld.asBuilder()
             .setIdnTables(ImmutableSet.of(JA, UNCONFUSABLE_LATIN, EXTENDED_LATIN))
             .setAllowedFullyQualifiedHostNames(ImmutableSet.of("zeta", "alpha", "gamma", "beta"))
+            .setCreateBillingCostTransitions(
+                ImmutableSortedMap.of(START_OF_TIME, Money.of(USD, 13)))
             .setBreakglassMode(true)
             .build());
     File tldFile = tmpDir.resolve("idns.yaml").toFile();
