@@ -18,7 +18,6 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
-import static com.google.common.collect.Iterables.getLast;
 import static google.registry.batch.BatchModule.PARAM_DRY_RUN;
 import static google.registry.dns.DnsUtils.requestDomainDnsRefresh;
 import static google.registry.model.reporting.HistoryEntry.Type.DOMAIN_DELETE;
@@ -46,7 +45,7 @@ import google.registry.request.auth.Auth;
 import google.registry.util.RegistryEnvironment;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
-import javax.annotation.Nullable;
+import java.util.concurrent.atomic.AtomicReference;
 import javax.inject.Inject;
 import javax.persistence.TypedQuery;
 import org.joda.time.DateTime;
@@ -94,18 +93,6 @@ public class DeleteProberDataAction implements Runnable {
   //
   // Note: creationTime must be compared to a Java object (CreateAutoTimestamp) but deletionTime can
   // be compared directly to the SQL timestamp (it's a DateTime)
-
-  // The dry run query orders the results and compares the last in previous batch to progress
-  // through the result set.
-  private static final String DRYRUN_DOMAIN_QUERY_STRING =
-      "FROM Domain d WHERE d.tld IN :tlds AND d.domainName NOT LIKE 'nic.%%' AND"
-          + " (d.subordinateHosts IS EMPTY OR d.subordinateHosts IS NULL) AND d.creationTime <"
-          + " :creationTimeCutoff AND ((d.creationTime <= :nowAutoTimestamp AND d.deletionTime >"
-          + " :now) OR d.deletionTime < :nowMinusSoftDeleteDelay) %s ORDER BY"
-          + " d.repoId ASC";
-
-  // This query does not need to sort the results between batches since the domains will be deleted
-  // in each batch, they will not be returned in the next result set.
   private static final String DOMAIN_QUERY_STRING =
       "FROM Domain d WHERE d.tld IN :tlds AND d.domainName NOT LIKE 'nic.%%' AND"
           + " (d.subordinateHosts IS EMPTY OR d.subordinateHosts IS NULL) AND d.creationTime <"
@@ -157,22 +144,23 @@ public class DeleteProberDataAction implements Runnable {
         Sets.difference(tlds, deletableTlds));
     AtomicInteger softDeletedDomains = new AtomicInteger();
     AtomicInteger hardDeletedDomains = new AtomicInteger();
-    ImmutableList<Domain> domainsBatch;
-    @Nullable String lastInPreviousBatch = null;
+    AtomicReference<ImmutableList<Domain>> domainsBatch = new AtomicReference<>();
     DateTime now = DateTime.now(DateTimeZone.UTC);
     do {
-      Optional<String> lastInPreviousBatchOpt = Optional.ofNullable(lastInPreviousBatch);
-      domainsBatch =
-          tm().transact(
-                  () ->
-                      processDomains(
-                          deletableTlds,
-                          softDeletedDomains,
-                          hardDeletedDomains,
-                          lastInPreviousBatchOpt,
-                          now));
-      lastInPreviousBatch = domainsBatch.isEmpty() ? null : getLast(domainsBatch).getRepoId();
-    } while (domainsBatch.size() == batchSize);
+      tm().transact(
+              () ->
+                  domainsBatch.set(
+                      processDomains(deletableTlds, softDeletedDomains, hardDeletedDomains, now)));
+
+      // Only process one batch in dryrun mode
+      if (isDryRun) {
+        break;
+      }
+
+      logger.atInfo().log(
+          "deleteProberData hard deleted %d names with %d batchSize",
+          hardDeletedDomains.get(), batchSize);
+    } while (domainsBatch.get().size() == batchSize);
     logger.atInfo().log(
         "%s %d domains.",
         isDryRun ? "Would have soft-deleted" : "Soft-deleted", softDeletedDomains.get());
@@ -185,25 +173,15 @@ public class DeleteProberDataAction implements Runnable {
       ImmutableSet<String> deletableTlds,
       AtomicInteger softDeletedDomains,
       AtomicInteger hardDeletedDomains,
-      Optional<String> lastInPreviousBatch,
       DateTime now) {
-    String queryString =
-        isDryRun
-            ? String.format(
-                DRYRUN_DOMAIN_QUERY_STRING,
-                lastInPreviousBatch.isPresent() ? "AND d.repoId > :lastInPreviousBatch" : "")
-            : DOMAIN_QUERY_STRING;
     TypedQuery<Domain> query =
-        tm().query(queryString, Domain.class)
+        tm().query(DOMAIN_QUERY_STRING, Domain.class)
             .setParameter("tlds", deletableTlds)
             .setParameter(
                 "creationTimeCutoff", CreateAutoTimestamp.create(now.minus(DOMAIN_USED_DURATION)))
             .setParameter("nowMinusSoftDeleteDelay", now.minus(SOFT_DELETE_DELAY))
             .setParameter("nowAutoTimestamp", CreateAutoTimestamp.create(now))
             .setParameter("now", now);
-    if (lastInPreviousBatch.isPresent() && isDryRun) {
-      query.setParameter("lastInPreviousBatch", lastInPreviousBatch.get());
-    }
     ImmutableList<Domain> domainList =
         query.setMaxResults(batchSize).getResultStream().collect(toImmutableList());
       ImmutableList.Builder<String> domainRepoIdsToHardDelete = new ImmutableList.Builder<>();
@@ -257,6 +235,9 @@ public class DeleteProberDataAction implements Runnable {
     tm().query("DELETE FROM Host WHERE hostName IN :hostNames")
         .setParameter("hostNames", hostNames)
         .executeUpdate();
+    tm().query("DELETE FROM GracePeriod WHERE domainRepoId IN :repoIds")
+        .setParameter("repoIds", domainRepoIds)
+        .executeUpdate();
     tm().query("DELETE FROM BillingEvent WHERE domainRepoId IN :repoIds")
         .setParameter("repoIds", domainRepoIds)
         .executeUpdate();
@@ -266,12 +247,38 @@ public class DeleteProberDataAction implements Runnable {
     tm().query("DELETE FROM BillingCancellation WHERE domainRepoId IN :repoIds")
         .setParameter("repoIds", domainRepoIds)
         .executeUpdate();
-    tm().query("DELETE FROM DomainHistory WHERE repoId IN :repoIds")
+    tm().query("DELETE FROM GracePeriodHistory WHERE domainRepoId IN :repoIds")
         .setParameter("repoIds", domainRepoIds)
         .executeUpdate();
     tm().query("DELETE FROM PollMessage WHERE domainRepoId IN :repoIds")
         .setParameter("repoIds", domainRepoIds)
         .executeUpdate();
+    // We have to use the native SQL query here because DomainHost and DomainHistoryHost table don't
+    // have their own entity class, so we cannot reference its property like domainHost.hostRepoId
+    // in a JPQL query.
+    tm().getEntityManager()
+        .createNativeQuery("DELETE FROM \"DomainHost\" WHERE domain_repo_id IN :repoIds")
+        .setParameter("repoIds", domainRepoIds)
+        .executeUpdate();
+    tm().getEntityManager()
+        .createNativeQuery(
+            "DELETE FROM \"DomainHistoryHost\" WHERE domain_history_domain_repo_id IN :repoIds")
+        .setParameter("repoIds", domainRepoIds)
+        .executeUpdate();
+    tm().query("DELETE FROM DelegationSignerData WHERE domainRepoId IN :repoIds")
+        .setParameter("repoIds", domainRepoIds)
+        .executeUpdate();
+    tm().query("DELETE FROM DomainTransactionRecord WHERE domainRepoId IN :repoIds")
+        .setParameter("repoIds", domainRepoIds)
+        .executeUpdate();
+    tm().query("DELETE FROM DomainDsDataHistory WHERE domainRepoId IN :repoIds")
+        .setParameter("repoIds", domainRepoIds)
+        .executeUpdate();
+    tm().query("DELETE FROM DomainHistory WHERE repoId IN :repoIds")
+        .setParameter("repoIds", domainRepoIds)
+        .executeUpdate();
+    // Delete from domain table is done last so that a trainsient failure in the middle of an action
+    // run will not prevent the domain from being deleted by this action in a future run
     tm().query("DELETE FROM Domain WHERE repoId IN :repoIds")
         .setParameter("repoIds", domainRepoIds)
         .executeUpdate();
