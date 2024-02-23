@@ -152,7 +152,7 @@ public final class LabelDiffUpdates {
     ImmutableSet<String> registeredDomainNames =
         ImmutableSet.copyOf(ForeignKeyUtils.load(Domain.class, validDomainNames, now).keySet());
     for (String domain : registeredDomainNames) {
-      nonBlockedDomains.add(UnblockableDomain.of(domain, Reason.REGISTERED));
+      nonBlockedDomains.add(new UnblockableDomain(domain, Reason.REGISTERED));
       tm().put(BsaUnblockableDomain.of(domain, BsaUnblockableDomain.Reason.REGISTERED));
     }
 
@@ -161,7 +161,7 @@ public final class LabelDiffUpdates {
             .filter(domain -> isReservedDomain(domain, now))
             .collect(toImmutableSet());
     for (String domain : reservedDomainNames) {
-      nonBlockedDomains.add(UnblockableDomain.of(domain, Reason.RESERVED));
+      nonBlockedDomains.add(new UnblockableDomain(domain, Reason.RESERVED));
       tm().put(BsaUnblockableDomain.of(domain, BsaUnblockableDomain.Reason.RESERVED));
     }
     return nonBlockedDomains.build();

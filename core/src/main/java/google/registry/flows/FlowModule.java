@@ -314,7 +314,7 @@ public class FlowModule {
 
   @Provides
   static FlowMetadata provideFlowMetadata(@Superuser boolean isSuperuser) {
-    return FlowMetadata.newBuilder().setSuperuser(isSuperuser).build();
+    return FlowMetadata.newBuilder().setIsSuperuser(isSuperuser).build();
   }
 
   /** Wrapper class to carry an {@link EppException} to the calling code. */

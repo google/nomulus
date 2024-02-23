@@ -134,10 +134,10 @@ class JsonSerializationsTest {
     assertThat(
             toUnblockableDomainsReport(
                 Stream.of(
-                    UnblockableDomain.of("a.ing", Reason.REGISTERED),
-                    UnblockableDomain.of("b.app", Reason.INVALID),
-                    UnblockableDomain.of("c.dev", Reason.RESERVED),
-                    UnblockableDomain.of("d.page", Reason.REGISTERED))))
+                    new UnblockableDomain("a.ing", Reason.REGISTERED),
+                    new UnblockableDomain("b.app", Reason.INVALID),
+                    new UnblockableDomain("c.dev", Reason.RESERVED),
+                    new UnblockableDomain("d.page", Reason.REGISTERED))))
         .hasValue(expected);
   }
 }

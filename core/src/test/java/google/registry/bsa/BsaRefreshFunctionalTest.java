@@ -139,7 +139,7 @@ class BsaRefreshFunctionalTest {
         RESERVED_LIST_NAME, ImmutableMap.of("blocked1", RESERVED_FOR_SPECIFIC_USE));
     String jobName = getRefreshJobName(fakeClock.nowUtc());
     action.run();
-    UnblockableDomain newUnblockable = UnblockableDomain.of("blocked1.app", Reason.RESERVED);
+    UnblockableDomain newUnblockable = new UnblockableDomain("blocked1.app", Reason.RESERVED);
     assertThat(queryUnblockableDomains()).containsExactly(newUnblockable);
     assertThat(gcsClient.readRefreshChanges(jobName))
         .containsExactly(UnblockableDomainChange.ofNew(newUnblockable));
@@ -154,7 +154,7 @@ class BsaRefreshFunctionalTest {
     persistActiveDomain("dummy.dev", fakeClock.nowUtc());
     String jobName = getRefreshJobName(fakeClock.nowUtc());
     action.run();
-    UnblockableDomain newUnblockable = UnblockableDomain.of("blocked1.dev", Reason.REGISTERED);
+    UnblockableDomain newUnblockable = new UnblockableDomain("blocked1.dev", Reason.REGISTERED);
     assertThat(queryUnblockableDomains()).containsExactly(newUnblockable);
     assertThat(gcsClient.readRefreshChanges(jobName))
         .containsExactly(UnblockableDomainChange.ofNew(newUnblockable));
@@ -169,7 +169,7 @@ class BsaRefreshFunctionalTest {
     Domain domain = persistActiveDomain("blocked1.dev", fakeClock.nowUtc());
     action.run();
     assertThat(queryUnblockableDomains())
-        .containsExactly(UnblockableDomain.of("blocked1.dev", Reason.REGISTERED));
+        .containsExactly(new UnblockableDomain("blocked1.dev", Reason.REGISTERED));
     fakeClock.advanceOneMilli();
     deleteTestDomain(domain, fakeClock.nowUtc());
     fakeClock.advanceOneMilli();
@@ -181,7 +181,7 @@ class BsaRefreshFunctionalTest {
     assertThat(gcsClient.readRefreshChanges(jobName))
         .containsExactly(
             UnblockableDomainChange.ofDeleted(
-                UnblockableDomain.of("blocked1.dev", Reason.REGISTERED)));
+                new UnblockableDomain("blocked1.dev", Reason.REGISTERED)));
 
     verify(bsaReportSender, never()).addUnblockableDomainsUpdates(anyString());
     verify(bsaReportSender, times(1)).removeUnblockableDomainsUpdates("[\n  \"blocked1.dev\"\n]");
@@ -193,7 +193,7 @@ class BsaRefreshFunctionalTest {
         RESERVED_LIST_NAME, ImmutableMap.of("blocked1", RESERVED_FOR_SPECIFIC_USE));
     action.run();
     assertThat(queryUnblockableDomains())
-        .containsExactly(UnblockableDomain.of("blocked1.app", Reason.RESERVED));
+        .containsExactly(new UnblockableDomain("blocked1.app", Reason.RESERVED));
     fakeClock.advanceOneMilli();
     removeReservedDomainFromList(RESERVED_LIST_NAME, ImmutableSet.of("blocked1"));
 
@@ -204,7 +204,7 @@ class BsaRefreshFunctionalTest {
     assertThat(gcsClient.readRefreshChanges(jobName))
         .containsExactly(
             UnblockableDomainChange.ofDeleted(
-                UnblockableDomain.of("blocked1.app", Reason.RESERVED)));
+                new UnblockableDomain("blocked1.app", Reason.RESERVED)));
 
     verify(bsaReportSender, never()).addUnblockableDomainsUpdates(anyString());
     verify(bsaReportSender, times(1)).removeUnblockableDomainsUpdates("[\n  \"blocked1.app\"\n]");
@@ -217,7 +217,7 @@ class BsaRefreshFunctionalTest {
     Domain domain = persistActiveDomain("blocked1.app", fakeClock.nowUtc());
     action.run();
     assertThat(queryUnblockableDomains())
-        .containsExactly(UnblockableDomain.of("blocked1.app", Reason.REGISTERED));
+        .containsExactly(new UnblockableDomain("blocked1.app", Reason.REGISTERED));
     fakeClock.advanceOneMilli();
     deleteTestDomain(domain, fakeClock.nowUtc());
     fakeClock.advanceOneMilli();
@@ -226,11 +226,11 @@ class BsaRefreshFunctionalTest {
     Mockito.reset(bsaReportSender);
     action.run();
     assertThat(queryUnblockableDomains())
-        .containsExactly(UnblockableDomain.of("blocked1.app", Reason.RESERVED));
+        .containsExactly(new UnblockableDomain("blocked1.app", Reason.RESERVED));
     assertThat(gcsClient.readRefreshChanges(jobName))
         .containsExactly(
             UnblockableDomainChange.ofChanged(
-                UnblockableDomain.of("blocked1.app", Reason.REGISTERED), Reason.RESERVED));
+                new UnblockableDomain("blocked1.app", Reason.REGISTERED), Reason.RESERVED));
     InOrder inOrder = Mockito.inOrder(bsaReportSender);
     inOrder.verify(bsaReportSender).removeUnblockableDomainsUpdates("[\n  \"blocked1.app\"\n]");
     inOrder
@@ -244,7 +244,7 @@ class BsaRefreshFunctionalTest {
         RESERVED_LIST_NAME, ImmutableMap.of("blocked1", RESERVED_FOR_SPECIFIC_USE));
     action.run();
     assertThat(queryUnblockableDomains())
-        .containsExactly(UnblockableDomain.of("blocked1.app", Reason.RESERVED));
+        .containsExactly(new UnblockableDomain("blocked1.app", Reason.RESERVED));
     fakeClock.advanceOneMilli();
     persistActiveDomain("blocked1.app", fakeClock.nowUtc());
     fakeClock.advanceOneMilli();
@@ -252,12 +252,12 @@ class BsaRefreshFunctionalTest {
     Mockito.reset(bsaReportSender);
     String jobName = getRefreshJobName(fakeClock.nowUtc());
     action.run();
-    UnblockableDomain changed = UnblockableDomain.of("blocked1.app", Reason.REGISTERED);
+    UnblockableDomain changed = new UnblockableDomain("blocked1.app", Reason.REGISTERED);
     assertThat(queryUnblockableDomains()).containsExactly(changed);
     assertThat(gcsClient.readRefreshChanges(jobName))
         .containsExactly(
             UnblockableDomainChange.ofChanged(
-                UnblockableDomain.of("blocked1.app", Reason.RESERVED), Reason.REGISTERED));
+                new UnblockableDomain("blocked1.app", Reason.RESERVED), Reason.REGISTERED));
     InOrder inOrder = Mockito.inOrder(bsaReportSender);
     inOrder.verify(bsaReportSender).removeUnblockableDomainsUpdates("[\n  \"blocked1.app\"\n]");
     inOrder
@@ -272,7 +272,7 @@ class BsaRefreshFunctionalTest {
     persistActiveDomain("blocked1.app", fakeClock.nowUtc());
     String jobName = getRefreshJobName(fakeClock.nowUtc());
     action.run();
-    UnblockableDomain newUnblockable = UnblockableDomain.of("blocked1.app", Reason.REGISTERED);
+    UnblockableDomain newUnblockable = new UnblockableDomain("blocked1.app", Reason.REGISTERED);
     assertThat(queryUnblockableDomains()).containsExactly(newUnblockable);
     assertThat(gcsClient.readRefreshChanges(jobName))
         .containsExactly(UnblockableDomainChange.ofNew(newUnblockable));
@@ -285,7 +285,7 @@ class BsaRefreshFunctionalTest {
     persistActiveDomain("blocked1.app", fakeClock.nowUtc());
     action.run();
     assertThat(queryUnblockableDomains())
-        .containsExactly(UnblockableDomain.of("blocked1.app", Reason.REGISTERED));
+        .containsExactly(new UnblockableDomain("blocked1.app", Reason.REGISTERED));
     fakeClock.advanceOneMilli();
     removeReservedDomainFromList(RESERVED_LIST_NAME, ImmutableSet.of("blocked1"));
     fakeClock.advanceOneMilli();
@@ -294,7 +294,7 @@ class BsaRefreshFunctionalTest {
     String jobName = getRefreshJobName(fakeClock.nowUtc());
     action.run();
     assertThat(queryUnblockableDomains())
-        .containsExactly(UnblockableDomain.of("blocked1.app", Reason.REGISTERED));
+        .containsExactly(new UnblockableDomain("blocked1.app", Reason.REGISTERED));
     // Verify that refresh change file does not exist (404 error) since there is no change.
     assertThat(
             assertThrows(
@@ -309,7 +309,7 @@ class BsaRefreshFunctionalTest {
     persistActiveDomain("blocked1.app", fakeClock.nowUtc());
     action.run();
     assertThat(queryUnblockableDomains())
-        .containsExactly(UnblockableDomain.of("blocked1.app", Reason.REGISTERED));
+        .containsExactly(new UnblockableDomain("blocked1.app", Reason.REGISTERED));
     fakeClock.advanceOneMilli();
     addReservedDomainToList(
         RESERVED_LIST_NAME, ImmutableMap.of("blocked1", RESERVED_FOR_SPECIFIC_USE));
@@ -319,7 +319,7 @@ class BsaRefreshFunctionalTest {
     String jobName = getRefreshJobName(fakeClock.nowUtc());
     action.run();
     assertThat(queryUnblockableDomains())
-        .containsExactly(UnblockableDomain.of("blocked1.app", Reason.REGISTERED));
+        .containsExactly(new UnblockableDomain("blocked1.app", Reason.REGISTERED));
     // Verify that refresh change file does not exist (404 error) since there is no change.
     assertThat(
             assertThrows(

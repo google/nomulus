@@ -49,7 +49,7 @@ public abstract class UnblockableDomainChange {
   @Memoized
   public UnblockableDomain newValue() {
     verify(newReason().isPresent(), "Removed unblockable does not have new value.");
-    return UnblockableDomain.of(unblockable().domainName(), newReason().get());
+    return new UnblockableDomain(unblockable().domainName(), newReason().get());
   }
 
   public boolean isNewOrChange() {
@@ -78,7 +78,7 @@ public abstract class UnblockableDomainChange {
   public static UnblockableDomainChange deserialize(String text) {
     List<String> items = BsaStringUtils.PROPERTY_SPLITTER.splitToList(text);
     return of(
-        UnblockableDomain.of(items.get(0), Reason.valueOf(items.get(1))),
+        new UnblockableDomain(items.get(0), Reason.valueOf(items.get(1))),
         Objects.equals(items.get(2), DELETE_REASON_PLACEHOLDER)
             ? Optional.empty()
             : Optional.of(Reason.valueOf(items.get(2))));

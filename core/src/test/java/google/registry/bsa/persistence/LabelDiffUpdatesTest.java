@@ -126,8 +126,8 @@ class LabelDiffUpdatesTest {
             fakeClock.nowUtc());
     assertThat(unblockableDomains)
         .containsExactly(
-            UnblockableDomain.of("label.app", UnblockableDomain.Reason.REGISTERED),
-            UnblockableDomain.of("label.dev", UnblockableDomain.Reason.INVALID));
+            new UnblockableDomain("label.app", UnblockableDomain.Reason.REGISTERED),
+            new UnblockableDomain("label.dev", UnblockableDomain.Reason.INVALID));
     assertThat(tm().transact(() -> tm().loadByKeyIfPresent(BsaLabel.vKey("label")))).isPresent();
     assertThat(
             tm().transact(() -> tm().loadByKeyIfPresent(BsaUnblockableDomain.vKey("label", "app"))))
@@ -153,9 +153,9 @@ class LabelDiffUpdatesTest {
             fakeClock.nowUtc());
     assertThat(unblockableDomains)
         .containsExactly(
-            UnblockableDomain.of("label.app", UnblockableDomain.Reason.REGISTERED),
-            UnblockableDomain.of("label.page", UnblockableDomain.Reason.RESERVED),
-            UnblockableDomain.of("label.dev", UnblockableDomain.Reason.INVALID));
+            new UnblockableDomain("label.app", UnblockableDomain.Reason.REGISTERED),
+            new UnblockableDomain("label.page", UnblockableDomain.Reason.RESERVED),
+            new UnblockableDomain("label.dev", UnblockableDomain.Reason.INVALID));
     assertThat(tm().transact(() -> tm().loadByKeyIfPresent(BsaLabel.vKey("label")))).isPresent();
     assertThat(
             tm().transact(() -> tm().loadByKey(BsaUnblockableDomain.vKey("label", "app")).reason))

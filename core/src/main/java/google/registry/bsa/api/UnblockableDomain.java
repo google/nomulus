@@ -18,19 +18,13 @@ import static google.registry.bsa.BsaStringUtils.DOMAIN_JOINER;
 import static google.registry.bsa.BsaStringUtils.PROPERTY_JOINER;
 import static google.registry.bsa.BsaStringUtils.PROPERTY_SPLITTER;
 
-import com.google.auto.value.AutoValue;
 import java.util.List;
 
 /**
  * A domain name whose second-level domain (SLD) matches a BSA label but is not blocked. It may be
  * already registered, or on the TLD's reserve list.
  */
-// TODO(1/15/2024): rename to UnblockableDomain.
-@AutoValue
-public abstract class UnblockableDomain {
-  public abstract String domainName();
-
-  public abstract Reason reason();
+public record UnblockableDomain(String domainName, Reason reason) {
 
   /** Reasons why a valid domain name cannot be blocked. */
   public enum Reason {
@@ -45,14 +39,10 @@ public abstract class UnblockableDomain {
 
   public static UnblockableDomain deserialize(String text) {
     List<String> items = PROPERTY_SPLITTER.splitToList(text);
-    return of(items.get(0), Reason.valueOf(items.get(1)));
-  }
-
-  public static UnblockableDomain of(String domainName, Reason reason) {
-    return new AutoValue_UnblockableDomain(domainName, reason);
+    return new UnblockableDomain(items.get(0), Reason.valueOf(items.get(1)));
   }
 
   public static UnblockableDomain of(String label, String tld, Reason reason) {
-    return of(DOMAIN_JOINER.join(label, tld), reason);
+    return new UnblockableDomain(DOMAIN_JOINER.join(label, tld), reason);
   }
 }
