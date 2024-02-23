@@ -36,7 +36,7 @@ import javax.xml.bind.annotation.XmlType;
  * @see <a href="http://tools.ietf.org/html/rfc4034">RFC 4034</a>
  */
 @XmlType(name = "dsData")
-@Entity
+@Entity(name = "DelegationSignerData")
 @IdClass(DomainDsDataId.class)
 @Table(name = "DelegationSignerData", indexes = @Index(columnList = "domainRepoId"))
 public class DomainDsData extends DomainDsDataBase {
