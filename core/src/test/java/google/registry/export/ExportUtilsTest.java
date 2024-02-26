@@ -44,7 +44,7 @@ class ExportUtilsTest {
         "lol,NAME_COLLISION",
         "snow,FULLY_BLOCKED");
     createTld("tld");
-    persistResource(Tld.get("tld").asBuilder().setReservedLists(rl1, rl2, rl3).build());
+    persistResource(Tld.get("tld").asBuilder().setReservedLists(rl1, rl2).build());
     assertThat(new ExportUtils("# This is a disclaimer.").exportReservedTerms(Tld.get("tld")))
         .isEqualTo("# This is a disclaimer.\ncat\nlol\nsnow\ntine\n");
   }
