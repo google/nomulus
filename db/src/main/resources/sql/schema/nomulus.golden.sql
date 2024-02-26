@@ -250,6 +250,24 @@ ALTER SEQUENCE public."ClaimsList_revision_id_seq" OWNED BY public."ClaimsList".
 
 
 --
+-- Name: ConsoleEppActionHistory; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public."ConsoleEppActionHistory" (
+    history_revision_id bigint NOT NULL,
+    history_date_time timestamp with time zone NOT NULL,
+    history_method text NOT NULL,
+    history_request_body text,
+    history_type text NOT NULL,
+    history_url text NOT NULL,
+    history_entry_class text,
+    repo_id text,
+    revision_id bigint NOT NULL,
+    history_acting_user text NOT NULL
+);
+
+
+--
 -- Name: Contact; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -962,6 +980,96 @@ CREATE TABLE public."RegistrarPoc" (
 
 
 --
+-- Name: RegistrarPocUpdateHistory; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public."RegistrarPocUpdateHistory" (
+    history_revision_id bigint NOT NULL,
+    history_date_time timestamp with time zone NOT NULL,
+    history_method text NOT NULL,
+    history_request_body text,
+    history_type text NOT NULL,
+    history_url text NOT NULL,
+    email_address text NOT NULL,
+    registrar_id text NOT NULL,
+    allowed_to_set_registry_lock_password boolean NOT NULL,
+    fax_number text,
+    login_email_address text,
+    name text,
+    phone_number text,
+    registry_lock_email_address text,
+    registry_lock_password_hash text,
+    registry_lock_password_salt text,
+    types text[],
+    visible_in_domain_whois_as_abuse boolean NOT NULL,
+    visible_in_whois_as_admin boolean NOT NULL,
+    visible_in_whois_as_tech boolean NOT NULL,
+    history_acting_user text NOT NULL
+);
+
+
+--
+-- Name: RegistrarUpdateHistory; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public."RegistrarUpdateHistory" (
+    history_revision_id bigint NOT NULL,
+    history_date_time timestamp with time zone NOT NULL,
+    history_method text NOT NULL,
+    history_request_body text,
+    history_type text NOT NULL,
+    history_url text NOT NULL,
+    allowed_tlds text[],
+    billing_account_map public.hstore,
+    block_premium_names boolean NOT NULL,
+    client_certificate text,
+    client_certificate_hash text,
+    contacts_require_syncing boolean NOT NULL,
+    creation_time timestamp with time zone NOT NULL,
+    drive_folder_id text,
+    email_address text,
+    failover_client_certificate text,
+    failover_client_certificate_hash text,
+    fax_number text,
+    iana_identifier bigint,
+    icann_referral_email text,
+    i18n_address_city text,
+    i18n_address_country_code text,
+    i18n_address_state text,
+    i18n_address_street_line1 text,
+    i18n_address_street_line2 text,
+    i18n_address_street_line3 text,
+    i18n_address_zip text,
+    ip_address_allow_list text[],
+    last_certificate_update_time timestamp with time zone,
+    last_expiring_cert_notification_sent_date timestamp with time zone,
+    last_expiring_failover_cert_notification_sent_date timestamp with time zone,
+    localized_address_city text,
+    localized_address_country_code text,
+    localized_address_state text,
+    localized_address_street_line1 text,
+    localized_address_street_line2 text,
+    localized_address_street_line3 text,
+    localized_address_zip text,
+    password_hash text,
+    phone_number text,
+    phone_passcode text,
+    po_number text,
+    rdap_base_urls text[],
+    registrar_name text NOT NULL,
+    registry_lock_allowed boolean NOT NULL,
+    password_salt text,
+    state text,
+    type text NOT NULL,
+    url text,
+    whois_server text,
+    update_timestamp timestamp with time zone,
+    registrar_id text NOT NULL,
+    history_acting_user text NOT NULL
+);
+
+
+--
 -- Name: RegistryLock; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -1212,6 +1320,29 @@ CREATE TABLE public."User" (
 
 
 --
+-- Name: UserUpdateHistory; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public."UserUpdateHistory" (
+    history_revision_id bigint NOT NULL,
+    history_date_time timestamp with time zone NOT NULL,
+    history_method text NOT NULL,
+    history_request_body text,
+    history_type text NOT NULL,
+    history_url text NOT NULL,
+    user_id bigint NOT NULL,
+    email_address text NOT NULL,
+    registry_lock_password_hash text,
+    registry_lock_password_salt text,
+    global_role text NOT NULL,
+    is_admin boolean NOT NULL,
+    registrar_roles public.hstore,
+    update_timestamp timestamp with time zone,
+    history_acting_user text NOT NULL
+);
+
+
+--
 -- Name: User_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
@@ -1407,6 +1538,14 @@ ALTER TABLE ONLY public."ClaimsList"
 
 
 --
+-- Name: ConsoleEppActionHistory ConsoleEppActionHistory_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."ConsoleEppActionHistory"
+    ADD CONSTRAINT "ConsoleEppActionHistory_pkey" PRIMARY KEY (history_revision_id);
+
+
+--
 -- Name: ContactHistory ContactHistory_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1559,11 +1698,27 @@ ALTER TABLE ONLY public."RdeRevision"
 
 
 --
+-- Name: RegistrarPocUpdateHistory RegistrarPocUpdateHistory_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."RegistrarPocUpdateHistory"
+    ADD CONSTRAINT "RegistrarPocUpdateHistory_pkey" PRIMARY KEY (history_revision_id);
+
+
+--
 -- Name: RegistrarPoc RegistrarPoc_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public."RegistrarPoc"
     ADD CONSTRAINT "RegistrarPoc_pkey" PRIMARY KEY (registrar_id, email_address);
+
+
+--
+-- Name: RegistrarUpdateHistory RegistrarUpdateHistory_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."RegistrarUpdateHistory"
+    ADD CONSTRAINT "RegistrarUpdateHistory_pkey" PRIMARY KEY (history_revision_id);
 
 
 --
@@ -1644,6 +1799,14 @@ ALTER TABLE ONLY public."Tld"
 
 ALTER TABLE ONLY public."TmchCrl"
     ADD CONSTRAINT "TmchCrl_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: UserUpdateHistory UserUpdateHistory_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."UserUpdateHistory"
+    ADD CONSTRAINT "UserUpdateHistory_pkey" PRIMARY KEY (history_revision_id);
 
 
 --
@@ -1736,6 +1899,13 @@ CREATE INDEX idx2exdfbx6oiiwnhr8j6gjpqt2j ON public."BillingCancellation" USING 
 
 
 --
+-- Name: idx3d1mucv7axrhud8w8jl4vsu62; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx3d1mucv7axrhud8w8jl4vsu62 ON public."RegistrarUpdateHistory" USING btree (registrar_id);
+
+
+--
 -- Name: idx3y3k7m2bkgahm9sixiohgyrga; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -1778,6 +1948,13 @@ CREATE INDEX idx5yfbr88439pxw0v3j86c74fp8 ON public."BillingEvent" USING btree (
 
 
 --
+-- Name: idx5yqacw829y5bm6f7eajsq1cts; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx5yqacw829y5bm6f7eajsq1cts ON public."UserUpdateHistory" USING btree (email_address);
+
+
+--
 -- Name: idx67qwkjtlq5q8dv6egtrtnhqi7; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -1810,6 +1987,13 @@ CREATE INDEX idx6syykou4nkc7hqa5p8r92cpch ON public."BillingRecurrence" USING bt
 --
 
 CREATE INDEX idx6w3qbtgce93cal2orjg1tw7b7 ON public."DomainHistory" USING btree (history_modification_time);
+
+
+--
+-- Name: idx6y67d6wsffmr6jcxax5ghwqhd; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx6y67d6wsffmr6jcxax5ghwqhd ON public."ConsoleEppActionHistory" USING btree (repo_id);
 
 
 --
@@ -1897,10 +2081,24 @@ CREATE INDEX idxbgssjudpm428mrv0xfpvgifps ON public."GracePeriod" USING btree (b
 
 
 --
+-- Name: idxbjacjlm8ianc4kxxvamnu94k5; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idxbjacjlm8ianc4kxxvamnu94k5 ON public."UserUpdateHistory" USING btree (history_acting_user);
+
+
+--
 -- Name: idxbn8t4wp85fgxjl8q4ctlscx55; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX idxbn8t4wp85fgxjl8q4ctlscx55 ON public."Contact" USING btree (current_sponsor_registrar_id);
+
+
+--
+-- Name: idxcclyb3n5gbex8u8m9fjlujitw; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idxcclyb3n5gbex8u8m9fjlujitw ON public."ConsoleEppActionHistory" USING btree (history_acting_user);
 
 
 --
@@ -1946,6 +2144,13 @@ CREATE INDEX idxfg2nnjlujxo6cb9fha971bq2n ON public."HostHistory" USING btree (c
 
 
 --
+-- Name: idxfr24wvpg8qalwqy4pni7evrpj; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idxfr24wvpg8qalwqy4pni7evrpj ON public."RegistrarPocUpdateHistory" USING btree (registrar_id);
+
+
+--
 -- Name: idxhlqqd5uy98cjyos72d81x9j95; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -1964,6 +2169,13 @@ CREATE INDEX idxhmv411mdqo5ibn4vy7ykxpmlv ON public."BillingEvent" USING btree (
 --
 
 CREATE INDEX idxhp33wybmb6tbpr1bq7ttwk8je ON public."ContactHistory" USING btree (history_registrar_id);
+
+
+--
+-- Name: idxiahqo1d1fqdfknywmj2xbxl7t; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idxiahqo1d1fqdfknywmj2xbxl7t ON public."ConsoleEppActionHistory" USING btree (revision_id);
 
 
 --
@@ -2058,6 +2270,13 @@ CREATE INDEX idxlrq7v63pc21uoh3auq6eybyhl ON public."Domain" USING btree (autore
 
 
 --
+-- Name: idxm6k18dusy2lfi5y81k8g256sa; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idxm6k18dusy2lfi5y81k8g256sa ON public."RegistrarUpdateHistory" USING btree (history_acting_user);
+
+
+--
 -- Name: idxn1f711wicdnooa2mqb7g1m55o; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -2149,6 +2368,13 @@ CREATE INDEX idxqa3g92jc17e8dtiaviy4fet4x ON public."BillingCancellation" USING 
 
 
 --
+-- Name: idxr1cxua6it0rxgt9tpyugspxk; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idxr1cxua6it0rxgt9tpyugspxk ON public."RegistrarPocUpdateHistory" USING btree (email_address);
+
+
+--
 -- Name: idxr22ciyccwi9rrqmt1ro0s59qf; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -2167,6 +2393,13 @@ CREATE INDEX idxrc77s1ndiemi2vwwudchye214 ON public."Host" USING gin (inet_addre
 --
 
 CREATE INDEX idxrh4xmrot9bd63o382ow9ltfig ON public."DomainHistory" USING btree (creation_time);
+
+
+--
+-- Name: idxrn6posxkx58de1cp09g5257cw; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idxrn6posxkx58de1cp09g5257cw ON public."RegistrarPocUpdateHistory" USING btree (history_acting_user);
 
 
 --
@@ -2272,6 +2505,14 @@ CREATE INDEX spec11threatmatch_tld_idx ON public."Spec11ThreatMatch" USING btree
 --
 
 CREATE INDEX user_email_address_idx ON public."User" USING btree (email_address);
+
+
+--
+-- Name: UserUpdateHistory fk1s7bopbl3pwrhv3jkkofnv3o0; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."UserUpdateHistory"
+    ADD CONSTRAINT fk1s7bopbl3pwrhv3jkkofnv3o0 FOREIGN KEY (history_acting_user) REFERENCES public."User"(email_address);
 
 
 --
@@ -2763,6 +3004,14 @@ ALTER TABLE ONLY public."DomainHistoryHost"
 
 
 --
+-- Name: ConsoleEppActionHistory fkb686b9os2nsjpv930npa4r3b4; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."ConsoleEppActionHistory"
+    ADD CONSTRAINT fkb686b9os2nsjpv930npa4r3b4 FOREIGN KEY (history_acting_user) REFERENCES public."User"(email_address);
+
+
+--
 -- Name: BsaUnblockableDomain fkbsaunblockabledomainlabel; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -2784,6 +3033,14 @@ ALTER TABLE ONLY public."DomainTransactionRecord"
 
 ALTER TABLE ONLY public."DomainHost"
     ADD CONSTRAINT fkfmi7bdink53swivs390m2btxg FOREIGN KEY (domain_repo_id) REFERENCES public."Domain"(repo_id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: RegistrarPocUpdateHistory fkftpbwctxtkc1i0njc0tdcaa2g; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."RegistrarPocUpdateHistory"
+    ADD CONSTRAINT fkftpbwctxtkc1i0njc0tdcaa2g FOREIGN KEY (history_acting_user) REFERENCES public."User"(email_address);
 
 
 --
@@ -2827,11 +3084,43 @@ ALTER TABLE ONLY public."DomainDsDataHistory"
 
 
 --
+-- Name: RegistrarPocUpdateHistory fkregistrarpocupdatehistoryemailaddress; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."RegistrarPocUpdateHistory"
+    ADD CONSTRAINT fkregistrarpocupdatehistoryemailaddress FOREIGN KEY (email_address, registrar_id) REFERENCES public."RegistrarPoc"(email_address, registrar_id);
+
+
+--
+-- Name: RegistrarUpdateHistory fkregistrarupdatehistoryregistrarid; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."RegistrarUpdateHistory"
+    ADD CONSTRAINT fkregistrarupdatehistoryregistrarid FOREIGN KEY (registrar_id) REFERENCES public."Registrar"(registrar_id);
+
+
+--
+-- Name: RegistrarUpdateHistory fksr7w342s7x5s5jvdti2axqeq8; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."RegistrarUpdateHistory"
+    ADD CONSTRAINT fksr7w342s7x5s5jvdti2axqeq8 FOREIGN KEY (history_acting_user) REFERENCES public."User"(email_address);
+
+
+--
 -- Name: DelegationSignerData fktr24j9v14ph2mfuw2gsmt12kq; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public."DelegationSignerData"
     ADD CONSTRAINT fktr24j9v14ph2mfuw2gsmt12kq FOREIGN KEY (domain_repo_id) REFERENCES public."Domain"(repo_id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: UserUpdateHistory fkuserupdatehistoryemailaddress; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."UserUpdateHistory"
+    ADD CONSTRAINT fkuserupdatehistoryemailaddress FOREIGN KEY (email_address) REFERENCES public."User"(email_address);
 
 
 --
