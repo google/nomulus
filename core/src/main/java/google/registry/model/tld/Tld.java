@@ -138,7 +138,7 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
     try {
       String thisYaml = mapper.writeValueAsString(this);
       String otherYaml = mapper.writeValueAsString(tldToCompare);
-      return thisYaml.equals(otherYaml) && compareCreateBillingCostTransitions(tldToCompare);
+      return thisYaml.equals(otherYaml) && createBillingCostTransitionsEqual(tldToCompare);
     } catch (JsonProcessingException e) {
       throw new RuntimeException(e);
     }
@@ -692,7 +692,7 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
         .toValueMap();
   }
 
-  public boolean compareCreateBillingCostTransitions(Tld newTld) {
+  public boolean createBillingCostTransitionsEqual(Tld newTld) {
     if (createBillingCostTransitions == null) {
       return false;
     }

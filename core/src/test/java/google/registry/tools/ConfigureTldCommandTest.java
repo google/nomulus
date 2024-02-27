@@ -164,7 +164,7 @@ public class ConfigureTldCommandTest extends CommandTestCase<ConfigureTldCommand
     runCommandForced("--input=" + tldFile);
     Tld updatedTld = Tld.get("idns");
     testTldConfiguredSuccessfully(updatedTld, "idns.yaml");
-    assertThat(tld.compareCreateBillingCostTransitions(updatedTld)).isFalse();
+    assertThat(tld.createBillingCostTransitionsEqual(updatedTld)).isFalse();
   }
 
   @Test
