@@ -345,23 +345,17 @@ public final class DatabaseHelper {
         domain.asBuilder().setAutorenewBillingEvent(billingRecurrence.createVKey()).build());
   }
 
-  public static ReservedList persistReservedList(String listName, String... lines) {
-    return persistReservedList(listName, true, lines);
-  }
-
   public static ReservedList persistReservedList(ReservedList reservedList) {
     ReservedListDao.save(reservedList);
     maybeAdvanceClock();
     return reservedList;
   }
 
-  public static ReservedList persistReservedList(
-      String listName, boolean shouldPublish, String... lines) {
+  public static ReservedList persistReservedList(String listName, String... lines) {
     ReservedList reservedList =
         new ReservedList.Builder()
             .setName(listName)
             .setReservedListMapFromLines(ImmutableList.copyOf(lines))
-            .setShouldPublish(shouldPublish)
             .setCreationTimestamp(DateTime.now(DateTimeZone.UTC))
             .build();
     return persistReservedList(reservedList);

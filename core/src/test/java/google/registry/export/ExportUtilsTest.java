@@ -43,13 +43,8 @@ class ExportUtilsTest {
         "tld-reserved2",
         "lol,NAME_COLLISION",
         "snow,FULLY_BLOCKED");
-    ReservedList rl3 = persistReservedList(
-        "tld-reserved3",
-        false,
-        "tine,FULLY_BLOCKED");
     createTld("tld");
-    persistResource(Tld.get("tld").asBuilder().setReservedLists(rl1, rl2, rl3).build());
-    // Should not contain jimmy, tine, or oval.
+    persistResource(Tld.get("tld").asBuilder().setReservedLists(rl1, rl2).build());
     assertThat(new ExportUtils("# This is a disclaimer.").exportReservedTerms(Tld.get("tld")))
         .isEqualTo("# This is a disclaimer.\ncat\nlol\nsnow\n");
   }

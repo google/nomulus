@@ -1022,7 +1022,7 @@ CREATE TABLE public."ReservedList" (
     revision_id bigint NOT NULL,
     creation_timestamp timestamp with time zone NOT NULL,
     name text NOT NULL,
-    should_publish boolean NOT NULL
+    should_publish boolean
 );
 
 
