@@ -22,7 +22,7 @@ tasks.register('copyJettyBase', Copy) {
 }
 
 war {
-    setArchiveBaseName("root")
+    setArchiveBaseName("nomulus")
     setDestinationDirectory(layout.buildDirectory.dir('jetty-base/webapps'))
     dependsOn(tasks.named('copyJettyBase'))
 }
@@ -46,6 +46,23 @@ tasks.register('stage') {
 
 tasks.register('buildNomulusImage', Exec) {
     commandLine 'docker', 'build', '-t', 'nomulus', '.'
+    dependsOn(tasks.named('stage'))
+}
+
+tasks.register('run', JavaExec) {
+    // We do the check when the task actually runs, not when we define it.
+    // This way if one doesn't set the value, one can still run other tasks.
+    doFirst {
+        def jetty_home = System.getenv('JETTY_HOME')
+        if (jetty_home == null) {
+            throw new GradleException('JETTY_HOME is not set.')
+        }
+    }
+    def jetty_home = System.getenv('JETTY_HOME')
+    def environment = rootProject.environment
+    workingDir(layout.buildDirectory.dir('jetty-base'))
+    classpath = files(jetty_home + '/start.jar')
+    systemProperty('google.registry.environment', environment)
     dependsOn(tasks.named('stage'))
 }
 
