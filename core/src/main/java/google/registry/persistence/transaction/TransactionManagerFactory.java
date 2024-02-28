@@ -17,8 +17,6 @@ package google.registry.persistence.transaction;
 import static com.google.common.base.Preconditions.checkState;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 
-import com.google.appengine.api.utils.SystemProperty;
-import com.google.appengine.api.utils.SystemProperty.Environment.Value;
 import com.google.common.base.Suppliers;
 import google.registry.persistence.DaggerPersistenceComponent;
 import google.registry.tools.RegistryToolEnvironment;
@@ -43,32 +41,19 @@ public final class TransactionManagerFactory {
   private static JpaTransactionManager createJpaTransactionManager() {
     // If we are running a nomulus command, jpaTm will be injected in RegistryCli.java
     // by calling setJpaTm().
-    if (isInAppEngine()) {
-      return DaggerPersistenceComponent.create().appEngineJpaTransactionManager();
+    if (RegistryEnvironment.get() != RegistryEnvironment.UNITTEST) {
+      return DaggerPersistenceComponent.create().jpaTransactionManager();
     } else {
       return DummyJpaTransactionManager.create();
     }
   }
 
   private static JpaTransactionManager createReplicaJpaTransactionManager() {
-    if (isInAppEngine()) {
+    if (RegistryEnvironment.get() != RegistryEnvironment.UNITTEST) {
       return DaggerPersistenceComponent.create().readOnlyReplicaJpaTransactionManager();
     } else {
       return DummyJpaTransactionManager.create();
     }
-  }
-
-  /**
-   * This function uses App Engine API to determine if the current runtime environment is App
-   * Engine.
-   *
-   * @see <a
-   *     href="https://cloud.google.com/appengine/docs/standard/java/javadoc/com/google/appengine/api/utils/SystemProperty">App
-   *     Engine API public doc</a>
-   */
-  private static boolean isInAppEngine() {
-    // SystemProperty.environment.value() returns null if the current runtime is local JVM
-    return SystemProperty.environment.value() == Value.Production;
   }
 
   /**
