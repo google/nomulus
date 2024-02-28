@@ -138,7 +138,10 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
     try {
       String thisYaml = mapper.writeValueAsString(this);
       String otherYaml = mapper.writeValueAsString(tldToCompare);
-      return thisYaml.equals(otherYaml);
+      // Since Jackson uses getters and not field values to construct the YAML representation, an
+      // explicit check of the createBillingCostTransitions is necessary since this field is
+      // auto-populated in the getter when the field is set to null.
+      return thisYaml.equals(otherYaml) && createBillingCostTransitionsEqual(tldToCompare);
     } catch (JsonProcessingException e) {
       throw new RuntimeException(e);
     }
@@ -690,6 +693,15 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
             createBillingCostTransitions,
             () -> TimedTransitionProperty.withInitialValue(getCreateBillingCost()))
         .toValueMap();
+  }
+
+  public boolean createBillingCostTransitionsEqual(Tld newTld) {
+    if (createBillingCostTransitions == null) {
+      return false;
+    }
+    return createBillingCostTransitions
+        .toValueMap()
+        .equals(newTld.getCreateBillingCostTransitions());
   }
 
   /**
