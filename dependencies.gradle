@@ -158,7 +158,7 @@ ext {
       'com.google.oauth-client:google-oauth-client-java6:[1.31.4,)',
       'com.google.oauth-client:google-oauth-client-jetty:[1.31.4,)',
       'com.google.oauth-client:google-oauth-client-servlet:[1.31.4,)',
-      'com.google.protobuf:protobuf-java:[3.13.0,)',
+      'com.google.protobuf:protobuf-java:[3.13.0,3.25.3]',
       'com.google.protobuf:protobuf-java-util:[3.17.3,)',
       'com.google.re2j:re2j:[1.6,)',
       'com.google.truth.extensions:truth-java8-extension:[1.1.2,)',
