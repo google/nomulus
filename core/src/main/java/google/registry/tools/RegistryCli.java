@@ -23,7 +23,6 @@ import com.beust.jcommander.Parameter;
 import com.beust.jcommander.ParameterException;
 import com.beust.jcommander.Parameters;
 import com.beust.jcommander.ParametersDelegate;
-import com.google.common.base.Ascii;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
@@ -219,21 +218,12 @@ final class RegistryCli implements CommandRunner {
 
     // Reset the JPA transaction manager after every command to avoid a situation where a test can
     // interfere with other tests
-    try {
-      JpaTransactionManager cachedJpaTm = tm();
-      TransactionManagerFactory.setJpaTm(() -> component.nomulusToolJpaTransactionManager().get());
-      TransactionManagerFactory.setReplicaJpaTm(
-          () -> component.nomulusToolReplicaJpaTransactionManager().get());
-      command.run();
-      TransactionManagerFactory.setJpaTm(() -> cachedJpaTm);
-    } catch (Exception e) {
-      String env = Ascii.toLowerCase(environment.name());
-      System.err.printf(
-          "Could not get tool transaction manager; try running nomulus -e %s logout "
-              + "and then nomulus -e %s login.\n",
-          env, env);
-      throw e;
-    }
+    JpaTransactionManager cachedJpaTm = tm();
+    TransactionManagerFactory.setJpaTm(() -> component.nomulusToolJpaTransactionManager().get());
+    TransactionManagerFactory.setReplicaJpaTm(
+        () -> component.nomulusToolReplicaJpaTransactionManager().get());
+    command.run();
+    TransactionManagerFactory.setJpaTm(() -> cachedJpaTm);
   }
 
   void setEnvironment(RegistryToolEnvironment environment) {
