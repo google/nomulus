@@ -31,19 +31,6 @@ def goldensDir =
   "${javaTestDir}/google/registry/webdriver/goldens/chrome-linux"
 def jsDir = "${project.projectDir}/src/main/javascript"
 
-// Tests that conflict with (mostly unidentified) members of the main test
-// suite. It is unclear if they are offenders (i.e., those that pollute global
-// state) or victims.
-// TODO(weiminyu): identify cause and fix offending tests.
-def outcastTestPatterns = [
-    // Problem seems to lie with AppEngine TaskQueue for test.
-    "google/registry/batch/RefreshDnsOnHostRenameActionTest.*",
-    "google/registry/flows/EppLifecycleHostTest.*",
-    "google/registry/flows/domain/DomainCreateFlowTest.*",
-    "google/registry/flows/domain/DomainUpdateFlowTest.*",
-    "google/registry/tools/CreateDomainCommandTest.*",
-]
-
 // Tests that fail when running Gradle in a docker container, e. g. when
 // building the release artifacts in Google Cloud Build.
 def dockerIncompatibleTestPatterns = [
@@ -62,9 +49,9 @@ def dockerIncompatibleTestPatterns = [
     "google/registry/persistence/PersistenceModuleTest.*",
 ]
 
-// Tests that conflict with members of both the main test suite and the
-// outcast suite. They seem to be affected by global states outside of
-// Nomulus classes, e.g., threads and objects retained by frameworks.
+// Tests that conflict with members of the main test suite They seem to be
+// affected by global states outside of Nomulus classes, e.g., threads and
+// objects retained by frameworks.
 // TODO(weiminyu): identify cause and fix offending tests.
 def fragileTestPatterns = [
     // Changes cache timeouts and for some reason appears to have contention
@@ -956,16 +943,6 @@ task fragileTest(type: FilteringTest) {
   }
 }
 
-task outcastTest(type: FilteringTest) {
-  tests = outcastTestPatterns
-
-  // Sets the maximum number of test executors that may exist at the same time.
-  // Note that this number appears to contribute to NoClassDefFoundError
-  // exceptions on certain machines and distros. The root cause is unclear.
-  // Try reducing this number if you experience similar problems.
-  maxParallelForks 3
-}
-
 // Dedicated test suite for schema-dependent tests.
 task sqlIntegrationTest(type: FilteringTest) {
   // TestSuite still requires a JUnit 4 runner, which knows how to handle JUnit 5 tests.
@@ -989,7 +966,6 @@ task registryToolIntegrationTest(dependsOn: nomulus, type: FilteringTest) {
 task standardTest(type: FilteringTest) {
   includeAllTests()
   exclude fragileTestPatterns
-  exclude outcastTestPatterns
   // See SqlIntegrationTestSuite.java
   exclude '**/*BeforeSuiteTest.*', '**/*AfterSuiteTest.*'
 
@@ -1006,7 +982,7 @@ task standardTest(type: FilteringTest) {
   // Also, Gradle executes tests in 1 thread and some of our test infrastructures
   // depend on that, e.g. DualDatabaseTestInvocationContextProvider injects
   // different implementation of TransactionManager into TransactionManagerFactory.
-  maxParallelForks 5
+  maxParallelForks 64
 
   systemProperty 'test.projectRoot', rootProject.projectRootDir
   systemProperty 'test.resourcesDir', resourcesDir
@@ -1017,11 +993,11 @@ test {
   // FilteringTest tasks.
   exclude "**"
   // TODO(weiminyu): Remove dependency on sqlIntegrationTest
-}.dependsOn(fragileTest, outcastTest, standardTest, registryToolIntegrationTest, sqlIntegrationTest)
+}.dependsOn(fragileTest, standardTest, registryToolIntegrationTest, sqlIntegrationTest)
 
 
 // When we override tests, we also break the cleanTest command.
-cleanTest.dependsOn(cleanFragileTest, cleanOutcastTest, cleanStandardTest,
+cleanTest.dependsOn(cleanFragileTest, cleanStandardTest,
                     cleanRegistryToolIntegrationTest, cleanSqlIntegrationTest)
 
 project.build.dependsOn devtool

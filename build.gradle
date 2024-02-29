@@ -412,9 +412,9 @@ subprojects {
     }
   }
 
-  // No need to produce javadoc for the docs subproject, which has no APIs to
+  // No need to produce javadoc for the jetty subproject, which has no APIs to
   // expose to users.
-  if (project.name != 'docs') {
+  if (project.name != 'jetty') {
     javadocSource << project.sourceSets.main.allJava
     javadocClasspath << project.sourceSets.main.runtimeClasspath
     javadocClasspath << "${buildDir}/generated/sources/annotationProcessor/java/main"

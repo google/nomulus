@@ -31,6 +31,7 @@ import static org.mockito.Mockito.when;
 
 import com.google.cloud.storage.contrib.nio.testing.LocalStorageHelper;
 import com.google.common.base.Joiner;
+import com.google.common.collect.ImmutableList;
 import google.registry.bsa.BlockListFetcher.LazyBlockList;
 import google.registry.bsa.api.BsaReportSender;
 import google.registry.gcs.GcsUtils;
@@ -56,7 +57,6 @@ import org.mockito.Mock;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.stubbing.Answer;
-import org.testcontainers.shaded.com.google.common.collect.ImmutableList;
 
 /** Functional tests of BSA block list download and processing. */
 @ExtendWith(MockitoExtension.class)
