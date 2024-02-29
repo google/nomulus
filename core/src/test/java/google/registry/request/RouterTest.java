@@ -15,7 +15,6 @@
 package google.registry.request;
 
 import static com.google.common.truth.Truth.assertThat;
-import static com.google.common.truth.Truth8.assertThat;
 import static google.registry.request.auth.Auth.AUTH_API_ADMIN;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 

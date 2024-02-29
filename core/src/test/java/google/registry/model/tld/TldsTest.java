@@ -15,7 +15,6 @@
 package google.registry.model.tld;
 
 import static com.google.common.truth.Truth.assertThat;
-import static com.google.common.truth.Truth8.assertThat;
 import static google.registry.model.tld.Tlds.hasActiveBsaEnrollment;
 import static google.registry.testing.DatabaseHelper.createTlds;
 import static google.registry.testing.DatabaseHelper.newTld;

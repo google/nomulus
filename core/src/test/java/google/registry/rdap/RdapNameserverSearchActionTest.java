@@ -702,10 +702,10 @@ class RdapNameserverSearchActionTest extends RdapSearchActionTestCase<RdapNamese
         "ns*",
         ImmutableList.of(
             "ns1.cat.1.test",
-            "ns1.cat2.lol",
             "ns1.cat.external",
             "ns1.cat.lol",
             "ns1.cat.xn--q9jyb4c",
+            "ns1.cat2.lol",
             "ns2.cat.lol",
             "nsx1.cat.lol",
             "nsx2.cat.lol",

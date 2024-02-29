@@ -14,7 +14,6 @@
 
 package google.registry.testing;
 
-import com.github.benmanes.caffeine.cache.CacheLoader;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.google.common.flogger.FluentLogger;
@@ -31,28 +30,25 @@ public final class SystemInfo {
   private static final LoadingCache<String, Boolean> hasCommandCache =
       Caffeine.newBuilder()
           .build(
-              new CacheLoader<String, Boolean>() {
-                @Override
-                public Boolean load(String cmd) throws InterruptedException {
-                  try {
-                    Process pid = Runtime.getRuntime().exec(cmd);
-                    pid.getOutputStream().close();
-                    pid.waitFor();
-                  } catch (IOException e) {
-                    logger.atWarning().withCause(e).log("%s command not available.", cmd);
-                    return false;
-                  }
-                  return true;
+              cmd -> {
+                try {
+                  Process pid = Runtime.getRuntime().exec(cmd.split(" "));
+                  pid.getOutputStream().close();
+                  pid.waitFor();
+                } catch (IOException e) {
+                  logger.atWarning().withCause(e).log("%s command not available.", cmd);
+                  return false;
                 }
+                return true;
               });
 
   /**
-   * Returns {@code true} if system command can be run from path.
+   * Returns {@code true} if system command can be run from the path.
    *
-   * <p><b>Warning:</b> The command is actually run! So there could be side-effects. You might need
+   * <p><b>Warning:</b> The command is actually run! So there could be side effects. You might need
    * to specify a version flag or something. Return code is ignored.
    *
-   * <p>This result is a memoized. If multiple therads try to get the same result at once, the heavy
+   * <p>This result is a memoized. If multiple threads try to get the same result at once, the heavy
    * lifting will only be performed by the first thread and the rest will wait.
    */
   public static boolean hasCommand(String cmd) throws ExecutionException {

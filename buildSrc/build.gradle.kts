@@ -104,8 +104,6 @@ dependencies {
   implementation(deps["org.apache.commons:commons-text"]!!)
   annotationProcessor(deps["com.google.auto.value:auto-value"]!!)
   testImplementation(deps["com.google.truth:truth"]!!)
-  testImplementation(
-      deps["com.google.truth.extensions:truth-java8-extension"]!!)
   testImplementation(deps["org.junit.jupiter:junit-jupiter-api"]!!)
   testImplementation(deps["org.junit.jupiter:junit-jupiter-engine"]!!)
   testImplementation(deps["org.mockito:mockito-core"]!!)

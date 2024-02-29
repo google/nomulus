@@ -16,7 +16,6 @@ package google.registry.gradle.plugin;
 
 import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static com.google.common.truth.Truth.assertThat;
-import static com.google.common.truth.Truth8.assertThat;
 import static google.registry.gradle.plugin.GcsPluginUtils.toByteArraySupplier;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
