@@ -33,6 +33,7 @@ import com.google.api.services.gmail.Gmail.Users;
 import com.google.api.services.gmail.Gmail.Users.Messages;
 import com.google.api.services.gmail.Gmail.Users.Messages.Send;
 import com.google.api.services.gmail.model.Message;
+import com.google.common.collect.ImmutableList;
 import google.registry.groups.GmailClient.RetriableGmailExceptionPredicate;
 import google.registry.util.EmailMessage;
 import google.registry.util.EmailMessage.Attachment;
@@ -50,7 +51,6 @@ import org.mockito.Mock;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.stubbing.Answer;
-import org.testcontainers.shaded.com.google.common.collect.ImmutableList;
 
 /** Unit tests for {@link GmailClient}. */
 @ExtendWith(MockitoExtension.class)
