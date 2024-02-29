@@ -172,6 +172,12 @@ PRESUBMITS = {
         {"/node_modules/", "google/registry/ui/js/util.js", "registrar_bin."},
     ):
         "JavaScript files should not include console logging.",
+    PresubmitCheck(
+        r"org\.testcontainers\.shaded\.",
+        "java",
+        {"/node_modules/"},
+    ):
+        "Do not use shaded dependencies from testcontainers.",
 }
 
 # Note that this regex only works for one kind of Flyway file.  If we want to

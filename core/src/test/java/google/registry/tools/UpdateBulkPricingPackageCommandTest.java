@@ -19,6 +19,7 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import com.google.common.collect.ImmutableSet;
 import com.google.common.truth.Truth;
 import google.registry.model.billing.BillingBase.RenewalPriceBehavior;
 import google.registry.model.domain.fee.FeeQueryCommandExtensionItem.CommandName;
@@ -31,7 +32,6 @@ import org.joda.money.Money;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.testcontainers.shaded.com.google.common.collect.ImmutableSet;
 
 /** Unit tests for {@link UpdateBulkPricingPackageCommand}. */
 public class UpdateBulkPricingPackageCommandTest
