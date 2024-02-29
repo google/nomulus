@@ -381,8 +381,8 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
 
   private JsonObject generateExpectedJsonForTwoDomainsCatStarReplySql() {
     return jsonFileBuilder()
-        .addDomain("cat2.lol", "17-LOL")
         .addDomain("cat.lol", "C-LOL")
+        .addDomain("cat2.lol", "17-LOL")
         .load("rdap_domains_two.json");
   }
 
@@ -938,11 +938,11 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
         .isEqualTo(
             jsonFileBuilder()
                 .addDomain("cat.1.test", "39-1_TEST")
-                .addDomain("cat2.lol", "17-LOL")
                 .addDomain("cat.example", "21-EXAMPLE")
                 .addDomain("cat.lol", "C-LOL")
-                .setNextQuery("name=cat*&cursor=Y2F0LmxvbA%3D%3D")
-                .load("rdap_domains_four_truncated.json"));
+                .addDomain("cat.みんな", "2D-Q9JYB4C")
+                .setNextQuery("name=cat*&cursor=Y2F0LnhuLS1xOWp5YjRj")
+                .load("rdap_domains_four_with_one_unicode_truncated.json"));
     assertThat(response.getStatus()).isEqualTo(200);
     verifyMetrics(SearchType.BY_DOMAIN_NAME, Optional.of(5L), IncompletenessWarningType.TRUNCATED);
   }
@@ -1109,8 +1109,8 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
     assertThat(generateActualJson(RequestType.NAME, "*.lol"))
         .isEqualTo(
             jsonFileBuilder()
-                .addDomain("cat2.lol", "17-LOL")
                 .addDomain("cat.lol", "C-LOL")
+                .addDomain("cat2.lol", "17-LOL")
                 .addDomain("domain1.lol", "4B-LOL")
                 .addDomain("domain2.lol", "4A-LOL")
                 .setNextQuery("name=*.lol&cursor=ZG9tYWluMi5sb2w%3D")
@@ -1159,9 +1159,9 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
         RequestType.NAME,
         "domain*.lol",
         ImmutableList.of(
+            "domain1.lol",
             "domain10.lol",
             "domain11.lol",
-            "domain1.lol",
             "domain2.lol",
             "domain3.lol",
             "domain4.lol",
@@ -1179,11 +1179,11 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
         RequestType.NAME,
         "*.lol",
         ImmutableList.of(
-            "cat2.lol",
             "cat.lol",
+            "cat2.lol",
+            "domain1.lol",
             "domain10.lol",
             "domain11.lol",
-            "domain1.lol",
             "domain2.lol",
             "domain3.lol",
             "domain4.lol",

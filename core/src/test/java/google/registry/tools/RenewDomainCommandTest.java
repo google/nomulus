@@ -22,6 +22,7 @@ import static google.registry.testing.DatabaseHelper.persistResource;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.beust.jcommander.ParameterException;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import google.registry.model.domain.Domain;
 import google.registry.model.registrar.Registrar;
@@ -30,7 +31,6 @@ import java.util.List;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.testcontainers.shaded.com.google.common.collect.ImmutableList;
 
 /** Unit tests for {@link RenewDomainCommand}. */
 public class RenewDomainCommandTest extends EppToolCommandTestCase<RenewDomainCommand> {

@@ -34,6 +34,7 @@ import java.util.Arrays;
 import javax.net.SocketFactory;
 import org.joda.time.Duration;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.xbill.DNS.ARecord;
 import org.xbill.DNS.DClass;
@@ -47,6 +48,7 @@ import org.xbill.DNS.Type;
 import org.xbill.DNS.Update;
 
 /** Unit tests for {@link DnsMessageTransport}. */
+@Disabled("This test class hangs and causes OOM when running as part of standardTest with Java 21")
 class DnsMessageTransportTest {
 
   private static final String UPDATE_HOST = "127.0.0.1";
