@@ -27,6 +27,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.testing.TestLogHandler;
 import google.registry.groups.GmailClient;
 import google.registry.model.billing.BillingBase.RenewalPriceBehavior;
@@ -52,7 +53,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.mockito.ArgumentCaptor;
-import org.testcontainers.shaded.com.google.common.collect.ImmutableSet;
 
 /** Unit tests for {@link CheckBulkComplianceAction}. */
 public class CheckBulkComplianceActionTest {

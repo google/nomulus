@@ -20,11 +20,11 @@ import static google.registry.bsa.api.JsonSerializations.toInProgressOrdersRepor
 import static google.registry.bsa.api.JsonSerializations.toUnblockableDomainsReport;
 
 import com.google.common.base.Joiner;
+import com.google.common.collect.ImmutableList;
 import google.registry.bsa.api.BlockOrder.OrderType;
 import google.registry.bsa.api.UnblockableDomain.Reason;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
-import org.testcontainers.shaded.com.google.common.collect.ImmutableList;
 
 /** Unit tests for {@link JsonSerializations}. */
 class JsonSerializationsTest {

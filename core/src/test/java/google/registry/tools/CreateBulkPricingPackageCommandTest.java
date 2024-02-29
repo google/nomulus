@@ -21,6 +21,7 @@ import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import com.google.common.collect.ImmutableSet;
 import google.registry.model.billing.BillingBase.RenewalPriceBehavior;
 import google.registry.model.domain.fee.FeeQueryCommandExtensionItem.CommandName;
 import google.registry.model.domain.token.AllocationToken;
@@ -31,7 +32,6 @@ import org.joda.money.CurrencyUnit;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.Test;
-import org.testcontainers.shaded.com.google.common.collect.ImmutableSet;
 
 /** Unit tests for {@link CreateBulkPricingPackageCommand}. */
 public class CreateBulkPricingPackageCommandTest

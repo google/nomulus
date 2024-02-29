@@ -33,14 +33,14 @@ import google.registry.util.SelfSignedCaCertificate;
 import java.io.StringWriter;
 import java.security.cert.X509Certificate;
 import java.util.Optional;
+import org.bouncycastle.openssl.jcajce.JcaMiscPEMGenerator;
+import org.bouncycastle.util.io.pem.PemObjectGenerator;
+import org.bouncycastle.util.io.pem.PemWriter;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
-import org.testcontainers.shaded.org.bouncycastle.openssl.jcajce.JcaMiscPEMGenerator;
-import org.testcontainers.shaded.org.bouncycastle.util.io.pem.PemObjectGenerator;
-import org.testcontainers.shaded.org.bouncycastle.util.io.pem.PemWriter;
 
 /** Test logging in with TLS credentials. */
 class EppLoginTlsTest extends EppTestCase {

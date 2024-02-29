@@ -51,7 +51,7 @@ import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link BillingBase}. */
 public class BillingBaseTest extends EntityTestCase {
-  private final DateTime now = DateTime.now(UTC);
+  private final DateTime now = DateTime.parse("2012-01-23T22:33:44Z");
 
   BillingBaseTest() {
     super(JpaEntityCoverageCheck.ENABLED);

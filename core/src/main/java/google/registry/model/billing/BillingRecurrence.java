@@ -181,7 +181,9 @@ public class BillingRecurrence extends BillingBase {
       checkNotNull(instance.reason);
       // Don't require recurrenceLastExpansion to be individually set on every new Recurrence.
       // The correct default value if not otherwise set is the event time of the recurrence minus
-      // 1 year.
+      // 1 year. This operation is leap-year safe as a billing event created on 2/29 will have its
+      // event time on 2/28 next year, and therefore the last expansion time on 2/28 this year. This
+      // ensures that it will be expanded on 2/28 next year and included in the February invoice.
       instance.recurrenceLastExpansion =
           Optional.ofNullable(instance.recurrenceLastExpansion)
               .orElse(instance.eventTime.minusYears(1));
