@@ -77,7 +77,7 @@ class SchemaTest {
    * easier to update the golden schema this way.
    */
   @Container
-  private PostgreSQLContainer sqlContainer =
+  private final PostgreSQLContainer<?> sqlContainer =
       new PostgreSQLContainer<>(NomulusPostgreSql.getDockerTag())
           .withClasspathResourceMapping(
               MOUNTED_RESOURCE_PATH, CONTAINER_MOUNT_POINT, BindMode.READ_WRITE);
@@ -116,7 +116,7 @@ class SchemaTest {
   @Test
   @EnabledIfSystemProperty(named = "deploy_to_existing_db", matches = ".*")
   void deploySchema_existingDb() {
-    // Initialize database with the base schema, which is on the classpath.
+    // Initialize the database with the base schema, which is on the classpath.
     Flyway flyway =
         Flyway.configure()
             .locations("sql/flyway")

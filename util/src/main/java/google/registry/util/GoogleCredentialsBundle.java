@@ -49,7 +49,7 @@ public class GoogleCredentialsBundle implements Serializable {
   }
 
   /**
-   * Returns the service account email address of the underlying {@link} GoogleCredentials, if
+   * Returns the service account email address of the underlying {@link GoogleCredentials}, if
    * possible.
    */
   public String serviceAccount() {
