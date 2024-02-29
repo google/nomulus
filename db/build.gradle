@@ -168,7 +168,6 @@ dependencies {
   testRuntimeOnly deps['com.google.flogger:flogger-system-backend']
   testImplementation deps['com.google.guava:guava']
   testImplementation deps['com.google.truth:truth']
-  testImplementation deps['com.google.truth.extensions:truth-java8-extension']
   testRuntimeOnly deps['io.github.java-diff-utils:java-diff-utils']
   testImplementation deps['org.junit.jupiter:junit-jupiter-api']
   testImplementation deps['org.junit.jupiter:junit-jupiter-engine']

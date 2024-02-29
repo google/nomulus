@@ -15,7 +15,6 @@
 package google.registry.flows;
 
 import static com.google.common.truth.Truth.assertThat;
-import static com.google.common.truth.Truth8.assertThat;
 import static google.registry.model.tld.Tld.TldState.PREDELEGATION;
 import static google.registry.monitoring.whitebox.CheckApiMetric.Availability.AVAILABLE;
 import static google.registry.monitoring.whitebox.CheckApiMetric.Availability.BSA_BLOCKED;

@@ -14,7 +14,7 @@
 
 package google.registry.bsa.api;
 
-import static com.google.common.truth.Truth8.assertThat;
+import static com.google.common.truth.Truth.assertThat;
 import static google.registry.bsa.api.JsonSerializations.toCompletedOrdersReport;
 import static google.registry.bsa.api.JsonSerializations.toInProgressOrdersReport;
 import static google.registry.bsa.api.JsonSerializations.toUnblockableDomainsReport;
