@@ -178,6 +178,12 @@ PRESUBMITS = {
         {"/node_modules/"},
     ):
         "Do not use shaded dependencies from testcontainers.",
+    PresubmitCheck(
+        r"com\.google\.common\.truth\.Truth8",
+        "java",
+        {"/node_modules/"},
+    ):
+        "Truth8 is deprecated. Use Truth instead.",
 }
 
 # Note that this regex only works for one kind of Flyway file.  If we want to

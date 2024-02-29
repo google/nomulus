@@ -22,7 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Maps;
-import com.google.common.truth.Truth8;
+import com.google.common.truth.Truth;
 import google.registry.model.ImmutableObject;
 import google.registry.persistence.VKey;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaUnitTestExtension;
@@ -328,11 +328,10 @@ public class TransactionManagerTest {
   @Test
   void loadSingleton_returnsValue_orEmpty() {
     assertEntityNotExist(theEntity);
-    Truth8.assertThat(tm().transact(() -> tm().loadSingleton(TestEntity.class))).isEmpty();
+    Truth.assertThat(tm().transact(() -> tm().loadSingleton(TestEntity.class))).isEmpty();
 
     tm().transact(() -> tm().insert(theEntity));
-    Truth8.assertThat(tm().transact(() -> tm().loadSingleton(TestEntity.class)))
-        .hasValue(theEntity);
+    Truth.assertThat(tm().transact(() -> tm().loadSingleton(TestEntity.class))).hasValue(theEntity);
   }
 
   @Test

@@ -15,7 +15,6 @@
 package google.registry.bsa.persistence;
 
 import static com.google.common.truth.Truth.assertThat;
-import static com.google.common.truth.Truth8.assertThat;
 import static google.registry.bsa.DownloadStage.CHECKSUMS_DO_NOT_MATCH;
 import static google.registry.bsa.DownloadStage.DONE;
 import static google.registry.bsa.DownloadStage.DOWNLOAD_BLOCK_LISTS;

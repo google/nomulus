@@ -15,7 +15,6 @@
 package google.registry.request.auth;
 
 import static com.google.common.truth.Truth.assertThat;
-import static com.google.common.truth.Truth8.assertThat;
 import static google.registry.request.auth.AuthResult.NOT_AUTHENTICATED;
 import static google.registry.request.auth.AuthSettings.AuthLevel.APP;
 import static google.registry.request.auth.AuthSettings.AuthLevel.NONE;

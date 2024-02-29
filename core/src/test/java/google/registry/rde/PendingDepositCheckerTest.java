@@ -28,7 +28,7 @@ import static org.joda.time.DateTimeConstants.TUESDAY;
 import static org.joda.time.Duration.standardDays;
 
 import com.google.common.collect.ImmutableSetMultimap;
-import com.google.common.truth.Truth8;
+import com.google.common.truth.Truth;
 import google.registry.model.common.Cursor;
 import google.registry.model.common.Cursor.CursorType;
 import google.registry.model.tld.Tld;
@@ -95,7 +95,7 @@ public class PendingDepositCheckerTest {
     createTldWithEscrowEnabled("lol");
     clock.advanceOneMilli();
     Tld registry = Tld.get("lol");
-    Truth8.assertThat(loadByKeyIfPresent(Cursor.createScopedVKey(RDE_STAGING, registry))).isEmpty();
+    Truth.assertThat(loadByKeyIfPresent(Cursor.createScopedVKey(RDE_STAGING, registry))).isEmpty();
     checker.getTldsAndWatermarksPendingDepositForRdeAndBrda();
     assertThat(loadByKey(Cursor.createScopedVKey(RDE_STAGING, registry)).getCursorTime())
         .isEqualTo(DateTime.parse("2000-01-01TZ"));
@@ -122,9 +122,9 @@ public class PendingDepositCheckerTest {
     clock.advanceOneMilli();
     setCursor(registry, RDE_STAGING, DateTime.parse("2000-01-02TZ")); // assume rde is already done
     clock.advanceOneMilli();
-    Truth8.assertThat(loadByKeyIfPresent(Cursor.createScopedVKey(BRDA, registry))).isEmpty();
+    Truth.assertThat(loadByKeyIfPresent(Cursor.createScopedVKey(BRDA, registry))).isEmpty();
     assertThat(checker.getTldsAndWatermarksPendingDepositForRdeAndBrda()).isEmpty();
-    Truth8.assertThat(loadByKeyIfPresent(Cursor.createScopedVKey(BRDA, registry))).isEmpty();
+    Truth.assertThat(loadByKeyIfPresent(Cursor.createScopedVKey(BRDA, registry))).isEmpty();
   }
 
   @Test

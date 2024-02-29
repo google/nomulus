@@ -88,6 +88,7 @@ test {
 //
 // A typical use case is to run tests from desktop that accesses Cloud resources.
 tasks.withType(Test).configureEach {
+  maxHeapSize = "4096m"
   def gcp_integration_env_property = 'test.gcp_integration.env'
 
   if (project.hasProperty(gcp_integration_env_property)) {

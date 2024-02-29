@@ -34,6 +34,7 @@ import java.util.Arrays;
 import javax.net.SocketFactory;
 import org.joda.time.Duration;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.xbill.DNS.ARecord;
 import org.xbill.DNS.DClass;
@@ -111,6 +112,9 @@ class DnsMessageTransportTest {
   }
 
   @Test
+  @Disabled("This test hangs and causes OOM when using Java 21")
+  // This test should never have passed. The socket is mocked and calling setSoTimeout() has no
+  // effect whatsoever. We should consider removing it.
   void testTimeoutReceivingResponse() throws Exception {
     InputStream mockInputStream = mock(InputStream.class);
     when(mockInputStream.read()).thenThrow(new SocketTimeoutException("testing"));
@@ -142,7 +146,7 @@ class DnsMessageTransportTest {
   }
 
   @Test
-  void testResponseIdMismatchThrowsExeption() throws Exception {
+  void testResponseIdMismatchThrowsException() throws Exception {
     expectedResponse.getHeader().setID(1 + simpleQuery.getHeader().getID());
     when(mockSocket.getInputStream())
         .thenReturn(new ByteArrayInputStream(messageToBytesWithLength(expectedResponse)));
