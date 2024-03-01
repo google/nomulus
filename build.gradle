@@ -281,6 +281,12 @@ def javadocSource = []
 def javadocClasspath = []
 def javadocDependentTasks = []
 
+def services = [':services:default',
+                ':services:backend',
+                ':services:bsa',
+                ':services:tools',
+                ':services:pubapi']
+
 subprojects {
   // Skip no-op project
   if (project.name == 'services') return
@@ -365,12 +371,6 @@ subprojects {
     }
   }
 
-  def services = [':services:default',
-                  ':services:backend',
-                  ':services:bsa',
-                  ':services:tools',
-                  ':services:pubapi']
-
   // Set up all of the deployment projects.
   if (services.contains(project.path)) {
 
@@ -420,6 +420,13 @@ subprojects {
     javadocClasspath << "${buildDir}/generated/sources/annotationProcessor/java/main"
     javadocDependentTasks << project.tasks.compileJava
   }
+}
+
+// Force SDK download to be sequential, otherwise parallel tasks will try to
+// write to the same location to upgrade gcloud and fail.
+for (int i = 1; i < services.size(); i++) {
+  project("${services[i]}").downloadCloudSdk
+          .dependsOn(project("${services[i - 1]}").downloadCloudSdk)
 }
 
 // If "-P verboseTestOutput=true" is passed in, configure all subprojects to dump all of their
