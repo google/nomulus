@@ -32,6 +32,7 @@ dependencies {
 
   runtimeOnly deps['com.google.flogger:flogger-system-backend']
   runtimeOnly deps['io.netty:netty-tcnative-boringssl-static']
+  runtimeOnly deps['org.slf4j:slf4j-jdk14']
 
   testImplementation deps['com.google.truth:truth']
   testImplementation deps['junit:junit']

@@ -163,12 +163,12 @@ dependencies {
 
   runtimeOnly deps['com.google.cloud.sql:postgres-socket-factory']
   runtimeOnly deps['org.postgresql:postgresql']
+  runtimeOnly deps['org.slf4j:slf4j-jdk14']
 
   testImplementation deps['com.google.flogger:flogger']
   testRuntimeOnly deps['com.google.flogger:flogger-system-backend']
   testImplementation deps['com.google.guava:guava']
   testImplementation deps['com.google.truth:truth']
-  testImplementation deps['com.google.truth.extensions:truth-java8-extension']
   testRuntimeOnly deps['io.github.java-diff-utils:java-diff-utils']
   testImplementation deps['org.junit.jupiter:junit-jupiter-api']
   testImplementation deps['org.junit.jupiter:junit-jupiter-engine']

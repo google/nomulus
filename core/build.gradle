@@ -287,7 +287,6 @@ dependencies {
   testImplementation deps['com.google.monitoring-client:contrib']
   testImplementation deps['com.google.protobuf:protobuf-java-util']
   testImplementation deps['com.google.truth:truth']
-  testImplementation deps['com.google.truth.extensions:truth-java8-extension']
   testImplementation deps['org.checkerframework:checker-qual']
   testImplementation deps['org.hamcrest:hamcrest']
   testImplementation deps['org.hamcrest:hamcrest-core']
