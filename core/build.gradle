@@ -249,6 +249,7 @@ dependencies {
   testImplementation deps['org.seleniumhq.selenium:selenium-chrome-driver']
   testImplementation deps['org.seleniumhq.selenium:selenium-java']
   testImplementation deps['org.seleniumhq.selenium:selenium-remote-driver']
+  runtime deps['org.slf4j:slf4j-api']
   runtimeOnly deps['org.slf4j:slf4j-jdk14']
   testImplementation deps['org.testcontainers:jdbc']
   testImplementation deps['org.testcontainers:junit-jupiter']

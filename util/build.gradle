@@ -56,6 +56,7 @@ dependencies {
   testImplementation deps['org.hamcrest:hamcrest-core']
   testImplementation deps['org.mockito:mockito-core']
   testImplementation deps['org.mockito:mockito-junit-jupiter']
+  testImplementation deps['org.slf4j:slf4j-api']
   testImplementation deps['org.testcontainers:junit-jupiter']
   testImplementation project(path: ':common', configuration: 'testing')
   testRuntimeOnly deps['com.google.flogger:flogger-system-backend']

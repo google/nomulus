@@ -163,7 +163,9 @@ dependencies {
 
   runtimeOnly deps['com.google.cloud.sql:postgres-socket-factory']
   runtimeOnly deps['org.postgresql:postgresql']
+  testCompileOnly deps['org.slf4j:slf4j-api']
   runtimeOnly deps['org.slf4j:slf4j-jdk14']
+
 
   testImplementation deps['com.google.flogger:flogger']
   testRuntimeOnly deps['com.google.flogger:flogger-system-backend']

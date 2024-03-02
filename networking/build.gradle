@@ -32,7 +32,7 @@ dependencies {
 
   runtimeOnly deps['com.google.flogger:flogger-system-backend']
   runtimeOnly deps['io.netty:netty-tcnative-boringssl-static']
-  runtimeOnly deps['org.slf4j:slf4j-jdk14']
+
 
   testImplementation deps['com.google.truth:truth']
   testImplementation deps['junit:junit']
@@ -44,6 +44,8 @@ dependencies {
   testImplementation deps['org.junit.platform:junit-platform-runner']
   testImplementation deps['org.junit.platform:junit-platform-suite-api']
   testImplementation deps['org.testcontainers:junit-jupiter']
+  testImplementation deps['org.slf4j:slf4j-api']
+  runtimeOnly deps['org.slf4j:slf4j-jdk14']
   testImplementation project(path: ':common', configuration: 'testing')
 
   annotationProcessor deps['com.google.dagger:dagger-compiler']
