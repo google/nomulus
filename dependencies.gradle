@@ -101,8 +101,8 @@ ext {
       // Dependencies with dynamic versions start from here.
       'args4j:args4j:[2.0.26,)',
       'com.google.api:gax:[1.66.0,)',
-      'com.google.api.grpc:proto-google-cloud-secretmanager-v1:[1.4.0, 2.23.0]!!)',
-      'com.google.api.grpc:proto-google-cloud-tasks-v2:[1.33.2, 2.23.0]!!)',
+      'com.google.api.grpc:proto-google-cloud-secretmanager-v1:[1.4.0,)',
+      'com.google.api.grpc:proto-google-cloud-tasks-v2:[1.33.2,)',
       'com.google.api.grpc:proto-google-common-protos:[2.1.0,)',
 
       // Excluding versions 2.0 from google-api-client because they're
@@ -132,10 +132,10 @@ ext {
       'com.google.cloud.sql:postgres-socket-factory:[1.2.1,)',
       'com.google.cloud:google-cloud-core:[1.94.3,)',
       'com.google.cloud:google-cloud-core-http:[1.94.3,)',
-      'com.google.cloud:google-cloud-secretmanager:[1.4.0, 2.23.0]!!',
+      'com.google.cloud:google-cloud-secretmanager:[1.4.0,)',
       'com.google.cloud:google-cloud-storage:[1.113.12, 2.22.6]!!',
       'com.google.cloud:google-cloud-nio:[0.123.4, 0.126.19]!!',
-      'com.google.cloud:google-cloud-tasks:[1.33.2, 2.23.0]!!',
+      'com.google.cloud:google-cloud-tasks:[1.33.2,)',
       'com.google.code.findbugs:jsr305:[3.0.2,)',
       'com.google.code.gson:gson:[2.8.6,)',
       'com.google.dagger:dagger-compiler:[2.33,)',
