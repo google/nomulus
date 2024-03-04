@@ -77,7 +77,7 @@ public final class SslInitializerTestUtils {
       throws Exception {
     X500Name subjectDnName = new X500Name("CN=" + hostname);
     BigInteger serialNumber = BigInteger.valueOf(System.currentTimeMillis());
-    X500Name issuerDnName = new X500Name(ssc.cert().getIssuerDN().getName());
+    X500Name issuerDnName = new X500Name(ssc.cert().getIssuerX500Principal().getName());
     ContentSigner sigGen = new JcaContentSignerBuilder("SHA256WithRSAEncryption").build(ssc.key());
     X509v3CertificateBuilder v3CertGen =
         new JcaX509v3CertificateBuilder(
