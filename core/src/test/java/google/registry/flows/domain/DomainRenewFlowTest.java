@@ -15,7 +15,6 @@
 package google.registry.flows.domain;
 
 import static com.google.common.truth.Truth.assertThat;
-import static com.google.common.truth.Truth8.assertThat;
 import static google.registry.flows.domain.DomainTransferFlowTestCase.persistWithPendingTransfer;
 import static google.registry.model.billing.BillingBase.RenewalPriceBehavior.DEFAULT;
 import static google.registry.model.billing.BillingBase.RenewalPriceBehavior.NONPREMIUM;
@@ -52,7 +51,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.collect.Iterables;
-import com.google.common.truth.Truth8;
+import com.google.common.truth.Truth;
 import google.registry.flows.EppException;
 import google.registry.flows.EppRequestSource;
 import google.registry.flows.FlowUtils.NotLoggedInException;
@@ -1345,7 +1344,7 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
     // We still need to verify that the bulk token is removed as it's not being tested as a part of
     // doSuccessfulTest
     Domain domain = reloadResourceByForeignKey();
-    Truth8.assertThat(domain.getCurrentBulkToken()).isEmpty();
+    Truth.assertThat(domain.getCurrentBulkToken()).isEmpty();
   }
 
   @Test

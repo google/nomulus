@@ -16,7 +16,6 @@ package google.registry.batch;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
-import static com.google.common.truth.Truth8.assertThat;
 import static google.registry.model.EppResourceUtils.loadByForeignKey;
 import static google.registry.testing.DatabaseHelper.assertDomainDnsRequests;
 import static google.registry.testing.DatabaseHelper.createTld;

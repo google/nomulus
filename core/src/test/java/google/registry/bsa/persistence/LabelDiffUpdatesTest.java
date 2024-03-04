@@ -15,7 +15,6 @@
 package google.registry.bsa.persistence;
 
 import static com.google.common.truth.Truth.assertThat;
-import static com.google.common.truth.Truth8.assertThat;
 import static google.registry.bsa.ReservedDomainsTestingUtils.addReservedListsToTld;
 import static google.registry.bsa.ReservedDomainsTestingUtils.createReservedList;
 import static google.registry.bsa.persistence.LabelDiffUpdates.applyLabelDiff;
