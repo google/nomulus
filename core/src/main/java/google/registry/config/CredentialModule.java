@@ -19,6 +19,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import com.google.auth.ServiceAccountSigner;
 import com.google.auth.oauth2.GoogleCredentials;
 import com.google.common.collect.ImmutableList;
+import com.google.common.flogger.FluentLogger;
 import dagger.Module;
 import dagger.Provides;
 import google.registry.config.RegistryConfig.Config;
