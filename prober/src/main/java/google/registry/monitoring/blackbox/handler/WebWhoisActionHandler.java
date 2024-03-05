@@ -46,7 +46,7 @@ public class WebWhoisActionHandler extends ActionHandler {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
-  /** Dagger injected components necessary for redirect responses: */
+  /* Dagger injected components necessary for redirect responses: */
 
   /** {@link Bootstrap} necessary for remaking connection on redirect response. */
   private final Bootstrap bootstrap;

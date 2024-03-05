@@ -37,7 +37,6 @@ dependencies {
   implementation deps['org.bouncycastle:bcpkix-jdk15on']
   implementation deps['org.bouncycastle:bcprov-jdk15on']
   implementation deps['xerces:xmlParserAPIs']
-  implementation deps['xpp3:xpp3']
   implementation project(':common')
   implementation project(':util')
   implementation project(':networking')

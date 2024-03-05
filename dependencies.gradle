@@ -29,15 +29,14 @@ ext {
       //    a dependency group can not work together. For example, the three
       //    bouncycastle jars need to be hardcoded with the same version string
       //    as of April, 2022.
-      // 6. Dependency constraints violation: e.g., as of April 2022, Hibernate
-      //    6.0 has a dependency that is not Java-8-compatible.
-      // 7. Maven mirroring error. Gradle expects that a dependency with dynamic
-      //    version be available on both repo.maven and repo2.maven. The
-      //    resolved version of xpp3 is not on repo.maven. This may be due to
-      //    the fact that xpp3 has been renamed to org.ogce.xpp3.
+      // 6. Dependency constraints violation: e.g., Hibernate 6.0 requires
+      //    Jakarta EE.
 
       // Note that since Gradle 7, for version labels to be strict, we need to
       // append '!!' to the end. Otherwise they may still be forced to upgrade.
+
+
+      // PINNED VERSIONS START HERE.
 
       // Breaking changes causing compilation error.
       'com.beust:jcommander:1.60',
@@ -50,6 +49,7 @@ ext {
 
       // Breaking change causing soy template parsing error.
       'com.google.template:soy:2021-02-01',
+      'com.google.protobuf:protobuf-java:3.13.0',
 
       // Our .xjb files are not compatible with newer binding specs: some
       // xml elements' names have changed.
@@ -57,6 +57,7 @@ ext {
 
       // appengine-api-1.0-sdk has breaking changes.
       'com.google.appengine:appengine-api-1.0-sdk:1.9.86',
+
       // Pin-breakers for appengine-api-1.0-sdk
       'com.google.appengine:appengine-testing:1.9.86',
 
@@ -64,25 +65,7 @@ ext {
       'com.google.javascript:closure-compiler:v20210505',
       'com.google.closure-stylesheets:closure-stylesheets:1.5.0',
 
-      // 5.6.12.Final is buggy wrt immutable CompositeUserTypes.
-      // 6.0+ requires Java 11.
-      'org.hibernate:hibernate-core:[5.6.14.Final, 6.0)',
-      'org.hibernate:hibernate-hikaricp:[5.6.14.Final, 6.0)',
-      // Latest version of the following are Java11-only
-      'com.zaxxer:HikariCP:3.4.5',
-      'com.github.ben-manes.caffeine:caffeine:[2.9.3,3.0)',
-
-      // Broken by asymmetric mirroring on Maven. Note that this should be
-      // upgraded to org.ogce.xpp3
-      'xpp3:xpp3:1.1.4c',
-
-      // Dependency groups with inconsistent version resolutions start here
-      'io.netty:netty-buffer:4.1.59.Final',
-      'io.netty:netty-codec-http:4.1.59.Final',
-      'io.netty:netty-codec:4.1.59.Final',
-      'io.netty:netty-common:4.1.59.Final',
-      'io.netty:netty-handler:4.1.59.Final',
-      'io.netty:netty-transport:4.1.59.Final',
+      // Dependency groups with inconsistent version.
       'org.apache.sshd:sshd-core:2.0.0',
       'org.apache.sshd:sshd-scp:2.0.0',
       'org.apache.sshd:sshd-sftp:2.0.0',
@@ -98,12 +81,23 @@ ext {
       'us.fatehi:schemacrawler-diagram:16.10.1',
       'us.fatehi:schemacrawler-tools:16.10.1',
 
-      // Dependencies with dynamic versions start from here.
-      'args4j:args4j:[2.0.26,)',
-      'com.google.api:gax:[1.66.0,)',
-      'com.google.api.grpc:proto-google-cloud-secretmanager-v1:[1.4.0,)',
-      'com.google.api.grpc:proto-google-cloud-tasks-v2:[1.33.2,)',
-      'com.google.api.grpc:proto-google-common-protos:[2.1.0,)',
+
+      // CAPPED VERSIONS START HERE.
+
+      // Hibernate 6.0+ requires Jakarta EE.
+      'org.hibernate:hibernate-core:[5.6.14.Final, 6.0)',
+      'org.hibernate:hibernate-hikaricp:[5.6.14.Final, 6.0)',
+
+      // Netty 5.0 is in alpha and breaks API.
+      'io.netty:netty-codec-http:[4.1.59.Final, 5.0.0)!!',
+      'io.netty:netty-codec:[4.1.59.Final, 5.0.0)!!',
+      'io.netty:netty-common:[4.1.59.Final, 5.0.0)!!',
+      'io.netty:netty-handler:[4.1.59.Final, 5.0.0)!!',
+      'io.netty:netty-transport:[4.1.59.Final, 5.0.0)!!',
+      'io.netty:netty-buffer:[4.1.59.Final, 5.0.0)!!',
+
+      // OkHttp 5.0 is in alpha.
+      'com.squareup.okhttp3:okhttp:[4.10.0, 5.0.0)!!',
 
       // Excluding versions 2.0 from google-api-client because they're
       // runtime incompatible with version 1.25 of admin directory API.
@@ -112,6 +106,17 @@ ext {
       'com.google.api-client:google-api-client:[1.31.3,2.0)!!',
       'com.google.api-client:google-api-client-appengine:[1.31.3,2.0)',
       'com.google.api-client:google-api-client-servlet:[1.31.3,2.0)',
+
+
+      // DYNAMIC VERSIONS START HERE.
+
+      'args4j:args4j:[2.0.26,)',
+      'com.fasterxml.jackson.core:jackson-databind:[2.11.2,)',
+      'com.github.ben-manes.caffeine:caffeine:[3.0.0,)',
+      'com.google.api.grpc:proto-google-cloud-secretmanager-v1:[1.4.0,)',
+      'com.google.api.grpc:proto-google-cloud-tasks-v2:[1.33.2,)',
+      'com.google.api.grpc:proto-google-common-protos:[2.1.0,)',
+      'com.google.api:gax:[1.66.0,)',
       'com.google.apis:google-api-services-appengine:[v1-rev130-1.25.0,)',
       'com.google.apis:google-api-services-bigquery:[v2-rev459-1.25.0,)',
       'com.google.apis:google-api-services-cloudkms:[v1-rev108-1.25.0,)',
@@ -127,14 +132,14 @@ ext {
       'com.google.auto.service:auto-service:[1.0-rc7,)',
       'com.google.auto.value:auto-value-annotations:[1.7.4,)',
       'com.google.auto.value:auto-value:[1.7.4,)',
-      'com.google.cloud.bigdataoss:util:2.2.6',
+      'com.google.cloud.bigdataoss:util:[2.2.6,)',
       'com.google.cloud.sql:jdbc-socket-factory-core:[1.2.1,)',
       'com.google.cloud.sql:postgres-socket-factory:[1.2.1,)',
-      'com.google.cloud:google-cloud-core:[1.94.3,)',
       'com.google.cloud:google-cloud-core-http:[1.94.3,)',
+      'com.google.cloud:google-cloud-core:[1.94.3,)',
+      'com.google.cloud:google-cloud-nio:[0.123.4,)',
       'com.google.cloud:google-cloud-secretmanager:[1.4.0,)',
-      'com.google.cloud:google-cloud-storage:[1.113.12, 2.22.6]!!',
-      'com.google.cloud:google-cloud-nio:[0.123.4, 0.126.19]!!',
+      'com.google.cloud:google-cloud-storage:[2.26.0,)',
       'com.google.cloud:google-cloud-tasks:[1.33.2,)',
       'com.google.code.findbugs:jsr305:[3.0.2,)',
       'com.google.code.gson:gson:[2.8.6,)',
@@ -153,24 +158,23 @@ ext {
       'com.google.monitoring-client:contrib:[1.0.7,)',
       'com.google.monitoring-client:metrics:[1.0.7,)',
       'com.google.monitoring-client:stackdriver:[1.0.7,)',
-      'com.google.oauth-client:google-oauth-client:[1.31.4,)',
       'com.google.oauth-client:google-oauth-client-appengine:[1.31.4,)',
       'com.google.oauth-client:google-oauth-client-java6:[1.31.4,)',
       'com.google.oauth-client:google-oauth-client-jetty:[1.31.4,)',
       'com.google.oauth-client:google-oauth-client-servlet:[1.31.4,)',
-      'com.google.protobuf:protobuf-java:[3.13.0,3.25.3]',
+      'com.google.oauth-client:google-oauth-client:[1.31.4,)',
       'com.google.protobuf:protobuf-java-util:[3.17.3,)',
       'com.google.re2j:re2j:[1.6,)',
       'com.google.truth:truth:[1.1.2,)',
       'com.googlecode.json-simple:json-simple:[1.1.1,)',
       'com.ibm.icu:icu4j:[68.2,)',
       'com.jcraft:jsch:[0.1.55,)',
-      'commons-codec:commons-codec:[1.15,)',
       'com.squareup:javapoet:[1.13.0,)',
-      'com.squareup.okhttp3:okhttp:[4.10.0,4.99.0]!!', // Don't use v5 which is in alpha yet.
       'com.sun.activation:javax.activation:[1.2.0,)',
       'com.sun.xml.bind:jaxb-impl:[2.3.3,)',
       'com.sun.xml.bind:jaxb-osgi:[2.3.3,)',
+      'com.zaxxer:HikariCP:[3.4.5,)',
+      'commons-codec:commons-codec:[1.15,)',
       'dnsjava:dnsjava:[3.3.1,)',
       'guru.nidi:graphviz-java-all-j2v8:[0.17.0,)',
       'io.github.classgraph:classgraph:[4.8.102,)',
@@ -185,15 +189,6 @@ ext {
       'javax.xml.bind:jaxb-api:[2.3.0,)',
       'joda-time:joda-time:[2.9.2,)',
       'junit:junit:[4.13,)',
-      'org.checkerframework:checker-qual:[3.9.1,)',
-      'org.checkerframework:checker-compat-qual:[2.5.5,)',
-      'org.junit.jupiter:junit-jupiter-api:[5.6.2,)',
-      'org.junit.jupiter:junit-jupiter-engine:[5.6.2,)',
-      'org.junit.jupiter:junit-jupiter-migrationsupport:[5.6.2,)',
-      'org.junit.jupiter:junit-jupiter-params:[5.6.2,)',
-      'org.junit.platform:junit-platform-runner:[1.6.2,)',
-      'org.junit.platform:junit-platform-suite-api:[1.6.2,)',
-      'org.junit-pioneer:junit-pioneer:[0.7.0,)',
       'org.apache.avro:avro:[1.8.2,)',
       'org.apache.beam:beam-runners-core-construction-java:[2.37.0,)',
       'org.apache.beam:beam-runners-direct-java:[2.37.0,)',
@@ -209,21 +204,31 @@ ext {
       'org.apache.httpcomponents:httpclient:[4.5.11,)',
       'org.apache.httpcomponents:httpcore:[4.4.13,)',
       'org.apache.tomcat:tomcat-annotations-api:[8.0.5,)',
-      'com.fasterxml.jackson.core:jackson-databind:[2.11.2,)',
-      'org.flywaydb:flyway-core:[5.2.4,10.0)!!',
+      'org.checkerframework:checker-compat-qual:[2.5.5,)',
+      'org.checkerframework:checker-qual:[3.9.1,)',
+      'org.eclipse.jetty:jetty-server:[9.4.49.v20220914,)',
+      'org.eclipse.jetty:jetty-servlet:[9.4.49.v20220914,)',
+      'org.flywaydb:flyway-core:[10.0.0,)',
+      'org.flywaydb:flyway-database-postgresql:[10.0.0,)',
       'org.glassfish.jaxb:jaxb-runtime:[2.3.0,)',
-      'org.hamcrest:hamcrest:[2.2,)',
       'org.hamcrest:hamcrest-core:[2.2,)',
       'org.hamcrest:hamcrest-library:[2.2,)',
+      'org.hamcrest:hamcrest:[2.2,)',
       'org.joda:joda-money:[1.0.1,)',
       'org.json:json:[20160810,)',
       'org.jsoup:jsoup:[1.13.1,)',
+      'org.junit-pioneer:junit-pioneer:[0.7.0,)',
+      'org.junit.jupiter:junit-jupiter-api:[5.6.2,)',
+      'org.junit.jupiter:junit-jupiter-engine:[5.6.2,)',
+      'org.junit.jupiter:junit-jupiter-migrationsupport:[5.6.2,)',
+      'org.junit.jupiter:junit-jupiter-params:[5.6.2,)',
+      'org.junit.platform:junit-platform-runner:[1.6.2,)',
+      'org.junit.platform:junit-platform-suite-api:[1.6.2,)',
       'org.mockito:mockito-core:[3.7.7,)',
       'org.mockito:mockito-junit-jupiter:[3.7.7,)',
       'org.mortbay.jetty:jetty:[6.1.26,)',
+      'org.ogce:xpp3:[1.1.6,)',
       'org.postgresql:postgresql:[42.2.18,)',
-      'org.eclipse.jetty:jetty-server:[9.4.49.v20220914,)',
-      'org.eclipse.jetty:jetty-servlet:[9.4.49.v20220914,)',
       'org.slf4j:slf4j-jdk14:[1.7.28,)',
       'org.testcontainers:jdbc:[1.19.6,)',
       'org.testcontainers:junit-jupiter:[1.19.6,)',

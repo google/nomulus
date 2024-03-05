@@ -390,6 +390,12 @@
       "moduleLicense": null,
       "moduleVersion": "1.0.1",
       "moduleName": "org.jetbrains.kotlinx:kotlinx-serialization-core"
+    },
+    {
+      // "Apache License, Version 2.0".
+      "moduleLicense": null,
+      "moduleVersion": "1.4",
+      "moduleName": "jakarta-regexp:jakarta-regexp"
     }
   ]
 }

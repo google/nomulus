@@ -354,7 +354,7 @@ public abstract class EppResource extends UpdateAutoTimestampEntity implements B
   }
 
   static final CacheLoader<VKey<? extends EppResource>, EppResource> CACHE_LOADER =
-      new CacheLoader<VKey<? extends EppResource>, EppResource>() {
+      new CacheLoader<>() {
 
         @Override
         public EppResource load(VKey<? extends EppResource> key) {
@@ -362,8 +362,8 @@ public abstract class EppResource extends UpdateAutoTimestampEntity implements B
         }
 
         @Override
-        public Map<VKey<? extends EppResource>, EppResource> loadAll(
-            Iterable<? extends VKey<? extends EppResource>> keys) {
+        public Map<? extends VKey<? extends EppResource>, ? extends EppResource> loadAll(
+            Set<? extends VKey<? extends EppResource>> keys) {
           return replicaTm().reTransact(() -> replicaTm().loadByKeys(keys));
         }
       };

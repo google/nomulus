@@ -90,13 +90,13 @@ class IcannReportingUploadActionTest {
   void beforeEach() throws Exception {
     createTlds("tld", "foo");
     gcsUtils.createFromBytes(
-        BlobId.of("basin/icann/monthly/2006-06", "tld-transactions-200606.csv"), PAYLOAD_SUCCESS);
+        BlobId.of("basin", "icann/monthly/2006-06/tld-transactions-200606.csv"), PAYLOAD_SUCCESS);
     gcsUtils.createFromBytes(
-        BlobId.of("basin/icann/monthly/2006-06", "tld-activity-200606.csv"), PAYLOAD_FAIL);
+        BlobId.of("basin", "icann/monthly/2006-06/tld-activity-200606.csv"), PAYLOAD_FAIL);
     gcsUtils.createFromBytes(
-        BlobId.of("basin/icann/monthly/2006-06", "foo-transactions-200606.csv"), PAYLOAD_SUCCESS);
+        BlobId.of("basin", "icann/monthly/2006-06/foo-transactions-200606.csv"), PAYLOAD_SUCCESS);
     gcsUtils.createFromBytes(
-        BlobId.of("basin/icann/monthly/2006-06", "foo-activity-200606.csv"), PAYLOAD_SUCCESS);
+        BlobId.of("basin", "icann/monthly/2006-06/foo-activity-200606.csv"), PAYLOAD_SUCCESS);
     when(mockReporter.send(PAYLOAD_SUCCESS, "tld-transactions-200606.csv")).thenReturn(true);
     when(mockReporter.send(PAYLOAD_SUCCESS, "foo-transactions-200606.csv")).thenReturn(true);
     when(mockReporter.send(PAYLOAD_FAIL, "tld-activity-200606.csv")).thenReturn(false);
@@ -150,9 +150,9 @@ class IcannReportingUploadActionTest {
         Cursor.createScoped(
             CursorType.ICANN_UPLOAD_TX, DateTime.parse("2006-01-01TZ"), Tld.get("tld")));
     gcsUtils.createFromBytes(
-        BlobId.of("basin/icann/monthly/2005-12", "tld-transactions-200512.csv"), PAYLOAD_SUCCESS);
+        BlobId.of("basin", "icann/monthly/2005-12/tld-transactions-200512.csv"), PAYLOAD_SUCCESS);
     gcsUtils.createFromBytes(
-        BlobId.of("basin/icann/monthly/2005-12", "tld-activity-200512.csv"), PAYLOAD_SUCCESS);
+        BlobId.of("basin", "icann/monthly/2005-12/tld-activity-200512.csv"), PAYLOAD_SUCCESS);
     when(mockReporter.send(PAYLOAD_SUCCESS, "tld-activity-200512.csv")).thenReturn(true);
     when(mockReporter.send(PAYLOAD_SUCCESS, "tld-transactions-200512.csv")).thenReturn(true);
 
@@ -176,7 +176,7 @@ class IcannReportingUploadActionTest {
   @Test
   void testSuccess_advancesCursor() throws Exception {
     gcsUtils.createFromBytes(
-        BlobId.of("basin/icann/monthly/2006-06", "tld-activity-200606.csv"), PAYLOAD_SUCCESS);
+        BlobId.of("basin", "icann/monthly/2006-06/tld-activity-200606.csv"), PAYLOAD_SUCCESS);
     when(mockReporter.send(PAYLOAD_SUCCESS, "tld-activity-200606.csv")).thenReturn(true);
     IcannReportingUploadAction action = createAction();
     action.run();
