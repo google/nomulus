@@ -16,8 +16,6 @@ package google.registry.ui.server.registrar;
 
 import static com.google.common.collect.Iterables.getOnlyElement;
 import static com.google.monitoring.metrics.contrib.LongMetricSubject.assertThat;
-import static google.registry.config.RegistryConfig.getGSuiteOutgoingEmailAddress;
-import static google.registry.config.RegistryConfig.getGSuiteOutgoingEmailDisplayName;
 import static google.registry.request.auth.AuthenticatedRegistrarAccessor.Role.ADMIN;
 import static google.registry.request.auth.AuthenticatedRegistrarAccessor.Role.OWNER;
 import static google.registry.security.JsonHttpTestUtils.createJsonPayload;
@@ -106,8 +104,6 @@ public abstract class RegistrarSettingsActionTestCase {
         new JsonActionRunner(ImmutableMap.of(), new JsonResponse(new ResponseImpl(rsp)));
     action.sendEmailUtils =
         new SendEmailUtils(
-            getGSuiteOutgoingEmailAddress(),
-            getGSuiteOutgoingEmailDisplayName(),
             ImmutableList.of("notification@test.example", "notification2@test.example"),
             gmailClient);
     action.registrarConsoleMetrics = new RegistrarConsoleMetrics();

@@ -48,7 +48,6 @@ import google.registry.ui.server.SendEmailUtils;
 import google.registry.util.EmailMessage;
 import google.registry.util.RegistryEnvironment;
 import java.util.Optional;
-import javax.mail.internet.InternetAddress;
 import javax.servlet.http.HttpServletRequest;
 import org.joda.money.CurrencyUnit;
 import org.junit.jupiter.api.BeforeEach;
@@ -95,8 +94,6 @@ final class ConsoleRegistrarCreatorActionTest {
     action.authResult = AuthResult.createUser(UserAuthInfo.create(user, false));
     action.sendEmailUtils =
         new SendEmailUtils(
-            new InternetAddress("outgoing@registry.example"),
-            "UnitTest Registry",
             ImmutableList.of("notification@test.example", "notification2@test.example"),
             gmailClient);
     action.logoFilename = "logo.png";

@@ -55,7 +55,6 @@ class BillingEmailUtilsTest {
     return new BillingEmailUtils(
         gmailClient,
         new YearMonth(2017, 10),
-        new InternetAddress("my-sender@test.com"),
         new InternetAddress("my-receiver@test.com"),
         ImmutableList.of(
             new InternetAddress("hello@world.com"), new InternetAddress("hola@mundo.com")),
@@ -75,7 +74,6 @@ class BillingEmailUtilsTest {
     EmailMessage emailMessage = contentCaptor.getValue();
     EmailMessage expectedContent =
         EmailMessage.newBuilder()
-            .setFrom(new InternetAddress("my-sender@test.com"))
             .setRecipients(
                 ImmutableList.of(
                     new InternetAddress("hello@world.com"), new InternetAddress("hola@mundo.com")))
@@ -126,7 +124,6 @@ class BillingEmailUtilsTest {
 
   private void validateAlertMessage(EmailMessage emailMessage, String body)
       throws MessagingException {
-    assertThat(emailMessage.from()).isEqualTo(new InternetAddress("my-sender@test.com"));
     assertThat(emailMessage.recipients())
         .containsExactly(new InternetAddress("my-receiver@test.com"));
     assertThat(emailMessage.subject()).isEqualTo("Billing Pipeline Alert: 2017-10");

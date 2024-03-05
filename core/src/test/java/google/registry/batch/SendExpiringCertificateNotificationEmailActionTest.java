@@ -98,7 +98,6 @@ class SendExpiringCertificateNotificationEmailActionTest {
         new SendExpiringCertificateNotificationEmailAction(
             EXPIRATION_WARNING_EMAIL_BODY_TEXT,
             EXPIRATION_WARNING_EMAIL_SUBJECT_TEXT,
-            new InternetAddress("test@example.com"),
             sendEmailService,
             certificateChecker,
             response);

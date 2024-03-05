@@ -29,7 +29,6 @@ import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 import com.google.common.flogger.FluentLogger;
 import com.google.gson.Gson;
-import google.registry.config.RegistryConfig.Config;
 import google.registry.flows.domain.DomainFlowUtils;
 import google.registry.groups.GmailClient;
 import google.registry.model.domain.RegistryLock;
@@ -85,7 +84,6 @@ public class RegistryLockPostAction implements Runnable, JsonActionRunner.JsonAc
   private final AuthenticatedRegistrarAccessor registrarAccessor;
   private final GmailClient gmailClient;
   private final DomainLockUtils domainLockUtils;
-  private final InternetAddress gSuiteOutgoingEmailAddress;
 
   @Inject
   RegistryLockPostAction(
@@ -94,15 +92,13 @@ public class RegistryLockPostAction implements Runnable, JsonActionRunner.JsonAc
       AuthResult authResult,
       AuthenticatedRegistrarAccessor registrarAccessor,
       GmailClient gmailClient,
-      DomainLockUtils domainLockUtils,
-      @Config("gSuiteOutgoingEmailAddress") InternetAddress gSuiteOutgoingEmailAddress) {
+      DomainLockUtils domainLockUtils) {
     this.req = req;
     this.jsonActionRunner = jsonActionRunner;
     this.authResult = authResult;
     this.registrarAccessor = registrarAccessor;
     this.gmailClient = gmailClient;
     this.domainLockUtils = domainLockUtils;
-    this.gSuiteOutgoingEmailAddress = gSuiteOutgoingEmailAddress;
   }
 
   @Override
@@ -174,7 +170,6 @@ public class RegistryLockPostAction implements Runnable, JsonActionRunner.JsonAc
               .setBody(body)
               .setSubject(String.format("Registry %s verification", action))
               .setRecipients(recipients)
-              .setFrom(gSuiteOutgoingEmailAddress)
               .build());
     } catch (AddressException | URISyntaxException e) {
       throw new RuntimeException(e); // caught above -- this is so we can run in a transaction
