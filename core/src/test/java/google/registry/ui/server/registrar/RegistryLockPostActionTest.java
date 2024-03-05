@@ -91,8 +91,6 @@ final class RegistryLockPostActionTest {
 
   private User userWithoutPermission;
   private User userWithLockPermission;
-
-  private InternetAddress outgoingAddress;
   private Domain domain;
   private RegistryLockPostAction action;
 
@@ -108,8 +106,6 @@ final class RegistryLockPostActionTest {
         userFromRegistrarPoc(JpaTransactionManagerExtension.makeRegistrarContact2());
     createTld("tld");
     domain = persistResource(DatabaseHelper.newDomain("example.tld"));
-
-    outgoingAddress = new InternetAddress("domain-registry@example.com");
 
     when(mockRequest.getServerName()).thenReturn("registrarconsole.tld");
 
@@ -502,7 +498,6 @@ final class RegistryLockPostActionTest {
     EmailMessage sentMessage = emailCaptor.getValue();
     assertThat(sentMessage.subject()).matches("Registry (un)?lock verification");
     assertThat(sentMessage.body()).matches(EMAIL_MESSAGE_TEMPLATE);
-    assertThat(sentMessage.from()).isEqualTo(new InternetAddress("domain-registry@example.com"));
     assertThat(sentMessage.recipients()).containsExactly(new InternetAddress(recipient));
   }
 
@@ -524,12 +519,6 @@ final class RegistryLockPostActionTest {
             "adminreg",
             new CloudTasksHelper(clock).getTestCloudTasksUtils());
     return new RegistryLockPostAction(
-        mockRequest,
-        jsonActionRunner,
-        authResult,
-        registrarAccessor,
-        gmailClient,
-        domainLockUtils,
-        outgoingAddress);
+        mockRequest, jsonActionRunner, authResult, registrarAccessor, gmailClient, domainLockUtils);
   }
 }

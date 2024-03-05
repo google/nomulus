@@ -173,7 +173,6 @@ public class Spec11EmailUtils {
             .setSubject(subject)
             .setBody(getEmailBody(date, soyTemplateInfo, registrarThreatMatches))
             .setContentType(MediaType.HTML_UTF_8)
-            .setFrom(outgoingEmailAddress)
             .addRecipient(getEmailAddressForRegistrar(registrarThreatMatches.clientId()))
             .setBccs(spec11BccEmailAddresses)
             .build());
@@ -216,7 +215,6 @@ public class Spec11EmailUtils {
     try {
       gmailClient.sendEmail(
           EmailMessage.newBuilder()
-              .setFrom(outgoingEmailAddress)
               .addRecipient(alertRecipientAddress)
               .setBody(body)
               .setSubject(subject)

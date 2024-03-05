@@ -86,7 +86,6 @@ public final class IcannReportingUploadAction implements Runnable {
   @Inject IcannHttpReporter icannReporter;
   @Inject Retrier retrier;
   @Inject Response response;
-  @Inject @Config("gSuiteOutgoingEmailAddress") InternetAddress sender;
 
   @Inject
   @Config("newAlertRecipientEmailAddress")
@@ -297,7 +296,7 @@ public final class IcannReportingUploadAction implements Runnable {
                     (e) ->
                         String.format("%s - %s", e.getKey(), e.getValue() ? "SUCCESS" : "FAILURE"))
                 .collect(Collectors.joining("\n")));
-    gmailClient.sendEmail(EmailMessage.create(subject, body, recipient, sender));
+    gmailClient.sendEmail(EmailMessage.create(subject, body, recipient));
   }
 
   private byte[] readBytesFromGcs(BlobId reportFilename) throws IOException {

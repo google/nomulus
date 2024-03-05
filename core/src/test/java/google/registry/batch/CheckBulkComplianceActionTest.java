@@ -44,7 +44,6 @@ import google.registry.ui.server.SendEmailUtils;
 import google.registry.util.EmailMessage;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.mail.internet.InternetAddress;
 import org.joda.money.CurrencyUnit;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
@@ -89,8 +88,6 @@ public class CheckBulkComplianceActionTest {
     loggerToIntercept.addHandler(logHandler);
     sendEmailUtils =
         new SendEmailUtils(
-            new InternetAddress("outgoing@registry.example"),
-            "UnitTest Registry",
             ImmutableList.of("notification@test.example", "notification2@test.example"),
             gmailClient);
     createTld("tld");

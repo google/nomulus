@@ -37,7 +37,6 @@ public class BillingEmailUtils {
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
   private final GmailClient gmailClient;
   private final YearMonth yearMonth;
-  private final InternetAddress outgoingEmailAddress;
   private final InternetAddress alertRecipientAddress;
   private final ImmutableList<InternetAddress> invoiceEmailRecipients;
   private final Optional<InternetAddress> replyToEmailAddress;
@@ -51,7 +50,6 @@ public class BillingEmailUtils {
   BillingEmailUtils(
       GmailClient gmailClient,
       YearMonth yearMonth,
-      @Config("gSuiteOutgoingEmailAddress") InternetAddress outgoingEmailAddress,
       @Config("newAlertRecipientEmailAddress") InternetAddress alertRecipientAddress,
       @Config("invoiceEmailRecipients") ImmutableList<InternetAddress> invoiceEmailRecipients,
       @Config("invoiceReplyToEmailAddress") Optional<InternetAddress> replyToEmailAddress,
@@ -62,7 +60,6 @@ public class BillingEmailUtils {
       GcsUtils gcsUtils) {
     this.gmailClient = gmailClient;
     this.yearMonth = yearMonth;
-    this.outgoingEmailAddress = outgoingEmailAddress;
     this.alertRecipientAddress = alertRecipientAddress;
     this.invoiceEmailRecipients = invoiceEmailRecipients;
     this.replyToEmailAddress = replyToEmailAddress;
@@ -94,7 +91,6 @@ public class BillingEmailUtils {
                       "<p>Use the following link to download %s invoice for the domain registry -"
                           + " <a href=\"%s\">invoice</a>.</p>",
                       yearMonth, fileUrl))
-              .setFrom(outgoingEmailAddress)
               .setRecipients(invoiceEmailRecipients)
               .setReplyToEmailAddress(replyToEmailAddress)
               .setContentType(MediaType.HTML_UTF_8)
@@ -115,7 +111,6 @@ public class BillingEmailUtils {
               .setSubject(String.format("Billing Pipeline Alert: %s", yearMonth))
               .setBody(body)
               .addRecipient(alertRecipientAddress)
-              .setFrom(outgoingEmailAddress)
               .build());
     } catch (Throwable e) {
       throw new RuntimeException("The alert e-mail system failed.", e);

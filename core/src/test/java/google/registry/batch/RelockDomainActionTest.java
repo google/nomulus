@@ -258,7 +258,6 @@ public class RelockDomainActionTest {
                     + "contact support at support@example.com if you have any questions.")
             .setRecipients(
                 ImmutableSet.of(new InternetAddress("Marla.Singer.RegistryLock@crr.com")))
-            .setFrom(new InternetAddress("outgoing@example.com"))
             .build();
     verify(gmailClient).sendEmail(expectedEmail);
   }
@@ -292,7 +291,6 @@ public class RelockDomainActionTest {
             .setSubject("Error re-locking domain example.tld")
             .setBody(body)
             .setRecipients(recipients)
-            .setFrom(new InternetAddress("outgoing@example.com"))
             .build();
     verify(gmailClient).sendEmail(expectedEmail);
   }
@@ -321,12 +319,10 @@ public class RelockDomainActionTest {
   private RelockDomainAction createAction(Long oldUnlockRevisionId, int previousAttempts)
       throws Exception {
     InternetAddress alertRecipientAddress = new InternetAddress("alerts@example.com");
-    InternetAddress gSuiteOutgoingAddress = new InternetAddress("outgoing@example.com");
     return new RelockDomainAction(
         oldUnlockRevisionId,
         previousAttempts,
         alertRecipientAddress,
-        gSuiteOutgoingAddress,
         "support@example.com",
         gmailClient,
         domainLockUtils,

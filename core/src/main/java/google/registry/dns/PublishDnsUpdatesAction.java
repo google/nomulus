@@ -118,7 +118,6 @@ public final class PublishDnsUpdatesAction implements Runnable, Callable<Void> {
   private final String dnsUpdateFailRegistryName;
   private final Lazy<InternetAddress> registrySupportEmail;
   private final Lazy<InternetAddress> registryCcEmail;
-  private final InternetAddress gSuiteOutgoingEmailAddress;
 
   @Inject
   public PublishDnsUpdatesAction(
@@ -136,7 +135,6 @@ public final class PublishDnsUpdatesAction implements Runnable, Callable<Void> {
       @Config("dnsUpdateFailRegistryName") String dnsUpdateFailRegistryName,
       @Config("registrySupportEmail") Lazy<InternetAddress> registrySupportEmail,
       @Config("registryCcEmail") Lazy<InternetAddress> registryCcEmail,
-      @Config("gSuiteOutgoingEmailAddress") InternetAddress gSuiteOutgoingEmailAddress,
       @Header(CLOUD_TASKS_RETRY_HEADER) int retryCount,
       DnsWriterProxy dnsWriterProxy,
       DnsMetrics dnsMetrics,
@@ -167,7 +165,6 @@ public final class PublishDnsUpdatesAction implements Runnable, Callable<Void> {
     this.dnsUpdateFailRegistryName = dnsUpdateFailRegistryName;
     this.registrySupportEmail = registrySupportEmail;
     this.registryCcEmail = registryCcEmail;
-    this.gSuiteOutgoingEmailAddress = gSuiteOutgoingEmailAddress;
   }
 
   private void recordActionResult(ActionStatus status) {
@@ -309,7 +306,6 @@ public final class PublishDnsUpdatesAction implements Runnable, Callable<Void> {
               .setSubject(dnsUpdateFailEmailSubjectText)
               .setRecipients(recipients)
               .addBcc(registryCcEmail.get())
-              .setFrom(gSuiteOutgoingEmailAddress)
               .build());
 
     } else {

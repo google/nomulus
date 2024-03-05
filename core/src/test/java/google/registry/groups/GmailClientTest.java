@@ -75,7 +75,6 @@ public class GmailClientTest {
         EmailMessage.create(
             "subject",
             "body",
-            new InternetAddress("from@example.com"),
             new InternetAddress("to@example.com"));
     Send gSend = mock(Send.class);
     Messages gMessages = mock(Messages.class);
@@ -93,7 +92,6 @@ public class GmailClientTest {
         EmailMessage.create(
             "subject",
             "body",
-            new InternetAddress("from@example.com"),
             new InternetAddress("to@example.com"));
     getGmailClient(false).sendEmail(message);
     verifyNoInteractions(gmail);
@@ -107,7 +105,6 @@ public class GmailClientTest {
     InternetAddress bccAddr = new InternetAddress("bcc@example.com");
     EmailMessage emailMessage =
         EmailMessage.newBuilder()
-            .setFrom(fromAddr)
             .setRecipients(ImmutableList.of(toAddr))
             .setSubject("My subject")
             .setBody("My body")
@@ -148,7 +145,6 @@ public class GmailClientTest {
     InternetAddress replyToAddr = new InternetAddress("some-addr@another.com");
     EmailMessage emailMessage =
         EmailMessage.newBuilder()
-            .setFrom(fromAddr)
             .setRecipients(ImmutableList.of(toAddr))
             .setReplyToEmailAddress(replyToAddr)
             .setSubject("My subject")
