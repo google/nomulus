@@ -71,7 +71,7 @@ while (( "$#" > 0 )); do
     "gs://${dev_project}-deploy/${release_tag}/beam/${metadata_basename}" \
     --image-gcr-path "${image_name}:${release_tag}" \
     --sdk-language "JAVA" \
-    --flex-template-base-image JAVA17 \
+    --flex-template-base-image gcr.io/dataflow-templates-base/java21-template-launcher-base:latest \
     --metadata-file "./core/src/main/resources/${metadata_pathname}" \
     --jar "./core/build/libs/${uberjar_name}.jar" \
     --env FLEX_TEMPLATE_JAVA_MAIN_CLASS="${main_class}" \
