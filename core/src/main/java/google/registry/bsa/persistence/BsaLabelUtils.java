@@ -33,7 +33,7 @@ import google.registry.persistence.VKey;
 import java.time.Duration;
 import java.util.Map;
 import java.util.Optional;
-import org.apache.commons.lang3.stream.Streams;
+import java.util.Set;
 
 /** Helpers for {@link BsaLabel}. */
 public final class BsaLabelUtils {
@@ -41,7 +41,7 @@ public final class BsaLabelUtils {
   private BsaLabelUtils() {}
 
   static final CacheLoader<VKey<BsaLabel>, Optional<BsaLabel>> CACHE_LOADER =
-      new CacheLoader<VKey<BsaLabel>, Optional<BsaLabel>>() {
+      new CacheLoader<>() {
 
         @Override
         public Optional<BsaLabel> load(VKey<BsaLabel> key) {
@@ -49,11 +49,11 @@ public final class BsaLabelUtils {
         }
 
         @Override
-        public Map<VKey<BsaLabel>, Optional<BsaLabel>> loadAll(
-            Iterable<? extends VKey<BsaLabel>> keys) {
+        public Map<? extends VKey<BsaLabel>, ? extends Optional<BsaLabel>> loadAll(
+            Set<? extends VKey<BsaLabel>> keys) {
           ImmutableMap<VKey<? extends BsaLabel>, BsaLabel> existingLabels =
               replicaTm().reTransact(() -> replicaTm().loadByKeysIfPresent(keys));
-          return Streams.of(keys)
+          return keys.stream()
               .collect(
                   toImmutableMap(key -> key, key -> Optional.ofNullable(existingLabels.get(key))));
         }
@@ -75,7 +75,7 @@ public final class BsaLabelUtils {
    * <p>Since the cached BSA labels have the same usage pattern as the cached EppResources, the
    * cache configuration for the latter are reused here.
    */
-  private static LoadingCache<VKey<BsaLabel>, Optional<BsaLabel>> cacheBsaLabels =
+  private static final LoadingCache<VKey<BsaLabel>, Optional<BsaLabel>> cacheBsaLabels =
       createBsaLabelsCache(getEppResourceCachingDuration());
 
   private static LoadingCache<VKey<BsaLabel>, Optional<BsaLabel>> createBsaLabelsCache(

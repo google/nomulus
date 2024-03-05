@@ -16,8 +16,8 @@ package google.registry.model.tld;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
-import static com.google.common.collect.Maps.toMap;
 import static google.registry.config.RegistryConfig.getSingletonCacheRefreshDuration;
 import static google.registry.model.EntityYamlUtils.createObjectMapper;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
@@ -106,7 +106,7 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
   @Column(name = "tld_name", nullable = false)
   String tldStr;
 
-  /** The suffix that identifies roids as belonging to this specific tld, e.g. -HOW for .how. */
+  /** The suffix that identifies roids as belonging to this specific tld, e.g., -HOW for .how. */
   String roidSuffix;
 
   /** Default values for all the relevant TLD parameters. */
@@ -234,7 +234,7 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
   private static final LoadingCache<String, Tld> CACHE =
       CacheUtils.newCacheBuilder(getSingletonCacheRefreshDuration())
           .build(
-              new CacheLoader<String, Tld>() {
+              new CacheLoader<>() {
                 @Override
                 public Tld load(final String tld) {
                   return tm().reTransact(() -> tm().loadByKeyIfPresent(createVKey(tld)))
@@ -242,9 +242,9 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
                 }
 
                 @Override
-                public Map<String, Tld> loadAll(Iterable<? extends String> tlds) {
+                public Map<? extends String, ? extends Tld> loadAll(Set<? extends String> tlds) {
                   ImmutableMap<String, VKey<Tld>> keysMap =
-                      toMap(ImmutableSet.copyOf(tlds), Tld::createVKey);
+                      tlds.stream().collect(toImmutableMap(tld -> tld, Tld::createVKey));
                   Map<VKey<? extends Tld>, Tld> entities =
                       tm().reTransact(() -> tm().loadByKeysIfPresent(keysMap.values()));
                   return Maps.transformEntries(keysMap, (k, v) -> entities.getOrDefault(v, null));

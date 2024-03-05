@@ -260,7 +260,7 @@ dependencies {
   implementation deps['us.fatehi:schemacrawler-diagram']
   implementation deps['us.fatehi:schemacrawler-tools']
   implementation deps['xerces:xmlParserAPIs']
-  implementation deps['xpp3:xpp3']
+  implementation deps['org.ogce:xpp3']
   // This dependency must come after javax.mail:mail as it would otherwise
   // shadow classes in package javax.mail with its own implementation.
   implementation deps['com.google.appengine:appengine-api-1.0-sdk']

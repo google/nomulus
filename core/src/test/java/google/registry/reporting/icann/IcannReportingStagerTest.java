@@ -92,11 +92,11 @@ class IcannReportingStagerTest {
     String expectedReport2 = "fooField,barField\r\n56,78";
     byte[] generatedFile1 =
         gcsUtils.readBytesFrom(
-            BlobId.of("test-bucket/icann/monthly/2017-06", "fooTld-activity-201706.csv"));
+            BlobId.of("test-bucket", "icann/monthly/2017-06/fooTld-activity-201706.csv"));
     assertThat(new String(generatedFile1, UTF_8)).isEqualTo(expectedReport1);
     byte[] generatedFile2 =
         gcsUtils.readBytesFrom(
-            BlobId.of("test-bucket/icann/monthly/2017-06", "barTld-activity-201706.csv"));
+            BlobId.of("test-bucket", "icann/monthly/2017-06/barTld-activity-201706.csv"));
     assertThat(new String(generatedFile2, UTF_8)).isEqualTo(expectedReport2);
   }
 
@@ -134,11 +134,11 @@ class IcannReportingStagerTest {
     String expectedReport2 = "registrar,iana,field\r\n\"reg1\",123,30\r\nTotals,,30";
     byte[] generatedFile1 =
         gcsUtils.readBytesFrom(
-            BlobId.of("test-bucket/icann/monthly/2017-06", "fooTld-transactions-201706.csv"));
+            BlobId.of("test-bucket", "icann/monthly/2017-06/fooTld-transactions-201706.csv"));
     assertThat(new String(generatedFile1, UTF_8)).isEqualTo(expectedReport1);
     byte[] generatedFile2 =
         gcsUtils.readBytesFrom(
-            BlobId.of("test-bucket/icann/monthly/2017-06", "barTld-transactions-201706.csv"));
+            BlobId.of("test-bucket", "icann/monthly/2017-06/barTld-transactions-201706.csv"));
     assertThat(new String(generatedFile2, UTF_8)).isEqualTo(expectedReport2);
   }
 
@@ -151,7 +151,7 @@ class IcannReportingStagerTest {
 
     String expectedManifest = "fooTld-transactions-201706.csv\nbarTld-activity-201706.csv\n";
     byte[] generatedManifest =
-        gcsUtils.readBytesFrom(BlobId.of("test-bucket/icann/monthly/2017-06", "MANIFEST.txt"));
+        gcsUtils.readBytesFrom(BlobId.of("test-bucket", "icann/monthly/2017-06/MANIFEST.txt"));
     assertThat(new String(generatedManifest, UTF_8)).isEqualTo(expectedManifest);
   }
 

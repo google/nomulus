@@ -23,7 +23,9 @@ import com.google.common.io.CharStreams;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
-import java.net.URL;
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.Map;
 import java.util.function.Function;
 import javax.inject.Inject;
@@ -81,14 +83,17 @@ public class MetricParameters {
   private static HttpURLConnection gceConnectionFactory(String path) {
     String url = GCE_METADATA_URL_BASE + path;
     try {
-      HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
+      HttpURLConnection connection = (HttpURLConnection) new URI(url).toURL().openConnection();
       connection.setRequestMethod("GET");
       // The metadata server requires this header to be set when querying from a GCE instance.
       connection.setRequestProperty("Metadata-Flavor", "Google");
       connection.setDoOutput(true);
       return connection;
-    } catch (IOException e) {
+    } catch (URISyntaxException | MalformedURLException e) {
       throw new RuntimeException(String.format("Incorrect GCE metadata server URL: %s", url), e);
+    } catch (IOException e) {
+      throw new RuntimeException(
+          String.format("Cannot connect to GCE metadata server: %s", url), e);
     }
   }
 

@@ -15,7 +15,7 @@ import org.gradle.process.internal.ExecException
 // limitations under the License.
 
 plugins {
-  id "org.flywaydb.flyway" version "6.0.1"
+  id "org.flywaydb.flyway" version "10.8.1"
   id 'maven-publish'
 }
 
@@ -160,6 +160,7 @@ dependencies {
   def deps = rootProject.dependencyMap
 
   implementation deps['org.flywaydb:flyway-core']
+  runtimeOnly deps['org.flywaydb:flyway-database-postgresql']
 
   runtimeOnly deps['com.google.cloud.sql:postgres-socket-factory']
   runtimeOnly deps['org.postgresql:postgresql']

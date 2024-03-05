@@ -322,19 +322,18 @@ public class AllocationToken extends UpdateAutoTimestampEntity implements Builda
       ALLOCATION_TOKENS_CACHE =
           CacheUtils.newCacheBuilder(getSingletonCacheRefreshDuration())
               .build(
-                  new CacheLoader<VKey<AllocationToken>, Optional<AllocationToken>>() {
+                  new CacheLoader<>() {
                     @Override
                     public Optional<AllocationToken> load(VKey<AllocationToken> key) {
                       return tm().reTransact(() -> tm().loadByKeyIfPresent(key));
                     }
 
                     @Override
-                    public Map<VKey<AllocationToken>, Optional<AllocationToken>> loadAll(
-                        Iterable<? extends VKey<AllocationToken>> keys) {
-                      ImmutableSet<VKey<AllocationToken>> keySet = ImmutableSet.copyOf(keys);
+                    public Map<? extends VKey<AllocationToken>, ? extends Optional<AllocationToken>>
+                        loadAll(Set<? extends VKey<AllocationToken>> keys) {
                       return tm().reTransact(
                               () ->
-                                  keySet.stream()
+                                  keys.stream()
                                       .collect(
                                           toImmutableMap(
                                               key -> key, key -> tm().loadByKeyIfPresent(key))));

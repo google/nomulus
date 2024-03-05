@@ -29,7 +29,6 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
-import com.google.common.collect.Streams;
 import google.registry.config.RegistryConfig;
 import google.registry.model.contact.Contact;
 import google.registry.model.domain.Domain;
@@ -42,6 +41,7 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
+import java.util.Set;
 import javax.annotation.Nullable;
 import org.joda.time.DateTime;
 
@@ -83,7 +83,7 @@ public final class ForeignKeyUtils {
    * active at or after the specified moment in time.
    *
    * <p>The returned map will omit any foreign keys for which the {@link EppResource} doesn't exist
-   * or has been soft deleted.
+   * or has been soft-deleted.
    */
   public static <E extends EppResource> ImmutableMap<String, VKey<E>> load(
       Class<E> clazz, Collection<String> foreignKeys, final DateTime now) {
@@ -94,7 +94,7 @@ public final class ForeignKeyUtils {
 
   /**
    * Helper method to load {@link VKey}s to all the most recent {@link EppResource}s for the given
-   * foreign keys, regardless of whether or not they have been soft-deleted.
+   * foreign keys, regardless of whether they have been soft-deleted.
    *
    * <p>Used by both the cached (w/o deletion check) and the non-cached (with deletion check) calls.
    *
@@ -129,24 +129,25 @@ public final class ForeignKeyUtils {
 
   private static final CacheLoader<VKey<? extends EppResource>, Optional<MostRecentResource>>
       CACHE_LOADER =
-          new CacheLoader<VKey<? extends EppResource>, Optional<MostRecentResource>>() {
+          new CacheLoader<>() {
 
             @Override
             public Optional<MostRecentResource> load(VKey<? extends EppResource> key) {
-              return loadAll(ImmutableList.of(key)).get(key);
+              return loadAll(ImmutableSet.of(key)).get(key);
             }
 
             @Override
-            public Map<VKey<? extends EppResource>, Optional<MostRecentResource>> loadAll(
-                Iterable<? extends VKey<? extends EppResource>> keys) {
-              if (!keys.iterator().hasNext()) {
+            public Map<
+                    ? extends VKey<? extends EppResource>, ? extends Optional<MostRecentResource>>
+                loadAll(Set<? extends VKey<? extends EppResource>> keys) {
+              if (keys.isEmpty()) {
                 return ImmutableMap.of();
               }
               // It is safe to use the resource type of first element because when this function is
               // called, it is always passed with a list of VKeys with the same type.
               Class<? extends EppResource> clazz = keys.iterator().next().getKind();
               ImmutableList<String> foreignKeys =
-                  Streams.stream(keys).map(key -> (String) key.getKey()).collect(toImmutableList());
+                  keys.stream().map(key -> (String) key.getKey()).collect(toImmutableList());
               ImmutableMap<String, MostRecentResource> existingKeys =
                   ForeignKeyUtils.load(clazz, foreignKeys, true);
               // The above map only contains keys that exist in the database, so we re-add the
@@ -166,7 +167,7 @@ public final class ForeignKeyUtils {
    *
    * <p>Note that here the key of the {@link LoadingCache} is of type {@code VKey<? extends
    * EppResource>}, but they are not legal {@link VKey}s to {@link EppResource}s, whose keys are the
-   * SQL primary keys, i.e. the {@code repoId}s. Instead, their keys are the foreign keys used to
+   * SQL primary keys, i.e., the {@code repoId}s. Instead, their keys are the foreign keys used to
    * query the database. We use {@link VKey} here because it is a convenient composite class that
    * contains both the resource type and the foreign key, which are needed to for the query and
    * caching.
@@ -199,7 +200,7 @@ public final class ForeignKeyUtils {
    * that are active at or after the specified moment in time, using the cache if enabled.
    *
    * <p>The returned map will omit any keys for which the {@link EppResource} doesn't exist or has
-   * been soft deleted.
+   * been soft-deleted.
    *
    * <p>Don't use the cached version of this method unless you really need it for performance
    * reasons, and are OK with the trade-offs in loss of transactional consistency.

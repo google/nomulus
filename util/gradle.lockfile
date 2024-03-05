@@ -3,8 +3,8 @@
 # This file is expected to be part of source control.
 aopalliance:aopalliance:1.0=annotationProcessor,errorprone,testAnnotationProcessor
 com.fasterxml.jackson.core:jackson-annotations:2.10.3=testCompileClasspath,testRuntimeClasspath
-com.github.ben-manes.caffeine:caffeine:2.9.3=deploy_jar,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 com.github.ben-manes.caffeine:caffeine:3.0.5=annotationProcessor,errorprone,testAnnotationProcessor
+com.github.ben-manes.caffeine:caffeine:3.1.8=deploy_jar,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 com.github.docker-java:docker-java-api:3.3.5=testCompileClasspath,testRuntimeClasspath
 com.github.docker-java:docker-java-transport-zerodep:3.3.5=testCompileClasspath,testRuntimeClasspath
 com.github.docker-java:docker-java-transport:3.3.5=testCompileClasspath,testRuntimeClasspath
