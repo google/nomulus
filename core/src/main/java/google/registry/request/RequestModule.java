@@ -43,12 +43,12 @@ import google.registry.request.auth.AuthResult;
 import google.registry.request.lock.LockHandler;
 import google.registry.request.lock.LockHandlerImpl;
 import google.registry.tools.GsonUtils;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 import java.util.Map;
 import java.util.Optional;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
 import org.json.simple.JSONValue;
 import org.json.simple.parser.ParseException;
 

@@ -23,7 +23,7 @@ import javax.inject.Qualifier;
 /**
  * Dagger qualifier for the HTTP request URL.
  *
- * @see javax.servlet.http.HttpServletRequest#getRequestURL()
+ * @see jakarta.servlet.http.HttpServletRequest#getRequestURL()
  */
 @Retention(RUNTIME)
 @Qualifier

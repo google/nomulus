@@ -25,8 +25,8 @@ import google.registry.request.Action;
 import google.registry.request.Action.Method;
 import google.registry.request.Parameter;
 import google.registry.request.auth.Auth;
+import jakarta.servlet.http.HttpServletRequest;
 import javax.inject.Inject;
-import javax.servlet.http.HttpServletRequest;
 
 /** Runs EPP commands directly without logging in, verifying an XSRF token from the tool. */
 @Action(

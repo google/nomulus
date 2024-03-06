@@ -23,8 +23,8 @@ import static google.registry.security.XsrfTokenManager.X_CSRF_TOKEN;
 import com.google.appengine.api.users.UserService;
 import com.google.common.collect.ImmutableSet;
 import google.registry.security.XsrfTokenManager;
+import jakarta.servlet.http.HttpServletRequest;
 import javax.inject.Inject;
-import javax.servlet.http.HttpServletRequest;
 
 /**
  * Authentication mechanism for legacy cookie-based App Engine authentication.

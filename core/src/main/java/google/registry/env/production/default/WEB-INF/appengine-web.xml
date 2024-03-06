@@ -11,7 +11,6 @@
   </manual-scaling>
 
   <system-properties>
-    <property name="appengine.use.EE8" value="true"/>
     <property name="java.util.logging.config.file"
               value="WEB-INF/logging.properties"/>
     <property name="google.registry.environment"

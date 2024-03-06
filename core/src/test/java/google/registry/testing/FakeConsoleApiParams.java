@@ -21,8 +21,8 @@ import google.registry.request.auth.AuthResult;
 import google.registry.request.auth.UserAuthInfo;
 import google.registry.security.XsrfTokenManager;
 import google.registry.ui.server.registrar.ConsoleApiParams;
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.Optional;
-import javax.servlet.http.HttpServletRequest;
 import org.joda.time.DateTime;
 
 public final class FakeConsoleApiParams {

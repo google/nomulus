@@ -22,7 +22,7 @@ import javax.inject.Qualifier;
 /**
  * Dagger qualifier for the HTTP servlet path, prepended with scheme, host and port.
  *
- * See {@link javax.servlet.http.HttpServletRequest#getServletPath}
+ * <p>See {@link jakarta.servlet.http.HttpServletRequest#getServletPath}
  */
 @Qualifier
 @Documented
