@@ -422,11 +422,15 @@ subprojects {
   }
 }
 
-// Force SDK download to be sequential, otherwise parallel tasks will try to
-// write to the same location to upgrade gcloud and fail.
+// Force SDK download and deployment to be sequential, otherwise parallel tasks
+// will fail. For SDK download, they will try to write to the same location to
+// upgrade gcloud. For deployment, they will try to deploy different services to
+// the same project at the same time.
 for (int i = 1; i < services.size(); i++) {
   project("${services[i]}").downloadCloudSdk
           .dependsOn(project("${services[i - 1]}").downloadCloudSdk)
+  project("${services[i]}").appengineDeployAll
+          .dependsOn(project("${services[i - 1]}").appengineDeployAll)
 }
 
 // If "-P verboseTestOutput=true" is passed in, configure all subprojects to dump all of their
