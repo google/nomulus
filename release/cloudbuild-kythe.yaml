@@ -34,6 +34,7 @@ steps:
     jvmopts="$${jvmopts} --add-exports=jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED"
     jvmopts="$${jvmopts} --add-exports=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED"
     jvmopts="$${jvmopts} --add-exports=jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED"
+    jvmopts="$${jvmopts} --add-exports=jdk.internal.opt/jdk.internal.opt=ALL-UNNAMED"
     export KYTHE_JAVA_RUNTIME_OPTIONS=$${jvmopts}
     export KYTHE_VNAMES="$${PWD}/vnames.json"
     export KYTHE_ROOT_DIRECTORY="$${PWD}"
