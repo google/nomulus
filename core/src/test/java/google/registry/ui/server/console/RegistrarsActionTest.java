@@ -43,13 +43,13 @@ import google.registry.testing.DeterministicStringGenerator;
 import google.registry.testing.FakeResponse;
 import google.registry.ui.server.registrar.RegistrarConsoleModule;
 import google.registry.util.StringGenerator;
+import jakarta.servlet.http.HttpServletRequest;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.StringReader;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import javax.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 

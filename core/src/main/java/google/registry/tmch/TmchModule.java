@@ -23,9 +23,9 @@ import dagger.Provides;
 import google.registry.keyring.api.KeyModule.Key;
 import google.registry.request.HttpException.BadRequestException;
 import google.registry.request.Parameter;
+import jakarta.servlet.http.HttpServletRequest;
 import java.net.MalformedURLException;
 import java.net.URL;
-import javax.servlet.http.HttpServletRequest;
 import org.bouncycastle.openpgp.PGPPublicKey;
 
 /** Dagger module for TMCH package. */

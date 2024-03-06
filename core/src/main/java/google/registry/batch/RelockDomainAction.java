@@ -19,8 +19,8 @@ import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.request.Action.Method.POST;
 import static google.registry.tools.LockOrUnlockDomainCommand.REGISTRY_LOCK_STATUSES;
-import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
-import static javax.servlet.http.HttpServletResponse.SC_OK;
+import static jakarta.servlet.http.HttpServletResponse.SC_NO_CONTENT;
+import static jakarta.servlet.http.HttpServletResponse.SC_OK;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.flogger.FluentLogger;

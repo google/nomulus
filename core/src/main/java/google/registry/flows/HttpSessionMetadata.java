@@ -18,9 +18,9 @@ import static com.google.common.base.MoreObjects.toStringHelper;
 import static google.registry.util.CollectionUtils.nullToEmpty;
 
 import com.google.common.base.Joiner;
+import jakarta.servlet.http.HttpSession;
 import java.util.Optional;
 import java.util.Set;
-import javax.servlet.http.HttpSession;
 
 /** A metadata class that is a wrapper around {@link HttpSession}. */
 public class HttpSessionMetadata implements SessionMetadata {

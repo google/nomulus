@@ -20,10 +20,10 @@ import static google.registry.request.Action.Method.GET;
 import static google.registry.request.Action.Method.POST;
 import static google.registry.xml.ValidationMode.LENIENT;
 import static google.registry.xml.ValidationMode.STRICT;
+import static jakarta.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+import static jakarta.servlet.http.HttpServletResponse.SC_NO_CONTENT;
+import static jakarta.servlet.http.HttpServletResponse.SC_OK;
 import static java.util.function.Function.identity;
-import static javax.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
-import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
-import static javax.servlet.http.HttpServletResponse.SC_OK;
 
 import com.google.api.services.dataflow.Dataflow;
 import com.google.api.services.dataflow.model.LaunchFlexTemplateParameter;

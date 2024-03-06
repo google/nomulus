@@ -37,8 +37,8 @@ import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationT
 import google.registry.testing.FakeClock;
 import google.registry.util.CidrAddressBlock;
 import google.registry.util.ProxyHttpHeaders;
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.Optional;
-import javax.servlet.http.HttpServletRequest;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;

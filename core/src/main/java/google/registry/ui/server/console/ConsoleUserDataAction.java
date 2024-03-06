@@ -23,8 +23,8 @@ import google.registry.model.console.User;
 import google.registry.request.Action;
 import google.registry.request.auth.Auth;
 import google.registry.ui.server.registrar.ConsoleApiParams;
+import jakarta.servlet.http.Cookie;
 import javax.inject.Inject;
-import javax.servlet.http.Cookie;
 import org.json.JSONObject;
 
 @Action(

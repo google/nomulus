@@ -16,10 +16,10 @@ package google.registry.export.sheet;
 
 import static com.google.common.net.MediaType.PLAIN_TEXT_UTF_8;
 import static google.registry.request.Action.Method.POST;
-import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
-import static javax.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
-import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
-import static javax.servlet.http.HttpServletResponse.SC_OK;
+import static jakarta.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
+import static jakarta.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+import static jakarta.servlet.http.HttpServletResponse.SC_NO_CONTENT;
+import static jakarta.servlet.http.HttpServletResponse.SC_OK;
 
 import com.google.common.flogger.FluentLogger;
 import google.registry.config.RegistryConfig.Config;
