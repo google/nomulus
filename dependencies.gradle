@@ -206,8 +206,6 @@ ext {
       'org.apache.tomcat:tomcat-annotations-api:[8.0.5,)',
       'org.checkerframework:checker-compat-qual:[2.5.5,)',
       'org.checkerframework:checker-qual:[3.9.1,)',
-      'org.eclipse.jetty:jetty-server:[9.4.49.v20220914,)',
-      'org.eclipse.jetty:jetty-servlet:[9.4.49.v20220914,)',
       'org.flywaydb:flyway-core:[10.0.0,)',
       'org.flywaydb:flyway-database-postgresql:[10.0.0,)',
       'org.hamcrest:hamcrest-core:[2.2,)',
