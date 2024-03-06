@@ -21,7 +21,7 @@ import static google.registry.model.EppResourceUtils.loadByForeignKeyCached;
 import static google.registry.model.tld.Tlds.findTldForName;
 import static google.registry.model.tld.Tlds.getTlds;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
+import static jakarta.servlet.http.HttpServletResponse.SC_NOT_FOUND;
 
 import com.google.auto.value.AutoValue;
 import com.google.common.annotations.VisibleForTesting;

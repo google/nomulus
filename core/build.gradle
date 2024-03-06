@@ -199,7 +199,7 @@ dependencies {
   implementation deps['javax.mail:mail']
   implementation deps['javax.inject:javax.inject']
   implementation deps['javax.persistence:javax.persistence-api']
-  implementation deps['javax.servlet:servlet-api']
+  implementation deps['jakarta.servlet:jakarta.servlet-api']
   implementation deps['javax.xml.bind:jaxb-api']
   implementation deps['jline:jline']
   implementation deps['joda-time:joda-time']
@@ -230,10 +230,10 @@ dependencies {
   implementation deps['org.joda:joda-money']
   implementation deps['org.json:json']
   implementation deps['org.jsoup:jsoup']
-  testImplementation deps['org.mortbay.jetty:jetty']
+  testImplementation deps['org.eclipse.jetty:jetty-server']
+  testImplementation deps['org.eclipse.jetty.ee10:jetty-ee10-servlet']
+  testImplementation deps['org.eclipse.jetty.ee10:jetty-ee10-webapp']
   implementation deps['org.postgresql:postgresql']
-  implementation "org.eclipse.jetty:jetty-server:9.4.49.v20220914"
-  implementation "org.eclipse.jetty:jetty-servlet:9.4.49.v20220914"
   testImplementation deps['org.seleniumhq.selenium:selenium-api']
   testImplementation deps['org.seleniumhq.selenium:selenium-chrome-driver']
   testImplementation deps['org.seleniumhq.selenium:selenium-java']

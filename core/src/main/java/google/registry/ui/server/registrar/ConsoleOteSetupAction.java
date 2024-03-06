@@ -17,7 +17,7 @@ package google.registry.ui.server.registrar;
 import static com.google.common.base.Preconditions.checkState;
 import static google.registry.ui.server.SoyTemplateUtils.CSS_RENAMING_MAP_SUPPLIER;
 import static google.registry.util.RegistryEnvironment.PRODUCTION;
-import static javax.servlet.http.HttpServletResponse.SC_FORBIDDEN;
+import static jakarta.servlet.http.HttpServletResponse.SC_FORBIDDEN;
 
 import com.google.common.base.Ascii;
 import com.google.common.base.Supplier;

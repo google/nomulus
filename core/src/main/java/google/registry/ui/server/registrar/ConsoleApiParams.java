@@ -18,7 +18,7 @@ import com.google.auto.value.AutoValue;
 import google.registry.request.Response;
 import google.registry.request.auth.AuthResult;
 import google.registry.security.XsrfTokenManager;
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 
 /** Groups necessary dependencies for Console API actions * */
 @AutoValue

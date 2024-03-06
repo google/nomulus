@@ -24,9 +24,9 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Ordering;
 import com.google.common.flogger.FluentLogger;
 import google.registry.request.auth.AuthSettings.AuthMethod;
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.Optional;
 import javax.inject.Inject;
-import javax.servlet.http.HttpServletRequest;
 
 /** Top-level authentication/authorization class; calls authentication mechanisms as needed. */
 public class RequestAuthenticator {
