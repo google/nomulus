@@ -16,12 +16,12 @@ package google.registry.testing;
 
 import static com.google.common.base.Preconditions.checkState;
 
+import jakarta.servlet.ServletContext;
+import jakarta.servlet.http.HttpSession;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
 import javax.annotation.Nullable;
-import javax.servlet.ServletContext;
-import javax.servlet.http.HttpSession;
 
 /** A fake {@link HttpSession} that only provides support for getting/setting attributes. */
 @SuppressWarnings("deprecation")
@@ -62,28 +62,13 @@ public class FakeHttpSession implements HttpSession {
   }
 
   @Override
-  public javax.servlet.http.HttpSessionContext getSessionContext() {
-    throw new UnsupportedOperationException();
-  }
-
-  @Override
   public Object getAttribute(@Nullable String name) {
     checkState(isValid, "This session has been invalidated.");
     return map.get(name);
   }
 
   @Override
-  public Object getValue(@Nullable String name) {
-    throw new UnsupportedOperationException();
-  }
-
-  @Override
-  public Enumeration<?> getAttributeNames() {
-    throw new UnsupportedOperationException();
-  }
-
-  @Override
-  public String[] getValueNames() {
+  public Enumeration<String> getAttributeNames() {
     throw new UnsupportedOperationException();
   }
 
@@ -94,19 +79,9 @@ public class FakeHttpSession implements HttpSession {
   }
 
   @Override
-  public void putValue(@Nullable String name, @Nullable Object value) {
-    throw new UnsupportedOperationException();
-  }
-
-  @Override
   public void removeAttribute(@Nullable String name) {
     checkState(isValid, "This session has been invalidated.");
     map.remove(name);
-  }
-
-  @Override
-  public void removeValue(@Nullable String name) {
-    throw new UnsupportedOperationException();
   }
 
   @Override

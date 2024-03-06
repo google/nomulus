@@ -17,9 +17,9 @@ package google.registry.request;
 import static com.google.common.html.HtmlEscapers.htmlEscaper;
 
 import com.google.common.flogger.FluentLogger;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.logging.Level;
-import javax.servlet.http.HttpServletResponse;
 
 /** Base for exceptions that cause an HTTP error response. */
 public abstract class HttpException extends RuntimeException {

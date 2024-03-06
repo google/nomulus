@@ -17,7 +17,7 @@ package google.registry.reporting.icann;
 import static com.google.common.net.MediaType.PLAIN_TEXT_UTF_8;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.request.Action.Method.POST;
-import static javax.servlet.http.HttpServletResponse.SC_OK;
+import static jakarta.servlet.http.HttpServletResponse.SC_OK;
 
 import com.google.cloud.storage.BlobId;
 import com.google.common.collect.ImmutableMap;

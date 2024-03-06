@@ -18,7 +18,7 @@ import static google.registry.dns.DnsUtils.requestDomainDnsRefresh;
 import static google.registry.dns.RefreshDnsOnHostRenameAction.PATH;
 import static google.registry.model.EppResourceUtils.getLinkedDomainKeys;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
+import static jakarta.servlet.http.HttpServletResponse.SC_NO_CONTENT;
 
 import com.google.common.net.MediaType;
 import google.registry.model.EppResourceUtils;

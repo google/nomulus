@@ -15,7 +15,7 @@
 package google.registry.reporting.spec11;
 
 import static com.google.common.truth.Truth.assertThat;
-import static javax.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+import static jakarta.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 import static org.apache.http.HttpStatus.SC_OK;
 import static org.mockito.Mockito.when;
 
