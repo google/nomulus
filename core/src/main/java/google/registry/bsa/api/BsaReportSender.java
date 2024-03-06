@@ -14,9 +14,9 @@
 
 package google.registry.bsa.api;
 
+import static jakarta.servlet.http.HttpServletResponse.SC_ACCEPTED;
+import static jakarta.servlet.http.HttpServletResponse.SC_OK;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static javax.servlet.http.HttpServletResponse.SC_ACCEPTED;
-import static javax.servlet.http.HttpServletResponse.SC_OK;
 
 import com.google.api.client.http.HttpMethods;
 import com.google.common.flogger.FluentLogger;

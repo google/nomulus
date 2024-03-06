@@ -20,7 +20,7 @@ import javax.inject.Qualifier;
 /**
  * Dagger qualifier for the HTTP request method.
  *
- * @see javax.servlet.http.HttpServletRequest#getMethod()
+ * @see jakarta.servlet.http.HttpServletRequest#getMethod()
  */
 @Qualifier
 @Documented

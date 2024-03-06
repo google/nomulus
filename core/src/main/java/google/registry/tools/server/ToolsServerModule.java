@@ -23,8 +23,8 @@ import static google.registry.request.RequestParameters.extractRequiredParameter
 import dagger.Module;
 import dagger.Provides;
 import google.registry.request.Parameter;
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.Optional;
-import javax.servlet.http.HttpServletRequest;
 
 /**
  * Dagger module for the tools package.

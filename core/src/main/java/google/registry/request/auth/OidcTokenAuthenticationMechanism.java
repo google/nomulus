@@ -27,10 +27,10 @@ import google.registry.request.auth.AuthModule.RegularOidc;
 import google.registry.request.auth.AuthModule.RegularOidcFallback;
 import google.registry.request.auth.AuthSettings.AuthLevel;
 import google.registry.util.RegistryEnvironment;
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.Optional;
 import javax.annotation.Nullable;
 import javax.inject.Inject;
-import javax.servlet.http.HttpServletRequest;
 
 /**
  * An authenticam mechanism that verifies the OIDC token.

@@ -36,8 +36,8 @@ import google.registry.model.console.UserRoles;
 import google.registry.request.auth.AuthSettings.AuthLevel;
 import google.registry.request.auth.AuthSettings.AuthMethod;
 import google.registry.request.auth.AuthSettings.UserPolicy;
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.Optional;
-import javax.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 

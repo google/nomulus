@@ -14,7 +14,7 @@
 
 package google.registry.rdap;
 
-import static javax.servlet.http.HttpServletResponse.SC_OK;
+import static jakarta.servlet.http.HttpServletResponse.SC_OK;
 import static org.mockito.Mockito.verify;
 
 import com.google.common.collect.ImmutableListMultimap;

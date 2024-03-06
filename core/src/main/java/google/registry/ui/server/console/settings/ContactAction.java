@@ -37,10 +37,10 @@ import google.registry.request.auth.AuthResult;
 import google.registry.ui.forms.FormException;
 import google.registry.ui.server.registrar.JsonGetAction;
 import google.registry.ui.server.registrar.RegistrarSettingsAction;
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.Collections;
 import java.util.Optional;
 import javax.inject.Inject;
-import javax.servlet.http.HttpServletRequest;
 
 @Action(
     service = Action.Service.DEFAULT,

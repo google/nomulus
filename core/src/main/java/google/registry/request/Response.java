@@ -15,8 +15,8 @@
 package google.registry.request;
 
 import com.google.common.net.MediaType;
-import javax.servlet.http.Cookie;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletResponse;
 import org.joda.time.DateTime;
 
 /**

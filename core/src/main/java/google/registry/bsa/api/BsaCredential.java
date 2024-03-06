@@ -15,8 +15,8 @@
 package google.registry.bsa.api;
 
 import static google.registry.request.UrlConnectionUtils.getResponseBytes;
+import static jakarta.servlet.http.HttpServletResponse.SC_OK;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static javax.servlet.http.HttpServletResponse.SC_OK;
 
 import com.google.api.client.http.HttpMethods;
 import com.google.common.annotations.VisibleForTesting;

@@ -200,7 +200,7 @@ dependencies {
   implementation deps['javax.mail:mail']
   implementation deps['javax.inject:javax.inject']
   implementation deps['javax.persistence:javax.persistence-api']
-  implementation deps['javax.servlet:servlet-api']
+  implementation deps['jakarta.servlet:jakarta.servlet-api']
   implementation deps['javax.xml.bind:jaxb-api']
   implementation deps['jline:jline']
   implementation deps['joda-time:joda-time']
