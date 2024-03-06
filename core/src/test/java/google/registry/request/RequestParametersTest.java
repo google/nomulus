@@ -30,7 +30,7 @@ import static org.mockito.Mockito.when;
 
 import com.google.common.collect.ImmutableMap;
 import google.registry.request.HttpException.BadRequestException;
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.Test;
 
@@ -168,41 +168,41 @@ class RequestParametersTest {
 
   @Test
   void testExtractBooleanParameter_presentWithoutValue_returnsTrue() {
-    when(req.getParameterMap()).thenReturn(ImmutableMap.of("love", ""));
+    when(req.getParameterMap()).thenReturn(ImmutableMap.of("love", new String[] {}));
     assertThat(extractBooleanParameter(req, "love")).isTrue();
   }
 
   @Test
   void testExtractBooleanParameter_empty_returnsTrue() {
-    when(req.getParameterMap()).thenReturn(ImmutableMap.of("love", ""));
+    when(req.getParameterMap()).thenReturn(ImmutableMap.of("love", new String[] {}));
     when(req.getParameter("love")).thenReturn("");
     assertThat(extractBooleanParameter(req, "love")).isTrue();
   }
 
   @Test
   void testExtractBooleanParameter_presentStringArbitrary_returnsTrue() {
-    when(req.getParameterMap()).thenReturn(ImmutableMap.of("love", "lol"));
+    when(req.getParameterMap()).thenReturn(ImmutableMap.of("love", new String[] {"lol"}));
     when(req.getParameter("love")).thenReturn("lol");
     assertThat(extractBooleanParameter(req, "love")).isTrue();
   }
 
   @Test
   void testExtractBooleanParameter_presentStringTrue_returnsTrue() {
-    when(req.getParameterMap()).thenReturn(ImmutableMap.of("love", "true"));
+    when(req.getParameterMap()).thenReturn(ImmutableMap.of("love", new String[] {"true"}));
     when(req.getParameter("love")).thenReturn("true");
     assertThat(extractBooleanParameter(req, "love")).isTrue();
   }
 
   @Test
   void testExtractBooleanParameter_presentStringFalse_returnsFalse() {
-    when(req.getParameterMap()).thenReturn(ImmutableMap.of("love", "false"));
+    when(req.getParameterMap()).thenReturn(ImmutableMap.of("love", new String[] {"false"}));
     when(req.getParameter("love")).thenReturn("false");
     assertThat(extractBooleanParameter(req, "love")).isFalse();
   }
 
   @Test
   void testExtractBooleanParameter_presentStringFalse_caseInsensitive() {
-    when(req.getParameterMap()).thenReturn(ImmutableMap.of("love", "FaLsE"));
+    when(req.getParameterMap()).thenReturn(ImmutableMap.of("love", new String[] {"FaLsE"}));
     when(req.getParameter("love")).thenReturn("FaLsE");
     assertThat(extractBooleanParameter(req, "love")).isFalse();
   }

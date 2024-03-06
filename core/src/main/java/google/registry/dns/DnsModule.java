@@ -31,9 +31,9 @@ import google.registry.dns.DnsUtils.TargetType;
 import google.registry.dns.writer.DnsWriterZone;
 import google.registry.request.Parameter;
 import google.registry.request.RequestParameters;
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.Optional;
 import java.util.Set;
-import javax.servlet.http.HttpServletRequest;
 import org.joda.time.DateTime;
 
 /** Dagger module for the dns package. */

@@ -24,9 +24,9 @@ import com.google.common.base.Ascii;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableSet;
 import google.registry.request.HttpException.BadRequestException;
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.Optional;
 import javax.annotation.Nullable;
-import javax.servlet.http.HttpServletRequest;
 import org.joda.time.DateTime;
 
 /** Utilities for extracting parameters from HTTP requests. */

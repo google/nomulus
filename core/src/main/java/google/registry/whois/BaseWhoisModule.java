@@ -18,9 +18,9 @@ import dagger.Module;
 import dagger.Provides;
 import google.registry.util.Clock;
 import google.registry.whois.WhoisMetrics.WhoisMetric;
+import jakarta.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.io.Reader;
-import javax.servlet.http.HttpServletRequest;
 
 /**
  * Dagger base module for the whois package.

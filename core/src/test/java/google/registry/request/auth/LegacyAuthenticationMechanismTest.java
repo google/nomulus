@@ -29,7 +29,7 @@ import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationT
 import google.registry.request.auth.AuthSettings.AuthLevel;
 import google.registry.security.XsrfTokenManager;
 import google.registry.testing.FakeClock;
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

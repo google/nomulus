@@ -24,8 +24,8 @@ import static google.registry.tmch.LordnTaskUtils.COLUMNS_CLAIMS;
 import static google.registry.tmch.LordnTaskUtils.COLUMNS_SUNRISE;
 import static google.registry.tmch.LordnTaskUtils.getCsvLineForClaimsDomain;
 import static google.registry.tmch.LordnTaskUtils.getCsvLineForSunriseDomain;
+import static jakarta.servlet.http.HttpServletResponse.SC_ACCEPTED;
 import static java.nio.charset.StandardCharsets.US_ASCII;
-import static javax.servlet.http.HttpServletResponse.SC_ACCEPTED;
 
 import com.google.api.client.http.HttpMethods;
 import com.google.cloud.tasks.v2.Task;

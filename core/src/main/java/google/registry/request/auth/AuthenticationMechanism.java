@@ -14,7 +14,7 @@
 
 package google.registry.request.auth;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 
 /**
  * A particular way to authenticate an HTTP request, returning an {@link AuthResult}.
