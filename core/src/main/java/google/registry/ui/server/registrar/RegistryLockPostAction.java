@@ -46,13 +46,13 @@ import google.registry.request.auth.UserAuthInfo;
 import google.registry.security.JsonResponseHelper;
 import google.registry.tools.DomainLockUtils;
 import google.registry.util.EmailMessage;
+import jakarta.servlet.http.HttpServletRequest;
 import java.net.URISyntaxException;
 import java.util.Map;
 import java.util.Optional;
 import javax.inject.Inject;
 import javax.mail.internet.AddressException;
 import javax.mail.internet.InternetAddress;
-import javax.servlet.http.HttpServletRequest;
 import org.apache.http.client.utils.URIBuilder;
 import org.joda.time.Duration;
 

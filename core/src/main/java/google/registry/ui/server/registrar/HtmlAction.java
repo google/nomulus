@@ -16,7 +16,7 @@ package google.registry.ui.server.registrar;
 
 import static com.google.common.net.HttpHeaders.LOCATION;
 import static com.google.common.net.HttpHeaders.X_FRAME_OPTIONS;
-import static javax.servlet.http.HttpServletResponse.SC_MOVED_TEMPORARILY;
+import static jakarta.servlet.http.HttpServletResponse.SC_MOVED_TEMPORARILY;
 
 import com.google.appengine.api.users.UserService;
 import com.google.common.flogger.FluentLogger;
@@ -28,10 +28,10 @@ import google.registry.request.Response;
 import google.registry.request.auth.AuthResult;
 import google.registry.request.auth.UserAuthInfo;
 import google.registry.security.XsrfTokenManager;
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.HashMap;
 import java.util.Map;
 import javax.inject.Inject;
-import javax.servlet.http.HttpServletRequest;
 
 /**
  * Handles some of the nitty-gritty of responding to requests that should return HTML, including

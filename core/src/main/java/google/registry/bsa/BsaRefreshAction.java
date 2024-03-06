@@ -17,7 +17,7 @@ package google.registry.bsa;
 import static google.registry.bsa.BsaStringUtils.LINE_SPLITTER;
 import static google.registry.request.Action.Method.GET;
 import static google.registry.request.Action.Method.POST;
-import static javax.servlet.http.HttpServletResponse.SC_OK;
+import static jakarta.servlet.http.HttpServletResponse.SC_OK;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.flogger.FluentLogger;

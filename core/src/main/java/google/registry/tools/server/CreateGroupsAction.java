@@ -16,8 +16,8 @@ package google.registry.tools.server;
 
 import static google.registry.export.SyncGroupMembersAction.getGroupEmailAddressForContactType;
 import static google.registry.request.Action.Method.POST;
+import static jakarta.servlet.http.HttpServletResponse.SC_OK;
 import static java.util.Arrays.asList;
-import static javax.servlet.http.HttpServletResponse.SC_OK;
 
 import com.google.common.flogger.FluentLogger;
 import google.registry.config.RegistryConfig.Config;
