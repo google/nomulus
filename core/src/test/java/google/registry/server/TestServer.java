@@ -36,6 +36,7 @@ import java.util.concurrent.FutureTask;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.TimeUnit;
 import org.eclipse.jetty.ee10.servlet.DefaultServlet;
+import org.eclipse.jetty.ee10.servlet.ServletContextHandler;
 import org.eclipse.jetty.ee10.servlet.ServletHolder;
 import org.eclipse.jetty.ee10.webapp.WebAppContext;
 import org.eclipse.jetty.server.Server;
@@ -149,8 +150,9 @@ public final class TestServer {
     }
   }
 
-  private WebAppContext createHandler(Map<String, Path> runfiles, ImmutableList<Route> routes) {
-    WebAppContext context = new WebAppContext();
+  private ServletContextHandler createHandler(
+      Map<String, Path> runfiles, ImmutableList<Route> routes) {
+    ServletContextHandler context = new ServletContextHandler(CONTEXT_PATH, WebAppContext.SESSIONS);
     ServletHolder holder;
     context.setContextPath(CONTEXT_PATH);
     context.addServlet(HealthzServlet.class, "/healthz");
