@@ -210,7 +210,6 @@ ext {
       'org.eclipse.jetty:jetty-servlet:[9.4.49.v20220914,)',
       'org.flywaydb:flyway-core:[10.0.0,)',
       'org.flywaydb:flyway-database-postgresql:[10.0.0,)',
-      'org.glassfish.jaxb:jaxb-runtime:[2.3.0,)',
       'org.hamcrest:hamcrest-core:[2.2,)',
       'org.hamcrest:hamcrest-library:[2.2,)',
       'org.hamcrest:hamcrest:[2.2,)',
