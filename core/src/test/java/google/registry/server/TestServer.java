@@ -35,12 +35,11 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.TimeUnit;
-import org.eclipse.jetty.server.Connector;
+import org.eclipse.jetty.ee10.servlet.DefaultServlet;
+import org.eclipse.jetty.ee10.servlet.ServletHolder;
+import org.eclipse.jetty.ee10.webapp.WebAppContext;
 import org.eclipse.jetty.server.Server;
-import org.eclipse.jetty.server.SocketConnector;
-import org.eclipse.jetty.servlet.Context;
-import org.eclipse.jetty.servlet.DefaultServlet;
-import org.eclipse.jetty.servlet.ServletHolder;
+import org.eclipse.jetty.server.ServerConnector;
 
 /**
  * HTTP server that serves static content and handles servlet requests in the calling thread.
@@ -50,11 +49,11 @@ import org.eclipse.jetty.servlet.ServletHolder;
  * requests made to servlets (not static files) in the calling thread.
  *
  * <p><b>Note:</b> This server is intended for development purposes. For the love all that is good,
- * do not make this public facing.
+ * do not make this public-facing.
  *
  * <h3>Implementation Details</h3>
  *
- * <p>Jetty6 is multithreaded and provides no mechanism for controlling which threads execute your
+ * <p>Jetty is multithreaded and provides no mechanism for controlling which threads execute your
  * requests. HttpServer solves this problem by wrapping all the servlets provided to the constructor
  * inside {@link ServletWrapperDelegatorServlet}. When requests come in, a {@link FutureTask} will
  * be sent back to this class using a {@link LinkedBlockingDeque} message queue. Those messages are
@@ -81,8 +80,11 @@ public final class TestServer {
   public TestServer(
       HostAndPort address, ImmutableMap<String, Path> runfiles, ImmutableList<Route> routes) {
     urlAddress = createUrlAddress(address);
-    server.addConnector(createConnector(address));
-    server.addHandler(createHandler(runfiles, routes));
+    ServerConnector connector = new ServerConnector(server);
+    connector.setHost(urlAddress.getHost());
+    connector.setPort(urlAddress.getPortOrDefault(DEFAULT_PORT));
+    server.addConnector(connector);
+    server.setHandler(createHandler(runfiles, routes));
   }
 
   /** Starts the HTTP server in a new thread and returns once it's online. */
@@ -147,32 +149,25 @@ public final class TestServer {
     }
   }
 
-  private Context createHandler(Map<String, Path> runfiles, ImmutableList<Route> routes) {
-    Context context = new Context(server, CONTEXT_PATH, Context.SESSIONS);
-    context.addServlet(new ServletHolder(HealthzServlet.class), "/healthz");
+  private WebAppContext createHandler(Map<String, Path> runfiles, ImmutableList<Route> routes) {
+    WebAppContext context = new WebAppContext();
+    ServletHolder holder;
+    context.setContextPath(CONTEXT_PATH);
+    context.addServlet(HealthzServlet.class, "/healthz");
     for (Map.Entry<String, Path> runfile : runfiles.entrySet()) {
-      context.addServlet(
-          StaticResourceServlet.create(runfile.getKey(), runfile.getValue()),
-          runfile.getKey());
+      holder = context.addServlet(StaticResourceServlet.class, runfile.getKey());
+      StaticResourceServlet.configureServletHolder(holder, runfile.getKey(), runfile.getValue());
     }
     for (Route route : routes) {
-      context.addServlet(new ServletHolder(wrapServlet(route.servletClass())), route.path());
+      context.addServlet(wrapServlet(route.servletClass()), route.path());
     }
-    ServletHolder holder = new ServletHolder(DefaultServlet.class);
+    holder = context.addServlet(DefaultServlet.class, "/*");
     holder.setInitParameter("aliases", "1");
-    context.addServlet(holder, "/*");
     return context;
   }
 
   private HttpServlet wrapServlet(Class<? extends HttpServlet> servletClass) {
     return new ServletWrapperDelegatorServlet(servletClass, requestQueue);
-  }
-
-  private static Connector createConnector(HostAndPort address) {
-    SocketConnector connector = new SocketConnector();
-    connector.setHost(address.getHost());
-    connector.setPort(address.getPortOrDefault(DEFAULT_PORT));
-    return connector;
   }
 
   /** Converts a bind address into an address that other machines can use to connect here. */

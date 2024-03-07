@@ -233,6 +233,7 @@ dependencies {
   implementation deps['org.jsoup:jsoup']
   testImplementation deps['org.eclipse.jetty:jetty-server']
   testImplementation deps['org.eclipse.jetty.ee10:jetty-ee10-servlet']
+  testImplementation deps['org.eclipse.jetty.ee10:jetty-ee10-webapp']
   implementation deps['org.postgresql:postgresql']
   //implementation "org.eclipse.jetty:jetty-server:9.4.49.v20220914"
   //implementation "org.eclipse.jetty:jetty-servlet:9.4.49.v20220914"

@@ -33,7 +33,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Optional;
 import javax.annotation.PostConstruct;
-import org.eclipse.jetty.servlet.ServletHolder;
+import org.eclipse.jetty.ee10.servlet.ServletHolder;
 
 /**
  * Servlet for serving static resources on a Jetty development server path prefix.
@@ -70,11 +70,10 @@ public final class StaticResourceServlet extends HttpServlet {
    *     is a directory
    * @param root file or root directory to serve
    */
-  public static ServletHolder create(String prefix, Path root) {
+  public static void configureServletHolder(ServletHolder holder, String prefix, Path root) {
     root = root.toAbsolutePath();
     checkArgument(Files.exists(root), "Root must exist: %s", root);
     checkArgument(prefix.startsWith("/"), "Prefix must start with a slash: %s", prefix);
-    ServletHolder holder = new ServletHolder(StaticResourceServlet.class);
     holder.setInitParameter("root", root.toString());
     if (Files.isDirectory(root)) {
       checkArgument(prefix.endsWith("/*"),
@@ -83,7 +82,6 @@ public final class StaticResourceServlet extends HttpServlet {
     } else {
       holder.setInitParameter("prefix", prefix);
     }
-    return holder;
   }
 
   private Optional<FileServer> fileServer = Optional.empty();
