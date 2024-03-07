@@ -72,21 +72,18 @@ public class SendExpiringCertificateNotificationEmailAction implements Runnable 
   private final String expirationWarningEmailBodyText;
   private final GmailClient gmailClient;
   private final String expirationWarningEmailSubjectText;
-  private final InternetAddress gSuiteOutgoingEmailAddress;
   private final Response response;
 
   @Inject
   public SendExpiringCertificateNotificationEmailAction(
       @Config("expirationWarningEmailBodyText") String expirationWarningEmailBodyText,
       @Config("expirationWarningEmailSubjectText") String expirationWarningEmailSubjectText,
-      @Config("gSuiteOutgoingEmailAddress") InternetAddress gSuiteOutgoingEmailAddress,
       GmailClient gmailClient,
       CertificateChecker certificateChecker,
       Response response) {
     this.certificateChecker = certificateChecker;
     this.expirationWarningEmailSubjectText = expirationWarningEmailSubjectText;
     this.gmailClient = gmailClient;
-    this.gSuiteOutgoingEmailAddress = gSuiteOutgoingEmailAddress;
     this.expirationWarningEmailBodyText = expirationWarningEmailBodyText;
     this.response = response;
   }
@@ -172,7 +169,6 @@ public class SendExpiringCertificateNotificationEmailAction implements Runnable 
       }
       gmailClient.sendEmail(
           EmailMessage.newBuilder()
-              .setFrom(gSuiteOutgoingEmailAddress)
               .setSubject(expirationWarningEmailSubjectText)
               .setBody(
                   getEmailBody(

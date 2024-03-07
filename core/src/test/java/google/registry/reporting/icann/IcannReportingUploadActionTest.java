@@ -78,7 +78,6 @@ class IcannReportingUploadActionTest {
     action.retrier = new Retrier(new FakeSleeper(new FakeClock()), 3);
     action.reportingBucket = "basin";
     action.gmailClient = gmailClient;
-    action.sender = new InternetAddress("sender@example.com");
     action.recipient = new InternetAddress("recipient@example.com");
     action.response = response;
     action.clock = clock;
@@ -136,8 +135,7 @@ class IcannReportingUploadActionTest {
                     + "foo-transactions-200606.csv - SUCCESS\n"
                     + "tld-activity-200606.csv - FAILURE\n"
                     + "tld-transactions-200606.csv - SUCCESS",
-                new InternetAddress("recipient@example.com"),
-                new InternetAddress("sender@example.com")));
+                new InternetAddress("recipient@example.com")));
   }
 
   @Test
@@ -169,8 +167,7 @@ class IcannReportingUploadActionTest {
                 "Report Filename - Upload status:\n"
                     + "tld-activity-200512.csv - SUCCESS\n"
                     + "tld-transactions-200512.csv - SUCCESS",
-                new InternetAddress("recipient@example.com"),
-                new InternetAddress("sender@example.com")));
+                new InternetAddress("recipient@example.com")));
   }
 
   @Test
@@ -215,8 +212,7 @@ class IcannReportingUploadActionTest {
                     + "foo-transactions-200606.csv - SUCCESS\n"
                     + "tld-activity-200606.csv - FAILURE\n"
                     + "tld-transactions-200606.csv - SUCCESS",
-                new InternetAddress("recipient@example.com"),
-                new InternetAddress("sender@example.com")));
+                new InternetAddress("recipient@example.com")));
   }
 
   @Test
@@ -275,8 +271,7 @@ class IcannReportingUploadActionTest {
                     + "foo-transactions-200606.csv - SUCCESS\n"
                     + "tld-activity-200606.csv - FAILURE\n"
                     + "tld-transactions-200606.csv - SUCCESS",
-                new InternetAddress("recipient@example.com"),
-                new InternetAddress("sender@example.com")));
+                new InternetAddress("recipient@example.com")));
   }
 
   @Test
@@ -345,8 +340,7 @@ class IcannReportingUploadActionTest {
                     + "foo-transactions-200606.csv - SUCCESS\n"
                     + "tld-activity-200606.csv - FAILURE\n"
                     + "tld-transactions-200606.csv - SUCCESS",
-                new InternetAddress("recipient@example.com"),
-                new InternetAddress("sender@example.com")));
+                new InternetAddress("recipient@example.com")));
 
     Cursor newActivityCursor =
         loadByKey(Cursor.createScopedVKey(CursorType.ICANN_UPLOAD_ACTIVITY, Tld.get("new")));

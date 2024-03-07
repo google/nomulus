@@ -63,7 +63,6 @@ class IcannReportingStagingActionTest {
     action.response = response;
     action.stager = stager;
     action.retrier = new Retrier(new FakeSleeper(new FakeClock()), 3);
-    action.sender = new InternetAddress("sender@example.com");
     action.recipient = new InternetAddress("recipient@example.com");
     action.gmailClient = mock(GmailClient.class);
     action.cloudTasksUtils = cloudTasksHelper.getTestCloudTasksUtils();
@@ -94,8 +93,7 @@ class IcannReportingStagingActionTest {
             EmailMessage.create(
                 "ICANN Monthly report staging summary [SUCCESS]",
                 "Completed staging the following 2 ICANN reports:\na\nb",
-                new InternetAddress("recipient@example.com"),
-                new InternetAddress("sender@example.com")));
+                new InternetAddress("recipient@example.com")));
     assertUploadTaskEnqueued();
   }
 
@@ -110,8 +108,7 @@ class IcannReportingStagingActionTest {
             EmailMessage.create(
                 "ICANN Monthly report staging summary [SUCCESS]",
                 "Completed staging the following 4 ICANN reports:\na\nb\nc\nd",
-                new InternetAddress("recipient@example.com"),
-                new InternetAddress("sender@example.com")));
+                new InternetAddress("recipient@example.com")));
     assertUploadTaskEnqueued();
   }
 
@@ -129,8 +126,7 @@ class IcannReportingStagingActionTest {
             EmailMessage.create(
                 "ICANN Monthly report staging summary [SUCCESS]",
                 "Completed staging the following 4 ICANN reports:\na\nb\nc\nd",
-                new InternetAddress("recipient@example.com"),
-                new InternetAddress("sender@example.com")));
+                new InternetAddress("recipient@example.com")));
     assertUploadTaskEnqueued();
   }
 
@@ -153,8 +149,7 @@ class IcannReportingStagingActionTest {
                 "ICANN Monthly report staging summary [FAILURE]",
                 "Staging failed due to google.registry.bigquery.BigqueryJobFailureException: "
                     + "BigqueryJobFailureException: Expected failure, check logs for more details.",
-                new InternetAddress("recipient@example.com"),
-                new InternetAddress("sender@example.com")));
+                new InternetAddress("recipient@example.com")));
     // Assert no upload task enqueued
     cloudTasksHelper.assertNoTasksEnqueued("retryable-cron-tasks");
   }

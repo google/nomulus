@@ -82,7 +82,6 @@ public final class IcannReportingStagingAction implements Runnable {
   @Inject IcannReportingStager stager;
   @Inject Retrier retrier;
   @Inject Response response;
-  @Inject @Config("gSuiteOutgoingEmailAddress") InternetAddress sender;
 
   @Inject
   @Config("newAlertRecipientEmailAddress")
@@ -115,7 +114,6 @@ public final class IcannReportingStagingAction implements Runnable {
                             "Completed staging the following %d ICANN reports:\n%s",
                             manifestedFiles.size(), Joiner.on('\n').join(manifestedFiles)))
                     .addRecipient(recipient)
-                    .setFrom(sender)
                     .build());
 
             response.setStatus(SC_OK);
@@ -139,8 +137,7 @@ public final class IcannReportingStagingAction implements Runnable {
               "ICANN Monthly report staging summary [FAILURE]",
               String.format(
                   "Staging failed due to %s, check logs for more details.", getRootCause(e)),
-              recipient,
-              sender));
+              recipient));
       response.setStatus(SC_INTERNAL_SERVER_ERROR);
       response.setContentType(MediaType.PLAIN_TEXT_UTF_8);
       response.setPayload(

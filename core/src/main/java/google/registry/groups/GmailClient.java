@@ -79,9 +79,6 @@ public final class GmailClient {
 
   /**
    * Sends {@code emailMessage} using {@link Gmail}.
-   *
-   * <p>If the sender as specified by {@link EmailMessage#from} differs from the caller's identity,
-   * the caller must have delegated `send` authority to the sender.
    */
   public void sendEmail(EmailMessage emailMessage) {
     if (!isEmailSendingEnabled) {

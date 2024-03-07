@@ -22,7 +22,12 @@ import java.util.Collection;
 import java.util.Optional;
 import javax.mail.internet.InternetAddress;
 
-/** Value class representing the content and metadata of an email. */
+/**
+ * Value class representing the content and metadata of an email.
+ *
+ * <p>The sender address and display name are set by the email client and are not customizable by
+ * the user.
+ */
 @AutoValue
 public abstract class EmailMessage {
 
@@ -30,13 +35,11 @@ public abstract class EmailMessage {
     return new AutoValue_EmailMessage.Builder();
   }
 
-  public static EmailMessage create(
-      String subject, String body, InternetAddress recipient, InternetAddress from) {
+  public static EmailMessage create(String subject, String body, InternetAddress recipient) {
     return newBuilder()
         .setSubject(subject)
         .setBody(body)
         .setRecipients(ImmutableList.of(recipient))
-        .setFrom(from)
         .build();
   }
 
@@ -45,9 +48,6 @@ public abstract class EmailMessage {
   public abstract String body();
 
   public abstract ImmutableSet<InternetAddress> recipients();
-
-  // TODO(b/279671974): remove `from` after migration.
-  public abstract InternetAddress from();
 
   /** Optional return email address that overrides the default. */
   public abstract Optional<InternetAddress> replyToEmailAddress();
@@ -69,8 +69,6 @@ public abstract class EmailMessage {
     public abstract Builder setBody(String body);
 
     public abstract Builder setRecipients(Collection<InternetAddress> recipients);
-
-    public abstract Builder setFrom(InternetAddress from);
 
     public abstract Builder setReplyToEmailAddress(InternetAddress replyToEmailAddress);
 

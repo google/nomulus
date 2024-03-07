@@ -161,7 +161,6 @@ class Spec11EmailUtilsTest {
     List<EmailMessage> capturedContents = contentCaptor.getAllValues();
     validateMessage(
         capturedContents.get(0),
-        "abuse@test.com",
         "the.registrar@example.com",
         ImmutableList.of("abuse@test.com", "bcc@test.com"),
         "Super Cool Registry Monthly Threat Detector [2018-07-15]",
@@ -169,7 +168,6 @@ class Spec11EmailUtilsTest {
         Optional.of(MediaType.HTML_UTF_8));
     validateMessage(
         capturedContents.get(1),
-        "abuse@test.com",
         "new.registrar@example.com",
         ImmutableList.of("abuse@test.com", "bcc@test.com"),
         "Super Cool Registry Monthly Threat Detector [2018-07-15]",
@@ -179,7 +177,6 @@ class Spec11EmailUtilsTest {
         Optional.of(MediaType.HTML_UTF_8));
     validateMessage(
         capturedContents.get(2),
-        "abuse@test.com",
         "my-receiver@test.com",
         ImmutableList.of(),
         "Spec11 Pipeline Success 2018-07-15",
@@ -199,7 +196,6 @@ class Spec11EmailUtilsTest {
     List<EmailMessage> capturedMessages = contentCaptor.getAllValues();
     validateMessage(
         capturedMessages.get(0),
-        "abuse@test.com",
         "the.registrar@example.com",
         ImmutableList.of("abuse@test.com", "bcc@test.com"),
         "Super Cool Registry Daily Threat Detector [2018-07-15]",
@@ -207,7 +203,6 @@ class Spec11EmailUtilsTest {
         Optional.of(MediaType.HTML_UTF_8));
     validateMessage(
         capturedMessages.get(1),
-        "abuse@test.com",
         "new.registrar@example.com",
         ImmutableList.of("abuse@test.com", "bcc@test.com"),
         "Super Cool Registry Daily Threat Detector [2018-07-15]",
@@ -217,7 +212,6 @@ class Spec11EmailUtilsTest {
         Optional.of(MediaType.HTML_UTF_8));
     validateMessage(
         capturedMessages.get(2),
-        "abuse@test.com",
         "my-receiver@test.com",
         ImmutableList.of(),
         "Spec11 Pipeline Success 2018-07-15",
@@ -240,7 +234,6 @@ class Spec11EmailUtilsTest {
     List<EmailMessage> capturedContents = contentCaptor.getAllValues();
     validateMessage(
         capturedContents.get(0),
-        "abuse@test.com",
         "new.registrar@example.com",
         ImmutableList.of("abuse@test.com", "bcc@test.com"),
         "Super Cool Registry Monthly Threat Detector [2018-07-15]",
@@ -248,7 +241,6 @@ class Spec11EmailUtilsTest {
         Optional.of(MediaType.HTML_UTF_8));
     validateMessage(
         capturedContents.get(1),
-        "abuse@test.com",
         "my-receiver@test.com",
         ImmutableList.of(),
         "Spec11 Pipeline Success 2018-07-15",
@@ -273,7 +265,6 @@ class Spec11EmailUtilsTest {
     List<EmailMessage> capturedContents = contentCaptor.getAllValues();
     validateMessage(
         capturedContents.get(0),
-        "abuse@test.com",
         "the.registrar@example.com",
         ImmutableList.of("abuse@test.com", "bcc@test.com"),
         "Super Cool Registry Monthly Threat Detector [2018-07-15]",
@@ -281,7 +272,6 @@ class Spec11EmailUtilsTest {
         Optional.of(MediaType.HTML_UTF_8));
     validateMessage(
         capturedContents.get(1),
-        "abuse@test.com",
         "new.registrar@example.com",
         ImmutableList.of("abuse@test.com", "bcc@test.com"),
         "Super Cool Registry Monthly Threat Detector [2018-07-15]",
@@ -291,7 +281,6 @@ class Spec11EmailUtilsTest {
         Optional.of(MediaType.HTML_UTF_8));
     validateMessage(
         capturedContents.get(2),
-        "abuse@test.com",
         "my-receiver@test.com",
         ImmutableList.of(),
         "Spec11 Pipeline Success 2018-07-15",
@@ -328,7 +317,6 @@ class Spec11EmailUtilsTest {
     List<EmailMessage> capturedMessages = contentCaptor.getAllValues();
     validateMessage(
         capturedMessages.get(0),
-        "abuse@test.com",
         "the.registrar@example.com",
         ImmutableList.of("abuse@test.com", "bcc@test.com"),
         "Super Cool Registry Monthly Threat Detector [2018-07-15]",
@@ -336,7 +324,6 @@ class Spec11EmailUtilsTest {
         Optional.of(MediaType.HTML_UTF_8));
     validateMessage(
         capturedMessages.get(1),
-        "abuse@test.com",
         "new.registrar@example.com",
         ImmutableList.of("abuse@test.com", "bcc@test.com"),
         "Super Cool Registry Monthly Threat Detector [2018-07-15]",
@@ -346,7 +333,6 @@ class Spec11EmailUtilsTest {
         Optional.of(MediaType.HTML_UTF_8));
     validateMessage(
         capturedMessages.get(2),
-        "abuse@test.com",
         "my-receiver@test.com",
         ImmutableList.of(),
         "Spec11 Emailing Failure 2018-07-15",
@@ -360,7 +346,6 @@ class Spec11EmailUtilsTest {
     verify(gmailClient).sendEmail(contentCaptor.capture());
     validateMessage(
         contentCaptor.getValue(),
-        "abuse@test.com",
         "my-receiver@test.com",
         ImmutableList.of(),
         "Spec11 Pipeline Alert: 2018-07",
@@ -409,7 +394,6 @@ class Spec11EmailUtilsTest {
 
   private void validateMessage(
       EmailMessage message,
-      String from,
       String recipient,
       ImmutableList<String> bccs,
       String subject,
@@ -418,7 +402,6 @@ class Spec11EmailUtilsTest {
       throws MessagingException {
     EmailMessage.Builder expectedContentBuilder =
         EmailMessage.newBuilder()
-            .setFrom(new InternetAddress(from))
             .addRecipient(new InternetAddress(recipient))
             .setSubject(subject)
             .setBody(body);

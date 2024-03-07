@@ -87,7 +87,6 @@ public class PublishDnsUpdatesActionTest {
   private final DnsMetrics dnsMetrics = mock(DnsMetrics.class);
   private final CloudTasksHelper cloudTasksHelper = new CloudTasksHelper();
   private PublishDnsUpdatesAction action;
-  private InternetAddress outgoingRegistry;
   private Lazy<InternetAddress> registrySupportEmail;
   private Lazy<InternetAddress> registryCcEmail;
   private final GmailClient emailService = mock(GmailClient.class);
@@ -96,7 +95,6 @@ public class PublishDnsUpdatesActionTest {
   void beforeEach() throws Exception {
     createTld("xn--q9jyb4c");
     createTld("com");
-    outgoingRegistry = new InternetAddress("outgoing@registry.example");
     registrySupportEmail = Lazies.of(new InternetAddress("registry@test.com"));
     registryCcEmail = Lazies.of(new InternetAddress("registry-cc@test.com"));
     persistResource(
@@ -159,7 +157,6 @@ public class PublishDnsUpdatesActionTest {
         "awesomeRegistry",
         registrySupportEmail,
         registryCcEmail,
-        outgoingRegistry,
         retryCount,
         new DnsWriterProxy(ImmutableMap.of("correctWriter", dnsWriter)),
         dnsMetrics,

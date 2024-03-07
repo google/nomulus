@@ -39,8 +39,6 @@ class SendEmailUtilsTest {
   private void setRecipients(ImmutableList<String> recipients) throws Exception {
     sendEmailUtils =
         new SendEmailUtils(
-            new InternetAddress("outgoing@registry.example"),
-            "outgoing display name",
             recipients,
             gmailClient);
   }
@@ -141,7 +139,6 @@ class SendEmailUtilsTest {
         EmailMessage.newBuilder()
             .setSubject("Welcome to the Internet")
             .setBody("It is a dark and scary place.")
-            .setFrom(new InternetAddress("outgoing@registry.example"))
             .addBcc(new InternetAddress("bar@example.com"))
             .setRecipients(recipientBuilder.build())
             .build();
@@ -186,7 +183,6 @@ class SendEmailUtilsTest {
         EmailMessage.newBuilder()
             .setSubject("Welcome to the Internet")
             .setBody("It is a dark and scary place.")
-            .setFrom(new InternetAddress("outgoing@registry.example"))
             .setRecipients(recipientBuilder.build())
             .build();
     assertThat(emailMessage).isEqualTo(expectedContent);
