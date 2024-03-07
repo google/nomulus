@@ -85,12 +85,6 @@ sourceSets {
     java {
       compileClasspath += nonprod.output
       runtimeClasspath += nonprod.output
-
-      // Javadoc API is deprecated in Java 11 and removed in Java 12.
-      // TODO(jianglai): re-enable after migrating to the new Javadoc API
-      if ((JavaVersion.current().majorVersion as Integer) >= 11) {
-        exclude 'google/registry/documentation/**'
-      }
     }
     resources {
       exclude '**/*.xjb', '**/*.xsd'
@@ -110,10 +104,8 @@ configurations {
   devtool
 
   nonprodImplementation.extendsFrom implementation
-  nonprodRuntime.extendsFrom runtime
 
   testImplementation.extendsFrom nonprodImplementation
-  testRuntimeOnly.extendsFrom nonprodRuntime
 
   // Published jars that are used for server/schema compatibility tests.
   // See <a href="../integration/README.md">the integration project</a>
@@ -174,7 +166,6 @@ dependencies {
   implementation deps['com.google.dagger:dagger']
   implementation deps['com.google.errorprone:error_prone_annotations']
   implementation deps['com.google.flogger:flogger']
-  runtime deps['com.google.flogger:flogger-system-backend']
   implementation deps['com.google.guava:guava']
   implementation deps['com.google.protobuf:protobuf-java']
   // Might need to add this back if we re-add nebula-lint
@@ -201,7 +192,6 @@ dependencies {
   implementation deps['com.zaxxer:HikariCP']
   implementation deps['com.squareup.okhttp3:okhttp']
   implementation deps['dnsjava:dnsjava']
-  runtime deps['guru.nidi:graphviz-java-all-j2v8']
   testImplementation deps['io.github.classgraph:classgraph']
   testRuntimeOnly deps['io.github.java-diff-utils:java-diff-utils']
   testImplementation deps['javax.annotation:javax.annotation-api']
@@ -235,7 +225,6 @@ dependencies {
   implementation deps['org.bouncycastle:bcpkix-jdk15on']
   implementation deps['org.bouncycastle:bcprov-jdk15on']
   testImplementation deps['com.fasterxml.jackson.core:jackson-databind']
-  runtime deps['org.glassfish.jaxb:jaxb-runtime']
   implementation deps['org.hibernate:hibernate-core']
   implementation deps['org.hibernate:hibernate-hikaricp']
   implementation deps['org.joda:joda-money']
@@ -301,7 +290,6 @@ dependencies {
   testImplementation deps['org.junit.platform:junit-platform-suite-api']
   testImplementation deps['org.mockito:mockito-core']
   testImplementation deps['org.mockito:mockito-junit-jupiter']
-  runtime deps['org.postgresql:postgresql']
 
   // Indirect dependency found by undeclared-dependency check. Such
   // dependencies should go after all other implementation and testImplementation
