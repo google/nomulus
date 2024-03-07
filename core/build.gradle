@@ -231,7 +231,8 @@ dependencies {
   implementation deps['org.joda:joda-money']
   implementation deps['org.json:json']
   implementation deps['org.jsoup:jsoup']
-  testImplementation deps['org.mortbay.jetty:jetty']
+  testImplementation deps['org.eclipse.jetty:jetty-server']
+  testImplementation deps['org.eclipse.jetty.ee10:jetty-ee10-servlet']
   implementation deps['org.postgresql:postgresql']
   //implementation "org.eclipse.jetty:jetty-server:9.4.49.v20220914"
   //implementation "org.eclipse.jetty:jetty-servlet:9.4.49.v20220914"
