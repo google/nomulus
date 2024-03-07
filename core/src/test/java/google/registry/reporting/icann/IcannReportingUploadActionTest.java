@@ -130,11 +130,12 @@ class IcannReportingUploadActionTest {
         .sendEmail(
             EmailMessage.create(
                 "ICANN Monthly report upload summary: 3/4 succeeded",
-                "Report Filename - Upload status:\n"
-                    + "foo-activity-200606.csv - SUCCESS\n"
-                    + "foo-transactions-200606.csv - SUCCESS\n"
-                    + "tld-activity-200606.csv - FAILURE\n"
-                    + "tld-transactions-200606.csv - SUCCESS",
+                """
+                    Report Filename - Upload status:
+                    foo-activity-200606.csv - SUCCESS
+                    foo-transactions-200606.csv - SUCCESS
+                    tld-activity-200606.csv - FAILURE
+                    tld-transactions-200606.csv - SUCCESS""",
                 new InternetAddress("recipient@example.com")));
   }
 
@@ -164,9 +165,10 @@ class IcannReportingUploadActionTest {
         .sendEmail(
             EmailMessage.create(
                 "ICANN Monthly report upload summary: 2/2 succeeded",
-                "Report Filename - Upload status:\n"
-                    + "tld-activity-200512.csv - SUCCESS\n"
-                    + "tld-transactions-200512.csv - SUCCESS",
+                """
+                    Report Filename - Upload status:
+                    tld-activity-200512.csv - SUCCESS
+                    tld-transactions-200512.csv - SUCCESS""",
                 new InternetAddress("recipient@example.com")));
   }
 
@@ -179,7 +181,7 @@ class IcannReportingUploadActionTest {
     action.run();
     Cursor cursor =
         loadByKey(Cursor.createScopedVKey(CursorType.ICANN_UPLOAD_ACTIVITY, Tld.get("tld")));
-    assertThat(cursor.getCursorTime()).isEqualTo(DateTime.parse("2006-08-01TZ"));
+    assertThat(cursor.getCursorTime()).isEqualTo(DateTime.parse("2006-08-02T10:00:00Z"));
   }
 
   @Test
@@ -207,11 +209,12 @@ class IcannReportingUploadActionTest {
         .sendEmail(
             EmailMessage.create(
                 "ICANN Monthly report upload summary: 3/4 succeeded",
-                "Report Filename - Upload status:\n"
-                    + "foo-activity-200606.csv - SUCCESS\n"
-                    + "foo-transactions-200606.csv - SUCCESS\n"
-                    + "tld-activity-200606.csv - FAILURE\n"
-                    + "tld-transactions-200606.csv - SUCCESS",
+                """
+                    Report Filename - Upload status:
+                    foo-activity-200606.csv - SUCCESS
+                    foo-transactions-200606.csv - SUCCESS
+                    tld-activity-200606.csv - FAILURE
+                    tld-transactions-200606.csv - SUCCESS""",
                 new InternetAddress("recipient@example.com")));
   }
 
@@ -266,11 +269,12 @@ class IcannReportingUploadActionTest {
         .sendEmail(
             EmailMessage.create(
                 "ICANN Monthly report upload summary: 3/4 succeeded",
-                "Report Filename - Upload status:\n"
-                    + "foo-activity-200606.csv - SUCCESS\n"
-                    + "foo-transactions-200606.csv - SUCCESS\n"
-                    + "tld-activity-200606.csv - FAILURE\n"
-                    + "tld-transactions-200606.csv - SUCCESS",
+                """
+                    Report Filename - Upload status:
+                    foo-activity-200606.csv - SUCCESS
+                    foo-transactions-200606.csv - SUCCESS
+                    tld-activity-200606.csv - FAILURE
+                    tld-transactions-200606.csv - SUCCESS""",
                 new InternetAddress("recipient@example.com")));
   }
 
@@ -313,14 +317,14 @@ class IcannReportingUploadActionTest {
     IcannReportingUploadAction action = createAction();
     action.lockHandler = new FakeLockHandler(false);
     ServiceUnavailableException thrown =
-        assertThrows(ServiceUnavailableException.class, () -> action.run());
+        assertThrows(ServiceUnavailableException.class, action::run);
     assertThat(thrown)
         .hasMessageThat()
         .contains("Lock for IcannReportingUploadAction already in use");
   }
 
   @Test
-  void testSuccess_nullCursorsInitiatedToFirstOfNextMonth() throws Exception {
+  void testSuccess_nullCursorsInitiatedToSecondOfNextMonth() throws Exception {
     createTlds("new");
 
     IcannReportingUploadAction action = createAction();
@@ -335,18 +339,20 @@ class IcannReportingUploadActionTest {
         .sendEmail(
             EmailMessage.create(
                 "ICANN Monthly report upload summary: 3/4 succeeded",
-                "Report Filename - Upload status:\n"
-                    + "foo-activity-200606.csv - SUCCESS\n"
-                    + "foo-transactions-200606.csv - SUCCESS\n"
-                    + "tld-activity-200606.csv - FAILURE\n"
-                    + "tld-transactions-200606.csv - SUCCESS",
+                """
+                    Report Filename - Upload status:
+                    foo-activity-200606.csv - SUCCESS
+                    foo-transactions-200606.csv - SUCCESS
+                    tld-activity-200606.csv - FAILURE
+                    tld-transactions-200606.csv - SUCCESS""",
                 new InternetAddress("recipient@example.com")));
 
     Cursor newActivityCursor =
         loadByKey(Cursor.createScopedVKey(CursorType.ICANN_UPLOAD_ACTIVITY, Tld.get("new")));
-    assertThat(newActivityCursor.getCursorTime()).isEqualTo(DateTime.parse("2006-08-01TZ"));
+    assertThat(newActivityCursor.getCursorTime()).isEqualTo(DateTime.parse("2006-08-02T10:00:00Z"));
     Cursor newTransactionCursor =
         loadByKey(Cursor.createScopedVKey(CursorType.ICANN_UPLOAD_TX, Tld.get("new")));
-    assertThat(newTransactionCursor.getCursorTime()).isEqualTo(DateTime.parse("2006-08-01TZ"));
+    assertThat(newTransactionCursor.getCursorTime())
+        .isEqualTo(DateTime.parse("2006-08-02T10:00:00Z"));
   }
 }
