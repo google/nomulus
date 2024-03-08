@@ -27,18 +27,17 @@ import java.util.Arrays;
 import javax.annotation.Nullable;
 import org.apache.ftpserver.FtpServer;
 import org.apache.ftpserver.ftplet.FtpException;
-import org.apache.sshd.common.NamedFactory;
 import org.apache.sshd.common.file.virtualfs.VirtualFileSystemFactory;
 import org.apache.sshd.common.keyprovider.KeyPairProvider;
 import org.apache.sshd.common.random.SingletonRandomFactory;
+import org.apache.sshd.common.session.SessionContext;
+import org.apache.sshd.scp.server.ScpCommandFactory;
 import org.apache.sshd.server.ServerBuilder;
 import org.apache.sshd.server.SshServer;
 import org.apache.sshd.server.auth.password.PasswordAuthenticator;
 import org.apache.sshd.server.auth.pubkey.PublickeyAuthenticator;
-import org.apache.sshd.server.command.Command;
-import org.apache.sshd.server.scp.ScpCommandFactory;
 import org.apache.sshd.server.session.ServerSession;
-import org.apache.sshd.server.subsystem.sftp.SftpSubsystemFactory;
+import org.apache.sshd.sftp.server.SftpSubsystemFactory;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openssl.PEMKeyPair;
 import org.bouncycastle.openssl.PEMParser;
@@ -131,7 +130,7 @@ public class TestSftpServer implements FtpServer {
     server.setCommandFactory(new ScpCommandFactory());
     server.setPort(port);
 
-    NamedFactory<Command> sftpSubsystemFactory = new SftpSubsystemFactory.Builder().build();
+    SftpSubsystemFactory sftpSubsystemFactory = new SftpSubsystemFactory.Builder().build();
     server.setSubsystemFactories(ImmutableList.of(sftpSubsystemFactory));
 
     if (authorizedPassword != null) {
@@ -150,17 +149,17 @@ public class TestSftpServer implements FtpServer {
               ImmutableMap.of(KEY_TYPE, HOST_KEY_PAIR);
 
           @Override
-          public Iterable<KeyPair> loadKeys() {
+          public Iterable<KeyPair> loadKeys(SessionContext context) {
             return keyPairByTypeMap.values();
           }
 
           @Override
-          public Iterable<String> getKeyTypes() {
+          public Iterable<String> getKeyTypes(SessionContext context) {
             return keyPairByTypeMap.keySet();
           }
 
           @Override
-          public KeyPair loadKey(final String type) {
+          public KeyPair loadKey(SessionContext context, final String type) {
             return keyPairByTypeMap.get(type);
           }
         };

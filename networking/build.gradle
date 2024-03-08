@@ -25,8 +25,8 @@ dependencies {
   implementation deps['io.netty:netty-handler']
   implementation deps['io.netty:netty-transport']
   implementation deps['javax.inject:javax.inject']
-  implementation deps['org.bouncycastle:bcpkix-jdk15on']
-  implementation deps['org.bouncycastle:bcprov-jdk15on']
+  implementation deps['org.bouncycastle:bcpkix-jdk18on']
+  implementation deps['org.bouncycastle:bcprov-jdk18on']
   implementation project(':util')
   implementation project(':common')
 
@@ -35,8 +35,6 @@ dependencies {
 
   testImplementation deps['com.google.truth:truth']
   testImplementation deps['junit:junit']
-  testImplementation deps['org.bouncycastle:bcpkix-jdk15on']
-  testImplementation deps['org.bouncycastle:bcprov-jdk15on']
   testImplementation deps['org.junit.jupiter:junit-jupiter-api']
   testImplementation deps['org.junit.jupiter:junit-jupiter-engine']
   testImplementation deps['org.junit.jupiter:junit-jupiter-params']

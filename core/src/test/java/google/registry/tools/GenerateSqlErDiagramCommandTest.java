@@ -45,7 +45,7 @@ class GenerateSqlErDiagramCommandTest extends CommandTestCase<GenerateSqlErDiagr
 
   @Test
   void testSchemaGeneration() throws Exception {
-    runCommand("--out_dir=" + tmpDir.resolve("diagram").toString());
+    runCommand("--out_dir=" + tmpDir.resolve("diagram"));
 
     Path fullDiagram = tmpDir.resolve("diagram/full_er_diagram.html");
     Document fullDiagramDoc = Jsoup.parse(fullDiagram.toFile(), StandardCharsets.UTF_8.name());

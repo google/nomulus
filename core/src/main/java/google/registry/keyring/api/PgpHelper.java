@@ -73,21 +73,17 @@ public final class PgpHelper {
    */
   public static PGPPublicKey lookupPublicKey(
       PGPPublicKeyRingCollection keyring, String query, KeyRequirement want) {
-    try {
-      Iterator<PGPPublicKeyRing> results =
-          keyring.getKeyRings(checkNotNull(query, "query"), true, true);
-      verify(results.hasNext(), "No public key found matching substring: %s", query);
-      while (results.hasNext()) {
-        Optional<PGPPublicKey> result = lookupPublicSubkey(results.next(), want);
-        if (result.isPresent()) {
-          return result.get();
-        }
+    Iterator<PGPPublicKeyRing> results =
+        keyring.getKeyRings(checkNotNull(query, "query"), true, true);
+    verify(results.hasNext(), "No public key found matching substring: %s", query);
+    while (results.hasNext()) {
+      Optional<PGPPublicKey> result = lookupPublicSubkey(results.next(), want);
+      if (result.isPresent()) {
+        return result.get();
       }
-      throw new VerifyException(String.format(
-          "No public key (%s) found matching substring: %s", want, query));
-    } catch (PGPException e) {
-      throw new VerifyException(String.format("Public key lookup failed for query: %s", query), e);
     }
+    throw new VerifyException(
+        String.format("No public key (%s) found matching substring: %s", want, query));
   }
 
   /**

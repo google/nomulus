@@ -38,8 +38,8 @@ dependencies {
   implementation deps['javax.mail:mail']
   implementation deps['javax.xml.bind:jaxb-api']
   implementation deps['joda-time:joda-time']
-  implementation deps['org.bouncycastle:bcpkix-jdk15on']
-  implementation deps['org.bouncycastle:bcprov-jdk15on']
+  implementation deps['org.bouncycastle:bcpkix-jdk18on']
+  implementation deps['org.bouncycastle:bcprov-jdk18on']
   implementation deps['org.checkerframework:checker-compat-qual']
   implementation deps['org.yaml:snakeyaml']
   implementation project(':common')
