@@ -28,6 +28,7 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.Sets;
 import com.google.common.collect.Sets.SetView;
 import com.google.common.flogger.FluentLogger;
+import google.registry.config.RegistryConfig.Config;
 import google.registry.request.Action;
 import google.registry.request.Response;
 import google.registry.request.auth.Auth;
@@ -47,12 +48,18 @@ public class BsaValidateAction implements Runnable {
 
   static final String PATH = "/_dr/task/bsaValidate";
   private final GcsClient gcsClient;
+  private final int transactionBatchSize;
   private final BsaLock bsaLock;
   private final Response response;
 
   @Inject
-  BsaValidateAction(GcsClient gcsClient, BsaLock bsaLock, Response response) {
+  BsaValidateAction(
+      GcsClient gcsClient,
+      @Config("bsaTxnBatchSize") int transactionBatchSize,
+      BsaLock bsaLock,
+      Response response) {
     this.gcsClient = gcsClient;
+    this.transactionBatchSize = transactionBatchSize;
     this.bsaLock = bsaLock;
     this.response = response;
   }
@@ -96,7 +103,7 @@ public class BsaValidateAction implements Runnable {
 
   ImmutableList<String> checkBsaLabels(String jobName) {
     ImmutableSet<String> downloadedLabels = fetchDownloadedLabels(jobName);
-    ImmutableSet<String> persistedLabels = fetchPersistedLabels(/* batchSize= */ 500);
+    ImmutableSet<String> persistedLabels = fetchPersistedLabels(transactionBatchSize);
     ImmutableList.Builder<String> errors = new ImmutableList.Builder<>();
 
     int nErrorExamples = 10;
@@ -115,7 +122,7 @@ public class BsaValidateAction implements Runnable {
       String errorMessage =
           String.format(
               "Found %d unexpected labels in the DB. Examples: [%s]",
-              missingLabels.size(), examples);
+              unexpectedLabels.size(), examples);
       logger.atInfo().log(errorMessage);
       errors.add(errorMessage);
     }
