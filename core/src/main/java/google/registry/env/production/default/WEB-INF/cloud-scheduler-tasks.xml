@@ -298,6 +298,18 @@
   </task>
 
   <task>
+    <url><![CDATA[/_dr/task/bsaValidate]]></url>
+    <name>bsaValidate</name>
+    <service>bsa</service>
+    <description>
+      Validates the processed BSA data in the database against the original
+      block lists.
+    </description>
+    <!-- Runs twice daily. -->
+    <schedule>50 9,21 * * *</schedule>
+  </task>
+
+  <task>
     <url><![CDATA[/_dr/task/uploadBsaUnavailableNames]]></url>
     <name>uploadBsaUnavailableNames</name>
     <description>

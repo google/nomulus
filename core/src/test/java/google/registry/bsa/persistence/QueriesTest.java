@@ -17,6 +17,7 @@ package google.registry.bsa.persistence;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.bsa.BsaTransactions.bsaQuery;
+import static google.registry.bsa.persistence.Queries.batchReadBsaLabelText;
 import static google.registry.bsa.persistence.Queries.deleteBsaLabelByLabels;
 import static google.registry.bsa.persistence.Queries.queryBsaLabelByLabels;
 import static google.registry.bsa.persistence.Queries.queryBsaUnblockableDomainByLabels;
@@ -35,6 +36,7 @@ import google.registry.bsa.persistence.BsaUnblockableDomain.Reason;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationWithCoverageExtension;
 import google.registry.testing.FakeClock;
+import java.util.Optional;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -112,6 +114,16 @@ class QueriesTest {
                             .collect(toImmutableList())))
         .containsExactly(
             new BsaLabel("label1", fakeClock.nowUtc()), new BsaLabel("label2", fakeClock.nowUtc()));
+  }
+
+  @Test
+  void batchReadBsaLabelText_firstBatch() {
+    assertThat(batchReadBsaLabelText(Optional.empty(), 1)).containsExactly("label1");
+  }
+
+  @Test
+  void batchReadBsaLabelText_nextBatch() {
+    assertThat(batchReadBsaLabelText(Optional.of("label1"), 1)).containsExactly("label2");
   }
 
   @Test

@@ -30,7 +30,6 @@ import google.registry.util.Clock;
 import java.util.Objects;
 import java.util.Optional;
 import javax.inject.Inject;
-import org.joda.time.DateTime;
 import org.joda.time.Duration;
 
 /**
@@ -115,16 +114,6 @@ public final class DownloadScheduler {
             });
   }
 
-  Optional<DateTime> latestCompletedJobTime() {
-    return tm().transact(
-            () -> {
-              return fetchTwoMostRecentDownloads().stream()
-                  .filter(job -> Objects.equals(job.getStage(), DONE))
-                  .map(BsaDownload::getCreationTime)
-                  .findFirst();
-            });
-  }
-
   private boolean isTimeAgain(BsaDownload mostRecent, Duration interval) {
     return mostRecent.getCreationTime().plus(interval).minus(CRON_JITTER).isBefore(clock.nowUtc());
   }
@@ -162,5 +151,15 @@ public final class DownloadScheduler {
 
   static Optional<BsaDownload> fetchMostRecentDownload() {
     return fetchTwoMostRecentDownloads().stream().findFirst();
+  }
+
+  /**
+   * Returns the most recent download {@code jobName} if it has been fully processed, and {@code
+   * empty} if the download is still being processed.
+   */
+  public static Optional<String> fetchMostRecentDownloadJobIdIfCompleted() {
+    return fetchMostRecentDownload()
+        .filter(bsaDownload -> Objects.equals(bsaDownload.getStage(), DONE))
+        .map(BsaDownload::getJobName);
   }
 }

@@ -30,13 +30,31 @@ import java.util.stream.Stream;
 import org.joda.time.DateTime;
 
 /** Helpers for querying BSA JPA entities. */
-class Queries {
+public final class Queries {
 
   private Queries() {}
 
+  /**
+   * Entity objects that may be updated in the same query must be detached. See {@code
+   * JpaTransactionManagerImpl}.
+   */
   private static Object detach(Object obj) {
     em().detach(obj);
     return obj;
+  }
+
+  public static ImmutableList<String> batchReadBsaLabelText(
+      Optional<String> lastRead, int batchSize) {
+
+    return ImmutableList.copyOf(
+        bsaQuery(
+            () ->
+                em().createQuery(
+                        "SELECT b.label FROM BsaLabel b WHERE b.label > :lastRead ORDER BY b.label",
+                        String.class)
+                    .setParameter("lastRead", lastRead.orElse(""))
+                    .setMaxResults(batchSize)
+                    .getResultList()));
   }
 
   static Stream<BsaUnblockableDomain> queryBsaUnblockableDomainByLabels(

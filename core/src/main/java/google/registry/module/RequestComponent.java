@@ -29,6 +29,7 @@ import google.registry.batch.SendExpiringCertificateNotificationEmailAction;
 import google.registry.batch.WipeOutContactHistoryPiiAction;
 import google.registry.bsa.BsaDownloadAction;
 import google.registry.bsa.BsaRefreshAction;
+import google.registry.bsa.BsaValidateAction;
 import google.registry.bsa.UploadBsaUnavailableDomainsAction;
 import google.registry.cron.CronModule;
 import google.registry.cron.TldFanoutAction;
@@ -166,6 +167,8 @@ interface RequestComponent {
   BsaDownloadAction bsaDownloadAction();
 
   BsaRefreshAction bsaRefreshAction();
+
+  BsaValidateAction bsaValidateAction();
 
   CannedScriptExecutionAction cannedScriptExecutionAction();
 
