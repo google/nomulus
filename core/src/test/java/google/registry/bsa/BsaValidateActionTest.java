@@ -57,7 +57,7 @@ public class BsaValidateActionTest {
   void setup() {
     gcsClient =
         new GcsClient(new GcsUtils(LocalStorageHelper.getOptions()), "my-bucket", "SHA-256");
-    action = new BsaValidateAction(gcsClient, bsaLock, response);
+    action = new BsaValidateAction(gcsClient, /* transactionBatchSize= */ 500, bsaLock, response);
   }
 
   static void createBlockList(GcsClient gcsClient, BlockListType blockListType, String content)
