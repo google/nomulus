@@ -52,9 +52,6 @@
         for endpoints that need to be accessed by open-source automated processes.
       </description>
 
-      <!-- Internal AppEngine endpoints.  The '_ah' is short for app hosting.  -->
-      <url-pattern>/_ah/*</url-pattern>
-
       <!-- Verbatim JavaScript sources (only visible to admins for debugging). -->
       <url-pattern>/assets/sources/*</url-pattern>
 
@@ -68,24 +65,6 @@
       <role-name>admin</role-name>
     </auth-constraint>
 
-    <!-- Repeated here since catch-all rule below is not inherited. -->
-    <user-data-constraint>
-      <transport-guarantee>CONFIDENTIAL</transport-guarantee>
-    </user-data-constraint>
-  </security-constraint>
-
-  <security-constraint>
-    <web-resource-collection>
-      <web-resource-name>Registrar console</web-resource-name>
-      <description>
-        Registrar console requires user login.  This is in addition to the
-        code-level "requireLogin" configuration on individual @Actions.
-      </description>
-      <url-pattern>/registrar*</url-pattern>
-    </web-resource-collection>
-    <auth-constraint>
-      <role-name>*</role-name>
-    </auth-constraint>
     <!-- Repeated here since catch-all rule below is not inherited. -->
     <user-data-constraint>
       <transport-guarantee>CONFIDENTIAL</transport-guarantee>
