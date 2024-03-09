@@ -51,6 +51,8 @@ jobs:
     # Build with Gradle
     - name: Setup Gradle
       uses: gradle/actions/setup-gradle@v3
+    - name: Execute Gradle build
+      run: ./gradlew build -x test
 
     # Autobuild attempts to build any compiled languages  (C/C++, C#, Go, or Java).
     # If this step fails, then you should remove it and run the build manually (see below)
