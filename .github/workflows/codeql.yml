@@ -1,13 +1,13 @@
 name: "CodeQL"
 
 #on:
-#  push:
-#    branches: [ 'master' ]
-#  pull_request:
-#    # The branches below must be a subset of the branches above
-#    branches: [ 'master' ]
-#  schedule:
-#    - cron: '24 4 * * 2'
+  #  push:
+    #    branches: [ 'master' ]
+  #  pull_request:
+    #    # The branches below must be a subset of the branches above
+    #    branches: [ 'master' ]
+  #  schedule:
+    #    - cron: '24 4 * * 2'
 on: [push]
 
 jobs:
@@ -51,6 +51,10 @@ jobs:
     # Build with Gradle
     - name: Setup Gradle
       uses: gradle/actions/setup-gradle@v3
+      with:
+        build-scan-publish: true
+        build-scan-terms-of-service-url: "https://gradle.com/terms-of-service"
+        build-scan-terms-of-service-agree: "yes"
     - name: Execute Gradle build
       run: ./gradlew build -x test -x jIFC
 
