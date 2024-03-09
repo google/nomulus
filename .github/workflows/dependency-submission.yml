@@ -4,7 +4,7 @@ on:
   push:
     branches: [ 'master' ]
   schedule:
-    - cron: '24 3 1 * *'
+    - cron: '24 3 * * *'
 
 permissions:
   contents: write
