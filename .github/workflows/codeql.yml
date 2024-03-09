@@ -1,13 +1,14 @@
 name: "CodeQL"
 
-on:
-  push:
-    branches: [ 'master' ]
-  pull_request:
-    # The branches below must be a subset of the branches above
-    branches: [ 'master' ]
-  schedule:
-    - cron: '24 4 * * 2'
+#on:
+#  push:
+#    branches: [ 'master' ]
+#  pull_request:
+#    # The branches below must be a subset of the branches above
+#    branches: [ 'master' ]
+#  schedule:
+#    - cron: '24 4 * * 2'
+on: [push]
 
 jobs:
   analyze:
@@ -47,11 +48,14 @@ jobs:
         # Details on CodeQL's query packs refer to : https://docs.github.com/en/code-security/code-scanning/automatically-scanning-your-code-for-vulnerabilities-and-errors/configuring-code-scanning#using-queries-in-ql-packs
         queries: security-and-quality
 
+    # Build with Gradle
+    - name: Setup Gradle
+      uses: gradle/actions/setup-gradle@v3
 
     # Autobuild attempts to build any compiled languages  (C/C++, C#, Go, or Java).
     # If this step fails, then you should remove it and run the build manually (see below)
-    - name: Autobuild
-      uses: github/codeql-action/autobuild@v3
+    #- name: Autobuild
+    #  uses: github/codeql-action/autobuild@v3
 
     # ℹ️ Command-line programs to run using the OS shell.
     # 📚 See https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#jobsjob_idstepsrun
