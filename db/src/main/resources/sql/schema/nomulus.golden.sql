@@ -255,7 +255,7 @@ ALTER SEQUENCE public."ClaimsList_revision_id_seq" OWNED BY public."ClaimsList".
 
 CREATE TABLE public."ConsoleEppActionHistory" (
     history_revision_id bigint NOT NULL,
-    history_date_time timestamp with time zone NOT NULL,
+    history_modification_time timestamp with time zone NOT NULL,
     history_method text NOT NULL,
     history_request_body text,
     history_type text NOT NULL,
@@ -985,7 +985,7 @@ CREATE TABLE public."RegistrarPoc" (
 
 CREATE TABLE public."RegistrarPocUpdateHistory" (
     history_revision_id bigint NOT NULL,
-    history_date_time timestamp with time zone NOT NULL,
+    history_modification_time timestamp with time zone NOT NULL,
     history_method text NOT NULL,
     history_request_body text,
     history_type text NOT NULL,
@@ -1014,7 +1014,7 @@ CREATE TABLE public."RegistrarPocUpdateHistory" (
 
 CREATE TABLE public."RegistrarUpdateHistory" (
     history_revision_id bigint NOT NULL,
-    history_date_time timestamp with time zone NOT NULL,
+    history_modification_time timestamp with time zone NOT NULL,
     history_method text NOT NULL,
     history_request_body text,
     history_type text NOT NULL,
@@ -1325,7 +1325,7 @@ CREATE TABLE public."User" (
 
 CREATE TABLE public."UserUpdateHistory" (
     history_revision_id bigint NOT NULL,
-    history_date_time timestamp with time zone NOT NULL,
+    history_modification_time timestamp with time zone NOT NULL,
     history_method text NOT NULL,
     history_request_body text,
     history_type text NOT NULL,
