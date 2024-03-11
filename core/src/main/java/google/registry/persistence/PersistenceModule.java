@@ -220,8 +220,8 @@ public abstract class PersistenceModule {
 
   @Provides
   @Singleton
-  @AppEngineJpaTm
-  static JpaTransactionManager provideAppEngineJpaTm(
+  @DefaultJpaTm
+  static JpaTransactionManager provideDefaultJpaTm(
       SqlCredentialStore credentialStore,
       @PartialCloudSqlConfigs ImmutableMap<String, String> cloudSqlConfigs,
       Clock clock) {
@@ -380,10 +380,10 @@ public abstract class PersistenceModule {
   @Documented
   public @interface SchemaManagerConnection {}
 
-  /** Dagger qualifier for {@link JpaTransactionManager} used for App Engine application. */
+  /** Dagger qualifier for {@link JpaTransactionManager} used by default. */
   @Qualifier
   @Documented
-  @interface AppEngineJpaTm {}
+  @interface DefaultJpaTm {}
 
   /** Dagger qualifier for {@link JpaTransactionManager} used inside BEAM pipelines. */
   @Qualifier
