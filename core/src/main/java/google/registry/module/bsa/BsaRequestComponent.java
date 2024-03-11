@@ -27,7 +27,7 @@ import google.registry.request.RequestScope;
 
 @RequestScope
 @Subcomponent(modules = {RequestModule.class, UrlConnectionServiceModule.class})
-interface BsaRequestComponent {
+public interface BsaRequestComponent {
 
   BsaDownloadAction bsaDownloadAction();
 
