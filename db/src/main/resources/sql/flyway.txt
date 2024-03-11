@@ -158,3 +158,4 @@ V157__console_epp_action_history_indexes.sql
 V158__registrar_poc_update_history_indexes.sql
 V159__registrar_update_history_indexes.sql
 V160__user_update_history_indexes.sql
+V161__rename_console_history_time.sql
