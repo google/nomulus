@@ -53,7 +53,7 @@ import google.registry.ui.server.registrar.RegistryLockVerifyAction;
       RequestModule.class,
       WhiteboxModule.class,
     })
-interface FrontendRequestComponent {
+public interface FrontendRequestComponent {
   ConsoleDomainGetAction consoleDomainGetAction();
 
   ConsoleDomainListAction consoleDomainListAction();

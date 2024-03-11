@@ -99,7 +99,7 @@ import google.registry.tmch.TmchSmdrlAction;
       VoidDnsWriterModule.class,
       WhiteboxModule.class,
     })
-interface BackendRequestComponent {
+public interface BackendRequestComponent {
 
   BrdaCopyAction brdaCopyAction();
 

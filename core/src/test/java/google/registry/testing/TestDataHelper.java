@@ -73,7 +73,7 @@ public final class TestDataHelper {
   }
 
   /**
-   * Loads a text file from the "testdata" directory relative to the location of the specified
+   * Loads a text file from the resources directory relative to the location of the specified
    * context class.
    */
   public static String loadFile(Class<?> context, String filename) {

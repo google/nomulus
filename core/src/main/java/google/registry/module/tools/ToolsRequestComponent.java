@@ -49,7 +49,7 @@ import google.registry.tools.server.VerifyOteAction;
       ToolsServerModule.class,
       WhiteboxModule.class,
     })
-interface ToolsRequestComponent {
+public interface ToolsRequestComponent {
   CreateGroupsAction createGroupsAction();
   EppToolAction eppToolAction();
   FlowComponent.Builder flowComponentBuilder();
