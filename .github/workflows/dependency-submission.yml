@@ -1,0 +1,25 @@
+name: Dependency Submission
+
+on:
+  push:
+    branches: [ 'master' ]
+  schedule:
+    - cron: '24 3 * * *'
+
+permissions:
+  contents: write
+
+jobs:
+
+  dependency-submission:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout sources
+      uses: actions/checkout@v4
+    - name: Set Java version
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'temurin'
+        java-version: '21'
+    - name: Generate and submit dependency graph
+      uses: gradle/actions/dependency-submission@v3
