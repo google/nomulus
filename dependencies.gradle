@@ -68,7 +68,7 @@ ext {
       // Dependency groups with inconsistent version.
       'org.apache.sshd:sshd-core:2.0.0',
       'org.apache.sshd:sshd-scp:2.0.0',
-      'org.apache.sshd:sshd-sftp:2.0.0',
+      'org.apache.sshd:sshd-sftp:2.9.3',
       'org.bouncycastle:bcpg-jdk15on:1.67',
       'org.bouncycastle:bcpkix-jdk15on:1.67',
       'org.bouncycastle:bcprov-jdk15on:1.67',
