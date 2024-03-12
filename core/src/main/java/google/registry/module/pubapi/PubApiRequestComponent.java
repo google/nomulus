@@ -50,7 +50,7 @@ import google.registry.whois.WhoisModule;
       WhiteboxModule.class,
       WhoisModule.class,
     })
-interface PubApiRequestComponent {
+public interface PubApiRequestComponent {
   CheckApiAction checkApiAction();
   RdapAutnumAction rdapAutnumAction();
   RdapDomainAction rdapDomainAction();
