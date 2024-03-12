@@ -16,7 +16,6 @@ package google.registry.bsa;
 
 import static com.google.common.base.Verify.verify;
 import static google.registry.persistence.PersistenceModule.TransactionIsolationLevel.TRANSACTION_REPEATABLE_READ;
-import static google.registry.persistence.transaction.JpaTransactionManagerImpl.isInTransaction;
 import static google.registry.persistence.transaction.TransactionManagerFactory.replicaTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
@@ -36,18 +35,18 @@ public final class BsaTransactions {
 
   @CanIgnoreReturnValue
   public static <T> T bsaTransact(Callable<T> work) {
-    verify(!isInTransaction(), "May only be used for top-level transactions.");
+    verify(!tm().inTransaction(), "May only be used for top-level transactions.");
     return tm().transact(TRANSACTION_REPEATABLE_READ, work);
   }
 
   public static void bsaTransact(ThrowingRunnable work) {
-    verify(!isInTransaction(), "May only be used for top-level transactions.");
+    verify(!tm().inTransaction(), "May only be used for top-level transactions.");
     tm().transact(TRANSACTION_REPEATABLE_READ, work);
   }
 
   @CanIgnoreReturnValue
   public static <T> T bsaQuery(Callable<T> work) {
-    verify(!isInTransaction(), "May only be used for top-level transactions.");
+    verify(!tm().inTransaction(), "May only be used for top-level transactions.");
     // TRANSACTION_REPEATABLE_READ is default on replica.
     return replicaTm().transact(work);
   }

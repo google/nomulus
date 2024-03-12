@@ -36,12 +36,10 @@ public interface JpaTransactionManager extends TransactionManager {
    *
    * <p>The returned instance is closed when the current transaction completes.
    *
-   * @deprecated Use the static {@link JpaTransactionManagerImpl#em} method for now. In current
-   *     implementation the entity manager is obtained from a static {@code ThreadLocal} object that
-   *     is set up by the outermost {@link #transact} call. As an instance method, this method gives
-   *     the illusion that the call site has control over which database instance to use.
+   * <p>Note that in the current implementation the entity manager is obtained from a static {@code
+   * ThreadLocal} object that is set up by the outermost {@link #transact} call. Nested call sites
+   * have no control over which database instance to use.
    */
-  @Deprecated // See Javadoc above.
   EntityManager getEntityManager();
 
   /**
