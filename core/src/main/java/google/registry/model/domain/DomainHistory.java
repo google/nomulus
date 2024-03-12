@@ -91,11 +91,13 @@ public class DomainHistory extends HistoryEntry {
   @ElementCollection
   @JoinTable(
       name = "DomainHistoryHost",
-      indexes =
-          @Index(
-              columnList =
-                  "domain_history_history_revision_id,domain_history_domain_repo_id,host_repo_id",
-              unique = true))
+      indexes = {
+        @Index(columnList = "domain_history_domain_repo_id"),
+        @Index(
+            columnList =
+                "domain_history_history_revision_id,domain_history_domain_repo_id,host_repo_id",
+            unique = true)
+      })
   @Column(name = "host_repo_id")
   Set<VKey<Host>> nsHosts;
 
