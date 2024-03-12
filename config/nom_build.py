@@ -47,7 +47,7 @@ class GradleFlag:
 
 
 PROPERTIES_HEADER = """\
-# This file defines properties used by the gradle build.  It must be kept in
+# This file defines properties used by the gradle build. It must be kept in
 # sync with config/nom_build.py.
 #
 # To regenerate, run ./nom_build --generate-gradle-properties
