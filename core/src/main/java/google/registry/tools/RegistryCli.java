@@ -30,6 +30,7 @@ import google.registry.persistence.transaction.JpaTransactionManager;
 import google.registry.persistence.transaction.TransactionManagerFactory;
 import google.registry.tools.AuthModule.LoginRequiredException;
 import google.registry.tools.params.ParameterFactory;
+import google.registry.util.RegistryEnvironment;
 import java.security.Security;
 import java.util.Map;
 import java.util.Optional;
@@ -218,12 +219,16 @@ final class RegistryCli implements CommandRunner {
 
     // Reset the JPA transaction manager after every command to avoid a situation where a test can
     // interfere with other tests
-    JpaTransactionManager cachedJpaTm = tm();
+    if (RegistryEnvironment.get() == RegistryEnvironment.UNITTEST) {
+      JpaTransactionManager cachedJpaTm = tm();
+    }
     TransactionManagerFactory.setJpaTm(() -> component.nomulusToolJpaTransactionManager().get());
     TransactionManagerFactory.setReplicaJpaTm(
         () -> component.nomulusToolReplicaJpaTransactionManager().get());
     command.run();
-    TransactionManagerFactory.setJpaTm(() -> cachedJpaTm);
+    if (RegistryEnvironment.get() == RegistryEnvironment.UNITTEST) {
+      TransactionManagerFactory.setJpaTm(() -> cachedJpaTm);
+    }
   }
 
   void setEnvironment(RegistryToolEnvironment environment) {

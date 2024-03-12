@@ -18,6 +18,7 @@ import static com.google.common.base.Preconditions.checkState;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 
 import com.google.common.base.Suppliers;
+import com.google.common.collect.ImmutableSet;
 import google.registry.persistence.DaggerPersistenceComponent;
 import google.registry.tools.RegistryToolEnvironment;
 import google.registry.util.NonFinalForTesting;
@@ -26,6 +27,9 @@ import java.util.function.Supplier;
 
 /** Factory class to create {@link TransactionManager} instance. */
 public final class TransactionManagerFactory {
+
+  private static final ImmutableSet<RegistryEnvironment> NON_SERVING_ENVS = ImmutableSet.of(
+      RegistryEnvironment.UNITTEST, RegistryEnvironment.LOCAL);
 
   /** Supplier for jpaTm so that it is initialized only once, upon first usage. */
   @NonFinalForTesting
@@ -41,7 +45,7 @@ public final class TransactionManagerFactory {
   private static JpaTransactionManager createJpaTransactionManager() {
     // If we are running a nomulus command, jpaTm will be injected in RegistryCli.java
     // by calling setJpaTm().
-    if (RegistryEnvironment.get() != RegistryEnvironment.UNITTEST) {
+    if (!NON_SERVING_ENVS.contains(RegistryEnvironment.get())) {
       return DaggerPersistenceComponent.create().jpaTransactionManager();
     } else {
       return DummyJpaTransactionManager.create();
