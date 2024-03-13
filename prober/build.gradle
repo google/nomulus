@@ -34,8 +34,8 @@ dependencies {
   implementation deps['io.netty:netty-transport']
   implementation deps['javax.inject:javax.inject']
   implementation deps['joda-time:joda-time']
-  implementation deps['org.bouncycastle:bcpkix-jdk15on']
-  implementation deps['org.bouncycastle:bcprov-jdk15on']
+  implementation deps['org.bouncycastle:bcpkix-jdk18on']
+  implementation deps['org.bouncycastle:bcprov-jdk18on']
   implementation deps['xerces:xmlParserAPIs']
   implementation project(':common')
   implementation project(':util')

@@ -50,7 +50,7 @@ import schemacrawler.tools.options.OutputOptions;
 import schemacrawler.tools.options.OutputOptionsBuilder;
 
 /** Command to generate ER diagrams for SQL schema. */
-@Parameters(separators = " =", commandDescription = "Generate ER diagrams for SQL schmea.")
+@Parameters(separators = " =", commandDescription = "Generate ER diagrams for SQL schema.")
 public class GenerateSqlErDiagramCommand implements Command {
 
   private static final String DB_NAME = "postgres";
@@ -101,14 +101,14 @@ public class GenerateSqlErDiagramCommand implements Command {
       checkState(outDir.toFile().mkdirs(), "Failed to create directory %s", outDir);
     }
 
-    PostgreSQLContainer postgresContainer =
-        new PostgreSQLContainer(NomulusPostgreSql.getDockerTag())
-            .withDatabaseName(DB_NAME)
-            .withUsername(DB_USER)
-            .withPassword(DB_PASSWORD);
-    postgresContainer.start();
-
-    try (Connection conn = getConnection(postgresContainer)) {
+    try (PostgreSQLContainer<?> postgresContainer =
+        new PostgreSQLContainer<>(NomulusPostgreSql.getDockerTag())) {
+      postgresContainer
+          .withDatabaseName(DB_NAME)
+          .withUsername(DB_USER)
+          .withPassword(DB_PASSWORD)
+          .start();
+      Connection conn = getConnection(postgresContainer);
       initDb(conn);
       if (diagramType == ALL || diagramType == FULL) {
         improveDiagramHtml(generateErDiagram(conn, FULL_DIAGRAM_COMMAND, FULL_DIAGRAM_FILE_NAME));
@@ -116,8 +116,6 @@ public class GenerateSqlErDiagramCommand implements Command {
       if (diagramType == ALL || diagramType == BRIEF) {
         improveDiagramHtml(generateErDiagram(conn, BRIEF_DIAGRAM_COMMAND, BRIEF_DIAGRAM_FILE_NAME));
       }
-    } finally {
-      postgresContainer.stop();
     }
   }
 
@@ -125,7 +123,7 @@ public class GenerateSqlErDiagramCommand implements Command {
     try {
       Document doc = Jsoup.parse(diagram.toFile(), StandardCharsets.UTF_8.name());
 
-      // Add the last name of the flyway file to the HTML so we can have a test to verify that if
+      // Add the last name of the flyway file to the HTML, so we can have a test to verify that if
       // the generated diagram is up to date.
       doc.select("body > table > tbody")
           .first()
@@ -140,11 +138,9 @@ public class GenerateSqlErDiagramCommand implements Command {
                   + "</tr>");
 
       // Add pan and zoom support for the embedded SVG in the HTML.
-      StringBuilder svgPanZoomLib =
-          new StringBuilder("<script>")
-              .append(ResourceUtils.readResourceUtf8(SVG_PAN_ZOOM_LIB))
-              .append("</script>");
-      doc.select("head").first().append(svgPanZoomLib.toString());
+      String svgPanZoomLib =
+          "<script>" + ResourceUtils.readResourceUtf8(SVG_PAN_ZOOM_LIB) + "</script>";
+      doc.select("head").first().append(svgPanZoomLib);
       doc.select("svg")
           .first()
           .attributes()
@@ -163,8 +159,7 @@ public class GenerateSqlErDiagramCommand implements Command {
                   + "});"
                   + "</script>");
 
-      Files.write(
-          diagram, doc.outerHtml().getBytes(StandardCharsets.UTF_8), StandardOpenOption.WRITE);
+      Files.writeString(diagram, doc.outerHtml(), StandardOpenOption.WRITE);
     } catch (IOException e) {
       throw new UncheckedIOException(e);
     }
@@ -194,7 +189,7 @@ public class GenerateSqlErDiagramCommand implements Command {
     return outputFile;
   }
 
-  private static Connection getConnection(PostgreSQLContainer container) {
+  private static Connection getConnection(PostgreSQLContainer<?> container) {
     Properties info = new Properties();
     info.put("user", container.getUsername());
     info.put("password", container.getPassword());
