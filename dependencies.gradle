@@ -40,25 +40,18 @@ ext {
 
       // Breaking changes causing compilation error.
       'com.beust:jcommander:1.60',
+      // TODO: Migrate to com.google.cloud:google-cloud-dns
       'com.google.apis:google-api-services-dns:v2beta1-rev99-1.25.0',
       'com.google.apis:google-api-services-admin-directory:directory_v1-rev118-1.25.0',
       'com.google.apis:google-api-services-drive:v2-rev393-1.25.0',
-      'com.google.apis:google-api-services-gmail:v1-rev20220404-2.0.0',
       'com.thoughtworks.qdox:qdox:1.12.1',
       'jline:jline:1.0',
 
       // Remove after the legacy console is deleted.
-      'com.google.template:soy:2021-02-01',
-      'com.google.protobuf:protobuf-java:3.13.0',
-      'com.google.javascript:closure-compiler:v20210505',
       'com.google.closure-stylesheets:closure-stylesheets:1.5.0',
-
-      // Our .xjb files are not compatible with newer binding specs: some
-      // xml elements' names have changed.
-      'com.sun.xml.bind:jaxb-xjc:2.3.3',
-
-      // Dependency groups with inconsistent version.
-
+      'com.google.javascript:closure-compiler:v20210505',
+      'com.google.protobuf:protobuf-java:3.13.0',
+      'com.google.template:soy:2021-02-01',
       'org.seleniumhq.selenium:selenium-api:3.141.59',
       'org.seleniumhq.selenium:selenium-chrome-driver:3.141.59',
       'org.seleniumhq.selenium:selenium-java:3.141.59',
@@ -112,6 +105,7 @@ ext {
       'com.google.apis:google-api-services-bigquery:[v2-rev459-1.25.0,)',
       'com.google.apis:google-api-services-cloudkms:[v1-rev108-1.25.0,)',
       'com.google.apis:google-api-services-dataflow:[v1b3-rev302-1.25.0,)',
+      'com.google.apis:google-api-services-gmail:[v1-rev20220404-2.0.0,)',
       'com.google.apis:google-api-services-groupssettings:[v1-rev82-1.25.0,)',
       'com.google.apis:google-api-services-monitoring:[v3-rev540-1.25.0,)',
       'com.google.apis:google-api-services-sheets:[v4-rev612-1.25.0,)',
@@ -166,6 +160,7 @@ ext {
       'com.sun.activation:javax.activation:[1.2.0,)',
       'com.sun.xml.bind:jaxb-impl:[2.3.3,)',
       'com.sun.xml.bind:jaxb-osgi:[2.3.3,)',
+      'com.sun.xml.bind:jaxb-xjc:[2.3.3,)',
       'com.zaxxer:HikariCP:[3.4.5,)',
       'commons-codec:commons-codec:[1.15,)',
       'dnsjava:dnsjava:[3.3.1,)',
