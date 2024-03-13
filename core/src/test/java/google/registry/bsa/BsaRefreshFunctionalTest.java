@@ -86,6 +86,8 @@ class BsaRefreshFunctionalTest {
 
   @Mock BsaReportSender bsaReportSender;
 
+  @Mock BsaEmailSender emailSender;
+
   private GcsClient gcsClient;
   private Response response;
   private BsaRefreshAction action;
@@ -102,6 +104,7 @@ class BsaRefreshFunctionalTest {
             bsaReportSender,
             /* transactionBatchSize= */ 5,
             /* domainCreateTxnCommitTimeLag= */ Duration.millis(1),
+            emailSender,
             new BsaLock(
                 new FakeLockHandler(/* lockSucceeds= */ true), Duration.standardSeconds(30)),
             fakeClock,
@@ -145,6 +148,8 @@ class BsaRefreshFunctionalTest {
     verify(bsaReportSender, never()).removeUnblockableDomainsUpdates(anyString());
     verify(bsaReportSender, times(1))
         .addUnblockableDomainsUpdates("{\n  \"reserved\": [\n    \"blocked1.app\"\n  ]\n}");
+
+    verify(emailSender, times(1)).sendNotification("BSA refreshed successfully", "");
   }
 
   @Test

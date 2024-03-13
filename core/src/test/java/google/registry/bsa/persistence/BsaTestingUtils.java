@@ -18,6 +18,7 @@ import static com.google.common.collect.ImmutableList.toImmutableList;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import com.google.common.collect.ImmutableList;
+import google.registry.bsa.DownloadStage;
 import google.registry.bsa.api.UnblockableDomain;
 import google.registry.util.Clock;
 import org.joda.time.DateTime;
@@ -40,6 +41,11 @@ public final class BsaTestingUtils {
 
   public static void persistUnblockableDomain(UnblockableDomain unblockableDomain) {
     tm().transact(() -> tm().put(BsaUnblockableDomain.of(unblockableDomain)));
+  }
+
+  public static void persistDownloadSchedule(DownloadStage stage) {
+    BsaDownload bsaDownload = new BsaDownload().setStage(stage);
+    tm().transact(() -> tm().put(bsaDownload));
   }
 
   public static DownloadScheduler createDownloadScheduler(Clock clock) {

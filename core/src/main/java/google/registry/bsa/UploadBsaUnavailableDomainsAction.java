@@ -91,6 +91,7 @@ public class UploadBsaUnavailableDomainsAction implements Runnable {
   String gcsBucket;
 
   String apiUrl;
+  BsaEmailSender emailSender;
 
   google.registry.request.Response response;
 
@@ -99,6 +100,7 @@ public class UploadBsaUnavailableDomainsAction implements Runnable {
       Clock clock,
       BsaCredential bsaCredential,
       GcsUtils gcsUtils,
+      BsaEmailSender emailSender,
       @Config("bsaUnavailableDomainsGcsBucket") String gcsBucket,
       @Config("bsaUploadUnavailableDomainsUrl") String apiUrl,
       google.registry.request.Response response) {
@@ -107,6 +109,7 @@ public class UploadBsaUnavailableDomainsAction implements Runnable {
     this.gcsUtils = gcsUtils;
     this.gcsBucket = gcsBucket;
     this.apiUrl = apiUrl;
+    this.emailSender = emailSender;
     this.response = response;
   }
 
@@ -118,26 +121,36 @@ public class UploadBsaUnavailableDomainsAction implements Runnable {
     String unavailableDomains = Joiner.on("\n").join(getUnavailableDomains(runTime));
     if (unavailableDomains.isEmpty()) {
       logger.atWarning().log("No unavailable domains found; terminating.");
+      emailSender.sendNotification(
+          "BSA daily upload found no domains to upload", "This is unexpected. Please investigate.");
     } else {
-      uploadToGcs(unavailableDomains, runTime);
-      uploadToBsa(unavailableDomains, runTime);
+      boolean isGcsSuccess = uploadToGcs(unavailableDomains, runTime);
+      boolean isBsaSuccess = uploadToBsa(unavailableDomains, runTime);
+      if (isBsaSuccess && isGcsSuccess) {
+        emailSender.sendNotification("BSA daily upload completed successfully", "");
+      } else {
+        emailSender.sendNotification(
+            "BSA daily upload completed with errors", "Please see logs for details.");
+      }
     }
   }
 
   /** Uploads the unavailable domains list to GCS in the unavailable domains bucket. */
-  void uploadToGcs(String unavailableDomains, DateTime runTime) {
+  boolean uploadToGcs(String unavailableDomains, DateTime runTime) {
     logger.atInfo().log("Uploading unavailable names file to GCS in bucket %s", gcsBucket);
     BlobId blobId = BlobId.of(gcsBucket, createFilename(runTime));
     try (OutputStream gcsOutput = gcsUtils.openOutputStream(blobId);
         Writer osWriter = new OutputStreamWriter(gcsOutput, US_ASCII)) {
       osWriter.write(unavailableDomains);
+      return true;
     } catch (Exception e) {
       logger.atSevere().withCause(e).log(
           "Error writing BSA unavailable domains to GCS; skipping to BSA upload ...");
+      return false;
     }
   }
 
-  void uploadToBsa(String unavailableDomains, DateTime runTime) {
+  boolean uploadToBsa(String unavailableDomains, DateTime runTime) {
     try {
       byte[] gzippedContents = gzipUnavailableDomains(unavailableDomains);
       String sha512Hash = ByteSource.wrap(gzippedContents).hash(Hashing.sha512()).toString();
@@ -174,10 +187,12 @@ public class UploadBsaUnavailableDomainsAction implements Runnable {
             uploadResponse.code(),
             uploadResponse.body() == null ? "(none)" : uploadResponse.body().string());
       }
+      return true;
     } catch (IOException e) {
       logger.atSevere().withCause(e).log("Error while attempting to upload to BSA, aborting.");
       response.setStatus(HttpStatusCodes.STATUS_CODE_SERVER_ERROR);
       response.setPayload("Error while attempting to upload to BSA: " + e.getMessage());
+      return false;
     }
   }
 
