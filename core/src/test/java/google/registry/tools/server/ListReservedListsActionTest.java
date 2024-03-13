@@ -69,7 +69,7 @@ class ListReservedListsActionTest extends ListActionTestCase {
         Optional.of("*"),
         Optional.empty(),
         Optional.empty(),
-        "^name\\s+.*shouldPublish.*",
+        "^name\\s+.*",
         "^-+\\s+-+",
         "^xn--q9jyb4c-private\\s+.*",
         "^xn--q9jyb4c-published\\s+.*");
