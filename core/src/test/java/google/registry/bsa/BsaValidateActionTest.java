@@ -14,22 +14,38 @@
 
 package google.registry.bsa;
 
+import static com.google.common.base.Throwables.getStackTraceAsString;
 import static com.google.common.truth.Truth.assertThat;
+import static google.registry.bsa.persistence.BsaTestingUtils.persistDownloadSchedule;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import com.google.cloud.storage.BlobId;
 import com.google.cloud.storage.contrib.nio.testing.LocalStorageHelper;
 import com.google.common.base.Joiner;
+import com.google.common.collect.ImmutableList;
 import google.registry.bsa.persistence.BsaTestingUtils;
 import google.registry.gcs.GcsUtils;
+import google.registry.groups.GmailClient;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationWithCoverageExtension;
 import google.registry.request.Response;
 import google.registry.testing.FakeClock;
+import google.registry.util.EmailMessage;
+import java.util.concurrent.Callable;
+import javax.mail.internet.InternetAddress;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.RegisterExtension;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -45,19 +61,31 @@ public class BsaValidateActionTest {
   final JpaIntegrationWithCoverageExtension jpa =
       new JpaTestExtensions.Builder().withClock(fakeClock).buildIntegrationWithCoverageExtension();
 
-  @Mock BsaLock bsaLock;
+  @Mock GmailClient gmailClient;
 
   @Mock Response response;
+
+  @Mock private BsaLock bsaLock;
+
+  @Mock private InternetAddress emailRecipient;
+
+  @Captor ArgumentCaptor<EmailMessage> emailCaptor = ArgumentCaptor.forClass(EmailMessage.class);
 
   private GcsClient gcsClient;
 
   private BsaValidateAction action;
 
   @BeforeEach
-  void setup() {
+  void setup() throws Exception {
     gcsClient =
         new GcsClient(new GcsUtils(LocalStorageHelper.getOptions()), "my-bucket", "SHA-256");
-    action = new BsaValidateAction(gcsClient, /* transactionBatchSize= */ 500, bsaLock, response);
+    action =
+        new BsaValidateAction(
+            gcsClient,
+            new BsaEmailSender(gmailClient, emailRecipient),
+            /* transactionBatchSize= */ 500,
+            bsaLock,
+            response);
   }
 
   static void createBlockList(GcsClient gcsClient, BlockListType blockListType, String content)
@@ -151,5 +179,84 @@ public class BsaValidateActionTest {
 
     assertThat(allErrors).contains("Found 1 missing labels in the DB. Examples: [test1]");
     assertThat(allErrors).contains("Found 1 unexpected labels in the DB. Examples: [test3]");
+  }
+
+  @Test
+  void notificationSent_cannotAcquireLock() {
+    when(bsaLock.executeWithLock(any())).thenReturn(false);
+    action.run();
+    verify(gmailClient, times(1))
+        .sendEmail(
+            EmailMessage.create(
+                "BSA validation did not run: another BSA related task is running",
+                "",
+                emailRecipient));
+  }
+
+  @Test
+  void notificationSent_abortedByException() {
+    RuntimeException throwable = new RuntimeException("Error");
+    when(bsaLock.executeWithLock(any())).thenThrow(throwable);
+    action.run();
+    verify(gmailClient, times(1))
+        .sendEmail(
+            EmailMessage.create(
+                "BSA validation aborted", getStackTraceAsString(throwable), emailRecipient));
+  }
+
+  @Test
+  void notificationSent_noDownloads() {
+    when(bsaLock.executeWithLock(any()))
+        .thenAnswer(
+            args -> {
+              args.getArgument(0, Callable.class).call();
+              return true;
+            });
+    action.run();
+    verify(gmailClient, times(1))
+        .sendEmail(
+            EmailMessage.create(
+                "BSA validation does not run: block list downloads not found", "", emailRecipient));
+  }
+
+  @Test
+  void notificationSent_withValidationError() {
+    when(bsaLock.executeWithLock(any()))
+        .thenAnswer(
+            args -> {
+              args.getArgument(0, Callable.class).call();
+              return true;
+            });
+    persistDownloadSchedule(DownloadStage.DONE);
+    action = spy(action);
+    doReturn(ImmutableList.of("Error line 1.", "Error line 2"))
+        .when(action)
+        .checkBsaLabels(anyString());
+    action.run();
+    verify(gmailClient, times(1)).sendEmail(emailCaptor.capture());
+    EmailMessage message = emailCaptor.getValue();
+    assertThat(message.subject()).isEqualTo("BSA validation completed with errors");
+    assertThat(message.body()).startsWith("Most recent download is");
+    assertThat(message.body())
+        .isEqualTo(
+            "Most recent download is 2023-11-09t020857.880z.\n\n" + "Error line 1.\nError line 2");
+  }
+
+  @Test
+  void notificationSent_noError() {
+    when(bsaLock.executeWithLock(any()))
+        .thenAnswer(
+            args -> {
+              args.getArgument(0, Callable.class).call();
+              return true;
+            });
+    persistDownloadSchedule(DownloadStage.DONE);
+    action = spy(action);
+    doReturn(ImmutableList.of()).when(action).checkBsaLabels(anyString());
+    action.run();
+    verify(gmailClient, times(1)).sendEmail(emailCaptor.capture());
+    EmailMessage message = emailCaptor.getValue();
+    assertThat(message.subject()).isEqualTo("BSA validation completed: no errors found");
+    assertThat(message.body()).isEqualTo("Most recent download is 2023-11-09t020857.880z.\n\n");
   }
 }

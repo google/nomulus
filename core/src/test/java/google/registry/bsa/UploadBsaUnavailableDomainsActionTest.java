@@ -22,6 +22,8 @@ import static google.registry.testing.DatabaseHelper.persistReservedList;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 import com.google.cloud.storage.BlobId;
 import com.google.cloud.storage.contrib.nio.testing.LocalStorageHelper;
@@ -64,6 +66,8 @@ public class UploadBsaUnavailableDomainsActionTest {
 
   @Mock BsaCredential bsaCredential;
 
+  @Mock BsaEmailSender emailSender;
+
   private final GcsUtils gcsUtils = new GcsUtils(LocalStorageHelper.getOptions());
 
   private final FakeResponse response = new FakeResponse();
@@ -86,7 +90,7 @@ public class UploadBsaUnavailableDomainsActionTest {
             .build());
     action =
         new UploadBsaUnavailableDomainsAction(
-            clock, bsaCredential, gcsUtils, BUCKET, API_URL, response);
+            clock, bsaCredential, gcsUtils, emailSender, BUCKET, API_URL, response);
   }
 
   @Test
@@ -100,6 +104,10 @@ public class UploadBsaUnavailableDomainsActionTest {
     String blockList = new String(gcsUtils.readBytesFrom(existingFile), UTF_8);
     assertThat(blockList).isEqualTo("ace.tld\nflagrant.tld\nfoobar.tld\njimmy.tld\ntine.tld");
     assertThat(blockList).doesNotContain("not-blocked.tld");
+
+    // This test currently fails in the upload-to-bsa step.
+    verify(emailSender, times(1))
+        .sendNotification("BSA daily upload completed with errors", "Please see logs for details.");
 
     // TODO(mcilwain): Add test of BSA API upload as well.
   }

@@ -15,7 +15,8 @@
 package google.registry.bsa;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static google.registry.bsa.persistence.DownloadScheduler.fetchMostRecentDownloadJobIdIfCompleted;
+import static com.google.common.base.Throwables.getStackTraceAsString;
+import static google.registry.bsa.BsaTransactions.bsaQuery;
 import static google.registry.bsa.persistence.Queries.batchReadBsaLabelText;
 import static google.registry.request.Action.Method.GET;
 import static google.registry.request.Action.Method.POST;
@@ -28,6 +29,7 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.Sets;
 import com.google.common.collect.Sets.SetView;
 import com.google.common.flogger.FluentLogger;
+import google.registry.bsa.persistence.DownloadScheduler;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.request.Action;
 import google.registry.request.Response;
@@ -48,6 +50,7 @@ public class BsaValidateAction implements Runnable {
 
   static final String PATH = "/_dr/task/bsaValidate";
   private final GcsClient gcsClient;
+  private final BsaEmailSender emailSender;
   private final int transactionBatchSize;
   private final BsaLock bsaLock;
   private final Response response;
@@ -55,10 +58,12 @@ public class BsaValidateAction implements Runnable {
   @Inject
   BsaValidateAction(
       GcsClient gcsClient,
+      BsaEmailSender emailSender,
       @Config("bsaTxnBatchSize") int transactionBatchSize,
       BsaLock bsaLock,
       Response response) {
     this.gcsClient = gcsClient;
+    this.emailSender = emailSender;
     this.transactionBatchSize = transactionBatchSize;
     this.bsaLock = bsaLock;
     this.response = response;
@@ -68,12 +73,13 @@ public class BsaValidateAction implements Runnable {
   public void run() {
     try {
       if (!bsaLock.executeWithLock(this::runWithinLock)) {
-        logger.atInfo().log("Cannot execute action. Other BSA related task is executing.");
-        // TODO(blocked by go/r3pr/2354): send email
+        String message = "BSA validation did not run: another BSA related task is running";
+        logger.atInfo().log("%s.", message);
+        emailSender.sendNotification(message, /* body= */ "");
       }
     } catch (Throwable throwable) {
-      logger.atWarning().withCause(throwable).log("Failed to update block lists.");
-      // TODO(blocked by go/r3pr/2354): send email
+      logger.atWarning().withCause(throwable).log("Failed to validate block lists.");
+      emailSender.sendNotification("BSA validation aborted", getStackTraceAsString(throwable));
     }
     // Always return OK. No need to retry since all queries and GCS accesses are already
     // implicitly retried.
@@ -82,23 +88,35 @@ public class BsaValidateAction implements Runnable {
 
   /** Executes the validation action while holding the BSA lock. */
   Void runWithinLock() {
-    Optional<String> downloadJobName = fetchMostRecentDownloadJobIdIfCompleted();
+    Optional<String> downloadJobName =
+        bsaQuery(DownloadScheduler::fetchMostRecentDownloadJobIdIfCompleted);
     if (downloadJobName.isEmpty()) {
-      logger.atInfo().log("Cannot validate: latest download not found or unfinished.");
+      logger.atInfo().log("Cannot validate: block list downloads not found.");
+      emailSender.sendNotification(
+          "BSA validation does not run: block list downloads not found", "");
       return null;
     }
     logger.atInfo().log("Validating BSA with latest download: %s", downloadJobName.get());
 
-    ImmutableList.Builder<String> errors = new ImmutableList.Builder();
-    errors.addAll(checkBsaLabels(downloadJobName.get()));
+    ImmutableList.Builder<String> errorsBuilder = new ImmutableList.Builder<>();
+    errorsBuilder.addAll(checkBsaLabels(downloadJobName.get()));
 
-    emailValidationResults(downloadJobName.get(), errors.build());
+    ImmutableList<String> errors = errorsBuilder.build();
+
+    String resultSummary =
+        errors.isEmpty()
+            ? "BSA validation completed: no errors found"
+            : "BSA validation completed with errors";
+
+    emailValidationResults(resultSummary, downloadJobName.get(), errors);
     logger.atInfo().log("Finished validating BSA with latest download: %s", downloadJobName.get());
     return null;
   }
 
-  void emailValidationResults(String job, ImmutableList<String> errors) {
-    // TODO(blocked by go/r3pr/2354): send email
+  void emailValidationResults(String subject, String jobName, ImmutableList<String> results) {
+    String body =
+        String.format("Most recent download is %s.\n\n", jobName) + Joiner.on('\n').join(results);
+    emailSender.sendNotification(subject, body);
   }
 
   ImmutableList<String> checkBsaLabels(String jobName) {

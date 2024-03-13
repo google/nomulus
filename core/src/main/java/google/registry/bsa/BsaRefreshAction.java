@@ -14,6 +14,7 @@
 
 package google.registry.bsa;
 
+import static com.google.common.base.Throwables.getStackTraceAsString;
 import static google.registry.bsa.BsaStringUtils.LINE_SPLITTER;
 import static google.registry.request.Action.Method.GET;
 import static google.registry.request.Action.Method.POST;
@@ -55,6 +56,7 @@ public class BsaRefreshAction implements Runnable {
   private final BsaReportSender bsaReportSender;
   private final int transactionBatchSize;
   private final Duration domainCreateTxnCommitTimeLag;
+  private final BsaEmailSender emailSender;
   private final BsaLock bsaLock;
   private final Clock clock;
   private final Response response;
@@ -66,6 +68,7 @@ public class BsaRefreshAction implements Runnable {
       BsaReportSender bsaReportSender,
       @Config("bsaTxnBatchSize") int transactionBatchSize,
       @Config("domainCreateTxnCommitTimeLag") Duration domainCreateTxnCommitTimeLag,
+      BsaEmailSender emailSender,
       BsaLock bsaLock,
       Clock clock,
       Response response) {
@@ -74,6 +77,7 @@ public class BsaRefreshAction implements Runnable {
     this.bsaReportSender = bsaReportSender;
     this.transactionBatchSize = transactionBatchSize;
     this.domainCreateTxnCommitTimeLag = domainCreateTxnCommitTimeLag;
+    this.emailSender = emailSender;
     this.bsaLock = bsaLock;
     this.clock = clock;
     this.response = response;
@@ -83,11 +87,15 @@ public class BsaRefreshAction implements Runnable {
   public void run() {
     try {
       if (!bsaLock.executeWithLock(this::runWithinLock)) {
-        logger.atInfo().log("Job is being executed by another worker.");
+        String message = "BSA refresh did not run: another BSA related task is running";
+        logger.atInfo().log("%s.", message);
+        emailSender.sendNotification(message, /* body= */ "");
+      } else {
+        emailSender.sendNotification("BSA refreshed successfully", "");
       }
     } catch (Throwable throwable) {
-      // TODO(12/31/2023): consider sending an alert email.
-      logger.atWarning().withCause(throwable).log("Failed to update block lists.");
+      logger.atWarning().withCause(throwable).log("Failed to refresh BSA data.");
+      emailSender.sendNotification("BSA refresh aborted", getStackTraceAsString(throwable));
     }
     // Always return OK. No need to use a retrier on `runWithinLock`. Its individual steps are
     // implicitly retried. If action fails, the next cron will continue at checkpoint.

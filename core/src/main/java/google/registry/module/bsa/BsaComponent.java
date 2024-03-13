@@ -19,6 +19,7 @@ import dagger.Component;
 import dagger.Lazy;
 import google.registry.config.CredentialModule;
 import google.registry.config.RegistryConfig.ConfigModule;
+import google.registry.groups.GmailModule;
 import google.registry.keyring.KeyringModule;
 import google.registry.keyring.secretmanager.SecretManagerKeyringModule;
 import google.registry.module.bsa.BsaRequestComponent.BsaRequestComponentModule;
@@ -39,6 +40,7 @@ import javax.inject.Singleton;
       BsaRequestComponentModule.class,
       ConfigModule.class,
       CredentialModule.class,
+      GmailModule.class,
       GsonModule.class,
       PersistenceModule.class,
       KeyringModule.class,
