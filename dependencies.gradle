@@ -39,15 +39,16 @@ ext {
       // PINNED VERSIONS START HERE.
 
       // Breaking changes causing compilation error.
+      // TODO: Upgrade to 1.8x+
       'com.beust:jcommander:1.60',
       // TODO: Migrate to com.google.cloud:google-cloud-dns
       'com.google.apis:google-api-services-dns:v2beta1-rev99-1.25.0',
-      'com.google.apis:google-api-services-admin-directory:directory_v1-rev118-1.25.0',
+      // TODO: Migrate to v3
       'com.google.apis:google-api-services-drive:v2-rev393-1.25.0',
-      'com.thoughtworks.qdox:qdox:1.12.1',
+      // TODO: Migrate to org.jline
       'jline:jline:1.0',
 
-      // Remove after the legacy console is deleted.
+      // TODO: Remove after the legacy console is deleted.
       'com.google.closure-stylesheets:closure-stylesheets:1.5.0',
       'com.google.javascript:closure-compiler:v20210505',
       'com.google.protobuf:protobuf-java:3.13.0',
@@ -62,7 +63,7 @@ ext {
 
       // Schema crawler 16.11+ breaks API and tries to register a SQL driver
       // referenced (but not provided) by appengine-api-1.0-sdk.
-      // Try upgrading to the latest version after we are off GAE.
+      // TODO: Try upgrading to the latest version after we are off GAE.
       'us.fatehi:schemacrawler:[16.10.1, 16.11.0)!!',
       'us.fatehi:schemacrawler-api:[16.10.1, 16.11.0)!!',
       'us.fatehi:schemacrawler-diagram:[16.10.1, 16.11.0)!!',
@@ -83,6 +84,9 @@ ext {
       // OkHttp 5.0 is in alpha.
       'com.squareup.okhttp3:okhttp:[4.10.0, 5.0.0)!!',
 
+      // jaxb-xjc 2.4 and above requires changing the namespace to jakarta EE
+      'com.sun.xml.bind:jaxb-xjc:[2.3.3, 2.4)!!',
+
       // Excluding versions 2.0 from google-api-client because they're
       // runtime incompatible with version 1.25 of admin directory API.
       // TODO: see if we can upgrade to a newer version of the latter.
@@ -101,6 +105,7 @@ ext {
       'com.google.api.grpc:proto-google-cloud-tasks-v2:[1.33.2,)',
       'com.google.api.grpc:proto-google-common-protos:[2.1.0,)',
       'com.google.api:gax:[1.66.0,)',
+      'com.google.apis:google-api-services-admin-directory:[directory_v1-rev20240102-2.0.0,)',
       'com.google.apis:google-api-services-appengine:[v1-rev130-1.25.0,)',
       'com.google.apis:google-api-services-bigquery:[v2-rev459-1.25.0,)',
       'com.google.apis:google-api-services-cloudkms:[v1-rev108-1.25.0,)',
@@ -160,7 +165,6 @@ ext {
       'com.sun.activation:javax.activation:[1.2.0,)',
       'com.sun.xml.bind:jaxb-impl:[2.3.3,)',
       'com.sun.xml.bind:jaxb-osgi:[2.3.3,)',
-      'com.sun.xml.bind:jaxb-xjc:[2.3.3,)',
       'com.zaxxer:HikariCP:[3.4.5,)',
       'commons-codec:commons-codec:[1.15,)',
       'dnsjava:dnsjava:[3.3.1,)',

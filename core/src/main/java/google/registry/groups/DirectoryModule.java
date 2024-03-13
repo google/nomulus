@@ -14,7 +14,7 @@
 
 package google.registry.groups;
 
-import com.google.api.services.admin.directory.Directory;
+import com.google.api.services.directory.Directory;
 import dagger.Module;
 import dagger.Provides;
 import google.registry.config.CredentialModule.AdcDelegatedCredential;
