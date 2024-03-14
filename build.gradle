@@ -342,8 +342,8 @@ subprojects {
   // search for `flex-template-base-image` and update the parameter value.
   // There are at least two instances, one in core/build.gradle, one in
   // release/stage_beam_pipeline.sh
-  sourceCompatibility = JavaVersion.VERSION_17
-  targetCompatibility = JavaVersion.VERSION_17
+  sourceCompatibility = JavaVersion.VERSION_21
+  targetCompatibility = JavaVersion.VERSION_21
 
   project.tasks.test.dependsOn runPresubmits
 
