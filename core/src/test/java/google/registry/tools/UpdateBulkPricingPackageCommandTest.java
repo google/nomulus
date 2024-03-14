@@ -69,7 +69,7 @@ public class UpdateBulkPricingPackageCommandTest
         "--max_domains=200",
         "--max_creates=1000",
         "--price=USD 2000.00",
-        "--next_billing_date=2013-03-17",
+        "--next_billing_date=2013-03-17T00:00:00Z",
         "--clear_last_notification_sent",
         "abc123");
 
@@ -106,7 +106,7 @@ public class UpdateBulkPricingPackageCommandTest
                     "--max_domains=100",
                     "--max_creates=500",
                     "--price=USD 1000.00",
-                    "--next_billing_date=2012-03-17",
+                    "--next_billing_date=2012-03-17T00:00:00Z",
                     "nullPackage"));
     Truth.assertThat(thrown.getMessage())
         .isEqualTo("BulkPricingPackage with token nullPackage does not exist");
@@ -117,7 +117,7 @@ public class UpdateBulkPricingPackageCommandTest
     runCommandForced(
         "--max_creates=1000",
         "--price=USD 2000.00",
-        "--next_billing_date=2013-03-17",
+        "--next_billing_date=2013-03-17T00:00:00Z",
         "--clear_last_notification_sent",
         "abc123");
 
@@ -159,7 +159,7 @@ public class UpdateBulkPricingPackageCommandTest
     runCommandForced(
         "--max_domains=200",
         "--max_creates=1000",
-        "--next_billing_date=2013-03-17",
+        "--next_billing_date=2013-03-17T00:00:00Z",
         "--clear_last_notification_sent",
         "abc123");
 

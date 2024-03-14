@@ -22,7 +22,7 @@ import google.registry.model.domain.token.AllocationToken;
 import google.registry.model.domain.token.AllocationToken.TokenType;
 import google.registry.model.domain.token.BulkPricingPackage;
 import google.registry.persistence.VKey;
-import java.util.Date;
+import google.registry.tools.params.DateTimeParameter;
 import java.util.List;
 import java.util.Optional;
 import javax.annotation.Nullable;
@@ -56,9 +56,11 @@ abstract class CreateOrUpdateBulkPricingPackageCommand extends MutatingCommand {
   @Nullable
   @Parameter(
       names = "--next_billing_date",
+      converter = DateTimeParameter.class,
+      validateWith = DateTimeParameter.class,
       description =
           "The next date that the bulk pricing package should be billed for its annual fee")
-  Date nextBillingDate;
+  DateTime nextBillingDate;
 
   /** Returns the existing BulkPricingPackage or null if it does not exist. */
   @Nullable
@@ -105,9 +107,7 @@ abstract class CreateOrUpdateBulkPricingPackageCommand extends MutatingCommand {
                 Optional.ofNullable(maxCreates).ifPresent(builder::setMaxCreates);
                 Optional.ofNullable(price).ifPresent(builder::setBulkPrice);
                 Optional.ofNullable(nextBillingDate)
-                    .ifPresent(
-                        nextBillingDate ->
-                            builder.setNextBillingDate(new DateTime(nextBillingDate)));
+                    .ifPresent(nextBillingDate -> builder.setNextBillingDate(nextBillingDate));
                 if (clearLastNotificationSent()) {
                   builder.setLastNotificationSent(null);
                 }

@@ -20,6 +20,7 @@ import static google.registry.networking.handler.SslInitializerTestUtils.setUpSs
 import static google.registry.networking.handler.SslInitializerTestUtils.signKeyPair;
 import static google.registry.networking.handler.SslInitializerTestUtils.verifySslException;
 import static google.registry.networking.handler.SslServerInitializer.CLIENT_CERTIFICATE_PROMISE_KEY;
+import static org.joda.time.DateTimeZone.UTC;
 
 import com.google.common.base.Suppliers;
 import com.google.common.collect.ImmutableList;
@@ -41,11 +42,8 @@ import java.security.cert.CertificateException;
 import java.security.cert.CertificateExpiredException;
 import java.security.cert.CertificateNotYetValidException;
 import java.security.cert.X509Certificate;
-import java.time.Duration;
-import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Date;
 import java.util.List;
 import java.util.stream.Stream;
 import javax.net.ssl.SSLEngine;
@@ -53,6 +51,7 @@ import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLHandshakeException;
 import javax.net.ssl.SSLParameters;
 import javax.net.ssl.SSLSession;
+import org.joda.time.DateTime;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -66,7 +65,7 @@ import org.junit.jupiter.params.provider.MethodSource;
  * the overhead of routing traffic through the network layer, even if it were to go through
  * loopback. It also alleviates the need to pick a free port to use.
  *
- * <p>The local addresses used in each test method must to be different, otherwise tests run in
+ * <p>The local addresses used in each test method must be different, otherwise tests run in
  * parallel may interfere with each other.
  */
 class SslServerInitializerTest {
@@ -202,9 +201,7 @@ class SslServerInitializerTest {
         localAddress, getServerHandler(true, true, sslProvider, serverSsc.key(), serverSsc.cert()));
     SelfSignedCaCertificate clientSsc =
         SelfSignedCaCertificate.create(
-            "CLIENT",
-            Date.from(Instant.now().minus(Duration.ofDays(2))),
-            Date.from(Instant.now().plus(Duration.ofDays(1))));
+            "CLIENT", DateTime.now(UTC).minusDays(2), DateTime.now(UTC).plusDays(1));
     nettyExtension.setUpClient(
         localAddress,
         getClientHandler(
@@ -237,9 +234,7 @@ class SslServerInitializerTest {
             Suppliers.ofInstance(ImmutableList.of(serverSsc.cert()))));
     SelfSignedCaCertificate clientSsc =
         SelfSignedCaCertificate.create(
-            "CLIENT",
-            Date.from(Instant.now().minus(Duration.ofDays(2))),
-            Date.from(Instant.now().plus(Duration.ofDays(1))));
+            "CLIENT", DateTime.now(UTC).minusDays(2), DateTime.now(UTC).plusDays(1));
     nettyExtension.setUpClient(
         localAddress,
         getClientHandler(
@@ -271,20 +266,18 @@ class SslServerInitializerTest {
         localAddress, getServerHandler(true, true, sslProvider, serverSsc.key(), serverSsc.cert()));
     SelfSignedCaCertificate clientSsc =
         SelfSignedCaCertificate.create(
-            "CLIENT",
-            Date.from(Instant.now().minus(Duration.ofDays(2))),
-            Date.from(Instant.now().plus(Duration.ofDays(1))));
+            "CLIENT", DateTime.now(UTC).minusDays(2), DateTime.now(UTC).plusDays(1));
     nettyExtension.setUpClient(
         localAddress,
         getClientHandler(
             sslProvider, serverSsc.cert(), clientSsc.key(), clientSsc.cert(), "TLSv1.1", null));
 
     ImmutableList<Integer> jdkVersion =
-        Arrays.asList(System.getProperty("java.version").split("\\.")).stream()
+        Arrays.stream(System.getProperty("java.version").split("\\."))
             .map(Integer::parseInt)
             .collect(ImmutableList.toImmutableList());
 
-    // In JDK v11.0.11 and above TLS 1.1 is not supported any more, in which case attempting to
+    // In JDK v11.0.11 and above, TLS 1.1 is not supported anymore, in which case attempting to
     // connect with TLS 1.1 results in a ClosedChannelException instead of a SSLHandShakeException.
     // See https://www.oracle.com/java/technologies/javase/11-0-11-relnotes.html#JDK-8202343
     Class<? extends Exception> rootCause =
@@ -309,9 +302,7 @@ class SslServerInitializerTest {
         localAddress, getServerHandler(true, true, sslProvider, serverSsc.key(), serverSsc.cert()));
     SelfSignedCaCertificate clientSsc =
         SelfSignedCaCertificate.create(
-            "CLIENT",
-            Date.from(Instant.now().minus(Duration.ofDays(2))),
-            Date.from(Instant.now().minus(Duration.ofDays(1))));
+            "CLIENT", DateTime.now(UTC).minusDays(2), DateTime.now(UTC).minusDays(1));
     nettyExtension.setUpClient(
         localAddress,
         getClientHandler(sslProvider, serverSsc.cert(), clientSsc.key(), clientSsc.cert()));
@@ -332,9 +323,7 @@ class SslServerInitializerTest {
         localAddress, getServerHandler(true, true, sslProvider, serverSsc.key(), serverSsc.cert()));
     SelfSignedCaCertificate clientSsc =
         SelfSignedCaCertificate.create(
-            "CLIENT",
-            Date.from(Instant.now().plus(Duration.ofDays(1))),
-            Date.from(Instant.now().plus(Duration.ofDays(2))));
+            "CLIENT", DateTime.now(UTC).plusDays(1), DateTime.now(UTC).plusDays(2));
     nettyExtension.setUpClient(
         localAddress,
         getClientHandler(sslProvider, serverSsc.cert(), clientSsc.key(), clientSsc.cert()));
@@ -446,8 +435,8 @@ class SslServerInitializerTest {
         localAddress,
         getClientHandler(sslProvider, serverSsc.cert(), clientSsc.key(), clientSsc.cert()));
 
-    // When the client rejects the server cert due to wrong hostname, both the server and the client
-    // throw exceptions.
+    // When the client rejects the server cert due to the wrong hostname, both the server and the
+    // client throw exceptions.
     nettyExtension.assertThatClientRootCause().isInstanceOf(CertificateException.class);
     nettyExtension.assertThatClientRootCause().hasMessageThat().contains(SSL_HOST);
     nettyExtension.assertThatServerRootCause().isInstanceOf(SSLException.class);

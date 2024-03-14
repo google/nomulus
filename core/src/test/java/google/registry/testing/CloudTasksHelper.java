@@ -40,7 +40,6 @@ import com.google.common.collect.Multimap;
 import com.google.common.collect.Multimaps;
 import com.google.common.net.HttpHeaders;
 import com.google.common.net.MediaType;
-import com.google.common.truth.Truth8;
 import com.google.protobuf.Timestamp;
 import com.google.protobuf.util.Timestamps;
 import dagger.Module;
@@ -133,7 +132,7 @@ public class CloudTasksHelper implements Serializable {
   public void assertTasksEnqueuedWithProperty(
       String queueName, Function<Task, String> propertyGetter, String... expectedTaskProperties) {
     // Ordering is irrelevant but duplicates should be considered independently.
-    Truth8.assertThat(getTestTasksFor(queueName).stream().map(propertyGetter))
+    assertThat(getTestTasksFor(queueName).stream().map(propertyGetter))
         .containsExactly((Object[]) expectedTaskProperties);
   }
 

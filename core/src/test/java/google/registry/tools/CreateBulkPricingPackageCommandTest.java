@@ -53,7 +53,7 @@ public class CreateBulkPricingPackageCommandTest
         "--max_domains=100",
         "--max_creates=500",
         "--price=USD 1000.00",
-        "--next_billing_date=2012-03-17",
+        "--next_billing_date=2012-03-17T00:00:00Z",
         "abc123");
 
     Optional<BulkPricingPackage> bulkPricingPackageOptional =
@@ -161,7 +161,7 @@ public class CreateBulkPricingPackageCommandTest
             .setAllowedEppActions(ImmutableSet.of(CommandName.CREATE))
             .setDiscountFraction(1)
             .build());
-    runCommandForced("--price=USD 1000.00", "--next_billing_date=2012-03-17", "abc123");
+    runCommandForced("--price=USD 1000.00", "--next_billing_date=2012-03-17T00:00:00Z", "abc123");
     Optional<BulkPricingPackage> bulkPricingPackageOptional =
         tm().transact(() -> BulkPricingPackage.loadByTokenString("abc123"));
     assertThat(bulkPricingPackageOptional).isPresent();
