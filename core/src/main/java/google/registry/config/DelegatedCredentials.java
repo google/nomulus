@@ -45,7 +45,6 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.util.Collection;
-import java.util.Date;
 import java.util.Map;
 import java.util.ServiceLoader;
 import org.apache.commons.codec.binary.Base64;
@@ -195,10 +194,7 @@ public class DelegatedCredentials extends GoogleCredentials {
     GenericData responseData = response.parseAs(GenericData.class);
     String accessToken = validateString(responseData, "access_token", PARSE_ERROR_PREFIX);
     int expiresInSeconds = validateInt32(responseData, "expires_in", PARSE_ERROR_PREFIX);
-    long expiresAtMilliseconds = clock.nowUtc().getMillis() + expiresInSeconds * 1000L;
-    @SuppressWarnings("JavaUtilDate")
-    AccessToken token = new AccessToken(accessToken, new Date(expiresAtMilliseconds));
-    return token;
+    return new AccessToken(accessToken, clock.nowUtc().plusSeconds(expiresInSeconds).toDate());
   }
 
   String createAssertion(JsonFactory jsonFactory, long currentTime) throws IOException {
@@ -257,8 +253,7 @@ public class DelegatedCredentials extends GoogleCredentials {
     if (value == null) {
       throw new IOException(String.format(VALUE_NOT_FOUND_MESSAGE, errorPrefix, key));
     }
-    if (value instanceof BigDecimal) {
-      BigDecimal bigDecimalValue = (BigDecimal) value;
+    if (value instanceof BigDecimal bigDecimalValue) {
       return bigDecimalValue.intValueExact();
     }
     if (!(value instanceof Integer)) {

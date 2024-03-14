@@ -19,6 +19,7 @@ import static google.registry.networking.handler.SslInitializerTestUtils.getKeyP
 import static google.registry.networking.handler.SslInitializerTestUtils.setUpSslChannel;
 import static google.registry.networking.handler.SslInitializerTestUtils.signKeyPair;
 import static google.registry.networking.handler.SslInitializerTestUtils.verifySslException;
+import static org.joda.time.DateTimeZone.UTC;
 
 import com.google.common.collect.ImmutableList;
 import google.registry.util.SelfSignedCaCertificate;
@@ -43,12 +44,10 @@ import java.security.cert.CertificateException;
 import java.security.cert.CertificateExpiredException;
 import java.security.cert.CertificateNotYetValidException;
 import java.security.cert.X509Certificate;
-import java.time.Duration;
-import java.time.Instant;
-import java.util.Date;
 import java.util.stream.Stream;
 import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLSession;
+import org.joda.time.DateTime;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -62,7 +61,7 @@ import org.junit.jupiter.params.provider.MethodSource;
  * the overhead of routing traffic through the network layer, even if it were to go through
  * loopback. It also alleviates the need to pick a free port to use.
  *
- * <p>The local addresses used in each test method must to be different, otherwise tests run in
+ * <p>The local addresses used in each test method must be different, otherwise tests run in
  * parallel may interfere with each other.
  */
 class SslClientInitializerTest {
@@ -204,7 +203,7 @@ class SslClientInitializerTest {
     // Generate a new key pair.
     KeyPair keyPair = getKeyPair();
 
-    // Generate a self signed certificate, and use it to sign the key pair.
+    // Generate a self-signed certificate, and use it to sign the key pair.
     SelfSignedCaCertificate ssc = SelfSignedCaCertificate.create();
     X509Certificate cert = signKeyPair(ssc, keyPair, SSL_HOST);
 
@@ -212,7 +211,7 @@ class SslClientInitializerTest {
     PrivateKey privateKey = keyPair.getPrivate();
     nettyExtension.setUpServer(localAddress, getServerHandler(false, privateKey, cert));
 
-    // Set up the client to trust the self signed cert used to sign the cert that server provides.
+    // Set up the client to trust the self-signed cert used to sign the cert that server provides.
     SslClientInitializer<LocalChannel> sslClientInitializer =
         new SslClientInitializer<>(
             sslProvider,
@@ -239,21 +238,17 @@ class SslClientInitializerTest {
     // Generate a new key pair.
     KeyPair keyPair = getKeyPair();
 
-    // Generate a self signed certificate, and use it to sign the key pair.
+    // Generate a self-signed certificate, and use it to sign the key pair.
     SelfSignedCaCertificate ssc = SelfSignedCaCertificate.create();
     X509Certificate cert =
         signKeyPair(
-            ssc,
-            keyPair,
-            SSL_HOST,
-            Date.from(Instant.now().minus(Duration.ofDays(2))),
-            Date.from(Instant.now().minus(Duration.ofDays(1))));
+            ssc, keyPair, SSL_HOST, DateTime.now(UTC).minusDays(2), DateTime.now(UTC).minusDays(1));
 
     // Set up the server to use the signed cert and private key to perform handshake;
     PrivateKey privateKey = keyPair.getPrivate();
     nettyExtension.setUpServer(localAddress, getServerHandler(false, privateKey, cert));
 
-    // Set up the client to trust the self signed cert used to sign the cert that server provides.
+    // Set up the client to trust the self-signed cert used to sign the cert that server provides.
     SslClientInitializer<LocalChannel> sslClientInitializer =
         new SslClientInitializer<>(
             sslProvider,
@@ -280,21 +275,17 @@ class SslClientInitializerTest {
     // Generate a new key pair.
     KeyPair keyPair = getKeyPair();
 
-    // Generate a self signed certificate, and use it to sign the key pair.
+    // Generate a self-signed certificate, and use it to sign the key pair.
     SelfSignedCaCertificate ssc = SelfSignedCaCertificate.create();
     X509Certificate cert =
         signKeyPair(
-            ssc,
-            keyPair,
-            SSL_HOST,
-            Date.from(Instant.now().plus(Duration.ofDays(1))),
-            Date.from(Instant.now().plus(Duration.ofDays(2))));
+            ssc, keyPair, SSL_HOST, DateTime.now(UTC).plusDays(1), DateTime.now(UTC).plusDays(2));
 
     // Set up the server to use the signed cert and private key to perform handshake;
     PrivateKey privateKey = keyPair.getPrivate();
     nettyExtension.setUpServer(localAddress, getServerHandler(false, privateKey, cert));
 
-    // Set up the client to trust the self signed cert used to sign the cert that server provides.
+    // Set up the client to trust the self-signed cert used to sign the cert that server provides.
     SslClientInitializer<LocalChannel> sslClientInitializer =
         new SslClientInitializer<>(
             sslProvider,
@@ -333,7 +324,7 @@ class SslClientInitializerTest {
             SslClientInitializerTest::hostProvider,
             SslClientInitializerTest::portProvider,
             ImmutableList.of(serverSsc.cert()),
-            () -> clientSsc.key(),
+            clientSsc::key,
             () -> ImmutableList.of(clientSsc.cert()));
     nettyExtension.setUpClient(localAddress, sslClientInitializer);
 
@@ -360,7 +351,7 @@ class SslClientInitializerTest {
     // Generate a new key pair.
     KeyPair keyPair = getKeyPair();
 
-    // Generate a self signed certificate, and use it to sign the key pair.
+    // Generate a self-signed certificate, and use it to sign the key pair.
     SelfSignedCaCertificate ssc = SelfSignedCaCertificate.create();
     X509Certificate cert = signKeyPair(ssc, keyPair, "wrong.com");
 
@@ -368,7 +359,7 @@ class SslClientInitializerTest {
     PrivateKey privateKey = keyPair.getPrivate();
     nettyExtension.setUpServer(localAddress, getServerHandler(false, privateKey, cert));
 
-    // Set up the client to trust the self signed cert used to sign the cert that server provides.
+    // Set up the client to trust the self-signed cert used to sign the cert that server provides.
     SslClientInitializer<LocalChannel> sslClientInitializer =
         new SslClientInitializer<>(
             sslProvider,
@@ -379,7 +370,7 @@ class SslClientInitializerTest {
             null);
     nettyExtension.setUpClient(localAddress, sslClientInitializer);
 
-    // When the client rejects the server cert due to wrong hostname, both the client and server
+    // When the client rejects the server cert due to the wrong hostname, both the client and server
     // should throw exceptions.
     nettyExtension.assertThatClientRootCause().isInstanceOf(CertificateException.class);
     nettyExtension.assertThatClientRootCause().hasMessageThat().contains(SSL_HOST);
