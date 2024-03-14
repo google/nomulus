@@ -50,7 +50,7 @@ import javax.persistence.Converter;
 
 /** Processor to generate {@link AttributeConverter} for {@code VKey} type. */
 @SupportedAnnotationTypes("google.registry.persistence.WithVKey")
-@SupportedSourceVersion(SourceVersion.RELEASE_17)
+@SupportedSourceVersion(SourceVersion.RELEASE_21)
 public class VKeyProcessor extends AbstractProcessor {
 
   private static final String CONVERTER_CLASS_NAME_TEMP = "VKeyConverter_%s";
