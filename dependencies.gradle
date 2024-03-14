@@ -41,7 +41,9 @@ ext {
       // Breaking changes causing compilation error.
       // TODO: Upgrade to 1.8x+
       'com.beust:jcommander:1.60',
-      // TODO: Migrate to com.google.cloud:google-cloud-dns
+      // TODO: Migrate to com.google.cloud:google-cloud-dns if
+      // https://github.com/googleapis/google-cloud-java/issues/8929 is fixed.
+      // At least migrate to v2.
       'com.google.apis:google-api-services-dns:v2beta1-rev99-1.25.0',
       // TODO: Migrate to v3
       'com.google.apis:google-api-services-drive:v2-rev393-1.25.0',
@@ -70,6 +72,7 @@ ext {
       'us.fatehi:schemacrawler-tools:[16.10.1, 16.11.0)!!',
 
       // Hibernate 6.0+ requires Jakarta EE.
+      // TODO: Upgrade to 6.0+ after we migrate to Jakarta EE persistence.
       'org.hibernate:hibernate-core:[5.6.14.Final, 6.0)',
       'org.hibernate:hibernate-hikaricp:[5.6.14.Final, 6.0)',
 
@@ -84,16 +87,16 @@ ext {
       // OkHttp 5.0 is in alpha.
       'com.squareup.okhttp3:okhttp:[4.10.0, 5.0.0)!!',
 
-      // jaxb-xjc 2.4 and above requires changing the namespace to jakarta EE
+      // jaxb-xjc 2.4 and above requires changing the namespace to Jakarta EE
+      // TODO: Remove the cap after we upgrade to Jakarta EE xml Binding
+      // (I think).
       'com.sun.xml.bind:jaxb-xjc:[2.3.3, 2.4)!!',
 
-      // Excluding versions 2.0 from google-api-client because they're
-      // runtime incompatible with version 1.25 of admin directory API.
-      // TODO: see if we can upgrade to a newer version of the latter.
-      'com.google.api-client:google-api-client-java6:[1.31.3,2.0)!!',
-      'com.google.api-client:google-api-client:[1.31.3,2.0)!!',
-      'com.google.api-client:google-api-client-appengine:[1.31.3,2.0)',
-      'com.google.api-client:google-api-client-servlet:[1.31.3,2.0)',
+      // Excluding versions 2.0+ because it is runtime incompatible with the
+      // pinned google-api-services-(dns|drive) libraries. They have a
+      // hardcoded dependency on major version version 1.
+      // TODO: Remove the cap after the pins are removed.
+      'com.google.api-client:google-api-client:[1.31.3,2)!!',
 
 
       // DYNAMIC VERSIONS START HERE.
@@ -101,6 +104,9 @@ ext {
       'args4j:args4j:[2.0.26,)',
       'com.fasterxml.jackson.core:jackson-databind:[2.11.2,)',
       'com.github.ben-manes.caffeine:caffeine:[3.0.0,)',
+      'com.google.api-client:google-api-client-appengine:[1.31.3,)',
+      'com.google.api-client:google-api-client-java6:[1.31.3,)',
+      'com.google.api-client:google-api-client-servlet:[1.31.3,)',
       'com.google.api.grpc:proto-google-cloud-secretmanager-v1:[1.4.0,)',
       'com.google.api.grpc:proto-google-cloud-tasks-v2:[1.33.2,)',
       'com.google.api.grpc:proto-google-common-protos:[2.1.0,)',
