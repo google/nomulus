@@ -18,6 +18,7 @@ import static com.google.common.truth.Truth.assertThat;
 
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import google.registry.module.backend.BackendRequestComponent;
 import google.registry.module.bsa.BsaRequestComponent;
 import google.registry.module.frontend.FrontendRequestComponent;
@@ -28,7 +29,6 @@ import google.registry.testing.TestDataHelper;
 import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.Test;
-import org.testcontainers.shaded.com.google.common.collect.ImmutableMap;
 
 /** Unit tests for {@link RequestComponent}. */
 public class RequestComponentTest {
