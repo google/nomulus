@@ -693,7 +693,6 @@
        revision_id  bigserial not null,
         creation_timestamp timestamptz,
         name text not null,
-        should_publish boolean,
         primary key (revision_id)
     );
 

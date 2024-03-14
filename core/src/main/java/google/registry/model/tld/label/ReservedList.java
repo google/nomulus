@@ -71,10 +71,6 @@ public final class ReservedList
    */
   @Insignificant @Transient Map<String, ReservedListEntry> reservedListMap;
 
-  // TODO(b/321053918): Remove this field once the column is nullable
-  @Column(nullable = true)
-  boolean shouldPublish = true;
-
   @PreRemove
   void preRemove() {
     tm().query("DELETE FROM ReservedEntry WHERE revision_id = :revisionId")
