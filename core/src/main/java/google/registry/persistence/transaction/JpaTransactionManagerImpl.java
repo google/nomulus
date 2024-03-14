@@ -91,26 +91,6 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
   private static final ThreadLocal<TransactionInfo> transactionInfo =
       ThreadLocal.withInitial(TransactionInfo::new);
 
-  /** Returns true if inside a transaction; returns false otherwise. */
-  public static boolean isInTransaction() {
-    return transactionInfo.get().inTransaction;
-  }
-
-  /**
-   * Returns the {@link EntityManager} for the current database transaction.
-   *
-   * <p>This method must be call from inside a transaction.
-   */
-  public static EntityManager em() {
-    EntityManager entityManager = transactionInfo.get().entityManager;
-    if (entityManager == null) {
-      throw new PersistenceException(
-          "No EntityManager has been initialized. getEntityManager() must be invoked in the scope"
-              + " of a transaction");
-    }
-    return entityManager;
-  }
-
   public JpaTransactionManagerImpl(EntityManagerFactory emf, Clock clock, boolean readOnly) {
     this.emf = emf;
     this.clock = clock;
@@ -131,16 +111,10 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
     return emf.createEntityManager();
   }
 
-  @Deprecated // See Javadoc of interface method.
   @Override
   public EntityManager getEntityManager() {
-    EntityManager entityManager = transactionInfo.get().entityManager;
-    if (entityManager == null) {
-      throw new PersistenceException(
-          "No EntityManager has been initialized. getEntityManager() must be invoked in the scope"
-              + " of a transaction");
-    }
-    return entityManager;
+    assertInTransaction();
+    return transactionInfo.get().entityManager;
   }
 
   @Override
@@ -158,7 +132,6 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
     return getEntityManager().createQuery(sqlString);
   }
 
-  @Deprecated // See Javadoc of instance method.
   @Override
   public boolean inTransaction() {
     return transactionInfo.get().inTransaction;
