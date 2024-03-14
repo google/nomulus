@@ -16,7 +16,12 @@ package google.registry.bsa;
 
 import static com.google.common.base.Throwables.getStackTraceAsString;
 import static com.google.common.truth.Truth.assertThat;
+import static google.registry.bsa.persistence.BsaTestingUtils.persistBsaLabel;
 import static google.registry.bsa.persistence.BsaTestingUtils.persistDownloadSchedule;
+import static google.registry.bsa.persistence.BsaTestingUtils.persistUnblockableDomain;
+import static google.registry.testing.DatabaseHelper.createTld;
+import static google.registry.testing.DatabaseHelper.persistActiveDomain;
+import static google.registry.testing.DatabaseHelper.persistDeletedDomain;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.startsWith;
@@ -31,9 +36,12 @@ import com.google.cloud.storage.contrib.nio.testing.LocalStorageHelper;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import google.registry.bsa.api.UnblockableDomain;
+import google.registry.bsa.api.UnblockableDomain.Reason;
 import google.registry.bsa.persistence.BsaTestingUtils;
 import google.registry.gcs.GcsUtils;
 import google.registry.groups.GmailClient;
+import google.registry.model.domain.Domain;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationWithCoverageExtension;
 import google.registry.request.Response;
@@ -43,6 +51,7 @@ import google.registry.util.EmailMessage;
 import java.util.concurrent.Callable;
 import javax.mail.internet.InternetAddress;
 import org.joda.time.DateTime;
+import org.joda.time.Duration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -57,6 +66,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 public class BsaValidateActionTest {
 
   private static final String DOWNLOAD_JOB_NAME = "job";
+
+  private static final Duration MAX_STALENESS = Duration.standardMinutes(1);
 
   FakeClock fakeClock = new FakeClock(DateTime.parse("2023-11-09T02:08:57.880Z"));
 
@@ -90,8 +101,11 @@ public class BsaValidateActionTest {
             idnChecker,
             new BsaEmailSender(gmailClient, emailRecipient),
             /* transactionBatchSize= */ 500,
+            MAX_STALENESS,
+            fakeClock,
             bsaLock,
             response);
+    createTld("app");
   }
 
   static void createBlockList(GcsClient gcsClient, BlockListType blockListType, String content)
@@ -212,6 +226,61 @@ public class BsaValidateActionTest {
 
     assertThat(allErrors).contains("Found 1 missing labels in the DB. Examples: [test1]");
     assertThat(allErrors).contains("Found 1 unexpected labels in the DB. Examples: [test3]");
+  }
+
+  @Test
+  void isStalenessAllowed_newDomain_allowed() {
+    persistBsaLabel("label");
+    Domain domain = persistActiveDomain("label.app", fakeClock.nowUtc());
+    fakeClock.advanceBy(MAX_STALENESS.minus(Duration.standardSeconds(1)));
+    assertThat(action.isStalenessAllowed(true, domain.createVKey())).isTrue();
+  }
+
+  @Test
+  void isStalenessAllowed_newDomain_notAllowed() {
+    persistBsaLabel("label");
+    Domain domain = persistActiveDomain("label.app", fakeClock.nowUtc());
+    fakeClock.advanceBy(MAX_STALENESS);
+    assertThat(action.isStalenessAllowed(true, domain.createVKey())).isFalse();
+  }
+
+  @Test
+  void isStalenessAllowed_deletedDomain_allowed() {
+    persistBsaLabel("label");
+    Domain domain = persistDeletedDomain("label.app", fakeClock.nowUtc());
+    fakeClock.advanceBy(MAX_STALENESS.minus(Duration.standardSeconds(1)));
+    assertThat(action.isStalenessAllowed(false, domain.createVKey())).isTrue();
+  }
+
+  @Test
+  void isStalenessAllowed_deletedDomain_notAllowed() {
+    persistBsaLabel("label");
+    Domain domain = persistDeletedDomain("label.app", fakeClock.nowUtc());
+    fakeClock.advanceBy(MAX_STALENESS);
+    assertThat(action.isStalenessAllowed(false, domain.createVKey())).isFalse();
+  }
+
+  @Test
+  void checkUnblockableDomain_noError() {
+    createTld("app");
+    persistActiveDomain("label.app");
+    persistBsaLabel("label");
+    persistUnblockableDomain(UnblockableDomain.of("label", "app", Reason.REGISTERED));
+    when(idnChecker.getAllValidIdns(anyString())).thenReturn(ImmutableSet.of(IdnTableEnum.JA));
+
+    assertThat(action.checkUnblockableDomains()).isEmpty();
+  }
+
+  @Test
+  void checkUnblockableDomain_error() {
+    createTld("app");
+    persistActiveDomain("label.app");
+    persistBsaLabel("label");
+    persistUnblockableDomain(UnblockableDomain.of("label", "app", Reason.RESERVED));
+    when(idnChecker.getAllValidIdns(anyString())).thenReturn(ImmutableSet.of(IdnTableEnum.JA));
+
+    assertThat(action.checkUnblockableDomains())
+        .containsExactly("label.app: should be REGISTERED, found RESERVED");
   }
 
   @Test
