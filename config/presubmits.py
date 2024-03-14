@@ -173,17 +173,24 @@ PRESUBMITS = {
     ):
         "JavaScript files should not include console logging.",
     PresubmitCheck(
-        r"org\.testcontainers\.shaded\.",
+        r".*org\.testcontainers\.shaded.*",
         "java",
         {"/node_modules/"},
     ):
         "Do not use shaded dependencies from testcontainers.",
     PresubmitCheck(
-        r"com\.google\.common\.truth\.Truth8",
+        r".*com\.google\.common\.truth\.Truth8.*",
         "java",
         {"/node_modules/"},
     ):
         "Truth8 is deprecated. Use Truth instead.",
+    PresubmitCheck(
+        r".*java\.util\.Date.*",
+        "java",
+        {"/node_modules/", "JpaTransactionManagerImpl.java"},
+    ):
+        "Do not use java.util.Date. Use classes in Java.date package instead.",
+
 }
 
 # Note that this regex only works for one kind of Flyway file.  If we want to

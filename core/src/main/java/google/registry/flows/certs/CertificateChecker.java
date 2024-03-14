@@ -31,7 +31,6 @@ import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.ECPublicKey;
 import java.security.interfaces.RSAPublicKey;
-import java.util.Date;
 import java.util.stream.Collectors;
 import javax.inject.Inject;
 import org.bouncycastle.jcajce.provider.asymmetric.util.EC5Util;
@@ -106,12 +105,9 @@ public class CertificateChecker {
     // These 2 different instances of PublicKey need to be handled separately since their OIDs are
     // encoded differently. More details on this can be found at
     // https://stackoverflow.com/questions/49895713/how-to-find-the-matching-curve-name-from-an-ecpublickey.
-    if (key instanceof ECPublicKey) {
-      ECPublicKey ecKey = (ECPublicKey) key;
+    if (key instanceof ECPublicKey ecKey) {
       params = EC5Util.convertSpec(ecKey.getParams());
-    } else if (key instanceof org.bouncycastle.jce.interfaces.ECPublicKey) {
-      org.bouncycastle.jce.interfaces.ECPublicKey ecKey =
-          (org.bouncycastle.jce.interfaces.ECPublicKey) key;
+    } else if (key instanceof org.bouncycastle.jce.interfaces.ECPublicKey ecKey) {
       params = ecKey.getParameters();
     } else {
       throw new IllegalArgumentException("Unrecognized instance of PublicKey.");
@@ -148,7 +144,7 @@ public class CertificateChecker {
     if (!violations.isEmpty()) {
       String displayMessages =
           violations.stream()
-              .map(violation -> getViolationDisplayMessage(violation))
+              .map(this::getViolationDisplayMessage)
               .collect(Collectors.joining("\n"));
       throw new InsecureCertificateException(violations, displayMessages);
     }
@@ -162,7 +158,7 @@ public class CertificateChecker {
     ImmutableSet.Builder<CertificateViolation> violations = new ImmutableSet.Builder<>();
 
     // Check if currently in validity period
-    Date now = clock.nowUtc().toDate();
+    DateTime now = clock.nowUtc();
     if (DateTimeComparator.getInstance().compare(certificate.getNotAfter(), now) < 0) {
       violations.add(CertificateViolation.EXPIRED);
     } else if (DateTimeComparator.getInstance().compare(certificate.getNotBefore(), now) > 0) {
@@ -231,13 +227,13 @@ public class CertificateChecker {
       DateTime lastExpiringNotificationSentDate, String certificateStr) {
     X509Certificate certificate = getCertificate(certificateStr);
     DateTime now = clock.nowUtc();
-    // expiration date is one day after lastValidDate
+    // the expiration date is one day after lastValidDate
     DateTime lastValidDate = new DateTime(certificate.getNotAfter());
     if (lastValidDate.isBefore(now)) {
       return false;
     }
     /*
-     * Client should receive a notification if :
+     * Client should receive a notification if:
      *    1) client has never received notification (lastExpiringNotificationSentDate is initially
      *    set to START_OF_TIME) and the certificate has entered the expiring period, OR
      *    2) client has received notification but the interval between now and
@@ -254,29 +250,21 @@ public class CertificateChecker {
     // Yes, we'd rather do this as an instance method on the CertificateViolation enum itself, but
     // we can't because we need access to configuration (injected as instance variables) which you
     // can't get in a static enum context.
-    switch (certificateViolation) {
-      case EXPIRED:
-        return "Certificate is expired.";
-      case NOT_YET_VALID:
-        return "Certificate start date is in the future.";
-      case ALGORITHM_CONSTRAINED:
-        return "Certificate key algorithm must be RSA or ECDSA.";
-      case RSA_KEY_LENGTH_TOO_SHORT:
-        return String.format(
-            "RSA key length is too short; the minimum allowed length is %d bits.",
-            this.minimumRsaKeyLength);
-      case VALIDITY_LENGTH_TOO_LONG:
-        return String.format(
-            "Certificate validity period is too long; it must be less than or equal to %d days.",
-            this.maxValidityLengthSchedule.lastEntry().getValue());
-      case INVALID_ECDSA_CURVE:
-        return String.format(
-            "The ECDSA key must use one of these algorithms: %s", allowedEcdsaCurves);
-      default:
-        throw new IllegalArgumentException(
-            String.format(
-                "Unknown CertificateViolation enum value: %s", certificateViolation.name()));
-    }
+    return switch (certificateViolation) {
+      case EXPIRED -> "Certificate is expired.";
+      case NOT_YET_VALID -> "Certificate start date is in the future.";
+      case ALGORITHM_CONSTRAINED -> "Certificate key algorithm must be RSA or ECDSA.";
+      case RSA_KEY_LENGTH_TOO_SHORT ->
+          String.format(
+              "RSA key length is too short; the minimum allowed length is %d bits.",
+              this.minimumRsaKeyLength);
+      case VALIDITY_LENGTH_TOO_LONG ->
+          String.format(
+              "Certificate validity period is too long; it must be less than or equal to %d days.",
+              this.maxValidityLengthSchedule.lastEntry().getValue());
+      case INVALID_ECDSA_CURVE ->
+          String.format("The ECDSA key must use one of these algorithms: %s", allowedEcdsaCurves);
+    };
   }
 
   /**
@@ -295,7 +283,7 @@ public class CertificateChecker {
      * Gets a suitable end-user-facing display message for this particular certificate violation.
      *
      * <p>Note that the {@link CertificateChecker} instance must be passed in because it contains
-     * configuration values (e.g. minimum RSA key length) that go into the error message text.
+     * configuration values (e.g., minimum RSA key length) that go into the error message text.
      */
     public String getDisplayMessage(CertificateChecker certificateChecker) {
       return certificateChecker.getViolationDisplayMessage(this);
