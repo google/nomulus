@@ -640,6 +640,9 @@ bsa:
   # Number of entities (labels and unblockable domains) to process in a single
   # DB transaction.
   bsaTxnBatchSize: 1000
+  # Used by `BsaValidateAction`: ignore inconsistencies caused by recent events
+  # in the past. This is roughly equal to two `BsaRefreshAction` runs.
+  bsaValidationMaxStalenessSeconds: 3600
 
   # Http endpoint for acquiring Auth tokens.
   authUrl: "https://"

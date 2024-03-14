@@ -1489,6 +1489,12 @@ public final class RegistryConfig {
     }
 
     @Provides
+    @Config("bsaValidationMaxStaleness")
+    public static Duration provideBsaValidationMaxStaleness(RegistryConfigSettings config) {
+      return Duration.standardSeconds(config.bsa.bsaValidationMaxStalenessSeconds);
+    }
+
+    @Provides
     @Config("bsaAuthUrl")
     public static String provideBsaAuthUrl(RegistryConfigSettings config) {
       return config.bsa.authUrl;

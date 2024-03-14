@@ -275,6 +275,7 @@ public class RegistryConfigSettings {
     public int bsaMaxNopIntervalHours;
     public int bsaTxnBatchSize;
     public int domainCreateTxnCommitTimeLagSeconds;
+    public int bsaValidationMaxStalenessSeconds;
     public String authUrl;
     public int authTokenExpirySeconds;
     public Map<String, String> dataUrls;

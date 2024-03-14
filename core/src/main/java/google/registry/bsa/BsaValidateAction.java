@@ -16,27 +16,42 @@ package google.registry.bsa;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Throwables.getStackTraceAsString;
+import static com.google.common.collect.ImmutableList.toImmutableList;
 import static google.registry.bsa.BsaTransactions.bsaQuery;
+import static google.registry.bsa.ReservedDomainsUtils.isReservedDomain;
 import static google.registry.bsa.persistence.Queries.batchReadBsaLabelText;
+import static google.registry.persistence.transaction.TransactionManagerFactory.replicaTm;
 import static google.registry.request.Action.Method.GET;
 import static google.registry.request.Action.Method.POST;
 import static javax.servlet.http.HttpServletResponse.SC_OK;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Sets;
 import com.google.common.collect.Sets.SetView;
 import com.google.common.flogger.FluentLogger;
+import com.google.common.net.InternetDomainName;
+import google.registry.bsa.api.UnblockableDomain;
+import google.registry.bsa.api.UnblockableDomain.Reason;
 import google.registry.bsa.persistence.DownloadScheduler;
+import google.registry.bsa.persistence.Queries;
 import google.registry.config.RegistryConfig.Config;
+import google.registry.model.ForeignKeyUtils;
+import google.registry.model.domain.Domain;
+import google.registry.persistence.VKey;
 import google.registry.request.Action;
 import google.registry.request.Response;
 import google.registry.request.auth.Auth;
+import google.registry.util.Clock;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Stream;
 import javax.inject.Inject;
+import org.joda.time.DateTime;
+import org.joda.time.Duration;
 
 /** Validates the BSA data in the database against the most recent block lists. */
 @Action(
@@ -53,6 +68,8 @@ public class BsaValidateAction implements Runnable {
   private final IdnChecker idnChecker;
   private final BsaEmailSender emailSender;
   private final int transactionBatchSize;
+  private final Duration maxStaleness;
+  private final Clock clock;
   private final BsaLock bsaLock;
   private final Response response;
 
@@ -62,12 +79,16 @@ public class BsaValidateAction implements Runnable {
       IdnChecker idnChecker,
       BsaEmailSender emailSender,
       @Config("bsaTxnBatchSize") int transactionBatchSize,
+      @Config("bsaValidationMaxStaleness") Duration maxStaleness,
+      Clock clock,
       BsaLock bsaLock,
       Response response) {
     this.gcsClient = gcsClient;
     this.idnChecker = idnChecker;
     this.emailSender = emailSender;
     this.transactionBatchSize = transactionBatchSize;
+    this.maxStaleness = maxStaleness;
+    this.clock = clock;
     this.bsaLock = bsaLock;
     this.response = response;
   }
@@ -103,6 +124,7 @@ public class BsaValidateAction implements Runnable {
 
     ImmutableList.Builder<String> errorsBuilder = new ImmutableList.Builder<>();
     errorsBuilder.addAll(checkBsaLabels(downloadJobName.get()));
+    errorsBuilder.addAll(checkUnblockableDomains());
 
     ImmutableList<String> errors = errorsBuilder.build();
 
@@ -150,6 +172,66 @@ public class BsaValidateAction implements Runnable {
     return errors.build();
   }
 
+  ImmutableList<String> checkUnblockableDomains() {
+    ImmutableList.Builder<String> errors = new ImmutableList.Builder<>();
+    Optional<UnblockableDomain> lastRead = Optional.empty();
+    ImmutableList<UnblockableDomain> batch;
+    do {
+      batch = Queries.batchReadUnblockableDomains(lastRead, transactionBatchSize);
+      ImmutableMap<String, VKey<Domain>> activeDomains =
+          ForeignKeyUtils.load(
+              Domain.class,
+              batch.stream().map(UnblockableDomain::domainName).collect(toImmutableList()),
+              clock.nowUtc());
+      for (var unblockable : batch) {
+        checkOneUnblockableDomain(unblockable, activeDomains).ifPresent(errors::add);
+      }
+      if (!batch.isEmpty()) {
+        lastRead = Optional.of(Iterables.getLast(batch));
+      }
+    } while (batch.size() == transactionBatchSize);
+    return errors.build();
+  }
+
+  Optional<String> checkOneUnblockableDomain(
+      UnblockableDomain domain, ImmutableMap<String, VKey<Domain>> activeDomains) {
+    DateTime now = clock.nowUtc();
+    boolean isRegistered = activeDomains.containsKey(domain.domainName());
+    boolean isReserved = isReservedDomain(domain.domainName(), now);
+    InternetDomainName domainName = InternetDomainName.from(domain.domainName());
+    boolean isInvalid = idnChecker.getAllValidIdns(domainName.parts().get(0)).isEmpty();
+
+    Reason expectedReason =
+        isRegistered
+            ? Reason.REGISTERED
+            : (isReserved ? Reason.RESERVED : (isInvalid ? Reason.INVALID : null));
+    if (Objects.equals(expectedReason, domain.reason())) {
+      return Optional.empty();
+    }
+    if (isRegistered || domain.reason().equals(Reason.REGISTERED)) {
+      if (isStalenessAllowed(isRegistered, activeDomains.get(domain.domainName()))) {
+        return Optional.empty();
+      }
+    }
+    return Optional.of(
+        String.format(
+            "%s: should be %s, found %s",
+            domain.domainName(),
+            expectedReason != null ? expectedReason.name() : "BLOCKABLE",
+            domain.reason()));
+  }
+
+  boolean isStalenessAllowed(boolean isNewDomain, VKey<Domain> domainVKey) {
+    Domain domain = bsaQuery(() -> replicaTm().loadByKey(domainVKey));
+    var now = clock.nowUtc();
+    if (isNewDomain) {
+      return domain.getCreationTime().plus(maxStaleness).isAfter(now);
+    } else {
+      return domain.getDeletionTime().isBefore(now)
+          && domain.getDeletionTime().plus(maxStaleness).isAfter(now);
+    }
+  }
+
   /** Returns unique labels across all block lists in the download specified by {@code jobName}. */
   ImmutableSet<String> fetchDownloadedLabels(String jobName) {
     ImmutableSet.Builder<String> labelsBuilder = new ImmutableSet.Builder<>();
@@ -171,10 +253,11 @@ public class BsaValidateAction implements Runnable {
     Optional<String> lastRead = Optional.empty();
     do {
       batch = batchReadBsaLabelText(lastRead, batchSize);
-      batch.forEach(labelsBuilder::add);
+      labelsBuilder.addAll(batch);
       if (!batch.isEmpty()) {
         lastRead = Optional.of(Iterables.getLast(batch));
       }
+
     } while (batch.size() == batchSize);
     return labelsBuilder.build();
   }
