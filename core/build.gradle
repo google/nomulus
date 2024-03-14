@@ -195,8 +195,6 @@ dependencies {
   testRuntimeOnly deps['guru.nidi:graphviz-java-all-j2v8']
   testImplementation deps['io.github.classgraph:classgraph']
   testRuntimeOnly deps['io.github.java-diff-utils:java-diff-utils']
-  testImplementation deps['javax.annotation:javax.annotation-api']
-  testImplementation deps['javax.annotation:jsr250-api']
   implementation deps['javax.mail:mail']
   implementation deps['javax.inject:javax.inject']
   implementation deps['javax.persistence:javax.persistence-api']

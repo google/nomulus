@@ -173,8 +173,6 @@ ext {
       'io.github.classgraph:classgraph:[4.8.102,)',
       'io.github.java-diff-utils:java-diff-utils:[4.9,)',
       'io.netty:netty-tcnative-boringssl-static:[2.0.36.Final,)',
-      'javax.annotation:javax.annotation-api:[1.3.2,)',
-      'javax.annotation:jsr250-api:[1.0,)',
       'javax.inject:javax.inject:[1,)',
       'javax.mail:mail:[1.4,)',
       'javax.persistence:javax.persistence-api:[2.2,)',
