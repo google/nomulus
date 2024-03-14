@@ -17,25 +17,21 @@ package google.registry.bsa.persistence;
 import static com.google.common.base.Verify.verify;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
-import com.google.auto.value.AutoValue;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import google.registry.bsa.RefreshStage;
 import org.joda.time.DateTime;
 
-/** Information needed when handling a domain refresh. */
-@AutoValue
-public abstract class RefreshSchedule {
-
-  abstract long jobId();
-
-  abstract DateTime jobCreationTime();
-
-  public abstract String jobName();
-
-  public abstract RefreshStage stage();
-
-  /** The most recent job that ended in the {@code DONE} stage. */
-  public abstract DateTime prevRefreshTime();
+/**
+ * Information needed when handling a domain refresh.
+ *
+ * @param prevRefreshTime The most recent job that ended in the {@code DONE} stage.
+ */
+public record RefreshSchedule(
+    long jobId,
+    DateTime jobCreationTime,
+    String jobName,
+    RefreshStage stage,
+    DateTime prevRefreshTime) {
 
   /** Updates the current job to the new stage. */
   @CanIgnoreReturnValue
@@ -50,12 +46,12 @@ public abstract class RefreshSchedule {
                   stage);
               bsaRefresh.setStage(stage);
               tm().put(bsaRefresh);
-              return of(bsaRefresh, prevRefreshTime());
+              return create(bsaRefresh, prevRefreshTime());
             });
   }
 
-  static RefreshSchedule of(BsaDomainRefresh job, DateTime prevJobCreationTime) {
-    return new AutoValue_RefreshSchedule(
+  static RefreshSchedule create(BsaDomainRefresh job, DateTime prevJobCreationTime) {
+    return new RefreshSchedule(
         job.getJobId(),
         job.getCreationTime(),
         job.getJobName(),

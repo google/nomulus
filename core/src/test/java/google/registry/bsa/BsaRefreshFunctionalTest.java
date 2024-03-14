@@ -144,7 +144,7 @@ class BsaRefreshFunctionalTest {
     UnblockableDomain newUnblockable = new UnblockableDomain("blocked1.app", Reason.RESERVED);
     assertThat(queryUnblockableDomains()).containsExactly(newUnblockable);
     assertThat(gcsClient.readRefreshChanges(jobName))
-        .containsExactly(UnblockableDomainChange.ofNew(newUnblockable));
+        .containsExactly(UnblockableDomainChange.createNew(newUnblockable));
     verify(bsaReportSender, never()).removeUnblockableDomainsUpdates(anyString());
     verify(bsaReportSender, times(1))
         .addUnblockableDomainsUpdates("{\n  \"reserved\": [\n    \"blocked1.app\"\n  ]\n}");
@@ -161,7 +161,7 @@ class BsaRefreshFunctionalTest {
     UnblockableDomain newUnblockable = new UnblockableDomain("blocked1.dev", Reason.REGISTERED);
     assertThat(queryUnblockableDomains()).containsExactly(newUnblockable);
     assertThat(gcsClient.readRefreshChanges(jobName))
-        .containsExactly(UnblockableDomainChange.ofNew(newUnblockable));
+        .containsExactly(UnblockableDomainChange.createNew(newUnblockable));
 
     verify(bsaReportSender, never()).removeUnblockableDomainsUpdates(anyString());
     verify(bsaReportSender, times(1))
@@ -184,7 +184,7 @@ class BsaRefreshFunctionalTest {
     assertThat(queryUnblockableDomains()).isEmpty();
     assertThat(gcsClient.readRefreshChanges(jobName))
         .containsExactly(
-            UnblockableDomainChange.ofDeleted(
+            UnblockableDomainChange.createDeleted(
                 new UnblockableDomain("blocked1.dev", Reason.REGISTERED)));
 
     verify(bsaReportSender, never()).addUnblockableDomainsUpdates(anyString());
@@ -207,7 +207,7 @@ class BsaRefreshFunctionalTest {
     assertThat(queryUnblockableDomains()).isEmpty();
     assertThat(gcsClient.readRefreshChanges(jobName))
         .containsExactly(
-            UnblockableDomainChange.ofDeleted(
+            UnblockableDomainChange.createDeleted(
                 new UnblockableDomain("blocked1.app", Reason.RESERVED)));
 
     verify(bsaReportSender, never()).addUnblockableDomainsUpdates(anyString());
@@ -233,7 +233,7 @@ class BsaRefreshFunctionalTest {
         .containsExactly(new UnblockableDomain("blocked1.app", Reason.RESERVED));
     assertThat(gcsClient.readRefreshChanges(jobName))
         .containsExactly(
-            UnblockableDomainChange.ofChanged(
+            UnblockableDomainChange.createChanged(
                 new UnblockableDomain("blocked1.app", Reason.REGISTERED), Reason.RESERVED));
     InOrder inOrder = Mockito.inOrder(bsaReportSender);
     inOrder.verify(bsaReportSender).removeUnblockableDomainsUpdates("[\n  \"blocked1.app\"\n]");
@@ -260,7 +260,7 @@ class BsaRefreshFunctionalTest {
     assertThat(queryUnblockableDomains()).containsExactly(changed);
     assertThat(gcsClient.readRefreshChanges(jobName))
         .containsExactly(
-            UnblockableDomainChange.ofChanged(
+            UnblockableDomainChange.createChanged(
                 new UnblockableDomain("blocked1.app", Reason.RESERVED), Reason.REGISTERED));
     InOrder inOrder = Mockito.inOrder(bsaReportSender);
     inOrder.verify(bsaReportSender).removeUnblockableDomainsUpdates("[\n  \"blocked1.app\"\n]");
@@ -279,7 +279,7 @@ class BsaRefreshFunctionalTest {
     UnblockableDomain newUnblockable = new UnblockableDomain("blocked1.app", Reason.REGISTERED);
     assertThat(queryUnblockableDomains()).containsExactly(newUnblockable);
     assertThat(gcsClient.readRefreshChanges(jobName))
-        .containsExactly(UnblockableDomainChange.ofNew(newUnblockable));
+        .containsExactly(UnblockableDomainChange.createNew(newUnblockable));
   }
 
   @Test

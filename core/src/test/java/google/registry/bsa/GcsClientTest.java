@@ -79,7 +79,8 @@ class GcsClientTest {
   @Test
   void readWriteOrderDiffs_success() throws Exception {
     ImmutableList<BlockOrder> orders =
-        ImmutableList.of(BlockOrder.of(1, OrderType.CREATE), BlockOrder.of(2, OrderType.DELETE));
+        ImmutableList.of(
+            BlockOrder.create(1, OrderType.CREATE), BlockOrder.create(2, OrderType.DELETE));
     gcsClient.writeOrderDiffs("job", orders.stream());
     assertThat(gcsClient.readOrderDiffs("job")).containsExactlyElementsIn(orders);
   }
@@ -88,9 +89,9 @@ class GcsClientTest {
   void readWriteLabelDiffs_success() throws Exception {
     ImmutableList<BlockLabel> labels =
         ImmutableList.of(
-            BlockLabel.of("1", LabelType.CREATE.CREATE, ImmutableSet.of()),
-            BlockLabel.of("2", LabelType.NEW_ORDER_ASSOCIATION, ImmutableSet.of("JA")),
-            BlockLabel.of("3", LabelType.DELETE, ImmutableSet.of("JA", "EXTENDED_LATIN")));
+            BlockLabel.create("1", LabelType.CREATE.CREATE, ImmutableSet.of()),
+            BlockLabel.create("2", LabelType.NEW_ORDER_ASSOCIATION, ImmutableSet.of("JA")),
+            BlockLabel.create("3", LabelType.DELETE, ImmutableSet.of("JA", "EXTENDED_LATIN")));
     gcsClient.writeLabelDiffs("job", labels.stream());
     assertThat(gcsClient.readLabelDiffs("job")).containsExactlyElementsIn(labels);
   }

@@ -57,7 +57,6 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
 import static google.registry.util.DateTimeUtils.leapSafeAddYears;
 
-import com.google.auto.value.AutoValue;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.net.InternetDomainName;
@@ -698,18 +697,13 @@ public final class DomainCreateFlow implements MutatingFlow {
     }
   }
 
-  /** A class to store renewal info used in {@link BillingRecurrence} billing events. */
-  @AutoValue
-  public abstract static class RenewalPriceInfo {
-    static DomainCreateFlow.RenewalPriceInfo create(
+  /** A record to store renewal info used in {@link BillingRecurrence} billing events. */
+  public record RenewalPriceInfo(
+      RenewalPriceBehavior renewalPriceBehavior, @Nullable Money renewalPrice) {
+    static RenewalPriceInfo create(
         RenewalPriceBehavior renewalPriceBehavior, @Nullable Money renewalPrice) {
-      return new AutoValue_DomainCreateFlow_RenewalPriceInfo(renewalPriceBehavior, renewalPrice);
+      return new RenewalPriceInfo(renewalPriceBehavior, renewalPrice);
     }
-
-    public abstract RenewalPriceBehavior renewalPriceBehavior();
-
-    @Nullable
-    public abstract Money renewalPrice();
   }
 
   private static ImmutableList<FeeTransformResponseExtension> createResponseExtensions(

@@ -68,11 +68,11 @@ public class RefreshScheduler {
   RefreshSchedule scheduleNewJob(DateTime prevRefreshTime) {
     BsaDomainRefresh newJob = new BsaDomainRefresh();
     tm().insert(newJob);
-    return RefreshSchedule.of(newJob, prevRefreshTime);
+    return RefreshSchedule.create(newJob, prevRefreshTime);
   }
 
   RefreshSchedule rescheduleOngoingJob(BsaDomainRefresh ongoingJob, DateTime prevJobStartTime) {
-    return RefreshSchedule.of(ongoingJob, prevJobStartTime);
+    return RefreshSchedule.create(ongoingJob, prevJobStartTime);
   }
 
   @VisibleForTesting

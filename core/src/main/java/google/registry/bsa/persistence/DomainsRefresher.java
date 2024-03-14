@@ -177,7 +177,7 @@ public final class DomainsRefresher {
       BsaUnblockableDomain domain = nameToEntity.get(domainName);
       UnblockableDomain unblockable =
           UnblockableDomain.of(domain.label, domain.tld, Reason.valueOf(domain.reason.name()));
-      changes.add(UnblockableDomainChange.ofChanged(unblockable, Reason.REGISTERED));
+      changes.add(UnblockableDomainChange.createChanged(unblockable, Reason.REGISTERED));
     }
     // No longer registered: registered -> reserved/NONE
     for (String domainName : noLongerRegistered) {
@@ -186,8 +186,8 @@ public final class DomainsRefresher {
           UnblockableDomain.of(domain.label, domain.tld, Reason.valueOf(domain.reason.name()));
       changes.add(
           currReserved.contains(domainName)
-              ? UnblockableDomainChange.ofChanged(unblockable, Reason.RESERVED)
-              : UnblockableDomainChange.ofDeleted(unblockable));
+              ? UnblockableDomainChange.createChanged(unblockable, Reason.RESERVED)
+              : UnblockableDomainChange.createDeleted(unblockable));
     }
     // No longer reserved: reserved -> registered/None (the former duplicates with newly-registered)
     for (String domainName : noLongerReserved) {
@@ -195,7 +195,7 @@ public final class DomainsRefresher {
       UnblockableDomain unblockable =
           UnblockableDomain.of(domain.label, domain.tld, Reason.valueOf(domain.reason.name()));
       if (!currRegistered.contains(domainName)) {
-        changes.add(UnblockableDomainChange.ofDeleted(unblockable));
+        changes.add(UnblockableDomainChange.createDeleted(unblockable));
       }
     }
     return changes.build();
@@ -230,7 +230,7 @@ public final class DomainsRefresher {
           reservedNotCreated.remove(domainName);
           if (newCreated.remove(domainName)) {
             changes.add(
-                UnblockableDomainChange.ofChanged(
+                UnblockableDomainChange.createChanged(
                     unblockable.toUnblockableDomain(), Reason.REGISTERED));
           }
         }
@@ -240,10 +240,10 @@ public final class DomainsRefresher {
     Streams.concat(
             newCreated.stream()
                 .map(name -> new UnblockableDomain(name, Reason.REGISTERED))
-                .map(UnblockableDomainChange::ofNew),
+                .map(UnblockableDomainChange::createNew),
             reservedNotCreated.stream()
                 .map(name -> new UnblockableDomain(name, Reason.RESERVED))
-                .map(UnblockableDomainChange::ofNew))
+                .map(UnblockableDomainChange::createNew))
         .forEach(changes::add);
     return changes.build();
   }

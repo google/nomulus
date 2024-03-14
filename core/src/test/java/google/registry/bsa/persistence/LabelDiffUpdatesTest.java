@@ -94,7 +94,7 @@ class LabelDiffUpdatesTest {
 
     ImmutableList<UnblockableDomain> unblockableDomains =
         applyLabelDiff(
-            ImmutableList.of(BlockLabel.of("label", LabelType.DELETE, ImmutableSet.of())),
+            ImmutableList.of(BlockLabel.create("label", LabelType.DELETE, ImmutableSet.of())),
             idnChecker,
             schedule,
             fakeClock.nowUtc());
@@ -119,7 +119,7 @@ class LabelDiffUpdatesTest {
     ImmutableList<UnblockableDomain> unblockableDomains =
         applyLabelDiff(
             ImmutableList.of(
-                BlockLabel.of("label", LabelType.NEW_ORDER_ASSOCIATION, ImmutableSet.of())),
+                BlockLabel.create("label", LabelType.NEW_ORDER_ASSOCIATION, ImmutableSet.of())),
             idnChecker,
             schedule,
             fakeClock.nowUtc());
@@ -146,7 +146,7 @@ class LabelDiffUpdatesTest {
 
     ImmutableList<UnblockableDomain> unblockableDomains =
         applyLabelDiff(
-            ImmutableList.of(BlockLabel.of("label", LabelType.CREATE, ImmutableSet.of())),
+            ImmutableList.of(BlockLabel.create("label", LabelType.CREATE, ImmutableSet.of())),
             idnChecker,
             schedule,
             fakeClock.nowUtc());

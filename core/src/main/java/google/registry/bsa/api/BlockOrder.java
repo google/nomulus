@@ -14,7 +14,6 @@
 
 package google.registry.bsa.api;
 
-import com.google.auto.value.AutoValue;
 import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
 import java.util.List;
@@ -23,12 +22,7 @@ import java.util.List;
  * A BSA order, which are needed when communicating with the BSA API while processing downloaded
  * block lists.
  */
-@AutoValue
-public abstract class BlockOrder {
-
-  public abstract long orderId();
-
-  public abstract OrderType orderType();
+public record BlockOrder(long orderId, OrderType orderType) {
 
   static final Joiner JOINER = Joiner.on(',');
   static final Splitter SPLITTER = Splitter.on(',');
@@ -40,14 +34,14 @@ public abstract class BlockOrder {
   public static BlockOrder deserialize(String text) {
     List<String> items = SPLITTER.splitToList(text);
     try {
-      return of(Long.valueOf(items.get(0)), OrderType.valueOf(items.get(1)));
+      return create(Long.valueOf(items.get(0)), OrderType.valueOf(items.get(1)));
     } catch (NumberFormatException ne) {
       throw new IllegalArgumentException(text);
     }
   }
 
-  public static BlockOrder of(long orderId, OrderType orderType) {
-    return new AutoValue_BlockOrder(orderId, orderType);
+  public static BlockOrder create(long orderId, OrderType orderType) {
+    return new BlockOrder(orderId, orderType);
   }
 
   public enum OrderType {

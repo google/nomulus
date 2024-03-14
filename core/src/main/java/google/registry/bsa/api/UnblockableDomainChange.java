@@ -17,8 +17,6 @@ package google.registry.bsa.api;
 import static com.google.common.base.Verify.verify;
 import static google.registry.bsa.BsaStringUtils.PROPERTY_JOINER;
 
-import com.google.auto.value.AutoValue;
-import com.google.auto.value.extension.memoized.Memoized;
 import google.registry.bsa.BsaStringUtils;
 import google.registry.bsa.api.UnblockableDomain.Reason;
 import java.util.List;
@@ -26,8 +24,7 @@ import java.util.Objects;
 import java.util.Optional;
 
 /** Change record of an {@link UnblockableDomain}. */
-@AutoValue
-public abstract class UnblockableDomainChange {
+public record UnblockableDomainChange(UnblockableDomain unblockable, Optional<Reason> newReason) {
 
   /**
    * The text used in place of an empty {@link #newReason()} when an instance is serialized to
@@ -38,15 +35,10 @@ public abstract class UnblockableDomainChange {
    */
   private static final String DELETE_REASON_PLACEHOLDER = "IS_DELETE";
 
-  abstract UnblockableDomain unblockable();
-
-  abstract Optional<Reason> newReason();
-
   public String domainName() {
     return unblockable().domainName();
   }
 
-  @Memoized
   public UnblockableDomain newValue() {
     verify(newReason().isPresent(), "Removed unblockable does not have new value.");
     return new UnblockableDomain(unblockable().domainName(), newReason().get());
@@ -77,27 +69,28 @@ public abstract class UnblockableDomainChange {
 
   public static UnblockableDomainChange deserialize(String text) {
     List<String> items = BsaStringUtils.PROPERTY_SPLITTER.splitToList(text);
-    return of(
+    return create(
         new UnblockableDomain(items.get(0), Reason.valueOf(items.get(1))),
         Objects.equals(items.get(2), DELETE_REASON_PLACEHOLDER)
             ? Optional.empty()
             : Optional.of(Reason.valueOf(items.get(2))));
   }
 
-  public static UnblockableDomainChange ofNew(UnblockableDomain unblockable) {
-    return of(unblockable, Optional.of(unblockable.reason()));
+  public static UnblockableDomainChange createNew(UnblockableDomain unblockable) {
+    return create(unblockable, Optional.of(unblockable.reason()));
   }
 
-  public static UnblockableDomainChange ofDeleted(UnblockableDomain unblockable) {
-    return of(unblockable, Optional.empty());
+  public static UnblockableDomainChange createDeleted(UnblockableDomain unblockable) {
+    return create(unblockable, Optional.empty());
   }
 
-  public static UnblockableDomainChange ofChanged(UnblockableDomain unblockable, Reason newReason) {
-    return of(unblockable, Optional.of(newReason));
+  public static UnblockableDomainChange createChanged(
+      UnblockableDomain unblockable, Reason newReason) {
+    return create(unblockable, Optional.of(newReason));
   }
 
-  private static UnblockableDomainChange of(
+  private static UnblockableDomainChange create(
       UnblockableDomain unblockable, Optional<Reason> newReason) {
-    return new AutoValue_UnblockableDomainChange(unblockable, newReason);
+    return new UnblockableDomainChange(unblockable, newReason);
   }
 }

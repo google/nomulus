@@ -27,7 +27,7 @@ class BlockOrderTest {
 
   @BeforeEach
   void setup() {
-    order = BlockOrder.of(123, OrderType.CREATE);
+    order = BlockOrder.create(123, OrderType.CREATE);
   }
 
   @Test
