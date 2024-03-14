@@ -127,7 +127,7 @@ public final class TmchCertificateAuthority {
    */
   public void verify(X509Certificate cert) throws GeneralSecurityException {
     synchronized (TmchCertificateAuthority.class) {
-      X509Utils.verifyCertificate(getAndValidateRoot(), getCrl(), cert, clock.nowUtc().toDate());
+      X509Utils.verifyCertificate(getAndValidateRoot(), getCrl(), cert, clock.nowUtc());
     }
   }
 
@@ -151,7 +151,7 @@ public final class TmchCertificateAuthority {
     } catch (Exception e) {
       logger.atWarning().withCause(e).log("Old CRL is invalid, ignored during CRL update.");
     }
-    X509Utils.verifyCrl(getAndValidateRoot(), oldCrl, newCrl, clock.nowUtc().toDate());
+    X509Utils.verifyCrl(getAndValidateRoot(), oldCrl, newCrl, clock.nowUtc());
     TmchCrl.set(asciiCrl, url);
   }
 
