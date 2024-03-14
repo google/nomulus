@@ -34,7 +34,7 @@ dependencies {
   implementation deps['com.google.re2j:re2j']
   implementation deps['com.ibm.icu:icu4j']
   implementation deps['commons-codec:commons-codec']
-  implementation deps['javax.inject:javax.inject']
+  implementation deps['jakarta.inject:jakarta.inject-api']
   implementation deps['javax.mail:mail']
   implementation deps['javax.xml.bind:jaxb-api']
   implementation deps['joda-time:joda-time']

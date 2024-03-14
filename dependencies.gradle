@@ -98,6 +98,12 @@ ext {
       'com.google.api-client:google-api-client-appengine:[1.31.3,2.0)',
       'com.google.api-client:google-api-client-servlet:[1.31.3,2.0)',
 
+      // Dagger doesn't support the Jakarta namespace yet. Pre-2.0 Jakarta
+      // Inject still use the old javax namespace.
+      // TODO: Remove the cap when https://github.com/google/dagger/issues/2058
+      // is released.
+      'jakarta.inject:jakarta.inject-api:[1,2.0.0)!!',
+
 
       // DYNAMIC VERSIONS START HERE.
 
@@ -147,6 +153,7 @@ ext {
       'com.google.http-client:google-http-client-appengine:[1.39.0,)',
       'com.google.http-client:google-http-client-jackson2:[1.39.0,)',
       'com.google.http-client:google-http-client:[1.39.0,)',
+      // TODO: Remove after the old console is removed (dependency of soy).
       'com.google.inject:guice:[5.0.1,)',
       'com.google.monitoring-client:contrib:[1.0.7,)',
       'com.google.monitoring-client:metrics:[1.0.7,)',
@@ -173,7 +180,6 @@ ext {
       'io.github.classgraph:classgraph:[4.8.102,)',
       'io.github.java-diff-utils:java-diff-utils:[4.9,)',
       'io.netty:netty-tcnative-boringssl-static:[2.0.36.Final,)',
-      'javax.inject:javax.inject:[1,)',
       'javax.mail:mail:[1.4,)',
       'javax.persistence:javax.persistence-api:[2.2,)',
       'javax.servlet:servlet-api:[2.5,)',

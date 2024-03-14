@@ -57,7 +57,7 @@ dependencies {
   implementation deps['com.github.ben-manes.caffeine:caffeine']
   implementation deps['com.google.code.findbugs:jsr305']
   implementation deps['com.google.guava:guava']
-  implementation deps['javax.inject:javax.inject']
+  implementation deps['jakarta.inject:jakarta.inject-api']
   implementation deps['joda-time:joda-time']
   implementation deps['com.google.flogger:flogger']
   implementation deps['io.github.java-diff-utils:java-diff-utils']
