@@ -89,13 +89,6 @@ PROPERTIES = [
              'Allow connecting to plain HTTP repositories.  This is provided '
              'to allow us to communicate to a local proxy when doing '
              'dependency updates.'),
-    Property('uploaderDestination',
-             'Location to upload test reports to.  Normally this should be a '
-             'GCS url (see also uploaderCredentialsFile)'),
-    Property('uploaderCredentialsFile',
-             'json credentials file to use to upload test reports.'),
-    Property('uploaderMultithreadedUpload',
-             'Whether to enable multithread upload.'),
     Property('verboseTestOutput',
              'If true, show all test output in near-realtime.',
              'false',
