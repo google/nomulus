@@ -147,6 +147,9 @@ publishing {
 
 flyway {
   def accessInfo = project.ext.getJdbcAccessInfo()
+  pluginConfiguration = [
+          postgresqlTransactionalLock: 'false'
+  ]
 
   url = accessInfo.url
   user = accessInfo.user
@@ -160,7 +163,7 @@ dependencies {
   def deps = rootProject.dependencyMap
 
   implementation deps['org.flywaydb:flyway-core']
-  runtimeOnly deps['org.flywaydb:flyway-database-postgresql']
+  implementation deps['org.flywaydb:flyway-database-postgresql']
 
   runtimeOnly deps['com.google.cloud.sql:postgres-socket-factory']
   runtimeOnly deps['org.postgresql:postgresql']
