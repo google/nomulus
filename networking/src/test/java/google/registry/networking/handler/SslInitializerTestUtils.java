@@ -15,6 +15,7 @@
 package google.registry.networking.handler;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.joda.time.DateTimeZone.UTC;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.base.Throwables;
@@ -27,9 +28,6 @@ import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
-import java.time.Duration;
-import java.time.Instant;
-import java.util.Date;
 import java.util.concurrent.ExecutionException;
 import javax.net.ssl.SSLSession;
 import org.bouncycastle.asn1.x500.X500Name;
@@ -40,6 +38,7 @@ import org.bouncycastle.cert.jcajce.JcaX509v3CertificateBuilder;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
+import org.joda.time.DateTime;
 
 /**
  * Utility class that provides methods used by {@link SslClientInitializerTest} and {@link
@@ -67,13 +66,13 @@ public final class SslInitializerTestUtils {
   }
 
   /**
-   * Signs the given key pair with the given self signed certificate to generate a certificate with
+   * Signs the given key pair with the given self-signed certificate to generate a certificate with
    * the given validity range.
    *
    * @return signed public key (of the key pair) certificate
    */
   public static X509Certificate signKeyPair(
-      SelfSignedCaCertificate ssc, KeyPair keyPair, String hostname, Date from, Date to)
+      SelfSignedCaCertificate ssc, KeyPair keyPair, String hostname, DateTime from, DateTime to)
       throws Exception {
     X500Name subjectDnName = new X500Name("CN=" + hostname);
     BigInteger serialNumber = BigInteger.valueOf(System.currentTimeMillis());
@@ -81,7 +80,12 @@ public final class SslInitializerTestUtils {
     ContentSigner sigGen = new JcaContentSignerBuilder("SHA256WithRSAEncryption").build(ssc.key());
     X509v3CertificateBuilder v3CertGen =
         new JcaX509v3CertificateBuilder(
-            issuerDnName, serialNumber, from, to, subjectDnName, keyPair.getPublic());
+            issuerDnName,
+            serialNumber,
+            from.toDate(),
+            to.toDate(),
+            subjectDnName,
+            keyPair.getPublic());
 
     X509CertificateHolder certificateHolder = v3CertGen.build(sigGen);
     return new JcaX509CertificateConverter()
@@ -90,7 +94,7 @@ public final class SslInitializerTestUtils {
   }
 
   /**
-   * Signs the given key pair with the given self signed certificate to generate a certificate that
+   * Signs the given key pair with the given self-signed certificate to generate a certificate that
    * is valid from yesterday to tomorrow.
    *
    * @return signed public key (of the key pair) certificate
@@ -98,11 +102,7 @@ public final class SslInitializerTestUtils {
   public static X509Certificate signKeyPair(
       SelfSignedCaCertificate ssc, KeyPair keyPair, String hostname) throws Exception {
     return signKeyPair(
-        ssc,
-        keyPair,
-        hostname,
-        Date.from(Instant.now().minus(Duration.ofDays(1))),
-        Date.from(Instant.now().plus(Duration.ofDays(1))));
+        ssc, keyPair, hostname, DateTime.now(UTC).minusDays(1), DateTime.now(UTC).plusDays(1));
   }
 
   /**
@@ -110,7 +110,7 @@ public final class SslInitializerTestUtils {
    * and verifies if it is echoed back correctly.
    *
    * @param certs The certificate that the server should provide.
-   * @return The SSL session in current channel, can be used for further validation.
+   * @return The SSL session in the current channel, can be used for further validation.
    */
   static SSLSession setUpSslChannel(Channel channel, X509Certificate... certs) throws Exception {
     SslHandler sslHandler = channel.pipeline().get(SslHandler.class);

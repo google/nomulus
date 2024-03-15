@@ -15,6 +15,7 @@
 package google.registry.util;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static org.joda.time.DateTimeZone.UTC;
 
 import com.google.common.collect.ImmutableMap;
 import java.math.BigInteger;
@@ -23,9 +24,6 @@ import java.security.KeyPairGenerator;
 import java.security.PrivateKey;
 import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
-import java.time.Duration;
-import java.time.Instant;
-import java.util.Date;
 import java.util.Random;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.x500.X500Name;
@@ -44,9 +42,8 @@ import org.joda.time.DateTime;
 public class SelfSignedCaCertificate {
 
   private static final String DEFAULT_ISSUER_FQDN = "registry-test";
-  private static final Date DEFAULT_NOT_BEFORE =
-      Date.from(Instant.now().minus(Duration.ofHours(1)));
-  private static final Date DEFAULT_NOT_AFTER = Date.from(Instant.now().plus(Duration.ofDays(1)));
+  private static final DateTime DEFAULT_NOT_BEFORE = DateTime.now(UTC).minusHours(1);
+  private static final DateTime DEFAULT_NOT_AFTER = DateTime.now(UTC).plusDays(1);
 
   private static final Random RANDOM = new Random();
   private static final BouncyCastleProvider PROVIDER = new BouncyCastleProvider();
@@ -80,24 +77,14 @@ public class SelfSignedCaCertificate {
     return create(fqdn, DEFAULT_NOT_BEFORE, DEFAULT_NOT_AFTER);
   }
 
-  public static SelfSignedCaCertificate create(String fqdn, Date from, Date to) throws Exception {
-    return create(keyGen.generateKeyPair(), fqdn, from, to);
-  }
-
   public static SelfSignedCaCertificate create(String fqdn, DateTime from, DateTime to)
       throws Exception {
-    return create(keyGen.generateKeyPair(), fqdn, from.toDate(), to.toDate());
-  }
-
-  public static SelfSignedCaCertificate create(KeyPair keyPair, String fqdn, Date from, Date to)
-      throws Exception {
-    return new SelfSignedCaCertificate(keyPair.getPrivate(), createCaCert(keyPair, fqdn, from, to));
+    return create(keyGen.generateKeyPair(), fqdn, from, to);
   }
 
   public static SelfSignedCaCertificate create(
       KeyPair keyPair, String fqdn, DateTime from, DateTime to) throws Exception {
-    return new SelfSignedCaCertificate(
-        keyPair.getPrivate(), createCaCert(keyPair, fqdn, from.toDate(), to.toDate()));
+    return new SelfSignedCaCertificate(keyPair.getPrivate(), createCaCert(keyPair, fqdn, from, to));
   }
 
   static KeyPairGenerator createKeyPairGenerator() {
@@ -111,7 +98,7 @@ public class SelfSignedCaCertificate {
   }
 
   /** Returns a self-signed Certificate Authority (CA) certificate. */
-  static X509Certificate createCaCert(KeyPair keyPair, String fqdn, Date from, Date to)
+  static X509Certificate createCaCert(KeyPair keyPair, String fqdn, DateTime from, DateTime to)
       throws Exception {
     X500Name owner = new X500Name("CN=" + fqdn);
     String publicKeyAlg = keyPair.getPublic().getAlgorithm();
@@ -121,7 +108,12 @@ public class SelfSignedCaCertificate {
         new JcaContentSignerBuilder(signatureAlgorithm).build(keyPair.getPrivate());
     X509v3CertificateBuilder builder =
         new JcaX509v3CertificateBuilder(
-            owner, new BigInteger(64, RANDOM), from, to, owner, keyPair.getPublic());
+            owner,
+            new BigInteger(64, RANDOM),
+            from.toDate(),
+            to.toDate(),
+            owner,
+            keyPair.getPublic());
 
     // Mark cert as CA by adding basicConstraint with cA=true to the builder
     BasicConstraints basicConstraints = new BasicConstraints(true);
