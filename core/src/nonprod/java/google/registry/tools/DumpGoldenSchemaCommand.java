@@ -19,6 +19,7 @@ import com.beust.jcommander.Parameters;
 import java.io.IOException;
 import java.nio.file.Path;
 import org.flywaydb.core.Flyway;
+import org.flywaydb.database.postgresql.PostgreSQLConfigurationExtension;
 import org.testcontainers.containers.Container;
 
 /**
@@ -50,6 +51,10 @@ public class DumpGoldenSchemaCommand extends PostgresqlCommand {
                 postgresContainer.getUsername(),
                 postgresContainer.getPassword())
             .load();
+
+    PostgreSQLConfigurationExtension configurationExtension =
+        flyway.getConfigurationExtension(PostgreSQLConfigurationExtension.class);
+    configurationExtension.setTransactionalLock(false);
     flyway.migrate();
 
     String userName = postgresContainer.getUsername();

@@ -324,6 +324,7 @@ org.codehaus.jackson:jackson-mapper-asl:1.9.13=deploy_jar,runtimeClasspath,testR
 org.codehaus.mojo:animal-sniffer-annotations:1.23=deploy_jar,runtimeClasspath,testRuntimeClasspath
 org.conscrypt:conscrypt-openjdk-uber:2.5.2=deploy_jar,runtimeClasspath,testRuntimeClasspath
 org.flywaydb:flyway-core:10.10.0=deploy_jar,runtimeClasspath,testRuntimeClasspath
+org.flywaydb:flyway-database-postgresql:10.10.0=deploy_jar,runtimeClasspath,testRuntimeClasspath
 org.glassfish.jaxb:jaxb-runtime:2.3.1=deploy_jar,runtimeClasspath,testRuntimeClasspath
 org.glassfish.jaxb:txw2:2.3.1=deploy_jar,runtimeClasspath,testRuntimeClasspath
 org.gwtproject:gwt-user:2.10.0=deploy_jar,runtimeClasspath,testRuntimeClasspath
