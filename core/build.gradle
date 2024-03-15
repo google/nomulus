@@ -17,6 +17,7 @@ import java.util.Optional
 
 plugins {
   id 'java-library'
+  id "org.flywaydb.flyway" version "10.8.1"
   id 'maven-publish'
 }
 
@@ -317,6 +318,7 @@ dependencies {
 
   // Flyway classes needed to generate the golden file.
   implementation deps['org.flywaydb:flyway-core']
+  implementation deps['org.flywaydb:flyway-database-postgresql']
 
   closureCompiler deps['com.google.javascript:closure-compiler']
 }

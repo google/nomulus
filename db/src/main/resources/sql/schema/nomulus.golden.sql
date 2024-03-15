@@ -1962,6 +1962,13 @@ CREATE INDEX idx67qwkjtlq5q8dv6egtrtnhqi7 ON public."HostHistory" USING btree (h
 
 
 --
+-- Name: idx69qun5kxt3eux5igrxrqcycv0; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx69qun5kxt3eux5igrxrqcycv0 ON public."DomainHistoryHost" USING btree (domain_history_domain_repo_id);
+
+
+--
 -- Name: idx6ebt3nwk5ocvnremnhnlkl6ff; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -2127,6 +2134,13 @@ CREATE INDEX idxe7wu46c7wpvfmfnj4565abibp ON public."PollMessage" USING btree (r
 --
 
 CREATE INDEX idxeokttmxtpq2hohcioe5t2242b ON public."BillingCancellation" USING btree (registrar_id);
+
+
+--
+-- Name: idxf2q9dqj899h1q8lah5y719nxd; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idxf2q9dqj899h1q8lah5y719nxd ON public."PollMessage" USING btree (domain_repo_id);
 
 
 --
