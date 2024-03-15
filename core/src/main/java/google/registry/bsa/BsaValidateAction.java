@@ -50,6 +50,7 @@ public class BsaValidateAction implements Runnable {
 
   static final String PATH = "/_dr/task/bsaValidate";
   private final GcsClient gcsClient;
+  private final IdnChecker idnChecker;
   private final BsaEmailSender emailSender;
   private final int transactionBatchSize;
   private final BsaLock bsaLock;
@@ -58,11 +59,13 @@ public class BsaValidateAction implements Runnable {
   @Inject
   BsaValidateAction(
       GcsClient gcsClient,
+      IdnChecker idnChecker,
       BsaEmailSender emailSender,
       @Config("bsaTxnBatchSize") int transactionBatchSize,
       BsaLock bsaLock,
       Response response) {
     this.gcsClient = gcsClient;
+    this.idnChecker = idnChecker;
     this.emailSender = emailSender;
     this.transactionBatchSize = transactionBatchSize;
     this.bsaLock = bsaLock;
@@ -152,7 +155,11 @@ public class BsaValidateAction implements Runnable {
     ImmutableSet.Builder<String> labelsBuilder = new ImmutableSet.Builder<>();
     for (BlockListType blockListType : BlockListType.values()) {
       try (Stream<String> lines = gcsClient.readBlockList(jobName, blockListType)) {
-        lines.skip(1).map(BsaValidateAction::parseBlockListLine).forEach(labelsBuilder::add);
+        lines
+            .skip(1)
+            .map(BsaValidateAction::parseBlockListLine)
+            .filter(label -> !idnChecker.getAllValidIdns(label).isEmpty())
+            .forEach(labelsBuilder::add);
       }
     }
     return labelsBuilder.build();

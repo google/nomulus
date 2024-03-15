@@ -19,6 +19,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static google.registry.bsa.persistence.BsaTestingUtils.persistDownloadSchedule;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.startsWith;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
@@ -29,6 +30,7 @@ import com.google.cloud.storage.BlobId;
 import com.google.cloud.storage.contrib.nio.testing.LocalStorageHelper;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import google.registry.bsa.persistence.BsaTestingUtils;
 import google.registry.gcs.GcsUtils;
 import google.registry.groups.GmailClient;
@@ -36,6 +38,7 @@ import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationWithCoverageExtension;
 import google.registry.request.Response;
 import google.registry.testing.FakeClock;
+import google.registry.tldconfig.idn.IdnTableEnum;
 import google.registry.util.EmailMessage;
 import java.util.concurrent.Callable;
 import javax.mail.internet.InternetAddress;
@@ -63,6 +66,8 @@ public class BsaValidateActionTest {
 
   @Mock GmailClient gmailClient;
 
+  @Mock IdnChecker idnChecker;
+
   @Mock Response response;
 
   @Mock private BsaLock bsaLock;
@@ -82,6 +87,7 @@ public class BsaValidateActionTest {
     action =
         new BsaValidateAction(
             gcsClient,
+            idnChecker,
             new BsaEmailSender(gmailClient, emailRecipient),
             /* transactionBatchSize= */ 500,
             bsaLock,
@@ -113,6 +119,31 @@ public class BsaValidateActionTest {
         """;
     createBlockList(gcsClient, BlockListType.BLOCK, blockContent);
     createBlockList(gcsClient, BlockListType.BLOCK_PLUS, blockPlusContent);
+    when(idnChecker.getAllValidIdns(anyString())).thenReturn(ImmutableSet.of(IdnTableEnum.JA));
+    assertThat(action.fetchDownloadedLabels(DOWNLOAD_JOB_NAME))
+        .containsExactly("test1", "test2", "test3");
+  }
+
+  @Test
+  void fetchDownloadedLabels_withUnsupportedIdn_success() throws Exception {
+    String blockContent =
+        """
+        domainLabel,orderIDs
+        test1,1;2
+        test2,3,
+        """;
+    String blockPlusContent =
+        """
+        domainLabel,orderIDs
+        test2,4
+        test3,5,
+        invalid,6,
+        """;
+    createBlockList(gcsClient, BlockListType.BLOCK, blockContent);
+    createBlockList(gcsClient, BlockListType.BLOCK_PLUS, blockPlusContent);
+    when(idnChecker.getAllValidIdns(startsWith("test")))
+        .thenReturn(ImmutableSet.of(IdnTableEnum.JA));
+    when(idnChecker.getAllValidIdns("invalid")).thenReturn(ImmutableSet.of());
     assertThat(action.fetchDownloadedLabels(DOWNLOAD_JOB_NAME))
         .containsExactly("test1", "test2", "test3");
   }
@@ -154,6 +185,7 @@ public class BsaValidateActionTest {
     BsaTestingUtils.persistBsaLabel("test1");
     BsaTestingUtils.persistBsaLabel("test2");
     BsaTestingUtils.persistBsaLabel("test3");
+    when(idnChecker.getAllValidIdns(anyString())).thenReturn(ImmutableSet.of(IdnTableEnum.JA));
 
     assertThat(action.checkBsaLabels(DOWNLOAD_JOB_NAME)).isEmpty();
   }
@@ -174,6 +206,7 @@ public class BsaValidateActionTest {
     createBlockList(gcsClient, BlockListType.BLOCK_PLUS, blockPlusContent);
     BsaTestingUtils.persistBsaLabel("test2");
     BsaTestingUtils.persistBsaLabel("test3");
+    when(idnChecker.getAllValidIdns(anyString())).thenReturn(ImmutableSet.of(IdnTableEnum.JA));
 
     String allErrors = Joiner.on('\n').join(action.checkBsaLabels(DOWNLOAD_JOB_NAME));
 

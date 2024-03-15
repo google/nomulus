@@ -50,7 +50,7 @@ public class IdnChecker {
   }
 
   /** Returns all IDNs in which the {@code label} is valid. */
-  ImmutableSet<IdnTableEnum> getAllValidIdns(String label) {
+  public ImmutableSet<IdnTableEnum> getAllValidIdns(String label) {
     return idnToTlds.keySet().stream()
         .filter(idnTable -> idnTable.getTable().isValidLabel(label))
         .collect(toImmutableSet());
