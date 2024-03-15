@@ -162,3 +162,4 @@ V161__rename_console_epp_history_time.sql
 V162__rename_console_poc_history_time.sql
 V163__rename_console_registrar_history_time.sql
 V164__rename_console_user_history_time.sql
+V165__add_domain_repo_id_indexes_to_more_tables.sql

@@ -26,6 +26,7 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
 import org.flywaydb.core.Flyway;
+import org.flywaydb.database.postgresql.PostgreSQLConfigurationExtension;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.DisabledIfSystemProperty;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
@@ -91,6 +92,10 @@ class SchemaTest {
             .dataSource(
                 sqlContainer.getJdbcUrl(), sqlContainer.getUsername(), sqlContainer.getPassword())
             .load();
+
+    PostgreSQLConfigurationExtension configurationExtension =
+        flyway.getConfigurationExtension(PostgreSQLConfigurationExtension.class);
+    configurationExtension.setTransactionalLock(false);
 
     // flyway.migrate() returns the number of newly pushed scripts. This is a variable
     // number as our schema evolves.
