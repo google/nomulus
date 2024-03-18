@@ -12,5 +12,5 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 
-CREATE INDEX CONCURRENTLY IDX69qun5kxt3eux5igrxrqcycv0 ON "DomainHistoryHost" (domain_history_domain_repo_id);
-CREATE INDEX CONCURRENTLY IDXf2q9dqj899h1q8lah5y719nxd ON "PollMessage" (domain_repo_id);
+CREATE INDEX CONCURRENTLY IF NOT EXISTS IDX69qun5kxt3eux5igrxrqcycv0 ON "DomainHistoryHost" (domain_history_domain_repo_id);
+CREATE INDEX CONCURRENTLY IF NOT EXISTS IDXf2q9dqj899h1q8lah5y719nxd ON "PollMessage" (domain_repo_id);
