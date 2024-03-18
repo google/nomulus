@@ -172,7 +172,7 @@ class WebWhoisActionHandlerTest {
     assertThat(future.isSuccess()).isFalse();
 
     // Ensures that we fail as a result of a FailureException.
-    assertThat(future.cause() instanceof FailureException).isTrue();
+    assertThat(future.cause()).isInstanceOf(FailureException.class);
   }
 
   @Test

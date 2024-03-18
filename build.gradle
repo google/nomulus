@@ -36,8 +36,7 @@ buildscript {
 }
 
 plugins {
-  // Java static analysis plugins. Keep versions consistent with
-  // ./buildSrc/build.gradle.kts
+  // Java static analysis plugins.
 
   // Re-enable when compatible with Gradle 8
   // id 'nebula.lint' version '16.0.2'
@@ -68,44 +67,12 @@ wrapper {
   distributionType = Wrapper.DistributionType.ALL
 }
 
-apply plugin: google.registry.gradle.plugin.ReportUploaderPlugin
-
-reportUploader {
-  // Set the location where we want to upload the build results.
-  // e.g. -P uploaderDestination=gcs://domain-registry-alpha-build-result-test
-  //
-  // If not set - the upload will be skipped
-  destination = uploaderDestination
-
-  // The location of the file containing the OAuth2 Google Cloud credentials.
-  //
-  // The file can contain a Service Account key file in JSON format from the
-  // Google Developers Console or a stored user credential using the format
-  // supported by the Cloud SDK.
-  //
-  // If no file is given - the default credentials are used.
-  credentialsFile = uploaderCredentialsFile
-
-  // If set to 'yes', each file will be uploaded to GCS in a separate thread.
-  // This is MUCH faster.
-  multithreadedUpload = uploaderMultithreadedUpload
-}
-
 apply from: 'dependencies.gradle'
 
 apply from: 'dependency_lic.gradle'
 
 apply from: 'utils.gradle'
 
-// Custom task to run checkLicense in buildSrc, which is not triggered
-// by root project tasks. A shell task is used because buildSrc tasks
-// cannot be referenced in the same way as tasks from a regular included
-// build.
-task checkBuildSrcLicense(type:Exec) {
-  workingDir "${rootDir}/buildSrc"
-  commandLine '../gradlew', 'checkLicense'
-}
-tasks.checkLicense.dependsOn(tasks.checkBuildSrcLicense)
 tasks.build.dependsOn(tasks.checkLicense)
 
 // Provide defaults for all of the project properties.
@@ -452,9 +419,6 @@ if (verboseTestOutput.toBoolean()) {
 }
 
 task checkDependenciesDotGradle {
-  def buildSrcDepsFile = File.createTempFile('buildSrc', 'deps')
-  buildSrcDepsFile.deleteOnExit()
-  dependsOn createGetBuildSrcDirectDepsTask(buildSrcDepsFile)
 
   doLast {
     Set<String> depsInUse = []
@@ -467,9 +431,7 @@ task checkDependenciesDotGradle {
         }
       }
     }
-    if (buildSrcDepsFile.exists()) {
-      depsInUse.addAll(buildSrcDepsFile.readLines())
-    }
+
     def unusedDeps =
         rootProject.dependencyMap.keySet()
             .findAll { !depsInUse.contains(it) }
@@ -486,17 +448,6 @@ task checkDependenciesDotGradle {
 }
 tasks.build.dependsOn(tasks.checkDependenciesDotGradle)
 
-def createGetBuildSrcDirectDepsTask(outputFileName) {
-  return tasks
-      .create(
-          "getBuildSrcDeps_${java.util.UUID.randomUUID()}".toString(),
-          Exec) {
-    workingDir "${rootDir}/buildSrc"
-    commandLine '../gradlew', 'exportDependencies',
-                "-PdependencyExportFile=${outputFileName}"
-  }
-}
-
 rootProject.ext {
   invokeJavaDiffFormatScript = { action ->
     def javaHome = project.findProperty('org.gradle.java.home')
@@ -507,12 +458,8 @@ rootProject.ext {
       javaBin = ext.execInBash("which java", rootDir)
     }
     println("Running the formatting tool with $javaBin")
-    def scriptDir = rootDir.path.endsWith('buildSrc')
-            ? "${rootDir}/../java-format"
-            : "${rootDir}/java-format"
-    def workingDir = rootDir.path.endsWith('buildSrc')
-            ? "${rootDir}/.."
-            : rootDir
+    def scriptDir = "${rootDir}/java-format"
+    def workingDir = rootDir
     def formatDiffScript = "${scriptDir}/google-java-format-git-diff.sh"
     def pythonExe = getPythonExecutable()
 
