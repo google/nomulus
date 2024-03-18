@@ -18,8 +18,8 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static google.registry.request.UrlConnectionUtils.getResponseBytes;
 import static google.registry.request.UrlConnectionUtils.setBasicAuth;
 import static google.registry.util.HexDumper.dumpHex;
+import static jakarta.servlet.http.HttpServletResponse.SC_OK;
 import static java.nio.charset.StandardCharsets.US_ASCII;
-import static javax.servlet.http.HttpServletResponse.SC_OK;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.flogger.FluentLogger;

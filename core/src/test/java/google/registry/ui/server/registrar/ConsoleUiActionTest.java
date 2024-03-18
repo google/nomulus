@@ -19,7 +19,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static com.google.monitoring.metrics.contrib.LongMetricSubject.assertThat;
 import static google.registry.request.auth.AuthenticatedRegistrarAccessor.Role.ADMIN;
 import static google.registry.request.auth.AuthenticatedRegistrarAccessor.Role.OWNER;
-import static javax.servlet.http.HttpServletResponse.SC_MOVED_TEMPORARILY;
+import static jakarta.servlet.http.HttpServletResponse.SC_MOVED_TEMPORARILY;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -38,8 +38,8 @@ import google.registry.security.XsrfTokenManager;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeResponse;
 import google.registry.testing.UserServiceExtension;
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.Optional;
-import javax.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

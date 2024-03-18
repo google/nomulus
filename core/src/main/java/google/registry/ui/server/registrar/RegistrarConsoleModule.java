@@ -32,8 +32,8 @@ import google.registry.request.RequestScope;
 import google.registry.request.Response;
 import google.registry.request.auth.AuthResult;
 import google.registry.security.XsrfTokenManager;
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.Optional;
-import javax.servlet.http.HttpServletRequest;
 import org.joda.time.DateTime;
 
 /** Dagger module for the Registrar Console parameters. */

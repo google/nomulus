@@ -21,18 +21,19 @@ import org.mockito.stubbing.Answer;
  * Display helpful failure message if a mocked method is called.
  *
  * <p>One important problem this solves is when you mock servlets and the test fails, you usually
- * end up with failure messages like {@code Wanted but not invoked: rsp.setStatus(200)} which
- * aren't very helpful. This is because servlets normally report problems by calling
- * {@link javax.servlet.http.HttpServletResponse#sendError(int, String) rsp.sendError()} so it'd be
- * nice if we could have the error message be whatever arguments get passed to {@code sendError}.
+ * end up with failure messages like {@code Wanted but not invoked: rsp.setStatus(200)} which aren't
+ * very helpful. This is because servlets normally report problems by calling {@link
+ * jakarta.servlet.http.HttpServletResponse#sendError(int, String) rsp.sendError()} so it'd be nice
+ * if we could have the error message be whatever arguments get passed to {@code sendError}.
  *
  * <p>And that's where {@link FailAnswer} comes to the rescue! Here's an example of what you could
  * put at the beginning of a servlet test method to have better error messages:
  *
- * <pre>   {@code
- *   doAnswer(new FailAnswer<>()).when(rsp).sendError(anyInt());
- *   doAnswer(new FailAnswer<>()).when(rsp).sendError(anyInt(), anyString());
- *   }</pre>
+ * <pre>{@code
+ * doAnswer(new FailAnswer<>()).when(rsp).sendError(anyInt());
+ * doAnswer(new FailAnswer<>()).when(rsp).sendError(anyInt(), anyString());
+ *
+ * }</pre>
  *
  * @param <T> The return type of the mocked method (which doesn't actually return).
  */

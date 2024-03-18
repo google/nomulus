@@ -19,8 +19,8 @@ import static com.google.common.base.Strings.emptyToNull;
 import dagger.Module;
 import dagger.Provides;
 import google.registry.request.Parameter;
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.Optional;
-import javax.servlet.http.HttpServletRequest;
 
 /** Dagger module for the sheet package. */
 @Module

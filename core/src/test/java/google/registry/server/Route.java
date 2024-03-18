@@ -15,7 +15,7 @@
 package google.registry.server;
 
 import com.google.auto.value.AutoValue;
-import javax.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServlet;
 
 /** Pair of servlet path and servlet instance object. */
 @AutoValue

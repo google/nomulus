@@ -21,9 +21,9 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import javax.servlet.http.HttpServletResponse;
 import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link ResponseImpl}. */

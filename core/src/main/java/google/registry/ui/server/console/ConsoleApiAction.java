@@ -20,9 +20,9 @@ import com.google.api.client.http.HttpStatusCodes;
 import google.registry.model.console.User;
 import google.registry.security.XsrfTokenManager;
 import google.registry.ui.server.registrar.ConsoleApiParams;
+import jakarta.servlet.http.Cookie;
 import java.util.Arrays;
 import java.util.Optional;
-import javax.servlet.http.Cookie;
 
 /** Base class for handling Console API requests */
 public abstract class ConsoleApiAction implements Runnable {

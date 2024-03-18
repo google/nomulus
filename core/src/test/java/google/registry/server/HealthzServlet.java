@@ -15,12 +15,12 @@
 package google.registry.server;
 
 import static com.google.common.net.MediaType.PLAIN_TEXT_UTF_8;
-import static javax.servlet.http.HttpServletResponse.SC_OK;
+import static jakarta.servlet.http.HttpServletResponse.SC_OK;
 
+import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 
 /** Servlet for responding to {@code /healthz} requests. */
 public final class HealthzServlet extends HttpServlet {
