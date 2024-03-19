@@ -35,11 +35,19 @@ import javax.inject.Provider;
 import javax.inject.Qualifier;
 
 /**
- * Module that provides a {@link BackendProtocol.Builder} for HTTPS protocol.
+ * Module that provides a {@link BackendProtocol.Builder} for HTTP(S) protocol.
  *
  * <p>Only a builder is provided because the client protocol itself depends on the remote host
  * address, which is provided in the server protocol module that relays to this client protocol
- * module, e. g. {@link WhoisProtocolModule}.
+ * module, e.g., {@link WhoisProtocolModule}.
+ *
+ * <p>The protocol can be configured without TLS. In this case, the remote host has to be
+ * "localhost". Plan HTTP is only expected to be used when communication with Nomulus is via local
+ * loopback (for security reasons), as is the case when both the proxy and Nomulus container live in
+ * the same Kubernetes pod.
+ *
+ * @see <a href=https://kubernetes.io/docs/concepts/services-networking/>The Kubernetes network
+ *     model</a>
  */
 @Module
 public class HttpsRelayProtocolModule {
@@ -54,10 +62,12 @@ public class HttpsRelayProtocolModule {
   @HttpsRelayProtocol
   static BackendProtocol.Builder provideProtocolBuilder(
       ProxyConfig config,
+      @HttpsRelayProtocol boolean localRelay,
       @HttpsRelayProtocol ImmutableList<Provider<? extends ChannelHandler>> handlerProviders) {
     return Protocol.backendBuilder()
         .name(PROTOCOL_NAME)
-        .port(config.httpsRelay.port)
+        .isLocal(localRelay)
+        .port(localRelay ? config.httpsRelay.localPort : config.httpsRelay.port)
         .handlerProviders(handlerProviders);
   }
 
@@ -74,6 +84,7 @@ public class HttpsRelayProtocolModule {
   @Provides
   @HttpsRelayProtocol
   static ImmutableList<Provider<? extends ChannelHandler>> provideHandlerProviders(
+      @HttpsRelayProtocol boolean localRelay,
       @HttpsRelayProtocol
           Provider<SslClientInitializer<NioSocketChannel>> sslClientInitializerProvider,
       Provider<HttpClientCodec> httpClientCodecProvider,
@@ -81,13 +92,17 @@ public class HttpsRelayProtocolModule {
       Provider<BackendMetricsHandler> backendMetricsHandlerProvider,
       Provider<LoggingHandler> loggingHandlerProvider,
       Provider<FullHttpResponseRelayHandler> relayHandlerProvider) {
-    return ImmutableList.of(
-        sslClientInitializerProvider,
-        httpClientCodecProvider,
-        httpObjectAggregatorProvider,
-        backendMetricsHandlerProvider,
-        loggingHandlerProvider,
-        relayHandlerProvider);
+    ImmutableList.Builder<Provider<? extends ChannelHandler>> builder =
+        new ImmutableList.Builder<>();
+    if (!localRelay) {
+      builder.add(sslClientInitializerProvider);
+    }
+    builder.add(httpClientCodecProvider);
+    builder.add(httpObjectAggregatorProvider);
+    builder.add(backendMetricsHandlerProvider);
+    builder.add(loggingHandlerProvider);
+    builder.add(relayHandlerProvider);
+    return builder.build();
   }
 
   @Provides

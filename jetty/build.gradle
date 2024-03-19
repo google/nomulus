@@ -49,6 +49,15 @@ tasks.register('buildNomulusImage', Exec) {
     dependsOn(tasks.named('stage'))
 }
 
+tasks.register('tagNomulusImage', Exec) {
+    commandLine 'docker', 'tag', 'nomulus', "gcr.io/${rootProject.gcpProject}/nomulus"
+    dependsOn(tasks.named('buildNomulusImage'))
+}
+
+tasks.register('pushNomulusImage', Exec) {
+    commandLine 'docker', 'push', "gcr.io/${rootProject.gcpProject}/nomulus"
+}
+
 tasks.register('run', JavaExec) {
     // We do the check when the task actually runs, not when we define it.
     // This way if one doesn't set the value, one can still run other tasks.
@@ -64,6 +73,12 @@ tasks.register('run', JavaExec) {
     classpath = files(jetty_home + '/start.jar')
     systemProperty('google.registry.environment', environment)
     dependsOn(tasks.named('stage'))
+}
+
+tasks.register('deployNomulus', Exec) {
+    dependsOn(tasks.named('pushNomulusImage'), tasks.named(":proxy:pushProxyImage"))
+    configure verifyDeploymentConfig
+    commandLine './deploy-nomulus-for-env.sh', "${rootProject.environment}"
 }
 
 project.build.dependsOn(tasks.named('buildNomulusImage'))

@@ -177,7 +177,7 @@ healthCheck:
 
 httpsRelay:
   port: 443
-
+  localPort: 8080
   # Maximum size of an HTTP message in bytes.
   maxMessageLengthBytes: 524288
 
