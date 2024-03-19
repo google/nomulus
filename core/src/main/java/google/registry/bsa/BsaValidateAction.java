@@ -184,7 +184,7 @@ public class BsaValidateAction implements Runnable {
               batch.stream().map(UnblockableDomain::domainName).collect(toImmutableList()),
               clock.nowUtc());
       for (var unblockable : batch) {
-        checkOneUnblockableDomain(unblockable, activeDomains).ifPresent(errors::add);
+        verifyDomainStillUnblockable(unblockable, activeDomains).ifPresent(errors::add);
       }
       if (!batch.isEmpty()) {
         lastRead = Optional.of(Iterables.getLast(batch));
@@ -193,7 +193,7 @@ public class BsaValidateAction implements Runnable {
     return errors.build();
   }
 
-  Optional<String> checkOneUnblockableDomain(
+  Optional<String> verifyDomainStillUnblockable(
       UnblockableDomain domain, ImmutableMap<String, VKey<Domain>> activeDomains) {
     DateTime now = clock.nowUtc();
     boolean isRegistered = activeDomains.containsKey(domain.domainName());
