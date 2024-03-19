@@ -37,6 +37,7 @@ import google.registry.networking.module.CertificateSupplierModule;
 import google.registry.networking.module.CertificateSupplierModule.Mode;
 import google.registry.proxy.EppProtocolModule.EppProtocol;
 import google.registry.proxy.HealthCheckProtocolModule.HealthCheckProtocol;
+import google.registry.proxy.HttpsRelayProtocolModule.HttpsRelayProtocol;
 import google.registry.proxy.Protocol.FrontendProtocol;
 import google.registry.proxy.ProxyConfig.Environment;
 import google.registry.proxy.WebWhoisProtocolsModule.HttpWhoisProtocol;
@@ -90,6 +91,13 @@ public class ProxyModule {
 
   @Parameter(names = "--https_whois", description = "Port for HTTPS WHOIS")
   private Integer httpsWhoisPort;
+
+  @Parameter(
+      names = "--local",
+      description =
+          "Whether EPP/WHOIS traffic should be forwarded to localhost using HTTP on port defined in"
+              + " httpsRelay.localPort")
+  private boolean local = false;
 
   @Parameter(names = "--env", description = "Environment to run the proxy in")
   private Environment env = Environment.LOCAL;
@@ -169,6 +177,13 @@ public class ProxyModule {
   }
 
   @Provides
+  @HttpsRelayProtocol
+  @Singleton
+  boolean provideIsLocal() {
+    return local;
+  }
+
+  @Provides
   @WhoisProtocol
   int provideWhoisPort(ProxyConfig config) {
     return Optional.ofNullable(whoisPort).orElse(config.whois.port);
@@ -204,7 +219,7 @@ public class ProxyModule {
   }
 
   /**
-   * Provides shared logging handler.
+   * Provides a shared logging handler.
    *
    * <p>Note that this handler always records logs at {@code LogLevel.DEBUG}, it is up to the JUL
    * logger that it contains to decide if logs at this level should actually be captured. The log

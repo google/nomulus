@@ -67,7 +67,7 @@ import org.junit.jupiter.api.BeforeEach;
 /**
  * Base class for end-to-end tests of a {@link Protocol}.
  *
- * <p>The end-to-end tests ensures that the business logic that a {@link Protocol} defines are
+ * <p>The end-to-end tests ensure that the business logic that a {@link Protocol} defines are
  * correctly performed by various handlers attached to its pipeline. Non-business essential handlers
  * should be excluded.
  *
@@ -91,7 +91,7 @@ public abstract class ProtocolModuleTest {
           // The PROXY protocol is only used when the proxy is behind the GCP load balancer. It is
           // not part of any business logic.
           ProxyProtocolHandler.class,
-          // SSL is part of the business logic for some protocol (EPP for example), but its
+          // SSL is part of the business logic for some protocol (EPP, for example), but its
           // impact is isolated. Including it makes tests much more complicated. It should be tested
           // separately in its own unit tests.
           SslClientInitializer.class,
@@ -152,7 +152,7 @@ public abstract class ProtocolModuleTest {
   void initializeChannel(Consumer<Channel> initializer) {
     channel =
         new EmbeddedChannel(
-            new ChannelInitializer<Channel>() {
+            new ChannelInitializer<>() {
               @Override
               protected void initChannel(Channel ch) {
                 initializer.accept(ch);
@@ -218,8 +218,8 @@ public abstract class ProtocolModuleTest {
    *
    * <p>Most of the binding provided in this module should be either a fake, or a {@link
    * ChannelHandler} that is excluded, and annotated with {@code @Singleton}. This module acts as a
-   * replacement for {@link ProxyModule} used in production component. Providing a handler that is
-   * part of the business logic of a {@link Protocol} from this module is a sign that the binding
+   * replacement for {@link ProxyModule} used in the production component. Providing a handler that
+   * is part of the business logic of a {@link Protocol} from this module is a sign that the binding
    * should be provided in the respective {@code ProtocolModule} instead.
    */
   @Module
@@ -306,12 +306,19 @@ public abstract class ProtocolModuleTest {
     }
 
     // This method is only here to satisfy Dagger binding, but is never used. In test environment,
-    // it is the self-signed certificate and its key that end up being used.
+    // it is the self-signed certificate and its key that ends up being used.
     @Singleton
     @Provides
     @Named("pemBytes")
     static byte[] providePemBytes() {
       return new byte[0];
+    }
+
+    @Singleton
+    @Provides
+    @HttpsRelayProtocol
+    static boolean provideLocalRelay() {
+      return false;
     }
   }
 }
