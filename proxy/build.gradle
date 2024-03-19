@@ -18,19 +18,17 @@ task buildProxyImage(dependsOn: deployJar, type: Exec) {
   commandLine 'docker', 'build', '-t', 'proxy', '.'
 }
 
-task deployProxy(dependsOn: buildProxyImage) {
+task tagProxyImage(dependsOn: buildProxyImage, type: Exec) {
+  commandLine 'docker', 'tag', 'proxy', "gcr.io/${rootProject.gcpProject}/proxy"
+}
+
+task pushProxyImage(dependsOn: tagProxyImage, type: Exec) {
+  commandLine 'docker', 'push', "gcr.io/${rootProject.gcpProject}/proxy"
+}
+
+task deployProxy(dependsOn: pushProxyImage, type: Exec) {
   configure verifyDeploymentConfig
-  doLast {
-    exec {
-      commandLine 'docker', 'tag', 'proxy', "gcr.io/${rootProject.gcpProject}/proxy"
-    }
-    exec {
-      commandLine 'docker', 'push', "gcr.io/${rootProject.gcpProject}/proxy"
-    }
-    exec {
-      commandLine './deploy-proxy-for-env.sh', "${rootProject.environment}"
-    }
-  }
+  commandLine './deploy-proxy-for-env.sh', "${rootProject.environment}"
 }
 
 project.build.dependsOn buildProxyImage
