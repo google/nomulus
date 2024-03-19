@@ -1,0 +1,71 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nomulus
+  labels:
+    app: nomulus
+spec:
+  selector:
+    matchLabels:
+      app: nomulus
+  template:
+    metadata:
+      labels:
+        app: nomulus
+    spec:
+      containers:
+      - name: nomulus
+        image: gcr.io/GCP_PROJECT/nomulus
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 8080
+          name: http
+        resources:
+          requests:
+            cpu: "500m"
+        args: [ENVIRONMENT]
+      - name: proxy
+        image: gcr.io/domain-registry-alpha/proxy
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 30001
+          name: whois
+        - containerPort: 30002
+          name: epp
+        resources:
+          requests:
+            cpu: "500m"
+        args: [--env, ENVIRONMENT, --log, --local]
+        env:
+        - name: POD_ID
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: NAMESPACE_ID
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: CONTAINER_NAME
+          value: proxy
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: nomulus
+  labels:
+    app: nomulus
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: nomulus
+  minReplicas: 1
+  maxReplicas: 20
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 100
+
