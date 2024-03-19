@@ -47,6 +47,18 @@ public enum RegistryEnvironment {
    */
   UNITTEST;
 
+  /** System property for configuring which environment we should use. */
+  private static final String PROPERTY = "google.registry.environment";
+
+  /**
+   * System property for if Nomulus is running on top of a self-hosted Jetty server (i.e., not in
+   * App Engine).
+   */
+  private static final String JETTY_PROPERTY = "google.registry.jetty";
+
+  private static final boolean ON_JETTY =
+      Boolean.parseBoolean(System.getProperty(JETTY_PROPERTY, "false"));
+
   /** Sets this enum as the name of the registry environment. */
   public RegistryEnvironment setup() {
     return setup(SystemPropertySetter.PRODUCTION_IMPL);
@@ -66,6 +78,7 @@ public enum RegistryEnvironment {
     return valueOf(Ascii.toUpperCase(System.getProperty(PROPERTY, UNITTEST.name())));
   }
 
-  /** System property for configuring which environment we should use. */
-  private static final String PROPERTY = "google.registry.environment";
+  public static boolean isOnJetty() {
+    return ON_JETTY;
+  }
 }
