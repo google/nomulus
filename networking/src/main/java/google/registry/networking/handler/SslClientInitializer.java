@@ -21,9 +21,12 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.flogger.FluentLogger;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandler.Sharable;
+import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.embedded.EmbeddedChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
+import io.netty.handler.ssl.OptionalSslHandler;
+import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.ssl.SslProvider;
@@ -115,17 +118,33 @@ public class SslClientInitializer<C extends Channel> extends ChannelInitializer<
           privateKeySupplier.get(), certificateChainSupplier.get().toArray(new X509Certificate[0]));
     }
 
-    SslHandler sslHandler =
-        sslContextBuilder
-            .build()
-            .newHandler(channel.alloc(), hostProvider.apply(channel), portProvider.apply(channel));
+    OptionalSslHandler optionalSslHandler =
+        new OptionalSslHandler(
+            sslContextBuilder.build(), hostProvider.apply(channel), portProvider.apply(channel));
 
-    // Enable hostname verification.
-    SSLEngine sslEngine = sslHandler.engine();
-    SSLParameters sslParameters = sslEngine.getSSLParameters();
-    sslParameters.setEndpointIdentificationAlgorithm("HTTPS");
-    sslEngine.setSSLParameters(sslParameters);
+    channel.pipeline().addLast(optionalSslHandler);
+  }
 
-    channel.pipeline().addLast(sslHandler);
+  private static class OptionalSslHandler extends io.netty.handler.ssl.OptionalSslHandler {
+    private final String peerHost;
+    private final int peerPort;
+
+    public OptionalSslHandler(SslContext sslContext, String peerHost, int peerPort) {
+      super(sslContext);
+      this.peerHost = peerHost;
+      this.peerPort = peerPort;
+    }
+
+    @Override
+    protected SslHandler newSslHandler(ChannelHandlerContext context, SslContext sslContext) {
+      SslHandler sslHandler = sslContext.newHandler(context.alloc(), peerHost, peerPort);
+
+      // Enable hostname verification.
+      SSLEngine sslEngine = sslHandler.engine();
+      SSLParameters sslParameters = sslEngine.getSSLParameters();
+      sslParameters.setEndpointIdentificationAlgorithm("HTTPS");
+      sslEngine.setSSLParameters(sslParameters);
+      return sslHandler;
+    }
   }
 }

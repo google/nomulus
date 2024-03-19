@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright 2019 The Nomulus Authors. All Rights Reserved.
+# Copyright 2024 The Nomulus Authors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -28,19 +28,15 @@ current_context=$(kubectl config current-context)
 while read line
 do
   parts=(${line})
-  echo "Updating cluster ${parts[0]} in zone ${parts[1]}..."
+  echo "Updating cluster ${parts[0]} in location ${parts[1]}..."
   gcloud container clusters get-credentials "${parts[0]}" \
-    --project "${project}" --zone "${parts[1]}"
-  sed s/GCP_PROJECT/${project}/g "./kubernetes/proxy-deployment-${environment}.yaml" | \
-  kubectl replace -f -
-  kubectl replace -f "./kubernetes/proxy-service.yaml" --force
-  # Alpha does not have canary
-  if [[ ${environment} != "alpha" ]]; then
-    sed s/GCP_PROJECT/${project}/g "./kubernetes/proxy-deployment-${environment}-canary.yaml" | \
-    kubectl replace -f -
-    kubectl replace -f "./kubernetes/proxy-service-canary.yaml" --force
-  fi
+    --project "${project}" --location "${parts[1]}"
+  sed s/GCP_PROJECT/${project}/g "./kubernetes/nomulus-deployment.yaml" | \
+  sed s/ENVIRONMENT/${environment}/g | \
+  kubectl apply -f -
+  kubectl apply -f "./kubernetes/nomulus-service.yaml"
+  kubectl apply -f "./kubernetes/nomulus-gateway.yaml"
   # Kills all running pods, new pods created will be pulling the new image.
   kubectl delete pods --all
-done < <(gcloud container clusters list --project ${project} | grep proxy-cluster)
+done < <(gcloud container clusters list --project ${project} | grep nomulus)
 kubectl config use-context "$current_context"

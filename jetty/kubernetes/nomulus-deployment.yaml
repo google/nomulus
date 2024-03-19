@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nomulus
+  labels:
+    app: nomulus
+spec:
+  selector:
+    matchLabels:
+      app: nomulus
+  template:
+    metadata:
+      labels:
+        app: nomulus
+    spec:
+      containers:
+      - name: nomulus
+        image: gcr.io/domain-registry-alpha/nomulus:latest
+        ports:
+        - containerPort: 8080
+          name: http
+        resources:
+          requests:
+            cpu: "500m"
+        args: [alpha]
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: nomulus
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: nomulus
+  minReplicas: 1
+  maxReplicas: 20
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 100
