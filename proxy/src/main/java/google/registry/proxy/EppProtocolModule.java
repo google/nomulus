@@ -70,12 +70,14 @@ public final class EppProtocolModule {
       ProxyConfig config,
       @EppProtocol int eppPort,
       @EppProtocol ImmutableList<Provider<? extends ChannelHandler>> handlerProviders,
-      @HttpsRelayProtocol BackendProtocol.Builder backendProtocolBuilder) {
+      @HttpsRelayProtocol BackendProtocol.Builder backendProtocolBuilder,
+      @HttpsRelayProtocol boolean localRelay) {
     return Protocol.frontendBuilder()
         .name(PROTOCOL_NAME)
         .port(eppPort)
         .handlerProviders(handlerProviders)
-        .relayProtocol(backendProtocolBuilder.host(config.epp.relayHost).build())
+        .relayProtocol(
+            backendProtocolBuilder.host(localRelay ? "localhost" : config.epp.relayHost).build())
         .build();
   }
 
@@ -114,7 +116,7 @@ public final class EppProtocolModule {
         config.epp.headerLengthBytes,
         // Adjustment applied to the header field value in order to obtain message length.
         -config.epp.headerLengthBytes,
-        // Initial bytes to strip (i.e. strip the length header).
+        // Initial bytes to strip (i.e., strip the length header).
         config.epp.headerLengthBytes);
   }
 
@@ -150,9 +152,14 @@ public final class EppProtocolModule {
       @Named("idToken") Supplier<String> idTokenSupplier,
       @Named("hello") byte[] helloBytes,
       FrontendMetrics metrics,
-      ProxyConfig config) {
+      ProxyConfig config,
+      @HttpsRelayProtocol boolean localRelay) {
     return new EppServiceHandler(
-        config.epp.relayHost, config.epp.relayPath, idTokenSupplier, helloBytes, metrics);
+        localRelay ? "localhost" : config.epp.relayHost,
+        config.epp.relayPath,
+        idTokenSupplier,
+        helloBytes,
+        metrics);
   }
 
   @Singleton
