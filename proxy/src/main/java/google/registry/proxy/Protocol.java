@@ -47,8 +47,9 @@ public interface Protocol {
     return new AutoValue_Protocol_FrontendProtocol.Builder().hasBackend(true);
   }
 
+  /** A builder for {@link FrontendProtocol}, by default it connects to a remote host. */
   static BackendProtocol.Builder backendBuilder() {
-    return new AutoValue_Protocol_BackendProtocol.Builder();
+    return new AutoValue_Protocol_BackendProtocol.Builder().isLocal(false);
   }
 
   /**
@@ -121,10 +122,26 @@ public interface Protocol {
     /** The hostname that the proxy connects to. */
     public abstract String host();
 
+    /** Whether the protocol is expected to connect to localhost. */
+    public abstract boolean isLocal();
+
     /** Builder of {@link BackendProtocol}. */
     @AutoValue.Builder
     public abstract static class Builder extends Protocol.Builder<Builder, BackendProtocol> {
       public abstract Builder host(String value);
+
+      public abstract Builder isLocal(boolean value);
+
+      abstract BackendProtocol autoBuild();
+
+      @Override
+      public BackendProtocol build() {
+        BackendProtocol protocol = autoBuild();
+        Preconditions.checkState(
+            !protocol.isLocal() || protocol.host().equals("localhost"),
+            "Local backend protocol must connect to localhost");
+        return autoBuild();
+      }
     }
   }
 }
