@@ -79,7 +79,7 @@ if ! pgrep cloud_sql_proxy; then
 fi
 
 # Set the transactional lock to false, session-level lock will be used instead
-/flyway/flyway -postgresql.transactional.lock=false info
+#/flyway/flyway -postgresql.transactional.lock=false info
 
 /flyway/flyway -community -user=${db_user} -password=${db_password} \
   -url=jdbc:postgresql://localhost:5432/postgres \
