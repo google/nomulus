@@ -15,6 +15,7 @@
 package google.registry.bsa.persistence;
 
 import static com.google.common.base.Verify.verify;
+import static com.google.common.collect.ImmutableList.toImmutableList;
 import static google.registry.bsa.BsaStringUtils.DOMAIN_SPLITTER;
 import static google.registry.bsa.BsaTransactions.bsaQuery;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
@@ -22,6 +23,7 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import google.registry.bsa.api.UnblockableDomain;
 import google.registry.model.CreateAutoTimestamp;
 import java.util.List;
 import java.util.Optional;
@@ -45,7 +47,6 @@ public final class Queries {
 
   public static ImmutableList<String> batchReadBsaLabelText(
       Optional<String> lastRead, int batchSize) {
-
     return ImmutableList.copyOf(
         bsaQuery(
             () ->
@@ -56,6 +57,13 @@ public final class Queries {
                     .setParameter("lastRead", lastRead.orElse(""))
                     .setMaxResults(batchSize)
                     .getResultList()));
+  }
+
+  public static ImmutableList<UnblockableDomain> batchReadUnblockableDomains(
+      Optional<UnblockableDomain> lastRead, int batchSize) {
+    return batchReadUnblockables(lastRead.map(BsaUnblockableDomain::of), batchSize).stream()
+        .map(BsaUnblockableDomain::toUnblockableDomain)
+        .collect(toImmutableList());
   }
 
   static Stream<BsaUnblockableDomain> queryBsaUnblockableDomainByLabels(
