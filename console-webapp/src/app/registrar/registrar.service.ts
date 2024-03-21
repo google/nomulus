@@ -1,4 +1,4 @@
-// Copyright 2023 The Nomulus Authors. All Rights Reserved.
+// Copyright 2024 The Nomulus Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,44 +15,53 @@
 import { Injectable, computed, signal } from '@angular/core';
 import { Observable, tap } from 'rxjs';
 
+import { MatSnackBar } from '@angular/material/snack-bar';
+import { Router } from '@angular/router';
 import { BackendService } from '../shared/services/backend.service';
 import {
   GlobalLoader,
   GlobalLoaderService,
 } from '../shared/services/globalLoader.service';
-import { MatSnackBar } from '@angular/material/snack-bar';
 
 export interface Address {
-  street?: string[];
   city?: string;
   countryCode?: string;
-  zip?: string;
   state?: string;
+  street?: string[];
+  zip?: string;
 }
 
-export interface Registrar {
+export interface WhoisRegistrarFields {
+  ianaIdentifier?: number;
+  icannReferralEmail: string;
+  localizedAddress: Address;
+  registrarId: string;
+  url: string;
+  whoisServer: string;
+}
+
+export interface Registrar extends WhoisRegistrarFields {
   allowedTlds?: string[];
   billingAccountMap?: object;
   driveFolderId?: string;
   emailAddress?: string;
   faxNumber?: string;
-  ianaIdentifier?: number;
-  icannReferralEmail?: string;
   ipAddressAllowList?: string[];
-  localizedAddress?: Address;
   phoneNumber?: string;
   registrarId: string;
   registrarName: string;
   registryLockAllowed?: boolean;
-  url?: string;
-  whoisServer?: string;
 }
 
 @Injectable({
   providedIn: 'root',
 })
 export class RegistrarService implements GlobalLoader {
-  registrarId = signal<string>('');
+  registrarId = signal<string>(
+    new URLSearchParams(document.location.hash.split('?')[1]).get(
+      'registrarId'
+    ) || ''
+  );
   registrars = signal<Registrar[]>([]);
   registrar = computed<Registrar | undefined>(() =>
     this.registrars().find((r) => r.registrarId === this.registrarId())
@@ -61,7 +70,8 @@ export class RegistrarService implements GlobalLoader {
   constructor(
     private backend: BackendService,
     private globalLoader: GlobalLoaderService,
-    private _snackBar: MatSnackBar
+    private _snackBar: MatSnackBar,
+    private router: Router
   ) {
     this.loadRegistrars().subscribe((r) => {
       this.globalLoader.stopGlobalLoader(this);
@@ -70,7 +80,14 @@ export class RegistrarService implements GlobalLoader {
   }
 
   public updateSelectedRegistrar(registrarId: string) {
-    this.registrarId.set(registrarId);
+    if (registrarId !== this.registrarId()) {
+      this.registrarId.set(registrarId);
+      // add registrarId to url query params, so that we can pick it up after page refresh
+      this.router.navigate([], {
+        queryParams: { registrarId },
+        queryParamsHandling: 'merge',
+      });
+    }
   }
 
   public loadRegistrars(): Observable<Registrar[]> {
@@ -78,6 +95,23 @@ export class RegistrarService implements GlobalLoader {
       tap((registrars) => {
         if (registrars) {
           this.registrars.set(registrars);
+        }
+      })
+    );
+  }
+
+  saveRegistrar(registrar: Registrar) {
+    return this.backend.postRegistrar(registrar).pipe(
+      tap((registrar) => {
+        if (registrar) {
+          this.registrars.set(
+            this.registrars().map((r) => {
+              if (r.registrarId === registrar.registrarId) {
+                return registrar;
+              }
+              return r;
+            })
+          );
         }
       })
     );

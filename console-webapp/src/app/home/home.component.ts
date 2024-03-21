@@ -1,4 +1,4 @@
-// Copyright 2022 The Nomulus Authors. All Rights Reserved.
+// Copyright 2024 The Nomulus Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,12 +12,38 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Component, ViewEncapsulation } from '@angular/core';
+import { Component } from '@angular/core';
+import { Router } from '@angular/router';
+import { DomainListComponent } from '../domains/domainList.component';
+import { RegistrarComponent } from '../registrar/registrarsTable.component';
+import SecurityComponent from '../settings/security/security.component';
+import { SettingsComponent } from '../settings/settings.component';
+import { BreakPointObserverService } from '../shared/services/breakPoint.service';
 
 @Component({
   selector: 'app-home',
   templateUrl: './home.component.html',
   styleUrls: ['./home.component.scss'],
-  encapsulation: ViewEncapsulation.None,
 })
-export class HomeComponent {}
+export class HomeComponent {
+  constructor(
+    protected breakPointObserverService: BreakPointObserverService,
+    private router: Router
+  ) {}
+  viewRegistrars() {
+    this.router.navigate([RegistrarComponent.PATH], {
+      queryParamsHandling: 'merge',
+    });
+  }
+  updateEppPassword() {
+    this.router.navigate(
+      [SettingsComponent.PATH + '/' + SecurityComponent.PATH],
+      { queryParamsHandling: 'merge' }
+    );
+  }
+  viewDums() {
+    this.router.navigate([DomainListComponent.PATH], {
+      queryParamsHandling: 'merge',
+    });
+  }
+}

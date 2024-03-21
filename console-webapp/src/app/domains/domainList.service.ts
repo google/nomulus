@@ -1,4 +1,4 @@
-// Copyright 2023 The Nomulus Authors. All Rights Reserved.
+// Copyright 2024 The Nomulus Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,9 +13,9 @@
 // limitations under the License.
 
 import { Injectable } from '@angular/core';
-import { BackendService } from '../shared/services/backend.service';
-import { RegistrarService } from '../registrar/registrar.service';
 import { tap } from 'rxjs';
+import { RegistrarService } from '../registrar/registrar.service';
+import { BackendService } from '../shared/services/backend.service';
 
 export interface CreateAutoTimestamp {
   creationTime: string;
@@ -61,7 +61,7 @@ export class DomainListService {
       )
       .pipe(
         tap((domainListResult: DomainListResult) => {
-          this.checkpointTime = domainListResult.checkpointTime;
+          this.checkpointTime = domainListResult?.checkpointTime;
         })
       );
   }

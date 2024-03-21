@@ -1,98 +1,82 @@
-<div *ngIf="loading" class="settings-security__loading">
-  <mat-progress-bar mode="indeterminate"></mat-progress-bar>
-</div>
-<div class="settings-security" *ngIf="!loading">
-  <div class="settings-security__section">
-    <div class="settings-security__section-description">
-      <h2>IP Allowlist</h2>
-      <p>
-        Restrict access to EPP production servers to the following IP/IPv6
-        addresses, or ranges like 1.1.1.0/24
-      </p>
-    </div>
-    <div class="settings-security__section-form">
-      <div
-        *ngIf="
-          dataSource.ipAddressAllowList &&
-          dataSource.ipAddressAllowList.length > 0
-        "
-      >
-        <div
-          *ngFor="let item of dataSource.ipAddressAllowList; index as index"
-          class="settings-security__ipRecord"
-        >
-          <mat-form-field>
-            <input
-              matInput
-              type="text"
-              class="settings-security__ip-allowlist"
-              [(ngModel)]="item.value"
-              [disabled]="!inEdit"
-            />
+@if(securityService.isEditingSecurity) {
+<app-security-edit></app-security-edit>
+} @else {
+<div class="settings-security">
+  <mat-card appearance="outlined">
+    <mat-card-content>
+      <mat-list role="list">
+        <!-- IP Allowlist Start -->
+        <mat-list-item role="listitem">
+          <div class="settings-security__section-header">
+            <h2>IP Allowlist</h2>
             <button
-              *ngIf="inEdit"
-              matSuffix
-              mat-icon-button
-              aria-label="Remove"
-              (click)="removeIpEntry(index)"
+              mat-flat-button
+              color="primary"
+              aria-label="Edit Contact"
+              (click)="editSecurity()"
             >
-              <mat-icon>close</mat-icon>
+              <mat-icon>edit</mat-icon>
+              Edit
             </button>
-          </mat-form-field>
-        </div>
-      </div>
-      <button mat-stroked-button (click)="enableEdit(); createIpEntry()">
-        Add IP
-      </button>
-    </div>
-  </div>
-  <div class="settings-security__section">
-    <div class="settings-security__section-description">
-      <h2>SSL Certificate</h2>
-      <p>X.509 PEM certificate for EPP production access.</p>
-    </div>
-    <div class="settings-security__section-form">
-      <textarea
-        matInput
-        class="settings-security__clientCertificate"
-        [(ngModel)]="dataSource.clientCertificate"
-        [disabled]="!inEdit"
-      ></textarea>
-    </div>
-  </div>
-  <div class="settings-security__section">
-    <div class="settings-security__section-description">
-      <h2>Failover SSL Certificate</h2>
-      <p>X.509 PEM backup certificate for EPP Production Access.</p>
-    </div>
-    <div class="settings-security__section-form">
-      <textarea
-        matInput
-        [(ngModel)]="dataSource.failoverClientCertificate"
-        [disabled]="!inEdit"
-      ></textarea>
-    </div>
-  </div>
-  <div class="settings-security__actions">
-    <ng-template [ngIf]="inEdit" [ngIfElse]="inView">
-      <button
-        class="settings-security__actions-save"
-        mat-raised-button
-        color="primary"
-        (click)="save()"
-      >
-        Save
-      </button>
-      <button
-        class="settings-security__actions-cancel"
-        mat-stroked-button
-        (click)="cancel()"
-      >
-        Cancel
-      </button>
-    </ng-template>
-    <ng-template #inView>
-      <button #elseBlock mat-raised-button (click)="enableEdit()">Edit</button>
-    </ng-template>
-  </div>
+          </div>
+        </mat-list-item>
+        <mat-list-item role="listitem" lines="3">
+          <span class="console-app__list-value"
+            >Restrict access to EPP production servers to the following IP/IPv6
+            addresses, or ranges like 1.1.1.0/24</span
+          >
+        </mat-list-item>
+        <mat-divider></mat-divider>
+        @for (item of dataSource.ipAddressAllowList; track item.value) {
+        <mat-list-item role="listitem">
+          <span class="console-app__list-value">{{ item.value }}</span>
+        </mat-list-item>
+        <mat-divider></mat-divider>
+        } @empty {
+        <mat-list-item role="listitem">
+          <span class="console-app__list-value">No IP addresses on file.</span>
+        </mat-list-item>
+        }
+        <mat-list-item role="listitem"></mat-list-item>
+        <!-- IP Allowlist End -->
+
+        <!-- SSL Certificate Start -->
+        <mat-list-item role="listitem">
+          <h2>SSL Certificate</h2>
+        </mat-list-item>
+        <mat-list-item role="listitem">
+          <span class="console-app__list-value"
+            >X.509 PEM certificate for EPP production access</span
+          >
+        </mat-list-item>
+        <mat-divider></mat-divider>
+        <mat-list-item role="listitem" lines="10">
+          <span class="console-app__list-value">{{
+            dataSource.clientCertificate || "No client certificate on file."
+          }}</span>
+        </mat-list-item>
+        <mat-list-item role="listitem"> </mat-list-item>
+        <!-- SSL Certificate End -->
+
+        <!-- Failover SSL Certificate Start -->
+        <mat-list-item role="listitem">
+          <h2>Failover SSL Certificate</h2>
+        </mat-list-item>
+        <mat-list-item role="listitem">
+          <span class="console-app__list-value"
+            >X.509 PEM backup certificate for EPP production access</span
+          >
+        </mat-list-item>
+        <mat-divider></mat-divider>
+        <mat-list-item role="listitem" lines="10">
+          <span class="console-app__list-value">{{
+            dataSource.failoverClientCertificate ||
+              "No failover certificate on file."
+          }}</span>
+        </mat-list-item>
+        <!-- Failover SSL Certificate End -->
+      </mat-list>
+    </mat-card-content>
+  </mat-card>
 </div>
+}

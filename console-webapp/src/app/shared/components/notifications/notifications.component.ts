@@ -1,4 +1,4 @@
-// Copyright 2023 The Nomulus Authors. All Rights Reserved.
+// Copyright 2024 The Nomulus Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,10 +14,24 @@
 
 import { Component } from '@angular/core';
 
+interface Notification {
+  id: string;
+  date: Date;
+  text: string;
+}
+
 @Component({
-  selector: '[app-epp-widget]',
-  templateUrl: './eppWidget.component.html',
+  selector: 'app-notifications',
+  templateUrl: './notifications.component.html',
+  styleUrls: ['./notifications.component.scss'],
 })
-export class EppWidgetComponent {
+export class NotificationsComponent {
+  protected mockNotifications: Notification[] = [
+    {
+      id: '0',
+      date: new Date(),
+      text: 'Registry Downtime Planned on June 9, 2024 due to maintenance.',
+    },
+  ];
   constructor() {}
 }

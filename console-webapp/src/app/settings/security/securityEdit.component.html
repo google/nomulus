@@ -1,0 +1,60 @@
+<div class="settings-security__edit">
+  <h1>IP Allowlist</h1>
+  <p>
+    Restrict access to EPP production servers to the following IP/IPv6
+    addresses, or ranges like 1.1.1.0/24
+  </p>
+  <form (ngSubmit)="save()">
+    @for (ip of dataSource.ipAddressAllowList; track ip.value) {
+    <div class="settings-security__edit-ip">
+      <mat-form-field appearance="outline">
+        <input
+          matInput
+          type="text"
+          [(ngModel)]="ip.value"
+          [ngModelOptions]="{ standalone: true }"
+        />
+      </mat-form-field>
+      <button
+        matSuffix
+        mat-icon-button
+        aria-label="Remove"
+        (click)="removeIpEntry(ip)"
+      >
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+    }
+    <button mat-button color="primary" (click)="createIpEntry()" type="button">
+      + Add IP
+    </button>
+
+    <h1>SSL Certificate</h1>
+    <p>X.509 PEM certificate for EPP production access.</p>
+    <mat-form-field appearance="outline">
+      <textarea
+        matInput
+        [(ngModel)]="dataSource.clientCertificate"
+        [ngModelOptions]="{ standalone: true }"
+      ></textarea>
+    </mat-form-field>
+    <h1>Failover SSL Certificate</h1>
+    <p>X.509 PEM backup certificate for EPP Production Access.</p>
+    <mat-form-field appearance="outline">
+      <textarea
+        matInput
+        [(ngModel)]="dataSource.failoverClientCertificate"
+        [ngModelOptions]="{ standalone: true }"
+      ></textarea>
+    </mat-form-field>
+    <button
+      mat-flat-button
+      color="primary"
+      aria-label="Save security settings"
+      type="submit"
+      class="settings-security__edit-save"
+    >
+      Save
+    </button>
+  </form>
+</div>

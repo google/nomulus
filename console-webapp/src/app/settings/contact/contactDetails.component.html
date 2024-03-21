@@ -1,104 +1,201 @@
-<h3 mat-dialog-title>Contact details</h3>
-<div mat-dialog-content *ngIf="contact">
-  <form (ngSubmit)="saveAndClose($event)">
-    <p>
-      <mat-form-field class="contact-details__input">
+<div class="console-app__contact" *ngIf="contactService.contactInEdit">
+  <div class="console-app__contact-controls">
+    <button
+      mat-icon-button
+      aria-label="Back to contacts list"
+      (click)="goBack()"
+    >
+      <mat-icon>arrow_back</mat-icon>
+    </button>
+    <div class="spacer"></div>
+    @if(!isEditing && !contactService.isContactNewView) {
+    <button
+      mat-flat-button
+      color="primary"
+      aria-label="Edit Contact"
+      (click)="isEditing = true"
+    >
+      <mat-icon>edit</mat-icon>
+      Edit
+    </button>
+    <button mat-icon-button aria-label="Delete Contact">
+      <mat-icon>delete</mat-icon>
+    </button>
+    }
+  </div>
+
+  @if(isEditing || contactService.isContactNewView) {
+  <h1>Contact Details</h1>
+  <form (ngSubmit)="save($event)">
+    <section>
+      <mat-form-field appearance="outline">
         <mat-label>Name: </mat-label>
         <input
           matInput
           [required]="true"
-          [(ngModel)]="contact.name"
+          [(ngModel)]="contactService.contactInEdit.name"
           [ngModelOptions]="{ standalone: true }"
         />
       </mat-form-field>
-    </p>
 
-    <p>
-      <mat-form-field class="contact-details__input">
+      <mat-form-field appearance="outline">
         <mat-label>Primary account email: </mat-label>
         <input
           type="email"
           matInput
           [email]="true"
           [required]="true"
-          [(ngModel)]="contact.emailAddress"
+          [(ngModel)]="contactService.contactInEdit.emailAddress"
           [ngModelOptions]="{ standalone: true }"
         />
       </mat-form-field>
-    </p>
 
-    <p>
-      <mat-form-field class="contact-details__input">
+      <mat-form-field appearance="outline">
         <mat-label>Phone: </mat-label>
         <input
           matInput
-          [(ngModel)]="contact.phoneNumber"
+          [(ngModel)]="contactService.contactInEdit.phoneNumber"
           [ngModelOptions]="{ standalone: true }"
+          placeholder="+0.0000000000"
         />
       </mat-form-field>
-    </p>
 
-    <p>
-      <mat-form-field class="contact-details__input">
+      <mat-form-field appearance="outline">
         <mat-label>Fax: </mat-label>
         <input
           matInput
-          [(ngModel)]="contact.faxNumber"
+          [(ngModel)]="contactService.contactInEdit.faxNumber"
           [ngModelOptions]="{ standalone: true }"
         />
       </mat-form-field>
-    </p>
+    </section>
 
-    <div class="contact-details__group">
-      <label>Contact type:</label>
-      <div class="contact-details__group-content">
+    <section>
+      <h1>Contact Type</h1>
+      <p class="console-app__contact-required">
+        <mat-icon color="accent">error</mat-icon>Required to select at least one
+      </p>
+      <div class="">
         <mat-checkbox
-          *ngFor="let contactType of contactTypes"
-          [checked]="contact.types.includes(contactType.value)"
-          (change)="
-            $event.checked
-              ? contact.types.push(contactType.value)
-              : contact.types.splice(
-                  contact.types.indexOf(contactType.value),
-                  1
-                )
-          "
-          [disabled]="
-            contact.types.length === 1 && contact.types[0] === contactType.value
-          "
+          *ngFor="let contactType of contactTypeToTextMap | keyvalue"
+          [checked]="checkboxIsChecked(contactType.key)"
+          (change)="checkboxOnChange($event, contactType.key)"
+          [disabled]="checkboxIsDisabled(contactType.key)"
         >
-          {{ contactType.label }}
+          {{ contactType.value }}
         </mat-checkbox>
       </div>
-    </div>
-
-    <section>
-      <mat-checkbox
-        [(ngModel)]="contact.visibleInWhoisAsAdmin"
-        [ngModelOptions]="{ standalone: true }"
-        >Show in Registrar WHOIS record as admin contact</mat-checkbox
-      >
     </section>
 
     <section>
-      <mat-checkbox
-        [(ngModel)]="contact.visibleInWhoisAsTech"
-        [ngModelOptions]="{ standalone: true }"
-        >Show in Registrar WHOIS record as technical contact</mat-checkbox
-      >
-    </section>
+      <h1>WHOIS Preferences</h1>
+      <div>
+        <mat-checkbox
+          [(ngModel)]="contactService.contactInEdit.visibleInWhoisAsAdmin"
+          [ngModelOptions]="{ standalone: true }"
+          >Show in Registrar WHOIS record as admin contact</mat-checkbox
+        >
+      </div>
 
-    <section>
-      <mat-checkbox
-        [(ngModel)]="contact.visibleInDomainWhoisAsAbuse"
-        [ngModelOptions]="{ standalone: true }"
-        >Show Phone and Email in Domain WHOIS Record as registrar abuse contact
-        (per CL&D requirements)</mat-checkbox
-      >
+      <div>
+        <mat-checkbox
+          [(ngModel)]="contactService.contactInEdit.visibleInWhoisAsTech"
+          [ngModelOptions]="{ standalone: true }"
+          >Show in Registrar WHOIS record as technical contact</mat-checkbox
+        >
+      </div>
+
+      <div>
+        <mat-checkbox
+          [(ngModel)]="contactService.contactInEdit.visibleInDomainWhoisAsAbuse"
+          [ngModelOptions]="{ standalone: true }"
+          >Show Phone and Email in Domain WHOIS Record as registrar abuse
+          contact (per CL&D requirements)</mat-checkbox
+        >
+      </div>
     </section>
-    <mat-dialog-actions>
-      <button mat-button (click)="close()">Cancel</button>
-      <button type="submit" mat-button>Save</button>
-    </mat-dialog-actions>
+    <button
+      class="console-app__contact-submit"
+      mat-flat-button
+      color="primary"
+      type="submit"
+    >
+      Save
+    </button>
   </form>
+  } @else {
+  <h1>{{ contactService.contactInEdit.name }}</h1>
+  <mat-card appearance="outlined">
+    <mat-card-content>
+      <mat-list role="list">
+        <mat-list-item role="listitem">
+          <h2>Contact details</h2>
+        </mat-list-item>
+        <mat-divider></mat-divider>
+        <mat-list-item role="listitem">
+          <span class="console-app__list-key">Email</span>
+          <span class="console-app__list-value">{{
+            contactService.contactInEdit.emailAddress
+          }}</span>
+        </mat-list-item>
+        <mat-divider></mat-divider>
+        <mat-list-item role="listitem">
+          <span class="console-app__list-key">Phone</span>
+          <span class="console-app__list-value">{{
+            contactService.contactInEdit.phoneNumber
+          }}</span>
+        </mat-list-item>
+        <mat-divider></mat-divider>
+        <mat-list-item role="listitem">
+          <span class="console-app__list-key">Fax</span>
+          <span class="console-app__list-value">{{
+            contactService.contactInEdit.faxNumber
+          }}</span>
+        </mat-list-item>
+        <mat-divider></mat-divider>
+        <mat-list-item role="listitem">
+          <span class="console-app__list-key">Type:</span>
+          <span class="console-app__list-value">{{
+            contactService.contactInEdit.userFriendlyTypes.join(", ")
+          }}</span>
+        </mat-list-item>
+      </mat-list>
+    </mat-card-content>
+  </mat-card>
+  <mat-card appearance="outlined">
+    <mat-card-content>
+      <mat-list role="list">
+        <mat-list-item role="listitem">
+          <h2>WHOIS Preferences</h2>
+        </mat-list-item>
+        @if(contactService.contactInEdit.visibleInWhoisAsAdmin) {
+        <mat-divider></mat-divider>
+        <mat-list-item role="listitem">
+          <span class="console-app__list-value"
+            >Show in Registrar WHOIS record as admin contact</span
+          >
+        </mat-list-item>
+        } @if(contactService.contactInEdit.visibleInWhoisAsTech) {
+        <mat-divider></mat-divider>
+        <mat-list-item
+          role="listitem"
+          *ngIf="contactService.contactInEdit.visibleInWhoisAsTech"
+        >
+          <span class="console-app__list-value"
+            >Show in Registrar WHOIS record as technical contact</span
+          >
+        </mat-list-item>
+        } @if(contactService.contactInEdit.visibleInDomainWhoisAsAbuse) {
+        <mat-divider></mat-divider>
+        <mat-list-item role="listitem">
+          <span class="console-app__list-value"
+            >Show Phone and Email in Domain WHOIS Record as registrar abuse
+            contact (per CL&D requirements)</span
+          >
+        </mat-list-item>
+        }
+      </mat-list>
+    </mat-card-content>
+  </mat-card>
+  }
 </div>

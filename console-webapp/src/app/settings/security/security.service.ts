@@ -1,4 +1,4 @@
-// Copyright 2023 The Nomulus Authors. All Rights Reserved.
+// Copyright 2024 The Nomulus Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@ import { switchMap } from 'rxjs';
 import { RegistrarService } from 'src/app/registrar/registrar.service';
 import { BackendService } from 'src/app/shared/services/backend.service';
 
-interface ipAllowListItem {
+export interface ipAllowListItem {
   value: string;
 }
 export interface SecuritySettings {
@@ -52,9 +52,12 @@ export function uiToApiConverter(
   });
 }
 
-@Injectable()
+@Injectable({
+  providedIn: 'root',
+})
 export class SecurityService {
   securitySettings: SecuritySettings = {};
+  isEditingSecurity: boolean = false;
 
   constructor(
     private backend: BackendService,
