@@ -90,8 +90,6 @@ public class BsaRefreshAction implements Runnable {
         String message = "BSA refresh did not run: another BSA related task is running";
         logger.atInfo().log("%s.", message);
         emailSender.sendNotification(message, /* body= */ "");
-      } else {
-        emailSender.sendNotification("BSA refreshed successfully", "");
       }
     } catch (Throwable throwable) {
       logger.atWarning().withCause(throwable).log("Failed to refresh BSA data.");

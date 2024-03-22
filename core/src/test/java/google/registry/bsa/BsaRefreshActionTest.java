@@ -16,6 +16,7 @@ package google.registry.bsa;
 
 import static com.google.common.base.Throwables.getStackTraceAsString;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -96,14 +97,13 @@ public class BsaRefreshActionTest {
   }
 
   @Test
-  void notificationSent_success() {
+  void notification_notSent_whenNoError() {
     when(bsaLock.executeWithLock(any()))
         .thenAnswer(
             args -> {
               return true;
             });
     action.run();
-    verify(gmailClient, times(1))
-        .sendEmail(EmailMessage.create("BSA refreshed successfully", "", emailRecipient));
+    verify(gmailClient, never()).sendEmail(any());
   }
 }

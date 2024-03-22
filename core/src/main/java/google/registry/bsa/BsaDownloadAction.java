@@ -14,6 +14,7 @@
 
 package google.registry.bsa;
 
+import static com.google.common.base.Throwables.getStackTraceAsString;
 import static google.registry.bsa.BlockListType.BLOCK;
 import static google.registry.bsa.BlockListType.BLOCK_PLUS;
 import static google.registry.bsa.api.JsonSerializations.toCompletedOrdersReport;
@@ -65,6 +66,7 @@ public class BsaDownloadAction implements Runnable {
   private final BsaReportSender bsaReportSender;
   private final GcsClient gcsClient;
   private final Lazy<IdnChecker> lazyIdnChecker;
+  private final BsaEmailSender emailSender;
   private final BsaLock bsaLock;
   private final Clock clock;
   private final int transactionBatchSize;
@@ -78,6 +80,7 @@ public class BsaDownloadAction implements Runnable {
       BsaReportSender bsaReportSender,
       GcsClient gcsClient,
       Lazy<IdnChecker> lazyIdnChecker,
+      BsaEmailSender emailSender,
       BsaLock bsaLock,
       Clock clock,
       @Config("bsaTxnBatchSize") int transactionBatchSize,
@@ -88,6 +91,7 @@ public class BsaDownloadAction implements Runnable {
     this.bsaReportSender = bsaReportSender;
     this.gcsClient = gcsClient;
     this.lazyIdnChecker = lazyIdnChecker;
+    this.emailSender = emailSender;
     this.bsaLock = bsaLock;
     this.clock = clock;
     this.transactionBatchSize = transactionBatchSize;
@@ -98,12 +102,13 @@ public class BsaDownloadAction implements Runnable {
   public void run() {
     try {
       if (!bsaLock.executeWithLock(this::runWithinLock)) {
-        logger.atInfo().log("Job is being executed by another worker.");
+        String message = "BSA download did not run: another BSA related task is running";
+        logger.atInfo().log("%s.", message);
+        emailSender.sendNotification(message, /* body= */ "");
       }
     } catch (Throwable throwable) {
-      // TODO(12/31/2023): consider sending an alert email.
-      // TODO: if unretriable errors, log at severe and send email.
-      logger.atWarning().withCause(throwable).log("Failed to update block lists.");
+      logger.atWarning().withCause(throwable).log("Failed to download and process BSA data.");
+      emailSender.sendNotification("BSA download aborted", getStackTraceAsString(throwable));
     }
     // Always return OK. Let the next cron job retry.
     response.setStatus(SC_OK);
