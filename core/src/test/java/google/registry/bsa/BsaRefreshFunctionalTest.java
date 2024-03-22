@@ -149,7 +149,7 @@ class BsaRefreshFunctionalTest {
     verify(bsaReportSender, times(1))
         .addUnblockableDomainsUpdates("{\n  \"reserved\": [\n    \"blocked1.app\"\n  ]\n}");
 
-    verify(emailSender, times(1)).sendNotification("BSA refreshed successfully", "");
+    verify(emailSender, never()).sendNotification(anyString(), anyString());
   }
 
   @Test

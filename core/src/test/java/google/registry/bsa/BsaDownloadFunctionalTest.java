@@ -66,6 +66,8 @@ class BsaDownloadFunctionalTest {
   @Mock BlockListFetcher blockListFetcher;
   @Mock BsaReportSender bsaReportSender;
 
+  @Mock BsaEmailSender bsaEmailSender;
+
   private final FakeClock fakeClock = new FakeClock(TEST_START_TIME);
 
   @RegisterExtension
@@ -95,6 +97,7 @@ class BsaDownloadFunctionalTest {
             bsaReportSender,
             gcsClient,
             () -> new IdnChecker(fakeClock),
+            bsaEmailSender,
             new BsaLock(
                 new FakeLockHandler(/* lockSucceeds= */ true), Duration.standardSeconds(30)),
             fakeClock,

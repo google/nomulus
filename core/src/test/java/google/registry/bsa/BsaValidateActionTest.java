@@ -26,6 +26,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.startsWith;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -345,7 +346,7 @@ public class BsaValidateActionTest {
   }
 
   @Test
-  void notificationSent_noError() {
+  void notification_notSent_WhenNoError() {
     when(bsaLock.executeWithLock(any()))
         .thenAnswer(
             args -> {
@@ -356,9 +357,6 @@ public class BsaValidateActionTest {
     action = spy(action);
     doReturn(ImmutableList.of()).when(action).checkBsaLabels(anyString());
     action.run();
-    verify(gmailClient, times(1)).sendEmail(emailCaptor.capture());
-    EmailMessage message = emailCaptor.getValue();
-    assertThat(message.subject()).isEqualTo("BSA validation completed: no errors found");
-    assertThat(message.body()).isEqualTo("Most recent download is 2023-11-09t020857.880z.\n\n");
+    verify(gmailClient, never()).sendEmail(any());
   }
 }

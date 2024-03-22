@@ -132,9 +132,10 @@ public class BsaValidateAction implements Runnable {
         errors.isEmpty()
             ? "BSA validation completed: no errors found"
             : "BSA validation completed with errors";
-
-    emailValidationResults(resultSummary, downloadJobName.get(), errors);
-    logger.atInfo().log("Finished validating BSA with latest download: %s", downloadJobName.get());
+    if (!errors.isEmpty()) {
+      emailValidationResults(resultSummary, downloadJobName.get(), errors);
+    }
+    logger.atInfo().log("%s (latest download: %s)", resultSummary, downloadJobName.get());
     return null;
   }
 
