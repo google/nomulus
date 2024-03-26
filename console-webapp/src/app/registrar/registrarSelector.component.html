@@ -13,6 +13,7 @@
       [ngModel]="registrarInput()"
       (ngModelChange)="registrarInput.set($event)"
       [ngModelOptions]="{ standalone: true }"
+      (focus)="onFocus()"
       [matAutocomplete]="auto"
     />
     <mat-autocomplete
