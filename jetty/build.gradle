@@ -66,4 +66,20 @@ tasks.register('run', JavaExec) {
     dependsOn(tasks.named('stage'))
 }
 
+tasks.register('deployNomulus') {
+    dependsOn(tasks.named('buildNomulusImage'))
+    configure verifyDeploymentConfig
+    doLast {
+        exec {
+            commandLine 'docker', 'tag', 'nomulus', "gcr.io/${rootProject.gcpProject}/nomulus"
+        }
+        exec {
+            commandLine 'docker', 'push', "gcr.io/${rootProject.gcpProject}/nomulus"
+        }
+        exec {
+            commandLine './deploy-nomulus-for-env.sh', "${rootProject.environment}"
+        }
+    }
+}
+
 project.build.dependsOn(tasks.named('buildNomulusImage'))

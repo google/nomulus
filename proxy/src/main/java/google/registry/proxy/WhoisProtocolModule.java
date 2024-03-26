@@ -61,12 +61,14 @@ public final class WhoisProtocolModule {
       ProxyConfig config,
       @WhoisProtocol int whoisPort,
       @WhoisProtocol ImmutableList<Provider<? extends ChannelHandler>> handlerProviders,
-      @HttpsRelayProtocol BackendProtocol.Builder backendProtocolBuilder) {
+      @HttpsRelayProtocol BackendProtocol.Builder backendProtocolBuilder,
+      @HttpsRelayProtocol boolean localRelay) {
     return Protocol.frontendBuilder()
         .name(PROTOCOL_NAME)
         .port(whoisPort)
         .handlerProviders(handlerProviders)
-        .relayProtocol(backendProtocolBuilder.host(config.whois.relayHost).build())
+        .relayProtocol(
+            backendProtocolBuilder.host(localRelay ? "localhost" : config.whois.relayHost).build())
         .build();
   }
 
@@ -94,9 +96,13 @@ public final class WhoisProtocolModule {
   static WhoisServiceHandler provideWhoisServiceHandler(
       ProxyConfig config,
       @Named("idToken") Supplier<String> idTokenSupplier,
-      FrontendMetrics metrics) {
+      FrontendMetrics metrics,
+      @HttpsRelayProtocol boolean localRelay) {
     return new WhoisServiceHandler(
-        config.whois.relayHost, config.whois.relayPath, idTokenSupplier, metrics);
+        localRelay ? "localhost" : config.whois.relayHost,
+        config.whois.relayPath,
+        idTokenSupplier,
+        metrics);
   }
 
   @Provides
