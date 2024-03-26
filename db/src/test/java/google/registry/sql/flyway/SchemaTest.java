@@ -128,6 +128,10 @@ class SchemaTest {
             .dataSource(
                 sqlContainer.getJdbcUrl(), sqlContainer.getUsername(), sqlContainer.getPassword())
             .load();
+    PostgreSQLConfigurationExtension configurationExtension =
+        flyway.getConfigurationExtension(PostgreSQLConfigurationExtension.class);
+    configurationExtension.setTransactionalLock(false);
+
     flyway.migrate();
     logger.atInfo().log("Base schema version: %s", flyway.info().current().getVersion());
 
@@ -138,6 +142,9 @@ class SchemaTest {
             .dataSource(
                 sqlContainer.getJdbcUrl(), sqlContainer.getUsername(), sqlContainer.getPassword())
             .load();
+    configurationExtension =
+        flyway.getConfigurationExtension(PostgreSQLConfigurationExtension.class);
+    configurationExtension.setTransactionalLock(false);
     flyway.migrate();
     flyway.validate();
     logger.atInfo().log("Latest schema version: %s", flyway.info().current().getVersion());
