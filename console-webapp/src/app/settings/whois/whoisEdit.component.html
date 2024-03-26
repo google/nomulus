@@ -51,7 +51,17 @@
       </mat-form-field>
 
       <mat-form-field appearance="outline">
-        <mat-label>Street Address: </mat-label>
+        <mat-label>Street Address (line 1): </mat-label>
+        <input
+          matInput
+          type="text"
+          [ngModelOptions]="{ standalone: true }"
+          [(ngModel)]="registrarInEdit.localizedAddress.street![0]"
+        />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Street Address (line 2): </mat-label>
         <input
           matInput
           type="text"
