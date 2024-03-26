@@ -29,6 +29,7 @@ import org.apache.beam.sdk.coders.NullableCoder;
 import org.apache.beam.sdk.coders.StringUtf8Coder;
 import org.apache.beam.sdk.coders.VarIntCoder;
 import org.apache.beam.sdk.coders.VarLongCoder;
+import org.jetbrains.annotations.NotNull;
 import org.joda.time.DateTime;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
@@ -173,7 +174,7 @@ public abstract class BillingEvent {
 
   /** Returns the grouping key for this {@code BillingEvent}, to generate the overall invoice. */
   InvoiceGroupingKey getInvoiceGroupingKey() {
-    return new AutoValue_BillingEvent_InvoiceGroupingKey(
+    return new InvoiceGroupingKey(
         billingTime().toLocalDate().withDayOfMonth(1).toString(),
         years() == 0
             ? ""
@@ -196,9 +197,28 @@ public abstract class BillingEvent {
     return String.format("%s_%s", registrarId(), tld());
   }
 
-  /** Key for each {@code BillingEvent}, when aggregating for the overall invoice. */
-  @AutoValue
-  abstract static class InvoiceGroupingKey {
+  /**
+   * Key for each {@code BillingEvent}, when aggregating for the overall invoice.
+   *
+   * @param startDate The first day this invoice is valid, in yyyy-MM-dd format.
+   * @param endDate The last day this invoice is valid, in yyyy-MM-dd format.
+   * @param productAccountKey The billing account id, which is the {@code BillingEvent.billingId}.
+   * @param usageGroupingKey The invoice grouping key, which is the registrar ID.
+   * @param description The description of the item, formatted as: {@code action | TLD: tld | TERM:
+   *     n-year}.
+   * @param unitPrice The cost per invoice item.
+   * @param unitPriceCurrency The 3-digit currency code the unit price uses.
+   * @param poNumber The purchase order number for the item, blank for most registrars.
+   */
+  record InvoiceGroupingKey(
+      String startDate,
+      String endDate,
+      String productAccountKey,
+      String usageGroupingKey,
+      String description,
+      Double unitPrice,
+      String unitPriceCurrency,
+      String poNumber) {
 
     private static final ImmutableList<String> INVOICE_HEADERS =
         ImmutableList.of(
@@ -217,29 +237,6 @@ public abstract class BillingEvent {
             "UnitPriceCurrency",
             "PONumber");
 
-    /** Returns the first day this invoice is valid, in yyyy-MM-dd format. */
-    abstract String startDate();
-
-    /** Returns the last day this invoice is valid, in yyyy-MM-dd format. */
-    abstract String endDate();
-
-    /** Returns the billing account id, which is the {@code BillingEvent.billingId}. */
-    abstract String productAccountKey();
-
-    /** Returns the invoice grouping key, which is the registrar ID. */
-    abstract String usageGroupingKey();
-
-    /** Returns a description of the item, formatted as "action | TLD: tld | TERM: n-year." */
-    abstract String description();
-
-    /** Returns the cost per invoice item. */
-    abstract Double unitPrice();
-
-    /** Returns the 3-digit currency code the unit price uses. */
-    abstract String unitPriceCurrency();
-
-    /** Returns the purchase order number for the item, blank for most registrars. */
-    abstract String poNumber();
 
     /** Generates the CSV header for the overall invoice. */
     static String invoiceHeader() {
@@ -280,7 +277,8 @@ public abstract class BillingEvent {
       private InvoiceGroupingKeyCoder() {}
 
       @Override
-      public void encode(InvoiceGroupingKey value, OutputStream outStream) throws IOException {
+      public void encode(InvoiceGroupingKey value, @NotNull OutputStream outStream)
+          throws IOException {
         Coder<String> stringCoder = StringUtf8Coder.of();
         stringCoder.encode(value.startDate(), outStream);
         stringCoder.encode(value.endDate(), outStream);
@@ -293,8 +291,8 @@ public abstract class BillingEvent {
       }
 
       @Override
-      public InvoiceGroupingKey decode(InputStream inStream) throws IOException {
-        return new AutoValue_BillingEvent_InvoiceGroupingKey(
+      public InvoiceGroupingKey decode(@NotNull InputStream inStream) throws IOException {
+        return new InvoiceGroupingKey(
             stringCoder.decode(inStream),
             stringCoder.decode(inStream),
             stringCoder.decode(inStream),
