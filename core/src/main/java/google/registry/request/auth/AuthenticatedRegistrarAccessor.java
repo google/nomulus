@@ -28,7 +28,7 @@ import dagger.Lazy;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.groups.GroupsConnection;
 import google.registry.model.registrar.Registrar;
-import google.registry.model.registrar.Registrar.State;
+import google.registry.model.registrar.RegistrarBase.State;
 import google.registry.model.registrar.RegistrarPoc;
 import java.util.Optional;
 import javax.annotation.concurrent.Immutable;

@@ -26,7 +26,7 @@ import google.registry.model.OteAccountBuilder;
 import google.registry.model.OteStats;
 import google.registry.model.OteStats.StatType;
 import google.registry.model.registrar.Registrar;
-import google.registry.model.registrar.Registrar.Type;
+import google.registry.model.registrar.RegistrarBase.Type;
 import google.registry.request.Action;
 import google.registry.request.JsonActionRunner;
 import google.registry.request.auth.Auth;

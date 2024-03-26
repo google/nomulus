@@ -29,6 +29,7 @@ import com.google.re2j.Pattern;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarAddress;
 import google.registry.model.registrar.RegistrarPoc;
+import google.registry.model.registrar.RegistrarPocBase;
 import google.registry.ui.forms.FormException;
 import google.registry.ui.forms.FormField;
 import google.registry.ui.forms.FormFieldException;
@@ -90,12 +91,6 @@ public final class RegistrarFormFields {
           .matches(ASCII_PATTERN, ASCII_ERROR)
           .build();
 
-  public static final FormField<String, Registrar.State> STATE_FIELD =
-      FormField.named("state")
-          .emptyToNull()
-          .asEnum(Registrar.State.class)
-          .build();
-
   public static final FormField<List<String>, Set<String>> ALLOWED_TLDS_FIELD =
       FormFields.LABEL.asBuilderNamed("allowedTlds")
           .asSet()
@@ -104,14 +99,6 @@ public final class RegistrarFormFields {
   public static final FormField<String, String> WHOIS_SERVER_FIELD =
       FormFields.LABEL.asBuilderNamed("whoisServer")
           .transform(RegistrarFormFields::parseHostname)
-          .build();
-
-  public static final FormField<Boolean, Boolean> BLOCK_PREMIUM_NAMES_FIELD =
-      FormField.named("blockPremiumNames", Boolean.class)
-          .build();
-
-  public static final FormField<String, String> DRIVE_FOLDER_ID_FIELD =
-      FormFields.XS_NORMALIZED_STRING.asBuilderNamed("driveFolderId")
           .build();
 
   public static final FormField<String, String> CLIENT_CERTIFICATE_HASH_FIELD =
@@ -217,10 +204,10 @@ public final class RegistrarFormFields {
   public static final FormField<String, String> CONTACT_REGISTRY_LOCK_PASSWORD_FIELD =
       FormFields.NAME.asBuilderNamed("registryLockPassword").build();
 
-  public static final FormField<String, Set<RegistrarPoc.Type>> CONTACT_TYPES =
+  public static final FormField<String, Set<RegistrarPocBase.Type>> CONTACT_TYPES =
       FormField.named("types")
           .uppercased()
-          .asEnum(RegistrarPoc.Type.class)
+          .asEnum(RegistrarPocBase.Type.class)
           .asSet(Splitter.on(',').omitEmptyStrings().trimResults())
           .build();
 

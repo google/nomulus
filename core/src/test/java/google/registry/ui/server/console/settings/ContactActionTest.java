@@ -16,7 +16,8 @@ package google.registry.ui.server.console.settings;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.model.registrar.RegistrarPoc.Type.WHOIS;
+import static google.registry.model.registrar.RegistrarPocBase.Type.WHOIS;
+import static google.registry.testing.DatabaseHelper.createAdminUser;
 import static google.registry.testing.DatabaseHelper.insertInDb;
 import static google.registry.testing.DatabaseHelper.loadAllOf;
 import static google.registry.testing.SqlHelper.saveRegistrar;
@@ -27,7 +28,6 @@ import com.google.api.client.http.HttpStatusCodes;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.gson.Gson;
-import google.registry.model.console.GlobalRole;
 import google.registry.model.console.RegistrarRole;
 import google.registry.model.console.User;
 import google.registry.model.console.UserRoles;
@@ -102,9 +102,7 @@ class ContactActionTest {
     ContactAction action =
         createAction(
             Action.Method.GET,
-            AuthResult.createUser(
-                UserAuthInfo.create(
-                    createUser(new UserRoles.Builder().setGlobalRole(GlobalRole.FTE).build()))),
+            AuthResult.createUser(UserAuthInfo.create(createAdminUser("email@email.com"))),
             testRegistrar.getRegistrarId(),
             null);
     action.run();
@@ -119,9 +117,7 @@ class ContactActionTest {
     ContactAction action =
         createAction(
             Action.Method.GET,
-            AuthResult.createUser(
-                UserAuthInfo.create(
-                    createUser(new UserRoles.Builder().setGlobalRole(GlobalRole.FTE).build()))),
+            AuthResult.createUser(UserAuthInfo.create(createAdminUser("email@email.com"))),
             testRegistrar.getRegistrarId(),
             null);
     action.run();
@@ -134,9 +130,7 @@ class ContactActionTest {
     ContactAction action =
         createAction(
             Action.Method.POST,
-            AuthResult.createUser(
-                UserAuthInfo.create(
-                    createUser(new UserRoles.Builder().setGlobalRole(GlobalRole.FTE).build()))),
+            AuthResult.createUser(UserAuthInfo.create(createAdminUser("email@email.com"))),
             testRegistrar.getRegistrarId(),
             "[" + jsonRegistrar1 + "," + jsonRegistrar2 + "]");
     action.run();
@@ -156,9 +150,7 @@ class ContactActionTest {
     ContactAction action =
         createAction(
             Action.Method.POST,
-            AuthResult.createUser(
-                UserAuthInfo.create(
-                    createUser(new UserRoles.Builder().setGlobalRole(GlobalRole.FTE).build()))),
+            AuthResult.createUser(UserAuthInfo.create(createAdminUser("email@email.com"))),
             testRegistrar.getRegistrarId(),
             "[" + jsonRegistrar1 + "," + jsonRegistrar2 + "]");
     action.run();
@@ -181,9 +173,7 @@ class ContactActionTest {
     ContactAction action =
         createAction(
             Action.Method.POST,
-            AuthResult.createUser(
-                UserAuthInfo.create(
-                    createUser(new UserRoles.Builder().setGlobalRole(GlobalRole.FTE).build()))),
+            AuthResult.createUser(UserAuthInfo.create(createAdminUser("email@email.com"))),
             testRegistrar.getRegistrarId(),
             "[" + jsonRegistrar2 + "]");
     action.run();
@@ -204,23 +194,20 @@ class ContactActionTest {
             Action.Method.POST,
             AuthResult.createUser(
                 UserAuthInfo.create(
-                    createUser(
-                        new UserRoles.Builder()
-                            .setRegistrarRoles(
-                                ImmutableMap.of(
-                                    testRegistrar.getRegistrarId(), RegistrarRole.ACCOUNT_MANAGER))
-                            .build()))),
+                    new User.Builder()
+                        .setEmailAddress("email@email.com")
+                        .setUserRoles(
+                            new UserRoles.Builder()
+                                .setRegistrarRoles(
+                                    ImmutableMap.of(
+                                        testRegistrar.getRegistrarId(),
+                                        RegistrarRole.ACCOUNT_MANAGER))
+                                .build())
+                        .build())),
             testRegistrar.getRegistrarId(),
             "[" + jsonRegistrar2 + "]");
     action.run();
     assertThat(response.getStatus()).isEqualTo(HttpStatusCodes.STATUS_CODE_FORBIDDEN);
-  }
-
-  private User createUser(UserRoles userRoles) {
-    return new User.Builder()
-        .setEmailAddress("email@email.com")
-        .setUserRoles(userRoles)
-        .build();
   }
 
   private ContactAction createAction(

@@ -30,6 +30,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarPoc;
+import google.registry.model.registrar.RegistrarPocBase;
 import google.registry.tools.params.OptionalPhoneNumberParameter;
 import google.registry.tools.params.PathParameter;
 import google.registry.tools.params.StringListParameter;
@@ -167,7 +168,7 @@ final class RegistrarPocCommand extends MutatingCommand {
   private static final ImmutableSet<Mode> MODES_REQUIRING_CONTACT_SYNC =
       ImmutableSet.of(Mode.CREATE, Mode.UPDATE, Mode.DELETE);
 
-  @Nullable private ImmutableSet<RegistrarPoc.Type> contactTypes;
+  @Nullable private ImmutableSet<RegistrarPocBase.Type> contactTypes;
 
   @Override
   protected void init() throws Exception {
@@ -183,7 +184,7 @@ final class RegistrarPocCommand extends MutatingCommand {
     } else {
       contactTypes =
           contactTypeNames.stream()
-              .map(Enums.stringConverter(RegistrarPoc.Type.class))
+              .map(Enums.stringConverter(RegistrarPocBase.Type.class))
               .collect(toImmutableSet());
     }
     ImmutableSet<RegistrarPoc> contacts = registrar.getContacts();

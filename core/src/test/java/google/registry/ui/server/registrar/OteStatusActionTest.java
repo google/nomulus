@@ -26,7 +26,7 @@ import com.google.common.collect.Iterables;
 import google.registry.model.OteAccountBuilder;
 import google.registry.model.OteStats.StatType;
 import google.registry.model.OteStatsTestHelper;
-import google.registry.model.registrar.Registrar.Type;
+import google.registry.model.registrar.RegistrarBase.Type;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.request.auth.AuthenticatedRegistrarAccessor;

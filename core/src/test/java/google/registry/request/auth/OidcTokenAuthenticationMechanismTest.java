@@ -18,6 +18,7 @@ import static com.google.common.net.HttpHeaders.AUTHORIZATION;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.request.auth.AuthModule.BEARER_PREFIX;
 import static google.registry.request.auth.AuthModule.IAP_HEADER_NAME;
+import static google.registry.testing.DatabaseHelper.createAdminUser;
 import static google.registry.testing.DatabaseHelper.insertInDb;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -56,17 +57,12 @@ public class OidcTokenAuthenticationMechanismTest {
       ImmutableSet.of("service@email.test", "email@service.goog");
 
   private final Payload payload = new Payload();
-  private final User user =
-      new User.Builder()
-          .setEmailAddress(email)
-          .setUserRoles(
-              new UserRoles.Builder().setIsAdmin(true).setGlobalRole(GlobalRole.FTE).build())
-          .build();
   private final JsonWebSignature jwt =
       new JsonWebSignature(new Header(), payload, new byte[0], new byte[0]);
   private final TokenVerifier tokenVerifier = mock(TokenVerifier.class);
   private final HttpServletRequest request = mock(HttpServletRequest.class);
 
+  private User user;
   private AuthResult authResult;
   private OidcTokenAuthenticationMechanism authenticationMechanism =
       new OidcTokenAuthenticationMechanism(serviceAccounts, tokenVerifier, null, e -> rawToken) {};
@@ -80,7 +76,7 @@ public class OidcTokenAuthenticationMechanismTest {
     when(tokenVerifier.verify(rawToken)).thenReturn(jwt);
     payload.setEmail(email);
     payload.setSubject(gaiaId);
-    insertInDb(user);
+    user = createAdminUser(email);
   }
 
   @AfterEach

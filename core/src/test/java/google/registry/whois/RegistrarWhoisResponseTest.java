@@ -25,6 +25,7 @@ import com.google.common.collect.ImmutableSet;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarAddress;
 import google.registry.model.registrar.RegistrarPoc;
+import google.registry.model.registrar.RegistrarPocBase;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.testing.FakeClock;
@@ -74,7 +75,7 @@ class RegistrarWhoisResponseTest {
                 .setEmailAddress("joeregistrar@example-registrar.tld")
                 .setPhoneNumber("+1.3105551213")
                 .setFaxNumber("+1.3105551213")
-                .setTypes(ImmutableSet.of(RegistrarPoc.Type.ADMIN))
+                .setTypes(ImmutableSet.of(RegistrarPocBase.Type.ADMIN))
                 .setVisibleInWhoisAsAdmin(true)
                 .setVisibleInWhoisAsTech(false)
                 .build(),
@@ -84,7 +85,7 @@ class RegistrarWhoisResponseTest {
                 .setEmailAddress("johndoe@example-registrar.tld")
                 .setPhoneNumber("+1.1111111111")
                 .setFaxNumber("+1.1111111111")
-                .setTypes(ImmutableSet.of(RegistrarPoc.Type.ADMIN))
+                .setTypes(ImmutableSet.of(RegistrarPocBase.Type.ADMIN))
                 .build(),
             new RegistrarPoc.Builder()
                 .setRegistrar(registrar)
@@ -92,7 +93,7 @@ class RegistrarWhoisResponseTest {
                 .setEmailAddress("janeregistrar@example-registrar.tld")
                 .setPhoneNumber("+1.3105551214")
                 .setFaxNumber("+1.3105551213")
-                .setTypes(ImmutableSet.of(RegistrarPoc.Type.ADMIN))
+                .setTypes(ImmutableSet.of(RegistrarPocBase.Type.ADMIN))
                 .setVisibleInWhoisAsAdmin(true)
                 .build(),
             new RegistrarPoc.Builder()
@@ -101,7 +102,7 @@ class RegistrarWhoisResponseTest {
                 .setEmailAddress("janedoe@example-registrar.tld")
                 .setPhoneNumber("+1.1111111112")
                 .setFaxNumber("+1.1111111112")
-                .setTypes(ImmutableSet.of(RegistrarPoc.Type.TECH))
+                .setTypes(ImmutableSet.of(RegistrarPocBase.Type.TECH))
                 .build(),
             new RegistrarPoc.Builder()
                 .setRegistrar(registrar)
@@ -109,7 +110,7 @@ class RegistrarWhoisResponseTest {
                 .setEmailAddress("johngeek@example-registrar.tld")
                 .setPhoneNumber("+1.3105551215")
                 .setFaxNumber("+1.3105551216")
-                .setTypes(ImmutableSet.of(RegistrarPoc.Type.TECH))
+                .setTypes(ImmutableSet.of(RegistrarPocBase.Type.TECH))
                 .setVisibleInWhoisAsTech(true)
                 .build());
     persistResource(registrar);

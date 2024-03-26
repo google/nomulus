@@ -24,7 +24,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarPoc;
-import google.registry.model.registrar.RegistrarPoc.Type;
+import google.registry.model.registrar.RegistrarPocBase.Type;
 import google.registry.persistence.transaction.JpaTransactionManagerExtension;
 import java.util.List;
 import java.util.Map;
