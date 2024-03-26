@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Component, effect } from '@angular/core';
+import { Component, effect, ViewEncapsulation } from '@angular/core';
 import { MatTableDataSource } from '@angular/material/table';
 import { take } from 'rxjs';
 import { RegistrarService } from 'src/app/registrar/registrar.service';
@@ -27,6 +27,7 @@ import {
   selector: 'app-contact',
   templateUrl: './contact.component.html',
   styleUrls: ['./contact.component.scss'],
+  encapsulation: ViewEncapsulation.None,
 })
 export default class ContactComponent {
   public static PATH = 'contact';
@@ -69,17 +70,17 @@ export default class ContactComponent {
     private registrarService: RegistrarService
   ) {
     effect(() => {
+      if (this.contactService.contacts()) {
+        this.dataSource = new MatTableDataSource<ViewReadyContact>(
+          this.contactService.contacts().map(contactTypeToViewReadyContact)
+        );
+      }
+    });
+    effect(() => {
       if (this.registrarService.registrarId()) {
         this.contactService.isContactDetailsView = false;
         this.contactService.isContactNewView = false;
-        this.contactService
-          .fetchContacts()
-          .pipe(take(1))
-          .subscribe((contacts) => {
-            this.dataSource = new MatTableDataSource<ViewReadyContact>(
-              contacts.map(contactTypeToViewReadyContact)
-            );
-          });
+        this.contactService.fetchContacts().pipe(take(1)).subscribe();
       }
     });
   }

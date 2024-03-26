@@ -20,6 +20,11 @@
     mat-table {
       min-width: 800px;
     }
+    .contact__name-column-title {
+      color: #5f6368;
+      font-weight: 500;
+      padding: 10px 0;
+    }
   }
   &__empty-contacts {
     display: flex;
@@ -37,10 +42,5 @@
     position: absolute;
     right: 20px;
     top: 5px;
-  }
-  .contact__name-column-title {
-    color: #5f6368;
-    font-weight: 500;
-    padding: 10px 0;
   }
 }
