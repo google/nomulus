@@ -86,7 +86,12 @@ import org.joda.time.DateTime;
 @ExternalMessagingName("message")
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE)
 @DiscriminatorColumn(name = "type")
-@Table(indexes = {@Index(columnList = "registrar_id"), @Index(columnList = "eventTime")})
+@Table(
+    indexes = {
+      @Index(columnList = "domainRepoId"),
+      @Index(columnList = "registrar_id"),
+      @Index(columnList = "eventTime")
+    })
 public abstract class PollMessage extends ImmutableObject
     implements Buildable, TransferServerApproveEntity, UnsafeSerializable {
 

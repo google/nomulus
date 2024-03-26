@@ -78,7 +78,8 @@ if ! pgrep cloud_sql_proxy; then
   exit 1
 fi
 
-/flyway/flyway -community -user=${db_user} -password=${db_password} \
+/flyway/flyway -postgresql.transactional.lock=false -community \
+  -user=${db_user} -password=${db_password} \
   -url=jdbc:postgresql://localhost:5432/postgres \
   -locations=classpath:sql/flyway \
   ${flyway_action}

@@ -848,6 +848,7 @@ create index IDXrh4xmrot9bd63o382ow9ltfig on "DomainHistory" (creation_time);
 create index IDXaro1omfuaxjwmotk3vo00trwm on "DomainHistory" (history_registrar_id);
 create index IDXsu1nam10cjes9keobapn5jvxj on "DomainHistory" (history_type);
 create index IDX6w3qbtgce93cal2orjg1tw7b7 on "DomainHistory" (history_modification_time);
+create index IDX69qun5kxt3eux5igrxrqcycv0 on "DomainHistoryHost" (domain_history_domain_repo_id);
 
     alter table if exists "DomainHistoryHost" 
        add constraint UKt2e7ae3t8gcsxd13wjx2ka7ij unique (domain_history_history_revision_id, domain_history_domain_repo_id, host_repo_id);
@@ -869,6 +870,7 @@ create index IDXkkwbwcwvrdkkqothkiye4jiff on "HostHistory" (host_name);
 create index IDXknk8gmj7s47q56cwpa6rmpt5l on "HostHistory" (history_type);
 create index IDX67qwkjtlq5q8dv6egtrtnhqi7 on "HostHistory" (history_modification_time);
 create index IDXlg6a5tp70nch9cp0gc11brc5o on "PackagePromotion" (token);
+create index IDXf2q9dqj899h1q8lah5y719nxd on "PollMessage" (domain_repo_id);
 create index IDXe7wu46c7wpvfmfnj4565abibp on "PollMessage" (registrar_id);
 create index IDXaydgox62uno9qx8cjlj5lauye on "PollMessage" (event_time);
 create index premiumlist_name_idx on "PremiumList" (name);
