@@ -42,7 +42,7 @@ public final class StaticPremiumListPricingEngine implements PremiumPricingEngin
         tld.getPremiumListName().flatMap(pl -> PremiumListDao.getPremiumPrice(pl, label));
     return DomainPrices.create(
         premiumPrice.isPresent(),
-        premiumPrice.orElse(tld.getCreateBillingCost()),
+        premiumPrice.orElse(tld.getCreateBillingCost(priceTime)),
         premiumPrice.orElse(tld.getStandardRenewCost(priceTime)));
   }
 }

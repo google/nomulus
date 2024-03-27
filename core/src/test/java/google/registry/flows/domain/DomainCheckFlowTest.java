@@ -751,7 +751,8 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
         Tld.get("tld")
             .asBuilder()
             .setCurrency(JPY)
-            .setCreateBillingCost(Money.ofMajor(JPY, 800))
+            .setCreateBillingCostTransitions(
+                ImmutableSortedMap.of(START_OF_TIME, Money.ofMajor(JPY, 800)))
             .setEapFeeSchedule(ImmutableSortedMap.of(START_OF_TIME, Money.ofMajor(JPY, 800)))
             .setRenewBillingCostTransitions(
                 ImmutableSortedMap.of(START_OF_TIME, Money.ofMajor(JPY, 800)))
@@ -1344,7 +1345,12 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
     // Note that the response xml expects to see "11.10" with two digits after the decimal point.
     // This works because Money.getAmount(), used in the flow, returns a BigDecimal that is set to
     // display the number of digits that is conventional for the given currency.
-    persistResource(Tld.get("tld").asBuilder().setCreateBillingCost(Money.of(USD, 11.1)).build());
+    persistResource(
+        Tld.get("tld")
+            .asBuilder()
+            .setCreateBillingCostTransitions(
+                ImmutableSortedMap.of(START_OF_TIME, Money.of(USD, 11.1)))
+            .build());
     setEppInput("domain_check_fee_fractional.xml");
     runFlowAssertResponse(loadFile("domain_check_fee_fractional_response.xml"));
   }
