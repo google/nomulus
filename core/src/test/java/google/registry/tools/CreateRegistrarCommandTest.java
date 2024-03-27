@@ -593,7 +593,8 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
         newTld("foo", "FOO")
             .asBuilder()
             .setCurrency(JPY)
-            .setCreateBillingCost(Money.of(JPY, new BigDecimal(1300)))
+            .setCreateBillingCostTransitions(
+                ImmutableSortedMap.of(START_OF_TIME, Money.of(JPY, new BigDecimal(1300))))
             .setRestoreBillingCost(Money.of(JPY, new BigDecimal(1700)))
             .setServerStatusChangeBillingCost(Money.of(JPY, new BigDecimal(1900)))
             .setRegistryLockOrUnlockBillingCost(Money.of(JPY, new BigDecimal(2700)))

@@ -1033,7 +1033,8 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
         Tld.get("tld")
             .asBuilder()
             .setCurrency(EUR)
-            .setCreateBillingCost(Money.of(EUR, 13))
+            .setCreateBillingCostTransitions(
+                ImmutableSortedMap.of(START_OF_TIME, Money.of(EUR, 13)))
             .setRestoreBillingCost(Money.of(EUR, 11))
             .setRenewBillingCostTransitions(ImmutableSortedMap.of(START_OF_TIME, Money.of(EUR, 7)))
             .setEapFeeSchedule(ImmutableSortedMap.of(START_OF_TIME, Money.zero(EUR)))
@@ -1052,7 +1053,8 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
         Tld.get("tld")
             .asBuilder()
             .setCurrency(EUR)
-            .setCreateBillingCost(Money.of(EUR, 13))
+            .setCreateBillingCostTransitions(
+                ImmutableSortedMap.of(START_OF_TIME, Money.of(EUR, 13)))
             .setRestoreBillingCost(Money.of(EUR, 11))
             .setRenewBillingCostTransitions(ImmutableSortedMap.of(START_OF_TIME, Money.of(EUR, 7)))
             .setEapFeeSchedule(ImmutableSortedMap.of(START_OF_TIME, Money.zero(EUR)))
@@ -1071,7 +1073,8 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
         Tld.get("tld")
             .asBuilder()
             .setCurrency(EUR)
-            .setCreateBillingCost(Money.of(EUR, 13))
+            .setCreateBillingCostTransitions(
+                ImmutableSortedMap.of(START_OF_TIME, Money.of(EUR, 13)))
             .setRestoreBillingCost(Money.of(EUR, 11))
             .setRenewBillingCostTransitions(ImmutableSortedMap.of(START_OF_TIME, Money.of(EUR, 7)))
             .setEapFeeSchedule(ImmutableSortedMap.of(START_OF_TIME, Money.zero(EUR)))
@@ -1114,7 +1117,8 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
         Tld.get("tld")
             .asBuilder()
             .setCurrency(JPY)
-            .setCreateBillingCost(Money.ofMajor(JPY, 800))
+            .setCreateBillingCostTransitions(
+                ImmutableSortedMap.of(START_OF_TIME, Money.ofMajor(JPY, 800)))
             .setEapFeeSchedule(ImmutableSortedMap.of(START_OF_TIME, Money.ofMajor(JPY, 800)))
             .setRenewBillingCostTransitions(
                 ImmutableSortedMap.of(START_OF_TIME, Money.ofMajor(JPY, 800)))
