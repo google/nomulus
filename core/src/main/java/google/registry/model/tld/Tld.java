@@ -684,6 +684,7 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
     return createBillingCostTransitions.getValueAtTime(now);
   }
 
+  // This getter is still necessary for the Jackson deserialization in the ConfigureTldCommand
   public Money getCreateBillingCost() {
     return createBillingCost;
   }
