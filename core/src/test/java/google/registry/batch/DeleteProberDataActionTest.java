@@ -17,6 +17,7 @@ package google.registry.batch;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
 import static google.registry.model.EppResourceUtils.loadByForeignKey;
+import static google.registry.model.domain.rgp.GracePeriodStatus.ADD;
 import static google.registry.testing.DatabaseHelper.assertDomainDnsRequests;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.loadByEntitiesIfPresent;
@@ -37,6 +38,7 @@ import google.registry.model.billing.BillingBase.Reason;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainHistory;
+import google.registry.model.domain.GracePeriod;
 import google.registry.model.poll.PollMessage;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.tld.Tld;
@@ -312,12 +314,22 @@ class DeleteProberDataActionTest {
                 .setRegistrarId("TheRegistrar")
                 .setMsg("Domain registered")
                 .build());
+    GracePeriod gracePeriod =
+        persistSimpleResource(
+            GracePeriod.create(
+                ADD,
+                domain.getRepoId(),
+                DELETION_TIME.plusDays(5),
+                "TheRegistrar",
+                billingEvent.createVKey()));
+    domain = persistResource(domain.asBuilder().addGracePeriod(gracePeriod).build());
     ImmutableSet.Builder<ImmutableObject> builder =
         new ImmutableSet.Builder<ImmutableObject>()
             .add(domain)
             .add(historyEntry)
             .add(billingEvent)
-            .add(pollMessage);
+            .add(pollMessage)
+            .add(gracePeriod);
     return builder.build();
   }
 
