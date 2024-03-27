@@ -34,15 +34,14 @@ export class RegistrarSelectorComponent {
         option.toLowerCase().includes(filterValue)
       );
     });
-    this.onSelect(registrarService.registrarId());
+  }
+
+  onFocus() {
+    // We reset the list of options after selection, so that user doesn't have to clear it out
+    this.filteredOptions = this.allRegistrarIds();
   }
 
   onSelect(registrarId: string) {
     this.registrarService.updateSelectedRegistrar(registrarId);
-
-    // We reset the list of options after selection, so that user doesn't have to clear it out
-    setTimeout(() => {
-      this.filteredOptions = this.allRegistrarIds();
-    }, 10);
   }
 }

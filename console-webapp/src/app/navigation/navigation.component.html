@@ -18,7 +18,7 @@
     *matTreeNodeDef="let node; when: hasChild"
     (click)="onClick(node)"
   >
-    <div class="mat-tree-node" [class.active]="router.url.endsWith(node.path)">
+    <div class="mat-tree-node" [class.active]="router.url.includes(node.path)">
       <button
         class="console-app__nav-icon_expand"
         mat-icon-button
