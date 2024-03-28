@@ -13,12 +13,11 @@
 // limitations under the License.
 
 import { Component, effect } from '@angular/core';
-import { RegistrarService } from 'src/app/registrar/registrar.service';
 import {
-  SecurityService,
+  RegistrarService,
   SecuritySettings,
-  apiToUiConverter,
-} from './security.service';
+} from 'src/app/registrar/registrar.service';
+import { SecurityService, apiToUiConverter } from './security.service';
 
 @Component({
   selector: 'app-security',
@@ -42,5 +41,9 @@ export default class SecurityComponent {
 
   editSecurity() {
     this.securityService.isEditingSecurity = true;
+  }
+
+  editEppPassword() {
+    this.securityService.isEditingPassword = true;
   }
 }

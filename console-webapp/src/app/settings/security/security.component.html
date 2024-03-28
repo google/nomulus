@@ -1,7 +1,46 @@
 @if(securityService.isEditingSecurity) {
 <app-security-edit></app-security-edit>
+} @else if(securityService.isEditingPassword) {
+<app-epp-password-edit></app-epp-password-edit>
 } @else {
 <div class="settings-security">
+  <mat-card appearance="outlined">
+    <mat-card-content>
+      <mat-list role="list">
+        <!-- IP Allowlist Start -->
+        <mat-list-item role="listitem">
+          <div class="settings-security__section-header">
+            <h2>EPP Password</h2>
+            <button
+              mat-flat-button
+              color="primary"
+              aria-label="Edit EPP Password"
+              (click)="editEppPassword()"
+            >
+              <mat-icon>edit</mat-icon>
+              Edit
+            </button>
+          </div>
+        </mat-list-item>
+        <mat-list-item role="listitem" lines="3">
+          <span class="console-app__list-value"
+            >todo: come up with a text here</span
+          >
+        </mat-list-item>
+        <mat-list-item role="listitem">
+          <span class="console-app__list-key">Password</span>
+          <span class="console-app__list-value">••••••••••••••</span>
+        </mat-list-item>
+        <mat-divider></mat-divider>
+        <mat-list-item role="listitem">
+          <span class="console-app__list-key">Last Changed</span>
+          <span class="console-app__list-value">{{
+            dataSource.eppPasswordLastUpdated
+          }}</span>
+        </mat-list-item>
+      </mat-list>
+    </mat-card-content>
+  </mat-card>
   <mat-card appearance="outlined">
     <mat-card-content>
       <mat-list role="list">
@@ -12,7 +51,7 @@
             <button
               mat-flat-button
               color="primary"
-              aria-label="Edit Contact"
+              aria-label="Edit security settings"
               (click)="editSecurity()"
             >
               <mat-icon>edit</mat-icon>

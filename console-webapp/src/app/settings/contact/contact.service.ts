@@ -77,19 +77,17 @@ export class ContactService {
     private registrarService: RegistrarService
   ) {}
 
-  setEditableContact(contact?: Contact) {
-    this.contactInEdit = contactTypeToViewReadyContact(
-      contact
-        ? contact
-        : {
-            emailAddress: '',
-            name: '',
-            types: ['ADMIN'],
-            faxNumber: '',
-            phoneNumber: '',
-            registrarId: '',
-          }
-    );
+  setEditableContact(contact?: ViewReadyContact) {
+    this.contactInEdit = contact
+      ? contact
+      : contactTypeToViewReadyContact({
+          emailAddress: '',
+          name: '',
+          types: ['ADMIN'],
+          faxNumber: '',
+          phoneNumber: '',
+          registrarId: '',
+        });
   }
 
   fetchContacts(): Observable<Contact[]> {
@@ -104,13 +102,6 @@ export class ContactService {
     return this.backend
       .postContacts(this.registrarService.registrarId(), contacts)
       .pipe(switchMap((_) => this.fetchContacts()));
-  }
-
-  updateContact(index: number, contact: ViewReadyContact) {
-    const newContacts = this.contacts().map((c, i) =>
-      i === index ? contact : c
-    );
-    return this.saveContacts(newContacts);
   }
 
   addContact(contact: ViewReadyContact) {

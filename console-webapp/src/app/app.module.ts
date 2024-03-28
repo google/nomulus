@@ -36,6 +36,7 @@ import { RegistrarComponent } from './registrar/registrarsTable.component';
 import { ResourcesComponent } from './resources/resources.component';
 import SettingsContactComponent from './settings/contact/contact.component';
 import { ContactDetailsComponent } from './settings/contact/contactDetails.component';
+import EppPasswordEditComponent from './settings/security/eppPasswordEdit.component';
 import SecurityComponent from './settings/security/security.component';
 import SecurityEditComponent from './settings/security/securityEdit.component';
 import { SettingsComponent } from './settings/settings.component';
@@ -57,6 +58,7 @@ import { TldsComponent } from './tlds/tlds.component';
     BillingInfoComponent,
     ContactDetailsComponent,
     DomainListComponent,
+    EppPasswordEditComponent,
     HeaderComponent,
     HomeComponent,
     LocationBackDirective,

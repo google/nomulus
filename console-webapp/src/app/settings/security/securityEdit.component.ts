@@ -15,13 +15,12 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component } from '@angular/core';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { RegistrarService } from 'src/app/registrar/registrar.service';
 import {
-  SecurityService,
+  RegistrarService,
   SecuritySettings,
-  apiToUiConverter,
   ipAllowListItem,
-} from './security.service';
+} from 'src/app/registrar/registrar.service';
+import { SecurityService, apiToUiConverter } from './security.service';
 
 @Component({
   selector: 'app-security-edit',
