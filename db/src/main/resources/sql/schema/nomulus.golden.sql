@@ -1129,8 +1129,7 @@ CREATE TABLE public."ReservedEntry" (
 CREATE TABLE public."ReservedList" (
     revision_id bigint NOT NULL,
     creation_timestamp timestamp with time zone NOT NULL,
-    name text NOT NULL,
-    should_publish boolean
+    name text NOT NULL
 );
 
 
