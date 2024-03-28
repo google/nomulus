@@ -15,11 +15,11 @@
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable, catchError, of, throwError } from 'rxjs';
-import { SecuritySettingsBackendModel } from 'src/app/settings/security/security.service';
 
 import { DomainListResult } from 'src/app/domains/domainList.service';
 import {
   Registrar,
+  SecuritySettingsBackendModel,
   WhoisRegistrarFields,
 } from '../../registrar/registrar.service';
 import { Contact } from '../../settings/contact/contact.service';

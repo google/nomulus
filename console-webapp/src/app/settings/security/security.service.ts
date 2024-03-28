@@ -14,23 +14,13 @@
 
 import { Injectable } from '@angular/core';
 import { switchMap } from 'rxjs';
-import { RegistrarService } from 'src/app/registrar/registrar.service';
+import {
+  IpAllowListItem,
+  RegistrarService,
+  SecuritySettings,
+  SecuritySettingsBackendModel,
+} from 'src/app/registrar/registrar.service';
 import { BackendService } from 'src/app/shared/services/backend.service';
-
-export interface ipAllowListItem {
-  value: string;
-}
-export interface SecuritySettings {
-  clientCertificate?: string;
-  failoverClientCertificate?: string;
-  ipAddressAllowList?: Array<ipAllowListItem>;
-}
-
-export interface SecuritySettingsBackendModel {
-  clientCertificate?: string;
-  failoverClientCertificate?: string;
-  ipAddressAllowList?: Array<string>;
-}
 
 export function apiToUiConverter(
   securitySettings: SecuritySettingsBackendModel = {}
@@ -48,7 +38,7 @@ export function uiToApiConverter(
   return Object.assign({}, securitySettings, {
     ipAddressAllowList: (securitySettings.ipAddressAllowList || [])
       .filter((s) => s.value)
-      .map((ipAllowItem: ipAllowListItem) => ipAllowItem.value),
+      .map((ipAllowItem: IpAllowListItem) => ipAllowItem.value),
   });
 }
 
@@ -58,6 +48,7 @@ export function uiToApiConverter(
 export class SecurityService {
   securitySettings: SecuritySettings = {};
   isEditingSecurity: boolean = false;
+  isEditingPassword: boolean = false;
 
   constructor(
     private backend: BackendService,
@@ -76,4 +67,6 @@ export class SecurityService {
         })
       );
   }
+
+  saveEppPassword() {}
 }

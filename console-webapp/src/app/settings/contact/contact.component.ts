@@ -17,10 +17,9 @@ import { MatTableDataSource } from '@angular/material/table';
 import { take } from 'rxjs';
 import { RegistrarService } from 'src/app/registrar/registrar.service';
 import {
-  Contact,
   ContactService,
-  ViewReadyContact,
   contactTypeToViewReadyContact,
+  ViewReadyContact,
 } from './contact.service';
 
 @Component({
@@ -85,7 +84,7 @@ export default class ContactComponent {
     });
   }
 
-  openDetails(contact: Contact) {
+  openDetails(contact: ViewReadyContact) {
     this.contactService.setEditableContact(contact);
     this.contactService.isContactDetailsView = true;
   }
