@@ -21,6 +21,7 @@ import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static google.registry.dns.DnsUtils.requestDomainDnsRefresh;
 import static google.registry.model.reporting.HistoryEntry.Type.DOMAIN_DELETE;
 import static google.registry.model.tld.Tlds.getTldsOfType;
+import static google.registry.persistence.PersistenceModule.TransactionIsolationLevel.TRANSACTION_REPEATABLE_READ;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.request.Action.Method.POST;
 import static google.registry.request.RequestParameters.PARAM_BATCH_SIZE;
@@ -147,6 +148,7 @@ public class DeleteProberDataAction implements Runnable {
     DateTime now = DateTime.now(DateTimeZone.UTC);
     do {
       tm().transact(
+              TRANSACTION_REPEATABLE_READ,
               () ->
                   domainsBatch.set(
                       processDomains(deletableTlds, softDeletedDomains, hardDeletedDomains, now)));
