@@ -236,7 +236,8 @@ public class DeleteProberDataAction implements Runnable {
     tm().query("DELETE FROM Host WHERE hostName IN :hostNames")
         .setParameter("hostNames", hostNames)
         .executeUpdate();
-    tm().query("DELETE FROM GracePeriod WHERE domainRepoId IN :repoIds")
+    tm().getEntityManager()
+        .createNativeQuery("DELETE FROM \"GracePeriod\" WHERE domain_repo_id IN :repoIds")
         .setParameter("repoIds", domainRepoIds)
         .executeUpdate();
     tm().query("DELETE FROM BillingEvent WHERE domainRepoId IN :repoIds")
@@ -254,9 +255,6 @@ public class DeleteProberDataAction implements Runnable {
     tm().query("DELETE FROM PollMessage WHERE domainRepoId IN :repoIds")
         .setParameter("repoIds", domainRepoIds)
         .executeUpdate();
-    // We have to use the native SQL query here because DomainHost and DomainHistoryHost table don't
-    // have their own entity class, so we cannot reference its property like domainHost.hostRepoId
-    // in a JPQL query.
     tm().getEntityManager()
         .createNativeQuery("DELETE FROM \"DomainHost\" WHERE domain_repo_id IN :repoIds")
         .setParameter("repoIds", domainRepoIds)
@@ -266,16 +264,25 @@ public class DeleteProberDataAction implements Runnable {
             "DELETE FROM \"DomainHistoryHost\" WHERE domain_history_domain_repo_id IN :repoIds")
         .setParameter("repoIds", domainRepoIds)
         .executeUpdate();
-    tm().query("DELETE FROM DelegationSignerData WHERE domainRepoId IN :repoIds")
+    tm().getEntityManager()
+        .createNativeQuery("DELETE FROM \"HostHistory\" WHERE host_name IN :hostNames")
+        .setParameter("hostNames", hostNames)
+        .executeUpdate();
+    tm().getEntityManager()
+        .createNativeQuery("DELETE FROM \"DelegationSignerData\" WHERE domain_repo_id IN :repoIds")
         .setParameter("repoIds", domainRepoIds)
         .executeUpdate();
-    tm().query("DELETE FROM DomainTransactionRecord WHERE domainRepoId IN :repoIds")
+    tm().getEntityManager()
+        .createNativeQuery(
+            "DELETE FROM \"DomainTransactionRecord\" WHERE domain_repo_id IN :repoIds")
         .setParameter("repoIds", domainRepoIds)
         .executeUpdate();
-    tm().query("DELETE FROM DomainDsDataHistory WHERE domainRepoId IN :repoIds")
+    tm().getEntityManager()
+        .createNativeQuery("DELETE FROM \"DomainDsDataHistory\" WHERE domain_repo_id IN :repoIds")
         .setParameter("repoIds", domainRepoIds)
         .executeUpdate();
-    tm().query("DELETE FROM DomainHistory WHERE repoId IN :repoIds")
+    tm().getEntityManager()
+        .createNativeQuery("DELETE FROM \"DomainHistory\" WHERE domain_repo_id IN :repoIds")
         .setParameter("repoIds", domainRepoIds)
         .executeUpdate();
     // Delete from domain table is done last so that a trainsient failure in the middle of an action
