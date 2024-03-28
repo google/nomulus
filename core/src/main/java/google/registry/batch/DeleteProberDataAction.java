@@ -249,7 +249,8 @@ public class DeleteProberDataAction implements Runnable {
     tm().query("DELETE FROM BillingCancellation WHERE domainRepoId IN :repoIds")
         .setParameter("repoIds", domainRepoIds)
         .executeUpdate();
-    tm().query("DELETE FROM GracePeriodHistory WHERE domainRepoId IN :repoIds")
+    tm().getEntityManager()
+        .createNativeQuery("DELETE FROM \"GracePeriodHistory\" WHERE domain_repo_id IN :repoIds")
         .setParameter("repoIds", domainRepoIds)
         .executeUpdate();
     tm().query("DELETE FROM PollMessage WHERE domainRepoId IN :repoIds")
