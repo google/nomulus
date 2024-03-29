@@ -28,6 +28,7 @@ import static google.registry.request.RequestParameters.PARAM_BATCH_SIZE;
 import static google.registry.request.RequestParameters.PARAM_DRY_RUN;
 import static google.registry.request.RequestParameters.PARAM_TLDS;
 import static google.registry.util.RegistryEnvironment.PRODUCTION;
+import static org.joda.time.DateTimeZone.UTC;
 
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
@@ -50,7 +51,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import javax.inject.Inject;
 import javax.persistence.TypedQuery;
 import org.joda.time.DateTime;
-import org.joda.time.DateTimeZone;
 import org.joda.time.Duration;
 
 /**
@@ -145,13 +145,14 @@ public class DeleteProberDataAction implements Runnable {
     AtomicInteger softDeletedDomains = new AtomicInteger();
     AtomicInteger hardDeletedDomains = new AtomicInteger();
     AtomicReference<ImmutableList<Domain>> domainsBatch = new AtomicReference<>();
-    DateTime now = DateTime.now(DateTimeZone.UTC);
+    DateTime startTime = DateTime.now(UTC);
     do {
       tm().transact(
               TRANSACTION_REPEATABLE_READ,
               () ->
                   domainsBatch.set(
-                      processDomains(deletableTlds, softDeletedDomains, hardDeletedDomains, now)));
+                      processDomains(
+                          deletableTlds, softDeletedDomains, hardDeletedDomains, startTime)));
 
       // Only process one batch in dryrun mode
       if (isDryRun) {
@@ -161,7 +162,10 @@ public class DeleteProberDataAction implements Runnable {
       logger.atInfo().log(
           "deleteProberData hard deleted %d names with %d batchSize",
           hardDeletedDomains.get(), batchSize);
-    } while (domainsBatch.get().size() == batchSize);
+
+      // Automatically kill the job if it is running for over 20 hours
+    } while (DateTime.now(UTC).isBefore(startTime.plusHours(20))
+        && domainsBatch.get().size() == batchSize);
     logger.atInfo().log(
         "%s %d domains.",
         isDryRun ? "Would have soft-deleted" : "Soft-deleted", softDeletedDomains.get());
