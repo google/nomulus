@@ -96,8 +96,8 @@ public class DeleteProberDataAction implements Runnable {
   private static final String DOMAIN_QUERY_STRING =
       "FROM Domain d WHERE d.tld IN :tlds AND d.domainName NOT LIKE 'nic.%%' AND"
           + " (d.subordinateHosts IS EMPTY OR d.subordinateHosts IS NULL) AND d.creationTime <"
-          + " :creationTimeCutoff AND ((d.creationTime <= :nowAutoTimestamp AND d.deletionTime >"
-          + " :now) OR d.deletionTime < :nowMinusSoftDeleteDelay)";
+          + " :creationTimeCutoff AND (d.deletionTime > :now OR d.deletionTime <"
+          + " :nowMinusSoftDeleteDelay)";
 
   /** Number of domains to retrieve and delete per SQL transaction. */
   private static final int DEFAULT_BATCH_SIZE = 1000;
@@ -185,7 +185,6 @@ public class DeleteProberDataAction implements Runnable {
             .setParameter(
                 "creationTimeCutoff", CreateAutoTimestamp.create(now.minus(DOMAIN_USED_DURATION)))
             .setParameter("nowMinusSoftDeleteDelay", now.minus(SOFT_DELETE_DELAY))
-            .setParameter("nowAutoTimestamp", CreateAutoTimestamp.create(now))
             .setParameter("now", now);
     ImmutableList<Domain> domainList =
         query.setMaxResults(batchSize).getResultStream().collect(toImmutableList());
