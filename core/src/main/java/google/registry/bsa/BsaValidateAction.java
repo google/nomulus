@@ -17,12 +17,20 @@ package google.registry.bsa;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Throwables.getStackTraceAsString;
 import static com.google.common.collect.ImmutableList.toImmutableList;
+import static com.google.common.collect.ImmutableMap.toImmutableMap;
+import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static google.registry.bsa.BsaTransactions.bsaQuery;
+import static google.registry.bsa.ReservedDomainsUtils.getAllReservedNames;
 import static google.registry.bsa.ReservedDomainsUtils.isReservedDomain;
 import static google.registry.bsa.persistence.Queries.batchReadBsaLabelText;
+import static google.registry.bsa.persistence.Queries.queryMissedRegisteredUnblockables;
+import static google.registry.bsa.persistence.Queries.queryUnblockableDomainByLabels;
+import static google.registry.model.tld.Tld.isEnrolledWithBsa;
+import static google.registry.model.tld.Tlds.getTldEntitiesOfType;
 import static google.registry.persistence.transaction.TransactionManagerFactory.replicaTm;
 import static google.registry.request.Action.Method.GET;
 import static google.registry.request.Action.Method.POST;
+import static google.registry.util.BatchedStreams.toBatches;
 import static javax.servlet.http.HttpServletResponse.SC_OK;
 
 import com.google.common.base.Joiner;
@@ -38,9 +46,12 @@ import google.registry.bsa.api.UnblockableDomain;
 import google.registry.bsa.api.UnblockableDomain.Reason;
 import google.registry.bsa.persistence.DownloadScheduler;
 import google.registry.bsa.persistence.Queries;
+import google.registry.bsa.persistence.Queries.DomainLifeSpan;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.model.ForeignKeyUtils;
 import google.registry.model.domain.Domain;
+import google.registry.model.tld.Tld;
+import google.registry.model.tld.Tld.TldType;
 import google.registry.persistence.VKey;
 import google.registry.request.Action;
 import google.registry.request.Response;
@@ -124,7 +135,8 @@ public class BsaValidateAction implements Runnable {
 
     ImmutableList.Builder<String> errorsBuilder = new ImmutableList.Builder<>();
     errorsBuilder.addAll(checkBsaLabels(downloadJobName.get()));
-    errorsBuilder.addAll(checkUnblockableDomains());
+    errorsBuilder.addAll(checkWronglyReportedUnblockableDomains());
+    errorsBuilder.addAll(checkMissingUnblockableDomains());
 
     ImmutableList<String> errors = errorsBuilder.build();
 
@@ -173,7 +185,7 @@ public class BsaValidateAction implements Runnable {
     return errors.build();
   }
 
-  ImmutableList<String> checkUnblockableDomains() {
+  ImmutableList<String> checkWronglyReportedUnblockableDomains() {
     ImmutableList.Builder<String> errors = new ImmutableList.Builder<>();
     Optional<UnblockableDomain> lastRead = Optional.empty();
     ImmutableList<UnblockableDomain> batch;
@@ -261,6 +273,77 @@ public class BsaValidateAction implements Runnable {
 
     } while (batch.size() == batchSize);
     return labelsBuilder.build();
+  }
+
+  ImmutableList<String> checkMissingUnblockableDomains() {
+    DateTime now = clock.nowUtc();
+    ImmutableList.Builder<String> errors = new ImmutableList.Builder<>();
+    errors.addAll(checkForMissingReservedUnblockables(now));
+    errors.addAll(checkForMissingRegisteredUnblockables(now));
+    return errors.build();
+  }
+
+  ImmutableList<String> checkForMissingRegisteredUnblockables(DateTime now) {
+    ImmutableList.Builder<String> errors = new ImmutableList.Builder<>();
+    ImmutableList<Tld> bsaEnabledTlds =
+        getTldEntitiesOfType(TldType.REAL).stream()
+            .filter(tld -> isEnrolledWithBsa(tld, now))
+            .collect(toImmutableList());
+    DateTime stalenessThreshold = now.minus(maxStaleness);
+    bsaEnabledTlds.stream()
+        .map(Tld::getTldStr)
+        .map(tld -> bsaQuery(() -> queryMissedRegisteredUnblockables(tld, now)))
+        .flatMap(ImmutableList::stream)
+        .filter(domainLifeSpan -> domainLifeSpan.creationTime().isBefore(stalenessThreshold))
+        .map(DomainLifeSpan::domainName)
+        .forEach(
+            domainName ->
+                errors.add(
+                    String.format(
+                        "Registered domain %s missing or not recorded as REGISTERED", domainName)));
+    return errors.build();
+  }
+
+  ImmutableList<String> checkForMissingReservedUnblockables(DateTime now) {
+    ImmutableList.Builder<String> errors = new ImmutableList.Builder<>();
+    try (Stream<ImmutableList<String>> reservedNames =
+        toBatches(getAllReservedNames(now), transactionBatchSize)) {
+      reservedNames
+          .map(this::checkOneBatchReservedDomainsForMissingUnblockables)
+          .forEach(errors::addAll);
+    }
+    return errors.build();
+  }
+
+  ImmutableList<String> checkOneBatchReservedDomainsForMissingUnblockables(
+      ImmutableList<String> batch) {
+    ImmutableSet<String> labels =
+        batch.stream()
+            .map(InternetDomainName::from)
+            .map(d -> d.parts().get(0))
+            .collect(toImmutableSet());
+    ImmutableMap<String, UnblockableDomain> persistedUnblockables =
+        bsaQuery(
+            () ->
+                queryUnblockableDomainByLabels(labels)
+                    .collect(toImmutableMap(UnblockableDomain::domainName, x -> x)));
+    ImmutableList.Builder<String> errors = new ImmutableList.Builder<>();
+    ImmutableSet<UnblockableDomain.Reason> acceptableReasons =
+        ImmutableSet.of(Reason.REGISTERED, Reason.RESERVED);
+    for (var domainName : batch) {
+      if (!persistedUnblockables.containsKey(domainName)) {
+        errors.add(String.format("Missing unblockable domain: %s is reserved.", domainName));
+        continue;
+      }
+      var unblockable = persistedUnblockables.get(domainName);
+      if (!acceptableReasons.contains(unblockable.reason())) {
+        errors.add(
+            String.format(
+                "Wrong unblockable reason: %s should be reserved or registered, found %s.",
+                domainName, unblockable.reason()));
+      }
+    }
+    return errors.build();
   }
 
   static String parseBlockListLine(String line) {
