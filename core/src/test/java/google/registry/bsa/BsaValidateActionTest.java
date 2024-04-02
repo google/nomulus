@@ -296,6 +296,8 @@ public class BsaValidateActionTest {
   void checkForMissingReservedUnblockables_success() {
     persistResource(
         createTld("app").asBuilder().setBsaEnrollStartTime(Optional.of(START_OF_TIME)).build());
+    persistResource(
+        createTld("dev").asBuilder().setBsaEnrollStartTime(Optional.of(START_OF_TIME)).build());
     persistBsaLabel("registered-reserved");
     persistBsaLabel("reserved-only");
     persistBsaLabel("reserved-missing");
@@ -314,6 +316,28 @@ public class BsaValidateActionTest {
     ImmutableList<String> errors = action.checkForMissingReservedUnblockables(fakeClock.nowUtc());
     assertThat(errors)
         .containsExactly("Missing unblockable domain: reserved-missing.app is reserved.");
+  }
+
+  @Test
+  void checkForMissingReservedUnblockablesInOneTld_success() {
+    persistResource(
+        createTld("app").asBuilder().setBsaEnrollStartTime(Optional.of(START_OF_TIME)).build());
+    persistResource(
+        createTld("dev").asBuilder().setBsaEnrollStartTime(Optional.of(START_OF_TIME)).build());
+    persistBsaLabel("reserved-missing-in-app");
+    persistUnblockableDomain(
+        UnblockableDomain.of("reserved-missing-in-app", "dev", Reason.REGISTERED));
+
+    createReservedList(
+        "rl",
+        Stream.of("reserved-missing-in-app")
+            .collect(toImmutableMap(x -> x, x -> ReservationType.RESERVED_FOR_SPECIFIC_USE)));
+    addReservedListsToTld("app", ImmutableList.of("rl"));
+    addReservedListsToTld("dev", ImmutableList.of("rl"));
+
+    ImmutableList<String> errors = action.checkForMissingReservedUnblockables(fakeClock.nowUtc());
+    assertThat(errors)
+        .containsExactly("Missing unblockable domain: reserved-missing-in-app.app is reserved.");
   }
 
   @Test
