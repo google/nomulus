@@ -461,6 +461,7 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
   // TODO(sarahbot@): Remove this field and make createBillingCostTransitions not-null once all TLDs
   // are populated with a create cost transition map
   /** The per-year billing cost for registering a new domain name. */
+  @Deprecated
   @Type(type = JodaMoneyType.TYPE_NAME)
   @Columns(
       columns = {
@@ -470,6 +471,8 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
   Money createBillingCost = DEFAULT_CREATE_BILLING_COST;
 
   // TODO(sarahbot@): Make this field not null in the database
+  // TODO(sarahbot@): Rename this field to createBillingCost once the old createBillingCost has been
+  // removed
   /** A property that transitions to different create billing costs at different times. */
   @JsonDeserialize(using = TimedTransitionPropertyMoneyDeserializer.class)
   TimedTransitionProperty<Money> createBillingCostTransitions =
@@ -685,6 +688,9 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
   }
 
   // This getter is still necessary for the Jackson deserialization in the ConfigureTldCommand
+  // TODO(sarahbot@): Remove this getter once the deprecated createBillingCost field is removed from
+  // the schema
+  @Deprecated
   public Money getCreateBillingCost() {
     return createBillingCost;
   }
