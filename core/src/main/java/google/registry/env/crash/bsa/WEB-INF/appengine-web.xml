@@ -5,9 +5,9 @@
   <service>bsa</service>
   <app-engine-apis>true</app-engine-apis>
   <sessions-enabled>true</sessions-enabled>
-  <instance-class>B4</instance-class>
+  <instance-class>B4_1G</instance-class>
   <basic-scaling>
-    <max-instances>10</max-instances>
+    <max-instances>100</max-instances>
     <idle-timeout>10m</idle-timeout>
   </basic-scaling>
 
