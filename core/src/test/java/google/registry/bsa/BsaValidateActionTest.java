@@ -15,13 +15,18 @@
 package google.registry.bsa;
 
 import static com.google.common.base.Throwables.getStackTraceAsString;
+import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static com.google.common.truth.Truth.assertThat;
+import static google.registry.bsa.ReservedDomainsTestingUtils.addReservedListsToTld;
+import static google.registry.bsa.ReservedDomainsTestingUtils.createReservedList;
 import static google.registry.bsa.persistence.BsaTestingUtils.persistBsaLabel;
 import static google.registry.bsa.persistence.BsaTestingUtils.persistDownloadSchedule;
 import static google.registry.bsa.persistence.BsaTestingUtils.persistUnblockableDomain;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistDeletedDomain;
+import static google.registry.testing.DatabaseHelper.persistResource;
+import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.startsWith;
@@ -43,13 +48,16 @@ import google.registry.bsa.persistence.BsaTestingUtils;
 import google.registry.gcs.GcsUtils;
 import google.registry.groups.GmailClient;
 import google.registry.model.domain.Domain;
+import google.registry.model.tld.label.ReservationType;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationWithCoverageExtension;
 import google.registry.request.Response;
 import google.registry.testing.FakeClock;
 import google.registry.tldconfig.idn.IdnTableEnum;
 import google.registry.util.EmailMessage;
+import java.util.Optional;
 import java.util.concurrent.Callable;
+import java.util.stream.Stream;
 import javax.mail.internet.InternetAddress;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
@@ -269,7 +277,7 @@ public class BsaValidateActionTest {
     persistUnblockableDomain(UnblockableDomain.of("label", "app", Reason.REGISTERED));
     when(idnChecker.getAllValidIdns(anyString())).thenReturn(ImmutableSet.of(IdnTableEnum.JA));
 
-    assertThat(action.checkUnblockableDomains()).isEmpty();
+    assertThat(action.checkWronglyReportedUnblockableDomains()).isEmpty();
   }
 
   @Test
@@ -280,8 +288,73 @@ public class BsaValidateActionTest {
     persistUnblockableDomain(UnblockableDomain.of("label", "app", Reason.RESERVED));
     when(idnChecker.getAllValidIdns(anyString())).thenReturn(ImmutableSet.of(IdnTableEnum.JA));
 
-    assertThat(action.checkUnblockableDomains())
+    assertThat(action.checkWronglyReportedUnblockableDomains())
         .containsExactly("label.app: should be REGISTERED, found RESERVED");
+  }
+
+  @Test
+  void checkForMissingReservedUnblockables_success() {
+    persistResource(
+        createTld("app").asBuilder().setBsaEnrollStartTime(Optional.of(START_OF_TIME)).build());
+    persistResource(
+        createTld("dev").asBuilder().setBsaEnrollStartTime(Optional.of(START_OF_TIME)).build());
+    persistBsaLabel("registered-reserved");
+    persistBsaLabel("reserved-only");
+    persistBsaLabel("reserved-missing");
+    persistBsaLabel("invalid-in-app");
+
+    persistUnblockableDomain(UnblockableDomain.of("registered-reserved", "app", Reason.REGISTERED));
+    persistUnblockableDomain(UnblockableDomain.of("reserved-only", "app", Reason.RESERVED));
+    persistUnblockableDomain(UnblockableDomain.of("invalid-in-app", "dev", Reason.RESERVED));
+
+    createReservedList(
+        "rl",
+        Stream.of("registered-reserved", "reserved-only", "reserved-missing")
+            .collect(toImmutableMap(x -> x, x -> ReservationType.RESERVED_FOR_SPECIFIC_USE)));
+    addReservedListsToTld("app", ImmutableList.of("rl"));
+
+    ImmutableList<String> errors = action.checkForMissingReservedUnblockables(fakeClock.nowUtc());
+    assertThat(errors)
+        .containsExactly("Missing unblockable domain: reserved-missing.app is reserved.");
+  }
+
+  @Test
+  void checkForMissingReservedUnblockablesInOneTld_success() {
+    persistResource(
+        createTld("app").asBuilder().setBsaEnrollStartTime(Optional.of(START_OF_TIME)).build());
+    persistResource(
+        createTld("dev").asBuilder().setBsaEnrollStartTime(Optional.of(START_OF_TIME)).build());
+    persistBsaLabel("reserved-missing-in-app");
+    persistUnblockableDomain(
+        UnblockableDomain.of("reserved-missing-in-app", "dev", Reason.REGISTERED));
+
+    createReservedList(
+        "rl",
+        Stream.of("reserved-missing-in-app")
+            .collect(toImmutableMap(x -> x, x -> ReservationType.RESERVED_FOR_SPECIFIC_USE)));
+    addReservedListsToTld("app", ImmutableList.of("rl"));
+    addReservedListsToTld("dev", ImmutableList.of("rl"));
+
+    ImmutableList<String> errors = action.checkForMissingReservedUnblockables(fakeClock.nowUtc());
+    assertThat(errors)
+        .containsExactly("Missing unblockable domain: reserved-missing-in-app.app is reserved.");
+  }
+
+  @Test
+  void checkForMissingRegisteredUnblockables_success() {
+    persistResource(
+        createTld("app").asBuilder().setBsaEnrollStartTime(Optional.of(START_OF_TIME)).build());
+    persistBsaLabel("registered");
+    persistBsaLabel("registered-missing");
+    persistUnblockableDomain(UnblockableDomain.of("registered", "app", Reason.REGISTERED));
+    persistUnblockableDomain(UnblockableDomain.of("registered-missing", "app", Reason.RESERVED));
+    persistActiveDomain("registered.app");
+    persistActiveDomain("registered-missing.app");
+
+    ImmutableList<String> errors = action.checkForMissingRegisteredUnblockables(fakeClock.nowUtc());
+    assertThat(errors)
+        .containsExactly(
+            "Registered domain registered-missing.app missing or not recorded as REGISTERED");
   }
 
   @Test

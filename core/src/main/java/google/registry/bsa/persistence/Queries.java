@@ -19,12 +19,14 @@ import static com.google.common.collect.ImmutableList.toImmutableList;
 import static google.registry.bsa.BsaStringUtils.DOMAIN_SPLITTER;
 import static google.registry.bsa.BsaTransactions.bsaQuery;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+import static org.joda.time.DateTimeZone.UTC;
 
 import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import google.registry.bsa.api.UnblockableDomain;
 import google.registry.model.CreateAutoTimestamp;
+import java.sql.Timestamp;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -64,6 +66,11 @@ public final class Queries {
     return batchReadUnblockables(lastRead.map(BsaUnblockableDomain::of), batchSize).stream()
         .map(BsaUnblockableDomain::toUnblockableDomain)
         .collect(toImmutableList());
+  }
+
+  public static Stream<UnblockableDomain> queryUnblockableDomainByLabels(
+      ImmutableCollection<String> labels) {
+    return queryBsaUnblockableDomainByLabels(labels).map(BsaUnblockableDomain::toUnblockableDomain);
   }
 
   static Stream<BsaUnblockableDomain> queryBsaUnblockableDomainByLabels(
@@ -141,4 +148,55 @@ public final class Queries {
             .setParameter("tlds", tlds)
             .getResultList());
   }
+
+  /**
+   * Finds all currently registered domains that match BSA labels but are not recorded as
+   * unblockable.
+   *
+   * @return The missing unblockables and their creation and deletion time.
+   */
+  public static ImmutableList<DomainLifeSpan> queryMissedRegisteredUnblockables(
+      String tld, DateTime now) {
+    String sqlTemplate =
+        """
+    SELECT l.domain_name, creation_time, deletion_time
+    FROM
+        (SELECT d.domain_name, d.creation_time, d.deletion_time
+         FROM
+             "Domain" d
+         JOIN
+             (SELECT concat(label, '.', :tld) AS domain_name from "BsaLabel") b
+         ON b.domain_name = d.domain_name
+         WHERE deletion_time > ':now') l
+    LEFT OUTER JOIN
+        (SELECT concat(label, '.', tld) as domain_name
+         FROM "BsaUnblockableDomain"
+         WHERE tld = :tld and reason = 'REGISTERED') r
+    ON l.domain_name = r.domain_name
+    WHERE r.domain_name is null;
+    """;
+    // Native query: Hibernate's setParameter wrongly converts DateTime to bytea
+    String sql = sqlTemplate.replace(":now", now.toString());
+
+    return ((Stream<?>)
+            tm().getEntityManager()
+                .createNativeQuery(sql)
+                .setParameter("tld", tld)
+                .getResultStream())
+        .map(Object[].class::cast)
+        .map(
+            row ->
+                new DomainLifeSpan(
+                    (String) row[0],
+                    toDateTime((Timestamp) row[1]),
+                    toDateTime((Timestamp) row[2])))
+        .collect(toImmutableList());
+  }
+
+  // For testing convenience: 'assertEquals' fails between `new DateTime(timestamp)` and below.
+  static DateTime toDateTime(Timestamp timestamp) {
+    return new DateTime(timestamp.getTime(), UTC);
+  }
+
+  public record DomainLifeSpan(String domainName, DateTime creationTime, DateTime deletionTime) {}
 }
