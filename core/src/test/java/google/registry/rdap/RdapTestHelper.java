@@ -20,7 +20,6 @@ import static google.registry.testing.TestDataHelper.loadFile;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Sets;
 import com.google.common.collect.Streams;
 import com.google.common.truth.Truth;
 import com.google.gson.Gson;
@@ -30,7 +29,6 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import google.registry.util.Clock;
 import java.util.Map;
-import java.util.Objects;
 
 /** Test helper methods for RDAP tests. */
 class RdapTestHelper {
@@ -242,82 +240,4 @@ class RdapTestHelper {
     return reply;
   }
 
-  /** A small utility class to show nicer "huge JSON" diffs. */
-  static final class GsonSubject {
-    private JsonObject actual;
-
-    GsonSubject(JsonObject actual) {
-      this.actual = actual;
-    }
-
-    void isEqualTo(JsonObject expected) {
-      if (actual.equals(expected)) {
-        return;
-      }
-      StringBuilder difference = new StringBuilder();
-      difference.append("Actual JSON different than expected:");
-      diff("", actual, expected, difference);
-      throw new AssertionError(difference.toString());
-    }
-
-    private String jsonifyAndIndent(JsonElement element) {
-      String json = GSON.toJson(element);
-      return json.replaceAll("\n", "\n    ");
-    }
-
-    private JsonElement getOrNull(JsonArray jsonArray, int index) {
-      if (index >= jsonArray.size()) {
-        return null;
-      }
-      return jsonArray.get(index);
-    }
-
-    /** Writes down a human-readable diff between actual and expected into the StringBuilder. */
-    private void diff(
-        String name, JsonElement actual, JsonElement expected, StringBuilder builder) {
-      if (Objects.equals(actual, expected)) {
-        return;
-      }
-      if (actual == null) {
-        builder.append(String.format("Missing: %s ->%s\n\n", name, jsonifyAndIndent(expected)));
-        return;
-      }
-      if (expected == null) {
-        builder.append(String.format("Unexpected: %s -> %s\n\n", name, jsonifyAndIndent(actual)));
-        return;
-      }
-      if (actual.isJsonObject() && expected.isJsonObject()) {
-        // We put the "expected" first in the union so that the "expected" keys will all be first
-        // and in order
-        for (String key :
-            Sets.union(expected.getAsJsonObject().keySet(), actual.getAsJsonObject().keySet())) {
-          diff(
-              name + "." + key,
-              actual.getAsJsonObject().get(key),
-              expected.getAsJsonObject().get(key),
-              builder);
-        }
-        return;
-      }
-      if (actual.isJsonArray() && expected.isJsonArray()) {
-        int commonSize = Math.max(actual.getAsJsonArray().size(), expected.getAsJsonArray().size());
-        for (int i = 0; i < commonSize; i++) {
-          diff(
-              String.format("%s[%s]", name, i),
-              getOrNull(actual.getAsJsonArray(), i),
-              getOrNull(expected.getAsJsonArray(), i),
-              builder);
-        }
-        return;
-      }
-      builder.append(
-          String.format(
-              "Actual: %s -> %s\nExpected: %s\n\n",
-              name, jsonifyAndIndent(actual), jsonifyAndIndent(expected)));
-    }
-  }
-
-  static GsonSubject assertThat(JsonObject actual) {
-    return new GsonSubject(actual);
-  }
 }

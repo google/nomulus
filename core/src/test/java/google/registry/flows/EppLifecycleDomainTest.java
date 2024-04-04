@@ -14,6 +14,7 @@
 
 package google.registry.flows;
 
+import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.EppResourceUtils.loadByForeignKey;
 import static google.registry.model.eppoutput.Result.Code.SUCCESS;
 import static google.registry.model.eppoutput.Result.Code.SUCCESS_AND_CLOSE;
@@ -35,7 +36,6 @@ import static org.joda.money.CurrencyUnit.USD;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.collect.Ordering;
-import com.google.common.truth.Truth;
 import com.google.re2j.Matcher;
 import com.google.re2j.Pattern;
 import google.registry.model.billing.BillingBase.Reason;
@@ -494,8 +494,7 @@ class EppLifecycleDomainTest extends EppTestCase {
 
     // Make sure that in the future, the domain expiration is unchanged after deletion
     Domain clonedDomain = domain.cloneProjectedAtTime(deleteTime.plusYears(5));
-    Truth.assertThat(clonedDomain.getRegistrationExpirationTime())
-        .isEqualTo(createTime.plusYears(2));
+    assertThat(clonedDomain.getRegistrationExpirationTime()).isEqualTo(createTime.plusYears(2));
   }
 
   @Test
