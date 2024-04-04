@@ -15,7 +15,6 @@
 package google.registry.rdap;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.rdap.RdapTestHelper.assertThat;
 import static google.registry.rdap.RdapTestHelper.loadJsonFile;
 import static google.registry.rdap.RdapTestHelper.parseJsonObject;
 import static google.registry.request.Action.Method.GET;
@@ -27,6 +26,7 @@ import static google.registry.testing.FullFieldsTestEntityHelper.makeAndPersistD
 import static google.registry.testing.FullFieldsTestEntityHelper.makeHistoryEntry;
 import static google.registry.testing.FullFieldsTestEntityHelper.makeRegistrar;
 import static google.registry.testing.FullFieldsTestEntityHelper.makeRegistrarPocs;
+import static google.registry.testing.GsonSubject.assertAboutJson;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableListMultimap;
@@ -285,14 +285,16 @@ class RdapEntitySearchActionTest extends RdapSearchActionTestCase<RdapEntitySear
       @Nullable String address,
       String fileName) {
     rememberWildcardType(queryString);
-    assertThat(generateActualJsonWithFullName(queryString))
+    assertAboutJson()
+        .that(generateActualJsonWithFullName(queryString))
         .isEqualTo(generateExpectedJsonForEntity(handle, fullName, status, address, fileName));
     assertThat(response.getStatus()).isEqualTo(200);
   }
 
   private void runNotFoundNameTest(String queryString) {
     rememberWildcardType(queryString);
-    assertThat(generateActualJsonWithFullName(queryString))
+    assertAboutJson()
+        .that(generateActualJsonWithFullName(queryString))
         .isEqualTo(generateExpectedJsonError("No entities found", 404));
     assertThat(response.getStatus()).isEqualTo(404);
   }
@@ -323,14 +325,16 @@ class RdapEntitySearchActionTest extends RdapSearchActionTestCase<RdapEntitySear
       @Nullable String address,
       String fileName) {
     rememberWildcardType(queryString);
-    assertThat(generateActualJsonWithHandle(queryString))
+    assertAboutJson()
+        .that(generateActualJsonWithHandle(queryString))
         .isEqualTo(generateExpectedJsonForEntity(handle, fullName, status, address, fileName));
     assertThat(response.getStatus()).isEqualTo(200);
   }
 
   private void runNotFoundHandleTest(String queryString) {
     rememberWildcardType(queryString);
-    assertThat(generateActualJsonWithHandle(queryString))
+    assertAboutJson()
+        .that(generateActualJsonWithHandle(queryString))
         .isEqualTo(generateExpectedJsonError("No entities found", 404));
     assertThat(response.getStatus()).isEqualTo(404);
   }
@@ -393,17 +397,18 @@ class RdapEntitySearchActionTest extends RdapSearchActionTestCase<RdapEntitySear
   @Test
   void testInvalidRequest_rejected() {
     action.run();
-    assertThat(parseJsonObject(response.getPayload()))
+    assertAboutJson()
+        .that(parseJsonObject(response.getPayload()))
         .isEqualTo(
-            generateExpectedJsonError(
-                "You must specify either fn=XXXX or handle=YYYY", 400));
+            generateExpectedJsonError("You must specify either fn=XXXX or handle=YYYY", 400));
     assertThat(response.getStatus()).isEqualTo(400);
     verifyErrorMetrics(Optional.empty(), 400);
   }
 
   @Test
   void testNameMatch_suffixRejected() {
-    assertThat(generateActualJsonWithFullName("exam*ple"))
+    assertAboutJson()
+        .that(generateActualJsonWithFullName("exam*ple"))
         .isEqualTo(
             generateExpectedJsonError(
                 "Query can only have a single wildcard, and it must be at the end of the query,"
@@ -415,7 +420,8 @@ class RdapEntitySearchActionTest extends RdapSearchActionTestCase<RdapEntitySear
 
   @Test
   void testHandleMatch_suffixRejected() {
-    assertThat(generateActualJsonWithHandle("exam*ple"))
+    assertAboutJson()
+        .that(generateActualJsonWithHandle("exam*ple"))
         .isEqualTo(
             generateExpectedJsonError(
                 "Query can only have a single wildcard, and it must be at the end of the query,"
@@ -427,7 +433,8 @@ class RdapEntitySearchActionTest extends RdapSearchActionTestCase<RdapEntitySear
 
   @Test
   void testMultipleWildcards_rejected() {
-    assertThat(generateActualJsonWithHandle("*.*"))
+    assertAboutJson()
+        .that(generateActualJsonWithHandle("*.*"))
         .isEqualTo(
             generateExpectedJsonError(
                 "Query can only have a single wildcard, and it must be at the end of the query,"
@@ -440,11 +447,10 @@ class RdapEntitySearchActionTest extends RdapSearchActionTestCase<RdapEntitySear
   @Test
   void testNoCharactersToMatch_rejected() {
     rememberWildcardType("*");
-    assertThat(generateActualJsonWithHandle("*"))
+    assertAboutJson()
+        .that(generateActualJsonWithHandle("*"))
         .isEqualTo(
-            generateExpectedJsonError(
-                "Initial search string must be at least 2 characters",
-                422));
+            generateExpectedJsonError("Initial search string must be at least 2 characters", 422));
     assertThat(response.getStatus()).isEqualTo(422);
     verifyErrorMetrics(Optional.empty(), 422);
   }
@@ -452,11 +458,10 @@ class RdapEntitySearchActionTest extends RdapSearchActionTestCase<RdapEntitySear
   @Test
   void testFewerThanTwoCharactersToMatch_rejected() {
     rememberWildcardType("a*");
-    assertThat(generateActualJsonWithHandle("a*"))
+    assertAboutJson()
+        .that(generateActualJsonWithHandle("a*"))
         .isEqualTo(
-            generateExpectedJsonError(
-                "Initial search string must be at least 2 characters",
-                422));
+            generateExpectedJsonError("Initial search string must be at least 2 characters", 422));
     assertThat(response.getStatus()).isEqualTo(422);
     verifyErrorMetrics(Optional.empty(), 422);
   }
@@ -464,11 +469,11 @@ class RdapEntitySearchActionTest extends RdapSearchActionTestCase<RdapEntitySear
   @Test
   void testInvalidSubtype_rejected() {
     action.subtypeParam = Optional.of("Space Aliens");
-    assertThat(generateActualJsonWithFullName("Blinky (赤ベイ)"))
+    assertAboutJson()
+        .that(generateActualJsonWithFullName("Blinky (赤ベイ)"))
         .isEqualTo(
             generateExpectedJsonError(
-                "Subtype parameter must specify contacts, registrars or all",
-                400));
+                "Subtype parameter must specify contacts, registrars or all", 400));
     assertThat(response.getStatus()).isEqualTo(400);
     metricSearchType = SearchType.NONE; // Error occurs before search type is set.
     verifyErrorMetrics(Optional.empty(), 400);
@@ -569,7 +574,8 @@ class RdapEntitySearchActionTest extends RdapSearchActionTestCase<RdapEntitySear
   void testNameMatchContact_found_wildcardBoth() {
     login("2-RegistrarTest");
     rememberWildcardType("Blin*");
-    assertThat(generateActualJsonWithFullName("Blin*"))
+    assertAboutJson()
+        .that(generateActualJsonWithFullName("Blin*"))
         .isEqualTo(generateExpectedJson("rdap_multiple_contacts2.json"));
     assertThat(response.getStatus()).isEqualTo(200);
     verifyMetrics(2);
@@ -661,7 +667,8 @@ class RdapEntitySearchActionTest extends RdapSearchActionTestCase<RdapEntitySear
     createManyContactsAndRegistrars(4, 0, registrarTest);
     rememberWildcardType("Entity *");
     // JsonObject foo = generateActualJsonWithFullName("Entity *");
-    assertThat(generateActualJsonWithFullName("Entity *"))
+    assertAboutJson()
+        .that(generateActualJsonWithFullName("Entity *"))
         .isEqualTo(generateExpectedJson("rdap_nontruncated_contacts.json"));
     assertThat(response.getStatus()).isEqualTo(200);
     verifyMetrics(4);
@@ -672,7 +679,8 @@ class RdapEntitySearchActionTest extends RdapSearchActionTestCase<RdapEntitySear
     login("2-RegistrarTest");
     createManyContactsAndRegistrars(5, 0, registrarTest);
     rememberWildcardType("Entity *");
-    assertThat(generateActualJsonWithFullName("Entity *"))
+    assertAboutJson()
+        .that(generateActualJsonWithFullName("Entity *"))
         .isEqualTo(
             generateExpectedJson(
                 "fn=Entity+*&cursor=YzpFbnRpdHkgNA%3D%3D", "rdap_truncated_contacts.json"));
@@ -685,7 +693,8 @@ class RdapEntitySearchActionTest extends RdapSearchActionTestCase<RdapEntitySear
     login("2-RegistrarTest");
     createManyContactsAndRegistrars(9, 0, registrarTest);
     rememberWildcardType("Entity *");
-    assertThat(generateActualJsonWithFullName("Entity *"))
+    assertAboutJson()
+        .that(generateActualJsonWithFullName("Entity *"))
         .isEqualTo(
             generateExpectedJson(
                 "fn=Entity+*&cursor=YzpFbnRpdHkgNA%3D%3D", "rdap_truncated_contacts.json"));
@@ -717,7 +726,8 @@ class RdapEntitySearchActionTest extends RdapSearchActionTestCase<RdapEntitySear
   void testNameMatchRegistrars_nonTruncated() {
     createManyContactsAndRegistrars(0, 4, registrarTest);
     rememberWildcardType("Entity *");
-    assertThat(generateActualJsonWithFullName("Entity *"))
+    assertAboutJson()
+        .that(generateActualJsonWithFullName("Entity *"))
         .isEqualTo(generateExpectedJson("rdap_nontruncated_registrars.json"));
     assertThat(response.getStatus()).isEqualTo(200);
     verifyMetrics(0);
@@ -727,7 +737,8 @@ class RdapEntitySearchActionTest extends RdapSearchActionTestCase<RdapEntitySear
   void testNameMatchRegistrars_truncated() {
     createManyContactsAndRegistrars(0, 5, registrarTest);
     rememberWildcardType("Entity *");
-    assertThat(generateActualJsonWithFullName("Entity *"))
+    assertAboutJson()
+        .that(generateActualJsonWithFullName("Entity *"))
         .isEqualTo(
             generateExpectedJson(
                 "fn=Entity+*&cursor=cjpFbnRpdHkgNA%3D%3D", "rdap_truncated_registrars.json"));
@@ -739,7 +750,8 @@ class RdapEntitySearchActionTest extends RdapSearchActionTestCase<RdapEntitySear
   void testNameMatchRegistrars_reallyTruncated() {
     createManyContactsAndRegistrars(0, 9, registrarTest);
     rememberWildcardType("Entity *");
-    assertThat(generateActualJsonWithFullName("Entity *"))
+    assertAboutJson()
+        .that(generateActualJsonWithFullName("Entity *"))
         .isEqualTo(
             generateExpectedJson(
                 "fn=Entity+*&cursor=cjpFbnRpdHkgNA%3D%3D", "rdap_truncated_registrars.json"));
@@ -800,7 +812,8 @@ class RdapEntitySearchActionTest extends RdapSearchActionTestCase<RdapEntitySear
     login("2-RegistrarTest");
     createManyContactsAndRegistrars(3, 3, registrarTest);
     rememberWildcardType("Entity *");
-    assertThat(generateActualJsonWithFullName("Entity *"))
+    assertAboutJson()
+        .that(generateActualJsonWithFullName("Entity *"))
         .isEqualTo(
             generateExpectedJson(
                 "fn=Entity+*&cursor=cjpFbnRpdHkgNA%3D%3D", "rdap_truncated_mixed_entities.json"));
@@ -830,7 +843,8 @@ class RdapEntitySearchActionTest extends RdapSearchActionTestCase<RdapEntitySear
     action.subtypeParam = Optional.of("contacts");
     createManyContactsAndRegistrars(4, 4, registrarTest);
     rememberWildcardType("Entity *");
-    assertThat(generateActualJsonWithFullName("Entity *"))
+    assertAboutJson()
+        .that(generateActualJsonWithFullName("Entity *"))
         .isEqualTo(generateExpectedJson("rdap_nontruncated_contacts.json"));
     assertThat(response.getStatus()).isEqualTo(200);
     verifyMetrics(4);

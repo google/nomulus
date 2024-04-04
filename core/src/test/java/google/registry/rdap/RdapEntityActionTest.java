@@ -15,7 +15,6 @@
 package google.registry.rdap;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.rdap.RdapTestHelper.assertThat;
 import static google.registry.rdap.RdapTestHelper.loadJsonFile;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.persistResource;
@@ -25,6 +24,7 @@ import static google.registry.testing.FullFieldsTestEntityHelper.makeDomain;
 import static google.registry.testing.FullFieldsTestEntityHelper.makeHost;
 import static google.registry.testing.FullFieldsTestEntityHelper.makeRegistrar;
 import static google.registry.testing.FullFieldsTestEntityHelper.makeRegistrarPocs;
+import static google.registry.testing.GsonSubject.assertAboutJson;
 import static org.mockito.Mockito.verify;
 
 import com.google.common.collect.ImmutableList;
@@ -170,7 +170,8 @@ class RdapEntityActionTest extends RdapActionBaseTestCase<RdapEntityAction> {
       String rdapStatus,
       String address,
       String fileName) {
-    assertThat(generateActualJson(handleQuery))
+    assertAboutJson()
+        .that(generateActualJson(handleQuery))
         .isEqualTo(
             generateExpectedJsonWithTopLevelEntries(
                 handleQuery, fullName, rdapStatus, address, fileName));
@@ -178,7 +179,8 @@ class RdapEntityActionTest extends RdapActionBaseTestCase<RdapEntityAction> {
   }
 
   private void runNotFoundTest(String handleQuery) {
-    assertThat(generateActualJson(handleQuery))
+    assertAboutJson()
+        .that(generateActualJson(handleQuery))
         .isEqualTo(generateExpectedJsonError(handleQuery + " not found", 404));
     assertThat(response.getStatus()).isEqualTo(404);
   }
@@ -305,7 +307,8 @@ class RdapEntityActionTest extends RdapActionBaseTestCase<RdapEntityAction> {
 
   @Test
   void testRegistrarByName_found() {
-    assertThat(generateActualJson("IDN%20Registrar"))
+    assertAboutJson()
+        .that(generateActualJson("IDN%20Registrar"))
         .isEqualTo(
             generateExpectedJsonWithTopLevelEntries(
                 "102", "IDN Registrar", "active", null, "rdap_registrar.json"));
@@ -364,9 +367,11 @@ class RdapEntityActionTest extends RdapActionBaseTestCase<RdapEntityAction> {
   @Test
   void testQueryParameter_ignored() {
     login("evilregistrar");
-    assertThat(generateActualJson(techContact.getRepoId() + "?key=value")).isEqualTo(
-        generateExpectedJsonWithTopLevelEntries(
-            techContact.getRepoId(), "rdap_associated_contact.json"));
+    assertAboutJson()
+        .that(generateActualJson(techContact.getRepoId() + "?key=value"))
+        .isEqualTo(
+            generateExpectedJsonWithTopLevelEntries(
+                techContact.getRepoId(), "rdap_associated_contact.json"));
     assertThat(response.getStatus()).isEqualTo(200);
   }
 

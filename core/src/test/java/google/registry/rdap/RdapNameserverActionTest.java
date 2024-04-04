@@ -15,11 +15,11 @@
 package google.registry.rdap;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.rdap.RdapTestHelper.assertThat;
 import static google.registry.rdap.RdapTestHelper.loadJsonFile;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.FullFieldsTestEntityHelper.makeRegistrar;
+import static google.registry.testing.GsonSubject.assertAboutJson;
 import static org.mockito.Mockito.verify;
 
 import com.google.common.collect.ImmutableMap;
@@ -105,132 +105,149 @@ class RdapNameserverActionTest extends RdapActionBaseTestCase<RdapNameserverActi
 
   @Test
   void testInvalidNameserver_returns400() {
-    assertThat(generateActualJson("invalid/host/name"))
+    assertAboutJson()
+        .that(generateActualJson("invalid/host/name"))
         .isEqualTo(
             generateExpectedJsonError(
-                "invalid/host/name is not a valid nameserver: Invalid host name",
-                400));
+                "invalid/host/name is not a valid nameserver: Invalid host name", 400));
     assertThat(response.getStatus()).isEqualTo(400);
   }
 
   @Test
   void testUnknownNameserver_returns404() {
-    assertThat(generateActualJson("ns1.missing.com")).isEqualTo(
-        generateExpectedJsonError("ns1.missing.com not found", 404));
+    assertAboutJson()
+        .that(generateActualJson("ns1.missing.com"))
+        .isEqualTo(generateExpectedJsonError("ns1.missing.com not found", 404));
     assertThat(response.getStatus()).isEqualTo(404);
   }
 
   @Test
   void testValidNameserver_works() {
-    assertThat(generateActualJson("ns1.cat.lol"))
-        .isEqualTo(generateExpectedJsonWithTopLevelEntries(
-            "ns1.cat.lol",
-            ImmutableMap.of(
-                "HANDLE", "2-ROID",
-                "ADDRESSTYPE", "v4",
-                "ADDRESS", "1.2.3.4",
-                "STATUS", "active"),
-            "rdap_host.json"));
+    assertAboutJson()
+        .that(generateActualJson("ns1.cat.lol"))
+        .isEqualTo(
+            generateExpectedJsonWithTopLevelEntries(
+                "ns1.cat.lol",
+                ImmutableMap.of(
+                    "HANDLE", "2-ROID",
+                    "ADDRESSTYPE", "v4",
+                    "ADDRESS", "1.2.3.4",
+                    "STATUS", "active"),
+                "rdap_host.json"));
     assertThat(response.getStatus()).isEqualTo(200);
   }
 
   @Test
   void testTrailingDot_getsIgnored() {
-    assertThat(generateActualJson("ns1.cat.lol."))
-        .isEqualTo(generateExpectedJsonWithTopLevelEntries(
-            "ns1.cat.lol",
-            ImmutableMap.of(
-                "HANDLE", "2-ROID",
-                "ADDRESSTYPE", "v4",
-                "ADDRESS", "1.2.3.4",
-                "STATUS", "active"),
-            "rdap_host.json"));
+    assertAboutJson()
+        .that(generateActualJson("ns1.cat.lol."))
+        .isEqualTo(
+            generateExpectedJsonWithTopLevelEntries(
+                "ns1.cat.lol",
+                ImmutableMap.of(
+                    "HANDLE", "2-ROID",
+                    "ADDRESSTYPE", "v4",
+                    "ADDRESS", "1.2.3.4",
+                    "STATUS", "active"),
+                "rdap_host.json"));
     assertThat(response.getStatus()).isEqualTo(200);
   }
 
   @Test
   void testUpperCase_getsCanonicalized() {
-    assertThat(generateActualJson("Ns1.CaT.lOl."))
-        .isEqualTo(generateExpectedJsonWithTopLevelEntries(
-            "ns1.cat.lol",
-            ImmutableMap.of(
-                "HANDLE", "2-ROID",
-                "ADDRESSTYPE", "v4",
-                "ADDRESS", "1.2.3.4",
-                "STATUS", "active"),
-            "rdap_host.json"));
+    assertAboutJson()
+        .that(generateActualJson("Ns1.CaT.lOl."))
+        .isEqualTo(
+            generateExpectedJsonWithTopLevelEntries(
+                "ns1.cat.lol",
+                ImmutableMap.of(
+                    "HANDLE", "2-ROID",
+                    "ADDRESSTYPE", "v4",
+                    "ADDRESS", "1.2.3.4",
+                    "STATUS", "active"),
+                "rdap_host.json"));
     assertThat(response.getStatus()).isEqualTo(200);
   }
 
   @Test
   void testQueryParameter_getsIgnored() {
-    assertThat(generateActualJson("ns1.cat.lol?key=value"))
-        .isEqualTo(generateExpectedJsonWithTopLevelEntries(
-            "ns1.cat.lol",
-            ImmutableMap.of(
-                "HANDLE", "2-ROID",
-                "ADDRESSTYPE", "v4",
-                "ADDRESS", "1.2.3.4",
-                "STATUS", "active"),
-            "rdap_host.json"));
+    assertAboutJson()
+        .that(generateActualJson("ns1.cat.lol?key=value"))
+        .isEqualTo(
+            generateExpectedJsonWithTopLevelEntries(
+                "ns1.cat.lol",
+                ImmutableMap.of(
+                    "HANDLE", "2-ROID",
+                    "ADDRESSTYPE", "v4",
+                    "ADDRESS", "1.2.3.4",
+                    "STATUS", "active"),
+                "rdap_host.json"));
     assertThat(response.getStatus()).isEqualTo(200);
   }
 
   @Test
   void testIdnNameserver_works() {
-    assertThat(generateActualJson("ns1.cat.みんな"))
-        .isEqualTo(generateExpectedJsonWithTopLevelEntries(
-            "ns1.cat.みんな",
-            ImmutableMap.of(
-                "PUNYCODENAME", "ns1.cat.xn--q9jyb4c",
-                "HANDLE", "5-ROID",
-                "ADDRESSTYPE", "v6",
-                "ADDRESS", "bad:f00d:cafe::15:beef",
-                "STATUS", "active"),
-            "rdap_host_unicode.json"));
+    assertAboutJson()
+        .that(generateActualJson("ns1.cat.みんな"))
+        .isEqualTo(
+            generateExpectedJsonWithTopLevelEntries(
+                "ns1.cat.みんな",
+                ImmutableMap.of(
+                    "PUNYCODENAME", "ns1.cat.xn--q9jyb4c",
+                    "HANDLE", "5-ROID",
+                    "ADDRESSTYPE", "v6",
+                    "ADDRESS", "bad:f00d:cafe::15:beef",
+                    "STATUS", "active"),
+                "rdap_host_unicode.json"));
     assertThat(response.getStatus()).isEqualTo(200);
   }
 
   @Test
   void testPunycodeNameserver_works() {
-    assertThat(generateActualJson("ns1.cat.xn--q9jyb4c"))
-        .isEqualTo(generateExpectedJsonWithTopLevelEntries(
-            "ns1.cat.みんな",
-            ImmutableMap.of(
-                "PUNYCODENAME", "ns1.cat.xn--q9jyb4c",
-                "HANDLE", "5-ROID",
-                "ADDRESSTYPE", "v6",
-                "ADDRESS", "bad:f00d:cafe::15:beef",
-                "STATUS", "active"),
-            "rdap_host_unicode.json"));
+    assertAboutJson()
+        .that(generateActualJson("ns1.cat.xn--q9jyb4c"))
+        .isEqualTo(
+            generateExpectedJsonWithTopLevelEntries(
+                "ns1.cat.みんな",
+                ImmutableMap.of(
+                    "PUNYCODENAME", "ns1.cat.xn--q9jyb4c",
+                    "HANDLE", "5-ROID",
+                    "ADDRESSTYPE", "v6",
+                    "ADDRESS", "bad:f00d:cafe::15:beef",
+                    "STATUS", "active"),
+                "rdap_host_unicode.json"));
     assertThat(response.getStatus()).isEqualTo(200);
   }
 
   @Test
   void testMultilevelNameserver_works() {
-    assertThat(generateActualJson("ns1.domain.1.tld"))
-        .isEqualTo(generateExpectedJsonWithTopLevelEntries(
-            "ns1.domain.1.tld",
-            ImmutableMap.of(
-                "HANDLE", "8-ROID",
-                "ADDRESSTYPE", "v4",
-                "ADDRESS", "5.6.7.8",
-                "STATUS", "active"),
-            "rdap_host.json"));
+    assertAboutJson()
+        .that(generateActualJson("ns1.domain.1.tld"))
+        .isEqualTo(
+            generateExpectedJsonWithTopLevelEntries(
+                "ns1.domain.1.tld",
+                ImmutableMap.of(
+                    "HANDLE", "8-ROID",
+                    "ADDRESSTYPE", "v4",
+                    "ADDRESS", "5.6.7.8",
+                    "STATUS", "active"),
+                "rdap_host.json"));
     assertThat(response.getStatus()).isEqualTo(200);
   }
 
   @Test
   void testExternalNameserver_works() {
-    assertThat(generateActualJson("ns1.domain.external"))
-        .isEqualTo(generateExpectedJsonWithTopLevelEntries(
-            "ns1.domain.external",
-            ImmutableMap.of(
-                "HANDLE", "C-ROID",
-                "ADDRESSTYPE", "v4",
-                "ADDRESS", "9.10.11.12",
-                "STATUS", "active"),
-            "rdap_host.json"));
+    assertAboutJson()
+        .that(generateActualJson("ns1.domain.external"))
+        .isEqualTo(
+            generateExpectedJsonWithTopLevelEntries(
+                "ns1.domain.external",
+                ImmutableMap.of(
+                    "HANDLE", "C-ROID",
+                    "ADDRESSTYPE", "v4",
+                    "ADDRESS", "9.10.11.12",
+                    "STATUS", "active"),
+                "rdap_host.json"));
     assertThat(response.getStatus()).isEqualTo(200);
   }
 
@@ -267,7 +284,8 @@ class RdapNameserverActionTest extends RdapActionBaseTestCase<RdapNameserverActi
   void testDeletedNameserver_found_loggedInAsCorrectRegistrar() {
     login("TheRegistrar");
     action.includeDeletedParam = Optional.of(true);
-    assertThat(generateActualJson("nsdeleted.cat.lol"))
+    assertAboutJson()
+        .that(generateActualJson("nsdeleted.cat.lol"))
         .isEqualTo(
             generateExpectedJsonWithTopLevelEntries(
                 "nsdeleted.cat.lol",
@@ -284,7 +302,8 @@ class RdapNameserverActionTest extends RdapActionBaseTestCase<RdapNameserverActi
   void testDeletedNameserver_found_loggedInAsAdmin() {
     loginAsAdmin();
     action.includeDeletedParam = Optional.of(true);
-    assertThat(generateActualJson("nsdeleted.cat.lol"))
+    assertAboutJson()
+        .that(generateActualJson("nsdeleted.cat.lol"))
         .isEqualTo(
             generateExpectedJsonWithTopLevelEntries(
                 "nsdeleted.cat.lol",

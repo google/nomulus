@@ -15,7 +15,6 @@
 package google.registry.rdap;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.rdap.RdapTestHelper.assertThat;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.DatabaseHelper.persistSimpleResources;
@@ -24,6 +23,7 @@ import static google.registry.testing.FullFieldsTestEntityHelper.makeDomain;
 import static google.registry.testing.FullFieldsTestEntityHelper.makeHistoryEntry;
 import static google.registry.testing.FullFieldsTestEntityHelper.makeRegistrar;
 import static google.registry.testing.FullFieldsTestEntityHelper.makeRegistrarPocs;
+import static google.registry.testing.GsonSubject.assertAboutJson;
 import static org.mockito.Mockito.verify;
 
 import com.google.gson.JsonObject;
@@ -221,7 +221,8 @@ class RdapDomainActionTest extends RdapActionBaseTestCase<RdapDomainAction> {
   }
 
   private void assertProperResponseForCatLol(String queryString, String expectedOutputFile) {
-    assertThat(generateActualJson(queryString))
+    assertAboutJson()
+        .that(generateActualJson(queryString))
         .isEqualTo(
             addBoilerplate(
                 jsonFileBuilder()
@@ -238,7 +239,8 @@ class RdapDomainActionTest extends RdapActionBaseTestCase<RdapDomainAction> {
 
   @Test
   void testInvalidDomain_returns400() {
-    assertThat(generateActualJson("invalid/domain/name"))
+    assertAboutJson()
+        .that(generateActualJson("invalid/domain/name"))
         .isEqualTo(
             generateExpectedJsonError(
                 "invalid/domain/name is not a valid domain name: Domain names can only contain a-z,"
@@ -249,7 +251,8 @@ class RdapDomainActionTest extends RdapActionBaseTestCase<RdapDomainAction> {
 
   @Test
   void testUnknownDomain_returns400() {
-    assertThat(generateActualJson("missingdomain.com"))
+    assertAboutJson()
+        .that(generateActualJson("missingdomain.com"))
         .isEqualTo(
             generateExpectedJsonError(
                 "missingdomain.com is not a valid domain name: Domain name is under tld com which"
@@ -299,7 +302,8 @@ class RdapDomainActionTest extends RdapActionBaseTestCase<RdapDomainAction> {
   @Test
   void testIdnDomain_works() {
     login("idnregistrar");
-    assertThat(generateActualJson("cat.みんな"))
+    assertAboutJson()
+        .that(generateActualJson("cat.みんな"))
         .isEqualTo(
             addBoilerplate(
                 jsonFileBuilder()
@@ -317,7 +321,8 @@ class RdapDomainActionTest extends RdapActionBaseTestCase<RdapDomainAction> {
   @Test
   void testIdnDomainWithPercentEncoding_works() {
     login("idnregistrar");
-    assertThat(generateActualJson("cat.%E3%81%BF%E3%82%93%E3%81%AA"))
+    assertAboutJson()
+        .that(generateActualJson("cat.%E3%81%BF%E3%82%93%E3%81%AA"))
         .isEqualTo(
             addBoilerplate(
                 jsonFileBuilder()
@@ -335,7 +340,8 @@ class RdapDomainActionTest extends RdapActionBaseTestCase<RdapDomainAction> {
   @Test
   void testPunycodeDomain_works() {
     login("idnregistrar");
-    assertThat(generateActualJson("cat.xn--q9jyb4c"))
+    assertAboutJson()
+        .that(generateActualJson("cat.xn--q9jyb4c"))
         .isEqualTo(
             addBoilerplate(
                 jsonFileBuilder()
@@ -353,7 +359,8 @@ class RdapDomainActionTest extends RdapActionBaseTestCase<RdapDomainAction> {
   @Test
   void testMultilevelDomain_works() {
     login("1tldregistrar");
-    assertThat(generateActualJson("cat.1.tld"))
+    assertAboutJson()
+        .that(generateActualJson("cat.1.tld"))
         .isEqualTo(
             addBoilerplate(
                 jsonFileBuilder()
@@ -379,7 +386,8 @@ class RdapDomainActionTest extends RdapActionBaseTestCase<RdapDomainAction> {
 
   @Test
   void testDeletedDomain_notFound() {
-    assertThat(generateActualJson("dodo.lol"))
+    assertAboutJson()
+        .that(generateActualJson("dodo.lol"))
         .isEqualTo(generateExpectedJsonError("dodo.lol not found", 404));
     assertThat(response.getStatus()).isEqualTo(404);
   }
@@ -410,7 +418,8 @@ class RdapDomainActionTest extends RdapActionBaseTestCase<RdapDomainAction> {
   void testDeletedDomain_works_loggedInAsCorrectRegistrar() {
     login("evilregistrar");
     action.includeDeletedParam = Optional.of(true);
-    assertThat(generateActualJson("dodo.lol"))
+    assertAboutJson()
+        .that(generateActualJson("dodo.lol"))
         .isEqualTo(
             addBoilerplate(
                 jsonFileBuilder()
@@ -429,7 +438,8 @@ class RdapDomainActionTest extends RdapActionBaseTestCase<RdapDomainAction> {
   void testDeletedDomain_works_loggedInAsAdmin() {
     loginAsAdmin();
     action.includeDeletedParam = Optional.of(true);
-    assertThat(generateActualJson("dodo.lol"))
+    assertAboutJson()
+        .that(generateActualJson("dodo.lol"))
         .isEqualTo(
             addBoilerplate(
                 jsonFileBuilder()
