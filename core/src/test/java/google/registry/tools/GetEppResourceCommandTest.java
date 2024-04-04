@@ -14,9 +14,9 @@
 
 package google.registry.tools;
 
+import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertThrows;
 
-import com.google.common.truth.Truth;
 import google.registry.testing.FakeClock;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
@@ -53,6 +53,6 @@ public class GetEppResourceCommandTest {
   @Test
   public void readTimestampNotProvided_setToNow_noException() {
     commandUnderTest.run();
-    Truth.assertThat(commandUnderTest.readTimestamp).isEqualTo(clock.nowUtc());
+    assertThat(commandUnderTest.readTimestamp).isEqualTo(clock.nowUtc());
   }
 }

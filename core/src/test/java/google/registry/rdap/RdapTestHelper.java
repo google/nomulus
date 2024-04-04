@@ -15,6 +15,7 @@
 package google.registry.rdap;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.truth.Truth.assertThat;
 import static google.registry.testing.TestDataHelper.loadFile;
 
 import com.google.common.base.Joiner;
@@ -22,7 +23,6 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Sets;
 import com.google.common.collect.Streams;
-import com.google.common.truth.Truth;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
@@ -182,7 +182,7 @@ class RdapTestHelper {
 
   static String getLinkToNext(JsonObject results) {
     JsonArray notices = results.getAsJsonArray("notices");
-    Truth.assertThat(notices).isNotNull();
+    assertThat(notices).isNotNull();
     return Streams.stream(notices)
         .map(notice -> notice.getAsJsonObject())
         .filter(notice -> notice.has("title"))
@@ -315,9 +315,5 @@ class RdapTestHelper {
               "Actual: %s -> %s\nExpected: %s\n\n",
               name, jsonifyAndIndent(actual), jsonifyAndIndent(expected)));
     }
-  }
-
-  static GsonSubject assertThat(JsonObject actual) {
-    return new GsonSubject(actual);
   }
 }

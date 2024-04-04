@@ -15,6 +15,7 @@
 package google.registry.ui.server.registrar;
 
 import static com.google.common.collect.Iterables.getOnlyElement;
+import static com.google.common.truth.Truth.assertThat;
 import static com.google.monitoring.metrics.contrib.LongMetricSubject.assertThat;
 import static google.registry.request.auth.AuthenticatedRegistrarAccessor.Role.ADMIN;
 import static google.registry.request.auth.AuthenticatedRegistrarAccessor.Role.OWNER;
@@ -32,7 +33,6 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSetMultimap;
 import com.google.common.collect.ImmutableSortedMap;
-import com.google.common.truth.Truth;
 import google.registry.flows.certs.CertificateChecker;
 import google.registry.groups.GmailClient;
 import google.registry.model.registrar.RegistrarPoc;
@@ -167,7 +167,7 @@ public abstract class RegistrarSettingsActionTestCase {
   void verifyNotificationEmailsSent() throws Exception {
     ArgumentCaptor<EmailMessage> captor = ArgumentCaptor.forClass(EmailMessage.class);
     verify(gmailClient).sendEmail(captor.capture());
-    Truth.assertThat(captor.getValue().recipients())
+    assertThat(captor.getValue().recipients())
         .containsExactly(
             new InternetAddress("notification@test.example"),
             new InternetAddress("notification2@test.example"),
