@@ -74,7 +74,6 @@ import google.registry.tldconfig.idn.IdnTableEnum;
 import google.registry.util.Idn;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
@@ -138,10 +137,7 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
     try {
       String thisYaml = mapper.writeValueAsString(this);
       String otherYaml = mapper.writeValueAsString(tldToCompare);
-      // Since Jackson uses getters and not field values to construct the YAML representation, an
-      // explicit check of the createBillingCostTransitions is necessary since this field is
-      // auto-populated in the getter when the field is set to null.
-      return thisYaml.equals(otherYaml) && createBillingCostTransitionsEqual(tldToCompare);
+      return thisYaml.equals(otherYaml);
     } catch (JsonProcessingException e) {
       throw new RuntimeException(e);
     }
@@ -465,6 +461,7 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
   // TODO(sarahbot@): Remove this field and make createBillingCostTransitions not-null once all TLDs
   // are populated with a create cost transition map
   /** The per-year billing cost for registering a new domain name. */
+  @Deprecated
   @Type(type = JodaMoneyType.TYPE_NAME)
   @Columns(
       columns = {
@@ -473,11 +470,13 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
       })
   Money createBillingCost = DEFAULT_CREATE_BILLING_COST;
 
-  // TODO(sarahbot@): Make this field not null and add a default value once field is populated on
-  // all existing TLDs
+  // TODO(sarahbot@): Make this field not null in the database
+  // TODO(sarahbot@): Rename this field to createBillingCost once the old createBillingCost has been
+  // removed
   /** A property that transitions to different create billing costs at different times. */
   @JsonDeserialize(using = TimedTransitionPropertyMoneyDeserializer.class)
-  TimedTransitionProperty<Money> createBillingCostTransitions;
+  TimedTransitionProperty<Money> createBillingCostTransitions =
+      TimedTransitionProperty.withInitialValue(DEFAULT_CREATE_BILLING_COST);
 
   /** The one-time billing cost for restoring a domain name from the redemption grace period. */
   @Type(type = JodaMoneyType.TYPE_NAME)
@@ -684,24 +683,20 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
    * domain create.
    */
   @VisibleForTesting
+  public Money getCreateBillingCost(DateTime now) {
+    return createBillingCostTransitions.getValueAtTime(now);
+  }
+
+  // This getter is still necessary for the Jackson deserialization in the ConfigureTldCommand
+  // TODO(sarahbot@): Remove this getter once the deprecated createBillingCost field is removed from
+  // the schema
+  @Deprecated
   public Money getCreateBillingCost() {
     return createBillingCost;
   }
 
   public ImmutableSortedMap<DateTime, Money> getCreateBillingCostTransitions() {
-    return Objects.requireNonNullElseGet(
-            createBillingCostTransitions,
-            () -> TimedTransitionProperty.withInitialValue(getCreateBillingCost()))
-        .toValueMap();
-  }
-
-  public boolean createBillingCostTransitionsEqual(Tld newTld) {
-    if (createBillingCostTransitions == null) {
-      return false;
-    }
-    return createBillingCostTransitions
-        .toValueMap()
-        .equals(newTld.getCreateBillingCostTransitions());
+    return createBillingCostTransitions.toValueMap();
   }
 
   /**
@@ -1171,16 +1166,14 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
       // and cloned it into a new builder, to block re-building a Tld in an invalid state.
       instance.tldStateTransitions.checkValidity();
       // TODO(sarahbot@): Remove null check when createBillingCostTransitions field is made not-null
-      if (instance.createBillingCostTransitions != null) {
-        instance.createBillingCostTransitions.checkValidity();
-      }
+      checkArgumentNotNull(
+          instance.getCreateBillingCostTransitions(),
+          "CreateBillingCostTransitions cannot be null");
+      instance.createBillingCostTransitions.checkValidity();
       instance.renewBillingCostTransitions.checkValidity();
       instance.eapFeeSchedule.checkValidity();
       // All costs must be in the expected currency.
       checkArgumentNotNull(instance.getCurrency(), "Currency must be set");
-      checkArgument(
-          instance.getCreateBillingCost().getCurrencyUnit().equals(instance.currency),
-          "Create cost must be in the tld's currency");
       checkArgument(
           instance.getRestoreBillingCost().getCurrencyUnit().equals(instance.currency),
           "Restore cost must be in the TLD's currency");
@@ -1195,6 +1188,9 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
       checkArgument(
           instance.getRenewBillingCostTransitions().values().stream().allMatch(currencyCheck),
           "Renew cost must be in the TLD's currency");
+      checkArgument(
+          instance.getCreateBillingCostTransitions().values().stream().allMatch(currencyCheck),
+          "Create cost must be in the TLD's currency");
       checkArgument(
           instance.eapFeeSchedule.toValueMap().values().stream().allMatch(currencyCheck),
           "All EAP fees must be in the TLD's currency");

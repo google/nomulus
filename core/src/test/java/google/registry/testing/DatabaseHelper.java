@@ -244,6 +244,7 @@ public final class DatabaseHelper {
         .setRenewBillingCostTransitions(ImmutableSortedMap.of(START_OF_TIME, Money.of(USD, 11)))
         .setEapFeeSchedule(ImmutableSortedMap.of(START_OF_TIME, Money.zero(USD)))
         .setCreateBillingCost(Money.of(USD, 13))
+        .setCreateBillingCostTransitions(ImmutableSortedMap.of(START_OF_TIME, Money.of(USD, 13)))
         .setRestoreBillingCost(Money.of(USD, 17))
         .setServerStatusChangeBillingCost(Money.of(USD, 19))
         // Always set a default premium list. Tests that don't want it can delete it.
