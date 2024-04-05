@@ -25,7 +25,6 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.CharMatcher;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.collect.Sets;
 import com.google.common.collect.Sets.SetView;
 import com.google.common.flogger.FluentLogger;
@@ -255,27 +254,38 @@ public class ConfigureTldCommand extends MutatingCommand {
     checkArgument(
         currencyUnit.equals(newTld.getRegistryLockOrUnlockBillingCost().getCurrencyUnit()),
         "registryLockOrUnlockBillingCost must use the same currency as the TLD");
-    ImmutableSortedMap<DateTime, Money> renewBillingCostTransitions =
-        newTld.getRenewBillingCostTransitions();
-    for (Money renewBillingCost : renewBillingCostTransitions.values()) {
-      checkArgument(
-          renewBillingCost.getCurrencyUnit().equals(currencyUnit),
-          "All Money values in the renewBillingCostTransitions map must use the TLD's currency"
-              + " unit");
-    }
-    ImmutableSortedMap<DateTime, Money> createBillingCostTransitions =
-        newTld.getCreateBillingCostTransitions();
-    for (Money createBillingCost : createBillingCostTransitions.values()) {
-      checkArgument(
-          createBillingCost.getCurrencyUnit().equals(currencyUnit),
-          "All Money values in the createBillingCostTransitions map must use the TLD's currency"
-              + " unit");
-    }
-    ImmutableSortedMap<DateTime, Money> eapFeeSchedule = newTld.getEapFeeScheduleAsMap();
-    for (Money eapFee : eapFeeSchedule.values()) {
-      checkArgument(
-          eapFee.getCurrencyUnit().equals(currencyUnit),
-          "All Money values in the eapFeeSchedule map must use the TLD's currency unit");
-    }
+    ImmutableSet<CurrencyUnit> currencies =
+        newTld.getRenewBillingCostTransitions().values().stream()
+            .map(Money::getCurrencyUnit)
+            .distinct()
+            .collect(toImmutableSet());
+    checkArgument(
+        currencies.size() == 1 && currencies.contains(currencyUnit),
+        "All Money values in the renewBillingCostTransitions map must use the TLD's currency unit"
+            + " %s. Found %s currency unit(s) in the renewBillingCostTransitionsMap",
+        currencyUnit,
+        currencies);
+    ImmutableSet<CurrencyUnit> createCurrencies =
+        newTld.getCreateBillingCostTransitions().values().stream()
+            .map(Money::getCurrencyUnit)
+            .distinct()
+            .collect(toImmutableSet());
+    checkArgument(
+        createCurrencies.size() == 1 && createCurrencies.contains(currencyUnit),
+        "All Money values in the createBillingCostTransitions map must use the TLD's currency unit"
+            + " %s. Found %s currency unit(s) in the createBillingCostTransitionsMap",
+        currencyUnit,
+        createCurrencies);
+    ImmutableSet<CurrencyUnit> eapCurrencies =
+        newTld.getEapFeeScheduleAsMap().values().stream()
+            .map(Money::getCurrencyUnit)
+            .distinct()
+            .collect(toImmutableSet());
+    checkArgument(
+        eapCurrencies.size() == 1 && eapCurrencies.contains(currencyUnit),
+        "All Money values in the eapFeeSchedule map must use the TLD's currency unit"
+            + " %s. Found %s currency unit(s) in the eapFeeSchedule",
+        currencyUnit,
+        eapCurrencies);
   }
 }

@@ -475,7 +475,7 @@ public class ConfigureTldCommandTest extends CommandTestCase<ConfigureTldCommand
     assertThat(thrown.getMessage())
         .isEqualTo(
             "All Money values in the renewBillingCostTransitions map must use the TLD's currency"
-                + " unit");
+                + " unit USD. Found [EUR] currency unit(s) in the renewBillingCostTransitionsMap");
   }
 
   @Test
@@ -504,7 +504,7 @@ public class ConfigureTldCommandTest extends CommandTestCase<ConfigureTldCommand
     assertThat(thrown.getMessage())
         .isEqualTo(
             "All Money values in the renewBillingCostTransitions map must use the TLD's currency"
-                + " unit");
+                + " unit USD. Found [EUR] currency unit(s) in the renewBillingCostTransitionsMap");
   }
 
   @Test
