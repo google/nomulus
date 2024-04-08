@@ -49,12 +49,18 @@ public abstract class ConsoleApiAction implements Runnable {
     }
   }
 
+
   protected void postHandler(User user) {
     throw new UnsupportedOperationException("Console API POST handler not implemented");
   }
 
   protected void getHandler(User user) {
     throw new UnsupportedOperationException("Console API GET handler not implemented");
+  }
+
+  protected void setFailedResponse(String message, int code) {
+    consoleApiParams.response().setStatus(code);
+    consoleApiParams.response().setPayload(message);
   }
 
   private boolean verifyXSRF() {
