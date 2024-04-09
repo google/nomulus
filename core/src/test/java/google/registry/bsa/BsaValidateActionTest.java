@@ -31,6 +31,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.startsWith;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
@@ -56,7 +57,6 @@ import google.registry.testing.FakeClock;
 import google.registry.tldconfig.idn.IdnTableEnum;
 import google.registry.util.EmailMessage;
 import java.util.Optional;
-import java.util.concurrent.Callable;
 import java.util.stream.Stream;
 import javax.mail.internet.InternetAddress;
 import org.joda.time.DateTime;
@@ -90,8 +90,6 @@ public class BsaValidateActionTest {
 
   @Mock Response response;
 
-  @Mock private BsaLock bsaLock;
-
   @Mock private InternetAddress emailRecipient;
 
   @Captor ArgumentCaptor<EmailMessage> emailCaptor = ArgumentCaptor.forClass(EmailMessage.class);
@@ -112,7 +110,6 @@ public class BsaValidateActionTest {
             /* transactionBatchSize= */ 500,
             MAX_STALENESS,
             fakeClock,
-            bsaLock,
             response);
     createTld("app");
   }
@@ -358,21 +355,10 @@ public class BsaValidateActionTest {
   }
 
   @Test
-  void notificationSent_cannotAcquireLock() {
-    when(bsaLock.executeWithLock(any())).thenReturn(false);
-    action.run();
-    verify(gmailClient, times(1))
-        .sendEmail(
-            EmailMessage.create(
-                "BSA validation did not run: another BSA related task is running",
-                "",
-                emailRecipient));
-  }
-
-  @Test
   void notificationSent_abortedByException() {
+    action = spy(action);
     RuntimeException throwable = new RuntimeException("Error");
-    when(bsaLock.executeWithLock(any())).thenThrow(throwable);
+    doThrow(throwable).when(action).validate();
     action.run();
     verify(gmailClient, times(1))
         .sendEmail(
@@ -382,12 +368,6 @@ public class BsaValidateActionTest {
 
   @Test
   void notificationSent_noDownloads() {
-    when(bsaLock.executeWithLock(any()))
-        .thenAnswer(
-            args -> {
-              args.getArgument(0, Callable.class).call();
-              return true;
-            });
     action.run();
     verify(gmailClient, times(1))
         .sendEmail(
@@ -397,12 +377,6 @@ public class BsaValidateActionTest {
 
   @Test
   void notificationSent_withValidationError() {
-    when(bsaLock.executeWithLock(any()))
-        .thenAnswer(
-            args -> {
-              args.getArgument(0, Callable.class).call();
-              return true;
-            });
     persistDownloadSchedule(DownloadStage.DONE);
     action = spy(action);
     doReturn(ImmutableList.of("Error line 1.", "Error line 2"))
@@ -420,12 +394,6 @@ public class BsaValidateActionTest {
 
   @Test
   void notification_notSent_WhenNoError() {
-    when(bsaLock.executeWithLock(any()))
-        .thenAnswer(
-            args -> {
-              args.getArgument(0, Callable.class).call();
-              return true;
-            });
     persistDownloadSchedule(DownloadStage.DONE);
     action = spy(action);
     doReturn(ImmutableList.of()).when(action).checkBsaLabels(anyString());

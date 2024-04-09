@@ -81,7 +81,6 @@ public class BsaValidateAction implements Runnable {
   private final int transactionBatchSize;
   private final Duration maxStaleness;
   private final Clock clock;
-  private final BsaLock bsaLock;
   private final Response response;
 
   @Inject
@@ -92,7 +91,6 @@ public class BsaValidateAction implements Runnable {
       @Config("bsaTxnBatchSize") int transactionBatchSize,
       @Config("bsaValidationMaxStaleness") Duration maxStaleness,
       Clock clock,
-      BsaLock bsaLock,
       Response response) {
     this.gcsClient = gcsClient;
     this.idnChecker = idnChecker;
@@ -100,18 +98,13 @@ public class BsaValidateAction implements Runnable {
     this.transactionBatchSize = transactionBatchSize;
     this.maxStaleness = maxStaleness;
     this.clock = clock;
-    this.bsaLock = bsaLock;
     this.response = response;
   }
 
   @Override
   public void run() {
     try {
-      if (!bsaLock.executeWithLock(this::runWithinLock)) {
-        String message = "BSA validation did not run: another BSA related task is running";
-        logger.atInfo().log("%s.", message);
-        emailSender.sendNotification(message, /* body= */ "");
-      }
+      validate();
     } catch (Throwable throwable) {
       logger.atWarning().withCause(throwable).log("Failed to validate block lists.");
       emailSender.sendNotification("BSA validation aborted", getStackTraceAsString(throwable));
@@ -121,15 +114,15 @@ public class BsaValidateAction implements Runnable {
     response.setStatus(SC_OK);
   }
 
-  /** Executes the validation action while holding the BSA lock. */
-  Void runWithinLock() {
+  /** Performs validation of BSA data in the database. */
+  void validate() {
     Optional<String> downloadJobName =
         bsaQuery(DownloadScheduler::fetchMostRecentDownloadJobIdIfCompleted);
     if (downloadJobName.isEmpty()) {
       logger.atInfo().log("Cannot validate: block list downloads not found.");
       emailSender.sendNotification(
           "BSA validation does not run: block list downloads not found", "");
-      return null;
+      return;
     }
     logger.atInfo().log("Validating BSA with latest download: %s", downloadJobName.get());
 
@@ -148,7 +141,6 @@ public class BsaValidateAction implements Runnable {
       emailValidationResults(resultSummary, downloadJobName.get(), errors);
     }
     logger.atInfo().log("%s (latest download: %s)", resultSummary, downloadJobName.get());
-    return null;
   }
 
   void emailValidationResults(String subject, String jobName, ImmutableList<String> results) {
