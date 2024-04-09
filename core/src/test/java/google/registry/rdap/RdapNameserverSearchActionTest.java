@@ -15,7 +15,6 @@
 package google.registry.rdap;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.rdap.RdapTestHelper.assertThat;
 import static google.registry.rdap.RdapTestHelper.loadJsonFile;
 import static google.registry.rdap.RdapTestHelper.parseJsonObject;
 import static google.registry.request.Action.Method.GET;
@@ -26,6 +25,7 @@ import static google.registry.testing.DatabaseHelper.persistSimpleResources;
 import static google.registry.testing.FullFieldsTestEntityHelper.makeDomain;
 import static google.registry.testing.FullFieldsTestEntityHelper.makeRegistrar;
 import static google.registry.testing.FullFieldsTestEntityHelper.makeRegistrarPocs;
+import static google.registry.testing.GsonSubject.assertAboutJson;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableListMultimap;
@@ -246,7 +246,8 @@ class RdapNameserverSearchActionTest extends RdapSearchActionTestCase<RdapNamese
   @Test
   void testInvalidRequest_rejected() {
     action.run();
-    assertThat(parseJsonObject(response.getPayload()))
+    assertAboutJson()
+        .that(parseJsonObject(response.getPayload()))
         .isEqualTo(generateExpectedJsonError("You must specify either name=XXXX or ip=YYYY", 400));
     assertThat(response.getStatus()).isEqualTo(400);
     verifyErrorMetrics(Optional.empty(), 400);
@@ -254,7 +255,8 @@ class RdapNameserverSearchActionTest extends RdapSearchActionTestCase<RdapNamese
 
   @Test
   void testInvalidSuffix_rejected() {
-    assertThat(generateActualJsonWithName("exam*ple"))
+    assertAboutJson()
+        .that(generateActualJsonWithName("exam*ple"))
         .isEqualTo(
             generateExpectedJsonError(
                 "Query can only have a single wildcard, and it must be at the end of a label, but"
@@ -267,7 +269,8 @@ class RdapNameserverSearchActionTest extends RdapSearchActionTestCase<RdapNamese
 
   @Test
   void testNonexistentDomainSuffix_unprocessable() {
-    assertThat(generateActualJsonWithName("exam*.foo.bar"))
+    assertAboutJson()
+        .that(generateActualJsonWithName("exam*.foo.bar"))
         .isEqualTo(
             generateExpectedJsonError(
                 "A suffix after a wildcard in a nameserver lookup must be an in-bailiwick domain",
@@ -278,7 +281,8 @@ class RdapNameserverSearchActionTest extends RdapSearchActionTestCase<RdapNamese
 
   @Test
   void testMultipleWildcards_rejected() {
-    assertThat(generateActualJsonWithName("*.*"))
+    assertAboutJson()
+        .that(generateActualJsonWithName("*.*"))
         .isEqualTo(
             generateExpectedJsonError(
                 "Query can only have a single wildcard, and it must be at the end of a label, but"
@@ -291,7 +295,8 @@ class RdapNameserverSearchActionTest extends RdapSearchActionTestCase<RdapNamese
 
   @Test
   void testNoCharactersToMatch_rejected() {
-    assertThat(generateActualJsonWithName("*"))
+    assertAboutJson()
+        .that(generateActualJsonWithName("*"))
         .isEqualTo(
             generateExpectedJsonError("Initial search string must be at least 2 characters", 422));
     assertThat(response.getStatus()).isEqualTo(422);
@@ -300,7 +305,8 @@ class RdapNameserverSearchActionTest extends RdapSearchActionTestCase<RdapNamese
 
   @Test
   void testFewerThanTwoCharactersToMatch_rejected() {
-    assertThat(generateActualJsonWithName("a*"))
+    assertAboutJson()
+        .that(generateActualJsonWithName("a*"))
         .isEqualTo(
             generateExpectedJsonError("Initial search string must be at least 2 characters", 422));
     assertThat(response.getStatus()).isEqualTo(422);
@@ -309,7 +315,8 @@ class RdapNameserverSearchActionTest extends RdapSearchActionTestCase<RdapNamese
 
   @Test
   void testNameMatch_ns1_cat_lol_found() {
-    assertThat(generateActualJsonWithName("ns1.cat.lol"))
+    assertAboutJson()
+        .that(generateActualJsonWithName("ns1.cat.lol"))
         .isEqualTo(
             generateExpectedJsonForNameserver(
                 "ns1.cat.lol", null, "2-ROID", "v4", "1.2.3.4", "rdap_host_linked.json"));
@@ -319,7 +326,8 @@ class RdapNameserverSearchActionTest extends RdapSearchActionTestCase<RdapNamese
 
   @Test
   void testNameMatch_ns1_cat_lol_foundWithUpperCase() {
-    assertThat(generateActualJsonWithName("Ns1.CaT.lOl"))
+    assertAboutJson()
+        .that(generateActualJsonWithName("Ns1.CaT.lOl"))
         .isEqualTo(
             generateExpectedJsonForNameserver(
                 "ns1.cat.lol", null, "2-ROID", "v4", "1.2.3.4", "rdap_host_linked.json"));
@@ -345,7 +353,8 @@ class RdapNameserverSearchActionTest extends RdapSearchActionTestCase<RdapNamese
 
   @Test
   void testNameMatch_ns2_cat_lol_found() {
-    assertThat(generateActualJsonWithName("ns2.cat.lol"))
+    assertAboutJson()
+        .that(generateActualJsonWithName("ns2.cat.lol"))
         .isEqualTo(
             generateExpectedJsonForNameserver(
                 "ns2.cat.lol",
@@ -368,7 +377,8 @@ class RdapNameserverSearchActionTest extends RdapSearchActionTestCase<RdapNamese
 
   @Test
   void testNameMatch_ns1_cat_external_found() {
-    assertThat(generateActualJsonWithName("ns1.cat.external"))
+    assertAboutJson()
+        .that(generateActualJsonWithName("ns1.cat.external"))
         .isEqualTo(
             generateExpectedJsonForNameserver(
                 "ns1.cat.external", null, "8-ROID", null, null, "rdap_host_external.json"));
@@ -378,7 +388,8 @@ class RdapNameserverSearchActionTest extends RdapSearchActionTestCase<RdapNamese
 
   @Test
   void testNameMatch_ns1_cat_idn_unicode_found() {
-    assertThat(generateActualJsonWithName("ns1.cat.みんな"))
+    assertAboutJson()
+        .that(generateActualJsonWithName("ns1.cat.みんな"))
         .isEqualTo(
             generateExpectedJsonForNameserver(
                 "ns1.cat.みんな",
@@ -395,7 +406,8 @@ class RdapNameserverSearchActionTest extends RdapSearchActionTestCase<RdapNamese
 
   @Test
   void testNameMatch_ns1_cat_idn_punycode_found() {
-    assertThat(generateActualJsonWithName("ns1.cat.xn--q9jyb4c"))
+    assertAboutJson()
+        .that(generateActualJsonWithName("ns1.cat.xn--q9jyb4c"))
         .isEqualTo(
             generateExpectedJsonForNameserver(
                 "ns1.cat.みんな",
@@ -410,7 +422,8 @@ class RdapNameserverSearchActionTest extends RdapSearchActionTestCase<RdapNamese
 
   @Test
   void testNameMatch_ns1_cat_1_test_found() {
-    assertThat(generateActualJsonWithName("ns1.cat.1.test"))
+    assertAboutJson()
+        .that(generateActualJsonWithName("ns1.cat.1.test"))
         .isEqualTo(
             generateExpectedJsonForNameserver(
                 "ns1.cat.1.test", null, "E-ROID", "v4", "1.2.3.6", "rdap_host.json"));
@@ -502,7 +515,8 @@ class RdapNameserverSearchActionTest extends RdapSearchActionTestCase<RdapNamese
   @Test
   void testNameMatch_nontruncatedResultSet() {
     createManyHosts(4);
-    assertThat(generateActualJsonWithName("nsx*.cat.lol"))
+    assertAboutJson()
+        .that(generateActualJsonWithName("nsx*.cat.lol"))
         .isEqualTo(loadJsonFile("rdap_nontruncated_hosts.json"));
     assertThat(response.getStatus()).isEqualTo(200);
     verifyMetrics(4);
@@ -511,7 +525,8 @@ class RdapNameserverSearchActionTest extends RdapSearchActionTestCase<RdapNamese
   @Test
   void testNameMatch_truncatedResultSet() {
     createManyHosts(5);
-    assertThat(generateActualJsonWithName("nsx*.cat.lol"))
+    assertAboutJson()
+        .that(generateActualJsonWithName("nsx*.cat.lol"))
         .isEqualTo(
             loadJsonFile(
                 "rdap_truncated_hosts.json", "QUERY", "name=nsx*.cat.lol&cursor=bnN4NC5jYXQubG9s"));
@@ -522,7 +537,8 @@ class RdapNameserverSearchActionTest extends RdapSearchActionTestCase<RdapNamese
   @Test
   void testNameMatch_reallyTruncatedResultSet() {
     createManyHosts(9);
-    assertThat(generateActualJsonWithName("nsx*.cat.lol"))
+    assertAboutJson()
+        .that(generateActualJsonWithName("nsx*.cat.lol"))
         .isEqualTo(
             loadJsonFile(
                 "rdap_truncated_hosts.json", "QUERY", "name=nsx*.cat.lol&cursor=bnN4NC5jYXQubG9s"));
@@ -534,7 +550,8 @@ class RdapNameserverSearchActionTest extends RdapSearchActionTestCase<RdapNamese
   @Test
   void testNameMatchDeletedHost_foundTheOtherHost() {
     persistResource(hostNs1CatLol.asBuilder().setDeletionTime(clock.nowUtc().minusDays(1)).build());
-    assertThat(generateActualJsonWithName("ns*.cat.lol"))
+    assertAboutJson()
+        .that(generateActualJsonWithName("ns*.cat.lol"))
         .isEqualTo(
             generateExpectedJsonForNameserver(
                 "ns2.cat.lol",
@@ -550,7 +567,8 @@ class RdapNameserverSearchActionTest extends RdapSearchActionTestCase<RdapNamese
   @Test
   void testNameMatchDeletedHost_notFound() {
     persistResource(hostNs1CatLol.asBuilder().setDeletionTime(clock.nowUtc().minusDays(1)).build());
-    assertThat(generateActualJsonWithName("ns1.cat.lol"))
+    assertAboutJson()
+        .that(generateActualJsonWithName("ns1.cat.lol"))
         .isEqualTo(generateExpectedJsonError("No nameservers found", 404));
     assertThat(response.getStatus()).isEqualTo(404);
     verifyErrorMetrics();
@@ -559,7 +577,8 @@ class RdapNameserverSearchActionTest extends RdapSearchActionTestCase<RdapNamese
   @Test
   void testNameMatchDeletedHostWithWildcard_notFound() {
     persistResource(hostNs1CatLol.asBuilder().setDeletionTime(clock.nowUtc().minusDays(1)).build());
-    assertThat(generateActualJsonWithName("cat.lo*"))
+    assertAboutJson()
+        .that(generateActualJsonWithName("cat.lo*"))
         .isEqualTo(generateExpectedJsonError("No nameservers found", 404));
     assertThat(response.getStatus()).isEqualTo(404);
     verifyErrorMetrics();
@@ -727,7 +746,8 @@ class RdapNameserverSearchActionTest extends RdapSearchActionTestCase<RdapNamese
 
   @Test
   void testAddressMatchV4Address_found() {
-    assertThat(generateActualJsonWithIp("1.2.3.4"))
+    assertAboutJson()
+        .that(generateActualJsonWithIp("1.2.3.4"))
         .isEqualTo(
             generateExpectedJsonForNameserver(
                 "ns1.cat.lol", null, "2-ROID", "v4", "1.2.3.4", "rdap_host_linked.json"));
@@ -753,7 +773,8 @@ class RdapNameserverSearchActionTest extends RdapSearchActionTestCase<RdapNamese
 
   @Test
   void testAddressMatchV6Address_foundMultiple() {
-    assertThat(generateActualJsonWithIp("bad:f00d:cafe::15:beef"))
+    assertAboutJson()
+        .that(generateActualJsonWithIp("bad:f00d:cafe::15:beef"))
         .isEqualTo(loadJsonFile("rdap_multiple_hosts.json"));
     assertThat(response.getStatus()).isEqualTo(200);
     verifyMetrics(2);
@@ -769,7 +790,8 @@ class RdapNameserverSearchActionTest extends RdapSearchActionTestCase<RdapNamese
   @Test
   void testAddressMatchDeletedHost_notFound() {
     persistResource(hostNs1CatLol.asBuilder().setDeletionTime(clock.nowUtc().minusDays(1)).build());
-    assertThat(generateActualJsonWithIp("1.2.3.4"))
+    assertAboutJson()
+        .that(generateActualJsonWithIp("1.2.3.4"))
         .isEqualTo(generateExpectedJsonError("No nameservers found", 404));
     assertThat(response.getStatus()).isEqualTo(404);
     verifyErrorMetrics();
@@ -778,7 +800,8 @@ class RdapNameserverSearchActionTest extends RdapSearchActionTestCase<RdapNamese
   @Test
   void testAddressMatch_nontruncatedResultSet() {
     createManyHosts(4);
-    assertThat(generateActualJsonWithIp("5.5.5.1"))
+    assertAboutJson()
+        .that(generateActualJsonWithIp("5.5.5.1"))
         .isEqualTo(loadJsonFile("rdap_nontruncated_hosts.json"));
     assertThat(response.getStatus()).isEqualTo(200);
     verifyMetrics(4);
@@ -787,7 +810,8 @@ class RdapNameserverSearchActionTest extends RdapSearchActionTestCase<RdapNamese
   @Test
   void testAddressMatch_truncatedResultSet() {
     createManyHosts(5);
-    assertThat(generateActualJsonWithIp("5.5.5.1"))
+    assertAboutJson()
+        .that(generateActualJsonWithIp("5.5.5.1"))
         .isEqualTo(
             loadJsonFile(
                 "rdap_truncated_hosts.json", "QUERY", "ip=5.5.5.1&cursor=MTctUk9JRA%3D%3D"));
@@ -798,7 +822,8 @@ class RdapNameserverSearchActionTest extends RdapSearchActionTestCase<RdapNamese
   @Test
   void testAddressMatch_reallyTruncatedResultSet() {
     createManyHosts(9);
-    assertThat(generateActualJsonWithIp("5.5.5.1"))
+    assertAboutJson()
+        .that(generateActualJsonWithIp("5.5.5.1"))
         .isEqualTo(
             loadJsonFile(
                 "rdap_truncated_hosts.json", "QUERY", "ip=5.5.5.1&cursor=MTctUk9JRA%3D%3D"));

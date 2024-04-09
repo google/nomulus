@@ -28,7 +28,6 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.google.common.truth.Truth;
 import google.registry.keyring.api.Keyring;
 import google.registry.request.UrlConnectionService;
 import google.registry.testing.FakeClock;
@@ -117,8 +116,7 @@ class BsaCredentialTest {
   void fetchNewAuthToken_whenStatusIsNotOK_throwsRetriableException() throws Exception {
     setupHttp();
     when(connection.getResponseCode()).thenReturn(202);
-    Truth.assertThat(
-            assertThrows(BsaException.class, () -> credential.getAuthToken()).isRetriable())
+    assertThat(assertThrows(BsaException.class, () -> credential.getAuthToken()).isRetriable())
         .isTrue();
   }
 
