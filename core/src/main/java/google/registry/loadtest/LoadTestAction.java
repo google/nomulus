@@ -42,6 +42,7 @@ import java.util.List;
 import java.util.Random;
 import java.util.function.Function;
 import javax.inject.Inject;
+import org.apache.arrow.util.VisibleForTesting;
 import org.joda.time.DateTime;
 
 /**
@@ -152,12 +153,12 @@ public class LoadTestAction implements Runnable {
   @Inject CloudTasksUtils cloudTasksUtils;
 
   private final String xmlContactCreateTmpl;
-  private final String xmlContactCreateFail;
+  @VisibleForTesting final String xmlContactCreateFail;
   private final String xmlContactInfo;
   private final String xmlDomainCheck;
-  private final String xmlDomainCreateTmpl;
+  @VisibleForTesting final String xmlDomainCreateTmpl;
   private final String xmlDomainCreateFail;
-  private final String xmlDomainInfo;
+  @VisibleForTesting final String xmlDomainInfo;
   private final String xmlHostCreateTmpl;
   private final String xmlHostCreateFail;
   private final String xmlHostInfo;
@@ -325,7 +326,7 @@ public class LoadTestAction implements Runnable {
     return name.toString();
   }
 
-  private List<Task> createTasks(List<String> xmls, DateTime start) {
+  List<Task> createTasks(List<String> xmls, DateTime start) {
     ImmutableList.Builder<Task> tasks = new ImmutableList.Builder<>();
     for (int i = 0; i < xmls.size(); i++) {
       // Space tasks evenly within across a second.
@@ -333,7 +334,7 @@ public class LoadTestAction implements Runnable {
           Instant.ofEpochMilli(start.plusMillis((int) (1000.0 / xmls.size() * i)).getMillis());
       tasks.add(
           Task.newBuilder()
-              .setAppEngineHttpRequest(
+              .setHttpRequest(
                   cloudTasksUtils
                       .createPostTask(
                           "/_dr/epptool",
@@ -348,7 +349,7 @@ public class LoadTestAction implements Runnable {
                               "xml",
                               xmls.get(i)))
                       .toBuilder()
-                      .getAppEngineHttpRequest()
+                      .getHttpRequest()
                       .toBuilder()
                       // instead of adding the X_CSRF_TOKEN to params, this remains as part of
                       // headers because of the existing setup for authentication in {@link
