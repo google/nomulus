@@ -23,12 +23,29 @@ import {
   GlobalLoaderService,
 } from '../shared/services/globalLoader.service';
 
+export interface IpAllowListItem {
+  value: string;
+}
+
 export interface Address {
   city?: string;
   countryCode?: string;
   state?: string;
   street?: string[];
   zip?: string;
+}
+
+export interface SecuritySettingsBackendModel {
+  clientCertificate?: string;
+  failoverClientCertificate?: string;
+  ipAddressAllowList?: Array<string>;
+  // TODO: @ptkach At some point we want to add a back-end support for this
+  eppPasswordLastUpdated?: string;
+}
+
+export interface SecuritySettings
+  extends Omit<SecuritySettingsBackendModel, 'ipAddressAllowList'> {
+  ipAddressAllowList?: Array<IpAllowListItem>;
 }
 
 export interface WhoisRegistrarFields {
@@ -40,13 +57,14 @@ export interface WhoisRegistrarFields {
   whoisServer: string;
 }
 
-export interface Registrar extends WhoisRegistrarFields {
+export interface Registrar
+  extends WhoisRegistrarFields,
+    SecuritySettingsBackendModel {
   allowedTlds?: string[];
   billingAccountMap?: object;
   driveFolderId?: string;
   emailAddress?: string;
   faxNumber?: string;
-  ipAddressAllowList?: string[];
   phoneNumber?: string;
   registrarId: string;
   registrarName: string;

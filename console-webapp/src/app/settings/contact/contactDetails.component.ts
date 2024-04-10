@@ -65,16 +65,17 @@ export class ContactDetailsComponent {
 
   save(e: SubmitEvent) {
     e.preventDefault();
-    this.contactService
-      .saveContacts([this.contactService.contactInEdit])
-      .subscribe({
-        complete: () => {
-          this.goBack();
-        },
-        error: (err: HttpErrorResponse) => {
-          this._snackBar.open(err.error);
-        },
-      });
+    const request = this.contactService.isContactNewView
+      ? this.contactService.addContact(this.contactService.contactInEdit)
+      : this.contactService.saveContacts(this.contactService.contacts());
+    request.subscribe({
+      complete: () => {
+        this.goBack();
+      },
+      error: (err: HttpErrorResponse) => {
+        this._snackBar.open(err.error);
+      },
+    });
   }
 
   checkboxIsChecked(type: string) {

@@ -15,13 +15,12 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component } from '@angular/core';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { RegistrarService } from 'src/app/registrar/registrar.service';
 import {
-  SecurityService,
+  IpAllowListItem,
+  RegistrarService,
   SecuritySettings,
-  apiToUiConverter,
-  ipAllowListItem,
-} from './security.service';
+} from 'src/app/registrar/registrar.service';
+import { SecurityService, apiToUiConverter } from './security.service';
 
 @Component({
   selector: 'app-security-edit',
@@ -58,7 +57,7 @@ export default class SecurityEditComponent {
     this.securityService.isEditingSecurity = false;
   }
 
-  removeIpEntry(ip: ipAllowListItem) {
+  removeIpEntry(ip: IpAllowListItem) {
     this.dataSource.ipAddressAllowList =
       this.dataSource.ipAddressAllowList?.filter((item) => item !== ip);
   }
