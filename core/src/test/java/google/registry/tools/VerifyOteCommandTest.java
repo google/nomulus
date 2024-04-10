@@ -78,7 +78,7 @@ class VerifyOteCommandTest extends CommandTestCase<VerifyOteCommand> {
   @Test
   void testFailure_noRegistrarsNoCheckAll() {
     IllegalArgumentException thrown =
-        assertThrows(IllegalArgumentException.class, () -> runCommand(""));
+        assertThrows(IllegalArgumentException.class, () -> runCommand());
     assertThat(thrown)
         .hasMessageThat()
         .contains("Must provide at least one registrar name, or supply --check_all with no names.");

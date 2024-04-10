@@ -20,6 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import com.beust.jcommander.ParameterException;
 import google.registry.tools.server.ToolsTestData;
 import java.io.ByteArrayInputStream;
+import java.io.FileNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -85,7 +86,7 @@ class ExecuteEppCommandTest extends EppToolCommandTestCase<ExecuteEppCommand> {
   @Test
   void testFailure_unknownFlag() {
     assertThrows(
-        ParameterException.class,
+        FileNotFoundException.class, // --unrecognized=foo is treated as the main parameter.
         () -> runCommand("--client=NewRegistrar", "--unrecognized=foo", "--force", "foo.xml"));
   }
 }

@@ -182,14 +182,18 @@ class EnqueuePollMessageCommandTest extends CommandTestCase<EnqueuePollMessageCo
   void testDomainIsRequired() {
     ParameterException thrown =
         assertThrows(ParameterException.class, () -> runCommandForced("--message=Foo bar"));
-    assertThat(thrown).hasMessageThat().contains("The following option is required: -d, --domain");
+    assertThat(thrown)
+        .hasMessageThat()
+        .contains("The following option is required: [-d | --domain]");
   }
 
   @Test
   void testMessageIsRequired() {
     ParameterException thrown =
         assertThrows(ParameterException.class, () -> runCommandForced("--domain=example.tld"));
-    assertThat(thrown).hasMessageThat().contains("The following option is required: -m, --message");
+    assertThat(thrown)
+        .hasMessageThat()
+        .contains("The following option is required: [-m | --message]");
   }
 
   @Test

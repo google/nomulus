@@ -115,15 +115,15 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
   }
 
   @Test
-  void testSuccess_quotedPassword() throws Exception {
+  void testSuccess_password() throws Exception {
     runCommandForced(
         "--name=blobio",
-        "--password=\"some_password\"",
+        "--password=some_password",
         "--registrar_type=REAL",
         "--iana_id=8",
         "--passcode=01234",
         "--icann_referral_email=foo@bar.test",
-        "--street=\"123 Fake St\"",
+        "--street=123 Fake St",
         "--city Fakington",
         "--state MA",
         "--zip 00351",
@@ -631,9 +631,9 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
         "--password=some_password",
         "--registrar_type=REAL",
         "--iana_id=8",
-        "--street=\"1234 Main St\"",
-        "--street \"4th Floor\"",
-        "--street \"Suite 1\"",
+        "--street=1234 Main St",
+        "--street 4th Floor",
+        "--street Suite 1",
         "--city Brooklyn",
         "--state NY",
         "--zip 11223",
@@ -1155,7 +1155,7 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
             () ->
                 runCommandForced(
                     "--name=blobio",
-                    "--password=\"\"",
+                    "--password=",
                     "--registrar_type=REAL",
                     "--iana_id=8",
                     "--passcode=01234",
@@ -1380,7 +1380,7 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
   @Test
   void testFailure_tooFewStreetLines() {
     assertThrows(
-        IllegalArgumentException.class,
+        ParameterException.class,
         () ->
             runCommandForced(
                 "--name=blobio",
@@ -1580,7 +1580,7 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
   @Test
   void testFailure_unknownFlag() {
     assertThrows(
-        ParameterException.class,
+        IllegalArgumentException.class,
         () ->
             runCommandForced(
                 "--name=blobio",

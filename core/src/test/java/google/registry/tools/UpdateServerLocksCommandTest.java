@@ -31,8 +31,12 @@ class UpdateServerLocksCommandTest extends EppToolCommandTestCase<UpdateServerLo
 
   @Test
   void testSuccess_multipleWordReason() throws Exception {
-    runCommandForced("--client=NewRegistrar", "--registrar_request=false",
-        "--reason=\"Test this\"", "--domain_name=example.tld", "--apply=serverRenewProhibited");
+    runCommandForced(
+        "--client=NewRegistrar",
+        "--registrar_request=false",
+        "--reason=Test this",
+        "--domain_name=example.tld",
+        "--apply=serverRenewProhibited");
     eppVerifier.verifySent("update_server_locks_multiple_word_reason.xml");
   }
 
