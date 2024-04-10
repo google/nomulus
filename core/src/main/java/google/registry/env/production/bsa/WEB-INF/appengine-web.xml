@@ -7,8 +7,8 @@
   <sessions-enabled>true</sessions-enabled>
   <instance-class>B4_1G</instance-class>
   <basic-scaling>
-    <max-instances>100</max-instances>
-    <idle-timeout>10m</idle-timeout>
+    <max-instances>3</max-instances>
+    <idle-timeout>60m</idle-timeout>
   </basic-scaling>
 
   <system-properties>
