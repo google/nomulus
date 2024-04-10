@@ -38,7 +38,6 @@ project.build.dependsOn buildProxyImage
 dependencies {
   def deps = rootProject.dependencyMap
 
-  implementation deps['com.beust:jcommander']
   implementation deps['com.google.api-client:google-api-client']
   implementation deps['com.google.apis:google-api-services-cloudkms']
   implementation deps['com.google.apis:google-api-services-monitoring']
@@ -77,6 +76,7 @@ dependencies {
   testImplementation deps['com.google.monitoring-client:contrib']
   testImplementation deps['com.google.truth:truth']
   testImplementation deps['junit:junit']
+  implementation deps['org.jcommander:jcommander']
   testImplementation deps['org.junit.jupiter:junit-jupiter-api']
   testImplementation deps['org.junit.jupiter:junit-jupiter-engine']
   testImplementation deps['org.junit.jupiter:junit-jupiter-params']

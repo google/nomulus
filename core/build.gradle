@@ -130,7 +130,6 @@ dependencies {
 
   testRuntimeOnly files(sourceSets.test.resources.srcDirs)
 
-  implementation deps['com.beust:jcommander']
   implementation deps['com.github.ben-manes.caffeine:caffeine']
   implementation deps['com.google.api:gax']
   implementation deps['com.google.api.grpc:proto-google-common-protos']
@@ -226,6 +225,7 @@ dependencies {
   testImplementation deps['com.fasterxml.jackson.core:jackson-databind']
   implementation deps['org.hibernate:hibernate-core']
   implementation deps['org.hibernate:hibernate-hikaricp']
+  implementation deps['org.jcommander:jcommander']
   implementation deps['org.joda:joda-money']
   implementation deps['org.json:json']
   implementation deps['org.jsoup:jsoup']

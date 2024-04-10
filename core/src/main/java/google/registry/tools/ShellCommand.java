@@ -23,7 +23,6 @@ import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.ParameterDescription;
 import com.beust.jcommander.Parameters;
-import com.google.auto.value.AutoValue;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Ascii;
 import com.google.common.collect.ImmutableList;
@@ -47,7 +46,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import jline.Completor;
 import jline.ConsoleReader;
@@ -87,7 +85,7 @@ public class ShellCommand implements Command {
    * The runner we received in the constructor.
    *
    * <p>We might want to update this runner based on flags (e.g. --encapsulate_output), but these
-   * flags aren't available in the constructor so we have to do it in the {@link #run} function.
+   * flags aren't available in the constructor, so we have to do it in the {@link #run} function.
    */
   private final CommandRunner originalRunner;
 
@@ -112,7 +110,7 @@ public class ShellCommand implements Command {
               + "command, allowing the output to be easily parsed by wrapper scripts.")
   boolean encapsulateOutput = false;
 
-  public ShellCommand(CommandRunner runner) throws IOException {
+  ShellCommand(CommandRunner runner) throws IOException {
     this.originalRunner = runner;
     InputStream in = System.in;
     if (System.console() != null) {
@@ -155,19 +153,13 @@ public class ShellCommand implements Command {
     if (consoleReader != null) {
       @SuppressWarnings("unchecked")
       ImmutableList<Completor> completors = ImmutableList.copyOf(consoleReader.getCompletors());
-      completors
-          .forEach(consoleReader::removeCompletor);
+      completors.forEach(consoleReader::removeCompletor);
       consoleReader.addCompletor(new JCommanderCompletor(jcommander));
     }
     return this;
   }
 
-  private static class OutputEncapsulator implements CommandRunner {
-    private final CommandRunner runner;
-
-    private OutputEncapsulator(CommandRunner runner) {
-      this.runner = runner;
-    }
+  private record OutputEncapsulator(CommandRunner runner) implements CommandRunner {
 
     /**
      * Emit a success command separator.
@@ -233,7 +225,7 @@ public class ShellCommand implements Command {
     // haven't been processed in the constructor.
     CommandRunner runner =
         encapsulateOutput ? new OutputEncapsulator(originalRunner) : originalRunner;
-    // On Production we want to be extra careful - to prevent accidental use.
+    // On Production, we want to be extra careful - to prevent accidental use.
     boolean beExtraCareful = (RegistryToolEnvironment.get() == RegistryToolEnvironment.PRODUCTION);
     setPrompt(RegistryToolEnvironment.get(), beExtraCareful);
     String line;
@@ -245,7 +237,7 @@ public class ShellCommand implements Command {
           && lastTime.plus(IDLE_THRESHOLD).isBefore(clock.nowUtc())) {
         throw new RuntimeException(
             "Been idle for too long, while in 'extra careful' mode. "
-            + "The last command was saved in history. Please rerun the shell and try again.");
+                + "The last command was saved in history. Please rerun the shell and try again.");
       }
       lastTime = clock.nowUtc();
       String[] lineArgs = parseCommand(line);
@@ -299,7 +291,7 @@ public class ShellCommand implements Command {
   static class JCommanderCompletor implements Completor {
 
     private static final ParamDoc DEFAULT_PARAM_DOC =
-        ParamDoc.create("[No documentation available]", ImmutableList.of());
+        new ParamDoc("[No documentation available]", ImmutableList.of());
 
     /**
      * Documentation for all the known command + argument combinations.
@@ -332,15 +324,11 @@ public class ShellCommand implements Command {
      *
      * <p>For now - "all possible options" are only known for enum parameters.
      */
-    @AutoValue
-    abstract static class ParamDoc {
-      abstract String documentation();
-
-      abstract ImmutableList<String> options();
+    record ParamDoc(String documentation, ImmutableList<String> options) {
 
       static ParamDoc create(@Nullable ParameterDescription parameter) {
         if (parameter == null) {
-          return create("[None]", ImmutableList.of());
+          return new ParamDoc("[None]", ImmutableList.of());
         }
         String type = parameter.getParameterized().getGenericType().toString();
         Class<?> clazz = parameter.getParameterized().getType();
@@ -350,28 +338,19 @@ public class ShellCommand implements Command {
               Arrays.stream(clazz.getEnumConstants())
                   .map(Object::toString)
                   .collect(toImmutableList());
-          type = options.stream().collect(Collectors.joining(", "));
+          type = String.join(", ", options);
         }
         if (type.startsWith("class ")) {
           type = type.substring(6);
         }
-        return create(
-            String.format(
-                "%s\n  (%s)",
-                parameter.getDescription(),
-                type),
-            options);
-      }
-
-      static ParamDoc create(String documentation, ImmutableList<String> options) {
-        return new AutoValue_ShellCommand_JCommanderCompletor_ParamDoc(documentation, options);
+        return new ParamDoc(String.format("%s\n  (%s)", parameter.getDescription(), type), options);
       }
     }
 
     /**
      * Populates the completions and documentation based on the JCommander.
      *
-     * The input data is copied, so changing the jcommander after creation of the
+     * <p>The input data is copied, so changing the jcommander after creation of the
      * JCommanderCompletor doesn't change the completions.
      */
     JCommanderCompletor(JCommander jcommander) {
@@ -383,7 +362,13 @@ public class ShellCommand implements Command {
         JCommander subCommander = entry.getValue();
 
         // Add the "main" parameters documentation
-        builder.put(command, "", ParamDoc.create(subCommander.getMainParameter()));
+        builder.put(
+            command,
+            "",
+            ParamDoc.create(
+                subCommander.getMainParameter() == null
+                    ? null
+                    : subCommander.getMainParameterValue()));
 
         // For each command - go over the parameters (arguments / flags)
         for (ParameterDescription parameter : subCommander.getParameters()) {
@@ -399,7 +384,7 @@ public class ShellCommand implements Command {
     }
 
     @Override
-    @SuppressWarnings({"unchecked", "rawtypes"})
+    @SuppressWarnings("unchecked")
     public int complete(String buffer, int location, List completions) {
       // We just defer to the other function because of the warnings (the use of a naked List by
       // jline)
@@ -412,7 +397,7 @@ public class ShellCommand implements Command {
      * @param buffer the command line.
      * @param location the location in the command line we want to complete
      * @param completions a list to fill with the completion results
-     * @return the number of character back from the location that are part of the completions
+     * @return the number of characters back from the location that are part of the completions
      */
     int completeInternal(String buffer, int location, List<String> completions) {
       String truncatedBuffer = buffer.substring(0, location);
@@ -453,7 +438,7 @@ public class ShellCommand implements Command {
      *
      * @param command the name of the command we're running. Null if not yet known (it is in 'word')
      * @param context the previous argument for context. Null if we're the first.
-     * @param word the (partial) word to complete. Can be the command, if "command" is null, or any
+     * @param word the (partial) word to complete. Can be the command if "command" is null, or any
      *     "regular" argument, if "command" isn't null.
      * @return list of all possible completions to 'word'
      */
@@ -488,19 +473,14 @@ public class ShellCommand implements Command {
     }
 
     private List<String> getCommandCompletions(String word) {
-      return commandFlagDocs
-          .rowKeySet()
-          .stream()
+      return commandFlagDocs.rowKeySet().stream()
           .filter(s -> s.startsWith(word))
           .map(s -> s + " ")
           .collect(toImmutableList());
     }
 
     private List<String> getFlagCompletions(String command, String word) {
-      return commandFlagDocs
-          .row(command)
-          .keySet()
-          .stream()
+      return commandFlagDocs.row(command).keySet().stream()
           .filter(s -> s.startsWith(word))
           .map(s -> s + " ")
           .collect(toImmutableList());
@@ -513,19 +493,15 @@ public class ShellCommand implements Command {
       //
       // We want documentation for a flag if the previous argument was a flag, but the value of the
       // flag wasn't set. So if the previous argument is "--flag" then we want documentation of that
-      // flag, but if it's "--flag=value" then that flag is set and we want documentation of the
+      // flag, but if it's "--flag=value" then that flag is set, and we want documentation of the
       // main parameters.
       boolean isFlagParameter =
-          context != null
-              && context.startsWith("-")
-              && context.indexOf('=') == -1;
+          context != null && context.startsWith("-") && context.indexOf('=') == -1;
       ParamDoc paramDoc =
           Optional.ofNullable(commandFlagDocs.get(command, isFlagParameter ? context : ""))
               .orElse(DEFAULT_PARAM_DOC);
       if (!word.isEmpty()) {
-        return paramDoc
-            .options()
-            .stream()
+        return paramDoc.options().stream()
             .filter(s -> s.startsWith(word))
             .map(s -> s + " ")
             .collect(toImmutableList());
@@ -547,10 +523,6 @@ public class ShellCommand implements Command {
 
     private final byte[] prefix;
     private final ByteArrayOutputStream lastLine = new ByteArrayOutputStream();
-
-    // Flag to keep track of whether the last character written was a newline.  We initialize this
-    // to "true" because we always want the first line of output to be escaped with a leading space.
-    boolean lastWasNewline = true;
 
     EncapsulatingOutputStream(OutputStream out, String identifier) {
       super(out);
@@ -581,7 +553,7 @@ public class ShellCommand implements Command {
       // (System.out)
     }
 
-    /** Dump the accumulated last line of output, if there was one. */
+    /** Dump the accumulated last line of output if there was one. */
     public void dumpLastLine() throws IOException {
       if (lastLine.size() > 0) {
         out.write(prefix);

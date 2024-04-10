@@ -213,7 +213,7 @@ class UpdateDomainCommandTest extends EppToolCommandTestCase<UpdateDomainCommand
         "--client=NewRegistrar",
         "--registrant=crr-admin",
         "--password=2fooBAR",
-        "--reason=\"Testing domain update\"",
+        "--reason=Testing domain update",
         "--registrar_request=false",
         "example.tld");
     eppVerifier.verifySent("domain_update_change_metadata.xml");

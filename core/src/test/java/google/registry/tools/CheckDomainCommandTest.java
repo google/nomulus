@@ -90,7 +90,7 @@ class CheckDomainCommandTest extends EppToolCommandTestCase<CheckDomainCommand> 
   @Test
   void testFailure_unknownFlag() {
     assertThrows(
-        ParameterException.class,
+        IllegalArgumentException.class,
         () -> runCommand("--client=NewRegistrar", "--unrecognized=foo", "example.tld"));
   }
 }

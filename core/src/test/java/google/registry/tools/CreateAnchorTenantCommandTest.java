@@ -50,8 +50,12 @@ class CreateAnchorTenantCommandTest extends EppToolCommandTestCase<CreateAnchorT
 
   @Test
   void testSuccess_multipleWordReason() throws Exception {
-    runCommandForced("--client=NewRegistrar", "--superuser",
-        "--reason=\"anchor tenant test\"", "--contact=jd1234", "--domain_name=example.tld");
+    runCommandForced(
+        "--client=NewRegistrar",
+        "--superuser",
+        "--reason=anchor tenant test",
+        "--contact=jd1234",
+        "--domain_name=example.tld");
     eppVerifier
         .expectSuperuser()
         .verifySent("domain_create_anchor_tenant_multiple_word_reason.xml");

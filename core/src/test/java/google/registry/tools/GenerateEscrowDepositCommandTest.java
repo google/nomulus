@@ -48,7 +48,7 @@ public class GenerateEscrowDepositCommandTest
             ParameterException.class,
             () ->
                 runCommand("--watermark=2017-01-01T00:00:00Z", "--mode=thin", "-r 42", "-o test"));
-    assertThat(thrown).hasMessageThat().contains("The following option is required: -t, --tld");
+    assertThat(thrown).hasMessageThat().contains("The following option is required: [-t | --tld]");
   }
 
   @Test
@@ -89,7 +89,7 @@ public class GenerateEscrowDepositCommandTest
             () -> runCommand("--tld=tld", "--mode=full", "-r 42", "-o test"));
     assertThat(thrown)
         .hasMessageThat()
-        .contains("The following option is required: -w, --watermark");
+        .contains("The following option is required: [-w | --watermark]");
   }
 
   @Test
@@ -109,7 +109,9 @@ public class GenerateEscrowDepositCommandTest
             () ->
                 runCommand(
                     "--tld=tld", "--watermark=2017-01-01T00:00:00Z", "--mode=thin", "-r 42"));
-    assertThat(thrown).hasMessageThat().contains("The following option is required: -o, --outdir");
+    assertThat(thrown)
+        .hasMessageThat()
+        .contains("The following option is required: [-o | --outdir]");
   }
 
   @Test
@@ -156,7 +158,7 @@ public class GenerateEscrowDepositCommandTest
                     "-o test"));
     assertThat(thrown)
         .hasMessageThat()
-        .contains("Invalid value for -m parameter. Allowed values:[FULL, THIN]");
+        .contains("Invalid value for --mode parameter. Allowed values:[FULL, THIN]");
   }
 
   @Test

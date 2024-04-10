@@ -35,9 +35,8 @@ public final class ParameterFactory implements IStringConverterFactory {
   /** Returns JCommander converter for a given type, or {@code null} if none exists. */
   @Nullable
   @Override
-  @SuppressWarnings("unchecked")
-  public <T> Class<? extends IStringConverter<T>> getConverter(@Nullable Class<T> type) {
-    return (Class<? extends IStringConverter<T>>) CONVERTERS.get(type);
+  public Class<? extends IStringConverter<?>> getConverter(@Nullable Class<?> type) {
+    return CONVERTERS.get(type);
   }
 
   private static final ImmutableMap<Class<?>, Class<? extends IStringConverter<?>>> CONVERTERS =
@@ -53,4 +52,6 @@ public final class ParameterFactory implements IStringConverterFactory {
           .put(Path.class, PathParameter.class)
           .put(YearMonth.class, YearMonthParameter.class)
           .build();
+
+
 }

@@ -30,8 +30,7 @@ class DeleteDomainCommandTest extends EppToolCommandTestCase<DeleteDomainCommand
 
   @Test
   void testSuccess_multipleWordReason() throws Exception {
-    runCommandForced(
-        "--client=NewRegistrar", "--domain_name=example.tld", "--reason=\"Test test\"");
+    runCommandForced("--client=NewRegistrar", "--domain_name=example.tld", "--reason=Test test");
     eppVerifier.verifySent("domain_delete_multiple_word_reason.xml");
   }
 

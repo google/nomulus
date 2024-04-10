@@ -142,8 +142,7 @@ class GenerateAllocationTokensCommandTest extends CommandTestCase<GenerateAlloca
         "--discount_premiums", "true",
         "--discount_years", "6",
         "--token_status_transitions",
-            String.format(
-                "\"%s=NOT_STARTED,%s=VALID,%s=ENDED\"", START_OF_TIME, promoStart, promoEnd));
+            String.format("%s=NOT_STARTED,%s=VALID,%s=ENDED", START_OF_TIME, promoStart, promoEnd));
     assertAllocationTokens(
         new AllocationToken.Builder()
             .setToken("promo123456789ABCDEFG")
@@ -379,8 +378,8 @@ class GenerateAllocationTokensCommandTest extends CommandTestCase<GenerateAlloca
     assertThat(thrown)
         .hasMessageThat()
         .isEqualTo(
-            "Invalid value for -t parameter. Allowed values:[BULK_PRICING, DEFAULT_PROMO, PACKAGE,"
-                + " SINGLE_USE, UNLIMITED_USE, REGISTER_BSA]");
+            "Invalid value for --type parameter. Allowed values:[BULK_PRICING, DEFAULT_PROMO,"
+                + " PACKAGE, SINGLE_USE, UNLIMITED_USE, REGISTER_BSA]");
   }
 
   @Test
@@ -410,7 +409,7 @@ class GenerateAllocationTokensCommandTest extends CommandTestCase<GenerateAlloca
                         "--type",
                         "BULK_PRICING",
                         String.format(
-                            "--token_status_transitions=\"%s=NOT_STARTED,%s=VALID,%s=ENDED\"",
+                            "--token_status_transitions=%s=NOT_STARTED,%s=VALID,%s=ENDED",
                             START_OF_TIME, fakeClock.nowUtc(), fakeClock.nowUtc().plusDays(1)))))
         .hasMessageThat()
         .isEqualTo(

@@ -51,7 +51,7 @@ class ShellCommandTest {
   final SystemPropertyExtension systemPropertyExtension = new SystemPropertyExtension();
 
   CommandRunner cli = mock(CommandRunner.class);
-  private FakeClock clock = new FakeClock(DateTime.parse("2000-01-01TZ"));
+  private final FakeClock clock = new FakeClock(DateTime.parse("2000-01-01TZ"));
 
   private PrintStream orgStdout;
   private PrintStream orgStderr;
@@ -82,7 +82,7 @@ class ShellCommandTest {
 
   private ShellCommand createShellCommand(
       CommandRunner commandRunner, Duration delay, String... commands) throws Exception {
-    ArrayDeque<String> queue = new ArrayDeque<String>(ImmutableList.copyOf(commands));
+    ArrayDeque<String> queue = new ArrayDeque<>(ImmutableList.copyOf(commands));
     BufferedReader bufferedReader = mock(BufferedReader.class);
     when(bufferedReader.readLine())
         .thenAnswer(
@@ -241,14 +241,14 @@ class ShellCommandTest {
   }
 
   @Test
-  void testEncapsulatedOutputStream_basicFuncionality() throws Exception {
+  void testEncapsulatedOutputStream_basicFunctionality() throws Exception {
     ByteArrayOutputStream backing = new ByteArrayOutputStream();
     try (PrintStream out =
         new PrintStream(new ShellCommand.EncapsulatingOutputStream(backing, "out: "))) {
       out.println("first line");
       out.print("second line\ntrailing data");
     }
-    assertThat(backing.toString("UTF-8"))
+    assertThat(backing.toString(UTF_8))
         .isEqualTo("out: first line\nout: second line\nout: trailing data\n");
   }
 
@@ -256,7 +256,7 @@ class ShellCommandTest {
   void testEncapsulatedOutputStream_emptyStream() throws Exception {
     ByteArrayOutputStream backing = new ByteArrayOutputStream();
     new PrintStream(new ShellCommand.EncapsulatingOutputStream(backing, "out: ")).close();
-    assertThat(backing.toString("UTF-8")).isEqualTo("");
+    assertThat(backing.toString(UTF_8)).isEqualTo("");
   }
 
   @Test
@@ -275,12 +275,17 @@ class ShellCommandTest {
     shellCommand.encapsulateOutput = true;
 
     shellCommand.run();
-    assertThat(stderr.toString("UTF-8")).isEmpty();
-    assertThat(stdout.toString("UTF-8"))
+    assertThat(stderr.toString(UTF_8)).isEmpty();
+    assertThat(stdout.toString(UTF_8))
         .isEqualTo(
-            "RUNNING \"command1\"\n"
-                + "out: first line\nerr: second line\nerr: surprise!\nout: fragmented line\n"
-                + "SUCCESS\n");
+            """
+                RUNNING "command1"
+                out: first line
+                err: second line
+                err: surprise!
+                out: fragmented line
+                SUCCESS
+                """);
   }
 
   @Test
@@ -295,12 +300,14 @@ class ShellCommandTest {
             });
     shellCommand.encapsulateOutput = true;
     shellCommand.run();
-    assertThat(stderr.toString("UTF-8")).isEmpty();
-    assertThat(stdout.toString("UTF-8"))
+    assertThat(stderr.toString(UTF_8)).isEmpty();
+    assertThat(stdout.toString(UTF_8))
         .isEqualTo(
-            "RUNNING \"command1\"\n"
-                + "out: first line\n"
-                + "FAILURE java.lang.Exception some error!\n");
+            """
+                RUNNING "command1"
+                out: first line
+                FAILURE java.lang.Exception some error!
+                """);
   }
 
   @Test
@@ -308,16 +315,11 @@ class ShellCommandTest {
     captureOutput();
     ShellCommand shellCommand =
         createShellCommand(
-            args -> {
-              System.out.println("first line");
-            },
-            Duration.ZERO,
-            "",
-            "do something");
+            args -> System.out.println("first line"), Duration.ZERO, "", "do something");
     shellCommand.encapsulateOutput = true;
     shellCommand.run();
-    assertThat(stderr.toString("UTF-8")).isEmpty();
-    assertThat(stdout.toString("UTF-8"))
+    assertThat(stderr.toString(UTF_8)).isEmpty();
+    assertThat(stdout.toString(UTF_8))
         .isEqualTo("RUNNING \"do\" \"something\"\nout: first line\nSUCCESS\n");
   }
 

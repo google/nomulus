@@ -39,8 +39,6 @@ ext {
       // PINNED VERSIONS START HERE.
 
       // Breaking changes causing compilation error.
-      // TODO: Upgrade to 1.8x+
-      'com.beust:jcommander:1.60',
       // TODO: Migrate to com.google.cloud:google-cloud-dns if
       // https://github.com/googleapis/google-cloud-java/issues/8929 is fixed.
       // At least migrate to v2.
@@ -221,6 +219,7 @@ ext {
       'org.hamcrest:hamcrest-core:[2.2,)',
       'org.hamcrest:hamcrest-library:[2.2,)',
       'org.hamcrest:hamcrest:[2.2,)',
+      'org.jcommander:jcommander:[1.83,)',
       'org.joda:joda-money:[1.0.1,)',
       'org.json:json:[20160810,)',
       'org.jsoup:jsoup:[1.13.1,)',

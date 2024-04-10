@@ -65,7 +65,7 @@ abstract class CreateOrUpdateReservedListCommandTestCase<
                 runCommandForced(
                     "--name=xn--q9jyb4c_common-reserved",
                     "--input=" + reservedTermsPath + "-nonexistent"));
-    assertThat(thrown).hasMessageThat().contains("-i not found");
+    assertThat(thrown).hasMessageThat().contains("--input not found");
   }
 
   @Test

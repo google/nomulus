@@ -414,7 +414,7 @@ class UpdateRegistrarCommandTest extends CommandTestCase<UpdateRegistrarCommand>
             .asBuilder()
             .setBillingAccountMap(ImmutableMap.of(USD, "abc123", JPY, "789xyz"))
             .build());
-    runCommand("--billing_account_map=\"\"", "--force", "NewRegistrar");
+    runCommand("--billing_account_map=", "--force", "NewRegistrar");
     assertThat(loadRegistrar("NewRegistrar").getBillingAccountMap()).isEmpty();
   }
 
@@ -482,9 +482,9 @@ class UpdateRegistrarCommandTest extends CommandTestCase<UpdateRegistrarCommand>
   @Test
   void testSuccess_streetAddress() throws Exception {
     runCommand(
-        "--street=\"1234 Main St\"",
-        "--street \"4th Floor\"",
-        "--street \"Suite 1\"",
+        "--street=1234 Main St",
+        "--street 4th Floor",
+        "--street Suite 1",
         "--city Brooklyn",
         "--state NY",
         "--zip 11223",
@@ -902,7 +902,7 @@ class UpdateRegistrarCommandTest extends CommandTestCase<UpdateRegistrarCommand>
   @Test
   void testFailure_tooFewStreetLines() {
     assertThrows(
-        IllegalArgumentException.class,
+        ParameterException.class,
         () ->
             runCommand(
                 "--street",
@@ -917,7 +917,7 @@ class UpdateRegistrarCommandTest extends CommandTestCase<UpdateRegistrarCommand>
   @Test
   void testFailure_unknownFlag() {
     assertThrows(
-        ParameterException.class,
+        IllegalArgumentException.class,
         () -> runCommand("--force", "--unrecognized_flag=foo", "NewRegistrar"));
   }
 

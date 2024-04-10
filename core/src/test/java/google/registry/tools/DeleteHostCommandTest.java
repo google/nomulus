@@ -30,8 +30,7 @@ class DeleteHostCommandTest extends EppToolCommandTestCase<DeleteHostCommand> {
 
   @Test
   void testSuccess_multipleWordReason() throws Exception {
-    runCommand(
-        "--client=NewRegistrar", "--host=ns1.example.tld", "--force", "--reason=\"Test test\"");
+    runCommand("--client=NewRegistrar", "--host=ns1.example.tld", "--force", "--reason=Test test");
     eppVerifier.verifySent("host_delete_multiple_word_reason.xml");
   }
 

@@ -104,6 +104,12 @@ public abstract class CommandTestCase<C extends Command> {
     } finally {
       // Reset back to UNITTEST environment.
       RegistryToolEnvironment.UNITTEST.setup(systemPropertyExtension);
+      // Reset the "force" field because it gets flipped every time the "--force" flag is present.
+      // If we force-run the same command multiple times in the same test method, the second run
+      // will flip the boolean again to false and not run as forced.
+      if (command instanceof ConfirmingCommand cc) {
+        cc.force = false;
+      }
     }
   }
 

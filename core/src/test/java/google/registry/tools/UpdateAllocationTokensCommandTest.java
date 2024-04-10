@@ -317,7 +317,7 @@ class UpdateAllocationTokensCommandTest extends CommandTestCase<UpdateAllocation
         "token",
         "--token_status_transitions",
         String.format(
-            "\"%s=NOT_STARTED,%s=VALID,%s=CANCELLED\"", START_OF_TIME, now.minusDays(1), now));
+            "%s=NOT_STARTED,%s=VALID,%s=CANCELLED", START_OF_TIME, now.minusDays(1), now));
     token = reloadResource(token);
     assertThat(token.getTokenStatusTransitions().toValueMap())
         .containsExactly(START_OF_TIME, NOT_STARTED, now.minusDays(1), VALID, now, CANCELLED);
@@ -336,8 +336,7 @@ class UpdateAllocationTokensCommandTest extends CommandTestCase<UpdateAllocation
                     "token",
                     "--token_status_transitions",
                     String.format(
-                        "\"%s=NOT_STARTED,%s=ENDED,%s=VALID\"",
-                        START_OF_TIME, now.minusDays(1), now)));
+                        "%s=NOT_STARTED,%s=ENDED,%s=VALID", START_OF_TIME, now.minusDays(1), now)));
     assertThat(thrown)
         .hasMessageThat()
         .isEqualTo("tokenStatusTransitions map cannot transition from NOT_STARTED to ENDED.");
@@ -364,8 +363,7 @@ class UpdateAllocationTokensCommandTest extends CommandTestCase<UpdateAllocation
         "--prefix",
         "token",
         "--token_status_transitions",
-        String.format(
-            "\"%s=NOT_STARTED,%s=VALID,%s=ENDED\"", START_OF_TIME, now.minusDays(1), now));
+        String.format("%s=NOT_STARTED,%s=VALID,%s=ENDED", START_OF_TIME, now.minusDays(1), now));
     token = reloadResource(token);
     assertThat(token.getTokenStatusTransitions().toValueMap())
         .containsExactly(START_OF_TIME, NOT_STARTED, now.minusDays(1), VALID, now, ENDED);
@@ -403,8 +401,7 @@ class UpdateAllocationTokensCommandTest extends CommandTestCase<UpdateAllocation
                     "token",
                     "--token_status_transitions",
                     String.format(
-                        "\"%s=NOT_STARTED,%s=VALID,%s=ENDED\"",
-                        START_OF_TIME, now.minusDays(1), now)));
+                        "%s=NOT_STARTED,%s=VALID,%s=ENDED", START_OF_TIME, now.minusDays(1), now)));
     assertThat(thrown)
         .hasMessageThat()
         .isEqualTo(

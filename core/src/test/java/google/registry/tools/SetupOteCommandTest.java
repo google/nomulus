@@ -205,7 +205,7 @@ class SetupOteCommandTest extends CommandTestCase<SetupOteCommand> {
                     "--registrar=blobio",
                     "--email=contact@email.com",
                     "--certfile=" + getCertFilename()));
-    assertThat(thrown).hasMessageThat().contains("option is required: -a, --ip_allow_list");
+    assertThat(thrown).hasMessageThat().contains("option is required: [-a | --ip_allow_list]");
   }
 
   @Test
@@ -218,7 +218,7 @@ class SetupOteCommandTest extends CommandTestCase<SetupOteCommand> {
                     "--ip_allow_list=1.1.1.1",
                     "--email=contact@email.com",
                     "--certfile=" + getCertFilename()));
-    assertThat(thrown).hasMessageThat().contains("option is required: -r, --registrar");
+    assertThat(thrown).hasMessageThat().contains("option is required: [-r | --registrar]");
   }
 
   @Test
@@ -244,7 +244,7 @@ class SetupOteCommandTest extends CommandTestCase<SetupOteCommand> {
                     "--ip_allow_list=1.1.1.1",
                     "--certfile=" + getCertFilename(),
                     "--registrar=blobio"));
-    assertThat(thrown).hasMessageThat().contains("option is required: --email");
+    assertThat(thrown).hasMessageThat().contains("option is required: [--email]");
   }
 
   @Test
