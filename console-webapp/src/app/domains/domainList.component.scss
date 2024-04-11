@@ -12,6 +12,15 @@
     }
   }
 
+  &-domains {
+    position: relative;
+    &__download {
+      position: absolute;
+      top: 0;
+      right: 0;
+    }
+  }
+
   &__domains {
     width: 100%;
     overflow: auto;
