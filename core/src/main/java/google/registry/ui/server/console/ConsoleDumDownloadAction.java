@@ -31,7 +31,6 @@ import google.registry.ui.server.registrar.ConsoleApiParams;
 import google.registry.util.Clock;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.util.List;
 import javax.inject.Inject;
 import org.apache.commons.csv.CSVFormat;
@@ -40,17 +39,17 @@ import org.joda.time.DateTime;
 
 @Action(
     service = Action.Service.DEFAULT,
-    path = ConsoleDUMDownloadAction.PATH,
+    path = ConsoleDumDownloadAction.PATH,
     method = {GET},
     auth = Auth.AUTH_PUBLIC_LOGGED_IN)
-public class ConsoleDUMDownloadAction extends ConsoleApiAction {
+public class ConsoleDumDownloadAction extends ConsoleApiAction {
 
   private static final String SQL_TEMPLATE =
       """
             SELECT CONCAT(
               d.domain_name,',',d.creation_time,',',d.registration_expiration_time,',',d.statuses
             ) AS result FROM "Domain" d
-            WHERE d.current_sponsor_registrar_id = ':registrarId'
+            WHERE d.current_sponsor_registrar_id = :registrarId
             AND d.deletion_time > ':now'
             AND d.creation_time <= ':now';
       """;
@@ -62,7 +61,7 @@ public class ConsoleDUMDownloadAction extends ConsoleApiAction {
   private final String registrarId;
 
   @Inject
-  public ConsoleDUMDownloadAction(
+  public ConsoleDumDownloadAction(
       Clock clock,
       ConsoleApiParams consoleApiParams,
       @Parameter("registrarId") String registrarId) {
@@ -87,34 +86,22 @@ public class ConsoleDUMDownloadAction extends ConsoleApiAction {
         .setHeader("Cache-Control", "max-age=86400"); // 86400 seconds = 1 day
     consoleApiParams
         .response()
-        .setDateHeader(
-            "Expires", DateTime.now(UTC).withTimeAtStartOfDay().plusDays(1).withTimeAtStartOfDay());
+        .setDateHeader("Expires", DateTime.now(UTC).withTimeAtStartOfDay().plusDays(1));
 
-    PrintWriter writer = null;
-    try {
-      writer = consoleApiParams.response().getWriter();
+    try (var writer = consoleApiParams.response().getWriter()) {
       CSVPrinter csvPrinter = new CSVPrinter(writer, CSVFormat.DEFAULT);
       writeCsv(csvPrinter);
     } catch (IOException e) {
       logger.atWarning().withCause(e).log(
           String.format("Failed to create DUM csv for %s", registrarId));
-      if (writer != null) {
-        writer.close();
-      }
       consoleApiParams.response().setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
       return;
-    }
-    if (writer != null) {
-      writer.close();
     }
     consoleApiParams.response().setStatus(HttpServletResponse.SC_OK);
   }
 
   private void writeCsv(CSVPrinter printer) throws IOException {
-    String sql =
-        SQL_TEMPLATE
-            .replace(":registrarId", registrarId)
-            .replaceAll(":now", clock.nowUtc().toString());
+    String sql = SQL_TEMPLATE.replaceAll(":now", clock.nowUtc().toString());
 
     // We deliberately don't want to use ImmutableList.copyOf because underlying list may contain
     // large amount of records and that will degrade performance.
@@ -123,6 +110,7 @@ public class ConsoleDUMDownloadAction extends ConsoleApiAction {
                 () ->
                     tm().getEntityManager()
                         .createNativeQuery(sql)
+                        .setParameter("registrarId", registrarId)
                         .setHint("org.hibernate.fetchSize", 1000)
                         .getResultList());
 

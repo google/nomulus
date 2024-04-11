@@ -1,3 +1,17 @@
+// Copyright 2024 The Nomulus Authors. All Rights Reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package google.registry.ui.server.console;
 
 import static com.google.common.truth.Truth.assertThat;
@@ -5,6 +19,7 @@ import static google.registry.testing.DatabaseHelper.createTld;
 import static org.mockito.Mockito.when;
 
 import com.google.api.client.http.HttpStatusCodes;
+import com.google.common.collect.ImmutableList;
 import com.google.gson.Gson;
 import google.registry.model.console.GlobalRole;
 import google.registry.model.console.User;
@@ -19,14 +34,14 @@ import google.registry.testing.FakeConsoleApiParams;
 import google.registry.testing.FakeResponse;
 import google.registry.tools.GsonUtils;
 import google.registry.ui.server.registrar.ConsoleApiParams;
+import java.io.IOException;
 import java.util.Optional;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
-import org.testcontainers.shaded.com.google.common.collect.ImmutableList;
 
-class ConsoleDUMDownloadActionTest {
+class ConsoleDumDownloadActionTest {
 
   private static final Gson GSON = GsonUtils.provideGson();
 
@@ -50,7 +65,7 @@ class ConsoleDUMDownloadActionTest {
   }
 
   @Test
-  void testSuccess_returnsCorrectDomains() {
+  void testSuccess_returnsCorrectDomains() throws IOException {
     User user =
         new User.Builder()
             .setEmailAddress("email@email.com")
@@ -58,7 +73,7 @@ class ConsoleDUMDownloadActionTest {
             .build();
 
     AuthResult authResult = AuthResult.createUser(UserAuthInfo.create(user));
-    ConsoleDUMDownloadAction action = createAction(Optional.of(authResult));
+    ConsoleDumDownloadAction action = createAction(Optional.of(authResult));
     action.run();
     ImmutableList<String> expected =
         ImmutableList.of(
@@ -68,7 +83,8 @@ class ConsoleDUMDownloadActionTest {
             "0exists.tld,2024-04-15 00:00:00+00,2025-02-09 00:00:00+00,{INACTIVE}");
     FakeResponse response = (FakeResponse) consoleApiParams.response();
     assertThat(response.getStatus()).isEqualTo(HttpStatusCodes.STATUS_CODE_OK);
-    ImmutableList<String> actual = ImmutableList.copyOf(response.writer.toString().split("\r\n"));
+    ImmutableList<String> actual =
+        ImmutableList.copyOf(response.getStringWriter().toString().split("\r\n"));
     assertThat(actual).containsExactlyElementsIn(expected);
   }
 
@@ -81,15 +97,15 @@ class ConsoleDUMDownloadActionTest {
         new User.Builder().setEmailAddress("email@email.com").setUserRoles(userRoles).build();
 
     AuthResult authResult = AuthResult.createUser(UserAuthInfo.create(user));
-    ConsoleDUMDownloadAction action = createAction(Optional.of(authResult));
+    ConsoleDumDownloadAction action = createAction(Optional.of(authResult));
     action.run();
     assertThat(((FakeResponse) consoleApiParams.response()).getStatus())
         .isEqualTo(HttpStatusCodes.STATUS_CODE_FORBIDDEN);
   }
 
-  ConsoleDUMDownloadAction createAction(Optional<AuthResult> maybeAuthResult) {
+  private ConsoleDumDownloadAction createAction(Optional<AuthResult> maybeAuthResult) {
     consoleApiParams = FakeConsoleApiParams.get(maybeAuthResult);
     when(consoleApiParams.request().getMethod()).thenReturn(Action.Method.GET.toString());
-    return new ConsoleDUMDownloadAction(clock, consoleApiParams, "TheRegistrar");
+    return new ConsoleDumDownloadAction(clock, consoleApiParams, "TheRegistrar");
   }
 }
