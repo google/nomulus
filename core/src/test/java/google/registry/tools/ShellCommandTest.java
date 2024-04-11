@@ -15,10 +15,9 @@
 package google.registry.tools;
 
 import static com.google.common.truth.Truth.assertThat;
-import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.nio.charset.StandardCharsets.US_ASCII;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.MissingCommandException;
@@ -28,15 +27,20 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import google.registry.testing.FakeClock;
 import google.registry.testing.SystemPropertyExtension;
-import google.registry.tools.ShellCommand.JCommanderCompletor;
-import java.io.BufferedReader;
+import google.registry.tools.ShellCommand.JCommanderCompleter;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.PrintStream;
-import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import org.jline.reader.Candidate;
+import org.jline.reader.LineReaderBuilder;
+import org.jline.reader.impl.DefaultParser;
+import org.jline.terminal.Terminal;
+import org.jline.terminal.impl.DumbTerminal;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
 import org.junit.jupiter.api.AfterEach;
@@ -52,6 +56,7 @@ class ShellCommandTest {
 
   CommandRunner cli = mock(CommandRunner.class);
   private final FakeClock clock = new FakeClock(DateTime.parse("2000-01-01TZ"));
+  private final DelayingByteArrayInputStream input = new DelayingByteArrayInputStream(clock);
 
   private PrintStream orgStdout;
   private PrintStream orgStderr;
@@ -61,6 +66,7 @@ class ShellCommandTest {
 
   @BeforeEach
   void beforeEach() {
+    RegistryToolEnvironment.UNITTEST.setup(systemPropertyExtension);
     orgStdout = System.out;
     orgStderr = System.err;
   }
@@ -82,27 +88,20 @@ class ShellCommandTest {
 
   private ShellCommand createShellCommand(
       CommandRunner commandRunner, Duration delay, String... commands) throws Exception {
-    ArrayDeque<String> queue = new ArrayDeque<>(ImmutableList.copyOf(commands));
-    BufferedReader bufferedReader = mock(BufferedReader.class);
-    when(bufferedReader.readLine())
-        .thenAnswer(
-            (x) -> {
-              clock.advanceBy(delay);
-              if (queue.isEmpty()) {
-                throw new IOException();
-              }
-              return queue.poll();
-            });
-    return new ShellCommand(bufferedReader, clock, commandRunner);
+    input.setInput(commands);
+    input.setDelay(delay);
+    Terminal terminal = new DumbTerminal(input, System.out);
+    return new ShellCommand(terminal, clock, commandRunner);
   }
 
   @Test
   void testCommandProcessing() throws Exception {
-    MockCli cli = new MockCli();
+    FakeCli cli = new FakeCli();
     ShellCommand shellCommand =
-        createShellCommand(cli, Duration.ZERO, "test1 foo bar", "test2 foo bar");
+        createShellCommand(cli, Duration.ZERO, "test1 foo bar", "test2 foo bar", "exit");
     shellCommand.run();
     assertThat(cli.calls)
+        // "exit" causes the shell to exit and does not call cli.run.
         .containsExactly(
             ImmutableList.of("test1", "foo", "bar"), ImmutableList.of("test2", "foo", "bar"))
         .inOrder();
@@ -111,7 +110,7 @@ class ShellCommandTest {
   @Test
   void testNoIdleWhenInAlpha() throws Exception {
     RegistryToolEnvironment.ALPHA.setup(systemPropertyExtension);
-    MockCli cli = new MockCli();
+    FakeCli cli = new FakeCli();
     ShellCommand shellCommand =
         createShellCommand(cli, Duration.standardDays(1), "test1 foo bar", "test2 foo bar");
     shellCommand.run();
@@ -120,7 +119,7 @@ class ShellCommandTest {
   @Test
   void testNoIdleWhenInSandbox() throws Exception {
     RegistryToolEnvironment.SANDBOX.setup(systemPropertyExtension);
-    MockCli cli = new MockCli();
+    FakeCli cli = new FakeCli();
     ShellCommand shellCommand =
         createShellCommand(cli, Duration.standardDays(1), "test1 foo bar", "test2 foo bar");
     shellCommand.run();
@@ -129,7 +128,7 @@ class ShellCommandTest {
   @Test
   void testIdleWhenOverHourInProduction() throws Exception {
     RegistryToolEnvironment.PRODUCTION.setup(systemPropertyExtension);
-    MockCli cli = new MockCli();
+    FakeCli cli = new FakeCli();
     ShellCommand shellCommand =
         createShellCommand(cli, Duration.standardMinutes(61), "test1 foo bar", "test2 foo bar");
     RuntimeException exception = assertThrows(RuntimeException.class, shellCommand::run);
@@ -139,7 +138,7 @@ class ShellCommandTest {
   @Test
   void testNoIdleWhenUnderHourInProduction() throws Exception {
     RegistryToolEnvironment.PRODUCTION.setup(systemPropertyExtension);
-    MockCli cli = new MockCli();
+    FakeCli cli = new FakeCli();
     ShellCommand shellCommand =
         createShellCommand(cli, Duration.standardMinutes(59), "test1 foo bar", "test2 foo bar");
     shellCommand.run();
@@ -149,7 +148,6 @@ class ShellCommandTest {
   void testMultipleCommandInvocations() throws Exception {
     RegistryCli cli =
         new RegistryCli("unittest", ImmutableMap.of("test_command", TestCommand.class));
-    RegistryToolEnvironment.UNITTEST.setup(systemPropertyExtension);
     cli.setEnvironment(RegistryToolEnvironment.UNITTEST);
     cli.run(new String[] {"test_command", "-x", "xval", "arg1", "arg2"});
     cli.run(new String[] {"test_command", "-x", "otherxval", "arg3"});
@@ -170,74 +168,72 @@ class ShellCommandTest {
     assertThrows(MissingCommandException.class, () -> cli.run(new String[] {"bad_command"}));
   }
 
-  private void performJCommanderCompletorTest(
-      String line, int expectedBackMotion, String... expectedCompletions) {
+  private void performJCommanderCompletorTest(String line, String... expectedCompletions) {
     JCommander jcommander = new JCommander();
+    List<Candidate> candidates = Arrays.stream(expectedCompletions).map(Candidate::new).toList();
     jcommander.setProgramName("test");
     jcommander.addCommand("help", new HelpCommand(jcommander));
     jcommander.addCommand("testCommand", new TestCommand());
     jcommander.addCommand("testAnotherCommand", new TestAnotherCommand());
-    List<String> completions = new ArrayList<>();
-    assertThat(
-            line.length()
-                - new JCommanderCompletor(jcommander)
-                    .completeInternal(line, line.length(), completions))
-        .isEqualTo(expectedBackMotion);
-    assertThat(completions).containsExactlyElementsIn(expectedCompletions);
+    List<Candidate> completions = new ArrayList<>();
+    new JCommanderCompleter(jcommander)
+        .complete(
+            LineReaderBuilder.builder().build(),
+            new DefaultParser().parse(line, line.length()),
+            completions);
+    assertThat(completions).containsExactlyElementsIn(candidates);
   }
 
   @Test
   void testCompletion_commands() {
-    performJCommanderCompletorTest("", 0, "testCommand ", "testAnotherCommand ", "help ");
-    performJCommanderCompletorTest("n", 1);
-    performJCommanderCompletorTest("test", 4, "testCommand ", "testAnotherCommand ");
-    performJCommanderCompletorTest(" test", 4, "testCommand ", "testAnotherCommand ");
-    performJCommanderCompletorTest("testC", 5, "testCommand ");
-    performJCommanderCompletorTest("testA", 5, "testAnotherCommand ");
+    performJCommanderCompletorTest("", "testCommand ", "testAnotherCommand ", "help ");
+    performJCommanderCompletorTest("n");
+    performJCommanderCompletorTest("test", "testCommand ", "testAnotherCommand ");
+    performJCommanderCompletorTest(" test", "testCommand ", "testAnotherCommand ");
+    performJCommanderCompletorTest("testC", "testCommand ");
+    performJCommanderCompletorTest("testA", "testAnotherCommand ");
   }
 
   @Test
   void testCompletion_help() {
-    performJCommanderCompletorTest("h", 1, "help ");
-    performJCommanderCompletorTest("help ", 0, "testCommand ", "testAnotherCommand ", "help ");
-    performJCommanderCompletorTest("help testC", 5, "testCommand ");
-    performJCommanderCompletorTest("help testCommand ", 0);
+    performJCommanderCompletorTest("h", "help ");
+    performJCommanderCompletorTest("help ", "testCommand ", "testAnotherCommand ", "help ");
+    performJCommanderCompletorTest("help testC", "testCommand ");
+    performJCommanderCompletorTest("help testCommand ");
   }
 
   @Test
   void testCompletion_documentation() {
     performJCommanderCompletorTest(
         "testCommand ",
-        0,
         "",
-        "Main parameter: normal argument\n  (java.util.List<java.lang.String>)");
-    performJCommanderCompletorTest("testAnotherCommand ", 0, "", "Main parameter: [None]");
+        "Main parameter: normal arguments\n  (java.util.List<java.lang.String>)");
+    performJCommanderCompletorTest("testAnotherCommand ", "", "Main parameter: [None]");
     performJCommanderCompletorTest(
-        "testCommand -x ", 0, "", "Flag documentation: test parameter\n  (java.lang.String)");
+        "testCommand -x ", "", "Flag documentation: test parameter\n  (java.lang.String)");
     performJCommanderCompletorTest(
-        "testAnotherCommand -x ", 0, "", "Flag documentation: [No documentation available]");
+        "testAnotherCommand -x ", "", "Flag documentation: [No documentation available]");
     performJCommanderCompletorTest(
         "testCommand x ",
-        0,
         "",
-        "Main parameter: normal argument\n  (java.util.List<java.lang.String>)");
-    performJCommanderCompletorTest("testAnotherCommand x ", 0, "", "Main parameter: [None]");
+        "Main parameter: normal arguments\n  (java.util.List<java.lang.String>)");
+    performJCommanderCompletorTest("testAnotherCommand x ", "", "Main parameter: [None]");
   }
 
   @Test
   void testCompletion_arguments() {
-    performJCommanderCompletorTest("testCommand -", 1, "-x ", "--xparam ", "--xorg ");
-    performJCommanderCompletorTest("testCommand --wrong", 7);
-    performJCommanderCompletorTest("testCommand noise  --", 2, "--xparam ", "--xorg ");
-    performJCommanderCompletorTest("testAnotherCommand --o", 3);
+    performJCommanderCompletorTest("testCommand -", "-x ", "--xparam ", "--xorg ");
+    performJCommanderCompletorTest("testCommand --wrong");
+    performJCommanderCompletorTest("testCommand noise  --", "--xparam ", "--xorg ");
+    performJCommanderCompletorTest("testAnotherCommand --o");
   }
 
   @Test
   void testCompletion_enum() {
-    performJCommanderCompletorTest("testCommand --xorg P", 1, "PRIVATE ", "PUBLIC ");
-    performJCommanderCompletorTest("testCommand --xorg PU", 2, "PUBLIC ");
+    performJCommanderCompletorTest("testCommand --xorg P", "PRIVATE ", "PUBLIC ");
+    performJCommanderCompletorTest("testCommand --xorg PU", "PUBLIC ");
     performJCommanderCompletorTest(
-        "testCommand --xorg ", 0, "", "Flag documentation: test organization\n  (PRIVATE, PUBLIC)");
+        "testCommand --xorg ", "", "Flag documentation: test organization\n  (PRIVATE, PUBLIC)");
   }
 
   @Test
@@ -248,7 +244,7 @@ class ShellCommandTest {
       out.println("first line");
       out.print("second line\ntrailing data");
     }
-    assertThat(backing.toString(UTF_8))
+    assertThat(backing.toString(US_ASCII))
         .isEqualTo("out: first line\nout: second line\nout: trailing data\n");
   }
 
@@ -256,27 +252,28 @@ class ShellCommandTest {
   void testEncapsulatedOutputStream_emptyStream() throws Exception {
     ByteArrayOutputStream backing = new ByteArrayOutputStream();
     new PrintStream(new ShellCommand.EncapsulatingOutputStream(backing, "out: ")).close();
-    assertThat(backing.toString(UTF_8)).isEqualTo("");
+    assertThat(backing.toString(US_ASCII)).isEqualTo("");
   }
 
   @Test
   void testEncapsulatedOutput_command() throws Exception {
-    RegistryToolEnvironment.ALPHA.setup(systemPropertyExtension);
     captureOutput();
     ShellCommand shellCommand =
-        new ShellCommand(
+        createShellCommand(
             args -> {
               System.out.println("first line");
               System.err.println("second line");
               System.out.print("fragmented ");
               System.err.println("surprise!");
               System.out.println("line");
-            });
+            },
+            Duration.ZERO,
+            "command1");
     shellCommand.encapsulateOutput = true;
 
     shellCommand.run();
-    assertThat(stderr.toString(UTF_8)).isEmpty();
-    assertThat(stdout.toString(UTF_8))
+    assertThat(stderr.toString(US_ASCII)).isEmpty();
+    assertThat(stdout.toString(US_ASCII))
         .isEqualTo(
             """
                 RUNNING "command1"
@@ -290,18 +287,19 @@ class ShellCommandTest {
 
   @Test
   void testEncapsulatedOutput_throws() throws Exception {
-    RegistryToolEnvironment.ALPHA.setup(systemPropertyExtension);
     captureOutput();
     ShellCommand shellCommand =
-        new ShellCommand(
+        createShellCommand(
             args -> {
               System.out.println("first line");
               throw new Exception("some error!");
-            });
+            },
+            Duration.ZERO,
+            "command1");
     shellCommand.encapsulateOutput = true;
     shellCommand.run();
-    assertThat(stderr.toString(UTF_8)).isEmpty();
-    assertThat(stdout.toString(UTF_8))
+    assertThat(stderr.toString(US_ASCII)).isEmpty();
+    assertThat(stdout.toString(US_ASCII))
         .isEqualTo(
             """
                 RUNNING "command1"
@@ -318,8 +316,8 @@ class ShellCommandTest {
             args -> System.out.println("first line"), Duration.ZERO, "", "do something");
     shellCommand.encapsulateOutput = true;
     shellCommand.run();
-    assertThat(stderr.toString(UTF_8)).isEmpty();
-    assertThat(stdout.toString(UTF_8))
+    assertThat(stderr.toString(US_ASCII)).isEmpty();
+    assertThat(stdout.toString(US_ASCII))
         .isEqualTo("RUNNING \"do\" \"something\"\nout: first line\nSUCCESS\n");
   }
 
@@ -329,10 +327,10 @@ class ShellCommandTest {
     stderr = new ByteArrayOutputStream();
     System.setOut(new PrintStream(stdout));
     System.setErr(new PrintStream(stderr));
-    System.setIn(new ByteArrayInputStream("command1\n".getBytes(UTF_8)));
+    System.setIn(new ByteArrayInputStream("command1\n".getBytes(US_ASCII)));
   }
 
-  static class MockCli implements CommandRunner {
+  static class FakeCli implements CommandRunner {
     public ArrayList<ImmutableList<String>> calls = new ArrayList<>();
 
     @Override
@@ -343,10 +341,12 @@ class ShellCommandTest {
 
   @Parameters(commandDescription = "Test command")
   static class TestCommand implements Command {
-    // List for recording command invocations by run().
-    //
-    // This has to be static because it gets populated by multiple TestCommand instances, which are
-    // created in RegistryCli by using reflection to call the constructor.
+    /**
+     * List for recording command invocations by {@link #run}.
+     *
+     * <p>This has to be static because it gets populated by multiple TestCommand instances, which
+     * are created in {@link RegistryCli} by using reflection to call the constructor.
+     */
     static final List<List<String>> commandInvocations = new ArrayList<>();
 
     @Parameter(
@@ -358,7 +358,8 @@ class ShellCommandTest {
         names = {"--xorg"},
         description = "test organization")
     OrgType orgType = OrgType.PRIVATE;
-    @Parameter(description = "normal argument")
+
+    @Parameter(description = "normal arguments")
     List<String> args;
 
     TestCommand() {}
@@ -383,5 +384,34 @@ class ShellCommandTest {
   static class TestAnotherCommand implements Command {
     @Override
     public void run() {}
+  }
+
+  @SuppressWarnings("InputStreamSlowMultibyteRead")
+  private static class DelayingByteArrayInputStream extends InputStream {
+    private final FakeClock clock;
+    private ByteArrayInputStream stream;
+    private Duration delay;
+
+    DelayingByteArrayInputStream(FakeClock clock) {
+      this.clock = clock;
+    }
+
+    void setInput(String... commands) {
+      this.stream =
+          new ByteArrayInputStream((String.join("\n", commands) + "\n").getBytes(US_ASCII));
+    }
+
+    void setDelay(Duration delay) {
+      this.delay = delay;
+    }
+
+    @Override
+    public int read() throws IOException {
+      int nextByte = stream.read();
+      if (nextByte == '\n') {
+        clock.advanceBy(delay);
+      }
+      return nextByte;
+    }
   }
 }

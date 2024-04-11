@@ -45,8 +45,6 @@ ext {
       'com.google.apis:google-api-services-dns:v2beta1-rev99-1.25.0',
       // TODO: Migrate to v3
       'com.google.apis:google-api-services-drive:v2-rev393-1.25.0',
-      // TODO: Migrate to org.jline
-      'jline:jline:1.0',
 
       // TODO: Remove after the legacy console is deleted.
       'com.google.closure-stylesheets:closure-stylesheets:1.5.0',
@@ -220,6 +218,7 @@ ext {
       'org.hamcrest:hamcrest-library:[2.2,)',
       'org.hamcrest:hamcrest:[2.2,)',
       'org.jcommander:jcommander:[1.83,)',
+      'org.jline:jline:[3.0,)',
       'org.joda:joda-money:[1.0.1,)',
       'org.json:json:[20160810,)',
       'org.jsoup:jsoup:[1.13.1,)',
