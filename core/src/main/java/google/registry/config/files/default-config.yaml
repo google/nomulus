@@ -396,6 +396,9 @@ rde:
   sshIdentityEmailAddress: rde@example.com
 
 registrarConsole:
+  # DUM download file name, excluding the extension
+  dumFileName: dum_file_name
+
   # Filename of the logo to use in the header of the console. This filename is
   # relative to ui/assets/images/
   logoFilename: logo.png

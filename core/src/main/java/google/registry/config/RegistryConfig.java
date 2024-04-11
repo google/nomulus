@@ -204,6 +204,17 @@ public final class RegistryConfig {
     }
 
     /**
+     * The DUM file name, used as a file name base for DUM csv file
+     *
+     * @see google.registry.ui.server.console.ConsoleDumDownloadAction
+     */
+    @Provides
+    @Config("dumFileName")
+    public static String provideDumFileName(RegistryConfigSettings config) {
+      return config.registrarConsole.dumFileName;
+    }
+
+    /**
      * The contact phone number. Used in the "contact-us" section of the registrar console.
      *
      * @see google.registry.ui.server.registrar.ConsoleUiAction

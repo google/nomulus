@@ -42,8 +42,8 @@ public final class FakeResponse implements Response {
   private boolean wasMutuallyExclusiveResponseSet;
   private String lastResponseStackTrace;
 
-  public final StringWriter writer = new StringWriter();
-  PrintWriter printWriter = new PrintWriter(writer);
+  private final StringWriter writer = new StringWriter();
+  private PrintWriter printWriter = new PrintWriter(writer);
 
   private ArrayList<Cookie> cookies = new ArrayList<>();
 
@@ -61,6 +61,10 @@ public final class FakeResponse implements Response {
 
   public Map<String, Object> getHeaders() {
     return unmodifiableMap(headers);
+  }
+
+  public StringWriter getStringWriter() {
+    return writer;
   }
 
   @Override
