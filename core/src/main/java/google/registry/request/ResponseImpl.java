@@ -18,6 +18,7 @@ import com.google.common.net.MediaType;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.io.PrintWriter;
 import javax.inject.Inject;
 import org.joda.time.DateTime;
 
@@ -63,5 +64,10 @@ public final class ResponseImpl implements Response {
   @Override
   public void addCookie(Cookie cookie) {
     rsp.addCookie(cookie);
+  }
+
+  @Override
+  public PrintWriter getWriter() throws IOException {
+    return rsp.getWriter();
   }
 }

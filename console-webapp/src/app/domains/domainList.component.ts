@@ -54,7 +54,7 @@ export class DomainListComponent {
   constructor(
     private backendService: BackendService,
     private domainListService: DomainListService,
-    private registrarService: RegistrarService,
+    protected registrarService: RegistrarService,
     private _snackBar: MatSnackBar
   ) {
     effect(() => {
