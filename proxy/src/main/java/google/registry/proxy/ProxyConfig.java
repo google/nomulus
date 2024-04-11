@@ -103,6 +103,7 @@ public class ProxyConfig {
   /** Configuration options that apply to HTTPS relay protocol. */
   public static class HttpsRelay {
     public int port;
+    public int localPort;
     public int maxMessageLengthBytes;
   }
 
