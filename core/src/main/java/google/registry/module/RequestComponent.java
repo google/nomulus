@@ -108,6 +108,7 @@ import google.registry.tools.server.ListTldsAction;
 import google.registry.tools.server.RefreshDnsForAllDomainsAction;
 import google.registry.tools.server.ToolsServerModule;
 import google.registry.tools.server.VerifyOteAction;
+import google.registry.ui.server.console.ConsoleDUMDownloadAction;
 import google.registry.ui.server.console.ConsoleDomainGetAction;
 import google.registry.ui.server.console.ConsoleDomainListAction;
 import google.registry.ui.server.console.ConsoleUserDataAction;
@@ -185,6 +186,8 @@ interface RequestComponent {
   ConsoleUiAction consoleUiAction();
 
   ConsoleUserDataAction consoleUserDataAction();
+
+  ConsoleDUMDownloadAction consoleDUMDownloadAction();
 
   ContactAction contactAction();
 

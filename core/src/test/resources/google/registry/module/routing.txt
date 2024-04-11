@@ -57,6 +57,7 @@ PATH                                               CLASS                        
 /check                                             CheckApiAction                                 GET      n  API          NONE PUBLIC
 /console-api/domain                                ConsoleDomainGetAction                         GET      n  API,LEGACY   USER PUBLIC
 /console-api/domain-list                           ConsoleDomainListAction                        GET      n  API,LEGACY   USER PUBLIC
+/console-api/dum-download                          ConsoleDUMDownloadAction                       GET      n  API,LEGACY   USER PUBLIC
 /console-api/registrars                            RegistrarsAction                               GET,POST n  API,LEGACY   USER PUBLIC
 /console-api/settings/contacts                     ContactAction                                  GET,POST n  API,LEGACY   USER PUBLIC
 /console-api/settings/security                     SecurityAction                                 POST     n  API,LEGACY   USER PUBLIC

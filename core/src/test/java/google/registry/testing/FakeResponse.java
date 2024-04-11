@@ -23,6 +23,9 @@ import com.google.common.base.Throwables;
 import com.google.common.net.MediaType;
 import google.registry.request.Response;
 import jakarta.servlet.http.Cookie;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -38,6 +41,9 @@ public final class FakeResponse implements Response {
   private final Map<String, Object> headers = new HashMap<>();
   private boolean wasMutuallyExclusiveResponseSet;
   private String lastResponseStackTrace;
+
+  public final StringWriter writer = new StringWriter();
+  PrintWriter printWriter = new PrintWriter(writer);
 
   private ArrayList<Cookie> cookies = new ArrayList<>();
 
@@ -93,6 +99,11 @@ public final class FakeResponse implements Response {
     cookies.add(cookie);
   }
 
+  @Override
+  public PrintWriter getWriter() throws IOException {
+    return printWriter;
+  }
+
   public List<Cookie> getCookies() {
     return cookies;
   }
@@ -113,4 +124,5 @@ public final class FakeResponse implements Response {
       return Throwables.getStackTraceAsString(e);
     }
   }
+
 }

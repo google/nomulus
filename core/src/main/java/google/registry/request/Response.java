@@ -17,6 +17,8 @@ package google.registry.request;
 import com.google.common.net.MediaType;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.io.PrintWriter;
 import org.joda.time.DateTime;
 
 /**
@@ -59,4 +61,6 @@ public interface Response {
    * @see HttpServletResponse#addCookie(Cookie)
    */
   void addCookie(Cookie cookie);
+
+  PrintWriter getWriter() throws IOException;
 }
