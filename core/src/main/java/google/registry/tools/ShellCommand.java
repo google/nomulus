@@ -16,7 +16,6 @@ package google.registry.tools;
 
 import static com.google.common.base.StandardSystemProperty.USER_HOME;
 import static com.google.common.collect.ImmutableList.toImmutableList;
-import static java.nio.charset.StandardCharsets.US_ASCII;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.beust.jcommander.JCommander;
@@ -31,27 +30,31 @@ import com.google.common.escape.Escaper;
 import com.google.common.escape.Escapers;
 import google.registry.util.Clock;
 import google.registry.util.SystemClock;
-import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
-import java.io.File;
 import java.io.FilterOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.io.StreamTokenizer;
 import java.io.StringReader;
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Optional;
 import javax.annotation.Nullable;
-import jline.Completor;
-import jline.ConsoleReader;
-import jline.ConsoleReaderInputStream;
-import jline.FileNameCompletor;
-import jline.History;
+import org.jline.builtins.Completers.FileNameCompleter;
+import org.jline.reader.Candidate;
+import org.jline.reader.Completer;
+import org.jline.reader.EndOfFileException;
+import org.jline.reader.LineReader;
+import org.jline.reader.LineReaderBuilder;
+import org.jline.reader.ParsedLine;
+import org.jline.reader.UserInterruptException;
+import org.jline.reader.impl.LineReaderImpl;
+import org.jline.terminal.Terminal;
+import org.jline.terminal.TerminalBuilder;
+import org.jline.terminal.impl.DumbTerminal;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
 
@@ -89,73 +92,56 @@ public class ShellCommand implements Command {
    */
   private final CommandRunner originalRunner;
 
-  private final BufferedReader lineReader;
-  private final ConsoleReader consoleReader;
+  private final LineReader lineReader;
   private final Clock clock;
+
+  private String prompt = null;
 
   @Parameter(
       names = {"--dont_exit_on_idle"},
       description =
-          "Prevents the shell from exiting on PROD after the 1 hour idle delay. "
-              + "Will instead warn you and require re-running the command.")
+          """
+              Prevents the shell from exiting on PROD after the 1 hour idle delay.
+              Will instead warn you and require re-running the command.""")
   boolean dontExitOnIdle = false;
 
   @Parameter(
       names = {"--encapsulate_output"},
       description =
-          "Encapsulate command standard output and error by combining the two streams to standard "
-              + "output and inserting a prefix ('out:' or 'err:') at the beginning of every line "
-              + "of normal output and adding a line consisting of either 'SUCCESS' or "
-              + "'FAILURE <exception-name> <error-message>' at the end of the output for a "
-              + "command, allowing the output to be easily parsed by wrapper scripts.")
+          """
+              Encapsulate command standard output and error by combining the two streams to
+              standard output and inserting a prefix ('out:' or 'err:') at the beginning of every
+              line of normal output and adding a line consisting of either 'SUCCESS' or
+              'FAILURE <exception-name> <error-message>' at the end of the output for a
+              command, allowing the output to be easily parsed by wrapper scripts.""")
   boolean encapsulateOutput = false;
 
   ShellCommand(CommandRunner runner) throws IOException {
-    this.originalRunner = runner;
-    InputStream in = System.in;
-    if (System.console() != null) {
-      consoleReader = new ConsoleReader();
-      // There are 104 different commands. We want the threshold to be more than that
-      consoleReader.setAutoprintThreshhold(200);
-      consoleReader.setDefaultPrompt("nom > ");
-      consoleReader.setHistory(new History(new File(USER_HOME.value(), HISTORY_FILE)));
-      in = new ConsoleReaderInputStream(consoleReader);
-    } else {
-      consoleReader = null;
-    }
-    this.lineReader = new BufferedReader(new InputStreamReader(in, US_ASCII));
-    this.clock = new SystemClock();
+    this(TerminalBuilder.terminal(), new SystemClock(), runner);
+    prompt = "nom > ";
+    lineReader.variable(LineReader.HISTORY_FILE, Path.of(USER_HOME.value(), HISTORY_FILE));
   }
 
-  @VisibleForTesting
-  ShellCommand(BufferedReader bufferedReader, Clock clock, CommandRunner runner) {
+  ShellCommand(Terminal terminal, Clock clock, CommandRunner runner) {
     this.originalRunner = runner;
-    this.lineReader = bufferedReader;
+    this.lineReader = LineReaderBuilder.builder().terminal(terminal).build();
     this.clock = clock;
-    this.consoleReader = null;
   }
 
   private void setPrompt(RegistryToolEnvironment environment, boolean alert) {
-    if (consoleReader == null) {
+    // Do not set the prompt in tests.
+    if (lineReader.getTerminal() instanceof DumbTerminal) {
       return;
     }
-    if (alert) {
-      consoleReader.setDefaultPrompt(
-          String.format("nom@%s%s%s > ", ALERT_COLOR, environment, RESET));
-    } else {
-      consoleReader.setDefaultPrompt(
-          String.format(
-              "nom@%s%s%s > ", NON_ALERT_COLOR, Ascii.toLowerCase(environment.toString()), RESET));
-    }
+    prompt =
+        alert
+            ? String.format("nom@%s%s%s > ", ALERT_COLOR, environment, RESET)
+            : String.format(
+                "nom@%s%s%s > ", NON_ALERT_COLOR, Ascii.toLowerCase(environment.toString()), RESET);
   }
 
   public ShellCommand buildCompletions(JCommander jcommander) {
-    if (consoleReader != null) {
-      @SuppressWarnings("unchecked")
-      ImmutableList<Completor> completors = ImmutableList.copyOf(consoleReader.getCompletors());
-      completors.forEach(consoleReader::removeCompletor);
-      consoleReader.addCompletor(new JCommanderCompletor(jcommander));
-    }
+    ((LineReaderImpl) lineReader).setCompleter(new JCommanderCompleter(jcommander));
     return this;
   }
 
@@ -230,21 +216,26 @@ public class ShellCommand implements Command {
     setPrompt(RegistryToolEnvironment.get(), beExtraCareful);
     String line;
     DateTime lastTime = clock.nowUtc();
-    while ((line = getLine()) != null) {
+    while (true) {
+      try {
+        line = lineReader.readLine(prompt);
+      } catch (UserInterruptException | EndOfFileException e) {
+        break;
+      }
       // Make sure we're not idle for too long. Only relevant when we're "extra careful"
       if (!dontExitOnIdle
           && beExtraCareful
           && lastTime.plus(IDLE_THRESHOLD).isBefore(clock.nowUtc())) {
         throw new RuntimeException(
-            "Been idle for too long, while in 'extra careful' mode. "
-                + "The last command was saved in history. Please rerun the shell and try again.");
+            """
+                Been idle for too long, while in 'extra careful' mode.
+                The last command was saved in history. Please rerun the shell and try again.""");
       }
       lastTime = clock.nowUtc();
       String[] lineArgs = parseCommand(line);
       if (lineArgs.length == 0) {
         continue;
       }
-
       try {
         runner.run(lineArgs);
       } catch (Exception e) {
@@ -254,14 +245,6 @@ public class ShellCommand implements Command {
     }
     if (!encapsulateOutput) {
       System.err.println();
-    }
-  }
-
-  private String getLine() {
-    try {
-      return lineReader.readLine();
-    } catch (IOException e) {
-      return null;
     }
   }
 
@@ -288,7 +271,7 @@ public class ShellCommand implements Command {
     return resultBuilder.build().toArray(new String[0]);
   }
 
-  static class JCommanderCompletor implements Completor {
+  static class JCommanderCompleter implements Completer {
 
     private static final ParamDoc DEFAULT_PARAM_DOC =
         new ParamDoc("[No documentation available]", ImmutableList.of());
@@ -312,7 +295,7 @@ public class ShellCommand implements Command {
      */
     private final ImmutableTable<String, String, ParamDoc> commandFlagDocs;
 
-    private final FileNameCompletor filenameCompletor = new FileNameCompletor();
+    private final FileNameCompleter filenameCompleter = new FileNameCompleter();
 
     /**
      * Holds all the information about a parameter we need for completion.
@@ -351,9 +334,9 @@ public class ShellCommand implements Command {
      * Populates the completions and documentation based on the JCommander.
      *
      * <p>The input data is copied, so changing the jcommander after creation of the
-     * JCommanderCompletor doesn't change the completions.
+     * JCommanderCompleter doesn't change the completions.
      */
-    JCommanderCompletor(JCommander jcommander) {
+    JCommanderCompleter(JCommander jcommander) {
       ImmutableTable.Builder<String, String, ParamDoc> builder = new ImmutableTable.Builder<>();
 
       // Go over all the commands
@@ -384,53 +367,26 @@ public class ShellCommand implements Command {
     }
 
     @Override
-    @SuppressWarnings("unchecked")
-    public int complete(String buffer, int location, List completions) {
-      // We just defer to the other function because of the warnings (the use of a naked List by
-      // jline)
-      return completeInternal(buffer, location, completions);
-    }
-
-    /**
-     * Given a string, finds all the possible completions to the end of that string.
-     *
-     * @param buffer the command line.
-     * @param location the location in the command line we want to complete
-     * @param completions a list to fill with the completion results
-     * @return the number of characters back from the location that are part of the completions
-     */
-    int completeInternal(String buffer, int location, List<String> completions) {
-      String truncatedBuffer = buffer.substring(0, location);
-      String[] parsedBuffer = parseCommand(truncatedBuffer);
-      int argumentIndex = parsedBuffer.length - 1;
-
-      if (argumentIndex < 0 || !truncatedBuffer.endsWith(parsedBuffer[argumentIndex])) {
-        argumentIndex += 1;
-      }
+    public void complete(LineReader reader, ParsedLine line, List<Candidate> candidates) {
+      int argumentIndex = line.wordIndex();
       // The argument we want to complete (only partially written, might even be empty)
-      String partialArgument =
-          argumentIndex < parsedBuffer.length ? parsedBuffer[argumentIndex] : "";
-      int argumentStart = location - partialArgument.length();
+      String partialArgument = line.word();
       // The command name. Null if we're at the first argument
-      String command = argumentIndex == 0 ? null : parsedBuffer[0];
+      String command = argumentIndex == 0 ? null : line.words().getFirst();
       // The previous argument before it - used for context. Null if we're at the first argument
-      String previousArgument = argumentIndex <= 1 ? null : parsedBuffer[argumentIndex - 1];
+      String previousArgument = argumentIndex <= 1 ? null : line.words().get(argumentIndex - 1);
 
       // If it's obviously a file path (starts with something "file path like") - complete as a file
       if (partialArgument.startsWith("./")
           || partialArgument.startsWith("~/")
           || partialArgument.startsWith("/")) {
-        int offset =
-            filenameCompletor.complete(partialArgument, partialArgument.length(), completions);
-        if (offset >= 0) {
-          return argumentStart + offset;
-        }
-        return -1;
+        filenameCompleter.complete(reader, line, candidates);
       }
 
       // Complete based on flag data
-      completions.addAll(getCompletions(command, previousArgument, partialArgument));
-      return argumentStart;
+      getCompletions(command, previousArgument, partialArgument).stream()
+          .map(Candidate::new)
+          .forEach(candidates::add);
     }
 
     /**
