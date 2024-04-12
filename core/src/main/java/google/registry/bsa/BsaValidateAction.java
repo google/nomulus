@@ -22,6 +22,7 @@ import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static google.registry.bsa.BsaTransactions.bsaQuery;
 import static google.registry.bsa.ReservedDomainsUtils.getAllReservedNames;
 import static google.registry.bsa.ReservedDomainsUtils.isReservedDomain;
+import static google.registry.bsa.persistence.BsaLabelUtils.isLabelBlocked;
 import static google.registry.bsa.persistence.Queries.batchReadBsaLabelText;
 import static google.registry.bsa.persistence.Queries.queryMissedRegisteredUnblockables;
 import static google.registry.bsa.persistence.Queries.queryUnblockableDomainByLabels;
@@ -299,7 +300,9 @@ public class BsaValidateAction implements Runnable {
   ImmutableList<String> checkForMissingReservedUnblockables(DateTime now) {
     ImmutableList.Builder<String> errors = new ImmutableList.Builder<>();
     try (Stream<ImmutableList<String>> reservedNames =
-        toBatches(getAllReservedNames(now), transactionBatchSize)) {
+        toBatches(
+            getAllReservedNames(now).filter(BsaValidateAction::isBlockedByBsa),
+            transactionBatchSize)) {
       reservedNames
           .map(this::checkOneBatchReservedDomainsForMissingUnblockables)
           .forEach(errors::addAll);
@@ -336,6 +339,11 @@ public class BsaValidateAction implements Runnable {
       }
     }
     return errors.build();
+  }
+
+  static boolean isBlockedByBsa(String domainInBsaEnrolledTld) {
+    InternetDomainName domainName = InternetDomainName.from(domainInBsaEnrolledTld);
+    return isLabelBlocked(domainName.parts().get(0));
   }
 
   static String parseBlockListLine(String line) {
