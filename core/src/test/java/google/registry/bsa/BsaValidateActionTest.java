@@ -338,6 +338,21 @@ public class BsaValidateActionTest {
   }
 
   @Test
+  void checkForMissingReservedUnblockables_unblockedReservedNotReported() {
+    persistResource(
+        createTld("app").asBuilder().setBsaEnrollStartTime(Optional.of(START_OF_TIME)).build());
+
+    createReservedList(
+        "rl",
+        Stream.of("reserved-only")
+            .collect(toImmutableMap(x -> x, x -> ReservationType.RESERVED_FOR_SPECIFIC_USE)));
+    addReservedListsToTld("app", ImmutableList.of("rl"));
+
+    ImmutableList<String> errors = action.checkForMissingReservedUnblockables(fakeClock.nowUtc());
+    assertThat(errors).isEmpty();
+  }
+
+  @Test
   void checkForMissingRegisteredUnblockables_success() {
     persistResource(
         createTld("app").asBuilder().setBsaEnrollStartTime(Optional.of(START_OF_TIME)).build());
