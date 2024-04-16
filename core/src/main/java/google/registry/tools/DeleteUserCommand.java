@@ -15,6 +15,7 @@
 package google.registry.tools;
 
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+import static google.registry.tools.CreateUserCommand.IAP_SECURED_WEB_APP_USER_ROLE;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 import static google.registry.util.PreconditionsUtils.checkArgumentPresent;
 
@@ -24,10 +25,13 @@ import google.registry.model.console.User;
 import google.registry.model.console.UserDao;
 import java.util.Optional;
 import javax.annotation.Nullable;
+import javax.inject.Inject;
 
 /** Deletes a {@link User}. */
 @Parameters(separators = " =", commandDescription = "Delete a user account")
 public class DeleteUserCommand extends ConfirmingCommand {
+
+  @Inject IamClient iamClient;
 
   @Nullable
   @Parameter(names = "--email", description = "Email address of the user", required = true)
@@ -48,6 +52,7 @@ public class DeleteUserCommand extends ConfirmingCommand {
               checkArgumentPresent(optionalUser, "Email no longer corresponds to a valid user");
               tm().delete(optionalUser.get());
             });
+    iamClient.removeBinding(email, IAP_SECURED_WEB_APP_USER_ROLE);
     return String.format("Deleted user with email %s", email);
   }
 }

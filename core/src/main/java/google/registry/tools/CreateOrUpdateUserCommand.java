@@ -31,7 +31,6 @@ import javax.annotation.Nullable;
 /** Shared base class for commands that create or modify a {@link User}. */
 public abstract class CreateOrUpdateUserCommand extends ConfirmingCommand {
 
-  @Nullable
   @Parameter(names = "--email", description = "Email address of the user", required = true)
   String email;
 
@@ -61,7 +60,7 @@ public abstract class CreateOrUpdateUserCommand extends ConfirmingCommand {
   abstract User getExistingUser(String email);
 
   @Override
-  protected final String execute() throws Exception {
+  protected String execute() throws Exception {
     checkArgumentNotNull(email, "Email must be provided");
     tm().transact(this::executeInTransaction);
     return String.format("Saved user with email %s", email);

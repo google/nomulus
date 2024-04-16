@@ -101,6 +101,10 @@ interface RegistryToolComponent {
 
   void inject(CreateRegistrarCommand command);
 
+  void inject(CreateUserCommand command);
+
+  void inject(DeleteUserCommand command);
+
   void inject(EncryptEscrowDepositCommand command);
 
   void inject(EnqueuePollMessageCommand command);
