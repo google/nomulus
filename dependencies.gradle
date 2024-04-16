@@ -121,6 +121,7 @@ ext {
       'com.google.apis:google-api-services-dataflow:[v1b3-rev302-1.25.0,)',
       'com.google.apis:google-api-services-gmail:[v1-rev20220404-2.0.0,)',
       'com.google.apis:google-api-services-groupssettings:[v1-rev82-1.25.0,)',
+      'com.google.apis:google-api-services-iam:[v1-rev20240118-2.0.0,0)',
       'com.google.apis:google-api-services-monitoring:[v3-rev540-1.25.0,)',
       'com.google.apis:google-api-services-sheets:[v4-rev612-1.25.0,)',
       'com.google.apis:google-api-services-storage:[v1-rev20210127-1.31.0,)',

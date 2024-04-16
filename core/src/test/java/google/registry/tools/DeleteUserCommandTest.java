@@ -15,16 +15,29 @@
 package google.registry.tools;
 
 import static com.google.common.truth.Truth.assertThat;
+import static google.registry.tools.CreateUserCommand.IAP_SECURED_WEB_APP_USER_ROLE;
 import static org.junit.Assert.assertThrows;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 import google.registry.model.console.GlobalRole;
 import google.registry.model.console.User;
 import google.registry.model.console.UserDao;
 import google.registry.model.console.UserRoles;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /** Tests for {@link DeleteUserCommand}. */
 public class DeleteUserCommandTest extends CommandTestCase<DeleteUserCommand> {
+
+  private final IamClient iamClient = mock(IamClient.class);
+
+  @BeforeEach
+  void beforeEach() {
+    command.iamClient = iamClient;
+  }
 
   @Test
   void testSuccess_deletesUser() throws Exception {
@@ -38,6 +51,8 @@ public class DeleteUserCommandTest extends CommandTestCase<DeleteUserCommand> {
     assertThat(UserDao.loadUser("email@example.test")).isPresent();
     runCommandForced("--email", "email@example.test");
     assertThat(UserDao.loadUser("email@example.test")).isEmpty();
+    verify(iamClient).removeBinding("email@example.test", IAP_SECURED_WEB_APP_USER_ROLE);
+    verifyNoMoreInteractions(iamClient);
   }
 
   @Test
@@ -48,5 +63,6 @@ public class DeleteUserCommandTest extends CommandTestCase<DeleteUserCommand> {
                 () -> runCommandForced("--email", "nonexistent@example.test")))
         .hasMessageThat()
         .isEqualTo("Email does not correspond to a valid user");
+    verifyNoInteractions(iamClient);
   }
 }
