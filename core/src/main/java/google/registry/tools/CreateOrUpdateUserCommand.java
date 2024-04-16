@@ -61,13 +61,13 @@ public abstract class CreateOrUpdateUserCommand extends ConfirmingCommand {
   abstract User getExistingUser(String email);
 
   @Override
-  protected final String execute() throws Exception {
+  protected String execute() throws Exception {
     checkArgumentNotNull(email, "Email must be provided");
     tm().transact(this::executeInTransaction);
     return String.format("Saved user with email %s", email);
   }
 
-  private void executeInTransaction() {
+  private boolean executeInTransaction() {
     User user = getExistingUser(email);
     UserRoles.Builder userRolesBuilder =
         (user == null) ? new UserRoles.Builder() : user.getUserRoles().asBuilder();
@@ -81,5 +81,6 @@ public abstract class CreateOrUpdateUserCommand extends ConfirmingCommand {
     builder.setUserRoles(userRolesBuilder.build());
     User newUser = builder.build();
     UserDao.saveUser(newUser);
+    return user == null;
   }
 }
