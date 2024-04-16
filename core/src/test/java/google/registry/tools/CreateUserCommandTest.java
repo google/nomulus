@@ -15,7 +15,11 @@
 package google.registry.tools;
 
 import static com.google.common.truth.Truth.assertThat;
+import static google.registry.tools.CreateUserCommand.IAP_SECURED_WEB_APP_USER_ROLE;
 import static org.junit.Assert.assertThrows;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
@@ -24,10 +28,18 @@ import google.registry.model.console.RegistrarRole;
 import google.registry.model.console.User;
 import google.registry.model.console.UserDao;
 import google.registry.testing.DatabaseHelper;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /** Tests for {@link CreateUserCommand}. */
 public class CreateUserCommandTest extends CommandTestCase<CreateUserCommand> {
+
+  private final IamClient iamClient = mock(IamClient.class);
+
+  @BeforeEach
+  void beforeEach() {
+    command.iamClient = iamClient;
+  }
 
   @Test
   void testSuccess() throws Exception {
@@ -37,12 +49,16 @@ public class CreateUserCommandTest extends CommandTestCase<CreateUserCommand> {
     assertThat(onlyUser.getUserRoles().isAdmin()).isFalse();
     assertThat(onlyUser.getUserRoles().getGlobalRole()).isEqualTo(GlobalRole.NONE);
     assertThat(onlyUser.getUserRoles().getRegistrarRoles()).isEmpty();
+    verify(iamClient).addBinding("user@example.test", IAP_SECURED_WEB_APP_USER_ROLE);
+    verifyNoMoreInteractions(iamClient);
   }
 
   @Test
   void testSuccess_admin() throws Exception {
     runCommandForced("--email", "user@example.test", "--admin", "true");
     assertThat(UserDao.loadUser("user@example.test").get().getUserRoles().isAdmin()).isTrue();
+    verify(iamClient).addBinding("user@example.test", IAP_SECURED_WEB_APP_USER_ROLE);
+    verifyNoMoreInteractions(iamClient);
   }
 
   @Test
@@ -50,6 +66,8 @@ public class CreateUserCommandTest extends CommandTestCase<CreateUserCommand> {
     runCommandForced("--email", "user@example.test", "--global_role", "FTE");
     assertThat(UserDao.loadUser("user@example.test").get().getUserRoles().getGlobalRole())
         .isEqualTo(GlobalRole.FTE);
+    verify(iamClient).addBinding("user@example.test", IAP_SECURED_WEB_APP_USER_ROLE);
+    verifyNoMoreInteractions(iamClient);
   }
 
   @Test
@@ -66,16 +84,21 @@ public class CreateUserCommandTest extends CommandTestCase<CreateUserCommand> {
                 RegistrarRole.ACCOUNT_MANAGER,
                 "NewRegistrar",
                 RegistrarRole.PRIMARY_CONTACT));
+    verify(iamClient).addBinding("user@example.test", IAP_SECURED_WEB_APP_USER_ROLE);
+    verifyNoMoreInteractions(iamClient);
   }
 
   @Test
   void testFailure_alreadyExists() throws Exception {
     runCommandForced("--email", "user@example.test");
+    verify(iamClient).addBinding("user@example.test", IAP_SECURED_WEB_APP_USER_ROLE);
+    verifyNoMoreInteractions(iamClient);
     assertThat(
             assertThrows(
                 IllegalArgumentException.class,
                 () -> runCommandForced("--email", "user@example.test")))
         .hasMessageThat()
         .isEqualTo("A user with email user@example.test already exists");
+    verifyNoMoreInteractions(iamClient);
   }
 }
