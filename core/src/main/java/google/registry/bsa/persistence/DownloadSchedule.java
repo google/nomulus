@@ -21,33 +21,26 @@ import static google.registry.bsa.DownloadStage.MAKE_ORDER_AND_LABEL_DIFF;
 import static google.registry.bsa.DownloadStage.NOP;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
-import com.google.auto.value.AutoValue;
 import com.google.common.collect.ImmutableMap;
 import google.registry.bsa.BlockListType;
 import google.registry.bsa.DownloadStage;
 import java.util.Optional;
 import org.joda.time.DateTime;
 
-/** Information needed when handling a download from BSA. */
-@AutoValue
-public abstract class DownloadSchedule {
-
-  abstract long jobId();
-
-  abstract DateTime jobCreationTime();
-
-  public abstract String jobName();
-
-  public abstract DownloadStage stage();
-
-  /** The most recent job that ended in the {@code DONE} stage. */
-  public abstract Optional<CompletedJob> latestCompleted();
-
-  /**
-   * Returns true if download should be processed even if the checksums show that it has not changed
-   * from the previous one.
-   */
-  public abstract boolean alwaysDownload();
+/**
+ * Information needed when handling a download from BSA.
+ *
+ * @param latestCompleted The most recent job that ended in the {@code DONE} stage.
+ * @param alwaysDownload Whether the download should be processed even if the checksums show that it
+ *     has not changed from the previous one.
+ */
+public record DownloadSchedule(
+    long jobId,
+    DateTime jobCreationTime,
+    String jobName,
+    DownloadStage stage,
+    Optional<CompletedJob> latestCompleted,
+    boolean alwaysDownload) {
 
   /** Updates the current job to the new stage. */
   public void updateJobStage(DownloadStage stage) {
@@ -88,12 +81,12 @@ public abstract class DownloadSchedule {
               bsaDownload.setStage(stage);
               bsaDownload.setChecksums(checksums);
               tm().put(bsaDownload);
-              return of(bsaDownload);
+              return create(bsaDownload);
             });
   }
 
-  static DownloadSchedule of(BsaDownload currentJob) {
-    return new AutoValue_DownloadSchedule(
+  static DownloadSchedule create(BsaDownload currentJob) {
+    return new DownloadSchedule(
         currentJob.getJobId(),
         currentJob.getCreationTime(),
         currentJob.getJobName(),
@@ -102,9 +95,9 @@ public abstract class DownloadSchedule {
         /* alwaysDownload= */ true);
   }
 
-  static DownloadSchedule of(
+  static DownloadSchedule create(
       BsaDownload currentJob, CompletedJob latestCompleted, boolean alwaysDownload) {
-    return new AutoValue_DownloadSchedule(
+    return new DownloadSchedule(
         currentJob.getJobId(),
         currentJob.getCreationTime(),
         currentJob.getJobName(),
@@ -114,15 +107,10 @@ public abstract class DownloadSchedule {
   }
 
   /** Information about a completed BSA download job. */
-  @AutoValue
-  public abstract static class CompletedJob {
-    public abstract String jobName();
+  public record CompletedJob(String jobName, ImmutableMap<BlockListType, String> checksums) {
 
-    public abstract ImmutableMap<BlockListType, String> checksums();
-
-    static CompletedJob of(BsaDownload completedJob) {
-      return new AutoValue_DownloadSchedule_CompletedJob(
-          completedJob.getJobName(), completedJob.getChecksums());
+    public static CompletedJob create(BsaDownload completedJob) {
+      return new CompletedJob(completedJob.getJobName(), completedJob.getChecksums());
     }
   }
 }

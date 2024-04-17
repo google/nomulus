@@ -72,15 +72,15 @@ class BsaDiffCreatorTest {
     BsaDiff diff = diffCreator.createDiff(schedule, idnChecker);
     assertThat(diff.getLabels())
         .containsExactly(
-            BlockLabel.of("test1", LabelType.CREATE, ImmutableSet.of("JA")),
-            BlockLabel.of("test2", LabelType.CREATE, ImmutableSet.of("JA")),
-            BlockLabel.of("test3", LabelType.CREATE, ImmutableSet.of("JA")));
+            BlockLabel.create("test1", LabelType.CREATE, ImmutableSet.of("JA")),
+            BlockLabel.create("test2", LabelType.CREATE, ImmutableSet.of("JA")),
+            BlockLabel.create("test3", LabelType.CREATE, ImmutableSet.of("JA")));
     assertThat(diff.getOrders())
         .containsExactly(
-            BlockOrder.of(1, OrderType.CREATE),
-            BlockOrder.of(2, OrderType.CREATE),
-            BlockOrder.of(3, OrderType.CREATE),
-            BlockOrder.of(4, OrderType.CREATE));
+            BlockOrder.create(1, OrderType.CREATE),
+            BlockOrder.create(2, OrderType.CREATE),
+            BlockOrder.create(3, OrderType.CREATE),
+            BlockOrder.create(4, OrderType.CREATE));
   }
 
   @Test
@@ -96,16 +96,16 @@ class BsaDiffCreatorTest {
     BsaDiff diff = diffCreator.createDiff(schedule, idnChecker);
     assertThat(diff.getLabels())
         .containsExactly(
-            BlockLabel.of("test1", LabelType.CREATE, ImmutableSet.of("JA")),
-            BlockLabel.of("test2", LabelType.CREATE, ImmutableSet.of("JA")),
-            BlockLabel.of("test3", LabelType.CREATE, ImmutableSet.of("JA")));
+            BlockLabel.create("test1", LabelType.CREATE, ImmutableSet.of("JA")),
+            BlockLabel.create("test2", LabelType.CREATE, ImmutableSet.of("JA")),
+            BlockLabel.create("test3", LabelType.CREATE, ImmutableSet.of("JA")));
     assertThat(diff.getOrders())
         .containsExactly(
-            BlockOrder.of(1, OrderType.CREATE),
-            BlockOrder.of(2, OrderType.CREATE),
-            BlockOrder.of(3, OrderType.CREATE),
-            BlockOrder.of(4, OrderType.CREATE),
-            BlockOrder.of(5, OrderType.CREATE));
+            BlockOrder.create(1, OrderType.CREATE),
+            BlockOrder.create(2, OrderType.CREATE),
+            BlockOrder.create(3, OrderType.CREATE),
+            BlockOrder.create(4, OrderType.CREATE),
+            BlockOrder.create(5, OrderType.CREATE));
   }
 
   @Test
@@ -140,15 +140,15 @@ class BsaDiffCreatorTest {
     BsaDiff diff = diffCreator.createDiff(schedule, idnChecker);
     assertThat(diff.getLabels())
         .containsExactly(
-            BlockLabel.of("test1", LabelType.DELETE, ImmutableSet.of("JA")),
-            BlockLabel.of("test2", LabelType.DELETE, ImmutableSet.of("JA")),
-            BlockLabel.of("test3", LabelType.DELETE, ImmutableSet.of("JA")));
+            BlockLabel.create("test1", LabelType.DELETE, ImmutableSet.of("JA")),
+            BlockLabel.create("test2", LabelType.DELETE, ImmutableSet.of("JA")),
+            BlockLabel.create("test3", LabelType.DELETE, ImmutableSet.of("JA")));
     assertThat(diff.getOrders())
         .containsExactly(
-            BlockOrder.of(1, OrderType.DELETE),
-            BlockOrder.of(2, OrderType.DELETE),
-            BlockOrder.of(3, OrderType.DELETE),
-            BlockOrder.of(4, OrderType.DELETE));
+            BlockOrder.create(1, OrderType.DELETE),
+            BlockOrder.create(2, OrderType.DELETE),
+            BlockOrder.create(3, OrderType.DELETE),
+            BlockOrder.create(4, OrderType.DELETE));
   }
 
   @Test
@@ -167,8 +167,8 @@ class BsaDiffCreatorTest {
     BsaDiff diff = diffCreator.createDiff(schedule, idnChecker);
     assertThat(diff.getLabels())
         .containsExactly(
-            BlockLabel.of("test1", LabelType.NEW_ORDER_ASSOCIATION, ImmutableSet.of("JA")));
-    assertThat(diff.getOrders()).containsExactly(BlockOrder.of(5, OrderType.CREATE));
+            BlockLabel.create("test1", LabelType.NEW_ORDER_ASSOCIATION, ImmutableSet.of("JA")));
+    assertThat(diff.getOrders()).containsExactly(BlockOrder.create(5, OrderType.CREATE));
   }
 
   @Test
@@ -187,8 +187,8 @@ class BsaDiffCreatorTest {
     when(schedule.latestCompleted()).thenReturn(Optional.of(completedJob));
     BsaDiff diff = diffCreator.createDiff(schedule, idnChecker);
     assertThat(diff.getLabels())
-        .containsExactly(BlockLabel.of("test4", LabelType.CREATE, ImmutableSet.of("JA")));
-    assertThat(diff.getOrders()).containsExactly(BlockOrder.of(5, OrderType.CREATE));
+        .containsExactly(BlockLabel.create("test4", LabelType.CREATE, ImmutableSet.of("JA")));
+    assertThat(diff.getOrders()).containsExactly(BlockOrder.create(5, OrderType.CREATE));
   }
 
   @Test
@@ -205,7 +205,7 @@ class BsaDiffCreatorTest {
     when(schedule.latestCompleted()).thenReturn(Optional.of(completedJob));
     BsaDiff diff = diffCreator.createDiff(schedule, idnChecker);
     assertThat(diff.getLabels()).isEmpty();
-    assertThat(diff.getOrders()).containsExactly(BlockOrder.of(4, OrderType.DELETE));
+    assertThat(diff.getOrders()).containsExactly(BlockOrder.create(4, OrderType.DELETE));
   }
 
   @Test
@@ -222,7 +222,7 @@ class BsaDiffCreatorTest {
     when(schedule.latestCompleted()).thenReturn(Optional.of(completedJob));
     BsaDiff diff = diffCreator.createDiff(schedule, idnChecker);
     assertThat(diff.getLabels()).isEmpty();
-    assertThat(diff.getOrders()).containsExactly(BlockOrder.of(1, OrderType.DELETE));
+    assertThat(diff.getOrders()).containsExactly(BlockOrder.create(1, OrderType.DELETE));
   }
 
   @Test
@@ -240,8 +240,8 @@ class BsaDiffCreatorTest {
     when(schedule.latestCompleted()).thenReturn(Optional.of(completedJob));
     BsaDiff diff = diffCreator.createDiff(schedule, idnChecker);
     assertThat(diff.getLabels())
-        .containsExactly(BlockLabel.of("test2", LabelType.DELETE, ImmutableSet.of("JA")));
-    assertThat(diff.getOrders()).containsExactly(BlockOrder.of(3, OrderType.DELETE));
+        .containsExactly(BlockLabel.create("test2", LabelType.DELETE, ImmutableSet.of("JA")));
+    assertThat(diff.getOrders()).containsExactly(BlockOrder.create(3, OrderType.DELETE));
   }
 
   @Test
@@ -260,13 +260,13 @@ class BsaDiffCreatorTest {
     BsaDiff diff = diffCreator.createDiff(schedule, idnChecker);
     assertThat(diff.getLabels())
         .containsExactly(
-            BlockLabel.of("test1", LabelType.DELETE, ImmutableSet.of("JA")),
-            BlockLabel.of("test3", LabelType.DELETE, ImmutableSet.of("JA")));
+            BlockLabel.create("test1", LabelType.DELETE, ImmutableSet.of("JA")),
+            BlockLabel.create("test3", LabelType.DELETE, ImmutableSet.of("JA")));
     assertThat(diff.getOrders())
         .containsExactly(
-            BlockOrder.of(1, OrderType.DELETE),
-            BlockOrder.of(2, OrderType.DELETE),
-            BlockOrder.of(4, OrderType.DELETE));
+            BlockOrder.create(1, OrderType.DELETE),
+            BlockOrder.create(2, OrderType.DELETE),
+            BlockOrder.create(4, OrderType.DELETE));
   }
 
   @Test

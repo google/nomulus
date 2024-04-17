@@ -14,7 +14,6 @@
 
 package google.registry.bsa.api;
 
-import com.google.auto.value.AutoValue;
 import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableSet;
@@ -24,17 +23,10 @@ import java.util.List;
  * A BSA label to block. New domains with matching second-level domain (SLD) will be denied
  * registration in TLDs enrolled with BSA.
  */
-@AutoValue
-public abstract class BlockLabel {
+public record BlockLabel(String label, LabelType labelType, ImmutableSet<String> idnTables) {
 
   static final Joiner JOINER = Joiner.on(',');
   static final Splitter SPLITTER = Splitter.on(',').trimResults();
-
-  public abstract String label();
-
-  public abstract LabelType labelType();
-
-  public abstract ImmutableSet<String> idnTables();
 
   public String serialize() {
     return JOINER.join(label(), labelType().name(), idnTables().stream().sorted().toArray());
@@ -43,7 +35,7 @@ public abstract class BlockLabel {
   public static BlockLabel deserialize(String text) {
     List<String> items = SPLITTER.splitToList(text);
     try {
-      return of(
+      return create(
           items.get(0),
           LabelType.valueOf(items.get(1)),
           ImmutableSet.copyOf(items.subList(2, items.size())));
@@ -52,8 +44,8 @@ public abstract class BlockLabel {
     }
   }
 
-  public static BlockLabel of(String label, LabelType type, ImmutableSet<String> idnTables) {
-    return new AutoValue_BlockLabel(label, type, idnTables);
+  public static BlockLabel create(String label, LabelType type, ImmutableSet<String> idnTables) {
+    return new BlockLabel(label, type, idnTables);
   }
 
   public enum LabelType {

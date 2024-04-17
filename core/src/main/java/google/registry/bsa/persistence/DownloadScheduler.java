@@ -100,15 +100,15 @@ public final class DownloadScheduler {
                     : Optional.empty();
               } else if (recentDownloads.size() == 1) {
                 // First job ever, still in progress
-                return Optional.of(DownloadSchedule.of(recentDownloads.get(0)));
+                return Optional.of(DownloadSchedule.create(recentDownloads.get(0)));
               } else {
                 // Job in progress, with completed previous jobs.
                 BsaDownload prev = recentDownloads.get(1);
                 verify(prev.getStage().equals(DONE), "Unexpectedly found two ongoing jobs.");
                 return Optional.of(
-                    DownloadSchedule.of(
+                    DownloadSchedule.create(
                         mostRecent,
-                        CompletedJob.of(prev),
+                        CompletedJob.create(prev),
                         isTimeAgain(mostRecent, maxNopInterval)));
               }
             });
@@ -127,8 +127,9 @@ public final class DownloadScheduler {
     return prevJob
         .map(
             prev ->
-                DownloadSchedule.of(job, CompletedJob.of(prev), isTimeAgain(prev, maxNopInterval)))
-        .orElseGet(() -> DownloadSchedule.of(job));
+                DownloadSchedule.create(
+                    job, CompletedJob.create(prev), isTimeAgain(prev, maxNopInterval)))
+        .orElseGet(() -> DownloadSchedule.create(job));
   }
 
   /**

@@ -28,7 +28,7 @@ class BlockLabelTest {
 
   @BeforeEach
   void setup() {
-    label = BlockLabel.of("buy", LabelType.CREATE, ImmutableSet.of("JA", "EXTENDED_LATIN"));
+    label = BlockLabel.create("buy", LabelType.CREATE, ImmutableSet.of("JA", "EXTENDED_LATIN"));
   }
 
   @Test
@@ -43,7 +43,7 @@ class BlockLabelTest {
 
   @Test
   void emptyIdns() {
-    label = BlockLabel.of("buy", LabelType.CREATE, ImmutableSet.of());
+    label = BlockLabel.create("buy", LabelType.CREATE, ImmutableSet.of());
     assertThat(label.serialize()).isEqualTo("buy,CREATE");
     assertThat(BlockLabel.deserialize("buy,CREATE")).isEqualTo(label);
   }

@@ -44,7 +44,7 @@ class JsonSerializationsTest {
                     "    \"status\": \"ActivationInProgress\"",
                     "  }",
                     "]"));
-    assertThat(toInProgressOrdersReport(Stream.of(BlockOrder.of(1, OrderType.CREATE))))
+    assertThat(toInProgressOrdersReport(Stream.of(BlockOrder.create(1, OrderType.CREATE))))
         .hasValue(expected);
   }
 
@@ -66,7 +66,9 @@ class JsonSerializationsTest {
                     "]"));
     assertThat(
             toInProgressOrdersReport(
-                Stream.of(BlockOrder.of(1, OrderType.CREATE), BlockOrder.of(2, OrderType.DELETE))))
+                Stream.of(
+                    BlockOrder.create(1, OrderType.CREATE),
+                    BlockOrder.create(2, OrderType.DELETE))))
         .hasValue(expected);
   }
 
@@ -82,7 +84,7 @@ class JsonSerializationsTest {
                     "    \"status\": \"Active\"",
                     "  }",
                     "]"));
-    assertThat(toCompletedOrdersReport(Stream.of(BlockOrder.of(1, OrderType.CREATE))))
+    assertThat(toCompletedOrdersReport(Stream.of(BlockOrder.create(1, OrderType.CREATE))))
         .hasValue(expected);
   }
 
@@ -104,7 +106,9 @@ class JsonSerializationsTest {
                     "]"));
     assertThat(
             toCompletedOrdersReport(
-                Stream.of(BlockOrder.of(1, OrderType.CREATE), BlockOrder.of(2, OrderType.DELETE))))
+                Stream.of(
+                    BlockOrder.create(1, OrderType.CREATE),
+                    BlockOrder.create(2, OrderType.DELETE))))
         .hasValue(expected);
   }
 

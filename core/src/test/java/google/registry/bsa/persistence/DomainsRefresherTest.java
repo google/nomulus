@@ -68,7 +68,7 @@ public class DomainsRefresherTest {
     tm().transact(() -> tm().insert(BsaUnblockableDomain.of("label.tld", Reason.REGISTERED)));
     assertThat(refresher.refreshStaleUnblockables())
         .containsExactly(
-            UnblockableDomainChange.ofDeleted(
+            UnblockableDomainChange.createDeleted(
                 new UnblockableDomain("label.tld", UnblockableDomain.Reason.REGISTERED)));
   }
 
@@ -78,7 +78,7 @@ public class DomainsRefresherTest {
     tm().transact(() -> tm().insert(BsaUnblockableDomain.of("label.tld", Reason.RESERVED)));
     assertThat(refresher.refreshStaleUnblockables())
         .containsExactly(
-            UnblockableDomainChange.ofDeleted(
+            UnblockableDomainChange.createDeleted(
                 new UnblockableDomain("label.tld", UnblockableDomain.Reason.RESERVED)));
   }
 
@@ -88,7 +88,7 @@ public class DomainsRefresherTest {
     persistBsaLabel("label");
     assertThat(refresher.getNewUnblockables())
         .containsExactly(
-            UnblockableDomainChange.ofNew(
+            UnblockableDomainChange.createNew(
                 new UnblockableDomain("label.tld", UnblockableDomain.Reason.REGISTERED)));
   }
 
@@ -99,7 +99,7 @@ public class DomainsRefresherTest {
     addReservedListsToTld("tld", ImmutableList.of("reservedList"));
     assertThat(refresher.getNewUnblockables())
         .containsExactly(
-            UnblockableDomainChange.ofNew(
+            UnblockableDomainChange.createNew(
                 new UnblockableDomain("label.tld", UnblockableDomain.Reason.RESERVED)));
   }
 
@@ -112,7 +112,7 @@ public class DomainsRefresherTest {
 
     assertThat(refresher.refreshStaleUnblockables())
         .containsExactly(
-            UnblockableDomainChange.ofChanged(
+            UnblockableDomainChange.createChanged(
                 new UnblockableDomain("label.tld", UnblockableDomain.Reason.REGISTERED),
                 UnblockableDomain.Reason.RESERVED));
   }
@@ -125,7 +125,7 @@ public class DomainsRefresherTest {
     persistResource(newDomain("label.tld"));
     assertThat(refresher.refreshStaleUnblockables())
         .containsExactly(
-            UnblockableDomainChange.ofChanged(
+            UnblockableDomainChange.createChanged(
                 new UnblockableDomain("label.tld", UnblockableDomain.Reason.RESERVED),
                 UnblockableDomain.Reason.REGISTERED));
   }
@@ -140,7 +140,7 @@ public class DomainsRefresherTest {
     persistResource(newDomain("label.tld"));
     assertThat(refresher.refreshStaleUnblockables())
         .containsExactly(
-            UnblockableDomainChange.ofChanged(
+            UnblockableDomainChange.createChanged(
                 new UnblockableDomain("label.tld", UnblockableDomain.Reason.RESERVED),
                 UnblockableDomain.Reason.REGISTERED));
   }

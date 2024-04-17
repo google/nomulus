@@ -21,7 +21,6 @@ import static com.google.common.collect.Maps.newHashMap;
 import static com.google.common.collect.Multimaps.newListMultimap;
 import static com.google.common.collect.Multimaps.toMultimap;
 
-import com.google.auto.value.AutoValue;
 import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
@@ -192,8 +191,8 @@ class BsaDiffCreator {
           newAndRemaining.values().stream()
               .filter(value -> !Objects.equals(ORDER_ID_SENTINEL, value))
               .distinct()
-              .map(id -> BlockOrder.of(id, OrderType.CREATE)),
-          deleted.values().stream().distinct().map(id -> BlockOrder.of(id, OrderType.DELETE)));
+              .map(id -> BlockOrder.create(id, OrderType.CREATE)),
+          deleted.values().stream().distinct().map(id -> BlockOrder.create(id, OrderType.DELETE)));
     }
 
     Stream<BlockLabel> getLabels() {
@@ -203,7 +202,7 @@ class BsaDiffCreator {
                   .filter(entry -> entry.getValue().contains(ORDER_ID_SENTINEL))
                   .map(
                       entry ->
-                          BlockLabel.of(
+                          BlockLabel.create(
                               entry.getKey(),
                               LabelType.NEW_ORDER_ASSOCIATION,
                               getAllValidIdnNames(entry.getKey()))),
@@ -212,12 +211,14 @@ class BsaDiffCreator {
                   .filter(entry -> !entry.getValue().contains(ORDER_ID_SENTINEL))
                   .map(
                       entry ->
-                          BlockLabel.of(
+                          BlockLabel.create(
                               entry.getKey(),
                               LabelType.CREATE,
                               getAllValidIdnNames(entry.getKey()))),
               Sets.difference(deleted.keySet(), newAndRemaining.keySet()).stream()
-                  .map(label -> BlockLabel.of(label, LabelType.DELETE, getAllValidIdnNames(label))))
+                  .map(
+                      label ->
+                          BlockLabel.create(label, LabelType.DELETE, getAllValidIdnNames(label))))
           .flatMap(x -> x);
     }
 
@@ -241,29 +242,21 @@ class BsaDiffCreator {
     }
   }
 
-  @AutoValue
-  abstract static class LabelOrderPair {
-    abstract String label();
-
-    abstract Long orderId();
+  record LabelOrderPair(String label, Long orderId) {
 
     static LabelOrderPair of(String key, Long value) {
-      return new AutoValue_BsaDiffCreator_LabelOrderPair(key, value);
+      return new LabelOrderPair(key, value);
     }
   }
 
-  @AutoValue
-  abstract static class Line {
-    abstract String label();
-
-    abstract ImmutableList<Long> orderIds();
+  record Line(String label, ImmutableList<Long> orderIds) {
 
     Stream<LabelOrderPair> labelOrderPairs(Canonicals<Long> canonicals) {
       return orderIds().stream().map(id -> LabelOrderPair.of(label(), canonicals.get(id)));
     }
 
     static Line of(String label, ImmutableList<Long> orderIds) {
-      return new AutoValue_BsaDiffCreator_Line(label, orderIds);
+      return new Line(label, orderIds);
     }
   }
 }
