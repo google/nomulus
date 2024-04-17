@@ -120,9 +120,9 @@
     <url><![CDATA[/_dr/cron/fanout?queue=retryable-cron-tasks&endpoint=/_dr/task/deleteProberData&runInEmpty]]></url>
     <name>deleteProberData</name>
     <description>
-      This job clears out data from probers and runs once a week.
+      This job clears out data from probers and runs once a day.
     </description>
-    <schedule>0 14 * * 1</schedule>
+    <schedule>0 14 * * *</schedule>
   </task>
 
   <task>
