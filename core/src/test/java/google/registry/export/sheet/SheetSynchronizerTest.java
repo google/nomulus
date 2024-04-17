@@ -114,7 +114,7 @@ class SheetSynchronizerTest {
   }
 
   @Test
-  void testSynchronize_unknownFields_doesntUpdate() throws Exception {
+  void testSynchronize_unknownFields_writesColumnHeaderErrorIntoCell() throws Exception {
     existingSheet.add(createRow("a", "c", "b"));
     existingSheet.add(createRow("diffVal1", "sameVal", "diffVal2"));
     data = ImmutableList.of(ImmutableMap.of("a", "val1", "b", "val2", "d", "val3"));
@@ -125,7 +125,7 @@ class SheetSynchronizerTest {
 
     BatchUpdateValuesRequest expectedRequest = new BatchUpdateValuesRequest();
     List<List<Object>> expectedVals = newArrayList();
-    expectedVals.add(createRow("val1", "sameVal", "val2"));
+    expectedVals.add(createRow("val1", "Invalid Sheet column header name", "val2"));
     expectedRequest.setData(
         newArrayList(new ValueRange().setRange("Registrars!A2").setValues(expectedVals)));
     expectedRequest.setValueInputOption("RAW");
@@ -133,7 +133,7 @@ class SheetSynchronizerTest {
   }
 
   @Test
-  void testSynchronize_notFullRow_getsPadded() throws Exception {
+  void testSynchronize_notFullRow_isHandledCorrectly() throws Exception {
     existingSheet.add(createRow("a", "c", "b"));
     existingSheet.add(createRow("diffVal1", "diffVal2"));
     data = ImmutableList.of(ImmutableMap.of("a", "val1", "b", "paddedVal", "d", "val3"));
@@ -144,7 +144,7 @@ class SheetSynchronizerTest {
 
     BatchUpdateValuesRequest expectedRequest = new BatchUpdateValuesRequest();
     List<List<Object>> expectedVals = newArrayList();
-    expectedVals.add(createRow("val1", "diffVal2", "paddedVal"));
+    expectedVals.add(createRow("val1", "Invalid Sheet column header name", "paddedVal"));
     expectedRequest.setData(
         newArrayList(new ValueRange().setRange("Registrars!A2").setValues(expectedVals)));
     expectedRequest.setValueInputOption("RAW");
