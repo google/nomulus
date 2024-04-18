@@ -75,7 +75,7 @@ import org.joda.time.DateTime;
     service = Service.BSA,
     path = "/_dr/task/uploadBsaUnavailableNames",
     method = {GET, POST},
-    auth = Auth.AUTH_API_ADMIN)
+    auth = Auth.AUTH_ADMIN)
 public class UploadBsaUnavailableDomainsAction implements Runnable {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();

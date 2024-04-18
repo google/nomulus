@@ -18,18 +18,16 @@ import static com.google.common.base.MoreObjects.toStringHelper;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
-import com.google.appengine.api.users.User;
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.Ascii;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSetMultimap;
 import com.google.common.flogger.FluentLogger;
 import dagger.Lazy;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.groups.GroupsConnection;
+import google.registry.model.console.User;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarBase.State;
-import google.registry.model.registrar.RegistrarPoc;
 import java.util.Optional;
 import javax.annotation.concurrent.Immutable;
 import javax.inject.Inject;
@@ -37,24 +35,23 @@ import javax.inject.Inject;
 /**
  * Allows access only to {@link Registrar}s the current user has access to.
  *
- * <p>A user has OWNER role on a Registrar if there exists a {@link RegistrarPoc} with that user's
- * gaeId and the registrar as a parent.
+ * <p>A user has OWNER role on a Registrar if there exists a mapping to the registrar in its {@link
+ * google.registry.model.console.UserRoles} map, regardless of the role.
  *
- * <p>An "admin" has in addition OWNER role on {@code #registryAdminRegistrarId} and to all
+ * <p>An "admin" has, in addition, OWNER role on {@code #registryAdminRegistrarId} and to all
  * non-{@code REAL} registrars (see {@link Registrar#getType}).
  *
  * <p>An "admin" also has ADMIN role on ALL registrars.
  *
- * <p>A user is an "admin" if they are a GAE-admin, or if their email is in the "Support" G Suite
- * group.
+ * <p>A user is an "admin" if it has global admin permission, or if their email is in the "Support"
+ * G Suite group.
  *
  * <p>NOTE: to check whether the user is in the "Support" G Suite group, we need a connection to G
- * Suite. This in turn requires we have valid JsonCredentials, which not all environments have set
- * up. This connection will be created lazily (only if needed).
+ * Suite. This, in turn, requires us to have valid JsonCredentials, which not all environments have
+ * set up. This connection will be created lazily (only if needed).
  *
  * <p>Specifically, we don't instantiate the connection if: (a) gSuiteSupportGroupEmailAddress isn't
- * defined, or (b) the user is logged out, or (c) the user is a GAE-admin, or (d) bypassAdminCheck
- * is true.
+ * defined, or (b) the user is logged out, or (c) the user is an admin.
  */
 @Immutable
 public class AuthenticatedRegistrarAccessor {
@@ -70,8 +67,8 @@ public class AuthenticatedRegistrarAccessor {
   private final String userIdForLogging;
 
   /**
-   * Whether this user is an Admin, meaning either a GAE-admin or a member of the Support G Suite
-   * group.
+   * Whether this user is an admin, meaning either they have global admin permission or a member of
+   * the Support G Suite group.
    */
   private final boolean isAdmin;
 
@@ -83,26 +80,6 @@ public class AuthenticatedRegistrarAccessor {
    * <p>Logged out users have an empty roleMap.
    */
   private final ImmutableSetMultimap<String, Role> roleMap;
-
-  /**
-   * Bypass the "isAdmin" check making all users NOT admins.
-   *
-   * <p>Currently our test server doesn't let you change the user after the test server was created.
-   * This means we'd need multiple test files to test the same actions as both a "regular" user and
-   * an admin.
-   *
-   * <p>To overcome this - we add a flag that lets you dynamically choose whether a user is an admin
-   * or not by creating a fake "GAE-admin" user and then bypassing the admin check if they want to
-   * fake a "regular" user.
-   *
-   * <p>The reason we don't do it the other way around (have a flag that makes anyone an admin) is
-   * that such a flag would be a security risk, especially since VisibleForTesting is unenforced
-   * (and you could set it with reflection anyway).
-   *
-   * <p>Instead of having a test flag that elevates permissions (which has security concerns) we add
-   * this flag that reduces permissions.
-   */
-  @VisibleForTesting public static boolean bypassAdminCheck = false;
 
   @Inject
   public AuthenticatedRegistrarAccessor(
@@ -140,9 +117,7 @@ public class AuthenticatedRegistrarAccessor {
     return new AuthenticatedRegistrarAccessor("TestUserId", isAdmin, roleMap);
   }
 
-  /**
-   * Returns whether this user is allowed to create new Registrars and TLDs.
-   */
+  /** Returns whether this user is allowed to create new Registrars and TLDs. */
   public boolean isAdmin() {
     return isAdmin;
   }
@@ -282,53 +257,39 @@ public class AuthenticatedRegistrarAccessor {
       AuthResult authResult,
       Optional<String> gSuiteSupportGroupEmailAddress,
       Lazy<GroupsConnection> lazyGroupsConnection) {
-    if (authResult.userAuthInfo().isEmpty()) {
+    if (authResult.user().isEmpty()) {
       return false;
     }
 
-    UserAuthInfo userAuthInfo = authResult.userAuthInfo().get();
-    // both GAE project admin and members of the gSuiteSupportGroupEmailAddress are considered
-    // admins for the RegistrarConsole.
-    return !bypassAdminCheck
-        && (userAuthInfo.isUserAdmin()
-            || checkIsSupport(
-                lazyGroupsConnection,
-                userAuthInfo.getEmailAddress(),
-                gSuiteSupportGroupEmailAddress));
+    User user = authResult.user().get();
+    // both user object with admin permission and members of the gSuiteSupportGroupEmailAddress are
+    // considered admins for the RegistrarConsole.
+    return user.getUserRoles().isAdmin()
+        || checkIsSupport(
+            lazyGroupsConnection, user.getEmailAddress(), gSuiteSupportGroupEmailAddress);
   }
 
   /** Returns a map of registrar IDs to roles for all registrars that the user has access to. */
   private static ImmutableSetMultimap<String, Role> createRoleMap(
       AuthResult authResult, boolean isAdmin, String registryAdminRegistrarId) {
-    if (authResult.userAuthInfo().isEmpty()) {
+    if (authResult.user().isEmpty()) {
       return ImmutableSetMultimap.of();
     }
     ImmutableSetMultimap.Builder<String, Role> builder = new ImmutableSetMultimap.Builder<>();
-    UserAuthInfo userAuthInfo = authResult.userAuthInfo().get();
-    if (userAuthInfo.appEngineUser().isPresent()) {
-      User user = userAuthInfo.appEngineUser().get();
-      logger.atInfo().log("Checking registrar contacts for user ID %s.", user.getEmail());
-
-      // Find all registrars that have a registrar contact with this user's ID.
-      tm().transact(
-              () ->
-                  tm().query(
-                          "SELECT r FROM Registrar r INNER JOIN RegistrarPoc rp ON r.registrarId ="
-                              + " rp.registrarId WHERE lower(rp.loginEmailAddress) = :email AND"
-                              + " r.state != :state",
-                          Registrar.class)
-                      .setParameter("email", Ascii.toLowerCase(user.getEmail()))
-                      .setParameter("state", State.DISABLED)
-                      .getResultStream()
-                      .forEach(registrar -> builder.put(registrar.getRegistrarId(), Role.OWNER)));
-    } else {
-      userAuthInfo
-          .consoleUser()
-          .get()
-          .getUserRoles()
-          .getRegistrarRoles()
-          .forEach((k, v) -> builder.put(k, Role.OWNER));
-    }
+    authResult
+        .user()
+        .get()
+        .getUserRoles()
+        .getRegistrarRoles()
+        .forEach(
+            (k, v) ->
+                Registrar.loadByRegistrarId(k)
+                    .ifPresent(
+                        registrar -> {
+                          if (registrar.getState() != State.DISABLED) {
+                            builder.put(k, Role.OWNER);
+                          }
+                        }));
 
     // Admins have ADMIN access to all registrars, and also OWNER access to the registry registrar
     // and all non-REAL or non-live registrars.

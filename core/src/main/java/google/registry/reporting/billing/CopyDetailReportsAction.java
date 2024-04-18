@@ -47,7 +47,7 @@ import javax.inject.Inject;
     service = Action.Service.BACKEND,
     path = CopyDetailReportsAction.PATH,
     method = POST,
-    auth = Auth.AUTH_API_ADMIN)
+    auth = Auth.AUTH_ADMIN)
 public final class CopyDetailReportsAction implements Runnable {
 
   public static final String PATH = "/_dr/task/copyDetailReports";

@@ -81,7 +81,7 @@ import javax.inject.Inject;
     service = Action.Service.BACKEND,
     path = "/_dr/cron/fanout",
     automaticallyPrintOk = true,
-    auth = Auth.AUTH_API_ADMIN)
+    auth = Auth.AUTH_ADMIN)
 public final class TldFanoutAction implements Runnable {
 
   /** A set of control params to TldFanoutAction that aren't passed down to the executing action. */

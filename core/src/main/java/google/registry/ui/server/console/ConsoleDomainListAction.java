@@ -88,7 +88,7 @@ public class ConsoleDomainListAction implements JsonGetAction {
 
   @Override
   public void run() {
-    User user = authResult.userAuthInfo().get().consoleUser().get();
+    User user = authResult.user().get();
     if (!user.getUserRoles().hasPermission(registrarId, DOWNLOAD_DOMAINS)) {
       response.setStatus(HttpStatusCodes.STATUS_CODE_FORBIDDEN);
       return;

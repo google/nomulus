@@ -47,11 +47,7 @@ import org.joda.time.DateTime;
  * @see WhoisHttpAction
  * @see <a href="http://www.ietf.org/rfc/rfc3912.txt">RFC 3912: WHOIS Protocol Specification</a>
  */
-@Action(
-    service = Action.Service.PUBAPI,
-    path = "/_dr/whois",
-    method = POST,
-    auth = Auth.AUTH_API_ADMIN)
+@Action(service = Action.Service.PUBAPI, path = "/_dr/whois", method = POST, auth = Auth.AUTH_ADMIN)
 public class WhoisAction implements Runnable {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();

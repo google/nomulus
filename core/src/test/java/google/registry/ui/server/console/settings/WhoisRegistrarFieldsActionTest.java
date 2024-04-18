@@ -34,7 +34,6 @@ import google.registry.request.RequestModule;
 import google.registry.request.auth.AuthResult;
 import google.registry.request.auth.AuthenticatedRegistrarAccessor;
 import google.registry.request.auth.AuthenticatedRegistrarAccessor.Role;
-import google.registry.request.auth.UserAuthInfo;
 import google.registry.testing.DatabaseHelper;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeResponse;
@@ -126,15 +125,14 @@ public class WhoisRegistrarFieldsActionTest {
     Registrar newRegistrar = Registrar.loadByRegistrarIdCached("NewRegistrar").get();
     AuthResult onlyTheRegistrar =
         AuthResult.createUser(
-            UserAuthInfo.create(
-                new User.Builder()
-                    .setEmailAddress("email@email.example")
-                    .setUserRoles(
-                        new UserRoles.Builder()
-                            .setRegistrarRoles(
-                                ImmutableMap.of("TheRegistrar", RegistrarRole.PRIMARY_CONTACT))
-                            .build())
-                    .build()));
+            new User.Builder()
+                .setEmailAddress("email@email.example")
+                .setUserRoles(
+                    new UserRoles.Builder()
+                        .setRegistrarRoles(
+                            ImmutableMap.of("TheRegistrar", RegistrarRole.PRIMARY_CONTACT))
+                        .build())
+                .build());
     uiRegistrarMap.put("registrarId", "NewRegistrar");
     WhoisRegistrarFieldsAction action = createAction(onlyTheRegistrar);
     action.run();
@@ -144,8 +142,7 @@ public class WhoisRegistrarFieldsActionTest {
   }
 
   private AuthResult defaultUserAuth() {
-    return AuthResult.createUser(
-        UserAuthInfo.create(DatabaseHelper.createAdminUser("email@email.example")));
+    return AuthResult.createUser(DatabaseHelper.createAdminUser("email@email.example"));
   }
 
   private WhoisRegistrarFieldsAction createAction() throws IOException {

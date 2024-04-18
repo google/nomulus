@@ -33,7 +33,6 @@ import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.request.RequestModule;
 import google.registry.request.auth.AuthResult;
 import google.registry.request.auth.AuthenticatedRegistrarAccessor;
-import google.registry.request.auth.UserAuthInfo;
 import google.registry.testing.DatabaseHelper;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeResponse;
@@ -89,8 +88,7 @@ class SecurityActionTest {
     clock.setTo(DateTime.parse("2020-11-01T00:00:00Z"));
     SecurityAction action =
         createAction(
-            AuthResult.createUser(
-                UserAuthInfo.create(DatabaseHelper.createAdminUser("email@email.com"))),
+            AuthResult.createUser(DatabaseHelper.createAdminUser("email@email.com")),
             testRegistrar.getRegistrarId());
     action.run();
     assertThat(response.getStatus()).isEqualTo(HttpStatusCodes.STATUS_CODE_OK);

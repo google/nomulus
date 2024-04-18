@@ -28,7 +28,6 @@ import google.registry.model.EppResourceUtils;
 import google.registry.model.domain.Domain;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.request.auth.AuthResult;
-import google.registry.request.auth.UserAuthInfo;
 import google.registry.testing.DatabaseHelper;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeResponse;
@@ -229,8 +228,7 @@ public class ConsoleDomainListActionTest {
       @Nullable Long totalResults,
       @Nullable String searchTerm) {
     response = new FakeResponse();
-    AuthResult authResult =
-        AuthResult.createUser(UserAuthInfo.create(createAdminUser("email@email.example")));
+    AuthResult authResult = AuthResult.createUser(createAdminUser("email@email.example"));
     return new ConsoleDomainListAction(
         authResult,
         response,
