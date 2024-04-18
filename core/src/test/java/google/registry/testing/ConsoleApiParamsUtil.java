@@ -16,31 +16,19 @@ package google.registry.testing;
 
 import static org.mockito.Mockito.mock;
 
-import com.google.appengine.api.users.UserService;
 import google.registry.request.auth.AuthResult;
-import google.registry.request.auth.UserAuthInfo;
 import google.registry.security.XsrfTokenManager;
 import google.registry.ui.server.registrar.ConsoleApiParams;
 import jakarta.servlet.http.HttpServletRequest;
-import java.util.Optional;
 import org.joda.time.DateTime;
 
-public final class FakeConsoleApiParams {
+public final class ConsoleApiParamsUtil {
 
-  public static ConsoleApiParams get(Optional<AuthResult> maybeAuthResult) {
-    AuthResult authResult =
-        maybeAuthResult.orElseGet(
-            () ->
-                AuthResult.createUser(
-                    UserAuthInfo.create(
-                        new com.google.appengine.api.users.User(
-                            "JohnDoe@theregistrar.com", "theregistrar.com"),
-                        false)));
+  public static ConsoleApiParams createFake(AuthResult authResult) {
     return ConsoleApiParams.create(
         mock(HttpServletRequest.class),
         new FakeResponse(),
         authResult,
-        new XsrfTokenManager(
-            new FakeClock(DateTime.parse("2020-02-02T01:23:45Z")), mock(UserService.class)));
+        new XsrfTokenManager(new FakeClock(DateTime.parse("2020-02-02T01:23:45Z"))));
   }
 }

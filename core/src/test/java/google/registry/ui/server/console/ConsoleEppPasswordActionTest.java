@@ -39,14 +39,13 @@ import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.request.Action;
 import google.registry.request.auth.AuthResult;
 import google.registry.request.auth.AuthenticatedRegistrarAccessor;
-import google.registry.request.auth.UserAuthInfo;
-import google.registry.testing.FakeConsoleApiParams;
+import google.registry.security.XsrfTokenManager;
+import google.registry.testing.ConsoleApiParamsUtil;
 import google.registry.testing.FakeResponse;
 import google.registry.tools.GsonUtils;
 import google.registry.ui.server.registrar.ConsoleApiParams;
 import google.registry.util.EmailMessage;
 import jakarta.servlet.http.Cookie;
-import java.util.Optional;
 import javax.mail.internet.AddressException;
 import javax.mail.internet.InternetAddress;
 import org.junit.jupiter.api.BeforeEach;
@@ -192,15 +191,15 @@ class ConsoleEppPasswordActionTest {
             .setUserRoles(new UserRoles.Builder().setGlobalRole(GlobalRole.FTE).build())
             .build();
 
-    AuthResult authResult = AuthResult.createUser(UserAuthInfo.create(user));
-    consoleApiParams = FakeConsoleApiParams.get(Optional.of(authResult));
+    AuthResult authResult = AuthResult.createUser(user);
+    consoleApiParams = ConsoleApiParamsUtil.createFake(authResult);
     AuthenticatedRegistrarAccessor authenticatedRegistrarAccessor =
         AuthenticatedRegistrarAccessor.createForTesting(
             ImmutableSetMultimap.of("registrarId", OWNER));
     Cookie cookie =
         new Cookie(
-            consoleApiParams.xsrfTokenManager().X_CSRF_TOKEN,
-            consoleApiParams.xsrfTokenManager().generateToken(""));
+            XsrfTokenManager.X_CSRF_TOKEN,
+            consoleApiParams.xsrfTokenManager().generateToken("email@email.com"));
     when(consoleApiParams.request().getMethod()).thenReturn(Action.Method.POST.toString());
     when(consoleApiParams.request().getCookies()).thenReturn(new Cookie[] {cookie});
 

@@ -30,7 +30,6 @@ import google.registry.model.console.UserRoles;
 import google.registry.model.domain.Domain;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.request.auth.AuthResult;
-import google.registry.request.auth.UserAuthInfo;
 import google.registry.testing.DatabaseHelper;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeResponse;
@@ -233,11 +232,10 @@ public class ConsoleDomainListActionTest {
     response = new FakeResponse();
     AuthResult authResult =
         AuthResult.createUser(
-            UserAuthInfo.create(
-                new User.Builder()
-                    .setEmailAddress("email@email.example")
-                    .setUserRoles(new UserRoles.Builder().setGlobalRole(GlobalRole.FTE).build())
-                    .build()));
+            new User.Builder()
+                .setEmailAddress("email@email.example")
+                .setUserRoles(new UserRoles.Builder().setGlobalRole(GlobalRole.FTE).build())
+                .build());
     return new ConsoleDomainListAction(
         authResult,
         response,

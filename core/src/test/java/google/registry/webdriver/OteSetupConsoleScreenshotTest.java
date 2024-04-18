@@ -14,11 +14,14 @@
 
 package google.registry.webdriver;
 
+import static google.registry.model.console.RegistrarRole.ACCOUNT_MANAGER;
 import static google.registry.server.Fixture.BASIC;
 import static google.registry.server.Route.route;
 
+import com.google.common.collect.ImmutableMap;
 import google.registry.module.frontend.FrontendServlet;
 import google.registry.server.RegistryTestServer;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.junitpioneer.jupiter.RetryingTest;
 import org.openqa.selenium.By;
@@ -34,6 +37,11 @@ public class OteSetupConsoleScreenshotTest extends WebDriverTestCase {
           .setFixtures(BASIC)
           .setEmail("Marla.Singer@google.com")
           .build();
+
+  @BeforeEach
+  void beforeEach() {
+    server.setRegistrarRoles(ImmutableMap.of("TheRegistrar", ACCOUNT_MANAGER));
+  }
 
   @RetryingTest(3)
   void get_owner_fails() throws Throwable {

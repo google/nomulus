@@ -27,7 +27,6 @@ import google.registry.request.Parameter;
 import google.registry.request.Response;
 import google.registry.request.auth.Auth;
 import google.registry.request.auth.AuthResult;
-import google.registry.request.auth.UserAuthInfo;
 import google.registry.ui.server.registrar.JsonGetAction;
 import java.util.Optional;
 import javax.inject.Inject;
@@ -60,16 +59,12 @@ public class ConsoleDomainGetAction implements JsonGetAction {
 
   @Override
   public void run() {
-    if (!authResult.isAuthenticated() || authResult.userAuthInfo().isEmpty()) {
+    if (!authResult.isAuthenticated() || authResult.user().isEmpty()) {
       response.setStatus(HttpStatusCodes.STATUS_CODE_UNAUTHORIZED);
       return;
     }
-    UserAuthInfo authInfo = authResult.userAuthInfo().get();
-    if (authInfo.consoleUser().isEmpty()) {
-      response.setStatus(HttpStatusCodes.STATUS_CODE_UNAUTHORIZED);
-      return;
-    }
-    User user = authInfo.consoleUser().get();
+
+    User user = authResult.user().get();
     Optional<Domain> possibleDomain =
         tm().transact(
                 () ->

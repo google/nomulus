@@ -53,7 +53,7 @@ import org.joda.time.Duration;
     path = RelockDomainAction.PATH,
     method = POST,
     automaticallyPrintOk = true,
-    auth = Auth.AUTH_API_ADMIN)
+    auth = Auth.AUTH_ADMIN)
 public class RelockDomainAction implements Runnable {
 
   public static final String PATH = "/_dr/task/relockDomain";

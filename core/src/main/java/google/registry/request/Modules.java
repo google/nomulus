@@ -18,8 +18,6 @@ import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport;
 import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.JsonFactory;
 import com.google.api.client.json.gson.GsonFactory;
-import com.google.appengine.api.users.UserService;
-import com.google.appengine.api.users.UserServiceFactory;
 import dagger.Module;
 import dagger.Provides;
 import java.net.HttpURLConnection;
@@ -37,25 +35,13 @@ public final class Modules {
     static UrlConnectionService provideUrlConnectionService() {
       return url -> {
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-        if (connection instanceof HttpsURLConnection) {
-          HttpsURLConnection httpsConnection = (HttpsURLConnection) connection;
+        if (connection instanceof HttpsURLConnection httpsConnection) {
           SSLContext tls13Context = SSLContext.getInstance("TLSv1.3");
           tls13Context.init(null, null, null);
           httpsConnection.setSSLSocketFactory(tls13Context.getSocketFactory());
         }
         return connection;
       };
-    }
-  }
-
-  /** Dagger module for {@link UserService}. */
-  @Module
-  public static final class UserServiceModule {
-    private static final UserService userService = UserServiceFactory.getUserService();
-
-    @Provides
-    static UserService provideUserService() {
-      return userService;
     }
   }
 
@@ -68,10 +54,7 @@ public final class Modules {
     }
   }
 
-  /**
-   * Dagger module that provides standard {@link NetHttpTransport}. Used in non App Engine
-   * environment.
-   */
+  /** Dagger module that provides standard {@link NetHttpTransport}. */
   @Module
   public static final class NetHttpTransportModule {
 
