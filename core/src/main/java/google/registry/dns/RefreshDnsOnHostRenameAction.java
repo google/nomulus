@@ -33,11 +33,7 @@ import google.registry.request.auth.Auth;
 import javax.inject.Inject;
 import org.joda.time.DateTime;
 
-@Action(
-    service = Service.BACKEND,
-    path = PATH,
-    method = Action.Method.POST,
-    auth = Auth.AUTH_API_ADMIN)
+@Action(service = Service.BACKEND, path = PATH, method = Action.Method.POST, auth = Auth.AUTH_ADMIN)
 public class RefreshDnsOnHostRenameAction implements Runnable {
 
   public static final String QUEUE_HOST_RENAME = "async-host-rename";

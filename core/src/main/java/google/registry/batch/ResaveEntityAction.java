@@ -40,7 +40,7 @@ import org.joda.time.DateTime;
 @Action(
     service = Action.Service.BACKEND,
     path = ResaveEntityAction.PATH,
-    auth = Auth.AUTH_API_ADMIN,
+    auth = Auth.AUTH_ADMIN,
     method = Method.POST)
 public class ResaveEntityAction implements Runnable {
 

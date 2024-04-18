@@ -29,7 +29,7 @@ import javax.inject.Inject;
     service = Action.Service.DEFAULT,
     path = "/_dr/epp",
     method = Method.POST,
-    auth = Auth.AUTH_API_ADMIN)
+    auth = Auth.AUTH_ADMIN)
 public class EppTlsAction implements Runnable {
 
   @Inject @Payload byte[] inputXmlBytes;

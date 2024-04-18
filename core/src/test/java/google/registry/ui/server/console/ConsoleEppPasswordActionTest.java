@@ -40,8 +40,7 @@ import google.registry.request.Action;
 import google.registry.request.RequestModule;
 import google.registry.request.auth.AuthResult;
 import google.registry.request.auth.AuthenticatedRegistrarAccessor;
-import google.registry.request.auth.UserAuthInfo;
-import google.registry.testing.FakeConsoleApiParams;
+import google.registry.testing.ConsoleApiParamsUtils;
 import google.registry.testing.FakeResponse;
 import google.registry.tools.GsonUtils;
 import google.registry.ui.server.console.ConsoleEppPasswordAction.EppPasswordData;
@@ -157,8 +156,8 @@ class ConsoleEppPasswordActionTest {
             .setUserRoles(new UserRoles.Builder().setGlobalRole(GlobalRole.FTE).build())
             .build();
 
-    AuthResult authResult = AuthResult.createUser(UserAuthInfo.create(user));
-    consoleApiParams = FakeConsoleApiParams.get(Optional.of(authResult));
+    AuthResult authResult = AuthResult.createUser(user);
+    consoleApiParams = ConsoleApiParamsUtils.createFake(authResult);
     AuthenticatedRegistrarAccessor authenticatedRegistrarAccessor =
         AuthenticatedRegistrarAccessor.createForTesting(
             ImmutableSetMultimap.of("registrarId", OWNER));
