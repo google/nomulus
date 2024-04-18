@@ -18,8 +18,6 @@ import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport;
 import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.JsonFactory;
 import com.google.api.client.json.gson.GsonFactory;
-import com.google.appengine.api.users.UserService;
-import com.google.appengine.api.users.UserServiceFactory;
 import dagger.Module;
 import dagger.Provides;
 import java.net.HttpURLConnection;
@@ -47,17 +45,6 @@ public final class Modules {
     }
   }
 
-  /** Dagger module for {@link UserService}. */
-  @Module
-  public static final class UserServiceModule {
-    private static final UserService userService = UserServiceFactory.getUserService();
-
-    @Provides
-    static UserService provideUserService() {
-      return userService;
-    }
-  }
-
   /** Dagger module that causes the Google GSON parser to be used for Google APIs requests. */
   @Module
   public static final class GsonModule {
@@ -67,10 +54,7 @@ public final class Modules {
     }
   }
 
-  /**
-   * Dagger module that provides standard {@link NetHttpTransport}. Used in non App Engine
-   * environment.
-   */
+  /** Dagger module that provides standard {@link NetHttpTransport}. */
   @Module
   public static final class NetHttpTransportModule {
 

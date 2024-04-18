@@ -58,7 +58,7 @@ import org.joda.time.DateTime;
     path = LoadTestAction.PATH,
     method = Action.Method.POST,
     automaticallyPrintOk = true,
-    auth = Auth.AUTH_API_ADMIN)
+    auth = Auth.AUTH_ADMIN)
 public class LoadTestAction implements Runnable {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
@@ -350,9 +350,8 @@ public class LoadTestAction implements Runnable {
                       .toBuilder()
                       .getAppEngineHttpRequest()
                       .toBuilder()
-                      // instead of adding the X_CSRF_TOKEN to params, this remains as part of
-                      // headers because of the existing setup for authentication in {@link
-                      // google.registry.request.auth.LegacyAuthenticationMechanism}
+                      // TODO: investigate if the following is necessary now that
+                      // LegacyAuthenticationMechanism is gone.
                       .putHeaders(X_CSRF_TOKEN, xsrfToken)
                       .build())
               .setScheduleTime(

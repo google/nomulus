@@ -55,7 +55,7 @@ import javax.inject.Inject;
 @Action(
     service = Action.Service.BACKEND,
     path = ResaveAllEppResourcesPipelineAction.PATH,
-    auth = Auth.AUTH_API_ADMIN)
+    auth = Auth.AUTH_ADMIN)
 public class ResaveAllEppResourcesPipelineAction implements Runnable {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();

@@ -70,7 +70,7 @@ import org.joda.time.Duration;
     service = Action.Service.BSA,
     path = BsaValidateAction.PATH,
     method = {GET, POST},
-    auth = Auth.AUTH_API_ADMIN)
+    auth = Auth.AUTH_ADMIN)
 public class BsaValidateAction implements Runnable {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();

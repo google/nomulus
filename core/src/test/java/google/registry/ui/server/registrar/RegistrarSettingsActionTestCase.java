@@ -27,7 +27,6 @@ import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.google.appengine.api.users.User;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -35,6 +34,8 @@ import com.google.common.collect.ImmutableSetMultimap;
 import com.google.common.collect.ImmutableSortedMap;
 import google.registry.flows.certs.CertificateChecker;
 import google.registry.groups.GmailClient;
+import google.registry.model.console.User;
+import google.registry.model.console.UserRoles;
 import google.registry.model.registrar.RegistrarPoc;
 import google.registry.model.registrar.RegistrarPocBase;
 import google.registry.persistence.transaction.JpaTestExtensions;
@@ -44,7 +45,6 @@ import google.registry.request.JsonResponse;
 import google.registry.request.ResponseImpl;
 import google.registry.request.auth.AuthResult;
 import google.registry.request.auth.AuthenticatedRegistrarAccessor;
-import google.registry.request.auth.UserAuthInfo;
 import google.registry.testing.CloudTasksHelper;
 import google.registry.testing.FakeClock;
 import google.registry.ui.server.SendEmailUtils;
@@ -110,7 +110,10 @@ public abstract class RegistrarSettingsActionTestCase {
     action.registrarConsoleMetrics = new RegistrarConsoleMetrics();
     action.authResult =
         AuthResult.createUser(
-            UserAuthInfo.create(new User("user@email.com", "email.com", "12345"), false));
+            new User.Builder()
+                .setEmailAddress("user@email.com")
+                .setUserRoles(new UserRoles())
+                .build());
     action.certificateChecker =
         new CertificateChecker(
             ImmutableSortedMap.of(START_OF_TIME, 825, DateTime.parse("2020-09-01T00:00:00Z"), 398),
