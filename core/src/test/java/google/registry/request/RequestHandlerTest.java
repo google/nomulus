@@ -17,7 +17,7 @@ package google.registry.request;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.request.Action.Method.GET;
 import static google.registry.request.Action.Method.POST;
-import static google.registry.request.auth.Auth.AUTH_API_ADMIN;
+import static google.registry.request.auth.Auth.AUTH_ADMIN;
 import static google.registry.request.auth.Auth.AUTH_PUBLIC;
 import static google.registry.request.auth.AuthResult.NOT_AUTHENTICATED;
 import static org.mockito.ArgumentMatchers.any;
@@ -28,13 +28,13 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
-import com.google.appengine.api.users.User;
 import com.google.common.testing.NullPointerTester;
+import google.registry.model.console.User;
+import google.registry.model.console.UserRoles;
 import google.registry.request.HttpException.ServiceUnavailableException;
 import google.registry.request.auth.AuthResult;
 import google.registry.request.auth.AuthSettings.AuthLevel;
 import google.registry.request.auth.RequestAuthenticator;
-import google.registry.request.auth.UserAuthInfo;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.PrintWriter;
@@ -122,7 +122,7 @@ public final class RequestHandlerTest {
   @Action(
       service = Action.Service.DEFAULT,
       path = "/auth/adminUser",
-      auth = AUTH_API_ADMIN,
+      auth = AUTH_ADMIN,
       method = GET)
   public class AuthAdminUserAction extends AuthBase {
     AuthAdminUserAction(AuthResult authResult) {
@@ -192,7 +192,11 @@ public final class RequestHandlerTest {
   private final StringWriter httpOutput = new StringWriter();
   private RequestHandler<Component> handler;
   private AuthResult providedAuthResult = null;
-  private final User testUser = new User("test@example.com", "test@example.com");
+  private final User testUser =
+      new User.Builder()
+          .setEmailAddress("test@example.com")
+          .setUserRoles(new UserRoles.Builder().setIsAdmin(true).build())
+          .build();
 
   @BeforeEach
   void beforeEach() throws Exception {
@@ -418,7 +422,7 @@ public final class RequestHandlerTest {
 
     assertThat(providedAuthResult).isNotNull();
     assertThat(providedAuthResult.authLevel()).isEqualTo(AuthLevel.NONE);
-    assertThat(providedAuthResult.userAuthInfo()).isEmpty();
+    assertThat(providedAuthResult.user()).isEmpty();
     assertMetric("/auth/none", GET, AuthLevel.NONE, true);
   }
 
@@ -426,7 +430,7 @@ public final class RequestHandlerTest {
   void testAuthNeeded_failure() throws Exception {
     when(req.getMethod()).thenReturn("GET");
     when(req.getRequestURI()).thenReturn("/auth/adminUser");
-    when(requestAuthenticator.authorize(AUTH_API_ADMIN.authSettings(), req))
+    when(requestAuthenticator.authorize(AUTH_ADMIN.authSettings(), req))
         .thenReturn(Optional.empty());
 
     handler.handleRequest(req, rsp);
@@ -439,15 +443,15 @@ public final class RequestHandlerTest {
   void testAuthNeeded_success() throws Exception {
     when(req.getMethod()).thenReturn("GET");
     when(req.getRequestURI()).thenReturn("/auth/adminUser");
-    when(requestAuthenticator.authorize(AUTH_API_ADMIN.authSettings(), req))
-        .thenReturn(Optional.of(AuthResult.createUser(UserAuthInfo.create(testUser, true))));
+    when(requestAuthenticator.authorize(AUTH_ADMIN.authSettings(), req))
+        .thenReturn(Optional.of(AuthResult.createUser(testUser)));
 
     handler.handleRequest(req, rsp);
 
     assertThat(providedAuthResult).isNotNull();
     assertThat(providedAuthResult.authLevel()).isEqualTo(AuthLevel.USER);
-    assertThat(providedAuthResult.userAuthInfo()).isPresent();
-    assertThat(providedAuthResult.userAuthInfo().get().appEngineUser()).hasValue(testUser);
+    assertThat(providedAuthResult.user()).isPresent();
+    assertThat(providedAuthResult.user()).hasValue(testUser);
     assertMetric("/auth/adminUser", GET, AuthLevel.USER, true);
   }
 }

@@ -1,38 +1,38 @@
-PATH                                               CLASS                                          METHODS  OK AUTH_METHODS MIN USER_POLICY
-/_dr/cron/fanout                                   TldFanoutAction                                GET      y  API          APP ADMIN
-/_dr/dnsRefresh                                    RefreshDnsAction                               GET      y  API          APP ADMIN
-/_dr/task/brdaCopy                                 BrdaCopyAction                                 POST     y  API          APP ADMIN
-/_dr/task/copyDetailReports                        CopyDetailReportsAction                        POST     n  API          APP ADMIN
-/_dr/task/deleteExpiredDomains                     DeleteExpiredDomainsAction                     GET      n  API          APP ADMIN
-/_dr/task/deleteLoadTestData                       DeleteLoadTestDataAction                       POST     n  API          APP ADMIN
-/_dr/task/deleteProberData                         DeleteProberDataAction                         POST     n  API          APP ADMIN
-/_dr/task/executeCannedScript                      CannedScriptExecutionAction                    POST,GET y  API          APP ADMIN
-/_dr/task/expandBillingRecurrences                 ExpandBillingRecurrencesAction                 GET      n  API          APP ADMIN
-/_dr/task/exportDomainLists                        ExportDomainListsAction                        POST     n  API          APP ADMIN
-/_dr/task/exportPremiumTerms                       ExportPremiumTermsAction                       POST     n  API          APP ADMIN
-/_dr/task/exportReservedTerms                      ExportReservedTermsAction                      POST     n  API          APP ADMIN
-/_dr/task/generateInvoices                         GenerateInvoicesAction                         POST     n  API          APP ADMIN
-/_dr/task/generateSpec11                           GenerateSpec11ReportAction                     POST     n  API          APP ADMIN
-/_dr/task/icannReportingStaging                    IcannReportingStagingAction                    POST     n  API          APP ADMIN
-/_dr/task/icannReportingUpload                     IcannReportingUploadAction                     POST     n  API          APP ADMIN
-/_dr/task/nordnUpload                              NordnUploadAction                              POST     y  API          APP ADMIN
-/_dr/task/nordnVerify                              NordnVerifyAction                              POST     y  API          APP ADMIN
-/_dr/task/publishDnsUpdates                        PublishDnsUpdatesAction                        POST     y  API          APP ADMIN
-/_dr/task/publishInvoices                          PublishInvoicesAction                          POST     n  API          APP ADMIN
-/_dr/task/publishSpec11                            PublishSpec11ReportAction                      POST     n  API          APP ADMIN
-/_dr/task/rdeReport                                RdeReportAction                                POST     n  API          APP ADMIN
-/_dr/task/rdeStaging                               RdeStagingAction                               GET,POST n  API          APP ADMIN
-/_dr/task/rdeUpload                                RdeUploadAction                                POST     n  API          APP ADMIN
-/_dr/task/readDnsRefreshRequests                   ReadDnsRefreshRequestsAction                   POST     y  API          APP ADMIN
-/_dr/task/refreshDnsOnHostRename                   RefreshDnsOnHostRenameAction                   POST     n  API          APP ADMIN
-/_dr/task/relockDomain                             RelockDomainAction                             POST     y  API          APP ADMIN
-/_dr/task/resaveAllEppResourcesPipeline            ResaveAllEppResourcesPipelineAction            GET      n  API          APP ADMIN
-/_dr/task/resaveEntity                             ResaveEntityAction                             POST     n  API          APP ADMIN
-/_dr/task/sendExpiringCertificateNotificationEmail SendExpiringCertificateNotificationEmailAction GET      n  API          APP ADMIN
-/_dr/task/syncGroupMembers                         SyncGroupMembersAction                         POST     n  API          APP ADMIN
-/_dr/task/syncRegistrarsSheet                      SyncRegistrarsSheetAction                      POST     n  API          APP ADMIN
-/_dr/task/tmchCrl                                  TmchCrlAction                                  POST     y  API          APP ADMIN
-/_dr/task/tmchDnl                                  TmchDnlAction                                  POST     y  API          APP ADMIN
-/_dr/task/tmchSmdrl                                TmchSmdrlAction                                POST     y  API          APP ADMIN
-/_dr/task/updateRegistrarRdapBaseUrls              UpdateRegistrarRdapBaseUrlsAction              GET      y  API          APP ADMIN
-/_dr/task/wipeOutContactHistoryPii                 WipeOutContactHistoryPiiAction                 GET      n  API          APP ADMIN
+PATH                                               CLASS                                          METHODS  OK MIN USER_POLICY
+/_dr/cron/fanout                                   TldFanoutAction                                GET      y  APP ADMIN
+/_dr/dnsRefresh                                    RefreshDnsAction                               GET      y  APP ADMIN
+/_dr/task/brdaCopy                                 BrdaCopyAction                                 POST     y  APP ADMIN
+/_dr/task/copyDetailReports                        CopyDetailReportsAction                        POST     n  APP ADMIN
+/_dr/task/deleteExpiredDomains                     DeleteExpiredDomainsAction                     GET      n  APP ADMIN
+/_dr/task/deleteLoadTestData                       DeleteLoadTestDataAction                       POST     n  APP ADMIN
+/_dr/task/deleteProberData                         DeleteProberDataAction                         POST     n  APP ADMIN
+/_dr/task/executeCannedScript                      CannedScriptExecutionAction                    POST,GET y  APP ADMIN
+/_dr/task/expandBillingRecurrences                 ExpandBillingRecurrencesAction                 GET      n  APP ADMIN
+/_dr/task/exportDomainLists                        ExportDomainListsAction                        POST     n  APP ADMIN
+/_dr/task/exportPremiumTerms                       ExportPremiumTermsAction                       POST     n  APP ADMIN
+/_dr/task/exportReservedTerms                      ExportReservedTermsAction                      POST     n  APP ADMIN
+/_dr/task/generateInvoices                         GenerateInvoicesAction                         POST     n  APP ADMIN
+/_dr/task/generateSpec11                           GenerateSpec11ReportAction                     POST     n  APP ADMIN
+/_dr/task/icannReportingStaging                    IcannReportingStagingAction                    POST     n  APP ADMIN
+/_dr/task/icannReportingUpload                     IcannReportingUploadAction                     POST     n  APP ADMIN
+/_dr/task/nordnUpload                              NordnUploadAction                              POST     y  APP ADMIN
+/_dr/task/nordnVerify                              NordnVerifyAction                              POST     y  APP ADMIN
+/_dr/task/publishDnsUpdates                        PublishDnsUpdatesAction                        POST     y  APP ADMIN
+/_dr/task/publishInvoices                          PublishInvoicesAction                          POST     n  APP ADMIN
+/_dr/task/publishSpec11                            PublishSpec11ReportAction                      POST     n  APP ADMIN
+/_dr/task/rdeReport                                RdeReportAction                                POST     n  APP ADMIN
+/_dr/task/rdeStaging                               RdeStagingAction                               GET,POST n  APP ADMIN
+/_dr/task/rdeUpload                                RdeUploadAction                                POST     n  APP ADMIN
+/_dr/task/readDnsRefreshRequests                   ReadDnsRefreshRequestsAction                   POST     y  APP ADMIN
+/_dr/task/refreshDnsOnHostRename                   RefreshDnsOnHostRenameAction                   POST     n  APP ADMIN
+/_dr/task/relockDomain                             RelockDomainAction                             POST     y  APP ADMIN
+/_dr/task/resaveAllEppResourcesPipeline            ResaveAllEppResourcesPipelineAction            GET      n  APP ADMIN
+/_dr/task/resaveEntity                             ResaveEntityAction                             POST     n  APP ADMIN
+/_dr/task/sendExpiringCertificateNotificationEmail SendExpiringCertificateNotificationEmailAction GET      n  APP ADMIN
+/_dr/task/syncGroupMembers                         SyncGroupMembersAction                         POST     n  APP ADMIN
+/_dr/task/syncRegistrarsSheet                      SyncRegistrarsSheetAction                      POST     n  APP ADMIN
+/_dr/task/tmchCrl                                  TmchCrlAction                                  POST     y  APP ADMIN
+/_dr/task/tmchDnl                                  TmchDnlAction                                  POST     y  APP ADMIN
+/_dr/task/tmchSmdrl                                TmchSmdrlAction                                POST     y  APP ADMIN
+/_dr/task/updateRegistrarRdapBaseUrls              UpdateRegistrarRdapBaseUrlsAction              GET      y  APP ADMIN
+/_dr/task/wipeOutContactHistoryPii                 WipeOutContactHistoryPiiAction                 GET      n  APP ADMIN

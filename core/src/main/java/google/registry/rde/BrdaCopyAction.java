@@ -66,7 +66,7 @@ import org.joda.time.DateTime;
     path = BrdaCopyAction.PATH,
     method = POST,
     automaticallyPrintOk = true,
-    auth = Auth.AUTH_API_ADMIN)
+    auth = Auth.AUTH_ADMIN)
 public final class BrdaCopyAction implements Runnable {
 
   public static final String PATH = "/_dr/task/brdaCopy";

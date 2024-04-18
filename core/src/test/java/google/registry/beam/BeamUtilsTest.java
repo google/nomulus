@@ -18,6 +18,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableList;
+import org.apache.avro.AvroRuntimeException;
 import org.apache.avro.Schema;
 import org.apache.avro.generic.GenericData;
 import org.apache.avro.generic.GenericRecord;
@@ -55,10 +56,13 @@ class BeamUtilsTest {
   }
 
   @Test
-  void testExtractField_fieldDoesntExist_returnsNull() {
+  void testExtractField_fieldDoesntExist_throwsException() {
     schemaAndRecord.getRecord().put("aFloat", null);
-    assertThat(BeamUtils.extractField(schemaAndRecord.getRecord(), "aFloat")).isEqualTo("null");
-    assertThat(BeamUtils.extractField(schemaAndRecord.getRecord(), "missing")).isEqualTo("null");
+    AvroRuntimeException expected =
+        assertThrows(
+            AvroRuntimeException.class,
+            () -> BeamUtils.extractField(schemaAndRecord.getRecord(), "missing"));
+    assertThat(expected).hasMessageThat().isEqualTo("Not a valid schema field: missing");
   }
 
   @Test
@@ -68,16 +72,12 @@ class BeamUtilsTest {
 
   @Test
   void testCheckFieldsNotNull_fieldMissing_throwsException() {
-    IllegalStateException expected =
+    AvroRuntimeException expected =
         assertThrows(
-            IllegalStateException.class,
+            AvroRuntimeException.class,
             () ->
                 BeamUtils.checkFieldsNotNull(
                     ImmutableList.of("aString", "aFloat", "notAField"), schemaAndRecord));
-    assertThat(expected)
-        .hasMessageThat()
-        .isEqualTo(
-            "Read unexpected null value for field(s) notAField for record "
-                + "{\"aString\": \"hello world\", \"aFloat\": 2.54}");
+    assertThat(expected).hasMessageThat().isEqualTo("Not a valid schema field: notAField");
   }
 }
