@@ -34,10 +34,9 @@ import google.registry.request.Action;
 import google.registry.request.RequestModule;
 import google.registry.request.auth.AuthResult;
 import google.registry.request.auth.AuthenticatedRegistrarAccessor;
-import google.registry.request.auth.UserAuthInfo;
+import google.registry.testing.ConsoleApiParamsUtils;
 import google.registry.testing.DatabaseHelper;
 import google.registry.testing.FakeClock;
-import google.registry.testing.FakeConsoleApiParams;
 import google.registry.testing.FakeResponse;
 import google.registry.ui.server.registrar.ConsoleApiParams;
 import google.registry.ui.server.registrar.RegistrarConsoleModule;
@@ -90,8 +89,7 @@ class SecurityActionTest {
     clock.setTo(DateTime.parse("2020-11-01T00:00:00Z"));
     SecurityAction action =
         createAction(
-            AuthResult.createUser(
-                UserAuthInfo.create(DatabaseHelper.createAdminUser("email@email.com"))),
+            AuthResult.createUser(DatabaseHelper.createAdminUser("email@email.com")),
             testRegistrar.getRegistrarId());
     action.run();
     assertThat(((FakeResponse) consoleApiParams.response()).getStatus()).isEqualTo(SC_OK);
@@ -104,7 +102,7 @@ class SecurityActionTest {
 
   private SecurityAction createAction(AuthResult authResult, String registrarId)
       throws IOException {
-    consoleApiParams = FakeConsoleApiParams.get(Optional.of(authResult));
+    consoleApiParams = ConsoleApiParamsUtils.createFake(authResult);
     when(consoleApiParams.request().getMethod()).thenReturn(Action.Method.POST.toString());
     doReturn(new BufferedReader(new StringReader(jsonRegistrar1)))
         .when(consoleApiParams.request())

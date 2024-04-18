@@ -29,6 +29,7 @@ import static google.registry.tools.LockOrUnlockDomainCommand.REGISTRY_LOCK_STAT
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 
 import com.google.common.collect.ImmutableMap;
+import google.registry.model.console.RegistrarRole;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.RegistryLock;
 import google.registry.model.registrar.RegistrarBase.State;
@@ -39,6 +40,7 @@ import google.registry.testing.CertificateSamples;
 import google.registry.testing.DatabaseHelper;
 import java.util.Optional;
 import java.util.UUID;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.junitpioneer.jupiter.RetryingTest;
 import org.openqa.selenium.By;
@@ -59,7 +61,13 @@ class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
               route("/registry-lock-verify", FrontendServlet.class))
           .setFixtures(BASIC)
           .setEmail("Marla.Singer@crr.com") // from makeRegistrarContact3
+          .setRegistryLockEmail("Marla.Singer.RegistryLock@crr.com")
           .build();
+
+  @BeforeEach
+  void beforeEach() {
+    server.setRegistrarRoles(ImmutableMap.of("TheRegistrar", RegistrarRole.ACCOUNT_MANAGER));
+  }
 
   @RetryingTest(3)
   void index_owner() throws Throwable {
@@ -140,13 +148,13 @@ class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
 
   @RetryingTest(3)
   void settingsContactEdit_setRegistryLockPassword() throws Throwable {
-          persistResource(makeRegistrar2().asBuilder().setRegistryLockAllowed(true).build());
-          persistResource(
-              makeRegistrarContact2()
-                  .asBuilder()
-                  .setRegistryLockEmailAddress("johndoe.registrylock@example.com")
-                  .setAllowedToSetRegistryLockPassword(true)
-                  .build());
+    persistResource(makeRegistrar2().asBuilder().setRegistryLockAllowed(true).build());
+    persistResource(
+        makeRegistrarContact2()
+            .asBuilder()
+            .setRegistryLockEmailAddress("johndoe.registrylock@example.com")
+            .setAllowedToSetRegistryLockPassword(true)
+            .build());
     driver.manage().window().setSize(new Dimension(1050, 2000));
     driver.get(server.getUrl("/registrar#contact-settings/johndoe@theregistrar.com"));
     driver.waitForDisplayedElement(By.tagName("h1"));
@@ -176,20 +184,19 @@ class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
             .filter(c -> "johndoe@theregistrar.com".equals(c.getEmailAddress()))
             .findFirst()
             .get();
-          assertThat(contact.verifyRegistryLockPassword("password")).isTrue();
-          assertThat(contact.getRegistryLockEmailAddress())
-              .isEqualTo(Optional.of("johndoe.registrylock@example.com"));
+    assertThat(contact.verifyRegistryLockPassword("password")).isTrue();
+    assertThat(contact.getRegistryLockEmailAddress())
+        .isEqualTo(Optional.of("johndoe.registrylock@example.com"));
   }
 
   @RetryingTest(3)
   void settingsContactEdit_setRegistryLockPassword_alreadySet() throws Throwable {
-          persistResource(
-              makeRegistrarContact2()
-                  .asBuilder()
-                  .setAllowedToSetRegistryLockPassword(true)
-                  .setRegistryLockPassword("hi")
-                  .build());
-          persistResource(makeRegistrar2().asBuilder().setRegistryLockAllowed(true).build());
+    persistResource(
+        makeRegistrarContact2()
+            .asBuilder()
+            .setAllowedToSetRegistryLockPassword(true)
+            .setRegistryLockPassword("hi")
+            .build());
     driver.manage().window().setSize(new Dimension(1050, 2000));
     driver.get(server.getUrl("/registrar#contact-settings/johndoe@theregistrar.com"));
     driver.waitForDisplayedElement(By.tagName("h1"));
@@ -306,12 +313,12 @@ class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
 
   @RetryingTest(3)
   void settingsSecurityWithCerts() throws Throwable {
-          persistResource(
-              loadRegistrar("TheRegistrar")
-                  .asBuilder()
-                  .setClientCertificate(CertificateSamples.SAMPLE_CERT, START_OF_TIME)
-                  .setFailoverClientCertificate(CertificateSamples.SAMPLE_CERT2, START_OF_TIME)
-                  .build());
+    persistResource(
+        loadRegistrar("TheRegistrar")
+            .asBuilder()
+            .setClientCertificate(CertificateSamples.SAMPLE_CERT, START_OF_TIME)
+            .setFailoverClientCertificate(CertificateSamples.SAMPLE_CERT2, START_OF_TIME)
+            .build());
     driver.manage().window().setSize(new Dimension(1050, 2000));
     driver.get(server.getUrl("/registrar#security-settings"));
     driver.waitForDisplayedElement(By.tagName("h1"));
@@ -371,17 +378,17 @@ class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
   @RetryingTest(3)
   void registryLockVerify_success() throws Throwable {
     String lockVerificationCode = "f1be78a2-2d61-458c-80f0-9dd8f2f8625f";
-          createTld("tld");
-          persistResource(DatabaseHelper.newDomain("example-lock.tld"));
-          saveRegistryLock(
-              new RegistryLock.Builder()
-                  .setRegistrarPocId("johndoe@theregistrar.com")
-                  .setRepoId("repoId")
-                  .setRegistrarId("TheRegistrar")
-                  .setVerificationCode("f1be78a2-2d61-458c-80f0-9dd8f2f8625f")
-                  .isSuperuser(false)
-                  .setDomainName("example-lock.tld")
-                  .build());
+    createTld("tld");
+    persistResource(DatabaseHelper.newDomain("example-lock.tld"));
+    saveRegistryLock(
+        new RegistryLock.Builder()
+            .setRegistrarPocId("johndoe@theregistrar.com")
+            .setRepoId("repoId")
+            .setRegistrarId("TheRegistrar")
+            .setVerificationCode("f1be78a2-2d61-458c-80f0-9dd8f2f8625f")
+            .isSuperuser(false)
+            .setDomainName("example-lock.tld")
+            .build());
     driver.get(
         server.getUrl(
             "/registry-lock-verify?isLock=true&lockVerificationCode=" + lockVerificationCode));
@@ -398,6 +405,8 @@ class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
 
   @RetryingTest(3)
   void registryLock_empty() throws Throwable {
+    server.setRegistrarRoles(
+        ImmutableMap.of("TheRegistrar", RegistrarRole.ACCOUNT_MANAGER_WITH_REGISTRY_LOCK));
     driver.get(server.getUrl("/registrar?clientId=TheRegistrar#registry-lock"));
     driver.waitForDisplayedElement(By.tagName("h2"));
     driver.diffPage("page");
@@ -405,7 +414,7 @@ class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
 
   @RetryingTest(3)
   void registryLock_notAllowed() throws Throwable {
-          persistResource(makeRegistrar2().asBuilder().setRegistryLockAllowed(false).build());
+    persistResource(makeRegistrar2().asBuilder().setRegistryLockAllowed(false).build());
     driver.get(server.getUrl("/registrar?clientId=TheRegistrar#registry-lock"));
     driver.waitForDisplayedElement(By.tagName("h2"));
     driver.diffPage("page");
@@ -413,7 +422,9 @@ class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
 
   @RetryingTest(3)
   void registryLock_nonEmpty() throws Throwable {
-          createDomainAndSaveLock();
+    createDomainAndSaveLock();
+    server.setRegistrarRoles(
+        ImmutableMap.of("TheRegistrar", RegistrarRole.ACCOUNT_MANAGER_WITH_REGISTRY_LOCK));
     driver.get(server.getUrl("/registrar#registry-lock"));
     driver.waitForDisplayedElement(By.tagName("h2"));
     driver.diffPage("page");
@@ -421,48 +432,50 @@ class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
 
   @RetryingTest(3)
   void registryLock_nonEmpty_admin() throws Throwable {
-          createTld("tld");
-          // expired unlock request
-          Domain expiredUnlockRequestDomain = persistActiveDomain("expiredunlock.tld");
-          saveRegistryLock(
-              createRegistryLock(expiredUnlockRequestDomain)
-                  .asBuilder()
-                  .setLockCompletionTime(START_OF_TIME.minusDays(1))
-                  .setUnlockRequestTime(START_OF_TIME.minusDays(1))
-                  .build());
-          Domain domain = persistActiveDomain("example.tld");
-          saveRegistryLock(createRegistryLock(domain).asBuilder().isSuperuser(true).build());
-          Domain otherDomain = persistActiveDomain("otherexample.tld");
-          saveRegistryLock(createRegistryLock(otherDomain));
-          // include one pending-lock domain
-          Domain pendingDomain = persistActiveDomain("pending.tld");
-          saveRegistryLock(
-              new RegistryLock.Builder()
-                  .setVerificationCode(UUID.randomUUID().toString())
-                  .isSuperuser(false)
-                  .setRegistrarId("TheRegistrar")
-                  .setRegistrarPocId("Marla.Singer@crr.com")
-                  .setDomainName("pending.tld")
-                  .setRepoId(pendingDomain.getRepoId())
-                  .build());
-          // and one pending-unlock domain
-          Domain pendingUnlockDomain =
-              persistResource(
-                  DatabaseHelper.newDomain("pendingunlock.tld")
-                      .asBuilder()
-                      .setStatusValues(REGISTRY_LOCK_STATUSES)
-                      .build());
-          saveRegistryLock(
-              new RegistryLock.Builder()
-                  .setVerificationCode(UUID.randomUUID().toString())
-                  .isSuperuser(false)
-                  .setRegistrarId("TheRegistrar")
-                  .setRegistrarPocId("Marla.Singer@crr.com")
-                  .setDomainName(pendingUnlockDomain.getDomainName())
-                  .setRepoId(pendingUnlockDomain.getRepoId())
-                  .setLockCompletionTime(START_OF_TIME)
-                  .setUnlockRequestTime(START_OF_TIME)
-                  .build());
+    createTld("tld");
+    // expired unlock request
+    Domain expiredUnlockRequestDomain = persistActiveDomain("expiredunlock.tld");
+    saveRegistryLock(
+        createRegistryLock(expiredUnlockRequestDomain)
+            .asBuilder()
+            .setLockCompletionTime(START_OF_TIME.minusDays(1))
+            .setUnlockRequestTime(START_OF_TIME.minusDays(1))
+            .build());
+    server.setRegistrarRoles(
+        ImmutableMap.of("TheRegistrar", RegistrarRole.ACCOUNT_MANAGER_WITH_REGISTRY_LOCK));
+    Domain domain = persistActiveDomain("example.tld");
+    saveRegistryLock(createRegistryLock(domain).asBuilder().isSuperuser(true).build());
+    Domain otherDomain = persistActiveDomain("otherexample.tld");
+    saveRegistryLock(createRegistryLock(otherDomain));
+    // include one pending-lock domain
+    Domain pendingDomain = persistActiveDomain("pending.tld");
+    saveRegistryLock(
+        new RegistryLock.Builder()
+            .setVerificationCode(UUID.randomUUID().toString())
+            .isSuperuser(false)
+            .setRegistrarId("TheRegistrar")
+            .setRegistrarPocId("Marla.Singer@crr.com")
+            .setDomainName("pending.tld")
+            .setRepoId(pendingDomain.getRepoId())
+            .build());
+    // and one pending-unlock domain
+    Domain pendingUnlockDomain =
+        persistResource(
+            DatabaseHelper.newDomain("pendingunlock.tld")
+                .asBuilder()
+                .setStatusValues(REGISTRY_LOCK_STATUSES)
+                .build());
+    saveRegistryLock(
+        new RegistryLock.Builder()
+            .setVerificationCode(UUID.randomUUID().toString())
+            .isSuperuser(false)
+            .setRegistrarId("TheRegistrar")
+            .setRegistrarPocId("Marla.Singer@crr.com")
+            .setDomainName(pendingUnlockDomain.getDomainName())
+            .setRepoId(pendingUnlockDomain.getRepoId())
+            .setLockCompletionTime(START_OF_TIME)
+            .setUnlockRequestTime(START_OF_TIME)
+            .build());
     driver.get(server.getUrl("/registrar#registry-lock"));
     driver.waitForDisplayedElement(By.tagName("h2"));
     driver.diffPage("page");
@@ -470,7 +483,9 @@ class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
 
   @RetryingTest(3)
   void registryLock_unlockModal() throws Throwable {
-          createDomainAndSaveLock();
+    createDomainAndSaveLock();
+    server.setRegistrarRoles(
+        ImmutableMap.of("TheRegistrar", RegistrarRole.ACCOUNT_MANAGER_WITH_REGISTRY_LOCK));
     driver.get(server.getUrl("/registrar#registry-lock"));
     driver.waitForDisplayedElement(By.tagName("h2"));
     driver.findElement(By.id("button-unlock-example.tld")).click();
@@ -482,8 +497,10 @@ class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
   @RetryingTest(3)
   void registryLock_lockModal() throws Throwable {
     server.setIsAdmin(true);
-          createTld("tld");
-          persistActiveDomain("example.tld");
+    createTld("tld");
+    persistActiveDomain("example.tld");
+    server.setRegistrarRoles(
+        ImmutableMap.of("TheRegistrar", RegistrarRole.ACCOUNT_MANAGER_WITH_REGISTRY_LOCK));
     driver.get(server.getUrl("/registrar#registry-lock"));
     driver.waitForDisplayedElement(By.tagName("h2"));
     driver.findElement(By.id("button-lock-domain")).click();

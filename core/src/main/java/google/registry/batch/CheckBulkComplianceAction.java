@@ -38,10 +38,7 @@ import org.joda.time.Days;
  * An action that checks all {@link BulkPricingPackage} objects for compliance with their max create
  * limit.
  */
-@Action(
-    service = Service.BACKEND,
-    path = CheckBulkComplianceAction.PATH,
-    auth = Auth.AUTH_API_ADMIN)
+@Action(service = Service.BACKEND, path = CheckBulkComplianceAction.PATH, auth = Auth.AUTH_ADMIN)
 public class CheckBulkComplianceAction implements Runnable {
 
   public static final String PATH = "/_dr/task/checkBulkCompliance";

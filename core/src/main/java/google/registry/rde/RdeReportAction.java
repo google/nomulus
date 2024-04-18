@@ -56,7 +56,7 @@ import org.joda.time.Duration;
     service = Action.Service.BACKEND,
     path = RdeReportAction.PATH,
     method = POST,
-    auth = Auth.AUTH_API_ADMIN)
+    auth = Auth.AUTH_ADMIN)
 public final class RdeReportAction implements Runnable, EscrowTask {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();

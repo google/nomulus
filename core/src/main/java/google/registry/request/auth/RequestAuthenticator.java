@@ -21,9 +21,7 @@ import static google.registry.request.auth.AuthSettings.AuthLevel.USER;
 import static google.registry.request.auth.AuthSettings.UserPolicy.ADMIN;
 
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Ordering;
 import com.google.common.flogger.FluentLogger;
-import google.registry.request.auth.AuthSettings.AuthMethod;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.Optional;
 import javax.inject.Inject;
@@ -32,16 +30,12 @@ import javax.inject.Inject;
 public class RequestAuthenticator {
 
   private final ImmutableList<AuthenticationMechanism> apiAuthenticationMechanisms;
-  private final LegacyAuthenticationMechanism legacyAuthenticationMechanism;
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
   @Inject
-  public RequestAuthenticator(
-      ImmutableList<AuthenticationMechanism> apiAuthenticationMechanisms,
-      LegacyAuthenticationMechanism legacyAuthenticationMechanism) {
+  public RequestAuthenticator(ImmutableList<AuthenticationMechanism> apiAuthenticationMechanisms) {
     this.apiAuthenticationMechanisms = apiAuthenticationMechanisms;
-    this.legacyAuthenticationMechanism = legacyAuthenticationMechanism;
   }
 
   /**
@@ -66,8 +60,8 @@ public class RequestAuthenticator {
       return Optional.empty();
     }
     if (auth.userPolicy() == ADMIN
-        && authResult.userAuthInfo().isPresent()
-        && !authResult.userAuthInfo().get().isUserAdmin()) {
+        && authResult.user().isPresent()
+        && !authResult.user().get().getUserRoles().isAdmin()) {
       logger.atWarning().log(
           "Not authorized; user policy is ADMIN, but the user was not an admin.");
       return Optional.empty();
@@ -84,28 +78,13 @@ public class RequestAuthenticator {
    */
   AuthResult authenticate(AuthSettings auth, HttpServletRequest req) {
     checkAuthConfig(auth);
-    for (AuthMethod authMethod : auth.methods()) {
-      AuthResult authResult;
-      switch (authMethod) {
-          // API-based user authentication mechanisms, such as OIDC.
-        case API -> {
-          for (AuthenticationMechanism authMechanism : apiAuthenticationMechanisms) {
-            authResult = authMechanism.authenticate(req);
-            if (authResult.isAuthenticated()) {
-              logger.atInfo().log(
-                  "Authenticated via %s: %s", authMechanism.getClass().getSimpleName(), authResult);
-              return authResult;
-            }
-          }
-        }
-          // Legacy authentication via UserService
-        case LEGACY -> {
-          authResult = legacyAuthenticationMechanism.authenticate(req);
-          if (authResult.isAuthenticated()) {
-            logger.atInfo().log("Authenticated via legacy auth: %s", authResult);
-            return authResult;
-          }
-        }
+    AuthResult authResult;
+    for (AuthenticationMechanism authMechanism : apiAuthenticationMechanisms) {
+      authResult = authMechanism.authenticate(req);
+      if (authResult.isAuthenticated()) {
+        logger.atInfo().log(
+            "Authenticated via %s: %s", authMechanism.getClass().getSimpleName(), authResult);
+        return authResult;
       }
     }
     logger.atInfo().log("No authentication found.");
@@ -114,10 +93,6 @@ public class RequestAuthenticator {
 
   /** Validates an AuthSettings object, checking for invalid setting combinations. */
   static void checkAuthConfig(AuthSettings auth) {
-    checkArgument(!auth.methods().isEmpty(), "Must specify at least one auth method");
-    checkArgument(
-        Ordering.explicit(AuthMethod.API, AuthMethod.LEGACY).isStrictlyOrdered(auth.methods()),
-        "Auth methods must be unique and strictly in order - API, LEGACY");
     checkArgument(
         (auth.minimumLevel() != NONE) || (auth.userPolicy() != ADMIN),
         "Actions with minimal auth level at NONE should not specify ADMIN user policy");
