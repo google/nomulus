@@ -16,7 +16,6 @@ package google.registry.ui.server.console;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.testing.DatabaseHelper.createTld;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.google.api.client.http.HttpStatusCodes;
@@ -29,12 +28,10 @@ import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.request.Action;
 import google.registry.request.RequestModule;
 import google.registry.request.auth.AuthResult;
-import google.registry.request.auth.UserAuthInfo;
+import google.registry.testing.ConsoleApiParamsUtils;
 import google.registry.testing.DatabaseHelper;
-import google.registry.testing.FakeConsoleApiParams;
 import google.registry.testing.FakeResponse;
 import google.registry.ui.server.registrar.ConsoleApiParams;
-import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -60,12 +57,11 @@ public class ConsoleDomainGetActionTest {
     ConsoleDomainGetAction action =
         createAction(
             AuthResult.createUser(
-                UserAuthInfo.create(
-                    createUser(
-                        new UserRoles.Builder()
-                            .setRegistrarRoles(
-                                ImmutableMap.of("TheRegistrar", RegistrarRole.ACCOUNT_MANAGER))
-                            .build()))),
+                createUser(
+                    new UserRoles.Builder()
+                        .setRegistrarRoles(
+                            ImmutableMap.of("TheRegistrar", RegistrarRole.ACCOUNT_MANAGER))
+                        .build())),
             "exists.tld");
     action.run();
     assertThat(((FakeResponse) consoleApiParams.response()).getStatus())
@@ -102,23 +98,10 @@ public class ConsoleDomainGetActionTest {
   }
 
   @Test
-  void testFailure_wrongTypeOfUser() {
-    ConsoleDomainGetAction action =
-        createAction(
-            AuthResult.createUser(
-                UserAuthInfo.create(mock(com.google.appengine.api.users.User.class), false)),
-            "exists.tld");
-    action.run();
-    assertThat(((FakeResponse) consoleApiParams.response()).getStatus())
-        .isEqualTo(HttpStatusCodes.STATUS_CODE_UNAUTHORIZED);
-  }
-
-  @Test
   void testFailure_noAccessToRegistrar() {
     ConsoleDomainGetAction action =
         createAction(
-            AuthResult.createUser(UserAuthInfo.create(createUser(new UserRoles.Builder().build()))),
-            "exists.tld");
+            AuthResult.createUser(createUser(new UserRoles.Builder().build())), "exists.tld");
     action.run();
     assertThat(((FakeResponse) consoleApiParams.response()).getStatus())
         .isEqualTo(HttpStatusCodes.STATUS_CODE_NOT_FOUND);
@@ -128,8 +111,7 @@ public class ConsoleDomainGetActionTest {
   void testFailure_nonexistentDomain() {
     ConsoleDomainGetAction action =
         createAction(
-            AuthResult.createUser(
-                UserAuthInfo.create(createUser(new UserRoles.Builder().setIsAdmin(true).build()))),
+            AuthResult.createUser(createUser(new UserRoles.Builder().setIsAdmin(true).build())),
             "nonexistent.tld");
     action.run();
     assertThat(((FakeResponse) consoleApiParams.response()).getStatus())
@@ -144,7 +126,7 @@ public class ConsoleDomainGetActionTest {
   }
 
   private ConsoleDomainGetAction createAction(AuthResult authResult, String domain) {
-    consoleApiParams = FakeConsoleApiParams.get(Optional.of(authResult));
+    consoleApiParams = ConsoleApiParamsUtils.createFake(authResult);
     when(consoleApiParams.request().getMethod()).thenReturn(Action.Method.GET.toString());
     return new ConsoleDomainGetAction(consoleApiParams, GSON, domain);
   }

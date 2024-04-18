@@ -1,5 +1,5 @@
-PATH                                CLASS                             METHODS  OK AUTH_METHODS MIN USER_POLICY
-/_dr/task/bsaDownload               BsaDownloadAction                 GET,POST n  API          APP ADMIN
-/_dr/task/bsaRefresh                BsaRefreshAction                  GET,POST n  API          APP ADMIN
-/_dr/task/bsaValidate               BsaValidateAction                 GET,POST n  API          APP ADMIN
-/_dr/task/uploadBsaUnavailableNames UploadBsaUnavailableDomainsAction GET,POST n  API          APP ADMIN
+PATH                                CLASS                             METHODS  OK MIN USER_POLICY
+/_dr/task/bsaDownload               BsaDownloadAction                 GET,POST n  APP ADMIN
+/_dr/task/bsaRefresh                BsaRefreshAction                  GET,POST n  APP ADMIN
+/_dr/task/bsaValidate               BsaValidateAction                 GET,POST n  APP ADMIN
+/_dr/task/uploadBsaUnavailableNames UploadBsaUnavailableDomainsAction GET,POST n  APP ADMIN

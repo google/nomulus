@@ -26,9 +26,6 @@ import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTransactionManagerExtension;
 import google.registry.request.auth.AuthResult;
 import google.registry.request.auth.OidcTokenAuthenticationMechanism;
-import google.registry.request.auth.UserAuthInfo;
-import google.registry.testing.UserInfo;
-import google.registry.testing.UserServiceExtension;
 import google.registry.tools.params.HostAndPortParameter;
 import google.registry.ui.ConsoleDebug;
 import java.util.List;
@@ -139,9 +136,6 @@ public final class RegistryTestServerMain {
     final RegistryTestServer server = new RegistryTestServer(address);
 
     System.out.printf("%sLoading SQL fixtures and User service...%s\n", BLUE, RESET);
-    new UserServiceExtension(
-            loginIsAdmin ? UserInfo.createAdmin(loginEmail) : UserInfo.create(loginEmail))
-        .beforeEach(null);
     UserRoles userRoles =
         new UserRoles.Builder().setIsAdmin(loginIsAdmin).setGlobalRole(GlobalRole.FTE).build();
     User user =
@@ -150,8 +144,7 @@ public final class RegistryTestServerMain {
             .setUserRoles(userRoles)
             .setRegistryLockPassword("registryLockPassword")
             .build();
-    OidcTokenAuthenticationMechanism.setAuthResultForTesting(
-        AuthResult.createUser(UserAuthInfo.create(user)));
+    OidcTokenAuthenticationMechanism.setAuthResultForTesting(AuthResult.createUser(user));
     new JpaTestExtensions.Builder().buildIntegrationTestExtension().beforeEach(null);
     JpaTransactionManagerExtension.loadInitialData();
     System.out.printf("%sLoading fixtures...%s\n", BLUE, RESET);

@@ -14,6 +14,8 @@
 
 package google.registry.request.auth;
 
+import static com.google.common.base.Preconditions.checkState;
+
 import com.google.api.client.json.webtoken.JsonWebSignature;
 import com.google.auth.oauth2.TokenVerifier;
 import com.google.common.annotations.VisibleForTesting;
@@ -117,7 +119,7 @@ public abstract class OidcTokenAuthenticationMechanism implements Authentication
     }
     Optional<User> maybeUser = UserDao.loadUser(email);
     if (maybeUser.isPresent()) {
-      return AuthResult.createUser(UserAuthInfo.create(maybeUser.get()));
+      return AuthResult.createUser(maybeUser.get());
     }
     logger.atInfo().log("No end user found for email address %s", email);
     if (serviceAccountEmails.stream().anyMatch(e -> e.equals(email))) {
@@ -131,11 +133,17 @@ public abstract class OidcTokenAuthenticationMechanism implements Authentication
 
   @VisibleForTesting
   public static void setAuthResultForTesting(@Nullable AuthResult authResult) {
+    checkState(
+        RegistryEnvironment.get() == RegistryEnvironment.UNITTEST,
+        "Explicitly setting auth result is only supported in tests");
     authResultForTesting = authResult;
   }
 
   @VisibleForTesting
   public static void unsetAuthResultForTesting() {
+    checkState(
+        RegistryEnvironment.get() == RegistryEnvironment.UNITTEST,
+        "Explicitly unsetting auth result is only supported in tests");
     authResultForTesting = null;
   }
 

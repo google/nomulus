@@ -54,7 +54,7 @@ import org.joda.time.YearMonth;
     service = Action.Service.BACKEND,
     path = GenerateInvoicesAction.PATH,
     method = POST,
-    auth = Auth.AUTH_API_ADMIN)
+    auth = Auth.AUTH_ADMIN)
 public class GenerateInvoicesAction implements Runnable {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();

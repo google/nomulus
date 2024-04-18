@@ -14,21 +14,19 @@
 
 package google.registry.ui.server.registrar;
 
-import static com.google.common.net.HttpHeaders.LOCATION;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.registrar.Registrar.loadByRegistrarId;
 import static google.registry.testing.DatabaseHelper.persistPremiumList;
-import static jakarta.servlet.http.HttpServletResponse.SC_MOVED_TEMPORARILY;
+import static jakarta.servlet.http.HttpServletResponse.SC_UNAUTHORIZED;
 import static org.joda.money.CurrencyUnit.USD;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
-import com.google.appengine.api.users.User;
-import com.google.appengine.api.users.UserServiceFactory;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSetMultimap;
 import google.registry.groups.GmailClient;
+import google.registry.model.console.User;
+import google.registry.model.console.UserRoles;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarAddress;
 import google.registry.model.registrar.RegistrarPoc;
@@ -37,13 +35,11 @@ import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationT
 import google.registry.request.Action.Method;
 import google.registry.request.auth.AuthResult;
 import google.registry.request.auth.AuthenticatedRegistrarAccessor;
-import google.registry.request.auth.UserAuthInfo;
 import google.registry.security.XsrfTokenManager;
 import google.registry.testing.DeterministicStringGenerator;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeResponse;
 import google.registry.testing.SystemPropertyExtension;
-import google.registry.testing.UserServiceExtension;
 import google.registry.ui.server.SendEmailUtils;
 import google.registry.util.EmailMessage;
 import google.registry.util.RegistryEnvironment;
@@ -66,15 +62,17 @@ final class ConsoleRegistrarCreatorActionTest {
   final JpaIntegrationTestExtension jpa =
       new JpaTestExtensions.Builder().buildIntegrationTestExtension();
 
-  @RegisterExtension final UserServiceExtension userService = new UserServiceExtension("");
-
   @RegisterExtension
   @Order(Integer.MAX_VALUE)
   final SystemPropertyExtension systemPropertyExtension = new SystemPropertyExtension();
 
   private final FakeResponse response = new FakeResponse();
   private final ConsoleRegistrarCreatorAction action = new ConsoleRegistrarCreatorAction();
-  private final User user = new User("marla.singer@example.com", "gmail.com", "12345");
+  private final User user =
+      new User.Builder()
+          .setEmailAddress("marla.singer@example.com")
+          .setUserRoles(new UserRoles())
+          .build();
 
   @Mock HttpServletRequest request;
   @Mock GmailClient gmailClient;
@@ -89,9 +87,8 @@ final class ConsoleRegistrarCreatorActionTest {
     action.registrarAccessor =
         AuthenticatedRegistrarAccessor.createForTesting(
             ImmutableSetMultimap.of("unused", AuthenticatedRegistrarAccessor.Role.ADMIN));
-    action.userService = UserServiceFactory.getUserService();
-    action.xsrfTokenManager = new XsrfTokenManager(new FakeClock(), action.userService);
-    action.authResult = AuthResult.createUser(UserAuthInfo.create(user, false));
+    action.xsrfTokenManager = new XsrfTokenManager(new FakeClock());
+    action.authResult = AuthResult.createUser(user);
     action.sendEmailUtils =
         new SendEmailUtils(
             ImmutableList.of("notification@test.example", "notification2@test.example"),
@@ -125,12 +122,10 @@ final class ConsoleRegistrarCreatorActionTest {
   }
 
   @Test
-  void testNoUser_redirect() {
-    when(request.getRequestURI()).thenReturn("/test");
+  void testNoUser_unauthroized() {
     action.authResult = AuthResult.NOT_AUTHENTICATED;
     action.run();
-    assertThat(response.getStatus()).isEqualTo(SC_MOVED_TEMPORARILY);
-    assertThat(response.getHeaders().get(LOCATION)).isEqualTo("/_ah/login?continue=%2Ftest");
+    assertThat(response.getStatus()).isEqualTo(SC_UNAUTHORIZED);
   }
 
   @Test

@@ -37,8 +37,7 @@ import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.request.Action;
 import google.registry.request.RequestModule;
 import google.registry.request.auth.AuthResult;
-import google.registry.request.auth.UserAuthInfo;
-import google.registry.testing.FakeConsoleApiParams;
+import google.registry.testing.ConsoleApiParamsUtils;
 import google.registry.testing.FakeResponse;
 import google.registry.ui.server.registrar.ConsoleApiParams;
 import google.registry.ui.server.registrar.RegistrarConsoleModule;
@@ -101,7 +100,7 @@ class ContactActionTest {
     ContactAction action =
         createAction(
             Action.Method.GET,
-            AuthResult.createUser(UserAuthInfo.create(createAdminUser("email@email.com"))),
+            AuthResult.createUser(createAdminUser("email@email.com")),
             testRegistrar.getRegistrarId(),
             null);
     action.run();
@@ -118,7 +117,7 @@ class ContactActionTest {
     ContactAction action =
         createAction(
             Action.Method.GET,
-            AuthResult.createUser(UserAuthInfo.create(createAdminUser("email@email.com"))),
+            AuthResult.createUser(createAdminUser("email@email.com")),
             testRegistrar.getRegistrarId(),
             null);
     action.run();
@@ -132,7 +131,7 @@ class ContactActionTest {
     ContactAction action =
         createAction(
             Action.Method.POST,
-            AuthResult.createUser(UserAuthInfo.create(createAdminUser("email@email.com"))),
+            AuthResult.createUser(createAdminUser("email@email.com")),
             testRegistrar.getRegistrarId(),
             "[" + jsonRegistrar1 + "," + jsonRegistrar2 + "]");
     action.run();
@@ -153,7 +152,7 @@ class ContactActionTest {
     ContactAction action =
         createAction(
             Action.Method.POST,
-            AuthResult.createUser(UserAuthInfo.create(createAdminUser("email@email.com"))),
+            AuthResult.createUser(createAdminUser("email@email.com")),
             testRegistrar.getRegistrarId(),
             "[" + jsonRegistrar1 + "," + jsonRegistrar2 + "]");
     action.run();
@@ -177,7 +176,7 @@ class ContactActionTest {
     ContactAction action =
         createAction(
             Action.Method.POST,
-            AuthResult.createUser(UserAuthInfo.create(createAdminUser("email@email.com"))),
+            AuthResult.createUser(createAdminUser("email@email.com")),
             testRegistrar.getRegistrarId(),
             "[" + jsonRegistrar2 + "]");
     action.run();
@@ -198,17 +197,15 @@ class ContactActionTest {
         createAction(
             Action.Method.POST,
             AuthResult.createUser(
-                UserAuthInfo.create(
-                    new User.Builder()
-                        .setEmailAddress("email@email.com")
-                        .setUserRoles(
-                            new UserRoles.Builder()
-                                .setRegistrarRoles(
-                                    ImmutableMap.of(
-                                        testRegistrar.getRegistrarId(),
-                                        RegistrarRole.ACCOUNT_MANAGER))
-                                .build())
-                        .build())),
+                new User.Builder()
+                    .setEmailAddress("email@email.com")
+                    .setUserRoles(
+                        new UserRoles.Builder()
+                            .setRegistrarRoles(
+                                ImmutableMap.of(
+                                    testRegistrar.getRegistrarId(), RegistrarRole.ACCOUNT_MANAGER))
+                            .build())
+                    .build()),
             testRegistrar.getRegistrarId(),
             "[" + jsonRegistrar2 + "]");
     action.run();
@@ -219,7 +216,7 @@ class ContactActionTest {
   private ContactAction createAction(
       Action.Method method, AuthResult authResult, String registrarId, String contacts)
       throws IOException {
-    consoleApiParams = FakeConsoleApiParams.get(Optional.of(authResult));
+    consoleApiParams = ConsoleApiParamsUtils.createFake(authResult);
     when(consoleApiParams.request().getMethod()).thenReturn(method.toString());
     if (method.equals(Action.Method.GET)) {
       return new ContactAction(consoleApiParams, GSON, registrarId, Optional.empty());

@@ -14,7 +14,6 @@
 
 package google.registry.request.auth;
 
-import com.google.common.collect.ImmutableList;
 import com.google.errorprone.annotations.Immutable;
 import google.registry.model.console.UserRoles;
 
@@ -25,26 +24,7 @@ import google.registry.model.console.UserRoles;
  * values.
  */
 @Immutable
-public record AuthSettings(
-    ImmutableList<AuthMethod> methods, AuthLevel minimumLevel, UserPolicy userPolicy) {
-
-  static AuthSettings create(
-      ImmutableList<AuthMethod> methods, AuthLevel minimumLevel, UserPolicy userPolicy) {
-    return new AuthSettings(methods, minimumLevel, userPolicy);
-  }
-
-  /** Available methods for authentication. */
-  public enum AuthMethod {
-
-    /**
-     * Authentication methods suitable for API-style access, such as {@link
-     * OidcTokenAuthenticationMechanism}.
-     */
-    API,
-
-    /** Legacy authentication using cookie-based App Engine Users API. Must come last if present. */
-    LEGACY
-  }
+public record AuthSettings(AuthLevel minimumLevel, UserPolicy userPolicy) {
 
   /**
    * Authentication level.
@@ -90,16 +70,7 @@ public record AuthSettings(
     /** No user policy is enforced; anyone can access this action. */
     PUBLIC,
 
-    /**
-     * If there is a user, it must be an admin, as determined by {@link UserAuthInfo#isUserAdmin()}.
-     *
-     * <p>Note that, if the user returned is an App Engine {@link
-     * com.google.appengine.api.users.User} , anybody with access to the app in the GCP Console,
-     * including editors and viewers, is an admin.
-     *
-     * <p>On the other hand, if the user is a {@link google.registry.model.console.User}, the admin
-     * role is explicitly defined in that object via the {@link UserRoles#isAdmin()} method.
-     */
+    /** If there is a user, it must be an admin, as determined by {@link UserRoles#isAdmin()}. */
     ADMIN
   }
 }
