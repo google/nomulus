@@ -75,7 +75,7 @@ public class ContactAction implements JsonGetAction {
 
   @Override
   public void run() {
-    User user = authResult.userAuthInfo().get().consoleUser().get();
+    User user = authResult.user().get();
     if (req.getMethod().equals(GET.toString())) {
       getHandler(user);
     } else {

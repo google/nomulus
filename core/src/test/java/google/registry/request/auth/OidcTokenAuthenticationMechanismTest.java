@@ -133,7 +133,7 @@ public class OidcTokenAuthenticationMechanismTest {
     authResult = authenticationMechanism.authenticate(request);
     assertThat(authResult.isAuthenticated()).isTrue();
     assertThat(authResult.authLevel()).isEqualTo(AuthLevel.USER);
-    assertThat(authResult.userAuthInfo().get().consoleUser().get()).isEqualTo(user);
+    assertThat(authResult.user().get()).isEqualTo(user);
   }
 
   @Test
@@ -157,7 +157,7 @@ public class OidcTokenAuthenticationMechanismTest {
     authResult = authenticationMechanism.authenticate(request);
     assertThat(authResult.isAuthenticated()).isTrue();
     assertThat(authResult.authLevel()).isEqualTo(AuthLevel.USER);
-    assertThat(authResult.userAuthInfo().get().consoleUser().get()).isEqualTo(serviceUser);
+    assertThat(authResult.user().get()).isEqualTo(serviceUser);
   }
 
   @Test

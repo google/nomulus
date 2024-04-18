@@ -59,7 +59,7 @@ import org.json.JSONException;
     service = Action.Service.BACKEND,
     path = PublishSpec11ReportAction.PATH,
     method = POST,
-    auth = Auth.AUTH_API_ADMIN)
+    auth = Auth.AUTH_ADMIN)
 public class PublishSpec11ReportAction implements Runnable {
 
   static final String PATH = "/_dr/task/publishSpec11";

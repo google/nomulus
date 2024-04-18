@@ -263,6 +263,9 @@
       "moduleLicense": "Unicode/ICU License"
     },
     {
+      "moduleLicense": "Unicode-3.0"
+    },
+    {
       "moduleLicense": "Public Domain",
       "moduleName": "aopalliance:aopalliance"
     },

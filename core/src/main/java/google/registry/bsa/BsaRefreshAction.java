@@ -44,7 +44,7 @@ import org.joda.time.Duration;
     service = Action.Service.BSA,
     path = BsaRefreshAction.PATH,
     method = {GET, POST},
-    auth = Auth.AUTH_API_ADMIN)
+    auth = Auth.AUTH_ADMIN)
 public class BsaRefreshAction implements Runnable {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();

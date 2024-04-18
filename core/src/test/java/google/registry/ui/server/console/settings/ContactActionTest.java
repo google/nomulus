@@ -37,7 +37,6 @@ import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.request.Action;
 import google.registry.request.RequestModule;
 import google.registry.request.auth.AuthResult;
-import google.registry.request.auth.UserAuthInfo;
 import google.registry.testing.FakeResponse;
 import google.registry.ui.server.registrar.RegistrarConsoleModule;
 import jakarta.servlet.http.HttpServletRequest;
@@ -103,8 +102,7 @@ class ContactActionTest {
         createAction(
             Action.Method.GET,
             AuthResult.createUser(
-                UserAuthInfo.create(
-                    createUser(new UserRoles.Builder().setGlobalRole(GlobalRole.FTE).build()))),
+                createUser(new UserRoles.Builder().setGlobalRole(GlobalRole.FTE).build())),
             testRegistrar.getRegistrarId(),
             null);
     action.run();
@@ -120,8 +118,7 @@ class ContactActionTest {
         createAction(
             Action.Method.GET,
             AuthResult.createUser(
-                UserAuthInfo.create(
-                    createUser(new UserRoles.Builder().setGlobalRole(GlobalRole.FTE).build()))),
+                createUser(new UserRoles.Builder().setGlobalRole(GlobalRole.FTE).build())),
             testRegistrar.getRegistrarId(),
             null);
     action.run();
@@ -135,8 +132,7 @@ class ContactActionTest {
         createAction(
             Action.Method.POST,
             AuthResult.createUser(
-                UserAuthInfo.create(
-                    createUser(new UserRoles.Builder().setGlobalRole(GlobalRole.FTE).build()))),
+                createUser(new UserRoles.Builder().setGlobalRole(GlobalRole.FTE).build())),
             testRegistrar.getRegistrarId(),
             "[" + jsonRegistrar1 + "," + jsonRegistrar2 + "]");
     action.run();
@@ -157,8 +153,7 @@ class ContactActionTest {
         createAction(
             Action.Method.POST,
             AuthResult.createUser(
-                UserAuthInfo.create(
-                    createUser(new UserRoles.Builder().setGlobalRole(GlobalRole.FTE).build()))),
+                createUser(new UserRoles.Builder().setGlobalRole(GlobalRole.FTE).build())),
             testRegistrar.getRegistrarId(),
             "[" + jsonRegistrar1 + "," + jsonRegistrar2 + "]");
     action.run();
@@ -182,8 +177,7 @@ class ContactActionTest {
         createAction(
             Action.Method.POST,
             AuthResult.createUser(
-                UserAuthInfo.create(
-                    createUser(new UserRoles.Builder().setGlobalRole(GlobalRole.FTE).build()))),
+                createUser(new UserRoles.Builder().setGlobalRole(GlobalRole.FTE).build())),
             testRegistrar.getRegistrarId(),
             "[" + jsonRegistrar2 + "]");
     action.run();
@@ -203,13 +197,12 @@ class ContactActionTest {
         createAction(
             Action.Method.POST,
             AuthResult.createUser(
-                UserAuthInfo.create(
-                    createUser(
-                        new UserRoles.Builder()
-                            .setRegistrarRoles(
-                                ImmutableMap.of(
-                                    testRegistrar.getRegistrarId(), RegistrarRole.ACCOUNT_MANAGER))
-                            .build()))),
+                createUser(
+                    new UserRoles.Builder()
+                        .setRegistrarRoles(
+                            ImmutableMap.of(
+                                testRegistrar.getRegistrarId(), RegistrarRole.ACCOUNT_MANAGER))
+                        .build())),
             testRegistrar.getRegistrarId(),
             "[" + jsonRegistrar2 + "]");
     action.run();
