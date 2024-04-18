@@ -58,7 +58,7 @@ public class ConsoleUserDataAction extends ConsoleApiAction {
 
   @Override
   protected void getHandler(User user) {
-    // As this is a first GET request we use it as an opportunity to set a XSRF cookie
+    // As this is the first GET request, we use it as an opportunity to set a XSRF cookie
     // for angular to read - https://angular.io/guide/http-security-xsrf-protection
     Cookie xsrfCookie =
         new Cookie(

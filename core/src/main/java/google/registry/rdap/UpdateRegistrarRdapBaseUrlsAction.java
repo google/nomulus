@@ -55,7 +55,7 @@ import org.apache.commons.csv.CSVRecord;
     service = Action.Service.BACKEND,
     path = "/_dr/task/updateRegistrarRdapBaseUrls",
     automaticallyPrintOk = true,
-    auth = Auth.AUTH_API_ADMIN)
+    auth = Auth.AUTH_ADMIN)
 public final class UpdateRegistrarRdapBaseUrlsAction implements Runnable {
 
   private static final String RDAP_IDS_URL =

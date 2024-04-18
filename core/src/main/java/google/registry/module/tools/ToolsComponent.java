@@ -35,7 +35,6 @@ import google.registry.monitoring.whitebox.StackdriverModule;
 import google.registry.privileges.secretmanager.SecretManagerModule;
 import google.registry.request.Modules.GsonModule;
 import google.registry.request.Modules.NetHttpTransportModule;
-import google.registry.request.Modules.UserServiceModule;
 import google.registry.request.auth.AuthModule;
 import google.registry.util.UtilsModule;
 import javax.inject.Singleton;
@@ -63,7 +62,6 @@ import javax.inject.Singleton;
       ServerTridProviderModule.class,
       StackdriverModule.class,
       ToolsRequestComponentModule.class,
-      UserServiceModule.class,
       UtilsModule.class
     })
 interface ToolsComponent {

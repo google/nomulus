@@ -153,7 +153,6 @@ dependencies {
   implementation deps['com.google.apis:google-api-services-monitoring']
   implementation deps['com.google.apis:google-api-services-sheets']
   implementation deps['com.google.apis:google-api-services-storage']
-  testImplementation deps['com.google.appengine:appengine-api-stubs']
   implementation deps['com.google.auth:google-auth-library-credentials']
   implementation deps['com.google.auth:google-auth-library-oauth2-http']
   implementation deps['com.google.cloud.bigdataoss:util']
@@ -250,10 +249,6 @@ dependencies {
   implementation deps['us.fatehi:schemacrawler-tools']
   implementation deps['xerces:xmlParserAPIs']
   implementation deps['org.ogce:xpp3']
-  // This dependency must come after javax.mail:mail as it would otherwise
-  // shadow classes in package javax.mail with its own implementation.
-  implementation deps['com.google.appengine:appengine-api-1.0-sdk']
-
   // Known issue: nebula-lint misses inherited dependency.
   implementation project(':common')
   testImplementation project(path: ':common', configuration: 'testing')
@@ -271,7 +266,6 @@ dependencies {
   testAnnotationProcessor project(':processor')
 
   testImplementation deps['com.google.cloud:google-cloud-nio']
-  testImplementation deps['com.google.appengine:appengine-testing']
   testImplementation deps['com.google.guava:guava-testlib']
   testImplementation deps['com.google.monitoring-client:contrib']
   testImplementation deps['com.google.protobuf:protobuf-java-util']
