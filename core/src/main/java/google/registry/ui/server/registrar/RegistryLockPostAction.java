@@ -70,16 +70,15 @@ import org.joda.time.Duration;
     auth = Auth.AUTH_PUBLIC_LOGGED_IN)
 public class RegistryLockPostAction implements Runnable, JsonActionRunner.JsonAction {
   public static final String PATH = "/registry-lock-post";
-
-  private static final FluentLogger logger = FluentLogger.forEnclosingClass();
-  private static final Gson GSON = new Gson();
-
-  private static final String VERIFICATION_EMAIL_TEMPLATE =
+  public static final String VERIFICATION_EMAIL_TEMPLATE =
       """
           Please click the link below to perform the lock / unlock action on domain %s. Note: this\
            code will expire in one hour.
 
           %s""";
+
+  private static final FluentLogger logger = FluentLogger.forEnclosingClass();
+  private static final Gson GSON = new Gson();
 
   private final HttpServletRequest req;
   private final JsonActionRunner jsonActionRunner;
