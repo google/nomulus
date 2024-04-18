@@ -36,7 +36,6 @@ import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.request.RequestModule;
 import google.registry.request.auth.AuthResult;
 import google.registry.request.auth.AuthenticatedRegistrarAccessor;
-import google.registry.request.auth.UserAuthInfo;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeResponse;
 import google.registry.ui.server.registrar.RegistrarConsoleModule;
@@ -92,8 +91,7 @@ class SecurityActionTest {
     SecurityAction action =
         createAction(
             AuthResult.createUser(
-                UserAuthInfo.create(
-                    createUser(new UserRoles.Builder().setGlobalRole(GlobalRole.FTE).build()))),
+                createUser(new UserRoles.Builder().setGlobalRole(GlobalRole.FTE).build())),
             testRegistrar.getRegistrarId());
     action.run();
     assertThat(response.getStatus()).isEqualTo(HttpStatusCodes.STATUS_CODE_OK);

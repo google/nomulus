@@ -43,7 +43,7 @@ import javax.inject.Inject;
     service = Action.Service.TOOLS,
     path = CreateGroupsAction.PATH,
     method = POST,
-    auth = Auth.AUTH_API_ADMIN)
+    auth = Auth.AUTH_ADMIN)
 public class CreateGroupsAction implements Runnable {
 
   public static final String PATH = "/_dr/admin/createGroups";

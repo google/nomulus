@@ -75,7 +75,7 @@ public class WhoisRegistrarFieldsAction implements JsonGetAction {
       return;
     }
 
-    User user = authResult.userAuthInfo().get().consoleUser().get();
+    User user = authResult.user().get();
     if (!user.getUserRoles()
         .hasPermission(
             registrar.get().getRegistrarId(), ConsolePermission.EDIT_REGISTRAR_DETAILS)) {

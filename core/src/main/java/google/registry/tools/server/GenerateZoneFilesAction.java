@@ -65,7 +65,7 @@ import org.joda.time.Duration;
     service = Action.Service.TOOLS,
     path = GenerateZoneFilesAction.PATH,
     method = POST,
-    auth = Auth.AUTH_API_ADMIN)
+    auth = Auth.AUTH_ADMIN)
 public class GenerateZoneFilesAction implements Runnable, JsonActionRunner.JsonAction {
 
   private static final FluentLogger log = FluentLogger.forEnclosingClass();
