@@ -33,7 +33,7 @@ import javax.inject.Inject;
     service = Action.Service.TOOLS,
     path = ListReservedListsAction.PATH,
     method = {GET, POST},
-    auth = Auth.AUTH_API_ADMIN)
+    auth = Auth.AUTH_ADMIN)
 public final class ListReservedListsAction extends ListObjectsAction<ReservedList> {
 
   public static final String PATH = "/_dr/admin/list/reservedLists";

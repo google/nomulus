@@ -22,7 +22,6 @@ import static org.mockito.Mockito.verify;
 
 import google.registry.model.server.Lock;
 import google.registry.testing.FakeClock;
-import google.registry.testing.UserServiceExtension;
 import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeoutException;
@@ -30,7 +29,6 @@ import javax.annotation.Nullable;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link LockHandler}. */
 final class LockHandlerImplTest {
@@ -38,10 +36,6 @@ final class LockHandlerImplTest {
   private static final Duration ONE_DAY = Duration.standardDays(1);
 
   private final FakeClock clock = new FakeClock(DateTime.parse("2001-08-29T12:20:00Z"));
-
-  // We do not actually need to set up user service, rather, we just need this extension to set up
-  // App Engine environment so the status checker can make an App Engine API call.
-  @RegisterExtension UserServiceExtension userService = new UserServiceExtension("");
 
   private static class CountingCallable implements Callable<Void> {
     int numCalled;

@@ -18,11 +18,11 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.flogger.FluentLogger;
 import dagger.Module;
 import dagger.Provides;
+import google.registry.model.console.User;
 import google.registry.request.Parameter;
 import google.registry.request.RequestParameters;
 import google.registry.request.auth.AuthResult;
 import google.registry.request.auth.AuthenticatedRegistrarAccessor;
-import google.registry.request.auth.UserAuthInfo;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.Optional;
 
@@ -101,11 +101,11 @@ public final class RdapModule {
   @Provides
   static RdapAuthorization provideRdapAuthorization(
       AuthResult authResult, AuthenticatedRegistrarAccessor registrarAccessor) {
-    if (authResult.userAuthInfo().isEmpty()) {
+    if (authResult.user().isEmpty()) {
       return RdapAuthorization.PUBLIC_AUTHORIZATION;
     }
-    UserAuthInfo userAuthInfo = authResult.userAuthInfo().get();
-    if (userAuthInfo.isUserAdmin()) {
+    User user = authResult.user().get();
+    if (user.getUserRoles().isAdmin()) {
       return RdapAuthorization.ADMINISTRATOR_AUTHORIZATION;
     }
     ImmutableSet<String> clientIds = registrarAccessor.getAllRegistrarIdsWithRoles().keySet();

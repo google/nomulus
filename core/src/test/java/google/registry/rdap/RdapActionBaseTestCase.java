@@ -22,13 +22,13 @@ import static google.registry.request.Action.Method.GET;
 import static google.registry.request.Action.Method.HEAD;
 import static org.mockito.Mockito.mock;
 
-import com.google.appengine.api.users.User;
 import com.google.gson.JsonObject;
+import google.registry.model.console.User;
+import google.registry.model.console.UserRoles;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.request.Actions;
 import google.registry.request.auth.AuthResult;
-import google.registry.request.auth.UserAuthInfo;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeResponse;
 import google.registry.util.Idn;
@@ -48,11 +48,17 @@ abstract class RdapActionBaseTestCase<A extends RdapActionBase> {
 
   protected static final AuthResult AUTH_RESULT =
       AuthResult.createUser(
-          UserAuthInfo.create(new User("rdap.user@user.com", "gmail.com", "12345"), false));
+          new User.Builder()
+              .setEmailAddress("rdap.user@user.com")
+              .setUserRoles(new UserRoles.Builder().setIsAdmin(false).build())
+              .build());
 
   protected static final AuthResult AUTH_RESULT_ADMIN =
       AuthResult.createUser(
-          UserAuthInfo.create(new User("rdap.admin@google.com", "gmail.com", "12345"), true));
+          new User.Builder()
+              .setEmailAddress("rdap.admin@google.com")
+              .setUserRoles(new UserRoles.Builder().setIsAdmin(true).build())
+              .build());
 
   protected FakeResponse response = new FakeResponse();
   protected final FakeClock clock = new FakeClock(DateTime.parse("2000-01-01TZ"));
