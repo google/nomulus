@@ -1,13 +1,13 @@
-PATH                 CLASS                      METHODS  OK AUTH_METHODS MIN  USER_POLICY
-/_dr/whois           WhoisAction                POST     n  API          APP  ADMIN
-/check               CheckApiAction             GET      n  API          NONE PUBLIC
-/rdap/autnum/(*)     RdapAutnumAction           GET,HEAD n  API          NONE PUBLIC
-/rdap/domain/(*)     RdapDomainAction           GET,HEAD n  API          NONE PUBLIC
-/rdap/domains        RdapDomainSearchAction     GET,HEAD n  API          NONE PUBLIC
-/rdap/entities       RdapEntitySearchAction     GET,HEAD n  API          NONE PUBLIC
-/rdap/entity/(*)     RdapEntityAction           GET,HEAD n  API          NONE PUBLIC
-/rdap/help(*)        RdapHelpAction             GET,HEAD n  API          NONE PUBLIC
-/rdap/ip/(*)         RdapIpAction               GET,HEAD n  API          NONE PUBLIC
-/rdap/nameserver/(*) RdapNameserverAction       GET,HEAD n  API          NONE PUBLIC
-/rdap/nameservers    RdapNameserverSearchAction GET,HEAD n  API          NONE PUBLIC
-/whois/(*)           WhoisHttpAction            GET      n  API          NONE PUBLIC
+PATH                 CLASS                      METHODS  OK MIN  USER_POLICY
+/_dr/whois           WhoisAction                POST     n  APP  ADMIN
+/check               CheckApiAction             GET      n  NONE PUBLIC
+/rdap/autnum/(*)     RdapAutnumAction           GET,HEAD n  NONE PUBLIC
+/rdap/domain/(*)     RdapDomainAction           GET,HEAD n  NONE PUBLIC
+/rdap/domains        RdapDomainSearchAction     GET,HEAD n  NONE PUBLIC
+/rdap/entities       RdapEntitySearchAction     GET,HEAD n  NONE PUBLIC
+/rdap/entity/(*)     RdapEntityAction           GET,HEAD n  NONE PUBLIC
+/rdap/help(*)        RdapHelpAction             GET,HEAD n  NONE PUBLIC
+/rdap/ip/(*)         RdapIpAction               GET,HEAD n  NONE PUBLIC
+/rdap/nameserver/(*) RdapNameserverAction       GET,HEAD n  NONE PUBLIC
+/rdap/nameservers    RdapNameserverSearchAction GET,HEAD n  NONE PUBLIC
+/whois/(*)           WhoisHttpAction            GET      n  NONE PUBLIC

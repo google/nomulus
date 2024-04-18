@@ -21,11 +21,13 @@ import static google.registry.testing.DatabaseHelper.loadRegistrar;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import google.registry.model.console.RegistrarRole;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarAddress;
 import google.registry.model.registrar.RegistrarPoc;
 import google.registry.module.frontend.FrontendServlet;
 import google.registry.server.RegistryTestServer;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.junitpioneer.jupiter.RetryingTest;
 import org.openqa.selenium.By;
@@ -43,7 +45,13 @@ public class RegistrarConsoleWebTest extends WebDriverTestCase {
               route("/registrar-settings", FrontendServlet.class))
           .setFixtures(BASIC)
           .setEmail("Marla.Singer@crr.com")
+          .setRegistryLockEmail("Marla.Singer.RegistryLock@crr.com")
           .build();
+
+  @BeforeEach
+  void beforeEach() {
+    server.setRegistrarRoles(ImmutableMap.of("TheRegistrar", RegistrarRole.ACCOUNT_MANAGER));
+  }
 
   /** Checks the identified element has the given text content. */
   void assertEltText(String eltId, String eltValue) {
@@ -112,8 +120,8 @@ public class RegistrarConsoleWebTest extends WebDriverTestCase {
   @RetryingTest(3)
   void testEditButtonsVisibility_adminOnly() throws Throwable {
     server.setIsAdmin(true);
-    // To make sure we're only ADMIN (and not also "OWNER"), we switch to the NewRegistrar we
-    // aren't in the contacts of
+    // To make sure we're only ADMIN (and not also "OWNER"), we switch to the NewRegistrar for
+    // which we don't have a role.
     driver.get(server.getUrl("/registrar?clientId=NewRegistrar#whois-settings"));
     assertEltInvisible("reg-app-btns-edit");
     assertEltInvisible("reg-app-btn-add");

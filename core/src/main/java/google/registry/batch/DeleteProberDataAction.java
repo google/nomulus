@@ -61,7 +61,7 @@ import org.joda.time.Duration;
     service = Action.Service.BACKEND,
     path = "/_dr/task/deleteProberData",
     method = POST,
-    auth = Auth.AUTH_API_ADMIN)
+    auth = Auth.AUTH_ADMIN)
 public class DeleteProberDataAction implements Runnable {
 
   // TODO(b/323026070): Add email alert on failure of this action

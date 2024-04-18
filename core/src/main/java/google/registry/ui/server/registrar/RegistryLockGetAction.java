@@ -22,18 +22,16 @@ import static google.registry.ui.server.registrar.RegistrarConsoleModule.PARAM_C
 import static jakarta.servlet.http.HttpServletResponse.SC_FORBIDDEN;
 import static jakarta.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 
-import com.google.appengine.api.users.User;
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.Ascii;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.flogger.FluentLogger;
 import com.google.common.net.MediaType;
 import com.google.gson.Gson;
 import google.registry.model.console.ConsolePermission;
+import google.registry.model.console.User;
 import google.registry.model.domain.RegistryLock;
 import google.registry.model.registrar.Registrar;
-import google.registry.model.registrar.RegistrarPoc;
 import google.registry.model.tld.RegistryLockDao;
 import google.registry.request.Action;
 import google.registry.request.Action.Method;
@@ -44,9 +42,7 @@ import google.registry.request.auth.Auth;
 import google.registry.request.auth.AuthResult;
 import google.registry.request.auth.AuthenticatedRegistrarAccessor;
 import google.registry.request.auth.AuthenticatedRegistrarAccessor.RegistrarAccessDeniedException;
-import google.registry.request.auth.UserAuthInfo;
 import google.registry.security.JsonResponseHelper;
-import java.util.Objects;
 import java.util.Optional;
 import javax.inject.Inject;
 import org.joda.time.DateTime;
@@ -101,7 +97,7 @@ public final class RegistryLockGetAction implements JsonGetAction {
   @Override
   public void run() {
     checkArgument(Method.GET.equals(method), "Only GET requests allowed");
-    checkArgument(authResult.userAuthInfo().isPresent(), "User auth info must be present");
+    checkArgument(authResult.user().isPresent(), "User must be present");
     checkArgument(paramClientId.isPresent(), "clientId must be present");
     response.setContentType(MediaType.JSON_UTF_8);
 
@@ -121,29 +117,7 @@ public final class RegistryLockGetAction implements JsonGetAction {
     }
   }
 
-  static Optional<RegistrarPoc> getContactMatchingLogin(User user, Registrar registrar) {
-    ImmutableList<RegistrarPoc> matchingContacts =
-        registrar.getContacts().stream()
-            .filter(contact -> contact.getLoginEmailAddress() != null)
-            .filter(
-                contact ->
-                    Objects.equals(
-                        Ascii.toLowerCase(contact.getLoginEmailAddress()),
-                        Ascii.toLowerCase(user.getEmail())))
-            .collect(toImmutableList());
-    if (matchingContacts.size() > 1) {
-      ImmutableList<String> matchingEmails =
-          matchingContacts.stream().map(RegistrarPoc::getEmailAddress).collect(toImmutableList());
-      throw new IllegalArgumentException(
-          String.format(
-              "User with login email %s had multiple matching contacts with contact email addresses"
-                  + " %s",
-              user.getEmail(), matchingEmails));
-    }
-    return matchingContacts.stream().findFirst();
-  }
-
-  static Registrar getRegistrarAndVerifyLockAccess(
+  static void verifyLockAccess(
       AuthenticatedRegistrarAccessor registrarAccessor, String clientId, boolean isAdmin)
       throws RegistrarAccessDeniedException {
     Registrar registrar = registrarAccessor.getRegistrar(clientId);
@@ -151,37 +125,22 @@ public final class RegistryLockGetAction implements JsonGetAction {
         isAdmin || registrar.isRegistryLockAllowed(),
         "Registry lock not allowed for registrar %s",
         clientId);
-    return registrar;
   }
 
   private ImmutableMap<String, ?> getLockedDomainsMap(String registrarId)
       throws RegistrarAccessDeniedException {
     // Note: admins always have access to the locks page
-    checkArgument(authResult.userAuthInfo().isPresent(), "User auth info must be present");
+    checkArgument(authResult.user().isPresent(), "User must be present");
 
     boolean isAdmin = registrarAccessor.isAdmin();
-    Registrar registrar = getRegistrarAndVerifyLockAccess(registrarAccessor, registrarId, isAdmin);
+    verifyLockAccess(registrarAccessor, registrarId, isAdmin);
 
-    UserAuthInfo userAuthInfo = authResult.userAuthInfo().get();
+    User user = authResult.user().get();
     // Split logic depending on whether we are using the old auth system or the new one
     boolean isRegistryLockAllowed;
-    String relevantEmail;
-    if (userAuthInfo.appEngineUser().isPresent()) {
-      User user = userAuthInfo.appEngineUser().get();
-      Optional<RegistrarPoc> contactOptional = getContactMatchingLogin(user, registrar);
-      isRegistryLockAllowed =
-          isAdmin || contactOptional.map(RegistrarPoc::isRegistryLockAllowed).orElse(false);
-      relevantEmail =
-          isAdmin
-              ? user.getEmail()
-              // if the contact isn't present, we shouldn't display the email anyway
-              : contactOptional.flatMap(RegistrarPoc::getRegistryLockEmailAddress).orElse("");
-    } else {
-      google.registry.model.console.User user = userAuthInfo.consoleUser().get();
-      isRegistryLockAllowed =
-          user.getUserRoles().hasPermission(registrarId, ConsolePermission.REGISTRY_LOCK);
-      relevantEmail = user.getEmailAddress();
-    }
+    isRegistryLockAllowed =
+        user.getUserRoles().hasPermission(registrarId, ConsolePermission.REGISTRY_LOCK);
+    String relevantEmail = user.getRegistryLockEmailAddress().orElse(user.getEmailAddress());
     // Use the contact's registry lock email if it's present, else use the login email (for admins)
     return ImmutableMap.of(
         LOCK_ENABLED_FOR_CONTACT_PARAM,

@@ -34,7 +34,7 @@ import org.joda.time.DateTime;
     service = Action.Service.TOOLS,
     path = ListHostsAction.PATH,
     method = {GET, POST},
-    auth = Auth.AUTH_API_ADMIN)
+    auth = Auth.AUTH_ADMIN)
 public final class ListHostsAction extends ListObjectsAction<Host> {
 
   public static final String PATH = "/_dr/admin/list/hosts";
