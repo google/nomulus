@@ -48,9 +48,9 @@ public class RegistrarsAction extends ConsoleApiAction {
   private static final int PASSCODE_LENGTH = 5;
   static final String PATH = "/console-api/registrars";
   private final Gson gson;
-  private Optional<Registrar> registrar;
-  private StringGenerator passwordGenerator;
-  private StringGenerator passcodeGenerator;
+  private final Optional<Registrar> registrar;
+  private final StringGenerator passwordGenerator;
+  private final StringGenerator passcodeGenerator;
 
   @Inject
   public RegistrarsAction(

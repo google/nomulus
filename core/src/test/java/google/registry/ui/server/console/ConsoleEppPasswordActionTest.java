@@ -39,13 +39,11 @@ import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.request.Action;
 import google.registry.request.auth.AuthResult;
 import google.registry.request.auth.AuthenticatedRegistrarAccessor;
-import google.registry.request.auth.UserAuthInfo;
-import google.registry.testing.FakeConsoleApiParams;
+import google.registry.testing.ConsoleApiParamsUtils;
 import google.registry.testing.FakeResponse;
 import google.registry.tools.GsonUtils;
 import google.registry.ui.server.registrar.ConsoleApiParams;
 import google.registry.util.EmailMessage;
-import java.util.Optional;
 import javax.mail.internet.AddressException;
 import javax.mail.internet.InternetAddress;
 import org.junit.jupiter.api.BeforeEach;
@@ -191,8 +189,8 @@ class ConsoleEppPasswordActionTest {
             .setUserRoles(new UserRoles.Builder().setGlobalRole(GlobalRole.FTE).build())
             .build();
 
-    AuthResult authResult = AuthResult.createUser(UserAuthInfo.create(user));
-    consoleApiParams = FakeConsoleApiParams.get(Optional.of(authResult));
+    AuthResult authResult = AuthResult.createUser(user);
+    consoleApiParams = ConsoleApiParamsUtils.createFake(authResult);
     AuthenticatedRegistrarAccessor authenticatedRegistrarAccessor =
         AuthenticatedRegistrarAccessor.createForTesting(
             ImmutableSetMultimap.of("registrarId", OWNER));

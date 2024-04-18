@@ -22,18 +22,21 @@ import static google.registry.util.NetworkUtils.pickUnusedPort;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.net.HostAndPort;
+import google.registry.model.console.RegistrarRole;
+import google.registry.model.console.User;
+import google.registry.model.console.UserRoles;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
-import google.registry.request.auth.AuthenticatedRegistrarAccessor;
+import google.registry.request.auth.AuthResult;
+import google.registry.request.auth.OidcTokenAuthenticationMechanism;
 import google.registry.server.Fixture;
 import google.registry.server.Route;
 import google.registry.server.TestServer;
-import google.registry.testing.UserInfo;
-import google.registry.testing.UserServiceExtension;
 import java.net.URL;
 import java.net.UnknownHostException;
 import java.nio.file.Path;
 import java.time.Duration;
+import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.LinkedBlockingDeque;
@@ -49,10 +52,10 @@ public final class TestServerExtension implements BeforeEachCallback, AfterEachC
   private final ImmutableList<Fixture> fixtures;
   private final JpaIntegrationTestExtension jpa =
       new JpaTestExtensions.Builder().buildIntegrationTestExtension();
-  private final UserServiceExtension userService;
   private final BlockingQueue<FutureTask<?>> jobs = new LinkedBlockingDeque<>();
   private final ImmutableMap<String, Path> runfiles;
   private final ImmutableList<Route> routes;
+  private User user;
 
   private TestServer testServer;
   private Thread serverThread;
@@ -65,9 +68,12 @@ public final class TestServerExtension implements BeforeEachCallback, AfterEachC
     this.runfiles = runfiles;
     this.routes = routes;
     this.fixtures = fixtures;
-    // We create an GAE-Admin user, and then use AuthenticatedRegistrarAccessor.bypassAdminCheck to
-    // choose whether the user is an admin or not.
-    this.userService = new UserServiceExtension(UserInfo.createAdmin(email));
+    // We create a user, and then use setIsAdmin to override this setting if necessary
+    this.user =
+        new User.Builder()
+            .setEmailAddress(email)
+            .setUserRoles(new UserRoles.Builder().build())
+            .build();
   }
 
   @Override
@@ -84,7 +90,6 @@ public final class TestServerExtension implements BeforeEachCallback, AfterEachC
     } catch (UnknownHostException e) {
       throw new IllegalStateException(e);
     }
-    setIsAdmin(false);
     Server server = new Server(context);
     serverThread = new Thread(server);
     synchronized (this) {
@@ -100,10 +105,8 @@ public final class TestServerExtension implements BeforeEachCallback, AfterEachC
 
   @Override
   public void afterEach(ExtensionContext context) {
-    // Reset the global state AuthenticatedRegistrarAccessor.bypassAdminCheck
-    // to the default value, so it doesn't interfere with other tests
-    AuthenticatedRegistrarAccessor.bypassAdminCheck = false;
     serverThread.interrupt();
+    OidcTokenAuthenticationMechanism.unsetAuthResultForTesting();
     try {
       serverThread.join();
     } catch (InterruptedException e) {
@@ -115,22 +118,27 @@ public final class TestServerExtension implements BeforeEachCallback, AfterEachC
     }
   }
 
-  /**
-   * Set the current user's Admin status.
-   *
-   * <p>This is sort of a hack because we can't actually change the user itself, nor that user's GAE
-   * roles. Instead, we created a GAE-admin user in the constructor and we "bypass the admin check"
-   * if we want that user to not be an admin.
-   *
-   * <p>A better implementation would be to replace the AuthenticatedRegistrarAccessor - that way we
-   * can fully control the Roles the user has without relying on the implementation. But right now
-   * we don't have the ability to change injected values like that :/
-   */
+  /** Set the current user's admin status. */
   public void setIsAdmin(boolean isAdmin) {
-    AuthenticatedRegistrarAccessor.bypassAdminCheck = !isAdmin;
+    user =
+        user.asBuilder()
+            .setUserRoles(user.getUserRoles().asBuilder().setIsAdmin(isAdmin).build())
+            .build();
+    OidcTokenAuthenticationMechanism.setAuthResultForTesting(AuthResult.createUser(user));
   }
 
-  /** @see TestServer#getUrl(String) */
+  /** Set the current user's registrar role map. */
+  public void setRegistrarRoles(Map<String, RegistrarRole> registrarRoles) {
+    user =
+        user.asBuilder()
+            .setUserRoles(user.getUserRoles().asBuilder().setRegistrarRoles(registrarRoles).build())
+            .build();
+    OidcTokenAuthenticationMechanism.setAuthResultForTesting(AuthResult.createUser(user));
+  }
+
+  /**
+   * @see TestServer#getUrl(String)
+   */
   public URL getUrl(String path) {
     return testServer.getUrl(path);
   }
@@ -156,12 +164,10 @@ public final class TestServerExtension implements BeforeEachCallback, AfterEachC
       try {
         try {
           jpa.beforeEach(context);
-          userService.beforeEach(context);
           this.runInner();
         } catch (InterruptedException e) {
           // This is what we expect to happen.
         } finally {
-          userService.afterEach(context);
           jpa.afterEach(context);
         }
       } catch (Throwable e) {
