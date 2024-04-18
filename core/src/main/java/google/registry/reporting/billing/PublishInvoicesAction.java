@@ -52,7 +52,7 @@ import org.joda.time.YearMonth;
     service = Action.Service.BACKEND,
     path = PublishInvoicesAction.PATH,
     method = POST,
-    auth = Auth.AUTH_API_ADMIN)
+    auth = Auth.AUTH_ADMIN)
 public class PublishInvoicesAction implements Runnable {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();

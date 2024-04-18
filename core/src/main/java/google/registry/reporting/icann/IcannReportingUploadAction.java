@@ -70,7 +70,7 @@ import org.joda.time.Duration;
     service = Action.Service.BACKEND,
     path = IcannReportingUploadAction.PATH,
     method = POST,
-    auth = Auth.AUTH_API_ADMIN)
+    auth = Auth.AUTH_ADMIN)
 public final class IcannReportingUploadAction implements Runnable {
 
   static final String PATH = "/_dr/task/icannReportingUpload";

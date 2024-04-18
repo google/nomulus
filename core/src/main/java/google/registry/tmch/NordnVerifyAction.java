@@ -54,7 +54,7 @@ import javax.inject.Inject;
     path = NordnVerifyAction.PATH,
     method = Action.Method.POST,
     automaticallyPrintOk = true,
-    auth = Auth.AUTH_API_ADMIN)
+    auth = Auth.AUTH_ADMIN)
 public final class NordnVerifyAction implements Runnable {
 
   static final String PATH = "/_dr/task/nordnVerify";

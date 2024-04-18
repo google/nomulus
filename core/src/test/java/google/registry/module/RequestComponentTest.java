@@ -67,26 +67,14 @@ public class RequestComponentTest {
   }
 
   private record Route(
-      String path,
-      String clazz,
-      String methods,
-      String ok,
-      String authMethods,
-      String min,
-      String userPolicy) {
+      String path, String clazz, String methods, String ok, String min, String userPolicy) {
     private static final Splitter splitter = Splitter.on(' ').omitEmptyStrings().trimResults();
 
     static Route create(String line) {
       ImmutableList<String> parts = ImmutableList.copyOf(splitter.split(line));
-      assertThat(parts.size()).isEqualTo(7);
+      assertThat(parts.size()).isEqualTo(6);
       return new Route(
-          parts.get(0),
-          parts.get(1),
-          parts.get(2),
-          parts.get(3),
-          parts.get(4),
-          parts.get(5),
-          parts.get(6));
+          parts.get(0), parts.get(1), parts.get(2), parts.get(3), parts.get(4), parts.get(5));
     }
   }
 }
