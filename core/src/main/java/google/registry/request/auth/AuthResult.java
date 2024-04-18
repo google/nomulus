@@ -18,6 +18,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static google.registry.request.auth.AuthSettings.AuthLevel.APP;
 import static google.registry.request.auth.AuthSettings.AuthLevel.USER;
 
+import google.registry.model.console.User;
 import google.registry.request.auth.AuthSettings.AuthLevel;
 import java.util.Optional;
 import javax.annotation.Nullable;
@@ -26,24 +27,23 @@ import javax.annotation.Nullable;
  * Results of authentication for a given HTTP request, as emitted by an {@link
  * AuthenticationMechanism}.
  *
- * @param userAuthInfo Information about the authenticated user, if there is one.
- * @param appServiceAccount Service account email of the authenticated app, if there is one. This
- *     will be logged upon successful login.
+ * @param authLevel the level of authentication obtained
+ * @param user information about the authenticated user, if there is one
+ * @param serviceAccountEmail service account email of the authenticated app, if there is one
  */
 public record AuthResult(
-    AuthLevel authLevel, Optional<UserAuthInfo> userAuthInfo, Optional<String> appServiceAccount) {
+    AuthLevel authLevel, Optional<User> user, Optional<String> serviceAccountEmail) {
 
   public boolean isAuthenticated() {
     return authLevel() != AuthLevel.NONE;
   }
 
   public String userIdForLogging() {
-    return userAuthInfo()
-        .map(
-            userAuthInfo ->
+    return user.map(
+            user ->
                 String.format(
                     "%s %s",
-                    userAuthInfo.isUserAdmin() ? "admin" : "user", userAuthInfo.getEmailAddress()))
+                    user.getUserRoles().isAdmin() ? "admin" : "user", user.getEmailAddress()))
         .orElse("<logged-out user>");
   }
 
@@ -51,22 +51,21 @@ public record AuthResult(
     return create(APP, null, email);
   }
 
-  public static AuthResult createUser(UserAuthInfo userAuthInfo) {
-    return create(USER, userAuthInfo, null);
+  public static AuthResult createUser(User user) {
+    return create(USER, user, null);
   }
 
   private static AuthResult create(
-      AuthLevel authLevel, @Nullable UserAuthInfo userAuthInfo, @Nullable String email) {
+      AuthLevel authLevel, @Nullable User user, @Nullable String serviceAccountEmail) {
     checkArgument(
-        userAuthInfo == null || email == null,
-        "User auth info and service account email cannot be specificed at the same time");
+        user == null || serviceAccountEmail == null,
+        "User and service account email cannot be specified at the same time");
+    checkArgument(authLevel != USER || user != null, "User must be specified for auth level USER");
     checkArgument(
-        authLevel != USER || userAuthInfo != null,
-        "User auth info must be specified for auth level USER");
-    checkArgument(
-        authLevel != APP || email != null,
+        authLevel != APP || serviceAccountEmail != null,
         "Service account email must be specified for auth level APP");
-    return new AuthResult(authLevel, Optional.ofNullable(userAuthInfo), Optional.ofNullable(email));
+    return new AuthResult(
+        authLevel, Optional.ofNullable(user), Optional.ofNullable(serviceAccountEmail));
   }
 
   /**
