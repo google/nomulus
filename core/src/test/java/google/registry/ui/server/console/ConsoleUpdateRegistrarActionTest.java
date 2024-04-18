@@ -40,8 +40,7 @@ import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.request.Action;
 import google.registry.request.RequestModule;
 import google.registry.request.auth.AuthResult;
-import google.registry.request.auth.UserAuthInfo;
-import google.registry.testing.FakeConsoleApiParams;
+import google.registry.testing.ConsoleApiParamsUtils;
 import google.registry.testing.FakeResponse;
 import google.registry.testing.SystemPropertyExtension;
 import google.registry.tools.GsonUtils;
@@ -161,8 +160,8 @@ class ConsoleUpdateRegistrarActionTest {
   }
 
   private ConsoleApiParams createParams() {
-    AuthResult authResult = AuthResult.createUser(UserAuthInfo.create(user));
-    return FakeConsoleApiParams.get(Optional.of(authResult));
+    AuthResult authResult = AuthResult.createUser(user);
+    return ConsoleApiParamsUtils.createFake(authResult);
   }
 
   ConsoleUpdateRegistrarAction createAction(String requestData) throws IOException {

@@ -43,7 +43,6 @@ import google.registry.rde.JSchModule;
 import google.registry.request.Modules.GsonModule;
 import google.registry.request.Modules.NetHttpTransportModule;
 import google.registry.request.Modules.UrlConnectionServiceModule;
-import google.registry.request.Modules.UserServiceModule;
 import google.registry.request.auth.AuthModule;
 import google.registry.util.UtilsModule;
 import javax.inject.Singleton;
@@ -78,7 +77,6 @@ import javax.inject.Singleton;
       SheetsServiceModule.class,
       StackdriverModule.class,
       UrlConnectionServiceModule.class,
-      UserServiceModule.class,
       VoidDnsWriterModule.class,
       UtilsModule.class
     })

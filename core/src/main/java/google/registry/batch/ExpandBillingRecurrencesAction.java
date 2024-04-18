@@ -52,7 +52,7 @@ import org.joda.time.DateTime;
 @Action(
     service = Action.Service.BACKEND,
     path = "/_dr/task/expandBillingRecurrences",
-    auth = Auth.AUTH_API_ADMIN)
+    auth = Auth.AUTH_ADMIN)
 public class ExpandBillingRecurrencesAction implements Runnable {
 
   public static final String PARAM_START_TIME = "startTime";

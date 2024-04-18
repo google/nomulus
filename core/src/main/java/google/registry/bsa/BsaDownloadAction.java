@@ -53,7 +53,7 @@ import javax.inject.Inject;
     service = Action.Service.BSA,
     path = BsaDownloadAction.PATH,
     method = {GET, POST},
-    auth = Auth.AUTH_API_ADMIN)
+    auth = Auth.AUTH_ADMIN)
 public class BsaDownloadAction implements Runnable {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();

@@ -17,35 +17,27 @@ package google.registry.testing;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import com.google.appengine.api.users.UserService;
+import google.registry.model.console.User;
 import google.registry.request.auth.AuthResult;
-import google.registry.request.auth.UserAuthInfo;
 import google.registry.security.XsrfTokenManager;
 import google.registry.ui.server.registrar.ConsoleApiParams;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
-import java.util.Optional;
 import org.joda.time.DateTime;
 
-public final class FakeConsoleApiParams {
+public final class ConsoleApiParamsUtils {
 
-  public static ConsoleApiParams get(Optional<AuthResult> maybeAuthResult) {
-    AuthResult authResult =
-        maybeAuthResult.orElseGet(
-            () ->
-                AuthResult.createUser(
-                    UserAuthInfo.create(
-                        new com.google.appengine.api.users.User(
-                            "JohnDoe@theregistrar.com", "theregistrar.com"),
-                        false)));
+  public static ConsoleApiParams createFake(AuthResult authResult) {
     HttpServletRequest request = mock(HttpServletRequest.class);
     XsrfTokenManager xsrfTokenManager =
-        new XsrfTokenManager(
-            new FakeClock(DateTime.parse("2020-02-02T01:23:45Z")), mock(UserService.class));
+        new XsrfTokenManager(new FakeClock(DateTime.parse("2020-02-02T01:23:45Z")));
     when(request.getCookies())
         .thenReturn(
             new Cookie[] {
-              new Cookie(XsrfTokenManager.X_CSRF_TOKEN, xsrfTokenManager.generateToken(""))
+              new Cookie(
+                  XsrfTokenManager.X_CSRF_TOKEN,
+                  xsrfTokenManager.generateToken(
+                      authResult.user().map(User::getEmailAddress).orElse("")))
             });
     return ConsoleApiParams.create(request, new FakeResponse(), authResult, xsrfTokenManager);
   }

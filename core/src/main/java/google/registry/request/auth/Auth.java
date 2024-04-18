@@ -14,12 +14,8 @@
 
 package google.registry.request.auth;
 
-import com.google.common.collect.ImmutableList;
 import google.registry.request.auth.AuthSettings.AuthLevel;
-import google.registry.request.auth.AuthSettings.AuthMethod;
 import google.registry.request.auth.AuthSettings.UserPolicy;
-import google.registry.ui.server.registrar.HtmlAction;
-import google.registry.ui.server.registrar.JsonGetAction;
 
 /** Enum used to configure authentication settings for Actions. */
 public enum Auth {
@@ -27,35 +23,17 @@ public enum Auth {
   /**
    * Allows anyone to access.
    *
-   * <p>If a user is logged in, will authenticate (and return) them. Otherwise, access is still
-   * granted, but NOT_AUTHENTICATED is returned.
-   *
-   * <p>User-facing legacy console endpoints (those that extend {@link HtmlAction}) use it. They
-   * need to allow requests from signed-out users so that they can redirect users to the login page.
-   * After a user is logged in, they check if the user actually has access to the specific console
-   * using {@link AuthenticatedRegistrarAccessor}.
-   *
-   * @see HtmlAction
+   * <p>This is used for public HTML endpoints like RDAP, the check API, and web WHOIS.
    */
-  AUTH_PUBLIC_LEGACY(
-      ImmutableList.of(AuthMethod.API, AuthMethod.LEGACY), AuthLevel.NONE, UserPolicy.PUBLIC),
+  AUTH_PUBLIC(AuthLevel.NONE, UserPolicy.PUBLIC),
 
   /**
    * Allows anyone to access, as long as they are logged in.
    *
-   * <p>This is used by legacy registrar console programmatic endpoints (those that extend {@link
-   * JsonGetAction}), which are accessed via XHR requests sent from a logged-in user when performing
-   * actions on the console.
+   * <p>Note that the action might use {@link AuthenticatedRegistrarAccessor} to impose a more
+   * fine-grained access control pattern than merely whether the user is logged in/out.
    */
-  AUTH_PUBLIC_LOGGED_IN(
-      ImmutableList.of(AuthMethod.API, AuthMethod.LEGACY), AuthLevel.USER, UserPolicy.PUBLIC),
-
-  /**
-   * Allows anyone to access.
-   *
-   * <p>This is used for public HTML endpoints like RDAP, the check API, and web WHOIS.
-   */
-  AUTH_PUBLIC(ImmutableList.of(AuthMethod.API), AuthLevel.NONE, UserPolicy.PUBLIC),
+  AUTH_PUBLIC_LOGGED_IN(AuthLevel.USER, UserPolicy.PUBLIC),
 
   /**
    * Allows only the app itself (via service accounts) or admins to access.
@@ -64,12 +42,12 @@ public enum Auth {
    * associated service account needs to be allowlisted in the {@code
    * auth.allowedServiceAccountEmails} field in the config YAML file.
    */
-  AUTH_API_ADMIN(ImmutableList.of(AuthMethod.API), AuthLevel.APP, UserPolicy.ADMIN);
+  AUTH_ADMIN(AuthLevel.APP, UserPolicy.ADMIN);
 
   private final AuthSettings authSettings;
 
-  Auth(ImmutableList<AuthMethod> methods, AuthLevel minimumLevel, UserPolicy userPolicy) {
-    authSettings = AuthSettings.create(methods, minimumLevel, userPolicy);
+  Auth(AuthLevel minimumLevel, UserPolicy userPolicy) {
+    authSettings = new AuthSettings(minimumLevel, userPolicy);
   }
 
   public AuthSettings authSettings() {

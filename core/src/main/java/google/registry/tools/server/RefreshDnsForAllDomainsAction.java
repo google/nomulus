@@ -54,7 +54,7 @@ import org.joda.time.Duration;
 @Action(
     service = Action.Service.TOOLS,
     path = "/_dr/task/refreshDnsForAllDomains",
-    auth = Auth.AUTH_API_ADMIN)
+    auth = Auth.AUTH_ADMIN)
 public class RefreshDnsForAllDomainsAction implements Runnable {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();

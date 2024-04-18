@@ -19,8 +19,6 @@ import static google.registry.request.auth.AuthResult.NOT_AUTHENTICATED;
 import static google.registry.request.auth.AuthSettings.AuthLevel.APP;
 import static google.registry.request.auth.AuthSettings.AuthLevel.NONE;
 import static google.registry.request.auth.AuthSettings.AuthLevel.USER;
-import static google.registry.request.auth.AuthSettings.AuthMethod.API;
-import static google.registry.request.auth.AuthSettings.AuthMethod.LEGACY;
 import static google.registry.request.auth.AuthSettings.UserPolicy.ADMIN;
 import static google.registry.request.auth.AuthSettings.UserPolicy.PUBLIC;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -34,7 +32,6 @@ import google.registry.model.console.GlobalRole;
 import google.registry.model.console.User;
 import google.registry.model.console.UserRoles;
 import google.registry.request.auth.AuthSettings.AuthLevel;
-import google.registry.request.auth.AuthSettings.AuthMethod;
 import google.registry.request.auth.AuthSettings.UserPolicy;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.Optional;
@@ -48,27 +45,18 @@ class RequestAuthenticatorTest {
 
   private static final AuthResult USER_PUBLIC_AUTH =
       AuthResult.createUser(
-          UserAuthInfo.create(
-              new User.Builder()
-                  .setEmailAddress("user@registry.example")
-                  .setUserRoles(
-                      new UserRoles.Builder()
-                          .setIsAdmin(false)
-                          .setGlobalRole(GlobalRole.NONE)
-                          .build())
-                  .build()));
+          new User.Builder()
+              .setEmailAddress("user@registry.example")
+              .setUserRoles(new UserRoles.Builder().setGlobalRole(GlobalRole.NONE).build())
+              .build());
 
   private static final AuthResult USER_ADMIN_AUTH =
       AuthResult.createUser(
-          UserAuthInfo.create(
-              new User.Builder()
-                  .setEmailAddress("admin@registry.example")
-                  .setUserRoles(
-                      new UserRoles.Builder()
-                          .setIsAdmin(true)
-                          .setGlobalRole(GlobalRole.FTE)
-                          .build())
-                  .build()));
+          new User.Builder()
+              .setEmailAddress("admin@registry.example")
+              .setUserRoles(
+                  new UserRoles.Builder().setIsAdmin(true).setGlobalRole(GlobalRole.FTE).build())
+              .build());
 
   private final HttpServletRequest req = mock(HttpServletRequest.class);
 
@@ -76,28 +64,23 @@ class RequestAuthenticatorTest {
       mock(AuthenticationMechanism.class);
   private final AuthenticationMechanism apiAuthenticationMechanism2 =
       mock(AuthenticationMechanism.class);
-  private final LegacyAuthenticationMechanism legacyAuthenticationMechanism =
-      mock(LegacyAuthenticationMechanism.class);
 
   private Optional<AuthResult> authorize(AuthLevel authLevel, UserPolicy userPolicy) {
     return new RequestAuthenticator(
-            ImmutableList.of(apiAuthenticationMechanism1, apiAuthenticationMechanism2),
-            legacyAuthenticationMechanism)
-        .authorize(AuthSettings.create(ImmutableList.of(API, LEGACY), authLevel, userPolicy), req);
+            ImmutableList.of(apiAuthenticationMechanism1, apiAuthenticationMechanism2))
+        .authorize(new AuthSettings(authLevel, userPolicy), req);
   }
 
-  private AuthResult authenticate(AuthMethod... methods) {
+  private AuthResult authenticate() {
     return new RequestAuthenticator(
-            ImmutableList.of(apiAuthenticationMechanism1, apiAuthenticationMechanism2),
-            legacyAuthenticationMechanism)
-        .authenticate(AuthSettings.create(ImmutableList.copyOf(methods), NONE, PUBLIC), req);
+            ImmutableList.of(apiAuthenticationMechanism1, apiAuthenticationMechanism2))
+        .authenticate(new AuthSettings(NONE, PUBLIC), req);
   }
 
   @BeforeEach
   void beforeEach() {
     when(apiAuthenticationMechanism1.authenticate(req)).thenReturn(NOT_AUTHENTICATED);
     when(apiAuthenticationMechanism2.authenticate(req)).thenReturn(NOT_AUTHENTICATED);
-    when(legacyAuthenticationMechanism.authenticate(req)).thenReturn(NOT_AUTHENTICATED);
   }
 
   @Test
@@ -160,117 +143,29 @@ class RequestAuthenticatorTest {
   @Test
   void testAuthenticate_apiFirst() {
     when(apiAuthenticationMechanism1.authenticate(req)).thenReturn(APP_AUTH);
-    assertThat(authenticate(API, LEGACY)).isEqualTo(APP_AUTH);
+    assertThat(authenticate()).isEqualTo(APP_AUTH);
     verify(apiAuthenticationMechanism1).authenticate(req);
     verifyNoMoreInteractions(apiAuthenticationMechanism1);
     verifyNoMoreInteractions(apiAuthenticationMechanism2);
-    verifyNoMoreInteractions(legacyAuthenticationMechanism);
   }
 
   @Test
   void testAuthenticate_apiSecond() {
     when(apiAuthenticationMechanism2.authenticate(req)).thenReturn(APP_AUTH);
-    assertThat(authenticate(API, LEGACY)).isEqualTo(APP_AUTH);
+    assertThat(authenticate()).isEqualTo(APP_AUTH);
     verify(apiAuthenticationMechanism1).authenticate(req);
     verify(apiAuthenticationMechanism2).authenticate(req);
     verifyNoMoreInteractions(apiAuthenticationMechanism1);
     verifyNoMoreInteractions(apiAuthenticationMechanism2);
-    verifyNoMoreInteractions(legacyAuthenticationMechanism);
-  }
-
-  @Test
-  void testAuthenticate_legacy() {
-    when(legacyAuthenticationMechanism.authenticate(req)).thenReturn(APP_AUTH);
-    assertThat(authenticate(API, LEGACY)).isEqualTo(APP_AUTH);
-    verify(apiAuthenticationMechanism1).authenticate(req);
-    verify(apiAuthenticationMechanism2).authenticate(req);
-    verify(legacyAuthenticationMechanism).authenticate(req);
-    verifyNoMoreInteractions(apiAuthenticationMechanism1);
-    verifyNoMoreInteractions(apiAuthenticationMechanism2);
-    verifyNoMoreInteractions(legacyAuthenticationMechanism);
-  }
-
-  @Test
-  void testAuthenticate_returnFirstResult() {
-    // API auth 2 returns an authenticted auth result, so we don't bother trying the next auth
-    // (legacy auth).
-    when(apiAuthenticationMechanism2.authenticate(req)).thenReturn(APP_AUTH);
-    when(legacyAuthenticationMechanism.authenticate(req)).thenReturn(USER_PUBLIC_AUTH);
-    assertThat(authenticate(API, LEGACY)).isEqualTo(APP_AUTH);
-    verify(apiAuthenticationMechanism1).authenticate(req);
-    verify(apiAuthenticationMechanism2).authenticate(req);
-    verifyNoMoreInteractions(apiAuthenticationMechanism1);
-    verifyNoMoreInteractions(apiAuthenticationMechanism2);
-    verifyNoMoreInteractions(legacyAuthenticationMechanism);
   }
 
   @Test
   void testAuthenticate_notAuthenticated() {
-    assertThat(authenticate(API, LEGACY)).isEqualTo(NOT_AUTHENTICATED);
-    verify(apiAuthenticationMechanism1).authenticate(req);
-    verify(apiAuthenticationMechanism2).authenticate(req);
-    verify(legacyAuthenticationMechanism).authenticate(req);
-    verifyNoMoreInteractions(apiAuthenticationMechanism1);
-    verifyNoMoreInteractions(apiAuthenticationMechanism2);
-    verifyNoMoreInteractions(legacyAuthenticationMechanism);
-  }
-
-  @Test
-  void testAuthenticate_apiOnly() {
-    when(legacyAuthenticationMechanism.authenticate(req)).thenReturn(USER_PUBLIC_AUTH);
-    assertThat(authenticate(API)).isEqualTo(NOT_AUTHENTICATED);
+    assertThat(authenticate()).isEqualTo(NOT_AUTHENTICATED);
     verify(apiAuthenticationMechanism1).authenticate(req);
     verify(apiAuthenticationMechanism2).authenticate(req);
     verifyNoMoreInteractions(apiAuthenticationMechanism1);
     verifyNoMoreInteractions(apiAuthenticationMechanism2);
-    verifyNoMoreInteractions(legacyAuthenticationMechanism);
-  }
-
-  @Test
-  void testAuthenticate_legacyOnly() {
-    when(apiAuthenticationMechanism1.authenticate(req)).thenReturn(USER_PUBLIC_AUTH);
-    assertThat(authenticate(LEGACY)).isEqualTo(NOT_AUTHENTICATED);
-    verify(legacyAuthenticationMechanism).authenticate(req);
-    verifyNoMoreInteractions(apiAuthenticationMechanism1);
-    verifyNoMoreInteractions(apiAuthenticationMechanism2);
-    verifyNoMoreInteractions(legacyAuthenticationMechanism);
-  }
-
-  @Test
-  void testFailure_checkAuthConfig_noMethods() {
-    IllegalArgumentException thrown =
-        assertThrows(
-            IllegalArgumentException.class,
-            () ->
-                RequestAuthenticator.checkAuthConfig(
-                    AuthSettings.create(ImmutableList.of(), NONE, PUBLIC)));
-    assertThat(thrown).hasMessageThat().contains("Must specify at least one auth method");
-  }
-
-  @Test
-  void testFailure_checkAuthConfig_wrongMethodOrder() {
-    IllegalArgumentException thrown =
-        assertThrows(
-            IllegalArgumentException.class,
-            () ->
-                RequestAuthenticator.checkAuthConfig(
-                    AuthSettings.create(ImmutableList.of(LEGACY, API), NONE, PUBLIC)));
-    assertThat(thrown)
-        .hasMessageThat()
-        .contains("Auth methods must be unique and strictly in order - API, LEGACY");
-  }
-
-  @Test
-  void testFailure_CheckAuthConfig_duplicateMethods() {
-    IllegalArgumentException thrown =
-        assertThrows(
-            IllegalArgumentException.class,
-            () ->
-                RequestAuthenticator.checkAuthConfig(
-                    AuthSettings.create(ImmutableList.of(API, API), NONE, PUBLIC)));
-    assertThat(thrown)
-        .hasMessageThat()
-        .contains("Auth methods must be unique and strictly in order - API, LEGACY");
   }
 
   @Test
@@ -278,9 +173,7 @@ class RequestAuthenticatorTest {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
-            () ->
-                RequestAuthenticator.checkAuthConfig(
-                    AuthSettings.create(ImmutableList.of(API, LEGACY), NONE, ADMIN)));
+            () -> RequestAuthenticator.checkAuthConfig(new AuthSettings(NONE, ADMIN)));
     assertThat(thrown)
         .hasMessageThat()
         .contains("Actions with minimal auth level at NONE should not specify ADMIN user policy");

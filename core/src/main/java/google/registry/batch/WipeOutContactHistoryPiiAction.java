@@ -51,7 +51,7 @@ import org.joda.time.DateTime;
 @Action(
     service = Service.BACKEND,
     path = WipeOutContactHistoryPiiAction.PATH,
-    auth = Auth.AUTH_API_ADMIN)
+    auth = Auth.AUTH_ADMIN)
 public class WipeOutContactHistoryPiiAction implements Runnable {
 
   public static final String PATH = "/_dr/task/wipeOutContactHistoryPii";

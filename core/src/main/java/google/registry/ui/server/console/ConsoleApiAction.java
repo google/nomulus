@@ -26,7 +26,6 @@ import google.registry.model.console.ConsolePermission;
 import google.registry.model.console.GlobalRole;
 import google.registry.model.console.User;
 import google.registry.request.HttpException;
-import google.registry.request.auth.AuthResult;
 import google.registry.security.XsrfTokenManager;
 import google.registry.ui.server.registrar.ConsoleApiParams;
 import google.registry.ui.server.registrar.ConsoleUiAction;
@@ -50,13 +49,11 @@ public abstract class ConsoleApiAction implements Runnable {
   @Override
   public final void run() {
     // Shouldn't be even possible because of Auth annotations on the various implementing classes
-    AuthResult authResult = consoleApiParams.authResult();
-    if (authResult.userAuthInfo().isEmpty()
-        || authResult.userAuthInfo().get().consoleUser().isEmpty()) {
+    if (consoleApiParams.authResult().user().isEmpty()) {
       consoleApiParams.response().setStatus(SC_UNAUTHORIZED);
       return;
     }
-    User user = consoleApiParams.authResult().userAuthInfo().get().consoleUser().get();
+    User user = consoleApiParams.authResult().user().get();
 
     // This allows us to enable console to a selected cohort of users with release
     // We can ignore it in tests
@@ -74,7 +71,7 @@ public abstract class ConsoleApiAction implements Runnable {
       if (consoleApiParams.request().getMethod().equals(GET.toString())) {
         getHandler(user);
       } else {
-        if (verifyXSRF()) {
+        if (verifyXSRF(user)) {
           postHandler(user);
         }
       }
@@ -112,13 +109,15 @@ public abstract class ConsoleApiAction implements Runnable {
     consoleApiParams.response().setPayload(message);
   }
 
-  private boolean verifyXSRF() {
+  private boolean verifyXSRF(User user) {
     Optional<Cookie> maybeCookie =
         Arrays.stream(consoleApiParams.request().getCookies())
             .filter(c -> XsrfTokenManager.X_CSRF_TOKEN.equals(c.getName()))
             .findFirst();
     if (maybeCookie.isEmpty()
-        || !consoleApiParams.xsrfTokenManager().validateToken(maybeCookie.get().getValue())) {
+        || !consoleApiParams
+            .xsrfTokenManager()
+            .validateToken(user.getEmailAddress(), maybeCookie.get().getValue())) {
       consoleApiParams.response().setStatus(SC_UNAUTHORIZED);
       return false;
     }

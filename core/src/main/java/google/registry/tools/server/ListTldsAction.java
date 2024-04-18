@@ -34,7 +34,7 @@ import org.joda.time.DateTime;
     service = Action.Service.TOOLS,
     path = ListTldsAction.PATH,
     method = {GET, POST},
-    auth = Auth.AUTH_API_ADMIN)
+    auth = Auth.AUTH_ADMIN)
 public final class ListTldsAction extends ListObjectsAction<Tld> {
 
   public static final String PATH = "/_dr/admin/list/tlds";

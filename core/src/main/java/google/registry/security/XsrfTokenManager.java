@@ -19,7 +19,6 @@ import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.joda.time.DateTimeZone.UTC;
 
-import com.google.appengine.api.users.UserService;
 import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
 import com.google.common.flogger.FluentLogger;
@@ -49,12 +48,10 @@ public final class XsrfTokenManager {
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
   private final Clock clock;
-  private final UserService userService;
 
   @Inject
-  public XsrfTokenManager(Clock clock, UserService userService) {
+  public XsrfTokenManager(Clock clock) {
     this.clock = clock;
-    this.userService = userService;
   }
 
   /** Generates an XSRF token for a given user based on email address. */
@@ -81,7 +78,7 @@ public final class XsrfTokenManager {
   }
 
   /** Validates an XSRF token against the current logged-in user. */
-  public boolean validateToken(String token) {
+  public boolean validateToken(String email, String token) {
     checkArgumentNotNull(token);
     List<String> tokenParts = Splitter.on(':').splitToList(token);
     if (tokenParts.size() != 3) {
@@ -104,12 +101,8 @@ public final class XsrfTokenManager {
       logger.atInfo().log("Expired timestamp in XSRF token: %s", token);
       return false;
     }
-    String currentUserEmail =
-        userService.isUserLoggedIn() ? userService.getCurrentUser().getEmail() : "";
-
     // Reconstruct the token to verify validity.
-    String reconstructedToken =
-        encodeToken(ServerSecret.get().asBytes(), currentUserEmail, timestampMillis);
+    String reconstructedToken = encodeToken(ServerSecret.get().asBytes(), email, timestampMillis);
     if (!token.equals(reconstructedToken)) {
       logger.atWarning().log(
           "Reconstructed XSRF mismatch (got != expected): %s != %s", token, reconstructedToken);

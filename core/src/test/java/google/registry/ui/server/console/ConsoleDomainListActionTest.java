@@ -30,10 +30,9 @@ import google.registry.model.domain.Domain;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.request.Action;
 import google.registry.request.auth.AuthResult;
-import google.registry.request.auth.UserAuthInfo;
+import google.registry.testing.ConsoleApiParamsUtils;
 import google.registry.testing.DatabaseHelper;
 import google.registry.testing.FakeClock;
-import google.registry.testing.FakeConsoleApiParams;
 import google.registry.testing.FakeResponse;
 import google.registry.tools.GsonUtils;
 import google.registry.ui.server.console.ConsoleDomainListAction.DomainListResult;
@@ -261,9 +260,8 @@ public class ConsoleDomainListActionTest {
       @Nullable Integer resultsPerPage,
       @Nullable Long totalResults,
       @Nullable String searchTerm) {
-    AuthResult authResult =
-        AuthResult.createUser(UserAuthInfo.create(createAdminUser("email@email.example")));
-    consoleApiParams = FakeConsoleApiParams.get(Optional.of(authResult));
+    AuthResult authResult = AuthResult.createUser(createAdminUser("email@email.example"));
+    consoleApiParams = ConsoleApiParamsUtils.createFake(authResult);
     when(consoleApiParams.request().getMethod()).thenReturn(Action.Method.GET.toString());
     return new ConsoleDomainListAction(
         consoleApiParams,
