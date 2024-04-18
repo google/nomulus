@@ -37,7 +37,7 @@ import javax.inject.Inject;
     service = Action.Service.BACKEND,
     path = "/_dr/task/exportReservedTerms",
     method = POST,
-    auth = Auth.AUTH_API_ADMIN)
+    auth = Auth.AUTH_ADMIN)
 public class ExportReservedTermsAction implements Runnable {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();

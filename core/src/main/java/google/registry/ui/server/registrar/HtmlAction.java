@@ -14,19 +14,17 @@
 
 package google.registry.ui.server.registrar;
 
-import static com.google.common.net.HttpHeaders.LOCATION;
 import static com.google.common.net.HttpHeaders.X_FRAME_OPTIONS;
-import static jakarta.servlet.http.HttpServletResponse.SC_MOVED_TEMPORARILY;
+import static jakarta.servlet.http.HttpServletResponse.SC_UNAUTHORIZED;
 
-import com.google.appengine.api.users.UserService;
 import com.google.common.flogger.FluentLogger;
 import com.google.common.net.MediaType;
 import google.registry.config.RegistryConfig.Config;
+import google.registry.model.console.User;
 import google.registry.request.Action;
 import google.registry.request.RequestMethod;
 import google.registry.request.Response;
 import google.registry.request.auth.AuthResult;
-import google.registry.request.auth.UserAuthInfo;
 import google.registry.security.XsrfTokenManager;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.HashMap;
@@ -45,7 +43,6 @@ public abstract class HtmlAction implements Runnable {
 
   @Inject HttpServletRequest req;
   @Inject Response response;
-  @Inject UserService userService;
   @Inject XsrfTokenManager xsrfTokenManager;
   @Inject AuthResult authResult;
   @Inject @RequestMethod Action.Method method;
@@ -67,34 +64,21 @@ public abstract class HtmlAction implements Runnable {
     response.setHeader(X_FRAME_OPTIONS, "SAMEORIGIN"); // Disallow iframing.
     response.setHeader("X-Ui-Compatible", "IE=edge"); // Ask IE not to be silly.
 
-    if (authResult.userAuthInfo().isEmpty()) {
-      response.setStatus(SC_MOVED_TEMPORARILY);
-      String location;
-      try {
-        location = userService.createLoginURL(req.getRequestURI());
-      } catch (IllegalArgumentException e) {
-        // UserServiceImpl.createLoginURL() throws IllegalArgumentException if underlying API call
-        // returns an error code of NOT_ALLOWED. createLoginURL() assumes that the error is caused
-        // by an invalid URL. But in fact, the error can also occur if UserService doesn't have any
-        // user information, which happens when the request has been authenticated as internal. In
-        // this case, we want to avoid dying before we can send the redirect, so just redirect to
-        // the root path.
-        location = "/";
-      }
-      response.setHeader(LOCATION, location);
+    if (authResult.user().isEmpty()) {
+      response.setStatus(SC_UNAUTHORIZED);
       return;
     }
     response.setContentType(MediaType.HTML_UTF_8);
 
-    UserAuthInfo authInfo = authResult.userAuthInfo().get();
+    User user = authResult.user().get();
     // Using HashMap to allow null values
     HashMap<String, Object> data = new HashMap<>();
     data.put("logoFilename", logoFilename);
     data.put("productName", productName);
-    data.put("username", authInfo.getUsername());
-    data.put("logoutUrl", userService.createLogoutURL(getPath()));
+    data.put("username", user.getEmailAddress());
+    data.put("logoutUrl", "/registrar?gcp-iap-mode=CLEAR_LOGIN_COOKIE");
     data.put("analyticsConfig", analyticsConfig);
-    data.put("xsrfToken", xsrfTokenManager.generateToken(authInfo.getEmailAddress()));
+    data.put("xsrfToken", xsrfTokenManager.generateToken(user.getEmailAddress()));
 
     logger.atInfo().log(
         "User %s is accessing %s with method %s.",

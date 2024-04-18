@@ -49,7 +49,7 @@ import javax.inject.Inject;
     service = Action.Service.BACKEND,
     path = "/_dr/task/exportDomainLists",
     method = POST,
-    auth = Auth.AUTH_API_ADMIN)
+    auth = Auth.AUTH_ADMIN)
 public class ExportDomainListsAction implements Runnable {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
