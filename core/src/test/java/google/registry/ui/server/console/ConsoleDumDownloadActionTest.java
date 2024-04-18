@@ -28,15 +28,13 @@ import google.registry.model.console.UserRoles;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.request.Action;
 import google.registry.request.auth.AuthResult;
-import google.registry.request.auth.UserAuthInfo;
+import google.registry.testing.ConsoleApiParamsUtils;
 import google.registry.testing.DatabaseHelper;
 import google.registry.testing.FakeClock;
-import google.registry.testing.FakeConsoleApiParams;
 import google.registry.testing.FakeResponse;
 import google.registry.tools.GsonUtils;
 import google.registry.ui.server.registrar.ConsoleApiParams;
 import java.io.IOException;
-import java.util.Optional;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -73,8 +71,8 @@ class ConsoleDumDownloadActionTest {
             .setUserRoles(new UserRoles.Builder().setGlobalRole(GlobalRole.FTE).build())
             .build();
 
-    AuthResult authResult = AuthResult.createUser(UserAuthInfo.create(user));
-    ConsoleDumDownloadAction action = createAction(Optional.of(authResult));
+    AuthResult authResult = AuthResult.createUser(user);
+    ConsoleDumDownloadAction action = createAction(authResult);
     action.run();
     ImmutableList<String> expected =
         ImmutableList.of(
@@ -97,14 +95,14 @@ class ConsoleDumDownloadActionTest {
     User user =
         new User.Builder().setEmailAddress("email@email.com").setUserRoles(userRoles).build();
 
-    AuthResult authResult = AuthResult.createUser(UserAuthInfo.create(user));
-    ConsoleDumDownloadAction action = createAction(Optional.of(authResult));
+    AuthResult authResult = AuthResult.createUser(user);
+    ConsoleDumDownloadAction action = createAction(authResult);
     action.run();
     assertThat(((FakeResponse) consoleApiParams.response()).getStatus()).isEqualTo(SC_FORBIDDEN);
   }
 
-  private ConsoleDumDownloadAction createAction(Optional<AuthResult> maybeAuthResult) {
-    consoleApiParams = FakeConsoleApiParams.get(maybeAuthResult);
+  private ConsoleDumDownloadAction createAction(AuthResult authResult) {
+    consoleApiParams = ConsoleApiParamsUtils.createFake(authResult);
     when(consoleApiParams.request().getMethod()).thenReturn(Action.Method.GET.toString());
     return new ConsoleDumDownloadAction(clock, consoleApiParams, "TheRegistrar", "test_name");
   }

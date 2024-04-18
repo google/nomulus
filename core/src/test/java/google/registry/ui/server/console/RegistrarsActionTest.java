@@ -39,9 +39,8 @@ import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.request.Action;
 import google.registry.request.RequestModule;
 import google.registry.request.auth.AuthResult;
-import google.registry.request.auth.UserAuthInfo;
+import google.registry.testing.ConsoleApiParamsUtils;
 import google.registry.testing.DeterministicStringGenerator;
-import google.registry.testing.FakeConsoleApiParams;
 import google.registry.testing.FakeResponse;
 import google.registry.ui.server.registrar.ConsoleApiParams;
 import google.registry.ui.server.registrar.RegistrarConsoleModule;
@@ -114,9 +113,8 @@ class RegistrarsActionTest {
         createAction(
             Action.Method.GET,
             AuthResult.createUser(
-                UserAuthInfo.create(
-                    createUser(
-                        new UserRoles.Builder().setGlobalRole(GlobalRole.SUPPORT_LEAD).build()))));
+                createUser(
+                    new UserRoles.Builder().setGlobalRole(GlobalRole.SUPPORT_LEAD).build())));
     action.run();
     assertThat(((FakeResponse) consoleApiParams.response()).getStatus()).isEqualTo(SC_OK);
     String payload = ((FakeResponse) consoleApiParams.response()).getPayload();
@@ -136,8 +134,7 @@ class RegistrarsActionTest {
         createAction(
             Action.Method.GET,
             AuthResult.createUser(
-                UserAuthInfo.create(
-                    createUser(new UserRoles.Builder().setGlobalRole(GlobalRole.FTE).build()))));
+                createUser(new UserRoles.Builder().setGlobalRole(GlobalRole.FTE).build())));
     action.run();
     assertThat(((FakeResponse) consoleApiParams.response()).getStatus()).isEqualTo(SC_OK);
     String payload = ((FakeResponse) consoleApiParams.response()).getPayload();
@@ -156,8 +153,7 @@ class RegistrarsActionTest {
     RegistrarsAction action =
         createAction(
             Action.Method.POST,
-            AuthResult.createUser(
-                UserAuthInfo.create(createUser(new UserRoles.Builder().setIsAdmin(true).build()))));
+            AuthResult.createUser(createUser(new UserRoles.Builder().setIsAdmin(true).build())));
     action.run();
     assertThat(((FakeResponse) consoleApiParams.response()).getStatus()).isEqualTo(SC_OK);
     Registrar r = loadRegistrar("regIdTest");
@@ -185,8 +181,7 @@ class RegistrarsActionTest {
                   createAction(
                       Action.Method.POST,
                       AuthResult.createUser(
-                          UserAuthInfo.create(
-                              createUser(new UserRoles.Builder().setIsAdmin(true).build()))));
+                          createUser(new UserRoles.Builder().setIsAdmin(true).build())));
               action.run();
               assertThat(((FakeResponse) consoleApiParams.response()).getStatus())
                   .isEqualTo(SC_BAD_REQUEST);
@@ -203,8 +198,7 @@ class RegistrarsActionTest {
     RegistrarsAction action =
         createAction(
             Action.Method.POST,
-            AuthResult.createUser(
-                UserAuthInfo.create(createUser(new UserRoles.Builder().setIsAdmin(true).build()))));
+            AuthResult.createUser(createUser(new UserRoles.Builder().setIsAdmin(true).build())));
     action.run();
     assertThat(((FakeResponse) consoleApiParams.response()).getStatus()).isEqualTo(SC_BAD_REQUEST);
     assertThat(((FakeResponse) consoleApiParams.response()).getPayload())
@@ -218,14 +212,12 @@ class RegistrarsActionTest {
         createAction(
             Action.Method.GET,
             AuthResult.createUser(
-                UserAuthInfo.create(
-                    createUser(
-                        new UserRoles.Builder()
-                            .setRegistrarRoles(
-                                ImmutableMap.of(
-                                    "registrarId",
-                                    RegistrarRole.ACCOUNT_MANAGER_WITH_REGISTRY_LOCK))
-                            .build()))));
+                createUser(
+                    new UserRoles.Builder()
+                        .setRegistrarRoles(
+                            ImmutableMap.of(
+                                "registrarId", RegistrarRole.ACCOUNT_MANAGER_WITH_REGISTRY_LOCK))
+                        .build())));
     action.run();
     assertThat(((FakeResponse) consoleApiParams.response()).getStatus()).isEqualTo(SC_FORBIDDEN);
   }
@@ -238,7 +230,7 @@ class RegistrarsActionTest {
   }
 
   private RegistrarsAction createAction(Action.Method method, AuthResult authResult) {
-    consoleApiParams = FakeConsoleApiParams.get(Optional.of(authResult));
+    consoleApiParams = ConsoleApiParamsUtils.createFake(authResult);
     when(consoleApiParams.request().getMethod()).thenReturn(method.toString());
     if (method.equals(Action.Method.GET)) {
       return new RegistrarsAction(

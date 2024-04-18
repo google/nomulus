@@ -69,7 +69,7 @@ import org.joda.time.Duration;
 @Action(
     service = Action.Service.BACKEND,
     path = DeleteExpiredDomainsAction.PATH,
-    auth = Auth.AUTH_API_ADMIN)
+    auth = Auth.AUTH_ADMIN)
 public class DeleteExpiredDomainsAction implements Runnable {
 
   public static final String PATH = "/_dr/task/deleteExpiredDomains";

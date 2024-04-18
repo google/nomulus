@@ -23,17 +23,16 @@ import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.SqlHelper.getRegistryLockByVerificationCode;
 import static google.registry.testing.SqlHelper.saveRegistryLock;
 import static google.registry.tools.LockOrUnlockDomainCommand.REGISTRY_LOCK_STATUSES;
-import static jakarta.servlet.http.HttpServletResponse.SC_MOVED_TEMPORARILY;
 import static jakarta.servlet.http.HttpServletResponse.SC_OK;
+import static jakarta.servlet.http.HttpServletResponse.SC_UNAUTHORIZED;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import com.google.appengine.api.users.User;
-import com.google.appengine.api.users.UserService;
-import com.google.appengine.api.users.UserServiceFactory;
 import com.google.common.collect.ImmutableMap;
 import google.registry.model.billing.BillingBase.Reason;
 import google.registry.model.billing.BillingEvent;
+import google.registry.model.console.User;
+import google.registry.model.console.UserRoles;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.RegistryLock;
@@ -43,14 +42,12 @@ import google.registry.model.tld.Tld;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.request.auth.AuthResult;
-import google.registry.request.auth.UserAuthInfo;
 import google.registry.security.XsrfTokenManager;
 import google.registry.testing.CloudTasksHelper;
 import google.registry.testing.DatabaseHelper;
 import google.registry.testing.DeterministicStringGenerator;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeResponse;
-import google.registry.testing.UserServiceExtension;
 import google.registry.tools.DomainLockUtils;
 import google.registry.util.StringGenerator;
 import google.registry.util.StringGenerator.Alphabets;
@@ -69,13 +66,12 @@ final class RegistryLockVerifyActionTest {
   final JpaIntegrationTestExtension jpa =
       new JpaTestExtensions.Builder().withClock(fakeClock).buildIntegrationTestExtension();
 
-  @RegisterExtension
-  final UserServiceExtension userServiceExtension =
-      new UserServiceExtension("marla.singer@example.com");
-
   private final HttpServletRequest request = mock(HttpServletRequest.class);
-  private final UserService userService = UserServiceFactory.getUserService();
-  private final User user = new User("marla.singer@example.com", "gmail.com", "12345");
+  private final User user =
+      new User.Builder()
+          .setEmailAddress("marla.singer@example.com")
+          .setUserRoles(new UserRoles())
+          .build();
   private final String lockId = "123456789ABCDEFGHJKLMNPQRSTUVWXY";
   private final StringGenerator stringGenerator =
       new DeterministicStringGenerator(Alphabets.BASE_58);
@@ -136,7 +132,11 @@ final class RegistryLockVerifyActionTest {
 
   @Test
   void testSuccess_adminLock_createsOnlyHistoryEntry() {
-    action.authResult = AuthResult.createUser(UserAuthInfo.create(user, true));
+    action.authResult =
+        AuthResult.createUser(
+            user.asBuilder()
+                .setUserRoles(user.getUserRoles().asBuilder().setIsAdmin(true).build())
+                .build());
     saveRegistryLock(createLock().asBuilder().isSuperuser(true).build());
 
     action.run();
@@ -211,8 +211,7 @@ final class RegistryLockVerifyActionTest {
   void testFailure_notLoggedIn() {
     action.authResult = AuthResult.NOT_AUTHENTICATED;
     action.run();
-    assertThat(response.getStatus()).isEqualTo(SC_MOVED_TEMPORARILY);
-    assertThat(response.getHeaders()).containsKey("Location");
+    assertThat(response.getStatus()).isEqualTo(SC_UNAUTHORIZED);
     assertNoDomainChanges();
   }
 
@@ -324,15 +323,14 @@ final class RegistryLockVerifyActionTest {
             new DomainLockUtils(
                 stringGenerator, "adminreg", cloudTasksHelper.getTestCloudTasksUtils()),
             lockVerificationCode);
-    authResult = AuthResult.createUser(UserAuthInfo.create(user, false));
+    authResult = AuthResult.createUser(user);
     action.req = request;
     action.response = response;
     action.authResult = authResult;
-    action.userService = userService;
     action.logoFilename = "logo.png";
     action.productName = "Nomulus";
     action.analyticsConfig = ImmutableMap.of("googleAnalyticsId", "sampleId");
-    action.xsrfTokenManager = new XsrfTokenManager(new FakeClock(), action.userService);
+    action.xsrfTokenManager = new XsrfTokenManager(new FakeClock());
     return action;
   }
 }

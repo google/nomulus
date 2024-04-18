@@ -14,30 +14,26 @@
 
 package google.registry.ui.server.registrar;
 
-import static com.google.common.net.HttpHeaders.LOCATION;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.monitoring.metrics.contrib.LongMetricSubject.assertThat;
 import static google.registry.request.auth.AuthenticatedRegistrarAccessor.Role.ADMIN;
 import static google.registry.request.auth.AuthenticatedRegistrarAccessor.Role.OWNER;
-import static jakarta.servlet.http.HttpServletResponse.SC_MOVED_TEMPORARILY;
+import static jakarta.servlet.http.HttpServletResponse.SC_UNAUTHORIZED;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
-import com.google.appengine.api.users.User;
-import com.google.appengine.api.users.UserServiceFactory;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSetMultimap;
 import com.google.common.net.MediaType;
+import google.registry.model.console.User;
+import google.registry.model.console.UserRoles;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.request.Action.Method;
 import google.registry.request.auth.AuthResult;
 import google.registry.request.auth.AuthenticatedRegistrarAccessor;
-import google.registry.request.auth.UserAuthInfo;
 import google.registry.security.XsrfTokenManager;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeResponse;
-import google.registry.testing.UserServiceExtension;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.Optional;
 import org.junit.jupiter.api.AfterEach;
@@ -52,13 +48,14 @@ class ConsoleUiActionTest {
   final JpaIntegrationTestExtension jpa =
       new JpaTestExtensions.Builder().buildIntegrationTestExtension();
 
-  @RegisterExtension
-  final UserServiceExtension userService = new UserServiceExtension("marla.singer@example.com");
-
   private final HttpServletRequest request = mock(HttpServletRequest.class);
   private final FakeResponse response = new FakeResponse();
   private final ConsoleUiAction action = new ConsoleUiAction();
-  private final User user = new User("marla.singer@example.com", "gmail.com", "12345");
+  private final User user =
+      new User.Builder()
+          .setEmailAddress("marla.singer@example.com")
+          .setUserRoles(new UserRoles())
+          .build();
 
   @BeforeEach
   void beforeEach() {
@@ -73,11 +70,10 @@ class ConsoleUiActionTest {
     action.req = request;
     action.response = response;
     action.registrarConsoleMetrics = new RegistrarConsoleMetrics();
-    action.userService = UserServiceFactory.getUserService();
-    action.xsrfTokenManager = new XsrfTokenManager(new FakeClock(), action.userService);
+    action.xsrfTokenManager = new XsrfTokenManager(new FakeClock());
     action.method = Method.GET;
     action.paramClientId = Optional.empty();
-    action.authResult = AuthResult.createUser(UserAuthInfo.create(user, false));
+    action.authResult = AuthResult.createUser(user);
     action.analyticsConfig = ImmutableMap.of("googleAnalyticsId", "sampleId");
 
     action.registrarAccessor =
@@ -158,21 +154,10 @@ class ConsoleUiActionTest {
   }
 
   @Test
-  void testNoUser_redirect() {
-    when(request.getRequestURI()).thenReturn("/test");
+  void testNoUser_not_logged_in() {
     action.authResult = AuthResult.NOT_AUTHENTICATED;
     action.run();
-    assertThat(response.getStatus()).isEqualTo(SC_MOVED_TEMPORARILY);
-    assertThat(response.getHeaders().get(LOCATION)).isEqualTo("/_ah/login?continue=%2Ftest");
-  }
-
-  @Test
-  void testNoUserInformationAtAll_redirectToRoot() {
-    when(request.getRequestURI()).thenThrow(new IllegalArgumentException());
-    action.authResult = AuthResult.NOT_AUTHENTICATED;
-    action.run();
-    assertThat(response.getStatus()).isEqualTo(SC_MOVED_TEMPORARILY);
-    assertThat(response.getHeaders().get(LOCATION)).isEqualTo("/");
+    assertThat(response.getStatus()).isEqualTo(SC_UNAUTHORIZED);
   }
 
   @Test

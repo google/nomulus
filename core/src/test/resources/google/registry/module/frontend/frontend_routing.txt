@@ -1,20 +1,20 @@
-PATH                               CLASS                         METHODS  OK AUTH_METHODS MIN  USER_POLICY
-/_dr/epp                           EppTlsAction                  POST     n  API          APP  ADMIN
-/console-api/domain                ConsoleDomainGetAction        GET      n  API,LEGACY   USER PUBLIC
-/console-api/domain-list           ConsoleDomainListAction       GET      n  API,LEGACY   USER PUBLIC
-/console-api/dum-download          ConsoleDumDownloadAction      GET      n  API,LEGACY   USER PUBLIC
-/console-api/eppPassword           ConsoleEppPasswordAction      POST     n  API,LEGACY   USER PUBLIC
-/console-api/registrars            RegistrarsAction              GET,POST n  API,LEGACY   USER PUBLIC
-/console-api/registry-lock         ConsoleRegistryLockAction     GET,POST n  API,LEGACY   USER PUBLIC
-/console-api/settings/contacts     ContactAction                 GET,POST n  API,LEGACY   USER PUBLIC
-/console-api/settings/security     SecurityAction                POST     n  API,LEGACY   USER PUBLIC
-/console-api/settings/whois-fields WhoisRegistrarFieldsAction    POST     n  API,LEGACY   USER PUBLIC
-/console-api/userdata              ConsoleUserDataAction         GET      n  API,LEGACY   USER PUBLIC
-/registrar                         ConsoleUiAction               GET      n  API,LEGACY   NONE PUBLIC
-/registrar-create                  ConsoleRegistrarCreatorAction POST,GET n  API,LEGACY   NONE PUBLIC
-/registrar-ote-setup               ConsoleOteSetupAction         POST,GET n  API,LEGACY   NONE PUBLIC
-/registrar-ote-status              OteStatusAction               POST     n  API,LEGACY   USER PUBLIC
-/registrar-settings                RegistrarSettingsAction       POST     n  API,LEGACY   USER PUBLIC
-/registry-lock-get                 RegistryLockGetAction         GET      n  API,LEGACY   USER PUBLIC
-/registry-lock-post                RegistryLockPostAction        POST     n  API,LEGACY   USER PUBLIC
-/registry-lock-verify              RegistryLockVerifyAction      GET      n  API,LEGACY   NONE PUBLIC
+PATH                               CLASS                         METHODS  OK MIN  USER_POLICY
+/_dr/epp                           EppTlsAction                  POST     n  APP  ADMIN
+/console-api/domain                ConsoleDomainGetAction        GET      n  USER PUBLIC
+/console-api/domain-list           ConsoleDomainListAction       GET      n  USER PUBLIC
+/console-api/dum-download          ConsoleDumDownloadAction      GET      n  USER PUBLIC
+/console-api/eppPassword           ConsoleEppPasswordAction      POST     n  USER PUBLIC
+/console-api/registrars            RegistrarsAction              GET,POST n  USER PUBLIC
+/console-api/registry-lock         ConsoleRegistryLockAction     GET,POST n  USER PUBLIC
+/console-api/settings/contacts     ContactAction                 GET,POST n  USER PUBLIC
+/console-api/settings/security     SecurityAction                POST     n  USER PUBLIC
+/console-api/settings/whois-fields WhoisRegistrarFieldsAction    POST     n  USER PUBLIC
+/console-api/userdata              ConsoleUserDataAction         GET      n  USER PUBLIC
+/registrar                         ConsoleUiAction               GET      n  USER PUBLIC
+/registrar-create                  ConsoleRegistrarCreatorAction POST,GET n  USER PUBLIC
+/registrar-ote-setup               ConsoleOteSetupAction         POST,GET n  USER PUBLIC
+/registrar-ote-status              OteStatusAction               POST     n  USER PUBLIC
+/registrar-settings                RegistrarSettingsAction       POST     n  USER PUBLIC
+/registry-lock-get                 RegistryLockGetAction         GET      n  USER PUBLIC
+/registry-lock-post                RegistryLockPostAction        POST     n  USER PUBLIC
+/registry-lock-verify              RegistryLockVerifyAction      GET      n  USER PUBLIC

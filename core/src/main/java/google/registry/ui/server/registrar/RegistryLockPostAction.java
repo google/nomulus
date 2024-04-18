@@ -19,11 +19,9 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.security.JsonResponseHelper.Status.ERROR;
 import static google.registry.security.JsonResponseHelper.Status.SUCCESS;
-import static google.registry.ui.server.registrar.RegistryLockGetAction.getContactMatchingLogin;
-import static google.registry.ui.server.registrar.RegistryLockGetAction.getRegistrarAndVerifyLockAccess;
+import static google.registry.ui.server.registrar.RegistryLockGetAction.verifyLockAccess;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 
-import com.google.appengine.api.users.User;
 import com.google.common.base.Strings;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
@@ -31,9 +29,8 @@ import com.google.common.flogger.FluentLogger;
 import com.google.gson.Gson;
 import google.registry.flows.domain.DomainFlowUtils;
 import google.registry.groups.GmailClient;
+import google.registry.model.console.User;
 import google.registry.model.domain.RegistryLock;
-import google.registry.model.registrar.Registrar;
-import google.registry.model.registrar.RegistrarPoc;
 import google.registry.request.Action;
 import google.registry.request.Action.Method;
 import google.registry.request.HttpException.ForbiddenException;
@@ -42,7 +39,6 @@ import google.registry.request.auth.Auth;
 import google.registry.request.auth.AuthResult;
 import google.registry.request.auth.AuthenticatedRegistrarAccessor;
 import google.registry.request.auth.AuthenticatedRegistrarAccessor.RegistrarAccessDeniedException;
-import google.registry.request.auth.UserAuthInfo;
 import google.registry.security.JsonResponseHelper;
 import google.registry.tools.DomainLockUtils;
 import google.registry.util.EmailMessage;
@@ -119,13 +115,11 @@ public class RegistryLockPostAction implements Runnable, JsonActionRunner.JsonAc
       checkArgument(!Strings.isNullOrEmpty(postInput.domainName), "Missing key for domainName");
       DomainFlowUtils.validateDomainName(postInput.domainName);
       checkNotNull(postInput.isLock, "Missing key for isLock");
-      UserAuthInfo userAuthInfo =
-          authResult
-              .userAuthInfo()
-              .orElseThrow(() -> new ForbiddenException("User is not logged in"));
+      User user =
+          authResult.user().orElseThrow(() -> new ForbiddenException("User is not logged in"));
 
       // TODO: Move this line to the transaction below during nested transaction refactoring.
-      String userEmail = verifyPasswordAndGetEmail(userAuthInfo, postInput);
+      String userEmail = verifyPasswordAndGetEmail(user, postInput);
       tm().transact(
               () -> {
                 RegistryLock registryLock =
@@ -177,56 +171,18 @@ public class RegistryLockPostAction implements Runnable, JsonActionRunner.JsonAc
     }
   }
 
-  private String verifyPasswordAndGetEmail(
-      UserAuthInfo userAuthInfo, RegistryLockPostInput postInput)
+  private String verifyPasswordAndGetEmail(User user, RegistryLockPostInput postInput)
       throws RegistrarAccessDeniedException {
     if (registrarAccessor.isAdmin()) {
-      return userAuthInfo.getEmailAddress();
+      return user.getEmailAddress();
     }
-    if (userAuthInfo.appEngineUser().isPresent()) {
-      return verifyPasswordAndGetEmailLegacyUser(userAuthInfo.appEngineUser().get(), postInput);
-    } else {
-      return verifyPasswordAndGetEmailConsoleUser(userAuthInfo.consoleUser().get(), postInput);
-    }
-  }
-
-  private String verifyPasswordAndGetEmailConsoleUser(
-      google.registry.model.console.User user, RegistryLockPostInput postInput)
-      throws RegistrarAccessDeniedException {
     // Verify that the registrar has locking enabled
-    getRegistrarAndVerifyLockAccess(registrarAccessor, postInput.registrarId, false);
+    verifyLockAccess(registrarAccessor, postInput.registrarId, false);
     checkArgument(
         user.verifyRegistryLockPassword(postInput.password),
         "Incorrect registry lock password for user");
     return user.getRegistryLockEmailAddress()
         .orElseThrow(() -> new IllegalArgumentException("User has no registry lock email address"));
-  }
-
-  private String verifyPasswordAndGetEmailLegacyUser(User user, RegistryLockPostInput postInput)
-      throws RegistrarAccessDeniedException {
-    // Verify that the user can access the registrar, that the user has
-    // registry lock enabled, and that the user provided a correct password
-
-    Registrar registrar =
-        getRegistrarAndVerifyLockAccess(registrarAccessor, postInput.registrarId, false);
-    RegistrarPoc registrarPoc =
-        getContactMatchingLogin(user, registrar)
-            .orElseThrow(
-                () ->
-                    new IllegalArgumentException(
-                        String.format(
-                            "Cannot match user %s to registrar contact", user.getUserId())));
-    checkArgument(
-        registrarPoc.verifyRegistryLockPassword(postInput.password),
-        "Incorrect registry lock password for contact");
-    return registrarPoc
-        .getRegistryLockEmailAddress()
-        .orElseThrow(
-            () ->
-                new IllegalStateException(
-                    String.format(
-                        "Contact %s had no registry lock email address",
-                        registrarPoc.getEmailAddress())));
   }
 
   /** Value class that represents the expected input body from the UI request. */

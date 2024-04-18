@@ -46,7 +46,7 @@ import javax.net.ssl.HttpsURLConnection;
     path = "/_dr/task/executeCannedScript",
     method = {POST, GET},
     automaticallyPrintOk = true,
-    auth = Auth.AUTH_API_ADMIN)
+    auth = Auth.AUTH_ADMIN)
 public class CannedScriptExecutionAction implements Runnable {
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 

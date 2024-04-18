@@ -15,33 +15,27 @@
 package google.registry.ui.server.registrar;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.persistence.transaction.JpaTransactionManagerExtension.makeRegistrar2;
-import static google.registry.persistence.transaction.JpaTransactionManagerExtension.makeRegistrarContact2;
-import static google.registry.persistence.transaction.JpaTransactionManagerExtension.makeRegistrarContact3;
 import static google.registry.request.auth.AuthenticatedRegistrarAccessor.Role.ADMIN;
 import static google.registry.request.auth.AuthenticatedRegistrarAccessor.Role.OWNER;
-import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.SqlHelper.saveRegistryLock;
 import static jakarta.servlet.http.HttpServletResponse.SC_FORBIDDEN;
 import static jakarta.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 import static jakarta.servlet.http.HttpServletResponse.SC_OK;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import com.google.appengine.api.users.User;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSetMultimap;
 import com.google.gson.Gson;
 import google.registry.model.console.RegistrarRole;
+import google.registry.model.console.User;
 import google.registry.model.console.UserRoles;
 import google.registry.model.domain.RegistryLock;
-import google.registry.model.registrar.RegistrarPoc;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.request.Action.Method;
 import google.registry.request.auth.AuthResult;
 import google.registry.request.auth.AuthenticatedRegistrarAccessor;
-import google.registry.request.auth.UserAuthInfo;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeResponse;
 import java.util.Map;
@@ -72,17 +66,29 @@ final class RegistryLockGetActionTest {
 
   @BeforeEach
   void beforeEach() {
-    user = userFromRegistrarPoc(makeRegistrarContact3());
+    user =
+        new User.Builder()
+            .setEmailAddress("Marla.Singer@crr.com")
+            .setUserRoles(
+                new UserRoles.Builder()
+                    .setRegistrarRoles(
+                        ImmutableMap.of(
+                            "TheRegistrar", RegistrarRole.ACCOUNT_MANAGER_WITH_REGISTRY_LOCK))
+                    .build())
+            .build();
+    action = createAction(user);
+  }
+
+  private RegistryLockGetAction createAction(User user) {
     fakeClock.setTo(DateTime.parse("2000-06-08T22:00:00.0Z"));
-    authResult = AuthResult.createUser(UserAuthInfo.create(user, false));
+    authResult = AuthResult.createUser(user);
     accessor =
         AuthenticatedRegistrarAccessor.createForTesting(
             ImmutableSetMultimap.of(
                 "TheRegistrar", OWNER,
                 "NewRegistrar", OWNER));
-    action =
-        new RegistryLockGetAction(
-            Method.GET, response, accessor, authResult, Optional.of("TheRegistrar"));
+    return new RegistryLockGetAction(
+        Method.GET, response, accessor, authResult, Optional.of("TheRegistrar"));
   }
 
   @Test
@@ -108,7 +114,7 @@ final class RegistryLockGetActionTest {
                     .build())
             .build();
 
-    action.authResult = AuthResult.createUser(UserAuthInfo.create(consoleUser));
+    action.authResult = AuthResult.createUser(consoleUser);
     action.run();
     assertThat(response.getStatus()).isEqualTo(SC_OK);
     assertThat(GSON.fromJson(response.getPayload(), Map.class))
@@ -231,7 +237,7 @@ final class RegistryLockGetActionTest {
                         "lockEnabledForContact",
                         true,
                         "email",
-                        "Marla.Singer.RegistryLock@crr.com",
+                        "Marla.Singer@crr.com",
                         "clientId",
                         "TheRegistrar",
                         "locks",
@@ -286,10 +292,10 @@ final class RegistryLockGetActionTest {
   }
 
   @Test
-  void testFailure_noAuthInfo() {
+  void testFailure_noUser() {
     action.authResult = AuthResult.NOT_AUTHENTICATED;
     IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class, action::run);
-    assertThat(thrown).hasMessageThat().isEqualTo("User auth info must be present");
+    assertThat(thrown).hasMessageThat().isEqualTo("User must be present");
   }
 
   @Test
@@ -312,8 +318,16 @@ final class RegistryLockGetActionTest {
   @Test
   void testSuccess_readOnlyAccessForOtherUsers() {
     // If lock is not enabled for a user, this should be read-only
-    persistResource(
-        makeRegistrarContact3().asBuilder().setAllowedToSetRegistryLockPassword(true).build());
+    action =
+        createAction(
+            user.asBuilder()
+                .setUserRoles(
+                    user.getUserRoles()
+                        .asBuilder()
+                        .setRegistrarRoles(
+                            ImmutableMap.of("TheRegistrar", RegistrarRole.ACCOUNT_MANAGER))
+                        .build())
+                .build());
     action.run();
     assertThat(GSON.fromJson(response.getPayload(), Map.class).get("results"))
         .isEqualTo(
@@ -322,7 +336,7 @@ final class RegistryLockGetActionTest {
                     "lockEnabledForContact",
                     false,
                     "email",
-                    "Marla.Singer.RegistryLock@crr.com",
+                    "Marla.Singer@crr.com",
                     "clientId",
                     "TheRegistrar",
                     "locks",
@@ -332,10 +346,11 @@ final class RegistryLockGetActionTest {
   @Test
   void testSuccess_lockAllowedForAdmin() {
     // Locks are allowed for admins even when they're not enabled for the registrar
-    persistResource(makeRegistrar2().asBuilder().setRegistryLockAllowed(false).build());
-    // disallow the other user
-    persistResource(makeRegistrarContact2().asBuilder().setLoginEmailAddress(null).build());
-    authResult = AuthResult.createUser(UserAuthInfo.create(user, true));
+    authResult =
+        AuthResult.createUser(
+            user.asBuilder()
+                .setUserRoles(user.getUserRoles().asBuilder().setIsAdmin(true).build())
+                .build());
     accessor =
         AuthenticatedRegistrarAccessor.createForTesting(
             ImmutableSetMultimap.of(
@@ -353,29 +368,6 @@ final class RegistryLockGetActionTest {
                     true,
                     "email",
                     "Marla.Singer@crr.com",
-                    "clientId",
-                    "TheRegistrar",
-                    "locks",
-                    ImmutableList.of())));
-  }
-
-  @Test
-  void testSuccess_linkedToLoginContactEmail() {
-    // Note that the email address is case-insensitive.
-    user = new User("marla.singer@crr.com", "crr.com", user.getUserId());
-    authResult = AuthResult.createUser(UserAuthInfo.create(user, false));
-    action =
-        new RegistryLockGetAction(
-            Method.GET, response, accessor, authResult, Optional.of("TheRegistrar"));
-    action.run();
-    assertThat(GSON.fromJson(response.getPayload(), Map.class).get("results"))
-        .isEqualTo(
-            ImmutableList.of(
-                ImmutableMap.of(
-                    "lockEnabledForContact",
-                    true,
-                    "email",
-                    "Marla.Singer.RegistryLock@crr.com",
                     "clientId",
                     "TheRegistrar",
                     "locks",
@@ -409,9 +401,5 @@ final class RegistryLockGetActionTest {
             Method.GET, response, accessor, authResult, Optional.of("SomeBadRegistrar"));
     action.run();
     assertThat(response.getStatus()).isEqualTo(SC_FORBIDDEN);
-  }
-
-  static User userFromRegistrarPoc(RegistrarPoc registrarPoc) {
-    return new User(registrarPoc.getLoginEmailAddress(), "gmail.com");
   }
 }
