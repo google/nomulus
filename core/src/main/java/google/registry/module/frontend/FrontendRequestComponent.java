@@ -28,6 +28,7 @@ import google.registry.request.RequestScope;
 import google.registry.ui.server.console.ConsoleDomainGetAction;
 import google.registry.ui.server.console.ConsoleDomainListAction;
 import google.registry.ui.server.console.ConsoleEppPasswordAction;
+import google.registry.ui.server.console.ConsoleRegistryLockAction;
 import google.registry.ui.server.console.ConsoleUserDataAction;
 import google.registry.ui.server.console.RegistrarsAction;
 import google.registry.ui.server.console.settings.ContactAction;
@@ -63,6 +64,9 @@ public interface FrontendRequestComponent {
 
   ConsoleOteSetupAction consoleOteSetupAction();
   ConsoleRegistrarCreatorAction consoleRegistrarCreatorAction();
+
+  ConsoleRegistryLockAction consoleRegistryLockAction();
+
   ConsoleUiAction consoleUiAction();
 
   ConsoleUserDataAction consoleUserDataAction();

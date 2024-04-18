@@ -109,6 +109,20 @@ public final class RequestParameters {
   /**
    * Returns first GET or POST parameter associated with {@code name} as a long.
    *
+   * @throws BadRequestException if request parameter is present but not a valid long
+   */
+  public static Optional<Long> extractOptionalLongParameter(HttpServletRequest req, String name) {
+    String stringParam = req.getParameter(name);
+    try {
+      return isNullOrEmpty(stringParam) ? Optional.empty() : Optional.of(Long.valueOf(stringParam));
+    } catch (NumberFormatException e) {
+      throw new BadRequestException("Expected long: " + name);
+    }
+  }
+
+  /**
+   * Returns first GET or POST parameter associated with {@code name} as a long.
+   *
    * @throws BadRequestException if request parameter is absent, empty, or not a valid long
    */
   public static long extractLongParameter(HttpServletRequest req, String name) {
