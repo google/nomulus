@@ -9,9 +9,6 @@ anchorTenantAddGracePeriodLength: "PT2592000S"
 autoRenewGracePeriodLength: "PT3888000S"
 automaticTransferLength: "PT432000S"
 claimsPeriodEnd: "294247-01-10T04:00:54.775Z"
-createBillingCost:
-  currency: "USD"
-  amount: 13.00
 createBillingCostTransitions:
   "1970-01-01T00:00:00.000Z":
     currency: "USD"

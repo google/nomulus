@@ -27,9 +27,6 @@ transferGracePeriodLength: "PT2592000S"
 automaticTransferLength: "PT2592000S"
 pendingDeleteLength: "PT2592000S"
 currency: "USD"
-createBillingCost:
-  currency: "USD"
-  amount: 25.00
 restoreBillingCost:
   currency: "USD"
   amount: 17.00
