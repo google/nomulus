@@ -45,7 +45,6 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
 import google.registry.dns.writer.VoidDnsWriter;
 import google.registry.model.EntityTestCase;
-import google.registry.model.common.TimedTransitionProperty;
 import google.registry.model.domain.token.AllocationToken;
 import google.registry.model.tld.Tld.TldNotFoundException;
 import google.registry.model.tld.Tld.TldState;
@@ -149,8 +148,7 @@ public final class TldTest extends EntityTestCase {
             .asBuilder()
             .setDnsAPlusAaaaTtl(Duration.standardHours(1))
             .setDnsWriters(ImmutableSet.of("baz", "bang"))
-            .setCreateBillingCostTransitions(
-                TimedTransitionProperty.withInitialValue(Money.of(USD, 13)).toValueMap())
+            .setCreateBillingCost(Money.of(USD, 8))
             .setEapFeeSchedule(
                 ImmutableSortedMap.of(
                     START_OF_TIME,
@@ -172,12 +170,7 @@ public final class TldTest extends EntityTestCase {
 
   @Test
   void testSuccess_tldYamlRoundtrip() throws Exception {
-    Tld testTld =
-        createTld("test")
-            .asBuilder()
-            .setCreateBillingCostTransitions(
-                TimedTransitionProperty.withInitialValue(Money.of(USD, 8)).toValueMap())
-            .build();
+    Tld testTld = createTld("test").asBuilder().setCreateBillingCost(Money.of(USD, 8)).build();
     ObjectMapper mapper = createObjectMapper();
     String yaml = mapper.writeValueAsString(testTld);
     Tld constructedTld = mapper.readValue(yaml, Tld.class);

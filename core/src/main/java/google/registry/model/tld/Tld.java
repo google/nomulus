@@ -458,9 +458,10 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
   @JsonDeserialize(using = CurrencyDeserializer.class)
   CurrencyUnit currency = DEFAULT_CURRENCY;
 
-  // TODO(sarahbot@): Remove this field
+  // TODO(sarahbot@): Remove this field once all saved configuration files have this field removed
   /** The per-year billing cost for registering a new domain name. */
   @Deprecated
+  @JsonIgnore
   @Type(type = JodaMoneyType.TYPE_NAME)
   @Columns(
       columns = {

@@ -5,9 +5,6 @@ anchorTenantAddGracePeriodLength: "PT2592000S"
 autoRenewGracePeriodLength: "PT2592000S"
 automaticTransferLength: "PT2592000S"
 claimsPeriodEnd: "294247-01-10T04:00:54.775Z"
-createBillingCost:
-  currency: "USD"
-  amount: 25.00
 creationTime: "2022-09-01T00:00:00.000Z"
 currency: "USD"
 defaultPromoTokens: []
