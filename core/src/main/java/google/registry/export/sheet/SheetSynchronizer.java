@@ -38,6 +38,8 @@ class SheetSynchronizer {
 
   private static final String SHEET_NAME = "Registrars";
 
+  private static final String INVALID_HEADER_TEXT = "Invalid Sheet column header name";
+
   @Inject Sheets sheetsService;
   @Inject SheetSynchronizer() {}
 
@@ -92,10 +94,12 @@ class SheetSynchronizer {
         cellRow.add("");
       }
       for (int j = 0; j < headers.size(); j++) {
-        // Look for the value corresponding to the row and header indices in data
-        String dataField = data.get(i).get(headers.get(j));
-        // If the cell's header matches a data header, and the values aren't equal, mutate it
-        if (dataField != null && !cellRow.get(j).toString().equals(dataField)) {
+        // Look for the value corresponding to the row and header indices in data, otherwise write
+        // out an error so it's clear to a reader of the Google Sheet that the column header is
+        // invalid.
+        String dataField = data.get(i).getOrDefault(headers.get(j), INVALID_HEADER_TEXT);
+        // If the existing cell value is different than the new data, mutate it.
+        if (!cellRow.get(j).toString().equals(dataField)) {
           mutated = true;
           originalVals.get(i).set(j, dataField);
         }
