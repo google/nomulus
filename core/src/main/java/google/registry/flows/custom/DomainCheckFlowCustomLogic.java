@@ -14,7 +14,7 @@
 
 package google.registry.flows.custom;
 
-import com.google.auto.value.AutoValue;
+import com.google.auto.value.AutoBuilder;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.net.InternetDomainName;
@@ -22,7 +22,6 @@ import google.registry.flows.EppException;
 import google.registry.flows.FlowMetadata;
 import google.registry.flows.SessionMetadata;
 import google.registry.flows.domain.DomainCheckFlow;
-import google.registry.model.ImmutableObject;
 import google.registry.model.eppinput.EppInput;
 import google.registry.model.eppoutput.CheckData.DomainCheck;
 import google.registry.model.eppoutput.EppResponse.ResponseExtension;
@@ -67,91 +66,83 @@ public class DomainCheckFlowCustomLogic extends BaseFlowCustomLogic {
         .build();
   }
 
-  /** A class to encapsulate parameters for a call to {@link #afterValidation}. */
-  @AutoValue
-  public abstract static class AfterValidationParameters extends ImmutableObject {
-
-    public abstract ImmutableMap<String, InternetDomainName> domainNames();
-
-    /**
-     * The time to perform the domain check as of. This defaults to the current time, but can be
-     * overridden in v&gt;=0.12 of the fee extension.
-     */
-    public abstract DateTime asOfDate();
+  /**
+   * A record to encapsulate parameters for a call to {@link #afterValidation}.
+   *
+   * @param domainNames A map of the domain names being checked, from domain name as string to
+   *     parsed value.
+   * @param asOfDate The time to perform the domain check as of. This defaults to the current time,
+   *     but can be overridden in v&gt;=0.12 of the fee extension.
+   */
+  public record AfterValidationParameters(
+      ImmutableMap<String, InternetDomainName> domainNames, DateTime asOfDate) {
 
     public static Builder newBuilder() {
-      return new AutoValue_DomainCheckFlowCustomLogic_AfterValidationParameters.Builder();
+      return new AutoBuilder_DomainCheckFlowCustomLogic_AfterValidationParameters_Builder();
     }
 
     /** Builder for {@link AfterValidationParameters}. */
-    @AutoValue.Builder
-    public abstract static class Builder {
+    @AutoBuilder
+    public interface Builder {
 
-      public abstract Builder setDomainNames(ImmutableMap<String, InternetDomainName> domainNames);
+      Builder setDomainNames(ImmutableMap<String, InternetDomainName> domainNames);
 
-      public abstract Builder setAsOfDate(DateTime asOfDate);
+      Builder setAsOfDate(DateTime asOfDate);
 
-      public abstract AfterValidationParameters build();
-    }
-  }
-
-  /** A class to encapsulate parameters for a call to {@link #beforeResponse}. */
-  @AutoValue
-  public abstract static class BeforeResponseParameters extends ImmutableObject {
-
-    public abstract ImmutableList<DomainCheck> domainChecks();
-
-    public abstract ImmutableList<? extends ResponseExtension> responseExtensions();
-
-    /**
-     * The time to perform the domain check as of. This defaults to the current time, but can be
-     * overridden in v&gt;=0.12 of the fee extension.
-     */
-    public abstract DateTime asOfDate();
-
-    public static Builder newBuilder() {
-      return new AutoValue_DomainCheckFlowCustomLogic_BeforeResponseParameters.Builder();
-    }
-
-    /** Builder for {@link BeforeResponseParameters}. */
-    @AutoValue.Builder
-    public abstract static class Builder {
-
-      public abstract Builder setDomainChecks(ImmutableList<DomainCheck> domainChecks);
-
-      public abstract Builder setResponseExtensions(
-          ImmutableList<? extends ResponseExtension> responseExtensions);
-
-      public abstract Builder setAsOfDate(DateTime asOfDate);
-
-      public abstract BeforeResponseParameters build();
+      AfterValidationParameters build();
     }
   }
 
   /**
-   * A class to encapsulate parameters for the return values from a call to {@link #beforeResponse}.
+   * A record to encapsulate parameters for a call to {@link #beforeResponse}.
+   *
+   * @param asOfDate The time to perform the domain check as of. This defaults to the current time,
+   *     but can be overridden in v&gt;=0.12 of the fee extension.
    */
-  @AutoValue
-  public abstract static class BeforeResponseReturnData extends ImmutableObject {
-
-    public abstract ImmutableList<DomainCheck> domainChecks();
-
-    public abstract ImmutableList<? extends ResponseExtension> responseExtensions();
+  public record BeforeResponseParameters(
+      ImmutableList<DomainCheck> domainChecks,
+      ImmutableList<? extends ResponseExtension> responseExtensions,
+      DateTime asOfDate) {
 
     public static Builder newBuilder() {
-      return new AutoValue_DomainCheckFlowCustomLogic_BeforeResponseReturnData.Builder();
+      return new AutoBuilder_DomainCheckFlowCustomLogic_BeforeResponseParameters_Builder();
+    }
+
+    /** Builder for {@link BeforeResponseParameters}. */
+    @AutoBuilder
+    public interface Builder {
+
+      Builder setDomainChecks(ImmutableList<DomainCheck> domainChecks);
+
+      Builder setResponseExtensions(ImmutableList<? extends ResponseExtension> responseExtensions);
+
+      Builder setAsOfDate(DateTime asOfDate);
+
+      BeforeResponseParameters build();
+    }
+  }
+
+  /**
+   * A record to encapsulate parameters for the return values from a call to {@link
+   * #beforeResponse}.
+   */
+  public record BeforeResponseReturnData(
+      ImmutableList<DomainCheck> domainChecks,
+      ImmutableList<? extends ResponseExtension> responseExtensions) {
+
+    public static Builder newBuilder() {
+      return new AutoBuilder_DomainCheckFlowCustomLogic_BeforeResponseReturnData_Builder();
     }
 
     /** Builder for {@link BeforeResponseReturnData}. */
-    @AutoValue.Builder
-    public abstract static class Builder {
+    @AutoBuilder
+    public interface Builder {
 
-      public abstract Builder setDomainChecks(ImmutableList<DomainCheck> domainChecks);
+      Builder setDomainChecks(ImmutableList<DomainCheck> domainChecks);
 
-      public abstract Builder setResponseExtensions(
-          ImmutableList<? extends ResponseExtension> responseExtensions);
+      Builder setResponseExtensions(ImmutableList<? extends ResponseExtension> responseExtensions);
 
-      public abstract BeforeResponseReturnData build();
+      BeforeResponseReturnData build();
     }
   }
 }

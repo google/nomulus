@@ -69,9 +69,8 @@ public class AllocationTokenFlowUtils {
     try {
       tokenEntity = loadToken(token);
     } catch (EppException e) {
-      return AllocationTokenDomainCheckResults.create(
-          Optional.empty(),
-          ImmutableMap.copyOf(Maps.toMap(domainNames, ignored -> e.getMessage())));
+      return new AllocationTokenDomainCheckResults(
+          Optional.empty(), Maps.toMap(domainNames, ignored -> e.getMessage()));
     }
 
     // If the token is only invalid for some domain names (e.g. an invalid TLD), include those error
@@ -97,8 +96,7 @@ public class AllocationTokenFlowUtils {
     resultsBuilder.putAll(
         tokenCustomLogic.checkDomainsWithToken(
             validDomainNames.build(), tokenEntity, registrarId, now));
-    return AllocationTokenDomainCheckResults.create(
-        Optional.of(tokenEntity), resultsBuilder.build());
+    return new AllocationTokenDomainCheckResults(Optional.of(tokenEntity), resultsBuilder.build());
   }
 
   /** Redeems a SINGLE_USE {@link AllocationToken}, returning the redeemed copy. */

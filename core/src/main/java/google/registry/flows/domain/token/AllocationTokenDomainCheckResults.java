@@ -14,23 +14,11 @@
 
 package google.registry.flows.domain.token;
 
-import com.google.auto.value.AutoValue;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.net.InternetDomainName;
 import google.registry.model.domain.token.AllocationToken;
 import java.util.Optional;
 
-/** Value class to represent the result of loading a token and checking domains with it. */
-@AutoValue
-public abstract class AllocationTokenDomainCheckResults {
-
-  public abstract Optional<AllocationToken> token();
-
-  public abstract ImmutableMap<InternetDomainName, String> domainCheckResults();
-
-  public static AllocationTokenDomainCheckResults create(
-      Optional<AllocationToken> allocationToken,
-      ImmutableMap<InternetDomainName, String> domainCheckResults) {
-    return new AutoValue_AllocationTokenDomainCheckResults(allocationToken, domainCheckResults);
-  }
-}
+/** Record to represent the result of loading a token and checking domains with it. */
+public record AllocationTokenDomainCheckResults(
+    Optional<AllocationToken> token, ImmutableMap<InternetDomainName, String> domainCheckResults) {}
