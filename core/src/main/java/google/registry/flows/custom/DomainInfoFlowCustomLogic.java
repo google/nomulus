@@ -14,13 +14,12 @@
 
 package google.registry.flows.custom;
 
-import com.google.auto.value.AutoValue;
+import com.google.auto.value.AutoBuilder;
 import com.google.common.collect.ImmutableList;
 import google.registry.flows.EppException;
 import google.registry.flows.FlowMetadata;
 import google.registry.flows.SessionMetadata;
 import google.registry.flows.domain.DomainInfoFlow;
-import google.registry.model.ImmutableObject;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainInfoData;
 import google.registry.model.eppinput.EppInput;
@@ -65,79 +64,67 @@ public class DomainInfoFlowCustomLogic extends BaseFlowCustomLogic {
         .build();
   }
 
-  /** A class to encapsulate parameters for a call to {@link #afterValidation}. */
-  @AutoValue
-  public abstract static class AfterValidationParameters extends ImmutableObject {
-
-    public abstract Domain domain();
+  /** A record to encapsulate parameters for a call to {@link #afterValidation}. */
+  public record AfterValidationParameters(Domain domain) {
 
     public static Builder newBuilder() {
-      return new AutoValue_DomainInfoFlowCustomLogic_AfterValidationParameters.Builder();
+      return new AutoBuilder_DomainInfoFlowCustomLogic_AfterValidationParameters_Builder();
     }
 
     /** Builder for {@link AfterValidationParameters}. */
-    @AutoValue.Builder
-    public abstract static class Builder {
+    @AutoBuilder
+    public interface Builder {
 
-      public abstract Builder setDomain(Domain domain);
+      Builder setDomain(Domain domain);
 
-      public abstract AfterValidationParameters build();
+      AfterValidationParameters build();
     }
   }
 
-  /** A class to encapsulate parameters for a call to {@link #beforeResponse}. */
-  @AutoValue
-  public abstract static class BeforeResponseParameters extends ImmutableObject {
-
-    public abstract Domain domain();
-
-    public abstract DomainInfoData resData();
-
-    public abstract ImmutableList<? extends ResponseExtension> responseExtensions();
+  /** A record to encapsulate parameters for a call to {@link #beforeResponse}. */
+  public record BeforeResponseParameters(
+      Domain domain,
+      DomainInfoData resData,
+      ImmutableList<? extends ResponseExtension> responseExtensions) {
 
     public static Builder newBuilder() {
-      return new AutoValue_DomainInfoFlowCustomLogic_BeforeResponseParameters.Builder();
+      return new AutoBuilder_DomainInfoFlowCustomLogic_BeforeResponseParameters_Builder();
     }
 
     /** Builder for {@link BeforeResponseParameters}. */
-    @AutoValue.Builder
-    public abstract static class Builder {
+    @AutoBuilder
+    public interface Builder {
 
-      public abstract Builder setDomain(Domain domain);
+      Builder setDomain(Domain domain);
 
-      public abstract Builder setResData(DomainInfoData resData);
+      Builder setResData(DomainInfoData resData);
 
-      public abstract Builder setResponseExtensions(
-          ImmutableList<? extends ResponseExtension> responseExtensions);
+      Builder setResponseExtensions(ImmutableList<? extends ResponseExtension> responseExtensions);
 
-      public abstract BeforeResponseParameters build();
+      BeforeResponseParameters build();
     }
   }
 
   /**
-   * A class to encapsulate parameters for the return values from a call to {@link #beforeResponse}.
+   * A record to encapsulate parameters for the return values from a call to {@link
+   * #beforeResponse}.
    */
-  @AutoValue
-  public abstract static class BeforeResponseReturnData extends ImmutableObject {
-
-    public abstract DomainInfoData resData();
-
-    public abstract ImmutableList<? extends ResponseExtension> responseExtensions();
+  public record BeforeResponseReturnData(
+      DomainInfoData resData, ImmutableList<? extends ResponseExtension> responseExtensions) {
 
     public static Builder newBuilder() {
-      return new AutoValue_DomainInfoFlowCustomLogic_BeforeResponseReturnData.Builder();
+      return new AutoBuilder_DomainInfoFlowCustomLogic_BeforeResponseReturnData_Builder();
     }
 
     /** Builder for {@link BeforeResponseReturnData}. */
-    @AutoValue.Builder
-    public abstract static class Builder {
+    @AutoBuilder
+    public interface Builder {
 
-      public abstract Builder setResData(DomainInfoData resData);
+      Builder setResData(DomainInfoData resData);
 
-      public abstract Builder setResponseExtensions(
-          ImmutableList<? extends ResponseExtension> responseExtensions);
+      Builder setResponseExtensions(ImmutableList<? extends ResponseExtension> responseExtensions);
 
-      public abstract BeforeResponseReturnData build();
+      BeforeResponseReturnData build();
     }
   }
 }

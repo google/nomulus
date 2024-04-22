@@ -14,14 +14,13 @@
 
 package google.registry.flows.custom;
 
-import com.google.auto.value.AutoValue;
+import com.google.auto.value.AutoBuilder;
 import com.google.common.net.InternetDomainName;
 import google.registry.flows.EppException;
 import google.registry.flows.FlowMetadata;
 import google.registry.flows.SessionMetadata;
 import google.registry.flows.domain.DomainPricingLogic;
 import google.registry.flows.domain.FeesAndCredits;
-import google.registry.model.ImmutableObject;
 import google.registry.model.eppinput.EppInput;
 import google.registry.model.tld.Tld;
 import javax.annotation.Nullable;
@@ -75,171 +74,135 @@ public class DomainPricingCustomLogic extends BaseFlowCustomLogic {
     return priceParameters.feesAndCredits();
   }
 
-  /** A class to encapsulate parameters for a call to {@link #customizeCreatePrice} . */
-  @AutoValue
-  public abstract static class CreatePriceParameters extends ImmutableObject {
-
-    public abstract FeesAndCredits feesAndCredits();
-
-    public abstract Tld tld();
-
-    public abstract InternetDomainName domainName();
-
-    public abstract DateTime asOfDate();
-
-    public abstract int years();
+  /** A record to encapsulate parameters for a call to {@link #customizeCreatePrice} . */
+  public record CreatePriceParameters(
+      FeesAndCredits feesAndCredits,
+      Tld tld,
+      InternetDomainName domainName,
+      DateTime asOfDate,
+      int years) {
 
     public static Builder newBuilder() {
-      return new AutoValue_DomainPricingCustomLogic_CreatePriceParameters.Builder();
+      return new AutoBuilder_DomainPricingCustomLogic_CreatePriceParameters_Builder();
     }
 
     /** Builder for {@link CreatePriceParameters}. */
-    @AutoValue.Builder
-    public abstract static class Builder {
+    @AutoBuilder
+    public interface Builder {
 
-      public abstract Builder setFeesAndCredits(FeesAndCredits feesAndCredits);
+      Builder setFeesAndCredits(FeesAndCredits feesAndCredits);
 
-      public abstract Builder setTld(Tld tld);
+      Builder setTld(Tld tld);
 
-      public abstract Builder setDomainName(InternetDomainName domainName);
+      Builder setDomainName(InternetDomainName domainName);
 
-      public abstract Builder setAsOfDate(DateTime asOfDate);
+      Builder setAsOfDate(DateTime asOfDate);
 
-      public abstract Builder setYears(int years);
+      Builder setYears(int years);
 
-      public abstract CreatePriceParameters build();
+      CreatePriceParameters build();
     }
   }
 
-  /** A class to encapsulate parameters for a call to {@link #customizeRenewPrice} . */
-  @AutoValue
-  public abstract static class RenewPriceParameters extends ImmutableObject {
-
-    public abstract FeesAndCredits feesAndCredits();
-
-    public abstract Tld tld();
-
-    public abstract InternetDomainName domainName();
-
-    public abstract DateTime asOfDate();
-
-    public abstract int years();
+  /** A record to encapsulate parameters for a call to {@link #customizeRenewPrice} . */
+  public record RenewPriceParameters(
+      FeesAndCredits feesAndCredits,
+      Tld tld,
+      InternetDomainName domainName,
+      DateTime asOfDate,
+      int years) {
 
     public static Builder newBuilder() {
-      return new AutoValue_DomainPricingCustomLogic_RenewPriceParameters.Builder();
+      return new AutoBuilder_DomainPricingCustomLogic_RenewPriceParameters_Builder();
     }
 
     /** Builder for {@link RenewPriceParameters}. */
-    @AutoValue.Builder
-    public abstract static class Builder {
+    @AutoBuilder
+    public interface Builder {
 
-      public abstract Builder setFeesAndCredits(FeesAndCredits feesAndCredits);
+      Builder setFeesAndCredits(FeesAndCredits feesAndCredits);
 
-      public abstract Builder setTld(Tld tld);
+      Builder setTld(Tld tld);
 
-      public abstract Builder setDomainName(InternetDomainName domainName);
+      Builder setDomainName(InternetDomainName domainName);
 
-      public abstract Builder setAsOfDate(DateTime asOfDate);
+      Builder setAsOfDate(DateTime asOfDate);
 
-      public abstract Builder setYears(int years);
+      Builder setYears(int years);
 
-      public abstract RenewPriceParameters build();
+      RenewPriceParameters build();
     }
   }
 
-  /** A class to encapsulate parameters for a call to {@link #customizeRestorePrice} . */
-  @AutoValue
-  public abstract static class RestorePriceParameters extends ImmutableObject {
-
-    public abstract FeesAndCredits feesAndCredits();
-
-    public abstract Tld tld();
-
-    public abstract InternetDomainName domainName();
-
-    public abstract DateTime asOfDate();
+  /** A record to encapsulate parameters for a call to {@link #customizeRestorePrice} . */
+  public record RestorePriceParameters(
+      FeesAndCredits feesAndCredits, Tld tld, InternetDomainName domainName, DateTime asOfDate) {
 
     public static Builder newBuilder() {
-      return new AutoValue_DomainPricingCustomLogic_RestorePriceParameters.Builder();
+      return new AutoBuilder_DomainPricingCustomLogic_RestorePriceParameters_Builder();
     }
 
     /** Builder for {@link RestorePriceParameters}. */
-    @AutoValue.Builder
-    public abstract static class Builder {
+    @AutoBuilder
+    public interface Builder {
 
-      public abstract Builder setFeesAndCredits(FeesAndCredits feesAndCredits);
+      Builder setFeesAndCredits(FeesAndCredits feesAndCredits);
 
-      public abstract Builder setTld(Tld tld);
+      Builder setTld(Tld tld);
 
-      public abstract Builder setDomainName(InternetDomainName domainName);
+      Builder setDomainName(InternetDomainName domainName);
 
-      public abstract Builder setAsOfDate(DateTime asOfDate);
+      Builder setAsOfDate(DateTime asOfDate);
 
-      public abstract RestorePriceParameters build();
+      RestorePriceParameters build();
     }
   }
 
-  /** A class to encapsulate parameters for a call to {@link #customizeTransferPrice} . */
-  @AutoValue
-  public abstract static class TransferPriceParameters extends ImmutableObject {
-
-    public abstract FeesAndCredits feesAndCredits();
-
-    public abstract Tld tld();
-
-    public abstract InternetDomainName domainName();
-
-    public abstract DateTime asOfDate();
+  /** A record to encapsulate parameters for a call to {@link #customizeTransferPrice} . */
+  public record TransferPriceParameters(
+      FeesAndCredits feesAndCredits, Tld tld, InternetDomainName domainName, DateTime asOfDate) {
 
     public static Builder newBuilder() {
-      return new AutoValue_DomainPricingCustomLogic_TransferPriceParameters.Builder();
+      return new AutoBuilder_DomainPricingCustomLogic_TransferPriceParameters_Builder();
     }
 
     /** Builder for {@link TransferPriceParameters}. */
-    @AutoValue.Builder
-    public abstract static class Builder {
+    @AutoBuilder
+    public interface Builder {
 
-      public abstract Builder setFeesAndCredits(FeesAndCredits feesAndCredits);
+      Builder setFeesAndCredits(FeesAndCredits feesAndCredits);
 
-      public abstract Builder setTld(Tld tld);
+      Builder setTld(Tld tld);
 
-      public abstract Builder setDomainName(InternetDomainName domainName);
+      Builder setDomainName(InternetDomainName domainName);
 
-      public abstract Builder setAsOfDate(DateTime asOfDate);
+      Builder setAsOfDate(DateTime asOfDate);
 
-      public abstract TransferPriceParameters build();
+      TransferPriceParameters build();
     }
   }
 
-  /** A class to encapsulate parameters for a call to {@link #customizeUpdatePrice} . */
-  @AutoValue
-  public abstract static class UpdatePriceParameters extends ImmutableObject {
-
-    public abstract FeesAndCredits feesAndCredits();
-
-    public abstract Tld tld();
-
-    public abstract InternetDomainName domainName();
-
-    public abstract DateTime asOfDate();
+  /** A record to encapsulate parameters for a call to {@link #customizeUpdatePrice} . */
+  public record UpdatePriceParameters(
+      FeesAndCredits feesAndCredits, Tld tld, InternetDomainName domainName, DateTime asOfDate) {
 
     public static Builder newBuilder() {
-      return new AutoValue_DomainPricingCustomLogic_UpdatePriceParameters.Builder();
+      return new AutoBuilder_DomainPricingCustomLogic_UpdatePriceParameters_Builder();
     }
 
     /** Builder for {@link UpdatePriceParameters}. */
-    @AutoValue.Builder
-    public abstract static class Builder {
+    @AutoBuilder
+    public interface Builder {
 
-      public abstract Builder setFeesAndCredits(FeesAndCredits feesAndCredits);
+      Builder setFeesAndCredits(FeesAndCredits feesAndCredits);
 
-      public abstract Builder setTld(Tld tld);
+      Builder setTld(Tld tld);
 
-      public abstract Builder setDomainName(InternetDomainName domainName);
+      Builder setDomainName(InternetDomainName domainName);
 
-      public abstract Builder setAsOfDate(DateTime asOfDate);
+      Builder setAsOfDate(DateTime asOfDate);
 
-      public abstract UpdatePriceParameters build();
+      UpdatePriceParameters build();
     }
   }
 }

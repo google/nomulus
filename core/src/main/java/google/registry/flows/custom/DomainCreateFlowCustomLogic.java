@@ -14,14 +14,13 @@
 
 package google.registry.flows.custom;
 
-import com.google.auto.value.AutoValue;
+import com.google.auto.value.AutoBuilder;
 import com.google.common.collect.ImmutableList;
 import com.google.common.net.InternetDomainName;
 import google.registry.flows.EppException;
 import google.registry.flows.FlowMetadata;
 import google.registry.flows.SessionMetadata;
 import google.registry.flows.domain.DomainCreateFlow;
-import google.registry.model.ImmutableObject;
 import google.registry.model.domain.Domain;
 import google.registry.model.eppinput.EppInput;
 import google.registry.model.eppoutput.EppResponse.ResponseData;
@@ -81,147 +80,114 @@ public class DomainCreateFlowCustomLogic extends BaseFlowCustomLogic {
         .build();
   }
 
-  /** A class to encapsulate parameters for a call to {@link #afterValidation}. */
-  @AutoValue
-  public abstract static class AfterValidationParameters extends ImmutableObject {
-
-    /** The parsed domain name of the domain that is requested to be created. */
-    public abstract InternetDomainName domainName();
-
-    /**
-     * The number of years that the domain name will be registered for.
-     *
-     * <p>On standard TLDs, this is usually 1.
-     */
-    public abstract int years();
-
-    /**
-     * The ID of the validated signed mark.
-     *
-     * <p>If a signed mark was not supplied, this value will be absent.
-     */
-    public abstract Optional<String> signedMarkId();
+  /**
+   * A record to encapsulate parameters for a call to {@link #afterValidation}.
+   *
+   * @param domainName The parsed domain name of the domain that is requested to be created.
+   * @param years The number of years that the domain name will be registered for (typically 1).
+   * @param signedMarkId The ID of the validated signed mark, or absent if not supplied.
+   */
+  public record AfterValidationParameters(
+      InternetDomainName domainName, int years, Optional<String> signedMarkId) {
 
     public static Builder newBuilder() {
-      return new AutoValue_DomainCreateFlowCustomLogic_AfterValidationParameters.Builder();
+      return new AutoBuilder_DomainCreateFlowCustomLogic_AfterValidationParameters_Builder();
     }
 
     /** Builder for {@link AfterValidationParameters}. */
-    @AutoValue.Builder
-    public abstract static class Builder {
+    @AutoBuilder
+    public interface Builder {
 
-      public abstract Builder setDomainName(InternetDomainName domainName);
+      Builder setDomainName(InternetDomainName domainName);
 
-      public abstract Builder setYears(int years);
+      Builder setYears(int years);
 
-      public abstract Builder setSignedMarkId(Optional<String> signedMarkId);
+      Builder setSignedMarkId(Optional<String> signedMarkId);
 
-      public abstract AfterValidationParameters build();
-    }
-  }
-
-  /** A class to encapsulate parameters for a call to {@link #beforeSave}. */
-  @AutoValue
-  public abstract static class BeforeSaveParameters extends ImmutableObject {
-
-    /**
-     * The new {@link Domain} entity that is going to be persisted at the end of the transaction.
-     */
-    public abstract Domain newDomain();
-
-    /**
-     * The new {@link HistoryEntry} entity for the domain's creation that is going to be persisted
-     * at the end of the transaction.
-     */
-    public abstract HistoryEntry historyEntry();
-
-    /**
-     * The collection of {@link EntityChanges} (including new entities and those to delete) that
-     * will be persisted at the end of the transaction.
-     *
-     * <p>Note that the new domain and history entry are also included as saves in this collection,
-     * and are separated out above solely for convenience, as they are most likely to need to be
-     * changed. Removing them from the collection will cause them not to be saved, which is most
-     * likely not what you intended.
-     */
-    public abstract EntityChanges entityChanges();
-
-    /**
-     * The number of years that the domain name will be registered for.
-     *
-     * <p>On standard TLDs, this is usually 1.
-     */
-    public abstract int years();
-
-    public static Builder newBuilder() {
-      return new AutoValue_DomainCreateFlowCustomLogic_BeforeSaveParameters.Builder();
-    }
-
-    /** Builder for {@link BeforeSaveParameters}. */
-    @AutoValue.Builder
-    public abstract static class Builder {
-
-      public abstract Builder setNewDomain(Domain newDomain);
-
-      public abstract Builder setHistoryEntry(HistoryEntry historyEntry);
-
-      public abstract Builder setEntityChanges(EntityChanges entityChanges);
-
-      public abstract Builder setYears(int years);
-
-      public abstract BeforeSaveParameters build();
-    }
-  }
-
-  /** A class to encapsulate parameters for a call to {@link #beforeResponse}. */
-  @AutoValue
-  public abstract static class BeforeResponseParameters extends ImmutableObject {
-
-    public abstract ResponseData resData();
-
-    public abstract ImmutableList<? extends ResponseExtension> responseExtensions();
-
-    public static BeforeResponseParameters.Builder newBuilder() {
-      return new AutoValue_DomainCreateFlowCustomLogic_BeforeResponseParameters.Builder();
-    }
-
-    /** Builder for {@link DomainCreateFlowCustomLogic.BeforeResponseParameters}. */
-    @AutoValue.Builder
-    public abstract static class Builder {
-
-      public abstract BeforeResponseParameters.Builder setResData(ResponseData resData);
-
-      public abstract BeforeResponseParameters.Builder setResponseExtensions(
-          ImmutableList<? extends ResponseExtension> responseExtensions);
-
-      public abstract BeforeResponseParameters build();
+      AfterValidationParameters build();
     }
   }
 
   /**
-   * A class to encapsulate parameters for the return values from a call to {@link #beforeResponse}.
+   * A record to encapsulate parameters for a call to {@link #beforeSave}.
+   *
+   * @param newDomain The new {@link Domain} entity that is going to be persisted at the end of the
+   *     transaction.
+   * @param historyEntry The new {@link HistoryEntry} entity for the domain's creation that is going
+   *     to be persisted at the end of the transaction.
+   * @param entityChanges The collection of {@link EntityChanges} (including new entities and those
+   *     to delete) that will be persisted at the end of the transaction.
+   *     <p>Note that the new domain and history entry are also included as saves in this
+   *     collection, and are separated out above solely for convenience, as they are most likely to
+   *     need to be changed. Removing them from the collection will cause them not to be saved,
+   *     which is most likely not what you intended.
+   * @param years The number of years that the domain name will be registered for (typically 1).
    */
-  @AutoValue
-  public abstract static class BeforeResponseReturnData extends ImmutableObject {
+  public record BeforeSaveParameters(
+      Domain newDomain, HistoryEntry historyEntry, EntityChanges entityChanges, int years) {
 
-    public abstract ResponseData resData();
+    public static Builder newBuilder() {
+      return new AutoBuilder_DomainCreateFlowCustomLogic_BeforeSaveParameters_Builder();
+    }
 
-    public abstract ImmutableList<? extends ResponseExtension> responseExtensions();
+    /** Builder for {@link BeforeSaveParameters}. */
+    @AutoBuilder
+    public interface Builder {
+
+      Builder setNewDomain(Domain newDomain);
+
+      Builder setHistoryEntry(HistoryEntry historyEntry);
+
+      Builder setEntityChanges(EntityChanges entityChanges);
+
+      Builder setYears(int years);
+
+      BeforeSaveParameters build();
+    }
+  }
+
+  /** A record to encapsulate parameters for a call to {@link #beforeResponse}. */
+  public record BeforeResponseParameters(
+      ResponseData resData, ImmutableList<? extends ResponseExtension> responseExtensions) {
+
+    public static BeforeResponseParameters.Builder newBuilder() {
+      return new AutoBuilder_DomainCreateFlowCustomLogic_BeforeResponseParameters_Builder();
+    }
+
+    /** Builder for {@link DomainCreateFlowCustomLogic.BeforeResponseParameters}. */
+    @AutoBuilder
+    public interface Builder {
+
+      BeforeResponseParameters.Builder setResData(ResponseData resData);
+
+      BeforeResponseParameters.Builder setResponseExtensions(
+          ImmutableList<? extends ResponseExtension> responseExtensions);
+
+      BeforeResponseParameters build();
+    }
+  }
+
+  /**
+   * A record to encapsulate parameters for the return values from a call to {@link
+   * #beforeResponse}.
+   */
+  public record BeforeResponseReturnData(
+      ResponseData resData, ImmutableList<? extends ResponseExtension> responseExtensions) {
 
     public static BeforeResponseReturnData.Builder newBuilder() {
-      return new AutoValue_DomainCreateFlowCustomLogic_BeforeResponseReturnData.Builder();
+      return new AutoBuilder_DomainCreateFlowCustomLogic_BeforeResponseReturnData_Builder();
     }
 
     /** Builder for {@link DomainCreateFlowCustomLogic.BeforeResponseReturnData}. */
-    @AutoValue.Builder
-    public abstract static class Builder {
+    @AutoBuilder
+    public interface Builder {
 
-      public abstract BeforeResponseReturnData.Builder setResData(ResponseData resData);
+      BeforeResponseReturnData.Builder setResData(ResponseData resData);
 
-      public abstract BeforeResponseReturnData.Builder setResponseExtensions(
+      BeforeResponseReturnData.Builder setResponseExtensions(
           ImmutableList<? extends ResponseExtension> responseExtensions);
 
-      public abstract BeforeResponseReturnData build();
+      BeforeResponseReturnData build();
     }
   }
 }

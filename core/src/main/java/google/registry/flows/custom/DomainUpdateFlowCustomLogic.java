@@ -14,12 +14,11 @@
 
 package google.registry.flows.custom;
 
-import com.google.auto.value.AutoValue;
+import com.google.auto.value.AutoBuilder;
 import google.registry.flows.EppException;
 import google.registry.flows.FlowMetadata;
 import google.registry.flows.SessionMetadata;
 import google.registry.flows.domain.DomainUpdateFlow;
-import google.registry.model.ImmutableObject;
 import google.registry.model.domain.Domain;
 import google.registry.model.eppinput.EppInput;
 import google.registry.model.reporting.HistoryEntry;
@@ -61,61 +60,53 @@ public class DomainUpdateFlowCustomLogic extends BaseFlowCustomLogic {
     return parameters.entityChanges();
   }
 
-  /** A class to encapsulate parameters for a call to {@link #afterValidation}. */
-  @AutoValue
-  public abstract static class AfterValidationParameters extends ImmutableObject {
-
-    public abstract Domain existingDomain();
+  /** A record to encapsulate parameters for a call to {@link #afterValidation}. */
+  public record AfterValidationParameters(Domain existingDomain) {
 
     public static Builder newBuilder() {
-      return new AutoValue_DomainUpdateFlowCustomLogic_AfterValidationParameters.Builder();
+      return new AutoBuilder_DomainUpdateFlowCustomLogic_AfterValidationParameters_Builder();
     }
 
     /** Builder for {@link AfterValidationParameters}. */
-    @AutoValue.Builder
-    public abstract static class Builder {
+    @AutoBuilder
+    public interface Builder {
 
-      public abstract Builder setExistingDomain(Domain existingDomain);
+      Builder setExistingDomain(Domain existingDomain);
 
-      public abstract AfterValidationParameters build();
+      AfterValidationParameters build();
     }
   }
 
   /**
-   * A class to encapsulate parameters for a call to {@link #beforeSave}.
+   * A record to encapsulate parameters for a call to {@link #beforeSave}.
    *
    * <p>Note that both newDomain and historyEntry are included in entityChanges. They are also
    * passed separately for convenience, but they are the same instance, and changes to them will
    * also affect what is persisted from entityChanges.
    */
-  @AutoValue
-  public abstract static class BeforeSaveParameters extends ImmutableObject {
-
-    public abstract Domain existingDomain();
-
-    public abstract Domain newDomain();
-
-    public abstract HistoryEntry historyEntry();
-
-    public abstract EntityChanges entityChanges();
+  public record BeforeSaveParameters(
+      Domain existingDomain,
+      Domain newDomain,
+      HistoryEntry historyEntry,
+      EntityChanges entityChanges) {
 
     public static Builder newBuilder() {
-      return new AutoValue_DomainUpdateFlowCustomLogic_BeforeSaveParameters.Builder();
+      return new AutoBuilder_DomainUpdateFlowCustomLogic_BeforeSaveParameters_Builder();
     }
 
     /** Builder for {@link BeforeSaveParameters}. */
-    @AutoValue.Builder
-    public abstract static class Builder {
+    @AutoBuilder
+    public interface Builder {
 
-      public abstract Builder setExistingDomain(Domain existingDomain);
+      Builder setExistingDomain(Domain existingDomain);
 
-      public abstract Builder setNewDomain(Domain newDomain);
+      Builder setNewDomain(Domain newDomain);
 
-      public abstract Builder setHistoryEntry(HistoryEntry historyEntry);
+      Builder setHistoryEntry(HistoryEntry historyEntry);
 
-      public abstract Builder setEntityChanges(EntityChanges entityChanges);
+      Builder setEntityChanges(EntityChanges entityChanges);
 
-      public abstract BeforeSaveParameters build();
+      BeforeSaveParameters build();
     }
   }
 }

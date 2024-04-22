@@ -23,7 +23,6 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 
 import com.github.benmanes.caffeine.cache.CacheLoader;
 import com.github.benmanes.caffeine.cache.LoadingCache;
-import com.google.auto.value.AutoValue;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -221,15 +220,10 @@ public final class ForeignKeyUtils {
                 e -> VKey.create(clazz, e.getValue().get().repoId())));
   }
 
-  @AutoValue
-  abstract static class MostRecentResource {
-
-    abstract String repoId();
-
-    abstract DateTime deletionTime();
+  record MostRecentResource(String repoId, DateTime deletionTime) {
 
     static MostRecentResource create(String repoId, DateTime deletionTime) {
-      return new AutoValue_ForeignKeyUtils_MostRecentResource(repoId, deletionTime);
+      return new MostRecentResource(repoId, deletionTime);
     }
   }
 }
