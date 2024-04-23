@@ -458,10 +458,10 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
   @JsonDeserialize(using = CurrencyDeserializer.class)
   CurrencyUnit currency = DEFAULT_CURRENCY;
 
-  // TODO(sarahbot@): Remove this field and make createBillingCostTransitions not-null once all TLDs
-  // are populated with a create cost transition map
+  // TODO(sarahbot@): Remove this field once all saved configuration files have this field removed
   /** The per-year billing cost for registering a new domain name. */
   @Deprecated
+  @JsonIgnore
   @Type(type = JodaMoneyType.TYPE_NAME)
   @Columns(
       columns = {
@@ -470,10 +470,10 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
       })
   Money createBillingCost = DEFAULT_CREATE_BILLING_COST;
 
-  // TODO(sarahbot@): Make this field not null in the database
   // TODO(sarahbot@): Rename this field to createBillingCost once the old createBillingCost has been
   // removed
   /** A property that transitions to different create billing costs at different times. */
+  @Column(nullable = false)
   @JsonDeserialize(using = TimedTransitionPropertyMoneyDeserializer.class)
   TimedTransitionProperty<Money> createBillingCostTransitions =
       TimedTransitionProperty.withInitialValue(DEFAULT_CREATE_BILLING_COST);
@@ -1165,10 +1165,6 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
       // here to catch cases where we loaded an invalid TimedTransitionProperty from the database
       // and cloned it into a new builder, to block re-building a Tld in an invalid state.
       instance.tldStateTransitions.checkValidity();
-      // TODO(sarahbot@): Remove null check when createBillingCostTransitions field is made not-null
-      checkArgumentNotNull(
-          instance.getCreateBillingCostTransitions(),
-          "CreateBillingCostTransitions cannot be null");
       instance.createBillingCostTransitions.checkValidity();
       instance.renewBillingCostTransitions.checkValidity();
       instance.eapFeeSchedule.checkValidity();

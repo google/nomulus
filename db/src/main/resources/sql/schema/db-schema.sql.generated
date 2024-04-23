@@ -739,7 +739,7 @@
         claims_period_end timestamptz not null,
         create_billing_cost_amount numeric(19, 2),
         create_billing_cost_currency text,
-        create_billing_cost_transitions hstore,
+        create_billing_cost_transitions hstore not null,
         creation_time timestamptz not null,
         currency text not null,
         default_promo_tokens text[],
