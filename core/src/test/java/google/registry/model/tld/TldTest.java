@@ -148,6 +148,7 @@ public final class TldTest extends EntityTestCase {
             .asBuilder()
             .setDnsAPlusAaaaTtl(Duration.standardHours(1))
             .setDnsWriters(ImmutableSet.of("baz", "bang"))
+            // set create billing cost back to the default (database helper sets it to $13)
             .setCreateBillingCost(Money.of(USD, 8))
             .setEapFeeSchedule(
                 ImmutableSortedMap.of(
