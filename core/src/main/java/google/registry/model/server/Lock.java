@@ -15,6 +15,7 @@
 package google.registry.model.server;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static google.registry.persistence.PersistenceModule.TransactionIsolationLevel.TRANSACTION_REPEATABLE_READ;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.DateTimeUtils.isAtOrAfter;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
@@ -196,7 +197,20 @@ public class Lock extends ImmutableObject implements Serializable {
 
           return new AcquireResult(now, lock, newLock, lockState);
         };
-    AcquireResult acquireResult = tm().transact(lockAcquirer);
+    /*
+     * Use REPEATABLE READ to avoid write conflicts with other locks.
+     *
+     * <p>Since the Lock table is small, Postgresql may choose table scan instead of PK lookup. At
+     * the SERIALIZABLE level this can cause conflicts with other locks. There is no way to forbid
+     * table scan on a per-query or per-table basis.
+     *
+     * <p>Using REPEATABLE READ is safe since Lock acquire/release only accesses one row. Note that
+     * passing the isolation level to the `transact` method requires that it is not a nested
+     * transaction. As of the time of this change this is the case.
+     *
+     * <p>See b/333537928 for more information.
+     */
+    AcquireResult acquireResult = tm().transact(TRANSACTION_REPEATABLE_READ, lockAcquirer);
 
     logAcquireResult(acquireResult);
     lockMetrics.recordAcquire(resourceName, scope, acquireResult.lockState());
@@ -232,7 +246,8 @@ public class Lock extends ImmutableObject implements Serializable {
                 "Not deleting lock: %s - someone else has it: %s", lockId, loadedLock);
           }
         };
-    tm().transact(lockReleaser);
+    // See comments in the `acquire` method for this isolation level.
+    tm().transact(TRANSACTION_REPEATABLE_READ, lockReleaser);
   }
 
   static class LockId extends ImmutableObject implements Serializable {
