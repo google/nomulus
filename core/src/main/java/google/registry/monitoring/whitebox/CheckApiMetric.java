@@ -16,14 +16,18 @@ package google.registry.monitoring.whitebox;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-import com.google.auto.value.AutoValue;
+import com.google.auto.value.AutoBuilder;
 import google.registry.util.Clock;
 import java.util.Optional;
 import org.joda.time.DateTime;
 
-/** A value class for recording attributes of a domain check metric. */
-@AutoValue
-public abstract class CheckApiMetric {
+/** A record for recording attributes of a domain check metric. */
+public record CheckApiMetric(
+    DateTime startTimestamp,
+    DateTime endTimestamp,
+    Status status,
+    Optional<Tier> tier,
+    Optional<Availability> availability) {
 
   /** Price tier of a domain name. */
   public enum Tier {
@@ -77,24 +81,13 @@ public abstract class CheckApiMetric {
     }
   }
 
-  public abstract DateTime startTimestamp();
-
-  public abstract DateTime endTimestamp();
-
-  public abstract Status status();
-
-  public abstract Optional<Tier> tier();
-
-  public abstract Optional<Availability> availability();
 
   public static Builder builder(Clock clock) {
-    return new AutoValue_CheckApiMetric.Builder().startTimestamp(clock.nowUtc()).setClock(clock);
+    return new AutoBuilder_CheckApiMetric_Builder().startTimestamp(clock.nowUtc()).setClock(clock);
   }
 
-  CheckApiMetric() {}
-
   /** Builder for {@link CheckApiMetric}. */
-  @AutoValue.Builder
+  @AutoBuilder
   public abstract static class Builder {
 
     private Clock clock;

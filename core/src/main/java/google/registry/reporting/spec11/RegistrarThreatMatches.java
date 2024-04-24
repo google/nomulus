@@ -14,20 +14,14 @@
 
 package google.registry.reporting.spec11;
 
-import com.google.auto.value.AutoValue;
 import com.google.common.collect.ImmutableList;
 import google.registry.beam.spec11.ThreatMatch;
 import java.util.List;
 
-/** Value class representing the registrar and list-of-threat-matches pair stored in GCS. */
-@AutoValue
-public abstract class RegistrarThreatMatches {
-
-  public abstract String clientId();
-
-  public abstract ImmutableList<ThreatMatch> threatMatches();
+/** Value record representing the registrar and list-of-threat-matches pair stored in GCS. */
+public record RegistrarThreatMatches(String clientId, ImmutableList<ThreatMatch> threatMatches) {
 
   static RegistrarThreatMatches create(String clientId, List<ThreatMatch> threatMatches) {
-    return new AutoValue_RegistrarThreatMatches(clientId, ImmutableList.copyOf(threatMatches));
+    return new RegistrarThreatMatches(clientId, ImmutableList.copyOf(threatMatches));
   }
 }

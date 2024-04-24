@@ -14,7 +14,6 @@
 
 package google.registry.model.tld.label;
 
-import com.google.auto.value.AutoValue;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableSet;
 import com.google.monitoring.metrics.EventMetric;
@@ -43,16 +42,11 @@ class DomainLabelMetrics {
     UNCACHED_POSITIVE
   }
 
-  @AutoValue
-  abstract static class MetricsReservedListMatch {
+  record MetricsReservedListMatch(String reservedListName, ReservationType reservationType) {
     static MetricsReservedListMatch create(
         String reservedListName, ReservationType reservationType) {
-      return new AutoValue_DomainLabelMetrics_MetricsReservedListMatch(
-          reservedListName, reservationType);
+      return new MetricsReservedListMatch(reservedListName, reservationType);
     }
-
-    abstract String reservedListName();
-    abstract ReservationType reservationType();
   }
 
   /**

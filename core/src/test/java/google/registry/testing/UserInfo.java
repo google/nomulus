@@ -14,35 +14,25 @@
 
 package google.registry.testing;
 
-import com.google.auto.value.AutoValue;
-
 /**
  * Container for values passed to {@link UserServiceExtension} to set the logged-in user for tests.
  */
-@AutoValue
-public abstract class UserInfo {
-
-  abstract String email();
-  abstract String authDomain();
-  abstract boolean isAdmin();
-  abstract boolean isLoggedIn();
+public record UserInfo(String email, String authDomain, boolean isAdmin, boolean isLoggedIn) {
 
   /** Creates a new logged-in non-admin user instance. */
   public static UserInfo create(String email) {
     String authDomain = email.substring(email.indexOf('@') + 1);
-    return new AutoValue_UserInfo(email, authDomain, false, true);
+    return new UserInfo(email, authDomain, false, true);
   }
 
   /** Creates a new logged-in admin user instance. */
   public static UserInfo createAdmin(String email) {
     String authDomain = email.substring(email.indexOf('@') + 1);
-    return new AutoValue_UserInfo(email, authDomain, true, true);
+    return new UserInfo(email, authDomain, true, true);
   }
 
   /** Returns a logged-out user instance. */
   public static UserInfo loggedOut() {
-    return new AutoValue_UserInfo("", "", false, false);
+    return new UserInfo("", "", false, false);
   }
-
-  UserInfo() {}
 }

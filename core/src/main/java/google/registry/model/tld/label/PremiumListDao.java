@@ -23,7 +23,6 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import static google.registry.util.CollectionUtils.isNullOrEmpty;
 
 import com.github.benmanes.caffeine.cache.LoadingCache;
-import com.google.auto.value.AutoValue;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -236,14 +235,10 @@ public final class PremiumListDao {
         .collect(toImmutableList());
   }
 
-  @AutoValue
-  abstract static class RevisionIdAndLabel {
-    abstract long revisionId();
-
-    abstract String label();
+  record RevisionIdAndLabel(long revisionId, String label) {
 
     static RevisionIdAndLabel create(long revisionId, String label) {
-      return new AutoValue_PremiumListDao_RevisionIdAndLabel(revisionId, label);
+      return new RevisionIdAndLabel(revisionId, label);
     }
   }
 

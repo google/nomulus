@@ -14,7 +14,6 @@
 
 package google.registry.request.auth;
 
-import com.google.auto.value.AutoValue;
 import com.google.common.collect.ImmutableList;
 import com.google.errorprone.annotations.Immutable;
 import google.registry.model.console.UserRoles;
@@ -26,18 +25,12 @@ import google.registry.model.console.UserRoles;
  * values.
  */
 @Immutable
-@AutoValue
-public abstract class AuthSettings {
-
-  public abstract ImmutableList<AuthMethod> methods();
-
-  public abstract AuthLevel minimumLevel();
-
-  public abstract UserPolicy userPolicy();
+public record AuthSettings(
+    ImmutableList<AuthMethod> methods, AuthLevel minimumLevel, UserPolicy userPolicy) {
 
   static AuthSettings create(
       ImmutableList<AuthMethod> methods, AuthLevel minimumLevel, UserPolicy userPolicy) {
-    return new AutoValue_AuthSettings(methods, minimumLevel, userPolicy);
+    return new AuthSettings(methods, minimumLevel, userPolicy);
   }
 
   /** Available methods for authentication. */

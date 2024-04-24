@@ -17,7 +17,7 @@ package google.registry.whois;
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.monitoring.metrics.EventMetric.DEFAULT_FITTER;
 
-import com.google.auto.value.AutoValue;
+import com.google.auto.value.AutoBuilder;
 import com.google.common.collect.ImmutableSet;
 import com.google.monitoring.metrics.EventMetric;
 import com.google.monitoring.metrics.IncrementableMetric;
@@ -73,18 +73,12 @@ public class WhoisMetrics {
   }
 
   /** A value class for recording attributes of a WHOIS metric. */
-  @AutoValue
-  public abstract static class WhoisMetric {
-
-    public abstract Optional<String> commandName();
-
-    public abstract int numResults();
-
-    public abstract int status();
-
-    public abstract DateTime startTimestamp();
-
-    public abstract DateTime endTimestamp();
+  public record WhoisMetric(
+      Optional<String> commandName,
+      int numResults,
+      int status,
+      DateTime startTimestamp,
+      DateTime endTimestamp) {
 
     /**
      * Create a {@link WhoisMetric.Builder} for a request context, with the start and end timestamps
@@ -98,11 +92,11 @@ public class WhoisMetrics {
 
     /** Create a {@link WhoisMetric.Builder}. */
     public static Builder builder() {
-      return new AutoValue_WhoisMetrics_WhoisMetric.Builder();
+      return new AutoBuilder_WhoisMetrics_WhoisMetric_Builder();
     }
 
     /** A builder to create instances of {@link WhoisMetric}. */
-    @AutoValue.Builder
+    @AutoBuilder
     public abstract static class Builder {
 
       boolean wasBuilt = false;

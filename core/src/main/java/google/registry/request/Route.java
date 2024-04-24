@@ -14,7 +14,6 @@
 
 package google.registry.request;
 
-import com.google.auto.value.AutoValue;
 import java.util.function.Function;
 
 /**
@@ -22,17 +21,12 @@ import java.util.function.Function;
  *
  * @see Router
  */
-@AutoValue
-abstract class Route {
+record Route(Action action, Function<Object, Runnable> instantiator, Class<?> actionClass) {
 
   static Route create(
       Action action, Function<Object, Runnable> instantiator, Class<?> actionClass) {
-    return new AutoValue_Route(action, instantiator, actionClass);
+    return new Route(action, instantiator, actionClass);
   }
-
-  abstract Action action();
-  abstract Function<Object, Runnable> instantiator();
-  abstract Class<?> actionClass();
 
   boolean isMethodAllowed(Action.Method requestMethod) {
     for (Action.Method method : action().method()) {

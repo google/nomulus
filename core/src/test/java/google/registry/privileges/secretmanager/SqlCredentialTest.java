@@ -1,4 +1,4 @@
-// Copyright 2017 The Nomulus Authors. All Rights Reserved.
+// Copyright 2024 The Nomulus Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,15 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package google.registry.server;
+package google.registry.privileges.secretmanager;
 
-import jakarta.servlet.http.HttpServlet;
+import static com.google.common.truth.Truth.assertThat;
 
-/** Pair of servlet path and servlet instance object. */
-public record Route(String path, Class<? extends HttpServlet> servletClass) {
+import org.junit.jupiter.api.Test;
 
-  /** Creates a new route mapping between a path (may have wildcards) and a servlet. */
-  public static Route route(String path, Class<? extends HttpServlet> servletClass) {
-    return new Route(path, servletClass);
+/** Unit tests for {@link SqlCredential}. */
+public class SqlCredentialTest {
+
+  @Test
+  void secrets_arentWrittenOutByToString() {
+    SqlCredential cred = SqlCredential.create("joshua", "rosebud");
+    String credStr = cred.toString();
+    assertThat(credStr).doesNotContain("joshua");
+    assertThat(credStr).doesNotContain("rosebud");
   }
 }

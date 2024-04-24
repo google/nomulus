@@ -18,7 +18,6 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static google.registry.request.auth.AuthSettings.AuthLevel.APP;
 import static google.registry.request.auth.AuthSettings.AuthLevel.USER;
 
-import com.google.auto.value.AutoValue;
 import google.registry.request.auth.AuthSettings.AuthLevel;
 import java.util.Optional;
 import javax.annotation.Nullable;
@@ -26,18 +25,13 @@ import javax.annotation.Nullable;
 /**
  * Results of authentication for a given HTTP request, as emitted by an {@link
  * AuthenticationMechanism}.
+ *
+ * @param userAuthInfo Information about the authenticated user, if there is one.
+ * @param appServiceAccount Service account email of the authenticated app, if there is one. This
+ *     will be logged upon successful login.
  */
-@AutoValue
-public abstract class AuthResult {
-
-  public abstract AuthLevel authLevel();
-
-  /** Information about the authenticated user, if there is one. */
-  public abstract Optional<UserAuthInfo> userAuthInfo();
-
-  /** Service account email of the authenticated app, if there is one. */
-  @SuppressWarnings("unused") // The service account will be logged upon successful login.
-  public abstract Optional<String> appServiceAccount();
+public record AuthResult(
+    AuthLevel authLevel, Optional<UserAuthInfo> userAuthInfo, Optional<String> appServiceAccount) {
 
   public boolean isAuthenticated() {
     return authLevel() != AuthLevel.NONE;
@@ -72,8 +66,7 @@ public abstract class AuthResult {
     checkArgument(
         authLevel != APP || email != null,
         "Service account email must be specified for auth level APP");
-    return new AutoValue_AuthResult(
-        authLevel, Optional.ofNullable(userAuthInfo), Optional.ofNullable(email));
+    return new AuthResult(authLevel, Optional.ofNullable(userAuthInfo), Optional.ofNullable(email));
   }
 
   /**

@@ -14,6 +14,7 @@
 
 package google.registry.monitoring.blackbox;
 
+import com.google.auto.value.AutoBuilder;
 import com.google.auto.value.AutoValue;
 import google.registry.monitoring.blackbox.connection.ProbingAction;
 import google.registry.monitoring.blackbox.connection.Protocol;
@@ -31,30 +32,23 @@ import org.joda.time.Duration;
  * {@link OutboundMessageType}, {@link Protocol}, {@link Duration}, and {@link Bootstrap} instances.
  * It then modifies these components on each loop iteration with the consumed {@link Token} and from
  * that, generates a new {@link ProbingAction} to call.
+ *
+ * @param duration Time delay duration between actions.
+ * @param protocol {@link Protocol} type for this step.
+ * @param messageTemplate {@link OutboundMessageType} instance that serves as template to be
+ *     modified by {@link Token}.
+ * @param bootstrap {@link Bootstrap} instance provided by parent {@link ProbingSequence} that
+ *     allows for creation of new channels.
  */
-@AutoValue
-public abstract class ProbingStep {
+public record ProbingStep(
+    Duration duration,
+    Protocol protocol,
+    OutboundMessageType messageTemplate,
+    Bootstrap bootstrap) {
 
   public static Builder builder() {
-    return new AutoValue_ProbingStep.Builder();
+    return new AutoBuilder_ProbingStep_Builder();
   }
-
-  /** Time delay duration between actions. */
-  abstract Duration duration();
-
-  /** {@link Protocol} type for this step. */
-  abstract Protocol protocol();
-
-  /**
-   * {@link OutboundMessageType} instance that serves as template to be modified by {@link Token}.
-   */
-  abstract OutboundMessageType messageTemplate();
-
-  /**
-   * {@link Bootstrap} instance provided by parent {@link ProbingSequence} that allows for creation
-   * of new channels.
-   */
-  abstract Bootstrap bootstrap();
 
   /**
    * Generates a new {@link ProbingAction} from {@code token} modified {@link OutboundMessageType}
@@ -84,18 +78,18 @@ public abstract class ProbingStep {
         protocol(), messageTemplate().getClass().getName());
   }
 
-  /** Standard {@link AutoValue.Builder} for {@link ProbingStep}. */
-  @AutoValue.Builder
-  public abstract static class Builder {
+  /** Builder for {@link ProbingStep}. */
+  @AutoBuilder
+  public interface Builder {
 
-    public abstract Builder setDuration(Duration value);
+    Builder setDuration(Duration value);
 
-    public abstract Builder setProtocol(Protocol value);
+    Builder setProtocol(Protocol value);
 
-    public abstract Builder setMessageTemplate(OutboundMessageType value);
+    Builder setMessageTemplate(OutboundMessageType value);
 
-    public abstract Builder setBootstrap(Bootstrap value);
+    Builder setBootstrap(Bootstrap value);
 
-    public abstract ProbingStep build();
+    ProbingStep build();
   }
 }

@@ -14,7 +14,7 @@
 
 package google.registry.util;
 
-import com.google.auto.value.AutoValue;
+import com.google.auto.value.AutoBuilder;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.net.MediaType;
@@ -23,16 +23,25 @@ import java.util.Optional;
 import javax.mail.internet.InternetAddress;
 
 /**
- * Value class representing the content and metadata of an email.
+ * Record representing the content and metadata of an email.
  *
  * <p>The sender address and display name are set by the email client and are not customizable by
  * the user.
+ *
+ * @param replyToEmailAddress Optional return email address that overrides the default.
  */
-@AutoValue
-public abstract class EmailMessage {
+public record EmailMessage(
+    String subject,
+    String body,
+    ImmutableSet<InternetAddress> recipients,
+    Optional<InternetAddress> replyToEmailAddress,
+    ImmutableSet<InternetAddress> ccs,
+    ImmutableSet<InternetAddress> bccs,
+    Optional<MediaType> contentType,
+    Optional<Attachment> attachment) {
 
   public static Builder newBuilder() {
-    return new AutoValue_EmailMessage.Builder();
+    return new AutoBuilder_EmailMessage_Builder();
   }
 
   public static EmailMessage create(String subject, String body, InternetAddress recipient) {
@@ -43,92 +52,68 @@ public abstract class EmailMessage {
         .build();
   }
 
-  public abstract String subject();
-
-  public abstract String body();
-
-  public abstract ImmutableSet<InternetAddress> recipients();
-
-  /** Optional return email address that overrides the default. */
-  public abstract Optional<InternetAddress> replyToEmailAddress();
-
-  public abstract ImmutableSet<InternetAddress> ccs();
-
-  public abstract ImmutableSet<InternetAddress> bccs();
-
-  public abstract Optional<MediaType> contentType();
-
-  public abstract Optional<Attachment> attachment();
-
   /** Builder for {@link EmailMessage}. */
-  @AutoValue.Builder
-  public abstract static class Builder {
+  @AutoBuilder
+  public interface Builder {
 
-    public abstract Builder setSubject(String subject);
+    Builder setSubject(String subject);
 
-    public abstract Builder setBody(String body);
+    Builder setBody(String body);
 
-    public abstract Builder setRecipients(Collection<InternetAddress> recipients);
+    Builder setRecipients(Collection<InternetAddress> recipients);
 
-    public abstract Builder setReplyToEmailAddress(InternetAddress replyToEmailAddress);
+    Builder setReplyToEmailAddress(InternetAddress replyToEmailAddress);
 
-    public abstract Builder setReplyToEmailAddress(Optional<InternetAddress> replyToEmailAddress);
+    Builder setReplyToEmailAddress(Optional<InternetAddress> replyToEmailAddress);
 
-    public abstract Builder setBccs(Collection<InternetAddress> bccs);
+    Builder setBccs(Collection<InternetAddress> bccs);
 
-    public abstract Builder setCcs(Collection<InternetAddress> ccs);
+    Builder setCcs(Collection<InternetAddress> ccs);
 
-    public abstract Builder setContentType(MediaType contentType);
+    Builder setContentType(MediaType contentType);
 
-    public abstract Builder setAttachment(Attachment attachment);
+    Builder setAttachment(Attachment attachment);
 
-    abstract ImmutableSet.Builder<InternetAddress> recipientsBuilder();
+    ImmutableSet.Builder<InternetAddress> recipientsBuilder();
 
-    abstract ImmutableSet.Builder<InternetAddress> bccsBuilder();
+    ImmutableSet.Builder<InternetAddress> bccsBuilder();
 
-    abstract ImmutableSet.Builder<InternetAddress> ccsBuilder();
+    ImmutableSet.Builder<InternetAddress> ccsBuilder();
 
-    public Builder addRecipient(InternetAddress value) {
+    default Builder addRecipient(InternetAddress value) {
       recipientsBuilder().add(value);
       return this;
     }
 
-    public Builder addBcc(InternetAddress bcc) {
+    default Builder addBcc(InternetAddress bcc) {
       bccsBuilder().add(bcc);
       return this;
     }
 
-    public Builder addCc(InternetAddress cc) {
+    default Builder addCc(InternetAddress cc) {
       ccsBuilder().add(cc);
       return this;
     }
 
-    public abstract EmailMessage build();
+    EmailMessage build();
   }
 
   /** An attachment to the email, if one exists. */
-  @AutoValue
-  public abstract static class Attachment {
+  public record Attachment(MediaType contentType, String filename, String content) {
     public static Builder newBuilder() {
-      return new AutoValue_EmailMessage_Attachment.Builder();
+      return new AutoBuilder_EmailMessage_Attachment_Builder();
     }
 
-    public abstract MediaType contentType();
-
-    public abstract String filename();
-
-    public abstract String content();
-
     /** Builder for {@link Attachment}. */
-    @AutoValue.Builder
-    public abstract static class Builder {
-      public abstract Builder setContentType(MediaType contentType);
+    @AutoBuilder
+    public interface Builder {
+      Builder setContentType(MediaType contentType);
 
-      public abstract Builder setFilename(String filename);
+      Builder setFilename(String filename);
 
-      public abstract Builder setContent(String content);
+      Builder setContent(String content);
 
-      public abstract Attachment build();
+      Attachment build();
     }
   }
 }
