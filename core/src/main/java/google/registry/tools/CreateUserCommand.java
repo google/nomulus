@@ -20,15 +20,27 @@ import com.beust.jcommander.Parameters;
 import google.registry.model.console.User;
 import google.registry.model.console.UserDao;
 import javax.annotation.Nullable;
+import javax.inject.Inject;
 
 /** Command to create a new User. */
 @Parameters(separators = " =", commandDescription = "Update a user account")
 public class CreateUserCommand extends CreateOrUpdateUserCommand {
+
+  static final String IAP_SECURED_WEB_APP_USER_ROLE = "roles/iap.httpsResourceAccessor";
+
+  @Inject IamClient iamClient;
 
   @Nullable
   @Override
   User getExistingUser(String email) {
     checkArgument(UserDao.loadUser(email).isEmpty(), "A user with email %s already exists", email);
     return null;
+  }
+
+  @Override
+  protected String execute() throws Exception {
+    String ret = super.execute();
+    iamClient.addBinding(email, IAP_SECURED_WEB_APP_USER_ROLE);
+    return ret;
   }
 }
