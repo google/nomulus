@@ -14,7 +14,6 @@
 
 package google.registry.privileges.secretmanager;
 
-import com.google.auto.value.AutoValue;
 import com.google.cloud.secretmanager.v1.SecretVersion;
 import com.google.common.collect.Streams;
 import java.util.Optional;
@@ -116,18 +115,11 @@ public interface SecretManagerClient {
   void deleteSecret(String secretId);
 
   /** Contains the {@link SecretVersion.State State} of an secret version. */
-  @AutoValue
-  abstract class SecretVersionState {
+  record SecretVersionState(String secretId, String version, SecretVersion.State state) {
 
-    public abstract String secretId();
-
-    public abstract String version();
-
-    public abstract SecretVersion.State state();
-
-    public static SecretVersionState of(
+    public static SecretVersionState create(
         String secretId, String version, SecretVersion.State state) {
-      return new AutoValue_SecretManagerClient_SecretVersionState(secretId, version, state);
+      return new SecretVersionState(secretId, version, state);
     }
   }
 

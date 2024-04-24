@@ -23,7 +23,6 @@ import static google.registry.model.tld.Tlds.getTlds;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static jakarta.servlet.http.HttpServletResponse.SC_NOT_FOUND;
 
-import com.google.auto.value.AutoValue;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Verify;
 import com.google.common.net.InternetDomainName;
@@ -100,12 +99,8 @@ public class DomainLookupCommand implements WhoisCommand {
         domain -> new DomainWhoisResponse(domain, fullOutput, whoisRedactedEmailText, now));
   }
 
-  @AutoValue
-  abstract static class ResponseOrException {
-
-    abstract Optional<WhoisResponse> whoisResponse();
-
-    abstract Optional<WhoisException> exception();
+  record ResponseOrException(
+      Optional<WhoisResponse> whoisResponse, Optional<WhoisException> exception) {
 
     WhoisResponse returnOrThrow() throws WhoisException {
       Verify.verify(
@@ -115,13 +110,11 @@ public class DomainLookupCommand implements WhoisCommand {
     }
 
     static ResponseOrException of(WhoisResponse response) {
-      return new AutoValue_DomainLookupCommand_ResponseOrException(
-          Optional.of(response), Optional.empty());
+      return new ResponseOrException(Optional.of(response), Optional.empty());
     }
 
     static ResponseOrException of(WhoisException exception) {
-      return new AutoValue_DomainLookupCommand_ResponseOrException(
-          Optional.empty(), Optional.of(exception));
+      return new ResponseOrException(Optional.empty(), Optional.of(exception));
     }
   }
 }

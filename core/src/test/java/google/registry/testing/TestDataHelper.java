@@ -21,7 +21,6 @@ import static google.registry.util.CollectionUtils.nullToEmpty;
 import static google.registry.util.ResourceUtils.readResourceBytes;
 import static google.registry.util.ResourceUtils.readResourceUtf8;
 
-import com.google.auto.value.AutoValue;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.io.ByteSource;
 import com.google.common.io.MoreFiles;
@@ -40,14 +39,9 @@ import javax.annotation.Nullable;
 /** Contains helper methods for dealing with test data. */
 public final class TestDataHelper {
 
-  @AutoValue
-  abstract static class FileKey {
-    abstract Class<?> context();
-
-    abstract String filename();
-
+  record FileKey(Class<?> context, String filename) {
     static FileKey create(Class<?> context, String filename) {
-      return new AutoValue_TestDataHelper_FileKey(context, filename);
+      return new FileKey(context, filename);
     }
   }
 

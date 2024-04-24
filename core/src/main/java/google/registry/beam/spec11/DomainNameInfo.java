@@ -14,30 +14,23 @@
 
 package google.registry.beam.spec11;
 
-import com.google.auto.value.AutoValue;
 import com.google.common.annotations.VisibleForTesting;
 import java.io.Serializable;
 
 /**
- * A POJO representing a domain name and associated info, parsed from a {@code SchemaAndRecord}.
+ * A record representing a domain name and associated info, parsed from a {@code SchemaAndRecord}.
  *
  * <p>This is a trivially serializable class that allows Beam to transform the results of a SQL
  * query into a standard Java representation.
+ *
+ * @param domainName The fully qualified domain name.
+ * @param domainRepoId The domain repo ID (the primary key of the domain table).
+ * @param registrarId The registrar ID of the associated registrar for this domain.
+ * @param registrarEmailAddress The email address of the registrar associated with this domain.
  */
-@AutoValue
-public abstract class DomainNameInfo implements Serializable {
-
-  /** Returns the fully qualified domain name. */
-  abstract String domainName();
-
-  /** Returns the domain repo ID (the primary key of the domain table). */
-  abstract String domainRepoId();
-
-  /** Returns the registrar ID of the associated registrar for this domain. */
-  abstract String registrarId();
-
-  /** Returns the email address of the registrar associated with this domain. */
-  abstract String registrarEmailAddress();
+public record DomainNameInfo(
+    String domainName, String domainRepoId, String registrarId, String registrarEmailAddress)
+    implements Serializable {
 
   /**
    * Creates a concrete {@link DomainNameInfo}.
@@ -45,7 +38,6 @@ public abstract class DomainNameInfo implements Serializable {
   @VisibleForTesting
   static DomainNameInfo create(
       String domainName, String domainRepoId, String registrarId, String registrarEmailAddress) {
-    return new AutoValue_DomainNameInfo(
-        domainName, domainRepoId, registrarId, registrarEmailAddress);
+    return new DomainNameInfo(domainName, domainRepoId, registrarId, registrarEmailAddress);
   }
 }

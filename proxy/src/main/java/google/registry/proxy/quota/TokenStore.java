@@ -18,7 +18,6 @@ import static google.registry.proxy.quota.QuotaConfig.SENTINEL_UNLIMITED_TOKENS;
 import static java.lang.StrictMath.max;
 import static java.lang.StrictMath.min;
 
-import com.google.auto.value.AutoValue;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.flogger.FluentLogger;
 import google.registry.util.Clock;
@@ -49,16 +48,11 @@ import org.joda.time.Duration;
 public class TokenStore {
 
   /** Value class representing a timestamped integer. */
-  @AutoValue
-  abstract static class TimestampedInteger {
+  record TimestampedInteger(int value, DateTime timestamp) {
 
     static TimestampedInteger create(int value, DateTime timestamp) {
-      return new AutoValue_TokenStore_TimestampedInteger(value, timestamp);
+      return new TimestampedInteger(value, timestamp);
     }
-
-    abstract int value();
-
-    abstract DateTime timestamp();
   }
 
   /**

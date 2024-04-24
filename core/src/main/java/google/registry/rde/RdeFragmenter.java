@@ -17,7 +17,6 @@ package google.registry.rde;
 import static google.registry.model.EppResourceUtils.loadAtPointInTime;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
-import com.google.auto.value.AutoValue;
 import com.google.common.collect.ImmutableMap;
 import google.registry.model.EppResource;
 import google.registry.model.contact.Contact;
@@ -96,14 +95,10 @@ public class RdeFragmenter {
   }
 
   /** Map key for {@link RdeFragmenter} cache. */
-  @AutoValue
-  abstract static class WatermarkModePair {
-    abstract DateTime watermark();
-
-    abstract RdeMode mode();
+  record WatermarkModePair(DateTime watermark, RdeMode mode) {
 
     static WatermarkModePair create(DateTime watermark, RdeMode mode) {
-      return new AutoValue_RdeFragmenter_WatermarkModePair(watermark, mode);
+      return new WatermarkModePair(watermark, mode);
     }
   }
 }

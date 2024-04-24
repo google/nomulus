@@ -24,7 +24,6 @@ import static google.registry.security.JsonResponseHelper.Status.SUCCESS;
 import static google.registry.util.PreconditionsUtils.checkArgumentPresent;
 import static google.registry.util.RegistryEnvironment.PRODUCTION;
 
-import com.google.auto.value.AutoValue;
 import com.google.common.base.Ascii;
 import com.google.common.base.Strings;
 import com.google.common.collect.HashMultimap;
@@ -180,38 +179,29 @@ public class RegistrarSettingsAction implements Runnable, JsonActionRunner.JsonA
     }
   }
 
-  @AutoValue
-  abstract static class RegistrarResult {
-    abstract String message();
-
-    abstract Registrar registrar();
+  record RegistrarResult(String message, Registrar registrar) {
 
     Map<String, Object> toJsonResponse() {
       return JsonResponseHelper.create(SUCCESS, message(), registrar().toJsonMap());
     }
 
     static RegistrarResult create(String message, Registrar registrar) {
-      return new AutoValue_RegistrarSettingsAction_RegistrarResult(message, registrar);
+      return new RegistrarResult(message, registrar);
     }
   }
 
-  @AutoValue
-  abstract static class EmailInfo {
-    abstract Registrar registrar();
-
-    abstract Registrar updatedRegistrar();
-
-    abstract ImmutableSet<RegistrarPoc> contacts();
-
-    abstract ImmutableSet<RegistrarPoc> updatedContacts();
+  record EmailInfo(
+      Registrar registrar,
+      Registrar updatedRegistrar,
+      ImmutableSet<RegistrarPoc> contacts,
+      ImmutableSet<RegistrarPoc> updatedContacts) {
 
     static EmailInfo create(
         Registrar registrar,
         Registrar updatedRegistrar,
         ImmutableSet<RegistrarPoc> contacts,
         ImmutableSet<RegistrarPoc> updatedContacts) {
-      return new AutoValue_RegistrarSettingsAction_EmailInfo(
-          registrar, updatedRegistrar, contacts, updatedContacts);
+      return new EmailInfo(registrar, updatedRegistrar, contacts, updatedContacts);
     }
   }
 

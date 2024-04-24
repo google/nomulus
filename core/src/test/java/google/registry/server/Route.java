@@ -14,20 +14,13 @@
 
 package google.registry.server;
 
-import com.google.auto.value.AutoValue;
 import jakarta.servlet.http.HttpServlet;
 
 /** Pair of servlet path and servlet instance object. */
-@AutoValue
-public abstract class Route {
-
-  abstract String path();
-  abstract Class<? extends HttpServlet> servletClass();
+public record Route(String path, Class<? extends HttpServlet> servletClass) {
 
   /** Creates a new route mapping between a path (may have wildcards) and a servlet. */
   public static Route route(String path, Class<? extends HttpServlet> servletClass) {
-    return new AutoValue_Route(path, servletClass);
+    return new Route(path, servletClass);
   }
-
-  Route() {}
 }

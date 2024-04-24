@@ -16,7 +16,6 @@ package google.registry.privileges.secretmanager;
 
 import static avro.shaded.com.google.common.base.Preconditions.checkState;
 
-import com.google.auto.value.AutoValue;
 import java.util.List;
 
 /**
@@ -24,19 +23,14 @@ import java.util.List;
  *
  * <p>User must take care not to include the {@link #SEPARATOR} in property values.
  */
-@AutoValue
-public abstract class SqlCredential {
+public record SqlCredential(String login, String password) {
 
   public static final Character SEPARATOR = ' ';
 
-  public abstract String login();
-
-  public abstract String password();
-
   @Override
-  public final String toString() {
-    // Use Object.toString(), which does not show object data.
-    return super.toString();
+  public String toString() {
+    // Use Object.toString(), which does not show the sensitive date in record fields.
+    return ((Object) this).toString();
   }
 
   public final String toFormattedString() {
@@ -46,10 +40,10 @@ public abstract class SqlCredential {
   public static SqlCredential fromFormattedString(String sqlCredential) {
     List<String> items = com.google.common.base.Splitter.on(SEPARATOR).splitToList(sqlCredential);
     checkState(items.size() == 2, "Invalid SqlCredential string.");
-    return of(items.get(0), items.get(1));
+    return create(items.get(0), items.get(1));
   }
 
-  public static SqlCredential of(String login, String password) {
-    return new AutoValue_SqlCredential(login, password);
+  public static SqlCredential create(String login, String password) {
+    return new SqlCredential(login, password);
   }
 }
