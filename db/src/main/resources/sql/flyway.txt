@@ -165,3 +165,4 @@ V164__rename_console_user_history_time.sql
 V165__add_domain_repo_id_indexes_to_more_tables.sql
 V166__drop_should_publish_column.sql
 V167__creat_billing_cost_transitions_not_null.sql
+V168__registry_lock_email.sql

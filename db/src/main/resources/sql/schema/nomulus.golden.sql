@@ -1314,7 +1314,8 @@ CREATE TABLE public."User" (
     global_role text NOT NULL,
     is_admin boolean NOT NULL,
     registrar_roles public.hstore NOT NULL,
-    update_timestamp timestamp with time zone
+    update_timestamp timestamp with time zone,
+    registry_lock_email_address text
 );
 
 
