@@ -14,13 +14,16 @@
 
 package google.registry.rdap;
 
-import com.google.auto.value.AutoValue;
 import com.google.common.collect.ImmutableSet;
-import google.registry.model.ImmutableObject;
 
-/** Authorization information for RDAP data access. */
-@AutoValue
-public abstract class RdapAuthorization extends ImmutableObject {
+/**
+ * Authorization information for RDAP data access.
+ *
+ * @param role The role to be used for access.
+ * @param registrarIds The registrar client IDs for which access is granted (used only if the role
+ *     is REGISTRAR.
+ */
+public record RdapAuthorization(Role role, ImmutableSet<String> registrarIds) {
 
   enum Role {
     ADMINISTRATOR,
@@ -28,29 +31,20 @@ public abstract class RdapAuthorization extends ImmutableObject {
     PUBLIC
   }
 
-  /** The role to be used for access. */
-  public abstract Role role();
-
-  /** The registrar client IDs for which access is granted (used only if the role is REGISTRAR. */
-  public abstract ImmutableSet<String> registrarIds();
-
   static RdapAuthorization create(Role role, String registrarId) {
-    return new AutoValue_RdapAuthorization(role, ImmutableSet.of(registrarId));
+    return create(role, ImmutableSet.of(registrarId));
   }
 
   static RdapAuthorization create(Role role, ImmutableSet<String> clientIds) {
-    return new AutoValue_RdapAuthorization(role, clientIds);
+    return new RdapAuthorization(role, clientIds);
   }
 
   boolean isAuthorizedForRegistrar(String registrarId) {
-    switch (role()) {
-      case ADMINISTRATOR:
-        return true;
-      case REGISTRAR:
-        return registrarIds().contains(registrarId);
-      default:
-        return false;
-    }
+    return switch (role()) {
+      case ADMINISTRATOR -> true;
+      case REGISTRAR -> registrarIds().contains(registrarId);
+      default -> false;
+    };
   }
 
   public static final RdapAuthorization PUBLIC_AUTHORIZATION =

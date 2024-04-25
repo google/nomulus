@@ -16,7 +16,7 @@ package google.registry.monitoring.whitebox;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
-import com.google.auto.value.AutoValue;
+import com.google.auto.value.AutoBuilder;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import google.registry.model.eppoutput.Result.Code;
@@ -25,30 +25,23 @@ import google.registry.util.Clock;
 import java.util.Optional;
 import org.joda.time.DateTime;
 
-/** A value class for recording attributes of an EPP metric. */
-@AutoValue
-public abstract class EppMetric {
+/** A record for recording attributes of an EPP metric. */
+public record EppMetric(
+    DateTime startTimestamp,
+    DateTime endTimestamp,
+    Optional<String> commandName,
+    Optional<String> registrarId,
+    Optional<String> tld,
+    Optional<Code> status) {
 
-  public abstract DateTime getStartTimestamp();
-
-  public abstract DateTime getEndTimestamp();
-
-  public abstract Optional<String> getCommandName();
-
-  public abstract Optional<String> getRegistrarId();
-
-  public abstract Optional<String> getTld();
-
-  public abstract Optional<Code> getStatus();
-
-  /** Create an {@link EppMetric.Builder}. */
+  /** Create an {@link Builder}. */
   public static Builder builder() {
-    return new AutoValue_EppMetric.Builder();
+    return new AutoBuilder_EppMetric_Builder();
   }
 
   /**
-   * Create an {@link EppMetric.Builder} for a request context, with the given request ID and
-   * with start and end timestamps taken from the given clock.
+   * Create an {@link Builder} for a request context, with the given request ID and with start and
+   * end timestamps taken from the given clock.
    *
    * <p>The start timestamp is recorded now, and the end timestamp at {@code build()}.
    */
@@ -58,8 +51,32 @@ public abstract class EppMetric {
           .setClock(clock);
   }
 
+  public DateTime getStartTimestamp() {
+    return startTimestamp;
+  }
+
+  public DateTime getEndTimestamp() {
+    return endTimestamp;
+  }
+
+  public Optional<String> getCommandName() {
+    return commandName;
+  }
+
+  public Optional<String> getRegistrarId() {
+    return registrarId;
+  }
+
+  public Optional<String> getTld() {
+    return tld;
+  }
+
+  public Optional<Code> getStatus() {
+    return status;
+  }
+
   /** A builder to create instances of {@link EppMetric}. */
-  @AutoValue.Builder
+  @AutoBuilder
   public abstract static class Builder {
 
     /** Builder-only clock to support automatic recording of endTimestamp on {@link #build()}. */
@@ -97,18 +114,14 @@ public abstract class EppMetric {
      */
     public Builder setTlds(ImmutableSet<String> tlds) {
       switch (tlds.size()) {
-        case 0:
-          setTld(Optional.empty());
-          break;
-        case 1:
+        case 0 -> setTld(Optional.empty());
+        case 1 -> {
           String tld = Iterables.getOnlyElement(tlds);
           // Only record TLDs that actually exist, otherwise we can blow up cardinality by recording
           // an arbitrarily large number of strings.
           setTld(Optional.ofNullable(Tlds.getTlds().contains(tld) ? tld : "_invalid"));
-          break;
-        default:
-          setTld("_various");
-          break;
+        }
+        default -> setTld("_various");
       }
       return this;
     }

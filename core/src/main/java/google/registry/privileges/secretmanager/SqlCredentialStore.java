@@ -79,7 +79,7 @@ public class SqlCredentialStore {
     String credentialVersion =
         csmClient.addSecretVersion(
             credentialDataSecretId,
-            SqlCredential.of(createDatabaseLoginName(user), password).toFormattedString());
+            SqlCredential.create(createDatabaseLoginName(user), password).toFormattedString());
     return SecretVersionName.of(csmClient.getProject(), credentialDataSecretId, credentialVersion);
   }
 

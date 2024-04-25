@@ -19,7 +19,6 @@ import static com.google.common.collect.ImmutableList.toImmutableList;
 import static google.registry.util.PreconditionsUtils.checkArgumentPresent;
 
 import com.beust.jcommander.IStringConverter;
-import com.google.auto.value.AutoValue;
 import com.google.common.base.Ascii;
 import com.google.common.base.CharMatcher;
 import com.google.common.base.Splitter;
@@ -29,17 +28,9 @@ import com.google.template.soy.data.SoyMapData;
 import google.registry.flows.domain.DomainFlowUtils;
 import java.util.List;
 
-@AutoValue
-abstract class DsRecord {
+record DsRecord(int keyTag, int alg, int digestType, String digest) {
+
   private static final Splitter SPLITTER = Splitter.on(CharMatcher.whitespace()).omitEmptyStrings();
-
-  public abstract int keyTag();
-
-  public abstract int alg();
-
-  public abstract int digestType();
-
-  public abstract String digest();
 
   private static DsRecord create(int keyTag, int alg, int digestType, String digest) {
     digest = Ascii.toUpperCase(digest);
@@ -62,7 +53,7 @@ abstract class DsRecord {
           String.format("DS record uses an unrecognized algorithm: %d", alg));
     }
 
-    return new AutoValue_DsRecord(keyTag, alg, digestType, digest);
+    return new DsRecord(keyTag, alg, digestType, digest);
   }
 
   /**

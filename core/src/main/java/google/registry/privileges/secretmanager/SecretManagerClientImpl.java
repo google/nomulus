@@ -94,7 +94,7 @@ public class SecretManagerClientImpl implements SecretManagerClient {
 
   private static SecretVersionState toSecretVersionState(SecretVersion secretVersion) {
     SecretVersionName name = SecretVersionName.parse(secretVersion.getName());
-    return SecretVersionState.of(
+    return SecretVersionState.create(
         name.getSecret(), name.getSecretVersion(), secretVersion.getState());
   }
 

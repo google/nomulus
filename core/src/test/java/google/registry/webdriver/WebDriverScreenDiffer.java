@@ -18,7 +18,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static java.lang.Math.abs;
 import static java.util.stream.Collectors.joining;
 
-import com.google.auto.value.AutoValue;
+import com.google.auto.value.AutoBuilder;
 import com.google.common.collect.Lists;
 import com.google.common.flogger.FluentLogger;
 import java.awt.Color;
@@ -59,35 +59,30 @@ class WebDriverScreenDiffer implements ScreenDiffer {
     this.actualScreenshots = Lists.newArrayList();
   }
 
-  @AutoValue
-  abstract static class ComparisonResult {
-    abstract ActualScreenshot actualScreenshot();
-
-    abstract boolean isConsideredSimilar();
-
-    abstract boolean isMissingGoldenImage();
-
-    abstract boolean isSizeDifferent();
-
-    abstract int numDiffPixels();
+  record ComparisonResult(
+      ActualScreenshot actualScreenshot,
+      boolean isConsideredSimilar,
+      boolean isMissingGoldenImage,
+      boolean isSizeDifferent,
+      int numDiffPixels) {
 
     static Builder builder() {
-      return new AutoValue_WebDriverScreenDiffer_ComparisonResult.Builder();
+      return new AutoBuilder_WebDriverScreenDiffer_ComparisonResult_Builder();
     }
 
-    @AutoValue.Builder
-    abstract static class Builder {
-      abstract Builder setActualScreenshot(ActualScreenshot actualScreenshot);
+    @AutoBuilder
+    interface Builder {
+      Builder setActualScreenshot(ActualScreenshot actualScreenshot);
 
-      abstract Builder setIsConsideredSimilar(boolean isConsideredSimilar);
+      Builder setIsConsideredSimilar(boolean isConsideredSimilar);
 
-      abstract Builder setIsMissingGoldenImage(boolean isMissingGoldenImage);
+      Builder setIsMissingGoldenImage(boolean isMissingGoldenImage);
 
-      abstract Builder setIsSizeDifferent(boolean isSizeDifferent);
+      Builder setIsSizeDifferent(boolean isSizeDifferent);
 
-      abstract Builder setNumDiffPixels(int numDiffPixels);
+      Builder setNumDiffPixels(int numDiffPixels);
 
-      abstract ComparisonResult build();
+      ComparisonResult build();
     }
   }
 

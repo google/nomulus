@@ -14,22 +14,16 @@
 
 package google.registry.rde;
 
-import com.google.auto.value.AutoValue;
+import java.io.Serial;
 import java.io.Serializable;
 
 /** Container of RDE resource marshalled by {@link RdeMarshaller}. */
-@AutoValue
-public abstract class DepositFragment implements Serializable {
+public record DepositFragment(RdeResourceType type, String xml, String error)
+    implements Serializable {
 
-  private static final long serialVersionUID = -5241410684255467454L;
-
-  public abstract RdeResourceType type();
-  public abstract String xml();
-  public abstract String error();
+  @Serial private static final long serialVersionUID = -5241410684255467454L;
 
   public static DepositFragment create(RdeResourceType type, String xml, String error) {
-    return new AutoValue_DepositFragment(type, xml, error);
+    return new DepositFragment(type, xml, error);
   }
-
-  DepositFragment() {}
 }

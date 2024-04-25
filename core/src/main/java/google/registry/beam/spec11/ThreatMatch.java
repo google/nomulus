@@ -14,28 +14,26 @@
 
 package google.registry.beam.spec11;
 
-import com.google.auto.value.AutoValue;
 import com.google.common.annotations.VisibleForTesting;
 import java.io.Serializable;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-/** A POJO representing a threat match response from the {@code SafeBrowsing API}. */
-@AutoValue
-public abstract class ThreatMatch implements Serializable {
+/**
+ * A record representing a threat match response from the {@code SafeBrowsing API}.
+ *
+ * @param threatType What kind of threat this is (malware, phishing, etc.).
+ * @param domainName The fully qualified domain name of the matched threat.
+ */
+public record ThreatMatch(String threatType, String domainName) implements Serializable {
 
   private static final String THREAT_TYPE_FIELD = "threatType";
   private static final String DOMAIN_NAME_FIELD = "domainName";
   private static final String OUTDATED_NAME_FIELD = "fullyQualifiedDomainName";
 
-  /** Returns what kind of threat it is (malware, phishing etc.) */
-  public abstract String threatType();
-  /** Returns the fully qualified domain name [SLD].[TLD] of the matched threat. */
-  public abstract String domainName();
-
   @VisibleForTesting
   static ThreatMatch create(String threatType, String domainName) {
-    return new AutoValue_ThreatMatch(threatType, domainName);
+    return new ThreatMatch(threatType, domainName);
   }
 
   /** Returns a {@link JSONObject} representing a subset of this object's data. */
@@ -49,7 +47,7 @@ public abstract class ThreatMatch implements Serializable {
   public static ThreatMatch fromJSON(JSONObject threatMatch) throws JSONException {
     // TODO: delete OUTDATED_NAME_FIELD once we no longer process reports saved with
     // fullyQualifiedDomainName in them, likely 2023
-    return new AutoValue_ThreatMatch(
+    return new ThreatMatch(
         threatMatch.getString(THREAT_TYPE_FIELD),
         threatMatch.has(OUTDATED_NAME_FIELD)
             ? threatMatch.getString(OUTDATED_NAME_FIELD)

@@ -14,7 +14,6 @@
 
 package google.registry.beam.billing;
 
-import com.google.auto.value.AutoValue;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import google.registry.reporting.billing.BillingModule;
@@ -34,9 +33,39 @@ import org.joda.time.DateTime;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
 
-/** A POJO representing a single billable event, parsed from a {@code SchemaAndRecord}. */
-@AutoValue
-public abstract class BillingEvent {
+/**
+ * A record representing a single billable event, parsed from a {@code SchemaAndRecord}.
+ *
+ * @param id The unique ID for the {@code BillingEvent} associated with this event.
+ * @param billingTime The DateTime (in UTC) this event becomes billable.
+ * @param eventTime The DateTime (in UTC) this event was generated.
+ * @param registrarId The billed registrar's name.
+ * @param billingId The billed registrar's billing account key.
+ * @param poNumber The Purchase Order number.
+ * @param tld The TLD this event was generated for.
+ * @param action The billable action this event was generated for (CREATE, RENEW, TRANSFER...).
+ * @param domain The fully qualified domain name this event was generated for.
+ * @param repositoryId The unique RepoID associated with the billed domain.
+ * @param years The number of years this billing event is made out for.
+ * @param currency The 3-letter currency code for the billing event (USD or JPY).
+ * @param amount The total cost associated with this billing event.
+ * @param flags A list of space-delimited flags associated with the event.
+ */
+public record BillingEvent(
+    long id,
+    DateTime billingTime,
+    DateTime eventTime,
+    String registrarId,
+    String billingId,
+    String poNumber,
+    String tld,
+    String action,
+    String domain,
+    String repositoryId,
+    int years,
+    String currency,
+    double amount,
+    String flags) {
 
   private static final DateTimeFormatter DATE_TIME_FORMATTER =
       DateTimeFormat.forPattern("yyyy-MM-dd HH:mm:ss zzz");
@@ -60,48 +89,6 @@ public abstract class BillingEvent {
           "amount",
           "flags");
 
-  /** Returns the unique ID for the {@code BillingEvent} associated with this event. */
-  abstract long id();
-
-  /** Returns the UTC DateTime this event becomes billable. */
-  abstract DateTime billingTime();
-
-  /** Returns the UTC DateTime this event was generated. */
-  abstract DateTime eventTime();
-
-  /** Returns the billed registrar's name. */
-  abstract String registrarId();
-
-  /** Returns the billed registrar's billing account key. */
-  abstract String billingId();
-
-  /** Returns the Purchase Order number. */
-  abstract String poNumber();
-
-  /** Returns the tld this event was generated for. */
-  abstract String tld();
-
-  /** Returns the billable action this event was generated for (i.e., RENEW, CREATE, TRANSFER...) */
-  abstract String action();
-
-  /** Returns the fully qualified domain name this event was generated for. */
-  abstract String domain();
-
-  /** Returns the unique RepoID associated with the billed domain. */
-  abstract String repositoryId();
-
-  /** Returns the number of years this billing event is made out for. */
-  abstract int years();
-
-  /** Returns the 3-letter currency code for the billing event (i.e., USD or JPY.) */
-  abstract String currency();
-
-  /** Returns the cost associated with this billing event. */
-  abstract double amount();
-
-  /** Returns a list of space-delimited flags associated with the event. */
-  abstract String flags();
-
   /** Creates a concrete {@link BillingEvent}. */
   static BillingEvent create(
       long id,
@@ -118,7 +105,7 @@ public abstract class BillingEvent {
       String currency,
       double amount,
       String flags) {
-    return new AutoValue_BillingEvent(
+    return new BillingEvent(
         id,
         billingTime,
         eventTime,
@@ -338,7 +325,7 @@ public abstract class BillingEvent {
 
     @Override
     public BillingEvent decode(InputStream inStream) throws IOException {
-      return new AutoValue_BillingEvent(
+      return new BillingEvent(
           longCoder.decode(inStream),
           DATE_TIME_FORMATTER.parseDateTime(stringCoder.decode(inStream)),
           DATE_TIME_FORMATTER.parseDateTime(stringCoder.decode(inStream)),

@@ -200,7 +200,8 @@ public class FakeSecretManagerClient implements SecretManagerClient {
     Iterable<SecretVersionState> listVersions() {
       ImmutableList.Builder<SecretVersionState> builder = new ImmutableList.Builder<>();
       for (int i = 0; i < versions.size(); i++) {
-        builder.add(SecretVersionState.of(secretId, String.valueOf(i), versions.get(i).getState()));
+        builder.add(
+            SecretVersionState.create(secretId, String.valueOf(i), versions.get(i).getState()));
       }
       return builder.build();
     }

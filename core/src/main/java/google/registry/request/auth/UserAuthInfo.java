@@ -15,26 +15,21 @@
 package google.registry.request.auth;
 
 import com.google.appengine.api.users.User;
-import com.google.auto.value.AutoValue;
 import java.util.Optional;
 
-/** Extra information provided by the authentication mechanism about the user. */
-@AutoValue
-public abstract class UserAuthInfo {
-
-  public abstract Optional<google.registry.model.console.User> consoleUser();
-
-  /** User object from the AppEngine Users API. */
-  public abstract Optional<User> appEngineUser();
-
-  /**
-   * Whether the user is an admin.
-   *
-   * <p>Note that, in App Engine parlance, an admin is any user who is a project owner, editor, OR
-   * viewer (as well as the specific role App Engine Admin). So even users with read-only access to
-   * the App Engine product qualify as an "admin".
-   */
-  public abstract boolean isUserAdmin();
+/**
+ * Extra information provided by the authentication mechanism about the user.
+ *
+ * @param appEngineUser User object from the AppEngine Users API.
+ * @param isUserAdmin Whether the user is an admin.
+ *     <p>Note that, in App Engine parlance, an admin is any user who is a project owner, editor, OR
+ *     viewer (as well as the specific role App Engine Admin). So even users with read-only access
+ *     to the App Engine product qualify as an "admin".
+ */
+public record UserAuthInfo(
+    Optional<google.registry.model.console.User> consoleUser,
+    Optional<User> appEngineUser,
+    boolean isUserAdmin) {
 
   public String getEmailAddress() {
     return appEngineUser()
@@ -49,11 +44,10 @@ public abstract class UserAuthInfo {
   }
 
   public static UserAuthInfo create(User user, boolean isUserAdmin) {
-    return new AutoValue_UserAuthInfo(Optional.empty(), Optional.of(user), isUserAdmin);
+    return new UserAuthInfo(Optional.empty(), Optional.of(user), isUserAdmin);
   }
 
   public static UserAuthInfo create(google.registry.model.console.User user) {
-    return new AutoValue_UserAuthInfo(
-        Optional.of(user), Optional.empty(), user.getUserRoles().isAdmin());
+    return new UserAuthInfo(Optional.of(user), Optional.empty(), user.getUserRoles().isAdmin());
   }
 }

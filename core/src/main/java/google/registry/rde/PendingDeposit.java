@@ -16,7 +16,6 @@ package google.registry.rde;
 
 import static com.google.common.base.Preconditions.checkState;
 
-import com.google.auto.value.AutoValue;
 import google.registry.model.common.Cursor.CursorType;
 import google.registry.model.rde.RdeMode;
 import java.io.IOException;
@@ -46,52 +45,35 @@ import org.joda.time.Duration;
  * arguments (see {@code RdePipeline#decodePendingDeposits}). The latter requires safe
  * deserialization because the data crosses credential boundaries (See {@code
  * SafeObjectInputStream}).
+ *
+ * @param manual True if deposits should be generated via manual operation, which does not update
+ *     the cursor, and saves the generated deposits in a special manual subdirectory tree.
+ * @param tld TLD for which a deposit should be generated.
+ * @param watermark Watermark date for which a deposit should be generated.
+ * @param mode Which type of deposit to generate: full (RDE) or thin (BRDA).
+ * @param cursor The cursor type to update (not used in manual operation).
+ * @param interval Amount of time to increment the cursor (not used in manual operation).
+ * @param directoryWithTrailingSlash Subdirectory of bucket/manual in which files should be placed,
+ *     including a trailing slash (used only in manual operation).
+ * @param revision Revision number for generated files; if absent, use the next available in the
+ *     sequence (used only in manual operation).
  */
-@AutoValue
-public abstract class PendingDeposit implements Serializable {
+public record PendingDeposit(
+    boolean manual,
+    String tld,
+    DateTime watermark,
+    RdeMode mode,
+    CursorType cursor,
+    Duration interval,
+    String directoryWithTrailingSlash,
+    @Nullable Integer revision)
+    implements Serializable {
 
   private static final long serialVersionUID = 3141095605225904433L;
 
-  /**
-   * True if deposits should be generated via manual operation, which does not update the cursor,
-   * and saves the generated deposits in a special manual subdirectory tree.
-   */
-  public abstract boolean manual();
-
-  /** TLD for which a deposit should be generated. */
-  public abstract String tld();
-
-  /** Watermark date for which a deposit should be generated. */
-  public abstract DateTime watermark();
-
-  /** Which type of deposit to generate: full (RDE) or thin (BRDA). */
-  public abstract RdeMode mode();
-
-  /** The cursor type to update (not used in manual operation). */
-  @Nullable
-  public abstract CursorType cursor();
-
-  /** Amount of time to increment the cursor (not used in manual operation). */
-  @Nullable
-  public abstract Duration interval();
-
-  /**
-   * Subdirectory of bucket/manual in which files should be placed, including a trailing slash (used
-   * only in manual operation).
-   */
-  @Nullable
-  public abstract String directoryWithTrailingSlash();
-
-  /**
-   * Revision number for generated files; if absent, use the next available in the sequence (used
-   * only in manual operation).
-   */
-  @Nullable
-  public abstract Integer revision();
-
   public static PendingDeposit create(
       String tld, DateTime watermark, RdeMode mode, CursorType cursor, Duration interval) {
-    return new AutoValue_PendingDeposit(false, tld, watermark, mode, cursor, interval, null, null);
+    return new PendingDeposit(false, tld, watermark, mode, cursor, interval, null, null);
   }
 
   public static PendingDeposit createInManualOperation(
@@ -100,15 +82,13 @@ public abstract class PendingDeposit implements Serializable {
       RdeMode mode,
       String directoryWithTrailingSlash,
       @Nullable Integer revision) {
-    return new AutoValue_PendingDeposit(
+    return new PendingDeposit(
         true, tld, watermark, mode, null, null, directoryWithTrailingSlash, revision);
   }
 
-  PendingDeposit() {}
-
   /**
    * Specifies that {@link SerializedForm} be used for {@code SafeObjectInputStream}-compatible
-   * custom-serialization of {@link AutoValue_PendingDeposit the AutoValue implementation class}.
+   * custom-serialization of {@link PendingDeposit the AutoValue implementation class}.
    *
    * <p>This method is package-protected so that the AutoValue implementation class inherits this
    * behavior.
@@ -193,7 +173,7 @@ public abstract class PendingDeposit implements Serializable {
 
     @Override
     public PendingDeposit decode(InputStream inStream) throws IOException {
-      return new AutoValue_PendingDeposit(
+      return new PendingDeposit(
           BooleanCoder.of().decode(inStream),
           StringUtf8Coder.of().decode(inStream),
           DateTime.parse(StringUtf8Coder.of().decode(inStream)),

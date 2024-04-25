@@ -14,7 +14,6 @@
 
 package google.registry.whois;
 
-import com.google.auto.value.AutoValue;
 import org.joda.time.DateTime;
 
 /** Representation of a WHOIS query response. */
@@ -36,13 +35,10 @@ public interface WhoisResponse {
   DateTime getTimestamp();
 
   /** A wrapper class for the plaintext response of a WHOIS command and its number of results. */
-  @AutoValue
-  abstract class WhoisResponseResults {
-    public abstract String plainTextOutput();
-    public abstract int numResults();
+  record WhoisResponseResults(String plainTextOutput, int numResults) {
 
     static WhoisResponseResults create(String plainTextOutput, int numResults) {
-      return new AutoValue_WhoisResponse_WhoisResponseResults(plainTextOutput, numResults);
+      return new WhoisResponseResults(plainTextOutput, numResults);
     }
   }
 }
