@@ -197,12 +197,7 @@ class ConsoleEppPasswordActionTest {
     AuthenticatedRegistrarAccessor authenticatedRegistrarAccessor =
         AuthenticatedRegistrarAccessor.createForTesting(
             ImmutableSetMultimap.of("registrarId", OWNER));
-    Cookie cookie =
-        new Cookie(
-            consoleApiParams.xsrfTokenManager().X_CSRF_TOKEN,
-            consoleApiParams.xsrfTokenManager().generateToken(""));
     when(consoleApiParams.request().getMethod()).thenReturn(Action.Method.POST.toString());
-    when(consoleApiParams.request().getCookies()).thenReturn(new Cookie[] {cookie});
 
     return new ConsoleEppPasswordAction(
         consoleApiParams, authenticatedRegistrarAccessor, gmailClient);
