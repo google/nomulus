@@ -62,7 +62,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
@@ -73,6 +72,7 @@ import org.joda.time.DateTime;
 
 /** A simple EPP client that can be used for load testing. */
 @Parameters(separators = " =")
+@SuppressWarnings("FutureReturnValueIgnored")
 public class EppClient implements Runnable {
 
   static {
@@ -94,10 +94,8 @@ public class EppClient implements Runnable {
       AttributeKey.valueOf("INPUT_ITERATOR");
   static final AttributeKey<Promise<Void>> LOGGING_REQUEST_COMPLETE =
       AttributeKey.valueOf("LOGGING_REQUEST_COMPLETE");
-
-  private static final boolean forceTerminate = true;
-  private static final int port = 700;
-  private static final int timeoutSeconds = 600;
+  private static final int PORT = 700;
+  private static final int TIMEOUT_SECONDS = 600;
 
   public static class InetAddressConverter implements IStringConverter<InetAddress> {
 
@@ -150,6 +148,11 @@ public class EppClient implements Runnable {
       names = {"--password", "-pw"},
       description = "Registrar password.")
   private String password = "abcde12345";
+
+  @Parameter(
+      names = {"--force_terminate", "-ft"},
+      description = "Whether to explicitly close the connection after receiving a logout response.")
+  private boolean forceTerminate = false;
 
   public static void main(String[] args) throws IOException {
     EppClient eppClient = new EppClient();
@@ -261,7 +264,7 @@ public class EppClient implements Runnable {
                     .keyManager(key.getPrivate(), cert)
                     .trustManager(InsecureTrustManagerFactory.INSTANCE)
                     .build()
-                    .newHandler(ch.alloc(), host.getHostName(), port));
+                    .newHandler(ch.alloc(), host.getHostName(), PORT));
         ch.pipeline().addLast(new LengthFieldBasedFrameDecoder(512 * 1024, 0, 4, -4, 4));
         ch.pipeline().addLast(new LengthFieldPrepender(4, true));
         ch.pipeline().addLast(loggingHandler);
@@ -300,11 +303,11 @@ public class EppClient implements Runnable {
         bootstrap.attr(CHANNEL_NUMBER, i);
         channelFutures.add(
             bootstrap
-                .connect(host, port)
+                .connect(host, PORT)
                 .addListener(
                     (ChannelFuture cf) -> {
                       if (!cf.isSuccess()) {
-                        System.out.printf("Cannot connect to %s:%s\n", host, port);
+                        System.out.printf("Cannot connect to %s:%s\n", host, PORT);
                       }
                     }));
       }
@@ -318,7 +321,7 @@ public class EppClient implements Runnable {
         if (!channel
             .closeFuture()
             .awaitUninterruptibly(
-                timeoutSeconds
+                TIMEOUT_SECONDS
                     - Duration.between(
                             channel.attr(REQUEST_SENT).get().getFirst(),
                             ZonedDateTime.now(ZoneOffset.UTC))
@@ -340,7 +343,7 @@ public class EppClient implements Runnable {
         System.out.printf("\n");
       }
 
-      Future<?> unusedFuture = eventLoopGroup.shutdownGracefully();
+      eventLoopGroup.shutdownGracefully();
 
       channelFutures.forEach(
           channelFuture -> {
