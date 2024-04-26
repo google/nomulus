@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright 2023 The Nomulus Authors. All Rights Reserved.
+# Copyright 2024 The Nomulus Authors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -17,4 +17,4 @@ cd test-client/
 
 tar -xvf jdk-21_linux-x64_bin.tar.gz
 
-jdk-21.0.2/bin/java -jar load-testing/load-testing.jar --host epp.registry-sandbox.google --certificate certificate.pem -k key.pem
+jdk-21.0.2/bin/java -jar load-testing/load-testing.jar --host epp.registry-sandbox.google --certificate certificate.pem -k key.pem -ft

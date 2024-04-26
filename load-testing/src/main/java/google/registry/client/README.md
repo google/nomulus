@@ -42,8 +42,8 @@ registry platform.
   ```shell
   $ ./nom_build :load-testing:build
     ```
-* Unzip the created client jar files: `unzip load-testing/build/distributions/load-testing.zip -d load-testing/build/distributions/`
-
+* Unzip the created client jar files: 
+* 
     ```shell
   $ unzip load-testing/build/distributions/load-testing.zip -d load-testing/build/distributions/
     ```
