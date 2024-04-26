@@ -110,6 +110,7 @@ import google.registry.tools.server.ToolsServerModule;
 import google.registry.tools.server.VerifyOteAction;
 import google.registry.ui.server.console.ConsoleDomainGetAction;
 import google.registry.ui.server.console.ConsoleDomainListAction;
+import google.registry.ui.server.console.ConsoleDumDownloadAction;
 import google.registry.ui.server.console.ConsoleEppPasswordAction;
 import google.registry.ui.server.console.ConsoleUserDataAction;
 import google.registry.ui.server.console.RegistrarsAction;
@@ -188,6 +189,8 @@ interface RequestComponent {
   ConsoleUiAction consoleUiAction();
 
   ConsoleUserDataAction consoleUserDataAction();
+
+  ConsoleDumDownloadAction ConsoleDumDownloadAction();
 
   ContactAction contactAction();
 

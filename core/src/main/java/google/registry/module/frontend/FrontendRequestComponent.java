@@ -27,6 +27,7 @@ import google.registry.request.RequestModule;
 import google.registry.request.RequestScope;
 import google.registry.ui.server.console.ConsoleDomainGetAction;
 import google.registry.ui.server.console.ConsoleDomainListAction;
+import google.registry.ui.server.console.ConsoleDumDownloadAction;
 import google.registry.ui.server.console.ConsoleEppPasswordAction;
 import google.registry.ui.server.console.ConsoleUserDataAction;
 import google.registry.ui.server.console.RegistrarsAction;
@@ -66,6 +67,8 @@ public interface FrontendRequestComponent {
   ConsoleUiAction consoleUiAction();
 
   ConsoleUserDataAction consoleUserDataAction();
+
+  ConsoleDumDownloadAction ConsoleDumDownloadAction();
 
   ContactAction contactAction();
 

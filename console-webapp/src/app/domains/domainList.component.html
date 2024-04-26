@@ -1,6 +1,6 @@
 <app-selected-registrar-wrapper>
-  <h1 class="mat-headline-4">Domains</h1>
   <div class="console-domains">
+    <h1 class="mat-headline-4">Domains</h1>
     @if (totalResults === 0) {
     <div class="console-app__empty-domains">
       <h1>
@@ -13,6 +13,17 @@
     } @else if(isLoading) {
     <mat-progress-bar mode="indeterminate"></mat-progress-bar>
     } @else {
+    <a
+      mat-stroked-button
+      color="primary"
+      href="/console-api/dum-download?registrarId={{
+        registrarService.registrarId()
+      }}"
+      class="console-app-domains__download"
+    >
+      <mat-icon>download</mat-icon>
+      Download domains (.csv)
+    </a>
     <mat-form-field class="console-app__domains-filter">
       <mat-label>Filter</mat-label>
       <input
