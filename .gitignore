@@ -54,6 +54,9 @@ local.properties
 # Java annotation processor (APT)
 .factorypath
 
+# NX local cache
+console-webapp/.nx/cache
+
 # PDT-specific (PHP Development Tools)
 .buildpath
 
