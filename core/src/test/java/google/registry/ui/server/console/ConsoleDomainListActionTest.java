@@ -20,6 +20,7 @@ import static google.registry.testing.DatabaseHelper.createAdminUser;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistDomainAsDeleted;
+import static org.mockito.Mockito.when;
 
 import com.google.api.client.http.HttpStatusCodes;
 import com.google.common.collect.Iterables;
@@ -27,13 +28,16 @@ import com.google.gson.Gson;
 import google.registry.model.EppResourceUtils;
 import google.registry.model.domain.Domain;
 import google.registry.persistence.transaction.JpaTestExtensions;
+import google.registry.request.Action;
 import google.registry.request.auth.AuthResult;
 import google.registry.request.auth.UserAuthInfo;
 import google.registry.testing.DatabaseHelper;
 import google.registry.testing.FakeClock;
+import google.registry.testing.FakeConsoleApiParams;
 import google.registry.testing.FakeResponse;
 import google.registry.tools.GsonUtils;
 import google.registry.ui.server.console.ConsoleDomainListAction.DomainListResult;
+import google.registry.ui.server.registrar.ConsoleApiParams;
 import java.util.Optional;
 import javax.annotation.Nullable;
 import org.joda.time.DateTime;
@@ -48,7 +52,7 @@ public class ConsoleDomainListActionTest {
 
   private final FakeClock clock = new FakeClock(DateTime.parse("2023-10-20T00:00:00.000Z"));
 
-  private FakeResponse response;
+  private ConsoleApiParams consoleApiParams;
 
   @RegisterExtension
   final JpaTestExtensions.JpaIntegrationTestExtension jpa =
@@ -68,7 +72,9 @@ public class ConsoleDomainListActionTest {
   void testSuccess_allDomains() {
     ConsoleDomainListAction action = createAction("TheRegistrar");
     action.run();
-    DomainListResult result = GSON.fromJson(response.getPayload(), DomainListResult.class);
+    DomainListResult result =
+        GSON.fromJson(
+            ((FakeResponse) consoleApiParams.response()).getPayload(), DomainListResult.class);
     assertThat(result.domains).hasSize(10);
     assertThat(result.totalResults).isEqualTo(10);
     assertThat(result.checkpointTime).isEqualTo(clock.nowUtc());
@@ -80,7 +86,9 @@ public class ConsoleDomainListActionTest {
   void testSuccess_noDomains() {
     ConsoleDomainListAction action = createAction("NewRegistrar");
     action.run();
-    DomainListResult result = GSON.fromJson(response.getPayload(), DomainListResult.class);
+    DomainListResult result =
+        GSON.fromJson(
+            ((FakeResponse) consoleApiParams.response()).getPayload(), DomainListResult.class);
     assertThat(result.domains).hasSize(0);
     assertThat(result.totalResults).isEqualTo(0);
     assertThat(result.checkpointTime).isEqualTo(clock.nowUtc());
@@ -91,7 +99,9 @@ public class ConsoleDomainListActionTest {
     // Two pages of results should go in reverse chronological order
     ConsoleDomainListAction action = createAction("TheRegistrar", null, 0, 5, null, null);
     action.run();
-    DomainListResult result = GSON.fromJson(response.getPayload(), DomainListResult.class);
+    DomainListResult result =
+        GSON.fromJson(
+            ((FakeResponse) consoleApiParams.response()).getPayload(), DomainListResult.class);
     assertThat(result.domains.stream().map(Domain::getDomainName).collect(toImmutableList()))
         .containsExactly("9exists.tld", "8exists.tld", "7exists.tld", "6exists.tld", "5exists.tld");
     assertThat(result.totalResults).isEqualTo(10);
@@ -99,7 +109,9 @@ public class ConsoleDomainListActionTest {
     // Now do the second page
     action = createAction("TheRegistrar", result.checkpointTime, 1, 5, 10L, null);
     action.run();
-    result = GSON.fromJson(response.getPayload(), DomainListResult.class);
+    result =
+        GSON.fromJson(
+            ((FakeResponse) consoleApiParams.response()).getPayload(), DomainListResult.class);
     assertThat(result.domains.stream().map(Domain::getDomainName).collect(toImmutableList()))
         .containsExactly("4exists.tld", "3exists.tld", "2exists.tld", "1exists.tld", "0exists.tld");
   }
@@ -108,7 +120,9 @@ public class ConsoleDomainListActionTest {
   void testSuccess_partialPage() {
     ConsoleDomainListAction action = createAction("TheRegistrar", null, 1, 8, null, null);
     action.run();
-    DomainListResult result = GSON.fromJson(response.getPayload(), DomainListResult.class);
+    DomainListResult result =
+        GSON.fromJson(
+            ((FakeResponse) consoleApiParams.response()).getPayload(), DomainListResult.class);
     assertThat(result.domains.stream().map(Domain::getDomainName).collect(toImmutableList()))
         .containsExactly("1exists.tld", "0exists.tld");
   }
@@ -118,7 +132,9 @@ public class ConsoleDomainListActionTest {
     ConsoleDomainListAction action = createAction("TheRegistrar", null, 0, 10, null, null);
     action.run();
 
-    DomainListResult result = GSON.fromJson(response.getPayload(), DomainListResult.class);
+    DomainListResult result =
+        GSON.fromJson(
+            ((FakeResponse) consoleApiParams.response()).getPayload(), DomainListResult.class);
     assertThat(result.domains).hasSize(10);
     assertThat(result.totalResults).isEqualTo(10);
 
@@ -128,7 +144,9 @@ public class ConsoleDomainListActionTest {
     // Even though we persisted a new domain, the old checkpoint should return no more results
     action = createAction("TheRegistrar", result.checkpointTime, 1, 10, null, null);
     action.run();
-    result = GSON.fromJson(response.getPayload(), DomainListResult.class);
+    result =
+        GSON.fromJson(
+            ((FakeResponse) consoleApiParams.response()).getPayload(), DomainListResult.class);
     assertThat(result.domains).isEmpty();
     assertThat(result.totalResults).isEqualTo(10);
   }
@@ -137,7 +155,9 @@ public class ConsoleDomainListActionTest {
   void testSuccess_checkpointTime_deletion() {
     ConsoleDomainListAction action = createAction("TheRegistrar", null, 0, 5, null, null);
     action.run();
-    DomainListResult result = GSON.fromJson(response.getPayload(), DomainListResult.class);
+    DomainListResult result =
+        GSON.fromJson(
+            ((FakeResponse) consoleApiParams.response()).getPayload(), DomainListResult.class);
 
     clock.advanceOneMilli();
     Domain toDelete =
@@ -147,7 +167,9 @@ public class ConsoleDomainListActionTest {
     // Second page should include the domain that is now deleted due to the checkpoint time
     action = createAction("TheRegistrar", result.checkpointTime, 1, 5, null, null);
     action.run();
-    result = GSON.fromJson(response.getPayload(), DomainListResult.class);
+    result =
+        GSON.fromJson(
+            ((FakeResponse) consoleApiParams.response()).getPayload(), DomainListResult.class);
     assertThat(result.domains.stream().map(Domain::getDomainName).collect(toImmutableList()))
         .containsExactly("4exists.tld", "3exists.tld", "2exists.tld", "1exists.tld", "0exists.tld");
   }
@@ -156,7 +178,9 @@ public class ConsoleDomainListActionTest {
   void testSuccess_searchTerm_oneMatch() {
     ConsoleDomainListAction action = createAction("TheRegistrar", null, 0, 5, null, "0");
     action.run();
-    DomainListResult result = GSON.fromJson(response.getPayload(), DomainListResult.class);
+    DomainListResult result =
+        GSON.fromJson(
+            ((FakeResponse) consoleApiParams.response()).getPayload(), DomainListResult.class);
     assertThat(Iterables.getOnlyElement(result.domains).getDomainName()).isEqualTo("0exists.tld");
   }
 
@@ -164,7 +188,9 @@ public class ConsoleDomainListActionTest {
   void testSuccess_searchTerm_returnsNone() {
     ConsoleDomainListAction action = createAction("TheRegistrar", null, 0, 5, null, "deleted");
     action.run();
-    DomainListResult result = GSON.fromJson(response.getPayload(), DomainListResult.class);
+    DomainListResult result =
+        GSON.fromJson(
+            ((FakeResponse) consoleApiParams.response()).getPayload(), DomainListResult.class);
     assertThat(result.domains).isEmpty();
   }
 
@@ -172,7 +198,9 @@ public class ConsoleDomainListActionTest {
   void testSuccess_searchTerm_caseInsensitive() {
     ConsoleDomainListAction action = createAction("TheRegistrar", null, 0, 5, null, "eXiStS");
     action.run();
-    DomainListResult result = GSON.fromJson(response.getPayload(), DomainListResult.class);
+    DomainListResult result =
+        GSON.fromJson(
+            ((FakeResponse) consoleApiParams.response()).getPayload(), DomainListResult.class);
     assertThat(result.domains).hasSize(5);
     assertThat(result.totalResults).isEqualTo(10);
   }
@@ -181,7 +209,9 @@ public class ConsoleDomainListActionTest {
   void testSuccess_searchTerm_tld() {
     ConsoleDomainListAction action = createAction("TheRegistrar", null, 0, 5, null, "tld");
     action.run();
-    DomainListResult result = GSON.fromJson(response.getPayload(), DomainListResult.class);
+    DomainListResult result =
+        GSON.fromJson(
+            ((FakeResponse) consoleApiParams.response()).getPayload(), DomainListResult.class);
     assertThat(result.domains).hasSize(5);
     assertThat(result.totalResults).isEqualTo(10);
   }
@@ -190,7 +220,9 @@ public class ConsoleDomainListActionTest {
   void testPartialSuccess_pastEnd() {
     ConsoleDomainListAction action = createAction("TheRegistrar", null, 5, 5, null, null);
     action.run();
-    DomainListResult result = GSON.fromJson(response.getPayload(), DomainListResult.class);
+    DomainListResult result =
+        GSON.fromJson(
+            ((FakeResponse) consoleApiParams.response()).getPayload(), DomainListResult.class);
     assertThat(result.domains).isEmpty();
   }
 
@@ -198,14 +230,16 @@ public class ConsoleDomainListActionTest {
   void testFailure_invalidResultsPerPage() {
     ConsoleDomainListAction action = createAction("TheRegistrar", null, 0, 0, null, null);
     action.run();
-    assertThat(response.getStatus()).isEqualTo(HttpStatusCodes.STATUS_CODE_BAD_REQUEST);
-    assertThat(response.getPayload())
+    assertThat(((FakeResponse) consoleApiParams.response()).getStatus())
+        .isEqualTo(HttpStatusCodes.STATUS_CODE_BAD_REQUEST);
+    assertThat(((FakeResponse) consoleApiParams.response()).getPayload())
         .isEqualTo("Results per page must be between 1 and 500 inclusive");
 
     action = createAction("TheRegistrar", null, 0, 501, null, null);
     action.run();
-    assertThat(response.getStatus()).isEqualTo(HttpStatusCodes.STATUS_CODE_BAD_REQUEST);
-    assertThat(response.getPayload())
+    assertThat(((FakeResponse) consoleApiParams.response()).getStatus())
+        .isEqualTo(HttpStatusCodes.STATUS_CODE_BAD_REQUEST);
+    assertThat(((FakeResponse) consoleApiParams.response()).getPayload())
         .isEqualTo("Results per page must be between 1 and 500 inclusive");
   }
 
@@ -213,8 +247,10 @@ public class ConsoleDomainListActionTest {
   void testFailure_invalidPageNumber() {
     ConsoleDomainListAction action = createAction("TheRegistrar", null, -1, 10, null, null);
     action.run();
-    assertThat(response.getStatus()).isEqualTo(HttpStatusCodes.STATUS_CODE_BAD_REQUEST);
-    assertThat(response.getPayload()).isEqualTo("Page number must be non-negative");
+    assertThat(((FakeResponse) consoleApiParams.response()).getStatus())
+        .isEqualTo(HttpStatusCodes.STATUS_CODE_BAD_REQUEST);
+    assertThat(((FakeResponse) consoleApiParams.response()).getPayload())
+        .isEqualTo("Page number must be non-negative");
   }
 
   private ConsoleDomainListAction createAction(String registrarId) {
@@ -228,12 +264,12 @@ public class ConsoleDomainListActionTest {
       @Nullable Integer resultsPerPage,
       @Nullable Long totalResults,
       @Nullable String searchTerm) {
-    response = new FakeResponse();
     AuthResult authResult =
         AuthResult.createUser(UserAuthInfo.create(createAdminUser("email@email.example")));
+    consoleApiParams = FakeConsoleApiParams.get(Optional.of(authResult));
+    when(consoleApiParams.request().getMethod()).thenReturn(Action.Method.GET.toString());
     return new ConsoleDomainListAction(
-        authResult,
-        response,
+        consoleApiParams,
         GSON,
         registrarId,
         Optional.ofNullable(checkpointTime),

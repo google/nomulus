@@ -21,7 +21,7 @@ import static google.registry.testing.DatabaseHelper.createAdminUser;
 import static google.registry.testing.DatabaseHelper.insertInDb;
 import static google.registry.testing.DatabaseHelper.loadAllOf;
 import static google.registry.testing.SqlHelper.saveRegistrar;
-import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.when;
 
 import com.google.api.client.http.HttpStatusCodes;
@@ -38,9 +38,10 @@ import google.registry.request.Action;
 import google.registry.request.RequestModule;
 import google.registry.request.auth.AuthResult;
 import google.registry.request.auth.UserAuthInfo;
+import google.registry.testing.FakeConsoleApiParams;
 import google.registry.testing.FakeResponse;
+import google.registry.ui.server.registrar.ConsoleApiParams;
 import google.registry.ui.server.registrar.RegistrarConsoleModule;
-import jakarta.servlet.http.HttpServletRequest;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.StringReader;
@@ -69,10 +70,9 @@ class ContactActionTest {
           + "\"visibleInWhoisAsTech\":false,\"visibleInDomainWhoisAsAbuse\":false}";
 
   private Registrar testRegistrar;
-  private final HttpServletRequest request = mock(HttpServletRequest.class);
+  private ConsoleApiParams consoleApiParams;
   private RegistrarPoc testRegistrarPoc;
   private static final Gson GSON = RequestModule.provideGson();
-  private FakeResponse response;
 
   @RegisterExtension
   final JpaTestExtensions.JpaIntegrationTestExtension jpa =
@@ -80,7 +80,6 @@ class ContactActionTest {
 
   @BeforeEach
   void beforeEach() {
-    response = new FakeResponse();
     testRegistrar = saveRegistrar("registrarId");
     testRegistrarPoc =
         new RegistrarPoc.Builder()
@@ -106,8 +105,10 @@ class ContactActionTest {
             testRegistrar.getRegistrarId(),
             null);
     action.run();
-    assertThat(response.getStatus()).isEqualTo(HttpStatusCodes.STATUS_CODE_OK);
-    assertThat(response.getPayload()).isEqualTo("[" + jsonRegistrar1 + "]");
+    assertThat(((FakeResponse) consoleApiParams.response()).getStatus())
+        .isEqualTo(HttpStatusCodes.STATUS_CODE_OK);
+    assertThat(((FakeResponse) consoleApiParams.response()).getPayload())
+        .isEqualTo("[" + jsonRegistrar1 + "]");
   }
 
   @Test
@@ -121,8 +122,9 @@ class ContactActionTest {
             testRegistrar.getRegistrarId(),
             null);
     action.run();
-    assertThat(response.getStatus()).isEqualTo(HttpStatusCodes.STATUS_CODE_OK);
-    assertThat(response.getPayload()).isEqualTo("[]");
+    assertThat(((FakeResponse) consoleApiParams.response()).getStatus())
+        .isEqualTo(HttpStatusCodes.STATUS_CODE_OK);
+    assertThat(((FakeResponse) consoleApiParams.response()).getPayload()).isEqualTo("[]");
   }
 
   @Test
@@ -134,7 +136,8 @@ class ContactActionTest {
             testRegistrar.getRegistrarId(),
             "[" + jsonRegistrar1 + "," + jsonRegistrar2 + "]");
     action.run();
-    assertThat(response.getStatus()).isEqualTo(HttpStatusCodes.STATUS_CODE_OK);
+    assertThat(((FakeResponse) consoleApiParams.response()).getStatus())
+        .isEqualTo(HttpStatusCodes.STATUS_CODE_OK);
     assertThat(
             loadAllOf(RegistrarPoc.class).stream()
                 .filter(r -> r.registrarId.equals(testRegistrar.getRegistrarId()))
@@ -154,7 +157,8 @@ class ContactActionTest {
             testRegistrar.getRegistrarId(),
             "[" + jsonRegistrar1 + "," + jsonRegistrar2 + "]");
     action.run();
-    assertThat(response.getStatus()).isEqualTo(HttpStatusCodes.STATUS_CODE_OK);
+    assertThat(((FakeResponse) consoleApiParams.response()).getStatus())
+        .isEqualTo(HttpStatusCodes.STATUS_CODE_OK);
     HashMap<String, String> testResult = new HashMap<>();
     loadAllOf(RegistrarPoc.class).stream()
         .filter(r -> r.registrarId.equals(testRegistrar.getRegistrarId()))
@@ -177,7 +181,8 @@ class ContactActionTest {
             testRegistrar.getRegistrarId(),
             "[" + jsonRegistrar2 + "]");
     action.run();
-    assertThat(response.getStatus()).isEqualTo(HttpStatusCodes.STATUS_CODE_OK);
+    assertThat(((FakeResponse) consoleApiParams.response()).getStatus())
+        .isEqualTo(HttpStatusCodes.STATUS_CODE_OK);
     assertThat(
             loadAllOf(RegistrarPoc.class).stream()
                 .filter(r -> r.registrarId.equals(testRegistrar.getRegistrarId()))
@@ -207,21 +212,25 @@ class ContactActionTest {
             testRegistrar.getRegistrarId(),
             "[" + jsonRegistrar2 + "]");
     action.run();
-    assertThat(response.getStatus()).isEqualTo(HttpStatusCodes.STATUS_CODE_FORBIDDEN);
+    assertThat(((FakeResponse) consoleApiParams.response()).getStatus())
+        .isEqualTo(HttpStatusCodes.STATUS_CODE_FORBIDDEN);
   }
 
   private ContactAction createAction(
       Action.Method method, AuthResult authResult, String registrarId, String contacts)
       throws IOException {
-    when(request.getMethod()).thenReturn(method.toString());
+    consoleApiParams = FakeConsoleApiParams.get(Optional.of(authResult));
+    when(consoleApiParams.request().getMethod()).thenReturn(method.toString());
     if (method.equals(Action.Method.GET)) {
-      return new ContactAction(request, authResult, response, GSON, registrarId, Optional.empty());
+      return new ContactAction(consoleApiParams, GSON, registrarId, Optional.empty());
     } else {
-      when(request.getReader()).thenReturn(new BufferedReader(new StringReader(contacts)));
+      doReturn(new BufferedReader(new StringReader(contacts)))
+          .when(consoleApiParams.request())
+          .getReader();
       Optional<ImmutableSet<RegistrarPoc>> maybeContacts =
           RegistrarConsoleModule.provideContacts(
-              GSON, RequestModule.provideJsonBody(request, GSON));
-      return new ContactAction(request, authResult, response, GSON, registrarId, maybeContacts);
+              GSON, RequestModule.provideJsonBody(consoleApiParams.request(), GSON));
+      return new ContactAction(consoleApiParams, GSON, registrarId, maybeContacts);
     }
   }
 }

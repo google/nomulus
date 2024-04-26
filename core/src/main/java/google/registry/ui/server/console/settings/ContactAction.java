@@ -31,13 +31,11 @@ import google.registry.model.registrar.RegistrarPoc;
 import google.registry.persistence.transaction.QueryComposer.Comparator;
 import google.registry.request.Action;
 import google.registry.request.Parameter;
-import google.registry.request.Response;
 import google.registry.request.auth.Auth;
-import google.registry.request.auth.AuthResult;
 import google.registry.ui.forms.FormException;
-import google.registry.ui.server.registrar.JsonGetAction;
+import google.registry.ui.server.console.ConsoleApiAction;
+import google.registry.ui.server.registrar.ConsoleApiParams;
 import google.registry.ui.server.registrar.RegistrarSettingsAction;
-import jakarta.servlet.http.HttpServletRequest;
 import java.util.Collections;
 import java.util.Optional;
 import javax.inject.Inject;
@@ -47,45 +45,29 @@ import javax.inject.Inject;
     path = ContactAction.PATH,
     method = {GET, POST},
     auth = Auth.AUTH_PUBLIC_LOGGED_IN)
-public class ContactAction implements JsonGetAction {
+public class ContactAction extends ConsoleApiAction {
   static final String PATH = "/console-api/settings/contacts";
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
-  private final HttpServletRequest req;
-  private final AuthResult authResult;
-  private final Response response;
   private final Gson gson;
   private final Optional<ImmutableSet<RegistrarPoc>> contacts;
   private final String registrarId;
 
   @Inject
   public ContactAction(
-      HttpServletRequest req,
-      AuthResult authResult,
-      Response response,
+      ConsoleApiParams consoleApiParams,
       Gson gson,
       @Parameter("registrarId") String registrarId,
       @Parameter("contacts") Optional<ImmutableSet<RegistrarPoc>> contacts) {
-    this.authResult = authResult;
-    this.response = response;
+    super(consoleApiParams);
     this.gson = gson;
     this.registrarId = registrarId;
     this.contacts = contacts;
-    this.req = req;
   }
 
   @Override
-  public void run() {
-    User user = authResult.userAuthInfo().get().consoleUser().get();
-    if (req.getMethod().equals(GET.toString())) {
-      getHandler(user);
-    } else {
-      postHandler(user);
-    }
-  }
-
-  private void getHandler(User user) {
+  protected void getHandler(User user) {
     if (!user.getUserRoles().hasPermission(registrarId, ConsolePermission.VIEW_REGISTRAR_DETAILS)) {
-      response.setStatus(HttpStatusCodes.STATUS_CODE_FORBIDDEN);
+      consoleApiParams.response().setStatus(HttpStatusCodes.STATUS_CODE_FORBIDDEN);
       return;
     }
 
@@ -99,19 +81,20 @@ public class ContactAction implements JsonGetAction {
                         .filter(r -> !r.getTypes().isEmpty())
                         .collect(toImmutableList()));
 
-    response.setStatus(HttpStatusCodes.STATUS_CODE_OK);
-    response.setPayload(gson.toJson(am));
+    consoleApiParams.response().setStatus(HttpStatusCodes.STATUS_CODE_OK);
+    consoleApiParams.response().setPayload(gson.toJson(am));
   }
 
-  private void postHandler(User user) {
+  @Override
+  protected void postHandler(User user) {
     if (!user.getUserRoles().hasPermission(registrarId, ConsolePermission.EDIT_REGISTRAR_DETAILS)) {
-      response.setStatus(HttpStatusCodes.STATUS_CODE_FORBIDDEN);
+      consoleApiParams.response().setStatus(HttpStatusCodes.STATUS_CODE_FORBIDDEN);
       return;
     }
 
     if (contacts.isEmpty()) {
-      response.setStatus(HttpStatusCodes.STATUS_CODE_BAD_REQUEST);
-      response.setPayload(gson.toJson("Contacts parameter is not present"));
+      consoleApiParams.response().setStatus(HttpStatusCodes.STATUS_CODE_BAD_REQUEST);
+      consoleApiParams.response().setPayload(gson.toJson("Contacts parameter is not present"));
       return;
     }
 
@@ -137,12 +120,12 @@ public class ContactAction implements JsonGetAction {
     } catch (FormException e) {
       logger.atWarning().withCause(e).log(
           "Error processing contacts post request for registrar: %s", registrarId);
-      response.setStatus(HttpStatusCodes.STATUS_CODE_BAD_REQUEST);
-      response.setPayload(e.getMessage());
+      consoleApiParams.response().setStatus(HttpStatusCodes.STATUS_CODE_BAD_REQUEST);
+      consoleApiParams.response().setPayload(e.getMessage());
       return;
     }
 
     RegistrarPoc.updateContacts(registrar, updatedContacts);
-    response.setStatus(HttpStatusCodes.STATUS_CODE_OK);
+    consoleApiParams.response().setStatus(HttpStatusCodes.STATUS_CODE_OK);
   }
 }

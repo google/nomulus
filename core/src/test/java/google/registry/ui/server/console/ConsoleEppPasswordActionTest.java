@@ -45,7 +45,6 @@ import google.registry.testing.FakeResponse;
 import google.registry.tools.GsonUtils;
 import google.registry.ui.server.registrar.ConsoleApiParams;
 import google.registry.util.EmailMessage;
-import jakarta.servlet.http.Cookie;
 import java.util.Optional;
 import javax.mail.internet.AddressException;
 import javax.mail.internet.InternetAddress;
@@ -197,12 +196,7 @@ class ConsoleEppPasswordActionTest {
     AuthenticatedRegistrarAccessor authenticatedRegistrarAccessor =
         AuthenticatedRegistrarAccessor.createForTesting(
             ImmutableSetMultimap.of("registrarId", OWNER));
-    Cookie cookie =
-        new Cookie(
-            consoleApiParams.xsrfTokenManager().X_CSRF_TOKEN,
-            consoleApiParams.xsrfTokenManager().generateToken(""));
     when(consoleApiParams.request().getMethod()).thenReturn(Action.Method.POST.toString());
-    when(consoleApiParams.request().getCookies()).thenReturn(new Cookie[] {cookie});
 
     return new ConsoleEppPasswordAction(
         consoleApiParams, authenticatedRegistrarAccessor, gmailClient);

@@ -27,10 +27,8 @@ import google.registry.model.console.User;
 import google.registry.model.domain.Domain;
 import google.registry.request.Action;
 import google.registry.request.Parameter;
-import google.registry.request.Response;
 import google.registry.request.auth.Auth;
-import google.registry.request.auth.AuthResult;
-import google.registry.ui.server.registrar.JsonGetAction;
+import google.registry.ui.server.registrar.ConsoleApiParams;
 import java.util.List;
 import java.util.Optional;
 import javax.inject.Inject;
@@ -43,7 +41,7 @@ import org.joda.time.DateTime;
     path = ConsoleDomainListAction.PATH,
     method = Action.Method.GET,
     auth = Auth.AUTH_PUBLIC_LOGGED_IN)
-public class ConsoleDomainListAction implements JsonGetAction {
+public class ConsoleDomainListAction extends ConsoleApiAction {
 
   public static final String PATH = "/console-api/domain-list";
 
@@ -54,8 +52,6 @@ public class ConsoleDomainListAction implements JsonGetAction {
   private static final String SEARCH_TERM_QUERY = " AND LOWER(domainName) LIKE :searchTerm";
   private static final String ORDER_BY_STATEMENT = " ORDER BY creationTime DESC";
 
-  private final AuthResult authResult;
-  private final Response response;
   private final Gson gson;
   private final String registrarId;
   private final Optional<DateTime> checkpointTime;
@@ -66,8 +62,7 @@ public class ConsoleDomainListAction implements JsonGetAction {
 
   @Inject
   public ConsoleDomainListAction(
-      AuthResult authResult,
-      Response response,
+      ConsoleApiParams consoleApiParams,
       Gson gson,
       @Parameter("registrarId") String registrarId,
       @Parameter("checkpointTime") Optional<DateTime> checkpointTime,
@@ -75,8 +70,7 @@ public class ConsoleDomainListAction implements JsonGetAction {
       @Parameter("resultsPerPage") Optional<Integer> resultsPerPage,
       @Parameter("totalResults") Optional<Long> totalResults,
       @Parameter("searchTerm") Optional<String> searchTerm) {
-    this.authResult = authResult;
-    this.response = response;
+    super(consoleApiParams);
     this.gson = gson;
     this.registrarId = registrarId;
     this.checkpointTime = checkpointTime;
@@ -87,19 +81,20 @@ public class ConsoleDomainListAction implements JsonGetAction {
   }
 
   @Override
-  public void run() {
-    User user = authResult.userAuthInfo().get().consoleUser().get();
+  protected void getHandler(User user) {
     if (!user.getUserRoles().hasPermission(registrarId, DOWNLOAD_DOMAINS)) {
-      response.setStatus(HttpStatusCodes.STATUS_CODE_FORBIDDEN);
+      consoleApiParams.response().setStatus(HttpStatusCodes.STATUS_CODE_FORBIDDEN);
       return;
     }
-
     if (resultsPerPage < 1 || resultsPerPage > 500) {
-      writeBadRequest("Results per page must be between 1 and 500 inclusive");
+      setFailedResponse(
+          "Results per page must be between 1 and 500 inclusive",
+          HttpStatusCodes.STATUS_CODE_BAD_REQUEST);
       return;
     }
     if (pageNumber < 0) {
-      writeBadRequest("Page number must be non-negative");
+      setFailedResponse(
+          "Page number must be non-negative", HttpStatusCodes.STATUS_CODE_BAD_REQUEST);
       return;
     }
 
@@ -130,8 +125,10 @@ public class ConsoleDomainListAction implements JsonGetAction {
             .setFirstResult(numResultsToSkip)
             .setMaxResults(resultsPerPage)
             .getResultList();
-    response.setPayload(gson.toJson(new DomainListResult(domains, checkpoint, actualTotalResults)));
-    response.setStatus(HttpStatusCodes.STATUS_CODE_OK);
+    consoleApiParams
+        .response()
+        .setPayload(gson.toJson(new DomainListResult(domains, checkpoint, actualTotalResults)));
+    consoleApiParams.response().setStatus(HttpStatusCodes.STATUS_CODE_OK);
   }
 
   /** Creates the query to get the total number of matching domains, interpolating as necessary. */
@@ -152,11 +149,6 @@ public class ConsoleDomainListAction implements JsonGetAction {
           .setParameter("searchTerm", String.format("%%%s%%", Ascii.toLowerCase(searchTerm.get())));
     }
     return tm().query(DOMAIN_QUERY_TEMPLATE + ORDER_BY_STATEMENT, Domain.class);
-  }
-
-  private void writeBadRequest(String message) {
-    response.setPayload(message);
-    response.setStatus(HttpStatusCodes.STATUS_CODE_BAD_REQUEST);
   }
 
   /** Container result class that allows for pagination. */
