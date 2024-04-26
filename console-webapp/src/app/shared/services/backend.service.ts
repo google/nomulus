@@ -33,6 +33,12 @@ export class BackendService {
     error: HttpErrorResponse,
     mockData?: Type
   ): Observable<Type> {
+
+    // This is a temporary redirect to the old console untill the new console
+    // is fully released and enabled
+    if(error.url && window.location.href.indexOf(error.url) < 0) {
+      window.location.href = error.url;
+    }
     if (error.error instanceof Error) {
       // A client-side or network error occurred. Handle it accordingly.
       console.error('An error occurred:', error.error.message);

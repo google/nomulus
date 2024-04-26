@@ -21,7 +21,6 @@ import static google.registry.testing.DatabaseHelper.persistNewRegistrar;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.SqlHelper.saveRegistrar;
 import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.google.api.client.http.HttpStatusCodes;
@@ -40,10 +39,12 @@ import google.registry.request.RequestModule;
 import google.registry.request.auth.AuthResult;
 import google.registry.request.auth.UserAuthInfo;
 import google.registry.testing.DeterministicStringGenerator;
+import google.registry.testing.FakeConsoleApiParams;
 import google.registry.testing.FakeResponse;
+import google.registry.ui.server.registrar.ConsoleApiParams;
 import google.registry.ui.server.registrar.RegistrarConsoleModule;
 import google.registry.util.StringGenerator;
-import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.Cookie;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.StringReader;
@@ -56,9 +57,8 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 /** Tests for {@link google.registry.ui.server.console.RegistrarsAction}. */
 class RegistrarsActionTest {
 
-  private final HttpServletRequest request = mock(HttpServletRequest.class);
   private static final Gson GSON = RequestModule.provideGson();
-  private FakeResponse response;
+  private ConsoleApiParams consoleApiParams;
 
   private StringGenerator passwordGenerator =
       new DeterministicStringGenerator("abcdefghijklmnopqrstuvwxyz");
@@ -112,8 +112,9 @@ class RegistrarsActionTest {
                     createUser(
                         new UserRoles.Builder().setGlobalRole(GlobalRole.SUPPORT_LEAD).build()))));
     action.run();
-    assertThat(response.getStatus()).isEqualTo(HttpStatusCodes.STATUS_CODE_OK);
-    String payload = response.getPayload();
+    assertThat(((FakeResponse) consoleApiParams.response()).getStatus())
+        .isEqualTo(HttpStatusCodes.STATUS_CODE_OK);
+    String payload = ((FakeResponse) consoleApiParams.response()).getPayload();
     assertThat(
             ImmutableList.of("\"registrarId\":\"NewRegistrar\"", "\"registrarId\":\"TheRegistrar\"")
                 .stream()
@@ -131,8 +132,9 @@ class RegistrarsActionTest {
                 UserAuthInfo.create(
                     createUser(new UserRoles.Builder().setGlobalRole(GlobalRole.FTE).build()))));
     action.run();
-    assertThat(response.getStatus()).isEqualTo(HttpStatusCodes.STATUS_CODE_OK);
-    String payload = response.getPayload();
+    assertThat(((FakeResponse) consoleApiParams.response()).getStatus())
+        .isEqualTo(HttpStatusCodes.STATUS_CODE_OK);
+    String payload = ((FakeResponse) consoleApiParams.response()).getPayload();
     assertThat(
             ImmutableList.of(
                     "\"registrarId\":\"NewRegistrar\"",
@@ -151,7 +153,8 @@ class RegistrarsActionTest {
             AuthResult.createUser(
                 UserAuthInfo.create(createUser(new UserRoles.Builder().setIsAdmin(true).build()))));
     action.run();
-    assertThat(response.getStatus()).isEqualTo(HttpStatusCodes.STATUS_CODE_OK);
+    assertThat(((FakeResponse) consoleApiParams.response()).getStatus())
+        .isEqualTo(HttpStatusCodes.STATUS_CODE_OK);
     Registrar r = loadRegistrar("regIdTest");
     assertThat(r).isNotNull();
     assertThat(
@@ -180,12 +183,12 @@ class RegistrarsActionTest {
                           UserAuthInfo.create(
                               createUser(new UserRoles.Builder().setIsAdmin(true).build()))));
               action.run();
-              assertThat(response.getStatus()).isEqualTo(HttpStatusCodes.STATUS_CODE_BAD_REQUEST);
-              assertThat(response.getPayload())
+              assertThat(((FakeResponse) consoleApiParams.response()).getStatus())
+                  .isEqualTo(HttpStatusCodes.STATUS_CODE_BAD_REQUEST);
+              assertThat(((FakeResponse) consoleApiParams.response()).getPayload())
                   .isEqualTo(
-                      GSON.toJson(
-                          String.format(
-                              "Missing value for %s", userFriendlyKeysToRegistrarKeys.get(key))));
+                      String.format(
+                          "Missing value for %s", userFriendlyKeysToRegistrarKeys.get(key)));
             });
   }
 
@@ -198,9 +201,10 @@ class RegistrarsActionTest {
             AuthResult.createUser(
                 UserAuthInfo.create(createUser(new UserRoles.Builder().setIsAdmin(true).build()))));
     action.run();
-    assertThat(response.getStatus()).isEqualTo(HttpStatusCodes.STATUS_CODE_BAD_REQUEST);
-    assertThat(response.getPayload())
-        .isEqualTo(GSON.toJson("Registrar with registrarId regIdTest already exists"));
+    assertThat(((FakeResponse) consoleApiParams.response()).getStatus())
+        .isEqualTo(HttpStatusCodes.STATUS_CODE_BAD_REQUEST);
+    assertThat(((FakeResponse) consoleApiParams.response()).getPayload())
+        .isEqualTo("Registrar with registrarId regIdTest already exists");
   }
 
   @Test
@@ -219,7 +223,8 @@ class RegistrarsActionTest {
                                     RegistrarRole.ACCOUNT_MANAGER_WITH_REGISTRY_LOCK))
                             .build()))));
     action.run();
-    assertThat(response.getStatus()).isEqualTo(HttpStatusCodes.STATUS_CODE_FORBIDDEN);
+    assertThat(((FakeResponse) consoleApiParams.response()).getStatus())
+        .isEqualTo(HttpStatusCodes.STATUS_CODE_FORBIDDEN);
   }
 
   private User createUser(UserRoles userRoles) {
@@ -230,27 +235,24 @@ class RegistrarsActionTest {
   }
 
   private RegistrarsAction createAction(Action.Method method, AuthResult authResult) {
-    response = new FakeResponse();
-    when(request.getMethod()).thenReturn(method.toString());
+    consoleApiParams = FakeConsoleApiParams.get(Optional.of(authResult));
+    when(consoleApiParams.request().getMethod()).thenReturn(method.toString());
     if (method.equals(Action.Method.GET)) {
       return new RegistrarsAction(
-          request,
-          authResult,
-          response,
-          GSON,
-          Optional.ofNullable(null),
-          passwordGenerator,
-          passcodeGenerator);
+          consoleApiParams, GSON, Optional.ofNullable(null), passwordGenerator, passcodeGenerator);
     } else {
       try {
+        Cookie cookie =
+            new Cookie(
+                consoleApiParams.xsrfTokenManager().X_CSRF_TOKEN,
+                consoleApiParams.xsrfTokenManager().generateToken(""));
+        when(consoleApiParams.request().getCookies()).thenReturn(new Cookie[] {cookie});
         doReturn(new BufferedReader(new StringReader(registrarParamMap.toString())))
-            .when(request)
+            .when(consoleApiParams.request())
             .getReader();
       } catch (IOException e) {
         return new RegistrarsAction(
-            request,
-            authResult,
-            response,
+            consoleApiParams,
             GSON,
             Optional.ofNullable(null),
             passwordGenerator,
@@ -258,15 +260,9 @@ class RegistrarsActionTest {
       }
       Optional<Registrar> maybeRegistrar =
           RegistrarConsoleModule.provideRegistrar(
-              GSON, RequestModule.provideJsonBody(request, GSON));
+              GSON, RequestModule.provideJsonBody(consoleApiParams.request(), GSON));
       return new RegistrarsAction(
-          request,
-          authResult,
-          response,
-          GSON,
-          maybeRegistrar,
-          passwordGenerator,
-          passcodeGenerator);
+          consoleApiParams, GSON, maybeRegistrar, passwordGenerator, passcodeGenerator);
     }
   }
 }

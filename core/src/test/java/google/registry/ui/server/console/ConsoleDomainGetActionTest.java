@@ -17,6 +17,7 @@ package google.registry.ui.server.console;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import com.google.api.client.http.HttpStatusCodes;
 import com.google.common.collect.ImmutableMap;
@@ -25,11 +26,15 @@ import google.registry.model.console.RegistrarRole;
 import google.registry.model.console.User;
 import google.registry.model.console.UserRoles;
 import google.registry.persistence.transaction.JpaTestExtensions;
+import google.registry.request.Action;
 import google.registry.request.RequestModule;
 import google.registry.request.auth.AuthResult;
 import google.registry.request.auth.UserAuthInfo;
 import google.registry.testing.DatabaseHelper;
+import google.registry.testing.FakeConsoleApiParams;
 import google.registry.testing.FakeResponse;
+import google.registry.ui.server.registrar.ConsoleApiParams;
+import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -38,7 +43,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 public class ConsoleDomainGetActionTest {
 
   private static final Gson GSON = RequestModule.provideGson();
-  private static final FakeResponse RESPONSE = new FakeResponse();
+  private ConsoleApiParams consoleApiParams;
 
   @RegisterExtension
   final JpaTestExtensions.JpaIntegrationTestExtension jpa =
@@ -63,8 +68,9 @@ public class ConsoleDomainGetActionTest {
                             .build()))),
             "exists.tld");
     action.run();
-    assertThat(RESPONSE.getStatus()).isEqualTo(HttpStatusCodes.STATUS_CODE_OK);
-    assertThat(RESPONSE.getPayload())
+    assertThat(((FakeResponse) consoleApiParams.response()).getStatus())
+        .isEqualTo(HttpStatusCodes.STATUS_CODE_OK);
+    assertThat(((FakeResponse) consoleApiParams.response()).getPayload())
         .isEqualTo(
             "{\"domainName\":\"exists.tld\",\"adminContact\":{\"key\":\"3-ROID\",\"kind\":"
                 + "\"google.registry.model.contact.Contact\"},\"techContact\":{\"key\":\"3-ROID\","
@@ -82,7 +88,8 @@ public class ConsoleDomainGetActionTest {
   void testFailure_emptyAuth() {
     ConsoleDomainGetAction action = createAction(AuthResult.NOT_AUTHENTICATED, "exists.tld");
     action.run();
-    assertThat(RESPONSE.getStatus()).isEqualTo(HttpStatusCodes.STATUS_CODE_UNAUTHORIZED);
+    assertThat(((FakeResponse) consoleApiParams.response()).getStatus())
+        .isEqualTo(HttpStatusCodes.STATUS_CODE_UNAUTHORIZED);
   }
 
   @Test
@@ -90,7 +97,8 @@ public class ConsoleDomainGetActionTest {
     ConsoleDomainGetAction action =
         createAction(AuthResult.createApp("service@registry.example"), "exists.tld");
     action.run();
-    assertThat(RESPONSE.getStatus()).isEqualTo(HttpStatusCodes.STATUS_CODE_UNAUTHORIZED);
+    assertThat(((FakeResponse) consoleApiParams.response()).getStatus())
+        .isEqualTo(HttpStatusCodes.STATUS_CODE_UNAUTHORIZED);
   }
 
   @Test
@@ -101,7 +109,8 @@ public class ConsoleDomainGetActionTest {
                 UserAuthInfo.create(mock(com.google.appengine.api.users.User.class), false)),
             "exists.tld");
     action.run();
-    assertThat(RESPONSE.getStatus()).isEqualTo(HttpStatusCodes.STATUS_CODE_UNAUTHORIZED);
+    assertThat(((FakeResponse) consoleApiParams.response()).getStatus())
+        .isEqualTo(HttpStatusCodes.STATUS_CODE_UNAUTHORIZED);
   }
 
   @Test
@@ -111,7 +120,8 @@ public class ConsoleDomainGetActionTest {
             AuthResult.createUser(UserAuthInfo.create(createUser(new UserRoles.Builder().build()))),
             "exists.tld");
     action.run();
-    assertThat(RESPONSE.getStatus()).isEqualTo(HttpStatusCodes.STATUS_CODE_NOT_FOUND);
+    assertThat(((FakeResponse) consoleApiParams.response()).getStatus())
+        .isEqualTo(HttpStatusCodes.STATUS_CODE_NOT_FOUND);
   }
 
   @Test
@@ -122,7 +132,8 @@ public class ConsoleDomainGetActionTest {
                 UserAuthInfo.create(createUser(new UserRoles.Builder().setIsAdmin(true).build()))),
             "nonexistent.tld");
     action.run();
-    assertThat(RESPONSE.getStatus()).isEqualTo(HttpStatusCodes.STATUS_CODE_NOT_FOUND);
+    assertThat(((FakeResponse) consoleApiParams.response()).getStatus())
+        .isEqualTo(HttpStatusCodes.STATUS_CODE_NOT_FOUND);
   }
 
   private User createUser(UserRoles userRoles) {
@@ -133,6 +144,8 @@ public class ConsoleDomainGetActionTest {
   }
 
   private ConsoleDomainGetAction createAction(AuthResult authResult, String domain) {
-    return new ConsoleDomainGetAction(authResult, RESPONSE, GSON, domain);
+    consoleApiParams = FakeConsoleApiParams.get(Optional.of(authResult));
+    when(consoleApiParams.request().getMethod()).thenReturn(Action.Method.GET.toString());
+    return new ConsoleDomainGetAction(consoleApiParams, GSON, domain);
   }
 }
