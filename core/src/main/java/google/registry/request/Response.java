@@ -28,6 +28,8 @@ import org.joda.time.DateTime;
  */
 public interface Response {
 
+  void sendRedirect(String url) throws IOException;
+
   /** Sets the HTTP status code. */
   void setStatus(int status);
 

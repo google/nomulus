@@ -33,6 +33,11 @@ public final class ResponseImpl implements Response {
   }
 
   @Override
+  public void sendRedirect(String url) throws IOException {
+    rsp.sendRedirect(url);
+  }
+
+  @Override
   public void setStatus(int status) {
     rsp.setStatus(status);
   }

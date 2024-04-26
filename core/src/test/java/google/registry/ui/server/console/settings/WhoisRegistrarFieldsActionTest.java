@@ -16,7 +16,7 @@ package google.registry.ui.server.console.settings;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.ImmutableObjectSubject.assertAboutImmutableObjects;
-import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.when;
 
 import com.google.api.client.http.HttpStatusCodes;
@@ -31,6 +31,7 @@ import google.registry.model.console.User;
 import google.registry.model.console.UserRoles;
 import google.registry.model.registrar.Registrar;
 import google.registry.persistence.transaction.JpaTestExtensions;
+import google.registry.request.Action;
 import google.registry.request.RequestModule;
 import google.registry.request.auth.AuthResult;
 import google.registry.request.auth.AuthenticatedRegistrarAccessor;
@@ -38,13 +39,16 @@ import google.registry.request.auth.AuthenticatedRegistrarAccessor.Role;
 import google.registry.request.auth.UserAuthInfo;
 import google.registry.testing.DatabaseHelper;
 import google.registry.testing.FakeClock;
+import google.registry.testing.FakeConsoleApiParams;
 import google.registry.testing.FakeResponse;
+import google.registry.ui.server.registrar.ConsoleApiParams;
 import google.registry.ui.server.registrar.RegistrarConsoleModule;
-import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.Cookie;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.StringReader;
 import java.util.HashMap;
+import java.util.Optional;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -52,10 +56,9 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 /** Tests for {@link WhoisRegistrarFieldsAction}. */
 public class WhoisRegistrarFieldsActionTest {
 
+  private ConsoleApiParams consoleApiParams;
   private static final Gson GSON = RequestModule.provideGson();
   private final FakeClock clock = new FakeClock(DateTime.parse("2023-08-01T00:00:00.000Z"));
-  private final FakeResponse fakeResponse = new FakeResponse();
-  private final HttpServletRequest request = mock(HttpServletRequest.class);
   private final AuthenticatedRegistrarAccessor registrarAccessor =
       AuthenticatedRegistrarAccessor.createForTesting(
           ImmutableSetMultimap.of("TheRegistrar", Role.OWNER, "NewRegistrar", Role.OWNER));
@@ -111,7 +114,8 @@ public class WhoisRegistrarFieldsActionTest {
                 + " \"NL\", \"zip\": \"10011\", \"countryCode\": \"CA\"}"));
     WhoisRegistrarFieldsAction action = createAction();
     action.run();
-    assertThat(fakeResponse.getStatus()).isEqualTo(HttpStatusCodes.STATUS_CODE_OK);
+    assertThat(((FakeResponse) consoleApiParams.response()).getStatus())
+        .isEqualTo(HttpStatusCodes.STATUS_CODE_OK);
     Registrar newRegistrar = Registrar.loadByRegistrarId("TheRegistrar").get(); // skip cache
     assertThat(newRegistrar.getWhoisServer()).isEqualTo("whois.nic.google");
     assertThat(newRegistrar.getUrl()).isEqualTo("https://newurl.example");
@@ -139,7 +143,8 @@ public class WhoisRegistrarFieldsActionTest {
     uiRegistrarMap.put("registrarId", "NewRegistrar");
     WhoisRegistrarFieldsAction action = createAction(onlyTheRegistrar);
     action.run();
-    assertThat(fakeResponse.getStatus()).isEqualTo(HttpStatusCodes.STATUS_CODE_FORBIDDEN);
+    assertThat(((FakeResponse) consoleApiParams.response()).getStatus())
+        .isEqualTo(HttpStatusCodes.STATUS_CODE_FORBIDDEN);
     // should be no change
     assertThat(DatabaseHelper.loadByEntity(newRegistrar)).isEqualTo(newRegistrar);
   }
@@ -158,14 +163,20 @@ public class WhoisRegistrarFieldsActionTest {
   }
 
   private WhoisRegistrarFieldsAction createAction(AuthResult authResult) throws IOException {
-    when(request.getReader())
-        .thenReturn(new BufferedReader(new StringReader(uiRegistrarMap.toString())));
+    consoleApiParams = FakeConsoleApiParams.get(Optional.of(authResult));
+    when(consoleApiParams.request().getMethod()).thenReturn(Action.Method.POST.toString());
+    Cookie cookie =
+        new Cookie(
+            consoleApiParams.xsrfTokenManager().X_CSRF_TOKEN,
+            consoleApiParams.xsrfTokenManager().generateToken(""));
+    when(consoleApiParams.request().getCookies()).thenReturn(new Cookie[] {cookie});
+    doReturn(new BufferedReader(new StringReader(uiRegistrarMap.toString())))
+        .when(consoleApiParams.request())
+        .getReader();
     return new WhoisRegistrarFieldsAction(
-        authResult,
-        fakeResponse,
-        GSON,
+        consoleApiParams,
         registrarAccessor,
         RegistrarConsoleModule.provideRegistrar(
-            GSON, RequestModule.provideJsonBody(request, GSON)));
+            GSON, RequestModule.provideJsonBody(consoleApiParams.request(), GSON)));
   }
 }
