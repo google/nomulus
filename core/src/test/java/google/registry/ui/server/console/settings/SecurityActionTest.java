@@ -20,7 +20,7 @@ import static google.registry.testing.DatabaseHelper.loadRegistrar;
 import static google.registry.testing.SqlHelper.saveRegistrar;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import com.google.api.client.http.HttpStatusCodes;
 import com.google.common.collect.ImmutableSet;
@@ -30,15 +30,17 @@ import com.google.gson.Gson;
 import google.registry.flows.certs.CertificateChecker;
 import google.registry.model.registrar.Registrar;
 import google.registry.persistence.transaction.JpaTestExtensions;
+import google.registry.request.Action;
 import google.registry.request.RequestModule;
 import google.registry.request.auth.AuthResult;
 import google.registry.request.auth.AuthenticatedRegistrarAccessor;
 import google.registry.request.auth.UserAuthInfo;
 import google.registry.testing.DatabaseHelper;
 import google.registry.testing.FakeClock;
+import google.registry.testing.FakeConsoleApiParams;
 import google.registry.testing.FakeResponse;
+import google.registry.ui.server.registrar.ConsoleApiParams;
 import google.registry.ui.server.registrar.RegistrarConsoleModule;
-import jakarta.servlet.http.HttpServletRequest;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.StringReader;
@@ -57,10 +59,9 @@ class SecurityActionTest {
               + " \"ipAddressAllowList\": [\"192.168.1.1/32\"]}",
           SAMPLE_CERT2);
   private static final Gson GSON = RequestModule.provideGson();
-  private final HttpServletRequest request = mock(HttpServletRequest.class);
+  private ConsoleApiParams consoleApiParams;
   private final FakeClock clock = new FakeClock();
   private Registrar testRegistrar;
-  private FakeResponse response = new FakeResponse();
 
   private AuthenticatedRegistrarAccessor registrarAccessor =
       AuthenticatedRegistrarAccessor.createForTesting(
@@ -93,7 +94,8 @@ class SecurityActionTest {
                 UserAuthInfo.create(DatabaseHelper.createAdminUser("email@email.com"))),
             testRegistrar.getRegistrarId());
     action.run();
-    assertThat(response.getStatus()).isEqualTo(HttpStatusCodes.STATUS_CODE_OK);
+    assertThat(((FakeResponse) consoleApiParams.response()).getStatus())
+        .isEqualTo(HttpStatusCodes.STATUS_CODE_OK);
     Registrar r = loadRegistrar(testRegistrar.getRegistrarId());
     assertThat(r.getClientCertificateHash().get())
         .isEqualTo("GNd6ZP8/n91t9UTnpxR8aH7aAW4+CpvufYx9ViGbcMY");
@@ -103,16 +105,15 @@ class SecurityActionTest {
 
   private SecurityAction createAction(AuthResult authResult, String registrarId)
       throws IOException {
-    doReturn(new BufferedReader(new StringReader(jsonRegistrar1))).when(request).getReader();
+    consoleApiParams = FakeConsoleApiParams.get(Optional.of(authResult));
+    when(consoleApiParams.request().getMethod()).thenReturn(Action.Method.POST.toString());
+    doReturn(new BufferedReader(new StringReader(jsonRegistrar1)))
+        .when(consoleApiParams.request())
+        .getReader();
     Optional<Registrar> maybeRegistrar =
-        RegistrarConsoleModule.provideRegistrar(GSON, RequestModule.provideJsonBody(request, GSON));
-      return new SecurityAction(
-          authResult,
-          response,
-          GSON,
-          certificateChecker,
-          registrarAccessor,
-          registrarId,
-          maybeRegistrar);
+        RegistrarConsoleModule.provideRegistrar(
+            GSON, RequestModule.provideJsonBody(consoleApiParams.request(), GSON));
+    return new SecurityAction(
+        consoleApiParams, certificateChecker, registrarAccessor, registrarId, maybeRegistrar);
   }
 }

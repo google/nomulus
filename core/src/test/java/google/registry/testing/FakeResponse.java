@@ -68,6 +68,12 @@ public final class FakeResponse implements Response {
   }
 
   @Override
+  public void sendRedirect(String url) throws IOException {
+    status = 302;
+    this.payload = String.format("Redirected to %s", url);
+  }
+
+  @Override
   public void setStatus(int status) {
     checkArgument(status >= 100);
     this.status = status;

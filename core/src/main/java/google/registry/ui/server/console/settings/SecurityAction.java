@@ -18,7 +18,6 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import static google.registry.request.Action.Method.POST;
 
 import com.google.api.client.http.HttpStatusCodes;
-import com.google.gson.Gson;
 import google.registry.flows.certs.CertificateChecker;
 import google.registry.flows.certs.CertificateChecker.InsecureCertificateException;
 import google.registry.model.console.ConsolePermission;
@@ -26,12 +25,11 @@ import google.registry.model.console.User;
 import google.registry.model.registrar.Registrar;
 import google.registry.request.Action;
 import google.registry.request.Parameter;
-import google.registry.request.Response;
 import google.registry.request.auth.Auth;
-import google.registry.request.auth.AuthResult;
 import google.registry.request.auth.AuthenticatedRegistrarAccessor;
 import google.registry.request.auth.AuthenticatedRegistrarAccessor.RegistrarAccessDeniedException;
-import google.registry.ui.server.registrar.JsonGetAction;
+import google.registry.ui.server.console.ConsoleApiAction;
+import google.registry.ui.server.registrar.ConsoleApiParams;
 import java.util.Optional;
 import javax.inject.Inject;
 
@@ -40,12 +38,9 @@ import javax.inject.Inject;
     path = SecurityAction.PATH,
     method = {POST},
     auth = Auth.AUTH_PUBLIC_LOGGED_IN)
-public class SecurityAction implements JsonGetAction {
+public class SecurityAction extends ConsoleApiAction {
 
   static final String PATH = "/console-api/settings/security";
-  private final AuthResult authResult;
-  private final Response response;
-  private final Gson gson;
   private final String registrarId;
   private final AuthenticatedRegistrarAccessor registrarAccessor;
   private final Optional<Registrar> registrar;
@@ -53,16 +48,12 @@ public class SecurityAction implements JsonGetAction {
 
   @Inject
   public SecurityAction(
-      AuthResult authResult,
-      Response response,
-      Gson gson,
+      ConsoleApiParams consoleApiParams,
       CertificateChecker certificateChecker,
       AuthenticatedRegistrarAccessor registrarAccessor,
       @Parameter("registrarId") String registrarId,
       @Parameter("registrar") Optional<Registrar> registrar) {
-    this.authResult = authResult;
-    this.response = response;
-    this.gson = gson;
+    super(consoleApiParams);
     this.registrarId = registrarId;
     this.registrarAccessor = registrarAccessor;
     this.registrar = registrar;
@@ -70,16 +61,15 @@ public class SecurityAction implements JsonGetAction {
   }
 
   @Override
-  public void run() {
-    User user = authResult.userAuthInfo().get().consoleUser().get();
+  protected void postHandler(User user) {
     if (!user.getUserRoles().hasPermission(registrarId, ConsolePermission.EDIT_REGISTRAR_DETAILS)) {
-      response.setStatus(HttpStatusCodes.STATUS_CODE_FORBIDDEN);
+      consoleApiParams.response().setStatus(HttpStatusCodes.STATUS_CODE_FORBIDDEN);
       return;
     }
 
     if (registrar.isEmpty()) {
-      response.setStatus(HttpStatusCodes.STATUS_CODE_BAD_REQUEST);
-      response.setPayload(gson.toJson("'registrar' parameter is not present"));
+      setFailedResponse(
+          "'registrar' parameter is not present", HttpStatusCodes.STATUS_CODE_BAD_REQUEST);
       return;
     }
 
@@ -87,8 +77,7 @@ public class SecurityAction implements JsonGetAction {
     try {
       savedRegistrar = registrarAccessor.getRegistrar(registrarId);
     } catch (RegistrarAccessDeniedException e) {
-      response.setStatus(HttpStatusCodes.STATUS_CODE_FORBIDDEN);
-      response.setPayload(e.getMessage());
+      setFailedResponse(e.getMessage(), HttpStatusCodes.STATUS_CODE_FORBIDDEN);
       return;
     }
 
@@ -122,12 +111,12 @@ public class SecurityAction implements JsonGetAction {
         }
       }
     } catch (InsecureCertificateException e) {
-      response.setStatus(HttpStatusCodes.STATUS_CODE_BAD_REQUEST);
-      response.setPayload("Invalid certificate in parameter");
+      setFailedResponse(
+          "Invalid certificate in parameter", HttpStatusCodes.STATUS_CODE_BAD_REQUEST);
       return;
     }
 
     tm().put(updatedRegistrar.build());
-    response.setStatus(HttpStatusCodes.STATUS_CODE_OK);
+    consoleApiParams.response().setStatus(HttpStatusCodes.STATUS_CODE_OK);
   }
 }

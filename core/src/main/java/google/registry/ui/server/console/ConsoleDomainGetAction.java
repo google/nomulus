@@ -24,11 +24,8 @@ import google.registry.model.console.User;
 import google.registry.model.domain.Domain;
 import google.registry.request.Action;
 import google.registry.request.Parameter;
-import google.registry.request.Response;
 import google.registry.request.auth.Auth;
-import google.registry.request.auth.AuthResult;
-import google.registry.request.auth.UserAuthInfo;
-import google.registry.ui.server.registrar.JsonGetAction;
+import google.registry.ui.server.registrar.ConsoleApiParams;
 import java.util.Optional;
 import javax.inject.Inject;
 
@@ -37,55 +34,41 @@ import javax.inject.Inject;
     service = Action.Service.DEFAULT,
     path = ConsoleDomainGetAction.PATH,
     auth = Auth.AUTH_PUBLIC_LOGGED_IN)
-public class ConsoleDomainGetAction implements JsonGetAction {
+public class ConsoleDomainGetAction extends ConsoleApiAction {
 
   public static final String PATH = "/console-api/domain";
 
-  private final AuthResult authResult;
-  private final Response response;
   private final Gson gson;
   private final String paramDomain;
 
   @Inject
   public ConsoleDomainGetAction(
-      AuthResult authResult,
-      Response response,
+      ConsoleApiParams consoleApiParams,
       Gson gson,
       @Parameter("consoleDomain") String paramDomain) {
-    this.authResult = authResult;
-    this.response = response;
-    this.gson = gson;
+    super(consoleApiParams);
     this.paramDomain = paramDomain;
+    this.gson = gson;
   }
 
   @Override
-  public void run() {
-    if (!authResult.isAuthenticated() || authResult.userAuthInfo().isEmpty()) {
-      response.setStatus(HttpStatusCodes.STATUS_CODE_UNAUTHORIZED);
-      return;
-    }
-    UserAuthInfo authInfo = authResult.userAuthInfo().get();
-    if (authInfo.consoleUser().isEmpty()) {
-      response.setStatus(HttpStatusCodes.STATUS_CODE_UNAUTHORIZED);
-      return;
-    }
-    User user = authInfo.consoleUser().get();
+  protected void getHandler(User user) {
     Optional<Domain> possibleDomain =
         tm().transact(
                 () ->
                     EppResourceUtils.loadByForeignKeyCached(
                         Domain.class, paramDomain, tm().getTransactionTime()));
     if (possibleDomain.isEmpty()) {
-      response.setStatus(HttpStatusCodes.STATUS_CODE_NOT_FOUND);
+      consoleApiParams.response().setStatus(HttpStatusCodes.STATUS_CODE_NOT_FOUND);
       return;
     }
     Domain domain = possibleDomain.get();
     if (!user.getUserRoles()
         .hasPermission(domain.getCurrentSponsorRegistrarId(), ConsolePermission.DOWNLOAD_DOMAINS)) {
-      response.setStatus(HttpStatusCodes.STATUS_CODE_NOT_FOUND);
+      consoleApiParams.response().setStatus(HttpStatusCodes.STATUS_CODE_NOT_FOUND);
       return;
     }
-    response.setStatus(HttpStatusCodes.STATUS_CODE_OK);
-    response.setPayload(gson.toJson(domain));
+    consoleApiParams.response().setStatus(HttpStatusCodes.STATUS_CODE_OK);
+    consoleApiParams.response().setPayload(gson.toJson(domain));
   }
 }

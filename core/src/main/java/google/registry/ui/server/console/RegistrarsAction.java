@@ -31,12 +31,9 @@ import google.registry.model.registrar.RegistrarBase.State;
 import google.registry.model.registrar.RegistrarPoc;
 import google.registry.request.Action;
 import google.registry.request.Parameter;
-import google.registry.request.Response;
 import google.registry.request.auth.Auth;
-import google.registry.request.auth.AuthResult;
-import google.registry.ui.server.registrar.JsonGetAction;
+import google.registry.ui.server.registrar.ConsoleApiParams;
 import google.registry.util.StringGenerator;
-import jakarta.servlet.http.HttpServletRequest;
 import java.util.Optional;
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -46,50 +43,33 @@ import javax.inject.Named;
     path = RegistrarsAction.PATH,
     method = {GET, POST},
     auth = Auth.AUTH_PUBLIC_LOGGED_IN)
-public class RegistrarsAction implements JsonGetAction {
+public class RegistrarsAction extends ConsoleApiAction {
   private static final int PASSWORD_LENGTH = 16;
   private static final int PASSCODE_LENGTH = 5;
   static final String PATH = "/console-api/registrars";
-  private final AuthResult authResult;
-  private final Response response;
   private final Gson gson;
-  private final HttpServletRequest req;
   private Optional<Registrar> registrar;
   private StringGenerator passwordGenerator;
   private StringGenerator passcodeGenerator;
 
   @Inject
   public RegistrarsAction(
-      HttpServletRequest req,
-      AuthResult authResult,
-      Response response,
+      ConsoleApiParams consoleApiParams,
       Gson gson,
       @Parameter("registrar") Optional<Registrar> registrar,
       @Named("base58StringGenerator") StringGenerator passwordGenerator,
       @Named("digitOnlyStringGenerator") StringGenerator passcodeGenerator) {
-    this.authResult = authResult;
-    this.response = response;
+    super(consoleApiParams);
     this.gson = gson;
     this.registrar = registrar;
-    this.req = req;
     this.passcodeGenerator = passcodeGenerator;
     this.passwordGenerator = passwordGenerator;
   }
 
-
   @Override
-  public void run() {
-    User user = authResult.userAuthInfo().get().consoleUser().get();
-    if (req.getMethod().equals(GET.toString())) {
-      getHandler(user);
-    } else {
-      postHandler(user);
-    }
-  }
-
-  private void getHandler(User user) {
+  protected void getHandler(User user) {
     if (!user.getUserRoles().hasGlobalPermission(ConsolePermission.VIEW_REGISTRARS)) {
-      response.setStatus(HttpStatusCodes.STATUS_CODE_FORBIDDEN);
+      consoleApiParams.response().setStatus(HttpStatusCodes.STATUS_CODE_FORBIDDEN);
       return;
     }
     ImmutableList<Registrar> registrars =
@@ -97,19 +77,20 @@ public class RegistrarsAction implements JsonGetAction {
             .filter(r -> r.getType() == Registrar.Type.REAL)
             .collect(ImmutableList.toImmutableList());
 
-    response.setPayload(gson.toJson(registrars));
-    response.setStatus(HttpStatusCodes.STATUS_CODE_OK);
+    consoleApiParams.response().setPayload(gson.toJson(registrars));
+    consoleApiParams.response().setStatus(HttpStatusCodes.STATUS_CODE_OK);
   }
 
-  private void postHandler(User user) {
+  @Override
+  protected void postHandler(User user) {
     if (!user.getUserRoles().isAdmin()) {
-      response.setStatus(HttpStatusCodes.STATUS_CODE_FORBIDDEN);
+      consoleApiParams.response().setStatus(HttpStatusCodes.STATUS_CODE_FORBIDDEN);
       return;
     }
 
     if (registrar.isEmpty()) {
-      response.setStatus(HttpStatusCodes.STATUS_CODE_BAD_REQUEST);
-      response.setPayload(gson.toJson("'registrar' parameter is not present"));
+      consoleApiParams.response().setStatus(HttpStatusCodes.STATUS_CODE_BAD_REQUEST);
+      consoleApiParams.response().setPayload(gson.toJson("'registrar' parameter is not present"));
       return;
     }
 
@@ -171,11 +152,9 @@ public class RegistrarsAction implements JsonGetAction {
               });
 
     } catch (IllegalArgumentException e) {
-      response.setStatus(HttpStatusCodes.STATUS_CODE_BAD_REQUEST);
-      response.setPayload(gson.toJson(e.getMessage()));
+      setFailedResponse(e.getMessage(), HttpStatusCodes.STATUS_CODE_BAD_REQUEST);
     } catch (Throwable e) {
-      response.setStatus(HttpStatusCodes.STATUS_CODE_SERVER_ERROR);
-      response.setPayload(gson.toJson(e.getMessage()));
+      setFailedResponse(e.getMessage(), HttpStatusCodes.STATUS_CODE_SERVER_ERROR);
     }
   }
 }
