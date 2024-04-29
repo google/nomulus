@@ -50,6 +50,9 @@ public class User extends UpdateAutoTimestampEntity implements Buildable {
   @Column(nullable = false)
   private String emailAddress;
 
+  /** Optional external email address to use for registry lock confirmation emails. */
+  @Column private String registryLockEmailAddress;
+
   /** Roles (which grant permissions) associated with this user. */
   @Column(nullable = false)
   private UserRoles userRoles;
@@ -69,6 +72,10 @@ public class User extends UpdateAutoTimestampEntity implements Buildable {
 
   public String getEmailAddress() {
     return emailAddress;
+  }
+
+  public String getRegistryLockEmailAddress() {
+    return registryLockEmailAddress;
   }
 
   public UserRoles getUserRoles() {
@@ -133,6 +140,15 @@ public class User extends UpdateAutoTimestampEntity implements Buildable {
 
     public Builder setEmailAddress(String emailAddress) {
       getInstance().emailAddress = checkValidEmail(emailAddress);
+      return this;
+    }
+
+    public Builder setRegistryLockEmailAddress(String registryLockEmailAddress) {
+      if (registryLockEmailAddress == null) {
+        getInstance().registryLockEmailAddress = null;
+      } else {
+        getInstance().registryLockEmailAddress = checkValidEmail(registryLockEmailAddress);
+      }
       return this;
     }
 

@@ -39,6 +39,29 @@ public class UpdateUserCommandTest extends CommandTestCase<UpdateUserCommand> {
   }
 
   @Test
+  void testSuccess_registryLockEmail() throws Exception {
+    runCommandForced(
+        "--email",
+        "user@example.test",
+        "--registry_lock_email_address",
+        "registrylockemail@otherexample.test");
+    assertThat(UserDao.loadUser("user@example.test").get().getRegistryLockEmailAddress())
+        .isEqualTo("registrylockemail@otherexample.test");
+  }
+
+  @Test
+  void testSuccess_removeRegistryLockEmail() throws Exception {
+    UserDao.saveUser(
+        UserDao.loadUser("user@example.test")
+            .get()
+            .asBuilder()
+            .setRegistryLockEmailAddress("registrylock@otherexample.test")
+            .build());
+    runCommandForced("--email", "user@example.test", "--registry_lock_email_address", "");
+    assertThat(UserDao.loadUser("user@example.test").get().getRegistryLockEmailAddress()).isNull();
+  }
+
+  @Test
   void testSuccess_admin() throws Exception {
     assertThat(UserDao.loadUser("user@example.test").get().getUserRoles().isAdmin()).isFalse();
     runCommandForced("--email", "user@example.test", "--admin", "true");
@@ -85,5 +108,20 @@ public class UpdateUserCommandTest extends CommandTestCase<UpdateUserCommand> {
                 () -> runCommandForced("--email", "nonexistent@example.test")))
         .hasMessageThat()
         .isEqualTo("User nonexistent@example.test not found");
+  }
+
+  @Test
+  void testFailure_badRegistryLockEmail() {
+    assertThat(
+            assertThrows(
+                IllegalArgumentException.class,
+                () ->
+                    runCommandForced(
+                        "--email",
+                        "user@example.test",
+                        "--registry_lock_email_address",
+                        "this is not valid")))
+        .hasMessageThat()
+        .isEqualTo("Provided email this is not valid is not a valid email address");
   }
 }

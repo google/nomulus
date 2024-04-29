@@ -197,7 +197,9 @@ public class RegistryLockPostAction implements Runnable, JsonActionRunner.JsonAc
     checkArgument(
         user.verifyRegistryLockPassword(postInput.password),
         "Incorrect registry lock password for user");
-    return user.getEmailAddress();
+    return user.getRegistryLockEmailAddress() != null
+        ? user.getRegistryLockEmailAddress()
+        : user.getEmailAddress();
   }
 
   private String verifyPasswordAndGetEmailLegacyUser(User user, RegistryLockPostInput postInput)
