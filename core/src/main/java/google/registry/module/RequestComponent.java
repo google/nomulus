@@ -190,7 +190,7 @@ interface RequestComponent {
 
   ConsoleUserDataAction consoleUserDataAction();
 
-  ConsoleDumDownloadAction ConsoleDumDownloadAction();
+  ConsoleDumDownloadAction consoleDumDownloadAction();
 
   ContactAction contactAction();
 
