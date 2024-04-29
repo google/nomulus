@@ -28,71 +28,77 @@ class ValidateEscrowDepositCommandTest extends CommandTestCase<ValidateEscrowDep
   void testRun_plainXml() throws Exception {
     String file = writeToTmpFile(RdeTestData.loadBytes("deposit_full.xml").read());
     runCommand("--input=" + file);
-    assertThat(getStdoutAsString()).isEqualTo(""
-        + "ID: 20101017001\n"
-        + "Previous ID: 20101010001\n"
-        + "Type: FULL\n"
-        + "Watermark: 2010-10-17T00:00:00.000Z\n"
-        + "RDE Version: 1.0\n"
-        + "\n"
-        + "RDE Object URIs:\n"
-        + "  - urn:ietf:params:xml:ns:rdeContact-1.0\n"
-        + "  - urn:ietf:params:xml:ns:rdeDomain-1.0\n"
-        + "  - urn:ietf:params:xml:ns:rdeEppParams-1.0\n"
-        + "  - urn:ietf:params:xml:ns:rdeHeader-1.0\n"
-        + "  - urn:ietf:params:xml:ns:rdeHost-1.0\n"
-        + "  - urn:ietf:params:xml:ns:rdeIDN-1.0\n"
-        + "  - urn:ietf:params:xml:ns:rdeNNDN-1.0\n"
-        + "  - urn:ietf:params:xml:ns:rdeRegistrar-1.0\n"
-        + "\n"
-        + "Contents:\n"
-        + "  - XjcRdeContact: 1 entry\n"
-        + "  - XjcRdeDomain: 2 entries\n"
-        + "  - XjcRdeEppParams: 1 entry\n"
-        + "  - XjcRdeHeader: 1 entry\n"
-        + "  - XjcRdeHost: 2 entries\n"
-        + "  - XjcRdeIdn: 1 entry\n"
-        + "  - XjcRdeNndn: 1 entry\n"
-        + "  - XjcRdePolicy: 1 entry\n"
-        + "  - XjcRdeRegistrar: 1 entry\n"
-        + "\n"
-        + "RDE deposit is XML schema valid\n");
+    assertThat(getStdoutAsString())
+        .isEqualTo(
+            """
+        ID: 20101017001
+        Previous ID: 20101010001
+        Type: FULL
+        Watermark: 2010-10-17T00:00:00.000Z
+        RDE Version: 1.0
+
+        RDE Object URIs:
+          - urn:ietf:params:xml:ns:rdeContact-1.0
+          - urn:ietf:params:xml:ns:rdeDomain-1.0
+          - urn:ietf:params:xml:ns:rdeEppParams-1.0
+          - urn:ietf:params:xml:ns:rdeHeader-1.0
+          - urn:ietf:params:xml:ns:rdeHost-1.0
+          - urn:ietf:params:xml:ns:rdeIDN-1.0
+          - urn:ietf:params:xml:ns:rdeNNDN-1.0
+          - urn:ietf:params:xml:ns:rdeRegistrar-1.0
+
+        Contents:
+          - XjcRdeContact: 1 entry
+          - XjcRdeDomain: 2 entries
+          - XjcRdeEppParams: 1 entry
+          - XjcRdeHeader: 1 entry
+          - XjcRdeHost: 2 entries
+          - XjcRdeIdn: 1 entry
+          - XjcRdeNndn: 1 entry
+          - XjcRdePolicy: 1 entry
+          - XjcRdeRegistrar: 1 entry
+
+        RDE deposit is XML schema valid
+        """);
   }
 
   @Test
   void testRun_plainXml_badReference() throws Exception {
     String file = writeToTmpFile(RdeTestData.loadBytes("deposit_full_badref.xml").read());
     runCommand("--input=" + file);
-    assertThat(getStdoutAsString()).isEqualTo(""
-        + "ID: 20101017001\n"
-        + "Previous ID: 20101010001\n"
-        + "Type: FULL\n"
-        + "Watermark: 2010-10-17T00:00:00.000Z\n"
-        + "RDE Version: 1.0\n"
-        + "\n"
-        + "RDE Object URIs:\n"
-        + "  - urn:ietf:params:xml:ns:rdeContact-1.0\n"
-        + "  - urn:ietf:params:xml:ns:rdeDomain-1.0\n"
-        + "  - urn:ietf:params:xml:ns:rdeEppParams-1.0\n"
-        + "  - urn:ietf:params:xml:ns:rdeHeader-1.0\n"
-        + "  - urn:ietf:params:xml:ns:rdeHost-1.0\n"
-        + "  - urn:ietf:params:xml:ns:rdeIDN-1.0\n"
-        + "  - urn:ietf:params:xml:ns:rdeNNDN-1.0\n"
-        + "  - urn:ietf:params:xml:ns:rdeRegistrar-1.0\n"
-        + "\n"
-        + "Contents:\n"
-        + "  - XjcRdeContact: 1 entry\n"
-        + "  - XjcRdeDomain: 2 entries\n"
-        + "  - XjcRdeEppParams: 1 entry\n"
-        + "  - XjcRdeHeader: 1 entry\n"
-        + "  - XjcRdeHost: 2 entries\n"
-        + "  - XjcRdeIdn: 1 entry\n"
-        + "  - XjcRdeNndn: 1 entry\n"
-        + "  - XjcRdePolicy: 1 entry\n"
-        + "  - XjcRdeRegistrar: 1 entry\n"
-        + "\n"
-        + "Bad host refs: ns1.LAFFO.com\n"
-        + "RDE deposit is XML schema valid but has bad references\n");
+    assertThat(getStdoutAsString())
+        .isEqualTo(
+            """
+        ID: 20101017001
+        Previous ID: 20101010001
+        Type: FULL
+        Watermark: 2010-10-17T00:00:00.000Z
+        RDE Version: 1.0
+
+        RDE Object URIs:
+          - urn:ietf:params:xml:ns:rdeContact-1.0
+          - urn:ietf:params:xml:ns:rdeDomain-1.0
+          - urn:ietf:params:xml:ns:rdeEppParams-1.0
+          - urn:ietf:params:xml:ns:rdeHeader-1.0
+          - urn:ietf:params:xml:ns:rdeHost-1.0
+          - urn:ietf:params:xml:ns:rdeIDN-1.0
+          - urn:ietf:params:xml:ns:rdeNNDN-1.0
+          - urn:ietf:params:xml:ns:rdeRegistrar-1.0
+
+        Contents:
+          - XjcRdeContact: 1 entry
+          - XjcRdeDomain: 2 entries
+          - XjcRdeEppParams: 1 entry
+          - XjcRdeHeader: 1 entry
+          - XjcRdeHost: 2 entries
+          - XjcRdeIdn: 1 entry
+          - XjcRdeNndn: 1 entry
+          - XjcRdePolicy: 1 entry
+          - XjcRdeRegistrar: 1 entry
+
+        Bad host refs: ns1.LAFFO.com
+        RDE deposit is XML schema valid but has bad references
+        """);
   }
 
   @Test

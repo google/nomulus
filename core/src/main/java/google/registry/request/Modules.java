@@ -37,8 +37,7 @@ public final class Modules {
     static UrlConnectionService provideUrlConnectionService() {
       return url -> {
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-        if (connection instanceof HttpsURLConnection) {
-          HttpsURLConnection httpsConnection = (HttpsURLConnection) connection;
+        if (connection instanceof HttpsURLConnection httpsConnection) {
           SSLContext tls13Context = SSLContext.getInstance("TLSv1.3");
           tls13Context.init(null, null, null);
           httpsConnection.setSSLSocketFactory(tls13Context.getSocketFactory());

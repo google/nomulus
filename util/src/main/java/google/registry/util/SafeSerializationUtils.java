@@ -73,8 +73,7 @@ public final class SafeSerializationUtils {
       return null;
     }
     try (ObjectInputStream is = new SafeObjectInputStream(new ByteArrayInputStream(bytes))) {
-      Serializable ret = (Serializable) is.readObject();
-      return ret;
+      return (Serializable) is.readObject();
     } catch (IOException | ClassNotFoundException e) {
       throw new IllegalArgumentException("Failed to deserialize: " + Arrays.toString(bytes), e);
     }

@@ -56,7 +56,7 @@ public class TestServer {
       ImmutableList<? extends ChannelHandler> handlers) {
     // Creates ChannelInitializer with handlers specified
     ChannelInitializer<LocalChannel> serverInitializer =
-        new ChannelInitializer<LocalChannel>() {
+        new ChannelInitializer<>() {
           @Override
           protected void initChannel(LocalChannel ch) {
             for (ChannelHandler handler : handlers) {

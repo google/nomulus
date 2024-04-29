@@ -376,7 +376,7 @@ public class TestPipelineExtension extends Pipeline
     providerRuntimeValues.put(uuid, runtimeValue);
     return ValueProvider.NestedValueProvider.of(
         options.as(TestValueProviderOptions.class).getProviderRuntimeValues(),
-        new GetFromRuntimeValues<T>(uuid));
+        new GetFromRuntimeValues<>(uuid));
   }
 
   private final Map<String, Object> providerRuntimeValues = Maps.newHashMap();

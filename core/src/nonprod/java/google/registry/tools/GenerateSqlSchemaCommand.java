@@ -14,8 +14,6 @@
 
 package google.registry.tools;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
-
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import com.google.common.annotations.VisibleForTesting;
@@ -94,15 +92,21 @@ public class GenerateSqlSchemaCommand implements Command {
       databasePort = postgresContainer.getMappedPort(POSTGRESQL_PORT);
     } else if (databaseHost == null) {
       System.err.println(
-          "You must specify either --start_postgresql to start a PostgreSQL database in a\n"
-              + "docker instance, or specify --db_host (and, optionally, --db_port) to identify\n"
-              + "the location of a running instance.  To start a long-lived instance (suitable\n"
-              + "for running this command multiple times) run this:\n\n"
-              + "  docker run --rm --name some-postgres -e POSTGRES_PASSWORD=domain-registry \\\n"
-              + "    -d postgres:9.6.12\n\n"
-              + "Copy the container id output from the command, then run:\n\n"
-              + "  docker inspect <container-id> | grep IPAddress\n\n"
-              + "To obtain the value for --db-host.\n");
+          """
+              You must specify either --start_postgresql to start a PostgreSQL database in a
+              docker instance, or specify --db_host (and, optionally, --db_port) to identify
+              the location of a running instance.  To start a long-lived instance (suitable
+              for running this command multiple times) run this:
+
+                docker run --rm --name some-postgres -e POSTGRES_PASSWORD=domain-registry \\
+                  -d postgres:9.6.12
+
+              Copy the container id output from the command, then run:
+
+                docker inspect <container-id> | grep IPAddress
+
+              To obtain the value for --db-host.
+              """);
       // TODO(mmuller): need exit(1), see above.
       return;
     }
@@ -119,21 +123,23 @@ public class GenerateSqlSchemaCommand implements Command {
       // appends to the existing file, so this has the additional desired effect of clearing any
       // existing data in the file.
       String copyright =
-          "-- Copyright 2019 The Nomulus Authors. All Rights Reserved.\n"
-              + "--\n"
-              + "-- Licensed under the Apache License, Version 2.0 (the \"License\");\n"
-              + "-- you may not use this file except in compliance with the License.\n"
-              + "-- You may obtain a copy of the License at\n"
-              + "--\n"
-              + "--     http://www.apache.org/licenses/LICENSE-2.0\n"
-              + "--\n"
-              + "-- Unless required by applicable law or agreed to in writing, software\n"
-              + "-- distributed under the License is distributed on an \"AS IS\" BASIS,\n"
-              + "-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\n"
-              + "-- See the License for the specific language governing permissions and\n"
-              + "-- limitations under the License.\n";
+          """
+              -- Copyright 2019 The Nomulus Authors. All Rights Reserved.
+              --
+              -- Licensed under the Apache License, Version 2.0 (the "License");
+              -- you may not use this file except in compliance with the License.
+              -- You may obtain a copy of the License at
+              --
+              --     http://www.apache.org/licenses/LICENSE-2.0
+              --
+              -- Unless required by applicable law or agreed to in writing, software
+              -- distributed under the License is distributed on an "AS IS" BASIS,
+              -- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+              -- See the License for the specific language governing permissions and
+              -- limitations under the License.
+              """;
       try {
-        Files.write(outputFile.toPath(), copyright.getBytes(UTF_8));
+        Files.writeString(outputFile.toPath(), copyright);
       } catch (IOException e) {
         System.err.println("Error writing sql file: " + e);
         e.printStackTrace();

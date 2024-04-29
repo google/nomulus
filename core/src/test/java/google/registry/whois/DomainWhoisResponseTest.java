@@ -326,8 +326,10 @@ class DomainWhoisResponseTest {
             domainWhoisResponse
                 .getResponse(
                     false,
-                    "Doodle Disclaimer\nI exist so that carriage return\n"
-                        + "in disclaimer can be tested.")
+                    """
+                        Doodle Disclaimer
+                        I exist so that carriage return
+                        in disclaimer can be tested.""")
                 .plainTextOutput())
         .contains("Domain Status: ok");
   }

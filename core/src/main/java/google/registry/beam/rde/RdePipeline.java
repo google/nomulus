@@ -688,27 +688,26 @@ public class RdePipeline implements Serializable {
   protected abstract static class TupleTags {
 
     protected static final TupleTag<KV<PendingDeposit, DepositFragment>> DOMAIN_FRAGMENTS =
-        new TupleTag<KV<PendingDeposit, DepositFragment>>() {};
+        new TupleTag<>() {};
 
     protected static final TupleTag<KV<String, PendingDeposit>> REFERENCED_CONTACTS =
-        new TupleTag<KV<String, PendingDeposit>>() {};
+        new TupleTag<>() {};
 
     protected static final TupleTag<KV<String, PendingDeposit>> REFERENCED_HOSTS =
-        new TupleTag<KV<String, PendingDeposit>>() {};
+        new TupleTag<>() {};
 
     protected static final TupleTag<KV<String, KV<String, CoGbkResult>>> SUPERORDINATE_DOMAINS =
-        new TupleTag<KV<String, KV<String, CoGbkResult>>>() {};
+        new TupleTag<>() {};
 
     protected static final TupleTag<KV<PendingDeposit, DepositFragment>> EXTERNAL_HOST_FRAGMENTS =
-        new TupleTag<KV<PendingDeposit, DepositFragment>>() {};
+        new TupleTag<>() {};
 
-    protected static final TupleTag<PendingDeposit> PENDING_DEPOSIT =
-        new TupleTag<PendingDeposit>() {};
+    protected static final TupleTag<PendingDeposit> PENDING_DEPOSIT = new TupleTag<>() {};
 
     protected static final TupleTag<KV<String, CoGbkResult>> HOST_TO_PENDING_DEPOSIT =
-        new TupleTag<KV<String, CoGbkResult>>() {};
+        new TupleTag<>() {};
 
-    protected static final TupleTag<Long> REVISION_ID = new TupleTag<Long>() {};
+    protected static final TupleTag<Long> REVISION_ID = new TupleTag<>() {};
   }
 
   @Singleton

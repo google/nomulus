@@ -62,7 +62,7 @@ final class GenerateDnsReportCommand implements Command {
   @Override
   public void run() throws Exception {
     assertTldExists(tld);
-    Files.write(output, new Generator().generate().getBytes(US_ASCII));
+    Files.writeString(output, new Generator().generate(), US_ASCII);
   }
 
   private class Generator {
