@@ -61,14 +61,7 @@ abstract class EppToolCommand extends ConfirmingCommand implements CommandWithCo
 
   private ServiceConnection connection;
 
-  static class XmlEppParameters {
-    final String clientId;
-    final String xml;
-
-    XmlEppParameters(String clientId, String xml) {
-      this.clientId = clientId;
-      this.xml = xml;
-    }
+  record XmlEppParameters(String clientId, String xml) {
 
     @Override
     public String toString() {

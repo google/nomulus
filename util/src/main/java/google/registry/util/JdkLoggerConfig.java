@@ -68,8 +68,7 @@ public final class JdkLoggerConfig {
    * in all expected use cases, so it should be okay to retain all of them for the life of a task.
    */
   // TODO(dbeaumont): Reassess the risk of memory leaks here and decide what to do about it.
-  private static final Map<String, JdkLoggerConfig> strongRefMap =
-      new ConcurrentHashMap<String, JdkLoggerConfig>();
+  private static final Map<String, JdkLoggerConfig> strongRefMap = new ConcurrentHashMap<>();
 
   /** Delegate logger. */
   private final Logger logger;

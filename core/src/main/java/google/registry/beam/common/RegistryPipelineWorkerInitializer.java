@@ -50,16 +50,17 @@ public class RegistryPipelineWorkerInitializer implements JvmInitializer {
     environment.setup();
     RegistryPipelineComponent registryPipelineComponent =
         toRegistryPipelineComponent(registryOptions);
-    Lazy<JpaTransactionManager> transactionManagerLazy;
-    switch (registryOptions.getJpaTransactionManagerType()) {
-      case READ_ONLY_REPLICA:
-        transactionManagerLazy =
-            registryPipelineComponent.getReadOnlyReplicaJpaTransactionManager();
-        break;
-      case REGULAR:
-      default:
-        transactionManagerLazy = registryPipelineComponent.getJpaTransactionManager();
-    }
+    Lazy<JpaTransactionManager> transactionManagerLazy =
+        switch (registryOptions.getJpaTransactionManagerType()) {
+          case READ_ONLY_REPLICA ->
+              registryPipelineComponent.getReadOnlyReplicaJpaTransactionManager();
+          case REGULAR -> registryPipelineComponent.getJpaTransactionManager();
+          default ->
+              throw new IllegalStateException(
+                  String.format(
+                      "Unknown JPA transaction manager type: %s",
+                      registryOptions.getJpaTransactionManagerType()));
+        };
     TransactionManagerFactory.setJpaTmOnBeamWorker(transactionManagerLazy::get);
     SystemPropertySetter.PRODUCTION_IMPL.setProperty(PROPERTY, "true");
   }

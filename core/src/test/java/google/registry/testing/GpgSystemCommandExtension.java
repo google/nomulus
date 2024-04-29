@@ -79,7 +79,7 @@ public final class GpgSystemCommandExtension implements BeforeEachCallback, Afte
    *
    * @see Runtime#exec(String[])
    */
-  public final Process exec(String... args) throws IOException {
+  public Process exec(String... args) throws IOException {
     checkState(!Objects.equals(cwd, DEV_NULL));
     checkArgument(args.length > 0, "args");
     return runtime.exec(args, env, cwd);

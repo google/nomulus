@@ -40,39 +40,41 @@ public class RdeMarshallerTest {
         new RdeMarshaller(STRICT).marshalRegistrar(loadRegistrar("TheRegistrar"));
     assertThat(fragment.type()).isEqualTo(RdeResourceType.REGISTRAR);
     assertThat(fragment.error()).isEmpty();
-    String expected = ""
-        + "<rdeRegistrar:registrar>\n"
-        + "    <rdeRegistrar:id>TheRegistrar</rdeRegistrar:id>\n"
-        + "    <rdeRegistrar:name>The Registrar</rdeRegistrar:name>\n"
-        + "    <rdeRegistrar:gurid>1</rdeRegistrar:gurid>\n"
-        + "    <rdeRegistrar:status>ok</rdeRegistrar:status>\n"
-        + "    <rdeRegistrar:postalInfo type=\"loc\">\n"
-        + "        <rdeRegistrar:addr>\n"
-        + "            <rdeRegistrar:street>123 Example Bőulevard</rdeRegistrar:street>\n"
-        + "            <rdeRegistrar:city>Williamsburg</rdeRegistrar:city>\n"
-        + "            <rdeRegistrar:sp>NY</rdeRegistrar:sp>\n"
-        + "            <rdeRegistrar:pc>11211</rdeRegistrar:pc>\n"
-        + "            <rdeRegistrar:cc>US</rdeRegistrar:cc>\n"
-        + "        </rdeRegistrar:addr>\n"
-        + "    </rdeRegistrar:postalInfo>\n"
-        + "    <rdeRegistrar:postalInfo type=\"int\">\n"
-        + "        <rdeRegistrar:addr>\n"
-        + "            <rdeRegistrar:street>123 Example Boulevard</rdeRegistrar:street>\n"
-        + "            <rdeRegistrar:city>Williamsburg</rdeRegistrar:city>\n"
-        + "            <rdeRegistrar:sp>NY</rdeRegistrar:sp>\n"
-        + "            <rdeRegistrar:pc>11211</rdeRegistrar:pc>\n"
-        + "            <rdeRegistrar:cc>US</rdeRegistrar:cc>\n"
-        + "        </rdeRegistrar:addr>\n"
-        + "    </rdeRegistrar:postalInfo>\n"
-        + "    <rdeRegistrar:voice>+1.2223334444</rdeRegistrar:voice>\n"
-        + "    <rdeRegistrar:email>the.registrar@example.com</rdeRegistrar:email>\n"
-        + "    <rdeRegistrar:url>http://my.fake.url</rdeRegistrar:url>\n"
-        + "    <rdeRegistrar:whoisInfo>\n"
-        + "        <rdeRegistrar:name>whois.nic.fakewhois.example</rdeRegistrar:name>\n"
-        + "    </rdeRegistrar:whoisInfo>\n"
-        + "    <rdeRegistrar:crDate>mine eyes have seen the glory</rdeRegistrar:crDate>\n"
-        + "    <rdeRegistrar:upDate>of the coming of the borg</rdeRegistrar:upDate>\n"
-        + "</rdeRegistrar:registrar>\n";
+    String expected =
+        """
+        <rdeRegistrar:registrar>
+            <rdeRegistrar:id>TheRegistrar</rdeRegistrar:id>
+            <rdeRegistrar:name>The Registrar</rdeRegistrar:name>
+            <rdeRegistrar:gurid>1</rdeRegistrar:gurid>
+            <rdeRegistrar:status>ok</rdeRegistrar:status>
+            <rdeRegistrar:postalInfo type="loc">
+                <rdeRegistrar:addr>
+                    <rdeRegistrar:street>123 Example Bőulevard</rdeRegistrar:street>
+                    <rdeRegistrar:city>Williamsburg</rdeRegistrar:city>
+                    <rdeRegistrar:sp>NY</rdeRegistrar:sp>
+                    <rdeRegistrar:pc>11211</rdeRegistrar:pc>
+                    <rdeRegistrar:cc>US</rdeRegistrar:cc>
+                </rdeRegistrar:addr>
+            </rdeRegistrar:postalInfo>
+            <rdeRegistrar:postalInfo type="int">
+                <rdeRegistrar:addr>
+                    <rdeRegistrar:street>123 Example Boulevard</rdeRegistrar:street>
+                    <rdeRegistrar:city>Williamsburg</rdeRegistrar:city>
+                    <rdeRegistrar:sp>NY</rdeRegistrar:sp>
+                    <rdeRegistrar:pc>11211</rdeRegistrar:pc>
+                    <rdeRegistrar:cc>US</rdeRegistrar:cc>
+                </rdeRegistrar:addr>
+            </rdeRegistrar:postalInfo>
+            <rdeRegistrar:voice>+1.2223334444</rdeRegistrar:voice>
+            <rdeRegistrar:email>the.registrar@example.com</rdeRegistrar:email>
+            <rdeRegistrar:url>http://my.fake.url</rdeRegistrar:url>
+            <rdeRegistrar:whoisInfo>
+                <rdeRegistrar:name>whois.nic.fakewhois.example</rdeRegistrar:name>
+            </rdeRegistrar:whoisInfo>
+            <rdeRegistrar:crDate>mine eyes have seen the glory</rdeRegistrar:crDate>
+            <rdeRegistrar:upDate>of the coming of the borg</rdeRegistrar:upDate>
+        </rdeRegistrar:registrar>
+        """;
     XmlTestUtils.assertXmlEquals(DECLARATION + expected, DECLARATION + fragment.xml(),
         "registrar.crDate",
         "registrar.upDate");

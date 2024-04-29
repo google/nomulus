@@ -54,8 +54,7 @@ public final class PollFlowUtils {
     if (pollMessage instanceof PollMessage.OneTime) {
       // One-time poll messages are deleted once acked.
       tm().delete(pollMessage.createVKey());
-    } else if (pollMessage instanceof PollMessage.Autorenew) {
-      PollMessage.Autorenew autorenewPollMessage = (PollMessage.Autorenew) pollMessage;
+    } else if (pollMessage instanceof PollMessage.Autorenew autorenewPollMessage) {
 
       // Move the eventTime of this autorenew poll message forward by a year.
       DateTime nextEventTime = autorenewPollMessage.getEventTime().plusYears(1);

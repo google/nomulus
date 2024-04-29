@@ -33,20 +33,10 @@ import javax.annotation.Nullable;
 public final class DiffUtils {
 
   /**
-   * A helper class to store the two sides of a diff. If both sides are Sets then they will be
+   * A helper record to store the two sides of a diff. If both sides are Sets then they will be
    * diffed, otherwise the two objects are toStringed in Collection format "[a, b]".
    */
-  private static class DiffPair {
-    @Nullable
-    final Object a;
-
-    @Nullable
-    final Object b;
-
-    DiffPair(@Nullable Object a, @Nullable Object b) {
-      this.a = a;
-      this.b = b;
-    }
+  private record DiffPair(@Nullable Object a, @Nullable Object b) {
 
     @Override
     public String toString() {
@@ -133,10 +123,9 @@ public final class DiffUtils {
       Object value = entry.getValue();
       if (value instanceof Map) {
         output = prettyPrintDiffedMap((Map<?, ?>) entry.getValue(), newPath);
-      } else if (value instanceof DiffPair
+      } else if (value instanceof DiffPair pair
           && ((DiffPair) value).a instanceof Set
           && ((DiffPair) value).b instanceof Set) {
-        DiffPair pair = ((DiffPair) value);
         String prettyLineDiff = prettyPrintSetDiff((Set<?>) pair.a, (Set<?>) pair.b) + "\n";
         output = newPath + (prettyLineDiff.startsWith("\n") ? ":" : ": ") + prettyLineDiff;
       } else {

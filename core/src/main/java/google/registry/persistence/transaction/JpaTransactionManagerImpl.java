@@ -544,15 +544,7 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
     return emf.getMetamodel().entity(clazz);
   }
 
-  private static class EntityId {
-    private final String name;
-    private final Object value;
-
-    private EntityId(String name, Object value) {
-      this.name = name;
-      this.value = value;
-    }
-  }
+  private record EntityId(String name, Object value) {}
 
   private static ImmutableSet<EntityId> getEntityIdsFromEntity(
       EntityType<?> entityType, Object entity) {

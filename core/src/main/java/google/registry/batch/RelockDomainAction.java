@@ -66,11 +66,15 @@ public class RelockDomainAction implements Runnable {
   private static final Duration ONE_HOUR = Duration.standardHours(1);
 
   private static final String RELOCK_SUCCESS_EMAIL_TEMPLATE =
-      "The domain %s was successfully re-locked.\n\nPlease contact support at %s if you have any "
-          + "questions.";
+      """
+          The domain %s was successfully re-locked.
+
+          Please contact support at %s if you have any questions.""";
   private static final String RELOCK_NON_RETRYABLE_FAILURE_EMAIL_TEMPLATE =
-      "There was an error when automatically re-locking %s. Error message: %s\n\nPlease contact "
-          + "support at %s if you have any questions.";
+      """
+          There was an error when automatically re-locking %s. Error message: %s
+
+          Please contact support at %s if you have any questions.""";
   private static final String RELOCK_TRANSIENT_FAILURE_EMAIL_TEMPLATE =
       "There was an unexpected error when automatically re-locking %s. We will continue retrying "
           + "the lock for five hours. Please contact support at %s if you have any questions";

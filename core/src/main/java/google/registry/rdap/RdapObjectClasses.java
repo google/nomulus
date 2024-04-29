@@ -47,7 +47,7 @@ final class RdapObjectClasses {
   /**
    * Temporary implementation of VCards.
    *
-   * Will create a better implementation soon.
+   * <p>Will create a better implementation soon.
    */
   @RestrictJsonNames({})
   @AutoValue
@@ -146,7 +146,7 @@ final class RdapObjectClasses {
   /**
    * An object that can be used to create a TopLevelReply.
    *
-   * All Actions need to return an object of this type.
+   * <p>All Actions need to return an object of this type.
    */
   abstract static class ReplyPayloadBase extends AbstractJsonableObject {
     final BoilerplateType boilerplateType;
@@ -173,15 +173,14 @@ final class RdapObjectClasses {
     @JsonableElement("notices[]") abstract Notice aTosNotice();
 
     @JsonableElement("notices") ImmutableList<Notice> boilerplateNotices() {
-      switch (aAreplyObject().boilerplateType) {
-        case DOMAIN:
-          return RdapIcannStandardInformation.domainBoilerplateNotices;
-        case NAMESERVER:
-        case ENTITY:
-          return RdapIcannStandardInformation.nameserverAndEntityBoilerplateNotices;
-        default: // things other than domains, nameservers and entities do not yet have boilerplate
-          return ImmutableList.of();
-      }
+      return switch (aAreplyObject().boilerplateType) {
+        case DOMAIN -> RdapIcannStandardInformation.domainBoilerplateNotices;
+        case NAMESERVER, ENTITY ->
+            RdapIcannStandardInformation.nameserverAndEntityBoilerplateNotices;
+        default -> // things other than domains, nameservers and entities do not yet have
+            // boilerplate
+            ImmutableList.of();
+      };
     }
 
     static TopLevelReplyObject create(ReplyPayloadBase replyObject, Notice tosNotice) {

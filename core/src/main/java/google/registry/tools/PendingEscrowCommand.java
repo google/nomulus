@@ -28,7 +28,7 @@ import javax.inject.Inject;
 final class PendingEscrowCommand implements Command {
 
   private static final Ordering<PendingDeposit> SORTER =
-      new Ordering<PendingDeposit>() {
+      new Ordering<>() {
         @Override
         public int compare(PendingDeposit left, PendingDeposit right) {
           return ComparisonChain.start()
@@ -36,7 +36,8 @@ final class PendingEscrowCommand implements Command {
               .compare(left.mode(), right.mode())
               .compare(left.watermark(), right.watermark())
               .result();
-        }};
+        }
+      };
 
   @Inject
   PendingDepositChecker checker;

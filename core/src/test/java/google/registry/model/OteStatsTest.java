@@ -59,39 +59,40 @@ public final class OteStatsTest {
     OteStatsTestHelper.setupCompleteOte("blobio");
     OteStats stats = OteStats.getFromRegistrar("blobio");
     String expected =
-        "contact creates: 0\n"
-            + "contact deletes: 0\n"
-            + "contact transfer approves: 0\n"
-            + "contact transfer cancels: 0\n"
-            + "contact transfer rejects: 0\n"
-            + "contact transfer requests: 0\n"
-            + "contact updates: 0\n"
-            + "domain autorenews: 0\n"
-            + "domain creates: 5\n"
-            + "domain creates ascii: 4\n"
-            + "domain creates idn: 1\n"
-            + "domain creates start date sunrise: 1\n"
-            + "domain creates with claims notice: 1\n"
-            + "domain creates with fee: 1\n"
-            + "domain creates with sec dns: 1\n"
-            + "domain creates without sec dns: 4\n"
-            + "domain deletes: 1\n"
-            + "domain renews: 0\n"
-            + "domain restores: 1\n"
-            + "domain transfer approves: 1\n"
-            + "domain transfer cancels: 1\n"
-            + "domain transfer rejects: 1\n"
-            + "domain transfer requests: 1\n"
-            + "domain updates: 1\n"
-            + "domain updates with sec dns: 1\n"
-            + "domain updates without sec dns: 0\n"
-            + "host creates: 1\n"
-            + "host creates external: 0\n"
-            + "host creates subordinate: 1\n"
-            + "host deletes: 1\n"
-            + "host updates: 1\n"
-            + "unclassified flows: 0\n"
-            + "TOTAL: 30";
+        """
+            contact creates: 0
+            contact deletes: 0
+            contact transfer approves: 0
+            contact transfer cancels: 0
+            contact transfer rejects: 0
+            contact transfer requests: 0
+            contact updates: 0
+            domain autorenews: 0
+            domain creates: 5
+            domain creates ascii: 4
+            domain creates idn: 1
+            domain creates start date sunrise: 1
+            domain creates with claims notice: 1
+            domain creates with fee: 1
+            domain creates with sec dns: 1
+            domain creates without sec dns: 4
+            domain deletes: 1
+            domain renews: 0
+            domain restores: 1
+            domain transfer approves: 1
+            domain transfer cancels: 1
+            domain transfer rejects: 1
+            domain transfer requests: 1
+            domain updates: 1
+            domain updates with sec dns: 1
+            domain updates without sec dns: 0
+            host creates: 1
+            host creates external: 0
+            host creates subordinate: 1
+            host deletes: 1
+            host updates: 1
+            unclassified flows: 0
+            TOTAL: 30""";
     assertThat(stats.toString()).isEqualTo(expected);
   }
 
@@ -100,39 +101,40 @@ public final class OteStatsTest {
     OteStatsTestHelper.setupIncompleteOte("blobio");
     OteStats stats = OteStats.getFromRegistrar("blobio");
     String expected =
-        "contact creates: 0\n"
-            + "contact deletes: 0\n"
-            + "contact transfer approves: 0\n"
-            + "contact transfer cancels: 0\n"
-            + "contact transfer rejects: 0\n"
-            + "contact transfer requests: 0\n"
-            + "contact updates: 0\n"
-            + "domain autorenews: 0\n"
-            + "domain creates: 4\n"
-            + "domain creates ascii: 4\n"
-            + "domain creates idn: 0\n"
-            + "domain creates start date sunrise: 1\n"
-            + "domain creates with claims notice: 1\n"
-            + "domain creates with fee: 1\n"
-            + "domain creates with sec dns: 1\n"
-            + "domain creates without sec dns: 3\n"
-            + "domain deletes: 1\n"
-            + "domain renews: 0\n"
-            + "domain restores: 0\n"
-            + "domain transfer approves: 1\n"
-            + "domain transfer cancels: 1\n"
-            + "domain transfer rejects: 1\n"
-            + "domain transfer requests: 1\n"
-            + "domain updates: 1\n"
-            + "domain updates with sec dns: 1\n"
-            + "domain updates without sec dns: 0\n"
-            + "host creates: 1\n"
-            + "host creates external: 0\n"
-            + "host creates subordinate: 1\n"
-            + "host deletes: 0\n"
-            + "host updates: 10\n"
-            + "unclassified flows: 0\n"
-            + "TOTAL: 34";
+        """
+            contact creates: 0
+            contact deletes: 0
+            contact transfer approves: 0
+            contact transfer cancels: 0
+            contact transfer rejects: 0
+            contact transfer requests: 0
+            contact updates: 0
+            domain autorenews: 0
+            domain creates: 4
+            domain creates ascii: 4
+            domain creates idn: 0
+            domain creates start date sunrise: 1
+            domain creates with claims notice: 1
+            domain creates with fee: 1
+            domain creates with sec dns: 1
+            domain creates without sec dns: 3
+            domain deletes: 1
+            domain renews: 0
+            domain restores: 0
+            domain transfer approves: 1
+            domain transfer cancels: 1
+            domain transfer rejects: 1
+            domain transfer requests: 1
+            domain updates: 1
+            domain updates with sec dns: 1
+            domain updates without sec dns: 0
+            host creates: 1
+            host creates external: 0
+            host creates subordinate: 1
+            host deletes: 0
+            host updates: 10
+            unclassified flows: 0
+            TOTAL: 34""";
     assertThat(stats.toString()).isEqualTo(expected);
   }
 }

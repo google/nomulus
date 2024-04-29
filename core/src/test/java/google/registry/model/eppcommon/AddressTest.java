@@ -49,18 +49,20 @@ class AddressTest {
       new JpaTestExtensions.Builder().withEntityClass(TestEntity.class).buildUnitTestExtension();
 
   private static final String ENTITY_XML =
-      "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n"
-          + "<testEntity>\n"
-          + "    <address>\n"
-          + "        <street>123 W 14th St</street>\n"
-          + "        <street>8th Fl</street>\n"
-          + "        <street>Rm 8</street>\n"
-          + "        <city>New York</city>\n"
-          + "        <sp>NY</sp>\n"
-          + "        <pc>10011</pc>\n"
-          + "        <cc>US</cc>\n"
-          + "    </address>\n"
-          + "</testEntity>\n";
+      """
+          <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+          <testEntity>
+              <address>
+                  <street>123 W 14th St</street>
+                  <street>8th Fl</street>
+                  <street>Rm 8</street>
+                  <city>New York</city>
+                  <sp>NY</sp>
+                  <pc>10011</pc>
+                  <cc>US</cc>
+              </address>
+          </testEntity>
+          """;
 
   private TestAddress address = createAddress("123 W 14th St", "8th Fl", "Rm 8");
   private TestEntity entity = new TestEntity(1L, address);
