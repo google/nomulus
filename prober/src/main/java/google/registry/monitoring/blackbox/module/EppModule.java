@@ -264,11 +264,6 @@ public class EppModule {
     return new EppRequestMessage("hello", greetingResponse, null, (a, b) -> ImmutableMap.of());
   }
 
-  /**
-   * Set of all possible {@link EppRequestMessage}s paired with their expected {@link
-   * EppResponseMessage}s.
-   */
-
   /** {@link Provides} login {@link EppRequestMessage} with expected response of success. */
   @Provides
   @Named("loginSuccess")

@@ -98,30 +98,15 @@ class GcpJsonFormatter extends Formatter {
    *     href="https://github.com/googleapis/google-cloud-java/blob/master/google-cloud-clients/google-cloud-logging/src/main/java/com/google/cloud/logging/LoggingHandler.java#L325">{@code LoggingHandler}</a>
    */
   private static String severityFor(Level level) {
-    switch (level.intValue()) {
-        // FINEST
-      case 300:
-        return "DEBUG";
-        // FINER
-      case 400:
-        return "DEBUG";
-        // FINE
-      case 500:
-        return "DEBUG";
-        // CONFIG
-      case 700:
-        return "INFO";
-        // INFO
-      case 800:
-        return "INFO";
-        // WARNING
-      case 900:
-        return "WARNING";
-        // SEVERE
-      case 1000:
-        return "ERROR";
-      default:
-        return "DEFAULT";
-    }
+    return switch (level.intValue()) {
+      case 300 -> "DEBUG"; // FINEST
+      case 400 -> "DEBUG"; // FINER
+      case 500 -> "DEBUG"; // FINE
+      case 700 -> "INFO"; // CONFIG
+      case 800 -> "INFO"; // INFO
+      case 900 -> "WARNING"; // WARNING
+      case 1000 -> "ERROR"; // SEVERE
+      default -> "DEFAULT";
+    };
   }
 }

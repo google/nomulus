@@ -79,12 +79,14 @@ public class UrlConnectionUtilsTest {
                 + " boundary=\"------------------------------AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\"",
             "294");
     String payload =
-        "--------------------------------AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\r\n"
-            + "Content-Disposition: form-data; name=\"lol\"; filename=\"cat\"\r\n"
-            + "Content-Type: text/csv; charset=utf-8\r\n"
-            + "\r\n"
-            + "The nice people at the store say hello. ヘ(◕。◕ヘ)\r\n"
-            + "--------------------------------AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA--\r\n";
+        """
+            --------------------------------AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\r
+            Content-Disposition: form-data; name="lol"; filename="cat"\r
+            Content-Type: text/csv; charset=utf-8\r
+            \r
+            The nice people at the store say hello. ヘ(◕。◕ヘ)\r
+            --------------------------------AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA--\r
+            """;
     verify(connection).setDoOutput(true);
     verify(connection).getOutputStream();
     assertThat(connectionOutputStream.toByteArray()).isEqualTo(payload.getBytes(UTF_8));

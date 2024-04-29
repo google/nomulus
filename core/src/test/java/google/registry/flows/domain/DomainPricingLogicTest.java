@@ -247,8 +247,7 @@ public class DomainPricingLogicTest {
 
   @Test
   void
-      testGetDomainRenewPrice_oneYear_premiumDomain_default_withTokenNotValidForPremiums_throwsException()
-          throws EppException {
+      testGetDomainRenewPrice_oneYear_premiumDomain_default_withTokenNotValidForPremiums_throwsException() {
     AllocationToken allocationToken =
         persistResource(
             new AllocationToken.Builder()
@@ -315,8 +314,7 @@ public class DomainPricingLogicTest {
 
   @Test
   void
-      testGetDomainRenewPrice_multiYear_premiumDomain_default_withTokenNotValidForPremiums_throwsException()
-          throws EppException {
+      testGetDomainRenewPrice_multiYear_premiumDomain_default_withTokenNotValidForPremiums_throwsException() {
     AllocationToken allocationToken =
         persistResource(
             new AllocationToken.Builder()
@@ -724,7 +722,7 @@ public class DomainPricingLogicTest {
   }
 
   @Test
-  void testGetDomainRenewPrice_negativeYear_throwsException() throws EppException {
+  void testGetDomainRenewPrice_negativeYear_throwsException() {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,

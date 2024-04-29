@@ -76,14 +76,16 @@ class DiffUtilsTest {
 
     assertThat(prettyPrintSetDiff(ImmutableSet.of(a, b), ImmutableSet.of(a, c)))
         .isEqualTo(
-            "\n"
-                + "    ADDED:\n"
-                + "        {c}\n"
-                + "    REMOVED:\n"
-                + "        {b}\n"
-                + "    FINAL CONTENTS:\n"
-                + "        {a},\n"
-                + "        {c}");
+            """
+
+                    ADDED:
+                        {c}
+                    REMOVED:
+                        {b}
+                    FINAL CONTENTS:
+                        {a},
+                        {c}\
+                """);
   }
 
   private static class DummyObject {

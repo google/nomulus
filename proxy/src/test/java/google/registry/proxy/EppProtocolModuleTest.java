@@ -48,10 +48,12 @@ class EppProtocolModuleTest extends ProtocolModuleTest {
   private static final String CLIENT_ADDRESS = "epp.client.tld";
 
   private static final byte[] HELLO_BYTES =
-      ("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\n"
-              + "<epp xmlns=\"urn:ietf:params:xml:ns:epp-1.0\">\n"
-              + "  <hello/>\n"
-              + "</epp>\n")
+      """
+          <?xml version="1.0" encoding="UTF-8" standalone="no"?>
+          <epp xmlns="urn:ietf:params:xml:ns:epp-1.0">
+            <hello/>
+          </epp>
+          """
           .getBytes(UTF_8);
 
   private X509Certificate certificate;

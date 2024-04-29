@@ -55,14 +55,14 @@ import org.xbill.DNS.Type;
 import org.xbill.DNS.Update;
 
 /**
- * A DnsWriter that implements the DNS UPDATE protocol as specified in
- * <a href="https://tools.ietf.org/html/rfc2136">RFC 2136</a>. Publishes changes in the
- * domain-registry to a (capable) external DNS server, sometimes called a "hidden master". DNS
- * UPDATE messages are sent via a supplied "transport" class.
+ * A DnsWriter that implements the DNS UPDATE protocol as specified in <a
+ * href="https://tools.ietf.org/html/rfc2136">RFC 2136</a>. Publishes changes in the domain-registry
+ * to a (capable) external DNS server, sometimes called a "hidden master". DNS UPDATE messages are
+ * sent via a supplied "transport" class.
  *
- * On call to {@link #commit()}, a single UPDATE message is created containing the records required
- * to "synchronize" the DNS with the current (at the time of processing) state of the registry, for
- * the supplied domain/host.
+ * <p>On call to {@link #commit()}, a single UPDATE message is created containing the records
+ * required to "synchronize" the DNS with the current (at the time of processing) state of the
+ * registry, for the supplied domain/host.
  *
  * <p>The general strategy of the publish methods is to delete <em>all</em> resource records of any
  * <em>type</em> that match the exact domain/host name supplied. And then for create/update cases,
@@ -73,8 +73,8 @@ import org.xbill.DNS.Update;
  * <p>Only NS, DS, A, and AAAA records are published, and in particular no DNSSEC signing is done
  * assuming that this will be done by a third party DNS provider.
  *
- * <p>Each commit call is treated as an atomic update to the DNS. If a commit fails an exception
- * is thrown. The SOA record serial number is implicitly incremented by the server on each UPDATE
+ * <p>Each commit call is treated as an atomic update to the DNS. If a commit fails an exception is
+ * thrown. The SOA record serial number is implicitly incremented by the server on each UPDATE
  * message, as required by RFC 2136. Care must be taken to make sure the SOA serial number does not
  * go backwards if the entire TLD (zone) is "reset" to empty and republished.
  */

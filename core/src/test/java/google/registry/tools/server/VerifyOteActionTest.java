@@ -53,28 +53,25 @@ class VerifyOteActionTest {
   void testSuccess_passNotSummarized() throws Exception {
     OteStatsTestHelper.setupCompleteOte("blobio");
     String expectedOteStatus =
-        "domain creates idn: 1\n"
-            + "domain creates start date sunrise: 1\n"
-            + "domain creates with claims notice: 1\n"
-            + "domain creates with fee: 1\n"
-            + "domain creates with sec dns: 1\n"
-            + ".*"
-            + "domain deletes: 1\n"
-            + ".*"
-            + "domain restores: 1\n"
-            + "domain transfer approves: 1\n"
-            + "domain transfer cancels: 1\n"
-            + "domain transfer rejects: 1\n"
-            + "domain transfer requests: 1\n"
-            + ".*"
-            + "domain updates with sec dns: 1\n"
-            + ".*"
-            + "host creates subordinate: 1\n"
-            + "host deletes: 1\n"
-            + "host updates: 1\n"
-            + ".*"
-            + "Requirements passed: 16/16\n"
-            + "Overall OT&E status: PASS\n";
+        """
+            domain creates idn: 1
+            domain creates start date sunrise: 1
+            domain creates with claims notice: 1
+            domain creates with fee: 1
+            domain creates with sec dns: 1
+            .*domain deletes: 1
+            .*domain restores: 1
+            domain transfer approves: 1
+            domain transfer cancels: 1
+            domain transfer rejects: 1
+            domain transfer requests: 1
+            .*domain updates with sec dns: 1
+            .*host creates subordinate: 1
+            host deletes: 1
+            host updates: 1
+            .*Requirements passed: 16/16
+            Overall OT&E status: PASS
+            """;
     Pattern expectedOteStatusPattern = Pattern.compile(expectedOteStatus, Pattern.DOTALL);
     assertThat(getResponse(false)).containsMatch(expectedOteStatusPattern);
   }
@@ -83,28 +80,25 @@ class VerifyOteActionTest {
   void testFailure_incomplete() throws Exception {
     OteStatsTestHelper.setupIncompleteOte("blobio");
     String expectedOteStatus =
-        "domain creates idn: 0\n"
-            + "domain creates start date sunrise: 1\n"
-            + "domain creates with claims notice: 1\n"
-            + "domain creates with fee: 1\n"
-            + "domain creates with sec dns: 1\n"
-            + ".*"
-            + "domain deletes: 1\n"
-            + ".*"
-            + "domain restores: 0\n"
-            + "domain transfer approves: 1\n"
-            + "domain transfer cancels: 1\n"
-            + "domain transfer rejects: 1\n"
-            + "domain transfer requests: 1\n"
-            + ".*"
-            + "domain updates with sec dns: 1\n"
-            + ".*"
-            + "host creates subordinate: 1\n"
-            + "host deletes: 0\n"
-            + "host updates: 10\n"
-            + ".*"
-            + "Requirements passed: 13/16\n"
-            + "Overall OT&E status: FAIL\n";
+        """
+            domain creates idn: 0
+            domain creates start date sunrise: 1
+            domain creates with claims notice: 1
+            domain creates with fee: 1
+            domain creates with sec dns: 1
+            .*domain deletes: 1
+            .*domain restores: 0
+            domain transfer approves: 1
+            domain transfer cancels: 1
+            domain transfer rejects: 1
+            domain transfer requests: 1
+            .*domain updates with sec dns: 1
+            .*host creates subordinate: 1
+            host deletes: 0
+            host updates: 10
+            .*Requirements passed: 13/16
+            Overall OT&E status: FAIL
+            """;
     Pattern expectedOteStatusPattern = Pattern.compile(expectedOteStatus, Pattern.DOTALL);
     assertThat(getResponse(false)).containsMatch(expectedOteStatusPattern);
   }

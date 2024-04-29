@@ -159,15 +159,18 @@ public abstract class MutatingCommand extends ConfirmingCommand {
                 ? ((ImmutableObject) existingEntity.get()).toDiffableFieldMap()
                 : ImmutableMap.of()));
     switch (change.type) {
-      case CREATE:
+      case CREATE -> {
         tm().insert(change.newEntity);
         return;
-      case UPDATE:
+      }
+      case UPDATE -> {
         tm().update(change.newEntity);
         return;
-      case DELETE:
+      }
+      case DELETE -> {
         tm().delete(change.vKey);
         return;
+      }
     }
     throw new UnsupportedOperationException("Unknown entity change type: " + change.type);
   }

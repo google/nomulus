@@ -96,10 +96,9 @@ class BsaDomainRefresh {
     if (this == o) {
       return true;
     }
-    if (!(o instanceof BsaDomainRefresh)) {
+    if (!(o instanceof BsaDomainRefresh that)) {
       return false;
     }
-    BsaDomainRefresh that = (BsaDomainRefresh) o;
     return Objects.equal(jobId, that.jobId)
         && Objects.equal(creationTime, that.creationTime)
         && Objects.equal(updateTime, that.updateTime)

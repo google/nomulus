@@ -78,8 +78,7 @@ public class DatabaseException extends PersistenceException {
   static String getSqlError(Throwable t) {
     ImmutableList.Builder<String> errMessageBuilder = new ImmutableList.Builder<>();
     do {
-      if (t instanceof SQLException) {
-        SQLException e = (SQLException) t;
+      if (t instanceof SQLException e) {
         getSqlExceptionDetails(e).ifPresent(errMessageBuilder::add);
       }
       t = t.getCause();

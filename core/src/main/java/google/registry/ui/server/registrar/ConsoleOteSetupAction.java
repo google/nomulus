@@ -106,14 +106,17 @@ public final class ConsoleOteSetupAction extends HtmlAction {
       return;
     }
     switch (method) {
-      case POST:
+      case POST -> {
         runPost(data);
         return;
-      case GET:
+      }
+      case GET -> {
         runGet(data);
         return;
-      default:
+      }
+      default -> {
         return;
+      }
     }
   }
 

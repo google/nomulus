@@ -72,7 +72,7 @@ public final class LabelDiffUpdates {
               for (Map.Entry<LabelType, ImmutableList<BlockLabel>> entry :
                   labelsByType.entrySet()) {
                 switch (entry.getKey()) {
-                  case CREATE:
+                  case CREATE -> {
                     // With current Cloud SQL, label upsert throughput is about 200/second. If
                     // better performance is needed, consider bulk insert in native SQL.
                     tm().putAll(
@@ -86,8 +86,8 @@ public final class LabelDiffUpdates {
                     // cached BsaLabels. Eventually will be consistent.
                     nonBlockedDomains.addAll(
                         tallyUnblockableDomainsForNewLabels(entry.getValue(), idnChecker, now));
-                    break;
-                  case DELETE:
+                  }
+                  case DELETE -> {
                     ImmutableSet<String> deletedLabels =
                         entry.getValue().stream()
                             .filter(label -> isValidInAtLeastOneTld(label, idnChecker))
@@ -100,8 +100,8 @@ public final class LabelDiffUpdates {
                           "Only found %s entities among the %s labels: [%s]",
                           nDeleted, deletedLabels.size(), deletedLabels);
                     }
-                    break;
-                  case NEW_ORDER_ASSOCIATION:
+                  }
+                  case NEW_ORDER_ASSOCIATION -> {
                     ImmutableSet<String> affectedLabels =
                         entry.getValue().stream()
                             .filter(label -> isValidInAtLeastOneTld(label, idnChecker))
@@ -120,13 +120,12 @@ public final class LabelDiffUpdates {
                     Queries.queryBsaUnblockableDomainByLabels(affectedLabels)
                         .map(BsaUnblockableDomain::toUnblockableDomain)
                         .forEach(nonBlockedDomains::add);
-
                     for (BlockLabel label : entry.getValue()) {
                       getInvalidTldsForLabel(label, idnChecker)
                           .map(tld -> UnblockableDomain.of(label.label(), tld, Reason.INVALID))
                           .forEach(nonBlockedDomains::add);
                     }
-                    break;
+                  }
                 }
               }
             });

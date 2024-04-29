@@ -130,23 +130,22 @@ public final class PgpHelper {
     while (keys.hasNext()) {
       PGPPublicKey key = keys.next();
       switch (want) {
-        case ENCRYPT:
+        case ENCRYPT -> {
           if (key.isEncryptionKey()) {
             return Optional.of(key);
           }
-          break;
-        case SIGN:
+        }
+        case SIGN -> {
           if (isSigningKey(key)) {
             return Optional.of(key);
           }
-          break;
-        case ENCRYPT_SIGN:
+        }
+        case ENCRYPT_SIGN -> {
           if (key.isEncryptionKey() && isSigningKey(key)) {
             return Optional.of(key);
           }
-          break;
-        default:
-          throw new AssertionError();
+        }
+        default -> throw new AssertionError();
       }
     }
     return Optional.empty();
@@ -154,14 +153,9 @@ public final class PgpHelper {
 
   /** Returns {@code true} if this key can be used for signing. */
   public static boolean isSigningKey(PGPPublicKey key) {
-    switch (key.getAlgorithm()) {
-      case RSA_GENERAL:
-      case RSA_SIGN:
-      case DSA:
-      case ELGAMAL_GENERAL:
-        return true;
-      default:
-        return false;
-    }
+    return switch (key.getAlgorithm()) {
+      case RSA_GENERAL, RSA_SIGN, DSA, ELGAMAL_GENERAL -> true;
+      default -> false;
+    };
   }
 }

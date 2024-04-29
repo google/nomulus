@@ -53,9 +53,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.mockito.Mock;
-import org.mockito.invocation.InvocationOnMock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.mockito.stubbing.Answer;
 
 /** Functional tests of BSA block list download and processing. */
 @ExtendWith(MockitoExtension.class)
@@ -170,20 +168,17 @@ class BsaDownloadFunctionalTest {
       throws Exception {
     byte[] bytes =
         Joiner.on('\n')
-            .join(new ImmutableList.Builder().add(BSA_CSV_HEADER).addAll(dataLines).build())
+            .join(new ImmutableList.Builder<String>().add(BSA_CSV_HEADER).addAll(dataLines).build())
             .getBytes(UTF_8);
     String checksum = generateChecksum(bytes);
     LazyBlockList blockList = mock(LazyBlockList.class);
     when(blockList.checksum()).thenReturn(checksum);
     when(blockList.getName()).thenReturn(blockListType);
     doAnswer(
-            new Answer() {
-              @Override
-              public Object answer(InvocationOnMock invocation) throws Throwable {
-                BiConsumer<byte[], Integer> consumer = invocation.getArgument(0);
-                consumer.accept(bytes, bytes.length);
-                return null;
-              }
+            invocation -> {
+              BiConsumer<byte[], Integer> consumer = invocation.getArgument(0);
+              consumer.accept(bytes, bytes.length);
+              return null;
             })
         .when(blockList)
         .consumeAll(any(BiConsumer.class));
