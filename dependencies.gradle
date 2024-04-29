@@ -139,6 +139,7 @@ ext {
       'com.google.cloud.sql:postgres-socket-factory:[1.2.1,)',
       'com.google.cloud:google-cloud-core-http:[1.94.3,)',
       'com.google.cloud:google-cloud-core:[1.94.3,)',
+      'com.google.cloud:google-cloud-logging:[3.16.3,)',
       'com.google.cloud:google-cloud-nio:[0.123.4,)',
       'com.google.cloud:google-cloud-secretmanager:[1.4.0,)',
       'com.google.cloud:google-cloud-storage:[2.26.0,)',

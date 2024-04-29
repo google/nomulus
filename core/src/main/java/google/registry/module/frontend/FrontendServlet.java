@@ -26,6 +26,6 @@ public final class FrontendServlet extends ServletBase {
   private static final Lazy<MetricReporter> metricReporter = component.metricReporter();
 
   public FrontendServlet() {
-    super(requestHandler, metricReporter);
+    super(component.projectId(), requestHandler, metricReporter);
   }
 }

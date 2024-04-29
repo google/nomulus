@@ -19,6 +19,7 @@ import dagger.Component;
 import dagger.Lazy;
 import google.registry.config.CloudTasksUtilsModule;
 import google.registry.config.CredentialModule;
+import google.registry.config.RegistryConfig.Config;
 import google.registry.config.RegistryConfig.ConfigModule;
 import google.registry.export.DriveModule;
 import google.registry.flows.ServerTridProviderModule;
@@ -70,4 +71,7 @@ interface ToolsComponent {
   ToolsRequestHandler requestHandler();
 
   Lazy<MetricReporter> metricReporter();
+
+  @Config("projectId")
+  String projectId();
 }

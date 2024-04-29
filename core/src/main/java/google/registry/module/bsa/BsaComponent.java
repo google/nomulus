@@ -18,6 +18,7 @@ import com.google.monitoring.metrics.MetricReporter;
 import dagger.Component;
 import dagger.Lazy;
 import google.registry.config.CredentialModule;
+import google.registry.config.RegistryConfig.Config;
 import google.registry.config.RegistryConfig.ConfigModule;
 import google.registry.groups.GmailModule;
 import google.registry.keyring.KeyringModule;
@@ -55,4 +56,7 @@ interface BsaComponent {
   BsaRequestHandler requestHandler();
 
   Lazy<MetricReporter> metricReporter();
+
+  @Config("projectId")
+  String projectId();
 }
