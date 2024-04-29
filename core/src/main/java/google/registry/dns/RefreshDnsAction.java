@@ -63,16 +63,15 @@ public final class RefreshDnsAction implements Runnable {
     tm().transact(
             () -> {
               switch (type) {
-                case DOMAIN:
+                case DOMAIN -> {
                   loadAndVerifyExistence(Domain.class, domainOrHostName);
                   requestDomainDnsRefresh(domainOrHostName);
-                  break;
-                case HOST:
+                }
+                case HOST -> {
                   verifyHostIsSubordinate(loadAndVerifyExistence(Host.class, domainOrHostName));
                   requestHostDnsRefresh(domainOrHostName);
-                  break;
-                default:
-                  throw new BadRequestException("Unsupported type: " + type);
+                }
+                default -> throw new BadRequestException("Unsupported type: " + type);
               }
             });
   }

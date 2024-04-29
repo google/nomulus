@@ -51,13 +51,15 @@ class GetHistoryEntriesCommandTest extends CommandTestCase<GetHistoryEntriesComm
             clock.nowUtc()));
     runCommand("--id=example.tld", "--type=DOMAIN");
     assertStdoutIs(
-        "Client: TheRegistrar\n"
-            + "Time: 2000-01-01T00:00:00.000Z\n"
-            + "Client TRID: ABC-123\n"
-            + "Server TRID: server-trid\n"
-            + "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n"
-            + "<xml/>\n"
-            + "\n");
+        """
+            Client: TheRegistrar
+            Time: 2000-01-01T00:00:00.000Z
+            Client TRID: ABC-123
+            Server TRID: server-trid
+            <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+            <xml/>
+
+            """);
   }
 
   @Test
@@ -101,13 +103,15 @@ class GetHistoryEntriesCommandTest extends CommandTestCase<GetHistoryEntriesComm
         "--before",
         clock.nowUtc().plusMinutes(1).toString());
     assertStdoutIs(
-        "Client: TheRegistrar\n"
-            + "Time: 2000-01-01T00:00:00.000Z\n"
-            + "Client TRID: ABC-123\n"
-            + "Server TRID: server-trid\n"
-            + "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n"
-            + "<xml/>\n"
-            + "\n");
+        """
+            Client: TheRegistrar
+            Time: 2000-01-01T00:00:00.000Z
+            Client TRID: ABC-123
+            Server TRID: server-trid
+            <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+            <xml/>
+
+            """);
   }
 
   @Test
@@ -124,12 +128,14 @@ class GetHistoryEntriesCommandTest extends CommandTestCase<GetHistoryEntriesComm
             .build());
     runCommand("--id=example.tld", "--type=DOMAIN");
     assertStdoutIs(
-        "Client: TheRegistrar\n"
-            + "Time: 2000-01-01T00:00:00.000Z\n"
-            + "Client TRID: null\n"
-            + "Server TRID: null\n"
-            + "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n"
-            + "<xml/>\n"
-            + "\n");
+        """
+            Client: TheRegistrar
+            Time: 2000-01-01T00:00:00.000Z
+            Client TRID: null
+            Server TRID: null
+            <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+            <xml/>
+
+            """);
   }
 }

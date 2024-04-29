@@ -54,7 +54,7 @@ public class GsonUtils {
       if (!GsonPostProcessable.class.isAssignableFrom(type.getRawType())) {
         return originalAdapter;
       }
-      return new TypeAdapter<T>() {
+      return new TypeAdapter<>() {
         @Override
         public void write(JsonWriter out, T value) throws IOException {
           originalAdapter.write(out, value);

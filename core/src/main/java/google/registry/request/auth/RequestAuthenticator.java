@@ -88,7 +88,7 @@ public class RequestAuthenticator {
       AuthResult authResult;
       switch (authMethod) {
           // API-based user authentication mechanisms, such as OIDC.
-        case API:
+        case API -> {
           for (AuthenticationMechanism authMechanism : apiAuthenticationMechanisms) {
             authResult = authMechanism.authenticate(req);
             if (authResult.isAuthenticated()) {
@@ -97,15 +97,15 @@ public class RequestAuthenticator {
               return authResult;
             }
           }
-          break;
+        }
           // Legacy authentication via UserService
-        case LEGACY:
+        case LEGACY -> {
           authResult = legacyAuthenticationMechanism.authenticate(req);
           if (authResult.isAuthenticated()) {
             logger.atInfo().log("Authenticated via legacy auth: %s", authResult);
             return authResult;
           }
-          break;
+        }
       }
     }
     logger.atInfo().log("No authentication found.");

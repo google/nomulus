@@ -48,21 +48,23 @@ public final class UpdateRegistrarRdapBaseUrlsActionTest {
 
   // This reply simulates part of the actual IANA CSV reply
   private static final String CSV_REPLY =
-      "\"ID\",Registrar Name,Status,RDAP Base URL\n"
-          + "1,Reserved,Reserved,\n"
-          + "81,Gandi SAS,Accredited,https://rdap.gandi.net/\n"
-          + "100,Whois Corp.,Accredited,https://www.yesnic.com/rdap/\n"
-          + "134,BB-Online UK Limited,Accredited,https://rdap.bb-online.com/\n"
-          + "1316,\"Xiamen 35.Com Technology Co., Ltd.\",Accredited,https://rdap.35.com/rdap/\n"
-          + "1448,Blacknight Internet Solutions Ltd.,Accredited,https://rdap.blacknight.com/\n"
-          + "1463,\"Global Domains International, Inc. DBA"
-          + " DomainCostClub.com\",Accredited,https://rdap.domaincostclub.com/\n"
-          + "1556,\"Chengdu West Dimension Digital Technology Co.,"
-          + " Ltd.\",Accredited,https://rdap.west.cn/rdap/\n"
-          + "2288,Metaregistrar BV,Accredited,https://rdap.metaregistrar.com/\n"
-          + "4000,Gname 031 Inc,Accredited,\n"
-          + "9999,Reserved for non-billable transactions where Registry Operator acts as"
-          + " Registrar,Reserved,\n";
+      """
+          "ID",Registrar Name,Status,RDAP Base URL
+          1,Reserved,Reserved,
+          81,Gandi SAS,Accredited,https://rdap.gandi.net/
+          100,Whois Corp.,Accredited,https://www.yesnic.com/rdap/
+          134,BB-Online UK Limited,Accredited,https://rdap.bb-online.com/
+          1316,"Xiamen 35.Com Technology Co., Ltd.",Accredited,https://rdap.35.com/rdap/
+          1448,Blacknight Internet Solutions Ltd.,Accredited,https://rdap.blacknight.com/
+          1463,"Global Domains International, Inc. DBA DomainCostClub.com",Accredited,\
+          https://rdap.domaincostclub.com/
+          1556,"Chengdu West Dimension Digital Technology Co., Ltd.",Accredited,\
+          https://rdap.west.cn/rdap/
+          2288,Metaregistrar BV,Accredited,https://rdap.metaregistrar.com/
+          4000,Gname 031 Inc,Accredited,
+          9999,Reserved for non-billable transactions where Registry Operator acts as\
+           Registrar,Reserved,
+          """;
 
   @RegisterExtension
   public JpaIntegrationTestExtension jpa =

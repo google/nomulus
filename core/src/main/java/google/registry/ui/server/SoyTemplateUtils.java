@@ -90,14 +90,11 @@ public final class SoyTemplateUtils {
 
   private static ImmutableMap<String, String> getCssRenames(URL cssMap, URL cssMapDebug) {
     try {
-      switch (ConsoleDebug.get()) {
-        case RAW:
-          return ImmutableMap.of();  // See firstNonNull() above for clarification.
-        case DEBUG:
-          return extractCssRenames(Resources.toString(cssMapDebug, UTF_8));
-        default:
-          return extractCssRenames(Resources.toString(cssMap, UTF_8));
-      }
+      return switch (ConsoleDebug.get()) {
+        case RAW -> ImmutableMap.of(); // See firstNonNull() above for clarification.
+        case DEBUG -> extractCssRenames(Resources.toString(cssMapDebug, UTF_8));
+        default -> extractCssRenames(Resources.toString(cssMap, UTF_8));
+      };
     } catch (IOException e) {
       throw new RuntimeException("Failed to load css map", e);
     }

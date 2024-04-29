@@ -55,58 +55,42 @@ final class GetKeyringSecretCommand implements Command {
     Security.addProvider(new BouncyCastleProvider());
 
     switch (keyringKeyName) {
-      case BRDA_RECEIVER_PUBLIC_KEY:
-        out.write(KeySerializer.serializePublicKey(keyring.getBrdaReceiverKey()));
-        break;
-      case BRDA_SIGNING_KEY_PAIR:
-        out.write(KeySerializer.serializeKeyPair(keyring.getBrdaSigningKey()));
-        break;
-      case BRDA_SIGNING_PUBLIC_KEY:
-        out.write(KeySerializer.serializePublicKey(keyring.getBrdaSigningKey().getPublicKey()));
-        break;
-      case BSA_API_KEY:
-        out.write(KeySerializer.serializeString(keyring.getBsaApiKey()));
-        break;
-      case ICANN_REPORTING_PASSWORD:
-        out.write(KeySerializer.serializeString(keyring.getIcannReportingPassword()));
-        break;
-      case SAFE_BROWSING_API_KEY:
-        out.write(KeySerializer.serializeString(keyring.getSafeBrowsingAPIKey()));
-        break;
-      case MARKSDB_DNL_LOGIN_AND_PASSWORD:
-        out.write(KeySerializer.serializeString(keyring.getMarksdbDnlLoginAndPassword()));
-        break;
-      case MARKSDB_LORDN_PASSWORD:
-        out.write(KeySerializer.serializeString(keyring.getMarksdbLordnPassword()));
-        break;
-      case MARKSDB_SMDRL_LOGIN_AND_PASSWORD:
-        out.write(KeySerializer.serializeString(keyring.getMarksdbSmdrlLoginAndPassword()));
-        break;
-      case RDE_RECEIVER_PUBLIC_KEY:
-        out.write(KeySerializer.serializePublicKey(keyring.getRdeReceiverKey()));
-        break;
-      case RDE_SIGNING_KEY_PAIR:
-        out.write(KeySerializer.serializeKeyPair(keyring.getRdeSigningKey()));
-        break;
-      case RDE_SIGNING_PUBLIC_KEY:
-        out.write(KeySerializer.serializePublicKey(keyring.getRdeSigningKey().getPublicKey()));
-        break;
-      case RDE_SSH_CLIENT_PRIVATE_KEY:
-        out.write(KeySerializer.serializeString(keyring.getRdeSshClientPrivateKey()));
-        break;
-      case RDE_SSH_CLIENT_PUBLIC_KEY:
-        out.write(KeySerializer.serializeString(keyring.getRdeSshClientPublicKey()));
-        break;
-      case RDE_STAGING_KEY_PAIR:
-        // Note that we're saving a key pair rather than just the private key because we can't
-        // serialize a private key on its own. See {@link KeySerializer}.
-        out.write(KeySerializer.serializeKeyPair(
-            new PGPKeyPair(
-                keyring.getRdeStagingEncryptionKey(), keyring.getRdeStagingDecryptionKey())));
-        break;
-      case RDE_STAGING_PUBLIC_KEY:
-        out.write(KeySerializer.serializePublicKey(keyring.getRdeStagingEncryptionKey()));
-        break;
+      case BRDA_RECEIVER_PUBLIC_KEY ->
+          out.write(KeySerializer.serializePublicKey(keyring.getBrdaReceiverKey()));
+      case BRDA_SIGNING_KEY_PAIR ->
+          out.write(KeySerializer.serializeKeyPair(keyring.getBrdaSigningKey()));
+      case BRDA_SIGNING_PUBLIC_KEY ->
+          out.write(KeySerializer.serializePublicKey(keyring.getBrdaSigningKey().getPublicKey()));
+      case BSA_API_KEY -> out.write(KeySerializer.serializeString(keyring.getBsaApiKey()));
+      case ICANN_REPORTING_PASSWORD ->
+          out.write(KeySerializer.serializeString(keyring.getIcannReportingPassword()));
+      case SAFE_BROWSING_API_KEY ->
+          out.write(KeySerializer.serializeString(keyring.getSafeBrowsingAPIKey()));
+      case MARKSDB_DNL_LOGIN_AND_PASSWORD ->
+          out.write(KeySerializer.serializeString(keyring.getMarksdbDnlLoginAndPassword()));
+      case MARKSDB_LORDN_PASSWORD ->
+          out.write(KeySerializer.serializeString(keyring.getMarksdbLordnPassword()));
+      case MARKSDB_SMDRL_LOGIN_AND_PASSWORD ->
+          out.write(KeySerializer.serializeString(keyring.getMarksdbSmdrlLoginAndPassword()));
+      case RDE_RECEIVER_PUBLIC_KEY ->
+          out.write(KeySerializer.serializePublicKey(keyring.getRdeReceiverKey()));
+      case RDE_SIGNING_KEY_PAIR ->
+          out.write(KeySerializer.serializeKeyPair(keyring.getRdeSigningKey()));
+      case RDE_SIGNING_PUBLIC_KEY ->
+          out.write(KeySerializer.serializePublicKey(keyring.getRdeSigningKey().getPublicKey()));
+      case RDE_SSH_CLIENT_PRIVATE_KEY ->
+          out.write(KeySerializer.serializeString(keyring.getRdeSshClientPrivateKey()));
+      case RDE_SSH_CLIENT_PUBLIC_KEY ->
+          out.write(KeySerializer.serializeString(keyring.getRdeSshClientPublicKey()));
+      case RDE_STAGING_KEY_PAIR ->
+          // Note that we're saving a key pair rather than just the private key because we can't
+          // serialize a private key on its own. See {@link KeySerializer}.
+          out.write(
+              KeySerializer.serializeKeyPair(
+                  new PGPKeyPair(
+                      keyring.getRdeStagingEncryptionKey(), keyring.getRdeStagingDecryptionKey())));
+      case RDE_STAGING_PUBLIC_KEY ->
+          out.write(KeySerializer.serializePublicKey(keyring.getRdeStagingEncryptionKey()));
     }
   }
 }

@@ -31,24 +31,27 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 /** Unit tests for {@link GhostrydeCommand}. */
 class GhostrydeCommandTest extends CommandTestCase<GhostrydeCommand> {
 
-  private static final byte[] SONG_BY_CHRISTINA_ROSSETTI = (""
-      + "When I am dead, my dearest,       \n"
-      + "  Sing no sad songs for me;       \n"
-      + "Plant thou no roses at my head,   \n"
-      + "  Nor shady cypress tree:         \n"
-      + "Be the green grass above me       \n"
-      + "  With showers and dewdrops wet;  \n"
-      + "And if thou wilt, remember,       \n"
-      + "  And if thou wilt, forget.       \n"
-      + "                                  \n"
-      + "I shall not see the shadows,      \n"
-      + "  I shall not feel the rain;      \n"
-      + "I shall not hear the nightingale  \n"
-      + "  Sing on, as if in pain:         \n"
-      + "And dreaming through the twilight \n"
-      + "  That doth not rise nor set,     \n"
-      + "Haply I may remember,             \n"
-      + "  And haply may forget.           \n").getBytes(UTF_8);
+  private static final byte[] SONG_BY_CHRISTINA_ROSSETTI =
+      """
+      When I am dead, my dearest,      \s
+        Sing no sad songs for me;      \s
+      Plant thou no roses at my head,  \s
+        Nor shady cypress tree:        \s
+      Be the green grass above me      \s
+        With showers and dewdrops wet; \s
+      And if thou wilt, remember,      \s
+        And if thou wilt, forget.      \s
+                                       \s
+      I shall not see the shadows,     \s
+        I shall not feel the rain;     \s
+      I shall not hear the nightingale \s
+        Sing on, as if in pain:        \s
+      And dreaming through the twilight\s
+        That doth not rise nor set,    \s
+      Haply I may remember,            \s
+        And haply may forget.          \s
+      """
+          .getBytes(UTF_8);
 
   @RegisterExtension
   final BouncyCastleProviderExtension bouncy = new BouncyCastleProviderExtension();

@@ -38,7 +38,7 @@ public final class DnsWriterProxy {
   /**
    * Returns the instance of {@link DnsWriter} by class name.
    *
-   * If the DnsWriter doesn't belong to this TLD, will return null.
+   * <p>If the DnsWriter doesn't belong to this TLD, will return null.
    */
   public DnsWriter getByClassNameForTld(String className, String tld) {
     if (!Tld.get(tld).getDnsWriters().contains(className)) {

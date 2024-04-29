@@ -103,7 +103,7 @@ public enum GracePeriodStatus implements EppEnum {
   /**
    * Maps from xmlName to {@link GracePeriodStatus}.
    *
-   * If no match is found for xmlName, null is returned.
+   * <p>If no match is found for xmlName, null is returned.
    */
   @Nullable
   public static GracePeriodStatus fromXmlName(String xmlName) {

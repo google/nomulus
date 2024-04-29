@@ -22,8 +22,8 @@ import org.junit.jupiter.api.BeforeEach;
 /**
  * Abstract class for commands that construct + send EPP commands.
  *
- * Has an EppToolVerifier member that needs to have all epp messages accounted for before the test
- * has ended.
+ * <p>Has an EppToolVerifier member that needs to have all epp messages accounted for before the
+ * test has ended.
  *
  * @param <C> the command type
  */

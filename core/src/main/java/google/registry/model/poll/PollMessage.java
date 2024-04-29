@@ -529,8 +529,7 @@ public abstract class PollMessage extends ImmutableObject
         // Set the identifier according to the TransferResponse type.
         if (instance.transferResponse instanceof ContactTransferResponse) {
           instance.contactId = ((ContactTransferResponse) instance.transferResponse).getContactId();
-        } else if (instance.transferResponse instanceof DomainTransferResponse) {
-          DomainTransferResponse response = (DomainTransferResponse) instance.transferResponse;
+        } else if (instance.transferResponse instanceof DomainTransferResponse response) {
           instance.domainName = response.getDomainName();
           instance.extendedRegistrationExpirationTime =
               response.getExtendedRegistrationExpirationTime();

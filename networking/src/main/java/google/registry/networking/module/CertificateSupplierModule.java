@@ -131,16 +131,12 @@ public final class CertificateSupplierModule {
       @PemFile Lazy<Supplier<PrivateKey>> pemPrivateKeySupplier,
       @P12File Lazy<Supplier<PrivateKey>> p12PrivateKeySupplier,
       @SelfSigned Lazy<Supplier<PrivateKey>> selfSignedPrivateKeySupplier) {
-    switch (mode) {
-      case PEM_FILE:
-        return pemPrivateKeySupplier.get();
-      case P12_FILE:
-        return p12PrivateKeySupplier.get();
-      case SELF_SIGNED:
-        return selfSignedPrivateKeySupplier.get();
-      default:
-        throw new RuntimeException("Certificate provider mode exhausted.");
-    }
+    return switch (mode) {
+      case PEM_FILE -> pemPrivateKeySupplier.get();
+      case P12_FILE -> p12PrivateKeySupplier.get();
+      case SELF_SIGNED -> selfSignedPrivateKeySupplier.get();
+      default -> throw new RuntimeException("Certificate provider mode exhausted.");
+    };
   }
 
   @Singleton
@@ -150,16 +146,12 @@ public final class CertificateSupplierModule {
       @PemFile Lazy<Supplier<ImmutableList<X509Certificate>>> pemCertificatesSupplier,
       @P12File Lazy<Supplier<ImmutableList<X509Certificate>>> p12CertificatesSupplier,
       @SelfSigned Lazy<Supplier<ImmutableList<X509Certificate>>> selfSignedCertificatesSupplier) {
-    switch (mode) {
-      case PEM_FILE:
-        return pemCertificatesSupplier.get();
-      case P12_FILE:
-        return p12CertificatesSupplier.get();
-      case SELF_SIGNED:
-        return selfSignedCertificatesSupplier.get();
-      default:
-        throw new RuntimeException("Certificate provider mode exhausted.");
-    }
+    return switch (mode) {
+      case PEM_FILE -> pemCertificatesSupplier.get();
+      case P12_FILE -> p12CertificatesSupplier.get();
+      case SELF_SIGNED -> selfSignedCertificatesSupplier.get();
+      default -> throw new RuntimeException("Certificate provider mode exhausted.");
+    };
   }
 
   @Singleton
