@@ -22,9 +22,9 @@ public interface TransportCredentials {
   /**
    * Check that these credentials are valid for the registrar and optionally check the password.
    *
-   * Called by {@link google.registry.flows.session.LoginFlow LoginFlow} to check the transport
-   * credentials against the stored registrar's credentials. If they do not match, throw an
-   * {@link AuthenticationErrorException}.
+   * <p>Called by {@link google.registry.flows.session.LoginFlow LoginFlow} to check the transport
+   * credentials against the stored registrar's credentials. If they do not match, throw an {@link
+   * AuthenticationErrorException}.
    */
   void validate(Registrar registrar, String password) throws AuthenticationErrorException;
 

@@ -78,10 +78,10 @@ import org.mockito.quality.Strictness;
 final class RegistryLockPostActionTest {
 
   private static final String EMAIL_MESSAGE_TEMPLATE =
-      "Please click the link below to perform the lock \\/ unlock action on domain example.tld. "
-          + "Note: this code will expire in one hour.\n\n"
-          + "https:\\/\\/registrarconsole.tld\\/registry-lock-verify\\?lockVerificationCode="
-          + "[0-9a-zA-Z_\\-]+&isLock=(true|false)";
+      """
+          Please click the link below to perform the lock \\/ unlock action on domain example.tld. Note: this code will expire in one hour.
+
+          https:\\/\\/registrarconsole.tld\\/registry-lock-verify\\?lockVerificationCode=[0-9a-zA-Z_\\-]+&isLock=(true|false)""";
 
   private final FakeClock clock = new FakeClock();
 

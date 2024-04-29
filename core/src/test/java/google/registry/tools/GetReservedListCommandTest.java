@@ -24,13 +24,15 @@ import org.junit.jupiter.api.Test;
 public class GetReservedListCommandTest extends CommandTestCase<GetReservedListCommand> {
 
   private static final String BASE_LIST_CONTENTS =
-      "atlanta,RESERVED_FOR_SPECIFIC_USE # comment\n"
-          + "boston,RESERVED_FOR_SPECIFIC_USE\n"
-          + "chicago,FULLY_BLOCKED # another comment\n"
-          + "dallas,RESERVED_FOR_SPECIFIC_USE # cool city\n"
-          + "elpaso,RESERVED_FOR_SPECIFIC_USE\n"
-          + "fairbanks,RESERVED_FOR_ANCHOR_TENANT # alaska\n"
-          + "greensboro,RESERVED_FOR_SPECIFIC_USE\n";
+      """
+          atlanta,RESERVED_FOR_SPECIFIC_USE # comment
+          boston,RESERVED_FOR_SPECIFIC_USE
+          chicago,FULLY_BLOCKED # another comment
+          dallas,RESERVED_FOR_SPECIFIC_USE # cool city
+          elpaso,RESERVED_FOR_SPECIFIC_USE
+          fairbanks,RESERVED_FOR_ANCHOR_TENANT # alaska
+          greensboro,RESERVED_FOR_SPECIFIC_USE
+          """;
 
   @BeforeEach
   void beforeEach() {

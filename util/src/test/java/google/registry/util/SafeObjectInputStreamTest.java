@@ -111,10 +111,9 @@ public class SafeObjectInputStreamTest {
       if (this == o) {
         return true;
       }
-      if (!(o instanceof NomulusEntity)) {
+      if (!(o instanceof NomulusEntity that)) {
         return false;
       }
-      NomulusEntity that = (NomulusEntity) o;
       return Objects.equal(value, that.value);
     }
 

@@ -123,9 +123,10 @@ class WebDriverScreenDiffer implements ScreenDiffer {
                   if (result.isConsideredSimilar()) {
                     logger.atInfo().log(
                         String.format(
-                            "Screenshot test for [%s] passed:\n"
-                                + "  - golden image location: %s\n"
-                                + "  - screenshot image location: %s",
+                            """
+                                Screenshot test for [%s] passed:
+                                  - golden image location: %s
+                                  - screenshot image location: %s""",
                             imageName, goldenImagePath, persistedScreenshot.toAbsolutePath()));
                     return "";
                   } else {
@@ -138,9 +139,10 @@ class WebDriverScreenDiffer implements ScreenDiffer {
                     }
 
                     return String.format(
-                        "Screenshot test for [%s] failed because %s:\n"
-                            + "  - golden image location: %s\n"
-                            + "  - screenshot image location: %s",
+                        """
+                            Screenshot test for [%s] failed because %s:
+                              - golden image location: %s
+                              - screenshot image location: %s""",
                         imageName,
                         diffReason,
                         result.isMissingGoldenImage() ? "missing" : goldenImagePath(imageName),
