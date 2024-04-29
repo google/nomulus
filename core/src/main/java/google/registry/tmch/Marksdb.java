@@ -77,13 +77,12 @@ public final class Marksdb {
             "No OpenPGP packets found in signature.\n%s",
             dumpHex(signature)));
       }
-      if (!(object instanceof PGPSignatureList)) {
+      if (!(object instanceof PGPSignatureList sigs)) {
         throw new SignatureException(String.format(
             "Expected PGPSignatureList packet but got %s\n%s",
             object.getClass().getSimpleName(),
             dumpHex(signature)));
       }
-      PGPSignatureList sigs = (PGPSignatureList) object;
       if (sigs.isEmpty()) {
         throw new SignatureException(String.format(
             "PGPSignatureList doesn't have a PGPSignature.\n%s",

@@ -56,18 +56,14 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 class SendExpiringCertificateNotificationEmailActionTest {
 
   private static final String EXPIRATION_WARNING_EMAIL_BODY_TEXT =
-      " Dear %1$s,\n"
-          + '\n'
-          + "We would like to inform you that your %2$s certificate will expire at %3$s."
-          + '\n'
-          + " Kind update your account using the following steps: "
-          + '\n'
-          + "  1. Navigate to support and login using your %4$s@registry.example credentials.\n"
-          + "  2. Click Settings -> Privacy on the top left corner.\n"
-          + "  3. Click Edit and enter certificate string."
-          + "  3. Click Save"
-          + "Regards,"
-          + "Example Registry";
+      """
+           Dear %1$s,
+
+          We would like to inform you that your %2$s certificate will expire at %3$s.
+           Kind update your account using the following steps:
+            1. Navigate to support and login using your %4$s@registry.example credentials.
+            2. Click Settings -> Privacy on the top left corner.
+            3. Click Edit and enter certificate string.  3. Click SaveRegards,Example Registry""";
 
   private static final String EXPIRATION_WARNING_EMAIL_SUBJECT_TEXT = "Expiration Warning Email";
 

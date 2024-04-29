@@ -84,10 +84,9 @@ class BsaUnblockableDomain {
     if (this == o) {
       return true;
     }
-    if (!(o instanceof BsaUnblockableDomain)) {
+    if (!(o instanceof BsaUnblockableDomain that)) {
       return false;
     }
-    BsaUnblockableDomain that = (BsaUnblockableDomain) o;
     return Objects.equal(label, that.label)
         && Objects.equal(tld, that.tld)
         && reason == that.reason
@@ -142,10 +141,9 @@ class BsaUnblockableDomain {
       if (this == o) {
         return true;
       }
-      if (!(o instanceof BsaUnblockableDomainId)) {
+      if (!(o instanceof BsaUnblockableDomainId that)) {
         return false;
       }
-      BsaUnblockableDomainId that = (BsaUnblockableDomainId) o;
       return Objects.equal(label, that.label) && Objects.equal(tld, that.tld);
     }
 

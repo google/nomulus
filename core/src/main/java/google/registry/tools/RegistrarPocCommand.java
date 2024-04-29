@@ -20,7 +20,6 @@ import static com.google.common.base.Strings.isNullOrEmpty;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static google.registry.util.CollectionUtils.nullToEmpty;
 import static google.registry.util.PreconditionsUtils.checkArgumentPresent;
-import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
@@ -194,16 +193,14 @@ final class RegistrarPocCommand extends MutatingCommand {
     }
     RegistrarPoc oldContact;
     switch (mode) {
-      case LIST:
-        listContacts(contacts);
-        break;
-      case CREATE:
+      case LIST -> listContacts(contacts);
+      case CREATE -> {
         stageEntityChange(null, createContact(registrar));
         if (visibleInDomainWhoisAsAbuse != null && visibleInDomainWhoisAsAbuse) {
           unsetOtherWhoisAbuseFlags(contacts, null);
         }
-        break;
-      case UPDATE:
+      }
+      case UPDATE -> {
         oldContact =
             checkNotNull(
                 contactsMap.get(checkNotNull(email, "--email is required when --mode=UPDATE")),
@@ -219,8 +216,8 @@ final class RegistrarPocCommand extends MutatingCommand {
         if (visibleInDomainWhoisAsAbuse != null && visibleInDomainWhoisAsAbuse) {
           unsetOtherWhoisAbuseFlags(contacts, oldContact.getEmailAddress());
         }
-        break;
-      case DELETE:
+      }
+      case DELETE -> {
         oldContact =
             checkNotNull(
                 contactsMap.get(checkNotNull(email, "--email is required when --mode=DELETE")),
@@ -230,9 +227,8 @@ final class RegistrarPocCommand extends MutatingCommand {
             !oldContact.getVisibleInDomainWhoisAsAbuse(),
             "Cannot delete the domain WHOIS abuse contact; set the flag on another contact first");
         stageEntityChange(oldContact, null);
-        break;
-      default:
-        throw new AssertionError();
+      }
+      default -> throw new AssertionError();
     }
     if (MODES_REQUIRING_CONTACT_SYNC.contains(mode)) {
       stageEntityChange(registrar, registrar.asBuilder().setContactsRequireSyncing(true).build());
@@ -244,7 +240,7 @@ final class RegistrarPocCommand extends MutatingCommand {
     for (RegistrarPoc c : contacts) {
       result.add(c.toStringMultilinePlainText());
     }
-    Files.write(output, Joiner.on('\n').join(result).getBytes(UTF_8));
+    Files.writeString(output, Joiner.on('\n').join(result));
   }
 
   private RegistrarPoc createContact(Registrar registrar) {

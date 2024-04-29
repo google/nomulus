@@ -20,6 +20,7 @@ import static google.registry.bsa.DownloadStage.DONE;
 import static google.registry.bsa.DownloadStage.DOWNLOAD_BLOCK_LISTS;
 import static google.registry.bsa.DownloadStage.MAKE_ORDER_AND_LABEL_DIFF;
 import static google.registry.bsa.DownloadStage.NOP;
+import static google.registry.bsa.persistence.DownloadScheduler.fetchTwoMostRecentDownloads;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static org.joda.time.Duration.standardDays;
 import static org.joda.time.Duration.standardMinutes;
@@ -165,26 +166,26 @@ class DownloadSchedulerTest {
 
   @Test
   void loadRecentProcessedJobs_noneExists() {
-    assertThat(tm().transact(() -> scheduler.fetchTwoMostRecentDownloads())).isEmpty();
+    assertThat(tm().transact(() -> fetchTwoMostRecentDownloads())).isEmpty();
   }
 
   @Test
   void loadRecentProcessedJobs_nopJobsOnly() {
     insertOneJobAndAdvanceClock(DownloadStage.NOP);
     insertOneJobAndAdvanceClock(DownloadStage.CHECKSUMS_DO_NOT_MATCH);
-    assertThat(tm().transact(() -> scheduler.fetchTwoMostRecentDownloads())).isEmpty();
+    assertThat(tm().transact(() -> fetchTwoMostRecentDownloads())).isEmpty();
   }
 
   @Test
   void loadRecentProcessedJobs_oneInProgressJob() {
     BsaDownload job = insertOneJobAndAdvanceClock(MAKE_ORDER_AND_LABEL_DIFF);
-    assertThat(tm().transact(() -> scheduler.fetchTwoMostRecentDownloads())).containsExactly(job);
+    assertThat(tm().transact(() -> fetchTwoMostRecentDownloads())).containsExactly(job);
   }
 
   @Test
   void loadRecentProcessedJobs_oneDoneJob() {
     BsaDownload job = insertOneJobAndAdvanceClock(DONE);
-    assertThat(tm().transact(() -> scheduler.fetchTwoMostRecentDownloads())).containsExactly(job);
+    assertThat(tm().transact(() -> fetchTwoMostRecentDownloads())).containsExactly(job);
   }
 
   @Test
@@ -195,7 +196,7 @@ class DownloadSchedulerTest {
     insertOneJobAndAdvanceClock(DownloadStage.NOP);
     insertOneJobAndAdvanceClock(DownloadStage.CHECKSUMS_DO_NOT_MATCH);
     BsaDownload inprogress = insertOneJobAndAdvanceClock(DownloadStage.APPLY_ORDER_AND_LABEL_DIFF);
-    assertThat(tm().transact(() -> scheduler.fetchTwoMostRecentDownloads()))
+    assertThat(tm().transact(() -> fetchTwoMostRecentDownloads()))
         .containsExactly(inprogress, completed)
         .inOrder();
   }

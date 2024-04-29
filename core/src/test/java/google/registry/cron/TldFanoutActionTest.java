@@ -223,10 +223,12 @@ class TldFanoutActionTest {
     assertThat(taskList).hasSize(3);
     String expectedResponse =
         String.format(
-            "OK: Launched the following 3 tasks in queue the-queue\n"
-                + "- Task: '%s', tld: 'com', endpoint: 'https://backend.example.com/the/servlet'\n"
-                + "- Task: '%s', tld: 'net', endpoint: 'https://backend.example.com/the/servlet'\n"
-                + "- Task: '%s', tld: 'org', endpoint: 'https://backend.example.com/the/servlet'\n",
+            """
+                OK: Launched the following 3 tasks in queue the-queue
+                - Task: '%s', tld: 'com', endpoint: 'https://backend.example.com/the/servlet'
+                - Task: '%s', tld: 'net', endpoint: 'https://backend.example.com/the/servlet'
+                - Task: '%s', tld: 'org', endpoint: 'https://backend.example.com/the/servlet'
+                """,
             taskList.get(0).getName(), taskList.get(1).getName(), taskList.get(2).getName());
     assertThat(response.getPayload()).isEqualTo(expectedResponse);
   }
@@ -240,8 +242,10 @@ class TldFanoutActionTest {
     assertThat(taskList).hasSize(1);
     String expectedResponse =
         String.format(
-            "OK: Launched the following 1 tasks in queue the-queue\n"
-                + "- Task: '%s', tld: '', endpoint: 'https://backend.example.com/the/servlet'\n",
+            """
+                OK: Launched the following 1 tasks in queue the-queue
+                - Task: '%s', tld: '', endpoint: 'https://backend.example.com/the/servlet'
+                """,
             taskList.get(0).getName());
     assertThat(response.getPayload()).isEqualTo(expectedResponse);
   }

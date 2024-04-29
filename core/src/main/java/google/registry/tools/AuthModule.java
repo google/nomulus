@@ -150,7 +150,7 @@ public class AuthModule {
       @Nullable @Config("credentialFilePath") String credentialFilePath) {
     try {
       if (credentialFilePath != null) {
-        return new String(Files.readAllBytes(Paths.get(credentialFilePath)), UTF_8);
+        return Files.readString(Paths.get(credentialFilePath));
       } else {
         return new Gson()
             .toJson(

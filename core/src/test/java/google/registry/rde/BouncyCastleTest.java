@@ -96,25 +96,27 @@ import org.junit.jupiter.api.extension.RegisterExtension;
  */
 public class BouncyCastleTest {
 
-  private static final String FALL_OF_HYPERION_A_DREAM = ""
-      + "Fanatics have their dreams, wherewith they weave\n"
-      + "A paradise for a sect; the savage too\n"
-      + "From forth the loftiest fashion of his sleep\n"
-      + "Guesses at Heaven; pity these have not\n"
-      + "Trac'd upon vellum or wild Indian leaf\n"
-      + "The shadows of melodious utterance.\n"
-      + "But bare of laurel they live, dream, and die;\n"
-      + "For Poesy alone can tell her dreams,\n"
-      + "With the fine spell of words alone can save\n"
-      + "Imagination from the sable charm\n"
-      + "And dumb enchantment. Who alive can say,\n"
-      + "'Thou art no Poet may'st not tell thy dreams?'\n"
-      + "Since every man whose soul is not a clod\n"
-      + "Hath visions, and would speak, if he had loved\n"
-      + "And been well nurtured in his mother tongue.\n"
-      + "Whether the dream now purpos'd to rehearse\n"
-      + "Be poet's or fanatic's will be known\n"
-      + "When this warm scribe my hand is in the grave.\n";
+  private static final String FALL_OF_HYPERION_A_DREAM =
+      """
+      Fanatics have their dreams, wherewith they weave
+      A paradise for a sect; the savage too
+      From forth the loftiest fashion of his sleep
+      Guesses at Heaven; pity these have not
+      Trac'd upon vellum or wild Indian leaf
+      The shadows of melodious utterance.
+      But bare of laurel they live, dream, and die;
+      For Poesy alone can tell her dreams,
+      With the fine spell of words alone can save
+      Imagination from the sable charm
+      And dumb enchantment. Who alive can say,
+      'Thou art no Poet may'st not tell thy dreams?'
+      Since every man whose soul is not a clod
+      Hath visions, and would speak, if he had loved
+      And been well nurtured in his mother tongue.
+      Whether the dream now purpos'd to rehearse
+      Be poet's or fanatic's will be known
+      When this warm scribe my hand is in the grave.
+      """;
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 

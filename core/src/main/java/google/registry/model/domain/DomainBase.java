@@ -659,22 +659,17 @@ public class DomainBase extends EppResource
           contact.getType());
       contactsDiscovered.add(contact.getType());
       switch (contact.getType()) {
-        case BILLING:
-          billingContact = contact.getContactKey();
-          break;
-        case TECH:
-          techContact = contact.getContactKey();
-          break;
-        case ADMIN:
-          adminContact = contact.getContactKey();
-          break;
-        case REGISTRANT:
+        case BILLING -> billingContact = contact.getContactKey();
+        case TECH -> techContact = contact.getContactKey();
+        case ADMIN -> adminContact = contact.getContactKey();
+        case REGISTRANT -> {
           if (includeRegistrant) {
             registrantContact = contact.getContactKey();
           }
-          break;
-        default:
-          throw new IllegalArgumentException("Unknown contact resource type: " + contact.getType());
+        }
+        default ->
+            throw new IllegalArgumentException(
+                "Unknown contact resource type: " + contact.getType());
       }
     }
   }

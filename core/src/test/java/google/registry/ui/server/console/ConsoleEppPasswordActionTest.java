@@ -40,6 +40,7 @@ import google.registry.request.Action;
 import google.registry.request.auth.AuthResult;
 import google.registry.request.auth.AuthenticatedRegistrarAccessor;
 import google.registry.request.auth.UserAuthInfo;
+import google.registry.security.XsrfTokenManager;
 import google.registry.testing.FakeConsoleApiParams;
 import google.registry.testing.FakeResponse;
 import google.registry.tools.GsonUtils;
@@ -154,7 +155,7 @@ class ConsoleEppPasswordActionTest {
   }
 
   @Test
-  void testSuccess_passwordUpdated() throws AddressException {
+  void testSuccess_passwordUpdated() {
     ConsoleEppPasswordAction action = createAction();
     setParams(
         ImmutableMap.of(
@@ -199,8 +200,7 @@ class ConsoleEppPasswordActionTest {
             ImmutableSetMultimap.of("registrarId", OWNER));
     Cookie cookie =
         new Cookie(
-            consoleApiParams.xsrfTokenManager().X_CSRF_TOKEN,
-            consoleApiParams.xsrfTokenManager().generateToken(""));
+            XsrfTokenManager.X_CSRF_TOKEN, consoleApiParams.xsrfTokenManager().generateToken(""));
     when(consoleApiParams.request().getMethod()).thenReturn(Action.Method.POST.toString());
     when(consoleApiParams.request().getCookies()).thenReturn(new Cookie[] {cookie});
 

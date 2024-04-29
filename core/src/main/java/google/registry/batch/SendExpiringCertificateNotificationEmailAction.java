@@ -206,7 +206,7 @@ public class SendExpiringCertificateNotificationEmailAction implements Runnable 
               () -> {
                 Registrar.Builder newRegistrar = tm().loadByEntity(registrar).asBuilder();
                 switch (certificateType) {
-                  case PRIMARY:
+                  case PRIMARY -> {
                     newRegistrar.setLastExpiringCertNotificationSentDate(now);
                     tm().put(newRegistrar.build());
                     logger.atInfo().log(
@@ -215,8 +215,8 @@ public class SendExpiringCertificateNotificationEmailAction implements Runnable 
                         DATE_FORMATTER.print(now),
                         certificateType.getDisplayName(),
                         registrar.getRegistrarName());
-                    break;
-                  case FAILOVER:
+                  }
+                  case FAILOVER -> {
                     newRegistrar.setLastExpiringFailoverCertNotificationSentDate(now);
                     tm().put(newRegistrar.build());
                     logger.atInfo().log(
@@ -225,13 +225,13 @@ public class SendExpiringCertificateNotificationEmailAction implements Runnable 
                         DATE_FORMATTER.print(now),
                         certificateType.getDisplayName(),
                         registrar.getRegistrarName());
-                    break;
-                  default:
-                    throw new IllegalArgumentException(
-                        String.format(
-                            "Unsupported certificate type: %s being passed in when updating "
-                                + "the last notification sent date to registrar %s.",
-                            certificateType.toString(), registrar.getRegistrarName()));
+                  }
+                  default ->
+                      throw new IllegalArgumentException(
+                          String.format(
+                              "Unsupported certificate type: %s being passed in when updating "
+                                  + "the last notification sent date to registrar %s.",
+                              certificateType.toString(), registrar.getRegistrarName()));
                 }
               });
     } catch (Exception e) {

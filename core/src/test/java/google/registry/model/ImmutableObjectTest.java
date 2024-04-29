@@ -65,7 +65,12 @@ public class ImmutableObjectTest {
   void testToString_simpleClass() {
     SimpleObject object = new SimpleObject("foo", null);
     assertThat(object.toString())
-        .isEqualTo("" + "SimpleObject: {\n" + "    a=foo\n" + "    b=null\n" + "}");
+        .isEqualTo(
+            """
+            SimpleObject: {
+                a=foo
+                b=null
+            }""");
   }
 
   @Test

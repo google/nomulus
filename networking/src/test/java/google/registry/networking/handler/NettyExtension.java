@@ -75,7 +75,7 @@ public final class NettyExtension implements AfterEachCallback {
     checkState(echoHandler == null, "Can't call setUpServer twice");
     echoHandler = new EchoHandler();
     ChannelInitializer<LocalChannel> serverInitializer =
-        new ChannelInitializer<LocalChannel>() {
+        new ChannelInitializer<>() {
           @Override
           protected void initChannel(LocalChannel ch) {
             // Add the given handler
@@ -99,7 +99,7 @@ public final class NettyExtension implements AfterEachCallback {
     checkState(dumpHandler == null, "Can't call setUpClient twice");
     dumpHandler = new DumpHandler();
     ChannelInitializer<LocalChannel> clientInitializer =
-        new ChannelInitializer<LocalChannel>() {
+        new ChannelInitializer<>() {
           @Override
           protected void initChannel(LocalChannel ch) {
             // Add the given handler

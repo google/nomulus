@@ -52,18 +52,13 @@ import org.joda.time.DateTime;
  *
  * <p>This implementation is geared towards RDAP replies, and hence has RDAP-specific quirks.
  * Specifically:
- *
  * - Fields with empty arrays are not shown at all
- *
  * - VCards are a built-in special case (Not implemented yet)
- *
  * - DateTime conversion is specifically supported as if it were a primitive
- *
  * - Arrays are considered to be SETS rather than lists, meaning repeated values are removed and the
  *   order isn't guaranteed
  *
  * Usage:
- *
  * {@link JsonableElement}
  * -----------------------
  *
@@ -324,8 +319,7 @@ abstract class AbstractJsonableObject implements Jsonable {
 
   /** Converts an Object to a JsonElement. */
   private static JsonElement toJsonElement(String name, Member member, Object object) {
-    if (object instanceof Jsonable) {
-      Jsonable jsonable = (Jsonable) object;
+    if (object instanceof Jsonable jsonable) {
       verifyAllowedJsonKeyName(name, member, jsonable.getClass());
       return jsonable.toJson();
     }
@@ -414,8 +408,7 @@ abstract class AbstractJsonableObject implements Jsonable {
           object, "Member '%s' is null. If you want an optional member - use Optional", member);
 
       // We ignore any Optional that are empty, as if they didn't exist at all
-      if (object instanceof Optional) {
-        Optional<?> optional = (Optional<?>) object;
+      if (object instanceof Optional<?> optional) {
         if (optional.isEmpty()) {
           return;
         }

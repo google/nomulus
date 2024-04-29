@@ -254,8 +254,10 @@ public class RelockDomainActionTest {
         EmailMessage.newBuilder()
             .setSubject("Successful re-lock of domain example.tld")
             .setBody(
-                "The domain example.tld was successfully re-locked.\n\nPlease "
-                    + "contact support at support@example.com if you have any questions.")
+                """
+                    The domain example.tld was successfully re-locked.
+
+                    Please contact support at support@example.com if you have any questions.""")
             .setRecipients(
                 ImmutableSet.of(new InternetAddress("Marla.Singer.RegistryLock@crr.com")))
             .build();
@@ -265,8 +267,10 @@ public class RelockDomainActionTest {
   private void assertNonTransientFailureEmail(String exceptionMessage) throws Exception {
     String expectedBody =
         String.format(
-            "There was an error when automatically re-locking example.tld. Error message: %s\n\n"
-                + "Please contact support at support@example.com if you have any questions.",
+            """
+                There was an error when automatically re-locking example.tld. Error message: %s
+
+                Please contact support at support@example.com if you have any questions.""",
             exceptionMessage);
     assertFailureEmailWithBody(
         expectedBody, ImmutableSet.of(new InternetAddress("Marla.Singer.RegistryLock@crr.com")));

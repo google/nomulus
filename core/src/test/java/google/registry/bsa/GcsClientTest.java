@@ -89,7 +89,7 @@ class GcsClientTest {
   void readWriteLabelDiffs_success() throws Exception {
     ImmutableList<BlockLabel> labels =
         ImmutableList.of(
-            BlockLabel.create("1", LabelType.CREATE.CREATE, ImmutableSet.of()),
+            BlockLabel.create("1", LabelType.CREATE, ImmutableSet.of()),
             BlockLabel.create("2", LabelType.NEW_ORDER_ASSOCIATION, ImmutableSet.of("JA")),
             BlockLabel.create("3", LabelType.DELETE, ImmutableSet.of("JA", "EXTENDED_LATIN")));
     gcsClient.writeLabelDiffs("job", labels.stream());
