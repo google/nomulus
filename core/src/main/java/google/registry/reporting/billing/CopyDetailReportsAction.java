@@ -97,8 +97,7 @@ public final class CopyDetailReportsAction implements Runnable {
       response.setPayload(String.format("Failure, encountered %s", e.getMessage()));
       return;
     }
-    ImmutableMap.Builder<String, Throwable> copyErrorsBuilder =
-        new ImmutableMap.Builder<String, Throwable>();
+    ImmutableMap.Builder<String, Throwable> copyErrorsBuilder = new ImmutableMap.Builder<>();
     for (String detailReportName : detailReportObjectNames) {
       // The standard report format is "invoice_details_yyyy-MM_registrarId_tld.csv
       // TODO(larryruili): Determine a safer way of enforcing this.

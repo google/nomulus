@@ -14,8 +14,6 @@
 
 package google.registry.monitoring.blackbox.message;
 
-import google.registry.monitoring.blackbox.exception.UndeterminedStateException;
-
 /**
  * {@link InboundMessageType} and {@link OutboundMessageType} type for the purpose of containing
  * String messages to be passed down channel
@@ -34,7 +32,7 @@ public class TestMessage implements OutboundMessageType, InboundMessageType {
   }
 
   @Override
-  public OutboundMessageType modifyMessage(String... args) throws UndeterminedStateException {
+  public OutboundMessageType modifyMessage(String... args) {
     message = args[0];
     return this;
   }

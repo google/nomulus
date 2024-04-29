@@ -53,10 +53,12 @@ import org.junit.jupiter.api.Test;
 class EppServiceHandlerTest {
 
   private static final String HELLO =
-      "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\n"
-          + "<epp xmlns=\"urn:ietf:params:xml:ns:epp-1.0\">\n"
-          + "  <hello/>\n"
-          + "</epp>\n";
+      """
+          <?xml version="1.0" encoding="UTF-8" standalone="no"?>
+          <epp xmlns="urn:ietf:params:xml:ns:epp-1.0">
+            <hello/>
+          </epp>
+          """;
 
   private static final String RELAY_HOST = "registry.example.tld";
   private static final String RELAY_PATH = "/epp";

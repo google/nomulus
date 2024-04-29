@@ -808,17 +808,12 @@ public class RdapJsonFormatter {
 
   /** Converts a domain registry contact type into a role as defined by RFC 9083. */
   private static RdapEntity.Role convertContactTypeToRdapRole(DesignatedContact.Type contactType) {
-    switch (contactType) {
-      case REGISTRANT:
-        return RdapEntity.Role.REGISTRANT;
-      case TECH:
-        return RdapEntity.Role.TECH;
-      case BILLING:
-        return RdapEntity.Role.BILLING;
-      case ADMIN:
-        return RdapEntity.Role.ADMIN;
-    }
-    throw new AssertionError();
+    return switch (contactType) {
+      case REGISTRANT -> RdapEntity.Role.REGISTRANT;
+      case TECH -> RdapEntity.Role.TECH;
+      case BILLING -> RdapEntity.Role.BILLING;
+      case ADMIN -> RdapEntity.Role.ADMIN;
+    };
   }
 
   /**

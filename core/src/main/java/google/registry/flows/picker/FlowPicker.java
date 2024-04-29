@@ -124,22 +124,21 @@ public class FlowPicker {
     }};
 
   /** Poll flows have an {@link InnerCommand} of type {@link Poll}. */
-  private static final FlowProvider POLL_FLOW_PROVIDER = new FlowProvider() {
-    @Override
-    Class<? extends Flow> get(
-        EppInput eppInput, InnerCommand innerCommand, ResourceCommand resourceCommand) {
-      if (!(innerCommand instanceof Poll)) {
-        return null;
-      }
-      switch (((Poll) innerCommand).getPollOp()) {
-        case ACK:
-          return PollAckFlow.class;
-        case REQUEST:
-          return PollRequestFlow.class;
-        default:
-          return UnimplementedFlow.class;
-      }
-    }};
+  private static final FlowProvider POLL_FLOW_PROVIDER =
+      new FlowProvider() {
+        @Override
+        Class<? extends Flow> get(
+            EppInput eppInput, InnerCommand innerCommand, ResourceCommand resourceCommand) {
+          if (!(innerCommand instanceof Poll)) {
+            return null;
+          }
+          return switch (((Poll) innerCommand).getPollOp()) {
+            case ACK -> PollAckFlow.class;
+            case REQUEST -> PollRequestFlow.class;
+            default -> UnimplementedFlow.class;
+          };
+        }
+      };
 
   /**
    * The domain restore command is technically a domain {@literal <update>}, but logically a totally

@@ -138,14 +138,14 @@ public final class DomainPricingLogic {
       isRenewCostPremiumPrice = domainPrices.isPremium();
     } else {
       switch (billingRecurrence.getRenewalPriceBehavior()) {
-        case DEFAULT:
+        case DEFAULT -> {
           renewCost =
               getDomainRenewCostWithDiscount(tld, domainPrices, dateTime, years, allocationToken);
           isRenewCostPremiumPrice = domainPrices.isPremium();
-          break;
+        }
           // if the renewal price behavior is specified, then the renewal price should be the same
           // as the creation price, which is stored in the billing event as the renewal price
-        case SPECIFIED:
+        case SPECIFIED -> {
           checkArgumentPresent(
               billingRecurrence.getRenewalPrice(),
               "Unexpected behavior: renewal price cannot be null when renewal behavior is"
@@ -153,20 +153,20 @@ public final class DomainPricingLogic {
           // Don't apply allocation token to renewal price when SPECIFIED
           renewCost = billingRecurrence.getRenewalPrice().get().multipliedBy(years);
           isRenewCostPremiumPrice = false;
-          break;
+        }
           // if the renewal price behavior is nonpremium, it means that the domain should be renewed
           // at standard price of domains at the time, even if the domain is premium
-        case NONPREMIUM:
+        case NONPREMIUM -> {
           renewCost =
               getDomainCostWithDiscount(
                   false, years, allocationToken, tld.getStandardRenewCost(dateTime));
           isRenewCostPremiumPrice = false;
-          break;
-        default:
-          throw new IllegalArgumentException(
-              String.format(
-                  "Unknown RenewalPriceBehavior enum value: %s",
-                  billingRecurrence.getRenewalPriceBehavior()));
+        }
+        default ->
+            throw new IllegalArgumentException(
+                String.format(
+                    "Unknown RenewalPriceBehavior enum value: %s",
+                    billingRecurrence.getRenewalPriceBehavior()));
       }
     }
     return customLogic.customizeRenewPrice(

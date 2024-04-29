@@ -15,7 +15,6 @@
 package google.registry.tools;
 
 import static com.google.common.truth.Truth.assertThat;
-import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.when;
 
@@ -180,7 +179,7 @@ class AuthModuleTest {
   @MockitoSettings(strictness = Strictness.LENIENT)
   void test_provideExternalCredentialJson() throws Exception {
     File credentialFile = folder.resolve("credential.json").toFile();
-    Files.write(credentialFile.toPath(), "{some_field: some_value}".getBytes(UTF_8));
+    Files.writeString(credentialFile.toPath(), "{some_field: some_value}");
     String credentialJson =
         AuthModule.provideLocalCredentialJson(
             AuthModuleTest::getSecrets, this::getCredential, credentialFile.getCanonicalPath());

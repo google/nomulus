@@ -254,9 +254,9 @@ class EppLoginTlsTest extends EppTestCase {
                 "CODE",
                 "2200",
                 "MSG",
-                "Registrar certificate contains the following security violations:\n"
-                    + "Certificate is expired.\n"
-                    + "Certificate validity period is too long; it must be less than or equal to"
-                    + " 398 days."));
+                """
+                    Registrar certificate contains the following security violations:
+                    Certificate is expired.
+                    Certificate validity period is too long; it must be less than or equal to 398 days."""));
   }
 }

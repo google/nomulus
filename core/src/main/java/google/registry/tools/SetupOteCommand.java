@@ -114,8 +114,10 @@ final class SetupOteCommand extends ConfirmingCommand {
         && RegistryEnvironment.get() != RegistryEnvironment.UNITTEST) {
       builder.append(
           String.format(
-              "\n\nWARNING: Running against %s environment. Are "
-                  + "you sure you didn\'t mean to run this against sandbox (e.g. \"-e SANDBOX\")?",
+              """
+
+
+                  WARNING: Running against %s environment. Are you sure you didn\'t mean to run this against sandbox (e.g. "-e SANDBOX")?""",
               RegistryEnvironment.get()));
     }
 

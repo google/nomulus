@@ -48,10 +48,9 @@ class IcannReportingStagerTest {
 
   private IcannReportingStager createStager() {
     IcannReportingStager action = new IcannReportingStager();
-    ActivityReportingQueryBuilder activityBuilder =
+    action.activityQueryBuilder =
         new ActivityReportingQueryBuilder(
             "test-project", "icann_reporting", new BasicDnsCountQueryCoordinator(null));
-    action.activityQueryBuilder = activityBuilder;
     action.transactionsQueryBuilder =
         new TransactionsReportingQueryBuilder("test-project", "icann_reporting");
     action.reportingBucket = "test-bucket";
@@ -156,7 +155,7 @@ class IcannReportingStagerTest {
   }
 
   private ListenableFuture<DestinationTable> fakeFuture() {
-    return new ListenableFuture<DestinationTable>() {
+    return new ListenableFuture<>() {
       @Override
       public void addListener(Runnable runnable, Executor executor) {
         // No-op

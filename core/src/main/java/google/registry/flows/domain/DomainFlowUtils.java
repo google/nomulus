@@ -16,12 +16,10 @@ package google.registry.flows.domain;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
-import static com.google.common.base.Predicates.equalTo;
 import static com.google.common.base.Strings.emptyToNull;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static com.google.common.collect.ImmutableSetMultimap.toImmutableSetMultimap;
-import static com.google.common.collect.Iterables.any;
 import static com.google.common.collect.Sets.difference;
 import static com.google.common.collect.Sets.intersection;
 import static com.google.common.collect.Sets.union;
@@ -95,6 +93,7 @@ import google.registry.model.domain.DomainCommand.Update;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.ForeignKeyedDesignatedContact;
 import google.registry.model.domain.Period;
+import google.registry.model.domain.Period.Unit;
 import google.registry.model.domain.fee.BaseFee;
 import google.registry.model.domain.fee.BaseFee.FeeType;
 import google.registry.model.domain.fee.Credit;
@@ -121,7 +120,7 @@ import google.registry.model.domain.token.AllocationToken.RegistrationBehavior;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.eppoutput.EppResponse.ResponseExtension;
 import google.registry.model.host.Host;
-import google.registry.model.poll.PollMessage;
+import google.registry.model.poll.PollMessage.Autorenew;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.Registrar.State;
 import google.registry.model.reporting.DomainTransactionRecord;
@@ -206,7 +205,7 @@ public class DomainFlowUtils {
     if (parts.size() <= 1) {
       throw new BadDomainNamePartsCountException();
     }
-    if (any(parts, equalTo(""))) {
+    if (parts.stream().anyMatch(""::equals)) {
       throw new EmptyDomainNamePartException();
     }
     validateFirstLabel(parts.get(0));
@@ -329,7 +328,7 @@ public class DomainFlowUtils {
   /** Check if the registrar running the flow has access to the TLD in question. */
   public static void checkAllowedAccessToTld(String registrarId, String tld) throws EppException {
     if (!Registrar.loadByRegistrarIdCached(registrarId).get().getAllowedTlds().contains(tld)) {
-      throw new DomainFlowUtils.NotAuthorizedForTldException(tld);
+      throw new NotAuthorizedForTldException(tld);
     }
   }
 
@@ -344,7 +343,7 @@ public class DomainFlowUtils {
         .get()
         .getBillingAccountMap()
         .containsKey(tld.getCurrency())) {
-      throw new DomainFlowUtils.MissingBillingAccountMapException(tld.getCurrency());
+      throw new MissingBillingAccountMapException(tld.getCurrency());
     }
   }
 
@@ -405,7 +404,7 @@ public class DomainFlowUtils {
 
   /** We only allow specifying years in a period. */
   static Period verifyUnitIsYears(Period period) throws EppException {
-    if (!checkNotNull(period).getUnit().equals(Period.Unit.YEARS)) {
+    if (!checkNotNull(period).getUnit().equals(Unit.YEARS)) {
       throw new BadPeriodUnitException();
     }
     return period;
@@ -534,7 +533,7 @@ public class DomainFlowUtils {
 
   public static boolean isReserved(InternetDomainName domainName, boolean isSunrise) {
     ImmutableSet<ReservationType> types = getReservationTypes(domainName);
-    return !Sets.intersection(types, RESERVED_TYPES).isEmpty()
+    return !intersection(types, RESERVED_TYPES).isEmpty()
         || !(isSunrise || intersection(TYPES_ALLOWED_FOR_CREATE_ONLY_IN_SUNRISE, types).isEmpty());
   }
 
@@ -601,8 +600,8 @@ public class DomainFlowUtils {
    * Fills in a builder with the data needed for an autorenew poll message for this domain. This
    * does not copy over the id of the current autorenew poll message.
    */
-  public static PollMessage.Autorenew.Builder newAutorenewPollMessage(Domain domain) {
-    return new PollMessage.Autorenew.Builder()
+  public static Autorenew.Builder newAutorenewPollMessage(Domain domain) {
+    return new Autorenew.Builder()
         .setTargetId(domain.getDomainName())
         .setRegistrarId(domain.getCurrentSponsorRegistrarId())
         .setEventTime(domain.getRegistrationExpirationTime())
@@ -623,7 +622,7 @@ public class DomainFlowUtils {
       BillingRecurrence existingBillingRecurrence,
       DateTime newEndTime,
       @Nullable HistoryEntryId historyId) {
-    Optional<PollMessage.Autorenew> autorenewPollMessage =
+    Optional<Autorenew> autorenewPollMessage =
         tm().loadByKeyIfPresent(domain.getAutorenewPollMessage());
 
     // Construct an updated autorenew poll message. If the autorenew poll message no longer exists,
@@ -632,7 +631,7 @@ public class DomainFlowUtils {
     // message to be deleted), and then subsequently the transfer was canceled, rejected, or deleted
     // (which would cause the poll message to be recreated here). In the latter case, the history id
     // of the event that created the new poll message will also be used.
-    PollMessage.Autorenew updatedAutorenewPollMessage;
+    Autorenew updatedAutorenewPollMessage;
     if (autorenewPollMessage.isPresent()) {
       updatedAutorenewPollMessage =
           autorenewPollMessage.get().asBuilder().setAutorenewEndTime(newEndTime).build();
@@ -706,7 +705,7 @@ public class DomainFlowUtils {
     String feeClass = null;
     ImmutableList<Fee> fees = ImmutableList.of();
     switch (feeRequest.getCommandName()) {
-      case CREATE:
+      case CREATE -> {
         // Don't return a create price for reserved names.
         if (isReserved(domainName, isSunrise) && !isAvailable) {
           feeClass = "reserved";
@@ -726,16 +725,16 @@ public class DomainFlowUtils {
                       allocationToken)
                   .getFees();
         }
-        break;
-      case RENEW:
+      }
+      case RENEW -> {
         builder.setAvailIfSupported(true);
         fees =
             pricingLogic
                 .getRenewPrice(
                     tld, domainNameString, now, years, billingRecurrence, allocationToken)
                 .getFees();
-        break;
-      case RESTORE:
+      }
+      case RESTORE -> {
         // The minimum allowable period per the EPP spec is 1, so, strangely, 1 year still has to be
         // passed in as the period for a restore even if the domain would *not* be renewed as part
         // of a restore. This is fixed in RFC 8748 (which is a more recent version of the fee
@@ -751,21 +750,20 @@ public class DomainFlowUtils {
         boolean isExpired =
             domain.isPresent() && domain.get().getRegistrationExpirationTime().isBefore(now);
         fees = pricingLogic.getRestorePrice(tld, domainNameString, now, isExpired).getFees();
-        break;
-      case TRANSFER:
+      }
+      case TRANSFER -> {
         if (years != 1) {
           throw new TransfersAreAlwaysForOneYearException();
         }
         builder.setAvailIfSupported(true);
         fees =
             pricingLogic.getTransferPrice(tld, domainNameString, now, billingRecurrence).getFees();
-        break;
-      case UPDATE:
+      }
+      case UPDATE -> {
         builder.setAvailIfSupported(true);
         fees = pricingLogic.getUpdatePrice(tld, domainNameString, now).getFees();
-        break;
-      default:
-        throw new UnknownFeeCommandException(feeRequest.getUnparsedCommandName());
+      }
+      default -> throw new UnknownFeeCommandException(feeRequest.getUnparsedCommandName());
     }
 
     if (feeClass == null) {

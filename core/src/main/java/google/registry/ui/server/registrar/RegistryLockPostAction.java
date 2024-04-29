@@ -75,8 +75,10 @@ public class RegistryLockPostAction implements Runnable, JsonActionRunner.JsonAc
   private static final Gson GSON = new Gson();
 
   private static final String VERIFICATION_EMAIL_TEMPLATE =
-      "Please click the link below to perform the lock / unlock action on domain %s. Note: "
-          + "this code will expire in one hour.\n\n%s";
+      """
+          Please click the link below to perform the lock / unlock action on domain %s. Note: this code will expire in one hour.
+
+          %s""";
 
   private final HttpServletRequest req;
   private final JsonActionRunner jsonActionRunner;

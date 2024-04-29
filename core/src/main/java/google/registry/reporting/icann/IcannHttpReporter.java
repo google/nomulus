@@ -79,7 +79,7 @@ public class IcannHttpReporter {
 
   /** Uploads {@code reportBytes} to ICANN, returning whether or not it succeeded. */
   public boolean send(byte[] reportBytes, String reportFilename)
-      throws GeneralSecurityException, XmlException, IOException {
+      throws GeneralSecurityException, IOException {
     validateReportFilename(reportFilename);
     URL uploadUrl = makeUrl(reportFilename);
     logger.atInfo().log(
@@ -153,17 +153,15 @@ public class IcannHttpReporter {
   }
 
   private String getUrlPrefix(ReportType reportType) {
-    switch (reportType) {
-      case TRANSACTIONS:
-        return icannTransactionsUrl;
-      case ACTIVITY:
-        return icannActivityUrl;
-      default:
-        throw new IllegalStateException(
-            String.format(
-                "Received invalid reportTypes! Expected ACTIVITY or TRANSACTIONS, got %s.",
-                reportType));
-    }
+    return switch (reportType) {
+      case TRANSACTIONS -> icannTransactionsUrl;
+      case ACTIVITY -> icannActivityUrl;
+      default ->
+          throw new IllegalStateException(
+              String.format(
+                  "Received invalid reportTypes! Expected ACTIVITY or TRANSACTIONS, got %s.",
+                  reportType));
+    };
   }
 
 }
