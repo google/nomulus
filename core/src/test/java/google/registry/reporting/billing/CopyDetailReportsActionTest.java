@@ -177,18 +177,22 @@ class CopyDetailReportsActionTest {
             "hello,world\n1,2".getBytes(UTF_8));
     verify(emailUtils)
         .sendAlertEmail(
-            "Copied detail reports.\n"
-                + "The following errors were encountered:\n"
-                + "Registrar: TheRegistrar\n"
-                + "Error: java.io.IOException: expected\n");
+            """
+                Copied detail reports.
+                The following errors were encountered:
+                Registrar: TheRegistrar
+                Error: java.io.IOException: expected
+                """);
     assertThat(response.getStatus()).isEqualTo(SC_OK);
     assertThat(response.getContentType()).isEqualTo(MediaType.PLAIN_TEXT_UTF_8);
     assertThat(response.getPayload())
         .isEqualTo(
-            "Copied detail reports.\n"
-                + "The following errors were encountered:\n"
-                + "Registrar: TheRegistrar\n"
-                + "Error: java.io.IOException: expected\n");
+            """
+                Copied detail reports.
+                The following errors were encountered:
+                Registrar: TheRegistrar
+                Error: java.io.IOException: expected
+                """);
   }
 
   @Test

@@ -33,6 +33,7 @@ import google.registry.model.registrar.RegistrarPoc;
 import google.registry.request.Action;
 import google.registry.request.Action.Method;
 import google.registry.request.Action.Service;
+import google.registry.request.HttpException.BadRequestException;
 import google.registry.request.Parameter;
 import google.registry.request.auth.Auth;
 import google.registry.request.auth.AuthenticatedRegistrarAccessor;
@@ -128,14 +129,16 @@ public final class ConsoleRegistrarCreatorAction extends HtmlAction {
       return;
     }
     switch (method) {
-      case POST:
+      case POST -> {
         runPost(data);
-        return;
-      case GET:
+      }
+      case GET -> {
         runGet(data);
-        return;
-      default:
-        return;
+      }
+      default -> {
+        throw new BadRequestException(
+            String.format("Action cannot be called with method %s", method));
+      }
     }
   }
 

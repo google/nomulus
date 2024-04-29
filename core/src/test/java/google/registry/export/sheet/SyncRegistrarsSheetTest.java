@@ -197,40 +197,42 @@ public class SyncRegistrarsSheetTest {
     assertThat(row)
         .containsEntry(
             "primaryContacts",
-            ""
-                + "Jane Doe\n"
-                + "contact@example.com\n"
-                + "Tel: +1.1234567890\n"
-                + "Types: [ADMIN, BILLING]\n"
-                + "Visible in registrar WHOIS query as Admin contact: No\n"
-                + "Visible in registrar WHOIS query as Technical contact: No\n"
-                + "Phone number and email visible in domain WHOIS query as "
-                + "Registrar Abuse contact info: No\n"
-                + "Registrar-Console access: No\n"
-                + '\n'
-                + "John Doe\n"
-                + "john.doe@example.tld\n"
-                + "Tel: +1.1234567890\n"
-                + "Fax: +1.1234567891\n"
-                + "Types: [ADMIN]\n"
-                + "Visible in registrar WHOIS query as Admin contact: No\n"
-                + "Visible in registrar WHOIS query as Technical contact: Yes\n"
-                + "Phone number and email visible in domain WHOIS query as "
-                + "Registrar Abuse contact info: No\n"
-                + "Registrar-Console access: Yes\n"
-                + "Login Email Address: john.doe@example.tld\n");
+            """
+                Jane Doe
+                contact@example.com
+                Tel: +1.1234567890
+                Types: [ADMIN, BILLING]
+                Visible in registrar WHOIS query as Admin contact: No
+                Visible in registrar WHOIS query as Technical contact: No
+                Phone number and email visible in domain WHOIS query as Registrar Abuse contact\
+                 info: No
+                Registrar-Console access: No
+
+                John Doe
+                john.doe@example.tld
+                Tel: +1.1234567890
+                Fax: +1.1234567891
+                Types: [ADMIN]
+                Visible in registrar WHOIS query as Admin contact: No
+                Visible in registrar WHOIS query as Technical contact: Yes
+                Phone number and email visible in domain WHOIS query as Registrar Abuse contact\
+                 info: No
+                Registrar-Console access: Yes
+                Login Email Address: john.doe@example.tld
+                """);
     assertThat(row)
         .containsEntry(
             "techContacts",
-            ""
-                + "Jane Smith\n"
-                + "pride@example.net\n"
-                + "Types: [TECH]\n"
-                + "Visible in registrar WHOIS query as Admin contact: No\n"
-                + "Visible in registrar WHOIS query as Technical contact: No\n"
-                + "Phone number and email visible in domain WHOIS query as "
-                + "Registrar Abuse contact info: No\n"
-                + "Registrar-Console access: No\n");
+            """
+                Jane Smith
+                pride@example.net
+                Types: [TECH]
+                Visible in registrar WHOIS query as Admin contact: No
+                Visible in registrar WHOIS query as Technical contact: No
+                Phone number and email visible in domain WHOIS query as Registrar Abuse contact\
+                 info: No
+                Registrar-Console access: No
+                """);
     assertThat(row).containsEntry("marketingContacts", "");
     assertThat(row).containsEntry("abuseContacts", "");
     assertThat(row).containsEntry("whoisInquiryContacts", "");
@@ -238,32 +240,34 @@ public class SyncRegistrarsSheetTest {
     assertThat(row)
         .containsEntry(
             "billingContacts",
-            ""
-                + "Jane Doe\n"
-                + "contact@example.com\n"
-                + "Tel: +1.1234567890\n"
-                + "Types: [ADMIN, BILLING]\n"
-                + "Visible in registrar WHOIS query as Admin contact: No\n"
-                + "Visible in registrar WHOIS query as Technical contact: No\n"
-                + "Phone number and email visible in domain WHOIS query as "
-                + "Registrar Abuse contact info: No\n"
-                + "Registrar-Console access: No\n");
+            """
+                Jane Doe
+                contact@example.com
+                Tel: +1.1234567890
+                Types: [ADMIN, BILLING]
+                Visible in registrar WHOIS query as Admin contact: No
+                Visible in registrar WHOIS query as Technical contact: No
+                Phone number and email visible in domain WHOIS query as Registrar Abuse contact\
+                 info: No
+                Registrar-Console access: No
+                """);
     assertThat(row).containsEntry("contactsMarkedAsWhoisAdmin", "");
     assertThat(row)
         .containsEntry(
             "contactsMarkedAsWhoisTech",
-            ""
-                + "John Doe\n"
-                + "john.doe@example.tld\n"
-                + "Tel: +1.1234567890\n"
-                + "Fax: +1.1234567891\n"
-                + "Types: [ADMIN]\n"
-                + "Visible in registrar WHOIS query as Admin contact: No\n"
-                + "Visible in registrar WHOIS query as Technical contact: Yes\n"
-                + "Phone number and email visible in domain WHOIS query as "
-                + "Registrar Abuse contact info: No\n"
-                + "Registrar-Console access: Yes\n"
-                + "Login Email Address: john.doe@example.tld\n");
+            """
+                John Doe
+                john.doe@example.tld
+                Tel: +1.1234567890
+                Fax: +1.1234567891
+                Types: [ADMIN]
+                Visible in registrar WHOIS query as Admin contact: No
+                Visible in registrar WHOIS query as Technical contact: Yes
+                Phone number and email visible in domain WHOIS query as Registrar Abuse contact\
+                 info: No
+                Registrar-Console access: Yes
+                Login Email Address: john.doe@example.tld
+                """);
     assertThat(row).containsEntry("emailAddress", "nowhere@example.org");
     assertThat(row).containsEntry(
         "address.street", "I get fallen back upon since there's no l10n addr");

@@ -109,16 +109,18 @@ public class ModelUtils {
       if (value != null && value.getClass().isArray()) {
         // It's surprisingly difficult to convert arrays into lists if the array might be primitive.
         final Object arrayValue = value;
-        value = new AbstractList<Object>() {
-            @Override
-            public Object get(int index) {
-              return Array.get(arrayValue, index);
-            }
+        value =
+            new AbstractList<>() {
+              @Override
+              public Object get(int index) {
+                return Array.get(arrayValue, index);
+              }
 
-            @Override
-            public int size() {
-              return Array.getLength(arrayValue);
-            }};
+              @Override
+              public int size() {
+                return Array.getLength(arrayValue);
+              }
+            };
       }
       values.put(field, value);
     }

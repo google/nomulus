@@ -59,12 +59,14 @@ class HibernateSchemaExporterTest {
     exporter.export(ImmutableList.of(HibernateSchemaTestEntity.class), sqlFile);
     assertThat(Files.readAllBytes(sqlFile.toPath()))
         .isEqualTo(
-            ("\n"
-                    + "    create table \"TestEntity\" (\n"
-                    + "       name text not null,\n"
-                    + "        cu text,\n"
-                    + "        primary key (name)\n"
-                    + "    );\n")
+            """
+
+                    create table "TestEntity" (
+                       name text not null,
+                        cu text,
+                        primary key (name)
+                    );
+                """
                 .getBytes(StandardCharsets.UTF_8));
   }
 

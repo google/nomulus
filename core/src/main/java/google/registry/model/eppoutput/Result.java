@@ -34,7 +34,7 @@ public class Result extends ImmutableObject {
    * [RFC5321]. EPP uses four decimal digits to describe the success or failure of each EPP command.
    * Each of the digits of the reply have special significance."
    *
-   * "The first digit denotes command success or failure. The second digit denotes the response
+   * <p>"The first digit denotes command success or failure. The second digit denotes the response
    * category, such as command syntax or security. The third and fourth digits provide explicit
    * response detail within each response category."
    */

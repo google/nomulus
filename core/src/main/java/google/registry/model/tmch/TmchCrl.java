@@ -60,17 +60,17 @@ public final class TmchCrl extends CrossTldSingleton {
   }
 
   /** ASCII-armored X.509 certificate revocation list. */
-  public final String getCrl() {
+  public String getCrl() {
     return crl;
   }
 
   /** Returns the URL that the CRL was downloaded from. */
-  public final String getUrl() {
+  public String getUrl() {
     return crl;
   }
 
   /** Time we last updated the Database with a newer ICANN CRL. */
-  public final DateTime getUpdated() {
+  public DateTime getUpdated() {
     return updated;
   }
 }

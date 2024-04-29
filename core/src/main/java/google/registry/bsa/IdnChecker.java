@@ -80,7 +80,7 @@ public class IdnChecker {
   }
 
   private static ImmutableMap<IdnTableEnum, ImmutableSet<Tld>> getIdnToTldMap(DateTime now) {
-    ImmutableMultimap.Builder<IdnTableEnum, Tld> idnToTldMap = new ImmutableMultimap.Builder();
+    var idnToTldMap = new ImmutableMultimap.Builder<IdnTableEnum, Tld>();
     Tlds.getTldEntitiesOfType(TldType.REAL).stream()
         .filter(tld -> isEnrolledWithBsa(tld, now))
         .forEach(

@@ -79,7 +79,7 @@ public class RdapIcannStandardInformation {
   /**
    * Required by ICANN RDAP Profile section 1.4.9, as corrected by Gustavo Lozano of ICANN.
    *
-   * Also mentioned in the RDAP Technical Implementation Guide 3.6.
+   * <p>Also mentioned in the RDAP Technical Implementation Guide 3.6.
    *
    * @see <a href="http://mm.icann.org/pipermail/gtld-tech/2016-October/000822.html">Questions about
    *     the ICANN RDAP Profile</a>
@@ -95,7 +95,7 @@ public class RdapIcannStandardInformation {
   /**
    * Required by ICANN RDAP Profile section 1.4.8, as corrected by Gustavo Lozano of ICANN.
    *
-   * Also mentioned in the RDAP Technical Implementation Guide 3.5.
+   * <p>Also mentioned in the RDAP Technical Implementation Guide 3.5.
    *
    * @see <a href="http://mm.icann.org/pipermail/gtld-tech/2016-October/000822.html">Questions about
    *     the ICANN RDAP Profile</a>

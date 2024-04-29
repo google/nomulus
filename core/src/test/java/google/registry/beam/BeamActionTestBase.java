@@ -45,7 +45,7 @@ public abstract class BeamActionTestBase {
   protected FlexTemplates templates = mock(FlexTemplates.class);
   protected Launch launch = mock(Launch.class);
   private Answer<LaunchFlexTemplateResponse> answer =
-      new Answer<LaunchFlexTemplateResponse>() {
+      new Answer<>() {
         private Integer times = 0;
 
         @Override

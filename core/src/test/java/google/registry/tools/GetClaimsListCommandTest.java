@@ -49,6 +49,6 @@ class GetClaimsListCommandTest extends CommandTestCase<GetClaimsListCommand> {
     ClaimsListDao.save(ClaimsList.create(DateTime.now(UTC), ImmutableMap.of("a", "1")));
     File output = tmpDir.resolve("claims.txt").toFile();
     runCommand("--output=" + output.getAbsolutePath());
-    assertThat(new String(Files.readAllBytes(output.toPath()), UTF_8)).endsWith("\n");
+    assertThat(Files.readString(output.toPath())).endsWith("\n");
   }
 }

@@ -175,14 +175,7 @@ public class TextDiffSubject extends Subject {
         .orElse(0);
   }
 
-  private static class SideBySideRowFormatter {
-    private final int maxExpectedLineLength;
-    private final int maxActualLineLength;
-
-    private SideBySideRowFormatter(int maxExpectedLineLength, int maxActualLineLength) {
-      this.maxExpectedLineLength = maxExpectedLineLength;
-      this.maxActualLineLength = maxActualLineLength;
-    }
+  private record SideBySideRowFormatter(int maxExpectedLineLength, int maxActualLineLength) {
 
     public String formatRow(String expected, String actual, char padChar) {
       return String.format(
