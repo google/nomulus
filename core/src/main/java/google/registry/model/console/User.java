@@ -14,7 +14,6 @@
 
 package google.registry.model.console;
 
-
 import google.registry.persistence.VKey;
 import javax.persistence.Access;
 import javax.persistence.AccessType;
@@ -58,6 +57,5 @@ public class User extends UserBase {
     public Builder(User user) {
       super(user);
     }
-
   }
 }

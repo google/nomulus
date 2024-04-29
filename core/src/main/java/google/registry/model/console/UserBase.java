@@ -25,6 +25,7 @@ import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 import google.registry.model.Buildable;
 import google.registry.model.UpdateAutoTimestampEntity;
 import google.registry.util.PasswordUtils;
+import java.util.Optional;
 import javax.persistence.Access;
 import javax.persistence.AccessType;
 import javax.persistence.Column;
@@ -53,6 +54,9 @@ public class UserBase extends UpdateAutoTimestampEntity implements Buildable {
   /** Email address of the user in question. */
   @Column(nullable = false)
   String emailAddress;
+
+  /** Optional external email address to use for registry lock confirmation emails. */
+  @Column String registryLockEmailAddress;
 
   /** Roles (which grant permissions) associated with this user. */
   @Column(nullable = false)
@@ -87,6 +91,10 @@ public class UserBase extends UpdateAutoTimestampEntity implements Buildable {
 
   public String getEmailAddress() {
     return emailAddress;
+  }
+
+  public Optional<String> getRegistryLockEmailAddress() {
+    return Optional.ofNullable(registryLockEmailAddress);
   }
 
   public UserRoles getUserRoles() {
@@ -147,6 +155,15 @@ public class UserBase extends UpdateAutoTimestampEntity implements Buildable {
 
     public B setEmailAddress(String emailAddress) {
       getInstance().emailAddress = checkValidEmail(emailAddress);
+      return thisCastToDerived();
+    }
+
+    public B setRegistryLockEmailAddress(String registryLockEmailAddress) {
+      if (registryLockEmailAddress == null) {
+        getInstance().registryLockEmailAddress = null;
+      } else {
+        getInstance().registryLockEmailAddress = checkValidEmail(registryLockEmailAddress);
+      }
       return thisCastToDerived();
     }
 
