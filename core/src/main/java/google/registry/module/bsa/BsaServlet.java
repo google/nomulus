@@ -25,6 +25,6 @@ public final class BsaServlet extends ServletBase {
   private static final Lazy<MetricReporter> metricReporter = component.metricReporter();
 
   public BsaServlet() {
-    super(requestHandler, metricReporter);
+    super(component.projectId(), requestHandler, metricReporter);
   }
 }

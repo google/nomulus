@@ -12,12 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package google.registry.proxy;
+package google.registry.util;
 
 import com.google.common.collect.ImmutableMap;
+import com.google.common.flogger.LogSite;
+import com.google.common.flogger.backend.LogData;
+import com.google.common.flogger.backend.system.SimpleLogRecord;
 import com.google.gson.Gson;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.util.Optional;
 import java.util.logging.Formatter;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
@@ -35,9 +39,9 @@ import java.util.logging.LogRecord;
  *     href="https://medium.com/retailmenot-engineering/formatting-python-logs-for-stackdriver-5a5ddd80761c">
  *     Formatting Python Logs from Stackdriver</a> <a
  *     href="https://stackoverflow.com/questions/44164730/gke-stackdriver-java-logback-logging-format">
- *     GKE & Stackdriver: Java logback logging format?</a>
+ *     GKE &amp; Stackdriver: Java logback logging format?</a>
  */
-class GcpJsonFormatter extends Formatter {
+public class GcpJsonFormatter extends Formatter {
 
   /** JSON field that determines the log level. */
   private static final String SEVERITY = "severity";
@@ -82,6 +86,16 @@ class GcpJsonFormatter extends Formatter {
       if (record.getSourceMethodName() != null) {
         source += " " + record.getSourceMethodName();
       }
+      if (record instanceof SimpleLogRecord) {
+        Optional<Integer> lineNumber =
+            Optional.ofNullable(((SimpleLogRecord) record).getLogData())
+                .map(LogData::getLogSite)
+                .map(LogSite::getLineNumber);
+        if (lineNumber.isPresent()) {
+          source += " line:" + lineNumber.get();
+        }
+      }
+
     } else {
       source = record.getLoggerName();
     }

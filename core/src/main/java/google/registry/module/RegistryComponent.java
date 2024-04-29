@@ -23,6 +23,7 @@ import google.registry.batch.BatchModule;
 import google.registry.bigquery.BigqueryModule;
 import google.registry.config.CloudTasksUtilsModule;
 import google.registry.config.CredentialModule;
+import google.registry.config.RegistryConfig.Config;
 import google.registry.config.RegistryConfig.ConfigModule;
 import google.registry.dns.writer.VoidDnsWriterModule;
 import google.registry.export.DriveModule;
@@ -95,6 +96,9 @@ interface RegistryComponent {
   RequestHandler<RequestComponent> requestHandler();
 
   Lazy<MetricReporter> metricReporter();
+
+  @Config("projectId")
+  String projectId();
 
   @Module
   class RegistryModule {
