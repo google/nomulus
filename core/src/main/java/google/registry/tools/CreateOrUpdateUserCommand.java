@@ -36,6 +36,14 @@ public abstract class CreateOrUpdateUserCommand extends ConfirmingCommand {
 
   @Nullable
   @Parameter(
+      names = "--registry_lock_email_address",
+      description =
+          "Optional external email address to use for registry lock confirmation emails, or empty"
+              + " to remove the field.")
+  private String registryLockEmailAddress;
+
+  @Nullable
+  @Parameter(
       names = "--admin",
       description = "Whether or not the user in question is an admin",
       arity = 1)
@@ -78,6 +86,16 @@ public abstract class CreateOrUpdateUserCommand extends ConfirmingCommand {
     User.Builder builder =
         (user == null) ? new User.Builder().setEmailAddress(email) : user.asBuilder();
     builder.setUserRoles(userRolesBuilder.build());
+
+    // An empty registryLockEmailAddress indicates that we should remove the field
+    if (registryLockEmailAddress != null) {
+      if (registryLockEmailAddress.isEmpty()) {
+        builder.setRegistryLockEmailAddress(null);
+      } else {
+        builder.setRegistryLockEmailAddress(registryLockEmailAddress);
+      }
+    }
+
     User newUser = builder.build();
     UserDao.saveUser(newUser);
   }

@@ -218,6 +218,7 @@ final class RegistryLockPostActionTest {
     google.registry.model.console.User consoleUser =
         new google.registry.model.console.User.Builder()
             .setEmailAddress("johndoe@theregistrar.com")
+            .setRegistryLockEmailAddress("johndoe.registrylock@theregistrar.com")
             .setUserRoles(
                 new UserRoles.Builder()
                     .setRegistrarRoles(
@@ -229,7 +230,7 @@ final class RegistryLockPostActionTest {
     AuthResult consoleAuthResult = AuthResult.createUser(UserAuthInfo.create(consoleUser));
     action = createAction(consoleAuthResult);
     Map<String, ?> response = action.handleJsonRequest(lockRequest());
-    assertSuccess(response, "lock", "johndoe@theregistrar.com");
+    assertSuccess(response, "lock", "johndoe.registrylock@theregistrar.com");
   }
 
   @Test
