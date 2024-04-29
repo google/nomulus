@@ -158,14 +158,16 @@ public class SslServerInitializer<C extends Channel> extends ChannelInitializer<
                             ((RSAPublicKey) clientPublicKey).getModulus().bitLength();
                       }
                       logger.atInfo().log(
-                          "--SSL Information--\n"
-                              + "Client Certificate Hash: %s\n"
-                              + "SSL Protocol: %s\n"
-                              + "Cipher Suite: %s\n"
-                              + "Not Before: %s\n"
-                              + "Not After: %s\n"
-                              + "Client Certificate Type: %s\n"
-                              + "Client Certificate Length: %s\n",
+                          """
+                              --SSL Information--
+                              Client Certificate Hash: %s
+                              SSL Protocol: %s
+                              Cipher Suite: %s
+                              Not Before: %s
+                              Not After: %s
+                              Client Certificate Type: %s
+                              Client Certificate Length: %s
+                              """,
                           getCertificateHash(clientCertificate),
                           sslSession.getProtocol(),
                           sslSession.getCipherSuite(),

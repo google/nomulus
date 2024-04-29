@@ -107,14 +107,7 @@ public final class StaticResourceServlet extends HttpServlet {
     fileServer.get().doGet(req, rsp);
   }
 
-  private static final class FileServer {
-    private final Path root;
-    private final String prefix;
-
-    FileServer(Path root, String prefix) {
-      this.root = root;
-      this.prefix = prefix;
-    }
+  private record FileServer(Path root, String prefix) {
 
     Optional<Path> doHead(HttpServletRequest req, HttpServletResponse rsp) throws IOException {
       verify(req.getRequestURI().startsWith(prefix));

@@ -90,21 +90,19 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
   private JsonObject generateActualJson(RequestType requestType, String paramValue, String cursor) {
     String requestTypeParam;
     switch (requestType) {
-      case NAME:
+      case NAME -> {
         action.nameParam = Optional.of(paramValue);
         requestTypeParam = "name";
-        break;
-      case NS_LDH_NAME:
+      }
+      case NS_LDH_NAME -> {
         action.nsLdhNameParam = Optional.of(paramValue);
         requestTypeParam = "nsLdhName";
-        break;
-      case NS_IP:
+      }
+      case NS_IP -> {
         action.nsIpParam = Optional.of(paramValue);
         requestTypeParam = "nsIp";
-        break;
-      default:
-        requestTypeParam = "";
-        break;
+      }
+      default -> requestTypeParam = "";
     }
     if (paramValue != null) {
       if (cursor == null) {

@@ -158,11 +158,9 @@ public class TmchXmlSignature {
         return null;
       }
       for (Object keyInfoChild : keyInfo.getContent()) {
-        if (keyInfoChild instanceof X509Data) {
-          X509Data x509Data = (X509Data) keyInfoChild;
+        if (keyInfoChild instanceof X509Data x509Data) {
           for (Object x509DataChild : x509Data.getContent()) {
-            if (x509DataChild instanceof X509Certificate) {
-              X509Certificate cert = (X509Certificate) x509DataChild;
+            if (x509DataChild instanceof X509Certificate cert) {
               try {
                 tmchCertificateAuthority.verify(cert);
               } catch (SignatureException e) {

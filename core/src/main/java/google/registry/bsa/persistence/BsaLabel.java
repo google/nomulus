@@ -61,10 +61,9 @@ final class BsaLabel {
     if (this == o) {
       return true;
     }
-    if (!(o instanceof BsaLabel)) {
+    if (!(o instanceof BsaLabel label1)) {
       return false;
     }
-    BsaLabel label1 = (BsaLabel) o;
     return Objects.equal(label, label1.label) && Objects.equal(creationTime, label1.creationTime);
   }
 

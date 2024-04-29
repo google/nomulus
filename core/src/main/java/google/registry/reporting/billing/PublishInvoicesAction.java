@@ -97,22 +97,22 @@ public class PublishInvoicesAction implements Runnable {
       Job job = dataflow.projects().locations().jobs().get(projectId, jobRegion, jobId).execute();
       String state = job.getCurrentState();
       switch (state) {
-        case JOB_DONE:
+        case JOB_DONE -> {
           logger.atInfo().log("Dataflow job %s finished successfully, publishing results.", jobId);
           response.setStatus(SC_OK);
           enqueueCopyDetailReportsTask();
           emailUtils.emailOverallInvoice();
-          break;
-        case JOB_FAILED:
+        }
+        case JOB_FAILED -> {
           logger.atSevere().log("Dataflow job %s finished unsuccessfully.", jobId);
           response.setStatus(SC_NO_CONTENT);
           emailUtils.sendAlertEmail(
               String.format("Dataflow job %s ended in status failure.", jobId));
-          break;
-        default:
+        }
+        default -> {
           logger.atInfo().log("Job in non-terminal state %s, retrying:", state);
           response.setStatus(SC_SERVICE_UNAVAILABLE);
-          break;
+        }
       }
     } catch (IOException e) {
       emailUtils.sendAlertEmail(String.format("Publish action failed due to %s", e.getMessage()));

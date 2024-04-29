@@ -67,12 +67,13 @@ public enum ReservationType {
     return messageForCheck;
   }
 
-  private static final Ordering<ReservationType> ORDERING = new Ordering<ReservationType>() {
-    @Override
-    public int compare(ReservationType left, ReservationType right) {
-      return Integer.compare(left.ordinal(), right.ordinal());
-    }
-  };
+  private static final Ordering<ReservationType> ORDERING =
+      new Ordering<>() {
+        @Override
+        public int compare(ReservationType left, ReservationType right) {
+          return Integer.compare(left.ordinal(), right.ordinal());
+        }
+      };
 
   /**
    * Returns the {@code ReservationType} with the highest severity, used when a label has multiple

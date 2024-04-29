@@ -148,9 +148,8 @@ public class XmlTransformer {
           XML_INPUT_FACTORY.createXMLStreamReader(new StreamSource(autoClosingStream, SYSTEM_ID))));
     } catch (UnmarshalException e) {
       // Plain old parsing exceptions have a SAXParseException with no further cause.
-      if (e.getLinkedException() instanceof SAXParseException
+      if (e.getLinkedException() instanceof SAXParseException sae
           && e.getLinkedException().getCause() == null) {
-        SAXParseException sae = (SAXParseException) e.getLinkedException();
         throw new XmlException(String.format(
             "Syntax error at line %d, column %d: %s",
             sae.getLineNumber(),
@@ -158,8 +157,7 @@ public class XmlTransformer {
             nullToEmpty(sae.getMessage()).replaceAll("&quot;", "")));
       }
       // These get thrown for attempted XXE attacks.
-      if (e.getLinkedException() instanceof XMLStreamException) {
-        XMLStreamException xse = (XMLStreamException) e.getLinkedException();
+      if (e.getLinkedException() instanceof XMLStreamException xse) {
         throw new XmlException(String.format(
             "Syntax error at line %d, column %d: %s",
             xse.getLocation().getLineNumber(),

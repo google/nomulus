@@ -68,8 +68,8 @@ public final class Concurrent {
     if (threadCount == 1) {
       return items.stream().map(funk).collect(toImmutableList());
     }
-    ExecutorService executor = newFixedThreadPool(threadCount);
-    try {
+    ;
+    try (ExecutorService executor = newFixedThreadPool(threadCount)) {
       List<Future<B>> futures = new ArrayList<>();
       for (final A item : items) {
         futures.add(executor.submit(() -> funk.apply(item)));
@@ -83,8 +83,6 @@ public final class Concurrent {
         }
       }
       return results.build();
-    } finally {
-      executor.shutdownNow();
     }
   }
 

@@ -234,7 +234,7 @@ class RegistrarSettingsActionTest extends RegistrarSettingsActionTestCase {
   /**
    * Makes sure a field update succeeds IF AND ONLY IF we have the "correct" role.
    *
-   * Each of the Registrar fields can be changed only by a single {@link Role}. We make sure that
+   * <p>Each of the Registrar fields can be changed only by a single {@link Role}. We make sure that
    * trying to update the field works if the user has the "correct" role, but fails if it doesn't.
    */
   private <T> void doTestUpdate(

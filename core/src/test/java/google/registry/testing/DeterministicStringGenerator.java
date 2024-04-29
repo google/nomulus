@@ -64,13 +64,11 @@ public class DeterministicStringGenerator extends StringGenerator {
     for (int i = 0; i < length; i++) {
       password.append(iterator.next());
     }
-    switch (rule) {
-      case PREPEND_COUNTER:
-        return String.format("%04d_%s", counter++, password.toString());
-      case DEFAULT:
-      default:
-        return password.toString();
-    }
+    return switch (rule) {
+      case PREPEND_COUNTER -> String.format("%04d_%s", counter++, password.toString());
+      case DEFAULT -> password.toString();
+      default -> password.toString();
+    };
   }
 
   public DeterministicStringGenerator(@Named("alphabetBase64") String alphabet, Rule rule) {

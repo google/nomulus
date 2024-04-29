@@ -404,7 +404,11 @@ public class BsaValidateActionTest {
     assertThat(message.body()).startsWith("Most recent download is");
     assertThat(message.body())
         .isEqualTo(
-            "Most recent download is 2023-11-09t020857.880z.\n\n" + "Error line 1.\nError line 2");
+            """
+                Most recent download is 2023-11-09t020857.880z.
+
+                Error line 1.
+                Error line 2""");
   }
 
   @Test

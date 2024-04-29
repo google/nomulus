@@ -24,19 +24,21 @@ import org.junit.jupiter.api.Test;
 public class GetPremiumListCommandTest extends CommandTestCase<GetPremiumListCommand> {
 
   private static final String BASE_LIST_CONTENTS =
-      "tld:\n"
-          + "aluminum,USD 11.00\n"
-          + "brass,USD 20.00\n"
-          + "copper,USD 15.00\n"
-          + "diamond,USD 1000000.00\n"
-          + "gold,USD 24317.00\n"
-          + "iridium,USD 13117.00\n"
-          + "palladium,USD 877.00\n"
-          + "platinum,USD 87741.00\n"
-          + "rhodium,USD 88415.00\n"
-          + "rich,USD 100.00\n"
-          + "richer,USD 1000.00\n"
-          + "silver,USD 588.00\n";
+      """
+          tld:
+          aluminum,USD 11.00
+          brass,USD 20.00
+          copper,USD 15.00
+          diamond,USD 1000000.00
+          gold,USD 24317.00
+          iridium,USD 13117.00
+          palladium,USD 877.00
+          platinum,USD 87741.00
+          rhodium,USD 88415.00
+          rich,USD 100.00
+          richer,USD 1000.00
+          silver,USD 588.00
+          """;
 
   @BeforeEach
   void beforeEach() {

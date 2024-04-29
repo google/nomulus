@@ -34,7 +34,7 @@ public record BlockOrder(long orderId, OrderType orderType) {
   public static BlockOrder deserialize(String text) {
     List<String> items = SPLITTER.splitToList(text);
     try {
-      return create(Long.valueOf(items.get(0)), OrderType.valueOf(items.get(1)));
+      return create(Long.parseLong(items.get(0)), OrderType.valueOf(items.get(1)));
     } catch (NumberFormatException ne) {
       throw new IllegalArgumentException(text);
     }

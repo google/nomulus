@@ -15,7 +15,6 @@
 package google.registry.tools;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.testing.DatabaseHelper.createTld;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.io.Files;
