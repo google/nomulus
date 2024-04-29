@@ -80,7 +80,7 @@ public final class TmchCertificateAuthority {
   private static final LoadingCache<TmchCaMode, X509CRL> CRL_CACHE =
       CacheUtils.newCacheBuilder(getSingletonCacheRefreshDuration())
           .build(
-              new CacheLoader<TmchCaMode, X509CRL>() {
+              new CacheLoader<>() {
                 @Override
                 public X509CRL load(final TmchCaMode tmchCaMode) throws GeneralSecurityException {
                   Optional<TmchCrl> storedCrl = TmchCrl.get();

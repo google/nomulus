@@ -52,12 +52,22 @@ final class LoginCommand implements Command {
               url -> {
                 int remotePort = forwardingServerReceiver.getRemotePort();
                 System.out.printf(
-                    "Please first run the following command in a separate terminal on your local "
-                        + "host:\n\n  ssh -L %s:localhost:%s %s\n\n",
+                    """
+                        Please first run the following command in a separate terminal on your local\
+                         host:
+
+                          ssh -L %s:localhost:%s %s
+
+                        """,
                     port, remotePort, remoteHost);
                 System.out.printf(
-                    "Please then open the following URL in your local browser and follow the"
-                        + " instructions:\n\n  %s\n\n",
+                    """
+                        Please then open the following URL in your local browser and follow the\
+                         instructions:
+
+                          %s
+
+                        """,
                     url);
               });
     } else {

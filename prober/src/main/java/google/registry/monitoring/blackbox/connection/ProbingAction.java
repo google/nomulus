@@ -202,10 +202,12 @@ public abstract class ProbingAction implements Callable<ChannelFuture> {
   @Override
   public final String toString() {
     return String.format(
-        "ProbingAction with delay: %d\n"
-            + "outboundMessage: %s\n"
-            + "protocol: %s\n"
-            + "host: %s\n",
+        """
+            ProbingAction with delay: %d
+            outboundMessage: %s
+            protocol: %s
+            host: %s
+            """,
         delay().getStandardSeconds(), outboundMessage(), protocol(), host());
   }
 
@@ -268,7 +270,7 @@ public abstract class ProbingAction implements Callable<ChannelFuture> {
       if (channel == null) {
         bootstrap
             .handler(
-                new ChannelInitializer<Channel>() {
+                new ChannelInitializer<>() {
                   @Override
                   protected void initChannel(Channel outboundChannel) {
                     // Uses Handlers from Protocol to fill pipeline in order of provided handlers.

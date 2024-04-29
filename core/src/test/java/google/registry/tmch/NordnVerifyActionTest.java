@@ -48,30 +48,34 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 class NordnVerifyActionTest {
 
   private static final String LOG_ACCEPTED =
-      "1,2012-08-16T02:15:00.0Z,2012-08-16T00:00:00.0Z,"
-          + "0000000000000478Nzs+3VMkR8ckuUynOLmyeqTmZQSbzDuf/R50n2n5QX4=,accepted,no-warnings,1\n"
-          + "roid,result-code\n"
-          + "SH8013-REP,2000";
+      """
+          1,2012-08-16T02:15:00.0Z,2012-08-16T00:00:00.0Z,0000000000000478Nzs+3VMkR8ckuUynOLmyeqTmZQSbzDuf/R50n2n5QX4=,accepted,no-warnings,1
+          roid,result-code
+          SH8013-REP,2000""";
 
   private static final String LOG_REJECTED =
-      "1,2012-08-16T02:15:00.0Z,2012-08-16T00:00:00.0Z,"
-          + "0000000000000478Nzs+3VMkR8ckuUynOLmyeqTmZQSbzDuf/R50n2n5QX4=,rejected,no-warnings,1\n"
-          + "roid,result-code\n"
-          + "SH8013-REP,2001";
+      """
+          1,2012-08-16T02:15:00.0Z,2012-08-16T00:00:00.0Z,0000000000000478Nzs+3VMkR8ckuUynOLmyeqTmZQSbzDuf/R50n2n5QX4=,rejected,no-warnings,1
+          roid,result-code
+          SH8013-REP,2001""";
 
   private static final String LOG_WARNINGS =
-      "1,2012-08-16T02:15:00.0Z,2012-08-16T00:00:00.0Z,0000000000000478Nzs+3VMkR8ckuUynOLmyeqTmZQSbzDuf/R50n2n5QX4=,accepted,warnings-present,3\n"
-          + "roid,result-code\n"
-          + "SH8013-REP,2001\n"
-          + "lulz-roid,3609\n"
-          + "sabokitty-roid,3610\n";
+      """
+          1,2012-08-16T02:15:00.0Z,2012-08-16T00:00:00.0Z,0000000000000478Nzs+3VMkR8ckuUynOLmyeqTmZQSbzDuf/R50n2n5QX4=,accepted,warnings-present,3
+          roid,result-code
+          SH8013-REP,2001
+          lulz-roid,3609
+          sabokitty-roid,3610
+          """;
 
   private static final String LOG_ERRORS =
-      "1,2012-08-16T02:15:00.0Z,2012-08-16T00:00:00.0Z,0000000000000478Nzs+3VMkR8ckuUynOLmyeqTmZQSbzDuf/R50n2n5QX4=,accepted,warnings-present,3\n"
-          + "roid,result-code\n"
-          + "SH8013-REP,2000\n"
-          + "lulz-roid,4601\n"
-          + "bogpog,4611\n";
+      """
+          1,2012-08-16T02:15:00.0Z,2012-08-16T00:00:00.0Z,0000000000000478Nzs+3VMkR8ckuUynOLmyeqTmZQSbzDuf/R50n2n5QX4=,accepted,warnings-present,3
+          roid,result-code
+          SH8013-REP,2000
+          lulz-roid,4601
+          bogpog,4611
+          """;
 
   @RegisterExtension
   final JpaIntegrationTestExtension jpa =

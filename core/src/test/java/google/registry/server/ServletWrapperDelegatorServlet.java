@@ -52,7 +52,7 @@ public final class ServletWrapperDelegatorServlet extends HttpServlet {
       throws ServletException, IOException {
     FutureTask<Void> task =
         new FutureTask<>(
-            new Callable<Void>() {
+            new Callable<>() {
               @Nullable
               @Override
               public Void call() throws ServletException, IOException {

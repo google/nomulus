@@ -54,62 +54,50 @@ final class UpdateKeyringSecretCommand implements Command {
     byte[] input = Files.readAllBytes(inputPath);
 
     switch (keyringKeyName) {
-      case BRDA_RECEIVER_PUBLIC_KEY:
-        secretManagerKeyringUpdater.setBrdaReceiverPublicKey(deserializePublicKey(input));
-        break;
-      case BRDA_SIGNING_KEY_PAIR:
-        secretManagerKeyringUpdater.setBrdaSigningKey(deserializeKeyPair(input));
-        break;
-      case BRDA_SIGNING_PUBLIC_KEY:
-        throw new IllegalArgumentException(
-            "Can't update BRDA_SIGNING_PUBLIC_KEY directly."
-            + " Must update public and private keys together using BRDA_SIGNING_KEY_PAIR.");
-      case BSA_API_KEY:
-        secretManagerKeyringUpdater.setBsaApiKey(deserializeString(input));
-        break;
-      case ICANN_REPORTING_PASSWORD:
-        secretManagerKeyringUpdater.setIcannReportingPassword(deserializeString(input));
-        break;
-      case MARKSDB_DNL_LOGIN_AND_PASSWORD:
-        secretManagerKeyringUpdater.setMarksdbDnlLoginAndPassword(deserializeString(input));
-        break;
-      case MARKSDB_LORDN_PASSWORD:
-        secretManagerKeyringUpdater.setMarksdbLordnPassword(deserializeString(input));
-        break;
-      case MARKSDB_SMDRL_LOGIN_AND_PASSWORD:
-        secretManagerKeyringUpdater.setMarksdbSmdrlLoginAndPassword(deserializeString(input));
-        break;
-      case RDE_RECEIVER_PUBLIC_KEY:
-        secretManagerKeyringUpdater.setRdeReceiverPublicKey(deserializePublicKey(input));
-        break;
-      case RDE_SIGNING_KEY_PAIR:
-        secretManagerKeyringUpdater.setRdeSigningKey(deserializeKeyPair(input));
-        break;
-      case RDE_SIGNING_PUBLIC_KEY:
-        throw new IllegalArgumentException(
-            "Can't update RDE_SIGNING_PUBLIC_KEY directly."
-            + " Must update public and private keys together using RDE_SIGNING_KEY_PAIR.");
-      // Note that RDE_SSH_CLIENT public / private keys are slightly different than other key pairs,
-      // since they are just regular strings rather than {@link PGPKeyPair}s (because OpenSSH
-      // doesn't use PGP-style keys)
-      //
-      // Hence we can and need to update the private and public keys individually.
-      case RDE_SSH_CLIENT_PRIVATE_KEY:
-        secretManagerKeyringUpdater.setRdeSshClientPrivateKey(deserializeString(input));
-        break;
-      case RDE_SSH_CLIENT_PUBLIC_KEY:
-        secretManagerKeyringUpdater.setRdeSshClientPublicKey(deserializeString(input));
-        break;
-      case RDE_STAGING_KEY_PAIR:
-        secretManagerKeyringUpdater.setRdeStagingKey(deserializeKeyPair(input));
-        break;
-      case SAFE_BROWSING_API_KEY:
-        secretManagerKeyringUpdater.setSafeBrowsingAPIKey(deserializeString(input));
-        break;
-      case RDE_STAGING_PUBLIC_KEY:
-        throw new IllegalArgumentException(
-            "Can't update RDE_STAGING_PUBLIC_KEY directly."
-            + " Must update public and private keys together using RDE_STAGING_KEY_PAIR.");
+      case BRDA_RECEIVER_PUBLIC_KEY ->
+          secretManagerKeyringUpdater.setBrdaReceiverPublicKey(deserializePublicKey(input));
+      case BRDA_SIGNING_KEY_PAIR ->
+          secretManagerKeyringUpdater.setBrdaSigningKey(deserializeKeyPair(input));
+      case BRDA_SIGNING_PUBLIC_KEY ->
+          throw new IllegalArgumentException(
+              "Can't update BRDA_SIGNING_PUBLIC_KEY directly."
+                  + " Must update public and private keys together using BRDA_SIGNING_KEY_PAIR.");
+      case BSA_API_KEY -> secretManagerKeyringUpdater.setBsaApiKey(deserializeString(input));
+      case ICANN_REPORTING_PASSWORD ->
+          secretManagerKeyringUpdater.setIcannReportingPassword(deserializeString(input));
+      case MARKSDB_DNL_LOGIN_AND_PASSWORD ->
+          secretManagerKeyringUpdater.setMarksdbDnlLoginAndPassword(deserializeString(input));
+      case MARKSDB_LORDN_PASSWORD ->
+          secretManagerKeyringUpdater.setMarksdbLordnPassword(deserializeString(input));
+      case MARKSDB_SMDRL_LOGIN_AND_PASSWORD ->
+          secretManagerKeyringUpdater.setMarksdbSmdrlLoginAndPassword(deserializeString(input));
+      case RDE_RECEIVER_PUBLIC_KEY ->
+          secretManagerKeyringUpdater.setRdeReceiverPublicKey(deserializePublicKey(input));
+      case RDE_SIGNING_KEY_PAIR ->
+          secretManagerKeyringUpdater.setRdeSigningKey(deserializeKeyPair(input));
+      case RDE_SIGNING_PUBLIC_KEY ->
+          throw new IllegalArgumentException(
+              "Can't update RDE_SIGNING_PUBLIC_KEY directly."
+                  + " Must update public and private keys together using RDE_SIGNING_KEY_PAIR.");
+
+        // Note that RDE_SSH_CLIENT public / private keys are slightly different than other key
+        // pairs,
+        // since they are just regular strings rather than {@link PGPKeyPair}s (because OpenSSH
+        // doesn't use PGP-style keys)
+        //
+        // Hence we can and need to update the private and public keys individually.
+      case RDE_SSH_CLIENT_PRIVATE_KEY ->
+          secretManagerKeyringUpdater.setRdeSshClientPrivateKey(deserializeString(input));
+      case RDE_SSH_CLIENT_PUBLIC_KEY ->
+          secretManagerKeyringUpdater.setRdeSshClientPublicKey(deserializeString(input));
+      case RDE_STAGING_KEY_PAIR ->
+          secretManagerKeyringUpdater.setRdeStagingKey(deserializeKeyPair(input));
+      case SAFE_BROWSING_API_KEY ->
+          secretManagerKeyringUpdater.setSafeBrowsingAPIKey(deserializeString(input));
+      case RDE_STAGING_PUBLIC_KEY ->
+          throw new IllegalArgumentException(
+              "Can't update RDE_STAGING_PUBLIC_KEY directly."
+                  + " Must update public and private keys together using RDE_STAGING_KEY_PAIR.");
     }
 
     secretManagerKeyringUpdater.update();

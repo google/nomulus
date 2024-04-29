@@ -194,13 +194,15 @@ public class GhostrydeTest {
     //     .isEqualTo("expect error");
 
     String encryptedInputBase64 =
-        "    hQEMA6WcEy81iaHVAQgAnn9bS6IOCTW2uZnITPWH8zIYr6K7YJslv38c4YU5eQqVhHC5PN0NhM2l\n"
-            + "    i89U3lUE6gp3DdEEbTbugwXCHWyRL4fYTlpiHZjBn2vZdSS21EAG+q1XuTaD8DTjkC2G060/sW6i\n"
-            + "    0gSIkksqgubbSVZTxHEqh92tv35KCqiYc52hjKZIIGI8FHhpJOtDa3bhMMad8nrMy3vbv5LiYNh5\n"
-            + "    j3DUCFhskU8Ldi1vBfXIonqUNLBrD/R471VVJyQ3NoGQTVUF9uXLoy+2dL0oBLc1Avj1XNP5PQ08\n"
-            + "    MWlqmezkLdY0oHnQqTHYhYDxRo/Sw7xO1GLwWR11rcx/IAJloJbKSHTFeNJUAcKFnKvPDwBk3nnr\n"
-            + "    uR505HtOj/tZDT5weVjhrlnmWXzaBRmYASy6PXZu6KzTbPUQTf4JeeJWdyw7glLMr2WPdMVPGZ8e\n"
-            + "    gcFAjSJZjZlqohZyBUpP\n";
+        """
+                hQEMA6WcEy81iaHVAQgAnn9bS6IOCTW2uZnITPWH8zIYr6K7YJslv38c4YU5eQqVhHC5PN0NhM2l
+                i89U3lUE6gp3DdEEbTbugwXCHWyRL4fYTlpiHZjBn2vZdSS21EAG+q1XuTaD8DTjkC2G060/sW6i
+                0gSIkksqgubbSVZTxHEqh92tv35KCqiYc52hjKZIIGI8FHhpJOtDa3bhMMad8nrMy3vbv5LiYNh5
+                j3DUCFhskU8Ldi1vBfXIonqUNLBrD/R471VVJyQ3NoGQTVUF9uXLoy+2dL0oBLc1Avj1XNP5PQ08
+                MWlqmezkLdY0oHnQqTHYhYDxRo/Sw7xO1GLwWR11rcx/IAJloJbKSHTFeNJUAcKFnKvPDwBk3nnr
+                uR505HtOj/tZDT5weVjhrlnmWXzaBRmYASy6PXZu6KzTbPUQTf4JeeJWdyw7glLMr2WPdMVPGZ8e
+                gcFAjSJZjZlqohZyBUpP
+            """;
 
     byte[] result =
         Ghostryde.decode(Base64.getMimeDecoder().decode(encryptedInputBase64), privateKey);

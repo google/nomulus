@@ -103,7 +103,7 @@ public final class Queries {
 
   static ImmutableList<BsaUnblockableDomain> batchReadUnblockables(
       Optional<BsaUnblockableDomain> lastRead, int batchSize) {
-    return ImmutableList.copyOf(
+    return ImmutableList.<BsaUnblockableDomain>copyOf(
         bsaQuery(
             () ->
                 tm().getEntityManager()

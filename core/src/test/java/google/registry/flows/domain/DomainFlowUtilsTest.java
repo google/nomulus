@@ -168,7 +168,7 @@ class DomainFlowUtilsTest extends ResourceFlowTestCase<DomainInfoFlow, Domain> {
   }
 
   @Test
-  void testCheckHasBillingAccount_failsOnRealTld() throws EppException {
+  void testCheckHasBillingAccount_failsOnRealTld() {
     persistFoobarTld(TldType.REAL);
     MissingBillingAccountMapException thrown =
         assertThrows(

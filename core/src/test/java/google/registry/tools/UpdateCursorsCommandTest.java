@@ -100,8 +100,10 @@ class UpdateCursorsCommandTest extends CommandTestCase<UpdateCursorsCommand> {
     String changes = command.prompt();
     assertThat(changes)
         .isEqualTo(
-            "Change cursorTime of BRDA for Scope:foo to 1984-12-18T00:00:00.000Z\n"
-                + "Change cursorTime of BRDA for Scope:bar to 1984-12-18T00:00:00.000Z\n");
+            """
+                Change cursorTime of BRDA for Scope:foo to 1984-12-18T00:00:00.000Z
+                Change cursorTime of BRDA for Scope:bar to 1984-12-18T00:00:00.000Z
+                """);
   }
 
   @Test
@@ -117,8 +119,10 @@ class UpdateCursorsCommandTest extends CommandTestCase<UpdateCursorsCommand> {
     String changes = command.prompt();
     assertThat(changes)
         .isEqualTo(
-            "Change cursorTime of BRDA for Scope:foo to 1984-12-18T00:00:00.000Z\n"
-                + "Change cursorTime of BRDA for Scope:bar to 1984-12-18T00:00:00.000Z\n");
+            """
+                Change cursorTime of BRDA for Scope:foo to 1984-12-18T00:00:00.000Z
+                Change cursorTime of BRDA for Scope:bar to 1984-12-18T00:00:00.000Z
+                """);
   }
 
   @Test
