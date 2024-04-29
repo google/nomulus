@@ -100,7 +100,7 @@ public class IntervalDescriptor extends AbstractTypeDescriptor<PGInterval>
 
   @Override
   public <X> ValueBinder<X> getBinder(JavaTypeDescriptor<X> javaTypeDescriptor) {
-    return new BasicBinder<X>(javaTypeDescriptor, this) {
+    return new BasicBinder<>(javaTypeDescriptor, this) {
       @Override
       protected void doBind(PreparedStatement st, X value, int index, WrapperOptions options)
           throws SQLException {
@@ -117,7 +117,7 @@ public class IntervalDescriptor extends AbstractTypeDescriptor<PGInterval>
 
   @Override
   public <X> ValueExtractor<X> getExtractor(JavaTypeDescriptor<X> javaTypeDescriptor) {
-    return new BasicExtractor<X>(javaTypeDescriptor, this) {
+    return new BasicExtractor<>(javaTypeDescriptor, this) {
       @Override
       protected X doExtract(ResultSet rs, String name, WrapperOptions options) throws SQLException {
         return javaTypeDescriptor.wrap(rs.getObject(name), options);

@@ -187,18 +187,12 @@ public class CheckBulkComplianceAction implements Runnable {
               .getLastNotificationSent()
               .map(sentDate -> Days.daysBetween(sentDate, clock.nowUtc()).getDays())
               .orElse(Integer.MAX_VALUE);
-      if (daysSinceLastNotification < THIRTY_DAYS) {
-        // Don't send an email if notification was already sent within the last 30
-        // days
-        continue;
-      } else if (daysSinceLastNotification < FORTY_DAYS) {
-        // Send an upgrade email if last email was between 30 and 40 days ago
+      // Send a warning email if 30-39 days since last notification and an upgrade email if 40+ days
+      if (daysSinceLastNotification >= THIRTY_DAYS) {
         sendActiveDomainOverageEmail(
-            /* warning= */ false, bulkPricingPackage, overageList.get(bulkPricingPackage));
-      } else {
-        // Send a warning email
-        sendActiveDomainOverageEmail(
-            /* warning= */ true, bulkPricingPackage, overageList.get(bulkPricingPackage));
+            /* warning= */ daysSinceLastNotification >= FORTY_DAYS,
+            bulkPricingPackage,
+            overageList.get(bulkPricingPackage));
       }
     }
   }

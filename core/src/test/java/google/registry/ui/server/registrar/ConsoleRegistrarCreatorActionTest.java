@@ -184,15 +184,16 @@ final class ConsoleRegistrarCreatorActionTest {
     assertThat(emailMessage.subject()).isEqualTo("Registrar myclientid created in unittest");
     assertThat(emailMessage.body())
         .isEqualTo(
-            ""
-                + "The following registrar was created in unittest by TestUserId:\n"
-                + "    clientId: myclientid\n"
-                + "    name: registrar name\n"
-                + "    billingAccount: USD=billing-account\n"
-                + "    ianaId: 12321\n"
-                + "    referralEmail: icann@example.com\n"
-                + "    driveId: drive-id\n"
-                + "Gave user myclientid@registry.example web access to the registrar\n");
+            """
+                The following registrar was created in unittest by TestUserId:
+                    clientId: myclientid
+                    name: registrar name
+                    billingAccount: USD=billing-account
+                    ianaId: 12321
+                    referralEmail: icann@example.com
+                    driveId: drive-id
+                Gave user myclientid@registry.example web access to the registrar
+                """);
     Registrar registrar = loadByRegistrarId("myclientid").orElse(null);
     assertThat(registrar).isNotNull();
     assertThat(registrar.getRegistrarId()).isEqualTo("myclientid");
@@ -277,12 +278,13 @@ final class ConsoleRegistrarCreatorActionTest {
 
     action.billingAccount =
         Optional.of(
-            ""
-                + "JPY=billing-account-yen\n"
-                + "  Usd = billing-account-usd  \r\n"
-                + "\n"
-                + "   \n"
-                + "eur=billing-account-eur\n");
+            """
+                JPY=billing-account-yen
+                  Usd = billing-account-usd  \r
+
+                  \s
+                eur=billing-account-eur
+                """);
     action.run();
 
     assertThat(response.getPayload())
@@ -317,9 +319,10 @@ final class ConsoleRegistrarCreatorActionTest {
 
     action.billingAccount =
         Optional.of(
-            ""
-                + "JPY=billing-account-1\n"
-                + "jpy=billing-account-2\n");
+            """
+                JPY=billing-account-1
+                jpy=billing-account-2
+                """);
     action.run();
 
     assertThat(response.getPayload())
@@ -345,10 +348,11 @@ final class ConsoleRegistrarCreatorActionTest {
 
     action.billingAccount =
         Optional.of(
-            ""
-                + "JPY=billing-account-1\n"
-                + "xyz=billing-account-2\n"
-                + "usd=billing-account-3\n");
+            """
+                JPY=billing-account-1
+                xyz=billing-account-2
+                usd=billing-account-3
+                """);
     action.run();
 
     assertThat(response.getPayload())
@@ -372,10 +376,11 @@ final class ConsoleRegistrarCreatorActionTest {
 
     action.billingAccount =
         Optional.of(
-            ""
-                + "JPY=billing-account-1\n"
-                + "some bad line\n"
-                + "usd=billing-account-2\n");
+            """
+                JPY=billing-account-1
+                some bad line
+                usd=billing-account-2
+                """);
     action.run();
 
     assertThat(response.getPayload())

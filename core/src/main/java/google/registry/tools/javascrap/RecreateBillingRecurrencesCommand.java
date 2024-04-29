@@ -60,11 +60,12 @@ public class RecreateBillingRecurrencesCommand extends ConfirmingCommand {
               ImmutableList<BillingRecurrence> newRecurrences =
                   convertRecurrencesWithoutSaving(existingRecurrences);
               return String.format(
-                  "Create new BillingRecurrence(s)?\n"
-                      + "Existing recurrences:\n"
-                      + "%s\n"
-                      + "New recurrences:\n"
-                      + "%s",
+                  """
+                      Create new BillingRecurrence(s)?
+                      Existing recurrences:
+                      %s
+                      New recurrences:
+                      %s""",
                   Joiner.on('\n').join(existingRecurrences), Joiner.on('\n').join(newRecurrences));
             });
   }

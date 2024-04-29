@@ -32,7 +32,7 @@ public class NullIgnoringCollectionBuilder<E, B extends ImmutableCollection.Buil
 
   public static <E2, B2 extends ImmutableCollection.Builder<E2>>
       NullIgnoringCollectionBuilder<E2, B2> create(B2 builder) {
-    return new NullIgnoringCollectionBuilder<E2, B2>(builder);
+    return new NullIgnoringCollectionBuilder<>(builder);
   }
 
   /** If 'elem' is not null, add it to the builder. */

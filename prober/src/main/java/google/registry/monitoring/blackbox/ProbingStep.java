@@ -72,9 +72,12 @@ public record ProbingStep(
   }
 
   @Override
-  public final String toString() {
+  public String toString() {
     return String.format(
-        "ProbingStep with Protocol: %s\n" + "OutboundMessage: %s\n",
+        """
+            ProbingStep with Protocol: %s
+            OutboundMessage: %s
+            """,
         protocol(), messageTemplate().getClass().getName());
   }
 

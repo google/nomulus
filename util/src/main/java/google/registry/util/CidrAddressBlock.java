@@ -441,7 +441,7 @@ public class CidrAddressBlock implements Iterable<InetAddress>, Serializable {
 
   @Override
   public Iterator<InetAddress> iterator() {
-    return new AbstractSequentialIterator<InetAddress>(ip) {
+    return new AbstractSequentialIterator<>(ip) {
       @Override
       protected InetAddress computeNext(InetAddress previous) {
         if (InetAddresses.isMaximum(previous)) {
@@ -463,11 +463,10 @@ public class CidrAddressBlock implements Iterable<InetAddress>, Serializable {
 
   @Override
   public boolean equals(@Nullable Object o) {
-    if (!(o instanceof CidrAddressBlock)) {
+    if (!(o instanceof CidrAddressBlock cidr)) {
       return false;
     }
 
-    CidrAddressBlock cidr = (CidrAddressBlock) o;
     return ip.equals(cidr.ip) && (netmask == cidr.netmask);
   }
 

@@ -15,7 +15,6 @@
 package google.registry.tools;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Predicates.isNull;
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static com.google.common.base.Verify.verify;
 import static com.google.common.collect.ImmutableList.toImmutableList;
@@ -30,13 +29,14 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import google.registry.flows.certs.CertificateChecker;
 import google.registry.model.registrar.Registrar;
+import google.registry.model.registrar.Registrar.State;
 import google.registry.model.registrar.RegistrarAddress;
 import google.registry.model.registrar.RegistrarBase;
 import google.registry.tools.params.KeyValueMapParameter.CurrencyUnitToStringMap;
 import google.registry.tools.params.OptionalLongParameter;
 import google.registry.tools.params.OptionalPhoneNumberParameter;
 import google.registry.tools.params.OptionalStringParameter;
-import google.registry.tools.params.PathParameter;
+import google.registry.tools.params.PathParameter.InputFile;
 import google.registry.tools.params.StringListParameter;
 import google.registry.util.CidrAddressBlock;
 import java.nio.file.Files;
@@ -46,6 +46,7 @@ import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import javax.annotation.Nullable;
 import javax.inject.Inject;
@@ -65,7 +66,7 @@ abstract class CreateOrUpdateRegistrarCommand extends MutatingCommand {
 
   @Nullable
   @Parameter(names = "--registrar_state", description = "Initial state of the registrar")
-  RegistrarBase.State registrarState;
+  State registrarState;
 
   @Parameter(
       names = "--allowed_tlds",
@@ -129,7 +130,7 @@ abstract class CreateOrUpdateRegistrarCommand extends MutatingCommand {
   @Parameter(
       names = "--cert_file",
       description = "File containing client certificate (X.509 PEM)",
-      validateWith = PathParameter.InputFile.class)
+      validateWith = InputFile.class)
   Path clientCertificateFilename;
 
   @Parameter(
@@ -143,7 +144,7 @@ abstract class CreateOrUpdateRegistrarCommand extends MutatingCommand {
   @Parameter(
       names = "--failover_cert_file",
       description = "File containing failover client certificate (X.509 PEM)",
-      validateWith = PathParameter.InputFile.class)
+      validateWith = InputFile.class)
   Path failoverClientCertificateFilename;
 
   @Parameter(
@@ -293,24 +294,13 @@ abstract class CreateOrUpdateRegistrarCommand extends MutatingCommand {
         // On creates, fall back to ICANN referral email (if present).
         builder.setEmailAddress(icannReferralEmail);
       }
-      if (url != null) {
-        builder.setUrl(url.orElse(null));
-      }
-      if (phone != null) {
-        builder.setPhoneNumber(phone.orElse(null));
-      }
-      if (fax != null) {
-        builder.setFaxNumber(fax.orElse(null));
-      }
-      if (registrarType != null) {
-        builder.setType(registrarType);
-      }
-      if (registrarState != null) {
-        builder.setState(registrarState);
-      }
-      if (driveFolderId != null) {
-        builder.setDriveFolderId(driveFolderId.orElse(null));
-      }
+      Optional.ofNullable(url).ifPresent(u -> builder.setUrl(u.orElse(null)));
+      Optional.ofNullable(phone).ifPresent(p -> builder.setPhoneNumber(p.orElse(null)));
+      Optional.ofNullable(fax).ifPresent(f -> builder.setFaxNumber(f.orElse(null)));
+      Optional.ofNullable(registrarType).ifPresent(builder::setType);
+      Optional.ofNullable(registrarState).ifPresent(builder::setState);
+      Optional.ofNullable(driveFolderId).ifPresent(d -> builder.setDriveFolderId(d.orElse(null)));
+
       if (!allowedTlds.isEmpty() || !addAllowedTlds.isEmpty()) {
         checkModifyAllowedTlds(oldRegistrar);
       }
@@ -338,7 +328,7 @@ abstract class CreateOrUpdateRegistrarCommand extends MutatingCommand {
             ipAllowList.stream().map(CidrAddressBlock::create).collect(toImmutableList()));
       }
       if (clientCertificateFilename != null) {
-        String asciiCert = new String(Files.readAllBytes(clientCertificateFilename), US_ASCII);
+        String asciiCert = Files.readString(clientCertificateFilename, US_ASCII);
         // An empty certificate file is allowed in order to provide a functionality for removing an
         // existing certificate without providing a replacement. An uploaded empty certificate file
         // will prevent the registrar from being able to establish EPP connections.
@@ -361,16 +351,13 @@ abstract class CreateOrUpdateRegistrarCommand extends MutatingCommand {
       }
 
       if (failoverClientCertificateFilename != null) {
-        String asciiCert =
-            new String(Files.readAllBytes(failoverClientCertificateFilename), US_ASCII);
+        String asciiCert = Files.readString(failoverClientCertificateFilename, US_ASCII);
         if (!asciiCert.equals("")) {
           certificateChecker.validateCertificate(asciiCert);
         }
         builder.setFailoverClientCertificate(asciiCert, now);
       }
-      if (ianaId != null) {
-        builder.setIanaIdentifier(ianaId.orElse(null));
-      }
+      Optional.ofNullable(ianaId).ifPresent(i -> builder.setIanaIdentifier(i.orElse(null)));
       Optional.ofNullable(poNumber).ifPresent(builder::setPoNumber);
       if (billingAccountMap != null) {
         LinkedHashMap<CurrencyUnit, String> newBillingAccountMap = new LinkedHashMap<>();
@@ -384,8 +371,8 @@ abstract class CreateOrUpdateRegistrarCommand extends MutatingCommand {
       }
       List<Object> streetAddressFields = Arrays.asList(street, city, state, zip, countryCode);
       checkArgument(
-          streetAddressFields.stream().anyMatch(isNull())
-              == streetAddressFields.stream().allMatch(isNull()),
+          streetAddressFields.stream().anyMatch(Objects::isNull)
+              == streetAddressFields.stream().allMatch(Objects::isNull),
           "Must specify all fields of address");
       if (street != null) {
         // We always set the localized address for now. That should be safe to do since it supports

@@ -62,7 +62,7 @@ class BsaDiffCreator {
     this.gcsClient = gcsClient;
   }
 
-  private <K, V extends Comparable> Multimap<K, V> listBackedMultiMap() {
+  private <K, V extends Comparable<?>> Multimap<K, V> listBackedMultiMap() {
     return newListMultimap(newHashMap(), Lists::newArrayList);
   }
 

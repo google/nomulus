@@ -98,10 +98,9 @@ abstract class ListObjectsCommand implements CommandWithConnection {
     if (obj == null) {
       throw new VerifyException("Server returned no status");
     }
-    if (!(obj instanceof String)) {
+    if (!(obj instanceof String status)) {
       throw new VerifyException("Server returned non-string status");
     }
-    String status = (String) obj;
     // Handle errors.
     if (status.equals("error")) {
       obj = responseMap.get("error");
