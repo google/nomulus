@@ -25,6 +25,6 @@ public class RegistryServlet extends ServletBase {
   private static final Lazy<MetricReporter> metricReporter = component.metricReporter();
 
   public RegistryServlet() {
-    super(requestHandler, metricReporter);
+    super(component.projectId(), requestHandler, metricReporter);
   }
 }

@@ -14,10 +14,17 @@
 
 package google.registry.module;
 
+import static com.google.cloud.logging.TraceLoggingEnhancer.setCurrentTraceId;
+import static google.registry.util.RandomStringGenerator.insecureRandomStringGenerator;
+import static google.registry.util.RegistryEnvironment.isOnJetty;
+import static google.registry.util.StringGenerator.Alphabets.HEX_DIGITS_ONLY;
+
 import com.google.common.flogger.FluentLogger;
 import com.google.monitoring.metrics.MetricReporter;
 import dagger.Lazy;
 import google.registry.request.RequestHandler;
+import google.registry.util.RandomStringGenerator;
+import google.registry.util.RegistryEnvironment;
 import google.registry.util.SystemClock;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
@@ -31,12 +38,23 @@ import org.joda.time.DateTime;
 /** Base for Servlets that handle all requests to our App Engine modules. */
 public class ServletBase extends HttpServlet {
 
+  private static final FluentLogger logger = FluentLogger.forEnclosingClass();
+
+  // Length of a log trace_id, arbitrarily chosen.
+  private static final int LOG_TRACE_ID_LENGTH = 32;
+
   private final RequestHandler<?> requestHandler;
   private final Lazy<MetricReporter> metricReporter;
-  private static final FluentLogger logger = FluentLogger.forEnclosingClass();
+
+  private final String projectId;
   private static final SystemClock clock = new SystemClock();
 
-  public ServletBase(RequestHandler<?> requestHandler, Lazy<MetricReporter> metricReporter) {
+  private static final RandomStringGenerator LOG_TRACE_ID_GENERATOR =
+      insecureRandomStringGenerator(HEX_DIGITS_ONLY);
+
+  public ServletBase(
+      String projectId, RequestHandler<?> requestHandler, Lazy<MetricReporter> metricReporter) {
+    this.projectId = projectId;
     this.requestHandler = requestHandler;
     this.metricReporter = metricReporter;
   }
@@ -75,11 +93,38 @@ public class ServletBase extends HttpServlet {
     logger.atInfo().log("Received %s request.", getClass().getSimpleName());
     DateTime startTime = clock.nowUtc();
     try {
+      setTraceId(startTime);
       requestHandler.handleRequest(req, rsp);
     } finally {
       logger.atInfo().log(
           "Finished %s request. Latency: %.3fs.",
           getClass().getSimpleName(), (clock.nowUtc().getMillis() - startTime.getMillis()) / 1000d);
+      removeTraceId();
     }
+  }
+
+  /** Sets a thread-local trace id for request scope log tracing. */
+  void setTraceId(DateTime startTime) {
+    if (RegistryEnvironment.get().equals(RegistryEnvironment.LOCAL)) {
+      return;
+    }
+    // Use `isOnJetty == True` as a stand-in for GKE check in Nomulus. Do not manually set trace_ids
+    // on platforms already doing so, like AppEngine or Cloud Run.
+    if (isOnJetty()) {
+      setCurrentTraceId(traceId());
+    }
+  }
+
+  /** Removes any thread-local trace id. */
+  void removeTraceId() {
+    if (isOnJetty()) {
+      setCurrentTraceId(null);
+    }
+  }
+
+  String traceId() {
+    return String.format(
+        "projects/%s/traces/%s",
+        projectId, LOG_TRACE_ID_GENERATOR.createString(LOG_TRACE_ID_LENGTH));
   }
 }

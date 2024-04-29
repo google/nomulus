@@ -18,6 +18,7 @@ import com.google.monitoring.metrics.MetricReporter;
 import dagger.Component;
 import dagger.Lazy;
 import google.registry.config.CredentialModule;
+import google.registry.config.RegistryConfig.Config;
 import google.registry.config.RegistryConfig.ConfigModule;
 import google.registry.flows.ServerTridProviderModule;
 import google.registry.flows.custom.CustomLogicFactoryModule;
@@ -68,4 +69,7 @@ interface PubApiComponent {
   PubApiRequestHandler requestHandler();
 
   Lazy<MetricReporter> metricReporter();
+
+  @Config("projectId")
+  String projectId();
 }
