@@ -49,6 +49,7 @@ import javax.persistence.Table;
       @Index(columnList = "creationTime"),
       @Index(columnList = "deletionTime"),
       @Index(columnList = "currentSponsorRegistrarId"),
+      @Index(columnList = "superordinateDomain")
     })
 @ExternalMessagingName("host")
 @WithVKey(String.class)

@@ -61,7 +61,8 @@ import org.joda.time.DateTime;
       @Index(columnList = "lordnPhase"),
       @Index(columnList = "billing_recurrence_id"),
       @Index(columnList = "transfer_billing_event_id"),
-      @Index(columnList = "transfer_billing_recurrence_id")
+      @Index(columnList = "transfer_billing_recurrence_id"),
+      @Index(columnList = "transfer_billing_cancellation_id")
     })
 @WithVKey(String.class)
 @ExternalMessagingName("domain")

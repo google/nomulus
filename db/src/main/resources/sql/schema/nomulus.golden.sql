@@ -2186,6 +2186,13 @@ CREATE INDEX idxhp33wybmb6tbpr1bq7ttwk8je ON public."ContactHistory" USING btree
 
 
 --
+-- Name: idxhteajcrxmq4o8rsys8kevyiqr; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idxhteajcrxmq4o8rsys8kevyiqr ON public."Domain" USING btree (transfer_billing_cancellation_id);
+
+
+--
 -- Name: idxiahqo1d1fqdfknywmj2xbxl7t; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -2337,6 +2344,13 @@ CREATE INDEX idxoqd7n4hbx86hvlgkilq75olas ON public."Contact" USING btree (conta
 --
 
 CREATE INDEX idxoqttafcywwdn41um6kwlt0n8b ON public."BillingRecurrence" USING btree (domain_repo_id);
+
+
+--
+-- Name: idxorp4yv9ult4ds6kgxo5fs5gnw; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idxorp4yv9ult4ds6kgxo5fs5gnw ON public."Host" USING btree (superordinate_domain);
 
 
 --
