@@ -38,6 +38,7 @@ import google.registry.model.common.Cursor;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarAddress;
 import google.registry.model.registrar.RegistrarPoc;
+import google.registry.model.registrar.RegistrarPocBase;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.testing.DatabaseHelper;
@@ -157,7 +158,8 @@ public class SyncRegistrarsSheetTest {
                 .setName("Jane Doe")
                 .setEmailAddress("contact@example.com")
                 .setPhoneNumber("+1.1234567890")
-                .setTypes(ImmutableSet.of(RegistrarPoc.Type.ADMIN, RegistrarPoc.Type.BILLING))
+                .setTypes(
+                    ImmutableSet.of(RegistrarPocBase.Type.ADMIN, RegistrarPocBase.Type.BILLING))
                 .build(),
             new RegistrarPoc.Builder()
                 .setRegistrar(registrar)
@@ -165,7 +167,7 @@ public class SyncRegistrarsSheetTest {
                 .setEmailAddress("john.doe@example.tld")
                 .setPhoneNumber("+1.1234567890")
                 .setFaxNumber("+1.1234567891")
-                .setTypes(ImmutableSet.of(RegistrarPoc.Type.ADMIN))
+                .setTypes(ImmutableSet.of(RegistrarPocBase.Type.ADMIN))
                 // Purposely flip the internal/external admin/tech
                 // distinction to make sure we're not relying on it.  Sigh.
                 .setVisibleInWhoisAsAdmin(false)
@@ -176,7 +178,7 @@ public class SyncRegistrarsSheetTest {
                 .setRegistrar(registrar)
                 .setName("Jane Smith")
                 .setEmailAddress("pride@example.net")
-                .setTypes(ImmutableSet.of(RegistrarPoc.Type.TECH))
+                .setTypes(ImmutableSet.of(RegistrarPocBase.Type.TECH))
                 .build());
     // Use registrar key for contacts' parent.
     DateTime registrarCreationTime = persistResource(registrar).getCreationTime();

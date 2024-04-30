@@ -41,7 +41,7 @@ import google.registry.flows.certs.CertificateChecker;
 import google.registry.flows.certs.CertificateChecker.InsecureCertificateException;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarPoc;
-import google.registry.model.registrar.RegistrarPoc.Type;
+import google.registry.model.registrar.RegistrarPocBase.Type;
 import google.registry.request.Action;
 import google.registry.request.Action.Service;
 import google.registry.request.HttpException.BadRequestException;

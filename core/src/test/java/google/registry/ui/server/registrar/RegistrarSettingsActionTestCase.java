@@ -36,6 +36,7 @@ import com.google.common.collect.ImmutableSortedMap;
 import google.registry.flows.certs.CertificateChecker;
 import google.registry.groups.GmailClient;
 import google.registry.model.registrar.RegistrarPoc;
+import google.registry.model.registrar.RegistrarPocBase;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.request.JsonActionRunner;
@@ -97,7 +98,7 @@ public abstract class RegistrarSettingsActionTestCase {
     // Add a technical contact to the registrar (in addition to the default admin contact created by
     // JpaTransactionManagerExtension).
     techContact =
-        getOnlyElement(loadRegistrar(CLIENT_ID).getContactsOfType(RegistrarPoc.Type.TECH));
+        getOnlyElement(loadRegistrar(CLIENT_ID).getContactsOfType(RegistrarPocBase.Type.TECH));
 
     action.registrarAccessor = null;
     action.jsonActionRunner =
