@@ -7,7 +7,7 @@
     *matTreeNodeDef="let node"
     matTreeNodeToggle
     (click)="onClick(node)"
-    [class.active]="router.url.endsWith(node.path)"
+    [class.active]="router.url.includes(node.path)"
   >
     <mat-icon class="console-app__nav-icon" *ngIf="node.iconName">
       {{ node.iconName }}

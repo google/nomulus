@@ -17,12 +17,14 @@ import { Injectable } from '@angular/core';
 import { Observable, catchError, of, throwError } from 'rxjs';
 
 import { DomainListResult } from 'src/app/domains/domainList.service';
+import { environment } from 'src/environments/environment';
 import {
   Registrar,
   SecuritySettingsBackendModel,
   WhoisRegistrarFields,
 } from '../../registrar/registrar.service';
 import { Contact } from '../../settings/contact/contact.service';
+import { EppPasswordBackendModel } from '../../settings/security/security.service';
 import { UserData } from './userData.service';
 
 @Injectable()
@@ -35,7 +37,11 @@ export class BackendService {
   ): Observable<Type> {
     // This is a temporary redirect to the old console untill the new console
     // is fully released and enabled
-    if (error.url && window.location.href.indexOf(error.url) < 0) {
+    if (
+      environment.production &&
+      error.url &&
+      window.location.href.indexOf(error.url) < 0
+    ) {
       window.location.href = error.url;
     }
     if (error.error instanceof Error) {
@@ -136,6 +142,15 @@ export class BackendService {
     return this.http.post<SecuritySettingsBackendModel>(
       `/console-api/settings/security?registrarId=${registrarId}`,
       securitySettings
+    );
+  }
+
+  postEppPasswordUpdate(
+    data: EppPasswordBackendModel
+  ): Observable<EppPasswordBackendModel> {
+    return this.http.post<EppPasswordBackendModel>(
+      `/console-api/eppPassword`,
+      data
     );
   }
 
