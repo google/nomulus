@@ -70,8 +70,7 @@ public class RdeFragmenter {
       cache.put(WatermarkModePair.create(watermark, RdeMode.FULL), result);
       cache.put(WatermarkModePair.create(watermark, RdeMode.THIN), result);
       return result;
-    } else if (resource instanceof Host) {
-      Host host = (Host) resource;
+    } else if (resource instanceof Host host) {
       result =
           Optional.of(
               host.isSubordinate()

@@ -147,8 +147,7 @@ public class XmlTestUtils {
       @Nullable String path,
       Set<String> ignoredPaths,
       Map<String, String> nsMap) throws Exception {
-    if (obj instanceof JSONObject) {
-      JSONObject jsonObject = (JSONObject) obj;
+    if (obj instanceof JSONObject jsonObject) {
       Map<String, Object> map = new HashMap<>();
       String[] names = JSONObject.getNames(jsonObject);
       if (names != null) {

@@ -154,20 +154,16 @@ public class RegistrarSettingsAction implements Runnable, JsonActionRunner.JsonA
         "Received request '%s' on registrar '%s' with args %s", op, registrarId, args);
     String status = "SUCCESS";
     try {
-      switch (op) {
-        case "update":
-          return update(args, registrarId).toJsonResponse();
-        case "read":
-          return read(registrarId).toJsonResponse();
-        default:
-          throw new IllegalArgumentException("Unknown or unsupported operation: " + op);
-      }
+      return switch (op) {
+        case "update" -> update(args, registrarId).toJsonResponse();
+        case "read" -> read(registrarId).toJsonResponse();
+        default -> throw new IllegalArgumentException("Unknown or unsupported operation: " + op);
+      };
     } catch (Throwable e) {
       logger.atWarning().withCause(e).log(
           "Failed to perform operation '%s' on registrar '%s' for args %s", op, registrarId, args);
       status = "ERROR: " + e.getClass().getSimpleName();
-      if (e instanceof FormFieldException) {
-        FormFieldException formFieldException = (FormFieldException) e;
+      if (e instanceof FormFieldException formFieldException) {
         return JsonResponseHelper.createFormFieldError(
             formFieldException.getMessage(), formFieldException.getFieldName());
       }
@@ -641,8 +637,11 @@ public class RegistrarSettingsAction implements Runnable, JsonActionRunner.JsonA
             "Registrar %s (%s) updated in registry %s environment",
             existingRegistrar.getRegistrarName(), existingRegistrar.getRegistrarId(), environment),
         String.format(
-            "The following changes were made in registry %s environment to "
-                + "the registrar %s by %s:\n\n%s",
+            """
+                The following changes were made in registry %s environment to the registrar %s by\
+                 %s:
+
+                %s""",
             environment,
             existingRegistrar.getRegistrarId(),
             authResult.userIdForLogging(),

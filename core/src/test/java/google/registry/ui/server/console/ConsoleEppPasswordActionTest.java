@@ -153,7 +153,7 @@ class ConsoleEppPasswordActionTest {
   }
 
   @Test
-  void testSuccess_passwordUpdated() throws AddressException {
+  void testSuccess_passwordUpdated() {
     ConsoleEppPasswordAction action = createAction();
     setParams(
         ImmutableMap.of(

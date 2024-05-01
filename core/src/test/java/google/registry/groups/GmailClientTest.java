@@ -48,9 +48,7 @@ import javax.mail.internet.MimeMultipart;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.invocation.InvocationOnMock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.mockito.stubbing.Answer;
 
 /** Unit tests for {@link GmailClient}. */
 @ExtendWith(MockitoExtension.class)
@@ -159,13 +157,10 @@ public class GmailClientTest {
     MimeMessage mimeMessage = mock(MimeMessage.class);
     byte[] data = "My content".getBytes(UTF_8);
     doAnswer(
-            new Answer() {
-              @Override
-              public Object answer(InvocationOnMock invocation) throws Throwable {
-                OutputStream os = invocation.getArgument(0);
-                os.write(data);
-                return null;
-              }
+            invocation -> {
+              OutputStream os = invocation.getArgument(0);
+              os.write(data);
+              return null;
             })
         .when(mimeMessage)
         .writeTo(any(OutputStream.class));

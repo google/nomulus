@@ -191,9 +191,10 @@ final class RegistryCli implements CommandRunner {
           e.printStackTrace();
           System.err.println("===================================================================");
           System.err.println(
-              "This error is likely the result of having another instance of\n"
-                  + "nomulus running at the same time.  Check your system, shut down\n"
-                  + "the other instance, and try again.");
+              """
+                  This error is likely the result of having another instance of
+                  nomulus running at the same time.  Check your system, shut down
+                  the other instance, and try again.""");
           System.err.println("===================================================================");
         } else {
           throw e;

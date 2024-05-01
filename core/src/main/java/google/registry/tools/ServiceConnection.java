@@ -163,18 +163,12 @@ public class ServiceConnection {
   }
 
   public static URL getServer(Service service) {
-    switch (service) {
-      case DEFAULT:
-        return RegistryConfig.getDefaultServer();
-      case TOOLS:
-        return RegistryConfig.getToolsServer();
-      case BACKEND:
-        return RegistryConfig.getBackendServer();
-      case BSA:
-        return RegistryConfig.getBsaServer();
-      case PUBAPI:
-        return RegistryConfig.getPubapiServer();
-    }
-    throw new IllegalStateException("Unknown service: " + service);
+    return switch (service) {
+      case DEFAULT -> RegistryConfig.getDefaultServer();
+      case TOOLS -> RegistryConfig.getToolsServer();
+      case BACKEND -> RegistryConfig.getBackendServer();
+      case BSA -> RegistryConfig.getBsaServer();
+      case PUBAPI -> RegistryConfig.getPubapiServer();
+    };
   }
 }

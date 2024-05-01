@@ -115,7 +115,7 @@ public class StringCollectionDescriptor extends AbstractTypeDescriptor<StringCol
 
   @Override
   public <X> ValueBinder<X> getBinder(JavaTypeDescriptor<X> javaTypeDescriptor) {
-    return new BasicBinder<X>(javaTypeDescriptor, this) {
+    return new BasicBinder<>(javaTypeDescriptor, this) {
       @Override
       protected void doBind(PreparedStatement st, X value, int index, WrapperOptions options)
           throws SQLException {
@@ -123,8 +123,7 @@ public class StringCollectionDescriptor extends AbstractTypeDescriptor<StringCol
           st.setArray(index, null);
           return;
         }
-        if (value instanceof StringCollection) {
-          StringCollection stringCollection = (StringCollection) value;
+        if (value instanceof StringCollection stringCollection) {
           if (stringCollection.getCollection() == null) {
             st.setArray(index, null);
           } else {
@@ -154,7 +153,7 @@ public class StringCollectionDescriptor extends AbstractTypeDescriptor<StringCol
 
   @Override
   public <X> ValueExtractor<X> getExtractor(JavaTypeDescriptor<X> javaTypeDescriptor) {
-    return new BasicExtractor<X>(javaTypeDescriptor, this) {
+    return new BasicExtractor<>(javaTypeDescriptor, this) {
       @Override
       protected X doExtract(ResultSet rs, String name, WrapperOptions options) throws SQLException {
         return javaTypeDescriptor.wrap(rs.getArray(name), options);

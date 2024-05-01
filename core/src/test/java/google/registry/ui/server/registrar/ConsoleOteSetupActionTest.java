@@ -159,13 +159,14 @@ public final class ConsoleOteSetupActionTest {
         .isEqualTo("OT&E for registrar myclientid created in unittest");
     assertThat(emailMessage.body())
         .isEqualTo(
-            ""
-                + "The following entities were created in unittest by TestUserId:\n"
-                + "   Registrar myclientid-1 with access to TLD myclientid-sunrise\n"
-                + "   Registrar myclientid-3 with access to TLD myclientid-ga\n"
-                + "   Registrar myclientid-4 with access to TLD myclientid-ga\n"
-                + "   Registrar myclientid-5 with access to TLD myclientid-eap\n"
-                + "Gave user contact@registry.example web access to these Registrars\n");
+            """
+                The following entities were created in unittest by TestUserId:
+                   Registrar myclientid-1 with access to TLD myclientid-sunrise
+                   Registrar myclientid-3 with access to TLD myclientid-ga
+                   Registrar myclientid-4 with access to TLD myclientid-ga
+                   Registrar myclientid-5 with access to TLD myclientid-eap
+                Gave user contact@registry.example web access to these Registrars
+                """);
     assertThat(response.getPayload()).contains("gtag('config', 'sampleId')");
   }
 

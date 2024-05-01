@@ -120,10 +120,9 @@ class BsaDownload {
     if (this == o) {
       return true;
     }
-    if (!(o instanceof BsaDownload)) {
+    if (!(o instanceof BsaDownload that)) {
       return false;
     }
-    BsaDownload that = (BsaDownload) o;
     return Objects.equal(creationTime, that.creationTime)
         && Objects.equal(updateTime, that.updateTime)
         && Objects.equal(blockListChecksums, that.blockListChecksums)
@@ -136,6 +135,6 @@ class BsaDownload {
   }
 
   static VKey<BsaDownload> vKey(long jobId) {
-    return VKey.create(BsaDownload.class, Long.valueOf(jobId));
+    return VKey.create(BsaDownload.class, jobId);
   }
 }

@@ -114,27 +114,15 @@ abstract class RdapActionBaseTestCase<A extends RdapActionBase> {
   }
 
   JsonObject generateExpectedJsonError(String description, int code) {
-    String title;
-    switch (code) {
-      case 404:
-        title = "Not Found";
-        break;
-      case 500:
-        title = "Internal Server Error";
-        break;
-      case 501:
-        title = "Not Implemented";
-        break;
-      case 400:
-        title = "Bad Request";
-        break;
-      case 422:
-        title = "Unprocessable Entity";
-        break;
-      default:
-        title = "ERR";
-        break;
-    }
+    String title =
+        switch (code) {
+          case 404 -> "Not Found";
+          case 500 -> "Internal Server Error";
+          case 501 -> "Not Implemented";
+          case 400 -> "Bad Request";
+          case 422 -> "Unprocessable Entity";
+          default -> "ERR";
+        };
     return RdapTestHelper.loadJsonFile(
         "rdap_error.json",
         "DESCRIPTION",

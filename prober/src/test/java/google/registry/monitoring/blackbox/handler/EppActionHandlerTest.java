@@ -75,20 +75,25 @@ class EppActionHandlerTest {
   private Document getResponse(EppResponseMessage response, boolean fail, String clTrid)
       throws Exception {
     switch (response.name()) {
-      case "greeting":
+      case "greeting" -> {
         if (fail) {
           return EppUtils.getBasicResponse(true, clTrid, SERVER_ID);
         } else {
           return EppUtils.getGreeting();
         }
-      case "domainExists":
+      }
+      case "domainExists" -> {
         return EppUtils.getDomainCheck(!fail, clTrid, SERVER_ID, DOMAIN_NAME);
-      case "domainNotExists":
+      }
+      case "domainNotExists" -> {
         return EppUtils.getDomainCheck(fail, clTrid, SERVER_ID, DOMAIN_NAME);
-      case "success":
+      }
+      case "success" -> {
         return EppUtils.getBasicResponse(!fail, clTrid, SERVER_ID);
-      default:
+      }
+      default -> {
         return EppUtils.getBasicResponse(fail, clTrid, SERVER_ID);
+      }
     }
   }
 

@@ -184,15 +184,11 @@ public final class PosixTarHeader {
 
   /** Returns the {@link Type} of file. */
   public Type getType() {
-    switch (header[156]) {
-      case '\0':
-      case '0':
-        return Type.REGULAR;
-      case '5':
-        return Type.DIRECTORY;
-      default:
-        return Type.UNSUPPORTED;
-    }
+    return switch (header[156]) {
+      case '\0', '0' -> Type.REGULAR;
+      case '5' -> Type.DIRECTORY;
+      default -> Type.UNSUPPORTED;
+    };
   }
 
   /**
@@ -434,14 +430,9 @@ public final class PosixTarHeader {
      */
     public Builder setType(Type type) {
       switch (type) {
-        case REGULAR:
-          header[156] = '0';
-          break;
-        case DIRECTORY:
-          header[156] = '5';
-          break;
-        default:
-          throw new UnsupportedOperationException();
+        case REGULAR -> header[156] = '0';
+        case DIRECTORY -> header[156] = '5';
+        default -> throw new UnsupportedOperationException();
       }
       return this;
     }

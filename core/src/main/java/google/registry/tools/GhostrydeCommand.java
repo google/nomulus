@@ -76,7 +76,7 @@ final class GhostrydeCommand implements Command {
   Provider<PGPPrivateKey> rdeStagingDecryptionKey;
 
   @Override
-  public final void run() throws Exception {
+  public void run() throws Exception {
     checkArgument(encrypt ^ decrypt, "Please specify either --encrypt or --decrypt");
     if (encrypt) {
       checkArgumentNotNull(output, "--output path is required in --encrypt mode");
