@@ -22,6 +22,13 @@ import {
 } from 'src/app/registrar/registrar.service';
 import { BackendService } from 'src/app/shared/services/backend.service';
 
+export interface EppPasswordBackEndModel {
+  registrarId: string;
+  oldPassword: string;
+  newPassword: string;
+  newPasswordRepeat: string;
+}
+
 export function apiToUiConverter(
   securitySettings: SecuritySettingsBackendModel = {}
 ): SecuritySettings {
@@ -68,5 +75,11 @@ export class SecurityService {
       );
   }
 
-  saveEppPassword() {}
+  saveEppPassword(data: EppPasswordBackEndModel) {
+    return this.backend.postEppPasswordUpdate(data).pipe(
+      switchMap(() => {
+        return this.registrarService.loadRegistrars();
+      })
+    );
+  }
 }
