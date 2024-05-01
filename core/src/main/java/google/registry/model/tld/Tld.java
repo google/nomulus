@@ -458,9 +458,8 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
   @JsonDeserialize(using = CurrencyDeserializer.class)
   CurrencyUnit currency = DEFAULT_CURRENCY;
 
-  // TODO(sarahbot@): Rename this field to createBillingCost once the old createBillingCost column
-  // has been
-  // removed from the database
+  // TODO(sarahbot@): Rename this field to createBillingCost once the old createBillingCost columns
+  // have been removed from the database
   /** A property that transitions to different create billing costs at different times. */
   @Column(nullable = false)
   @JsonDeserialize(using = TimedTransitionPropertyMoneyDeserializer.class)
