@@ -50,7 +50,6 @@ class GetTldCommandTest extends CommandTestCase<GetTldCommand> {
         tld.asBuilder()
             .setDnsAPlusAaaaTtl(Duration.standardMinutes(15))
             .setDriveFolderId("driveFolder")
-            .setCreateBillingCost(Money.of(USD, 25))
             .setCreateBillingCostTransitions(
                 ImmutableSortedMap.of(
                     START_OF_TIME,
