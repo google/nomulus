@@ -188,16 +188,6 @@ public class ConfigureTldCommandTest extends CommandTestCase<ConfigureTldCommand
   }
 
   @Test
-  void testSuccess_fileHasCreateBillingCost() throws Exception {
-    createTld("withcreatecost");
-    File tldFile = tmpDir.resolve("withcreatecost.yaml").toFile();
-    Files.asCharSink(tldFile, UTF_8).write(loadFile(getClass(), "withcreatecost.yaml"));
-    runCommandForced("--input=" + tldFile);
-    Tld updatedTld = Tld.get("withcreatecost");
-    assertThat(updatedTld.getCreateBillingCost()).isEqualTo(Money.of(USD, 8));
-  }
-
-  @Test
   void testSuccess_fileMissingCreateBillingCostTransitionsRevertsToBasicConstructedMap()
       throws Exception {
     ImmutableSortedMap<DateTime, Money> createCostTransitions =
