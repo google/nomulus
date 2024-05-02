@@ -689,8 +689,7 @@ public class ConfigureTldCommandTest extends CommandTestCase<ConfigureTldCommand
     Files.asCharSink(tldFile, UTF_8).write(loadFile(getClass(), "tld.yaml"));
     runCommandForced("--input=" + tldFile, "-d");
     Tld notUpdatedTld = Tld.get("tld");
-    assertThat(notUpdatedTld.getCreateBillingCost(fakeClock.nowUtc()))
-        .isEqualTo(Money.of(USD, 13));
+    assertThat(notUpdatedTld.getCreateBillingCost(fakeClock.nowUtc())).isEqualTo(Money.of(USD, 13));
   }
 
   @Test
