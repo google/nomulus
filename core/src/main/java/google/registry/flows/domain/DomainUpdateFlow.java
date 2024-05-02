@@ -273,6 +273,7 @@ public final class DomainUpdateFlow implements MutatingFlow {
                         secDnsUpdate.get())
                     : domain.getDsData())
             .setLastEppUpdateTime(now)
+            .setLastUpdateTimeViaEpp(now)
             .setLastEppUpdateRegistrarId(registrarId)
             .addStatusValues(add.getStatusValues())
             .removeStatusValues(remove.getStatusValues())

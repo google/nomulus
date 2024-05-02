@@ -91,6 +91,7 @@ public class Host extends HostBase implements ForeignKeyedEppResource {
           .setLastSuperordinateChange(hostBase.getLastSuperordinateChange())
           .setLastEppUpdateRegistrarId(hostBase.getLastEppUpdateRegistrarId())
           .setLastEppUpdateTime(hostBase.getLastEppUpdateTime())
+          .setLastUpdateTimeViaEpp(hostBase.getLastUpdateTimeViaEpp())
           .setPersistedCurrentSponsorRegistrarId(hostBase.getPersistedCurrentSponsorRegistrarId())
           .setRepoId(hostBase.getRepoId())
           .setSuperordinateDomain(hostBase.getSuperordinateDomain())

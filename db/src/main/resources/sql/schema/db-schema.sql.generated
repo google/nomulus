@@ -153,6 +153,7 @@
         deletion_time timestamptz,
         last_epp_update_registrar_id text,
         last_epp_update_time timestamptz,
+        last_update_time_via_epp timestamptz,
         statuses text[],
         auth_info_repo_id text,
         auth_info_value text,
@@ -273,6 +274,7 @@
         deletion_time timestamptz,
         last_epp_update_registrar_id text,
         last_epp_update_time timestamptz,
+        last_update_time_via_epp timestamptz,
         statuses text[],
         update_timestamp timestamptz,
         primary key (contact_repo_id, history_revision_id)
@@ -314,6 +316,7 @@
         deletion_time timestamptz,
         last_epp_update_registrar_id text,
         last_epp_update_time timestamptz,
+        last_update_time_via_epp timestamptz,
         statuses text[],
         admin_contact text,
         auth_info_repo_id text,
@@ -436,6 +439,7 @@
         deletion_time timestamptz,
         last_epp_update_registrar_id text,
         last_epp_update_time timestamptz,
+        last_update_time_via_epp timestamptz,
         statuses text[],
         update_timestamp timestamptz,
         primary key (domain_repo_id, history_revision_id)
@@ -496,6 +500,7 @@
         deletion_time timestamptz,
         last_epp_update_registrar_id text,
         last_epp_update_time timestamptz,
+        last_update_time_via_epp timestamptz,
         statuses text[],
         host_name text,
         inet_addresses text[],
@@ -528,6 +533,7 @@
         deletion_time timestamptz,
         last_epp_update_registrar_id text,
         last_epp_update_time timestamptz,
+        last_update_time_via_epp timestamptz,
         statuses text[],
         update_timestamp timestamptz,
         primary key (host_repo_id, history_revision_id)

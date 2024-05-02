@@ -90,6 +90,7 @@ public class Contact extends ContactBase implements ForeignKeyedEppResource {
           .setLastTransferTime(contactBase.getLastTransferTime())
           .setLastEppUpdateRegistrarId(contactBase.getLastEppUpdateRegistrarId())
           .setLastEppUpdateTime(contactBase.getLastEppUpdateTime())
+          .setLastUpdateTimeViaEpp(contactBase.getLastUpdateTimeViaEpp())
           .setLocalizedPostalInfo(contactBase.getLocalizedPostalInfo())
           .setPersistedCurrentSponsorRegistrarId(
               contactBase.getPersistedCurrentSponsorRegistrarId())

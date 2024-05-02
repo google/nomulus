@@ -129,6 +129,7 @@ public final class ContactUpdateFlow implements MutatingFlow {
     Contact newContact =
         builder
             .setLastEppUpdateTime(now)
+            .setLastUpdateTimeViaEpp(now)
             .setLastEppUpdateRegistrarId(registrarId)
             .setAuthInfo(preferFirst(change.getAuthInfo(), existingContact.getAuthInfo()))
             .setDisclose(preferFirst(change.getDisclose(), existingContact.getDisclose()))

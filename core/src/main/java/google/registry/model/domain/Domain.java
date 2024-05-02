@@ -191,6 +191,7 @@ public class Domain extends DomainBase implements ForeignKeyedEppResource {
           .setLaunchNotice(domainBase.getLaunchNotice())
           .setLastEppUpdateRegistrarId(domainBase.getLastEppUpdateRegistrarId())
           .setLastEppUpdateTime(domainBase.getLastEppUpdateTime())
+          .setLastUpdateTimeViaEpp(domainBase.getLastUpdateTimeViaEpp())
           .setNameservers(domainBase.getNameservers())
           .setPersistedCurrentSponsorRegistrarId(domainBase.getPersistedCurrentSponsorRegistrarId())
           .setRegistrant(domainBase.getRegistrant())

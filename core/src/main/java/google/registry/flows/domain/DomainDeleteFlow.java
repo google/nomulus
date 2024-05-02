@@ -159,7 +159,10 @@ public final class DomainDeleteFlow implements MutatingFlow {
     } else {
       builder = existingDomain.asBuilder();
     }
-    builder.setLastEppUpdateTime(now).setLastEppUpdateRegistrarId(registrarId);
+    builder
+        .setLastEppUpdateTime(now)
+        .setLastUpdateTimeViaEpp(now)
+        .setLastEppUpdateRegistrarId(registrarId);
     Duration redemptionGracePeriodLength = tld.getRedemptionGracePeriodLength();
     Duration pendingDeleteLength = tld.getPendingDeleteLength();
     Optional<DomainDeleteSuperuserExtension> domainDeleteSuperuserExtension =

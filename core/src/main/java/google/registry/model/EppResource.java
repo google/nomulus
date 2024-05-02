@@ -34,6 +34,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.gson.annotations.Expose;
 import google.registry.config.RegistryConfig;
 import google.registry.model.eppcommon.StatusValue;
+import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.transfer.TransferData;
 import google.registry.persistence.VKey;
 import google.registry.util.NonFinalForTesting;
@@ -129,8 +130,23 @@ public abstract class EppResource extends UpdateAutoTimestampEntity implements B
    * <p>This does not refer to the last delta made on this object, which might include out-of-band
    * edits; it only includes EPP-visible modifications such as {@literal <update>}. Can be null if
    * the resource has never been modified.
+   *
+   * <p>This field reflects the last update that is <b>visible</b> in EPP requests, not necessarily
+   * when the last EPP request was made on this entity. For that, see {@link #lastUpdateTimeViaEpp}.
    */
   @Expose DateTime lastEppUpdateTime;
+
+  /**
+   * The time that this resource was last updated via an EPP request.
+   *
+   * <p>This will usually be the same as {@link #lastEppUpdateTime} but not always, as that field
+   * can be modified by automated events such as grace period expirations or autorenews. There
+   * should <b>always</b> be exactly one {@link HistoryEntry} object corresponding to this time.
+   *
+   * <p>This field exists to track when (if) the EppResource becomes out of sync with the
+   * corresponding most-recent {@link HistoryEntry} object.
+   */
+  DateTime lastUpdateTimeViaEpp;
 
   /** Status values associated with this resource. */
   @Expose Set<StatusValue> statuses;
@@ -162,6 +178,10 @@ public abstract class EppResource extends UpdateAutoTimestampEntity implements B
 
   public DateTime getLastEppUpdateTime() {
     return lastEppUpdateTime;
+  }
+
+  public DateTime getLastUpdateTimeViaEpp() {
+    return lastUpdateTimeViaEpp;
   }
 
   public String getLastEppUpdateRegistrarId() {
@@ -278,6 +298,12 @@ public abstract class EppResource extends UpdateAutoTimestampEntity implements B
     /** Set the time when a {@literal <update>} was performed on this resource. */
     public B setLastEppUpdateTime(DateTime lastEppUpdateTime) {
       getInstance().lastEppUpdateTime = lastEppUpdateTime;
+      return thisCastToDerived();
+    }
+
+    /** Set the time when this resource was updated by an EPP request. */
+    public B setLastUpdateTimeViaEpp(DateTime lastUpdateTimeViaEpp) {
+      getInstance().lastUpdateTimeViaEpp = lastUpdateTimeViaEpp;
       return thisCastToDerived();
     }
 

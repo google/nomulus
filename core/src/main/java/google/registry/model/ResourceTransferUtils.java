@@ -145,14 +145,14 @@ public final class ResourceTransferUtils {
 
     return builder
         .removeStatusValue(StatusValue.PENDING_TRANSFER)
+        .setLastUpdateTimeViaEpp(now)
         .setTransferData(
-            (TransferData)
-                resource
-                    .getTransferData()
-                    .copyConstantFieldsToBuilder()
-                    .setTransferStatus(transferStatus)
-                    .setPendingTransferExpirationTime(checkNotNull(now))
-                    .build());
+            resource
+                .getTransferData()
+                .copyConstantFieldsToBuilder()
+                .setTransferStatus(transferStatus)
+                .setPendingTransferExpirationTime(checkNotNull(now))
+                .build());
   }
 
   /**

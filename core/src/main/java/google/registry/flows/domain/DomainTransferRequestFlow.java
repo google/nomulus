@@ -284,6 +284,7 @@ public final class DomainTransferRequestFlow implements MutatingFlow {
             .setTransferData(pendingTransferData)
             .addStatusValue(StatusValue.PENDING_TRANSFER)
             .setLastEppUpdateTime(now)
+            .setLastUpdateTimeViaEpp(now)
             .setLastEppUpdateRegistrarId(gainingClientId)
             .build();
     DomainHistory domainHistory = buildDomainHistory(newDomain, tld, now, period);

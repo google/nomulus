@@ -247,6 +247,7 @@ public final class DomainRestoreRequestFlow implements MutatingFlow {
         // it won't immediately be deleted again.
         .setAutorenewEndTime(Optional.empty())
         .setLastEppUpdateTime(now)
+        .setLastUpdateTimeViaEpp(now)
         .setLastEppUpdateRegistrarId(registrarId)
         .build();
   }
