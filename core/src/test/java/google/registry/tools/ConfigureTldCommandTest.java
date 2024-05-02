@@ -89,7 +89,7 @@ public class ConfigureTldCommandTest extends CommandTestCase<ConfigureTldCommand
     Tld tld = Tld.get("tld");
     assertThat(tld).isNotNull();
     assertThat(tld.getDriveFolderId()).isEqualTo("driveFolder");
-    assertThat(tld.getCreateBillingCost(fakeClock.nowUtc())).isEqualTo(Money.of(USD, 25));
+    assertThat(tld.getCreateBillingCostMap(fakeClock.nowUtc())).isEqualTo(Money.of(USD, 25));
     testTldConfiguredSuccessfully(tld, "tld.yaml");
     assertThat(tld.getBreakglassMode()).isFalse();
   }
@@ -101,7 +101,7 @@ public class ConfigureTldCommandTest extends CommandTestCase<ConfigureTldCommand
     runCommandForced("--input=" + tldFile);
     Tld tld = Tld.get("jpy");
     assertThat(tld).isNotNull();
-    assertThat(tld.getCreateBillingCost(fakeClock.nowUtc()))
+    assertThat(tld.getCreateBillingCostMap(fakeClock.nowUtc()))
         .isEqualTo(Money.of(JPY, new BigDecimal("250")));
     assertThat(tld.getEapFeeFor(DateTime.now(UTC)).getCost()).isEqualTo(new BigDecimal(0));
     testTldConfiguredSuccessfully(tld, "jpy.yaml");
@@ -110,12 +110,12 @@ public class ConfigureTldCommandTest extends CommandTestCase<ConfigureTldCommand
   @Test
   void testSuccess_updateTld() throws Exception {
     Tld tld = createTld("tld");
-    assertThat(tld.getCreateBillingCost(fakeClock.nowUtc())).isEqualTo(Money.of(USD, 13));
+    assertThat(tld.getCreateBillingCostMap(fakeClock.nowUtc())).isEqualTo(Money.of(USD, 13));
     File tldFile = tmpDir.resolve("tld.yaml").toFile();
     Files.asCharSink(tldFile, UTF_8).write(loadFile(getClass(), "tld.yaml"));
     runCommandForced("--input=" + tldFile);
     Tld updatedTld = Tld.get("tld");
-    assertThat(updatedTld.getCreateBillingCost(fakeClock.nowUtc())).isEqualTo(Money.of(USD, 25));
+    assertThat(updatedTld.getCreateBillingCostMap(fakeClock.nowUtc())).isEqualTo(Money.of(USD, 25));
     testTldConfiguredSuccessfully(updatedTld, "tld.yaml");
     assertThat(updatedTld.getBreakglassMode()).isFalse();
     assertThat(tld.getBsaEnrollStartTime()).isEmpty();
@@ -159,59 +159,21 @@ public class ConfigureTldCommandTest extends CommandTestCase<ConfigureTldCommand
     // TLD's YAML will contain the fields in the correct order
     assertThat(tld).isNotNull();
     assertThat(tld.getDriveFolderId()).isEqualTo("driveFolder");
-    assertThat(tld.getCreateBillingCost(fakeClock.nowUtc())).isEqualTo(Money.of(USD, 25));
+    assertThat(tld.getCreateBillingCostMap(fakeClock.nowUtc())).isEqualTo(Money.of(USD, 25));
     assertThat(tld.getPremiumListName().get()).isEqualTo("test");
   }
 
   @Test
   void testSuccess_outOfOrderFieldsOnUpdate() throws Exception {
     Tld tld = createTld("outoforderfields");
-    assertThat(tld.getCreateBillingCost(fakeClock.nowUtc())).isEqualTo(Money.of(USD, 13));
+    assertThat(tld.getCreateBillingCostMap(fakeClock.nowUtc())).isEqualTo(Money.of(USD, 13));
     File tldFile = tmpDir.resolve("outoforderfields.yaml").toFile();
     Files.asCharSink(tldFile, UTF_8).write(loadFile(getClass(), "outoforderfields.yaml"));
     runCommandForced("--input=" + tldFile);
     Tld updatedTld = Tld.get("outoforderfields");
     // Cannot test that created TLD converted to YAML is equal to original YAML since the created
     // TLD's YAML will contain the fields in the correct order
-    assertThat(updatedTld.getCreateBillingCost(fakeClock.nowUtc())).isEqualTo(Money.of(USD, 25));
-  }
-
-  @Test
-  void testSuccess_fileMissingCreateBillingCostTransitions() throws Exception {
-    createTld("nocreatecostmap");
-    File tldFile = tmpDir.resolve("nocreatecostmap.yaml").toFile();
-    Files.asCharSink(tldFile, UTF_8).write(loadFile(getClass(), "nocreatecostmap.yaml"));
-    runCommandForced("--input=" + tldFile);
-    Tld updatedTld = Tld.get("nocreatecostmap");
-    assertThat(updatedTld.getCreateBillingCostTransitions())
-        .isEqualTo(ImmutableSortedMap.of(START_OF_TIME, Money.of(USD, 25)));
-  }
-
-  @Test
-  void testSuccess_fileMissingCreateBillingCostTransitionsRevertsToBasicConstructedMap()
-      throws Exception {
-    ImmutableSortedMap<DateTime, Money> createCostTransitions =
-        ImmutableSortedMap.of(
-            START_OF_TIME,
-            Money.of(USD, 8),
-            fakeClock.nowUtc(),
-            Money.of(USD, 1),
-            fakeClock.nowUtc().plusMonths(1),
-            Money.of(USD, 2),
-            fakeClock.nowUtc().plusMonths(2),
-            Money.of(USD, 3));
-    Tld tld =
-        createTld("nocreatecostmap")
-            .asBuilder()
-            .setCreateBillingCostTransitions(createCostTransitions)
-            .build();
-    assertThat(tld.getCreateBillingCostTransitions().size()).isEqualTo(4);
-    File tldFile = tmpDir.resolve("nocreatecostmap.yaml").toFile();
-    Files.asCharSink(tldFile, UTF_8).write(loadFile(getClass(), "nocreatecostmap.yaml"));
-    runCommandForced("--input=" + tldFile);
-    Tld updatedTld = Tld.get("nocreatecostmap");
-    assertThat(updatedTld.getCreateBillingCostTransitions())
-        .isEqualTo(ImmutableSortedMap.of(START_OF_TIME, Money.of(USD, 25)));
+    assertThat(updatedTld.getCreateBillingCostMap(fakeClock.nowUtc())).isEqualTo(Money.of(USD, 25));
   }
 
   @Test
@@ -227,14 +189,14 @@ public class ConfigureTldCommandTest extends CommandTestCase<ConfigureTldCommand
   }
 
   @Test
-  void testSuccess_addCreateBillingCostTransitions() throws Exception {
+  void testSuccess_createBillingCostName() throws Exception {
+    // This file uses the field name "createBillingCost" instead of "createBillingCostTransitions"
     createTld("costmap");
     File tldFile = tmpDir.resolve("costmap.yaml").toFile();
     Files.asCharSink(tldFile, UTF_8).write(loadFile(getClass(), "costmap.yaml"));
     runCommandForced("--input=" + tldFile);
     Tld updatedTld = Tld.get("costmap");
-    ImmutableSortedMap<DateTime, Money> costTransitions =
-        updatedTld.getCreateBillingCostTransitions();
+    ImmutableSortedMap<DateTime, Money> costTransitions = updatedTld.getCreateBillingCostMap();
     assertThat(costTransitions.size()).isEqualTo(3);
     assertThat(costTransitions.get(START_OF_TIME)).isEqualTo(Money.of(USD, 13));
     assertThat(costTransitions.get(START_OF_TIME.plusYears(26))).isEqualTo(Money.of(USD, 14));
@@ -266,7 +228,7 @@ public class ConfigureTldCommandTest extends CommandTestCase<ConfigureTldCommand
     Tld tld = Tld.get("nullablefieldsallnull");
     assertThat(tld).isNotNull();
     assertThat(tld.getDriveFolderId()).isEqualTo(null);
-    assertThat(tld.getCreateBillingCost(fakeClock.nowUtc())).isEqualTo(Money.of(USD, 25));
+    assertThat(tld.getCreateBillingCostMap(fakeClock.nowUtc())).isEqualTo(Money.of(USD, 25));
     // cannot test that created TLD converted to YAML is equal to original YAML since the created
     // TLD's YAML will contain empty sets for some of the null fields
     assertThat(tld.getIdnTables()).isEmpty();
@@ -284,7 +246,7 @@ public class ConfigureTldCommandTest extends CommandTestCase<ConfigureTldCommand
     Tld updatedTld = Tld.get("nullablefieldsallnull");
     assertThat(updatedTld).isNotNull();
     assertThat(updatedTld.getDriveFolderId()).isEqualTo(null);
-    assertThat(updatedTld.getCreateBillingCost(fakeClock.nowUtc())).isEqualTo(Money.of(USD, 25));
+    assertThat(updatedTld.getCreateBillingCostMap(fakeClock.nowUtc())).isEqualTo(Money.of(USD, 25));
     // cannot test that created TLD converted to YAML is equal to original YAML since the created
     // TLD's YAML will contain empty sets for some of the null fields
     assertThat(updatedTld.getIdnTables()).isEmpty();
@@ -357,7 +319,7 @@ public class ConfigureTldCommandTest extends CommandTestCase<ConfigureTldCommand
     Tld tld = Tld.get(name);
     assertThat(tld).isNotNull();
     assertThat(tld.getDriveFolderId()).isEqualTo("driveFolder");
-    assertThat(tld.getCreateBillingCost(fakeClock.nowUtc())).isEqualTo(Money.of(USD, 25));
+    assertThat(tld.getCreateBillingCostMap(fakeClock.nowUtc())).isEqualTo(Money.of(USD, 25));
     String yaml = objectMapper.writeValueAsString(tld);
     assertThat(yaml).isEqualTo(fileContents);
   }
@@ -567,8 +529,7 @@ public class ConfigureTldCommandTest extends CommandTestCase<ConfigureTldCommand
         tld.asBuilder()
             .setIdnTables(ImmutableSet.of(JA, UNCONFUSABLE_LATIN, EXTENDED_LATIN))
             .setAllowedFullyQualifiedHostNames(ImmutableSet.of("zeta", "alpha", "gamma", "beta"))
-            .setCreateBillingCostTransitions(
-                ImmutableSortedMap.of(START_OF_TIME, Money.of(USD, 13)))
+            .setCreateBillingCost(ImmutableSortedMap.of(START_OF_TIME, Money.of(USD, 13)))
             .build());
     File tldFile = tmpDir.resolve("idns.yaml").toFile();
     Files.asCharSink(tldFile, UTF_8).write(loadFile(getClass(), "idns.yaml"));
@@ -584,12 +545,12 @@ public class ConfigureTldCommandTest extends CommandTestCase<ConfigureTldCommand
   @Test
   void testSuccess_breakGlassFlag_startsBreakGlassMode() throws Exception {
     Tld tld = createTld("tld");
-    assertThat(tld.getCreateBillingCost(fakeClock.nowUtc())).isEqualTo(Money.of(USD, 13));
+    assertThat(tld.getCreateBillingCostMap(fakeClock.nowUtc())).isEqualTo(Money.of(USD, 13));
     File tldFile = tmpDir.resolve("tld.yaml").toFile();
     Files.asCharSink(tldFile, UTF_8).write(loadFile(getClass(), "tld.yaml"));
     runCommandForced("--input=" + tldFile, "--break_glass=true");
     Tld updatedTld = Tld.get("tld");
-    assertThat(updatedTld.getCreateBillingCost(fakeClock.nowUtc())).isEqualTo(Money.of(USD, 25));
+    assertThat(updatedTld.getCreateBillingCostMap(fakeClock.nowUtc())).isEqualTo(Money.of(USD, 25));
     testTldConfiguredSuccessfully(updatedTld, "tld.yaml");
     assertThat(updatedTld.getBreakglassMode()).isTrue();
   }
@@ -597,13 +558,13 @@ public class ConfigureTldCommandTest extends CommandTestCase<ConfigureTldCommand
   @Test
   void testSuccess_breakGlassFlag_continuesBreakGlassMode() throws Exception {
     Tld tld = createTld("tld");
-    assertThat(tld.getCreateBillingCost(fakeClock.nowUtc())).isEqualTo(Money.of(USD, 13));
+    assertThat(tld.getCreateBillingCostMap(fakeClock.nowUtc())).isEqualTo(Money.of(USD, 13));
     persistResource(tld.asBuilder().setBreakglassMode(true).build());
     File tldFile = tmpDir.resolve("tld.yaml").toFile();
     Files.asCharSink(tldFile, UTF_8).write(loadFile(getClass(), "tld.yaml"));
     runCommandForced("--input=" + tldFile, "--break_glass=true");
     Tld updatedTld = Tld.get("tld");
-    assertThat(updatedTld.getCreateBillingCost(fakeClock.nowUtc())).isEqualTo(Money.of(USD, 25));
+    assertThat(updatedTld.getCreateBillingCostMap(fakeClock.nowUtc())).isEqualTo(Money.of(USD, 25));
     testTldConfiguredSuccessfully(updatedTld, "tld.yaml");
     assertThat(updatedTld.getBreakglassMode()).isTrue();
   }
@@ -615,8 +576,7 @@ public class ConfigureTldCommandTest extends CommandTestCase<ConfigureTldCommand
         tld.asBuilder()
             .setIdnTables(ImmutableSet.of(JA, UNCONFUSABLE_LATIN, EXTENDED_LATIN))
             .setAllowedFullyQualifiedHostNames(ImmutableSet.of("zeta", "alpha", "gamma", "beta"))
-            .setCreateBillingCostTransitions(
-                ImmutableSortedMap.of(START_OF_TIME, Money.of(USD, 13)))
+            .setCreateBillingCost(ImmutableSortedMap.of(START_OF_TIME, Money.of(USD, 13)))
             .setBreakglassMode(true)
             .build());
     File tldFile = tmpDir.resolve("idns.yaml").toFile();
@@ -636,8 +596,7 @@ public class ConfigureTldCommandTest extends CommandTestCase<ConfigureTldCommand
         tld.asBuilder()
             .setIdnTables(ImmutableSet.of(JA, UNCONFUSABLE_LATIN, EXTENDED_LATIN))
             .setAllowedFullyQualifiedHostNames(ImmutableSet.of("zeta", "alpha", "gamma", "beta"))
-            .setCreateBillingCostTransitions(
-                ImmutableSortedMap.of(START_OF_TIME, Money.of(USD, 13)))
+            .setCreateBillingCost(ImmutableSortedMap.of(START_OF_TIME, Money.of(USD, 13)))
             .setBreakglassMode(true)
             .build());
     File tldFile = tmpDir.resolve("idns.yaml").toFile();
@@ -682,13 +641,13 @@ public class ConfigureTldCommandTest extends CommandTestCase<ConfigureTldCommand
   @Test
   void testSuccess_breakGlassFlagFalse_endsBreakGlassMode() throws Exception {
     Tld tld = createTld("tld");
-    assertThat(tld.getCreateBillingCost(fakeClock.nowUtc())).isEqualTo(Money.of(USD, 13));
+    assertThat(tld.getCreateBillingCostMap(fakeClock.nowUtc())).isEqualTo(Money.of(USD, 13));
     persistResource(tld.asBuilder().setBreakglassMode(true).build());
     File tldFile = tmpDir.resolve("tld.yaml").toFile();
     Files.asCharSink(tldFile, UTF_8).write(loadFile(getClass(), "tld.yaml"));
     runCommandForced("--break_glass=false", "--input=" + tldFile);
     Tld updatedTld = Tld.get("tld");
-    assertThat(updatedTld.getCreateBillingCost(fakeClock.nowUtc())).isEqualTo(Money.of(USD, 25));
+    assertThat(updatedTld.getCreateBillingCostMap(fakeClock.nowUtc())).isEqualTo(Money.of(USD, 25));
     testTldConfiguredSuccessfully(updatedTld, "tld.yaml");
     assertThat(updatedTld.getBreakglassMode()).isFalse();
   }
@@ -725,12 +684,13 @@ public class ConfigureTldCommandTest extends CommandTestCase<ConfigureTldCommand
   @Test
   void testSuccess_dryRunOnUpdate_noChanges() throws Exception {
     Tld tld = createTld("tld");
-    assertThat(tld.getCreateBillingCost(fakeClock.nowUtc())).isEqualTo(Money.of(USD, 13));
+    assertThat(tld.getCreateBillingCostMap(fakeClock.nowUtc())).isEqualTo(Money.of(USD, 13));
     File tldFile = tmpDir.resolve("tld.yaml").toFile();
     Files.asCharSink(tldFile, UTF_8).write(loadFile(getClass(), "tld.yaml"));
     runCommandForced("--input=" + tldFile, "-d");
     Tld notUpdatedTld = Tld.get("tld");
-    assertThat(notUpdatedTld.getCreateBillingCost(fakeClock.nowUtc())).isEqualTo(Money.of(USD, 13));
+    assertThat(notUpdatedTld.getCreateBillingCostMap(fakeClock.nowUtc()))
+        .isEqualTo(Money.of(USD, 13));
   }
 
   @Test
@@ -757,7 +717,7 @@ public class ConfigureTldCommandTest extends CommandTestCase<ConfigureTldCommand
     runCommandInEnvironment(
         RegistryToolEnvironment.PRODUCTION, "--input=" + tldFile, "--break_glass=true", "-f");
     Tld updatedTld = Tld.get("tld");
-    assertThat(updatedTld.getCreateBillingCost(fakeClock.nowUtc())).isEqualTo(Money.of(USD, 25));
+    assertThat(updatedTld.getCreateBillingCostMap(fakeClock.nowUtc())).isEqualTo(Money.of(USD, 25));
     testTldConfiguredSuccessfully(updatedTld, "tld.yaml");
     assertThat(updatedTld.getBreakglassMode()).isTrue();
   }
@@ -770,7 +730,7 @@ public class ConfigureTldCommandTest extends CommandTestCase<ConfigureTldCommand
     runCommandInEnvironment(
         RegistryToolEnvironment.PRODUCTION, "--input=" + tldFile, "--build_environment", "-f");
     Tld updatedTld = Tld.get("tld");
-    assertThat(updatedTld.getCreateBillingCost(fakeClock.nowUtc())).isEqualTo(Money.of(USD, 25));
+    assertThat(updatedTld.getCreateBillingCostMap(fakeClock.nowUtc())).isEqualTo(Money.of(USD, 25));
     testTldConfiguredSuccessfully(updatedTld, "tld.yaml");
     assertThat(updatedTld.getBreakglassMode()).isFalse();
   }

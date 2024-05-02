@@ -1089,8 +1089,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     persistResource(
         Tld.get("tld")
             .asBuilder()
-            .setCreateBillingCostTransitions(
-                ImmutableSortedMap.of(START_OF_TIME, Money.of(USD, 20)))
+            .setCreateBillingCost(ImmutableSortedMap.of(START_OF_TIME, Money.of(USD, 20)))
             .build());
     persistContactsAndHosts();
     EppException thrown = assertThrows(FeesMismatchException.class, this::runFlow);
@@ -1112,7 +1111,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
         Tld.get("tld")
             .asBuilder()
             .setDefaultPromoTokens(ImmutableList.of(defaultToken.createVKey()))
-            .setCreateBillingCostTransitions(ImmutableSortedMap.of(START_OF_TIME, Money.of(USD, 8)))
+            .setCreateBillingCost(ImmutableSortedMap.of(START_OF_TIME, Money.of(USD, 8)))
             .build());
     // Expects fee of $26
     setEppInput("domain_create_fee.xml", ImmutableMap.of("FEE_VERSION", "0.6", "CURRENCY", "USD"));
@@ -1139,8 +1138,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
         Tld.get("tld")
             .asBuilder()
             .setDefaultPromoTokens(ImmutableList.of(defaultToken.createVKey()))
-            .setCreateBillingCostTransitions(
-                ImmutableSortedMap.of(START_OF_TIME, Money.of(USD, 100)))
+            .setCreateBillingCost(ImmutableSortedMap.of(START_OF_TIME, Money.of(USD, 100)))
             .build());
     // Expects fee of $26
     setEppInput("domain_create_fee.xml", ImmutableMap.of("FEE_VERSION", "0.6", "CURRENCY", "USD"));
@@ -1155,8 +1153,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     persistResource(
         Tld.get("tld")
             .asBuilder()
-            .setCreateBillingCostTransitions(
-                ImmutableSortedMap.of(START_OF_TIME, Money.of(USD, 20)))
+            .setCreateBillingCost(ImmutableSortedMap.of(START_OF_TIME, Money.of(USD, 20)))
             .build());
     persistContactsAndHosts();
     EppException thrown = assertThrows(FeesMismatchException.class, this::runFlow);
@@ -1178,7 +1175,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
         Tld.get("tld")
             .asBuilder()
             .setDefaultPromoTokens(ImmutableList.of(defaultToken.createVKey()))
-            .setCreateBillingCostTransitions(ImmutableSortedMap.of(START_OF_TIME, Money.of(USD, 8)))
+            .setCreateBillingCost(ImmutableSortedMap.of(START_OF_TIME, Money.of(USD, 8)))
             .build());
     // Expects fee of $26
     setEppInput("domain_create_fee.xml", ImmutableMap.of("FEE_VERSION", "0.11", "CURRENCY", "USD"));
@@ -1205,8 +1202,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
         Tld.get("tld")
             .asBuilder()
             .setDefaultPromoTokens(ImmutableList.of(defaultToken.createVKey()))
-            .setCreateBillingCostTransitions(
-                ImmutableSortedMap.of(START_OF_TIME, Money.of(USD, 100)))
+            .setCreateBillingCost(ImmutableSortedMap.of(START_OF_TIME, Money.of(USD, 100)))
             .build());
     // Expects fee of $26
     setEppInput("domain_create_fee.xml", ImmutableMap.of("FEE_VERSION", "0.11", "CURRENCY", "USD"));
@@ -1221,8 +1217,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     persistResource(
         Tld.get("tld")
             .asBuilder()
-            .setCreateBillingCostTransitions(
-                ImmutableSortedMap.of(START_OF_TIME, Money.of(USD, 20)))
+            .setCreateBillingCost(ImmutableSortedMap.of(START_OF_TIME, Money.of(USD, 20)))
             .build());
     persistContactsAndHosts();
     EppException thrown = assertThrows(FeesMismatchException.class, this::runFlow);
@@ -1244,7 +1239,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
         Tld.get("tld")
             .asBuilder()
             .setDefaultPromoTokens(ImmutableList.of(defaultToken.createVKey()))
-            .setCreateBillingCostTransitions(ImmutableSortedMap.of(START_OF_TIME, Money.of(USD, 8)))
+            .setCreateBillingCost(ImmutableSortedMap.of(START_OF_TIME, Money.of(USD, 8)))
             .build());
     // Expects fee of $26
     setEppInput("domain_create_fee.xml", ImmutableMap.of("FEE_VERSION", "0.12", "CURRENCY", "USD"));
@@ -1271,8 +1266,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
         Tld.get("tld")
             .asBuilder()
             .setDefaultPromoTokens(ImmutableList.of(defaultToken.createVKey()))
-            .setCreateBillingCostTransitions(
-                ImmutableSortedMap.of(START_OF_TIME, Money.of(USD, 100)))
+            .setCreateBillingCost(ImmutableSortedMap.of(START_OF_TIME, Money.of(USD, 100)))
             .build());
     // Expects fee of $26
     setEppInput("domain_create_fee.xml", ImmutableMap.of("FEE_VERSION", "0.12", "CURRENCY", "USD"));
@@ -2999,8 +2993,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
         Tld.get("tld")
             .asBuilder()
             .setCurrency(JPY)
-            .setCreateBillingCostTransitions(
-                ImmutableSortedMap.of(START_OF_TIME, Money.ofMajor(JPY, 800)))
+            .setCreateBillingCost(ImmutableSortedMap.of(START_OF_TIME, Money.ofMajor(JPY, 800)))
             .setEapFeeSchedule(ImmutableSortedMap.of(START_OF_TIME, Money.ofMajor(JPY, 800)))
             .setRenewBillingCostTransitions(
                 ImmutableSortedMap.of(START_OF_TIME, Money.ofMajor(JPY, 800)))

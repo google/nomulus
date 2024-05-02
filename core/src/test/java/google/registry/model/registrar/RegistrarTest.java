@@ -65,7 +65,7 @@ class RegistrarTest extends EntityTestCase {
         newTld("xn--q9jyb4c", "MINNA")
             .asBuilder()
             .setCurrency(JPY)
-            .setCreateBillingCostTransitions(
+            .setCreateBillingCost(
                 ImmutableSortedMap.of(START_OF_TIME, Money.of(JPY, new BigDecimal(1300))))
             .setRestoreBillingCost(Money.of(JPY, new BigDecimal(1700)))
             .setServerStatusChangeBillingCost(Money.of(JPY, new BigDecimal(1900)))

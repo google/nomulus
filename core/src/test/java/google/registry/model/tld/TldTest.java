@@ -228,12 +228,11 @@ public final class TldTest extends EntityTestCase {
             Money.of(USD, 2),
             fakeClock.nowUtc().plusMonths(2),
             Money.of(USD, 3));
-    Tld registry =
-        Tld.get("tld").asBuilder().setCreateBillingCostTransitions(createCostTransitions).build();
-    assertThat(registry.getCreateBillingCostTransitions()).isEqualTo(createCostTransitions);
-    assertThat(registry.getCreateBillingCost(fakeClock.nowUtc().minus(Duration.standardDays(5))))
+    Tld registry = Tld.get("tld").asBuilder().setCreateBillingCost(createCostTransitions).build();
+    assertThat(registry.getCreateBillingCostMap()).isEqualTo(createCostTransitions);
+    assertThat(registry.getCreateBillingCostMap(fakeClock.nowUtc().minus(Duration.standardDays(5))))
         .isEqualTo(Money.of(USD, 8));
-    assertThat(registry.getCreateBillingCost(fakeClock.nowUtc().plusMonths(8)))
+    assertThat(registry.getCreateBillingCostMap(fakeClock.nowUtc().plusMonths(8)))
         .isEqualTo(Money.of(USD, 3));
   }
 
@@ -252,11 +251,7 @@ public final class TldTest extends EntityTestCase {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
-            () ->
-                Tld.get("tld")
-                    .asBuilder()
-                    .setCreateBillingCostTransitions(createCostTransitions)
-                    .build());
+            () -> Tld.get("tld").asBuilder().setCreateBillingCost(createCostTransitions).build());
     assertThat(thrown.getMessage()).isEqualTo("Create billing cost cannot be negative");
   }
 
@@ -264,7 +259,7 @@ public final class TldTest extends EntityTestCase {
   void testSettingRestoreBillingCost() {
     Tld registry = Tld.get("tld").asBuilder().setRestoreBillingCost(Money.of(USD, 42)).build();
     // The default value of 13 is set in createTld().
-    assertThat(registry.getCreateBillingCost(fakeClock.nowUtc())).isEqualTo(Money.of(USD, 13));
+    assertThat(registry.getCreateBillingCostMap(fakeClock.nowUtc())).isEqualTo(Money.of(USD, 13));
     assertThat(registry.getRestoreBillingCost()).isEqualTo(Money.of(USD, 42));
   }
 
@@ -587,8 +582,7 @@ public final class TldTest extends EntityTestCase {
             IllegalArgumentException.class,
             () ->
                 new Tld.Builder()
-                    .setCreateBillingCostTransitions(
-                        ImmutableSortedMap.of(START_OF_TIME, Money.of(USD, 13)))
+                    .setCreateBillingCost(ImmutableSortedMap.of(START_OF_TIME, Money.of(USD, 13)))
                     .setTldStr("invalid")
                     .build());
     assertThat(thrown)
@@ -669,8 +663,7 @@ public final class TldTest extends EntityTestCase {
             () ->
                 Tld.get("tld")
                     .asBuilder()
-                    .setCreateBillingCostTransitions(
-                        ImmutableSortedMap.of(START_OF_TIME, Money.of(EUR, 42)))
+                    .setCreateBillingCost(ImmutableSortedMap.of(START_OF_TIME, Money.of(EUR, 42)))
                     .build());
     assertThat(thrown).hasMessageThat().contains("cost must be in the TLD's currency");
   }
