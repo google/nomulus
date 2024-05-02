@@ -230,9 +230,9 @@ public final class TldTest extends EntityTestCase {
             Money.of(USD, 3));
     Tld registry = Tld.get("tld").asBuilder().setCreateBillingCost(createCostTransitions).build();
     assertThat(registry.getCreateBillingCostMap()).isEqualTo(createCostTransitions);
-    assertThat(registry.getCreateBillingCostMap(fakeClock.nowUtc().minus(Duration.standardDays(5))))
+    assertThat(registry.getCreateBillingCost(fakeClock.nowUtc().minus(Duration.standardDays(5))))
         .isEqualTo(Money.of(USD, 8));
-    assertThat(registry.getCreateBillingCostMap(fakeClock.nowUtc().plusMonths(8)))
+    assertThat(registry.getCreateBillingCost(fakeClock.nowUtc().plusMonths(8)))
         .isEqualTo(Money.of(USD, 3));
   }
 
@@ -259,7 +259,7 @@ public final class TldTest extends EntityTestCase {
   void testSettingRestoreBillingCost() {
     Tld registry = Tld.get("tld").asBuilder().setRestoreBillingCost(Money.of(USD, 42)).build();
     // The default value of 13 is set in createTld().
-    assertThat(registry.getCreateBillingCostMap(fakeClock.nowUtc())).isEqualTo(Money.of(USD, 13));
+    assertThat(registry.getCreateBillingCost(fakeClock.nowUtc())).isEqualTo(Money.of(USD, 13));
     assertThat(registry.getRestoreBillingCost()).isEqualTo(Money.of(USD, 42));
   }
 

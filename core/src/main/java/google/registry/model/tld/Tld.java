@@ -673,7 +673,7 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
    * Use {@code PricingEngineProxy.getDomainCreateCost} instead of this to find the cost for a
    * domain create.
    */
-  public Money getCreateBillingCostMap(DateTime now) {
+  public Money getCreateBillingCost(DateTime now) {
     return createBillingCost.getValueAtTime(now);
   }
 
