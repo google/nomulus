@@ -1338,7 +1338,8 @@ CREATE TABLE public."UserUpdateHistory" (
     is_admin boolean NOT NULL,
     registrar_roles public.hstore,
     update_timestamp timestamp with time zone,
-    history_acting_user text NOT NULL
+    history_acting_user text NOT NULL,
+    registry_lock_email_address text
 );
 
 
