@@ -27,6 +27,7 @@ import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 import static org.joda.money.CurrencyUnit.USD;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -461,9 +462,11 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
   // TODO(sarahbot@): Rename this field to createBillingCost once the old createBillingCost columns
   // have been removed from the database
   /** A property that transitions to different create billing costs at different times. */
-  @Column(nullable = false)
+  @Column(nullable = false, name = "create_billing_cost_transitions")
   @JsonDeserialize(using = TimedTransitionPropertyMoneyDeserializer.class)
-  TimedTransitionProperty<Money> createBillingCostTransitions =
+  @JsonProperty("createBillingCostTransitions")
+  @JsonAlias("createBillingCost")
+  TimedTransitionProperty<Money> createBillingCost =
       TimedTransitionProperty.withInitialValue(DEFAULT_CREATE_BILLING_COST);
 
   /** The one-time billing cost for restoring a domain name from the redemption grace period. */
@@ -670,13 +673,13 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
    * Use {@code PricingEngineProxy.getDomainCreateCost} instead of this to find the cost for a
    * domain create.
    */
-  @VisibleForTesting
-  public Money getCreateBillingCost(DateTime now) {
-    return createBillingCostTransitions.getValueAtTime(now);
+  public Money getCreateBillingCostMap(DateTime now) {
+    return createBillingCost.getValueAtTime(now);
   }
 
-  public ImmutableSortedMap<DateTime, Money> getCreateBillingCostTransitions() {
-    return createBillingCostTransitions.toValueMap();
+  @JsonProperty("createBillingCostTransitions")
+  public ImmutableSortedMap<DateTime, Money> getCreateBillingCostMap() {
+    return createBillingCost.toValueMap();
   }
 
   /**
@@ -956,14 +959,12 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
       return this;
     }
 
-    public Builder setCreateBillingCostTransitions(
-        ImmutableSortedMap<DateTime, Money> createCostsMap) {
+    public Builder setCreateBillingCost(ImmutableSortedMap<DateTime, Money> createCostsMap) {
       checkArgumentNotNull(createCostsMap, "Create billing costs map cannot be null");
       checkArgument(
           createCostsMap.values().stream().allMatch(Money::isPositiveOrZero),
           "Create billing cost cannot be negative");
-      getInstance().createBillingCostTransitions =
-          TimedTransitionProperty.fromValueMap(createCostsMap);
+      getInstance().createBillingCost = TimedTransitionProperty.fromValueMap(createCostsMap);
       return this;
     }
 
@@ -1139,7 +1140,7 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
       // here to catch cases where we loaded an invalid TimedTransitionProperty from the database
       // and cloned it into a new builder, to block re-building a Tld in an invalid state.
       instance.tldStateTransitions.checkValidity();
-      instance.createBillingCostTransitions.checkValidity();
+      instance.createBillingCost.checkValidity();
       instance.renewBillingCostTransitions.checkValidity();
       instance.eapFeeSchedule.checkValidity();
       // All costs must be in the expected currency.
@@ -1159,7 +1160,7 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
           instance.getRenewBillingCostTransitions().values().stream().allMatch(currencyCheck),
           "Renew cost must be in the TLD's currency");
       checkArgument(
-          instance.getCreateBillingCostTransitions().values().stream().allMatch(currencyCheck),
+          instance.getCreateBillingCostMap().values().stream().allMatch(currencyCheck),
           "Create cost must be in the TLD's currency");
       checkArgument(
           instance.eapFeeSchedule.toValueMap().values().stream().allMatch(currencyCheck),
