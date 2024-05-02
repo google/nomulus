@@ -14,7 +14,9 @@
 
 package google.registry.dns;
 
+import static com.google.common.base.Verify.verify;
 import static com.google.common.collect.ImmutableList.toImmutableList;
+import static google.registry.persistence.PersistenceModule.TransactionIsolationLevel.TRANSACTION_REPEATABLE_READ;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import com.google.common.collect.ImmutableCollection;
@@ -98,7 +100,11 @@ public final class DnsUtils {
    */
   public static ImmutableList<DnsRefreshRequest> readAndUpdateRequestsWithLatestProcessTime(
       String tld, Duration cooldown, int batchSize) {
+    // Give a user-friendly error message. If nested, the `transact` call below will throw.
+    verify(!tm().inTransaction(), "Cannot specify isolation level in nested transaction.");
+    // It is critical that below query use repeatable-read. See b/337894387.
     return tm().transact(
+            TRANSACTION_REPEATABLE_READ,
             () -> {
               DateTime transactionTime = tm().getTransactionTime();
               ImmutableList<DnsRefreshRequest> requests =
@@ -131,7 +137,9 @@ public final class DnsUtils {
    * error because all we care about is that it no longer exists after the method runs.
    */
   public static void deleteRequests(Collection<DnsRefreshRequest> requests) {
+    verify(!tm().inTransaction(), "Cannot specify isolation level in nested transaction.");
     tm().transact(
+            TRANSACTION_REPEATABLE_READ,
             () ->
                 tm().delete(
                         requests.stream()
