@@ -15,6 +15,7 @@
 package google.registry.dns;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
+import static google.registry.persistence.PersistenceModule.TransactionIsolationLevel.TRANSACTION_REPEATABLE_READ;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import com.google.common.collect.ImmutableCollection;
@@ -98,7 +99,9 @@ public final class DnsUtils {
    */
   public static ImmutableList<DnsRefreshRequest> readAndUpdateRequestsWithLatestProcessTime(
       String tld, Duration cooldown, int batchSize) {
+    // It is critical that below query use repeatable-read. See b/337894387.
     return tm().transact(
+            TRANSACTION_REPEATABLE_READ,
             () -> {
               DateTime transactionTime = tm().getTransactionTime();
               ImmutableList<DnsRefreshRequest> requests =
@@ -131,7 +134,9 @@ public final class DnsUtils {
    * error because all we care about is that it no longer exists after the method runs.
    */
   public static void deleteRequests(Collection<DnsRefreshRequest> requests) {
+    // It is critical that below query use repeatable-read. See b/337894387.
     tm().transact(
+            TRANSACTION_REPEATABLE_READ,
             () ->
                 tm().delete(
                         requests.stream()
