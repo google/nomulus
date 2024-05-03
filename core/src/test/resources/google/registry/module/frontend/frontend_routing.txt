@@ -5,6 +5,7 @@ PATH                               CLASS                         METHODS  OK AUT
 /console-api/dum-download          ConsoleDumDownloadAction      GET      n  API,LEGACY   USER PUBLIC
 /console-api/eppPassword           ConsoleEppPasswordAction      POST     n  API,LEGACY   USER PUBLIC
 /console-api/registrars            RegistrarsAction              GET,POST n  API,LEGACY   USER PUBLIC
+/console-api/registry-lock         ConsoleRegistryLockAction     GET,POST n  API,LEGACY   USER PUBLIC
 /console-api/settings/contacts     ContactAction                 GET,POST n  API,LEGACY   USER PUBLIC
 /console-api/settings/security     SecurityAction                POST     n  API,LEGACY   USER PUBLIC
 /console-api/settings/whois-fields WhoisRegistrarFieldsAction    POST     n  API,LEGACY   USER PUBLIC

@@ -22,7 +22,6 @@ import com.google.api.client.http.HttpStatusCodes;
 import com.google.gson.Gson;
 import google.registry.model.console.User;
 import google.registry.persistence.transaction.JpaTestExtensions;
-import google.registry.request.Action;
 import google.registry.request.RequestModule;
 import google.registry.request.auth.AuthResult;
 import google.registry.request.auth.UserAuthInfo;
@@ -54,8 +53,7 @@ class ConsoleUserDataActionTest {
     User user = DatabaseHelper.createAdminUser("email@email.com");
     AuthResult authResult = AuthResult.createUser(UserAuthInfo.create(user));
     ConsoleUserDataAction action =
-        createAction(
-            Optional.of(FakeConsoleApiParams.get(Optional.of(authResult))), Action.Method.GET);
+        createAction(Optional.of(FakeConsoleApiParams.get(Optional.of(authResult))));
     action.run();
     List<Cookie> cookies = ((FakeResponse) consoleApiParams.response()).getCookies();
     assertThat(cookies.stream().map(cookie -> cookie.getName()).collect(toImmutableList()))
@@ -67,8 +65,7 @@ class ConsoleUserDataActionTest {
     User user = DatabaseHelper.createAdminUser("email@email.com");
     AuthResult authResult = AuthResult.createUser(UserAuthInfo.create(user));
     ConsoleUserDataAction action =
-        createAction(
-            Optional.of(FakeConsoleApiParams.get(Optional.of(authResult))), Action.Method.GET);
+        createAction(Optional.of(FakeConsoleApiParams.get(Optional.of(authResult))));
     action.run();
     assertThat(((FakeResponse) consoleApiParams.response()).getStatus())
         .isEqualTo(HttpStatusCodes.STATUS_CODE_OK);
@@ -92,17 +89,17 @@ class ConsoleUserDataActionTest {
 
   @Test
   void testFailure_notAConsoleUser() throws IOException {
-    ConsoleUserDataAction action = createAction(Optional.empty(), Action.Method.GET);
+    ConsoleUserDataAction action = createAction(Optional.empty());
     action.run();
     assertThat(((FakeResponse) consoleApiParams.response()).getStatus())
         .isEqualTo(HttpStatusCodes.STATUS_CODE_UNAUTHORIZED);
   }
 
-  private ConsoleUserDataAction createAction(
-      Optional<ConsoleApiParams> maybeConsoleApiParams, Action.Method method) throws IOException {
+  private ConsoleUserDataAction createAction(Optional<ConsoleApiParams> maybeConsoleApiParams)
+      throws IOException {
     consoleApiParams =
         maybeConsoleApiParams.orElseGet(() -> FakeConsoleApiParams.get(Optional.empty()));
-    when(consoleApiParams.request().getMethod()).thenReturn(method.toString());
+    when(consoleApiParams.request().getMethod()).thenReturn("GET");
     return new ConsoleUserDataAction(
         consoleApiParams, "Nomulus", "support@example.com", "+1 (212) 867 5309", "test");
   }
