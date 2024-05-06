@@ -156,8 +156,7 @@ public class ConsoleRegistryLockAction extends ConsoleApiAction {
           new URIBuilder()
               .setScheme("https")
               .setHost(consoleApiParams.request().getServerName())
-              // TODO: replace this with the PATH in ConsoleRegistryLockVerifyAction once it exists
-              .setPath("/console-api/registry-lock-verify")
+              .setPath("/console/#/registry-lock-verify")
               .setParameter("lockVerificationCode", lock.getVerificationCode())
               .build()
               .toString();
