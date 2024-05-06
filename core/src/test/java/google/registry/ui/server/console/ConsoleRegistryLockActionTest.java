@@ -122,15 +122,7 @@ public class ConsoleRegistryLockActionTest {
 
   @Test
   void testGet_simpleLock() {
-    saveRegistryLock(
-        new RegistryLock.Builder()
-            .setRepoId("repoId")
-            .setDomainName("example.test")
-            .setRegistrarId("TheRegistrar")
-            .setVerificationCode("123456789ABCDEFGHJKLMNPQRSTUVWXY")
-            .setRegistrarPocId("johndoe@theregistrar.com")
-            .setLockCompletionTime(fakeClock.nowUtc())
-            .build());
+    saveRegistryLock(createDefaultLockBuilder().setLockCompletionTime(fakeClock.nowUtc()).build());
     action.run();
     assertThat(response.getStatus()).isEqualTo(SC_OK);
     assertThat(response.getPayload())
