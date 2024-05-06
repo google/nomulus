@@ -77,11 +77,13 @@ import org.mockito.quality.Strictness;
 @MockitoSettings(strictness = Strictness.LENIENT)
 final class RegistryLockPostActionTest {
 
-  private static final String EMAIL_MESSAGE_TEMPLATE =
-      "Please click the link below to perform the lock \\/ unlock action on domain example.tld. "
-          + "Note: this code will expire in one hour.\n\n"
-          + "https:\\/\\/registrarconsole.tld\\/registry-lock-verify\\?lockVerificationCode="
-          + "[0-9a-zA-Z_\\-]+&isLock=(true|false)";
+  private static final String EXPECTED_EMAIL_MESSAGE =
+      """
+      Please click the link below to perform the lock / unlock action on domain example.tld. Note: \
+      this code will expire in one hour.
+
+      https://registrarconsole.tld/registry-lock-verify?lockVerificationCode=\
+      123456789ABCDEFGHJKLMNPQRSTUVWXY""";
 
   private final FakeClock clock = new FakeClock();
 
@@ -497,7 +499,7 @@ final class RegistryLockPostActionTest {
     verify(gmailClient).sendEmail(emailCaptor.capture());
     EmailMessage sentMessage = emailCaptor.getValue();
     assertThat(sentMessage.subject()).matches("Registry (un)?lock verification");
-    assertThat(sentMessage.body()).matches(EMAIL_MESSAGE_TEMPLATE);
+    assertThat(sentMessage.body()).isEqualTo(EXPECTED_EMAIL_MESSAGE);
     assertThat(sentMessage.recipients()).containsExactly(new InternetAddress(recipient));
   }
 

@@ -73,11 +73,13 @@ import org.mockito.quality.Strictness;
 @MockitoSettings(strictness = Strictness.LENIENT)
 public class ConsoleRegistryLockActionTest {
 
-  private static final String EMAIL_MESSAGE_TEMPLATE =
-      "Please click the link below to perform the lock \\/ unlock action on domain example.test."
-          + " Note: this code will expire in one hour.\n\n"
-          + "https:\\/\\/registrarconsole.tld\\/console-api\\/registry-lock-verify\\?lockVerificationCode="
-          + "[0-9a-zA-Z_\\-]+&isLock=(true|false)";
+  private static final String EXPECTED_EMAIL_MESSAGE =
+      """
+      Please click the link below to perform the lock / unlock action on domain example.test. \
+      Note: this code will expire in one hour.
+
+      https://registrarconsole.tld/console-api/registry-lock-verify?lockVerificationCode=\
+      123456789ABCDEFGHJKLMNPQRSTUVWXY""";
 
   private static final Gson GSON = RequestModule.provideGson();
 
@@ -532,7 +534,7 @@ public class ConsoleRegistryLockActionTest {
     verify(gmailClient).sendEmail(emailCaptor.capture());
     EmailMessage sentMessage = emailCaptor.getValue();
     assertThat(sentMessage.subject()).matches("Registry (un)?lock verification");
-    assertThat(sentMessage.body()).matches(EMAIL_MESSAGE_TEMPLATE);
+    assertThat(sentMessage.body()).isEqualTo(EXPECTED_EMAIL_MESSAGE);
     assertThat(sentMessage.recipients())
         .containsExactly(new InternetAddress("user@theregistrar.com"));
   }

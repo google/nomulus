@@ -92,7 +92,7 @@ final class RegistryLockVerifyActionTest {
     Host host = persistActiveHost("ns1.example.net");
     domain = persistResource(DatabaseHelper.newDomain("example.tld", host));
     when(request.getRequestURI()).thenReturn("https://registry.example/registry-lock-verification");
-    action = createAction(lockId, true);
+    action = createAction(lockId);
   }
 
   @Test
@@ -113,9 +113,14 @@ final class RegistryLockVerifyActionTest {
 
   @Test
   void testSuccess_unlockDomain() {
-    action = createAction(lockId, false);
+    action = createAction(lockId);
     domain = persistResource(domain.asBuilder().setStatusValues(REGISTRY_LOCK_STATUSES).build());
-    saveRegistryLock(createLock().asBuilder().setUnlockRequestTime(fakeClock.nowUtc()).build());
+    saveRegistryLock(
+        createLock()
+            .asBuilder()
+            .setLockCompletionTime(fakeClock.nowUtc())
+            .setUnlockRequestTime(fakeClock.nowUtc())
+            .build());
     action.run();
     assertThat(response.getStatus()).isEqualTo(SC_OK);
     assertThat(response.getPayload()).contains("Success: unlock has been applied to example.tld");
@@ -154,7 +159,8 @@ final class RegistryLockVerifyActionTest {
   void testFailure_alreadyVerified() {
     saveRegistryLock(createLock().asBuilder().setLockCompletionTime(fakeClock.nowUtc()).build());
     action.run();
-    assertThat(response.getPayload()).contains("Failed: Domain example.tld is already locked");
+    assertThat(response.getPayload())
+        .contains("Lock/unlock with code 123456789ABCDEFGHJKLMNPQRSTUVWXY is already completed");
     assertNoDomainChanges();
   }
 
@@ -178,7 +184,7 @@ final class RegistryLockVerifyActionTest {
 
   @Test
   void testFailure_alreadyUnlocked() {
-    action = createAction(lockId, false);
+    action = createAction(lockId);
     saveRegistryLock(
         createLock()
             .asBuilder()
@@ -187,7 +193,8 @@ final class RegistryLockVerifyActionTest {
             .setUnlockCompletionTime(fakeClock.nowUtc())
             .build());
     action.run();
-    assertThat(response.getPayload()).contains("Failed: Domain example.tld is already unlocked");
+    assertThat(response.getPayload())
+        .contains("Lock/unlock with code 123456789ABCDEFGHJKLMNPQRSTUVWXY is already completed");
     assertNoDomainChanges();
   }
 
@@ -229,41 +236,21 @@ final class RegistryLockVerifyActionTest {
   }
 
   @Test
-  void testFailure_isLockTrue_shouldBeFalse() {
-    domain = persistResource(domain.asBuilder().setStatusValues(REGISTRY_LOCK_STATUSES).build());
-    saveRegistryLock(
-        createLock()
-            .asBuilder()
-            .setLockCompletionTime(fakeClock.nowUtc())
-            .setUnlockRequestTime(fakeClock.nowUtc())
-            .build());
-    action.run();
-    assertThat(response.getPayload()).contains("Failed: Domain example.tld is already locked");
-  }
-
-  @Test
-  void testFailure_isLockFalse_shouldBeTrue() {
-    action = createAction(lockId, false);
-    saveRegistryLock(createLock());
-    action.run();
-    assertThat(response.getPayload()).contains("Failed: Domain example.tld is already unlocked");
-  }
-
-  @Test
   void testFailure_lock_unlock_lockAgain() {
     RegistryLock lock = saveRegistryLock(createLock());
     action.run();
     assertThat(response.getPayload()).contains("Success: lock has been applied to example.tld");
     String unlockVerificationCode = "some-unlock-code";
     saveRegistryLock(
-        lock.asBuilder()
+        loadByEntity(lock)
+            .asBuilder()
             .setVerificationCode(unlockVerificationCode)
             .setUnlockRequestTime(fakeClock.nowUtc())
             .build());
-    action = createAction(unlockVerificationCode, false);
+    action = createAction(unlockVerificationCode);
     action.run();
     assertThat(response.getPayload()).contains("Success: unlock has been applied to example.tld");
-    action = createAction(lockId, true);
+    action = createAction(lockId);
     action.run();
     assertThat(response.getPayload()).contains("Failed: Invalid verification code");
   }
@@ -273,22 +260,29 @@ final class RegistryLockVerifyActionTest {
     saveRegistryLock(createLock());
     action.run();
     assertThat(response.getPayload()).contains("Success: lock has been applied to example.tld");
-    action = createAction(lockId, true);
+    action = createAction(lockId);
     action.run();
-    assertThat(response.getPayload()).contains("Failed: Domain example.tld is already locked");
+    assertThat(response.getPayload())
+        .contains("Lock/unlock with code 123456789ABCDEFGHJKLMNPQRSTUVWXY is already completed");
   }
 
   @Test
   void testFailure_unlock_unlockAgain() {
-    action = createAction(lockId, false);
+    action = createAction(lockId);
     domain = persistResource(domain.asBuilder().setStatusValues(REGISTRY_LOCK_STATUSES).build());
-    saveRegistryLock(createLock().asBuilder().setUnlockRequestTime(fakeClock.nowUtc()).build());
+    saveRegistryLock(
+        createLock()
+            .asBuilder()
+            .setLockCompletionTime(fakeClock.nowUtc())
+            .setUnlockRequestTime(fakeClock.nowUtc())
+            .build());
     action.run();
     assertThat(response.getStatus()).isEqualTo(SC_OK);
     assertThat(response.getPayload()).contains("Success: unlock has been applied to example.tld");
-    action = createAction(lockId, false);
+    action = createAction(lockId);
     action.run();
-    assertThat(response.getPayload()).contains("Failed: Domain example.tld is already unlocked");
+    assertThat(response.getPayload())
+        .contains("Lock/unlock with code 123456789ABCDEFGHJKLMNPQRSTUVWXY is already completed");
   }
 
   private RegistryLock createLock() {
@@ -323,14 +317,13 @@ final class RegistryLockVerifyActionTest {
             .build());
   }
 
-  private RegistryLockVerifyAction createAction(String lockVerificationCode, Boolean isLock) {
+  private RegistryLockVerifyAction createAction(String lockVerificationCode) {
     response = new FakeResponse();
     RegistryLockVerifyAction action =
         new RegistryLockVerifyAction(
             new DomainLockUtils(
                 stringGenerator, "adminreg", cloudTasksHelper.getTestCloudTasksUtils()),
-            lockVerificationCode,
-            isLock);
+            lockVerificationCode);
     authResult = AuthResult.createUser(UserAuthInfo.create(user, false));
     action.req = request;
     action.response = response;

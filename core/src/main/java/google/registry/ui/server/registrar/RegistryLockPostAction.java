@@ -160,7 +160,6 @@ public class RegistryLockPostAction implements Runnable, JsonActionRunner.JsonAc
               .setHost(req.getServerName())
               .setPath("registry-lock-verify")
               .setParameter("lockVerificationCode", lock.getVerificationCode())
-              .setParameter("isLock", String.valueOf(isLock))
               .build()
               .toString();
       String body = String.format(VERIFICATION_EMAIL_TEMPLATE, lock.getDomainName(), url);
