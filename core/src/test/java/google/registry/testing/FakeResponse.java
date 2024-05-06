@@ -23,6 +23,7 @@ import com.google.common.base.Throwables;
 import com.google.common.net.MediaType;
 import google.registry.request.Response;
 import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -69,7 +70,7 @@ public final class FakeResponse implements Response {
 
   @Override
   public void sendRedirect(String url) throws IOException {
-    status = 302;
+    status = HttpServletResponse.SC_FOUND;
     this.payload = String.format("Redirected to %s", url);
   }
 
