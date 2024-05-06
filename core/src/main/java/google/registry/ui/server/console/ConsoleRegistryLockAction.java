@@ -47,10 +47,8 @@ import google.registry.util.EmailMessage;
 import jakarta.mail.internet.AddressException;
 import jakarta.mail.internet.InternetAddress;
 import jakarta.servlet.http.HttpServletRequest;
-import java.net.URISyntaxException;
 import java.util.Optional;
 import javax.inject.Inject;
-import org.apache.http.client.utils.URIBuilder;
 import org.joda.time.Duration;
 
 /**
@@ -153,14 +151,9 @@ public class ConsoleRegistryLockAction extends ConsoleApiAction {
   private void sendVerificationEmail(RegistryLock lock, String userEmail, boolean isLock) {
     try {
       String url =
-          new URIBuilder()
-              .setScheme("https")
-              .setHost(consoleApiParams.request().getServerName())
-              // TODO: replace this with the PATH in ConsoleRegistryLockVerifyAction once it exists
-              .setPath("/console-api/registry-lock-verify")
-              .setParameter("lockVerificationCode", lock.getVerificationCode())
-              .build()
-              .toString();
+          String.format(
+              "https://%s/console/#/registry-lock-verify?lockVerificationCode=%s",
+              consoleApiParams.request().getServerName(), lock.getVerificationCode());
       String body = String.format(VERIFICATION_EMAIL_TEMPLATE, lock.getDomainName(), url);
       ImmutableList<InternetAddress> recipients =
           ImmutableList.of(new InternetAddress(userEmail, true));
@@ -171,7 +164,7 @@ public class ConsoleRegistryLockAction extends ConsoleApiAction {
               .setSubject(String.format("Registry %s verification", action))
               .setRecipients(recipients)
               .build());
-    } catch (AddressException | URISyntaxException e) {
+    } catch (AddressException e) {
       throw new RuntimeException(e); // caught above -- this is so we can run in a transaction
     }
   }
