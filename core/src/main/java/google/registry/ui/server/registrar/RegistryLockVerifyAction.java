@@ -50,29 +50,22 @@ public final class RegistryLockVerifyAction extends HtmlAction {
 
   private final DomainLockUtils domainLockUtils;
   private final String lockVerificationCode;
-  private final Boolean isLock;
 
   @Inject
   public RegistryLockVerifyAction(
       DomainLockUtils domainLockUtils,
-      @Parameter("lockVerificationCode") String lockVerificationCode,
-      @Parameter("isLock") Boolean isLock) {
+      @Parameter("lockVerificationCode") String lockVerificationCode) {
     this.domainLockUtils = domainLockUtils;
     this.lockVerificationCode = lockVerificationCode;
-    this.isLock = isLock;
   }
 
   @Override
   public void runAfterLogin(Map<String, Object> data) {
     try {
       boolean isAdmin = authResult.userAuthInfo().get().isUserAdmin();
-      final RegistryLock resultLock;
-      if (isLock) {
-        resultLock = domainLockUtils.verifyAndApplyLock(lockVerificationCode, isAdmin);
-      } else {
-        resultLock = domainLockUtils.verifyAndApplyUnlock(lockVerificationCode, isAdmin);
-      }
-      data.put("isLock", isLock);
+      RegistryLock resultLock =
+          domainLockUtils.verifyVerificationCode(lockVerificationCode, isAdmin);
+      data.put("isLock", resultLock.getUnlockCompletionTime().isEmpty());
       data.put("success", true);
       data.put("domainName", resultLock.getDomainName());
     } catch (Throwable t) {
