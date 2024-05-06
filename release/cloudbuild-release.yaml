@@ -210,9 +210,9 @@ steps:
       $(gcloud auth list --format='get(account)' --filter=active)
     git add .
     git commit -m "Release commit for tag ${TAG_NAME}"
-    git push origin master
+    git push -o nokeycheck origin master 
     git tag ${TAG_NAME}
-    git push origin ${TAG_NAME}
+    git push -o nokeycheck origin ${TAG_NAME}
 timeout: 3600s
 options:
   machineType: 'E2_HIGHCPU_32'
