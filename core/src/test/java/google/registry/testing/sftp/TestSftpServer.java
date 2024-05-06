@@ -51,36 +51,35 @@ public class TestSftpServer implements FtpServer {
     Security.addProvider(new BouncyCastleProvider());
   }
 
-  private static final String HOST_KEY =
-      """
-      -----BEGIN RSA PRIVATE KEY-----
-      MIIEowIBAAKCAQEAx7uuoDyMR3c+sIg0fPfBeyoUjPa6hh3yN5S4/HLEOOaXcA2c
-      uhNm8WwIXF/FwC32CJHZcCC3XhNeQDIpEt5wj9NHr++pjYWjp4Ue+n/2QbDO4LKB
-      fb67zRbL++BZNswBKYwmzaiHoyWYERj+ZrZpf7hqHnKTAs4NIUCkhUvUHQzgdfT6
-      vfEYv2HrM2VVVaqpUALrkogZHqQYfLA+InHXXZ3x+GmdSBCxaxUHHZypwETv+yBJ
-      YAP+9Ofcmu3mpedK/3o3KJ2pD4OXwoXAtbHDOfnJMJylCKcCT3aodpdULSf4A8Zm
-      o4fxppQCbGUw43D7u18he5qNdLDkgCV8iXewbQIDAQABAoIBAH/Fs9e0BDVvtj3u
-      VE2hnTeyWsU2zWog3CPsU07ECH0yHqzDOIDdCpzk9JBLgFEJ1fvzebs+Yq+fCktd
-      C2OTw0Ru78xAMCJl3KS9B21O0PWDK0UZTLdpffCcZc/y3H+ukAvJKcWky2h2E0rU
-      x2JjzSe0jMZ/m0ZPFJ0yIk1XjhEqWgp3OCP9EHaO82+GM8UTuoBrfOs8gcv6aqiO
-      L06BU6a6i75chUtZbSadaUnZOE8tIyXit6p63bBHp2oN4D8FiOPBuTDwFEI4zrA4
-      vNcfRvKQWnQjlWm91BCajNxVqWi7XtWK7ikmwefZWNcd83RSf6vfb8ThpjwHmBaE
-      dbbL9i0CgYEA+KwB5qiaRxryBI1xqQaH6HiQ5WtW06ft43l2FrTZGPocjyF7KyWn
-      lS5q0J4tdSSkNfXqhT8aosm3VjfIxoDuQQO0ptD+km5qe1xu/qxLHJYd5FP67X9O
-      66e8sxcDSuKSvZ6wNeKNOL5SC7dDLCuMZoRTvXxGneg9a1w2x1MVrZsCgYEAzZ56
-      cqqNvavj4x2yDG+4oAB4/sQvVFK2+PopFpO5w8ezLDVfnoIv56gfmqMN9UdZH8Ew
-      PJhuEFRcdePo2ZnNjsWf9NhniJSMsEPTIc5qOPyoo5DcQM6DU8f4HC236uR+5P0h
-      jLfKRpvZl+N3skJi98QQr9PeLyb0sM8zRbZ0fpcCgYA9nuIZtk4EsLioSCSSLfwf
-      r0C4mRC7AjIA3GhW2Bm0BsZs8W8EEiCk5wuxBoFdNec7N+UVf72p+TJlOw2Vov1n
-      PvPVIpTy1EmuqAkZMriqLMjbe7QChjmYS8iG2H0IYXzbYCdqMumr1f2eyZrrpx7z
-      iHb3zYPyPUp7AC7S1dPZYQKBgQCK0p+LQVk3IJFYalkmiltVM1x9bUkjHkFIseUB
-      yDUYWIDArTxkkTL0rY7A4atv2X7zsIP3tVZCEiLmuTwhhfTBmu3W6jBkhx7Bdtla
-      LrmKxhK5c/kwi/0gmJcLt1Y/8Ys24SxAjGm16E0tfjb3FFkrPKWjgGC25w83PH06
-      aOgX+wKBgBLkLh/rwpiD4e8ZVjGuCn9A0H/2KZknXyNbkVjPho0FXBKIlfMa6c34
-      fRLDvHVZ0xo4dQxp38Wg+ZzIwGoAHhuJpSsfMsWKVXwNwV4iMEt2zyZRomui3TzT
-      +8awtDyALwvL05EBuxctT3iFGQcUj/fNCi0PeLoTSscdH2pdvHTb
-      -----END RSA PRIVATE KEY-----
-      """;
+
+  private static final String HOST_KEY = ""
+      + "-----BEGIN RSA PRIVATE KEY-----\n"
+      + "MIIEowIBAAKCAQEAx7uuoDyMR3c+sIg0fPfBeyoUjPa6hh3yN5S4/HLEOOaXcA2c\n"
+      + "uhNm8WwIXF/FwC32CJHZcCC3XhNeQDIpEt5wj9NHr++pjYWjp4Ue+n/2QbDO4LKB\n"
+      + "fb67zRbL++BZNswBKYwmzaiHoyWYERj+ZrZpf7hqHnKTAs4NIUCkhUvUHQzgdfT6\n"
+      + "vfEYv2HrM2VVVaqpUALrkogZHqQYfLA+InHXXZ3x+GmdSBCxaxUHHZypwETv+yBJ\n"
+      + "YAP+9Ofcmu3mpedK/3o3KJ2pD4OXwoXAtbHDOfnJMJylCKcCT3aodpdULSf4A8Zm\n"
+      + "o4fxppQCbGUw43D7u18he5qNdLDkgCV8iXewbQIDAQABAoIBAH/Fs9e0BDVvtj3u\n"
+      + "VE2hnTeyWsU2zWog3CPsU07ECH0yHqzDOIDdCpzk9JBLgFEJ1fvzebs+Yq+fCktd\n"
+      + "C2OTw0Ru78xAMCJl3KS9B21O0PWDK0UZTLdpffCcZc/y3H+ukAvJKcWky2h2E0rU\n"
+      + "x2JjzSe0jMZ/m0ZPFJ0yIk1XjhEqWgp3OCP9EHaO82+GM8UTuoBrfOs8gcv6aqiO\n"
+      + "L06BU6a6i75chUtZbSadaUnZOE8tIyXit6p63bBHp2oN4D8FiOPBuTDwFEI4zrA4\n"
+      + "vNcfRvKQWnQjlWm91BCajNxVqWi7XtWK7ikmwefZWNcd83RSf6vfb8ThpjwHmBaE\n"
+      + "dbbL9i0CgYEA+KwB5qiaRxryBI1xqQaH6HiQ5WtW06ft43l2FrTZGPocjyF7KyWn\n"
+      + "lS5q0J4tdSSkNfXqhT8aosm3VjfIxoDuQQO0ptD+km5qe1xu/qxLHJYd5FP67X9O\n"
+      + "66e8sxcDSuKSvZ6wNeKNOL5SC7dDLCuMZoRTvXxGneg9a1w2x1MVrZsCgYEAzZ56\n"
+      + "cqqNvavj4x2yDG+4oAB4/sQvVFK2+PopFpO5w8ezLDVfnoIv56gfmqMN9UdZH8Ew\n"
+      + "PJhuEFRcdePo2ZnNjsWf9NhniJSMsEPTIc5qOPyoo5DcQM6DU8f4HC236uR+5P0h\n"
+      + "jLfKRpvZl+N3skJi98QQr9PeLyb0sM8zRbZ0fpcCgYA9nuIZtk4EsLioSCSSLfwf\n"
+      + "r0C4mRC7AjIA3GhW2Bm0BsZs8W8EEiCk5wuxBoFdNec7N+UVf72p+TJlOw2Vov1n\n"
+      + "PvPVIpTy1EmuqAkZMriqLMjbe7QChjmYS8iG2H0IYXzbYCdqMumr1f2eyZrrpx7z\n"
+      + "iHb3zYPyPUp7AC7S1dPZYQKBgQCK0p+LQVk3IJFYalkmiltVM1x9bUkjHkFIseUB\n"
+      + "yDUYWIDArTxkkTL0rY7A4atv2X7zsIP3tVZCEiLmuTwhhfTBmu3W6jBkhx7Bdtla\n"
+      + "LrmKxhK5c/kwi/0gmJcLt1Y/8Ys24SxAjGm16E0tfjb3FFkrPKWjgGC25w83PH06\n"
+      + "aOgX+wKBgBLkLh/rwpiD4e8ZVjGuCn9A0H/2KZknXyNbkVjPho0FXBKIlfMa6c34\n"
+      + "fRLDvHVZ0xo4dQxp38Wg+ZzIwGoAHhuJpSsfMsWKVXwNwV4iMEt2zyZRomui3TzT\n"
+      + "+8awtDyALwvL05EBuxctT3iFGQcUj/fNCi0PeLoTSscdH2pdvHTb\n"
+      + "-----END RSA PRIVATE KEY-----\n";
 
   private static final String KEY_TYPE = "ssh-rsa";
 
