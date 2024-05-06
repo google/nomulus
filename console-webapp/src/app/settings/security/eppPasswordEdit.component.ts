@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { HttpErrorResponse } from '@angular/common/http';
 import { Component } from '@angular/core';
 import {
   AbstractControl,
@@ -68,9 +69,12 @@ export default class EppPasswordEditComponent {
     ) {
       this.passwordUpdateForm?.get('newPasswordRepeat')?.setErrors(null);
     } else {
-      this.passwordUpdateForm
-        ?.get('newPasswordRepeat')
-        ?.setErrors({ passwordsDontMatch: control.value });
+      // latest angular just won't detect the error without setTimeout
+      setTimeout(() => {
+        this.passwordUpdateForm
+          ?.get('newPasswordRepeat')
+          ?.setErrors({ passwordsDontMatch: control.value });
+      });
     }
     return null;
   };
@@ -92,15 +96,24 @@ export default class EppPasswordEditComponent {
   });
 
   save() {
-    debugger;
-    // this.securityService.saveEppPassword().subscribe({
-    //   complete: () => {
-    //     this.goBack();
-    //   },
-    //   error: (err: HttpErrorResponse) => {
-    //     this._snackBar.open(err.error);
-    //   },
-    // });
+    const { oldPassword, newPassword, newPasswordRepeat } =
+      this.passwordUpdateForm.value;
+    if (!oldPassword || !newPassword || !newPasswordRepeat) return;
+    this.securityService
+      .saveEppPassword({
+        registrarId: this.registrarService.registrarId(),
+        oldPassword,
+        newPassword,
+        newPasswordRepeat,
+      })
+      .subscribe({
+        complete: () => {
+          this.goBack();
+        },
+        error: (err: HttpErrorResponse) => {
+          this._snackBar.open(err.error);
+        },
+      });
   }
 
   goBack() {

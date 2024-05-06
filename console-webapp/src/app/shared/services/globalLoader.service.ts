@@ -30,7 +30,7 @@ export interface GlobalLoader {
   providedIn: 'root',
 })
 export class GlobalLoaderService {
-  private static readonly TIMEOUT_MS = 3000;
+  private static readonly TIMEOUT_MS = 10000;
   private loaders = new Map<GlobalLoader, Subscription>();
   public isLoading: boolean = false;
 
