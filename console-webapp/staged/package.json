@@ -1,0 +1,12 @@
+{
+  "name": "console-webapp-static-server",
+  "version": "0.0.0",
+  "scripts": {
+    "start": "node server.js",
+    "gcp-build":""
+  },
+  "private": true,
+  "dependencies": {
+    "express": "^4.16.4"
+  }
+}

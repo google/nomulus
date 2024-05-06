@@ -539,8 +539,6 @@ task coreDev {
   dependsOn 'javadoc'
   dependsOn 'checkDependenciesDotGradle'
   dependsOn 'checkLicense'
-  // TODO: @ptkach reenable after console design merged
-  // dependsOn ':console-webapp:runConsoleWebappUnitTests'
   dependsOn ':core:check'
   dependsOn 'assemble'
 }
