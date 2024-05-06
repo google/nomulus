@@ -17,7 +17,6 @@ import { Injectable } from '@angular/core';
 import { Observable, catchError, of, throwError } from 'rxjs';
 
 import { DomainListResult } from 'src/app/domains/domainList.service';
-import { environment } from 'src/environments/environment';
 import {
   Registrar,
   SecuritySettingsBackendModel,
@@ -35,13 +34,9 @@ export class BackendService {
     error: HttpErrorResponse,
     mockData?: Type
   ): Observable<Type> {
-    // This is a temporary redirect to the old console untill the new console
+    // This is a temporary redirect to the old console until the new console
     // is fully released and enabled
-    if (
-      environment.production &&
-      error.url &&
-      window.location.href.indexOf(error.url) < 0
-    ) {
+    if (error.url && new URL(error.url).pathname === '/registrar') {
       window.location.href = error.url;
     }
     if (error.error instanceof Error) {
