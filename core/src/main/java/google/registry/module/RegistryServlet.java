@@ -35,6 +35,7 @@ public class RegistryServlet extends ServletBase {
   private static final String LOG_TRACE_PATTERN = "projects/%s/traces/%s";
   private static final RandomStringGenerator LOG_TRACE_ID_GENERATOR =
       insecureRandomStringGenerator(HEX_DIGITS_ONLY);
+
   private static final RegistryComponent component = DaggerRegistryComponent.create();
   private static final RequestHandler<RequestComponent> requestHandler = component.requestHandler();
   private static final Lazy<MetricReporter> metricReporter = component.metricReporter();

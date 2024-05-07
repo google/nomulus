@@ -43,6 +43,16 @@ class LoggingPropertiesTest {
 
   private ByteArrayOutputStream stdout;
 
+  /**
+   * Note that this test classes uses `System.out` and may cause conflicts in the following
+   * scenarios:
+   *
+   * <ul>
+   *   <li>Another test class is added that also manipulates `System.out`
+   *   <li>More test methods are added to this class and intra-class parallelization is enabled for
+   *       this project.
+   * </ul>
+   */
   @BeforeEach
   void setup() {
     origStdout = System.out;
