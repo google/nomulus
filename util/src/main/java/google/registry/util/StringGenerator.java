@@ -40,7 +40,7 @@ public abstract class StringGenerator implements Serializable {
     /** Decimal digit-only alphabet. */
     public static final String DIGITS_ONLY = "0123456789";
 
-    /** Hex digit-only alphabet. */
+    /** Hexadecimal digit-only alphabet. */
     public static final String HEX_DIGITS_ONLY = "0123456789abcdef";
 
     /** Full ASCII alphabet with a wide selection of punctuation characters. */

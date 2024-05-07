@@ -26,6 +26,6 @@ public final class ToolsServlet extends ServletBase {
   private static final Lazy<MetricReporter> metricReporter = component.metricReporter();
 
   public ToolsServlet() {
-    super(component.projectId(), requestHandler, metricReporter);
+    super(requestHandler, metricReporter);
   }
 }

@@ -86,9 +86,9 @@ public class GcpJsonFormatter extends Formatter {
       if (record.getSourceMethodName() != null) {
         source += " " + record.getSourceMethodName();
       }
-      if (record instanceof SimpleLogRecord) {
+      if (record instanceof SimpleLogRecord simpleLogRecord) {
         Optional<Integer> lineNumber =
-            Optional.ofNullable(((SimpleLogRecord) record).getLogData())
+            Optional.ofNullable(simpleLogRecord.getLogData())
                 .map(LogData::getLogSite)
                 .map(LogSite::getLineNumber);
         if (lineNumber.isPresent()) {

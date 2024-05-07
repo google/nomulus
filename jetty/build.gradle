@@ -44,10 +44,10 @@ tasks.named('compileTestJava') {
 }
 
 dependencies {
+    def deps = rootProject.dependencyMap
     implementation project(':core')
 
     testRuntimeOnly project(':util')
-    def deps = rootProject.dependencyMap
     testImplementation deps['com.google.cloud:google-cloud-logging']
     testImplementation deps['com.google.code.gson:gson']
     testImplementation deps['com.google.flogger:flogger']
