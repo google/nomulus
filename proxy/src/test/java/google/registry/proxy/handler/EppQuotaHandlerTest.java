@@ -78,14 +78,14 @@ class EppQuotaHandlerTest {
 
   @Test
   void testSuccess_quotaGrantedAndReturned() {
-    when(quotaManager.acquireQuota(QuotaRequest.create(clientCertHash)))
-        .thenReturn(QuotaResponse.create(true, clientCertHash, now));
+    when(quotaManager.acquireQuota(new QuotaRequest(clientCertHash)))
+        .thenReturn(new QuotaResponse(true, clientCertHash, now));
 
     // First read, acquire quota.
     assertThat(channel.writeInbound(message)).isTrue();
     assertThat((Object) channel.readInbound()).isEqualTo(message);
     assertThat(channel.isActive()).isTrue();
-    verify(quotaManager).acquireQuota(QuotaRequest.create(clientCertHash));
+    verify(quotaManager).acquireQuota(new QuotaRequest(clientCertHash));
 
     // Second read, should not acquire quota again.
     Object newMessage = new Object();
@@ -96,19 +96,19 @@ class EppQuotaHandlerTest {
     // Channel closed, release quota.
     ChannelFuture unusedFuture = channel.close();
     verify(quotaManager)
-        .releaseQuota(QuotaRebate.create(QuotaResponse.create(true, clientCertHash, now)));
+        .releaseQuota(QuotaRebate.create(new QuotaResponse(true, clientCertHash, now)));
     verifyNoMoreInteractions(quotaManager);
   }
 
   @Test
   void testFailure_quotaNotGranted() {
-    when(quotaManager.acquireQuota(QuotaRequest.create(clientCertHash)))
-        .thenReturn(QuotaResponse.create(false, clientCertHash, now));
+    when(quotaManager.acquireQuota(new QuotaRequest(clientCertHash)))
+        .thenReturn(new QuotaResponse(false, clientCertHash, now));
     OverQuotaException e =
         assertThrows(OverQuotaException.class, () -> channel.writeInbound(message));
     ChannelFuture unusedFuture = channel.close();
     assertThat(e).hasMessageThat().contains(clientCertHash);
-    verify(quotaManager).acquireQuota(QuotaRequest.create(clientCertHash));
+    verify(quotaManager).acquireQuota(new QuotaRequest(clientCertHash));
     // Make sure that quotaManager.releaseQuota() is not called when the channel closes.
     verifyNoMoreInteractions(quotaManager);
     verify(metrics).registerQuotaRejection("epp", clientCertHash);
@@ -125,10 +125,10 @@ class EppQuotaHandlerTest {
     setProtocol(otherChannel);
     final DateTime later = now.plus(Duration.standardSeconds(1));
 
-    when(quotaManager.acquireQuota(QuotaRequest.create(clientCertHash)))
-        .thenReturn(QuotaResponse.create(true, clientCertHash, now));
-    when(quotaManager.acquireQuota(QuotaRequest.create(otherClientCertHash)))
-        .thenReturn(QuotaResponse.create(false, otherClientCertHash, later));
+    when(quotaManager.acquireQuota(new QuotaRequest(clientCertHash)))
+        .thenReturn(new QuotaResponse(true, clientCertHash, now));
+    when(quotaManager.acquireQuota(new QuotaRequest(otherClientCertHash)))
+        .thenReturn(new QuotaResponse(false, otherClientCertHash, later));
 
     // Allows the first user.
     assertThat(channel.writeInbound(message)).isTrue();
@@ -152,9 +152,9 @@ class EppQuotaHandlerTest {
     setProtocol(otherChannel);
     final DateTime later = now.plus(Duration.standardSeconds(1));
 
-    when(quotaManager.acquireQuota(QuotaRequest.create(clientCertHash)))
-        .thenReturn(QuotaResponse.create(true, clientCertHash, now))
-        .thenReturn(QuotaResponse.create(false, clientCertHash, later));
+    when(quotaManager.acquireQuota(new QuotaRequest(clientCertHash)))
+        .thenReturn(new QuotaResponse(true, clientCertHash, now))
+        .thenReturn(new QuotaResponse(false, clientCertHash, later));
 
     // Allows the first channel.
     assertThat(channel.writeInbound(message)).isTrue();

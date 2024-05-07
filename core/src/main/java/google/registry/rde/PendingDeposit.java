@@ -14,16 +14,13 @@
 
 package google.registry.rde;
 
-import static com.google.common.base.Preconditions.checkState;
 
 import google.registry.model.common.Cursor.CursorType;
 import google.registry.model.rde.RdeMode;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.io.ObjectStreamException;
 import java.io.OutputStream;
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.Optional;
 import javax.annotation.Nullable;
@@ -49,10 +46,12 @@ import org.joda.time.Duration;
  * @param manual True if deposits should be generated via manual operation, which does not update
  *     the cursor, and saves the generated deposits in a special manual subdirectory tree.
  * @param tld TLD for which a deposit should be generated.
- * @param watermark Watermark date for which a deposit should be generated.
+ * @param watermarkStr String representation of the watermark date for which a deposit should be
+ *     generated.
  * @param mode Which type of deposit to generate: full (RDE) or thin (BRDA).
  * @param cursor The cursor type to update (not used in manual operation).
- * @param interval Amount of time to increment the cursor (not used in manual operation).
+ * @param intervalStr String representation of the amount of time to increment the cursor (not used
+ *     in manual operation).
  * @param directoryWithTrailingSlash Subdirectory of bucket/manual in which files should be placed,
  *     including a trailing slash (used only in manual operation).
  * @param revision Revision number for generated files; if absent, use the next available in the
@@ -61,19 +60,28 @@ import org.joda.time.Duration;
 public record PendingDeposit(
     boolean manual,
     String tld,
-    DateTime watermark,
+    String watermarkStr,
     RdeMode mode,
-    CursorType cursor,
-    Duration interval,
-    String directoryWithTrailingSlash,
+    @Nullable CursorType cursor,
+    @Nullable String intervalStr,
+    @Nullable String directoryWithTrailingSlash,
     @Nullable Integer revision)
     implements Serializable {
 
-  private static final long serialVersionUID = 3141095605225904433L;
+  public DateTime watermark() {
+    return DateTime.parse(watermarkStr);
+  }
+
+  public Duration interval() {
+    return intervalStr == null ? null : Duration.parse(intervalStr);
+  }
+
+  @Serial private static final long serialVersionUID = 3141095605225904433L;
 
   public static PendingDeposit create(
       String tld, DateTime watermark, RdeMode mode, CursorType cursor, Duration interval) {
-    return new PendingDeposit(false, tld, watermark, mode, cursor, interval, null, null);
+    return new PendingDeposit(
+        false, tld, watermark.toString(), mode, cursor, interval.toString(), null, null);
   }
 
   public static PendingDeposit createInManualOperation(
@@ -83,55 +91,7 @@ public record PendingDeposit(
       String directoryWithTrailingSlash,
       @Nullable Integer revision) {
     return new PendingDeposit(
-        true, tld, watermark, mode, null, null, directoryWithTrailingSlash, revision);
-  }
-
-  /**
-   * Specifies that {@link SerializedForm} be used for {@code SafeObjectInputStream}-compatible
-   * custom-serialization of {@link PendingDeposit the AutoValue implementation class}.
-   *
-   * <p>This method is package-protected so that the AutoValue implementation class inherits this
-   * behavior.
-   *
-   * <p>This method leverages {@link PendingDepositCoder} to serializes an instance. However, it is
-   * not invoked in Beam pipelines.
-   */
-  Object writeReplace() throws ObjectStreamException {
-    return new SerializedForm(this);
-  }
-
-  /**
-   * Proxy for custom-serialization of {@link PendingDeposit}. This is necessary because the actual
-   * class to be (de)serialized is the generated AutoValue implementation. See also {@link
-   * #writeReplace}.
-   *
-   * <p>This class leverages {@link PendingDepositCoder} to safely deserializes an instance.
-   * However, it is not used in Beam pipelines.
-   */
-  private static class SerializedForm implements Serializable {
-
-    private static final long serialVersionUID = 3141095605225904433L;
-
-    private PendingDeposit value;
-
-    private SerializedForm(PendingDeposit value) {
-      this.value = value;
-    }
-
-    private void writeObject(ObjectOutputStream os) throws IOException {
-      checkState(value != null, "Non-null value expected for serialization.");
-      PendingDepositCoder.INSTANCE.encode(value, os);
-    }
-
-    private void readObject(ObjectInputStream is) throws IOException, ClassNotFoundException {
-      checkState(value == null, "Non-null value unexpected for deserialization.");
-      this.value = PendingDepositCoder.INSTANCE.decode(is);
-    }
-
-    @SuppressWarnings("unused")
-    private Object readResolve() throws ObjectStreamException {
-      return this.value;
-    }
+        true, tld, watermark.toString(), mode, null, null, directoryWithTrailingSlash, revision);
   }
 
   /**
@@ -158,15 +118,12 @@ public record PendingDeposit(
     public void encode(PendingDeposit value, OutputStream outStream) throws IOException {
       BooleanCoder.of().encode(value.manual(), outStream);
       StringUtf8Coder.of().encode(value.tld(), outStream);
-      StringUtf8Coder.of().encode(value.watermark().toString(), outStream);
+      StringUtf8Coder.of().encode(value.watermarkStr(), outStream);
       StringUtf8Coder.of().encode(value.mode().name(), outStream);
       NullableCoder.of(StringUtf8Coder.of())
           .encode(
               Optional.ofNullable(value.cursor()).map(CursorType::name).orElse(null), outStream);
-      NullableCoder.of(StringUtf8Coder.of())
-          .encode(
-              Optional.ofNullable(value.interval()).map(Duration::toString).orElse(null),
-              outStream);
+      NullableCoder.of(StringUtf8Coder.of()).encode(value.intervalStr(), outStream);
       NullableCoder.of(StringUtf8Coder.of()).encode(value.directoryWithTrailingSlash(), outStream);
       NullableCoder.of(VarIntCoder.of()).encode(value.revision(), outStream);
     }
@@ -176,14 +133,12 @@ public record PendingDeposit(
       return new PendingDeposit(
           BooleanCoder.of().decode(inStream),
           StringUtf8Coder.of().decode(inStream),
-          DateTime.parse(StringUtf8Coder.of().decode(inStream)),
+          StringUtf8Coder.of().decode(inStream),
           RdeMode.valueOf(StringUtf8Coder.of().decode(inStream)),
           Optional.ofNullable(NullableCoder.of(StringUtf8Coder.of()).decode(inStream))
               .map(CursorType::valueOf)
               .orElse(null),
-          Optional.ofNullable(NullableCoder.of(StringUtf8Coder.of()).decode(inStream))
-              .map(Duration::parse)
-              .orElse(null),
+          NullableCoder.of(StringUtf8Coder.of()).decode(inStream),
           NullableCoder.of(StringUtf8Coder.of()).decode(inStream),
           NullableCoder.of(VarIntCoder.of()).decode(inStream));
     }

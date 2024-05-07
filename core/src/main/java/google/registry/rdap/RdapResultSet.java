@@ -14,14 +14,23 @@
 
 package google.registry.rdap;
 
-import com.google.auto.value.AutoValue;
 import com.google.common.collect.ImmutableList;
 import google.registry.model.EppResource;
 import google.registry.rdap.RdapSearchResults.IncompletenessWarningType;
 import java.util.List;
 
-@AutoValue
-abstract class RdapResultSet<T extends EppResource> {
+/**
+ * RDAP result set.
+ *
+ * @param resources List of EPP resources.
+ * @param incompletenessWarningType Type of warning to display regarding possible incomplete data.
+ * @param numResourcesRetrieved Number of resources retrieved from the database in the process of
+ *     assembling the data set.
+ */
+record RdapResultSet<T extends EppResource>(
+    ImmutableList<T> resources,
+    IncompletenessWarningType incompletenessWarningType,
+    int numResourcesRetrieved) {
 
   static <S extends EppResource> RdapResultSet<S> create(List<S> resources) {
     return create(resources, IncompletenessWarningType.COMPLETE, resources.size());
@@ -31,16 +40,7 @@ abstract class RdapResultSet<T extends EppResource> {
       List<S> resources,
       IncompletenessWarningType incompletenessWarningType,
       int numResourcesRetrieved) {
-    return new AutoValue_RdapResultSet<>(
+    return new RdapResultSet<>(
         ImmutableList.copyOf(resources), incompletenessWarningType, numResourcesRetrieved);
   }
-
-  /** List of EPP resources. */
-  abstract ImmutableList<T> resources();
-
-  /** Type of warning to display regarding possible incomplete data. */
-  abstract IncompletenessWarningType incompletenessWarningType();
-
-  /** Number of resources retrieved from the database in the process of assembling the data set. */
-  abstract int numResourcesRetrieved();
 }
