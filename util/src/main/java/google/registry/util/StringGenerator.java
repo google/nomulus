@@ -37,12 +37,16 @@ public abstract class StringGenerator implements Serializable {
     public static final String BASE_58 =
         "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
 
-    /** Digit-only alphabet. */
+    /** Decimal digit-only alphabet. */
     public static final String DIGITS_ONLY = "0123456789";
+
+    /** Hexadecimal digit-only alphabet. */
+    public static final String HEX_DIGITS_ONLY = "0123456789abcdef";
 
     /** Full ASCII alphabet with a wide selection of punctuation characters. */
     public static final String FULL_ASCII =
-        "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ`~!@#$%^&*()_-+={}[]\\/<>,.;?':| ";
+        "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ`~!@#$%^&*()_-+={}[]\\/<>,.;?':|"
+            + " ";
   }
 
   protected String alphabet;

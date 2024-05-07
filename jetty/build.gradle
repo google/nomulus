@@ -27,8 +27,35 @@ war {
     dependsOn(tasks.named('copyJettyBase'))
 }
 
+test {
+    filter {
+        // As the only test class in this project, this must be in the 'test'
+        // task. If more tests are added, this class along with the system
+        // property definition below, should be moved to a dedicated task.
+        includeTestsMatching "google.registry.jetty.LoggingPropertiesTest.*"
+    }
+
+    systemProperty 'java.util.logging.config.file', "${projectDir}/logging.properties"
+}
+
+tasks.named('compileTestJava') {
+    // Gradle insists on this execution dependency.
+    dependsOn(tasks.named('copyJettyBase'))
+}
+
 dependencies {
+    def deps = rootProject.dependencyMap
     implementation project(':core')
+
+    testRuntimeOnly project(':util')
+    testImplementation deps['com.google.cloud:google-cloud-logging']
+    testImplementation deps['com.google.code.gson:gson']
+    testImplementation deps['com.google.flogger:flogger']
+    testImplementation deps['com.google.guava:guava']
+    testImplementation deps['com.google.truth:truth']
+
+    testImplementation deps['org.junit.jupiter:junit-jupiter-api']
+    testImplementation deps['org.junit.jupiter:junit-jupiter-engine']
 }
 
 tasks.register('copyConsole', Copy) {

@@ -17,15 +17,22 @@ package google.registry.util;
 import static com.google.common.base.Preconditions.checkArgument;
 
 import java.security.SecureRandom;
+import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
+import java.util.function.Supplier;
 
 /** Random string generator. */
 public class RandomStringGenerator extends StringGenerator {
 
-  private final SecureRandom random;
+  private final Supplier<Random> random;
 
   public RandomStringGenerator(String alphabet, SecureRandom random) {
+    this(alphabet, () -> random);
+  }
+
+  private RandomStringGenerator(String alphabet, Supplier<Random> maybeInsecure) {
     super(alphabet);
-    this.random = random;
+    this.random = maybeInsecure;
   }
 
   /** Generates a random string of a specified length. */
@@ -34,8 +41,18 @@ public class RandomStringGenerator extends StringGenerator {
     checkArgument(length > 0);
     char[] password = new char[length];
     for (int i = 0; i < length; ++i) {
-      password[i] = alphabet.charAt(random.nextInt(alphabet.length()));
+      password[i] = alphabet.charAt(random.get().nextInt(alphabet.length()));
     }
     return new String(password);
+  }
+
+  /**
+   * Returns an instance of this class backed by an insecure {@link Random random number generator}.
+   *
+   * <p>This is good for generating non-critical data at high throughput, e.g., log traces.
+   */
+  public static RandomStringGenerator insecureRandomStringGenerator(String alphabet) {
+    // Use the low-contention ThreadLocalRandom. Must call `current` at every use.
+    return new RandomStringGenerator(alphabet, ThreadLocalRandom::current);
   }
 }

@@ -14,17 +14,51 @@
 
 package google.registry.module;
 
+import static com.google.cloud.logging.TraceLoggingEnhancer.setCurrentTraceId;
+import static google.registry.util.RandomStringGenerator.insecureRandomStringGenerator;
+import static google.registry.util.StringGenerator.Alphabets.HEX_DIGITS_ONLY;
+
 import com.google.monitoring.metrics.MetricReporter;
 import dagger.Lazy;
 import google.registry.request.RequestHandler;
+import google.registry.util.RandomStringGenerator;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import java.io.IOException;
 
 /** Servlet that handles all requests. */
 public class RegistryServlet extends ServletBase {
+
+  // Length of a log trace_id, arbitrarily chosen.
+  private static final int LOG_TRACE_ID_LENGTH = 32;
+  // GCP log trace pattern. Fill in project_id and trace id
+  private static final String LOG_TRACE_PATTERN = "projects/%s/traces/%s";
+  private static final RandomStringGenerator LOG_TRACE_ID_GENERATOR =
+      insecureRandomStringGenerator(HEX_DIGITS_ONLY);
+
   private static final RegistryComponent component = DaggerRegistryComponent.create();
   private static final RequestHandler<RequestComponent> requestHandler = component.requestHandler();
   private static final Lazy<MetricReporter> metricReporter = component.metricReporter();
 
+  private final String projectId;
+
   public RegistryServlet() {
     super(requestHandler, metricReporter);
+    this.projectId = component.projectId();
+  }
+
+  @Override
+  public void service(HttpServletRequest req, HttpServletResponse rsp) throws IOException {
+    setCurrentTraceId(traceId());
+    try {
+      super.service(req, rsp);
+    } finally {
+      setCurrentTraceId(null);
+    }
+  }
+
+  String traceId() {
+    return String.format(
+        LOG_TRACE_PATTERN, projectId, LOG_TRACE_ID_GENERATOR.createString(LOG_TRACE_ID_LENGTH));
   }
 }

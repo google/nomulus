@@ -45,6 +45,7 @@ import google.registry.proxy.WebWhoisProtocolsModule.HttpsWhoisProtocol;
 import google.registry.proxy.WhoisProtocolModule.WhoisProtocol;
 import google.registry.proxy.handler.ProxyProtocolHandler;
 import google.registry.util.Clock;
+import google.registry.util.GcpJsonFormatter;
 import google.registry.util.GoogleCredentialsBundle;
 import google.registry.util.JdkLoggerConfig;
 import google.registry.util.OidcTokenUtils;
