@@ -212,10 +212,7 @@ public class ConfigureTldCommand extends MutatingCommand {
     Set<String> missingFields = new HashSet<>();
     for (String field : tldFields) {
       if (!keySet.contains(field)) {
-        if (!field.equals("createBillingCost")
-            || !keySet.contains("createBillingCostTransitions")) {
-          missingFields.add(field);
-        }
+        missingFields.add(field);
       }
     }
     checkArgument(
@@ -269,7 +266,7 @@ public class ConfigureTldCommand extends MutatingCommand {
         currencyUnit,
         currencies);
     ImmutableSet<CurrencyUnit> createCurrencies =
-        newTld.getCreateBillingCostMap().values().stream()
+        newTld.getCreateBillingCostTransitions().values().stream()
             .map(Money::getCurrencyUnit)
             .distinct()
             .collect(toImmutableSet());

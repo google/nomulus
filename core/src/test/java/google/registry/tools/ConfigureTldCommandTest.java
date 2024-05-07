@@ -189,20 +189,6 @@ public class ConfigureTldCommandTest extends CommandTestCase<ConfigureTldCommand
   }
 
   @Test
-  void testSuccess_createBillingCostName() throws Exception {
-    // This file uses the field name "createBillingCost" instead of "createBillingCostTransitions"
-    createTld("costmap");
-    File tldFile = tmpDir.resolve("costmap.yaml").toFile();
-    Files.asCharSink(tldFile, UTF_8).write(loadFile(getClass(), "costmap.yaml"));
-    runCommandForced("--input=" + tldFile);
-    Tld updatedTld = Tld.get("costmap");
-    ImmutableSortedMap<DateTime, Money> costTransitions = updatedTld.getCreateBillingCostMap();
-    assertThat(costTransitions.size()).isEqualTo(3);
-    assertThat(costTransitions.get(START_OF_TIME)).isEqualTo(Money.of(USD, 13));
-    assertThat(costTransitions.get(START_OF_TIME.plusYears(26))).isEqualTo(Money.of(USD, 14));
-  }
-
-  @Test
   void testFailure_fileMissingNullableFieldOnUpdate() throws Exception {
     Tld tld = createTld("missingnullablefields");
     persistResource(
@@ -529,7 +515,8 @@ public class ConfigureTldCommandTest extends CommandTestCase<ConfigureTldCommand
         tld.asBuilder()
             .setIdnTables(ImmutableSet.of(JA, UNCONFUSABLE_LATIN, EXTENDED_LATIN))
             .setAllowedFullyQualifiedHostNames(ImmutableSet.of("zeta", "alpha", "gamma", "beta"))
-            .setCreateBillingCost(ImmutableSortedMap.of(START_OF_TIME, Money.of(USD, 13)))
+            .setCreateBillingCostTransitions(
+                ImmutableSortedMap.of(START_OF_TIME, Money.of(USD, 13)))
             .build());
     File tldFile = tmpDir.resolve("idns.yaml").toFile();
     Files.asCharSink(tldFile, UTF_8).write(loadFile(getClass(), "idns.yaml"));
@@ -576,7 +563,8 @@ public class ConfigureTldCommandTest extends CommandTestCase<ConfigureTldCommand
         tld.asBuilder()
             .setIdnTables(ImmutableSet.of(JA, UNCONFUSABLE_LATIN, EXTENDED_LATIN))
             .setAllowedFullyQualifiedHostNames(ImmutableSet.of("zeta", "alpha", "gamma", "beta"))
-            .setCreateBillingCost(ImmutableSortedMap.of(START_OF_TIME, Money.of(USD, 13)))
+            .setCreateBillingCostTransitions(
+                ImmutableSortedMap.of(START_OF_TIME, Money.of(USD, 13)))
             .setBreakglassMode(true)
             .build());
     File tldFile = tmpDir.resolve("idns.yaml").toFile();
@@ -596,7 +584,8 @@ public class ConfigureTldCommandTest extends CommandTestCase<ConfigureTldCommand
         tld.asBuilder()
             .setIdnTables(ImmutableSet.of(JA, UNCONFUSABLE_LATIN, EXTENDED_LATIN))
             .setAllowedFullyQualifiedHostNames(ImmutableSet.of("zeta", "alpha", "gamma", "beta"))
-            .setCreateBillingCost(ImmutableSortedMap.of(START_OF_TIME, Money.of(USD, 13)))
+            .setCreateBillingCostTransitions(
+                ImmutableSortedMap.of(START_OF_TIME, Money.of(USD, 13)))
             .setBreakglassMode(true)
             .build());
     File tldFile = tmpDir.resolve("idns.yaml").toFile();

@@ -186,7 +186,8 @@ class DomainFlowUtilsTest extends ResourceFlowTestCase<DomainInfoFlow, Domain> {
             .asBuilder()
             .setTldType(tldType)
             .setCurrency(CHF)
-            .setCreateBillingCost(ImmutableSortedMap.of(START_OF_TIME, Money.ofMajor(CHF, 800)))
+            .setCreateBillingCostTransitions(
+                ImmutableSortedMap.of(START_OF_TIME, Money.ofMajor(CHF, 800)))
             .setEapFeeSchedule(ImmutableSortedMap.of(START_OF_TIME, Money.ofMajor(CHF, 800)))
             .setRenewBillingCostTransitions(
                 ImmutableSortedMap.of(START_OF_TIME, Money.ofMajor(CHF, 800)))
