@@ -14,9 +14,9 @@
 
 package google.registry.persistence.transaction;
 
-import autovalue.shaded.com.google.common.collect.ImmutableList;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Joiner;
+import com.google.common.collect.ImmutableList;
 import java.sql.SQLException;
 import java.util.Optional;
 import javax.persistence.PersistenceException;

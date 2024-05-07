@@ -14,7 +14,7 @@
 
 package google.registry.privileges.secretmanager;
 
-import static avro.shaded.com.google.common.base.Preconditions.checkState;
+import static com.google.common.base.Preconditions.checkState;
 
 import java.util.List;
 

@@ -59,7 +59,7 @@ public abstract class QuotaHandler extends ChannelInboundHandlerAdapter {
     if (quotaResponse == null) {
       String userId = getUserId(ctx);
       checkNotNull(userId, "Cannot obtain User ID");
-      quotaResponse = quotaManager.acquireQuota(QuotaRequest.create(userId));
+      quotaResponse = quotaManager.acquireQuota(new QuotaRequest(userId));
       if (!quotaResponse.success()) {
         String protocolName = ctx.channel().attr(PROTOCOL_KEY).get().name();
         metrics.registerQuotaRejection(protocolName, isUserIdPii() ? "none" : userId);

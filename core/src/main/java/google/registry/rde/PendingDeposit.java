@@ -14,16 +14,13 @@
 
 package google.registry.rde;
 
-import static com.google.common.base.Preconditions.checkState;
 
 import google.registry.model.common.Cursor.CursorType;
 import google.registry.model.rde.RdeMode;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.io.ObjectStreamException;
 import java.io.OutputStream;
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.Optional;
 import javax.annotation.Nullable;
@@ -69,7 +66,7 @@ public record PendingDeposit(
     @Nullable Integer revision)
     implements Serializable {
 
-  private static final long serialVersionUID = 3141095605225904433L;
+  @Serial private static final long serialVersionUID = 3141095605225904433L;
 
   public static PendingDeposit create(
       String tld, DateTime watermark, RdeMode mode, CursorType cursor, Duration interval) {
@@ -84,54 +81,6 @@ public record PendingDeposit(
       @Nullable Integer revision) {
     return new PendingDeposit(
         true, tld, watermark, mode, null, null, directoryWithTrailingSlash, revision);
-  }
-
-  /**
-   * Specifies that {@link SerializedForm} be used for {@code SafeObjectInputStream}-compatible
-   * custom-serialization of {@link PendingDeposit the AutoValue implementation class}.
-   *
-   * <p>This method is package-protected so that the AutoValue implementation class inherits this
-   * behavior.
-   *
-   * <p>This method leverages {@link PendingDepositCoder} to serializes an instance. However, it is
-   * not invoked in Beam pipelines.
-   */
-  Object writeReplace() throws ObjectStreamException {
-    return new SerializedForm(this);
-  }
-
-  /**
-   * Proxy for custom-serialization of {@link PendingDeposit}. This is necessary because the actual
-   * class to be (de)serialized is the generated AutoValue implementation. See also {@link
-   * #writeReplace}.
-   *
-   * <p>This class leverages {@link PendingDepositCoder} to safely deserializes an instance.
-   * However, it is not used in Beam pipelines.
-   */
-  private static class SerializedForm implements Serializable {
-
-    private static final long serialVersionUID = 3141095605225904433L;
-
-    private PendingDeposit value;
-
-    private SerializedForm(PendingDeposit value) {
-      this.value = value;
-    }
-
-    private void writeObject(ObjectOutputStream os) throws IOException {
-      checkState(value != null, "Non-null value expected for serialization.");
-      PendingDepositCoder.INSTANCE.encode(value, os);
-    }
-
-    private void readObject(ObjectInputStream is) throws IOException, ClassNotFoundException {
-      checkState(value == null, "Non-null value unexpected for deserialization.");
-      this.value = PendingDepositCoder.INSTANCE.decode(is);
-    }
-
-    @SuppressWarnings("unused")
-    private Object readResolve() throws ObjectStreamException {
-      return this.value;
-    }
   }
 
   /**

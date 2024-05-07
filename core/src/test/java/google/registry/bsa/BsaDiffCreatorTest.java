@@ -47,11 +47,9 @@ class BsaDiffCreatorTest {
 
   @Mock GcsClient gcsClient;
 
-  @SuppressWarnings("DoNotMockAutoValue")
   @Mock
   DownloadSchedule schedule;
 
-  @SuppressWarnings("DoNotMockAutoValue")
   @Mock
   CompletedJob completedJob;
 
