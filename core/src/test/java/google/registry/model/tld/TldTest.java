@@ -149,7 +149,6 @@ public final class TldTest extends EntityTestCase {
             .setDnsAPlusAaaaTtl(Duration.standardHours(1))
             .setDnsWriters(ImmutableSet.of("baz", "bang"))
             // set create billing cost back to the default (database helper sets it to $13)
-            .setCreateBillingCost(Money.of(USD, 8))
             .setEapFeeSchedule(
                 ImmutableSortedMap.of(
                     START_OF_TIME,
@@ -171,7 +170,7 @@ public final class TldTest extends EntityTestCase {
 
   @Test
   void testSuccess_tldYamlRoundtrip() throws Exception {
-    Tld testTld = createTld("test").asBuilder().setCreateBillingCost(Money.of(USD, 8)).build();
+    Tld testTld = createTld("test");
     ObjectMapper mapper = createObjectMapper();
     String yaml = mapper.writeValueAsString(testTld);
     Tld constructedTld = mapper.readValue(yaml, Tld.class);
@@ -608,15 +607,6 @@ public final class TldTest extends EntityTestCase {
                     .setRenewBillingCostTransitions(
                         ImmutableSortedMap.of(START_OF_TIME, Money.of(USD, -42))));
     assertThat(thrown).hasMessageThat().contains("billing cost cannot be negative");
-  }
-
-  @Test
-  void testFailure_negativeCreateBillingCost() {
-    IllegalArgumentException thrown =
-        assertThrows(
-            IllegalArgumentException.class,
-            () -> Tld.get("tld").asBuilder().setCreateBillingCost(Money.of(USD, -42)));
-    assertThat(thrown).hasMessageThat().contains("createBillingCost cannot be negative");
   }
 
   @Test

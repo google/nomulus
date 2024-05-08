@@ -458,20 +458,6 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
   @JsonDeserialize(using = CurrencyDeserializer.class)
   CurrencyUnit currency = DEFAULT_CURRENCY;
 
-  // TODO(sarahbot@): Remove this field once all saved configuration files have this field removed
-  /** The per-year billing cost for registering a new domain name. */
-  @Deprecated
-  @JsonIgnore
-  @Type(type = JodaMoneyType.TYPE_NAME)
-  @Columns(
-      columns = {
-        @Column(name = "create_billing_cost_amount"),
-        @Column(name = "create_billing_cost_currency")
-      })
-  Money createBillingCost = DEFAULT_CREATE_BILLING_COST;
-
-  // TODO(sarahbot@): Rename this field to createBillingCost once the old createBillingCost has been
-  // removed
   /** A property that transitions to different create billing costs at different times. */
   @Column(nullable = false)
   @JsonDeserialize(using = TimedTransitionPropertyMoneyDeserializer.class)
@@ -682,17 +668,8 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
    * Use {@code PricingEngineProxy.getDomainCreateCost} instead of this to find the cost for a
    * domain create.
    */
-  @VisibleForTesting
   public Money getCreateBillingCost(DateTime now) {
     return createBillingCostTransitions.getValueAtTime(now);
-  }
-
-  // This getter is still necessary for the Jackson deserialization in the ConfigureTldCommand
-  // TODO(sarahbot@): Remove this getter once the deprecated createBillingCost field is removed from
-  // the schema
-  @Deprecated
-  public Money getCreateBillingCost() {
-    return createBillingCost;
   }
 
   public ImmutableSortedMap<DateTime, Money> getCreateBillingCostTransitions() {
@@ -973,12 +950,6 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
     public Builder setCurrency(CurrencyUnit currency) {
       checkArgument(currency != null, "currency must be non-null");
       getInstance().currency = currency;
-      return this;
-    }
-
-    public Builder setCreateBillingCost(Money amount) {
-      checkArgument(amount.isPositiveOrZero(), "createBillingCost cannot be negative");
-      getInstance().createBillingCost = amount;
       return this;
     }
 

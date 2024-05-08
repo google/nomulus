@@ -177,54 +177,6 @@ public class ConfigureTldCommandTest extends CommandTestCase<ConfigureTldCommand
   }
 
   @Test
-  void testSuccess_fileMissingCreateBillingCostTransitions() throws Exception {
-    createTld("nocreatecostmap");
-    File tldFile = tmpDir.resolve("nocreatecostmap.yaml").toFile();
-    Files.asCharSink(tldFile, UTF_8).write(loadFile(getClass(), "nocreatecostmap.yaml"));
-    runCommandForced("--input=" + tldFile);
-    Tld updatedTld = Tld.get("nocreatecostmap");
-    assertThat(updatedTld.getCreateBillingCostTransitions())
-        .isEqualTo(ImmutableSortedMap.of(START_OF_TIME, Money.of(USD, 25)));
-  }
-
-  @Test
-  void testSuccess_fileHasCreateBillingCost() throws Exception {
-    createTld("withcreatecost");
-    File tldFile = tmpDir.resolve("withcreatecost.yaml").toFile();
-    Files.asCharSink(tldFile, UTF_8).write(loadFile(getClass(), "withcreatecost.yaml"));
-    runCommandForced("--input=" + tldFile);
-    Tld updatedTld = Tld.get("withcreatecost");
-    assertThat(updatedTld.getCreateBillingCost()).isEqualTo(Money.of(USD, 8));
-  }
-
-  @Test
-  void testSuccess_fileMissingCreateBillingCostTransitionsRevertsToBasicConstructedMap()
-      throws Exception {
-    ImmutableSortedMap<DateTime, Money> createCostTransitions =
-        ImmutableSortedMap.of(
-            START_OF_TIME,
-            Money.of(USD, 8),
-            fakeClock.nowUtc(),
-            Money.of(USD, 1),
-            fakeClock.nowUtc().plusMonths(1),
-            Money.of(USD, 2),
-            fakeClock.nowUtc().plusMonths(2),
-            Money.of(USD, 3));
-    Tld tld =
-        createTld("nocreatecostmap")
-            .asBuilder()
-            .setCreateBillingCostTransitions(createCostTransitions)
-            .build();
-    assertThat(tld.getCreateBillingCostTransitions().size()).isEqualTo(4);
-    File tldFile = tmpDir.resolve("nocreatecostmap.yaml").toFile();
-    Files.asCharSink(tldFile, UTF_8).write(loadFile(getClass(), "nocreatecostmap.yaml"));
-    runCommandForced("--input=" + tldFile);
-    Tld updatedTld = Tld.get("nocreatecostmap");
-    assertThat(updatedTld.getCreateBillingCostTransitions())
-        .isEqualTo(ImmutableSortedMap.of(START_OF_TIME, Money.of(USD, 25)));
-  }
-
-  @Test
   void testFailure_fileMissingNullableFieldsOnCreate() throws Exception {
     File tldFile = tmpDir.resolve("missingnullablefields.yaml").toFile();
     Files.asCharSink(tldFile, UTF_8).write(loadFile(getClass(), "missingnullablefields.yaml"));
@@ -234,20 +186,6 @@ public class ConfigureTldCommandTest extends CommandTestCase<ConfigureTldCommand
         .isEqualTo(
             "The input file is missing data for the following fields: [tldStateTransitions,"
                 + " premiumListName, currency, numDnsPublishLocks]");
-  }
-
-  @Test
-  void testSuccess_addCreateBillingCostTransitions() throws Exception {
-    createTld("costmap");
-    File tldFile = tmpDir.resolve("costmap.yaml").toFile();
-    Files.asCharSink(tldFile, UTF_8).write(loadFile(getClass(), "costmap.yaml"));
-    runCommandForced("--input=" + tldFile);
-    Tld updatedTld = Tld.get("costmap");
-    ImmutableSortedMap<DateTime, Money> costTransitions =
-        updatedTld.getCreateBillingCostTransitions();
-    assertThat(costTransitions.size()).isEqualTo(3);
-    assertThat(costTransitions.get(START_OF_TIME)).isEqualTo(Money.of(USD, 13));
-    assertThat(costTransitions.get(START_OF_TIME.plusYears(26))).isEqualTo(Money.of(USD, 14));
   }
 
   @Test
