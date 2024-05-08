@@ -103,7 +103,13 @@ public final class ContactDeleteFlow implements MutatingFlow {
             : existingContact;
     // Wipe out PII on contact deletion.
     newContact =
-        newContact.asBuilder().wipeOut().setStatusValues(null).setDeletionTime(now).build();
+        newContact
+            .asBuilder()
+            .wipeOut()
+            .setStatusValues(null)
+            .setDeletionTime(now)
+            .setLastUpdateTimeViaEpp(now)
+            .build();
     ContactHistory contactHistory =
         historyBuilder.setType(Type.CONTACT_DELETE).setContact(newContact).build();
     handlePendingTransferOnDelete(existingContact, newContact, now, contactHistory);

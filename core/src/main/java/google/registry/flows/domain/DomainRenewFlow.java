@@ -244,6 +244,7 @@ public final class DomainRenewFlow implements MutatingFlow {
         existingDomain
             .asBuilder()
             .setLastEppUpdateTime(now)
+            .setLastUpdateTimeViaEpp(now)
             .setLastEppUpdateRegistrarId(registrarId)
             .setRegistrationExpirationTime(newExpirationTime)
             .setAutorenewBillingEvent(newAutorenewEvent.createVKey())

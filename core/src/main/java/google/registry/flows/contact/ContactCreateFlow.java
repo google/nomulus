@@ -86,6 +86,7 @@ public final class ContactCreateFlow implements MutatingFlow {
             .setEmailAddress(command.getEmail())
             .setInternationalizedPostalInfo(command.getInternationalizedPostalInfo())
             .setLocalizedPostalInfo(command.getLocalizedPostalInfo())
+            .setLastUpdateTimeViaEpp(now)
             .build();
     validateAsciiPostalInfo(newContact.getInternationalizedPostalInfo());
     validateContactAgainstPolicy(newContact);

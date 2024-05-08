@@ -257,6 +257,7 @@ public final class DomainTransferApproveFlow implements MutatingFlow {
                                     GracePeriodStatus.TRANSFER, existingDomain.getRepoId(), event)))
                     .orElseGet(ImmutableSet::of))
             .setLastEppUpdateTime(now)
+            .setLastUpdateTimeViaEpp(now)
             .setLastEppUpdateRegistrarId(registrarId)
             // Even if the existing domain had a bulk token, that bulk token should be removed
             // on transfer

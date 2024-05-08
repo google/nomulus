@@ -386,6 +386,7 @@ public final class DomainCreateFlow implements MutatingFlow {
             .setCreationRegistrarId(registrarId)
             .setPersistedCurrentSponsorRegistrarId(registrarId)
             .setRepoId(repoId)
+            .setLastUpdateTimeViaEpp(now)
             .setIdnTableName(validateDomainNameWithIdnTables(domainName))
             .setRegistrationExpirationTime(registrationExpirationTime)
             .setAutorenewBillingEvent(autorenewBillingEvent.createVKey())
