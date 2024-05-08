@@ -60,7 +60,6 @@ class LabelDiffUpdatesTest {
 
   @Mock IdnChecker idnChecker;
 
-  @SuppressWarnings("DoNotMockAutoValue")
   @Mock
   DownloadSchedule schedule;
 

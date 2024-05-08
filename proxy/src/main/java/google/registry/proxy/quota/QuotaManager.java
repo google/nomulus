@@ -14,7 +14,6 @@
 
 package google.registry.proxy.quota;
 
-import com.google.auto.value.AutoValue;
 import google.registry.proxy.quota.TokenStore.TimestampedInteger;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
@@ -40,42 +39,16 @@ import org.joda.time.DateTime;
 public class QuotaManager {
 
   /** Value class representing a quota request. */
-  @AutoValue
-  public abstract static class QuotaRequest {
-
-    public static QuotaRequest create(String userId) {
-      return new AutoValue_QuotaManager_QuotaRequest(userId);
-    }
-
-    abstract String userId();
-  }
+  public record QuotaRequest(String userId) {}
 
   /** Value class representing a quota response. */
-  @AutoValue
-  public abstract static class QuotaResponse {
-    public static QuotaResponse create(
-        boolean success, String userId, DateTime grantedTokenRefillTime) {
-      return new AutoValue_QuotaManager_QuotaResponse(success, userId, grantedTokenRefillTime);
-    }
-
-    public abstract boolean success();
-
-    abstract String userId();
-
-    abstract DateTime grantedTokenRefillTime();
-  }
+  public record QuotaResponse(boolean success, String userId, DateTime grantedTokenRefillTime) {}
 
   /** Value class representing a quota rebate. */
-  @AutoValue
-  public abstract static class QuotaRebate {
+  public record QuotaRebate(String userId, DateTime grantedTokenRefillTime) {
     public static QuotaRebate create(QuotaResponse response) {
-      return new AutoValue_QuotaManager_QuotaRebate(
-          response.userId(), response.grantedTokenRefillTime());
+      return new QuotaRebate(response.userId(), response.grantedTokenRefillTime());
     }
-
-    abstract String userId();
-
-    abstract DateTime grantedTokenRefillTime();
   }
 
   private final TokenStore tokenStore;
@@ -91,7 +64,7 @@ public class QuotaManager {
   /** Attempts to acquire requested quota, synchronously. */
   public QuotaResponse acquireQuota(QuotaRequest request) {
     TimestampedInteger tokens = tokenStore.take(request.userId());
-    return QuotaResponse.create(tokens.value() != 0, request.userId(), tokens.timestamp());
+    return new QuotaResponse(tokens.value() != 0, request.userId(), tokens.timestamp());
   }
 
   /** Returns granted quota to the token store, asynchronously. */

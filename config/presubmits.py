@@ -179,6 +179,18 @@ PRESUBMITS = {
     ):
         "Do not use shaded dependencies from testcontainers.",
     PresubmitCheck(
+        r".*autovalue\.shaded.*",
+        "java",
+        {"/node_modules/"},
+    ):
+        "Do not use shaded dependencies from autovalue.",
+    PresubmitCheck(
+        r".*avro\.shaded.*",
+        "java",
+        {"/node_modules/"},
+    ):
+        "Do not use shaded dependencies from avro.",
+    PresubmitCheck(
         r".*com\.google\.common\.truth\.Truth8.*",
         "java",
         {"/node_modules/"},

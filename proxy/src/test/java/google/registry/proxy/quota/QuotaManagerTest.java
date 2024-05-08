@@ -48,7 +48,7 @@ class QuotaManagerTest {
   void testSuccess_requestApproved() {
     when(tokenStore.take(anyString())).thenReturn(TimestampedInteger.create(1, clock.nowUtc()));
 
-    request = QuotaRequest.create(USER_ID);
+    request = new QuotaRequest(USER_ID);
     response = quotaManager.acquireQuota(request);
     assertThat(response.success()).isTrue();
     assertThat(response.userId()).isEqualTo(USER_ID);
@@ -59,7 +59,7 @@ class QuotaManagerTest {
   void testSuccess_requestDenied() {
     when(tokenStore.take(anyString())).thenReturn(TimestampedInteger.create(0, clock.nowUtc()));
 
-    request = QuotaRequest.create(USER_ID);
+    request = new QuotaRequest(USER_ID);
     response = quotaManager.acquireQuota(request);
     assertThat(response.success()).isFalse();
     assertThat(response.userId()).isEqualTo(USER_ID);
@@ -69,7 +69,7 @@ class QuotaManagerTest {
   @Test
   void testSuccess_rebate() {
     DateTime grantedTokenRefillTime = clock.nowUtc();
-    response = QuotaResponse.create(true, USER_ID, grantedTokenRefillTime);
+    response = new QuotaResponse(true, USER_ID, grantedTokenRefillTime);
     QuotaRebate rebate = QuotaRebate.create(response);
     Future<?> unusedFuture = quotaManager.releaseQuota(rebate);
     verify(tokenStore).scheduleRefresh();

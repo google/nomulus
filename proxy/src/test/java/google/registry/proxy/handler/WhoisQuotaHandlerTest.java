@@ -77,14 +77,14 @@ class WhoisQuotaHandlerTest {
 
   @Test
   void testSuccess_quotaGranted() {
-    when(quotaManager.acquireQuota(QuotaRequest.create(remoteAddress)))
-        .thenReturn(QuotaResponse.create(true, remoteAddress, now));
+    when(quotaManager.acquireQuota(new QuotaRequest(remoteAddress)))
+        .thenReturn(new QuotaResponse(true, remoteAddress, now));
 
     // First read, acquire quota.
     assertThat(channel.writeInbound(message)).isTrue();
     assertThat((Object) channel.readInbound()).isEqualTo(message);
     assertThat(channel.isActive()).isTrue();
-    verify(quotaManager).acquireQuota(QuotaRequest.create(remoteAddress));
+    verify(quotaManager).acquireQuota(new QuotaRequest(remoteAddress));
 
     // Second read, should not acquire quota again.
     assertThat(channel.writeInbound(message)).isTrue();
@@ -97,8 +97,8 @@ class WhoisQuotaHandlerTest {
 
   @Test
   void testFailure_quotaNotGranted() {
-    when(quotaManager.acquireQuota(QuotaRequest.create(remoteAddress)))
-        .thenReturn(QuotaResponse.create(false, remoteAddress, now));
+    when(quotaManager.acquireQuota(new QuotaRequest(remoteAddress)))
+        .thenReturn(new QuotaResponse(false, remoteAddress, now));
     OverQuotaException e =
         assertThrows(OverQuotaException.class, () -> channel.writeInbound(message));
     assertThat(e).hasMessageThat().contains("none");
@@ -116,10 +116,10 @@ class WhoisQuotaHandlerTest {
     setProtocol(otherChannel);
     final DateTime later = now.plus(Duration.standardSeconds(1));
 
-    when(quotaManager.acquireQuota(QuotaRequest.create(remoteAddress)))
-        .thenReturn(QuotaResponse.create(true, remoteAddress, now));
-    when(quotaManager.acquireQuota(QuotaRequest.create(otherRemoteAddress)))
-        .thenReturn(QuotaResponse.create(false, otherRemoteAddress, later));
+    when(quotaManager.acquireQuota(new QuotaRequest(remoteAddress)))
+        .thenReturn(new QuotaResponse(true, remoteAddress, now));
+    when(quotaManager.acquireQuota(new QuotaRequest(otherRemoteAddress)))
+        .thenReturn(new QuotaResponse(false, otherRemoteAddress, later));
 
     // Allows the first user.
     assertThat(channel.writeInbound(message)).isTrue();
@@ -149,12 +149,12 @@ class WhoisQuotaHandlerTest {
     thirdChannel.attr(REMOTE_ADDRESS_KEY).set(remoteAddress);
     final DateTime evenLater = now.plus(Duration.standardSeconds(60));
 
-    when(quotaManager.acquireQuota(QuotaRequest.create(remoteAddress)))
-        .thenReturn(QuotaResponse.create(true, remoteAddress, now))
+    when(quotaManager.acquireQuota(new QuotaRequest(remoteAddress)))
+        .thenReturn(new QuotaResponse(true, remoteAddress, now))
         // Throttles the second connection.
-        .thenReturn(QuotaResponse.create(false, remoteAddress, later))
+        .thenReturn(new QuotaResponse(false, remoteAddress, later))
         // Allows the third connection because token refilled.
-        .thenReturn(QuotaResponse.create(true, remoteAddress, evenLater));
+        .thenReturn(new QuotaResponse(true, remoteAddress, evenLater));
 
     // Allows the first channel.
     assertThat(channel.writeInbound(message)).isTrue();
