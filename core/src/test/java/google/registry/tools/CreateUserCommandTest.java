@@ -54,6 +54,17 @@ public class CreateUserCommandTest extends CommandTestCase<CreateUserCommand> {
   }
 
   @Test
+  void testSuccess_registryLock() throws Exception {
+    runCommandForced(
+        "--email",
+        "user@example.test",
+        "--registry_lock_email_address",
+        "registrylockemail@otherexample.test");
+    assertThat(UserDao.loadUser("user@example.test").get().getRegistryLockEmailAddress())
+        .hasValue("registrylockemail@otherexample.test");
+  }
+
+  @Test
   void testSuccess_admin() throws Exception {
     runCommandForced("--email", "user@example.test", "--admin", "true");
     assertThat(UserDao.loadUser("user@example.test").get().getUserRoles().isAdmin()).isTrue();
@@ -100,5 +111,30 @@ public class CreateUserCommandTest extends CommandTestCase<CreateUserCommand> {
         .hasMessageThat()
         .isEqualTo("A user with email user@example.test already exists");
     verifyNoMoreInteractions(iamClient);
+  }
+
+  @Test
+  void testFailure_badEmail() throws Exception {
+    assertThat(
+            assertThrows(
+                IllegalArgumentException.class,
+                () -> runCommandForced("--email", "this is not valid")))
+        .hasMessageThat()
+        .isEqualTo("Provided email this is not valid is not a valid email address");
+  }
+
+  @Test
+  void testFailure_badRegistryLockEmail() throws Exception {
+    assertThat(
+            assertThrows(
+                IllegalArgumentException.class,
+                () ->
+                    runCommandForced(
+                        "--email",
+                        "user@example.test",
+                        "--registry_lock_email_address",
+                        "this is not valid")))
+        .hasMessageThat()
+        .isEqualTo("Provided email this is not valid is not a valid email address");
   }
 }

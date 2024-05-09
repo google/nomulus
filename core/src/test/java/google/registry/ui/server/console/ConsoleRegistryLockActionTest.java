@@ -100,6 +100,7 @@ public class ConsoleRegistryLockActionTest {
     user =
         new User.Builder()
             .setEmailAddress("user@theregistrar.com")
+            .setRegistryLockEmailAddress("registrylock@theregistrar.com")
             .setUserRoles(
                 new UserRoles.Builder()
                     .setRegistrarRoles(
@@ -437,6 +438,15 @@ public class ConsoleRegistryLockActionTest {
   }
 
   @Test
+  void testPost_failure_noRegistryLockEmail() {
+    user = user.asBuilder().setRegistryLockEmailAddress(null).build();
+    action = createDefaultPostAction(true);
+    action.run();
+    assertThat(response.getStatus()).isEqualTo(HttpStatusCodes.STATUS_CODE_BAD_REQUEST);
+    assertThat(response.getPayload()).isEqualTo("User has no registry lock email address");
+  }
+
+  @Test
   void testPost_failure_badPassword() throws Exception {
     action = createPostAction("example.test", true, "badPassword", Optional.empty());
     action.run();
@@ -534,6 +544,6 @@ public class ConsoleRegistryLockActionTest {
     assertThat(sentMessage.subject()).matches("Registry (un)?lock verification");
     assertThat(sentMessage.body()).matches(EMAIL_MESSAGE_TEMPLATE);
     assertThat(sentMessage.recipients())
-        .containsExactly(new InternetAddress("user@theregistrar.com"));
+        .containsExactly(new InternetAddress("registrylock@theregistrar.com"));
   }
 }

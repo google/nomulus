@@ -150,20 +150,27 @@ public class ConsoleRegistryLockAction extends ConsoleApiAction {
       }
     }
 
-    String userEmail = user.getEmailAddress();
+    Optional<String> maybeRegistryLockEmail = user.getRegistryLockEmailAddress();
+    if (maybeRegistryLockEmail.isEmpty()) {
+      setFailedResponse(
+          "User has no registry lock email address", HttpStatusCodes.STATUS_CODE_BAD_REQUEST);
+      return;
+    }
+    String registryLockEmail = maybeRegistryLockEmail.get();
+
     try {
       tm().transact(
               () -> {
                 RegistryLock registryLock =
                     isLock
                         ? domainLockUtils.saveNewRegistryLockRequest(
-                            domainName, registrarId, userEmail, isAdmin)
+                            domainName, registrarId, registryLockEmail, isAdmin)
                         : domainLockUtils.saveNewRegistryUnlockRequest(
                             domainName,
                             registrarId,
                             isAdmin,
                             relockDurationMillis.map(Duration::new));
-                sendVerificationEmail(registryLock, userEmail, isLock);
+                sendVerificationEmail(registryLock, registryLockEmail, isLock);
               });
     } catch (IllegalArgumentException e) {
       // Catch IllegalArgumentExceptions separately to give a nicer error message and code
