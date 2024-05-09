@@ -139,8 +139,7 @@ public class ProxyModule {
       // "io.netty.handler.logging.LoggingHandler" to actually process the logs. This JUL logger is
       // set to Level.FINE if the --log parameter is passed, so that it does not filter out logs
       // that the LoggingHandler writes. Otherwise, the logs are silently ignored because the
-      // default
-      // JUL logger level is Level.INFO.
+      // default JUL logger level is Level.INFO.
       JdkLoggerConfig.getConfig(LoggingHandler.class).setLevel(Level.FINE);
       // Log source IP information if --log parameter is passed. This is considered PII and should
       // only be used in non-production environment for debugging purpose.
