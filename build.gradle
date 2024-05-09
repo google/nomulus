@@ -304,7 +304,7 @@ subprojects {
 
   afterEvaluate {
     if (rootProject.enableDependencyLocking.toBoolean()
-        && (project.name != 'integration' && project.name != 'load-testing')) {
+        && (project.name != 'integration')) {
       // The ':integration' project runs server/schema integration tests using
       // dynamically specified jars with no transitive dependency. Therefore
       // dependency-locking does not make sense. Furthermore, during
