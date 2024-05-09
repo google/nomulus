@@ -21,6 +21,8 @@ import com.google.common.flogger.backend.system.SimpleLogRecord;
 import com.google.gson.Gson;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Optional;
 import java.util.logging.Formatter;
 import java.util.logging.Level;
@@ -29,17 +31,15 @@ import java.util.logging.LogRecord;
 /**
  * JUL formatter that formats log messages in a single-line JSON that Stackdriver logging can parse.
  *
- * <p>There is no clear documentation on how to achieve this or on the format of the JSON. This is
- * much a trial and error process, plus a lot of searching. To summarize, if the logs are printed to
- * {@code STDOUT} or {@code STDERR} in a single-line JSON, with the content in the {@code message}
- * field and the log level in the {@code severity} field, it will be picked up by Stackdriver
- * logging agent running in GKE containers and logged at correct level..
+ * <p>The structured logs written to {@code STDOUT} and {@code STDERR} will be picked up by GAE/GKE
+ * logging agent and automatically ingested by Stackdriver. Certain fields (see below) in the JSON
+ * will be converted to the corresponding <a
+ * href="https://cloud.google.com/logging/docs/reference/v2/rest/v2/LogEntry">{@code Log Entry}</a>
+ * fields and parsed by Log Explorer.
  *
  * @see <a
- *     href="https://medium.com/retailmenot-engineering/formatting-python-logs-for-stackdriver-5a5ddd80761c">
- *     Formatting Python Logs from Stackdriver</a> <a
- *     href="https://stackoverflow.com/questions/44164730/gke-stackdriver-java-logback-logging-format">
- *     GKE &amp; Stackdriver: Java logback logging format?</a>
+ *     href="https://cloud.google.com/logging/docs/structured-logging#structured_logging_special_fields">
+ *     Logging agent: special JSON fields</a>
  */
 public class GcpJsonFormatter extends Formatter {
 
@@ -47,26 +47,30 @@ public class GcpJsonFormatter extends Formatter {
   private static final String SEVERITY = "severity";
 
   /**
-   * JSON field that stores the calling class and function when the log occurs.
-   *
-   * <p>This field is not used by Stackdriver, but it is useful and can be found when the log
-   * entries are expanded
+   * JSON field that stores information regarding the source code location information associated
+   * with the log entry, if any.
    */
-  private static final String SOURCE = "source";
+  private static final String SOURCE_LOCATION = "logging.googleapis.com/sourceLocation";
 
   /** JSON field that contains the content, this will show up as the main entry in a log. */
   private static final String MESSAGE = "message";
+
+  private static final String FILE = "file";
+
+  private static final String FUNCTION = "function";
+
+  private static final String LINE = "line";
 
   private static final Gson gson = new Gson();
 
   @Override
   public String format(LogRecord record) {
-    // Add an extra newline before the message. Stackdriver does not show newlines correctly, and
-    // treats them as whitespace. If you want to see correctly formatted log message, expand the
-    // log and look for the jsonPayload.message field. This newline makes sure that the entire
-    // message starts on its own line, so that indentation within the message is correct.
+    // Add an extra newline before the message for better displaying of multi-line logs. To see the
+    // correctly indented multi-line logs, expand the log and look for the testPayload field. This
+    // newline makes sure that the entire message starts on its own line, so that indentation within
+    // the message is correct.
 
-    String message = "\n" + record.getMessage();
+    String message = '\n' + record.getMessage();
     String severity = severityFor(record.getLevel());
 
     // The rest is mostly lifted from java.util.logging.SimpleFormatter.
@@ -80,36 +84,56 @@ public class GcpJsonFormatter extends Formatter {
       stacktrace = sw.toString();
     }
 
-    String source;
+    String function = "";
     if (record.getSourceClassName() != null) {
-      source = record.getSourceClassName();
+      function = record.getSourceClassName();
       if (record.getSourceMethodName() != null) {
-        source += " " + record.getSourceMethodName();
+        function += "." + record.getSourceMethodName();
       }
-      if (record instanceof SimpleLogRecord simpleLogRecord) {
-        Optional<Integer> lineNumber =
-            Optional.ofNullable(simpleLogRecord.getLogData())
-                .map(LogData::getLogSite)
-                .map(LogSite::getLineNumber);
-        if (lineNumber.isPresent()) {
-          source += " line:" + lineNumber.get();
-        }
-      }
-
-    } else {
-      source = record.getLoggerName();
     }
 
+    String line = "";
+    String file = "";
+    if (record instanceof SimpleLogRecord simpleLogRecord) {
+      Optional<LogSite> logSite =
+          Optional.ofNullable(simpleLogRecord.getLogData()).map(LogData::getLogSite);
+      if (logSite.isPresent()) {
+        line = String.valueOf(logSite.get().getLineNumber());
+        file = logSite.get().getFileName();
+      }
+    }
+
+    Map<String, String> sourceLocation = new LinkedHashMap<>();
+    if (!file.isEmpty()) {
+      sourceLocation.put(FILE, file);
+    }
+    if (!line.isEmpty()) {
+      sourceLocation.put(LINE, line);
+    }
+    if (!function.isEmpty()) {
+      sourceLocation.put(FUNCTION, function);
+    }
     return gson.toJson(
-            ImmutableMap.of(SEVERITY, severity, SOURCE, source, MESSAGE, message + stacktrace))
+            ImmutableMap.of(
+                SEVERITY,
+                severity,
+                SOURCE_LOCATION,
+                sourceLocation,
+                // ImmutableMap.of(FILE, file, LINE, line, FUNCTION, function),
+                MESSAGE,
+                message + stacktrace))
+        // This trailing newline is required for the proxy because otherwise multiple logs might be
+        // sent to Stackdriver together (due to the async nature of the proxy), and not parsed
+        // correctly.
         + '\n';
   }
 
   /**
-   * Map {@link Level} to a severity string that Stackdriver understands.
+   * Maps a {@link Level} to a severity string that Stackdriver understands.
    *
    * @see <a
-   *     href="https://github.com/googleapis/google-cloud-java/blob/master/google-cloud-clients/google-cloud-logging/src/main/java/com/google/cloud/logging/LoggingHandler.java#L325">{@code LoggingHandler}</a>
+   *     href="https://github.com/googleapis/java-logging/blob/main/google-cloud-logging/src/main/java/com/google/cloud/logging/LoggingHandler.java">
+   *     LoggingHandler.java</a>
    */
   private static String severityFor(Level level) {
     return switch (level.intValue()) {

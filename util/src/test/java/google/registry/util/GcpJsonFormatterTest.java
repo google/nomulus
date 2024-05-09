@@ -16,87 +16,122 @@ package google.registry.util;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import com.google.common.base.Joiner;
+import com.google.common.flogger.FluentLogger;
+import com.google.common.flogger.StackSize;
+import java.io.ByteArrayOutputStream;
+import java.nio.charset.StandardCharsets;
+import java.util.logging.Handler;
 import java.util.logging.Level;
-import java.util.logging.LogRecord;
+import java.util.logging.Logger;
+import java.util.logging.StreamHandler;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-/** Unit tests for {@link GcpJsonFormatter}. */
+/**
+ * Unit tests for {@link GcpJsonFormatter}.
+ *
+ * @see <a
+ *     href="https://github.com/google/flogger/blob/master/google/src/test/java/com/google/common/flogger/GoogleLoggerTest.java">
+ *     GoogleLoggerTest.java</a>
+ */
 class GcpJsonFormatterTest {
 
-  private static final String LOGGER_NAME = "example.company.app.logger";
-  private static final String SOURCE_CLASS_NAME = "example.company.app.component.Doer";
-  private static final String SOURCE_METHOD_NAME = "doStuff";
-  private static final String MESSAGE = "Something I have to say";
+  private Logger jdkLogger;
+  private FluentLogger logger;
+  private Handler handler;
+  private ByteArrayOutputStream ostream;
 
-  private final GcpJsonFormatter formatter = new GcpJsonFormatter();
-  private final LogRecord logRecord = new LogRecord(Level.WARNING, MESSAGE);
+  private static final String LOG_TEMPLATE =
+      """
+      {"severity":"@@SEVERITY@@","logging.googleapis.com/sourceLocation":{"file":"GcpJsonFormatterTest.java","line":"@@LINE@@","function":"google.registry.util.GcpJsonFormatterTest.@@FUNCTION@@"},"message":"\\n@@MESSAGE@@"}
+      """;
 
-  private static String makeJson(String severity, String source, String message) {
-    return "{"
-        + Joiner.on(",")
-            .join(
-                makeJsonField("severity", severity),
-                makeJsonField("source", source),
-                makeJsonField("message", "\\n" + message))
-        + "}\n";
-  }
-
-  private static String makeJsonField(String name, String content) {
-    return Joiner.on(":").join(addQuoteAndReplaceNewline(name), addQuoteAndReplaceNewline(content));
-  }
-
-  private static String addQuoteAndReplaceNewline(String content) {
-    // This quadruple escaping is hurting my eyes.
-    return "\"" + content.replaceAll("\n", "\\\\n") + "\"";
+  private static String makeJson(String severity, int line, String function, String message) {
+    return LOG_TEMPLATE
+        .replace("@@SEVERITY@@", severity)
+        .replace("@@LINE@@", String.valueOf(line))
+        .replace("@@FUNCTION@@", function)
+        .replace("@@MESSAGE@@", message);
   }
 
   @BeforeEach
   void beforeEach() {
-    logRecord.setLoggerName(LOGGER_NAME);
+    logger = FluentLogger.forEnclosingClass();
+    ostream = new ByteArrayOutputStream();
+    handler = new StreamHandler(ostream, new GcpJsonFormatter());
+    jdkLogger = Logger.getLogger(GcpJsonFormatterTest.class.getName());
+    jdkLogger.setUseParentHandlers(false);
+    jdkLogger.addHandler(handler);
+    jdkLogger.setLevel(Level.INFO);
+  }
+
+  @AfterEach
+  void afterEach() {
+    jdkLogger.removeHandler(handler);
   }
 
   @Test
   void testSuccess() {
-    String actual = formatter.format(logRecord);
-    String expected = makeJson("WARNING", LOGGER_NAME, MESSAGE);
-    assertThat(actual).isEqualTo(expected);
+    logger.atInfo().log("Something I have to say");
+    handler.close();
+    String output = ostream.toString(StandardCharsets.US_ASCII);
+    assertThat(output).isEqualTo(makeJson("INFO", 76, "testSuccess", "Something I have to say"));
   }
 
   @Test
-  void testSuccess_sourceClassAndMethod() {
-    logRecord.setSourceClassName(SOURCE_CLASS_NAME);
-    logRecord.setSourceMethodName(SOURCE_METHOD_NAME);
-    String actual = formatter.format(logRecord);
-    String expected = makeJson("WARNING", SOURCE_CLASS_NAME + " " + SOURCE_METHOD_NAME, MESSAGE);
-    assertThat(actual).isEqualTo(expected);
-  }
-
-  @Test
-  void testSuccess_multilineMessage() {
-    String multilineMessage = "First line message\nSecond line message\n";
-    logRecord.setMessage(multilineMessage);
-    String actual = formatter.format(logRecord);
-    String expected = makeJson("WARNING", LOGGER_NAME, multilineMessage);
-    assertThat(actual).isEqualTo(expected);
+  void testSuccess_logLevel() {
+    logger.atSevere().log("Something went terribly wrong");
+    handler.close();
+    String output = ostream.toString(StandardCharsets.US_ASCII);
+    assertThat(output)
+        .isEqualTo(makeJson("ERROR", 84, "testSuccess_logLevel", "Something went terribly wrong"));
   }
 
   @Test
   void testSuccess_withCause() {
-    Throwable throwable = new Throwable("Some reason");
-    StackTraceElement[] stacktrace = {
-      new StackTraceElement("class1", "method1", "file1", 5),
-      new StackTraceElement("class2", "method2", "file2", 10),
-    };
-    String stacktraceString =
-        "java.lang.Throwable: Some reason\\n"
-            + "\\tat class1.method1(file1:5)\\n"
-            + "\\tat class2.method2(file2:10)\\n";
-    throwable.setStackTrace(stacktrace);
-    logRecord.setThrown(throwable);
-    String actual = formatter.format(logRecord);
-    String expected = makeJson("WARNING", LOGGER_NAME, MESSAGE + "\\n" + stacktraceString);
-    assertThat(actual).isEqualTo(expected);
+    logger.atSevere().withCause(new RuntimeException("boom!")).log("Something went terribly wrong");
+    handler.close();
+    String output = ostream.toString(StandardCharsets.US_ASCII);
+    String prefix =
+        makeJson(
+            "ERROR",
+            93,
+            "testSuccess_withCause",
+            "Something went terribly wrong\\njava.lang.RuntimeException: boom!");
+    // Remove the last three characters (", }, \n) from the template as the actual output contains
+    // the full stack trace.
+    prefix = prefix.substring(0, prefix.length() - 3);
+    assertThat(output).startsWith(prefix);
+  }
+
+  @Test
+  void testSuccess_withStackTrace() {
+    logger.atSevere().withStackTrace(StackSize.FULL).log("Something is worth checking");
+    handler.close();
+    String output = ostream.toString(StandardCharsets.US_ASCII);
+    String prefix =
+        makeJson(
+            "ERROR",
+            110,
+            "testSuccess_withStackTrace",
+            "Something is worth checking\\ncom.google.common.flogger.LogSiteStackTrace: FULL");
+    // Remove the last three characters (", }, \n) from the template as the actual output contains
+    // the full stack trace.
+    prefix = prefix.substring(0, prefix.length() - 3);
+    assertThat(output).startsWith(prefix);
+  }
+
+  @Test
+  void testSuccess_notFlogger() {
+    jdkLogger.log(Level.INFO, "Something I have to say");
+    handler.close();
+    String output = ostream.toString(StandardCharsets.US_ASCII);
+    // Only flogger populates the file and line fields.
+    String expected =
+        makeJson("INFO", 4321, "testSuccess_notFlogger", "Something I have to say")
+            .replace("\"file\":\"GcpJsonFormatterTest.java\",", "")
+            .replace("\"line\":\"4321\",", "");
+    assertThat(output).isEqualTo(expected);
   }
 }

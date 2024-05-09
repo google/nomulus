@@ -21,6 +21,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import com.google.common.base.Splitter;
 import com.google.common.flogger.FluentLogger;
 import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.util.Map;
@@ -28,7 +29,6 @@ import java.util.Optional;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInfo;
 
 /**
  * Unit tests for verifying the `logging.properties` used by the Nomulus image.
@@ -68,7 +68,7 @@ class LoggingPropertiesTest {
   }
 
   @Test
-  void success_messageLogged_withTraceIdAndSourceLocation(TestInfo testInfo) {
+  void success_messageLogged_withTraceId() {
     logger.atInfo().log("My log message.");
     String logs = stdout.toString(UTF_8);
     Optional<String> log =
@@ -77,16 +77,7 @@ class LoggingPropertiesTest {
             .filter(line -> line.contains("My log message."))
             .findAny();
     assertThat(log).isPresent();
-    Map<String, String> logRecord = new Gson().fromJson(log.get(), Map.class);
-    assertThat(logRecord).containsEntry("severity", "INFO");
+    Map<String, ?> logRecord = new Gson().fromJson(log.get(), new TypeToken<>() {});
     assertThat(logRecord).containsEntry("logging.googleapis.com/trace", "my custom trace id");
-    assertThat(logRecord).containsKey("message");
-    assertThat(logRecord.get("message")).contains("My log message.");
-    // Verify that log contains full log site info: `{class_name} {method_name} line:{line_number}`
-    assertThat(logRecord.get("message"))
-        .containsMatch(
-            String.format(
-                "%s %s line:\\d+",
-                LoggingPropertiesTest.class.getName(), testInfo.getTestMethod().get().getName()));
   }
 }
