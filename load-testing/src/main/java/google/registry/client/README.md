@@ -13,14 +13,14 @@ registry platform.
   ```
 
 * Verify that the IP address of any created instances is in the allowlist of the
-  proxy.
+  proxy registrar user.
     * Use the below command to get the IP addresses of the created instances.
 
         ```shell
         $ (gcloud compute instances list | awk '/^loadtest/ { print $5 }')
         ```
 
-    * Check the proxy's current allow list
+    * Check the proxy registrar's current allow list
 
       ```shell
       $ nomulus -e sandbox get_registrar proxy | grep ipAddressAllowList
