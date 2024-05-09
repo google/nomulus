@@ -13,32 +13,70 @@
 // limitations under the License.
 
 apply plugin: 'java'
-apply plugin: 'java-library-distribution'
+
+createUberJar('buildLoadTestClient', 'loadTest', 'google.registry.client.EppClient')
 
 dependencies {
-    implementation 'joda-time:joda-time:2.9.2'
-    implementation 'io.netty:netty-buffer:4.1.59.Final'
-    implementation 'io.netty:netty-codec:4.1.59.Final'
-    implementation 'io.netty:netty-codec-http:4.1.59.Final'
-    implementation 'io.netty:netty-common:4.1.59.Final'
-    implementation 'io.netty:netty-handler:4.1.59.Final'
-    implementation 'io.netty:netty-transport:4.1.59.Final'
-    implementation 'com.google.guava:guava:33.0.0-jre'
-    implementation 'org.bouncycastle:bcpg-jdk18on:1.78'
-    implementation 'org.bouncycastle:bcpkix-jdk18on:1.78'
-    implementation 'org.bouncycastle:bcprov-jdk18on:1.78'
-    implementation 'org.jcommander:jcommander:1.83'
-    implementation 'com.google.flogger:flogger:0.7.4'
-    runtimeOnly 'com.google.flogger:flogger-system-backend:0.8'
+    def deps = rootProject.dependencyMap
+    implementation deps['joda-time:joda-time']
+    implementation deps['io.netty:netty-buffer']
+    implementation deps['io.netty:netty-codec']
+    implementation deps['io.netty:netty-codec-http']
+    implementation deps['io.netty:netty-common']
+    implementation deps['io.netty:netty-handler']
+    implementation deps['io.netty:netty-transport']
+    implementation deps['com.google.guava:guava']
+    implementation deps['org.bouncycastle:bcpg-jdk18on']
+    implementation deps['org.bouncycastle:bcpkix-jdk18on']
+    implementation deps['org.bouncycastle:bcprov-jdk18on']
+    implementation deps['org.jcommander:jcommander']
+    implementation deps['com.google.flogger:flogger']
+    runtimeOnly deps['com.google.flogger:flogger-system-backend']
 }
 
-distZip.shouldRunAfter(build)
+task makeStagingDirectory {
+    new File('stage').mkdirs()
+}
 
-jar {
-    manifest {
-        attributes 'Main-Class': 'google.registry.client.EppClient',
-        'Class-Path': configurations.runtimeClasspath.files.collect{ "lib/$it.name" }.join(' ')
-    }
+task copyJarToStaging(dependsOn: makeStagingDirectory, type: Copy) {
+    from "${rootDir}/load-testing/build/libs/loadTest.jar"
+    into "${rootDir}/stage"
+}
+
+task copyRunScriptToStaging(dependsOn: copyJarToStaging, type: Copy) {
+    from "${rootDir}/load-testing/run.sh"
+    into "${rootDir}/stage"
+}
+
+task copyCertificateToStaging(dependsOn: copyRunScriptToStaging, type: Copy) {
+    from "${rootDir}/load-testing/certificate.pem"
+    into "${rootDir}/stage"
+}
+
+task copyKeyToStaging(dependsOn: copyCertificateToStaging, type: Copy) {
+    from "${rootDir}/load-testing/key.pem"
+    into "${rootDir}/stage"
+}
+
+task copyJavaToStaging(dependsOn: copyKeyToStaging, type: Copy) {
+    from "${rootDir}/load-testing/jdk-21_linux-x64_bin.tar.gz"
+    into "${rootDir}/stage"
+}
+
+task extractJdk (dependsOn: copyJavaToStaging, type: Exec) {
+    executable "sh"
+    workingDir "${rootDir}/stage/"
+    args "-c", "tar -xvf jdk-21_linux-x64_bin.tar.gz"
+}
+
+task deployStagingToInstances (dependsOn: extractJdk, type: Exec) {
+    executable "sh"
+    workingDir "${rootDir}/"
+    args "-c", "load-testing/src/main/java/google/registry/client/deploy.sh"
+}
+
+task deployLoadTest(dependsOn: deployStagingToInstances) {
+    doLast {println 'deploying load tests'}
 }
 
 test {

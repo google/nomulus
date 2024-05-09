@@ -36,43 +36,22 @@ registry platform.
 
 ### Running the client
 
-* Download the Java 21 JDK [jdk-21_linux-x64_bin.tar.gz](https://www.oracle.com/java/technologies/downloads/#java21)
-
-* Build the client: 
+* From the merged root build the load testing client:
   ```shell
-  $ ./nom_build :load-testing:build
-    ```
-* Unzip the created client jar files: 
-* 
-    ```shell
-  $ unzip load-testing/build/distributions/load-testing.zip -d load-testing/build/distributions/
+  $ ./nom_build :load-testing:buildLoadTestClient
     ```
 
-* Build the staging directory. You will need a locally-stored `certificate.pem` 
-and `key.pem` file with your SSL certificate and private key. DO NOT submit 
-these files to GitHub! 
-
-    ```shell
-    $ mkdir stage
-    $ cp -r load-testing/build/distributions/load-testing/ stage/
-    $ cp -r jdk-21_linux-x64_bin.tar.gz stage/
-    $ cp load-testing/src/main/java/google/registry/client/run.sh stage/
-    $ cp certificate.pem stage/
-    $ cp key.pem stage/
-    ```
-
-* Deploy the staging directory to all instances
-
-    ```shell
-    $ HOSTS=$(gcloud compute instances list | awk '/^loadtest/ { print $5 }')
-    $ for host in $HOSTS; do ssh $host sudo apt-get -y install rsync; done
-    $ for host in $HOSTS; do rsync -avz stage/ $host:test-client/; done
+* Deploy the client to the GCE instances (this will create a local staging 
+directory and deploy it to each of your previously created loadtest GCE instances): 
+  ```shell
+  $ ./nom_build :load-testing:deployLoadTest
     ```
 
 * Run the load test. Configurations of the load test can be made by configuring 
-this `run.sh` file.
+this `run.sh` file locally and re-deploying.
 
     ```shell
+    $ HOSTS=$(gcloud compute instances list | awk '/^loadtest/ { print $5 }')
     $ for host in $HOSTS; do ssh $host test-client/run.sh; done
     ```
 
