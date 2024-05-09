@@ -22,7 +22,6 @@ import static google.registry.client.EppClient.LOGGING_LOCATION;
 import static google.registry.client.EppClient.LOGGING_REQUEST_COMPLETE;
 import static google.registry.client.EppClient.REQUEST_SENT;
 import static google.registry.client.EppClient.RESPONSE_RECEIVED;
-import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.nio.file.StandardOpenOption.APPEND;
 
 import com.google.common.flogger.FluentLogger;
@@ -66,7 +65,7 @@ public class EppClientHandler extends ChannelDuplexHandler {
         if (!Files.exists(loggingLocation)) {
           Files.createFile(loggingLocation);
         }
-        Files.write(loggingLocation, (time.toString() + "\n").getBytes(UTF_8), APPEND);
+        Files.writeString(loggingLocation, time.toString() + "\n", APPEND);
         Files.write(loggingLocation, contents, APPEND);
       } catch (IOException e) {
         throw new RuntimeException(e);
@@ -79,9 +78,6 @@ public class EppClientHandler extends ChannelDuplexHandler {
     ZonedDateTime now = ZonedDateTime.now(ZoneOffset.UTC);
     ctx.channel().attr(REQUEST_SENT).get().add(now);
     ctx.channel().attr(LOGGING_REQUEST_COMPLETE).set(ctx.executor().newPromise());
-    if (ctx.channel().attr(LOGGING_REQUEST_COMPLETE).get() == null) {
-      ctx.channel().attr(LOGGING_REQUEST_COMPLETE).get().setSuccess(null);
-    }
     super.channelRegistered(ctx);
   }
 

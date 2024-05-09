@@ -13,8 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-cd test-client/
-
-tar -xvf jdk-21_linux-x64_bin.tar.gz
-
-jdk-21.0.2/bin/java -jar load-testing/load-testing.jar --host epp.registry-sandbox.google --certificate certificate.pem -k key.pem -ft
+HOSTS=$(gcloud compute instances list | awk '/^loadtest/ { print $5 }')
+for host in $HOSTS; do ssh $host sudo apt-get -y install rsync; done
+for host in $HOSTS; do rsync -avz stage/ $host:test-client/; done

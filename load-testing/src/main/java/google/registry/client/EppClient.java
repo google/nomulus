@@ -14,7 +14,6 @@
 package google.registry.client;
 
 import static com.google.common.io.Resources.getResource;
-import static com.google.common.io.Resources.toByteArray;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.joda.time.DateTimeZone.UTC;
 
@@ -154,7 +153,7 @@ public class EppClient implements Runnable {
       description = "Whether to explicitly close the connection after receiving a logout response.")
   private boolean forceTerminate = false;
 
-  public static void main(String[] args) throws IOException {
+  public static void main(String[] args) {
     EppClient eppClient = new EppClient();
     JCommander jCommander = new JCommander(eppClient);
     jCommander.parse(args);
@@ -180,15 +179,7 @@ public class EppClient implements Runnable {
     return inputList.build();
   }
 
-  static byte[] readBytesFromFile(String filename) {
-    try {
-      return toByteArray(getResource(EppClient.class, "resources/" + filename));
-    } catch (IOException e) {
-      throw new IllegalArgumentException("Cannot read from file: resources/" + filename);
-    }
-  }
-
-  static String readStringFromFile(String filename) {
+  private static String readStringFromFile(String filename) {
     try {
       return Resources.toString(getResource(EppClient.class, "resources/" + filename), UTF_8);
     } catch (IOException e) {
@@ -196,7 +187,7 @@ public class EppClient implements Runnable {
     }
   }
 
-  static KeyPair getKeyPair(String filename) throws IOException {
+  private static KeyPair getKeyPair(String filename) throws IOException {
     byte[] keyBytes = Files.asCharSource(new File(filename), UTF_8).read().getBytes(UTF_8);
     try {
       PEMKeyPair pemPair =
@@ -209,7 +200,7 @@ public class EppClient implements Runnable {
     }
   }
 
-  static X509Certificate getCertificate(String filename) throws IOException {
+  private static X509Certificate getCertificate(String filename) throws IOException {
     byte[] certificateBytes = Files.asCharSource(new File(filename), UTF_8).read().getBytes(UTF_8);
     try {
       X509CertificateHolder certificateHolder =
@@ -225,7 +216,7 @@ public class EppClient implements Runnable {
 
   private ChannelInitializer<SocketChannel> makeChannelInitializer(
       String outputFolder, ImmutableList<ExecutorService> loggingExecutors) throws IOException {
-    return new ChannelInitializer<SocketChannel>() {
+    return new ChannelInitializer<>() {
 
       private final ImmutableList<String> inputList =
           makeInputList(ZonedDateTime.now(ZoneOffset.UTC));
@@ -257,7 +248,6 @@ public class EppClient implements Runnable {
                                 .getBytes(UTF_8))
                     .iterator());
 
-        ch.pipeline().addLast(new ProxyHeaderHandler());
         ch.pipeline()
             .addLast(
                 SslContextBuilder.forClient()
@@ -273,18 +263,20 @@ public class EppClient implements Runnable {
     };
   }
 
+  private static String createOutputFolder(String folderName) {
+    Path folder = Paths.get(folderName);
+    if (!folder.toFile().exists()) {
+      folder.toFile().mkdirs();
+    }
+    System.out.printf("\nOutputs saved at %s\n", folder);
+    return folderName;
+  }
+
   @Override
   public void run() {
-    String outputFolder = DateTime.now(UTC).toString();
-    int numberOfThreads = Runtime.getRuntime().availableProcessors();
-    ImmutableList.Builder<ExecutorService> builder =
-        ImmutableList.builderWithExpectedSize(numberOfThreads);
-    for (int i = 0; i < numberOfThreads; ++i) {
-      builder.add(Executors.newSingleThreadExecutor());
-    }
+    String outputFolder = createOutputFolder(String.format("load-tests/%s", DateTime.now(UTC)));
 
-    final ImmutableList<ExecutorService> loggingExecutors = builder.build();
-
+    ExecutorService loggingExecutors = Executors.newFixedThreadPool(5);
     EventLoopGroup eventLoopGroup = new NioEventLoopGroup();
     try {
 
@@ -292,7 +284,7 @@ public class EppClient implements Runnable {
           new Bootstrap()
               .group(eventLoopGroup)
               .channel(NioSocketChannel.class)
-              .handler(makeChannelInitializer(outputFolder, loggingExecutors));
+              .handler(makeChannelInitializer(outputFolder, ImmutableList.of(loggingExecutors)));
 
       List<ChannelFuture> channelFutures = new ArrayList<>();
 
@@ -321,11 +313,13 @@ public class EppClient implements Runnable {
         if (!channel
             .closeFuture()
             .awaitUninterruptibly(
-                TIMEOUT_SECONDS
-                    - Duration.between(
-                            channel.attr(REQUEST_SENT).get().getFirst(),
-                            ZonedDateTime.now(ZoneOffset.UTC))
-                        .toMillis())) {
+                Duration.ofSeconds(
+                        TIMEOUT_SECONDS
+                            - Duration.between(
+                                    channel.attr(REQUEST_SENT).get().getFirst(),
+                                    ZonedDateTime.now(ZoneOffset.UTC))
+                                .getSeconds())
+                    .toMillis())) {
           channel.close().syncUninterruptibly();
           killedConnections.add(channelNumber);
         }
@@ -340,7 +334,7 @@ public class EppClient implements Runnable {
         for (int channelNumber : killedConnections) {
           System.out.printf("%d ", channelNumber);
         }
-        System.out.printf("\n");
+        System.out.print("\n");
       }
 
       eventLoopGroup.shutdownGracefully();
@@ -349,7 +343,7 @@ public class EppClient implements Runnable {
           channelFuture -> {
             channelFuture.channel().attr(LOGGING_REQUEST_COMPLETE).get().syncUninterruptibly();
           });
-      loggingExecutors.forEach(executorService -> executorService.shutdown());
+      loggingExecutors.shutdown();
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
