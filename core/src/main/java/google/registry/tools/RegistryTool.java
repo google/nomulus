@@ -80,6 +80,7 @@ public final class RegistryTool {
           .put("get_routing_map", GetRoutingMapCommand.class)
           .put("get_sql_credential", GetSqlCredentialCommand.class)
           .put("get_tld", GetTldCommand.class)
+          .put("get_user", GetUserCommand.class)
           .put("ghostryde", GhostrydeCommand.class)
           .put("hash_certificate", HashCertificateCommand.class)
           .put("list_cursors", ListCursorsCommand.class)
