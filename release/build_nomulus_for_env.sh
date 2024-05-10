@@ -51,6 +51,8 @@ else
     mv services/"${service}"/build/staged-app "${dest}/${service}"
   done
 
+  mkdir -p "${dest}/console" && cp -r console-webapp/staged/* "${dest}/console"
+
   mv core/build/resources/main/google/registry/env/common/META-INF \
     "${dest}/META-INF"
 
