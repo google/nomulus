@@ -27,6 +27,7 @@ import com.google.gson.Gson;
 import google.registry.model.console.ConsolePermission;
 import google.registry.model.console.User;
 import google.registry.model.registrar.Registrar;
+import google.registry.model.registrar.RegistrarBase;
 import google.registry.model.registrar.RegistrarBase.State;
 import google.registry.model.registrar.RegistrarPoc;
 import google.registry.request.Action;
@@ -74,7 +75,10 @@ public class RegistrarsAction extends ConsoleApiAction {
     }
     ImmutableList<Registrar> registrars =
         Streams.stream(Registrar.loadAll())
-            .filter(r -> r.getType() == Registrar.Type.REAL)
+            .filter(
+                r ->
+                    ImmutableList.of(Registrar.Type.REAL, RegistrarBase.Type.OTE)
+                        .contains(r.getType()))
             .collect(ImmutableList.toImmutableList());
 
     consoleApiParams.response().setPayload(gson.toJson(registrars));

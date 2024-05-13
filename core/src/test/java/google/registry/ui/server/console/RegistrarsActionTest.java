@@ -99,10 +99,15 @@ class RegistrarsActionTest {
       new JpaTestExtensions.Builder().buildIntegrationTestExtension();
 
   @Test
-  void testSuccess_onlyRealRegistrars() {
+  void testSuccess_onlyRealAndOteRegistrars() {
     Registrar registrar = persistNewRegistrar("registrarId");
     registrar = registrar.asBuilder().setType(Registrar.Type.TEST).setIanaIdentifier(null).build();
     persistResource(registrar);
+
+    registrar = persistNewRegistrar("registrarId2");
+    registrar = registrar.asBuilder().setType(Registrar.Type.OTE).setIanaIdentifier(null).build();
+    persistResource(registrar);
+
     RegistrarsAction action =
         createAction(
             Action.Method.GET,
@@ -114,11 +119,15 @@ class RegistrarsActionTest {
     assertThat(((FakeResponse) consoleApiParams.response()).getStatus())
         .isEqualTo(HttpStatusCodes.STATUS_CODE_OK);
     String payload = ((FakeResponse) consoleApiParams.response()).getPayload();
-    assertThat(
-            ImmutableList.of("\"registrarId\":\"NewRegistrar\"", "\"registrarId\":\"TheRegistrar\"")
-                .stream()
-                .allMatch(s -> payload.contains(s)))
-        .isTrue();
+
+    var actualRegistrarIds =
+        ImmutableList.copyOf(GSON.fromJson(payload, Registrar[].class)).stream()
+            .map(r -> r.getRegistrarId())
+            .collect(Collectors.toList());
+
+    var expectedRegistrarIds = ImmutableList.of("NewRegistrar", "TheRegistrar", "registrarId2");
+
+    assertThat(actualRegistrarIds).containsExactlyElementsIn(expectedRegistrarIds);
   }
 
   @Test
