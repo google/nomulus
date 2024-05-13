@@ -14,7 +14,6 @@
 
 package google.registry.util;
 
-import com.google.common.collect.ImmutableMap;
 import com.google.common.flogger.LogSite;
 import com.google.common.flogger.backend.LogData;
 import com.google.common.flogger.backend.system.SimpleLogRecord;
@@ -52,6 +51,8 @@ public class GcpJsonFormatter extends Formatter {
    */
   private static final String SOURCE_LOCATION = "logging.googleapis.com/sourceLocation";
 
+  private static final String TRACE = "logging.googleapis.com/trace";
+
   /** JSON field that contains the content, this will show up as the main entry in a log. */
   private static final String MESSAGE = "message";
 
@@ -63,6 +64,30 @@ public class GcpJsonFormatter extends Formatter {
 
   private static final Gson gson = new Gson();
 
+  private static final ThreadLocal<String> traceId = new ThreadLocal<>();
+
+  /**
+   * Set the Trace ID associated with any logging done by the current thread.
+   *
+   * @param id The traceID, in the form projects/[PROJECT_ID]/traces/[TRACE_ID]
+   */
+  public static void setCurrentTraceId(String id) {
+    if (id == null) {
+      traceId.remove();
+    } else {
+      traceId.set(id);
+    }
+  }
+
+  /**
+   * Get the Trace ID associated with any logging done by the current thread.
+   *
+   * @return id The traceID
+   */
+  public static String getCurrentTraceId() {
+    return traceId.get();
+  }
+
   @Override
   public String format(LogRecord record) {
     // Add an extra newline before the message for better displaying of multi-line logs. To see the
@@ -70,7 +95,6 @@ public class GcpJsonFormatter extends Formatter {
     // newline makes sure that the entire message starts on its own line, so that indentation within
     // the message is correct.
 
-    String message = '\n' + record.getMessage();
     String severity = severityFor(record.getLevel());
 
     // The rest is mostly lifted from java.util.logging.SimpleFormatter.
@@ -83,6 +107,7 @@ public class GcpJsonFormatter extends Formatter {
       }
       stacktrace = sw.toString();
     }
+    String message = '\n' + record.getMessage() + stacktrace;
 
     String function = "";
     if (record.getSourceClassName() != null) {
@@ -113,19 +138,18 @@ public class GcpJsonFormatter extends Formatter {
     if (!function.isEmpty()) {
       sourceLocation.put(FUNCTION, function);
     }
-    return gson.toJson(
-            ImmutableMap.of(
-                SEVERITY,
-                severity,
-                SOURCE_LOCATION,
-                sourceLocation,
-                // ImmutableMap.of(FILE, file, LINE, line, FUNCTION, function),
-                MESSAGE,
-                message + stacktrace))
-        // This trailing newline is required for the proxy because otherwise multiple logs might be
-        // sent to Stackdriver together (due to the async nature of the proxy), and not parsed
-        // correctly.
-        + '\n';
+
+    Map<String, Object> json = new LinkedHashMap<>();
+    json.put(SEVERITY, severity);
+    json.put(SOURCE_LOCATION, sourceLocation);
+    json.put(MESSAGE, message);
+    if (traceId.get() != null) {
+      json.put(TRACE, traceId.get());
+    }
+    // This trailing newline is required for the proxy because otherwise multiple logs might be
+    // sent to Stackdriver together (due to the async nature of the proxy), and not parsed
+    // correctly.
+    return gson.toJson(json) + '\n';
   }
 
   /**

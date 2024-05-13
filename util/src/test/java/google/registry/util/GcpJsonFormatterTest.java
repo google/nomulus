@@ -69,6 +69,7 @@ class GcpJsonFormatterTest {
   @AfterEach
   void afterEach() {
     jdkLogger.removeHandler(handler);
+    GcpJsonFormatter.setCurrentTraceId(null);
   }
 
   @Test
@@ -77,6 +78,20 @@ class GcpJsonFormatterTest {
     handler.close();
     String output = ostream.toString(StandardCharsets.US_ASCII);
     assertThat(output).isEqualTo(makeJson("INFO", 76, "testSuccess", "Something I have to say"));
+  }
+
+  @Test
+  void testSuccess_traceId() {
+    GcpJsonFormatter.setCurrentTraceId("trace_id");
+    logger.atInfo().log("Something I have to say");
+    handler.close();
+    String output = ostream.toString(StandardCharsets.US_ASCII);
+    String expected = makeJson("INFO", 86, "testSuccess_traceId", "Something I have to say");
+    // Remove the last two characters (}, \n) from the template and add the trace ID.
+    expected =
+        expected.substring(0, expected.length() - 2)
+            + ",\"logging.googleapis.com/trace\":\"trace_id\"}\n";
+    assertThat(output).isEqualTo(expected);
   }
 
   @Test

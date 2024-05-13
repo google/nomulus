@@ -14,17 +14,23 @@
 
 package google.registry.module;
 
-import static com.google.cloud.logging.TraceLoggingEnhancer.setCurrentTraceId;
+import static google.registry.util.GcpJsonFormatter.setCurrentTraceId;
 import static google.registry.util.RandomStringGenerator.insecureRandomStringGenerator;
 import static google.registry.util.StringGenerator.Alphabets.HEX_DIGITS_ONLY;
 
 import com.google.monitoring.metrics.MetricReporter;
 import dagger.Lazy;
 import google.registry.request.RequestHandler;
+import google.registry.util.GcpJsonFormatter;
+import google.registry.util.JdkLoggerConfig;
 import google.registry.util.RandomStringGenerator;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.logging.ConsoleHandler;
+import java.util.logging.Handler;
+import java.util.logging.Level;
 
 /** Servlet that handles all requests. */
 public class RegistryServlet extends ServletBase {
@@ -41,6 +47,17 @@ public class RegistryServlet extends ServletBase {
   private static final Lazy<MetricReporter> metricReporter = component.metricReporter();
 
   private final String projectId;
+
+  static {
+    // Remove all other handlers on the root logger to avoid double logging.
+    JdkLoggerConfig rootLoggerConfig = JdkLoggerConfig.getConfig("");
+    Arrays.asList(rootLoggerConfig.getHandlers()).forEach(rootLoggerConfig::removeHandler);
+
+    Handler rootHandler = new ConsoleHandler();
+    rootHandler.setLevel(Level.INFO);
+    rootHandler.setFormatter(new GcpJsonFormatter());
+    rootLoggerConfig.addHandler(rootHandler);
+  }
 
   public RegistryServlet() {
     super(requestHandler, metricReporter);
