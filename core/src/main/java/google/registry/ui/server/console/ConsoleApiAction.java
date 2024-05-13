@@ -51,7 +51,7 @@ public abstract class ConsoleApiAction implements Runnable {
     // This allows us to enable console to a selected cohort of users with release
     // We can ignore it in tests
     if (RegistryEnvironment.get() != RegistryEnvironment.UNITTEST
-        && !GlobalRole.FTE.equals(user.getUserRoles().getGlobalRole())) {
+        && GlobalRole.NONE.equals(user.getUserRoles().getGlobalRole())) {
       try {
         consoleApiParams.response().sendRedirect(ConsoleUiAction.PATH);
         return;
