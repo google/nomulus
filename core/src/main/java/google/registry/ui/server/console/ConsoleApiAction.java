@@ -17,8 +17,12 @@ package google.registry.ui.server.console;
 import static google.registry.request.Action.Method.GET;
 
 import com.google.api.client.http.HttpStatusCodes;
+import com.google.common.base.Throwables;
+import com.google.common.flogger.FluentLogger;
+import google.registry.model.console.ConsolePermission;
 import google.registry.model.console.GlobalRole;
 import google.registry.model.console.User;
+import google.registry.request.HttpException;
 import google.registry.request.auth.AuthResult;
 import google.registry.security.XsrfTokenManager;
 import google.registry.ui.server.registrar.ConsoleApiParams;
@@ -31,6 +35,9 @@ import java.util.Optional;
 
 /** Base class for handling Console API requests */
 public abstract class ConsoleApiAction implements Runnable {
+
+  private static final FluentLogger logger = FluentLogger.forEnclosingClass();
+
   protected ConsoleApiParams consoleApiParams;
 
   public ConsoleApiAction(ConsoleApiParams consoleApiParams) {
@@ -60,15 +67,36 @@ public abstract class ConsoleApiAction implements Runnable {
       }
     }
 
-    if (consoleApiParams.request().getMethod().equals(GET.toString())) {
-      getHandler(user);
-    } else {
-      if (verifyXSRF()) {
-        postHandler(user);
+    try {
+      if (consoleApiParams.request().getMethod().equals(GET.toString())) {
+        getHandler(user);
+      } else {
+        if (verifyXSRF()) {
+          postHandler(user);
+        }
       }
+    } catch (ConsolePermissionForbiddenException e) {
+      logger.atWarning().withCause(e).log("Forbidden");
+      setFailedResponse("", HttpStatusCodes.STATUS_CODE_FORBIDDEN);
+    } catch (HttpException.BadRequestException | IllegalArgumentException e) {
+      logger.atWarning().withCause(e).log("Error in request");
+      setFailedResponse(
+          Throwables.getRootCause(e).getMessage(), HttpStatusCodes.STATUS_CODE_BAD_REQUEST);
+    } catch (Throwable t) {
+      logger.atWarning().withCause(t).log("Internal server error");
+      setFailedResponse(
+          Throwables.getRootCause(t).getMessage(), HttpStatusCodes.STATUS_CODE_SERVER_ERROR);
     }
   }
 
+  protected void checkPermission(User user, String registrarId, ConsolePermission permission) {
+    if (!user.getUserRoles().hasPermission(registrarId, permission)) {
+      throw new ConsolePermissionForbiddenException(
+          String.format(
+              "User %s does not have permission %s on registrar %s",
+              user.getEmailAddress(), permission, registrarId));
+    }
+  }
 
   protected void postHandler(User user) {
     throw new UnsupportedOperationException("Console API POST handler not implemented");
@@ -96,4 +124,10 @@ public abstract class ConsoleApiAction implements Runnable {
     return true;
   }
 
+  /** Specialized exception class used for failure when a user doesn't have the right permission. */
+  private static class ConsolePermissionForbiddenException extends RuntimeException {
+    private ConsolePermissionForbiddenException(String message) {
+      super(message);
+    }
+  }
 }

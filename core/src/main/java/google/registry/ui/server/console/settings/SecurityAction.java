@@ -14,6 +14,7 @@
 
 package google.registry.ui.server.console.settings;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.request.Action.Method.POST;
 
@@ -62,16 +63,8 @@ public class SecurityAction extends ConsoleApiAction {
 
   @Override
   protected void postHandler(User user) {
-    if (!user.getUserRoles().hasPermission(registrarId, ConsolePermission.EDIT_REGISTRAR_DETAILS)) {
-      consoleApiParams.response().setStatus(HttpStatusCodes.STATUS_CODE_FORBIDDEN);
-      return;
-    }
-
-    if (registrar.isEmpty()) {
-      setFailedResponse(
-          "'registrar' parameter is not present", HttpStatusCodes.STATUS_CODE_BAD_REQUEST);
-      return;
-    }
+    checkPermission(user, registrarId, ConsolePermission.EDIT_REGISTRAR_DETAILS);
+    checkArgument(registrar.isPresent(), "'registrar' parameter is not present");
 
     Registrar savedRegistrar;
     try {

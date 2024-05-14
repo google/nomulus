@@ -48,9 +48,9 @@ public class RegistrarsAction extends ConsoleApiAction {
   private static final int PASSCODE_LENGTH = 5;
   static final String PATH = "/console-api/registrars";
   private final Gson gson;
-  private Optional<Registrar> registrar;
-  private StringGenerator passwordGenerator;
-  private StringGenerator passcodeGenerator;
+  private final Optional<Registrar> registrar;
+  private final StringGenerator passwordGenerator;
+  private final StringGenerator passcodeGenerator;
 
   @Inject
   public RegistrarsAction(
@@ -88,73 +88,62 @@ public class RegistrarsAction extends ConsoleApiAction {
       return;
     }
 
-    if (registrar.isEmpty()) {
-      consoleApiParams.response().setStatus(HttpStatusCodes.STATUS_CODE_BAD_REQUEST);
-      consoleApiParams.response().setPayload(gson.toJson("'registrar' parameter is not present"));
-      return;
-    }
-
-    Registrar registrarParam = registrar.get();
+    Registrar registrarParam =
+        registrar.orElseThrow(
+            () -> new IllegalArgumentException("'registrar' parameter is not present"));
     String errorMsg = "Missing value for %s";
-    try {
-      checkArgument(!isNullOrEmpty(registrarParam.getRegistrarId()), errorMsg, "registrarId");
-      checkArgument(!isNullOrEmpty(registrarParam.getRegistrarName()), errorMsg, "name");
-      checkArgument(!registrarParam.getBillingAccountMap().isEmpty(), errorMsg, "billingAccount");
-      checkArgument(registrarParam.getIanaIdentifier() != null, String.format(errorMsg, "ianaId"));
-      checkArgument(
-          !isNullOrEmpty(registrarParam.getIcannReferralEmail()), errorMsg, "referralEmail");
-      checkArgument(!isNullOrEmpty(registrarParam.getDriveFolderId()), errorMsg, "driveId");
-      checkArgument(!isNullOrEmpty(registrarParam.getEmailAddress()), errorMsg, "consoleUserEmail");
-      checkArgument(
-          registrarParam.getLocalizedAddress() != null
-              && !isNullOrEmpty(registrarParam.getLocalizedAddress().getState())
-              && !isNullOrEmpty(registrarParam.getLocalizedAddress().getCity())
-              && !isNullOrEmpty(registrarParam.getLocalizedAddress().getZip())
-              && !isNullOrEmpty(registrarParam.getLocalizedAddress().getCountryCode())
-              && !registrarParam.getLocalizedAddress().getStreet().isEmpty(),
-          errorMsg,
-          "address");
+    checkArgument(!isNullOrEmpty(registrarParam.getRegistrarId()), errorMsg, "registrarId");
+    checkArgument(!isNullOrEmpty(registrarParam.getRegistrarName()), errorMsg, "name");
+    checkArgument(!registrarParam.getBillingAccountMap().isEmpty(), errorMsg, "billingAccount");
+    checkArgument(registrarParam.getIanaIdentifier() != null, String.format(errorMsg, "ianaId"));
+    checkArgument(
+        !isNullOrEmpty(registrarParam.getIcannReferralEmail()), errorMsg, "referralEmail");
+    checkArgument(!isNullOrEmpty(registrarParam.getDriveFolderId()), errorMsg, "driveId");
+    checkArgument(!isNullOrEmpty(registrarParam.getEmailAddress()), errorMsg, "consoleUserEmail");
+    checkArgument(
+        registrarParam.getLocalizedAddress() != null
+            && !isNullOrEmpty(registrarParam.getLocalizedAddress().getState())
+            && !isNullOrEmpty(registrarParam.getLocalizedAddress().getCity())
+            && !isNullOrEmpty(registrarParam.getLocalizedAddress().getZip())
+            && !isNullOrEmpty(registrarParam.getLocalizedAddress().getCountryCode())
+            && !registrarParam.getLocalizedAddress().getStreet().isEmpty(),
+        errorMsg,
+        "address");
 
-      String password = passwordGenerator.createString(PASSWORD_LENGTH);
-      String phonePasscode = passcodeGenerator.createString(PASSCODE_LENGTH);
+    String password = passwordGenerator.createString(PASSWORD_LENGTH);
+    String phonePasscode = passcodeGenerator.createString(PASSCODE_LENGTH);
 
-      Registrar registrar =
-          new Registrar.Builder()
-              .setRegistrarId(registrarParam.getRegistrarId())
-              .setRegistrarName(registrarParam.getRegistrarName())
-              .setBillingAccountMap(registrarParam.getBillingAccountMap())
-              .setIanaIdentifier(Long.valueOf(registrarParam.getIanaIdentifier()))
-              .setIcannReferralEmail(registrarParam.getIcannReferralEmail())
-              .setEmailAddress(registrarParam.getIcannReferralEmail())
-              .setDriveFolderId(registrarParam.getDriveFolderId())
-              .setType(Registrar.Type.REAL)
-              .setPassword(password)
-              .setPhonePasscode(phonePasscode)
-              .setState(State.PENDING)
-              .setLocalizedAddress(registrarParam.getLocalizedAddress())
-              .build();
+    Registrar registrar =
+        new Registrar.Builder()
+            .setRegistrarId(registrarParam.getRegistrarId())
+            .setRegistrarName(registrarParam.getRegistrarName())
+            .setBillingAccountMap(registrarParam.getBillingAccountMap())
+            .setIanaIdentifier(registrarParam.getIanaIdentifier())
+            .setIcannReferralEmail(registrarParam.getIcannReferralEmail())
+            .setEmailAddress(registrarParam.getIcannReferralEmail())
+            .setDriveFolderId(registrarParam.getDriveFolderId())
+            .setType(Registrar.Type.REAL)
+            .setPassword(password)
+            .setPhonePasscode(phonePasscode)
+            .setState(State.PENDING)
+            .setLocalizedAddress(registrarParam.getLocalizedAddress())
+            .build();
 
-      RegistrarPoc contact =
-          new RegistrarPoc.Builder()
-              .setRegistrar(registrar)
-              .setName(registrarParam.getEmailAddress())
-              .setEmailAddress(registrarParam.getEmailAddress())
-              .setLoginEmailAddress(registrarParam.getEmailAddress())
-              .build();
+    RegistrarPoc contact =
+        new RegistrarPoc.Builder()
+            .setRegistrar(registrar)
+            .setName(registrarParam.getEmailAddress())
+            .setEmailAddress(registrarParam.getEmailAddress())
+            .setLoginEmailAddress(registrarParam.getEmailAddress())
+            .build();
 
-      tm().transact(
-              () -> {
-                checkArgument(
-                    Registrar.loadByRegistrarId(registrar.getRegistrarId()).isEmpty(),
-                    "Registrar with registrarId %s already exists",
-                    registrar.getRegistrarId());
-                tm().putAll(registrar, contact);
-              });
-
-    } catch (IllegalArgumentException e) {
-      setFailedResponse(e.getMessage(), HttpStatusCodes.STATUS_CODE_BAD_REQUEST);
-    } catch (Throwable e) {
-      setFailedResponse(e.getMessage(), HttpStatusCodes.STATUS_CODE_SERVER_ERROR);
-    }
+    tm().transact(
+            () -> {
+              checkArgument(
+                  Registrar.loadByRegistrarId(registrar.getRegistrarId()).isEmpty(),
+                  "Registrar with registrarId %s already exists",
+                  registrar.getRegistrarId());
+              tm().putAll(registrar, contact);
+            });
   }
 }
