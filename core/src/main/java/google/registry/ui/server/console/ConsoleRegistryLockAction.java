@@ -14,6 +14,7 @@
 
 package google.registry.ui.server.console;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.request.Action.Method.GET;
@@ -26,7 +27,6 @@ import static google.registry.ui.server.registrar.RegistryLockPostAction.VERIFIC
 
 import com.google.api.client.http.HttpStatusCodes;
 import com.google.common.collect.ImmutableList;
-import com.google.common.flogger.FluentLogger;
 import com.google.gson.Gson;
 import google.registry.flows.EppException;
 import google.registry.flows.domain.DomainFlowUtils;
@@ -37,7 +37,6 @@ import google.registry.model.domain.RegistryLock;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.tld.RegistryLockDao;
 import google.registry.request.Action;
-import google.registry.request.HttpException;
 import google.registry.request.Parameter;
 import google.registry.request.Response;
 import google.registry.request.auth.Auth;
@@ -66,8 +65,6 @@ import org.joda.time.Duration;
     auth = Auth.AUTH_PUBLIC_LOGGED_IN)
 public class ConsoleRegistryLockAction extends ConsoleApiAction {
 
-  private static final FluentLogger logger = FluentLogger.forEnclosingClass();
-
   static final String PATH = "/console-api/registry-lock";
 
   private final DomainLockUtils domainLockUtils;
@@ -91,10 +88,7 @@ public class ConsoleRegistryLockAction extends ConsoleApiAction {
 
   @Override
   protected void getHandler(User user) {
-    if (!user.getUserRoles().hasPermission(registrarId, ConsolePermission.REGISTRY_LOCK)) {
-      consoleApiParams.response().setStatus(HttpStatusCodes.STATUS_CODE_FORBIDDEN);
-      return;
-    }
+    checkPermission(user, registrarId, ConsolePermission.REGISTRY_LOCK);
     consoleApiParams.response().setPayload(gson.toJson(getLockedDomains()));
     consoleApiParams.response().setStatus(HttpStatusCodes.STATUS_CODE_OK);
   }
@@ -104,45 +98,31 @@ public class ConsoleRegistryLockAction extends ConsoleApiAction {
     HttpServletRequest req = consoleApiParams.request();
     Response response = consoleApiParams.response();
     // User must have the proper permission on the registrar
-    if (!user.getUserRoles().hasPermission(registrarId, ConsolePermission.REGISTRY_LOCK)) {
-      setFailedResponse("", HttpStatusCodes.STATUS_CODE_FORBIDDEN);
-      return;
-    }
+    checkPermission(user, registrarId, ConsolePermission.REGISTRY_LOCK);
 
     // Shouldn't happen, but double-check the registrar has registry lock enabled
     Registrar registrar = Registrar.loadByRegistrarIdCached(registrarId).get();
-    if (!registrar.isRegistryLockAllowed()) {
-      setFailedResponse(
-          String.format("Registry lock not allowed for registrar %s", registrarId),
-          HttpStatusCodes.STATUS_CODE_BAD_REQUEST);
-      return;
-    }
+    checkArgument(
+        registrar.isRegistryLockAllowed(),
+        "Registry lock not allowed for registrar %s",
+        registrarId);
 
     // Retrieve and validate the necessary params
-    String domainName;
-    boolean isLock;
-    Optional<String> maybePassword;
-    Optional<Long> relockDurationMillis;
+    String domainName = extractRequiredParameter(req, "domainName");
+    boolean isLock = extractBooleanParameter(req, "isLock");
+    Optional<String> maybePassword = extractOptionalParameter(req, "password");
+    Optional<Long> relockDurationMillis = extractOptionalLongParameter(req, "relockDurationMillis");
 
     try {
-      domainName = extractRequiredParameter(req, "domainName");
-      isLock = extractBooleanParameter(req, "isLock");
-      maybePassword = extractOptionalParameter(req, "password");
-      relockDurationMillis = extractOptionalLongParameter(req, "relockDurationMillis");
       DomainFlowUtils.validateDomainName(domainName);
-    } catch (HttpException.BadRequestException | EppException e) {
-      logger.atWarning().withCause(e).log("Bad request when attempting registry lock/unlock");
-      setFailedResponse(e.getMessage(), HttpStatusCodes.STATUS_CODE_BAD_REQUEST);
-      return;
+    } catch (EppException e) {
+      throw new IllegalArgumentException(e);
     }
 
     // Passwords aren't required for admin users, otherwise we need to validate it
     boolean isAdmin = user.getUserRoles().isAdmin();
     if (!isAdmin) {
-      if (maybePassword.isEmpty()) {
-        setFailedResponse("No password provided", HttpStatusCodes.STATUS_CODE_BAD_REQUEST);
-        return;
-      }
+      checkArgument(maybePassword.isPresent(), "No password provided");
       if (!user.verifyRegistryLockPassword(maybePassword.get())) {
         setFailedResponse(
             "Incorrect registry lock password", HttpStatusCodes.STATUS_CODE_UNAUTHORIZED);
@@ -150,38 +130,23 @@ public class ConsoleRegistryLockAction extends ConsoleApiAction {
       }
     }
 
-    Optional<String> maybeRegistryLockEmail = user.getRegistryLockEmailAddress();
-    if (maybeRegistryLockEmail.isEmpty()) {
-      setFailedResponse(
-          "User has no registry lock email address", HttpStatusCodes.STATUS_CODE_BAD_REQUEST);
-      return;
-    }
-    String registryLockEmail = maybeRegistryLockEmail.get();
-
-    try {
-      tm().transact(
-              () -> {
-                RegistryLock registryLock =
-                    isLock
-                        ? domainLockUtils.saveNewRegistryLockRequest(
-                            domainName, registrarId, registryLockEmail, isAdmin)
-                        : domainLockUtils.saveNewRegistryUnlockRequest(
-                            domainName,
-                            registrarId,
-                            isAdmin,
-                            relockDurationMillis.map(Duration::new));
-                sendVerificationEmail(registryLock, registryLockEmail, isLock);
-              });
-    } catch (IllegalArgumentException e) {
-      // Catch IllegalArgumentExceptions separately to give a nicer error message and code
-      logger.atWarning().withCause(e).log("Failed to lock/unlock domain");
-      setFailedResponse(e.getMessage(), HttpStatusCodes.STATUS_CODE_BAD_REQUEST);
-      return;
-    } catch (Throwable t) {
-      logger.atWarning().withCause(t).log("Failed to lock/unlock domain");
-      setFailedResponse("Internal server error", HttpStatusCodes.STATUS_CODE_SERVER_ERROR);
-      return;
-    }
+    String registryLockEmail =
+        user.getRegistryLockEmailAddress()
+            .orElseThrow(
+                () -> new IllegalArgumentException("User has no registry lock email address"));
+    tm().transact(
+            () -> {
+              RegistryLock registryLock =
+                  isLock
+                      ? domainLockUtils.saveNewRegistryLockRequest(
+                          domainName, registrarId, registryLockEmail, isAdmin)
+                      : domainLockUtils.saveNewRegistryUnlockRequest(
+                          domainName,
+                          registrarId,
+                          isAdmin,
+                          relockDurationMillis.map(Duration::new));
+              sendVerificationEmail(registryLock, registryLockEmail, isLock);
+            });
     response.setStatus(HttpStatusCodes.STATUS_CODE_OK);
   }
 
