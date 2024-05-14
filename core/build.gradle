@@ -159,7 +159,6 @@ dependencies {
   implementation deps['com.google.cloud.bigdataoss:util']
   implementation deps['com.google.cloud.sql:jdbc-socket-factory-core']
   runtimeOnly deps['com.google.cloud.sql:postgres-socket-factory']
-  implementation deps['com.google.cloud:google-cloud-logging']
   implementation deps['com.google.cloud:google-cloud-secretmanager']
   implementation deps['com.google.code.gson:gson']
   implementation deps['com.google.auto.service:auto-service-annotations']
