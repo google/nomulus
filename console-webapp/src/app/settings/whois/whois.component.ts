@@ -37,7 +37,7 @@ export default class WhoisComponent {
       result += `${registrar?.localizedAddress?.state} `;
     }
     if (registrar?.localizedAddress?.countryCode) {
-      result += registrar?.localizedAddress?.countryCode;
+      result += `${registrar?.localizedAddress?.countryCode} `;
     }
     if (registrar?.localizedAddress?.zip) {
       result += registrar?.localizedAddress?.zip;
