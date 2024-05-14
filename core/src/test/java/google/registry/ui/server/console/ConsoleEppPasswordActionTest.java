@@ -26,7 +26,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.google.api.client.http.HttpStatusCodes;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSetMultimap;
 import com.google.gson.Gson;
 import google.registry.flows.PasswordOnlyTransportCredentials;
@@ -43,6 +42,7 @@ import google.registry.request.auth.UserAuthInfo;
 import google.registry.testing.FakeConsoleApiParams;
 import google.registry.testing.FakeResponse;
 import google.registry.tools.GsonUtils;
+import google.registry.ui.server.console.ConsoleEppPasswordAction.PasswordChangeRequest;
 import google.registry.ui.server.registrar.ConsoleApiParams;
 import google.registry.util.EmailMessage;
 import java.util.Optional;
@@ -79,27 +79,18 @@ class ConsoleEppPasswordActionTest {
 
   @Test
   void testFailure_emptyParams() {
-    ConsoleEppPasswordAction action = createAction();
+    ConsoleEppPasswordAction action = createAction("", "", "", "");
     action.run();
     assertThat(((FakeResponse) consoleApiParams.response()).getStatus())
         .isEqualTo(HttpStatusCodes.STATUS_CODE_BAD_REQUEST);
     assertThat(((FakeResponse) consoleApiParams.response()).getPayload())
-        .isEqualTo("Missing parameter: registrarId");
+        .isEqualTo("Missing param(s): registrarId");
   }
 
   @Test
   void testFailure_passwordsDontMatch() {
-    ConsoleEppPasswordAction action = createAction();
-    setParams(
-        ImmutableMap.of(
-            "registrarId",
-            "registrarId",
-            "oldPassword",
-            "oldPassword",
-            "newPassword",
-            "newPassword",
-            "newPasswordRepeat",
-            "newPasswordRepeat"));
+    ConsoleEppPasswordAction action =
+        createAction("registrarId", "oldPassword", "newPassword", "newPasswordRepeat");
     action.run();
     assertThat(((FakeResponse) consoleApiParams.response()).getStatus())
         .isEqualTo(HttpStatusCodes.STATUS_CODE_BAD_REQUEST);
@@ -109,17 +100,8 @@ class ConsoleEppPasswordActionTest {
 
   @Test
   void testFailure_existingPasswordIncorrect() {
-    ConsoleEppPasswordAction action = createAction();
-    setParams(
-        ImmutableMap.of(
-            "registrarId",
-            "registrarId",
-            "oldPassword",
-            "oldPassword",
-            "newPassword",
-            "randomPasword",
-            "newPasswordRepeat",
-            "randomPasword"));
+    ConsoleEppPasswordAction action =
+        createAction("registrarId", "oldPassword", "randomPasword", "randomPasword");
     action.run();
     assertThat(((FakeResponse) consoleApiParams.response()).getStatus())
         .isEqualTo(HttpStatusCodes.STATUS_CODE_FORBIDDEN);
@@ -129,17 +111,8 @@ class ConsoleEppPasswordActionTest {
 
   @Test
   void testSuccess_sendsConfirmationEmail() throws AddressException {
-    ConsoleEppPasswordAction action = createAction();
-    setParams(
-        ImmutableMap.of(
-            "registrarId",
-            "registrarId",
-            "oldPassword",
-            "foobar",
-            "newPassword",
-            "randomPassword",
-            "newPasswordRepeat",
-            "randomPassword"));
+    ConsoleEppPasswordAction action =
+        createAction("registrarId", "foobar", "randomPassword", "randomPassword");
     action.run();
     verify(gmailClient, times(1))
         .sendEmail(
@@ -154,17 +127,8 @@ class ConsoleEppPasswordActionTest {
 
   @Test
   void testSuccess_passwordUpdated() {
-    ConsoleEppPasswordAction action = createAction();
-    setParams(
-        ImmutableMap.of(
-            "registrarId",
-            "registrarId",
-            "oldPassword",
-            "foobar",
-            "newPassword",
-            "randomPassword",
-            "newPasswordRepeat",
-            "randomPassword"));
+    ConsoleEppPasswordAction action =
+        createAction("registrarId", "foobar", "randomPassword", "randomPassword");
     action.run();
     assertThat(((FakeResponse) consoleApiParams.response()).getStatus())
         .isEqualTo(HttpStatusCodes.STATUS_CODE_OK);
@@ -174,16 +138,8 @@ class ConsoleEppPasswordActionTest {
         });
   }
 
-  private void setParams(ImmutableMap<String, String> params) {
-    params.entrySet().stream()
-        .forEach(
-            entry -> {
-              when(consoleApiParams.request().getParameter(entry.getKey()))
-                  .thenReturn(entry.getValue());
-            });
-  }
-
-  private ConsoleEppPasswordAction createAction() {
+  private ConsoleEppPasswordAction createAction(
+      String registrarId, String oldPassword, String newPassword, String newPasswordRepeat) {
     response = new FakeResponse();
     User user =
         new User.Builder()
@@ -199,6 +155,10 @@ class ConsoleEppPasswordActionTest {
     when(consoleApiParams.request().getMethod()).thenReturn(Action.Method.POST.toString());
 
     return new ConsoleEppPasswordAction(
-        consoleApiParams, authenticatedRegistrarAccessor, gmailClient);
+        consoleApiParams,
+        authenticatedRegistrarAccessor,
+        gmailClient,
+        Optional.of(
+            new PasswordChangeRequest(registrarId, oldPassword, newPassword, newPasswordRepeat)));
   }
 }

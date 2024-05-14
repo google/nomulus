@@ -14,6 +14,7 @@
 
 import { Component, computed } from '@angular/core';
 import { RegistrarService } from '../registrar/registrar.service';
+import { MatSnackBar } from '@angular/material/snack-bar';
 
 @Component({
   selector: 'app-billingInfo',
@@ -22,20 +23,25 @@ import { RegistrarService } from '../registrar/registrar.service';
 })
 export class BillingInfoComponent {
   public static PATH = 'billingInfo';
-  constructor(public registrarService: RegistrarService) {}
+  constructor(
+    public registrarService: RegistrarService,
+    private _snackBar: MatSnackBar
+  ) {}
 
   driveFolderUrl = computed<string>(() => {
     if (this.registrarService.registrar()?.driveFolderId) {
-      return `https://drive.google.com/drive/folders/${
+      return (
+        'https://drive.google.com/drive/folders/' +
         this.registrarService.registrar()?.driveFolderId
-      }`;
+      );
     }
     return '';
   });
 
   openBillingDetails(e: MouseEvent) {
-    if (!this.driveFolderUrl()) {
+    if (!this.registrarService.registrar()?.driveFolderId) {
       e.preventDefault();
+      this._snackBar.open('Billing Folder ID has not been assigned');
     }
   }
 }
