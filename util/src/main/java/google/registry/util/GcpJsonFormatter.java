@@ -57,6 +57,16 @@ public class GcpJsonFormatter extends Formatter {
   /** JSON field that contains the content, this will show up as the main entry in a log. */
   private static final String MESSAGE = "message";
 
+  /**
+   * JSON field that contains the stack trace, if any.
+   *
+   * <p>Note that this field is not part of the structured logging that stackdriver understands.
+   * Normally we'd just append the stack trace to the message itself. However, for unclear reasons,
+   * if we do that on GKE, the log entry containing a stack trace will be lumped together with
+   * several following log entries and makes it hard to read.
+   */
+  private static final String STACKTRACE = "stacktrace";
+
   private static final String FILE = "file";
 
   private static final String FUNCTION = "function";
@@ -99,16 +109,17 @@ public class GcpJsonFormatter extends Formatter {
     String severity = severityFor(record.getLevel());
 
     // The rest is mostly lifted from java.util.logging.SimpleFormatter.
-    String stacktrace = "";
+    String throwable = "";
     if (record.getThrown() != null) {
       StringWriter sw = new StringWriter();
-      try (PrintWriter pw = new PrintWriter(sw)) {
-        pw.println();
-        record.getThrown().printStackTrace(pw);
-      }
-      stacktrace = sw.toString();
+      PrintWriter pw = new PrintWriter(sw);
+      pw.println();
+      record.getThrown().printStackTrace(pw);
+      pw.close();
+      throwable = sw.toString();
     }
-    String message = '\n' + record.getMessage() + stacktrace;
+
+    String message = '\n' + formatMessage(record);
 
     String function = "";
     if (record.getSourceClassName() != null) {
@@ -144,6 +155,9 @@ public class GcpJsonFormatter extends Formatter {
     json.put(SEVERITY, severity);
     json.put(SOURCE_LOCATION, sourceLocation);
     json.put(MESSAGE, message);
+    if (!throwable.isEmpty()) {
+      json.put(STACKTRACE, throwable);
+    }
     if (traceId.get() != null) {
       json.put(TRACE, traceId.get());
     }

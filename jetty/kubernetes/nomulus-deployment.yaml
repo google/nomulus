@@ -13,6 +13,7 @@ spec:
       labels:
         app: nomulus
     spec:
+      serviceAccountName: nomulus
       containers:
       - name: nomulus
         image: gcr.io/GCP_PROJECT/nomulus
