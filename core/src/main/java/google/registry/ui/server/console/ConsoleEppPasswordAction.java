@@ -14,11 +14,13 @@
 
 package google.registry.ui.server.console;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.request.Action.Method.POST;
-import static google.registry.request.RequestParameters.extractRequiredParameter;
 
 import com.google.api.client.http.HttpStatusCodes;
+import com.google.auto.value.AutoValue;
+import com.google.common.base.Strings;
 import com.google.common.base.Throwables;
 import com.google.common.flogger.FluentLogger;
 import google.registry.flows.EppException.AuthenticationErrorException;
@@ -27,7 +29,7 @@ import google.registry.groups.GmailClient;
 import google.registry.model.console.User;
 import google.registry.model.registrar.Registrar;
 import google.registry.request.Action;
-import google.registry.request.HttpException.BadRequestException;
+import google.registry.request.Parameter;
 import google.registry.request.auth.Auth;
 import google.registry.request.auth.AuthenticatedRegistrarAccessor;
 import google.registry.request.auth.AuthenticatedRegistrarAccessor.RegistrarAccessDeniedException;
@@ -57,48 +59,64 @@ public class ConsoleEppPasswordAction extends ConsoleApiAction {
   private final AuthenticatedRegistrarAccessor registrarAccessor;
   private final GmailClient gmailClient;
 
+  private final Optional<PasswordChangeRequest> eppPasswordChangeRequest;
+
   @Inject
   public ConsoleEppPasswordAction(
       ConsoleApiParams consoleApiParams,
       AuthenticatedRegistrarAccessor registrarAccessor,
-      GmailClient gmailClient) {
+      GmailClient gmailClient,
+      @Parameter("eppPasswordChangeRequest")
+          Optional<PasswordChangeRequest> eppPasswordChangeRequest) {
     super(consoleApiParams);
     this.registrarAccessor = registrarAccessor;
     this.gmailClient = gmailClient;
+    this.eppPasswordChangeRequest = eppPasswordChangeRequest;
+  }
+
+  private boolean confirmParamsAvailable() {
+    if (!this.eppPasswordChangeRequest.isPresent()) {
+      setFailedResponse(
+          "Epp Password update body is invalid", HttpStatusCodes.STATUS_CODE_BAD_REQUEST);
+      return false;
+    }
+    var eppRequestBody = this.eppPasswordChangeRequest.get();
+    var errorMsg = "Missing param(s): %s";
+    try {
+      checkArgument(!Strings.isNullOrEmpty(eppRequestBody.registrarId()), errorMsg, "registrarId");
+      checkArgument(!Strings.isNullOrEmpty(eppRequestBody.oldPassword()), errorMsg, "oldPassword");
+      checkArgument(!Strings.isNullOrEmpty(eppRequestBody.newPassword()), errorMsg, "newPassword");
+      checkArgument(
+          !Strings.isNullOrEmpty(eppRequestBody.newPasswordRepeat()),
+          errorMsg,
+          "newPasswordRepeat");
+    } catch (IllegalArgumentException e) {
+      setFailedResponse(e.getMessage(), HttpStatusCodes.STATUS_CODE_BAD_REQUEST);
+      return false;
+    }
+
+    return true;
   }
 
   @Override
   protected void postHandler(User user) {
-    String registrarId;
-    String oldPassword;
-    String newPassword;
-    String newPasswordRepeat;
-
-    try {
-      registrarId = extractRequiredParameter(consoleApiParams.request(), "registrarId");
-      oldPassword = extractRequiredParameter(consoleApiParams.request(), "oldPassword");
-      newPassword = extractRequiredParameter(consoleApiParams.request(), "newPassword");
-      newPasswordRepeat = extractRequiredParameter(consoleApiParams.request(), "newPasswordRepeat");
-    } catch (BadRequestException e) {
-      setFailedResponse(e.getMessage(), HttpStatusCodes.STATUS_CODE_BAD_REQUEST);
-      return;
-    }
-
-    if (!newPassword.equals(newPasswordRepeat)) {
+    if (!this.confirmParamsAvailable()) return;
+    var eppRequestBody = this.eppPasswordChangeRequest.get();
+    if (!eppRequestBody.newPassword().equals(eppRequestBody.newPasswordRepeat())) {
       setFailedResponse("New password fields don't match", HttpStatusCodes.STATUS_CODE_BAD_REQUEST);
       return;
     }
 
     Registrar registrar;
     try {
-      registrar = registrarAccessor.getRegistrar(registrarId);
+      registrar = registrarAccessor.getRegistrar(eppRequestBody.registrarId());
     } catch (RegistrarAccessDeniedException e) {
       setFailedResponse(e.getMessage(), HttpStatusCodes.STATUS_CODE_NOT_FOUND);
       return;
     }
 
     try {
-      credentials.validate(registrar, oldPassword);
+      credentials.validate(registrar, eppRequestBody.oldPassword());
     } catch (AuthenticationErrorException e) {
       setFailedResponse(e.getMessage(), HttpStatusCodes.STATUS_CODE_FORBIDDEN);
       return;
@@ -107,7 +125,7 @@ public class ConsoleEppPasswordAction extends ConsoleApiAction {
     try {
       tm().transact(
               () -> {
-                tm().put(registrar.asBuilder().setPassword(newPassword).build());
+                tm().put(registrar.asBuilder().setPassword(eppRequestBody.newPassword()).build());
                 this.gmailClient.sendEmail(
                     EmailMessage.create(
                         EMAIL_SUBJ,
@@ -122,5 +140,22 @@ public class ConsoleEppPasswordAction extends ConsoleApiAction {
     }
 
     consoleApiParams.response().setStatus(HttpStatusCodes.STATUS_CODE_OK);
+  }
+
+  @AutoValue
+  public abstract static class PasswordChangeRequest {
+    abstract String registrarId();
+
+    abstract String oldPassword();
+
+    abstract String newPassword();
+
+    abstract String newPasswordRepeat();
+
+    public static PasswordChangeRequest create(
+        String registrarId, String oldPassword, String newPassword, String newPasswordRepeat) {
+      return new AutoValue_ConsoleEppPasswordAction_PasswordChangeRequest(
+          registrarId, oldPassword, newPassword, newPasswordRepeat);
+    }
   }
 }

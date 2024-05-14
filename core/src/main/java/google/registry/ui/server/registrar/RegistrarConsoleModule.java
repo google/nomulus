@@ -32,6 +32,7 @@ import google.registry.request.RequestScope;
 import google.registry.request.Response;
 import google.registry.request.auth.AuthResult;
 import google.registry.security.XsrfTokenManager;
+import google.registry.ui.server.console.ConsoleEppPasswordAction.PasswordChangeRequest;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.Optional;
 import org.joda.time.DateTime;
@@ -231,5 +232,12 @@ public final class RegistrarConsoleModule {
   @Parameter("searchTerm")
   public static Optional<String> provideSearchTerm(HttpServletRequest req) {
     return extractOptionalParameter(req, "searchTerm");
+  }
+
+  @Provides
+  @Parameter("eppPasswordChangeRequest")
+  public static Optional<PasswordChangeRequest> provideEppPasswordChangeRequest(
+      Gson gson, @OptionalJsonPayload Optional<JsonElement> payload) {
+    return payload.map(s -> gson.fromJson(s, PasswordChangeRequest.class));
   }
 }
