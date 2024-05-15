@@ -1249,8 +1249,6 @@ CREATE TABLE public."Tld" (
     auto_renew_grace_period_length interval NOT NULL,
     automatic_transfer_length interval NOT NULL,
     claims_period_end timestamp with time zone NOT NULL,
-    create_billing_cost_amount numeric(19,2),
-    create_billing_cost_currency text,
     creation_time timestamp with time zone NOT NULL,
     currency text NOT NULL,
     dns_paused boolean NOT NULL,

@@ -168,3 +168,4 @@ V167__creat_billing_cost_transitions_not_null.sql
 V168__registry_lock_email.sql
 V169__add_more_indexes_needed_for_delete_prober_data.sql
 V170__user_update_registry_lock_email.sql
+V171__drop_create_billing_cost_columns_from_tld.sql
