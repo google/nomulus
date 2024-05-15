@@ -7,7 +7,7 @@
       <fee:delData
         xmlns:fee="urn:ietf:params:xml:ns:fee-0.6">
         <fee:currency>USD</fee:currency>
-        <fee:credit description="addPeriod credit">-26.00</fee:credit>
+        <fee:credit description="addPeriod credit">-24.00</fee:credit>
       </fee:delData>
     </extension>
     <trID>

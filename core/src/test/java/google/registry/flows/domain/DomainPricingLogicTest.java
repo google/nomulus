@@ -145,8 +145,8 @@ public class DomainPricingLogicTest {
         .isEqualTo(
             new FeesAndCredits.Builder()
                 .setCurrency(USD)
-                // 13 * 2 * 0.85 == 22.1
-                .addFeeOrCredit(Fee.create(Money.of(USD, 22.1).getAmount(), CREATE, false))
+                // (13 + 11) * 0.85 == 20.40
+                .addFeeOrCredit(Fee.create(Money.of(USD, 20.4).getAmount(), CREATE, false))
                 .build());
   }
 

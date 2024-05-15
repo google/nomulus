@@ -15,7 +15,7 @@
     <extension>
       <fee:create xmlns:fee="urn:ietf:params:xml:ns:fee-0.6">
         <fee:currency>USD</fee:currency>
-        <fee:fee description="create">26.00</fee:fee>
+        <fee:fee description="create">24.00</fee:fee>
         <fee:fee description="Early Access Period">100.00</fee:fee>
       </fee:create>
     </extension>

@@ -20,7 +20,7 @@
     <extension>
       <fee:create xmlns:fee="urn:ietf:params:xml:ns:fee-%FEE_VERSION%">
         <fee:currency>%CURRENCY%</fee:currency>
-        <fee:fee>26.00</fee:fee>
+        <fee:fee>24.00</fee:fee>
       </fee:create>
     </extension>
     <clTRID>ABC-12345</clTRID>

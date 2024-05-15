@@ -31,7 +31,7 @@
           <fee:currency>USD</fee:currency>
           <fee:command>create</fee:command>
           <fee:period unit="y">2</fee:period>
-          <fee:fee description="create">19.50</fee:fee>
+          <fee:fee description="create">17.50</fee:fee>
         </fee:cd>
       </fee:chkData>
     </extension>
