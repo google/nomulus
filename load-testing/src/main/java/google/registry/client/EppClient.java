@@ -275,16 +275,20 @@ public class EppClient implements Runnable {
   @Override
   public void run() {
     String outputFolder = createOutputFolder(String.format("load-tests/%s", DateTime.now(UTC)));
+    ImmutableList.Builder<ExecutorService> builder = ImmutableList.builderWithExpectedSize(5);
+    for (int i = 0; i < 5; ++i) {
+      builder.add(Executors.newSingleThreadExecutor());
+    }
+    final ImmutableList<ExecutorService> loggingExecutors = builder.build();
 
-    ExecutorService loggingExecutors = Executors.newFixedThreadPool(5);
     EventLoopGroup eventLoopGroup = new NioEventLoopGroup();
-    try {
 
+    try {
       Bootstrap bootstrap =
           new Bootstrap()
               .group(eventLoopGroup)
               .channel(NioSocketChannel.class)
-              .handler(makeChannelInitializer(outputFolder, ImmutableList.of(loggingExecutors)));
+              .handler(makeChannelInitializer(outputFolder, loggingExecutors));
 
       List<ChannelFuture> channelFutures = new ArrayList<>();
 
@@ -313,13 +317,11 @@ public class EppClient implements Runnable {
         if (!channel
             .closeFuture()
             .awaitUninterruptibly(
-                Duration.ofSeconds(
-                        TIMEOUT_SECONDS
-                            - Duration.between(
-                                    channel.attr(REQUEST_SENT).get().getFirst(),
-                                    ZonedDateTime.now(ZoneOffset.UTC))
-                                .getSeconds())
-                    .toMillis())) {
+                TIMEOUT_SECONDS * 1000
+                    - Duration.between(
+                            channel.attr(REQUEST_SENT).get().getFirst(),
+                            ZonedDateTime.now(ZoneOffset.UTC))
+                        .toMillis())) {
           channel.close().syncUninterruptibly();
           killedConnections.add(channelNumber);
         }
@@ -343,7 +345,7 @@ public class EppClient implements Runnable {
           channelFuture -> {
             channelFuture.channel().attr(LOGGING_REQUEST_COMPLETE).get().syncUninterruptibly();
           });
-      loggingExecutors.shutdown();
+      loggingExecutors.forEach(ExecutorService::shutdown);
     } catch (IOException e) {
       throw new RuntimeException(e);
     }

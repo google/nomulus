@@ -1,15 +1,21 @@
 ## EPP Load Testing Client
 
 This project contains an EPP client that can be use for load testing the full 
-registry platform.
+registry platform. All the below commands should be run from the merged root.
 
 ### Setting up the test instances
+* Download the Java 21 JDK jdk-21_linux-x64_bin.tar.gz (note that if this version 
+is no longer available, you'll need to modify the instanceSetUp.sh script(it 
+hard-codes the jdk path and version).
 
-*   Create however many GCE instances you want to run on (2 in the example
-    below):
+* To create however many GCE instances you want to run on, you will need to 
+modify the `instanceSetUp.sh` file to include the correct number of instances. 
+
+* Run the instance set up script to create and configure each of the GCE 
+instances to be used for load testing:
 
   ```shell
-  $ gcloud compute instances create loadtest-{1..2} --machine-type g1-small --zone us-east4-a
+  $ load-testing/instanceSetUp.sh
   ```
 
 * Verify that the IP address of any created instances is in the allowlist of the
@@ -44,7 +50,7 @@ registry platform.
 * Deploy the client to the GCE instances (this will create a local staging 
 directory and deploy it to each of your previously created loadtest GCE instances): 
   ```shell
-  $ ./nom_build :load-testing:deployLoadTest
+  $ ./nom_build :load-testing:deployLoadTestsToInstances
     ```
 
 * Run the load test. Configurations of the load test can be made by configuring 
@@ -57,10 +63,13 @@ this `run.sh` file locally and re-deploying.
 
 ### Cleanup
 
-* Delete the GCE instances
+* Modify the `instanceCleanUp.sh` script to use the correct number of instances
+used during setup.
+
+* Run the instance clean up script 
 
     ```shell
-    $ gcloud compute instances delete loadtest-{1..2} --zone us-east4-a
+    $ load-testing/instanceCleanUp.sh
     ```
   
 * You may want to remove any host key fingerprints for those hosts from your ~/.ssh/known_hosts file (these IPs tend to get reused with new host keys)

@@ -35,48 +35,24 @@ dependencies {
 }
 
 task makeStagingDirectory {
-    new File('stage').mkdirs()
+    new File('build/stage').mkdirs()
 }
 
-task copyJarToStaging(dependsOn: makeStagingDirectory, type: Copy) {
-    from "${rootDir}/load-testing/build/libs/loadTest.jar"
-    into "${rootDir}/stage"
+task copyFilesToStaging(dependsOn: makeStagingDirectory, type: Copy) {
+    into "${rootDir}/build"
+
+    into("stage") {
+        from "${rootDir}/load-testing/build/libs/loadTest.jar"
+        from "${rootDir}/load-testing/run.sh"
+        from "${rootDir}/load-testing/certificate.pem"
+        from "${rootDir}/load-testing/key.pem"
+    }
 }
 
-task copyRunScriptToStaging(dependsOn: copyJarToStaging, type: Copy) {
-    from "${rootDir}/load-testing/run.sh"
-    into "${rootDir}/stage"
-}
-
-task copyCertificateToStaging(dependsOn: copyRunScriptToStaging, type: Copy) {
-    from "${rootDir}/load-testing/certificate.pem"
-    into "${rootDir}/stage"
-}
-
-task copyKeyToStaging(dependsOn: copyCertificateToStaging, type: Copy) {
-    from "${rootDir}/load-testing/key.pem"
-    into "${rootDir}/stage"
-}
-
-task copyJavaToStaging(dependsOn: copyKeyToStaging, type: Copy) {
-    from "${rootDir}/load-testing/jdk-21_linux-x64_bin.tar.gz"
-    into "${rootDir}/stage"
-}
-
-task extractJdk (dependsOn: copyJavaToStaging, type: Exec) {
-    executable "sh"
-    workingDir "${rootDir}/stage/"
-    args "-c", "tar -xvf jdk-21_linux-x64_bin.tar.gz"
-}
-
-task deployStagingToInstances (dependsOn: extractJdk, type: Exec) {
+task deployLoadTestsToInstances (dependsOn: copyFilesToStaging, type: Exec) {
     executable "sh"
     workingDir "${rootDir}/"
-    args "-c", "load-testing/src/main/java/google/registry/client/deploy.sh"
-}
-
-task deployLoadTest(dependsOn: deployStagingToInstances) {
-    doLast {println 'deploying load tests'}
+    args "-c", "load-testing/deploy.sh"
 }
 
 test {

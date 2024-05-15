@@ -14,5 +14,4 @@
 # limitations under the License.
 
 HOSTS=$(gcloud compute instances list | awk '/^loadtest/ { print $5 }')
-for host in $HOSTS; do ssh $host sudo apt-get -y install rsync; done
-for host in $HOSTS; do rsync -avz stage/ $host:test-client/; done
+for host in $HOSTS; do rsync -avz ./build/stage/ $host:test-client/; done
