@@ -27,6 +27,7 @@ import com.google.gson.Gson;
 import google.registry.model.console.ConsolePermission;
 import google.registry.model.console.User;
 import google.registry.model.registrar.Registrar;
+import google.registry.model.registrar.RegistrarBase;
 import google.registry.model.registrar.RegistrarBase.State;
 import google.registry.model.registrar.RegistrarPoc;
 import google.registry.request.Action;
@@ -46,11 +47,14 @@ import javax.inject.Named;
 public class RegistrarsAction extends ConsoleApiAction {
   private static final int PASSWORD_LENGTH = 16;
   private static final int PASSCODE_LENGTH = 5;
+  private static final ImmutableList<RegistrarBase.Type> allowedRegistrarTypes =
+      ImmutableList.of(Registrar.Type.REAL, RegistrarBase.Type.OTE);
   static final String PATH = "/console-api/registrars";
   private final Gson gson;
   private Optional<Registrar> registrar;
   private StringGenerator passwordGenerator;
   private StringGenerator passcodeGenerator;
+
 
   @Inject
   public RegistrarsAction(
@@ -72,9 +76,10 @@ public class RegistrarsAction extends ConsoleApiAction {
       consoleApiParams.response().setStatus(HttpStatusCodes.STATUS_CODE_FORBIDDEN);
       return;
     }
+
     ImmutableList<Registrar> registrars =
         Streams.stream(Registrar.loadAll())
-            .filter(r -> r.getType() == Registrar.Type.REAL)
+            .filter(r -> allowedRegistrarTypes.contains(r.getType()))
             .collect(ImmutableList.toImmutableList());
 
     consoleApiParams.response().setPayload(gson.toJson(registrars));
