@@ -58,7 +58,7 @@ public class ConsoleDumDownloadAction extends ConsoleApiAction {
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
   public static final String PATH = "/console-api/dum-download";
-  private Clock clock;
+  private final Clock clock;
   private final String registrarId;
   private final String dumFileName;
 
@@ -76,11 +76,7 @@ public class ConsoleDumDownloadAction extends ConsoleApiAction {
 
   @Override
   protected void getHandler(User user) {
-    if (!user.getUserRoles().hasPermission(registrarId, ConsolePermission.DOWNLOAD_DOMAINS)) {
-      consoleApiParams.response().setStatus(HttpServletResponse.SC_FORBIDDEN);
-      return;
-    }
-
+    checkPermission(user, registrarId, ConsolePermission.DOWNLOAD_DOMAINS);
     consoleApiParams.response().setContentType(MediaType.CSV_UTF_8);
     consoleApiParams
         .response()

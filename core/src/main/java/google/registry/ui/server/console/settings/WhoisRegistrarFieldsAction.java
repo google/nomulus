@@ -14,6 +14,7 @@
 
 package google.registry.ui.server.console.settings;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.request.Action.Method.POST;
 
@@ -45,8 +46,8 @@ import javax.inject.Inject;
 public class WhoisRegistrarFieldsAction extends ConsoleApiAction {
 
   static final String PATH = "/console-api/settings/whois-fields";
-  private AuthenticatedRegistrarAccessor registrarAccessor;
-  private Optional<Registrar> registrar;
+  private final AuthenticatedRegistrarAccessor registrarAccessor;
+  private final Optional<Registrar> registrar;
 
   @Inject
   public WhoisRegistrarFieldsAction(
@@ -60,19 +61,9 @@ public class WhoisRegistrarFieldsAction extends ConsoleApiAction {
 
   @Override
   protected void postHandler(User user) {
-    if (registrar.isEmpty()) {
-      setFailedResponse(
-          "'registrar' parameter is not present", HttpStatusCodes.STATUS_CODE_BAD_REQUEST);
-      return;
-    }
-
-    if (!user.getUserRoles()
-        .hasPermission(
-            registrar.get().getRegistrarId(), ConsolePermission.EDIT_REGISTRAR_DETAILS)) {
-      consoleApiParams.response().setStatus(HttpStatusCodes.STATUS_CODE_FORBIDDEN);
-      return;
-    }
-
+    checkArgument(registrar.isPresent(), "'registrar' parameter is not present");
+    checkPermission(
+        user, registrar.get().getRegistrarId(), ConsolePermission.EDIT_REGISTRAR_DETAILS);
     tm().transact(() -> loadAndModifyRegistrar(registrar.get()));
   }
 
@@ -82,8 +73,7 @@ public class WhoisRegistrarFieldsAction extends ConsoleApiAction {
       // reload to make sure the object has all the correct fields
       savedRegistrar = registrarAccessor.getRegistrar(providedRegistrar.getRegistrarId());
     } catch (RegistrarAccessDeniedException e) {
-      consoleApiParams.response().setStatus(HttpStatusCodes.STATUS_CODE_FORBIDDEN);
-      consoleApiParams.response().setPayload(e.getMessage());
+      setFailedResponse(e.getMessage(), HttpStatusCodes.STATUS_CODE_FORBIDDEN);
       return;
     }
 

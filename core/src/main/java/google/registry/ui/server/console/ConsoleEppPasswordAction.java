@@ -14,26 +14,23 @@
 
 package google.registry.ui.server.console;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.request.Action.Method.POST;
 import static google.registry.request.RequestParameters.extractRequiredParameter;
 
 import com.google.api.client.http.HttpStatusCodes;
-import com.google.common.base.Throwables;
-import com.google.common.flogger.FluentLogger;
 import google.registry.flows.EppException.AuthenticationErrorException;
 import google.registry.flows.PasswordOnlyTransportCredentials;
 import google.registry.groups.GmailClient;
 import google.registry.model.console.User;
 import google.registry.model.registrar.Registrar;
 import google.registry.request.Action;
-import google.registry.request.HttpException.BadRequestException;
 import google.registry.request.auth.Auth;
 import google.registry.request.auth.AuthenticatedRegistrarAccessor;
 import google.registry.request.auth.AuthenticatedRegistrarAccessor.RegistrarAccessDeniedException;
 import google.registry.ui.server.registrar.ConsoleApiParams;
 import google.registry.util.EmailMessage;
-import java.util.Optional;
 import javax.inject.Inject;
 import javax.mail.internet.InternetAddress;
 
@@ -43,8 +40,6 @@ import javax.mail.internet.InternetAddress;
     method = {POST},
     auth = Auth.AUTH_PUBLIC_LOGGED_IN)
 public class ConsoleEppPasswordAction extends ConsoleApiAction {
-
-  private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
   protected static final String EMAIL_SUBJ = "EPP password update confirmation";
   protected static final String EMAIL_BODY =
@@ -69,25 +64,12 @@ public class ConsoleEppPasswordAction extends ConsoleApiAction {
 
   @Override
   protected void postHandler(User user) {
-    String registrarId;
-    String oldPassword;
-    String newPassword;
-    String newPasswordRepeat;
-
-    try {
-      registrarId = extractRequiredParameter(consoleApiParams.request(), "registrarId");
-      oldPassword = extractRequiredParameter(consoleApiParams.request(), "oldPassword");
-      newPassword = extractRequiredParameter(consoleApiParams.request(), "newPassword");
-      newPasswordRepeat = extractRequiredParameter(consoleApiParams.request(), "newPasswordRepeat");
-    } catch (BadRequestException e) {
-      setFailedResponse(e.getMessage(), HttpStatusCodes.STATUS_CODE_BAD_REQUEST);
-      return;
-    }
-
-    if (!newPassword.equals(newPasswordRepeat)) {
-      setFailedResponse("New password fields don't match", HttpStatusCodes.STATUS_CODE_BAD_REQUEST);
-      return;
-    }
+    String registrarId = extractRequiredParameter(consoleApiParams.request(), "registrarId");
+    String oldPassword = extractRequiredParameter(consoleApiParams.request(), "oldPassword");
+    String newPassword = extractRequiredParameter(consoleApiParams.request(), "newPassword");
+    String newPasswordRepeat =
+        extractRequiredParameter(consoleApiParams.request(), "newPasswordRepeat");
+    checkArgument(newPassword.equals(newPasswordRepeat), "New password fields don't match");
 
     Registrar registrar;
     try {
@@ -104,22 +86,15 @@ public class ConsoleEppPasswordAction extends ConsoleApiAction {
       return;
     }
 
-    try {
-      tm().transact(
-              () -> {
-                tm().put(registrar.asBuilder().setPassword(newPassword).build());
-                this.gmailClient.sendEmail(
-                    EmailMessage.create(
-                        EMAIL_SUBJ,
-                        String.format(EMAIL_BODY, registrar.getRegistrarName()),
-                        new InternetAddress(registrar.getEmailAddress(), true)));
-              });
-    } catch (Throwable e) {
-      logger.atWarning().withCause(e).log("Failed to update password.");
-      String message =
-          Optional.ofNullable(Throwables.getRootCause(e).getMessage()).orElse("Unspecified error");
-      setFailedResponse(message, HttpStatusCodes.STATUS_CODE_SERVER_ERROR);
-    }
+    tm().transact(
+            () -> {
+              tm().put(registrar.asBuilder().setPassword(newPassword).build());
+              this.gmailClient.sendEmail(
+                  EmailMessage.create(
+                      EMAIL_SUBJ,
+                      String.format(EMAIL_BODY, registrar.getRegistrarName()),
+                      new InternetAddress(registrar.getEmailAddress(), true)));
+            });
 
     consoleApiParams.response().setStatus(HttpStatusCodes.STATUS_CODE_OK);
   }

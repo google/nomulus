@@ -14,6 +14,7 @@
 
 package google.registry.ui.server.console;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static google.registry.model.console.ConsolePermission.DOWNLOAD_DOMAINS;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
@@ -82,22 +83,11 @@ public class ConsoleDomainListAction extends ConsoleApiAction {
 
   @Override
   protected void getHandler(User user) {
-    if (!user.getUserRoles().hasPermission(registrarId, DOWNLOAD_DOMAINS)) {
-      consoleApiParams.response().setStatus(HttpStatusCodes.STATUS_CODE_FORBIDDEN);
-      return;
-    }
-    if (resultsPerPage < 1 || resultsPerPage > 500) {
-      setFailedResponse(
-          "Results per page must be between 1 and 500 inclusive",
-          HttpStatusCodes.STATUS_CODE_BAD_REQUEST);
-      return;
-    }
-    if (pageNumber < 0) {
-      setFailedResponse(
-          "Page number must be non-negative", HttpStatusCodes.STATUS_CODE_BAD_REQUEST);
-      return;
-    }
-
+    checkPermission(user, registrarId, DOWNLOAD_DOMAINS);
+    checkArgument(
+        resultsPerPage > 0 && resultsPerPage <= 500,
+        "Results per page must be between 1 and 500 inclusive");
+    checkArgument(pageNumber >= 0, "Page number must be non-negative");
     tm().transact(this::runInTransaction);
   }
 

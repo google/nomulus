@@ -14,6 +14,7 @@
 
 package google.registry.ui.server.console.settings;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.request.Action.Method.GET;
@@ -66,11 +67,7 @@ public class ContactAction extends ConsoleApiAction {
 
   @Override
   protected void getHandler(User user) {
-    if (!user.getUserRoles().hasPermission(registrarId, ConsolePermission.VIEW_REGISTRAR_DETAILS)) {
-      consoleApiParams.response().setStatus(HttpStatusCodes.STATUS_CODE_FORBIDDEN);
-      return;
-    }
-
+    checkPermission(user, registrarId, ConsolePermission.VIEW_REGISTRAR_DETAILS);
     ImmutableList<RegistrarPoc> am =
         tm().transact(
                 () ->
@@ -87,17 +84,8 @@ public class ContactAction extends ConsoleApiAction {
 
   @Override
   protected void postHandler(User user) {
-    if (!user.getUserRoles().hasPermission(registrarId, ConsolePermission.EDIT_REGISTRAR_DETAILS)) {
-      consoleApiParams.response().setStatus(HttpStatusCodes.STATUS_CODE_FORBIDDEN);
-      return;
-    }
-
-    if (contacts.isEmpty()) {
-      consoleApiParams.response().setStatus(HttpStatusCodes.STATUS_CODE_BAD_REQUEST);
-      consoleApiParams.response().setPayload(gson.toJson("Contacts parameter is not present"));
-      return;
-    }
-
+    checkPermission(user, registrarId, ConsolePermission.EDIT_REGISTRAR_DETAILS);
+    checkArgument(contacts.isPresent(), "Contacts parameter is not present");
     Registrar registrar =
         Registrar.loadByRegistrarId(registrarId)
             .orElseThrow(
@@ -120,9 +108,7 @@ public class ContactAction extends ConsoleApiAction {
     } catch (FormException e) {
       logger.atWarning().withCause(e).log(
           "Error processing contacts post request for registrar: %s", registrarId);
-      consoleApiParams.response().setStatus(HttpStatusCodes.STATUS_CODE_BAD_REQUEST);
-      consoleApiParams.response().setPayload(e.getMessage());
-      return;
+      throw new IllegalArgumentException(e);
     }
 
     RegistrarPoc.updateContacts(registrar, updatedContacts);
