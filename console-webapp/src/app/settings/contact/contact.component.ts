@@ -71,7 +71,7 @@ export default class ContactComponent {
     effect(() => {
       if (this.contactService.contacts()) {
         this.dataSource = new MatTableDataSource<ViewReadyContact>(
-          this.contactService.contacts().map(contactTypeToViewReadyContact)
+          this.contactService.contacts()
         );
       }
     });
