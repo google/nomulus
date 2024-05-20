@@ -109,14 +109,11 @@ class GcpJsonFormatterTest {
     handler.close();
     String output = ostream.toString(StandardCharsets.US_ASCII);
     String prefix =
-        makeJson(
-            "ERROR",
-            108,
-            "testSuccess_withCause",
-            "Something went terribly wrong\\njava.lang.RuntimeException: boom!");
-    // Remove the last three characters (", }, \n) from the template as the actual output contains
+        makeJson("ERROR", 108, "testSuccess_withCause", "Something went terribly wrong");
+    // Remove the last two characters (}, \n) from the template as the actual output contains
     // the full stack trace.
-    prefix = prefix.substring(0, prefix.length() - 3);
+    prefix = prefix.substring(0, prefix.length() - 2);
+    prefix += ",\"stacktrace\":\"\\njava.lang.RuntimeException: boom!\\n";
     assertThat(output).startsWith(prefix);
   }
 
@@ -126,14 +123,11 @@ class GcpJsonFormatterTest {
     handler.close();
     String output = ostream.toString(StandardCharsets.US_ASCII);
     String prefix =
-        makeJson(
-            "ERROR",
-            125,
-            "testSuccess_withStackTrace",
-            "Something is worth checking\\ncom.google.common.flogger.LogSiteStackTrace: FULL");
-    // Remove the last three characters (", }, \n) from the template as the actual output contains
+        makeJson("ERROR", 122, "testSuccess_withStackTrace", "Something is worth checking");
+    // Remove the last three characters (}, \n) from the template as the actual output contains
     // the full stack trace.
-    prefix = prefix.substring(0, prefix.length() - 3);
+    prefix = prefix.substring(0, prefix.length() - 2);
+    prefix += ",\"stacktrace\":\"\\ncom.google.common.flogger.LogSiteStackTrace: FULL\\n";
     assertThat(output).startsWith(prefix);
   }
 
