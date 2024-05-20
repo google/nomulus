@@ -51,10 +51,12 @@ export const columns = [
     columnDef: 'billingAccountMap',
     header: 'Billing Accounts',
     cell: (record: Registrar) =>
-      // @ts-ignore - completely legit line, but TS keeps complaining
-      `${Object.entries(record.billingAccountMap).reduce((acc, [key, val]) => {
-        return `${acc}${key}=${val}<br/>`;
-      }, '')}`,
+      `${Object.entries(record.billingAccountMap || {}).reduce(
+        (acc, [key, val]) => {
+          return `${acc}${key}=${val}<br/>`;
+        },
+        ''
+      )}`,
   },
   {
     columnDef: 'registryLockAllowed',

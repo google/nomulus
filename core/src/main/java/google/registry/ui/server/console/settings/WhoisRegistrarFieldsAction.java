@@ -81,6 +81,8 @@ public class WhoisRegistrarFieldsAction extends ConsoleApiAction {
     newRegistrar.setWhoisServer(providedRegistrar.getWhoisServer());
     newRegistrar.setUrl(providedRegistrar.getUrl());
     newRegistrar.setLocalizedAddress(providedRegistrar.getLocalizedAddress());
+    newRegistrar.setPhoneNumber(providedRegistrar.getPhoneNumber());
+    newRegistrar.setFaxNumber(providedRegistrar.getFaxNumber());
     tm().put(newRegistrar.build());
     consoleApiParams.response().setStatus(HttpStatusCodes.STATUS_CODE_OK);
   }
