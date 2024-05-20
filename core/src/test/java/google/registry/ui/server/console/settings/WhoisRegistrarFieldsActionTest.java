@@ -105,6 +105,10 @@ public class WhoisRegistrarFieldsActionTest {
         ImmutableMap.of(
             "whoisServer",
             "whois.nic.google",
+            "phoneNumber",
+            "+1.4155552671",
+            "faxNumber",
+            "+1.4155552672",
             "url",
             "\"https://newurl.example\"",
             "localizedAddress",
@@ -118,10 +122,13 @@ public class WhoisRegistrarFieldsActionTest {
     assertThat(newRegistrar.getWhoisServer()).isEqualTo("whois.nic.google");
     assertThat(newRegistrar.getUrl()).isEqualTo("https://newurl.example");
     assertThat(newRegistrar.getLocalizedAddress().toJsonMap()).isEqualTo(addressMap);
+    assertThat(newRegistrar.getPhoneNumber()).isEqualTo("+1.4155552671");
+    assertThat(newRegistrar.getFaxNumber()).isEqualTo("+1.4155552672");
     // the non-changed fields should be the same
     assertAboutImmutableObjects()
         .that(newRegistrar)
-        .isEqualExceptFields(oldRegistrar, "whoisServer", "url", "localizedAddress");
+        .isEqualExceptFields(
+            oldRegistrar, "whoisServer", "url", "localizedAddress", "phoneNumber", "faxNumber");
   }
 
   @Test
