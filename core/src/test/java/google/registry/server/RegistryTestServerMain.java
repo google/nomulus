@@ -53,7 +53,7 @@ public final class RegistryTestServerMain {
       names = "--address",
       description = "Listening address.",
       validateWith = HostAndPortParameter.class)
-  private HostAndPort address = HostAndPort.fromString("[::]:8080");
+  private HostAndPort address = HostAndPort.fromString("[::1]:8080");
 
   @Parameter(names = "--fixtures", description = "Fixtures to load into the DB.")
   private List<Fixture> fixtures = ImmutableList.of(Fixture.BASIC);
