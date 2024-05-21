@@ -6,6 +6,7 @@ PATH                                               CLASS                        
 /_dr/admin/list/registrars                         ListRegistrarsAction                           GET,POST n  API          APP  ADMIN
 /_dr/admin/list/reservedLists                      ListReservedListsAction                        GET,POST n  API          APP  ADMIN
 /_dr/admin/list/tlds                               ListTldsAction                                 GET,POST n  API          APP  ADMIN
+/_dr/admin/updateUserGroup                         UpdateUserGroupAction                          POST     n  API          APP  ADMIN
 /_dr/admin/verifyOte                               VerifyOteAction                                POST     n  API          APP  ADMIN
 /_dr/cron/fanout                                   TldFanoutAction                                GET      y  API          APP  ADMIN
 /_dr/dnsRefresh                                    RefreshDnsAction                               GET      y  API          APP  ADMIN

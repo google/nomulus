@@ -15,6 +15,7 @@
 package google.registry.export;
 
 import static com.google.common.net.MediaType.PLAIN_TEXT_UTF_8;
+import static com.google.common.truth.Truth.assertThat;
 import static google.registry.export.ExportPremiumTermsAction.EXPORT_MIME_TYPE;
 import static google.registry.export.ExportPremiumTermsAction.PREMIUM_TERMS_FILENAME;
 import static google.registry.testing.DatabaseHelper.createTld;
@@ -41,13 +42,12 @@ import google.registry.model.tld.label.PremiumList;
 import google.registry.model.tld.label.PremiumListDao;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
-import google.registry.request.Response;
 import google.registry.storage.drive.DriveConnection;
+import google.registry.testing.FakeResponse;
 import java.io.IOException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
-import org.mockito.ArgumentMatchers;
 
 /** Unit tests for {@link ExportPremiumTermsAction}. */
 public class ExportPremiumTermsActionTest {
@@ -63,7 +63,7 @@ public class ExportPremiumTermsActionTest {
       new JpaTestExtensions.Builder().buildIntegrationTestExtension();
 
   private final DriveConnection driveConnection = mock(DriveConnection.class);
-  private final Response response = mock(Response.class);
+  private final FakeResponse response = new FakeResponse();
 
   private void runAction(String tld) {
     ExportPremiumTermsAction action = new ExportPremiumTermsAction();
@@ -100,10 +100,9 @@ public class ExportPremiumTermsActionTest {
             EXPECTED_FILE_CONTENT.getBytes(UTF_8));
     verifyNoMoreInteractions(driveConnection);
 
-    verify(response).setStatus(SC_OK);
-    verify(response).setPayload("file_id");
-    verify(response).setContentType(PLAIN_TEXT_UTF_8);
-    verifyNoMoreInteractions(response);
+    assertThat(response.getStatus()).isEqualTo(SC_OK);
+    assertThat(response.getPayload()).isEqualTo("file_id");
+    assertThat(response.getContentType()).isEqualTo(PLAIN_TEXT_UTF_8);
   }
 
   @Test
@@ -112,10 +111,9 @@ public class ExportPremiumTermsActionTest {
     runAction("tld");
 
     verifyNoInteractions(driveConnection);
-    verify(response).setStatus(SC_OK);
-    verify(response).setPayload("No premium lists configured");
-    verify(response).setContentType(PLAIN_TEXT_UTF_8);
-    verifyNoMoreInteractions(response);
+    assertThat(response.getStatus()).isEqualTo(SC_OK);
+    assertThat(response.getPayload()).isEqualTo("No premium lists configured");
+    assertThat(response.getContentType()).isEqualTo(PLAIN_TEXT_UTF_8);
   }
 
   @Test
@@ -124,11 +122,10 @@ public class ExportPremiumTermsActionTest {
     runAction("tld");
 
     verifyNoInteractions(driveConnection);
-    verify(response).setStatus(SC_OK);
-    verify(response)
-        .setPayload("Skipping export because no Drive folder is associated with this TLD");
-    verify(response).setContentType(PLAIN_TEXT_UTF_8);
-    verifyNoMoreInteractions(response);
+    assertThat(response.getStatus()).isEqualTo(SC_OK);
+    assertThat(response.getPayload())
+        .isEqualTo("Skipping export because no Drive folder is associated with this TLD");
+    assertThat(response.getContentType()).isEqualTo(PLAIN_TEXT_UTF_8);
   }
 
   @Test
@@ -137,10 +134,9 @@ public class ExportPremiumTermsActionTest {
     assertThrows(RuntimeException.class, () -> runAction("tld"));
 
     verifyNoInteractions(driveConnection);
-    verify(response).setStatus(SC_INTERNAL_SERVER_ERROR);
-    verify(response).setPayload(anyString());
-    verify(response).setContentType(PLAIN_TEXT_UTF_8);
-    verifyNoMoreInteractions(response);
+    assertThat(response.getStatus()).isEqualTo(SC_INTERNAL_SERVER_ERROR);
+    assertThat(response.getPayload()).isNotEmpty();
+    assertThat(response.getContentType()).isEqualTo(PLAIN_TEXT_UTF_8);
   }
 
   @Test
@@ -149,10 +145,9 @@ public class ExportPremiumTermsActionTest {
     assertThrows(RuntimeException.class, () -> runAction("tld"));
 
     verifyNoInteractions(driveConnection);
-    verify(response).setStatus(SC_INTERNAL_SERVER_ERROR);
-    verify(response).setPayload("Could not load premium list for " + "tld");
-    verify(response).setContentType(PLAIN_TEXT_UTF_8);
-    verifyNoMoreInteractions(response);
+    assertThat(response.getStatus()).isEqualTo(SC_INTERNAL_SERVER_ERROR);
+    assertThat(response.getPayload()).isEqualTo("Could not load premium list for " + "tld");
+    assertThat(response.getContentType()).isEqualTo(PLAIN_TEXT_UTF_8);
   }
 
   @Test
@@ -167,10 +162,8 @@ public class ExportPremiumTermsActionTest {
             "bad_folder_id",
             EXPECTED_FILE_CONTENT.getBytes(UTF_8));
     verifyNoMoreInteractions(driveConnection);
-    verify(response).setStatus(SC_INTERNAL_SERVER_ERROR);
-    verify(response).setPayload(
-        ArgumentMatchers.contains("Error exporting premium terms file to Drive."));
-    verify(response).setContentType(PLAIN_TEXT_UTF_8);
-    verifyNoMoreInteractions(response);
+    assertThat(response.getStatus()).isEqualTo(SC_INTERNAL_SERVER_ERROR);
+    assertThat(response.getPayload()).contains("Error exporting premium terms file to Drive.");
+    assertThat(response.getContentType()).isEqualTo(PLAIN_TEXT_UTF_8);
   }
 }

@@ -107,6 +107,7 @@ import google.registry.tools.server.ListReservedListsAction;
 import google.registry.tools.server.ListTldsAction;
 import google.registry.tools.server.RefreshDnsForAllDomainsAction;
 import google.registry.tools.server.ToolsServerModule;
+import google.registry.tools.server.UpdateUserGroupAction;
 import google.registry.tools.server.VerifyOteAction;
 import google.registry.ui.server.console.ConsoleDomainGetAction;
 import google.registry.ui.server.console.ConsoleDomainListAction;
@@ -322,6 +323,8 @@ interface RequestComponent {
   TmchSmdrlAction tmchSmdrlAction();
 
   UpdateRegistrarRdapBaseUrlsAction updateRegistrarRdapBaseUrlsAction();
+
+  UpdateUserGroupAction updateUserGroupAction();
 
   UploadBsaUnavailableDomainsAction uploadBsaUnavailableDomains();
 
