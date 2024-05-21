@@ -24,16 +24,15 @@ HOSTS=$(gcloud compute instances list | awk '/^loadtest/ { print $5 }')
 for host in $HOSTS;
   do
     for i in {1..60}; do
-      if ssh $host sudo apt-get -y install rsync; then
-        ssh $host mkdir test-client/
+      if ssh $host 'sudo apt-get -y update &&
+                    sudo apt-get -y upgrade &&
+                    sudo apt-get -y install rsync &&
+                    sudo apt-get install wget -y &&
+                    wget https://download.oracle.com/java/21/archive/jdk-21.0.2_linux-x64_bin.tar.gz &&
+                    tar -xvf jdk-21.0.2_linux-x64_bin.tar.gz'; then
         break
       else
         sleep 5
       fi
     done
   done
-
-#Install Java 21
-tar -xvf load-testing/jdk-21_linux-x64_bin.tar.gz &&
-for host in $HOSTS; do rsync -avz jdk-21.0.2/ $host:test-client/jdk-21.0.2/; done
-rm -rf jdk-21.0.2/
