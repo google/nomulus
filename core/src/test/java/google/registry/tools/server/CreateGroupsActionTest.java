@@ -28,7 +28,7 @@ import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.request.HttpException.BadRequestException;
 import google.registry.request.HttpException.InternalServerErrorException;
-import google.registry.request.Response;
+import google.registry.testing.FakeResponse;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -41,7 +41,7 @@ class CreateGroupsActionTest {
       new JpaTestExtensions.Builder().buildIntegrationTestExtension();
 
   private final DirectoryGroupsConnection connection = mock(DirectoryGroupsConnection.class);
-  private final Response response = mock(Response.class);
+  private final FakeResponse response = new FakeResponse();
 
   private void runAction(String registrarId) {
     CreateGroupsAction action = new CreateGroupsAction();
@@ -74,8 +74,8 @@ class CreateGroupsActionTest {
   @Test
   void test_createsAllGroupsSuccessfully() throws Exception {
     runAction("NewRegistrar");
-    verify(response).setStatus(SC_OK);
-    verify(response).setPayload("Success!");
+    assertThat(response.getStatus()).isEqualTo(SC_OK);
+    assertThat(response.getPayload()).isEqualTo("Success!");
     verifyGroupCreationCallsForNewRegistrar();
     verify(connection).addMemberToGroup("registrar-primary-contacts@domain-registry.example",
         "newregistrar-primary-contacts@domain-registry.example",
