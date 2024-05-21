@@ -83,6 +83,7 @@ public class RegistryConfigSettings {
     public String outgoingEmailDisplayName;
     public String adminAccountEmailAddress;
     public String supportGroupEmailAddress;
+    public String consoleUserGroupEmailAddress;
   }
 
   /** Configuration options for registry policy. */
