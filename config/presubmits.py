@@ -202,7 +202,12 @@ PRESUBMITS = {
         {"/node_modules/", "JpaTransactionManagerImpl.java"},
     ):
         "Do not use java.util.Date. Use classes in java.time package instead.",
-
+    PresubmitCheck(
+        r".*mock\(Response\.class\).*",
+        "java",
+        {"/node_modules/"},
+    ):
+        "Do not mock Response, use FakeResponse.",
 }
 
 # Note that this regex only works for one kind of Flyway file.  If we want to
