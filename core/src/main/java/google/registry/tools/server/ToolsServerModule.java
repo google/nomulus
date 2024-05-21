@@ -23,12 +23,11 @@ import static google.registry.request.RequestParameters.extractRequiredParameter
 import dagger.Module;
 import dagger.Provides;
 import google.registry.request.Parameter;
+import google.registry.tools.server.UpdateUserGroupAction.Mode;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.Optional;
 
-/**
- * Dagger module for the tools package.
- */
+/** Dagger module for the tools package. */
 @Module
 public class ToolsServerModule {
 
@@ -74,5 +73,22 @@ public class ToolsServerModule {
   @Parameter("refreshQps")
   static Optional<Integer> provideRefreshQps(HttpServletRequest req) {
     return extractOptionalIntParameter(req, "refreshQps");
+  }
+
+  @Provides
+  static Mode provideGroupUpdateMode(HttpServletRequest req) {
+    return Mode.valueOf(extractRequiredParameter(req, "groupUpdateMode"));
+  }
+
+  @Provides
+  @Parameter("userEmailAddress")
+  static String provideUserEmailAddress(HttpServletRequest req) {
+    return extractRequiredParameter(req, "userEmailAddress");
+  }
+
+  @Provides
+  @Parameter("groupEmailAddress")
+  static String provideGroupEmailAddress(HttpServletRequest req) {
+    return extractRequiredParameter(req, "groupEmailAddress");
   }
 }

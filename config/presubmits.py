@@ -196,6 +196,12 @@ PRESUBMITS = {
         {"/node_modules/"},
     ):
         "Use status code from jakarta.servlet.http.HttpServletResponse.",
+    PresubmitCheck(
+        r".*mock\(Response\.class\).*",
+        "java",
+        {"/node_modules/"},
+    ):
+        "Do not mock Response, use FakeResponse.",
 }
 
 # Note that this regex only works for one kind of Flyway file.  If we want to

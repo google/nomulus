@@ -22,8 +22,11 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 
+import com.google.common.collect.ImmutableMap;
+import com.google.common.net.MediaType;
 import google.registry.model.console.UserDao;
 import google.registry.testing.DatabaseHelper;
+import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -31,10 +34,13 @@ import org.junit.jupiter.api.Test;
 public class DeleteUserCommandTest extends CommandTestCase<DeleteUserCommand> {
 
   private final IamClient iamClient = mock(IamClient.class);
+  private final ServiceConnection connection = mock(ServiceConnection.class);
 
   @BeforeEach
   void beforeEach() {
     command.iamClient = iamClient;
+    command.setConnection(connection);
+    command.maybeGroupEmailAddress = Optional.empty();
   }
 
   @Test
@@ -45,6 +51,30 @@ public class DeleteUserCommandTest extends CommandTestCase<DeleteUserCommand> {
     assertThat(UserDao.loadUser("email@example.test")).isEmpty();
     verify(iamClient).removeBinding("email@example.test", IAP_SECURED_WEB_APP_USER_ROLE);
     verifyNoMoreInteractions(iamClient);
+    verifyNoInteractions(connection);
+  }
+
+  @Test
+  void testSuccess_deletesUser_removeFromGroup() throws Exception {
+    command.maybeGroupEmailAddress = Optional.of("group@example.test");
+    DatabaseHelper.createAdminUser("email@example.test");
+    assertThat(UserDao.loadUser("email@example.test")).isPresent();
+    runCommandForced("--email", "email@example.test");
+    assertThat(UserDao.loadUser("email@example.test")).isEmpty();
+    verify(connection)
+        .sendPostRequest(
+            "/_dr/admin/updateUserGroup",
+            ImmutableMap.of(
+                "userEmailAddress",
+                "email@example.test",
+                "groupEmailAddress",
+                "group@example.test",
+                "groupUpdateMode",
+                "REMOVE"),
+            MediaType.PLAIN_TEXT_UTF_8,
+            new byte[0]);
+    verifyNoInteractions(iamClient);
+    verifyNoMoreInteractions(connection);
   }
 
   @Test
@@ -56,5 +86,6 @@ public class DeleteUserCommandTest extends CommandTestCase<DeleteUserCommand> {
         .hasMessageThat()
         .isEqualTo("Email does not correspond to a valid user");
     verifyNoInteractions(iamClient);
+    verifyNoInteractions(connection);
   }
 }

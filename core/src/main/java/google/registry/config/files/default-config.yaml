@@ -47,6 +47,11 @@ gSuite:
   # given "ADMIN" role on the registrar console.
   supportGroupEmailAddress: support@example.com
 
+  # Group containing the emails of console users. This group should be granted
+  # roles/iap.httpsResourceAccessor out-of-band. If this field is empty, each
+  # console user will be granted to the role individually when they are created.
+  consoleUserGroupEmailAddress:
+
 registryPolicy:
   # Repository identifier (ROID) suffix for contacts and hosts.
   contactAndHostRoidSuffix: ROID
