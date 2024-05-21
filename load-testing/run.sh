@@ -13,6 +13,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-cd test-client/
+HOSTS=$(gcloud compute instances list | awk '/^loadtest/ { print $5 }')
 
-jdk-21.0.2/bin/java -jar loadTest.jar --host epp.example --certificate certificate.pem -k key.pem -pw examplePassword -ft
+for host in $HOSTS;
+  do ssh $host 'cd test-client/ &&
+    ../jdk-21.0.2/bin/java -jar loadTest.jar --host epp.example --certificate certificate.pem -k key.pem -pw examplePassword -ft';
+  done

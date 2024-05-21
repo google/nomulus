@@ -35,24 +35,18 @@ dependencies {
 }
 
 task makeStagingDirectory {
-    new File('build/stage').mkdirs()
+    mkdir layout.buildDirectory.dir('stage')
 }
 
 task copyFilesToStaging(dependsOn: makeStagingDirectory, type: Copy) {
-    into "${rootDir}/build"
-
-    into("stage") {
-        from "${rootDir}/load-testing/build/libs/loadTest.jar"
-        from "${rootDir}/load-testing/run.sh"
-        from "${rootDir}/load-testing/certificate.pem"
-        from "${rootDir}/load-testing/key.pem"
-    }
+    from layout.buildDirectory.file('libs/loadTest.jar'), "${projectDir}/certificate.pem", "${projectDir}/key.pem"
+    into layout.buildDirectory.dir('stage')
 }
 
 task deployLoadTestsToInstances (dependsOn: copyFilesToStaging, type: Exec) {
     executable "sh"
-    workingDir "${rootDir}/"
-    args "-c", "load-testing/deploy.sh"
+    workingDir "${projectDir}/"
+    args "-c", "./deploy.sh"
 }
 
 test {

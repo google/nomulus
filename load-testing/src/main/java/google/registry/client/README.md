@@ -4,9 +4,6 @@ This project contains an EPP client that can be use for load testing the full
 registry platform. All the below commands should be run from the merged root.
 
 ### Setting up the test instances
-* Download the Java 21 JDK jdk-21_linux-x64_bin.tar.gz (note that if this version 
-is no longer available, you'll need to modify the instanceSetUp.sh script(it 
-hard-codes the jdk path and version).
 
 * To create however many GCE instances you want to run on, you will need to 
 modify the `instanceSetUp.sh` file to include the correct number of instances. 
@@ -54,11 +51,10 @@ directory and deploy it to each of your previously created loadtest GCE instance
     ```
 
 * Run the load test. Configurations of the load test can be made by configuring 
-this `run.sh` file locally and re-deploying.
+this `run.sh` file locally.
 
     ```shell
-    $ HOSTS=$(gcloud compute instances list | awk '/^loadtest/ { print $5 }')
-    $ for host in $HOSTS; do ssh $host test-client/run.sh; done
+    $ load-testing/run.sh
     ```
 
 ### Cleanup
