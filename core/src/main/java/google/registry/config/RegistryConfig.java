@@ -492,6 +492,18 @@ public final class RegistryConfig {
     }
 
     /**
+     * Returns the email address of the group containing emails of console users.
+     *
+     * <p>This group should be granted the {@code roles/iap.httpsResourceAccessor} role.
+     */
+    @Provides
+    @Config("gSuiteConsoleUserGroupEmailAddress")
+    public static Optional<String> provideGSuiteConsoleUserGroupEmailAddress(
+        RegistryConfigSettings config) {
+      return Optional.ofNullable(Strings.emptyToNull(config.gSuite.consoleUserGroupEmailAddress));
+    }
+
+    /**
      * Returns the email address(es) that notifications of registrar and/or registrar contact
      * updates should be sent to, or the empty list if updates should not be sent.
      *
