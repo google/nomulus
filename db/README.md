@@ -215,7 +215,7 @@ project directory as working directory, run the following shell snippets:
 ```shell
 # Tags exist as folder names under gs://domain-registry-dev-deploy.
 SCHEMA_TAG=
-# Recognized environments are alpha, crash, sandbox and production
+# Recognized environments are alpha, crash, qa, sandbox and production
 SQL_ENV=
 # Deploy on cloud build. The --project is optional if domain-registry-dev
 # is already your default project.
@@ -226,20 +226,20 @@ gcloud builds submit --config=release/cloudbuild-schema-deploy.yaml \
 ./nom_build :db:flywayInfo --dbServer=${SQL_ENV}
 ```
 
-To test unsubmitted schema changes in the alpha or crash environments, use the
+To test unsubmitted schema changes in the alpha, qa or crash environments, use the
 following command to deploy the local schema,
 
 ```shell
-./nom_build :db:flywayMigrate --dbServer=[alpha|crash] \
-    --environment=[alpha|crash]
+./nom_build :db:flywayMigrate --dbServer=[alpha|qa|crash] \
+    --environment=[alpha|qa|crash]
 ```
 
 If you run into problems due to incompatible dependency versions, you may try
 the dependencies used by our releases:
 
 ```
-./nom_build :db:flywayMigrate --dbServer=[alpha|crash] \
-    --environment=[alpha|crash] \
+./nom_build :db:flywayMigrate --dbServer=[alpha|qa|crash] \
+    --environment=[alpha|qa|crash] \
     --mavenUrl=https://storage.googleapis.com/domain-registry-maven-repository/maven \
     --pluginsUrl=https://storage.googleapis.com/domain-registry-maven-repository/plugins
 ```
@@ -254,7 +254,7 @@ environments. Use this only when the Flyway task is broken.
 From the root of the repository:
 
 ```
-$ TARGET_ENV=[alpha|crash]
+$ TARGET_ENV=[alpha|qa|crash]
 $ BUILDER_PROJECT=<project-where-the-builder-image-is-stored>
 $ ./nom_build :db:schema
 $ mkdir -p release/schema-deployer/flyway/jars release/schema-deployer/secrets
@@ -268,8 +268,8 @@ $ nomulus -e ${TARGET_ENV} \
     --output release/schema-deployer/secrets/schema_deployer_credential.dec
 $ cp db/build/libs/schema.jar release/schema-deployer/flyway/jars
 $ cd release/schema-deployer
-$ docker build -t --build-arg PROJECT_ID=${BUILDER_PROJECT} \
-    --build-arg TAG_NAME=latest schema_deployer .
+$ docker build -t schema_deployer --build-arg PROJECT_ID=${BUILDER_PROJECT} \
+    --build-arg TAG_NAME=latest .
 $ docker run  -v `pwd`/secrets:/secrets \
     -v `pwd`/flyway/jars:/flyway/jars -w `pwd` \
     schema_deployer:latest \
