@@ -17,5 +17,5 @@ HOSTS=$(gcloud compute instances list | awk '/^loadtest/ { print $5 }')
 
 for host in $HOSTS;
   do ssh $host 'cd test-client/ &&
-    ../jdk-21.0.2/bin/java -jar loadTest.jar --host epp.example --certificate certificate.pem -k key.pem -pw examplePassword -ft';
+    java -jar loadTest.jar --host epp.example --certificate certificate.pem -k key.pem -pw examplePassword -ft';
   done

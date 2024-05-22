@@ -13,23 +13,22 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Create the instances - modify this number for the amount of instnaces you
+# Create the instances - modify this number for the amount of instances you
 # would like to use for your load test
-gcloud compute instances create loadtest-{1..2} --machine-type g1-small --zone us-east4-a
+gcloud compute instances create loadtest-{1..2} --machine-type g1-small \
+--image-family ubuntu-2204-lts --image-project ubuntu-os-cloud --zone us-east4-a
 
 # Get all the created load tests instances
 HOSTS=$(gcloud compute instances list | awk '/^loadtest/ { print $5 }')
 
-#Install rsync
+#Install rsync and Java - Retry is needed here since ssh connection will fail until instances are fully provisioned
 for host in $HOSTS;
   do
     for i in {1..60}; do
       if ssh $host 'sudo apt-get -y update &&
                     sudo apt-get -y upgrade &&
                     sudo apt-get -y install rsync &&
-                    sudo apt-get install wget -y &&
-                    wget https://download.oracle.com/java/21/archive/jdk-21.0.2_linux-x64_bin.tar.gz &&
-                    tar -xvf jdk-21.0.2_linux-x64_bin.tar.gz'; then
+                    sudo apt-get -y install openjdk-21-jdk'; then
         break
       else
         sleep 5

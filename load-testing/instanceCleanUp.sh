@@ -13,8 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Create the instances - modify this number for the amount of instnaces you
-# would like to use for your load test
+# Find and delete the instances used for load testing
 
-# Modify the number to match the number of instances used in setup
-gcloud compute instances delete loadtest-{1..2} --zone us-east4-a
+gcloud compute instances list --filter="name ~ loadtest.*" --zones us-east4-a \
+--format="value(name)" | xargs gcloud compute instances delete --zone us-east4-a

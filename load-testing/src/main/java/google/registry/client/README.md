@@ -59,10 +59,7 @@ this `run.sh` file locally.
 
 ### Cleanup
 
-* Modify the `instanceCleanUp.sh` script to use the correct number of instances
-used during setup.
-
-* Run the instance clean up script 
+* Run the instance clean up script to delete the created instances
 
     ```shell
     $ load-testing/instanceCleanUp.sh
