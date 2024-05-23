@@ -24,11 +24,14 @@ import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.SqlHelper.getMostRecentRegistryLockByRepoId;
 import static google.registry.testing.SqlHelper.saveRegistryLock;
 import static google.registry.tools.LockOrUnlockDomainCommand.REGISTRY_LOCK_STATUSES;
+import static jakarta.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
+import static jakarta.servlet.http.HttpServletResponse.SC_FORBIDDEN;
+import static jakarta.servlet.http.HttpServletResponse.SC_OK;
+import static jakarta.servlet.http.HttpServletResponse.SC_UNAUTHORIZED;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
-import com.google.api.client.http.HttpStatusCodes;
 import com.google.common.collect.ImmutableMap;
 import com.google.gson.Gson;
 import google.registry.groups.GmailClient;
@@ -130,7 +133,7 @@ public class ConsoleRegistryLockActionTest {
             .setLockCompletionTime(fakeClock.nowUtc())
             .build());
     action.run();
-    assertThat(response.getStatus()).isEqualTo(HttpStatusCodes.STATUS_CODE_OK);
+    assertThat(response.getStatus()).isEqualTo(SC_OK);
     assertThat(response.getPayload())
         .isEqualTo(
             """
@@ -222,7 +225,7 @@ public class ConsoleRegistryLockActionTest {
     saveRegistryLock(unlockedLock);
 
     action.run();
-    assertThat(response.getStatus()).isEqualTo(HttpStatusCodes.STATUS_CODE_OK);
+    assertThat(response.getStatus()).isEqualTo(SC_OK);
     // We should include all the locks that are currently locked, which does not include pending
     // locks or completed unlocks
     assertThat(response.getPayload())
@@ -252,7 +255,7 @@ public class ConsoleRegistryLockActionTest {
   @Test
   void testGet_noLocks() {
     action.run();
-    assertThat(response.getStatus()).isEqualTo(HttpStatusCodes.STATUS_CODE_OK);
+    assertThat(response.getStatus()).isEqualTo(SC_OK);
     assertThat(response.getPayload()).isEqualTo("[]");
   }
 
@@ -265,7 +268,7 @@ public class ConsoleRegistryLockActionTest {
             .build();
     action = createGetAction();
     action.run();
-    assertThat(response.getStatus()).isEqualTo(HttpStatusCodes.STATUS_CODE_FORBIDDEN);
+    assertThat(response.getStatus()).isEqualTo(SC_FORBIDDEN);
   }
 
   @Test
@@ -282,14 +285,14 @@ public class ConsoleRegistryLockActionTest {
             .build();
     action = createGetAction();
     action.run();
-    assertThat(response.getStatus()).isEqualTo(HttpStatusCodes.STATUS_CODE_FORBIDDEN);
+    assertThat(response.getStatus()).isEqualTo(SC_FORBIDDEN);
   }
 
   @Test
   void testPost_lock() throws Exception {
     action = createDefaultPostAction(true);
     action.run();
-    assertThat(response.getStatus()).isEqualTo(HttpStatusCodes.STATUS_CODE_OK);
+    assertThat(response.getStatus()).isEqualTo(SC_OK);
     assertThat(getMostRecentRegistryLockByRepoId(defaultDomain.getRepoId())).isPresent();
     verifyEmail();
     // Doesn't actually change the status values (hasn't been verified)
@@ -302,7 +305,7 @@ public class ConsoleRegistryLockActionTest {
     persistResource(defaultDomain.asBuilder().setStatusValues(REGISTRY_LOCK_STATUSES).build());
     action = createDefaultPostAction(false);
     action.run();
-    assertThat(response.getStatus()).isEqualTo(HttpStatusCodes.STATUS_CODE_OK);
+    assertThat(response.getStatus()).isEqualTo(SC_OK);
     verifyEmail();
     // Doesn't actually change the status values (hasn't been verified)
     assertThat(loadByEntity(defaultDomain).getStatusValues())
@@ -320,7 +323,7 @@ public class ConsoleRegistryLockActionTest {
             "registryLockPassword",
             Optional.of(Duration.standardDays(1).getMillis()));
     action.run();
-    assertThat(response.getStatus()).isEqualTo(HttpStatusCodes.STATUS_CODE_OK);
+    assertThat(response.getStatus()).isEqualTo(SC_OK);
     verifyEmail();
     RegistryLock savedUnlockRequest =
         getMostRecentRegistryLockByRepoId(defaultDomain.getRepoId()).get();
@@ -343,7 +346,7 @@ public class ConsoleRegistryLockActionTest {
             .build();
     action = createDefaultPostAction(false);
     action.run();
-    assertThat(response.getStatus()).isEqualTo(HttpStatusCodes.STATUS_CODE_OK);
+    assertThat(response.getStatus()).isEqualTo(SC_OK);
     verifyEmail();
   }
 
@@ -356,7 +359,7 @@ public class ConsoleRegistryLockActionTest {
             .build();
     action = createPostAction("example.test", true, "", Optional.empty());
     action.run();
-    assertThat(response.getStatus()).isEqualTo(HttpStatusCodes.STATUS_CODE_OK);
+    assertThat(response.getStatus()).isEqualTo(SC_OK);
     verifyEmail();
   }
 
@@ -369,7 +372,7 @@ public class ConsoleRegistryLockActionTest {
             .build();
     action = createDefaultPostAction(true);
     action.run();
-    assertThat(response.getStatus()).isEqualTo(HttpStatusCodes.STATUS_CODE_FORBIDDEN);
+    assertThat(response.getStatus()).isEqualTo(SC_FORBIDDEN);
   }
 
   @Test
@@ -386,14 +389,14 @@ public class ConsoleRegistryLockActionTest {
             .build();
     action = createDefaultPostAction(true);
     action.run();
-    assertThat(response.getStatus()).isEqualTo(HttpStatusCodes.STATUS_CODE_FORBIDDEN);
+    assertThat(response.getStatus()).isEqualTo(SC_FORBIDDEN);
   }
 
   @Test
   void testPost_failure_unlock_noLock() throws Exception {
     action = createDefaultPostAction(false);
     action.run();
-    assertThat(response.getStatus()).isEqualTo(HttpStatusCodes.STATUS_CODE_BAD_REQUEST);
+    assertThat(response.getStatus()).isEqualTo(SC_BAD_REQUEST);
     assertThat(response.getPayload()).isEqualTo("Domain example.test is already unlocked");
   }
 
@@ -407,7 +410,7 @@ public class ConsoleRegistryLockActionTest {
     persistResource(defaultDomain.asBuilder().setStatusValues(REGISTRY_LOCK_STATUSES).build());
     action = createDefaultPostAction(false);
     action.run();
-    assertThat(response.getStatus()).isEqualTo(HttpStatusCodes.STATUS_CODE_BAD_REQUEST);
+    assertThat(response.getStatus()).isEqualTo(SC_BAD_REQUEST);
     assertThat(response.getPayload())
         .isEqualTo("Non-admin user cannot unlock admin-locked domain example.test");
   }
@@ -423,7 +426,7 @@ public class ConsoleRegistryLockActionTest {
     action =
         createPostAction("otherregistrar.test", true, "registryLockPassword", Optional.empty());
     action.run();
-    assertThat(response.getStatus()).isEqualTo(HttpStatusCodes.STATUS_CODE_BAD_REQUEST);
+    assertThat(response.getStatus()).isEqualTo(SC_BAD_REQUEST);
     assertThat(response.getPayload())
         .isEqualTo("Domain otherregistrar.test is not owned by registrar TheRegistrar");
   }
@@ -434,7 +437,7 @@ public class ConsoleRegistryLockActionTest {
         loadRegistrar("TheRegistrar").asBuilder().setRegistryLockAllowed(false).build());
     action = createDefaultPostAction(true);
     action.run();
-    assertThat(response.getStatus()).isEqualTo(HttpStatusCodes.STATUS_CODE_BAD_REQUEST);
+    assertThat(response.getStatus()).isEqualTo(SC_BAD_REQUEST);
     assertThat(response.getPayload())
         .isEqualTo("Registry lock not allowed for registrar TheRegistrar");
   }
@@ -444,7 +447,7 @@ public class ConsoleRegistryLockActionTest {
     user = user.asBuilder().setRegistryLockEmailAddress(null).build();
     action = createDefaultPostAction(true);
     action.run();
-    assertThat(response.getStatus()).isEqualTo(HttpStatusCodes.STATUS_CODE_BAD_REQUEST);
+    assertThat(response.getStatus()).isEqualTo(SC_BAD_REQUEST);
     assertThat(response.getPayload()).isEqualTo("User has no registry lock email address");
   }
 
@@ -452,7 +455,7 @@ public class ConsoleRegistryLockActionTest {
   void testPost_failure_badPassword() throws Exception {
     action = createPostAction("example.test", true, "badPassword", Optional.empty());
     action.run();
-    assertThat(response.getStatus()).isEqualTo(HttpStatusCodes.STATUS_CODE_UNAUTHORIZED);
+    assertThat(response.getStatus()).isEqualTo(SC_UNAUTHORIZED);
   }
 
   @Test
@@ -460,7 +463,7 @@ public class ConsoleRegistryLockActionTest {
     saveRegistryLock(createDefaultLockBuilder().build());
     action = createDefaultPostAction(true);
     action.run();
-    assertThat(response.getStatus()).isEqualTo(HttpStatusCodes.STATUS_CODE_BAD_REQUEST);
+    assertThat(response.getStatus()).isEqualTo(SC_BAD_REQUEST);
     assertThat(response.getPayload())
         .isEqualTo("A pending or completed lock action already exists for example.test");
   }
@@ -470,7 +473,7 @@ public class ConsoleRegistryLockActionTest {
     persistResource(defaultDomain.asBuilder().setStatusValues(REGISTRY_LOCK_STATUSES).build());
     action = createDefaultPostAction(true);
     action.run();
-    assertThat(response.getStatus()).isEqualTo(HttpStatusCodes.STATUS_CODE_BAD_REQUEST);
+    assertThat(response.getStatus()).isEqualTo(SC_BAD_REQUEST);
     assertThat(response.getPayload()).isEqualTo("Domain example.test is already locked");
   }
 
@@ -484,7 +487,7 @@ public class ConsoleRegistryLockActionTest {
             .build());
     action = createDefaultPostAction(false);
     action.run();
-    assertThat(response.getStatus()).isEqualTo(HttpStatusCodes.STATUS_CODE_BAD_REQUEST);
+    assertThat(response.getStatus()).isEqualTo(SC_BAD_REQUEST);
     assertThat(response.getPayload()).isEqualTo("Domain example.test is already unlocked");
   }
 

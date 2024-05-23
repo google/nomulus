@@ -16,10 +16,11 @@ package google.registry.ui.server.console.settings;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.ImmutableObjectSubject.assertAboutImmutableObjects;
+import static jakarta.servlet.http.HttpServletResponse.SC_FORBIDDEN;
+import static jakarta.servlet.http.HttpServletResponse.SC_OK;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.when;
 
-import com.google.api.client.http.HttpStatusCodes;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSetMultimap;
@@ -116,8 +117,7 @@ public class WhoisRegistrarFieldsActionTest {
                 + " \"NL\", \"zip\": \"10011\", \"countryCode\": \"CA\"}"));
     WhoisRegistrarFieldsAction action = createAction();
     action.run();
-    assertThat(((FakeResponse) consoleApiParams.response()).getStatus())
-        .isEqualTo(HttpStatusCodes.STATUS_CODE_OK);
+    assertThat(((FakeResponse) consoleApiParams.response()).getStatus()).isEqualTo(SC_OK);
     Registrar newRegistrar = Registrar.loadByRegistrarId("TheRegistrar").get(); // skip cache
     assertThat(newRegistrar.getWhoisServer()).isEqualTo("whois.nic.google");
     assertThat(newRegistrar.getUrl()).isEqualTo("https://newurl.example");
@@ -148,8 +148,7 @@ public class WhoisRegistrarFieldsActionTest {
     uiRegistrarMap.put("registrarId", "NewRegistrar");
     WhoisRegistrarFieldsAction action = createAction(onlyTheRegistrar);
     action.run();
-    assertThat(((FakeResponse) consoleApiParams.response()).getStatus())
-        .isEqualTo(HttpStatusCodes.STATUS_CODE_FORBIDDEN);
+    assertThat(((FakeResponse) consoleApiParams.response()).getStatus()).isEqualTo(SC_FORBIDDEN);
     // should be no change
     assertThat(DatabaseHelper.loadByEntity(newRegistrar)).isEqualTo(newRegistrar);
   }

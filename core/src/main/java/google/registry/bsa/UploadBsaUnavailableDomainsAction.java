@@ -23,9 +23,9 @@ import static google.registry.model.tld.label.ReservedList.loadReservedLists;
 import static google.registry.persistence.transaction.TransactionManagerFactory.replicaTm;
 import static google.registry.request.Action.Method.GET;
 import static google.registry.request.Action.Method.POST;
+import static jakarta.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 
-import com.google.api.client.http.HttpStatusCodes;
 import com.google.cloud.storage.BlobId;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
@@ -190,7 +190,7 @@ public class UploadBsaUnavailableDomainsAction implements Runnable {
       return true;
     } catch (IOException e) {
       logger.atSevere().withCause(e).log("Error while attempting to upload to BSA, aborting.");
-      response.setStatus(HttpStatusCodes.STATUS_CODE_SERVER_ERROR);
+      response.setStatus(SC_INTERNAL_SERVER_ERROR);
       response.setPayload("Error while attempting to upload to BSA: " + e.getMessage());
       return false;
     }

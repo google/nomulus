@@ -173,23 +173,11 @@ PRESUBMITS = {
     ):
         "JavaScript files should not include console logging.",
     PresubmitCheck(
-        r".*org\.testcontainers\.shaded.*",
+        r".*\nimport (static )?.*\.shaded\..*",
         "java",
         {"/node_modules/"},
     ):
-        "Do not use shaded dependencies from testcontainers.",
-    PresubmitCheck(
-        r".*autovalue\.shaded.*",
-        "java",
-        {"/node_modules/"},
-    ):
-        "Do not use shaded dependencies from autovalue.",
-    PresubmitCheck(
-        r".*avro\.shaded.*",
-        "java",
-        {"/node_modules/"},
-    ):
-        "Do not use shaded dependencies from avro.",
+        "Do not use shaded dependencies",
     PresubmitCheck(
         r".*com\.google\.common\.truth\.Truth8.*",
         "java",
@@ -202,7 +190,12 @@ PRESUBMITS = {
         {"/node_modules/", "JpaTransactionManagerImpl.java"},
     ):
         "Do not use java.util.Date. Use classes in java.time package instead.",
-
+    PresubmitCheck(
+        r".*com\.google\.api\.client\.http\.HttpStatusCodes.*",
+        "java",
+        {"/node_modules/"},
+    ):
+        "Use status code from jakarta.servlet.http.HttpServletResponse.",
 }
 
 # Note that this regex only works for one kind of Flyway file.  If we want to

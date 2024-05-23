@@ -14,12 +14,12 @@
 
 package google.registry.rde;
 
-import static com.google.api.client.http.HttpStatusCodes.STATUS_CODE_BAD_REQUEST;
-import static com.google.api.client.http.HttpStatusCodes.STATUS_CODE_OK;
 import static google.registry.request.UrlConnectionUtils.getResponseBytes;
 import static google.registry.request.UrlConnectionUtils.setBasicAuth;
 import static google.registry.request.UrlConnectionUtils.setPayload;
 import static google.registry.util.DomainNameUtils.canonicalizeHostname;
+import static jakarta.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
+import static jakarta.servlet.http.HttpServletResponse.SC_OK;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.api.client.http.HttpMethods;
@@ -85,7 +85,7 @@ public class RdeReporter {
 
     try {
       responseCode = connection.getResponseCode();
-      if (responseCode != STATUS_CODE_OK && responseCode != STATUS_CODE_BAD_REQUEST) {
+      if (responseCode != SC_OK && responseCode != SC_BAD_REQUEST) {
         logger.atWarning().log("Connection to RDE report server failed: %d", responseCode);
         throw new UrlConnectionException("PUT failed", connection);
       }
@@ -96,7 +96,7 @@ public class RdeReporter {
 
     // We know that an HTTP 200 response can only contain a result code of
     // 1000 (i. e. success), there is no need to parse it.
-    if (responseCode != STATUS_CODE_OK) {
+    if (responseCode != SC_OK) {
       XjcIirdeaResult result = parseResult(responseBytes);
       logger.atWarning().log(
           "Rejected when trying to PUT RDE report to ICANN server: %d %s\n%s",

@@ -17,8 +17,8 @@ package google.registry.ui.server.console;
 import static com.google.common.base.Preconditions.checkArgument;
 import static google.registry.model.console.ConsolePermission.DOWNLOAD_DOMAINS;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+import static jakarta.servlet.http.HttpServletResponse.SC_OK;
 
-import com.google.api.client.http.HttpStatusCodes;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Ascii;
 import com.google.gson.Gson;
@@ -118,7 +118,7 @@ public class ConsoleDomainListAction extends ConsoleApiAction {
     consoleApiParams
         .response()
         .setPayload(gson.toJson(new DomainListResult(domains, checkpoint, actualTotalResults)));
-    consoleApiParams.response().setStatus(HttpStatusCodes.STATUS_CODE_OK);
+    consoleApiParams.response().setStatus(SC_OK);
   }
 
   /** Creates the query to get the total number of matching domains, interpolating as necessary. */

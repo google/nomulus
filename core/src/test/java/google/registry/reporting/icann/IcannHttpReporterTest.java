@@ -14,11 +14,11 @@
 
 package google.registry.reporting.icann;
 
-import static com.google.api.client.http.HttpStatusCodes.STATUS_CODE_BAD_REQUEST;
-import static com.google.api.client.http.HttpStatusCodes.STATUS_CODE_OK;
-import static com.google.api.client.http.HttpStatusCodes.STATUS_CODE_SERVER_ERROR;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.testing.DatabaseHelper.createTld;
+import static jakarta.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
+import static jakarta.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+import static jakarta.servlet.http.HttpServletResponse.SC_OK;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
@@ -61,7 +61,7 @@ class IcannHttpReporterTest {
     createTld("test");
     createTld("xn--abc123");
     when(connection.getOutputStream()).thenReturn(outputStream);
-    when(connection.getResponseCode()).thenReturn(STATUS_CODE_OK);
+    when(connection.getResponseCode()).thenReturn(SC_OK);
     when(connection.getInputStream()).thenReturn(IIRDEA_GOOD_XML.openBufferedStream());
     reporter.urlConnectionService = urlConnectionService;
     reporter.password = "fakePass";
@@ -99,7 +99,7 @@ class IcannHttpReporterTest {
 
   @Test
   void testFail_BadIirdeaResponse() throws Exception {
-    when(connection.getResponseCode()).thenReturn(STATUS_CODE_BAD_REQUEST);
+    when(connection.getResponseCode()).thenReturn(SC_BAD_REQUEST);
     when(connection.getErrorStream()).thenReturn(IIRDEA_BAD_XML.openBufferedStream());
     assertThat(reporter.send(FAKE_PAYLOAD, "test-transactions-201706.csv")).isFalse();
     verify(connection).getErrorStream();
@@ -107,7 +107,7 @@ class IcannHttpReporterTest {
 
   @Test
   void testFail_OtherBadHttpResponse() throws Exception {
-    when(connection.getResponseCode()).thenReturn(STATUS_CODE_SERVER_ERROR);
+    when(connection.getResponseCode()).thenReturn(SC_INTERNAL_SERVER_ERROR);
     assertThat(reporter.send(FAKE_PAYLOAD, "test-transactions-201706.csv")).isFalse();
     verify(connection, times(0)).getInputStream();
   }

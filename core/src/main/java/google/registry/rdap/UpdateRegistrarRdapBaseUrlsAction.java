@@ -14,11 +14,11 @@
 
 package google.registry.rdap;
 
-import static com.google.api.client.http.HttpStatusCodes.STATUS_CODE_OK;
 import static com.google.common.net.HttpHeaders.ACCEPT_ENCODING;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.request.UrlConnectionUtils.gUnzipBytes;
 import static google.registry.request.UrlConnectionUtils.isGZipped;
+import static jakarta.servlet.http.HttpServletResponse.SC_OK;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.collect.ImmutableMap;
@@ -114,7 +114,7 @@ public final class UpdateRegistrarRdapBaseUrlsAction implements Runnable {
     connection.setRequestProperty(ACCEPT_ENCODING, "gzip");
     String csvString;
     try {
-      if (connection.getResponseCode() != STATUS_CODE_OK) {
+      if (connection.getResponseCode() != SC_OK) {
         throw new UrlConnectionException("Failed to load RDAP base URLs from ICANN", connection);
       }
       // With GZIP encoding header in the request (see above) ICANN had still sent response in plain

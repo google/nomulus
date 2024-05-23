@@ -17,8 +17,10 @@ package google.registry.ui.server.console.settings;
 import static com.google.common.base.Preconditions.checkArgument;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.request.Action.Method.POST;
+import static jakarta.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
+import static jakarta.servlet.http.HttpServletResponse.SC_FORBIDDEN;
+import static jakarta.servlet.http.HttpServletResponse.SC_OK;
 
-import com.google.api.client.http.HttpStatusCodes;
 import google.registry.flows.certs.CertificateChecker;
 import google.registry.flows.certs.CertificateChecker.InsecureCertificateException;
 import google.registry.model.console.ConsolePermission;
@@ -70,7 +72,7 @@ public class SecurityAction extends ConsoleApiAction {
     try {
       savedRegistrar = registrarAccessor.getRegistrar(registrarId);
     } catch (RegistrarAccessDeniedException e) {
-      setFailedResponse(e.getMessage(), HttpStatusCodes.STATUS_CODE_FORBIDDEN);
+      setFailedResponse(e.getMessage(), SC_FORBIDDEN);
       return;
     }
 
@@ -104,12 +106,11 @@ public class SecurityAction extends ConsoleApiAction {
         }
       }
     } catch (InsecureCertificateException e) {
-      setFailedResponse(
-          "Invalid certificate in parameter", HttpStatusCodes.STATUS_CODE_BAD_REQUEST);
+      setFailedResponse("Invalid certificate in parameter", SC_BAD_REQUEST);
       return;
     }
 
     tm().put(updatedRegistrar.build());
-    consoleApiParams.response().setStatus(HttpStatusCodes.STATUS_CODE_OK);
+    consoleApiParams.response().setStatus(SC_OK);
   }
 }
