@@ -19,10 +19,10 @@ import static google.registry.testing.CertificateSamples.SAMPLE_CERT2;
 import static google.registry.testing.DatabaseHelper.loadRegistrar;
 import static google.registry.testing.SqlHelper.saveRegistrar;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
+import static jakarta.servlet.http.HttpServletResponse.SC_OK;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.when;
 
-import com.google.api.client.http.HttpStatusCodes;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSetMultimap;
 import com.google.common.collect.ImmutableSortedMap;
@@ -94,8 +94,7 @@ class SecurityActionTest {
                 UserAuthInfo.create(DatabaseHelper.createAdminUser("email@email.com"))),
             testRegistrar.getRegistrarId());
     action.run();
-    assertThat(((FakeResponse) consoleApiParams.response()).getStatus())
-        .isEqualTo(HttpStatusCodes.STATUS_CODE_OK);
+    assertThat(((FakeResponse) consoleApiParams.response()).getStatus()).isEqualTo(SC_OK);
     Registrar r = loadRegistrar(testRegistrar.getRegistrarId());
     assertThat(r.getClientCertificateHash().get())
         .isEqualTo("GNd6ZP8/n91t9UTnpxR8aH7aAW4+CpvufYx9ViGbcMY");

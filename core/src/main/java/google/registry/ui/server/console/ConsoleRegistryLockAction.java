@@ -24,8 +24,9 @@ import static google.registry.request.RequestParameters.extractOptionalLongParam
 import static google.registry.request.RequestParameters.extractOptionalParameter;
 import static google.registry.request.RequestParameters.extractRequiredParameter;
 import static google.registry.ui.server.registrar.RegistryLockPostAction.VERIFICATION_EMAIL_TEMPLATE;
+import static jakarta.servlet.http.HttpServletResponse.SC_OK;
+import static jakarta.servlet.http.HttpServletResponse.SC_UNAUTHORIZED;
 
-import com.google.api.client.http.HttpStatusCodes;
 import com.google.common.collect.ImmutableList;
 import com.google.gson.Gson;
 import google.registry.flows.EppException;
@@ -90,7 +91,7 @@ public class ConsoleRegistryLockAction extends ConsoleApiAction {
   protected void getHandler(User user) {
     checkPermission(user, registrarId, ConsolePermission.REGISTRY_LOCK);
     consoleApiParams.response().setPayload(gson.toJson(getLockedDomains()));
-    consoleApiParams.response().setStatus(HttpStatusCodes.STATUS_CODE_OK);
+    consoleApiParams.response().setStatus(SC_OK);
   }
 
   @Override
@@ -124,8 +125,7 @@ public class ConsoleRegistryLockAction extends ConsoleApiAction {
     if (!isAdmin) {
       checkArgument(maybePassword.isPresent(), "No password provided");
       if (!user.verifyRegistryLockPassword(maybePassword.get())) {
-        setFailedResponse(
-            "Incorrect registry lock password", HttpStatusCodes.STATUS_CODE_UNAUTHORIZED);
+        setFailedResponse("Incorrect registry lock password", SC_UNAUTHORIZED);
         return;
       }
     }
@@ -147,7 +147,7 @@ public class ConsoleRegistryLockAction extends ConsoleApiAction {
                           relockDurationMillis.map(Duration::new));
               sendVerificationEmail(registryLock, registryLockEmail, isLock);
             });
-    response.setStatus(HttpStatusCodes.STATUS_CODE_OK);
+    response.setStatus(SC_OK);
   }
 
   private void sendVerificationEmail(RegistryLock lock, String userEmail, boolean isLock) {

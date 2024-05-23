@@ -14,9 +14,12 @@
 
 package google.registry.ui.server.console;
 
+import static com.github.dockerjava.zerodep.shaded.org.apache.hc.core5.http.HttpStatus.SC_INTERNAL_SERVER_ERROR;
 import static google.registry.request.Action.Method.GET;
+import static jakarta.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
+import static jakarta.servlet.http.HttpServletResponse.SC_FORBIDDEN;
+import static jakarta.servlet.http.HttpServletResponse.SC_UNAUTHORIZED;
 
-import com.google.api.client.http.HttpStatusCodes;
 import com.google.common.base.Throwables;
 import com.google.common.flogger.FluentLogger;
 import google.registry.model.console.ConsolePermission;
@@ -50,7 +53,7 @@ public abstract class ConsoleApiAction implements Runnable {
     AuthResult authResult = consoleApiParams.authResult();
     if (authResult.userAuthInfo().isEmpty()
         || authResult.userAuthInfo().get().consoleUser().isEmpty()) {
-      consoleApiParams.response().setStatus(HttpStatusCodes.STATUS_CODE_UNAUTHORIZED);
+      consoleApiParams.response().setStatus(SC_UNAUTHORIZED);
       return;
     }
     User user = consoleApiParams.authResult().userAuthInfo().get().consoleUser().get();
@@ -77,15 +80,13 @@ public abstract class ConsoleApiAction implements Runnable {
       }
     } catch (ConsolePermissionForbiddenException e) {
       logger.atWarning().withCause(e).log("Forbidden");
-      setFailedResponse("", HttpStatusCodes.STATUS_CODE_FORBIDDEN);
+      setFailedResponse("", SC_FORBIDDEN);
     } catch (HttpException.BadRequestException | IllegalArgumentException e) {
       logger.atWarning().withCause(e).log("Error in request");
-      setFailedResponse(
-          Throwables.getRootCause(e).getMessage(), HttpStatusCodes.STATUS_CODE_BAD_REQUEST);
+      setFailedResponse(Throwables.getRootCause(e).getMessage(), SC_BAD_REQUEST);
     } catch (Throwable t) {
       logger.atWarning().withCause(t).log("Internal server error");
-      setFailedResponse(
-          Throwables.getRootCause(t).getMessage(), HttpStatusCodes.STATUS_CODE_SERVER_ERROR);
+      setFailedResponse(Throwables.getRootCause(t).getMessage(), SC_INTERNAL_SERVER_ERROR);
     }
   }
 
@@ -118,7 +119,7 @@ public abstract class ConsoleApiAction implements Runnable {
             .findFirst();
     if (maybeCookie.isEmpty()
         || !consoleApiParams.xsrfTokenManager().validateToken(maybeCookie.get().getValue())) {
-      consoleApiParams.response().setStatus(HttpStatusCodes.STATUS_CODE_UNAUTHORIZED);
+      consoleApiParams.response().setStatus(SC_UNAUTHORIZED);
       return false;
     }
     return true;

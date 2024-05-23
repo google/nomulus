@@ -21,10 +21,11 @@ import static google.registry.testing.DatabaseHelper.createAdminUser;
 import static google.registry.testing.DatabaseHelper.insertInDb;
 import static google.registry.testing.DatabaseHelper.loadAllOf;
 import static google.registry.testing.SqlHelper.saveRegistrar;
+import static jakarta.servlet.http.HttpServletResponse.SC_FORBIDDEN;
+import static jakarta.servlet.http.HttpServletResponse.SC_OK;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.when;
 
-import com.google.api.client.http.HttpStatusCodes;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.gson.Gson;
@@ -105,8 +106,7 @@ class ContactActionTest {
             testRegistrar.getRegistrarId(),
             null);
     action.run();
-    assertThat(((FakeResponse) consoleApiParams.response()).getStatus())
-        .isEqualTo(HttpStatusCodes.STATUS_CODE_OK);
+    assertThat(((FakeResponse) consoleApiParams.response()).getStatus()).isEqualTo(SC_OK);
     assertThat(((FakeResponse) consoleApiParams.response()).getPayload())
         .isEqualTo("[" + jsonRegistrar1 + "]");
   }
@@ -122,8 +122,7 @@ class ContactActionTest {
             testRegistrar.getRegistrarId(),
             null);
     action.run();
-    assertThat(((FakeResponse) consoleApiParams.response()).getStatus())
-        .isEqualTo(HttpStatusCodes.STATUS_CODE_OK);
+    assertThat(((FakeResponse) consoleApiParams.response()).getStatus()).isEqualTo(SC_OK);
     assertThat(((FakeResponse) consoleApiParams.response()).getPayload()).isEqualTo("[]");
   }
 
@@ -136,8 +135,7 @@ class ContactActionTest {
             testRegistrar.getRegistrarId(),
             "[" + jsonRegistrar1 + "," + jsonRegistrar2 + "]");
     action.run();
-    assertThat(((FakeResponse) consoleApiParams.response()).getStatus())
-        .isEqualTo(HttpStatusCodes.STATUS_CODE_OK);
+    assertThat(((FakeResponse) consoleApiParams.response()).getStatus()).isEqualTo(SC_OK);
     assertThat(
             loadAllOf(RegistrarPoc.class).stream()
                 .filter(r -> r.registrarId.equals(testRegistrar.getRegistrarId()))
@@ -157,8 +155,7 @@ class ContactActionTest {
             testRegistrar.getRegistrarId(),
             "[" + jsonRegistrar1 + "," + jsonRegistrar2 + "]");
     action.run();
-    assertThat(((FakeResponse) consoleApiParams.response()).getStatus())
-        .isEqualTo(HttpStatusCodes.STATUS_CODE_OK);
+    assertThat(((FakeResponse) consoleApiParams.response()).getStatus()).isEqualTo(SC_OK);
     HashMap<String, String> testResult = new HashMap<>();
     loadAllOf(RegistrarPoc.class).stream()
         .filter(r -> r.registrarId.equals(testRegistrar.getRegistrarId()))
@@ -181,8 +178,7 @@ class ContactActionTest {
             testRegistrar.getRegistrarId(),
             "[" + jsonRegistrar2 + "]");
     action.run();
-    assertThat(((FakeResponse) consoleApiParams.response()).getStatus())
-        .isEqualTo(HttpStatusCodes.STATUS_CODE_OK);
+    assertThat(((FakeResponse) consoleApiParams.response()).getStatus()).isEqualTo(SC_OK);
     assertThat(
             loadAllOf(RegistrarPoc.class).stream()
                 .filter(r -> r.registrarId.equals(testRegistrar.getRegistrarId()))
@@ -212,8 +208,7 @@ class ContactActionTest {
             testRegistrar.getRegistrarId(),
             "[" + jsonRegistrar2 + "]");
     action.run();
-    assertThat(((FakeResponse) consoleApiParams.response()).getStatus())
-        .isEqualTo(HttpStatusCodes.STATUS_CODE_FORBIDDEN);
+    assertThat(((FakeResponse) consoleApiParams.response()).getStatus()).isEqualTo(SC_FORBIDDEN);
   }
 
   private ContactAction createAction(

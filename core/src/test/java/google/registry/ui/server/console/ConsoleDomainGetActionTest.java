@@ -16,10 +16,12 @@ package google.registry.ui.server.console;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.testing.DatabaseHelper.createTld;
+import static jakarta.servlet.http.HttpServletResponse.SC_NOT_FOUND;
+import static jakarta.servlet.http.HttpServletResponse.SC_OK;
+import static jakarta.servlet.http.HttpServletResponse.SC_UNAUTHORIZED;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import com.google.api.client.http.HttpStatusCodes;
 import com.google.common.collect.ImmutableMap;
 import com.google.gson.Gson;
 import google.registry.model.console.RegistrarRole;
@@ -68,8 +70,7 @@ public class ConsoleDomainGetActionTest {
                             .build()))),
             "exists.tld");
     action.run();
-    assertThat(((FakeResponse) consoleApiParams.response()).getStatus())
-        .isEqualTo(HttpStatusCodes.STATUS_CODE_OK);
+    assertThat(((FakeResponse) consoleApiParams.response()).getStatus()).isEqualTo(SC_OK);
     assertThat(((FakeResponse) consoleApiParams.response()).getPayload())
         .isEqualTo(
             "{\"domainName\":\"exists.tld\",\"adminContact\":{\"key\":\"3-ROID\",\"kind\":"
@@ -88,8 +89,7 @@ public class ConsoleDomainGetActionTest {
   void testFailure_emptyAuth() {
     ConsoleDomainGetAction action = createAction(AuthResult.NOT_AUTHENTICATED, "exists.tld");
     action.run();
-    assertThat(((FakeResponse) consoleApiParams.response()).getStatus())
-        .isEqualTo(HttpStatusCodes.STATUS_CODE_UNAUTHORIZED);
+    assertThat(((FakeResponse) consoleApiParams.response()).getStatus()).isEqualTo(SC_UNAUTHORIZED);
   }
 
   @Test
@@ -97,8 +97,7 @@ public class ConsoleDomainGetActionTest {
     ConsoleDomainGetAction action =
         createAction(AuthResult.createApp("service@registry.example"), "exists.tld");
     action.run();
-    assertThat(((FakeResponse) consoleApiParams.response()).getStatus())
-        .isEqualTo(HttpStatusCodes.STATUS_CODE_UNAUTHORIZED);
+    assertThat(((FakeResponse) consoleApiParams.response()).getStatus()).isEqualTo(SC_UNAUTHORIZED);
   }
 
   @Test
@@ -109,8 +108,7 @@ public class ConsoleDomainGetActionTest {
                 UserAuthInfo.create(mock(com.google.appengine.api.users.User.class), false)),
             "exists.tld");
     action.run();
-    assertThat(((FakeResponse) consoleApiParams.response()).getStatus())
-        .isEqualTo(HttpStatusCodes.STATUS_CODE_UNAUTHORIZED);
+    assertThat(((FakeResponse) consoleApiParams.response()).getStatus()).isEqualTo(SC_UNAUTHORIZED);
   }
 
   @Test
@@ -120,8 +118,7 @@ public class ConsoleDomainGetActionTest {
             AuthResult.createUser(UserAuthInfo.create(createUser(new UserRoles.Builder().build()))),
             "exists.tld");
     action.run();
-    assertThat(((FakeResponse) consoleApiParams.response()).getStatus())
-        .isEqualTo(HttpStatusCodes.STATUS_CODE_NOT_FOUND);
+    assertThat(((FakeResponse) consoleApiParams.response()).getStatus()).isEqualTo(SC_NOT_FOUND);
   }
 
   @Test
@@ -132,8 +129,7 @@ public class ConsoleDomainGetActionTest {
                 UserAuthInfo.create(createUser(new UserRoles.Builder().setIsAdmin(true).build()))),
             "nonexistent.tld");
     action.run();
-    assertThat(((FakeResponse) consoleApiParams.response()).getStatus())
-        .isEqualTo(HttpStatusCodes.STATUS_CODE_NOT_FOUND);
+    assertThat(((FakeResponse) consoleApiParams.response()).getStatus()).isEqualTo(SC_NOT_FOUND);
   }
 
   private User createUser(UserRoles userRoles) {
