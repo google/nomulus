@@ -18,6 +18,8 @@
 gcloud compute instances create loadtest-{1..2} --machine-type g1-small \
 --image-family ubuntu-2204-lts --image-project ubuntu-os-cloud --zone us-east4-a
 
+sleep 10
+
 # Get all the created load tests instances
 HOSTS=$(gcloud compute instances list | awk '/^loadtest/ { print $5 }')
 

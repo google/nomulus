@@ -5,8 +5,11 @@ registry platform. All the below commands should be run from the merged root.
 
 ### Setting up the test instances
 
-* To create however many GCE instances you want to run on, you will need to 
-modify the `instanceSetUp.sh` file to include the correct number of instances. 
+* If you have not done s yet, you will need to set up ssh keys in your 
+[GCE metadata](https://pantheon.corp.google.com/compute/metadata?resourceTab=sshkeys):
+
+* To create however many GCE instances you want to run on, modify the 
+`instanceSetUp.sh` file to include the correct number of instances. 
 
 * Run the instance set up script to create and configure each of the GCE 
 instances to be used for load testing:
