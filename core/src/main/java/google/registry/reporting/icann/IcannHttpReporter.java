@@ -14,10 +14,10 @@
 
 package google.registry.reporting.icann;
 
-import static com.google.api.client.http.HttpStatusCodes.STATUS_CODE_OK;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.net.MediaType.CSV_UTF_8;
 import static google.registry.model.tld.Tlds.assertTldExists;
+import static jakarta.servlet.http.HttpServletResponse.SC_OK;
 
 import com.google.api.client.http.HttpMethods;
 import com.google.common.base.Ascii;
@@ -95,7 +95,7 @@ public class IcannHttpReporter {
     try {
       responseCode = connection.getResponseCode();
       content = UrlConnectionUtils.getResponseBytes(connection);
-      if (responseCode != STATUS_CODE_OK) {
+      if (responseCode != SC_OK) {
         XjcIirdeaResult result = parseResult(content);
         logger.atWarning().log(
             "PUT rejected, status code %s:\n%s\n%s",

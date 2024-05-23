@@ -15,8 +15,9 @@
 package google.registry.ui.server.console;
 
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+import static jakarta.servlet.http.HttpServletResponse.SC_NOT_FOUND;
+import static jakarta.servlet.http.HttpServletResponse.SC_OK;
 
-import com.google.api.client.http.HttpStatusCodes;
 import com.google.gson.Gson;
 import google.registry.model.EppResourceUtils;
 import google.registry.model.console.ConsolePermission;
@@ -59,16 +60,16 @@ public class ConsoleDomainGetAction extends ConsoleApiAction {
                     EppResourceUtils.loadByForeignKeyCached(
                         Domain.class, paramDomain, tm().getTransactionTime()));
     if (possibleDomain.isEmpty()) {
-      consoleApiParams.response().setStatus(HttpStatusCodes.STATUS_CODE_NOT_FOUND);
+      consoleApiParams.response().setStatus(SC_NOT_FOUND);
       return;
     }
     Domain domain = possibleDomain.get();
     if (!user.getUserRoles()
         .hasPermission(domain.getCurrentSponsorRegistrarId(), ConsolePermission.DOWNLOAD_DOMAINS)) {
-      consoleApiParams.response().setStatus(HttpStatusCodes.STATUS_CODE_NOT_FOUND);
+      consoleApiParams.response().setStatus(SC_NOT_FOUND);
       return;
     }
-    consoleApiParams.response().setStatus(HttpStatusCodes.STATUS_CODE_OK);
+    consoleApiParams.response().setStatus(SC_OK);
     consoleApiParams.response().setPayload(gson.toJson(domain));
   }
 }

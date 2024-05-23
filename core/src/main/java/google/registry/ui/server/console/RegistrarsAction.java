@@ -19,8 +19,9 @@ import static com.google.common.base.Strings.isNullOrEmpty;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.request.Action.Method.GET;
 import static google.registry.request.Action.Method.POST;
+import static jakarta.servlet.http.HttpServletResponse.SC_FORBIDDEN;
+import static jakarta.servlet.http.HttpServletResponse.SC_OK;
 
-import com.google.api.client.http.HttpStatusCodes;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Streams;
 import com.google.gson.Gson;
@@ -72,7 +73,7 @@ public class RegistrarsAction extends ConsoleApiAction {
   @Override
   protected void getHandler(User user) {
     if (!user.getUserRoles().hasGlobalPermission(ConsolePermission.VIEW_REGISTRARS)) {
-      consoleApiParams.response().setStatus(HttpStatusCodes.STATUS_CODE_FORBIDDEN);
+      consoleApiParams.response().setStatus(SC_FORBIDDEN);
       return;
     }
 
@@ -82,13 +83,13 @@ public class RegistrarsAction extends ConsoleApiAction {
             .collect(ImmutableList.toImmutableList());
 
     consoleApiParams.response().setPayload(gson.toJson(registrars));
-    consoleApiParams.response().setStatus(HttpStatusCodes.STATUS_CODE_OK);
+    consoleApiParams.response().setStatus(SC_OK);
   }
 
   @Override
   protected void postHandler(User user) {
     if (!user.getUserRoles().isAdmin()) {
-      consoleApiParams.response().setStatus(HttpStatusCodes.STATUS_CODE_FORBIDDEN);
+      consoleApiParams.response().setStatus(SC_FORBIDDEN);
       return;
     }
 

@@ -202,7 +202,12 @@ PRESUBMITS = {
         {"/node_modules/", "JpaTransactionManagerImpl.java"},
     ):
         "Do not use java.util.Date. Use classes in java.time package instead.",
-
+    PresubmitCheck(
+        r".*com\.google\.api\.client\.http\.HttpStatusCodes.*",
+        "java",
+        {"/node_modules/"},
+    ):
+        "Use status code from jakarta.servlet.http.HttpServletResponse.",
 }
 
 # Note that this regex only works for one kind of Flyway file.  If we want to

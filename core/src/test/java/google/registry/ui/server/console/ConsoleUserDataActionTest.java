@@ -16,9 +16,10 @@ package google.registry.ui.server.console;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.truth.Truth.assertThat;
+import static jakarta.servlet.http.HttpServletResponse.SC_OK;
+import static jakarta.servlet.http.HttpServletResponse.SC_UNAUTHORIZED;
 import static org.mockito.Mockito.when;
 
-import com.google.api.client.http.HttpStatusCodes;
 import com.google.gson.Gson;
 import google.registry.model.console.User;
 import google.registry.persistence.transaction.JpaTestExtensions;
@@ -67,8 +68,7 @@ class ConsoleUserDataActionTest {
     ConsoleUserDataAction action =
         createAction(Optional.of(FakeConsoleApiParams.get(Optional.of(authResult))));
     action.run();
-    assertThat(((FakeResponse) consoleApiParams.response()).getStatus())
-        .isEqualTo(HttpStatusCodes.STATUS_CODE_OK);
+    assertThat(((FakeResponse) consoleApiParams.response()).getStatus()).isEqualTo(SC_OK);
     Map jsonObject =
         GSON.fromJson(((FakeResponse) consoleApiParams.response()).getPayload(), Map.class);
     assertThat(jsonObject)
@@ -91,8 +91,7 @@ class ConsoleUserDataActionTest {
   void testFailure_notAConsoleUser() throws IOException {
     ConsoleUserDataAction action = createAction(Optional.empty());
     action.run();
-    assertThat(((FakeResponse) consoleApiParams.response()).getStatus())
-        .isEqualTo(HttpStatusCodes.STATUS_CODE_UNAUTHORIZED);
+    assertThat(((FakeResponse) consoleApiParams.response()).getStatus()).isEqualTo(SC_UNAUTHORIZED);
   }
 
   private ConsoleUserDataAction createAction(Optional<ConsoleApiParams> maybeConsoleApiParams)

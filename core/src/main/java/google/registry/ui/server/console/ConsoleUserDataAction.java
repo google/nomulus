@@ -15,8 +15,8 @@
 package google.registry.ui.server.console;
 
 import static google.registry.request.Action.Method.GET;
+import static jakarta.servlet.http.HttpServletResponse.SC_OK;
 
-import com.google.api.client.http.HttpStatusCodes;
 import com.google.common.collect.ImmutableMap;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.model.console.User;
@@ -88,6 +88,6 @@ public class ConsoleUserDataAction extends ConsoleApiAction {
                 "technicalDocsUrl", technicalDocsUrl));
 
     consoleApiParams.response().setPayload(json.toString());
-    consoleApiParams.response().setStatus(HttpStatusCodes.STATUS_CODE_OK);
+    consoleApiParams.response().setStatus(SC_OK);
   }
 }

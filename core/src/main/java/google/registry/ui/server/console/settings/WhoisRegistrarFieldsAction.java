@@ -17,8 +17,9 @@ package google.registry.ui.server.console.settings;
 import static com.google.common.base.Preconditions.checkArgument;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.request.Action.Method.POST;
+import static jakarta.servlet.http.HttpServletResponse.SC_FORBIDDEN;
+import static jakarta.servlet.http.HttpServletResponse.SC_OK;
 
-import com.google.api.client.http.HttpStatusCodes;
 import google.registry.model.console.ConsolePermission;
 import google.registry.model.console.User;
 import google.registry.model.registrar.Registrar;
@@ -73,7 +74,7 @@ public class WhoisRegistrarFieldsAction extends ConsoleApiAction {
       // reload to make sure the object has all the correct fields
       savedRegistrar = registrarAccessor.getRegistrar(providedRegistrar.getRegistrarId());
     } catch (RegistrarAccessDeniedException e) {
-      setFailedResponse(e.getMessage(), HttpStatusCodes.STATUS_CODE_FORBIDDEN);
+      setFailedResponse(e.getMessage(), SC_FORBIDDEN);
       return;
     }
 
@@ -84,6 +85,6 @@ public class WhoisRegistrarFieldsAction extends ConsoleApiAction {
     newRegistrar.setPhoneNumber(providedRegistrar.getPhoneNumber());
     newRegistrar.setFaxNumber(providedRegistrar.getFaxNumber());
     tm().put(newRegistrar.build());
-    consoleApiParams.response().setStatus(HttpStatusCodes.STATUS_CODE_OK);
+    consoleApiParams.response().setStatus(SC_OK);
   }
 }

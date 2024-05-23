@@ -20,10 +20,12 @@ import static google.registry.testing.DatabaseHelper.loadRegistrar;
 import static google.registry.testing.DatabaseHelper.persistNewRegistrar;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.SqlHelper.saveRegistrar;
+import static jakarta.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
+import static jakarta.servlet.http.HttpServletResponse.SC_FORBIDDEN;
+import static jakarta.servlet.http.HttpServletResponse.SC_OK;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.when;
 
-import com.google.api.client.http.HttpStatusCodes;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.gson.Gson;
@@ -116,8 +118,7 @@ class RegistrarsActionTest {
                     createUser(
                         new UserRoles.Builder().setGlobalRole(GlobalRole.SUPPORT_LEAD).build()))));
     action.run();
-    assertThat(((FakeResponse) consoleApiParams.response()).getStatus())
-        .isEqualTo(HttpStatusCodes.STATUS_CODE_OK);
+    assertThat(((FakeResponse) consoleApiParams.response()).getStatus()).isEqualTo(SC_OK);
     String payload = ((FakeResponse) consoleApiParams.response()).getPayload();
 
     var actualRegistrarIds =
@@ -138,8 +139,7 @@ class RegistrarsActionTest {
                 UserAuthInfo.create(
                     createUser(new UserRoles.Builder().setGlobalRole(GlobalRole.FTE).build()))));
     action.run();
-    assertThat(((FakeResponse) consoleApiParams.response()).getStatus())
-        .isEqualTo(HttpStatusCodes.STATUS_CODE_OK);
+    assertThat(((FakeResponse) consoleApiParams.response()).getStatus()).isEqualTo(SC_OK);
     String payload = ((FakeResponse) consoleApiParams.response()).getPayload();
     assertThat(
             ImmutableList.of(
@@ -159,8 +159,7 @@ class RegistrarsActionTest {
             AuthResult.createUser(
                 UserAuthInfo.create(createUser(new UserRoles.Builder().setIsAdmin(true).build()))));
     action.run();
-    assertThat(((FakeResponse) consoleApiParams.response()).getStatus())
-        .isEqualTo(HttpStatusCodes.STATUS_CODE_OK);
+    assertThat(((FakeResponse) consoleApiParams.response()).getStatus()).isEqualTo(SC_OK);
     Registrar r = loadRegistrar("regIdTest");
     assertThat(r).isNotNull();
     assertThat(
@@ -190,7 +189,7 @@ class RegistrarsActionTest {
                               createUser(new UserRoles.Builder().setIsAdmin(true).build()))));
               action.run();
               assertThat(((FakeResponse) consoleApiParams.response()).getStatus())
-                  .isEqualTo(HttpStatusCodes.STATUS_CODE_BAD_REQUEST);
+                  .isEqualTo(SC_BAD_REQUEST);
               assertThat(((FakeResponse) consoleApiParams.response()).getPayload())
                   .isEqualTo(
                       String.format(
@@ -207,8 +206,7 @@ class RegistrarsActionTest {
             AuthResult.createUser(
                 UserAuthInfo.create(createUser(new UserRoles.Builder().setIsAdmin(true).build()))));
     action.run();
-    assertThat(((FakeResponse) consoleApiParams.response()).getStatus())
-        .isEqualTo(HttpStatusCodes.STATUS_CODE_BAD_REQUEST);
+    assertThat(((FakeResponse) consoleApiParams.response()).getStatus()).isEqualTo(SC_BAD_REQUEST);
     assertThat(((FakeResponse) consoleApiParams.response()).getPayload())
         .isEqualTo("Registrar with registrarId regIdTest already exists");
   }
@@ -229,8 +227,7 @@ class RegistrarsActionTest {
                                     RegistrarRole.ACCOUNT_MANAGER_WITH_REGISTRY_LOCK))
                             .build()))));
     action.run();
-    assertThat(((FakeResponse) consoleApiParams.response()).getStatus())
-        .isEqualTo(HttpStatusCodes.STATUS_CODE_FORBIDDEN);
+    assertThat(((FakeResponse) consoleApiParams.response()).getStatus()).isEqualTo(SC_FORBIDDEN);
   }
 
   private User createUser(UserRoles userRoles) {

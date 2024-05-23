@@ -16,9 +16,10 @@ package google.registry.ui.server.console;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.testing.DatabaseHelper.createTld;
+import static jakarta.servlet.http.HttpServletResponse.SC_FORBIDDEN;
+import static jakarta.servlet.http.HttpServletResponse.SC_OK;
 import static org.mockito.Mockito.when;
 
-import com.google.api.client.http.HttpStatusCodes;
 import com.google.common.collect.ImmutableList;
 import com.google.gson.Gson;
 import google.registry.model.console.GlobalRole;
@@ -82,7 +83,7 @@ class ConsoleDumDownloadActionTest {
             "1exists.tld,2024-04-15 00:00:00.001+00,2025-02-09 00:00:00.001+00,{INACTIVE}",
             "0exists.tld,2024-04-15 00:00:00+00,2025-02-09 00:00:00+00,{INACTIVE}");
     FakeResponse response = (FakeResponse) consoleApiParams.response();
-    assertThat(response.getStatus()).isEqualTo(HttpStatusCodes.STATUS_CODE_OK);
+    assertThat(response.getStatus()).isEqualTo(SC_OK);
     ImmutableList<String> actual =
         ImmutableList.copyOf(response.getStringWriter().toString().split("\r\n"));
     assertThat(actual).containsExactlyElementsIn(expected);
@@ -99,8 +100,7 @@ class ConsoleDumDownloadActionTest {
     AuthResult authResult = AuthResult.createUser(UserAuthInfo.create(user));
     ConsoleDumDownloadAction action = createAction(Optional.of(authResult));
     action.run();
-    assertThat(((FakeResponse) consoleApiParams.response()).getStatus())
-        .isEqualTo(HttpStatusCodes.STATUS_CODE_FORBIDDEN);
+    assertThat(((FakeResponse) consoleApiParams.response()).getStatus()).isEqualTo(SC_FORBIDDEN);
   }
 
   private ConsoleDumDownloadAction createAction(Optional<AuthResult> maybeAuthResult) {
