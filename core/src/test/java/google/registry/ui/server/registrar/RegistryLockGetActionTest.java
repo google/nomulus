@@ -24,9 +24,9 @@ import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.SqlHelper.saveRegistryLock;
 import static jakarta.servlet.http.HttpServletResponse.SC_FORBIDDEN;
 import static jakarta.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+import static jakarta.servlet.http.HttpServletResponse.SC_OK;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import com.google.api.client.http.HttpStatusCodes;
 import com.google.appengine.api.users.User;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -110,7 +110,7 @@ final class RegistryLockGetActionTest {
 
     action.authResult = AuthResult.createUser(UserAuthInfo.create(consoleUser));
     action.run();
-    assertThat(response.getStatus()).isEqualTo(HttpStatusCodes.STATUS_CODE_OK);
+    assertThat(response.getStatus()).isEqualTo(SC_OK);
     assertThat(GSON.fromJson(response.getPayload(), Map.class))
         .containsExactly(
             "status",
@@ -220,7 +220,7 @@ final class RegistryLockGetActionTest {
     saveRegistryLock(unlockedLock);
 
     action.run();
-    assertThat(response.getStatus()).isEqualTo(HttpStatusCodes.STATUS_CODE_OK);
+    assertThat(response.getStatus()).isEqualTo(SC_OK);
     assertThat(GSON.fromJson(response.getPayload(), Map.class))
         .containsExactly(
             "status", "SUCCESS",

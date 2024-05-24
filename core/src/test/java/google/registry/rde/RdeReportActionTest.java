@@ -14,9 +14,6 @@
 
 package google.registry.rde;
 
-import static com.google.api.client.http.HttpStatusCodes.STATUS_CODE_BAD_REQUEST;
-import static com.google.api.client.http.HttpStatusCodes.STATUS_CODE_OK;
-import static com.google.api.client.http.HttpStatusCodes.STATUS_CODE_UNAUTHORIZED;
 import static com.google.common.net.MediaType.PLAIN_TEXT_UTF_8;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.common.Cursor.CursorType.RDE_REPORT;
@@ -26,6 +23,9 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.loadByKey;
 import static google.registry.testing.DatabaseHelper.persistResource;
+import static jakarta.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
+import static jakarta.servlet.http.HttpServletResponse.SC_OK;
+import static jakarta.servlet.http.HttpServletResponse.SC_UNAUTHORIZED;
 import static org.joda.time.Duration.standardDays;
 import static org.joda.time.Duration.standardSeconds;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -121,7 +121,7 @@ public class RdeReportActionTest {
     gcsUtils.createFromBytes(reportFile, Ghostryde.encode(REPORT_XML.read(), encryptKey));
     tm().transact(() -> RdeRevision.saveRevision("test", DateTime.parse("2006-06-06TZ"), FULL, 0));
     when(httpUrlConnection.getOutputStream()).thenReturn(connectionOutputStream);
-    when(httpUrlConnection.getResponseCode()).thenReturn(STATUS_CODE_OK);
+    when(httpUrlConnection.getResponseCode()).thenReturn(SC_OK);
     when(httpUrlConnection.getInputStream()).thenReturn(IIRDEA_GOOD_XML.openBufferedStream());
   }
 
@@ -263,7 +263,7 @@ public class RdeReportActionTest {
 
   @Test
   void testRunWithLock_badRequest_throws500WithErrorInfo() throws Exception {
-    when(httpUrlConnection.getResponseCode()).thenReturn(STATUS_CODE_BAD_REQUEST);
+    when(httpUrlConnection.getResponseCode()).thenReturn(SC_BAD_REQUEST);
     when(httpUrlConnection.getErrorStream()).thenReturn(IIRDEA_BAD_XML.openBufferedStream());
     InternalServerErrorException thrown =
         assertThrows(
@@ -274,7 +274,7 @@ public class RdeReportActionTest {
 
   @Test
   void testRunWithLock_notAuthorized() throws Exception {
-    when(httpUrlConnection.getResponseCode()).thenReturn(STATUS_CODE_UNAUTHORIZED);
+    when(httpUrlConnection.getResponseCode()).thenReturn(SC_UNAUTHORIZED);
     UrlConnectionException thrown =
         assertThrows(
             UrlConnectionException.class, () -> createAction().runWithLock(loadRdeReportCursor()));

@@ -19,6 +19,9 @@ import static google.registry.request.auth.AuthenticatedRegistrarAccessor.Role.O
 import static google.registry.testing.DatabaseHelper.loadRegistrar;
 import static google.registry.testing.DatabaseHelper.persistNewRegistrar;
 import static google.registry.testing.DatabaseHelper.persistResource;
+import static jakarta.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
+import static jakarta.servlet.http.HttpServletResponse.SC_FORBIDDEN;
+import static jakarta.servlet.http.HttpServletResponse.SC_OK;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
@@ -26,7 +29,6 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.google.api.client.http.HttpStatusCodes;
 import com.google.common.collect.ImmutableSetMultimap;
 import com.google.gson.Gson;
 import google.registry.flows.PasswordOnlyTransportCredentials;
@@ -90,8 +92,7 @@ class ConsoleEppPasswordActionTest {
   void testFailure_emptyParams() throws IOException {
     ConsoleEppPasswordAction action = createAction("", "", "", "");
     action.run();
-    assertThat(((FakeResponse) consoleApiParams.response()).getStatus())
-        .isEqualTo(HttpStatusCodes.STATUS_CODE_BAD_REQUEST);
+    assertThat(((FakeResponse) consoleApiParams.response()).getStatus()).isEqualTo(SC_BAD_REQUEST);
     assertThat(((FakeResponse) consoleApiParams.response()).getPayload())
         .isEqualTo("Missing param(s): registrarId");
   }
@@ -101,8 +102,7 @@ class ConsoleEppPasswordActionTest {
     ConsoleEppPasswordAction action =
         createAction("registrarId", "oldPassword", "newPassword", "newPasswordRepeat");
     action.run();
-    assertThat(((FakeResponse) consoleApiParams.response()).getStatus())
-        .isEqualTo(HttpStatusCodes.STATUS_CODE_BAD_REQUEST);
+    assertThat(((FakeResponse) consoleApiParams.response()).getStatus()).isEqualTo(SC_BAD_REQUEST);
     assertThat(((FakeResponse) consoleApiParams.response()).getPayload())
         .contains("New password fields don't match");
   }
@@ -112,8 +112,7 @@ class ConsoleEppPasswordActionTest {
     ConsoleEppPasswordAction action =
         createAction("registrarId", "oldPassword", "randomPasword", "randomPasword");
     action.run();
-    assertThat(((FakeResponse) consoleApiParams.response()).getStatus())
-        .isEqualTo(HttpStatusCodes.STATUS_CODE_FORBIDDEN);
+    assertThat(((FakeResponse) consoleApiParams.response()).getStatus()).isEqualTo(SC_FORBIDDEN);
     assertThat(((FakeResponse) consoleApiParams.response()).getPayload())
         .contains("Registrar password is incorrect");
   }
@@ -130,8 +129,7 @@ class ConsoleEppPasswordActionTest {
                 "Dear registrarId name,\n"
                     + "This is to confirm that your account password has been changed.",
                 new InternetAddress("testEmail@google.com")));
-    assertThat(((FakeResponse) consoleApiParams.response()).getStatus())
-        .isEqualTo(HttpStatusCodes.STATUS_CODE_OK);
+    assertThat(((FakeResponse) consoleApiParams.response()).getStatus()).isEqualTo(SC_OK);
   }
 
   @Test
@@ -139,8 +137,7 @@ class ConsoleEppPasswordActionTest {
     ConsoleEppPasswordAction action =
         createAction("registrarId", "foobar", "randomPassword", "randomPassword");
     action.run();
-    assertThat(((FakeResponse) consoleApiParams.response()).getStatus())
-        .isEqualTo(HttpStatusCodes.STATUS_CODE_OK);
+    assertThat(((FakeResponse) consoleApiParams.response()).getStatus()).isEqualTo(SC_OK);
     assertDoesNotThrow(
         () -> {
           credentials.validate(loadRegistrar("registrarId"), "randomPassword");

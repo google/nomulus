@@ -17,8 +17,10 @@ package google.registry.ui.server.console;
 import static com.google.common.base.Preconditions.checkArgument;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.request.Action.Method.POST;
+import static jakarta.servlet.http.HttpServletResponse.SC_FORBIDDEN;
+import static jakarta.servlet.http.HttpServletResponse.SC_NOT_FOUND;
+import static jakarta.servlet.http.HttpServletResponse.SC_OK;
 
-import com.google.api.client.http.HttpStatusCodes;
 import com.google.common.base.Strings;
 import com.google.gson.annotations.Expose;
 import google.registry.flows.EppException.AuthenticationErrorException;
@@ -92,14 +94,14 @@ public class ConsoleEppPasswordAction extends ConsoleApiAction {
     try {
       registrar = registrarAccessor.getRegistrar(eppRequestBody.registrarId());
     } catch (RegistrarAccessDeniedException e) {
-      setFailedResponse(e.getMessage(), HttpStatusCodes.STATUS_CODE_NOT_FOUND);
+      setFailedResponse(e.getMessage(), SC_NOT_FOUND);
       return;
     }
 
     try {
       credentials.validate(registrar, eppRequestBody.oldPassword());
     } catch (AuthenticationErrorException e) {
-      setFailedResponse(e.getMessage(), HttpStatusCodes.STATUS_CODE_FORBIDDEN);
+      setFailedResponse(e.getMessage(), SC_FORBIDDEN);
       return;
     }
 
@@ -113,7 +115,7 @@ public class ConsoleEppPasswordAction extends ConsoleApiAction {
                       new InternetAddress(registrar.getEmailAddress(), true)));
             });
 
-    consoleApiParams.response().setStatus(HttpStatusCodes.STATUS_CODE_OK);
+    consoleApiParams.response().setStatus(SC_OK);
   }
 
   public record EppPasswordData(

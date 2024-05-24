@@ -20,9 +20,9 @@ import static google.registry.testing.DatabaseHelper.createAdminUser;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistDomainAsDeleted;
+import static jakarta.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static org.mockito.Mockito.when;
 
-import com.google.api.client.http.HttpStatusCodes;
 import com.google.common.collect.Iterables;
 import com.google.gson.Gson;
 import google.registry.model.EppResourceUtils;
@@ -230,15 +230,13 @@ public class ConsoleDomainListActionTest {
   void testFailure_invalidResultsPerPage() {
     ConsoleDomainListAction action = createAction("TheRegistrar", null, 0, 0, null, null);
     action.run();
-    assertThat(((FakeResponse) consoleApiParams.response()).getStatus())
-        .isEqualTo(HttpStatusCodes.STATUS_CODE_BAD_REQUEST);
+    assertThat(((FakeResponse) consoleApiParams.response()).getStatus()).isEqualTo(SC_BAD_REQUEST);
     assertThat(((FakeResponse) consoleApiParams.response()).getPayload())
         .isEqualTo("Results per page must be between 1 and 500 inclusive");
 
     action = createAction("TheRegistrar", null, 0, 501, null, null);
     action.run();
-    assertThat(((FakeResponse) consoleApiParams.response()).getStatus())
-        .isEqualTo(HttpStatusCodes.STATUS_CODE_BAD_REQUEST);
+    assertThat(((FakeResponse) consoleApiParams.response()).getStatus()).isEqualTo(SC_BAD_REQUEST);
     assertThat(((FakeResponse) consoleApiParams.response()).getPayload())
         .isEqualTo("Results per page must be between 1 and 500 inclusive");
   }
@@ -247,8 +245,7 @@ public class ConsoleDomainListActionTest {
   void testFailure_invalidPageNumber() {
     ConsoleDomainListAction action = createAction("TheRegistrar", null, -1, 10, null, null);
     action.run();
-    assertThat(((FakeResponse) consoleApiParams.response()).getStatus())
-        .isEqualTo(HttpStatusCodes.STATUS_CODE_BAD_REQUEST);
+    assertThat(((FakeResponse) consoleApiParams.response()).getStatus()).isEqualTo(SC_BAD_REQUEST);
     assertThat(((FakeResponse) consoleApiParams.response()).getPayload())
         .isEqualTo("Page number must be non-negative");
   }

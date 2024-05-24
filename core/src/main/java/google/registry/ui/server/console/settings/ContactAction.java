@@ -19,8 +19,8 @@ import static com.google.common.collect.ImmutableList.toImmutableList;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.request.Action.Method.GET;
 import static google.registry.request.Action.Method.POST;
+import static jakarta.servlet.http.HttpServletResponse.SC_OK;
 
-import com.google.api.client.http.HttpStatusCodes;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.flogger.FluentLogger;
@@ -78,7 +78,7 @@ public class ContactAction extends ConsoleApiAction {
                         .filter(r -> !r.getTypes().isEmpty())
                         .collect(toImmutableList()));
 
-    consoleApiParams.response().setStatus(HttpStatusCodes.STATUS_CODE_OK);
+    consoleApiParams.response().setStatus(SC_OK);
     consoleApiParams.response().setPayload(gson.toJson(am));
   }
 
@@ -112,6 +112,6 @@ public class ContactAction extends ConsoleApiAction {
     }
 
     RegistrarPoc.updateContacts(registrar, updatedContacts);
-    consoleApiParams.response().setStatus(HttpStatusCodes.STATUS_CODE_OK);
+    consoleApiParams.response().setStatus(SC_OK);
   }
 }
