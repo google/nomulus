@@ -14,6 +14,11 @@
 
   <servlet-mapping>
     <servlet-name>tools-servlet</servlet-name>
+    <url-pattern>/_dr/admin/updateUserGroup</url-pattern>
+  </servlet-mapping>
+
+  <servlet-mapping>
+    <servlet-name>tools-servlet</servlet-name>
     <url-pattern>/_dr/admin/verifyOte</url-pattern>
   </servlet-mapping>
 

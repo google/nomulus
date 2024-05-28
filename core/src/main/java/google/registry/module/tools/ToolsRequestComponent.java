@@ -36,6 +36,7 @@ import google.registry.tools.server.ListReservedListsAction;
 import google.registry.tools.server.ListTldsAction;
 import google.registry.tools.server.RefreshDnsForAllDomainsAction;
 import google.registry.tools.server.ToolsServerModule;
+import google.registry.tools.server.UpdateUserGroupAction;
 import google.registry.tools.server.VerifyOteAction;
 
 /** Dagger component with per-request lifetime for "tools" App Engine module. */
@@ -50,9 +51,10 @@ import google.registry.tools.server.VerifyOteAction;
       WhiteboxModule.class,
     })
 public interface ToolsRequestComponent {
+  FlowComponent.Builder flowComponentBuilder();
+
   CreateGroupsAction createGroupsAction();
   EppToolAction eppToolAction();
-  FlowComponent.Builder flowComponentBuilder();
   GenerateZoneFilesAction generateZoneFilesAction();
   ListDomainsAction listDomainsAction();
   ListHostsAction listHostsAction();
@@ -62,6 +64,9 @@ public interface ToolsRequestComponent {
   ListTldsAction listTldsAction();
   LoadTestAction loadTestAction();
   RefreshDnsForAllDomainsAction refreshDnsForAllDomainsAction();
+
+  UpdateUserGroupAction updateUserGroupAction();
+
   VerifyOteAction verifyOteAction();
 
   @Subcomponent.Builder

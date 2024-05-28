@@ -36,8 +36,8 @@ import google.registry.model.tld.Tld;
 import google.registry.model.tld.label.ReservedList;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
-import google.registry.request.Response;
 import google.registry.storage.drive.DriveConnection;
+import google.registry.testing.FakeResponse;
 import java.io.IOException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -50,7 +50,7 @@ public class ExportReservedTermsActionTest {
   JpaIntegrationTestExtension jpa = new JpaTestExtensions.Builder().buildIntegrationTestExtension();
 
   private final DriveConnection driveConnection = mock(DriveConnection.class);
-  private final Response response = mock(Response.class);
+  private final FakeResponse response = new FakeResponse();
 
   private void runAction(String tld) {
     ExportReservedTermsAction action = new ExportReservedTermsAction();
@@ -63,18 +63,13 @@ public class ExportReservedTermsActionTest {
 
   @BeforeEach
   void beforeEach() throws Exception {
-    ReservedList rl = persistReservedList(
-        "tld-reserved",
-        "lol,FULLY_BLOCKED",
-        "cat,FULLY_BLOCKED");
+    ReservedList rl = persistReservedList("tld-reserved", "lol,FULLY_BLOCKED", "cat,FULLY_BLOCKED");
     createTld("tld");
     persistResource(
         Tld.get("tld").asBuilder().setReservedLists(rl).setDriveFolderId("brouhaha").build());
     when(driveConnection.createOrUpdateFile(
-        anyString(),
-        any(MediaType.class),
-        anyString(),
-        any(byte[].class))).thenReturn("1001");
+            anyString(), any(MediaType.class), anyString(), any(byte[].class)))
+        .thenReturn("1001");
   }
 
   @Test
@@ -83,8 +78,8 @@ public class ExportReservedTermsActionTest {
     byte[] expected = "# This is a disclaimer.\ncat\nlol\n".getBytes(UTF_8);
     verify(driveConnection)
         .createOrUpdateFile(RESERVED_TERMS_FILENAME, EXPORT_MIME_TYPE, "brouhaha", expected);
-    verify(response).setStatus(SC_OK);
-    verify(response).setPayload("1001");
+    assertThat(response.getStatus()).isEqualTo(SC_OK);
+    assertThat(response.getPayload()).isEqualTo("1001");
   }
 
   @Test
@@ -96,35 +91,33 @@ public class ExportReservedTermsActionTest {
             .setDriveFolderId(null)
             .build());
     runAction("tld");
-    verify(response).setStatus(SC_OK);
-    verify(response).setPayload("No reserved lists configured");
+    assertThat(response.getStatus()).isEqualTo(SC_OK);
+    assertThat(response.getPayload()).isEqualTo("No reserved lists configured");
   }
 
   @Test
   void test_uploadFileToDrive_doesNothingWhenDriveFolderIdIsNull() {
     persistResource(Tld.get("tld").asBuilder().setDriveFolderId(null).build());
     runAction("tld");
-    verify(response).setStatus(SC_OK);
-    verify(response)
-        .setPayload("Skipping export because no Drive folder is associated with this TLD");
+    assertThat(response.getStatus()).isEqualTo(SC_OK);
+    assertThat(response.getPayload())
+        .isEqualTo("Skipping export because no Drive folder is associated with this TLD");
   }
 
   @Test
   void test_uploadFileToDrive_failsWhenDriveCannotBeReached() throws Exception {
     when(driveConnection.createOrUpdateFile(
-        anyString(),
-        any(MediaType.class),
-        anyString(),
-        any(byte[].class))).thenThrow(new IOException("errorMessage"));
+            anyString(), any(MediaType.class), anyString(), any(byte[].class)))
+        .thenThrow(new IOException("errorMessage"));
     RuntimeException thrown = assertThrows(RuntimeException.class, () -> runAction("tld"));
-    verify(response).setStatus(SC_INTERNAL_SERVER_ERROR);
+    assertThat(response.getStatus()).isEqualTo(SC_INTERNAL_SERVER_ERROR);
     assertThat(thrown).hasCauseThat().hasMessageThat().isEqualTo("errorMessage");
   }
 
   @Test
   void test_uploadFileToDrive_failsWhenTldDoesntExist() {
     RuntimeException thrown = assertThrows(RuntimeException.class, () -> runAction("fakeTld"));
-    verify(response).setStatus(SC_INTERNAL_SERVER_ERROR);
+    assertThat(response.getStatus()).isEqualTo(SC_INTERNAL_SERVER_ERROR);
     assertThat(thrown)
         .hasCauseThat()
         .hasMessageThat()
