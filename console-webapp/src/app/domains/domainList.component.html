@@ -1,18 +1,6 @@
 <app-selected-registrar-wrapper>
   <div class="console-domains">
     <h1 class="mat-headline-4">Domains</h1>
-    @if (totalResults === 0) {
-    <div class="console-app__empty-domains">
-      <h1>
-        <mat-icon class="console-app__empty-domains-icon secondary-text"
-          >apps_outage</mat-icon
-        >
-      </h1>
-      <h1>No domains found</h1>
-    </div>
-    } @else if(isLoading) {
-    <mat-progress-bar mode="indeterminate"></mat-progress-bar>
-    } @else {
     <a
       mat-stroked-button
       color="primary"
@@ -31,9 +19,24 @@
         matInput
         [(ngModel)]="searchTerm"
         (ngModelChange)="sendInput()"
+        [disabled]="isLoading"
         #input
       />
     </mat-form-field>
+    @if (isLoading) {
+    <div class="console-app__domains-spinner">
+      <mat-spinner />
+    </div>
+    } @else if (totalResults === 0) {
+    <div class="console-app__empty-domains">
+      <h1>
+        <mat-icon class="console-app__empty-domains-icon secondary-text"
+          >apps_outage</mat-icon
+        >
+      </h1>
+      <h1>No domains found</h1>
+    </div>
+    } @else {
     <mat-table
       [dataSource]="dataSource"
       class="mat-elevation-z0"

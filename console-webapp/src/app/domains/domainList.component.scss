@@ -35,6 +35,11 @@
     min-width: $min-width !important;
   }
 
+  &__domains-spinner {
+    display: flex;
+    justify-content: center;
+  }
+
   .mat-mdc-paginator {
     min-width: $min-width !important;
   }
