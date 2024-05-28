@@ -287,6 +287,15 @@ public final class DomainPricingLogic {
         Optional.empty());
   }
 
+  /**
+   * Returns the domain creation or renewal cost for the given number of {@code years}.
+   *
+   * <p>For domain creation, {@code firstYearCost} is the creation cost while {@code
+   * subsequentYearCost} is the single-year renewal cost (which is guaranteed to be present).
+   *
+   * <p>For domain renewal, {@code firstYearCost} is the single-year renewal cost and {@code
+   * subsequentYearCost} should be empty.
+   */
   private Money getDomainCostWithDiscount(
       boolean isPremium,
       int years,
@@ -294,21 +303,22 @@ public final class DomainPricingLogic {
       Money firstYearCost,
       Optional<Money> subsequentYearCost)
       throws AllocationTokenInvalidForPremiumNameException {
-    checkArgument(years > 0, "Domain creation/renew for zero years.");
+    checkArgument(years > 0, "Registration years to get cost for must be positive.");
     validateTokenForPossiblePremiumName(allocationToken, isPremium);
     Money totalDomainFlowCost =
         firstYearCost.plus(subsequentYearCost.orElse(firstYearCost).multipliedBy(years - 1));
 
     // Apply the allocation token discount, if applicable.
-    int discountedYears;
     if (allocationToken.isPresent()
-        && allocationToken.get().getTokenBehavior().equals(TokenBehavior.DEFAULT)
-        && (discountedYears = Math.min(years, allocationToken.get().getDiscountYears())) > 0) {
-      var discount =
-          firstYearCost
-              .plus(subsequentYearCost.orElse(firstYearCost).multipliedBy(discountedYears - 1))
-              .multipliedBy(allocationToken.get().getDiscountFraction(), RoundingMode.HALF_EVEN);
-      totalDomainFlowCost = totalDomainFlowCost.minus(discount);
+        && allocationToken.get().getTokenBehavior().equals(TokenBehavior.DEFAULT)) {
+      int discountedYears = Math.min(years, allocationToken.get().getDiscountYears());
+      if (discountedYears > 0) {
+        var discount =
+            firstYearCost
+                .plus(subsequentYearCost.orElse(firstYearCost).multipliedBy(discountedYears - 1))
+                .multipliedBy(allocationToken.get().getDiscountFraction(), RoundingMode.HALF_EVEN);
+        totalDomainFlowCost = totalDomainFlowCost.minus(discount);
+      }
     }
     return totalDomainFlowCost;
   }
