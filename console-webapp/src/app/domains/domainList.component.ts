@@ -59,6 +59,8 @@ export class DomainListComponent {
   ) {
     effect(() => {
       if (this.registrarService.registrarId()) {
+        this.pageNumber = 0;
+        this.totalResults = 0;
         this.reloadData();
       }
     });
