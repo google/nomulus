@@ -44,7 +44,7 @@ class GcpJsonFormatterTest {
 
   private static final String LOG_TEMPLATE =
       """
-      {"severity":"@@SEVERITY@@","logging.googleapis.com/sourceLocation":{"file":"GcpJsonFormatterTest.java","line":"@@LINE@@","function":"google.registry.util.GcpJsonFormatterTest.@@FUNCTION@@"},"message":"\\n@@MESSAGE@@"}
+      {"severity":"@@SEVERITY@@","logging.googleapis.com/sourceLocation":{"file":"GcpJsonFormatterTest.java","line":"@@LINE@@","function":"google.registry.util.GcpJsonFormatterTest.@@FUNCTION@@"},"message":"@@MESSAGE@@"}
       """;
 
   private static String makeJson(String severity, int line, String function, String message) {
