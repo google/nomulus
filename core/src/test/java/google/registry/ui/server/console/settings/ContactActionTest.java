@@ -16,7 +16,9 @@ package google.registry.ui.server.console.settings;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.truth.Truth.assertThat;
+import static google.registry.model.registrar.RegistrarPocBase.Type.ADMIN;
 import static google.registry.model.registrar.RegistrarPocBase.Type.WHOIS;
+import static google.registry.request.auth.AuthenticatedRegistrarAccessor.Role.OWNER;
 import static google.registry.testing.DatabaseHelper.createAdminUser;
 import static google.registry.testing.DatabaseHelper.insertInDb;
 import static google.registry.testing.DatabaseHelper.loadAllOf;
@@ -28,6 +30,7 @@ import static org.mockito.Mockito.when;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.ImmutableSetMultimap;
 import com.google.gson.Gson;
 import google.registry.model.console.RegistrarRole;
 import google.registry.model.console.User;
@@ -39,6 +42,7 @@ import google.registry.request.Action;
 import google.registry.request.RequestModule;
 import google.registry.request.auth.AuthResult;
 import google.registry.testing.ConsoleApiParamsUtils;
+import google.registry.request.auth.AuthenticatedRegistrarAccessor;
 import google.registry.testing.FakeResponse;
 import google.registry.ui.server.registrar.ConsoleApiParams;
 import google.registry.ui.server.registrar.RegistrarConsoleModule;
@@ -58,7 +62,7 @@ class ContactActionTest {
           + "\"emailAddress\":\"test.registrar1@example.com\","
           + "\"registrarId\":\"registrarId\","
           + "\"phoneNumber\":\"+1.9999999999\",\"faxNumber\":\"+1.9999999991\","
-          + "\"types\":[\"WHOIS\"],\"visibleInWhoisAsAdmin\":true,"
+          + "\"types\":[\"WHOIS\",\"ADMIN\"],\"visibleInWhoisAsAdmin\":true,"
           + "\"visibleInWhoisAsTech\":false,\"visibleInDomainWhoisAsAbuse\":false}";
 
   private static String jsonRegistrar2 =
@@ -66,7 +70,7 @@ class ContactActionTest {
           + "\"emailAddress\":\"test.registrar2@example.com\","
           + "\"registrarId\":\"registrarId\","
           + "\"phoneNumber\":\"+1.1234567890\",\"faxNumber\":\"+1.1234567891\","
-          + "\"types\":[\"WHOIS\"],\"visibleInWhoisAsAdmin\":true,"
+          + "\"types\":[\"WHOIS\",\"ADMIN\"],\"visibleInWhoisAsAdmin\":true,"
           + "\"visibleInWhoisAsTech\":false,\"visibleInDomainWhoisAsAbuse\":false}";
 
   private Registrar testRegistrar;
@@ -88,7 +92,7 @@ class ContactActionTest {
             .setEmailAddress("test.registrar1@example.com")
             .setPhoneNumber("+1.9999999999")
             .setFaxNumber("+1.9999999991")
-            .setTypes(ImmutableSet.of(WHOIS))
+            .setTypes(ImmutableSet.of(WHOIS, ADMIN))
             .setVisibleInWhoisAsAdmin(true)
             .setVisibleInWhoisAsTech(false)
             .setVisibleInDomainWhoisAsAbuse(false)
@@ -127,6 +131,7 @@ class ContactActionTest {
 
   @Test
   void testSuccess_postCreateContactInfo() throws IOException {
+    insertInDb(testRegistrarPoc);
     ContactAction action =
         createAction(
             Action.Method.POST,
@@ -213,8 +218,12 @@ class ContactActionTest {
       throws IOException {
     consoleApiParams = ConsoleApiParamsUtils.createFake(authResult);
     when(consoleApiParams.request().getMethod()).thenReturn(method.toString());
+    AuthenticatedRegistrarAccessor authenticatedRegistrarAccessor =
+        AuthenticatedRegistrarAccessor.createForTesting(
+            ImmutableSetMultimap.of("registrarId", OWNER));
     if (method.equals(Action.Method.GET)) {
-      return new ContactAction(consoleApiParams, GSON, registrarId, Optional.empty());
+      return new ContactAction(
+          consoleApiParams, GSON, authenticatedRegistrarAccessor, registrarId, Optional.empty());
     } else {
       doReturn(new BufferedReader(new StringReader(contacts)))
           .when(consoleApiParams.request())
@@ -222,7 +231,8 @@ class ContactActionTest {
       Optional<ImmutableSet<RegistrarPoc>> maybeContacts =
           RegistrarConsoleModule.provideContacts(
               GSON, RequestModule.provideJsonBody(consoleApiParams.request(), GSON));
-      return new ContactAction(consoleApiParams, GSON, registrarId, maybeContacts);
+      return new ContactAction(
+          consoleApiParams, GSON, authenticatedRegistrarAccessor, registrarId, maybeContacts);
     }
   }
 }

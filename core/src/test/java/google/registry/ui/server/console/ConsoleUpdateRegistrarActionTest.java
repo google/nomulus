@@ -17,19 +17,16 @@ package google.registry.ui.server.console;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.registrar.RegistrarPocBase.Type.WHOIS;
 import static google.registry.testing.DatabaseHelper.createTlds;
-import static google.registry.testing.DatabaseHelper.persistNewRegistrar;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static jakarta.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static jakarta.servlet.http.HttpServletResponse.SC_OK;
 import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.gson.Gson;
-import google.registry.groups.GmailClient;
 import google.registry.model.console.GlobalRole;
 import google.registry.model.console.User;
 import google.registry.model.console.UserRoles;
@@ -73,8 +70,6 @@ class ConsoleUpdateRegistrarActionTest {
   private static String registrarPostData =
       "{\"registrarId\":\"%s\",\"allowedTlds\":[%s],\"registryLockAllowed\":%s}";
 
-  private GmailClient gmailClient = mock(GmailClient.class);
-
   @RegisterExtension
   @Order(Integer.MAX_VALUE)
   final SystemPropertyExtension systemPropertyExtension = new SystemPropertyExtension();
@@ -82,17 +77,17 @@ class ConsoleUpdateRegistrarActionTest {
   @BeforeEach
   void beforeEach() throws Exception {
     createTlds("app", "dev");
-    registrar = persistNewRegistrar("registrarId");
+    registrar = Registrar.loadByRegistrarId("TheRegistrar").get();
     persistResource(
         registrar
             .asBuilder()
             .setType(RegistrarBase.Type.REAL)
-            .setEmailAddress("testEmail@google.com")
+            .setAllowedTlds(ImmutableSet.of())
+            .setRegistryLockAllowed(false)
             .build());
     user =
         new User.Builder()
             .setEmailAddress("user@registrarId.com")
-            .setRegistryLockEmailAddress("registryedit@registrarId.com")
             .setUserRoles(new UserRoles.Builder().setGlobalRole(GlobalRole.FTE).build())
             .build();
     consoleApiParams = createParams();
@@ -104,9 +99,9 @@ class ConsoleUpdateRegistrarActionTest {
 
   @Test
   void testSuccess__updatesRegistrar() throws IOException {
-    var action = createAction(String.format(registrarPostData, "registrarId", "app, dev", false));
+    var action = createAction(String.format(registrarPostData, "TheRegistrar", "app, dev", false));
     action.run();
-    Registrar newRegistrar = Registrar.loadByRegistrarId("registrarId").get();
+    Registrar newRegistrar = Registrar.loadByRegistrarId("TheRegistrar").get();
     assertThat(newRegistrar.getAllowedTlds()).containsExactly("app", "dev");
     assertThat(newRegistrar.isRegistryLockAllowed()).isFalse();
     assertThat(((FakeResponse) consoleApiParams.response()).getStatus()).isEqualTo(SC_OK);
@@ -115,7 +110,7 @@ class ConsoleUpdateRegistrarActionTest {
   @Test
   void testFails__missingWhoisContact() throws IOException {
     RegistryEnvironment.PRODUCTION.setup(systemPropertyExtension);
-    var action = createAction(String.format(registrarPostData, "registrarId", "app, dev", false));
+    var action = createAction(String.format(registrarPostData, "TheRegistrar", "app, dev", false));
     action.run();
     assertThat(((FakeResponse) consoleApiParams.response()).getStatus()).isEqualTo(SC_BAD_REQUEST);
     assertThat((String) ((FakeResponse) consoleApiParams.response()).getPayload())
@@ -138,9 +133,9 @@ class ConsoleUpdateRegistrarActionTest {
             .setVisibleInDomainWhoisAsAbuse(true)
             .build();
     persistResource(contact);
-    var action = createAction(String.format(registrarPostData, "registrarId", "app, dev", false));
+    var action = createAction(String.format(registrarPostData, "TheRegistrar", "app, dev", false));
     action.run();
-    Registrar newRegistrar = Registrar.loadByRegistrarId("registrarId").get();
+    Registrar newRegistrar = Registrar.loadByRegistrarId("TheRegistrar").get();
     assertThat(newRegistrar.getAllowedTlds()).containsExactly("app", "dev");
     assertThat(newRegistrar.isRegistryLockAllowed()).isFalse();
     assertThat(((FakeResponse) consoleApiParams.response()).getStatus()).isEqualTo(SC_OK);
@@ -148,15 +143,17 @@ class ConsoleUpdateRegistrarActionTest {
 
   @Test
   void testSuccess__sendsEmail() throws AddressException, IOException {
-    var action = createAction(String.format(registrarPostData, "registrarId", "app, dev", false));
+    var action = createAction(String.format(registrarPostData, "TheRegistrar", "app, dev", false));
     action.run();
-    verify(gmailClient, times(1))
+    verify(consoleApiParams.gmailClient(), times(1))
         .sendEmail(
             EmailMessage.create(
-                "Registrar registrarId has been updated",
-                "The following changes were made in registry UNITTEST environment to the registrar"
-                    + " registrarId:/nAllowed TLDs: [] -> [app, dev]",
-                new InternetAddress("testEmail@google.com")));
+                "Registrar The Registrar (TheRegistrar) updated in registry unittest environment",
+                "The following changes were made in registry unittest environment to the registrar"
+                    + " TheRegistrar by user user@registrarId.com:\n"
+                    + "\n"
+                    + "allowedTlds: null -> [app, dev]\n",
+                new InternetAddress("johndoe@theregistrar.com")));
   }
 
   private ConsoleApiParams createParams() {
@@ -172,7 +169,6 @@ class ConsoleUpdateRegistrarActionTest {
     Optional<Registrar> maybeRegistrarUpdateData =
         RegistrarConsoleModule.provideRegistrar(
             GSON, RequestModule.provideJsonBody(consoleApiParams.request(), GSON));
-    return new ConsoleUpdateRegistrarAction(
-        consoleApiParams, gmailClient, maybeRegistrarUpdateData);
+    return new ConsoleUpdateRegistrarAction(consoleApiParams, maybeRegistrarUpdateData);
   }
 }

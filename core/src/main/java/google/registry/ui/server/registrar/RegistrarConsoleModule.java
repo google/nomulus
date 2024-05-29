@@ -24,6 +24,7 @@ import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import dagger.Module;
 import dagger.Provides;
+import google.registry.groups.GmailClient;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarPoc;
 import google.registry.request.OptionalJsonPayload;
@@ -48,8 +49,9 @@ public final class RegistrarConsoleModule {
       HttpServletRequest request,
       Response response,
       AuthResult authResult,
+      GmailClient gmailClient,
       XsrfTokenManager xsrfTokenManager) {
-    return ConsoleApiParams.create(request, response, authResult, xsrfTokenManager);
+    return ConsoleApiParams.create(request, response, authResult, gmailClient, xsrfTokenManager);
   }
 
   @Provides

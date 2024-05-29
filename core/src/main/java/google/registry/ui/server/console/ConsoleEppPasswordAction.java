@@ -22,10 +22,10 @@ import static jakarta.servlet.http.HttpServletResponse.SC_NOT_FOUND;
 import static jakarta.servlet.http.HttpServletResponse.SC_OK;
 
 import com.google.common.base.Strings;
+import com.google.common.collect.ImmutableMap;
 import com.google.gson.annotations.Expose;
 import google.registry.flows.EppException.AuthenticationErrorException;
 import google.registry.flows.PasswordOnlyTransportCredentials;
-import google.registry.groups.GmailClient;
 import google.registry.model.console.User;
 import google.registry.model.registrar.Registrar;
 import google.registry.request.Action;
@@ -34,10 +34,9 @@ import google.registry.request.auth.Auth;
 import google.registry.request.auth.AuthenticatedRegistrarAccessor;
 import google.registry.request.auth.AuthenticatedRegistrarAccessor.RegistrarAccessDeniedException;
 import google.registry.ui.server.registrar.ConsoleApiParams;
-import google.registry.util.EmailMessage;
+import google.registry.util.DiffUtils;
 import java.util.Optional;
 import javax.inject.Inject;
-import javax.mail.internet.InternetAddress;
 
 @Action(
     service = Action.Service.DEFAULT,
@@ -45,16 +44,12 @@ import javax.mail.internet.InternetAddress;
     method = {POST},
     auth = Auth.AUTH_PUBLIC_LOGGED_IN)
 public class ConsoleEppPasswordAction extends ConsoleApiAction {
-  protected static final String EMAIL_SUBJ = "EPP password update confirmation";
-  protected static final String EMAIL_BODY =
-      "Dear %s,\n" + "This is to confirm that your account password has been changed.";
 
   public static final String PATH = "/console-api/eppPassword";
 
   private final PasswordOnlyTransportCredentials credentials =
       new PasswordOnlyTransportCredentials();
   private final AuthenticatedRegistrarAccessor registrarAccessor;
-  private final GmailClient gmailClient;
 
   private final Optional<EppPasswordData> eppPasswordChangeRequest;
 
@@ -62,11 +57,9 @@ public class ConsoleEppPasswordAction extends ConsoleApiAction {
   public ConsoleEppPasswordAction(
       ConsoleApiParams consoleApiParams,
       AuthenticatedRegistrarAccessor registrarAccessor,
-      GmailClient gmailClient,
       @Parameter("eppPasswordChangeRequest") Optional<EppPasswordData> eppPasswordChangeRequest) {
     super(consoleApiParams);
     this.registrarAccessor = registrarAccessor;
-    this.gmailClient = gmailClient;
     this.eppPasswordChangeRequest = eppPasswordChangeRequest;
   }
 
@@ -107,12 +100,17 @@ public class ConsoleEppPasswordAction extends ConsoleApiAction {
 
     tm().transact(
             () -> {
-              tm().put(registrar.asBuilder().setPassword(eppRequestBody.newPassword()).build());
-              this.gmailClient.sendEmail(
-                  EmailMessage.create(
-                      EMAIL_SUBJ,
-                      String.format(EMAIL_BODY, registrar.getRegistrarName()),
-                      new InternetAddress(registrar.getEmailAddress(), true)));
+              Registrar updatedRegistrar =
+                  registrar.asBuilder().setPassword(eppRequestBody.newPassword()).build();
+              tm().put(updatedRegistrar);
+              sendExternalUpdatesIfNecessary(
+                  EmailInfo.create(
+                      registrar,
+                      updatedRegistrar,
+                      registrar.getContacts(),
+                      registrar.getContacts()),
+                  Optional.of(
+                      ImmutableMap.of("password", new DiffUtils.DiffPair("********", "••••••••"))));
             });
 
     consoleApiParams.response().setStatus(SC_OK);

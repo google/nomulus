@@ -17,6 +17,7 @@ package google.registry.testing;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import google.registry.groups.GmailClient;
 import google.registry.model.console.User;
 import google.registry.request.auth.AuthResult;
 import google.registry.security.XsrfTokenManager;
@@ -29,6 +30,7 @@ public final class ConsoleApiParamsUtils {
 
   public static ConsoleApiParams createFake(AuthResult authResult) {
     HttpServletRequest request = mock(HttpServletRequest.class);
+    GmailClient gmailClient = mock(GmailClient.class);
     XsrfTokenManager xsrfTokenManager =
         new XsrfTokenManager(new FakeClock(DateTime.parse("2020-02-02T01:23:45Z")));
     when(request.getCookies())
@@ -39,6 +41,7 @@ public final class ConsoleApiParamsUtils {
                   xsrfTokenManager.generateToken(
                       authResult.user().map(User::getEmailAddress).orElse("")))
             });
-    return ConsoleApiParams.create(request, new FakeResponse(), authResult, xsrfTokenManager);
+    return ConsoleApiParams.create(
+        request, new FakeResponse(), authResult, gmailClient, xsrfTokenManager);
   }
 }

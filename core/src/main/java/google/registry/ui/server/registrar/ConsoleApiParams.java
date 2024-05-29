@@ -14,6 +14,7 @@
 
 package google.registry.ui.server.registrar;
 
+import google.registry.groups.GmailClient;
 import google.registry.request.Response;
 import google.registry.request.auth.AuthResult;
 import google.registry.security.XsrfTokenManager;
@@ -24,12 +25,14 @@ public record ConsoleApiParams(
     HttpServletRequest request,
     Response response,
     AuthResult authResult,
+    GmailClient gmailClient,
     XsrfTokenManager xsrfTokenManager) {
   public static ConsoleApiParams create(
       HttpServletRequest request,
       Response response,
       AuthResult authResult,
+      GmailClient gmailClient,
       XsrfTokenManager xsrfTokenManager) {
-    return new ConsoleApiParams(request, response, authResult, xsrfTokenManager);
+    return new ConsoleApiParams(request, response, authResult, gmailClient, xsrfTokenManager);
   }
 }
