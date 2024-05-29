@@ -101,11 +101,6 @@ public class GcpJsonFormatter extends Formatter {
 
   @Override
   public String format(LogRecord record) {
-    // Add an extra newline before the message for better displaying of multi-line logs. To see the
-    // correctly indented multi-line logs, expand the log and look for the textPayload field. This
-    // newline makes sure that the entire message starts on its own line, so that indentation within
-    // the message is correct.
-
     String severity = severityFor(record.getLevel());
 
     // The rest is mostly lifted from java.util.logging.SimpleFormatter.
@@ -119,7 +114,7 @@ public class GcpJsonFormatter extends Formatter {
       throwable = sw.toString();
     }
 
-    String message = '\n' + formatMessage(record);
+    String message = formatMessage(record);
 
     String function = "";
     if (record.getSourceClassName() != null) {
