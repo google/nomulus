@@ -155,6 +155,13 @@ public enum Fixture {
               .build());
 
       persistResource(
+          DatabaseHelper.newDomain("newregistrar.example")
+              .asBuilder()
+              .setPersistedCurrentSponsorRegistrarId("NewRegistrar")
+              .setCreationRegistrarId("NewRegistrar")
+              .build());
+
+      persistResource(
           loadRegistrar("TheRegistrar")
               .asBuilder()
               .setAllowedTlds(ImmutableSet.of("example", "xn--q9jyb4c"))
