@@ -711,7 +711,7 @@ class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, Domain> {
             "COMMAND", "create",
             "DESCRIPTION", "create",
             "PERIOD", "2",
-            "FEE", "26.00"),
+            "FEE", "24.00"),
         true);
   }
 

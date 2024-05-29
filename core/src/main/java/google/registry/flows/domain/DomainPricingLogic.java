@@ -159,7 +159,11 @@ public final class DomainPricingLogic {
         case NONPREMIUM -> {
           renewCost =
               getDomainCostWithDiscount(
-                  false, years, allocationToken, tld.getStandardRenewCost(dateTime));
+                  false,
+                  years,
+                  allocationToken,
+                  tld.getStandardRenewCost(dateTime),
+                  Optional.empty());
           isRenewCostPremiumPrice = false;
         }
         default ->
@@ -252,7 +256,11 @@ public final class DomainPricingLogic {
       DomainPrices domainPrices, int years, Optional<AllocationToken> allocationToken)
       throws EppException {
     return getDomainCostWithDiscount(
-        domainPrices.isPremium(), years, allocationToken, domainPrices.getCreateCost());
+        domainPrices.isPremium(),
+        years,
+        allocationToken,
+        domainPrices.getCreateCost(),
+        Optional.of(domainPrices.getRenewCost()));
   }
 
   /** Returns the domain renew cost with allocation-token-related discounts applied. */
@@ -272,24 +280,45 @@ public final class DomainPricingLogic {
       }
     }
     return getDomainCostWithDiscount(
-        domainPrices.isPremium(), years, allocationToken, domainPrices.getRenewCost());
+        domainPrices.isPremium(),
+        years,
+        allocationToken,
+        domainPrices.getRenewCost(),
+        Optional.empty());
   }
 
+  /**
+   * Returns the domain creation or renewal cost for the given number of {@code years}.
+   *
+   * <p>For domain creation, {@code firstYearCost} is the creation cost while {@code
+   * subsequentYearCost} is the single-year renewal cost (which is guaranteed to be present).
+   *
+   * <p>For domain renewal, {@code firstYearCost} is the single-year renewal cost and {@code
+   * subsequentYearCost} should be empty.
+   */
   private Money getDomainCostWithDiscount(
-      boolean isPremium, int years, Optional<AllocationToken> allocationToken, Money oneYearCost)
+      boolean isPremium,
+      int years,
+      Optional<AllocationToken> allocationToken,
+      Money firstYearCost,
+      Optional<Money> subsequentYearCost)
       throws AllocationTokenInvalidForPremiumNameException {
+    checkArgument(years > 0, "Registration years to get cost for must be positive.");
     validateTokenForPossiblePremiumName(allocationToken, isPremium);
-    Money totalDomainFlowCost = oneYearCost.multipliedBy(years);
+    Money totalDomainFlowCost =
+        firstYearCost.plus(subsequentYearCost.orElse(firstYearCost).multipliedBy(years - 1));
 
     // Apply the allocation token discount, if applicable.
     if (allocationToken.isPresent()
         && allocationToken.get().getTokenBehavior().equals(TokenBehavior.DEFAULT)) {
       int discountedYears = Math.min(years, allocationToken.get().getDiscountYears());
-      Money discount =
-          oneYearCost.multipliedBy(
-              discountedYears * allocationToken.get().getDiscountFraction(),
-              RoundingMode.HALF_EVEN);
-      totalDomainFlowCost = totalDomainFlowCost.minus(discount);
+      if (discountedYears > 0) {
+        var discount =
+            firstYearCost
+                .plus(subsequentYearCost.orElse(firstYearCost).multipliedBy(discountedYears - 1))
+                .multipliedBy(allocationToken.get().getDiscountFraction(), RoundingMode.HALF_EVEN);
+        totalDomainFlowCost = totalDomainFlowCost.minus(discount);
+      }
     }
     return totalDomainFlowCost;
   }

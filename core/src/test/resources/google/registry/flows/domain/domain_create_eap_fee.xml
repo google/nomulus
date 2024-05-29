@@ -20,7 +20,7 @@
     <extension>
       <fee:create xmlns:fee="urn:ietf:params:xml:ns:fee-%FEE_VERSION%">
         <fee:currency>USD</fee:currency>
-        <fee:fee description="%DESCRIPTION_1%">26.00</fee:fee>
+        <fee:fee description="%DESCRIPTION_1%">24.00</fee:fee>
         <fee:fee description="%DESCRIPTION_2%">100.00</fee:fee>
       </fee:create>
     </extension>

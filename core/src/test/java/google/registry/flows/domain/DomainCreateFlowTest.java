@@ -295,7 +295,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     BigDecimal createCost =
         isDomainPremium(getUniqueIdFromCommand(), clock.nowUtc())
             ? BigDecimal.valueOf(200)
-            : BigDecimal.valueOf(26);
+            : BigDecimal.valueOf(24);
     if (isAnchorTenant) {
       createCost = BigDecimal.ZERO;
     }
@@ -687,7 +687,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     doSuccessfulTest(
         "tld",
         "domain_create_response_fee.xml",
-        ImmutableMap.of("FEE_VERSION", "0.6", "FEE", "26.00"));
+        ImmutableMap.of("FEE_VERSION", "0.6", "FEE", "24.00"));
   }
 
   @Test
@@ -697,7 +697,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     doSuccessfulTest(
         "tld",
         "domain_create_response_fee.xml",
-        ImmutableMap.of("FEE_VERSION", "0.11", "FEE", "26.00"));
+        ImmutableMap.of("FEE_VERSION", "0.11", "FEE", "24.00"));
   }
 
   @Test
@@ -707,7 +707,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     doSuccessfulTest(
         "tld",
         "domain_create_response_fee.xml",
-        ImmutableMap.of("FEE_VERSION", "0.12", "FEE", "26.00"));
+        ImmutableMap.of("FEE_VERSION", "0.12", "FEE", "24.00"));
   }
 
   @Test
@@ -717,7 +717,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     doSuccessfulTest(
         "tld",
         "domain_create_response_fee.xml",
-        ImmutableMap.of("FEE_VERSION", "0.6", "FEE", "26.00"));
+        ImmutableMap.of("FEE_VERSION", "0.6", "FEE", "24.00"));
   }
 
   @Test
@@ -727,7 +727,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     doSuccessfulTest(
         "tld",
         "domain_create_response_fee.xml",
-        ImmutableMap.of("FEE_VERSION", "0.11", "FEE", "26.00"));
+        ImmutableMap.of("FEE_VERSION", "0.11", "FEE", "24.00"));
   }
 
   @Test
@@ -737,7 +737,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     doSuccessfulTest(
         "tld",
         "domain_create_response_fee.xml",
-        ImmutableMap.of("FEE_VERSION", "0.12", "FEE", "26.00"));
+        ImmutableMap.of("FEE_VERSION", "0.12", "FEE", "24.00"));
   }
 
   @Test
@@ -1114,14 +1114,14 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
             .setDefaultPromoTokens(ImmutableList.of(defaultToken.createVKey()))
             .setCreateBillingCostTransitions(ImmutableSortedMap.of(START_OF_TIME, Money.of(USD, 8)))
             .build());
-    // Expects fee of $26
+    // Expects fee of $24
     setEppInput("domain_create_fee.xml", ImmutableMap.of("FEE_VERSION", "0.6", "CURRENCY", "USD"));
     persistContactsAndHosts();
-    // $12 is equal to 50% off the first year registration and 0% 0ff the 2nd year
+    // $15 is 50% off the first year registration ($8) and 0% 0ff the 2nd year (renewal at $11)
     runFlowAssertResponse(
         loadFile(
             "domain_create_response_fee.xml",
-            ImmutableMap.of("FEE_VERSION", "0.6", "FEE", "12.00")));
+            ImmutableMap.of("FEE_VERSION", "0.6", "FEE", "15.00")));
   }
 
   @Test
@@ -1142,7 +1142,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
             .setCreateBillingCostTransitions(
                 ImmutableSortedMap.of(START_OF_TIME, Money.of(USD, 100)))
             .build());
-    // Expects fee of $26
+    // Expects fee of $24
     setEppInput("domain_create_fee.xml", ImmutableMap.of("FEE_VERSION", "0.6", "CURRENCY", "USD"));
     persistContactsAndHosts();
     EppException thrown = assertThrows(FeesMismatchException.class, this::runFlow);
@@ -1180,14 +1180,14 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
             .setDefaultPromoTokens(ImmutableList.of(defaultToken.createVKey()))
             .setCreateBillingCostTransitions(ImmutableSortedMap.of(START_OF_TIME, Money.of(USD, 8)))
             .build());
-    // Expects fee of $26
+    // Expects fee of $24
     setEppInput("domain_create_fee.xml", ImmutableMap.of("FEE_VERSION", "0.11", "CURRENCY", "USD"));
     persistContactsAndHosts();
     // $12 is equal to 50% off the first year registration and 0% 0ff the 2nd year
     runFlowAssertResponse(
         loadFile(
             "domain_create_response_fee.xml",
-            ImmutableMap.of("FEE_VERSION", "0.11", "FEE", "12.00")));
+            ImmutableMap.of("FEE_VERSION", "0.11", "FEE", "15.00")));
   }
 
   @Test
@@ -1208,7 +1208,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
             .setCreateBillingCostTransitions(
                 ImmutableSortedMap.of(START_OF_TIME, Money.of(USD, 100)))
             .build());
-    // Expects fee of $26
+    // Expects fee of $24
     setEppInput("domain_create_fee.xml", ImmutableMap.of("FEE_VERSION", "0.11", "CURRENCY", "USD"));
     persistContactsAndHosts();
     EppException thrown = assertThrows(FeesMismatchException.class, this::runFlow);
@@ -1246,14 +1246,14 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
             .setDefaultPromoTokens(ImmutableList.of(defaultToken.createVKey()))
             .setCreateBillingCostTransitions(ImmutableSortedMap.of(START_OF_TIME, Money.of(USD, 8)))
             .build());
-    // Expects fee of $26
+    // Expects fee of $24
     setEppInput("domain_create_fee.xml", ImmutableMap.of("FEE_VERSION", "0.12", "CURRENCY", "USD"));
     persistContactsAndHosts();
     // $12 is equal to 50% off the first year registration and 0% 0ff the 2nd year
     runFlowAssertResponse(
         loadFile(
             "domain_create_response_fee.xml",
-            ImmutableMap.of("FEE_VERSION", "0.12", "FEE", "12.00")));
+            ImmutableMap.of("FEE_VERSION", "0.12", "FEE", "15.00")));
   }
 
   @Test
@@ -1274,7 +1274,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
             .setCreateBillingCostTransitions(
                 ImmutableSortedMap.of(START_OF_TIME, Money.of(USD, 100)))
             .build());
-    // Expects fee of $26
+    // Expects fee of $24
     setEppInput("domain_create_fee.xml", ImmutableMap.of("FEE_VERSION", "0.12", "CURRENCY", "USD"));
     persistContactsAndHosts();
     EppException thrown = assertThrows(FeesMismatchException.class, this::runFlow);
@@ -1615,20 +1615,20 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     BillingEvent billingEvent =
         Iterables.getOnlyElement(DatabaseHelper.loadAllOf(BillingEvent.class));
     assertThat(billingEvent.getTargetId()).isEqualTo("example.tld");
-    assertThat(billingEvent.getCost()).isEqualTo(Money.of(USD, BigDecimal.valueOf(19.5)));
+    assertThat(billingEvent.getCost()).isEqualTo(Money.of(USD, BigDecimal.valueOf(17.5)));
   }
 
   @Test
   void testSuccess_allocationToken_multiYearDiscount_maxesAtTokenDiscountYears() throws Exception {
-    // 2yrs @ $13 + 3yrs @ $13 * (1 - 0.73) = $36.53
-    runTest_allocationToken_multiYearDiscount(false, 0.73, 3, Money.of(USD, 36.53));
+    // ($13 + $11 + $11) *  (1 - 0.73) + 2 * $11 =
+    runTest_allocationToken_multiYearDiscount(false, 0.73, 3, Money.of(USD, 31.45));
   }
 
   @Test
   void testSuccess_allocationToken_multiYearDiscount_maxesAtNumRegistrationYears()
       throws Exception {
-    // 5yrs @ $13 * (1 - 0.276) = $47.06
-    runTest_allocationToken_multiYearDiscount(false, 0.276, 10, Money.of(USD, 47.06));
+    // ($13 + 4 * $11) * (1 - 0.276) = $41.27
+    runTest_allocationToken_multiYearDiscount(false, 0.276, 10, Money.of(USD, 41.27));
   }
 
   void runTest_allocationToken_multiYearDiscount(
@@ -1900,7 +1900,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     BillingEvent billingEvent =
         Iterables.getOnlyElement(DatabaseHelper.loadAllOf(BillingEvent.class));
     assertThat(billingEvent.getTargetId()).isEqualTo("example.tld");
-    assertThat(billingEvent.getCost()).isEqualTo(Money.of(USD, BigDecimal.valueOf(19.5)));
+    assertThat(billingEvent.getCost()).isEqualTo(Money.of(USD, BigDecimal.valueOf(17.5)));
     assertThat(billingEvent.getAllocationToken().get().getKey()).isEqualTo("abc123");
   }
 
@@ -2014,7 +2014,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
                 ImmutableList.of(defaultToken1.createVKey(), defaultToken2.createVKey()))
             .build());
     BillingEvent billingEvent = runTest_defaultToken("bbbbb");
-    assertThat(billingEvent.getCost()).isEqualTo(Money.of(USD, BigDecimal.valueOf(19.5)));
+    assertThat(billingEvent.getCost()).isEqualTo(Money.of(USD, BigDecimal.valueOf(17.5)));
   }
 
   @Test
@@ -2045,7 +2045,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
             .build());
     DatabaseHelper.deleteResource(defaultToken1);
     BillingEvent billingEvent = runTest_defaultToken("bbbbb");
-    assertThat(billingEvent.getCost()).isEqualTo(Money.of(USD, BigDecimal.valueOf(19.5)));
+    assertThat(billingEvent.getCost()).isEqualTo(Money.of(USD, BigDecimal.valueOf(17.5)));
   }
 
   @Test
@@ -3102,7 +3102,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
         new ImmutableMap.Builder<String, String>()
             .put("FEE_VERSION", "0.6")
             .put("DESCRIPTION_1", "create")
-            .put("FEE_1", "26")
+            .put("FEE_1", "24")
             .put("DESCRIPTION_2", "Early Access Period")
             .put("FEE_2", "100")
             .put("DESCRIPTION_3", "renew")
@@ -3111,7 +3111,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     persistContactsAndHosts();
     setEapForTld("tld");
     EppException thrown = assertThrows(FeesMismatchException.class, this::runFlow);
-    assertThat(thrown).hasMessageThat().contains("expected total of USD 126.00");
+    assertThat(thrown).hasMessageThat().contains("expected total of USD 124.00");
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
@@ -3122,7 +3122,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
         new ImmutableMap.Builder<String, String>()
             .put("FEE_VERSION", "0.6")
             .put("DESCRIPTION_1", "create")
-            .put("FEE_1", "26")
+            .put("FEE_1", "24")
             .put("DESCRIPTION_2", "Early Access Period")
             .put("FEE_2", "55")
             .put("DESCRIPTION_3", "Early Access Period")
@@ -3142,7 +3142,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
         new ImmutableMap.Builder<String, String>()
             .put("FEE_VERSION", "0.6")
             .put("DESCRIPTION_1", "create")
-            .put("FEE_1", "26")
+            .put("FEE_1", "24")
             .put("DESCRIPTION_2", "Early Access Period")
             .put("FEE_2", "55")
             .put("DESCRIPTION_3", "Early Access Period")

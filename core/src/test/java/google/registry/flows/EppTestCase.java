@@ -297,7 +297,7 @@ public class EppTestCase {
         .setReason(Reason.CREATE)
         .setTargetId(domain.getDomainName())
         .setRegistrarId(domain.getCurrentSponsorRegistrarId())
-        .setCost(Money.parse("USD 26.00"))
+        .setCost(Money.parse("USD 24.00"))
         .setPeriodYears(2)
         .setEventTime(createTime)
         .setBillingTime(createTime.plus(Tld.get(domain.getTld()).getAddGracePeriodLength()))

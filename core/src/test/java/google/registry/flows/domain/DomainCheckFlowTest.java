@@ -514,14 +514,17 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
             .build());
     setEppInput(
         "domain_check_allocationtoken_promotion.xml", ImmutableMap.of("DOMAIN", "single.tld"));
+    // 1-yr: 13 * .556
+    // 2-yr: (13 + 11) * .556
+    // 5-yr: 2-yr-cost + 3 * 11
     runFlowAssertResponse(
         loadFile(
             "domain_check_allocationtoken_promotion_response.xml",
             new ImmutableMap.Builder<String, String>()
                 .put("DOMAIN", "single.tld")
                 .put("COST_1YR", "7.23")
-                .put("COST_2YR", "14.46")
-                .put("COST_5YR", "53.46")
+                .put("COST_2YR", "13.34")
+                .put("COST_5YR", "46.34")
                 .put("FEE_CLASS", "")
                 .build()));
   }
