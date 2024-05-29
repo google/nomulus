@@ -7,13 +7,13 @@
         <contact:id>@@RANDOM@@-@@CHANNEL_NUMBER@@-@@REPEAT_NUMBER@@</contact:id>
         <contact:postalInfo type="int">
           <contact:name>John Doe</contact:name>
-          <contact:org>Charleston Road Registry, Inc.</contact:org>
+          <contact:org>Example, Inc.</contact:org>
           <contact:addr>
-            <contact:street>1600 Amphitheatre Parkway</contact:street>
+            <contact:street>111 Example Street</contact:street>
             <contact:street></contact:street>
-            <contact:city>Mountain View</contact:city>
+            <contact:city>Los Angeles</contact:city>
             <contact:sp>CA</contact:sp>
-            <contact:pc>94043</contact:pc>
+            <contact:pc>90210</contact:pc>
             <contact:cc>US</contact:cc>
           </contact:addr>
         </contact:postalInfo>
