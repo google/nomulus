@@ -36,10 +36,9 @@ import google.registry.request.RequestModule;
 import google.registry.request.auth.AuthResult;
 import google.registry.request.auth.AuthenticatedRegistrarAccessor;
 import google.registry.request.auth.AuthenticatedRegistrarAccessor.Role;
-import google.registry.request.auth.UserAuthInfo;
+import google.registry.testing.ConsoleApiParamsUtils;
 import google.registry.testing.DatabaseHelper;
 import google.registry.testing.FakeClock;
-import google.registry.testing.FakeConsoleApiParams;
 import google.registry.testing.FakeResponse;
 import google.registry.ui.server.registrar.ConsoleApiParams;
 import google.registry.ui.server.registrar.RegistrarConsoleModule;
@@ -47,7 +46,6 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.StringReader;
 import java.util.HashMap;
-import java.util.Optional;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -136,15 +134,14 @@ public class WhoisRegistrarFieldsActionTest {
     Registrar newRegistrar = Registrar.loadByRegistrarIdCached("NewRegistrar").get();
     AuthResult onlyTheRegistrar =
         AuthResult.createUser(
-            UserAuthInfo.create(
-                new User.Builder()
-                    .setEmailAddress("email@email.example")
-                    .setUserRoles(
-                        new UserRoles.Builder()
-                            .setRegistrarRoles(
-                                ImmutableMap.of("TheRegistrar", RegistrarRole.PRIMARY_CONTACT))
-                            .build())
-                    .build()));
+            new User.Builder()
+                .setEmailAddress("email@email.example")
+                .setUserRoles(
+                    new UserRoles.Builder()
+                        .setRegistrarRoles(
+                            ImmutableMap.of("TheRegistrar", RegistrarRole.PRIMARY_CONTACT))
+                        .build())
+                .build());
     uiRegistrarMap.put("registrarId", "NewRegistrar");
     WhoisRegistrarFieldsAction action = createAction(onlyTheRegistrar);
     action.run();
@@ -154,8 +151,7 @@ public class WhoisRegistrarFieldsActionTest {
   }
 
   private AuthResult defaultUserAuth() {
-    return AuthResult.createUser(
-        UserAuthInfo.create(DatabaseHelper.createAdminUser("email@email.example")));
+    return AuthResult.createUser(DatabaseHelper.createAdminUser("email@email.example"));
   }
 
   private WhoisRegistrarFieldsAction createAction() throws IOException {
@@ -163,7 +159,7 @@ public class WhoisRegistrarFieldsActionTest {
   }
 
   private WhoisRegistrarFieldsAction createAction(AuthResult authResult) throws IOException {
-    consoleApiParams = FakeConsoleApiParams.get(Optional.of(authResult));
+    consoleApiParams = ConsoleApiParamsUtils.createFake(authResult);
     when(consoleApiParams.request().getMethod()).thenReturn(Action.Method.POST.toString());
     doReturn(new BufferedReader(new StringReader(uiRegistrarMap.toString())))
         .when(consoleApiParams.request())

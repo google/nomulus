@@ -64,7 +64,7 @@ import org.joda.time.Duration;
     path = "/_dr/task/readDnsRefreshRequests",
     automaticallyPrintOk = true,
     method = POST,
-    auth = Auth.AUTH_API_ADMIN)
+    auth = Auth.AUTH_ADMIN)
 public final class ReadDnsRefreshRequestsAction implements Runnable {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();

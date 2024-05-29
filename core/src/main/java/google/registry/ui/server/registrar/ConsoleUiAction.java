@@ -43,7 +43,7 @@ import javax.inject.Inject;
 @Action(
     service = Action.Service.DEFAULT,
     path = ConsoleUiAction.PATH,
-    auth = Auth.AUTH_PUBLIC_LEGACY)
+    auth = Auth.AUTH_PUBLIC_LOGGED_IN)
 public final class ConsoleUiAction extends HtmlAction {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();

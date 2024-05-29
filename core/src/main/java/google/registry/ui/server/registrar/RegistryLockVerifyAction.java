@@ -34,7 +34,7 @@ import javax.inject.Inject;
 @Action(
     service = Action.Service.DEFAULT,
     path = RegistryLockVerifyAction.PATH,
-    auth = Auth.AUTH_PUBLIC_LEGACY)
+    auth = Auth.AUTH_PUBLIC_LOGGED_IN)
 public final class RegistryLockVerifyAction extends HtmlAction {
 
   public static final String PATH = "/registry-lock-verify";
@@ -62,7 +62,7 @@ public final class RegistryLockVerifyAction extends HtmlAction {
   @Override
   public void runAfterLogin(Map<String, Object> data) {
     try {
-      boolean isAdmin = authResult.userAuthInfo().get().isUserAdmin();
+      boolean isAdmin = authResult.user().get().getUserRoles().isAdmin();
       RegistryLock resultLock =
           domainLockUtils.verifyVerificationCode(lockVerificationCode, isAdmin);
       data.put("isLock", resultLock.getUnlockCompletionTime().isEmpty());

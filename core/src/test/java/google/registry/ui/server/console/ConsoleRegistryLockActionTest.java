@@ -45,11 +45,10 @@ import google.registry.model.eppcommon.StatusValue;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.request.RequestModule;
 import google.registry.request.auth.AuthResult;
-import google.registry.request.auth.UserAuthInfo;
 import google.registry.testing.CloudTasksHelper;
+import google.registry.testing.ConsoleApiParamsUtils;
 import google.registry.testing.DeterministicStringGenerator;
 import google.registry.testing.FakeClock;
-import google.registry.testing.FakeConsoleApiParams;
 import google.registry.testing.FakeResponse;
 import google.registry.tools.DomainLockUtils;
 import google.registry.ui.server.registrar.ConsoleApiParams;
@@ -529,8 +528,8 @@ public class ConsoleRegistryLockActionTest {
   }
 
   private ConsoleApiParams createParams() {
-    AuthResult authResult = AuthResult.createUser(UserAuthInfo.create(user));
-    return FakeConsoleApiParams.get(Optional.of(authResult));
+    AuthResult authResult = AuthResult.createUser(user);
+    return ConsoleApiParamsUtils.createFake(authResult);
   }
 
   private RegistryLock.Builder createDefaultLockBuilder() {
