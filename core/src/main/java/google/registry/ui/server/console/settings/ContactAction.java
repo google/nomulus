@@ -103,6 +103,7 @@ public class ContactAction extends ConsoleApiAction {
             Collections.singletonMap(
                 "contacts",
                 contacts.get().stream().map(RegistrarPoc::toJsonMap).collect(toImmutableList())));
+
     try {
       RegistrarSettingsAction.checkContactRequirements(oldContacts, updatedContacts);
     } catch (FormException e) {
@@ -111,7 +112,16 @@ public class ContactAction extends ConsoleApiAction {
       throw new IllegalArgumentException(e);
     }
 
-    RegistrarPoc.updateContacts(registrar, updatedContacts);
+    tm().transact(
+            () -> {
+              RegistrarPoc.updateContacts(registrar, updatedContacts);
+              Registrar updatedRegistrar =
+                  registrar.asBuilder().setContactsRequireSyncing(true).build();
+              tm().put(updatedRegistrar);
+              sendExternalUpdatesIfNecessary(
+                  EmailInfo.create(registrar, updatedRegistrar, oldContacts, updatedContacts));
+            });
+
     consoleApiParams.response().setStatus(SC_OK);
   }
 }
