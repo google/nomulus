@@ -36,7 +36,7 @@ public final class DiffUtils {
    * A helper record to store the two sides of a diff. If both sides are Sets then they will be
    * diffed, otherwise the two objects are toStringed in Collection format "[a, b]".
    */
-  private record DiffPair(@Nullable Object a, @Nullable Object b) {
+  public record DiffPair(@Nullable Object a, @Nullable Object b) {
 
     @Override
     public String toString() {
