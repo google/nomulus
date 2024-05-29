@@ -78,13 +78,22 @@ public class WhoisRegistrarFieldsAction extends ConsoleApiAction {
       return;
     }
 
-    Registrar.Builder newRegistrar = savedRegistrar.asBuilder();
-    newRegistrar.setWhoisServer(providedRegistrar.getWhoisServer());
-    newRegistrar.setUrl(providedRegistrar.getUrl());
-    newRegistrar.setLocalizedAddress(providedRegistrar.getLocalizedAddress());
-    newRegistrar.setPhoneNumber(providedRegistrar.getPhoneNumber());
-    newRegistrar.setFaxNumber(providedRegistrar.getFaxNumber());
-    tm().put(newRegistrar.build());
+    Registrar newRegistrar =
+        savedRegistrar
+            .asBuilder()
+            .setWhoisServer(providedRegistrar.getWhoisServer())
+            .setUrl(providedRegistrar.getUrl())
+            .setLocalizedAddress(providedRegistrar.getLocalizedAddress())
+            .setPhoneNumber(providedRegistrar.getPhoneNumber())
+            .setFaxNumber(providedRegistrar.getFaxNumber())
+            .build();
+    tm().put(newRegistrar);
+    sendExternalUpdatesIfNecessary(
+        EmailInfo.create(
+            savedRegistrar,
+            newRegistrar,
+            savedRegistrar.getContacts(),
+            savedRegistrar.getContacts()));
     consoleApiParams.response().setStatus(SC_OK);
   }
 }

@@ -21,7 +21,6 @@ import static google.registry.util.PreconditionsUtils.checkArgumentPresent;
 import static org.apache.http.HttpStatus.SC_OK;
 
 import com.google.common.base.Strings;
-import google.registry.groups.GmailClient;
 import google.registry.model.console.ConsolePermission;
 import google.registry.model.console.User;
 import google.registry.model.registrar.Registrar;
@@ -31,13 +30,10 @@ import google.registry.request.Parameter;
 import google.registry.request.auth.Auth;
 import google.registry.ui.server.registrar.ConsoleApiParams;
 import google.registry.util.DomainNameUtils;
-import google.registry.util.EmailMessage;
 import google.registry.util.RegistryEnvironment;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.inject.Inject;
-import javax.mail.internet.AddressException;
-import javax.mail.internet.InternetAddress;
 
 @Action(
     service = Action.Service.DEFAULT,
@@ -46,45 +42,37 @@ import javax.mail.internet.InternetAddress;
     auth = Auth.AUTH_PUBLIC_LOGGED_IN)
 public class ConsoleUpdateRegistrarAction extends ConsoleApiAction {
   static final String PATH = "/console-api/registrar";
-  private static final String EMAIL_SUBJ = "Registrar %s has been updated";
-  private static final String EMAIL_BODY =
-      "The following changes were made in registry %s environment to the registrar %s:";
   private final Optional<Registrar> registrar;
-
-  private final GmailClient gmailClient;
 
   @Inject
   ConsoleUpdateRegistrarAction(
       ConsoleApiParams consoleApiParams,
-      GmailClient gmailClient,
       @Parameter("registrar") Optional<Registrar> registrar) {
     super(consoleApiParams);
     this.registrar = registrar;
-    this.gmailClient = gmailClient;
   }
 
   @Override
   protected void postHandler(User user) {
     var errorMsg = "Missing param(s): %s";
-    Registrar updatedRegistrar =
+    Registrar registrarParam =
         registrar.orElseThrow(() -> new BadRequestException(String.format(errorMsg, "registrar")));
-    checkArgument(
-        !Strings.isNullOrEmpty(updatedRegistrar.getRegistrarId()), errorMsg, "registrarId");
+    checkArgument(!Strings.isNullOrEmpty(registrarParam.getRegistrarId()), errorMsg, "registrarId");
     checkPermission(
-        user, updatedRegistrar.getRegistrarId(), ConsolePermission.EDIT_REGISTRAR_DETAILS);
+        user, registrarParam.getRegistrarId(), ConsolePermission.EDIT_REGISTRAR_DETAILS);
 
     tm().transact(
             () -> {
               Optional<Registrar> existingRegistrar =
-                  Registrar.loadByRegistrarId(updatedRegistrar.getRegistrarId());
+                  Registrar.loadByRegistrarId(registrarParam.getRegistrarId());
               checkArgument(
                   !existingRegistrar.isEmpty(),
                   "Registrar with registrarId %s doesn't exists",
-                  updatedRegistrar.getRegistrarId());
+                  registrarParam.getRegistrarId());
 
               // Only allow modifying allowed TLDs if we're in a non-PRODUCTION environment, if the
               // registrar is not REAL, or the registrar has a WHOIS abuse contact set.
-              if (!updatedRegistrar.getAllowedTlds().isEmpty()) {
+              if (!registrarParam.getAllowedTlds().isEmpty()) {
                 boolean isRealRegistrar =
                     Registrar.Type.REAL.equals(existingRegistrar.get().getType());
                 if (RegistryEnvironment.PRODUCTION.equals(RegistryEnvironment.get())
@@ -97,49 +85,27 @@ public class ConsoleUpdateRegistrarAction extends ConsoleApiAction {
                 }
               }
 
-              tm().put(
-                      existingRegistrar
-                          .get()
-                          .asBuilder()
-                          .setAllowedTlds(
-                              updatedRegistrar.getAllowedTlds().stream()
-                                  .map(DomainNameUtils::canonicalizeHostname)
-                                  .collect(Collectors.toSet()))
-                          .setRegistryLockAllowed(updatedRegistrar.isRegistryLockAllowed())
-                          .build());
+              Registrar updatedRegistrar =
+                  existingRegistrar
+                      .get()
+                      .asBuilder()
+                      .setAllowedTlds(
+                          registrarParam.getAllowedTlds().stream()
+                              .map(DomainNameUtils::canonicalizeHostname)
+                              .collect(Collectors.toSet()))
+                      .setRegistryLockAllowed(registrarParam.isRegistryLockAllowed())
+                      .build();
 
-              sendEmail(existingRegistrar.get(), updatedRegistrar);
+              tm().put(updatedRegistrar);
+              sendExternalUpdatesIfNecessary(
+                  EmailInfo.create(
+                      existingRegistrar.get(),
+                      updatedRegistrar,
+                      existingRegistrar.get().getContacts(),
+                      existingRegistrar.get().getContacts()));
             });
 
     consoleApiParams.response().setStatus(SC_OK);
   }
 
-  void sendEmail(Registrar oldRegistrar, Registrar updatedRegistrar) throws AddressException {
-    String emailBody =
-        String.format(EMAIL_BODY, RegistryEnvironment.get(), oldRegistrar.getRegistrarId());
-
-    StringBuilder diff = new StringBuilder();
-    if (oldRegistrar.isRegistryLockAllowed() != updatedRegistrar.isRegistryLockAllowed()) {
-      diff.append("/n");
-      diff.append(
-          String.format(
-              "Registry Lock Allowed: %s -> %s",
-              oldRegistrar.isRegistryLockAllowed(), updatedRegistrar.isRegistryLockAllowed()));
-    }
-    if (!oldRegistrar.getAllowedTlds().equals(updatedRegistrar.getAllowedTlds())) {
-      diff.append("/n");
-      diff.append(
-          String.format(
-              "Allowed TLDs: %s -> %s",
-              oldRegistrar.getAllowedTlds(), updatedRegistrar.getAllowedTlds()));
-    }
-
-    if (diff.length() > 0) {
-      this.gmailClient.sendEmail(
-          EmailMessage.create(
-              String.format(EMAIL_SUBJ, oldRegistrar.getRegistrarId()),
-              emailBody + diff,
-              new InternetAddress(oldRegistrar.getEmailAddress(), true)));
-    }
-  }
 }

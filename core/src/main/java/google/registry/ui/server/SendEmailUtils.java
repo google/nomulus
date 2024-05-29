@@ -35,7 +35,7 @@ import javax.mail.internet.InternetAddress;
 public class SendEmailUtils {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
-  private final GmailClient gmailClient;
+  public final GmailClient gmailClient;
   private final ImmutableList<String> registrarChangesNotificationEmailAddresses;
 
   @Inject
