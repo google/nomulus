@@ -81,7 +81,7 @@ public class SecurityAction extends ConsoleApiAction {
 
   private void setResponse(Registrar savedRegistrar) {
     Registrar registrarParameter = registrar.get();
-    Registrar.Builder updatedRegistrar =
+    Registrar.Builder updatedRegistrarBuilder =
         savedRegistrar
             .asBuilder()
             .setIpAddressAllowList(registrarParameter.getIpAddressAllowList());
@@ -93,7 +93,7 @@ public class SecurityAction extends ConsoleApiAction {
         if (registrarParameter.getClientCertificate().isPresent()) {
           String newClientCert = registrarParameter.getClientCertificate().get();
           certificateChecker.validateCertificate(newClientCert);
-          updatedRegistrar.setClientCertificate(newClientCert, tm().getTransactionTime());
+          updatedRegistrarBuilder.setClientCertificate(newClientCert, tm().getTransactionTime());
         }
       }
       if (!savedRegistrar
@@ -102,7 +102,8 @@ public class SecurityAction extends ConsoleApiAction {
         if (registrarParameter.getFailoverClientCertificate().isPresent()) {
           String newFailoverCert = registrarParameter.getFailoverClientCertificate().get();
           certificateChecker.validateCertificate(newFailoverCert);
-          updatedRegistrar.setFailoverClientCertificate(newFailoverCert, tm().getTransactionTime());
+          updatedRegistrarBuilder.setFailoverClientCertificate(
+              newFailoverCert, tm().getTransactionTime());
         }
       }
     } catch (InsecureCertificateException e) {
@@ -110,7 +111,15 @@ public class SecurityAction extends ConsoleApiAction {
       return;
     }
 
-    tm().put(updatedRegistrar.build());
+    Registrar updatedRegistrar = updatedRegistrarBuilder.build();
+    tm().put(updatedRegistrar);
+
+    sendExternalUpdatesIfNecessary(
+        EmailInfo.create(
+            savedRegistrar,
+            updatedRegistrar,
+            savedRegistrar.getContacts(),
+            savedRegistrar.getContacts()));
     consoleApiParams.response().setStatus(SC_OK);
   }
 }

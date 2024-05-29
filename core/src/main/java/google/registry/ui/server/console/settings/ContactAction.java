@@ -31,8 +31,11 @@ import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarPoc;
 import google.registry.persistence.transaction.QueryComposer.Comparator;
 import google.registry.request.Action;
+import google.registry.request.HttpException.ForbiddenException;
 import google.registry.request.Parameter;
 import google.registry.request.auth.Auth;
+import google.registry.request.auth.AuthenticatedRegistrarAccessor;
+import google.registry.request.auth.AuthenticatedRegistrarAccessor.Role;
 import google.registry.ui.forms.FormException;
 import google.registry.ui.server.console.ConsoleApiAction;
 import google.registry.ui.server.registrar.ConsoleApiParams;
@@ -52,17 +55,20 @@ public class ContactAction extends ConsoleApiAction {
   private final Gson gson;
   private final Optional<ImmutableSet<RegistrarPoc>> contacts;
   private final String registrarId;
+  private final AuthenticatedRegistrarAccessor registrarAccessor;
 
   @Inject
   public ContactAction(
       ConsoleApiParams consoleApiParams,
       Gson gson,
+      AuthenticatedRegistrarAccessor registrarAccessor,
       @Parameter("registrarId") String registrarId,
       @Parameter("contacts") Optional<ImmutableSet<RegistrarPoc>> contacts) {
     super(consoleApiParams);
     this.gson = gson;
     this.registrarId = registrarId;
     this.contacts = contacts;
+    this.registrarAccessor = registrarAccessor;
   }
 
   @Override
@@ -103,6 +109,11 @@ public class ContactAction extends ConsoleApiAction {
             Collections.singletonMap(
                 "contacts",
                 contacts.get().stream().map(RegistrarPoc::toJsonMap).collect(toImmutableList())));
+
+    if (!registrarAccessor.hasRoleOnRegistrar(Role.OWNER, registrar.getRegistrarId())) {
+      throw new ForbiddenException("Only OWNERs can update the contacts");
+    }
+
     try {
       RegistrarSettingsAction.checkContactRequirements(oldContacts, updatedContacts);
     } catch (FormException e) {
@@ -111,7 +122,16 @@ public class ContactAction extends ConsoleApiAction {
       throw new IllegalArgumentException(e);
     }
 
-    RegistrarPoc.updateContacts(registrar, updatedContacts);
+    tm().transact(
+            () -> {
+              RegistrarPoc.updateContacts(registrar, updatedContacts);
+              Registrar updatedRegistrar =
+                  registrar.asBuilder().setContactsRequireSyncing(true).build();
+              tm().put(updatedRegistrar);
+              sendExternalUpdatesIfNecessary(
+                  EmailInfo.create(registrar, updatedRegistrar, oldContacts, updatedContacts));
+            });
+
     consoleApiParams.response().setStatus(SC_OK);
   }
 }
