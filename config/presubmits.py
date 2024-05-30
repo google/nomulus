@@ -202,6 +202,12 @@ PRESUBMITS = {
         {"/node_modules/"},
     ):
         "Do not mock Response, use FakeResponse.",
+    PresubmitCheck(
+        r".*javax\.servlet\..*",
+        "java",
+        {"/node_modules/"},
+    ):
+        "Do not use javax.servlet.* Use jakarta.servlet.* instead.",
 }
 
 # Note that this regex only works for one kind of Flyway file.  If we want to
