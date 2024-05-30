@@ -14,8 +14,16 @@ import org.gradle.process.internal.ExecException
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+buildscript {
+  dependencies {
+    def deps = rootProject.dependencyMap
+
+    classpath  deps['org.flywaydb:flyway-database-postgresql']
+  }
+}
+
 plugins {
-  id "org.flywaydb.flyway" version "10.8.1"
+  id "org.flywaydb.flyway" version "10.13.0"
   id 'maven-publish'
 }
 
@@ -147,9 +155,15 @@ publishing {
 
 flyway {
   def accessInfo = project.ext.getJdbcAccessInfo()
-  pluginConfiguration = [
-          postgresqlTransactionalLock: 'false'
-  ]
+  // Below config is required when adding an index concurrently using the
+  // `flywayMigrate` Gradle task. However it is  currently broken and an
+  // `unknonw property` exception is thrown. Disabling it for now since we
+  // do not expect adding indexes concurrently very often.
+  // See also: https://github.com/flyway/flyway/issues/3858
+  //
+  // pluginConfiguration = [
+  //         postgresqlTransactionalLock: 'false'
+  // ]
 
   url = accessInfo.url
   user = accessInfo.user
