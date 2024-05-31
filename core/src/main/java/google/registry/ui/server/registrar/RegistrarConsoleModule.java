@@ -32,6 +32,7 @@ import google.registry.request.RequestScope;
 import google.registry.request.Response;
 import google.registry.request.auth.AuthResult;
 import google.registry.security.XsrfTokenManager;
+import google.registry.ui.server.SendEmailUtils;
 import google.registry.ui.server.console.ConsoleEppPasswordAction.EppPasswordData;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.Optional;
@@ -48,8 +49,9 @@ public final class RegistrarConsoleModule {
       HttpServletRequest request,
       Response response,
       AuthResult authResult,
+      SendEmailUtils sendEmailUtils,
       XsrfTokenManager xsrfTokenManager) {
-    return ConsoleApiParams.create(request, response, authResult, xsrfTokenManager);
+    return ConsoleApiParams.create(request, response, authResult, sendEmailUtils, xsrfTokenManager);
   }
 
   @Provides

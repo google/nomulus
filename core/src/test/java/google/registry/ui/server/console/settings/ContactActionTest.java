@@ -16,6 +16,7 @@ package google.registry.ui.server.console.settings;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.truth.Truth.assertThat;
+import static google.registry.model.registrar.RegistrarPocBase.Type.ADMIN;
 import static google.registry.model.registrar.RegistrarPocBase.Type.WHOIS;
 import static google.registry.testing.DatabaseHelper.createAdminUser;
 import static google.registry.testing.DatabaseHelper.insertInDb;
@@ -23,9 +24,14 @@ import static google.registry.testing.DatabaseHelper.loadAllOf;
 import static google.registry.testing.SqlHelper.saveRegistrar;
 import static jakarta.servlet.http.HttpServletResponse.SC_FORBIDDEN;
 import static jakarta.servlet.http.HttpServletResponse.SC_OK;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.gson.Gson;
@@ -42,11 +48,14 @@ import google.registry.testing.ConsoleApiParamsUtils;
 import google.registry.testing.FakeResponse;
 import google.registry.ui.server.registrar.ConsoleApiParams;
 import google.registry.ui.server.registrar.RegistrarConsoleModule;
+import google.registry.util.EmailMessage;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.StringReader;
 import java.util.HashMap;
 import java.util.Optional;
+import javax.mail.internet.AddressException;
+import javax.mail.internet.InternetAddress;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -58,7 +67,7 @@ class ContactActionTest {
           + "\"emailAddress\":\"test.registrar1@example.com\","
           + "\"registrarId\":\"registrarId\","
           + "\"phoneNumber\":\"+1.9999999999\",\"faxNumber\":\"+1.9999999991\","
-          + "\"types\":[\"WHOIS\"],\"visibleInWhoisAsAdmin\":true,"
+          + "\"types\":[\"WHOIS\",\"ADMIN\"],\"visibleInWhoisAsAdmin\":true,"
           + "\"visibleInWhoisAsTech\":false,\"visibleInDomainWhoisAsAbuse\":false}";
 
   private static String jsonRegistrar2 =
@@ -66,7 +75,7 @@ class ContactActionTest {
           + "\"emailAddress\":\"test.registrar2@example.com\","
           + "\"registrarId\":\"registrarId\","
           + "\"phoneNumber\":\"+1.1234567890\",\"faxNumber\":\"+1.1234567891\","
-          + "\"types\":[\"WHOIS\"],\"visibleInWhoisAsAdmin\":true,"
+          + "\"types\":[\"WHOIS\",\"ADMIN\"],\"visibleInWhoisAsAdmin\":true,"
           + "\"visibleInWhoisAsTech\":false,\"visibleInDomainWhoisAsAbuse\":false}";
 
   private Registrar testRegistrar;
@@ -88,7 +97,7 @@ class ContactActionTest {
             .setEmailAddress("test.registrar1@example.com")
             .setPhoneNumber("+1.9999999999")
             .setFaxNumber("+1.9999999991")
-            .setTypes(ImmutableSet.of(WHOIS))
+            .setTypes(ImmutableSet.of(WHOIS, ADMIN))
             .setVisibleInWhoisAsAdmin(true)
             .setVisibleInWhoisAsTech(false)
             .setVisibleInDomainWhoisAsAbuse(false)
@@ -111,6 +120,20 @@ class ContactActionTest {
   }
 
   @Test
+  void testSuccess_noOp() throws IOException {
+    insertInDb(testRegistrarPoc);
+    ContactAction action =
+        createAction(
+            Action.Method.POST,
+            AuthResult.createUser(createAdminUser("email@email.com")),
+            testRegistrar.getRegistrarId(),
+            "[" + jsonRegistrar1 + "]");
+    action.run();
+    assertThat(((FakeResponse) consoleApiParams.response()).getStatus()).isEqualTo(SC_OK);
+    verify(consoleApiParams.sendEmailUtils().gmailClient, never()).sendEmail(any());
+  }
+
+  @Test
   void testSuccess_onlyContactsWithNonEmptyType() throws IOException {
     testRegistrarPoc = testRegistrarPoc.asBuilder().setTypes(ImmutableSet.of()).build();
     insertInDb(testRegistrarPoc);
@@ -127,6 +150,7 @@ class ContactActionTest {
 
   @Test
   void testSuccess_postCreateContactInfo() throws IOException {
+    insertInDb(testRegistrarPoc);
     ContactAction action =
         createAction(
             Action.Method.POST,
@@ -165,6 +189,59 @@ class ContactActionTest {
             "test.registrar1@example.com",
             "Test Registrar 2",
             "test.registrar2@example.com");
+  }
+
+  @Test
+  void testSuccess_sendsEmail() throws IOException, AddressException {
+    testRegistrarPoc = testRegistrarPoc.asBuilder().setEmailAddress("incorrect@email.com").build();
+    insertInDb(testRegistrarPoc);
+    ContactAction action =
+        createAction(
+            Action.Method.POST,
+            AuthResult.createUser(createAdminUser("email@email.com")),
+            testRegistrar.getRegistrarId(),
+            "[" + jsonRegistrar1 + "]");
+    action.run();
+    assertThat(((FakeResponse) consoleApiParams.response()).getStatus()).isEqualTo(SC_OK);
+    verify(consoleApiParams.sendEmailUtils().gmailClient, times(1))
+        .sendEmail(
+            EmailMessage.newBuilder()
+                .setSubject(
+                    "Registrar New Registrar (registrarId) updated in registry unittest"
+                        + " environment")
+                .setBody(
+                    "The following changes were made in registry unittest environment to the"
+                        + " registrar registrarId by admin email@email.com:\n"
+                        + "\n"
+                        + "contacts:\n"
+                        + "    ADDED:\n"
+                        + "        {name=Test Registrar 1,"
+                        + " emailAddress=test.registrar1@example.com, registrarId=registrarId,"
+                        + " registryLockEmailAddress=null, phoneNumber=+1.9999999999,"
+                        + " faxNumber=+1.9999999991, types=[ADMIN, WHOIS], loginEmailAddress=null,"
+                        + " visibleInWhoisAsAdmin=true, visibleInWhoisAsTech=false,"
+                        + " visibleInDomainWhoisAsAbuse=false,"
+                        + " allowedToSetRegistryLockPassword=false}\n"
+                        + "    REMOVED:\n"
+                        + "        {name=Test Registrar 1, emailAddress=incorrect@email.com,"
+                        + " registrarId=registrarId, registryLockEmailAddress=null,"
+                        + " phoneNumber=+1.9999999999, faxNumber=+1.9999999991, types=[WHOIS,"
+                        + " ADMIN], loginEmailAddress=null, visibleInWhoisAsAdmin=true,"
+                        + " visibleInWhoisAsTech=false, visibleInDomainWhoisAsAbuse=false,"
+                        + " allowedToSetRegistryLockPassword=false}\n"
+                        + "    FINAL CONTENTS:\n"
+                        + "        {name=Test Registrar 1,"
+                        + " emailAddress=test.registrar1@example.com, registrarId=registrarId,"
+                        + " registryLockEmailAddress=null, phoneNumber=+1.9999999999,"
+                        + " faxNumber=+1.9999999991, types=[ADMIN, WHOIS], loginEmailAddress=null,"
+                        + " visibleInWhoisAsAdmin=true, visibleInWhoisAsTech=false,"
+                        + " visibleInDomainWhoisAsAbuse=false,"
+                        + " allowedToSetRegistryLockPassword=false}\n")
+                .setRecipients(
+                    ImmutableList.of(
+                        new InternetAddress("notification@test.example"),
+                        new InternetAddress("incorrect@email.com")))
+                .build());
   }
 
   @Test

@@ -17,22 +17,20 @@ package google.registry.ui.server.console;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.request.auth.AuthenticatedRegistrarAccessor.Role.OWNER;
 import static google.registry.testing.DatabaseHelper.loadRegistrar;
-import static google.registry.testing.DatabaseHelper.persistNewRegistrar;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static jakarta.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static jakarta.servlet.http.HttpServletResponse.SC_FORBIDDEN;
 import static jakarta.servlet.http.HttpServletResponse.SC_OK;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSetMultimap;
 import com.google.gson.Gson;
 import google.registry.flows.PasswordOnlyTransportCredentials;
-import google.registry.groups.GmailClient;
 import google.registry.model.console.GlobalRole;
 import google.registry.model.console.User;
 import google.registry.model.console.UserRoles;
@@ -67,7 +65,6 @@ class ConsoleEppPasswordActionTest {
   private ConsoleApiParams consoleApiParams;
   protected PasswordOnlyTransportCredentials credentials = new PasswordOnlyTransportCredentials();
   private FakeResponse response;
-  private GmailClient gmailClient = mock(GmailClient.class);
 
   @RegisterExtension
   final JpaTestExtensions.JpaIntegrationTestExtension jpa =
@@ -75,14 +72,11 @@ class ConsoleEppPasswordActionTest {
 
   @BeforeEach
   void beforeEach() {
-    Registrar registrar = persistNewRegistrar("registrarId");
+    Registrar registrar = Registrar.loadByRegistrarId("TheRegistrar").get();
     registrar =
         registrar
             .asBuilder()
-            .setType(Registrar.Type.TEST)
-            .setIanaIdentifier(null)
             .setPassword("foobar")
-            .setEmailAddress("testEmail@google.com")
             .build();
     persistResource(registrar);
   }
@@ -99,7 +93,7 @@ class ConsoleEppPasswordActionTest {
   @Test
   void testFailure_passwordsDontMatch() throws IOException {
     ConsoleEppPasswordAction action =
-        createAction("registrarId", "oldPassword", "newPassword", "newPasswordRepeat");
+        createAction("TheRegistrar", "oldPassword", "newPassword", "newPasswordRepeat");
     action.run();
     assertThat(((FakeResponse) consoleApiParams.response()).getStatus()).isEqualTo(SC_BAD_REQUEST);
     assertThat(((FakeResponse) consoleApiParams.response()).getPayload())
@@ -109,7 +103,7 @@ class ConsoleEppPasswordActionTest {
   @Test
   void testFailure_existingPasswordIncorrect() throws IOException {
     ConsoleEppPasswordAction action =
-        createAction("registrarId", "oldPassword", "randomPasword", "randomPasword");
+        createAction("TheRegistrar", "oldPassword", "randomPasword", "randomPasword");
     action.run();
     assertThat(((FakeResponse) consoleApiParams.response()).getStatus()).isEqualTo(SC_FORBIDDEN);
     assertThat(((FakeResponse) consoleApiParams.response()).getPayload())
@@ -119,27 +113,33 @@ class ConsoleEppPasswordActionTest {
   @Test
   void testSuccess_sendsConfirmationEmail() throws IOException, AddressException {
     ConsoleEppPasswordAction action =
-        createAction("registrarId", "foobar", "randomPassword", "randomPassword");
+        createAction("TheRegistrar", "foobar", "randomPassword", "randomPassword");
     action.run();
-    verify(gmailClient, times(1))
+    verify(consoleApiParams.sendEmailUtils().gmailClient, times(1))
         .sendEmail(
-            EmailMessage.create(
-                "EPP password update confirmation",
-                "Dear registrarId name,\n"
-                    + "This is to confirm that your account password has been changed.",
-                new InternetAddress("testEmail@google.com")));
+            EmailMessage.newBuilder()
+                .setSubject(
+                    "Registrar The Registrar (TheRegistrar) updated in registry unittest"
+                        + " environment")
+                .setBody(
+                    "The following changes were made in registry unittest environment to the"
+                        + " registrar TheRegistrar by user email@email.com:\n"
+                        + "\n"
+                        + "password: ******** -> ••••••••\n")
+                .setRecipients(ImmutableList.of(new InternetAddress("notification@test.example")))
+                .build());
     assertThat(((FakeResponse) consoleApiParams.response()).getStatus()).isEqualTo(SC_OK);
   }
 
   @Test
   void testSuccess_passwordUpdated() throws IOException {
     ConsoleEppPasswordAction action =
-        createAction("registrarId", "foobar", "randomPassword", "randomPassword");
+        createAction("TheRegistrar", "foobar", "randomPassword", "randomPassword");
     action.run();
     assertThat(((FakeResponse) consoleApiParams.response()).getStatus()).isEqualTo(SC_OK);
     assertDoesNotThrow(
         () -> {
-          credentials.validate(loadRegistrar("registrarId"), "randomPassword");
+          credentials.validate(loadRegistrar("TheRegistrar"), "randomPassword");
         });
   }
 
@@ -157,7 +157,7 @@ class ConsoleEppPasswordActionTest {
     consoleApiParams = ConsoleApiParamsUtils.createFake(authResult);
     AuthenticatedRegistrarAccessor authenticatedRegistrarAccessor =
         AuthenticatedRegistrarAccessor.createForTesting(
-            ImmutableSetMultimap.of("registrarId", OWNER));
+            ImmutableSetMultimap.of("TheRegistrar", OWNER));
     when(consoleApiParams.request().getMethod()).thenReturn(Action.Method.POST.toString());
     doReturn(
             new BufferedReader(
@@ -171,6 +171,6 @@ class ConsoleEppPasswordActionTest {
             GSON, RequestModule.provideJsonBody(consoleApiParams.request(), GSON));
 
     return new ConsoleEppPasswordAction(
-        consoleApiParams, authenticatedRegistrarAccessor, gmailClient, maybePasswordChangeRequest);
+        consoleApiParams, authenticatedRegistrarAccessor, maybePasswordChangeRequest);
   }
 }

@@ -17,6 +17,7 @@ package google.registry.ui.server.registrar;
 import google.registry.request.Response;
 import google.registry.request.auth.AuthResult;
 import google.registry.security.XsrfTokenManager;
+import google.registry.ui.server.SendEmailUtils;
 import jakarta.servlet.http.HttpServletRequest;
 
 /** Groups necessary dependencies for Console API actions * */
@@ -24,12 +25,14 @@ public record ConsoleApiParams(
     HttpServletRequest request,
     Response response,
     AuthResult authResult,
+    SendEmailUtils sendEmailUtils,
     XsrfTokenManager xsrfTokenManager) {
   public static ConsoleApiParams create(
       HttpServletRequest request,
       Response response,
       AuthResult authResult,
+      SendEmailUtils sendEmailUtils,
       XsrfTokenManager xsrfTokenManager) {
-    return new ConsoleApiParams(request, response, authResult, xsrfTokenManager);
+    return new ConsoleApiParams(request, response, authResult, sendEmailUtils, xsrfTokenManager);
   }
 }
