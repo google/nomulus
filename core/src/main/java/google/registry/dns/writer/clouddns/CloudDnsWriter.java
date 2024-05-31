@@ -401,7 +401,7 @@ public class CloudDnsWriter extends BaseDnsWriter {
       if (err == null || err.getErrors().size() > 1) {
         throw e;
       }
-      String errorReason = err.getErrors().get(0).getReason();
+      String errorReason = err.getErrors().getFirst().getReason();
 
       if (RETRYABLE_EXCEPTION_REASONS.contains(errorReason)) {
         throw new ZoneStateException(errorReason);
