@@ -23,6 +23,7 @@ import google.registry.bsa.persistence.BsaUnblockableDomainTest;
 import google.registry.model.billing.BillingBaseTest;
 import google.registry.model.common.CursorTest;
 import google.registry.model.common.DnsRefreshRequestTest;
+import google.registry.model.common.FeatureFlagTest;
 import google.registry.model.console.ConsoleEppActionHistoryTest;
 import google.registry.model.console.RegistrarPocUpdateHistoryTest;
 import google.registry.model.console.RegistrarUpdateHistoryTest;
@@ -103,6 +104,7 @@ import org.junit.runner.RunWith;
   DnsRefreshRequestTest.class,
   DomainSqlTest.class,
   DomainHistoryTest.class,
+  FeatureFlagTest.class,
   HostHistoryTest.class,
   LockTest.class,
   PollMessageTest.class,

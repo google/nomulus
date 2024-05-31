@@ -463,6 +463,12 @@
         primary key (id)
     );
 
+    create table "FeatureFlag" (
+       feature_name text not null,
+        status bytea not null,
+        primary key (feature_name)
+    );
+
     create table "GracePeriod" (
        grace_period_id int8 not null,
         billing_event_id int8,

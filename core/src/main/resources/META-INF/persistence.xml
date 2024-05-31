@@ -56,6 +56,7 @@
     <class>google.registry.model.contact.Contact</class>
     <class>google.registry.model.domain.Domain</class>
     <class>google.registry.model.domain.DomainHistory</class>
+    <class>google.registry.model.common.FeatureFlag</class>
     <class>google.registry.model.domain.GracePeriod</class>
     <class>google.registry.model.domain.GracePeriod$GracePeriodHistory</class>
     <class>google.registry.model.domain.secdns.DomainDsData</class>
