@@ -348,7 +348,10 @@ public class CloudDnsWriter extends BaseDnsWriter {
     // TODO(b/70217860): do we want to use a retrier here?
     try {
       Dns.ResourceRecordSets.List listRecordsRequest =
-          dnsConnection.resourceRecordSets().list(projectId, zoneName).setName(domainName);
+          dnsConnection
+              .resourceRecordSets()
+              .list(projectId, "global", zoneName)
+              .setName(domainName);
 
       rateLimiter.acquire();
       return listRecordsRequest.execute().getRrsets();
@@ -394,14 +397,14 @@ public class CloudDnsWriter extends BaseDnsWriter {
 
     rateLimiter.acquire();
     try {
-      dnsConnection.changes().create(projectId, zoneName, change).execute();
+      dnsConnection.changes().create(projectId, "global", zoneName, change).execute();
     } catch (GoogleJsonResponseException e) {
       GoogleJsonError err = e.getDetails();
       // We did something really wrong here, just give up and re-throw
       if (err == null || err.getErrors().size() > 1) {
         throw e;
       }
-      String errorReason = err.getErrors().get(0).getReason();
+      String errorReason = err.getErrors().getFirst().getReason();
 
       if (RETRYABLE_EXCEPTION_REASONS.contains(errorReason)) {
         throw new ZoneStateException(errorReason);
