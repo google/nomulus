@@ -99,7 +99,7 @@ class ConsoleUpdateRegistrarActionTest {
       new JpaTestExtensions.Builder().buildIntegrationTestExtension();
 
   @Test
-  void testSuccess__updatesRegistrar() throws IOException {
+  void testSuccess_updatesRegistrar() throws IOException {
     var action = createAction(String.format(registrarPostData, "TheRegistrar", "app, dev", false));
     action.run();
     Registrar newRegistrar = Registrar.loadByRegistrarId("TheRegistrar").get();
@@ -109,7 +109,7 @@ class ConsoleUpdateRegistrarActionTest {
   }
 
   @Test
-  void testFails__missingWhoisContact() throws IOException {
+  void testFails_missingWhoisContact() throws IOException {
     RegistryEnvironment.PRODUCTION.setup(systemPropertyExtension);
     var action = createAction(String.format(registrarPostData, "TheRegistrar", "app, dev", false));
     action.run();
@@ -119,7 +119,7 @@ class ConsoleUpdateRegistrarActionTest {
   }
 
   @Test
-  void testSuccess__presentWhoisContact() throws IOException {
+  void testSuccess_presentWhoisContact() throws IOException {
     RegistryEnvironment.PRODUCTION.setup(systemPropertyExtension);
     RegistrarPoc contact =
         new RegistrarPoc.Builder()
@@ -143,7 +143,7 @@ class ConsoleUpdateRegistrarActionTest {
   }
 
   @Test
-  void testSuccess__sendsEmail() throws AddressException, IOException {
+  void testSuccess_sendsEmail() throws AddressException, IOException {
     var action = createAction(String.format(registrarPostData, "TheRegistrar", "app, dev", false));
     action.run();
     verify(consoleApiParams.sendEmailUtils().gmailClient, times(1))

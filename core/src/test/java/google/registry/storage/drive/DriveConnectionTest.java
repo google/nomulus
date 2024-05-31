@@ -18,7 +18,6 @@ import static com.google.common.io.ByteStreams.toByteArray;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -28,12 +27,9 @@ import static org.mockito.Mockito.when;
 
 import com.google.api.client.http.ByteArrayContent;
 import com.google.api.services.drive.Drive;
-import com.google.api.services.drive.Drive.Children;
 import com.google.api.services.drive.Drive.Files;
-import com.google.api.services.drive.model.ChildList;
-import com.google.api.services.drive.model.ChildReference;
 import com.google.api.services.drive.model.File;
-import com.google.api.services.drive.model.ParentReference;
+import com.google.api.services.drive.model.FileList;
 import com.google.common.collect.ImmutableList;
 import com.google.common.net.MediaType;
 import java.util.Arrays;
@@ -47,15 +43,13 @@ class DriveConnectionTest {
 
   private final Drive drive = mock(Drive.class);
   private final Files files = mock(Files.class);
-  private final Children children = mock(Children.class);
-  private final Files.Insert insert = mock(Files.Insert.class);
+  private final Files.Create create = mock(Files.Create.class);
   private final Files.Update update = mock(Files.Update.class);
-  private final Children.List childrenList = mock(Children.List.class);
+  private final Files.List filesList = mock(Files.List.class);
 
   private static final byte[] DATA = {1, 2, 3};
-  ChildList childList;
   private DriveConnection driveConnection;
-  private List<String> allChildren;
+  private List<String> allFiles;
 
   private ArgumentMatcher<ByteArrayContent> hasByteArrayContent(final byte[] data) {
     return arg -> {
@@ -72,154 +66,143 @@ class DriveConnectionTest {
     driveConnection = new DriveConnection();
     driveConnection.drive = drive;
     when(drive.files()).thenReturn(files);
-    when(drive.children()).thenReturn(children);
-    when(insert.execute()).thenReturn(new File().setId("id"));
+    when(create.execute()).thenReturn(new File().setId("id"));
     when(update.execute()).thenReturn(new File().setId("id"));
 
     // Mocking required for listFiles.
-    ChildReference child1 = new ChildReference().setId("child1");
-    ChildReference child2 = new ChildReference().setId("child2");
-    ChildReference child3 = new ChildReference().setId("child3");
-    ChildReference child4 = new ChildReference().setId("child4");
-    List<ChildReference> children1 = ImmutableList.of(child1, child2);
-    List<ChildReference> children2 = ImmutableList.of(child3, child4);
-    allChildren = ImmutableList.of(child1.getId(), child2.getId(), child3.getId(), child4.getId());
-    ChildList childList1 = new ChildList();
-    childList1.setItems(children1);
-    childList1.setNextPageToken("page2");
-    ChildList childList2 = new ChildList();
-    childList2.setItems(children2);
-    childList2.setNextPageToken(null);
-    when(childrenList.execute()).thenReturn(childList1, childList2);
-    when(childrenList.setQ(anyString())).thenReturn(childrenList);
-    when(childrenList.getPageToken()).thenCallRealMethod();
-    when(childrenList.setPageToken(any())).thenCallRealMethod();
-    when(children.list("driveFolderId")).thenReturn(childrenList);
+    File file1 = new File().setId("file1");
+    File file2 = new File().setId("file2");
+    File file3 = new File().setId("file2");
+    File file4 = new File().setId("file4");
+    List<File> files1 = ImmutableList.of(file1, file2);
+    List<File> files2 = ImmutableList.of(file3, file4);
+    allFiles = ImmutableList.of(file1.getId(), file2.getId(), file3.getId(), file4.getId());
+    FileList fileList1 = new FileList();
+    fileList1.setFiles(files1);
+    fileList1.setNextPageToken("page2");
+    FileList fileList2 = new FileList();
+    fileList2.setFiles(files2);
+    fileList2.setNextPageToken(null);
+    when(filesList.execute()).thenReturn(fileList1, fileList2);
+    when(filesList.getPageToken()).thenCallRealMethod();
+    when(filesList.setPageToken(any())).thenCallRealMethod();
+    when(files.list()).thenReturn(filesList);
   }
 
   @Test
   void testCreateFileAtRoot() throws Exception {
-    when(files.insert(
-            eq(new File().setTitle("title").setMimeType("image/gif")),
+    when(files.create(
+            eq(new File().setName("name").setMimeType("image/gif")),
             argThat(hasByteArrayContent(DATA))))
-        .thenReturn(insert);
-    assertThat(driveConnection.createFile("title", MediaType.GIF, null, DATA)).isEqualTo("id");
+        .thenReturn(create);
+    assertThat(driveConnection.createFile("name", MediaType.GIF, null, DATA)).isEqualTo("id");
   }
 
   @Test
   void testCreateFileInFolder() throws Exception {
-    when(files.insert(
+    when(files.create(
             eq(
                 new File()
-                    .setTitle("title")
+                    .setName("name")
                     .setMimeType("image/gif")
-                    .setParents(ImmutableList.of(new ParentReference().setId("parent")))),
+                    .setParents(ImmutableList.of("parent"))),
             argThat(hasByteArrayContent(DATA))))
-        .thenReturn(insert);
-    assertThat(driveConnection.createFile("title", MediaType.GIF, "parent", DATA)).isEqualTo("id");
+        .thenReturn(create);
+    assertThat(driveConnection.createFile("name", MediaType.GIF, "parent", DATA)).isEqualTo("id");
   }
 
   @Test
   void testCreateFolderAtRoot() throws Exception {
-    when(files.insert(
-            new File().setTitle("title").setMimeType("application/vnd.google-apps.folder")))
-        .thenReturn(insert);
-    assertThat(driveConnection.createFolder("title", null)).isEqualTo("id");
+    when(files.create(new File().setName("name").setMimeType("application/vnd.google-apps.folder")))
+        .thenReturn(create);
+    assertThat(driveConnection.createFolder("name", null)).isEqualTo("id");
   }
 
   @Test
   void testCreateFolderInFolder() throws Exception {
-    when(files.insert(
+    when(files.create(
             new File()
-                .setTitle("title")
+                .setName("name")
                 .setMimeType("application/vnd.google-apps.folder")
-                .setParents(ImmutableList.of(new ParentReference().setId("parent")))))
-        .thenReturn(insert);
-    assertThat(driveConnection.createFolder("title", "parent")).isEqualTo("id");
+                .setParents(ImmutableList.of("parent"))))
+        .thenReturn(create);
+    assertThat(driveConnection.createFolder("name", "parent")).isEqualTo("id");
   }
 
   @Test
   void testListFiles_noQueryWithPagination() throws Exception {
-    assertThat(driveConnection.listFiles("driveFolderId")).containsExactlyElementsIn(allChildren);
-    verify(childrenList).setPageToken("page2");
-    verify(childrenList).setPageToken(null);
-    verify(childrenList, times(0)).setQ(anyString());
-    verify(childrenList, times(2)).getPageToken();
+    assertThat(driveConnection.listFiles("driveFolderId")).containsExactlyElementsIn(allFiles);
+    verify(filesList).setPageToken("page2");
+    verify(filesList).setPageToken(null);
+    verify(filesList, times(1)).setQ("'driveFolderId' in parents");
+    verify(filesList, times(2)).getPageToken();
   }
 
   @Test
   void testListFiles_withQueryAndPagination() throws Exception {
     assertThat(driveConnection.listFiles("driveFolderId", "sampleQuery"))
-        .containsExactlyElementsIn(allChildren);
-    verify(childrenList).setPageToken("page2");
-    verify(childrenList).setPageToken(null);
-    verify(childrenList, times(1)).setQ("sampleQuery");
-    verify(childrenList, times(2)).getPageToken();
+        .containsExactlyElementsIn(allFiles);
+    verify(filesList).setPageToken("page2");
+    verify(filesList).setPageToken(null);
+    verify(filesList, times(1)).setQ("'driveFolderId' in parents and sampleQuery");
+    verify(filesList, times(2)).getPageToken();
   }
 
   @Test
   void testCreateOrUpdateFile_succeedsForNewFile() throws Exception {
-    when(files.insert(
+    when(files.create(
             eq(
                 new File()
-                    .setTitle("title")
+                    .setName("name")
                     .setMimeType("video/webm")
-                    .setParents(ImmutableList.of(new ParentReference().setId("driveFolderId")))),
+                    .setParents(ImmutableList.of("driveFolderId"))),
             argThat(hasByteArrayContent(DATA))))
-        .thenReturn(insert);
-    ChildList emptyChildList = new ChildList().setItems(ImmutableList.of()).setNextPageToken(null);
-    when(childrenList.execute()).thenReturn(emptyChildList);
+        .thenReturn(create);
+    FileList emptyFileList = new FileList().setFiles(ImmutableList.of()).setNextPageToken(null);
+    when(filesList.execute()).thenReturn(emptyFileList);
     assertThat(
-            driveConnection.createOrUpdateFile(
-                "title", MediaType.WEBM_VIDEO, "driveFolderId", DATA))
+            driveConnection.createOrUpdateFile("name", MediaType.WEBM_VIDEO, "driveFolderId", DATA))
         .isEqualTo("id");
   }
 
   @Test
   void testCreateOrUpdateFile_succeedsForUpdatingFile() throws Exception {
-    when(files.update(
-            eq("id"), eq(new File().setTitle("title")), argThat(hasByteArrayContent(DATA))))
+    when(files.update(eq("id"), eq(new File().setName("name")), argThat(hasByteArrayContent(DATA))))
         .thenReturn(update);
-    ChildList childList =
-        new ChildList()
-            .setItems(ImmutableList.of(new ChildReference().setId("id")))
-            .setNextPageToken(null);
-    when(childrenList.execute()).thenReturn(childList);
+    FileList fileList =
+        new FileList().setFiles(ImmutableList.of(new File().setId("id"))).setNextPageToken(null);
+    when(filesList.execute()).thenReturn(fileList);
     assertThat(
-            driveConnection.createOrUpdateFile(
-                "title", MediaType.WEBM_VIDEO, "driveFolderId", DATA))
+            driveConnection.createOrUpdateFile("name", MediaType.WEBM_VIDEO, "driveFolderId", DATA))
         .isEqualTo("id");
   }
 
   @Test
   void testCreateOrUpdateFile_throwsExceptionWhenMultipleFilesWithNameAlreadyExist()
       throws Exception {
-    ChildList childList =
-        new ChildList()
-            .setItems(
-                ImmutableList.of(
-                    new ChildReference().setId("id1"), new ChildReference().setId("id2")))
+    FileList fileList =
+        new FileList()
+            .setFiles(ImmutableList.of(new File().setId("id1"), new File().setId("id2")))
             .setNextPageToken(null);
-    when(childrenList.execute()).thenReturn(childList);
+    when(filesList.execute()).thenReturn(fileList);
     IllegalStateException thrown =
         assertThrows(
             IllegalStateException.class,
             () ->
                 driveConnection.createOrUpdateFile(
-                    "title", MediaType.WEBM_VIDEO, "driveFolderId", DATA));
+                    "name", MediaType.WEBM_VIDEO, "driveFolderId", DATA));
     assertThat(thrown)
         .hasMessageThat()
         .contains(
-            "Could not update file 'title' in Drive folder id 'driveFolderId' "
+            "Could not update file 'name' in Drive folder id 'driveFolderId' "
                 + "because multiple files with that name already exist.");
   }
 
   @Test
   void testUpdateFile_succeeds() throws Exception {
-    when(files.update(
-            eq("id"), eq(new File().setTitle("title")), argThat(hasByteArrayContent(DATA))))
+    when(files.update(eq("id"), eq(new File().setName("name")), argThat(hasByteArrayContent(DATA))))
         .thenReturn(update);
-    assertThat(driveConnection.updateFile("id", "title", MediaType.WEBM_VIDEO, DATA))
+    assertThat(driveConnection.updateFile("id", "name", MediaType.WEBM_VIDEO, DATA))
         .isEqualTo("id");
   }
 }
