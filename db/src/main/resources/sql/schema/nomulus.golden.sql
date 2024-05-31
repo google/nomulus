@@ -678,6 +678,16 @@ ALTER SEQUENCE public."DomainTransactionRecord_id_seq" OWNED BY public."DomainTr
 
 
 --
+-- Name: FeatureFlag; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public."FeatureFlag" (
+    feature_name text NOT NULL,
+    status bytea NOT NULL
+);
+
+
+--
 -- Name: GracePeriod; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -1616,6 +1626,14 @@ ALTER TABLE ONLY public."DomainTransactionRecord"
 
 ALTER TABLE ONLY public."Domain"
     ADD CONSTRAINT "Domain_pkey" PRIMARY KEY (repo_id);
+
+
+--
+-- Name: FeatureFlag FeatureFlag_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."FeatureFlag"
+    ADD CONSTRAINT "FeatureFlag_pkey" PRIMARY KEY (feature_name);
 
 
 --
