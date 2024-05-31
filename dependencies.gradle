@@ -37,12 +37,6 @@ ext {
 
 
       // PINNED VERSIONS START HERE.
-
-      // Breaking changes causing compilation error.
-      // TODO: Migrate to com.google.cloud:google-cloud-dns if
-      // https://github.com/googleapis/google-cloud-java/issues/8929 is fixed.
-      // At least migrate to v2.
-      'com.google.apis:google-api-services-dns:v2beta1-rev99-1.25.0',
       // TODO: Migrate to v3
       'com.google.apis:google-api-services-drive:v2-rev393-1.25.0',
 
@@ -119,6 +113,7 @@ ext {
       'com.google.apis:google-api-services-bigquery:[v2-rev459-1.25.0,)',
       'com.google.apis:google-api-services-cloudkms:[v1-rev108-1.25.0,)',
       'com.google.apis:google-api-services-dataflow:[v1b3-rev302-1.25.0,)',
+      'com.google.apis:google-api-services-dns:[v2-rev20220505-1.32.1,)',
       'com.google.apis:google-api-services-gmail:[v1-rev20220404-2.0.0,)',
       'com.google.apis:google-api-services-groupssettings:[v1-rev82-1.25.0,)',
       'com.google.apis:google-api-services-iam:[v1-rev20240118-2.0.0,0)',

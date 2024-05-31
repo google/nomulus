@@ -142,9 +142,9 @@ public class CloudDnsWriterTest {
 
     when(dnsConnection.changes()).thenReturn(changes);
     when(dnsConnection.resourceRecordSets()).thenReturn(resourceRecordSets);
-    when(resourceRecordSets.list(anyString(), anyString()))
+    when(resourceRecordSets.list(anyString(), anyString(), anyString()))
         .thenAnswer(invocationOnMock -> newListResourceRecordSetsRequestMock());
-    when(changes.create(anyString(), zoneNameCaptor.capture(), changeCaptor.capture()))
+    when(changes.create(anyString(), anyString(), zoneNameCaptor.capture(), changeCaptor.capture()))
         .thenReturn(createChangeRequest);
     // Change our stub zone when a request to change the records is executed
     when(createChangeRequest.execute())
