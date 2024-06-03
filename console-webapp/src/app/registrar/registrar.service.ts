@@ -85,6 +85,8 @@ export class RegistrarService implements GlobalLoader {
     this.registrars().find((r) => r.registrarId === this.registrarId())
   );
 
+  inNewRegistrarMode = signal(false);
+
   constructor(
     private backend: BackendService,
     private globalLoader: GlobalLoaderService,

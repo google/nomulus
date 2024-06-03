@@ -1,0 +1,182 @@
+<div class="console-new-registrar">
+  <button
+    mat-icon-button
+    aria-label="Back to registrars list"
+    (click)="goBack()"
+  >
+    <mat-icon>arrow_back</mat-icon>
+  </button>
+  <div class="spacer"></div>
+  <h1>Create a registrar</h1>
+  <form (ngSubmit)="save($event)" #form>
+    <h2>General</h2>
+    <section>
+      <mat-form-field appearance="outline">
+        <mat-label>Registrar Name: </mat-label>
+        <input
+          matInput
+          [required]="true"
+          [(ngModel)]="newRegistrar.registrarName"
+          [ngModelOptions]="{ standalone: true }"
+        />
+      </mat-form-field>
+    </section>
+    <section>
+      <mat-form-field appearance="outline">
+        <mat-label>Registrar ID: </mat-label>
+        <input
+          matInput
+          [required]="true"
+          [(ngModel)]="newRegistrar.registrarId"
+          [ngModelOptions]="{ standalone: true }"
+        />
+      </mat-form-field>
+    </section>
+    <section>
+      <mat-form-field appearance="outline">
+        <mat-label>Registrar email address: </mat-label>
+        <input
+          matInput
+          type="email"
+          [required]="true"
+          [(ngModel)]="newRegistrar.emailAddress"
+          [ngModelOptions]="{ standalone: true }"
+        />
+      </mat-form-field>
+    </section>
+    <section>
+      <mat-form-field appearance="outline">
+        <mat-label>Billing Accounts: </mat-label>
+        <textarea
+          matInput
+          required="true"
+          placeholder="USD=billing-id-for-usd
+JPY=billing-id-for-yen"
+          [ngModel]="billingAccountMap"
+          (ngModelChange)="onBillingAccountMapChange($event)"
+          [ngModelOptions]="{ standalone: true }"
+        ></textarea>
+      </mat-form-field>
+    </section>
+    <section>
+      <mat-form-field appearance="outline">
+        <mat-label>IANA ID: </mat-label>
+        <input
+          matInput
+          [required]="true"
+          [(ngModel)]="newRegistrar.ianaIdentifier"
+          [ngModelOptions]="{ standalone: true }"
+        />
+      </mat-form-field>
+    </section>
+    <section>
+      <mat-form-field appearance="outline">
+        <mat-label>ICANN referral email: </mat-label>
+        <input
+          matInput
+          [required]="true"
+          type="email"
+          [(ngModel)]="newRegistrar.icannReferralEmail"
+          [ngModelOptions]="{ standalone: true }"
+        />
+      </mat-form-field>
+    </section>
+    <section>
+      <mat-form-field appearance="outline">
+        <mat-label>Drive ID: </mat-label>
+        <input
+          matInput
+          [required]="true"
+          [(ngModel)]="newRegistrar.driveFolderId"
+          [ngModelOptions]="{ standalone: true }"
+        />
+      </mat-form-field>
+    </section>
+    <h2>Contact Info</h2>
+    <section>
+      <mat-form-field appearance="outline">
+        <mat-label>Street address (Line 1): </mat-label>
+        <input
+          matInput
+          [required]="true"
+          [(ngModel)]="localizedAddressStreet.line1"
+          [ngModelOptions]="{ standalone: true }"
+        />
+      </mat-form-field>
+    </section>
+    <section>
+      <mat-form-field appearance="outline">
+        <mat-label>Street address (Line 2)</mat-label>
+        <input
+          matInput
+          [required]="false"
+          [(ngModel)]="localizedAddressStreet.line2"
+          [ngModelOptions]="{ standalone: true }"
+        />
+      </mat-form-field>
+    </section>
+    <section>
+      <mat-form-field appearance="outline">
+        <mat-label>Street address (Line 3)</mat-label>
+        <input
+          matInput
+          [required]="false"
+          [(ngModel)]="localizedAddressStreet.line3"
+          [ngModelOptions]="{ standalone: true }"
+        />
+      </mat-form-field>
+    </section>
+    <section>
+      <mat-form-field appearance="outline">
+        <mat-label>City: </mat-label>
+        <input
+          matInput
+          [required]="true"
+          [(ngModel)]="newRegistrar.localizedAddress.city"
+          [ngModelOptions]="{ standalone: true }"
+        />
+      </mat-form-field>
+    </section>
+    <section>
+      <mat-form-field appearance="outline">
+        <mat-label>State/Region: </mat-label>
+        <input
+          matInput
+          [required]="false"
+          [(ngModel)]="newRegistrar.localizedAddress.state"
+          [ngModelOptions]="{ standalone: true }"
+        />
+      </mat-form-field>
+    </section>
+    <section>
+      <mat-form-field appearance="outline">
+        <mat-label>ZIP/Postal Code: </mat-label>
+        <input
+          matInput
+          [required]="false"
+          [(ngModel)]="newRegistrar.localizedAddress.zip"
+          [ngModelOptions]="{ standalone: true }"
+        />
+      </mat-form-field>
+    </section>
+    <section>
+      <mat-form-field appearance="outline">
+        <mat-label>Country Code (e.g. US): </mat-label>
+        <input
+          matInput
+          [required]="true"
+          [(ngModel)]="newRegistrar.localizedAddress.countryCode"
+          [ngModelOptions]="{ standalone: true }"
+        />
+      </mat-form-field>
+    </section>
+    <button
+      class="console-new-registrar__submit"
+      mat-flat-button
+      color="primary"
+      type="submit"
+    >
+      Save
+    </button>
+  </form>
+</div>

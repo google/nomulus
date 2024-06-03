@@ -111,4 +111,8 @@ export class RegistrarComponent {
     // TODO: consider filteing out only by registrar name
     this.dataSource.filter = filterValue.trim().toLowerCase();
   }
+
+  openNewRegistrar() {
+    this.registrarService.inNewRegistrarMode.set(true);
+  }
 }
