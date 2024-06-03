@@ -1,0 +1,20 @@
+.console-new-registrar {
+  max-width: 616px;
+
+  h2 {
+    margin: 40px 0 25px 0;
+  }
+
+  section {
+    margin-bottom: 20px;
+  }
+
+  mat-form-field {
+    display: block;
+    width: 100%;
+  }
+
+  &__submit {
+    margin: 30px 0;
+  }
+}
