@@ -14,11 +14,15 @@
 
 package google.registry.util;
 
+import static google.registry.util.GcpJsonFormatter.getCurrentTraceId;
+import static google.registry.util.GcpJsonFormatter.setCurrentTraceId;
+
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.SimpleTimeLimiter;
 import java.util.List;
 import java.util.concurrent.AbstractExecutorService;
 import java.util.concurrent.TimeUnit;
+import javax.annotation.Nullable;
 
 public class TimeLimiter {
 
@@ -26,7 +30,7 @@ public class TimeLimiter {
 
     @Override
     public void execute(Runnable command) {
-      MoreExecutors.platformThreadFactory().newThread(command).start();
+      MoreExecutors.platformThreadFactory().newThread(new LogTracingRunnable(command)).start();
     }
 
     @Override
@@ -52,6 +56,27 @@ public class TimeLimiter {
     @Override
     public boolean awaitTermination(long timeout, TimeUnit unit) {
       throw new UnsupportedOperationException();
+    }
+  }
+
+  private static class LogTracingRunnable implements Runnable {
+
+    private final Runnable runnable;
+    @Nullable private final String logTraceId;
+
+    LogTracingRunnable(Runnable runnable) {
+      this.runnable = runnable;
+      logTraceId = getCurrentTraceId();
+    }
+
+    @Override
+    public void run() {
+      setCurrentTraceId(logTraceId);
+      try {
+        this.runnable.run();
+      } finally {
+        setCurrentTraceId(null);
+      }
     }
   }
 
