@@ -15,6 +15,11 @@
     min-width: $min-width !important;
   }
 
+  &__registrars-header {
+    display: flex;
+    justify-content: space-between;
+  }
+
   .mat-mdc-paginator {
     min-width: $min-width !important;
   }

@@ -42,28 +42,32 @@ export class RegistrarDetailsComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    this.subscription = this.route.paramMap.subscribe((params: ParamMap) => {
-      this.registrarInEdit = structuredClone(
-        this.registrarService
-          .registrars()
-          .filter((r) => r.registrarId === params.get('id'))[0]
-      );
-      if (!this.registrarInEdit) {
-        this._snackBar.open(
-          `Registrar with id ${params.get('id')} is not available`
+    this.registrarService.registrarsLoaded.then(() => {
+      this.subscription = this.route.paramMap.subscribe((params: ParamMap) => {
+        this.registrarInEdit = structuredClone(
+          this.registrarService
+            .registrars()
+            .filter((r) => r.registrarId === params.get('id'))[0]
         );
-        this.registrarNotFound = true;
-      } else {
-        this.registrarNotFound = false;
-      }
+        if (!this.registrarInEdit) {
+          this._snackBar.open(
+            `Registrar with id ${params.get('id')} is not available`
+          );
+          this.registrarNotFound = true;
+        } else {
+          this.registrarNotFound = false;
+        }
+      });
     });
   }
 
   addTLD(e: MatChipInputEvent) {
+    this.registrarInEdit.allowedTlds = this.registrarInEdit.allowedTlds || [];
     this.removeTLD(e.value); // Prevent dups
-    this.registrarInEdit.allowedTlds = this.registrarInEdit.allowedTlds?.concat(
-      [e.value.toLowerCase()]
-    );
+    this.registrarInEdit.allowedTlds = [
+      ...this.registrarInEdit.allowedTlds,
+      e.value.toLowerCase(),
+    ];
   }
 
   removeTLD(tld: string) {
@@ -73,7 +77,7 @@ export class RegistrarDetailsComponent implements OnInit {
   }
 
   saveAndClose() {
-    this.registrarService.saveRegistrar(this.registrarInEdit).subscribe({
+    this.registrarService.updateRegistrar(this.registrarInEdit).subscribe({
       complete: () => {
         this.router.navigate([RegistrarComponent.PATH], {
           queryParamsHandling: 'merge',

@@ -1,5 +1,19 @@
+@if(registrarService.inNewRegistrarMode()) {
+<app-new-registrar />
+} @else {
 <div class="console-app__registrars">
-  <h1 class="mat-headline-4">Registrars</h1>
+  <div class="console-app__registrars-header">
+    <h1 class="mat-headline-4">Registrars</h1>
+    <button
+      mat-flat-button
+      color="primary"
+      (click)="openNewRegistrar()"
+      aria-label="Add new registrar"
+    >
+      <mat-icon>add</mat-icon>
+      Add new registrar
+    </button>
+  </div>
   <mat-form-field class="console-app__registrars-filter">
     <mat-label>Search</mat-label>
     <input
@@ -36,3 +50,5 @@
     showFirstLastButtons
   ></mat-paginator>
 </div>
+
+}

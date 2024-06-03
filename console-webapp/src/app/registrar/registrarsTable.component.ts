@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Component, ViewChild, ViewEncapsulation } from '@angular/core';
+import { Component, effect, ViewChild, ViewEncapsulation } from '@angular/core';
 import { MatPaginator } from '@angular/material/paginator';
 import { MatSort } from '@angular/material/sort';
 import { MatTableDataSource } from '@angular/material/table';
@@ -93,6 +93,9 @@ export class RegistrarComponent {
     this.dataSource = new MatTableDataSource<Registrar>(
       registrarService.registrars()
     );
+    effect(() => {
+      this.dataSource.data = registrarService.registrars();
+    });
   }
 
   ngAfterViewInit() {
@@ -110,5 +113,9 @@ export class RegistrarComponent {
     const filterValue = (event.target as HTMLInputElement).value;
     // TODO: consider filteing out only by registrar name
     this.dataSource.filter = filterValue.trim().toLowerCase();
+  }
+
+  openNewRegistrar() {
+    this.registrarService.inNewRegistrarMode.set(true);
   }
 }

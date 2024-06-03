@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import { Injectable, computed, signal } from '@angular/core';
-import { Observable, tap } from 'rxjs';
+import { Observable, tap, switchMap } from 'rxjs';
 
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { Router } from '@angular/router';
@@ -85,14 +85,21 @@ export class RegistrarService implements GlobalLoader {
     this.registrars().find((r) => r.registrarId === this.registrarId())
   );
 
+  inNewRegistrarMode = signal(false);
+
+  registrarsLoaded: Promise<void>;
+
   constructor(
     private backend: BackendService,
     private globalLoader: GlobalLoaderService,
     private _snackBar: MatSnackBar,
     private router: Router
   ) {
-    this.loadRegistrars().subscribe((r) => {
-      this.globalLoader.stopGlobalLoader(this);
+    this.registrarsLoaded = new Promise((resolve) => {
+      this.loadRegistrars().subscribe((r) => {
+        this.globalLoader.stopGlobalLoader(this);
+        resolve();
+      });
     });
     this.globalLoader.startGlobalLoader(this);
   }
@@ -118,19 +125,23 @@ export class RegistrarService implements GlobalLoader {
     );
   }
 
-  saveRegistrar(registrar: Registrar) {
-    return this.backend.postRegistrar(registrar).pipe(
-      tap((registrar) => {
-        if (registrar) {
-          this.registrars.set(
-            this.registrars().map((r) => {
-              if (r.registrarId === registrar.registrarId) {
-                return registrar;
-              }
-              return r;
-            })
-          );
-        }
+  createRegistrar(registrar: Registrar) {
+    return this.backend
+      .createRegistrar(registrar)
+      .pipe(switchMap((_) => this.loadRegistrars()));
+  }
+
+  updateRegistrar(updatedRegistrar: Registrar) {
+    return this.backend.updateRegistrar(updatedRegistrar).pipe(
+      tap(() => {
+        this.registrars.set(
+          this.registrars().map((r) => {
+            if (r.registrarId === updatedRegistrar.registrarId) {
+              return updatedRegistrar;
+            }
+            return r;
+          })
+        );
       })
     );
   }
