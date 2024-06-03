@@ -20,6 +20,7 @@ import com.google.common.flogger.FluentLogger;
 import com.google.common.flogger.StackSize;
 import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -77,7 +78,7 @@ class GcpJsonFormatterTest {
     logger.atInfo().log("Something I have to say");
     handler.close();
     String output = ostream.toString(StandardCharsets.US_ASCII);
-    assertThat(output).isEqualTo(makeJson("INFO", 77, "testSuccess", "Something I have to say"));
+    assertThat(output).isEqualTo(makeJson("INFO", 78, "testSuccess", "Something I have to say"));
   }
 
   @Test
@@ -86,7 +87,7 @@ class GcpJsonFormatterTest {
     logger.atInfo().log("Something I have to say");
     handler.close();
     String output = ostream.toString(StandardCharsets.US_ASCII);
-    String expected = makeJson("INFO", 86, "testSuccess_traceId", "Something I have to say");
+    String expected = makeJson("INFO", 87, "testSuccess_traceId", "Something I have to say");
     // Remove the last two characters (}, \n) from the template and add the trace ID.
     expected =
         expected.substring(0, expected.length() - 2)
@@ -100,7 +101,7 @@ class GcpJsonFormatterTest {
     handler.close();
     String output = ostream.toString(StandardCharsets.US_ASCII);
     assertThat(output)
-        .isEqualTo(makeJson("ERROR", 99, "testSuccess_logLevel", "Something went terribly wrong"));
+        .isEqualTo(makeJson("ERROR", 100, "testSuccess_logLevel", "Something went terribly wrong"));
   }
 
   @Test
@@ -109,7 +110,7 @@ class GcpJsonFormatterTest {
     handler.close();
     String output = ostream.toString(StandardCharsets.US_ASCII);
     String prefix =
-        makeJson("ERROR", 108, "testSuccess_withCause", "Something went terribly wrong");
+        makeJson("ERROR", 109, "testSuccess_withCause", "Something went terribly wrong");
     // Remove the last two characters (}, \n) from the template as the actual output contains
     // the full stack trace.
     prefix = prefix.substring(0, prefix.length() - 2);
@@ -123,7 +124,7 @@ class GcpJsonFormatterTest {
     handler.close();
     String output = ostream.toString(StandardCharsets.US_ASCII);
     String prefix =
-        makeJson("ERROR", 122, "testSuccess_withStackTrace", "Something is worth checking");
+        makeJson("ERROR", 123, "testSuccess_withStackTrace", "Something is worth checking");
     // Remove the last three characters (}, \n) from the template as the actual output contains
     // the full stack trace.
     prefix = prefix.substring(0, prefix.length() - 2);
@@ -142,5 +143,32 @@ class GcpJsonFormatterTest {
             .replace("\"file\":\"GcpJsonFormatterTest.java\",", "")
             .replace("\"line\":\"4321\",", "");
     assertThat(output).isEqualTo(expected);
+  }
+
+  @Test
+  void testSuccess_timeLimiter() throws Exception {
+    TimeLimiter.create().callWithTimeout(this::logSomething, 1, TimeUnit.SECONDS);
+    handler.close();
+    String output = ostream.toString(StandardCharsets.US_ASCII);
+    assertThat(output).isEqualTo(makeJson("INFO", 171, "logSomething", "Something I have to say"));
+  }
+
+  @Test
+  void testSuccess_timeLimiter_traceId() throws Exception {
+    GcpJsonFormatter.setCurrentTraceId("trace_id");
+    TimeLimiter.create().callWithTimeout(this::logSomething, 1, TimeUnit.SECONDS);
+    handler.close();
+    String output = ostream.toString(StandardCharsets.US_ASCII);
+    String expected = makeJson("INFO", 171, "logSomething", "Something I have to say");
+    // Remove the last two characters (}, \n) from the template and add the trace ID.
+    expected =
+        expected.substring(0, expected.length() - 2)
+            + ",\"logging.googleapis.com/trace\":\"trace_id\"}\n";
+    assertThat(output).isEqualTo(expected);
+  }
+
+  private Void logSomething() {
+    logger.atInfo().log("Something I have to say");
+    return null;
   }
 }
