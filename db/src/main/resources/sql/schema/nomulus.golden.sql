@@ -54,7 +54,9 @@ CREATE TABLE public."AllocationToken" (
     redemption_domain_history_id bigint,
     renewal_price_behavior text DEFAULT 'DEFAULT'::text NOT NULL,
     registration_behavior text DEFAULT 'DEFAULT'::text NOT NULL,
-    allowed_epp_actions text[]
+    allowed_epp_actions text[],
+    renewal_price_amount numeric(19,2),
+    renewal_price_currency text
 );
 
 
