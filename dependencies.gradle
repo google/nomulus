@@ -38,14 +38,6 @@ ext {
 
       // PINNED VERSIONS START HERE.
 
-      // Breaking changes causing compilation error.
-      // TODO: Migrate to com.google.cloud:google-cloud-dns if
-      // https://github.com/googleapis/google-cloud-java/issues/8929 is fixed.
-      // At least migrate to v2.
-      'com.google.apis:google-api-services-dns:v2beta1-rev99-1.25.0',
-      // TODO: Migrate to v3
-      'com.google.apis:google-api-services-drive:v2-rev393-1.25.0',
-
       // TODO: Remove after the legacy console is deleted.
       'com.google.closure-stylesheets:closure-stylesheets:1.5.0',
       'com.google.javascript:closure-compiler:v20210505',
@@ -89,25 +81,27 @@ ext {
       // (I think).
       'com.sun.xml.bind:jaxb-xjc:[2.3.3, 2.4)!!',
 
-      // Excluding versions 2.0+ because it is runtime incompatible with the
-      // pinned google-api-services-(dns|drive) libraries. They have a
-      // hardcoded dependency on major version version 1.
-      // TODO: Remove the cap after the pins are removed.
-      'com.google.api-client:google-api-client:[1.31.3,2)!!',
-
       // Dagger doesn't support the Jakarta namespace yet. Pre-2.0 Jakarta
       // Inject still use the old javax namespace.
       // TODO: Remove the cap when https://github.com/google/dagger/issues/2058
       // is released.
       'jakarta.inject:jakarta.inject-api:[1,2.0.0)!!',
 
+      // This packages has a broken versioning scheme. There are v1beta3-* and
+      // v1b4-* packages that are way older than v1b3-rev2024MMDD-* that need to
+      // be excluded.
+      'com.google.apis:google-api-services-dataflow:[v1b3-rev20240430-2.0.0, v1b4)!!',
+
+      // v2 has not been updated since 2022, seems abandoned. It also requires
+      // google-api-client major version 1.
+      'com.google.apis:google-api-services-dns:[v1-rev20240419-2.0.0, v2beta)',
 
       // DYNAMIC VERSIONS START HERE.
 
       'args4j:args4j:[2.0.26,)',
       'com.fasterxml.jackson.core:jackson-databind:[2.11.2,)',
       'com.github.ben-manes.caffeine:caffeine:[3.0.0,)',
-      'com.google.api-client:google-api-client-appengine:[1.31.3,)',
+      'com.google.api-client:google-api-client:[1.31.3,)',
       'com.google.api-client:google-api-client-java6:[1.31.3,)',
       'com.google.api-client:google-api-client-servlet:[1.31.3,)',
       'com.google.api.grpc:proto-google-cloud-secretmanager-v1:[1.4.0,)',
@@ -115,15 +109,14 @@ ext {
       'com.google.api.grpc:proto-google-common-protos:[2.1.0,)',
       'com.google.api:gax:[1.66.0,)',
       'com.google.apis:google-api-services-admin-directory:[directory_v1-rev20240102-2.0.0,)',
-      'com.google.apis:google-api-services-appengine:[v1-rev130-1.25.0,)',
-      'com.google.apis:google-api-services-bigquery:[v2-rev459-1.25.0,)',
-      'com.google.apis:google-api-services-cloudkms:[v1-rev108-1.25.0,)',
-      'com.google.apis:google-api-services-dataflow:[v1b3-rev302-1.25.0,)',
+      'com.google.apis:google-api-services-bigquery:[v2-rev20240423-2.0.0,)',
+      'com.google.apis:google-api-services-cloudkms:[v1-rev20240513-2.0.0,)',
+      'com.google.apis:google-api-services-drive:[v3-rev20240521-2.0.0,)',
       'com.google.apis:google-api-services-gmail:[v1-rev20220404-2.0.0,)',
       'com.google.apis:google-api-services-groupssettings:[v1-rev82-1.25.0,)',
       'com.google.apis:google-api-services-iam:[v1-rev20240118-2.0.0,0)',
-      'com.google.apis:google-api-services-monitoring:[v3-rev540-1.25.0,)',
-      'com.google.apis:google-api-services-sheets:[v4-rev612-1.25.0,)',
+      'com.google.apis:google-api-services-monitoring:[v3-rev20240519-2.0.0,)',
+      'com.google.apis:google-api-services-sheets:[v4-rev20240514-2.0.0,)',
       'com.google.apis:google-api-services-storage:[v1-rev20210127-1.31.0,)',
       'com.google.auth:google-auth-library-credentials:[0.24.1,)',
       'com.google.auth:google-auth-library-oauth2-http:[0.24.1,)',
@@ -150,7 +143,6 @@ ext {
       'com.google.guava:guava-testlib:[33.0.0-jre,)',
       'com.google.guava:guava:[33.0.0-jre,)',
       'com.google.gwt:gwt-user:[2.9.0,)',
-      'com.google.http-client:google-http-client-appengine:[1.39.0,)',
       'com.google.http-client:google-http-client-jackson2:[1.39.0,)',
       'com.google.http-client:google-http-client:[1.39.0,)',
       // TODO: Remove after the old console is removed (dependency of soy).
@@ -158,7 +150,6 @@ ext {
       'com.google.monitoring-client:contrib:[1.0.7,)',
       'com.google.monitoring-client:metrics:[1.0.7,)',
       'com.google.monitoring-client:stackdriver:[1.0.7,)',
-      'com.google.oauth-client:google-oauth-client-appengine:[1.31.4,)',
       'com.google.oauth-client:google-oauth-client-java6:[1.31.4,)',
       'com.google.oauth-client:google-oauth-client-jetty:[1.31.4,)',
       'com.google.oauth-client:google-oauth-client-servlet:[1.31.4,)',
