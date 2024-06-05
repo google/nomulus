@@ -243,6 +243,7 @@ dependencies {
   implementation deps['us.fatehi:schemacrawler-api']
   implementation deps['us.fatehi:schemacrawler-diagram']
   implementation deps['us.fatehi:schemacrawler-tools']
+  implementation deps['us.fatehi:schemacrawler-postgresql']
   implementation deps['xerces:xmlParserAPIs']
   implementation deps['org.ogce:xpp3']
   // Known issue: nebula-lint misses inherited dependency.

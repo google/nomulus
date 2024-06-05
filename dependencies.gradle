@@ -35,7 +35,6 @@ ext {
       // Note that since Gradle 7, for version labels to be strict, we need to
       // append '!!' to the end. Otherwise they may still be forced to upgrade.
 
-
       // PINNED VERSIONS START HERE.
 
       // TODO: Remove after the legacy console is deleted.
@@ -51,14 +50,6 @@ ext {
       'com.google.template:soy:2021-02-01',
 
       // CAPPED VERSIONS START HERE.
-
-      // Schema crawler 16.11+ breaks API and tries to register a SQL driver
-      // referenced (but not provided) by appengine-api-1.0-sdk.
-      // TODO: Try upgrading to the latest version after we are off GAE.
-      'us.fatehi:schemacrawler:[16.10.1, 16.11.0)!!',
-      'us.fatehi:schemacrawler-api:[16.10.1, 16.11.0)!!',
-      'us.fatehi:schemacrawler-diagram:[16.10.1, 16.11.0)!!',
-      'us.fatehi:schemacrawler-tools:[16.10.1, 16.11.0)!!',
 
       // Hibernate 6.0+ requires Jakarta EE.
       // TODO: Upgrade to 6.0+ after we migrate to Jakarta EE persistence.
@@ -232,6 +223,11 @@ ext {
       'org.testcontainers:selenium:[1.19.6,)',
       'org.testcontainers:testcontainers:[1.19.6,)',
       'org.yaml:snakeyaml:[1.17,)',
+      'us.fatehi:schemacrawler:[16.10.1,)',
+      'us.fatehi:schemacrawler-api:[16.10.1,)',
+      'us.fatehi:schemacrawler-diagram:[16.10.1,)',
+      'us.fatehi:schemacrawler-postgresql:[16.10.1,)',
+      'us.fatehi:schemacrawler-tools:[16.10.1,)',
       'xerces:xmlParserAPIs:[2.6.2,)',
     ]
 
