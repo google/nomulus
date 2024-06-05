@@ -683,7 +683,7 @@ ALTER SEQUENCE public."DomainTransactionRecord_id_seq" OWNED BY public."DomainTr
 
 CREATE TABLE public."FeatureFlag" (
     feature_name text NOT NULL,
-    status bytea NOT NULL
+    status public.hstore NOT NULL
 );
 
 

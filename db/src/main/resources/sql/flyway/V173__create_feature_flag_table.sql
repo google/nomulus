@@ -14,6 +14,6 @@
 
 create table "FeatureFlag" (
     feature_name text not null,
-    status bytea not null,
+    status hstore not null,
     primary key (feature_name)
 );

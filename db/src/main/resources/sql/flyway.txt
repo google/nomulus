@@ -169,8 +169,5 @@ V168__registry_lock_email.sql
 V169__add_more_indexes_needed_for_delete_prober_data.sql
 V170__user_update_registry_lock_email.sql
 V171__drop_create_billing_cost_columns_from_tld.sql
-<<<<<<< HEAD
 V172__allocation_token_renewal_price.sql
-=======
 V173__create_feature_flag_table.sql
->>>>>>> 55268a2c2 (Add FeatureFlag table to the database)
