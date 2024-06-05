@@ -17,13 +17,14 @@ package google.registry.model.common;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.common.FeatureFlag.FeatureStatus.ACTIVE;
 import static google.registry.model.common.FeatureFlag.FeatureStatus.INACTIVE;
-import static google.registry.testing.DatabaseHelper.loadByEntity;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static org.joda.time.DateTimeZone.UTC;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableSortedMap;
 import google.registry.model.EntityTestCase;
+import google.registry.model.common.FeatureFlag.FeatureFlagNotFoundException;
 import google.registry.model.common.FeatureFlag.FeatureStatus;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.Test;
@@ -47,7 +48,14 @@ public class FeatureFlagTest extends EntityTestCase {
                     .build())
             .build();
     persistResource(featureFlag);
-    FeatureFlag flagFromDb = loadByEntity(featureFlag);
+    FeatureFlag flagFromDb = FeatureFlag.get("testFlag");
     assertThat(featureFlag).isEqualTo(flagFromDb);
+  }
+
+  @Test
+  void testFailure_featureFlagNotPresent() {
+    FeatureFlagNotFoundException thrown =
+        assertThrows(FeatureFlagNotFoundException.class, () -> FeatureFlag.get("fakeFlag"));
+    assertThat(thrown).hasMessageThat().isEqualTo("No feature flag object(s) found for fakeFlag");
   }
 }
