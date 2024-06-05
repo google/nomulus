@@ -16,7 +16,7 @@ package google.registry.whois;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.collect.ImmutableList.toImmutableList;
-import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.replicaTm;
 import static jakarta.servlet.http.HttpServletResponse.SC_NOT_FOUND;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -51,10 +51,12 @@ final class NameserverLookupByIpCommand implements WhoisCommand {
   public WhoisResponse executeQuery(DateTime now) throws WhoisException {
     Iterable<Host> hostsFromDb;
     hostsFromDb =
-        tm().transact(
+        replicaTm()
+            .transact(
                 () ->
                     // We cannot query @Convert-ed fields in HQL, so we must use native Postgres.
-                    tm().getEntityManager()
+                    replicaTm()
+                        .getEntityManager()
                         /*
                          * Using array_operator <@ (contained-by) with gin index on inet_address.
                          * Without gin index, this is slightly slower than the alternative form of

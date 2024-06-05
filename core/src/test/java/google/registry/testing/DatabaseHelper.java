@@ -28,7 +28,6 @@ import static google.registry.config.RegistryConfig.getContactAndHostRoidSuffix;
 import static google.registry.config.RegistryConfig.getContactAutomaticTransferLength;
 import static google.registry.model.EppResourceUtils.createDomainRepoId;
 import static google.registry.model.EppResourceUtils.createRepoId;
-import static google.registry.model.IdService.allocateId;
 import static google.registry.model.ImmutableObjectSubject.assertAboutImmutableObjects;
 import static google.registry.model.ImmutableObjectSubject.immutableObjectCorrespondence;
 import static google.registry.model.ResourceTransferUtils.createTransferResponse;
@@ -393,7 +392,7 @@ public final class DatabaseHelper {
     // prevent breaking some hard-coded flow tests. IDs in tests are allocated in a strictly
     // increasing sequence, if we don't pad out the ID here, we would have to renumber hundreds of
     // unit tests.
-    allocateId();
+    tm().reTransact(tm()::allocateId);
     PremiumListDao.save(premiumList);
     maybeAdvanceClock();
     return premiumList;
@@ -963,12 +962,12 @@ public final class DatabaseHelper {
 
   /** Returns a newly allocated, globally unique domain repoId of the format HEX-TLD. */
   public static String generateNewDomainRoid(String tld) {
-    return createDomainRepoId(allocateId(), tld);
+    return createDomainRepoId(tm().reTransact(tm()::allocateId), tld);
   }
 
   /** Returns a newly allocated, globally unique contact/host repoId of the format HEX_TLD-ROID. */
   public static String generateNewContactHostRoid() {
-    return createRepoId(allocateId(), getContactAndHostRoidSuffix());
+    return createRepoId(tm().reTransact(tm()::allocateId), getContactAndHostRoidSuffix());
   }
 
   /** Persists an object in the DB for tests. */

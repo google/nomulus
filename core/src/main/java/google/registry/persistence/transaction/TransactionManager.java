@@ -48,6 +48,15 @@ public interface TransactionManager {
    */
   void assertInTransaction();
 
+  /**
+   * Returns a {@link long} value that can be used as {@code id} by a JPA model entity.
+   *
+   * <p>The returned value must be project-wide unique when transacting on the primary database
+   * instance, but only needs to be unique within a JVM instance when transacting on the replica
+   * instance.
+   */
+  long allocateId();
+
   /** Executes the work in a transaction and returns the result. */
   <T> T transact(Callable<T> work);
 

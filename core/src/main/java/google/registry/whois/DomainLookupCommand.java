@@ -20,7 +20,7 @@ import static google.registry.model.EppResourceUtils.loadByForeignKey;
 import static google.registry.model.EppResourceUtils.loadByForeignKeyCached;
 import static google.registry.model.tld.Tlds.findTldForName;
 import static google.registry.model.tld.Tlds.getTlds;
-import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.replicaTm;
 import static jakarta.servlet.http.HttpServletResponse.SC_NOT_FOUND;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -67,7 +67,8 @@ public class DomainLookupCommand implements WhoisCommand {
     // Include `getResponse` and `isBlockedByBsa` in one transaction to reduce latency.
     // Must pass the exceptions outside to throw.
     ResponseOrException result =
-        tm().transact(
+        replicaTm()
+            .transact(
                 () -> {
                   final Optional<WhoisResponse> response = getResponse(domainName, now);
                   if (response.isPresent()) {

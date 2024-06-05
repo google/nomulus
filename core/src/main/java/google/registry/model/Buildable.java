@@ -16,8 +16,8 @@ package google.registry.model;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
-import static google.registry.model.IdService.allocateId;
 import static google.registry.model.ModelUtils.getAllFields;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import google.registry.model.annotations.IdAllocation;
 import google.registry.util.TypeUtils.TypeInstantiator;
@@ -65,7 +65,7 @@ public interface Buildable {
             && !idField.getType().equals(String.class)
             && Optional.ofNullable((Long) ModelUtils.getFieldValue(instance, idField))
                 .orElse(0L) == 0) {
-          ModelUtils.setFieldValue(instance, idField, allocateId());
+          ModelUtils.setFieldValue(instance, idField, tm().reTransact(tm()::allocateId));
         }
         return instance;
       } finally {
