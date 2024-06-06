@@ -44,10 +44,13 @@ import schemacrawler.schemacrawler.LoadOptionsBuilder;
 import schemacrawler.schemacrawler.SchemaCrawlerOptions;
 import schemacrawler.schemacrawler.SchemaCrawlerOptionsBuilder;
 import schemacrawler.schemacrawler.SchemaInfoLevelBuilder;
+import schemacrawler.tools.command.text.diagram.options.DiagramOutputFormat;
 import schemacrawler.tools.executable.SchemaCrawlerExecutable;
-import schemacrawler.tools.integration.diagram.DiagramOutputFormat;
 import schemacrawler.tools.options.OutputOptions;
 import schemacrawler.tools.options.OutputOptionsBuilder;
+import us.fatehi.utility.datasource.DatabaseConnectionSource;
+import us.fatehi.utility.datasource.DatabaseConnectionSources;
+import us.fatehi.utility.datasource.MultiUseUserCredentials;
 
 /** Command to generate ER diagrams for SQL schema. */
 @Parameters(separators = " =", commandDescription = "Generate ER diagrams for SQL schema.")
@@ -111,10 +114,12 @@ public class GenerateSqlErDiagramCommand implements Command {
       Connection conn = getConnection(postgresContainer);
       initDb(conn);
       if (diagramType == ALL || diagramType == FULL) {
-        improveDiagramHtml(generateErDiagram(conn, FULL_DIAGRAM_COMMAND, FULL_DIAGRAM_FILE_NAME));
+        improveDiagramHtml(
+            generateErDiagram(postgresContainer, FULL_DIAGRAM_COMMAND, FULL_DIAGRAM_FILE_NAME));
       }
       if (diagramType == ALL || diagramType == BRIEF) {
-        improveDiagramHtml(generateErDiagram(conn, BRIEF_DIAGRAM_COMMAND, BRIEF_DIAGRAM_FILE_NAME));
+        improveDiagramHtml(
+            generateErDiagram(postgresContainer, BRIEF_DIAGRAM_COMMAND, BRIEF_DIAGRAM_FILE_NAME));
       }
     }
   }
@@ -165,7 +170,8 @@ public class GenerateSqlErDiagramCommand implements Command {
     }
   }
 
-  private Path generateErDiagram(Connection connection, String command, String fileName) {
+  private Path generateErDiagram(
+      PostgreSQLContainer<?> container, String command, String fileName) {
     Path outputFile = outDir.resolve(fileName);
 
     LoadOptionsBuilder loadOptionsBuilder =
@@ -179,7 +185,11 @@ public class GenerateSqlErDiagramCommand implements Command {
     SchemaCrawlerExecutable executable = new SchemaCrawlerExecutable(command);
     executable.setSchemaCrawlerOptions(options);
     executable.setOutputOptions(outputOptions);
-    executable.setConnection(connection);
+    DatabaseConnectionSource connection =
+        DatabaseConnectionSources.newDatabaseConnectionSource(
+            container.getJdbcUrl(),
+            new MultiUseUserCredentials(container.getUsername(), container.getPassword()));
+    executable.setDataSource(connection);
     try {
       executable.execute();
     } catch (Exception e) {
