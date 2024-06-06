@@ -87,6 +87,7 @@ import google.registry.model.tld.Tld.TldState;
 import google.registry.model.tld.label.ReservedList;
 import google.registry.testing.DatabaseHelper;
 import java.math.BigDecimal;
+import java.util.Optional;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
@@ -160,6 +161,8 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
 
   @Test
   void testSuccess_bsaBlocked_otherwiseAvailable_blocked() throws Exception {
+    persistResource(
+        Tld.get("tld").asBuilder().setBsaEnrollStartTime(Optional.of(START_OF_TIME)).build());
     persistBsaLabel("example1");
     doCheckTest(
         create(false, "example1.tld", "Blocked by a GlobalBlock service"),
@@ -169,6 +172,8 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
 
   @Test
   void testSuccess_bsaBlocked_alsoRegistered_registered() throws Exception {
+    persistResource(
+        Tld.get("tld").asBuilder().setBsaEnrollStartTime(Optional.of(START_OF_TIME)).build());
     persistBsaLabel("example1");
     persistActiveDomain("example1.tld");
     doCheckTest(
@@ -179,6 +184,8 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
 
   @Test
   void testSuccess_bsaBlocked_alsoReserved_reserved() throws Exception {
+    persistResource(
+        Tld.get("tld").asBuilder().setBsaEnrollStartTime(Optional.of(START_OF_TIME)).build());
     persistBsaLabel("reserved");
     persistBsaLabel("allowedinsunrise");
     setEppInput("domain_check_one_tld_reserved.xml");
@@ -191,6 +198,8 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
 
   @Test
   void testSuccess_bsaBlocked_createAllowedWithToken() throws Exception {
+    persistResource(
+        Tld.get("tld").asBuilder().setBsaEnrollStartTime(Optional.of(START_OF_TIME)).build());
     persistBsaLabel("example1");
     setEppInput("domain_check_allocationtoken.xml");
     persistResource(
@@ -208,6 +217,8 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
 
   @Test
   void testSuccess_bsaBlocked_withIrrelevantTokenType() throws Exception {
+    persistResource(
+        Tld.get("tld").asBuilder().setBsaEnrollStartTime(Optional.of(START_OF_TIME)).build());
     persistBsaLabel("example1");
     setEppInput("domain_check_allocationtoken.xml");
     persistResource(
@@ -221,6 +232,19 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
         create(false, "example2.tld", "Alloc token invalid for domain"),
         create(false, "reserved.tld", "Reserved"),
         create(false, "specificuse.tld", "Reserved; alloc. token required"));
+  }
+
+  @Test
+  void testSuccess_bsaBlocked_onlyInEnrolledTlds() throws Exception {
+    setEppInput("domain_check.xml");
+    createTlds("com", "net", "org");
+    persistResource(
+        Tld.get("com").asBuilder().setBsaEnrollStartTime(Optional.of(START_OF_TIME)).build());
+    persistBsaLabel("example");
+    doCheckTest(
+        create(false, "example.com", "Blocked by a GlobalBlock service"),
+        create(true, "example.net", null),
+        create(true, "example.org", null));
   }
 
   @Test

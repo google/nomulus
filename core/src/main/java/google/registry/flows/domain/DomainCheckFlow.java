@@ -33,6 +33,7 @@ import static google.registry.flows.domain.DomainFlowUtils.validateDomainName;
 import static google.registry.flows.domain.DomainFlowUtils.validateDomainNameWithIdnTables;
 import static google.registry.flows.domain.DomainFlowUtils.verifyNotInPredelegation;
 import static google.registry.model.tld.Tld.TldState.START_DATE_SUNRISE;
+import static google.registry.model.tld.Tld.isEnrolledWithBsa;
 import static google.registry.model.tld.label.ReservationType.getTypeOfHighestSeverity;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
@@ -188,7 +189,7 @@ public final class DomainCheckFlow implements TransactionalFlow {
     ImmutableSet<InternetDomainName> bsaBlockedDomainNames =
         existingDomains.size() == parsedDomains.size()
             ? ImmutableSet.of()
-            : getBsaBlockedDomains(parsedDomains.values());
+            : getBsaBlockedDomains(parsedDomains.values(), now);
     Optional<AllocationTokenExtension> allocationTokenExtension =
         eppInput.getSingleExtension(AllocationTokenExtension.class);
     Optional<AllocationTokenDomainCheckResults> tokenDomainCheckResults =
@@ -441,9 +442,11 @@ public final class DomainCheckFlow implements TransactionalFlow {
   }
 
   static ImmutableSet<InternetDomainName> getBsaBlockedDomains(
-      ImmutableCollection<InternetDomainName> parsedDomains) {
+      ImmutableCollection<InternetDomainName> parsedDomains, DateTime now) {
     Map<String, ImmutableList<InternetDomainName>> labelToDomainNames =
         parsedDomains.stream()
+            .filter(
+                parsedDomain -> isEnrolledWithBsa(Tld.get(parsedDomain.parent().toString()), now))
             .collect(
                 Collectors.groupingBy(
                     parsedDomain -> parsedDomain.parts().get(0), toImmutableList()));
