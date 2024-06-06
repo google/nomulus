@@ -58,11 +58,10 @@ export class DomainListComponent {
     private _snackBar: MatSnackBar
   ) {
     effect(() => {
-      if (this.registrarService.registrarId()) {
-        this.pageNumber = 0;
-        this.totalResults = 0;
-        this.reloadData();
-      }
+      this.pageNumber = 0;
+      this.totalResults = 0;
+      this.reloadData();
+      this.registrarService.registrarId();
     });
   }
 

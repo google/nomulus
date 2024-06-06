@@ -31,8 +31,22 @@
     width: 100%;
   }
 
+  &__domains-table-parent {
+    position: relative;
+  }
+
   &__domains-table {
     min-width: $min-width !important;
+  }
+
+  &__domains-spinner {
+    align-items: center;
+    display: flex;
+    justify-content: center;
+    position: absolute;
+    height: 100%;
+    width: 100%;
+    background: rgba(255, 255, 255, 0.6);
   }
 
   .mat-mdc-paginator {
