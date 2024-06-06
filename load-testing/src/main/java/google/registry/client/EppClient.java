@@ -22,6 +22,7 @@ import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import com.google.common.collect.ImmutableList;
+import com.google.common.io.BaseEncoding;
 import com.google.common.io.Files;
 import com.google.common.io.Resources;
 import io.netty.bootstrap.Bootstrap;
@@ -59,6 +60,8 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
+import java.util.Random;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import org.bouncycastle.cert.X509CertificateHolder;
@@ -80,6 +83,11 @@ public class EppClient implements Runnable {
 
   private static final String LOGIN_FILE = "login.xml";
   private static final String LOGOUT_FILE = "logout.xml";
+
+  private static final String CONTACT_CREATE_FILE = "contact_create.xml";
+
+  private static final String DOMAIN_CREATE_FILE = "domain_create.xml";
+
   static final AttributeKey<ArrayList<ZonedDateTime>> REQUEST_SENT =
       AttributeKey.valueOf("REQUEST_SENT");
   static final AttributeKey<ArrayList<ZonedDateTime>> RESPONSE_RECEIVED =
@@ -95,6 +103,7 @@ public class EppClient implements Runnable {
       AttributeKey.valueOf("LOGGING_REQUEST_COMPLETE");
   private static final int PORT = 700;
   private static final int TIMEOUT_SECONDS = 600;
+  private static final Random random = new Random();
 
   public static class InetAddressConverter implements IStringConverter<InetAddress> {
 
@@ -149,6 +158,16 @@ public class EppClient implements Runnable {
   private String password = "abcde12345";
 
   @Parameter(
+      names = {"--domain_creates"},
+      description = "The number of domains to create.")
+  private int domainCreates = 0;
+
+  @Parameter(
+      names = {"--tld"},
+      description = "TLD to create domains on.")
+  private String tld = "test";
+
+  @Parameter(
       names = {"--force_terminate", "-ft"},
       description = "Whether to explicitly close the connection after receiving a logout response.")
   private boolean forceTerminate = false;
@@ -164,17 +183,35 @@ public class EppClient implements Runnable {
     eppClient.run();
   }
 
+  private static String generateRandomString(int length) {
+    byte[] buffer = new byte[length];
+    random.nextBytes(buffer);
+    return BaseEncoding.base32().encode(buffer).toLowerCase(Locale.US);
+  }
+
   private ImmutableList<String> makeInputList(ZonedDateTime now) {
     ImmutableList.Builder<String> templatesList = ImmutableList.builder();
     ImmutableList.Builder<String> inputList = ImmutableList.builder();
     templatesList.add(readStringFromFile(LOGIN_FILE));
+    for (int i = 0; i < domainCreates; i++) {
+      String randomString = generateRandomString(5);
+      templatesList.add(
+          readStringFromFile(CONTACT_CREATE_FILE)
+              .replace("@@REPEAT_NUMBER@@", String.valueOf(i))
+              .replace("@@RANDOM@@", randomString));
+      templatesList.add(
+          readStringFromFile(DOMAIN_CREATE_FILE)
+              .replace("@@REPEAT_NUMBER@@", String.valueOf(i))
+              .replace("@@RANDOM@@", randomString));
+    }
     templatesList.add(readStringFromFile(LOGOUT_FILE));
     for (String template : templatesList.build()) {
       inputList.add(
           template
               .replace("@@CLIENT@@", client)
               .replace("@@PASSWORD@@", password)
-              .replace("@@NOW@@", now.toString()));
+              .replace("@@NOW@@", now.toString())
+              .replace("@@TLD@@", tld));
     }
     return inputList.build();
   }
@@ -292,8 +329,9 @@ public class EppClient implements Runnable {
 
       List<ChannelFuture> channelFutures = new ArrayList<>();
 
-      // Three requests: hello (from the proxy), login and logout.
-      int requestPerConnection = 3;
+      // Three requests: hello (from the proxy), login and logout plus additional configured EPP
+      // requests.
+      int requestPerConnection = 3 + (domainCreates * 2);
 
       for (int i = 0; i < connections; i++) {
         bootstrap.attr(CHANNEL_NUMBER, i);

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<epp xmlns="urn:ietf:params:xml:ns:epp-1.0">
+  <command>
+    <create>
+      <domain:create
+          xmlns:domain="urn:ietf:params:xml:ns:domain-1.0">
+        <domain:name>@@RANDOM@@-@@CHANNEL_NUMBER@@-@@REPEAT_NUMBER@@.@@TLD@@</domain:name>
+        <domain:period unit="y">1</domain:period>
+        <domain:ns>
+          <domain:hostObj>ns1.domain.com</domain:hostObj>
+        </domain:ns>
+        <domain:registrant>@@RANDOM@@-@@CHANNEL_NUMBER@@-@@REPEAT_NUMBER@@</domain:registrant>
+        <domain:contact type="admin">@@RANDOM@@-@@CHANNEL_NUMBER@@-@@REPEAT_NUMBER@@</domain:contact>
+        <domain:contact type="tech">@@RANDOM@@-@@CHANNEL_NUMBER@@-@@REPEAT_NUMBER@@</domain:contact>
+        <domain:authInfo>
+          <domain:pw>somepassword</domain:pw>
+        </domain:authInfo>
+      </domain:create>
+    </create>
+    <clTRID>epp-client-domain-create-@@NOW@@-@@CHANNEL_NUMBER@@</clTRID>
+  </command>
+</epp>
