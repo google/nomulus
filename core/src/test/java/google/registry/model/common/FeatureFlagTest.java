@@ -17,11 +17,13 @@ package google.registry.model.common;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.common.FeatureFlag.FeatureStatus.ACTIVE;
 import static google.registry.model.common.FeatureFlag.FeatureStatus.INACTIVE;
+import static google.registry.testing.DatabaseHelper.loadByEntity;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static org.joda.time.DateTimeZone.UTC;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
 import google.registry.model.EntityTestCase;
 import google.registry.model.common.FeatureFlag.FeatureFlagNotFoundException;
@@ -37,7 +39,23 @@ public class FeatureFlagTest extends EntityTestCase {
   }
 
   @Test
-  void testPersistence() {
+  void testSuccess_persistence() {
+    FeatureFlag featureFlag =
+        new FeatureFlag.Builder()
+            .setFeatureName("testFlag")
+            .setStatus(
+                ImmutableSortedMap.<DateTime, FeatureStatus>naturalOrder()
+                    .put(START_OF_TIME, INACTIVE)
+                    .put(DateTime.now(UTC).plusWeeks(8), ACTIVE)
+                    .build())
+            .build();
+    persistResource(featureFlag);
+    FeatureFlag flagFromDb = loadByEntity(featureFlag);
+    assertThat(featureFlag).isEqualTo(flagFromDb);
+  }
+
+  @Test
+  void testSuccess_getSingleFlag() {
     FeatureFlag featureFlag =
         new FeatureFlag.Builder()
             .setFeatureName("testFlag")
@@ -53,9 +71,94 @@ public class FeatureFlagTest extends EntityTestCase {
   }
 
   @Test
+  void testSuccess_getMultipleFlags() {
+    FeatureFlag featureFlag1 =
+        persistResource(
+            new FeatureFlag.Builder()
+                .setFeatureName("testFlag1")
+                .setStatus(
+                    ImmutableSortedMap.<DateTime, FeatureStatus>naturalOrder()
+                        .put(START_OF_TIME, INACTIVE)
+                        .put(DateTime.now(UTC).plusWeeks(8), ACTIVE)
+                        .build())
+                .build());
+    FeatureFlag featureFlag2 =
+        persistResource(
+            new FeatureFlag.Builder()
+                .setFeatureName("testFlag2")
+                .setStatus(
+                    ImmutableSortedMap.<DateTime, FeatureStatus>naturalOrder()
+                        .put(START_OF_TIME, INACTIVE)
+                        .put(DateTime.now(UTC).plusWeeks(3), INACTIVE)
+                        .build())
+                .build());
+    FeatureFlag featureFlag3 =
+        persistResource(
+            new FeatureFlag.Builder()
+                .setFeatureName("testFlag3")
+                .setStatus(
+                    ImmutableSortedMap.<DateTime, FeatureStatus>naturalOrder()
+                        .put(START_OF_TIME, INACTIVE)
+                        .build())
+                .build());
+    ImmutableSet<FeatureFlag> featureFlags =
+        FeatureFlag.get(ImmutableSet.of("testFlag1", "testFlag2", "testFlag3"));
+    assertThat(featureFlags.size()).isEqualTo(3);
+    assertThat(featureFlags).containsExactly(featureFlag1, featureFlag2, featureFlag3);
+  }
+
+  @Test
   void testFailure_featureFlagNotPresent() {
     FeatureFlagNotFoundException thrown =
         assertThrows(FeatureFlagNotFoundException.class, () -> FeatureFlag.get("fakeFlag"));
     assertThat(thrown).hasMessageThat().isEqualTo("No feature flag object(s) found for fakeFlag");
+  }
+
+  @Test
+  void testFailure_replaceFeatureName() {
+    FeatureFlag featureFlag =
+        new FeatureFlag.Builder()
+            .setFeatureName("testFlag")
+            .setStatus(
+                ImmutableSortedMap.<DateTime, FeatureStatus>naturalOrder()
+                    .put(START_OF_TIME, INACTIVE)
+                    .put(DateTime.now(UTC).plusWeeks(8), ACTIVE)
+                    .build())
+            .build();
+    IllegalStateException thrown =
+        assertThrows(
+            IllegalStateException.class,
+            () -> featureFlag.asBuilder().setFeatureName("differentName"));
+    assertThat(thrown).hasMessageThat().isEqualTo("Feature name can only be set once");
+  }
+
+  @Test
+  void testFailure_nullFeatureName() {
+    FeatureFlag.Builder featureFlagBuilder =
+        new FeatureFlag.Builder()
+            .setStatus(
+                ImmutableSortedMap.<DateTime, FeatureStatus>naturalOrder()
+                    .put(START_OF_TIME, INACTIVE)
+                    .put(DateTime.now(UTC).plusWeeks(8), ACTIVE)
+                    .build());
+    IllegalArgumentException thrown =
+        assertThrows(IllegalArgumentException.class, () -> featureFlagBuilder.build());
+    assertThat(thrown).hasMessageThat().isEqualTo("Feature name must not be null or empty");
+  }
+
+  @Test
+  void testFailure_invalidStatusMap() {
+    FeatureFlag.Builder featureFlagBuilder = new FeatureFlag.Builder().setFeatureName("testFlag");
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () ->
+                featureFlagBuilder.setStatus(
+                    ImmutableSortedMap.<DateTime, FeatureStatus>naturalOrder()
+                        .put(DateTime.now(UTC).plusWeeks(8), ACTIVE)
+                        .build()));
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo("Must provide transition entry for the start of time (Unix Epoch)");
   }
 }

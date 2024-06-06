@@ -20,7 +20,6 @@ import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static google.registry.config.RegistryConfig.getSingletonCacheRefreshDuration;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 
 import com.github.benmanes.caffeine.cache.CacheLoader;
 import com.github.benmanes.caffeine.cache.LoadingCache;
@@ -116,7 +115,7 @@ public class FeatureFlag extends ImmutableObject implements Buildable {
 
   @Override
   public VKey<FeatureFlag> createVKey() {
-    return VKey.create(FeatureFlag.class, featureName);
+    return createVKey(featureName);
   }
 
   public String getFeatureName() {
@@ -156,8 +155,6 @@ public class FeatureFlag extends ImmutableObject implements Buildable {
 
     public Builder setFeatureName(String featureName) {
       checkState(getInstance().featureName == null, "Feature name can only be set once");
-      checkArgumentNotNull(featureName, "Feature name must not be null");
-      checkArgument(!featureName.isEmpty(), "Feature name must not be empty");
       getInstance().featureName = featureName;
       return this;
     }
