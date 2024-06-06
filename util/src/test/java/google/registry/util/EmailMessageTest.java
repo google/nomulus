@@ -16,7 +16,7 @@ package google.registry.util;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import javax.mail.internet.InternetAddress;
+import jakarta.mail.internet.InternetAddress;
 import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link EmailMessage} record. */

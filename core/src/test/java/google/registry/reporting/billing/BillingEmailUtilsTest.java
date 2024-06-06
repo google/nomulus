@@ -26,9 +26,9 @@ import com.google.common.net.MediaType;
 import google.registry.gcs.GcsUtils;
 import google.registry.groups.GmailClient;
 import google.registry.util.EmailMessage;
+import jakarta.mail.MessagingException;
+import jakarta.mail.internet.InternetAddress;
 import java.util.Optional;
-import javax.mail.MessagingException;
-import javax.mail.internet.InternetAddress;
 import org.joda.time.YearMonth;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -109,7 +109,7 @@ class BillingEmailUtilsTest {
     assertThat(thrown)
         .hasCauseThat()
         .hasMessageThat()
-        .isEqualTo("javax.mail.MessagingException: expected");
+        .isEqualTo("jakarta.mail.MessagingException: expected");
     // Verify we sent an e-mail alert
     verify(gmailClient, times(2)).sendEmail(contentCaptor.capture());
     validateAlertMessage(contentCaptor.getValue(), "Emailing invoice failed due to expected");

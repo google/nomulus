@@ -41,10 +41,10 @@ import google.registry.request.auth.Auth;
 import google.registry.tools.DomainLockUtils;
 import google.registry.util.DateTimeUtils;
 import google.registry.util.EmailMessage;
+import jakarta.mail.internet.AddressException;
+import jakarta.mail.internet.InternetAddress;
 import java.util.Optional;
 import javax.inject.Inject;
-import javax.mail.internet.AddressException;
-import javax.mail.internet.InternetAddress;
 import org.joda.time.Duration;
 
 /** Task that re-locks a previously-Registry-Locked domain after a predetermined period of time. */

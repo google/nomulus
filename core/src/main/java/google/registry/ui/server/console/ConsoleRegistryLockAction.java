@@ -44,12 +44,12 @@ import google.registry.request.auth.Auth;
 import google.registry.tools.DomainLockUtils;
 import google.registry.ui.server.registrar.ConsoleApiParams;
 import google.registry.util.EmailMessage;
+import jakarta.mail.internet.AddressException;
+import jakarta.mail.internet.InternetAddress;
 import jakarta.servlet.http.HttpServletRequest;
 import java.net.URISyntaxException;
 import java.util.Optional;
 import javax.inject.Inject;
-import javax.mail.internet.AddressException;
-import javax.mail.internet.InternetAddress;
 import org.apache.http.client.utils.URIBuilder;
 import org.joda.time.Duration;
 

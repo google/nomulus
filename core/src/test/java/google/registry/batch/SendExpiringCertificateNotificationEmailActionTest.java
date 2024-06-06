@@ -43,10 +43,10 @@ import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationT
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeResponse;
 import google.registry.util.SelfSignedCaCertificate;
+import jakarta.mail.internet.InternetAddress;
 import java.security.cert.X509Certificate;
 import java.util.Optional;
 import javax.annotation.Nullable;
-import javax.mail.internet.InternetAddress;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

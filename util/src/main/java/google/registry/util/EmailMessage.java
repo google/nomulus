@@ -18,9 +18,9 @@ import com.google.auto.value.AutoBuilder;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.net.MediaType;
+import jakarta.mail.internet.InternetAddress;
 import java.util.Collection;
 import java.util.Optional;
-import javax.mail.internet.InternetAddress;
 
 /**
  * Record representing the content and metadata of an email.

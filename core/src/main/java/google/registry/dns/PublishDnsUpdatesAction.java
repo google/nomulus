@@ -63,11 +63,11 @@ import google.registry.request.lock.LockHandler;
 import google.registry.util.Clock;
 import google.registry.util.DomainNameUtils;
 import google.registry.util.EmailMessage;
+import jakarta.mail.internet.InternetAddress;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import javax.inject.Inject;
-import javax.mail.internet.InternetAddress;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
 

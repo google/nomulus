@@ -27,7 +27,7 @@ import google.registry.groups.GmailClient;
 import google.registry.request.Response;
 import google.registry.testing.FakeClock;
 import google.registry.util.EmailMessage;
-import javax.mail.internet.InternetAddress;
+import jakarta.mail.internet.InternetAddress;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
 import org.junit.jupiter.api.BeforeEach;

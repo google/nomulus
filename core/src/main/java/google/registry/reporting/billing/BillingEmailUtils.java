@@ -26,9 +26,9 @@ import google.registry.gcs.GcsUtils;
 import google.registry.groups.GmailClient;
 import google.registry.reporting.billing.BillingModule.InvoiceDirectoryPrefix;
 import google.registry.util.EmailMessage;
+import jakarta.mail.internet.InternetAddress;
 import java.util.Optional;
 import javax.inject.Inject;
-import javax.mail.internet.InternetAddress;
 import org.joda.time.YearMonth;
 
 /** Utility functions for sending emails involving monthly invoices. */
