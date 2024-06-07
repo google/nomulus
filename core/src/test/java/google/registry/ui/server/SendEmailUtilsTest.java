@@ -24,9 +24,9 @@ import static org.mockito.Mockito.verify;
 import com.google.common.collect.ImmutableList;
 import google.registry.groups.GmailClient;
 import google.registry.util.EmailMessage;
+import jakarta.mail.MessagingException;
+import jakarta.mail.internet.InternetAddress;
 import java.util.Optional;
-import javax.mail.MessagingException;
-import javax.mail.internet.InternetAddress;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 

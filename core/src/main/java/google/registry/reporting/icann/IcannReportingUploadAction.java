@@ -42,13 +42,13 @@ import google.registry.request.lock.LockHandler;
 import google.registry.util.Clock;
 import google.registry.util.EmailMessage;
 import google.registry.util.Retrier;
+import jakarta.mail.internet.InternetAddress;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Map;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import javax.inject.Inject;
-import javax.mail.internet.InternetAddress;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
 
