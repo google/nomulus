@@ -15,7 +15,6 @@
 package google.registry.flows;
 
 import static com.google.common.base.Preconditions.checkState;
-import static google.registry.model.IdService.allocateId;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.xml.ValidationMode.LENIENT;
 import static google.registry.xml.ValidationMode.STRICT;
@@ -103,7 +102,7 @@ public final class FlowUtils {
   }
 
   public static HistoryEntryId createHistoryEntryId(EppResource parent) {
-    return new HistoryEntryId(parent.getRepoId(), allocateId());
+    return new HistoryEntryId(parent.getRepoId(), tm().allocateId());
   }
 
   /** Registrar is not logged in. */

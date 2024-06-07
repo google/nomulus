@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-package google.registry.model;
+package google.registry.persistence.transaction;
 
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
@@ -22,7 +22,7 @@ import java.util.concurrent.atomic.AtomicLong;
 /**
  * Allocates a {@code long} to use as a {@code @Id}, (part) of the primary SQL key for an entity.
  */
-public final class IdService {
+final class IdService {
 
   private IdService() {}
 
@@ -32,7 +32,7 @@ public final class IdService {
    *
    * <p>The generated IDs are project-wide unique.
    */
-  public static long allocateId() {
+  static long allocateId() {
     return tm().transact(
             () ->
                 (BigInteger)

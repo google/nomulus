@@ -19,7 +19,6 @@ import static google.registry.flows.ResourceFlowUtils.verifyResourceDoesNotExist
 import static google.registry.flows.contact.ContactFlowUtils.validateAsciiPostalInfo;
 import static google.registry.flows.contact.ContactFlowUtils.validateContactAgainstPolicy;
 import static google.registry.model.EppResourceUtils.createRepoId;
-import static google.registry.model.IdService.allocateId;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import com.google.common.collect.ImmutableSet;
@@ -79,7 +78,7 @@ public final class ContactCreateFlow implements MutatingFlow {
             .setAuthInfo(command.getAuthInfo())
             .setCreationRegistrarId(registrarId)
             .setPersistedCurrentSponsorRegistrarId(registrarId)
-            .setRepoId(createRepoId(allocateId(), roidSuffix))
+            .setRepoId(createRepoId(tm().allocateId(), roidSuffix))
             .setFaxNumber(command.getFax())
             .setVoiceNumber(command.getVoice())
             .setDisclose(command.getDisclose())

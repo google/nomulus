@@ -22,7 +22,6 @@ import static google.registry.flows.host.HostFlowUtils.validateHostName;
 import static google.registry.flows.host.HostFlowUtils.verifySuperordinateDomainNotInPendingDelete;
 import static google.registry.flows.host.HostFlowUtils.verifySuperordinateDomainOwnership;
 import static google.registry.model.EppResourceUtils.createRepoId;
-import static google.registry.model.IdService.allocateId;
 import static google.registry.model.reporting.HistoryEntry.Type.HOST_CREATE;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.CollectionUtils.isNullOrEmpty;
@@ -123,7 +122,7 @@ public final class HostCreateFlow implements MutatingFlow {
             .setPersistedCurrentSponsorRegistrarId(registrarId)
             .setHostName(targetId)
             .setInetAddresses(command.getInetAddresses())
-            .setRepoId(createRepoId(allocateId(), roidSuffix))
+            .setRepoId(createRepoId(tm().allocateId(), roidSuffix))
             .setSuperordinateDomain(superordinateDomain.map(Domain::createVKey).orElse(null))
             .build();
     historyBuilder.setType(HOST_CREATE).setHost(newHost);

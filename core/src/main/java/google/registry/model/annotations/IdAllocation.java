@@ -14,15 +14,14 @@
 
 package google.registry.model.annotations;
 
-import google.registry.model.IdService;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * This annotation is needed for any ID field that needs to be allocated with {@link IdService}
- * class
+ * This annotation is needed for any ID field that needs to be allocated with {@link
+ * google.registry.persistence.transaction.TransactionManager#allocateId} class
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.FIELD)

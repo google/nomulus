@@ -15,7 +15,6 @@
 package google.registry.tools;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static google.registry.model.IdService.allocateId;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
 
@@ -119,7 +118,7 @@ public class UpdateRecurrenceCommand extends ConfirmingCommand {
     domainsAndRecurrences.forEach(
         (domain, existingRecurrence) -> {
           // Make a new history ID to break the (recurrence, history, domain) circular dep chain
-          long newHistoryId = allocateId();
+          long newHistoryId = tm().allocateId();
           HistoryEntryId newDomainHistoryId = new HistoryEntryId(domain.getRepoId(), newHistoryId);
           BillingRecurrence endingNow =
               existingRecurrence.asBuilder().setRecurrenceEndTime(now).build();

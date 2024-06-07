@@ -14,7 +14,7 @@
 
 package google.registry.model.domain.secdns;
 
-import static google.registry.model.IdService.allocateId;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.reporting.HistoryEntry.HistoryEntryId;
@@ -48,7 +48,7 @@ public class DomainDsDataHistory extends DomainDsDataBase {
     instance.algorithm = dsData.getAlgorithm();
     instance.digestType = dsData.getDigestType();
     instance.digest = dsData.getDigest();
-    instance.dsDataHistoryRevisionId = allocateId();
+    instance.dsDataHistoryRevisionId = tm().reTransact(tm()::allocateId);
     return instance;
   }
 

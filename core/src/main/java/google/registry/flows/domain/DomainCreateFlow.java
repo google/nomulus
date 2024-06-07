@@ -46,7 +46,6 @@ import static google.registry.flows.domain.DomainFlowUtils.verifyPremiumNameIsNo
 import static google.registry.flows.domain.DomainFlowUtils.verifyRegistrarIsActive;
 import static google.registry.flows.domain.DomainFlowUtils.verifyUnitIsYears;
 import static google.registry.model.EppResourceUtils.createDomainRepoId;
-import static google.registry.model.IdService.allocateId;
 import static google.registry.model.eppcommon.StatusValue.SERVER_HOLD;
 import static google.registry.model.reporting.HistoryEntry.Type.DOMAIN_CREATE;
 import static google.registry.model.tld.Tld.TldState.GENERAL_AVAILABILITY;
@@ -345,8 +344,8 @@ public final class DomainCreateFlow implements MutatingFlow {
     Optional<SecDnsCreateExtension> secDnsCreate =
         validateSecDnsExtension(eppInput.getSingleExtension(SecDnsCreateExtension.class));
     DateTime registrationExpirationTime = leapSafeAddYears(now, years);
-    String repoId = createDomainRepoId(allocateId(), tld.getTldStr());
-    long historyRevisionId = allocateId();
+    String repoId = createDomainRepoId(tm().allocateId(), tld.getTldStr());
+    long historyRevisionId = tm().allocateId();
     HistoryEntryId domainHistoryId = new HistoryEntryId(repoId, historyRevisionId);
     historyBuilder.setRevisionId(historyRevisionId);
     // Bill for the create.

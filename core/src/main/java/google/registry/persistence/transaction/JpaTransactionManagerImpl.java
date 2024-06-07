@@ -56,6 +56,7 @@ import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Callable;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import javax.annotation.Nullable;
@@ -138,6 +139,12 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
   }
 
   @Override
+  public long allocateId() {
+    assertInTransaction();
+    return transactionInfo.get().idProvider.get();
+  }
+
+  @Override
   public void assertInTransaction() {
     if (!inTransaction()) {
       throw new IllegalStateException("Not in a transaction");
@@ -210,7 +217,7 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
     EntityTransaction txn = txnInfo.entityManager.getTransaction();
     try {
       txn.begin();
-      txnInfo.start(clock);
+      txnInfo.start(clock, readOnly ? ReplicaDbIdService::allocatedId : IdService::allocateId);
       if (readOnly) {
         getEntityManager().createNativeQuery("SET TRANSACTION READ ONLY").executeUpdate();
         logger.atInfo().log("Using read-only SQL replica");
@@ -668,6 +675,7 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
     EntityManager entityManager;
     boolean inTransaction = false;
     DateTime transactionTime;
+    Supplier<Long> idProvider;
 
     // The set of entity objects that have been either persisted (via insert()) or merged (via
     // put()/update()). If the entity manager returns these as a result of a find() or query
@@ -676,13 +684,15 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
     Set<Object> objectsToSave = Collections.newSetFromMap(new IdentityHashMap<>());
 
     /** Start a new transaction. */
-    private void start(Clock clock) {
+    private void start(Clock clock, Supplier<Long> idProvider) {
       checkArgumentNotNull(clock);
       inTransaction = true;
       transactionTime = clock.nowUtc();
+      this.idProvider = idProvider;
     }
 
     private void clear() {
+      idProvider = null;
       inTransaction = false;
       transactionTime = null;
       objectsToSave = Collections.newSetFromMap(new IdentityHashMap<>());

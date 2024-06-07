@@ -15,7 +15,7 @@
 package google.registry.model.domain;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static google.registry.model.IdService.allocateId;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -70,7 +70,8 @@ public class GracePeriod extends GracePeriodBase {
         (billingRecurrence != null) == GracePeriodStatus.AUTO_RENEW.equals(type),
         "BillingRecurrences must be present on (and only on) autorenew grace periods");
     GracePeriod instance = new GracePeriod();
-    instance.gracePeriodId = gracePeriodId == null ? allocateId() : gracePeriodId;
+    instance.gracePeriodId =
+        gracePeriodId == null ? tm().reTransact(tm()::allocateId) : gracePeriodId;
     instance.type = checkArgumentNotNull(type);
     instance.domainRepoId = checkArgumentNotNull(domainRepoId);
     instance.expirationTime = checkArgumentNotNull(expirationTime);
@@ -198,7 +199,7 @@ public class GracePeriod extends GracePeriodBase {
 
     static GracePeriodHistory createFrom(long historyRevisionId, GracePeriod gracePeriod) {
       GracePeriodHistory instance = new GracePeriodHistory();
-      instance.gracePeriodHistoryRevisionId = allocateId();
+      instance.gracePeriodHistoryRevisionId = tm().reTransact(tm()::allocateId);
       instance.domainHistoryRevisionId = historyRevisionId;
       instance.gracePeriodId = gracePeriod.gracePeriodId;
       instance.type = gracePeriod.type;
