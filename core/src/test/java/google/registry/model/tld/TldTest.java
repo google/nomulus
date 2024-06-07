@@ -326,6 +326,16 @@ public final class TldTest extends EntityTestCase {
   }
 
   @Test
+  void testFailure_testGetAllMissingTld() {
+    createTld("foo");
+    TldNotFoundException thrown =
+        assertThrows(
+            TldNotFoundException.class,
+            () -> assertThat(Tld.get(ImmutableSet.of("foo", "tld", "missing"))));
+    assertThat(thrown).hasMessageThat().isEqualTo("No TLD object(s) found for missing");
+  }
+
+  @Test
   void testSetReservedLists() {
     ReservedList rl5 =
         persistReservedList(
