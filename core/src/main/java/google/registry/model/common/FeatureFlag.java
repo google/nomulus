@@ -28,7 +28,8 @@ import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
-import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
+import com.google.common.collect.Sets.SetView;
 import google.registry.model.Buildable;
 import google.registry.model.CacheUtils;
 import google.registry.model.ImmutableObject;
@@ -73,15 +74,11 @@ public class FeatureFlag extends ImmutableObject implements Buildable {
 
   public static ImmutableSet<FeatureFlag> get(Set<String> featureNames) {
     Map<String, FeatureFlag> featureFlags = CACHE.getAll(featureNames);
-    ImmutableSet<String> missingFlags =
-        featureFlags.entrySet().stream()
-            .filter(e -> e.getValue() == null)
-            .map(Map.Entry::getKey)
-            .collect(toImmutableSet());
+    SetView<String> missingFlags = Sets.difference(featureNames, featureFlags.keySet());
     if (missingFlags.isEmpty()) {
       return featureFlags.values().stream().collect(toImmutableSet());
     } else {
-      throw new FeatureFlagNotFoundException(missingFlags);
+      throw new FeatureFlagNotFoundException(missingFlags.immutableCopy());
     }
   }
 
@@ -105,7 +102,8 @@ public class FeatureFlag extends ImmutableObject implements Buildable {
                               toImmutableMap(featureName -> featureName, FeatureFlag::createVKey));
                   Map<VKey<? extends FeatureFlag>, FeatureFlag> entities =
                       tm().reTransact(() -> tm().loadByKeysIfPresent(keysMap.values()));
-                  return Maps.transformEntries(keysMap, (k, v) -> entities.getOrDefault(v, null));
+                  return entities.values().stream()
+                      .collect(toImmutableMap(flag -> flag.featureName, flag -> flag));
                 }
               });
 
