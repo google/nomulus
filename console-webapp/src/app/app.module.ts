@@ -30,6 +30,7 @@ import { DomainListComponent } from './domains/domainList.component';
 import { HeaderComponent } from './header/header.component';
 import { HomeComponent } from './home/home.component';
 import { NavigationComponent } from './navigation/navigation.component';
+import NewRegistrarComponent from './registrar/newRegistrar.component';
 import { RegistrarDetailsComponent } from './registrar/registrarDetails.component';
 import { RegistrarSelectorComponent } from './registrar/registrarSelector.component';
 import { RegistrarComponent } from './registrar/registrarsTable.component';
@@ -63,6 +64,7 @@ import { TldsComponent } from './tlds/tlds.component';
     HomeComponent,
     LocationBackDirective,
     NavigationComponent,
+    NewRegistrarComponent,
     NotificationsComponent,
     RegistrarComponent,
     RegistrarDetailsComponent,

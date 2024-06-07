@@ -38,7 +38,7 @@ import javax.inject.Inject;
 
 @Action(
     service = Action.Service.DEFAULT,
-    path = ConsoleEppPasswordAction.PATH,
+    path = ConsoleUpdateRegistrarAction.PATH,
     method = {POST},
     auth = Auth.AUTH_PUBLIC_LOGGED_IN)
 public class ConsoleUpdateRegistrarAction extends ConsoleApiAction {

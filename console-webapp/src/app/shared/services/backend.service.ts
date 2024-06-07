@@ -110,7 +110,13 @@ export class BackendService {
       .pipe(catchError((err) => this.errorCatcher<Registrar[]>(err)));
   }
 
-  postRegistrar(registrar: Registrar): Observable<Registrar> {
+  createRegistrar(registrar: Registrar): Observable<Registrar> {
+    return this.http
+      .post<Registrar>('/console-api/registrars', registrar)
+      .pipe(catchError((err) => this.errorCatcher<Registrar>(err)));
+  }
+
+  updateRegistrar(registrar: Registrar): Observable<Registrar> {
     return this.http
       .post<Registrar>('/console-api/registrar', registrar)
       .pipe(catchError((err) => this.errorCatcher<Registrar>(err)));
