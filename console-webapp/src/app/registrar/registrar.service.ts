@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import { Injectable, computed, signal } from '@angular/core';
-import { Observable, tap, switchMap } from 'rxjs';
+import { Observable, switchMap, tap } from 'rxjs';
 
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { Router } from '@angular/router';

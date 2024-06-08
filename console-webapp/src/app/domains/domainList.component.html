@@ -1,28 +1,7 @@
 <app-selected-registrar-wrapper>
-  <div class="console-domains">
+  <div class="console-app-domains">
     <h1 class="mat-headline-4">Domains</h1>
-    <a
-      mat-stroked-button
-      color="primary"
-      href="/console-api/dum-download?registrarId={{
-        registrarService.registrarId()
-      }}"
-      class="console-app-domains__download"
-    >
-      <mat-icon>download</mat-icon>
-      Download domains (.csv)
-    </a>
-    <mat-form-field class="console-app__domains-filter">
-      <mat-label>Filter</mat-label>
-      <input
-        type="search"
-        matInput
-        [(ngModel)]="searchTerm"
-        (ngModelChange)="sendInput()"
-        [disabled]="isLoading"
-        #input
-      />
-    </mat-form-field>
+
     @if (!isLoading && totalResults == 0) {
     <div class="console-app__empty-domains">
       <h1>
@@ -38,6 +17,29 @@
       <div class="console-app__domains-spinner">
         <mat-spinner />
       </div>
+      } @else {
+      <a
+        mat-stroked-button
+        color="primary"
+        href="/console-api/dum-download?registrarId={{
+          registrarService.registrarId()
+        }}"
+        class="console-app-domains__download"
+      >
+        <mat-icon>download</mat-icon>
+        Download domains (.csv)
+      </a>
+      <mat-form-field class="console-app__domains-filter">
+        <mat-label>Filter</mat-label>
+        <input
+          type="search"
+          matInput
+          [(ngModel)]="searchTerm"
+          (ngModelChange)="sendInput()"
+          [disabled]="isLoading"
+          #input
+        />
+      </mat-form-field>
       }
       <mat-table
         [dataSource]="dataSource"
