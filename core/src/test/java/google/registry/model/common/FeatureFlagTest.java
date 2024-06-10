@@ -108,26 +108,24 @@ public class FeatureFlagTest extends EntityTestCase {
 
   @Test
   void testFailure_getMultipleFlagsOneMissing() {
-    FeatureFlag featureFlag1 =
-        persistResource(
-            new FeatureFlag.Builder()
-                .setFeatureName("testFlag1")
-                .setStatus(
-                    ImmutableSortedMap.<DateTime, FeatureStatus>naturalOrder()
-                        .put(START_OF_TIME, INACTIVE)
-                        .put(DateTime.now(UTC).plusWeeks(8), ACTIVE)
-                        .build())
-                .build());
-    FeatureFlag featureFlag2 =
-        persistResource(
-            new FeatureFlag.Builder()
-                .setFeatureName("testFlag2")
-                .setStatus(
-                    ImmutableSortedMap.<DateTime, FeatureStatus>naturalOrder()
-                        .put(START_OF_TIME, INACTIVE)
-                        .put(DateTime.now(UTC).plusWeeks(3), INACTIVE)
-                        .build())
-                .build());
+    persistResource(
+        new FeatureFlag.Builder()
+            .setFeatureName("testFlag1")
+            .setStatus(
+                ImmutableSortedMap.<DateTime, FeatureStatus>naturalOrder()
+                    .put(START_OF_TIME, INACTIVE)
+                    .put(DateTime.now(UTC).plusWeeks(8), ACTIVE)
+                    .build())
+            .build());
+    persistResource(
+        new FeatureFlag.Builder()
+            .setFeatureName("testFlag2")
+            .setStatus(
+                ImmutableSortedMap.<DateTime, FeatureStatus>naturalOrder()
+                    .put(START_OF_TIME, INACTIVE)
+                    .put(DateTime.now(UTC).plusWeeks(3), INACTIVE)
+                    .build())
+            .build());
     FeatureFlagNotFoundException thrown =
         assertThrows(
             FeatureFlagNotFoundException.class,
@@ -145,7 +143,7 @@ public class FeatureFlagTest extends EntityTestCase {
   }
 
   @Test
-  void testFailure_replaceFeatureName() {
+  void testFailure_resetFeatureName() {
     FeatureFlag featureFlag =
         new FeatureFlag.Builder()
             .setFeatureName("testFlag")

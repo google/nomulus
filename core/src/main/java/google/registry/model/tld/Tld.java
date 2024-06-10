@@ -44,7 +44,6 @@ import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.collect.Ordering;
 import com.google.common.collect.Range;
 import com.google.common.collect.Sets;
-import com.google.common.collect.Sets.SetView;
 import com.google.common.net.InternetDomainName;
 import google.registry.model.Buildable;
 import google.registry.model.CacheUtils;
@@ -204,11 +203,12 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
   /** Returns the TLD entities for the given TLD strings, throwing if any don't exist. */
   public static ImmutableSet<Tld> get(Set<String> tlds) {
     Map<String, Tld> registries = CACHE.getAll(tlds);
-    SetView<String> missingRegistries = Sets.difference(tlds, registries.keySet());
+    ImmutableSet<String> missingRegistries =
+        Sets.difference(tlds, registries.keySet()).immutableCopy();
     if (missingRegistries.isEmpty()) {
       return registries.values().stream().collect(toImmutableSet());
     } else {
-      throw new TldNotFoundException(missingRegistries.immutableCopy());
+      throw new TldNotFoundException(missingRegistries);
     }
   }
 

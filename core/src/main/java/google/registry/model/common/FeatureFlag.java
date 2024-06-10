@@ -29,7 +29,6 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.collect.Sets;
-import com.google.common.collect.Sets.SetView;
 import google.registry.model.Buildable;
 import google.registry.model.CacheUtils;
 import google.registry.model.ImmutableObject;
@@ -74,11 +73,12 @@ public class FeatureFlag extends ImmutableObject implements Buildable {
 
   public static ImmutableSet<FeatureFlag> get(Set<String> featureNames) {
     Map<String, FeatureFlag> featureFlags = CACHE.getAll(featureNames);
-    SetView<String> missingFlags = Sets.difference(featureNames, featureFlags.keySet());
+    ImmutableSet<String> missingFlags =
+        Sets.difference(featureNames, featureFlags.keySet()).immutableCopy();
     if (missingFlags.isEmpty()) {
       return featureFlags.values().stream().collect(toImmutableSet());
     } else {
-      throw new FeatureFlagNotFoundException(missingFlags.immutableCopy());
+      throw new FeatureFlagNotFoundException(missingFlags);
     }
   }
 
