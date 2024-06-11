@@ -105,7 +105,9 @@ final class DomainWhoisResponse extends WhoisResponseImpl {
                 "Registrar Abuse Contact Phone",
                 abuseContact.map(RegistrarPoc::getPhoneNumber).orElse(""))
             .emitStatusValues(domain.getStatusValues(), domain.getGracePeriods())
-            .emitContact("Registrant", Optional.of(domain.getRegistrant()), preferUnicode)
+            // TODO(mcilwain): Investigate if the WHOIS spec requires us to always output REDACTED
+            //                 text in WHOIS even if the contact is not present, and if so, do so.
+            .emitContact("Registrant", domain.getRegistrant(), preferUnicode)
             .emitContact("Admin", getContactReference(Type.ADMIN), preferUnicode)
             .emitContact("Tech", getContactReference(Type.TECH), preferUnicode)
             .emitContact("Billing", getContactReference(Type.BILLING), preferUnicode)

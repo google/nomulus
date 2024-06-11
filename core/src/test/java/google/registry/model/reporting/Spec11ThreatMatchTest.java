@@ -31,6 +31,7 @@ import google.registry.model.domain.Domain;
 import google.registry.model.host.Host;
 import google.registry.model.transfer.ContactTransferData;
 import google.registry.persistence.VKey;
+import java.util.Optional;
 import org.joda.time.LocalDate;
 import org.joda.time.format.ISODateTimeFormat;
 import org.junit.jupiter.api.BeforeEach;
@@ -68,7 +69,7 @@ public final class Spec11ThreatMatchTest extends EntityTestCase {
             .setDomainName("foo.tld")
             .setRepoId(domainRepoId)
             .setNameservers(hostVKey)
-            .setRegistrant(registrantContactVKey)
+            .setRegistrant(Optional.of(registrantContactVKey))
             .setContacts(ImmutableSet.of())
             .build();
 

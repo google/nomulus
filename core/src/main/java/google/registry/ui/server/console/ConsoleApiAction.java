@@ -254,5 +254,4 @@ public abstract class ConsoleApiAction implements Runnable {
       super(message);
     }
   }
-
 }

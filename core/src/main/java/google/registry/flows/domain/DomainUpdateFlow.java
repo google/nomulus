@@ -278,7 +278,7 @@ public final class DomainUpdateFlow implements MutatingFlow {
             .removeStatusValues(remove.getStatusValues())
             .removeContacts(remove.getContacts())
             .addContacts(add.getContacts())
-            .setRegistrant(firstNonNull(change.getRegistrant(), domain.getRegistrant()))
+            .setRegistrant(change.getRegistrant().or(domain::getRegistrant))
             .setAuthInfo(firstNonNull(change.getAuthInfo(), domain.getAuthInfo()));
 
     if (!add.getNameservers().isEmpty()) {
@@ -301,6 +301,8 @@ public final class DomainUpdateFlow implements MutatingFlow {
   }
 
   private static void validateRegistrantIsntBeingRemoved(Change change) throws EppException {
+    // TODO(mcilwain): Make this check the minimum registration data set migration schedule
+    //                 and not require presence of a registrant in later stages.
     if (change.getRegistrantContactId() != null && change.getRegistrantContactId().isEmpty()) {
       throw new MissingRegistrantException();
     }

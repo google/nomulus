@@ -51,6 +51,7 @@ import google.registry.model.transfer.DomainTransferData;
 import google.registry.model.transfer.TransferStatus;
 import google.registry.testing.FakeClock;
 import google.registry.util.Idn;
+import java.util.Optional;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
 
@@ -63,8 +64,9 @@ final class RdeFixtures {
             .setDomainName("example." + tld)
             .setRepoId(generateNewDomainRoid(tld))
             .setRegistrant(
-                makeContact(clock, "5372808-ERL", "(◕‿◕) nevermore", "prophet@evil.みんな")
-                    .createVKey())
+                Optional.of(
+                    makeContact(clock, "5372808-ERL", "(◕‿◕) nevermore", "prophet@evil.みんな")
+                        .createVKey()))
             .build();
     DomainHistory historyEntry =
         persistResource(

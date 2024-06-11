@@ -412,11 +412,13 @@ public class DomainFlowUtils {
 
   /** Verify that no linked resources have disallowed statuses. */
   static void verifyNotInPendingDelete(
-      Set<DesignatedContact> contacts, VKey<Contact> registrant, Set<VKey<Host>> nameservers)
+      Set<DesignatedContact> contacts,
+      Optional<VKey<Contact>> registrant,
+      Set<VKey<Host>> nameservers)
       throws EppException {
     ImmutableList.Builder<VKey<? extends EppResource>> keysToLoad = new ImmutableList.Builder<>();
     contacts.stream().map(DesignatedContact::getContactKey).forEach(keysToLoad::add);
-    Optional.ofNullable(registrant).ifPresent(keysToLoad::add);
+    registrant.ifPresent(keysToLoad::add);
     keysToLoad.addAll(nameservers);
     verifyNotInPendingDelete(EppResource.loadCached(keysToLoad.build()).values());
   }
@@ -480,9 +482,10 @@ public class DomainFlowUtils {
   }
 
   static void validateRequiredContactsPresent(
-      @Nullable VKey<Contact> registrant, Set<DesignatedContact> contacts)
+      Optional<VKey<Contact>> registrant, Set<DesignatedContact> contacts)
       throws RequiredParameterMissingException {
-    if (registrant == null) {
+    // TODO: Check minimum reg data set migration schedule here and don't throw when any are empty.
+    if (registrant.isEmpty()) {
       throw new MissingRegistrantException();
     }
 
