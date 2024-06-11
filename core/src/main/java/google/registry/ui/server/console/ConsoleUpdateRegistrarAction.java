@@ -47,8 +47,7 @@ public class ConsoleUpdateRegistrarAction extends ConsoleApiAction {
 
   @Inject
   ConsoleUpdateRegistrarAction(
-      ConsoleApiParams consoleApiParams,
-      @Parameter("registrar") Optional<Registrar> registrar) {
+      ConsoleApiParams consoleApiParams, @Parameter("registrar") Optional<Registrar> registrar) {
     super(consoleApiParams);
     this.registrar = registrar;
   }
@@ -108,5 +107,4 @@ public class ConsoleUpdateRegistrarAction extends ConsoleApiAction {
 
     consoleApiParams.response().setStatus(SC_OK);
   }
-
 }

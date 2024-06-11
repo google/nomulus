@@ -119,8 +119,11 @@ public final class DomainInfoFlow implements TransactionalFlow {
             .setCreationTime(domain.getCreationTime())
             .setLastEppUpdateTime(domain.getLastEppUpdateTime())
             .setRegistrationExpirationTime(domain.getRegistrationExpirationTime())
-            .setLastTransferTime(domain.getLastTransferTime())
-            .setRegistrant(tm().loadByKey(domain.getRegistrant()).getContactId());
+            .setLastTransferTime(domain.getLastTransferTime());
+    domain
+        .getRegistrant()
+        .ifPresent(r -> infoBuilder.setRegistrant(tm().loadByKey(r).getContactId()));
+
     // If authInfo is non-null, then the caller is authorized to see the full information since we
     // will have already verified the authInfo is valid.
     if (registrarId.equals(domain.getCurrentSponsorRegistrarId()) || authInfo.isPresent()) {

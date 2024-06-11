@@ -40,6 +40,7 @@ import google.registry.model.eppinput.ResourceCommand.ResourceUpdate;
 import google.registry.model.eppinput.ResourceCommand.SingleResourceCommand;
 import google.registry.model.host.Host;
 import google.registry.persistence.VKey;
+import java.util.Optional;
 import java.util.Set;
 import javax.annotation.Nullable;
 import javax.xml.bind.annotation.XmlAttribute;
@@ -76,21 +77,21 @@ public class DomainCommand {
 
     /** The contactId of the registrant who registered this domain. */
     @XmlElement(name = "registrant")
+    @Nullable
     String registrantContactId;
 
     /** A resolved key to the registrant who registered this domain. */
-    @XmlTransient VKey<Contact> registrant;
+    @Nullable @XmlTransient VKey<Contact> registrant;
 
     /** Authorization info (aka transfer secret) of the domain. */
     DomainAuthInfo authInfo;
 
-    public String getRegistrantContactId() {
-      return registrantContactId;
+    public Optional<String> getRegistrantContactId() {
+      return Optional.ofNullable(registrantContactId);
     }
 
-    @Nullable
-    public VKey<Contact> getRegistrant() {
-      return registrant;
+    public Optional<VKey<Contact>> getRegistrant() {
+      return Optional.ofNullable(registrant);
     }
 
     public DomainAuthInfo getAuthInfo() {
