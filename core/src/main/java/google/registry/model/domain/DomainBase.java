@@ -135,7 +135,7 @@ public class DomainBase extends EppResource
 
   @Expose VKey<Contact> billingContact;
   @Expose VKey<Contact> techContact;
-  @Expose VKey<Contact> registrantContact;
+  @Expose @Nullable VKey<Contact> registrantContact;
 
   /** Authorization info (aka transfer secret) of the domain. */
   @Embedded
@@ -585,8 +585,8 @@ public class DomainBase extends EppResource
   }
 
   /** A key to the registrant who registered this domain. */
-  public VKey<Contact> getRegistrant() {
-    return registrantContact;
+  public Optional<VKey<Contact>> getRegistrant() {
+    return Optional.ofNullable(registrantContact);
   }
 
   public VKey<Contact> getAdminContact() {
@@ -604,6 +604,11 @@ public class DomainBase extends EppResource
   /** Associated contacts for the domain (other than registrant). */
   public ImmutableSet<DesignatedContact> getContacts() {
     return getAllContacts(false);
+  }
+
+  /** Gets all associated contacts for the domain, including the registrant. */
+  public ImmutableSet<DesignatedContact> getAllContacts() {
+    return getAllContacts(true);
   }
 
   public DomainAuthInfo getAuthInfo() {
@@ -717,7 +722,6 @@ public class DomainBase extends EppResource
       instance.autorenewEndTime = firstNonNull(getInstance().autorenewEndTime, END_OF_TIME);
 
       checkArgumentNotNull(emptyToNull(instance.domainName), "Missing domainName");
-      checkArgumentNotNull(instance.getRegistrant(), "Missing registrant");
       instance.tld = getTldFromDomainName(instance.domainName);
 
       T newDomain = super.build();
@@ -749,9 +753,9 @@ public class DomainBase extends EppResource
       return thisCastToDerived();
     }
 
-    public B setRegistrant(VKey<Contact> registrant) {
+    public B setRegistrant(Optional<VKey<Contact>> registrant) {
       // Set the registrant field specifically.
-      getInstance().registrantContact = registrant;
+      getInstance().registrantContact = registrant.orElse(null);
       return thisCastToDerived();
     }
 

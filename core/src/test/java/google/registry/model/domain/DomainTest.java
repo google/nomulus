@@ -185,7 +185,7 @@ public class DomainTest {
                             StatusValue.SERVER_UPDATE_PROHIBITED,
                             StatusValue.SERVER_RENEW_PROHIBITED,
                             StatusValue.SERVER_HOLD))
-                    .setRegistrant(contact1Key)
+                    .setRegistrant(Optional.of(contact1Key))
                     .setNameservers(ImmutableSet.of(hostKey))
                     .setSubordinateHosts(ImmutableSet.of("ns1.example.com"))
                     .setPersistedCurrentSponsorRegistrarId("NewRegistrar")
@@ -240,6 +240,16 @@ public class DomainTest {
     // original domain object).
     assertThat(loadByForeignKey(Domain.class, domain.getForeignKey(), fakeClock.nowUtc()))
         .hasValue(domain);
+  }
+
+  @Test
+  void testRegistrantNotRequired() {
+    persistResource(domain.asBuilder().setRegistrant(Optional.empty()).build());
+    assertThat(
+            loadByForeignKey(Domain.class, domain.getForeignKey(), fakeClock.nowUtc())
+                .get()
+                .getRegistrant())
+        .isEmpty();
   }
 
   @Test
@@ -1012,14 +1022,14 @@ public class DomainTest {
             DesignatedContact.create(Type.BILLING, contact3Key),
             DesignatedContact.create(Type.TECH, contact4Key)),
         true);
-    assertThat(domain.getRegistrant()).isEqualTo(contact1Key);
+    assertThat(domain.getRegistrant()).hasValue(contact1Key);
     assertThat(domain.getAdminContact()).isEqualTo(contact2Key);
     assertThat(domain.getBillingContact()).isEqualTo(contact3Key);
     assertThat(domain.getTechContact()).isEqualTo(contact4Key);
 
     // Make sure everything gets nulled out.
     domain.setContactFields(ImmutableSet.of(), true);
-    assertThat(domain.getRegistrant()).isNull();
+    assertThat(domain.getRegistrant()).isEmpty();
     assertThat(domain.getAdminContact()).isNull();
     assertThat(domain.getBillingContact()).isNull();
     assertThat(domain.getTechContact()).isNull();
@@ -1032,13 +1042,13 @@ public class DomainTest {
             DesignatedContact.create(Type.BILLING, contact3Key),
             DesignatedContact.create(Type.TECH, contact4Key)),
         false);
-    assertThat(domain.getRegistrant()).isNull();
+    assertThat(domain.getRegistrant()).isEmpty();
     assertThat(domain.getAdminContact()).isEqualTo(contact2Key);
     assertThat(domain.getBillingContact()).isEqualTo(contact3Key);
     assertThat(domain.getTechContact()).isEqualTo(contact4Key);
-    domain = domain.asBuilder().setRegistrant(contact1Key).build();
+    domain = domain.asBuilder().setRegistrant(Optional.of(contact1Key)).build();
     domain.setContactFields(ImmutableSet.of(), false);
-    assertThat(domain.getRegistrant()).isEqualTo(contact1Key);
+    assertThat(domain.getRegistrant()).hasValue(contact1Key);
     assertThat(domain.getAdminContact()).isNull();
     assertThat(domain.getBillingContact()).isNull();
     assertThat(domain.getTechContact()).isNull();

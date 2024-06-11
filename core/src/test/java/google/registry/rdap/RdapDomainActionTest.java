@@ -15,6 +15,7 @@
 package google.registry.rdap;
 
 import static com.google.common.truth.Truth.assertThat;
+import static google.registry.model.EppResourceUtils.loadByForeignKey;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.DatabaseHelper.persistSimpleResources;
@@ -275,6 +276,19 @@ class RdapDomainActionTest extends RdapActionBaseTestCase<RdapDomainAction> {
 
   @Test
   void testValidDomain_notLoggedIn_noContacts() {
+    assertProperResponseForCatLol("cat.lol", "rdap_domain_no_contacts_with_remark.json");
+  }
+
+  @Test
+  void testValidDomain_notLoggedIn_contactsShowRedacted_evenWhenRegistrantDoesntExist() {
+    // Even though the registrant is empty on this domain, it still shows a full set of REDACTED
+    // fields through RDAP.
+    persistResource(
+        loadByForeignKey(Domain.class, "cat.lol", clock.nowUtc())
+            .get()
+            .asBuilder()
+            .setRegistrant(Optional.empty())
+            .build());
     assertProperResponseForCatLol("cat.lol", "rdap_domain_no_contacts_with_remark.json");
   }
 
