@@ -54,6 +54,7 @@ import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationW
 import google.registry.testing.FakeClock;
 import google.registry.util.SerializeUtils;
 import java.util.Arrays;
+import java.util.Optional;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -69,7 +70,7 @@ public class DomainSqlTest {
       new JpaTestExtensions.Builder().withClock(fakeClock).buildIntegrationWithCoverageExtension();
 
   private Domain domain;
-  private VKey<Contact> contactKey;
+  private Optional<VKey<Contact>> contactKey;
   private VKey<Contact> contact2Key;
   private VKey<Host> host1VKey;
   private Host host;
@@ -82,7 +83,7 @@ public class DomainSqlTest {
     saveRegistrar("registrar1");
     saveRegistrar("registrar2");
     saveRegistrar("registrar3");
-    contactKey = createKey(Contact.class, "contact_id1");
+    contactKey = Optional.of(createKey(Contact.class, "contact_id1"));
     contact2Key = createKey(Contact.class, "contact_id2");
 
     host1VKey = createKey(Host.class, "host1");

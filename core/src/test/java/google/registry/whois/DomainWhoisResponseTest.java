@@ -41,6 +41,7 @@ import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.testing.FakeClock;
 import google.registry.whois.WhoisResponse.WhoisResponseResults;
+import java.util.Optional;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -264,7 +265,7 @@ class DomainWhoisResponseTest {
                         StatusValue.CLIENT_RENEW_PROHIBITED,
                         StatusValue.CLIENT_TRANSFER_PROHIBITED,
                         StatusValue.SERVER_UPDATE_PROHIBITED))
-                .setRegistrant(registrantResourceKey)
+                .setRegistrant(Optional.of(registrantResourceKey))
                 .setContacts(
                     ImmutableSet.of(
                         DesignatedContact.create(DesignatedContact.Type.ADMIN, adminResourceKey),
@@ -288,6 +289,18 @@ class DomainWhoisResponseTest {
             domainWhoisResponse.getResponse(
                 false,
                 "Doodle Disclaimer\nI exist so that carriage return\nin disclaimer can be tested."))
+        .isEqualTo(WhoisResponseResults.create(loadFile("whois_domain.txt"), 1));
+  }
+
+  @Test
+  void getPlainTextOutputTest_noRegistrant() {
+    persistResource(domain.asBuilder().setRegistrant(Optional.empty()).build());
+    DomainWhoisResponse domainWhoisResponse =
+        new DomainWhoisResponse(domain, false, "Please contact registrar", clock.nowUtc());
+    assertThat(
+        domainWhoisResponse.getResponse(
+            false,
+            "Doodle Disclaimer\nI exist so that carriage return\nin disclaimer can be tested."))
         .isEqualTo(WhoisResponseResults.create(loadFile("whois_domain.txt"), 1));
   }
 

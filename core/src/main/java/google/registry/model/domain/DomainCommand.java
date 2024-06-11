@@ -40,8 +40,8 @@ import google.registry.model.eppinput.ResourceCommand.ResourceUpdate;
 import google.registry.model.eppinput.ResourceCommand.SingleResourceCommand;
 import google.registry.model.host.Host;
 import google.registry.persistence.VKey;
+import java.util.Optional;
 import java.util.Set;
-import javax.annotation.Nullable;
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlElementWrapper;
@@ -88,9 +88,8 @@ public class DomainCommand {
       return registrantContactId;
     }
 
-    @Nullable
-    public VKey<Contact> getRegistrant() {
-      return registrant;
+    public Optional<VKey<Contact>> getRegistrant() {
+      return Optional.ofNullable(registrant);
     }
 
     public DomainAuthInfo getAuthInfo() {

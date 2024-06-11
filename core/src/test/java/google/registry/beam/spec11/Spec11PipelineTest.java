@@ -54,6 +54,7 @@ import google.registry.util.Retrier;
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Optional;
 import org.apache.beam.sdk.coders.KvCoder;
 import org.apache.beam.sdk.coders.SerializableCoder;
 import org.apache.beam.sdk.options.PipelineOptionsFactory;
@@ -297,7 +298,7 @@ class Spec11PipelineTest {
         .setLastEppUpdateTime(fakeClock.nowUtc())
         .setLastEppUpdateRegistrarId(registrar.getRegistrarId())
         .setLastTransferTime(fakeClock.nowUtc())
-        .setRegistrant(contact.createVKey())
+        .setRegistrant(Optional.of(contact.createVKey()))
         .setPersistedCurrentSponsorRegistrarId(registrar.getRegistrarId())
         .setRegistrationExpirationTime(fakeClock.nowUtc().plusYears(1))
         .setAuthInfo(DomainAuthInfo.create(PasswordAuth.create("password")))
