@@ -23,7 +23,7 @@ import { MaterialModule } from './material.module';
 
 import { BackendService } from './shared/services/backend.service';
 
-import { HttpClientModule } from '@angular/common/http';
+import { provideHttpClient } from '@angular/common/http';
 import { MAT_FORM_FIELD_DEFAULT_OPTIONS } from '@angular/material/form-field';
 import { BillingInfoComponent } from './billingInfo/billingInfo.component';
 import { DomainListComponent } from './domains/domainList.component';
@@ -80,12 +80,12 @@ import { TldsComponent } from './tlds/tlds.component';
     WhoisComponent,
     WhoisEditComponent,
   ],
+  bootstrap: [AppComponent],
   imports: [
     AppRoutingModule,
     BrowserAnimationsModule,
     BrowserModule,
     FormsModule,
-    HttpClientModule,
     MaterialModule,
     SnackBarModule,
   ],
@@ -100,7 +100,7 @@ import { TldsComponent } from './tlds/tlds.component';
         subscriptSizing: 'dynamic',
       },
     },
+    provideHttpClient(),
   ],
-  bootstrap: [AppComponent],
 })
 export class AppModule {}

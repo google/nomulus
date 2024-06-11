@@ -30,14 +30,14 @@ body {
 
 .console-app {
   .mat-headline-4 {
-    margin-top: 6px;
-    margin-bottom: 24px;
+    margin-top: 6px !important;
+    margin-bottom: 24px !important;
   }
   .spacer {
     flex: 1;
   }
   h1 {
-    margin-bottom: 24px;
+    margin-bottom: 24px !important;
   }
   a {
     text-decoration: none;

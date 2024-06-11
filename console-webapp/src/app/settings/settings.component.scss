@@ -13,9 +13,6 @@
 // limitations under the License.
 
 .console-settings {
-  > mat-divider {
-    margin-bottom: 40px;
-  }
   .mdc-tab {
     &.active-link {
       border-bottom: 2px solid var(--primary);
@@ -23,5 +20,8 @@
         color: var(--primary);
       }
     }
+  }
+  nav {
+    margin-bottom: 40px;
   }
 }
