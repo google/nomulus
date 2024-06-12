@@ -41,9 +41,9 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
-import com.google.common.collect.Maps;
 import com.google.common.collect.Ordering;
 import com.google.common.collect.Range;
+import com.google.common.collect.Sets;
 import com.google.common.net.InternetDomainName;
 import google.registry.model.Buildable;
 import google.registry.model.CacheUtils;
@@ -204,10 +204,7 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
   public static ImmutableSet<Tld> get(Set<String> tlds) {
     Map<String, Tld> registries = CACHE.getAll(tlds);
     ImmutableSet<String> missingRegistries =
-        registries.entrySet().stream()
-            .filter(e -> e.getValue() == null)
-            .map(Map.Entry::getKey)
-            .collect(toImmutableSet());
+        Sets.difference(tlds, registries.keySet()).immutableCopy();
     if (missingRegistries.isEmpty()) {
       return registries.values().stream().collect(toImmutableSet());
     } else {
@@ -243,7 +240,8 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
                       tlds.stream().collect(toImmutableMap(tld -> tld, Tld::createVKey));
                   Map<VKey<? extends Tld>, Tld> entities =
                       tm().reTransact(() -> tm().loadByKeysIfPresent(keysMap.values()));
-                  return Maps.transformEntries(keysMap, (k, v) -> entities.getOrDefault(v, null));
+                  return entities.values().stream()
+                      .collect(toImmutableMap(tld -> tld.tldStr, tld -> tld));
                 }
               });
 
