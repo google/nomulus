@@ -14,7 +14,6 @@
 
 package google.registry.flows;
 
-import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.xml.XmlTransformer.prettyPrint;
 
 import com.google.common.flogger.FluentLogger;
@@ -28,6 +27,7 @@ import google.registry.model.eppcommon.Trid;
 import google.registry.model.eppoutput.EppOutput;
 import google.registry.monitoring.whitebox.EppMetric;
 import google.registry.persistence.PersistenceModule.TransactionIsolationLevel;
+import google.registry.persistence.transaction.JpaTransactionManager;
 import java.util.Optional;
 import javax.inject.Inject;
 import javax.inject.Provider;
@@ -52,6 +52,8 @@ public class FlowRunner {
   @Inject SessionMetadata sessionMetadata;
   @Inject Trid trid;
   @Inject FlowReporter flowReporter;
+  @Inject JpaTransactionManager jpaTransactionManager;
+
   @Inject FlowRunner() {}
 
   /** Runs the EPP flow, and records metrics on the given builder. */
@@ -77,26 +79,24 @@ public class FlowRunner {
       return EppOutput.create(flowProvider.get().run());
     }
     try {
-      // TODO(mcilwain/weiminyu): Use transactReadOnly() here for TransactionalFlow and transact()
-      //                          for MutatingFlow.
-      return tm().transact(
-              isolationLevelOverride.orElse(null),
-              () -> {
-                try {
-                  EppOutput output = EppOutput.create(flowProvider.get().run());
-                  if (isDryRun) {
-                    throw new DryRunException(output);
-                  }
-                  if (flowClass.equals(LoginFlow.class)) {
-                    // In LoginFlow, registrarId isn't known until after the flow executes, so save
-                    // it then.
-                    eppMetricBuilder.setRegistrarId(sessionMetadata.getRegistrarId());
-                  }
-                  return output;
-                } catch (EppException e) {
-                  throw new EppRuntimeException(e);
-                }
-              });
+      return jpaTransactionManager.transact(
+          isolationLevelOverride.orElse(null),
+          () -> {
+            try {
+              EppOutput output = EppOutput.create(flowProvider.get().run());
+              if (isDryRun) {
+                throw new DryRunException(output);
+              }
+              if (flowClass.equals(LoginFlow.class)) {
+                // In LoginFlow, registrarId isn't known until after the flow executes, so save
+                // it then.
+                eppMetricBuilder.setRegistrarId(sessionMetadata.getRegistrarId());
+              }
+              return output;
+            } catch (EppException e) {
+              throw new EppRuntimeException(e);
+            }
+          });
     } catch (DryRunException e) {
       return e.output;
     } catch (EppRuntimeException e) {

@@ -15,6 +15,7 @@
 package google.registry.flows;
 
 import static com.google.common.base.Preconditions.checkState;
+import static google.registry.persistence.transaction.TransactionManagerFactory.replicaTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import com.google.common.base.Strings;
@@ -37,6 +38,7 @@ import google.registry.model.host.HostHistory;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.persistence.IsolationLevel;
 import google.registry.persistence.PersistenceModule.TransactionIsolationLevel;
+import google.registry.persistence.transaction.JpaTransactionManager;
 import java.lang.annotation.Documented;
 import java.util.Optional;
 import javax.inject.Qualifier;
@@ -188,6 +190,16 @@ public class FlowModule {
       return FlowPicker.getFlowClass(eppInput);
     } catch (EppException e) {
       throw new EppExceptionInProviderException(e);
+    }
+  }
+
+  @Provides
+  @FlowScope
+  static JpaTransactionManager provideJpaTm(Class<? extends Flow> flowClass) {
+    if (MutatingFlow.class.isAssignableFrom(flowClass)) {
+      return tm();
+    } else {
+      return replicaTm();
     }
   }
 
