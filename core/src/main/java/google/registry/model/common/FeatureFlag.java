@@ -69,11 +69,7 @@ public class FeatureFlag extends ImmutableObject implements Buildable {
       TimedTransitionProperty.withInitialValue(FeatureStatus.INACTIVE);
 
   public static Optional<FeatureFlag> getIfPresent(String featureName) {
-    FeatureFlag maybeFeatureFlag = CACHE.get(featureName);
-    if (maybeFeatureFlag == null) {
-      return Optional.empty();
-    }
-    return Optional.of(maybeFeatureFlag);
+    return Optional.ofNullable(CACHE.get(featureName));
   }
 
   public static ImmutableList<FeatureFlag> getAll() {
