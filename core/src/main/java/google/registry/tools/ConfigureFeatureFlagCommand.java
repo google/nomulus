@@ -21,17 +21,16 @@ import google.registry.model.common.FeatureFlag;
 import google.registry.model.common.FeatureFlag.FeatureStatus;
 import google.registry.tools.params.TransitionListParameter.FeatureStatusTransitions;
 import java.util.Optional;
-import javax.annotation.Nullable;
 import org.joda.time.DateTime;
 
 /** Command for creating and updating {@link FeatureFlag} objects. */
 @Parameters(separators = " =", commandDescription = "Create or update a feature flag.")
 public class ConfigureFeatureFlagCommand extends MutatingCommand {
 
-  @Nullable
   @Parameter(
       names = {"-n", "--name"},
-      description = "The name of the feature flag to create")
+      description = "The name of the feature flag to create",
+      required = true)
   String name;
 
   @Parameter(
@@ -41,7 +40,8 @@ public class ConfigureFeatureFlagCommand extends MutatingCommand {
       description =
           "Comma-delimited list of feature status transitions effective on specific dates, of the"
               + " form <time>=<status>[,<time>=<status>]* where each status represents the status"
-              + " of the feature flag.")
+              + " of the feature flag.",
+      required = true)
   private ImmutableSortedMap<DateTime, FeatureStatus> featureStatusTransitions;
 
   @Override
