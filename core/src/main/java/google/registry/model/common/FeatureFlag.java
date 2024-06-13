@@ -27,20 +27,11 @@ import com.github.benmanes.caffeine.cache.CacheLoader;
 import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.google.common.base.Joiner;
 import com.google.common.base.Strings;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.ImmutableSortedMap;
-import com.google.common.collect.Sets;
-import google.registry.model.Buildable;
-import google.registry.model.CacheUtils;
-import google.registry.model.ImmutableObject;
-import google.registry.persistence.VKey;
-import java.util.Map;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
-import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 import google.registry.model.Buildable;
 import google.registry.model.CacheUtils;
 import google.registry.model.EntityYamlUtils.TimedTransitionPropertyFeatureStatusDeserializer;
@@ -100,7 +91,8 @@ public class FeatureFlag extends ImmutableObject implements Buildable {
 
   public static ImmutableSet<FeatureFlag> get(Set<String> featureNames) {
     Map<String, FeatureFlag> featureFlags = CACHE.getAll(featureNames);
-    ImmutableSet<String> missingFlags = Sets.difference(featureNames, featureFlags.keySet()).immutableCopy();
+    ImmutableSet<String> missingFlags =
+        Sets.difference(featureNames, featureFlags.keySet()).immutableCopy();
     if (missingFlags.isEmpty()) {
       return featureFlags.values().stream().collect(toImmutableSet());
     } else {
