@@ -564,6 +564,35 @@ public class AllocationTokenTest extends EntityTestCase {
         .build();
   }
 
+  @Test
+  void testFailures_badNonpremiumCreate() {
+    createTld("tld");
+    AllocationToken validToken =
+        new AllocationToken.Builder()
+            .setToken("abc")
+            .setTokenType(SINGLE_USE)
+            .setRegistrationBehavior(RegistrationBehavior.NONPREMIUM_CREATE)
+            .setDomainName("example.tld")
+            .build();
+    assertThrows(
+        IllegalArgumentException.class, () -> validToken.asBuilder().setDomainName(null).build());
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> validToken.asBuilder().setDiscountFraction(0.5).build());
+    assertThrows(
+        IllegalArgumentException.class,
+        () ->
+            validToken
+                .asBuilder()
+                .setAllowedEppActions(
+                    ImmutableSet.of(
+                        CommandName.RENEW,
+                        CommandName.TRANSFER,
+                        CommandName.RESTORE,
+                        CommandName.UPDATE))
+                .build());
+  }
+
   private void assertBadInitialTransition(TokenStatus status) {
     assertBadTransition(
         ImmutableSortedMap.<DateTime, TokenStatus>naturalOrder()

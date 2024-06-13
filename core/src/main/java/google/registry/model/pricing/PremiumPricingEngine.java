@@ -46,7 +46,7 @@ public interface PremiumPricingEngine {
     private Money createCost;
     private Money renewCost;
 
-    static DomainPrices create(boolean isPremium, Money createCost, Money renewCost) {
+    public static DomainPrices create(boolean isPremium, Money createCost, Money renewCost) {
       DomainPrices instance = new DomainPrices();
       instance.isPremium = isPremium;
       instance.createCost = createCost;
