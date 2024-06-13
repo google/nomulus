@@ -111,6 +111,7 @@ class FlowRunnerTest {
         new StatelessRequestSessionMetadata("TheRegistrar", ImmutableSet.of());
     flowRunner.trid = Trid.create("client-123", "server-456");
     flowRunner.flowReporter = mock(FlowReporter.class);
+    flowRunner.jpaTransactionManager = tm();
   }
 
   @Test
