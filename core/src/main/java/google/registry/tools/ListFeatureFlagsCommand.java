@@ -31,6 +31,9 @@ public class ListFeatureFlagsCommand implements Command {
 
   @Override
   public void run() throws Exception {
+    // Don't use try-with-resources to manage standard output streams, closing the stream will
+    // cause subsequent output to standard output or standard error to be lost
+    // See: https://errorprone.info/bugpattern/ClosingStandardOutputStreams
     PrintStream printStream = new PrintStream(System.out, false, UTF_8);
     ImmutableList<FeatureFlag> featureFlags = FeatureFlag.getAll();
     for (FeatureFlag featureFlag : featureFlags) {
