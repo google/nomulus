@@ -3520,6 +3520,23 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
   }
 
   @Test
+  void testSuccess_nonpremiumCreateToken() throws Exception {
+    createTld("example");
+    persistContactsAndHosts();
+    AllocationToken token =
+        persistResource(
+            new AllocationToken.Builder()
+                .setToken("abc123")
+                .setTokenType(SINGLE_USE)
+                .setRegistrationBehavior(RegistrationBehavior.NONPREMIUM_CREATE)
+                .setDomainName("rich.example")
+                .build());
+    setEppInput(
+        "domain_create_premium_allocationtoken.xml", ImmutableMap.of("YEARS", "1", "FEE", "13.00"));
+    runFlowAssertResponse(loadFile("domain_create_nonpremium_token_response.xml"));
+  }
+
+  @Test
   void testFailure_quietPeriod_defaultTokenPresent() throws Exception {
     persistResource(
         new AllocationToken.Builder().setToken("abc123").setTokenType(SINGLE_USE).build());
