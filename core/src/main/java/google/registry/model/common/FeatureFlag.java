@@ -21,6 +21,8 @@ import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static google.registry.config.RegistryConfig.getSingletonCacheRefreshDuration;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.github.benmanes.caffeine.cache.CacheLoader;
 import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.google.common.base.Joiner;
@@ -34,6 +36,18 @@ import google.registry.model.CacheUtils;
 import google.registry.model.ImmutableObject;
 import google.registry.persistence.VKey;
 import java.util.Map;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.ImmutableSortedMap;
+import com.google.common.collect.Maps;
+import google.registry.model.Buildable;
+import google.registry.model.CacheUtils;
+import google.registry.model.EntityYamlUtils.TimedTransitionPropertyFeatureStatusDeserializer;
+import google.registry.model.ImmutableObject;
+import google.registry.persistence.VKey;
+import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -59,8 +73,21 @@ public class FeatureFlag extends ImmutableObject implements Buildable {
 
   /** A map of times for each {@link FeatureStatus} the FeatureFlag should hold. */
   @Column(nullable = false)
+  @JsonDeserialize(using = TimedTransitionPropertyFeatureStatusDeserializer.class)
   TimedTransitionProperty<FeatureStatus> status =
       TimedTransitionProperty.withInitialValue(FeatureStatus.INACTIVE);
+
+  public static Optional<FeatureFlag> getIfPresent(String featureName) {
+    FeatureFlag maybeFeatureFlag = CACHE.get(featureName);
+    if (maybeFeatureFlag == null) {
+      return Optional.empty();
+    }
+    return Optional.of(maybeFeatureFlag);
+  }
+
+  public static ImmutableList<FeatureFlag> getAll() {
+    return tm().transact(() -> tm().loadAllOf(FeatureFlag.class));
+  }
 
   public static FeatureFlag get(String featureName) {
     FeatureFlag maybeFeatureFlag = CACHE.get(featureName);
@@ -73,8 +100,7 @@ public class FeatureFlag extends ImmutableObject implements Buildable {
 
   public static ImmutableSet<FeatureFlag> get(Set<String> featureNames) {
     Map<String, FeatureFlag> featureFlags = CACHE.getAll(featureNames);
-    ImmutableSet<String> missingFlags =
-        Sets.difference(featureNames, featureFlags.keySet()).immutableCopy();
+    ImmutableSet<String> missingFlags = Sets.difference(featureNames, featureFlags.keySet()).immutableCopy();
     if (missingFlags.isEmpty()) {
       return featureFlags.values().stream().collect(toImmutableSet());
     } else {
@@ -120,6 +146,7 @@ public class FeatureFlag extends ImmutableObject implements Buildable {
     return featureName;
   }
 
+  @JsonProperty("status")
   public TimedTransitionProperty<FeatureStatus> getStatusMap() {
     return status;
   }
@@ -152,7 +179,9 @@ public class FeatureFlag extends ImmutableObject implements Buildable {
     }
 
     public Builder setFeatureName(String featureName) {
-      checkState(getInstance().featureName == null, "Feature name can only be set once");
+      checkState(
+          getInstance().featureName == null || getInstance().featureName.equals(featureName),
+          "Feature name can only be set once");
       getInstance().featureName = featureName;
       return this;
     }

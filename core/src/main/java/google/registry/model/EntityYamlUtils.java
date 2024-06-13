@@ -31,6 +31,7 @@ import com.fasterxml.jackson.databind.ser.std.StdSerializer;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator.Feature;
 import com.google.common.collect.ImmutableSortedSet;
+import google.registry.model.common.FeatureFlag.FeatureStatus;
 import google.registry.model.common.TimedTransitionProperty;
 import google.registry.model.domain.token.AllocationToken;
 import google.registry.model.tld.Tld.TldState;
@@ -360,6 +361,33 @@ public class EntityYamlUtils {
                           Money.of(
                               CurrencyUnit.of(valueMap.get(key).get("currency").toString()),
                               new BigDecimal(String.valueOf(valueMap.get(key).get("amount")))))));
+    }
+  }
+
+  /** A custom JSON deserializer for a {@link TimedTransitionProperty} of {@link FeatureStatus}. */
+  public static class TimedTransitionPropertyFeatureStatusDeserializer
+      extends StdDeserializer<TimedTransitionProperty<FeatureStatus>> {
+
+    public TimedTransitionPropertyFeatureStatusDeserializer() {
+      this(null);
+    }
+
+    public TimedTransitionPropertyFeatureStatusDeserializer(
+        Class<TimedTransitionProperty<FeatureStatus>> t) {
+      super(t);
+    }
+
+    @Override
+    public TimedTransitionProperty<FeatureStatus> deserialize(
+        JsonParser jp, DeserializationContext context) throws IOException {
+      SortedMap<String, String> valueMap = jp.readValueAs(SortedMap.class);
+      return TimedTransitionProperty.fromValueMap(
+          valueMap.keySet().stream()
+              .collect(
+                  toImmutableSortedMap(
+                      natural(),
+                      DateTime::parse,
+                      key -> FeatureStatus.valueOf(valueMap.get(key)))));
     }
   }
 
