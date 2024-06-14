@@ -14,12 +14,13 @@
 
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { RegistrarComponent } from './registrarsTable.component';
-import { BackendService } from '../shared/services/backend.service';
-import { ActivatedRoute } from '@angular/router';
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+import { ActivatedRoute } from '@angular/router';
 import { MaterialModule } from '../material.module';
+import { BackendService } from '../shared/services/backend.service';
+import { RegistrarComponent } from './registrarsTable.component';
 
 describe('RegistrarComponent', () => {
   let component: RegistrarComponent;
@@ -28,14 +29,12 @@ describe('RegistrarComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       declarations: [RegistrarComponent],
-      imports: [
-        HttpClientTestingModule,
-        MaterialModule,
-        BrowserAnimationsModule,
-      ],
+      imports: [MaterialModule, BrowserAnimationsModule],
       providers: [
         BackendService,
         { provide: ActivatedRoute, useValue: {} as ActivatedRoute },
+        provideHttpClient(),
+        provideHttpClientTesting(),
       ],
     }).compileComponents();
 

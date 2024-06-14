@@ -14,18 +14,19 @@
 
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 
-import SecurityComponent from './security.component';
-import { SecurityService, apiToUiConverter } from './security.service';
-import { BackendService } from 'src/app/shared/services/backend.service';
-import { HttpClientTestingModule } from '@angular/common/http/testing';
-import { MaterialModule } from 'src/app/material.module';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
+import { FormsModule } from '@angular/forms';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { of } from 'rxjs';
-import { FormsModule } from '@angular/forms';
+import { MaterialModule } from 'src/app/material.module';
 import {
   Registrar,
   RegistrarService,
 } from 'src/app/registrar/registrar.service';
+import { BackendService } from 'src/app/shared/services/backend.service';
+import SecurityComponent from './security.component';
+import { SecurityService, apiToUiConverter } from './security.service';
 
 describe('SecurityComponent', () => {
   let component: SecurityComponent;
@@ -50,16 +51,13 @@ describe('SecurityComponent', () => {
     } as RegistrarService;
 
     await TestBed.configureTestingModule({
-      imports: [
-        HttpClientTestingModule,
-        MaterialModule,
-        BrowserAnimationsModule,
-        FormsModule,
-      ],
       declarations: [SecurityComponent],
+      imports: [MaterialModule, BrowserAnimationsModule, FormsModule],
       providers: [
         BackendService,
         { provide: RegistrarService, useValue: dummyRegistrarService },
+        provideHttpClient(),
+        provideHttpClientTesting(),
       ],
     })
       .overrideComponent(SecurityComponent, {

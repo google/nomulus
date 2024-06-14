@@ -14,6 +14,11 @@
 
 import { TestBed } from '@angular/core/testing';
 
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
+import { MatSnackBar } from '@angular/material/snack-bar';
+import { BackendService } from 'src/app/shared/services/backend.service';
+import SecurityComponent from './security.component';
 import {
   SecurityService,
   SecuritySettings,
@@ -21,10 +26,6 @@ import {
   apiToUiConverter,
   uiToApiConverter,
 } from './security.service';
-import { HttpClientTestingModule } from '@angular/common/http/testing';
-import SecurityComponent from './security.component';
-import { BackendService } from 'src/app/shared/services/backend.service';
-import { MatSnackBar } from '@angular/material/snack-bar';
 
 describe('SecurityService', () => {
   const uiMockData: SecuritySettings = {
@@ -42,9 +43,15 @@ describe('SecurityService', () => {
 
   beforeEach(() => {
     TestBed.configureTestingModule({
-      imports: [HttpClientTestingModule],
       declarations: [SecurityComponent],
-      providers: [MatSnackBar, SecurityService, BackendService],
+      imports: [],
+      providers: [
+        MatSnackBar,
+        SecurityService,
+        BackendService,
+        provideHttpClient(),
+        provideHttpClientTesting(),
+      ],
     });
     service = TestBed.inject(SecurityService);
   });

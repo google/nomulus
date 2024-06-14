@@ -14,18 +14,24 @@
 
 import { TestBed } from '@angular/core/testing';
 
-import { RegistrarService } from './registrar.service';
-import { BackendService } from '../shared/services/backend.service';
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { BackendService } from '../shared/services/backend.service';
+import { RegistrarService } from './registrar.service';
 
 describe('RegistrarService', () => {
   let service: RegistrarService;
 
   beforeEach(() => {
     TestBed.configureTestingModule({
-      imports: [HttpClientTestingModule],
-      providers: [BackendService, MatSnackBar],
+      imports: [],
+      providers: [
+        BackendService,
+        MatSnackBar,
+        provideHttpClient(),
+        provideHttpClientTesting(),
+      ],
     });
     service = TestBed.inject(RegistrarService);
   });

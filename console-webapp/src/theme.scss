@@ -4,63 +4,19 @@
 
 $secondary-color: #80868b;
 $border-color: #dadce0;
-$hue-undefined: "undefined";
-$blue-palette: (
-  50: #e8f0fe,
-  100: #d2e3fc,
-  200: #aecbfa,
-  300: #8ab4f8,
-  400: #669df6,
-  500: #4285f4,
-  600: #1a73e8,
-  700: #1967d2,
-  800: #185abc,
-  900: #174ea6,
-  A100: $hue-undefined,
-  A200: $hue-undefined,
-  A400: $hue-undefined,
-  A700: $hue-undefined,
-  contrast: (
-    50: #174ea6,
-    100: #174ea6,
-    200: #174ea6,
-    300: #174ea6,
-    400: #174ea6,
-    500: white,
-    600: white,
-    700: white,
-    800: white,
-    900: white,
-    A100: $hue-undefined,
-    A200: $hue-undefined,
-    A400: $hue-undefined,
-    A700: $hue-undefined,
-  ),
-);
 
 @function rem($valueInPixels, $rootbase: 16px) {
   @return math.div($valueInPixels, $rootbase) * 1rem;
 }
-
-/** Copied from docs section **/
 
 // Include the common styles for Angular Material. We include this here so that you only
 // have to load a single css file for Angular Material in your app.
 // Be sure that you only ever include this mixin once!
 @include mat.core();
 
-// The warn palette is optional (defaults to red).
-$theme-warn: mat.define-palette(mat.$red-palette);
-
-/** 
-** Application specific section - Global styles and mixins
-**/
-
-$theme-primary: mat.define-palette($blue-palette);
-
-$typographyConfig: mat.define-typography-config(
+$typographyConfig: mat.m2-define-typography-config(
   $headline-1:
-    mat.define-typography-level(
+    mat.m2-define-typography-level(
       rem(29px),
       rem(36px),
       500,
@@ -68,7 +24,7 @@ $typographyConfig: mat.define-typography-config(
       normal
     ),
   $headline-4:
-    mat.define-typography-level(
+    mat.m2-define-typography-level(
       rem(28px),
       rem(36px),
       500,
@@ -76,7 +32,7 @@ $typographyConfig: mat.define-typography-config(
       normal
     ),
   $headline-5:
-    mat.define-typography-level(
+    mat.m2-define-typography-level(
       rem(20px),
       rem(28px),
       400,
@@ -84,9 +40,15 @@ $typographyConfig: mat.define-typography-config(
       normal
     ),
   $headline-6:
-    mat.define-typography-level(rem(16px), rem(2px), 500, "Google Sans", normal),
+    mat.m2-define-typography-level(
+      rem(16px),
+      rem(2px),
+      500,
+      "Google Sans",
+      normal
+    ),
   $body-1:
-    mat.define-typography-level(
+    mat.m2-define-typography-level(
       rem(16px),
       rem(24px),
       400,
@@ -94,7 +56,7 @@ $typographyConfig: mat.define-typography-config(
       normal
     ),
   $body-2:
-    mat.define-typography-level(
+    mat.m2-define-typography-level(
       rem(14px),
       rem(20px),
       400,
@@ -102,7 +64,7 @@ $typographyConfig: mat.define-typography-config(
       normal
     ),
   $caption:
-    mat.define-typography-level(
+    mat.m2-define-typography-level(
       rem(14px),
       rem(24px),
       400,
@@ -110,37 +72,13 @@ $typographyConfig: mat.define-typography-config(
       0.15px
     ),
   $overline:
-    mat.define-typography-level(rem(14px), rem(20px), 500, "Google Sans", 0.5px),
-);
-
-@include mat.typography-hierarchy($typographyConfig);
-@mixin form-field-density($density) {
-  $field-typography: mat.define-typography-config(
-    $body-1: mat.define-typography-level(12px, 24px, 400),
-  );
-  @include mat.typography-level($field-typography, "body-1");
-  @include mat.form-field-density($density);
-}
-
-// Define lowest possible density class to be used in application
-// In the same manner -1...-5 classes can be defined
-.mat-form-field-density-5 {
-  @include form-field-density(-5);
-}
-
-/** 
-** Light theme
-**/
-$light-theme: mat.define-light-theme(
-  (
-    color: (
-      primary: $theme-primary,
-      accent: $theme-primary,
-      warn: $theme-warn,
+    mat.m2-define-typography-level(
+      rem(14px),
+      rem(20px),
+      500,
+      "Google Sans",
+      0.5px
     ),
-    density: 0,
-    typography: $typographyConfig,
-  )
 );
 
 // Access and define a class with secondary color exposed
@@ -165,12 +103,41 @@ mat-row:hover {
 
 :root {
   --text: #5f6368;
-  --primary: #{mat.get-color-from-palette($blue-palette, 500)};
-  --lightest: #{mat.get-color-from-palette($blue-palette, 100)};
+  --primary: #4285f4;
+  --lightest: #d2e3fc;
   --light-highlight: #e8eaed;
   --lightest-highlight: #f8f9fa;
   --secondary: #{$secondary-color};
   --border: #{$border-color};
+  --mat-tree-node-text-font: "Google Sans Text";
+  --mat-tree-node-text-size: 0.95rem;
+  --mat-sidenav-container-width: 280px;
 }
 
-@include mat.all-component-themes($light-theme);
+$theme: mat.define-theme(
+  (
+    color: (
+      theme-type: light,
+      primary: mat.$blue-palette,
+    ),
+    typography: (
+      plain-family: "Google Sans",
+      brand-family: "Google Sans Text",
+      bold-weight: 600,
+    ),
+  )
+);
+
+html {
+  @include mat.all-component-themes($theme);
+  @include mat.typography-hierarchy($typographyConfig);
+  @include mat.form-field-theme(
+    mat.define-theme(
+      (
+        density: (
+          scale: -3,
+        ),
+      )
+    )
+  );
+}
