@@ -1,5 +1,5 @@
 #standardSQL
-  -- Copyright 2017 The Nomulus Authors. All Rights Reserved.
+  -- Copyright 2024 The Nomulus Authors. All Rights Reserved.
   --
   -- Licensed under the Apache License, Version 2.0 (the "License");
   -- you may not use this file except in compliance with the License.
@@ -15,5 +15,17 @@
 
   -- Retrieve per-TLD DNS query counts.
 
-SELECT *
-FROM `domain-registry-test.icann_reporting.dns_counts_from_plx`
+SELECT
+  tld,
+  CASE
+    WHEN transport = 'tcp' THEN 'dns-tcp-queries'
+    WHEN transport = 'udp' THEN 'dns-udp-queries'
+  END AS metricName,
+  SUM(query_count) AS count
+FROM
+  `%PROJECT_ID%.%DATASET_ID%.%TABLE_ID%`
+WHERE
+  STARTS_WITH(date_utc, '%YEAR_MONTH%')
+GROUP BY
+  tld,
+  metricName

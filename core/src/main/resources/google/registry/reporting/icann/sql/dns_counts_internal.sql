@@ -16,4 +16,4 @@
   -- Retrieve per-TLD DNS query counts.
 
 SELECT *
-FROM `domain-registry-test.icann_reporting.dns_counts_from_plx`
+FROM `%PROJECT_ID%.%ICANN_REPORTING_DATA_SET%.%DNS_TABLE_NAME%`

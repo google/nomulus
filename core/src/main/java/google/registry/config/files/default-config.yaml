@@ -73,7 +73,7 @@ registryPolicy:
 
   # Custom logic class for handling DNS query count reporting for ICANN.
   # See reporting/icann/DnsCountQueryCoordinator.java
-  dnsCountQueryCoordinatorClass: google.registry.reporting.icann.BasicDnsCountQueryCoordinator
+  dnsCountQueryCoordinatorClass: google.registry.reporting.icann.DummyDnsCountQueryCoordinator
 
   # Length of time after which contact transfers automatically conclude.
   contactAutomaticTransferDays: 5
