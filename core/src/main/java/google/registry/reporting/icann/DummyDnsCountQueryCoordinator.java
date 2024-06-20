@@ -18,16 +18,13 @@ import google.registry.util.ResourceUtils;
 import google.registry.util.SqlTemplate;
 import org.joda.time.YearMonth;
 
-/**
- * DNS Count query for the basic case.
- */
-public class BasicDnsCountQueryCoordinator implements DnsCountQueryCoordinator {
-
-  BasicDnsCountQueryCoordinator(DnsCountQueryCoordinator.Params params) {}
+/** DNS Count query where returned values are all -1. */
+public class DummyDnsCountQueryCoordinator extends DnsCountQueryCoordinator {
 
   @Override
-  public String createQuery(YearMonth yearMonth) {
-    return SqlTemplate.create(ResourceUtils.readResourceUtf8(this.getClass(), "sql/dns_counts.sql"))
+  public String createQuery() {
+    return SqlTemplate.create(
+            ResourceUtils.readResourceUtf8(this.getClass(), "sql/dns_counts_dummy.sql"))
         .build();
   }
 
