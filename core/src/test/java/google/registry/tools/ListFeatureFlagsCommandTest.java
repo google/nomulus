@@ -40,7 +40,7 @@ public class ListFeatureFlagsCommandTest extends CommandTestCase<ListFeatureFlag
     persistResource(
         new FeatureFlag.Builder()
             .setFeatureName("testFlag")
-            .setStatus(
+            .setStatusMap(
                 ImmutableSortedMap.<DateTime, FeatureStatus>naturalOrder()
                     .put(START_OF_TIME, INACTIVE)
                     .put(fakeClock.nowUtc().plusWeeks(8), ACTIVE)
@@ -55,7 +55,7 @@ public class ListFeatureFlagsCommandTest extends CommandTestCase<ListFeatureFlag
     persistResource(
         new FeatureFlag.Builder()
             .setFeatureName("Mars")
-            .setStatus(
+            .setStatusMap(
                 ImmutableSortedMap.<DateTime, FeatureStatus>naturalOrder()
                     .put(START_OF_TIME, INACTIVE)
                     .put(fakeClock.nowUtc().plusWeeks(8), ACTIVE)
@@ -64,7 +64,7 @@ public class ListFeatureFlagsCommandTest extends CommandTestCase<ListFeatureFlag
     persistResource(
         new FeatureFlag.Builder()
             .setFeatureName("Venus")
-            .setStatus(
+            .setStatusMap(
                 ImmutableSortedMap.<DateTime, FeatureStatus>naturalOrder()
                     .put(START_OF_TIME, INACTIVE)
                     .put(fakeClock.nowUtc().plusWeeks(1), ACTIVE)
@@ -75,7 +75,7 @@ public class ListFeatureFlagsCommandTest extends CommandTestCase<ListFeatureFlag
     persistResource(
         new FeatureFlag.Builder()
             .setFeatureName("Jupiter")
-            .setStatus(
+            .setStatusMap(
                 ImmutableSortedMap.<DateTime, FeatureStatus>naturalOrder()
                     .put(START_OF_TIME, ACTIVE)
                     .build())

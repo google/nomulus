@@ -31,7 +31,6 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
-import com.google.common.collect.Sets;
 import google.registry.model.Buildable;
 import google.registry.model.CacheUtils;
 import google.registry.model.EntityYamlUtils.TimedTransitionPropertyFeatureStatusDeserializer;
@@ -68,56 +67,61 @@ public class FeatureFlag extends ImmutableObject implements Buildable {
   TimedTransitionProperty<FeatureStatus> status =
       TimedTransitionProperty.withInitialValue(FeatureStatus.INACTIVE);
 
-  public static Optional<FeatureFlag> getIfPresent(String featureName) {
-    return Optional.ofNullable(CACHE.get(featureName));
+  public static Optional<FeatureFlag> getUncached(String featureName) {
+    return tm().transact(() -> tm().loadByKeyIfPresent(createVKey(featureName)));
   }
 
-  public static ImmutableList<FeatureFlag> getAll() {
+  public static ImmutableList<FeatureFlag> getAllUncached() {
     return tm().transact(() -> tm().loadAllOf(FeatureFlag.class));
   }
 
   public static FeatureFlag get(String featureName) {
-    FeatureFlag maybeFeatureFlag = CACHE.get(featureName);
-    if (maybeFeatureFlag == null) {
+    Optional<FeatureFlag> maybeFeatureFlag = CACHE.get(featureName);
+    if (maybeFeatureFlag.isEmpty()) {
       throw new FeatureFlagNotFoundException(featureName);
     } else {
-      return maybeFeatureFlag;
+      return maybeFeatureFlag.get();
     }
   }
 
-  public static ImmutableSet<FeatureFlag> get(Set<String> featureNames) {
-    Map<String, FeatureFlag> featureFlags = CACHE.getAll(featureNames);
+  public static ImmutableSet<FeatureFlag> getAll(Set<String> featureNames) {
+    Map<String, Optional<FeatureFlag>> featureFlags = CACHE.getAll(featureNames);
     ImmutableSet<String> missingFlags =
-        Sets.difference(featureNames, featureFlags.keySet()).immutableCopy();
+        featureFlags.entrySet().stream()
+            .filter(e -> e.getValue().isEmpty())
+            .map(Map.Entry::getKey)
+            .collect(toImmutableSet());
     if (missingFlags.isEmpty()) {
-      return featureFlags.values().stream().collect(toImmutableSet());
+      return featureFlags.values().stream().map(Optional::get).collect(toImmutableSet());
     } else {
       throw new FeatureFlagNotFoundException(missingFlags);
     }
   }
 
   /** A cache that loads the {@link FeatureFlag} for a given featureName. */
-  private static final LoadingCache<String, FeatureFlag> CACHE =
+  private static final LoadingCache<String, Optional<FeatureFlag>> CACHE =
       CacheUtils.newCacheBuilder(getSingletonCacheRefreshDuration())
           .build(
               new CacheLoader<>() {
                 @Override
-                public FeatureFlag load(final String featureName) {
-                  return tm().reTransact(() -> tm().loadByKeyIfPresent(createVKey(featureName)))
-                      .orElse(null);
+                public Optional<FeatureFlag> load(final String featureName) {
+                  return tm().transact(() -> tm().loadByKeyIfPresent(createVKey(featureName)));
                 }
 
                 @Override
-                public Map<? extends String, ? extends FeatureFlag> loadAll(
+                public Map<? extends String, ? extends Optional<FeatureFlag>> loadAll(
                     Set<? extends String> featureFlagNames) {
                   ImmutableMap<String, VKey<FeatureFlag>> keysMap =
                       featureFlagNames.stream()
                           .collect(
                               toImmutableMap(featureName -> featureName, FeatureFlag::createVKey));
-                  Map<VKey<? extends FeatureFlag>, FeatureFlag> entities =
-                      tm().reTransact(() -> tm().loadByKeysIfPresent(keysMap.values()));
-                  return entities.values().stream()
-                      .collect(toImmutableMap(flag -> flag.featureName, flag -> flag));
+                  return tm().transact(
+                          () ->
+                              featureFlagNames.stream()
+                                  .collect(
+                                      toImmutableMap(
+                                          flag -> flag,
+                                          flag -> tm().loadByKeyIfPresent(keysMap.get(flag)))));
                 }
               });
 
@@ -174,7 +178,7 @@ public class FeatureFlag extends ImmutableObject implements Buildable {
       return this;
     }
 
-    public Builder setStatus(ImmutableSortedMap<DateTime, FeatureStatus> statusMap) {
+    public Builder setStatusMap(ImmutableSortedMap<DateTime, FeatureStatus> statusMap) {
       getInstance().status = TimedTransitionProperty.fromValueMap(statusMap);
       return this;
     }
@@ -187,7 +191,7 @@ public class FeatureFlag extends ImmutableObject implements Buildable {
       super("No feature flag object(s) found for " + Joiner.on(", ").join(featureNames));
     }
 
-    FeatureFlagNotFoundException(String featureName) {
+    public FeatureFlagNotFoundException(String featureName) {
       this(ImmutableSet.of(featureName));
     }
   }
