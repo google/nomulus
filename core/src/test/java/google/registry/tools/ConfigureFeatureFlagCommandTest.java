@@ -50,7 +50,7 @@ public class ConfigureFeatureFlagCommandTest extends CommandTestCase<ConfigureFe
   }
 
   @Test
-  void testCreate_mulitpleFlags() throws Exception {
+  void testCreate_multipleFlags() throws Exception {
     DateTime featureStart = clock.nowUtc().plusWeeks(2);
 
     runCommandForced(
