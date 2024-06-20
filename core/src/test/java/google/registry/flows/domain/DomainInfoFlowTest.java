@@ -1105,6 +1105,7 @@ class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, Domain> {
                 .setAllowedTlds(ImmutableSet.of("foo"))
                 .setAllowedRegistrarIds(ImmutableSet.of("NewRegistrar"))
                 .setRenewalPriceBehavior(RenewalPriceBehavior.SPECIFIED)
+                .setRenewalPrice(Money.of(USD, 0))
                 .setAllowedEppActions(ImmutableSet.of(CommandName.CREATE))
                 .setDiscountFraction(1)
                 .build());
@@ -1126,6 +1127,7 @@ class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, Domain> {
                 .setAllowedTlds(ImmutableSet.of("foo"))
                 .setAllowedRegistrarIds(ImmutableSet.of("NewRegistrar"))
                 .setRenewalPriceBehavior(RenewalPriceBehavior.SPECIFIED)
+                .setRenewalPrice(Money.of(USD, 0))
                 .setAllowedEppActions(ImmutableSet.of(CommandName.CREATE))
                 .setDiscountFraction(1)
                 .build());
@@ -1159,6 +1161,7 @@ class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, Domain> {
                 .setAllowedTlds(ImmutableSet.of("foo"))
                 .setAllowedRegistrarIds(ImmutableSet.of("NewRegistrar"))
                 .setRenewalPriceBehavior(RenewalPriceBehavior.SPECIFIED)
+                .setRenewalPrice(Money.of(USD, 0))
                 .setAllowedEppActions(ImmutableSet.of(CommandName.CREATE))
                 .setDiscountFraction(1)
                 .build());

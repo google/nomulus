@@ -17,6 +17,7 @@ package google.registry.tools;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.persistResource;
+import static org.joda.money.CurrencyUnit.USD;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableSet;
@@ -47,6 +48,7 @@ public class UpdateBulkPricingPackageCommandTest
                 .setAllowedTlds(ImmutableSet.of("foo"))
                 .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
                 .setRenewalPriceBehavior(RenewalPriceBehavior.SPECIFIED)
+                .setRenewalPrice(Money.of(USD, 0))
                 .setAllowedEppActions(ImmutableSet.of(CommandName.CREATE))
                 .setDiscountFraction(1)
                 .build());
@@ -94,6 +96,7 @@ public class UpdateBulkPricingPackageCommandTest
             .setAllowedTlds(ImmutableSet.of("foo"))
             .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
             .setRenewalPriceBehavior(RenewalPriceBehavior.SPECIFIED)
+            .setRenewalPrice(Money.of(USD, 0))
             .setAllowedEppActions(ImmutableSet.of(CommandName.CREATE))
             .setDiscountFraction(1)
             .build());

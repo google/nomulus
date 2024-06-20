@@ -55,6 +55,7 @@ public class BulkPricingPackageTest extends EntityTestCase {
                 .setAllowedTlds(ImmutableSet.of("foo"))
                 .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
                 .setRenewalPriceBehavior(RenewalPriceBehavior.SPECIFIED)
+                .setRenewalPrice(Money.of(CurrencyUnit.USD, 0))
                 .setAllowedEppActions(ImmutableSet.of(CommandName.CREATE))
                 .setDiscountFraction(1)
                 .build());
