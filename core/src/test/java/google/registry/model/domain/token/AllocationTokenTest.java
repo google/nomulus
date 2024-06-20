@@ -43,6 +43,8 @@ import google.registry.model.domain.token.AllocationToken.TokenStatus;
 import google.registry.model.domain.token.AllocationToken.TokenType;
 import google.registry.model.reporting.HistoryEntry.HistoryEntryId;
 import google.registry.util.SerializeUtils;
+import org.joda.money.CurrencyUnit;
+import org.joda.money.Money;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -158,15 +160,16 @@ public class AllocationTokenTest extends EntityTestCase {
 
   @Test
   void testSetRenewalBehavior_assertsRenewalBehaviorIsNotDefault() {
-    assertThat(
-            persistResource(
-                    new AllocationToken.Builder()
-                        .setToken("abc123")
-                        .setTokenType(SINGLE_USE)
-                        .setRenewalPriceBehavior(RenewalPriceBehavior.SPECIFIED)
-                        .build())
-                .getRenewalPriceBehavior())
-        .isEqualTo(RenewalPriceBehavior.SPECIFIED);
+    AllocationToken token =
+        persistResource(
+            new AllocationToken.Builder()
+                .setToken("abc123")
+                .setTokenType(SINGLE_USE)
+                .setRenewalPriceBehavior(RenewalPriceBehavior.SPECIFIED)
+                .setRenewalPrice(Money.of(CurrencyUnit.USD, 5))
+                .build());
+    assertThat(token.getRenewalPriceBehavior()).isEqualTo(RenewalPriceBehavior.SPECIFIED);
+    assertThat(token.getRenewalPrice()).hasValue(Money.of(CurrencyUnit.USD, 5));
   }
 
   @Test
@@ -181,7 +184,11 @@ public class AllocationTokenTest extends EntityTestCase {
     AllocationToken loadedToken = loadByEntity(token);
     assertThat(token).isEqualTo(loadedToken);
     persistResource(
-        loadedToken.asBuilder().setRenewalPriceBehavior(RenewalPriceBehavior.SPECIFIED).build());
+        loadedToken
+            .asBuilder()
+            .setRenewalPriceBehavior(RenewalPriceBehavior.SPECIFIED)
+            .setRenewalPrice(Money.of(CurrencyUnit.USD, 5))
+            .build());
     assertThat(loadByEntity(token).getRenewalPriceBehavior())
         .isEqualTo(RenewalPriceBehavior.SPECIFIED);
   }
@@ -218,17 +225,50 @@ public class AllocationTokenTest extends EntityTestCase {
   }
 
   @Test
-  void testFail_bulkTokenNotSpecifiedRenewalBehavior() {
+  void testFail_bulkTokenInvalidRenewalBehavior() {
+    assertThat(
+            assertThrows(
+                IllegalArgumentException.class,
+                () ->
+                    new AllocationToken.Builder()
+                        .setToken("abc123")
+                        .setTokenType(TokenType.BULK_PRICING)
+                        .setDiscountFraction(1)
+                        .setAllowedEppActions(ImmutableSet.of(CommandName.CREATE))
+                        .setRenewalPriceBehavior(RenewalPriceBehavior.DEFAULT)
+                        .build()))
+        .hasMessageThat()
+        .isEqualTo("BULK_PRICING tokens must have renewalPriceBehavior set to SPECIFIED");
+
+    assertThat(
+            assertThrows(
+                IllegalArgumentException.class,
+                () ->
+                    new AllocationToken.Builder()
+                        .setToken("abc123")
+                        .setTokenType(TokenType.BULK_PRICING)
+                        .setDiscountFraction(1)
+                        .setAllowedEppActions(ImmutableSet.of(CommandName.CREATE))
+                        .setRenewalPriceBehavior(RenewalPriceBehavior.SPECIFIED)
+                        .setRenewalPrice(Money.of(CurrencyUnit.USD, 5))
+                        .build()))
+        .hasMessageThat()
+        .isEqualTo("BULK_PRICING tokens must have a renewal price of 0");
+  }
+
+  @Test
+  void testFailure_bulkTokenDiscountFraction() {
     AllocationToken.Builder builder =
         new AllocationToken.Builder()
             .setToken("abc123")
             .setTokenType(TokenType.BULK_PRICING)
             .setAllowedEppActions(ImmutableSet.of(CommandName.CREATE))
-            .setRenewalPriceBehavior(RenewalPriceBehavior.DEFAULT);
+            .setRenewalPriceBehavior(RenewalPriceBehavior.SPECIFIED)
+            .setRenewalPrice(Money.of(CurrencyUnit.USD, 0));
     IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class, builder::build);
     assertThat(thrown)
         .hasMessageThat()
-        .isEqualTo("Bulk tokens must have renewalPriceBehavior set to SPECIFIED");
+        .isEqualTo("BULK_PRICING tokens must have a discountFraction of 1.0");
   }
 
   @Test
@@ -237,12 +277,14 @@ public class AllocationTokenTest extends EntityTestCase {
         new AllocationToken.Builder()
             .setToken("abc123")
             .setTokenType(TokenType.BULK_PRICING)
+            .setDiscountFraction(1)
             .setAllowedEppActions(ImmutableSet.of(CommandName.CREATE, CommandName.RESTORE))
-            .setRenewalPriceBehavior(RenewalPriceBehavior.SPECIFIED);
+            .setRenewalPriceBehavior(RenewalPriceBehavior.SPECIFIED)
+            .setRenewalPrice(Money.of(CurrencyUnit.USD, 0));
     IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class, builder::build);
     assertThat(thrown)
         .hasMessageThat()
-        .isEqualTo("Bulk tokens may only be valid for CREATE actions");
+        .isEqualTo("BULK_PRICING tokens may only be valid for CREATE actions");
   }
 
   @Test
@@ -263,11 +305,13 @@ public class AllocationTokenTest extends EntityTestCase {
         new AllocationToken.Builder()
             .setToken("abc123")
             .setTokenType(TokenType.BULK_PRICING)
-            .setRenewalPriceBehavior(RenewalPriceBehavior.SPECIFIED);
+            .setDiscountFraction(1)
+            .setRenewalPriceBehavior(RenewalPriceBehavior.SPECIFIED)
+            .setRenewalPrice(Money.of(CurrencyUnit.USD, 0));
     IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class, builder::build);
     assertThat(thrown)
         .hasMessageThat()
-        .isEqualTo("Bulk tokens may only be valid for CREATE actions");
+        .isEqualTo("BULK_PRICING tokens may only be valid for CREATE actions");
   }
 
   @Test
@@ -276,11 +320,15 @@ public class AllocationTokenTest extends EntityTestCase {
         new AllocationToken.Builder()
             .setToken("abc123")
             .setTokenType(TokenType.BULK_PRICING)
+            .setDiscountFraction(1)
             .setAllowedEppActions(ImmutableSet.of(CommandName.CREATE))
             .setRenewalPriceBehavior(RenewalPriceBehavior.SPECIFIED)
+            .setRenewalPrice(Money.of(CurrencyUnit.USD, 0))
             .setDiscountPremiums(true);
     IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class, builder::build);
-    assertThat(thrown).hasMessageThat().isEqualTo("Bulk tokens cannot discount premium names");
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo("BULK_PRICING tokens cannot discount premium names");
   }
 
   @Test
@@ -338,8 +386,10 @@ public class AllocationTokenTest extends EntityTestCase {
         new AllocationToken.Builder()
             .setToken("foobar")
             .setTokenType(BULK_PRICING)
+            .setDiscountFraction(1)
             .setAllowedEppActions(ImmutableSet.of(CommandName.CREATE))
             .setRenewalPriceBehavior(RenewalPriceBehavior.SPECIFIED)
+            .setRenewalPrice(Money.of(CurrencyUnit.USD, 0))
             .setAllowedRegistrarIds(ImmutableSet.of("foo", "bar"));
     IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class, builder::build);
     assertThat(thrown)
@@ -534,6 +584,32 @@ public class AllocationTokenTest extends EntityTestCase {
     assertThat(thrown)
         .hasMessageThat()
         .isEqualTo("Discount years can only be specified along with a discount fraction");
+  }
+
+  @Test
+  void testBuild_specifiedTokenInvalidBehavior() {
+    assertThat(
+            assertThrows(
+                IllegalArgumentException.class,
+                () ->
+                    new AllocationToken.Builder()
+                        .setToken("abc")
+                        .setTokenType(SINGLE_USE)
+                        .setRenewalPriceBehavior(RenewalPriceBehavior.SPECIFIED)
+                        .build()))
+        .hasMessageThat()
+        .isEqualTo("renewalPrice must be specified iff renewalPriceBehavior is SPECIFIED");
+    assertThat(
+            assertThrows(
+                IllegalArgumentException.class,
+                () ->
+                    new AllocationToken.Builder()
+                        .setToken("abc")
+                        .setTokenType(SINGLE_USE)
+                        .setRenewalPrice(Money.of(CurrencyUnit.USD, 10))
+                        .build()))
+        .hasMessageThat()
+        .isEqualTo("renewalPrice must be specified iff renewalPriceBehavior is SPECIFIED");
   }
 
   @Test

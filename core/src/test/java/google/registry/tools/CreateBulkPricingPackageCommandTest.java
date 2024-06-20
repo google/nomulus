@@ -18,6 +18,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
+import static org.joda.money.CurrencyUnit.USD;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableSet;
@@ -46,6 +47,7 @@ public class CreateBulkPricingPackageCommandTest
             .setAllowedTlds(ImmutableSet.of("foo"))
             .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
             .setRenewalPriceBehavior(RenewalPriceBehavior.SPECIFIED)
+            .setRenewalPrice(Money.of(USD, 0))
             .setAllowedEppActions(ImmutableSet.of(CommandName.CREATE))
             .setDiscountFraction(1)
             .build());
@@ -78,6 +80,7 @@ public class CreateBulkPricingPackageCommandTest
             .setAllowedTlds(ImmutableSet.of("foo"))
             .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
             .setRenewalPriceBehavior(RenewalPriceBehavior.SPECIFIED)
+            .setRenewalPrice(Money.of(USD, 0))
             .setDiscountFraction(1)
             .build());
     IllegalArgumentException thrown =
@@ -122,6 +125,7 @@ public class CreateBulkPricingPackageCommandTest
             .setAllowedTlds(ImmutableSet.of("foo"))
             .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
             .setRenewalPriceBehavior(RenewalPriceBehavior.SPECIFIED)
+            .setRenewalPrice(Money.of(USD, 0))
             .setAllowedEppActions(ImmutableSet.of(CommandName.CREATE))
             .setDiscountFraction(1)
             .build());
@@ -158,6 +162,7 @@ public class CreateBulkPricingPackageCommandTest
             .setAllowedTlds(ImmutableSet.of("foo"))
             .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
             .setRenewalPriceBehavior(RenewalPriceBehavior.SPECIFIED)
+            .setRenewalPrice(Money.of(USD, 0))
             .setAllowedEppActions(ImmutableSet.of(CommandName.CREATE))
             .setDiscountFraction(1)
             .build());
@@ -184,6 +189,7 @@ public class CreateBulkPricingPackageCommandTest
             .setAllowedTlds(ImmutableSet.of("foo"))
             .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
             .setRenewalPriceBehavior(RenewalPriceBehavior.SPECIFIED)
+            .setRenewalPrice(Money.of(USD, 0))
             .setAllowedEppActions(ImmutableSet.of(CommandName.CREATE))
             .setDiscountFraction(1)
             .build());
@@ -210,6 +216,7 @@ public class CreateBulkPricingPackageCommandTest
             .setAllowedTlds(ImmutableSet.of("foo"))
             .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
             .setRenewalPriceBehavior(RenewalPriceBehavior.SPECIFIED)
+            .setRenewalPrice(Money.of(USD, 0))
             .setAllowedEppActions(ImmutableSet.of(CommandName.CREATE))
             .setDiscountFraction(1)
             .build());
