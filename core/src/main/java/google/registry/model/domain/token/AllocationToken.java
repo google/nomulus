@@ -50,6 +50,7 @@ import google.registry.model.domain.fee.FeeQueryCommandExtensionItem.CommandName
 import google.registry.model.reporting.HistoryEntry.HistoryEntryId;
 import google.registry.persistence.VKey;
 import google.registry.persistence.WithVKey;
+import google.registry.persistence.converter.JodaMoneyType;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -63,6 +64,9 @@ import javax.persistence.Enumerated;
 import javax.persistence.Id;
 import javax.persistence.Index;
 import javax.persistence.Table;
+import org.hibernate.annotations.Columns;
+import org.hibernate.annotations.Type;
+import org.joda.money.Money;
 import org.joda.time.DateTime;
 
 /** An entity representing an allocation token. */
@@ -236,6 +240,12 @@ public class AllocationToken extends UpdateAutoTimestampEntity implements Builda
   @Column(name = "renewalPriceBehavior", nullable = false)
   RenewalPriceBehavior renewalPriceBehavior = RenewalPriceBehavior.DEFAULT;
 
+  /** The price used for renewals iff the renewalPriceBehavior is SPECIFIED. */
+  @Nullable
+  @Type(type = JodaMoneyType.TYPE_NAME)
+  @Columns(columns = {@Column(name = "renewalPriceAmount"), @Column(name = "renewalPriceCurrency")})
+  Money renewalPrice;
+
   @Enumerated(EnumType.STRING)
   @Column(nullable = false)
   RegistrationBehavior registrationBehavior = RegistrationBehavior.DEFAULT;
@@ -310,6 +320,10 @@ public class AllocationToken extends UpdateAutoTimestampEntity implements Builda
     return renewalPriceBehavior;
   }
 
+  public Optional<Money> getRenewalPrice() {
+    return Optional.ofNullable(renewalPrice);
+  }
+
   public RegistrationBehavior getRegistrationBehavior() {
     return registrationBehavior;
   }
@@ -378,28 +392,11 @@ public class AllocationToken extends UpdateAutoTimestampEntity implements Builda
       checkArgumentNotNull(getInstance().tokenType, "Token type must be specified");
       checkArgument(!Strings.isNullOrEmpty(getInstance().token), "Token must not be null or empty");
       checkArgument(
-          !getInstance().tokenType.equals(TokenType.BULK_PRICING)
-              || getInstance().renewalPriceBehavior.equals(RenewalPriceBehavior.SPECIFIED),
-          "Bulk tokens must have renewalPriceBehavior set to SPECIFIED");
-      checkArgument(
-          !getInstance().tokenType.equals(TokenType.BULK_PRICING)
-              || ImmutableSet.of(CommandName.CREATE).equals(getInstance().allowedEppActions),
-          "Bulk tokens may only be valid for CREATE actions");
-      checkArgument(
-          !getInstance().tokenType.equals(TokenType.BULK_PRICING)
-              || !getInstance().discountPremiums,
-          "Bulk tokens cannot discount premium names");
-      checkArgument(
           getInstance().domainName == null || getInstance().tokenType.isOneTimeUse(),
           "Domain name can only be specified for SINGLE_USE or REGISTER_BSA tokens");
       checkArgument(
           getInstance().redemptionHistoryId == null || getInstance().tokenType.isOneTimeUse(),
           "Redemption history entry can only be specified for SINGLE_USE or REGISTER_BSA tokens");
-      checkArgument(
-          getInstance().tokenType != TokenType.BULK_PRICING
-              || (getInstance().allowedClientIds != null
-                  && getInstance().allowedClientIds.size() == 1),
-          "BULK_PRICING tokens must have exactly one allowed client registrar");
       checkArgument(
           getInstance().discountFraction > 0 || !getInstance().discountPremiums,
           "Discount premiums can only be specified along with a discount fraction");
@@ -425,6 +422,33 @@ public class AllocationToken extends UpdateAutoTimestampEntity implements Builda
                 || getInstance().allowedEppActions.contains(CommandName.CREATE),
             "NONPREMIUM_CREATE tokens must allow for CREATE actions");
       }
+
+      checkArgument(
+          getInstance().renewalPriceBehavior.equals(RenewalPriceBehavior.SPECIFIED)
+              == (getInstance().renewalPrice != null),
+          "renewalPrice must be specified iff renewalPriceBehavior is SPECIFIED");
+
+      if (getInstance().tokenType.equals(TokenType.BULK_PRICING)) {
+        checkArgument(
+            getInstance().discountFraction == 1.0,
+            "BULK_PRICING tokens must have a discountFraction of 1.0");
+        checkArgument(
+            !getInstance().shouldDiscountPremiums(),
+            "BULK_PRICING tokens cannot discount premium names");
+        checkArgument(
+            getInstance().renewalPriceBehavior.equals(RenewalPriceBehavior.SPECIFIED),
+            "BULK_PRICING tokens must have renewalPriceBehavior set to SPECIFIED");
+        checkArgument(
+            getInstance().renewalPrice.getAmount().intValue() == 0,
+            "BULK_PRICING tokens must have a renewal price of 0");
+        checkArgument(
+            ImmutableSet.of(CommandName.CREATE).equals(getInstance().allowedEppActions),
+            "BULK_PRICING tokens may only be valid for CREATE actions");
+        checkArgument(
+            getInstance().allowedClientIds != null && getInstance().allowedClientIds.size() == 1,
+            "BULK_PRICING tokens must have exactly one allowed client registrar");
+      }
+
       if (getInstance().domainName != null) {
         try {
           DomainFlowUtils.validateDomainName(getInstance().domainName);
@@ -518,6 +542,11 @@ public class AllocationToken extends UpdateAutoTimestampEntity implements Builda
 
     public Builder setRenewalPriceBehavior(RenewalPriceBehavior renewalPriceBehavior) {
       getInstance().renewalPriceBehavior = renewalPriceBehavior;
+      return this;
+    }
+
+    public Builder setRenewalPrice(Money renewalPrice) {
+      getInstance().renewalPrice = renewalPrice;
       return this;
     }
 
