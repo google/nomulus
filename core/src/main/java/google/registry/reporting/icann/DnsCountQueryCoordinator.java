@@ -14,7 +14,13 @@
 
 package google.registry.reporting.icann;
 
-import google.registry.bigquery.BigqueryConnection;
+import static google.registry.util.TypeUtils.getClassFromString;
+import static google.registry.util.TypeUtils.instantiate;
+
+import dagger.MembersInjector;
+import dagger.Module;
+import dagger.Provides;
+import google.registry.config.RegistryConfig.Config;
 import org.joda.time.YearMonth;
 
 /**
@@ -23,33 +29,10 @@ import org.joda.time.YearMonth;
  * <p>DNS systems may have different ways of providing this information, so it's useful to
  * modularize this.
  *
- * <p>Derived classes must provide a constructor that accepts a
- * {@link google.registry.reporting.icann.DnsCountQueryCoordinator.Params}.  To override this,
- * define dnsCountQueryCoordinatorClass in your config file.
+ * <p>Derived classes can have {@code Inject}-annotated fileds that will be automatically populated
+ * by a {@link MembersInjector}.
  */
 public interface DnsCountQueryCoordinator {
-
-  /**
-   * Class to carry parameters for a new coordinator.
-   *
-   * <p>If your report query requires any additional parameters, add them here.
-   */
-  class Params {
-
-    public BigqueryConnection bigquery;
-
-    /** The Google Cloud project id. */
-    public String projectId;
-
-    /** The BigQuery dataset from which to query. */
-    public String icannReportingDataSet;
-
-    public Params(BigqueryConnection bigquery, String projectId, String icannReportingDataSet) {
-      this.bigquery = bigquery;
-      this.projectId = projectId;
-      this.icannReportingDataSet = icannReportingDataSet;
-    }
-  }
 
   /** Creates the string used to query bigtable for DNS count information. */
   String createQuery(YearMonth yearMonth);
@@ -62,4 +45,17 @@ public interface DnsCountQueryCoordinator {
    * to handle them correctly or propagate them as-is, no {@link RuntimeException} wrapping).
    */
   void prepareForQuery(YearMonth yearMonth) throws InterruptedException;
+
+  @Module
+  class DnsCountQueryCoordinatorModule {
+    @Provides
+    static DnsCountQueryCoordinator provideDnsCountQueryCoordinator(
+        MembersInjector<DnsCountQueryCoordinator> injector,
+        @Config("dnsCountQueryCoordinatorClass") String customClass) {
+      DnsCountQueryCoordinator coordinator =
+          instantiate(getClassFromString(customClass, DnsCountQueryCoordinator.class));
+      injector.injectMembers(coordinator);
+      return coordinator;
+    }
+  }
 }

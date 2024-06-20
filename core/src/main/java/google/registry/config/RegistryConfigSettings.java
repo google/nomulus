@@ -94,6 +94,7 @@ public class RegistryConfigSettings {
     public String whoisCommandFactoryClass;
     public String allocationTokenCustomLogicClass;
     public String dnsCountQueryCoordinatorClass;
+    public String dnsCountProjectId;
     public int contactAutomaticTransferDays;
     public String greetingServerId;
     public List<String> registrarChangesNotificationEmailAddresses;
