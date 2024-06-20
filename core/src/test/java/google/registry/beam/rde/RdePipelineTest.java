@@ -31,6 +31,7 @@ import static google.registry.rde.RdeResourceType.HOST;
 import static google.registry.rde.RdeResourceType.REGISTRAR;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.insertSimpleResources;
+import static google.registry.testing.DatabaseHelper.newDomain;
 import static google.registry.testing.DatabaseHelper.persistActiveContact;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistActiveHost;
@@ -83,10 +84,10 @@ import google.registry.rde.PendingDeposit;
 import google.registry.rde.RdeResourceType;
 import google.registry.testing.CloudTasksHelper;
 import google.registry.testing.CloudTasksHelper.TaskMatcher;
-import google.registry.testing.DatabaseHelper;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeKeyringModule;
 import java.io.IOException;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -266,23 +267,23 @@ public class RdePipelineTest {
     persistHostHistory(host1);
     Domain helloDomain =
         persistEppResource(
-            DatabaseHelper.newDomain("hello.soy", contact1)
-                .asBuilder()
-                .addNameserver(host1.createVKey())
-                .build());
+            newDomain("hello.soy", contact1).asBuilder().addNameserver(host1.createVKey()).build());
     persistDomainHistory(helloDomain);
     persistHostHistory(persistActiveHost("not-used-subordinate.hello.soy"));
     Host host2 = persistActiveHost("ns1.hello.soy");
     persistHostHistory(host2);
+
+    // This domain has no registrant.
     Domain kittyDomain =
         persistEppResource(
-            DatabaseHelper.newDomain("kitty.fun", contact2)
+            newDomain("kitty.fun", contact2)
                 .asBuilder()
                 .addNameservers(ImmutableSet.of(host1.createVKey(), host2.createVKey()))
+                .setRegistrant(Optional.empty())
                 .build());
     persistDomainHistory(kittyDomain);
     // Should not appear because the TLD is not included in a pending deposit.
-    persistDomainHistory(persistEppResource(DatabaseHelper.newDomain("lol.cat", contact1)));
+    persistDomainHistory(persistEppResource(newDomain("lol.cat", contact1)));
     // To be deleted.
     Domain deletedDomain = persistActiveDomain("deleted.soy");
     persistDomainHistory(deletedDomain);
@@ -325,7 +326,7 @@ public class RdePipelineTest {
     persistHostHistory(futureHost);
     persistDomainHistory(
         persistEppResource(
-            DatabaseHelper.newDomain("future.soy", futureContact)
+            newDomain("future.soy", futureContact)
                 .asBuilder()
                 .setNameservers(futureHost.createVKey())
                 .build()));
@@ -379,18 +380,30 @@ public class RdePipelineTest {
                         // The same registrars are attached to all the pending deposits.
                         .containsExactly("New Registrar", "The Registrar", "external_monitoring");
                     // Domain fragments.
-                    if ("soy".equals(kv.getKey().tld())) {
-                      assertThat(
-                              getFragmentForType(kv, DOMAIN)
-                                  .map(getXmlElement(DOMAIN_NAME_PATTERN))
-                                  .collect(toImmutableSet()))
-                          .containsExactly("hello.soy");
-                    } else {
-                      assertThat(
-                              getFragmentForType(kv, DOMAIN)
-                                  .map(getXmlElement(DOMAIN_NAME_PATTERN))
-                                  .collect(toImmutableSet()))
-                          .containsExactly("cat.fun");
+                    ImmutableSet<DepositFragment> domainFrags =
+                        getFragmentForType(kv, DOMAIN).collect(toImmutableSet());
+                    assertThat(domainFrags).hasSize(1);
+                    if ("fun".equals(kv.getKey().tld())) {
+                      // Note that this fragment contains no registrant (which is valid).
+                      assertThat(domainFrags.stream().findFirst().get().xml().strip())
+                          .isEqualTo(
+                              """
+                          <rdeDomain:domain>
+                              <rdeDomain:name>cat.fun</rdeDomain:name>
+                              <rdeDomain:roid>15-FUN</rdeDomain:roid>
+                              <rdeDomain:uName>cat.fun</rdeDomain:uName>
+                              <rdeDomain:status s="ok"/>
+                              <rdeDomain:contact type="admin">contact456</rdeDomain:contact>
+                              <rdeDomain:contact type="tech">contact456</rdeDomain:contact>
+                              <rdeDomain:ns>
+                                  <domain:hostObj>ns1.external.tld</domain:hostObj>
+                                  <domain:hostObj>ns1.hello.soy</domain:hostObj>
+                              </rdeDomain:ns>
+                              <rdeDomain:clID>TheRegistrar</rdeDomain:clID>
+                              <rdeDomain:crRr>TheRegistrar</rdeDomain:crRr>
+                              <rdeDomain:crDate>1970-01-01T00:00:00Z</rdeDomain:crDate>
+                              <rdeDomain:exDate>294247-01-10T04:00:54Z</rdeDomain:exDate>
+                          </rdeDomain:domain>""");
                     }
                     if (kv.getKey().mode().equals(FULL)) {
                       // Contact fragments for hello.soy.
@@ -400,12 +413,35 @@ public class RdePipelineTest {
                                     .map(getXmlElement(CONTACT_ID_PATTERN))
                                     .collect(toImmutableSet()))
                             .containsExactly("contact1234", "contact789");
+
                         // Host fragments for hello.soy.
                         assertThat(
                                 getFragmentForType(kv, HOST)
                                     .map(getXmlElement(HOST_NAME_PATTERN))
                                     .collect(toImmutableSet()))
                             .containsExactly("ns1.external.tld", "ns1.lol.cat");
+
+                        // Domain fragments for hello.soy: Note that this contains a registrant.
+                        assertThat(domainFrags.stream().findFirst().get().xml().strip())
+                            .isEqualTo(
+                                """
+                          <rdeDomain:domain>
+                              <rdeDomain:name>hello.soy</rdeDomain:name>
+                              <rdeDomain:roid>E-SOY</rdeDomain:roid>
+                              <rdeDomain:uName>hello.soy</rdeDomain:uName>
+                              <rdeDomain:status s="ok"/>
+                              <rdeDomain:registrant>contact1234</rdeDomain:registrant>
+                              <rdeDomain:contact type="admin">contact789</rdeDomain:contact>
+                              <rdeDomain:contact type="tech">contact1234</rdeDomain:contact>
+                              <rdeDomain:ns>
+                                  <domain:hostObj>ns1.external.tld</domain:hostObj>
+                                  <domain:hostObj>ns1.lol.cat</domain:hostObj>
+                              </rdeDomain:ns>
+                              <rdeDomain:clID>TheRegistrar</rdeDomain:clID>
+                              <rdeDomain:crRr>TheRegistrar</rdeDomain:crRr>
+                              <rdeDomain:crDate>1970-01-01T00:00:00Z</rdeDomain:crDate>
+                              <rdeDomain:exDate>294247-01-10T04:00:54Z</rdeDomain:exDate>
+                          </rdeDomain:domain>""");
                       } else {
                         // Contact fragments for cat.fun.
                         assertThat(
@@ -413,6 +449,7 @@ public class RdePipelineTest {
                                     .map(getXmlElement(CONTACT_ID_PATTERN))
                                     .collect(toImmutableSet()))
                             .containsExactly("contactABC");
+
                         // Host fragments for cat.soy.
                         assertThat(
                                 getFragmentForType(kv, HOST)
@@ -429,6 +466,25 @@ public class RdePipelineTest {
                                           fragment.type().equals(CONTACT)
                                               || fragment.type().equals(HOST)))
                           .isFalse();
+
+                      // Domain fragments for hello.soy: Note that this contains no contact info.
+                      assertThat(domainFrags.stream().findFirst().get().xml().strip())
+                          .isEqualTo(
+                              """
+                          <rdeDomain:domain>
+                              <rdeDomain:name>hello.soy</rdeDomain:name>
+                              <rdeDomain:roid>E-SOY</rdeDomain:roid>
+                              <rdeDomain:uName>hello.soy</rdeDomain:uName>
+                              <rdeDomain:status s="ok"/>
+                              <rdeDomain:ns>
+                                  <domain:hostObj>ns1.external.tld</domain:hostObj>
+                                  <domain:hostObj>ns1.lol.cat</domain:hostObj>
+                              </rdeDomain:ns>
+                              <rdeDomain:clID>TheRegistrar</rdeDomain:clID>
+                              <rdeDomain:crRr>TheRegistrar</rdeDomain:crRr>
+                              <rdeDomain:crDate>1970-01-01T00:00:00Z</rdeDomain:crDate>
+                              <rdeDomain:exDate>294247-01-10T04:00:54Z</rdeDomain:exDate>
+                          </rdeDomain:domain>""");
                     }
                   });
               return null;

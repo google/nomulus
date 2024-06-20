@@ -190,7 +190,7 @@ public final class DatabaseHelper {
         .setPersistedCurrentSponsorRegistrarId("TheRegistrar")
         .setCreationTimeForTest(START_OF_TIME)
         .setAuthInfo(DomainAuthInfo.create(PasswordAuth.create("2fooBAR")))
-        .setRegistrant(contactKey)
+        .setRegistrant(Optional.of(contactKey))
         .setContacts(
             ImmutableSet.of(
                 DesignatedContact.create(Type.ADMIN, contactKey),
@@ -603,7 +603,7 @@ public final class DatabaseHelper {
                 .setCreationRegistrarId("TheRegistrar")
                 .setCreationTimeForTest(creationTime)
                 .setRegistrationExpirationTime(expirationTime)
-                .setRegistrant(contact.createVKey())
+                .setRegistrant(Optional.of(contact.createVKey()))
                 .setContacts(
                     ImmutableSet.of(
                         DesignatedContact.create(Type.ADMIN, contact.createVKey()),

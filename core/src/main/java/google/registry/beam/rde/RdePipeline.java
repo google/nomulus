@@ -468,7 +468,7 @@ public class RdePipeline implements Serializable {
                                 HashSet<Serializable> contacts = new HashSet<>();
                                 contacts.add(domain.getAdminContact().getKey());
                                 contacts.add(domain.getTechContact().getKey());
-                                contacts.add(domain.getRegistrant().getKey());
+                                domain.getRegistrant().ifPresent(r -> contacts.add(r.getKey()));
                                 // Billing contact is not mandatory.
                                 if (domain.getBillingContact() != null) {
                                   contacts.add(domain.getBillingContact().getKey());

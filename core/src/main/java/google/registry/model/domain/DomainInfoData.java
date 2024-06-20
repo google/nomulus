@@ -63,6 +63,7 @@ public abstract class DomainInfoData implements ResponseData {
   abstract ImmutableSet<StatusValue> getStatusValues();
 
   @XmlElement(name = "registrant")
+  @Nullable
   abstract String getRegistrant();
 
   @XmlElement(name = "contact")

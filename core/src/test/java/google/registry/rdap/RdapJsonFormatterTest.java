@@ -52,6 +52,8 @@ import google.registry.rdap.RdapObjectClasses.ReplyPayloadBase;
 import google.registry.rdap.RdapObjectClasses.TopLevelReplyObject;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FullFieldsTestEntityHelper;
+import java.util.Optional;
+import javax.annotation.Nullable;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -77,7 +79,7 @@ class RdapJsonFormatterTest {
   private Host hostNoAddresses;
   private Host hostNotLinked;
   private Host hostSuperordinatePendingTransfer;
-  private Contact contactRegistrant;
+  @Nullable private Contact contactRegistrant;
   private Contact contactAdmin;
   private Contact contactTech;
   private Contact contactNotLinked;
@@ -371,7 +373,7 @@ class RdapJsonFormatterTest {
         .that(
             rdapJsonFormatter
                 .createRdapContactEntity(
-                    contactRegistrant,
+                    Optional.of(contactRegistrant),
                     ImmutableSet.of(RdapEntity.Role.REGISTRANT),
                     OutputDataType.FULL)
                 .toJson())
@@ -384,7 +386,7 @@ class RdapJsonFormatterTest {
         .that(
             rdapJsonFormatter
                 .createRdapContactEntity(
-                    contactRegistrant,
+                    Optional.of(contactRegistrant),
                     ImmutableSet.of(RdapEntity.Role.REGISTRANT),
                     OutputDataType.SUMMARY)
                 .toJson())
@@ -398,7 +400,7 @@ class RdapJsonFormatterTest {
         .that(
             rdapJsonFormatter
                 .createRdapContactEntity(
-                    contactRegistrant,
+                    Optional.of(contactRegistrant),
                     ImmutableSet.of(RdapEntity.Role.REGISTRANT),
                     OutputDataType.FULL)
                 .toJson())
@@ -418,7 +420,7 @@ class RdapJsonFormatterTest {
         .that(
             rdapJsonFormatter
                 .createRdapContactEntity(
-                    contactRegistrant,
+                    Optional.of(contactRegistrant),
                     ImmutableSet.of(RdapEntity.Role.REGISTRANT),
                     OutputDataType.FULL)
                 .toJson())
@@ -431,7 +433,9 @@ class RdapJsonFormatterTest {
         .that(
             rdapJsonFormatter
                 .createRdapContactEntity(
-                    contactAdmin, ImmutableSet.of(RdapEntity.Role.ADMIN), OutputDataType.FULL)
+                    Optional.of(contactAdmin),
+                    ImmutableSet.of(RdapEntity.Role.ADMIN),
+                    OutputDataType.FULL)
                 .toJson())
         .isEqualTo(loadJson("rdapjson_admincontact.json"));
   }
@@ -442,7 +446,9 @@ class RdapJsonFormatterTest {
         .that(
             rdapJsonFormatter
                 .createRdapContactEntity(
-                    contactTech, ImmutableSet.of(RdapEntity.Role.TECH), OutputDataType.FULL)
+                    Optional.of(contactTech),
+                    ImmutableSet.of(RdapEntity.Role.TECH),
+                    OutputDataType.FULL)
                 .toJson())
         .isEqualTo(loadJson("rdapjson_techcontact.json"));
   }
@@ -452,7 +458,8 @@ class RdapJsonFormatterTest {
     assertAboutJson()
         .that(
             rdapJsonFormatter
-                .createRdapContactEntity(contactTech, ImmutableSet.of(), OutputDataType.FULL)
+                .createRdapContactEntity(
+                    Optional.of(contactTech), ImmutableSet.of(), OutputDataType.FULL)
                 .toJson())
         .isEqualTo(loadJson("rdapjson_rolelesscontact.json"));
   }
@@ -462,7 +469,8 @@ class RdapJsonFormatterTest {
     assertAboutJson()
         .that(
             rdapJsonFormatter
-                .createRdapContactEntity(contactNotLinked, ImmutableSet.of(), OutputDataType.FULL)
+                .createRdapContactEntity(
+                    Optional.of(contactNotLinked), ImmutableSet.of(), OutputDataType.FULL)
                 .toJson())
         .isEqualTo(loadJson("rdapjson_unlinkedcontact.json"));
   }

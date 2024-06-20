@@ -20,7 +20,6 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import com.google.common.base.Ascii;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.flogger.FluentLogger;
 import google.registry.model.contact.Contact;
 import google.registry.model.domain.DesignatedContact;
 import google.registry.model.domain.Domain;
@@ -45,11 +44,10 @@ import google.registry.xjc.rgp.XjcRgpStatusType;
 import google.registry.xjc.rgp.XjcRgpStatusValueType;
 import google.registry.xjc.secdns.XjcSecdnsDsDataType;
 import google.registry.xjc.secdns.XjcSecdnsDsOrKeyType;
+import java.util.Optional;
 
 /** Utility class that turns {@link Domain} as {@link XjcRdeDomainElement}. */
 final class DomainToXjcConverter {
-
-  private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
   /** Converts {@link Domain} to {@link XjcRdeDomainElement}. */
   static XjcRdeDomainElement convert(Domain domain, RdeMode mode) {
@@ -168,11 +166,9 @@ final class DomainToXjcConverter {
         // o  An OPTIONAL <registrant> element that contain the identifier for
         //    the human or organizational social information object associated
         //    as the holder of the domain name object.
-        VKey<Contact> registrant = model.getRegistrant();
-        if (registrant == null) {
-          logger.atWarning().log("Domain %s has no registrant contact.", domainName);
-        } else {
-          Contact registrantContact = tm().transact(() -> tm().loadByKey(registrant));
+        Optional<VKey<Contact>> registrant = model.getRegistrant();
+        if (registrant.isPresent()) {
+          Contact registrantContact = tm().transact(() -> tm().loadByKey(registrant.get()));
           checkState(
               registrantContact != null,
               "Registrant contact %s on domain %s does not exist",

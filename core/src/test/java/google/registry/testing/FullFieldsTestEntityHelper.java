@@ -46,6 +46,7 @@ import google.registry.persistence.VKey;
 import google.registry.util.Idn;
 import java.net.InetAddress;
 import java.util.List;
+import java.util.Optional;
 import javax.annotation.Nullable;
 import org.joda.time.DateTime;
 
@@ -351,7 +352,7 @@ public final class FullFieldsTestEntityHelper {
                     StatusValue.SERVER_UPDATE_PROHIBITED))
             .setDsData(ImmutableSet.of(DomainDsData.create(1, 2, 3, "deadface")));
     if (registrant != null) {
-      builder.setRegistrant(registrant.createVKey());
+      builder.setRegistrant(Optional.of(registrant.createVKey()));
     }
     if ((admin != null) || (tech != null)) {
       ImmutableSet.Builder<DesignatedContact> contactsBuilder = new ImmutableSet.Builder<>();
