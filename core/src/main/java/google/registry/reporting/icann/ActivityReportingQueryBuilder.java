@@ -77,7 +77,7 @@ public final class ActivityReportingQueryBuilder implements QueryBuilder {
     queriesBuilder.put(
         getTableName(REGISTRAR_OPERATING_STATUS, yearMonth), operationalRegistrarsQuery);
 
-    String dnsCountsQuery = dnsCountQueryCoordinator.createQuery(yearMonth);
+    String dnsCountsQuery = dnsCountQueryCoordinator.createQuery();
     queriesBuilder.put(getTableName(DNS_COUNTS, yearMonth), dnsCountsQuery);
 
     // Convert reportingMonth into YYYYMMDD format for Bigquery table partition pattern-matching.
