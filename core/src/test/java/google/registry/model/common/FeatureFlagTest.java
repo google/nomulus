@@ -43,7 +43,7 @@ public class FeatureFlagTest extends EntityTestCase {
     FeatureFlag featureFlag =
         new FeatureFlag.Builder()
             .setFeatureName("testFlag")
-            .setStatus(
+            .setStatusMap(
                 ImmutableSortedMap.<DateTime, FeatureStatus>naturalOrder()
                     .put(START_OF_TIME, INACTIVE)
                     .put(DateTime.now(UTC).plusWeeks(8), ACTIVE)
@@ -59,7 +59,7 @@ public class FeatureFlagTest extends EntityTestCase {
     FeatureFlag featureFlag =
         new FeatureFlag.Builder()
             .setFeatureName("testFlag")
-            .setStatus(
+            .setStatusMap(
                 ImmutableSortedMap.<DateTime, FeatureStatus>naturalOrder()
                     .put(START_OF_TIME, INACTIVE)
                     .put(DateTime.now(UTC).plusWeeks(8), ACTIVE)
@@ -75,7 +75,7 @@ public class FeatureFlagTest extends EntityTestCase {
         persistResource(
             new FeatureFlag.Builder()
                 .setFeatureName("testFlag1")
-                .setStatus(
+                .setStatusMap(
                     ImmutableSortedMap.<DateTime, FeatureStatus>naturalOrder()
                         .put(START_OF_TIME, INACTIVE)
                         .put(DateTime.now(UTC).plusWeeks(8), ACTIVE)
@@ -85,7 +85,7 @@ public class FeatureFlagTest extends EntityTestCase {
         persistResource(
             new FeatureFlag.Builder()
                 .setFeatureName("testFlag2")
-                .setStatus(
+                .setStatusMap(
                     ImmutableSortedMap.<DateTime, FeatureStatus>naturalOrder()
                         .put(START_OF_TIME, INACTIVE)
                         .put(DateTime.now(UTC).plusWeeks(3), INACTIVE)
@@ -95,13 +95,13 @@ public class FeatureFlagTest extends EntityTestCase {
         persistResource(
             new FeatureFlag.Builder()
                 .setFeatureName("testFlag3")
-                .setStatus(
+                .setStatusMap(
                     ImmutableSortedMap.<DateTime, FeatureStatus>naturalOrder()
                         .put(START_OF_TIME, INACTIVE)
                         .build())
                 .build());
     ImmutableSet<FeatureFlag> featureFlags =
-        FeatureFlag.get(ImmutableSet.of("testFlag1", "testFlag2", "testFlag3"));
+        FeatureFlag.getAll(ImmutableSet.of("testFlag1", "testFlag2", "testFlag3"));
     assertThat(featureFlags.size()).isEqualTo(3);
     assertThat(featureFlags).containsExactly(featureFlag1, featureFlag2, featureFlag3);
   }
@@ -111,7 +111,7 @@ public class FeatureFlagTest extends EntityTestCase {
     persistResource(
         new FeatureFlag.Builder()
             .setFeatureName("testFlag1")
-            .setStatus(
+            .setStatusMap(
                 ImmutableSortedMap.<DateTime, FeatureStatus>naturalOrder()
                     .put(START_OF_TIME, INACTIVE)
                     .put(DateTime.now(UTC).plusWeeks(8), ACTIVE)
@@ -120,7 +120,7 @@ public class FeatureFlagTest extends EntityTestCase {
     persistResource(
         new FeatureFlag.Builder()
             .setFeatureName("testFlag2")
-            .setStatus(
+            .setStatusMap(
                 ImmutableSortedMap.<DateTime, FeatureStatus>naturalOrder()
                     .put(START_OF_TIME, INACTIVE)
                     .put(DateTime.now(UTC).plusWeeks(3), INACTIVE)
@@ -129,7 +129,7 @@ public class FeatureFlagTest extends EntityTestCase {
     FeatureFlagNotFoundException thrown =
         assertThrows(
             FeatureFlagNotFoundException.class,
-            () -> FeatureFlag.get(ImmutableSet.of("missingFlag", "testFlag1", "testFlag2")));
+            () -> FeatureFlag.getAll(ImmutableSet.of("missingFlag", "testFlag1", "testFlag2")));
     assertThat(thrown)
         .hasMessageThat()
         .isEqualTo("No feature flag object(s) found for missingFlag");
@@ -147,7 +147,7 @@ public class FeatureFlagTest extends EntityTestCase {
     FeatureFlag featureFlag =
         new FeatureFlag.Builder()
             .setFeatureName("testFlag")
-            .setStatus(
+            .setStatusMap(
                 ImmutableSortedMap.<DateTime, FeatureStatus>naturalOrder()
                     .put(START_OF_TIME, INACTIVE)
                     .put(DateTime.now(UTC).plusWeeks(8), ACTIVE)
@@ -164,7 +164,7 @@ public class FeatureFlagTest extends EntityTestCase {
   void testFailure_nullFeatureName() {
     FeatureFlag.Builder featureFlagBuilder =
         new FeatureFlag.Builder()
-            .setStatus(
+            .setStatusMap(
                 ImmutableSortedMap.<DateTime, FeatureStatus>naturalOrder()
                     .put(START_OF_TIME, INACTIVE)
                     .put(DateTime.now(UTC).plusWeeks(8), ACTIVE)
@@ -179,7 +179,7 @@ public class FeatureFlagTest extends EntityTestCase {
     FeatureFlag.Builder featureFlagBuilder =
         new FeatureFlag.Builder()
             .setFeatureName("")
-            .setStatus(
+            .setStatusMap(
                 ImmutableSortedMap.<DateTime, FeatureStatus>naturalOrder()
                     .put(START_OF_TIME, INACTIVE)
                     .put(DateTime.now(UTC).plusWeeks(8), ACTIVE)
@@ -196,7 +196,7 @@ public class FeatureFlagTest extends EntityTestCase {
         assertThrows(
             IllegalArgumentException.class,
             () ->
-                featureFlagBuilder.setStatus(
+                featureFlagBuilder.setStatusMap(
                     ImmutableSortedMap.<DateTime, FeatureStatus>naturalOrder()
                         .put(DateTime.now(UTC).plusWeeks(8), ACTIVE)
                         .build()));

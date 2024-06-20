@@ -35,7 +35,7 @@ public class ListFeatureFlagsCommand implements Command {
     // cause subsequent output to standard output or standard error to be lost
     // See: https://errorprone.info/bugpattern/ClosingStandardOutputStreams
     PrintStream printStream = new PrintStream(System.out, false, UTF_8);
-    ImmutableList<FeatureFlag> featureFlags = FeatureFlag.getAll();
+    ImmutableList<FeatureFlag> featureFlags = FeatureFlag.getAllUncached();
     for (FeatureFlag featureFlag : featureFlags) {
       printStream.println(mapper.writeValueAsString(featureFlag));
     }

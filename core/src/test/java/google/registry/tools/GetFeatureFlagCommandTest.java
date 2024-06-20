@@ -47,7 +47,7 @@ public class GetFeatureFlagCommandTest extends CommandTestCase<GetFeatureFlagCom
     persistResource(
         new FeatureFlag.Builder()
             .setFeatureName("testFlag")
-            .setStatus(
+            .setStatusMap(
                 ImmutableSortedMap.<DateTime, FeatureStatus>naturalOrder()
                     .put(START_OF_TIME, INACTIVE)
                     .put(clock.nowUtc().plusWeeks(8), ACTIVE)
@@ -66,7 +66,7 @@ public class GetFeatureFlagCommandTest extends CommandTestCase<GetFeatureFlagCom
     persistResource(
         new FeatureFlag.Builder()
             .setFeatureName("testFlag")
-            .setStatus(
+            .setStatusMap(
                 ImmutableSortedMap.<DateTime, FeatureStatus>naturalOrder()
                     .put(START_OF_TIME, INACTIVE)
                     .put(clock.nowUtc().plusWeeks(8), ACTIVE)
@@ -75,7 +75,7 @@ public class GetFeatureFlagCommandTest extends CommandTestCase<GetFeatureFlagCom
     persistResource(
         new FeatureFlag.Builder()
             .setFeatureName("secondFlag")
-            .setStatus(
+            .setStatusMap(
                 ImmutableSortedMap.<DateTime, FeatureStatus>naturalOrder()
                     .put(START_OF_TIME, INACTIVE)
                     .put(clock.nowUtc().plusWeeks(3), ACTIVE)
@@ -108,7 +108,7 @@ public class GetFeatureFlagCommandTest extends CommandTestCase<GetFeatureFlagCom
     persistResource(
         new FeatureFlag.Builder()
             .setFeatureName("testFlag")
-            .setStatus(
+            .setStatusMap(
                 ImmutableSortedMap.<DateTime, FeatureStatus>naturalOrder()
                     .put(START_OF_TIME, INACTIVE)
                     .put(clock.nowUtc().plusWeeks(8), ACTIVE)
