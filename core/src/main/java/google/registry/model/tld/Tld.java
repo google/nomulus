@@ -43,7 +43,6 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.collect.Ordering;
 import com.google.common.collect.Range;
-import com.google.common.collect.Sets;
 import com.google.common.net.InternetDomainName;
 import google.registry.model.Buildable;
 import google.registry.model.CacheUtils;
@@ -192,21 +191,24 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
 
   /** Returns the TLD for a given TLD, throwing if none exists. */
   public static Tld get(String tld) {
-    Tld maybeTld = CACHE.get(tld);
-    if (maybeTld == null) {
+    Optional<Tld> maybeTld = CACHE.get(tld);
+    if (maybeTld.isEmpty()) {
       throw new TldNotFoundException(tld);
     } else {
-      return maybeTld;
+      return maybeTld.get();
     }
   }
 
   /** Returns the TLD entities for the given TLD strings, throwing if any don't exist. */
   public static ImmutableSet<Tld> get(Set<String> tlds) {
-    Map<String, Tld> registries = CACHE.getAll(tlds);
+    Map<String, Optional<Tld>> registries = CACHE.getAll(tlds);
     ImmutableSet<String> missingRegistries =
-        Sets.difference(tlds, registries.keySet()).immutableCopy();
+        registries.entrySet().stream()
+            .filter(e -> e.getValue().isEmpty())
+            .map(Map.Entry::getKey)
+            .collect(toImmutableSet());
     if (missingRegistries.isEmpty()) {
-      return registries.values().stream().collect(toImmutableSet());
+      return registries.values().stream().map(Optional::get).collect(toImmutableSet());
     } else {
       throw new TldNotFoundException(missingRegistries);
     }
@@ -224,24 +226,27 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
   }
 
   /** A cache that loads the {@link Tld} for a given tld. */
-  private static final LoadingCache<String, Tld> CACHE =
+  private static final LoadingCache<String, Optional<Tld>> CACHE =
       CacheUtils.newCacheBuilder(getSingletonCacheRefreshDuration())
           .build(
               new CacheLoader<>() {
                 @Override
-                public Tld load(final String tld) {
-                  return tm().reTransact(() -> tm().loadByKeyIfPresent(createVKey(tld)))
-                      .orElse(null);
+                public Optional<Tld> load(final String tld) {
+                  return tm().reTransact(() -> tm().loadByKeyIfPresent(createVKey(tld)));
                 }
 
                 @Override
-                public Map<? extends String, ? extends Tld> loadAll(Set<? extends String> tlds) {
+                public Map<? extends String, ? extends Optional<Tld>> loadAll(
+                    Set<? extends String> tlds) {
                   ImmutableMap<String, VKey<Tld>> keysMap =
                       tlds.stream().collect(toImmutableMap(tld -> tld, Tld::createVKey));
-                  Map<VKey<? extends Tld>, Tld> entities =
-                      tm().reTransact(() -> tm().loadByKeysIfPresent(keysMap.values()));
-                  return entities.values().stream()
-                      .collect(toImmutableMap(tld -> tld.tldStr, tld -> tld));
+                  return tm().reTransact(
+                          () ->
+                              tlds.stream()
+                                  .collect(
+                                      toImmutableMap(
+                                          tld -> tld,
+                                          tld -> tm().loadByKeyIfPresent(keysMap.get(tld)))));
                 }
               });
 

@@ -20,6 +20,7 @@ import com.google.common.collect.ImmutableSortedMap;
 import google.registry.model.common.FeatureFlag;
 import google.registry.model.common.FeatureFlag.FeatureStatus;
 import google.registry.tools.params.TransitionListParameter.FeatureStatusTransitions;
+import java.util.List;
 import java.util.Optional;
 import org.joda.time.DateTime;
 
@@ -27,11 +28,8 @@ import org.joda.time.DateTime;
 @Parameters(separators = " =", commandDescription = "Create or update a feature flag.")
 public class ConfigureFeatureFlagCommand extends MutatingCommand {
 
-  @Parameter(
-      names = {"-n", "--name"},
-      description = "The name of the feature flag to create",
-      required = true)
-  String name;
+  @Parameter(description = "Feature flag(s) to create or update", required = true)
+  private List<String> mainParameters;
 
   @Parameter(
       names = "--status_map",
@@ -46,10 +44,11 @@ public class ConfigureFeatureFlagCommand extends MutatingCommand {
 
   @Override
   protected void init() throws Exception {
-    Optional<FeatureFlag> oldFlag = FeatureFlag.getIfPresent(name);
-    FeatureFlag.Builder newFlagBuilder =
-        oldFlag.isPresent() ? oldFlag.get().asBuilder() : new FeatureFlag().asBuilder();
-    newFlagBuilder.setFeatureName(name).setStatus(featureStatusTransitions);
-    stageEntityChange(oldFlag.orElse(null), newFlagBuilder.build());
+    for (String name : mainParameters) {
+      Optional<FeatureFlag> oldFlag = FeatureFlag.getUncached(name);
+      FeatureFlag.Builder newFlagBuilder =
+          new FeatureFlag().asBuilder().setFeatureName(name).setStatusMap(featureStatusTransitions);
+      stageEntityChange(oldFlag.orElse(null), newFlagBuilder.build());
+    }
   }
 }
