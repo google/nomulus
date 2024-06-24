@@ -19,6 +19,7 @@ import static com.google.common.collect.Sets.union;
 import static com.google.common.io.BaseEncoding.base16;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.EppResourceUtils.loadByForeignKey;
+import static google.registry.model.common.FeatureFlag.FeatureStatus.ACTIVE;
 import static google.registry.model.common.FeatureFlag.FeatureStatus.INACTIVE;
 import static google.registry.model.eppcommon.StatusValue.CLIENT_DELETE_PROHIBITED;
 import static google.registry.model.eppcommon.StatusValue.CLIENT_HOLD;
@@ -297,6 +298,20 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
+  @Test
+  void testSuccess_minimumDatasetPhase1_emptyRegistrant() throws Exception {
+    persistResource(
+        FeatureFlag.get("minimumRegistryDatasetPhase1")
+            .asBuilder()
+            .setStatus(
+                ImmutableSortedMap.of(START_OF_TIME, INACTIVE, clock.nowUtc().minusDays(5), ACTIVE))
+            .build());
+    setEppInput("domain_update_empty_registrant.xml");
+    persistReferencedEntities();
+    persistDomain();
+    doSuccessfulTest();
+  }
+
   private void modifyDomainToHave13Nameservers() throws Exception {
     ImmutableSet.Builder<VKey<Host>> nameservers = new ImmutableSet.Builder<>();
     for (int i = 1; i < 15; i++) {
@@ -317,7 +332,7 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
     persistDomain();
     // Modify domain to have 13 nameservers. We will then remove one and add one in the test.
     modifyDomainToHave13Nameservers();
-    doSuccessfulTest();
+    runFlowAssertResponse(loadFile("generic_success_response.xml"));
   }
 
   @Test
@@ -1487,6 +1502,28 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
   }
 
   @Test
+  void testSuccess_minimumDatasetPhase1_removeAdmin() throws Exception {
+    persistResource(
+        FeatureFlag.get("minimumRegistryDatasetPhase1")
+            .asBuilder()
+            .setStatus(
+                ImmutableSortedMap.of(START_OF_TIME, INACTIVE, clock.nowUtc().minusDays(5), ACTIVE))
+            .build());
+    setEppInput("domain_update_remove_admin.xml");
+    persistReferencedEntities();
+    persistResource(
+        DatabaseHelper.newDomain(getUniqueIdFromCommand())
+            .asBuilder()
+            .setContacts(
+                ImmutableSet.of(
+                    DesignatedContact.create(Type.ADMIN, sh8013Contact.createVKey()),
+                    DesignatedContact.create(Type.TECH, sh8013Contact.createVKey())))
+            .build());
+    runFlowAssertResponse(
+        CommitMode.LIVE, UserPrivileges.SUPERUSER, loadFile("generic_success_response.xml"));
+  }
+
+  @Test
   void testFailure_removeTech() throws Exception {
     setEppInput("domain_update_remove_tech.xml");
     persistReferencedEntities();
@@ -1500,6 +1537,28 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
             .build());
     EppException thrown = assertThrows(MissingTechnicalContactException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
+  }
+
+  @Test
+  void testSuccess_minimumDatasetPhase1_removeTech() throws Exception {
+    persistResource(
+        FeatureFlag.get("minimumRegistryDatasetPhase1")
+            .asBuilder()
+            .setStatus(
+                ImmutableSortedMap.of(START_OF_TIME, INACTIVE, clock.nowUtc().minusDays(5), ACTIVE))
+            .build());
+    setEppInput("domain_update_remove_tech.xml");
+    persistReferencedEntities();
+    persistResource(
+        DatabaseHelper.newDomain(getUniqueIdFromCommand())
+            .asBuilder()
+            .setContacts(
+                ImmutableSet.of(
+                    DesignatedContact.create(Type.ADMIN, sh8013Contact.createVKey()),
+                    DesignatedContact.create(Type.TECH, sh8013Contact.createVKey())))
+            .build());
+    runFlowAssertResponse(
+        CommitMode.LIVE, UserPrivileges.SUPERUSER, loadFile("generic_success_response.xml"));
   }
 
   @Test
