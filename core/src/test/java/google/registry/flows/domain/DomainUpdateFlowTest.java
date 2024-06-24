@@ -309,7 +309,7 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
     setEppInput("domain_update_empty_registrant.xml");
     persistReferencedEntities();
     persistDomain();
-    doSuccessfulTest();
+    runFlowAssertResponse(loadFile("generic_success_response.xml"));
   }
 
   private void modifyDomainToHave13Nameservers() throws Exception {
@@ -332,7 +332,7 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
     persistDomain();
     // Modify domain to have 13 nameservers. We will then remove one and add one in the test.
     modifyDomainToHave13Nameservers();
-    runFlowAssertResponse(loadFile("generic_success_response.xml"));
+    doSuccessfulTest();
   }
 
   @Test
@@ -1519,8 +1519,7 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
                     DesignatedContact.create(Type.ADMIN, sh8013Contact.createVKey()),
                     DesignatedContact.create(Type.TECH, sh8013Contact.createVKey())))
             .build());
-    runFlowAssertResponse(
-        CommitMode.LIVE, UserPrivileges.SUPERUSER, loadFile("generic_success_response.xml"));
+    runFlowAssertResponse(loadFile("generic_success_response.xml"));
   }
 
   @Test
@@ -1557,8 +1556,7 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
                     DesignatedContact.create(Type.ADMIN, sh8013Contact.createVKey()),
                     DesignatedContact.create(Type.TECH, sh8013Contact.createVKey())))
             .build());
-    runFlowAssertResponse(
-        CommitMode.LIVE, UserPrivileges.SUPERUSER, loadFile("generic_success_response.xml"));
+    runFlowAssertResponse(loadFile("generic_success_response.xml"));
   }
 
   @Test
