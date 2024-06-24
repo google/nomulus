@@ -41,8 +41,10 @@ import static google.registry.flows.domain.DomainFlowUtils.validateRegistrantAll
 import static google.registry.flows.domain.DomainFlowUtils.validateRequiredContactsPresent;
 import static google.registry.flows.domain.DomainFlowUtils.verifyClientUpdateNotProhibited;
 import static google.registry.flows.domain.DomainFlowUtils.verifyNotInPendingDelete;
+import static google.registry.model.common.FeatureFlag.FeatureStatus.INACTIVE;
 import static google.registry.model.reporting.HistoryEntry.Type.DOMAIN_UPDATE;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+import static org.joda.time.DateTimeZone.UTC;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -66,6 +68,7 @@ import google.registry.flows.domain.DomainFlowUtils.NameserversNotSpecifiedForTl
 import google.registry.model.ImmutableObject;
 import google.registry.model.billing.BillingBase.Reason;
 import google.registry.model.billing.BillingEvent;
+import google.registry.model.common.FeatureFlag;
 import google.registry.model.domain.DesignatedContact;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainCommand.Update;
@@ -248,7 +251,11 @@ public final class DomainUpdateFlow implements MutatingFlow {
     checkSameValuesNotAddedAndRemoved(add.getContacts(), remove.getContacts());
     checkSameValuesNotAddedAndRemoved(add.getStatusValues(), remove.getStatusValues());
     Change change = command.getInnerChange();
-    validateRegistrantIsntBeingRemoved(change);
+    if (FeatureFlag.get("minimumRegistryDatasetPhase1")
+        .getStatus(DateTime.now(UTC))
+        .equals(INACTIVE)) {
+      validateRegistrantIsntBeingRemoved(change);
+    }
     Optional<SecDnsUpdateExtension> secDnsUpdate =
         eppInput.getSingleExtension(SecDnsUpdateExtension.class);
 
@@ -300,6 +307,7 @@ public final class DomainUpdateFlow implements MutatingFlow {
     return domainBuilder.build();
   }
 
+  // TODO(sarahbot): Remove this method once minimum registry dataset phase 1 begins
   private static void validateRegistrantIsntBeingRemoved(Change change) throws EppException {
     // TODO(mcilwain): Make this check the minimum registration data set migration schedule
     //                 and not require presence of a registrant in later stages.
@@ -317,7 +325,11 @@ public final class DomainUpdateFlow implements MutatingFlow {
    * cause Domain update failure.
    */
   private static void validateNewState(Domain newDomain) throws EppException {
-    validateRequiredContactsPresent(newDomain.getRegistrant(), newDomain.getContacts());
+    if (FeatureFlag.get("minimumRegistryDatasetPhase1")
+        .getStatus(DateTime.now(UTC))
+        .equals(INACTIVE)) {
+      validateRequiredContactsPresent(newDomain.getRegistrant(), newDomain.getContacts());
+    }
     validateDsData(newDomain.getDsData());
     validateNameserversCountForTld(
         newDomain.getTld(),
