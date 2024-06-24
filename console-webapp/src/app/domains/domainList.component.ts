@@ -60,8 +60,9 @@ export class DomainListComponent {
     effect(() => {
       this.pageNumber = 0;
       this.totalResults = 0;
-      this.reloadData();
-      this.registrarService.registrarId();
+      if (this.registrarService.registrarId()) {
+        this.reloadData();
+      }
     });
   }
 
