@@ -16,6 +16,7 @@ package google.registry.flows;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.EppResourceUtils.loadByForeignKey;
+import static google.registry.model.common.FeatureFlag.FeatureStatus.INACTIVE;
 import static google.registry.model.eppoutput.Result.Code.SUCCESS;
 import static google.registry.model.eppoutput.Result.Code.SUCCESS_AND_CLOSE;
 import static google.registry.model.eppoutput.Result.Code.SUCCESS_WITH_ACTION_PENDING;
@@ -40,6 +41,7 @@ import com.google.re2j.Matcher;
 import com.google.re2j.Pattern;
 import google.registry.model.billing.BillingBase.Reason;
 import google.registry.model.billing.BillingEvent;
+import google.registry.model.common.FeatureFlag;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.reporting.HistoryEntry.Type;
@@ -73,6 +75,12 @@ class EppLifecycleDomainTest extends EppTestCase {
 
   @BeforeEach
   void beforeEach() {
+    persistResource(
+        new FeatureFlag()
+            .asBuilder()
+            .setFeatureName("minimumRegistryDatasetPhase1")
+            .setStatus(ImmutableSortedMap.of(START_OF_TIME, INACTIVE))
+            .build());
     createTlds("example", "tld");
   }
 

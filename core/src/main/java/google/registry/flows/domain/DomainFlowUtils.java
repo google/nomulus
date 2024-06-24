@@ -24,6 +24,7 @@ import static com.google.common.collect.Sets.difference;
 import static com.google.common.collect.Sets.intersection;
 import static com.google.common.collect.Sets.union;
 import static google.registry.bsa.persistence.BsaLabelUtils.isLabelBlocked;
+import static google.registry.model.common.FeatureFlag.FeatureStatus.INACTIVE;
 import static google.registry.model.domain.Domain.MAX_REGISTRATION_YEARS;
 import static google.registry.model.domain.token.AllocationToken.TokenType.REGISTER_BSA;
 import static google.registry.model.tld.Tld.TldState.GENERAL_AVAILABILITY;
@@ -48,6 +49,7 @@ import static google.registry.util.DateTimeUtils.leapSafeAddYears;
 import static google.registry.util.DomainNameUtils.ACE_PREFIX;
 import static java.util.Comparator.comparing;
 import static java.util.stream.Collectors.joining;
+import static org.joda.time.DateTimeZone.UTC;
 
 import com.google.common.base.Ascii;
 import com.google.common.base.CharMatcher;
@@ -82,6 +84,7 @@ import google.registry.model.EppResource;
 import google.registry.model.billing.BillingBase.Flag;
 import google.registry.model.billing.BillingBase.Reason;
 import google.registry.model.billing.BillingRecurrence;
+import google.registry.model.common.FeatureFlag;
 import google.registry.model.contact.Contact;
 import google.registry.model.domain.DesignatedContact;
 import google.registry.model.domain.DesignatedContact.Type;
@@ -481,6 +484,7 @@ public class DomainFlowUtils {
     }
   }
 
+  // TODO(sarahbot): Remove this method once minimum registry dataset phase 1 begins
   static void validateRequiredContactsPresent(
       Optional<VKey<Contact>> registrant, Set<DesignatedContact> contacts)
       throws RequiredParameterMissingException {
@@ -1041,7 +1045,11 @@ public class DomainFlowUtils {
     String tldStr = tld.getTldStr();
     validateRegistrantAllowedOnTld(tldStr, command.getRegistrantContactId());
     validateNoDuplicateContacts(command.getContacts());
-    validateRequiredContactsPresent(command.getRegistrant(), command.getContacts());
+    if (FeatureFlag.get("minimumRegistryDatasetPhase1")
+        .getStatus(DateTime.now(UTC))
+        .equals(INACTIVE)) {
+      validateRequiredContactsPresent(command.getRegistrant(), command.getContacts());
+    }
     ImmutableSet<String> hostNames = command.getNameserverHostNames();
     validateNameserversCountForTld(tldStr, domainName, hostNames.size());
     validateNameserversAllowedOnTld(tldStr, hostNames);
@@ -1405,6 +1413,7 @@ public class DomainFlowUtils {
   }
 
   /** Registrant is required. */
+  // TODO(sarahbot): Remove this exception once minimum registry dataset phase 1 begins
   static class MissingRegistrantException extends RequiredParameterMissingException {
     public MissingRegistrantException() {
       super("Registrant is required");
@@ -1412,6 +1421,7 @@ public class DomainFlowUtils {
   }
 
   /** Admin contact is required. */
+  // TODO(sarahbot): Remove this exception once minimum registry dataset phase 1 begins
   static class MissingAdminContactException extends RequiredParameterMissingException {
     public MissingAdminContactException() {
       super("Admin contact is required");
@@ -1419,6 +1429,7 @@ public class DomainFlowUtils {
   }
 
   /** Technical contact is required. */
+  // TODO(sarahbot): Remove this exception once minimum registry dataset phase 1 begins
   static class MissingTechnicalContactException extends RequiredParameterMissingException {
     public MissingTechnicalContactException() {
       super("Technical contact is required");
