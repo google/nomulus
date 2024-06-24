@@ -25,6 +25,7 @@ import {
 import { Contact } from '../../settings/contact/contact.service';
 import { EppPasswordBackendModel } from '../../settings/security/security.service';
 import { UserData } from './userData.service';
+import { RegistryLockVerificationResponse } from 'src/app/lock/registryLockVerify.service';
 
 @Injectable()
 export class BackendService {
@@ -167,6 +168,14 @@ export class BackendService {
     return this.http.post<WhoisRegistrarFields>(
       '/console-api/settings/whois-fields',
       whoisRegistrarFields
+    );
+  }
+
+  verifyRegistryLockRequest(
+    lockVerificationCode: string
+  ): Observable<RegistryLockVerificationResponse> {
+    return this.http.get<RegistryLockVerificationResponse>(
+      `/console-api/registry-lock-verify?lockVerificationCode=${lockVerificationCode}`
     );
   }
 }

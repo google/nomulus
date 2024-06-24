@@ -53,6 +53,7 @@ import { UserDataService } from './shared/services/userData.service';
 import { SnackBarModule } from './snackbar.module';
 import { SupportComponent } from './support/support.component';
 import { TldsComponent } from './tlds/tlds.component';
+import { RegistryLockVerifyComponent } from './lock/registryLockVerify.component';
 
 @NgModule({
   declarations: [
@@ -71,6 +72,7 @@ import { TldsComponent } from './tlds/tlds.component';
     RegistrarComponent,
     RegistrarDetailsComponent,
     RegistrarSelectorComponent,
+    RegistryLockVerifyComponent,
     ResourcesComponent,
     SecurityComponent,
     SecurityEditComponent,

@@ -1,0 +1,19 @@
+<h1 class="mat-headline-4">Success!</h1>
+<div class="console-app__registry-lock">
+  @if (isLoading) {
+  <div class="console-app__registry-lock-verify-spinner">
+    <mat-spinner />
+  </div>
+  } @else {
+  <div class="console-app__registry-lock-content">
+    <div class="console-app__registry-lock-subhead">
+      The domain {{ domainName }} has been successfully {{ action }}ed.
+    </div>
+  </div>
+  }
+  <div>
+    <a class="text-l" href="{{ domainListUrl() }}"
+      >Return to the list of domains</a
+    >
+  </div>
+</div>
