@@ -488,7 +488,6 @@ public class DomainFlowUtils {
   static void validateRequiredContactsPresent(
       Optional<VKey<Contact>> registrant, Set<DesignatedContact> contacts)
       throws RequiredParameterMissingException {
-    // TODO: Check minimum reg data set migration schedule here and don't throw when any are empty.
     if (registrant.isEmpty()) {
       throw new MissingRegistrantException();
     }

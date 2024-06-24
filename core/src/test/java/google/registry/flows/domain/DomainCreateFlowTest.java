@@ -25,6 +25,7 @@ import static google.registry.model.billing.BillingBase.Flag.SUNRISE;
 import static google.registry.model.billing.BillingBase.RenewalPriceBehavior.DEFAULT;
 import static google.registry.model.billing.BillingBase.RenewalPriceBehavior.NONPREMIUM;
 import static google.registry.model.billing.BillingBase.RenewalPriceBehavior.SPECIFIED;
+import static google.registry.model.common.FeatureFlag.FeatureStatus.ACTIVE;
 import static google.registry.model.common.FeatureFlag.FeatureStatus.INACTIVE;
 import static google.registry.model.domain.fee.Fee.FEE_EXTENSION_URIS;
 import static google.registry.model.domain.token.AllocationToken.TokenType.BULK_PRICING;
@@ -2162,11 +2163,39 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
   }
 
   @Test
+  void testSuccess_minimumDatasetPhase1_missingRegistrant() throws Exception {
+    persistResource(
+        FeatureFlag.get("minimumRegistryDatasetPhase1")
+            .asBuilder()
+            .setStatus(
+                ImmutableSortedMap.of(START_OF_TIME, INACTIVE, clock.nowUtc().minusDays(5), ACTIVE))
+            .build());
+    setEppInput("domain_create_missing_registrant.xml");
+    persistContactsAndHosts();
+    runFlowAssertResponse(
+        loadFile("domain_create_response.xml", ImmutableMap.of("DOMAIN", "example.tld")));
+  }
+
+  @Test
   void testFailure_missingAdmin() {
     setEppInput("domain_create_missing_admin.xml");
     persistContactsAndHosts();
     EppException thrown = assertThrows(MissingAdminContactException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
+  }
+
+  @Test
+  void testSuccess_minimumDatasetPhase1_missingAdmin() throws Exception {
+    persistResource(
+        FeatureFlag.get("minimumRegistryDatasetPhase1")
+            .asBuilder()
+            .setStatus(
+                ImmutableSortedMap.of(START_OF_TIME, INACTIVE, clock.nowUtc().minusDays(5), ACTIVE))
+            .build());
+    setEppInput("domain_create_missing_admin.xml");
+    persistContactsAndHosts();
+    runFlowAssertResponse(
+        loadFile("domain_create_response.xml", ImmutableMap.of("DOMAIN", "example.tld")));
   }
 
   @Test
@@ -2178,11 +2207,39 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
   }
 
   @Test
+  void testSuccess_minimumDatasetPhase1_missingTech() throws Exception {
+    persistResource(
+        FeatureFlag.get("minimumRegistryDatasetPhase1")
+            .asBuilder()
+            .setStatus(
+                ImmutableSortedMap.of(START_OF_TIME, INACTIVE, clock.nowUtc().minusDays(5), ACTIVE))
+            .build());
+    setEppInput("domain_create_missing_tech.xml");
+    persistContactsAndHosts();
+    runFlowAssertResponse(
+        loadFile("domain_create_response.xml", ImmutableMap.of("DOMAIN", "example.tld")));
+  }
+
+  @Test
   void testFailure_missingNonRegistrantContacts() {
     setEppInput("domain_create_missing_non_registrant_contacts.xml");
     persistContactsAndHosts();
     EppException thrown = assertThrows(MissingAdminContactException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
+  }
+
+  @Test
+  void testSuccess_minimumDatasetPhase1_missingNonRegistrantContacts() throws Exception {
+    persistResource(
+        FeatureFlag.get("minimumRegistryDatasetPhase1")
+            .asBuilder()
+            .setStatus(
+                ImmutableSortedMap.of(START_OF_TIME, INACTIVE, clock.nowUtc().minusDays(5), ACTIVE))
+            .build());
+    setEppInput("domain_create_missing_non_registrant_contacts.xml");
+    persistContactsAndHosts();
+    runFlowAssertResponse(
+        loadFile("domain_create_response.xml", ImmutableMap.of("DOMAIN", "example.tld")));
   }
 
   @Test
