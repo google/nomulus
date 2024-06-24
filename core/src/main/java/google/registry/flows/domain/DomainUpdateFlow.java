@@ -309,8 +309,6 @@ public final class DomainUpdateFlow implements MutatingFlow {
 
   // TODO(sarahbot): Remove this method once minimum registry dataset phase 1 begins
   private static void validateRegistrantIsntBeingRemoved(Change change) throws EppException {
-    // TODO(mcilwain): Make this check the minimum registration data set migration schedule
-    //                 and not require presence of a registrant in later stages.
     if (change.getRegistrantContactId().isPresent()
         && change.getRegistrantContactId().get().isEmpty()) {
       throw new MissingRegistrantException();
