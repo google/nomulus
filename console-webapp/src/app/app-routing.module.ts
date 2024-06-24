@@ -26,6 +26,7 @@ import { SettingsComponent } from './settings/settings.component';
 import UsersComponent from './settings/users/users.component';
 import WhoisComponent from './settings/whois/whois.component';
 import { SupportComponent } from './support/support.component';
+import { RegistryLockVerifyComponent } from './lock/registryLockVerify.component';
 
 export interface RouteWithIcon extends Route {
   iconName?: string;
@@ -33,6 +34,10 @@ export interface RouteWithIcon extends Route {
 
 export const routes: RouteWithIcon[] = [
   { path: '', redirectTo: '/home', pathMatch: 'full' },
+  {
+    path: RegistryLockVerifyComponent.PATH,
+    component: RegistryLockVerifyComponent,
+  },
   { path: 'registrars', component: RegistrarComponent },
   {
     path: 'home',
