@@ -1,0 +1,28 @@
+@if (isLoading) {
+<div class="console-app__registry-lock-verify-spinner">
+  <mat-spinner />
+</div>
+} @else if (domainName) {
+<h1 class="mat-headline-4">Success!</h1>
+<div class="console-app__registry-lock-content">
+  <div class="console-app__registry-lock-subhead">
+    The domain {{ domainName }} has been successfully {{ action }}ed.
+  </div>
+</div>
+<div>
+  <a
+    class="text-l"
+    routerLink="{{ DOMAIN_LIST_COMPONENT_PATH }}"
+    [queryParams]="{ registrarId: this.registrarService.registrarId() }"
+    >Return to the list of domains</a
+  >
+</div>
+} @else {
+<h1 class="mat-headline-4">Failure</h1>
+<div class="console-app__registry-lock-content">
+  <div class="console-app__registry-lock-subhead">
+    An error occurred: {{ errorMessage }}.<br /><br />Please double-check the
+    verification code and try again.
+  </div>
+</div>
+}
