@@ -21,19 +21,23 @@ import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static google.registry.config.RegistryConfig.getSingletonCacheRefreshDuration;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.github.benmanes.caffeine.cache.CacheLoader;
 import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.google.common.base.Joiner;
 import com.google.common.base.Strings;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
-import com.google.common.collect.Sets;
 import google.registry.model.Buildable;
 import google.registry.model.CacheUtils;
+import google.registry.model.EntityYamlUtils.TimedTransitionPropertyFeatureStatusDeserializer;
 import google.registry.model.ImmutableObject;
 import google.registry.persistence.VKey;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -59,42 +63,53 @@ public class FeatureFlag extends ImmutableObject implements Buildable {
 
   /** A map of times for each {@link FeatureStatus} the FeatureFlag should hold. */
   @Column(nullable = false)
+  @JsonDeserialize(using = TimedTransitionPropertyFeatureStatusDeserializer.class)
   TimedTransitionProperty<FeatureStatus> status =
       TimedTransitionProperty.withInitialValue(FeatureStatus.INACTIVE);
 
+  public static Optional<FeatureFlag> getUncached(String featureName) {
+    return tm().transact(() -> tm().loadByKeyIfPresent(createVKey(featureName)));
+  }
+
+  public static ImmutableList<FeatureFlag> getAllUncached() {
+    return tm().transact(() -> tm().loadAllOf(FeatureFlag.class));
+  }
+
   public static FeatureFlag get(String featureName) {
-    FeatureFlag maybeFeatureFlag = CACHE.get(featureName);
-    if (maybeFeatureFlag == null) {
+    Optional<FeatureFlag> maybeFeatureFlag = CACHE.get(featureName);
+    if (maybeFeatureFlag.isEmpty()) {
       throw new FeatureFlagNotFoundException(featureName);
     } else {
-      return maybeFeatureFlag;
+      return maybeFeatureFlag.get();
     }
   }
 
-  public static ImmutableSet<FeatureFlag> get(Set<String> featureNames) {
-    Map<String, FeatureFlag> featureFlags = CACHE.getAll(featureNames);
+  public static ImmutableSet<FeatureFlag> getAll(Set<String> featureNames) {
+    Map<String, Optional<FeatureFlag>> featureFlags = CACHE.getAll(featureNames);
     ImmutableSet<String> missingFlags =
-        Sets.difference(featureNames, featureFlags.keySet()).immutableCopy();
+        featureFlags.entrySet().stream()
+            .filter(e -> e.getValue().isEmpty())
+            .map(Map.Entry::getKey)
+            .collect(toImmutableSet());
     if (missingFlags.isEmpty()) {
-      return featureFlags.values().stream().collect(toImmutableSet());
+      return featureFlags.values().stream().map(Optional::get).collect(toImmutableSet());
     } else {
       throw new FeatureFlagNotFoundException(missingFlags);
     }
   }
 
   /** A cache that loads the {@link FeatureFlag} for a given featureName. */
-  private static final LoadingCache<String, FeatureFlag> CACHE =
+  private static final LoadingCache<String, Optional<FeatureFlag>> CACHE =
       CacheUtils.newCacheBuilder(getSingletonCacheRefreshDuration())
           .build(
               new CacheLoader<>() {
                 @Override
-                public FeatureFlag load(final String featureName) {
-                  return tm().reTransact(() -> tm().loadByKeyIfPresent(createVKey(featureName)))
-                      .orElse(null);
+                public Optional<FeatureFlag> load(final String featureName) {
+                  return tm().reTransact(() -> tm().loadByKeyIfPresent(createVKey(featureName)));
                 }
 
                 @Override
-                public Map<? extends String, ? extends FeatureFlag> loadAll(
+                public Map<? extends String, ? extends Optional<FeatureFlag>> loadAll(
                     Set<? extends String> featureFlagNames) {
                   ImmutableMap<String, VKey<FeatureFlag>> keysMap =
                       featureFlagNames.stream()
@@ -102,8 +117,15 @@ public class FeatureFlag extends ImmutableObject implements Buildable {
                               toImmutableMap(featureName -> featureName, FeatureFlag::createVKey));
                   Map<VKey<? extends FeatureFlag>, FeatureFlag> entities =
                       tm().reTransact(() -> tm().loadByKeysIfPresent(keysMap.values()));
-                  return entities.values().stream()
-                      .collect(toImmutableMap(flag -> flag.featureName, flag -> flag));
+                  return tm().reTransact(
+                          () ->
+                              featureFlagNames.stream()
+                                  .collect(
+                                      toImmutableMap(
+                                          flag -> flag,
+                                          flag ->
+                                              Optional.ofNullable(
+                                                  entities.get(createVKey(flag))))));
                 }
               });
 
@@ -120,6 +142,7 @@ public class FeatureFlag extends ImmutableObject implements Buildable {
     return featureName;
   }
 
+  @JsonProperty("status")
   public TimedTransitionProperty<FeatureStatus> getStatusMap() {
     return status;
   }
@@ -152,12 +175,14 @@ public class FeatureFlag extends ImmutableObject implements Buildable {
     }
 
     public Builder setFeatureName(String featureName) {
-      checkState(getInstance().featureName == null, "Feature name can only be set once");
+      checkState(
+          getInstance().featureName == null || getInstance().featureName.equals(featureName),
+          "Feature name can only be set once");
       getInstance().featureName = featureName;
       return this;
     }
 
-    public Builder setStatus(ImmutableSortedMap<DateTime, FeatureStatus> statusMap) {
+    public Builder setStatusMap(ImmutableSortedMap<DateTime, FeatureStatus> statusMap) {
       getInstance().status = TimedTransitionProperty.fromValueMap(statusMap);
       return this;
     }
@@ -170,7 +195,7 @@ public class FeatureFlag extends ImmutableObject implements Buildable {
       super("No feature flag object(s) found for " + Joiner.on(", ").join(featureNames));
     }
 
-    FeatureFlagNotFoundException(String featureName) {
+    public FeatureFlagNotFoundException(String featureName) {
       this(ImmutableSet.of(featureName));
     }
   }

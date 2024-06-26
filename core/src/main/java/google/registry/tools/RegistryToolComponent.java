@@ -119,6 +119,8 @@ interface RegistryToolComponent {
 
   void inject(GetDomainCommand command);
 
+  void inject(GetFeatureFlagCommand command);
+
   void inject(GetHostCommand command);
 
   void inject(GetKeyringSecretCommand command);
@@ -130,6 +132,8 @@ interface RegistryToolComponent {
   void inject(GhostrydeCommand command);
 
   void inject(ListCursorsCommand command);
+
+  void inject(ListFeatureFlagsCommand command);
 
   void inject(LockDomainCommand command);
 

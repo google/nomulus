@@ -111,8 +111,8 @@ abstract class CreateOrUpdateBulkPricingPackageCommand extends MutatingCommand {
                 if (clearLastNotificationSent()) {
                   builder.setLastNotificationSent(null);
                 }
-                BulkPricingPackage newBUlkPricingPackage = builder.build();
-                stageEntityChange(oldBulkPricingPackage, newBUlkPricingPackage);
+                BulkPricingPackage newBulkPricingPackage = builder.build();
+                stageEntityChange(oldBulkPricingPackage, newBulkPricingPackage);
               });
     }
   }
