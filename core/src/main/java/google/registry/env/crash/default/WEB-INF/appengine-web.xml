@@ -6,10 +6,9 @@
   <app-engine-apis>true</app-engine-apis>
   <sessions-enabled>true</sessions-enabled>
   <instance-class>B4_1G</instance-class>
-  <basic-scaling>
-    <max-instances>10</max-instances>
-    <idle-timeout>30m</idle-timeout>
-  </basic-scaling>
+  <manual-scaling>
+    <instances>24</instances>
+  </manual-scaling>
 
   <system-properties>
     <property name="java.util.logging.config.file"
