@@ -105,7 +105,7 @@ public class FeatureFlag extends ImmutableObject implements Buildable {
               new CacheLoader<>() {
                 @Override
                 public Optional<FeatureFlag> load(final String featureName) {
-                  return tm().transact(() -> tm().loadByKeyIfPresent(createVKey(featureName)));
+                  return tm().reTransact(() -> tm().loadByKeyIfPresent(createVKey(featureName)));
                 }
 
                 @Override
@@ -115,13 +115,17 @@ public class FeatureFlag extends ImmutableObject implements Buildable {
                       featureFlagNames.stream()
                           .collect(
                               toImmutableMap(featureName -> featureName, FeatureFlag::createVKey));
-                  return tm().transact(
+                  Map<VKey<? extends FeatureFlag>, FeatureFlag> entities =
+                      tm().reTransact(() -> tm().loadByKeysIfPresent(keysMap.values()));
+                  return tm().reTransact(
                           () ->
                               featureFlagNames.stream()
                                   .collect(
                                       toImmutableMap(
                                           flag -> flag,
-                                          flag -> tm().loadByKeyIfPresent(keysMap.get(flag)))));
+                                          flag ->
+                                              Optional.ofNullable(
+                                                  entities.get(createVKey(flag))))));
                 }
               });
 

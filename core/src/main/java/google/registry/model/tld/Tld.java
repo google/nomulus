@@ -191,12 +191,7 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
 
   /** Returns the TLD for a given TLD, throwing if none exists. */
   public static Tld get(String tld) {
-    Optional<Tld> maybeTld = CACHE.get(tld);
-    if (maybeTld.isEmpty()) {
-      throw new TldNotFoundException(tld);
-    } else {
-      return maybeTld.get();
-    }
+    return CACHE.get(tld).orElseThrow(() -> new TldNotFoundException(tld));
   }
 
   /** Returns the TLD entities for the given TLD strings, throwing if any don't exist. */
@@ -240,13 +235,16 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
                     Set<? extends String> tlds) {
                   ImmutableMap<String, VKey<Tld>> keysMap =
                       tlds.stream().collect(toImmutableMap(tld -> tld, Tld::createVKey));
+                  Map<VKey<? extends Tld>, Tld> entities =
+                      tm().reTransact(() -> tm().loadByKeysIfPresent(keysMap.values()));
                   return tm().reTransact(
                           () ->
                               tlds.stream()
                                   .collect(
                                       toImmutableMap(
                                           tld -> tld,
-                                          tld -> tm().loadByKeyIfPresent(keysMap.get(tld)))));
+                                          tld ->
+                                              Optional.ofNullable(entities.get(createVKey(tld))))));
                 }
               });
 
