@@ -115,7 +115,17 @@ public class AllocationToken extends UpdateAutoTimestampEntity implements Builda
      */
     BYPASS_TLD_STATE,
     /** Bypasses most checks and creates the domain as an anchor tenant, with all that implies. */
-    ANCHOR_TENANT
+    ANCHOR_TENANT,
+    /**
+     * Bypasses the premium list to use the standard creation price. Does not affect the renewal
+     * price.
+     *
+     * <p>This cannot be specified along with a discount fraction, and any renewals (automatic or
+     * otherwise) will use the premium price for the domain if one exists.
+     *
+     * <p>Tokens with this behavior must be tied to a single particular domain.
+     */
+    NONPREMIUM_CREATE
   }
 
   /** Type of the token that indicates how and where it should be used. */
@@ -403,6 +413,17 @@ public class AllocationToken extends UpdateAutoTimestampEntity implements Builda
       if (getInstance().registrationBehavior.equals(RegistrationBehavior.ANCHOR_TENANT)) {
         checkArgumentNotNull(
             getInstance().domainName, "ANCHOR_TENANT tokens must be tied to a domain");
+      }
+      if (getInstance().registrationBehavior.equals(RegistrationBehavior.NONPREMIUM_CREATE)) {
+        checkArgument(
+            getInstance().discountFraction == 0.0,
+            "NONPREMIUM_CREATE tokens cannot apply a discount");
+        checkArgumentNotNull(
+            getInstance().domainName, "NONPREMIUM_CREATE tokens must be tied to a domain");
+        checkArgument(
+            getInstance().allowedEppActions == null
+                || getInstance().allowedEppActions.contains(CommandName.CREATE),
+            "NONPREMIUM_CREATE tokens must allow for CREATE actions");
       }
       if (getInstance().domainName != null) {
         try {

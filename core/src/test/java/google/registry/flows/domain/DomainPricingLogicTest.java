@@ -55,6 +55,7 @@ import google.registry.testing.DatabaseHelper;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeHttpSession;
 import google.registry.util.Clock;
+import java.math.BigDecimal;
 import java.util.Optional;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
@@ -146,7 +147,7 @@ public class DomainPricingLogicTest {
             new FeesAndCredits.Builder()
                 .setCurrency(USD)
                 // (13 + 11) * 0.85 == 20.40
-                .addFeeOrCredit(Fee.create(Money.of(USD, 20.4).getAmount(), CREATE, false))
+                .addFeeOrCredit(Fee.create(new BigDecimal("20.40"), CREATE, false))
                 .build());
   }
 
@@ -159,7 +160,7 @@ public class DomainPricingLogicTest {
         .isEqualTo(
             new FeesAndCredits.Builder()
                 .setCurrency(USD)
-                .addFeeOrCredit(Fee.create(Money.of(USD, 10).getAmount(), RENEW, false))
+                .addFeeOrCredit(Fee.create(new BigDecimal("10.00"), RENEW, false))
                 .build());
   }
 
@@ -172,7 +173,7 @@ public class DomainPricingLogicTest {
         .isEqualTo(
             new FeesAndCredits.Builder()
                 .setCurrency(USD)
-                .addFeeOrCredit(Fee.create(Money.of(USD, 50).getAmount(), RENEW, false))
+                .addFeeOrCredit(Fee.create(new BigDecimal("50.00"), RENEW, false))
                 .build());
   }
 
@@ -185,7 +186,7 @@ public class DomainPricingLogicTest {
         .isEqualTo(
             new FeesAndCredits.Builder()
                 .setCurrency(USD)
-                .addFeeOrCredit(Fee.create(Money.of(USD, 100).getAmount(), RENEW, true))
+                .addFeeOrCredit(Fee.create(new BigDecimal("100.00"), RENEW, true))
                 .build());
   }
 
@@ -198,7 +199,7 @@ public class DomainPricingLogicTest {
         .isEqualTo(
             new FeesAndCredits.Builder()
                 .setCurrency(USD)
-                .addFeeOrCredit(Fee.create(Money.of(USD, 500).getAmount(), RENEW, true))
+                .addFeeOrCredit(Fee.create(new BigDecimal("500.00"), RENEW, true))
                 .build());
   }
 
@@ -215,7 +216,7 @@ public class DomainPricingLogicTest {
         .isEqualTo(
             new FeesAndCredits.Builder()
                 .setCurrency(USD)
-                .addFeeOrCredit(Fee.create(Money.of(USD, 100).getAmount(), RENEW, true))
+                .addFeeOrCredit(Fee.create(new BigDecimal("100.00"), RENEW, true))
                 .build());
   }
 
@@ -241,7 +242,7 @@ public class DomainPricingLogicTest {
         .isEqualTo(
             new FeesAndCredits.Builder()
                 .setCurrency(USD)
-                .addFeeOrCredit(Fee.create(Money.of(USD, 50).getAmount(), RENEW, true))
+                .addFeeOrCredit(Fee.create(new BigDecimal("50.00"), RENEW, true))
                 .build());
   }
 
@@ -281,7 +282,7 @@ public class DomainPricingLogicTest {
         .isEqualTo(
             new FeesAndCredits.Builder()
                 .setCurrency(USD)
-                .addFeeOrCredit(Fee.create(Money.of(USD, 500).getAmount(), RENEW, true))
+                .addFeeOrCredit(Fee.create(new BigDecimal("500.00"), RENEW, true))
                 .build());
   }
 
@@ -308,7 +309,7 @@ public class DomainPricingLogicTest {
         .isEqualTo(
             new FeesAndCredits.Builder()
                 .setCurrency(USD)
-                .addFeeOrCredit(Fee.create(Money.of(USD, 400).getAmount(), RENEW, true))
+                .addFeeOrCredit(Fee.create(new BigDecimal("400.00"), RENEW, true))
                 .build());
   }
 
@@ -350,7 +351,7 @@ public class DomainPricingLogicTest {
         .isEqualTo(
             new FeesAndCredits.Builder()
                 .setCurrency(USD)
-                .addFeeOrCredit(Fee.create(Money.of(USD, 10).getAmount(), RENEW, false))
+                .addFeeOrCredit(Fee.create(new BigDecimal("10.00"), RENEW, false))
                 .build());
   }
 
@@ -376,7 +377,7 @@ public class DomainPricingLogicTest {
         .isEqualTo(
             new FeesAndCredits.Builder()
                 .setCurrency(USD)
-                .addFeeOrCredit(Fee.create(Money.of(USD, 5).getAmount(), RENEW, false))
+                .addFeeOrCredit(Fee.create(new BigDecimal("5.00"), RENEW, false))
                 .build());
   }
 
@@ -394,7 +395,7 @@ public class DomainPricingLogicTest {
         .isEqualTo(
             new FeesAndCredits.Builder()
                 .setCurrency(USD)
-                .addFeeOrCredit(Fee.create(Money.of(USD, 50).getAmount(), RENEW, false))
+                .addFeeOrCredit(Fee.create(new BigDecimal("50.00"), RENEW, false))
                 .build());
   }
 
@@ -421,7 +422,7 @@ public class DomainPricingLogicTest {
         .isEqualTo(
             new FeesAndCredits.Builder()
                 .setCurrency(USD)
-                .addFeeOrCredit(Fee.create(Money.of(USD, 40).getAmount(), RENEW, false))
+                .addFeeOrCredit(Fee.create(new BigDecimal("40.00"), RENEW, false))
                 .build());
   }
 
@@ -439,7 +440,7 @@ public class DomainPricingLogicTest {
         .isEqualTo(
             new FeesAndCredits.Builder()
                 .setCurrency(USD)
-                .addFeeOrCredit(Fee.create(Money.of(USD, 10).getAmount(), RENEW, false))
+                .addFeeOrCredit(Fee.create(new BigDecimal("10.00"), RENEW, false))
                 .build());
   }
 
@@ -466,7 +467,7 @@ public class DomainPricingLogicTest {
         .isEqualTo(
             new FeesAndCredits.Builder()
                 .setCurrency(USD)
-                .addFeeOrCredit(Fee.create(Money.of(USD, 5).getAmount(), RENEW, false))
+                .addFeeOrCredit(Fee.create(new BigDecimal("5.00"), RENEW, false))
                 .build());
   }
 
@@ -484,7 +485,7 @@ public class DomainPricingLogicTest {
         .isEqualTo(
             new FeesAndCredits.Builder()
                 .setCurrency(USD)
-                .addFeeOrCredit(Fee.create(Money.of(USD, 50).getAmount(), RENEW, false))
+                .addFeeOrCredit(Fee.create(new BigDecimal("50.00"), RENEW, false))
                 .build());
   }
 
@@ -512,7 +513,7 @@ public class DomainPricingLogicTest {
         .isEqualTo(
             new FeesAndCredits.Builder()
                 .setCurrency(USD)
-                .addFeeOrCredit(Fee.create(Money.of(USD, 40).getAmount(), RENEW, false))
+                .addFeeOrCredit(Fee.create(new BigDecimal("40.00"), RENEW, false))
                 .build());
   }
 
@@ -530,7 +531,7 @@ public class DomainPricingLogicTest {
         .isEqualTo(
             new FeesAndCredits.Builder()
                 .setCurrency(USD)
-                .addFeeOrCredit(Fee.create(Money.of(USD, 10).getAmount(), RENEW, false))
+                .addFeeOrCredit(Fee.create(new BigDecimal("10.00"), RENEW, false))
                 .build());
   }
 
@@ -548,7 +549,7 @@ public class DomainPricingLogicTest {
         .isEqualTo(
             new FeesAndCredits.Builder()
                 .setCurrency(USD)
-                .addFeeOrCredit(Fee.create(Money.of(USD, 50).getAmount(), RENEW, false))
+                .addFeeOrCredit(Fee.create(new BigDecimal("50.00"), RENEW, false))
                 .build());
   }
 
@@ -567,7 +568,7 @@ public class DomainPricingLogicTest {
         .isEqualTo(
             new FeesAndCredits.Builder()
                 .setCurrency(USD)
-                .addFeeOrCredit(Fee.create(Money.of(USD, 1).getAmount(), RENEW, false))
+                .addFeeOrCredit(Fee.create(new BigDecimal("1.00"), RENEW, false))
                 .build());
   }
 
@@ -597,7 +598,7 @@ public class DomainPricingLogicTest {
         .isEqualTo(
             new FeesAndCredits.Builder()
                 .setCurrency(USD)
-                .addFeeOrCredit(Fee.create(Money.of(USD, 1).getAmount(), RENEW, false))
+                .addFeeOrCredit(Fee.create(new BigDecimal("1.00"), RENEW, false))
                 .build());
   }
 
@@ -628,7 +629,7 @@ public class DomainPricingLogicTest {
         .isEqualTo(
             new FeesAndCredits.Builder()
                 .setCurrency(USD)
-                .addFeeOrCredit(Fee.create(Money.of(USD, 1).getAmount(), RENEW, false))
+                .addFeeOrCredit(Fee.create(new BigDecimal("1.00"), RENEW, false))
                 .build());
     assertThat(
             Iterables.getLast(DatabaseHelper.loadAllOf(BillingRecurrence.class))
@@ -651,7 +652,7 @@ public class DomainPricingLogicTest {
         .isEqualTo(
             new FeesAndCredits.Builder()
                 .setCurrency(USD)
-                .addFeeOrCredit(Fee.create(Money.of(USD, 5).getAmount(), RENEW, false))
+                .addFeeOrCredit(Fee.create(new BigDecimal("5.00"), RENEW, false))
                 .build());
   }
 
@@ -679,7 +680,7 @@ public class DomainPricingLogicTest {
         .isEqualTo(
             new FeesAndCredits.Builder()
                 .setCurrency(USD)
-                .addFeeOrCredit(Fee.create(Money.of(USD, 5).getAmount(), RENEW, false))
+                .addFeeOrCredit(Fee.create(new BigDecimal("5.00"), RENEW, false))
                 .build());
   }
 
@@ -698,7 +699,7 @@ public class DomainPricingLogicTest {
         .isEqualTo(
             new FeesAndCredits.Builder()
                 .setCurrency(USD)
-                .addFeeOrCredit(Fee.create(Money.of(USD, 17).getAmount(), RENEW, false))
+                .addFeeOrCredit(Fee.create(new BigDecimal("17.00"), RENEW, false))
                 .build());
   }
 
@@ -717,7 +718,7 @@ public class DomainPricingLogicTest {
         .isEqualTo(
             new FeesAndCredits.Builder()
                 .setCurrency(USD)
-                .addFeeOrCredit(Fee.create(Money.of(USD, 85).getAmount(), RENEW, false))
+                .addFeeOrCredit(Fee.create(new BigDecimal("85.00"), RENEW, false))
                 .build());
   }
 
@@ -739,7 +740,7 @@ public class DomainPricingLogicTest {
         .isEqualTo(
             new FeesAndCredits.Builder()
                 .setCurrency(USD)
-                .addFeeOrCredit(Fee.create(Money.of(USD, 10).getAmount(), RENEW, false))
+                .addFeeOrCredit(Fee.create(new BigDecimal("10.00"), RENEW, false))
                 .build());
   }
 
@@ -750,7 +751,7 @@ public class DomainPricingLogicTest {
         .isEqualTo(
             new FeesAndCredits.Builder()
                 .setCurrency(USD)
-                .addFeeOrCredit(Fee.create(Money.of(USD, 100).getAmount(), RENEW, true))
+                .addFeeOrCredit(Fee.create(new BigDecimal("100.00"), RENEW, true))
                 .build());
   }
 
@@ -765,7 +766,7 @@ public class DomainPricingLogicTest {
         .isEqualTo(
             new FeesAndCredits.Builder()
                 .setCurrency(USD)
-                .addFeeOrCredit(Fee.create(Money.of(USD, 10).getAmount(), RENEW, false))
+                .addFeeOrCredit(Fee.create(new BigDecimal("10.00"), RENEW, false))
                 .build());
   }
 
@@ -780,7 +781,7 @@ public class DomainPricingLogicTest {
         .isEqualTo(
             new FeesAndCredits.Builder()
                 .setCurrency(USD)
-                .addFeeOrCredit(Fee.create(Money.of(USD, 100).getAmount(), RENEW, true))
+                .addFeeOrCredit(Fee.create(new BigDecimal("100.00"), RENEW, true))
                 .build());
   }
 
@@ -796,7 +797,7 @@ public class DomainPricingLogicTest {
         .isEqualTo(
             new FeesAndCredits.Builder()
                 .setCurrency(USD)
-                .addFeeOrCredit(Fee.create(Money.of(USD, 10).getAmount(), RENEW, false))
+                .addFeeOrCredit(Fee.create(new BigDecimal("10.00"), RENEW, false))
                 .build());
   }
 
@@ -812,7 +813,7 @@ public class DomainPricingLogicTest {
         .isEqualTo(
             new FeesAndCredits.Builder()
                 .setCurrency(USD)
-                .addFeeOrCredit(Fee.create(Money.of(USD, 10).getAmount(), RENEW, false))
+                .addFeeOrCredit(Fee.create(new BigDecimal("10.00"), RENEW, false))
                 .build());
   }
 
@@ -829,7 +830,7 @@ public class DomainPricingLogicTest {
         .isEqualTo(
             new FeesAndCredits.Builder()
                 .setCurrency(USD)
-                .addFeeOrCredit(Fee.create(Money.of(USD, 1.23).getAmount(), RENEW, false))
+                .addFeeOrCredit(Fee.create(new BigDecimal("1.23"), RENEW, false))
                 .build());
   }
 
@@ -846,7 +847,61 @@ public class DomainPricingLogicTest {
         .isEqualTo(
             new FeesAndCredits.Builder()
                 .setCurrency(USD)
-                .addFeeOrCredit(Fee.create(Money.of(USD, 1.23).getAmount(), RENEW, false))
+                .addFeeOrCredit(Fee.create(new BigDecimal("1.23"), RENEW, false))
+                .build());
+  }
+
+  @Test
+  void testGetDomainCreatePrice_nonPremiumCreate_unaffectedRenewal() throws EppException {
+    AllocationToken allocationToken =
+        persistResource(
+            new AllocationToken.Builder()
+                .setToken("abc123")
+                .setTokenType(SINGLE_USE)
+                .setDomainName("premium.example")
+                .setRegistrationBehavior(AllocationToken.RegistrationBehavior.NONPREMIUM_CREATE)
+                .build());
+    assertThat(
+            domainPricingLogic.getCreatePrice(
+                tld,
+                "premium.example",
+                clock.nowUtc(),
+                1,
+                false,
+                false,
+                Optional.of(allocationToken)))
+        .isEqualTo(
+            new FeesAndCredits.Builder()
+                .setCurrency(USD)
+                .addFeeOrCredit(Fee.create(new BigDecimal("13.00"), CREATE, false))
+                .build());
+    // Two-year create should be 13 (standard price) + 100 (premium price)
+    assertThat(
+            domainPricingLogic.getCreatePrice(
+                tld,
+                "premium.example",
+                clock.nowUtc(),
+                2,
+                false,
+                false,
+                Optional.of(allocationToken)))
+        .isEqualTo(
+            new FeesAndCredits.Builder()
+                .setCurrency(USD)
+                .addFeeOrCredit(Fee.create(new BigDecimal("113.00"), CREATE, false))
+                .build());
+    assertThat(
+            domainPricingLogic.getRenewPrice(
+                tld,
+                "premium.example",
+                clock.nowUtc(),
+                1,
+                persistDomainAndSetRecurrence("premium.example", DEFAULT, Optional.empty()),
+                Optional.of(allocationToken)))
+        .isEqualTo(
+            new FeesAndCredits.Builder()
+                .setCurrency(USD)
+                .addFeeOrCredit(Fee.create(new BigDecimal("100.00"), RENEW, true))
                 .build());
   }
 }

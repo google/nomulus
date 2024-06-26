@@ -85,6 +85,15 @@ public final class DomainPricingLogic {
       createFee = Fee.create(zeroInCurrency(currency), FeeType.CREATE, false);
     } else {
       DomainPrices domainPrices = getPricesForDomainName(domainName, dateTime);
+      if (allocationToken.isPresent()
+          && allocationToken
+              .get()
+              .getRegistrationBehavior()
+              .equals(RegistrationBehavior.NONPREMIUM_CREATE)) {
+        domainPrices =
+            DomainPrices.create(
+                false, tld.getCreateBillingCost(dateTime), domainPrices.getRenewCost());
+      }
       Money domainCreateCost =
           getDomainCreateCostWithDiscount(domainPrices, years, allocationToken);
       // Apply a sunrise discount if configured and applicable
