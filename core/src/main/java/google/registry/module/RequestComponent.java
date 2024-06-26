@@ -114,6 +114,7 @@ import google.registry.ui.server.console.ConsoleDomainListAction;
 import google.registry.ui.server.console.ConsoleDumDownloadAction;
 import google.registry.ui.server.console.ConsoleEppPasswordAction;
 import google.registry.ui.server.console.ConsoleRegistryLockAction;
+import google.registry.ui.server.console.ConsoleRegistryLockVerifyAction;
 import google.registry.ui.server.console.ConsoleUpdateRegistrarAction;
 import google.registry.ui.server.console.ConsoleUserDataAction;
 import google.registry.ui.server.console.RegistrarsAction;
@@ -190,6 +191,8 @@ interface RequestComponent {
   ConsoleRegistrarCreatorAction consoleRegistrarCreatorAction();
 
   ConsoleRegistryLockAction consoleRegistryLockAction();
+
+  ConsoleRegistryLockVerifyAction consoleRegistryLockVerifyAction();
 
   ConsoleUiAction consoleUiAction();
 

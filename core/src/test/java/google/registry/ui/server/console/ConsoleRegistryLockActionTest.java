@@ -80,7 +80,7 @@ public class ConsoleRegistryLockActionTest {
       Please click the link below to perform the lock / unlock action on domain example.test. \
       Note: this code will expire in one hour.
 
-      https://registrarconsole.tld/console-api/registry-lock-verify?lockVerificationCode=\
+      https://registrarconsole.tld/console/registry-lock-verify?lockVerificationCode=\
       123456789ABCDEFGHJKLMNPQRSTUVWXY""";
 
   private static final Gson GSON = RequestModule.provideGson();
@@ -122,15 +122,7 @@ public class ConsoleRegistryLockActionTest {
 
   @Test
   void testGet_simpleLock() {
-    saveRegistryLock(
-        new RegistryLock.Builder()
-            .setRepoId("repoId")
-            .setDomainName("example.test")
-            .setRegistrarId("TheRegistrar")
-            .setVerificationCode("123456789ABCDEFGHJKLMNPQRSTUVWXY")
-            .setRegistrarPocId("johndoe@theregistrar.com")
-            .setLockCompletionTime(fakeClock.nowUtc())
-            .build());
+    saveRegistryLock(createDefaultLockBuilder().setLockCompletionTime(fakeClock.nowUtc()).build());
     action.run();
     assertThat(response.getStatus()).isEqualTo(SC_OK);
     assertThat(response.getPayload())
