@@ -15,31 +15,26 @@
 package google.registry.tools;
 
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.tools.CreateUserCommand.IAP_SECURED_WEB_APP_USER_ROLE;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 import static google.registry.util.PreconditionsUtils.checkArgumentPresent;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.flogger.FluentLogger;
-import com.google.common.net.MediaType;
+import google.registry.batch.CloudTasksUtils;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.model.console.User;
 import google.registry.model.console.UserDao;
-import google.registry.tools.server.UpdateUserGroupAction;
 import java.util.Optional;
 import javax.annotation.Nullable;
 import javax.inject.Inject;
 
 /** Deletes a {@link User}. */
 @Parameters(separators = " =", commandDescription = "Delete a user account")
-public class DeleteUserCommand extends ConfirmingCommand implements CommandWithConnection {
+public class DeleteUserCommand extends ConfirmingCommand {
 
-  private static final FluentLogger logger = FluentLogger.forEnclosingClass();
-
-  private ServiceConnection connection;
   @Inject IamClient iamClient;
+
+  @Inject CloudTasksUtils cloudTasksUtils;
 
   @Inject
   @Config("gSuiteConsoleUserGroupEmailAddress")
@@ -48,11 +43,6 @@ public class DeleteUserCommand extends ConfirmingCommand implements CommandWithC
   @Nullable
   @Parameter(names = "--email", description = "Email address of the user", required = true)
   String email;
-
-  @Override
-  public void setConnection(ServiceConnection connection) {
-    this.connection = connection;
-  }
 
   @Override
   protected String prompt() {
@@ -69,24 +59,7 @@ public class DeleteUserCommand extends ConfirmingCommand implements CommandWithC
               checkArgumentPresent(optionalUser, "Email no longer corresponds to a valid user");
               tm().delete(optionalUser.get());
             });
-    String groupEmailAddress = maybeGroupEmailAddress.orElse(null);
-    if (groupEmailAddress != null) {
-      logger.atInfo().log("Removing %s from group %s", email, groupEmailAddress);
-      connection.sendPostRequest(
-          UpdateUserGroupAction.PATH,
-          ImmutableMap.of(
-              "userEmailAddress",
-              email,
-              "groupEmailAddress",
-              groupEmailAddress,
-              "groupUpdateMode",
-              "REMOVE"),
-          MediaType.PLAIN_TEXT_UTF_8,
-          new byte[0]);
-    } else {
-      logger.atInfo().log("Removing IAP role from user %s", email);
-      iamClient.removeBinding(email, IAP_SECURED_WEB_APP_USER_ROLE);
-    }
+    User.revokeIapPermission(email, maybeGroupEmailAddress, cloudTasksUtils, iamClient);
     return String.format("Deleted user with email %s", email);
   }
 }

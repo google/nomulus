@@ -15,6 +15,8 @@
 package google.registry.tools;
 
 import static com.google.common.truth.Truth.assertThat;
+import static google.registry.model.OteAccountBuilderTest.verifyUser;
+import static google.registry.model.console.User.IAP_SECURED_WEB_APP_USER_ROLE;
 import static google.registry.model.registrar.RegistrarBase.State.ACTIVE;
 import static google.registry.model.tld.Tld.TldState.GENERAL_AVAILABILITY;
 import static google.registry.model.tld.Tld.TldState.START_DATE_SUNRISE;
@@ -26,19 +28,30 @@ import static google.registry.testing.DatabaseHelper.persistResource;
 import static org.joda.money.CurrencyUnit.USD;
 import static org.joda.time.DateTimeZone.UTC;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 
 import com.beust.jcommander.ParameterException;
+import com.google.cloud.tasks.v2.HttpMethod;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
+import google.registry.model.console.GlobalRole;
+import google.registry.model.console.User;
+import google.registry.model.console.UserDao;
+import google.registry.model.console.UserRoles;
 import google.registry.model.registrar.Registrar;
-import google.registry.model.registrar.RegistrarPoc;
 import google.registry.model.tld.Tld;
 import google.registry.model.tld.Tld.TldState;
+import google.registry.testing.CloudTasksHelper;
+import google.registry.testing.CloudTasksHelper.TaskMatcher;
 import google.registry.testing.DeterministicStringGenerator;
 import google.registry.testing.FakeClock;
 import google.registry.util.CidrAddressBlock;
 import java.security.cert.CertificateParsingException;
+import java.util.Optional;
+import javax.annotation.Nullable;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
@@ -50,22 +63,24 @@ class SetupOteCommandTest extends CommandTestCase<SetupOteCommand> {
 
   private static final String PASSWORD = "abcdefghijklmnop";
 
-  private DeterministicStringGenerator passwordGenerator =
+  private final IamClient iamClient = mock(IamClient.class);
+  private final CloudTasksHelper cloudTasksHelper = new CloudTasksHelper();
+  private final DeterministicStringGenerator passwordGenerator =
       new DeterministicStringGenerator("abcdefghijklmnopqrstuvwxyz");
 
   @BeforeEach
   void beforeEach() {
     command.passwordGenerator = passwordGenerator;
     command.clock = new FakeClock(DateTime.parse("2018-07-07TZ"));
+    command.maybeGroupEmailAddress = Optional.of("group@example.com");
+    command.cloudTasksUtils = cloudTasksHelper.getTestCloudTasksUtils();
+    command.iamClient = iamClient;
     persistPremiumList("default_sandbox_list", USD, "sandbox,USD 1000");
   }
 
   /** Verify TLD creation. */
   private void verifyTldCreation(
-      String tldName,
-      String roidSuffix,
-      TldState tldState,
-      boolean isEarlyAccess) {
+      String tldName, String roidSuffix, TldState tldState, boolean isEarlyAccess) {
     Tld registry = Tld.get(tldName);
     assertThat(registry).isNotNull();
     assertThat(registry.getRoidSuffix()).isEqualTo(roidSuffix);
@@ -107,13 +122,28 @@ class SetupOteCommandTest extends CommandTestCase<SetupOteCommand> {
     assertThat(registrar.getClientCertificateHash()).hasValue(SAMPLE_CERT_HASH);
   }
 
-  private void verifyRegistrarContactCreation(String registrarName, String email) {
-    ImmutableSet<RegistrarPoc> registrarPocs = loadRegistrar(registrarName).getContacts();
-    assertThat(registrarPocs).hasSize(1);
-    RegistrarPoc registrarPoc = registrarPocs.stream().findAny().get();
-    assertThat(registrarPoc.getEmailAddress()).isEqualTo(email);
-    assertThat(registrarPoc.getName()).isEqualTo(email);
-    assertThat(registrarPoc.getLoginEmailAddress()).isEqualTo(email);
+  private void verifyIapPermission(@Nullable String emailAddress) {
+    if (emailAddress == null) {
+      cloudTasksHelper.assertNoTasksEnqueued("console-user-group-update");
+      verifyNoInteractions(iamClient);
+    } else {
+      String groupEmailAddress = command.maybeGroupEmailAddress.orElse(null);
+      if (groupEmailAddress == null) {
+        cloudTasksHelper.assertNoTasksEnqueued("console-user-group-update");
+        verify(iamClient).addBinding(emailAddress, IAP_SECURED_WEB_APP_USER_ROLE);
+      } else {
+        cloudTasksHelper.assertTasksEnqueued(
+            "console-user-group-update",
+            new TaskMatcher()
+                .service("TOOLS")
+                .method(HttpMethod.POST)
+                .path("/_dr/admin/updateUserGroup")
+                .param("userEmailAddress", emailAddress)
+                .param("groupEmailAddress", groupEmailAddress)
+                .param("groupUpdateMode", "ADD"));
+        verifyNoInteractions(iamClient);
+      }
+    }
   }
 
   @Test
@@ -136,10 +166,12 @@ class SetupOteCommandTest extends CommandTestCase<SetupOteCommand> {
     verifyRegistrarCreation("blobio-4", "blobio-ga", PASSWORD, ipAddress);
     verifyRegistrarCreation("blobio-5", "blobio-eap", PASSWORD, ipAddress);
 
-    verifyRegistrarContactCreation("blobio-1", "contact@email.com");
-    verifyRegistrarContactCreation("blobio-3", "contact@email.com");
-    verifyRegistrarContactCreation("blobio-4", "contact@email.com");
-    verifyRegistrarContactCreation("blobio-5", "contact@email.com");
+    verifyUser("blobio-1", "contact@email.com");
+    verifyUser("blobio-3", "contact@email.com");
+    verifyUser("blobio-4", "contact@email.com");
+    verifyUser("blobio-5", "contact@email.com");
+
+    verifyIapPermission("contact@email.com");
   }
 
   @Test
@@ -162,10 +194,12 @@ class SetupOteCommandTest extends CommandTestCase<SetupOteCommand> {
     verifyRegistrarCreation("abc-4", "abc-ga", PASSWORD, ipAddress);
     verifyRegistrarCreation("abc-5", "abc-eap", PASSWORD, ipAddress);
 
-    verifyRegistrarContactCreation("abc-1", "abc@email.com");
-    verifyRegistrarContactCreation("abc-3", "abc@email.com");
-    verifyRegistrarContactCreation("abc-4", "abc@email.com");
-    verifyRegistrarContactCreation("abc-5", "abc@email.com");
+    verifyUser("abc-1", "abc@email.com");
+    verifyUser("abc-3", "abc@email.com");
+    verifyUser("abc-4", "abc@email.com");
+    verifyUser("abc-5", "abc@email.com");
+
+    verifyIapPermission("abc@email.com");
   }
 
   @Test
@@ -180,19 +214,20 @@ class SetupOteCommandTest extends CommandTestCase<SetupOteCommand> {
     verifyTldCreation("blobio-ga", "BLOBIOG2", GENERAL_AVAILABILITY, false);
     verifyTldCreation("blobio-eap", "BLOBIOE3", GENERAL_AVAILABILITY, true);
 
-    ImmutableList<CidrAddressBlock> ipAddresses = ImmutableList.of(
-        CidrAddressBlock.create("1.1.1.1"),
-        CidrAddressBlock.create("2.2.2.2"));
+    ImmutableList<CidrAddressBlock> ipAddresses =
+        ImmutableList.of(CidrAddressBlock.create("1.1.1.1"), CidrAddressBlock.create("2.2.2.2"));
 
     verifyRegistrarCreation("blobio-1", "blobio-sunrise", PASSWORD, ipAddresses);
     verifyRegistrarCreation("blobio-3", "blobio-ga", PASSWORD, ipAddresses);
     verifyRegistrarCreation("blobio-4", "blobio-ga", PASSWORD, ipAddresses);
     verifyRegistrarCreation("blobio-5", "blobio-eap", PASSWORD, ipAddresses);
 
-    verifyRegistrarContactCreation("blobio-1", "contact@email.com");
-    verifyRegistrarContactCreation("blobio-3", "contact@email.com");
-    verifyRegistrarContactCreation("blobio-4", "contact@email.com");
-    verifyRegistrarContactCreation("blobio-5", "contact@email.com");
+    verifyUser("blobio-1", "contact@email.com");
+    verifyUser("blobio-3", "contact@email.com");
+    verifyUser("blobio-4", "contact@email.com");
+    verifyUser("blobio-5", "contact@email.com");
+
+    verifyIapPermission("contact@email.com");
   }
 
   @Test
@@ -206,6 +241,7 @@ class SetupOteCommandTest extends CommandTestCase<SetupOteCommand> {
                     "--email=contact@email.com",
                     "--certfile=" + getCertFilename()));
     assertThat(thrown).hasMessageThat().contains("option is required: [-a | --ip_allow_list]");
+    verifyIapPermission(null);
   }
 
   @Test
@@ -219,6 +255,7 @@ class SetupOteCommandTest extends CommandTestCase<SetupOteCommand> {
                     "--email=contact@email.com",
                     "--certfile=" + getCertFilename()));
     assertThat(thrown).hasMessageThat().contains("option is required: [-r | --registrar]");
+    verifyIapPermission(null);
   }
 
   @Test
@@ -232,6 +269,7 @@ class SetupOteCommandTest extends CommandTestCase<SetupOteCommand> {
     assertThat(thrown)
         .hasMessageThat()
         .contains("Must specify exactly one client certificate file.");
+    verifyIapPermission(null);
   }
 
   @Test
@@ -245,6 +283,36 @@ class SetupOteCommandTest extends CommandTestCase<SetupOteCommand> {
                     "--certfile=" + getCertFilename(),
                     "--registrar=blobio"));
     assertThat(thrown).hasMessageThat().contains("option is required: [--email]");
+    verifyIapPermission(null);
+  }
+
+  @Test
+  void testSuccess_noConsoleUserGroup() throws Exception {
+    command.maybeGroupEmailAddress = Optional.empty();
+    runCommandForced(
+        "--ip_allow_list=1.1.1.1",
+        "--registrar=blobio",
+        "--email=contact@email.com",
+        "--certfile=" + getCertFilename());
+
+    verifyTldCreation("blobio-sunrise", "BLOBIOS0", START_DATE_SUNRISE, false);
+    verifyTldCreation("blobio-ga", "BLOBIOG2", GENERAL_AVAILABILITY, false);
+    verifyTldCreation("blobio-eap", "BLOBIOE3", GENERAL_AVAILABILITY, true);
+
+    ImmutableList<CidrAddressBlock> ipAddress =
+        ImmutableList.of(CidrAddressBlock.create("1.1.1.1"));
+
+    verifyRegistrarCreation("blobio-1", "blobio-sunrise", PASSWORD, ipAddress);
+    verifyRegistrarCreation("blobio-3", "blobio-ga", PASSWORD, ipAddress);
+    verifyRegistrarCreation("blobio-4", "blobio-ga", PASSWORD, ipAddress);
+    verifyRegistrarCreation("blobio-5", "blobio-eap", PASSWORD, ipAddress);
+
+    verifyUser("blobio-1", "contact@email.com");
+    verifyUser("blobio-3", "contact@email.com");
+    verifyUser("blobio-4", "contact@email.com");
+    verifyUser("blobio-5", "contact@email.com");
+
+    verifyIapPermission("contact@email.com");
   }
 
   @Test
@@ -259,6 +327,7 @@ class SetupOteCommandTest extends CommandTestCase<SetupOteCommand> {
                     "--email=contact@email.com",
                     "--certfile=/dev/null"));
     assertThat(thrown).hasMessageThat().contains("No X509Certificate found");
+    verifyIapPermission(null);
   }
 
   @Test
@@ -273,6 +342,7 @@ class SetupOteCommandTest extends CommandTestCase<SetupOteCommand> {
                     "--email=contact@email.com",
                     "--certfile=" + getCertFilename()));
     assertThat(thrown).hasMessageThat().contains("Invalid registrar name: 3blo-bio");
+    verifyIapPermission(null);
   }
 
   @Test
@@ -287,6 +357,7 @@ class SetupOteCommandTest extends CommandTestCase<SetupOteCommand> {
                     "--email=contact@email.com",
                     "--certfile=" + getCertFilename()));
     assertThat(thrown).hasMessageThat().contains("Invalid registrar name: bl");
+    verifyIapPermission(null);
   }
 
   @Test
@@ -301,6 +372,7 @@ class SetupOteCommandTest extends CommandTestCase<SetupOteCommand> {
                     "--email=contact@email.com",
                     "--certfile=" + getCertFilename()));
     assertThat(thrown).hasMessageThat().contains("Invalid registrar name: blobiotoooolong");
+    verifyIapPermission(null);
   }
 
   @Test
@@ -315,6 +387,7 @@ class SetupOteCommandTest extends CommandTestCase<SetupOteCommand> {
                     "--email=contact@email.com",
                     "--certfile=" + getCertFilename()));
     assertThat(thrown).hasMessageThat().contains("Invalid registrar name: blo#bio");
+    verifyIapPermission(null);
   }
 
   @Test
@@ -330,6 +403,7 @@ class SetupOteCommandTest extends CommandTestCase<SetupOteCommand> {
                     "--email=contact@email.com",
                     "--certfile=" + getCertFilename()));
     assertThat(thrown).hasMessageThat().contains("VKey<Tld>(sql:blobio-sunrise)");
+    verifyIapPermission(null);
   }
 
   @Test
@@ -345,6 +419,8 @@ class SetupOteCommandTest extends CommandTestCase<SetupOteCommand> {
 
     verifyTldCreation("blobio-sunrise", "BLOBIOS0", START_DATE_SUNRISE, false);
     verifyTldCreation("blobio-ga", "BLOBIOG2", GENERAL_AVAILABILITY, false);
+
+    verifyIapPermission("contact@email.com");
   }
 
   @Test
@@ -366,6 +442,28 @@ class SetupOteCommandTest extends CommandTestCase<SetupOteCommand> {
                     "--email=contact@email.com",
                     "--certfile=" + getCertFilename()));
     assertThat(thrown).hasMessageThat().contains("VKey<Registrar>(sql:blobio-1)");
+    verifyIapPermission(null);
+  }
+
+  @Test
+  void testFailure_userExists() {
+    User user =
+        new User.Builder()
+            .setEmailAddress("contact@email.com")
+            .setUserRoles(new UserRoles.Builder().setGlobalRole(GlobalRole.FTE).build())
+            .build();
+    UserDao.saveUser(user);
+    IllegalStateException thrown =
+        assertThrows(
+            IllegalStateException.class,
+            () ->
+                runCommandForced(
+                    "--ip_allow_list=1.1.1.1",
+                    "--registrar=blobio",
+                    "--email=contact@email.com",
+                    "--certfile=" + getCertFilename()));
+    assertThat(thrown).hasMessageThat().contains("Found existing users: {contact@email.com");
+    verifyIapPermission(null);
   }
 
   @Test
@@ -385,10 +483,46 @@ class SetupOteCommandTest extends CommandTestCase<SetupOteCommand> {
         "--email=contact@email.com",
         "--certfile=" + getCertFilename());
 
-    ImmutableList<CidrAddressBlock> ipAddress = ImmutableList.of(
-        CidrAddressBlock.create("1.1.1.1"));
+    ImmutableList<CidrAddressBlock> ipAddress =
+        ImmutableList.of(CidrAddressBlock.create("1.1.1.1"));
 
     verifyRegistrarCreation("blobio-1", "blobio-sunrise", PASSWORD, ipAddress);
     verifyRegistrarCreation("blobio-3", "blobio-ga", PASSWORD, ipAddress);
+
+    verifyIapPermission("contact@email.com");
+  }
+
+  @Test
+  void testSuccess_userExists_replaceExisting() throws Exception {
+    User user =
+        new User.Builder()
+            .setEmailAddress("contact@email.com")
+            .setUserRoles(new UserRoles.Builder().setGlobalRole(GlobalRole.FTE).build())
+            .build();
+    UserDao.saveUser(user);
+
+    runCommandForced(
+        "--overwrite",
+        "--ip_allow_list=1.1.1.1",
+        "--registrar=blobio",
+        "--email=contact@email.com",
+        "--certfile=" + getCertFilename());
+
+    ImmutableList<CidrAddressBlock> ipAddress =
+        ImmutableList.of(CidrAddressBlock.create("1.1.1.1"));
+
+    verifyRegistrarCreation("blobio-1", "blobio-sunrise", PASSWORD, ipAddress);
+    verifyRegistrarCreation("blobio-3", "blobio-ga", PASSWORD, ipAddress);
+
+    verifyUser("blobio-1", "contact@email.com");
+    verifyUser("blobio-3", "contact@email.com");
+    verifyUser("blobio-4", "contact@email.com");
+    verifyUser("blobio-5", "contact@email.com");
+
+    // verify that the role is completely replaced, e.g., the global role is gone.
+    assertThat(UserDao.loadUser("contact@email.com").get().getUserRoles().getGlobalRole())
+        .isEqualTo(GlobalRole.NONE);
+
+    verifyIapPermission("contact@email.com");
   }
 }

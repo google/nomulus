@@ -15,6 +15,7 @@
 package google.registry.model;
 
 import static com.google.common.truth.Truth.assertThat;
+import static google.registry.model.console.User.IAP_SECURED_WEB_APP_USER_ROLE;
 import static google.registry.model.tld.Tld.TldState.GENERAL_AVAILABILITY;
 import static google.registry.model.tld.Tld.TldState.START_DATE_SUNRISE;
 import static google.registry.persistence.transaction.JpaTransactionManagerExtension.makeRegistrar1;
@@ -26,16 +27,28 @@ import static google.registry.testing.DatabaseHelper.persistSimpleResource;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static org.joda.money.CurrencyUnit.USD;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 
+import com.google.cloud.tasks.v2.HttpMethod;
 import com.google.common.collect.ImmutableList;
+import google.registry.batch.CloudTasksUtils;
+import google.registry.model.console.RegistrarRole;
+import google.registry.model.console.User;
+import google.registry.model.console.UserDao;
 import google.registry.model.registrar.Registrar;
-import google.registry.model.registrar.RegistrarPoc;
 import google.registry.model.tld.Tld;
 import google.registry.model.tld.Tld.TldState;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
+import google.registry.testing.CloudTasksHelper;
+import google.registry.testing.CloudTasksHelper.TaskMatcher;
+import google.registry.tools.IamClient;
 import google.registry.util.CidrAddressBlock;
 import google.registry.util.SystemClock;
+import java.util.Optional;
+import javax.annotation.Nullable;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
@@ -49,6 +62,9 @@ public final class OteAccountBuilderTest {
   @RegisterExtension
   final JpaIntegrationTestExtension jpa =
       new JpaTestExtensions.Builder().buildIntegrationTestExtension();
+
+  private final CloudTasksHelper cloudTasksHelper = new CloudTasksHelper();
+  private final IamClient iamClient = mock(IamClient.class);
 
   @Test
   void testGetRegistrarToTldMap() {
@@ -89,23 +105,63 @@ public final class OteAccountBuilderTest {
     assertThat(registrar.getAllowedTlds()).containsExactly(tld);
   }
 
-  private static void assertContactExists(String registrarId, String email) {
-    Registrar registrar = Registrar.loadByRegistrarId(registrarId).get();
-    assertThat(registrar.getContacts().stream().map(RegistrarPoc::getEmailAddress)).contains(email);
-    RegistrarPoc contact =
-        registrar.getContacts().stream()
-            .filter(c -> email.equals(c.getEmailAddress()))
-            .findAny()
-            .get();
-    assertThat(contact.getEmailAddress()).isEqualTo(email);
-    assertThat(contact.getLoginEmailAddress()).isEqualTo(email);
+  public static void verifyUser(String registrarId, String email) {
+    Optional<User> maybeUser = UserDao.loadUser(email);
+    assertThat(maybeUser).isPresent();
+    assertThat(maybeUser.get().getUserRoles().getRegistrarRoles().get(registrarId))
+        .isEqualTo(RegistrarRole.ACCOUNT_MANAGER);
+  }
+
+  public static void verifyIapPermission(
+      @Nullable String emailAddress,
+      Optional<String> maybeGroupEmailAddress,
+      CloudTasksHelper cloudTasksHelper,
+      IamClient iamClient) {
+    if (emailAddress == null) {
+      cloudTasksHelper.assertNoTasksEnqueued("console-user-group-update");
+      verifyNoInteractions(iamClient);
+    } else {
+      String groupEmailAddress = maybeGroupEmailAddress.orElse(null);
+      if (groupEmailAddress == null) {
+        cloudTasksHelper.assertNoTasksEnqueued("console-user-group-update");
+        verify(iamClient).addBinding(emailAddress, IAP_SECURED_WEB_APP_USER_ROLE);
+      } else {
+        cloudTasksHelper.assertTasksEnqueued(
+            "console-user-group-update",
+            new TaskMatcher()
+                .service("TOOLS")
+                .method(HttpMethod.POST)
+                .path("/_dr/admin/updateUserGroup")
+                .param("userEmailAddress", emailAddress)
+                .param("groupEmailAddress", groupEmailAddress)
+                .param("groupUpdateMode", "ADD"));
+        verifyNoInteractions(iamClient);
+      }
+    }
+  }
+
+  @Test
+  void testUpdateUserGroup() {
+    CloudTasksUtils cloudTasksUtils = cloudTasksHelper.getTestCloudTasksUtils();
+    OteAccountBuilder.forRegistrarId("myclientid")
+        .addUser("email@example.com")
+        .grantIapPermission(Optional.of("console@example.com"), cloudTasksUtils, iamClient);
+    verifyIapPermission(
+        "email@example.com", Optional.of("console@example.com"), cloudTasksHelper, iamClient);
+  }
+
+  @Test
+  void testGrantIndividualPermission() {
+    CloudTasksUtils cloudTasksUtils = cloudTasksHelper.getTestCloudTasksUtils();
+    OteAccountBuilder.forRegistrarId("myclientid")
+        .addUser("email@example.com")
+        .grantIapPermission(Optional.empty(), cloudTasksUtils, iamClient);
+    verifyIapPermission("email@example.com", Optional.empty(), cloudTasksHelper, iamClient);
   }
 
   @Test
   void testCreateOteEntities_success() {
-    OteAccountBuilder.forRegistrarId("myclientid")
-        .addContact("email@example.com")
-        .buildAndPersist();
+    OteAccountBuilder.forRegistrarId("myclientid").addUser("email@example.com").buildAndPersist();
 
     assertTldExists("myclientid-sunrise", START_DATE_SUNRISE, Money.zero(USD));
     assertTldExists("myclientid-ga", GENERAL_AVAILABILITY, Money.zero(USD));
@@ -114,18 +170,18 @@ public final class OteAccountBuilderTest {
     assertRegistrarExists("myclientid-3", "myclientid-ga");
     assertRegistrarExists("myclientid-4", "myclientid-ga");
     assertRegistrarExists("myclientid-5", "myclientid-eap");
-    assertContactExists("myclientid-1", "email@example.com");
-    assertContactExists("myclientid-3", "email@example.com");
-    assertContactExists("myclientid-4", "email@example.com");
-    assertContactExists("myclientid-5", "email@example.com");
+    verifyUser("myclientid-1", "email@example.com");
+    verifyUser("myclientid-3", "email@example.com");
+    verifyUser("myclientid-4", "email@example.com");
+    verifyUser("myclientid-5", "email@example.com");
   }
 
   @Test
   void testCreateOteEntities_multipleContacts_success() {
     OteAccountBuilder.forRegistrarId("myclientid")
-        .addContact("email@example.com")
-        .addContact("other@example.com")
-        .addContact("someone@example.com")
+        .addUser("email@example.com")
+        .addUser("other@example.com")
+        .addUser("someone@example.com")
         .buildAndPersist();
 
     assertTldExists("myclientid-sunrise", START_DATE_SUNRISE, Money.zero(USD));
@@ -135,18 +191,18 @@ public final class OteAccountBuilderTest {
     assertRegistrarExists("myclientid-3", "myclientid-ga");
     assertRegistrarExists("myclientid-4", "myclientid-ga");
     assertRegistrarExists("myclientid-5", "myclientid-eap");
-    assertContactExists("myclientid-1", "email@example.com");
-    assertContactExists("myclientid-3", "email@example.com");
-    assertContactExists("myclientid-4", "email@example.com");
-    assertContactExists("myclientid-5", "email@example.com");
-    assertContactExists("myclientid-1", "other@example.com");
-    assertContactExists("myclientid-3", "other@example.com");
-    assertContactExists("myclientid-4", "other@example.com");
-    assertContactExists("myclientid-5", "other@example.com");
-    assertContactExists("myclientid-1", "someone@example.com");
-    assertContactExists("myclientid-3", "someone@example.com");
-    assertContactExists("myclientid-4", "someone@example.com");
-    assertContactExists("myclientid-5", "someone@example.com");
+    verifyUser("myclientid-1", "email@example.com");
+    verifyUser("myclientid-3", "email@example.com");
+    verifyUser("myclientid-4", "email@example.com");
+    verifyUser("myclientid-5", "email@example.com");
+    verifyUser("myclientid-1", "other@example.com");
+    verifyUser("myclientid-3", "other@example.com");
+    verifyUser("myclientid-4", "other@example.com");
+    verifyUser("myclientid-5", "other@example.com");
+    verifyUser("myclientid-1", "someone@example.com");
+    verifyUser("myclientid-3", "someone@example.com");
+    verifyUser("myclientid-4", "someone@example.com");
+    verifyUser("myclientid-5", "someone@example.com");
   }
 
   @Test
@@ -223,7 +279,7 @@ public final class OteAccountBuilderTest {
     OteAccountBuilder oteSetupHelper = OteAccountBuilder.forRegistrarId("myclientid");
 
     IllegalStateException thrown =
-        assertThrows(IllegalStateException.class, () -> oteSetupHelper.buildAndPersist());
+        assertThrows(IllegalStateException.class, oteSetupHelper::buildAndPersist);
     assertThat(thrown)
         .hasMessageThat()
         .contains("Found existing object(s) conflicting with OT&E objects");
@@ -236,7 +292,7 @@ public final class OteAccountBuilderTest {
     OteAccountBuilder oteSetupHelper = OteAccountBuilder.forRegistrarId("myclientid");
 
     IllegalStateException thrown =
-        assertThrows(IllegalStateException.class, () -> oteSetupHelper.buildAndPersist());
+        assertThrows(IllegalStateException.class, oteSetupHelper::buildAndPersist);
     assertThat(thrown)
         .hasMessageThat()
         .contains("Found existing object(s) conflicting with OT&E objects");
@@ -261,7 +317,7 @@ public final class OteAccountBuilderTest {
   void testCreateOteEntities_doubleCreation_actuallyReplaces() {
     OteAccountBuilder.forRegistrarId("myclientid")
         .setPassword("oldPassword")
-        .addContact("email@example.com")
+        .addUser("email@example.com")
         .buildAndPersist();
 
     assertThat(Registrar.loadByRegistrarId("myclientid-3").get().verifyPassword("oldPassword"))
@@ -269,7 +325,7 @@ public final class OteAccountBuilderTest {
 
     OteAccountBuilder.forRegistrarId("myclientid")
         .setPassword("newPassword")
-        .addContact("email@example.com")
+        .addUser("email@example.com")
         .setReplaceExisting(true)
         .buildAndPersist();
 
@@ -281,19 +337,17 @@ public final class OteAccountBuilderTest {
 
   @Test
   void testCreateOteEntities_doubleCreation_keepsOldContacts() {
-    OteAccountBuilder.forRegistrarId("myclientid")
-        .addContact("email@example.com")
-        .buildAndPersist();
+    OteAccountBuilder.forRegistrarId("myclientid").addUser("email@example.com").buildAndPersist();
 
-    assertContactExists("myclientid-3", "email@example.com");
+    verifyUser("myclientid-3", "email@example.com");
 
     OteAccountBuilder.forRegistrarId("myclientid")
-        .addContact("other@example.com")
+        .addUser("other@example.com")
         .setReplaceExisting(true)
         .buildAndPersist();
 
-    assertContactExists("myclientid-3", "other@example.com");
-    assertContactExists("myclientid-3", "email@example.com");
+    verifyUser("myclientid-3", "other@example.com");
+    verifyUser("myclientid-3", "email@example.com");
   }
 
   @Test
@@ -338,4 +392,6 @@ public final class OteAccountBuilderTest {
         .hasMessageThat()
         .isEqualTo("ID myclientid-7 is not one of the OT&E registrar IDs for base myclientid");
   }
+
+
 }
