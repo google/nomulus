@@ -24,6 +24,8 @@ import com.google.common.base.Supplier;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.flogger.FluentLogger;
 import com.google.template.soy.tofu.SoyTofu;
+import google.registry.batch.CloudTasksUtils;
+import google.registry.config.RegistryConfig.Config;
 import google.registry.model.OteAccountBuilder;
 import google.registry.request.Action;
 import google.registry.request.Action.Method;
@@ -31,6 +33,7 @@ import google.registry.request.HttpException.BadRequestException;
 import google.registry.request.Parameter;
 import google.registry.request.auth.Auth;
 import google.registry.request.auth.AuthenticatedRegistrarAccessor;
+import google.registry.tools.IamClient;
 import google.registry.ui.server.SendEmailUtils;
 import google.registry.ui.server.SoyTemplateUtils;
 import google.registry.ui.soy.registrar.OteSetupConsoleSoyInfo;
@@ -87,6 +90,14 @@ public final class ConsoleOteSetupAction extends HtmlAction {
   @Parameter("password")
   Optional<String> optionalPassword;
 
+  @Inject CloudTasksUtils cloudTasksUtils;
+
+  @Inject IamClient iamClient;
+
+  @Inject
+  @Config("gSuiteConsoleUserGroupEmailAddress")
+  Optional<String> maybeGroupEmailAddress;
+
   @Inject
   ConsoleOteSetupAction() {}
 
@@ -107,16 +118,11 @@ public final class ConsoleOteSetupAction extends HtmlAction {
       return;
     }
     switch (method) {
-      case POST -> {
-        runPost(data);
-      }
-      case GET -> {
-        runGet(data);
-      }
-      default -> {
-        throw new BadRequestException(
-            String.format("Action cannot be called with method %s", method));
-      }
+      case POST -> runPost(data);
+      case GET -> runGet(data);
+      default ->
+          throw new BadRequestException(
+              String.format("Action cannot be called with method %s", method));
     }
   }
 
@@ -133,11 +139,13 @@ public final class ConsoleOteSetupAction extends HtmlAction {
       data.put("contactEmail", email.get());
 
       String password = optionalPassword.orElse(passwordGenerator.createString(PASSWORD_LENGTH));
-      ImmutableMap<String, String> clientIdToTld =
+      OteAccountBuilder oteAccountBuilder =
           OteAccountBuilder.forRegistrarId(clientId.get())
-              .addContact(email.get())
-              .setPassword(password)
-              .buildAndPersist();
+              .addUser(email.get())
+              .setPassword(password);
+      ImmutableMap<String, String> clientIdToTld = oteAccountBuilder.buildAndPersist();
+
+      oteAccountBuilder.grantIapPermission(maybeGroupEmailAddress, cloudTasksUtils, iamClient);
 
       sendExternalUpdates(clientIdToTld);
 

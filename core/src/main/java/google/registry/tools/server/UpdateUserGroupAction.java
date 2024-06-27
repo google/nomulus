@@ -34,6 +34,7 @@ import javax.inject.Inject;
 public class UpdateUserGroupAction implements Runnable {
 
   public static final String PATH = "/_dr/admin/updateUserGroup";
+  public static final String GROUP_UPDATE_QUEUE = "console-user-group-update";
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
@@ -53,7 +54,7 @@ public class UpdateUserGroupAction implements Runnable {
   @Inject
   UpdateUserGroupAction() {}
 
-  enum Mode {
+  public enum Mode {
     ADD,
     REMOVE
   }

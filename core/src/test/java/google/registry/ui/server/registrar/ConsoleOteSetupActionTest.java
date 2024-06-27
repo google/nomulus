@@ -15,11 +15,14 @@
 package google.registry.ui.server.registrar;
 
 import static com.google.common.truth.Truth.assertThat;
+import static google.registry.model.OteAccountBuilderTest.verifyIapPermission;
+import static google.registry.model.OteAccountBuilderTest.verifyUser;
 import static google.registry.model.registrar.Registrar.loadByRegistrarId;
 import static google.registry.testing.DatabaseHelper.persistPremiumList;
 import static jakarta.servlet.http.HttpServletResponse.SC_UNAUTHORIZED;
 import static org.joda.money.CurrencyUnit.USD;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
 import com.google.common.collect.ImmutableList;
@@ -35,10 +38,12 @@ import google.registry.request.Action.Method;
 import google.registry.request.auth.AuthResult;
 import google.registry.request.auth.AuthenticatedRegistrarAccessor;
 import google.registry.security.XsrfTokenManager;
+import google.registry.testing.CloudTasksHelper;
 import google.registry.testing.DeterministicStringGenerator;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeResponse;
 import google.registry.testing.SystemPropertyExtension;
+import google.registry.tools.IamClient;
 import google.registry.ui.server.SendEmailUtils;
 import google.registry.util.EmailMessage;
 import google.registry.util.RegistryEnvironment;
@@ -65,6 +70,8 @@ public final class ConsoleOteSetupActionTest {
   @Order(value = Integer.MAX_VALUE)
   final SystemPropertyExtension systemPropertyExtension = new SystemPropertyExtension();
 
+  private final IamClient iamClient = mock(IamClient.class);
+  private final CloudTasksHelper cloudTasksHelper = new CloudTasksHelper();
   private final FakeResponse response = new FakeResponse();
   private final ConsoleOteSetupAction action = new ConsoleOteSetupAction();
   private final User user =
@@ -100,6 +107,9 @@ public final class ConsoleOteSetupActionTest {
 
     action.optionalPassword = Optional.empty();
     action.passwordGenerator = new DeterministicStringGenerator("abcdefghijklmnopqrstuvwxyz");
+    action.maybeGroupEmailAddress = Optional.of("group@example.com");
+    action.cloudTasksUtils = cloudTasksHelper.getTestCloudTasksUtils();
+    action.iamClient = iamClient;
   }
 
   @Test
@@ -142,9 +152,7 @@ public final class ConsoleOteSetupActionTest {
     // checking that all the entities are there or that they have the correct values.
     assertThat(loadByRegistrarId("myclientid-3")).isPresent();
     assertThat(Tld.get("myclientid-ga")).isNotNull();
-    assertThat(
-            loadByRegistrarId("myclientid-5").get().getContacts().asList().get(0).getEmailAddress())
-        .isEqualTo("contact@registry.example");
+    verifyUser("myclientid-5", "contact@registry.example");
     assertThat(response.getPayload())
         .contains("<h1>OT&E successfully created for registrar myclientid!</h1>");
     ArgumentCaptor<EmailMessage> contentCaptor = ArgumentCaptor.forClass(EmailMessage.class);
@@ -163,6 +171,14 @@ public final class ConsoleOteSetupActionTest {
                 Gave user contact@registry.example web access to these Registrars
                 """);
     assertThat(response.getPayload()).contains("gtag('config', 'sampleId')");
+    verifyIapPermission(
+        "contact@registry.example", action.maybeGroupEmailAddress, cloudTasksHelper, iamClient);
+  }
+
+  @Test
+  void testPost_authorized_noConsoleGroup() {
+    action.maybeGroupEmailAddress = Optional.empty();
+    testPost_authorized();
   }
 
   @Test

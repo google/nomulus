@@ -15,29 +15,24 @@
 package google.registry.tools;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static google.registry.model.console.User.grantIapPermission;
 
 import com.beust.jcommander.Parameters;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.flogger.FluentLogger;
-import com.google.common.net.MediaType;
+import google.registry.batch.CloudTasksUtils;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.model.console.User;
 import google.registry.model.console.UserDao;
-import google.registry.tools.server.UpdateUserGroupAction;
 import java.util.Optional;
 import javax.annotation.Nullable;
 import javax.inject.Inject;
 
 /** Command to create a new User. */
 @Parameters(separators = " =", commandDescription = "Update a user account")
-public class CreateUserCommand extends CreateOrUpdateUserCommand implements CommandWithConnection {
-
-  static final String IAP_SECURED_WEB_APP_USER_ROLE = "roles/iap.httpsResourceAccessor";
-  static final FluentLogger logger = FluentLogger.forEnclosingClass();
-
-  private ServiceConnection connection;
+public class CreateUserCommand extends CreateOrUpdateUserCommand {
 
   @Inject IamClient iamClient;
+
+  @Inject CloudTasksUtils cloudTasksUtils;
 
   @Inject
   @Config("gSuiteConsoleUserGroupEmailAddress")
@@ -53,29 +48,7 @@ public class CreateUserCommand extends CreateOrUpdateUserCommand implements Comm
   @Override
   protected String execute() throws Exception {
     String ret = super.execute();
-    String groupEmailAddress = maybeGroupEmailAddress.orElse(null);
-    if (groupEmailAddress != null) {
-      logger.atInfo().log("Adding %s to group %s", email, groupEmailAddress);
-      connection.sendPostRequest(
-          UpdateUserGroupAction.PATH,
-          ImmutableMap.of(
-              "userEmailAddress",
-              email,
-              "groupEmailAddress",
-              groupEmailAddress,
-              "groupUpdateMode",
-              "ADD"),
-          MediaType.PLAIN_TEXT_UTF_8,
-          new byte[0]);
-    } else {
-      logger.atInfo().log("Granting IAP role to user %s", email);
-      iamClient.addBinding(email, IAP_SECURED_WEB_APP_USER_ROLE);
-    }
+    grantIapPermission(email, maybeGroupEmailAddress, cloudTasksUtils, iamClient);
     return ret;
-  }
-
-  @Override
-  public void setConnection(ServiceConnection connection) {
-    this.connection = connection;
   }
 }
