@@ -15,16 +15,17 @@
 package google.registry.tools;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.tools.CreateUserCommand.IAP_SECURED_WEB_APP_USER_ROLE;
+import static google.registry.model.console.UserBase.IAP_SECURED_WEB_APP_USER_ROLE;
 import static org.junit.Assert.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 
-import com.google.common.collect.ImmutableMap;
-import com.google.common.net.MediaType;
+import com.google.cloud.tasks.v2.HttpMethod;
 import google.registry.model.console.UserDao;
+import google.registry.testing.CloudTasksHelper;
+import google.registry.testing.CloudTasksHelper.TaskMatcher;
 import google.registry.testing.DatabaseHelper;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
@@ -34,13 +35,13 @@ import org.junit.jupiter.api.Test;
 public class DeleteUserCommandTest extends CommandTestCase<DeleteUserCommand> {
 
   private final IamClient iamClient = mock(IamClient.class);
-  private final ServiceConnection connection = mock(ServiceConnection.class);
+  private final CloudTasksHelper cloudTasksHelper = new CloudTasksHelper();
 
   @BeforeEach
   void beforeEach() {
     command.iamClient = iamClient;
-    command.setConnection(connection);
     command.maybeGroupEmailAddress = Optional.empty();
+    command.cloudTasksUtils = cloudTasksHelper.getTestCloudTasksUtils();
   }
 
   @Test
@@ -51,7 +52,7 @@ public class DeleteUserCommandTest extends CommandTestCase<DeleteUserCommand> {
     assertThat(UserDao.loadUser("email@example.test")).isEmpty();
     verify(iamClient).removeBinding("email@example.test", IAP_SECURED_WEB_APP_USER_ROLE);
     verifyNoMoreInteractions(iamClient);
-    verifyNoInteractions(connection);
+    cloudTasksHelper.assertNoTasksEnqueued("console-user-group-update");
   }
 
   @Test
@@ -61,20 +62,16 @@ public class DeleteUserCommandTest extends CommandTestCase<DeleteUserCommand> {
     assertThat(UserDao.loadUser("email@example.test")).isPresent();
     runCommandForced("--email", "email@example.test");
     assertThat(UserDao.loadUser("email@example.test")).isEmpty();
-    verify(connection)
-        .sendPostRequest(
-            "/_dr/admin/updateUserGroup",
-            ImmutableMap.of(
-                "userEmailAddress",
-                "email@example.test",
-                "groupEmailAddress",
-                "group@example.test",
-                "groupUpdateMode",
-                "REMOVE"),
-            MediaType.PLAIN_TEXT_UTF_8,
-            new byte[0]);
+    cloudTasksHelper.assertTasksEnqueued(
+        "console-user-group-update",
+        new TaskMatcher()
+            .method(HttpMethod.POST)
+            .service("TOOLS")
+            .path("/_dr/admin/updateUserGroup")
+            .param("userEmailAddress", "email@example.test")
+            .param("groupEmailAddress", "group@example.test")
+            .param("groupUpdateMode", "REMOVE"));
     verifyNoInteractions(iamClient);
-    verifyNoMoreInteractions(connection);
   }
 
   @Test
@@ -86,6 +83,6 @@ public class DeleteUserCommandTest extends CommandTestCase<DeleteUserCommand> {
         .hasMessageThat()
         .isEqualTo("Email does not correspond to a valid user");
     verifyNoInteractions(iamClient);
-    verifyNoInteractions(connection);
+    cloudTasksHelper.assertNoTasksEnqueued("console-user-group-update");
   }
 }

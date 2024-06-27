@@ -15,20 +15,22 @@
 package google.registry.tools;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.tools.CreateUserCommand.IAP_SECURED_WEB_APP_USER_ROLE;
+import static google.registry.model.console.UserBase.IAP_SECURED_WEB_APP_USER_ROLE;
 import static org.junit.Assert.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 
+import com.google.cloud.tasks.v2.HttpMethod;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
-import com.google.common.net.MediaType;
 import google.registry.model.console.GlobalRole;
 import google.registry.model.console.RegistrarRole;
 import google.registry.model.console.User;
 import google.registry.model.console.UserDao;
+import google.registry.testing.CloudTasksHelper;
+import google.registry.testing.CloudTasksHelper.TaskMatcher;
 import google.registry.testing.DatabaseHelper;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
@@ -38,13 +40,13 @@ import org.junit.jupiter.api.Test;
 public class CreateUserCommandTest extends CommandTestCase<CreateUserCommand> {
 
   private final IamClient iamClient = mock(IamClient.class);
-  private final ServiceConnection connection = mock(ServiceConnection.class);
+  private final CloudTasksHelper cloudTasksHelper = new CloudTasksHelper();
 
   @BeforeEach
   void beforeEach() {
     command.iamClient = iamClient;
     command.maybeGroupEmailAddress = Optional.empty();
-    command.setConnection(connection);
+    command.cloudTasksUtils = cloudTasksHelper.getTestCloudTasksUtils();
   }
 
   @Test
@@ -57,7 +59,7 @@ public class CreateUserCommandTest extends CommandTestCase<CreateUserCommand> {
     assertThat(onlyUser.getUserRoles().getRegistrarRoles()).isEmpty();
     verify(iamClient).addBinding("user@example.test", IAP_SECURED_WEB_APP_USER_ROLE);
     verifyNoMoreInteractions(iamClient);
-    verifyNoInteractions(connection);
+    cloudTasksHelper.assertNoTasksEnqueued("console-user-group-update");
   }
 
   @Test
@@ -69,20 +71,16 @@ public class CreateUserCommandTest extends CommandTestCase<CreateUserCommand> {
     assertThat(onlyUser.getUserRoles().isAdmin()).isFalse();
     assertThat(onlyUser.getUserRoles().getGlobalRole()).isEqualTo(GlobalRole.NONE);
     assertThat(onlyUser.getUserRoles().getRegistrarRoles()).isEmpty();
-    verify(connection)
-        .sendPostRequest(
-            "/_dr/admin/updateUserGroup",
-            ImmutableMap.of(
-                "userEmailAddress",
-                "user@example.test",
-                "groupEmailAddress",
-                "group@example.test",
-                "groupUpdateMode",
-                "ADD"),
-            MediaType.PLAIN_TEXT_UTF_8,
-            new byte[0]);
+    cloudTasksHelper.assertTasksEnqueued(
+        "console-user-group-update",
+        new TaskMatcher()
+            .method(HttpMethod.POST)
+            .service("TOOLS")
+            .path("/_dr/admin/updateUserGroup")
+            .param("userEmailAddress", "user@example.test")
+            .param("groupEmailAddress", "group@example.test")
+            .param("groupUpdateMode", "ADD"));
     verifyNoInteractions(iamClient);
-    verifyNoMoreInteractions(connection);
   }
 
   @Test
@@ -102,7 +100,7 @@ public class CreateUserCommandTest extends CommandTestCase<CreateUserCommand> {
     assertThat(UserDao.loadUser("user@example.test").get().getUserRoles().isAdmin()).isTrue();
     verify(iamClient).addBinding("user@example.test", IAP_SECURED_WEB_APP_USER_ROLE);
     verifyNoMoreInteractions(iamClient);
-    verifyNoInteractions(connection);
+    cloudTasksHelper.assertNoTasksEnqueued("console-user-group-update");
   }
 
   @Test
@@ -112,7 +110,7 @@ public class CreateUserCommandTest extends CommandTestCase<CreateUserCommand> {
         .isEqualTo(GlobalRole.FTE);
     verify(iamClient).addBinding("user@example.test", IAP_SECURED_WEB_APP_USER_ROLE);
     verifyNoMoreInteractions(iamClient);
-    verifyNoInteractions(connection);
+    cloudTasksHelper.assertNoTasksEnqueued("console-user-group-update");
   }
 
   @Test
@@ -131,7 +129,7 @@ public class CreateUserCommandTest extends CommandTestCase<CreateUserCommand> {
                 RegistrarRole.PRIMARY_CONTACT));
     verify(iamClient).addBinding("user@example.test", IAP_SECURED_WEB_APP_USER_ROLE);
     verifyNoMoreInteractions(iamClient);
-    verifyNoInteractions(connection);
+    cloudTasksHelper.assertNoTasksEnqueued("console-user-group-update");
   }
 
   @Test
@@ -146,7 +144,7 @@ public class CreateUserCommandTest extends CommandTestCase<CreateUserCommand> {
         .hasMessageThat()
         .isEqualTo("A user with email user@example.test already exists");
     verifyNoMoreInteractions(iamClient);
-    verifyNoInteractions(connection);
+    cloudTasksHelper.assertNoTasksEnqueued("console-user-group-update");
   }
 
   @Test
