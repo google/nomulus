@@ -17,6 +17,7 @@ package google.registry.model;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.ImmutableList.toImmutableList;
+import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static google.registry.model.tld.Tld.TldState.GENERAL_AVAILABILITY;
 import static google.registry.model.tld.Tld.TldState.START_DATE_SUNRISE;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
@@ -28,19 +29,28 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.collect.Sets;
 import com.google.common.collect.Streams;
+import google.registry.batch.CloudTasksUtils;
+import google.registry.model.console.RegistrarRole;
+import google.registry.model.console.User;
+import google.registry.model.console.UserDao;
+import google.registry.model.console.UserRoles;
 import google.registry.model.pricing.StaticPremiumListPricingEngine;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarAddress;
-import google.registry.model.registrar.RegistrarPoc;
 import google.registry.model.tld.Tld;
 import google.registry.model.tld.Tld.TldState;
 import google.registry.model.tld.Tld.TldType;
 import google.registry.model.tld.label.PremiumList;
 import google.registry.model.tld.label.PremiumListDao;
 import google.registry.persistence.VKey;
+import google.registry.tools.IamClient;
 import google.registry.util.CidrAddressBlock;
 import google.registry.util.RegistryEnvironment;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.regex.Pattern;
@@ -75,8 +85,8 @@ public final class OteAccountBuilder {
    * Validation regex for registrar base client IDs (3-14 lowercase alphanumeric characters).
    *
    * <p>The base client ID is appended with numbers to create four different test registrar accounts
-   * (e.g. reg-1, reg-3, reg-4, reg-5). Registrar client IDs are of type clIDType in eppcom.xsd
-   * which is limited to 16 characters, hence the limit of 14 here to account for the dash and
+   * (e.g., reg-1, reg-3, reg-4, reg-5). Registrar client IDs are of type clIDType in eppcom.xsd
+   * that is limited to 16 characters, hence the limit of 14 here to account for the dash and
    * numbers.
    *
    * <p>The base client ID is also used to generate the OT&E TLDs, hence the restriction to
@@ -113,7 +123,7 @@ public final class OteAccountBuilder {
    * The default billing account map applied to all OT&amp;E registrars.
    *
    * <p>This contains dummy values for USD and JPY so that OT&amp;E registrars can be granted access
-   * to all existing TLDs in sandbox. Note that OT&amp;E is only on sandbox and thus these dummy
+   * to all existing TLDs in sandbox. Note that OT&amp;E is only on sandbox, and thus these dummy
    * values will never be used in production (the only environment where real invoicing takes
    * place).
    */
@@ -124,7 +134,7 @@ public final class OteAccountBuilder {
   private final Tld sunriseTld;
   private final Tld gaTld;
   private final Tld eapTld;
-  private final ImmutableList.Builder<RegistrarPoc> contactsBuilder = new ImmutableList.Builder<>();
+  private final List<User> users = new ArrayList<>();
 
   private ImmutableList<Registrar> registrars;
   private boolean replaceExisting = false;
@@ -172,16 +182,28 @@ public final class OteAccountBuilder {
   }
 
   /**
-   * Adds a RegistrarContact with Web Console access.
+   * Adds a {@link User} with Web Console access.
    *
-   * <p>NOTE: can be called more than once, adding multiple contacts. Each contact will have access
-   * to all OT&amp;E Registrars.
+   * <p>NOTE: can be called more than once, adding multiple users. Each user will have access to all
+   * OT&amp;E Registrars.
    *
-   * @param email the contact/login email that will have web-console access to all the Registrars.
-   *     Must be from "our G Suite domain".
+   * @param email the login email that will have web-console access to all the Registrars. Must be
+   *     from "our Google Workspace domain".
    */
-  public OteAccountBuilder addContact(String email) {
-    registrars.forEach(registrar -> contactsBuilder.add(createRegistrarContact(email, registrar)));
+  public OteAccountBuilder addUser(String email) {
+    users.add(
+        new User.Builder()
+            .setEmailAddress(email)
+            .setUserRoles(
+                new UserRoles.Builder()
+                    .setRegistrarRoles(
+                        registrars.stream()
+                            .collect(
+                                toImmutableMap(
+                                    Registrar::getRegistrarId,
+                                    registrar -> RegistrarRole.ACCOUNT_MANAGER)))
+                    .build())
+            .build());
     return this;
   }
 
@@ -217,7 +239,7 @@ public final class OteAccountBuilder {
     return transformRegistrars(builder -> builder.setClientCertificate(asciiCert, now));
   }
 
-  /** Sets the IP allow list to all the OT&amp;E Registrars. */
+  /** Sets the IP allowlist to all the OT&amp;E Registrars. */
   public OteAccountBuilder setIpAllowList(Collection<String> ipAllowList) {
     ImmutableList<CidrAddressBlock> ipAddressAllowList =
         ipAllowList.stream().map(CidrAddressBlock::create).collect(toImmutableList());
@@ -237,27 +259,46 @@ public final class OteAccountBuilder {
   }
 
   /**
-   * Return map from the OT&amp;E registrarIds we will create to the new TLDs they will have access
-   * to.
+   * Return the map from the OT&amp;E registrarIds we will create to the new TLDs they will have
+   * access to.
    */
   public ImmutableMap<String, String> getRegistrarIdToTldMap() {
     return registrarIdToTld;
   }
 
+  /** Grants the users permission to pass IAP. */
+  public void grantIapPermission(
+      Optional<String> groupEmailAddress, CloudTasksUtils cloudTasksUtils, IamClient iamClient) {
+    for (User user : users) {
+      User.grantIapPermission(
+          user.getEmailAddress(), groupEmailAddress, cloudTasksUtils, iamClient);
+    }
+  }
+
   /** Saves all the OT&amp;E entities we created. */
   private void saveAllEntities() {
-    // use ImmutableObject instead of Registry so that the Key generation doesn't break
     ImmutableList<Tld> registries = ImmutableList.of(sunriseTld, gaTld, eapTld);
-    ImmutableList<RegistrarPoc> contacts = contactsBuilder.build();
+    Map<String, User> existingUsers = new HashMap<>();
+
+    for (User user : users) {
+      String email = user.getEmailAddress();
+      Optional<User> existingUser = UserDao.loadUser(email);
+      existingUser.ifPresent(value -> existingUsers.put(email, value));
+    }
+
+    if (!replaceExisting) {
+      checkState(existingUsers.isEmpty(), "Found existing users: %s", existingUsers);
+    }
 
     tm().transact(
             () -> {
+              // The users have to have unique email addresses regardless of the value of
+              // replaceExisting, as the uniqueness is enforced by UserDao.
               if (!replaceExisting) {
                 ImmutableList<VKey<? extends ImmutableObject>> keys =
                     Streams.concat(
                             registries.stream().map(tld -> Tld.createVKey(tld.getTldStr())),
-                            registrars.stream().map(Registrar::createVKey),
-                            contacts.stream().map(RegistrarPoc::createVKey))
+                            registrars.stream().map(Registrar::createVKey))
                         .collect(toImmutableList());
                 ImmutableMap<VKey<? extends ImmutableObject>, ImmutableObject> existingObjects =
                     tm().loadByKeysIfPresent(keys);
@@ -275,8 +316,15 @@ public final class OteAccountBuilder {
               registrars = registrars.stream().map(this::addAllowedTld).collect(toImmutableList());
               // and we can save the registrars and contacts!
               tm().putAll(registrars);
-              tm().putAll(contacts);
             });
+
+    for (User user : users) {
+      String email = user.getEmailAddress();
+      if (existingUsers.containsKey(email)) {
+        user = existingUsers.get(email).asBuilder().setUserRoles(user.getUserRoles()).build();
+      }
+      UserDao.saveUser(user);
+    }
   }
 
   private Registrar addAllowedTld(Registrar registrar) {
@@ -333,15 +381,6 @@ public final class OteAccountBuilder {
         .setIcannReferralEmail("nightmare@registrar.test")
         .setState(Registrar.State.ACTIVE)
         .setBillingAccountMap(DEFAULT_BILLING_ACCOUNT_MAP)
-        .build();
-  }
-
-  private static RegistrarPoc createRegistrarContact(String email, Registrar registrar) {
-    return new RegistrarPoc.Builder()
-        .setRegistrar(registrar)
-        .setName(email)
-        .setEmailAddress(email)
-        .setLoginEmailAddress(email)
         .build();
   }
 

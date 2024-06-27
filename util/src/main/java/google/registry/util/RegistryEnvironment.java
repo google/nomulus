@@ -14,6 +14,8 @@
 
 package google.registry.util;
 
+import static com.google.common.base.Preconditions.checkState;
+
 import com.google.common.base.Ascii;
 
 /** Registry environments. */
@@ -59,6 +61,20 @@ public enum RegistryEnvironment {
   private static final boolean ON_JETTY =
       Boolean.parseBoolean(System.getProperty(JETTY_PROPERTY, "false"));
 
+  /**
+   * A thread local boolean that can be set in tests to indicate some code is running in a local
+   * test server.
+   *
+   * <p>Certain API calls (like calls to Cloud Tasks) are hard to stub when they run in the test
+   * server because test server does not allow arbitrary injection of dependencies. Instead, code
+   * running in the server can check this value and decide whether to skip these API calls.
+   *
+   * <p>The value is set to false by default and can only be set to true in unit test environment.
+   * It is s set to true in {@code start()} and set to false in {@code stop()} in {@code
+   * TestDriver}.
+   */
+  private static final ThreadLocal<Boolean> IN_TEST_DRIVER = ThreadLocal.withInitial(() -> false);
+
   /** Sets this enum as the name of the registry environment. */
   public RegistryEnvironment setup() {
     return setup(SystemPropertySetter.PRODUCTION_IMPL);
@@ -80,5 +96,14 @@ public enum RegistryEnvironment {
 
   public static boolean isOnJetty() {
     return ON_JETTY;
+  }
+
+  public static void setIsInTestDriver(boolean value) {
+    checkState(RegistryEnvironment.get() == RegistryEnvironment.UNITTEST);
+    IN_TEST_DRIVER.set(value);
+  }
+
+  public static boolean isInTestDriver() {
+    return IN_TEST_DRIVER.get();
   }
 }

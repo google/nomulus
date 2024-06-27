@@ -96,6 +96,14 @@
     <max-retry-duration>3600s</max-retry-duration>
   </queue>
 
+  <!-- Queue for tasks that sync data to Google Spreadsheets. -->
+  <queue>
+    <name>console-user-group-update</name>
+    <max-dispatches-per-second>1</max-dispatches-per-second>
+    <max-concurrent-dispatches>1</max-concurrent-dispatches>
+    <max-retry-duration>3600s</max-retry-duration>
+  </queue>
+
   <!-- Queue for infrequent cron tasks (i.e. hourly or less often) that should retry three times on failure. -->
   <queue>
     <name>retryable-cron-tasks</name>

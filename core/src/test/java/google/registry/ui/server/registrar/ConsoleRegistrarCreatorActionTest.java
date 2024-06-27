@@ -15,31 +15,39 @@
 package google.registry.ui.server.registrar;
 
 import static com.google.common.truth.Truth.assertThat;
+import static google.registry.model.console.UserBase.IAP_SECURED_WEB_APP_USER_ROLE;
 import static google.registry.model.registrar.Registrar.loadByRegistrarId;
 import static google.registry.testing.DatabaseHelper.persistPremiumList;
 import static jakarta.servlet.http.HttpServletResponse.SC_UNAUTHORIZED;
 import static org.joda.money.CurrencyUnit.USD;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 
+import com.google.cloud.tasks.v2.HttpMethod;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSetMultimap;
 import google.registry.groups.GmailClient;
+import google.registry.model.console.RegistrarRole;
 import google.registry.model.console.User;
+import google.registry.model.console.UserDao;
 import google.registry.model.console.UserRoles;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarAddress;
-import google.registry.model.registrar.RegistrarPoc;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.request.Action.Method;
 import google.registry.request.auth.AuthResult;
 import google.registry.request.auth.AuthenticatedRegistrarAccessor;
 import google.registry.security.XsrfTokenManager;
+import google.registry.testing.CloudTasksHelper;
+import google.registry.testing.CloudTasksHelper.TaskMatcher;
 import google.registry.testing.DeterministicStringGenerator;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeResponse;
 import google.registry.testing.SystemPropertyExtension;
+import google.registry.tools.IamClient;
 import google.registry.ui.server.SendEmailUtils;
 import google.registry.util.EmailMessage;
 import google.registry.util.RegistryEnvironment;
@@ -73,6 +81,8 @@ final class ConsoleRegistrarCreatorActionTest {
           .setEmailAddress("marla.singer@example.com")
           .setUserRoles(new UserRoles())
           .build();
+  private final CloudTasksHelper cloudTasksHelper = new CloudTasksHelper();
+  private final IamClient iamClient = mock(IamClient.class);
 
   @Mock HttpServletRequest request;
   @Mock GmailClient gmailClient;
@@ -119,6 +129,10 @@ final class ConsoleRegistrarCreatorActionTest {
     action.passcodeGenerator = new DeterministicStringGenerator("314159265");
 
     action.analyticsConfig = ImmutableMap.of("googleAnalyticsId", "sampleId");
+
+    action.maybeGroupEmailAddress = Optional.of("group@example.com");
+    action.cloudTasksUtils = cloudTasksHelper.getTestCloudTasksUtils();
+    action.iamClient = iamClient;
   }
 
   @Test
@@ -152,8 +166,7 @@ final class ConsoleRegistrarCreatorActionTest {
     assertThat(response.getPayload()).contains("gtag('config', 'sampleId')");
   }
 
-  @Test
-  void testPost_authorized_minimalAddress() {
+  void runTestPost_authorized_minimalAddress() {
     action.clientId = Optional.of("myclientid");
     action.name = Optional.of("registrar name");
     action.billingAccount = Optional.of("USD=billing-account");
@@ -209,14 +222,36 @@ final class ConsoleRegistrarCreatorActionTest {
         .setCountryCode("CC")
         .build());
 
-    assertThat(registrar.getContacts())
-        .containsExactly(
-            new RegistrarPoc.Builder()
-                .setRegistrar(registrar)
-                .setName("myclientid@registry.example")
-                .setEmailAddress("myclientid@registry.example")
-                .setLoginEmailAddress("myclientid@registry.example")
-                .build());
+    assertThat(
+            UserDao.loadUser("myclientid@registry.example")
+                .get()
+                .getUserRoles()
+                .getRegistrarRoles()
+                .get("myclientid"))
+        .isEqualTo(RegistrarRole.ACCOUNT_MANAGER);
+  }
+
+  @Test
+  void testPost_authorized_minimalAddress_consoleUserGroup() {
+    runTestPost_authorized_minimalAddress();
+    cloudTasksHelper.assertTasksEnqueued(
+        "console-user-group-update",
+        new TaskMatcher()
+            .service("TOOLS")
+            .method(HttpMethod.POST)
+            .path("/_dr/admin/updateUserGroup")
+            .param("userEmailAddress", "myclientid@registry.example")
+            .param("groupEmailAddress", action.maybeGroupEmailAddress.get())
+            .param("groupUpdateMode", "ADD"));
+    verifyNoInteractions(iamClient);
+  }
+
+  @Test
+  void testPost_authorized_minimalAddress_NoConsoleUserGroup() {
+    action.maybeGroupEmailAddress = Optional.empty();
+    runTestPost_authorized_minimalAddress();
+    cloudTasksHelper.assertNoTasksEnqueued("console-user-group-update");
+    verify(iamClient).addBinding("myclientid@registry.example", IAP_SECURED_WEB_APP_USER_ROLE);
   }
 
   @Test
