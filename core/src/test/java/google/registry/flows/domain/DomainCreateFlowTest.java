@@ -19,6 +19,7 @@ import static com.google.common.io.BaseEncoding.base16;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.bsa.persistence.BsaTestingUtils.persistBsaLabel;
 import static google.registry.flows.FlowTestCase.UserPrivileges.SUPERUSER;
+import static google.registry.flows.domain.DomainFlowUtils.MIN_DATASET_CONTACTS_OPTIONAL_FLAG;
 import static google.registry.model.billing.BillingBase.Flag.ANCHOR_TENANT;
 import static google.registry.model.billing.BillingBase.Flag.RESERVED;
 import static google.registry.model.billing.BillingBase.Flag.SUNRISE;
@@ -256,7 +257,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     persistResource(
         new FeatureFlag()
             .asBuilder()
-            .setFeatureName("minimumRegistryDatasetPhase1")
+            .setFeatureName(MIN_DATASET_CONTACTS_OPTIONAL_FLAG)
             .setStatus(ImmutableSortedMap.of(START_OF_TIME, INACTIVE))
             .build());
     persistClaimsList(ImmutableMap.of("example-one", CLAIMS_KEY, "test-validate", CLAIMS_KEY));
@@ -2165,7 +2166,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
   @Test
   void testSuccess_minimumDatasetPhase1_missingRegistrant() throws Exception {
     persistResource(
-        FeatureFlag.get("minimumRegistryDatasetPhase1")
+        FeatureFlag.get(MIN_DATASET_CONTACTS_OPTIONAL_FLAG)
             .asBuilder()
             .setStatus(
                 ImmutableSortedMap.of(START_OF_TIME, INACTIVE, clock.nowUtc().minusDays(5), ACTIVE))
@@ -2187,7 +2188,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
   @Test
   void testSuccess_minimumDatasetPhase1_missingAdmin() throws Exception {
     persistResource(
-        FeatureFlag.get("minimumRegistryDatasetPhase1")
+        FeatureFlag.get(MIN_DATASET_CONTACTS_OPTIONAL_FLAG)
             .asBuilder()
             .setStatus(
                 ImmutableSortedMap.of(START_OF_TIME, INACTIVE, clock.nowUtc().minusDays(5), ACTIVE))
@@ -2209,7 +2210,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
   @Test
   void testSuccess_minimumDatasetPhase1_missingTech() throws Exception {
     persistResource(
-        FeatureFlag.get("minimumRegistryDatasetPhase1")
+        FeatureFlag.get(MIN_DATASET_CONTACTS_OPTIONAL_FLAG)
             .asBuilder()
             .setStatus(
                 ImmutableSortedMap.of(START_OF_TIME, INACTIVE, clock.nowUtc().minusDays(5), ACTIVE))
@@ -2231,7 +2232,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
   @Test
   void testSuccess_minimumDatasetPhase1_missingNonRegistrantContacts() throws Exception {
     persistResource(
-        FeatureFlag.get("minimumRegistryDatasetPhase1")
+        FeatureFlag.get(MIN_DATASET_CONTACTS_OPTIONAL_FLAG)
             .asBuilder()
             .setStatus(
                 ImmutableSortedMap.of(START_OF_TIME, INACTIVE, clock.nowUtc().minusDays(5), ACTIVE))

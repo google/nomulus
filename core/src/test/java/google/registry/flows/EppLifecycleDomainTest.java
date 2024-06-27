@@ -15,6 +15,7 @@
 package google.registry.flows;
 
 import static com.google.common.truth.Truth.assertThat;
+import static google.registry.flows.domain.DomainFlowUtils.MIN_DATASET_CONTACTS_OPTIONAL_FLAG;
 import static google.registry.model.EppResourceUtils.loadByForeignKey;
 import static google.registry.model.common.FeatureFlag.FeatureStatus.INACTIVE;
 import static google.registry.model.eppoutput.Result.Code.SUCCESS;
@@ -78,7 +79,7 @@ class EppLifecycleDomainTest extends EppTestCase {
     persistResource(
         new FeatureFlag()
             .asBuilder()
-            .setFeatureName("minimumRegistryDatasetPhase1")
+            .setFeatureName(MIN_DATASET_CONTACTS_OPTIONAL_FLAG)
             .setStatus(ImmutableSortedMap.of(START_OF_TIME, INACTIVE))
             .build());
     createTlds("example", "tld");
