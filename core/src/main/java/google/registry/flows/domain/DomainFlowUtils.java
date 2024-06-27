@@ -24,7 +24,7 @@ import static com.google.common.collect.Sets.difference;
 import static com.google.common.collect.Sets.intersection;
 import static com.google.common.collect.Sets.union;
 import static google.registry.bsa.persistence.BsaLabelUtils.isLabelBlocked;
-import static google.registry.model.common.FeatureFlag.FeatureStatus.INACTIVE;
+import static google.registry.model.common.FeatureFlag.FeatureStatus.ACTIVE;
 import static google.registry.model.domain.Domain.MAX_REGISTRATION_YEARS;
 import static google.registry.model.domain.token.AllocationToken.TokenType.REGISTER_BSA;
 import static google.registry.model.tld.Tld.TldState.GENERAL_AVAILABILITY;
@@ -49,7 +49,6 @@ import static google.registry.util.DateTimeUtils.leapSafeAddYears;
 import static google.registry.util.DomainNameUtils.ACE_PREFIX;
 import static java.util.Comparator.comparing;
 import static java.util.stream.Collectors.joining;
-import static org.joda.time.DateTimeZone.UTC;
 
 import com.google.common.base.Ascii;
 import com.google.common.base.CharMatcher;
@@ -175,6 +174,10 @@ public class DomainFlowUtils {
       "Domain on the name collision list was allocated. But by policy, the domain will not be "
           + "delegated. Please visit https://www.icann.org/namecollision  for more information on "
           + "name collision.";
+
+  /** The name of the FeatureFlag used for phase 1 of the minimum registry dataset migration. */
+  public static final String MIN_DATASET_CONTACTS_OPTIONAL_FLAG =
+      "minimumRegistryDataset_contactsOptional";
 
   /** Strict validator for ascii lowercase letters, digits, and "-", allowing "." as a separator */
   private static final CharMatcher ALLOWED_CHARS =
@@ -484,10 +487,18 @@ public class DomainFlowUtils {
     }
   }
 
-  // TODO(sarahbot): Remove this method once minimum registry dataset phase 1 begins
-  static void validateRequiredContactsPresent(
+  // TODO(sarahbot): Determine if we will continue supporting thick registries and if we do, change
+  // flag check to a registry config check. Otherwise, remove this method after the migration to the
+  // minimum dataset begins.
+  static void validateRequiredContactsPresentIfRequiredForDataset(
       Optional<VKey<Contact>> registrant, Set<DesignatedContact> contacts)
       throws RequiredParameterMissingException {
+    if (FeatureFlag.get(MIN_DATASET_CONTACTS_OPTIONAL_FLAG)
+        .getStatus(tm().getTransactionTime())
+        .equals(ACTIVE)) {
+      // Contacts are not required once we have begun the migration to the minimum dataset
+      return;
+    }
     if (registrant.isEmpty()) {
       throw new MissingRegistrantException();
     }
@@ -1044,11 +1055,8 @@ public class DomainFlowUtils {
     String tldStr = tld.getTldStr();
     validateRegistrantAllowedOnTld(tldStr, command.getRegistrantContactId());
     validateNoDuplicateContacts(command.getContacts());
-    if (FeatureFlag.get("minimumRegistryDatasetPhase1")
-        .getStatus(DateTime.now(UTC))
-        .equals(INACTIVE)) {
-      validateRequiredContactsPresent(command.getRegistrant(), command.getContacts());
-    }
+    validateRequiredContactsPresentIfRequiredForDataset(
+        command.getRegistrant(), command.getContacts());
     ImmutableSet<String> hostNames = command.getNameserverHostNames();
     validateNameserversCountForTld(tldStr, domainName, hostNames.size());
     validateNameserversAllowedOnTld(tldStr, hostNames);
@@ -1412,7 +1420,6 @@ public class DomainFlowUtils {
   }
 
   /** Registrant is required. */
-  // TODO(sarahbot): Remove this exception once minimum registry dataset phase 1 begins
   static class MissingRegistrantException extends RequiredParameterMissingException {
     public MissingRegistrantException() {
       super("Registrant is required");
@@ -1420,7 +1427,6 @@ public class DomainFlowUtils {
   }
 
   /** Admin contact is required. */
-  // TODO(sarahbot): Remove this exception once minimum registry dataset phase 1 begins
   static class MissingAdminContactException extends RequiredParameterMissingException {
     public MissingAdminContactException() {
       super("Admin contact is required");
@@ -1428,7 +1434,6 @@ public class DomainFlowUtils {
   }
 
   /** Technical contact is required. */
-  // TODO(sarahbot): Remove this exception once minimum registry dataset phase 1 begins
   static class MissingTechnicalContactException extends RequiredParameterMissingException {
     public MissingTechnicalContactException() {
       super("Technical contact is required");

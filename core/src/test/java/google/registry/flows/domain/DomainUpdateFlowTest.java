@@ -18,6 +18,7 @@ import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.collect.Sets.union;
 import static com.google.common.io.BaseEncoding.base16;
 import static com.google.common.truth.Truth.assertThat;
+import static google.registry.flows.domain.DomainFlowUtils.MIN_DATASET_CONTACTS_OPTIONAL_FLAG;
 import static google.registry.model.EppResourceUtils.loadByForeignKey;
 import static google.registry.model.common.FeatureFlag.FeatureStatus.ACTIVE;
 import static google.registry.model.common.FeatureFlag.FeatureStatus.INACTIVE;
@@ -146,7 +147,7 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
     persistResource(
         new FeatureFlag()
             .asBuilder()
-            .setFeatureName("minimumRegistryDatasetPhase1")
+            .setFeatureName(MIN_DATASET_CONTACTS_OPTIONAL_FLAG)
             .setStatus(ImmutableSortedMap.of(START_OF_TIME, INACTIVE))
             .build());
   }
@@ -301,7 +302,7 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
   @Test
   void testSuccess_minimumDatasetPhase1_emptyRegistrant() throws Exception {
     persistResource(
-        FeatureFlag.get("minimumRegistryDatasetPhase1")
+        FeatureFlag.get(MIN_DATASET_CONTACTS_OPTIONAL_FLAG)
             .asBuilder()
             .setStatus(
                 ImmutableSortedMap.of(START_OF_TIME, INACTIVE, clock.nowUtc().minusDays(5), ACTIVE))
@@ -1504,7 +1505,7 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
   @Test
   void testSuccess_minimumDatasetPhase1_removeAdmin() throws Exception {
     persistResource(
-        FeatureFlag.get("minimumRegistryDatasetPhase1")
+        FeatureFlag.get(MIN_DATASET_CONTACTS_OPTIONAL_FLAG)
             .asBuilder()
             .setStatus(
                 ImmutableSortedMap.of(START_OF_TIME, INACTIVE, clock.nowUtc().minusDays(5), ACTIVE))
@@ -1541,7 +1542,7 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
   @Test
   void testSuccess_minimumDatasetPhase1_removeTech() throws Exception {
     persistResource(
-        FeatureFlag.get("minimumRegistryDatasetPhase1")
+        FeatureFlag.get(MIN_DATASET_CONTACTS_OPTIONAL_FLAG)
             .asBuilder()
             .setStatus(
                 ImmutableSortedMap.of(START_OF_TIME, INACTIVE, clock.nowUtc().minusDays(5), ACTIVE))

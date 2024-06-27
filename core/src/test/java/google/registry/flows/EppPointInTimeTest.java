@@ -15,6 +15,7 @@
 package google.registry.flows;
 
 import static com.google.common.truth.Truth.assertThat;
+import static google.registry.flows.domain.DomainFlowUtils.MIN_DATASET_CONTACTS_OPTIONAL_FLAG;
 import static google.registry.model.EppResourceUtils.loadAtPointInTime;
 import static google.registry.model.ImmutableObjectSubject.assertAboutImmutableObjects;
 import static google.registry.model.common.FeatureFlag.FeatureStatus.INACTIVE;
@@ -62,7 +63,7 @@ class EppPointInTimeTest {
     persistResource(
         new FeatureFlag()
             .asBuilder()
-            .setFeatureName("minimumRegistryDatasetPhase1")
+            .setFeatureName(MIN_DATASET_CONTACTS_OPTIONAL_FLAG)
             .setStatus(ImmutableSortedMap.of(START_OF_TIME, INACTIVE))
             .build());
     createTld("tld");
