@@ -28,6 +28,7 @@ import static google.registry.flows.ResourceFlowUtils.verifyAllStatusesAreClient
 import static google.registry.flows.ResourceFlowUtils.verifyNoDisallowedStatuses;
 import static google.registry.flows.ResourceFlowUtils.verifyOptionalAuthInfo;
 import static google.registry.flows.ResourceFlowUtils.verifyResourceOwnership;
+import static google.registry.flows.domain.DomainFlowUtils.MIN_DATASET_CONTACTS_OPTIONAL_FLAG;
 import static google.registry.flows.domain.DomainFlowUtils.checkAllowedAccessToTld;
 import static google.registry.flows.domain.DomainFlowUtils.cloneAndLinkReferences;
 import static google.registry.flows.domain.DomainFlowUtils.updateDsData;
@@ -38,9 +39,10 @@ import static google.registry.flows.domain.DomainFlowUtils.validateNameserversAl
 import static google.registry.flows.domain.DomainFlowUtils.validateNameserversCountForTld;
 import static google.registry.flows.domain.DomainFlowUtils.validateNoDuplicateContacts;
 import static google.registry.flows.domain.DomainFlowUtils.validateRegistrantAllowedOnTld;
-import static google.registry.flows.domain.DomainFlowUtils.validateRequiredContactsPresent;
+import static google.registry.flows.domain.DomainFlowUtils.validateRequiredContactsPresentIfRequiredForDataset;
 import static google.registry.flows.domain.DomainFlowUtils.verifyClientUpdateNotProhibited;
 import static google.registry.flows.domain.DomainFlowUtils.verifyNotInPendingDelete;
+import static google.registry.model.common.FeatureFlag.FeatureStatus.ACTIVE;
 import static google.registry.model.reporting.HistoryEntry.Type.DOMAIN_UPDATE;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
@@ -66,6 +68,7 @@ import google.registry.flows.domain.DomainFlowUtils.NameserversNotSpecifiedForTl
 import google.registry.model.ImmutableObject;
 import google.registry.model.billing.BillingBase.Reason;
 import google.registry.model.billing.BillingEvent;
+import google.registry.model.common.FeatureFlag;
 import google.registry.model.domain.DesignatedContact;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainCommand.Update;
@@ -248,7 +251,7 @@ public final class DomainUpdateFlow implements MutatingFlow {
     checkSameValuesNotAddedAndRemoved(add.getContacts(), remove.getContacts());
     checkSameValuesNotAddedAndRemoved(add.getStatusValues(), remove.getStatusValues());
     Change change = command.getInnerChange();
-    validateRegistrantIsntBeingRemoved(change);
+    validateRegistrantIsntBeingRemovedIfRequiredForDataset(change);
     Optional<SecDnsUpdateExtension> secDnsUpdate =
         eppInput.getSingleExtension(SecDnsUpdateExtension.class);
 
@@ -300,9 +303,17 @@ public final class DomainUpdateFlow implements MutatingFlow {
     return domainBuilder.build();
   }
 
-  private static void validateRegistrantIsntBeingRemoved(Change change) throws EppException {
-    // TODO(mcilwain): Make this check the minimum registration data set migration schedule
-    //                 and not require presence of a registrant in later stages.
+  // TODO(sarahbot): Determine if we will continue supporting thick registries and if we do, change
+  // flag check to a registry config check. Otherwise, remove this method after the migration to the
+  // minimum dataset begins.
+  private static void validateRegistrantIsntBeingRemovedIfRequiredForDataset(Change change)
+      throws EppException {
+    if (FeatureFlag.get(MIN_DATASET_CONTACTS_OPTIONAL_FLAG)
+        .getStatus(tm().getTransactionTime())
+        .equals(ACTIVE)) {
+      // registrants are not required once we have begun the migration to the minimum dataset
+      return;
+    }
     if (change.getRegistrantContactId().isPresent()
         && change.getRegistrantContactId().get().isEmpty()) {
       throw new MissingRegistrantException();
@@ -317,7 +328,8 @@ public final class DomainUpdateFlow implements MutatingFlow {
    * cause Domain update failure.
    */
   private static void validateNewState(Domain newDomain) throws EppException {
-    validateRequiredContactsPresent(newDomain.getRegistrant(), newDomain.getContacts());
+    validateRequiredContactsPresentIfRequiredForDataset(
+        newDomain.getRegistrant(), newDomain.getContacts());
     validateDsData(newDomain.getDsData());
     validateNameserversCountForTld(
         newDomain.getTld(),
