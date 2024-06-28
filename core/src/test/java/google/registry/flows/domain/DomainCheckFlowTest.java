@@ -918,24 +918,6 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
     runFlowAssertResponse(loadFile("domain_check_fee_response_v06.xml"));
   }
 
-  private void setUpDefaultToken() {
-    AllocationToken defaultToken =
-        persistResource(
-            new AllocationToken.Builder()
-                .setToken("bbbbb")
-                .setTokenType(DEFAULT_PROMO)
-                .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
-                .setAllowedTlds(ImmutableSet.of("tld"))
-                .setAllowedEppActions(ImmutableSet.of(CommandName.CREATE))
-                .setDiscountFraction(0.5)
-                .build());
-    persistResource(
-        Tld.get("tld")
-            .asBuilder()
-            .setDefaultPromoTokens(ImmutableList.of(defaultToken.createVKey()))
-            .build());
-  }
-
   @Test
   void testFeeExtension_defaultToken_v06() throws Exception {
     setUpDefaultToken();
@@ -1782,24 +1764,6 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  private void runEapFeeCheckTest(String inputFile, String outputFile) throws Exception {
-    clock.setTo(DateTime.parse("2010-01-01T10:00:00Z"));
-    persistActiveDomain("example1.tld");
-    persistResource(
-        Tld.get("tld")
-            .asBuilder()
-            .setEapFeeSchedule(
-                new ImmutableSortedMap.Builder<DateTime, Money>(Ordering.natural())
-                    .put(START_OF_TIME, Money.of(USD, 0))
-                    .put(clock.nowUtc().minusDays(1), Money.of(USD, 100))
-                    .put(clock.nowUtc().plusDays(1), Money.of(USD, 50))
-                    .put(clock.nowUtc().plusDays(2), Money.of(USD, 0))
-                    .build())
-            .build());
-    setEppInput(inputFile, ImmutableMap.of("CURRENCY", "USD"));
-    runFlowAssertResponse(loadFile(outputFile));
-  }
-
   @Test
   void testSuccess_eapFeeCheck_v06() throws Exception {
     runEapFeeCheckTest("domain_check_fee_v06.xml", "domain_check_eap_fee_response_v06.xml");
@@ -1836,6 +1800,43 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
     assertTldsFieldLogged("com", "net", "org");
   }
 
+  @Test
+  void testTieredPricingPromoResponse() throws Exception {
+    sessionMetadata.setRegistrarId("NewRegistrar");
+    setUpDefaultToken("NewRegistrar");
+    persistActiveDomain("example1.tld");
+    setEppInput("domain_check_fee_v12.xml");
+    runFlowAssertResponse(loadFile("domain_check_tiered_promotion_fee_response_v12.xml"));
+  }
+
+  @Test
+  void testTieredPricingPromo_registrarNotIncluded_standardResponse() throws Exception {
+    setUpDefaultToken("NewRegistrar");
+    persistActiveDomain("example1.tld");
+    setEppInput("domain_check_fee_v12.xml");
+    runFlowAssertResponse(loadFile("domain_check_fee_response_v12.xml"));
+  }
+
+  @Test
+  void testTieredPricingPromo_registrarIncluded_noTokenActive() throws Exception {
+    sessionMetadata.setRegistrarId("NewRegistrar");
+    persistActiveDomain("example1.tld");
+
+    persistResource(
+        setUpDefaultToken("NewRegistrar")
+            .asBuilder()
+            .setTokenStatusTransitions(
+                ImmutableSortedMap.of(
+                    START_OF_TIME,
+                    TokenStatus.NOT_STARTED,
+                    clock.nowUtc().plusDays(1),
+                    TokenStatus.VALID))
+            .build());
+
+    setEppInput("domain_check_fee_v12.xml");
+    runFlowAssertResponse(loadFile("domain_check_fee_response_v12.xml"));
+  }
+
   private Domain persistPendingDeleteDomain(String domainName) {
     Domain existingDomain =
         persistResource(
@@ -1866,5 +1867,46 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
                 .build());
     return persistResource(
         existingDomain.asBuilder().setAutorenewBillingEvent(renewEvent.createVKey()).build());
+  }
+
+  private void runEapFeeCheckTest(String inputFile, String outputFile) throws Exception {
+    clock.setTo(DateTime.parse("2010-01-01T10:00:00Z"));
+    persistActiveDomain("example1.tld");
+    persistResource(
+        Tld.get("tld")
+            .asBuilder()
+            .setEapFeeSchedule(
+                new ImmutableSortedMap.Builder<DateTime, Money>(Ordering.natural())
+                    .put(START_OF_TIME, Money.of(USD, 0))
+                    .put(clock.nowUtc().minusDays(1), Money.of(USD, 100))
+                    .put(clock.nowUtc().plusDays(1), Money.of(USD, 50))
+                    .put(clock.nowUtc().plusDays(2), Money.of(USD, 0))
+                    .build())
+            .build());
+    setEppInput(inputFile, ImmutableMap.of("CURRENCY", "USD"));
+    runFlowAssertResponse(loadFile(outputFile));
+  }
+
+  private AllocationToken setUpDefaultToken() {
+    return setUpDefaultToken("TheRegistrar");
+  }
+
+  private AllocationToken setUpDefaultToken(String registrarId) {
+    AllocationToken defaultToken =
+        persistResource(
+            new AllocationToken.Builder()
+                .setToken("bbbbb")
+                .setTokenType(DEFAULT_PROMO)
+                .setAllowedRegistrarIds(ImmutableSet.of(registrarId))
+                .setAllowedTlds(ImmutableSet.of("tld"))
+                .setAllowedEppActions(ImmutableSet.of(CommandName.CREATE))
+                .setDiscountFraction(0.5)
+                .build());
+    persistResource(
+        Tld.get("tld")
+            .asBuilder()
+            .setDefaultPromoTokens(ImmutableList.of(defaultToken.createVKey()))
+            .build());
+    return defaultToken;
   }
 }

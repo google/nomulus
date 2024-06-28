@@ -34,19 +34,26 @@ public abstract class FeeQueryCommandExtensionItem extends ImmutableObject {
 
   /** The name of a command that might have an associated fee. */
   public enum CommandName {
-    UNKNOWN(false),
-    CREATE(false),
-    RENEW(true),
-    TRANSFER(true),
-    RESTORE(true),
-    UPDATE(false);
+    UNKNOWN(false, false),
+    CREATE(false, true),
+    RENEW(true, true),
+    TRANSFER(true, true),
+    RESTORE(true, true),
+    UPDATE(false, true),
+    /**
+     * We don't accept CUSTOM commands in requests but may issue them in responses. A CUSTOM command
+     * name is permitted in general per RFC 8748 section 3.1.
+     */
+    CUSTOM(false, false);
 
     private final boolean loadDomainForCheck;
+    private final boolean acceptableInputAction;
 
     public static CommandName parseKnownCommand(String string) {
       try {
         CommandName command = valueOf(string);
-        checkArgument(!command.equals(UNKNOWN));
+        checkArgument(
+            command.acceptableInputAction, "Command %s is not an acceptable input action", string);
         return command;
       } catch (IllegalArgumentException e) {
         throw new IllegalArgumentException(
@@ -55,8 +62,9 @@ public abstract class FeeQueryCommandExtensionItem extends ImmutableObject {
       }
     }
 
-    CommandName(boolean loadDomainForCheck) {
+    CommandName(boolean loadDomainForCheck, boolean acceptableInputAction) {
       this.loadDomainForCheck = loadDomainForCheck;
+      this.acceptableInputAction = acceptableInputAction;
     }
 
     public boolean shouldLoadDomainForCheck() {
