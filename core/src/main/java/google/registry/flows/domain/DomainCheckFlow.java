@@ -43,6 +43,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
 import com.google.common.net.InternetDomainName;
+import google.registry.config.RegistryConfig;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.flows.EppException;
 import google.registry.flows.EppException.ParameterValuePolicyErrorException;
@@ -70,6 +71,7 @@ import google.registry.model.domain.DomainCommand.Check;
 import google.registry.model.domain.fee.FeeCheckCommandExtension;
 import google.registry.model.domain.fee.FeeCheckCommandExtensionItem;
 import google.registry.model.domain.fee.FeeCheckResponseExtensionItem;
+import google.registry.model.domain.fee.FeeQueryCommandExtensionItem;
 import google.registry.model.domain.fee06.FeeCheckCommandExtensionV06;
 import google.registry.model.domain.launch.LaunchCheckExtension;
 import google.registry.model.domain.token.AllocationToken;
@@ -128,6 +130,9 @@ import org.joda.time.DateTime;
  */
 @ReportingSpec(ActivityReportField.DOMAIN_CHECK)
 public final class DomainCheckFlow implements TransactionalFlow {
+
+  private static final String STANDARD_FEE_RESPONSE_CLASS = "STANDARD";
+  private static final String STANDARD_PROMOTION_FEE_RESPONSE_CLASS = "STANDARD PROMOTION";
 
   @Inject ResourceCommand resourceCommand;
   @Inject ExtensionManager extensionManager;
@@ -300,6 +305,8 @@ public final class DomainCheckFlow implements TransactionalFlow {
         loadDomainsForChecks(feeCheck, domainNames, existingDomains);
     ImmutableMap<String, BillingRecurrence> recurrences = loadRecurrencesForDomains(domainObjs);
 
+    boolean shouldUseTieredPricingPromotion =
+        RegistryConfig.getTieredPricingPromotionRegistrarIds().contains(registrarId);
     for (FeeCheckCommandExtensionItem feeCheckItem : feeCheck.getItems()) {
       for (String domainName : getDomainNamesToCheckForFee(feeCheckItem, domainNames.keySet())) {
         Optional<AllocationToken> defaultToken =
@@ -332,6 +339,44 @@ public final class DomainCheckFlow implements TransactionalFlow {
               allocationToken.isPresent() ? allocationToken : defaultToken,
               availableDomains.contains(domainName),
               recurrences.getOrDefault(domainName, null));
+          // In the case of a registrar that is running a tiered pricing promotion, we issue two
+          // responses for the CREATE fee check command: one (the default response) with the
+          // non-promotional price, and one (an extra STANDARD PROMO response) with the actual
+          // promotional price.
+          if (defaultToken.isPresent()
+              && shouldUseTieredPricingPromotion
+              && feeCheckItem
+                  .getCommandName()
+                  .equals(FeeQueryCommandExtensionItem.CommandName.CREATE)) {
+            // First, set the promotional (real) price under the STANDARD PROMO class
+            builder
+                .setClass(STANDARD_PROMOTION_FEE_RESPONSE_CLASS)
+                .setCommand(
+                    FeeQueryCommandExtensionItem.CommandName.CUSTOM,
+                    feeCheckItem.getPhase(),
+                    feeCheckItem.getSubphase());
+
+            // Next, get the non-promotional price and set it as the standard response to the CREATE
+            // fee check command
+            FeeCheckResponseExtensionItem.Builder<?> nonPromotionalBuilder =
+                feeCheckItem.createResponseBuilder();
+            handleFeeRequest(
+                feeCheckItem,
+                nonPromotionalBuilder,
+                domainNames.get(domainName),
+                domain,
+                feeCheck.getCurrency(),
+                now,
+                pricingLogic,
+                allocationToken,
+                availableDomains.contains(domainName),
+                recurrences.getOrDefault(domainName, null));
+            responseItems.add(
+                nonPromotionalBuilder
+                    .setClass(STANDARD_FEE_RESPONSE_CLASS)
+                    .setDomainNameIfSupported(domainName)
+                    .build());
+          }
           responseItems.add(builder.setDomainNameIfSupported(domainName).build());
         } catch (AllocationTokenInvalidForPremiumNameException
             | AllocationTokenNotValidForCommandException
