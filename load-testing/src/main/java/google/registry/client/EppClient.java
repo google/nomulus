@@ -347,6 +347,10 @@ public class EppClient implements Runnable {
       }
 
       LinkedHashSet<Integer> killedConnections = new LinkedHashSet<>();
+      LinkedHashSet<Integer> incompleteConnections = new LinkedHashSet<>();
+      List<Long> requestTimes = new ArrayList<>();
+      ZonedDateTime startTime = null;
+      ZonedDateTime endTime = null;
 
       // Wait for all channels to close.
       for (ChannelFuture channelFuture : channelFutures) {
@@ -365,10 +369,51 @@ public class EppClient implements Runnable {
         }
       }
 
+      for (ChannelFuture channelFuture : channelFutures) {
+        Channel channel = channelFuture.channel();
+        for (int i = 0; i < channel.attr(RESPONSE_RECEIVED).get().size(); i++) {
+          requestTimes.add(
+              Duration.between(
+                      channel.attr(REQUEST_SENT).get().get(i),
+                      channel.attr(RESPONSE_RECEIVED).get().get(i))
+                  .toMillis());
+        }
+        int channelNumber = channel.attr(CHANNEL_NUMBER).get();
+        ZonedDateTime channelStartTime =
+            channelFutures.get(channelNumber).channel().attr(REQUEST_SENT).get().getFirst();
+        ZonedDateTime channelEndTime =
+            channelFutures.get(channelNumber).channel().attr(RESPONSE_RECEIVED).get().getLast();
+        if (startTime == null || startTime.isAfter(channelStartTime)) {
+          startTime = channelStartTime;
+        }
+        if (endTime == null || endTime.isBefore(channelEndTime)) {
+          endTime = channelEndTime;
+        }
+
+        if (channel.attr(RESPONSE_RECEIVED).get().size() != requestPerConnection) {
+          incompleteConnections.add(channelNumber);
+        }
+      }
+
+      if (!incompleteConnections.isEmpty()) {
+        System.out.printf("%d incomplete connections: ", incompleteConnections.size());
+        for (int channelNumber : incompleteConnections) {
+          System.out.printf("Channel %d not finished", channelNumber);
+          if (killedConnections.contains(channelNumber)) {
+            System.out.println(" connection killed");
+          }
+        }
+        System.out.print("\n");
+      }
+
       System.out.println();
       System.out.println("====== SUMMARY ======");
       System.out.printf("Number of connections: %d\n", connections);
       System.out.printf("Number of requests per connection: %d\n", requestPerConnection);
+      System.out.printf(
+          "QPS: %.2f\n",
+          (double) requestTimes.size() * 1000.0 / Duration.between(startTime, endTime).toMillis());
+      System.out.printf("%d incomplete connections: ", incompleteConnections.size());
       if (!killedConnections.isEmpty()) {
         System.out.printf("Force killed connections (%d): ", killedConnections.size());
         for (int channelNumber : killedConnections) {
