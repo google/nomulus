@@ -1208,6 +1208,12 @@ public final class RegistryConfig {
       return config.registryPolicy.dnsCountQueryCoordinatorClass;
     }
 
+    @Provides
+    @Config("dnsCountProjectId")
+    public static String dnsCountProjectId(RegistryConfigSettings config) {
+      return config.registryPolicy.dnsCountProjectId;
+    }
+
     /** Returns the disclaimer text for the exported premium terms. */
     @Provides
     @Config("premiumTermsExportDisclaimer")

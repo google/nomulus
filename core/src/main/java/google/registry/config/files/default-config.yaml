@@ -73,7 +73,11 @@ registryPolicy:
 
   # Custom logic class for handling DNS query count reporting for ICANN.
   # See reporting/icann/DnsCountQueryCoordinator.java
-  dnsCountQueryCoordinatorClass: google.registry.reporting.icann.BasicDnsCountQueryCoordinator
+  dnsCountQueryCoordinatorClass: google.registry.reporting.icann.DummyDnsCountQueryCoordinator
+
+  # GCP project in which the DNS activity count is stored as a BigQuery table.
+  # Not necessarily the same as the project where Nomulus runs.
+  dnsCountProjectId: your-dns-activity-count-project-id
 
   # Length of time after which contact transfers automatically conclude.
   contactAutomaticTransferDays: 5

@@ -31,7 +31,7 @@ class TransactionsReportingQueryBuilderTest {
   }
 
   @Test
-  void testAggregateQueryMatch_cloud_sql() {
+  void testAggregateQueryMatch() {
     TransactionsReportingQueryBuilder queryBuilder =
         createQueryBuilder("cloud_sql_icann_reporting");
     assertThat(queryBuilder.getReportQuery(yearMonth))
@@ -43,7 +43,7 @@ class TransactionsReportingQueryBuilderTest {
   }
 
   @Test
-  void testIntermediaryQueryMatch_cloud_sql() {
+  void testIntermediaryQueryMatch() {
     ImmutableList<String> expectedQueryNames =
         ImmutableList.of(
             TransactionsReportingQueryBuilder.REGISTRAR_IANA_ID,
@@ -59,7 +59,7 @@ class TransactionsReportingQueryBuilderTest {
     ImmutableMap<String, String> actualQueries = queryBuilder.getViewQueryMap(yearMonth);
     for (String queryName : expectedQueryNames) {
       String actualTableName = String.format("%s_201709", queryName);
-      String testFilename = String.format("%s_test_cloud_sql.sql", queryName);
+      String testFilename = String.format("%s_test.sql", queryName);
       assertThat(actualQueries.get(actualTableName))
           .isEqualTo(ReportingTestData.loadFile(testFilename));
     }
