@@ -16,11 +16,21 @@ package google.registry.model.console;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.ImmutableObjectSubject.assertAboutImmutableObjects;
+import static google.registry.model.console.UserBase.IAP_SECURED_WEB_APP_USER_ROLE;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 
+import com.google.cloud.tasks.v2.HttpMethod;
+import google.registry.batch.CloudTasksUtils;
 import google.registry.model.EntityTestCase;
+import google.registry.testing.CloudTasksHelper;
+import google.registry.testing.CloudTasksHelper.TaskMatcher;
 import google.registry.testing.DatabaseHelper;
+import google.registry.tools.IamClient;
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 
 /** Tests for {@link User}. */
@@ -103,5 +113,57 @@ public class UserTest extends EntityTestCase {
     user = user.asBuilder().removeRegistryLockPassword().build();
     assertThat(user.hasRegistryLockPassword()).isFalse();
     assertThat(user.verifyRegistryLockPassword("foobar")).isFalse();
+  }
+
+  @Test
+  void testGrantIapPermission() {
+    CloudTasksHelper cloudTasksHelper = new CloudTasksHelper();
+    IamClient iamClient = mock(IamClient.class);
+    CloudTasksUtils cloudTasksUtils = cloudTasksHelper.getTestCloudTasksUtils();
+
+    // Individual permission.
+    User.grantIapPermission("email@example.com", Optional.empty(), cloudTasksUtils, iamClient);
+    cloudTasksHelper.assertNoTasksEnqueued();
+    verify(iamClient).addBinding("email@example.com", IAP_SECURED_WEB_APP_USER_ROLE);
+
+    // Group membership.
+    User.grantIapPermission(
+        "email@example.com", Optional.of("console@example.com"), cloudTasksUtils, iamClient);
+    cloudTasksHelper.assertTasksEnqueued(
+        "console-user-group-update",
+        new TaskMatcher()
+            .service("TOOLS")
+            .method(HttpMethod.POST)
+            .path("/_dr/admin/updateUserGroup")
+            .param("userEmailAddress", "email@example.com")
+            .param("groupEmailAddress", "console@example.com")
+            .param("groupUpdateMode", "ADD"));
+    verifyNoMoreInteractions(iamClient);
+  }
+
+  @Test
+  void testRevokeIapPermission() {
+    CloudTasksHelper cloudTasksHelper = new CloudTasksHelper();
+    IamClient iamClient = mock(IamClient.class);
+    CloudTasksUtils cloudTasksUtils = cloudTasksHelper.getTestCloudTasksUtils();
+
+    // Individual permission.
+    User.revokeIapPermission("email@example.com", Optional.empty(), cloudTasksUtils, iamClient);
+    cloudTasksHelper.assertNoTasksEnqueued();
+    verify(iamClient).removeBinding("email@example.com", IAP_SECURED_WEB_APP_USER_ROLE);
+
+    // Group membership.
+    User.revokeIapPermission(
+        "email@example.com", Optional.of("console@example.com"), cloudTasksUtils, iamClient);
+    cloudTasksHelper.assertTasksEnqueued(
+        "console-user-group-update",
+        new TaskMatcher()
+            .service("TOOLS")
+            .method(HttpMethod.POST)
+            .path("/_dr/admin/updateUserGroup")
+            .param("userEmailAddress", "email@example.com")
+            .param("groupEmailAddress", "console@example.com")
+            .param("groupUpdateMode", "REMOVE"));
+    verifyNoMoreInteractions(iamClient);
   }
 }

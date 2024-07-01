@@ -15,18 +15,24 @@
 package google.registry.ui.server.registrar;
 
 import static com.google.common.truth.Truth.assertThat;
+import static google.registry.model.console.UserBase.IAP_SECURED_WEB_APP_USER_ROLE;
 import static google.registry.model.registrar.Registrar.loadByRegistrarId;
 import static google.registry.testing.DatabaseHelper.persistPremiumList;
 import static jakarta.servlet.http.HttpServletResponse.SC_UNAUTHORIZED;
 import static org.joda.money.CurrencyUnit.USD;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 
+import com.google.cloud.tasks.v2.HttpMethod;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSetMultimap;
 import google.registry.groups.GmailClient;
+import google.registry.model.console.RegistrarRole;
 import google.registry.model.console.User;
+import google.registry.model.console.UserDao;
 import google.registry.model.console.UserRoles;
 import google.registry.model.tld.Tld;
 import google.registry.persistence.transaction.JpaTestExtensions;
@@ -35,15 +41,19 @@ import google.registry.request.Action.Method;
 import google.registry.request.auth.AuthResult;
 import google.registry.request.auth.AuthenticatedRegistrarAccessor;
 import google.registry.security.XsrfTokenManager;
+import google.registry.testing.CloudTasksHelper;
+import google.registry.testing.CloudTasksHelper.TaskMatcher;
 import google.registry.testing.DeterministicStringGenerator;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeResponse;
 import google.registry.testing.SystemPropertyExtension;
+import google.registry.tools.IamClient;
 import google.registry.ui.server.SendEmailUtils;
 import google.registry.util.EmailMessage;
 import google.registry.util.RegistryEnvironment;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.Optional;
+import javax.annotation.Nullable;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
@@ -65,6 +75,8 @@ public final class ConsoleOteSetupActionTest {
   @Order(value = Integer.MAX_VALUE)
   final SystemPropertyExtension systemPropertyExtension = new SystemPropertyExtension();
 
+  private final IamClient iamClient = mock(IamClient.class);
+  private final CloudTasksHelper cloudTasksHelper = new CloudTasksHelper();
   private final FakeResponse response = new FakeResponse();
   private final ConsoleOteSetupAction action = new ConsoleOteSetupAction();
   private final User user =
@@ -100,6 +112,9 @@ public final class ConsoleOteSetupActionTest {
 
     action.optionalPassword = Optional.empty();
     action.passwordGenerator = new DeterministicStringGenerator("abcdefghijklmnopqrstuvwxyz");
+    action.maybeGroupEmailAddress = Optional.of("group@example.com");
+    action.cloudTasksUtils = cloudTasksHelper.getTestCloudTasksUtils();
+    action.iamClient = iamClient;
   }
 
   @Test
@@ -142,9 +157,7 @@ public final class ConsoleOteSetupActionTest {
     // checking that all the entities are there or that they have the correct values.
     assertThat(loadByRegistrarId("myclientid-3")).isPresent();
     assertThat(Tld.get("myclientid-ga")).isNotNull();
-    assertThat(
-            loadByRegistrarId("myclientid-5").get().getContacts().asList().get(0).getEmailAddress())
-        .isEqualTo("contact@registry.example");
+    verifyUser("contact@registry.example", "myclientid-5");
     assertThat(response.getPayload())
         .contains("<h1>OT&E successfully created for registrar myclientid!</h1>");
     ArgumentCaptor<EmailMessage> contentCaptor = ArgumentCaptor.forClass(EmailMessage.class);
@@ -163,6 +176,13 @@ public final class ConsoleOteSetupActionTest {
                 Gave user contact@registry.example web access to these Registrars
                 """);
     assertThat(response.getPayload()).contains("gtag('config', 'sampleId')");
+    verifyIapPermission("contact@registry.example");
+  }
+
+  @Test
+  void testPost_authorized_noConsoleGroup() {
+    action.maybeGroupEmailAddress = Optional.empty();
+    testPost_authorized();
   }
 
   @Test
@@ -192,5 +212,36 @@ public final class ConsoleOteSetupActionTest {
     action.run();
     assertThat(response.getPayload()).contains("<h1>You need permission</h1>");
     assertThat(response.getPayload()).contains("gtag('config', 'sampleId')");
+  }
+
+  private void verifyUser(String email, String registrarId) {
+    User user = UserDao.loadUser(email).orElse(null);
+    assertThat(user).isNotNull();
+    assertThat(user.getUserRoles().getRegistrarRoles().get(registrarId))
+        .isEqualTo(RegistrarRole.ACCOUNT_MANAGER);
+  }
+
+  private void verifyIapPermission(@Nullable String emailAddress) {
+    if (emailAddress == null) {
+      cloudTasksHelper.assertNoTasksEnqueued("console-user-group-update");
+      verifyNoInteractions(iamClient);
+    } else {
+      String groupEmailAddress = action.maybeGroupEmailAddress.orElse(null);
+      if (groupEmailAddress == null) {
+        cloudTasksHelper.assertNoTasksEnqueued("console-user-group-update");
+        verify(iamClient).addBinding(emailAddress, IAP_SECURED_WEB_APP_USER_ROLE);
+      } else {
+        cloudTasksHelper.assertTasksEnqueued(
+            "console-user-group-update",
+            new TaskMatcher()
+                .service("TOOLS")
+                .method(HttpMethod.POST)
+                .path("/_dr/admin/updateUserGroup")
+                .param("userEmailAddress", emailAddress)
+                .param("groupEmailAddress", groupEmailAddress)
+                .param("groupUpdateMode", "ADD"));
+        verifyNoInteractions(iamClient);
+      }
+    }
   }
 }

@@ -17,7 +17,7 @@ package google.registry.tools;
 import com.google.api.services.dataflow.Dataflow;
 import dagger.Module;
 import dagger.Provides;
-import google.registry.config.CredentialModule.LocalCredential;
+import google.registry.config.CredentialModule.ApplicationDefaultCredential;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.util.GoogleCredentialsBundle;
 
@@ -27,7 +27,7 @@ public class RegistryToolDataflowModule {
 
   @Provides
   static Dataflow provideDataflow(
-      @LocalCredential GoogleCredentialsBundle credentialsBundle,
+      @ApplicationDefaultCredential GoogleCredentialsBundle credentialsBundle,
       @Config("projectId") String projectId) {
     return new Dataflow.Builder(
             credentialsBundle.getHttpTransport(),

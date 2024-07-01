@@ -135,7 +135,7 @@ public final class RegistryTestServerMain {
 
     final RegistryTestServer server = new RegistryTestServer(address);
 
-    System.out.printf("%sLoading SQL fixtures and User service...%s\n", BLUE, RESET);
+    System.out.printf("%sLoading SQL fixtures setting User for authentication...%s\n", BLUE, RESET);
     UserRoles userRoles =
         new UserRoles.Builder().setIsAdmin(loginIsAdmin).setGlobalRole(GlobalRole.FTE).build();
     User user =
@@ -151,7 +151,7 @@ public final class RegistryTestServerMain {
     for (Fixture fixture : fixtures) {
       fixture.load();
     }
-    System.out.printf("%sStarting Jetty6 HTTP Server...%s\n", BLUE, RESET);
+    System.out.printf("%sStarting Jetty HTTP Server...%s\n", BLUE, RESET);
     server.start();
     System.out.printf("%sListening on: %s%s\n", PURPLE, server.getUrl("/"), RESET);
     try {

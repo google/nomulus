@@ -22,6 +22,8 @@ import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.io.MoreFiles;
+import google.registry.batch.CloudTasksUtils;
+import google.registry.config.RegistryConfig.Config;
 import google.registry.model.OteAccountBuilder;
 import google.registry.tools.params.PathParameter;
 import google.registry.util.Clock;
@@ -30,6 +32,7 @@ import google.registry.util.StringGenerator;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import javax.inject.Inject;
 import javax.inject.Named;
 
@@ -47,7 +50,7 @@ final class SetupOteCommand extends ConfirmingCommand {
 
   @Parameter(
       names = {"-a", "--ip_allow_list"},
-      description = "Comma-separated list of IP addreses or CIDR ranges.",
+      description = "Comma-separated list of IP addresses or CIDR ranges.",
       required = true)
   private List<String> ipAllowList = new ArrayList<>();
 
@@ -55,7 +58,7 @@ final class SetupOteCommand extends ConfirmingCommand {
       names = {"--email"},
       description =
           "The registrar's account to use for console access. "
-              + "Must be on the registry's G Suite domain.",
+              + "Must be on the registry's Google Workspace domain.",
       required = true)
   private String email;
 
@@ -76,6 +79,14 @@ final class SetupOteCommand extends ConfirmingCommand {
 
   @Inject Clock clock;
 
+  @Inject CloudTasksUtils cloudTasksUtils;
+
+  @Inject IamClient iamClient;
+
+  @Inject
+  @Config("gSuiteConsoleUserGroupEmailAddress")
+  Optional<String> maybeGroupEmailAddress;
+
   OteAccountBuilder oteAccountBuilder;
   String password;
 
@@ -87,7 +98,7 @@ final class SetupOteCommand extends ConfirmingCommand {
     password = passwordGenerator.createString(PASSWORD_LENGTH);
     oteAccountBuilder =
         OteAccountBuilder.forRegistrarId(registrar)
-            .addContact(email)
+            .addUser(email)
             .setPassword(password)
             .setIpAllowList(ipAllowList)
             .setReplaceExisting(overwrite);
@@ -114,8 +125,11 @@ final class SetupOteCommand extends ConfirmingCommand {
         && RegistryEnvironment.get() != RegistryEnvironment.UNITTEST) {
       builder.append(
           String.format(
-              "\n\nWARNING: Running against %s environment. Are "
-                  + "you sure you didn\'t mean to run this against sandbox (e.g. \"-e SANDBOX\")?",
+              """
+
+
+                  WARNING: Running against %s environment. Are \
+                  you sure you didn't mean to run this against sandbox (e.g. "-e SANDBOX")?""",
               RegistryEnvironment.get()));
     }
 
@@ -125,15 +139,15 @@ final class SetupOteCommand extends ConfirmingCommand {
   @Override
   public String execute() {
     ImmutableMap<String, String> clientIdToTld = oteAccountBuilder.buildAndPersist();
+    oteAccountBuilder.grantIapPermission(maybeGroupEmailAddress, cloudTasksUtils, iamClient);
 
     StringBuilder output = new StringBuilder();
 
     output.append("Copy these usernames/passwords back into the onboarding bug:\n\n");
     clientIdToTld.forEach(
-        (clientId, tld) -> {
-          output.append(
-              String.format("Login: %s\nPassword: %s\nTLD: %s\n\n", clientId, password, tld));
-        });
+        (clientId, tld) ->
+            output.append(
+                String.format("Login: %s\nPassword: %s\nTLD: %s\n\n", clientId, password, tld)));
 
     return output.toString();
   }

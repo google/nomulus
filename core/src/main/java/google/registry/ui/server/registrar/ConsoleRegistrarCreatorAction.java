@@ -26,10 +26,15 @@ import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.flogger.FluentLogger;
 import com.google.template.soy.tofu.SoyTofu;
+import google.registry.batch.CloudTasksUtils;
+import google.registry.config.RegistryConfig.Config;
+import google.registry.model.console.RegistrarRole;
+import google.registry.model.console.User;
+import google.registry.model.console.UserDao;
+import google.registry.model.console.UserRoles;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarAddress;
 import google.registry.model.registrar.RegistrarBase.State;
-import google.registry.model.registrar.RegistrarPoc;
 import google.registry.request.Action;
 import google.registry.request.Action.Method;
 import google.registry.request.Action.Service;
@@ -37,6 +42,7 @@ import google.registry.request.HttpException.BadRequestException;
 import google.registry.request.Parameter;
 import google.registry.request.auth.Auth;
 import google.registry.request.auth.AuthenticatedRegistrarAccessor;
+import google.registry.tools.IamClient;
 import google.registry.ui.server.SendEmailUtils;
 import google.registry.ui.server.SoyTemplateUtils;
 import google.registry.ui.soy.registrar.AnalyticsSoyInfo;
@@ -95,6 +101,14 @@ public final class ConsoleRegistrarCreatorAction extends HtmlAction {
   @Parameter("consoleName")
   Optional<String> name;
 
+  @Inject CloudTasksUtils cloudTasksUtils;
+
+  @Inject IamClient iamClient;
+
+  @Inject
+  @Config("gSuiteConsoleUserGroupEmailAddress")
+  Optional<String> maybeGroupEmailAddress;
+
   @Inject @Parameter("billingAccount") Optional<String> billingAccount;
   @Inject @Parameter("ianaId") Optional<Integer> ianaId;
   @Inject @Parameter("referralEmail") Optional<String> referralEmail;
@@ -129,16 +143,11 @@ public final class ConsoleRegistrarCreatorAction extends HtmlAction {
       return;
     }
     switch (method) {
-      case POST -> {
-        runPost(data);
-      }
-      case GET -> {
-        runGet(data);
-      }
-      default -> {
-        throw new BadRequestException(
-            String.format("Action cannot be called with method %s", method));
-      }
+      case POST -> runPost(data);
+      case GET -> runGet(data);
+      default ->
+          throw new BadRequestException(
+              String.format("Action cannot be called with method %s", method));
     }
   }
 
@@ -169,7 +178,8 @@ public final class ConsoleRegistrarCreatorAction extends HtmlAction {
                       list))
           .collect(
               toImmutableMap(
-                  list -> CurrencyUnit.of(Ascii.toUpperCase(list.get(0))), list -> list.get(1)));
+                  list -> CurrencyUnit.of(Ascii.toUpperCase(list.getFirst())),
+                  list -> list.get(1)));
     } catch (Throwable e) {
       throw new RuntimeException("Error parsing billing accounts - " + e.getMessage(), e);
     }
@@ -233,12 +243,15 @@ public final class ConsoleRegistrarCreatorAction extends HtmlAction {
                       .setZip(optionalZip.orElse(null))
                       .build())
               .build();
-      RegistrarPoc contact =
-          new RegistrarPoc.Builder()
-              .setRegistrar(registrar)
-              .setName(consoleUserEmail.get())
+      User user =
+          new User.Builder()
               .setEmailAddress(consoleUserEmail.get())
-              .setLoginEmailAddress(consoleUserEmail.get())
+              .setUserRoles(
+                  new UserRoles.Builder()
+                      .setRegistrarRoles(
+                          ImmutableMap.of(
+                              registrar.getRegistrarId(), RegistrarRole.ACCOUNT_MANAGER))
+                      .build())
               .build();
       tm().transact(
               () -> {
@@ -246,8 +259,11 @@ public final class ConsoleRegistrarCreatorAction extends HtmlAction {
                     Registrar.loadByRegistrarId(registrar.getRegistrarId()).isEmpty(),
                     "Registrar with client ID %s already exists",
                     registrar.getRegistrarId());
-                tm().putAll(registrar, contact);
+                tm().put(registrar);
               });
+      UserDao.saveUser(user);
+      User.grantIapPermission(
+          user.getEmailAddress(), maybeGroupEmailAddress, cloudTasksUtils, iamClient);
       data.put("password", password);
       data.put("passcode", phonePasscode);
 
