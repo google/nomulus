@@ -201,6 +201,15 @@ registryPolicy:
   # will be free.
   sunriseDomainCreateDiscount: 0.15
 
+  # List of registrars participating in tiered pricing promotions that require
+  # non-standard responses to EPP domain:check and domain:create commands.
+  # When a promotion is active, we will set an additional STANDARD PROMOTION
+  # fee check response on any domain checks that corresponds to the actual
+  # promotional price (the regular response will be the non-promotional price).
+  # In addition, we will return the non-promotional (i.e. incorrect) price on
+  # domain create requests.
+  tieredPricingPromotionRegistrarIds: []
+
 hibernate:
   # If set to false, calls to tm().transact() cannot be nested. If set to true,
   # nested calls to tm().transact() are allowed, as long as they do not specify

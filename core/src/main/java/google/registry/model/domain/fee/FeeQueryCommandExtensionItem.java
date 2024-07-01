@@ -39,14 +39,17 @@ public abstract class FeeQueryCommandExtensionItem extends ImmutableObject {
     RENEW(true),
     TRANSFER(true),
     RESTORE(true),
-    UPDATE(false);
+    UPDATE(false),
+    // We don't accept CUSTOM commands in requests but may issue them in responses.
+    // A CUSTOM command name is permitted in general per RFC 8748 section 3.1.
+    CUSTOM(false);
 
     private final boolean loadDomainForCheck;
 
     public static CommandName parseKnownCommand(String string) {
       try {
         CommandName command = valueOf(string);
-        checkArgument(!command.equals(UNKNOWN));
+        checkArgument(!command.equals(UNKNOWN) && !command.equals(CUSTOM));
         return command;
       } catch (IllegalArgumentException e) {
         throw new IllegalArgumentException(
