@@ -77,6 +77,10 @@ import org.joda.time.DateTime;
 @SuppressWarnings("FutureReturnValueIgnored")
 public class EppClient implements Runnable {
 
+  // TODO(sarahbot): Add loadtest for delete flow
+
+  // TODO(sarahbot): Add functionality to delete data created by load tests
+
   static {
     Security.addProvider(new BouncyCastleProvider());
   }
