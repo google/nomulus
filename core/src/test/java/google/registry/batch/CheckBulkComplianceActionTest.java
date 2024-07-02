@@ -20,6 +20,7 @@ import static google.registry.testing.DatabaseHelper.persistActiveContact;
 import static google.registry.testing.DatabaseHelper.persistEppResource;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.LogsSubject.assertAboutLogs;
+import static org.joda.money.CurrencyUnit.USD;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -111,8 +112,9 @@ public class CheckBulkComplianceActionTest {
                 .setAllowedTlds(ImmutableSet.of("foo"))
                 .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
                 .setRenewalPriceBehavior(RenewalPriceBehavior.SPECIFIED)
+                .setRenewalPrice(Money.of(CurrencyUnit.USD, 0))
                 .setAllowedEppActions(ImmutableSet.of(CommandName.CREATE))
-                .setDiscountFraction(1)
+                .setDiscountFraction(1.0)
                 .build());
     bulkPricingPackage =
         new BulkPricingPackage.Builder()
@@ -206,8 +208,9 @@ public class CheckBulkComplianceActionTest {
                 .setAllowedTlds(ImmutableSet.of("foo"))
                 .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
                 .setRenewalPriceBehavior(RenewalPriceBehavior.SPECIFIED)
+                .setRenewalPrice(Money.of(USD, 0))
                 .setAllowedEppActions(ImmutableSet.of(CommandName.CREATE))
-                .setDiscountFraction(1)
+                .setDiscountFraction(1.0)
                 .build());
     BulkPricingPackage bulkPricingPackage2 =
         new BulkPricingPackage.Builder()
@@ -263,8 +266,9 @@ public class CheckBulkComplianceActionTest {
                 .setAllowedTlds(ImmutableSet.of("foo"))
                 .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
                 .setRenewalPriceBehavior(RenewalPriceBehavior.SPECIFIED)
+                .setRenewalPrice(Money.of(USD, 0))
                 .setAllowedEppActions(ImmutableSet.of(CommandName.CREATE))
-                .setDiscountFraction(1)
+                .setDiscountFraction(1.0)
                 .build());
     BulkPricingPackage packagePromotion2 =
         new BulkPricingPackage.Builder()
@@ -338,8 +342,9 @@ public class CheckBulkComplianceActionTest {
                 .setAllowedTlds(ImmutableSet.of("foo"))
                 .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
                 .setRenewalPriceBehavior(RenewalPriceBehavior.SPECIFIED)
+                .setRenewalPrice(Money.of(USD, 0))
                 .setAllowedEppActions(ImmutableSet.of(CommandName.CREATE))
-                .setDiscountFraction(1)
+                .setDiscountFraction(1.0)
                 .build());
     BulkPricingPackage bulkPricingPackage2 =
         new BulkPricingPackage.Builder()
@@ -404,8 +409,9 @@ public class CheckBulkComplianceActionTest {
                 .setAllowedTlds(ImmutableSet.of("foo"))
                 .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
                 .setRenewalPriceBehavior(RenewalPriceBehavior.SPECIFIED)
+                .setRenewalPrice(Money.of(USD, 0))
                 .setAllowedEppActions(ImmutableSet.of(CommandName.CREATE))
-                .setDiscountFraction(1)
+                .setDiscountFraction(1.0)
                 .build());
     BulkPricingPackage bulkPricingPackage2 =
         new BulkPricingPackage.Builder()

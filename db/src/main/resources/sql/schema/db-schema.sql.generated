@@ -26,6 +26,8 @@
         redemption_domain_repo_id text,
         redemption_domain_history_id int8,
         registration_behavior text not null,
+        renewal_price_amount numeric(19, 2),
+        renewal_price_currency text,
         renewal_price_behavior text not null,
         token_status_transitions hstore,
         token_type text,

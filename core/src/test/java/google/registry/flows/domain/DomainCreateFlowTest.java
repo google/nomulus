@@ -1371,6 +1371,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
                 .setTokenType(SINGLE_USE)
                 .setDomainName("resdom.tld")
                 .setRenewalPriceBehavior(SPECIFIED)
+                .setRenewalPrice(Money.of(USD, 0))
                 .build());
     // Despite the domain being FULLY_BLOCKED, the non-superuser create succeeds the domain is also
     // RESERVED_FOR_SPECIFIC_USE and the correct allocation token is passed.
@@ -3413,6 +3414,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
                 .setToken("abc123")
                 .setTokenType(SINGLE_USE)
                 .setRenewalPriceBehavior(SPECIFIED)
+                .setRenewalPrice(Money.of(USD, 0))
                 .build());
     assertThat(
             DomainCreateFlow.getRenewalPriceInfo(
@@ -3439,6 +3441,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
                                 .setToken("abc123")
                                 .setTokenType(SINGLE_USE)
                                 .setRenewalPriceBehavior(SPECIFIED)
+                                .setRenewalPrice(Money.of(USD, 0))
                                 .build())),
                     new FeesAndCredits.Builder()
                         .setCurrency(USD)
@@ -3891,10 +3894,12 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
             new AllocationToken.Builder()
                 .setToken("abc123")
                 .setTokenType(BULK_PRICING)
+                .setDiscountFraction(1.0)
                 .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
                 .setAllowedTlds(ImmutableSet.of("tld"))
                 .setAllowedEppActions(ImmutableSet.of(CommandName.CREATE))
                 .setRenewalPriceBehavior(SPECIFIED)
+                .setRenewalPrice(Money.of(USD, 0))
                 .build());
     persistContactsAndHosts();
     setEppInput(
@@ -3919,10 +3924,12 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
         new AllocationToken.Builder()
             .setToken("abc123")
             .setTokenType(BULK_PRICING)
+            .setDiscountFraction(1.0)
             .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
             .setAllowedEppActions(ImmutableSet.of(CommandName.CREATE))
             .setAllowedTlds(ImmutableSet.of("tld"))
             .setRenewalPriceBehavior(SPECIFIED)
+            .setRenewalPrice(Money.of(USD, 0))
             .build());
     persistContactsAndHosts();
     setEppInput(

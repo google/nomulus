@@ -30,6 +30,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
+import com.beust.jcommander.internal.Nullable;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
@@ -62,6 +63,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.inject.Inject;
 import javax.inject.Named;
+import org.joda.money.Money;
 import org.joda.time.DateTime;
 
 /** Command to generate and persist {@link AllocationToken}s. */
@@ -158,9 +160,15 @@ class GenerateAllocationTokensCommand implements Command {
           "The type of renewal price behavior, either DEFAULT (default), NONPREMIUM, or SPECIFIED."
               + " This indicates how a domain should be charged for renewal. By default, a domain"
               + " will be renewed at the renewal price from the pricing engine. If the renewal"
-              + " price behavior is set to SPECIFIED, it means that the renewal cost will be the"
-              + " same as the domain's calculated create price.")
+              + " price behavior is set to SPECIFIED, it means that the renewal cost will be equal"
+              + " to the provided renewal price.")
   private RenewalPriceBehavior renewalPriceBehavior = DEFAULT;
+
+  @Parameter(
+      names = {"--renewal_price"},
+      description = "The renewal price amount iff the renewal price behavior is SPECIFIED.")
+  @Nullable
+  private Money renewalPrice;
 
   @Parameter(
       names = {"--registration_behavior"},
@@ -228,6 +236,7 @@ class GenerateAllocationTokensCommand implements Command {
                     Optional.ofNullable(discountYears).ifPresent(token::setDiscountYears);
                     Optional.ofNullable(tokenStatusTransitions)
                         .ifPresent(token::setTokenStatusTransitions);
+                    Optional.ofNullable(renewalPrice).ifPresent(token::setRenewalPrice);
                     Optional.ofNullable(domainNames)
                         .ifPresent(d -> token.setDomainName(d.removeFirst()));
                     return token.build();
@@ -294,6 +303,10 @@ class GenerateAllocationTokensCommand implements Command {
           "BULK_PRICING tokens should not be generated with ENDED or CANCELLED in their transition"
               + " map");
     }
+
+    checkArgument(
+        renewalPriceBehavior.equals(RenewalPriceBehavior.SPECIFIED) == (renewalPrice != null),
+        "renewal_price must be specified iff renewal_price_behavior is SPECIFIED");
 
     if (tokenStrings != null) {
       verifyTokenStringsDoNotExist();

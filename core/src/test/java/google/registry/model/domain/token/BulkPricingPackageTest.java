@@ -55,8 +55,9 @@ public class BulkPricingPackageTest extends EntityTestCase {
                 .setAllowedTlds(ImmutableSet.of("foo"))
                 .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
                 .setRenewalPriceBehavior(RenewalPriceBehavior.SPECIFIED)
+                .setRenewalPrice(Money.of(CurrencyUnit.USD, 0))
                 .setAllowedEppActions(ImmutableSet.of(CommandName.CREATE))
-                .setDiscountFraction(1)
+                .setDiscountFraction(1.0)
                 .build());
 
     BulkPricingPackage bulkPricingPackage =
@@ -84,7 +85,7 @@ public class BulkPricingPackageTest extends EntityTestCase {
                 .setCreationTimeForTest(DateTime.parse("2010-11-12T05:00:00Z"))
                 .setAllowedTlds(ImmutableSet.of("foo"))
                 .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
-                .setDiscountFraction(1)
+                .setDiscountFraction(1.0)
                 .build());
 
     IllegalArgumentException thrown =

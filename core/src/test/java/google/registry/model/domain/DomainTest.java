@@ -842,7 +842,9 @@ public class DomainTest {
             new AllocationToken.Builder()
                 .setToken("abc123")
                 .setTokenType(BULK_PRICING)
+                .setDiscountFraction(1.0)
                 .setRenewalPriceBehavior(SPECIFIED)
+                .setRenewalPrice(Money.of(USD, 0))
                 .setAllowedEppActions(ImmutableSet.of(CommandName.CREATE))
                 .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
                 .build());
@@ -904,7 +906,9 @@ public class DomainTest {
             new AllocationToken.Builder()
                 .setToken("abc123")
                 .setTokenType(BULK_PRICING)
+                .setDiscountFraction(1.0)
                 .setRenewalPriceBehavior(SPECIFIED)
+                .setRenewalPrice(Money.of(USD, 0))
                 .setAllowedEppActions(ImmutableSet.of(CommandName.CREATE))
                 .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
                 .build());
@@ -1074,7 +1078,9 @@ public class DomainTest {
         new AllocationToken.Builder()
             .setToken("abc123")
             .setTokenType(BULK_PRICING)
+            .setDiscountFraction(1.0)
             .setRenewalPriceBehavior(SPECIFIED)
+            .setRenewalPrice(Money.of(USD, 0))
             .setAllowedEppActions(ImmutableSet.of(CommandName.CREATE))
             .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
             .build();
@@ -1092,7 +1098,9 @@ public class DomainTest {
             new AllocationToken.Builder()
                 .setToken("abc123")
                 .setTokenType(BULK_PRICING)
+                .setDiscountFraction(1.0)
                 .setRenewalPriceBehavior(SPECIFIED)
+                .setRenewalPrice(Money.of(USD, 0))
                 .setAllowedEppActions(ImmutableSet.of(CommandName.CREATE))
                 .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
                 .build());

@@ -55,6 +55,8 @@ import google.registry.testing.FakeClock;
 import google.registry.util.SerializeUtils;
 import java.util.Arrays;
 import java.util.Optional;
+import org.joda.money.CurrencyUnit;
+import org.joda.money.Money;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -134,10 +136,12 @@ public class DomainSqlTest {
         new AllocationToken.Builder()
             .setToken("abc123Unlimited")
             .setTokenType(BULK_PRICING)
+            .setDiscountFraction(1.0)
             .setCreationTimeForTest(DateTime.parse("2010-11-12T05:00:00Z"))
             .setAllowedTlds(ImmutableSet.of("dev", "app"))
             .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
             .setRenewalPriceBehavior(RenewalPriceBehavior.SPECIFIED)
+            .setRenewalPrice(Money.of(CurrencyUnit.USD, 0))
             .setAllowedEppActions(ImmutableSet.of(CommandName.CREATE))
             .setTokenStatusTransitions(
                 ImmutableSortedMap.<DateTime, TokenStatus>naturalOrder()
