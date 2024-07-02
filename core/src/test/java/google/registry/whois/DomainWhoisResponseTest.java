@@ -308,6 +308,25 @@ class DomainWhoisResponseTest {
   }
 
   @Test
+  void getPlainTextOutputTest_noContacts() {
+    DomainWhoisResponse domainWhoisResponse =
+        new DomainWhoisResponse(
+            domain
+                .asBuilder()
+                .setRegistrant(Optional.empty())
+                .setContacts(ImmutableSet.of())
+                .build(),
+            false,
+            "Please contact registrar",
+            clock.nowUtc());
+    assertThat(
+            domainWhoisResponse.getResponse(
+                false,
+                "Doodle Disclaimer\nI exist so that carriage return\nin disclaimer can be tested."))
+        .isEqualTo(WhoisResponseResults.create(loadFile("whois_domain_no_contacts.txt"), 1));
+  }
+
+  @Test
   void getPlainTextOutputTest_registrarAbuseInfoMissing() {
     persistResource(abuseContact.asBuilder().setVisibleInDomainWhoisAsAbuse(false).build());
     DomainWhoisResponse domainWhoisResponse =
