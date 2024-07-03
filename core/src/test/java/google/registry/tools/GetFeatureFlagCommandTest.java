@@ -46,16 +46,16 @@ public class GetFeatureFlagCommandTest extends CommandTestCase<GetFeatureFlagCom
   void testSuccess() throws Exception {
     persistResource(
         new FeatureFlag.Builder()
-            .setFeatureName("testFlag")
+            .setFeatureName("TEST_FEATURE")
             .setStatusMap(
                 ImmutableSortedMap.<DateTime, FeatureStatus>naturalOrder()
                     .put(START_OF_TIME, INACTIVE)
                     .put(clock.nowUtc().plusWeeks(8), ACTIVE)
                     .build())
             .build());
-    runCommand("testFlag");
+    runCommand("TEST_FEATURE");
     assertInStdout(
-        "featureName: \"testFlag\"\n"
+        "featureName: \"TEST_FEATURE\"\n"
             + "status:\n"
             + "  \"1970-01-01T00:00:00.000Z\": \"INACTIVE\"\n"
             + "  \"2000-02-26T00:00:00.000Z\": \"ACTIVE\"");
@@ -65,7 +65,7 @@ public class GetFeatureFlagCommandTest extends CommandTestCase<GetFeatureFlagCom
   void testSuccess_multipleArguments() throws Exception {
     persistResource(
         new FeatureFlag.Builder()
-            .setFeatureName("testFlag")
+            .setFeatureName("TEST_FEATURE")
             .setStatusMap(
                 ImmutableSortedMap.<DateTime, FeatureStatus>naturalOrder()
                     .put(START_OF_TIME, INACTIVE)
@@ -74,7 +74,7 @@ public class GetFeatureFlagCommandTest extends CommandTestCase<GetFeatureFlagCom
             .build());
     persistResource(
         new FeatureFlag.Builder()
-            .setFeatureName("secondFlag")
+            .setFeatureName("MINIMUM_DATASET_CONTACTS_OPTIONAL")
             .setStatusMap(
                 ImmutableSortedMap.<DateTime, FeatureStatus>naturalOrder()
                     .put(START_OF_TIME, INACTIVE)
@@ -82,14 +82,14 @@ public class GetFeatureFlagCommandTest extends CommandTestCase<GetFeatureFlagCom
                     .put(clock.nowUtc().plusWeeks(6), INACTIVE)
                     .build())
             .build());
-    runCommand("testFlag", "secondFlag");
+    runCommand("TEST_FEATURE", "MINIMUM_DATASET_CONTACTS_OPTIONAL");
     assertInStdout(
-        "featureName: \"testFlag\"\n"
+        "featureName: \"TEST_FEATURE\"\n"
             + "status:\n"
             + "  \"1970-01-01T00:00:00.000Z\": \"INACTIVE\"\n"
             + "  \"2000-02-26T00:00:00.000Z\": \"ACTIVE\""
             + "\n\n"
-            + "featureName: \"secondFlag\"\n"
+            + "featureName: \"MINIMUM_DATASET_CONTACTS_OPTIONAL\"\n"
             + "status:\n"
             + "  \"1970-01-01T00:00:00.000Z\": \"INACTIVE\"\n"
             + "  \"2000-01-22T00:00:00.000Z\": \"ACTIVE\"\n"
@@ -99,22 +99,26 @@ public class GetFeatureFlagCommandTest extends CommandTestCase<GetFeatureFlagCom
   @Test
   void testFailure_featureFlagDoesNotExist() {
     FeatureFlagNotFoundException thrown =
-        assertThrows(FeatureFlagNotFoundException.class, () -> runCommand("nullFlag"));
-    assertThat(thrown).hasMessageThat().isEqualTo("No feature flag object(s) found for nullFlag");
+        assertThrows(FeatureFlagNotFoundException.class, () -> runCommand("TEST_FEATURE"));
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo("No feature flag object(s) found for TEST_FEATURE");
   }
 
   @Test
   void testFailure_oneFlagDoesNotExist() {
     persistResource(
         new FeatureFlag.Builder()
-            .setFeatureName("testFlag")
+            .setFeatureName("TEST_FEATURE")
             .setStatusMap(
                 ImmutableSortedMap.<DateTime, FeatureStatus>naturalOrder()
                     .put(START_OF_TIME, INACTIVE)
                     .put(clock.nowUtc().plusWeeks(8), ACTIVE)
                     .build())
             .build());
-    assertThrows(FeatureFlagNotFoundException.class, () -> runCommand("testFlag", "missingFlag"));
+    assertThrows(
+        FeatureFlagNotFoundException.class,
+        () -> runCommand("TEST_FEATURE", "MINIMUM_DATASET_CONTACTS_OPTIONAL"));
   }
 
   @Test

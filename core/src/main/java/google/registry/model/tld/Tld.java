@@ -41,6 +41,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
+import com.google.common.collect.Maps;
 import com.google.common.collect.Ordering;
 import com.google.common.collect.Range;
 import com.google.common.net.InternetDomainName;
@@ -237,14 +238,8 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
                       tlds.stream().collect(toImmutableMap(tld -> tld, Tld::createVKey));
                   Map<VKey<? extends Tld>, Tld> entities =
                       tm().reTransact(() -> tm().loadByKeysIfPresent(keysMap.values()));
-                  return tm().reTransact(
-                          () ->
-                              tlds.stream()
-                                  .collect(
-                                      toImmutableMap(
-                                          tld -> tld,
-                                          tld ->
-                                              Optional.ofNullable(entities.get(createVKey(tld))))));
+                  return Maps.toMap(
+                      tlds, tld -> Optional.ofNullable(entities.get(createVKey(tld))));
                 }
               });
 
