@@ -21,6 +21,7 @@ import com.beust.jcommander.Parameters;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import google.registry.model.common.FeatureFlag;
 import google.registry.model.common.FeatureFlag.FeatureFlagNotFoundException;
+import google.registry.model.common.FeatureFlag.FeatureName;
 import java.io.PrintStream;
 import java.util.List;
 import java.util.Optional;
@@ -44,7 +45,7 @@ public class GetFeatureFlagCommand implements Command {
     for (String featureFlag : mainParameters) {
       Optional<FeatureFlag> maybeFeatureFlag = FeatureFlag.getUncached(featureFlag);
       if (maybeFeatureFlag.isEmpty()) {
-        throw new FeatureFlagNotFoundException(featureFlag);
+        throw new FeatureFlagNotFoundException(FeatureName.valueOf(featureFlag));
       }
       printStream.println(objectMapper.writeValueAsString(maybeFeatureFlag.get()));
     }
