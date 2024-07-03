@@ -14,7 +14,19 @@
 
 package google.registry.model.console;
 
+import static google.registry.tools.server.UpdateUserGroupAction.GROUP_UPDATE_QUEUE;
+
+import com.google.cloud.tasks.v2.Task;
+import com.google.common.collect.ImmutableMultimap;
+import com.google.common.flogger.FluentLogger;
+import google.registry.batch.CloudTasksUtils;
 import google.registry.persistence.VKey;
+import google.registry.request.Action.Service;
+import google.registry.tools.IamClient;
+import google.registry.tools.server.UpdateUserGroupAction;
+import google.registry.tools.server.UpdateUserGroupAction.Mode;
+import google.registry.util.RegistryEnvironment;
+import java.util.Optional;
 import javax.persistence.Access;
 import javax.persistence.AccessType;
 import javax.persistence.Embeddable;
@@ -30,6 +42,76 @@ import javax.persistence.Table;
 @Entity
 @Table(indexes = {@Index(columnList = "emailAddress", name = "user_email_address_idx")})
 public class User extends UserBase {
+
+  public static final String IAP_SECURED_WEB_APP_USER_ROLE = "roles/iap.httpsResourceAccessor";
+  private static final FluentLogger logger = FluentLogger.forEnclosingClass();
+
+  /**
+   * Grants the user permission to pass IAP.
+   *
+   * <p>Depending on if a console user group is set up, the permission is granted either
+   * individually or via group membership.
+   */
+  public static void grantIapPermission(
+      String emailAddress,
+      Optional<String> groupEmailAddress,
+      CloudTasksUtils cloudTasksUtils,
+      IamClient iamClient) {
+    if (RegistryEnvironment.isInTestServer()) {
+      return;
+    }
+    if (groupEmailAddress.isEmpty()) {
+      logger.atInfo().log("Granting IAP role to user %s", emailAddress);
+      iamClient.addBinding(emailAddress, IAP_SECURED_WEB_APP_USER_ROLE);
+    } else {
+      logger.atInfo().log("Adding %s to group %s", emailAddress, groupEmailAddress.get());
+      modifyGroupMembershipAsync(
+          emailAddress, groupEmailAddress.get(), cloudTasksUtils, UpdateUserGroupAction.Mode.ADD);
+    }
+  }
+
+  /**
+   * Revoke the user's permission to pass IAP.
+   *
+   * <p>Depending on if a console user group is set up, the permission is revoked either
+   * individually or via group membership.
+   */
+  public static void revokeIapPermission(
+      String emailAddress,
+      Optional<String> groupEmailAddress,
+      CloudTasksUtils cloudTasksUtils,
+      IamClient iamClient) {
+    if (RegistryEnvironment.isInTestServer()) {
+      return;
+    }
+    if (groupEmailAddress.isEmpty()) {
+      logger.atInfo().log("Removing IAP role from user %s", emailAddress);
+      iamClient.removeBinding(emailAddress, IAP_SECURED_WEB_APP_USER_ROLE);
+    } else {
+      logger.atInfo().log("Removing %s from group %s", emailAddress, groupEmailAddress.get());
+      modifyGroupMembershipAsync(
+          emailAddress, groupEmailAddress.get(), cloudTasksUtils, Mode.REMOVE);
+    }
+  }
+
+  private static void modifyGroupMembershipAsync(
+      String userEmailAddress,
+      String groupEmailAddress,
+      CloudTasksUtils cloudTasksUtils,
+      Mode mode) {
+    Task task =
+        cloudTasksUtils.createPostTask(
+            UpdateUserGroupAction.PATH,
+            Service.TOOLS,
+            ImmutableMultimap.of(
+                "userEmailAddress",
+                userEmailAddress,
+                "groupEmailAddress",
+                groupEmailAddress,
+                "groupUpdateMode",
+                mode.name()));
+    cloudTasksUtils.enqueue(GROUP_UPDATE_QUEUE, task);
+  }
 
   @Override
   @Id

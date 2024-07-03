@@ -80,12 +80,12 @@ import org.joda.time.DateTime;
  * to the same test task container that the original instance pushes to, so that we can make
  * assertions on them by accessing the original instance. We cannot make the test task container
  * itself static because we do not want tasks enqueued in previous tests to interfere with latter
- * tests, when they run on the same JVM (and therefore share the same static class members). To
- * solve this we put the test container in a static map whose keys are the instance IDs. An
- * explicitly created new {@link CloudTasksHelper} (as would be created for a new test method) would
- * have a new ID allocated to it, and therefore stores its tasks in a distinct container. A
- * deserialized {@link CloudTasksHelper}, on the other hand, will have the same instance ID and
- * share the same test class container with its progenitor.
+ * tests when they run on the same JVM (and therefore share the same static class members). To solve
+ * this, we put the test container in a static map whose keys are the instance IDs. An explicitly
+ * created new {@link CloudTasksHelper} (as would be created for a new test method) would have a new
+ * ID allocated to it, and therefore stores its tasks in a distinct container. A deserialized {@link
+ * CloudTasksHelper}, on the other hand, will have the same instance ID and share the same test
+ * class container with its progenitor.
  */
 public class CloudTasksHelper implements Serializable {
 
@@ -131,7 +131,7 @@ public class CloudTasksHelper implements Serializable {
    */
   public void assertTasksEnqueuedWithProperty(
       String queueName, Function<Task, String> propertyGetter, String... expectedTaskProperties) {
-    // Ordering is irrelevant but duplicates should be considered independently.
+    // Ordering is irrelevant, but duplicates should be considered independently.
     assertThat(getTestTasksFor(queueName).stream().map(propertyGetter))
         .containsExactly((Object[]) expectedTaskProperties);
   }
@@ -285,7 +285,7 @@ public class CloudTasksHelper implements Serializable {
               });
       headers = headerBuilder.build();
       ImmutableMultimap.Builder<String, String> paramBuilder = new ImmutableMultimap.Builder<>();
-      // Note that UriParameters.parse() does not throw an IAE on a bad query string (e.g. one
+      // Note that UriParameters.parse() does not throw an IAE on a bad query string (e.g., one
       // where parameters are not properly URL-encoded); it always does a best-effort parse.
       if (method == HttpMethod.GET && uri.getQuery() != null) {
         paramBuilder.putAll(UriParameters.parse(uri.getQuery()));
@@ -382,7 +382,7 @@ public class CloudTasksHelper implements Serializable {
      * the same contract as {@link #equals}, since it will ignore null fields.
      *
      * <p>Match fails if any headers or params expected on the TaskMatcher are not found on the
-     * Task. Note that the inverse is not true (i.e. there may be extra headers on the Task).
+     * Task. Note that the inverse is not true (i.e., there may be extra headers on the Task).
      *
      * <p>Schedule time by default is Timestamp.getDefaultInstance() or null.
      */

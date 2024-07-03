@@ -20,7 +20,7 @@ import com.google.api.services.cloudresourcemanager.model.GetIamPolicyRequest;
 import com.google.api.services.cloudresourcemanager.model.Policy;
 import com.google.api.services.cloudresourcemanager.model.SetIamPolicyRequest;
 import com.google.common.base.Ascii;
-import google.registry.config.CredentialModule.LocalCredential;
+import google.registry.config.CredentialModule.ApplicationDefaultCredential;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.util.GoogleCredentialsBundle;
 import java.io.IOException;
@@ -38,7 +38,7 @@ public class IamClient {
 
   @Inject
   public IamClient(
-      @LocalCredential GoogleCredentialsBundle credentialsBundle,
+      @ApplicationDefaultCredential GoogleCredentialsBundle credentialsBundle,
       @Config("projectId") String projectId) {
     this(
         new CloudResourceManager.Builder(
