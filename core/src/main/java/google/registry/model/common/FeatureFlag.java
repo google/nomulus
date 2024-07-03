@@ -133,7 +133,7 @@ public class FeatureFlag extends ImmutableObject implements Buildable {
                       tm().reTransact(() -> tm().loadByKeysIfPresent(keysMap.values()));
                   return Maps.toMap(
                       featureFlagNames,
-                      flag -> Optional.ofNullable(entities.get(createVKey(flag))));
+                      name -> Optional.ofNullable(entities.get(createVKey(name))));
                 }
               });
 
