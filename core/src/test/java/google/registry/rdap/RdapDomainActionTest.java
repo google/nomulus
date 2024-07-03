@@ -27,6 +27,7 @@ import static google.registry.testing.FullFieldsTestEntityHelper.makeRegistrarPo
 import static google.registry.testing.GsonSubject.assertAboutJson;
 import static org.mockito.Mockito.verify;
 
+import com.google.common.collect.ImmutableSet;
 import com.google.gson.JsonObject;
 import google.registry.model.contact.Contact;
 import google.registry.model.domain.Domain;
@@ -290,6 +291,20 @@ class RdapDomainActionTest extends RdapActionBaseTestCase<RdapDomainAction> {
             .setRegistrant(Optional.empty())
             .build());
     assertProperResponseForCatLol("cat.lol", "rdap_domain_no_contacts_with_remark.json");
+  }
+
+  @Test
+  void testValidDomain_notLoggedIn_contactsShowRedacted_whenNoContactsExist() {
+    // Even though the domain has no contacts, it still shows a full set of REDACTED fields through
+    // RDAP.
+    persistResource(
+        loadByForeignKey(Domain.class, "cat.lol", clock.nowUtc())
+            .get()
+            .asBuilder()
+            .setRegistrant(Optional.empty())
+            .setContacts(ImmutableSet.of())
+            .build());
+    assertProperResponseForCatLol("cat.lol", "rdap_domain_no_contacts_exist_with_remark.json");
   }
 
   @Test

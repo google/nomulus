@@ -1023,16 +1023,16 @@ public class DomainTest {
             DesignatedContact.create(Type.TECH, contact4Key)),
         true);
     assertThat(domain.getRegistrant()).hasValue(contact1Key);
-    assertThat(domain.getAdminContact()).isEqualTo(contact2Key);
-    assertThat(domain.getBillingContact()).isEqualTo(contact3Key);
-    assertThat(domain.getTechContact()).isEqualTo(contact4Key);
+    assertThat(domain.getAdminContact()).hasValue(contact2Key);
+    assertThat(domain.getBillingContact()).hasValue(contact3Key);
+    assertThat(domain.getTechContact()).hasValue(contact4Key);
 
     // Make sure everything gets nulled out.
     domain.setContactFields(ImmutableSet.of(), true);
     assertThat(domain.getRegistrant()).isEmpty();
-    assertThat(domain.getAdminContact()).isNull();
-    assertThat(domain.getBillingContact()).isNull();
-    assertThat(domain.getTechContact()).isNull();
+    assertThat(domain.getAdminContact()).isEmpty();
+    assertThat(domain.getBillingContact()).isEmpty();
+    assertThat(domain.getTechContact()).isEmpty();
 
     // Make sure that changes don't affect the registrant unless requested.
     domain.setContactFields(
@@ -1043,15 +1043,15 @@ public class DomainTest {
             DesignatedContact.create(Type.TECH, contact4Key)),
         false);
     assertThat(domain.getRegistrant()).isEmpty();
-    assertThat(domain.getAdminContact()).isEqualTo(contact2Key);
-    assertThat(domain.getBillingContact()).isEqualTo(contact3Key);
-    assertThat(domain.getTechContact()).isEqualTo(contact4Key);
+    assertThat(domain.getAdminContact()).hasValue(contact2Key);
+    assertThat(domain.getBillingContact()).hasValue(contact3Key);
+    assertThat(domain.getTechContact()).hasValue(contact4Key);
     domain = domain.asBuilder().setRegistrant(Optional.of(contact1Key)).build();
     domain.setContactFields(ImmutableSet.of(), false);
     assertThat(domain.getRegistrant()).hasValue(contact1Key);
-    assertThat(domain.getAdminContact()).isNull();
-    assertThat(domain.getBillingContact()).isNull();
-    assertThat(domain.getTechContact()).isNull();
+    assertThat(domain.getAdminContact()).isEmpty();
+    assertThat(domain.getBillingContact()).isEmpty();
+    assertThat(domain.getTechContact()).isEmpty();
   }
 
   @Test

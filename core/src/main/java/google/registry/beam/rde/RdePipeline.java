@@ -466,13 +466,10 @@ public class RdePipeline implements Serializable {
                               // Contacts and hosts are only deposited in RDE, not BRDA.
                               if (pendingDeposit.mode() == RdeMode.FULL) {
                                 HashSet<Serializable> contacts = new HashSet<>();
-                                contacts.add(domain.getAdminContact().getKey());
-                                contacts.add(domain.getTechContact().getKey());
-                                domain.getRegistrant().ifPresent(r -> contacts.add(r.getKey()));
-                                // Billing contact is not mandatory.
-                                if (domain.getBillingContact() != null) {
-                                  contacts.add(domain.getBillingContact().getKey());
-                                }
+                                domain.getAdminContact().ifPresent(c -> contacts.add(c.getKey()));
+                                domain.getTechContact().ifPresent(c -> contacts.add(c.getKey()));
+                                domain.getRegistrant().ifPresent(c -> contacts.add(c.getKey()));
+                                domain.getBillingContact().ifPresent(c -> contacts.add(c.getKey()));
                                 referencedContactCounter.inc(contacts.size());
                                 contacts.forEach(
                                     contactRepoId ->

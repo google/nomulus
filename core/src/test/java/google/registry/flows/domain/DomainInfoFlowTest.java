@@ -236,6 +236,19 @@ class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, Domain> {
   }
 
   @Test
+  void testSuccess_noContacts() throws Exception {
+    persistTestEntities(false);
+    domain =
+        persistResource(
+            domain
+                .asBuilder()
+                .setRegistrant(Optional.empty())
+                .setContacts(ImmutableSet.of())
+                .build());
+    doSuccessfulTest("domain_info_response_no_contacts.xml", false);
+  }
+
+  @Test
   void testSuccess_clTridNotSpecified() throws Exception {
     setEppInput("domain_info_no_cltrid.xml");
     doSuccessfulTest("domain_info_response_no_cltrid.xml");

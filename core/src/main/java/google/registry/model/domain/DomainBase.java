@@ -46,6 +46,7 @@ import google.registry.model.EppResource;
 import google.registry.model.EppResource.ResourceWithTransferData;
 import google.registry.model.billing.BillingRecurrence;
 import google.registry.model.contact.Contact;
+import google.registry.model.domain.DesignatedContact.Type;
 import google.registry.model.domain.launch.LaunchNotice;
 import google.registry.model.domain.rgp.GracePeriodStatus;
 import google.registry.model.domain.secdns.DomainDsData;
@@ -131,10 +132,10 @@ public class DomainBase extends EppResource
   @Expose @Transient Set<VKey<Host>> nsHosts;
 
   /** Contacts. */
-  @Expose VKey<Contact> adminContact;
+  @Expose @Nullable VKey<Contact> adminContact;
 
-  @Expose VKey<Contact> billingContact;
-  @Expose VKey<Contact> techContact;
+  @Expose @Nullable VKey<Contact> billingContact;
+  @Expose @Nullable VKey<Contact> techContact;
   @Expose @Nullable VKey<Contact> registrantContact;
 
   /** Authorization info (aka transfer secret) of the domain. */
@@ -589,24 +590,32 @@ public class DomainBase extends EppResource
     return Optional.ofNullable(registrantContact);
   }
 
-  public VKey<Contact> getAdminContact() {
-    return adminContact;
+  public Optional<VKey<Contact>> getAdminContact() {
+    return Optional.ofNullable(adminContact);
   }
 
-  public VKey<Contact> getBillingContact() {
-    return billingContact;
+  public Optional<VKey<Contact>> getBillingContact() {
+    return Optional.ofNullable(billingContact);
   }
 
-  public VKey<Contact> getTechContact() {
-    return techContact;
+  public Optional<VKey<Contact>> getTechContact() {
+    return Optional.ofNullable(techContact);
   }
 
-  /** Associated contacts for the domain (other than registrant). */
+  /**
+   * Associated contacts for the domain (other than registrant).
+   *
+   * <p>Note: This can be an empty set if no contacts are present for the domain.
+   */
   public ImmutableSet<DesignatedContact> getContacts() {
     return getAllContacts(false);
   }
 
-  /** Gets all associated contacts for the domain, including the registrant. */
+  /**
+   * Gets all associated contacts for the domain, including the registrant.
+   *
+   * <p>Note: This can be an empty set if no contacts are present for the domain.
+   */
   public ImmutableSet<DesignatedContact> getAllContacts() {
     return getAllContacts(true);
   }
@@ -615,7 +624,11 @@ public class DomainBase extends EppResource
     return authInfo;
   }
 
-  /** Returns all referenced contacts from this domain. */
+  /**
+   * Returns all referenced contacts from this domain.
+   *
+   * <p>Note: This can be an empty set if no contacts are present for the domain.
+   */
   public ImmutableSet<VKey<Contact>> getReferencedContacts() {
     return nullToEmptyImmutableCopy(getAllContacts(true)).stream()
         .map(DesignatedContact::getContactKey)
@@ -625,18 +638,12 @@ public class DomainBase extends EppResource
 
   private ImmutableSet<DesignatedContact> getAllContacts(boolean includeRegistrant) {
     ImmutableSet.Builder<DesignatedContact> builder = new ImmutableSet.Builder<>();
-    if (includeRegistrant && registrantContact != null) {
-      builder.add(DesignatedContact.create(DesignatedContact.Type.REGISTRANT, registrantContact));
+    if (includeRegistrant) {
+      getRegistrant().ifPresent(c -> builder.add(DesignatedContact.create(Type.REGISTRANT, c)));
     }
-    if (adminContact != null) {
-      builder.add(DesignatedContact.create(DesignatedContact.Type.ADMIN, adminContact));
-    }
-    if (billingContact != null) {
-      builder.add(DesignatedContact.create(DesignatedContact.Type.BILLING, billingContact));
-    }
-    if (techContact != null) {
-      builder.add(DesignatedContact.create(DesignatedContact.Type.TECH, techContact));
-    }
+    getAdminContact().ifPresent(c -> builder.add(DesignatedContact.create(Type.ADMIN, c)));
+    getBillingContact().ifPresent(c -> builder.add(DesignatedContact.create(Type.BILLING, c)));
+    getTechContact().ifPresent(c -> builder.add(DesignatedContact.create(Type.TECH, c)));
     return builder.build();
   }
 
@@ -652,11 +659,13 @@ public class DomainBase extends EppResource
    */
   void setContactFields(Set<DesignatedContact> contacts, boolean includeRegistrant) {
     // Set the individual contact fields.
-    billingContact = techContact = adminContact = null;
+    billingContact = null;
+    techContact = null;
+    adminContact = null;
     if (includeRegistrant) {
       registrantContact = null;
     }
-    HashSet<DesignatedContact.Type> contactsDiscovered = new HashSet<>();
+    HashSet<Type> contactsDiscovered = new HashSet<>();
     for (DesignatedContact contact : contacts) {
       checkArgument(
           !contactsDiscovered.contains(contact.getType()),
@@ -687,7 +696,7 @@ public class DomainBase extends EppResource
 
   /** Predicate to determine if a given {@link DesignatedContact} is the registrant. */
   static final Predicate<DesignatedContact> IS_REGISTRANT =
-      (DesignatedContact contact) -> DesignatedContact.Type.REGISTRANT.equals(contact.type);
+      (DesignatedContact contact) -> Type.REGISTRANT.equals(contact.type);
 
   /** An override of {@link EppResource#asBuilder} with tighter typing. */
   @Override

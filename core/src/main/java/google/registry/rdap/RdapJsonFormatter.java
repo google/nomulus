@@ -381,8 +381,11 @@ public class RdapJsonFormatter {
                 () ->
                     ImmutableSet.copyOf(replicaTm().loadByKeys(domain.getNameservers()).values()));
     // Load the registrant and other contacts and add them to the data.
+    ImmutableSet<VKey<Contact>> contacts = domain.getReferencedContacts();
     ImmutableMap<VKey<? extends Contact>, Contact> loadedContacts =
-        replicaTm().transact(() -> replicaTm().loadByKeysIfPresent(domain.getReferencedContacts()));
+        contacts.isEmpty()
+            ? ImmutableMap.of()
+            : replicaTm().transact(() -> replicaTm().loadByKeysIfPresent(contacts));
 
     // RDAP Response Profile 2.7.1, 2.7.3 - we MUST have the contacts. 2.7.4 discusses redaction of
     // fields we don't want to show (as opposed to not having contacts at all) because of GDPR etc.
@@ -544,7 +547,8 @@ public class RdapJsonFormatter {
     // TODO(mcilwain): Once the RDAP profile is fully updated for minimum registration data set,
     //                 we will want to not include non-existent contacts at all, rather than
     //                 pretending they exist and just showing REDACTED info. This is especially
-    //                 important for authorized flows, where you wouldn't expect to see redaction.
+    //                 important for authorized flows, where you wouldn't expect to see redaction
+    //                 (although no one actually has access to authorized flows yet).
     boolean isAuthorized =
         contact.isPresent()
             && rdapAuthorization.isAuthorizedForRegistrar(
