@@ -13,6 +13,9 @@
 // limitations under the License.
 package google.registry.tools;
 
+import static google.registry.model.common.FeatureFlag.FeatureName.MINIMUM_DATASET_CONTACTS_OPTIONAL;
+import static google.registry.model.common.FeatureFlag.FeatureName.MINIMUM_DATASET_CONTACTS_PROHIBITED;
+import static google.registry.model.common.FeatureFlag.FeatureName.TEST_FEATURE;
 import static google.registry.model.common.FeatureFlag.FeatureStatus.ACTIVE;
 import static google.registry.model.common.FeatureFlag.FeatureStatus.INACTIVE;
 import static google.registry.testing.DatabaseHelper.persistResource;
@@ -39,7 +42,7 @@ public class ListFeatureFlagsCommandTest extends CommandTestCase<ListFeatureFlag
   void testSuccess_oneFlag() throws Exception {
     persistResource(
         new FeatureFlag.Builder()
-            .setFeatureName("TEST_FEATURE")
+            .setFeatureName(TEST_FEATURE)
             .setStatusMap(
                 ImmutableSortedMap.<DateTime, FeatureStatus>naturalOrder()
                     .put(START_OF_TIME, INACTIVE)
@@ -54,7 +57,7 @@ public class ListFeatureFlagsCommandTest extends CommandTestCase<ListFeatureFlag
   void test_success_manyFlags() throws Exception {
     persistResource(
         new FeatureFlag.Builder()
-            .setFeatureName("TEST_FEATURE")
+            .setFeatureName(TEST_FEATURE)
             .setStatusMap(
                 ImmutableSortedMap.<DateTime, FeatureStatus>naturalOrder()
                     .put(START_OF_TIME, INACTIVE)
@@ -63,7 +66,7 @@ public class ListFeatureFlagsCommandTest extends CommandTestCase<ListFeatureFlag
             .build());
     persistResource(
         new FeatureFlag.Builder()
-            .setFeatureName("MINIMUM_DATASET_CONTACTS_OPTIONAL")
+            .setFeatureName(MINIMUM_DATASET_CONTACTS_OPTIONAL)
             .setStatusMap(
                 ImmutableSortedMap.<DateTime, FeatureStatus>naturalOrder()
                     .put(START_OF_TIME, INACTIVE)
@@ -74,7 +77,7 @@ public class ListFeatureFlagsCommandTest extends CommandTestCase<ListFeatureFlag
             .build());
     persistResource(
         new FeatureFlag.Builder()
-            .setFeatureName("MINIMUM_DATASET_CONTACTS_PROHIBITED")
+            .setFeatureName(MINIMUM_DATASET_CONTACTS_PROHIBITED)
             .setStatusMap(
                 ImmutableSortedMap.<DateTime, FeatureStatus>naturalOrder()
                     .put(START_OF_TIME, ACTIVE)

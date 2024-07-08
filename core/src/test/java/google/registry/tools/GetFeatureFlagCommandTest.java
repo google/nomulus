@@ -15,6 +15,8 @@
 package google.registry.tools;
 
 import static com.google.common.truth.Truth.assertThat;
+import static google.registry.model.common.FeatureFlag.FeatureName.MINIMUM_DATASET_CONTACTS_OPTIONAL;
+import static google.registry.model.common.FeatureFlag.FeatureName.TEST_FEATURE;
 import static google.registry.model.common.FeatureFlag.FeatureStatus.ACTIVE;
 import static google.registry.model.common.FeatureFlag.FeatureStatus.INACTIVE;
 import static google.registry.testing.DatabaseHelper.persistResource;
@@ -46,7 +48,7 @@ public class GetFeatureFlagCommandTest extends CommandTestCase<GetFeatureFlagCom
   void testSuccess() throws Exception {
     persistResource(
         new FeatureFlag.Builder()
-            .setFeatureName("TEST_FEATURE")
+            .setFeatureName(TEST_FEATURE)
             .setStatusMap(
                 ImmutableSortedMap.<DateTime, FeatureStatus>naturalOrder()
                     .put(START_OF_TIME, INACTIVE)
@@ -65,7 +67,7 @@ public class GetFeatureFlagCommandTest extends CommandTestCase<GetFeatureFlagCom
   void testSuccess_multipleArguments() throws Exception {
     persistResource(
         new FeatureFlag.Builder()
-            .setFeatureName("TEST_FEATURE")
+            .setFeatureName(TEST_FEATURE)
             .setStatusMap(
                 ImmutableSortedMap.<DateTime, FeatureStatus>naturalOrder()
                     .put(START_OF_TIME, INACTIVE)
@@ -74,7 +76,7 @@ public class GetFeatureFlagCommandTest extends CommandTestCase<GetFeatureFlagCom
             .build());
     persistResource(
         new FeatureFlag.Builder()
-            .setFeatureName("MINIMUM_DATASET_CONTACTS_OPTIONAL")
+            .setFeatureName(MINIMUM_DATASET_CONTACTS_OPTIONAL)
             .setStatusMap(
                 ImmutableSortedMap.<DateTime, FeatureStatus>naturalOrder()
                     .put(START_OF_TIME, INACTIVE)
@@ -109,7 +111,7 @@ public class GetFeatureFlagCommandTest extends CommandTestCase<GetFeatureFlagCom
   void testFailure_oneFlagDoesNotExist() {
     persistResource(
         new FeatureFlag.Builder()
-            .setFeatureName("TEST_FEATURE")
+            .setFeatureName(TEST_FEATURE)
             .setStatusMap(
                 ImmutableSortedMap.<DateTime, FeatureStatus>naturalOrder()
                     .put(START_OF_TIME, INACTIVE)

@@ -76,26 +76,17 @@ public class FeatureFlag extends ImmutableObject implements Buildable {
   TimedTransitionProperty<FeatureStatus> status =
       TimedTransitionProperty.withInitialValue(FeatureStatus.INACTIVE);
 
-  public static Optional<FeatureFlag> getUncached(String featureName) {
-    return tm().transact(
-            () -> tm().loadByKeyIfPresent(createVKey(FeatureName.valueOf(featureName))));
+  public static Optional<FeatureFlag> getUncached(FeatureName featureName) {
+    return tm().transact(() -> tm().loadByKeyIfPresent(createVKey(featureName)));
   }
 
   public static ImmutableList<FeatureFlag> getAllUncached() {
     return tm().transact(() -> tm().loadAllOf(FeatureFlag.class));
   }
 
-  public static FeatureFlag get(String featureName) {
-    return get(FeatureName.valueOf(featureName));
-  }
-
   public static FeatureFlag get(FeatureName featureName) {
     Optional<FeatureFlag> maybeFeatureFlag = CACHE.get(featureName);
-    if (maybeFeatureFlag.isEmpty()) {
-      throw new FeatureFlagNotFoundException(featureName);
-    } else {
-      return maybeFeatureFlag.get();
-    }
+    return maybeFeatureFlag.orElseThrow(() -> new FeatureFlagNotFoundException(featureName));
   }
 
   public static ImmutableSet<FeatureFlag> getAll(Set<FeatureName> featureNames) {
@@ -178,11 +169,6 @@ public class FeatureFlag extends ImmutableObject implements Buildable {
       getInstance().status.checkValidity();
       checkArgument(getInstance().featureName != null, "FeatureName cannot be null");
       return super.build();
-    }
-
-    public Builder setFeatureName(String featureName) {
-      getInstance().featureName = FeatureName.valueOf(featureName);
-      return this;
     }
 
     public Builder setFeatureName(FeatureName featureName) {

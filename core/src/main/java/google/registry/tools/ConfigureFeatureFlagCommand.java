@@ -18,6 +18,7 @@ import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import com.google.common.collect.ImmutableSortedMap;
 import google.registry.model.common.FeatureFlag;
+import google.registry.model.common.FeatureFlag.FeatureName;
 import google.registry.model.common.FeatureFlag.FeatureStatus;
 import google.registry.tools.params.TransitionListParameter.FeatureStatusTransitions;
 import java.util.List;
@@ -28,8 +29,8 @@ import org.joda.time.DateTime;
 @Parameters(separators = " =", commandDescription = "Create or update a feature flag.")
 public class ConfigureFeatureFlagCommand extends MutatingCommand {
 
-  @Parameter(description = "Feature flag(s) to create or update", required = true)
-  private List<String> mainParameters;
+  @Parameter(description = "Feature flag name(s) to create or update", required = true)
+  private List<FeatureName> mainParameters;
 
   @Parameter(
       names = "--status_map",
@@ -44,7 +45,7 @@ public class ConfigureFeatureFlagCommand extends MutatingCommand {
 
   @Override
   protected void init() throws Exception {
-    for (String name : mainParameters) {
+    for (FeatureName name : mainParameters) {
       Optional<FeatureFlag> oldFlag = FeatureFlag.getUncached(name);
       FeatureFlag.Builder newFlagBuilder =
           new FeatureFlag().asBuilder().setFeatureName(name).setStatusMap(featureStatusTransitions);

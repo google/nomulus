@@ -157,25 +157,6 @@ public class FeatureFlagTest extends EntityTestCase {
   }
 
   @Test
-  void testFailure_featureNameNotFound() {
-    IllegalArgumentException thrown =
-        assertThrows(
-            IllegalArgumentException.class,
-            () ->
-                new FeatureFlag.Builder()
-                    .setFeatureName("testFlag")
-                    .setStatusMap(
-                        ImmutableSortedMap.<DateTime, FeatureStatus>naturalOrder()
-                            .put(START_OF_TIME, INACTIVE)
-                            .put(DateTime.now(UTC).plusWeeks(8), ACTIVE)
-                            .build()));
-    assertThat(thrown)
-        .hasMessageThat()
-        .isEqualTo(
-            "No enum constant google.registry.model.common.FeatureFlag.FeatureName.testFlag");
-  }
-
-  @Test
   void testFailure_nullFeatureName() {
     FeatureFlag.Builder featureFlagBuilder =
         new FeatureFlag.Builder()

@@ -32,7 +32,7 @@ import javax.inject.Inject;
 public class GetFeatureFlagCommand implements Command {
 
   @Parameter(description = "Feature flag(s) to show", required = true)
-  private List<String> mainParameters;
+  private List<FeatureName> mainParameters;
 
   @Inject ObjectMapper objectMapper;
 
@@ -42,10 +42,10 @@ public class GetFeatureFlagCommand implements Command {
     // cause subsequent output to standard output or standard error to be lost
     // See: https://errorprone.info/bugpattern/ClosingStandardOutputStreams
     PrintStream printStream = new PrintStream(System.out, false, UTF_8);
-    for (String featureFlag : mainParameters) {
+    for (FeatureName featureFlag : mainParameters) {
       Optional<FeatureFlag> maybeFeatureFlag = FeatureFlag.getUncached(featureFlag);
       if (maybeFeatureFlag.isEmpty()) {
-        throw new FeatureFlagNotFoundException(FeatureName.valueOf(featureFlag));
+        throw new FeatureFlagNotFoundException(featureFlag);
       }
       printStream.println(objectMapper.writeValueAsString(maybeFeatureFlag.get()));
     }
