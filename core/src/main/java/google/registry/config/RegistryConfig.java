@@ -1781,6 +1781,19 @@ public final class RegistryConfig {
   }
 
   /**
+   * List of registrars for which we include a promotional price on domain checks if configured.
+   *
+   * <p>In these cases, when a default promotion is running for the domain+registrar combination in
+   * question (a DEFAULT_PROMO token is set on the TLD), the standard non-promotional price will be
+   * returned for that domain as the standard create price. We will then add an additional fee check
+   * response with the actual promotional price and a "STANDARD PROMOTION" class.
+   */
+  public static ImmutableSet<String> getTieredPricingPromotionRegistrarIds() {
+    return ImmutableSet.copyOf(
+        CONFIG_SETTINGS.get().registryPolicy.tieredPricingPromotionRegistrarIds);
+  }
+
+  /**
    * Memoizes loading of the {@link RegistryConfigSettings} POJO.
    *
    * <p>Memoizing without cache expiration is used because the app must be re-deployed in order to
@@ -1789,8 +1802,6 @@ public final class RegistryConfig {
   @VisibleForTesting
   public static final Supplier<RegistryConfigSettings> CONFIG_SETTINGS =
       memoize(RegistryConfig::getConfigSettings);
-
-
 
   private static InternetAddress parseEmailAddress(String email) {
     try {
