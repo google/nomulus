@@ -40,6 +40,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
+import org.joda.money.Money;
 import org.joda.time.DateTime;
 
 /** Command to update existing {@link AllocationToken}s. */
@@ -110,10 +111,16 @@ final class UpdateAllocationTokensCommand extends UpdateOrDeleteAllocationTokens
           "The type of renewal price behavior, either DEFAULT (default), NONPREMIUM, or SPECIFIED."
               + " This indicates how a domain should be charged for renewal. By default, a domain"
               + " will be renewed at the renewal price from the pricing engine. If the renewal"
-              + " price behavior is set to SPECIFIED, it means that the renewal cost will be the"
-              + " same as the domain's calculated create price.")
+              + " price behavior is set to SPECIFIED, it means that the renewal cost will be equal"
+              + " to the provided renewal price.")
   @Nullable
   private RenewalPriceBehavior renewalPriceBehavior;
+
+  @Parameter(
+      names = {"--renewal_price"},
+      description = "The renewal price amount iff the renewal price behavior is SPECIFIED.")
+  @Nullable
+  private Money renewalPrice;
 
   @Parameter(
       names = {"--registration_behavior"},
@@ -189,17 +196,22 @@ final class UpdateAllocationTokensCommand extends UpdateOrDeleteAllocationTokens
         .ifPresent(tlds -> builder.setAllowedTlds(ImmutableSet.copyOf(tlds)));
     Optional.ofNullable(allowedEppActions)
         .ifPresent(
-            eppActions -> {
-              builder.setAllowedEppActions(
-                  eppActions.stream()
-                      .map(CommandName::parseKnownCommand)
-                      .collect(toImmutableSet()));
-            });
+            eppActions ->
+                builder.setAllowedEppActions(
+                    eppActions.stream()
+                        .map(CommandName::parseKnownCommand)
+                        .collect(toImmutableSet())));
     Optional.ofNullable(discountFraction).ifPresent(builder::setDiscountFraction);
     Optional.ofNullable(discountPremiums).ifPresent(builder::setDiscountPremiums);
     Optional.ofNullable(discountYears).ifPresent(builder::setDiscountYears);
     Optional.ofNullable(tokenStatusTransitions).ifPresent(builder::setTokenStatusTransitions);
+
+    if (renewalPriceBehavior != null
+        && renewalPriceBehavior != original.getRenewalPriceBehavior()) {
+      builder.setRenewalPrice(null);
+    }
     Optional.ofNullable(renewalPriceBehavior).ifPresent(builder::setRenewalPriceBehavior);
+    Optional.ofNullable(renewalPrice).ifPresent(builder::setRenewalPrice);
     Optional.ofNullable(registrationBehavior).ifPresent(builder::setRegistrationBehavior);
     return builder.build();
   }
