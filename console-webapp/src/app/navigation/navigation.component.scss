@@ -44,10 +44,10 @@ $expand-icon-size: 26px;
 
       &:hover {
         background-color: var(--light-highlight);
-        border-radius: 0 25px 25px 0;
+        border-radius: 0 15px 15px 0;
       }
       &.active {
-        border-radius: 0 25px 25px 0;
+        border-radius: 0 15px 15px 0;
         background-color: var(--lightest);
       }
     }

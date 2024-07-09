@@ -1,11 +1,6 @@
 .console-app {
   $min-width: 756px;
 
-  &__registrars {
-    width: 100%;
-    overflow: auto;
-  }
-
   &__registrars-filter {
     min-width: $min-width !important;
     width: 100%;

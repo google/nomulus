@@ -13,82 +13,93 @@
     </div>
     } @else {
     <div class="console-app__domains-table-parent">
-      @if (isLoading) {
-      <div class="console-app__domains-spinner">
-        <mat-spinner />
+      <div class="console-app__scrollable-wrapper">
+        <div class="console-app__scrollable">
+          @if (isLoading) {
+          <div class="console-app__domains-spinner">
+            <mat-spinner />
+          </div>
+          } @else {
+          <a
+            mat-stroked-button
+            color="primary"
+            href="/console-api/dum-download?registrarId={{
+              registrarService.registrarId()
+            }}"
+            class="console-app-domains__download"
+          >
+            <mat-icon>download</mat-icon>
+            Download domains (.csv)
+          </a>
+
+          <mat-form-field class="console-app__domains-filter">
+            <mat-label>Filter</mat-label>
+            <input
+              type="search"
+              matInput
+              [(ngModel)]="searchTerm"
+              (ngModelChange)="sendInput()"
+              [disabled]="isLoading"
+              #input
+            />
+          </mat-form-field>
+          }
+          <mat-table
+            [dataSource]="dataSource"
+            class="mat-elevation-z0"
+            class="console-app__domains-table"
+          >
+            <ng-container matColumnDef="domainName">
+              <mat-header-cell *matHeaderCellDef>Domain Name</mat-header-cell>
+              <mat-cell *matCellDef="let element">{{
+                element.domainName
+              }}</mat-cell>
+            </ng-container>
+
+            <ng-container matColumnDef="creationTime">
+              <mat-header-cell *matHeaderCellDef>Creation Time</mat-header-cell>
+              <mat-cell *matCellDef="let element">
+                {{ element.creationTime.creationTime }}
+              </mat-cell>
+            </ng-container>
+
+            <ng-container matColumnDef="registrationExpirationTime">
+              <mat-header-cell *matHeaderCellDef
+                >Expiration Time</mat-header-cell
+              >
+              <mat-cell *matCellDef="let element">
+                {{ element.registrationExpirationTime }}
+              </mat-cell>
+            </ng-container>
+
+            <ng-container matColumnDef="statuses">
+              <mat-header-cell *matHeaderCellDef>Statuses</mat-header-cell>
+              <mat-cell *matCellDef="let element">{{
+                element.statuses
+              }}</mat-cell>
+            </ng-container>
+
+            <mat-header-row
+              *matHeaderRowDef="displayedColumns"
+            ></mat-header-row>
+            <mat-row *matRowDef="let row; columns: displayedColumns"></mat-row>
+
+            <!-- Row shown when there is no matching data. -->
+            <mat-row *matNoDataRow>
+              <mat-cell colspan="4">No domains found</mat-cell>
+            </mat-row>
+          </mat-table>
+          <mat-paginator
+            [length]="totalResults"
+            [pageIndex]="pageNumber"
+            [pageSize]="resultsPerPage"
+            [pageSizeOptions]="[10, 25, 50, 100, 500]"
+            (page)="onPageChange($event)"
+            aria-label="Select page of domain results"
+            showFirstLastButtons
+          ></mat-paginator>
+        </div>
       </div>
-      } @else {
-      <a
-        mat-stroked-button
-        color="primary"
-        href="/console-api/dum-download?registrarId={{
-          registrarService.registrarId()
-        }}"
-        class="console-app-domains__download"
-      >
-        <mat-icon>download</mat-icon>
-        Download domains (.csv)
-      </a>
-      <mat-form-field class="console-app__domains-filter">
-        <mat-label>Filter</mat-label>
-        <input
-          type="search"
-          matInput
-          [(ngModel)]="searchTerm"
-          (ngModelChange)="sendInput()"
-          [disabled]="isLoading"
-          #input
-        />
-      </mat-form-field>
-      }
-      <mat-table
-        [dataSource]="dataSource"
-        class="mat-elevation-z0"
-        class="console-app__domains-table"
-      >
-        <ng-container matColumnDef="domainName">
-          <mat-header-cell *matHeaderCellDef>Domain Name</mat-header-cell>
-          <mat-cell *matCellDef="let element">{{
-            element.domainName
-          }}</mat-cell>
-        </ng-container>
-
-        <ng-container matColumnDef="creationTime">
-          <mat-header-cell *matHeaderCellDef>Creation Time</mat-header-cell>
-          <mat-cell *matCellDef="let element">
-            {{ element.creationTime.creationTime }}
-          </mat-cell>
-        </ng-container>
-
-        <ng-container matColumnDef="registrationExpirationTime">
-          <mat-header-cell *matHeaderCellDef>Expiration Time</mat-header-cell>
-          <mat-cell *matCellDef="let element">
-            {{ element.registrationExpirationTime }}
-          </mat-cell>
-        </ng-container>
-
-        <ng-container matColumnDef="statuses">
-          <mat-header-cell *matHeaderCellDef>Statuses</mat-header-cell>
-          <mat-cell *matCellDef="let element">{{ element.statuses }}</mat-cell>
-        </ng-container>
-
-        <mat-header-row *matHeaderRowDef="displayedColumns"></mat-header-row>
-        <mat-row *matRowDef="let row; columns: displayedColumns"></mat-row>
-
-        <!-- Row shown when there is no matching data. -->
-        <mat-row *matNoDataRow>
-          <mat-cell colspan="4">No domains found</mat-cell>
-        </mat-row>
-      </mat-table>
-      <mat-paginator
-        [length]="totalResults"
-        [pageIndex]="pageNumber"
-        [pageSize]="resultsPerPage"
-        [pageSizeOptions]="[10, 25, 50, 100, 500]"
-        (page)="onPageChange($event)"
-        aria-label="Select page of domain results"
-        showFirstLastButtons
-      ></mat-paginator>
     </div>
     }
   </div>
