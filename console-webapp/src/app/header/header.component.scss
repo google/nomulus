@@ -16,11 +16,11 @@
   &__logo {
     color: inherit;
     text-decoration: none;
-    margin-left: -10px;
+    margin-left: -15px;
   }
   &__menu-btn {
-    width: 25px;
-    height: 25px;
+    width: 30px;
+    height: 30px;
     padding: 0;
   }
   &__header {
@@ -30,9 +30,6 @@
     .mat-toolbar {
       background: transparent;
       margin-bottom: 10px;
-    }
-
-    @media (max-width: 480px) {
     }
 
     &-user-icon {

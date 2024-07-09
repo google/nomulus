@@ -18,11 +18,6 @@
     right: 0;
   }
 
-  &__domains {
-    width: 100%;
-    overflow: auto;
-  }
-
   &__domains-filter {
     min-width: $min-width !important;
     width: 100%;
@@ -30,7 +25,6 @@
 
   &__domains-table-parent {
     position: relative;
-    width: fit-content;
     min-width: 100%;
   }
 

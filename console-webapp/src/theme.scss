@@ -1,6 +1,7 @@
 @use "sass:map";
 @use "sass:math";
 @use "@angular/material" as mat;
+@use "@material/textfield";
 
 $secondary-color: #80868b;
 $border-color: #dadce0;
@@ -131,13 +132,7 @@ $theme: mat.define-theme(
 html {
   @include mat.all-component-themes($theme);
   @include mat.typography-hierarchy($typographyConfig);
-  @include mat.form-field-theme(
-    mat.define-theme(
-      (
-        density: (
-          scale: -3,
-        ),
-      )
-    )
-  );
+  .field-small {
+    @include mat.form-field-density(-3);
+  }
 }
