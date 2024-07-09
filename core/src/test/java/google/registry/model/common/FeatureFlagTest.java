@@ -15,6 +15,9 @@
 package google.registry.model.common;
 
 import static com.google.common.truth.Truth.assertThat;
+import static google.registry.model.common.FeatureFlag.FeatureName.MINIMUM_DATASET_CONTACTS_OPTIONAL;
+import static google.registry.model.common.FeatureFlag.FeatureName.MINIMUM_DATASET_CONTACTS_PROHIBITED;
+import static google.registry.model.common.FeatureFlag.FeatureName.TEST_FEATURE;
 import static google.registry.model.common.FeatureFlag.FeatureStatus.ACTIVE;
 import static google.registry.model.common.FeatureFlag.FeatureStatus.INACTIVE;
 import static google.registry.testing.DatabaseHelper.loadByEntity;
@@ -42,8 +45,8 @@ public class FeatureFlagTest extends EntityTestCase {
   void testSuccess_persistence() {
     FeatureFlag featureFlag =
         new FeatureFlag.Builder()
-            .setFeatureName("testFlag")
-            .setStatus(
+            .setFeatureName(TEST_FEATURE)
+            .setStatusMap(
                 ImmutableSortedMap.<DateTime, FeatureStatus>naturalOrder()
                     .put(START_OF_TIME, INACTIVE)
                     .put(DateTime.now(UTC).plusWeeks(8), ACTIVE)
@@ -58,15 +61,15 @@ public class FeatureFlagTest extends EntityTestCase {
   void testSuccess_getSingleFlag() {
     FeatureFlag featureFlag =
         new FeatureFlag.Builder()
-            .setFeatureName("testFlag")
-            .setStatus(
+            .setFeatureName(TEST_FEATURE)
+            .setStatusMap(
                 ImmutableSortedMap.<DateTime, FeatureStatus>naturalOrder()
                     .put(START_OF_TIME, INACTIVE)
                     .put(DateTime.now(UTC).plusWeeks(8), ACTIVE)
                     .build())
             .build();
     persistResource(featureFlag);
-    assertThat(FeatureFlag.get("testFlag")).isEqualTo(featureFlag);
+    assertThat(FeatureFlag.get(TEST_FEATURE)).isEqualTo(featureFlag);
   }
 
   @Test
@@ -74,8 +77,8 @@ public class FeatureFlagTest extends EntityTestCase {
     FeatureFlag featureFlag1 =
         persistResource(
             new FeatureFlag.Builder()
-                .setFeatureName("testFlag1")
-                .setStatus(
+                .setFeatureName(TEST_FEATURE)
+                .setStatusMap(
                     ImmutableSortedMap.<DateTime, FeatureStatus>naturalOrder()
                         .put(START_OF_TIME, INACTIVE)
                         .put(DateTime.now(UTC).plusWeeks(8), ACTIVE)
@@ -84,8 +87,8 @@ public class FeatureFlagTest extends EntityTestCase {
     FeatureFlag featureFlag2 =
         persistResource(
             new FeatureFlag.Builder()
-                .setFeatureName("testFlag2")
-                .setStatus(
+                .setFeatureName(MINIMUM_DATASET_CONTACTS_OPTIONAL)
+                .setStatusMap(
                     ImmutableSortedMap.<DateTime, FeatureStatus>naturalOrder()
                         .put(START_OF_TIME, INACTIVE)
                         .put(DateTime.now(UTC).plusWeeks(3), INACTIVE)
@@ -94,14 +97,18 @@ public class FeatureFlagTest extends EntityTestCase {
     FeatureFlag featureFlag3 =
         persistResource(
             new FeatureFlag.Builder()
-                .setFeatureName("testFlag3")
-                .setStatus(
+                .setFeatureName(MINIMUM_DATASET_CONTACTS_PROHIBITED)
+                .setStatusMap(
                     ImmutableSortedMap.<DateTime, FeatureStatus>naturalOrder()
                         .put(START_OF_TIME, INACTIVE)
                         .build())
                 .build());
     ImmutableSet<FeatureFlag> featureFlags =
-        FeatureFlag.get(ImmutableSet.of("testFlag1", "testFlag2", "testFlag3"));
+        FeatureFlag.getAll(
+            ImmutableSet.of(
+                TEST_FEATURE,
+                MINIMUM_DATASET_CONTACTS_OPTIONAL,
+                MINIMUM_DATASET_CONTACTS_PROHIBITED));
     assertThat(featureFlags.size()).isEqualTo(3);
     assertThat(featureFlags).containsExactly(featureFlag1, featureFlag2, featureFlag3);
   }
@@ -110,8 +117,8 @@ public class FeatureFlagTest extends EntityTestCase {
   void testFailure_getMultipleFlagsOneMissing() {
     persistResource(
         new FeatureFlag.Builder()
-            .setFeatureName("testFlag1")
-            .setStatus(
+            .setFeatureName(TEST_FEATURE)
+            .setStatusMap(
                 ImmutableSortedMap.<DateTime, FeatureStatus>naturalOrder()
                     .put(START_OF_TIME, INACTIVE)
                     .put(DateTime.now(UTC).plusWeeks(8), ACTIVE)
@@ -119,8 +126,8 @@ public class FeatureFlagTest extends EntityTestCase {
             .build());
     persistResource(
         new FeatureFlag.Builder()
-            .setFeatureName("testFlag2")
-            .setStatus(
+            .setFeatureName(MINIMUM_DATASET_CONTACTS_OPTIONAL)
+            .setStatusMap(
                 ImmutableSortedMap.<DateTime, FeatureStatus>naturalOrder()
                     .put(START_OF_TIME, INACTIVE)
                     .put(DateTime.now(UTC).plusWeeks(3), INACTIVE)
@@ -129,74 +136,48 @@ public class FeatureFlagTest extends EntityTestCase {
     FeatureFlagNotFoundException thrown =
         assertThrows(
             FeatureFlagNotFoundException.class,
-            () -> FeatureFlag.get(ImmutableSet.of("missingFlag", "testFlag1", "testFlag2")));
+            () ->
+                FeatureFlag.getAll(
+                    ImmutableSet.of(
+                        TEST_FEATURE,
+                        MINIMUM_DATASET_CONTACTS_OPTIONAL,
+                        MINIMUM_DATASET_CONTACTS_PROHIBITED)));
     assertThat(thrown)
         .hasMessageThat()
-        .isEqualTo("No feature flag object(s) found for missingFlag");
+        .isEqualTo("No feature flag object(s) found for MINIMUM_DATASET_CONTACTS_PROHIBITED");
   }
 
   @Test
   void testFailure_featureFlagNotPresent() {
     FeatureFlagNotFoundException thrown =
-        assertThrows(FeatureFlagNotFoundException.class, () -> FeatureFlag.get("fakeFlag"));
-    assertThat(thrown).hasMessageThat().isEqualTo("No feature flag object(s) found for fakeFlag");
-  }
-
-  @Test
-  void testFailure_resetFeatureName() {
-    FeatureFlag featureFlag =
-        new FeatureFlag.Builder()
-            .setFeatureName("testFlag")
-            .setStatus(
-                ImmutableSortedMap.<DateTime, FeatureStatus>naturalOrder()
-                    .put(START_OF_TIME, INACTIVE)
-                    .put(DateTime.now(UTC).plusWeeks(8), ACTIVE)
-                    .build())
-            .build();
-    IllegalStateException thrown =
-        assertThrows(
-            IllegalStateException.class,
-            () -> featureFlag.asBuilder().setFeatureName("differentName"));
-    assertThat(thrown).hasMessageThat().isEqualTo("Feature name can only be set once");
+        assertThrows(FeatureFlagNotFoundException.class, () -> FeatureFlag.get(TEST_FEATURE));
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo("No feature flag object(s) found for TEST_FEATURE");
   }
 
   @Test
   void testFailure_nullFeatureName() {
     FeatureFlag.Builder featureFlagBuilder =
         new FeatureFlag.Builder()
-            .setStatus(
+            .setStatusMap(
                 ImmutableSortedMap.<DateTime, FeatureStatus>naturalOrder()
                     .put(START_OF_TIME, INACTIVE)
                     .put(DateTime.now(UTC).plusWeeks(8), ACTIVE)
                     .build());
     IllegalArgumentException thrown =
         assertThrows(IllegalArgumentException.class, () -> featureFlagBuilder.build());
-    assertThat(thrown).hasMessageThat().isEqualTo("Feature name must not be null or empty");
-  }
-
-  @Test
-  void testFailure_emptyFeatureName() {
-    FeatureFlag.Builder featureFlagBuilder =
-        new FeatureFlag.Builder()
-            .setFeatureName("")
-            .setStatus(
-                ImmutableSortedMap.<DateTime, FeatureStatus>naturalOrder()
-                    .put(START_OF_TIME, INACTIVE)
-                    .put(DateTime.now(UTC).plusWeeks(8), ACTIVE)
-                    .build());
-    IllegalArgumentException thrown =
-        assertThrows(IllegalArgumentException.class, () -> featureFlagBuilder.build());
-    assertThat(thrown).hasMessageThat().isEqualTo("Feature name must not be null or empty");
+    assertThat(thrown).hasMessageThat().isEqualTo("FeatureName cannot be null");
   }
 
   @Test
   void testFailure_invalidStatusMap() {
-    FeatureFlag.Builder featureFlagBuilder = new FeatureFlag.Builder().setFeatureName("testFlag");
+    FeatureFlag.Builder featureFlagBuilder = new FeatureFlag.Builder().setFeatureName(TEST_FEATURE);
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
             () ->
-                featureFlagBuilder.setStatus(
+                featureFlagBuilder.setStatusMap(
                     ImmutableSortedMap.<DateTime, FeatureStatus>naturalOrder()
                         .put(DateTime.now(UTC).plusWeeks(8), ACTIVE)
                         .build()));

@@ -14,29 +14,34 @@
 
 package google.registry.model.common;
 
-import static com.google.api.client.util.Preconditions.checkState;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static google.registry.config.RegistryConfig.getSingletonCacheRefreshDuration;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.github.benmanes.caffeine.cache.CacheLoader;
 import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.google.common.base.Joiner;
-import com.google.common.base.Strings;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
-import com.google.common.collect.Sets;
+import com.google.common.collect.Maps;
 import google.registry.model.Buildable;
 import google.registry.model.CacheUtils;
+import google.registry.model.EntityYamlUtils.TimedTransitionPropertyFeatureStatusDeserializer;
 import google.registry.model.ImmutableObject;
 import google.registry.persistence.VKey;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.Id;
 import org.joda.time.DateTime;
 
@@ -54,60 +59,76 @@ public class FeatureFlag extends ImmutableObject implements Buildable {
     INACTIVE
   }
 
+  public enum FeatureName {
+    TEST_FEATURE,
+    MINIMUM_DATASET_CONTACTS_OPTIONAL,
+    MINIMUM_DATASET_CONTACTS_PROHIBITED
+  }
+
   /** The name of the flag/feature. */
-  @Id String featureName;
+  @Enumerated(EnumType.STRING)
+  @Id
+  FeatureName featureName;
 
   /** A map of times for each {@link FeatureStatus} the FeatureFlag should hold. */
   @Column(nullable = false)
+  @JsonDeserialize(using = TimedTransitionPropertyFeatureStatusDeserializer.class)
   TimedTransitionProperty<FeatureStatus> status =
       TimedTransitionProperty.withInitialValue(FeatureStatus.INACTIVE);
 
-  public static FeatureFlag get(String featureName) {
-    FeatureFlag maybeFeatureFlag = CACHE.get(featureName);
-    if (maybeFeatureFlag == null) {
-      throw new FeatureFlagNotFoundException(featureName);
-    } else {
-      return maybeFeatureFlag;
-    }
+  public static Optional<FeatureFlag> getUncached(FeatureName featureName) {
+    return tm().transact(() -> tm().loadByKeyIfPresent(createVKey(featureName)));
   }
 
-  public static ImmutableSet<FeatureFlag> get(Set<String> featureNames) {
-    Map<String, FeatureFlag> featureFlags = CACHE.getAll(featureNames);
-    ImmutableSet<String> missingFlags =
-        Sets.difference(featureNames, featureFlags.keySet()).immutableCopy();
+  public static ImmutableList<FeatureFlag> getAllUncached() {
+    return tm().transact(() -> tm().loadAllOf(FeatureFlag.class));
+  }
+
+  public static FeatureFlag get(FeatureName featureName) {
+    Optional<FeatureFlag> maybeFeatureFlag = CACHE.get(featureName);
+    return maybeFeatureFlag.orElseThrow(() -> new FeatureFlagNotFoundException(featureName));
+  }
+
+  public static ImmutableSet<FeatureFlag> getAll(Set<FeatureName> featureNames) {
+    Map<FeatureName, Optional<FeatureFlag>> featureFlags = CACHE.getAll(featureNames);
+    ImmutableSet<FeatureName> missingFlags =
+        featureFlags.entrySet().stream()
+            .filter(e -> e.getValue().isEmpty())
+            .map(Map.Entry::getKey)
+            .collect(toImmutableSet());
     if (missingFlags.isEmpty()) {
-      return featureFlags.values().stream().collect(toImmutableSet());
+      return featureFlags.values().stream().map(Optional::get).collect(toImmutableSet());
     } else {
       throw new FeatureFlagNotFoundException(missingFlags);
     }
   }
 
   /** A cache that loads the {@link FeatureFlag} for a given featureName. */
-  private static final LoadingCache<String, FeatureFlag> CACHE =
+  private static final LoadingCache<FeatureName, Optional<FeatureFlag>> CACHE =
       CacheUtils.newCacheBuilder(getSingletonCacheRefreshDuration())
           .build(
               new CacheLoader<>() {
                 @Override
-                public FeatureFlag load(final String featureName) {
-                  return tm().reTransact(() -> tm().loadByKeyIfPresent(createVKey(featureName)))
-                      .orElse(null);
+                public Optional<FeatureFlag> load(final FeatureName featureName) {
+                  return tm().reTransact(() -> tm().loadByKeyIfPresent(createVKey(featureName)));
                 }
 
                 @Override
-                public Map<? extends String, ? extends FeatureFlag> loadAll(
-                    Set<? extends String> featureFlagNames) {
-                  ImmutableMap<String, VKey<FeatureFlag>> keysMap =
+                public Map<? extends FeatureName, ? extends Optional<FeatureFlag>> loadAll(
+                    Set<? extends FeatureName> featureFlagNames) {
+                  ImmutableMap<FeatureName, VKey<FeatureFlag>> keysMap =
                       featureFlagNames.stream()
                           .collect(
                               toImmutableMap(featureName -> featureName, FeatureFlag::createVKey));
                   Map<VKey<? extends FeatureFlag>, FeatureFlag> entities =
                       tm().reTransact(() -> tm().loadByKeysIfPresent(keysMap.values()));
-                  return entities.values().stream()
-                      .collect(toImmutableMap(flag -> flag.featureName, flag -> flag));
+                  return Maps.toMap(
+                      featureFlagNames,
+                      name -> Optional.ofNullable(entities.get(createVKey(name))));
                 }
               });
 
-  public static VKey<FeatureFlag> createVKey(String featureName) {
+  public static VKey<FeatureFlag> createVKey(FeatureName featureName) {
     return VKey.create(FeatureFlag.class, featureName);
   }
 
@@ -116,10 +137,11 @@ public class FeatureFlag extends ImmutableObject implements Buildable {
     return createVKey(featureName);
   }
 
-  public String getFeatureName() {
+  public FeatureName getFeatureName() {
     return featureName;
   }
 
+  @JsonProperty("status")
   public TimedTransitionProperty<FeatureStatus> getStatusMap() {
     return status;
   }
@@ -144,20 +166,17 @@ public class FeatureFlag extends ImmutableObject implements Buildable {
 
     @Override
     public FeatureFlag build() {
-      checkArgument(
-          !Strings.isNullOrEmpty(getInstance().featureName),
-          "Feature name must not be null or empty");
       getInstance().status.checkValidity();
+      checkArgument(getInstance().featureName != null, "FeatureName cannot be null");
       return super.build();
     }
 
-    public Builder setFeatureName(String featureName) {
-      checkState(getInstance().featureName == null, "Feature name can only be set once");
+    public Builder setFeatureName(FeatureName featureName) {
       getInstance().featureName = featureName;
       return this;
     }
 
-    public Builder setStatus(ImmutableSortedMap<DateTime, FeatureStatus> statusMap) {
+    public Builder setStatusMap(ImmutableSortedMap<DateTime, FeatureStatus> statusMap) {
       getInstance().status = TimedTransitionProperty.fromValueMap(statusMap);
       return this;
     }
@@ -166,11 +185,11 @@ public class FeatureFlag extends ImmutableObject implements Buildable {
   /** Exception to throw when no FeatureFlag entity is found for given FeatureName string(s). */
   public static class FeatureFlagNotFoundException extends RuntimeException {
 
-    FeatureFlagNotFoundException(ImmutableSet<String> featureNames) {
+    FeatureFlagNotFoundException(ImmutableSet<FeatureName> featureNames) {
       super("No feature flag object(s) found for " + Joiner.on(", ").join(featureNames));
     }
 
-    FeatureFlagNotFoundException(String featureName) {
+    public FeatureFlagNotFoundException(FeatureName featureName) {
       this(ImmutableSet.of(featureName));
     }
   }
