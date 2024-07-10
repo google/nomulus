@@ -20,6 +20,7 @@ import static google.registry.batch.AsyncTaskEnqueuer.PARAM_RESOURCE_KEY;
 import static google.registry.batch.AsyncTaskEnqueuer.QUEUE_ASYNC_ACTIONS;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.loadByEntity;
+import static google.registry.testing.DatabaseHelper.newDomain;
 import static google.registry.testing.DatabaseHelper.persistActiveContact;
 import static google.registry.testing.DatabaseHelper.persistDomainWithDependentResources;
 import static google.registry.testing.DatabaseHelper.persistDomainWithPendingTransfer;
@@ -39,7 +40,6 @@ import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationT
 import google.registry.request.Response;
 import google.registry.testing.CloudTasksHelper;
 import google.registry.testing.CloudTasksHelper.TaskMatcher;
-import google.registry.testing.DatabaseHelper;
 import google.registry.testing.FakeClock;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
@@ -107,7 +107,7 @@ public class ResaveEntityActionTest {
 
   @Test
   void test_domainPendingDeletion_isResavedAndReenqueued() {
-    Domain newDomain = DatabaseHelper.newDomain("domain.tld");
+    Domain newDomain = newDomain("domain.tld");
     Domain domain =
         persistResource(
             newDomain
@@ -143,5 +143,17 @@ public class ResaveEntityActionTest {
             .param(PARAM_RESOURCE_KEY, resavedDomain.createVKey().stringify())
             .param(PARAM_REQUESTED_TIME, requestedTime.toString())
             .scheduleTime(clock.nowUtc().plus(standardDays(5))));
+  }
+
+  @Test
+  void test_queuedTaskForNonExistentDomain_failsPermanently() {
+    DateTime requestedTime = clock.nowUtc();
+    // It should complete its run without throwing an exception (that would cause a retry) ...
+    runAction(
+        newDomain("nonexistent.tld").createVKey().stringify(),
+        requestedTime,
+        ImmutableSortedSet.of(requestedTime.plusDays(5)));
+    // ... and it shouldn't enqueue the subsequent re-save 5 days later.
+    cloudTasksHelper.assertNoTasksEnqueued(QUEUE_ASYNC_ACTIONS);
   }
 }
