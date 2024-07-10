@@ -217,6 +217,7 @@ dependencies {
   implementation deps['org.bouncycastle:bcpg-jdk18on']
   implementation deps['org.bouncycastle:bcpkix-jdk18on']
   implementation deps['org.bouncycastle:bcprov-jdk18on']
+  implementation deps['com.fasterxml.jackson.dataformat:jackson-dataformat-yaml']
   testImplementation deps['com.fasterxml.jackson.core:jackson-databind']
   implementation deps['org.hibernate:hibernate-core']
   implementation deps['org.hibernate:hibernate-hikaricp']
