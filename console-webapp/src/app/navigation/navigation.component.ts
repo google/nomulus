@@ -18,6 +18,7 @@ import { MatTreeNestedDataSource } from '@angular/material/tree';
 import { NavigationEnd, Router } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { RouteWithIcon, routes } from '../app-routing.module';
+import { RESTRICTED_ELEMENTS } from '../shared/directives/userLevelVisiblity.directive';
 
 interface NavMenuNode extends RouteWithIcon {
   parentRoute?: RouteWithIcon;
@@ -37,6 +38,7 @@ export class NavigationComponent {
   treeControl = new NestedTreeControl<RouteWithIcon>((node) => node.children);
   dataSource = new MatTreeNestedDataSource<RouteWithIcon>();
   private subscription!: Subscription;
+
   hasChild = (_: number, node: RouteWithIcon) =>
     !!node.children && node.children.length > 0;
 
@@ -54,6 +56,12 @@ export class NavigationComponent {
 
   ngOnDestroy() {
     this.subscription.unsubscribe();
+  }
+
+  getElementId(node: RouteWithIcon) {
+    return node.path === 'registrars'
+      ? RESTRICTED_ELEMENTS.REGISTRAR_ELEMENT
+      : null;
   }
 
   syncExpandedNavigationWithRoute(url: string) {

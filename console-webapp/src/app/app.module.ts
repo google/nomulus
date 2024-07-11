@@ -46,6 +46,7 @@ import WhoisEditComponent from './settings/whois/whoisEdit.component';
 import { NotificationsComponent } from './shared/components/notifications/notifications.component';
 import { SelectedRegistrarWrapper } from './shared/components/selectedRegistrarWrapper/selectedRegistrarWrapper.component';
 import { LocationBackDirective } from './shared/directives/locationBack.directive';
+import { UserLevelVisibility } from './shared/directives/userLevelVisiblity.directive';
 import { BreakPointObserverService } from './shared/services/breakPoint.service';
 import { GlobalLoaderService } from './shared/services/globalLoader.service';
 import { UserDataService } from './shared/services/userData.service';
@@ -63,6 +64,7 @@ import { TldsComponent } from './tlds/tlds.component';
     HeaderComponent,
     HomeComponent,
     LocationBackDirective,
+    UserLevelVisibility,
     NavigationComponent,
     NewRegistrarComponent,
     NotificationsComponent,
