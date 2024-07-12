@@ -59,6 +59,7 @@ import static google.registry.util.DateTimeUtils.leapSafeAddYears;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.net.InternetDomainName;
+import google.registry.config.RegistryConfig;
 import google.registry.flows.EppException;
 import google.registry.flows.EppException.CommandUseErrorException;
 import google.registry.flows.EppException.ParameterValuePolicyErrorException;
@@ -438,11 +439,22 @@ public final class DomainCreateFlow implements MutatingFlow {
                 .build());
     persistEntityChanges(entityChanges);
 
+    // If the registrar is participating in tiered pricing promos, return the standard price in the
+    // response (even if the actual charged price is less)
+    boolean shouldShowDefaultPrice =
+        defaultTokenUsed
+            && RegistryConfig.getTieredPricingPromotionRegistrarIds().contains(registrarId);
+    FeesAndCredits responseFeesAndCredits =
+        shouldShowDefaultPrice
+            ? pricingLogic.getCreatePrice(
+                tld, targetId, now, years, isAnchorTenant, isSunriseCreate, Optional.empty())
+            : feesAndCredits;
+
     BeforeResponseReturnData responseData =
         flowCustomLogic.beforeResponse(
             BeforeResponseParameters.newBuilder()
                 .setResData(DomainCreateData.create(targetId, now, registrationExpirationTime))
-                .setResponseExtensions(createResponseExtensions(feeCreate, feesAndCredits))
+                .setResponseExtensions(createResponseExtensions(feeCreate, responseFeesAndCredits))
                 .build());
     return responseBuilder
         .setResData(responseData.resData())
