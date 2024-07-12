@@ -70,4 +70,11 @@ body {
   .mat-mdc-list-item-unscoped-content {
     display: flex;
   }
+
+  &__scrollable {
+    overflow-x: auto;
+    &-wrapper {
+      overflow-x: hidden;
+    }
+  }
 }
