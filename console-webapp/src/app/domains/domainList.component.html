@@ -19,7 +19,7 @@
           <div class="console-app__domains-spinner">
             <mat-spinner />
           </div>
-          } @else {
+          }
           <a
             mat-stroked-button
             color="primary"
@@ -39,11 +39,10 @@
               matInput
               [(ngModel)]="searchTerm"
               (ngModelChange)="sendInput()"
-              [disabled]="isLoading"
               #input
             />
           </mat-form-field>
-          }
+
           <mat-table
             [dataSource]="dataSource"
             class="mat-elevation-z0"
