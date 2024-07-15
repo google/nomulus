@@ -28,7 +28,6 @@ import static google.registry.flows.ResourceFlowUtils.verifyAllStatusesAreClient
 import static google.registry.flows.ResourceFlowUtils.verifyNoDisallowedStatuses;
 import static google.registry.flows.ResourceFlowUtils.verifyOptionalAuthInfo;
 import static google.registry.flows.ResourceFlowUtils.verifyResourceOwnership;
-import static google.registry.flows.domain.DomainFlowUtils.MIN_DATASET_CONTACTS_OPTIONAL_FLAG;
 import static google.registry.flows.domain.DomainFlowUtils.checkAllowedAccessToTld;
 import static google.registry.flows.domain.DomainFlowUtils.cloneAndLinkReferences;
 import static google.registry.flows.domain.DomainFlowUtils.updateDsData;
@@ -42,6 +41,7 @@ import static google.registry.flows.domain.DomainFlowUtils.validateRegistrantAll
 import static google.registry.flows.domain.DomainFlowUtils.validateRequiredContactsPresentIfRequiredForDataset;
 import static google.registry.flows.domain.DomainFlowUtils.verifyClientUpdateNotProhibited;
 import static google.registry.flows.domain.DomainFlowUtils.verifyNotInPendingDelete;
+import static google.registry.model.common.FeatureFlag.FeatureName.MINIMUM_DATASET_CONTACTS_OPTIONAL;
 import static google.registry.model.common.FeatureFlag.FeatureStatus.ACTIVE;
 import static google.registry.model.reporting.HistoryEntry.Type.DOMAIN_UPDATE;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
@@ -308,7 +308,7 @@ public final class DomainUpdateFlow implements MutatingFlow {
   // minimum dataset begins.
   private static void validateRegistrantIsntBeingRemovedIfRequiredForDataset(Change change)
       throws EppException {
-    if (FeatureFlag.get(MIN_DATASET_CONTACTS_OPTIONAL_FLAG)
+    if (FeatureFlag.get(MINIMUM_DATASET_CONTACTS_OPTIONAL)
         .getStatus(tm().getTransactionTime())
         .equals(ACTIVE)) {
       // registrants are not required once we have begun the migration to the minimum dataset

@@ -15,9 +15,9 @@
 package google.registry.flows;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.flows.domain.DomainFlowUtils.MIN_DATASET_CONTACTS_OPTIONAL_FLAG;
 import static google.registry.model.EppResourceUtils.loadAtPointInTime;
 import static google.registry.model.ImmutableObjectSubject.assertAboutImmutableObjects;
+import static google.registry.model.common.FeatureFlag.FeatureName.MINIMUM_DATASET_CONTACTS_OPTIONAL;
 import static google.registry.model.common.FeatureFlag.FeatureStatus.INACTIVE;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.loadAllOf;
@@ -63,8 +63,8 @@ class EppPointInTimeTest {
     persistResource(
         new FeatureFlag()
             .asBuilder()
-            .setFeatureName(MIN_DATASET_CONTACTS_OPTIONAL_FLAG)
-            .setStatus(ImmutableSortedMap.of(START_OF_TIME, INACTIVE))
+            .setFeatureName(MINIMUM_DATASET_CONTACTS_OPTIONAL)
+            .setStatusMap(ImmutableSortedMap.of(START_OF_TIME, INACTIVE))
             .build());
     createTld("tld");
   }

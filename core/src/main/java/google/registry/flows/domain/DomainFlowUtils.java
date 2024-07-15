@@ -24,6 +24,7 @@ import static com.google.common.collect.Sets.difference;
 import static com.google.common.collect.Sets.intersection;
 import static com.google.common.collect.Sets.union;
 import static google.registry.bsa.persistence.BsaLabelUtils.isLabelBlocked;
+import static google.registry.model.common.FeatureFlag.FeatureName.MINIMUM_DATASET_CONTACTS_OPTIONAL;
 import static google.registry.model.common.FeatureFlag.FeatureStatus.ACTIVE;
 import static google.registry.model.domain.Domain.MAX_REGISTRATION_YEARS;
 import static google.registry.model.domain.token.AllocationToken.TokenType.REGISTER_BSA;
@@ -174,10 +175,6 @@ public class DomainFlowUtils {
       "Domain on the name collision list was allocated. But by policy, the domain will not be "
           + "delegated. Please visit https://www.icann.org/namecollision  for more information on "
           + "name collision.";
-
-  /** The name of the FeatureFlag used for phase 1 of the minimum registry dataset migration. */
-  public static final String MIN_DATASET_CONTACTS_OPTIONAL_FLAG =
-      "minimumRegistryDataset_contactsOptional";
 
   /** Strict validator for ascii lowercase letters, digits, and "-", allowing "." as a separator */
   private static final CharMatcher ALLOWED_CHARS =
@@ -493,7 +490,7 @@ public class DomainFlowUtils {
   static void validateRequiredContactsPresentIfRequiredForDataset(
       Optional<VKey<Contact>> registrant, Set<DesignatedContact> contacts)
       throws RequiredParameterMissingException {
-    if (FeatureFlag.get(MIN_DATASET_CONTACTS_OPTIONAL_FLAG)
+    if (FeatureFlag.get(MINIMUM_DATASET_CONTACTS_OPTIONAL)
         .getStatus(tm().getTransactionTime())
         .equals(ACTIVE)) {
       // Contacts are not required once we have begun the migration to the minimum dataset

@@ -19,13 +19,13 @@ import static com.google.common.io.BaseEncoding.base16;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.bsa.persistence.BsaTestingUtils.persistBsaLabel;
 import static google.registry.flows.FlowTestCase.UserPrivileges.SUPERUSER;
-import static google.registry.flows.domain.DomainFlowUtils.MIN_DATASET_CONTACTS_OPTIONAL_FLAG;
 import static google.registry.model.billing.BillingBase.Flag.ANCHOR_TENANT;
 import static google.registry.model.billing.BillingBase.Flag.RESERVED;
 import static google.registry.model.billing.BillingBase.Flag.SUNRISE;
 import static google.registry.model.billing.BillingBase.RenewalPriceBehavior.DEFAULT;
 import static google.registry.model.billing.BillingBase.RenewalPriceBehavior.NONPREMIUM;
 import static google.registry.model.billing.BillingBase.RenewalPriceBehavior.SPECIFIED;
+import static google.registry.model.common.FeatureFlag.FeatureName.MINIMUM_DATASET_CONTACTS_OPTIONAL;
 import static google.registry.model.common.FeatureFlag.FeatureStatus.ACTIVE;
 import static google.registry.model.common.FeatureFlag.FeatureStatus.INACTIVE;
 import static google.registry.model.domain.fee.Fee.FEE_EXTENSION_URIS;
@@ -257,8 +257,8 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     persistResource(
         new FeatureFlag()
             .asBuilder()
-            .setFeatureName(MIN_DATASET_CONTACTS_OPTIONAL_FLAG)
-            .setStatus(ImmutableSortedMap.of(START_OF_TIME, INACTIVE))
+            .setFeatureName(MINIMUM_DATASET_CONTACTS_OPTIONAL)
+            .setStatusMap(ImmutableSortedMap.of(START_OF_TIME, INACTIVE))
             .build());
     persistClaimsList(ImmutableMap.of("example-one", CLAIMS_KEY, "test-validate", CLAIMS_KEY));
   }
@@ -2166,9 +2166,9 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
   @Test
   void testSuccess_minimumDatasetPhase1_missingRegistrant() throws Exception {
     persistResource(
-        FeatureFlag.get(MIN_DATASET_CONTACTS_OPTIONAL_FLAG)
+        FeatureFlag.get(MINIMUM_DATASET_CONTACTS_OPTIONAL)
             .asBuilder()
-            .setStatus(
+            .setStatusMap(
                 ImmutableSortedMap.of(START_OF_TIME, INACTIVE, clock.nowUtc().minusDays(5), ACTIVE))
             .build());
     setEppInput("domain_create_missing_registrant.xml");
@@ -2188,9 +2188,9 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
   @Test
   void testSuccess_minimumDatasetPhase1_missingAdmin() throws Exception {
     persistResource(
-        FeatureFlag.get(MIN_DATASET_CONTACTS_OPTIONAL_FLAG)
+        FeatureFlag.get(MINIMUM_DATASET_CONTACTS_OPTIONAL)
             .asBuilder()
-            .setStatus(
+            .setStatusMap(
                 ImmutableSortedMap.of(START_OF_TIME, INACTIVE, clock.nowUtc().minusDays(5), ACTIVE))
             .build());
     setEppInput("domain_create_missing_admin.xml");
@@ -2210,9 +2210,9 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
   @Test
   void testSuccess_minimumDatasetPhase1_missingTech() throws Exception {
     persistResource(
-        FeatureFlag.get(MIN_DATASET_CONTACTS_OPTIONAL_FLAG)
+        FeatureFlag.get(MINIMUM_DATASET_CONTACTS_OPTIONAL)
             .asBuilder()
-            .setStatus(
+            .setStatusMap(
                 ImmutableSortedMap.of(START_OF_TIME, INACTIVE, clock.nowUtc().minusDays(5), ACTIVE))
             .build());
     setEppInput("domain_create_missing_tech.xml");
@@ -2232,9 +2232,9 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
   @Test
   void testSuccess_minimumDatasetPhase1_missingNonRegistrantContacts() throws Exception {
     persistResource(
-        FeatureFlag.get(MIN_DATASET_CONTACTS_OPTIONAL_FLAG)
+        FeatureFlag.get(MINIMUM_DATASET_CONTACTS_OPTIONAL)
             .asBuilder()
-            .setStatus(
+            .setStatusMap(
                 ImmutableSortedMap.of(START_OF_TIME, INACTIVE, clock.nowUtc().minusDays(5), ACTIVE))
             .build());
     setEppInput("domain_create_missing_non_registrant_contacts.xml");
