@@ -18,8 +18,8 @@ import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.collect.Sets.union;
 import static com.google.common.io.BaseEncoding.base16;
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.flows.domain.DomainFlowUtils.MIN_DATASET_CONTACTS_OPTIONAL_FLAG;
 import static google.registry.model.EppResourceUtils.loadByForeignKey;
+import static google.registry.model.common.FeatureFlag.FeatureName.MINIMUM_DATASET_CONTACTS_OPTIONAL;
 import static google.registry.model.common.FeatureFlag.FeatureStatus.ACTIVE;
 import static google.registry.model.common.FeatureFlag.FeatureStatus.INACTIVE;
 import static google.registry.model.eppcommon.StatusValue.CLIENT_DELETE_PROHIBITED;
@@ -147,8 +147,8 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
     persistResource(
         new FeatureFlag()
             .asBuilder()
-            .setFeatureName(MIN_DATASET_CONTACTS_OPTIONAL_FLAG)
-            .setStatus(ImmutableSortedMap.of(START_OF_TIME, INACTIVE))
+            .setFeatureName(MINIMUM_DATASET_CONTACTS_OPTIONAL)
+            .setStatusMap(ImmutableSortedMap.of(START_OF_TIME, INACTIVE))
             .build());
   }
 
@@ -302,9 +302,9 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
   @Test
   void testSuccess_minimumDatasetPhase1_emptyRegistrant() throws Exception {
     persistResource(
-        FeatureFlag.get(MIN_DATASET_CONTACTS_OPTIONAL_FLAG)
+        FeatureFlag.get(MINIMUM_DATASET_CONTACTS_OPTIONAL)
             .asBuilder()
-            .setStatus(
+            .setStatusMap(
                 ImmutableSortedMap.of(START_OF_TIME, INACTIVE, clock.nowUtc().minusDays(5), ACTIVE))
             .build());
     setEppInput("domain_update_empty_registrant.xml");
@@ -1505,9 +1505,9 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
   @Test
   void testSuccess_minimumDatasetPhase1_removeAdmin() throws Exception {
     persistResource(
-        FeatureFlag.get(MIN_DATASET_CONTACTS_OPTIONAL_FLAG)
+        FeatureFlag.get(MINIMUM_DATASET_CONTACTS_OPTIONAL)
             .asBuilder()
-            .setStatus(
+            .setStatusMap(
                 ImmutableSortedMap.of(START_OF_TIME, INACTIVE, clock.nowUtc().minusDays(5), ACTIVE))
             .build());
     setEppInput("domain_update_remove_admin.xml");
@@ -1542,9 +1542,9 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
   @Test
   void testSuccess_minimumDatasetPhase1_removeTech() throws Exception {
     persistResource(
-        FeatureFlag.get(MIN_DATASET_CONTACTS_OPTIONAL_FLAG)
+        FeatureFlag.get(MINIMUM_DATASET_CONTACTS_OPTIONAL)
             .asBuilder()
-            .setStatus(
+            .setStatusMap(
                 ImmutableSortedMap.of(START_OF_TIME, INACTIVE, clock.nowUtc().minusDays(5), ACTIVE))
             .build());
     setEppInput("domain_update_remove_tech.xml");

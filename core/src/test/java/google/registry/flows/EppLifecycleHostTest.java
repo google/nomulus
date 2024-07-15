@@ -15,8 +15,8 @@
 package google.registry.flows;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.flows.domain.DomainFlowUtils.MIN_DATASET_CONTACTS_OPTIONAL_FLAG;
 import static google.registry.model.EppResourceUtils.loadByForeignKey;
+import static google.registry.model.common.FeatureFlag.FeatureName.MINIMUM_DATASET_CONTACTS_OPTIONAL;
 import static google.registry.model.common.FeatureFlag.FeatureStatus.INACTIVE;
 import static google.registry.model.eppoutput.Result.Code.SUCCESS;
 import static google.registry.testing.DatabaseHelper.createTld;
@@ -97,8 +97,8 @@ class EppLifecycleHostTest extends EppTestCase {
     persistResource(
         new FeatureFlag()
             .asBuilder()
-            .setFeatureName(MIN_DATASET_CONTACTS_OPTIONAL_FLAG)
-            .setStatus(ImmutableSortedMap.of(START_OF_TIME, INACTIVE))
+            .setFeatureName(MINIMUM_DATASET_CONTACTS_OPTIONAL)
+            .setStatusMap(ImmutableSortedMap.of(START_OF_TIME, INACTIVE))
             .build());
     createTld("example");
     assertThatLoginSucceeds("NewRegistrar", "foo-BAR2");
@@ -153,8 +153,8 @@ class EppLifecycleHostTest extends EppTestCase {
     persistResource(
         new FeatureFlag()
             .asBuilder()
-            .setFeatureName(MIN_DATASET_CONTACTS_OPTIONAL_FLAG)
-            .setStatus(ImmutableSortedMap.of(START_OF_TIME, INACTIVE))
+            .setFeatureName(MINIMUM_DATASET_CONTACTS_OPTIONAL)
+            .setStatusMap(ImmutableSortedMap.of(START_OF_TIME, INACTIVE))
             .build());
     createTlds("bar.foo.tld", "foo.tld", "tld");
 
