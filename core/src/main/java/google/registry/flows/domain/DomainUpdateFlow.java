@@ -42,7 +42,7 @@ import static google.registry.flows.domain.DomainFlowUtils.validateRequiredConta
 import static google.registry.flows.domain.DomainFlowUtils.verifyClientUpdateNotProhibited;
 import static google.registry.flows.domain.DomainFlowUtils.verifyNotInPendingDelete;
 import static google.registry.model.common.FeatureFlag.FeatureName.MINIMUM_DATASET_CONTACTS_OPTIONAL;
-import static google.registry.model.common.FeatureFlag.FeatureStatus.ACTIVE;
+import static google.registry.model.common.FeatureFlag.isActiveNow;
 import static google.registry.model.reporting.HistoryEntry.Type.DOMAIN_UPDATE;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
@@ -68,7 +68,6 @@ import google.registry.flows.domain.DomainFlowUtils.NameserversNotSpecifiedForTl
 import google.registry.model.ImmutableObject;
 import google.registry.model.billing.BillingBase.Reason;
 import google.registry.model.billing.BillingEvent;
-import google.registry.model.common.FeatureFlag;
 import google.registry.model.domain.DesignatedContact;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainCommand.Update;
@@ -306,9 +305,7 @@ public final class DomainUpdateFlow implements MutatingFlow {
   private static void validateRegistrantIsntBeingRemovedIfRequiredForDataset(Change change)
       throws EppException {
     // TODO(b/353347632): Change this flag check to a registry config check.
-    if (FeatureFlag.get(MINIMUM_DATASET_CONTACTS_OPTIONAL)
-        .getStatus(tm().getTransactionTime())
-        .equals(ACTIVE)) {
+    if (isActiveNow(MINIMUM_DATASET_CONTACTS_OPTIONAL)) {
       // registrants are not required once we have begun the migration to the minimum dataset
       return;
     }

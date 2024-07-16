@@ -20,6 +20,7 @@ import static google.registry.model.common.FeatureFlag.FeatureName.MINIMUM_DATAS
 import static google.registry.model.common.FeatureFlag.FeatureName.TEST_FEATURE;
 import static google.registry.model.common.FeatureFlag.FeatureStatus.ACTIVE;
 import static google.registry.model.common.FeatureFlag.FeatureStatus.INACTIVE;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.loadByEntity;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
@@ -184,5 +185,23 @@ public class FeatureFlagTest extends EntityTestCase {
     assertThat(thrown)
         .hasMessageThat()
         .isEqualTo("Must provide transition entry for the start of time (Unix Epoch)");
+  }
+
+  @Test
+  void testSuccess_isActiveNow() {
+    fakeClock.setTo(DateTime.parse("2010-10-17TZ"));
+    FeatureFlag featureFlag =
+        persistResource(
+            new FeatureFlag.Builder()
+                .setFeatureName(TEST_FEATURE)
+                .setStatusMap(
+                    ImmutableSortedMap.<DateTime, FeatureStatus>naturalOrder()
+                        .put(START_OF_TIME, INACTIVE)
+                        .put(fakeClock.nowUtc().plusWeeks(8), ACTIVE)
+                        .build())
+                .build());
+    assertThat(tm().transact(() -> FeatureFlag.isActiveNow(TEST_FEATURE))).isFalse();
+    fakeClock.setTo(DateTime.parse("2011-10-17TZ"));
+    assertThat(tm().transact(() -> FeatureFlag.isActiveNow(TEST_FEATURE))).isTrue();
   }
 }

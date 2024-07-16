@@ -25,7 +25,7 @@ import static com.google.common.collect.Sets.intersection;
 import static com.google.common.collect.Sets.union;
 import static google.registry.bsa.persistence.BsaLabelUtils.isLabelBlocked;
 import static google.registry.model.common.FeatureFlag.FeatureName.MINIMUM_DATASET_CONTACTS_OPTIONAL;
-import static google.registry.model.common.FeatureFlag.FeatureStatus.ACTIVE;
+import static google.registry.model.common.FeatureFlag.isActiveNow;
 import static google.registry.model.domain.Domain.MAX_REGISTRATION_YEARS;
 import static google.registry.model.domain.token.AllocationToken.TokenType.REGISTER_BSA;
 import static google.registry.model.tld.Tld.TldState.GENERAL_AVAILABILITY;
@@ -84,7 +84,6 @@ import google.registry.model.EppResource;
 import google.registry.model.billing.BillingBase.Flag;
 import google.registry.model.billing.BillingBase.Reason;
 import google.registry.model.billing.BillingRecurrence;
-import google.registry.model.common.FeatureFlag;
 import google.registry.model.contact.Contact;
 import google.registry.model.domain.DesignatedContact;
 import google.registry.model.domain.DesignatedContact.Type;
@@ -488,9 +487,7 @@ public class DomainFlowUtils {
       Optional<VKey<Contact>> registrant, Set<DesignatedContact> contacts)
       throws RequiredParameterMissingException {
     // TODO(b/353347632): Change this flag check to a registry config check.
-    if (FeatureFlag.get(MINIMUM_DATASET_CONTACTS_OPTIONAL)
-        .getStatus(tm().getTransactionTime())
-        .equals(ACTIVE)) {
+    if (isActiveNow(MINIMUM_DATASET_CONTACTS_OPTIONAL)) {
       // Contacts are not required once we have begun the migration to the minimum dataset
       return;
     }
