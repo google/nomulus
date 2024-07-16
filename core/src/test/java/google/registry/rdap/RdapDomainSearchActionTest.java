@@ -750,7 +750,7 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
   void testDomainMatch_found_loggedInAsOtherRegistrar() {
     login("otherregistrar");
     runSuccessfulTestWithCatLol(
-        RequestType.NAME, "cat.lol", "rdap_domain_no_contacts_with_remark.json");
+        RequestType.NAME, "cat.lol", "rdap_domain_redacted_contacts_with_remark.json");
     verifyMetrics(SearchType.BY_DOMAIN_NAME, Optional.of(1L));
   }
 
@@ -782,7 +782,7 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
             .addRegistrar("St. John Chrysostom")
             .addNameserver("ns1.cat.lol", "8-ROID")
             .addNameserver("ns2.external.tld", "1F-ROID")
-            .load("rdap_domain_no_contacts_with_remark.json"));
+            .load("rdap_domain_redacted_contacts_with_remark.json"));
     verifyMetrics(SearchType.BY_DOMAIN_NAME, Optional.of(1L));
   }
 
@@ -826,7 +826,7 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
             .addRegistrar("1.test")
             .addNameserver("ns1.cat.1.test", "35-ROID")
             .addNameserver("ns2.cat.2.test", "37-ROID")
-            .load("rdap_domain_no_contacts_with_remark.json"));
+            .load("rdap_domain_redacted_contacts_with_remark.json"));
     verifyMetrics(SearchType.BY_DOMAIN_NAME, Optional.of(1L));
   }
 
@@ -840,7 +840,7 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
             .addRegistrar("1.test")
             .addNameserver("ns1.cat.1.test", "35-ROID")
             .addNameserver("ns2.cat.2.test", "37-ROID")
-            .load("rdap_domain_no_contacts_with_remark.json"));
+            .load("rdap_domain_redacted_contacts_with_remark.json"));
     verifyMetrics(SearchType.BY_DOMAIN_NAME, Optional.of(1L));
   }
 
@@ -1378,7 +1378,7 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
             .addRegistrar("1.test")
             .addNameserver("ns1.cat.1.test", "35-ROID")
             .addNameserver("ns2.cat.2.test", "37-ROID")
-            .load("rdap_domain_no_contacts_with_remark.json"));
+            .load("rdap_domain_redacted_contacts_with_remark.json"));
     verifyMetrics(SearchType.BY_NAMESERVER_NAME, 1, 1);
   }
 
@@ -1392,7 +1392,7 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
             .addRegistrar("1.test")
             .addNameserver("ns1.cat.1.test", "35-ROID")
             .addNameserver("ns2.cat.2.test", "37-ROID")
-            .load("rdap_domain_no_contacts_with_remark.json"));
+            .load("rdap_domain_redacted_contacts_with_remark.json"));
     verifyMetrics(SearchType.BY_NAMESERVER_NAME, 1, 1);
   }
 
@@ -1675,7 +1675,7 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
     runSuccessfulTestWithCatLol(
         RequestType.NS_IP,
         "bad:f00d:cafe:0:0:0:15:beef",
-        "rdap_domain_no_contacts_with_remark.json");
+        "rdap_domain_redacted_contacts_with_remark.json");
     verifyMetrics(SearchType.BY_NAMESERVER_ADDRESS, 1, 1);
   }
 

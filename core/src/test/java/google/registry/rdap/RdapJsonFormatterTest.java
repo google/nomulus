@@ -52,7 +52,6 @@ import google.registry.rdap.RdapObjectClasses.ReplyPayloadBase;
 import google.registry.rdap.RdapObjectClasses.TopLevelReplyObject;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FullFieldsTestEntityHelper;
-import java.util.Optional;
 import javax.annotation.Nullable;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
@@ -373,7 +372,7 @@ class RdapJsonFormatterTest {
         .that(
             rdapJsonFormatter
                 .createRdapContactEntity(
-                    Optional.of(contactRegistrant),
+                    contactRegistrant,
                     ImmutableSet.of(RdapEntity.Role.REGISTRANT),
                     OutputDataType.FULL)
                 .toJson())
@@ -386,7 +385,7 @@ class RdapJsonFormatterTest {
         .that(
             rdapJsonFormatter
                 .createRdapContactEntity(
-                    Optional.of(contactRegistrant),
+                    contactRegistrant,
                     ImmutableSet.of(RdapEntity.Role.REGISTRANT),
                     OutputDataType.SUMMARY)
                 .toJson())
@@ -400,7 +399,7 @@ class RdapJsonFormatterTest {
         .that(
             rdapJsonFormatter
                 .createRdapContactEntity(
-                    Optional.of(contactRegistrant),
+                    contactRegistrant,
                     ImmutableSet.of(RdapEntity.Role.REGISTRANT),
                     OutputDataType.FULL)
                 .toJson())
@@ -420,7 +419,7 @@ class RdapJsonFormatterTest {
         .that(
             rdapJsonFormatter
                 .createRdapContactEntity(
-                    Optional.of(contactRegistrant),
+                    contactRegistrant,
                     ImmutableSet.of(RdapEntity.Role.REGISTRANT),
                     OutputDataType.FULL)
                 .toJson())
@@ -433,9 +432,7 @@ class RdapJsonFormatterTest {
         .that(
             rdapJsonFormatter
                 .createRdapContactEntity(
-                    Optional.of(contactAdmin),
-                    ImmutableSet.of(RdapEntity.Role.ADMIN),
-                    OutputDataType.FULL)
+                    contactAdmin, ImmutableSet.of(RdapEntity.Role.ADMIN), OutputDataType.FULL)
                 .toJson())
         .isEqualTo(loadJson("rdapjson_admincontact.json"));
   }
@@ -446,9 +443,7 @@ class RdapJsonFormatterTest {
         .that(
             rdapJsonFormatter
                 .createRdapContactEntity(
-                    Optional.of(contactTech),
-                    ImmutableSet.of(RdapEntity.Role.TECH),
-                    OutputDataType.FULL)
+                    contactTech, ImmutableSet.of(RdapEntity.Role.TECH), OutputDataType.FULL)
                 .toJson())
         .isEqualTo(loadJson("rdapjson_techcontact.json"));
   }
@@ -458,8 +453,7 @@ class RdapJsonFormatterTest {
     assertAboutJson()
         .that(
             rdapJsonFormatter
-                .createRdapContactEntity(
-                    Optional.of(contactTech), ImmutableSet.of(), OutputDataType.FULL)
+                .createRdapContactEntity(contactTech, ImmutableSet.of(), OutputDataType.FULL)
                 .toJson())
         .isEqualTo(loadJson("rdapjson_rolelesscontact.json"));
   }
@@ -469,8 +463,7 @@ class RdapJsonFormatterTest {
     assertAboutJson()
         .that(
             rdapJsonFormatter
-                .createRdapContactEntity(
-                    Optional.of(contactNotLinked), ImmutableSet.of(), OutputDataType.FULL)
+                .createRdapContactEntity(contactNotLinked, ImmutableSet.of(), OutputDataType.FULL)
                 .toJson())
         .isEqualTo(loadJson("rdapjson_unlinkedcontact.json"));
   }
