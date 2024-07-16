@@ -484,12 +484,10 @@ public class DomainFlowUtils {
     }
   }
 
-  // TODO(sarahbot): Determine if we will continue supporting thick registries and if we do, change
-  // flag check to a registry config check. Otherwise, remove this method after the migration to the
-  // minimum dataset begins.
   static void validateRequiredContactsPresentIfRequiredForDataset(
       Optional<VKey<Contact>> registrant, Set<DesignatedContact> contacts)
       throws RequiredParameterMissingException {
+    // TODO(b/353347632): Change this flag check to a registry config check.
     if (FeatureFlag.get(MINIMUM_DATASET_CONTACTS_OPTIONAL)
         .getStatus(tm().getTransactionTime())
         .equals(ACTIVE)) {
