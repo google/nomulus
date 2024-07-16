@@ -276,27 +276,23 @@ class RdapDomainActionTest extends RdapActionBaseTestCase<RdapDomainAction> {
   }
 
   @Test
-  void testValidDomain_notLoggedIn_noContacts() {
-    assertProperResponseForCatLol("cat.lol", "rdap_domain_no_contacts_with_remark.json");
+  void testValidDomain_notLoggedIn_redactsAllContactInfo() {
+    assertProperResponseForCatLol("cat.lol", "rdap_domain_redacted_contacts_with_remark.json");
   }
 
   @Test
-  void testValidDomain_notLoggedIn_contactsShowRedacted_evenWhenRegistrantDoesntExist() {
-    // Even though the registrant is empty on this domain, it still shows a full set of REDACTED
-    // fields through RDAP.
+  void testValidDomain_notLoggedIn_showsNoRegistrant_whenRegistrantDoesntExist() {
     persistResource(
         loadByForeignKey(Domain.class, "cat.lol", clock.nowUtc())
             .get()
             .asBuilder()
             .setRegistrant(Optional.empty())
             .build());
-    assertProperResponseForCatLol("cat.lol", "rdap_domain_no_contacts_with_remark.json");
+    assertProperResponseForCatLol("cat.lol", "rdap_domain_no_registrant_with_remark.json");
   }
 
   @Test
-  void testValidDomain_notLoggedIn_contactsShowRedacted_whenNoContactsExist() {
-    // Even though the domain has no contacts, it still shows a full set of REDACTED fields through
-    // RDAP.
+  void testValidDomain_notLoggedIn_containsNoContactEntities_whenNoContactsExist() {
     persistResource(
         loadByForeignKey(Domain.class, "cat.lol", clock.nowUtc())
             .get()
@@ -308,24 +304,38 @@ class RdapDomainActionTest extends RdapActionBaseTestCase<RdapDomainAction> {
   }
 
   @Test
-  void testValidDomain_loggedInAsOtherRegistrar_noContacts() {
+  void testValidDomain_loggedIn_containsNoContactEntities_whenNoContactsExist() {
+    login("evilregistrar");
+    persistResource(
+        loadByForeignKey(Domain.class, "cat.lol", clock.nowUtc())
+            .get()
+            .asBuilder()
+            .setRegistrant(Optional.empty())
+            .setContacts(ImmutableSet.of())
+            .build());
+    assertProperResponseForCatLol("cat.lol", "rdap_domain_no_contacts_exist_with_remark.json");
+  }
+
+  @Test
+  void testValidDomain_loggedInAsOtherRegistrar_redactsAllContactInfo() {
     login("idnregistrar");
-    assertProperResponseForCatLol("cat.lol", "rdap_domain_no_contacts_with_remark.json");
+    assertProperResponseForCatLol("cat.lol", "rdap_domain_redacted_contacts_with_remark.json");
   }
 
   @Test
   void testUpperCase_ignored() {
-    assertProperResponseForCatLol("CaT.lOl", "rdap_domain_no_contacts_with_remark.json");
+    assertProperResponseForCatLol("CaT.lOl", "rdap_domain_redacted_contacts_with_remark.json");
   }
 
   @Test
   void testTrailingDot_ignored() {
-    assertProperResponseForCatLol("cat.lol.", "rdap_domain_no_contacts_with_remark.json");
+    assertProperResponseForCatLol("cat.lol.", "rdap_domain_redacted_contacts_with_remark.json");
   }
 
   @Test
   void testQueryParameter_ignored() {
-    assertProperResponseForCatLol("cat.lol?key=value", "rdap_domain_no_contacts_with_remark.json");
+    assertProperResponseForCatLol(
+        "cat.lol?key=value", "rdap_domain_redacted_contacts_with_remark.json");
   }
 
   @Test

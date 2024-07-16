@@ -76,7 +76,7 @@ public class RdapEntityAction extends RdapActionBase {
       // they are global, and might have different roles for different domains.
       if (contact.isPresent() && isAuthorized(contact.get())) {
         return rdapJsonFormatter.createRdapContactEntity(
-            contact, ImmutableSet.of(), OutputDataType.FULL);
+            contact.get(), ImmutableSet.of(), OutputDataType.FULL);
       }
     }
 
