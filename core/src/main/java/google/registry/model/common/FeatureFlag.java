@@ -18,6 +18,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static google.registry.config.RegistryConfig.getSingletonCacheRefreshDuration;
+import static google.registry.model.common.FeatureFlag.FeatureStatus.ACTIVE;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -148,6 +149,17 @@ public class FeatureFlag extends ImmutableObject implements Buildable {
 
   public FeatureStatus getStatus(DateTime time) {
     return status.getValueAtTime(time);
+  }
+
+  /** Returns if the FeatureFlag with the given FeatureName is active now. */
+  public static boolean isActiveNow(FeatureName featureName) {
+    tm().assertInTransaction();
+    return isActiveAt(featureName, tm().getTransactionTime());
+  }
+
+  /** Returns if the FeatureFlag with the given FeatureName is active at a given time. */
+  public static boolean isActiveAt(FeatureName featureName, DateTime dateTime) {
+    return FeatureFlag.get(featureName).getStatus(dateTime).equals(ACTIVE);
   }
 
   @Override

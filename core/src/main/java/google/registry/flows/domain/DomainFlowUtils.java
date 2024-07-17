@@ -24,6 +24,8 @@ import static com.google.common.collect.Sets.difference;
 import static com.google.common.collect.Sets.intersection;
 import static com.google.common.collect.Sets.union;
 import static google.registry.bsa.persistence.BsaLabelUtils.isLabelBlocked;
+import static google.registry.model.common.FeatureFlag.FeatureName.MINIMUM_DATASET_CONTACTS_OPTIONAL;
+import static google.registry.model.common.FeatureFlag.isActiveNow;
 import static google.registry.model.domain.Domain.MAX_REGISTRATION_YEARS;
 import static google.registry.model.domain.token.AllocationToken.TokenType.REGISTER_BSA;
 import static google.registry.model.tld.Tld.TldState.GENERAL_AVAILABILITY;
@@ -481,10 +483,14 @@ public class DomainFlowUtils {
     }
   }
 
-  static void validateRequiredContactsPresent(
+  static void validateRequiredContactsPresentIfRequiredForDataset(
       Optional<VKey<Contact>> registrant, Set<DesignatedContact> contacts)
       throws RequiredParameterMissingException {
-    // TODO: Check minimum reg data set migration schedule here and don't throw when any are empty.
+    // TODO(b/353347632): Change this flag check to a registry config check.
+    if (isActiveNow(MINIMUM_DATASET_CONTACTS_OPTIONAL)) {
+      // Contacts are not required once we have begun the migration to the minimum dataset
+      return;
+    }
     if (registrant.isEmpty()) {
       throw new MissingRegistrantException();
     }
@@ -1041,7 +1047,8 @@ public class DomainFlowUtils {
     String tldStr = tld.getTldStr();
     validateRegistrantAllowedOnTld(tldStr, command.getRegistrantContactId());
     validateNoDuplicateContacts(command.getContacts());
-    validateRequiredContactsPresent(command.getRegistrant(), command.getContacts());
+    validateRequiredContactsPresentIfRequiredForDataset(
+        command.getRegistrant(), command.getContacts());
     ImmutableSet<String> hostNames = command.getNameserverHostNames();
     validateNameserversCountForTld(tldStr, domainName, hostNames.size());
     validateNameserversAllowedOnTld(tldStr, hostNames);

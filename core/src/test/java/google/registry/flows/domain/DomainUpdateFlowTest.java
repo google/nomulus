@@ -19,6 +19,9 @@ import static com.google.common.collect.Sets.union;
 import static com.google.common.io.BaseEncoding.base16;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.EppResourceUtils.loadByForeignKey;
+import static google.registry.model.common.FeatureFlag.FeatureName.MINIMUM_DATASET_CONTACTS_OPTIONAL;
+import static google.registry.model.common.FeatureFlag.FeatureStatus.ACTIVE;
+import static google.registry.model.common.FeatureFlag.FeatureStatus.INACTIVE;
 import static google.registry.model.eppcommon.StatusValue.CLIENT_DELETE_PROHIBITED;
 import static google.registry.model.eppcommon.StatusValue.CLIENT_HOLD;
 import static google.registry.model.eppcommon.StatusValue.CLIENT_RENEW_PROHIBITED;
@@ -96,6 +99,7 @@ import google.registry.flows.exceptions.ResourceStatusProhibitsOperationExceptio
 import google.registry.model.ImmutableObject;
 import google.registry.model.billing.BillingBase.Reason;
 import google.registry.model.billing.BillingEvent;
+import google.registry.model.common.FeatureFlag;
 import google.registry.model.contact.Contact;
 import google.registry.model.domain.DesignatedContact;
 import google.registry.model.domain.DesignatedContact.Type;
@@ -140,6 +144,12 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
     createTld("tld");
     // Note that "domain_update.xml" tests adding and removing the same contact type.
     setEppInput("domain_update.xml");
+    persistResource(
+        new FeatureFlag()
+            .asBuilder()
+            .setFeatureName(MINIMUM_DATASET_CONTACTS_OPTIONAL)
+            .setStatusMap(ImmutableSortedMap.of(START_OF_TIME, INACTIVE))
+            .build());
   }
 
   private void persistReferencedEntities() {
@@ -287,6 +297,20 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
     MissingRegistrantException thrown =
         assertThrows(MissingRegistrantException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
+  }
+
+  @Test
+  void testSuccess_minimumDatasetPhase1_emptyRegistrant() throws Exception {
+    persistResource(
+        FeatureFlag.get(MINIMUM_DATASET_CONTACTS_OPTIONAL)
+            .asBuilder()
+            .setStatusMap(
+                ImmutableSortedMap.of(START_OF_TIME, INACTIVE, clock.nowUtc().minusDays(5), ACTIVE))
+            .build());
+    setEppInput("domain_update_empty_registrant.xml");
+    persistReferencedEntities();
+    persistDomain();
+    runFlowAssertResponse(loadFile("generic_success_response.xml"));
   }
 
   private void modifyDomainToHave13Nameservers() throws Exception {
@@ -1479,6 +1503,27 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
   }
 
   @Test
+  void testSuccess_minimumDatasetPhase1_removeAdmin() throws Exception {
+    persistResource(
+        FeatureFlag.get(MINIMUM_DATASET_CONTACTS_OPTIONAL)
+            .asBuilder()
+            .setStatusMap(
+                ImmutableSortedMap.of(START_OF_TIME, INACTIVE, clock.nowUtc().minusDays(5), ACTIVE))
+            .build());
+    setEppInput("domain_update_remove_admin.xml");
+    persistReferencedEntities();
+    persistResource(
+        DatabaseHelper.newDomain(getUniqueIdFromCommand())
+            .asBuilder()
+            .setContacts(
+                ImmutableSet.of(
+                    DesignatedContact.create(Type.ADMIN, sh8013Contact.createVKey()),
+                    DesignatedContact.create(Type.TECH, sh8013Contact.createVKey())))
+            .build());
+    runFlowAssertResponse(loadFile("generic_success_response.xml"));
+  }
+
+  @Test
   void testFailure_removeTech() throws Exception {
     setEppInput("domain_update_remove_tech.xml");
     persistReferencedEntities();
@@ -1492,6 +1537,27 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
             .build());
     EppException thrown = assertThrows(MissingTechnicalContactException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
+  }
+
+  @Test
+  void testSuccess_minimumDatasetPhase1_removeTech() throws Exception {
+    persistResource(
+        FeatureFlag.get(MINIMUM_DATASET_CONTACTS_OPTIONAL)
+            .asBuilder()
+            .setStatusMap(
+                ImmutableSortedMap.of(START_OF_TIME, INACTIVE, clock.nowUtc().minusDays(5), ACTIVE))
+            .build());
+    setEppInput("domain_update_remove_tech.xml");
+    persistReferencedEntities();
+    persistResource(
+        DatabaseHelper.newDomain(getUniqueIdFromCommand())
+            .asBuilder()
+            .setContacts(
+                ImmutableSet.of(
+                    DesignatedContact.create(Type.ADMIN, sh8013Contact.createVKey()),
+                    DesignatedContact.create(Type.TECH, sh8013Contact.createVKey())))
+            .build());
+    runFlowAssertResponse(loadFile("generic_success_response.xml"));
   }
 
   @Test

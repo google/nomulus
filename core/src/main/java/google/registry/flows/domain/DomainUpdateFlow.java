@@ -38,9 +38,11 @@ import static google.registry.flows.domain.DomainFlowUtils.validateNameserversAl
 import static google.registry.flows.domain.DomainFlowUtils.validateNameserversCountForTld;
 import static google.registry.flows.domain.DomainFlowUtils.validateNoDuplicateContacts;
 import static google.registry.flows.domain.DomainFlowUtils.validateRegistrantAllowedOnTld;
-import static google.registry.flows.domain.DomainFlowUtils.validateRequiredContactsPresent;
+import static google.registry.flows.domain.DomainFlowUtils.validateRequiredContactsPresentIfRequiredForDataset;
 import static google.registry.flows.domain.DomainFlowUtils.verifyClientUpdateNotProhibited;
 import static google.registry.flows.domain.DomainFlowUtils.verifyNotInPendingDelete;
+import static google.registry.model.common.FeatureFlag.FeatureName.MINIMUM_DATASET_CONTACTS_OPTIONAL;
+import static google.registry.model.common.FeatureFlag.isActiveNow;
 import static google.registry.model.reporting.HistoryEntry.Type.DOMAIN_UPDATE;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
@@ -248,7 +250,7 @@ public final class DomainUpdateFlow implements MutatingFlow {
     checkSameValuesNotAddedAndRemoved(add.getContacts(), remove.getContacts());
     checkSameValuesNotAddedAndRemoved(add.getStatusValues(), remove.getStatusValues());
     Change change = command.getInnerChange();
-    validateRegistrantIsntBeingRemoved(change);
+    validateRegistrantIsntBeingRemovedIfRequiredForDataset(change);
     Optional<SecDnsUpdateExtension> secDnsUpdate =
         eppInput.getSingleExtension(SecDnsUpdateExtension.class);
 
@@ -300,9 +302,13 @@ public final class DomainUpdateFlow implements MutatingFlow {
     return domainBuilder.build();
   }
 
-  private static void validateRegistrantIsntBeingRemoved(Change change) throws EppException {
-    // TODO(mcilwain): Make this check the minimum registration data set migration schedule
-    //                 and not require presence of a registrant in later stages.
+  private static void validateRegistrantIsntBeingRemovedIfRequiredForDataset(Change change)
+      throws EppException {
+    // TODO(b/353347632): Change this flag check to a registry config check.
+    if (isActiveNow(MINIMUM_DATASET_CONTACTS_OPTIONAL)) {
+      // registrants are not required once we have begun the migration to the minimum dataset
+      return;
+    }
     if (change.getRegistrantContactId().isPresent()
         && change.getRegistrantContactId().get().isEmpty()) {
       throw new MissingRegistrantException();
@@ -317,7 +323,8 @@ public final class DomainUpdateFlow implements MutatingFlow {
    * cause Domain update failure.
    */
   private static void validateNewState(Domain newDomain) throws EppException {
-    validateRequiredContactsPresent(newDomain.getRegistrant(), newDomain.getContacts());
+    validateRequiredContactsPresentIfRequiredForDataset(
+        newDomain.getRegistrant(), newDomain.getContacts());
     validateDsData(newDomain.getDsData());
     validateNameserversCountForTld(
         newDomain.getTld(),
