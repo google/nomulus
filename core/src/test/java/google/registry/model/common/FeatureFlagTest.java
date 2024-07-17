@@ -190,16 +190,15 @@ public class FeatureFlagTest extends EntityTestCase {
   @Test
   void testSuccess_isActiveNow() {
     fakeClock.setTo(DateTime.parse("2010-10-17TZ"));
-    FeatureFlag featureFlag =
-        persistResource(
-            new FeatureFlag.Builder()
-                .setFeatureName(TEST_FEATURE)
-                .setStatusMap(
-                    ImmutableSortedMap.<DateTime, FeatureStatus>naturalOrder()
-                        .put(START_OF_TIME, INACTIVE)
-                        .put(fakeClock.nowUtc().plusWeeks(8), ACTIVE)
-                        .build())
-                .build());
+    persistResource(
+        new FeatureFlag.Builder()
+            .setFeatureName(TEST_FEATURE)
+            .setStatusMap(
+                ImmutableSortedMap.<DateTime, FeatureStatus>naturalOrder()
+                    .put(START_OF_TIME, INACTIVE)
+                    .put(fakeClock.nowUtc().plusWeeks(8), ACTIVE)
+                    .build())
+            .build());
     assertThat(tm().transact(() -> FeatureFlag.isActiveNow(TEST_FEATURE))).isFalse();
     fakeClock.setTo(DateTime.parse("2011-10-17TZ"));
     assertThat(tm().transact(() -> FeatureFlag.isActiveNow(TEST_FEATURE))).isTrue();
