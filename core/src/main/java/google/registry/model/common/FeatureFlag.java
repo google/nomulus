@@ -154,7 +154,7 @@ public class FeatureFlag extends ImmutableObject implements Buildable {
   /** Returns if the FeatureFlag with the given FeatureName is active now. */
   public static boolean isActiveNow(FeatureName featureName) {
     tm().assertInTransaction();
-    return isActive(featureName, tm().getTransactionTime());
+    return isActiveAt(featureName, tm().getTransactionTime());
   }
 
   /** Returns if the FeatureFlag with the given FeatureName is active at a given time. */
