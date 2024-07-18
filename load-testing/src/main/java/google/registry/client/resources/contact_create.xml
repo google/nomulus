@@ -4,7 +4,7 @@
     <create>
       <contact:create
           xmlns:contact="urn:ietf:params:xml:ns:contact-1.0">
-        <contact:id>@@RANDOM@@-@@CHANNEL_NUMBER@@-@@REPEAT_NUMBER@@</contact:id>
+        <contact:id>@@RANDOM_CONTACT@@-@@CHANNEL_NUMBER@@</contact:id>
         <contact:postalInfo type="int">
           <contact:name>John Doe</contact:name>
           <contact:org>Example, Inc.</contact:org>
