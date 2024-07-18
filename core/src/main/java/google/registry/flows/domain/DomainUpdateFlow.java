@@ -68,6 +68,7 @@ import google.registry.flows.domain.DomainFlowUtils.NameserversNotSpecifiedForTl
 import google.registry.model.ImmutableObject;
 import google.registry.model.billing.BillingBase.Reason;
 import google.registry.model.billing.BillingEvent;
+import google.registry.model.contact.Contact;
 import google.registry.model.domain.DesignatedContact;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainCommand.Update;
@@ -89,6 +90,7 @@ import google.registry.model.poll.PendingActionNotificationResponse.DomainPendin
 import google.registry.model.poll.PollMessage;
 import google.registry.model.reporting.IcannReportingTypes.ActivityReportField;
 import google.registry.model.tld.Tld;
+import google.registry.persistence.VKey;
 import java.util.Objects;
 import java.util.Optional;
 import javax.inject.Inject;
@@ -250,7 +252,6 @@ public final class DomainUpdateFlow implements MutatingFlow {
     checkSameValuesNotAddedAndRemoved(add.getContacts(), remove.getContacts());
     checkSameValuesNotAddedAndRemoved(add.getStatusValues(), remove.getStatusValues());
     Change change = command.getInnerChange();
-    validateRegistrantIsntBeingRemovedIfRequiredForDataset(change);
     Optional<SecDnsUpdateExtension> secDnsUpdate =
         eppInput.getSingleExtension(SecDnsUpdateExtension.class);
 
@@ -280,7 +281,7 @@ public final class DomainUpdateFlow implements MutatingFlow {
             .removeStatusValues(remove.getStatusValues())
             .removeContacts(remove.getContacts())
             .addContacts(add.getContacts())
-            .setRegistrant(change.getRegistrant().or(domain::getRegistrant))
+            .setRegistrant(determineUpdatedRegistrant(change, domain))
             .setAuthInfo(firstNonNull(change.getAuthInfo(), domain.getAuthInfo()));
 
     if (!add.getNameservers().isEmpty()) {
@@ -302,17 +303,19 @@ public final class DomainUpdateFlow implements MutatingFlow {
     return domainBuilder.build();
   }
 
-  private static void validateRegistrantIsntBeingRemovedIfRequiredForDataset(Change change)
+  private Optional<VKey<Contact>> determineUpdatedRegistrant(Change change, Domain domain)
       throws EppException {
-    // TODO(b/353347632): Change this flag check to a registry config check.
-    if (isActiveNow(MINIMUM_DATASET_CONTACTS_OPTIONAL)) {
-      // registrants are not required once we have begun the migration to the minimum dataset
-      return;
-    }
+    // During phase 1 of minimum dataset transition, allow registrant to be removed
     if (change.getRegistrantContactId().isPresent()
         && change.getRegistrantContactId().get().isEmpty()) {
-      throw new MissingRegistrantException();
+      // TODO(b/353347632): Change this flag check to a registry config check.
+      if (isActiveNow(MINIMUM_DATASET_CONTACTS_OPTIONAL)) {
+        return Optional.empty();
+      } else {
+        throw new MissingRegistrantException();
+      }
     }
+    return change.getRegistrant().or(domain::getRegistrant);
   }
 
   /**
