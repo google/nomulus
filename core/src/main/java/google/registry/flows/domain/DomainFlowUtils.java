@@ -492,7 +492,7 @@ public class DomainFlowUtils {
       return;
     }
     if (registrant.isEmpty()) {
-      // throw new MissingRegistrantException();
+      throw new MissingRegistrantException();
     }
 
     Set<Type> roles = new HashSet<>();
