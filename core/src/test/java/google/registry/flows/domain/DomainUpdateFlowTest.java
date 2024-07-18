@@ -311,6 +311,7 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
     persistReferencedEntities();
     persistDomain();
     runFlowAssertResponse(loadFile("generic_success_response.xml"));
+    assertThat(reloadResourceByForeignKey().getRegistrant().isEmpty()).isTrue();
   }
 
   private void modifyDomainToHave13Nameservers() throws Exception {
