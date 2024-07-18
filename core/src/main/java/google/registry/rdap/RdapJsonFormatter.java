@@ -75,7 +75,6 @@ import java.net.InetAddress;
 import java.net.URI;
 import java.nio.file.Paths;
 import java.util.HashMap;
-import java.util.LinkedHashSet;
 import java.util.Locale;
 import java.util.Optional;
 import java.util.Set;
@@ -251,16 +250,6 @@ public class RdapJsonFormatter {
   private static final Ordering<DesignatedContact> DESIGNATED_CONTACT_ORDERING =
       Ordering.natural().onResultOf(DesignatedContact::getType);
 
-  /**
-   * The list of RDAP contact roles that are required to be present on each domain.
-   *
-   * <p>Per RDAP Response Profile 2.7.3, A domain MUST have the REGISTRANT, ADMIN, TECH roles and
-   * MAY have others. We also have the BILLING role in our system but it isn't required and is only
-   * listed if actually present.
-   */
-  private static final ImmutableSet<Role> REQUIRED_CONTACT_ROLES =
-      ImmutableSet.of(Role.REGISTRANT, Role.ADMIN, Role.TECH);
-
   /** Creates the TOS notice that is added to every reply. */
   Notice createTosNotice() {
     String linkValue = makeRdapServletRelativeUrl("help", RdapHelpAction.TOS_PATH);
@@ -403,7 +392,6 @@ public class RdapJsonFormatter {
 
     // Convert the contact entities to RDAP output contacts (this also converts the contact types
     // to RDAP roles).
-    Set<RdapContactEntity> rdapContacts = new LinkedHashSet<>();
     for (VKey<Contact> contactKey : contactsToRoles.keySet()) {
       Set<Role> roles =
           contactsToRoles.get(contactKey).stream()
@@ -412,21 +400,12 @@ public class RdapJsonFormatter {
       if (roles.isEmpty()) {
         continue;
       }
-      rdapContacts.add(
-          createRdapContactEntity(
-              Optional.ofNullable(loadedContacts.get(contactKey)), roles, OutputDataType.INTERNAL));
+      builder
+          .entitiesBuilder()
+          .add(
+              createRdapContactEntity(
+                  loadedContacts.get(contactKey), roles, OutputDataType.INTERNAL));
     }
-
-    // Loop through all required contact roles and fill in placeholder REDACTED info for any
-    // required ones that are missing, i.e. because of minimum registration data set.
-    for (Role role : REQUIRED_CONTACT_ROLES) {
-      if (rdapContacts.stream().noneMatch(c -> c.roles().contains(role))) {
-        rdapContacts.add(
-            createRdapContactEntity(
-                Optional.empty(), ImmutableSet.of(role), OutputDataType.INTERNAL));
-      }
-    }
-    builder.entitiesBuilder().addAll(rdapContacts);
 
     // Add the nameservers to the data; the load was kicked off above for efficiency.
     // RDAP Response Profile 2.9: we MUST have the nameservers
@@ -537,28 +516,20 @@ public class RdapJsonFormatter {
    * @param outputDataType whether to generate full or summary data
    */
   RdapContactEntity createRdapContactEntity(
-      Optional<Contact> contact, Iterable<RdapEntity.Role> roles, OutputDataType outputDataType) {
+      Contact contact, Iterable<RdapEntity.Role> roles, OutputDataType outputDataType) {
     RdapContactEntity.Builder contactBuilder = RdapContactEntity.builder();
 
     // RDAP Response Profile 2.7.1, 2.7.3 - we MUST have the contacts. 2.7.4 discusses censoring of
     // fields we don't want to show (as opposed to not having contacts at all) because of GDPR etc.
     //
     // 2.8 allows for unredacted output for authorized people.
-    // TODO(mcilwain): Once the RDAP profile is fully updated for minimum registration data set,
-    //                 we will want to not include non-existent contacts at all, rather than
-    //                 pretending they exist and just showing REDACTED info. This is especially
-    //                 important for authorized flows, where you wouldn't expect to see redaction
-    //                 (although no one actually has access to authorized flows yet).
     boolean isAuthorized =
-        contact.isPresent()
-            && rdapAuthorization.isAuthorizedForRegistrar(
-                contact.get().getCurrentSponsorRegistrarId());
+        rdapAuthorization.isAuthorizedForRegistrar(contact.getCurrentSponsorRegistrarId());
 
     VcardArray.Builder vcardBuilder = VcardArray.builder();
 
     if (isAuthorized) {
-      fillRdapContactEntityWhenAuthorized(
-          contactBuilder, vcardBuilder, contact.get(), outputDataType);
+      fillRdapContactEntityWhenAuthorized(contactBuilder, vcardBuilder, contact, outputDataType);
     } else {
       // GTLD Registration Data Temp Spec 17may18, Appendix A, 2.3, 2.4 and RDAP Response Profile
       // 2.7.4.1, 2.7.4.2 - the following fields must be redacted:

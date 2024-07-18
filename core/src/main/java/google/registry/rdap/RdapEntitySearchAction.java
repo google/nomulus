@@ -461,7 +461,7 @@ public class RdapEntitySearchAction extends RdapSearchActionBase {
           .entitySearchResultsBuilder()
           .add(
               rdapJsonFormatter.createRdapContactEntity(
-                  Optional.of(contact), ImmutableSet.of(), outputDataType));
+                  contact, ImmutableSet.of(), outputDataType));
       newCursor =
           Optional.of(
               CONTACT_CURSOR_PREFIX
