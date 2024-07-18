@@ -281,7 +281,7 @@ public final class DomainUpdateFlow implements MutatingFlow {
             .removeStatusValues(remove.getStatusValues())
             .removeContacts(remove.getContacts())
             .addContacts(add.getContacts())
-            .setRegistrant(getRegistrant(change, domain))
+            .setRegistrant(determineUpdatedRegistrant(change, domain))
             .setAuthInfo(firstNonNull(change.getAuthInfo(), domain.getAuthInfo()));
 
     if (!add.getNameservers().isEmpty()) {
@@ -303,7 +303,8 @@ public final class DomainUpdateFlow implements MutatingFlow {
     return domainBuilder.build();
   }
 
-  private Optional<VKey<Contact>> getRegistrant(Change change, Domain domain) throws EppException {
+  private Optional<VKey<Contact>> determineUpdatedRegistrant(Change change, Domain domain)
+      throws EppException {
     // During phase 1 of minimum dataset transition, allow registrant to be removed
     if (change.getRegistrantContactId().isPresent()
         && change.getRegistrantContactId().get().isEmpty()) {
