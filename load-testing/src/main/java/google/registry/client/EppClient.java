@@ -77,9 +77,9 @@ import org.joda.time.DateTime;
 @SuppressWarnings("FutureReturnValueIgnored")
 public class EppClient implements Runnable {
 
-  // TODO(sarahbot): Add loadtest for delete flow
+  // TODO(354014191): Add loadtest handling for other EPP flows
 
-  // TODO(sarahbot): Add functionality to delete data created by load tests
+  // TODO(354014901): Add functionality to delete/cleanup data created by this client
 
   static {
     Security.addProvider(new BouncyCastleProvider());
@@ -170,7 +170,7 @@ public class EppClient implements Runnable {
       names = {"--tld"},
       description = "TLD to create domains on.",
       required = true)
-  private String tld = "test";
+  private String tld = "loadtest";
 
   @Parameter(
       names = {"--force_terminate", "-ft"},
