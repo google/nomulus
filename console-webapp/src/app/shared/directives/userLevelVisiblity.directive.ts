@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Directive, ElementRef, Input, OnChanges } from '@angular/core';
+import { Directive, ElementRef, Input, effect } from '@angular/core';
 import { UserDataService } from '../services/userData.service';
 
 export enum RESTRICTED_ELEMENTS {
@@ -26,29 +26,28 @@ export const DISABLED_ELEMENTS_PER_ROLE = {
 @Directive({
   selector: '[elementId]',
 })
-export class UserLevelVisibility implements OnChanges {
+export class UserLevelVisibility {
   @Input() elementId!: RESTRICTED_ELEMENTS | null;
 
   constructor(
     private userDataService: UserDataService,
     private el: ElementRef
-  ) {}
-
-  ngOnChanges() {
-    this.processElement();
+  ) {
+    effect(this.processElement.bind(this));
   }
 
   processElement() {
+    const globalRole = this.userDataService?.userData()?.globalRole || 'NONE';
     if (this.elementId === null) {
       return;
     }
-
-    const globalRole = this.userDataService?.userData?.globalRole || 'NONE';
     if (
       // @ts-ignore
       (DISABLED_ELEMENTS_PER_ROLE[globalRole] || []).includes(this.elementId)
     ) {
       this.el.nativeElement.style.display = 'none';
+    } else {
+      this.el.nativeElement.style.display = '';
     }
   }
 }
