@@ -30,6 +30,15 @@
 
   &__domains-table {
     min-width: $min-width !important;
+    .mat-column-actions {
+      max-width: 100px;
+      // mat-icon {
+      //   margin-right: 0;
+      // }
+    }
+    .mat-column-registryLock {
+      max-width: 150px;
+    }
   }
 
   &__domains-spinner {

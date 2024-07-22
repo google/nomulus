@@ -12,7 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Injectable } from '@angular/core';
+import { HttpErrorResponse } from '@angular/common/http';
+import { Injectable, Type } from '@angular/core';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { tap } from 'rxjs';
 import { RegistrarService } from '../registrar/registrar.service';
 import { BackendService } from '../shared/services/backend.service';
@@ -27,6 +29,7 @@ export interface Domain {
   domainName: string;
   registrationExpirationTime: string;
   statuses: string[];
+  isLocked: boolean;
 }
 
 export interface DomainListResult {
@@ -35,13 +38,19 @@ export interface DomainListResult {
   totalResults: number;
 }
 
-@Injectable()
+@Injectable({
+  providedIn: 'root',
+})
 export class DomainListService {
   checkpointTime?: string;
+  selectedDomain?: string;
+  public activeActionComponent: Type<any> | null = null;
+  public domainsList: Domain[] = [];
 
   constructor(
     private backendService: BackendService,
-    private registrarService: RegistrarService
+    private registrarService: RegistrarService,
+    private _snackBar: MatSnackBar
   ) {}
 
   retrieveDomains(
@@ -62,7 +71,36 @@ export class DomainListService {
       .pipe(
         tap((domainListResult: DomainListResult) => {
           this.checkpointTime = domainListResult?.checkpointTime;
+          this.domainsList = domainListResult?.domains;
         })
       );
+  }
+
+  registryLockDomain(
+    domainName: string,
+    password: string,
+    relockDurationMillis: number | undefined,
+    isLocked: boolean
+  ) {
+    return this.backendService
+      .registryLockDomain(
+        domainName,
+        password,
+        relockDurationMillis,
+        this.registrarService.registrarId(),
+        isLocked
+      )
+      .subscribe({
+        complete: () => {
+          this.domainsList = this.domainsList.map((d) =>
+            d.domainName === domainName ? { ...d, isLocked } : d
+          );
+          this.activeActionComponent = null;
+          this.selectedDomain = undefined;
+        },
+        error: (err: HttpErrorResponse) => {
+          this._snackBar.open(err.error || err.message);
+        },
+      });
   }
 }

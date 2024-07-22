@@ -169,4 +169,19 @@ export class BackendService {
       whoisRegistrarFields
     );
   }
+
+  registryLockDomain(
+    domainName: string,
+    password: string | undefined,
+    relockDurationMillis: number | undefined,
+    registrarId: string,
+    isLock: boolean
+  ) {
+    return this.http.post('/console-api/registry-lock', {
+      domainName,
+      password,
+      registrarId,
+      relockDurationMillis,
+    });
+  }
 }

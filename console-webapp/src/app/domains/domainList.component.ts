@@ -19,14 +19,13 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTableDataSource } from '@angular/material/table';
 import { Subject, debounceTime } from 'rxjs';
 import { RegistrarService } from '../registrar/registrar.service';
-import { BackendService } from '../shared/services/backend.service';
 import { Domain, DomainListService } from './domainList.service';
+import { RegistryLockComponent } from './registryLock.component';
 
 @Component({
   selector: 'app-domain-list',
   templateUrl: './domainList.component.html',
   styleUrls: ['./domainList.component.scss'],
-  providers: [DomainListService],
 })
 export class DomainListComponent {
   public static PATH = 'domain-list';
@@ -37,6 +36,8 @@ export class DomainListComponent {
     'creationTime',
     'registrationExpirationTime',
     'statuses',
+    'registryLock',
+    'actions',
   ];
 
   dataSource: MatTableDataSource<Domain> = new MatTableDataSource();
@@ -52,8 +53,7 @@ export class DomainListComponent {
   @ViewChild(MatPaginator, { static: true }) paginator!: MatPaginator;
 
   constructor(
-    private backendService: BackendService,
-    private domainListService: DomainListService,
+    protected domainListService: DomainListService,
     protected registrarService: RegistrarService,
     private _snackBar: MatSnackBar
   ) {
@@ -80,6 +80,12 @@ export class DomainListComponent {
     this.searchTermSubject.complete();
   }
 
+  openRegistryLock(domainName: string) {
+    console.log('>>> Domain Name', domainName);
+    this.domainListService.selectedDomain = domainName;
+    this.domainListService.activeActionComponent = RegistryLockComponent;
+  }
+
   reloadData() {
     this.isLoading = true;
     this.domainListService
@@ -95,7 +101,7 @@ export class DomainListComponent {
           this.isLoading = false;
         },
         next: (domainListResult) => {
-          this.dataSource.data = (domainListResult || {}).domains;
+          this.dataSource.data = this.domainListService.domainsList;
           this.totalResults = (domainListResult || {}).totalResults || 0;
           this.isLoading = false;
         },

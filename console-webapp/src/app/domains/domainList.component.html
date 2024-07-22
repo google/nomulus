@@ -2,6 +2,17 @@
   <div class="console-app-domains">
     <h1 class="mat-headline-4">Domains</h1>
 
+    <div
+      class="console-app-domains__actions-wrapper"
+      [hidden]="!domainListService.activeActionComponent"
+    >
+      <ng-container
+        v-if="domainListService.activeActionComponent"
+        *ngComponentOutlet="domainListService.activeActionComponent"
+      >
+      </ng-container>
+    </div>
+
     @if (!isLoading && totalResults == 0) {
     <div class="console-app__empty-domains">
       <h1>
@@ -12,7 +23,18 @@
       <h1>No domains found</h1>
     </div>
     } @else {
-    <div class="console-app__domains-table-parent">
+    <mat-menu #actions="matMenu">
+      <ng-template matMenuContent let-domainName="domainName">
+        <button mat-menu-item (click)="openRegistryLock(domainName)">
+          <mat-icon>key</mat-icon>
+          <span>Registry Lock</span>
+        </button>
+      </ng-template>
+    </mat-menu>
+    <div
+      class="console-app__domains-table-parent"
+      [hidden]="domainListService.activeActionComponent"
+    >
       <div class="console-app__scrollable-wrapper">
         <div class="console-app__scrollable">
           @if (isLoading) {
@@ -78,6 +100,27 @@
               }}</mat-cell>
             </ng-container>
 
+            <ng-container matColumnDef="registryLock">
+              <mat-header-cell *matHeaderCellDef>Registry Lock</mat-header-cell>
+              <mat-cell *matCellDef="let element">{{
+                element.isLocked || false
+              }}</mat-cell>
+            </ng-container>
+
+            <ng-container matColumnDef="actions">
+              <mat-header-cell *matHeaderCellDef>Actions</mat-header-cell>
+              <mat-cell *matCellDef="let element">
+                <button
+                  mat-icon-button
+                  [matMenuTriggerFor]="actions"
+                  [matMenuTriggerData]="{ domainName: element.domainName }"
+                  aria-label="Domain actions"
+                >
+                  <mat-icon>more_horiz</mat-icon>
+                </button>
+              </mat-cell>
+            </ng-container>
+
             <mat-header-row
               *matHeaderRowDef="displayedColumns"
             ></mat-header-row>
@@ -85,7 +128,7 @@
 
             <!-- Row shown when there is no matching data. -->
             <mat-row *matNoDataRow>
-              <mat-cell colspan="4">No domains found</mat-cell>
+              <mat-cell colspan="6">No domains found</mat-cell>
             </mat-row>
           </mat-table>
           <mat-paginator
