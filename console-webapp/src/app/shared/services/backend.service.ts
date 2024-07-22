@@ -17,6 +17,8 @@ import { Injectable } from '@angular/core';
 import { Observable, catchError, of, throwError } from 'rxjs';
 
 import { DomainListResult } from 'src/app/domains/domainList.service';
+import { DomainLocksResult } from 'src/app/domains/registryLock.service';
+import { RegistryLockVerificationResponse } from 'src/app/lock/registryLockVerify.service';
 import {
   Registrar,
   SecuritySettingsBackendModel,
@@ -25,7 +27,6 @@ import {
 import { Contact } from '../../settings/contact/contact.service';
 import { EppPasswordBackendModel } from '../../settings/security/security.service';
 import { UserData } from './userData.service';
-import { RegistryLockVerificationResponse } from 'src/app/lock/registryLockVerify.service';
 
 @Injectable()
 export class BackendService {
@@ -169,6 +170,38 @@ export class BackendService {
       '/console-api/settings/whois-fields',
       whoisRegistrarFields
     );
+  }
+
+  registryLockDomain(
+    domainName: string,
+    password: string | undefined,
+    relockDurationMillis: number | undefined,
+    registrarId: string,
+    isLock: boolean
+  ) {
+    let url = `/console-api/registry-lock?registrarId=${registrarId}`;
+    if (domainName) {
+      url += `&domain=${domainName}`;
+    }
+    if (password) {
+      url += `&password=${password}`;
+    }
+    if (isLock !== undefined) {
+      url += `&isLock=${isLock}`;
+    }
+    if (relockDurationMillis) {
+      url += `&relockDurationMillis=${relockDurationMillis}`;
+    }
+
+    return this.http.post(url, {});
+  }
+
+  getLocks(registrarId: string): Observable<DomainLocksResult[]> {
+    return this.http
+      .get<DomainLocksResult[]>(
+        `/console-api/registry-lock?registrarId=${registrarId}`
+      )
+      .pipe(catchError((err) => this.errorCatcher<DomainLocksResult[]>(err)));
   }
 
   verifyRegistryLockRequest(
