@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Injectable } from '@angular/core';
+import { Injectable, signal } from '@angular/core';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { Observable, tap } from 'rxjs';
 import { BackendService } from './backend.service';
@@ -33,7 +33,7 @@ export interface UserData {
   providedIn: 'root',
 })
 export class UserDataService implements GlobalLoader {
-  public userData!: UserData;
+  userData = signal<UserData | undefined>(undefined);
   constructor(
     private backend: BackendService,
     protected globalLoader: GlobalLoaderService,
@@ -48,7 +48,7 @@ export class UserDataService implements GlobalLoader {
   getUserData(): Observable<UserData> {
     return this.backend.getUserData().pipe(
       tap((userData: UserData) => {
-        this.userData = userData;
+        this.userData.set(userData);
       })
     );
   }

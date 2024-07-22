@@ -17,9 +17,11 @@
     For general purpose questions once you are integrated with our registry
     system. If the issue is urgent, please put "Urgent" in the email title.
   </p>
-  <a class="text-l" href="mailto:{{ userDataService.userData.supportEmail }}">{{
-    userDataService.userData.supportEmail
-  }}</a>
+  <a
+    class="text-l"
+    href="mailto:{{ userDataService.userData()?.supportEmail }}"
+    >{{ userDataService.userData()?.supportEmail }}</a
+  >
   <p class="secondary-text">
     Note: You may receive occasional service announcements via
     registrar-announcement&#64;google.com. You will not be able to reply to
@@ -29,13 +31,13 @@
   <p class="text-l">For general support inquiries 24/7:</p>
   <a
     class="text-l"
-    href="tel:{{ userDataService.userData.supportPhoneNumber }}"
-    >{{ userDataService.userData.supportPhoneNumber }}</a
+    href="tel:{{ userDataService.userData()?.supportPhoneNumber }}"
+    >{{ userDataService.userData()?.supportPhoneNumber }}</a
   >
-  @if (userDataService.userData.passcode) {
+  @if (userDataService.userData()?.passcode) {
   <p class="text-l">Your telephone passcode:</p>
   <p class="text-l console-app__support-passcode">
-    {{ userDataService.userData.passcode }}
+    {{ userDataService.userData()?.passcode }}
   </p>
   <p class="secondary-text">
     Note: Please be ready with your account name and telephone passcode when

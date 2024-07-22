@@ -1,0 +1,20 @@
+.console-app {
+  &__registry-lock {
+    mat-label {
+      display: block;
+      margin-bottom: 10px;
+    }
+    p {
+      margin-bottom: 40px;
+    }
+  }
+  &__registry-lock-notification {
+    padding: 20px;
+    border-radius: 10px;
+    background-color: var(--light-highlight);
+    margin-bottom: 20px;
+    width: max-content;
+    display: flex;
+    align-items: center;
+  }
+}

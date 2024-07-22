@@ -18,6 +18,7 @@ import { DomainListComponent } from '../domains/domainList.component';
 import { RegistrarComponent } from '../registrar/registrarsTable.component';
 import SecurityComponent from '../settings/security/security.component';
 import { SettingsComponent } from '../settings/settings.component';
+import { RESTRICTED_ELEMENTS } from '../shared/directives/userLevelVisiblity.directive';
 import { BreakPointObserverService } from '../shared/services/breakPoint.service';
 
 @Component({
@@ -30,6 +31,9 @@ export class HomeComponent {
     protected breakPointObserverService: BreakPointObserverService,
     private router: Router
   ) {}
+  getElementIdForRegistrarsBlock() {
+    return RESTRICTED_ELEMENTS.REGISTRAR_ELEMENT;
+  }
   viewRegistrars() {
     this.router.navigate([RegistrarComponent.PATH], {
       queryParamsHandling: 'merge',
