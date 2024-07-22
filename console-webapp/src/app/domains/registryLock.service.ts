@@ -12,62 +12,59 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Injectable, Type } from '@angular/core';
+import { Injectable } from '@angular/core';
 import { tap } from 'rxjs';
 import { RegistrarService } from '../registrar/registrar.service';
 import { BackendService } from '../shared/services/backend.service';
 
-export interface CreateAutoTimestamp {
-  creationTime: string;
-}
-
-export interface Domain {
-  creationTime: CreateAutoTimestamp;
-  currentSponsorRegistrarId: string;
+export interface DomainLocksResult {
   domainName: string;
-  registrationExpirationTime: string;
-  statuses: string[];
-}
-
-export interface DomainListResult {
-  checkpointTime: string;
-  domains: Domain[];
-  totalResults: number;
 }
 
 @Injectable({
   providedIn: 'root',
 })
-export class DomainListService {
-  checkpointTime?: string;
-  selectedDomain?: string;
-  public activeActionComponent: Type<any> | null = null;
-  public domainsList: Domain[] = [];
+export class RegistryLockService {
+  public domainsLocks: DomainLocksResult[] = [];
 
   constructor(
     private backendService: BackendService,
     private registrarService: RegistrarService
   ) {}
 
-  retrieveDomains(
-    pageNumber?: number,
-    resultsPerPage?: number,
-    totalResults?: number,
-    searchTerm?: string
+  retrieveLocks() {
+    return this.backendService
+      .getLocks(this.registrarService.registrarId())
+      .pipe(
+        tap((domainLocksResult) => {
+          this.domainsLocks = domainLocksResult;
+        })
+      );
+  }
+
+  registryLockDomain(
+    domainName: string,
+    password: string,
+    relockDurationMillis: number | undefined,
+    isLocked: boolean
   ) {
     return this.backendService
-      .getDomains(
+      .registryLockDomain(
+        domainName,
+        password,
+        relockDurationMillis,
         this.registrarService.registrarId(),
-        this.checkpointTime,
-        pageNumber,
-        resultsPerPage,
-        totalResults,
-        searchTerm
+        isLocked
       )
       .pipe(
-        tap((domainListResult: DomainListResult) => {
-          this.checkpointTime = domainListResult?.checkpointTime;
-          this.domainsList = domainListResult?.domains;
+        tap(() => {
+          if (isLocked) {
+            this.domainsLocks = [...this.domainsLocks, { domainName }];
+          } else {
+            this.domainsLocks = this.domainsLocks.filter(
+              (d) => d.domainName !== domainName
+            );
+          }
         })
       );
   }

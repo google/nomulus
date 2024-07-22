@@ -34,7 +34,10 @@
       </mat-card-actions>
     </mat-card>
 
-    <mat-card appearance="outlined">
+    <mat-card
+      appearance="outlined"
+      [elementId]="getElementIdForRegistrarsBlock()"
+    >
       <mat-card-content>
         <h3>
           <mat-icon class="secondary-text">account_circle</mat-icon>

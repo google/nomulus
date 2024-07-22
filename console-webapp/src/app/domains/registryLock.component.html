@@ -1,0 +1,76 @@
+<div class="console-app__registry-lock">
+  <p>
+    <button
+      mat-icon-button
+      aria-label="Back to domains list"
+      (click)="goBack()"
+    >
+      <mat-icon>arrow_back</mat-icon>
+    </button>
+  </p>
+
+  @if (domain().isLocked) {
+  <h1>Unlock the domain {{ domainListService.selectedDomain }}</h1>
+  <form (ngSubmit)="save(false)" [formGroup]="unlockDomain">
+    <p>
+      <mat-label for="password">Password: </mat-label>
+      <mat-form-field name="password" appearance="outline">
+        <input matInput type="text" formControlName="password" required />
+      </mat-form-field>
+    </p>
+    <p>
+      <mat-label for="relockTime"
+        >Automatically re-lock the domain after:</mat-label
+      >
+      <mat-radio-group
+        name="relockTime"
+        formControlName="relockTime"
+        aria-label="Automatically relock option"
+      >
+        @for (option of relockOptions; track option.name) {
+        <mat-radio-button [value]="option.duration">{{
+          option.name
+        }}</mat-radio-button>
+        }
+      </mat-radio-group>
+    </p>
+
+    <div class="console-app__registry-lock-notification">
+      <mat-icon>priority_high</mat-icon>Confirmation email will be sent to your
+      email address to confirm the unlock
+    </div>
+    <button
+      mat-flat-button
+      color="primary"
+      type="submit"
+      [disabled]="!unlockDomain.valid"
+    >
+      Save
+    </button>
+  </form>
+  } @else {
+  <h1>Lock the domain {{ domainListService.selectedDomain }}</h1>
+  <form (ngSubmit)="save(true)" [formGroup]="lockDomain">
+    <p>
+      <mat-label for="password">Password: </mat-label>
+      <mat-form-field name="password" appearance="outline">
+        <input matInput type="text" formControlName="password" required />
+      </mat-form-field>
+    </p>
+
+    <div class="console-app__registry-lock-notification">
+      <mat-icon>priority_high</mat-icon>The lock will not take effect until you
+      click the confirmation link that will be emailed to you. When it takes
+      effect, you will be billed the standard server status change billing cost.
+    </div>
+    <button
+      mat-flat-button
+      color="primary"
+      type="submit"
+      [disabled]="!lockDomain.valid"
+    >
+      Save
+    </button>
+  </form>
+  }
+</div>

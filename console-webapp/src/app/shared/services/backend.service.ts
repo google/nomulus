@@ -17,6 +17,7 @@ import { Injectable } from '@angular/core';
 import { Observable, catchError, of, throwError } from 'rxjs';
 
 import { DomainListResult } from 'src/app/domains/domainList.service';
+import { DomainLocksResult } from 'src/app/domains/registryLock.service';
 import {
   Registrar,
   SecuritySettingsBackendModel,
@@ -168,5 +169,29 @@ export class BackendService {
       '/console-api/settings/whois-fields',
       whoisRegistrarFields
     );
+  }
+
+  registryLockDomain(
+    domainName: string,
+    password: string | undefined,
+    relockDurationMillis: number | undefined,
+    registrarId: string,
+    isLock: boolean
+  ) {
+    return this.http.post('/console-api/registry-lock', {
+      domainName,
+      password,
+      registrarId,
+      relockDurationMillis,
+      isLock,
+    });
+  }
+
+  getLocks(registrarId: string): Observable<DomainLocksResult[]> {
+    return this.http
+      .get<DomainLocksResult[]>(
+        `/console-api/registry-lock?registrarId=${registrarId}`
+      )
+      .pipe(catchError((err) => this.errorCatcher<DomainLocksResult[]>(err)));
   }
 }
