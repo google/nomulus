@@ -79,8 +79,6 @@ public class EppClient implements Runnable {
 
   // TODO(b/354014191): Add loadtest handling for other EPP flows
 
-  // TODO(b/354014901): Add functionality to delete/cleanup data created by this client
-
   static {
     Security.addProvider(new BouncyCastleProvider());
   }
@@ -418,7 +416,7 @@ public class EppClient implements Runnable {
       System.out.printf("Number of requests per connection: %d\n", requestsPerConnection);
       if (startTime != null && endTime != null) {
         System.out.printf(
-            "QPS: %.2f\n",
+            "Average Response QPS: %.2f\n",
             (double) requestDurations.size()
                 * 1000.0
                 / Duration.between(startTime, endTime).toMillis());
