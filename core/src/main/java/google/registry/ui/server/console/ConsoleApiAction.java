@@ -161,7 +161,7 @@ public abstract class ConsoleApiAction implements Runnable {
 
     Map<String, Object> registrarDiffMap = registrar.toDiffableFieldMap();
     Stream.of("passwordHash", "salt") // fields to remove from final diff
-        .forEach(fieldToBeRemoved -> registrarDiffMap.remove(fieldToBeRemoved));
+        .forEach(registrarDiffMap::remove);
 
     // Use LinkedHashMap here to preserve ordering; null values mean we can't use ImmutableMap.
     LinkedHashMap<String, Object> result = new LinkedHashMap<>(registrarDiffMap);

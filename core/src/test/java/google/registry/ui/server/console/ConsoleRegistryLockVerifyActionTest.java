@@ -156,7 +156,7 @@ public class ConsoleRegistryLockVerifyActionTest {
     action.run();
     assertThat(response.getStatus()).isEqualTo(HttpServletResponse.SC_BAD_REQUEST);
     assertThat(response.getPayload())
-        .isEqualTo("Invalid verification code 123456789ABCDEFGHJKLMNPQRSTUUUUU");
+        .isEqualTo("Invalid verification code \"123456789ABCDEFGHJKLMNPQRSTUUUUU\"");
     assertThat(loadByEntity(defaultDomain).getStatusValues()).containsExactly(StatusValue.INACTIVE);
   }
 

@@ -343,7 +343,7 @@ public final class DomainLockUtils {
         .orElseThrow(
             () ->
                 new IllegalArgumentException(
-                    String.format("Invalid verification code %s", verificationCode)));
+                    String.format("Invalid verification code \"%s\"", verificationCode)));
   }
 
   private void applyLockStatuses(RegistryLock lock, DateTime lockTime, boolean isAdmin) {
