@@ -21,7 +21,6 @@ import static google.registry.testing.DatabaseHelper.persistNewRegistrar;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.SqlHelper.saveRegistrar;
 import static jakarta.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
-import static jakarta.servlet.http.HttpServletResponse.SC_FORBIDDEN;
 import static jakarta.servlet.http.HttpServletResponse.SC_OK;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.when;
@@ -149,6 +148,28 @@ class RegistrarsActionTest {
   }
 
   @Test
+  void testSuccess_getOnlyAllowedRegistrars() {
+    saveRegistrar("registrarId");
+
+    RegistrarsAction action =
+        createAction(
+            Action.Method.GET,
+            AuthResult.createUser(
+                createUser(
+                    new UserRoles.Builder()
+                        .setRegistrarRoles(
+                            ImmutableMap.of("registrarId", RegistrarRole.ACCOUNT_MANAGER))
+                        .build())));
+
+    action.run();
+    assertThat(((FakeResponse) consoleApiParams.response()).getStatus()).isEqualTo(SC_OK);
+    String payload = ((FakeResponse) consoleApiParams.response()).getPayload();
+    Registrar[] registrars = GSON.fromJson(payload, Registrar[].class);
+    assertThat(registrars).hasLength(1);
+    assertThat(registrars[0].getRegistrarId()).isEqualTo("registrarId");
+  }
+
+  @Test
   void testSuccess_createRegistrar() {
     RegistrarsAction action =
         createAction(
@@ -203,23 +224,6 @@ class RegistrarsActionTest {
     assertThat(((FakeResponse) consoleApiParams.response()).getStatus()).isEqualTo(SC_BAD_REQUEST);
     assertThat(((FakeResponse) consoleApiParams.response()).getPayload())
         .isEqualTo("Registrar with registrarId regIdTest already exists");
-  }
-
-  @Test
-  void testFailure_getRegistrarIds() {
-    saveRegistrar("registrarId");
-    RegistrarsAction action =
-        createAction(
-            Action.Method.GET,
-            AuthResult.createUser(
-                createUser(
-                    new UserRoles.Builder()
-                        .setRegistrarRoles(
-                            ImmutableMap.of(
-                                "registrarId", RegistrarRole.ACCOUNT_MANAGER_WITH_REGISTRY_LOCK))
-                        .build())));
-    action.run();
-    assertThat(((FakeResponse) consoleApiParams.response()).getStatus()).isEqualTo(SC_FORBIDDEN);
   }
 
   private User createUser(UserRoles userRoles) {

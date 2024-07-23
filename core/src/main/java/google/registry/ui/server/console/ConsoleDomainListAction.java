@@ -115,6 +115,7 @@ public class ConsoleDomainListAction extends ConsoleApiAction {
             .setFirstResult(numResultsToSkip)
             .setMaxResults(resultsPerPage)
             .getResultList();
+
     consoleApiParams
         .response()
         .setPayload(gson.toJson(new DomainListResult(domains, checkpoint, actualTotalResults)));
