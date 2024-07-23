@@ -366,7 +366,7 @@ public final class DomainCreateFlow implements MutatingFlow {
         createAutorenewBillingEvent(
             domainHistoryId,
             registrationExpirationTime,
-            getRenewalPriceInfo(isAnchorTenant, allocationToken, feesAndCredits));
+            getRenewalPriceInfo(isAnchorTenant, allocationToken));
     PollMessage.Autorenew autorenewPollMessage =
         createAutorenewPollMessage(domainHistoryId, registrationExpirationTime);
     ImmutableSet.Builder<ImmutableObject> entitiesToSave = new ImmutableSet.Builder<>();
@@ -689,9 +689,7 @@ public final class DomainCreateFlow implements MutatingFlow {
    * AllocationToken} is 'SPECIFIED'.
    */
   static RenewalPriceInfo getRenewalPriceInfo(
-      boolean isAnchorTenant,
-      Optional<AllocationToken> allocationToken,
-      FeesAndCredits feesAndCredits) {
+      boolean isAnchorTenant, Optional<AllocationToken> allocationToken) {
     if (isAnchorTenant) {
       allocationToken.ifPresent(
           token ->
@@ -702,7 +700,7 @@ public final class DomainCreateFlow implements MutatingFlow {
     } else if (allocationToken.isPresent()
         && allocationToken.get().getRenewalPriceBehavior() == RenewalPriceBehavior.SPECIFIED) {
       return RenewalPriceInfo.create(
-          RenewalPriceBehavior.SPECIFIED, feesAndCredits.getCreateCost());
+          RenewalPriceBehavior.SPECIFIED, allocationToken.get().getRenewalPrice().get());
     } else {
       return RenewalPriceInfo.create(RenewalPriceBehavior.DEFAULT, null);
     }
