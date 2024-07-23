@@ -149,6 +149,29 @@ class RegistrarsActionTest {
   }
 
   @Test
+  void testSuccess_getOnlyAllowedRegistrars() {
+    saveRegistrar("registrarId");
+
+    RegistrarsAction action =
+        createAction(
+            Action.Method.GET,
+            AuthResult.createUser(
+                createUser(
+                    new UserRoles.Builder()
+                        .setRegistrarRoles(
+                            ImmutableMap.of("registrarId", RegistrarRole.ACCOUNT_MANAGER))
+                        .build())));
+
+    action.run();
+    assertThat(((FakeResponse) consoleApiParams.response()).getStatus()).isEqualTo(SC_OK);
+    String payload = ((FakeResponse) consoleApiParams.response()).getPayload();
+    assertThat(
+            ImmutableList.of("\"registrarId\":\"registrarId\"").stream()
+                .allMatch(s -> payload.contains(s)))
+        .isTrue();
+  }
+
+  @Test
   void testSuccess_createRegistrar() {
     RegistrarsAction action =
         createAction(

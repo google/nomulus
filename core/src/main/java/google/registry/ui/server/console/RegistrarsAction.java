@@ -16,6 +16,7 @@ package google.registry.ui.server.console;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Strings.isNullOrEmpty;
+import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.request.Action.Method.GET;
 import static google.registry.request.Action.Method.POST;
@@ -23,6 +24,7 @@ import static jakarta.servlet.http.HttpServletResponse.SC_FORBIDDEN;
 import static jakarta.servlet.http.HttpServletResponse.SC_OK;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Streams;
 import com.google.gson.Gson;
 import google.registry.model.console.ConsolePermission;
@@ -36,6 +38,7 @@ import google.registry.request.Parameter;
 import google.registry.request.auth.Auth;
 import google.registry.ui.server.registrar.ConsoleApiParams;
 import google.registry.util.StringGenerator;
+import java.util.List;
 import java.util.Optional;
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -50,6 +53,11 @@ public class RegistrarsAction extends ConsoleApiAction {
   private static final int PASSCODE_LENGTH = 5;
   private static final ImmutableList<RegistrarBase.Type> allowedRegistrarTypes =
       ImmutableList.of(Registrar.Type.REAL, RegistrarBase.Type.OTE);
+  private static final String SQL_TEMPLATE =
+      """
+            SELECT * FROM "Registrar"
+            WHERE registrar_id in :registrarIds
+      """;
   static final String PATH = "/console-api/registrars";
   private final Gson gson;
   private final Optional<Registrar> registrar;
@@ -72,18 +80,34 @@ public class RegistrarsAction extends ConsoleApiAction {
 
   @Override
   protected void getHandler(User user) {
-    if (!user.getUserRoles().hasGlobalPermission(ConsolePermission.VIEW_REGISTRARS)) {
+    if (user.getUserRoles().hasGlobalPermission(ConsolePermission.VIEW_REGISTRARS)) {
+      ImmutableList<Registrar> registrars =
+          Streams.stream(Registrar.loadAll())
+              .filter(r -> allowedRegistrarTypes.contains(r.getType()))
+              .collect(ImmutableList.toImmutableList());
+      consoleApiParams.response().setPayload(gson.toJson(registrars));
+      consoleApiParams.response().setStatus(SC_OK);
+    } else if (user.getUserRoles().getRegistrarRoles().values().stream()
+        .anyMatch(role -> role.hasPermission(ConsolePermission.VIEW_REGISTRAR_DETAILS))) {
+      ImmutableSet<String> accessibleRegistrarIds =
+          user.getUserRoles().getRegistrarRoles().entrySet().stream()
+              .filter(e -> e.getValue().hasPermission(ConsolePermission.VIEW_REGISTRAR_DETAILS))
+              .map(e -> e.getKey())
+              .collect(toImmutableSet());
+
+      List<Registrar> registrars =
+          tm().transact(
+                  () ->
+                      tm().getEntityManager()
+                          .createNativeQuery(SQL_TEMPLATE, Registrar.class)
+                          .setParameter("registrarIds", accessibleRegistrarIds)
+                          .getResultList());
+
+      consoleApiParams.response().setPayload(gson.toJson(registrars));
+      consoleApiParams.response().setStatus(SC_OK);
+    } else {
       consoleApiParams.response().setStatus(SC_FORBIDDEN);
-      return;
     }
-
-    ImmutableList<Registrar> registrars =
-        Streams.stream(Registrar.loadAll())
-            .filter(r -> allowedRegistrarTypes.contains(r.getType()))
-            .collect(ImmutableList.toImmutableList());
-
-    consoleApiParams.response().setPayload(gson.toJson(registrars));
-    consoleApiParams.response().setStatus(SC_OK);
   }
 
   @Override
@@ -151,4 +175,5 @@ public class RegistrarsAction extends ConsoleApiAction {
               tm().putAll(registrar, contact);
             });
   }
+
 }
