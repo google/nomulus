@@ -24,6 +24,7 @@ import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.SqlHelper.getMostRecentRegistryLockByRepoId;
 import static google.registry.testing.SqlHelper.saveRegistryLock;
 import static google.registry.tools.LockOrUnlockDomainCommand.REGISTRY_LOCK_STATUSES;
+import static google.registry.ui.server.console.ConsoleRegistryLockAction.ConsoleRegistryLockPostInput;
 import static jakarta.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static jakarta.servlet.http.HttpServletResponse.SC_FORBIDDEN;
 import static jakarta.servlet.http.HttpServletResponse.SC_OK;
@@ -309,10 +310,7 @@ public class ConsoleRegistryLockActionTest {
     persistResource(defaultDomain.asBuilder().setStatusValues(REGISTRY_LOCK_STATUSES).build());
     action =
         createPostAction(
-            "example.test",
-            false,
-            "registryLockPassword",
-            Optional.of(Duration.standardDays(1).getMillis()));
+            "example.test", false, "registryLockPassword", Duration.standardDays(1).getMillis());
     action.run();
     assertThat(response.getStatus()).isEqualTo(SC_OK);
     verifyEmail();
@@ -348,7 +346,7 @@ public class ConsoleRegistryLockActionTest {
             .setUserRoles(
                 new UserRoles.Builder().setGlobalRole(GlobalRole.FTE).setIsAdmin(true).build())
             .build();
-    action = createPostAction("example.test", true, "", Optional.empty());
+    action = createPostAction("example.test", true, "", null);
     action.run();
     assertThat(response.getStatus()).isEqualTo(SC_OK);
     verifyEmail();
@@ -414,8 +412,7 @@ public class ConsoleRegistryLockActionTest {
             .setCreationRegistrarId("NewRegistrar")
             .setPersistedCurrentSponsorRegistrarId("NewRegistrar")
             .build());
-    action =
-        createPostAction("otherregistrar.test", true, "registryLockPassword", Optional.empty());
+    action = createPostAction("otherregistrar.test", true, "registryLockPassword", null);
     action.run();
     assertThat(response.getStatus()).isEqualTo(SC_BAD_REQUEST);
     assertThat(response.getPayload())
@@ -444,7 +441,7 @@ public class ConsoleRegistryLockActionTest {
 
   @Test
   void testPost_failure_badPassword() throws Exception {
-    action = createPostAction("example.test", true, "badPassword", Optional.empty());
+    action = createPostAction("example.test", true, "badPassword", null);
     action.run();
     assertThat(response.getStatus()).isEqualTo(SC_UNAUTHORIZED);
   }
@@ -483,29 +480,25 @@ public class ConsoleRegistryLockActionTest {
   }
 
   private ConsoleRegistryLockAction createDefaultPostAction(boolean isLock) {
-    return createPostAction("example.test", isLock, "registryLockPassword", Optional.empty());
+    return createPostAction("example.test", isLock, "registryLockPassword", null);
   }
 
   private ConsoleRegistryLockAction createPostAction(
-      String domainName, boolean isLock, String password, Optional<Long> relockDurationMillis) {
+      String domainName, boolean isLock, String password, Long relockDurationMillis) {
     ConsoleApiParams params = createParams();
-    when(params.request().getParameter("domainName")).thenReturn(domainName);
-    when(params.request().getParameterMap())
-        .thenReturn(ImmutableMap.of("isLock", new String[] {String.valueOf(isLock)}));
-    when(params.request().getParameter("isLock")).thenReturn(String.valueOf(isLock));
-    when(params.request().getParameter("password")).thenReturn(password);
-    relockDurationMillis.ifPresent(
-        duration ->
-            when(params.request().getParameter("relockDurationMillis"))
-                .thenReturn(String.valueOf(duration)));
-    return createGenericAction(params, "POST");
+    ConsoleRegistryLockPostInput postInput =
+        new ConsoleRegistryLockPostInput(domainName, isLock, password, relockDurationMillis);
+    return createGenericAction(params, "POST", Optional.of(postInput));
   }
 
   private ConsoleRegistryLockAction createGetAction() throws IOException {
-    return createGenericAction(createParams(), "GET");
+    return createGenericAction(createParams(), "GET", Optional.empty());
   }
 
-  private ConsoleRegistryLockAction createGenericAction(ConsoleApiParams params, String method) {
+  private ConsoleRegistryLockAction createGenericAction(
+      ConsoleApiParams params,
+      String method,
+      Optional<ConsoleRegistryLockPostInput> optionalPostInput) {
     when(params.request().getMethod()).thenReturn(method);
     when(params.request().getServerName()).thenReturn("registrarconsole.tld");
     when(params.request().getParameter("registrarId")).thenReturn("TheRegistrar");
@@ -516,7 +509,7 @@ public class ConsoleRegistryLockActionTest {
             new CloudTasksHelper(fakeClock).getTestCloudTasksUtils());
     response = (FakeResponse) params.response();
     return new ConsoleRegistryLockAction(
-        params, domainLockUtils, gmailClient, GSON, "TheRegistrar");
+        params, domainLockUtils, gmailClient, GSON, optionalPostInput, "TheRegistrar");
   }
 
   private ConsoleApiParams createParams() {
