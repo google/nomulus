@@ -19,16 +19,13 @@ import static com.google.common.collect.ImmutableList.toImmutableList;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.request.Action.Method.GET;
 import static google.registry.request.Action.Method.POST;
-import static google.registry.request.RequestParameters.extractBooleanParameter;
-import static google.registry.request.RequestParameters.extractOptionalLongParameter;
-import static google.registry.request.RequestParameters.extractOptionalParameter;
-import static google.registry.request.RequestParameters.extractRequiredParameter;
 import static google.registry.ui.server.registrar.RegistryLockPostAction.VERIFICATION_EMAIL_TEMPLATE;
 import static jakarta.servlet.http.HttpServletResponse.SC_OK;
 import static jakarta.servlet.http.HttpServletResponse.SC_UNAUTHORIZED;
 
 import com.google.common.collect.ImmutableList;
 import com.google.gson.Gson;
+import com.google.gson.annotations.Expose;
 import google.registry.flows.EppException;
 import google.registry.flows.domain.DomainFlowUtils;
 import google.registry.groups.GmailClient;
@@ -46,8 +43,8 @@ import google.registry.ui.server.registrar.ConsoleApiParams;
 import google.registry.util.EmailMessage;
 import jakarta.mail.internet.AddressException;
 import jakarta.mail.internet.InternetAddress;
-import jakarta.servlet.http.HttpServletRequest;
 import java.util.Optional;
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 import org.joda.time.Duration;
 
@@ -69,6 +66,7 @@ public class ConsoleRegistryLockAction extends ConsoleApiAction {
   private final DomainLockUtils domainLockUtils;
   private final GmailClient gmailClient;
   private final Gson gson;
+  private final Optional<ConsoleRegistryLockPostInput> optionalPostInput;
   private final String registrarId;
 
   @Inject
@@ -77,11 +75,14 @@ public class ConsoleRegistryLockAction extends ConsoleApiAction {
       DomainLockUtils domainLockUtils,
       GmailClient gmailClient,
       Gson gson,
+      @Parameter("consoleRegistryLockPostInput")
+          Optional<ConsoleRegistryLockPostInput> optionalPostInput,
       @Parameter("registrarId") String registrarId) {
     super(consoleApiParams);
     this.domainLockUtils = domainLockUtils;
     this.gmailClient = gmailClient;
     this.gson = gson;
+    this.optionalPostInput = optionalPostInput;
     this.registrarId = registrarId;
   }
 
@@ -94,7 +95,6 @@ public class ConsoleRegistryLockAction extends ConsoleApiAction {
 
   @Override
   protected void postHandler(User user) {
-    HttpServletRequest req = consoleApiParams.request();
     Response response = consoleApiParams.response();
     // User must have the proper permission on the registrar
     checkPermission(user, registrarId, ConsolePermission.REGISTRY_LOCK);
@@ -107,10 +107,12 @@ public class ConsoleRegistryLockAction extends ConsoleApiAction {
         registrarId);
 
     // Retrieve and validate the necessary params
-    String domainName = extractRequiredParameter(req, "domainName");
-    boolean isLock = extractBooleanParameter(req, "isLock");
-    Optional<String> maybePassword = extractOptionalParameter(req, "password");
-    Optional<Long> relockDurationMillis = extractOptionalLongParameter(req, "relockDurationMillis");
+    ConsoleRegistryLockPostInput postInput =
+        optionalPostInput.orElseThrow(() -> new IllegalArgumentException("No POST input provided"));
+    String domainName = postInput.domainName();
+    boolean isLock = postInput.isLock();
+    Optional<String> maybePassword = Optional.ofNullable(postInput.password());
+    Optional<Long> relockDurationMillis = Optional.ofNullable(postInput.relockDurationMillis());
 
     try {
       DomainFlowUtils.validateDomainName(domainName);
@@ -176,4 +178,10 @@ public class ConsoleRegistryLockAction extends ConsoleApiAction {
                     .filter(lock -> !lock.isLockRequestExpired(tm().getTransactionTime()))
                     .collect(toImmutableList()));
   }
+
+  public record ConsoleRegistryLockPostInput(
+      @Expose String domainName,
+      @Expose boolean isLock,
+      @Expose @Nullable String password,
+      @Expose @Nullable Long relockDurationMillis) {}
 }
