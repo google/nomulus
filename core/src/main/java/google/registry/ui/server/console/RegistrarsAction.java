@@ -164,7 +164,6 @@ public class RegistrarsAction extends ConsoleApiAction {
             .setRegistrar(registrar)
             .setName(registrarParam.getEmailAddress())
             .setEmailAddress(registrarParam.getEmailAddress())
-            .setLoginEmailAddress(registrarParam.getEmailAddress())
             .build();
 
     tm().transact(

@@ -172,7 +172,6 @@ public class SyncRegistrarsSheetTest {
                 // distinction to make sure we're not relying on it.  Sigh.
                 .setVisibleInWhoisAsAdmin(false)
                 .setVisibleInWhoisAsTech(true)
-                .setLoginEmailAddress("john.doe@example.tld")
                 .build(),
             new RegistrarPoc.Builder()
                 .setRegistrar(registrar)
@@ -191,7 +190,7 @@ public class SyncRegistrarsSheetTest {
     ImmutableList<ImmutableMap<String, String>> rows = getOnlyElement(rowsCaptor.getAllValues());
     assertThat(rows).hasSize(2);
 
-    ImmutableMap<String, String> row = rows.get(0);
+    ImmutableMap<String, String> row = rows.getFirst();
     assertThat(row).containsEntry("registrarId", "aaaregistrar");
     assertThat(row).containsEntry("registrarName", "AAA Registrar Inc.");
     assertThat(row).containsEntry("state", "SUSPENDED");
@@ -208,7 +207,6 @@ public class SyncRegistrarsSheetTest {
                 Visible in registrar WHOIS query as Technical contact: No
                 Phone number and email visible in domain WHOIS query as Registrar Abuse contact\
                  info: No
-                Registrar-Console access: No
 
                 John Doe
                 john.doe@example.tld
@@ -219,8 +217,6 @@ public class SyncRegistrarsSheetTest {
                 Visible in registrar WHOIS query as Technical contact: Yes
                 Phone number and email visible in domain WHOIS query as Registrar Abuse contact\
                  info: No
-                Registrar-Console access: Yes
-                Login Email Address: john.doe@example.tld
                 """);
     assertThat(row)
         .containsEntry(
@@ -233,7 +229,6 @@ public class SyncRegistrarsSheetTest {
                 Visible in registrar WHOIS query as Technical contact: No
                 Phone number and email visible in domain WHOIS query as Registrar Abuse contact\
                  info: No
-                Registrar-Console access: No
                 """);
     assertThat(row).containsEntry("marketingContacts", "");
     assertThat(row).containsEntry("abuseContacts", "");
@@ -251,7 +246,6 @@ public class SyncRegistrarsSheetTest {
                 Visible in registrar WHOIS query as Technical contact: No
                 Phone number and email visible in domain WHOIS query as Registrar Abuse contact\
                  info: No
-                Registrar-Console access: No
                 """);
     assertThat(row).containsEntry("contactsMarkedAsWhoisAdmin", "");
     assertThat(row)
@@ -267,8 +261,6 @@ public class SyncRegistrarsSheetTest {
                 Visible in registrar WHOIS query as Technical contact: Yes
                 Phone number and email visible in domain WHOIS query as Registrar Abuse contact\
                  info: No
-                Registrar-Console access: Yes
-                Login Email Address: john.doe@example.tld
                 """);
     assertThat(row).containsEntry("emailAddress", "nowhere@example.org");
     assertThat(row).containsEntry(

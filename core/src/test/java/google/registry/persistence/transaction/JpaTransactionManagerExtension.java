@@ -426,7 +426,6 @@ public abstract class JpaTransactionManagerExtension
         .setEmailAddress("johndoe@theregistrar.com")
         .setPhoneNumber("+1.1234567890")
         .setTypes(ImmutableSet.of(RegistrarPocBase.Type.ADMIN))
-        .setLoginEmailAddress("johndoe@theregistrar.com")
         .build();
   }
 
@@ -438,7 +437,6 @@ public abstract class JpaTransactionManagerExtension
         .setRegistryLockEmailAddress("Marla.Singer.RegistryLock@crr.com")
         .setPhoneNumber("+1.2128675309")
         .setTypes(ImmutableSet.of(RegistrarPocBase.Type.TECH))
-        .setLoginEmailAddress("Marla.Singer@crr.com")
         .setAllowedToSetRegistryLockPassword(true)
         .setRegistryLockPassword("hi")
         .build();
