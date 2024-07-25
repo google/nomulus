@@ -29,10 +29,12 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import com.google.common.flogger.FluentLogger;
 import google.registry.batch.CloudTasksUtils;
+import google.registry.config.RegistryConfig;
 import google.registry.export.sheet.SyncRegistrarsSheetAction;
 import google.registry.model.console.ConsolePermission;
 import google.registry.model.console.GlobalRole;
 import google.registry.model.console.User;
+import google.registry.model.console.UserRoles;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarPoc;
 import google.registry.model.registrar.RegistrarPocBase;
@@ -62,6 +64,10 @@ public abstract class ConsoleApiAction implements Runnable {
 
   @Inject CloudTasksUtils cloudTasksUtils;
 
+  @Inject
+  @RegistryConfig.Config("registryAdminClientId")
+  String registryAdminClientId;
+
   public ConsoleApiAction(ConsoleApiParams consoleApiParams) {
     this.consoleApiParams = consoleApiParams;
   }
@@ -77,8 +83,12 @@ public abstract class ConsoleApiAction implements Runnable {
 
     // This allows us to enable console to a selected cohort of users with release
     // We can ignore it in tests
-    if (RegistryEnvironment.get() != RegistryEnvironment.UNITTEST
-        && GlobalRole.NONE.equals(user.getUserRoles().getGlobalRole())) {
+    UserRoles userRoles = user.getUserRoles();
+    boolean hasGlobalOrTestingRole =
+        !GlobalRole.NONE.equals(userRoles.getGlobalRole())
+            || userRoles.hasPermission(
+                registryAdminClientId, ConsolePermission.VIEW_REGISTRAR_DETAILS);
+    if (RegistryEnvironment.get() != RegistryEnvironment.UNITTEST && !hasGlobalOrTestingRole) {
       try {
         consoleApiParams.response().sendRedirect(ConsoleUiAction.PATH);
         return;
