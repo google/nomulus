@@ -173,3 +173,4 @@ V172__allocation_token_renewal_price.sql
 V173__create_feature_flag_table.sql
 V174__user_pkey.sql
 V175__user_update_history_id.sql
+V176__drop_login_email_address_column_from_registrar_poc.sql
