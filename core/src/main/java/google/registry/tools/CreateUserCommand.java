@@ -18,7 +18,6 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static google.registry.model.console.User.grantIapPermission;
 
 import com.beust.jcommander.Parameters;
-import google.registry.batch.CloudTasksUtils;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.model.console.User;
 import google.registry.model.console.UserDao;
@@ -28,11 +27,11 @@ import javax.inject.Inject;
 
 /** Command to create a new User. */
 @Parameters(separators = " =", commandDescription = "Update a user account")
-public class CreateUserCommand extends CreateOrUpdateUserCommand {
+public class CreateUserCommand extends CreateOrUpdateUserCommand implements CommandWithConnection {
+
+  private ServiceConnection connection;
 
   @Inject IamClient iamClient;
-
-  @Inject CloudTasksUtils cloudTasksUtils;
 
   @Inject
   @Config("gSuiteConsoleUserGroupEmailAddress")
@@ -48,7 +47,12 @@ public class CreateUserCommand extends CreateOrUpdateUserCommand {
   @Override
   protected String execute() throws Exception {
     String ret = super.execute();
-    grantIapPermission(email, maybeGroupEmailAddress, cloudTasksUtils, iamClient);
+    grantIapPermission(email, maybeGroupEmailAddress, null, connection, iamClient);
     return ret;
+  }
+
+  @Override
+  public void setConnection(ServiceConnection connection) {
+    this.connection = connection;
   }
 }

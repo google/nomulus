@@ -77,6 +77,7 @@ public class CloudTasksUtils implements Serializable {
       @Config("projectId") String projectId,
       @Config("locationId") String locationId,
       @Config("oauthClientId") String oauthClientId,
+      // Note that this has to be a service account, due to limitations of the Cloud Tasks API.
       @ApplicationDefaultCredential GoogleCredentialsBundle credential,
       SerializableCloudTasksClient client) {
     this.retrier = retrier;
