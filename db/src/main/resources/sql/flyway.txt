@@ -171,3 +171,4 @@ V170__user_update_registry_lock_email.sql
 V171__drop_create_billing_cost_columns_from_tld.sql
 V172__allocation_token_renewal_price.sql
 V173__create_feature_flag_table.sql
+V174__user_pkey.sql

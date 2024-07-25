@@ -887,16 +887,16 @@
     );
 
     create table "User" (
-       id  bigserial not null,
+       email_address text not null,
         update_timestamp timestamptz,
-        email_address text not null,
         registry_lock_email_address text,
         registry_lock_password_hash text,
         registry_lock_password_salt text,
         global_role text not null,
         is_admin boolean not null,
         registrar_roles hstore,
-        primary key (id)
+        id int8,
+        primary key (email_address)
     );
 
     create table "UserUpdateHistory" (
@@ -906,8 +906,8 @@
         history_request_body text,
         history_type text not null,
         history_url text not null,
-        user_id int8 not null,
         email_address text not null,
+        user_id int8 not null,
         registry_lock_email_address text,
         registry_lock_password_hash text,
         registry_lock_password_salt text,
@@ -1019,17 +1019,13 @@ create index reservedlist_name_idx on "ReservedList" (name);
 create index spec11threatmatch_registrar_id_idx on "Spec11ThreatMatch" (registrar_id);
 create index spec11threatmatch_tld_idx on "Spec11ThreatMatch" (tld);
 create index spec11threatmatch_check_date_idx on "Spec11ThreatMatch" (check_date);
-create index user_email_address_idx on "User" (email_address);
-
-    alter table if exists "User" 
-       add constraint UK_seshmd8qn3lcffsjw5j8wnbnd unique (email_address);
 create index IDXbjacjlm8ianc4kxxvamnu94k5 on "UserUpdateHistory" (history_acting_user);
 create index IDX5yqacw829y5bm6f7eajsq1cts on "UserUpdateHistory" (email_address);
 
     alter table if exists "ConsoleEppActionHistory" 
        add constraint FKb686b9os2nsjpv930npa4r3b4 
        foreign key (history_acting_user) 
-       references "User" (email_address);
+       references "User";
 
     alter table if exists "DelegationSignerData" 
        add constraint FKtr24j9v14ph2mfuw2gsmt12kq 
@@ -1069,12 +1065,12 @@ create index IDX5yqacw829y5bm6f7eajsq1cts on "UserUpdateHistory" (email_address)
     alter table if exists "RegistrarPocUpdateHistory" 
        add constraint FKftpbwctxtkc1i0njc0tdcaa2g 
        foreign key (history_acting_user) 
-       references "User" (email_address);
+       references "User";
 
     alter table if exists "RegistrarUpdateHistory" 
        add constraint FKsr7w342s7x5s5jvdti2axqeq8 
        foreign key (history_acting_user) 
-       references "User" (email_address);
+       references "User";
 
     alter table if exists "RegistryLock" 
        add constraint FK2lhcwpxlnqijr96irylrh1707 
@@ -1089,4 +1085,4 @@ create index IDX5yqacw829y5bm6f7eajsq1cts on "UserUpdateHistory" (email_address)
     alter table if exists "UserUpdateHistory" 
        add constraint FK1s7bopbl3pwrhv3jkkofnv3o0 
        foreign key (history_acting_user) 
-       references "User" (email_address);
+       references "User";
