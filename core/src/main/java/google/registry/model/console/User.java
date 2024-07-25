@@ -14,9 +14,11 @@
 
 package google.registry.model.console;
 
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.tools.server.UpdateUserGroupAction.GROUP_UPDATE_QUEUE;
 
 import com.google.cloud.tasks.v2.Task;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.flogger.FluentLogger;
 import google.registry.batch.CloudTasksUtils;
@@ -27,24 +29,24 @@ import google.registry.tools.server.UpdateUserGroupAction;
 import google.registry.tools.server.UpdateUserGroupAction.Mode;
 import google.registry.util.RegistryEnvironment;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicLong;
 import javax.persistence.Access;
 import javax.persistence.AccessType;
 import javax.persistence.Embeddable;
 import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
 import javax.persistence.Id;
-import javax.persistence.Index;
 import javax.persistence.Table;
 
 /** A console user, either a registry employee or a registrar partner. */
 @Embeddable
 @Entity
-@Table(indexes = {@Index(columnList = "emailAddress", name = "user_email_address_idx")})
+@Table
 public class User extends UserBase {
 
   public static final String IAP_SECURED_WEB_APP_USER_ROLE = "roles/iap.httpsResourceAccessor";
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
+
+  @VisibleForTesting public static final AtomicLong ID_GENERATOR_FOR_TESTING = new AtomicLong();
 
   /**
    * Grants the user permission to pass IAP.
@@ -114,11 +116,16 @@ public class User extends UserBase {
   }
 
   @Override
-  @Id
-  @GeneratedValue(strategy = GenerationType.IDENTITY)
   @Access(AccessType.PROPERTY)
   public Long getId() {
     return super.getId();
+  }
+
+  @Id
+  @Override
+  @Access(AccessType.PROPERTY)
+  public String getEmailAddress() {
+    return super.getEmailAddress();
   }
 
   @Override
@@ -138,6 +145,21 @@ public class User extends UserBase {
 
     public Builder(User user) {
       super(user);
+    }
+
+    @Override
+    public User build() {
+      // Sets the ID temporarily until we can get rid of the non-null constraint (and the field)
+      if (getInstance().getId() == null || getInstance().getId().equals(0L)) {
+        // In tests, we cannot guarantee that the database is fully set up -- so don't use it to
+        // generate a new long
+        if (RegistryEnvironment.get() == RegistryEnvironment.UNITTEST) {
+          getInstance().setId(ID_GENERATOR_FOR_TESTING.getAndIncrement());
+        } else {
+          getInstance().setId(tm().reTransact(tm()::allocateId));
+        }
+      }
+      return super.build();
     }
   }
 }

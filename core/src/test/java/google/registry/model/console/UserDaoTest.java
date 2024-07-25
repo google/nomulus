@@ -17,7 +17,6 @@ package google.registry.model.console;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.ImmutableObjectSubject.assertAboutImmutableObjects;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import google.registry.model.EntityTestCase;
 import org.junit.jupiter.api.Test;
@@ -64,7 +63,7 @@ public class UserDaoTest extends EntityTestCase {
   }
 
   @Test
-  void testFailure_sameEmail() {
+  void testSuccess_updateUser_sameEmail() {
     User user1 =
         new User.Builder()
             .setEmailAddress("email@email.com")
@@ -73,12 +72,12 @@ public class UserDaoTest extends EntityTestCase {
     User user2 =
         new User.Builder()
             .setEmailAddress("email@email.com")
-            .setUserRoles(new UserRoles.Builder().setGlobalRole(GlobalRole.SUPPORT_AGENT).build())
+            .setUserRoles(new UserRoles.Builder().setGlobalRole(GlobalRole.FTE).build())
             .build();
     UserDao.saveUser(user1);
-    assertThrows(IllegalArgumentException.class, () -> UserDao.saveUser(user2));
+    UserDao.saveUser(user2);
     assertAboutImmutableObjects()
-        .that(user1)
-        .isEqualExceptFields(UserDao.loadUser("email@email.com").get(), "id", "updateTimestamp");
+        .that(user2)
+        .isEqualExceptFields(UserDao.loadUser("email@email.com").get(), "updateTimestamp");
   }
 }
