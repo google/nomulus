@@ -14,22 +14,28 @@
 
 package google.registry.model.console;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.tools.server.UpdateUserGroupAction.GROUP_UPDATE_QUEUE;
 
 import com.google.cloud.tasks.v2.Task;
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.flogger.FluentLogger;
+import com.google.common.net.MediaType;
 import google.registry.batch.CloudTasksUtils;
 import google.registry.persistence.VKey;
 import google.registry.request.Action.Service;
 import google.registry.tools.IamClient;
+import google.registry.tools.ServiceConnection;
 import google.registry.tools.server.UpdateUserGroupAction;
 import google.registry.tools.server.UpdateUserGroupAction.Mode;
 import google.registry.util.RegistryEnvironment;
+import java.io.IOException;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicLong;
+import javax.annotation.Nullable;
 import javax.persistence.Access;
 import javax.persistence.AccessType;
 import javax.persistence.Embeddable;
@@ -57,18 +63,30 @@ public class User extends UserBase {
   public static void grantIapPermission(
       String emailAddress,
       Optional<String> groupEmailAddress,
-      CloudTasksUtils cloudTasksUtils,
+      @Nullable CloudTasksUtils cloudTasksUtils,
+      @Nullable ServiceConnection connection,
       IamClient iamClient) {
     if (RegistryEnvironment.isInTestServer()) {
       return;
     }
+    checkArgument(
+        cloudTasksUtils != null || connection != null,
+        "At least one of cloudTasksUtils or connection must be set");
+    checkArgument(
+        cloudTasksUtils == null || connection == null,
+        "Only one of cloudTasksUtils or connection can be set");
     if (groupEmailAddress.isEmpty()) {
       logger.atInfo().log("Granting IAP role to user %s", emailAddress);
       iamClient.addBinding(emailAddress, IAP_SECURED_WEB_APP_USER_ROLE);
     } else {
       logger.atInfo().log("Adding %s to group %s", emailAddress, groupEmailAddress.get());
-      modifyGroupMembershipAsync(
-          emailAddress, groupEmailAddress.get(), cloudTasksUtils, UpdateUserGroupAction.Mode.ADD);
+      if (cloudTasksUtils != null) {
+        modifyGroupMembershipAsync(
+            emailAddress, groupEmailAddress.get(), cloudTasksUtils, UpdateUserGroupAction.Mode.ADD);
+      } else {
+        modifyGroupMembershipSync(
+            emailAddress, groupEmailAddress.get(), connection, UpdateUserGroupAction.Mode.ADD);
+      }
     }
   }
 
@@ -81,18 +99,29 @@ public class User extends UserBase {
   public static void revokeIapPermission(
       String emailAddress,
       Optional<String> groupEmailAddress,
-      CloudTasksUtils cloudTasksUtils,
+      @Nullable CloudTasksUtils cloudTasksUtils,
+      @Nullable ServiceConnection connection,
       IamClient iamClient) {
     if (RegistryEnvironment.isInTestServer()) {
       return;
     }
+    checkArgument(
+        cloudTasksUtils != null || connection != null,
+        "At least one of cloudTasksUtils or connection must be set");
+    checkArgument(
+        cloudTasksUtils == null || connection == null,
+        "Only one of cloudTasksUtils or connection can be set");
     if (groupEmailAddress.isEmpty()) {
       logger.atInfo().log("Removing IAP role from user %s", emailAddress);
       iamClient.removeBinding(emailAddress, IAP_SECURED_WEB_APP_USER_ROLE);
     } else {
       logger.atInfo().log("Removing %s from group %s", emailAddress, groupEmailAddress.get());
-      modifyGroupMembershipAsync(
-          emailAddress, groupEmailAddress.get(), cloudTasksUtils, Mode.REMOVE);
+      if (cloudTasksUtils != null) {
+        modifyGroupMembershipAsync(
+            emailAddress, groupEmailAddress.get(), cloudTasksUtils, Mode.REMOVE);
+      } else {
+        modifyGroupMembershipSync(emailAddress, groupEmailAddress.get(), connection, Mode.REMOVE);
+      }
     }
   }
 
@@ -113,6 +142,25 @@ public class User extends UserBase {
                 "groupUpdateMode",
                 mode.name()));
     cloudTasksUtils.enqueue(GROUP_UPDATE_QUEUE, task);
+  }
+
+  private static void modifyGroupMembershipSync(
+      String userEmailAddress, String groupEmailAddress, ServiceConnection connection, Mode mode) {
+    try {
+      connection.sendPostRequest(
+          UpdateUserGroupAction.PATH,
+          ImmutableMap.of(
+              "userEmailAddress",
+              userEmailAddress,
+              "groupEmailAddress",
+              groupEmailAddress,
+              "groupUpdateMode",
+              mode.name()),
+          MediaType.PLAIN_TEXT_UTF_8,
+          new byte[0]);
+    } catch (IOException e) {
+      throw new RuntimeException("Cannot send request to server", e);
+    }
   }
 
   @Override

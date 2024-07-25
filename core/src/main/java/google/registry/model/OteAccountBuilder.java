@@ -271,7 +271,7 @@ public final class OteAccountBuilder {
       Optional<String> groupEmailAddress, CloudTasksUtils cloudTasksUtils, IamClient iamClient) {
     for (User user : users) {
       User.grantIapPermission(
-          user.getEmailAddress(), groupEmailAddress, cloudTasksUtils, iamClient);
+          user.getEmailAddress(), groupEmailAddress, cloudTasksUtils, null, iamClient);
     }
   }
 
