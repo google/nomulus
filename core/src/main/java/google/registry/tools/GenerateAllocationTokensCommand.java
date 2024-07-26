@@ -293,7 +293,7 @@ class GenerateAllocationTokensCommand implements Command {
       // tokens should only be scheduled to end with a brief time period before the status
       // transition occurs so that no new domains are registered using that token between when the
       // status is scheduled and when the transition occurs.
-      // TODO(@sarahbot): Create a cleaner way to handle ending bulk pricing packages once we
+      // TODO(b/261763205): Create a cleaner way to handle ending bulk pricing packages once we
       // actually have customers using them
       boolean hasEnding =
           tokenStatusTransitions.containsValue(TokenStatus.ENDED)

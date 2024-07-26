@@ -64,7 +64,7 @@ import org.joda.time.Duration;
     auth = Auth.AUTH_ADMIN)
 public class DeleteProberDataAction implements Runnable {
 
-  // TODO(b/323026070): Add email alert on failure of this action
+  // TODO(b/346390641): Add email alert on failure of this action
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
   /**

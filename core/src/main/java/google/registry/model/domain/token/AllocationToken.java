@@ -139,7 +139,7 @@ public class AllocationToken extends UpdateAutoTimestampEntity implements Builda
     /** Token saved on a TLD to use if no other token is passed from the client */
     DEFAULT_PROMO(/* isOneTimeUse= */ false),
     /** This is the old name for what is now BULK_PRICING. */
-    // TODO(sarahbot@): Remove this type once all tokens of this type have been scrubbed from the
+    // TODO(b/261763205): Remove this type once all tokens of this type have been scrubbed from the
     // database
     @Deprecated
     PACKAGE(/* isOneTimeUse= */ false),
