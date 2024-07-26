@@ -142,7 +142,7 @@ JPY=billing-id-for-yen"
         <mat-label>State/Region: </mat-label>
         <input
           matInput
-          [required]="false"
+          [required]="true"
           [(ngModel)]="newRegistrar.localizedAddress.state"
           [ngModelOptions]="{ standalone: true }"
         />
