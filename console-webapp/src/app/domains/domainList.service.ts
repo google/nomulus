@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Injectable } from '@angular/core';
+import { Injectable, Type } from '@angular/core';
 import { tap } from 'rxjs';
 import { RegistrarService } from '../registrar/registrar.service';
 import { BackendService } from '../shared/services/backend.service';
@@ -35,9 +35,14 @@ export interface DomainListResult {
   totalResults: number;
 }
 
-@Injectable()
+@Injectable({
+  providedIn: 'root',
+})
 export class DomainListService {
   checkpointTime?: string;
+  selectedDomain?: string;
+  public activeActionComponent: Type<any> | null = null;
+  public domainsList: Domain[] = [];
 
   constructor(
     private backendService: BackendService,
@@ -62,6 +67,7 @@ export class DomainListService {
       .pipe(
         tap((domainListResult: DomainListResult) => {
           this.checkpointTime = domainListResult?.checkpointTime;
+          this.domainsList = domainListResult?.domains;
         })
       );
   }
