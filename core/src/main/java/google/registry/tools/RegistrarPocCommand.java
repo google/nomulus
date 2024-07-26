@@ -41,7 +41,6 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import javax.annotation.Nullable;
@@ -89,12 +88,6 @@ final class RegistrarPocCommand extends MutatingCommand {
 
   @Nullable
   @Parameter(
-      names = "--login_email",
-      description = "Console login email address. If not specified, --email will be used.")
-  String loginEmail;
-
-  @Nullable
-  @Parameter(
       names = "--registry_lock_email",
       description = "Email address used for registry lock confirmation emails")
   String registryLockEmail;
@@ -114,13 +107,6 @@ final class RegistrarPocCommand extends MutatingCommand {
       converter = OptionalPhoneNumberParameter.class,
       validateWith = OptionalPhoneNumberParameter.class)
   private Optional<String> fax;
-
-  @Nullable
-  @Parameter(
-      names = "--allow_console_access",
-      description = "Enable or disable access to the registrar console for this contact.",
-      arity = 1)
-  Boolean allowConsoleAccess;
 
   @Nullable
   @Parameter(
@@ -173,7 +159,7 @@ final class RegistrarPocCommand extends MutatingCommand {
   protected void init() throws Exception {
     checkArgument(mainParameters.size() == 1,
         "Must specify exactly one client identifier: %s", ImmutableList.copyOf(mainParameters));
-    String clientId = mainParameters.get(0);
+    String clientId = mainParameters.getFirst();
     Registrar registrar =
         checkArgumentPresent(
             Registrar.loadByRegistrarId(clientId), "Registrar %s not found", clientId);
@@ -261,9 +247,6 @@ final class RegistrarPocCommand extends MutatingCommand {
     }
     builder.setTypes(nullToEmpty(contactTypes));
 
-    if (Objects.equals(allowConsoleAccess, Boolean.TRUE)) {
-      builder.setLoginEmailAddress(loginEmail == null ? email : loginEmail);
-    }
     if (visibleInWhoisAsAdmin != null) {
       builder.setVisibleInWhoisAsAdmin(visibleInWhoisAsAdmin);
     }
@@ -307,13 +290,6 @@ final class RegistrarPocCommand extends MutatingCommand {
     }
     if (visibleInDomainWhoisAsAbuse != null) {
       builder.setVisibleInDomainWhoisAsAbuse(visibleInDomainWhoisAsAbuse);
-    }
-    if (allowConsoleAccess != null) {
-      if (allowConsoleAccess.equals(Boolean.TRUE)) {
-        builder.setLoginEmailAddress(loginEmail == null ? email : loginEmail);
-      } else {
-        builder.setLoginEmailAddress(null);
-      }
     }
     if (allowedToSetRegistryLockPassword != null) {
       builder.setAllowedToSetRegistryLockPassword(allowedToSetRegistryLockPassword);

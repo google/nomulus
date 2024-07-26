@@ -25,8 +25,6 @@ import javax.persistence.AccessType;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.IdClass;
-import javax.persistence.Index;
-import javax.persistence.Table;
 
 /**
  * A contact for a Registrar. Note, equality, hashCode and comparable have been overridden to only
@@ -37,7 +35,6 @@ import javax.persistence.Table;
  * set to true.
  */
 @Entity
-@Table(indexes = @Index(columnList = "loginEmailAddress", name = "registrarpoc_login_email_idx"))
 @IdClass(RegistrarPocId.class)
 @Access(AccessType.FIELD)
 public class RegistrarPoc extends RegistrarPocBase {

@@ -98,12 +98,7 @@ public class RegistrarPocBase extends ImmutableObject implements Jsonifiable, Un
   /** The name of the contact. */
   @Expose String name;
 
-  /**
-   * The contact email address of the contact.
-   *
-   * <p>This is different from the login email which is assgined to the regstrar and cannot be
-   * changed.
-   */
+  /** The contact email address of the contact. */
   @Expose @Transient String emailAddress;
 
   @Expose @Transient public String registrarId;
@@ -122,9 +117,6 @@ public class RegistrarPocBase extends ImmutableObject implements Jsonifiable, Un
    * data is internal to the registry.
    */
   @Expose Set<Type> types;
-
-  /** A GAIA email address that was assigned to the registrar for console login purpose. */
-  String loginEmailAddress;
 
   /**
    * Whether this contact is publicly visible in WHOIS registrar query results as an Admin contact.
@@ -219,10 +211,6 @@ public class RegistrarPocBase extends ImmutableObject implements Jsonifiable, Un
     return visibleInDomainWhoisAsAbuse;
   }
 
-  public String getLoginEmailAddress() {
-    return loginEmailAddress;
-  }
-
   public Builder<? extends RegistrarPocBase, ?> asBuilder() {
     return new Builder<>(clone(this));
   }
@@ -286,13 +274,6 @@ public class RegistrarPocBase extends ImmutableObject implements Jsonifiable, Un
                 + "Registrar Abuse contact info: ")
         .append(getVisibleInDomainWhoisAsAbuse() ? "Yes" : "No")
         .append('\n');
-    result
-        .append("Registrar-Console access: ")
-        .append(getLoginEmailAddress() != null ? "Yes" : "No")
-        .append('\n');
-    if (getLoginEmailAddress() != null) {
-      result.append("Login Email Address: ").append(getLoginEmailAddress()).append('\n');
-    }
     return result.toString();
   }
 
@@ -310,7 +291,6 @@ public class RegistrarPocBase extends ImmutableObject implements Jsonifiable, Un
         .put("visibleInDomainWhoisAsAbuse", visibleInDomainWhoisAsAbuse)
         .put("allowedToSetRegistryLockPassword", allowedToSetRegistryLockPassword)
         .put("registryLockAllowed", isRegistryLockAllowed())
-        .put("loginEmailAddress", loginEmailAddress)
         .build();
   }
 
@@ -408,11 +388,6 @@ public class RegistrarPocBase extends ImmutableObject implements Jsonifiable, Un
 
     public B setVisibleInDomainWhoisAsAbuse(boolean visible) {
       getInstance().visibleInDomainWhoisAsAbuse = visible;
-      return thisCastToDerived();
-    }
-
-    public B setLoginEmailAddress(String loginEmailAddress) {
-      getInstance().loginEmailAddress = loginEmailAddress;
       return thisCastToDerived();
     }
 

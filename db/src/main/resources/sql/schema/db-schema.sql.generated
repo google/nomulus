@@ -672,7 +672,6 @@
         registrar_id text not null,
         allowed_to_set_registry_lock_password boolean not null,
         fax_number text,
-        login_email_address text,
         name text,
         phone_number text,
         registry_lock_email_address text,
@@ -696,7 +695,6 @@
         registrar_id text not null,
         allowed_to_set_registry_lock_password boolean not null,
         fax_number text,
-        login_email_address text,
         name text,
         phone_number text,
         registry_lock_email_address text,
@@ -1004,7 +1002,6 @@ create index IDXaydgox62uno9qx8cjlj5lauye on "PollMessage" (event_time);
 create index premiumlist_name_idx on "PremiumList" (name);
 create index registrar_name_idx on "Registrar" (registrar_name);
 create index registrar_iana_identifier_idx on "Registrar" (iana_identifier);
-create index registrarpoc_login_email_idx on "RegistrarPoc" (login_email_address);
 create index IDXrn6posxkx58de1cp09g5257cw on "RegistrarPocUpdateHistory" (history_acting_user);
 create index IDXr1cxua6it0rxgt9tpyugspxk on "RegistrarPocUpdateHistory" (email_address);
 create index IDXfr24wvpg8qalwqy4pni7evrpj on "RegistrarPocUpdateHistory" (registrar_id);

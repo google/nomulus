@@ -23,7 +23,8 @@ import com.google.common.io.Resources;
 import google.registry.persistence.NomulusPostgreSql;
 import java.io.File;
 import java.nio.file.Path;
-import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
@@ -33,26 +34,31 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 @Testcontainers
 class GenerateSqlSchemaCommandTest extends CommandTestCase<GenerateSqlSchemaCommand> {
 
-  private String containerHostName;
-  private int containerPort;
+  private static String containerHostName;
+  private static int containerPort;
 
   @Container
-  private static PostgreSQLContainer postgres =
-      new PostgreSQLContainer(NomulusPostgreSql.getDockerTag())
+  private static final PostgreSQLContainer<?> postgres =
+      new PostgreSQLContainer<>(NomulusPostgreSql.getDockerTag())
           .withDatabaseName("postgres")
           .withUsername("postgres")
           .withPassword("domain-registry");
 
-  @BeforeEach
-  void beforeEach() {
-    containerHostName = postgres.getContainerIpAddress();
+  @BeforeAll
+  static void beforeAll() {
+    containerHostName = postgres.getHost();
     containerPort = postgres.getMappedPort(GenerateSqlSchemaCommand.POSTGRESQL_PORT);
+  }
+
+  @AfterAll
+  static void afterAll() {
+    postgres.close();
   }
 
   @Test
   void testSchemaGeneration() throws Exception {
     runCommand(
-        "--out_file=" + tmpDir.resolve("schema.sql").toString(),
+        "--out_file=" + tmpDir.resolve("schema.sql"),
         "--db_host=" + containerHostName,
         "--db_port=" + containerPort);
 
@@ -69,7 +75,7 @@ class GenerateSqlSchemaCommandTest extends CommandTestCase<GenerateSqlSchemaComm
   @Test
   void testIncompatibleFlags() throws Exception {
     runCommand(
-        "--out_file=" + tmpDir.resolve("schema.sql").toString(),
+        "--out_file=" + tmpDir.resolve("schema.sql"),
         "--db_host=" + containerHostName,
         "--db_port=" + containerPort,
         "--start_postgresql");
@@ -79,14 +85,14 @@ class GenerateSqlSchemaCommandTest extends CommandTestCase<GenerateSqlSchemaComm
   @Test
   void testDockerPostgresql() throws Exception {
     Path schemaFile = tmpDir.resolve("schema.sql");
-    runCommand("--start_postgresql", "--out_file=" + schemaFile.toString());
+    runCommand("--start_postgresql", "--out_file=" + schemaFile);
     assertThat(schemaFile.toFile().exists()).isTrue();
   }
 
   @Test
   void validateGeneratedSchemaIsSameAsSchemaInFile() throws Exception {
     Path schemaFile = tmpDir.resolve("schema.sql");
-    runCommand("--start_postgresql", "--out_file=" + schemaFile.toString());
+    runCommand("--start_postgresql", "--out_file=" + schemaFile);
     assertThat(schemaFile.toFile().toURI().toURL())
         .hasSameContentAs(Resources.getResource("sql/schema/db-schema.sql.generated"));
   }

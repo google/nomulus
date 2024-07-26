@@ -193,9 +193,6 @@ public final class RegistrarFormFields {
   public static final FormField<String, String> CONTACT_FAX_NUMBER_FIELD =
       FormFields.PHONE_NUMBER.asBuilderNamed("faxNumber").build();
 
-  public static final FormField<String, String> CONTACT_LOGIN_EMAIL_ADDRESS_FIELD =
-      FormFields.NAME.asBuilderNamed("loginEmailAddress").build();
-
   public static final FormField<Object, Boolean> CONTACT_ALLOWED_TO_SET_REGISTRY_LOCK_PASSWORD =
       FormField.named("allowedToSetRegistryLockPassword", Object.class)
           .transform(Boolean.class, b -> Boolean.valueOf(Objects.toString(b)))
@@ -384,8 +381,6 @@ public final class RegistrarFormFields {
     builder.setPhoneNumber(CONTACT_PHONE_NUMBER_FIELD.extractUntyped(args).orElse(null));
     builder.setFaxNumber(CONTACT_FAX_NUMBER_FIELD.extractUntyped(args).orElse(null));
     builder.setTypes(CONTACT_TYPES.extractUntyped(args).orElse(ImmutableSet.of()));
-    builder.setLoginEmailAddress(
-        CONTACT_LOGIN_EMAIL_ADDRESS_FIELD.extractUntyped(args).orElse(null));
     // The parser is inconsistent with whether it retrieves boolean values as strings or booleans.
     // As a result, use a potentially-redundant converter that can deal with both.
     builder.setAllowedToSetRegistryLockPassword(
