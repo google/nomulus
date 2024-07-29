@@ -63,7 +63,8 @@ public class FeatureFlag extends ImmutableObject implements Buildable {
   public enum FeatureName {
     TEST_FEATURE,
     MINIMUM_DATASET_CONTACTS_OPTIONAL,
-    MINIMUM_DATASET_CONTACTS_PROHIBITED
+    MINIMUM_DATASET_CONTACTS_PROHIBITED,
+    NEW_CONSOLE
   }
 
   /** The name of the flag/feature. */

@@ -16,6 +16,9 @@ package google.registry.ui.server.console;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
+import static google.registry.model.common.FeatureFlag.FeatureName.NEW_CONSOLE;
+import static google.registry.model.common.FeatureFlag.isActiveNow;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.request.Action.Method.GET;
 import static jakarta.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static jakarta.servlet.http.HttpServletResponse.SC_FORBIDDEN;
@@ -88,7 +91,10 @@ public abstract class ConsoleApiAction implements Runnable {
         !GlobalRole.NONE.equals(userRoles.getGlobalRole())
             || userRoles.hasPermission(
                 registryAdminClientId, ConsolePermission.VIEW_REGISTRAR_DETAILS);
-    if (RegistryEnvironment.get() != RegistryEnvironment.UNITTEST && !hasGlobalOrTestingRole) {
+
+    if (!hasGlobalOrTestingRole
+        && RegistryEnvironment.get() != RegistryEnvironment.UNITTEST
+        && tm().transact(() -> !isActiveNow(NEW_CONSOLE))) {
       try {
         consoleApiParams.response().sendRedirect(ConsoleUiAction.PATH);
         return;
