@@ -1317,7 +1317,7 @@ CREATE TABLE public."TmchCrl" (
 --
 
 CREATE TABLE public."User" (
-    id bigint NOT NULL,
+    id bigint,
     email_address text NOT NULL,
     registry_lock_password_hash text,
     registry_lock_password_salt text,
@@ -1833,7 +1833,7 @@ ALTER TABLE ONLY public."UserUpdateHistory"
 --
 
 ALTER TABLE ONLY public."User"
-    ADD CONSTRAINT "User_pkey" PRIMARY KEY (id);
+    ADD CONSTRAINT "User_pkey" PRIMARY KEY (email_address);
 
 
 --
@@ -2545,13 +2545,6 @@ CREATE INDEX spec11threatmatch_registrar_id_idx ON public."Spec11ThreatMatch" US
 --
 
 CREATE INDEX spec11threatmatch_tld_idx ON public."Spec11ThreatMatch" USING btree (tld);
-
-
---
--- Name: user_email_address_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX user_email_address_idx ON public."User" USING btree (email_address);
 
 
 --

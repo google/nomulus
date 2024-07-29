@@ -28,6 +28,7 @@ public class GetUserCommandTest extends CommandTestCase<GetUserCommand> {
 
   @BeforeEach
   void beforeEach() {
+    User.ID_GENERATOR_FOR_TESTING.set(0L);
     UserDao.saveUser(
         new User.Builder()
             .setEmailAddress("johndoe@theregistrar.com")
@@ -52,7 +53,7 @@ public class GetUserCommandTest extends CommandTestCase<GetUserCommand> {
         """
         User: {
             emailAddress=fte@google.com
-            id=2
+            id=1
             registryLockEmailAddress=null
             registryLockPasswordHash=null
             registryLockPasswordSalt=null
@@ -75,7 +76,7 @@ public class GetUserCommandTest extends CommandTestCase<GetUserCommand> {
         """
         User: {
             emailAddress=johndoe@theregistrar.com
-            id=1
+            id=0
             registryLockEmailAddress=null
             registryLockPasswordHash=null
             registryLockPasswordSalt=null
@@ -90,7 +91,7 @@ public class GetUserCommandTest extends CommandTestCase<GetUserCommand> {
         }
         User: {
             emailAddress=fte@google.com
-            id=2
+            id=1
             registryLockEmailAddress=null
             registryLockPasswordHash=null
             registryLockPasswordSalt=null
@@ -113,7 +114,7 @@ public class GetUserCommandTest extends CommandTestCase<GetUserCommand> {
         """
         User: {
             emailAddress=johndoe@theregistrar.com
-            id=1
+            id=0
             registryLockEmailAddress=null
             registryLockPasswordHash=null
             registryLockPasswordSalt=null

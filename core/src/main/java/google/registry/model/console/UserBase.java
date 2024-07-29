@@ -53,8 +53,7 @@ public class UserBase extends UpdateAutoTimestampEntity implements Buildable {
   @Transient private Long id;
 
   /** Email address of the user in question. */
-  @Column(nullable = false)
-  String emailAddress;
+  @Transient String emailAddress;
 
   /** Optional external email address to use for registry lock confirmation emails. */
   @Column String registryLockEmailAddress;
@@ -88,6 +87,10 @@ public class UserBase extends UpdateAutoTimestampEntity implements Buildable {
   @SuppressWarnings("unused")
   void setId(Long id) {
     this.id = id;
+  }
+
+  void setEmailAddress(String emailAddress) {
+    this.emailAddress = emailAddress;
   }
 
   public String getEmailAddress() {

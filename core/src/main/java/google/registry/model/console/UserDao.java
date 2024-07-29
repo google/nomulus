@@ -14,7 +14,6 @@
 
 package google.registry.model.console;
 
-import static com.google.common.base.Preconditions.checkArgument;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import java.util.Optional;
@@ -32,23 +31,8 @@ public class UserDao {
                     .findFirst());
   }
 
-  /** Saves the given user, checking that no existing user already exists with this email. */
+  /** Saves the given user, updating it if it already exists. */
   public static void saveUser(User user) {
-    tm().transact(
-            () -> {
-              // Check for an existing user (the unique constraint protects us, but this gives a
-              // nicer exception)
-              Optional<User> maybeSavedUser = loadUser(user.getEmailAddress());
-              if (maybeSavedUser.isPresent()) {
-                User savedUser = maybeSavedUser.get();
-                checkArgument(
-                    savedUser.getId().equals(user.getId()),
-                    String.format(
-                        "Attempted save of User with email address %s and ID %s, user with that"
-                            + " email already exists with ID %s",
-                        user.getEmailAddress(), user.getId(), savedUser.getId()));
-              }
-              tm().put(user);
-            });
+    tm().transact(() -> tm().put(user));
   }
 }
