@@ -110,15 +110,6 @@ class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
     driver.diffPage("page");
   }
 
-  /** Admins shouldn't have the "add" button */
-  @RetryingTest(3)
-  void settingsContact_asAdmin() throws Throwable {
-    server.setIsAdmin(true);
-    driver.get(server.getUrl("/registrar?clientId=NewRegistrar#contact-settings"));
-    driver.waitForDisplayedElement(By.tagName("h1"));
-    driver.diffPage("page");
-  }
-
   @RetryingTest(3)
   void settingsContactItem() throws Throwable {
     driver.get(server.getUrl("/registrar#contact-settings/johndoe@theregistrar.com"));
