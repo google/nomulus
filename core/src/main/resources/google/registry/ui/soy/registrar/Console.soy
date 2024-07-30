@@ -36,6 +36,7 @@
   {@param technicalDocsUrl: string}
   {@param environment: string}
   {@param analyticsConfig: [googleAnalyticsId: string|null]}
+  {@param includeDeprecationWarning: bool}
 
   {call registry.soy.console.header}
     {param app: 'registrar' /}
@@ -45,7 +46,7 @@
   {call registry.soy.console.googlebar data="all" /}
   <div id="reg-app" lang="en-US">
     <div id="reg-appbar" class="{css('kd-appbar')}">
-      <div class="{css('kd-description')}">
+      <div id="reg-accessing-as-role" class="{css('kd-description')}">
         Accessing <span class="{css('kd-value')}">{$clientId}</span> as{sp}
         {if $isOwner}<span class="{css('kd-value')}">Owner</span>{/if}
         {if $isAdmin}<span class="{css('kd-value')}">Admin</span>{/if}
@@ -53,6 +54,13 @@
           {sp}(Switch registrar: {call .clientIdSelect_ data="all" /})
         {/if}
       </div>
+      {if $includeDeprecationWarning}
+      <div id="reg-deprecation-warning">
+        <h1>Note: this console is deprecated and will be deactivated in October 2024.
+            Please use the <a href="/console">new console</a> instead.
+        </h1>
+      </div>
+      {/if}
       <div id="reg-app-buttons" class="{css('kd-buttonbar')} {css('left')}"></div>
     </div>
     {call .navbar_ data="all" /}

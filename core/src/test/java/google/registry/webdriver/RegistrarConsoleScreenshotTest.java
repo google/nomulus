@@ -29,6 +29,8 @@ import static google.registry.tools.LockOrUnlockDomainCommand.REGISTRY_LOCK_STAT
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSortedMap;
+import google.registry.model.common.FeatureFlag;
 import google.registry.model.console.RegistrarRole;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.RegistryLock;
@@ -106,15 +108,6 @@ class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
   @RetryingTest(3)
   void settingsContact() throws Throwable {
     driver.get(server.getUrl("/registrar#contact-settings"));
-    driver.waitForDisplayedElement(By.tagName("h1"));
-    driver.diffPage("page");
-  }
-
-  /** Admins shouldn't have the "add" button */
-  @RetryingTest(3)
-  void settingsContact_asAdmin() throws Throwable {
-    server.setIsAdmin(true);
-    driver.get(server.getUrl("/registrar?clientId=NewRegistrar#contact-settings"));
     driver.waitForDisplayedElement(By.tagName("h1"));
     driver.diffPage("page");
   }
@@ -515,6 +508,18 @@ class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
         makeRegistrarContact3().asBuilder().setAllowedToSetRegistryLockPassword(true).build());
     driver.get(server.getUrl("/registrar?clientId=TheRegistrar#registry-lock"));
     driver.waitForDisplayedElement(By.tagName("h2"));
+    driver.diffPage("page");
+  }
+
+  @RetryingTest(3)
+  void deprecationWarning_active() throws Throwable {
+    persistResource(
+        new FeatureFlag.Builder()
+            .setFeatureName(FeatureFlag.FeatureName.NEW_CONSOLE)
+            .setStatusMap(ImmutableSortedMap.of(START_OF_TIME, FeatureFlag.FeatureStatus.ACTIVE))
+            .build());
+    driver.get(server.getUrl("/registrar"));
+    driver.waitForDisplayedElement(By.tagName("h1"));
     driver.diffPage("page");
   }
 

@@ -261,7 +261,7 @@ li.kd-menulistitem {
   top: 136px;
   left: 173px;
   bottom: 0;
-  width: 100%;
+  width: calc(100% - 173px);
   margin: 0;
   padding: 25px 0 1em 0;
   overflow-y: scroll !important;
@@ -295,4 +295,32 @@ li.kd-menulistitem {
 
 .reg-select {
   margin-left: 23px;
+}
+
+div#reg-deprecation-warning {
+    position: fixed;
+    top: 64px;
+    width: 100%;
+    left: 0;
+    text-align: center;
+    background-color: #ba2a1a;
+    font-size: 0.6svw;
+}
+
+div#reg-deprecation-warning h1 {
+  color: #ffffff;
+}
+
+div#reg-deprecation-warning a {
+  color: #add8e6;
+}
+
+div#reg-accessing-as-role {
+  margin-top: 40px;
+}
+
+@media screen and (max-width: 1600px) {
+  div#reg-deprecation-warning {
+    font-size: 0.85vw;
+  }
 }
