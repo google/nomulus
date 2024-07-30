@@ -1340,7 +1340,7 @@ CREATE TABLE public."UserUpdateHistory" (
     history_request_body text,
     history_type text NOT NULL,
     history_url text NOT NULL,
-    user_id bigint NOT NULL,
+    user_id bigint,
     email_address text NOT NULL,
     registry_lock_password_hash text,
     registry_lock_password_salt text,
