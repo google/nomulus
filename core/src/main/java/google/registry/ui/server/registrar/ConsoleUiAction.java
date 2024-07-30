@@ -18,6 +18,7 @@ import static google.registry.request.auth.AuthenticatedRegistrarAccessor.Role.A
 import static google.registry.request.auth.AuthenticatedRegistrarAccessor.Role.OWNER;
 import static google.registry.ui.server.SoyTemplateUtils.CSS_RENAMING_MAP_SUPPLIER;
 import static jakarta.servlet.http.HttpServletResponse.SC_FORBIDDEN;
+import static jakarta.servlet.http.HttpServletResponse.SC_PERMANENT_REDIRECT;
 import static jakarta.servlet.http.HttpServletResponse.SC_SERVICE_UNAVAILABLE;
 
 import com.google.common.base.Supplier;
@@ -26,6 +27,7 @@ import com.google.common.flogger.FluentLogger;
 import com.google.template.soy.data.SoyMapData;
 import com.google.template.soy.tofu.SoyTofu;
 import google.registry.config.RegistryConfig.Config;
+import google.registry.model.console.GlobalRole;
 import google.registry.request.Action;
 import google.registry.request.Parameter;
 import google.registry.request.auth.Auth;
@@ -35,8 +37,10 @@ import google.registry.request.auth.AuthenticatedRegistrarAccessor.Role;
 import google.registry.ui.server.SoyTemplateUtils;
 import google.registry.ui.soy.registrar.ConsoleSoyInfo;
 import google.registry.util.RegistryEnvironment;
+import java.io.IOException;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Stream;
 import javax.inject.Inject;
 
 /** Action that serves Registrar Console single HTML page (SPA). */
@@ -100,6 +104,7 @@ public final class ConsoleUiAction extends HtmlAction {
     soyMapData.put("announcementsEmail", announcementsEmail);
     soyMapData.put("supportPhoneNumber", supportPhoneNumber);
     soyMapData.put("technicalDocsUrl", technicalDocsUrl);
+
     if (!enabled) {
       response.setStatus(SC_SERVICE_UNAVAILABLE);
       response.setPayload(
@@ -111,6 +116,21 @@ public final class ConsoleUiAction extends HtmlAction {
               .render());
       return;
     }
+
+    // Set permanent redirect to the new console for tech support
+    if (Stream.of(GlobalRole.SUPPORT_LEAD, GlobalRole.SUPPORT_AGENT)
+        .anyMatch(
+            globalRole ->
+                globalRole.equals(authResult.user().get().getUserRoles().getGlobalRole()))) {
+      response.setStatus(SC_PERMANENT_REDIRECT);
+      try {
+        response.sendRedirect("/console");
+        return;
+      } catch (IOException e) {
+        throw new RuntimeException(e);
+      }
+    }
+
     ImmutableSetMultimap<String, Role> roleMap = registrarAccessor.getAllRegistrarIdsWithRoles();
     soyMapData.put("allClientIds", roleMap.keySet());
     soyMapData.put("environment", RegistryEnvironment.get().toString());
