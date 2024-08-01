@@ -16,6 +16,7 @@ package google.registry.tools;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.console.User.IAP_SECURED_WEB_APP_USER_ROLE;
+import static google.registry.testing.DatabaseHelper.loadExistingUser;
 import static org.junit.Assert.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -28,7 +29,6 @@ import com.google.common.net.MediaType;
 import google.registry.model.console.GlobalRole;
 import google.registry.model.console.RegistrarRole;
 import google.registry.model.console.User;
-import google.registry.model.console.UserDao;
 import google.registry.testing.DatabaseHelper;
 import google.registry.tools.server.UpdateUserGroupAction;
 import java.util.Optional;
@@ -93,14 +93,14 @@ public class CreateUserCommandTest extends CommandTestCase<CreateUserCommand> {
         "user@example.test",
         "--registry_lock_email_address",
         "registrylockemail@otherexample.test");
-    assertThat(UserDao.loadUser("user@example.test").get().getRegistryLockEmailAddress())
+    assertThat(loadExistingUser("user@example.test").getRegistryLockEmailAddress())
         .hasValue("registrylockemail@otherexample.test");
   }
 
   @Test
   void testSuccess_admin() throws Exception {
     runCommandForced("--email", "user@example.test", "--admin", "true");
-    assertThat(UserDao.loadUser("user@example.test").get().getUserRoles().isAdmin()).isTrue();
+    assertThat(loadExistingUser("user@example.test").getUserRoles().isAdmin()).isTrue();
     verify(iamClient).addBinding("user@example.test", IAP_SECURED_WEB_APP_USER_ROLE);
     verifyNoMoreInteractions(iamClient);
     verifyNoInteractions(connection);
@@ -109,7 +109,7 @@ public class CreateUserCommandTest extends CommandTestCase<CreateUserCommand> {
   @Test
   void testSuccess_globalRole() throws Exception {
     runCommandForced("--email", "user@example.test", "--global_role", "FTE");
-    assertThat(UserDao.loadUser("user@example.test").get().getUserRoles().getGlobalRole())
+    assertThat(loadExistingUser("user@example.test").getUserRoles().getGlobalRole())
         .isEqualTo(GlobalRole.FTE);
     verify(iamClient).addBinding("user@example.test", IAP_SECURED_WEB_APP_USER_ROLE);
     verifyNoMoreInteractions(iamClient);
@@ -123,7 +123,7 @@ public class CreateUserCommandTest extends CommandTestCase<CreateUserCommand> {
         "user@example.test",
         "--registrar_roles",
         "TheRegistrar=ACCOUNT_MANAGER,NewRegistrar=PRIMARY_CONTACT");
-    assertThat(UserDao.loadUser("user@example.test").get().getUserRoles().getRegistrarRoles())
+    assertThat(loadExistingUser("user@example.test").getUserRoles().getRegistrarRoles())
         .isEqualTo(
             ImmutableMap.of(
                 "TheRegistrar",

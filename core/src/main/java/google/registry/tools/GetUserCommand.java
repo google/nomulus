@@ -14,10 +14,12 @@
 
 package google.registry.tools;
 
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import google.registry.model.console.User;
-import google.registry.model.console.UserDao;
+import google.registry.persistence.VKey;
 import java.util.List;
 
 /** Command to display one or more users. */
@@ -29,11 +31,14 @@ public class GetUserCommand implements Command {
 
   @Override
   public void run() throws Exception {
-    for (String emailAddress : mainParameters) {
-      System.out.println(
-          UserDao.loadUser(emailAddress)
-              .map(User::toString)
-              .orElse(String.format("No user with email address %s", emailAddress)));
-    }
+    tm().transact(
+            () -> {
+              for (String emailAddress : mainParameters) {
+                System.out.println(
+                    tm().loadByKeyIfPresent(VKey.create(User.class, emailAddress))
+                        .map(User::toString)
+                        .orElse(String.format("No user with email address %s", emailAddress)));
+              }
+            });
   }
 }

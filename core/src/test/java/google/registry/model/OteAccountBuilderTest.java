@@ -22,6 +22,7 @@ import static google.registry.persistence.transaction.JpaTransactionManagerExten
 import static google.registry.testing.CertificateSamples.SAMPLE_CERT;
 import static google.registry.testing.CertificateSamples.SAMPLE_CERT_HASH;
 import static google.registry.testing.DatabaseHelper.createTld;
+import static google.registry.testing.DatabaseHelper.loadByKeyIfPresent;
 import static google.registry.testing.DatabaseHelper.persistPremiumList;
 import static google.registry.testing.DatabaseHelper.persistSimpleResource;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
@@ -36,10 +37,10 @@ import com.google.common.collect.ImmutableList;
 import google.registry.batch.CloudTasksUtils;
 import google.registry.model.console.RegistrarRole;
 import google.registry.model.console.User;
-import google.registry.model.console.UserDao;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.tld.Tld;
 import google.registry.model.tld.Tld.TldState;
+import google.registry.persistence.VKey;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.testing.CloudTasksHelper;
@@ -106,7 +107,7 @@ public final class OteAccountBuilderTest {
   }
 
   public static void verifyUser(String registrarId, String email) {
-    Optional<User> maybeUser = UserDao.loadUser(email);
+    Optional<User> maybeUser = loadByKeyIfPresent(VKey.create(User.class, email));
     assertThat(maybeUser).isPresent();
     assertThat(maybeUser.get().getUserRoles().getRegistrarRoles().get(registrarId))
         .isEqualTo(RegistrarRole.ACCOUNT_MANAGER);

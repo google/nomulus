@@ -73,7 +73,6 @@ import google.registry.model.billing.BillingRecurrence;
 import google.registry.model.common.DnsRefreshRequest;
 import google.registry.model.console.GlobalRole;
 import google.registry.model.console.User;
-import google.registry.model.console.UserDao;
 import google.registry.model.console.UserRoles;
 import google.registry.model.contact.Contact;
 import google.registry.model.contact.ContactAuthInfo;
@@ -1014,20 +1013,33 @@ public final class DatabaseHelper {
     return tm().transact(() -> tm().loadByEntity(resource));
   }
 
+  public static User loadExistingUser(String emailAddress) {
+    return loadByKey(VKey.create(User.class, emailAddress));
+  }
+
   /** Persists an admin {@link User} with the given email address if it doesn't already exist. */
   public static User createAdminUser(String emailAddress) {
-    Optional<User> existingUser = UserDao.loadUser(emailAddress);
-    if (existingUser.isPresent()) {
-      return existingUser.get();
-    }
-    User user =
-        new User.Builder()
-            .setEmailAddress(emailAddress)
-            .setUserRoles(
-                new UserRoles.Builder().setGlobalRole(GlobalRole.FTE).setIsAdmin(true).build())
-            .build();
-    tm().transact(() -> tm().put(user));
-    return UserDao.loadUser(emailAddress).get();
+    // Reload the user to pick up the update time
+    return loadByEntity(
+        tm().transact(
+                () -> {
+                  VKey<User> key = VKey.create(User.class, emailAddress);
+                  Optional<User> existingUser = tm().loadByKeyIfPresent(key);
+                  if (existingUser.isPresent()) {
+                    return existingUser.get();
+                  }
+                  User user =
+                      new User.Builder()
+                          .setEmailAddress(emailAddress)
+                          .setUserRoles(
+                              new UserRoles.Builder()
+                                  .setGlobalRole(GlobalRole.FTE)
+                                  .setIsAdmin(true)
+                                  .build())
+                          .build();
+                  tm().put(user);
+                  return user;
+                }));
   }
 
   /** Returns all the history entries that are parented off the given EppResource. */
