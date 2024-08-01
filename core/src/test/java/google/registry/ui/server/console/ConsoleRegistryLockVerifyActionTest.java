@@ -90,7 +90,7 @@ public class ConsoleRegistryLockVerifyActionTest {
     assertThat(response.getStatus()).isEqualTo(HttpServletResponse.SC_OK);
     assertThat(response.getPayload())
         .isEqualTo(
-            "{\"action\":\"unlocked\",\"domainName\":\"example.test\",\"registrarId\":\"TheRegistrar\"}");
+            "{\"action\":\"locked\",\"domainName\":\"example.test\",\"registrarId\":\"TheRegistrar\"}");
     assertThat(loadByEntity(defaultDomain).getStatusValues())
         .containsAtLeastElementsIn(REGISTRY_LOCK_STATUSES);
   }
@@ -123,7 +123,7 @@ public class ConsoleRegistryLockVerifyActionTest {
     assertThat(response.getStatus()).isEqualTo(HttpServletResponse.SC_OK);
     assertThat(response.getPayload())
         .isEqualTo(
-            "{\"action\":\"unlocked\",\"domainName\":\"example.test\",\"registrarId\":\"TheRegistrar\"}");
+            "{\"action\":\"locked\",\"domainName\":\"example.test\",\"registrarId\":\"TheRegistrar\"}");
     assertThat(loadByEntity(defaultDomain).getStatusValues())
         .containsAtLeastElementsIn(REGISTRY_LOCK_STATUSES);
   }

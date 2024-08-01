@@ -60,7 +60,7 @@ public class ConsoleRegistryLockVerifyAction extends ConsoleApiAction {
     RegistryLock lock =
         domainLockUtils.verifyVerificationCode(lockVerificationCode, user.getUserRoles().isAdmin());
     RegistryLockAction action =
-        lock.getLockCompletionTime().isPresent()
+        lock.getUnlockCompletionTime().isPresent()
             ? RegistryLockAction.UNLOCKED
             : RegistryLockAction.LOCKED;
     RegistryLockVerificationResponse lockResponse =
