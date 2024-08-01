@@ -263,7 +263,7 @@ public final class ConsoleRegistrarCreatorAction extends HtmlAction {
               });
       UserDao.saveUser(user);
       User.grantIapPermission(
-          user.getEmailAddress(), maybeGroupEmailAddress, cloudTasksUtils, iamClient);
+          user.getEmailAddress(), maybeGroupEmailAddress, cloudTasksUtils, null, iamClient);
       data.put("password", password);
       data.put("passcode", phonePasscode);
 

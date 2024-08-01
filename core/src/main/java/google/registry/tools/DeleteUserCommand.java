@@ -20,7 +20,6 @@ import static google.registry.util.PreconditionsUtils.checkArgumentPresent;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
-import google.registry.batch.CloudTasksUtils;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.model.console.User;
 import google.registry.model.console.UserDao;
@@ -30,11 +29,11 @@ import javax.inject.Inject;
 
 /** Deletes a {@link User}. */
 @Parameters(separators = " =", commandDescription = "Delete a user account")
-public class DeleteUserCommand extends ConfirmingCommand {
+public class DeleteUserCommand extends ConfirmingCommand implements CommandWithConnection {
+
+  private ServiceConnection connection;
 
   @Inject IamClient iamClient;
-
-  @Inject CloudTasksUtils cloudTasksUtils;
 
   @Inject
   @Config("gSuiteConsoleUserGroupEmailAddress")
@@ -59,7 +58,12 @@ public class DeleteUserCommand extends ConfirmingCommand {
               checkArgumentPresent(optionalUser, "Email no longer corresponds to a valid user");
               tm().delete(optionalUser.get());
             });
-    User.revokeIapPermission(email, maybeGroupEmailAddress, cloudTasksUtils, iamClient);
+    User.revokeIapPermission(email, maybeGroupEmailAddress, null, connection, iamClient);
     return String.format("Deleted user with email %s", email);
+  }
+
+  @Override
+  public void setConnection(ServiceConnection connection) {
+    this.connection = connection;
   }
 }

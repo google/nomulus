@@ -21,15 +21,20 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 import com.google.cloud.tasks.v2.HttpMethod;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.net.MediaType;
 import google.registry.batch.CloudTasksUtils;
 import google.registry.model.EntityTestCase;
 import google.registry.testing.CloudTasksHelper;
 import google.registry.testing.CloudTasksHelper.TaskMatcher;
 import google.registry.testing.DatabaseHelper;
 import google.registry.tools.IamClient;
+import google.registry.tools.ServiceConnection;
+import google.registry.tools.server.UpdateUserGroupAction;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 
@@ -55,6 +60,34 @@ public class UserTest extends EntityTestCase {
                           .getResultList())
                   .isEmpty();
             });
+  }
+
+  @Test
+  void testFailure_asyncAndSyncModeConflict() {
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> User.grantIapPermission("email@example.com", Optional.empty(), null, null, null));
+    assertThrows(
+        IllegalArgumentException.class,
+        () ->
+            User.grantIapPermission(
+                "email@example.com",
+                Optional.empty(),
+                mock(CloudTasksUtils.class),
+                mock(ServiceConnection.class),
+                null));
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> User.revokeIapPermission("email@example.com", Optional.empty(), null, null, null));
+    assertThrows(
+        IllegalArgumentException.class,
+        () ->
+            User.revokeIapPermission(
+                "email@example.com",
+                Optional.empty(),
+                mock(CloudTasksUtils.class),
+                mock(ServiceConnection.class),
+                null));
   }
 
   @Test
@@ -116,19 +149,20 @@ public class UserTest extends EntityTestCase {
   }
 
   @Test
-  void testGrantIapPermission() {
+  void testGrantIapPermissionAsync() {
     CloudTasksHelper cloudTasksHelper = new CloudTasksHelper();
     IamClient iamClient = mock(IamClient.class);
     CloudTasksUtils cloudTasksUtils = cloudTasksHelper.getTestCloudTasksUtils();
 
     // Individual permission.
-    User.grantIapPermission("email@example.com", Optional.empty(), cloudTasksUtils, iamClient);
+    User.grantIapPermission(
+        "email@example.com", Optional.empty(), cloudTasksUtils, null, iamClient);
     cloudTasksHelper.assertNoTasksEnqueued();
     verify(iamClient).addBinding("email@example.com", IAP_SECURED_WEB_APP_USER_ROLE);
 
     // Group membership.
     User.grantIapPermission(
-        "email@example.com", Optional.of("console@example.com"), cloudTasksUtils, iamClient);
+        "email@example.com", Optional.of("console@example.com"), cloudTasksUtils, null, iamClient);
     cloudTasksHelper.assertTasksEnqueued(
         "console-user-group-update",
         new TaskMatcher()
@@ -142,19 +176,49 @@ public class UserTest extends EntityTestCase {
   }
 
   @Test
-  void testRevokeIapPermission() {
+  void testGrantIapPermissionSync() throws Exception {
+    ServiceConnection connection = mock(ServiceConnection.class);
+    IamClient iamClient = mock(IamClient.class);
+
+    // Individual permission.
+    User.grantIapPermission("email@example.com", Optional.empty(), null, connection, iamClient);
+    verifyNoInteractions(connection);
+    verify(iamClient).addBinding("email@example.com", IAP_SECURED_WEB_APP_USER_ROLE);
+
+    // Group membership.
+    User.grantIapPermission(
+        "email@example.com", Optional.of("console@example.com"), null, connection, iamClient);
+    verify(connection)
+        .sendPostRequest(
+            UpdateUserGroupAction.PATH,
+            ImmutableMap.of(
+                "userEmailAddress",
+                "email@example.com",
+                "groupEmailAddress",
+                "console@example.com",
+                "groupUpdateMode",
+                "ADD"),
+            MediaType.PLAIN_TEXT_UTF_8,
+            new byte[0]);
+    verifyNoMoreInteractions(iamClient);
+    verifyNoMoreInteractions(connection);
+  }
+
+  @Test
+  void testRevokeIapPermissionAsync() {
     CloudTasksHelper cloudTasksHelper = new CloudTasksHelper();
     IamClient iamClient = mock(IamClient.class);
     CloudTasksUtils cloudTasksUtils = cloudTasksHelper.getTestCloudTasksUtils();
 
     // Individual permission.
-    User.revokeIapPermission("email@example.com", Optional.empty(), cloudTasksUtils, iamClient);
+    User.revokeIapPermission(
+        "email@example.com", Optional.empty(), cloudTasksUtils, null, iamClient);
     cloudTasksHelper.assertNoTasksEnqueued();
     verify(iamClient).removeBinding("email@example.com", IAP_SECURED_WEB_APP_USER_ROLE);
 
     // Group membership.
     User.revokeIapPermission(
-        "email@example.com", Optional.of("console@example.com"), cloudTasksUtils, iamClient);
+        "email@example.com", Optional.of("console@example.com"), cloudTasksUtils, null, iamClient);
     cloudTasksHelper.assertTasksEnqueued(
         "console-user-group-update",
         new TaskMatcher()
@@ -165,5 +229,34 @@ public class UserTest extends EntityTestCase {
             .param("groupEmailAddress", "console@example.com")
             .param("groupUpdateMode", "REMOVE"));
     verifyNoMoreInteractions(iamClient);
+  }
+
+  @Test
+  void testRevokeIapPermissionSync() throws Exception {
+    ServiceConnection connection = mock(ServiceConnection.class);
+    IamClient iamClient = mock(IamClient.class);
+
+    // Individual permission.
+    User.revokeIapPermission("email@example.com", Optional.empty(), null, connection, iamClient);
+    verifyNoInteractions(connection);
+    verify(iamClient).removeBinding("email@example.com", IAP_SECURED_WEB_APP_USER_ROLE);
+
+    // Group membership.
+    User.revokeIapPermission(
+        "email@example.com", Optional.of("console@example.com"), null, connection, iamClient);
+    verify(connection)
+        .sendPostRequest(
+            UpdateUserGroupAction.PATH,
+            ImmutableMap.of(
+                "userEmailAddress",
+                "email@example.com",
+                "groupEmailAddress",
+                "console@example.com",
+                "groupUpdateMode",
+                "REMOVE"),
+            MediaType.PLAIN_TEXT_UTF_8,
+            new byte[0]);
+    verifyNoMoreInteractions(iamClient);
+    verifyNoMoreInteractions(connection);
   }
 }
