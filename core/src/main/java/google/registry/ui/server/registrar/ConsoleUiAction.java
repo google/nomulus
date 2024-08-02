@@ -15,6 +15,7 @@
 package google.registry.ui.server.registrar;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.request.auth.AuthenticatedRegistrarAccessor.Role.ADMIN;
 import static google.registry.request.auth.AuthenticatedRegistrarAccessor.Role.OWNER;
 import static google.registry.ui.server.SoyTemplateUtils.CSS_RENAMING_MAP_SUPPLIER;
@@ -28,6 +29,7 @@ import com.google.common.flogger.FluentLogger;
 import com.google.template.soy.data.SoyMapData;
 import com.google.template.soy.tofu.SoyTofu;
 import google.registry.config.RegistryConfig.Config;
+import google.registry.model.common.FeatureFlag;
 import google.registry.model.console.GlobalRole;
 import google.registry.request.Action;
 import google.registry.request.Parameter;
@@ -136,6 +138,16 @@ public final class ConsoleUiAction extends HtmlAction {
     ImmutableSetMultimap<String, Role> roleMap = registrarAccessor.getAllRegistrarIdsWithRoles();
     soyMapData.put("allClientIds", roleMap.keySet());
     soyMapData.put("environment", RegistryEnvironment.get().toString());
+    boolean newConsole =
+        tm().transact(
+                () ->
+                    FeatureFlag.getUncached(FeatureFlag.FeatureName.NEW_CONSOLE)
+                        .map(
+                            flag ->
+                                flag.getStatus(tm().getTransactionTime())
+                                    .equals(FeatureFlag.FeatureStatus.ACTIVE))
+                        .orElse(false));
+    soyMapData.put("includeDeprecationWarning", newConsole);
     // We set the initial value to the value that will show if guessClientId throws.
     String clientId = "<null>";
     try {
