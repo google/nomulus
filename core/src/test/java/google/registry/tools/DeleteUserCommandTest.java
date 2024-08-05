@@ -24,7 +24,8 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.net.MediaType;
-import google.registry.model.console.UserDao;
+import google.registry.model.console.User;
+import google.registry.persistence.VKey;
 import google.registry.testing.DatabaseHelper;
 import google.registry.tools.server.UpdateUserGroupAction;
 import java.util.Optional;
@@ -47,9 +48,10 @@ public class DeleteUserCommandTest extends CommandTestCase<DeleteUserCommand> {
   @Test
   void testSuccess_deletesUser() throws Exception {
     DatabaseHelper.createAdminUser("email@example.test");
-    assertThat(UserDao.loadUser("email@example.test")).isPresent();
+    VKey<User> key = VKey.create(User.class, "email@example.test");
+    assertThat(DatabaseHelper.loadByKeyIfPresent(key)).isPresent();
     runCommandForced("--email", "email@example.test");
-    assertThat(UserDao.loadUser("email@example.test")).isEmpty();
+    assertThat(DatabaseHelper.loadByKeyIfPresent(key)).isEmpty();
     verify(iamClient).removeBinding("email@example.test", IAP_SECURED_WEB_APP_USER_ROLE);
     verifyNoMoreInteractions(iamClient);
     verifyNoInteractions(connection);
@@ -59,9 +61,10 @@ public class DeleteUserCommandTest extends CommandTestCase<DeleteUserCommand> {
   void testSuccess_deletesUser_removeFromGroup() throws Exception {
     command.maybeGroupEmailAddress = Optional.of("group@example.test");
     DatabaseHelper.createAdminUser("email@example.test");
-    assertThat(UserDao.loadUser("email@example.test")).isPresent();
+    VKey<User> key = VKey.create(User.class, "email@example.test");
+    assertThat(DatabaseHelper.loadByKeyIfPresent(key)).isPresent();
     runCommandForced("--email", "email@example.test");
-    assertThat(UserDao.loadUser("email@example.test")).isEmpty();
+    assertThat(DatabaseHelper.loadByKeyIfPresent(key)).isEmpty();
     verify(connection)
         .sendPostRequest(
             UpdateUserGroupAction.PATH,

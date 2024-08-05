@@ -893,7 +893,6 @@
         global_role text not null,
         is_admin boolean not null,
         registrar_roles hstore,
-        id int8,
         primary key (email_address)
     );
 
@@ -905,7 +904,6 @@
         history_type text not null,
         history_url text not null,
         email_address text not null,
-        user_id int8 not null,
         registry_lock_email_address text,
         registry_lock_password_hash text,
         registry_lock_password_salt text,

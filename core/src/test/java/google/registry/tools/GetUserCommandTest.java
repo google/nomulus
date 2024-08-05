@@ -14,12 +14,13 @@
 
 package google.registry.tools;
 
+
 import com.google.common.collect.ImmutableMap;
 import google.registry.model.console.GlobalRole;
 import google.registry.model.console.RegistrarRole;
 import google.registry.model.console.User;
-import google.registry.model.console.UserDao;
 import google.registry.model.console.UserRoles;
+import google.registry.testing.DatabaseHelper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -28,8 +29,7 @@ public class GetUserCommandTest extends CommandTestCase<GetUserCommand> {
 
   @BeforeEach
   void beforeEach() {
-    User.ID_GENERATOR_FOR_TESTING.set(0L);
-    UserDao.saveUser(
+    DatabaseHelper.putInDb(
         new User.Builder()
             .setEmailAddress("johndoe@theregistrar.com")
             .setUserRoles(
@@ -37,8 +37,7 @@ public class GetUserCommandTest extends CommandTestCase<GetUserCommand> {
                     .setRegistrarRoles(
                         ImmutableMap.of("TheRegistrar", RegistrarRole.PRIMARY_CONTACT))
                     .build())
-            .build());
-    UserDao.saveUser(
+            .build(),
         new User.Builder()
             .setEmailAddress("fte@google.com")
             .setUserRoles(
@@ -53,7 +52,6 @@ public class GetUserCommandTest extends CommandTestCase<GetUserCommand> {
         """
         User: {
             emailAddress=fte@google.com
-            id=1
             registryLockEmailAddress=null
             registryLockPasswordHash=null
             registryLockPasswordSalt=null
@@ -76,7 +74,6 @@ public class GetUserCommandTest extends CommandTestCase<GetUserCommand> {
         """
         User: {
             emailAddress=johndoe@theregistrar.com
-            id=0
             registryLockEmailAddress=null
             registryLockPasswordHash=null
             registryLockPasswordSalt=null
@@ -91,7 +88,6 @@ public class GetUserCommandTest extends CommandTestCase<GetUserCommand> {
         }
         User: {
             emailAddress=fte@google.com
-            id=1
             registryLockEmailAddress=null
             registryLockPasswordHash=null
             registryLockPasswordSalt=null
@@ -114,7 +110,6 @@ public class GetUserCommandTest extends CommandTestCase<GetUserCommand> {
         """
         User: {
             emailAddress=johndoe@theregistrar.com
-            id=0
             registryLockEmailAddress=null
             registryLockPasswordHash=null
             registryLockPasswordSalt=null

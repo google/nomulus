@@ -38,10 +38,6 @@ public class UserUpdateHistory extends ConsoleUpdateHistory {
 
   UserBase user;
 
-  // This field exists so that it's populated in the SQL table
-  @Column(nullable = false, name = "userId")
-  Long id;
-
   @Column(nullable = false, name = "emailAddress")
   String emailAddress;
 
@@ -51,7 +47,6 @@ public class UserUpdateHistory extends ConsoleUpdateHistory {
 
   @PostLoad
   void postLoad() {
-    user.setId(id);
     user.setEmailAddress(emailAddress);
   }
 
@@ -83,7 +78,6 @@ public class UserUpdateHistory extends ConsoleUpdateHistory {
 
     public Builder setUser(User user) {
       getInstance().user = user;
-      getInstance().id = user.getId();
       getInstance().emailAddress = user.getEmailAddress();
       return this;
     }

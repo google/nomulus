@@ -32,7 +32,6 @@ import com.google.common.collect.Streams;
 import google.registry.batch.CloudTasksUtils;
 import google.registry.model.console.RegistrarRole;
 import google.registry.model.console.User;
-import google.registry.model.console.UserDao;
 import google.registry.model.console.UserRoles;
 import google.registry.model.pricing.StaticPremiumListPricingEngine;
 import google.registry.model.registrar.Registrar;
@@ -48,9 +47,7 @@ import google.registry.util.CidrAddressBlock;
 import google.registry.util.RegistryEnvironment;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.regex.Pattern;
@@ -278,22 +275,14 @@ public final class OteAccountBuilder {
   /** Saves all the OT&amp;E entities we created. */
   private void saveAllEntities() {
     ImmutableList<Tld> registries = ImmutableList.of(sunriseTld, gaTld, eapTld);
-    Map<String, User> existingUsers = new HashMap<>();
-
-    users.forEach(
-        user ->
-            UserDao.loadUser(user.getEmailAddress())
-                .ifPresent(
-                    existingUser ->
-                        existingUsers.put(existingUser.getEmailAddress(), existingUser)));
-
-    if (!replaceExisting) {
-      checkState(existingUsers.isEmpty(), "Found existing users: %s", existingUsers);
-    }
-
     tm().transact(
             () -> {
               if (!replaceExisting) {
+                ImmutableMap<String, User> existingUsers =
+                    tm().loadByEntitiesIfPresent(users).stream()
+                        .collect(toImmutableMap(User::getEmailAddress, u -> u));
+                checkState(existingUsers.isEmpty(), "Found existing users: %s", existingUsers);
+
                 ImmutableList<VKey<? extends ImmutableObject>> keys =
                     Streams.concat(
                             registries.stream().map(tld -> Tld.createVKey(tld.getTldStr())),
@@ -317,16 +306,7 @@ public final class OteAccountBuilder {
               tm().putAll(registrars);
             });
 
-    for (User user : users) {
-      String email = user.getEmailAddress();
-      if (existingUsers.containsKey(email)) {
-        // Note that other roles for the existing user are reset. We do this instead of simply
-        // saving the new user is that UserDao does not allow us to save the new user with the same
-        // email as the existing user.
-        user = existingUsers.get(email).asBuilder().setUserRoles(user.getUserRoles()).build();
-      }
-      UserDao.saveUser(user);
-    }
+    tm().transact(() -> tm().putAll(ImmutableList.copyOf(users)));
   }
 
   private Registrar addAllowedTld(Registrar registrar) {

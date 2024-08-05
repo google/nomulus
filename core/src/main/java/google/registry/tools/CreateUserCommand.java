@@ -16,11 +16,12 @@ package google.registry.tools;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static google.registry.model.console.User.grantIapPermission;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import com.beust.jcommander.Parameters;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.model.console.User;
-import google.registry.model.console.UserDao;
+import google.registry.persistence.VKey;
 import java.util.Optional;
 import javax.annotation.Nullable;
 import javax.inject.Inject;
@@ -40,7 +41,8 @@ public class CreateUserCommand extends CreateOrUpdateUserCommand implements Comm
   @Nullable
   @Override
   User getExistingUser(String email) {
-    checkArgument(UserDao.loadUser(email).isEmpty(), "A user with email %s already exists", email);
+    checkArgument(
+        !tm().exists(VKey.create(User.class, email)), "A user with email %s already exists", email);
     return null;
   }
 

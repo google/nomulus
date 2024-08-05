@@ -22,9 +22,11 @@ import static google.registry.model.tld.Tld.TldState.GENERAL_AVAILABILITY;
 import static google.registry.model.tld.Tld.TldState.START_DATE_SUNRISE;
 import static google.registry.testing.CertificateSamples.SAMPLE_CERT_HASH;
 import static google.registry.testing.DatabaseHelper.createTld;
+import static google.registry.testing.DatabaseHelper.loadExistingUser;
 import static google.registry.testing.DatabaseHelper.loadRegistrar;
 import static google.registry.testing.DatabaseHelper.persistPremiumList;
 import static google.registry.testing.DatabaseHelper.persistResource;
+import static google.registry.testing.DatabaseHelper.putInDb;
 import static org.joda.money.CurrencyUnit.USD;
 import static org.joda.time.DateTimeZone.UTC;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -39,7 +41,6 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
 import google.registry.model.console.GlobalRole;
 import google.registry.model.console.User;
-import google.registry.model.console.UserDao;
 import google.registry.model.console.UserRoles;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.tld.Tld;
@@ -447,12 +448,11 @@ class SetupOteCommandTest extends CommandTestCase<SetupOteCommand> {
 
   @Test
   void testFailure_userExists() {
-    User user =
+    putInDb(
         new User.Builder()
             .setEmailAddress("contact@email.com")
             .setUserRoles(new UserRoles.Builder().setGlobalRole(GlobalRole.FTE).build())
-            .build();
-    UserDao.saveUser(user);
+            .build());
     IllegalStateException thrown =
         assertThrows(
             IllegalStateException.class,
@@ -494,12 +494,11 @@ class SetupOteCommandTest extends CommandTestCase<SetupOteCommand> {
 
   @Test
   void testSuccess_userExists_replaceExisting() throws Exception {
-    User user =
+    putInDb(
         new User.Builder()
             .setEmailAddress("contact@email.com")
             .setUserRoles(new UserRoles.Builder().setGlobalRole(GlobalRole.FTE).build())
-            .build();
-    UserDao.saveUser(user);
+            .build());
 
     runCommandForced(
         "--overwrite",
@@ -520,7 +519,7 @@ class SetupOteCommandTest extends CommandTestCase<SetupOteCommand> {
     verifyUser("blobio-5", "contact@email.com");
 
     // verify that the role is completely replaced, e.g., the global role is gone.
-    assertThat(UserDao.loadUser("contact@email.com").get().getUserRoles().getGlobalRole())
+    assertThat(loadExistingUser("contact@email.com").getUserRoles().getGlobalRole())
         .isEqualTo(GlobalRole.NONE);
 
     verifyIapPermission("contact@email.com");
