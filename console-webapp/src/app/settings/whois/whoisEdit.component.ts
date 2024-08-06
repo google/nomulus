@@ -19,6 +19,7 @@ import {
   Registrar,
   RegistrarService,
 } from 'src/app/registrar/registrar.service';
+import { UserDataService } from 'src/app/shared/services/userData.service';
 import { WhoisService } from './whois.service';
 
 @Component({
@@ -30,6 +31,7 @@ export default class WhoisEditComponent {
   registrarInEdit: Registrar | undefined;
 
   constructor(
+    public userDataService: UserDataService,
     public whoisService: WhoisService,
     public registrarService: RegistrarService,
     private _snackBar: MatSnackBar
