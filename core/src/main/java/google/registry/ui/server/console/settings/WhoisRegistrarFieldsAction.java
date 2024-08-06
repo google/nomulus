@@ -17,6 +17,7 @@ package google.registry.ui.server.console.settings;
 import static com.google.common.base.Preconditions.checkArgument;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.request.Action.Method.POST;
+import static jakarta.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static jakarta.servlet.http.HttpServletResponse.SC_FORBIDDEN;
 import static jakarta.servlet.http.HttpServletResponse.SC_OK;
 
@@ -30,6 +31,7 @@ import google.registry.request.auth.AuthenticatedRegistrarAccessor;
 import google.registry.request.auth.AuthenticatedRegistrarAccessor.RegistrarAccessDeniedException;
 import google.registry.ui.server.console.ConsoleApiAction;
 import google.registry.ui.server.registrar.ConsoleApiParams;
+import java.util.Objects;
 import java.util.Optional;
 import javax.inject.Inject;
 
@@ -65,10 +67,10 @@ public class WhoisRegistrarFieldsAction extends ConsoleApiAction {
     checkArgument(registrar.isPresent(), "'registrar' parameter is not present");
     checkPermission(
         user, registrar.get().getRegistrarId(), ConsolePermission.EDIT_REGISTRAR_DETAILS);
-    tm().transact(() -> loadAndModifyRegistrar(registrar.get()));
+    tm().transact(() -> loadAndModifyRegistrar(registrar.get(), user));
   }
 
-  private void loadAndModifyRegistrar(Registrar providedRegistrar) {
+  private void loadAndModifyRegistrar(Registrar providedRegistrar, User user) {
     Registrar savedRegistrar;
     try {
       // reload to make sure the object has all the correct fields
@@ -76,6 +78,13 @@ public class WhoisRegistrarFieldsAction extends ConsoleApiAction {
     } catch (RegistrarAccessDeniedException e) {
       setFailedResponse(e.getMessage(), SC_FORBIDDEN);
       return;
+    }
+
+    if (!Objects.equals(
+            savedRegistrar.getIcannReferralEmail(), providedRegistrar.getIcannReferralEmail())
+        && !user.getUserRoles().hasGlobalPermission(ConsolePermission.EDIT_REGISTRAR_DETAILS)) {
+      setFailedResponse(
+          "Icann Referral Email update is not permitted for this user", SC_BAD_REQUEST);
     }
 
     Registrar newRegistrar =
@@ -86,6 +95,8 @@ public class WhoisRegistrarFieldsAction extends ConsoleApiAction {
             .setLocalizedAddress(providedRegistrar.getLocalizedAddress())
             .setPhoneNumber(providedRegistrar.getPhoneNumber())
             .setFaxNumber(providedRegistrar.getFaxNumber())
+            .setIcannReferralEmail(providedRegistrar.getIcannReferralEmail())
+            .setEmailAddress(providedRegistrar.getEmailAddress())
             .build();
     tm().put(newRegistrar);
     sendExternalUpdatesIfNecessary(
