@@ -1205,7 +1205,7 @@ public final class DatabaseHelper {
             () -> {
               ImmutableList<? extends Class<?>> entityClasses =
                   tm().getEntityManager().getMetamodel().getEntities().stream()
-                      .map(javax.persistence.metamodel.Type::getJavaType)
+                      .map(jakarta.persistence.metamodel.Type::getJavaType)
                       .collect(toImmutableList());
               ImmutableList.Builder<Object> result = new ImmutableList.Builder<>();
               for (Class<?> entityClass : entityClasses) {

@@ -77,6 +77,9 @@ public class DnsUpdateWriterTest {
   public final JpaIntegrationTestExtension jpa =
       new JpaTestExtensions.Builder().buildIntegrationTestExtension();
 
+  // Base16 encoded sha1 digest. Must have 40 chars (20 bytes after decoding)
+  private static final String BASE16_SHA1_DIGEST = "0123".repeat(10);
+
   @Mock private DnsMessageTransport mockResolver;
   @Captor private ArgumentCaptor<Update> updateCaptor;
 
@@ -187,7 +190,7 @@ public class DnsUpdateWriterTest {
             .asBuilder()
             .setNameservers(ImmutableSet.of(persistActiveHost("ns1.example.tld").createVKey()))
             .setDsData(
-                ImmutableSet.of(DomainDsData.create(1, 3, 1, base16().decode("0123456789ABCDEF"))))
+                ImmutableSet.of(DomainDsData.create(1, 3, 1, base16().decode(BASE16_SHA1_DIGEST))))
             .build();
     persistResource(domain);
 
@@ -205,7 +208,7 @@ public class DnsUpdateWriterTest {
         "example.tld.",
         Type.DS,
         Duration.ZERO.getStandardSeconds(),
-        "1 3 1 0123456789ABCDEF");
+        "1 3 1 " + BASE16_SHA1_DIGEST);
     assertThatTotalUpdateSetsIs(update, 3); // The delete, the NS, and DS sets
   }
 
@@ -222,7 +225,7 @@ public class DnsUpdateWriterTest {
             .asBuilder()
             .setNameservers(ImmutableSet.of(persistActiveHost("ns1.example.tld").createVKey()))
             .setDsData(
-                ImmutableSet.of(DomainDsData.create(1, 3, 1, base16().decode("0123456789ABCDEF"))))
+                ImmutableSet.of(DomainDsData.create(1, 3, 1, base16().decode(BASE16_SHA1_DIGEST))))
             .build();
     persistResource(domain);
 
@@ -244,7 +247,7 @@ public class DnsUpdateWriterTest {
         "example.tld.",
         Type.DS,
         Duration.millis(400).getStandardSeconds(),
-        "1 3 1 0123456789ABCDEF");
+        "1 3 1 " + BASE16_SHA1_DIGEST);
     assertThatTotalUpdateSetsIs(update, 3); // The delete, the NS, and DS sets
   }
 

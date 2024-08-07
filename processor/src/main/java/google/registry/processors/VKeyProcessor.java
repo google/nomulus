@@ -24,6 +24,8 @@ import com.squareup.javapoet.MethodSpec;
 import com.squareup.javapoet.ParameterizedTypeName;
 import com.squareup.javapoet.TypeName;
 import com.squareup.javapoet.TypeSpec;
+import jakarta.persistence.AttributeConverter;
+import jakarta.persistence.Converter;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.List;
@@ -45,8 +47,6 @@ import javax.lang.model.type.TypeKind;
 import javax.lang.model.util.ElementFilter;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
-import javax.persistence.AttributeConverter;
-import javax.persistence.Converter;
 
 /** Processor to generate {@link AttributeConverter} for {@code VKey} type. */
 @SupportedAnnotationTypes("google.registry.persistence.WithVKey")

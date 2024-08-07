@@ -37,13 +37,13 @@ import google.registry.xjc.rdepolicy.XjcRdePolicyElement;
 import google.registry.xml.ValidationMode;
 import google.registry.xml.XmlException;
 import google.registry.xml.XmlFragmentMarshaller;
+import jakarta.xml.bind.JAXBElement;
+import jakarta.xml.bind.MarshalException;
 import java.io.ByteArrayOutputStream;
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.Collection;
 import javax.annotation.concurrent.NotThreadSafe;
-import javax.xml.bind.JAXBElement;
-import javax.xml.bind.MarshalException;
 import org.joda.time.DateTime;
 
 /** XML document <i>fragment</i> marshaller for RDE. */

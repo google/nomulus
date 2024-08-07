@@ -16,10 +16,10 @@ package google.registry.model.domain.superuser;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
 
+import jakarta.xml.bind.annotation.XmlElement;
+import jakarta.xml.bind.annotation.XmlRootElement;
 import java.util.Optional;
 import javax.annotation.Nullable;
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlRootElement;
 
 /** A superuser extension that may be present on domain update commands. */
 @XmlRootElement(name = "domainUpdate")
