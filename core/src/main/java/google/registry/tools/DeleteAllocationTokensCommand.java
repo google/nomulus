@@ -45,7 +45,7 @@ final class DeleteAllocationTokensCommand extends UpdateOrDeleteAllocationTokens
       description = "Allow deletion of allocation tokens with specified domains; defaults to false")
   private boolean withDomains;
 
-  private static final int BATCH_SIZE = 20;
+  private static final int BATCH_SIZE = 200;
   private static final Joiner JOINER = Joiner.on(", ");
 
   private ImmutableList<VKey<AllocationToken>> tokensToDelete;
