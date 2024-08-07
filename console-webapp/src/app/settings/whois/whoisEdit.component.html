@@ -132,6 +132,18 @@
         />
       </mat-form-field>
 
+      @if((userDataService.userData()?.globalRole || 'NONE') !== "NONE") {
+      <mat-form-field appearance="outline">
+        <mat-label>ICANN Referral Email: </mat-label>
+        <input
+          matInput
+          type="text"
+          [(ngModel)]="registrarInEdit.icannReferralEmail"
+          [ngModelOptions]="{ standalone: true }"
+        />
+      </mat-form-field>
+      }
+
       <button mat-flat-button color="primary" type="submit">Save</button>
     </form>
   </div>

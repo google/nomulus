@@ -104,6 +104,8 @@ public class WhoisRegistrarFieldsActionTest {
         ImmutableMap.of(
             "whoisServer",
             "whois.nic.google",
+            "icannReferralEmail",
+            "lol@sloth.test",
             "phoneNumber",
             "+1.4155552671",
             "faxNumber",
