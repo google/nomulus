@@ -17,7 +17,6 @@ package google.registry.ui.server.console.settings;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.registrar.RegistrarPocBase.Type.ADMIN;
-import static google.registry.model.registrar.RegistrarPocBase.Type.WHOIS;
 import static google.registry.testing.DatabaseHelper.createAdminUser;
 import static google.registry.testing.DatabaseHelper.insertInDb;
 import static google.registry.testing.DatabaseHelper.loadAllOf;
@@ -67,7 +66,7 @@ class ContactActionTest {
           + "\"emailAddress\":\"test.registrar1@example.com\","
           + "\"registrarId\":\"registrarId\","
           + "\"phoneNumber\":\"+1.9999999999\",\"faxNumber\":\"+1.9999999991\","
-          + "\"types\":[\"WHOIS\",\"ADMIN\"],\"visibleInWhoisAsAdmin\":true,"
+          + "\"types\":[\"ADMIN\"],\"visibleInWhoisAsAdmin\":true,"
           + "\"visibleInWhoisAsTech\":false,\"visibleInDomainWhoisAsAbuse\":false}";
 
   private static String jsonRegistrar2 =
@@ -75,7 +74,7 @@ class ContactActionTest {
           + "\"emailAddress\":\"test.registrar2@example.com\","
           + "\"registrarId\":\"registrarId\","
           + "\"phoneNumber\":\"+1.1234567890\",\"faxNumber\":\"+1.1234567891\","
-          + "\"types\":[\"WHOIS\",\"ADMIN\"],\"visibleInWhoisAsAdmin\":true,"
+          + "\"types\":[\"ADMIN\"],\"visibleInWhoisAsAdmin\":true,"
           + "\"visibleInWhoisAsTech\":false,\"visibleInDomainWhoisAsAbuse\":false}";
 
   private Registrar testRegistrar;
@@ -97,7 +96,7 @@ class ContactActionTest {
             .setEmailAddress("test.registrar1@example.com")
             .setPhoneNumber("+1.9999999999")
             .setFaxNumber("+1.9999999991")
-            .setTypes(ImmutableSet.of(WHOIS, ADMIN))
+            .setTypes(ImmutableSet.of(ADMIN))
             .setVisibleInWhoisAsAdmin(true)
             .setVisibleInWhoisAsTech(false)
             .setVisibleInDomainWhoisAsAbuse(false)
@@ -218,22 +217,22 @@ class ContactActionTest {
                         + "        {name=Test Registrar 1,"
                         + " emailAddress=test.registrar1@example.com, registrarId=registrarId,"
                         + " registryLockEmailAddress=null, phoneNumber=+1.9999999999,"
-                        + " faxNumber=+1.9999999991, types=[ADMIN, WHOIS],"
+                        + " faxNumber=+1.9999999991, types=[ADMIN],"
                         + " visibleInWhoisAsAdmin=true, visibleInWhoisAsTech=false,"
                         + " visibleInDomainWhoisAsAbuse=false,"
                         + " allowedToSetRegistryLockPassword=false}\n"
                         + "    REMOVED:\n"
                         + "        {name=Test Registrar 1, emailAddress=incorrect@email.com,"
                         + " registrarId=registrarId, registryLockEmailAddress=null,"
-                        + " phoneNumber=+1.9999999999, faxNumber=+1.9999999991, types=[WHOIS,"
-                        + " ADMIN], visibleInWhoisAsAdmin=true,"
+                        + " phoneNumber=+1.9999999999, faxNumber=+1.9999999991, types=[ADMIN],"
+                        + " visibleInWhoisAsAdmin=true,"
                         + " visibleInWhoisAsTech=false, visibleInDomainWhoisAsAbuse=false,"
                         + " allowedToSetRegistryLockPassword=false}\n"
                         + "    FINAL CONTENTS:\n"
                         + "        {name=Test Registrar 1,"
                         + " emailAddress=test.registrar1@example.com, registrarId=registrarId,"
                         + " registryLockEmailAddress=null, phoneNumber=+1.9999999999,"
-                        + " faxNumber=+1.9999999991, types=[ADMIN, WHOIS],"
+                        + " faxNumber=+1.9999999991, types=[ADMIN],"
                         + " visibleInWhoisAsAdmin=true, visibleInWhoisAsTech=false,"
                         + " visibleInDomainWhoisAsAbuse=false,"
                         + " allowedToSetRegistryLockPassword=false}\n")
