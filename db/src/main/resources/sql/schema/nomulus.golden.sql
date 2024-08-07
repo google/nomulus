@@ -1316,7 +1316,6 @@ CREATE TABLE public."TmchCrl" (
 --
 
 CREATE TABLE public."User" (
-    id bigint,
     email_address text NOT NULL,
     registry_lock_password_hash text,
     registry_lock_password_salt text,
@@ -1339,7 +1338,6 @@ CREATE TABLE public."UserUpdateHistory" (
     history_request_body text,
     history_type text NOT NULL,
     history_url text NOT NULL,
-    user_id bigint,
     email_address text NOT NULL,
     registry_lock_password_hash text,
     registry_lock_password_salt text,
@@ -1350,25 +1348,6 @@ CREATE TABLE public."UserUpdateHistory" (
     history_acting_user text NOT NULL,
     registry_lock_email_address text
 );
-
-
---
--- Name: User_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public."User_id_seq"
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: User_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public."User_id_seq" OWNED BY public."User".id;
 
 
 --
@@ -1458,13 +1437,6 @@ ALTER TABLE ONLY public."SignedMarkRevocationList" ALTER COLUMN revision_id SET 
 --
 
 ALTER TABLE ONLY public."Spec11ThreatMatch" ALTER COLUMN id SET DEFAULT nextval('public."SafeBrowsingThreat_id_seq"'::regclass);
-
-
---
--- Name: User id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public."User" ALTER COLUMN id SET DEFAULT nextval('public."User_id_seq"'::regclass);
 
 
 --
