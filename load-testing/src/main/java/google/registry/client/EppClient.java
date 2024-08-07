@@ -77,6 +77,8 @@ import org.joda.time.DateTime;
 @SuppressWarnings("FutureReturnValueIgnored")
 public class EppClient implements Runnable {
 
+  // TODO(b/354014191): Add loadtest handling for other EPP flows
+
   static {
     Security.addProvider(new BouncyCastleProvider());
   }
@@ -164,8 +166,9 @@ public class EppClient implements Runnable {
 
   @Parameter(
       names = {"--tld"},
-      description = "TLD to create domains on.")
-  private String tld = "test";
+      description = "TLD to create domains on.",
+      required = true)
+  private String tld = "loadtest";
 
   @Parameter(
       names = {"--force_terminate", "-ft"},
@@ -193,14 +196,17 @@ public class EppClient implements Runnable {
     ImmutableList.Builder<String> templatesList = ImmutableList.builder();
     ImmutableList.Builder<String> inputList = ImmutableList.builder();
     templatesList.add(readStringFromFile(LOGIN_FILE));
+    String randomContactString = generateRandomString(5);
+    if (domainCreates > 0) {
+      templatesList.add(
+          readStringFromFile(CONTACT_CREATE_FILE)
+              .replace("@@RANDOM_CONTACT@@", randomContactString));
+    }
     for (int i = 0; i < domainCreates; i++) {
       String randomString = generateRandomString(5);
       templatesList.add(
-          readStringFromFile(CONTACT_CREATE_FILE)
-              .replace("@@REPEAT_NUMBER@@", String.valueOf(i))
-              .replace("@@RANDOM@@", randomString));
-      templatesList.add(
           readStringFromFile(DOMAIN_CREATE_FILE)
+              .replace("@@RANDOM_CONTACT@@", randomContactString)
               .replace("@@REPEAT_NUMBER@@", String.valueOf(i))
               .replace("@@RANDOM@@", randomString));
     }
@@ -329,9 +335,14 @@ public class EppClient implements Runnable {
 
       List<ChannelFuture> channelFutures = new ArrayList<>();
 
-      // Three requests: hello (from the proxy), login and logout plus additional configured EPP
-      // requests.
-      int requestPerConnection = 3 + (domainCreates * 2);
+      // Three requests: hello (from the proxy), login and logout
+      int requestsPerConnection = 3;
+
+      // If testing domain creates, add the number of domain creates per connection plus the one
+      // contact created for each connection
+      if (domainCreates > 0) {
+        requestsPerConnection += domainCreates + 1;
+      }
 
       for (int i = 0; i < connections; i++) {
         bootstrap.attr(CHANNEL_NUMBER, i);
@@ -347,6 +358,11 @@ public class EppClient implements Runnable {
       }
 
       LinkedHashSet<Integer> killedConnections = new LinkedHashSet<>();
+      LinkedHashSet<Integer> incompleteConnections = new LinkedHashSet<>();
+      List<Long> requestDurations = new ArrayList<>();
+      ZonedDateTime startTime = null;
+      ZonedDateTime endTime = null;
+      int failedRequests = 0;
 
       // Wait for all channels to close.
       for (ChannelFuture channelFuture : channelFutures) {
@@ -365,10 +381,47 @@ public class EppClient implements Runnable {
         }
       }
 
+      for (ChannelFuture channelFuture : channelFutures) {
+        Channel channel = channelFuture.channel();
+        int channelNumber = channel.attr(CHANNEL_NUMBER).get();
+        int responsesReceived = channel.attr(RESPONSE_RECEIVED).get().size();
+        for (int i = 0; i < responsesReceived; i++) {
+          requestDurations.add(
+              Duration.between(
+                      channel.attr(REQUEST_SENT).get().get(i),
+                      channel.attr(RESPONSE_RECEIVED).get().get(i))
+                  .toMillis());
+        }
+        if (responsesReceived != requestsPerConnection) {
+          incompleteConnections.add(channelNumber);
+          failedRequests += (requestsPerConnection - channel.attr(REQUEST_SENT).get().size());
+        }
+        if (responsesReceived > 0) {
+          startTime = updateStartTime(channelFutures, channelNumber, startTime);
+          endTime = updateEndTime(channelFutures, channelNumber, endTime);
+        }
+      }
+
+      if (!incompleteConnections.isEmpty()) {
+        System.out.printf("%d incomplete connections: ", incompleteConnections.size());
+        for (int channelNumber : incompleteConnections) {
+          System.out.printf("Channel %d not finished\n", channelNumber);
+        }
+        System.out.print("\n");
+      }
+
       System.out.println();
       System.out.println("====== SUMMARY ======");
       System.out.printf("Number of connections: %d\n", connections);
-      System.out.printf("Number of requests per connection: %d\n", requestPerConnection);
+      System.out.printf("Number of requests per connection: %d\n", requestsPerConnection);
+      if (startTime != null && endTime != null) {
+        System.out.printf(
+            "Average Response QPS: %.2f\n",
+            (double) requestDurations.size()
+                * 1000.0
+                / Duration.between(startTime, endTime).toMillis());
+      }
+      System.out.printf("Number of incomplete connections: %d\n", incompleteConnections.size());
       if (!killedConnections.isEmpty()) {
         System.out.printf("Force killed connections (%d): ", killedConnections.size());
         for (int channelNumber : killedConnections) {
@@ -376,6 +429,7 @@ public class EppClient implements Runnable {
         }
         System.out.print("\n");
       }
+      System.out.printf("Number of Failed Requests: %d\n", failedRequests);
 
       eventLoopGroup.shutdownGracefully();
 
@@ -387,5 +441,26 @@ public class EppClient implements Runnable {
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
+  }
+
+  private ZonedDateTime updateStartTime(
+      List<ChannelFuture> channelFutures, int channelNumber, ZonedDateTime startTime) {
+    ZonedDateTime channelStartTime =
+        channelFutures.get(channelNumber).channel().attr(REQUEST_SENT).get().getFirst();
+    if (startTime == null || startTime.isAfter(channelStartTime)) {
+      return channelStartTime;
+    }
+    return startTime;
+  }
+
+  private ZonedDateTime updateEndTime(
+      List<ChannelFuture> channelFutures, int channelNumber, ZonedDateTime endTime) {
+    ZonedDateTime channelEndTime =
+        channelFutures.get(channelNumber).channel().attr(RESPONSE_RECEIVED).get().getLast();
+
+    if (endTime == null || endTime.isBefore(channelEndTime)) {
+      return channelEndTime;
+    }
+    return endTime;
   }
 }
