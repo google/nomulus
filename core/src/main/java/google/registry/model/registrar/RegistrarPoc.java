@@ -19,12 +19,12 @@ import com.google.common.annotations.VisibleForTesting;
 import google.registry.model.ImmutableObject;
 import google.registry.model.registrar.RegistrarPoc.RegistrarPocId;
 import google.registry.persistence.VKey;
+import jakarta.persistence.Access;
+import jakarta.persistence.AccessType;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.IdClass;
 import java.io.Serializable;
-import javax.persistence.Access;
-import javax.persistence.AccessType;
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.IdClass;
 
 /**
  * A contact for a Registrar. Note, equality, hashCode and comparable have been overridden to only

@@ -16,7 +16,7 @@ package google.registry.model.domain.bulktoken;
 
 import google.registry.model.ImmutableObject;
 import google.registry.model.eppinput.EppInput.CommandExtension;
-import javax.xml.bind.annotation.XmlRootElement;
+import jakarta.xml.bind.annotation.XmlRootElement;
 
 /** A bulk token extension that may be present on EPP domain commands. */
 @XmlRootElement(name = "info")
