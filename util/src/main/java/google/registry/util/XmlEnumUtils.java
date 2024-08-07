@@ -14,7 +14,7 @@
 
 package google.registry.util;
 
-import javax.xml.bind.annotation.XmlEnumValue;
+import jakarta.xml.bind.annotation.XmlEnumValue;
 
 /** Utility methods related to xml enums. */
 public class XmlEnumUtils {

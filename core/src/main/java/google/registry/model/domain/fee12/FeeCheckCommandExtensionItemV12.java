@@ -17,11 +17,11 @@ package google.registry.model.domain.fee12;
 import com.google.common.base.Ascii;
 import google.registry.model.domain.Period;
 import google.registry.model.domain.fee.FeeCheckCommandExtensionItem;
+import jakarta.xml.bind.annotation.XmlAttribute;
+import jakarta.xml.bind.annotation.XmlElement;
+import jakarta.xml.bind.annotation.XmlType;
 import java.util.Locale;
 import java.util.Optional;
-import javax.xml.bind.annotation.XmlAttribute;
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlType;
 import org.joda.money.CurrencyUnit;
 import org.joda.time.DateTime;
 

@@ -15,8 +15,8 @@
 package google.registry.model.common;
 
 import google.registry.model.ImmutableObject;
-import javax.persistence.Id;
-import javax.persistence.MappedSuperclass;
+import jakarta.persistence.Id;
+import jakarta.persistence.MappedSuperclass;
 
 /** A singleton entity in the database. */
 @MappedSuperclass

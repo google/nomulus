@@ -41,6 +41,20 @@ import google.registry.util.Clock;
 import google.registry.util.RegistryEnvironment;
 import google.registry.util.Retrier;
 import google.registry.util.SystemSleeper;
+import jakarta.persistence.CacheRetrieveMode;
+import jakarta.persistence.CacheStoreMode;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.EntityManagerFactory;
+import jakarta.persistence.EntityTransaction;
+import jakarta.persistence.FlushModeType;
+import jakarta.persistence.LockModeType;
+import jakarta.persistence.Parameter;
+import jakarta.persistence.PersistenceException;
+import jakarta.persistence.Query;
+import jakarta.persistence.TemporalType;
+import jakarta.persistence.TypedQuery;
+import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.metamodel.EntityType;
 import java.io.Serializable;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
@@ -60,18 +74,7 @@ import java.util.function.Supplier;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import javax.annotation.Nullable;
-import javax.persistence.EntityManager;
-import javax.persistence.EntityManagerFactory;
-import javax.persistence.EntityTransaction;
-import javax.persistence.FlushModeType;
-import javax.persistence.LockModeType;
-import javax.persistence.Parameter;
-import javax.persistence.PersistenceException;
-import javax.persistence.Query;
-import javax.persistence.TemporalType;
-import javax.persistence.TypedQuery;
-import javax.persistence.criteria.CriteriaQuery;
-import javax.persistence.metamodel.EntityType;
+import org.hibernate.Session;
 import org.hibernate.cfg.Environment;
 import org.joda.time.DateTime;
 
@@ -214,6 +217,10 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
     }
     TransactionInfo txnInfo = transactionInfo.get();
     txnInfo.entityManager = emf.createEntityManager();
+    if (readOnly) {
+      // Disable Hibernate's dirty object check on flushing, it has become more aggressive in v6.
+      txnInfo.entityManager.unwrap(Session.class).setDefaultReadOnly(true);
+    }
     EntityTransaction txn = txnInfo.entityManager.getTransaction();
     try {
       txn.begin();
@@ -734,6 +741,44 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
 
     DetachingTypedQuery(TypedQuery<T> delegate) {
       this.delegate = delegate;
+    }
+
+    @Override
+    public Integer getTimeout() {
+      return delegate.getTimeout();
+    }
+
+    @Override
+    public CacheRetrieveMode getCacheRetrieveMode() {
+      return delegate.getCacheRetrieveMode();
+    }
+
+    @Override
+    public CacheStoreMode getCacheStoreMode() {
+      return delegate.getCacheStoreMode();
+    }
+
+    @Override
+    public TypedQuery<T> setTimeout(Integer timeout) {
+      delegate.setTimeout(timeout);
+      return this;
+    }
+
+    @Override
+    public TypedQuery<T> setCacheStoreMode(CacheStoreMode mode) {
+      delegate.setCacheStoreMode(mode);
+      return this;
+    }
+
+    @Override
+    public TypedQuery<T> setCacheRetrieveMode(CacheRetrieveMode mode) {
+      delegate.setCacheRetrieveMode(mode);
+      return this;
+    }
+
+    @Override
+    public T getSingleResultOrNull() {
+      return delegate.getSingleResultOrNull();
     }
 
     @Override

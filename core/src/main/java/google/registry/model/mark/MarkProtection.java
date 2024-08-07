@@ -18,8 +18,8 @@ import static google.registry.util.CollectionUtils.nullToEmptyImmutableCopy;
 
 import com.google.common.collect.ImmutableList;
 import google.registry.model.ImmutableObject;
+import jakarta.xml.bind.annotation.XmlElement;
 import java.util.List;
-import javax.xml.bind.annotation.XmlElement;
 
 /** A country and region of a country where a mark is protected. */
 public class MarkProtection extends ImmutableObject {

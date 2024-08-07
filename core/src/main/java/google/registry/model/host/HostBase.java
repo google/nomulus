@@ -26,14 +26,16 @@ import google.registry.model.EppResource;
 import google.registry.model.domain.Domain;
 import google.registry.model.transfer.TransferData;
 import google.registry.persistence.VKey;
+import google.registry.persistence.converter.InetAddressSetUserType;
+import jakarta.persistence.Access;
+import jakarta.persistence.AccessType;
+import jakarta.persistence.Embeddable;
+import jakarta.persistence.MappedSuperclass;
 import java.net.InetAddress;
 import java.util.Optional;
 import java.util.Set;
 import javax.annotation.Nullable;
-import javax.persistence.Access;
-import javax.persistence.AccessType;
-import javax.persistence.Embeddable;
-import javax.persistence.MappedSuperclass;
+import org.hibernate.annotations.Type;
 import org.joda.time.DateTime;
 
 /**
@@ -42,7 +44,7 @@ import org.joda.time.DateTime;
  * <p>A host's {@link TransferData} is stored on the superordinate domain. Non-subordinate hosts
  * don't carry a full set of TransferData; all they have is lastTransferTime.
  *
- * <p>This class deliberately does not include an {@link javax.persistence.Id} so that any
+ * <p>This class deliberately does not include an {@link jakarta.persistence.Id} so that any
  * foreign-keyed fields can refer to the proper parent entity's ID, whether we're storing this in
  * the DB itself or as part of another entity
  *
@@ -63,6 +65,7 @@ public class HostBase extends EppResource {
   String hostName;
 
   /** IP Addresses for this host. Can be null if this is an external host. */
+  @Type(InetAddressSetUserType.class)
   Set<InetAddress> inetAddresses;
 
   /** The superordinate domain of this host, or null if this is an external host. */

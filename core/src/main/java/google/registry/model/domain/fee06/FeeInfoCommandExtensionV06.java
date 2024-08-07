@@ -17,9 +17,9 @@ package google.registry.model.domain.fee06;
 import google.registry.model.domain.fee.FeeExtensionCommandDescriptor;
 import google.registry.model.domain.fee.FeeQueryCommandExtensionItem;
 import google.registry.model.eppinput.EppInput.CommandExtension;
+import jakarta.xml.bind.annotation.XmlRootElement;
+import jakarta.xml.bind.annotation.XmlType;
 import java.util.Optional;
-import javax.xml.bind.annotation.XmlRootElement;
-import javax.xml.bind.annotation.XmlType;
 import org.joda.money.CurrencyUnit;
 import org.joda.time.DateTime;
 

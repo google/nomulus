@@ -24,10 +24,10 @@ import google.registry.model.domain.fee.FeeCheckCommandExtensionItem;
 import google.registry.model.domain.fee.FeeCheckResponseExtensionItem;
 import google.registry.model.domain.fee.FeeExtensionCommandDescriptor;
 import google.registry.model.domain.fee11.FeeCheckCommandExtensionV11.FeeCheckCommandExtensionItemV11;
+import jakarta.xml.bind.annotation.XmlElement;
+import jakarta.xml.bind.annotation.XmlRootElement;
+import jakarta.xml.bind.annotation.XmlType;
 import java.util.Optional;
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlRootElement;
-import javax.xml.bind.annotation.XmlType;
 import org.joda.money.CurrencyUnit;
 import org.joda.time.DateTime;
 
