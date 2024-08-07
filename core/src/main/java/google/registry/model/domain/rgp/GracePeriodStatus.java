@@ -19,10 +19,10 @@ import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import com.google.common.collect.ImmutableMap;
 import google.registry.model.adapters.EnumToAttributeAdapter;
 import google.registry.model.adapters.EnumToAttributeAdapter.EppEnum;
+import jakarta.xml.bind.annotation.XmlAttribute;
+import jakarta.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 import java.util.stream.Stream;
 import javax.annotation.Nullable;
-import javax.xml.bind.annotation.XmlAttribute;
-import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 
 /**
  * Represents a Registry Grace Period status, as defined by

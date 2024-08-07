@@ -22,13 +22,13 @@ import static java.util.logging.Logger.getLogger;
 
 import com.google.common.testing.TestLogHandler;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaUnitTestExtension;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
-import javax.persistence.Entity;
-import javax.persistence.Id;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

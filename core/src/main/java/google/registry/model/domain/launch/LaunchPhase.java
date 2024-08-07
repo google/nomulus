@@ -17,9 +17,9 @@ package google.registry.model.domain.launch;
 import static java.util.Objects.hash;
 
 import google.registry.model.ImmutableObject;
+import jakarta.xml.bind.annotation.XmlAttribute;
+import jakarta.xml.bind.annotation.XmlValue;
 import java.util.Objects;
-import javax.xml.bind.annotation.XmlAttribute;
-import javax.xml.bind.annotation.XmlValue;
 
 /**
  * The launch phase of the TLD being addressed by this command.
