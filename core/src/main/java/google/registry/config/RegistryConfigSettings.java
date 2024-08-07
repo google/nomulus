@@ -114,6 +114,7 @@ public class RegistryConfigSettings {
     public boolean requireSslCertificates;
     public double sunriseDomainCreateDiscount;
     public Set<String> tieredPricingPromotionRegistrarIds;
+    public boolean useMinimumDataset;
   }
 
   /** Configuration for Hibernate. */
