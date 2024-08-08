@@ -204,6 +204,7 @@ public final class RequestHandlerTest {
     handler =
         RequestHandler.create(
             Component.class,
+            "registry.test",
             () ->
                 new Builder() {
                   @Override

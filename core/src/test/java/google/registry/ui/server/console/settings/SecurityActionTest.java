@@ -38,8 +38,8 @@ import google.registry.testing.ConsoleApiParamsUtils;
 import google.registry.testing.DatabaseHelper;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeResponse;
-import google.registry.ui.server.registrar.ConsoleApiParams;
-import google.registry.ui.server.registrar.RegistrarConsoleModule;
+import google.registry.ui.server.console.ConsoleApiParams;
+import google.registry.ui.server.console.ConsoleModule;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.StringReader;
@@ -108,7 +108,7 @@ class SecurityActionTest {
         .when(consoleApiParams.request())
         .getReader();
     Optional<Registrar> maybeRegistrar =
-        RegistrarConsoleModule.provideRegistrar(
+        ConsoleModule.provideRegistrar(
             GSON, RequestModule.provideJsonBody(consoleApiParams.request(), GSON));
     return new SecurityAction(
         consoleApiParams, certificateChecker, registrarAccessor, registrarId, maybeRegistrar);

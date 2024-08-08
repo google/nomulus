@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package google.registry.ui.server.registrar;
+package google.registry.ui.server.console;
 
 import static google.registry.request.RequestParameters.extractBooleanParameter;
 import static google.registry.request.RequestParameters.extractOptionalIntParameter;
@@ -41,8 +41,8 @@ import org.joda.time.DateTime;
 
 /** Dagger module for the Registrar Console parameters. */
 @Module
-public final class RegistrarConsoleModule {
-  static final String PARAM_CLIENT_ID = "clientId";
+public final class ConsoleModule {
+  public static final String PARAM_CLIENT_ID = "clientId";
 
   @Provides
   @RequestScope

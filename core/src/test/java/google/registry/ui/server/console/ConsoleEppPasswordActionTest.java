@@ -44,8 +44,6 @@ import google.registry.testing.ConsoleApiParamsUtils;
 import google.registry.testing.FakeResponse;
 import google.registry.tools.GsonUtils;
 import google.registry.ui.server.console.ConsoleEppPasswordAction.EppPasswordData;
-import google.registry.ui.server.registrar.ConsoleApiParams;
-import google.registry.ui.server.registrar.RegistrarConsoleModule;
 import google.registry.util.EmailMessage;
 import jakarta.mail.internet.AddressException;
 import jakarta.mail.internet.InternetAddress;
@@ -167,7 +165,7 @@ class ConsoleEppPasswordActionTest {
         .when(consoleApiParams.request())
         .getReader();
     Optional<EppPasswordData> maybePasswordChangeRequest =
-        RegistrarConsoleModule.provideEppPasswordChangeRequest(
+        ConsoleModule.provideEppPasswordChangeRequest(
             GSON, RequestModule.provideJsonBody(consoleApiParams.request(), GSON));
 
     return new ConsoleEppPasswordAction(

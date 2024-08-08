@@ -24,15 +24,16 @@ import google.registry.model.console.ConsolePermission;
 import google.registry.model.console.User;
 import google.registry.model.domain.Domain;
 import google.registry.request.Action;
+import google.registry.request.Action.GkeService;
 import google.registry.request.Parameter;
 import google.registry.request.auth.Auth;
-import google.registry.ui.server.registrar.ConsoleApiParams;
 import java.util.Optional;
 import javax.inject.Inject;
 
 /** Returns a JSON representation of a domain to the registrar console. */
 @Action(
     service = Action.Service.DEFAULT,
+    gkeService = GkeService.CONSOLE,
     path = ConsoleDomainGetAction.PATH,
     auth = Auth.AUTH_PUBLIC_LOGGED_IN)
 public class ConsoleDomainGetAction extends ConsoleApiAction {

@@ -26,8 +26,8 @@ import static org.mockito.Mockito.when;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken.Payload;
 import com.google.api.client.json.webtoken.JsonWebSignature;
 import com.google.api.client.json.webtoken.JsonWebSignature.Header;
-import com.google.auth.oauth2.TokenVerifier;
 import com.google.auth.oauth2.TokenVerifier.VerificationException;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import dagger.Component;
 import dagger.Module;
@@ -41,6 +41,7 @@ import google.registry.request.auth.AuthSettings.AuthLevel;
 import google.registry.request.auth.OidcTokenAuthenticationMechanism.IapOidcAuthenticationMechanism;
 import google.registry.request.auth.OidcTokenAuthenticationMechanism.RegularOidcAuthenticationMechanism;
 import jakarta.servlet.http.HttpServletRequest;
+import java.util.Map;
 import javax.inject.Singleton;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -59,13 +60,13 @@ public class OidcTokenAuthenticationMechanismTest {
   private final Payload payload = new Payload();
   private final JsonWebSignature jwt =
       new JsonWebSignature(new Header(), payload, new byte[0], new byte[0]);
-  private final TokenVerifier tokenVerifier = mock(TokenVerifier.class);
   private final HttpServletRequest request = mock(HttpServletRequest.class);
 
   private User user;
   private AuthResult authResult;
   private OidcTokenAuthenticationMechanism authenticationMechanism =
-      new OidcTokenAuthenticationMechanism(serviceAccounts, tokenVerifier, null, e -> rawToken) {};
+      new OidcTokenAuthenticationMechanism(
+          serviceAccounts, request -> rawToken, (service, token) -> jwt) {};
 
   @RegisterExtension
   public final JpaTestExtensions.JpaUnitTestExtension jpaExtension =
@@ -73,7 +74,6 @@ public class OidcTokenAuthenticationMechanismTest {
 
   @BeforeEach
   void beforeEach() throws Exception {
-    when(tokenVerifier.verify(rawToken)).thenReturn(jwt);
     payload.setEmail(email);
     payload.setSubject(gaiaId);
     user = createAdminUser(email);
@@ -93,28 +93,23 @@ public class OidcTokenAuthenticationMechanismTest {
   @Test
   void testAuthenticate_noTokenFromRequest() {
     authenticationMechanism =
-        new OidcTokenAuthenticationMechanism(serviceAccounts, tokenVerifier, null, e -> null) {};
+        new OidcTokenAuthenticationMechanism(
+            serviceAccounts, e -> null, (service, token) -> jwt) {};
     authResult = authenticationMechanism.authenticate(request);
     assertThat(authResult).isEqualTo(AuthResult.NOT_AUTHENTICATED);
   }
 
   @Test
   void testAuthenticate_invalidToken() throws Exception {
-    when(tokenVerifier.verify(rawToken)).thenThrow(new VerificationException("Bad token"));
-    authResult = authenticationMechanism.authenticate(request);
-    assertThat(authResult).isEqualTo(AuthResult.NOT_AUTHENTICATED);
-  }
-
-  @Test
-  void testAuthenticate_fallbackVerifier() throws Exception {
-    TokenVerifier fallbackVerifier = mock(TokenVerifier.class);
-    when(tokenVerifier.verify(rawToken)).thenThrow(new VerificationException("Bad token"));
-    when(fallbackVerifier.verify(rawToken)).thenReturn(jwt);
     authenticationMechanism =
         new OidcTokenAuthenticationMechanism(
-            serviceAccounts, tokenVerifier, fallbackVerifier, e -> rawToken) {};
+            serviceAccounts,
+            e -> null,
+            (service, token) -> {
+              throw new VerificationException("Bad token");
+            }) {};
     authResult = authenticationMechanism.authenticate(request);
-    assertThat(authResult.isAuthenticated()).isEqualTo(true);
+    assertThat(authResult).isEqualTo(AuthResult.NOT_AUTHENTICATED);
   }
 
   @Test
@@ -233,9 +228,9 @@ public class OidcTokenAuthenticationMechanismTest {
 
     @Provides
     @Singleton
-    @Config("fallbackOauthClientId")
-    String provideFallbackOauthClientId() {
-      return "fallback-client-id";
+    @Config("backendServiceIds")
+    Map<String, Long> provideBackendServiceIds() {
+      return ImmutableMap.of();
     }
   }
 }

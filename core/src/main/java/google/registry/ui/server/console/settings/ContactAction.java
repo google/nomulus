@@ -31,11 +31,12 @@ import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarPoc;
 import google.registry.persistence.transaction.QueryComposer.Comparator;
 import google.registry.request.Action;
+import google.registry.request.Action.GkeService;
 import google.registry.request.Parameter;
 import google.registry.request.auth.Auth;
 import google.registry.ui.forms.FormException;
 import google.registry.ui.server.console.ConsoleApiAction;
-import google.registry.ui.server.registrar.ConsoleApiParams;
+import google.registry.ui.server.console.ConsoleApiParams;
 import google.registry.ui.server.registrar.RegistrarSettingsAction;
 import java.util.Collections;
 import java.util.Optional;
@@ -43,6 +44,7 @@ import javax.inject.Inject;
 
 @Action(
     service = Action.Service.DEFAULT,
+    gkeService = GkeService.CONSOLE,
     path = ContactAction.PATH,
     method = {GET, POST},
     auth = Auth.AUTH_PUBLIC_LOGGED_IN)

@@ -26,10 +26,10 @@ import google.registry.model.console.ConsolePermission;
 import google.registry.model.console.User;
 import google.registry.model.registrar.Registrar;
 import google.registry.request.Action;
+import google.registry.request.Action.GkeService;
 import google.registry.request.HttpException.BadRequestException;
 import google.registry.request.Parameter;
 import google.registry.request.auth.Auth;
-import google.registry.ui.server.registrar.ConsoleApiParams;
 import google.registry.util.DomainNameUtils;
 import google.registry.util.RegistryEnvironment;
 import java.util.Optional;
@@ -38,6 +38,7 @@ import javax.inject.Inject;
 
 @Action(
     service = Action.Service.DEFAULT,
+    gkeService = GkeService.CONSOLE,
     path = ConsoleUpdateRegistrarAction.PATH,
     method = {POST},
     auth = Auth.AUTH_PUBLIC_LOGGED_IN)

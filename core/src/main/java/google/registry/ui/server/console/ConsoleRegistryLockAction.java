@@ -35,11 +35,11 @@ import google.registry.model.domain.RegistryLock;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.tld.RegistryLockDao;
 import google.registry.request.Action;
+import google.registry.request.Action.GkeService;
 import google.registry.request.Parameter;
 import google.registry.request.Response;
 import google.registry.request.auth.Auth;
 import google.registry.tools.DomainLockUtils;
-import google.registry.ui.server.registrar.ConsoleApiParams;
 import google.registry.util.EmailMessage;
 import jakarta.mail.internet.AddressException;
 import jakarta.mail.internet.InternetAddress;
@@ -56,6 +56,7 @@ import org.joda.time.Duration;
  */
 @Action(
     service = Action.Service.DEFAULT,
+    gkeService = GkeService.CONSOLE,
     path = ConsoleRegistryLockAction.PATH,
     method = {GET, POST},
     auth = Auth.AUTH_PUBLIC_LOGGED_IN)

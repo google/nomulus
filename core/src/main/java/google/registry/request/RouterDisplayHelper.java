@@ -21,6 +21,7 @@ import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Streams;
+import java.util.Comparator;
 import java.util.Map;
 
 /**
@@ -37,6 +38,7 @@ import java.util.Map;
  * the content to be displayed. The columns are:
  *
  * <ol>
+ *   <li>the GKE service this action lives on
  *   <li>the URL path which maps to this action (with a "(*)" after it if the prefix flag is set)
  *   <li>the simple name of the action class
  *   <li>the allowable HTTP methods
@@ -49,12 +51,13 @@ import java.util.Map;
  */
 public class RouterDisplayHelper {
 
+  private static final String SERVICE = "service";
   private static final String PATH = "path";
   private static final String CLASS = "class";
   private static final String METHODS = "methods";
   private static final String MINIMUM_LEVEL = "minLevel";
 
-  private static final String FORMAT = "%%-%ds %%-%ds %%-%ds %%-2s %%-%ds %%s";
+  private static final String FORMAT = "%%-%ds %%-%ds %%-%ds %%-%ds %%-2s %%-%ds %%s";
 
   /** Returns a string representation of the routing map in the specified component. */
   public static String extractHumanReadableRoutesFromComponent(Class<?> componentClass) {
@@ -76,6 +79,7 @@ public class RouterDisplayHelper {
   private static String getFormatString(Map<String, Integer> columnWidths) {
     return String.format(
         FORMAT,
+        columnWidths.get(SERVICE),
         columnWidths.get(PATH),
         columnWidths.get(CLASS),
         columnWidths.get(METHODS),
@@ -84,18 +88,13 @@ public class RouterDisplayHelper {
 
   private static String headerToString(String formatString) {
     return String.format(
-        formatString,
-        "PATH",
-        "CLASS",
-        "METHODS",
-        "OK",
-        "MIN",
-        "USER_POLICY");
+        formatString, "SERVICE", "PATH", "CLASS", "METHODS", "OK", "MIN", "USER_POLICY");
   }
 
   private static String routeToString(Route route, String formatString) {
     return String.format(
         formatString,
+        Action.ServiceGetter.get(route.action()).name(),
         route.action().isPrefix() ? (route.action().path() + "(*)") : route.action().path(),
         route.actionClass().getSimpleName(),
         Joiner.on(",").join(route.action().method()),
@@ -107,12 +106,17 @@ public class RouterDisplayHelper {
   private static String formatRoutes(Iterable<Route> routes) {
 
     // Use the column header length as a minimum.
+    int serviceWidth = 7;
     int pathWidth = 4;
     int classWidth = 5;
     int methodsWidth = 7;
     int minLevelWidth = 3;
     for (Route route : routes) {
-      int len =
+      int len = Action.ServiceGetter.get(route.action()).name().length();
+      if (len > serviceWidth) {
+        serviceWidth = len;
+      }
+      len =
           route.action().isPrefix()
               ? (route.action().path().length() + 3)
               : route.action().path().length();
@@ -135,6 +139,7 @@ public class RouterDisplayHelper {
     final String formatString =
         getFormatString(
             new ImmutableMap.Builder<String, Integer>()
+                .put(SERVICE, serviceWidth)
                 .put(PATH, pathWidth)
                 .put(CLASS, classWidth)
                 .put(METHODS, methodsWidth)
@@ -143,6 +148,9 @@ public class RouterDisplayHelper {
     return headerToString(formatString)
         + String.format("%n")
         + Streams.stream(routes)
+            .sorted(
+                Comparator.comparing(
+                    (Route route) -> Action.ServiceGetter.get(route.action()).ordinal()))
             .map(route -> routeToString(route, formatString))
             .collect(joining(String.format("%n")));
   }

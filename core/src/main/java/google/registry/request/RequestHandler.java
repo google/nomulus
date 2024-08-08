@@ -22,14 +22,17 @@ import static jakarta.servlet.http.HttpServletResponse.SC_METHOD_NOT_ALLOWED;
 import static jakarta.servlet.http.HttpServletResponse.SC_NOT_FOUND;
 
 import com.google.common.flogger.FluentLogger;
+import google.registry.request.Action.GkeService;
 import google.registry.request.auth.AuthResult;
 import google.registry.request.auth.RequestAuthenticator;
 import google.registry.util.NonFinalForTesting;
+import google.registry.util.RegistryEnvironment;
 import google.registry.util.SystemClock;
 import google.registry.util.TypeUtils.TypeInstantiator;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.Objects;
 import java.util.Optional;
 import javax.annotation.Nullable;
 import javax.inject.Provider;
@@ -69,6 +72,7 @@ public class RequestHandler<C> {
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
   private final Router router;
+  @Nullable private final String baseDomain;
   private final Provider<? extends RequestComponentBuilder<C>> requestComponentBuilderProvider;
   private final RequestAuthenticator requestAuthenticator;
   private final SystemClock clock = new SystemClock();
@@ -91,22 +95,22 @@ public class RequestHandler<C> {
   protected RequestHandler(
       Provider<? extends RequestComponentBuilder<C>> requestComponentBuilderProvider,
       RequestAuthenticator requestAuthenticator) {
-    this(null, requestComponentBuilderProvider, requestAuthenticator);
+    this(null, null, requestComponentBuilderProvider, requestAuthenticator);
   }
 
   /** Creates a new RequestHandler with an explicit component class for test purposes. */
   public static <C> RequestHandler<C> create(
       Class<C> component,
+      @Nullable String baseDomain,
       Provider<? extends RequestComponentBuilder<C>> requestComponentBuilderProvider,
       RequestAuthenticator requestAuthenticator) {
     return new RequestHandler<>(
-        checkNotNull(component),
-        requestComponentBuilderProvider,
-        requestAuthenticator);
+        checkNotNull(component), baseDomain, requestComponentBuilderProvider, requestAuthenticator);
   }
 
   private RequestHandler(
       @Nullable Class<C> component,
+      @Nullable String baseDomain,
       Provider<? extends RequestComponentBuilder<C>> requestComponentBuilderProvider,
       RequestAuthenticator requestAuthenticator) {
     // If the component class isn't explicitly provided, infer it from the class's own typing.
@@ -114,6 +118,7 @@ public class RequestHandler<C> {
     // preserved at runtime, so only expose that option via the protected constructor.
     this.router = Router.create(
         component != null ? component : new TypeInstantiator<C>(getClass()){}.getExactType());
+    this.baseDomain = baseDomain;
     this.requestComponentBuilderProvider = checkNotNull(requestComponentBuilderProvider);
     this.requestAuthenticator = checkNotNull(requestAuthenticator);
   }
@@ -136,6 +141,17 @@ public class RequestHandler<C> {
       logger.atInfo().log("No action found for: %s", path);
       rsp.sendError(SC_NOT_FOUND);
       return;
+    }
+    if (RegistryEnvironment.isOnJetty()) {
+      GkeService service = Action.ServiceGetter.get(route.get().action());
+      String expectedDomain = String.format("%s.%s", service.getService(), baseDomain);
+      String actualDomain = req.getServerName();
+      if (!Objects.equals(actualDomain, expectedDomain)) {
+        logger.atWarning().log(
+            "Actual domain %s does not match expected domain %s", actualDomain, expectedDomain);
+        rsp.sendError(SC_NOT_FOUND);
+        return;
+      }
     }
     if (!route.get().isMethodAllowed(method)) {
       logger.atWarning().log("Method %s not allowed for: %s", method, path);

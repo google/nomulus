@@ -45,8 +45,8 @@ import google.registry.request.RequestModule;
 import google.registry.request.auth.AuthResult;
 import google.registry.testing.ConsoleApiParamsUtils;
 import google.registry.testing.FakeResponse;
-import google.registry.ui.server.registrar.ConsoleApiParams;
-import google.registry.ui.server.registrar.RegistrarConsoleModule;
+import google.registry.ui.server.console.ConsoleApiParams;
+import google.registry.ui.server.console.ConsoleModule;
 import google.registry.util.EmailMessage;
 import jakarta.mail.internet.AddressException;
 import jakarta.mail.internet.InternetAddress;
@@ -296,7 +296,7 @@ class ContactActionTest {
           .when(consoleApiParams.request())
           .getReader();
       Optional<ImmutableSet<RegistrarPoc>> maybeContacts =
-          RegistrarConsoleModule.provideContacts(
+          ConsoleModule.provideContacts(
               GSON, RequestModule.provideJsonBody(consoleApiParams.request(), GSON));
       return new ContactAction(consoleApiParams, GSON, registrarId, maybeContacts);
     }

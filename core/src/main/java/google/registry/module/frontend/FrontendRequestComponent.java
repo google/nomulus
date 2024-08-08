@@ -29,6 +29,7 @@ import google.registry.ui.server.console.ConsoleDomainGetAction;
 import google.registry.ui.server.console.ConsoleDomainListAction;
 import google.registry.ui.server.console.ConsoleDumDownloadAction;
 import google.registry.ui.server.console.ConsoleEppPasswordAction;
+import google.registry.ui.server.console.ConsoleModule;
 import google.registry.ui.server.console.ConsoleRegistryLockAction;
 import google.registry.ui.server.console.ConsoleRegistryLockVerifyAction;
 import google.registry.ui.server.console.ConsoleUpdateRegistrarAction;
@@ -41,7 +42,6 @@ import google.registry.ui.server.registrar.ConsoleOteSetupAction;
 import google.registry.ui.server.registrar.ConsoleRegistrarCreatorAction;
 import google.registry.ui.server.registrar.ConsoleUiAction;
 import google.registry.ui.server.registrar.OteStatusAction;
-import google.registry.ui.server.registrar.RegistrarConsoleModule;
 import google.registry.ui.server.registrar.RegistrarSettingsAction;
 import google.registry.ui.server.registrar.RegistryLockGetAction;
 import google.registry.ui.server.registrar.RegistryLockPostAction;
@@ -54,7 +54,7 @@ import google.registry.ui.server.registrar.RegistryLockVerifyAction;
       BatchModule.class,
       DnsModule.class,
       EppTlsModule.class,
-      RegistrarConsoleModule.class,
+      ConsoleModule.class,
       RequestModule.class,
       WhiteboxModule.class,
     })
