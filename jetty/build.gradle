@@ -85,7 +85,7 @@ tasks.register('run', JavaExec) {
 tasks.register('deployNomulus', Exec) {
     dependsOn('pushNomulusImage', ':proxy:pushProxyImage')
     configure verifyDeploymentConfig
-    commandLine './deploy-nomulus-for-env.sh', "${rootProject.environment}"
+    commandLine './deploy-nomulus-for-env.sh', "${rootProject.environment}", "${rootProject.baseDomain}"
 }
 
 project.build.dependsOn(tasks.named('buildNomulusImage'))

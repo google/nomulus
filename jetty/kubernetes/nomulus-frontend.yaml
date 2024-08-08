@@ -1,21 +1,19 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: nomulus
-  labels:
-    app: nomulus
+  name: frontend
 spec:
   selector:
     matchLabels:
-      app: nomulus
+      service: frontend
   template:
     metadata:
       labels:
-        app: nomulus
+        service: frontend
     spec:
       serviceAccountName: nomulus
       containers:
-      - name: nomulus
+      - name: frontend
         image: gcr.io/GCP_PROJECT/nomulus
         ports:
         - containerPort: 8080
@@ -50,14 +48,12 @@ spec:
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
-  name: nomulus
-  labels:
-    app: nomulus
+  name: frontend
 spec:
   scaleTargetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: nomulus
+    name: frontend
   minReplicas: 1
   maxReplicas: 20
   metrics:
@@ -67,4 +63,26 @@ spec:
         target:
           type: Utilization
           averageUtilization: 100
-
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend
+spec:
+  selector:
+    service: frontend
+  ports:
+    - port: 80
+      targetPort: http
+      name: http
+    - port: 43
+      targetPort: whois
+      name: whois
+    - port: 700
+      targetPort: epp
+      name: epp
+---
+apiVersion: net.gke.io/v1
+kind: ServiceExport
+metadata:
+  name: frontend
