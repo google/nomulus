@@ -18,7 +18,11 @@
       <mat-icon>edit</mat-icon>
       Edit
     </button>
-    <button mat-icon-button aria-label="Delete Contact">
+    <button
+      mat-icon-button
+      aria-label="Delete Contact"
+      (click)="deleteContact()"
+    >
       <mat-icon>delete</mat-icon>
     </button>
     }
