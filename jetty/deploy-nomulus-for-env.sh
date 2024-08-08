@@ -35,8 +35,12 @@ do
   sed s/ENVIRONMENT/${environment}/g | \
   kubectl apply -f -
   kubectl apply -f "./kubernetes/nomulus-service.yaml"
-  #kubectl apply -f "./kubernetes/nomulus-gateway.yaml"
   # Kills all running pods, new pods created will be pulling the new image.
   kubectl delete pods --all
+  # The multi-cluster gateway is only deployed to one cluster (the one in the US).
+  if [[ "${parts[1]}" == us-* ]]
+  then
+    kubectl apply -f "./kubernetes/nomulus-gateway.yaml"
+  fi
 done < <(gcloud container clusters list --project ${project} | grep nomulus)
 kubectl config use-context "$current_context"
