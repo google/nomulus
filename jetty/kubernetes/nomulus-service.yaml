@@ -15,8 +15,8 @@ spec:
     - port: 700
       targetPort: epp
       name: epp
-#---
-#kind: ServiceExport
-#apiVersion: net.gke.io/v1
-#metadata:
-#  name: nomulus
+---
+kind: ServiceExport
+apiVersion: net.gke.io/v1
+metadata:
+  name: nomulus
