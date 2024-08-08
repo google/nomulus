@@ -102,9 +102,11 @@ interface RegistryComponent {
   class RegistryModule {
     @Provides
     static RequestHandler<RequestComponent> provideRequestHandler(
+        @Config("baseDomain") String baseDomain,
         Provider<RequestComponent.Builder> componentProvider,
         RequestAuthenticator requestAuthenticator) {
-      return RequestHandler.create(RequestComponent.class, componentProvider, requestAuthenticator);
+      return RequestHandler.create(
+          RequestComponent.class, baseDomain, componentProvider, requestAuthenticator);
     }
   }
 }

@@ -1,0 +1,44 @@
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: HTTPRoute
+metadata:
+  name: pubapi
+spec:
+  parentRefs:
+  - kind: Gateway
+    name: nomulus
+  hostnames:
+    - "pubapi.BASE_DOMAIN"
+  rules:
+  - matches:
+    - path:
+        type: PathPrefix
+        value: /_dr/whois
+    - path:
+        type: PathPrefix
+        value: /check
+    - path:
+        type: PathPrefix
+        value: /whois
+    - path:
+        type: PathPrefix
+        value: /rdap
+    backendRefs:
+    - group: net.gke.io
+      kind: ServiceImport
+      name: pubapi
+      port: 80
+---
+apiVersion: networking.gke.io/v1
+kind: HealthCheckPolicy
+metadata:
+  name: pubapi
+spec:
+  default:
+    config:
+      type: HTTP
+      httpHealthCheck:
+        requestPath: /healthz/
+  targetRef:
+    group: net.gke.io
+    kind: ServiceImport
+    name: pubapi
