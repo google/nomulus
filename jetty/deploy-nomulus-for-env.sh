@@ -27,7 +27,7 @@ project="domain-registry-"${environment}
 current_context=$(kubectl config current-context)
 while read line
 do
-  parts=(${line})
+  parts=("${line}")
   echo "Updating cluster ${parts[0]} in location ${parts[1]}..."
   gcloud container clusters get-credentials "${parts[0]}" \
     --project "${project}" --location "${parts[1]}"
