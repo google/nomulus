@@ -5,9 +5,13 @@ metadata:
 spec:
   gatewayClassName: gke-l7-global-external-managed-mc
   listeners:
-  - name: http
-    protocol: HTTP
-    port: 80
+  - name: https
+    protocol: HTTPS
+    port: 443
+    tls:
+      mode: Terminate
+      options:
+        networking.gke.io/pre-shared-certs: nomulus
     allowedRoutes:
       kinds:
       - kind: HTTPRoute
