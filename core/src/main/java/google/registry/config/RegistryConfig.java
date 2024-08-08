@@ -120,6 +120,18 @@ public final class RegistryConfig {
     }
 
     @Provides
+    @Config("backendServiceIds")
+    public static Map<String, Long> provideBackendServiceIds(RegistryConfigSettings config) {
+      return config.gcpProject.backendServiceIds;
+    }
+
+    @Provides
+    @Config("baseDomain")
+    public static String provideBaseDomain(RegistryConfigSettings config) {
+      return config.gcpProject.baseDomain;
+    }
+
+    @Provides
     @Config("locationId")
     public static String provideLocationId(RegistryConfigSettings config) {
       return config.gcpProject.locationId;
@@ -1257,12 +1269,6 @@ public final class RegistryConfig {
     @Config("oauthClientId")
     public static String provideOauthClientId(RegistryConfigSettings config) {
       return config.auth.oauthClientId;
-    }
-
-    @Provides
-    @Config("fallbackOauthClientId")
-    public static String provideFallbackOauthClientId(RegistryConfigSettings config) {
-      return config.auth.fallbackOauthClientId;
     }
 
     /**

@@ -1,38 +1,37 @@
-kind: Gateway
 apiVersion: gateway.networking.k8s.io/v1beta1
-metadata:
-  name: nomulus
-spec:
-  gatewayClassName: gke-l7-global-external-managed-mc
-  listeners:
-  - name: http
-    protocol: HTTP
-    port: 80
-    allowedRoutes:
-      kinds:
-      - kind: HTTPRoute
----
 kind: HTTPRoute
-apiVersion: gateway.networking.k8s.io/v1beta1
 metadata:
-  name: nomulus
-  labels:
-    app: nomulus
+  name: pubapi
 spec:
   parentRefs:
   - kind: Gateway
     name: nomulus
+  hostnames:
+    - "pubapi.BASE_URL"
   rules:
-  - backendRefs:
+  - matches:
+    - path:
+        type: PathPrefix
+        value: /_dr/whois
+    - path:
+        type: PathPrefix
+        value: /check
+    - path:
+        type: PathPrefix
+        value: /whois
+    - path:
+        type: PathPrefix
+        value: /rdap
+    backendRefs:
     - group: net.gke.io
       kind: ServiceImport
-      name: nomulus
+      name: pubapi
       port: 80
 ---
 apiVersion: networking.gke.io/v1
 kind: HealthCheckPolicy
 metadata:
-  name: nomulus
+  name: pubapi
 spec:
   default:
     config:
@@ -42,5 +41,4 @@ spec:
   targetRef:
     group: net.gke.io
     kind: ServiceImport
-    name: nomulus
-
+    name: pubapi
