@@ -19,7 +19,9 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 
 import com.google.api.client.json.webtoken.JsonWebSignature;
 import com.google.auth.oauth2.TokenVerifier;
+import com.google.auth.oauth2.TokenVerifier.VerificationException;
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.flogger.FluentLogger;
 import google.registry.config.RegistryConfig.Config;
@@ -27,7 +29,6 @@ import google.registry.model.console.User;
 import google.registry.persistence.VKey;
 import google.registry.request.auth.AuthModule.IapOidc;
 import google.registry.request.auth.AuthModule.RegularOidc;
-import google.registry.request.auth.AuthModule.RegularOidcFallback;
 import google.registry.request.auth.AuthSettings.AuthLevel;
 import google.registry.util.RegistryEnvironment;
 import jakarta.servlet.http.HttpServletRequest;
@@ -51,27 +52,23 @@ public abstract class OidcTokenAuthenticationMechanism implements Authentication
 
   public static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
-  // A workaround that allows "use" of the OIDC authenticator when running local testing, i.e.
+  // A workaround that allows "use" of the OIDC authenticator when running local testing, i.e.,
   // the RegistryTestServer
   private static AuthResult authResultForTesting = null;
 
-  protected final TokenVerifier tokenVerifier;
-
-  protected final Optional<TokenVerifier> fallbackTokenVerifier;
-
   protected final TokenExtractor tokenExtractor;
+
+  protected final TokenVerifier tokenVerifier;
 
   private final ImmutableSet<String> serviceAccountEmails;
 
   protected OidcTokenAuthenticationMechanism(
       ImmutableSet<String> serviceAccountEmails,
-      TokenVerifier tokenVerifier,
-      @Nullable TokenVerifier fallbackTokenVerifier,
-      TokenExtractor tokenExtractor) {
+      TokenExtractor tokenExtractor,
+      TokenVerifier tokenVerifier) {
     this.serviceAccountEmails = serviceAccountEmails;
-    this.tokenVerifier = tokenVerifier;
-    this.fallbackTokenVerifier = Optional.ofNullable(fallbackTokenVerifier);
     this.tokenExtractor = tokenExtractor;
+    this.tokenVerifier = tokenVerifier;
   }
 
   @Override
@@ -87,7 +84,12 @@ public abstract class OidcTokenAuthenticationMechanism implements Authentication
     }
     JsonWebSignature token = null;
     try {
-      token = tokenVerifier.verify(rawIdToken);
+      String service = null;
+      if (RegistryEnvironment.isOnJetty()) {
+        String hostname = request.getServerName();
+        service = Splitter.on('.').split(hostname).iterator().next();
+      }
+      token = tokenVerifier.verify(service, rawIdToken);
     } catch (Exception e) {
       logger.atInfo().withCause(e).log(
           "Failed OIDC verification attempt:\n%s",
@@ -97,20 +99,7 @@ public abstract class OidcTokenAuthenticationMechanism implements Authentication
     }
 
     if (token == null) {
-      if (fallbackTokenVerifier.isPresent()) {
-        try {
-          token = fallbackTokenVerifier.get().verify(rawIdToken);
-        } catch (Exception e) {
-          logger.atInfo().withCause(e).log(
-              "Failed OIDC fallback verification attempt:\n%s",
-              RegistryEnvironment.get().equals(RegistryEnvironment.PRODUCTION)
-                  ? "Raw token redacted in prod"
-                  : rawIdToken);
-          return AuthResult.NOT_AUTHENTICATED;
-        }
-      } else {
-        return AuthResult.NOT_AUTHENTICATED;
-      }
+      return AuthResult.NOT_AUTHENTICATED;
     }
 
     String email = (String) token.getPayload().get("email");
@@ -155,6 +144,12 @@ public abstract class OidcTokenAuthenticationMechanism implements Authentication
     String extract(HttpServletRequest request);
   }
 
+  @FunctionalInterface
+  protected interface TokenVerifier {
+    @Nullable
+    JsonWebSignature verify(@Nullable String service, String rawToken) throws VerificationException;
+  }
+
   /**
    * A mechanism to authenticate HTTP requests that have gone through the GCP Identity-Aware Proxy.
    *
@@ -171,9 +166,9 @@ public abstract class OidcTokenAuthenticationMechanism implements Authentication
     @Inject
     protected IapOidcAuthenticationMechanism(
         @Config("allowedServiceAccountEmails") ImmutableSet<String> serviceAccountEmails,
-        @IapOidc TokenVerifier tokenVerifier,
-        @IapOidc TokenExtractor tokenExtractor) {
-      super(serviceAccountEmails, tokenVerifier, null, tokenExtractor);
+        @IapOidc TokenExtractor tokenExtractor,
+        @IapOidc TokenVerifier tokenVerifier) {
+      super(serviceAccountEmails, tokenExtractor, tokenVerifier);
     }
   }
 
@@ -192,10 +187,9 @@ public abstract class OidcTokenAuthenticationMechanism implements Authentication
     @Inject
     protected RegularOidcAuthenticationMechanism(
         @Config("allowedServiceAccountEmails") ImmutableSet<String> serviceAccountEmails,
-        @RegularOidc TokenVerifier tokenVerifier,
-        @RegularOidcFallback TokenVerifier fallbackTokenVerifier,
-        @RegularOidc TokenExtractor tokenExtractor) {
-      super(serviceAccountEmails, tokenVerifier, fallbackTokenVerifier, tokenExtractor);
+        @RegularOidc TokenExtractor tokenExtractor,
+        @RegularOidc TokenVerifier tokenVerifier) {
+      super(serviceAccountEmails, tokenExtractor, tokenVerifier);
     }
   }
 }

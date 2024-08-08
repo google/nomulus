@@ -25,3 +25,9 @@ rootProject.ext.projects = ['production': 'your-production-project',
 // The project to host your development/deployment infrastructure. It hosts
 // things like release artifacts, CI/CD system, etc.
 rootProject.ext.devProject = 'your-dev-project'
+
+rootProject.ext.baseDomains = ['production' : 'registry-production.test',
+                              'sandbox'   : 'registry-sandbox.test',
+                              'alpha'     : 'registry-alpha.test',
+                              'crash'     : 'registry-crash.test',
+                              'qa'        : 'registry-qa.test']
