@@ -28,4 +28,19 @@ spec:
       kind: ServiceImport
       name: nomulus
       port: 80
+---
+apiVersion: networking.gke.io/v1
+kind: HealthCheckPolicy
+metadata:
+  name: nomulus
+spec:
+  default:
+    config:
+      type: HTTP
+      httpHealthCheck:
+        requestPath: /healthz/
+  targetRef:
+    group: net.gke.io
+    kind: ServiceImport
+    name: nomulus
 
