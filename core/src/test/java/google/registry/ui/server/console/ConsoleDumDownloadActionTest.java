@@ -33,7 +33,6 @@ import google.registry.testing.DatabaseHelper;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeResponse;
 import google.registry.tools.GsonUtils;
-import google.registry.ui.server.registrar.ConsoleApiParams;
 import java.io.IOException;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;

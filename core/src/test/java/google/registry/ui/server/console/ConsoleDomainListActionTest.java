@@ -36,7 +36,6 @@ import google.registry.testing.FakeClock;
 import google.registry.testing.FakeResponse;
 import google.registry.tools.GsonUtils;
 import google.registry.ui.server.console.ConsoleDomainListAction.DomainListResult;
-import google.registry.ui.server.registrar.ConsoleApiParams;
 import java.util.Optional;
 import javax.annotation.Nullable;
 import org.joda.time.DateTime;

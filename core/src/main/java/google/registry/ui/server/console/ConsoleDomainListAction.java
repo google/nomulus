@@ -27,9 +27,9 @@ import google.registry.model.CreateAutoTimestamp;
 import google.registry.model.console.User;
 import google.registry.model.domain.Domain;
 import google.registry.request.Action;
+import google.registry.request.Action.GkeService;
 import google.registry.request.Parameter;
 import google.registry.request.auth.Auth;
-import google.registry.ui.server.registrar.ConsoleApiParams;
 import java.util.List;
 import java.util.Optional;
 import javax.inject.Inject;
@@ -39,6 +39,7 @@ import org.joda.time.DateTime;
 /** Returns a (paginated) list of domains for a particular registrar. */
 @Action(
     service = Action.Service.DEFAULT,
+    gkeService = GkeService.CONSOLE,
     path = ConsoleDomainListAction.PATH,
     method = Action.Method.GET,
     auth = Auth.AUTH_PUBLIC_LOGGED_IN)

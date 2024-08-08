@@ -21,15 +21,16 @@ import com.google.common.collect.ImmutableMap;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.model.console.User;
 import google.registry.request.Action;
+import google.registry.request.Action.GkeService;
 import google.registry.request.auth.Auth;
 import google.registry.security.XsrfTokenManager;
-import google.registry.ui.server.registrar.ConsoleApiParams;
 import jakarta.servlet.http.Cookie;
 import javax.inject.Inject;
 import org.json.JSONObject;
 
 @Action(
     service = Action.Service.DEFAULT,
+    gkeService = GkeService.CONSOLE,
     path = ConsoleUserDataAction.PATH,
     method = {GET},
     auth = Auth.AUTH_PUBLIC_LOGGED_IN)

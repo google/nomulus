@@ -23,7 +23,7 @@ import google.registry.model.console.User;
 import google.registry.request.auth.AuthResult;
 import google.registry.security.XsrfTokenManager;
 import google.registry.ui.server.SendEmailUtils;
-import google.registry.ui.server.registrar.ConsoleApiParams;
+import google.registry.ui.server.console.ConsoleApiParams;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import org.joda.time.DateTime;

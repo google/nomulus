@@ -1,5 +1,5 @@
 # This is the default configuration file for Nomulus. Do not make changes to it
-# unless you are writing new features that requires you to. To customize an
+# unless you are writing new features that require you to. To customize an
 # individual deployment or environment, create a nomulus-config.yaml file in the
 # WEB-INF/ directory overriding only the values you wish to change. You may need
 # to override some of these values to configure and enable some services used in
@@ -24,6 +24,17 @@ gcpProject:
   toolsServiceUrl: https://tools.example.com
   pubapiServiceUrl: https://pubapi.example.com
 
+  # The backend service IDs created when setting up GKE routes. They will be included in the
+  # audience field in the JWT that IAP creates.
+  # See: https://cloud.google.com/iap/docs/signed-headers-howto#verifying_the_jwt_payload
+  backendServiceIds:
+    frontend: 12345
+    backend: 12345
+    pubapi: 12345
+    console: 12345
+
+  # The base domain name of the registry service. Services are reachable at [service].baseDomain.
+  baseDomain: registry.test
 
 gSuite:
   # Publicly accessible domain name of the running G Suite instance.
@@ -328,24 +339,20 @@ caching:
 # Note: Only allowedServiceAccountEmails and oauthClientId should be configured.
 # Other fields are related to OAuth-based authentication and will be removed.
 auth:
-  # Service accounts (e.g. default service account, account used by Cloud
+  # Service accounts (e.g., default service account, account used by Cloud
   # Scheduler) allowed to send authenticated requests.
   allowedServiceAccountEmails:
   - default-service-account-email@email.com
   - cloud-scheduler-email@email.com
 
   # OAuth 2.0 client ID that will be used as the audience in OIDC ID tokens sent
-  # from clients (e.g. proxy, nomulus tool, cloud tasks) for authentication. The
+  # from clients (e.g., proxy, nomulus tool, cloud tasks) for authentication. The
   # same ID is the only one accepted by the regular OIDC or IAP authentication
-  # mechanisms. In most cases we should use the client ID created for IAP here,
+  # mechanisms. In most cases, we should use the client ID created for IAP here,
   # as it allows requests bearing a token with this audience to be accepted by
   # both IAP or regular OIDC. The clientId value in proxy config file should be
   # the same as this one.
   oauthClientId: iap-oauth-clientid
-
-  # Same as above, but serve as a fallback, so we can switch the client ID of
-  # the proxy without downtime.
-  fallbackOauthClientId: fallback-oauth-clientid
 
 credentialOAuth:
   # OAuth scopes required for accessing Google APIs using the default

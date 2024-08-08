@@ -16,7 +16,6 @@ package google.registry.request.auth;
 
 import static com.google.common.net.HttpHeaders.AUTHORIZATION;
 
-import com.google.auth.oauth2.TokenVerifier;
 import com.google.common.collect.ImmutableList;
 import dagger.Module;
 import dagger.Provides;
@@ -24,6 +23,10 @@ import google.registry.config.RegistryConfig.Config;
 import google.registry.request.auth.OidcTokenAuthenticationMechanism.IapOidcAuthenticationMechanism;
 import google.registry.request.auth.OidcTokenAuthenticationMechanism.RegularOidcAuthenticationMechanism;
 import google.registry.request.auth.OidcTokenAuthenticationMechanism.TokenExtractor;
+import google.registry.request.auth.OidcTokenAuthenticationMechanism.TokenVerifier;
+import google.registry.util.RegistryEnvironment;
+import java.util.Map;
+import javax.annotation.Nullable;
 import javax.inject.Qualifier;
 import javax.inject.Singleton;
 
@@ -35,9 +38,10 @@ public class AuthModule {
   // See https://cloud.google.com/iap/docs/signed-headers-howto#securing_iap_headers.
   public static final String IAP_HEADER_NAME = "X-Goog-IAP-JWT-Assertion";
   public static final String BEARER_PREFIX = "Bearer ";
-  // TODO: Change the IAP audience format once we are on GKE.
+  // TODO (jianglai): Only use GKE audience once we are fully migrated to GKE.
   // See: https://cloud.google.com/iap/docs/signed-headers-howto#verifying_the_jwt_payload
-  private static final String IAP_AUDIENCE_FORMAT = "/projects/%d/apps/%s";
+  private static final String IAP_GAE_AUDIENCE_FORMAT = "/projects/%d/apps/%s";
+  private static final String IAP_GKE_AUDIENCE_FORMAT = "/projects/%d/global/backendServices/%d";
   private static final String IAP_ISSUER_URL = "https://cloud.google.com/iap";
   private static final String REGULAR_ISSUER_URL = "https://accounts.google.com";
 
@@ -62,24 +66,35 @@ public class AuthModule {
   @IapOidc
   @Singleton
   TokenVerifier provideIapTokenVerifier(
-      @Config("projectId") String projectId, @Config("projectIdNumber") long projectIdNumber) {
-    String audience = String.format(IAP_AUDIENCE_FORMAT, projectIdNumber, projectId);
-    return TokenVerifier.newBuilder().setAudience(audience).setIssuer(IAP_ISSUER_URL).build();
+      @Config("projectId") String projectId,
+      @Config("projectIdNumber") long projectIdNumber,
+      @Config("backendServiceIds") Map<String, Long> backendServiceIds) {
+    com.google.auth.oauth2.TokenVerifier.Builder tokenVerifierBuilder =
+        com.google.auth.oauth2.TokenVerifier.newBuilder().setIssuer(IAP_ISSUER_URL);
+    return (String service, String token) -> {
+      String audience;
+      if (RegistryEnvironment.isOnJetty()) {
+        long backendServiceId = backendServiceIds.get(service);
+        audience = String.format(IAP_GKE_AUDIENCE_FORMAT, projectIdNumber, backendServiceId);
+      } else {
+        audience = String.format(IAP_GAE_AUDIENCE_FORMAT, projectIdNumber, projectId);
+      }
+      return tokenVerifierBuilder.setAudience(audience).build().verify(token);
+    };
   }
 
   @Provides
   @RegularOidc
   @Singleton
   TokenVerifier provideRegularTokenVerifier(@Config("oauthClientId") String clientId) {
-    return TokenVerifier.newBuilder().setAudience(clientId).setIssuer(REGULAR_ISSUER_URL).build();
-  }
-
-  @Provides
-  @RegularOidcFallback
-  @Singleton
-  TokenVerifier provideFallbackRegularTokenVerifier(
-      @Config("fallbackOauthClientId") String clientId) {
-    return TokenVerifier.newBuilder().setAudience(clientId).setIssuer(REGULAR_ISSUER_URL).build();
+    com.google.auth.oauth2.TokenVerifier tokenVerifier =
+        com.google.auth.oauth2.TokenVerifier.newBuilder()
+            .setAudience(clientId)
+            .setIssuer(REGULAR_ISSUER_URL)
+            .build();
+    return (@Nullable String service, String token) -> {
+      return tokenVerifier.verify(token);
+    };
   }
 
   @Provides

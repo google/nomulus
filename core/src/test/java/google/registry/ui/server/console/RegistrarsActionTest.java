@@ -41,8 +41,6 @@ import google.registry.request.auth.AuthResult;
 import google.registry.testing.ConsoleApiParamsUtils;
 import google.registry.testing.DeterministicStringGenerator;
 import google.registry.testing.FakeResponse;
-import google.registry.ui.server.registrar.ConsoleApiParams;
-import google.registry.ui.server.registrar.RegistrarConsoleModule;
 import google.registry.util.StringGenerator;
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -253,7 +251,7 @@ class RegistrarsActionTest {
             passcodeGenerator);
       }
       Optional<Registrar> maybeRegistrar =
-          RegistrarConsoleModule.provideRegistrar(
+          ConsoleModule.provideRegistrar(
               GSON, RequestModule.provideJsonBody(consoleApiParams.request(), GSON));
       return new RegistrarsAction(
           consoleApiParams, GSON, maybeRegistrar, passwordGenerator, passcodeGenerator);
