@@ -1,0 +1,35 @@
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: HTTPRoute
+metadata:
+  name: frontend
+spec:
+  parentRefs:
+  - kind: Gateway
+    name: nomulus
+  hostnames:
+    - "frontend.BASE_DOMAIN"
+  rules:
+  - matches:
+    - path:
+        type: PathPrefix
+        value: /_dr/epp
+    backendRefs:
+    - group: net.gke.io
+      kind: ServiceImport
+      name: frontend
+      port: 80
+---
+apiVersion: networking.gke.io/v1
+kind: HealthCheckPolicy
+metadata:
+  name: frontend
+spec:
+  default:
+    config:
+      type: HTTP
+      httpHealthCheck:
+        requestPath: /healthz/
+  targetRef:
+    group: net.gke.io
+    kind: ServiceImport
+    name: frontend

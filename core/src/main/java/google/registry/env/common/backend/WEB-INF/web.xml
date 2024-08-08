@@ -165,7 +165,7 @@
   <!-- Manually refreshes DNS information. -->
   <servlet-mapping>
     <servlet-name>backend-servlet</servlet-name>
-    <url-pattern>/_dr/dnsRefresh</url-pattern>
+    <url-pattern>/_dr/task/dnsRefresh</url-pattern>
   </servlet-mapping>
 
   <!-- Fans out a cron task over an adjustable range of TLDs. -->
