@@ -15,13 +15,14 @@
 package google.registry.tools;
 
 import static com.google.common.truth.Truth.assertThat;
+import static google.registry.testing.DatabaseHelper.loadExistingUser;
+import static google.registry.testing.DatabaseHelper.putInDb;
 import static org.junit.Assert.assertThrows;
 
 import com.google.common.collect.ImmutableMap;
 import google.registry.model.console.GlobalRole;
 import google.registry.model.console.RegistrarRole;
 import google.registry.model.console.User;
-import google.registry.model.console.UserDao;
 import google.registry.model.console.UserRoles;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -31,7 +32,7 @@ public class UpdateUserCommandTest extends CommandTestCase<UpdateUserCommand> {
 
   @BeforeEach
   void beforeEach() throws Exception {
-    UserDao.saveUser(
+    putInDb(
         new User.Builder()
             .setEmailAddress("user@example.test")
             .setUserRoles(new UserRoles.Builder().build())
@@ -45,41 +46,39 @@ public class UpdateUserCommandTest extends CommandTestCase<UpdateUserCommand> {
         "user@example.test",
         "--registry_lock_email_address",
         "registrylockemail@otherexample.test");
-    assertThat(UserDao.loadUser("user@example.test").get().getRegistryLockEmailAddress())
+    assertThat(loadExistingUser("user@example.test").getRegistryLockEmailAddress())
         .hasValue("registrylockemail@otherexample.test");
   }
 
   @Test
   void testSuccess_removeRegistryLockEmail() throws Exception {
-    UserDao.saveUser(
-        UserDao.loadUser("user@example.test")
-            .get()
+    putInDb(
+        loadExistingUser("user@example.test")
             .asBuilder()
             .setRegistryLockEmailAddress("registrylock@otherexample.test")
             .build());
     runCommandForced("--email", "user@example.test", "--registry_lock_email_address", "");
-    assertThat(UserDao.loadUser("user@example.test").get().getRegistryLockEmailAddress()).isEmpty();
+    assertThat(loadExistingUser("user@example.test").getRegistryLockEmailAddress()).isEmpty();
   }
 
   @Test
   void testSuccess_admin() throws Exception {
-    assertThat(UserDao.loadUser("user@example.test").get().getUserRoles().isAdmin()).isFalse();
+    assertThat(loadExistingUser("user@example.test").getUserRoles().isAdmin()).isFalse();
     runCommandForced("--email", "user@example.test", "--admin", "true");
-    assertThat(UserDao.loadUser("user@example.test").get().getUserRoles().isAdmin()).isTrue();
+    assertThat(loadExistingUser("user@example.test").getUserRoles().isAdmin()).isTrue();
     runCommandForced("--email", "user@example.test", "--admin", "false");
-    assertThat(UserDao.loadUser("user@example.test").get().getUserRoles().isAdmin()).isFalse();
+    assertThat(loadExistingUser("user@example.test").getUserRoles().isAdmin()).isFalse();
   }
 
   @Test
   void testSuccess_registrarRoles() throws Exception {
-    assertThat(UserDao.loadUser("user@example.test").get().getUserRoles().getRegistrarRoles())
-        .isEmpty();
+    assertThat(loadExistingUser("user@example.test").getUserRoles().getRegistrarRoles()).isEmpty();
     runCommandForced(
         "--email",
         "user@example.test",
         "--registrar_roles",
         "TheRegistrar=ACCOUNT_MANAGER,NewRegistrar=PRIMARY_CONTACT");
-    assertThat(UserDao.loadUser("user@example.test").get().getUserRoles().getRegistrarRoles())
+    assertThat(loadExistingUser("user@example.test").getUserRoles().getRegistrarRoles())
         .isEqualTo(
             ImmutableMap.of(
                 "TheRegistrar",
@@ -87,16 +86,15 @@ public class UpdateUserCommandTest extends CommandTestCase<UpdateUserCommand> {
                 "NewRegistrar",
                 RegistrarRole.PRIMARY_CONTACT));
     runCommandForced("--email", "user@example.test", "--registrar_roles", "");
-    assertThat(UserDao.loadUser("user@example.test").get().getUserRoles().getRegistrarRoles())
-        .isEmpty();
+    assertThat(loadExistingUser("user@example.test").getUserRoles().getRegistrarRoles()).isEmpty();
   }
 
   @Test
   void testSuccess_globalRole() throws Exception {
-    assertThat(UserDao.loadUser("user@example.test").get().getUserRoles().getGlobalRole())
+    assertThat(loadExistingUser("user@example.test").getUserRoles().getGlobalRole())
         .isEqualTo(GlobalRole.NONE);
     runCommandForced("--email", "user@example.test", "--global_role", "FTE");
-    assertThat(UserDao.loadUser("user@example.test").get().getUserRoles().getGlobalRole())
+    assertThat(loadExistingUser("user@example.test").getUserRoles().getGlobalRole())
         .isEqualTo(GlobalRole.FTE);
   }
 

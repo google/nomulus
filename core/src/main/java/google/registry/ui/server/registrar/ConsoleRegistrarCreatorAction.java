@@ -30,7 +30,6 @@ import google.registry.batch.CloudTasksUtils;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.model.console.RegistrarRole;
 import google.registry.model.console.User;
-import google.registry.model.console.UserDao;
 import google.registry.model.console.UserRoles;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarAddress;
@@ -260,8 +259,8 @@ public final class ConsoleRegistrarCreatorAction extends HtmlAction {
                     "Registrar with client ID %s already exists",
                     registrar.getRegistrarId());
                 tm().put(registrar);
+                tm().put(user);
               });
-      UserDao.saveUser(user);
       User.grantIapPermission(
           user.getEmailAddress(), maybeGroupEmailAddress, cloudTasksUtils, null, iamClient);
       data.put("password", password);

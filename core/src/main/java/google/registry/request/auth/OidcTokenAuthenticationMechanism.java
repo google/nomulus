@@ -15,6 +15,7 @@
 package google.registry.request.auth;
 
 import static com.google.common.base.Preconditions.checkState;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import com.google.api.client.json.webtoken.JsonWebSignature;
 import com.google.auth.oauth2.TokenVerifier;
@@ -23,7 +24,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.flogger.FluentLogger;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.model.console.User;
-import google.registry.model.console.UserDao;
+import google.registry.persistence.VKey;
 import google.registry.request.auth.AuthModule.IapOidc;
 import google.registry.request.auth.AuthModule.RegularOidc;
 import google.registry.request.auth.AuthModule.RegularOidcFallback;
@@ -117,7 +118,8 @@ public abstract class OidcTokenAuthenticationMechanism implements Authentication
       logger.atWarning().log("No email address from the OIDC token:\n%s", token.getPayload());
       return AuthResult.NOT_AUTHENTICATED;
     }
-    Optional<User> maybeUser = UserDao.loadUser(email);
+    Optional<User> maybeUser =
+        tm().transact(() -> tm().loadByKeyIfPresent(VKey.create(User.class, email)));
     if (maybeUser.isPresent()) {
       return AuthResult.createUser(maybeUser.get());
     }

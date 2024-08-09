@@ -14,20 +14,20 @@
 
 package google.registry.tools;
 
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.PreconditionsUtils.checkArgumentPresent;
 
 import com.beust.jcommander.Parameters;
 import google.registry.model.console.User;
-import google.registry.model.console.UserDao;
-import javax.annotation.Nullable;
+import google.registry.persistence.VKey;
 
 /** Updates a user, assuming that the user in question already exists. */
 @Parameters(separators = " =", commandDescription = "Update a user account")
 public class UpdateUserCommand extends CreateOrUpdateUserCommand {
 
-  @Nullable
   @Override
   User getExistingUser(String email) {
-    return checkArgumentPresent(UserDao.loadUser(email), "User %s not found", email);
+    return checkArgumentPresent(
+        tm().loadByKeyIfPresent(VKey.create(User.class, email)), "User %s not found", email);
   }
 }

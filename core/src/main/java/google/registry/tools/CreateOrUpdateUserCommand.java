@@ -22,7 +22,6 @@ import com.google.common.collect.ImmutableMap;
 import google.registry.model.console.GlobalRole;
 import google.registry.model.console.RegistrarRole;
 import google.registry.model.console.User;
-import google.registry.model.console.UserDao;
 import google.registry.model.console.UserRoles;
 import google.registry.tools.params.KeyValueMapParameter.StringToRegistrarRoleMap;
 import java.util.Optional;
@@ -95,8 +94,6 @@ public abstract class CreateOrUpdateUserCommand extends ConfirmingCommand {
         builder.setRegistryLockEmailAddress(registryLockEmailAddress);
       }
     }
-
-    User newUser = builder.build();
-    UserDao.saveUser(newUser);
+    tm().put(builder.build());
   }
 }
