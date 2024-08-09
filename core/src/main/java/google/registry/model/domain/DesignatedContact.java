@@ -20,8 +20,8 @@ import google.registry.model.ImmutableObject;
 import google.registry.model.UnsafeSerializable;
 import google.registry.model.contact.Contact;
 import google.registry.persistence.VKey;
-import javax.persistence.Embeddable;
-import javax.xml.bind.annotation.XmlEnumValue;
+import jakarta.persistence.Embeddable;
+import jakarta.xml.bind.annotation.XmlEnumValue;
 
 /**
  * Persisted type for storing a domain's contact associations.

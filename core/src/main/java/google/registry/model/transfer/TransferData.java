@@ -27,13 +27,13 @@ import google.registry.model.eppcommon.Trid;
 import google.registry.model.poll.PollMessage;
 import google.registry.persistence.VKey;
 import google.registry.util.NullIgnoringCollectionBuilder;
+import jakarta.persistence.AttributeOverride;
+import jakarta.persistence.AttributeOverrides;
+import jakarta.persistence.Column;
+import jakarta.persistence.Embedded;
+import jakarta.persistence.MappedSuperclass;
 import java.util.Set;
 import javax.annotation.Nullable;
-import javax.persistence.AttributeOverride;
-import javax.persistence.AttributeOverrides;
-import javax.persistence.Column;
-import javax.persistence.Embedded;
-import javax.persistence.MappedSuperclass;
 
 /**
  * Common transfer data for {@link EppResource} types. Only applies to domains and contacts; hosts

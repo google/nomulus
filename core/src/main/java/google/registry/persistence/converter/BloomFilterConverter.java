@@ -17,13 +17,13 @@ import static com.google.common.base.Charsets.US_ASCII;
 import static com.google.common.hash.Funnels.stringFunnel;
 
 import com.google.common.hash.BloomFilter;
+import jakarta.persistence.AttributeConverter;
+import jakarta.persistence.Converter;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import javax.annotation.Nullable;
-import javax.persistence.AttributeConverter;
-import javax.persistence.Converter;
 
 /** JPA converter for ASCII String {@link BloomFilter}s. */
 @Converter(autoApply = true)

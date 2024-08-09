@@ -13,8 +13,8 @@
 // limitations under the License.
 package google.registry.persistence.converter;
 
+import jakarta.persistence.Converter;
 import javax.annotation.Nullable;
-import javax.persistence.Converter;
 import org.joda.money.CurrencyUnit;
 
 /** JPA converter for {@link CurrencyUnit}s. */

@@ -18,11 +18,11 @@ import static com.google.common.collect.ImmutableList.toImmutableList;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Maps;
+import jakarta.persistence.AttributeConverter;
 import java.io.File;
 import java.util.EnumSet;
 import java.util.Map;
 import java.util.stream.Stream;
-import javax.persistence.AttributeConverter;
 import org.hibernate.boot.MetadataSources;
 import org.hibernate.boot.registry.StandardServiceRegistry;
 import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
@@ -30,7 +30,7 @@ import org.hibernate.cfg.Environment;
 import org.hibernate.tool.hbm2ddl.SchemaExport;
 import org.hibernate.tool.schema.TargetType;
 
-/** Utility class to export DDL script for given {@link javax.persistence.Entity} classes. */
+/** Utility class to export DDL script for given {@link jakarta.persistence.Entity} classes. */
 public class HibernateSchemaExporter {
   // Hibernate proprietary mappings.
   private static final String HIBERNATE_MAPPING_RESOURCES = "META-INF/orm.xml";
@@ -53,7 +53,7 @@ public class HibernateSchemaExporter {
   /** Exports DDL script to the {@code outputFile} for the given {@code entityClasses}. */
   public void export(ImmutableList<Class<?>> entityClasses, File outputFile) {
     // Configure Hibernate settings.
-    Map<String, String> settings = Maps.newHashMap();
+    Map<String, Object> settings = Maps.newHashMap();
     settings.put(Environment.DIALECT, NomulusPostgreSQLDialect.class.getName());
     settings.put(Environment.URL, jdbcUrl);
     settings.put(Environment.USER, username);

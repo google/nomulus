@@ -20,13 +20,13 @@ import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingRecurrence;
 import google.registry.model.domain.rgp.GracePeriodStatus;
 import google.registry.persistence.VKey;
-import javax.persistence.Access;
-import javax.persistence.AccessType;
-import javax.persistence.Column;
-import javax.persistence.EnumType;
-import javax.persistence.Enumerated;
-import javax.persistence.MappedSuperclass;
-import javax.persistence.Transient;
+import jakarta.persistence.Access;
+import jakarta.persistence.AccessType;
+import jakarta.persistence.Column;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.MappedSuperclass;
+import jakarta.persistence.Transient;
 import org.joda.time.DateTime;
 
 /** Base class containing common fields and methods for {@link GracePeriod}. */

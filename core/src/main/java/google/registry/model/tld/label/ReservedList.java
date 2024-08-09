@@ -35,18 +35,18 @@ import google.registry.model.Buildable;
 import google.registry.model.CacheUtils;
 import google.registry.model.tld.Tld;
 import google.registry.model.tld.label.DomainLabelMetrics.MetricsReservedListMatch;
+import jakarta.persistence.Column;
+import jakarta.persistence.Id;
+import jakarta.persistence.Index;
+import jakarta.persistence.PostPersist;
+import jakarta.persistence.PreRemove;
+import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
 import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import javax.annotation.Nullable;
-import javax.persistence.Column;
-import javax.persistence.Id;
-import javax.persistence.Index;
-import javax.persistence.PostPersist;
-import javax.persistence.PreRemove;
-import javax.persistence.Table;
-import javax.persistence.Transient;
 import org.joda.time.DateTime;
 
 /**
@@ -57,7 +57,7 @@ import org.joda.time.DateTime;
  * succeeds, we will end up with having two exact same reserved lists that differ only by
  * revisionId. This is fine though, because we only use the list with the highest revisionId.
  */
-@javax.persistence.Entity
+@jakarta.persistence.Entity
 @Table(indexes = {@Index(columnList = "name", name = "reservedlist_name_idx")})
 public final class ReservedList
     extends BaseDomainLabelList<ReservationType, ReservedList.ReservedListEntry> {
@@ -73,7 +73,7 @@ public final class ReservedList
 
   @PreRemove
   void preRemove() {
-    tm().query("DELETE FROM ReservedEntry WHERE revision_id = :revisionId")
+    tm().query("DELETE FROM ReservedEntry WHERE revisionId = :revisionId")
         .setParameter("revisionId", revisionId)
         .executeUpdate();
   }
@@ -104,13 +104,16 @@ public final class ReservedList
    * A reserved list entry entity, persisted to the database, that represents a single label and its
    * reservation type.
    */
-  @javax.persistence.Entity(name = "ReservedEntry")
+  @jakarta.persistence.Entity(name = "ReservedEntry")
   public static class ReservedListEntry extends DomainLabelEntry<ReservationType, ReservedListEntry>
       implements Buildable, Serializable {
 
     @Insignificant @Id Long revisionId;
 
-    @Column(nullable = false)
+    // This Enum field was mapped (unintended) by ordinal and is an int column in the real schema.
+    // In Hibernate 6, ordinal enum field is mapped to smallint instead of int. We override the def
+    // so that the generated schema is consistent with the real schema.
+    @Column(nullable = false, columnDefinition = "integer")
     ReservationType reservationType;
 
     String comment;

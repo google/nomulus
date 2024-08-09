@@ -23,24 +23,24 @@ import google.registry.model.EppResource;
 import google.registry.model.EppResource.ResourceWithTransferData;
 import google.registry.model.transfer.ContactTransferData;
 import google.registry.persistence.VKey;
+import jakarta.persistence.Access;
+import jakarta.persistence.AccessType;
+import jakarta.persistence.AttributeOverride;
+import jakarta.persistence.AttributeOverrides;
+import jakarta.persistence.Column;
+import jakarta.persistence.Embeddable;
+import jakarta.persistence.Embedded;
+import jakarta.persistence.MappedSuperclass;
+import jakarta.xml.bind.annotation.XmlElement;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Stream;
-import javax.persistence.Access;
-import javax.persistence.AccessType;
-import javax.persistence.AttributeOverride;
-import javax.persistence.AttributeOverrides;
-import javax.persistence.Column;
-import javax.persistence.Embeddable;
-import javax.persistence.Embedded;
-import javax.persistence.MappedSuperclass;
-import javax.xml.bind.annotation.XmlElement;
 import org.joda.time.DateTime;
 
 /**
  * A persistable contact resource including mutable and non-mutable fields.
  *
- * <p>This class deliberately does not include an {@link javax.persistence.Id} so that any
+ * <p>This class deliberately does not include an {@link jakarta.persistence.Id} so that any
  * foreign-keyed fields can refer to the proper parent entity's ID, whether we're storing this in
  * the DB itself or as part of another entity
  *

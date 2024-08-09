@@ -24,9 +24,9 @@ import com.google.common.collect.ImmutableList;
 import google.registry.model.domain.RegistryLock;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.tld.RegistryLockDao;
+import jakarta.persistence.PersistenceException;
 import java.sql.SQLException;
 import java.util.Optional;
-import javax.persistence.PersistenceException;
 import org.junit.jupiter.api.function.Executable;
 
 /** Static utils for setting up and retrieving test resources from the SQL database. */

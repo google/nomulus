@@ -45,11 +45,11 @@ import google.registry.request.Action;
 import google.registry.request.Parameter;
 import google.registry.request.auth.Auth;
 import google.registry.util.RegistryEnvironment;
+import jakarta.persistence.TypedQuery;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import javax.inject.Inject;
-import javax.persistence.TypedQuery;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
 
@@ -95,8 +95,8 @@ public class DeleteProberDataAction implements Runnable {
   // be compared directly to the SQL timestamp (it's a DateTime)
   private static final String DOMAIN_QUERY_STRING =
       "FROM Domain d WHERE d.tld IN :tlds AND d.domainName NOT LIKE 'nic.%%' AND"
-          + " (d.subordinateHosts IS EMPTY OR d.subordinateHosts IS NULL) AND d.creationTime <"
-          + " :creationTimeCutoff AND (d.deletionTime > :now OR d.deletionTime <"
+          + " (d.subordinateHosts IS NULL OR array_length(d.subordinateHosts) = 0) AND"
+          + " d.creationTime < :creationTimeCutoff AND (d.deletionTime > :now OR d.deletionTime <"
           + " :nowMinusSoftDeleteDelay)";
 
   /** Number of domains to retrieve and delete per SQL transaction. */

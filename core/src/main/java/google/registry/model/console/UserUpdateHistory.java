@@ -17,13 +17,13 @@ package google.registry.model.console;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 
 import google.registry.persistence.VKey;
-import javax.persistence.Access;
-import javax.persistence.AccessType;
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Index;
-import javax.persistence.PostLoad;
-import javax.persistence.Table;
+import jakarta.persistence.Access;
+import jakarta.persistence.AccessType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Index;
+import jakarta.persistence.PostLoad;
+import jakarta.persistence.Table;
 
 /**
  * A persisted history object representing an update to a User.

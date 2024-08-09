@@ -25,6 +25,7 @@ import google.registry.config.RegistryConfig.Config;
 import google.registry.model.domain.token.AllocationToken;
 import google.registry.model.domain.token.BulkPricingPackage;
 import google.registry.model.registrar.Registrar;
+import google.registry.persistence.VKey;
 import google.registry.request.Action;
 import google.registry.request.Action.Service;
 import google.registry.request.auth.Auth;
@@ -103,10 +104,13 @@ public class CheckBulkComplianceAction implements Runnable {
       Long creates =
           (Long)
               tm().query(
-                      "SELECT COUNT(*) FROM DomainHistory WHERE current_package_token ="
+                      "SELECT COUNT(*) FROM DomainHistory WHERE resource.currentBulkToken ="
                           + " :token AND modificationTime >= :lastBilling AND type ="
                           + " 'DOMAIN_CREATE'")
-                  .setParameter("token", bulkPricingPackage.getToken().getKey().toString())
+                  .setParameter(
+                      "token",
+                      VKey.create(
+                          AllocationToken.class, bulkPricingPackage.getToken().getKey().toString()))
                   .setParameter(
                       "lastBilling", bulkPricingPackage.getNextBillingDate().minusYears(1))
                   .getSingleResult();

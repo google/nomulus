@@ -15,9 +15,9 @@
 package google.registry.persistence.converter;
 
 import google.registry.persistence.VKey;
+import jakarta.persistence.AttributeConverter;
 import java.io.Serializable;
 import javax.annotation.Nullable;
-import javax.persistence.AttributeConverter;
 
 /**
  * Converts {@link VKey} to/from a type that can be directly stored in the database.

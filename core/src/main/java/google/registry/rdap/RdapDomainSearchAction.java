@@ -49,13 +49,13 @@ import google.registry.request.HttpException.UnprocessableEntityException;
 import google.registry.request.Parameter;
 import google.registry.request.auth.Auth;
 import google.registry.util.NonFinalForTesting;
+import jakarta.persistence.criteria.CriteriaBuilder;
 import java.net.InetAddress;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
 import javax.inject.Inject;
-import javax.persistence.criteria.CriteriaBuilder;
 import org.hibernate.Hibernate;
 
 /**
@@ -441,7 +441,7 @@ public class RdapDomainSearchAction extends RdapSearchActionBase {
         replicaTm()
             .transact(
                 () -> {
-                  javax.persistence.Query query =
+                  jakarta.persistence.Query query =
                       replicaTm()
                           .getEntityManager()
                           .createNativeQuery(queryBuilder.toString())

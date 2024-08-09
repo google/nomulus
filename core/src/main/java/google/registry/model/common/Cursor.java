@@ -24,14 +24,14 @@ import google.registry.model.UpdateAutoTimestampEntity;
 import google.registry.model.common.Cursor.CursorId;
 import google.registry.model.tld.Tld;
 import google.registry.persistence.VKey;
+import jakarta.persistence.AttributeOverride;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.Id;
+import jakarta.persistence.IdClass;
 import java.util.Optional;
-import javax.persistence.AttributeOverride;
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.EnumType;
-import javax.persistence.Enumerated;
-import javax.persistence.Id;
-import javax.persistence.IdClass;
 import org.joda.time.DateTime;
 
 /**

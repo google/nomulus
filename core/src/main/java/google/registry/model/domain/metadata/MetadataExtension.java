@@ -16,8 +16,8 @@ package google.registry.model.domain.metadata;
 
 import google.registry.model.ImmutableObject;
 import google.registry.model.eppinput.EppInput.CommandExtension;
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlRootElement;
+import jakarta.xml.bind.annotation.XmlElement;
+import jakarta.xml.bind.annotation.XmlRootElement;
 
 /** A metadata extension that may be present on EPP create/mutate commands. */
 @XmlRootElement(name = "metadata")

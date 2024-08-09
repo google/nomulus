@@ -14,7 +14,7 @@
 
 package google.registry.model.domain.fee;
 
-import javax.xml.bind.annotation.XmlTransient;
+import jakarta.xml.bind.annotation.XmlTransient;
 
 /** A fee extension that may be present on domain renew commands. */
 @XmlTransient

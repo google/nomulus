@@ -60,10 +60,24 @@ import google.registry.model.UpdateAutoTimestampEntity;
 import google.registry.model.tld.Tld;
 import google.registry.model.tld.Tld.TldType;
 import google.registry.persistence.VKey;
+import google.registry.persistence.converter.CidrBlockListUserType;
+import google.registry.persistence.converter.CurrencyToStringMapUserType;
 import google.registry.util.CidrAddressBlock;
 import google.registry.util.PasswordUtils;
 import jakarta.mail.internet.AddressException;
 import jakarta.mail.internet.InternetAddress;
+import jakarta.persistence.Access;
+import jakarta.persistence.AccessType;
+import jakarta.persistence.AttributeOverride;
+import jakarta.persistence.AttributeOverrides;
+import jakarta.persistence.Column;
+import jakarta.persistence.Embeddable;
+import jakarta.persistence.Embedded;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.Id;
+import jakarta.persistence.MappedSuperclass;
+import jakarta.persistence.Transient;
 import java.security.cert.CertificateParsingException;
 import java.util.Comparator;
 import java.util.List;
@@ -74,18 +88,6 @@ import java.util.Set;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import javax.annotation.Nullable;
-import javax.persistence.Access;
-import javax.persistence.AccessType;
-import javax.persistence.AttributeOverride;
-import javax.persistence.AttributeOverrides;
-import javax.persistence.Column;
-import javax.persistence.Embeddable;
-import javax.persistence.Embedded;
-import javax.persistence.EnumType;
-import javax.persistence.Enumerated;
-import javax.persistence.Id;
-import javax.persistence.MappedSuperclass;
-import javax.persistence.Transient;
 import org.joda.money.CurrencyUnit;
 import org.joda.time.DateTime;
 
@@ -254,6 +256,7 @@ public class RegistrarBase extends UpdateAutoTimestampEntity implements Buildabl
    * Whether registration of premium names should be blocked over EPP. If this is set to true, then
    * the only way to register premium names is with the superuser flag.
    */
+  @Column(nullable = false)
   boolean blockPremiumNames;
 
   // Authentication.
@@ -275,7 +278,9 @@ public class RegistrarBase extends UpdateAutoTimestampEntity implements Buildabl
   String failoverClientCertificateHash;
 
   /** An allow list of netmasks (in CIDR notation) which the client is allowed to connect from. */
-  @Expose List<CidrAddressBlock> ipAddressAllowList;
+  @org.hibernate.annotations.Type(value = CidrBlockListUserType.class)
+  @Expose
+  List<CidrAddressBlock> ipAddressAllowList;
 
   /** A hashed password for EPP access. The hash is a base64 encoded SHA256 string. */
   String passwordHash;
@@ -364,7 +369,10 @@ public class RegistrarBase extends UpdateAutoTimestampEntity implements Buildabl
    * accessed by {@link #getBillingAccountMap}, a sorted map is returned to guarantee deterministic
    * behavior when serializing the map, for display purpose for instance.
    */
-  @Expose @Nullable Map<CurrencyUnit, String> billingAccountMap;
+  @Expose
+  @Nullable
+  @org.hibernate.annotations.Type(value = CurrencyToStringMapUserType.class)
+  Map<CurrencyUnit, String> billingAccountMap;
 
   /** URL of registrar's website. */
   @Expose String url;
@@ -403,10 +411,13 @@ public class RegistrarBase extends UpdateAutoTimestampEntity implements Buildabl
    * A dirty bit for whether RegistrarContact changes have been made that haven't been synced to
    * Google Groups yet. When creating a new instance, contacts require syncing by default.
    */
+  @Column(nullable = false)
   boolean contactsRequireSyncing = true;
 
   /** Whether or not registry lock is allowed for this registrar. */
-  @Expose boolean registryLockAllowed = false;
+  @Column(nullable = false)
+  @Expose
+  boolean registryLockAllowed = false;
 
   public String getRegistrarId() {
     return registrarId;

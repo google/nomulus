@@ -17,7 +17,7 @@ package google.registry.model.domain.secdns;
 import com.google.common.collect.ImmutableSet;
 import google.registry.model.ImmutableObject;
 import google.registry.model.eppoutput.EppResponse.ResponseExtension;
-import javax.xml.bind.annotation.XmlRootElement;
+import jakarta.xml.bind.annotation.XmlRootElement;
 
 /** The EPP secDNS extension to be returned with domain info commands. */
 @XmlRootElement(name = "infData")

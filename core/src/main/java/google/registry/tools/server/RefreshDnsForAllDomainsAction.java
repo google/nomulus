@@ -32,11 +32,11 @@ import google.registry.request.Action;
 import google.registry.request.Parameter;
 import google.registry.request.Response;
 import google.registry.request.auth.Auth;
+import jakarta.persistence.TypedQuery;
 import java.util.Optional;
 import java.util.Random;
 import javax.annotation.Nullable;
 import javax.inject.Inject;
-import javax.persistence.TypedQuery;
 import org.apache.arrow.util.VisibleForTesting;
 import org.apache.http.HttpStatus;
 import org.joda.time.Duration;
@@ -118,7 +118,8 @@ public class RefreshDnsForAllDomainsAction implements Runnable {
   private Duration calculateSmear() {
     Long activeDomains =
         tm().query(
-                "SELECT COUNT(*) FROM Domain WHERE tld IN (:tlds) AND deletionTime = :endOfTime",
+                "SELECT COUNT(*) FROM Domain WHERE tld IN (:tlds) AND deletionTime ="
+                    + " :endOfTime",
                 Long.class)
             .setParameter("tlds", tlds)
             .setParameter("endOfTime", END_OF_TIME)

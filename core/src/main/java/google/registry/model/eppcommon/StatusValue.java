@@ -28,7 +28,7 @@ import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.host.Host;
 import google.registry.model.host.HostBase;
-import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
+import jakarta.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 
 /**
  * Represents an EPP status value for hosts, contacts, and domains, as defined in RFC 5731, 5732,

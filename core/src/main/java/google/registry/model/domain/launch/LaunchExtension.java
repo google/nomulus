@@ -16,7 +16,7 @@ package google.registry.model.domain.launch;
 
 import google.registry.model.Buildable.GenericBuilder;
 import google.registry.model.ImmutableObject;
-import javax.xml.bind.annotation.XmlTransient;
+import jakarta.xml.bind.annotation.XmlTransient;
 
 /**
  * A launch extension which can be passed in to domain update and delete, and also returned from

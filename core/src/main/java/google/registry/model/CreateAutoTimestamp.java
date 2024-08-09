@@ -17,11 +17,11 @@ package google.registry.model;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import com.google.gson.annotations.Expose;
+import jakarta.persistence.Column;
+import jakarta.persistence.Embeddable;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreUpdate;
 import javax.annotation.Nullable;
-import javax.persistence.Column;
-import javax.persistence.Embeddable;
-import javax.persistence.PrePersist;
-import javax.persistence.PreUpdate;
 import org.joda.time.DateTime;
 
 /** A timestamp that auto-updates when first saved to the database. */

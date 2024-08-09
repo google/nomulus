@@ -22,15 +22,17 @@ import com.google.common.collect.ImmutableSet;
 import google.registry.model.Buildable;
 import google.registry.model.ImmutableObject;
 import google.registry.util.DomainNameUtils;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Index;
+import jakarta.persistence.Table;
 import java.io.Serializable;
 import java.util.Set;
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.Index;
-import javax.persistence.Table;
 import org.joda.time.LocalDate;
 
 @Entity
@@ -62,6 +64,7 @@ public class Spec11ThreatMatch extends ImmutableObject implements Buildable, Ser
 
   /** The types of threat detected. */
   @Column(nullable = false)
+  @Enumerated(EnumType.STRING)
   Set<ThreatType> threatTypes;
 
   /** Primary key of the domain table and unique identifier for all EPP resources. */

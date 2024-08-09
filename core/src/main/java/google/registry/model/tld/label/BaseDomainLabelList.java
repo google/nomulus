@@ -28,15 +28,15 @@ import com.google.common.collect.Multiset;
 import google.registry.model.Buildable;
 import google.registry.model.ImmutableObject;
 import google.registry.model.tld.Tld;
+import jakarta.persistence.Column;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.MappedSuperclass;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import javax.annotation.Nullable;
-import javax.persistence.Column;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.MappedSuperclass;
 import org.joda.time.DateTime;
 
 /**

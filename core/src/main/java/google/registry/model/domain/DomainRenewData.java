@@ -15,9 +15,9 @@
 package google.registry.model.domain;
 
 import google.registry.model.eppoutput.EppResponse.ResponseData;
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlRootElement;
-import javax.xml.bind.annotation.XmlType;
+import jakarta.xml.bind.annotation.XmlElement;
+import jakarta.xml.bind.annotation.XmlRootElement;
+import jakarta.xml.bind.annotation.XmlType;
 import org.joda.time.DateTime;
 
 /** The {@link ResponseData} returned when renewing a domain. */

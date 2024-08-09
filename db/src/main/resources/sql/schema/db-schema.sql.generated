@@ -13,148 +13,148 @@
 -- limitations under the License.
 
     create table "AllocationToken" (
-       token text not null,
-        update_timestamp timestamptz,
+        token text not null,
+        update_timestamp timestamp(6) with time zone,
         allowed_registrar_ids text[],
         allowed_epp_actions text[],
         allowed_tlds text[],
-        creation_time timestamptz not null,
-        discount_fraction float8 not null,
+        creation_time timestamp(6) with time zone not null,
+        discount_fraction float(53) not null,
         discount_premiums boolean not null,
-        discount_years int4 not null,
+        discount_years integer not null,
         domain_name text,
         redemption_domain_repo_id text,
-        redemption_domain_history_id int8,
-        registration_behavior text not null,
-        renewal_price_amount numeric(19, 2),
+        redemption_domain_history_id bigint,
+        registration_behavior text not null check (registration_behavior in ('DEFAULT','BYPASS_TLD_STATE','ANCHOR_TENANT','NONPREMIUM_CREATE')),
+        renewal_price_amount numeric(19,2),
         renewal_price_currency text,
-        renewal_price_behavior text not null,
+        renewal_price_behavior text not null check (renewal_price_behavior in ('DEFAULT','NONPREMIUM','SPECIFIED')),
         token_status_transitions hstore,
-        token_type text,
-        primary key (token)
+        token_type text check (token_type in ('BULK_PRICING','DEFAULT_PROMO','PACKAGE','SINGLE_USE','UNLIMITED_USE','REGISTER_BSA')),
+        constraint allocation_token_token_idx primary key (token)
     );
 
     create table "BillingCancellation" (
-       billing_cancellation_id int8 not null,
+        billing_cancellation_id bigint not null,
         registrar_id text not null,
-        domain_history_revision_id int8 not null,
+        domain_history_revision_id bigint not null,
         domain_repo_id text not null,
-        event_time timestamptz not null,
+        event_time timestamp(6) with time zone not null,
         flags text[],
-        reason text not null,
+        reason text not null check (reason in ('CREATE','ERROR','FEE_EARLY_ACCESS','RENEW','RESTORE','SERVER_STATUS','TRANSFER')),
         domain_name text not null,
-        billing_event_id int8,
-        billing_recurrence_id int8,
-        billing_time timestamptz,
+        billing_event_id bigint,
+        billing_recurrence_id bigint,
+        billing_time timestamp(6) with time zone,
         primary key (billing_cancellation_id)
     );
 
     create table "BillingEvent" (
-       billing_event_id int8 not null,
+        billing_event_id bigint not null,
         registrar_id text not null,
-        domain_history_revision_id int8 not null,
+        domain_history_revision_id bigint not null,
         domain_repo_id text not null,
-        event_time timestamptz not null,
+        event_time timestamp(6) with time zone not null,
         flags text[],
-        reason text not null,
+        reason text not null check (reason in ('CREATE','ERROR','FEE_EARLY_ACCESS','RENEW','RESTORE','SERVER_STATUS','TRANSFER')),
         domain_name text not null,
         allocation_token text,
-        billing_time timestamptz,
-        cancellation_matching_billing_recurrence_id int8,
-        cost_amount numeric(19, 2),
+        billing_time timestamp(6) with time zone,
+        cancellation_matching_billing_recurrence_id bigint,
+        cost_amount numeric(19,2),
         cost_currency text,
-        period_years int4,
-        recurrence_history_revision_id int8,
-        synthetic_creation_time timestamptz,
+        period_years integer,
+        recurrence_history_revision_id bigint,
+        synthetic_creation_time timestamp(6) with time zone,
         primary key (billing_event_id)
     );
 
     create table "BillingRecurrence" (
-       billing_recurrence_id int8 not null,
+        billing_recurrence_id bigint not null,
         registrar_id text not null,
-        domain_history_revision_id int8 not null,
+        domain_history_revision_id bigint not null,
         domain_repo_id text not null,
-        event_time timestamptz not null,
+        event_time timestamp(6) with time zone not null,
         flags text[],
-        reason text not null,
+        reason text not null check (reason in ('CREATE','ERROR','FEE_EARLY_ACCESS','RENEW','RESTORE','SERVER_STATUS','TRANSFER')),
         domain_name text not null,
-        recurrence_end_time timestamptz,
-        recurrence_last_expansion timestamptz not null,
+        recurrence_end_time timestamp(6) with time zone,
+        recurrence_last_expansion timestamp(6) with time zone not null,
         recurrence_time_of_year text,
-        renewal_price_amount numeric(19, 2),
+        renewal_price_amount numeric(19,2),
         renewal_price_currency text,
-        renewal_price_behavior text not null,
+        renewal_price_behavior text not null check (renewal_price_behavior in ('DEFAULT','NONPREMIUM','SPECIFIED')),
         primary key (billing_recurrence_id)
     );
 
     create table "BsaDomainRefresh" (
-       job_id  bigserial not null,
-        creation_time timestamptz not null,
-        stage text not null,
-        update_timestamp timestamptz,
+        job_id bigint generated by default as identity,
+        creation_time timestamp(6) with time zone not null,
+        stage text not null check (stage in ('CHECK_FOR_CHANGES','APPLY_CHANGES','UPLOAD_REMOVALS','UPLOAD_ADDITIONS','DONE')),
+        update_timestamp timestamp(6) with time zone,
         primary key (job_id)
     );
 
     create table "BsaDownload" (
-       job_id  bigserial not null,
+        job_id bigint generated by default as identity,
         block_list_checksums text not null,
-        creation_time timestamptz not null,
-        stage text not null,
-        update_timestamp timestamptz,
+        creation_time timestamp(6) with time zone not null,
+        stage text not null check (stage in ('DOWNLOAD_BLOCK_LISTS','MAKE_ORDER_AND_LABEL_DIFF','APPLY_ORDER_AND_LABEL_DIFF','REPORT_START_OF_ORDER_PROCESSING','UPLOAD_UNBLOCKABLE_DOMAINS_FOR_NEW_ORDERS','REPORT_END_OF_ORDER_PROCESSING','DONE','NOP','CHECKSUMS_DO_NOT_MATCH')),
+        update_timestamp timestamp(6) with time zone,
         primary key (job_id)
     );
 
     create table "BsaLabel" (
-       label text not null,
-        creation_time timestamptz not null,
+        label text not null,
+        creation_time timestamp(6) with time zone not null,
         primary key (label)
     );
 
     create table "BsaUnblockableDomain" (
-       label text not null,
+        label text not null,
         tld text not null,
-        creation_time timestamptz not null,
-        reason text not null,
+        creation_time timestamp(6) with time zone not null,
+        reason text not null check (reason in ('REGISTERED','RESERVED')),
         primary key (label, tld)
     );
 
     create table "ClaimsEntry" (
-       revision_id int8 not null,
+        revision_id bigint not null,
         domain_label text not null,
         claim_key text not null,
-        primary key (revision_id, domain_label)
+        primary key (domain_label, revision_id)
     );
 
     create table "ClaimsList" (
-       revision_id  bigserial not null,
-        creation_timestamp timestamptz not null,
-        tmdb_generation_time timestamptz not null,
+        revision_id bigint generated by default as identity,
+        creation_timestamp timestamp(6) with time zone not null,
+        tmdb_generation_time timestamp(6) with time zone not null,
         primary key (revision_id)
     );
 
     create table "ConsoleEppActionHistory" (
-       history_revision_id int8 not null,
+        history_revision_id bigint not null,
         history_method text not null,
-        history_modification_time timestamptz not null,
+        history_modification_time timestamp(6) with time zone not null,
         history_request_body text,
-        history_type text not null,
+        history_type text not null check (history_type in ('EPP_ACTION','POC_CREATE','POC_UPDATE','POC_DELETE','REGISTRAR_UPDATE','USER_CREATE','USER_DELETE','USER_UPDATE')),
         history_url text not null,
         history_entry_class text not null,
         repo_id text not null,
-        revision_id int8 not null,
+        revision_id bigint,
         history_acting_user text not null,
         primary key (history_revision_id)
     );
 
     create table "Contact" (
-       repo_id text not null,
-        update_timestamp timestamptz,
+        repo_id text not null,
+        update_timestamp timestamp(6) with time zone,
         creation_registrar_id text,
-        creation_time timestamptz,
+        creation_time timestamp(6) with time zone,
         current_sponsor_registrar_id text,
-        deletion_time timestamptz,
+        deletion_time timestamp(6) with time zone,
         last_epp_update_registrar_id text,
-        last_epp_update_time timestamptz,
+        last_epp_update_time timestamp(6) with time zone,
         statuses text[],
         auth_info_repo_id text,
         auth_info_value text,
@@ -178,8 +178,8 @@
         addr_i18n_zip text,
         addr_i18n_name text,
         addr_i18n_org text,
-        addr_i18n_type text,
-        last_transfer_time timestamptz,
+        addr_i18n_type text check (addr_i18n_type in ('LOCALIZED','INTERNATIONALIZED')),
+        last_transfer_time timestamp(6) with time zone,
         addr_local_city text,
         addr_local_country_code text,
         addr_local_state text,
@@ -189,36 +189,36 @@
         addr_local_zip text,
         addr_local_name text,
         addr_local_org text,
-        addr_local_type text,
+        addr_local_type text check (addr_local_type in ('LOCALIZED','INTERNATIONALIZED')),
         search_name text,
-        transfer_history_entry_id int8,
-        transfer_poll_message_id_1 int8,
-        transfer_poll_message_id_2 int8,
-        transfer_poll_message_id_3 int8,
+        transfer_history_entry_id bigint,
+        transfer_poll_message_id_1 bigint,
+        transfer_poll_message_id_2 bigint,
+        transfer_poll_message_id_3 bigint,
         transfer_repo_id text,
         transfer_client_txn_id text,
         transfer_server_txn_id text,
         transfer_gaining_registrar_id text,
         transfer_losing_registrar_id text,
-        transfer_pending_expiration_time timestamptz,
-        transfer_request_time timestamptz,
-        transfer_status text,
+        transfer_pending_expiration_time timestamp(6) with time zone,
+        transfer_request_time timestamp(6) with time zone,
+        transfer_status text check (transfer_status in ('CLIENT_APPROVED','CLIENT_CANCELLED','CLIENT_REJECTED','PENDING','SERVER_APPROVED','SERVER_CANCELLED')),
         voice_phone_extension text,
         voice_phone_number text,
         primary key (repo_id)
     );
 
     create table "ContactHistory" (
-       contact_repo_id text not null,
-        history_revision_id int8 not null,
+        contact_repo_id text not null,
+        history_revision_id bigint not null,
         history_by_superuser boolean not null,
         history_registrar_id text,
-        history_modification_time timestamptz not null,
+        history_modification_time timestamp(6) with time zone not null,
         history_reason text,
         history_requested_by_registrar boolean,
         history_client_transaction_id text,
         history_server_transaction_id text,
-        history_type text not null,
+        history_type text not null check (history_type in ('CONTACT_CREATE','CONTACT_DELETE','CONTACT_DELETE_FAILURE','CONTACT_PENDING_DELETE','CONTACT_TRANSFER_APPROVE','CONTACT_TRANSFER_CANCEL','CONTACT_TRANSFER_REJECT','CONTACT_TRANSFER_REQUEST','CONTACT_UPDATE','DOMAIN_ALLOCATE','DOMAIN_AUTORENEW','DOMAIN_CREATE','DOMAIN_DELETE','DOMAIN_RENEW','DOMAIN_RESTORE','DOMAIN_TRANSFER_APPROVE','DOMAIN_TRANSFER_CANCEL','DOMAIN_TRANSFER_REJECT','DOMAIN_TRANSFER_REQUEST','DOMAIN_UPDATE','HOST_CREATE','HOST_DELETE','HOST_DELETE_FAILURE','HOST_PENDING_DELETE','HOST_UPDATE','RDE_IMPORT','SYNTHETIC')),
         history_xml_bytes bytea,
         auth_info_repo_id text,
         auth_info_value text,
@@ -242,8 +242,8 @@
         addr_i18n_zip text,
         addr_i18n_name text,
         addr_i18n_org text,
-        addr_i18n_type text,
-        last_transfer_time timestamptz,
+        addr_i18n_type text check (addr_i18n_type in ('LOCALIZED','INTERNATIONALIZED')),
+        last_transfer_time timestamp(6) with time zone,
         addr_local_city text,
         addr_local_country_code text,
         addr_local_state text,
@@ -253,355 +253,357 @@
         addr_local_zip text,
         addr_local_name text,
         addr_local_org text,
-        addr_local_type text,
+        addr_local_type text check (addr_local_type in ('LOCALIZED','INTERNATIONALIZED')),
         search_name text,
-        transfer_history_entry_id int8,
-        transfer_poll_message_id_1 int8,
-        transfer_poll_message_id_2 int8,
-        transfer_poll_message_id_3 int8,
+        transfer_history_entry_id bigint,
+        transfer_poll_message_id_1 bigint,
+        transfer_poll_message_id_2 bigint,
+        transfer_poll_message_id_3 bigint,
         transfer_repo_id text,
         transfer_client_txn_id text,
         transfer_server_txn_id text,
         transfer_gaining_registrar_id text,
         transfer_losing_registrar_id text,
-        transfer_pending_expiration_time timestamptz,
-        transfer_request_time timestamptz,
-        transfer_status text,
+        transfer_pending_expiration_time timestamp(6) with time zone,
+        transfer_request_time timestamp(6) with time zone,
+        transfer_status text check (transfer_status in ('CLIENT_APPROVED','CLIENT_CANCELLED','CLIENT_REJECTED','PENDING','SERVER_APPROVED','SERVER_CANCELLED')),
         voice_phone_extension text,
         voice_phone_number text,
         creation_registrar_id text,
-        creation_time timestamptz,
+        creation_time timestamp(6) with time zone,
         current_sponsor_registrar_id text,
-        deletion_time timestamptz,
+        deletion_time timestamp(6) with time zone,
         last_epp_update_registrar_id text,
-        last_epp_update_time timestamptz,
+        last_epp_update_time timestamp(6) with time zone,
         statuses text[],
-        update_timestamp timestamptz,
+        update_timestamp timestamp(6) with time zone,
         primary key (contact_repo_id, history_revision_id)
     );
 
     create table "Cursor" (
-       scope text not null,
-        type text not null,
-        last_update_time timestamptz not null,
-        cursor_time timestamptz not null,
+        scope text not null,
+        type text not null check (type in ('BRDA','RDE_REPORT','RDE_STAGING','RDE_UPLOAD','RDE_UPLOAD_SFTP','RECURRING_BILLING','SYNC_REGISTRAR_SHEET','ICANN_UPLOAD_TX','ICANN_UPLOAD_ACTIVITY')),
+        last_update_time timestamp(6) with time zone not null,
+        cursor_time timestamp(6) with time zone not null,
         primary key (scope, type)
     );
 
     create table "DelegationSignerData" (
-       algorithm int4 not null,
+        algorithm integer not null,
         digest bytea not null,
-        digest_type int4 not null,
+        digest_type integer not null,
         domain_repo_id text not null,
-        key_tag int4 not null,
+        key_tag integer not null,
         primary key (algorithm, digest, digest_type, domain_repo_id, key_tag)
     );
 
     create table "DnsRefreshRequest" (
-       id  bigserial not null,
-        last_process_time timestamptz not null,
+        id bigint generated by default as identity,
+        last_process_time timestamp(6) with time zone not null,
         name text not null,
-        request_time timestamptz not null,
+        request_time timestamp(6) with time zone not null,
         tld text not null,
-        type text not null,
+        type text not null check (type in ('DOMAIN','HOST')),
         primary key (id)
     );
 
     create table "Domain" (
-       repo_id text not null,
-        update_timestamp timestamptz,
+        repo_id text not null,
+        update_timestamp timestamp(6) with time zone,
         creation_registrar_id text,
-        creation_time timestamptz,
+        creation_time timestamp(6) with time zone,
         current_sponsor_registrar_id text,
-        deletion_time timestamptz,
+        deletion_time timestamp(6) with time zone,
         last_epp_update_registrar_id text,
-        last_epp_update_time timestamptz,
+        last_epp_update_time timestamp(6) with time zone,
         statuses text[],
         admin_contact text,
         auth_info_repo_id text,
         auth_info_value text,
-        billing_recurrence_id int8,
-        autorenew_end_time timestamptz,
-        autorenew_poll_message_id int8,
+        billing_recurrence_id bigint,
+        autorenew_end_time timestamp(6) with time zone,
+        autorenew_poll_message_id bigint,
         billing_contact text,
         current_package_token text,
-        deletion_poll_message_id int8,
+        deletion_poll_message_id bigint,
         domain_name text,
         idn_table_name text,
-        last_transfer_time timestamptz,
-        launch_notice_accepted_time timestamptz,
-        launch_notice_expiration_time timestamptz,
+        last_transfer_time timestamp(6) with time zone,
+        launch_notice_accepted_time timestamp(6) with time zone,
+        launch_notice_expiration_time timestamp(6) with time zone,
         launch_notice_tcn_id text,
         launch_notice_validator_id text,
-        lordn_phase text,
+        lordn_phase text check (lordn_phase in ('SUNRISE','CLAIMS','NONE')),
         registrant_contact text,
-        registration_expiration_time timestamptz,
+        registration_expiration_time timestamp(6) with time zone,
         smd_id text,
         subordinate_hosts text[],
         tech_contact text,
         tld text,
-        transfer_billing_cancellation_id int8,
-        transfer_billing_recurrence_id int8,
-        transfer_autorenew_poll_message_id int8,
-        transfer_autorenew_poll_message_history_id int8,
-        transfer_billing_event_id int8,
-        transfer_renew_period_unit text,
-        transfer_renew_period_value int4,
-        transfer_registration_expiration_time timestamptz,
-        transfer_history_entry_id int8,
-        transfer_poll_message_id_1 int8,
-        transfer_poll_message_id_2 int8,
-        transfer_poll_message_id_3 int8,
+        transfer_billing_cancellation_id bigint,
+        transfer_billing_recurrence_id bigint,
+        transfer_autorenew_poll_message_id bigint,
+        transfer_autorenew_poll_message_history_id bigint,
+        transfer_billing_event_id bigint,
+        transfer_renew_period_unit text check (transfer_renew_period_unit in ('YEARS','MONTHS')),
+        transfer_renew_period_value integer,
+        transfer_registration_expiration_time timestamp(6) with time zone,
+        transfer_history_entry_id bigint,
+        transfer_poll_message_id_1 bigint,
+        transfer_poll_message_id_2 bigint,
+        transfer_poll_message_id_3 bigint,
         transfer_repo_id text,
         transfer_client_txn_id text,
         transfer_server_txn_id text,
         transfer_gaining_registrar_id text,
         transfer_losing_registrar_id text,
-        transfer_pending_expiration_time timestamptz,
-        transfer_request_time timestamptz,
-        transfer_status text,
+        transfer_pending_expiration_time timestamp(6) with time zone,
+        transfer_request_time timestamp(6) with time zone,
+        transfer_status text check (transfer_status in ('CLIENT_APPROVED','CLIENT_CANCELLED','CLIENT_REJECTED','PENDING','SERVER_APPROVED','SERVER_CANCELLED')),
         primary key (repo_id)
     );
 
     create table "DomainDsDataHistory" (
-       ds_data_history_revision_id int8 not null,
-        algorithm int4 not null,
+        ds_data_history_revision_id bigint not null,
+        algorithm integer not null,
         digest bytea not null,
-        digest_type int4 not null,
-        domain_history_revision_id int8 not null,
+        digest_type integer not null,
+        domain_history_revision_id bigint not null,
         domain_repo_id text,
-        key_tag int4 not null,
+        key_tag integer not null,
         primary key (ds_data_history_revision_id)
     );
 
     create table "DomainHistory" (
-       domain_repo_id text not null,
-        history_revision_id int8 not null,
+        domain_repo_id text not null,
+        history_revision_id bigint not null,
         history_by_superuser boolean not null,
         history_registrar_id text,
-        history_modification_time timestamptz not null,
+        history_modification_time timestamp(6) with time zone not null,
         history_reason text,
         history_requested_by_registrar boolean,
         history_client_transaction_id text,
         history_server_transaction_id text,
-        history_type text not null,
+        history_type text not null check (history_type in ('CONTACT_CREATE','CONTACT_DELETE','CONTACT_DELETE_FAILURE','CONTACT_PENDING_DELETE','CONTACT_TRANSFER_APPROVE','CONTACT_TRANSFER_CANCEL','CONTACT_TRANSFER_REJECT','CONTACT_TRANSFER_REQUEST','CONTACT_UPDATE','DOMAIN_ALLOCATE','DOMAIN_AUTORENEW','DOMAIN_CREATE','DOMAIN_DELETE','DOMAIN_RENEW','DOMAIN_RESTORE','DOMAIN_TRANSFER_APPROVE','DOMAIN_TRANSFER_CANCEL','DOMAIN_TRANSFER_REJECT','DOMAIN_TRANSFER_REQUEST','DOMAIN_UPDATE','HOST_CREATE','HOST_DELETE','HOST_DELETE_FAILURE','HOST_PENDING_DELETE','HOST_UPDATE','RDE_IMPORT','SYNTHETIC')),
         history_xml_bytes bytea,
         history_other_registrar_id text,
-        history_period_unit text,
-        history_period_value int4,
+        history_period_unit text check (history_period_unit in ('YEARS','MONTHS')),
+        history_period_value integer,
         admin_contact text,
         auth_info_repo_id text,
         auth_info_value text,
-        billing_recurrence_id int8,
-        autorenew_end_time timestamptz,
-        autorenew_poll_message_id int8,
+        billing_recurrence_id bigint,
+        autorenew_end_time timestamp(6) with time zone,
+        autorenew_poll_message_id bigint,
         billing_contact text,
         current_package_token text,
-        deletion_poll_message_id int8,
+        deletion_poll_message_id bigint,
         domain_name text,
         idn_table_name text,
-        last_transfer_time timestamptz,
-        launch_notice_accepted_time timestamptz,
-        launch_notice_expiration_time timestamptz,
+        last_transfer_time timestamp(6) with time zone,
+        launch_notice_accepted_time timestamp(6) with time zone,
+        launch_notice_expiration_time timestamp(6) with time zone,
         launch_notice_tcn_id text,
         launch_notice_validator_id text,
-        lordn_phase text,
+        lordn_phase text check (lordn_phase in ('SUNRISE','CLAIMS','NONE')),
         registrant_contact text,
-        registration_expiration_time timestamptz,
+        registration_expiration_time timestamp(6) with time zone,
         smd_id text,
         subordinate_hosts text[],
         tech_contact text,
         tld text,
-        transfer_billing_cancellation_id int8,
-        transfer_billing_recurrence_id int8,
-        transfer_autorenew_poll_message_id int8,
-        transfer_autorenew_poll_message_history_id int8,
-        transfer_billing_event_id int8,
-        transfer_renew_period_unit text,
-        transfer_renew_period_value int4,
-        transfer_registration_expiration_time timestamptz,
-        transfer_history_entry_id int8,
-        transfer_poll_message_id_1 int8,
-        transfer_poll_message_id_2 int8,
-        transfer_poll_message_id_3 int8,
+        transfer_billing_cancellation_id bigint,
+        transfer_billing_recurrence_id bigint,
+        transfer_autorenew_poll_message_id bigint,
+        transfer_autorenew_poll_message_history_id bigint,
+        transfer_billing_event_id bigint,
+        transfer_renew_period_unit text check (transfer_renew_period_unit in ('YEARS','MONTHS')),
+        transfer_renew_period_value integer,
+        transfer_registration_expiration_time timestamp(6) with time zone,
+        transfer_history_entry_id bigint,
+        transfer_poll_message_id_1 bigint,
+        transfer_poll_message_id_2 bigint,
+        transfer_poll_message_id_3 bigint,
         transfer_repo_id text,
         transfer_client_txn_id text,
         transfer_server_txn_id text,
         transfer_gaining_registrar_id text,
         transfer_losing_registrar_id text,
-        transfer_pending_expiration_time timestamptz,
-        transfer_request_time timestamptz,
-        transfer_status text,
+        transfer_pending_expiration_time timestamp(6) with time zone,
+        transfer_request_time timestamp(6) with time zone,
+        transfer_status text check (transfer_status in ('CLIENT_APPROVED','CLIENT_CANCELLED','CLIENT_REJECTED','PENDING','SERVER_APPROVED','SERVER_CANCELLED')),
         creation_registrar_id text,
-        creation_time timestamptz,
+        creation_time timestamp(6) with time zone,
         current_sponsor_registrar_id text,
-        deletion_time timestamptz,
+        deletion_time timestamp(6) with time zone,
         last_epp_update_registrar_id text,
-        last_epp_update_time timestamptz,
+        last_epp_update_time timestamp(6) with time zone,
         statuses text[],
-        update_timestamp timestamptz,
+        update_timestamp timestamp(6) with time zone,
         primary key (domain_repo_id, history_revision_id)
     );
 
     create table "DomainHistoryHost" (
-       domain_history_domain_repo_id text not null,
-        domain_history_history_revision_id int8 not null,
-        host_repo_id text
+        domain_history_domain_repo_id text not null,
+        domain_history_history_revision_id bigint not null,
+        host_repo_id text,
+        unique (domain_history_history_revision_id, domain_history_domain_repo_id, host_repo_id)
     );
 
     create table "DomainHost" (
-       domain_repo_id text not null,
-        host_repo_id text
+        domain_repo_id text not null,
+        host_repo_id text,
+        unique (domain_repo_id, host_repo_id)
     );
 
     create table "DomainTransactionRecord" (
-       id  bigserial not null,
+        id bigint generated by default as identity,
         domain_repo_id text,
-        history_revision_id int8,
-        report_amount int4 not null,
-        report_field text not null,
-        reporting_time timestamptz not null,
+        history_revision_id bigint,
+        report_amount integer not null,
+        report_field text not null check (report_field in ('NET_ADDS_1_YR','NET_ADDS_2_YR','NET_ADDS_3_YR','NET_ADDS_4_YR','NET_ADDS_5_YR','NET_ADDS_6_YR','NET_ADDS_7_YR','NET_ADDS_8_YR','NET_ADDS_9_YR','NET_ADDS_10_YR','NET_RENEWS_1_YR','NET_RENEWS_2_YR','NET_RENEWS_3_YR','NET_RENEWS_4_YR','NET_RENEWS_5_YR','NET_RENEWS_6_YR','NET_RENEWS_7_YR','NET_RENEWS_8_YR','NET_RENEWS_9_YR','NET_RENEWS_10_YR','TRANSFER_SUCCESSFUL','TRANSFER_NACKED','DELETED_DOMAINS_GRACE','DELETED_DOMAINS_NOGRACE','RESTORED_DOMAINS')),
+        reporting_time timestamp(6) with time zone not null,
         tld text not null,
         primary key (id)
     );
 
     create table "FeatureFlag" (
-       feature_name text not null,
+        feature_name text not null check (feature_name in ('TEST_FEATURE','MINIMUM_DATASET_CONTACTS_OPTIONAL','MINIMUM_DATASET_CONTACTS_PROHIBITED','NEW_CONSOLE')),
         status hstore not null,
         primary key (feature_name)
     );
 
     create table "GracePeriod" (
-       grace_period_id int8 not null,
-        billing_event_id int8,
-        billing_recurrence_id int8,
+        grace_period_id bigint not null,
+        billing_event_id bigint,
+        billing_recurrence_id bigint,
         registrar_id text not null,
         domain_repo_id text not null,
-        expiration_time timestamptz not null,
-        type text not null,
+        expiration_time timestamp(6) with time zone not null,
+        type text not null check (type in ('ADD','AUTO_RENEW','REDEMPTION','RENEW','PENDING_DELETE','PENDING_RESTORE','TRANSFER')),
         primary key (grace_period_id)
     );
 
     create table "GracePeriodHistory" (
-       grace_period_history_revision_id int8 not null,
-        billing_event_id int8,
-        billing_recurrence_id int8,
+        grace_period_history_revision_id bigint not null,
+        billing_event_id bigint,
+        billing_recurrence_id bigint,
         registrar_id text not null,
         domain_repo_id text not null,
-        expiration_time timestamptz not null,
-        type text not null,
-        domain_history_revision_id int8,
-        grace_period_id int8 not null,
+        expiration_time timestamp(6) with time zone not null,
+        type text not null check (type in ('ADD','AUTO_RENEW','REDEMPTION','RENEW','PENDING_DELETE','PENDING_RESTORE','TRANSFER')),
+        domain_history_revision_id bigint,
+        grace_period_id bigint not null,
         primary key (grace_period_history_revision_id)
     );
 
     create table "Host" (
-       repo_id text not null,
-        update_timestamp timestamptz,
+        repo_id text not null,
+        update_timestamp timestamp(6) with time zone,
         creation_registrar_id text,
-        creation_time timestamptz,
+        creation_time timestamp(6) with time zone,
         current_sponsor_registrar_id text,
-        deletion_time timestamptz,
+        deletion_time timestamp(6) with time zone,
         last_epp_update_registrar_id text,
-        last_epp_update_time timestamptz,
+        last_epp_update_time timestamp(6) with time zone,
         statuses text[],
         host_name text,
         inet_addresses text[],
-        last_superordinate_change timestamptz,
-        last_transfer_time timestamptz,
+        last_superordinate_change timestamp(6) with time zone,
+        last_transfer_time timestamp(6) with time zone,
         superordinate_domain text,
         primary key (repo_id)
     );
 
     create table "HostHistory" (
-       host_repo_id text not null,
-        history_revision_id int8 not null,
+        host_repo_id text not null,
+        history_revision_id bigint not null,
         history_by_superuser boolean not null,
         history_registrar_id text,
-        history_modification_time timestamptz not null,
+        history_modification_time timestamp(6) with time zone not null,
         history_reason text,
         history_requested_by_registrar boolean,
         history_client_transaction_id text,
         history_server_transaction_id text,
-        history_type text not null,
+        history_type text not null check (history_type in ('CONTACT_CREATE','CONTACT_DELETE','CONTACT_DELETE_FAILURE','CONTACT_PENDING_DELETE','CONTACT_TRANSFER_APPROVE','CONTACT_TRANSFER_CANCEL','CONTACT_TRANSFER_REJECT','CONTACT_TRANSFER_REQUEST','CONTACT_UPDATE','DOMAIN_ALLOCATE','DOMAIN_AUTORENEW','DOMAIN_CREATE','DOMAIN_DELETE','DOMAIN_RENEW','DOMAIN_RESTORE','DOMAIN_TRANSFER_APPROVE','DOMAIN_TRANSFER_CANCEL','DOMAIN_TRANSFER_REJECT','DOMAIN_TRANSFER_REQUEST','DOMAIN_UPDATE','HOST_CREATE','HOST_DELETE','HOST_DELETE_FAILURE','HOST_PENDING_DELETE','HOST_UPDATE','RDE_IMPORT','SYNTHETIC')),
         history_xml_bytes bytea,
         host_name text,
         inet_addresses text[],
-        last_superordinate_change timestamptz,
-        last_transfer_time timestamptz,
+        last_superordinate_change timestamp(6) with time zone,
+        last_transfer_time timestamp(6) with time zone,
         superordinate_domain text,
         creation_registrar_id text,
-        creation_time timestamptz,
+        creation_time timestamp(6) with time zone,
         current_sponsor_registrar_id text,
-        deletion_time timestamptz,
+        deletion_time timestamp(6) with time zone,
         last_epp_update_registrar_id text,
-        last_epp_update_time timestamptz,
+        last_epp_update_time timestamp(6) with time zone,
         statuses text[],
-        update_timestamp timestamptz,
+        update_timestamp timestamp(6) with time zone,
         primary key (host_repo_id, history_revision_id)
     );
 
     create table "Lock" (
-       resource_name text not null,
+        resource_name text not null,
         scope text not null,
-        acquired_time timestamptz not null,
-        expiration_time timestamptz not null,
+        acquired_time timestamp(6) with time zone not null,
+        expiration_time timestamp(6) with time zone not null,
         primary key (resource_name, scope)
     );
 
     create table "PackagePromotion" (
-       package_promotion_id  bigserial not null,
-        package_price_amount numeric(19, 2) not null,
+        package_promotion_id bigint generated by default as identity,
+        package_price_amount numeric(19,2) not null,
         package_price_currency text not null,
-        last_notification_sent timestamptz,
-        max_creates int4 not null,
-        max_domains int4 not null,
-        next_billing_date timestamptz not null,
+        last_notification_sent timestamp(6) with time zone,
+        max_creates integer not null,
+        max_domains integer not null,
+        next_billing_date timestamp(6) with time zone not null,
         token text not null,
         primary key (package_promotion_id)
     );
 
     create table "PollMessage" (
-       type text not null,
-        poll_message_id int8 not null,
+        type text not null,
+        poll_message_id bigint not null,
         registrar_id text not null,
-        contact_history_revision_id int8,
+        contact_history_revision_id bigint,
         contact_repo_id text,
-        domain_history_revision_id int8,
+        domain_history_revision_id bigint,
         domain_repo_id text,
-        event_time timestamptz not null,
-        host_history_revision_id int8,
+        event_time timestamp(6) with time zone not null,
+        host_history_revision_id bigint,
         host_repo_id text,
         message text,
         transfer_response_contact_id text,
         transfer_response_domain_name text,
-        transfer_response_domain_expiration_time timestamptz,
+        transfer_response_domain_expiration_time timestamp(6) with time zone,
         transfer_response_host_id text,
         pending_action_response_action_result boolean,
         pending_action_response_name_or_id text,
-        pending_action_response_processed_date timestamptz,
+        pending_action_response_processed_date timestamp(6) with time zone,
         pending_action_response_client_txn_id text,
         pending_action_response_server_txn_id text,
         transfer_response_gaining_registrar_id text,
         transfer_response_losing_registrar_id text,
-        transfer_response_pending_transfer_expiration_time timestamptz,
-        transfer_response_transfer_request_time timestamptz,
-        transfer_response_transfer_status text,
-        autorenew_end_time timestamptz,
+        transfer_response_pending_transfer_expiration_time timestamp(6) with time zone,
+        transfer_response_transfer_request_time timestamp(6) with time zone,
+        transfer_response_transfer_status text check (transfer_response_transfer_status in ('CLIENT_APPROVED','CLIENT_CANCELLED','CLIENT_REJECTED','PENDING','SERVER_APPROVED','SERVER_CANCELLED')),
+        autorenew_end_time timestamp(6) with time zone,
         autorenew_domain_name text,
         primary key (poll_message_id)
     );
 
     create table "PremiumEntry" (
-       revision_id int8 not null,
+        revision_id bigint not null,
         domain_label text not null,
-        price numeric(19, 2) not null,
-        primary key (revision_id, domain_label)
+        price numeric(19,2) not null,
+        primary key (domain_label, revision_id)
     );
 
     create table "PremiumList" (
-       revision_id  bigserial not null,
-        creation_timestamp timestamptz,
+        revision_id bigint generated by default as identity,
+        creation_timestamp timestamp(6) with time zone,
         name text not null,
         bloom_filter bytea not null,
         currency text not null,
@@ -609,30 +611,30 @@
     );
 
     create table "RdeRevision" (
-       date date not null,
-        mode text not null,
+        date date not null,
+        mode text not null check (mode in ('FULL','THIN')),
         tld text not null,
-        update_timestamp timestamptz,
-        revision int4 not null,
+        update_timestamp timestamp(6) with time zone,
+        revision integer not null,
         primary key (date, mode, tld)
     );
 
     create table "Registrar" (
-       registrar_id text not null,
-        last_update_time timestamptz not null,
+        registrar_id text not null,
+        last_update_time timestamp(6) with time zone not null,
         allowed_tlds text[],
         billing_account_map hstore,
         block_premium_names boolean not null,
         client_certificate text,
         client_certificate_hash text,
         contacts_require_syncing boolean not null,
-        creation_time timestamptz not null,
+        creation_time timestamp(6) with time zone not null,
         drive_folder_id text,
         email_address text,
         failover_client_certificate text,
         failover_client_certificate_hash text,
         fax_number text,
-        iana_identifier int8,
+        iana_identifier bigint,
         icann_referral_email text,
         i18n_address_city text,
         i18n_address_country_code text,
@@ -642,9 +644,9 @@
         i18n_address_street_line3 text,
         i18n_address_zip text,
         ip_address_allow_list text[],
-        last_certificate_update_time timestamptz,
-        last_expiring_cert_notification_sent_date timestamptz,
-        last_expiring_failover_cert_notification_sent_date timestamptz,
+        last_certificate_update_time timestamp(6) with time zone,
+        last_expiring_cert_notification_sent_date timestamp(6) with time zone,
+        last_expiring_failover_cert_notification_sent_date timestamp(6) with time zone,
         localized_address_city text,
         localized_address_country_code text,
         localized_address_state text,
@@ -660,15 +662,15 @@
         registrar_name text not null,
         registry_lock_allowed boolean not null,
         password_salt text,
-        state text,
-        type text not null,
+        state text check (state in ('PENDING','ACTIVE','SUSPENDED','DISABLED')),
+        type text not null check (type in ('REAL','OTE','PDT','EXTERNAL_MONITORING','INTERNAL','MONITORING','TEST')),
         url text,
         whois_server text,
         primary key (registrar_id)
     );
 
     create table "RegistrarPoc" (
-       email_address text not null,
+        email_address text not null,
         registrar_id text not null,
         allowed_to_set_registry_lock_password boolean not null,
         fax_number text,
@@ -685,11 +687,11 @@
     );
 
     create table "RegistrarPocUpdateHistory" (
-       history_revision_id int8 not null,
+        history_revision_id bigint not null,
         history_method text not null,
-        history_modification_time timestamptz not null,
+        history_modification_time timestamp(6) with time zone not null,
         history_request_body text,
-        history_type text not null,
+        history_type text not null check (history_type in ('EPP_ACTION','POC_CREATE','POC_UPDATE','POC_DELETE','REGISTRAR_UPDATE','USER_CREATE','USER_DELETE','USER_UPDATE')),
         history_url text not null,
         email_address text not null,
         registrar_id text not null,
@@ -709,11 +711,11 @@
     );
 
     create table "RegistrarUpdateHistory" (
-       history_revision_id int8 not null,
+        history_revision_id bigint not null,
         history_method text not null,
-        history_modification_time timestamptz not null,
+        history_modification_time timestamp(6) with time zone not null,
         history_request_body text,
-        history_type text not null,
+        history_type text not null check (history_type in ('EPP_ACTION','POC_CREATE','POC_UPDATE','POC_DELETE','REGISTRAR_UPDATE','USER_CREATE','USER_DELETE','USER_UPDATE')),
         history_url text not null,
         allowed_tlds text[],
         billing_account_map hstore,
@@ -721,13 +723,13 @@
         client_certificate text,
         client_certificate_hash text,
         contacts_require_syncing boolean not null,
-        creation_time timestamptz not null,
+        creation_time timestamp(6) with time zone not null,
         drive_folder_id text,
         email_address text,
         failover_client_certificate text,
         failover_client_certificate_hash text,
         fax_number text,
-        iana_identifier int8,
+        iana_identifier bigint,
         icann_referral_email text,
         i18n_address_city text,
         i18n_address_country_code text,
@@ -737,9 +739,9 @@
         i18n_address_street_line3 text,
         i18n_address_zip text,
         ip_address_allow_list text[],
-        last_certificate_update_time timestamptz,
-        last_expiring_cert_notification_sent_date timestamptz,
-        last_expiring_failover_cert_notification_sent_date timestamptz,
+        last_certificate_update_time timestamp(6) with time zone,
+        last_expiring_cert_notification_sent_date timestamp(6) with time zone,
+        last_expiring_failover_cert_notification_sent_date timestamp(6) with time zone,
         localized_address_city text,
         localized_address_country_code text,
         localized_address_state text,
@@ -755,70 +757,71 @@
         registrar_name text not null,
         registry_lock_allowed boolean not null,
         password_salt text,
-        state text,
-        type text not null,
+        state text check (state in ('PENDING','ACTIVE','SUSPENDED','DISABLED')),
+        type text not null check (type in ('REAL','OTE','PDT','EXTERNAL_MONITORING','INTERNAL','MONITORING','TEST')),
         url text,
         whois_server text,
-        update_timestamp timestamptz,
+        update_timestamp timestamp(6) with time zone,
         registrar_id text not null,
         history_acting_user text not null,
         primary key (history_revision_id)
     );
 
     create table "RegistryLock" (
-       revision_id  bigserial not null,
-        last_update_time timestamptz not null,
+        revision_id bigint generated by default as identity,
+        last_update_time timestamp(6) with time zone not null,
         domain_name text not null,
         is_superuser boolean not null,
-        lock_completion_time timestamptz,
-        lock_request_time timestamptz not null,
+        lock_completion_time timestamp(6) with time zone,
+        lock_request_time timestamp(6) with time zone not null,
         registrar_id text not null,
         registrar_poc_id text,
         relock_duration interval,
         repo_id text not null,
-        unlock_completion_time timestamptz,
-        unlock_request_time timestamptz,
+        unlock_completion_time timestamp(6) with time zone,
+        unlock_request_time timestamp(6) with time zone,
         verification_code text not null,
-        relock_revision_id int8,
-        primary key (revision_id)
+        relock_revision_id bigint unique,
+        primary key (revision_id),
+        constraint idx_registry_lock_repo_id_revision_id unique (repo_id, revision_id)
     );
 
     create table "ReservedEntry" (
-       revision_id int8 not null,
+        revision_id bigint not null,
         domain_label text not null,
         comment text,
-        reservation_type int4 not null,
-        primary key (revision_id, domain_label)
+        reservation_type integer not null check (reservation_type between 0 and 4),
+        primary key (domain_label, revision_id)
     );
 
     create table "ReservedList" (
-       revision_id  bigserial not null,
-        creation_timestamp timestamptz,
+        revision_id bigint generated by default as identity,
+        creation_timestamp timestamp(6) with time zone,
         name text not null,
         primary key (revision_id)
     );
 
     create table "ServerSecret" (
-       id int8 not null,
+        id bigint not null,
         secret uuid,
         primary key (id)
     );
 
     create table "SignedMarkRevocationEntry" (
-       revision_id int8 not null,
-        revocation_time timestamptz not null,
+        revision_id bigint not null,
+        revocation_time timestamp(6) with time zone not null,
         smd_id text not null,
         primary key (revision_id, smd_id)
     );
 
     create table "SignedMarkRevocationList" (
-       revision_id  bigserial not null,
-        creation_time timestamptz,
+        revision_id bigint generated by default as identity,
+        creation_time timestamp(6) with time zone,
         primary key (revision_id)
     );
 
     create table "Spec11ThreatMatch" (
-       id  bigserial not null,
+        id bigint generated by default as identity,
         check_date date not null,
         domain_name text not null,
         domain_repo_id text not null,
@@ -829,7 +832,7 @@
     );
 
     create table "Tld" (
-       tld_name text not null,
+        tld_name text not null,
         add_grace_period_length interval not null,
         allowed_fully_qualified_host_names text[],
         allowed_registrant_contact_ids text[],
@@ -837,10 +840,10 @@
         auto_renew_grace_period_length interval not null,
         automatic_transfer_length interval not null,
         breakglass_mode boolean not null,
-        bsa_enroll_start_time timestamptz,
-        claims_period_end timestamptz not null,
+        bsa_enroll_start_time timestamp(6) with time zone,
+        claims_period_end timestamp(6) with time zone not null,
         create_billing_cost_transitions hstore not null,
-        creation_time timestamptz not null,
+        creation_time timestamp(6) with time zone not null,
         currency text not null,
         default_promo_tokens text[],
         dns_a_plus_aaaa_ttl interval,
@@ -854,168 +857,345 @@
         idn_tables text[],
         invoicing_enabled boolean not null,
         lordn_username text,
-        num_dns_publish_locks int4 not null,
+        num_dns_publish_locks integer not null,
         pending_delete_length interval not null,
         premium_list_name text,
         pricing_engine_class_name text,
         redemption_grace_period_length interval not null,
-        registry_lock_or_unlock_cost_amount numeric(19, 2),
+        registry_lock_or_unlock_cost_amount numeric(19,2),
         registry_lock_or_unlock_cost_currency text,
         renew_billing_cost_transitions hstore not null,
         renew_grace_period_length interval not null,
         reserved_list_names text[],
-        restore_billing_cost_amount numeric(19, 2),
+        restore_billing_cost_amount numeric(19,2),
         restore_billing_cost_currency text,
         roid_suffix text,
-        server_status_change_billing_cost_amount numeric(19, 2),
+        server_status_change_billing_cost_amount numeric(19,2),
         server_status_change_billing_cost_currency text,
         tld_state_transitions hstore not null,
-        tld_type text not null,
+        tld_type text not null check (tld_type in ('REAL','TEST')),
         tld_unicode text not null,
         transfer_grace_period_length interval not null,
         primary key (tld_name)
     );
 
     create table "TmchCrl" (
-       id int8 not null,
+        id bigint not null,
         certificate_revocations text not null,
-        update_timestamp timestamptz not null,
+        update_timestamp timestamp(6) with time zone not null,
         url text not null,
         primary key (id)
     );
 
     create table "User" (
-       email_address text not null,
-        update_timestamp timestamptz,
+        email_address text not null,
+        update_timestamp timestamp(6) with time zone,
         registry_lock_email_address text,
         registry_lock_password_hash text,
         registry_lock_password_salt text,
-        global_role text not null,
+        global_role text not null check (global_role in ('NONE','SUPPORT_AGENT','SUPPORT_LEAD','FTE')),
         is_admin boolean not null,
         registrar_roles hstore,
         primary key (email_address)
     );
 
     create table "UserUpdateHistory" (
-       history_revision_id int8 not null,
+        history_revision_id bigint not null,
         history_method text not null,
-        history_modification_time timestamptz not null,
+        history_modification_time timestamp(6) with time zone not null,
         history_request_body text,
-        history_type text not null,
+        history_type text not null check (history_type in ('EPP_ACTION','POC_CREATE','POC_UPDATE','POC_DELETE','REGISTRAR_UPDATE','USER_CREATE','USER_DELETE','USER_UPDATE')),
         history_url text not null,
         email_address text not null,
         registry_lock_email_address text,
         registry_lock_password_hash text,
         registry_lock_password_salt text,
-        global_role text not null,
+        global_role text not null check (global_role in ('NONE','SUPPORT_AGENT','SUPPORT_LEAD','FTE')),
         is_admin boolean not null,
         registrar_roles hstore,
-        update_timestamp timestamptz,
+        update_timestamp timestamp(6) with time zone,
         history_acting_user text not null,
         primary key (history_revision_id)
     );
-create index allocation_token_domain_name_idx on "AllocationToken" (domain_name);
-create index IDX9g3s7mjv1yn4t06nqid39whss on "AllocationToken" (token_type);
-create index IDXtmlqd31dpvvd2g1h9i7erw6aj on "AllocationToken" (redemption_domain_repo_id);
-create index IDXih4b2tea127p5rb61gje6e1y2 on "BillingCancellation" (registrar_id);
-create index IDX2exdfbx6oiiwnhr8j6gjpqt2j on "BillingCancellation" (event_time);
-create index IDXl8vobbecsd32k4ksavdfx8st6 on "BillingCancellation" (domain_repo_id);
-create index IDXqa3g92jc17e8dtiaviy4fet4x on "BillingCancellation" (billing_time);
-create index IDX4ytbe5f3b39trsd4okx5ijhs4 on "BillingCancellation" (billing_event_id);
-create index IDXku0fopwyvd57ebo8bf0jg9xo2 on "BillingCancellation" (billing_recurrence_id);
-create index IDXqspv57gj2led8ly42fq01t7m7 on "BillingEvent" (registrar_id);
-create index IDX5yfbr88439pxw0v3j86c74fp8 on "BillingEvent" (event_time);
-create index IDX6py6ocrab0ivr76srcd2okpnq on "BillingEvent" (billing_time);
-create index IDXplxf9v56p0wg8ws6qsvd082hk on "BillingEvent" (synthetic_creation_time);
-create index IDXbgfmveqa7e5hn689koikwn70r on "BillingEvent" (domain_repo_id);
-create index IDXcesda59ssop44kklytpb292hn on "BillingEvent" (allocation_token);
-create index IDX6ebt3nwk5ocvnremnhnlkl6ff on "BillingEvent" (cancellation_matching_billing_recurrence_id);
-create index IDXd3gxhkh0jk694pjvh9pyn7wjc on "BillingRecurrence" (registrar_id);
-create index IDX6syykou4nkc7hqa5p8r92cpch on "BillingRecurrence" (event_time);
-create index IDXoqttafcywwdn41um6kwlt0n8b on "BillingRecurrence" (domain_repo_id);
-create index IDXp3usbtvk0v1m14i5tdp4xnxgc on "BillingRecurrence" (recurrence_end_time);
-create index IDXp0pxi708hlu4n40qhbtihge8x on "BillingRecurrence" (recurrence_last_expansion);
-create index IDXjny8wuot75b5e6p38r47wdawu on "BillingRecurrence" (recurrence_time_of_year);
-create index IDXj874kw19bgdnkxo1rue45jwlw on "BsaDownload" (creation_time);
-create index IDXcclyb3n5gbex8u8m9fjlujitw on "ConsoleEppActionHistory" (history_acting_user);
-create index IDX6y67d6wsffmr6jcxax5ghwqhd on "ConsoleEppActionHistory" (repo_id);
-create index IDXiahqo1d1fqdfknywmj2xbxl7t on "ConsoleEppActionHistory" (revision_id);
-create index IDX3y752kr9uh4kh6uig54vemx0l on "Contact" (creation_time);
-create index IDXtm415d6fe1rr35stm33s5mg18 on "Contact" (current_sponsor_registrar_id);
-create index IDXn1f711wicdnooa2mqb7g1m55o on "Contact" (deletion_time);
-create index IDXoqd7n4hbx86hvlgkilq75olas on "Contact" (contact_id);
-create index IDX1p3esngcwwu6hstyua6itn6ff on "Contact" (search_name);
-create index IDXo1xdtpij2yryh0skxe9v91sep on "ContactHistory" (creation_time);
-create index IDXhp33wybmb6tbpr1bq7ttwk8je on "ContactHistory" (history_registrar_id);
-create index IDX9q53px6r302ftgisqifmc6put on "ContactHistory" (history_type);
-create index IDXsudwswtwqnfnx2o1hx4s0k0g5 on "ContactHistory" (history_modification_time);
-create index IDXhlqqd5uy98cjyos72d81x9j95 on "DelegationSignerData" (domain_repo_id);
-create index IDX8gtvnbk64yskcvrdp61f5ied3 on "DnsRefreshRequest" (request_time);
-create index IDXfdk2xpil2x1gh0omt84k2y3o1 on "DnsRefreshRequest" (last_process_time);
-create index IDXnb02m43jcx24r64n8rbg22u4q on "Domain" (admin_contact);
-create index IDXlrq7v63pc21uoh3auq6eybyhl on "Domain" (autorenew_end_time);
-create index IDXq9gy8x2xynt9tb16yajn1gcm8 on "Domain" (billing_contact);
-create index IDX8nr0ke9mrrx4ewj6pd2ag4rmr on "Domain" (creation_time);
-create index IDXhsjqiy2lyobfymplb28nm74lm on "Domain" (current_sponsor_registrar_id);
-create index IDX5mnf0wn20tno4b9do88j61klr on "Domain" (deletion_time);
-create index IDXc5aw4pk1vkd6ymhvkpanmoadv on "Domain" (domain_name);
-create index IDXr22ciyccwi9rrqmt1ro0s59qf on "Domain" (tech_contact);
-create index IDXrwl38wwkli1j7gkvtywi9jokq on "Domain" (tld);
-create index IDXa7fu0bqynfb79rr80528b4jqt on "Domain" (registrant_contact);
-create index IDXnjhib7v6fj7dhj5qydkefkl2u on "Domain" (lordn_phase);
-create index IDXsfci08jgsymxy6ovh4k7r358c on "Domain" (billing_recurrence_id);
-create index IDX3y3k7m2bkgahm9sixiohgyrga on "Domain" (transfer_billing_event_id);
-create index IDXcju58vqascbpve1t7fem53ctl on "Domain" (transfer_billing_recurrence_id);
-create index IDXhteajcrxmq4o8rsys8kevyiqr on "Domain" (transfer_billing_cancellation_id);
-create index IDXrh4xmrot9bd63o382ow9ltfig on "DomainHistory" (creation_time);
-create index IDXaro1omfuaxjwmotk3vo00trwm on "DomainHistory" (history_registrar_id);
-create index IDXsu1nam10cjes9keobapn5jvxj on "DomainHistory" (history_type);
-create index IDX6w3qbtgce93cal2orjg1tw7b7 on "DomainHistory" (history_modification_time);
-create index IDX69qun5kxt3eux5igrxrqcycv0 on "DomainHistoryHost" (domain_history_domain_repo_id);
 
-    alter table if exists "DomainHistoryHost" 
-       add constraint UKt2e7ae3t8gcsxd13wjx2ka7ij unique (domain_history_history_revision_id, domain_history_domain_repo_id, host_repo_id);
-create index IDXjw3rwtfrexyq53x9vu7qghrdt on "DomainHost" (host_repo_id);
+    create index allocation_token_domain_name_idx 
+       on "AllocationToken" (domain_name);
 
-    alter table if exists "DomainHost" 
-       add constraint UKat9erbh52e4lg3jw6ai9wkjj9 unique (domain_repo_id, host_repo_id);
-create index IDXj1mtx98ndgbtb1bkekahms18w on "GracePeriod" (domain_repo_id);
-create index IDXbgssjudpm428mrv0xfpvgifps on "GracePeriod" (billing_event_id);
-create index IDX5u5m6clpk3nktrvtyy5umacb6 on "GracePeriod" (billing_recurrence_id);
-create index IDXd01j17vrpjxaerxdmn8bwxs7s on "GracePeriodHistory" (domain_repo_id);
-create index IDXkpkh68n6dy5v51047yr6b0e9l on "Host" (host_name);
-create index IDXy98mebut8ix1v07fjxxdkqcx on "Host" (creation_time);
-create index IDXovmntef6l45tw2bsfl56tcugx on "Host" (deletion_time);
-create index IDXl49vydnq0h5j1piefwjy4i8er on "Host" (current_sponsor_registrar_id);
-create index IDXorp4yv9ult4ds6kgxo5fs5gnw on "Host" (superordinate_domain);
-create index IDXfg2nnjlujxo6cb9fha971bq2n on "HostHistory" (creation_time);
-create index IDX1iy7njgb7wjmj9piml4l2g0qi on "HostHistory" (history_registrar_id);
-create index IDXkkwbwcwvrdkkqothkiye4jiff on "HostHistory" (host_name);
-create index IDXknk8gmj7s47q56cwpa6rmpt5l on "HostHistory" (history_type);
-create index IDX67qwkjtlq5q8dv6egtrtnhqi7 on "HostHistory" (history_modification_time);
-create index IDXlg6a5tp70nch9cp0gc11brc5o on "PackagePromotion" (token);
-create index IDXf2q9dqj899h1q8lah5y719nxd on "PollMessage" (domain_repo_id);
-create index IDXe7wu46c7wpvfmfnj4565abibp on "PollMessage" (registrar_id);
-create index IDXaydgox62uno9qx8cjlj5lauye on "PollMessage" (event_time);
-create index premiumlist_name_idx on "PremiumList" (name);
-create index registrar_name_idx on "Registrar" (registrar_name);
-create index registrar_iana_identifier_idx on "Registrar" (iana_identifier);
-create index IDXrn6posxkx58de1cp09g5257cw on "RegistrarPocUpdateHistory" (history_acting_user);
-create index IDXr1cxua6it0rxgt9tpyugspxk on "RegistrarPocUpdateHistory" (email_address);
-create index IDXfr24wvpg8qalwqy4pni7evrpj on "RegistrarPocUpdateHistory" (registrar_id);
-create index IDXm6k18dusy2lfi5y81k8g256sa on "RegistrarUpdateHistory" (history_acting_user);
-create index IDX3d1mucv7axrhud8w8jl4vsu62 on "RegistrarUpdateHistory" (registrar_id);
-create index idx_registry_lock_verification_code on "RegistryLock" (verification_code);
-create index idx_registry_lock_registrar_id on "RegistryLock" (registrar_id);
+    create index IDX9g3s7mjv1yn4t06nqid39whss 
+       on "AllocationToken" (token_type);
 
-    alter table if exists "RegistryLock" 
-       add constraint idx_registry_lock_repo_id_revision_id unique (repo_id, revision_id);
-create index reservedlist_name_idx on "ReservedList" (name);
-create index spec11threatmatch_registrar_id_idx on "Spec11ThreatMatch" (registrar_id);
-create index spec11threatmatch_tld_idx on "Spec11ThreatMatch" (tld);
-create index spec11threatmatch_check_date_idx on "Spec11ThreatMatch" (check_date);
-create index IDXbjacjlm8ianc4kxxvamnu94k5 on "UserUpdateHistory" (history_acting_user);
-create index IDX5yqacw829y5bm6f7eajsq1cts on "UserUpdateHistory" (email_address);
+    create index IDXtmlqd31dpvvd2g1h9i7erw6aj 
+       on "AllocationToken" (redemption_domain_repo_id);
+
+    create index IDXih4b2tea127p5rb61gje6e1y2 
+       on "BillingCancellation" (registrar_id);
+
+    create index IDX2exdfbx6oiiwnhr8j6gjpqt2j 
+       on "BillingCancellation" (event_time);
+
+    create index IDXl8vobbecsd32k4ksavdfx8st6 
+       on "BillingCancellation" (domain_repo_id);
+
+    create index IDXqa3g92jc17e8dtiaviy4fet4x 
+       on "BillingCancellation" (billing_time);
+
+    create index IDX4ytbe5f3b39trsd4okx5ijhs4 
+       on "BillingCancellation" (billing_event_id);
+
+    create index IDXku0fopwyvd57ebo8bf0jg9xo2 
+       on "BillingCancellation" (billing_recurrence_id);
+
+    create index IDXqspv57gj2led8ly42fq01t7m7 
+       on "BillingEvent" (registrar_id);
+
+    create index IDX5yfbr88439pxw0v3j86c74fp8 
+       on "BillingEvent" (event_time);
+
+    create index IDX6py6ocrab0ivr76srcd2okpnq 
+       on "BillingEvent" (billing_time);
+
+    create index IDXplxf9v56p0wg8ws6qsvd082hk 
+       on "BillingEvent" (synthetic_creation_time);
+
+    create index IDXbgfmveqa7e5hn689koikwn70r 
+       on "BillingEvent" (domain_repo_id);
+
+    create index IDXcesda59ssop44kklytpb292hn 
+       on "BillingEvent" (allocation_token);
+
+    create index IDX6ebt3nwk5ocvnremnhnlkl6ff 
+       on "BillingEvent" (cancellation_matching_billing_recurrence_id);
+
+    create index IDXd3gxhkh0jk694pjvh9pyn7wjc 
+       on "BillingRecurrence" (registrar_id);
+
+    create index IDX6syykou4nkc7hqa5p8r92cpch 
+       on "BillingRecurrence" (event_time);
+
+    create index IDXoqttafcywwdn41um6kwlt0n8b 
+       on "BillingRecurrence" (domain_repo_id);
+
+    create index IDXp3usbtvk0v1m14i5tdp4xnxgc 
+       on "BillingRecurrence" (recurrence_end_time);
+
+    create index IDXp0pxi708hlu4n40qhbtihge8x 
+       on "BillingRecurrence" (recurrence_last_expansion);
+
+    create index IDXjny8wuot75b5e6p38r47wdawu 
+       on "BillingRecurrence" (recurrence_time_of_year);
+
+    create index IDXj874kw19bgdnkxo1rue45jwlw 
+       on "BsaDownload" (creation_time);
+
+    create index IDXcclyb3n5gbex8u8m9fjlujitw 
+       on "ConsoleEppActionHistory" (history_acting_user);
+
+    create index IDX6y67d6wsffmr6jcxax5ghwqhd 
+       on "ConsoleEppActionHistory" (repo_id);
+
+    create index IDXiahqo1d1fqdfknywmj2xbxl7t 
+       on "ConsoleEppActionHistory" (revision_id);
+
+    create index IDX3y752kr9uh4kh6uig54vemx0l 
+       on "Contact" (creation_time);
+
+    create index IDXtm415d6fe1rr35stm33s5mg18 
+       on "Contact" (current_sponsor_registrar_id);
+
+    create index IDXn1f711wicdnooa2mqb7g1m55o 
+       on "Contact" (deletion_time);
+
+    create index IDXoqd7n4hbx86hvlgkilq75olas 
+       on "Contact" (contact_id);
+
+    create index IDX1p3esngcwwu6hstyua6itn6ff 
+       on "Contact" (search_name);
+
+    create index IDXo1xdtpij2yryh0skxe9v91sep 
+       on "ContactHistory" (creation_time);
+
+    create index IDXhp33wybmb6tbpr1bq7ttwk8je 
+       on "ContactHistory" (history_registrar_id);
+
+    create index IDX9q53px6r302ftgisqifmc6put 
+       on "ContactHistory" (history_type);
+
+    create index IDXsudwswtwqnfnx2o1hx4s0k0g5 
+       on "ContactHistory" (history_modification_time);
+
+    create index IDXhlqqd5uy98cjyos72d81x9j95 
+       on "DelegationSignerData" (domain_repo_id);
+
+    create index IDX8gtvnbk64yskcvrdp61f5ied3 
+       on "DnsRefreshRequest" (request_time);
+
+    create index IDXfdk2xpil2x1gh0omt84k2y3o1 
+       on "DnsRefreshRequest" (last_process_time);
+
+    create index IDXnb02m43jcx24r64n8rbg22u4q 
+       on "Domain" (admin_contact);
+
+    create index IDXlrq7v63pc21uoh3auq6eybyhl 
+       on "Domain" (autorenew_end_time);
+
+    create index IDXq9gy8x2xynt9tb16yajn1gcm8 
+       on "Domain" (billing_contact);
+
+    create index IDX8nr0ke9mrrx4ewj6pd2ag4rmr 
+       on "Domain" (creation_time);
+
+    create index IDXhsjqiy2lyobfymplb28nm74lm 
+       on "Domain" (current_sponsor_registrar_id);
+
+    create index IDX5mnf0wn20tno4b9do88j61klr 
+       on "Domain" (deletion_time);
+
+    create index IDXc5aw4pk1vkd6ymhvkpanmoadv 
+       on "Domain" (domain_name);
+
+    create index IDXr22ciyccwi9rrqmt1ro0s59qf 
+       on "Domain" (tech_contact);
+
+    create index IDXrwl38wwkli1j7gkvtywi9jokq 
+       on "Domain" (tld);
+
+    create index IDXa7fu0bqynfb79rr80528b4jqt 
+       on "Domain" (registrant_contact);
+
+    create index IDXnjhib7v6fj7dhj5qydkefkl2u 
+       on "Domain" (lordn_phase);
+
+    create index IDXsfci08jgsymxy6ovh4k7r358c 
+       on "Domain" (billing_recurrence_id);
+
+    create index IDX3y3k7m2bkgahm9sixiohgyrga 
+       on "Domain" (transfer_billing_event_id);
+
+    create index IDXcju58vqascbpve1t7fem53ctl 
+       on "Domain" (transfer_billing_recurrence_id);
+
+    create index IDXhteajcrxmq4o8rsys8kevyiqr 
+       on "Domain" (transfer_billing_cancellation_id);
+
+    create index IDXrh4xmrot9bd63o382ow9ltfig 
+       on "DomainHistory" (creation_time);
+
+    create index IDXaro1omfuaxjwmotk3vo00trwm 
+       on "DomainHistory" (history_registrar_id);
+
+    create index IDXsu1nam10cjes9keobapn5jvxj 
+       on "DomainHistory" (history_type);
+
+    create index IDX6w3qbtgce93cal2orjg1tw7b7 
+       on "DomainHistory" (history_modification_time);
+
+    create index IDX69qun5kxt3eux5igrxrqcycv0 
+       on "DomainHistoryHost" (domain_history_domain_repo_id);
+
+    create index IDXjw3rwtfrexyq53x9vu7qghrdt 
+       on "DomainHost" (host_repo_id);
+
+    create index IDXj1mtx98ndgbtb1bkekahms18w 
+       on "GracePeriod" (domain_repo_id);
+
+    create index IDXbgssjudpm428mrv0xfpvgifps 
+       on "GracePeriod" (billing_event_id);
+
+    create index IDX5u5m6clpk3nktrvtyy5umacb6 
+       on "GracePeriod" (billing_recurrence_id);
+
+    create index IDXd01j17vrpjxaerxdmn8bwxs7s 
+       on "GracePeriodHistory" (domain_repo_id);
+
+    create index IDXkpkh68n6dy5v51047yr6b0e9l 
+       on "Host" (host_name);
+
+    create index IDXy98mebut8ix1v07fjxxdkqcx 
+       on "Host" (creation_time);
+
+    create index IDXovmntef6l45tw2bsfl56tcugx 
+       on "Host" (deletion_time);
+
+    create index IDXl49vydnq0h5j1piefwjy4i8er 
+       on "Host" (current_sponsor_registrar_id);
+
+    create index IDXorp4yv9ult4ds6kgxo5fs5gnw 
+       on "Host" (superordinate_domain);
+
+    create index IDXfg2nnjlujxo6cb9fha971bq2n 
+       on "HostHistory" (creation_time);
+
+    create index IDX1iy7njgb7wjmj9piml4l2g0qi 
+       on "HostHistory" (history_registrar_id);
+
+    create index IDXkkwbwcwvrdkkqothkiye4jiff 
+       on "HostHistory" (host_name);
+
+    create index IDXknk8gmj7s47q56cwpa6rmpt5l 
+       on "HostHistory" (history_type);
+
+    create index IDX67qwkjtlq5q8dv6egtrtnhqi7 
+       on "HostHistory" (history_modification_time);
+
+    create index IDXlg6a5tp70nch9cp0gc11brc5o 
+       on "PackagePromotion" (token);
+
+    create index IDXf2q9dqj899h1q8lah5y719nxd 
+       on "PollMessage" (domain_repo_id);
+
+    create index IDXe7wu46c7wpvfmfnj4565abibp 
+       on "PollMessage" (registrar_id);
+
+    create index IDXaydgox62uno9qx8cjlj5lauye 
+       on "PollMessage" (event_time);
+
+    create index premiumlist_name_idx 
+       on "PremiumList" (name);
+
+    create index registrar_name_idx 
+       on "Registrar" (registrar_name);
+
+    create index registrar_iana_identifier_idx 
+       on "Registrar" (iana_identifier);
+
+    create index IDXrn6posxkx58de1cp09g5257cw 
+       on "RegistrarPocUpdateHistory" (history_acting_user);
+
+    create index IDXr1cxua6it0rxgt9tpyugspxk 
+       on "RegistrarPocUpdateHistory" (email_address);
+
+    create index IDXfr24wvpg8qalwqy4pni7evrpj 
+       on "RegistrarPocUpdateHistory" (registrar_id);
+
+    create index IDXm6k18dusy2lfi5y81k8g256sa 
+       on "RegistrarUpdateHistory" (history_acting_user);
+
+    create index IDX3d1mucv7axrhud8w8jl4vsu62 
+       on "RegistrarUpdateHistory" (registrar_id);
+
+    create index idx_registry_lock_verification_code 
+       on "RegistryLock" (verification_code);
+
+    create index idx_registry_lock_registrar_id 
+       on "RegistryLock" (registrar_id);
+
+    create index reservedlist_name_idx 
+       on "ReservedList" (name);
+
+    create index spec11threatmatch_registrar_id_idx 
+       on "Spec11ThreatMatch" (registrar_id);
+
+    create index spec11threatmatch_tld_idx 
+       on "Spec11ThreatMatch" (tld);
+
+    create index spec11threatmatch_check_date_idx 
+       on "Spec11ThreatMatch" (check_date);
+
+    create index IDXbjacjlm8ianc4kxxvamnu94k5 
+       on "UserUpdateHistory" (history_acting_user);
+
+    create index IDX5yqacw829y5bm6f7eajsq1cts 
+       on "UserUpdateHistory" (email_address);
 
     alter table if exists "ConsoleEppActionHistory" 
        add constraint FKb686b9os2nsjpv930npa4r3b4 

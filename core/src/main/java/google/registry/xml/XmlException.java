@@ -17,7 +17,7 @@ package google.registry.xml;
 /**
  * An exception thrown by {@link XmlTransformer} when marshalling or unmarshalling fails.
  *
- * <p>Upstream errors such as {@link javax.xml.bind.JAXBException} will be wrapped by this class.
+ * <p>Upstream errors such as {@link jakarta.xml.bind.JAXBException} will be wrapped by this class.
  */
 public class XmlException extends Exception {
 

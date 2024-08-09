@@ -16,7 +16,7 @@ package google.registry.model.adapters;
 
 import static com.google.common.base.Strings.nullToEmpty;
 
-import javax.xml.bind.annotation.adapters.XmlAdapter;
+import jakarta.xml.bind.annotation.adapters.XmlAdapter;
 import org.joda.money.CurrencyUnit;
 
 /** Adapter to use Joda {@link CurrencyUnit} when marshalling strings. */

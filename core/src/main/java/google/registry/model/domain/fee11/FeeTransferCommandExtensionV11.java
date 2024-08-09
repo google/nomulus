@@ -20,10 +20,10 @@ import com.google.common.collect.ImmutableList;
 import google.registry.model.domain.fee.Credit;
 import google.registry.model.domain.fee.FeeTransferCommandExtension;
 import google.registry.model.domain.fee.FeeTransformResponseExtension;
+import jakarta.xml.bind.annotation.XmlElement;
+import jakarta.xml.bind.annotation.XmlRootElement;
+import jakarta.xml.bind.annotation.XmlType;
 import java.util.List;
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlRootElement;
-import javax.xml.bind.annotation.XmlType;
 
 /** A fee extension that may be present on domain transfer requests. */
 @XmlRootElement(name = "transfer")

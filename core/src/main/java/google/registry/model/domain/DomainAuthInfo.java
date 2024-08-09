@@ -15,7 +15,7 @@
 package google.registry.model.domain;
 
 import google.registry.model.eppcommon.AuthInfo;
-import javax.persistence.Embeddable;
+import jakarta.persistence.Embeddable;
 
 /** A version of authInfo specifically for domains. */
 @Embeddable

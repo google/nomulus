@@ -116,7 +116,7 @@ public class Spec11Pipeline implements Serializable {
         RegistryJpaIO.read(
                 "select d.repoId, r.emailAddress from Domain d join Registrar r on"
                     + " d.currentSponsorRegistrarId = r.registrarId where r.type = 'REAL' and"
-                    + " d.deletionTime > now()",
+                    + " d.deletionTime > CAST(now() AS timestamp)",
                 false,
                 Spec11Pipeline::parseRow)
             .withCoder(KvCoder.of(StringUtf8Coder.of(), StringUtf8Coder.of()));

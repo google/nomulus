@@ -21,9 +21,9 @@ import com.google.common.collect.ImmutableList;
 import google.registry.model.Buildable;
 import google.registry.model.ImmutableObject;
 import google.registry.model.eppoutput.EppResponse.ResponseExtension;
+import jakarta.xml.bind.annotation.XmlElement;
+import jakarta.xml.bind.annotation.XmlTransient;
 import java.util.List;
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlTransient;
 import org.joda.money.CurrencyUnit;
 
 /** Base class for fee responses on general transform commands (create, update, renew, transfer). */

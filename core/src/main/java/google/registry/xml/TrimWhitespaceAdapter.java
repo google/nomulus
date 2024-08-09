@@ -15,8 +15,8 @@
 package google.registry.xml;
 
 import com.google.common.base.CharMatcher;
+import jakarta.xml.bind.annotation.adapters.XmlAdapter;
 import javax.annotation.Nullable;
-import javax.xml.bind.annotation.adapters.XmlAdapter;
 
 /**
  * {@link XmlAdapter} which trims all whitespace surrounding a String.

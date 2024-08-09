@@ -16,7 +16,7 @@ package google.registry.model.domain.rgp;
 
 import google.registry.model.ImmutableObject;
 import google.registry.model.eppinput.EppInput.CommandExtension;
-import javax.xml.bind.annotation.XmlRootElement;
+import jakarta.xml.bind.annotation.XmlRootElement;
 
 /** The EPP RGP extension that may be present on domain update commands. */
 @XmlRootElement(name = "update")

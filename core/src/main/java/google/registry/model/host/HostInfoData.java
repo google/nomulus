@@ -19,11 +19,11 @@ import com.google.auto.value.AutoValue.CopyAnnotations;
 import com.google.common.collect.ImmutableSet;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.eppoutput.EppResponse.ResponseData;
+import jakarta.xml.bind.annotation.XmlElement;
+import jakarta.xml.bind.annotation.XmlRootElement;
+import jakarta.xml.bind.annotation.XmlType;
 import java.net.InetAddress;
 import javax.annotation.Nullable;
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlRootElement;
-import javax.xml.bind.annotation.XmlType;
 import org.joda.time.DateTime;
 
 /** The {@link ResponseData} returned for an EPP info flow on a host. */

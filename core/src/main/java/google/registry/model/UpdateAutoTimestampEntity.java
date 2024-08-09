@@ -15,10 +15,10 @@
 package google.registry.model;
 
 import google.registry.util.PreconditionsUtils;
-import javax.persistence.Access;
-import javax.persistence.AccessType;
-import javax.persistence.MappedSuperclass;
-import javax.xml.bind.annotation.XmlTransient;
+import jakarta.persistence.Access;
+import jakarta.persistence.AccessType;
+import jakarta.persistence.MappedSuperclass;
+import jakarta.xml.bind.annotation.XmlTransient;
 
 /**
  * Base class for entities that contains an {@link UpdateAutoTimestamp} which is updated every time

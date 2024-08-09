@@ -20,9 +20,9 @@ import static com.google.common.truth.Truth.assertWithMessage;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import jakarta.persistence.AttributeConverter;
+import jakarta.persistence.Entity;
 import java.util.Collections;
-import javax.persistence.AttributeConverter;
-import javax.persistence.Entity;
 import org.junit.jupiter.api.Test;
 
 /** Unit tests to verify persistence.xml is valid. */

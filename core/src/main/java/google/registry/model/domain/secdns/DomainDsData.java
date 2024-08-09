@@ -18,16 +18,16 @@ import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 
 import google.registry.model.ImmutableObject;
 import google.registry.model.domain.secdns.DomainDsData.DomainDsDataId;
+import jakarta.persistence.Access;
+import jakarta.persistence.AccessType;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.IdClass;
+import jakarta.persistence.Index;
+import jakarta.persistence.Table;
+import jakarta.xml.bind.DatatypeConverter;
+import jakarta.xml.bind.annotation.XmlType;
 import java.io.Serializable;
-import javax.persistence.Access;
-import javax.persistence.AccessType;
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.IdClass;
-import javax.persistence.Index;
-import javax.persistence.Table;
-import javax.xml.bind.DatatypeConverter;
-import javax.xml.bind.annotation.XmlType;
 
 /**
  * Holds the data necessary to construct a single Delegation Signer (DS) record for a domain.

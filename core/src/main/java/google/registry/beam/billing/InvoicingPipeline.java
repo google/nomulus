@@ -222,10 +222,10 @@ public class InvoicingPipeline implements Serializable {
         SqlTemplate.create(
                 ResourceUtils.readResourceUtf8(
                     InvoicingPipeline.class, "sql/cloud_sql_billing_events.sql"))
-            .put("FIRST_TIMESTAMP_OF_MONTH", yearMonth + "-01")
+            .put("FIRST_TIMESTAMP_OF_MONTH", yearMonth + "-01T00:00:00Z")
             .put(
                 "LAST_TIMESTAMP_OF_MONTH",
-                String.format("%d-%d-01", endMonth.getYear(), endMonth.getMonthValue()))
+                String.format("%d-%d-01T00:00:00Z", endMonth.getYear(), endMonth.getMonthValue()))
             .build();
     // Remove the comments from the query string
     return SQL_COMMENT_REGEX.matcher(queryWithComments).replaceAll("");

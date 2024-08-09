@@ -19,9 +19,9 @@ import static google.registry.util.CollectionUtils.nullSafeImmutableCopy;
 import com.google.common.collect.ImmutableSet;
 import google.registry.model.ImmutableObject;
 import google.registry.model.eppinput.EppInput.CommandExtension;
+import jakarta.xml.bind.annotation.XmlRootElement;
+import jakarta.xml.bind.annotation.XmlType;
 import java.util.Set;
-import javax.xml.bind.annotation.XmlRootElement;
-import javax.xml.bind.annotation.XmlType;
 
 /** The EPP secDNS extension that may be present on domain create commands. */
 @XmlRootElement(name = "create")

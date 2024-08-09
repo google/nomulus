@@ -264,7 +264,7 @@ public class RdapNameserverSearchAction extends RdapSearchActionBase {
         replicaTm()
             .transact(
                 () -> {
-                  javax.persistence.Query query =
+                  jakarta.persistence.Query query =
                       replicaTm()
                           .getEntityManager()
                           .createNativeQuery(queryBuilder.toString(), Host.class)

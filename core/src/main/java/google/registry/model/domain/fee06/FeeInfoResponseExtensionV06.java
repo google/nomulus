@@ -18,8 +18,8 @@ import google.registry.model.domain.fee.FeeExtensionCommandDescriptor;
 import google.registry.model.domain.fee.FeeQueryCommandExtensionItem.CommandName;
 import google.registry.model.domain.fee.FeeQueryResponseExtensionItem;
 import google.registry.model.eppoutput.EppResponse.ResponseExtension;
-import javax.xml.bind.annotation.XmlRootElement;
-import javax.xml.bind.annotation.XmlType;
+import jakarta.xml.bind.annotation.XmlRootElement;
+import jakarta.xml.bind.annotation.XmlType;
 import org.joda.money.CurrencyUnit;
 
 /**

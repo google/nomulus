@@ -14,7 +14,7 @@
 
 package google.registry.model.domain.launch;
 
-import javax.xml.bind.annotation.XmlRootElement;
+import jakarta.xml.bind.annotation.XmlRootElement;
 
 /**
  * An XML data object that represents a launch extension that may be present on EPP domain delete

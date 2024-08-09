@@ -17,13 +17,13 @@ package google.registry.persistence;
 import static com.google.common.truth.Truth.assertThat;
 
 import com.google.common.collect.ImmutableList;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import javax.persistence.Entity;
-import javax.persistence.Id;
 import org.joda.money.CurrencyUnit;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -62,7 +62,7 @@ class HibernateSchemaExporterTest {
             """
 
                     create table "TestEntity" (
-                       name text not null,
+                        name text not null,
                         cu text,
                         primary key (name)
                     );

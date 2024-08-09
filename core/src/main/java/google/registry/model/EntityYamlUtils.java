@@ -60,6 +60,7 @@ public class EntityYamlUtils {
     module.addSerializer(Money.class, new MoneySerializer());
     module.addDeserializer(Money.class, new MoneyDeserializer());
     module.addSerializer(Duration.class, new DurationSerializer());
+    module.addSerializer(TimedTransitionProperty.class, new TimedTransitionPropertySerializer());
     ObjectMapper mapper =
         JsonMapper.builder(new YAMLFactory().disable(Feature.WRITE_DOC_START_MARKER))
             .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
@@ -308,6 +309,24 @@ public class EntityYamlUtils {
         tokens.add(VKey.create(AllocationToken.class, token));
       }
       return tokens;
+    }
+  }
+
+  /** A custom JSON serializer for a {@link TimedTransitionProperty} of {@link Enum} values. */
+  public static class TimedTransitionPropertySerializer<E extends Enum<E>>
+      extends StdSerializer<TimedTransitionProperty<E>> {
+
+    TimedTransitionPropertySerializer() {
+      super(null, true);
+    }
+
+    @Override
+    public void serialize(
+        TimedTransitionProperty<E> data,
+        JsonGenerator jsonGenerator,
+        SerializerProvider serializerProvider)
+        throws IOException {
+      jsonGenerator.writeObject(data.toValueMap());
     }
   }
 

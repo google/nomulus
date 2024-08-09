@@ -22,9 +22,9 @@ import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 import com.google.common.net.InternetDomainName;
 import google.registry.model.Buildable.GenericBuilder;
 import google.registry.model.ImmutableObject;
-import javax.persistence.Column;
-import javax.persistence.Id;
-import javax.persistence.MappedSuperclass;
+import jakarta.persistence.Column;
+import jakarta.persistence.Id;
+import jakarta.persistence.MappedSuperclass;
 
 /**
  * Represents a label entry parsed from a line in a reserved/premium list txt file.

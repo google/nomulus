@@ -15,7 +15,7 @@
 package google.registry.model.transfer;
 
 import com.google.common.base.CaseFormat;
-import javax.xml.bind.annotation.XmlEnumValue;
+import jakarta.xml.bind.annotation.XmlEnumValue;
 
 /** Represents the EPP transfer status as defined in RFC 5730. */
 public enum TransferStatus {

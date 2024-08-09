@@ -18,8 +18,8 @@ import static com.google.common.base.Preconditions.checkArgument;
 
 import google.registry.model.ImmutableObject;
 import google.registry.model.domain.Period;
+import jakarta.xml.bind.annotation.XmlTransient;
 import java.util.Optional;
-import javax.xml.bind.annotation.XmlTransient;
 import org.joda.money.CurrencyUnit;
 import org.joda.time.DateTime;
 

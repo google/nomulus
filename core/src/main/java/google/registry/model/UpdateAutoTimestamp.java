@@ -17,12 +17,12 @@ package google.registry.model;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 
+import jakarta.persistence.Column;
+import jakarta.persistence.Embeddable;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreUpdate;
 import java.util.Optional;
 import javax.annotation.Nullable;
-import javax.persistence.Column;
-import javax.persistence.Embeddable;
-import javax.persistence.PrePersist;
-import javax.persistence.PreUpdate;
 import org.joda.time.DateTime;
 
 /** A timestamp that auto-updates on each save to Cloud SQL. */

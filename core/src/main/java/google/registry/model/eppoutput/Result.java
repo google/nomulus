@@ -19,8 +19,8 @@ import static google.registry.util.XmlEnumUtils.enumToXml;
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Preconditions;
 import google.registry.model.ImmutableObject;
-import javax.xml.bind.annotation.XmlAttribute;
-import javax.xml.bind.annotation.XmlEnumValue;
+import jakarta.xml.bind.annotation.XmlAttribute;
+import jakarta.xml.bind.annotation.XmlEnumValue;
 
 /**
  * "If the command was processed successfully, only one {@code Result} element MUST be returned. If

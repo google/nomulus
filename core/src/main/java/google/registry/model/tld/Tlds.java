@@ -35,10 +35,10 @@ import com.google.common.collect.Streams;
 import com.google.common.net.InternetDomainName;
 import google.registry.model.tld.Tld.TldType;
 import google.registry.util.DomainNameUtils;
+import jakarta.persistence.EntityManager;
 import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
-import javax.persistence.EntityManager;
 import org.joda.time.DateTime;
 
 /** Utilities for finding and listing {@link Tld} entities. */

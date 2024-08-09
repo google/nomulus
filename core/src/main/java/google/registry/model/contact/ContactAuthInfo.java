@@ -15,8 +15,8 @@
 package google.registry.model.contact;
 
 import google.registry.model.eppcommon.AuthInfo;
-import javax.persistence.Embeddable;
-import javax.xml.bind.annotation.XmlType;
+import jakarta.persistence.Embeddable;
+import jakarta.xml.bind.annotation.XmlType;
 
 /** A version of authInfo specifically for contacts. */
 @Embeddable

@@ -19,8 +19,8 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import google.registry.model.Buildable;
 import google.registry.model.ImmutableObject;
-import javax.xml.bind.annotation.XmlAttribute;
-import javax.xml.bind.annotation.XmlElement;
+import jakarta.xml.bind.annotation.XmlAttribute;
+import jakarta.xml.bind.annotation.XmlElement;
 import org.joda.time.DateTime;
 
 /** Information about the message queue for the currently logged in registrar. */

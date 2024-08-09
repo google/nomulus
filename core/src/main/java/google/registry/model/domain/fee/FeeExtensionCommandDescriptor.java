@@ -17,9 +17,9 @@ package google.registry.model.domain.fee;
 import com.google.common.base.Ascii;
 import google.registry.model.ImmutableObject;
 import google.registry.model.domain.fee.FeeQueryCommandExtensionItem.CommandName;
+import jakarta.xml.bind.annotation.XmlAttribute;
+import jakarta.xml.bind.annotation.XmlValue;
 import java.util.Locale;
-import javax.xml.bind.annotation.XmlAttribute;
-import javax.xml.bind.annotation.XmlValue;
 
 /** A command name along with the launch phase and subphase it is to be executed in. */
 public class FeeExtensionCommandDescriptor extends ImmutableObject {

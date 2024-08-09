@@ -25,13 +25,13 @@ import com.google.common.base.CharMatcher;
 import com.google.common.primitives.Ints;
 import google.registry.model.ImmutableObject;
 import google.registry.model.UnsafeSerializable;
+import jakarta.persistence.Embeddable;
+import jakarta.persistence.Embedded;
+import jakarta.xml.bind.annotation.XmlAttribute;
+import jakarta.xml.bind.annotation.XmlElement;
+import jakarta.xml.bind.annotation.XmlType;
+import jakarta.xml.bind.annotation.XmlValue;
 import java.util.Optional;
-import javax.persistence.Embeddable;
-import javax.persistence.Embedded;
-import javax.xml.bind.annotation.XmlAttribute;
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlType;
-import javax.xml.bind.annotation.XmlValue;
 import org.joda.time.DateTime;
 
 /** The claims notice id from the claims phase. */

@@ -44,16 +44,15 @@ import google.registry.persistence.VKey;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaUnitTestExtension;
 import google.registry.testing.DatabaseHelper;
 import google.registry.testing.FakeClock;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.Id;
+import jakarta.persistence.IdClass;
+import jakarta.persistence.OptimisticLockException;
+import jakarta.persistence.PersistenceException;
+import jakarta.persistence.RollbackException;
 import java.io.Serializable;
-import java.math.BigInteger;
 import java.util.NoSuchElementException;
-import javax.persistence.Entity;
-import javax.persistence.EntityManager;
-import javax.persistence.Id;
-import javax.persistence.IdClass;
-import javax.persistence.OptimisticLockException;
-import javax.persistence.PersistenceException;
-import javax.persistence.RollbackException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.junit.jupiter.api.function.Executable;
@@ -834,8 +833,8 @@ class JpaTransactionManagerImplTest {
   private static int countTable(String tableName) {
     return tm().transact(
             () -> {
-              BigInteger colCount =
-                  (BigInteger)
+              Long colCount =
+                  (Long)
                       tm().getEntityManager()
                           .createNativeQuery(String.format("SELECT COUNT(*) FROM %s", tableName))
                           .getSingleResult();

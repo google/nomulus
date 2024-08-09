@@ -106,7 +106,7 @@ public class RegistryJpaReadTest {
         RegistryJpaIO.read(
                 "select d, r.emailAddress from Domain d join Registrar r on"
                     + " d.currentSponsorRegistrarId = r.registrarId where r.type = :type"
-                    + " and d.deletionTime > now()",
+                    + " and d.deletionTime > CAST(now() AS timestamp)",
                 ImmutableMap.of("type", Registrar.Type.REAL),
                 false,
                 (Object[] row) -> {
@@ -150,7 +150,7 @@ public class RegistryJpaReadTest {
         RegistryJpaIO.read(
                 "select d from Domain d join Registrar r on"
                     + " d.currentSponsorRegistrarId = r.registrarId where r.type = :type"
-                    + " and d.deletionTime > now()",
+                    + " and d.deletionTime > CAST(now() AS timestamp)",
                 ImmutableMap.of("type", Registrar.Type.REAL),
                 Domain.class,
                 Domain::getRepoId)

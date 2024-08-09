@@ -23,8 +23,8 @@ import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationWithCoverageExtension;
 import google.registry.testing.FakeClock;
 import google.registry.testing.TestCacheExtension;
+import jakarta.persistence.PersistenceException;
 import java.time.Duration;
-import javax.persistence.PersistenceException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 

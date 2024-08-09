@@ -16,10 +16,10 @@ package google.registry.persistence.transaction;
 
 import google.registry.persistence.PersistenceModule.TransactionIsolationLevel;
 import google.registry.persistence.VKey;
-import javax.persistence.EntityManager;
-import javax.persistence.Query;
-import javax.persistence.TypedQuery;
-import javax.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.Query;
+import jakarta.persistence.TypedQuery;
+import jakarta.persistence.criteria.CriteriaQuery;
 
 /** Sub-interface of {@link TransactionManager} which defines JPA related methods. */
 public interface JpaTransactionManager extends TransactionManager {

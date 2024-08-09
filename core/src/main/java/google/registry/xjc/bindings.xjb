@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<bindings xmlns="http://java.sun.com/xml/ns/jaxb"
+<bindings xmlns="https://jakarta.ee/xml/ns/jaxb"
           xmlns:xsd="http://www.w3.org/2001/XMLSchema"
           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
           xmlns:xjc="http://java.sun.com/xml/ns/jaxb/xjc"
           xsi:schemaLocation="http://java.sun.com/xml/ns/jaxb
-                              http://java.sun.com/xml/ns/jaxb/bindingschema_2_0.xsd"
+                              http://java.sun.com/xml/ns/jaxb/bindingschema_3_0.xsd"
           extensionBindingPrefixes="xjc"
-          version="2.1">
+          version="3.0">
   <globalBindings generateElementClass="true">
     <xjc:simple/>
     <xjc:superClass name="google.registry.xjc.XjcObject"/>

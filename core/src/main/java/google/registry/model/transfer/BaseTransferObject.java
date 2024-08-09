@@ -17,12 +17,12 @@ package google.registry.model.transfer;
 import google.registry.model.Buildable.GenericBuilder;
 import google.registry.model.ImmutableObject;
 import google.registry.model.UnsafeSerializable;
-import javax.persistence.Column;
-import javax.persistence.EnumType;
-import javax.persistence.Enumerated;
-import javax.persistence.MappedSuperclass;
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlTransient;
+import jakarta.persistence.Column;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.MappedSuperclass;
+import jakarta.xml.bind.annotation.XmlElement;
+import jakarta.xml.bind.annotation.XmlTransient;
 import org.joda.time.DateTime;
 
 /** Fields common to {@link TransferData} and {@link TransferResponse}. */

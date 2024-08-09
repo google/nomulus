@@ -13,8 +13,8 @@
 // limitations under the License.
 package google.registry.persistence.converter;
 
+import jakarta.persistence.AttributeConverter;
 import javax.annotation.Nullable;
-import javax.persistence.AttributeConverter;
 
 /** Abstract JPA converter for objects that are stored by their toString() value. */
 abstract class ToStringConverterBase<T> implements AttributeConverter<T, String> {

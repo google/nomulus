@@ -40,13 +40,13 @@ import google.registry.model.transfer.DomainTransferData;
 import google.registry.model.transfer.TransferData;
 import google.registry.model.transfer.TransferStatus;
 import google.registry.persistence.VKey;
+import jakarta.persistence.Query;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import javax.annotation.Nullable;
-import javax.persistence.Query;
 import org.joda.time.DateTime;
 import org.joda.time.Interval;
 

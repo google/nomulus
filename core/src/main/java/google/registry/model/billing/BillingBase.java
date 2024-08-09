@@ -28,13 +28,13 @@ import google.registry.model.domain.DomainHistory;
 import google.registry.model.reporting.HistoryEntry.HistoryEntryId;
 import google.registry.model.transfer.TransferData.TransferServerApproveEntity;
 import google.registry.persistence.VKey;
+import jakarta.persistence.Column;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.Id;
+import jakarta.persistence.MappedSuperclass;
 import java.util.Set;
 import javax.annotation.Nullable;
-import javax.persistence.Column;
-import javax.persistence.EnumType;
-import javax.persistence.Enumerated;
-import javax.persistence.Id;
-import javax.persistence.MappedSuperclass;
 import org.joda.time.DateTime;
 
 /** A billable event in a domain's lifecycle. */
@@ -154,7 +154,9 @@ public abstract class BillingBase extends ImmutableObject
   @Column(name = "domain_name", nullable = false)
   String targetId;
 
-  @Nullable Set<Flag> flags;
+  @Nullable
+  @Enumerated(EnumType.STRING)
+  Set<Flag> flags;
 
   public String getRegistrarId() {
     return clientId;

@@ -17,9 +17,9 @@ package google.registry.persistence.transaction;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
+import jakarta.persistence.PersistenceException;
 import java.sql.SQLException;
 import java.util.Optional;
-import javax.persistence.PersistenceException;
 
 /**
  * Wraps an exception thrown by the JPA framework and captures the SQL error details (state and

@@ -36,14 +36,16 @@ import google.registry.model.CacheUtils;
 import google.registry.model.EntityYamlUtils.TimedTransitionPropertyFeatureStatusDeserializer;
 import google.registry.model.ImmutableObject;
 import google.registry.persistence.VKey;
+import google.registry.persistence.converter.FeatureStatusTransitionUserType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.Id;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.EnumType;
-import javax.persistence.Enumerated;
-import javax.persistence.Id;
+import org.hibernate.annotations.Type;
 import org.joda.time.DateTime;
 
 @Entity
@@ -74,6 +76,7 @@ public class FeatureFlag extends ImmutableObject implements Buildable {
 
   /** A map of times for each {@link FeatureStatus} the FeatureFlag should hold. */
   @Column(nullable = false)
+  @Type(FeatureStatusTransitionUserType.class)
   @JsonDeserialize(using = TimedTransitionPropertyFeatureStatusDeserializer.class)
   TimedTransitionProperty<FeatureStatus> status =
       TimedTransitionProperty.withInitialValue(FeatureStatus.INACTIVE);

@@ -16,11 +16,11 @@ package google.registry.model.transfer;
 
 import google.registry.model.EppResource;
 import google.registry.model.eppoutput.EppResponse.ResponseData;
-import javax.persistence.Embeddable;
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlRootElement;
-import javax.xml.bind.annotation.XmlTransient;
-import javax.xml.bind.annotation.XmlType;
+import jakarta.persistence.Embeddable;
+import jakarta.xml.bind.annotation.XmlElement;
+import jakarta.xml.bind.annotation.XmlRootElement;
+import jakarta.xml.bind.annotation.XmlTransient;
+import jakarta.xml.bind.annotation.XmlType;
 import org.joda.time.DateTime;
 
 /**

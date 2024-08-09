@@ -15,9 +15,9 @@
 package google.registry.model.eppcommon;
 
 import google.registry.model.ImmutableObject;
+import jakarta.persistence.Embeddable;
+import jakarta.xml.bind.annotation.XmlTransient;
 import java.io.Serializable;
-import javax.persistence.Embeddable;
-import javax.xml.bind.annotation.XmlTransient;
 
 /**
  * Used as the value of a tag that is present in the XML but has no children or value.

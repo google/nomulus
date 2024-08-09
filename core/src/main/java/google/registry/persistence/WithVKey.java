@@ -14,11 +14,11 @@
 
 package google.registry.persistence;
 
+import jakarta.persistence.AttributeConverter;
+import jakarta.persistence.Entity;
 import java.io.Serializable;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Target;
-import javax.persistence.AttributeConverter;
-import javax.persistence.Entity;
 
 /**
  * Annotation for {@link Entity} that can be saved as a foreign key in the form of a {@link VKey} in

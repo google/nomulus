@@ -30,15 +30,15 @@ import google.registry.tools.ServiceConnection;
 import google.registry.tools.server.UpdateUserGroupAction;
 import google.registry.tools.server.UpdateUserGroupAction.Mode;
 import google.registry.util.RegistryEnvironment;
+import jakarta.persistence.Access;
+import jakarta.persistence.AccessType;
+import jakarta.persistence.Embeddable;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 import java.io.IOException;
 import java.util.Optional;
 import javax.annotation.Nullable;
-import javax.persistence.Access;
-import javax.persistence.AccessType;
-import javax.persistence.Embeddable;
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.Table;
 
 /** A console user, either a registry employee or a registrar partner. */
 @Embeddable

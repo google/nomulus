@@ -22,9 +22,9 @@ import google.registry.model.Buildable.GenericBuilder;
 import google.registry.model.ImmutableObject;
 import google.registry.model.domain.Period;
 import google.registry.model.domain.fee.FeeQueryCommandExtensionItem.CommandName;
+import jakarta.xml.bind.annotation.XmlElement;
+import jakarta.xml.bind.annotation.XmlTransient;
 import java.util.List;
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlTransient;
 import org.joda.money.CurrencyUnit;
 import org.joda.time.DateTime;
 
