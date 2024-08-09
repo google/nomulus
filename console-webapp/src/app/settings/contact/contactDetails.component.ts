@@ -50,6 +50,9 @@ export class ContactDetailsComponent {
           error: (err: HttpErrorResponse) => {
             this._snackBar.open(err.error);
           },
+          complete: () => {
+            this.goBack();
+          },
         });
     }
   }
