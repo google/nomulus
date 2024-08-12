@@ -1,5 +1,5 @@
 # This is the default configuration file for Nomulus. Do not make changes to it
-# unless you are writing new features that requires you to. To customize an
+# unless you are writing new features that require you to. To customize an
 # individual deployment or environment, create a nomulus-config.yaml file in the
 # WEB-INF/ directory overriding only the values you wish to change. You may need
 # to override some of these values to configure and enable some services used in
@@ -24,6 +24,10 @@ gcpProject:
   toolsServiceUrl: https://tools.example.com
   pubapiServiceUrl: https://pubapi.example.com
 
+  # The backend service ID created when setting up GKE gateways. It will be included in the
+  # audience field in the JWT that IAP creates.
+  # See: https://cloud.google.com/iap/docs/signed-headers-howto#verifying_the_jwt_payload
+  backendServiceId: 123456789
 
 gSuite:
   # Publicly accessible domain name of the running G Suite instance.

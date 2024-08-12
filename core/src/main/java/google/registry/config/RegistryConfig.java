@@ -120,6 +120,12 @@ public final class RegistryConfig {
     }
 
     @Provides
+    @Config("backendServiceId")
+    public static long provideBackendServiceId(RegistryConfigSettings config) {
+      return config.gcpProject.backendServiceId;
+    }
+
+    @Provides
     @Config("locationId")
     public static String provideLocationId(RegistryConfigSettings config) {
       return config.gcpProject.locationId;
