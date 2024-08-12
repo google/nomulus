@@ -47,4 +47,3 @@ spec:
     group: net.gke.io
     kind: ServiceImport
     name: nomulus
-

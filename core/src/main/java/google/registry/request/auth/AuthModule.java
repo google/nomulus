@@ -24,6 +24,7 @@ import google.registry.config.RegistryConfig.Config;
 import google.registry.request.auth.OidcTokenAuthenticationMechanism.IapOidcAuthenticationMechanism;
 import google.registry.request.auth.OidcTokenAuthenticationMechanism.RegularOidcAuthenticationMechanism;
 import google.registry.request.auth.OidcTokenAuthenticationMechanism.TokenExtractor;
+import google.registry.util.RegistryEnvironment;
 import javax.inject.Qualifier;
 import javax.inject.Singleton;
 
@@ -37,7 +38,8 @@ public class AuthModule {
   public static final String BEARER_PREFIX = "Bearer ";
   // TODO: Change the IAP audience format once we are on GKE.
   // See: https://cloud.google.com/iap/docs/signed-headers-howto#verifying_the_jwt_payload
-  private static final String IAP_AUDIENCE_FORMAT = "/projects/%d/apps/%s";
+  private static final String IAP_GAE_AUDIENCE_FORMAT = "/projects/%d/apps/%s";
+  private static final String IAP_GKE_AUDIENCE_FORMAT = "/projects/%d/global/backendServices/%d";
   private static final String IAP_ISSUER_URL = "https://cloud.google.com/iap";
   private static final String REGULAR_ISSUER_URL = "https://accounts.google.com";
 
@@ -62,8 +64,13 @@ public class AuthModule {
   @IapOidc
   @Singleton
   TokenVerifier provideIapTokenVerifier(
-      @Config("projectId") String projectId, @Config("projectIdNumber") long projectIdNumber) {
-    String audience = String.format(IAP_AUDIENCE_FORMAT, projectIdNumber, projectId);
+      @Config("projectId") String projectId,
+      @Config("projectIdNumber") long projectIdNumber,
+      @Config("backendServiceId") long backendServiceId) {
+    String audience =
+        RegistryEnvironment.isOnJetty()
+            ? String.format(IAP_GKE_AUDIENCE_FORMAT, projectIdNumber, backendServiceId)
+            : String.format(IAP_GAE_AUDIENCE_FORMAT, projectIdNumber, projectId);
     return TokenVerifier.newBuilder().setAudience(audience).setIssuer(IAP_ISSUER_URL).build();
   }
 

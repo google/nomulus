@@ -41,6 +41,7 @@ do
   if [[ "${parts[1]}" == us-* ]]
   then
     kubectl apply -f "./kubernetes/nomulus-gateway.yaml"
+    kubectl apply -f "./kubernetes/nomulus-iap-${environment}.yaml"
   fi
 done < <(gcloud container clusters list --project "${project}" | grep nomulus)
 kubectl config use-context "$current_context"
