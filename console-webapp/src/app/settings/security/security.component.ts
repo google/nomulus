@@ -35,6 +35,7 @@ export default class SecurityComponent {
       if (this.registrarService.registrar()) {
         this.dataSource = apiToUiConverter(this.registrarService.registrar());
         this.securityService.isEditingSecurity = false;
+        this.securityService.isEditingPassword = false;
       }
     });
   }

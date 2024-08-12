@@ -20,6 +20,7 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { MaterialModule } from '../material.module';
 import { BackendService } from '../shared/services/backend.service';
 import { RegistrarSelectorComponent } from './registrarSelector.component';
+import { FormsModule } from '@angular/forms';
 
 describe('RegistrarSelectorComponent', () => {
   let component: RegistrarSelectorComponent;
@@ -28,7 +29,7 @@ describe('RegistrarSelectorComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       declarations: [RegistrarSelectorComponent],
-      imports: [MaterialModule, BrowserAnimationsModule],
+      imports: [MaterialModule, BrowserAnimationsModule, FormsModule],
       providers: [
         BackendService,
         provideHttpClient(),
