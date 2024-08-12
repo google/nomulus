@@ -20,20 +20,18 @@ import { FormsModule } from '@angular/forms';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { of } from 'rxjs';
 import { MaterialModule } from 'src/app/material.module';
-import {
-  Registrar,
-  RegistrarService,
-} from 'src/app/registrar/registrar.service';
+import { RegistrarService } from 'src/app/registrar/registrar.service';
 import { BackendService } from 'src/app/shared/services/backend.service';
 import SecurityComponent from './security.component';
-import { SecurityService, apiToUiConverter } from './security.service';
+import { SecurityService } from './security.service';
+import SecurityEditComponent from './securityEdit.component';
+import { MOCK_REGISTRAR_SERVICE } from 'src/testdata/registrar/registrar.service.mock';
 
 describe('SecurityComponent', () => {
   let component: SecurityComponent;
   let fixture: ComponentFixture<SecurityComponent>;
   let fetchSecurityDetailsSpy: Function;
   let saveSpy: Function;
-  let dummyRegistrarService: RegistrarService;
 
   beforeEach(async () => {
     const securityServiceSpy = jasmine.createSpyObj(SecurityService, [
@@ -46,16 +44,13 @@ describe('SecurityComponent', () => {
 
     saveSpy = securityServiceSpy.saveChanges;
 
-    dummyRegistrarService = {
-      registrar: { ipAddressAllowList: ['123.123.123.123'] },
-    } as RegistrarService;
-
     await TestBed.configureTestingModule({
-      declarations: [SecurityComponent],
+      declarations: [SecurityEditComponent, SecurityComponent],
       imports: [MaterialModule, BrowserAnimationsModule, FormsModule],
       providers: [
         BackendService,
-        { provide: RegistrarService, useValue: dummyRegistrarService },
+        SecurityService,
+        { provide: RegistrarService, useValue: MOCK_REGISTRAR_SERVICE },
         provideHttpClient(),
         provideHttpClientTesting(),
       ],
@@ -78,78 +73,65 @@ describe('SecurityComponent', () => {
     expect(component).toBeTruthy();
   });
 
-  it('should render ip allow list', waitForAsync(() => {
-    component.enableEdit();
+  it('should render security elements', waitForAsync(() => {
+    fixture.detectChanges();
     fixture.whenStable().then(() => {
-      expect(
-        Array.from(
-          fixture.nativeElement.querySelectorAll(
-            '.settings-security__ip-allowlist'
-          )
-        )
-      ).toHaveSize(1);
-      expect(
-        fixture.nativeElement.querySelector('.settings-security__ip-allowlist')
-          .value
-      ).toBe('123.123.123.123');
+      let listElems: Array<HTMLElement> = Array.from(
+        fixture.nativeElement.querySelectorAll('span.console-app__list-value')
+      );
+      expect(listElems).toHaveSize(8);
+      expect(listElems.map((e) => e.textContent)).toEqual([
+        'Change the password used for EPP logins',
+        '••••••••••••••',
+        'Restrict access to EPP production servers to the following IP/IPv6 addresses, or ranges like 1.1.1.0/24',
+        '123.123.123.123',
+        'X.509 PEM certificate for EPP production access',
+        'No client certificate on file.',
+        'X.509 PEM backup certificate for EPP production access',
+        'No failover certificate on file.',
+      ]);
     });
   }));
 
   it('should remove ip', waitForAsync(() => {
-    expect(
-      Array.from(
-        fixture.nativeElement.querySelectorAll(
-          '.settings-security__ip-allowlist'
-        )
-      )
-    ).toHaveSize(1);
-    component.removeIpEntry(0);
+    component.dataSource.ipAddressAllowList =
+      component.dataSource.ipAddressAllowList?.splice(1);
     fixture.whenStable().then(() => {
       fixture.detectChanges();
-      expect(
-        Array.from(
-          fixture.nativeElement.querySelectorAll(
-            '.settings-security__ip-allowlist'
-          )
-        )
-      ).toHaveSize(0);
+      let listElems: Array<HTMLElement> = Array.from(
+        fixture.nativeElement.querySelectorAll('span.console-app__list-value')
+      );
+      expect(listElems.map((e) => e.textContent)).toContain(
+        'No IP addresses on file.'
+      );
     });
   }));
 
-  it('should toggle inEdit', () => {
-    expect(component.inEdit).toBeFalse();
-    component.enableEdit();
-    expect(component.inEdit).toBeTrue();
+  it('should toggle isEditingSecurity', () => {
+    expect(component.securityService.isEditingSecurity).toBeFalse();
+    component.editSecurity();
+    expect(component.securityService.isEditingSecurity).toBeTrue();
   });
 
-  it('should create temporary data structure', () => {
-    expect(component.dataSource).toEqual(
-      apiToUiConverter(dummyRegistrarService.registrar)
-    );
-    component.removeIpEntry(0);
-    expect(component.dataSource).toEqual({ ipAddressAllowList: [] });
-    expect(dummyRegistrarService.registrar).toEqual({
-      ipAddressAllowList: ['123.123.123.123'],
-    } as Registrar);
-    component.cancel();
-    expect(component.dataSource).toEqual(
-      apiToUiConverter(dummyRegistrarService.registrar)
-    );
+  it('should toggle isEditingPassword', () => {
+    expect(component.securityService.isEditingPassword).toBeFalse();
+    component.editEppPassword();
+    expect(component.securityService.isEditingPassword).toBeTrue();
   });
 
   it('should call save', waitForAsync(async () => {
-    component.enableEdit();
-    fixture.detectChanges();
+    component.editSecurity();
     await fixture.whenStable();
+    fixture.detectChanges();
     const el = fixture.nativeElement.querySelector(
-      '.settings-security__clientCertificate'
+      '.console-app__clientCertificateValue'
     );
     el.value = 'test';
     el.dispatchEvent(new Event('input'));
     fixture.detectChanges();
     await fixture.whenStable();
     fixture.nativeElement
-      .querySelector('.settings-security__actions-save')
+      .querySelector('.settings-security__edit-save')
       .click();
     expect(saveSpy).toHaveBeenCalledOnceWith({
       ipAddressAllowList: [{ value: '123.123.123.123' }],

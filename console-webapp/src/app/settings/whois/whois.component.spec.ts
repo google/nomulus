@@ -32,7 +32,14 @@ describe('WhoisComponent', () => {
       imports: [MaterialModule, BrowserAnimationsModule],
       providers: [
         BackendService,
-        { provide: RegistrarService, useValue: { registrar: {} } },
+        {
+          provide: RegistrarService,
+          useValue: {
+            registrar: function () {
+              return {};
+            },
+          },
+        },
         provideHttpClient(),
         provideHttpClientTesting(),
       ],

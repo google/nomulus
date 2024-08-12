@@ -69,7 +69,9 @@ task deploy(type: Exec) {
 }
 
 tasks.buildConsoleWebappProd.dependsOn(tasks.npmInstallDeps)
+tasks.runConsoleWebappUnitTests.dependsOn(tasks.npmInstallDeps)
 tasks.applyFormatting.dependsOn(tasks.npmInstallDeps)
 tasks.checkFormatting.dependsOn(tasks.npmInstallDeps)
 tasks.build.dependsOn(tasks.checkFormatting)
+tasks.build.dependsOn(tasks.runConsoleWebappUnitTests)
 tasks.deploy.dependsOn(tasks.buildConsoleWebappProd)
