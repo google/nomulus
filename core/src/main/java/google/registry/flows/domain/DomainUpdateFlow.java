@@ -14,7 +14,6 @@
 
 package google.registry.flows.domain;
 
-import static com.google.common.base.MoreObjects.firstNonNull;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.collect.ImmutableSortedSet.toImmutableSortedSet;
 import static com.google.common.collect.Sets.symmetricDifference;
@@ -282,7 +281,7 @@ public final class DomainUpdateFlow implements MutatingFlow {
             .removeContacts(remove.getContacts())
             .addContacts(add.getContacts())
             .setRegistrant(determineUpdatedRegistrant(change, domain))
-            .setAuthInfo(firstNonNull(change.getAuthInfo(), domain.getAuthInfo()));
+            .setAuthInfo(Optional.ofNullable(change.getAuthInfo()).orElse(domain.getAuthInfo()));
 
     if (!add.getNameservers().isEmpty()) {
       domainBuilder.addNameservers(add.getNameservers().stream().collect(toImmutableSet()));

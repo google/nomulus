@@ -144,6 +144,7 @@ public class DomainBase extends EppResource
     @AttributeOverride(name = "pw.value", column = @Column(name = "auth_info_value")),
     @AttributeOverride(name = "pw.repoId", column = @Column(name = "auth_info_repo_id")),
   })
+  @Nullable
   DomainAuthInfo authInfo;
 
   /** Data used to construct DS records for this domain. */
@@ -620,6 +621,7 @@ public class DomainBase extends EppResource
     return getAllContacts(true);
   }
 
+  @Nullable
   public DomainAuthInfo getAuthInfo() {
     return authInfo;
   }
