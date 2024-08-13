@@ -1,0 +1,17 @@
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: Gateway
+metadata:
+  name: nomulus
+spec:
+  gatewayClassName: gke-l7-global-external-managed-mc
+  listeners:
+  - name: https
+    protocol: HTTPS
+    port: 443
+    tls:
+      mode: Terminate
+      options:
+        networking.gke.io/pre-shared-certs: nomulus
+    allowedRoutes:
+      kinds:
+      - kind: HTTPRoute

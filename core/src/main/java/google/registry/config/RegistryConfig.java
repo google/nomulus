@@ -120,9 +120,9 @@ public final class RegistryConfig {
     }
 
     @Provides
-    @Config("backendServiceId")
-    public static long provideBackendServiceId(RegistryConfigSettings config) {
-      return config.gcpProject.backendServiceId;
+    @Config("backendServiceIds")
+    public static Map<String, Long> provideBackendServiceIds(RegistryConfigSettings config) {
+      return config.gcpProject.backendServiceIds;
     }
 
     @Provides

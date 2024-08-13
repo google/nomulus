@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: console
+spec:
+  selector:
+    matchLabels:
+      service: console
+  template:
+    metadata:
+      labels:
+        service: console
+    spec:
+      serviceAccountName: nomulus
+      containers:
+      - name: console
+        image: gcr.io/GCP_PROJECT/nomulus
+        ports:
+        - containerPort: 8080
+          name: http
+        resources:
+          requests:
+            cpu: "500m"
+        args: [ENVIRONMENT]
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: console
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: console
+  minReplicas: 1
+  maxReplicas: 20
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 100
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: console
+spec:
+  selector:
+    service: console
+  ports:
+    - port: 80
+      targetPort: http
+      name: http
+---
+apiVersion: net.gke.io/v1
+kind: ServiceExport
+metadata:
+  name: console

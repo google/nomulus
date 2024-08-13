@@ -36,7 +36,7 @@ import javax.inject.Inject;
 /** Action that manually triggers refresh of DNS information. */
 @Action(
     service = Action.Service.BACKEND,
-    path = "/_dr/dnsRefresh",
+    path = "/_dr/task/dnsRefresh",
     automaticallyPrintOk = true,
     auth = Auth.AUTH_ADMIN)
 public final class RefreshDnsAction implements Runnable {

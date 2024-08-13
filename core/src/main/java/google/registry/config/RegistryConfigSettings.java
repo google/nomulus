@@ -56,7 +56,7 @@ public class RegistryConfigSettings {
     public String bsaServiceUrl;
     public String toolsServiceUrl;
     public String pubapiServiceUrl;
-    public long backendServiceId;
+    public Map<String, Long> backendServiceIds;
   }
 
   /** Configuration options for authenticating users. */

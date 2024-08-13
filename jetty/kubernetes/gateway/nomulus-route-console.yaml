@@ -1,0 +1,38 @@
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: HTTPRoute
+metadata:
+  name: console
+spec:
+  parentRefs:
+  - kind: Gateway
+    name: nomulus
+  hostnames:
+    - "console.BASE_URL"
+  rules:
+  - matches:
+    - path:
+        type: PathPrefix
+        value: /console-api
+    - path:
+        type: PathPrefix
+        value: /console
+    backendRefs:
+    - group: net.gke.io
+      kind: ServiceImport
+      name: console
+      port: 80
+---
+apiVersion: networking.gke.io/v1
+kind: HealthCheckPolicy
+metadata:
+  name: console
+spec:
+  default:
+    config:
+      type: HTTP
+      httpHealthCheck:
+        requestPath: /healthz/
+  targetRef:
+    group: net.gke.io
+    kind: ServiceImport
+    name: console
