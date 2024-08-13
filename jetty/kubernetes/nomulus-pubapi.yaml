@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pubapi
+spec:
+  selector:
+    matchLabels:
+      service: pubapi
+  template:
+    metadata:
+      labels:
+        service: pubapi
+    spec:
+      serviceAccountName: nomulus
+      containers:
+      - name: pubapi
+        image: gcr.io/GCP_PROJECT/nomulus
+        ports:
+        - containerPort: 8080
+          name: http
+        resources:
+          requests:
+            cpu: "500m"
+        args: [ENVIRONMENT]
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: pubapi
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: pubapi
+  minReplicas: 1
+  maxReplicas: 20
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 100
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: pubapi
+spec:
+  selector:
+    service: pubapi
+  ports:
+    - port: 80
+      targetPort: http
+      name: http
+---
+apiVersion: net.gke.io/v1
+kind: ServiceExport
+metadata:
+  name: pubapi

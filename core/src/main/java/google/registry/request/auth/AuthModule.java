@@ -16,15 +16,20 @@ package google.registry.request.auth;
 
 import static com.google.common.net.HttpHeaders.AUTHORIZATION;
 
-import com.google.auth.oauth2.TokenVerifier;
 import com.google.common.collect.ImmutableList;
+import dagger.BindsInstance;
 import dagger.Module;
 import dagger.Provides;
+import dagger.Subcomponent;
 import google.registry.config.RegistryConfig.Config;
+import google.registry.request.Action;
 import google.registry.request.auth.OidcTokenAuthenticationMechanism.IapOidcAuthenticationMechanism;
 import google.registry.request.auth.OidcTokenAuthenticationMechanism.RegularOidcAuthenticationMechanism;
 import google.registry.request.auth.OidcTokenAuthenticationMechanism.TokenExtractor;
+import google.registry.request.auth.OidcTokenAuthenticationMechanism.TokenVerifier;
 import google.registry.util.RegistryEnvironment;
+import java.util.Map;
+import javax.annotation.Nullable;
 import javax.inject.Qualifier;
 import javax.inject.Singleton;
 
@@ -66,27 +71,33 @@ public class AuthModule {
   TokenVerifier provideIapTokenVerifier(
       @Config("projectId") String projectId,
       @Config("projectIdNumber") long projectIdNumber,
-      @Config("backendServiceId") long backendServiceId) {
-    String audience =
-        RegistryEnvironment.isOnJetty()
-            ? String.format(IAP_GKE_AUDIENCE_FORMAT, projectIdNumber, backendServiceId)
-            : String.format(IAP_GAE_AUDIENCE_FORMAT, projectIdNumber, projectId);
-    return TokenVerifier.newBuilder().setAudience(audience).setIssuer(IAP_ISSUER_URL).build();
+      @Config("backendServiceIds") Map<String, Long> backendServiceIds) {
+    com.google.auth.oauth2.TokenVerifier.Builder tokenVerifierBuilder =
+        com.google.auth.oauth2.TokenVerifier.newBuilder().setIssuer(IAP_ISSUER_URL);
+    return (String service, String token) -> {
+      String audience;
+      if (RegistryEnvironment.isOnJetty()) {
+        long backendServiceId = backendServiceIds.get(service);
+        audience = String.format(IAP_GKE_AUDIENCE_FORMAT, projectIdNumber, backendServiceId);
+      } else {
+        audience = String.format(IAP_GAE_AUDIENCE_FORMAT, projectIdNumber, projectId);
+      }
+      return tokenVerifierBuilder.setAudience(audience).build().verify(token);
+    };
   }
 
   @Provides
   @RegularOidc
   @Singleton
   TokenVerifier provideRegularTokenVerifier(@Config("oauthClientId") String clientId) {
-    return TokenVerifier.newBuilder().setAudience(clientId).setIssuer(REGULAR_ISSUER_URL).build();
-  }
-
-  @Provides
-  @RegularOidcFallback
-  @Singleton
-  TokenVerifier provideFallbackRegularTokenVerifier(
-      @Config("fallbackOauthClientId") String clientId) {
-    return TokenVerifier.newBuilder().setAudience(clientId).setIssuer(REGULAR_ISSUER_URL).build();
+    com.google.auth.oauth2.TokenVerifier tokenVerifier =
+        com.google.auth.oauth2.TokenVerifier.newBuilder()
+            .setAudience(clientId)
+            .setIssuer(REGULAR_ISSUER_URL)
+            .build();
+    return (@Nullable String service, String token) -> {
+      return tokenVerifier.verify(token);
+    };
   }
 
   @Provides
@@ -107,5 +118,18 @@ public class AuthModule {
       }
       return null;
     };
+  }
+
+  @Subcomponent
+  public interface RequestAuthenticatorComponent {
+    RequestAuthenticator requestAuthenticator();
+
+    @Subcomponent.Builder
+    interface Builder {
+      @BindsInstance
+      Builder action(Action action);
+
+      RequestAuthenticatorComponent build();
+    }
   }
 }

@@ -17,12 +17,13 @@
 # kills all running pods to force k8s to create new pods using the just-pushed
 # manifest.
 
-if [[ $# -ne 1 ]]; then
-  echo "Usage: $0 alpha|crash|qa"
+if [[ $# -ne 2 ]]; then
+  echo "Usage: $0 alpha|crash|qa [base_url]}"
   exit 1
 fi
 
 environment=${1}
+base_url=${2}
 project="domain-registry-"${environment}
 current_context=$(kubectl config current-context)
 while read line
@@ -31,17 +32,25 @@ do
   echo "Updating cluster ${parts[0]} in location ${parts[1]}..."
   gcloud container clusters get-credentials "${parts[0]}" \
     --project "${project}" --location "${parts[1]}"
-  sed s/GCP_PROJECT/"${project}"/g "./kubernetes/nomulus-deployment.yaml" | \
-  sed s/ENVIRONMENT/"${environment}"/g | \
-  kubectl apply -f -
-  kubectl apply -f "./kubernetes/nomulus-service.yaml"
+  for service in frontend backend pubapi console
+  do
+    sed s/GCP_PROJECT/"${project}"/g "./kubernetes/nomulus-${service}.yaml" | \
+    sed s/ENVIRONMENT/"${environment}"/g | \
+    kubectl apply -f -
+  done
   # Kills all running pods, new pods created will be pulling the new image.
   kubectl delete pods --all
   # The multi-cluster gateway is only deployed to one cluster (the one in the US).
   if [[ "${parts[1]}" == us-* ]]
   then
-    kubectl apply -f "./kubernetes/nomulus-gateway.yaml"
-    kubectl apply -f "./kubernetes/nomulus-iap-${environment}.yaml"
+    kubectl apply -f "./kubernetes/gateway/nomulus-gateway.yaml"
+    for service in frontend backend pubapi console
+    do
+      sed s/BASE_URL/"${base_url}"/g "./kubernetes/gateway/nomulus-route-${service}.yaml" | \
+      kubectl apply -f -
+      sed s/SERVICE/"${service}"/g "./kubernetes/gateway/nomulus-iap-${environment}.yaml" | \
+      kubectl apply -f -
+    done
   fi
 done < <(gcloud container clusters list --project "${project}" | grep nomulus)
 kubectl config use-context "$current_context"

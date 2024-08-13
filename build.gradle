@@ -119,6 +119,7 @@ if (environment == '') {
 
 rootProject.ext.environment = environment
 rootProject.ext.gcpProject = gcpProject
+rootProject.ext.baseUrl = baseUrls[environment]
 rootProject.ext.prodOrSandboxEnv = environment in ['production', 'sandbox']
 
 // Function to verify that the deployment parameters have been set.

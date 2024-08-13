@@ -14,6 +14,7 @@
 
 package google.registry.request;
 
+import com.google.common.base.Ascii;
 import google.registry.request.auth.Auth;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -36,7 +37,6 @@ public @interface Action {
     BACKEND("backend"),
     PUBAPI("pubapi");
 
-
     private final String serviceId;
 
     Service(String serviceId) {
@@ -49,8 +49,25 @@ public @interface Action {
     }
   }
 
+  enum GkeService {
+    // This designation means that it defers to the GAE service, so we don't have to annotate EVERY
+    // action during the GKE migration.
+    SAME_AS_GAE,
+    FRONTEND,
+    BACKEND,
+    PUBAPI,
+    CONSOLE;
+
+    public String getService() {
+      return Ascii.toLowerCase(this.toString());
+    }
+  }
+
   /** Which App Engine service this action lives on. */
   Service service();
+
+  /** Which GKE service this action lives on. */
+  GkeService gkeService() default GkeService.SAME_AS_GAE;
 
   /** HTTP path to serve the action from. The path components must be percent-escaped. */
   String path();
@@ -72,4 +89,22 @@ public @interface Action {
 
   /** Authentication settings. */
   Auth auth();
+
+  // TODO(jianglai): Use Action.gkeService() directly once we are off GAE.
+  class ServiceGetter {
+    public static GkeService get(Action action) {
+      GkeService service = action.gkeService();
+      if (service != GkeService.SAME_AS_GAE) {
+        return service;
+      }
+      Service gaeService = action.service();
+      return switch (gaeService) {
+        case DEFAULT -> GkeService.FRONTEND;
+        case BACKEND -> GkeService.BACKEND;
+        case TOOLS -> GkeService.BACKEND;
+        case BSA -> GkeService.BACKEND;
+        case PUBAPI -> GkeService.PUBAPI;
+      };
+    }
+  }
 }
