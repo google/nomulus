@@ -104,8 +104,10 @@ import google.registry.model.contact.Contact;
 import google.registry.model.domain.DesignatedContact;
 import google.registry.model.domain.DesignatedContact.Type;
 import google.registry.model.domain.Domain;
+import google.registry.model.domain.DomainAuthInfo;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.secdns.DomainDsData;
+import google.registry.model.eppcommon.AuthInfo.PasswordAuth;
 import google.registry.model.eppcommon.Trid;
 import google.registry.model.host.Host;
 import google.registry.model.poll.PendingActionNotificationResponse.DomainPendingActionNotificationResponse;
@@ -262,6 +264,38 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
     persistReferencedEntities();
     persistDomain();
     doSuccessfulTest("generic_success_response_no_cltrid.xml");
+  }
+
+  @Test
+  void testSuccess_noExistingAuthData() throws Exception {
+    setEppInput("domain_update_no_auth_change.xml");
+    persistReferencedEntities();
+    persistDomain();
+    persistResource(
+        reloadResourceByForeignKey()
+            .asBuilder()
+            .setAuthInfo(DomainAuthInfo.create(PasswordAuth.create(null)))
+            .build());
+    assertMutatingFlow(true);
+    runFlowAssertResponse(loadFile("generic_success_response.xml"));
+    Domain domain = reloadResourceByForeignKey();
+    // Check that the domain was updated. These values came from the xml.
+    assertAboutDomains()
+        .that(domain)
+        .hasStatusValue(CLIENT_HOLD)
+        .and()
+        .hasAuthInfoPwd(null)
+        .and()
+        .hasOneHistoryEntryEachOfTypes(DOMAIN_CREATE, DOMAIN_UPDATE)
+        .and()
+        .hasLastEppUpdateTime(clock.nowUtc())
+        .and()
+        .hasLastEppUpdateRegistrarId("TheRegistrar")
+        .and()
+        .hasNoAutorenewEndTime();
+    assertNoBillingEvents();
+    assertDomainDnsRequests("example.tld");
+    assertLastHistoryContainsResource(reloadResourceByForeignKey());
   }
 
   @Test

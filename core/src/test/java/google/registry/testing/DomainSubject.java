@@ -29,6 +29,7 @@ import google.registry.model.eppcommon.AuthInfo;
 import google.registry.testing.TruthChainer.And;
 import google.registry.tmch.LordnTaskUtils.LordnPhase;
 import java.util.Set;
+import javax.annotation.Nullable;
 import org.joda.time.DateTime;
 
 /** Truth subject for asserting things about {@link Domain} instances. */
@@ -65,7 +66,7 @@ public final class DomainSubject extends AbstractEppResourceSubject<Domain, Doma
     return hasValue(lordnPhase, actual.getLordnPhase(), "lordnPhase");
   }
 
-  public And<DomainSubject> hasAuthInfoPwd(String pw) {
+  public And<DomainSubject> hasAuthInfoPwd(@Nullable String pw) {
     AuthInfo authInfo = actual.getAuthInfo();
     return hasValue(pw, authInfo == null ? null : authInfo.getPw().getValue(), "has auth info pw");
   }

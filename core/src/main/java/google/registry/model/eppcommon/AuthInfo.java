@@ -16,6 +16,7 @@ package google.registry.model.eppcommon;
 
 import google.registry.model.ImmutableObject;
 import google.registry.model.UnsafeSerializable;
+import javax.annotation.Nullable;
 import javax.persistence.Embeddable;
 import javax.persistence.Embedded;
 import javax.persistence.MappedSuperclass;
@@ -49,10 +50,12 @@ public abstract class AuthInfo extends ImmutableObject implements UnsafeSerializ
   public static class PasswordAuth extends ImmutableObject implements UnsafeSerializable {
     @XmlValue
     @XmlJavaTypeAdapter(NormalizedStringAdapter.class)
+    @Nullable
     String value;
 
     @XmlAttribute(name = "roid")
     @XmlJavaTypeAdapter(CollapsedStringAdapter.class)
+    @Nullable
     String repoId;
 
     public String getValue() {
@@ -63,14 +66,14 @@ public abstract class AuthInfo extends ImmutableObject implements UnsafeSerializ
       return repoId;
     }
 
-    public static PasswordAuth create(String value, String repoId) {
+    public static PasswordAuth create(@Nullable String value, @Nullable String repoId) {
       PasswordAuth instance = new PasswordAuth();
       instance.value = value;
       instance.repoId = repoId;
       return instance;
     }
 
-    public static PasswordAuth create(String value) {
+    public static PasswordAuth create(@Nullable String value) {
       return create(value, null);
     }
   }
