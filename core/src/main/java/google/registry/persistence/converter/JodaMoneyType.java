@@ -42,7 +42,10 @@ import org.joda.money.Money;
  *
  * <pre>{@code
  * @CompositeType(JodaMoneyType.class)
- * @AttributeOverride(name = "amount", column = @Column(name = "cost_currency"))
+ * @AttributeOverride(
+ *     name = "amount",
+ *     // Override default (numeric(38,2)) to match real schema definition (numeric(19,2)).
+ *     column = @Column(name = "cost_currency", precision = 19, scale = 2))
  * @AttributeOverride(name = "currency", column = @Column(name = "cost_currency"))
  * Money cost;
  * }</pre>
