@@ -26,8 +26,8 @@ rootProject.ext.projects = ['production': 'your-production-project',
 // things like release artifacts, CI/CD system, etc.
 rootProject.ext.devProject = 'your-dev-project'
 
-rootProject.ext.baseUrls = ['production' : 'registry-production.test',
-                             'sandbox'   : 'registry-sandbox.test',
-                             'alpha'     : 'registry-alpha.test',
-                             'crash'     : 'registry-crash.test',
-                             'qa'        : 'registry-qa.test']
+rootProject.ext.baseDomains = ['production' : 'registry-production.test',
+                              'sandbox'   : 'registry-sandbox.test',
+                              'alpha'     : 'registry-alpha.test',
+                              'crash'     : 'registry-crash.test',
+                              'qa'        : 'registry-qa.test']

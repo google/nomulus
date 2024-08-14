@@ -57,13 +57,13 @@ public class RegistryConfigSettings {
     public String toolsServiceUrl;
     public String pubapiServiceUrl;
     public Map<String, Long> backendServiceIds;
+    public String baseDomain;
   }
 
   /** Configuration options for authenticating users. */
   public static class Auth {
     public List<String> allowedServiceAccountEmails;
     public String oauthClientId;
-    public String fallbackOauthClientId;
   }
 
   /** Configuration options for accessing Google APIs. */

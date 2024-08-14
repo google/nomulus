@@ -14,6 +14,8 @@
 
 package google.registry.request;
 
+import static com.google.common.base.Preconditions.checkState;
+
 import com.google.common.base.Ascii;
 import google.registry.request.auth.Auth;
 import java.lang.annotation.ElementType;
@@ -59,6 +61,7 @@ public @interface Action {
     CONSOLE;
 
     public String getService() {
+      checkState(this != SAME_AS_GAE, "Cannot get service for SAME_AS_GAE");
       return Ascii.toLowerCase(this.toString());
     }
   }

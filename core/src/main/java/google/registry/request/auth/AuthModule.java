@@ -17,12 +17,9 @@ package google.registry.request.auth;
 import static com.google.common.net.HttpHeaders.AUTHORIZATION;
 
 import com.google.common.collect.ImmutableList;
-import dagger.BindsInstance;
 import dagger.Module;
 import dagger.Provides;
-import dagger.Subcomponent;
 import google.registry.config.RegistryConfig.Config;
-import google.registry.request.Action;
 import google.registry.request.auth.OidcTokenAuthenticationMechanism.IapOidcAuthenticationMechanism;
 import google.registry.request.auth.OidcTokenAuthenticationMechanism.RegularOidcAuthenticationMechanism;
 import google.registry.request.auth.OidcTokenAuthenticationMechanism.TokenExtractor;
@@ -41,7 +38,7 @@ public class AuthModule {
   // See https://cloud.google.com/iap/docs/signed-headers-howto#securing_iap_headers.
   public static final String IAP_HEADER_NAME = "X-Goog-IAP-JWT-Assertion";
   public static final String BEARER_PREFIX = "Bearer ";
-  // TODO: Change the IAP audience format once we are on GKE.
+  // TODO (jianglai): Change the IAP audience format once we are on GKE.
   // See: https://cloud.google.com/iap/docs/signed-headers-howto#verifying_the_jwt_payload
   private static final String IAP_GAE_AUDIENCE_FORMAT = "/projects/%d/apps/%s";
   private static final String IAP_GKE_AUDIENCE_FORMAT = "/projects/%d/global/backendServices/%d";
@@ -118,18 +115,5 @@ public class AuthModule {
       }
       return null;
     };
-  }
-
-  @Subcomponent
-  public interface RequestAuthenticatorComponent {
-    RequestAuthenticator requestAuthenticator();
-
-    @Subcomponent.Builder
-    interface Builder {
-      @BindsInstance
-      Builder action(Action action);
-
-      RequestAuthenticatorComponent build();
-    }
   }
 }
