@@ -26,7 +26,7 @@ public class CidrBlockListUserType
 
   @Override
   String[] toJdbcObject(List<CidrAddressBlock> collection) {
-    return collection.stream().map(Object::toString).toList().toArray(new String[0]);
+    return collection.stream().map(Object::toString).toArray(String[]::new);
   }
 
   @Override
