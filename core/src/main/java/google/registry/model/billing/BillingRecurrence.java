@@ -102,7 +102,7 @@ public class BillingRecurrence extends BillingBase {
   @CompositeType(JodaMoneyType.class)
   @AttributeOverride(
       name = "amount",
-      // Override Hibernate6 default (numeric(38,2)) to match real schema definition (numeric(19,2).
+      // Override Hibernate default (numeric(38,2)) to match real schema definition (numeric(19,2)).
       column = @Column(name = "renewalPriceAmount", precision = 19, scale = 2))
   @AttributeOverride(name = "currency", column = @Column(name = "renewalPriceCurrency"))
   Money renewalPrice;

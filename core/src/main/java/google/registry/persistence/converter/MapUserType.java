@@ -30,7 +30,7 @@ import org.hibernate.usertype.UserType;
  * Base Hibernate custom type for a logical map backed by a string map column (e.g., hstore in
  * Postgresql).
  *
- * @param <M> Type parameter for the logical map. It may not implement the {@link Map} interface.
+ * @param <M> Type parameter for the logical map. It might not implement the {@link Map} interface.
  */
 @SuppressWarnings({"raw", "unchecked"})
 abstract class MapUserType<M> implements UserType<M> {
