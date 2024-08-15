@@ -71,8 +71,6 @@ import google.registry.model.tld.label.ReservedList;
 import google.registry.persistence.VKey;
 import google.registry.persistence.converter.AllocationTokenVkeyListUserType;
 import google.registry.persistence.converter.BillingCostTransitionUserType;
-import google.registry.persistence.converter.DurationUserType;
-import google.registry.persistence.converter.JodaMoneyType;
 import google.registry.persistence.converter.TldStateTransitionUserType;
 import google.registry.tldconfig.idn.IdnTableEnum;
 import google.registry.util.Idn;
@@ -91,7 +89,6 @@ import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
-import org.hibernate.annotations.CompositeType;
 import org.hibernate.annotations.Type;
 import org.joda.money.CurrencyUnit;
 import org.joda.money.Money;
@@ -321,7 +318,6 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
    *
    * <p>When this field is null, the "dnsDefaultATtl" value from the config file will be used.
    */
-  @Type(DurationUserType.class)
   @JsonSerialize(using = OptionalDurationSerializer.class)
   Duration dnsAPlusAaaaTtl;
 
@@ -330,7 +326,6 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
    *
    * <p>When this field is null, the "dnsDefaultNsTtl" value from the config file will be used.
    */
-  @Type(DurationUserType.class)
   @JsonSerialize(using = OptionalDurationSerializer.class)
   Duration dnsNsTtl;
 
@@ -339,7 +334,6 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
    *
    * <p>When this field is null, the "dnsDefaultDsTtl" value from the config file will be used.
    */
-  @Type(DurationUserType.class)
   @JsonSerialize(using = OptionalDurationSerializer.class)
   Duration dnsDsTtl;
 
@@ -427,42 +421,34 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
    * <p>Domain deletes are free and effective immediately so long as they take place within this
    * amount of time following creation.
    */
-  @Type(DurationUserType.class)
   @Column(nullable = false)
   Duration addGracePeriodLength = DEFAULT_ADD_GRACE_PERIOD;
 
   /** The length of the anchor tenant add grace period for this TLD. */
-  @Type(DurationUserType.class)
   @Column(nullable = false)
   Duration anchorTenantAddGracePeriodLength = DEFAULT_ANCHOR_TENANT_ADD_GRACE_PERIOD;
 
   /** The length of the autorenew grace period for this TLD. */
-  @Type(DurationUserType.class)
   @Column(nullable = false)
   Duration autoRenewGracePeriodLength = DEFAULT_AUTO_RENEW_GRACE_PERIOD;
 
   /** The length of the redemption grace period for this TLD. */
-  @Type(DurationUserType.class)
   @Column(nullable = false)
   Duration redemptionGracePeriodLength = DEFAULT_REDEMPTION_GRACE_PERIOD;
 
   /** The length of the renew grace period for this TLD. */
-  @Type(DurationUserType.class)
   @Column(nullable = false)
   Duration renewGracePeriodLength = DEFAULT_RENEW_GRACE_PERIOD;
 
   /** The length of the transfer grace period for this TLD. */
-  @Type(DurationUserType.class)
   @Column(nullable = false)
   Duration transferGracePeriodLength = DEFAULT_TRANSFER_GRACE_PERIOD;
 
   /** The length of time before a transfer is automatically approved for this TLD. */
-  @Type(DurationUserType.class)
   @Column(nullable = false)
   Duration automaticTransferLength = DEFAULT_AUTOMATIC_TRANSFER_LENGTH;
 
   /** The length of time a domain spends in the non-redeemable pending delete phase for this TLD. */
-  @Type(DurationUserType.class)
   @Column(nullable = false)
   Duration pendingDeleteLength = DEFAULT_PENDING_DELETE_LENGTH;
 
@@ -480,7 +466,6 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
       TimedTransitionProperty.withInitialValue(DEFAULT_CREATE_BILLING_COST);
 
   /** The one-time billing cost for restoring a domain name from the redemption grace period. */
-  @CompositeType(JodaMoneyType.class)
   @AttributeOverride(
       name = "amount",
       // Override Hibernate default (numeric(38,2)) to match real schema definition (numeric(19,2)).
@@ -489,7 +474,6 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
   Money restoreBillingCost = DEFAULT_RESTORE_BILLING_COST;
 
   /** The one-time billing cost for changing the server status (i.e. lock). */
-  @CompositeType(JodaMoneyType.class)
   @AttributeOverride(
       name = "amount",
       // Override Hibernate default (numeric(38,2)) to match real schema definition (numeric(19,2)).
@@ -501,7 +485,6 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
   Money serverStatusChangeBillingCost = DEFAULT_SERVER_STATUS_CHANGE_BILLING_COST;
 
   /** The one-time billing cost for a registry lock/unlock action initiated by a registrar. */
-  @CompositeType(JodaMoneyType.class)
   @AttributeOverride(
       name = "amount",
       // Override Hibernate default (numeric(38,2)) to match real schema definition (numeric(19,2)).

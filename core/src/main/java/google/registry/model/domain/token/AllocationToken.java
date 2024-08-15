@@ -51,7 +51,6 @@ import google.registry.model.reporting.HistoryEntry.HistoryEntryId;
 import google.registry.persistence.VKey;
 import google.registry.persistence.WithVKey;
 import google.registry.persistence.converter.AllocationTokenStatusTransitionUserType;
-import google.registry.persistence.converter.JodaMoneyType;
 import jakarta.persistence.AttributeOverride;
 import jakarta.persistence.AttributeOverrides;
 import jakarta.persistence.Column;
@@ -65,7 +64,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import javax.annotation.Nullable;
-import org.hibernate.annotations.CompositeType;
 import org.hibernate.annotations.Type;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
@@ -248,7 +246,6 @@ public class AllocationToken extends UpdateAutoTimestampEntity implements Builda
       // Override Hibernate default (numeric(38,2)) to match real schema definition (numeric(19,2)).
       column = @Column(name = "renewalPriceAmount", precision = 19, scale = 2))
   @AttributeOverride(name = "currency", column = @Column(name = "renewalPriceCurrency"))
-  @CompositeType(JodaMoneyType.class)
   Money renewalPrice;
 
   @Enumerated(EnumType.STRING)

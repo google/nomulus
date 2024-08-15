@@ -38,10 +38,12 @@ import org.joda.money.Money;
  * each loaded BigDecimal, then calls the appropriate factory method for Money, which will adjust
  * the scale appropriately.
  *
+ * <p>Conversion of {@code Money} is automatic. See {@link
+ * google.registry.persistence.NomulusPostgreSQLDialect} for more information.
+ *
  * <p>Usage:
  *
  * <pre>{@code
- * @CompositeType(JodaMoneyType.class)
  * @AttributeOverride(
  *     name = "amount",
  *     // Override default (numeric(38,2)) to match real schema definition (numeric(19,2)).

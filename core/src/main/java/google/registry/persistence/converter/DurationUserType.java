@@ -29,7 +29,12 @@ import org.joda.time.Duration;
 import org.joda.time.Period;
 import org.postgresql.util.PGInterval;
 
-/** Hibernate custom type for {@link Duration}. */
+/**
+ * Hibernate custom type for {@link Duration}.
+ *
+ * <p>Conversion of {@code Duration} is automatic. See {@link
+ * google.registry.persistence.NomulusPostgreSQLDialect} for more information.
+ */
 public class DurationUserType implements UserType<Duration> {
 
   @Override

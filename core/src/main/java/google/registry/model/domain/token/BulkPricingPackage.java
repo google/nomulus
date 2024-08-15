@@ -23,7 +23,6 @@ import google.registry.model.Buildable;
 import google.registry.model.ImmutableObject;
 import google.registry.model.domain.token.AllocationToken.TokenType;
 import google.registry.persistence.VKey;
-import google.registry.persistence.converter.JodaMoneyType;
 import jakarta.persistence.AttributeOverride;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -33,7 +32,6 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.util.Optional;
 import javax.annotation.Nullable;
-import org.hibernate.annotations.CompositeType;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
 
@@ -64,7 +62,6 @@ public class BulkPricingPackage extends ImmutableObject implements Buildable {
   int maxCreates;
 
   /** The annual price of the bulk pricing package. */
-  @CompositeType(JodaMoneyType.class)
   @AttributeOverride(
       name = "amount",
       // Override Hibernate default (numeric(38,2)) to match real schema definition (numeric(19,2)).

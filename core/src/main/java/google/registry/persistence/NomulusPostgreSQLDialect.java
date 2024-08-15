@@ -13,7 +13,8 @@
 // limitations under the License.
 package google.registry.persistence;
 
-import google.registry.persistence.converter.StringMapUserType;
+import google.registry.persistence.converter.DurationUserType;
+import google.registry.persistence.converter.JodaMoneyType;
 import org.hibernate.boot.model.TypeContributions;
 import org.hibernate.dialect.PostgreSQLDialect;
 import org.hibernate.service.ServiceRegistry;
@@ -51,7 +52,10 @@ public class NomulusPostgreSQLDialect extends PostgreSQLDialect {
   public void contributeTypes(
       TypeContributions typeContributions, ServiceRegistry serviceRegistry) {
     super.contributeTypes(typeContributions, serviceRegistry);
-    typeContributions.contributeType(new StringMapUserType());
+    // Register custom user types for auto conversion. For now, this only works if the Java type to
+    // convert does not have generic type parameters.
+    typeContributions.contributeType(new DurationUserType());
+    typeContributions.contributeType(new JodaMoneyType());
 
     // Verify that custom codes do not conflict with built-in types.
     for (int customType :
