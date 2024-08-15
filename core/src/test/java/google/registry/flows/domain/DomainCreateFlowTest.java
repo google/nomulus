@@ -344,8 +344,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
         .and()
         .hasPeriodYears(2);
     RenewalPriceInfo renewalPriceInfo =
-        DomainCreateFlow.getRenewalPriceInfo(
-            isAnchorTenant, Optional.ofNullable(allocationToken), feesAndCredits);
+        DomainCreateFlow.getRenewalPriceInfo(isAnchorTenant, Optional.ofNullable(allocationToken));
     // There should be one bill for the create and one for the recurrence autorenew event.
     BillingEvent createBillingEvent =
         new BillingEvent.Builder()
@@ -3189,53 +3188,25 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
 
   @Test
   void testGetRenewalPriceInfo_isAnchorTenantWithoutToken_returnsNonPremiumAndNullPrice() {
-    assertThat(
-            DomainCreateFlow.getRenewalPriceInfo(
-                true,
-                Optional.empty(),
-                new FeesAndCredits.Builder()
-                    .setCurrency(USD)
-                    .addFeeOrCredit(Fee.create(BigDecimal.valueOf(0), FeeType.CREATE, false))
-                    .build()))
+    assertThat(DomainCreateFlow.getRenewalPriceInfo(true, Optional.empty()))
         .isEqualTo(RenewalPriceInfo.create(NONPREMIUM, null));
   }
 
   @Test
   void testGetRenewalPriceInfo_isAnchorTenantWithDefaultToken_returnsNonPremiumAndNullPrice() {
-    assertThat(
-            DomainCreateFlow.getRenewalPriceInfo(
-                true,
-                Optional.of(allocationToken),
-                new FeesAndCredits.Builder()
-                    .setCurrency(USD)
-                    .addFeeOrCredit(Fee.create(BigDecimal.valueOf(0), FeeType.CREATE, false))
-                    .build()))
+    assertThat(DomainCreateFlow.getRenewalPriceInfo(true, Optional.of(allocationToken)))
         .isEqualTo(RenewalPriceInfo.create(NONPREMIUM, null));
   }
 
   @Test
   void testGetRenewalPriceInfo_isNotAnchorTenantWithDefaultToken_returnsDefaultAndNullPrice() {
-    assertThat(
-            DomainCreateFlow.getRenewalPriceInfo(
-                false,
-                Optional.of(allocationToken),
-                new FeesAndCredits.Builder()
-                    .setCurrency(USD)
-                    .addFeeOrCredit(Fee.create(BigDecimal.valueOf(100), FeeType.CREATE, false))
-                    .build()))
+    assertThat(DomainCreateFlow.getRenewalPriceInfo(false, Optional.of(allocationToken)))
         .isEqualTo(RenewalPriceInfo.create(DEFAULT, null));
   }
 
   @Test
   void testGetRenewalPriceInfo_isNotAnchorTenantWithoutToken_returnsDefaultAndNullPrice() {
-    assertThat(
-            DomainCreateFlow.getRenewalPriceInfo(
-                false,
-                Optional.empty(),
-                new FeesAndCredits.Builder()
-                    .setCurrency(USD)
-                    .addFeeOrCredit(Fee.create(BigDecimal.valueOf(100), FeeType.CREATE, false))
-                    .build()))
+    assertThat(DomainCreateFlow.getRenewalPriceInfo(false, Optional.empty()))
         .isEqualTo(RenewalPriceInfo.create(DEFAULT, null));
   }
 
@@ -3248,17 +3219,10 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
                 .setToken("abc123")
                 .setTokenType(SINGLE_USE)
                 .setRenewalPriceBehavior(SPECIFIED)
-                .setRenewalPrice(Money.of(USD, 0))
+                .setRenewalPrice(Money.of(USD, 5))
                 .build());
-    assertThat(
-            DomainCreateFlow.getRenewalPriceInfo(
-                false,
-                Optional.of(token),
-                new FeesAndCredits.Builder()
-                    .setCurrency(USD)
-                    .addFeeOrCredit(Fee.create(BigDecimal.valueOf(100), FeeType.CREATE, false))
-                    .build()))
-        .isEqualTo(RenewalPriceInfo.create(SPECIFIED, Money.of(USD, 100)));
+    assertThat(DomainCreateFlow.getRenewalPriceInfo(false, Optional.of(token)))
+        .isEqualTo(RenewalPriceInfo.create(SPECIFIED, Money.of(USD, 5)));
   }
 
   @Test
@@ -3276,11 +3240,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
                                 .setTokenType(SINGLE_USE)
                                 .setRenewalPriceBehavior(SPECIFIED)
                                 .setRenewalPrice(Money.of(USD, 0))
-                                .build())),
-                    new FeesAndCredits.Builder()
-                        .setCurrency(USD)
-                        .addFeeOrCredit(Fee.create(BigDecimal.valueOf(0), FeeType.CREATE, true))
-                        .build()));
+                                .build()))));
     assertThat(thrown)
         .hasMessageThat()
         .isEqualTo("Renewal price behavior cannot be SPECIFIED for anchor tenant");
@@ -3300,11 +3260,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
                                 .setToken("abc123")
                                 .setTokenType(SINGLE_USE)
                                 .setRenewalPriceBehavior(RenewalPriceBehavior.valueOf("INVALID"))
-                                .build())),
-                    new FeesAndCredits.Builder()
-                        .setCurrency(USD)
-                        .addFeeOrCredit(Fee.create(BigDecimal.valueOf(0), FeeType.CREATE, true))
-                        .build()));
+                                .build()))));
     assertThat(thrown)
         .hasMessageThat()
         .isEqualTo(
