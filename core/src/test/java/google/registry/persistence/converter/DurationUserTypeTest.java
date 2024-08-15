@@ -23,7 +23,6 @@ import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaUnitTestExtension;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
-import org.hibernate.annotations.Type;
 import org.joda.time.Duration;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -102,7 +101,6 @@ public class DurationUserTypeTest {
 
     @Id String name = "id";
 
-    @Type(DurationUserType.class)
     Duration duration;
 
     public DurationTestEntity() {}

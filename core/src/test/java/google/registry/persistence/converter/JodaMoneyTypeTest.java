@@ -37,7 +37,6 @@ import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import org.hibernate.annotations.CompositeType;
 import org.joda.money.CurrencyUnit;
 import org.joda.money.IllegalCurrencyException;
 import org.joda.money.Money;
@@ -262,7 +261,6 @@ public class JodaMoneyTypeTest {
 
     @Id String name = "id";
 
-    @CompositeType(JodaMoneyType.class)
     Money money;
 
     public TestEntity() {}
@@ -282,17 +280,14 @@ public class JodaMoneyTypeTest {
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "MoneyMap", joinColumns = @JoinColumn(name = "entity_name"))
     @MapKeyColumn(name = "map_key")
-    @CompositeType(JodaMoneyType.class)
     Map<String, Money> moneyMap;
 
     @AttributeOverride(name = "amount", column = @Column(name = "my_amount"))
     @AttributeOverride(name = "currency", column = @Column(name = "my_currency"))
-    @CompositeType(JodaMoneyType.class)
     Money myMoney;
 
     @AttributeOverride(name = "amount", column = @Column(name = "your_amount"))
     @AttributeOverride(name = "currency", column = @Column(name = "your_currency"))
-    @CompositeType(JodaMoneyType.class)
     Money yourMoney;
 
     public ComplexTestEntity() {}

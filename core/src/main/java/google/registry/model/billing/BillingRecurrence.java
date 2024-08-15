@@ -21,7 +21,6 @@ import static google.registry.util.DateTimeUtils.END_OF_TIME;
 import google.registry.model.common.TimeOfYear;
 import google.registry.persistence.VKey;
 import google.registry.persistence.WithVKey;
-import google.registry.persistence.converter.JodaMoneyType;
 import jakarta.persistence.AttributeOverride;
 import jakarta.persistence.AttributeOverrides;
 import jakarta.persistence.Column;
@@ -33,7 +32,6 @@ import jakarta.persistence.Index;
 import jakarta.persistence.Table;
 import java.util.Optional;
 import javax.annotation.Nullable;
-import org.hibernate.annotations.CompositeType;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
 
@@ -99,7 +97,6 @@ public class BillingRecurrence extends BillingBase {
    * SPECIFIED. This column is used for internal registrations.
    */
   @Nullable
-  @CompositeType(JodaMoneyType.class)
   @AttributeOverride(
       name = "amount",
       // Override Hibernate default (numeric(38,2)) to match real schema definition (numeric(19,2)).
