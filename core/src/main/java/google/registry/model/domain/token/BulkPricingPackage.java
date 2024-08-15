@@ -67,7 +67,7 @@ public class BulkPricingPackage extends ImmutableObject implements Buildable {
   @CompositeType(JodaMoneyType.class)
   @AttributeOverride(
       name = "amount",
-      // Override Hibernate6 default (numeric(38,2)) to match real schema definition (numeric(19,2).
+      // Override Hibernate default (numeric(38,2)) to match real schema definition (numeric(19,2)).
       column = @Column(name = "package_price_amount", precision = 19, scale = 2, nullable = false))
   @AttributeOverride(
       name = "currency",

@@ -483,7 +483,7 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
   @CompositeType(JodaMoneyType.class)
   @AttributeOverride(
       name = "amount",
-      // Override Hibernate6 default (numeric(38,2)) to match real schema definition (numeric(19,2).
+      // Override Hibernate default (numeric(38,2)) to match real schema definition (numeric(19,2)).
       column = @Column(name = "restore_billing_cost_amount", precision = 19, scale = 2))
   @AttributeOverride(name = "currency", column = @Column(name = "restore_billing_cost_currency"))
   Money restoreBillingCost = DEFAULT_RESTORE_BILLING_COST;
@@ -492,7 +492,7 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
   @CompositeType(JodaMoneyType.class)
   @AttributeOverride(
       name = "amount",
-      // Override Hibernate6 default (numeric(38,2)) to match real schema definition (numeric(19,2).
+      // Override Hibernate default (numeric(38,2)) to match real schema definition (numeric(19,2)).
       column =
           @Column(name = "server_status_change_billing_cost_amount", precision = 19, scale = 2))
   @AttributeOverride(
@@ -504,7 +504,7 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
   @CompositeType(JodaMoneyType.class)
   @AttributeOverride(
       name = "amount",
-      // Override Hibernate6 default (numeric(38,2)) to match real schema definition (numeric(19,2).
+      // Override Hibernate default (numeric(38,2)) to match real schema definition (numeric(19,2)).
       column = @Column(name = "registry_lock_or_unlock_cost_amount", precision = 19, scale = 2))
   @AttributeOverride(
       name = "currency",
