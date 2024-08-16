@@ -29,6 +29,7 @@ import google.registry.ui.server.console.ConsoleDomainGetAction;
 import google.registry.ui.server.console.ConsoleDomainListAction;
 import google.registry.ui.server.console.ConsoleDumDownloadAction;
 import google.registry.ui.server.console.ConsoleEppPasswordAction;
+import google.registry.ui.server.console.ConsoleOteAction;
 import google.registry.ui.server.console.ConsoleRegistryLockAction;
 import google.registry.ui.server.console.ConsoleRegistryLockVerifyAction;
 import google.registry.ui.server.console.ConsoleUpdateRegistrarAction;
@@ -66,6 +67,9 @@ public interface FrontendRequestComponent {
   ConsoleEppPasswordAction consoleEppPasswordAction();
 
   ConsoleOteSetupAction consoleOteSetupAction();
+
+  ConsoleOteAction consoleOteAction();
+
   ConsoleRegistrarCreatorAction consoleRegistrarCreatorAction();
 
   ConsoleRegistryLockAction consoleRegistryLockAction();

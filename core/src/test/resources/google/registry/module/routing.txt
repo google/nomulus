@@ -60,6 +60,7 @@ PATH                                               CLASS                        
 /console-api/domain-list                           ConsoleDomainListAction                        GET      n  USER PUBLIC
 /console-api/dum-download                          ConsoleDumDownloadAction                       GET      n  USER PUBLIC
 /console-api/eppPassword                           ConsoleEppPasswordAction                       POST     n  USER PUBLIC
+/console-api/ote                                   ConsoleOteAction                               GET,POST n  USER PUBLIC
 /console-api/registrar                             ConsoleUpdateRegistrarAction                   POST     n  USER PUBLIC
 /console-api/registrars                            RegistrarsAction                               GET,POST n  USER PUBLIC
 /console-api/registry-lock                         ConsoleRegistryLockAction                      GET,POST n  USER PUBLIC
