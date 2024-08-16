@@ -34,6 +34,7 @@ import google.registry.request.auth.AuthResult;
 import google.registry.security.XsrfTokenManager;
 import google.registry.ui.server.SendEmailUtils;
 import google.registry.ui.server.console.ConsoleEppPasswordAction.EppPasswordData;
+import google.registry.ui.server.console.ConsoleOteAction.OteCreateData;
 import google.registry.ui.server.console.ConsoleRegistryLockAction.ConsoleRegistryLockPostInput;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.Optional;
@@ -242,6 +243,13 @@ public final class ConsoleModule {
   public static Optional<EppPasswordData> provideEppPasswordChangeRequest(
       Gson gson, @OptionalJsonPayload Optional<JsonElement> payload) {
     return payload.map(s -> gson.fromJson(s, EppPasswordData.class));
+  }
+
+  @Provides
+  @Parameter("oteCreateData")
+  public static Optional<OteCreateData> provideOteCreateData(
+      Gson gson, @OptionalJsonPayload Optional<JsonElement> payload) {
+    return payload.map(s -> gson.fromJson(s, OteCreateData.class));
   }
 
   @Provides
