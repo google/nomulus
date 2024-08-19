@@ -35,8 +35,8 @@ import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarAddress;
 import google.registry.model.registrar.RegistrarBase.State;
 import google.registry.request.Action;
+import google.registry.request.Action.GaeService;
 import google.registry.request.Action.Method;
-import google.registry.request.Action.Service;
 import google.registry.request.HttpException.BadRequestException;
 import google.registry.request.Parameter;
 import google.registry.request.auth.Auth;
@@ -66,7 +66,7 @@ import org.joda.money.CurrencyUnit;
  * information. - for POST, receives the information and creates the Registrar.
  */
 @Action(
-    service = Service.DEFAULT,
+    service = GaeService.DEFAULT,
     path = ConsoleRegistrarCreatorAction.PATH,
     method = {Method.POST, Method.GET},
     auth = Auth.AUTH_PUBLIC_LOGGED_IN)

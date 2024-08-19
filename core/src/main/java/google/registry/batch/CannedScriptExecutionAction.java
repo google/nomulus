@@ -20,6 +20,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.flogger.FluentLogger;
 import google.registry.request.Action;
+import google.registry.request.Action.GaeService;
 import google.registry.request.Parameter;
 import google.registry.request.Response;
 import google.registry.request.UrlConnectionService;
@@ -42,7 +43,7 @@ import javax.net.ssl.HttpsURLConnection;
  * --service BACKEND -X POST -u '/_dr/task/executeCannedScript}'}
  */
 @Action(
-    service = Action.Service.BACKEND,
+    service = GaeService.BACKEND,
     path = "/_dr/task/executeCannedScript",
     method = {POST, GET},
     automaticallyPrintOk = true,

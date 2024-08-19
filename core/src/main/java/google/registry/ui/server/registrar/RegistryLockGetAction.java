@@ -34,6 +34,7 @@ import google.registry.model.domain.RegistryLock;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.tld.RegistryLockDao;
 import google.registry.request.Action;
+import google.registry.request.Action.GaeService;
 import google.registry.request.Action.Method;
 import google.registry.request.Parameter;
 import google.registry.request.RequestMethod;
@@ -54,7 +55,7 @@ import org.joda.time.DateTime;
  * URL, which is why this is distinct from the {@link RegistryLockPostAction}.
  */
 @Action(
-    service = Action.Service.DEFAULT,
+    service = GaeService.DEFAULT,
     path = RegistryLockGetAction.PATH,
     auth = Auth.AUTH_PUBLIC_LOGGED_IN)
 public final class RegistryLockGetAction implements JsonGetAction {

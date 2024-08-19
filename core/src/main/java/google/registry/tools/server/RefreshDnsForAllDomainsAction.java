@@ -29,6 +29,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.flogger.FluentLogger;
 import google.registry.request.Action;
+import google.registry.request.Action.GaeService;
 import google.registry.request.Parameter;
 import google.registry.request.Response;
 import google.registry.request.auth.Auth;
@@ -57,7 +58,7 @@ import org.joda.time.Duration;
  * domains that have since been deleted.
  */
 @Action(
-    service = Action.Service.TOOLS,
+    service = GaeService.TOOLS,
     path = "/_dr/task/refreshDnsForAllDomains",
     auth = Auth.AUTH_ADMIN)
 public class RefreshDnsForAllDomainsAction implements Runnable {

@@ -65,7 +65,7 @@ import google.registry.model.host.HostCommand.Update.Change;
 import google.registry.model.host.HostHistory;
 import google.registry.model.reporting.IcannReportingTypes.ActivityReportField;
 import google.registry.persistence.VKey;
-import google.registry.request.Action.Service;
+import google.registry.request.Action;
 import java.util.Objects;
 import java.util.Optional;
 import javax.inject.Inject;
@@ -277,9 +277,9 @@ public final class HostUpdateFlow implements MutatingFlow {
       // We must also enqueue updates for all domains that use this host as their nameserver so
       // that their NS records can be updated to point at the new name.
       Task task =
-          cloudTasksUtils.createPostTask(
-              RefreshDnsOnHostRenameAction.PATH,
-              Service.BACKEND,
+          cloudTasksUtils.createTask(
+              RefreshDnsOnHostRenameAction.class,
+              Action.Method.POST,
               ImmutableMultimap.of(PARAM_HOST_KEY, existingHost.createVKey().stringify()));
       cloudTasksUtils.enqueue(QUEUE_HOST_RENAME, task);
     }

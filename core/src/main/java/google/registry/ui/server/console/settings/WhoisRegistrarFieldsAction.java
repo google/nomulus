@@ -25,6 +25,7 @@ import google.registry.model.console.ConsolePermission;
 import google.registry.model.console.User;
 import google.registry.model.registrar.Registrar;
 import google.registry.request.Action;
+import google.registry.request.Action.GaeService;
 import google.registry.request.Action.GkeService;
 import google.registry.request.Parameter;
 import google.registry.request.auth.Auth;
@@ -43,7 +44,7 @@ import javax.inject.Inject;
  * WHOIS/RDAP and don't have any other obvious means of edit.
  */
 @Action(
-    service = Action.Service.DEFAULT,
+    service = GaeService.DEFAULT,
     gkeService = GkeService.CONSOLE,
     path = WhoisRegistrarFieldsAction.PATH,
     method = {POST},

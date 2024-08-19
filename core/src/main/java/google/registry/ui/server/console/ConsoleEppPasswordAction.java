@@ -30,6 +30,7 @@ import google.registry.flows.PasswordOnlyTransportCredentials;
 import google.registry.model.console.User;
 import google.registry.model.registrar.Registrar;
 import google.registry.request.Action;
+import google.registry.request.Action.GaeService;
 import google.registry.request.Action.GkeService;
 import google.registry.request.Parameter;
 import google.registry.request.auth.Auth;
@@ -40,7 +41,7 @@ import java.util.Optional;
 import javax.inject.Inject;
 
 @Action(
-    service = Action.Service.DEFAULT,
+    service = GaeService.DEFAULT,
     gkeService = GkeService.CONSOLE,
     path = ConsoleEppPasswordAction.PATH,
     method = {POST},

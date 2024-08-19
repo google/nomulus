@@ -22,6 +22,7 @@ import static jakarta.servlet.http.HttpServletResponse.SC_METHOD_NOT_ALLOWED;
 import static jakarta.servlet.http.HttpServletResponse.SC_NOT_FOUND;
 
 import com.google.common.flogger.FluentLogger;
+import google.registry.config.RegistryConfig;
 import google.registry.request.Action.GkeService;
 import google.registry.request.auth.AuthResult;
 import google.registry.request.auth.RequestAuthenticator;
@@ -72,7 +73,6 @@ public class RequestHandler<C> {
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
   private final Router router;
-  @Nullable private final String baseDomain;
   private final Provider<? extends RequestComponentBuilder<C>> requestComponentBuilderProvider;
   private final RequestAuthenticator requestAuthenticator;
   private final SystemClock clock = new SystemClock();
@@ -95,22 +95,20 @@ public class RequestHandler<C> {
   protected RequestHandler(
       Provider<? extends RequestComponentBuilder<C>> requestComponentBuilderProvider,
       RequestAuthenticator requestAuthenticator) {
-    this(null, null, requestComponentBuilderProvider, requestAuthenticator);
+    this(null, requestComponentBuilderProvider, requestAuthenticator);
   }
 
   /** Creates a new RequestHandler with an explicit component class for test purposes. */
   public static <C> RequestHandler<C> create(
       Class<C> component,
-      @Nullable String baseDomain,
       Provider<? extends RequestComponentBuilder<C>> requestComponentBuilderProvider,
       RequestAuthenticator requestAuthenticator) {
     return new RequestHandler<>(
-        checkNotNull(component), baseDomain, requestComponentBuilderProvider, requestAuthenticator);
+        checkNotNull(component), requestComponentBuilderProvider, requestAuthenticator);
   }
 
   private RequestHandler(
       @Nullable Class<C> component,
-      @Nullable String baseDomain,
       Provider<? extends RequestComponentBuilder<C>> requestComponentBuilderProvider,
       RequestAuthenticator requestAuthenticator) {
     // If the component class isn't explicitly provided, infer it from the class's own typing.
@@ -118,7 +116,6 @@ public class RequestHandler<C> {
     // preserved at runtime, so only expose that option via the protected constructor.
     this.router = Router.create(
         component != null ? component : new TypeInstantiator<C>(getClass()){}.getExactType());
-    this.baseDomain = baseDomain;
     this.requestComponentBuilderProvider = checkNotNull(requestComponentBuilderProvider);
     this.requestAuthenticator = checkNotNull(requestAuthenticator);
   }
@@ -144,7 +141,7 @@ public class RequestHandler<C> {
     }
     if (RegistryEnvironment.isOnJetty()) {
       GkeService service = Action.ServiceGetter.get(route.get().action());
-      String expectedDomain = String.format("%s.%s", service.getServiceId(), baseDomain);
+      String expectedDomain = RegistryConfig.getServiceUrl(service).getHost();
       String actualDomain = req.getServerName();
       if (!Objects.equals(actualDomain, expectedDomain)) {
         logger.atWarning().log(

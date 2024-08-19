@@ -50,7 +50,7 @@ import javax.inject.Inject;
 import javax.inject.Named;
 
 @Action(
-    service = Action.Service.DEFAULT,
+    service = Action.GaeService.DEFAULT,
     gkeService = GkeService.CONSOLE,
     path = ConsoleOteAction.PATH,
     method = {GET, POST},

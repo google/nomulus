@@ -24,7 +24,7 @@ import com.google.common.flogger.FluentLogger;
 import com.google.common.net.MediaType;
 import google.registry.batch.CloudTasksUtils;
 import google.registry.persistence.VKey;
-import google.registry.request.Action.Service;
+import google.registry.request.Action;
 import google.registry.tools.IamClient;
 import google.registry.tools.ServiceConnection;
 import google.registry.tools.server.UpdateUserGroupAction;
@@ -126,9 +126,9 @@ public class User extends UserBase {
       CloudTasksUtils cloudTasksUtils,
       Mode mode) {
     Task task =
-        cloudTasksUtils.createPostTask(
-            UpdateUserGroupAction.PATH,
-            Service.TOOLS,
+        cloudTasksUtils.createTask(
+            UpdateUserGroupAction.class,
+            Action.Method.POST,
             ImmutableMultimap.of(
                 "userEmailAddress",
                 userEmailAddress,

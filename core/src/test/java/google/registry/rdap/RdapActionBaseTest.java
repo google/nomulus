@@ -30,6 +30,7 @@ import google.registry.rdap.RdapObjectClasses.BoilerplateType;
 import google.registry.rdap.RdapObjectClasses.ReplyPayloadBase;
 import google.registry.rdap.RdapSearchResults.IncompletenessWarningType;
 import google.registry.request.Action;
+import google.registry.request.Action.GaeService;
 import google.registry.request.auth.Auth;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
@@ -44,7 +45,7 @@ class RdapActionBaseTest extends RdapActionBaseTestCase<RdapActionBaseTest.RdapT
 
   /** Dummy RdapActionBase subclass used for testing. */
   @Action(
-      service = Action.Service.PUBAPI,
+      service = GaeService.PUBAPI,
       path = "/rdap/test/",
       method = {GET, HEAD},
       auth = Auth.AUTH_PUBLIC)
