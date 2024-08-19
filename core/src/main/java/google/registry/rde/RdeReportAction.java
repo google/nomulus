@@ -36,6 +36,7 @@ import google.registry.model.rde.RdeRevision;
 import google.registry.model.tld.Tld;
 import google.registry.rde.EscrowTaskRunner.EscrowTask;
 import google.registry.request.Action;
+import google.registry.request.Action.GaeService;
 import google.registry.request.HttpException.NoContentException;
 import google.registry.request.Parameter;
 import google.registry.request.RequestParameters;
@@ -53,7 +54,7 @@ import org.joda.time.Duration;
  * Action that uploads a small XML RDE report to ICANN after {@link RdeUploadAction} has finished.
  */
 @Action(
-    service = Action.Service.BACKEND,
+    service = GaeService.BACKEND,
     path = RdeReportAction.PATH,
     method = POST,
     auth = Auth.AUTH_ADMIN)

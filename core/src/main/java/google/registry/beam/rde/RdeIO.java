@@ -44,7 +44,7 @@ import google.registry.rde.RdeModule;
 import google.registry.rde.RdeResourceType;
 import google.registry.rde.RdeUploadAction;
 import google.registry.rde.RdeUtils;
-import google.registry.request.Action.Service;
+import google.registry.request.Action;
 import google.registry.request.RequestParameters;
 import google.registry.tldconfig.idn.IdnTableEnum;
 import google.registry.xjc.rdeheader.XjcRdeHeader;
@@ -302,9 +302,9 @@ public class RdeIO {
                 if (key.mode() == RdeMode.FULL) {
                   cloudTasksUtils.enqueue(
                       RDE_UPLOAD_QUEUE,
-                      cloudTasksUtils.createPostTaskWithDelay(
-                          RdeUploadAction.PATH,
-                          Service.BACKEND,
+                      cloudTasksUtils.createTaskWithDelay(
+                          RdeUploadAction.class,
+                          Action.Method.POST,
                           ImmutableMultimap.of(
                               RequestParameters.PARAM_TLD,
                               key.tld(),
@@ -314,9 +314,9 @@ public class RdeIO {
                 } else {
                   cloudTasksUtils.enqueue(
                       BRDA_QUEUE,
-                      cloudTasksUtils.createPostTaskWithDelay(
-                          BrdaCopyAction.PATH,
-                          Service.BACKEND,
+                      cloudTasksUtils.createTaskWithDelay(
+                          BrdaCopyAction.class,
+                          Action.Method.POST,
                           ImmutableMultimap.of(
                               RequestParameters.PARAM_TLD,
                               key.tld(),

@@ -24,6 +24,7 @@ import com.google.common.collect.ImmutableSet;
 import google.registry.model.EppResourceUtils;
 import google.registry.model.host.Host;
 import google.registry.request.Action;
+import google.registry.request.Action.GaeService;
 import google.registry.request.auth.Auth;
 import google.registry.util.Clock;
 import javax.inject.Inject;
@@ -31,7 +32,7 @@ import org.joda.time.DateTime;
 
 /** An action that lists hosts, for use by the {@code nomulus list_hosts} command. */
 @Action(
-    service = Action.Service.TOOLS,
+    service = GaeService.TOOLS,
     path = ListHostsAction.PATH,
     method = {GET, POST},
     auth = Auth.AUTH_ADMIN)

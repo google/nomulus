@@ -42,6 +42,7 @@ import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.tld.Tld.TldType;
 import google.registry.request.Action;
+import google.registry.request.Action.GaeService;
 import google.registry.request.Parameter;
 import google.registry.request.auth.Auth;
 import google.registry.util.RegistryEnvironment;
@@ -58,7 +59,7 @@ import org.joda.time.Duration;
  * billing events, along with their ForeignKeyDomainIndex entities.
  */
 @Action(
-    service = Action.Service.BACKEND,
+    service = GaeService.BACKEND,
     path = "/_dr/task/deleteProberData",
     method = POST,
     auth = Auth.AUTH_ADMIN)

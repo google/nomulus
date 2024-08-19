@@ -24,6 +24,7 @@ import static jakarta.servlet.http.HttpServletResponse.SC_OK;
 import com.google.common.flogger.FluentLogger;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.request.Action;
+import google.registry.request.Action.GaeService;
 import google.registry.request.Parameter;
 import google.registry.request.Response;
 import google.registry.request.auth.Auth;
@@ -54,7 +55,7 @@ import org.joda.time.Duration;
  * @see SyncRegistrarsSheet
  */
 @Action(
-    service = Action.Service.BACKEND,
+    service = GaeService.BACKEND,
     path = SyncRegistrarsSheetAction.PATH,
     method = POST,
     auth = Auth.AUTH_ADMIN)
