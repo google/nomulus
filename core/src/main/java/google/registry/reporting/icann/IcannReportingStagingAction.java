@@ -34,7 +34,7 @@ import google.registry.groups.GmailClient;
 import google.registry.reporting.ReportingModule;
 import google.registry.reporting.icann.IcannReportingModule.ReportType;
 import google.registry.request.Action;
-import google.registry.request.Action.Service;
+import google.registry.request.Action.GaeService;
 import google.registry.request.Parameter;
 import google.registry.request.Response;
 import google.registry.request.auth.Auth;
@@ -66,7 +66,7 @@ import org.joda.time.format.DateTimeFormat;
  * 'transactions'. If none specified - defaults to generating both.
  */
 @Action(
-    service = Action.Service.BACKEND,
+    service = GaeService.BACKEND,
     path = IcannReportingStagingAction.PATH,
     method = POST,
     auth = Auth.AUTH_ADMIN)
@@ -138,11 +138,8 @@ public final class IcannReportingStagingAction implements Runnable {
               logger.atInfo().log("Enqueueing report upload.");
               cloudTasksUtils.enqueue(
                   CRON_QUEUE,
-                  cloudTasksUtils.createPostTaskWithDelay(
-                      IcannReportingUploadAction.PATH,
-                      Service.BACKEND,
-                      null,
-                      Duration.standardMinutes(2)));
+                  cloudTasksUtils.createTaskWithDelay(
+                      IcannReportingUploadAction.class, POST, null, Duration.standardMinutes(2)));
             } else {
               logger.atInfo().log("Would have enqueued report upload");
             }

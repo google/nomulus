@@ -32,6 +32,7 @@ import google.registry.config.RegistryConfig.Config;
 import google.registry.model.common.FeatureFlag;
 import google.registry.model.console.GlobalRole;
 import google.registry.request.Action;
+import google.registry.request.Action.GaeService;
 import google.registry.request.Parameter;
 import google.registry.request.auth.Auth;
 import google.registry.request.auth.AuthenticatedRegistrarAccessor;
@@ -48,7 +49,7 @@ import javax.inject.Inject;
 
 /** Action that serves Registrar Console single HTML page (SPA). */
 @Action(
-    service = Action.Service.DEFAULT,
+    service = GaeService.DEFAULT,
     path = ConsoleUiAction.PATH,
     auth = Auth.AUTH_PUBLIC_LOGGED_IN)
 public final class ConsoleUiAction extends HtmlAction {

@@ -37,6 +37,7 @@ import google.registry.bsa.UploadBsaUnavailableDomainsAction;
 import google.registry.dns.ReadDnsRefreshRequestsAction;
 import google.registry.model.common.DnsRefreshRequest;
 import google.registry.persistence.transaction.JpaTransactionManager;
+import google.registry.request.Action.GkeService;
 import google.registry.util.RegistryEnvironment;
 import google.registry.util.YamlUtils;
 import jakarta.mail.internet.AddressException;
@@ -1591,6 +1592,14 @@ public final class RegistryConfig {
 
   public static boolean areServersLocal() {
     return CONFIG_SETTINGS.get().gcpProject.isLocal;
+  }
+
+  public static String getBaseDomain() {
+    return CONFIG_SETTINGS.get().gcpProject.baseDomain;
+  }
+
+  public static URL getServiceUrl(GkeService service) {
+    return makeUrl(String.format("https://%s.%s", service.getServiceId(), getBaseDomain()));
   }
 
   /**

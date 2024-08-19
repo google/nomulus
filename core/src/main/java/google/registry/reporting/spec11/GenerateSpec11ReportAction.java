@@ -32,7 +32,7 @@ import google.registry.config.RegistryConfig.Config;
 import google.registry.keyring.api.KeyModule.Key;
 import google.registry.reporting.ReportingModule;
 import google.registry.request.Action;
-import google.registry.request.Action.Service;
+import google.registry.request.Action.GaeService;
 import google.registry.request.Parameter;
 import google.registry.request.Response;
 import google.registry.request.auth.Auth;
@@ -50,7 +50,7 @@ import org.joda.time.LocalDate;
  * generates the specified month's Spec11 report and stores it on GCS.
  */
 @Action(
-    service = Action.Service.BACKEND,
+    service = GaeService.BACKEND,
     path = GenerateSpec11ReportAction.PATH,
     method = POST,
     auth = Auth.AUTH_ADMIN)
@@ -133,9 +133,9 @@ public class GenerateSpec11ReportAction implements Runnable {
       if (sendEmail) {
         cloudTasksUtils.enqueue(
             ReportingModule.BEAM_QUEUE,
-            cloudTasksUtils.createPostTaskWithDelay(
-                PublishSpec11ReportAction.PATH,
-                Service.BACKEND,
+            cloudTasksUtils.createTaskWithDelay(
+                PublishSpec11ReportAction.class,
+                POST,
                 ImmutableMultimap.of(
                     ReportingModule.PARAM_JOB_ID,
                     jobId,

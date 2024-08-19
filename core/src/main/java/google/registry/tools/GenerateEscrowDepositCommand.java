@@ -22,6 +22,7 @@ import static google.registry.rde.RdeModule.PARAM_MODE;
 import static google.registry.rde.RdeModule.PARAM_REVISION;
 import static google.registry.rde.RdeModule.PARAM_WATERMARKS;
 import static google.registry.rde.RdeModule.RDE_REPORT_QUEUE;
+import static google.registry.request.Action.Method.POST;
 import static google.registry.request.RequestParameters.PARAM_TLDS;
 
 import com.beust.jcommander.Parameter;
@@ -31,7 +32,6 @@ import com.google.common.collect.ImmutableMultimap;
 import google.registry.batch.CloudTasksUtils;
 import google.registry.model.rde.RdeMode;
 import google.registry.rde.RdeStagingAction;
-import google.registry.request.Action.Service;
 import java.util.List;
 import java.util.stream.Collectors;
 import javax.inject.Inject;
@@ -124,8 +124,7 @@ final class GenerateEscrowDepositCommand implements Command {
     }
     cloudTasksUtils.enqueue(
         RDE_REPORT_QUEUE,
-        cloudTasksUtils.createPostTask(
-            RdeStagingAction.PATH, Service.BACKEND, paramsBuilder.build()));
+        cloudTasksUtils.createTask(RdeStagingAction.class, POST, paramsBuilder.build()));
   }
 
 }

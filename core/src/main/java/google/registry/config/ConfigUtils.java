@@ -15,6 +15,8 @@
 package google.registry.config;
 
 import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 
 /** Helper methods for configuration classes. */
@@ -23,12 +25,12 @@ public final class ConfigUtils {
   /**
    * Creates a URL instance.
    *
-   * @throws RuntimeException to rethrow {@link MalformedURLException}
+   * @throws RuntimeException to rethrow {@link URISyntaxException} or {@link MalformedURLException}
    */
   public static URL makeUrl(String url) {
     try {
-      return new URL(url);
-    } catch (MalformedURLException e) {
+      return new URI(url).toURL();
+    } catch (URISyntaxException | MalformedURLException e) {
       throw new RuntimeException(e);
     }
   }

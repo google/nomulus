@@ -38,6 +38,7 @@ import google.registry.config.RegistryConfig.Config;
 import google.registry.reporting.ReportingModule;
 import google.registry.reporting.spec11.soy.Spec11EmailSoyInfo;
 import google.registry.request.Action;
+import google.registry.request.Action.GaeService;
 import google.registry.request.Parameter;
 import google.registry.request.Response;
 import google.registry.request.auth.Auth;
@@ -56,7 +57,7 @@ import org.json.JSONException;
  * ImmutableSet)} on success or {@link Spec11EmailUtils#sendAlertEmail(String, String)} on failure.
  */
 @Action(
-    service = Action.Service.BACKEND,
+    service = GaeService.BACKEND,
     path = PublishSpec11ReportAction.PATH,
     method = POST,
     auth = Auth.AUTH_ADMIN)

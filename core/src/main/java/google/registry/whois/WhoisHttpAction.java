@@ -32,6 +32,7 @@ import com.google.common.base.Throwables;
 import com.google.common.flogger.FluentLogger;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.request.Action;
+import google.registry.request.Action.GaeService;
 import google.registry.request.RequestPath;
 import google.registry.request.Response;
 import google.registry.request.auth.Auth;
@@ -94,7 +95,7 @@ import org.joda.time.Duration;
  * @see WhoisAction
  */
 @Action(
-    service = Action.Service.PUBAPI,
+    service = GaeService.PUBAPI,
     path = WhoisHttpAction.PATH,
     isPrefix = true,
     auth = Auth.AUTH_PUBLIC)

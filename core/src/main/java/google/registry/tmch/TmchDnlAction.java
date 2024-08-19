@@ -22,6 +22,7 @@ import google.registry.keyring.api.KeyModule.Key;
 import google.registry.model.tmch.ClaimsList;
 import google.registry.model.tmch.ClaimsListDao;
 import google.registry.request.Action;
+import google.registry.request.Action.GaeService;
 import google.registry.request.auth.Auth;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
@@ -31,7 +32,7 @@ import org.bouncycastle.openpgp.PGPException;
 
 /** Action to download the latest domain name list (aka claims list) from MarksDB. */
 @Action(
-    service = Action.Service.BACKEND,
+    service = GaeService.BACKEND,
     path = "/_dr/task/tmchDnl",
     method = POST,
     automaticallyPrintOk = true,

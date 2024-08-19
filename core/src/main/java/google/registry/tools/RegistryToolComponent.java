@@ -101,6 +101,8 @@ interface RegistryToolComponent {
 
   void inject(CreateUserCommand command);
 
+  void inject(CurlCommand command);
+
   void inject(DeleteUserCommand command);
 
   void inject(EncryptEscrowDepositCommand command);
@@ -189,6 +191,9 @@ interface RegistryToolComponent {
 
     @BindsInstance
     Builder sqlAccessInfoFile(@Nullable @Config("sqlAccessInfoFile") String sqlAccessInfoFile);
+
+    @BindsInstance
+    Builder useGke(@Config("useGke") boolean useGke);
 
     RegistryToolComponent build();
   }

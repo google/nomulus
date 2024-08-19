@@ -50,6 +50,7 @@ import google.registry.model.host.Host;
 import google.registry.model.rde.RdeMode;
 import google.registry.model.registrar.Registrar;
 import google.registry.request.Action;
+import google.registry.request.Action.GaeService;
 import google.registry.request.HttpException.BadRequestException;
 import google.registry.request.Parameter;
 import google.registry.request.RequestParameters;
@@ -204,7 +205,7 @@ import org.joda.time.Duration;
  *     Name Registration Data Objects Mapping</a>
  */
 @Action(
-    service = Action.Service.BACKEND,
+    service = GaeService.BACKEND,
     path = RdeStagingAction.PATH,
     method = {GET, POST},
     auth = Auth.AUTH_ADMIN)

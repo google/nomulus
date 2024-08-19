@@ -164,8 +164,10 @@ public final class ExtensionManager {
   /** Service extension(s) must be declared at login. */
   public static class UndeclaredServiceExtensionException extends CommandUseErrorException {
     public UndeclaredServiceExtensionException(Set<String> undeclaredUris) {
-      super(String.format("Service extension(s) must be declared at login: %s",
-            Joiner.on(", ").join(undeclaredUris)));
+      super(
+          String.format(
+              "Service extension(s) must be declared at login: %s",
+              Joiner.on(", ").join(undeclaredUris)));
     }
   }
 

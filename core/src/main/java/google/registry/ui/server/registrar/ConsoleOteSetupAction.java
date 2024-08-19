@@ -28,6 +28,7 @@ import google.registry.batch.CloudTasksUtils;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.model.OteAccountBuilder;
 import google.registry.request.Action;
+import google.registry.request.Action.GaeService;
 import google.registry.request.Action.Method;
 import google.registry.request.HttpException.BadRequestException;
 import google.registry.request.Parameter;
@@ -54,7 +55,7 @@ import javax.inject.Named;
  * Methods), separate this class to 2 Actions.
  */
 @Action(
-    service = Action.Service.DEFAULT,
+    service = GaeService.DEFAULT,
     path = ConsoleOteSetupAction.PATH,
     method = {Method.POST, Method.GET},
     auth = Auth.AUTH_PUBLIC_LOGGED_IN)

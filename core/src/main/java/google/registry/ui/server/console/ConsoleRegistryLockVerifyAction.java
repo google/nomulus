@@ -22,6 +22,7 @@ import com.google.gson.annotations.Expose;
 import google.registry.model.console.User;
 import google.registry.model.domain.RegistryLock;
 import google.registry.request.Action;
+import google.registry.request.Action.GaeService;
 import google.registry.request.Action.GkeService;
 import google.registry.request.Parameter;
 import google.registry.request.auth.Auth;
@@ -31,7 +32,7 @@ import javax.inject.Inject;
 
 /** Handler for verifying registry lock requests, a form of 2FA. */
 @Action(
-    service = Action.Service.DEFAULT,
+    service = GaeService.DEFAULT,
     gkeService = GkeService.CONSOLE,
     path = ConsoleRegistryLockVerifyAction.PATH,
     method = {GET},
