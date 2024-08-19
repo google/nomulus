@@ -63,7 +63,7 @@ public record AuthResult(
     checkArgument(authLevel != USER || user != null, "User must be specified for auth level USER");
     checkArgument(
         authLevel != APP || serviceAccountEmail != null,
-        "Service account email must be specified for auth level APP");
+        "GaeService account email must be specified for auth level APP");
     return new AuthResult(
         authLevel, Optional.ofNullable(user), Optional.ofNullable(serviceAccountEmail));
   }

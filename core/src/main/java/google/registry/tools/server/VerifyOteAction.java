@@ -21,6 +21,7 @@ import com.google.common.collect.Maps;
 import google.registry.model.OteStats;
 import google.registry.model.OteStats.StatType;
 import google.registry.request.Action;
+import google.registry.request.Action.GaeService;
 import google.registry.request.JsonActionRunner;
 import google.registry.request.JsonActionRunner.JsonAction;
 import google.registry.request.auth.Auth;
@@ -34,7 +35,7 @@ import javax.inject.Inject;
  * OT&amp;E commands that have been run just previously to verification may not be picked up yet.
  */
 @Action(
-    service = Action.Service.TOOLS,
+    service = GaeService.TOOLS,
     path = VerifyOteAction.PATH,
     method = Action.Method.POST,
     auth = Auth.AUTH_ADMIN)

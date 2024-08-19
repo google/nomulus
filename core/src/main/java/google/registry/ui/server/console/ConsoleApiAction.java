@@ -41,7 +41,6 @@ import google.registry.model.console.UserRoles;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarPoc;
 import google.registry.model.registrar.RegistrarPocBase;
-import google.registry.request.Action.Service;
 import google.registry.request.HttpException;
 import google.registry.security.XsrfTokenManager;
 import google.registry.ui.server.registrar.ConsoleUiAction;
@@ -197,8 +196,7 @@ public abstract class ConsoleApiAction implements Runnable {
       // there's an update besides the lastUpdateTime
       cloudTasksUtils.enqueue(
           SyncRegistrarsSheetAction.QUEUE,
-          cloudTasksUtils.createGetTask(
-              SyncRegistrarsSheetAction.PATH, Service.BACKEND, ImmutableMultimap.of()));
+          cloudTasksUtils.createTask(SyncRegistrarsSheetAction.class, GET, ImmutableMultimap.of()));
     }
 
     String environment = Ascii.toLowerCase(String.valueOf(RegistryEnvironment.get()));

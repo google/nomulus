@@ -15,10 +15,10 @@
 package google.registry.tools;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.request.Action.Service.BACKEND;
-import static google.registry.request.Action.Service.DEFAULT;
-import static google.registry.request.Action.Service.PUBAPI;
-import static google.registry.request.Action.Service.TOOLS;
+import static google.registry.request.Action.GaeService.BACKEND;
+import static google.registry.request.Action.GaeService.DEFAULT;
+import static google.registry.request.Action.GaeService.PUBAPI;
+import static google.registry.request.Action.GaeService.TOOLS;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
@@ -30,7 +30,7 @@ import static org.mockito.Mockito.when;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.net.MediaType;
-import google.registry.request.Action.Service;
+import google.registry.request.Action.GaeService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -48,7 +48,8 @@ class CurlCommandTest extends CommandTestCase<CurlCommand> {
   @BeforeEach
   void beforeEach() {
     command.setConnection(connection);
-    when(connection.withService(any(Service.class), anyBoolean())).thenReturn(connectionForService);
+    when(connection.withService(any(GaeService.class), anyBoolean()))
+        .thenReturn(connectionForService);
   }
 
   @Captor ArgumentCaptor<ImmutableMap<String, String>> urlParamCaptor;

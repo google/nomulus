@@ -43,7 +43,7 @@ import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarPoc;
 import google.registry.model.registrar.RegistrarPocBase.Type;
 import google.registry.request.Action;
-import google.registry.request.Action.Service;
+import google.registry.request.Action.GaeService;
 import google.registry.request.HttpException.BadRequestException;
 import google.registry.request.HttpException.ForbiddenException;
 import google.registry.request.JsonActionRunner;
@@ -74,7 +74,7 @@ import org.joda.time.DateTime;
  * preserve history.
  */
 @Action(
-    service = Action.Service.DEFAULT,
+    service = GaeService.DEFAULT,
     path = RegistrarSettingsAction.PATH,
     method = Action.Method.POST,
     auth = Auth.AUTH_PUBLIC_LOGGED_IN)
@@ -604,8 +604,8 @@ public class RegistrarSettingsAction implements Runnable, JsonActionRunner.JsonA
       // there's an update besides the lastUpdateTime
       cloudTasksUtils.enqueue(
           SyncRegistrarsSheetAction.QUEUE,
-          cloudTasksUtils.createGetTask(
-              SyncRegistrarsSheetAction.PATH, Service.BACKEND, ImmutableMultimap.of()));
+          cloudTasksUtils.createTask(
+              SyncRegistrarsSheetAction.class, Action.Method.GET, ImmutableMultimap.of()));
     }
     String environment = Ascii.toLowerCase(String.valueOf(RegistryEnvironment.get()));
     sendEmailUtils.sendEmail(

@@ -16,7 +16,7 @@ package google.registry.module.bsa;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import google.registry.request.Action.Service;
+import google.registry.request.Action.GaeService;
 import google.registry.request.RouterDisplayHelper;
 import google.registry.testing.GoldenFileTestHelper;
 import org.junit.jupiter.api.Test;
@@ -35,7 +35,7 @@ public class BsaRequestComponentTest {
   void testRoutingService() {
     assertThat(
             RouterDisplayHelper.extractHumanReadableRoutesWithWrongService(
-                BsaRequestComponent.class, Service.BSA))
+                BsaRequestComponent.class, GaeService.BSA))
         .isEmpty();
   }
 }
