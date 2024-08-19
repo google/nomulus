@@ -30,6 +30,7 @@ import google.registry.rdap.RdapJsonFormatter.OutputDataType;
 import google.registry.rdap.RdapMetrics.EndpointType;
 import google.registry.rdap.RdapObjectClasses.RdapEntity;
 import google.registry.request.Action;
+import google.registry.request.Action.GaeService;
 import google.registry.request.HttpException.NotFoundException;
 import google.registry.request.auth.Auth;
 import java.util.Optional;
@@ -46,7 +47,7 @@ import javax.inject.Inject;
  * Registrar ID registry. The type value of the publicID object MUST be equal to IANA Registrar ID.
  */
 @Action(
-    service = Action.Service.PUBAPI,
+    service = GaeService.PUBAPI,
     path = "/rdap/entity/",
     method = {GET, HEAD},
     isPrefix = true,

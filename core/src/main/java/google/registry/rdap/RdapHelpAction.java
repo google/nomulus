@@ -22,6 +22,7 @@ import google.registry.rdap.RdapDataStructures.Notice;
 import google.registry.rdap.RdapMetrics.EndpointType;
 import google.registry.rdap.RdapObjectClasses.HelpResponse;
 import google.registry.request.Action;
+import google.registry.request.Action.GaeService;
 import google.registry.request.HttpException.NotFoundException;
 import google.registry.request.auth.Auth;
 import java.util.Optional;
@@ -29,7 +30,7 @@ import javax.inject.Inject;
 
 /** RDAP (new WHOIS) action for help requests. */
 @Action(
-    service = Action.Service.PUBAPI,
+    service = GaeService.PUBAPI,
     path = "/rdap/help",
     method = {GET, HEAD},
     isPrefix = true,

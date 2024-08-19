@@ -55,6 +55,7 @@ import google.registry.model.tld.Tld;
 import google.registry.model.tld.Tld.TldType;
 import google.registry.persistence.VKey;
 import google.registry.request.Action;
+import google.registry.request.Action.GaeService;
 import google.registry.request.Response;
 import google.registry.request.auth.Auth;
 import google.registry.util.Clock;
@@ -67,7 +68,7 @@ import org.joda.time.Duration;
 
 /** Validates the BSA data in the database against the most recent block lists. */
 @Action(
-    service = Action.Service.BSA,
+    service = GaeService.BSA,
     path = BsaValidateAction.PATH,
     method = {GET, POST},
     auth = Auth.AUTH_ADMIN)

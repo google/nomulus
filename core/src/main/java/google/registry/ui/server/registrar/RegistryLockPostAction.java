@@ -32,6 +32,7 @@ import google.registry.groups.GmailClient;
 import google.registry.model.console.User;
 import google.registry.model.domain.RegistryLock;
 import google.registry.request.Action;
+import google.registry.request.Action.GaeService;
 import google.registry.request.Action.Method;
 import google.registry.request.HttpException.ForbiddenException;
 import google.registry.request.JsonActionRunner;
@@ -60,7 +61,7 @@ import org.joda.time.Duration;
  * URL, which is why this is distinct from the {@link RegistryLockGetAction}.
  */
 @Action(
-    service = Action.Service.DEFAULT,
+    service = GaeService.DEFAULT,
     path = RegistryLockPostAction.PATH,
     method = Method.POST,
     auth = Auth.AUTH_PUBLIC_LOGGED_IN)

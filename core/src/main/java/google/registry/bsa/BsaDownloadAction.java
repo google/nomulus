@@ -41,6 +41,7 @@ import google.registry.bsa.persistence.DownloadScheduler;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.model.tld.Tlds;
 import google.registry.request.Action;
+import google.registry.request.Action.GaeService;
 import google.registry.request.Response;
 import google.registry.request.auth.Auth;
 import google.registry.util.Clock;
@@ -50,7 +51,7 @@ import java.util.stream.Stream;
 import javax.inject.Inject;
 
 @Action(
-    service = Action.Service.BSA,
+    service = GaeService.BSA,
     path = BsaDownloadAction.PATH,
     method = {GET, POST},
     auth = Auth.AUTH_ADMIN)

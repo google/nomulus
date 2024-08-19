@@ -26,8 +26,12 @@ import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.net.MediaType;
+import google.registry.config.RegistryConfig.Config;
+import google.registry.request.Action.GaeService;
+import google.registry.request.Action.GkeService;
 import google.registry.request.Action.Service;
 import java.util.List;
+import javax.inject.Inject;
 
 @Parameters(separators = " =", commandDescription = "Send an HTTP command to the nomulus server.")
 class CurlCommand implements CommandWithConnection {
@@ -73,12 +77,16 @@ class CurlCommand implements CommandWithConnection {
       names = {"--service"},
       description = "Which service to connect to",
       required = true)
-  private Service service;
+  private String serviceName;
 
   @Parameter(
       names = {"--canary"},
       description = "If set, use the canary end-point; otherwise use the regular end-point.")
   private Boolean canary = Boolean.FALSE;
+
+  @Inject
+  @Config("useGke")
+  boolean useGke;
 
   @Override
   public void setConnection(ServiceConnection connection) {
@@ -94,6 +102,8 @@ class CurlCommand implements CommandWithConnection {
     } else if (method == Method.GET && data != null) {
       throw new IllegalArgumentException("You may not specify a body for a get method.");
     }
+
+    Service service = useGke ? GkeService.valueOf(serviceName) : GaeService.valueOf(serviceName);
 
     ServiceConnection connectionToService = connection.withService(service, canary);
     String response =

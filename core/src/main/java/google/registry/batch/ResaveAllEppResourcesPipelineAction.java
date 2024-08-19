@@ -28,6 +28,7 @@ import com.google.common.flogger.FluentLogger;
 import com.google.common.net.MediaType;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.request.Action;
+import google.registry.request.Action.GaeService;
 import google.registry.request.Parameter;
 import google.registry.request.Response;
 import google.registry.request.auth.Auth;
@@ -53,7 +54,7 @@ import javax.inject.Inject;
  * <p>This runs the {@link google.registry.beam.resave.ResaveAllEppResourcesPipeline}.
  */
 @Action(
-    service = Action.Service.BACKEND,
+    service = GaeService.BACKEND,
     path = ResaveAllEppResourcesPipelineAction.PATH,
     auth = Auth.AUTH_ADMIN)
 public class ResaveAllEppResourcesPipelineAction implements Runnable {

@@ -21,6 +21,7 @@ import com.google.common.collect.ImmutableMap;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.model.console.User;
 import google.registry.request.Action;
+import google.registry.request.Action.GaeService;
 import google.registry.request.Action.GkeService;
 import google.registry.request.auth.Auth;
 import google.registry.security.XsrfTokenManager;
@@ -29,7 +30,7 @@ import javax.inject.Inject;
 import org.json.JSONObject;
 
 @Action(
-    service = Action.Service.DEFAULT,
+    service = GaeService.DEFAULT,
     gkeService = GkeService.CONSOLE,
     path = ConsoleUserDataAction.PATH,
     method = {GET},

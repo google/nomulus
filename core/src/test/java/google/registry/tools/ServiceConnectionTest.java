@@ -15,7 +15,7 @@
 package google.registry.tools;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.request.Action.Service.DEFAULT;
+import static google.registry.request.Action.GaeService.DEFAULT;
 
 import org.junit.jupiter.api.Test;
 
@@ -24,14 +24,14 @@ public class ServiceConnectionTest {
 
   @Test
   void testServerUrl_notCanary() {
-    ServiceConnection connection = new ServiceConnection().withService(DEFAULT, false);
+    ServiceConnection connection = new ServiceConnection(false, null).withService(DEFAULT, false);
     String serverUrl = connection.getServer().toString();
     assertThat(serverUrl).isEqualTo("https://default.example.com"); // See default-config.yaml
   }
 
   @Test
   void testServerUrl_canary() {
-    ServiceConnection connection = new ServiceConnection().withService(DEFAULT, true);
+    ServiceConnection connection = new ServiceConnection(false, null).withService(DEFAULT, true);
     String serverUrl = connection.getServer().toString();
     assertThat(serverUrl).isEqualTo("https://nomulus-dot-default.example.com");
   }
