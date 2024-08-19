@@ -36,6 +36,7 @@ import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.reporting.HistoryEntryDao;
 import google.registry.persistence.VKey;
 import google.registry.request.Action;
+import google.registry.request.Action.GaeService;
 import google.registry.request.Parameter;
 import google.registry.request.auth.Auth;
 import google.registry.util.Clock;
@@ -53,7 +54,7 @@ import javax.inject.Inject;
  * production.
  */
 @Action(
-    service = Action.Service.BACKEND,
+    service = GaeService.BACKEND,
     path = "/_dr/task/deleteLoadTestData",
     method = POST,
     auth = Auth.AUTH_ADMIN)

@@ -34,6 +34,7 @@ import google.registry.model.registrar.RegistrarBase;
 import google.registry.model.registrar.RegistrarBase.State;
 import google.registry.model.registrar.RegistrarPoc;
 import google.registry.request.Action;
+import google.registry.request.Action.GaeService;
 import google.registry.request.Action.GkeService;
 import google.registry.request.Parameter;
 import google.registry.request.auth.Auth;
@@ -45,7 +46,7 @@ import javax.inject.Inject;
 import javax.inject.Named;
 
 @Action(
-    service = Action.Service.DEFAULT,
+    service = GaeService.DEFAULT,
     gkeService = GkeService.CONSOLE,
     path = RegistrarsAction.PATH,
     method = {GET, POST},

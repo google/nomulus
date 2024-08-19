@@ -22,12 +22,13 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import google.registry.model.registrar.Registrar;
 import google.registry.request.Action;
+import google.registry.request.Action.GaeService;
 import google.registry.request.auth.Auth;
 import javax.inject.Inject;
 
 /** An action that lists registrars, for use by the {@code nomulus list_registrars} command. */
 @Action(
-    service = Action.Service.TOOLS,
+    service = GaeService.TOOLS,
     path = ListRegistrarsAction.PATH,
     method = {GET, POST},
     auth = Auth.AUTH_ADMIN)

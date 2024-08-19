@@ -50,7 +50,7 @@ import google.registry.model.tld.Tld;
 import google.registry.rde.EscrowTaskRunner.EscrowTask;
 import google.registry.rde.JSchSshSession.JSchSshSessionFactory;
 import google.registry.request.Action;
-import google.registry.request.Action.Service;
+import google.registry.request.Action.GaeService;
 import google.registry.request.HttpException.NoContentException;
 import google.registry.request.Parameter;
 import google.registry.request.RequestParameters;
@@ -84,7 +84,7 @@ import org.joda.time.Duration;
  * RdeReportAction}.
  */
 @Action(
-    service = Action.Service.BACKEND,
+    service = GaeService.BACKEND,
     path = RdeUploadAction.PATH,
     method = POST,
     auth = Auth.AUTH_ADMIN)
@@ -130,8 +130,7 @@ public final class RdeUploadAction implements Runnable, EscrowTask {
     params.put(RequestParameters.PARAM_TLD, tld);
     prefix.ifPresent(s -> params.put(RdeModule.PARAM_PREFIX, s));
     cloudTasksUtils.enqueue(
-        RDE_REPORT_QUEUE,
-        cloudTasksUtils.createPostTask(RdeReportAction.PATH, Service.BACKEND, params));
+        RDE_REPORT_QUEUE, cloudTasksUtils.createTask(RdeReportAction.class, POST, params));
   }
 
   @Override

@@ -22,6 +22,7 @@ import dagger.Module;
 import dagger.Provides;
 import google.registry.model.eppcommon.ProtocolDefinition;
 import google.registry.request.Action;
+import google.registry.request.Action.GaeService;
 import google.registry.request.Action.Method;
 import google.registry.request.Parameter;
 import google.registry.request.auth.Auth;
@@ -30,7 +31,7 @@ import javax.inject.Inject;
 
 /** Runs EPP commands directly without logging in, verifying an XSRF token from the tool. */
 @Action(
-    service = Action.Service.TOOLS,
+    service = GaeService.TOOLS,
     path = EppToolAction.PATH,
     method = Method.POST,
     auth = Auth.AUTH_ADMIN)

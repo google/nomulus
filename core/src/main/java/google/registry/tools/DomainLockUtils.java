@@ -34,7 +34,7 @@ import google.registry.model.domain.RegistryLock;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.tld.RegistryLockDao;
 import google.registry.model.tld.Tld;
-import google.registry.request.Action.Service;
+import google.registry.request.Action;
 import google.registry.util.StringGenerator;
 import java.util.Optional;
 import javax.annotation.Nullable;
@@ -191,9 +191,9 @@ public final class DomainLockUtils {
   public void enqueueDomainRelock(Duration countdown, long lockRevisionId, int previousAttempts) {
     cloudTasksUtils.enqueue(
         QUEUE_ASYNC_ACTIONS,
-        cloudTasksUtils.createPostTaskWithDelay(
-            RelockDomainAction.PATH,
-            Service.BACKEND,
+        cloudTasksUtils.createTaskWithDelay(
+            RelockDomainAction.class,
+            Action.Method.POST,
             ImmutableMultimap.of(
                 RelockDomainAction.OLD_UNLOCK_REVISION_ID_PARAM,
                 String.valueOf(lockRevisionId),

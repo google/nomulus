@@ -23,6 +23,7 @@ import com.google.common.collect.ImmutableSet;
 import google.registry.model.tld.label.ReservedList;
 import google.registry.model.tld.label.ReservedListDao;
 import google.registry.request.Action;
+import google.registry.request.Action.GaeService;
 import google.registry.request.auth.Auth;
 import java.util.Comparator;
 import java.util.Optional;
@@ -30,7 +31,7 @@ import javax.inject.Inject;
 
 /** A that lists reserved lists, for use by the {@code nomulus list_reserved_lists} command. */
 @Action(
-    service = Action.Service.TOOLS,
+    service = GaeService.TOOLS,
     path = ListReservedListsAction.PATH,
     method = {GET, POST},
     auth = Auth.AUTH_ADMIN)

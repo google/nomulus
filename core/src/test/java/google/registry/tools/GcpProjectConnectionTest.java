@@ -84,9 +84,8 @@ final class GcpProjectConnectionTest {
         .thenReturn(new ByteArrayInputStream("MyContent".getBytes(UTF_8)));
     when(lowLevelHttpResponse.getStatusCode()).thenReturn(200);
 
-    connection = new ServiceConnection();
     httpTransport = new TestHttpTransport();
-    connection.requestFactory = httpTransport.createRequestFactory();
+    connection = new ServiceConnection(false, httpTransport.createRequestFactory());
   }
 
   @Test
