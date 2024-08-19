@@ -190,6 +190,9 @@ interface RegistryToolComponent {
     @BindsInstance
     Builder sqlAccessInfoFile(@Nullable @Config("sqlAccessInfoFile") String sqlAccessInfoFile);
 
+    @BindsInstance
+    Builder useGke(@Config("useGke") boolean useGke);
+
     RegistryToolComponent build();
   }
 }

@@ -258,7 +258,7 @@ public class RdapJsonFormatter {
 
     Notice.Builder noticeBuilder =
         Notice.builder()
-            .setTitle("RDAP Terms of Service")
+            .setTitle("RDAP Terms of GaeService")
             .setDescription(rdapTos)
             .addLink(selfLink);
     if (rdapTosStaticUrl != null) {

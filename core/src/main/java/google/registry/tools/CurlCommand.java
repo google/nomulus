@@ -26,7 +26,7 @@ import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.net.MediaType;
-import google.registry.request.Action.Service;
+import google.registry.request.Action.GaeService;
 import java.util.List;
 
 @Parameters(separators = " =", commandDescription = "Send an HTTP command to the nomulus server.")
@@ -73,7 +73,7 @@ class CurlCommand implements CommandWithConnection {
       names = {"--service"},
       description = "Which service to connect to",
       required = true)
-  private Service service;
+  private GaeService service;
 
   @Parameter(
       names = {"--canary"},

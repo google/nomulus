@@ -237,7 +237,7 @@ public abstract class HttpException extends RuntimeException {
 
     @Override
     public String getResponseCodeString() {
-      return "Service Unavailable";
+      return "GaeService Unavailable";
     }
   }
 }

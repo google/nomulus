@@ -67,8 +67,12 @@ final class RegistryCli implements CommandRunner {
       names = "--sql_access_info",
       description =
           "Name of a file containing space-separated SQL access info used when deploying "
-              + "Beam pipelines")
+              + "Beam pipelines",
+      arity = 1)
   private String sqlAccessInfoFile = null;
+
+  @Parameter(names = "--gke", description = "Whether to use GKE runtime, instead of GAE")
+  private boolean useGke = false;
 
   // Do not make this final - compile-time constant inlining may interfere with JCommander.
   @ParametersDelegate private LoggingParameters loggingParams = new LoggingParameters();
@@ -93,10 +97,10 @@ final class RegistryCli implements CommandRunner {
     Security.addProvider(new BouncyCastleProvider());
   }
 
-  // The <? extends Class<? extends Command>> wildcard looks a little funny, but is needed so that
-  // we can accept maps with value types that are subtypes of Class<? extends Command> rather than
-  // literally that type.  For more explanation, see:
-  //   http://www.angelikalanger.com/GenericsFAQ/FAQSections/TypeArguments.html#FAQ104
+  // The <? extends Class<? extends Command>> wildcard looks a little funny, but is necessary so
+  // that we can accept maps with value types that are subtypes of Class<? extends Command> rather
+  // than literally that type.  For more explanation, see:
+  // http://www.angelikalanger.com/GenericsFAQ/FAQSections/TypeArguments.html#FAQ104
   @Override
   public void run(String[] args) throws Exception {
 
@@ -105,7 +109,7 @@ final class RegistryCli implements CommandRunner {
     jcommander.addConverterFactory(new ParameterFactory());
     jcommander.setProgramName(programName);
 
-    // Create all command instances. It would be preferrable to do this in the constructor, but
+    // Create all command instances. It would be preferable to do this in the constructor, but
     // JCommander mutates the command instances and doesn't reset them, so we have to do it for
     // every run.
     try {
@@ -162,6 +166,7 @@ final class RegistryCli implements CommandRunner {
         DaggerRegistryToolComponent.builder()
             .credentialFilePath(credentialJson)
             .sqlAccessInfoFile(sqlAccessInfoFile)
+            .useGke(useGke)
             .build();
 
     // JCommander stores sub-commands as nested JCommander objects containing a list of user objects
@@ -204,7 +209,7 @@ final class RegistryCli implements CommandRunner {
   }
 
   private ServiceConnection getConnection() {
-    // Get the App Engine connection, advise the user if they are not currently logged in..
+    // Get the App Engine connection, advise the user if they are not currently logged in.
     if (connection == null) {
       connection = component.serviceConnection();
     }

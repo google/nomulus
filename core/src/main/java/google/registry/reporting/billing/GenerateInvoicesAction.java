@@ -32,7 +32,7 @@ import google.registry.config.RegistryConfig.Config;
 import google.registry.persistence.PersistenceModule;
 import google.registry.reporting.ReportingModule;
 import google.registry.request.Action;
-import google.registry.request.Action.Service;
+import google.registry.request.Action.GaeService;
 import google.registry.request.Parameter;
 import google.registry.request.Response;
 import google.registry.request.auth.Auth;
@@ -51,7 +51,7 @@ import org.joda.time.YearMonth;
  * template. The pipeline then generates invoices for the month and stores them on GCS.
  */
 @Action(
-    service = Action.Service.BACKEND,
+    service = GaeService.BACKEND,
     path = GenerateInvoicesAction.PATH,
     method = POST,
     auth = Auth.AUTH_ADMIN)
@@ -138,9 +138,9 @@ public class GenerateInvoicesAction implements Runnable {
       if (shouldPublish) {
         cloudTasksUtils.enqueue(
             ReportingModule.BEAM_QUEUE,
-            cloudTasksUtils.createPostTaskWithDelay(
-                PublishInvoicesAction.PATH,
-                Service.BACKEND,
+            cloudTasksUtils.createTaskWithDelay(
+                PublishInvoicesAction.class,
+                POST,
                 ImmutableMultimap.of(
                     ReportingModule.PARAM_JOB_ID,
                     jobId,

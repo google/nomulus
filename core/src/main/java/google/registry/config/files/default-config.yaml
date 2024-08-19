@@ -152,7 +152,7 @@ registryPolicy:
     >>> This name is not available for registration.
     >>> This name has been blocked by a GlobalBlock service.
 
-  # RDAP Terms of Service text displayed at the /rdap/help/tos endpoint.
+  # RDAP Terms of GaeService text displayed at the /rdap/help/tos endpoint.
   rdapTos: >
     By querying our Domain Database as part of the RDAP pilot program (RDAP
     Domain Database), you are agreeing to comply with these terms, so please
@@ -339,7 +339,7 @@ caching:
 # Note: Only allowedServiceAccountEmails and oauthClientId should be configured.
 # Other fields are related to OAuth-based authentication and will be removed.
 auth:
-  # Service accounts (e.g., default service account, account used by Cloud
+  # GaeService accounts (e.g., default service account, account used by Cloud
   # Scheduler) allowed to send authenticated requests.
   allowedServiceAccountEmails:
   - default-service-account-email@email.com

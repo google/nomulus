@@ -34,6 +34,7 @@ import google.registry.rdap.RdapMetrics.SearchType;
 import google.registry.rdap.RdapSearchResults.IncompletenessWarningType;
 import google.registry.rdap.RdapSearchResults.NameserverSearchResponse;
 import google.registry.request.Action;
+import google.registry.request.Action.GaeService;
 import google.registry.request.HttpException.BadRequestException;
 import google.registry.request.HttpException.NotFoundException;
 import google.registry.request.HttpException.UnprocessableEntityException;
@@ -56,7 +57,7 @@ import javax.inject.Inject;
  *     Data Access Protocol (RDAP)</a>
  */
 @Action(
-    service = Action.Service.PUBAPI,
+    service = GaeService.PUBAPI,
     path = "/rdap/nameservers",
     method = {GET, HEAD},
     auth = Auth.AUTH_PUBLIC)

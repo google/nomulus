@@ -21,6 +21,7 @@ import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Streams;
+import google.registry.request.Action.GaeService;
 import java.util.Comparator;
 import java.util.Map;
 
@@ -65,7 +66,7 @@ public class RouterDisplayHelper {
   }
 
   public static ImmutableList<String> extractHumanReadableRoutesWithWrongService(
-      Class<?> componentClass, Action.Service expectedService) {
+      Class<?> componentClass, GaeService expectedService) {
     return Router.extractRoutesFromComponent(componentClass).values().stream()
         .filter(route -> route.action().service() != expectedService)
         .map(

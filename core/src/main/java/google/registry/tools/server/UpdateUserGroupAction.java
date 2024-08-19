@@ -20,6 +20,7 @@ import com.google.common.flogger.FluentLogger;
 import google.registry.groups.GroupsConnection;
 import google.registry.groups.GroupsConnection.Role;
 import google.registry.request.Action;
+import google.registry.request.Action.GaeService;
 import google.registry.request.Parameter;
 import google.registry.request.Response;
 import google.registry.request.auth.Auth;
@@ -27,7 +28,7 @@ import javax.inject.Inject;
 
 /** Action that adds or deletes a console user to/from the group that has IAP permissions. */
 @Action(
-    service = Action.Service.TOOLS,
+    service = GaeService.TOOLS,
     path = UpdateUserGroupAction.PATH,
     method = POST,
     auth = Auth.AUTH_ADMIN)

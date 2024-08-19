@@ -21,6 +21,7 @@ import com.google.common.flogger.FluentLogger;
 import google.registry.keyring.api.KeyModule.Key;
 import google.registry.model.smd.SignedMarkRevocationList;
 import google.registry.request.Action;
+import google.registry.request.Action.GaeService;
 import google.registry.request.auth.Auth;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
@@ -30,7 +31,7 @@ import org.bouncycastle.openpgp.PGPException;
 
 /** Action to download the latest signed mark revocation list from MarksDB. */
 @Action(
-    service = Action.Service.BACKEND,
+    service = GaeService.BACKEND,
     path = "/_dr/task/tmchSmdrl",
     method = POST,
     automaticallyPrintOk = true,

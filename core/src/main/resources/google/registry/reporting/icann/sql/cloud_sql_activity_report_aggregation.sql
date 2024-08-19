@@ -19,7 +19,7 @@
 SELECT
   RealTlds.tld AS tld,
   SUM(IF(metricName = 'operational-registrars', count, 0)) AS operational_registrars,
-  -- We use the Centralized Zone Data Service.
+  -- We use the Centralized Zone Data GaeService.
   "CZDS" AS zfa_passwords,
   SUM(IF(metricName = 'whois-43-queries', count, 0)) AS whois_43_queries,
   SUM(IF(metricName = 'web-whois-queries', count, 0)) AS web_whois_queries,

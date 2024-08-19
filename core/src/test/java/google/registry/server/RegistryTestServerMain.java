@@ -57,12 +57,12 @@ public final class RegistryTestServerMain {
 
   @Parameter(
       names = "--login_email",
-      description = "Login email address for App Engine Local User Service.")
+      description = "Login email address for App Engine Local User GaeService.")
   private String loginEmail = "Marla.Singer@crr.com";
 
   @Parameter(
       names = "--login_is_admin",
-      description = "Should logged in user be an admin for App Engine Local User Service.",
+      description = "Should logged in user be an admin for App Engine Local User GaeService.",
       arity = 1)
   private boolean loginIsAdmin = true;
 

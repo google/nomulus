@@ -27,6 +27,7 @@ import google.registry.model.CreateAutoTimestamp;
 import google.registry.model.console.User;
 import google.registry.model.domain.Domain;
 import google.registry.request.Action;
+import google.registry.request.Action.GaeService;
 import google.registry.request.Action.GkeService;
 import google.registry.request.Parameter;
 import google.registry.request.auth.Auth;
@@ -38,7 +39,7 @@ import org.joda.time.DateTime;
 
 /** Returns a (paginated) list of domains for a particular registrar. */
 @Action(
-    service = Action.Service.DEFAULT,
+    service = GaeService.DEFAULT,
     gkeService = GkeService.CONSOLE,
     path = ConsoleDomainListAction.PATH,
     method = Action.Method.GET,

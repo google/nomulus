@@ -19,6 +19,7 @@ import static com.google.common.base.Strings.isNullOrEmpty;
 import static com.google.common.base.Verify.verify;
 import static com.google.common.net.HttpHeaders.X_REQUESTED_WITH;
 import static com.google.common.net.MediaType.JSON_UTF_8;
+import static google.registry.config.ConfigUtils.makeUrl;
 import static google.registry.security.JsonHttp.JSON_SAFETY_PREFIX;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -35,11 +36,12 @@ import com.google.common.io.CharStreams;
 import com.google.common.net.MediaType;
 import com.google.re2j.Matcher;
 import com.google.re2j.Pattern;
-import google.registry.config.RegistryConfig;
+import google.registry.config.RegistryConfig.Config;
+import google.registry.request.Action.GaeService;
+import google.registry.request.Action.GkeService;
 import google.registry.request.Action.Service;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Map;
 import javax.annotation.Nullable;
@@ -49,33 +51,33 @@ import org.json.simple.JSONValue;
 /**
  * An HTTP connection to a service.
  *
- * <p>By default - connects to the TOOLS service. To create a Connection to another service, call
- * the {@link #withService} function.
+ * <p>By default - connects to the TOOLS service in GAE and the BACKEND service in GKE. To create a
+ * Connection to another service, call the {@link #withService} function.
  */
 public class ServiceConnection {
 
   /** Pattern to heuristically extract title tag contents in HTML responses. */
-  private static final Pattern HTML_TITLE_TAG_PATTERN = Pattern.compile("<title>(.*?)</title>");
+  protected static final Pattern HTML_TITLE_TAG_PATTERN = Pattern.compile("<title>(.*?)</title>");
 
-  @Inject HttpRequestFactory requestFactory;
-  private final Service service;
-  private final boolean useCanary;
+  protected final Service service;
+  protected final boolean useCanary;
+  protected final HttpRequestFactory requestFactory;
 
   @Inject
-  ServiceConnection() {
-    service = Service.TOOLS;
-    useCanary = false;
+  ServiceConnection(@Config("useGke") boolean useGke, HttpRequestFactory requestFactory) {
+    this(useGke ? GkeService.BACKEND : GaeService.TOOLS, requestFactory, false);
   }
 
-  private ServiceConnection(Service service, HttpRequestFactory requestFactory, boolean useCanary) {
+  protected ServiceConnection(
+      Service service, HttpRequestFactory requestFactory, boolean useCanary) {
     this.service = service;
     this.requestFactory = requestFactory;
     this.useCanary = useCanary;
   }
 
   /** Returns a copy of this connection that talks to a different service endpoint. */
-  public ServiceConnection withService(Service service, boolean isCanary) {
-    return new ServiceConnection(service, requestFactory, isCanary);
+  public ServiceConnection withService(Service service, boolean useCanary) {
+    return new ServiceConnection(service, requestFactory, useCanary);
   }
 
   /** Returns the contents of the title tag in the given HTML, or null if not found. */
@@ -129,14 +131,11 @@ public class ServiceConnection {
 
   @VisibleForTesting
   URL getServer() {
-    URL url = getServer(service);
-    if (useCanary) {
+    URL url = service.getServiceUrl();
+    // Currently only GAE supports connecting to canary.
+    if (service instanceof GaeService && useCanary) {
       verify(!isNullOrEmpty(url.getHost()), "Null host in url");
-      try {
-        return new URL(url.getProtocol(), "nomulus-dot-" + url.getHost(), url.getFile());
-      } catch (MalformedURLException e) {
-        throw new RuntimeException(e);
-      }
+      url = makeUrl(String.format("nomulus-dot-%s%s", url.getHost(), url.getFile()));
     }
     return url;
   }
@@ -160,15 +159,5 @@ public class ServiceConnection {
             JSON_UTF_8,
             JSONValue.toJSONString(object).getBytes(UTF_8));
     return (Map<String, Object>) JSONValue.parse(response.substring(JSON_SAFETY_PREFIX.length()));
-  }
-
-  public static URL getServer(Service service) {
-    return switch (service) {
-      case DEFAULT -> RegistryConfig.getDefaultServer();
-      case TOOLS -> RegistryConfig.getToolsServer();
-      case BACKEND -> RegistryConfig.getBackendServer();
-      case BSA -> RegistryConfig.getBsaServer();
-      case PUBAPI -> RegistryConfig.getPubapiServer();
-    };
   }
 }
