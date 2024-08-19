@@ -28,6 +28,7 @@ import google.registry.model.OteStats.StatType;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarBase.Type;
 import google.registry.request.Action;
+import google.registry.request.Action.GaeService;
 import google.registry.request.JsonActionRunner;
 import google.registry.request.auth.Auth;
 import google.registry.request.auth.AuthenticatedRegistrarAccessor;
@@ -42,7 +43,7 @@ import javax.inject.Inject;
  * preserve history.
  */
 @Action(
-    service = Action.Service.DEFAULT,
+    service = GaeService.DEFAULT,
     path = OteStatusAction.PATH,
     method = Action.Method.POST,
     auth = Auth.AUTH_PUBLIC_LOGGED_IN)

@@ -22,6 +22,7 @@ import com.google.common.flogger.FluentLogger;
 import com.google.template.soy.tofu.SoyTofu;
 import google.registry.model.domain.RegistryLock;
 import google.registry.request.Action;
+import google.registry.request.Action.GaeService;
 import google.registry.request.Parameter;
 import google.registry.request.auth.Auth;
 import google.registry.tools.DomainLockUtils;
@@ -32,7 +33,7 @@ import javax.inject.Inject;
 
 /** Action that allows for verification of registry lock / unlock requests */
 @Action(
-    service = Action.Service.DEFAULT,
+    service = GaeService.DEFAULT,
     path = RegistryLockVerifyAction.PATH,
     auth = Auth.AUTH_PUBLIC_LOGGED_IN)
 public final class RegistryLockVerifyAction extends HtmlAction {

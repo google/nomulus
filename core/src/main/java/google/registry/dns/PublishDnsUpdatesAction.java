@@ -53,7 +53,7 @@ import google.registry.model.registrar.RegistrarPoc;
 import google.registry.model.registrar.RegistrarPocBase;
 import google.registry.model.tld.Tld;
 import google.registry.request.Action;
-import google.registry.request.Action.Service;
+import google.registry.request.Action.GaeService;
 import google.registry.request.Header;
 import google.registry.request.HttpException.ServiceUnavailableException;
 import google.registry.request.Parameter;
@@ -73,7 +73,7 @@ import org.joda.time.Duration;
 
 /** Task that sends domain and host updates to the DNS server. */
 @Action(
-    service = Action.Service.BACKEND,
+    service = GaeService.BACKEND,
     path = PublishDnsUpdatesAction.PATH,
     method = POST,
     automaticallyPrintOk = true,
@@ -328,9 +328,9 @@ public final class PublishDnsUpdatesAction implements Runnable, Callable<Void> {
   private void enqueue(ImmutableList<String> domains, ImmutableList<String> hosts) {
     cloudTasksUtils.enqueue(
         DNS_PUBLISH_PUSH_QUEUE_NAME,
-        cloudTasksUtils.createPostTask(
-            PATH,
-            Service.BACKEND,
+        cloudTasksUtils.createTask(
+            this.getClass(),
+            POST,
             ImmutableMultimap.<String, String>builder()
                 .put(PARAM_TLD, tld)
                 .put(PARAM_DNS_WRITER, dnsWriter)

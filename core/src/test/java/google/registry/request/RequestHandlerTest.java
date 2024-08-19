@@ -31,6 +31,7 @@ import static org.mockito.Mockito.when;
 import com.google.common.testing.NullPointerTester;
 import google.registry.model.console.User;
 import google.registry.model.console.UserRoles;
+import google.registry.request.Action.GaeService;
 import google.registry.request.HttpException.ServiceUnavailableException;
 import google.registry.request.auth.AuthResult;
 import google.registry.request.auth.AuthSettings.AuthLevel;
@@ -48,7 +49,7 @@ import org.junit.jupiter.api.Test;
 public final class RequestHandlerTest {
 
   @Action(
-      service = Action.Service.DEFAULT,
+      service = GaeService.DEFAULT,
       path = "/bumblebee",
       method = {GET, POST},
       isPrefix = true,
@@ -59,7 +60,7 @@ public final class RequestHandlerTest {
   }
 
   @Action(
-      service = Action.Service.DEFAULT,
+      service = GaeService.DEFAULT,
       path = "/sloth",
       method = POST,
       automaticallyPrintOk = true,
@@ -70,7 +71,7 @@ public final class RequestHandlerTest {
   }
 
   @Action(
-      service = Action.Service.DEFAULT,
+      service = GaeService.DEFAULT,
       path = "/safe-sloth",
       method = {GET, POST},
       auth = AUTH_PUBLIC)
@@ -79,7 +80,7 @@ public final class RequestHandlerTest {
     public void run() {}
   }
 
-  @Action(service = Action.Service.DEFAULT, path = "/fail", auth = AUTH_PUBLIC)
+  @Action(service = GaeService.DEFAULT, path = "/fail", auth = AUTH_PUBLIC)
   public static final class FailTask implements Runnable {
     @Override
     public void run() {
@@ -87,7 +88,7 @@ public final class RequestHandlerTest {
     }
   }
 
-  @Action(service = Action.Service.DEFAULT, path = "/failAtConstruction", auth = AUTH_PUBLIC)
+  @Action(service = GaeService.DEFAULT, path = "/failAtConstruction", auth = AUTH_PUBLIC)
   public static final class FailAtConstructionTask implements Runnable {
     FailAtConstructionTask() {
       throw new ServiceUnavailableException("Fail at construction");
@@ -112,18 +113,14 @@ public final class RequestHandlerTest {
     }
   }
 
-  @Action(service = Action.Service.DEFAULT, path = "/auth/none", auth = AUTH_PUBLIC, method = GET)
+  @Action(service = GaeService.DEFAULT, path = "/auth/none", auth = AUTH_PUBLIC, method = GET)
   public class AuthNoneAction extends AuthBase {
     AuthNoneAction(AuthResult authResult) {
       super(authResult);
     }
   }
 
-  @Action(
-      service = Action.Service.DEFAULT,
-      path = "/auth/adminUser",
-      auth = AUTH_ADMIN,
-      method = GET)
+  @Action(service = GaeService.DEFAULT, path = "/auth/adminUser", auth = AUTH_ADMIN, method = GET)
   public class AuthAdminUserAction extends AuthBase {
     AuthAdminUserAction(AuthResult authResult) {
       super(authResult);
@@ -204,7 +201,6 @@ public final class RequestHandlerTest {
     handler =
         RequestHandler.create(
             Component.class,
-            "registry.test",
             () ->
                 new Builder() {
                   @Override

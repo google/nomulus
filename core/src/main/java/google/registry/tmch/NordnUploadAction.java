@@ -37,7 +37,7 @@ import google.registry.batch.CloudTasksUtils;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.model.domain.Domain;
 import google.registry.request.Action;
-import google.registry.request.Action.Service;
+import google.registry.request.Action.GaeService;
 import google.registry.request.Parameter;
 import google.registry.request.RequestParameters;
 import google.registry.request.UrlConnectionService;
@@ -66,7 +66,7 @@ import org.joda.time.Duration;
  * @see NordnVerifyAction
  */
 @Action(
-    service = Action.Service.BACKEND,
+    service = GaeService.BACKEND,
     path = NordnUploadAction.PATH,
     method = Action.Method.POST,
     automaticallyPrintOk = true,
@@ -240,9 +240,9 @@ public final class NordnUploadAction implements Runnable {
 
   private Task makeVerifyTask(URL url) {
     // The actionLogId is used to uniquely associate the verify task back to the upload task.
-    return cloudTasksUtils.createPostTaskWithDelay(
-        NordnVerifyAction.PATH,
-        Service.BACKEND,
+    return cloudTasksUtils.createTaskWithDelay(
+        NordnVerifyAction.class,
+        Action.Method.POST,
         ImmutableMultimap.<String, String>builder()
             .put(NordnVerifyAction.NORDN_URL_PARAM, url.toString())
             .put(NordnVerifyAction.NORDN_LOG_ID_PARAM, actionLogId)

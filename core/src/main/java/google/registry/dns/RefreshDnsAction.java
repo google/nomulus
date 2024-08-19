@@ -26,6 +26,7 @@ import google.registry.model.annotations.ExternalMessagingName;
 import google.registry.model.domain.Domain;
 import google.registry.model.host.Host;
 import google.registry.request.Action;
+import google.registry.request.Action.GaeService;
 import google.registry.request.HttpException.BadRequestException;
 import google.registry.request.HttpException.NotFoundException;
 import google.registry.request.Parameter;
@@ -35,7 +36,7 @@ import javax.inject.Inject;
 
 /** Action that manually triggers refresh of DNS information. */
 @Action(
-    service = Action.Service.BACKEND,
+    service = GaeService.BACKEND,
     path = "/_dr/task/dnsRefresh",
     automaticallyPrintOk = true,
     auth = Auth.AUTH_ADMIN)
