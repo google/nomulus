@@ -21,11 +21,13 @@ import { BackendService } from 'src/app/shared/services/backend.service';
 import SecurityComponent from './security.component';
 import {
   SecurityService,
-  SecuritySettings,
-  SecuritySettingsBackendModel,
   apiToUiConverter,
   uiToApiConverter,
 } from './security.service';
+import {
+  SecuritySettings,
+  SecuritySettingsBackendModel,
+} from 'src/app/registrar/registrar.service';
 
 describe('SecurityService', () => {
   const uiMockData: SecuritySettings = {

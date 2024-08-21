@@ -20,6 +20,7 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { MaterialModule } from '../material.module';
 import { BackendService } from '../shared/services/backend.service';
 import { DomainListComponent } from './domainList.component';
+import { FormsModule } from '@angular/forms';
 
 describe('DomainListComponent', () => {
   let component: DomainListComponent;
@@ -28,7 +29,7 @@ describe('DomainListComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       declarations: [DomainListComponent],
-      imports: [MaterialModule, BrowserAnimationsModule],
+      imports: [MaterialModule, BrowserAnimationsModule, FormsModule],
       providers: [
         BackendService,
         provideHttpClient(),
