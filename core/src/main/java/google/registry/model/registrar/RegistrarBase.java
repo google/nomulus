@@ -233,6 +233,7 @@ public class RegistrarBase extends UpdateAutoTimestampEntity implements Buildabl
   String registrarName;
 
   /** The type of this registrar. */
+  @Expose
   @Column(nullable = false)
   @Enumerated(EnumType.STRING)
   Type type;
