@@ -42,8 +42,6 @@ import google.registry.testing.ConsoleApiParamsUtils;
 import google.registry.testing.FakeResponse;
 import google.registry.testing.SystemPropertyExtension;
 import google.registry.tools.GsonUtils;
-import google.registry.ui.server.registrar.ConsoleApiParams;
-import google.registry.ui.server.registrar.RegistrarConsoleModule;
 import google.registry.util.EmailMessage;
 import google.registry.util.RegistryEnvironment;
 import jakarta.mail.internet.AddressException;
@@ -172,7 +170,7 @@ class ConsoleUpdateRegistrarActionTest {
         .when(consoleApiParams.request())
         .getReader();
     Optional<Registrar> maybeRegistrarUpdateData =
-        RegistrarConsoleModule.provideRegistrar(
+        ConsoleModule.provideRegistrar(
             GSON, RequestModule.provideJsonBody(consoleApiParams.request(), GSON));
     return new ConsoleUpdateRegistrarAction(consoleApiParams, maybeRegistrarUpdateData);
   }

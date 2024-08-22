@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package google.registry.ui.server.registrar;
+package google.registry.ui.server.console;
 
 import google.registry.request.Response;
 import google.registry.request.auth.AuthResult;

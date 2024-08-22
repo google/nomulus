@@ -40,7 +40,6 @@ import google.registry.testing.DeterministicStringGenerator;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeResponse;
 import google.registry.tools.DomainLockUtils;
-import google.registry.ui.server.registrar.ConsoleApiParams;
 import google.registry.util.StringGenerator;
 import jakarta.servlet.http.HttpServletResponse;
 import org.joda.time.Duration;

@@ -26,9 +26,9 @@ import google.registry.config.RegistryConfig.Config;
 import google.registry.model.console.ConsolePermission;
 import google.registry.model.console.User;
 import google.registry.request.Action;
+import google.registry.request.Action.GkeService;
 import google.registry.request.Parameter;
 import google.registry.request.auth.Auth;
-import google.registry.ui.server.registrar.ConsoleApiParams;
 import google.registry.util.Clock;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -40,6 +40,7 @@ import org.joda.time.DateTime;
 
 @Action(
     service = Action.Service.DEFAULT,
+    gkeService = GkeService.CONSOLE,
     path = ConsoleDumDownloadAction.PATH,
     method = {GET},
     auth = Auth.AUTH_PUBLIC_LOGGED_IN)

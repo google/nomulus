@@ -44,7 +44,6 @@ import google.registry.model.registrar.RegistrarPocBase;
 import google.registry.request.Action.Service;
 import google.registry.request.HttpException;
 import google.registry.security.XsrfTokenManager;
-import google.registry.ui.server.registrar.ConsoleApiParams;
 import google.registry.ui.server.registrar.ConsoleUiAction;
 import google.registry.util.DiffUtils;
 import google.registry.util.RegistryEnvironment;

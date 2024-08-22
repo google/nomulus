@@ -19,6 +19,8 @@ import static com.google.common.truth.Truth.assertThat;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Sets;
 import google.registry.module.backend.BackendRequestComponent;
 import google.registry.module.bsa.BsaRequestComponent;
 import google.registry.module.frontend.FrontendRequestComponent;
@@ -26,8 +28,9 @@ import google.registry.module.pubapi.PubApiRequestComponent;
 import google.registry.module.tools.ToolsRequestComponent;
 import google.registry.testing.GoldenFileTestHelper;
 import google.registry.testing.TestDataHelper;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link RequestComponent}. */
@@ -40,6 +43,18 @@ public class RequestComponentTest {
           PubApiRequestComponent.class, "pubapi",
           BsaRequestComponent.class, "bsa");
 
+  // Paths that do not route to Jetty (all for the legacy console).
+  private static final ImmutableSet<String> ignoredPaths =
+      ImmutableSet.of(
+          "/registrar",
+          "/registrar-create",
+          "/registrar-ote-setup",
+          "/registrar-ote-status",
+          "/registrar-settings",
+          "/registry-lock-get",
+          "/registry-lock-post",
+          "/registry-lock-verify");
+
   @Test
   void testRoutingMap() {
     GoldenFileTestHelper.assertThatRoutesFromComponent(RequestComponent.class)
@@ -49,32 +64,49 @@ public class RequestComponentTest {
 
   @Test
   void testGaeToJettyRoutingCoverage() {
-    List<Route> jettyRoutes = getRoutes(RequestComponent.class, "routing.txt");
-    List<Route> gaeRoutes = new ArrayList<>();
+    Set<Route> jettyRoutes = getRoutes(RequestComponent.class, "routing.txt");
+    Set<Route> gaeRoutes = new HashSet<>();
     for (var component : GaeComponents.entrySet()) {
       gaeRoutes.addAll(getRoutes(component.getKey(), component.getValue() + "_routing.txt"));
     }
-    assertThat(jettyRoutes).containsExactlyElementsIn(gaeRoutes);
+    assertThat(Sets.difference(jettyRoutes, gaeRoutes)).isEmpty();
+    assertThat(
+            Sets.difference(gaeRoutes, jettyRoutes).stream()
+                .map(Route::path)
+                .collect(Collectors.toSet()))
+        .containsExactlyElementsIn(ignoredPaths);
   }
 
-  private List<Route> getRoutes(Class<?> context, String filename) {
+  private Set<Route> getRoutes(Class<?> context, String filename) {
     return TestDataHelper.loadFile(context, filename)
         .trim()
         .lines()
         .skip(1) // Skip the headers
         .map(Route::create)
-        .toList();
+        .collect(Collectors.toSet());
   }
 
   private record Route(
-      String path, String clazz, String methods, String ok, String min, String userPolicy) {
+      String service,
+      String path,
+      String clazz,
+      String methods,
+      String ok,
+      String min,
+      String userPolicy) {
     private static final Splitter splitter = Splitter.on(' ').omitEmptyStrings().trimResults();
 
     static Route create(String line) {
       ImmutableList<String> parts = ImmutableList.copyOf(splitter.split(line));
-      assertThat(parts.size()).isEqualTo(6);
+      assertThat(parts.size()).isEqualTo(7);
       return new Route(
-          parts.get(0), parts.get(1), parts.get(2), parts.get(3), parts.get(4), parts.get(5));
+          parts.get(0),
+          parts.get(1),
+          parts.get(2),
+          parts.get(3),
+          parts.get(4),
+          parts.get(5),
+          parts.get(6));
     }
   }
 }
