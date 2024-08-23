@@ -17,10 +17,11 @@ import { UserDataService } from '../services/userData.service';
 
 export enum RESTRICTED_ELEMENTS {
   REGISTRAR_ELEMENT,
+  OTE,
 }
 
 export const DISABLED_ELEMENTS_PER_ROLE = {
-  NONE: [RESTRICTED_ELEMENTS.REGISTRAR_ELEMENT],
+  NONE: [RESTRICTED_ELEMENTS.REGISTRAR_ELEMENT, RESTRICTED_ELEMENTS.OTE],
 };
 
 @Directive({

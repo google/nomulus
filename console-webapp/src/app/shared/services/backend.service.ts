@@ -19,6 +19,8 @@ import { Observable, catchError, of, throwError } from 'rxjs';
 import { DomainListResult } from 'src/app/domains/domainList.service';
 import { DomainLocksResult } from 'src/app/domains/registryLock.service';
 import { RegistryLockVerificationResponse } from 'src/app/lock/registryLockVerify.service';
+import { OteCreateResponse } from 'src/app/ote/newOte.component';
+import { OteStatusResponse } from 'src/app/ote/oteStatus.component';
 import {
   Registrar,
   SecuritySettingsBackendModel,
@@ -196,6 +198,22 @@ export class BackendService {
         `/console-api/registry-lock?registrarId=${registrarId}`
       )
       .pipe(catchError((err) => this.errorCatcher<DomainLocksResult[]>(err)));
+  }
+
+  generateOte(
+    oteForm: Object,
+    registrarId: string
+  ): Observable<OteCreateResponse> {
+    return this.http.post<OteCreateResponse>(
+      `/console-api/ote?registrarId=${registrarId}`,
+      oteForm
+    );
+  }
+
+  getOteStatus(registrarId: string) {
+    return this.http
+      .get<OteStatusResponse[]>(`/console-api/ote?registrarId=${registrarId}`)
+      .pipe(catchError((err) => this.errorCatcher<OteStatusResponse[]>(err)));
   }
 
   verifyRegistryLockRequest(

@@ -17,6 +17,8 @@ import { Observable, switchMap, tap } from 'rxjs';
 
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { Router } from '@angular/router';
+import { OteCreateResponse } from '../ote/newOte.component';
+import { OteStatusResponse } from '../ote/oteStatus.component';
 import { BackendService } from '../shared/services/backend.service';
 import {
   GlobalLoader,
@@ -69,6 +71,7 @@ export interface Registrar
   registrarId: string;
   registrarName: string;
   registryLockAllowed?: boolean;
+  type?: string;
 }
 
 @Injectable({
@@ -148,5 +151,18 @@ export class RegistrarService implements GlobalLoader {
 
   loadingTimeout() {
     this._snackBar.open('Timeout loading registrars');
+  }
+
+  generateOte(
+    oteForm: Object,
+    registrarId: string
+  ): Observable<OteCreateResponse> {
+    return this.backend
+      .generateOte(oteForm, registrarId)
+      .pipe(tap((_) => this.loadRegistrars()));
+  }
+
+  oteStatus(registrarId: string): Observable<OteStatusResponse[]> {
+    return this.backend.getOteStatus(registrarId);
   }
 }

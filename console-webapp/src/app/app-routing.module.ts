@@ -17,6 +17,9 @@ import { Route, RouterModule } from '@angular/router';
 import { BillingInfoComponent } from './billingInfo/billingInfo.component';
 import { DomainListComponent } from './domains/domainList.component';
 import { HomeComponent } from './home/home.component';
+import { RegistryLockVerifyComponent } from './lock/registryLockVerify.component';
+import { NewOteComponent } from './ote/newOte.component';
+import { OteStatusComponent } from './ote/oteStatus.component';
 import { RegistrarDetailsComponent } from './registrar/registrarDetails.component';
 import { RegistrarComponent } from './registrar/registrarsTable.component';
 import { ResourcesComponent } from './resources/resources.component';
@@ -26,7 +29,6 @@ import { SettingsComponent } from './settings/settings.component';
 import UsersComponent from './settings/users/users.component';
 import WhoisComponent from './settings/whois/whois.component';
 import { SupportComponent } from './support/support.component';
-import { RegistryLockVerifyComponent } from './lock/registryLockVerify.component';
 
 export interface RouteWithIcon extends Route {
   iconName?: string;
@@ -37,6 +39,14 @@ export const routes: RouteWithIcon[] = [
   {
     path: RegistryLockVerifyComponent.PATH,
     component: RegistryLockVerifyComponent,
+  },
+  {
+    path: NewOteComponent.PATH,
+    component: NewOteComponent,
+  },
+  {
+    path: OteStatusComponent.PATH,
+    component: OteStatusComponent,
   },
   { path: 'registrars', component: RegistrarComponent },
   {

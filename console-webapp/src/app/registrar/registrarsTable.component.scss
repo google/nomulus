@@ -10,6 +10,10 @@
     min-width: $min-width !important;
   }
 
+  &__registrars-new {
+    margin-left: 20px;
+  }
+
   &__registrars-header {
     display: flex;
     justify-content: space-between;

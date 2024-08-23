@@ -4,7 +4,17 @@
 <div class="console-app__registrars">
   <div class="console-app__registrars-header">
     <h1 class="mat-headline-4">Registrars</h1>
+    <div class="spacer"></div>
     <button
+      mat-stroked-button
+      (click)="createOteAccount()"
+      aria-label="Generate OT&E accounts"
+      [elementId]="getElementIdForOteBlock()"
+    >
+      Create OT&E accounts
+    </button>
+    <button
+      class="console-app__registrars-new"
       mat-flat-button
       color="primary"
       (click)="openNewRegistrar()"

@@ -9,6 +9,14 @@
       <div class="spacer"></div>
       @if(!inEdit && !registrarNotFound) {
       <button
+        mat-stroked-button
+        (click)="checkOteStatus()"
+        aria-label="Check OT&E account"
+        [elementId]="getElementIdForOteBlock()"
+      >
+        Check OT&E Status
+      </button>
+      <button
         mat-flat-button
         color="primary"
         aria-label="Edit Registrar"
