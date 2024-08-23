@@ -18,6 +18,8 @@ import { MatChipInputEvent } from '@angular/material/chips';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { ActivatedRoute, ParamMap, Router } from '@angular/router';
 import { Subscription } from 'rxjs';
+import { OteStatusComponent } from '../ote/oteStatus.component';
+import { RESTRICTED_ELEMENTS } from '../shared/directives/userLevelVisiblity.directive';
 import { Registrar, RegistrarService } from './registrar.service';
 import { RegistrarComponent, columns } from './registrarsTable.component';
 
@@ -70,6 +72,14 @@ export class RegistrarDetailsComponent implements OnInit {
     ];
   }
 
+  checkOteStatus() {
+    this.router.navigate([OteStatusComponent.PATH]);
+  }
+
+  getElementIdForOteBlock() {
+    return RESTRICTED_ELEMENTS.OTE;
+  }
+
   removeTLD(tld: string) {
     this.registrarInEdit.allowedTlds = this.registrarInEdit.allowedTlds?.filter(
       (v) => v != tld
@@ -91,6 +101,6 @@ export class RegistrarDetailsComponent implements OnInit {
   }
 
   ngOnDestroy() {
-    this.subscription.unsubscribe();
+    this.subscription && this.subscription.unsubscribe();
   }
 }

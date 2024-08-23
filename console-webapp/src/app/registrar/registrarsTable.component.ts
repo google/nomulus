@@ -17,6 +17,8 @@ import { MatPaginator } from '@angular/material/paginator';
 import { MatSort } from '@angular/material/sort';
 import { MatTableDataSource } from '@angular/material/table';
 import { Router } from '@angular/router';
+import { NewOteComponent } from '../ote/newOte.component';
+import { RESTRICTED_ELEMENTS } from '../shared/directives/userLevelVisiblity.directive';
 import { Registrar, RegistrarService } from './registrar.service';
 
 export const columns = [
@@ -101,6 +103,14 @@ export class RegistrarComponent {
   ngAfterViewInit() {
     this.dataSource.paginator = this.paginator;
     this.dataSource.sort = this.sort;
+  }
+
+  createOteAccount() {
+    this.router.navigate([NewOteComponent.PATH]);
+  }
+
+  getElementIdForOteBlock() {
+    return RESTRICTED_ELEMENTS.OTE;
   }
 
   openDetails(registrarId: string) {

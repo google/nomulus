@@ -1,0 +1,28 @@
+.console-app__ote-status {
+  max-width: 730px;
+  display: flex;
+  flex-wrap: wrap;
+  &_completed,
+  &_unfinished {
+    border: 1px solid #ddd;
+    padding: 20px;
+    border-radius: 10px;
+    margin: 0 20px 30px 0;
+    div {
+      display: flex;
+      min-width: 300px;
+      align-items: flex-start;
+      max-width: 300px;
+      margin-bottom: 10px;
+      padding-bottom: 5px;
+      border-bottom: 1px solid #ddd;
+      &:last-child {
+        border: none;
+      }
+    }
+
+    mat-icon {
+      min-width: 30px;
+    }
+  }
+}
