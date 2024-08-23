@@ -19,11 +19,6 @@
 
 SELECT
   protoPayload.resource AS requestPath,
-  ARRAY(
-  SELECT
-    logMessage
-  FROM
-    UNNEST(protoPayload.line)) AS logMessage
 FROM
   `%PROJECT_ID%.%APPENGINE_LOGS_DATA_SET%.%REQUEST_TABLE%*`
 WHERE

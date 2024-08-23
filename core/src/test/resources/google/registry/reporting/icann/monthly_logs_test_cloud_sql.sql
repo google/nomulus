@@ -19,11 +19,6 @@
 
 SELECT
   protoPayload.resource AS requestPath,
-  ARRAY(
-  SELECT
-    logMessage
-  FROM
-    UNNEST(protoPayload.line)) AS logMessage
 FROM
   `domain-registry-alpha.appengine_logs.appengine_googleapis_com_request_log_*`
 WHERE

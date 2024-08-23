@@ -37,13 +37,12 @@ FROM (
   FROM (
     SELECT
       -- Extract the logged JSON payload.
-      REGEXP_EXTRACT(logMessage, r'FLOW-LOG-SIGNATURE-METADATA: (.*)\n?$')
+      REGEXP_EXTRACT(textPayload, r'FLOW-LOG-SIGNATURE-METADATA: (.*)\n?$')
       AS json
-    FROM `%PROJECT_ID%.%ICANN_REPORTING_DATA_SET%.%MONTHLY_LOGS_TABLE%` AS logs
-    JOIN
-      UNNEST(logs.logMessage) AS logMessage
+    FROM `%PROJECT_ID%.%ICANN_REPORTING_DATA_SET%.%APP_LOGS_TABLE%*`
     WHERE
-      STARTS_WITH(logMessage, "%METADATA_LOG_PREFIX%"))) AS regexes
+      STARTS_WITH(textPayload, "FLOW-LOG-SIGNATURE-METADATA")
+      AND _TABLE_SUFFIX BETWEEN '%FIRST_DAY_OF_MONTH%' AND '%LAST_DAY_OF_MONTH%')) AS regexes
 JOIN
   -- Unnest the JSON-parsed tlds.
   UNNEST(regexes.tlds) AS tld
