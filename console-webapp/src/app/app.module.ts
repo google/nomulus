@@ -30,7 +30,10 @@ import { DomainListComponent } from './domains/domainList.component';
 import { RegistryLockComponent } from './domains/registryLock.component';
 import { HeaderComponent } from './header/header.component';
 import { HomeComponent } from './home/home.component';
+import { RegistryLockVerifyComponent } from './lock/registryLockVerify.component';
 import { NavigationComponent } from './navigation/navigation.component';
+import { NewOteComponent } from './ote/newOte.component';
+import { OteStatusComponent } from './ote/oteStatus.component';
 import NewRegistrarComponent from './registrar/newRegistrar.component';
 import { RegistrarDetailsComponent } from './registrar/registrarDetails.component';
 import { RegistrarSelectorComponent } from './registrar/registrarSelector.component';
@@ -54,7 +57,6 @@ import { UserDataService } from './shared/services/userData.service';
 import { SnackBarModule } from './snackbar.module';
 import { SupportComponent } from './support/support.component';
 import { TldsComponent } from './tlds/tlds.component';
-import { RegistryLockVerifyComponent } from './lock/registryLockVerify.component';
 
 @NgModule({
   declarations: [
@@ -66,6 +68,8 @@ import { RegistryLockVerifyComponent } from './lock/registryLockVerify.component
     HeaderComponent,
     HomeComponent,
     LocationBackDirective,
+    NewOteComponent,
+    OteStatusComponent,
     UserLevelVisibility,
     NavigationComponent,
     NewRegistrarComponent,

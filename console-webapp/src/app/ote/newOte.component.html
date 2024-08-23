@@ -1,0 +1,36 @@
+<h1 class="mat-headline-4">Generate OT&E Accounts</h1>
+<div class="console-app__new-ote">
+  @if (oteCreateResponseFormatted()) {
+  <h1>Generated Successfully</h1>
+  <mat-card appearance="outlined">
+    <mat-card-header>
+      <mat-card-title>Epp Credentials</mat-card-title>
+      <mat-card-subtitle
+        >Copy and paste this into an email to the registrars</mat-card-subtitle
+      >
+    </mat-card-header>
+    <mat-card-content>
+      <p>{{ oteCreateResponseFormatted() }}</p>
+    </mat-card-content>
+  </mat-card>
+  } @else {
+  <form (ngSubmit)="onSubmit()" [formGroup]="createOte">
+    <p>
+      <mat-form-field name="registrarId" appearance="outline">
+        <mat-label>Base Registrar Id: </mat-label>
+        <input matInput type="text" formControlName="registrarId" required />
+      </mat-form-field>
+    </p>
+    <p>
+      <mat-form-field name="registrarEmail" appearance="outline">
+        <mat-label>Contact Email: </mat-label>
+        <input matInput type="text" formControlName="registrarEmail" required />
+        <mat-hint
+          >Will be granted web-console access to the OTE registrars.</mat-hint
+        >
+      </mat-form-field>
+    </p>
+    <button mat-flat-button color="primary" type="submit">Save</button>
+  </form>
+  }
+</div>
