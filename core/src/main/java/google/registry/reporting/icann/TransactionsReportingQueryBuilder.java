@@ -113,13 +113,9 @@ public final class TransactionsReportingQueryBuilder implements QueryBuilder {
         SqlTemplate.create(getQueryFromFile("cloud_sql_attempted_adds.sql"))
             .put("PROJECT_ID", projectId)
             .put("APPENGINE_LOGS_DATA_SET", "appengine_logs")
-            .put("REQUEST_TABLE", "appengine_googleapis_com_request_log_")
+            .put("APP_LOGS_TABLE", "_var_log_app_")
             .put("FIRST_DAY_OF_MONTH", logTableFormatter.print(earliestReportTime))
             .put("LAST_DAY_OF_MONTH", logTableFormatter.print(latestReportTime))
-            // All metadata logs for reporting come from google.registry.flows.FlowReporter.
-            .put(
-                "METADATA_LOG_PREFIX",
-                "google.registry.flows.FlowReporter recordToLogs: FLOW-LOG-SIGNATURE-METADATA")
             .build();
     queriesBuilder.put(getTableName(ATTEMPTED_ADDS, yearMonth), attemptedAddsQuery);
 

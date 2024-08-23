@@ -97,11 +97,9 @@ public final class ActivityReportingQueryBuilder implements QueryBuilder {
         SqlTemplate.create(getQueryFromFile("epp_metrics.sql"))
             .put("PROJECT_ID", projectId)
             .put("ICANN_REPORTING_DATA_SET", icannReportingDataSet)
-            .put("MONTHLY_LOGS_TABLE", getTableName(MONTHLY_LOGS, yearMonth))
-            // All metadata logs for reporting come from google.registry.flows.FlowReporter.
-            .put(
-                "METADATA_LOG_PREFIX",
-                "google.registry.flows.FlowReporter recordToLogs: FLOW-LOG-SIGNATURE-METADATA")
+            .put("APP_LOGS_TABLE", "_var_log_app_")
+            .put("FIRST_DAY_OF_MONTH", logTableFormatter.print(firstDayOfMonth))
+            .put("LAST_DAY_OF_MONTH", logTableFormatter.print(lastDayOfMonth))
             .build();
     queriesBuilder.put(getTableName(EPP_METRICS, yearMonth), eppQuery);
 

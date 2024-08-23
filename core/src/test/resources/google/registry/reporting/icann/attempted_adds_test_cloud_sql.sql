@@ -41,29 +41,23 @@ FROM (
   FROM (
       -- Extract JSON metadata package from monthly logs
     SELECT
-      REGEXP_EXTRACT(logMessages, r'FLOW-LOG-SIGNATURE-METADATA: (.*)\n?$')
+      REGEXP_EXTRACT(textPayload, r'FLOW-LOG-SIGNATURE-METADATA: (.*)\n?$')
           AS json
     FROM (
       SELECT
-        protoPayload.resource AS requestPath,
-        ARRAY(
-          SELECT logMessage
-          FROM UNNEST(protoPayload.line)) AS logMessage
+        textPayload
       FROM
-        `domain-registry-alpha.appengine_logs.appengine_googleapis_com_request_log_*`
+        `domain-registry-alpha.appengine_logs._var_log_app_*`
       WHERE _TABLE_SUFFIX
       BETWEEN '20170901'
       AND '20170930')
-    JOIN UNNEST(logMessage) AS logMessages
-    -- Look for metadata logs from epp and registrar console requests
-    WHERE requestPath IN ('/_dr/epp', '/_dr/epptool', '/registrar-xhr')
-    AND STARTS_WITH(logMessages, "google.registry.flows.FlowReporter recordToLogs: FLOW-LOG-SIGNATURE-METADATA")
+    WHERE STARTS_WITH(textPayload, "FLOW-LOG-SIGNATURE-METADATA")
     -- Look for domain creates
     AND REGEXP_CONTAINS(
-       logMessages, r'"commandType":"create","resourceType":"domain"')
+       textPayload, r'"commandType":"create","resourceType":"domain"')
     -- Filter prober data
     AND NOT REGEXP_CONTAINS(
-        logMessages, r'"prober-[a-z]{2}-((any)|(canary))"') )
+        textPayload, r'"prober-[a-z]{2}-((any)|(canary))"') )
   GROUP BY tld, clientId ) AS logs_table
 JOIN
   EXTERNAL_QUERY("projects/domain-registry-alpha/locations/us/connections/domain-registry-alpha-sql",
