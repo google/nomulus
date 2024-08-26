@@ -13,7 +13,7 @@ Webapp is deployed with the nomulus default service war to Google App Engine.
 During nomulus default service war build task, gradle script triggers the
 following:
 
-1) Console webapp build script `buildConsoleWebappProd`, which installs
+1) Console webapp build script `buildConsoleWebapp`, which installs
    dependencies, assembles a compiled ts -> js, minified, optimized static
    artifact (html, css, js)
 2) Artifact assembled in step 1 then gets copied to core project web artifact

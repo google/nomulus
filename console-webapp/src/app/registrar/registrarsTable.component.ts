@@ -20,6 +20,7 @@ import { Router } from '@angular/router';
 import { NewOteComponent } from '../ote/newOte.component';
 import { RESTRICTED_ELEMENTS } from '../shared/directives/userLevelVisiblity.directive';
 import { Registrar, RegistrarService } from './registrar.service';
+import { PATHS } from '../app-routing.module';
 
 export const columns = [
   {
@@ -106,7 +107,7 @@ export class RegistrarComponent {
   }
 
   createOteAccount() {
-    this.router.navigate([NewOteComponent.PATH]);
+    this.router.navigate([PATHS.NewOteComponent]);
   }
 
   getElementIdForOteBlock() {
