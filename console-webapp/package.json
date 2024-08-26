@@ -4,9 +4,9 @@
   "scripts": {
     "ng": "ng",
     "start": "ng serve --proxy-config dev-proxy.config.json",
-    "build": "ng build --base-href=/console/",
+    "build": "ng build --base-href=/console/ --configuration=$npm_config_configuration",
     "build:local": "ng build --base-href=/default/console/",
-    "watch": "ng build --watch --configuration development",
+    "watch": "ng build --watch --configuration=development",
     "test": "ng test --browsers=ChromeHeadless --watch=false",
     "run:dev": "",
     "prettify": "npx prettier --write ./src/",

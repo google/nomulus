@@ -9,6 +9,7 @@
       <div class="spacer"></div>
       @if(!inEdit && !registrarNotFound) {
       <button
+        *ngIf="oteButtonVisible"
         mat-stroked-button
         (click)="checkOteStatus()"
         aria-label="Check OT&E account"
