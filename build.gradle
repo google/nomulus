@@ -60,7 +60,7 @@ dependencyLocking {
 
 node {
   download = false
-  version = "20.10.0"
+  version = "22.7.0"
 }
 
 wrapper {
