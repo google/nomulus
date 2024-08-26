@@ -34,6 +34,10 @@ export interface RouteWithIcon extends Route {
   iconName?: string;
 }
 
+export const PATHS = {
+  NewOteComponent: 'new-ote',
+  OteStatusComponent: 'ote-status',
+};
 export const routes: RouteWithIcon[] = [
   { path: '', redirectTo: '/home', pathMatch: 'full' },
   {
@@ -41,12 +45,14 @@ export const routes: RouteWithIcon[] = [
     component: RegistryLockVerifyComponent,
   },
   {
-    path: NewOteComponent.PATH,
-    component: NewOteComponent,
+    path: PATHS.NewOteComponent,
+    loadComponent: () =>
+      import('./ote/newOte.component').then((mod) => mod.NewOteComponent),
   },
   {
-    path: OteStatusComponent.PATH,
-    component: OteStatusComponent,
+    path: PATHS.OteStatusComponent,
+    loadComponent: () =>
+      import('./ote/oteStatus.component').then((mod) => mod.OteStatusComponent),
   },
   { path: 'registrars', component: RegistrarComponent },
   {

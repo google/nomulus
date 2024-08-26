@@ -16,6 +16,10 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Component, computed, signal } from '@angular/core';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { RegistrarService } from '../registrar/registrar.service';
+import { SharedModule } from '../app.module';
+import { MaterialModule } from '../material.module';
+import { SnackBarModule } from '../snackbar.module';
+import { CommonModule } from '@angular/common';
 
 export interface OteStatusResponse {
   description: string;
@@ -26,12 +30,12 @@ export interface OteStatusResponse {
 
 @Component({
   selector: 'app-ote-status',
+  standalone: true,
+  imports: [MaterialModule, SnackBarModule, CommonModule, SharedModule],
   templateUrl: './oteStatus.component.html',
   styleUrls: ['./oteStatus.component.scss'],
 })
 export class OteStatusComponent {
-  public static PATH = 'ote-status';
-
   oteStatusResponse = signal<OteStatusResponse[]>([]);
 
   oteStatusCompleted = computed(() =>

@@ -17,9 +17,10 @@ import { MatPaginator } from '@angular/material/paginator';
 import { MatSort } from '@angular/material/sort';
 import { MatTableDataSource } from '@angular/material/table';
 import { Router } from '@angular/router';
-import { NewOteComponent } from '../ote/newOte.component';
 import { RESTRICTED_ELEMENTS } from '../shared/directives/userLevelVisiblity.directive';
 import { Registrar, RegistrarService } from './registrar.service';
+import { PATHS } from '../app-routing.module';
+import { environment } from '../../environments/environment';
 
 export const columns = [
   {
@@ -82,7 +83,7 @@ export class RegistrarComponent {
   public static PATH = 'registrars';
   dataSource: MatTableDataSource<Registrar>;
   columns = columns;
-
+  oteButtonVisible = environment.sandbox;
   displayedColumns = this.columns.map((c) => c.columnDef);
 
   @ViewChild(MatPaginator) paginator!: MatPaginator;
@@ -106,7 +107,7 @@ export class RegistrarComponent {
   }
 
   createOteAccount() {
-    this.router.navigate([NewOteComponent.PATH]);
+    this.router.navigate([PATHS.NewOteComponent]);
   }
 
   getElementIdForOteBlock() {
@@ -114,6 +115,7 @@ export class RegistrarComponent {
   }
 
   openDetails(registrarId: string) {
+    this.registrarService.updateSelectedRegistrar(registrarId);
     this.router.navigate(['registrars/', registrarId], {
       queryParamsHandling: 'merge',
     });

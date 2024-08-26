@@ -57,6 +57,15 @@ import { UserDataService } from './shared/services/userData.service';
 import { SnackBarModule } from './snackbar.module';
 import { SupportComponent } from './support/support.component';
 import { TldsComponent } from './tlds/tlds.component';
+import { CommonModule } from '@angular/common';
+
+@NgModule({
+  declarations: [SelectedRegistrarWrapper],
+  imports: [MaterialModule, CommonModule],
+  exports: [SelectedRegistrarWrapper],
+  providers: [],
+})
+export class SharedModule {}
 
 @NgModule({
   declarations: [
@@ -68,8 +77,6 @@ import { TldsComponent } from './tlds/tlds.component';
     HeaderComponent,
     HomeComponent,
     LocationBackDirective,
-    NewOteComponent,
-    OteStatusComponent,
     UserLevelVisibility,
     NavigationComponent,
     NewRegistrarComponent,
@@ -82,7 +89,6 @@ import { TldsComponent } from './tlds/tlds.component';
     ResourcesComponent,
     SecurityComponent,
     SecurityEditComponent,
-    SelectedRegistrarWrapper,
     SettingsComponent,
     SettingsContactComponent,
     SupportComponent,
@@ -98,7 +104,9 @@ import { TldsComponent } from './tlds/tlds.component';
     FormsModule,
     MaterialModule,
     SnackBarModule,
+    SharedModule,
   ],
+  exports: [],
   providers: [
     BackendService,
     BreakPointObserverService,
