@@ -13,9 +13,14 @@
 // limitations under the License.
 
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, computed, signal } from '@angular/core';
+import { Component, computed, OnInit, signal } from '@angular/core';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { RegistrarService } from '../registrar/registrar.service';
+import { MaterialModule } from '../material.module';
+import { SnackBarModule } from '../snackbar.module';
+import { CommonModule } from '@angular/common';
+import { ActivatedRoute, ParamMap } from '@angular/router';
+import { take } from 'rxjs';
 
 export interface OteStatusResponse {
   description: string;
@@ -26,12 +31,13 @@ export interface OteStatusResponse {
 
 @Component({
   selector: 'app-ote-status',
+  standalone: true,
+  imports: [MaterialModule, SnackBarModule, CommonModule],
   templateUrl: './oteStatus.component.html',
   styleUrls: ['./oteStatus.component.scss'],
 })
-export class OteStatusComponent {
-  public static PATH = 'ote-status';
-
+export class OteStatusComponent implements OnInit {
+  registrarId = signal<string | null>(null);
   oteStatusResponse = signal<OteStatusResponse[]>([]);
 
   oteStatusCompleted = computed(() =>
@@ -41,16 +47,26 @@ export class OteStatusComponent {
     this.oteStatusResponse().filter((v) => !v.completed)
   );
   isOte = computed(
-    () => this.registrarService.registrar()?.type?.toLowerCase() === 'ote'
+    () =>
+      this.registrarService
+        .registrars()
+        .find((r) => r.registrarId === this.registrarId())
+        ?.type?.toLowerCase() === 'ote'
   );
 
   constructor(
+    private route: ActivatedRoute,
     protected registrarService: RegistrarService,
     private _snackBar: MatSnackBar
-  ) {
-    this.registrarService
-      .oteStatus(this.registrarService.registrarId())
-      .subscribe({
+  ) {}
+
+  ngOnInit(): void {
+    this.route.paramMap.pipe(take(1)).subscribe((params: ParamMap) => {
+      this.registrarId.set(params.get('id'));
+      const registrarId = this.registrarId();
+      if (!registrarId) throw 'Missing registrarId param';
+
+      this.registrarService.oteStatus(registrarId).subscribe({
         next: (oteStatusResponse: OteStatusResponse[]) => {
           this.oteStatusResponse.set(oteStatusResponse);
         },
@@ -58,5 +74,6 @@ export class OteStatusComponent {
           this._snackBar.open(err.error || err.message);
         },
       });
+    });
   }
 }

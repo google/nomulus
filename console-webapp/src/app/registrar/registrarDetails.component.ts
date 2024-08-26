@@ -22,6 +22,8 @@ import { OteStatusComponent } from '../ote/oteStatus.component';
 import { RESTRICTED_ELEMENTS } from '../shared/directives/userLevelVisiblity.directive';
 import { Registrar, RegistrarService } from './registrar.service';
 import { RegistrarComponent, columns } from './registrarsTable.component';
+import { PATHS } from '../app-routing.module';
+import { environment } from '../../environments/environment';
 
 @Component({
   selector: 'app-registrar-details',
@@ -31,8 +33,9 @@ import { RegistrarComponent, columns } from './registrarsTable.component';
 export class RegistrarDetailsComponent implements OnInit {
   public static PATH = 'registrars/:id';
   inEdit: boolean = false;
+  oteButtonVisible = environment.sandbox;
   registrarInEdit!: Registrar;
-  registrarNotFound: boolean = false;
+  registrarNotFound: boolean = true;
   columns = columns.filter((c) => !c.hiddenOnDetailsCard);
   private subscription!: Subscription;
 
@@ -73,7 +76,9 @@ export class RegistrarDetailsComponent implements OnInit {
   }
 
   checkOteStatus() {
-    this.router.navigate([OteStatusComponent.PATH]);
+    this.router.navigate(['ote-status/', this.registrarInEdit.registrarId], {
+      queryParamsHandling: 'merge',
+    });
   }
 
   getElementIdForOteBlock() {
