@@ -41,7 +41,6 @@ import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentMatcher;
-import org.testcontainers.shaded.com.google.errorprone.annotations.Immutable;
 
 /** Tests for {@link DriveConnection}. */
 class DriveConnectionTest {
