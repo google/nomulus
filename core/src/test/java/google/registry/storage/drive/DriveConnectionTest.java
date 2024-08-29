@@ -180,7 +180,6 @@ class DriveConnectionTest {
         new GoogleJsonResponseException(
             new HttpResponseException.Builder(503, "Service Unavailable.", new HttpHeaders()),
             new GoogleJsonError());
-    File testFile = new File().setId("testFile");
     when(filesList.execute()).thenThrow(googleJsonResponseException);
 
     GoogleJsonResponseException thrown =
