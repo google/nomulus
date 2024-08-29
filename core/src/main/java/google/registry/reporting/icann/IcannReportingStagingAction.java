@@ -16,6 +16,7 @@ package google.registry.reporting.icann;
 
 import static com.google.common.base.Throwables.getRootCause;
 import static google.registry.reporting.icann.IcannReportingModule.PARAM_REPORT_TYPES;
+import static google.registry.reporting.icann.IcannReportingModule.PARAM_SHOULD_UPLOAD;
 import static google.registry.reporting.icann.IcannReportingModule.PARAM_SUBDIR;
 import static google.registry.request.Action.Method.POST;
 import static jakarta.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
@@ -30,6 +31,7 @@ import google.registry.batch.CloudTasksUtils;
 import google.registry.bigquery.BigqueryJobFailureException;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.groups.GmailClient;
+import google.registry.reporting.ReportingModule;
 import google.registry.reporting.icann.IcannReportingModule.ReportType;
 import google.registry.request.Action;
 import google.registry.request.Action.Service;
@@ -79,6 +81,15 @@ public final class IcannReportingStagingAction implements Runnable {
   @Inject YearMonth yearMonth;
   @Inject @Parameter(PARAM_SUBDIR) Optional<String> overrideSubdir;
   @Inject @Parameter(PARAM_REPORT_TYPES) ImmutableSet<ReportType> reportTypes;
+
+  @Inject
+  @Parameter(ReportingModule.SEND_EMAIL)
+  boolean sendEmail;
+
+  @Inject
+  @Parameter(PARAM_SHOULD_UPLOAD)
+  boolean shouldUpload;
+
   @Inject IcannReportingStager stager;
   @Inject Retrier retrier;
   @Inject Response response;
@@ -106,28 +117,35 @@ public final class IcannReportingStagingAction implements Runnable {
             stager.createAndUploadManifest(subdir, manifestedFiles);
 
             logger.atInfo().log("Completed staging %d report files.", manifestedFiles.size());
-            gmailClient.sendEmail(
-                EmailMessage.newBuilder()
-                    .setSubject("ICANN Monthly report staging summary [SUCCESS]")
-                    .setBody(
-                        String.format(
-                            "Completed staging the following %d ICANN reports:\n%s",
-                            manifestedFiles.size(), Joiner.on('\n').join(manifestedFiles)))
-                    .addRecipient(recipient)
-                    .build());
-
+            if (sendEmail) {
+              gmailClient.sendEmail(
+                  EmailMessage.newBuilder()
+                      .setSubject("ICANN Monthly report staging summary [SUCCESS]")
+                      .setBody(
+                          String.format(
+                              "Completed staging the following %d ICANN reports:\n%s",
+                              manifestedFiles.size(), Joiner.on('\n').join(manifestedFiles)))
+                      .addRecipient(recipient)
+                      .build());
+            } else {
+              logger.atInfo().log("Would have sent staging report summary to %s", recipient);
+            }
             response.setStatus(SC_OK);
             response.setContentType(MediaType.PLAIN_TEXT_UTF_8);
             response.setPayload("Completed staging action.");
 
-            logger.atInfo().log("Enqueueing report upload.");
-            cloudTasksUtils.enqueue(
-                CRON_QUEUE,
-                cloudTasksUtils.createPostTaskWithDelay(
-                    IcannReportingUploadAction.PATH,
-                    Service.BACKEND,
-                    null,
-                    Duration.standardMinutes(2)));
+            if (shouldUpload) {
+              logger.atInfo().log("Enqueueing report upload.");
+              cloudTasksUtils.enqueue(
+                  CRON_QUEUE,
+                  cloudTasksUtils.createPostTaskWithDelay(
+                      IcannReportingUploadAction.PATH,
+                      Service.BACKEND,
+                      null,
+                      Duration.standardMinutes(2)));
+            } else {
+              logger.atInfo().log("Would have enqueued report upload");
+            }
             return null;
           },
           BigqueryJobFailureException.class);
