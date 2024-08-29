@@ -14,6 +14,7 @@
 
 package google.registry.reporting.icann;
 
+import static google.registry.request.RequestParameters.extractOptionalBooleanParameter;
 import static google.registry.request.RequestParameters.extractOptionalParameter;
 import static google.registry.request.RequestParameters.extractRequiredParameter;
 import static google.registry.request.RequestParameters.extractSetOfEnumParameters;
@@ -42,6 +43,7 @@ public final class IcannReportingModule {
 
   static final String PARAM_SUBDIR = "subdir";
   static final String PARAM_REPORT_TYPES = "reportTypes";
+  static final String PARAM_SHOULD_UPLOAD = "shouldUpload";
   static final String ICANN_REPORTING_DATA_SET = "icannReportingDataSet";
   static final String MANIFEST_FILE_NAME = "MANIFEST.txt";
 
@@ -74,6 +76,12 @@ public final class IcannReportingModule {
     ImmutableSet<ReportType> reportTypes =
         extractSetOfEnumParameters(req, ReportType.class, PARAM_REPORT_TYPES);
     return reportTypes.isEmpty() ? ImmutableSet.copyOf(ReportType.values()) : reportTypes;
+  }
+
+  @Provides
+  @Parameter(PARAM_SHOULD_UPLOAD)
+  static boolean provideShouldUpload(HttpServletRequest req) {
+    return extractOptionalBooleanParameter(req, PARAM_SHOULD_UPLOAD).orElse(true);
   }
 
   /**

@@ -37,13 +37,12 @@ FROM (
   FROM (
     SELECT
       -- Extract the logged JSON payload.
-      REGEXP_EXTRACT(logMessage, r'FLOW-LOG-SIGNATURE-METADATA: (.*)\n?$')
+      REGEXP_EXTRACT(textPayload, r'FLOW-LOG-SIGNATURE-METADATA: (.*)\n?$')
       AS json
-    FROM `domain-registry-alpha.cloud_sql_icann_reporting.monthly_logs_201709` AS logs
-    JOIN
-      UNNEST(logs.logMessage) AS logMessage
+    FROM `domain-registry-alpha.appengine_logs._var_log_app_*`
     WHERE
-      STARTS_WITH(logMessage, "google.registry.flows.FlowReporter recordToLogs: FLOW-LOG-SIGNATURE-METADATA"))) AS regexes
+      STARTS_WITH(textPayload, "FLOW-LOG-SIGNATURE-METADATA")
+      AND _TABLE_SUFFIX BETWEEN '20170901' AND '20170930')) AS regexes
 JOIN
   -- Unnest the JSON-parsed tlds.
   UNNEST(regexes.tlds) AS tld
