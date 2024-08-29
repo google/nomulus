@@ -25,7 +25,11 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.google.api.client.googleapis.json.GoogleJsonError;
+import com.google.api.client.googleapis.json.GoogleJsonResponseException;
 import com.google.api.client.http.ByteArrayContent;
+import com.google.api.client.http.HttpHeaders;
+import com.google.api.client.http.HttpResponseException;
 import com.google.api.services.drive.Drive;
 import com.google.api.services.drive.Drive.Files;
 import com.google.api.services.drive.model.File;
@@ -37,6 +41,7 @@ import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentMatcher;
+import org.testcontainers.shaded.com.google.errorprone.annotations.Immutable;
 
 /** Tests for {@link DriveConnection}. */
 class DriveConnectionTest {
@@ -146,6 +151,47 @@ class DriveConnectionTest {
     verify(filesList).setPageToken(null);
     verify(filesList, times(1)).setQ("'driveFolderId' in parents and sampleQuery");
     verify(filesList, times(2)).getPageToken();
+  }
+
+  @Test
+  void testListFiles_succeedsRetriedGoogleJsonResponseException() throws Exception {
+    GoogleJsonResponseException googleJsonResponseException =
+        new GoogleJsonResponseException(
+            new HttpResponseException.Builder(503, "Service Unavailable.", new HttpHeaders()),
+            new GoogleJsonError());
+    File testFile = new File().setId("testFile");
+    File testFile1 = new File().setId("testFile1");
+
+    when(filesList.execute())
+        .thenThrow(googleJsonResponseException)
+        .thenReturn(new FileList().setFiles(ImmutableList.of(testFile)).setNextPageToken("next"))
+        .thenThrow(googleJsonResponseException)
+        .thenReturn(new FileList().setFiles(ImmutableList.of(testFile1)));
+
+    assertThat(driveConnection.listFiles("driveFolderId"))
+        .containsExactly(testFile.getId(), testFile1.getId());
+    verify(filesList).setPageToken("next");
+    verify(filesList, times(1)).setQ("'driveFolderId' in parents");
+    verify(filesList, times(4)).getPageToken();
+  }
+
+  @Test
+  void testListFiles_throwsException_afterMaxRetriedGoogleJsonResponseException() throws Exception {
+    GoogleJsonResponseException googleJsonResponseException =
+        new GoogleJsonResponseException(
+            new HttpResponseException.Builder(503, "Service Unavailable.", new HttpHeaders()),
+            new GoogleJsonError());
+    File testFile = new File().setId("testFile");
+    when(filesList.execute()).thenThrow(googleJsonResponseException);
+
+    GoogleJsonResponseException thrown =
+        assertThrows(
+            GoogleJsonResponseException.class, () -> driveConnection.listFiles("driveFolderId"));
+    assertThat(thrown.getStatusCode()).isEqualTo(503);
+
+    verify(filesList, times(0)).setPageToken(null);
+    verify(filesList, times(1)).setQ("'driveFolderId' in parents");
+    verify(filesList, times(3)).getPageToken();
   }
 
   @Test
