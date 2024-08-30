@@ -182,14 +182,17 @@ class DriveConnectionTest {
             new GoogleJsonError());
     when(filesList.execute()).thenThrow(googleJsonResponseException);
 
-    GoogleJsonResponseException thrown =
+    Exception thrown =
         assertThrows(
-            GoogleJsonResponseException.class, () -> driveConnection.listFiles("driveFolderId"));
-    assertThat(thrown.getStatusCode()).isEqualTo(503);
+            Exception.class, () -> driveConnection.listFiles("driveFolderId", "sampleQuery"));
+    assertThat(thrown.getCause()).isEqualTo(googleJsonResponseException);
+    assertThat(thrown.getMessage())
+        .isEqualTo(
+            "Max. failures reached while attempting to list Drive files in folder driveFolderId with query sampleQuery; failing permanently.");
 
     verify(filesList, times(0)).setPageToken(null);
-    verify(filesList, times(1)).setQ("'driveFolderId' in parents");
-    verify(filesList, times(3)).getPageToken();
+    verify(filesList, times(1)).setQ("'driveFolderId' in parents and sampleQuery");
+    verify(filesList, times(10)).getPageToken();
   }
 
   @Test

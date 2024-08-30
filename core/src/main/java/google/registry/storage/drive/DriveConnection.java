@@ -35,7 +35,7 @@ public class DriveConnection {
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
   /** Number of times a request to Drive will be retried before propagating a failure. */
-  private static final int MAX_RETRIES = 3;
+  private static final int MAX_RETRIES = 10;
 
   private static final MediaType GOOGLE_FOLDER =
       MediaType.create("application", "vnd.google-apps.folder");
@@ -133,8 +133,8 @@ public class DriveConnection {
    * @see <a href="https://developers.google.com/drive/web/search-parameters">The query format</a>
    */
   public List<String> listFiles(String parentFolderId, String query) throws IOException {
-    int currentRequestExecution = 0;
-    boolean requestExecutionFailed;
+    int failures = 0;
+    boolean latestRequestFailed;
     ImmutableList.Builder<String> result = new ImmutableList.Builder<>();
     Files.List req = drive.files().list();
     StringBuilder q = new StringBuilder(String.format("'%s' in parents", parentFolderId));
@@ -143,22 +143,26 @@ public class DriveConnection {
     }
     req.setQ(q.toString());
     do {
-      FileList files;
       try {
-        requestExecutionFailed = false;
-        files = req.execute();
+        latestRequestFailed = false;
+        FileList files = req.execute();
         files.getFiles().forEach(file -> result.add(file.getId()));
         req.setPageToken(files.getNextPageToken());
-      } catch (GoogleJsonResponseException googleJsonResponseException) {
-        if (currentRequestExecution >= MAX_RETRIES) {
-          throw googleJsonResponseException;
+      } catch (GoogleJsonResponseException e) {
+        if (failures >= MAX_RETRIES) {
+          throw new RuntimeException(
+              String.format(
+                  "Max. failures reached while attempting to list Drive files in folder %s with query %s; failing permanently.",
+                  parentFolderId, query),
+              e);
         }
-        requestExecutionFailed = true;
-        logger.atWarning().withCause(googleJsonResponseException).log(
-            "Failed to list files from Drive. Folder: %s, query: %s.", parentFolderId, query);
-        currentRequestExecution++;
+        latestRequestFailed = true;
+        logger.atWarning().withCause(e).log(
+            "Attempt: %d. Failed to list files from Drive. Folder: %s, query: %s.",
+            failures, parentFolderId, query);
+        failures++;
       }
-    } while (!Strings.isNullOrEmpty(req.getPageToken()) || requestExecutionFailed);
+    } while (!Strings.isNullOrEmpty(req.getPageToken()) || latestRequestFailed);
     return result.build();
   }
 
