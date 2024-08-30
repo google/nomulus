@@ -152,7 +152,7 @@ public class DriveConnection {
         if (failures >= MAX_RETRIES) {
           throw new RuntimeException(
               String.format(
-                  "Max. failures reached while attempting to list Drive files in folder %s with "
+                  "Max failures reached while attempting to list Drive files in folder %s with "
                       + "query %s; failing permanently.",
                   parentFolderId, query),
               e);

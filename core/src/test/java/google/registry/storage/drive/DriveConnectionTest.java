@@ -188,7 +188,7 @@ class DriveConnectionTest {
     assertThat(thrown.getCause()).isEqualTo(googleJsonResponseException);
     assertThat(thrown.getMessage())
         .isEqualTo(
-            "Max. failures reached while attempting to list Drive files in folder "
+            "Max failures reached while attempting to list Drive files in folder "
                 + "driveFolderId with query sampleQuery; failing permanently.");
 
     verify(filesList, times(0)).setPageToken(null);
