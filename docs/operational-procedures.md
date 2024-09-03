@@ -20,7 +20,7 @@ metrics monitored are as follows:
     name, client id, and return status code.
 *   `/custom/epp/processing_time` -- A [Distribution][distribution] representing
     the processing time for EPP requests, described by command name, client id,
-    and retujrn status code.
+    and return status code.
 *   `/custom/whois/requests` -- A count of WHOIS requests, described by command
     name, number of returned results, and return status code.
 *   `/custom/whois/processing_time` -- A [Distribution][distribution]
