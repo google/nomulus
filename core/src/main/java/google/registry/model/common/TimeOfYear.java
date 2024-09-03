@@ -27,8 +27,8 @@ import com.google.common.collect.ContiguousSet;
 import com.google.common.collect.Range;
 import google.registry.model.ImmutableObject;
 import google.registry.model.UnsafeSerializable;
+import jakarta.persistence.Embeddable;
 import java.util.List;
-import javax.persistence.Embeddable;
 import org.joda.time.DateTime;
 
 /**

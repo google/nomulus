@@ -22,16 +22,13 @@ import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.token.AllocationToken;
 import google.registry.persistence.VKey;
 import google.registry.persistence.WithVKey;
-import google.registry.persistence.converter.JodaMoneyType;
+import jakarta.persistence.AttributeOverride;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Index;
+import jakarta.persistence.Table;
 import java.util.Optional;
 import javax.annotation.Nullable;
-import javax.persistence.AttributeOverride;
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Index;
-import javax.persistence.Table;
-import org.hibernate.annotations.Columns;
-import org.hibernate.annotations.Type;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
 
@@ -52,8 +49,11 @@ import org.joda.time.DateTime;
 public class BillingEvent extends BillingBase {
 
   /** The billable value. */
-  @Type(type = JodaMoneyType.TYPE_NAME)
-  @Columns(columns = {@Column(name = "cost_amount"), @Column(name = "cost_currency")})
+  @AttributeOverride(
+      name = "amount",
+      // Override Hibernate default (numeric(38,2)) to match real schema definition (numeric(19,2)).
+      column = @Column(name = "cost_amount", precision = 19, scale = 2))
+  @AttributeOverride(name = "currency", column = @Column(name = "cost_currency"))
   Money cost;
 
   /** When the cost should be billed. */

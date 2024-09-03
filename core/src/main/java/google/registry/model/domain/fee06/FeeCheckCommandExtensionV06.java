@@ -20,9 +20,9 @@ import com.google.common.collect.ImmutableList;
 import google.registry.model.ImmutableObject;
 import google.registry.model.domain.fee.FeeCheckCommandExtension;
 import google.registry.model.domain.fee.FeeCheckResponseExtensionItem;
+import jakarta.xml.bind.annotation.XmlElement;
+import jakarta.xml.bind.annotation.XmlRootElement;
 import java.util.List;
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlRootElement;
 import org.joda.money.CurrencyUnit;
 
 /** Version 0.6 of the fee extension that may be present on domain check commands. */

@@ -39,13 +39,13 @@ import google.registry.tools.params.NameserversParameter;
 import google.registry.tools.soy.DomainRenewSoyInfo;
 import google.registry.tools.soy.UniformRapidSuspensionSoyInfo;
 import google.registry.util.Clock;
+import jakarta.xml.bind.annotation.adapters.HexBinaryAdapter;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import javax.inject.Inject;
-import javax.xml.bind.annotation.adapters.HexBinaryAdapter;
 import org.joda.time.DateTime;
 import org.joda.time.format.DateTimeFormat;
 

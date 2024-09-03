@@ -15,10 +15,10 @@
 package google.registry.model.tmch;
 
 import google.registry.model.ImmutableObject;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
 import java.io.Serializable;
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Id;
 
 /**
  * Claims entry record, used by ClaimsList for persistence.
@@ -30,7 +30,10 @@ import javax.persistence.Id;
  */
 @Entity(name = "ClaimsEntry")
 class ClaimsEntry extends ImmutableObject implements Serializable {
-  @Id private Long revisionId;
+  @SuppressWarnings("unused")
+  @Id
+  private Long revisionId;
+
   @Id private String domainLabel;
 
   @Column(nullable = false)

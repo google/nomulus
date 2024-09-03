@@ -19,7 +19,7 @@ import static google.registry.util.CollectionUtils.forceEmptyToNull;
 
 import com.google.common.annotations.VisibleForTesting;
 import google.registry.model.eppcommon.Address;
-import javax.persistence.Embeddable;
+import jakarta.persistence.Embeddable;
 
 /**
  * Registrar Address

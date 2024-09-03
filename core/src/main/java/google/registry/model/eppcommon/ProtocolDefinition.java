@@ -31,8 +31,8 @@ import google.registry.model.domain.rgp.RgpUpdateExtension;
 import google.registry.model.domain.secdns.SecDnsCreateExtension;
 import google.registry.model.eppinput.EppInput.CommandExtension;
 import google.registry.model.eppoutput.EppResponse.ResponseExtension;
+import jakarta.xml.bind.annotation.XmlSchema;
 import java.util.EnumSet;
-import javax.xml.bind.annotation.XmlSchema;
 
 /** Constants that define the EPP protocol version we support. */
 public class ProtocolDefinition {

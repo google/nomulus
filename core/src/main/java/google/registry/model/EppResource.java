@@ -37,16 +37,18 @@ import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.transfer.TransferData;
 import google.registry.persistence.VKey;
 import google.registry.util.NonFinalForTesting;
+import jakarta.persistence.Access;
+import jakarta.persistence.AccessType;
+import jakarta.persistence.AttributeOverride;
+import jakarta.persistence.Column;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.MappedSuperclass;
+import jakarta.persistence.Transient;
 import java.time.Duration;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import javax.persistence.Access;
-import javax.persistence.AccessType;
-import javax.persistence.AttributeOverride;
-import javax.persistence.Column;
-import javax.persistence.MappedSuperclass;
-import javax.persistence.Transient;
 import org.joda.time.DateTime;
 
 /** An EPP entity object (i.e. a domain, contact, or host). */
@@ -133,7 +135,9 @@ public abstract class EppResource extends UpdateAutoTimestampEntity implements B
   @Expose DateTime lastEppUpdateTime;
 
   /** Status values associated with this resource. */
-  @Expose Set<StatusValue> statuses;
+  @Enumerated(EnumType.STRING)
+  @Expose
+  Set<StatusValue> statuses;
 
   public String getRepoId() {
     return repoId;
