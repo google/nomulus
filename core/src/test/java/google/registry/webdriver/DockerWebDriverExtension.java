@@ -43,7 +43,7 @@ class DockerWebDriverExtension implements BeforeAllCallback, AfterAllCallback {
   private static URL getWebDriverUrl() {
     // TODO(#209): Find a way to automatically detect the version of docker image
     GenericContainer container =
-        new GenericContainer("selenium/standalone-chrome:3.141.59-mercury")
+        new GenericContainer("selenium/standalone-chrome:4.25")
             .withFileSystemBind("/dev/shm", "/dev/shm", BindMode.READ_WRITE)
             .withExposedPorts(CHROME_DRIVER_SERVICE_PORT)
             .waitingFor(Wait.forHttp("/").withStartupTimeout(Duration.of(20, ChronoUnit.SECONDS)));
@@ -53,7 +53,7 @@ class DockerWebDriverExtension implements BeforeAllCallback, AfterAllCallback {
       url =
           new URL(
               String.format(
-                  "http://%s:%d/wd/hub",
+                  "http://%s:%d",
                   container.getContainerIpAddress(),
                   container.getMappedPort(CHROME_DRIVER_SERVICE_PORT)));
     } catch (MalformedURLException e) {
@@ -65,7 +65,7 @@ class DockerWebDriverExtension implements BeforeAllCallback, AfterAllCallback {
 
   @Override
   public void beforeAll(ExtensionContext context) {
-    ChromeOptions chromeOptions = new ChromeOptions().setHeadless(true);
+    ChromeOptions chromeOptions = new ChromeOptions().addArguments("--headless=new");
     webDriver = new RemoteWebDriver(WEB_DRIVER_URL, chromeOptions);
   }
 

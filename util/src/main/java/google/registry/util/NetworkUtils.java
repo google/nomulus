@@ -97,9 +97,6 @@ public final class NetworkUtils {
     if (localhost.isLoopbackAddress()) {
       try {
         Enumeration<NetworkInterface> interfaces = NetworkInterface.getNetworkInterfaces();
-        if (interfaces == null) {
-          return localhost;
-        }
         while (interfaces.hasMoreElements()) {
           NetworkInterface networkInterface = interfaces.nextElement();
           Enumeration<InetAddress> addresses = networkInterface.getInetAddresses();
