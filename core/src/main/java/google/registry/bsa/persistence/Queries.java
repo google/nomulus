@@ -109,7 +109,7 @@ public final class Queries {
                 tm().getEntityManager()
                     .createQuery(
                         "FROM BsaUnblockableDomain d WHERE d.label > :label OR (d.label = :label"
-                            + " AND d.tld >  :tld) ORDER BY d.tld, d.label ")
+                            + " AND d.tld >  :tld) ORDER BY d.label, d.tld ")
                     .setParameter("label", lastRead.map(d -> d.label).orElse(""))
                     .setParameter("tld", lastRead.map(d -> d.tld).orElse(""))
                     .setMaxResults(batchSize)
