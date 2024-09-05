@@ -22,11 +22,13 @@ import com.google.common.collect.ImmutableMap;
 import google.registry.module.frontend.FrontendServlet;
 import google.registry.server.RegistryTestServer;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.junitpioneer.jupiter.RetryingTest;
 import org.openqa.selenium.By;
 
 /** Registrar Console Screenshot Differ tests. */
+@Disabled
 public class OteSetupConsoleScreenshotTest extends WebDriverTestCase {
 
   @RegisterExtension

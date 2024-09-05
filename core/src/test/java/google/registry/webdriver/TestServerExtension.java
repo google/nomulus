@@ -22,6 +22,7 @@ import static google.registry.util.NetworkUtils.pickUnusedPort;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.net.HostAndPort;
+import google.registry.model.console.GlobalRole;
 import google.registry.model.console.RegistrarRole;
 import google.registry.model.console.User;
 import google.registry.model.console.UserRoles;
@@ -139,6 +140,15 @@ public final class TestServerExtension implements BeforeEachCallback, AfterEachC
     OidcTokenAuthenticationMechanism.setAuthResultForTesting(AuthResult.createUser(user));
   }
 
+  /** Sets the current user's global role. */
+  public void setGlobalRole(GlobalRole globalRole) {
+    user =
+        user.asBuilder()
+            .setUserRoles(new UserRoles.Builder().setGlobalRole(globalRole).build())
+            .build();
+    OidcTokenAuthenticationMechanism.setAuthResultForTesting(AuthResult.createUser(user));
+  }
+
   /**
    * @see TestServer#getUrl(String)
    */
@@ -231,11 +241,15 @@ public final class TestServerExtension implements BeforeEachCallback, AfterEachC
       return this;
     }
 
+    public Builder setRoutes(ImmutableList<Route> routes) {
+      checkArgument(!routes.isEmpty(), "Must include at least one route");
+      this.routes = routes;
+      return this;
+    }
+
     /** Sets the list of servlet {@link Route} objects for {@link TestServer}. */
     public Builder setRoutes(Route... routes) {
-      checkArgument(routes.length > 0);
-      this.routes = ImmutableList.copyOf(routes);
-      return this;
+      return setRoutes(ImmutableList.copyOf(routes));
     }
 
     /** Sets an ordered list of fixtures that should be loaded on startup. */
