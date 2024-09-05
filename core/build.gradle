@@ -910,6 +910,9 @@ task fragileTest(type: FilteringTest) {
   // Common exclude pattern. See README in parent directory for explanation.
   tests = fragileTestPatterns
 
+  // Screenshot tests depend on the console being built
+  dependsOn(rootProject.project('console-webapp').tasks.named('buildConsoleWebapp'))
+
   if (rootProject.findProperty("skipDockerIncompatibleTests") == "true") {
     exclude dockerIncompatibleTestPatterns
   }

@@ -52,7 +52,6 @@ public final class WebDriverPlusScreenDifferExtension
     implements BeforeEachCallback,
         AfterEachCallback,
         WebDriver,
-        org.openqa.selenium.interactions.HasInputDevices,
         TakesScreenshot,
         JavascriptExecutor,
         HasCapabilities {
@@ -72,7 +71,7 @@ public final class WebDriverPlusScreenDifferExtension
 
   // Default size of the browser window when taking screenshot. Having a fixed size of window can
   // help make visual regression test deterministic.
-  private static final Dimension DEFAULT_WINDOW_SIZE = new Dimension(1200, 2000);
+  private static final Dimension DEFAULT_WINDOW_SIZE = new Dimension(1920, 1200);
 
   private static final String GOLDENS_PATH =
       getResource(WebDriverPlusScreenDifferExtension.class, "goldens/chrome-linux").getFile();
@@ -131,6 +130,16 @@ public final class WebDriverPlusScreenDifferExtension
   /** Waits indefinitely for an element matching {@code by}, then returns it. */
   WebElement waitForElement(By by) throws InterruptedException {
     return waitForElementWithCondition(by, Predicates.alwaysTrue());
+  }
+
+  /** Waits for the removal of an element (e.g. a loading bar). */
+  void waitForElementToNotExist(By by) throws InterruptedException {
+    while (true) {
+      if (findElements(by).isEmpty()) {
+        return;
+      }
+      Thread.sleep(WAIT_FOR_ELEMENTS_POLLING_INTERVAL_MS);
+    }
   }
 
   /**
@@ -281,16 +290,6 @@ public final class WebDriverPlusScreenDifferExtension
   @Override
   public Options manage() {
     return driver.manage();
-  }
-
-  @Override
-  public org.openqa.selenium.interactions.Keyboard getKeyboard() {
-    return ((org.openqa.selenium.interactions.HasInputDevices) driver).getKeyboard();
-  }
-
-  @Override
-  public org.openqa.selenium.interactions.Mouse getMouse() {
-    return ((org.openqa.selenium.interactions.HasInputDevices) driver).getMouse();
   }
 
   @Override

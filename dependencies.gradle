@@ -38,10 +38,10 @@ ext {
       // TODO: Remove after the legacy console is deleted.
       'com.google.closure-stylesheets:closure-stylesheets:1.5.0',
       'com.google.javascript:closure-compiler:v20210505',
-      'org.seleniumhq.selenium:selenium-api:3.141.59',
-      'org.seleniumhq.selenium:selenium-chrome-driver:3.141.59',
-      'org.seleniumhq.selenium:selenium-java:3.141.59',
-      'org.seleniumhq.selenium:selenium-remote-driver:3.141.59',
+      'org.seleniumhq.selenium:selenium-api:4.25.0',
+      'org.seleniumhq.selenium:selenium-chrome-driver:4.25.0',
+      'org.seleniumhq.selenium:selenium-java:4.25.0',
+      'org.seleniumhq.selenium:selenium-remote-driver:4.25.0',
 
        // TODO: Migrate Soy Tofu to Soy Sauce (go/soysauce-migration)
       'com.google.template:soy:2021-02-01',
