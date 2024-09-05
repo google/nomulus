@@ -14,4 +14,5 @@
 
 export const environment = {
   production: true,
+  sandbox: false,
 };

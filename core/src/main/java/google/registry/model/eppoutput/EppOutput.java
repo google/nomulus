@@ -16,9 +16,9 @@ package google.registry.model.eppoutput;
 
 import com.google.common.annotations.VisibleForTesting;
 import google.registry.model.ImmutableObject;
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlElements;
-import javax.xml.bind.annotation.XmlRootElement;
+import jakarta.xml.bind.annotation.XmlElement;
+import jakarta.xml.bind.annotation.XmlElements;
+import jakarta.xml.bind.annotation.XmlRootElement;
 
 /** This class represents the root EPP XML element for output. */
 @XmlRootElement(name = "epp")

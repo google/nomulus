@@ -68,8 +68,6 @@ import { TldsComponent } from './tlds/tlds.component';
     HeaderComponent,
     HomeComponent,
     LocationBackDirective,
-    NewOteComponent,
-    OteStatusComponent,
     UserLevelVisibility,
     NavigationComponent,
     NewRegistrarComponent,
@@ -99,6 +97,7 @@ import { TldsComponent } from './tlds/tlds.component';
     MaterialModule,
     SnackBarModule,
   ],
+  exports: [SelectedRegistrarWrapper],
   providers: [
     BackendService,
     BreakPointObserverService,

@@ -20,7 +20,6 @@ import static google.registry.util.CollectionUtils.nullToEmpty;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static google.registry.util.DateTimeUtils.latestOf;
 
-import com.google.common.collect.ForwardingMap;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.collect.Ordering;
@@ -28,6 +27,7 @@ import google.registry.model.UnsafeSerializable;
 import java.io.Serializable;
 import java.util.Iterator;
 import java.util.NavigableMap;
+import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 import org.joda.time.DateTime;
 
@@ -36,13 +36,12 @@ import org.joda.time.DateTime;
  * corresponding instant, and remains active until the next transition occurs. At least one "start
  * of time" value (corresponding to {@code START_OF_TIME}, i.e. the Unix epoch) must be provided so
  * that the property will have a value for all possible times.
- *
- * <p>This concept is naturally represented by a sorted map of {@link DateTime} to {@link V}. This
- * class implements {@link ForwardingMap} and stores the data in a backing map and exposes several
- * convenient methods to extrapolate the value at arbitrary point in time.
  */
-public class TimedTransitionProperty<V extends Serializable> extends ForwardingMap<DateTime, V>
-    implements UnsafeSerializable {
+// Implementation note: this class used to implement the Guava ForwardingMap. This breaks in
+// Hibernate 6, which assumes that any class implementing Map<K, V> would also have <K, V> as its
+// first two generic type parameters. If this is fixed, we can add back the ForwardingMap, which
+// can simplify the code in a few places.
+public class TimedTransitionProperty<V extends Serializable> implements UnsafeSerializable {
 
   private static final long serialVersionUID = -7274659848856323290L;
 
@@ -145,11 +144,6 @@ public class TimedTransitionProperty<V extends Serializable> extends ForwardingM
         "Timed transition values missing required entry for the start of time (Unix Epoch)");
   }
 
-  @Override
-  protected ImmutableSortedMap<DateTime, V> delegate() {
-    return backingMap;
-  }
-
   /** Exposes the underlying {@link ImmutableSortedMap}. */
   public ImmutableSortedMap<DateTime, V> toValueMap() {
     return backingMap;
@@ -170,5 +164,25 @@ public class TimedTransitionProperty<V extends Serializable> extends ForwardingM
   @Nullable
   public DateTime getNextTransitionAfter(DateTime time) {
     return backingMap.higherKey(latestOf(START_OF_TIME, time));
+  }
+
+  public int size() {
+    return backingMap.size();
+  }
+
+  @Override
+  public boolean equals(@CheckForNull Object object) {
+    if (this == object) {
+      return true;
+    }
+    if (object instanceof TimedTransitionProperty<?> other) {
+      return this.backingMap.equals(other.backingMap);
+    }
+    return false;
+  }
+
+  @Override
+  public int hashCode() {
+    return this.backingMap.hashCode();
   }
 }

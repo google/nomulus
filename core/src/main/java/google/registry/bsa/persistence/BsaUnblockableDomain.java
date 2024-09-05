@@ -24,13 +24,13 @@ import google.registry.bsa.api.UnblockableDomain;
 import google.registry.bsa.persistence.BsaUnblockableDomain.BsaUnblockableDomainId;
 import google.registry.model.CreateAutoTimestamp;
 import google.registry.persistence.VKey;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.Id;
+import jakarta.persistence.IdClass;
 import java.io.Serializable;
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.EnumType;
-import javax.persistence.Enumerated;
-import javax.persistence.Id;
-import javax.persistence.IdClass;
 
 /** A domain matching a BSA label but is in use (registered or reserved), so cannot be blocked. */
 @Entity

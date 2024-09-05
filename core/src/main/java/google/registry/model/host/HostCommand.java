@@ -22,12 +22,12 @@ import google.registry.model.eppinput.ResourceCommand.AbstractSingleResourceComm
 import google.registry.model.eppinput.ResourceCommand.ResourceCheck;
 import google.registry.model.eppinput.ResourceCommand.ResourceCreateOrChange;
 import google.registry.model.eppinput.ResourceCommand.ResourceUpdate;
+import jakarta.xml.bind.annotation.XmlElement;
+import jakarta.xml.bind.annotation.XmlRootElement;
+import jakarta.xml.bind.annotation.XmlTransient;
+import jakarta.xml.bind.annotation.XmlType;
 import java.net.InetAddress;
 import java.util.Set;
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlRootElement;
-import javax.xml.bind.annotation.XmlTransient;
-import javax.xml.bind.annotation.XmlType;
 
 /** A collection of {@link Host} commands. */
 public class HostCommand {

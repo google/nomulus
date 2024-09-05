@@ -23,6 +23,8 @@ import static java.util.stream.Collectors.toList;
 
 import com.google.common.base.Joiner;
 import google.registry.persistence.VKey;
+import jakarta.persistence.Transient;
+import jakarta.xml.bind.annotation.XmlTransient;
 import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
@@ -38,7 +40,6 @@ import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import javax.annotation.concurrent.Immutable;
-import javax.xml.bind.annotation.XmlTransient;
 
 /** An immutable object that implements {@link #equals}, {@link #hashCode} and {@link #toString}. */
 @Immutable
@@ -63,10 +64,7 @@ public abstract class ImmutableObject implements Cloneable {
   @Target(FIELD)
   public @interface Insignificant {}
 
-  // Note: if this class is made to implement Serializable, this field must become 'transient' since
-  // hashing is not stable across executions. Also note that @XmlTransient is forbidden on transient
-  // fields and need to be removed if transient is added.
-  @XmlTransient protected Integer hashCode;
+  @XmlTransient @Transient protected Integer hashCode;
 
   private boolean equalsImmutableObject(ImmutableObject other) {
     return getClass().equals(other.getClass())
@@ -80,6 +78,7 @@ public abstract class ImmutableObject implements Cloneable {
    *
    * <p>Isolated into a method so that derived classes can override it.
    */
+  @Transient
   protected Map<Field, Object> getSignificantFields() {
     // Can't use streams or ImmutableMap because we can have null values.
     Map<Field, Object> result = new LinkedHashMap<>();

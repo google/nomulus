@@ -18,13 +18,13 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 
 import com.google.common.collect.ImmutableList;
 import google.registry.persistence.transaction.CriteriaQueryBuilder.WhereOperator;
+import jakarta.persistence.criteria.CriteriaBuilder;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Stream;
 import javax.annotation.Nullable;
-import javax.persistence.criteria.CriteriaBuilder;
 
 /**
  * Creates queries that can be used JPA.
@@ -98,8 +98,8 @@ public abstract class QueryComposer<T> {
   /**
    * Returns the one and only result of a query.
    *
-   * <p>Throws a {@link javax.persistence.NonUniqueResultException} if there is more than one
-   * result, throws {@link javax.persistence.NoResultException} if no results are found.
+   * <p>Throws a {@link jakarta.persistence.NonUniqueResultException} if there is more than one
+   * result, throws {@link jakarta.persistence.NoResultException} if no results are found.
    */
   public abstract T getSingleResult();
 

@@ -14,6 +14,17 @@
 
 package google.registry.persistence;
 
+import jakarta.persistence.Embeddable;
+import jakarta.persistence.Embedded;
+import jakarta.persistence.MappedSuperclass;
+import jakarta.persistence.PostLoad;
+import jakarta.persistence.PostPersist;
+import jakarta.persistence.PostRemove;
+import jakarta.persistence.PostUpdate;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreRemove;
+import jakarta.persistence.PreUpdate;
+import jakarta.persistence.Transient;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -22,17 +33,6 @@ import java.lang.reflect.Modifier;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.stream.Stream;
-import javax.persistence.Embeddable;
-import javax.persistence.Embedded;
-import javax.persistence.MappedSuperclass;
-import javax.persistence.PostLoad;
-import javax.persistence.PostPersist;
-import javax.persistence.PostRemove;
-import javax.persistence.PostUpdate;
-import javax.persistence.PrePersist;
-import javax.persistence.PreRemove;
-import javax.persistence.PreUpdate;
-import javax.persistence.Transient;
 
 /**
  * A listener class to invoke entity callbacks in cases where Hibernate doesn't invoke the callback
@@ -41,7 +41,7 @@ import javax.persistence.Transient;
  * <p>JPA defines a few annotations, e.g. {@link PostLoad}, that we can use for the application to
  * react to certain events that occur inside the persistence mechanism. However, Hibernate only
  * supports a few basic use cases, e.g. defining a {@link PostLoad} method directly in an {@link
- * javax.persistence.Entity} class or in an {@link Embeddable} class. If the annotated method is
+ * jakarta.persistence.Entity} class or in an {@link Embeddable} class. If the annotated method is
  * defined in an {@link Embeddable} class that is a property of another {@link Embeddable} class, or
  * it is defined in a parent class of the {@link Embeddable} class, Hibernate doesn't invoke it.
  *

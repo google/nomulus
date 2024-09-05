@@ -16,7 +16,7 @@ package google.registry.model.domain.superuser;
 
 import google.registry.model.ImmutableObject;
 import google.registry.model.eppinput.EppInput.CommandExtension;
-import javax.xml.bind.annotation.XmlTransient;
+import jakarta.xml.bind.annotation.XmlTransient;
 
 /** Base class for superuser EPP extensions. */
 @XmlTransient

@@ -14,45 +14,43 @@
 
 package google.registry.reporting.icann;
 
+import static google.registry.reporting.icann.IcannReportingModule.ICANN_REPORTING_DATA_SET;
+import static google.registry.util.TypeUtils.getClassFromString;
+import static google.registry.util.TypeUtils.instantiate;
+
+import dagger.MembersInjector;
+import dagger.Module;
+import dagger.Provides;
 import google.registry.bigquery.BigqueryConnection;
+import google.registry.config.RegistryConfig.Config;
+import javax.inject.Inject;
+import javax.inject.Named;
 import org.joda.time.YearMonth;
 
 /**
  * Methods for preparing and querying DNS statistics.
  *
  * <p>DNS systems may have different ways of providing this information, so it's useful to
- * modularize this.
+ * modularize this, by providing defining the `registryPolicy.dnsCountQueryCoordinatorClass` in your
+ * config file.
  *
- * <p>Derived classes must provide a constructor that accepts a
- * {@link google.registry.reporting.icann.DnsCountQueryCoordinator.Params}.  To override this,
- * define dnsCountQueryCoordinatorClass in your config file.
+ * <p>Due to limitations of {@link MembersInjector}, any injectable field needs to be declared in
+ * the base class, even if it is only used in a derived class.
  */
-public interface DnsCountQueryCoordinator {
+public abstract class DnsCountQueryCoordinator {
 
-  /**
-   * Class to carry parameters for a new coordinator.
-   *
-   * <p>If your report query requires any additional parameters, add them here.
-   */
-  class Params {
+  @Inject BigqueryConnection bigquery;
 
-    public BigqueryConnection bigquery;
+  @Inject
+  @Config("projectId")
+  String projectId;
 
-    /** The Google Cloud project id. */
-    public String projectId;
-
-    /** The BigQuery dataset from which to query. */
-    public String icannReportingDataSet;
-
-    public Params(BigqueryConnection bigquery, String projectId, String icannReportingDataSet) {
-      this.bigquery = bigquery;
-      this.projectId = projectId;
-      this.icannReportingDataSet = icannReportingDataSet;
-    }
-  }
+  @Inject
+  @Named(ICANN_REPORTING_DATA_SET)
+  String icannReportingDataSet;
 
   /** Creates the string used to query bigtable for DNS count information. */
-  String createQuery(YearMonth yearMonth);
+  abstract String createQuery();
 
   /**
    * Do any necessary preparation for the DNS query.
@@ -61,5 +59,18 @@ public interface DnsCountQueryCoordinator {
    * interruptible futures to prepare the query (and the correct thing to do with such exceptions is
    * to handle them correctly or propagate them as-is, no {@link RuntimeException} wrapping).
    */
-  void prepareForQuery(YearMonth yearMonth) throws InterruptedException;
+  abstract void prepareForQuery(YearMonth yearMonth) throws InterruptedException;
+
+  @Module
+  public static class DnsCountQueryCoordinatorModule {
+    @Provides
+    static DnsCountQueryCoordinator provideDnsCountQueryCoordinator(
+        MembersInjector<DnsCountQueryCoordinator> injector,
+        @Config("dnsCountQueryCoordinatorClass") String customClass) {
+      DnsCountQueryCoordinator coordinator =
+          instantiate(getClassFromString(customClass, DnsCountQueryCoordinator.class));
+      injector.injectMembers(coordinator);
+      return coordinator;
+    }
+  }
 }

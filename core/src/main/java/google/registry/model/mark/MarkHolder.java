@@ -14,9 +14,9 @@
 
 package google.registry.model.mark;
 
-import javax.xml.bind.annotation.XmlAttribute;
-import javax.xml.bind.annotation.XmlEnum;
-import javax.xml.bind.annotation.XmlEnumValue;
+import jakarta.xml.bind.annotation.XmlAttribute;
+import jakarta.xml.bind.annotation.XmlEnum;
+import jakarta.xml.bind.annotation.XmlEnumValue;
 
 /** Contact information for the holder of the mark. */
 public class MarkHolder extends CommonMarkContactFields {

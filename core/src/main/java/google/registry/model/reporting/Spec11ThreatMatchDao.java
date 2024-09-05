@@ -16,8 +16,6 @@ package google.registry.model.reporting;
 
 import com.google.common.collect.ImmutableList;
 import google.registry.persistence.transaction.JpaTransactionManager;
-import google.registry.util.DateTimeUtils;
-import javax.persistence.TemporalType;
 import org.joda.time.LocalDate;
 
 /**
@@ -32,8 +30,8 @@ public class Spec11ThreatMatchDao {
   public static void deleteEntriesByDate(JpaTransactionManager jpaTm, LocalDate date) {
     jpaTm.assertInTransaction();
     jpaTm
-        .query("DELETE FROM Spec11ThreatMatch WHERE check_date = :date")
-        .setParameter("date", DateTimeUtils.toSqlDate(date), TemporalType.DATE)
+        .query("DELETE FROM Spec11ThreatMatch WHERE checkDate = :date")
+        .setParameter("date", date)
         .executeUpdate();
   }
 
