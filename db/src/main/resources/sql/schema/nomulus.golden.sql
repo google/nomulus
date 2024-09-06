@@ -56,7 +56,9 @@ CREATE TABLE public."AllocationToken" (
     registration_behavior text DEFAULT 'DEFAULT'::text NOT NULL,
     allowed_epp_actions text[],
     renewal_price_amount numeric(19,2),
-    renewal_price_currency text
+    renewal_price_currency text,
+    discount_price_amount numeric(19,2),
+    discount_price_currency text
 );
 
 
