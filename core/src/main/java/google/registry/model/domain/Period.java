@@ -16,12 +16,12 @@ package google.registry.model.domain;
 
 import google.registry.model.ImmutableObject;
 import google.registry.model.UnsafeSerializable;
-import javax.persistence.Embeddable;
-import javax.persistence.EnumType;
-import javax.persistence.Enumerated;
-import javax.xml.bind.annotation.XmlAttribute;
-import javax.xml.bind.annotation.XmlEnumValue;
-import javax.xml.bind.annotation.XmlValue;
+import jakarta.persistence.Embeddable;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.xml.bind.annotation.XmlAttribute;
+import jakarta.xml.bind.annotation.XmlEnumValue;
+import jakarta.xml.bind.annotation.XmlValue;
 
 /** The "periodType" from <a href="http://tools.ietf.org/html/rfc5731">RFC5731</a>. */
 @Embeddable

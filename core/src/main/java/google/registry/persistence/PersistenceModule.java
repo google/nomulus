@@ -45,6 +45,8 @@ import google.registry.privileges.secretmanager.SqlUser.RobotId;
 import google.registry.privileges.secretmanager.SqlUser.RobotUser;
 import google.registry.tools.AuthModule.CloudSqlClientCredential;
 import google.registry.util.Clock;
+import jakarta.persistence.EntityManagerFactory;
+import jakarta.persistence.Persistence;
 import java.lang.annotation.Documented;
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -58,8 +60,6 @@ import javax.annotation.Nullable;
 import javax.inject.Provider;
 import javax.inject.Qualifier;
 import javax.inject.Singleton;
-import javax.persistence.EntityManagerFactory;
-import javax.persistence.Persistence;
 import org.hibernate.cfg.Environment;
 
 /** Dagger module class for the persistence layer. */

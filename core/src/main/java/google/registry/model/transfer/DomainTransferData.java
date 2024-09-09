@@ -25,13 +25,13 @@ import google.registry.model.domain.Period.Unit;
 import google.registry.model.poll.PollMessage;
 import google.registry.persistence.VKey;
 import google.registry.util.NullIgnoringCollectionBuilder;
+import jakarta.persistence.AttributeOverride;
+import jakarta.persistence.AttributeOverrides;
+import jakarta.persistence.Column;
+import jakarta.persistence.Embeddable;
+import jakarta.persistence.Embedded;
 import java.util.Set;
 import javax.annotation.Nullable;
-import javax.persistence.AttributeOverride;
-import javax.persistence.AttributeOverrides;
-import javax.persistence.Column;
-import javax.persistence.Embeddable;
-import javax.persistence.Embedded;
 import org.joda.time.DateTime;
 
 /** Transfer data for domain. */

@@ -21,22 +21,27 @@ import google.registry.model.Buildable;
 import google.registry.model.ImmutableObject;
 import google.registry.model.UnsafeSerializable;
 import google.registry.model.eppcommon.PresenceMarker;
+import google.registry.persistence.converter.PostalInfoChoiceListUserType;
+import jakarta.persistence.Embeddable;
+import jakarta.persistence.Embedded;
+import jakarta.xml.bind.annotation.XmlAttribute;
+import jakarta.xml.bind.annotation.XmlType;
 import java.io.Serializable;
 import java.util.List;
-import javax.persistence.Embeddable;
-import javax.persistence.Embedded;
-import javax.xml.bind.annotation.XmlAttribute;
-import javax.xml.bind.annotation.XmlType;
+import org.hibernate.annotations.Type;
 
 /** The "discloseType" from <a href="http://tools.ietf.org/html/rfc5733">RFC5733</a>. */
 @Embeddable
 @XmlType(propOrder = {"name", "org", "addr", "voice", "fax", "email"})
 public class Disclose extends ImmutableObject implements UnsafeSerializable {
 
+  @Type(PostalInfoChoiceListUserType.class)
   List<PostalInfoChoice> name;
 
+  @Type(PostalInfoChoiceListUserType.class)
   List<PostalInfoChoice> org;
 
+  @Type(PostalInfoChoiceListUserType.class)
   List<PostalInfoChoice> addr;
 
   @Embedded PresenceMarker voice;

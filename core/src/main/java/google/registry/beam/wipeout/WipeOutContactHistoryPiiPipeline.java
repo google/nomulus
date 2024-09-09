@@ -125,8 +125,8 @@ public class WipeOutContactHistoryPiiPipeline implements Serializable {
         // checking if it's null is one way to avoid processing contact history entities that
         // have been processed previously. Refer to RFC 5733 for more information.
         RegistryJpaIO.read(
-                "SELECT repoId, revisionId FROM ContactHistory WHERE email IS NOT NULL AND"
-                    + " modificationTime < :cutoffTime",
+                "SELECT repoId, revisionId FROM ContactHistory WHERE resource.email IS NOT NULL"
+                    + " AND modificationTime < :cutoffTime",
                 ImmutableMap.of("cutoffTime", cutoffTime),
                 Object[].class,
                 row -> KV.of((String) row[0], (long) row[1]))

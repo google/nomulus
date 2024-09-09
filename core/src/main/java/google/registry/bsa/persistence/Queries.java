@@ -26,7 +26,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import google.registry.bsa.api.UnblockableDomain;
 import google.registry.model.CreateAutoTimestamp;
-import java.sql.Timestamp;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -109,7 +109,7 @@ public final class Queries {
                 tm().getEntityManager()
                     .createQuery(
                         "FROM BsaUnblockableDomain d WHERE d.label > :label OR (d.label = :label"
-                            + " AND d.tld >  :tld) ORDER BY d.tld, d.label ")
+                            + " AND d.tld >  :tld) ORDER BY d.label, d.tld ")
                     .setParameter("label", lastRead.map(d -> d.label).orElse(""))
                     .setParameter("tld", lastRead.map(d -> d.tld).orElse(""))
                     .setMaxResults(batchSize)
@@ -167,7 +167,7 @@ public final class Queries {
          JOIN
              (SELECT concat(label, '.', :tld) AS domain_name from "BsaLabel") b
          ON b.domain_name = d.domain_name
-         WHERE deletion_time > ':now') l
+         WHERE deletion_time > :now) l
     LEFT OUTER JOIN
         (SELECT concat(label, '.', tld) as domain_name
          FROM "BsaUnblockableDomain"
@@ -175,27 +175,24 @@ public final class Queries {
     ON l.domain_name = r.domain_name
     WHERE r.domain_name is null;
     """;
-    // Native query: Hibernate's setParameter wrongly converts DateTime to bytea
-    String sql = sqlTemplate.replace(":now", now.toString());
 
     return ((Stream<?>)
             tm().getEntityManager()
-                .createNativeQuery(sql)
+                .createNativeQuery(sqlTemplate)
                 .setParameter("tld", tld)
+                .setParameter("now", Instant.ofEpochMilli(now.getMillis()))
                 .getResultStream())
         .map(Object[].class::cast)
         .map(
             row ->
                 new DomainLifeSpan(
-                    (String) row[0],
-                    toDateTime((Timestamp) row[1]),
-                    toDateTime((Timestamp) row[2])))
+                    (String) row[0], toDateTime((Instant) row[1]), toDateTime((Instant) row[2])))
         .collect(toImmutableList());
   }
 
   // For testing convenience: 'assertEquals' fails between `new DateTime(timestamp)` and below.
-  static DateTime toDateTime(Timestamp timestamp) {
-    return new DateTime(timestamp.getTime(), UTC);
+  static DateTime toDateTime(Instant timestamp) {
+    return new DateTime(timestamp.toEpochMilli(), UTC);
   }
 
   public record DomainLifeSpan(String domainName, DateTime creationTime, DateTime deletionTime) {}

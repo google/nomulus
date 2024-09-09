@@ -14,8 +14,8 @@
 
 package google.registry.model.adapters;
 
-import javax.xml.bind.annotation.XmlAttribute;
-import javax.xml.bind.annotation.adapters.XmlAdapter;
+import jakarta.xml.bind.annotation.XmlAttribute;
+import jakarta.xml.bind.annotation.adapters.XmlAdapter;
 
 /**
  * Used by JAXB to convert enums to the peculiar EPP format that puts the value in an attribute.

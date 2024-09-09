@@ -15,9 +15,9 @@
 package google.registry.persistence.converter;
 
 import google.registry.util.DateTimeUtils;
+import jakarta.persistence.AttributeConverter;
+import jakarta.persistence.Converter;
 import java.sql.Date;
-import javax.persistence.AttributeConverter;
-import javax.persistence.Converter;
 import org.joda.time.LocalDate;
 
 /** JPA converter for {@link LocalDate}, to/from {@link Date}. */

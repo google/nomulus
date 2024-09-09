@@ -18,11 +18,11 @@ import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 
 import google.registry.model.ImmutableObject;
 import google.registry.model.UnsafeSerializable;
+import jakarta.persistence.Embeddable;
+import jakarta.xml.bind.annotation.XmlElement;
+import jakarta.xml.bind.annotation.XmlType;
 import java.util.Optional;
 import javax.annotation.Nullable;
-import javax.persistence.Embeddable;
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlType;
 
 /**
  * "A {@code TRID} (transaction identifier) element containing the transaction identifier assigned

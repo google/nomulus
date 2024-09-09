@@ -2,92 +2,92 @@
     elementFormDefault = XmlNsForm.QUALIFIED,
     namespace = "@NAMESPACE@",
     xmlns = {
-        @javax.xml.bind.annotation.XmlNs(
+        @jakarta.xml.bind.annotation.XmlNs(
             prefix = "epp",
             namespaceURI = "urn:ietf:params:xml:ns:epp-1.0"),
-        @javax.xml.bind.annotation.XmlNs(
+        @jakarta.xml.bind.annotation.XmlNs(
             prefix = "eppcom",
             namespaceURI = "urn:ietf:params:xml:ns:eppcom-1.0"),
-        @javax.xml.bind.annotation.XmlNs(
+        @jakarta.xml.bind.annotation.XmlNs(
             prefix = "contact",
             namespaceURI = "urn:ietf:params:xml:ns:contact-1.0"),
-        @javax.xml.bind.annotation.XmlNs(
+        @jakarta.xml.bind.annotation.XmlNs(
             prefix = "domain",
             namespaceURI = "urn:ietf:params:xml:ns:domain-1.0"),
-        @javax.xml.bind.annotation.XmlNs(
+        @jakarta.xml.bind.annotation.XmlNs(
             prefix = "dsig",
             namespaceURI = "http://www.w3.org/2000/09/xmldsig#"),
-        @javax.xml.bind.annotation.XmlNs(
+        @jakarta.xml.bind.annotation.XmlNs(
             prefix = "fee06",
             namespaceURI = "urn:ietf:params:xml:ns:fee-0.6"),
-        @javax.xml.bind.annotation.XmlNs(
+        @jakarta.xml.bind.annotation.XmlNs(
             prefix = "fee11",
             namespaceURI = "urn:ietf:params:xml:ns:fee-0.11"),
-        @javax.xml.bind.annotation.XmlNs(
+        @jakarta.xml.bind.annotation.XmlNs(
             prefix = "fee12",
             namespaceURI = "urn:ietf:params:xml:ns:fee-0.12"),
-        @javax.xml.bind.annotation.XmlNs(
+        @jakarta.xml.bind.annotation.XmlNs(
             prefix = "host",
             namespaceURI = "urn:ietf:params:xml:ns:host-1.0"),
-        @javax.xml.bind.annotation.XmlNs(
+        @jakarta.xml.bind.annotation.XmlNs(
             prefix = "iirdea",
             namespaceURI = "urn:ietf:params:xml:ns:iirdea-1.0"),
-        @javax.xml.bind.annotation.XmlNs(
+        @jakarta.xml.bind.annotation.XmlNs(
             prefix = "launch",
             namespaceURI = "urn:ietf:params:xml:ns:launch-1.0"),
-        @javax.xml.bind.annotation.XmlNs(
+        @jakarta.xml.bind.annotation.XmlNs(
             prefix = "mark",
             namespaceURI = "urn:ietf:params:xml:ns:mark-1.0"),
-        @javax.xml.bind.annotation.XmlNs(
+        @jakarta.xml.bind.annotation.XmlNs(
             prefix = "rde",
             namespaceURI = "urn:ietf:params:xml:ns:rde-1.0"),
-        @javax.xml.bind.annotation.XmlNs(
+        @jakarta.xml.bind.annotation.XmlNs(
             prefix = "rdeContact",
             namespaceURI = "urn:ietf:params:xml:ns:rdeContact-1.0"),
-        @javax.xml.bind.annotation.XmlNs(
+        @jakarta.xml.bind.annotation.XmlNs(
             prefix = "rdeDomain",
             namespaceURI = "urn:ietf:params:xml:ns:rdeDomain-1.0"),
-        @javax.xml.bind.annotation.XmlNs(
+        @jakarta.xml.bind.annotation.XmlNs(
             prefix = "rdeEppParams",
             namespaceURI = "urn:ietf:params:xml:ns:rdeEppParams-1.0"),
-        @javax.xml.bind.annotation.XmlNs(
+        @jakarta.xml.bind.annotation.XmlNs(
             prefix = "rdeHeader",
             namespaceURI = "urn:ietf:params:xml:ns:rdeHeader-1.0"),
-        @javax.xml.bind.annotation.XmlNs(
+        @jakarta.xml.bind.annotation.XmlNs(
             prefix = "rdeHost",
             namespaceURI = "urn:ietf:params:xml:ns:rdeHost-1.0"),
-        @javax.xml.bind.annotation.XmlNs(
+        @jakarta.xml.bind.annotation.XmlNs(
             prefix = "rdeIDN",
             namespaceURI = "urn:ietf:params:xml:ns:rdeIDN-1.0"),
-        @javax.xml.bind.annotation.XmlNs(
+        @jakarta.xml.bind.annotation.XmlNs(
             prefix = "rdeNNDN",
             namespaceURI = "urn:ietf:params:xml:ns:rdeNNDN-1.0"),
-        @javax.xml.bind.annotation.XmlNs(
+        @jakarta.xml.bind.annotation.XmlNs(
             prefix = "rdeNotification",
             namespaceURI = "urn:ietf:params:xml:ns:rdeNotification-1.0"),
-        @javax.xml.bind.annotation.XmlNs(
+        @jakarta.xml.bind.annotation.XmlNs(
             prefix = "rdePolicy",
             namespaceURI = "urn:ietf:params:xml:ns:rdePolicy-1.0"),
-        @javax.xml.bind.annotation.XmlNs(
+        @jakarta.xml.bind.annotation.XmlNs(
             prefix = "rdeRegistrar",
             namespaceURI = "urn:ietf:params:xml:ns:rdeRegistrar-1.0"),
-        @javax.xml.bind.annotation.XmlNs(
+        @jakarta.xml.bind.annotation.XmlNs(
             prefix = "rdeReport",
             namespaceURI = "urn:ietf:params:xml:ns:rdeReport-1.0"),
-        @javax.xml.bind.annotation.XmlNs(
+        @jakarta.xml.bind.annotation.XmlNs(
             prefix = "rgp",
             namespaceURI = "urn:ietf:params:xml:ns:rgp-1.0"),
-        @javax.xml.bind.annotation.XmlNs(
+        @jakarta.xml.bind.annotation.XmlNs(
             prefix = "secDNS",
             namespaceURI = "urn:ietf:params:xml:ns:secDNS-1.1"),
-        @javax.xml.bind.annotation.XmlNs(
+        @jakarta.xml.bind.annotation.XmlNs(
             prefix = "smd",
             namespaceURI = "urn:ietf:params:xml:ns:signedMark-1.0"),
     })
 @XmlAccessorType(XmlAccessType.FIELD)
 package google.registry.xjc.@PACKAGE@;
 
-import javax.xml.bind.annotation.XmlAccessType;
-import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlNsForm;
-import javax.xml.bind.annotation.XmlSchema;
+import jakarta.xml.bind.annotation.XmlAccessType;
+import jakarta.xml.bind.annotation.XmlAccessorType;
+import jakarta.xml.bind.annotation.XmlNsForm;
+import jakarta.xml.bind.annotation.XmlSchema;

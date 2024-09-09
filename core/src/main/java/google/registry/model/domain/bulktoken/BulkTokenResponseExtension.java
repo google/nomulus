@@ -19,9 +19,9 @@ import google.registry.model.domain.token.AllocationToken;
 import google.registry.model.eppoutput.EppResponse.ResponseExtension;
 import google.registry.persistence.VKey;
 import google.registry.xml.TrimWhitespaceAdapter;
+import jakarta.xml.bind.annotation.XmlRootElement;
+import jakarta.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 import java.util.Optional;
-import javax.xml.bind.annotation.XmlRootElement;
-import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 
 /**
  * An XML data object that represents a bulk token extension that may be present on the response to

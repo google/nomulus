@@ -22,5 +22,5 @@ dependencies {
     implementation deps['com.google.code.findbugs:jsr305']
     implementation deps['com.google.guava:guava']
     implementation deps['com.squareup:javapoet']
-    implementation deps['javax.persistence:javax.persistence-api']
+    implementation deps['jakarta.persistence:jakarta.persistence-api']
 }

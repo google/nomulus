@@ -4,4 +4,8 @@
     white-space: break-spaces;
     padding: 20px;
   }
+  mat-form-field {
+    width: 100%;
+    max-width: 350px;
+  }
 }
