@@ -28,6 +28,9 @@
       "moduleLicense": "Apache License V2.0"
     },
     {
+      "moduleLicense": "Apache License Version 2.0"
+    },
+    {
       "moduleLicense": "Apache License, Version 2.0"
     },
     {
@@ -146,6 +149,9 @@
     },
     {
       "moduleLicense": "\\n                Dual license consisting of the CDDL v1.1 and GPL v2\\n            "
+    },
+    {
+      "moduleLicense": "EPL-2.0"
     },
     {
       "moduleLicense": "Eclipse Distribution License (New BSD License)"
@@ -353,11 +359,6 @@
       "moduleLicense": null,
       "moduleVersion": "4.8.0",
       "moduleName": "com.squareup.wire:wire-schema"
-    },
-    {
-      "moduleLicense": "Apache License Version 2.0",
-      "moduleVersion": "3.0.0.M2",
-      "moduleName": "io.apicurio:apicurio-registry-protobuf-schema-utilities"
     },
     {
       // "Apache License, Version 2.0". The plugin is able to parse up to

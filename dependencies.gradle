@@ -1,4 +1,4 @@
-// Copyright 2019 The Nomulus Authors. All Rights Reserved.
+/// Copyright 2019 The Nomulus Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -49,6 +49,10 @@ ext {
 
       // CAPPED VERSIONS START HERE.
 
+      // 2.0+ versions of jcommander have breaking changes that impact how
+      // collections are parsed.
+      'org.jcommander:jcommander:[1.83, 2.0)!!',
+
       // 6.6 is alpha.
       'org.hibernate.orm:hibernate-core:[6.0,6.6)!!',
       'org.hibernate.orm:hibernate-hikaricp:[6.0,6.6)!!',
@@ -67,8 +71,6 @@ ext {
       // OkHttp 5.0 is in alpha.
       'com.squareup.okhttp3:okhttp:[4.10.0, 5.0.0)!!',
 
-      'com.sun.xml.bind:jaxb-xjc:[4.0.5,)!!',
-
       // Dagger doesn't support the Jakarta namespace yet. Pre-2.0 Jakarta
       // Inject still use the old javax namespace.
       // TODO: Remove the cap when https://github.com/google/dagger/issues/2058
@@ -84,15 +86,8 @@ ext {
       // google-api-client major version 1.
       'com.google.apis:google-api-services-dns:[v1-rev20240419-2.0.0, v2beta)',
 
-      // Later versions of jcommander have breaking changes that we do not wish to pick up
-      'org.jcommander:jcommander:1.83',
-
       // DYNAMIC VERSIONS START HERE.
 
-      // There are breaking changes in the 4.x range of antlr so we need to make sure we don't
-      // pick up any older versions from transitive dependencies
-      'org.antlr:antlr4:[4.13.2,)',
-      'org.antlr:antlr4-runtime:[4.13.2,)',
       'args4j:args4j:[2.0.26,)',
       'com.fasterxml.jackson.core:jackson-databind:[2.11.2,)',
       'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:[2.17.2,)',
@@ -161,6 +156,7 @@ ext {
       'com.squareup:javapoet:[1.13.0,)',
       'com.sun.xml.bind:jaxb-impl:[4.0.5,)',
       'com.sun.xml.bind:jaxb-osgi:[4.0.5,)',
+      'com.sun.xml.bind:jaxb-xjc:[4.0.5,)',
       'com.zaxxer:HikariCP:[3.4.5,)',
       'commons-codec:commons-codec:[1.15,)',
       'dnsjava:dnsjava:[3.3.1,)',
@@ -174,6 +170,10 @@ ext {
       'jakarta.xml.bind:jakarta.xml.bind-api:[4.0.2,)',
       'joda-time:joda-time:[2.9.2,)',
       'junit:junit:[4.13,)',
+      // Antlr is not a direct dependency, but we need to ensure that the
+      // compile-time and runtime dependencies are compatible.
+      'org.antlr:antlr4:[4.13.2,)',
+      'org.antlr:antlr4-runtime:[4.13.2,)',
       'org.apache.avro:avro:[1.8.2,)',
       'org.apache.beam:beam-runners-core-construction-java:[2.37.0,)',
       'org.apache.beam:beam-runners-direct-java:[2.37.0,)',
