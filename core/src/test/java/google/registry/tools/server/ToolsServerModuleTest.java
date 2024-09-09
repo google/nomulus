@@ -15,9 +15,9 @@
 package google.registry.tools.server;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import google.registry.request.HttpException.BadRequestException;
 import jakarta.servlet.http.HttpServletRequest;
