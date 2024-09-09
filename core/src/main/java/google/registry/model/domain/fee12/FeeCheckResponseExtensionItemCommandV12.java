@@ -23,10 +23,10 @@ import google.registry.model.ImmutableObject;
 import google.registry.model.domain.Period;
 import google.registry.model.domain.fee.Fee;
 import google.registry.model.domain.fee.FeeQueryCommandExtensionItem.CommandName;
+import jakarta.xml.bind.annotation.XmlAttribute;
+import jakarta.xml.bind.annotation.XmlElement;
+import jakarta.xml.bind.annotation.XmlType;
 import java.util.List;
-import javax.xml.bind.annotation.XmlAttribute;
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlType;
 import org.joda.time.DateTime;
 
 /** The version 0.12 response command entity for a domain check on a single resource. */

@@ -41,7 +41,7 @@ tasks.register('copyConsole', Copy) {
         include "**/*"
     }
     into layout.buildDirectory.dir('jetty-base/webapps/console')
-    dependsOn(':console-webapp:buildConsoleWebappProd')
+    dependsOn(':console-webapp:buildConsoleWebapp')
 }
 
 tasks.register('stage') {

@@ -15,8 +15,8 @@
 package google.registry.model.mark;
 
 import google.registry.model.ImmutableObject;
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlTransient;
+import jakarta.xml.bind.annotation.XmlElement;
+import jakarta.xml.bind.annotation.XmlTransient;
 
 /**
  * Common fields shared amongst all mark contact subclasses.

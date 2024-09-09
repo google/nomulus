@@ -17,15 +17,15 @@ package google.registry.model.contact;
 import google.registry.model.EppResource;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.persistence.VKey;
+import jakarta.persistence.Access;
+import jakarta.persistence.AccessType;
+import jakarta.persistence.AttributeOverride;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Index;
+import jakarta.persistence.Table;
 import java.util.Optional;
 import javax.annotation.Nullable;
-import javax.persistence.Access;
-import javax.persistence.AccessType;
-import javax.persistence.AttributeOverride;
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Index;
-import javax.persistence.Table;
 
 /**
  * A persisted history entry representing an EPP modification to a contact.

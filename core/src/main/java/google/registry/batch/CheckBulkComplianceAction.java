@@ -103,10 +103,10 @@ public class CheckBulkComplianceAction implements Runnable {
       Long creates =
           (Long)
               tm().query(
-                      "SELECT COUNT(*) FROM DomainHistory WHERE current_package_token ="
+                      "SELECT COUNT(*) FROM DomainHistory WHERE resource.currentBulkToken ="
                           + " :token AND modificationTime >= :lastBilling AND type ="
                           + " 'DOMAIN_CREATE'")
-                  .setParameter("token", bulkPricingPackage.getToken().getKey().toString())
+                  .setParameter("token", bulkPricingPackage.getToken())
                   .setParameter(
                       "lastBilling", bulkPricingPackage.getNextBillingDate().minusYears(1))
                   .getSingleResult();

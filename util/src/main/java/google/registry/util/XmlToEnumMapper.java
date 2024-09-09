@@ -17,7 +17,7 @@ package google.registry.util;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 
 import com.google.common.collect.ImmutableMap;
-import javax.xml.bind.annotation.XmlEnumValue;
+import jakarta.xml.bind.annotation.XmlEnumValue;
 
 /** Efficient lookup from xml enums to java enums */
 public final class XmlToEnumMapper<T extends Enum<?>> {

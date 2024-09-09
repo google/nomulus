@@ -15,8 +15,8 @@
 package google.registry.model.domain.fee11;
 
 import google.registry.model.domain.fee.FeeTransformResponseExtension;
-import javax.xml.bind.annotation.XmlRootElement;
-import javax.xml.bind.annotation.XmlType;
+import jakarta.xml.bind.annotation.XmlRootElement;
+import jakarta.xml.bind.annotation.XmlType;
 
 /**
  * An XML data object that represents a fee extension that may be present on the response to EPP

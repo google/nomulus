@@ -59,7 +59,7 @@ import google.registry.reporting.billing.BillingModule;
 import google.registry.reporting.billing.CopyDetailReportsAction;
 import google.registry.reporting.billing.GenerateInvoicesAction;
 import google.registry.reporting.billing.PublishInvoicesAction;
-import google.registry.reporting.icann.DnsCountQueryCoordinatorModule;
+import google.registry.reporting.icann.DnsCountQueryCoordinator.DnsCountQueryCoordinatorModule;
 import google.registry.reporting.icann.IcannReportingModule;
 import google.registry.reporting.icann.IcannReportingStagingAction;
 import google.registry.reporting.icann.IcannReportingUploadAction;

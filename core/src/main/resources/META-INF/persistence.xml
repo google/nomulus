@@ -87,30 +87,10 @@
     <class>google.registry.model.domain.RegistryLock</class>
 
     <!-- Customized type converters -->
-    <class>google.registry.persistence.converter.AllocationTokenListConverter</class>
-    <class>google.registry.persistence.converter.AllocationTokenStatusTransitionConverter</class>
-    <class>google.registry.persistence.converter.BillingCostTransitionConverter</class>
-    <class>google.registry.persistence.converter.BillingEventFlagSetConverter</class>
     <class>google.registry.persistence.converter.BloomFilterConverter</class>
-    <class>google.registry.persistence.converter.CidrAddressBlockListConverter</class>
-    <class>google.registry.persistence.converter.CommandNameSetConverter</class>
-    <class>google.registry.persistence.converter.CurrencyToBillingConverter</class>
     <class>google.registry.persistence.converter.CurrencyUnitConverter</class>
     <class>google.registry.persistence.converter.DateTimeConverter</class>
-    <class>google.registry.persistence.converter.DurationConverter</class>
-    <class>google.registry.persistence.converter.FeatureFlagStatusConverter</class>
-    <class>google.registry.persistence.converter.IdnTableEnumSetConverter</class>
-    <class>google.registry.persistence.converter.InetAddressSetConverter</class>
     <class>google.registry.persistence.converter.LocalDateConverter</class>
-    <class>google.registry.persistence.converter.PostalInfoChoiceListConverter</class>
-    <class>google.registry.persistence.converter.RegistrarPocSetConverter</class>
-    <class>google.registry.persistence.converter.RegistrarToRoleConverter</class>
-    <class>google.registry.persistence.converter.Spec11ThreatMatchThreatTypeSetConverter</class>
-    <class>google.registry.persistence.converter.StatusValueSetConverter</class>
-    <class>google.registry.persistence.converter.StringListConverter</class>
-    <class>google.registry.persistence.converter.StringSetConverter</class>
-    <class>google.registry.persistence.converter.TldStateTransitionConverter</class>
-    <class>google.registry.persistence.converter.TransferServerApproveEntitySetConverter</class>
 
     <!-- Generated converters for VKey -->
     <class>google.registry.model.billing.VKeyConverter_BillingCancellation</class>

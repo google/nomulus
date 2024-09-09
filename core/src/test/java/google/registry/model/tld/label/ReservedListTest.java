@@ -65,7 +65,7 @@ class ReservedListTest {
         .and()
         .hasNoOtherValues();
     assertThat(reservedListProcessingTime)
-        .hasAnyValueForLabels("tld", "0", "(none)", "(none)")
+        .hasAnyValueForLabels("tld", "0")
         .and()
         .hasNoOtherValues();
     assertThat(reservedListHits).hasNoOtherValues();
@@ -130,11 +130,11 @@ class ReservedListTest {
         .and()
         .hasNoOtherValues();
     assertThat(reservedListProcessingTime)
-        .hasAnyValueForLabels("tld", "0", "(none)", "(none)")
+        .hasAnyValueForLabels("tld", "0")
         .and()
-        .hasAnyValueForLabels("tld", "1", "reserved1", FULLY_BLOCKED.toString())
+        .hasAnyValueForLabels("tld", "1")
         .and()
-        .hasAnyValueForLabels("tld", "1", "reserved2", FULLY_BLOCKED.toString())
+        .hasAnyValueForLabels("tld", "1")
         .and()
         .hasNoOtherValues();
     assertThat(reservedListHits)
@@ -182,9 +182,9 @@ class ReservedListTest {
         .and()
         .hasNoOtherValues();
     assertThat(reservedListProcessingTime)
-        .hasAnyValueForLabels("tld", "1", "reserved2", FULLY_BLOCKED.toString())
+        .hasAnyValueForLabels("tld", "1")
         .and()
-        .hasAnyValueForLabels("tld", "0", "(none)", "(none)")
+        .hasAnyValueForLabels("tld", "0")
         .and()
         .hasNoOtherValues();
     assertThat(reservedListHits)
@@ -209,9 +209,9 @@ class ReservedListTest {
         .and()
         .hasNoOtherValues();
     assertThat(reservedListProcessingTime)
-        .hasAnyValueForLabels("tld", "1", "reserved1", ALLOWED_IN_SUNRISE.toString())
+        .hasAnyValueForLabels("tld", "1")
         .and()
-        .hasAnyValueForLabels("tld", "2", "reserved2", FULLY_BLOCKED.toString())
+        .hasAnyValueForLabels("tld", "2")
         .and()
         .hasNoOtherValues();
     assertThat(reservedListHits)

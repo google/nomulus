@@ -50,8 +50,7 @@ class DomainLabelMetrics {
   }
 
   /**
-   * Labels attached to {@link #reservedListChecks} and {@link #reservedListProcessingTime}
-   * metrics.
+   * Labels attached to {@link #reservedListChecks} metrics.
    *
    * <p>A domain name can be matched by multiple reserved lists. To keep the metrics useful by
    * emitting only one metric result for each check, while avoiding potential combinatorial
@@ -67,21 +66,19 @@ class DomainLabelMetrics {
           LabelDescriptor.create("most_severe_reserved_list", "Reserved list name, if any."),
           LabelDescriptor.create("most_severe_reservation_type", "Type of reservation found."));
 
+  /** Labels attached to {@link #reservedListProcessingTime} metrics. */
+  private static final ImmutableSet<LabelDescriptor>
+      RESERVED_LIST_PROCESSING_TIME_LABEL_DESCRIPTORS =
+          ImmutableSet.of(
+              LabelDescriptor.create("tld", "TLD"),
+              LabelDescriptor.create("reserved_list_count", "Number of matching reserved lists."));
+
   /** Labels attached to {@link #reservedListHits} metric. */
   private static final ImmutableSet<LabelDescriptor> RESERVED_LIST_HIT_LABEL_DESCRIPTORS =
       ImmutableSet.of(
           LabelDescriptor.create("tld", "TLD"),
           LabelDescriptor.create("reserved_list", "Reserved list name."),
           LabelDescriptor.create("reservation_type", "Type of reservation found."));
-
-  /**
-   * Labels attached to {@link #premiumListChecks} and {@link #premiumListProcessingTime} metrics.
-   */
-  private static final ImmutableSet<LabelDescriptor> PREMIUM_LIST_LABEL_DESCRIPTORS =
-      ImmutableSet.of(
-          LabelDescriptor.create("tld", "TLD"),
-          LabelDescriptor.create("premium_list", "Premium list name."),
-          LabelDescriptor.create("outcome", "Outcome of the premium list check."));
 
   /** Metric counting the number of times a label was checked against all reserved lists. */
   @VisibleForTesting
@@ -101,7 +98,7 @@ class DomainLabelMetrics {
               "/domain_label/reserved/processing_time",
               "Reserved list check processing time",
               "milliseconds",
-              RESERVED_LIST_LABEL_DESCRIPTORS,
+              RESERVED_LIST_PROCESSING_TIME_LABEL_DESCRIPTORS,
               EventMetric.DEFAULT_FITTER);
 
   /**
@@ -123,28 +120,6 @@ class DomainLabelMetrics {
               "count",
               RESERVED_LIST_HIT_LABEL_DESCRIPTORS);
 
-
-  /** Metric recording the result of each premium list check. */
-  @VisibleForTesting
-  static final IncrementableMetric premiumListChecks =
-      MetricRegistryImpl.getDefault()
-          .newIncrementableMetric(
-              "/domain_label/premium/checks",
-              "Count of premium list checks",
-              "count",
-              PREMIUM_LIST_LABEL_DESCRIPTORS);
-
-  /** Metric recording the time required to process each premium list check. */
-  @VisibleForTesting
-  static final EventMetric premiumListProcessingTime =
-      MetricRegistryImpl.getDefault()
-          .newEventMetric(
-              "/domain_label/premium/processing_time",
-              "Premium list check processing time",
-              "milliseconds",
-              PREMIUM_LIST_LABEL_DESCRIPTORS,
-              EventMetric.DEFAULT_FITTER);
-
   /** Update all three reserved list metrics. */
   static void recordReservedListCheckOutcome(
       String tld, ImmutableSet<MetricsReservedListMatch> matches, double elapsedMillis) {
@@ -163,14 +138,6 @@ class DomainLabelMetrics {
         (matches.isEmpty() ? "(none)" : mostSevereMatch.reservationType()).toString();
     reservedListChecks.increment(
         tld, matchCount, mostSevereReservedList, mostSevereReservationType);
-    reservedListProcessingTime.record(
-        elapsedMillis, tld, matchCount, mostSevereReservedList, mostSevereReservationType);
-  }
-
-  /** Update both premium list metrics. */
-  static void recordPremiumListCheckOutcome(
-      String tld, String premiumList, PremiumListCheckOutcome outcome, double elapsedMillis) {
-    premiumListChecks.increment(tld, premiumList, outcome.name());
-    premiumListProcessingTime.record(elapsedMillis, tld, premiumList, outcome.name());
+    reservedListProcessingTime.record(elapsedMillis, tld, matchCount);
   }
 }

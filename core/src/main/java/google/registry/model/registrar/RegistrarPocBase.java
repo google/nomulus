@@ -35,16 +35,19 @@ import google.registry.model.JsonMapBuilder;
 import google.registry.model.Jsonifiable;
 import google.registry.model.UnsafeSerializable;
 import google.registry.util.PasswordUtils;
+import jakarta.persistence.Access;
+import jakarta.persistence.AccessType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Embeddable;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.Id;
+import jakarta.persistence.MappedSuperclass;
+import jakarta.persistence.Transient;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import javax.annotation.Nullable;
-import javax.persistence.Access;
-import javax.persistence.AccessType;
-import javax.persistence.Embeddable;
-import javax.persistence.Id;
-import javax.persistence.MappedSuperclass;
-import javax.persistence.Transient;
 
 /**
  * A contact for a Registrar. Note, equality, hashCode and comparable have been overridden to only
@@ -116,29 +119,38 @@ public class RegistrarPocBase extends ImmutableObject implements Jsonifiable, Un
    * Multiple types are used to associate the registrar contact with various mailing groups. This
    * data is internal to the registry.
    */
-  @Expose Set<Type> types;
+  @Enumerated(EnumType.STRING)
+  @Expose
+  Set<Type> types;
 
   /**
    * Whether this contact is publicly visible in WHOIS registrar query results as an Admin contact.
    */
-  @Expose boolean visibleInWhoisAsAdmin = false;
+  @Column(nullable = false)
+  @Expose
+  boolean visibleInWhoisAsAdmin = false;
 
   /**
    * Whether this contact is publicly visible in WHOIS registrar query results as a Technical
    * contact.
    */
-  @Expose boolean visibleInWhoisAsTech = false;
+  @Column(nullable = false)
+  @Expose
+  boolean visibleInWhoisAsTech = false;
 
   /**
    * Whether this contact's phone number and email address is publicly visible in WHOIS domain query
    * results as registrar abuse contact info.
    */
-  @Expose boolean visibleInDomainWhoisAsAbuse = false;
+  @Column(nullable = false)
+  @Expose
+  boolean visibleInDomainWhoisAsAbuse = false;
 
   /**
    * Whether the contact is allowed to set their registry lock password through the registrar
    * console. This will be set to false on contact creation and when the user sets a password.
    */
+  @Column(nullable = false)
   boolean allowedToSetRegistryLockPassword = false;
 
   /**

@@ -17,15 +17,10 @@ package google.registry.persistence.converter;
 import com.google.common.collect.ImmutableList;
 import java.io.Serializable;
 import java.math.BigDecimal;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.Objects;
-import javax.annotation.Nullable;
 import org.hibernate.HibernateException;
-import org.hibernate.engine.spi.SharedSessionContractImplementor;
-import org.hibernate.type.StandardBasicTypes;
-import org.hibernate.type.Type;
+import org.hibernate.engine.spi.SessionFactoryImplementor;
+import org.hibernate.metamodel.spi.ValueAccess;
 import org.hibernate.usertype.CompositeUserType;
 import org.joda.money.CurrencyUnit;
 import org.joda.money.Money;
@@ -43,63 +38,40 @@ import org.joda.money.Money;
  * each loaded BigDecimal, then calls the appropriate factory method for Money, which will adjust
  * the scale appropriately.
  *
- * <p>Although {@link CompositeUserType} is likely to suffer breaking change in Hibernate 6, it is
- * the only option. The suggested alternatives such as Hibernate component or Java Embeddable do not
- * work in this case. Hibernate component (our previous solution that is replaced by this class)
- * does not allow manipulation of the loaded amount objects. Java Embeddable is not applicable since
- * we do not own the Joda money classes.
+ * <p>Conversion of {@code Money} is automatic. See {@link
+ * google.registry.persistence.NomulusPostgreSQLDialect} for more information.
  *
  * <p>Usage:
  *
  * <pre>{@code
- * '@'Type(type = JodaMoneyType.TYPE_NAME)
- * '@'Columns(
- *   columns = {
- *     '@'Column(name = "cost_amount"),
- *     '@'Column(name = "cost_currency")
- *   }
- * )
+ * @AttributeOverride(
+ *     name = "amount",
+ *     // Override default (numeric(38,2)) to match real schema definition (numeric(19,2)).
+ *     column = @Column(name = "cost_currency", precision = 19, scale = 2))
+ * @AttributeOverride(name = "currency", column = @Column(name = "cost_currency"))
  * Money cost;
  * }</pre>
  */
-public class JodaMoneyType implements CompositeUserType {
+public class JodaMoneyType implements CompositeUserType<Money> {
 
-  public static final JodaMoneyType INSTANCE = new JodaMoneyType();
-
-  /** The name of this type registered with JPA. See the example in class doc. */
-  public static final String TYPE_NAME = "JodaMoney";
+  /** Maps {@link Money} fields to database columns. */
+  public static final class MoneyMapper {
+    BigDecimal amount;
+    String currency;
+  }
 
   // JPA property names that can be used in JPQL queries.
   private static final ImmutableList<String> JPA_PROPERTY_NAMES =
       ImmutableList.of("amount", "currency");
-  private static final ImmutableList<Type> PROPERTY_TYPES =
-      ImmutableList.of(StandardBasicTypes.BIG_DECIMAL, StandardBasicTypes.STRING);
   private static final int AMOUNT_ID = JPA_PROPERTY_NAMES.indexOf("amount");
   private static final int CURRENCY_ID = JPA_PROPERTY_NAMES.indexOf("currency");
 
   @Override
-  public String[] getPropertyNames() {
-    return JPA_PROPERTY_NAMES.toArray(new String[0]);
-  }
-
-  @Override
-  public Type[] getPropertyTypes() {
-    return PROPERTY_TYPES.toArray(new Type[0]);
-  }
-
-  @Override
-  public Object getPropertyValue(Object component, int property) throws HibernateException {
+  public Object getPropertyValue(Money money, int property) throws HibernateException {
     if (property >= JPA_PROPERTY_NAMES.size()) {
       throw new HibernateException("Property index too large: " + property);
     }
-    Money money = (Money) component;
     return property == AMOUNT_ID ? money.getAmount() : money.getCurrencyUnit().getCode();
-  }
-
-  @Override
-  public void setPropertyValue(Object component, int property, Object value)
-      throws HibernateException {
-    throw new HibernateException("Money is immutable");
   }
 
   @Override
@@ -108,55 +80,17 @@ public class JodaMoneyType implements CompositeUserType {
   }
 
   @Override
-  public boolean equals(Object x, Object y) throws HibernateException {
+  public boolean equals(Money x, Money y) {
     return Objects.equals(x, y);
   }
 
   @Override
-  public int hashCode(Object x) throws HibernateException {
+  public int hashCode(Money x) throws HibernateException {
     return Objects.hashCode(x);
   }
 
-  @Nullable
   @Override
-  public Object nullSafeGet(
-      ResultSet rs, String[] names, SharedSessionContractImplementor session, Object owner)
-      throws HibernateException, SQLException {
-    BigDecimal amount = StandardBasicTypes.BIG_DECIMAL.nullSafeGet(rs, names[AMOUNT_ID], session);
-    String currencyUnitString =
-        StandardBasicTypes.STRING.nullSafeGet(rs, names[CURRENCY_ID], session);
-    // It is allowable for a Money object to be null, but only if both the currency unit and the
-    // amount are null
-    if (amount == null && currencyUnitString == null) {
-      return null;
-    } else if (amount != null && currencyUnitString != null) {
-      // CurrencyUnit.of() throws an IllegalCurrencyException for unknown currency, which means the
-      // currency is valid if it returns a value
-      return Money.of(CurrencyUnit.of(currencyUnitString), amount.stripTrailingZeros());
-    } else {
-      throw new HibernateException(
-          String.format(
-              "Mismatching null state between currency '%s' and amount '%s'",
-              currencyUnitString, amount));
-    }
-  }
-
-  @Override
-  public void nullSafeSet(
-      PreparedStatement st, Object value, int index, SharedSessionContractImplementor session)
-      throws HibernateException, SQLException {
-    BigDecimal amount = value == null ? null : ((Money) value).getAmount();
-    String currencyUnit = value == null ? null : ((Money) value).getCurrencyUnit().getCode();
-
-    if ((amount == null && currencyUnit != null) || (amount != null && currencyUnit == null)) {
-      throw new HibernateException("Mismatching null state between currency and amount");
-    }
-    StandardBasicTypes.BIG_DECIMAL.nullSafeSet(st, amount, index, session);
-    StandardBasicTypes.STRING.nullSafeSet(st, currencyUnit, index + 1, session);
-  }
-
-  @Override
-  public Object deepCopy(Object value) throws HibernateException {
+  public Money deepCopy(Money value) throws HibernateException {
     return value;
   }
 
@@ -166,22 +100,37 @@ public class JodaMoneyType implements CompositeUserType {
   }
 
   @Override
-  public Serializable disassemble(Object value, SharedSessionContractImplementor session)
-      throws HibernateException {
-    return ((Money) value);
+  public Class<?> embeddable() {
+    return MoneyMapper.class;
   }
 
   @Override
-  public Object assemble(
-      Serializable cached, SharedSessionContractImplementor session, Object owner)
-      throws HibernateException {
-    return cached;
+  public Money instantiate(ValueAccess values, SessionFactoryImplementor sessionFactory) {
+    final String currency = values.getValue(CURRENCY_ID, String.class);
+    final BigDecimal amount = values.getValue(AMOUNT_ID, BigDecimal.class);
+    if (amount == null && currency == null) {
+      return null;
+    } else if (amount != null && currency != null) {
+      return Money.of(CurrencyUnit.of(currency), amount.stripTrailingZeros());
+    } else {
+      throw new HibernateException(
+          String.format(
+              "Mismatching null state between currency '%s' and amount '%s'", currency, amount));
+    }
   }
 
   @Override
-  public Object replace(
-      Object original, Object target, SharedSessionContractImplementor session, Object owner)
-      throws HibernateException {
+  public Serializable disassemble(Money value) throws HibernateException {
+    return value;
+  }
+
+  @Override
+  public Money assemble(Serializable cached, Object owner) throws HibernateException {
+    return (Money) cached;
+  }
+
+  @Override
+  public Money replace(Money original, Money target, Object owner) throws HibernateException {
     return original;
   }
 }
