@@ -51,6 +51,11 @@ import org.joda.time.Duration;
  *
  * <p>You may pass in a {@code batchSize} for the batched read of domains from the database. This is
  * recommended to be somewhere between 200 and 500. The default value is 250.
+ *
+ * <p>If {@code deletionTime} is passed in the request, this action will enqueue DNS publish tasks
+ * on all domains with a deletion time equal or greater than the value provided and there's no
+ * guaranteed that they will be active. {@code deletionTime} will be set at 0:00:00 UTC zone for the
+ * requested date.
  */
 @Action(
     service = Action.Service.TOOLS,
