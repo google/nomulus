@@ -39,6 +39,7 @@ import javax.inject.Inject;
 import javax.persistence.TypedQuery;
 import org.apache.arrow.util.VisibleForTesting;
 import org.apache.http.HttpStatus;
+import org.joda.time.DateTime;
 import org.joda.time.Duration;
 
 /**
@@ -80,17 +81,21 @@ public class RefreshDnsForAllDomainsAction implements Runnable {
 
   private final Random random;
 
+  private final DateTime deletionTime;
+
   @Inject
   RefreshDnsForAllDomainsAction(
       Response response,
       @Parameter(PARAM_TLDS) ImmutableSet<String> tlds,
       @Parameter(PARAM_BATCH_SIZE) Optional<Integer> batchSize,
       @Parameter("refreshQps") Optional<Integer> refreshQps,
+      @Parameter("deletionTime") Optional<DateTime> deletionTimeParam,
       Random random) {
     this.response = response;
     this.tlds = tlds;
     this.batchSize = batchSize.orElse(DEFAULT_BATCH_SIZE);
     this.refreshQps = refreshQps.orElse(DEFAULT_REFRESH_QPS);
+    this.deletionTime = deletionTimeParam.orElse(END_OF_TIME);
     this.random = random;
   }
 
@@ -118,10 +123,11 @@ public class RefreshDnsForAllDomainsAction implements Runnable {
   private Duration calculateSmear() {
     Long activeDomains =
         tm().query(
-                "SELECT COUNT(*) FROM Domain WHERE tld IN (:tlds) AND deletionTime = :endOfTime",
+                "SELECT COUNT(*) FROM Domain WHERE tld IN (:tlds) AND deletionTime >="
+                    + " :deletionTime",
                 Long.class)
             .setParameter("tlds", tlds)
-            .setParameter("endOfTime", END_OF_TIME)
+            .setParameter("deletionTime", deletionTime)
             .getSingleResult();
     return Duration.standardSeconds(Math.max(activeDomains / refreshQps, 1));
   }
@@ -130,12 +136,12 @@ public class RefreshDnsForAllDomainsAction implements Runnable {
     String sql =
         String.format(
             "SELECT domainName FROM Domain WHERE tld IN (:tlds) AND"
-                + " deletionTime = :endOfTime %s ORDER BY domainName ASC",
+                + " deletionTime >= :deletionTime %s ORDER BY domainName ASC",
             lastInPreviousBatch.isPresent() ? "AND domainName > :lastInPreviousBatch" : "");
     TypedQuery<String> query =
         tm().query(sql, String.class)
             .setParameter("tlds", tlds)
-            .setParameter("endOfTime", END_OF_TIME);
+            .setParameter("deletionTime", deletionTime);
     lastInPreviousBatch.ifPresent(l -> query.setParameter("lastInPreviousBatch", l));
     return query.setMaxResults(batchSize).getResultStream().collect(toImmutableList());
   }

@@ -15,6 +15,7 @@
 package google.registry.tools.server;
 
 import static com.google.common.base.Strings.emptyToNull;
+import static com.google.common.base.Strings.isNullOrEmpty;
 import static google.registry.request.RequestParameters.extractIntParameter;
 import static google.registry.request.RequestParameters.extractOptionalIntParameter;
 import static google.registry.request.RequestParameters.extractOptionalParameter;
@@ -22,10 +23,14 @@ import static google.registry.request.RequestParameters.extractRequiredParameter
 
 import dagger.Module;
 import dagger.Provides;
+import google.registry.request.HttpException.BadRequestException;
 import google.registry.request.Parameter;
 import google.registry.tools.server.UpdateUserGroupAction.Mode;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.Optional;
+import org.joda.time.DateTime;
+import org.joda.time.format.DateTimeFormat;
+import org.joda.time.format.DateTimeFormatter;
 
 /** Dagger module for the tools package. */
 @Module
@@ -73,6 +78,20 @@ public class ToolsServerModule {
   @Parameter("refreshQps")
   static Optional<Integer> provideRefreshQps(HttpServletRequest req) {
     return extractOptionalIntParameter(req, "refreshQps");
+  }
+
+  @Provides
+  @Parameter("deletionTime")
+  static Optional<DateTime> provideDeletionTime(HttpServletRequest req) {
+    DateTimeFormatter formatter = DateTimeFormat.forPattern("MM-dd-yyyy");
+    String stringParam = req.getParameter("deletionTime");
+    try {
+      return isNullOrEmpty(stringParam)
+          ? Optional.empty()
+          : Optional.of(formatter.parseDateTime(stringParam));
+    } catch (IllegalArgumentException e) {
+      throw new BadRequestException("Expected date in MM-dd-yyyy format, found: " + stringParam);
+    }
   }
 
   @Provides
