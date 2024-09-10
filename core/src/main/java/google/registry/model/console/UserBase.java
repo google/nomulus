@@ -25,15 +25,15 @@ import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 import google.registry.model.Buildable;
 import google.registry.model.UpdateAutoTimestampEntity;
 import google.registry.util.PasswordUtils;
+import jakarta.persistence.Access;
+import jakarta.persistence.AccessType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Embeddable;
+import jakarta.persistence.Id;
+import jakarta.persistence.MappedSuperclass;
+import jakarta.persistence.Transient;
 import java.util.Optional;
 import javax.annotation.Nullable;
-import javax.persistence.Access;
-import javax.persistence.AccessType;
-import javax.persistence.Column;
-import javax.persistence.Embeddable;
-import javax.persistence.Id;
-import javax.persistence.MappedSuperclass;
-import javax.persistence.Transient;
 
 /**
  * A console user, either a registry employee or a registrar partner.

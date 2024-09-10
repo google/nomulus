@@ -14,6 +14,7 @@
 
 package google.registry.storage.drive;
 
+import com.google.api.client.googleapis.json.GoogleJsonResponseException;
 import com.google.api.client.http.ByteArrayContent;
 import com.google.api.services.drive.Drive;
 import com.google.api.services.drive.Drive.Files;
@@ -21,6 +22,7 @@ import com.google.api.services.drive.model.File;
 import com.google.api.services.drive.model.FileList;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
+import com.google.common.flogger.FluentLogger;
 import com.google.common.net.MediaType;
 import java.io.IOException;
 import java.util.List;
@@ -29,6 +31,11 @@ import javax.inject.Inject;
 
 /** Class encapsulating parameters and state for accessing the Drive API. */
 public class DriveConnection {
+
+  private static final FluentLogger logger = FluentLogger.forEnclosingClass();
+
+  /** Number of times a request to Drive will be retried before propagating a failure. */
+  private static final int MAX_RETRIES = 10;
 
   private static final MediaType GOOGLE_FOLDER =
       MediaType.create("application", "vnd.google-apps.folder");
@@ -76,9 +83,9 @@ public class DriveConnection {
    * Creates a file with the given parent or updates the existing one if a file already exists with
    * that same name and parent.
    *
+   * @return the file id.
    * @throws IllegalStateException if multiple files with that name exist in the given folder.
    * @throws IOException if communication with Google Drive fails for any reason.
-   * @return the file id.
    */
   public String createOrUpdateFile(
       String name, MediaType mimeType, String parentFolderId, byte[] bytes) throws IOException {
@@ -126,6 +133,8 @@ public class DriveConnection {
    * @see <a href="https://developers.google.com/drive/web/search-parameters">The query format</a>
    */
   public List<String> listFiles(String parentFolderId, String query) throws IOException {
+    int failures = 0;
+    boolean latestRequestFailed;
     ImmutableList.Builder<String> result = new ImmutableList.Builder<>();
     Files.List req = drive.files().list();
     StringBuilder q = new StringBuilder(String.format("'%s' in parents", parentFolderId));
@@ -134,10 +143,27 @@ public class DriveConnection {
     }
     req.setQ(q.toString());
     do {
-      FileList files = req.execute();
-      files.getFiles().forEach(file -> result.add(file.getId()));
-      req.setPageToken(files.getNextPageToken());
-    } while (!Strings.isNullOrEmpty(req.getPageToken()));
+      try {
+        latestRequestFailed = false;
+        FileList files = req.execute();
+        files.getFiles().forEach(file -> result.add(file.getId()));
+        req.setPageToken(files.getNextPageToken());
+      } catch (GoogleJsonResponseException e) {
+        if (failures >= MAX_RETRIES) {
+          throw new RuntimeException(
+              String.format(
+                  "Max failures reached while attempting to list Drive files in folder %s with "
+                      + "query %s; failing permanently.",
+                  parentFolderId, query),
+              e);
+        }
+        latestRequestFailed = true;
+        logger.atWarning().withCause(e).log(
+            "Attempt: %d. Failed to list files from Drive. Folder: %s, query: %s.",
+            failures, parentFolderId, query);
+        failures++;
+      }
+    } while (!Strings.isNullOrEmpty(req.getPageToken()) || latestRequestFailed);
     return result.build();
   }
 

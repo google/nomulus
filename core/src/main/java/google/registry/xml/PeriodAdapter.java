@@ -16,8 +16,8 @@ package google.registry.xml;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
 
+import jakarta.xml.bind.annotation.adapters.XmlAdapter;
 import javax.annotation.Nullable;
-import javax.xml.bind.annotation.adapters.XmlAdapter;
 import org.joda.time.Period;
 
 /** Adapter to use Joda {@link Period} when marshalling XML. */

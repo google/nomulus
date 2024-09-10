@@ -18,18 +18,6 @@ steps:
          '-PmavenUrl=gcs://domain-registry-maven-repository/maven',
          '-PpluginsUrl=gcs://domain-registry-maven-repository/plugins'
   ]
-# Build Registry Console
-- name: 'gcr.io/${PROJECT_ID}/builder:latest'
-  # Set home for Gradle caches. Must be consistent with last step below
-  # and ./build_nomulus_for_env.sh
-  env: [ 'GRADLE_USER_HOME=/workspace/cloudbuild-caches' ]
-  entrypoint: /bin/bash
-  args:
-  - -c
-  - |
-    set -e
-    ./gradlew \
-      :console-webapp:buildConsoleWebappProd
 # Build and package the deployment files for each environment, and the tool
 # binary and image.
 - name: 'gcr.io/${PROJECT_ID}/builder:latest'
@@ -40,7 +28,7 @@ steps:
   args:
   - -c
   - |
-    for _env in tool alpha crash sandbox  production
+    for _env in tool alpha crash sandbox production
     do
       release/build_nomulus_for_env.sh $${_env} output
     done

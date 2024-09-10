@@ -14,7 +14,7 @@
 
 package google.registry.model.domain.fee;
 
-import javax.xml.bind.annotation.XmlTransient;
+import jakarta.xml.bind.annotation.XmlTransient;
 
 /**
  * Abstract class for individual fee extension items in Check responses. These are derived from the
