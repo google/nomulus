@@ -84,6 +84,13 @@ ext {
       // google-api-client major version 1.
       'com.google.apis:google-api-services-dns:[v1-rev20240419-2.0.0, v2beta)',
 
+      // Later versions of jcommander have breaking changes that we do not wish to pick up
+      'org.jcommander:jcommander:1.83',
+      // There are breaking changes in the 4.x range of antlr so we need to make sure we don't
+      // pick up any older versions from transitive dependencies
+      'org.antlr:antlr4:4.13.2',
+      'org.antlr:antlr4-runtime:4.13.2',
+
       // DYNAMIC VERSIONS START HERE.
 
       'args4j:args4j:[2.0.26,)',
@@ -196,7 +203,6 @@ ext {
       'org.hamcrest:hamcrest-core:[2.2,)',
       'org.hamcrest:hamcrest-library:[2.2,)',
       'org.hamcrest:hamcrest:[2.2,)',
-      'org.jcommander:jcommander:[1.83,)',
       'org.jline:jline:[3.0,)',
       'org.joda:joda-money:[1.0.1,)',
       'org.json:json:[20160810,)',
