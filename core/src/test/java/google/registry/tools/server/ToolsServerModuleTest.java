@@ -32,9 +32,9 @@ public class ToolsServerModuleTest {
 
   @Test
   void test_provideDeletionTime() throws Exception {
-    when(request.getParameter("deletionTime")).thenReturn("07-01-1991");
+    when(request.getParameter("deletionTime")).thenReturn("1991-07-01T00:00:00Z");
 
-    DateTime expected = DateTime.parse("1991-07-01T00:00:00");
+    DateTime expected = DateTime.parse("1991-07-01T00:00:00Z");
     Optional<DateTime> dateTimeParam = ToolsServerModule.provideDeletionTime(request);
 
     assertThat(dateTimeParam).isEqualTo(Optional.of(expected));
@@ -54,8 +54,6 @@ public class ToolsServerModuleTest {
     BadRequestException thrown =
         assertThrows(
             BadRequestException.class, () -> ToolsServerModule.provideDeletionTime(request));
-    assertThat(thrown)
-        .hasMessageThat()
-        .contains("Expected date in MM-dd-yyyy format, found: error404?");
+    assertThat(thrown).hasMessageThat().contains("Bad ISO 8601 timestamp: deletionTime");
   }
 }
