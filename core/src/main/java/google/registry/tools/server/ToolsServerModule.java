@@ -20,6 +20,7 @@ import static google.registry.request.RequestParameters.extractIntParameter;
 import static google.registry.request.RequestParameters.extractOptionalIntParameter;
 import static google.registry.request.RequestParameters.extractOptionalParameter;
 import static google.registry.request.RequestParameters.extractRequiredParameter;
+import static google.registry.request.RequestParameters.extractOptionalDatetimeParameter;
 
 import dagger.Module;
 import dagger.Provides;
@@ -83,15 +84,7 @@ public class ToolsServerModule {
   @Provides
   @Parameter("deletionTime")
   static Optional<DateTime> provideDeletionTime(HttpServletRequest req) {
-    DateTimeFormatter formatter = DateTimeFormat.forPattern("MM-dd-yyyy");
-    String stringParam = req.getParameter("deletionTime");
-    try {
-      return isNullOrEmpty(stringParam)
-          ? Optional.empty()
-          : Optional.of(formatter.parseDateTime(stringParam));
-    } catch (IllegalArgumentException e) {
-      throw new BadRequestException("Expected date in MM-dd-yyyy format, found: " + stringParam);
-    }
+    return extractOptionalDatetimeParameter(req, "deletionTime");
   }
 
   @Provides
