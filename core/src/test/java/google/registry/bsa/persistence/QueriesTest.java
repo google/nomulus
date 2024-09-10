@@ -15,9 +15,12 @@
 package google.registry.bsa.persistence;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
+import static com.google.common.collect.Iterables.getLast;
+import static com.google.common.collect.Iterables.getOnlyElement;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.bsa.BsaTransactions.bsaQuery;
 import static google.registry.bsa.persistence.Queries.batchReadBsaLabelText;
+import static google.registry.bsa.persistence.Queries.batchReadUnblockableDomains;
 import static google.registry.bsa.persistence.Queries.deleteBsaLabelByLabels;
 import static google.registry.bsa.persistence.Queries.queryBsaLabelByLabels;
 import static google.registry.bsa.persistence.Queries.queryBsaUnblockableDomainByLabels;
@@ -294,5 +297,16 @@ class QueriesTest {
         UnblockableDomain.of("label3", "tld2", UnblockableDomain.Reason.RESERVED));
     assertThat(bsaQuery(() -> queryMissedRegisteredUnblockables("tld2", fakeClock.nowUtc())))
         .containsExactly(new DomainLifeSpan("label3.tld2", time2, time2.plusHours(1)));
+  }
+
+  @Test
+  void batchReadUnblockables_multiBatch() {
+    ImmutableList<UnblockableDomain> firstBatch = batchReadUnblockableDomains(Optional.empty(), 3);
+    UnblockableDomain lastInFirstBatch = getLast(firstBatch);
+    assertThat(lastInFirstBatch.domainName()).isEqualTo("label2.page");
+    assertThat(
+            getOnlyElement(batchReadUnblockableDomains(Optional.of(lastInFirstBatch), 3))
+                .domainName())
+        .isEqualTo("label3.app");
   }
 }

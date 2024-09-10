@@ -34,6 +34,8 @@ LEFT JOIN BillingCancellation cr ON b.cancellationMatchingBillingEvent = cr.bill
 WHERE r.billingAccountMap IS NOT NULL
 AND r.type = 'REAL'
 AND t.invoicingEnabled IS TRUE
-AND b.billingTime BETWEEN CAST('%FIRST_TIMESTAMP_OF_MONTH%' AS timestamp) AND CAST('%LAST_TIMESTAMP_OF_MONTH%' AS timestamp)
+AND CAST(b.billingTime AS timestamp)
+    BETWEEN CAST('%FIRST_TIMESTAMP_OF_MONTH%' AS timestamp)
+    AND CAST('%LAST_TIMESTAMP_OF_MONTH%' AS timestamp)
 AND c.id IS NULL
 AND cr.id IS NULL

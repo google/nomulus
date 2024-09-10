@@ -37,17 +37,16 @@ task runConsoleWebappUnitTests(type: Exec) {
   args 'run', 'test'
 }
 
-task buildConsoleWebappNonProd(type: Exec) {
+task buildConsoleWebapp(type: Exec) {
   workingDir "${consoleDir}/"
   executable 'npm'
-  args 'run', 'build'
-}
-
-// Keeping the same as non prod for now before we figure out optimization we want to include
-task buildConsoleWebappProd(type: Exec) {
-  workingDir "${consoleDir}/"
-  executable 'npm'
-  args 'run', 'build'
+  def configuration = project.hasProperty('configuration') ?
+    project.getProperty('configuration') :
+    'production'
+  args 'run', "build", "--configuration=${configuration}"
+  doFirst {
+    println "Building console for environment: ${configuration}"
+  }
 }
 
 task applyFormatting(type: Exec) {
@@ -68,10 +67,10 @@ task deploy(type: Exec) {
   args 'app', 'deploy', "${projectParam}", '--quiet'
 }
 
-tasks.buildConsoleWebappProd.dependsOn(tasks.npmInstallDeps)
+tasks.buildConsoleWebapp.dependsOn(tasks.npmInstallDeps)
 tasks.runConsoleWebappUnitTests.dependsOn(tasks.npmInstallDeps)
 tasks.applyFormatting.dependsOn(tasks.npmInstallDeps)
 tasks.checkFormatting.dependsOn(tasks.npmInstallDeps)
 tasks.build.dependsOn(tasks.checkFormatting)
 tasks.build.dependsOn(tasks.runConsoleWebappUnitTests)
-tasks.deploy.dependsOn(tasks.buildConsoleWebappProd)
+tasks.deploy.dependsOn(tasks.buildConsoleWebapp)

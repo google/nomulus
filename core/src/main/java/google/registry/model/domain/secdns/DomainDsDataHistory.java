@@ -18,11 +18,11 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.reporting.HistoryEntry.HistoryEntryId;
-import javax.persistence.Access;
-import javax.persistence.AccessType;
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Id;
+import jakarta.persistence.Access;
+import jakarta.persistence.AccessType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
 
 /** Entity class to represent a historic {@link DomainDsData}. */
 @Entity

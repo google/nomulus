@@ -33,11 +33,11 @@ import google.registry.model.host.Host;
 import google.registry.model.host.HostHistory;
 import google.registry.persistence.VKey;
 import google.registry.persistence.transaction.CriteriaQueryBuilder;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaQuery;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Stream;
-import javax.persistence.criteria.CriteriaBuilder;
-import javax.persistence.criteria.CriteriaQuery;
 import org.joda.time.DateTime;
 
 /** Retrieves {@link HistoryEntry} descendants (e.g. {@link DomainHistory}). */

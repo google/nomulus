@@ -30,6 +30,7 @@ import static org.joda.money.CurrencyUnit.CAD;
 import static org.joda.money.CurrencyUnit.JPY;
 import static org.joda.money.CurrencyUnit.USD;
 
+import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -56,9 +57,11 @@ import java.io.Serial;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 import org.apache.beam.sdk.options.PipelineOptionsFactory;
 import org.apache.beam.sdk.testing.PAssert;
 import org.apache.beam.sdk.transforms.Create;
@@ -361,7 +364,9 @@ class InvoicingPipelineTest {
       WHERE r.billingAccountMap IS NOT NULL
       AND r.type = 'REAL'
       AND t.invoicingEnabled IS TRUE
-      AND b.billingTime BETWEEN CAST('2017-10-01' AS timestamp) AND CAST('2017-11-01' AS timestamp)
+      AND CAST(b.billingTime AS timestamp)
+          BETWEEN CAST('2017-10-01T00:00:00Z' AS timestamp)
+          AND CAST('2017-11-01T00:00:00Z' AS timestamp)
       AND c.id IS NULL
       AND cr.id IS NULL
       """);
@@ -603,6 +608,8 @@ class InvoicingPipelineTest {
           PCollection<google.registry.beam.billing.BillingEvent>,
           PCollection<google.registry.beam.billing.BillingEvent>> {
 
+    private static final Splitter FLAG_SPLITTER = Splitter.on(' ').omitEmptyStrings();
+
     @Serial private static final long serialVersionUID = 2695033474967615250L;
 
     @Override
@@ -628,8 +635,16 @@ class InvoicingPipelineTest {
                               billingEvent.years(),
                               billingEvent.currency(),
                               billingEvent.amount(),
-                              billingEvent.flags())))
+                              normalizeBillingEventFlags(billingEvent.flags()))))
           .setCoder(BillingEventCoder.ofNullable());
+    }
+
+    // Returns flags in sorted order for easy comparison.
+    private static String normalizeBillingEventFlags(String flags) {
+      return FLAG_SPLITTER
+          .splitToStream(flags)
+          .sorted(Comparator.<String>naturalOrder().reversed())
+          .collect(Collectors.joining(" "));
     }
   }
 }

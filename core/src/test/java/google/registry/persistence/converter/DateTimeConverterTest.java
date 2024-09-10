@@ -17,13 +17,15 @@ package google.registry.persistence.converter;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.insertInDb;
+import static java.time.ZoneOffset.UTC;
 
 import google.registry.model.ImmutableObject;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaUnitTestExtension;
-import java.sql.Timestamp;
-import javax.persistence.Entity;
-import javax.persistence.Id;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import java.time.Instant;
+import java.time.ZonedDateTime;
 import org.joda.time.DateTime;
 import org.joda.time.format.ISODateTimeFormat;
 import org.junit.jupiter.api.Test;
@@ -46,7 +48,7 @@ public class DateTimeConverterTest {
   @Test
   void convertToDatabaseColumn_convertsCorrectly() {
     DateTime dateTime = DateTime.parse("2019-09-01T01:01:01");
-    assertThat(converter.convertToDatabaseColumn(dateTime).getTime())
+    assertThat(converter.convertToDatabaseColumn(dateTime).toInstant().toEpochMilli())
         .isEqualTo(dateTime.getMillis());
   }
 
@@ -59,7 +61,10 @@ public class DateTimeConverterTest {
   void convertToEntityAttribute_convertsCorrectly() {
     DateTime dateTime = DateTime.parse("2019-09-01T01:01:01Z");
     long millis = dateTime.getMillis();
-    assertThat(converter.convertToEntityAttribute(new Timestamp(millis))).isEqualTo(dateTime);
+    assertThat(
+            converter.convertToEntityAttribute(
+                ZonedDateTime.ofInstant(Instant.ofEpochMilli(millis), UTC)))
+        .isEqualTo(dateTime);
   }
 
   static DateTime parseDateTime(String value) {
