@@ -32,7 +32,6 @@ import google.registry.batch.CloudTasksUtils;
 import google.registry.model.rde.RdeMode;
 import google.registry.rde.RdeStagingAction;
 import google.registry.request.Action.Service;
-import google.registry.tools.params.DateTimeParameter;
 import java.util.List;
 import java.util.stream.Collectors;
 import javax.inject.Inject;
@@ -54,8 +53,7 @@ final class GenerateEscrowDepositCommand implements Command {
   @Parameter(
       names = {"-w", "--watermark"},
       description = "Point-in-time timestamp(s) for which time the deposit should be generated",
-      required = true,
-      converter = DateTimeParameter.class)
+      required = true)
   private List<DateTime> watermarks;
 
   @Parameter(
@@ -85,6 +83,9 @@ final class GenerateEscrowDepositCommand implements Command {
 
   @Override
   public void run() {
+    if (watermarks.isEmpty()) {
+      throw new ParameterException("At least one watermark must be specified");
+    }
 
     if (tlds.isEmpty()) {
       throw new ParameterException("At least one TLD must be specified");

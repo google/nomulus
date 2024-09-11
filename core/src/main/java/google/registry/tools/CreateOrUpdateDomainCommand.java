@@ -43,7 +43,7 @@ abstract class CreateOrUpdateDomainCommand extends MutatingEppToolCommand {
   @Parameter(
       names = {"-n", "--nameservers"},
       description = "Comma-delimited list of nameservers, up to 13.",
-      converter = NameserversParameter.class,
+      listConverter = NameserversParameter.class,
       validateWith = NameserversParameter.class)
   Set<String> nameservers = new HashSet<>();
 

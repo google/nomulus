@@ -56,7 +56,6 @@ abstract class CreateOrUpdateBulkPricingPackageCommand extends MutatingCommand {
   @Nullable
   @Parameter(
       names = "--next_billing_date",
-      converter = DateTimeParameter.class,
       validateWith = DateTimeParameter.class,
       description =
           "The next date that the bulk pricing package should be billed for its annual fee")
