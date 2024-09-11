@@ -196,6 +196,8 @@ dependencies {
   implementation deps['jakarta.servlet:jakarta.servlet-api']
   implementation deps['jakarta.xml.bind:jakarta.xml.bind-api']
   implementation deps['joda-time:joda-time']
+  implementation deps['org.antlr:antlr4']
+  implementation deps['org.antlr:antlr4-runtime']
   implementation deps['org.apache.avro:avro']
   testImplementation deps['org.apache.beam:beam-runners-core-construction-java']
   testImplementation deps['org.apache.beam:beam-runners-direct-java']
