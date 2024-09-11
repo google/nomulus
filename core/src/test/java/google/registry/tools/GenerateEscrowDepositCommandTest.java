@@ -53,9 +53,9 @@ public class GenerateEscrowDepositCommandTest
 
   @Test
   void testCommand_emptyTld() {
-    IllegalArgumentException thrown =
+    ParameterException thrown =
         assertThrows(
-            IllegalArgumentException.class,
+            ParameterException.class,
             () ->
                 runCommand(
                     "--tld=",
@@ -63,7 +63,7 @@ public class GenerateEscrowDepositCommandTest
                     "--mode=thin",
                     "-r 42",
                     "-o test"));
-    assertThat(thrown).hasMessageThat().contains("Null or empty TLD specified");
+    assertThat(thrown).hasMessageThat().contains("At least one TLD must be specified");
   }
 
   @Test
@@ -94,11 +94,20 @@ public class GenerateEscrowDepositCommandTest
 
   @Test
   void testCommand_emptyWatermark() {
+    ParameterException thrown =
+        assertThrows(
+            ParameterException.class,
+            () -> runCommand("--tld=tld", "--watermark=", "--mode=full", "-r 42", "-o test"));
+    assertThat(thrown).hasMessageThat().contains("At least one watermark must be specified");
+  }
+
+  @Test
+  void testCommand_malformedWatermark() {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
-            () -> runCommand("--tld=tld", "--watermark=", "--mode=full", "-r 42", "-o test"));
-    assertThat(thrown).hasMessageThat().contains("Invalid format: \"\"");
+            () -> runCommand("--tld=tld", "--watermark=blah", "--mode=full", "-r 42", "-o test"));
+    assertThat(thrown).hasMessageThat().contains("Invalid format: \"blah\"");
   }
 
   @Test
