@@ -246,6 +246,13 @@ public class AllocationToken extends UpdateAutoTimestampEntity implements Builda
   @Columns(columns = {@Column(name = "renewalPriceAmount"), @Column(name = "renewalPriceCurrency")})
   Money renewalPrice;
 
+  /** A discount that allows to set promotional prices across different TLDs. */
+  @Nullable
+  @Type(type = JodaMoneyType.TYPE_NAME)
+  @Columns(
+      columns = {@Column(name = "discountPriceAmount"), @Column(name = "discountPriceCurrency")})
+  Money discountPrice;
+
   @Enumerated(EnumType.STRING)
   @Column(nullable = false)
   RegistrationBehavior registrationBehavior = RegistrationBehavior.DEFAULT;
@@ -293,6 +300,11 @@ public class AllocationToken extends UpdateAutoTimestampEntity implements Builda
   public double getDiscountFraction() {
     return discountFraction;
   }
+
+  public Money getDiscountPrice() {
+    return discountPrice;
+  }
+
 
   public boolean shouldDiscountPremiums() {
     return discountPremiums;
@@ -413,7 +425,8 @@ public class AllocationToken extends UpdateAutoTimestampEntity implements Builda
       }
       if (getInstance().registrationBehavior.equals(RegistrationBehavior.NONPREMIUM_CREATE)) {
         checkArgument(
-            getInstance().discountFraction == 0.0,
+            getInstance().discountFraction == 0.0
+                && getInstance().discountPrice.getAmount().doubleValue() == 0.0,
             "NONPREMIUM_CREATE tokens cannot apply a discount");
         checkArgumentNotNull(
             getInstance().domainName, "NONPREMIUM_CREATE tokens must be tied to a domain");
@@ -448,6 +461,18 @@ public class AllocationToken extends UpdateAutoTimestampEntity implements Builda
             getInstance().allowedClientIds != null && getInstance().allowedClientIds.size() == 1,
             "BULK_PRICING tokens must have exactly one allowed client registrar");
       }
+
+      if(getInstance().discountFraction != 0.0) {
+        checkArgument( getInstance().discountPrice.getAmount().doubleValue()
+                == 0.0,
+            "discountFraction and discountPrice can't be set together/");
+
+      }
+
+      checkArgument(
+          getInstance().discountFraction != 0 && getInstance().discountPrice.getAmount().doubleValue()
+                  != 0),
+          "discountFraction and discount can't be specified together");
 
       if (getInstance().domainName != null) {
         try {
