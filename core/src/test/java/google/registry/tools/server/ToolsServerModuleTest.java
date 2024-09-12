@@ -32,7 +32,7 @@ public class ToolsServerModuleTest {
 
   @Test
   void test_provideDeletionTime() throws Exception {
-    when(request.getParameter("deletionTime")).thenReturn("1991-07-01T00:00:00Z");
+    when(request.getParameter("activeOrDeletedSince")).thenReturn("1991-07-01T00:00:00Z");
 
     DateTime expected = DateTime.parse("1991-07-01T00:00:00Z");
     Optional<DateTime> dateTimeParam = ToolsServerModule.provideDeletionTime(request);
@@ -42,18 +42,18 @@ public class ToolsServerModuleTest {
 
   @Test
   void test_doesNotprovideDeletionTimeOnEmptyParam() throws Exception {
-    when(request.getParameter("deletionTime")).thenReturn("");
+    when(request.getParameter("activeOrDeletedSince")).thenReturn("");
 
     assertThat(ToolsServerModule.provideDeletionTime(request)).isEqualTo(Optional.empty());
   }
 
   @Test
   void test_provideDeletionTime_incorrectDateFormat_throwsBadRequestException() throws Exception {
-    when(request.getParameter("deletionTime")).thenReturn("error404?");
+    when(request.getParameter("activeOrDeletedSince")).thenReturn("error404?");
 
     BadRequestException thrown =
         assertThrows(
             BadRequestException.class, () -> ToolsServerModule.provideDeletionTime(request));
-    assertThat(thrown).hasMessageThat().contains("Bad ISO 8601 timestamp: deletionTime");
+    assertThat(thrown).hasMessageThat().contains("Bad ISO 8601 timestamp: activeOrDeletedSince");
   }
 }
