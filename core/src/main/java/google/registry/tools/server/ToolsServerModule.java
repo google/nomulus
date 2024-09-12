@@ -78,9 +78,9 @@ public class ToolsServerModule {
   }
 
   @Provides
-  @Parameter("deletionTime")
+  @Parameter("activeOrDeletedSince")
   static Optional<DateTime> provideDeletionTime(HttpServletRequest req) {
-    return extractOptionalDatetimeParameter(req, "deletionTime");
+    return extractOptionalDatetimeParameter(req, "activeOrDeletedSince");
   }
 
   @Provides

@@ -109,7 +109,7 @@ public class RefreshDnsForAllDomainsActionTest {
   }
 
   @Test
-  void test_runAction_refreshesDeletedDomain_whenDeletionTimeIsProvided() throws Exception {
+  void test_runAction_refreshesDeletedDomain_whenActiveOrDeletedSinceIsProvided() throws Exception {
     action =
         new RefreshDnsForAllDomainsAction(
             response,
