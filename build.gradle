@@ -275,6 +275,11 @@ subprojects {
           attributes 'Main-Class': mainClass
         }
       }
+      // Build as a multi-release jar since we've got member jars (e.g., dnsjava
+      // and snakeyaml) that are multi-release.
+      manifest {
+        attributes 'Multi-Release': true
+      }
       zip64 = true
       archiveClassifier = ''
       archiveVersion = ''
