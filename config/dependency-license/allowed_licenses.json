@@ -28,6 +28,9 @@
       "moduleLicense": "Apache License V2.0"
     },
     {
+      "moduleLicense": "Apache License Version 2.0"
+    },
+    {
       "moduleLicense": "Apache License, Version 2.0"
     },
     {
@@ -103,6 +106,12 @@
       "moduleLicense": "BSD-2-Clause"
     },
     {
+      "moduleLicense": "BSD 3-Clause \"New\" or \"Revised\" License (BSD-3-Clause)"
+    },
+    {
+      "moduleLicense": "BSD licence"
+    },
+    {
       "moduleLicense": "New BSD License"
     },
     {
@@ -140,6 +149,9 @@
     },
     {
       "moduleLicense": "\\n                Dual license consisting of the CDDL v1.1 and GPL v2\\n            "
+    },
+    {
+      "moduleLicense": "EPL-2.0"
     },
     {
       "moduleLicense": "Eclipse Distribution License (New BSD License)"
@@ -191,6 +203,9 @@
     },
     {
       "moduleLicense": "GNU GENERAL PUBLIC LICENSE, Version 2 + Classpath Exception"
+    },
+    {
+      "moduleLicense": "(GPL-2.0-only WITH Classpath-exception-2.0)"
     },
     {
       "moduleLicense": "GNU Library General Public License v2.1 or later"
@@ -266,6 +281,9 @@
       "moduleLicense": "Unicode-3.0"
     },
     {
+      "moduleLicense": "The W3C Software License"
+    },
+    {
       "moduleLicense": "Public Domain",
       "moduleName": "aopalliance:aopalliance"
     },
@@ -278,17 +296,17 @@
       "moduleName": "org.json:json"
     },
     {
-      // "Apache License, Version 2.0".
-      "moduleLicense": null,
-      "moduleVersion": "2.10.0",
-      "moduleName": "com.google.gwt:gwt-user"
-    },
-    {
       // "Apache License, Version 2.0". The plugin is able to parse up to
       // 2.11.3 correctly but then something changed with 2.12.* and it no
       // longer parses correctly, even though it's still Apache 2.0.
       "moduleLicense": null,
       "moduleName": "com.fasterxml.jackson:jackson-bom"
+    },
+    {
+      // "Apache License, Version 2.0".
+      "moduleLicense": null,
+      "moduleVersion": "26.26.0",
+      "moduleName": "com.google.cloud:libraries-bom"
     },
     {
       // Part of Guava with "Apache License, Version 2.0". The plugin is unable
@@ -297,19 +315,10 @@
       "moduleName": "com.google.guava:guava-parent"
     },
     {
-      // "Apache License, Version 2.0". The plugin is able to parse up to
-      // 2.0.33.Final but not this verson.
+      // "Apache License, Version 2.0".
       "moduleLicense": null,
-      "moduleVersion": "2.0.46.Final",
-      "moduleName": "io.netty:netty-tcnative-classes"
-    },
-    {
-      // Actually Eclipse Public License v2.0
-      "moduleLicense": null,
-      "moduleName": "org.junit:junit-bom"
-    },
-    {
-      "moduleLicense": "The W3C Software License"
+      "moduleVersion": "2.10.0",
+      "moduleName": "com.google.gwt:gwt-user"
     },
     {
       // "Apache License, Version 2.0".
@@ -319,15 +328,13 @@
     {
       // "Apache License, Version 2.0".
       "moduleLicense": null,
+      "moduleVersion": "1.15.1",
+      "moduleName": "com.squareup:kotlinpoet"
+    },
+    {
+      // "Apache License, Version 2.0".
+      "moduleLicense": null,
       "moduleName": "com.squareup.okio:okio"
-    },
-    {
-      "moduleLicense": "(GPL-2.0-only WITH Classpath-exception-2.0)",
-      "moduleName": "io.github.eisop:dataflow-errorprone"
-    },
-    {
-      "moduleLicense": "GNU General Public License, version 2 (GPL2), with the classpath exception",
-      "moduleName": "io.github.eisop:dataflow-errorprone"
     },
     {
       // "Apache License, Version 2.0".
@@ -354,15 +361,28 @@
       "moduleName": "com.squareup.wire:wire-schema"
     },
     {
-      // "Apache License, Version 2.0".
+      // "Apache License, Version 2.0". The plugin is able to parse up to
+      // 2.0.33.Final but not this verson.
       "moduleLicense": null,
-      "moduleVersion": "1.15.1",
-      "moduleName": "com.squareup:kotlinpoet"
+      "moduleVersion": "2.0.46.Final",
+      "moduleName": "io.netty:netty-tcnative-classes"
+    },
+    // "Apache License, Version 2.0".
+    {
+      "moduleLicense": null,
+      "moduleVersion": "1.33.0",
+      "moduleName": "io.opentelemetry:opentelemetry-bom"
     },
     {
-      "moduleLicense": "Apache License Version 2.0",
-      "moduleVersion": "3.0.0.M2",
-      "moduleName": "io.apicurio:apicurio-registry-protobuf-schema-utilities"
+      // "Apache License, Version 2.0".
+      "moduleLicense": null,
+      "moduleVersion": "1.4",
+      "moduleName": "jakarta-regexp:jakarta-regexp"
+    },
+    {
+      // Actually Eclipse Public License v2.0
+      "moduleLicense": null,
+      "moduleName": "org.junit:junit-bom"
     },
     {
       // "Apache License, Version 2.0".
@@ -393,12 +413,6 @@
       "moduleLicense": null,
       "moduleVersion": "1.0.1",
       "moduleName": "org.jetbrains.kotlinx:kotlinx-serialization-core"
-    },
-    {
-      // "Apache License, Version 2.0".
-      "moduleLicense": null,
-      "moduleVersion": "1.4",
-      "moduleName": "jakarta-regexp:jakarta-regexp"
     }
   ]
 }

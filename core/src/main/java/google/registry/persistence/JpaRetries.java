@@ -15,9 +15,9 @@
 package google.registry.persistence;
 
 import com.google.common.collect.ImmutableSet;
+import jakarta.persistence.OptimisticLockException;
 import java.sql.SQLException;
 import java.util.function.Predicate;
-import javax.persistence.OptimisticLockException;
 
 /** Helpers for identifying retriable database operations. */
 public final class JpaRetries {

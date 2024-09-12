@@ -15,8 +15,8 @@
 package google.registry.model.domain;
 
 import google.registry.model.ImmutableObject;
-import javax.xml.bind.annotation.XmlAttribute;
-import javax.xml.bind.annotation.XmlValue;
+import jakarta.xml.bind.annotation.XmlAttribute;
+import jakarta.xml.bind.annotation.XmlValue;
 
 /**
  * EPP-XML-serializable equivalent of {@link DesignatedContact}.

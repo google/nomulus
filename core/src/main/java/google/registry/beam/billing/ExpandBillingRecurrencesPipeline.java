@@ -53,7 +53,6 @@ import google.registry.persistence.PersistenceModule.TransactionIsolationLevel;
 import google.registry.util.Clock;
 import google.registry.util.SystemClock;
 import java.io.Serializable;
-import java.math.BigInteger;
 import java.util.Optional;
 import java.util.Set;
 import javax.inject.Singleton;
@@ -202,7 +201,7 @@ public class ExpandBillingRecurrencesPipeline implements Serializable {
                     "oneYearAgo",
                     endTime.minusYears(1)),
                 true,
-                (BigInteger id) -> {
+                (Long id) -> {
                   recurrencesInScopeCounter.inc();
                   // Note that because all elements are mapped to the same dummy key, the next
                   // batching transform will effectively be serial. This however does not matter for

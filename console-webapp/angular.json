@@ -63,6 +63,39 @@
               ],
               "outputHashing": "all"
             },
+            "sandbox": {
+              "budgets": [
+                {
+                  "type": "initial",
+                  "maximumWarning": "2mb",
+                  "maximumError": "5mb"
+                },
+                {
+                  "type": "anyComponentStyle",
+                  "maximumWarning": "2kb",
+                  "maximumError": "4kb"
+                }
+              ],
+              "fileReplacements": [
+                {
+                  "replace": "src/environments/environment.ts",
+                  "with": "src/environments/environment.sandbox.ts"
+                }
+              ],
+              "outputHashing": "all"
+            },
+            "crash": {
+              "optimization": false,
+              "extractLicenses": false,
+              "sourceMap": true,
+              "namedChunks": true
+            },
+            "alpha": {
+              "optimization": false,
+              "extractLicenses": false,
+              "sourceMap": true,
+              "namedChunks": true
+            },
             "development": {
               "optimization": false,
               "extractLicenses": false,
@@ -77,6 +110,15 @@
           "configurations": {
             "production": {
               "buildTarget": "console-webapp:build:production"
+            },
+            "alpha": {
+              "buildTarget": "console-webapp:build:alpha"
+            },
+            "crash": {
+              "buildTarget": "console-webapp:build:crash"
+            },
+            "sandbox": {
+              "buildTarget": "console-webapp:build:sandbox"
             },
             "development": {
               "buildTarget": "console-webapp:build:development"

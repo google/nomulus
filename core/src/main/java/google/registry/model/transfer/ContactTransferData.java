@@ -14,7 +14,7 @@
 
 package google.registry.model.transfer;
 
-import javax.persistence.Embeddable;
+import jakarta.persistence.Embeddable;
 
 /** Transfer data for contact. */
 @Embeddable
