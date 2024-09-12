@@ -305,7 +305,6 @@ public class AllocationToken extends UpdateAutoTimestampEntity implements Builda
     return discountPrice;
   }
 
-
   public boolean shouldDiscountPremiums() {
     return discountPremiums;
   }
@@ -462,17 +461,11 @@ public class AllocationToken extends UpdateAutoTimestampEntity implements Builda
             "BULK_PRICING tokens must have exactly one allowed client registrar");
       }
 
-      if(getInstance().discountFraction != 0.0) {
-        checkArgument( getInstance().discountPrice.getAmount().doubleValue()
-                == 0.0,
+      if (getInstance().discountFraction != 0.0) {
+        checkArgument(
+            getInstance().discountPrice == null,
             "discountFraction and discountPrice can't be set together/");
-
       }
-
-      checkArgument(
-          getInstance().discountFraction != 0 && getInstance().discountPrice.getAmount().doubleValue()
-                  != 0),
-          "discountFraction and discount can't be specified together");
 
       if (getInstance().domainName != null) {
         try {
