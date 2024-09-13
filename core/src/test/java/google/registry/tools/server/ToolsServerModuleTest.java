@@ -15,139 +15,45 @@
 package google.registry.tools.server;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.persistence.transaction.QueryComposer.Comparator.EQ;
-import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.testing.DatabaseHelper.assertDnsRequestsWithRequestTime;
-import static google.registry.testing.DatabaseHelper.assertDomainDnsRequestWithRequestTime;
-import static google.registry.testing.DatabaseHelper.assertNoDnsRequestsExcept;
-import static google.registry.testing.DatabaseHelper.createTld;
-import static google.registry.testing.DatabaseHelper.persistActiveDomain;
-import static google.registry.testing.DatabaseHelper.persistDeletedDomain;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
-import google.registry.dns.DnsUtils;
-import google.registry.model.common.DnsRefreshRequest;
-import google.registry.persistence.transaction.JpaTestExtensions;
-import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
-import google.registry.testing.FakeClock;
-import google.registry.testing.FakeResponse;
+import google.registry.request.HttpException.BadRequestException;
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.Optional;
-import java.util.Random;
 import org.joda.time.DateTime;
-import org.joda.time.Duration;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.RegisterExtension;
 
-/** Unit tests for {@link RefreshDnsForAllDomainsAction}. */
-public class RefreshDnsForAllDomainsActionTest {
+/** Unit tests for {@link ToolsServerModule}. */
+public class ToolsServerModuleTest {
 
-  private final FakeClock clock = new FakeClock(DateTime.parse("2020-02-02T02:02:02Z"));
-  private RefreshDnsForAllDomainsAction action;
-  private final FakeResponse response = new FakeResponse();
+  private final HttpServletRequest request = mock(HttpServletRequest.class);
 
-  @RegisterExtension
-  final JpaIntegrationTestExtension jpa =
-      new JpaTestExtensions.Builder().withClock(clock).buildIntegrationTestExtension();
+  @Test
+  void test_provideDeletionTime() throws Exception {
+    when(request.getParameter("activeOrDeletedSince")).thenReturn("1991-07-01T00:00:00Z");
 
-  @BeforeEach
-  void beforeEach() {
-    createTld("bar");
-    action =
-        new RefreshDnsForAllDomainsAction(
-            response,
-            ImmutableSet.of("bar"),
-            Optional.of(10),
-            Optional.empty(),
-            Optional.empty(),
-            new Random());
+    DateTime expected = DateTime.parse("1991-07-01T00:00:00Z");
+    Optional<DateTime> dateTimeParam = ToolsServerModule.provideDeletionTime(request);
+
+    assertThat(dateTimeParam).isEqualTo(Optional.of(expected));
   }
 
   @Test
-  void test_runAction_successfullyEnqueuesDnsRefreshes() throws Exception {
-    persistActiveDomain("foo.bar");
-    persistActiveDomain("low.bar");
-    action.run();
-    assertDomainDnsRequestWithRequestTime("foo.bar", clock.nowUtc());
-    assertDomainDnsRequestWithRequestTime("low.bar", clock.nowUtc());
+  void test_doesNotprovideDeletionTimeOnEmptyParam() throws Exception {
+    when(request.getParameter("activeOrDeletedSince")).thenReturn("");
+
+    assertThat(ToolsServerModule.provideDeletionTime(request)).isEqualTo(Optional.empty());
   }
 
   @Test
-  void test_runAction_smearsOutDnsRefreshes() throws Exception {
-    persistActiveDomain("foo.bar");
-    persistActiveDomain("low.bar");
-    // Set batch size to 1 since each batch will be enqueud at the same time
-    action =
-        new RefreshDnsForAllDomainsAction(
-            response,
-            ImmutableSet.of("bar"),
-            Optional.of(1),
-            Optional.of(7),
-            Optional.empty(),
-            new Random());
-    tm().transact(() -> action.refreshBatch(Optional.empty(), Duration.standardMinutes(1000)));
-    tm().transact(() -> action.refreshBatch(Optional.empty(), Duration.standardMinutes(1000)));
-    ImmutableList<DnsRefreshRequest> refreshRequests =
-        tm().transact(
-                () ->
-                    tm().createQueryComposer(DnsRefreshRequest.class)
-                        .where("type", EQ, DnsUtils.TargetType.DOMAIN)
-                        .list());
-    assertThat(refreshRequests.size()).isEqualTo(2);
-    assertThat(refreshRequests.get(0).getRequestTime())
-        .isNotEqualTo(refreshRequests.get(1).getRequestTime());
-  }
+  void test_provideDeletionTime_incorrectDateFormat_throwsBadRequestException() throws Exception {
+    when(request.getParameter("activeOrDeletedSince")).thenReturn("error404?");
 
-  @Test
-  void test_runAction_doesntRefreshDeletedDomain() throws Exception {
-    persistActiveDomain("foo.bar");
-    persistDeletedDomain("deleted.bar", clock.nowUtc().minusYears(1));
-    action.run();
-    assertDomainDnsRequestWithRequestTime("foo.bar", clock.nowUtc());
-    assertNoDnsRequestsExcept("foo.bar");
-  }
-
-  @Test
-  void test_runAction_refreshesDeletedDomain_whenActiveOrDeletedSinceIsProvided() throws Exception {
-    action =
-        new RefreshDnsForAllDomainsAction(
-            response,
-            ImmutableSet.of("bar"),
-            Optional.of(1),
-            Optional.of(7),
-            Optional.of(clock.nowUtc().minusYears(3)),
-            new Random());
-    persistActiveDomain("foo.bar");
-    persistDeletedDomain("deleted1.bar", clock.nowUtc().minusYears(1));
-    persistDeletedDomain("deleted3.bar", clock.nowUtc().minusYears(3));
-    persistDeletedDomain("deleted5.bar", clock.nowUtc().minusYears(5));
-    action.run();
-    assertDomainDnsRequestWithRequestTime("foo.bar", clock.nowUtc());
-    assertDomainDnsRequestWithRequestTime("deleted1.bar", clock.nowUtc());
-    assertDomainDnsRequestWithRequestTime("deleted3.bar", clock.nowUtc());
-
-    assertNoDnsRequestsExcept("foo.bar", "deleted1.bar", "deleted3.bar");
-  }
-
-  @Test
-  void test_runAction_ignoresDomainsOnOtherTlds() throws Exception {
-    createTld("baz");
-    persistActiveDomain("foo.bar");
-    persistActiveDomain("low.bar");
-    persistActiveDomain("ignore.baz");
-    action.run();
-    assertDomainDnsRequestWithRequestTime("foo.bar", clock.nowUtc());
-    assertDomainDnsRequestWithRequestTime("low.bar", clock.nowUtc());
-    assertNoDnsRequestsExcept("foo.bar", "low.bar");
-  }
-
-  @Test
-  void test_successfullyBatchesNames() {
-    for (int i = 0; i <= 10; i++) {
-      persistActiveDomain(String.format("test%s.bar", i));
-    }
-    action.run();
-    assertDnsRequestsWithRequestTime(clock.nowUtc(), 11);
+    BadRequestException thrown =
+        assertThrows(
+            BadRequestException.class, () -> ToolsServerModule.provideDeletionTime(request));
+    assertThat(thrown).hasMessageThat().contains("Bad ISO 8601 timestamp: activeOrDeletedSince");
   }
 }
