@@ -30,7 +30,6 @@ import google.registry.util.Clock;
 import google.registry.util.RegistryEnvironment;
 import google.registry.util.StringGenerator;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import javax.inject.Inject;
@@ -52,7 +51,7 @@ final class SetupOteCommand extends ConfirmingCommand {
       names = {"-a", "--ip_allow_list"},
       description = "Comma-separated list of IP addresses or CIDR ranges.",
       required = true)
-  private List<String> ipAllowList = new ArrayList<>();
+  private List<String> ipAllowList;
 
   @Parameter(
       names = {"--email"},

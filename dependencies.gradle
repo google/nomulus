@@ -49,10 +49,6 @@ ext {
 
       // CAPPED VERSIONS START HERE.
 
-      // 2.0+ versions of jcommander have breaking changes that impact how
-      // collections are parsed.
-      'org.jcommander:jcommander:[1.83, 2.0)!!',
-
       // 6.6 is alpha.
       'org.hibernate.orm:hibernate-core:[6.0,6.6)!!',
       'org.hibernate.orm:hibernate-hikaricp:[6.0,6.6)!!',
@@ -202,6 +198,7 @@ ext {
       'org.hamcrest:hamcrest-core:[2.2,)',
       'org.hamcrest:hamcrest-library:[2.2,)',
       'org.hamcrest:hamcrest:[2.2,)',
+      'org.jcommander:jcommander:[2.0,)',
       'org.jline:jline:[3.0,)',
       'org.joda:joda-money:[1.0.1,)',
       'org.json:json:[20160810,)',

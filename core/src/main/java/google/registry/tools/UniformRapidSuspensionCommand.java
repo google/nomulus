@@ -73,7 +73,7 @@ final class UniformRapidSuspensionCommand extends MutatingEppToolCommand {
       description =
           "Comma-delimited set of fully qualified host names to replace the current hosts"
               + " on the domain.",
-      converter = NameserversParameter.class,
+      listConverter = NameserversParameter.class,
       validateWith = NameserversParameter.class)
   private Set<String> newHosts = new HashSet<>();
 
