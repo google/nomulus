@@ -46,6 +46,7 @@ import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.fee.Fee;
 import google.registry.model.domain.token.AllocationToken;
+import google.registry.model.domain.token.AllocationToken.RegistrationBehavior;
 import google.registry.model.eppinput.EppInput;
 import google.registry.model.tld.Tld;
 import google.registry.model.tld.Tld.TldState;
@@ -148,6 +149,79 @@ public class DomainPricingLogicTest {
                 .setCurrency(USD)
                 // (13 + 11) * 0.85 == 20.40
                 .addFeeOrCredit(Fee.create(new BigDecimal("20.40"), CREATE, false))
+                .build());
+  }
+
+  @Test
+  void testGetDomainCreatePrice_discountPriceAllocationToken_oneYearCreate_appliesDiscount()
+      throws EppException {
+    AllocationToken allocationToken =
+        persistResource(
+            new AllocationToken.Builder()
+                .setToken("abc123")
+                .setTokenType(SINGLE_USE)
+                .setDomainName("default.example")
+                .setDiscountPrice(Money.of(USD, 5))
+                .setDiscountYears(1)
+                .setRegistrationBehavior(RegistrationBehavior.DEFAULT)
+                .build());
+    assertThat(
+            domainPricingLogic.getCreatePrice(
+                tld,
+                "default.example",
+                clock.nowUtc(),
+                1,
+                false,
+                false,
+                Optional.of(allocationToken)))
+        .isEqualTo(
+            new FeesAndCredits.Builder()
+                .setCurrency(USD)
+                .addFeeOrCredit(Fee.create(new BigDecimal("5.00"), CREATE, false))
+                .build());
+  }
+
+  @Test
+  void testGetDomainCreatePrice_discountPriceAllocationToken_twoYearCreate_appliesDiscount()
+      throws EppException {
+    AllocationToken allocationToken =
+        persistResource(
+            new AllocationToken.Builder()
+                .setToken("abc123")
+                .setTokenType(SINGLE_USE)
+                .setDomainName("default.example")
+                .setDiscountPrice(Money.of(USD, 5))
+                .setDiscountYears(1)
+                .setRegistrationBehavior(RegistrationBehavior.DEFAULT)
+                .build());
+
+    // Two-year create should be 5 (discount price) + 10 (regular price) = 15
+    assertThat(
+            domainPricingLogic.getCreatePrice(
+                tld,
+                "default.example",
+                clock.nowUtc(),
+                2,
+                false,
+                false,
+                Optional.of(allocationToken)))
+        .isEqualTo(
+            new FeesAndCredits.Builder()
+                .setCurrency(USD)
+                .addFeeOrCredit(Fee.create(new BigDecimal("15.00"), CREATE, false))
+                .build());
+    assertThat(
+            domainPricingLogic.getRenewPrice(
+                tld,
+                "premium.example",
+                clock.nowUtc(),
+                1,
+                persistDomainAndSetRecurrence("premium.example", DEFAULT, Optional.empty()),
+                Optional.of(allocationToken)))
+        .isEqualTo(
+            new FeesAndCredits.Builder()
+                .setCurrency(USD)
+                .addFeeOrCredit(Fee.create(new BigDecimal("100.00"), RENEW, true))
                 .build());
   }
 
@@ -255,6 +329,29 @@ public class DomainPricingLogicTest {
                 .setToken("abc123")
                 .setTokenType(SINGLE_USE)
                 .setDiscountFraction(0.5)
+                .setDiscountPremiums(false)
+                .build());
+    assertThrows(
+        AllocationTokenInvalidForPremiumNameException.class,
+        () ->
+            domainPricingLogic.getRenewPrice(
+                tld,
+                "premium.example",
+                clock.nowUtc(),
+                1,
+                persistDomainAndSetRecurrence("premium.example", DEFAULT, Optional.empty()),
+                Optional.of(allocationToken)));
+  }
+
+  @Test
+  void
+      testGetDomainRenewPrice_oneYear_premiumDomain_default_withDiscountPriceTokenNotValidForPremiums_throwsException() {
+    AllocationToken allocationToken =
+        persistResource(
+            new AllocationToken.Builder()
+                .setToken("abc123")
+                .setTokenType(SINGLE_USE)
+                .setDiscountPrice(Money.of(USD, 5))
                 .setDiscountPremiums(false)
                 .build());
     assertThrows(

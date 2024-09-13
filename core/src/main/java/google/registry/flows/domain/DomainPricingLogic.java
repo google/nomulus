@@ -321,7 +321,7 @@ public final class DomainPricingLogic {
     if (allocationToken.isPresent()
         && allocationToken.get().getTokenBehavior().equals(TokenBehavior.DEFAULT)) {
       if (allocationToken.get().getDiscountPrice() != null) {
-        int nonDiscountedYears = Math.min(0, years - allocationToken.get().getDiscountYears());
+        int nonDiscountedYears = Math.max(0, years - allocationToken.get().getDiscountYears());
         totalDomainFlowCost =
             allocationToken
                 .get()
