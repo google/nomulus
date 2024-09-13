@@ -21,6 +21,8 @@
         creation_time timestamp(6) with time zone not null,
         discount_fraction float(53) not null,
         discount_premiums boolean not null,
+        discount_price_amount numeric(19,2),
+        discount_price_currency text,
         discount_years integer not null,
         domain_name text,
         redemption_domain_repo_id text,

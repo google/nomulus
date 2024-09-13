@@ -123,8 +123,8 @@ public class AllocationToken extends UpdateAutoTimestampEntity implements Builda
      * Bypasses the premium list to use the standard creation price. Does not affect the renewal
      * price.
      *
-     * <p>This cannot be specified along with a discount fraction, and any renewals (automatic or
-     * otherwise) will use the premium price for the domain if one exists.
+     * <p>This cannot be specified along with a discount fraction/price, and any renewals (automatic
+     * or otherwise) will use the premium price for the domain if one exists.
      *
      * <p>Tokens with this behavior must be tied to a single particular domain.
      */
@@ -248,11 +248,20 @@ public class AllocationToken extends UpdateAutoTimestampEntity implements Builda
   @AttributeOverride(name = "currency", column = @Column(name = "renewalPriceCurrency"))
   Money renewalPrice;
 
-  /** A discount that allows to set promotional prices across different TLDs. */
+  /**
+   * A discount that allows to set promotional prices. This field is different from {@code
+   * discountFraction} because the price set here is treated as the domain price, versus {@code
+   * discountFraction} that applies a fraction discount to the domain base price.
+   *
+   * <p>Prefer this method of discount when attempting to set a promotional price across domains
+   * with different base prices (one example being domains with different TLDs).
+   */
   @Nullable
-  @Type(type = JodaMoneyType.TYPE_NAME)
-  @Columns(
-      columns = {@Column(name = "discountPriceAmount"), @Column(name = "discountPriceCurrency")})
+  @AttributeOverride(
+      name = "amount",
+      // Override Hibernate default (numeric(38,2)) to match real schema definition (numeric(19,2)).
+      column = @Column(name = "discountPriceAmount", precision = 19, scale = 2))
+  @AttributeOverride(name = "currency", column = @Column(name = "discountPriceCurrency"))
   Money discountPrice;
 
   @Enumerated(EnumType.STRING)
@@ -417,8 +426,10 @@ public class AllocationToken extends UpdateAutoTimestampEntity implements Builda
           getInstance().discountFraction > 0 || !getInstance().discountPremiums,
           "Discount premiums can only be specified along with a discount fraction");
       checkArgument(
-          getInstance().discountFraction > 0 || getInstance().discountYears == 1,
-          "Discount years can only be specified along with a discount fraction");
+          getInstance().discountFraction > 0
+              || getInstance().discountPrice != null
+              || getInstance().discountYears == 1,
+          "Discount years can only be specified along with a discount fraction/price");
       if (getInstance().getTokenType().equals(REGISTER_BSA)) {
         checkArgumentNotNull(
             getInstance().domainName, "REGISTER_BSA tokens must be tied to a domain");
@@ -429,8 +440,7 @@ public class AllocationToken extends UpdateAutoTimestampEntity implements Builda
       }
       if (getInstance().registrationBehavior.equals(RegistrationBehavior.NONPREMIUM_CREATE)) {
         checkArgument(
-            getInstance().discountFraction == 0.0
-                && getInstance().discountPrice.getAmount().doubleValue() == 0.0,
+            getInstance().discountFraction == 0.0 && getInstance().discountPrice == null,
             "NONPREMIUM_CREATE tokens cannot apply a discount");
         checkArgumentNotNull(
             getInstance().domainName, "NONPREMIUM_CREATE tokens must be tied to a domain");
@@ -469,7 +479,7 @@ public class AllocationToken extends UpdateAutoTimestampEntity implements Builda
       if (getInstance().discountFraction != 0.0) {
         checkArgument(
             getInstance().discountPrice == null,
-            "discountFraction and discountPrice can't be set together/");
+            "discountFraction and discountPrice can't be set together");
       }
 
       if (getInstance().domainName != null) {
@@ -575,6 +585,11 @@ public class AllocationToken extends UpdateAutoTimestampEntity implements Builda
 
     public Builder setRegistrationBehavior(RegistrationBehavior registrationBehavior) {
       getInstance().registrationBehavior = registrationBehavior;
+      return this;
+    }
+
+    public Builder setDiscountPrice(Money discountPrice) {
+      getInstance().discountPrice = discountPrice;
       return this;
     }
   }

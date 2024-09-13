@@ -156,8 +156,7 @@ public class AllocationTokenFlowUtils {
       Optional<AllocationToken> token, boolean isPremium)
       throws AllocationTokenInvalidForPremiumNameException {
     if (token.isPresent()
-        && (token.get().getDiscountFraction() != 0.0
-            || token.get().getDiscountPrice().getAmount().doubleValue() != 0.0)
+        && (token.get().getDiscountFraction() != 0.0 || token.get().getDiscountPrice() != null)
         && isPremium
         && !token.get().shouldDiscountPremiums()) {
       throw new AllocationTokenInvalidForPremiumNameException();

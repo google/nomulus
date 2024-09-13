@@ -571,7 +571,7 @@ public class AllocationTokenTest extends EntityTestCase {
   }
 
   @Test
-  void testBuild_discountYearsRequiresDiscountFraction() {
+  void testBuild_discountYearsRequiresDiscountFractionOrPrice() {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
@@ -583,7 +583,7 @@ public class AllocationTokenTest extends EntityTestCase {
                     .build());
     assertThat(thrown)
         .hasMessageThat()
-        .isEqualTo("Discount years can only be specified along with a discount fraction");
+        .isEqualTo("Discount years can only be specified along with a discount fraction/price");
   }
 
   @Test
@@ -667,6 +667,42 @@ public class AllocationTokenTest extends EntityTestCase {
                         CommandName.RESTORE,
                         CommandName.UPDATE))
                 .build());
+  }
+
+  @Test
+  void testBuild_discountPriceCantBeSetWithDiscountFraction() {
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () ->
+                new AllocationToken.Builder()
+                    .setToken("abc")
+                    .setTokenType(SINGLE_USE)
+                    .setDiscountYears(2)
+                    .setDiscountFraction(0.5)
+                    .setDiscountPrice(Money.of(CurrencyUnit.USD, 5))
+                    .build());
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo("discountFraction and discountPrice can't be set together");
+  }
+
+  @Test
+  void testBuild_discountPriceCantBeSetWithNonPremiumCreateRegistrationBehavior() {
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () ->
+                new AllocationToken.Builder()
+                    .setToken("abc")
+                    .setTokenType(SINGLE_USE)
+                    .setRegistrationBehavior(RegistrationBehavior.NONPREMIUM_CREATE)
+                    .setDiscountYears(2)
+                    .setDiscountPrice(Money.of(CurrencyUnit.USD, 5))
+                    .build());
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo("NONPREMIUM_CREATE tokens cannot apply a discount");
   }
 
   private void assertBadInitialTransition(TokenStatus status) {

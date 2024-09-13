@@ -152,8 +152,8 @@ public final class DomainPricingLogic {
               getDomainRenewCostWithDiscount(tld, domainPrices, dateTime, years, allocationToken);
           isRenewCostPremiumPrice = domainPrices.isPremium();
         }
-          // if the renewal price behavior is specified, then the renewal price should be the same
-          // as the creation price, which is stored in the billing event as the renewal price
+        // if the renewal price behavior is specified, then the renewal price should be the same
+        // as the creation price, which is stored in the billing event as the renewal price
         case SPECIFIED -> {
           checkArgumentPresent(
               billingRecurrence.getRenewalPrice(),
@@ -163,8 +163,8 @@ public final class DomainPricingLogic {
           renewCost = billingRecurrence.getRenewalPrice().get().multipliedBy(years);
           isRenewCostPremiumPrice = false;
         }
-          // if the renewal price behavior is nonpremium, it means that the domain should be renewed
-          // at standard price of domains at the time, even if the domain is premium
+        // if the renewal price behavior is nonpremium, it means that the domain should be renewed
+        // at standard price of domains at the time, even if the domain is premium
         case NONPREMIUM -> {
           renewCost =
               getDomainCostWithDiscount(
@@ -320,7 +320,7 @@ public final class DomainPricingLogic {
     // Apply the allocation token discount, if applicable.
     if (allocationToken.isPresent()
         && allocationToken.get().getTokenBehavior().equals(TokenBehavior.DEFAULT)) {
-      if (allocationToken.get().getDiscountPrice().getAmount().doubleValue() != 0.0) {
+      if (allocationToken.get().getDiscountPrice() != null) {
         int nonDiscountedYears = Math.min(0, years - allocationToken.get().getDiscountYears());
         totalDomainFlowCost =
             allocationToken
