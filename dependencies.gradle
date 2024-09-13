@@ -1,4 +1,4 @@
-// Copyright 2019 The Nomulus Authors. All Rights Reserved.
+/// Copyright 2019 The Nomulus Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -29,8 +29,6 @@ ext {
       //    a dependency group can not work together. For example, the three
       //    bouncycastle jars need to be hardcoded with the same version string
       //    as of April, 2022.
-      // 6. Dependency constraints violation: e.g., Hibernate 6.0 requires
-      //    Jakarta EE.
 
       // Note that since Gradle 7, for version labels to be strict, we need to
       // append '!!' to the end. Otherwise they may still be forced to upgrade.
@@ -51,10 +49,15 @@ ext {
 
       // CAPPED VERSIONS START HERE.
 
-      // Hibernate 6.0+ requires Jakarta EE.
-      // TODO: Upgrade to 6.0+ after we migrate to Jakarta EE persistence.
-      'org.hibernate:hibernate-core:[5.6.14.Final, 6.0)',
-      'org.hibernate:hibernate-hikaricp:[5.6.14.Final, 6.0)',
+      // 2.0+ versions of jcommander have breaking changes that impact how
+      // collections are parsed.
+      'org.jcommander:jcommander:[1.83, 2.0)!!',
+
+      // 6.6 is alpha.
+      'org.hibernate.orm:hibernate-core:[6.0,6.6)!!',
+      'org.hibernate.orm:hibernate-hikaricp:[6.0,6.6)!!',
+      // For SchemaExport
+      'org.hibernate.orm:hibernate-ant:[6.0,6.6)!!',
 
       // Netty 4.2 is in alpha and causes runtime error. Also note that v5.0
       // seems abandoned (last updated on Maven in 2015).
@@ -67,11 +70,6 @@ ext {
 
       // OkHttp 5.0 is in alpha.
       'com.squareup.okhttp3:okhttp:[4.10.0, 5.0.0)!!',
-
-      // jaxb-xjc 2.4 and above requires changing the namespace to Jakarta EE
-      // TODO: Remove the cap after we upgrade to Jakarta EE xml Binding
-      // (I think).
-      'com.sun.xml.bind:jaxb-xjc:[2.3.3, 2.4)!!',
 
       // Dagger doesn't support the Jakarta namespace yet. Pre-2.0 Jakarta
       // Inject still use the old javax namespace.
@@ -128,8 +126,10 @@ ext {
       'com.google.cloud:google-cloud-tasks:[1.33.2,)',
       'com.google.code.findbugs:jsr305:[3.0.2,)',
       'com.google.code.gson:gson:[2.8.6,)',
-      'com.google.dagger:dagger-compiler:[2.33,)',
-      'com.google.dagger:dagger:[2.33,)',
+      // Version 2.51.1 is the last working version before dagger fully supports
+      // jakarta annotations. See comments on jakarta.inject below.
+      'com.google.dagger:dagger-compiler:[2.33,2.51.2)!!',
+      'com.google.dagger:dagger:[2.33,2.51.2)!!',
       'com.google.errorprone:error_prone_annotations:[2.7.1,)',
       'com.google.flogger:flogger-system-backend:[0.7.4,)',
       'com.google.flogger:flogger:[0.7.4,)',
@@ -154,9 +154,9 @@ ext {
       'com.ibm.icu:icu4j:[68.2,)',
       'com.jcraft:jsch:[0.1.55,)',
       'com.squareup:javapoet:[1.13.0,)',
-      'com.sun.activation:javax.activation:[1.2.0,)',
-      'com.sun.xml.bind:jaxb-impl:[2.3.3,)',
-      'com.sun.xml.bind:jaxb-osgi:[2.3.3,)',
+      'com.sun.xml.bind:jaxb-impl:[4.0.5,)',
+      'com.sun.xml.bind:jaxb-osgi:[4.0.5,)',
+      'com.sun.xml.bind:jaxb-xjc:[4.0.5,)',
       'com.zaxxer:HikariCP:[3.4.5,)',
       'commons-codec:commons-codec:[1.15,)',
       'dnsjava:dnsjava:[3.3.1,)',
@@ -165,11 +165,15 @@ ext {
       'io.github.java-diff-utils:java-diff-utils:[4.9,)',
       'io.netty:netty-tcnative-boringssl-static:[2.0.36.Final,)',
       'jakarta.mail:jakarta.mail-api:[2.1.3,)',
+      'jakarta.persistence:jakarta.persistence-api:[3.2.0,)',
       'jakarta.servlet:jakarta.servlet-api:[6.0,)',
-      'javax.persistence:javax.persistence-api:[2.2,)',
-      'javax.xml.bind:jaxb-api:[2.3.0,)',
+      'jakarta.xml.bind:jakarta.xml.bind-api:[4.0.2,)',
       'joda-time:joda-time:[2.9.2,)',
       'junit:junit:[4.13,)',
+      // Antlr is not a direct dependency, but we need to ensure that the
+      // compile-time and runtime dependencies are compatible.
+      'org.antlr:antlr4:[4.13.2,)',
+      'org.antlr:antlr4-runtime:[4.13.2,)',
       'org.apache.avro:avro:[1.8.2,)',
       'org.apache.beam:beam-runners-core-construction-java:[2.37.0,)',
       'org.apache.beam:beam-runners-direct-java:[2.37.0,)',
@@ -198,7 +202,6 @@ ext {
       'org.hamcrest:hamcrest-core:[2.2,)',
       'org.hamcrest:hamcrest-library:[2.2,)',
       'org.hamcrest:hamcrest:[2.2,)',
-      'org.jcommander:jcommander:[1.83,)',
       'org.jline:jline:[3.0,)',
       'org.joda:joda-money:[1.0.1,)',
       'org.json:json:[20160810,)',

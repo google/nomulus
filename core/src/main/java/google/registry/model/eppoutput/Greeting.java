@@ -18,9 +18,9 @@ import google.registry.model.ImmutableObject;
 import google.registry.model.eppcommon.PresenceMarker;
 import google.registry.model.eppcommon.ProtocolDefinition;
 import google.registry.model.eppoutput.EppOutput.ResponseOrGreeting;
+import jakarta.xml.bind.annotation.XmlElement;
+import jakarta.xml.bind.annotation.XmlElementWrapper;
 import java.util.Set;
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlElementWrapper;
 import org.joda.time.DateTime;
 
 /**

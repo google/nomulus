@@ -25,6 +25,11 @@ import com.google.common.hash.BloomFilter;
 import google.registry.model.Buildable;
 import google.registry.model.tld.Tld;
 import google.registry.model.tld.label.PremiumList.PremiumEntry;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Index;
+import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -32,11 +37,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import javax.annotation.Nullable;
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Index;
-import javax.persistence.Table;
-import javax.persistence.Transient;
 import org.joda.money.CurrencyUnit;
 import org.joda.money.Money;
 
@@ -118,9 +118,10 @@ public final class PremiumList extends BaseDomainLabelList<BigDecimal, PremiumEn
   public static class PremiumEntry extends DomainLabelEntry<BigDecimal, PremiumList.PremiumEntry>
       implements Buildable, Serializable {
 
-    @Insignificant @javax.persistence.Id Long revisionId;
+    @Insignificant @jakarta.persistence.Id Long revisionId;
 
-    @Column(nullable = false)
+    // Override defaulting Hibernate 6 mapping (numeric(38,2)) to match amount real schema.
+    @Column(nullable = false, precision = 19, scale = 2)
     BigDecimal price;
 
     @Override

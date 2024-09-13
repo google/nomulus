@@ -26,20 +26,20 @@ import com.google.common.collect.ImmutableMap;
 import google.registry.model.CacheUtils;
 import google.registry.model.CreateAutoTimestamp;
 import google.registry.model.ImmutableObject;
+import jakarta.persistence.AttributeOverride;
+import jakarta.persistence.AttributeOverrides;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.PostPersist;
+import jakarta.persistence.PostUpdate;
+import jakarta.persistence.PreRemove;
+import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
 import java.util.Map;
 import java.util.Optional;
-import javax.persistence.AttributeOverride;
-import javax.persistence.AttributeOverrides;
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.PostPersist;
-import javax.persistence.PostUpdate;
-import javax.persistence.PreRemove;
-import javax.persistence.Table;
-import javax.persistence.Transient;
 import org.joda.time.DateTime;
 
 /**
@@ -104,7 +104,7 @@ public class ClaimsList extends ImmutableObject {
 
   @PreRemove
   void preRemove() {
-    tm().query("DELETE FROM ClaimsEntry WHERE revision_id = :revisionId")
+    tm().query("DELETE FROM ClaimsEntry WHERE revisionId = :revisionId")
         .setParameter("revisionId", revisionId)
         .executeUpdate();
   }

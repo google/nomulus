@@ -50,21 +50,20 @@ import google.registry.model.domain.fee.FeeQueryCommandExtensionItem.CommandName
 import google.registry.model.reporting.HistoryEntry.HistoryEntryId;
 import google.registry.persistence.VKey;
 import google.registry.persistence.WithVKey;
-import google.registry.persistence.converter.JodaMoneyType;
+import google.registry.persistence.converter.AllocationTokenStatusTransitionUserType;
+import jakarta.persistence.AttributeOverride;
+import jakarta.persistence.AttributeOverrides;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.Id;
+import jakarta.persistence.Index;
+import jakarta.persistence.Table;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import javax.annotation.Nullable;
-import javax.persistence.AttributeOverride;
-import javax.persistence.AttributeOverrides;
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.EnumType;
-import javax.persistence.Enumerated;
-import javax.persistence.Id;
-import javax.persistence.Index;
-import javax.persistence.Table;
-import org.hibernate.annotations.Columns;
 import org.hibernate.annotations.Type;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
@@ -242,8 +241,11 @@ public class AllocationToken extends UpdateAutoTimestampEntity implements Builda
 
   /** The price used for renewals iff the renewalPriceBehavior is SPECIFIED. */
   @Nullable
-  @Type(type = JodaMoneyType.TYPE_NAME)
-  @Columns(columns = {@Column(name = "renewalPriceAmount"), @Column(name = "renewalPriceCurrency")})
+  @AttributeOverride(
+      name = "amount",
+      // Override Hibernate default (numeric(38,2)) to match real schema definition (numeric(19,2)).
+      column = @Column(name = "renewalPriceAmount", precision = 19, scale = 2))
+  @AttributeOverride(name = "currency", column = @Column(name = "renewalPriceCurrency"))
   Money renewalPrice;
 
   @Enumerated(EnumType.STRING)
@@ -256,11 +258,14 @@ public class AllocationToken extends UpdateAutoTimestampEntity implements Builda
    * <p>If the token is promotional, the status will be VALID at the start of the promotion and
    * ENDED at the end. If manually cancelled, we will add a CANCELLED status.
    */
+  @Type(AllocationTokenStatusTransitionUserType.class)
   TimedTransitionProperty<TokenStatus> tokenStatusTransitions =
       TimedTransitionProperty.withInitialValue(NOT_STARTED);
 
   /** Allowed EPP actions for this token, or null if all actions are allowed. */
-  @Nullable Set<CommandName> allowedEppActions;
+  @Nullable
+  @Enumerated(EnumType.STRING)
+  Set<CommandName> allowedEppActions;
 
   public String getToken() {
     return token;

@@ -17,7 +17,7 @@ package google.registry.model.domain.fee06;
 import google.registry.model.domain.fee.FeeCheckResponseExtensionItem;
 import google.registry.model.domain.fee.FeeExtensionCommandDescriptor;
 import google.registry.model.domain.fee.FeeQueryCommandExtensionItem.CommandName;
-import javax.xml.bind.annotation.XmlType;
+import jakarta.xml.bind.annotation.XmlType;
 import org.joda.money.CurrencyUnit;
 
 /** The version 0.6 response for a domain check on a single resource. */

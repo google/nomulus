@@ -192,10 +192,12 @@ dependencies {
   testRuntimeOnly deps['io.github.java-diff-utils:java-diff-utils']
   implementation deps['jakarta.inject:jakarta.inject-api']
   implementation deps['jakarta.mail:jakarta.mail-api']
-  implementation deps['javax.persistence:javax.persistence-api']
+  implementation deps['jakarta.persistence:jakarta.persistence-api']
   implementation deps['jakarta.servlet:jakarta.servlet-api']
-  implementation deps['javax.xml.bind:jaxb-api']
+  implementation deps['jakarta.xml.bind:jakarta.xml.bind-api']
   implementation deps['joda-time:joda-time']
+  implementation deps['org.antlr:antlr4']
+  implementation deps['org.antlr:antlr4-runtime']
   implementation deps['org.apache.avro:avro']
   testImplementation deps['org.apache.beam:beam-runners-core-construction-java']
   testImplementation deps['org.apache.beam:beam-runners-direct-java']
@@ -219,8 +221,9 @@ dependencies {
   implementation deps['org.bouncycastle:bcprov-jdk18on']
   implementation deps['com.fasterxml.jackson.dataformat:jackson-dataformat-yaml']
   testImplementation deps['com.fasterxml.jackson.core:jackson-databind']
-  implementation deps['org.hibernate:hibernate-core']
-  implementation deps['org.hibernate:hibernate-hikaricp']
+  implementation deps['org.hibernate.orm:hibernate-ant']
+  implementation deps['org.hibernate.orm:hibernate-core']
+  implementation deps['org.hibernate.orm:hibernate-hikaricp']
   implementation deps['org.jcommander:jcommander']
   implementation deps['org.jline:jline']
   implementation deps['org.joda:joda-money']
@@ -289,10 +292,7 @@ dependencies {
   implementation deps['com.google.oauth-client:google-oauth-client-java6']
 
   // Dependencies needed for jaxb compilation.
-  // Use jaxb 2.2.11 because 2.3 is known to break the Ant task we use.
-  // TODO: upgrade jaxb versions to 2.4.0, already in beta by Sept 2018
-  jaxb deps['javax.xml.bind:jaxb-api']
-  jaxb deps['com.sun.activation:javax.activation']
+  jaxb deps['jakarta.xml.bind:jakarta.xml.bind-api']
   jaxb deps['com.sun.xml.bind:jaxb-xjc']
   jaxb deps['com.sun.xml.bind:jaxb-impl']
   jaxb deps['com.sun.xml.bind:jaxb-osgi']

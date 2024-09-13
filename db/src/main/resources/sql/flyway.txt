@@ -176,3 +176,4 @@ V175__user_update_history_id.sql
 V176__drop_login_email_address_column_from_registrar_poc.sql
 V177__drop_user_id.sql
 V178__drop_user_id_history.sql
+V179__add_discount_price_allocation_token.sql

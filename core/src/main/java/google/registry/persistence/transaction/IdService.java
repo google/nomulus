@@ -16,7 +16,6 @@ package google.registry.persistence.transaction;
 
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
-import java.math.BigInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -35,10 +34,9 @@ final class IdService {
   static long allocateId() {
     return tm().transact(
             () ->
-                (BigInteger)
+                (Long)
                     tm().getEntityManager()
                         .createNativeQuery("SELECT nextval('project_wide_unique_id_seq')")
-                        .getSingleResult())
-        .longValue();
+                        .getSingleResult());
   }
 }

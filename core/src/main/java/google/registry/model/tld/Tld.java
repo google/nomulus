@@ -69,9 +69,18 @@ import google.registry.model.domain.token.AllocationToken.TokenType;
 import google.registry.model.tld.label.PremiumList;
 import google.registry.model.tld.label.ReservedList;
 import google.registry.persistence.VKey;
-import google.registry.persistence.converter.JodaMoneyType;
+import google.registry.persistence.converter.AllocationTokenVkeyListUserType;
+import google.registry.persistence.converter.BillingCostTransitionUserType;
+import google.registry.persistence.converter.TldStateTransitionUserType;
 import google.registry.tldconfig.idn.IdnTableEnum;
 import google.registry.util.Idn;
+import jakarta.persistence.AttributeOverride;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.Id;
+import jakarta.persistence.PostPersist;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -80,13 +89,6 @@ import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.EnumType;
-import javax.persistence.Enumerated;
-import javax.persistence.Id;
-import javax.persistence.PostPersist;
-import org.hibernate.annotations.Columns;
 import org.hibernate.annotations.Type;
 import org.joda.money.CurrencyUnit;
 import org.joda.money.Money;
@@ -334,6 +336,7 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
    */
   @JsonSerialize(using = OptionalDurationSerializer.class)
   Duration dnsDsTtl;
+
   /**
    * The unicode-aware representation of the TLD associated with this {@link Tld}.
    *
@@ -366,6 +369,7 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
 
   /** A property that transitions to different {@link TldState}s at different times. */
   @Column(nullable = false)
+  @Type(TldStateTransitionUserType.class)
   @JsonDeserialize(using = TimedTransitionPropertyTldStateDeserializer.class)
   TimedTransitionProperty<TldState> tldStateTransitions =
       TimedTransitionProperty.withInitialValue(DEFAULT_TLD_STATE);
@@ -456,35 +460,38 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
 
   /** A property that transitions to different create billing costs at different times. */
   @Column(nullable = false)
+  @Type(BillingCostTransitionUserType.class)
   @JsonDeserialize(using = TimedTransitionPropertyMoneyDeserializer.class)
   TimedTransitionProperty<Money> createBillingCostTransitions =
       TimedTransitionProperty.withInitialValue(DEFAULT_CREATE_BILLING_COST);
 
   /** The one-time billing cost for restoring a domain name from the redemption grace period. */
-  @Type(type = JodaMoneyType.TYPE_NAME)
-  @Columns(
-      columns = {
-        @Column(name = "restore_billing_cost_amount"),
-        @Column(name = "restore_billing_cost_currency")
-      })
+  @AttributeOverride(
+      name = "amount",
+      // Override Hibernate default (numeric(38,2)) to match real schema definition (numeric(19,2)).
+      column = @Column(name = "restore_billing_cost_amount", precision = 19, scale = 2))
+  @AttributeOverride(name = "currency", column = @Column(name = "restore_billing_cost_currency"))
   Money restoreBillingCost = DEFAULT_RESTORE_BILLING_COST;
 
   /** The one-time billing cost for changing the server status (i.e. lock). */
-  @Type(type = JodaMoneyType.TYPE_NAME)
-  @Columns(
-      columns = {
-        @Column(name = "server_status_change_billing_cost_amount"),
-        @Column(name = "server_status_change_billing_cost_currency")
-      })
+  @AttributeOverride(
+      name = "amount",
+      // Override Hibernate default (numeric(38,2)) to match real schema definition (numeric(19,2)).
+      column =
+          @Column(name = "server_status_change_billing_cost_amount", precision = 19, scale = 2))
+  @AttributeOverride(
+      name = "currency",
+      column = @Column(name = "server_status_change_billing_cost_currency"))
   Money serverStatusChangeBillingCost = DEFAULT_SERVER_STATUS_CHANGE_BILLING_COST;
 
   /** The one-time billing cost for a registry lock/unlock action initiated by a registrar. */
-  @Type(type = JodaMoneyType.TYPE_NAME)
-  @Columns(
-      columns = {
-        @Column(name = "registry_lock_or_unlock_cost_amount"),
-        @Column(name = "registry_lock_or_unlock_cost_currency")
-      })
+  @AttributeOverride(
+      name = "amount",
+      // Override Hibernate default (numeric(38,2)) to match real schema definition (numeric(19,2)).
+      column = @Column(name = "registry_lock_or_unlock_cost_amount", precision = 19, scale = 2))
+  @AttributeOverride(
+      name = "currency",
+      column = @Column(name = "registry_lock_or_unlock_cost_currency"))
   Money registryLockOrUnlockBillingCost = DEFAULT_REGISTRY_LOCK_OR_UNLOCK_BILLING_COST;
 
   /**
@@ -495,12 +502,14 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
    * renewal to ensure transfers have a cost.
    */
   @Column(nullable = false)
+  @Type(BillingCostTransitionUserType.class)
   @JsonDeserialize(using = TimedTransitionPropertyMoneyDeserializer.class)
   TimedTransitionProperty<Money> renewBillingCostTransitions =
       TimedTransitionProperty.withInitialValue(DEFAULT_RENEW_BILLING_COST);
 
   /** A property that tracks the EAP fee schedule (if any) for the TLD. */
   @Column(nullable = false)
+  @Type(BillingCostTransitionUserType.class)
   @JsonDeserialize(using = TimedTransitionPropertyMoneyDeserializer.class)
   TimedTransitionProperty<Money> eapFeeSchedule =
       TimedTransitionProperty.withInitialValue(DEFAULT_EAP_BILLING_COST);
@@ -540,11 +549,14 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
    * (ex: add a token to the list or remove a token from the list) should not be allowed without
    * resetting the entire list contents.
    */
+  @Type(AllocationTokenVkeyListUserType.class)
   @JsonSerialize(using = TokenVKeyListSerializer.class)
   @JsonDeserialize(using = TokenVKeyListDeserializer.class)
   List<VKey<AllocationToken>> defaultPromoTokens;
 
   /** A set of allowed {@link IdnTableEnum}s for this TLD, or empty if we should use the default. */
+  // @Type(IdnTableEnumSetUserType.class)
+  @Enumerated(EnumType.STRING)
   @JsonSerialize(using = SortedEnumSetSerializer.class)
   Set<IdnTableEnum> idnTables;
 

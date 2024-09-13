@@ -51,6 +51,7 @@ else
     mv services/"${service}"/build/staged-app "${dest}/${service}"
   done
 
+  ./gradlew :console-webapp:buildConsoleWebapp -Pconfiguration="${environment}"
   mkdir -p "${dest}/console" && cp -r console-webapp/staged/* "${dest}/console"
 
   mv core/build/resources/main/google/registry/env/common/META-INF \

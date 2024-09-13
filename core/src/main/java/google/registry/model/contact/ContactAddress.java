@@ -15,7 +15,7 @@
 package google.registry.model.contact;
 
 import google.registry.model.eppcommon.Address;
-import javax.persistence.Embeddable;
+import jakarta.persistence.Embeddable;
 
 /**
  * EPP Contact Address
