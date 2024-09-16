@@ -182,7 +182,7 @@ public class DomainPricingLogicTest {
   }
 
   @Test
-  void testGetDomainCreatePrice_discountPriceAllocationToken_twoYearCreate_appliesDiscount()
+  void testGetDomainCreatePrice_discountPriceAllocationToken_multiYearCreate_appliesDiscount()
       throws EppException {
     AllocationToken allocationToken =
         persistResource(
@@ -195,33 +195,20 @@ public class DomainPricingLogicTest {
                 .setRegistrationBehavior(RegistrationBehavior.DEFAULT)
                 .build());
 
-    // Two-year create should be 5 (discount price) + 10 (regular price) = 15
+    // 3 year create should be 5 (discount price) + 10*2 (regular price) = 25.
     assertThat(
             domainPricingLogic.getCreatePrice(
                 tld,
                 "default.example",
                 clock.nowUtc(),
-                2,
+                3,
                 false,
                 false,
                 Optional.of(allocationToken)))
         .isEqualTo(
             new FeesAndCredits.Builder()
                 .setCurrency(USD)
-                .addFeeOrCredit(Fee.create(new BigDecimal("15.00"), CREATE, false))
-                .build());
-    assertThat(
-            domainPricingLogic.getRenewPrice(
-                tld,
-                "premium.example",
-                clock.nowUtc(),
-                1,
-                persistDomainAndSetRecurrence("premium.example", DEFAULT, Optional.empty()),
-                Optional.of(allocationToken)))
-        .isEqualTo(
-            new FeesAndCredits.Builder()
-                .setCurrency(USD)
-                .addFeeOrCredit(Fee.create(new BigDecimal("100.00"), RENEW, true))
+                .addFeeOrCredit(Fee.create(new BigDecimal("25.00"), CREATE, false))
                 .build());
   }
 
@@ -345,7 +332,7 @@ public class DomainPricingLogicTest {
 
   @Test
   void
-      testGetDomainRenewPrice_oneYear_premiumDomain_default_withDiscountPriceTokenNotValidForPremiums_throwsException() {
+      testGetDomainRenewPrice_oneYear_premiumDomain_default_withDiscountPriceToken_throwsException() {
     AllocationToken allocationToken =
         persistResource(
             new AllocationToken.Builder()
@@ -479,6 +466,33 @@ public class DomainPricingLogicTest {
   }
 
   @Test
+  void
+      testGetDomainRenewPrice_oneYear_standardDomain_default_withDiscountPriceToken_isDiscountedPrice()
+          throws EppException {
+    AllocationToken allocationToken =
+        persistResource(
+            new AllocationToken.Builder()
+                .setToken("abc123")
+                .setTokenType(SINGLE_USE)
+                .setDiscountPrice(Money.of(USD, 1.5))
+                .setDiscountPremiums(false)
+                .build());
+    assertThat(
+            domainPricingLogic.getRenewPrice(
+                tld,
+                "standard.example",
+                clock.nowUtc(),
+                1,
+                persistDomainAndSetRecurrence("standard.example", DEFAULT, Optional.empty()),
+                Optional.of(allocationToken)))
+        .isEqualTo(
+            new FeesAndCredits.Builder()
+                .setCurrency(USD)
+                .addFeeOrCredit(Fee.create(new BigDecimal("1.50"), RENEW, false))
+                .build());
+  }
+
+  @Test
   void testGetDomainRenewPrice_multiYear_standardDomain_default_isNonPremiumCost()
       throws EppException {
     assertThat(
@@ -520,6 +534,36 @@ public class DomainPricingLogicTest {
             new FeesAndCredits.Builder()
                 .setCurrency(USD)
                 .addFeeOrCredit(Fee.create(new BigDecimal("40.00"), RENEW, false))
+                .build());
+  }
+
+  @Test
+  void
+      testGetDomainRenewPrice_multiYear_standardDomain_default_withDiscountPriceToken_isDiscountedPrice()
+          throws EppException {
+    AllocationToken allocationToken =
+        persistResource(
+            new AllocationToken.Builder()
+                .setToken("discountPrice12345")
+                .setTokenType(SINGLE_USE)
+                .setDiscountPrice(Money.of(USD, 2.5))
+                .setDiscountPremiums(false)
+                .setDiscountYears(2)
+                .build());
+
+    // 5 year create should be 2*2.5 (discount price) + 10*3 (regular price) = 35.
+    assertThat(
+            domainPricingLogic.getRenewPrice(
+                tld,
+                "standard.example",
+                clock.nowUtc(),
+                5,
+                persistDomainAndSetRecurrence("standard.example", DEFAULT, Optional.empty()),
+                Optional.of(allocationToken)))
+        .isEqualTo(
+            new FeesAndCredits.Builder()
+                .setCurrency(USD)
+                .addFeeOrCredit(Fee.create(new BigDecimal("35.00"), RENEW, false))
                 .build());
   }
 
@@ -701,6 +745,36 @@ public class DomainPricingLogicTest {
 
   @Test
   void
+      testGetDomainRenewPrice_oneYear_standardDomain_internalRegistration_withDiscountPriceToken_isSpecifiedPrice()
+          throws EppException {
+    AllocationToken allocationToken =
+        persistResource(
+            new AllocationToken.Builder()
+                .setToken("abc123")
+                .setTokenType(SINGLE_USE)
+                .setDiscountPrice(Money.of(USD, 0.5))
+                .setDiscountPremiums(false)
+                .build());
+    assertThat(
+            domainPricingLogic.getRenewPrice(
+                tld,
+                "standard.example",
+                clock.nowUtc(),
+                1,
+                persistDomainAndSetRecurrence(
+                    "standard.example", SPECIFIED, Optional.of(Money.of(USD, 1))),
+                Optional.of(allocationToken)))
+
+        // The allocation token should not discount the speicifed price
+        .isEqualTo(
+            new FeesAndCredits.Builder()
+                .setCurrency(USD)
+                .addFeeOrCredit(Fee.create(new BigDecimal("1.00"), RENEW, false))
+                .build());
+  }
+
+  @Test
+  void
       testGetDomainRenewPrice_oneYear_standardDomain_internalRegistration_withToken_doesNotChangePriceBehavior()
           throws EppException {
     AllocationToken allocationToken =
@@ -763,6 +837,34 @@ public class DomainPricingLogicTest {
                 .setToken("abc123")
                 .setTokenType(SINGLE_USE)
                 .setDiscountFraction(0.5)
+                .setDiscountPremiums(false)
+                .build());
+    assertThat(
+            domainPricingLogic.getRenewPrice(
+                tld,
+                "standard.example",
+                clock.nowUtc(),
+                5,
+                persistDomainAndSetRecurrence(
+                    "standard.example", SPECIFIED, Optional.of(Money.of(USD, 1))),
+                Optional.of(allocationToken)))
+        .isEqualTo(
+            new FeesAndCredits.Builder()
+                .setCurrency(USD)
+                .addFeeOrCredit(Fee.create(new BigDecimal("5.00"), RENEW, false))
+                .build());
+  }
+
+  @Test
+  void
+      testGetDomainRenewPrice_multiYear_standardDomain_internalRegistration_withDiscountPriceToken_isSpecifiedPrice()
+          throws EppException {
+    AllocationToken allocationToken =
+        persistResource(
+            new AllocationToken.Builder()
+                .setToken("abc123")
+                .setTokenType(SINGLE_USE)
+                .setDiscountPrice(Money.of(USD, 0.5))
                 .setDiscountPremiums(false)
                 .build());
     assertThat(
