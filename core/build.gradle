@@ -293,9 +293,8 @@ dependencies {
 
   // Dependencies needed for jaxb compilation.
   jaxb deps['jakarta.xml.bind:jakarta.xml.bind-api']
-  jaxb deps['com.sun.xml.bind:jaxb-xjc']
-  jaxb deps['com.sun.xml.bind:jaxb-impl']
-  jaxb deps['com.sun.xml.bind:jaxb-osgi']
+  jaxb deps['org.glassfish.jaxb:jaxb-runtime']
+  jaxb deps['org.glassfish.jaxb:jaxb-xjc']
 
   // Dependency needed for soy to java compilation.
   soy deps['com.google.inject:guice']
