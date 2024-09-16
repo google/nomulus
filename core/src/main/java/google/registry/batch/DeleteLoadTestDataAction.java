@@ -16,6 +16,7 @@ package google.registry.batch;
 
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
+import static google.registry.persistence.PersistenceModule.TransactionIsolationLevel.TRANSACTION_REPEATABLE_READ;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.request.Action.Method.POST;
 import static google.registry.request.RequestParameters.PARAM_DRY_RUN;
@@ -91,6 +92,7 @@ public class DeleteLoadTestDataAction implements Runnable {
         "This action is not safe to run on PRODUCTION.");
 
     tm().transact(
+            TRANSACTION_REPEATABLE_READ,
             () -> {
               LOAD_TEST_REGISTRARS.forEach(this::deletePollMessages);
               tm().loadAllOfStream(Contact.class).forEach(this::deleteContact);

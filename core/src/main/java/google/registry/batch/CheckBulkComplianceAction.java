@@ -13,6 +13,7 @@
 // limitations under the License.
 package google.registry.batch;
 
+import static google.registry.persistence.PersistenceModule.TransactionIsolationLevel.TRANSACTION_REPEATABLE_READ;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
 
@@ -89,7 +90,7 @@ public class CheckBulkComplianceAction implements Runnable {
 
   @Override
   public void run() {
-    tm().transact(this::checkBulkPackages);
+    tm().transact(TRANSACTION_REPEATABLE_READ, this::checkBulkPackages);
   }
 
   private void checkBulkPackages() {
