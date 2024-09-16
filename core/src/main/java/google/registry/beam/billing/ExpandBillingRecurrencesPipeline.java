@@ -36,6 +36,7 @@ import google.registry.config.RegistryConfig.ConfigModule;
 import google.registry.flows.custom.CustomLogicFactoryModule;
 import google.registry.flows.custom.CustomLogicModule;
 import google.registry.flows.domain.DomainPricingLogic;
+import google.registry.flows.domain.DomainPricingLogic.AllocationTokenInvalidForCurrencyException;
 import google.registry.flows.domain.DomainPricingLogic.AllocationTokenInvalidForPremiumNameException;
 import google.registry.model.ImmutableObject;
 import google.registry.model.billing.BillingBase.Flag;
@@ -414,7 +415,8 @@ public class ExpandBillingRecurrencesPipeline implements Serializable {
                 .setCancellationMatchingBillingEvent(billingRecurrence)
                 .setTargetId(billingRecurrence.getTargetId())
                 .build();
-      } catch (AllocationTokenInvalidForPremiumNameException e) {
+      } catch (AllocationTokenInvalidForCurrencyException
+          | AllocationTokenInvalidForPremiumNameException e) {
         // This should not be reached since we are not using an allocation token
         return;
       }
