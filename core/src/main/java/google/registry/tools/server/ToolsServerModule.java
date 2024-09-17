@@ -16,6 +16,7 @@ package google.registry.tools.server;
 
 import static com.google.common.base.Strings.emptyToNull;
 import static google.registry.request.RequestParameters.extractIntParameter;
+import static google.registry.request.RequestParameters.extractOptionalDatetimeParameter;
 import static google.registry.request.RequestParameters.extractOptionalIntParameter;
 import static google.registry.request.RequestParameters.extractOptionalParameter;
 import static google.registry.request.RequestParameters.extractRequiredParameter;
@@ -26,6 +27,7 @@ import google.registry.request.Parameter;
 import google.registry.tools.server.UpdateUserGroupAction.Mode;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.Optional;
+import org.joda.time.DateTime;
 
 /** Dagger module for the tools package. */
 @Module
@@ -73,6 +75,12 @@ public class ToolsServerModule {
   @Parameter("refreshQps")
   static Optional<Integer> provideRefreshQps(HttpServletRequest req) {
     return extractOptionalIntParameter(req, "refreshQps");
+  }
+
+  @Provides
+  @Parameter("activeOrDeletedSince")
+  static Optional<DateTime> provideDeletionTime(HttpServletRequest req) {
+    return extractOptionalDatetimeParameter(req, "activeOrDeletedSince");
   }
 
   @Provides
