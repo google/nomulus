@@ -32,7 +32,8 @@ import static google.registry.monitoring.whitebox.CheckApiMetric.Status.SUCCESS;
 import static google.registry.monitoring.whitebox.CheckApiMetric.Status.UNKNOWN_ERROR;
 import static google.registry.monitoring.whitebox.CheckApiMetric.Tier.PREMIUM;
 import static google.registry.monitoring.whitebox.CheckApiMetric.Tier.STANDARD;
-import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+import static google.registry.persistence.PersistenceModule.TransactionIsolationLevel.TRANSACTION_REPEATABLE_READ;
+import static google.registry.persistence.transaction.TransactionManagerFactory.replicaTm;
 import static google.registry.pricing.PricingEngineProxy.isDomainPremium;
 import static google.registry.util.DomainNameUtils.canonicalizeHostname;
 import static org.json.simple.JSONValue.toJSONString;
@@ -108,7 +109,7 @@ public class CheckApiAction implements Runnable {
     try {
       domainString = canonicalizeHostname(nullToEmpty(domain));
       domainName = validateDomainName(domainString);
-      return tm().transact(() -> checkDomainName(domainName));
+      return replicaTm().transact(TRANSACTION_REPEATABLE_READ, () -> checkDomainName(domainName));
     } catch (IllegalArgumentException | EppException e) {
       metricBuilder.status(INVALID_NAME);
       return fail("Must supply a valid domain name on an authoritative TLD");
@@ -116,7 +117,7 @@ public class CheckApiAction implements Runnable {
   }
 
   private Map<String, Object> checkDomainName(InternetDomainName domainName) {
-    tm().assertInTransaction();
+    replicaTm().assertInTransaction();
 
     String domainString;
     try {
@@ -130,7 +131,7 @@ public class CheckApiAction implements Runnable {
       // Throws an EppException with a reasonable error message which will be sent back to caller.
       validateDomainNameWithIdnTables(domainName);
 
-      DateTime now = tm().getTransactionTime();
+      DateTime now = replicaTm().getTransactionTime();
       Tld tld = Tld.get(domainName.parent().toString());
       try {
         verifyNotInPredelegation(tld, now);
