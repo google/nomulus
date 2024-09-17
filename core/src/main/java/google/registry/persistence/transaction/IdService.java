@@ -30,13 +30,13 @@ final class IdService {
    * AtomicLong}
    *
    * <p>The generated IDs are project-wide unique.
+   *
+   * <p>Do not use this method directly. Use {@link TransactionManager#allocateId} instead.
    */
   static long allocateId() {
-    return tm().transact(
-            () ->
-                (Long)
-                    tm().getEntityManager()
-                        .createNativeQuery("SELECT nextval('project_wide_unique_id_seq')")
-                        .getSingleResult());
+    return (Long)
+        tm().getEntityManager()
+            .createNativeQuery("SELECT nextval('project_wide_unique_id_seq')")
+            .getSingleResult();
   }
 }

@@ -31,8 +31,10 @@ final class ReplicaDbIdService {
 
   /**
    * Returns the next long value from a {@link AtomicLong}. Each id is unique in the JVM instance.
+   *
+   * <p>Do not use this method directly. Use {@link TransactionManager#allocateId} instead.
    */
-  static final long allocatedId() {
+  static long allocatedId() {
     return nextId.getAndIncrement();
   }
 }
