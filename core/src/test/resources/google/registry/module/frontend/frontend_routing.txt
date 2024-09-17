@@ -21,3 +21,4 @@ CONSOLE  /console-api/settings/contacts     ContactAction                   GET,
 CONSOLE  /console-api/settings/security     SecurityAction                  POST     n  USER PUBLIC
 CONSOLE  /console-api/settings/whois-fields WhoisRegistrarFieldsAction      POST     n  USER PUBLIC
 CONSOLE  /console-api/userdata              ConsoleUserDataAction           GET      n  USER PUBLIC
+CONSOLE  /console-api/users                 ConsoleUsersAction              GET,POST n  USER PUBLIC
