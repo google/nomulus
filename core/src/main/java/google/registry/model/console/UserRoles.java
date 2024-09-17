@@ -18,6 +18,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 
 import com.google.common.collect.ImmutableMap;
+import com.google.gson.annotations.Expose;
 import google.registry.model.Buildable;
 import google.registry.model.ImmutableObject;
 import google.registry.persistence.converter.RegistrarToRoleMapUserType;
@@ -53,6 +54,7 @@ public class UserRoles extends ImmutableObject implements Buildable {
   private GlobalRole globalRole = GlobalRole.NONE;
 
   /** Any per-registrar roles that this user may have. */
+  @Expose
   @Type(RegistrarToRoleMapUserType.class)
   private Map<String, RegistrarRole> registrarRoles = ImmutableMap.of();
 
