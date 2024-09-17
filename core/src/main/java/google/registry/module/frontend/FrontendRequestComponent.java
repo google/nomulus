@@ -35,6 +35,7 @@ import google.registry.ui.server.console.ConsoleRegistryLockAction;
 import google.registry.ui.server.console.ConsoleRegistryLockVerifyAction;
 import google.registry.ui.server.console.ConsoleUpdateRegistrarAction;
 import google.registry.ui.server.console.ConsoleUserDataAction;
+import google.registry.ui.server.console.ConsoleUsersAction;
 import google.registry.ui.server.console.RegistrarsAction;
 import google.registry.ui.server.console.settings.ContactAction;
 import google.registry.ui.server.console.settings.SecurityAction;
@@ -80,6 +81,8 @@ public interface FrontendRequestComponent {
   ConsoleUpdateRegistrarAction consoleUpdateRegistrarAction();
 
   ConsoleUserDataAction consoleUserDataAction();
+
+  ConsoleUsersAction consoleUsersAction();
 
   ConsoleDumDownloadAction consoleDumDownloadAction();
 

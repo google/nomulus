@@ -22,6 +22,7 @@ import static google.registry.util.PasswordUtils.SALT_SUPPLIER;
 import static google.registry.util.PasswordUtils.hashPassword;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 
+import com.google.gson.annotations.Expose;
 import google.registry.model.Buildable;
 import google.registry.model.UpdateAutoTimestampEntity;
 import google.registry.util.PasswordUtils;
@@ -50,12 +51,13 @@ public class UserBase extends UpdateAutoTimestampEntity implements Buildable {
   private static final long serialVersionUID = 6936728603828566721L;
 
   /** Email address of the user in question. */
-  @Transient String emailAddress;
+  @Transient @Expose String emailAddress;
 
   /** Optional external email address to use for registry lock confirmation emails. */
   @Column String registryLockEmailAddress;
 
   /** Roles (which grant permissions) associated with this user. */
+  @Expose
   @Column(nullable = false)
   UserRoles userRoles;
 
