@@ -16,6 +16,7 @@ package google.registry.export;
 
 import static com.google.common.base.Verify.verifyNotNull;
 import static google.registry.model.tld.Tlds.getTldsOfType;
+import static google.registry.persistence.PersistenceModule.TransactionIsolationLevel.TRANSACTION_REPEATABLE_READ;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.request.Action.Method.POST;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -70,6 +71,7 @@ public class ExportDomainListsAction implements Runnable {
         tld -> {
           List<String> domains =
               tm().transact(
+                      TRANSACTION_REPEATABLE_READ,
                       () ->
                           // Note that if we had "creationTime <= :now" in the condition (not
                           // necessary as there is no pending creation, the order of deletionTime

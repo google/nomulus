@@ -64,7 +64,7 @@ final class UpdateDomainCommand extends CreateOrUpdateDomainCommand {
       description =
           "Comma-delimited list of nameservers to add, up to 13. "
               + "Cannot be set if --nameservers is set.",
-      converter = NameserversParameter.class,
+      listConverter = NameserversParameter.class,
       validateWith = NameserversParameter.class)
   private Set<String> addNameservers = new HashSet<>();
 
@@ -95,7 +95,7 @@ final class UpdateDomainCommand extends CreateOrUpdateDomainCommand {
       description =
           "Comma-delimited list of nameservers to remove, up to 13. "
               + "Cannot be set if --nameservers is set.",
-      converter = NameserversParameter.class,
+      listConverter = NameserversParameter.class,
       validateWith = NameserversParameter.class)
   private Set<String> removeNameservers = new HashSet<>();
 
