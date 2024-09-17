@@ -249,12 +249,12 @@ public class AllocationToken extends UpdateAutoTimestampEntity implements Builda
   Money renewalPrice;
 
   /**
-   * A discount that allows to set promotional prices. This field is different from {@code
+   * A discount that allows the setting of promotional prices. This field is different from {@code
    * discountFraction} because the price set here is treated as the domain price, versus {@code
    * discountFraction} that applies a fraction discount to the domain base price.
    *
-   * <p>Prefer this method of discount when attempting to set a promotional price across domains
-   * with different base prices (one example being domains with different TLDs).
+   * <p>Prefer this method of discount when attempting to set a promotional price across TLDs with
+   * different base prices.
    */
   @Nullable
   @AttributeOverride(
@@ -315,8 +315,8 @@ public class AllocationToken extends UpdateAutoTimestampEntity implements Builda
     return discountFraction;
   }
 
-  public Money getDiscountPrice() {
-    return discountPrice;
+  public Optional<Money> getDiscountPrice() {
+    return Optional.of(discountPrice);
   }
 
   public boolean shouldDiscountPremiums() {
@@ -588,7 +588,7 @@ public class AllocationToken extends UpdateAutoTimestampEntity implements Builda
       return this;
     }
 
-    public Builder setDiscountPrice(Money discountPrice) {
+    public Builder setDiscountPrice(@Nullable Money discountPrice) {
       getInstance().discountPrice = discountPrice;
       return this;
     }

@@ -327,15 +327,18 @@ public final class DomainPricingLogic {
     // Apply the allocation token discount, if applicable.
     if (allocationToken.isPresent()
         && allocationToken.get().getTokenBehavior().equals(TokenBehavior.DEFAULT)) {
-      if (allocationToken.get().getDiscountPrice() != null) {
-        if (!tld.getCurrency().equals(allocationToken.get().getDiscountPrice().getCurrencyUnit()))
+      if (allocationToken.get().getDiscountPrice().isPresent()) {
+        if (!tld.getCurrency()
+            .equals(allocationToken.get().getDiscountPrice().get().getCurrencyUnit())) {
           throw new AllocationTokenInvalidForCurrencyException();
+        }
 
         int nonDiscountedYears = Math.max(0, years - allocationToken.get().getDiscountYears());
         totalDomainFlowCost =
             allocationToken
                 .get()
                 .getDiscountPrice()
+                .get()
                 .multipliedBy(allocationToken.get().getDiscountYears())
                 .plus(subsequentYearCost.orElse(firstYearCost).multipliedBy(nonDiscountedYears));
       } else {
