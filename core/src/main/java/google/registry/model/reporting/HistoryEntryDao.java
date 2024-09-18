@@ -118,7 +118,7 @@ public class HistoryEntryDao {
   /** Loads all history objects from all time from the given registrars. */
   public static Iterable<HistoryEntry> loadHistoryObjectsByRegistrars(
       ImmutableCollection<String> registrarIds) {
-    return tm().transact(
+    return tm().reTransact(
             () ->
                 Streams.concat(
                         loadHistoryObjectByRegistrarsInternal(ContactHistory.class, registrarIds),

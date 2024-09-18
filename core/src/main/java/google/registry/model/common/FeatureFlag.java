@@ -82,7 +82,7 @@ public class FeatureFlag extends ImmutableObject implements Buildable {
       TimedTransitionProperty.withInitialValue(FeatureStatus.INACTIVE);
 
   public static Optional<FeatureFlag> getUncached(FeatureName featureName) {
-    return tm().transact(() -> tm().loadByKeyIfPresent(createVKey(featureName)));
+    return tm().reTransact(() -> tm().loadByKeyIfPresent(createVKey(featureName)));
   }
 
   public static ImmutableList<FeatureFlag> getAllUncached() {

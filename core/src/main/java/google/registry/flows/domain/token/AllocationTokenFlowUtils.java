@@ -177,8 +177,9 @@ public class AllocationTokenFlowUtils {
       return maybeTokenEntity.get();
     }
 
+    // TODO(b/368069206): `reTransact` needed by tests only.
     maybeTokenEntity =
-        tm().transact(() -> tm().loadByKeyIfPresent(VKey.create(AllocationToken.class, token)));
+        tm().reTransact(() -> tm().loadByKeyIfPresent(VKey.create(AllocationToken.class, token)));
 
     if (maybeTokenEntity.isEmpty()) {
       throw new InvalidAllocationTokenException();

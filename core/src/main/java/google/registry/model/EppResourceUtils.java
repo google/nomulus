@@ -345,7 +345,7 @@ public final class EppResourceUtils {
         "key must be either VKey<Contact> or VKey<Host>, but it is %s",
         key);
     boolean isContactKey = key.getKind().equals(Contact.class);
-    return tm().transact(
+    return tm().reTransact(
             () -> {
               Query query;
               if (isContactKey) {

@@ -1014,7 +1014,7 @@ public class RegistrarBase extends UpdateAutoTimestampEntity implements Buildabl
   /** Loads and returns a registrar entity by its id directly from the database. */
   public static Optional<Registrar> loadByRegistrarId(String registrarId) {
     checkArgument(!Strings.isNullOrEmpty(registrarId), "registrarId must be specified");
-    return tm().transact(() -> tm().loadByKeyIfPresent(createVKey(registrarId)));
+    return tm().reTransact(() -> tm().loadByKeyIfPresent(createVKey(registrarId)));
   }
 
   /**

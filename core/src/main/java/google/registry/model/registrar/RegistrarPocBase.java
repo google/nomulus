@@ -172,19 +172,16 @@ public class RegistrarPocBase extends ImmutableObject implements Jsonifiable, Un
    */
   public static void updateContacts(
       final Registrar registrar, final ImmutableSet<RegistrarPoc> contacts) {
-    tm().transact(
-            () -> {
-              ImmutableSet<String> emailAddressesToKeep =
-                  contacts.stream().map(RegistrarPoc::getEmailAddress).collect(toImmutableSet());
-              tm().query(
-                      "DELETE FROM RegistrarPoc WHERE registrarId = :registrarId AND "
-                          + "emailAddress NOT IN :emailAddressesToKeep")
-                  .setParameter("registrarId", registrar.getRegistrarId())
-                  .setParameter("emailAddressesToKeep", emailAddressesToKeep)
-                  .executeUpdate();
+    ImmutableSet<String> emailAddressesToKeep =
+        contacts.stream().map(RegistrarPoc::getEmailAddress).collect(toImmutableSet());
+    tm().query(
+            "DELETE FROM RegistrarPoc WHERE registrarId = :registrarId AND "
+                + "emailAddress NOT IN :emailAddressesToKeep")
+        .setParameter("registrarId", registrar.getRegistrarId())
+        .setParameter("emailAddressesToKeep", emailAddressesToKeep)
+        .executeUpdate();
 
-              tm().putAll(contacts);
-            });
+    tm().putAll(contacts);
   }
 
   public String getName() {

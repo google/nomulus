@@ -579,7 +579,7 @@ public class DomainBase extends EppResource
 
   /** Loads and returns the fully qualified host names of all linked nameservers. */
   public ImmutableSortedSet<String> loadNameserverHostNames() {
-    return tm().transact(
+    return tm().reTransact(
             () ->
                 tm().loadByKeys(getNameservers()).values().stream()
                     .map(Host::getHostName)

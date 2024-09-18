@@ -19,6 +19,7 @@ import static google.registry.model.registrar.RegistrarPocBase.Type.ABUSE;
 import static google.registry.model.registrar.RegistrarPocBase.Type.ADMIN;
 import static google.registry.model.registrar.RegistrarPocBase.Type.TECH;
 import static google.registry.model.registrar.RegistrarPocBase.Type.WHOIS;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.loadRegistrar;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.DatabaseHelper.persistSimpleResource;
@@ -49,16 +50,18 @@ class RegistrarPocCommandTest extends CommandTestCase<RegistrarPocCommand> {
   @Test
   void testList() throws Exception {
     Registrar registrar = loadRegistrar("NewRegistrar");
-    RegistrarPoc.updateContacts(
-        registrar,
-        ImmutableSet.of(
-            new RegistrarPoc.Builder()
-                .setRegistrar(registrar)
-                .setName("John Doe")
-                .setEmailAddress("john.doe@example.com")
-                .setTypes(ImmutableSet.of(ADMIN))
-                .setVisibleInWhoisAsAdmin(true)
-                .build()));
+    tm().transact(
+            () ->
+                RegistrarPoc.updateContacts(
+                    registrar,
+                    ImmutableSet.of(
+                        new RegistrarPoc.Builder()
+                            .setRegistrar(registrar)
+                            .setName("John Doe")
+                            .setEmailAddress("john.doe@example.com")
+                            .setTypes(ImmutableSet.of(ADMIN))
+                            .setVisibleInWhoisAsAdmin(true)
+                            .build())));
     runCommandForced("--mode=LIST", "--output=" + output, "NewRegistrar");
     assertThat(Files.readAllLines(Paths.get(output), UTF_8))
         .containsExactly(
