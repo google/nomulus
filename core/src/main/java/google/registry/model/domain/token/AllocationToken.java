@@ -316,7 +316,7 @@ public class AllocationToken extends UpdateAutoTimestampEntity implements Builda
   }
 
   public Optional<Money> getDiscountPrice() {
-    return Optional.of(discountPrice);
+    return Optional.ofNullable(discountPrice);
   }
 
   public boolean shouldDiscountPremiums() {
