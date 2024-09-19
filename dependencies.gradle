@@ -44,7 +44,7 @@ ext {
       'org.seleniumhq.selenium:selenium-remote-driver:3.141.59',
 
        // TODO: Migrate Soy Tofu to Soy Sauce (go/soysauce-migration)
-      'com.google.protobuf:protobuf-java:3.13.0',
+      'com.google.protobuf:protobuf-java:3.25.5',
       'com.google.template:soy:2021-02-01',
 
       // CAPPED VERSIONS START HERE.
