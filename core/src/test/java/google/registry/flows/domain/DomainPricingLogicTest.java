@@ -1023,6 +1023,37 @@ public class DomainPricingLogicTest {
   }
 
   @Test
+  void testGetDomainTransferPrice_premiumDomain_default_premiumRenewalPrice() throws EppException {
+    assertThat(
+            domainPricingLogic.getTransferPrice(
+                tld,
+                "premium.example",
+                clock.nowUtc(),
+                persistDomainAndSetRecurrence("premium.example", DEFAULT, Optional.empty())))
+        .isEqualTo(
+            new FeesAndCredits.Builder()
+                .setCurrency(USD)
+                .addFeeOrCredit(Fee.create(new BigDecimal("100.00"), RENEW, true))
+                .build());
+  }
+
+  @Test
+  void testGetDomainTransferPrice_standardDomain_nonPremium_nonPremiumRenewalPrice()
+      throws EppException {
+    assertThat(
+            domainPricingLogic.getTransferPrice(
+                tld,
+                "standard.example",
+                clock.nowUtc(),
+                persistDomainAndSetRecurrence("standard.example", NONPREMIUM, Optional.empty())))
+        .isEqualTo(
+            new FeesAndCredits.Builder()
+                .setCurrency(USD)
+                .addFeeOrCredit(Fee.create(new BigDecimal("10.00"), RENEW, false))
+                .build());
+  }
+
+  @Test
   void testGetDomainTransferPrice_premiumDomain_nonPremium_nonPremiumRenewalPrice()
       throws EppException {
     assertThat(
