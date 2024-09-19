@@ -39,6 +39,7 @@ import javax.annotation.Nullable;
 import javax.inject.Inject;
 import org.apache.arrow.util.VisibleForTesting;
 import org.apache.http.HttpStatus;
+import org.joda.time.DateTime;
 import org.joda.time.Duration;
 
 /**
@@ -50,6 +51,10 @@ import org.joda.time.Duration;
  *
  * <p>You may pass in a {@code batchSize} for the batched read of domains from the database. This is
  * recommended to be somewhere between 200 and 500. The default value is 250.
+ *
+ * <p>If {@code activeOrDeletedSince} is passed in the request, this action will enqueue DNS publish
+ * tasks on all domains with a deletion time equal or greater than the value provided, including
+ * domains that have since been deleted.
  */
 @Action(
     service = Action.Service.TOOLS,
@@ -80,17 +85,21 @@ public class RefreshDnsForAllDomainsAction implements Runnable {
 
   private final Random random;
 
+  private final DateTime activeOrDeletedSince;
+
   @Inject
   RefreshDnsForAllDomainsAction(
       Response response,
       @Parameter(PARAM_TLDS) ImmutableSet<String> tlds,
       @Parameter(PARAM_BATCH_SIZE) Optional<Integer> batchSize,
       @Parameter("refreshQps") Optional<Integer> refreshQps,
+      @Parameter("activeOrDeletedSince") Optional<DateTime> activeOrDeletedSince,
       Random random) {
     this.response = response;
     this.tlds = tlds;
     this.batchSize = batchSize.orElse(DEFAULT_BATCH_SIZE);
     this.refreshQps = refreshQps.orElse(DEFAULT_REFRESH_QPS);
+    this.activeOrDeletedSince = activeOrDeletedSince.orElse(END_OF_TIME);
     this.random = random;
   }
 
@@ -118,11 +127,11 @@ public class RefreshDnsForAllDomainsAction implements Runnable {
   private Duration calculateSmear() {
     Long activeDomains =
         tm().query(
-                "SELECT COUNT(*) FROM Domain WHERE tld IN (:tlds) AND deletionTime ="
-                    + " :endOfTime",
+                "SELECT COUNT(*) FROM Domain WHERE tld IN (:tlds) AND deletionTime >="
+                    + " :activeOrDeletedSince",
                 Long.class)
             .setParameter("tlds", tlds)
-            .setParameter("endOfTime", END_OF_TIME)
+            .setParameter("activeOrDeletedSince", activeOrDeletedSince)
             .getSingleResult();
     return Duration.standardSeconds(Math.max(activeDomains / refreshQps, 1));
   }
@@ -131,12 +140,12 @@ public class RefreshDnsForAllDomainsAction implements Runnable {
     String sql =
         String.format(
             "SELECT domainName FROM Domain WHERE tld IN (:tlds) AND"
-                + " deletionTime = :endOfTime %s ORDER BY domainName ASC",
+                + " deletionTime >= :activeOrDeletedSince %s ORDER BY domainName ASC",
             lastInPreviousBatch.isPresent() ? "AND domainName > :lastInPreviousBatch" : "");
     TypedQuery<String> query =
         tm().query(sql, String.class)
             .setParameter("tlds", tlds)
-            .setParameter("endOfTime", END_OF_TIME);
+            .setParameter("activeOrDeletedSince", activeOrDeletedSince);
     lastInPreviousBatch.ifPresent(l -> query.setParameter("lastInPreviousBatch", l));
     return query.setMaxResults(batchSize).getResultStream().collect(toImmutableList());
   }

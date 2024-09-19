@@ -70,6 +70,7 @@ import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Callable;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -224,7 +225,7 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
     EntityTransaction txn = txnInfo.entityManager.getTransaction();
     try {
       txn.begin();
-      txnInfo.start(clock, readOnly ? ReplicaDbIdService::allocatedId : IdService::allocateId);
+      txnInfo.start(clock, readOnly ? ReplicaDbIdService::allocateId : this::fetchIdFromSequence);
       if (readOnly) {
         getEntityManager().createNativeQuery("SET TRANSACTION READ ONLY").executeUpdate();
         logger.atInfo().log("Using read-only SQL replica");
@@ -556,6 +557,19 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
 
   private <T> EntityType<T> getEntityType(Class<T> clazz) {
     return emf.getMetamodel().entity(clazz);
+  }
+
+  /**
+   * A SQL Sequence based ID allocator that generates an ID from a monotonically increasing {@link
+   * AtomicLong}
+   *
+   * <p>The generated IDs are project-wide unique.
+   */
+  private long fetchIdFromSequence() {
+    return (Long)
+        getEntityManager()
+            .createNativeQuery("SELECT nextval('project_wide_unique_id_seq')")
+            .getSingleResult();
   }
 
   private record EntityId(String name, Object value) {}
@@ -1036,6 +1050,25 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
       return buildQuery().getResultList().stream()
           .map(JpaTransactionManagerImpl.this::detach)
           .collect(toImmutableList());
+    }
+  }
+
+  /**
+   * Provides {@code long} values for use as {@code id} by JPA model entities in (read-only)
+   * transactions in the replica database. Each id is only unique in the JVM instance.
+   *
+   * <p>The {@link #fetchIdFromSequence database sequence-based id allocator} cannot be used with
+   * the replica because id generation is a write operation.
+   */
+  private static final class ReplicaDbIdService {
+
+    private static final AtomicLong nextId = new AtomicLong(1);
+
+    /**
+     * Returns the next long value from a {@link AtomicLong}. Each id is unique in the JVM instance.
+     */
+    static long allocateId() {
+      return nextId.getAndIncrement();
     }
   }
 }
