@@ -44,7 +44,6 @@ ext {
       'org.seleniumhq.selenium:selenium-remote-driver:3.141.59',
 
        // TODO: Migrate Soy Tofu to Soy Sauce (go/soysauce-migration)
-      'com.google.protobuf:protobuf-java:3.13.0',
       'com.google.template:soy:2021-02-01',
 
       // CAPPED VERSIONS START HERE.
@@ -73,6 +72,11 @@ ext {
       // is released.
       'jakarta.inject:jakarta.inject-api:[1,2.0.0)!!',
 
+      // Version 2.51.1 is the last working version before dagger fully supports
+      // jakarta annotations. See comments on jakarta.inject below.
+      'com.google.dagger:dagger-compiler:[2.33,2.51.2)!!',
+      'com.google.dagger:dagger:[2.33,2.51.2)!!',
+
       // This packages has a broken versioning scheme. There are v1beta3-* and
       // v1b4-* packages that are way older than v1b3-rev2024MMDD-* that need to
       // be excluded.
@@ -81,6 +85,9 @@ ext {
       // v2 has not been updated since 2022, seems abandoned. It also requires
       // google-api-client major version 1.
       'com.google.apis:google-api-services-dns:[v1-rev20240419-2.0.0, v2beta)',
+
+      // TODO: Remove the cap after soy migration.
+      'com.google.protobuf:protobuf-java:[3.25.5, 4.0.0)!!',
 
       // DYNAMIC VERSIONS START HERE.
 
@@ -122,10 +129,6 @@ ext {
       'com.google.cloud:google-cloud-tasks:[1.33.2,)',
       'com.google.code.findbugs:jsr305:[3.0.2,)',
       'com.google.code.gson:gson:[2.8.6,)',
-      // Version 2.51.1 is the last working version before dagger fully supports
-      // jakarta annotations. See comments on jakarta.inject below.
-      'com.google.dagger:dagger-compiler:[2.33,2.51.2)!!',
-      'com.google.dagger:dagger:[2.33,2.51.2)!!',
       'com.google.errorprone:error_prone_annotations:[2.7.1,)',
       'com.google.flogger:flogger-system-backend:[0.7.4,)',
       'com.google.flogger:flogger:[0.7.4,)',
