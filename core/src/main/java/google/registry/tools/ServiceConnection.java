@@ -14,6 +14,7 @@
 
 package google.registry.tools;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static com.google.common.base.Verify.verify;
@@ -59,17 +60,19 @@ public class ServiceConnection {
   /** Pattern to heuristically extract title tag contents in HTML responses. */
   protected static final Pattern HTML_TITLE_TAG_PATTERN = Pattern.compile("<title>(.*?)</title>");
 
-  protected final Service service;
-  protected final boolean useCanary;
-  protected final HttpRequestFactory requestFactory;
+  private final Service service;
+  private final boolean useCanary;
+  private final HttpRequestFactory requestFactory;
 
   @Inject
   ServiceConnection(@Config("useGke") boolean useGke, HttpRequestFactory requestFactory) {
     this(useGke ? GkeService.BACKEND : GaeService.TOOLS, requestFactory, false);
   }
 
-  protected ServiceConnection(
-      Service service, HttpRequestFactory requestFactory, boolean useCanary) {
+  private ServiceConnection(Service service, HttpRequestFactory requestFactory, boolean useCanary) {
+    // Currently, only GAE supports connecting to canary.
+    // TODO (jianglai): decide how to implement canary for GKE.
+    checkArgument(useCanary == false || service instanceof GaeService, "Canary is only for GAE");
     this.service = service;
     this.requestFactory = requestFactory;
     this.useCanary = useCanary;
@@ -132,8 +135,7 @@ public class ServiceConnection {
   @VisibleForTesting
   URL getServer() {
     URL url = service.getServiceUrl();
-    // Currently only GAE supports connecting to canary.
-    if (service instanceof GaeService && useCanary) {
+    if (useCanary) {
       verify(!isNullOrEmpty(url.getHost()), "Null host in url");
       url =
           makeUrl(

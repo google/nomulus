@@ -159,6 +159,13 @@ public class CloudTasksUtilsTest {
   }
 
   @Test
+  void testFailure_methodNotAllowed() {
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> cloudTasksUtils.createTask(OtherAction.class, POST, params));
+  }
+
+  @Test
   void testSuccess_createPostTasks() {
     Task task = cloudTasksUtils.createTask(TheAction.class, POST, params);
     assertThat(task.getHttpRequest().getHttpMethod()).isEqualTo(HttpMethod.POST);
@@ -276,7 +283,7 @@ public class CloudTasksUtilsTest {
       service = GaeService.BACKEND,
       gkeService = GkeService.BACKEND,
       path = "/the/path",
-      method = {GET},
+      method = {GET, POST},
       auth = Auth.AUTH_ADMIN)
   private static class TheAction implements Runnable {
 
