@@ -605,7 +605,7 @@ public class RegistrarSettingsAction implements Runnable, JsonActionRunner.JsonA
       cloudTasksUtils.enqueue(
           SyncRegistrarsSheetAction.QUEUE,
           cloudTasksUtils.createTask(
-              SyncRegistrarsSheetAction.class, Action.Method.GET, ImmutableMultimap.of()));
+              SyncRegistrarsSheetAction.class, Action.Method.POST, ImmutableMultimap.of()));
     }
     String environment = Ascii.toLowerCase(String.valueOf(RegistryEnvironment.get()));
     sendEmailUtils.sendEmail(
