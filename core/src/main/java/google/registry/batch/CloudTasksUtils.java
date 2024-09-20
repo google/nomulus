@@ -28,6 +28,7 @@ import com.google.cloud.tasks.v2.QueueName;
 import com.google.cloud.tasks.v2.Task;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Streams;
 import com.google.common.escape.Escaper;
@@ -219,6 +220,13 @@ public class CloudTasksUtils implements Serializable {
         "Action class %s is not annotated with @Action",
         actionClazz.getSimpleName());
     String path = action.path();
+    ImmutableSet<Method> allowedMethods = ImmutableSet.copyOf(action.method());
+    checkArgument(
+        allowedMethods.contains(method),
+        "Method %s is not allowed for action %s. Allowed methods are %s",
+        method,
+        actionClazz.getSimpleName(),
+        allowedMethods);
     Service service =
         RegistryEnvironment.isOnJetty() ? Action.ServiceGetter.get(action) : action.service();
     return createTask(path, method, service, params);
