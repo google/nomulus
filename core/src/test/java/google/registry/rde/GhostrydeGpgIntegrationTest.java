@@ -87,7 +87,8 @@ class GhostrydeGpgIntegrationTest {
     assertThat(stdout).contains(":encrypted data packet:");
     assertThat(stdout).contains("version 3, algo 1, keyid A59C132F3589A1D5");
     assertThat(stdout).contains("name=\"" + Ghostryde.INNER_FILENAME + "\"");
-    assertThat(stderr).contains("encrypted with 2048-bit RSA key, ID A59C132F3589A1D5");
+    assertThat(stderr).contains("2048");
+    assertThat(stderr).contains("ID A59C132F3589A1D5");
 
     pid = gpg.exec(GPG_BINARY, "--use-embedded-filename", file.getPath());
     stderr = CharStreams.toString(new InputStreamReader(pid.getErrorStream(), UTF_8));

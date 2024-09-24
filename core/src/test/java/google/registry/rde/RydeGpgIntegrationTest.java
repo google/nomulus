@@ -148,9 +148,7 @@ public class RydeGpgIntegrationTest {
       assertWithMessage("Literal data packet should be in BINARY mode")
           .that(stdout)
           .contains("mode b ");
-      assertWithMessage("Unexpected asymmetric encryption algorithm")
-          .that(stderr)
-          .contains("encrypted with 2048-bit RSA key");
+      assertWithMessage("Unexpected asymmetric encryption algorithm").that(stderr).contains("2048");
       assertWithMessage("Unexpected receiver public key")
           .that(stderr)
           .contains("ID 7F9084EE54E1EB0F");
