@@ -22,6 +22,9 @@ steps:
   - |
     set -e
     git clone https://gerrit.googlesource.com/gcompute-tools
+    if [ ! -f /usr/bin/python ]; then
+      ln -s /usr/bin/python3 /usr/bin/python
+    fi
     ./gcompute-tools/git-cookie-authdaemon
     git clone ${_INTERNAL_REPO_URL} nomulus-internal
 # Download and decrypt the nomulus tool credential
