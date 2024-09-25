@@ -49,11 +49,11 @@ jobs:
 
     # Build with Gradle
     - name: Setup Gradle
-      uses: gradle/actions/setup-gradle@v3
+      uses: gradle/actions/setup-gradle@v4
       with:
         build-scan-publish: true
-        build-scan-terms-of-service-url: "https://gradle.com/terms-of-service"
-        build-scan-terms-of-service-agree: "yes"
+        build-scan-terms-of-use-url: "https://gradle.com/terms-of-service"
+        build-scan-terms-of-use-agree: "yes"
     - name: Execute Gradle build
       run: ./gradlew build -x test -x jIFC
 
