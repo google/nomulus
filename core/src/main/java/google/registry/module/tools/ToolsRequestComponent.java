@@ -28,8 +28,6 @@ import google.registry.request.RequestModule;
 import google.registry.request.RequestScope;
 import google.registry.tools.server.CreateGroupsAction;
 import google.registry.tools.server.GenerateZoneFilesAction;
-import google.registry.tools.server.ListDomainsAction;
-import google.registry.tools.server.ListHostsAction;
 import google.registry.tools.server.ListPremiumListsAction;
 import google.registry.tools.server.ListRegistrarsAction;
 import google.registry.tools.server.ListReservedListsAction;
@@ -56,8 +54,6 @@ public interface ToolsRequestComponent {
   CreateGroupsAction createGroupsAction();
   EppToolAction eppToolAction();
   GenerateZoneFilesAction generateZoneFilesAction();
-  ListDomainsAction listDomainsAction();
-  ListHostsAction listHostsAction();
   ListPremiumListsAction listPremiumListsAction();
   ListRegistrarsAction listRegistrarsAction();
   ListReservedListsAction listReservedListsAction();

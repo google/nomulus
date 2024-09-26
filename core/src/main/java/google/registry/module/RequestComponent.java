@@ -99,8 +99,6 @@ import google.registry.tmch.TmchModule;
 import google.registry.tmch.TmchSmdrlAction;
 import google.registry.tools.server.CreateGroupsAction;
 import google.registry.tools.server.GenerateZoneFilesAction;
-import google.registry.tools.server.ListDomainsAction;
-import google.registry.tools.server.ListHostsAction;
 import google.registry.tools.server.ListPremiumListsAction;
 import google.registry.tools.server.ListRegistrarsAction;
 import google.registry.tools.server.ListReservedListsAction;
@@ -224,10 +222,6 @@ interface RequestComponent {
   IcannReportingStagingAction icannReportingStagingAction();
 
   IcannReportingUploadAction icannReportingUploadAction();
-
-  ListDomainsAction listDomainsAction();
-
-  ListHostsAction listHostsAction();
 
   ListPremiumListsAction listPremiumListsAction();
 
