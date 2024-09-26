@@ -108,6 +108,7 @@ public class RefreshDnsForAllDomainsAction implements Runnable {
   public void run() {
     assertTldsExist(tlds);
     checkArgument(batchSize > 0, "Must specify a positive number for batch size");
+    logger.atInfo().log("Enqueueing DNS refresh tasks for TLDs %s.", tlds);
     Duration smear = tm().transact(TRANSACTION_REPEATABLE_READ, this::calculateSmear);
 
     ImmutableList<String> domainsBatch;
@@ -119,6 +120,7 @@ public class RefreshDnsForAllDomainsAction implements Runnable {
                   TRANSACTION_REPEATABLE_READ, () -> refreshBatch(lastInPreviousBatchOpt, smear));
       lastInPreviousBatch = domainsBatch.isEmpty() ? null : getLast(domainsBatch);
     } while (domainsBatch.size() == batchSize);
+    logger.atInfo().log("Finished enqueueing DNS refresh tasks.");
   }
 
   /**
@@ -134,7 +136,9 @@ public class RefreshDnsForAllDomainsAction implements Runnable {
             .setParameter("tlds", tlds)
             .setParameter("activeOrDeletedSince", activeOrDeletedSince)
             .getSingleResult();
-    return Duration.standardSeconds(Math.max(activeDomains / refreshQps, 1));
+    Duration smear = Duration.standardSeconds(Math.max(activeDomains / refreshQps, 1));
+    logger.atInfo().log("Smearing %d domain DNS refresh tasks across %s.", activeDomains, smear);
+    return smear;
   }
 
   private ImmutableList<String> getBatch(Optional<String> lastInPreviousBatch) {
