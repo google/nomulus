@@ -41,9 +41,7 @@ import google.registry.testing.FakeResponse;
 import google.registry.util.StringGenerator;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -117,9 +115,9 @@ class ConsoleUsersActionTest {
         createAction(Optional.of(ConsoleApiParamsUtils.createFake(authResult)), Optional.of("GET"));
     action.run();
     var response = ((FakeResponse) consoleApiParams.response());
-    User[] users = GSON.fromJson(response.getPayload(), User[].class);
-    assertThat(Arrays.stream(users).map(u -> u.getEmailAddress()).collect(Collectors.toList()))
-        .containsExactlyElementsIn(ImmutableList.of("test1@test.com", "test2@test.com"));
+    assertThat(response.getPayload())
+        .isEqualTo(
+            "[{\"emailAddress\":\"test1@test.com\",\"role\":\"PRIMARY_CONTACT\"},{\"emailAddress\":\"test2@test.com\",\"role\":\"PRIMARY_CONTACT\"}]");
   }
 
   @Test
@@ -155,7 +153,8 @@ class ConsoleUsersActionTest {
     var response = ((FakeResponse) consoleApiParams.response());
     assertThat(response.getStatus()).isEqualTo(SC_OK);
     assertThat(response.getPayload())
-        .contains("{\"password\":\"abcdefghijklmnop\",\"email\":\"email-1@email.com\"}");
+        .contains(
+            "{\"password\":\"abcdefghijklmnop\",\"emailAddress\":\"email-1@email.com\",\"role\":\"ACCOUNT_MANAGER\"}");
   }
 
   @Test

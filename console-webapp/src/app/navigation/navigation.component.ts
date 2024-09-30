@@ -17,8 +17,9 @@ import { Component } from '@angular/core';
 import { MatTreeNestedDataSource } from '@angular/material/tree';
 import { NavigationEnd, Router } from '@angular/router';
 import { Subscription } from 'rxjs';
-import { RouteWithIcon, routes } from '../app-routing.module';
+import { RouteWithIcon, routes, PATHS } from '../app-routing.module';
 import { RESTRICTED_ELEMENTS } from '../shared/directives/userLevelVisiblity.directive';
+import { RegistrarComponent } from '../registrar/registrarsTable.component';
 
 interface NavMenuNode extends RouteWithIcon {
   parentRoute?: RouteWithIcon;
@@ -59,9 +60,12 @@ export class NavigationComponent {
   }
 
   getElementId(node: RouteWithIcon) {
-    return node.path === 'registrars'
-      ? RESTRICTED_ELEMENTS.REGISTRAR_ELEMENT
-      : null;
+    if (node.path === RegistrarComponent.PATH) {
+      return RESTRICTED_ELEMENTS.REGISTRAR_ELEMENT;
+    } else if (node.path === PATHS.UsersComponent) {
+      return RESTRICTED_ELEMENTS.USERS;
+    }
+    return null;
   }
 
   syncExpandedNavigationWithRoute(url: string) {

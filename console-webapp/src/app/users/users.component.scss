@@ -12,25 +12,27 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+.console-app {
+  &__users-spinner {
+    align-items: center;
+    display: flex;
+    justify-content: center;
+  }
 
-import UsersComponent from './users.component';
+  $min-width: 756px;
+  $max-width: 1024px;
 
-describe('UsersComponent', () => {
-  let component: UsersComponent;
-  let fixture: ComponentFixture<UsersComponent>;
+  &__users-table {
+    min-width: $min-width !important;
+    max-width: $max-width;
+  }
 
-  beforeEach(async () => {
-    await TestBed.configureTestingModule({
-      declarations: [UsersComponent],
-    }).compileComponents();
+  &__users-new {
+    margin-left: 20px;
+  }
 
-    fixture = TestBed.createComponent(UsersComponent);
-    component = fixture.componentInstance;
-    fixture.detectChanges();
-  });
-
-  it('should create', () => {
-    expect(component).toBeTruthy();
-  });
-});
+  &__users-header {
+    display: flex;
+    justify-content: space-between;
+  }
+}

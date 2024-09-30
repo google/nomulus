@@ -95,10 +95,18 @@ public class ConsoleUsersAction extends ConsoleApiAction {
   @Override
   protected void getHandler(User user) {
     checkPermission(user, registrarId, ConsolePermission.MANAGE_USERS);
-    List<User> users =
+    List<ImmutableMap> users =
         getAllUsers().stream()
             .filter(u -> u.getUserRoles().getRegistrarRoles().containsKey(registrarId))
+            .map(
+                u ->
+                    ImmutableMap.of(
+                        "emailAddress",
+                        u.getEmailAddress(),
+                        "role",
+                        u.getUserRoles().getRegistrarRoles().get(registrarId)))
             .collect(Collectors.toList());
+
     consoleApiParams.response().setPayload(gson.toJson(users));
     consoleApiParams.response().setStatus(SC_OK);
   }
@@ -141,7 +149,12 @@ public class ConsoleUsersAction extends ConsoleApiAction {
         .setPayload(
             gson.toJson(
                 ImmutableMap.of(
-                    "password", newUser.getPassword(), "email", newUser.getPrimaryEmail())));
+                    "password",
+                    newUser.getPassword(),
+                    "emailAddress",
+                    newUser.getPrimaryEmail(),
+                    "role",
+                    ACCOUNT_MANAGER)));
   }
 
   private ImmutableList<User> getAllUsers() {
