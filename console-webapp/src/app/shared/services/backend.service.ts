@@ -21,6 +21,7 @@ import { DomainLocksResult } from 'src/app/domains/registryLock.service';
 import { RegistryLockVerificationResponse } from 'src/app/lock/registryLockVerify.service';
 import { OteCreateResponse } from 'src/app/ote/newOte.component';
 import { OteStatusResponse } from 'src/app/ote/oteStatus.component';
+import { User } from 'src/app/users/users.service';
 import {
   Registrar,
   SecuritySettingsBackendModel,
@@ -157,6 +158,18 @@ export class BackendService {
       `/console-api/eppPassword`,
       data
     );
+  }
+
+  getUsers(registrarId: string): Observable<User[]> {
+    return this.http
+      .get<User[]>(`/console-api/users?registrarId=${registrarId}`)
+      .pipe(catchError((err) => this.errorCatcher<User[]>(err)));
+  }
+
+  createUser(registrarId: string): Observable<User> {
+    return this.http
+      .post<User>(`/console-api/users?registrarId=${registrarId}`, {})
+      .pipe(catchError((err) => this.errorCatcher<User>(err)));
   }
 
   getUserData(): Observable<UserData> {

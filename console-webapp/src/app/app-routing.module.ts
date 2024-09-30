@@ -18,15 +18,12 @@ import { BillingInfoComponent } from './billingInfo/billingInfo.component';
 import { DomainListComponent } from './domains/domainList.component';
 import { HomeComponent } from './home/home.component';
 import { RegistryLockVerifyComponent } from './lock/registryLockVerify.component';
-import { NewOteComponent } from './ote/newOte.component';
-import { OteStatusComponent } from './ote/oteStatus.component';
 import { RegistrarDetailsComponent } from './registrar/registrarDetails.component';
 import { RegistrarComponent } from './registrar/registrarsTable.component';
 import { ResourcesComponent } from './resources/resources.component';
 import ContactComponent from './settings/contact/contact.component';
 import SecurityComponent from './settings/security/security.component';
 import { SettingsComponent } from './settings/settings.component';
-import UsersComponent from './settings/users/users.component';
 import WhoisComponent from './settings/whois/whois.component';
 import { SupportComponent } from './support/support.component';
 
@@ -37,6 +34,7 @@ export interface RouteWithIcon extends Route {
 export const PATHS = {
   NewOteComponent: 'new-ote',
   OteStatusComponent: 'ote-status/:registrarId',
+  UsersComponent: 'users',
 };
 export const routes: RouteWithIcon[] = [
   { path: '', redirectTo: '/home', pathMatch: 'full' },
@@ -94,10 +92,6 @@ export const routes: RouteWithIcon[] = [
         component: SecurityComponent,
         title: 'Security',
       },
-      {
-        path: UsersComponent.PATH,
-        component: UsersComponent,
-      },
     ],
   },
   // {
@@ -127,6 +121,13 @@ export const routes: RouteWithIcon[] = [
     component: ResourcesComponent,
     title: 'Resources',
     iconName: 'description',
+  },
+  {
+    path: PATHS.UsersComponent,
+    title: 'Users',
+    iconName: 'manage_accounts',
+    loadComponent: () =>
+      import('./users/users.component').then((mod) => mod.UsersComponent),
   },
   {
     path: SupportComponent.PATH,

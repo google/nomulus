@@ -372,6 +372,8 @@ credentialOAuth:
   delegatedCredentialOauthScopes:
   # View and manage groups on your domain in Directory API.
   - https://www.googleapis.com/auth/admin.directory.group
+  # View and manage users in Google Workspace
+  - https://www.googleapis.com/auth/admin.directory.user
   # View and manage group settings in Group Settings API.
   - https://www.googleapis.com/auth/apps.groups.settings
   # Send email through Gmail.

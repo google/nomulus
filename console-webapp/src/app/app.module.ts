@@ -32,8 +32,6 @@ import { HeaderComponent } from './header/header.component';
 import { HomeComponent } from './home/home.component';
 import { RegistryLockVerifyComponent } from './lock/registryLockVerify.component';
 import { NavigationComponent } from './navigation/navigation.component';
-import { NewOteComponent } from './ote/newOte.component';
-import { OteStatusComponent } from './ote/oteStatus.component';
 import NewRegistrarComponent from './registrar/newRegistrar.component';
 import { RegistrarDetailsComponent } from './registrar/registrarDetails.component';
 import { RegistrarSelectorComponent } from './registrar/registrarSelector.component';
@@ -59,6 +57,14 @@ import { SupportComponent } from './support/support.component';
 import { TldsComponent } from './tlds/tlds.component';
 
 @NgModule({
+  declarations: [SelectedRegistrarWrapper],
+  imports: [MaterialModule],
+  exports: [SelectedRegistrarWrapper],
+  providers: [],
+})
+export class SelectedRegistrarModule {}
+
+@NgModule({
   declarations: [
     AppComponent,
     BillingInfoComponent,
@@ -80,7 +86,6 @@ import { TldsComponent } from './tlds/tlds.component';
     ResourcesComponent,
     SecurityComponent,
     SecurityEditComponent,
-    SelectedRegistrarWrapper,
     SettingsComponent,
     SettingsContactComponent,
     SupportComponent,
@@ -96,8 +101,8 @@ import { TldsComponent } from './tlds/tlds.component';
     FormsModule,
     MaterialModule,
     SnackBarModule,
+    SelectedRegistrarModule,
   ],
-  exports: [SelectedRegistrarWrapper],
   providers: [
     BackendService,
     BreakPointObserverService,
