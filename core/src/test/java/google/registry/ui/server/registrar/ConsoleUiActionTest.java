@@ -20,6 +20,7 @@ import static google.registry.request.auth.AuthenticatedRegistrarAccessor.Role.A
 import static google.registry.request.auth.AuthenticatedRegistrarAccessor.Role.OWNER;
 import static jakarta.servlet.http.HttpServletResponse.SC_UNAUTHORIZED;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSetMultimap;
@@ -84,6 +85,7 @@ class ConsoleUiActionTest {
                 "NewRegistrar", ADMIN,
                 "AdminRegistrar", ADMIN));
     RegistrarConsoleMetrics.consoleRequestMetric.reset();
+    when(request.getParameter("noredirect")).thenReturn("true");
   }
 
   @AfterEach
@@ -96,6 +98,14 @@ class ConsoleUiActionTest {
         .hasValueForLabels(1, registrarId, explicitClientId, roles, status);
     RegistrarConsoleMetrics.consoleRequestMetric.reset(
         registrarId, explicitClientId, roles, status);
+  }
+
+  @Test
+  void testWebPage_redirect() {
+    when(request.getParameter("noredirect")).thenReturn(null);
+    action.run();
+    assertThat(response.getStatus()).isEqualTo(302);
+    assertThat(response.getPayload()).isEqualTo("Redirected to /console");
   }
 
   @Test
