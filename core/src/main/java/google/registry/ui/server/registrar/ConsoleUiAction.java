@@ -100,6 +100,18 @@ public final class ConsoleUiAction extends HtmlAction {
 
   @Override
   public void runAfterLogin(Map<String, Object> data) {
+    // This console is deprecated.
+    // Unless an explict "noredirect" URL parameter is included, it will redirect to the new
+    // console.
+    if (isNullOrEmpty(req.getParameter("noredirect"))) {
+      try {
+        response.sendRedirect("/console");
+        return;
+      } catch (IOException e) {
+        throw new RuntimeException(e);
+      }
+    }
+
     SoyMapData soyMapData = new SoyMapData();
     data.forEach((key, value) -> soyMapData.put(key, value));
 
@@ -119,21 +131,6 @@ public final class ConsoleUiAction extends HtmlAction {
               .setData(soyMapData)
               .render());
       return;
-    }
-
-    // Set permanent redirect to the new console for tech support
-    if (isNullOrEmpty(req.getParameter("redirect"))
-        && Stream.of(GlobalRole.SUPPORT_LEAD, GlobalRole.SUPPORT_AGENT)
-            .anyMatch(
-                globalRole ->
-                    globalRole.equals(authResult.user().get().getUserRoles().getGlobalRole()))) {
-      response.setStatus(SC_PERMANENT_REDIRECT);
-      try {
-        response.sendRedirect("/console");
-        return;
-      } catch (IOException e) {
-        throw new RuntimeException(e);
-      }
     }
 
     ImmutableSetMultimap<String, Role> roleMap = registrarAccessor.getAllRegistrarIdsWithRoles();
