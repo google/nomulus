@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { HttpErrorResponse } from '@angular/common/http';
+import { HttpErrorResponse, HttpStatusCode } from '@angular/common/http';
 import { Component, ViewChild, effect } from '@angular/core';
 import { MatPaginator, PageEvent } from '@angular/material/paginator';
 import { MatSnackBar } from '@angular/material/snack-bar';
@@ -91,7 +91,10 @@ export class DomainListComponent {
   loadLocks() {
     this.registryLockService.retrieveLocks().subscribe({
       error: (err: HttpErrorResponse) => {
-        this._snackBar.open(err.message);
+        if (err.status !== HttpStatusCode.Forbidden) {
+          // Some users may not have registry lock permissions and that's OK
+          this._snackBar.open(err.message);
+        }
       },
     });
   }
