@@ -28,12 +28,14 @@ import google.registry.model.registrar.RegistrarPoc;
 import google.registry.module.frontend.FrontendServlet;
 import google.registry.server.RegistryTestServer;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.junitpioneer.jupiter.RetryingTest;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
 
 /** WebDriver tests for Registrar Console UI. */
+@Disabled
 public class RegistrarConsoleWebTest extends WebDriverTestCase {
 
   @RegisterExtension

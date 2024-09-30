@@ -20,7 +20,6 @@ import static google.registry.request.auth.AuthenticatedRegistrarAccessor.Role.A
 import static google.registry.request.auth.AuthenticatedRegistrarAccessor.Role.OWNER;
 import static google.registry.ui.server.SoyTemplateUtils.CSS_RENAMING_MAP_SUPPLIER;
 import static jakarta.servlet.http.HttpServletResponse.SC_FORBIDDEN;
-import static jakarta.servlet.http.HttpServletResponse.SC_PERMANENT_REDIRECT;
 import static jakarta.servlet.http.HttpServletResponse.SC_SERVICE_UNAVAILABLE;
 
 import com.google.common.base.Supplier;
@@ -30,7 +29,6 @@ import com.google.template.soy.data.SoyMapData;
 import com.google.template.soy.tofu.SoyTofu;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.model.common.FeatureFlag;
-import google.registry.model.console.GlobalRole;
 import google.registry.request.Action;
 import google.registry.request.Action.GaeService;
 import google.registry.request.Parameter;
@@ -44,7 +42,6 @@ import google.registry.util.RegistryEnvironment;
 import java.io.IOException;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Stream;
 import javax.inject.Inject;
 
 /** Action that serves Registrar Console single HTML page (SPA). */
@@ -100,6 +97,18 @@ public final class ConsoleUiAction extends HtmlAction {
 
   @Override
   public void runAfterLogin(Map<String, Object> data) {
+    // This console is deprecated.
+    // Unless an explict "noredirect" URL parameter is included, it will redirect to the new
+    // console.
+    if (isNullOrEmpty(req.getParameter("noredirect"))) {
+      try {
+        response.sendRedirect("/console");
+        return;
+      } catch (IOException e) {
+        throw new RuntimeException(e);
+      }
+    }
+
     SoyMapData soyMapData = new SoyMapData();
     data.forEach((key, value) -> soyMapData.put(key, value));
 
@@ -119,21 +128,6 @@ public final class ConsoleUiAction extends HtmlAction {
               .setData(soyMapData)
               .render());
       return;
-    }
-
-    // Set permanent redirect to the new console for tech support
-    if (isNullOrEmpty(req.getParameter("redirect"))
-        && Stream.of(GlobalRole.SUPPORT_LEAD, GlobalRole.SUPPORT_AGENT)
-            .anyMatch(
-                globalRole ->
-                    globalRole.equals(authResult.user().get().getUserRoles().getGlobalRole()))) {
-      response.setStatus(SC_PERMANENT_REDIRECT);
-      try {
-        response.sendRedirect("/console");
-        return;
-      } catch (IOException e) {
-        throw new RuntimeException(e);
-      }
     }
 
     ImmutableSetMultimap<String, Role> roleMap = registrarAccessor.getAllRegistrarIdsWithRoles();
