@@ -35,13 +35,6 @@ ext {
 
       // PINNED VERSIONS START HERE.
 
-      // TODO: Remove after the legacy console is deleted.
-      'com.google.closure-stylesheets:closure-stylesheets:1.5.0',
-      'com.google.javascript:closure-compiler:v20210505',
-      'org.seleniumhq.selenium:selenium-api:3.141.59',
-      'org.seleniumhq.selenium:selenium-chrome-driver:3.141.59',
-      'org.seleniumhq.selenium:selenium-java:3.141.59',
-      'org.seleniumhq.selenium:selenium-remote-driver:3.141.59',
 
        // TODO: Migrate Soy Tofu to Soy Sauce (go/soysauce-migration)
       'com.google.template:soy:2021-02-01',
@@ -91,13 +84,12 @@ ext {
 
       // DYNAMIC VERSIONS START HERE.
 
-      'args4j:args4j:[2.0.26,)',
       'com.fasterxml.jackson.core:jackson-databind:[2.11.2,)',
       'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:[2.17.2,)',
       'com.github.ben-manes.caffeine:caffeine:[3.0.0,)',
-      'com.google.api-client:google-api-client:[1.31.3,)',
       'com.google.api-client:google-api-client-java6:[1.31.3,)',
       'com.google.api-client:google-api-client-servlet:[1.31.3,)',
+      'com.google.api-client:google-api-client:[1.31.3,)',
       'com.google.api.grpc:proto-google-cloud-secretmanager-v1:[1.4.0,)',
       'com.google.api.grpc:proto-google-cloud-tasks-v2:[1.33.2,)',
       'com.google.api.grpc:proto-google-common-protos:[2.1.0,)',
@@ -137,8 +129,6 @@ ext {
       'com.google.gwt:gwt-user:[2.9.0,)',
       'com.google.http-client:google-http-client-jackson2:[1.39.0,)',
       'com.google.http-client:google-http-client:[1.39.0,)',
-      // TODO: Remove after the old console is removed (dependency of soy).
-      'com.google.inject:guice:[5.0.1,)',
       'com.google.monitoring-client:contrib:[1.0.7,)',
       'com.google.monitoring-client:metrics:[1.0.7,)',
       'com.google.monitoring-client:stackdriver:[1.0.7,)',
@@ -168,8 +158,8 @@ ext {
       'junit:junit:[4.13,)',
       // Antlr is not a direct dependency, but we need to ensure that the
       // compile-time and runtime dependencies are compatible.
-      'org.antlr:antlr4:[4.13.2,)',
       'org.antlr:antlr4-runtime:[4.13.2,)',
+      'org.antlr:antlr4:[4.13.2,)',
       'org.apache.avro:avro:[1.11.4,)',
       'org.apache.beam:beam-runners-core-construction-java:[2.37.0,)',
       'org.apache.beam:beam-runners-direct-java:[2.37.0,)',
@@ -193,8 +183,14 @@ ext {
       'org.bouncycastle:bcprov-jdk18on:[1.67,)',
       'org.checkerframework:checker-compat-qual:[2.5.5,)',
       'org.checkerframework:checker-qual:[3.9.1,)',
+      'org.eclipse.angus:jakarta.mail:[2.0.3,)',
+      'org.eclipse.jetty.ee10:jetty-ee10-servlet:[12.0.0,)',
+      'org.eclipse.jetty.ee10:jetty-ee10-webapp:[12.0.0,)',
+      'org.eclipse.jetty:jetty-server:[12.0.0,)',
       'org.flywaydb:flyway-core:[10.0.0,)',
       'org.flywaydb:flyway-database-postgresql:[10.0.0,)',
+      'org.glassfish.jaxb:jaxb-runtime:[4.0.5,)',
+      'org.glassfish.jaxb:jaxb-xjc:[4.0.5,)',
       'org.hamcrest:hamcrest-core:[2.2,)',
       'org.hamcrest:hamcrest-library:[2.2,)',
       'org.hamcrest:hamcrest:[2.2,)',
@@ -212,14 +208,12 @@ ext {
       'org.junit.platform:junit-platform-suite-api:[1.6.2,)',
       'org.mockito:mockito-core:[3.7.7,)',
       'org.mockito:mockito-junit-jupiter:[3.7.7,)',
-      'org.eclipse.angus:jakarta.mail:[2.0.3,)',
-      'org.eclipse.jetty:jetty-server:[12.0.0,)',
-      'org.eclipse.jetty.ee10:jetty-ee10-servlet:[12.0.0,)',
-      'org.eclipse.jetty.ee10:jetty-ee10-webapp:[12.0.0,)',
-      'org.glassfish.jaxb:jaxb-runtime:[4.0.5,)',
-      'org.glassfish.jaxb:jaxb-xjc:[4.0.5,)',
       'org.ogce:xpp3:[1.1.6,)',
       'org.postgresql:postgresql:[42.2.18,)',
+      'org.seleniumhq.selenium:selenium-api:[3.141.59,)',
+      'org.seleniumhq.selenium:selenium-chrome-driver:[3.141.59,)',
+      'org.seleniumhq.selenium:selenium-java:[3.141.59,)',
+      'org.seleniumhq.selenium:selenium-remote-driver:[3.141.59,)',
       'org.slf4j:slf4j-jdk14:[1.7.28,)',
       'org.testcontainers:jdbc:[1.19.6,)',
       'org.testcontainers:junit-jupiter:[1.19.6,)',
@@ -227,11 +221,11 @@ ext {
       'org.testcontainers:selenium:[1.19.6,)',
       'org.testcontainers:testcontainers:[1.19.6,)',
       'org.yaml:snakeyaml:[1.17,)',
-      'us.fatehi:schemacrawler:[16.10.1,)',
       'us.fatehi:schemacrawler-api:[16.10.1,)',
       'us.fatehi:schemacrawler-diagram:[16.10.1,)',
       'us.fatehi:schemacrawler-postgresql:[16.10.1,)',
       'us.fatehi:schemacrawler-tools:[16.10.1,)',
+      'us.fatehi:schemacrawler:[16.10.1,)',
       'xerces:xmlParserAPIs:[2.6.2,)',
     ]
 

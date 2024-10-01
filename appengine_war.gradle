@@ -47,20 +47,9 @@ war {
 
 if (project.path == ":services:default") {
     war {
-        from("${coreResourcesDir}/google/registry/ui") {
-            include "registrar_bin.js"
-            if (environment != "production") {
-                include "registrar_bin.js.map"
-            }
-            into("assets/js")
-        }
-        from("${coreResourcesDir}/google/registry/ui/css") {
-            include "registrar*"
-            into("assets/css")
-        }
-        from("${coreResourcesDir}/google/registry/ui/assets/images") {
-            include "**/*"
-            into("assets/images")
+        from("${coreResourcesDir}/google/registry/ui/html") {
+            include "*.html"
+            into("registrar")
         }
     }
 }
@@ -104,7 +93,6 @@ appengineDeployAll.finalizedBy ':deployCloudSchedulerAndQueue'
 rootProject.deploy.dependsOn appengineDeployAll
 
 rootProject.stage.dependsOn appengineStage
-tasks['war'].dependsOn ':core:compileProdJS'
 tasks['war'].dependsOn ':core:processResources'
 tasks['war'].dependsOn ':core:jar'
 

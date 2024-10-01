@@ -3,7 +3,6 @@
 # This file is expected to be part of source control.
 aopalliance:aopalliance:1.0=annotationProcessor,compileClasspath,deploy_jar,errorprone,nonprodAnnotationProcessor,nonprodCompileClasspath,nonprodRuntimeClasspath,runtimeClasspath,soy,testAnnotationProcessor,testCompileClasspath,testRuntimeClasspath
 args4j:args4j:2.0.23=soy
-args4j:args4j:2.0.26=css
 args4j:args4j:2.33=compileClasspath,deploy_jar,nonprodCompileClasspath,nonprodRuntimeClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 cglib:cglib-nodep:2.2=css
 com.charleskorn.kaml:kaml:0.20.0=deploy_jar,nonprodRuntimeClasspath,runtimeClasspath,testRuntimeClasspath
@@ -111,7 +110,6 @@ com.google.auto.value:auto-value-annotations:1.9=annotationProcessor,errorprone,
 com.google.auto.value:auto-value:1.10.4=compileClasspath,deploy_jar,nonprodCompileClasspath,nonprodRuntimeClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 com.google.auto.value:auto-value:1.11.0=annotationProcessor,testAnnotationProcessor
 com.google.auto:auto-common:1.2.1=annotationProcessor,errorprone,nonprodAnnotationProcessor,testAnnotationProcessor
-com.google.closure-stylesheets:closure-stylesheets:1.5.0=css
 com.google.cloud.bigdataoss:gcsio:2.2.16=compileClasspath,deploy_jar,nonprodCompileClasspath,nonprodRuntimeClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 com.google.cloud.bigdataoss:util:2.2.16=compileClasspath,deploy_jar,nonprodCompileClasspath,nonprodRuntimeClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 com.google.cloud.bigtable:bigtable-client-core-config:1.28.0=compileClasspath,deploy_jar,nonprodCompileClasspath,nonprodRuntimeClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
@@ -196,9 +194,6 @@ com.google.inject:guice:5.1.0=annotationProcessor,errorprone,nonprodAnnotationPr
 com.google.inject:guice:7.0.0=soy
 com.google.j2objc:j2objc-annotations:1.3=checkstyle,soy
 com.google.j2objc:j2objc-annotations:3.0.0=compileClasspath,deploy_jar,nonprodCompileClasspath,nonprodRuntimeClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
-com.google.javascript:closure-compiler-externs:v20160713=css
-com.google.javascript:closure-compiler-unshaded:v20160713=css
-com.google.javascript:closure-compiler:v20210505=closureCompiler
 com.google.jsinterop:jsinterop-annotations:1.0.1=soy
 com.google.jsinterop:jsinterop-annotations:2.0.0=compileClasspath,deploy_jar,nonprodCompileClasspath,nonprodRuntimeClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 com.google.monitoring-client:contrib:1.0.7=testCompileClasspath,testRuntimeClasspath
