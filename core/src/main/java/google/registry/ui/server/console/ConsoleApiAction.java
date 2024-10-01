@@ -16,9 +16,6 @@ package google.registry.ui.server.console;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
-import static google.registry.model.common.FeatureFlag.FeatureName.NEW_CONSOLE;
-import static google.registry.model.common.FeatureFlag.isActiveNow;
-import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.request.Action.Method.GET;
 import static jakarta.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static jakarta.servlet.http.HttpServletResponse.SC_FORBIDDEN;
@@ -35,19 +32,15 @@ import google.registry.batch.CloudTasksUtils;
 import google.registry.config.RegistryConfig;
 import google.registry.export.sheet.SyncRegistrarsSheetAction;
 import google.registry.model.console.ConsolePermission;
-import google.registry.model.console.GlobalRole;
 import google.registry.model.console.User;
-import google.registry.model.console.UserRoles;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarPoc;
 import google.registry.model.registrar.RegistrarPocBase;
 import google.registry.request.HttpException;
 import google.registry.security.XsrfTokenManager;
-import google.registry.ui.server.registrar.ConsoleUiAction;
 import google.registry.util.DiffUtils;
 import google.registry.util.RegistryEnvironment;
 import jakarta.servlet.http.Cookie;
-import java.io.IOException;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -81,25 +74,6 @@ public abstract class ConsoleApiAction implements Runnable {
       return;
     }
     User user = consoleApiParams.authResult().user().get();
-
-    // This allows us to enable console to a selected cohort of users with release
-    // We can ignore it in tests
-    UserRoles userRoles = user.getUserRoles();
-    boolean hasGlobalOrTestingRole =
-        !GlobalRole.NONE.equals(userRoles.getGlobalRole())
-            || userRoles.hasPermission(
-                registryAdminClientId, ConsolePermission.VIEW_REGISTRAR_DETAILS);
-
-    if (!hasGlobalOrTestingRole
-        && RegistryEnvironment.get() != RegistryEnvironment.UNITTEST
-        && tm().transact(() -> !isActiveNow(NEW_CONSOLE))) {
-      try {
-        consoleApiParams.response().sendRedirect(ConsoleUiAction.PATH);
-        return;
-      } catch (IOException e) {
-        throw new RuntimeException(e);
-      }
-    }
 
     try {
       if (consoleApiParams.request().getMethod().equals(GET.toString())) {

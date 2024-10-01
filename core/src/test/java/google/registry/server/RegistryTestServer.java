@@ -38,10 +38,6 @@ public final class RegistryTestServer {
               PROJECT_ROOT.resolve("core/src/main/java/google/registry/ui/html/index.html"))
           .put("/error.html",
               PROJECT_ROOT.resolve("core/src/main/java/google/registry/ui/html/error.html"))
-          .put("/assets/js/*", RESOURCES_DIR.resolve("google/registry/ui"))
-          .put("/assets/css/*", RESOURCES_DIR.resolve("google/registry/ui/css"))
-          .put("/assets/sources/*", PROJECT_ROOT)
-          .put("/assets/*", PROJECT_ROOT.resolve("core/src/main/java/google/registry/ui/assets"))
           .build();
 
   private static final ImmutableList<Route> ROUTES =
@@ -70,17 +66,7 @@ public final class RegistryTestServer {
 
           // Notification of Registered Domain Names (NORDN)
           route("/_dr/task/nordnUpload", BackendServlet.class),
-          route("/_dr/task/nordnVerify", BackendServlet.class),
-
-          // Registrar Console
-          route("/registrar", FrontendServlet.class),
-          route("/registrar-create", FrontendServlet.class),
-          route("/registrar-ote-setup", FrontendServlet.class),
-          route("/registrar-ote-status", FrontendServlet.class),
-          route("/registrar-settings", FrontendServlet.class),
-          route("/registry-lock-get", FrontendServlet.class),
-          route("/registry-lock-post", FrontendServlet.class),
-          route("/registry-lock-verify", FrontendServlet.class));
+          route("/_dr/task/nordnVerify", BackendServlet.class));
 
   private final TestServer server;
 
