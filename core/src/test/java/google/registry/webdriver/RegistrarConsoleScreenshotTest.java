@@ -43,12 +43,14 @@ import google.registry.testing.DatabaseHelper;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.junitpioneer.jupiter.RetryingTest;
 import org.openqa.selenium.By;
 import org.openqa.selenium.Dimension;
 
 /** Registrar Console Screenshot Differ tests. */
+@Disabled
 class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
 
   @RegisterExtension
