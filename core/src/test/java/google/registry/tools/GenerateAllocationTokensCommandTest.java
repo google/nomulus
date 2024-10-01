@@ -165,6 +165,48 @@ class GenerateAllocationTokensCommandTest extends CommandTestCase<GenerateAlloca
   }
 
   @Test
+  void testSuccess_promotionToken_withDiscountPrice() throws Exception {
+    DateTime promoStart = DateTime.now(UTC);
+    DateTime promoEnd = promoStart.plusMonths(1);
+    runCommand(
+        "--number",
+        "1",
+        "--prefix",
+        "promo",
+        "--type",
+        "UNLIMITED_USE",
+        "--allowed_client_ids",
+        "TheRegistrar,NewRegistrar",
+        "--allowed_tlds",
+        "tld,example",
+        "--allowed_epp_actions",
+        "CREATE,RENEW",
+        "--discount_price",
+        "USD 3",
+        "--discount_years",
+        "6",
+        "--token_status_transitions",
+        String.format("%s=NOT_STARTED,%s=VALID,%s=ENDED", START_OF_TIME, promoStart, promoEnd));
+    assertAllocationTokens(
+        new AllocationToken.Builder()
+            .setToken("promo123456789ABCDEFG")
+            .setTokenType(UNLIMITED_USE)
+            .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar", "NewRegistrar"))
+            .setAllowedTlds(ImmutableSet.of("tld", "example"))
+            .setAllowedEppActions(ImmutableSet.of(CommandName.CREATE, CommandName.RENEW))
+            .setDiscountPrice(Money.of(CurrencyUnit.USD, 3))
+            .setDiscountPremiums(false)
+            .setDiscountYears(6)
+            .setTokenStatusTransitions(
+                ImmutableSortedMap.<DateTime, TokenStatus>naturalOrder()
+                    .put(START_OF_TIME, TokenStatus.NOT_STARTED)
+                    .put(promoStart, TokenStatus.VALID)
+                    .put(promoEnd, TokenStatus.ENDED)
+                    .build())
+            .build());
+  }
+
+  @Test
   void testSuccess_specifyTokens() throws Exception {
     runCommand("--tokens", "foobar,foobaz");
     assertAllocationTokens(createToken("foobar", null, null), createToken("foobaz", null, null));

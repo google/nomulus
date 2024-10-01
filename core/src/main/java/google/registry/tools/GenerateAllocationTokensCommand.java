@@ -47,6 +47,7 @@ import google.registry.model.domain.token.AllocationToken.RegistrationBehavior;
 import google.registry.model.domain.token.AllocationToken.TokenStatus;
 import google.registry.model.domain.token.AllocationToken.TokenType;
 import google.registry.persistence.VKey;
+import google.registry.tools.params.MoneyParameter;
 import google.registry.tools.params.TransitionListParameter.TokenStatusTransitions;
 import google.registry.util.CollectionUtils;
 import google.registry.util.DomainNameUtils;
@@ -141,6 +142,17 @@ class GenerateAllocationTokensCommand implements Command {
   private Boolean discountPremiums;
 
   @Parameter(
+      names = {"--discount_price"},
+      description =
+          "A discount that allows the setting of promotional prices. This field is different from "
+              + "{@code discountFraction} because the price set here is treated as the domain "
+              + "price, versus {@code discountFraction} that applies a fraction discount to the "
+              + "domain base price. Use CURRENCY PRICE format, example: USD 777.99",
+      converter = MoneyParameter.class,
+      validateWith = MoneyParameter.class)
+  private Money discountPrice;
+
+  @Parameter(
       names = {"--discount_years"},
       description = "The number of years the discount applies for. Default is 1, max value is 10.")
   private Integer discountYears;
@@ -233,6 +245,7 @@ class GenerateAllocationTokensCommand implements Command {
                                         .collect(toImmutableSet()));
                     Optional.ofNullable(discountFraction).ifPresent(token::setDiscountFraction);
                     Optional.ofNullable(discountPremiums).ifPresent(token::setDiscountPremiums);
+                    Optional.ofNullable(discountPrice).ifPresent(token::setDiscountPrice);
                     Optional.ofNullable(discountYears).ifPresent(token::setDiscountYears);
                     Optional.ofNullable(tokenStatusTransitions)
                         .ifPresent(token::setTokenStatusTransitions);
