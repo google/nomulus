@@ -142,6 +142,16 @@ class UpdateAllocationTokensCommandTest extends CommandTestCase<UpdateAllocation
   }
 
   @Test
+  void testUpdateDiscountPrice() throws Exception {
+    AllocationToken token =
+        persistResource(
+            builderWithPromo().setDiscountPrice(Money.of(CurrencyUnit.USD, 10)).build());
+    runCommandForced("--prefix", "token", "--discount_price", "USD 2.15");
+    assertThat(reloadResource(token).getDiscountPrice().get())
+        .isEqualTo(Money.of(CurrencyUnit.USD, 2.15));
+  }
+
+  @Test
   void testUpdateDiscountPremiums() throws Exception {
     AllocationToken token =
         persistResource(

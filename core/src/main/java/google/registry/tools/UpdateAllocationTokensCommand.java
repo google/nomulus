@@ -34,6 +34,7 @@ import google.registry.model.domain.token.AllocationToken;
 import google.registry.model.domain.token.AllocationToken.RegistrationBehavior;
 import google.registry.model.domain.token.AllocationToken.TokenStatus;
 import google.registry.model.domain.token.AllocationToken.TokenType;
+import google.registry.tools.params.MoneyParameter;
 import google.registry.tools.params.StringListParameter;
 import google.registry.tools.params.TransitionListParameter.TokenStatusTransitions;
 import java.util.List;
@@ -90,6 +91,17 @@ final class UpdateAllocationTokensCommand extends UpdateOrDeleteAllocationTokens
               + " is false.",
       arity = 1)
   private Boolean discountPremiums;
+
+  @Parameter(
+      names = {"--discount_price"},
+      description =
+          "A discount that allows the setting of promotional prices. This field is different from "
+              + "{@code discountFraction} because the price set here is treated as the domain "
+              + "price, versus {@code discountFraction} that applies a fraction discount to the "
+              + "domain base price. Use CURRENCY PRICE format, example: USD 777.99",
+      converter = MoneyParameter.class,
+      validateWith = MoneyParameter.class)
+  private Money discountPrice;
 
   @Parameter(
       names = {"-y", "--discount_years"},
@@ -203,6 +215,7 @@ final class UpdateAllocationTokensCommand extends UpdateOrDeleteAllocationTokens
                         .collect(toImmutableSet())));
     Optional.ofNullable(discountFraction).ifPresent(builder::setDiscountFraction);
     Optional.ofNullable(discountPremiums).ifPresent(builder::setDiscountPremiums);
+    Optional.ofNullable(discountPrice).ifPresent(builder::setDiscountPrice);
     Optional.ofNullable(discountYears).ifPresent(builder::setDiscountYears);
     Optional.ofNullable(tokenStatusTransitions).ifPresent(builder::setTokenStatusTransitions);
 
