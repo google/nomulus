@@ -98,10 +98,8 @@ processTestResources {
 }
 
 configurations {
-  css
   jaxb
   soy
-  closureCompiler
   devtool
 
   nonprodImplementation.extendsFrom implementation
@@ -112,17 +110,6 @@ configurations {
   // See <a href="../integration/README.md">the integration project</a>
   // for details.
   nomulus_test
-
-  // Exclude non-canonical servlet-api jars. Our AppEngine deployment uses
-  // javax.servlet:servlet-api:2.5
-  // For reasons we do not understand, marking the following dependencies as
-  // compileOnly instead of compile does not exclude them from runtimeClasspath.
-  all {
-    // servlet-api:3.1 pulled in but not used by soy compiler
-    exclude group: 'javax.servlet', module: 'javax.servlet-api'
-    // Jetty's servlet-api:2.5 implementation, pulled in by other Jetty jars
-    exclude group: 'org.mortbay.jetty', module: 'servlet-api'
-  }
 }
 
 dependencies {
@@ -297,13 +284,8 @@ dependencies {
   jaxb deps['org.glassfish.jaxb:jaxb-xjc']
 
   // Dependency needed for soy to java compilation.
-  soy deps['com.google.inject:guice']
   soy deps['com.google.protobuf:protobuf-java']
   soy deps['com.google.template:soy']
-
-  // Dependencies needed for compiling stylesheets to javascript
-  css deps['com.google.closure-stylesheets:closure-stylesheets']
-  css deps['args4j:args4j']
 
   // Tool dependencies.  used for doc generation.
   implementation files("${System.properties['java.home']}/../lib/tools.jar")
@@ -311,8 +293,6 @@ dependencies {
   // Flyway classes needed to generate the golden file.
   implementation deps['org.flywaydb:flyway-core']
   implementation deps['org.flywaydb:flyway-database-postgresql']
-
-  closureCompiler deps['com.google.javascript:closure-compiler']
 }
 
 task jaxbToJava {
@@ -383,9 +363,8 @@ task soyToJava {
   // Relative paths of soy directories.
   def spec11SoyDir = "google/registry/reporting/spec11/soy"
   def toolsSoyDir = "google/registry/tools/soy"
-  def registrarSoyDir = "google/registry/ui/soy/registrar"
 
-  def soyRelativeDirs = [spec11SoyDir, toolsSoyDir, registrarSoyDir]
+  def soyRelativeDirs = [spec11SoyDir, toolsSoyDir]
   soyRelativeDirs.each {
     inputs.dir "${resourcesSourceDir}/${it}"
     outputs.dir "${generatedDir}/${it}"
@@ -399,8 +378,7 @@ task soyToJava {
               "--outputDirectory", "${outputDirectory}",
               "--javaClassNameSource", "filename",
               "--allowExternalCalls", "true",
-              "--srcs", "${soyFiles.join(',')}",
-              "--compileTimeGlobalsFile", "${resourcesSourceDir}/google/registry/ui/globals.txt"
+              "--srcs", "${soyFiles.join(',')}"
     }
 
     // Replace the "@link" tags after the "@deprecated" tags in the generated
@@ -427,12 +405,6 @@ task soyToJava {
                     dir: "${resourcesSourceDir}/${toolsSoyDir}",
                     include: ['**/*.soy']))
 
-    soyToJava('google.registry.ui.soy.registrar',
-            "${generatedDir}/${registrarSoyDir}",
-            fileTree(
-                    dir: "${resourcesSourceDir}/${registrarSoyDir}",
-                    include: ['**/*.soy']))
-
     soyToJava('google.registry.reporting.spec11.soy',
             "${generatedDir}/${spec11SoyDir}",
             fileTree(
@@ -441,134 +413,8 @@ task soyToJava {
   }
 }
 
-task soyToJS(type: JavaExec) {
-  def rootSoyDirectory = "${resourcesSourceDir}/google/registry/ui/soy/registrar"
-  def outputSoyDirectory = "${generatedDir}/google/registry/ui/soy/registrar"
-  inputs.dir rootSoyDirectory
-  outputs.dir outputSoyDirectory
-
-  def inputSoyFiles = files {
-    file("${rootSoyDirectory}").listFiles()
-  }.filter {
-    it.name.endsWith(".soy")
-  }
-
-  classpath configurations.soy
-  main = "com.google.template.soy.SoyToJsSrcCompiler"
-  args "--outputPathFormat", "${outputSoyDirectory}/{INPUT_FILE_NAME}.js",
-          "--allowExternalCalls", "false",
-          "--srcs", "${inputSoyFiles.join(',')}",
-          "--compileTimeGlobalsFile", "${resourcesSourceDir}/google/registry/ui/globals.txt"
-}
-
-task stylesheetsToJavascript {
-  def cssSourceDir = "${jsDir}/google/registry/ui/css"
-  def outputDir = "${resourcesDir}/google/registry/ui/css"
-  inputs.dir cssSourceDir
-  outputs.dir outputDir
-
-  ext.cssCompile = { outputName, debug, cssFiles ->
-    javaexec {
-      main = "com.google.common.css.compiler.commandline.ClosureCommandLineCompiler"
-      classpath configurations.css
-
-      def argsBuffer = [
-          "--output-file", "${outputName}.css",
-          "--output-source-map", "${outputName}.css.map",
-          "--input-orientation", "LTR",
-          "--output-orientation", "NOCHANGE",
-          "--output-renaming-map", "${outputName}.css.js",
-          "--output-renaming-map-format", "CLOSURE_COMPILED_SPLIT_HYPHENS"
-      ]
-      if (debug) {
-        argsBuffer.addAll(["--rename", "DEBUG", "--pretty-print"])
-      } else {
-        argsBuffer.addAll(["--rename", "CLOSURE"])
-      }
-
-      argsBuffer.addAll(cssFiles)
-      args argsBuffer
-    }
-  }
-
-  doLast {
-    file("${outputDir}").mkdirs()
-    def ignoredFiles = ["demo_css.css", "registrar_imports_raw.css"]
-    def sourceFiles = []
-    // include all CSS files that we find except for the ones explicitly ignored
-    fileTree(cssSourceDir).each {
-      if (it.name.endsWith(".css") && !ignoredFiles.contains(it.name)) {
-        sourceFiles << (cssSourceDir + "/" + it.name)
-      }
-    }
-
-    // The css files have to be passed to the compiler in alphabetic order to
-    // avoid some flaky style issues
-    sourceFiles.sort()
-
-    cssCompile("${outputDir}/registrar_bin", false, sourceFiles)
-    cssCompile("${outputDir}/registrar_dbg", true, sourceFiles)
-  }
-}
-
-task compileProdJS(type: JavaExec) {
-  def outputDir = "${resourcesDir}/google/registry/ui"
-  def nodeModulesDir = "${rootDir}/node_modules"
-  def cssSourceDir = "${resourcesDir}/google/registry/ui/css"
-  def jsSourceDir = "${jsDir}/google/registry/ui/js"
-  def externsDir = "${jsDir}/google/registry/ui/externs"
-  def soySourceDir = "${generatedDir}/google/registry/ui/soy"
-
-  [nodeModulesDir, cssSourceDir, jsSourceDir, externsDir, soySourceDir].each {
-    inputs.dir "${it}"
-  }
-  outputs.dir outputDir
-
-  classpath configurations.closureCompiler
-  main = 'com.google.javascript.jscomp.CommandLineRunner'
-
-  def closureArgs = []
-  closureArgs << "--js_output_file=${outputDir}/registrar_bin.js"
-  // sourcemap-related configuration
-  closureArgs << "--create_source_map=${outputDir}/registrar_bin.js.map"
-  closureArgs << "--source_map_include_content=true"
-  closureArgs << "--source_map_location_mapping=${rootDir}/|"
-  closureArgs << "--output_wrapper=\"%output% //# sourceMappingURL=registrar_bin.js.map\""
-
-  // compilation options
-  closureArgs << "--compilation_level=ADVANCED"
-  closureArgs << "--entry_point=goog:registry.registrar.main"
-  closureArgs << "--generate_exports"
-
-  // manually include all the required js files
-  closureArgs << "--js=${nodeModulesDir}/google-closure-library/**/*.js"
-  closureArgs << "--js=${jsDir}/*.js"
-  closureArgs << "--js=${cssSourceDir}/registrar_bin.css.js"
-  closureArgs << "--js=${jsSourceDir}/**.js"
-  closureArgs << "--js=${externsDir}/json.js"
-  closureArgs << "--js=${soySourceDir}/**.js"
-  args closureArgs
-}
-compileProdJS.dependsOn soyToJava
-
 compileJava.dependsOn jaxbToJava
 compileJava.dependsOn soyToJava
-// The Closure JS compiler does not support Windows. It is fine to disable it if
-// all we want to do is to complile the Java code on Windows.
-if (!System.properties['os.name'].toLowerCase().contains('windows')) {
-  compileJava.dependsOn compileProdJS
-  assemble.dependsOn compileProdJS
-}
-
-// stylesheetsToJavascript must happen after processResources, which wipes the
-// resources folder before copying data into it.
-stylesheetsToJavascript.dependsOn processResources
-classes.dependsOn stylesheetsToJavascript
-compileProdJS.dependsOn stylesheetsToJavascript
-compileProdJS.dependsOn rootProject.npmInstall
-compileProdJS.dependsOn processResources
-compileProdJS.dependsOn processTestResources
-compileProdJS.dependsOn soyToJS
 
 // Make testing artifacts available to be depended up on by other projects.
 // TODO: factor out google.registry.testing to be a separate project.
@@ -829,16 +675,7 @@ artifacts {
   devtool devtool
 }
 
-task copyJsFilesForTestServer(dependsOn: assemble, type: Copy) {
-  // Unfortunately the test server relies on having some compiled JS/CSS
-  // in place, so copy it over here
-  from "${resourcesDir}/google/registry/ui/"
-  include '**/*.js'
-  include '**/*.css'
-  into "${project.projectDir}/src/main/resources/google/registry/ui/"
-}
-
-task runTestServer(dependsOn: copyJsFilesForTestServer, type: JavaExec) {
+task runTestServer(type: JavaExec) {
   main = 'google.registry.server.RegistryTestServerMain'
   classpath = sourceSets.test.runtimeClasspath
 }
