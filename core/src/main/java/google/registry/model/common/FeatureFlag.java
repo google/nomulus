@@ -66,7 +66,8 @@ public class FeatureFlag extends ImmutableObject implements Buildable {
     TEST_FEATURE,
     MINIMUM_DATASET_CONTACTS_OPTIONAL,
     MINIMUM_DATASET_CONTACTS_PROHIBITED,
-    NEW_CONSOLE
+    // TODO: Remove this unused flag.
+    NEW_CONSOLE,
   }
 
   /** The name of the flag/feature. */
