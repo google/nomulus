@@ -40,14 +40,6 @@ import google.registry.ui.server.console.RegistrarsAction;
 import google.registry.ui.server.console.settings.ContactAction;
 import google.registry.ui.server.console.settings.SecurityAction;
 import google.registry.ui.server.console.settings.WhoisRegistrarFieldsAction;
-import google.registry.ui.server.registrar.ConsoleOteSetupAction;
-import google.registry.ui.server.registrar.ConsoleRegistrarCreatorAction;
-import google.registry.ui.server.registrar.ConsoleUiAction;
-import google.registry.ui.server.registrar.OteStatusAction;
-import google.registry.ui.server.registrar.RegistrarSettingsAction;
-import google.registry.ui.server.registrar.RegistryLockGetAction;
-import google.registry.ui.server.registrar.RegistryLockPostAction;
-import google.registry.ui.server.registrar.RegistryLockVerifyAction;
 
 /** Dagger component with per-request lifetime for "default" App Engine module. */
 @RequestScope
@@ -69,14 +61,9 @@ public interface FrontendRequestComponent {
 
   ConsoleOteAction consoleOteAction();
 
-  ConsoleOteSetupAction consoleOteSetupAction();
-  ConsoleRegistrarCreatorAction consoleRegistrarCreatorAction();
-
   ConsoleRegistryLockAction consoleRegistryLockAction();
 
   ConsoleRegistryLockVerifyAction consoleRegistryLockVerifyAction();
-
-  ConsoleUiAction consoleUiAction();
 
   ConsoleUpdateRegistrarAction consoleUpdateRegistrarAction();
 
@@ -89,18 +76,13 @@ public interface FrontendRequestComponent {
   ContactAction contactAction();
 
   EppTlsAction eppTlsAction();
+
   FlowComponent.Builder flowComponentBuilder();
-  OteStatusAction oteStatusAction();
 
   RegistrarsAction registrarsAction();
 
-  RegistrarSettingsAction registrarSettingsAction();
-
-  RegistryLockGetAction registryLockGetAction();
-
-  RegistryLockPostAction registryLockPostAction();
-  RegistryLockVerifyAction registryLockVerifyAction();
   SecurityAction securityAction();
+
   WhoisRegistrarFieldsAction whoisRegistrarFieldsAction();
 
   @Subcomponent.Builder

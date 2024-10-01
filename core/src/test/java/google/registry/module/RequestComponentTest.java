@@ -19,8 +19,6 @@ import static com.google.common.truth.Truth.assertThat;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Sets;
 import google.registry.module.backend.BackendRequestComponent;
 import google.registry.module.bsa.BsaRequestComponent;
 import google.registry.module.frontend.FrontendRequestComponent;
@@ -43,18 +41,6 @@ public class RequestComponentTest {
           PubApiRequestComponent.class, "pubapi",
           BsaRequestComponent.class, "bsa");
 
-  // Paths that do not route to Jetty (all for the legacy console).
-  private static final ImmutableSet<String> ignoredPaths =
-      ImmutableSet.of(
-          "/registrar",
-          "/registrar-create",
-          "/registrar-ote-setup",
-          "/registrar-ote-status",
-          "/registrar-settings",
-          "/registry-lock-get",
-          "/registry-lock-post",
-          "/registry-lock-verify");
-
   @Test
   void testRoutingMap() {
     GoldenFileTestHelper.assertThatRoutesFromComponent(RequestComponent.class)
@@ -69,12 +55,7 @@ public class RequestComponentTest {
     for (var component : GaeComponents.entrySet()) {
       gaeRoutes.addAll(getRoutes(component.getKey(), component.getValue() + "_routing.txt"));
     }
-    assertThat(Sets.difference(jettyRoutes, gaeRoutes)).isEmpty();
-    assertThat(
-            Sets.difference(gaeRoutes, jettyRoutes).stream()
-                .map(Route::path)
-                .collect(Collectors.toSet()))
-        .containsExactlyElementsIn(ignoredPaths);
+    assertThat(jettyRoutes).isEqualTo(gaeRoutes);
   }
 
   private Set<Route> getRoutes(Class<?> context, String filename) {
