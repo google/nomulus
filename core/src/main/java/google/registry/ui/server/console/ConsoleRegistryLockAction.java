@@ -19,7 +19,6 @@ import static com.google.common.collect.ImmutableList.toImmutableList;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.request.Action.Method.GET;
 import static google.registry.request.Action.Method.POST;
-import static google.registry.ui.server.registrar.RegistryLockPostAction.VERIFICATION_EMAIL_TEMPLATE;
 import static jakarta.servlet.http.HttpServletResponse.SC_OK;
 import static jakarta.servlet.http.HttpServletResponse.SC_UNAUTHORIZED;
 
@@ -64,6 +63,12 @@ import org.joda.time.Duration;
 public class ConsoleRegistryLockAction extends ConsoleApiAction {
 
   static final String PATH = "/console-api/registry-lock";
+  static final String VERIFICATION_EMAIL_TEMPLATE =
+      """
+      Please click the link below to perform the lock / unlock action on domain %s. Note: this\
+       code will expire in one hour.
+
+      %s""";
 
   private final DomainLockUtils domainLockUtils;
   private final GmailClient gmailClient;
