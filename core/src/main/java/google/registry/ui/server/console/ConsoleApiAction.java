@@ -20,6 +20,7 @@ import static google.registry.model.common.FeatureFlag.FeatureName.NEW_CONSOLE;
 import static google.registry.model.common.FeatureFlag.isActiveNow;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.request.Action.Method.GET;
+import static google.registry.request.Action.Method.POST;
 import static jakarta.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static jakarta.servlet.http.HttpServletResponse.SC_FORBIDDEN;
 import static jakarta.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
@@ -196,7 +197,8 @@ public abstract class ConsoleApiAction implements Runnable {
       // there's an update besides the lastUpdateTime
       cloudTasksUtils.enqueue(
           SyncRegistrarsSheetAction.QUEUE,
-          cloudTasksUtils.createTask(SyncRegistrarsSheetAction.class, GET, ImmutableMultimap.of()));
+          cloudTasksUtils.createTask(
+              SyncRegistrarsSheetAction.class, POST, ImmutableMultimap.of()));
     }
 
     String environment = Ascii.toLowerCase(String.valueOf(RegistryEnvironment.get()));
@@ -208,10 +210,10 @@ public abstract class ConsoleApiAction implements Runnable {
                 registrar.getRegistrarName(), registrar.getRegistrarId(), environment),
             String.format(
                 """
-                  The following changes were made in registry %s environment to the registrar %s by\
-                   %s:
+                The following changes were made in registry %s environment to the registrar %s by\
+                 %s:
 
-                  %s""",
+                %s""",
                 environment,
                 registrar.getRegistrarId(),
                 consoleApiParams.authResult().userIdForLogging(),
