@@ -20,6 +20,7 @@ import static org.mockito.Mockito.when;
 import com.google.common.collect.ImmutableList;
 import google.registry.groups.GmailClient;
 import google.registry.model.console.User;
+import google.registry.request.RequestModule;
 import google.registry.request.auth.AuthResult;
 import google.registry.security.XsrfTokenManager;
 import google.registry.ui.server.SendEmailUtils;
@@ -45,7 +46,13 @@ public final class ConsoleApiParamsUtils {
                   xsrfTokenManager.generateToken(
                       authResult.user().map(User::getEmailAddress).orElse("")))
             });
+    when(request.getRequestURI()).thenReturn("/console/fake-url");
     return ConsoleApiParams.create(
-        request, new FakeResponse(), authResult, sendEmailUtils, xsrfTokenManager);
+        request,
+        new FakeResponse(),
+        authResult,
+        sendEmailUtils,
+        xsrfTokenManager,
+        RequestModule.provideGson());
   }
 }

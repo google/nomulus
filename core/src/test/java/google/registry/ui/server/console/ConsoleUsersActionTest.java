@@ -183,7 +183,6 @@ class ConsoleUsersActionTest {
         maybeConsoleApiParams.orElseGet(
             () -> ConsoleApiParamsUtils.createFake(AuthResult.NOT_AUTHENTICATED));
     when(consoleApiParams.request().getMethod()).thenReturn(method.orElse("GET"));
-    return new ConsoleUsersAction(
-        consoleApiParams, GSON, directory, passwordGenerator, "TheRegistrar");
+    return new ConsoleUsersAction(consoleApiParams, directory, passwordGenerator, "TheRegistrar");
   }
 }

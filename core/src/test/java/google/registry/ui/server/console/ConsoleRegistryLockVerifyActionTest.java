@@ -24,7 +24,6 @@ import static google.registry.tools.LockOrUnlockDomainCommand.REGISTRY_LOCK_STAT
 import static org.mockito.Mockito.when;
 
 import com.google.common.collect.ImmutableMap;
-import com.google.gson.Gson;
 import google.registry.model.console.RegistrarRole;
 import google.registry.model.console.User;
 import google.registry.model.console.UserRoles;
@@ -32,7 +31,6 @@ import google.registry.model.domain.Domain;
 import google.registry.model.domain.RegistryLock;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.persistence.transaction.JpaTestExtensions;
-import google.registry.request.RequestModule;
 import google.registry.request.auth.AuthResult;
 import google.registry.testing.CloudTasksHelper;
 import google.registry.testing.ConsoleApiParamsUtils;
@@ -51,7 +49,6 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 public class ConsoleRegistryLockVerifyActionTest {
 
   private static final String DEFAULT_CODE = "123456789ABCDEFGHJKLMNPQRSTUUUUU";
-  private static final Gson GSON = RequestModule.provideGson();
   private final FakeClock fakeClock = new FakeClock();
 
   @RegisterExtension
@@ -214,6 +211,6 @@ public class ConsoleRegistryLockVerifyActionTest {
             "adminreg",
             new CloudTasksHelper(fakeClock).getTestCloudTasksUtils());
     response = (FakeResponse) params.response();
-    return new ConsoleRegistryLockVerifyAction(params, domainLockUtils, GSON, verificationCode);
+    return new ConsoleRegistryLockVerifyAction(params, domainLockUtils, verificationCode);
   }
 }

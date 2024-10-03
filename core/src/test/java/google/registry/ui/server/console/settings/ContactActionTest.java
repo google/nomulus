@@ -290,7 +290,7 @@ class ContactActionTest {
     consoleApiParams = ConsoleApiParamsUtils.createFake(authResult);
     when(consoleApiParams.request().getMethod()).thenReturn(method.toString());
     if (method.equals(Action.Method.GET)) {
-      return new ContactAction(consoleApiParams, GSON, registrarId, Optional.empty());
+      return new ContactAction(consoleApiParams, registrarId, Optional.empty());
     } else {
       doReturn(new BufferedReader(new StringReader(contacts)))
           .when(consoleApiParams.request())
@@ -298,7 +298,7 @@ class ContactActionTest {
       Optional<ImmutableSet<RegistrarPoc>> maybeContacts =
           ConsoleModule.provideContacts(
               GSON, RequestModule.provideJsonBody(consoleApiParams.request(), GSON));
-      return new ContactAction(consoleApiParams, GSON, registrarId, maybeContacts);
+      return new ContactAction(consoleApiParams, registrarId, maybeContacts);
     }
   }
 }
