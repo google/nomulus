@@ -227,7 +227,6 @@ ext {
       'us.fatehi:schemacrawler-tools:[16.10.1,)',
       'us.fatehi:schemacrawler:[16.10.1,)',
       'xerces:xmlParserAPIs:[2.6.2,)',
-      // TODO: Remove after the old console is removed (dependency of soy).
     ]
 
     dependencyMap = dependencyList.collectEntries {
