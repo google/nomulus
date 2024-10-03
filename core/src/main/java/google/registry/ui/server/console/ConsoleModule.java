@@ -53,8 +53,10 @@ public final class ConsoleModule {
       Response response,
       AuthResult authResult,
       SendEmailUtils sendEmailUtils,
-      XsrfTokenManager xsrfTokenManager) {
-    return ConsoleApiParams.create(request, response, authResult, sendEmailUtils, xsrfTokenManager);
+      XsrfTokenManager xsrfTokenManager,
+      Gson gson) {
+    return ConsoleApiParams.create(
+        request, response, authResult, sendEmailUtils, xsrfTokenManager, gson);
   }
 
   @Provides

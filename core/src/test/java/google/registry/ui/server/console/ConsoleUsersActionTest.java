@@ -293,7 +293,6 @@ class ConsoleUsersActionTest {
     when(consoleApiParams.request().getMethod()).thenReturn(method.orElse("GET"));
     return new ConsoleUsersAction(
         consoleApiParams,
-        GSON,
         directory,
         iamClient,
         "email.com",

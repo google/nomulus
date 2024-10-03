@@ -15,8 +15,10 @@
 package google.registry.ui.server.console;
 
 import static com.google.common.truth.Truth.assertThat;
+import static google.registry.model.ImmutableObjectSubject.assertAboutImmutableObjects;
 import static google.registry.testing.DatabaseHelper.loadAllOf;
 import static google.registry.testing.DatabaseHelper.loadRegistrar;
+import static google.registry.testing.DatabaseHelper.loadSingleton;
 import static google.registry.testing.DatabaseHelper.persistNewRegistrar;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.SqlHelper.saveRegistrar;
@@ -30,6 +32,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.gson.Gson;
 import google.registry.model.console.GlobalRole;
 import google.registry.model.console.RegistrarRole;
+import google.registry.model.console.RegistrarUpdateHistory;
 import google.registry.model.console.User;
 import google.registry.model.console.UserRoles;
 import google.registry.model.registrar.Registrar;
@@ -183,6 +186,9 @@ class RegistrarsActionTest {
                 .findAny()
                 .isPresent())
         .isTrue();
+    assertAboutImmutableObjects()
+        .that(r)
+        .isEqualExceptFields(loadSingleton(RegistrarUpdateHistory.class).get().getRegistrar());
   }
 
   @Test
@@ -225,10 +231,8 @@ class RegistrarsActionTest {
   }
 
   private User createUser(UserRoles userRoles) {
-    return new User.Builder()
-        .setEmailAddress("email@email.com")
-        .setUserRoles(userRoles)
-        .build();
+    return persistResource(
+        new User.Builder().setEmailAddress("email@email.com").setUserRoles(userRoles).build());
   }
 
   private RegistrarsAction createAction(Action.Method method, AuthResult authResult) {
@@ -236,7 +240,7 @@ class RegistrarsActionTest {
     when(consoleApiParams.request().getMethod()).thenReturn(method.toString());
     if (method.equals(Action.Method.GET)) {
       return new RegistrarsAction(
-          consoleApiParams, GSON, Optional.ofNullable(null), passwordGenerator, passcodeGenerator);
+          consoleApiParams, Optional.ofNullable(null), passwordGenerator, passcodeGenerator);
     } else {
       try {
         doReturn(new BufferedReader(new StringReader(registrarParamMap.toString())))
@@ -245,7 +249,6 @@ class RegistrarsActionTest {
       } catch (IOException e) {
         return new RegistrarsAction(
             consoleApiParams,
-            GSON,
             Optional.ofNullable(null),
             passwordGenerator,
             passcodeGenerator);
@@ -254,7 +257,7 @@ class RegistrarsActionTest {
           ConsoleModule.provideRegistrar(
               GSON, RequestModule.provideJsonBody(consoleApiParams.request(), GSON));
       return new RegistrarsAction(
-          consoleApiParams, GSON, maybeRegistrar, passwordGenerator, passcodeGenerator);
+          consoleApiParams, maybeRegistrar, passwordGenerator, passcodeGenerator);
     }
   }
 }

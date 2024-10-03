@@ -31,7 +31,6 @@ import com.google.api.services.directory.model.UserName;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import com.google.gson.Gson;
 import com.google.gson.annotations.Expose;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.model.console.ConsolePermission;
@@ -46,9 +45,7 @@ import google.registry.request.auth.Auth;
 import google.registry.tools.IamClient;
 import google.registry.util.StringGenerator;
 import java.io.IOException;
-import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -61,10 +58,10 @@ import javax.inject.Named;
     auth = Auth.AUTH_PUBLIC_LOGGED_IN)
 public class ConsoleUsersAction extends ConsoleApiAction {
   static final String PATH = "/console-api/users";
-  private static final int PASSWORD_LENGTH = 16;
 
+  private static final int PASSWORD_LENGTH = 16;
   private static final Splitter EMAIL_SPLITTER = Splitter.on('@').trimResults();
-  private final Gson gson;
+
   private final String registrarId;
   private final Directory directory;
   private final StringGenerator passwordGenerator;
@@ -76,7 +73,6 @@ public class ConsoleUsersAction extends ConsoleApiAction {
   @Inject
   public ConsoleUsersAction(
       ConsoleApiParams consoleApiParams,
-      Gson gson,
       Directory directory,
       IamClient iamClient,
       @Config("gSuiteDomainName") String gSuiteDomainName,
@@ -85,7 +81,6 @@ public class ConsoleUsersAction extends ConsoleApiAction {
       @Parameter("userDeleteData") Optional<UserDeleteData> userDeleteData,
       @Parameter("registrarId") String registrarId) {
     super(consoleApiParams);
-    this.gson = gson;
     this.registrarId = registrarId;
     this.directory = directory;
     this.passwordGenerator = passwordGenerator;
@@ -100,7 +95,7 @@ public class ConsoleUsersAction extends ConsoleApiAction {
     // Temporary flag while testing
     if (user.getUserRoles().isAdmin()) {
       checkPermission(user, registrarId, ConsolePermission.MANAGE_USERS);
-      tm().transact(() -> runCreateInTransaction());
+      tm().transact(this::runCreateInTransaction);
     } else {
       consoleApiParams.response().setStatus(SC_FORBIDDEN);
     }
@@ -109,7 +104,7 @@ public class ConsoleUsersAction extends ConsoleApiAction {
   @Override
   protected void getHandler(User user) {
     checkPermission(user, registrarId, ConsolePermission.MANAGE_USERS);
-    List<ImmutableMap> users =
+    ImmutableList<ImmutableMap<String, ?>> users =
         getAllRegistrarUsers(registrarId).stream()
             .map(
                 u ->
@@ -118,9 +113,8 @@ public class ConsoleUsersAction extends ConsoleApiAction {
                         u.getEmailAddress(),
                         "role",
                         u.getUserRoles().getRegistrarRoles().get(registrarId)))
-            .collect(Collectors.toList());
-
-    consoleApiParams.response().setPayload(gson.toJson(users));
+            .collect(toImmutableList());
+    consoleApiParams.response().setPayload(consoleApiParams.gson().toJson(users));
     consoleApiParams.response().setStatus(SC_OK);
   }
 
@@ -129,7 +123,7 @@ public class ConsoleUsersAction extends ConsoleApiAction {
     // Temporary flag while testing
     if (user.getUserRoles().isAdmin()) {
       checkPermission(user, registrarId, ConsolePermission.MANAGE_USERS);
-      tm().transact(() -> runDeleteInTransaction());
+      tm().transact(this::runDeleteInTransaction);
     } else {
       consoleApiParams.response().setStatus(SC_FORBIDDEN);
     }
@@ -212,14 +206,16 @@ public class ConsoleUsersAction extends ConsoleApiAction {
     consoleApiParams
         .response()
         .setPayload(
-            gson.toJson(
-                ImmutableMap.of(
-                    "password",
-                    newUser.getPassword(),
-                    "emailAddress",
-                    newUser.getPrimaryEmail(),
-                    "role",
-                    ACCOUNT_MANAGER)));
+            consoleApiParams
+                .gson()
+                .toJson(
+                    ImmutableMap.of(
+                        "password",
+                        newUser.getPassword(),
+                        "emailAddress",
+                        newUser.getPrimaryEmail(),
+                        "role",
+                        ACCOUNT_MANAGER)));
   }
 
   private ImmutableList<User> getAllRegistrarUsers(String registrarId) {

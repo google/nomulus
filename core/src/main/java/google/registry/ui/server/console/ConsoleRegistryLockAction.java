@@ -23,7 +23,6 @@ import static jakarta.servlet.http.HttpServletResponse.SC_OK;
 import static jakarta.servlet.http.HttpServletResponse.SC_UNAUTHORIZED;
 
 import com.google.common.collect.ImmutableList;
-import com.google.gson.Gson;
 import com.google.gson.annotations.Expose;
 import google.registry.flows.EppException;
 import google.registry.flows.domain.DomainFlowUtils;
@@ -72,7 +71,6 @@ public class ConsoleRegistryLockAction extends ConsoleApiAction {
 
   private final DomainLockUtils domainLockUtils;
   private final GmailClient gmailClient;
-  private final Gson gson;
   private final Optional<ConsoleRegistryLockPostInput> optionalPostInput;
   private final String registrarId;
 
@@ -81,14 +79,12 @@ public class ConsoleRegistryLockAction extends ConsoleApiAction {
       ConsoleApiParams consoleApiParams,
       DomainLockUtils domainLockUtils,
       GmailClient gmailClient,
-      Gson gson,
       @Parameter("consoleRegistryLockPostInput")
           Optional<ConsoleRegistryLockPostInput> optionalPostInput,
       @Parameter("registrarId") String registrarId) {
     super(consoleApiParams);
     this.domainLockUtils = domainLockUtils;
     this.gmailClient = gmailClient;
-    this.gson = gson;
     this.optionalPostInput = optionalPostInput;
     this.registrarId = registrarId;
   }
@@ -96,7 +92,7 @@ public class ConsoleRegistryLockAction extends ConsoleApiAction {
   @Override
   protected void getHandler(User user) {
     checkPermission(user, registrarId, ConsolePermission.REGISTRY_LOCK);
-    consoleApiParams.response().setPayload(gson.toJson(getLockedDomains()));
+    consoleApiParams.response().setPayload(consoleApiParams.gson().toJson(getLockedDomains()));
     consoleApiParams.response().setStatus(SC_OK);
   }
 

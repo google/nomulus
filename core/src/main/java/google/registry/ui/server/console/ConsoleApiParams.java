@@ -14,6 +14,7 @@
 
 package google.registry.ui.server.console;
 
+import com.google.gson.Gson;
 import google.registry.request.Response;
 import google.registry.request.auth.AuthResult;
 import google.registry.security.XsrfTokenManager;
@@ -26,13 +27,16 @@ public record ConsoleApiParams(
     Response response,
     AuthResult authResult,
     SendEmailUtils sendEmailUtils,
-    XsrfTokenManager xsrfTokenManager) {
+    XsrfTokenManager xsrfTokenManager,
+    Gson gson) {
   public static ConsoleApiParams create(
       HttpServletRequest request,
       Response response,
       AuthResult authResult,
       SendEmailUtils sendEmailUtils,
-      XsrfTokenManager xsrfTokenManager) {
-    return new ConsoleApiParams(request, response, authResult, sendEmailUtils, xsrfTokenManager);
+      XsrfTokenManager xsrfTokenManager,
+      Gson gson) {
+    return new ConsoleApiParams(
+        request, response, authResult, sendEmailUtils, xsrfTokenManager, gson);
   }
 }

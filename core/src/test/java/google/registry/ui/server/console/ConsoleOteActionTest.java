@@ -245,7 +245,6 @@ class ConsoleOteActionTest {
     when(consoleApiParams.request().getMethod()).thenReturn(method.toString());
     return new ConsoleOteAction(
         consoleApiParams,
-        GSON,
         iamClient,
         registrarId,
         maybeGroupEmailAddress,
