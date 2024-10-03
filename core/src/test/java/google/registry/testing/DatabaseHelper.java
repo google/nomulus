@@ -1294,6 +1294,11 @@ public final class DatabaseHelper {
     return tm().transact(() -> tm().loadByEntitiesIfPresent(entities));
   }
 
+  /** Loads the only instance of this particular class, or empty if none exists. */
+  public static <T> Optional<T> loadSingleton(Class<T> clazz) {
+    return tm().transact(() -> tm().loadSingleton(clazz));
+  }
+
   /** Returns whether or not the given entity exists in Cloud SQL. */
   public static boolean existsInDb(ImmutableObject object) {
     return tm().transact(() -> tm().exists(object));

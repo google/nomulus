@@ -32,7 +32,6 @@ import com.google.api.services.directory.model.UserName;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import com.google.gson.Gson;
 import com.google.gson.annotations.Expose;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.model.console.ConsolePermission;
@@ -64,10 +63,10 @@ import javax.inject.Named;
     auth = Auth.AUTH_PUBLIC_LOGGED_IN)
 public class ConsoleUsersAction extends ConsoleApiAction {
   static final String PATH = "/console-api/users";
-  private static final int PASSWORD_LENGTH = 16;
 
+  private static final int PASSWORD_LENGTH = 16;
   private static final Splitter EMAIL_SPLITTER = Splitter.on('@').trimResults();
-  private final Gson gson;
+
   private final String registrarId;
   private final Directory directory;
   private final StringGenerator passwordGenerator;
@@ -79,7 +78,6 @@ public class ConsoleUsersAction extends ConsoleApiAction {
   @Inject
   public ConsoleUsersAction(
       ConsoleApiParams consoleApiParams,
-      Gson gson,
       Directory directory,
       IamClient iamClient,
       @Config("gSuiteDomainName") String gSuiteDomainName,
@@ -88,7 +86,6 @@ public class ConsoleUsersAction extends ConsoleApiAction {
       @Parameter("userData") Optional<UserData> userData,
       @Parameter("registrarId") String registrarId) {
     super(consoleApiParams);
-    this.gson = gson;
     this.registrarId = registrarId;
     this.directory = directory;
     this.passwordGenerator = passwordGenerator;
@@ -103,7 +100,7 @@ public class ConsoleUsersAction extends ConsoleApiAction {
     // Temporary flag while testing
     if (user.getUserRoles().isAdmin()) {
       checkPermission(user, registrarId, ConsolePermission.MANAGE_USERS);
-      tm().transact(() -> runCreateInTransaction());
+      tm().transact(this::runCreateInTransaction);
     } else {
       consoleApiParams.response().setStatus(SC_FORBIDDEN);
     }
@@ -133,7 +130,7 @@ public class ConsoleUsersAction extends ConsoleApiAction {
                         null))
             .collect(Collectors.toList());
 
-    consoleApiParams.response().setPayload(gson.toJson(users));
+    consoleApiParams.response().setPayload(consoleApiParams.gson().toJson(users));
     consoleApiParams.response().setStatus(SC_OK);
   }
 
@@ -142,7 +139,7 @@ public class ConsoleUsersAction extends ConsoleApiAction {
     // Temporary flag while testing
     if (user.getUserRoles().isAdmin()) {
       checkPermission(user, registrarId, ConsolePermission.MANAGE_USERS);
-      tm().transact(() -> runDeleteInTransaction());
+      tm().transact(this::runDeleteInTransaction);
     } else {
       consoleApiParams.response().setStatus(SC_FORBIDDEN);
     }
@@ -213,7 +210,7 @@ public class ConsoleUsersAction extends ConsoleApiAction {
     consoleApiParams
         .response()
         .setPayload(
-            gson.toJson(
+            consoleApiParams.gson().toJson(
                 new UserData(
                     newUser.getPrimaryEmail(), ACCOUNT_MANAGER.toString(), newUser.getPassword())));
   }

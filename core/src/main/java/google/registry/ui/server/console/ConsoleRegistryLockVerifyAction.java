@@ -17,7 +17,6 @@ package google.registry.ui.server.console;
 import static google.registry.request.Action.Method.GET;
 
 import com.google.common.base.Ascii;
-import com.google.gson.Gson;
 import com.google.gson.annotations.Expose;
 import google.registry.model.console.User;
 import google.registry.model.domain.RegistryLock;
@@ -42,18 +41,15 @@ public class ConsoleRegistryLockVerifyAction extends ConsoleApiAction {
   static final String PATH = "/console-api/registry-lock-verify";
 
   private final DomainLockUtils domainLockUtils;
-  private final Gson gson;
   private final String lockVerificationCode;
 
   @Inject
   public ConsoleRegistryLockVerifyAction(
       ConsoleApiParams consoleApiParams,
       DomainLockUtils domainLockUtils,
-      Gson gson,
       @Parameter("lockVerificationCode") String lockVerificationCode) {
     super(consoleApiParams);
     this.domainLockUtils = domainLockUtils;
-    this.gson = gson;
     this.lockVerificationCode = lockVerificationCode;
   }
 
@@ -68,7 +64,7 @@ public class ConsoleRegistryLockVerifyAction extends ConsoleApiAction {
     RegistryLockVerificationResponse lockResponse =
         new RegistryLockVerificationResponse(
             Ascii.toLowerCase(action.toString()), lock.getDomainName(), lock.getRegistrarId());
-    consoleApiParams.response().setPayload(gson.toJson(lockResponse));
+    consoleApiParams.response().setPayload(consoleApiParams.gson().toJson(lockResponse));
     consoleApiParams.response().setStatus(HttpServletResponse.SC_OK);
   }
 
