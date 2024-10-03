@@ -16,6 +16,7 @@ package google.registry.ui.server.console;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.request.Action.Method.DELETE;
 import static google.registry.request.Action.Method.GET;
 import static google.registry.request.Action.Method.HEAD;
@@ -36,6 +37,7 @@ import google.registry.batch.CloudTasksUtils;
 import google.registry.config.RegistryConfig;
 import google.registry.export.sheet.SyncRegistrarsSheetAction;
 import google.registry.model.console.ConsolePermission;
+import google.registry.model.console.ConsoleUpdateHistory;
 import google.registry.model.console.User;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarPoc;
@@ -258,6 +260,14 @@ public abstract class ConsoleApiAction implements Runnable {
         ImmutableSet<RegistrarPoc> updatedContacts) {
       return new EmailInfo(registrar, updatedRegistrar, contacts, updatedContacts);
     }
+  }
+
+  protected void finishAndPersistConsoleUpdateHistory(ConsoleUpdateHistory.Builder<?, ?> builder) {
+    builder.setActingUser(consoleApiParams.authResult().user().get());
+    builder.setUrl(consoleApiParams.request().getRequestURI());
+    builder.setMethod(consoleApiParams.request().getMethod());
+    builder.setModificationTime(tm().getTransactionTime());
+    tm().put(builder.build());
   }
 
   /** Specialized exception class used for failure when a user doesn't have the right permission. */

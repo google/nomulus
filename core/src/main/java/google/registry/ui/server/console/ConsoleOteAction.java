@@ -27,7 +27,6 @@ import static jakarta.servlet.http.HttpServletResponse.SC_OK;
 
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
-import com.google.gson.Gson;
 import com.google.gson.annotations.Expose;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.model.OteAccountBuilder;
@@ -62,7 +61,6 @@ public class ConsoleOteAction extends ConsoleApiAction {
   private static final String STAT_TYPE_DESCRIPTION_PARAM = "description";
   private static final String STAT_TYPE_REQUIREMENT_PARAM = "requirement";
   private static final String STAT_TYPE_TIMES_PERFORMED_PARAM = "timesPerformed";
-  private final Gson gson;
   private final StringGenerator passwordGenerator;
   private final Optional<OteCreateData> oteCreateData;
   private final Optional<String> maybeGroupEmailAddress;
@@ -72,14 +70,12 @@ public class ConsoleOteAction extends ConsoleApiAction {
   @Inject
   public ConsoleOteAction(
       ConsoleApiParams consoleApiParams,
-      Gson gson,
       IamClient iamClient,
       @Parameter("registrarId") String registrarId, // Get request param
       @Config("gSuiteConsoleUserGroupEmailAddress") Optional<String> maybeGroupEmailAddress,
       @Named("base58StringGenerator") StringGenerator passwordGenerator,
       @Parameter("oteCreateData") Optional<OteCreateData> oteCreateData) {
     super(consoleApiParams);
-    this.gson = gson;
     this.passwordGenerator = passwordGenerator;
     this.oteCreateData = oteCreateData;
     this.maybeGroupEmailAddress = maybeGroupEmailAddress;
@@ -116,8 +112,13 @@ public class ConsoleOteAction extends ConsoleApiAction {
     consoleApiParams
         .response()
         .setPayload(
-            gson.toJson(
-                ImmutableMap.builder().putAll(registrarIdToTld).put("password", password).build()));
+            consoleApiParams
+                .gson()
+                .toJson(
+                    ImmutableMap.builder()
+                        .putAll(registrarIdToTld)
+                        .put("password", password)
+                        .build()));
   }
 
   @Override
@@ -153,7 +154,7 @@ public class ConsoleOteAction extends ConsoleApiAction {
                               convertSingleRequirement(statType, oteStats.getCount(statType)))
                       .collect(toImmutableList());
               consoleApiParams.response().setStatus(SC_OK);
-              consoleApiParams.response().setPayload(gson.toJson(stats));
+              consoleApiParams.response().setPayload(consoleApiParams.gson().toJson(stats));
             });
   }
 

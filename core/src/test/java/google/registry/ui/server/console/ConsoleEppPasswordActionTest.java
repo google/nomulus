@@ -17,6 +17,7 @@ package google.registry.ui.server.console;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.request.auth.AuthenticatedRegistrarAccessor.Role.OWNER;
 import static google.registry.testing.DatabaseHelper.loadRegistrar;
+import static google.registry.testing.DatabaseHelper.loadSingleton;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static jakarta.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static jakarta.servlet.http.HttpServletResponse.SC_FORBIDDEN;
@@ -32,6 +33,7 @@ import com.google.common.collect.ImmutableSetMultimap;
 import com.google.gson.Gson;
 import google.registry.flows.PasswordOnlyTransportCredentials;
 import google.registry.model.console.GlobalRole;
+import google.registry.model.console.RegistrarUpdateHistory;
 import google.registry.model.console.User;
 import google.registry.model.console.UserRoles;
 import google.registry.model.registrar.Registrar;
@@ -41,6 +43,7 @@ import google.registry.request.RequestModule;
 import google.registry.request.auth.AuthResult;
 import google.registry.request.auth.AuthenticatedRegistrarAccessor;
 import google.registry.testing.ConsoleApiParamsUtils;
+import google.registry.testing.DatabaseHelper;
 import google.registry.testing.FakeResponse;
 import google.registry.tools.GsonUtils;
 import google.registry.ui.server.console.ConsoleEppPasswordAction.EppPasswordData;
@@ -139,6 +142,10 @@ class ConsoleEppPasswordActionTest {
         () -> {
           credentials.validate(loadRegistrar("TheRegistrar"), "randomPassword");
         });
+    assertThat(loadSingleton(RegistrarUpdateHistory.class).get().getRequestBody())
+        .isEqualTo(
+            "{\"registrarId\":\"TheRegistrar\",\"oldPassword\":\"********\",\"newPassword\":"
+                + "\"••••••••\",\"newPasswordRepeat\":\"••••••••\"}");
   }
 
   private ConsoleEppPasswordAction createAction(
@@ -150,6 +157,7 @@ class ConsoleEppPasswordActionTest {
             .setEmailAddress("email@email.com")
             .setUserRoles(new UserRoles.Builder().setGlobalRole(GlobalRole.FTE).build())
             .build();
+    DatabaseHelper.putInDb(user);
 
     AuthResult authResult = AuthResult.createUser(user);
     consoleApiParams = ConsoleApiParamsUtils.createFake(authResult);
