@@ -21,7 +21,10 @@ import static jakarta.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static jakarta.servlet.http.HttpServletResponse.SC_FORBIDDEN;
 import static jakarta.servlet.http.HttpServletResponse.SC_OK;
 
+import com.google.gson.Gson;
 import google.registry.model.console.ConsolePermission;
+import google.registry.model.console.ConsoleUpdateHistory;
+import google.registry.model.console.RegistrarUpdateHistory;
 import google.registry.model.console.User;
 import google.registry.model.registrar.Registrar;
 import google.registry.request.Action;
@@ -53,15 +56,18 @@ public class WhoisRegistrarFieldsAction extends ConsoleApiAction {
 
   static final String PATH = "/console-api/settings/whois-fields";
   private final AuthenticatedRegistrarAccessor registrarAccessor;
+  private final Gson gson;
   private final Optional<Registrar> registrar;
 
   @Inject
   public WhoisRegistrarFieldsAction(
       ConsoleApiParams consoleApiParams,
       AuthenticatedRegistrarAccessor registrarAccessor,
+      Gson gson,
       @Parameter("registrar") Optional<Registrar> registrar) {
     super(consoleApiParams);
     this.registrarAccessor = registrarAccessor;
+    this.gson = gson;
     this.registrar = registrar;
   }
 
@@ -104,6 +110,11 @@ public class WhoisRegistrarFieldsAction extends ConsoleApiAction {
             .setEmailAddress(providedRegistrar.getEmailAddress())
             .build();
     tm().put(newRegistrar);
+    finishAndPersistConsoleUpdateHistory(
+        new RegistrarUpdateHistory.Builder()
+            .setType(ConsoleUpdateHistory.Type.REGISTRAR_UPDATE)
+            .setRegistrar(newRegistrar)
+            .setRequestBody(gson.toJson(registrar.get())));
     sendExternalUpdatesIfNecessary(
         EmailInfo.create(
             savedRegistrar,

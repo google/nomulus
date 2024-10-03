@@ -22,7 +22,10 @@ import static org.apache.http.HttpStatus.SC_OK;
 
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableSet;
+import com.google.gson.Gson;
 import google.registry.model.console.ConsolePermission;
+import google.registry.model.console.ConsoleUpdateHistory;
+import google.registry.model.console.RegistrarUpdateHistory;
 import google.registry.model.console.User;
 import google.registry.model.registrar.Registrar;
 import google.registry.request.Action;
@@ -45,12 +48,16 @@ import javax.inject.Inject;
     auth = Auth.AUTH_PUBLIC_LOGGED_IN)
 public class ConsoleUpdateRegistrarAction extends ConsoleApiAction {
   static final String PATH = "/console-api/registrar";
+  private final Gson gson;
   private final Optional<Registrar> registrar;
 
   @Inject
   ConsoleUpdateRegistrarAction(
-      ConsoleApiParams consoleApiParams, @Parameter("registrar") Optional<Registrar> registrar) {
+      ConsoleApiParams consoleApiParams,
+      Gson gson,
+      @Parameter("registrar") Optional<Registrar> registrar) {
     super(consoleApiParams);
+    this.gson = gson;
     this.registrar = registrar;
   }
 
@@ -99,6 +106,11 @@ public class ConsoleUpdateRegistrarAction extends ConsoleApiAction {
                       .build();
 
               tm().put(updatedRegistrar);
+              finishAndPersistConsoleUpdateHistory(
+                  new RegistrarUpdateHistory.Builder()
+                      .setType(ConsoleUpdateHistory.Type.REGISTRAR_UPDATE)
+                      .setRegistrar(updatedRegistrar)
+                      .setRequestBody(gson.toJson(registrarParam)));
               sendExternalUpdatesIfNecessary(
                   EmailInfo.create(
                       existingRegistrar.get(),

@@ -22,9 +22,12 @@ import static jakarta.servlet.http.HttpServletResponse.SC_FORBIDDEN;
 import static jakarta.servlet.http.HttpServletResponse.SC_OK;
 
 import com.google.common.collect.ImmutableSet;
+import com.google.gson.Gson;
 import google.registry.flows.certs.CertificateChecker;
 import google.registry.flows.certs.CertificateChecker.InsecureCertificateException;
 import google.registry.model.console.ConsolePermission;
+import google.registry.model.console.ConsoleUpdateHistory;
+import google.registry.model.console.RegistrarUpdateHistory;
 import google.registry.model.console.User;
 import google.registry.model.registrar.Registrar;
 import google.registry.request.Action;
@@ -50,6 +53,7 @@ public class SecurityAction extends ConsoleApiAction {
   static final String PATH = "/console-api/settings/security";
   private final String registrarId;
   private final AuthenticatedRegistrarAccessor registrarAccessor;
+  private final Gson gson;
   private final Optional<Registrar> registrar;
   private final CertificateChecker certificateChecker;
 
@@ -58,11 +62,13 @@ public class SecurityAction extends ConsoleApiAction {
       ConsoleApiParams consoleApiParams,
       CertificateChecker certificateChecker,
       AuthenticatedRegistrarAccessor registrarAccessor,
+      Gson gson,
       @Parameter("registrarId") String registrarId,
       @Parameter("registrar") Optional<Registrar> registrar) {
     super(consoleApiParams);
     this.registrarId = registrarId;
     this.registrarAccessor = registrarAccessor;
+    this.gson = gson;
     this.registrar = registrar;
     this.certificateChecker = certificateChecker;
   }
@@ -117,6 +123,11 @@ public class SecurityAction extends ConsoleApiAction {
 
     Registrar updatedRegistrar = updatedRegistrarBuilder.build();
     tm().put(updatedRegistrar);
+    finishAndPersistConsoleUpdateHistory(
+        new RegistrarUpdateHistory.Builder()
+            .setType(ConsoleUpdateHistory.Type.REGISTRAR_UPDATE)
+            .setRegistrar(updatedRegistrar)
+            .setRequestBody(gson.toJson(registrar.get())));
 
     sendExternalUpdatesIfNecessary(
         EmailInfo.create(savedRegistrar, updatedRegistrar, ImmutableSet.of(), ImmutableSet.of()));

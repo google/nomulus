@@ -45,6 +45,7 @@ public final class ConsoleApiParamsUtils {
                   xsrfTokenManager.generateToken(
                       authResult.user().map(User::getEmailAddress).orElse("")))
             });
+    when(request.getRequestURI()).thenReturn("/console/fake-url");
     return ConsoleApiParams.create(
         request, new FakeResponse(), authResult, sendEmailUtils, xsrfTokenManager);
   }
