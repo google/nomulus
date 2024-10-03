@@ -21,7 +21,6 @@ import static jakarta.servlet.http.HttpServletResponse.SC_OK;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Ascii;
-import com.google.gson.Gson;
 import com.google.gson.annotations.Expose;
 import google.registry.model.CreateAutoTimestamp;
 import google.registry.model.console.User;
@@ -55,7 +54,6 @@ public class ConsoleDomainListAction extends ConsoleApiAction {
   private static final String SEARCH_TERM_QUERY = " AND LOWER(domainName) LIKE :searchTerm";
   private static final String ORDER_BY_STATEMENT = " ORDER BY creationTime DESC";
 
-  private final Gson gson;
   private final String registrarId;
   private final Optional<DateTime> checkpointTime;
   private final int pageNumber;
@@ -66,7 +64,6 @@ public class ConsoleDomainListAction extends ConsoleApiAction {
   @Inject
   public ConsoleDomainListAction(
       ConsoleApiParams consoleApiParams,
-      Gson gson,
       @Parameter("registrarId") String registrarId,
       @Parameter("checkpointTime") Optional<DateTime> checkpointTime,
       @Parameter("pageNumber") Optional<Integer> pageNumber,
@@ -74,7 +71,6 @@ public class ConsoleDomainListAction extends ConsoleApiAction {
       @Parameter("totalResults") Optional<Long> totalResults,
       @Parameter("searchTerm") Optional<String> searchTerm) {
     super(consoleApiParams);
-    this.gson = gson;
     this.registrarId = registrarId;
     this.checkpointTime = checkpointTime;
     this.pageNumber = pageNumber.orElse(0);
@@ -120,7 +116,10 @@ public class ConsoleDomainListAction extends ConsoleApiAction {
 
     consoleApiParams
         .response()
-        .setPayload(gson.toJson(new DomainListResult(domains, checkpoint, actualTotalResults)));
+        .setPayload(
+            consoleApiParams
+                .gson()
+                .toJson(new DomainListResult(domains, checkpoint, actualTotalResults)));
     consoleApiParams.response().setStatus(SC_OK);
   }
 

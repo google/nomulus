@@ -21,7 +21,6 @@ import static jakarta.servlet.http.HttpServletResponse.SC_OK;
 import static org.mockito.Mockito.when;
 
 import com.google.common.collect.ImmutableList;
-import com.google.gson.Gson;
 import google.registry.model.console.GlobalRole;
 import google.registry.model.console.User;
 import google.registry.model.console.UserRoles;
@@ -32,7 +31,6 @@ import google.registry.testing.ConsoleApiParamsUtils;
 import google.registry.testing.DatabaseHelper;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeResponse;
-import google.registry.tools.GsonUtils;
 import java.io.IOException;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
@@ -40,8 +38,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 class ConsoleDumDownloadActionTest {
-
-  private static final Gson GSON = GsonUtils.provideGson();
 
   private final FakeClock clock = new FakeClock(DateTime.parse("2024-04-15T00:00:00.000Z"));
 

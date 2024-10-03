@@ -264,7 +264,6 @@ public class ConsoleDomainListActionTest {
     when(consoleApiParams.request().getMethod()).thenReturn(Action.Method.GET.toString());
     return new ConsoleDomainListAction(
         consoleApiParams,
-        GSON,
         registrarId,
         Optional.ofNullable(checkpointTime),
         Optional.ofNullable(pageNumber),

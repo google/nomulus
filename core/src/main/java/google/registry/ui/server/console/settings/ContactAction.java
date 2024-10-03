@@ -28,7 +28,6 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Multimap;
 import com.google.common.flogger.FluentLogger;
-import com.google.gson.Gson;
 import google.registry.model.console.ConsolePermission;
 import google.registry.model.console.User;
 import google.registry.model.registrar.Registrar;
@@ -60,18 +59,15 @@ import javax.inject.Inject;
 public class ContactAction extends ConsoleApiAction {
   static final String PATH = "/console-api/settings/contacts";
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
-  private final Gson gson;
   private final Optional<ImmutableSet<RegistrarPoc>> contacts;
   private final String registrarId;
 
   @Inject
   public ContactAction(
       ConsoleApiParams consoleApiParams,
-      Gson gson,
       @Parameter("registrarId") String registrarId,
       @Parameter("contacts") Optional<ImmutableSet<RegistrarPoc>> contacts) {
     super(consoleApiParams);
-    this.gson = gson;
     this.registrarId = registrarId;
     this.contacts = contacts;
   }
@@ -90,7 +86,7 @@ public class ContactAction extends ConsoleApiAction {
                         .collect(toImmutableList()));
 
     consoleApiParams.response().setStatus(SC_OK);
-    consoleApiParams.response().setPayload(gson.toJson(am));
+    consoleApiParams.response().setPayload(consoleApiParams.gson().toJson(am));
   }
 
   @Override

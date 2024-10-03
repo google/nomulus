@@ -34,7 +34,6 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import com.google.common.collect.ImmutableMap;
-import com.google.gson.Gson;
 import google.registry.groups.GmailClient;
 import google.registry.model.console.GlobalRole;
 import google.registry.model.console.RegistrarRole;
@@ -44,7 +43,6 @@ import google.registry.model.domain.Domain;
 import google.registry.model.domain.RegistryLock;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.persistence.transaction.JpaTestExtensions;
-import google.registry.request.RequestModule;
 import google.registry.request.auth.AuthResult;
 import google.registry.testing.CloudTasksHelper;
 import google.registry.testing.ConsoleApiParamsUtils;
@@ -82,8 +80,6 @@ public class ConsoleRegistryLockActionTest {
 
       https://registrarconsole.tld/console/#/registry-lock-verify?lockVerificationCode=\
       123456789ABCDEFGHJKLMNPQRSTUVWXY""";
-
-  private static final Gson GSON = RequestModule.provideGson();
 
   private final FakeClock fakeClock = new FakeClock(DateTime.parse("2024-04-18T12:00:00.000Z"));
 
@@ -128,10 +124,10 @@ public class ConsoleRegistryLockActionTest {
     assertThat(response.getPayload())
         .isEqualTo(
             """
-            [{"domainName":"example.test","registrarPocId":"johndoe@theregistrar.com","lockRequestTime":\
-            {"creationTime":"2024-04-18T12:00:00.000Z"},"unlockRequestTime":"null","lockCompletionTime":\
-            "2024-04-18T12:00:00.000Z","unlockCompletionTime":"null","isSuperuser":false}]\
-            """);
+[{"domainName":"example.test","registrarPocId":"johndoe@theregistrar.com","lockRequestTime":\
+{"creationTime":"2024-04-18T12:00:00.000Z"},"unlockRequestTime":"null","lockCompletionTime":\
+"2024-04-18T12:00:00.000Z","unlockCompletionTime":"null","isSuperuser":false}]\
+""");
   }
 
   @Test
@@ -222,25 +218,25 @@ public class ConsoleRegistryLockActionTest {
     assertThat(response.getPayload())
         .isEqualTo(
             """
-            [{"domainName":"adminexample.test","lockRequestTime":{"creationTime":"2024-04-19T12:00:00.001Z"},\
-            "unlockRequestTime":"null","lockCompletionTime":"2024-04-19T12:00:00.001Z","unlockCompletionTime":\
-            "null","isSuperuser":true},\
-            \
-            {"domainName":"example.test","registrarPocId":"johndoe@theregistrar.com","lockRequestTime":\
-            {"creationTime":"2024-04-19T12:00:00.001Z"},"unlockRequestTime":"null","lockCompletionTime":\
-            "2024-04-19T12:00:00.000Z","unlockCompletionTime":"null","isSuperuser":false},\
-            \
-            {"domainName":"expiredunlock.test","registrarPocId":"johndoe@theregistrar.com","lockRequestTime":\
-            {"creationTime":"2024-04-18T12:00:00.000Z"},"unlockRequestTime":"2024-04-18T12:00:00.000Z",\
-            "lockCompletionTime":"2024-04-18T12:00:00.000Z","unlockCompletionTime":"null","isSuperuser":false},\
-            \
-            {"domainName":"incompleteunlock.test","registrarPocId":"johndoe@theregistrar.com","lockRequestTime":\
-            {"creationTime":"2024-04-19T12:00:00.001Z"},"unlockRequestTime":"2024-04-19T12:00:00.001Z",\
-            "lockCompletionTime":"2024-04-19T12:00:00.001Z","unlockCompletionTime":"null","isSuperuser":false},\
-            \
-            {"domainName":"pending.test","registrarPocId":"johndoe@theregistrar.com","lockRequestTime":\
-            {"creationTime":"2024-04-19T12:00:00.001Z"},"unlockRequestTime":"null","lockCompletionTime":"null",\
-            "unlockCompletionTime":"null","isSuperuser":false}]""");
+[{"domainName":"adminexample.test","lockRequestTime":{"creationTime":"2024-04-19T12:00:00.001Z"},\
+"unlockRequestTime":"null","lockCompletionTime":"2024-04-19T12:00:00.001Z","unlockCompletionTime":\
+"null","isSuperuser":true},\
+\
+{"domainName":"example.test","registrarPocId":"johndoe@theregistrar.com","lockRequestTime":\
+{"creationTime":"2024-04-19T12:00:00.001Z"},"unlockRequestTime":"null","lockCompletionTime":\
+"2024-04-19T12:00:00.000Z","unlockCompletionTime":"null","isSuperuser":false},\
+\
+{"domainName":"expiredunlock.test","registrarPocId":"johndoe@theregistrar.com","lockRequestTime":\
+{"creationTime":"2024-04-18T12:00:00.000Z"},"unlockRequestTime":"2024-04-18T12:00:00.000Z",\
+"lockCompletionTime":"2024-04-18T12:00:00.000Z","unlockCompletionTime":"null","isSuperuser":false},\
+\
+{"domainName":"incompleteunlock.test","registrarPocId":"johndoe@theregistrar.com","lockRequestTime":\
+{"creationTime":"2024-04-19T12:00:00.001Z"},"unlockRequestTime":"2024-04-19T12:00:00.001Z",\
+"lockCompletionTime":"2024-04-19T12:00:00.001Z","unlockCompletionTime":"null","isSuperuser":false},\
+\
+{"domainName":"pending.test","registrarPocId":"johndoe@theregistrar.com","lockRequestTime":\
+{"creationTime":"2024-04-19T12:00:00.001Z"},"unlockRequestTime":"null","lockCompletionTime":"null",\
+"unlockCompletionTime":"null","isSuperuser":false}]""");
   }
 
   @Test
@@ -508,7 +504,7 @@ public class ConsoleRegistryLockActionTest {
             new CloudTasksHelper(fakeClock).getTestCloudTasksUtils());
     response = (FakeResponse) params.response();
     return new ConsoleRegistryLockAction(
-        params, domainLockUtils, gmailClient, GSON, optionalPostInput, "TheRegistrar");
+        params, domainLockUtils, gmailClient, optionalPostInput, "TheRegistrar");
   }
 
   private ConsoleApiParams createParams() {
