@@ -53,7 +53,7 @@ jobs:
         build-scan-terms-of-use-url: "https://gradle.com/terms-of-service"
         build-scan-terms-of-use-agree: "yes"
     - name: Execute Gradle build
-      run: ./gradlew build -x test -x jIFC
+      run: ./gradlew --no-daemon --no-build-cache --no-configuration-cache --rerun-tasks clean build -x test -x jIFC
 
     # Autobuild attempts to build any compiled languages  (C/C++, C#, Go, or Java).
     # If this step fails, then you should remove it and run the build manually (see below)
