@@ -143,7 +143,7 @@ public class ContactAction extends ConsoleApiAction {
    *
    * @throws FormException if the checks fail.
    */
-  public static void checkContactRequirements(
+  private static void checkContactRequirements(
       ImmutableSet<RegistrarPoc> existingContacts, ImmutableSet<RegistrarPoc> updatedContacts) {
     // Check that no two contacts use the same email address.
     Set<String> emails = new HashSet<>();
@@ -277,18 +277,15 @@ public class ContactAction extends ConsoleApiAction {
       Multimap<Type, RegistrarPoc> newContactsByType,
       Type... types) {
     for (Type type : types) {
-      if (oldContactsByType.get(type).stream().anyMatch(ContactAction::hasPhone)
-          && newContactsByType.get(type).stream().noneMatch(ContactAction::hasPhone)) {
+      if (oldContactsByType.get(type).stream().anyMatch(contact -> contact.getPhoneNumber() != null)
+          && newContactsByType.get(type).stream()
+              .noneMatch(contact -> contact.getPhoneNumber() != null)) {
         throw new ContactRequirementException(
             String.format(
                 "Please provide a phone number for at least one %s contact",
                 type.getDisplayName()));
       }
     }
-  }
-
-  private static boolean hasPhone(RegistrarPoc contact) {
-    return contact.getPhoneNumber() != null;
   }
 
   /** Thrown when a set of contacts doesn't meet certain constraints. */
