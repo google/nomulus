@@ -27,7 +27,6 @@ import com.google.api.services.directory.Directory;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import com.google.gson.Gson;
 import google.registry.model.console.ConsolePermission;
 import google.registry.model.console.User;
 import google.registry.model.console.UserRoles;
@@ -57,7 +56,6 @@ public class ConsoleUsersAction extends ConsoleApiAction {
 
   private static final Splitter EMAIL_SPLITTER = Splitter.on('@').trimResults();
 
-  private final Gson gson;
   private final String registrarId;
   private final Directory directory;
   private final StringGenerator passwordGenerator;
@@ -65,12 +63,10 @@ public class ConsoleUsersAction extends ConsoleApiAction {
   @Inject
   public ConsoleUsersAction(
       ConsoleApiParams consoleApiParams,
-      Gson gson,
       Directory directory,
       @Named("base58StringGenerator") StringGenerator passwordGenerator,
       @Parameter("registrarId") String registrarId) {
     super(consoleApiParams);
-    this.gson = gson;
     this.registrarId = registrarId;
     this.directory = directory;
     this.passwordGenerator = passwordGenerator;
@@ -99,7 +95,7 @@ public class ConsoleUsersAction extends ConsoleApiAction {
         getAllUsers().stream()
             .filter(u -> u.getUserRoles().getRegistrarRoles().containsKey(registrarId))
             .collect(Collectors.toList());
-    consoleApiParams.response().setPayload(gson.toJson(users));
+    consoleApiParams.response().setPayload(consoleApiParams.gson().toJson(users));
     consoleApiParams.response().setStatus(SC_OK);
   }
 
@@ -139,9 +135,11 @@ public class ConsoleUsersAction extends ConsoleApiAction {
     consoleApiParams
         .response()
         .setPayload(
-            gson.toJson(
-                ImmutableMap.of(
-                    "password", newUser.getPassword(), "email", newUser.getPrimaryEmail())));
+            consoleApiParams
+                .gson()
+                .toJson(
+                    ImmutableMap.of(
+                        "password", newUser.getPassword(), "email", newUser.getPrimaryEmail())));
   }
 
   private ImmutableList<User> getAllUsers() {

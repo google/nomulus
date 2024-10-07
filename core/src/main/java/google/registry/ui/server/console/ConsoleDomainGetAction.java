@@ -18,7 +18,6 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import static jakarta.servlet.http.HttpServletResponse.SC_NOT_FOUND;
 import static jakarta.servlet.http.HttpServletResponse.SC_OK;
 
-import com.google.gson.Gson;
 import google.registry.model.EppResourceUtils;
 import google.registry.model.console.ConsolePermission;
 import google.registry.model.console.User;
@@ -41,17 +40,14 @@ public class ConsoleDomainGetAction extends ConsoleApiAction {
 
   public static final String PATH = "/console-api/domain";
 
-  private final Gson gson;
   private final String paramDomain;
 
   @Inject
   public ConsoleDomainGetAction(
       ConsoleApiParams consoleApiParams,
-      Gson gson,
       @Parameter("consoleDomain") String paramDomain) {
     super(consoleApiParams);
     this.paramDomain = paramDomain;
-    this.gson = gson;
   }
 
   @Override
@@ -72,6 +68,6 @@ public class ConsoleDomainGetAction extends ConsoleApiAction {
       return;
     }
     consoleApiParams.response().setStatus(SC_OK);
-    consoleApiParams.response().setPayload(gson.toJson(domain));
+    consoleApiParams.response().setPayload(consoleApiParams.gson().toJson(domain));
   }
 }

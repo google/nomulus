@@ -36,6 +36,7 @@ import google.registry.batch.CloudTasksUtils;
 import google.registry.config.RegistryConfig;
 import google.registry.export.sheet.SyncRegistrarsSheetAction;
 import google.registry.model.console.ConsolePermission;
+import google.registry.model.console.ConsoleUpdateHistory;
 import google.registry.model.console.GlobalRole;
 import google.registry.model.console.User;
 import google.registry.model.console.UserRoles;
@@ -261,6 +262,14 @@ public abstract class ConsoleApiAction implements Runnable {
         ImmutableSet<RegistrarPoc> updatedContacts) {
       return new EmailInfo(registrar, updatedRegistrar, contacts, updatedContacts);
     }
+  }
+
+  protected void finishAndPersistConsoleUpdateHistory(ConsoleUpdateHistory.Builder<?, ?> builder) {
+    builder.setActingUser(consoleApiParams.authResult().user().get());
+    builder.setUrl(consoleApiParams.request().getRequestURI());
+    builder.setMethod(consoleApiParams.request().getMethod());
+    builder.setModificationTime(tm().getTransactionTime());
+    tm().put(builder.build());
   }
 
   /** Specialized exception class used for failure when a user doesn't have the right permission. */

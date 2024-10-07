@@ -16,6 +16,7 @@ package google.registry.ui.server.console.settings;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.ImmutableObjectSubject.assertAboutImmutableObjects;
+import static google.registry.testing.DatabaseHelper.loadSingleton;
 import static jakarta.servlet.http.HttpServletResponse.SC_FORBIDDEN;
 import static jakarta.servlet.http.HttpServletResponse.SC_OK;
 import static org.mockito.Mockito.doReturn;
@@ -27,6 +28,7 @@ import com.google.common.collect.ImmutableSetMultimap;
 import com.google.common.collect.Maps;
 import com.google.gson.Gson;
 import google.registry.model.console.RegistrarRole;
+import google.registry.model.console.RegistrarUpdateHistory;
 import google.registry.model.console.User;
 import google.registry.model.console.UserRoles;
 import google.registry.model.registrar.Registrar;
@@ -129,6 +131,9 @@ public class WhoisRegistrarFieldsActionTest {
         .that(newRegistrar)
         .isEqualExceptFields(
             oldRegistrar, "whoisServer", "url", "localizedAddress", "phoneNumber", "faxNumber");
+    assertAboutImmutableObjects()
+        .that(loadSingleton(RegistrarUpdateHistory.class).get().getRegistrar())
+        .hasFieldsEqualTo(newRegistrar);
   }
 
   @Test
