@@ -55,6 +55,7 @@ import jakarta.persistence.TemporalType;
 import jakarta.persistence.TypedQuery;
 import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.metamodel.EntityType;
+import jakarta.persistence.metamodel.Metamodel;
 import java.io.Serializable;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
@@ -114,6 +115,11 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
   @Override
   public EntityManager getStandaloneEntityManager() {
     return emf.createEntityManager();
+  }
+
+  @Override
+  public Metamodel getMetaModel() {
+    return this.emf.getMetamodel();
   }
 
   @Override
