@@ -170,7 +170,7 @@ ext {
       // compile-time and runtime dependencies are compatible.
       'org.antlr:antlr4:[4.13.2,)',
       'org.antlr:antlr4-runtime:[4.13.2,)',
-      'org.apache.avro:avro:[1.8.2,)',
+      'org.apache.avro:avro:[1.11.4,)',
       'org.apache.beam:beam-runners-core-construction-java:[2.37.0,)',
       'org.apache.beam:beam-runners-direct-java:[2.37.0,)',
       'org.apache.beam:beam-runners-google-cloud-dataflow-java:[2.37.0,)',
