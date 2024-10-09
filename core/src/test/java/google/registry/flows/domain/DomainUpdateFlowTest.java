@@ -19,9 +19,6 @@ import static com.google.common.collect.Sets.union;
 import static com.google.common.io.BaseEncoding.base16;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.EppResourceUtils.loadByForeignKey;
-import static google.registry.model.common.FeatureFlag.FeatureName.MINIMUM_DATASET_CONTACTS_OPTIONAL;
-import static google.registry.model.common.FeatureFlag.FeatureStatus.ACTIVE;
-import static google.registry.model.common.FeatureFlag.FeatureStatus.INACTIVE;
 import static google.registry.model.eppcommon.StatusValue.CLIENT_DELETE_PROHIBITED;
 import static google.registry.model.eppcommon.StatusValue.CLIENT_HOLD;
 import static google.registry.model.eppcommon.StatusValue.CLIENT_RENEW_PROHIBITED;
@@ -99,7 +96,6 @@ import google.registry.flows.exceptions.ResourceStatusProhibitsOperationExceptio
 import google.registry.model.ImmutableObject;
 import google.registry.model.billing.BillingBase.Reason;
 import google.registry.model.billing.BillingEvent;
-import google.registry.model.common.FeatureFlag;
 import google.registry.model.contact.Contact;
 import google.registry.model.domain.DesignatedContact;
 import google.registry.model.domain.DesignatedContact.Type;
@@ -118,6 +114,7 @@ import google.registry.testing.DatabaseHelper;
 import java.util.Optional;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -140,18 +137,19 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
   private Contact sh8013Contact;
   private Contact mak21Contact;
   private Contact unusedContact;
+  private boolean cachedUseMinimumDataset;
 
   @BeforeEach
   void beforeEach() {
     createTld("tld");
     // Note that "domain_update.xml" tests adding and removing the same contact type.
     setEppInput("domain_update.xml");
-    persistResource(
-        new FeatureFlag()
-            .asBuilder()
-            .setFeatureName(MINIMUM_DATASET_CONTACTS_OPTIONAL)
-            .setStatusMap(ImmutableSortedMap.of(START_OF_TIME, INACTIVE))
-            .build());
+    cachedUseMinimumDataset = RegistryConfig.useMinimumDataset();
+  }
+
+  @AfterEach
+  void afterEach() {
+    RegistryConfig.CONFIG_SETTINGS.get().registryPolicy.useMinimumDataset = cachedUseMinimumDataset;
   }
 
   private void persistReferencedEntities() {
@@ -324,7 +322,8 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
   }
 
   @Test
-  void testFailure_emptyRegistrant() throws Exception {
+  void testFailure_thickRegistry_emptyRegistrant() throws Exception {
+    RegistryConfig.CONFIG_SETTINGS.get().registryPolicy.useMinimumDataset = false;
     setEppInput("domain_update_empty_registrant.xml");
     persistReferencedEntities();
     persistDomain();
@@ -334,13 +333,7 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
   }
 
   @Test
-  void testSuccess_minimumDatasetPhase1_emptyRegistrant() throws Exception {
-    persistResource(
-        FeatureFlag.get(MINIMUM_DATASET_CONTACTS_OPTIONAL)
-            .asBuilder()
-            .setStatusMap(
-                ImmutableSortedMap.of(START_OF_TIME, INACTIVE, clock.nowUtc().minusDays(5), ACTIVE))
-            .build());
+  void testSuccess_thinRegistry_emptyRegistrant() throws Exception {
     setEppInput("domain_update_empty_registrant.xml");
     persistReferencedEntities();
     persistDomain();
@@ -1522,7 +1515,8 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
   }
 
   @Test
-  void testFailure_removeAdmin() throws Exception {
+  void testFailure_thickRegistry_removeAdmin() throws Exception {
+    RegistryConfig.CONFIG_SETTINGS.get().registryPolicy.useMinimumDataset = false;
     setEppInput("domain_update_remove_admin.xml");
     persistReferencedEntities();
     persistResource(
@@ -1538,13 +1532,7 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
   }
 
   @Test
-  void testSuccess_minimumDatasetPhase1_removeAdmin() throws Exception {
-    persistResource(
-        FeatureFlag.get(MINIMUM_DATASET_CONTACTS_OPTIONAL)
-            .asBuilder()
-            .setStatusMap(
-                ImmutableSortedMap.of(START_OF_TIME, INACTIVE, clock.nowUtc().minusDays(5), ACTIVE))
-            .build());
+  void testSuccess_thinRegistry_removeAdmin() throws Exception {
     setEppInput("domain_update_remove_admin.xml");
     persistReferencedEntities();
     persistResource(
@@ -1559,7 +1547,8 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
   }
 
   @Test
-  void testFailure_removeTech() throws Exception {
+  void testFailure_thickRegistry_removeTech() throws Exception {
+    RegistryConfig.CONFIG_SETTINGS.get().registryPolicy.useMinimumDataset = false;
     setEppInput("domain_update_remove_tech.xml");
     persistReferencedEntities();
     persistResource(
@@ -1575,13 +1564,7 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
   }
 
   @Test
-  void testSuccess_minimumDatasetPhase1_removeTech() throws Exception {
-    persistResource(
-        FeatureFlag.get(MINIMUM_DATASET_CONTACTS_OPTIONAL)
-            .asBuilder()
-            .setStatusMap(
-                ImmutableSortedMap.of(START_OF_TIME, INACTIVE, clock.nowUtc().minusDays(5), ACTIVE))
-            .build());
+  void testSuccess_thinRegistry_removeTech() throws Exception {
     setEppInput("domain_update_remove_tech.xml");
     persistReferencedEntities();
     persistResource(
