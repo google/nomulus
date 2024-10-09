@@ -22,7 +22,7 @@ for more information on using webdriver.
 
     # Generate the golden image for a certain test
     $ ./gradlew :core:generateGoldenImages \
-      --tests "google.registry.webdriver.OteSetupConsoleScreenshotTest.get_owner_fails"
+      --tests "google.registry.webdriver.[MyTestClass.my_test]"
     ```
 3. Screenshot differs by X pixels
   * If you made any change to the existing test and expected to affect the web page,

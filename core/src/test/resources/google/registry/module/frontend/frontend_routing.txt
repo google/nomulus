@@ -1,13 +1,5 @@
 SERVICE  PATH                               CLASS                           METHODS  OK MIN  USER_POLICY
 FRONTEND /_dr/epp                           EppTlsAction                    POST     n  APP  ADMIN
-FRONTEND /registrar                         ConsoleUiAction                 GET      n  USER PUBLIC
-FRONTEND /registrar-create                  ConsoleRegistrarCreatorAction   POST,GET n  USER PUBLIC
-FRONTEND /registrar-ote-setup               ConsoleOteSetupAction           POST,GET n  USER PUBLIC
-FRONTEND /registrar-ote-status              OteStatusAction                 POST     n  USER PUBLIC
-FRONTEND /registrar-settings                RegistrarSettingsAction         POST     n  USER PUBLIC
-FRONTEND /registry-lock-get                 RegistryLockGetAction           GET      n  USER PUBLIC
-FRONTEND /registry-lock-post                RegistryLockPostAction          POST     n  USER PUBLIC
-FRONTEND /registry-lock-verify              RegistryLockVerifyAction        GET      n  USER PUBLIC
 CONSOLE  /console-api/domain                ConsoleDomainGetAction          GET      n  USER PUBLIC
 CONSOLE  /console-api/domain-list           ConsoleDomainListAction         GET      n  USER PUBLIC
 CONSOLE  /console-api/dum-download          ConsoleDumDownloadAction        GET      n  USER PUBLIC

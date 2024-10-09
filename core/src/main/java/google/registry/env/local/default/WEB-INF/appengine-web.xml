@@ -28,16 +28,7 @@
     <include path="/*.html">
       <http-header name="Cache-Control" value="max-age=0,must-revalidate" />
     </include>
-    <include path="/assets/js/**">
-      <http-header name="Cache-Control" value="max-age=0,must-revalidate" />
-    </include>
-    <include path="/assets/css/**">
-      <http-header name="Cache-Control" value="max-age=0,must-revalidate" />
-    </include>
-    <include path="/assets/images/**">
-      <http-header name="Cache-Control" value="max-age=0,must-revalidate" />
-    </include>
-    <include path="/assets/sources/**">
+    <include path="/registrar/*.html">
       <http-header name="Cache-Control" value="max-age=0,must-revalidate" />
     </include>
   </static-files>

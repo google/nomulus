@@ -18,58 +18,6 @@
     <url-pattern>/_dr/epp</url-pattern>
   </servlet-mapping>
 
-  <!-- Registrar Console endpoint, which accepts EPP XHRs from GAE GAIA-authenticated sessions. -->
-  <servlet-mapping>
-    <servlet-name>frontend-servlet</servlet-name>
-    <url-pattern>/registrar-xhr</url-pattern>
-  </servlet-mapping>
-
-  <!-- Registrar Console. -->
-  <servlet-mapping>
-    <servlet-name>frontend-servlet</servlet-name>
-    <url-pattern>/registrar</url-pattern>
-  </servlet-mapping>
-
-  <!-- Registrar creation console. -->
-  <servlet-mapping>
-    <servlet-name>frontend-servlet</servlet-name>
-    <url-pattern>/registrar-create</url-pattern>
-  </servlet-mapping>
-
-  <!-- OT&E creation console. -->
-  <servlet-mapping>
-    <servlet-name>frontend-servlet</servlet-name>
-    <url-pattern>/registrar-ote-setup</url-pattern>
-  </servlet-mapping>
-
-  <!-- OT&E status console. -->
-  <servlet-mapping>
-    <servlet-name>frontend-servlet</servlet-name>
-    <url-pattern>/registrar-ote-status</url-pattern>
-  </servlet-mapping>
-
-  <!-- Registrar Self-serve Settings. -->
-  <servlet-mapping>
-    <servlet-name>frontend-servlet</servlet-name>
-    <url-pattern>/registrar-settings</url-pattern>
-  </servlet-mapping>
-
-  <!-- Registry lock get/post/verify. -->
-  <servlet-mapping>
-    <servlet-name>frontend-servlet</servlet-name>
-    <url-pattern>/registry-lock-get</url-pattern>
-  </servlet-mapping>
-
-  <servlet-mapping>
-    <servlet-name>frontend-servlet</servlet-name>
-    <url-pattern>/registry-lock-post</url-pattern>
-  </servlet-mapping>
-
-  <servlet-mapping>
-    <servlet-name>frontend-servlet</servlet-name>
-    <url-pattern>/registry-lock-verify</url-pattern>
-  </servlet-mapping>
-
   <!-- Registrar console endpoints -->
   <servlet-mapping>
     <servlet-name>frontend-servlet</servlet-name>
@@ -84,46 +32,17 @@
         Admin-only internal section.  Requests for paths covered by the URL patterns below will be
         checked for a logged-in user account that's allowed to access the AppEngine admin console
         (NOTE: this includes Editor/Viewer permissions in addition to Owner and the new IAM
-        App Engine Admin role.  See https://cloud.google.com/appengine/docs/java/access-control
+        App Engine Admin role. See https://cloud.google.com/appengine/docs/java/access-control
         specifically the "Access handlers that have a login:admin restriction" line.)
 
         TODO(b/28219927): lift some of these restrictions so that we can allow OAuth authentication
         for endpoints that need to be accessed by open-source automated processes.
       </description>
-
       <!-- Internal AppEngine endpoints.  The '_ah' is short for app hosting.  -->
       <url-pattern>/_ah/*</url-pattern>
-
-      <!-- Verbatim JavaScript sources (only visible to admins for debugging). -->
-      <url-pattern>/assets/sources/*</url-pattern>
-
-      <!-- TODO(b/26776367): Move these files to /assets/sources. -->
-      <url-pattern>/assets/js/registrar_bin.js.map</url-pattern>
-      <url-pattern>/assets/js/registrar_dbg.js</url-pattern>
-      <url-pattern>/assets/css/registrar_dbg.css</url-pattern>
-
     </web-resource-collection>
     <auth-constraint>
       <role-name>admin</role-name>
-    </auth-constraint>
-
-    <!-- Repeated here since catch-all rule below is not inherited. -->
-    <user-data-constraint>
-      <transport-guarantee>CONFIDENTIAL</transport-guarantee>
-    </user-data-constraint>
-  </security-constraint>
-
-  <security-constraint>
-    <web-resource-collection>
-      <web-resource-name>Registrar console</web-resource-name>
-      <description>
-        Registrar console requires user login.  This is in addition to the
-        code-level "requireLogin" configuration on individual @Actions.
-      </description>
-      <url-pattern>/registrar*</url-pattern>
-    </web-resource-collection>
-    <auth-constraint>
-      <role-name>*</role-name>
     </auth-constraint>
     <!-- Repeated here since catch-all rule below is not inherited. -->
     <user-data-constraint>

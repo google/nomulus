@@ -422,29 +422,14 @@ registrarConsole:
   # DUM download file name, excluding the extension
   dumFileName: dum_file_name
 
-  # Filename of the logo to use in the header of the console. This filename is
-  # relative to ui/assets/images/
-  logoFilename: logo.png
-
   # Contact phone number for support with the registry.
   supportPhoneNumber: +1 (888) 555 0123
 
   # Contact email address for support with the registry.
   supportEmailAddress: support@example.com
 
-  # From: email address used to send announcements from the registry.
-  announcementsEmailAddress: announcements@example.com
-
-  # Contact email address for questions about integrating with the registry.
-  integrationEmailAddress: integration@example.com
-
   # URL linking to directory of technical support docs on the registry.
   technicalDocsUrl: http://example.com/your_support_docs/
-
-  # Configuration for all analytics services installed in the web console
-  analyticsConfig:
-    # Google Analytics account where data on console use is sent, optional
-    googleAnalyticsId: null
 
 monitoring:
   # Max queries per second for the Google Cloud Monitoring V3 (aka Stackdriver)

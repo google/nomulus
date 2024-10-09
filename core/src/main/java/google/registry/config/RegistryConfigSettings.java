@@ -189,18 +189,9 @@ public class RegistryConfigSettings {
   /** Configuration for the web-based registrar console. */
   public static class RegistrarConsole {
     public String dumFileName;
-    public String logoFilename;
     public String supportPhoneNumber;
     public String supportEmailAddress;
-    public String announcementsEmailAddress;
-    public String integrationEmailAddress;
     public String technicalDocsUrl;
-    public AnalyticsConfig analyticsConfig;
-  }
-
-  /** Configuration for analytics services installed in the registrar console */
-  public static class AnalyticsConfig {
-    public String googleAnalyticsId;
   }
 
   /** Configuration for monitoring. */

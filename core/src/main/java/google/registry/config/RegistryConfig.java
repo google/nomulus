@@ -46,8 +46,6 @@ import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
 import java.net.URI;
 import java.net.URL;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
@@ -138,22 +136,10 @@ public final class RegistryConfig {
       return config.gcpProject.locationId;
     }
 
-
-    /**
-     * The filename of the logo to be displayed in the header of the registrar console.
-     *
-     * @see google.registry.ui.server.registrar.ConsoleUiAction
-     */
-    @Provides
-    @Config("logoFilename")
-    public static String provideLogoFilename(RegistryConfigSettings config) {
-      return config.registrarConsole.logoFilename;
-    }
-
     /**
      * The product name of this specific registry. Used throughout the registrar console.
      *
-     * @see google.registry.ui.server.registrar.ConsoleUiAction
+     * @see google.registry.ui.server.console.ConsoleUserDataAction
      */
     @Provides
     @Config("productName")
@@ -181,39 +167,15 @@ public final class RegistryConfig {
     }
 
     /**
-     * The e-mail address for questions about integrating with the registry. Used in the
-     * "contact-us" section of the registrar console.
-     *
-     * @see google.registry.ui.server.registrar.ConsoleUiAction
-     */
-    @Provides
-    @Config("integrationEmail")
-    public static String provideIntegrationEmail(RegistryConfigSettings config) {
-      return config.registrarConsole.integrationEmailAddress;
-    }
-
-    /**
      * The e-mail address for general support. Used in the "contact-us" section of the registrar
      * console.
      *
-     * @see google.registry.ui.server.registrar.ConsoleUiAction
+     * @see google.registry.ui.server.console.ConsoleUserDataAction
      */
     @Provides
     @Config("supportEmail")
     public static String provideSupportEmail(RegistryConfigSettings config) {
       return config.registrarConsole.supportEmailAddress;
-    }
-
-    /**
-     * The "From" e-mail address for announcements. Used in the "contact-us" section of the
-     * registrar console.
-     *
-     * @see google.registry.ui.server.registrar.ConsoleUiAction
-     */
-    @Provides
-    @Config("announcementsEmail")
-    public static String provideAnnouncementsEmail(RegistryConfigSettings config) {
-      return config.registrarConsole.announcementsEmailAddress;
     }
 
     /**
@@ -230,7 +192,7 @@ public final class RegistryConfig {
     /**
      * The contact phone number. Used in the "contact-us" section of the registrar console.
      *
-     * @see google.registry.ui.server.registrar.ConsoleUiAction
+     * @see google.registry.ui.server.console.ConsoleUserDataAction
      */
     @Provides
     @Config("supportPhoneNumber")
@@ -242,28 +204,12 @@ public final class RegistryConfig {
      * The URL for technical support docs. Used in the "contact-us" section of the registrar
      * console.
      *
-     * @see google.registry.ui.server.registrar.ConsoleUiAction
+     * @see google.registry.ui.server.console.ConsoleUserDataAction
      */
     @Provides
     @Config("technicalDocsUrl")
     public static String provideTechnicalDocsUrl(RegistryConfigSettings config) {
       return config.registrarConsole.technicalDocsUrl;
-    }
-
-    /**
-     * Configuration for analytics services installed in the web console.
-     *
-     * @see google.registry.ui.server.registrar.ConsoleUiAction
-     * @see google.registry.ui.soy.registrar.AnalyticsSoyInfo
-     */
-    @Provides
-    @Config("analyticsConfig")
-    public static Map<String, Object> provideAnalyticsConfig(RegistryConfigSettings config) {
-      // Can't be an ImmutableMap because it may contain null values.
-      HashMap<String, Object> analyticsConfig = new HashMap<>();
-      analyticsConfig.put(
-          "googleAnalyticsId", config.registrarConsole.analyticsConfig.googleAnalyticsId);
-      return Collections.unmodifiableMap(analyticsConfig);
     }
 
     /**
@@ -520,7 +466,7 @@ public final class RegistryConfig {
      * Returns the email address(es) that notifications of registrar and/or registrar contact
      * updates should be sent to, or the empty list if updates should not be sent.
      *
-     * @see google.registry.ui.server.registrar.RegistrarSettingsAction
+     * @see google.registry.ui.server.SendEmailUtils
      */
     @Provides
     @Config("registrarChangesNotificationEmailAddresses")
@@ -912,17 +858,6 @@ public final class RegistryConfig {
     @Config("rdeUploadUrl")
     public static URI provideRdeUploadUrl(RegistryConfigSettings config) {
       return URI.create(config.rde.uploadUrl);
-    }
-
-    /**
-     * Whether or not the registrar console is enabled.
-     *
-     * @see google.registry.ui.server.registrar.ConsoleUiAction
-     */
-    @Provides
-    @Config("registrarConsoleEnabled")
-    public static boolean provideRegistrarConsoleEnabled() {
-      return true;
     }
 
     /**

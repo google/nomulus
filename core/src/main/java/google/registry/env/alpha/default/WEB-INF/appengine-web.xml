@@ -24,9 +24,7 @@
 
   <static-files>
     <include path="/*.html" expiration="1m"/>
-    <include path="/assets/js/**" expiration="1m"/>
-    <include path="/assets/css/**" expiration="1m"/>
-    <include path="/assets/images/**" expiration="1m"/>
-    <include path="/assets/sources/**" expiration="1m"/>
+    <include path="/registrar/*.html" expiration="1m"/>
+
   </static-files>
 </appengine-web-app>
