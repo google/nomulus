@@ -20,6 +20,7 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.Query;
 import jakarta.persistence.TypedQuery;
 import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.metamodel.Metamodel;
 
 /** Sub-interface of {@link TransactionManager} which defines JPA related methods. */
 public interface JpaTransactionManager extends TransactionManager {
@@ -30,6 +31,9 @@ public interface JpaTransactionManager extends TransactionManager {
    * <p>Caller is responsible for closing the returned instance.
    */
   EntityManager getStandaloneEntityManager();
+
+  /** Returns the JPA {@link Metamodel}. */
+  Metamodel getMetaModel();
 
   /**
    * Returns the {@link EntityManager} for the current request.
