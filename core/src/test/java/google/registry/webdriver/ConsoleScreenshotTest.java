@@ -150,6 +150,11 @@ public class ConsoleScreenshotTest extends WebDriverTestCase {
   private void loadHomePage() throws InterruptedException {
     driver.get(server.getUrl("/console/index.html"));
     driver.waitForElementToNotExist(By.tagName("mat-progress-bar"));
+    // Script that set cursor to transparent to prevent blanking cursor flakiness when comparing
+    // screenshots
+    String script =
+        "document.styleSheets[0].insertRule(\"html * {caret-color: transparent !important;}\")";
+    driver.executeScript(script);
   }
 
   private void selectRegistrar() throws InterruptedException {
