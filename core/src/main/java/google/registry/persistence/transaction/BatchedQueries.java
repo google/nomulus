@@ -33,7 +33,7 @@ public final class BatchedQueries {
 
   private BatchedQueries() {}
 
-  public static final int DEFAULT_BATCH_SIZE = 500;
+  private static final int DEFAULT_BATCH_SIZE = 500;
 
   public static <T> Stream<ImmutableList<T>> loadAllOf(Class<T> entityType) {
     return loadAllOf(entityType, DEFAULT_BATCH_SIZE);
@@ -48,17 +48,18 @@ public final class BatchedQueries {
    *
    * <p>This method must not be nested in any transaction; same for the traversal of the returned
    * {@link Stream}. Each batch is loaded in a separate transaction at the {@code
-   * TRANSACTION_REPEATABLE_READ} isolation level.
+   * TRANSACTION_REPEATABLE_READ} isolation level, and loads the snapshot of the batch at the
+   * batch's start time. New insertions or updates since then are not reflected in the result.
    */
   public static <T> Stream<ImmutableList<T>> loadAllOf(
       JpaTransactionManager jpaTm, Class<T> entityType, int batchSize) {
-    checkState(!jpaTm.inTransaction(), "loadAllOf cannot be nested in a transaction.");
-    checkArgument(batchSize > 0, "batchSize must be positive.");
+    checkState(!jpaTm.inTransaction(), "loadAllOf cannot be nested in a transaction");
+    checkArgument(batchSize > 0, "batchSize must be positive");
     EntityType<T> jpaEntityType = jpaTm.getMetaModel().entity(entityType);
     if (!jpaEntityType.hasSingleIdAttribute()) {
       // We should support multi-column primary keys on a case-by-case basis.
       throw new UnsupportedOperationException(
-          "Types with multi-column primary key not supported yet.");
+          "Types with multi-column primary key not supported yet");
     }
     return Streams.stream(
         new BatchedIterator<>(new SingleColIdBatchQuery<>(jpaTm, jpaEntityType), batchSize));
@@ -78,7 +79,7 @@ public final class BatchedQueries {
     private SingleColIdBatchQuery(JpaTransactionManager jpaTm, EntityType<T> jpaEntityType) {
       checkArgument(
           jpaEntityType.hasSingleIdAttribute(),
-          "%s must have a single ID attribute.",
+          "%s must have a single ID attribute",
           jpaEntityType.getJavaType().getSimpleName());
       this.jpaTm = jpaTm;
       this.entityType = jpaEntityType.getJavaType();
@@ -93,7 +94,7 @@ public final class BatchedQueries {
 
     @Override
     public ImmutableList<T> readBatch(Optional<T> lastRead, int batchSize) {
-      checkState(!jpaTm.inTransaction(), "Stream cannot be accessed in a transaction.");
+      checkState(!jpaTm.inTransaction(), "Stream cannot be accessed in a transaction");
       return jpaTm.transact(
           TRANSACTION_REPEATABLE_READ,
           () -> {
