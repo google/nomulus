@@ -33,11 +33,6 @@ ext {
       // Note that since Gradle 7, for version labels to be strict, we need to
       // append '!!' to the end. Otherwise they may still be forced to upgrade.
 
-      // PINNED VERSIONS START HERE.
-
-      // TODO: Migrate Soy Tofu to Soy Sauce (go/soysauce-migration)
-      'com.google.template:soy:2021-02-01',
-
       // CAPPED VERSIONS START HERE.
 
       // 6.6 is alpha.
@@ -77,9 +72,6 @@ ext {
       // v2 has not been updated since 2022, seems abandoned. It also requires
       // google-api-client major version 1.
       'com.google.apis:google-api-services-dns:[v1-rev20240419-2.0.0, v2beta)',
-
-      // TODO: Remove the cap after soy migration.
-      'com.google.protobuf:protobuf-java:[3.25.5, 4.0.0)!!',
 
       // DYNAMIC VERSIONS START HERE.
 
@@ -135,8 +127,14 @@ ext {
       'com.google.oauth-client:google-oauth-client-jetty:[1.31.4,)',
       'com.google.oauth-client:google-oauth-client-servlet:[1.31.4,)',
       'com.google.oauth-client:google-oauth-client:[1.31.4,)',
+      // NOTE: soy requires a version below 4.0.0, as its (now unmaintained) dependency
+      // com.google.common.html.types:types does not work with higher versions of protobuf.
+      // This cap is defined in the soy configuration directly in core/gradle.build. The uncapped
+      // version here applies to nomulus itself.
+      'com.google.protobuf:protobuf-java:[3.25.5,)',
       'com.google.protobuf:protobuf-java-util:[3.17.3,)',
       'com.google.re2j:re2j:[1.6,)',
+      'com.google.template:soy:[2024-02-26,)',
       'com.google.truth:truth:[1.1.2,)',
       'com.googlecode.json-simple:json-simple:[1.1.1,)',
       'com.ibm.icu:icu4j:[68.2,)',

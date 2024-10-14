@@ -175,7 +175,6 @@ dependencies {
   implementation deps['com.google.oauth-client:google-oauth-client-java6']
   implementation deps['com.google.oauth-client:google-oauth-client-jetty']
   implementation deps['com.google.oauth-client:google-oauth-client-servlet']
-  implementation deps['com.google.protobuf:protobuf-java']
   implementation deps['com.google.re2j:re2j']
   implementation deps['com.google.template:soy']
   implementation deps['com.googlecode.json-simple:json-simple']
@@ -293,7 +292,8 @@ dependencies {
   jaxb deps['org.glassfish.jaxb:jaxb-xjc']
 
   // Dependency needed for soy to java compilation.
-  soy deps['com.google.protobuf:protobuf-java']
+  // Read dependencies.gradle on why the soy version is pinned here directly.
+  soy 'com.google.protobuf:protobuf-java:[3.25.5, 4.0.0)!!'
   soy deps['com.google.template:soy']
 
   // Tool dependencies.  used for doc generation.
@@ -386,7 +386,6 @@ task soyToJava {
       args "--javaPackage", "${javaPackage}",
               "--outputDirectory", "${outputDirectory}",
               "--javaClassNameSource", "filename",
-              "--allowExternalCalls", "true",
               "--srcs", "${soyFiles.join(',')}"
     }
 

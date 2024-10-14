@@ -12,11 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-{namespace domain.registry.tools}
+{namespace domain.registry.tools.domain_update}
 /**
  * Update domain
  */
-{template .domainupdate stricthtml="false"}
+{template domainupdate stricthtml="false"}
   {@param domain: string}
   {@param add: bool}
   {@param addNameservers: list<string>}
@@ -29,15 +29,15 @@
   {@param removeTechs: list<string>}
   {@param removeStatuses: list<string>}
   {@param change: bool}
-  {@param? registrant: string}
-  {@param? password: string}
+  {@param? registrant: string|null}
+  {@param? password: string|null}
   {@param secdns: bool}
   {@param addDsRecords: list<[keyTag:int, alg:int, digestType:int, digest:string]>}
   {@param removeDsRecords: list<[keyTag:int, alg:int, digestType:int, digest:string]>}
   {@param removeAllDsRecords: bool}
-  {@param? autorenews: string}
-  {@param? reason: string}
-  {@param? requestedByRegistrar: string}
+  {@param? autorenews: string|null}
+  {@param? reason: string|null}
+  {@param? requestedByRegistrar: string|null}
 
   <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
   <epp xmlns="urn:ietf:params:xml:ns:epp-1.0">
@@ -99,7 +99,7 @@
           {/if}
         </domain:update>
       </update>
-      {if $secdns or $autorenews or $reason or $requestedByRegistrar}
+      {if $secdns || $autorenews || $reason || $requestedByRegistrar}
         <extension>
           {if $secdns}
             <secDNS:update xmlns:secDNS="urn:ietf:params:xml:ns:secDNS-1.1">
@@ -139,7 +139,7 @@
               <superuser:autorenews>{$autorenews}</superuser:autorenews>
             </superuser:domainUpdate>
           {/if}
-          {if $reason or $requestedByRegistrar}
+          {if $reason || $requestedByRegistrar}
             <metadata:metadata xmlns:metadata="urn:google:params:xml:ns:metadata-1.0">
             {if $reason}
               <metadata:reason>{$reason}</metadata:reason>
