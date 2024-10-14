@@ -12,17 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-{namespace domain.registry.tools}
+{namespace domain.registry.tools.update_server_locks}
 
 /**
  * Update server locks
  */
-{template .updateserverlocks stricthtml="false"}
+{template updateserverlocks stricthtml="false"}
 {@param domainName: string}
 {@param locksToApply: list<string>}
 {@param locksToRemove: list<string>}
 {@param requestedByRegistrar: any}
-{@param? reason: string}
+{@param? reason: string|null}
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <epp xmlns="urn:ietf:params:xml:ns:epp-1.0">
   <command>
