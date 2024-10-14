@@ -18,6 +18,7 @@ steps:
   - |
     set -e
     git clone https://gerrit.googlesource.com/gcompute-tools
+    sed -i s@/usr/bin/python@/usr/bin/python3@g ./gcompute-tools/git-cookie-authdaemon
     ./gcompute-tools/git-cookie-authdaemon
     git clone ${_INTERNAL_REPO_URL} nomulus-internal
 # Tag and push the internal repo.
