@@ -221,6 +221,13 @@ registryPolicy:
   # domain create requests.
   tieredPricingPromotionRegistrarIds: []
 
+  # Whether the registry is (or will be) using the ICANN minimum dataset or
+  # not. If true, contacts will be optional for domain creations, and eventually
+  # contacts will be forbidden for domain creations. If false, then the registry
+  # will continue to sture contact information on domains. See
+  # https://www.icann.org/resources/pages/registration-data-policy-2024-02-21-en for more.
+  useMinimumDataset: true
+
 hibernate:
   # If set to false, calls to tm().transact() cannot be nested. If set to true,
   # nested calls to tm().transact() are allowed, as long as they do not specify

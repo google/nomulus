@@ -25,9 +25,6 @@ import static google.registry.model.billing.BillingBase.Flag.SUNRISE;
 import static google.registry.model.billing.BillingBase.RenewalPriceBehavior.DEFAULT;
 import static google.registry.model.billing.BillingBase.RenewalPriceBehavior.NONPREMIUM;
 import static google.registry.model.billing.BillingBase.RenewalPriceBehavior.SPECIFIED;
-import static google.registry.model.common.FeatureFlag.FeatureName.MINIMUM_DATASET_CONTACTS_OPTIONAL;
-import static google.registry.model.common.FeatureFlag.FeatureStatus.ACTIVE;
-import static google.registry.model.common.FeatureFlag.FeatureStatus.INACTIVE;
 import static google.registry.model.domain.fee.Fee.FEE_EXTENSION_URIS;
 import static google.registry.model.domain.token.AllocationToken.TokenType.BULK_PRICING;
 import static google.registry.model.domain.token.AllocationToken.TokenType.DEFAULT_PROMO;
@@ -159,7 +156,6 @@ import google.registry.model.billing.BillingBase.Reason;
 import google.registry.model.billing.BillingBase.RenewalPriceBehavior;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingRecurrence;
-import google.registry.model.common.FeatureFlag;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.GracePeriod;
@@ -202,6 +198,7 @@ import javax.annotation.Nullable;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junitpioneer.jupiter.cartesian.CartesianTest;
@@ -225,6 +222,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
       TmchData.readEncodedSignedMark(TmchTestData.loadFile(SMD_FILE_PATH)).getEncodedData();
 
   private AllocationToken allocationToken;
+  private boolean cachedUseMinimumDataset;
 
   DomainCreateFlowTest() {
     setEppInput("domain_create.xml", ImmutableMap.of("DOMAIN", "example.tld"));
@@ -254,13 +252,13 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
                     "badcrash,NAME_COLLISION"),
                 persistReservedList("global-list", "resdom,FULLY_BLOCKED"))
             .build());
-    persistResource(
-        new FeatureFlag()
-            .asBuilder()
-            .setFeatureName(MINIMUM_DATASET_CONTACTS_OPTIONAL)
-            .setStatusMap(ImmutableSortedMap.of(START_OF_TIME, INACTIVE))
-            .build());
     persistClaimsList(ImmutableMap.of("example-one", CLAIMS_KEY, "test-validate", CLAIMS_KEY));
+    cachedUseMinimumDataset = RegistryConfig.useMinimumDataset();
+  }
+
+  @AfterEach
+  void afterEach() {
+    RegistryConfig.CONFIG_SETTINGS.get().registryPolicy.useMinimumDataset = cachedUseMinimumDataset;
   }
 
   private void enrollTldInBsa() {
@@ -2155,7 +2153,8 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
   }
 
   @Test
-  void testFailure_missingRegistrant() {
+  void testFailure_thickRegistry_missingRegistrant() {
+    RegistryConfig.CONFIG_SETTINGS.get().registryPolicy.useMinimumDataset = false;
     setEppInput("domain_create_missing_registrant.xml");
     persistContactsAndHosts();
     EppException thrown = assertThrows(MissingRegistrantException.class, this::runFlow);
@@ -2163,13 +2162,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
   }
 
   @Test
-  void testSuccess_minimumDatasetPhase1_missingRegistrant() throws Exception {
-    persistResource(
-        FeatureFlag.get(MINIMUM_DATASET_CONTACTS_OPTIONAL)
-            .asBuilder()
-            .setStatusMap(
-                ImmutableSortedMap.of(START_OF_TIME, INACTIVE, clock.nowUtc().minusDays(5), ACTIVE))
-            .build());
+  void testSuccess_thinRegistry_missingRegistrant() throws Exception {
     setEppInput("domain_create_missing_registrant.xml");
     persistContactsAndHosts();
     runFlowAssertResponse(
@@ -2177,7 +2170,8 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
   }
 
   @Test
-  void testFailure_missingAdmin() {
+  void testFailure_thickRegistry_missingAdmin() {
+    RegistryConfig.CONFIG_SETTINGS.get().registryPolicy.useMinimumDataset = false;
     setEppInput("domain_create_missing_admin.xml");
     persistContactsAndHosts();
     EppException thrown = assertThrows(MissingAdminContactException.class, this::runFlow);
@@ -2185,13 +2179,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
   }
 
   @Test
-  void testSuccess_minimumDatasetPhase1_missingAdmin() throws Exception {
-    persistResource(
-        FeatureFlag.get(MINIMUM_DATASET_CONTACTS_OPTIONAL)
-            .asBuilder()
-            .setStatusMap(
-                ImmutableSortedMap.of(START_OF_TIME, INACTIVE, clock.nowUtc().minusDays(5), ACTIVE))
-            .build());
+  void testSuccess_thinRegistry_missingAdmin() throws Exception {
     setEppInput("domain_create_missing_admin.xml");
     persistContactsAndHosts();
     runFlowAssertResponse(
@@ -2199,7 +2187,8 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
   }
 
   @Test
-  void testFailure_missingTech() {
+  void testFailure_thickRegistry_missingTech() {
+    RegistryConfig.CONFIG_SETTINGS.get().registryPolicy.useMinimumDataset = false;
     setEppInput("domain_create_missing_tech.xml");
     persistContactsAndHosts();
     EppException thrown = assertThrows(MissingTechnicalContactException.class, this::runFlow);
@@ -2207,13 +2196,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
   }
 
   @Test
-  void testSuccess_minimumDatasetPhase1_missingTech() throws Exception {
-    persistResource(
-        FeatureFlag.get(MINIMUM_DATASET_CONTACTS_OPTIONAL)
-            .asBuilder()
-            .setStatusMap(
-                ImmutableSortedMap.of(START_OF_TIME, INACTIVE, clock.nowUtc().minusDays(5), ACTIVE))
-            .build());
+  void testSuccess_thinRegistry_missingTech() throws Exception {
     setEppInput("domain_create_missing_tech.xml");
     persistContactsAndHosts();
     runFlowAssertResponse(
@@ -2221,7 +2204,8 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
   }
 
   @Test
-  void testFailure_missingNonRegistrantContacts() {
+  void testFailure_thickRegistry_missingNonRegistrantContacts() {
+    RegistryConfig.CONFIG_SETTINGS.get().registryPolicy.useMinimumDataset = false;
     setEppInput("domain_create_missing_non_registrant_contacts.xml");
     persistContactsAndHosts();
     EppException thrown = assertThrows(MissingAdminContactException.class, this::runFlow);
@@ -2229,13 +2213,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
   }
 
   @Test
-  void testSuccess_minimumDatasetPhase1_missingNonRegistrantContacts() throws Exception {
-    persistResource(
-        FeatureFlag.get(MINIMUM_DATASET_CONTACTS_OPTIONAL)
-            .asBuilder()
-            .setStatusMap(
-                ImmutableSortedMap.of(START_OF_TIME, INACTIVE, clock.nowUtc().minusDays(5), ACTIVE))
-            .build());
+  void testSuccess_thinRegistry_missingNonRegistrantContacts() throws Exception {
     setEppInput("domain_create_missing_non_registrant_contacts.xml");
     persistContactsAndHosts();
     runFlowAssertResponse(
