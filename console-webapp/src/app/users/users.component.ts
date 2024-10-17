@@ -24,6 +24,14 @@ import { RegistrarService } from '../registrar/registrar.service';
 import { SnackBarModule } from '../snackbar.module';
 import { User, UsersService } from './users.service';
 
+const roleToDescription = (role: String) => {
+  if (!role) return 'N/A';
+  else if (role.toLowerCase().startsWith('account_manager')) {
+    return 'Viewer';
+  }
+  return 'Editor';
+};
+
 export const columns = [
   {
     columnDef: 'emailAddress',
@@ -33,7 +41,7 @@ export const columns = [
   {
     columnDef: 'role',
     header: 'User role',
-    cell: (record: User) => `${record.role || ''}`,
+    cell: (record: User) => `${roleToDescription(record.role)}`,
   },
 ];
 
@@ -54,6 +62,7 @@ export class UsersComponent {
   dataSource: MatTableDataSource<User>;
   columns = columns;
   displayedColumns = this.columns.map((c) => c.columnDef);
+  isLoading = false;
 
   @ViewChild(MatSort) sort!: MatSort;
 
@@ -79,14 +88,19 @@ export class UsersComponent {
   }
 
   loadUsers() {
+    this.isLoading = true;
     this.usersService.fetchUsers().subscribe({
       error: (err: HttpErrorResponse) => {
         this._snackBar.open(err.error || err.message);
+      },
+      complete: () => {
+        this.isLoading = false;
       },
     });
   }
 
   createNewUser() {
+    this.isLoading = true;
     this.usersService.createNewUser().subscribe({
       next: (newUser) => {
         this._snackBar.open(
@@ -99,6 +113,9 @@ export class UsersComponent {
       },
       error: (err: HttpErrorResponse) => {
         this._snackBar.open(err.error || err.message);
+      },
+      complete: () => {
+        this.isLoading = false;
       },
     });
   }

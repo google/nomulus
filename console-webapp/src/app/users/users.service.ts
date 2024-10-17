@@ -29,7 +29,6 @@ export interface User {
 
 @Injectable()
 export class UsersService {
-  isLoaded = false;
   users = signal<User[]>([]);
 
   constructor(
@@ -42,7 +41,6 @@ export class UsersService {
       .getUsers(this.registrarService.registrarId())
       .pipe(
         tap((users: User[]) => {
-          this.isLoaded = true;
           this.users.set(users);
         })
       );

@@ -24,6 +24,7 @@ import static jakarta.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 import static jakarta.servlet.http.HttpServletResponse.SC_OK;
 
 import com.google.api.services.directory.Directory;
+import com.google.api.services.directory.model.UserName;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -124,6 +125,9 @@ public class ConsoleUsersAction extends ConsoleApiAction {
 
     com.google.api.services.directory.model.User newUser =
         new com.google.api.services.directory.model.User();
+
+    newUser.setName(
+        new UserName().setFamilyName(registrarId).setGivenName("User" + nextAvailableIncrement));
     newUser.setPassword(passwordGenerator.createString(PASSWORD_LENGTH));
     newUser.setPrimaryEmail(generateNewEmailAddress(user, nextAvailableIncrement));
 

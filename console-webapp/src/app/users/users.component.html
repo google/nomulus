@@ -1,5 +1,5 @@
 <app-selected-registrar-wrapper>
-  @if (usersService.isLoaded) {
+  @if (!isLoading) {
   <div class="console-app__users">
     <div class="console-app__users-header">
       <h1 class="mat-headline-4">Users</h1>
@@ -10,7 +10,7 @@
         aria-label="Create new user"
         color="primary"
       >
-        Create New User
+        Create a Viewer User
       </button>
     </div>
     <mat-table
