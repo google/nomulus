@@ -12,14 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-{namespace domain.registry.tools}
+{namespace domain.registry.tools.host_create}
 /**
  * Create host
  */
-{template .hostcreate stricthtml="false"}
+{template hostcreate stricthtml="false"}
   {@param hostname: string}
-  {@param? ipv4addresses: list<string>}
-  {@param? ipv6addresses: list<string>}
+  {@param? ipv4addresses: list<string>|null}
+  {@param? ipv6addresses: list<string>|null}
 
   <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
   <epp xmlns="urn:ietf:params:xml:ns:epp-1.0">

@@ -17,7 +17,7 @@
 /**
  * Template for the content of the monthly spec11 email
  */
-{template .monthlySpec11Email}
+{template monthlySpec11Email}
   {@param threats: list<map<string, string>>}
   {@param resources: list<string>}
   {@param registry: string}
@@ -32,7 +32,7 @@
     security concerns. This may be because the registrants have not completed the requisite steps
     to mitigate the potential security abuse and/or have it reviewed and delisted.</p>
 
-  {call .threatMatchTable}
+  {call threatMatchTable}
     {param threats: $threats /}
   {/call}
 
@@ -42,7 +42,7 @@
     please <a href="https://safebrowsing.google.com/safebrowsing/report_error/?hl=en">submit a
     request</a> to have the site reviewed.</p>
 
-  {call .resourceList}
+  {call resourceList}
     {param resources: $resources /}
   {/call}
 
@@ -56,7 +56,7 @@
 /**
  * Template for the content of the daily spec11 email
  */
-{template .dailySpec11Email}
+{template dailySpec11Email}
   {@param threats: list<map<string, string>>}
   {@param resources: list<string>}
   {@param date: string}
@@ -69,14 +69,14 @@
     identify potential security concerns. On {$date}, the following domains that your
     registrar manages were flagged for potential security concerns:</p>
 
-  {call .threatMatchTable}
+  {call threatMatchTable}
     {param threats: $threats /}
   {/call}
 
   <p><b>Please communicate these findings to the registrant and work with the
     registrant to mitigate any security issues and have the domains delisted.</b></p>
 
-  {call .resourceList}
+  {call resourceList}
     {param resources: $resources /}
   {/call}
 
@@ -98,7 +98,7 @@
 /**
  * Template for the list of potentially-useful resources
  */
-{template .resourceList}
+{template resourceList}
   {@param resources: list<string>}
   {if length($resources) > 0}
     Some helpful resources for getting off a blocked list include:
@@ -113,7 +113,7 @@
 /**
  * Template for the table containing the threats themselves
  */
-{template .threatMatchTable}
+{template threatMatchTable}
   {@param threats: list<map<string, string>>}
   <table>
     <tr>
@@ -122,8 +122,8 @@
     </tr>
     {for $threat in $threats}
       <tr>
-        <td>{$threat['domainName']}</td>
-        <td>{$threat['threatType']}</td>
+        <td>{$threat.get('domainName')}</td>
+        <td>{$threat.get('threatType')}</td>
       </tr>
     {/for}
   </table>

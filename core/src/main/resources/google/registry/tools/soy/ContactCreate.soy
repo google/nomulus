@@ -12,22 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-{namespace domain.registry.tools}
+{namespace domain.registry.tools.contact_create}
 /**
  * Create contact
  */
-{template .contactcreate stricthtml="false"}
-  {@param? id: string}
-  {@param? name: string}
-  {@param? org: string}
-  {@param? street: list<string>}
-  {@param? city: string}
-  {@param? state: string}
-  {@param? zip: string}
-  {@param? cc: string}
-  {@param? phone: string}
-  {@param? fax: string}
-  {@param? email: string}
+{template contactcreate stricthtml="false"}
+  {@param? id: string|null}
+  {@param? name: string|null}
+  {@param? org: string|null}
+  {@param? street: list<string>|null}
+  {@param? city: string|null}
+  {@param? state: string|null}
+  {@param? zip: string|null}
+  {@param? cc: string|null}
+  {@param? phone: string|null}
+  {@param? fax: string|null}
+  {@param? email: string|null}
   {@param password: string}
 
   <?xml version="1.0" encoding="UTF-8" standalone="yes"?>

@@ -1,5 +1,0 @@
-DEBUG = null
-google.registry.ui.ConsoleDebug.PRODUCTION = 0
-google.registry.ui.ConsoleDebug.DEBUG = 1
-google.registry.ui.ConsoleDebug.RAW = 2
-google.registry.ui.ConsoleDebug.TEST = 3

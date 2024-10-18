@@ -12,12 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-{namespace domain.registry.tools}
+{namespace domain.registry.tools.domain_check}
 
 /**
  * Domain check request
  */
-{template .domaincheck stricthtml="false"}
+{template domaincheck stricthtml="false"}
 {@param domainNames: list<string>}
 {@param? allocationToken: string|null}
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
@@ -40,7 +40,7 @@
         </fee:domain>
       {/for}
       </fee:check>
-      {if isNonnull($allocationToken)}
+      {if $allocationToken}
         <allocationToken:allocationToken
             xmlns:allocationToken="urn:ietf:params:xml:ns:allocationToken-1.0">
           {$allocationToken}

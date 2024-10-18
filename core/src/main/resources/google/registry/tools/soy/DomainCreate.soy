@@ -12,11 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-{namespace domain.registry.tools}
+{namespace domain.registry.tools.domain_create}
 /**
  * Create domain
  */
-{template .domaincreate stricthtml="false"}
+{template domaincreate stricthtml="false"}
   {@param domain: string}
   {@param period: int}
   {@param nameservers: list<string>}
@@ -24,12 +24,12 @@
   {@param admins: list<string>}
   {@param techs: list<string>}
   {@param password: string}
-  {@param? currency: string}
-  {@param? price: string}
+  {@param? currency: string|null}
+  {@param? price: string|null}
   {@param dsRecords: list<[keyTag:int, alg:int, digestType:int, digest:string]>}
-  {@param? reason: string}
-  {@param? requestedByRegistrar: string}
-  {@param? allocationToken: string}
+  {@param? reason: string|null}
+  {@param? requestedByRegistrar: string|null}
+  {@param? allocationToken: string|null}
 
   <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
   <epp xmlns="urn:ietf:params:xml:ns:epp-1.0">
@@ -57,7 +57,7 @@
           </domain:authInfo>
         </domain:create>
       </create>
-      {if length($dsRecords) > 0 or $price != null or $reason or $requestedByRegistrar or $allocationToken}
+      {if length($dsRecords) > 0 || $price != null || $reason || $requestedByRegistrar || $allocationToken}
         <extension>
           {if $price != null}
             <fee:create xmlns:fee="urn:ietf:params:xml:ns:fee-0.12">
@@ -77,7 +77,7 @@
               {/for}
             </secDNS:create>
           {/if}
-          {if $reason or $requestedByRegistrar}
+          {if $reason || $requestedByRegistrar}
             <metadata:metadata xmlns:metadata="urn:google:params:xml:ns:metadata-1.0">
             {if $reason}
               <metadata:reason>{$reason}</metadata:reason>

@@ -12,17 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-{namespace domain.registry.tools}
+{namespace domain.registry.tools.domain_renew}
 
 /**
  * Renew domain request
  */
-{template .renewdomain stricthtml="false"}
+{template renewdomain stricthtml="false"}
 {@param domainName: string}
 {@param expirationDate: string}
 {@param period: string}
-{@param? reason: string}
-{@param? requestedByRegistrar: string}
+{@param? reason: string|null}
+{@param? requestedByRegistrar: string|null}
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <epp xmlns="urn:ietf:params:xml:ns:epp-1.0">
   <command>
@@ -34,7 +34,7 @@
         <domain:period unit="y">{$period}</domain:period>
       </domain:renew>
     </renew>
-    {if $reason or $requestedByRegistrar}
+    {if $reason || $requestedByRegistrar}
       <extension>
           <metadata:metadata xmlns:metadata="urn:google:params:xml:ns:metadata-1.0">
             {if $reason}
