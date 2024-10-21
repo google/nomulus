@@ -39,6 +39,7 @@ import google.registry.dns.writer.clouddns.CloudDnsWriterModule;
 import google.registry.dns.writer.dnsupdate.DnsUpdateConfigModule;
 import google.registry.dns.writer.dnsupdate.DnsUpdateWriterModule;
 import google.registry.export.ExportDomainListsAction;
+import google.registry.export.ExportPendingDeleteDomainsAction;
 import google.registry.export.ExportPremiumTermsAction;
 import google.registry.export.ExportReservedTermsAction;
 import google.registry.export.SyncGroupMembersAction;
@@ -116,6 +117,8 @@ public interface BackendRequestComponent {
   ExpandBillingRecurrencesAction expandBillingRecurrencesAction();
 
   ExportDomainListsAction exportDomainListsAction();
+
+  ExportPendingDeleteDomainsAction exportPendingDeleteDomainsAction();
 
   ExportPremiumTermsAction exportPremiumTermsAction();
 

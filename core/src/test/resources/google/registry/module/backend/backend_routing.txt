@@ -9,6 +9,7 @@ BACKEND /_dr/task/dnsRefresh                               RefreshDnsAction     
 BACKEND /_dr/task/executeCannedScript                      CannedScriptExecutionAction                    POST,GET y  APP ADMIN
 BACKEND /_dr/task/expandBillingRecurrences                 ExpandBillingRecurrencesAction                 GET      n  APP ADMIN
 BACKEND /_dr/task/exportDomainLists                        ExportDomainListsAction                        POST     n  APP ADMIN
+BACKEND /_dr/task/exportPendingDeleteDomains               ExportPendingDeleteDomainsAction               POST     n  APP ADMIN
 BACKEND /_dr/task/exportPremiumTerms                       ExportPremiumTermsAction                       POST     n  APP ADMIN
 BACKEND /_dr/task/exportReservedTerms                      ExportReservedTermsAction                      POST     n  APP ADMIN
 BACKEND /_dr/task/generateInvoices                         GenerateInvoicesAction                         POST     n  APP ADMIN
