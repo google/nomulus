@@ -27,6 +27,36 @@ spec:
       kind: ServiceImport
       name: pubapi
       port: 80
+  - matches:
+    - path:
+        type: PathPrefix
+        value: /_dr/whois
+      headers:
+      - name: "canary"
+        value: "true"
+    - path:
+        type: PathPrefix
+        value: /check
+      headers:
+      - name: "canary"
+        value: "true"
+    - path:
+        type: PathPrefix
+        value: /whois
+      headers:
+      - name: "canary"
+        value: "true"
+    - path:
+        type: PathPrefix
+        value: /rdap
+      headers:
+      - name: "canary"
+        value: "true"
+    backendRefs:
+    - group: net.gke.io
+      kind: ServiceImport
+      name: pubapi-canary
+      port: 80
 ---
 apiVersion: networking.gke.io/v1
 kind: HealthCheckPolicy
@@ -42,3 +72,18 @@ spec:
     group: net.gke.io
     kind: ServiceImport
     name: pubapi
+---
+apiVersion: networking.gke.io/v1
+kind: HealthCheckPolicy
+metadata:
+  name: pubapi-canary
+spec:
+  default:
+    config:
+      type: HTTP
+      httpHealthCheck:
+        requestPath: /healthz/
+  targetRef:
+    group: net.gke.io
+    kind: ServiceImport
+    name: pubapi-canary

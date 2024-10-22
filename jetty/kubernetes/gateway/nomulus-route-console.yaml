@@ -21,6 +21,24 @@ spec:
       kind: ServiceImport
       name: console
       port: 80
+  - matches:
+    - path:
+        type: PathPrefix
+        value: /console-api
+      headers:
+      - name: "canary"
+        value: "true"
+    - path:
+        type: PathPrefix
+        value: /console
+      headers:
+      - name: "canary"
+        value: "true"
+    backendRefs:
+    - group: net.gke.io
+      kind: ServiceImport
+      name: console-canary
+      port: 80
 ---
 apiVersion: networking.gke.io/v1
 kind: HealthCheckPolicy
@@ -36,3 +54,18 @@ spec:
     group: net.gke.io
     kind: ServiceImport
     name: console
+---
+apiVersion: networking.gke.io/v1
+kind: HealthCheckPolicy
+metadata:
+  name: console-canary
+spec:
+  default:
+    config:
+      type: HTTP
+      httpHealthCheck:
+        requestPath: /healthz/
+  targetRef:
+    group: net.gke.io
+    kind: ServiceImport
+    name: console-canary

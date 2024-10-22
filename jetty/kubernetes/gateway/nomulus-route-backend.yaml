@@ -30,6 +30,42 @@ spec:
       kind: ServiceImport
       name: backend
       port: 80
+  - matches:
+    - path:
+        type: PathPrefix
+        value: /_dr/task
+      headers:
+      - name: "Canary"
+        value: "true"
+    - path:
+        type: PathPrefix
+        value: /_dr/cron
+      headers:
+      - name: "canary"
+        value: "true"
+    - path:
+        type: PathPrefix
+        value: /_dr/admin
+      headers:
+      - name: "canary"
+        value: "true"
+    - path:
+        type: PathPrefix
+        value: /_dr/epptool
+      headers:
+      - name: "canary"
+        value: "true"
+    - path:
+        type: PathPrefix
+        value: /loadtest
+      headers:
+      - name: "canary"
+        value: "true"
+    backendRefs:
+    - group: net.gke.io
+      kind: ServiceImport
+      name: backend-canary
+      port: 80
 ---
 apiVersion: networking.gke.io/v1
 kind: HealthCheckPolicy
@@ -45,3 +81,18 @@ spec:
     group: net.gke.io
     kind: ServiceImport
     name: backend
+---
+apiVersion: networking.gke.io/v1
+kind: HealthCheckPolicy
+metadata:
+  name: backend-canary
+spec:
+  default:
+    config:
+      type: HTTP
+      httpHealthCheck:
+        requestPath: /healthz/
+  targetRef:
+    group: net.gke.io
+    kind: ServiceImport
+    name: backend-canary

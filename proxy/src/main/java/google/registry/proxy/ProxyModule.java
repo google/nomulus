@@ -280,6 +280,13 @@ public class ProxyModule {
 
   @Singleton
   @Provides
+  @Named("canary")
+  static boolean provideIsCanary(ProxyConfig config) {
+    return config.canary;
+  }
+
+  @Singleton
+  @Provides
   static CloudKMS provideCloudKms(GoogleCredentialsBundle credentialsBundle, ProxyConfig config) {
     return new CloudKMS.Builder(
             credentialsBundle.getHttpTransport(),

@@ -54,11 +54,11 @@ class EppServiceHandlerTest {
 
   private static final String HELLO =
       """
-          <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-          <epp xmlns="urn:ietf:params:xml:ns:epp-1.0">
-            <hello/>
-          </epp>
-          """;
+      <?xml version="1.0" encoding="UTF-8" standalone="no"?>
+      <epp xmlns="urn:ietf:params:xml:ns:epp-1.0">
+        <hello/>
+      </epp>
+      """;
 
   private static final String RELAY_HOST = "registry.example.tld";
   private static final String RELAY_PATH = "/epp";
@@ -71,7 +71,8 @@ class EppServiceHandlerTest {
   private final FrontendMetrics metrics = mock(FrontendMetrics.class);
 
   private final EppServiceHandler eppServiceHandler =
-      new EppServiceHandler(RELAY_HOST, RELAY_PATH, () -> ID_TOKEN, HELLO.getBytes(UTF_8), metrics);
+      new EppServiceHandler(
+          RELAY_HOST, RELAY_PATH, false, () -> ID_TOKEN, HELLO.getBytes(UTF_8), metrics);
 
   private EmbeddedChannel channel;
 
@@ -146,7 +147,7 @@ class EppServiceHandlerTest {
     // Set up the second channel.
     EppServiceHandler eppServiceHandler2 =
         new EppServiceHandler(
-            RELAY_HOST, RELAY_PATH, () -> ID_TOKEN, HELLO.getBytes(UTF_8), metrics);
+            RELAY_HOST, RELAY_PATH, false, () -> ID_TOKEN, HELLO.getBytes(UTF_8), metrics);
     EmbeddedChannel channel2 = setUpNewChannel(eppServiceHandler2);
     setHandshakeSuccess(channel2, clientCertificate);
 
@@ -166,7 +167,7 @@ class EppServiceHandlerTest {
     // Set up the second channel.
     EppServiceHandler eppServiceHandler2 =
         new EppServiceHandler(
-            RELAY_HOST, RELAY_PATH, () -> ID_TOKEN, HELLO.getBytes(UTF_8), metrics);
+            RELAY_HOST, RELAY_PATH, false, () -> ID_TOKEN, HELLO.getBytes(UTF_8), metrics);
     EmbeddedChannel channel2 = setUpNewChannel(eppServiceHandler2);
     X509Certificate clientCertificate2 = SelfSignedCaCertificate.create().cert();
     setHandshakeSuccess(channel2, clientCertificate2);
@@ -209,6 +210,33 @@ class EppServiceHandlerTest {
     channel.writeInbound(Unpooled.wrappedBuffer(content.getBytes(UTF_8)));
     FullHttpRequest request = channel.readInbound();
     assertThat(request).isEqualTo(makeEppHttpRequest(content));
+    // Nothing further to pass to the next handler.
+    assertThat((Object) channel.readInbound()).isNull();
+    assertThat(channel.isActive()).isTrue();
+  }
+
+  @Test
+  void testSuccess_sendRequestToNextHandler_canary() throws Exception {
+    EppServiceHandler eppServiceHandler2 =
+        new EppServiceHandler(
+            RELAY_HOST, RELAY_PATH, true, () -> ID_TOKEN, HELLO.getBytes(UTF_8), metrics);
+    channel = setUpNewChannel(eppServiceHandler2);
+    setHandshakeSuccess();
+    // First inbound message is hello.
+    channel.readInbound();
+    String content = "<epp>stuff</epp>";
+    channel.writeInbound(Unpooled.wrappedBuffer(content.getBytes(UTF_8)));
+    FullHttpRequest request = channel.readInbound();
+    assertThat(request)
+        .isEqualTo(
+            TestUtils.makeEppHttpRequest(
+                content,
+                RELAY_HOST,
+                RELAY_PATH,
+                true,
+                ID_TOKEN,
+                getCertificateHash(clientCertificate),
+                CLIENT_ADDRESS));
     // Nothing further to pass to the next handler.
     assertThat((Object) channel.readInbound()).isNull();
     assertThat(channel.isActive()).isTrue();

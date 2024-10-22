@@ -18,6 +18,18 @@ spec:
       kind: ServiceImport
       name: frontend
       port: 80
+  - matches:
+    - path:
+        type: PathPrefix
+        value: /_dr/epp
+      headers:
+      - name: "canary"
+        value: "true"
+    backendRefs:
+    - group: net.gke.io
+      kind: ServiceImport
+      name: frontend-canary
+      port: 80
 ---
 apiVersion: networking.gke.io/v1
 kind: HealthCheckPolicy
@@ -33,3 +45,18 @@ spec:
     group: net.gke.io
     kind: ServiceImport
     name: frontend
+---
+apiVersion: networking.gke.io/v1
+kind: HealthCheckPolicy
+metadata:
+  name: frontend-canary
+spec:
+  default:
+    config:
+      type: HTTP
+      httpHealthCheck:
+        requestPath: /healthz/
+  targetRef:
+    group: net.gke.io
+    kind: ServiceImport
+    name: frontend-canary

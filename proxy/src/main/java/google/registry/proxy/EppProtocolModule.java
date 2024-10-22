@@ -151,12 +151,14 @@ public final class EppProtocolModule {
   static EppServiceHandler provideEppServiceHandler(
       @Named("idToken") Supplier<String> idTokenSupplier,
       @Named("hello") byte[] helloBytes,
+      @Named("canary") boolean canary,
       FrontendMetrics metrics,
       ProxyConfig config,
       @HttpsRelayProtocol boolean localRelay) {
     return new EppServiceHandler(
         localRelay ? "localhost" : config.epp.relayHost,
         config.epp.relayPath,
+        canary,
         idTokenSupplier,
         helloBytes,
         metrics);
