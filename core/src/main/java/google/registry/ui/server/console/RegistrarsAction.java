@@ -26,8 +26,9 @@ import static jakarta.servlet.http.HttpServletResponse.SC_OK;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Streams;
-import com.google.gson.Gson;
 import google.registry.model.console.ConsolePermission;
+import google.registry.model.console.ConsoleUpdateHistory;
+import google.registry.model.console.RegistrarUpdateHistory;
 import google.registry.model.console.User;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarBase;
@@ -62,7 +63,6 @@ public class RegistrarsAction extends ConsoleApiAction {
             WHERE registrar_id in :registrarIds
       """;
   static final String PATH = "/console-api/registrars";
-  private final Gson gson;
   private final Optional<Registrar> registrar;
   private final StringGenerator passwordGenerator;
   private final StringGenerator passcodeGenerator;
@@ -70,12 +70,10 @@ public class RegistrarsAction extends ConsoleApiAction {
   @Inject
   public RegistrarsAction(
       ConsoleApiParams consoleApiParams,
-      Gson gson,
       @Parameter("registrar") Optional<Registrar> registrar,
       @Named("base58StringGenerator") StringGenerator passwordGenerator,
       @Named("digitOnlyStringGenerator") StringGenerator passcodeGenerator) {
     super(consoleApiParams);
-    this.gson = gson;
     this.registrar = registrar;
     this.passcodeGenerator = passcodeGenerator;
     this.passwordGenerator = passwordGenerator;
@@ -88,7 +86,7 @@ public class RegistrarsAction extends ConsoleApiAction {
           Streams.stream(Registrar.loadAll())
               .filter(r -> allowedRegistrarTypes.contains(r.getType()))
               .collect(ImmutableList.toImmutableList());
-      consoleApiParams.response().setPayload(gson.toJson(registrars));
+      consoleApiParams.response().setPayload(consoleApiParams.gson().toJson(registrars));
       consoleApiParams.response().setStatus(SC_OK);
     } else if (user.getUserRoles().getRegistrarRoles().values().stream()
         .anyMatch(role -> role.hasPermission(ConsolePermission.VIEW_REGISTRAR_DETAILS))) {
@@ -106,7 +104,7 @@ public class RegistrarsAction extends ConsoleApiAction {
                           .setParameter("registrarIds", accessibleRegistrarIds)
                           .getResultList());
 
-      consoleApiParams.response().setPayload(gson.toJson(registrars));
+      consoleApiParams.response().setPayload(consoleApiParams.gson().toJson(registrars));
       consoleApiParams.response().setStatus(SC_OK);
     } else {
       consoleApiParams.response().setStatus(SC_FORBIDDEN);
@@ -175,6 +173,11 @@ public class RegistrarsAction extends ConsoleApiAction {
                   "Registrar with registrarId %s already exists",
                   registrar.getRegistrarId());
               tm().putAll(registrar, contact);
+              finishAndPersistConsoleUpdateHistory(
+                  new RegistrarUpdateHistory.Builder()
+                      .setType(ConsoleUpdateHistory.Type.REGISTRAR_UPDATE)
+                      .setRegistrar(registrar)
+                      .setRequestBody(consoleApiParams.gson().toJson(registrar)));
             });
   }
 

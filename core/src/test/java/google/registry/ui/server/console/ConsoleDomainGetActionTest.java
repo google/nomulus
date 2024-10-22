@@ -22,13 +22,11 @@ import static jakarta.servlet.http.HttpServletResponse.SC_UNAUTHORIZED;
 import static org.mockito.Mockito.when;
 
 import com.google.common.collect.ImmutableMap;
-import com.google.gson.Gson;
 import google.registry.model.console.RegistrarRole;
 import google.registry.model.console.User;
 import google.registry.model.console.UserRoles;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.request.Action;
-import google.registry.request.RequestModule;
 import google.registry.request.auth.AuthResult;
 import google.registry.testing.ConsoleApiParamsUtils;
 import google.registry.testing.DatabaseHelper;
@@ -40,7 +38,6 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 /** Tests for {@link google.registry.ui.server.console.ConsoleDomainGetAction}. */
 public class ConsoleDomainGetActionTest {
 
-  private static final Gson GSON = RequestModule.provideGson();
   private ConsoleApiParams consoleApiParams;
 
   @RegisterExtension
@@ -124,6 +121,6 @@ public class ConsoleDomainGetActionTest {
   private ConsoleDomainGetAction createAction(AuthResult authResult, String domain) {
     consoleApiParams = ConsoleApiParamsUtils.createFake(authResult);
     when(consoleApiParams.request().getMethod()).thenReturn(Action.Method.GET.toString());
-    return new ConsoleDomainGetAction(consoleApiParams, GSON, domain);
+    return new ConsoleDomainGetAction(consoleApiParams, domain);
   }
 }

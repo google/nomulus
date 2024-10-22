@@ -480,10 +480,10 @@ class ContactActionTest {
     consoleApiParams = ConsoleApiParamsUtils.createFake(authResult);
     when(consoleApiParams.request().getMethod()).thenReturn(method.toString());
     if (method.equals(Action.Method.GET)) {
-      return new ContactAction(consoleApiParams, GSON, registrarId, Optional.empty());
+      return new ContactAction(consoleApiParams, registrarId, Optional.empty());
     } else {
       return new ContactAction(
-          consoleApiParams, GSON, registrarId, Optional.of(ImmutableSet.copyOf(contacts)));
+          consoleApiParams, registrarId, Optional.of(ImmutableSet.copyOf(contacts)));
     }
   }
 }
