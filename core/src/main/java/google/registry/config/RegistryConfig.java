@@ -1744,6 +1744,18 @@ public final class RegistryConfig {
   }
 
   /**
+   * If the registry stores the minimum data set according to the ICANN Registration Data Policy.
+   *
+   * <p>See <a href=https://www.icann.org/resources/pages/registration-data-policy-2024-02-21-en>the
+   * ICANN policy</a> for more details. One significant change that this indicates is that the
+   * registry will not require contact information on domain creations. Eventually, contact
+   * information will be forbidden if the registry uses the minimum data set.
+   */
+  public static boolean useMinimumDataset() {
+    return CONFIG_SETTINGS.get().registryPolicy.useMinimumDataset;
+  }
+
+  /**
    * Memoizes loading of the {@link RegistryConfigSettings} POJO.
    *
    * <p>Memoizing without cache expiration is used because the app must be re-deployed in order to
