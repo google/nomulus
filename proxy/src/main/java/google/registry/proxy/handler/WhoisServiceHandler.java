@@ -33,9 +33,10 @@ public final class WhoisServiceHandler extends HttpsRelayServiceHandler {
   public WhoisServiceHandler(
       String relayHost,
       String relayPath,
+      boolean canary,
       Supplier<String> idTokenSupplier,
       FrontendMetrics metrics) {
-    super(relayHost, relayPath, idTokenSupplier, metrics);
+    super(relayHost, relayPath, canary, idTokenSupplier, metrics);
   }
 
   @Override

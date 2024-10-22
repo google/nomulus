@@ -14,7 +14,6 @@
 
 package google.registry.tools;
 
-import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static com.google.common.base.Verify.verify;
@@ -35,7 +34,6 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.io.CharStreams;
 import com.google.common.net.MediaType;
-import com.google.re2j.Matcher;
 import com.google.re2j.Pattern;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.request.Action.GaeService;
@@ -60,6 +58,8 @@ public class ServiceConnection {
   /** Pattern to heuristically extract title tag contents in HTML responses. */
   protected static final Pattern HTML_TITLE_TAG_PATTERN = Pattern.compile("<title>(.*?)</title>");
 
+  private static final String CANARY_HEADER = "canary";
+
   private final Service service;
   private final boolean useCanary;
   private final HttpRequestFactory requestFactory;
@@ -70,9 +70,6 @@ public class ServiceConnection {
   }
 
   private ServiceConnection(Service service, HttpRequestFactory requestFactory, boolean useCanary) {
-    // Currently, only GAE supports connecting to canary.
-    // TODO (jianglai): decide how to implement canary for GKE.
-    checkArgument(useCanary == false || service instanceof GaeService, "Canary is only for GAE");
     this.service = service;
     this.requestFactory = requestFactory;
     this.useCanary = useCanary;
@@ -80,13 +77,15 @@ public class ServiceConnection {
 
   /** Returns a copy of this connection that talks to a different service endpoint. */
   public ServiceConnection withService(Service service, boolean useCanary) {
+    Class<? extends Service> oldServiceClazz = this.service.getClass();
+    Class<? extends Service> newServiceClazz = service.getClass();
+    if (oldServiceClazz != newServiceClazz) {
+      throw new IllegalArgumentException(
+          String.format(
+              "Cannot switch from %s to %s",
+              oldServiceClazz.getSimpleName(), newServiceClazz.getSimpleName()));
+    }
     return new ServiceConnection(service, requestFactory, useCanary);
-  }
-
-  /** Returns the contents of the title tag in the given HTML, or null if not found. */
-  private static String extractHtmlTitle(String html) {
-    Matcher matcher = HTML_TITLE_TAG_PATTERN.matcher(html);
-    return (matcher.find() ? matcher.group(1) : null);
   }
 
   /** Returns the HTML from the connection error stream, if any, otherwise the empty string. */
@@ -107,19 +106,22 @@ public class ServiceConnection {
     HttpHeaders headers = request.getHeaders();
     headers.setCacheControl("no-cache");
     headers.put(X_REQUESTED_WITH, ImmutableList.of("RegistryTool"));
+    if (useCanary) {
+      headers.set(CANARY_HEADER, "true");
+    }
     request.setHeaders(headers);
     request.setFollowRedirects(false);
     request.setThrowExceptionOnExecuteError(false);
     request.setUnsuccessfulResponseHandler(
         (request1, response, supportsRetry) -> {
-          String errorTitle = extractHtmlTitle(getErrorHtmlAsString(response));
+          String error = getErrorHtmlAsString(response);
           throw new IOException(
               String.format(
                   "Error from %s: %d %s%s",
                   request1.getUrl().toString(),
                   response.getStatusCode(),
                   response.getStatusMessage(),
-                  (errorTitle == null ? "" : ": " + errorTitle)));
+                  error));
         });
     HttpResponse response = null;
     try {
@@ -135,8 +137,8 @@ public class ServiceConnection {
   @VisibleForTesting
   URL getServer() {
     URL url = service.getServiceUrl();
-    if (useCanary) {
-      verify(!isNullOrEmpty(url.getHost()), "Null host in url");
+    verify(!isNullOrEmpty(url.getHost()), "Null host in url");
+    if (useCanary && service instanceof GaeService) {
       url =
           makeUrl(
               String.format(

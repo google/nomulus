@@ -37,6 +37,11 @@ do
     sed s/GCP_PROJECT/"${project}"/g "./kubernetes/nomulus-${service}.yaml" | \
     sed s/ENVIRONMENT/"${environment}"/g | \
     kubectl apply -f -
+    # canary
+    sed s/GCP_PROJECT/"${project}"/g "./kubernetes/nomulus-${service}.yaml" | \
+    sed s/ENVIRONMENT/"${environment}"/g | \
+    sed s/"${service}"/"${service}-canary"/g | \
+    kubectl apply -f -
   done
   # Kills all running pods, new pods created will be pulling the new image.
   kubectl delete pods --all

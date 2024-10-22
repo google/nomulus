@@ -96,11 +96,13 @@ public final class WhoisProtocolModule {
   static WhoisServiceHandler provideWhoisServiceHandler(
       ProxyConfig config,
       @Named("idToken") Supplier<String> idTokenSupplier,
+      @Named("canary") boolean canary,
       FrontendMetrics metrics,
       @HttpsRelayProtocol boolean localRelay) {
     return new WhoisServiceHandler(
         localRelay ? "localhost" : config.whois.relayHost,
         config.whois.relayPath,
+        canary,
         idTokenSupplier,
         metrics);
   }

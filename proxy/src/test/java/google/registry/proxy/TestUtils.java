@@ -25,7 +25,6 @@ import io.netty.handler.codec.http.DefaultFullHttpResponse;
 import io.netty.handler.codec.http.FullHttpMessage;
 import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.FullHttpResponse;
-import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpMessage;
 import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpRequest;
@@ -53,6 +52,22 @@ public final class TestUtils {
     return request;
   }
 
+  public static FullHttpRequest makeHttpPostRequest(
+      String content, String host, String path, boolean canary) {
+    ByteBuf buf = Unpooled.wrappedBuffer(content.getBytes(US_ASCII));
+    FullHttpRequest request =
+        new DefaultFullHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.POST, path, buf);
+    request
+        .headers()
+        .set("user-agent", "Proxy")
+        .set("host", host)
+        .setInt("content-length", buf.readableBytes());
+    if (canary) {
+      request.headers().set("canary", "true");
+    }
+    return request;
+  }
+
   public static FullHttpRequest makeHttpGetRequest(String host, String path) {
     FullHttpRequest request =
         new DefaultFullHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.GET, path);
@@ -74,13 +89,43 @@ public final class TestUtils {
   }
 
   public static FullHttpRequest makeWhoisHttpRequest(
-      String content, String host, String path, String idToken) throws IOException {
-    FullHttpRequest request = makeHttpPostRequest(content, host, path);
+      String content, String host, String path, boolean canary, String idToken) throws IOException {
+    FullHttpRequest request = makeHttpPostRequest(content, host, path, canary);
     request
         .headers()
         .set("authorization", "Bearer " + idToken)
-        .set(HttpHeaderNames.CONTENT_TYPE, "text/plain")
+        .set("content-type", "text/plain")
         .set("accept", "text/plain");
+    return request;
+  }
+
+  public static FullHttpRequest makeWhoisHttpRequest(
+      String content, String host, String path, String idToken) throws IOException {
+    return makeWhoisHttpRequest(content, host, path, false, idToken);
+  }
+
+  public static FullHttpRequest makeEppHttpRequest(
+      String content,
+      String host,
+      String path,
+      boolean canary,
+      String idToken,
+      String sslClientCertificateHash,
+      String clientAddress,
+      Cookie... cookies)
+      throws IOException {
+    FullHttpRequest request = makeHttpPostRequest(content, host, path, canary);
+    request
+        .headers()
+        .set("authorization", "Bearer " + idToken)
+        .set("content-type", "application/epp+xml")
+        .set("accept", "application/epp+xml")
+        .set(ProxyHttpHeaders.CERTIFICATE_HASH, sslClientCertificateHash)
+        .set(ProxyHttpHeaders.IP_ADDRESS, clientAddress)
+        .set(ProxyHttpHeaders.FALLBACK_IP_ADDRESS, clientAddress);
+    if (cookies.length != 0) {
+      request.headers().set("cookie", ClientCookieEncoder.STRICT.encode(cookies));
+    }
     return request;
   }
 
@@ -93,31 +138,20 @@ public final class TestUtils {
       String clientAddress,
       Cookie... cookies)
       throws IOException {
-    FullHttpRequest request = makeHttpPostRequest(content, host, path);
-    request
-        .headers()
-        .set("authorization", "Bearer " + idToken)
-        .set(HttpHeaderNames.CONTENT_TYPE, "application/epp+xml")
-        .set("accept", "application/epp+xml")
-        .set(ProxyHttpHeaders.CERTIFICATE_HASH, sslClientCertificateHash)
-        .set(ProxyHttpHeaders.IP_ADDRESS, clientAddress)
-        .set(ProxyHttpHeaders.FALLBACK_IP_ADDRESS, clientAddress);
-    if (cookies.length != 0) {
-      request.headers().set("cookie", ClientCookieEncoder.STRICT.encode(cookies));
-    }
-    return request;
+    return makeEppHttpRequest(
+        content, host, path, false, idToken, sslClientCertificateHash, clientAddress, cookies);
   }
 
   public static FullHttpResponse makeWhoisHttpResponse(String content, HttpResponseStatus status) {
     FullHttpResponse response = makeHttpResponse(content, status);
-    response.headers().set(HttpHeaderNames.CONTENT_TYPE, "text/plain");
+    response.headers().set("content-type", "text/plain");
     return response;
   }
 
   public static FullHttpResponse makeEppHttpResponse(
       String content, HttpResponseStatus status, Cookie... cookies) {
     FullHttpResponse response = makeHttpResponse(content, status);
-    response.headers().set(HttpHeaderNames.CONTENT_TYPE, "application/epp+xml");
+    response.headers().set("content-type", "application/epp+xml");
     for (Cookie cookie : cookies) {
       response.headers().add("set-cookie", ServerCookieEncoder.STRICT.encode(cookie));
     }

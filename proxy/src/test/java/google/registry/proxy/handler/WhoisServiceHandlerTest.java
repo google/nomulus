@@ -50,7 +50,7 @@ class WhoisServiceHandlerTest {
   private final FrontendMetrics metrics = mock(FrontendMetrics.class);
 
   private final WhoisServiceHandler whoisServiceHandler =
-      new WhoisServiceHandler(RELAY_HOST, RELAY_PATH, () -> ID_TOKEN, metrics);
+      new WhoisServiceHandler(RELAY_HOST, RELAY_PATH, false, () -> ID_TOKEN, metrics);
   private EmbeddedChannel channel;
 
   @BeforeEach
@@ -74,7 +74,7 @@ class WhoisServiceHandlerTest {
 
     // Setup second channel.
     WhoisServiceHandler whoisServiceHandler2 =
-        new WhoisServiceHandler(RELAY_HOST, RELAY_PATH, () -> ID_TOKEN, metrics);
+        new WhoisServiceHandler(RELAY_HOST, RELAY_PATH, false, () -> ID_TOKEN, metrics);
     EmbeddedChannel channel2 =
         // We need a new channel id so that it has a different hash code.
         // This only is needed for EmbeddedChannel because it has a dummy hash code implementation.
@@ -89,6 +89,23 @@ class WhoisServiceHandlerTest {
     ByteBuf inputBuffer = Unpooled.wrappedBuffer(QUERY_CONTENT.getBytes(US_ASCII));
     FullHttpRequest expectedRequest =
         makeWhoisHttpRequest(QUERY_CONTENT, RELAY_HOST, RELAY_PATH, ID_TOKEN);
+    // Input data passed to next handler
+    assertThat(channel.writeInbound(inputBuffer)).isTrue();
+    FullHttpRequest inputRequest = channel.readInbound();
+    assertThat(inputRequest).isEqualTo(expectedRequest);
+    // The channel is still open, and nothing else is to be read from it.
+    assertThat((Object) channel.readInbound()).isNull();
+    assertThat(channel.isActive()).isTrue();
+  }
+
+  @Test
+  void testSuccess_fireInboundHttpRequest_canary() throws Exception {
+    WhoisServiceHandler whoisServiceHandler2 =
+        new WhoisServiceHandler(RELAY_HOST, RELAY_PATH, true, () -> ID_TOKEN, metrics);
+    channel = new EmbeddedChannel(whoisServiceHandler2);
+    ByteBuf inputBuffer = Unpooled.wrappedBuffer(QUERY_CONTENT.getBytes(US_ASCII));
+    FullHttpRequest expectedRequest =
+        makeWhoisHttpRequest(QUERY_CONTENT, RELAY_HOST, RELAY_PATH, true, ID_TOKEN);
     // Input data passed to next handler
     assertThat(channel.writeInbound(inputBuffer)).isTrue();
     FullHttpRequest inputRequest = channel.readInbound();

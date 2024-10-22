@@ -263,6 +263,13 @@ public abstract class ProtocolModuleTest {
 
     @Singleton
     @Provides
+    @Named("canary")
+    static boolean provideIsCanary() {
+      return false;
+    }
+
+    @Singleton
+    @Provides
     static LoggingHandler provideLoggingHandler() {
       return new LoggingHandler();
     }

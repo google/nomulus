@@ -60,10 +60,11 @@ public class EppServiceHandler extends HttpsRelayServiceHandler {
   public EppServiceHandler(
       String relayHost,
       String relayPath,
+      boolean canary,
       Supplier<String> idTokenSupplier,
       byte[] helloBytes,
       FrontendMetrics metrics) {
-    super(relayHost, relayPath, idTokenSupplier, metrics);
+    super(relayHost, relayPath, canary, idTokenSupplier, metrics);
     this.helloBytes = helloBytes.clone();
   }
 

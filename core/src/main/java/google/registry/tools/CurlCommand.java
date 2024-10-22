@@ -21,6 +21,7 @@ import com.beust.jcommander.IStringConverter;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import com.beust.jcommander.converters.IParameterSplitter;
+import com.google.common.base.Ascii;
 import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
@@ -103,7 +104,10 @@ class CurlCommand implements CommandWithConnection {
       throw new IllegalArgumentException("You may not specify a body for a get method.");
     }
 
-    Service service = useGke ? GkeService.valueOf(serviceName) : GaeService.valueOf(serviceName);
+    Service service =
+        useGke
+            ? GkeService.valueOf(Ascii.toUpperCase(serviceName))
+            : GaeService.valueOf(Ascii.toUpperCase(serviceName));
 
     ServiceConnection connectionToService = connection.withService(service, canary);
     String response =
