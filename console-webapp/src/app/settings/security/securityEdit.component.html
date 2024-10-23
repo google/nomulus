@@ -10,6 +10,7 @@
       <mat-form-field appearance="outline">
         <input
           matInput
+          [disabled]="isUpdating"
           type="text"
           [(ngModel)]="ip.value"
           [ngModelOptions]="{ standalone: true }"
@@ -20,12 +21,19 @@
         mat-icon-button
         aria-label="Remove"
         (click)="removeIpEntry(ip)"
+        [disabled]="isUpdating"
       >
         <mat-icon>close</mat-icon>
       </button>
     </div>
     }
-    <button mat-button color="primary" (click)="createIpEntry()" type="button">
+    <button
+      mat-button
+      [disabled]="isUpdating"
+      color="primary"
+      (click)="createIpEntry()"
+      type="button"
+    >
       + Add IP
     </button>
 
@@ -35,6 +43,7 @@
       <textarea
         class="console-app__clientCertificateValue"
         matInput
+        [disabled]="isUpdating"
         [(ngModel)]="dataSource.clientCertificate"
         [ngModelOptions]="{ standalone: true }"
       ></textarea>
@@ -44,6 +53,7 @@
     <mat-form-field appearance="outline">
       <textarea
         matInput
+        [disabled]="isUpdating"
         [(ngModel)]="dataSource.failoverClientCertificate"
         [ngModelOptions]="{ standalone: true }"
       ></textarea>
@@ -51,6 +61,7 @@
     <button
       mat-flat-button
       color="primary"
+      [disabled]="isUpdating"
       aria-label="Save security settings"
       type="submit"
       class="settings-security__edit-save"
