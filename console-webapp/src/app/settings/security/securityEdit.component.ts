@@ -29,6 +29,7 @@ import { SecurityService, apiToUiConverter } from './security.service';
 })
 export default class SecurityEditComponent {
   dataSource: SecuritySettings = {};
+  isUpdating = false;
 
   constructor(
     public securityService: SecurityService,
@@ -43,12 +44,15 @@ export default class SecurityEditComponent {
   }
 
   save() {
+    this.isUpdating = true;
     this.securityService.saveChanges(this.dataSource).subscribe({
       complete: () => {
+        this.isUpdating = false;
         this.goBack();
       },
       error: (err: HttpErrorResponse) => {
-        this._snackBar.open(err.error);
+        this._snackBar.open(err.error || err.message);
+        this.isUpdating = false;
       },
     });
   }
