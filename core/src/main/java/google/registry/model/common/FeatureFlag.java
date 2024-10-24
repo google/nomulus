@@ -66,6 +66,7 @@ public class FeatureFlag extends ImmutableObject implements Buildable {
     TEST_FEATURE,
     MINIMUM_DATASET_CONTACTS_OPTIONAL,
     MINIMUM_DATASET_CONTACTS_PROHIBITED,
+    INCLUDE_PENDING_DELETE_DATE_FOR_DOMAINS
   }
 
   /** The name of the flag/feature. */
@@ -152,6 +153,15 @@ public class FeatureFlag extends ImmutableObject implements Buildable {
 
   public FeatureStatus getStatus(DateTime time) {
     return status.getValueAtTime(time);
+  }
+
+  /** Returns if the flag is active, or the default value if the flag does not exist. */
+  public static boolean isActiveNowOrElse(FeatureName featureName, boolean defaultValue) {
+    tm().assertInTransaction();
+    return CACHE
+        .get(featureName)
+        .map(flag -> flag.getStatus(tm().getTransactionTime()).equals(ACTIVE))
+        .orElse(defaultValue);
   }
 
   /** Returns if the FeatureFlag with the given FeatureName is active now. */
