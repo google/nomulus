@@ -17,7 +17,7 @@ package google.registry.export;
 import static com.google.common.base.Verify.verifyNotNull;
 import static google.registry.model.tld.Tlds.getTldsOfType;
 import static google.registry.persistence.PersistenceModule.TransactionIsolationLevel.TRANSACTION_REPEATABLE_READ;
-import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.replicaTm;
 import static google.registry.request.Action.Method.POST;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -28,6 +28,9 @@ import com.google.common.flogger.FluentLogger;
 import com.google.common.net.MediaType;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.gcs.GcsUtils;
+import google.registry.model.common.FeatureFlag;
+import google.registry.model.domain.rgp.GracePeriodStatus;
+import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.tld.Tld;
 import google.registry.model.tld.Tld.TldType;
 import google.registry.request.Action;
@@ -38,8 +41,13 @@ import google.registry.util.Clock;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
+import java.time.Instant;
 import java.util.List;
 import javax.inject.Inject;
+import org.hibernate.query.NativeQuery;
+import org.hibernate.query.TupleTransformer;
+import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
 
 /**
  * An action that exports the list of active domains on all real TLDs to Google Drive and GCS.
@@ -55,7 +63,16 @@ import javax.inject.Inject;
 public class ExportDomainListsAction implements Runnable {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
-  public static final String REGISTERED_DOMAINS_FILENAME = "registered_domains.txt";
+  private static final String SELECT_DOMAINS_STATEMENT =
+      "SELECT domainName FROM Domain WHERE tld = :tld AND deletionTime > :now ORDER by domainName";
+  private static final String SELECT_DOMAINS_AND_DELETION_TIMES_STATEMENT =
+      "SELECT d.domain_name, d.deletion_time, d.statuses, gp.type FROM \"Domain\" d LEFT JOIN"
+          + " (SELECT * FROM \"GracePeriod\" WHERE type = 'REDEMPTION') AS gp ON d.repo_id ="
+          + " gp.domain_repo_id WHERE d.tld = :tld AND d.deletion_time > CAST(:now AS timestamptz)"
+          + " ORDER BY d.domain_name";
+
+  static final String REGISTERED_DOMAINS_TXT_FILENAME = "registered_domains.txt";
+  static final String REGISTERED_DOMAINS_CSV_FILENAME = "registered_domains.csv";
 
   @Inject Clock clock;
   @Inject DriveConnection driveConnection;
@@ -68,49 +85,53 @@ public class ExportDomainListsAction implements Runnable {
   public void run() {
     ImmutableSet<String> realTlds = getTldsOfType(TldType.REAL);
     logger.atInfo().log("Exporting domain lists for TLDs %s.", realTlds);
+
+    boolean includeDeletionTimes = replicaTm().transact(this::retrieveIncludeDeletionTimesFlag);
     realTlds.forEach(
         tld -> {
-          List<String> domains =
-              tm().transact(
+          List<String> domainsList =
+              replicaTm()
+                  .transact(
                       TRANSACTION_REPEATABLE_READ,
-                      () ->
-                          // Note that if we had "creationTime <= :now" in the condition (not
-                          // necessary as there is no pending creation, the order of deletionTime
-                          // and creationTime in the query would have been significant and it
-                          // should come after deletionTime. When Hibernate substitutes "now" it
-                          // will first validate that the **first** field that is to be compared
-                          // with it (deletionTime) is assignable from the substituted Java object
-                          // (click.nowUtc()). Since creationTime is a CreateAutoTimestamp, if it
-                          // comes first, we will need to substitute "now" with
-                          // CreateAutoTimestamp.create(clock.nowUtc()). This might look a bit
-                          // strange as the Java object type is clearly incompatible between the
-                          // two fields deletionTime (DateTime) and creationTime, yet they are
-                          // compared with the same "now". It is actually OK because in the end
-                          // Hibernate converts everything to SQL types (and Java field names to
-                          // SQL column names) to run the query. Both CreateAutoTimestamp and
-                          // DateTime are persisted as timestamp_z in SQL. It is only the
-                          // validation that compares the Java types, and only with the first
-                          // field that compares with the substituted value.
-                          tm().query(
-                                  "SELECT domainName FROM Domain "
-                                      + "WHERE tld = :tld "
-                                      + "AND deletionTime > :now "
-                                      + "ORDER by domainName ASC",
-                                  String.class)
+                      () -> {
+                        if (includeDeletionTimes) {
+                          // We want to include deletion times, but only for domains in the 5-day
+                          // PENDING_DELETE period after the REDEMPTION grace period. In order to
+                          // accomplish this without loading the entire list of domains, we use a
+                          // native query to join against the GracePeriod table to find
+                          // PENDING_DELETE domains that don't have a REDEMPTION grace period.
+                          return replicaTm()
+                              .getEntityManager()
+                              .createNativeQuery(SELECT_DOMAINS_AND_DELETION_TIMES_STATEMENT)
+                              .unwrap(NativeQuery.class)
+                              .setTupleTransformer(new DomainResultTransformer())
                               .setParameter("tld", tld)
-                              .setParameter("now", clock.nowUtc())
-                              .getResultList());
-          String domainsList = Joiner.on("\n").join(domains);
+                              .setParameter("now", replicaTm().getTransactionTime().toString())
+                              .getResultList();
+                        } else {
+                          return replicaTm()
+                              .query(SELECT_DOMAINS_STATEMENT, String.class)
+                              .setParameter("tld", tld)
+                              .setParameter("now", replicaTm().getTransactionTime())
+                              .getResultList();
+                        }
+                      });
           logger.atInfo().log(
-              "Exporting %d domains for TLD %s to GCS and Drive.", domains.size(), tld);
-          exportToGcs(tld, domainsList, gcsBucket, gcsUtils);
-          exportToDrive(tld, domainsList, driveConnection);
+              "Exporting %d domains for TLD %s to GCS and Drive.", domainsList.size(), tld);
+          String domainsListOutput = Joiner.on('\n').join(domainsList);
+          exportToGcs(tld, domainsListOutput, gcsBucket, gcsUtils, includeDeletionTimes);
+          exportToDrive(tld, domainsListOutput, driveConnection, includeDeletionTimes);
         });
   }
 
-  protected static boolean exportToDrive(
-      String tldStr, String domains, DriveConnection driveConnection) {
+  protected static void exportToDrive(
+      String tldStr,
+      String domains,
+      DriveConnection driveConnection,
+      boolean includeDeletionTimes) {
     verifyNotNull(driveConnection, "Expecting non-null driveConnection");
+    String filename =
+        includeDeletionTimes ? REGISTERED_DOMAINS_CSV_FILENAME : REGISTERED_DOMAINS_TXT_FILENAME;
     try {
       Tld tld = Tld.get(tldStr);
       if (tld.getDriveFolderId() == null) {
@@ -120,10 +141,7 @@ public class ExportDomainListsAction implements Runnable {
       } else {
         String resultMsg =
             driveConnection.createOrUpdateFile(
-                REGISTERED_DOMAINS_FILENAME,
-                MediaType.PLAIN_TEXT_UTF_8,
-                tld.getDriveFolderId(),
-                domains.getBytes(UTF_8));
+                filename, MediaType.CSV_UTF_8, tld.getDriveFolderId(), domains.getBytes(UTF_8));
         logger.atInfo().log(
             "Exporting registered domains succeeded for TLD %s, response was: %s",
             tldStr, resultMsg);
@@ -131,22 +149,49 @@ public class ExportDomainListsAction implements Runnable {
     } catch (Throwable e) {
       logger.atSevere().withCause(e).log(
           "Error exporting registered domains for TLD %s to Drive, skipping...", tldStr);
-      return false;
     }
-    return true;
   }
 
-  protected static boolean exportToGcs(
-      String tld, String domains, String gcsBucket, GcsUtils gcsUtils) {
-    BlobId blobId = BlobId.of(gcsBucket, tld + ".txt");
+  protected static void exportToGcs(
+      String tld,
+      String domains,
+      String gcsBucket,
+      GcsUtils gcsUtils,
+      boolean includeDeletionTimes) {
+    String extension = includeDeletionTimes ? ".csv" : ".txt";
+    BlobId blobId = BlobId.of(gcsBucket, tld + extension);
     try (OutputStream gcsOutput = gcsUtils.openOutputStream(blobId);
         Writer osWriter = new OutputStreamWriter(gcsOutput, UTF_8)) {
       osWriter.write(domains);
     } catch (Throwable e) {
       logger.atSevere().withCause(e).log(
           "Error exporting registered domains for TLD %s to GCS, skipping...", tld);
+    }
+  }
+
+  /** If we should include deletion times in a CSV file, or use the standard txt file. */
+  private boolean retrieveIncludeDeletionTimesFlag() {
+    try {
+      return FeatureFlag.isActiveNow(
+          FeatureFlag.FeatureName.INCLUDE_PENDING_DELETE_DATE_FOR_DOMAINS);
+    } catch (FeatureFlag.FeatureFlagNotFoundException e) {
       return false;
     }
-    return true;
+  }
+
+  /** Transforms the multiple columns selected from SQL into the output line. */
+  private static class DomainResultTransformer implements TupleTransformer<String> {
+    @Override
+    public String transformTuple(Object[] domainResult, String[] strings) {
+      String domainName = (String) domainResult[0];
+      Instant deletionInstant = (Instant) domainResult[1];
+      DateTime deletionTime = new DateTime(deletionInstant.toEpochMilli(), DateTimeZone.UTC);
+      String[] domainStatuses = (String[]) domainResult[2];
+      String gracePeriodType = (String) domainResult[3];
+      boolean inPendingDelete =
+          ImmutableSet.copyOf(domainStatuses).contains(StatusValue.PENDING_DELETE.toString())
+              && !GracePeriodStatus.REDEMPTION.toString().equals(gracePeriodType);
+      return String.format("%s,%s", domainName, inPendingDelete ? deletionTime : "");
+    }
   }
 }

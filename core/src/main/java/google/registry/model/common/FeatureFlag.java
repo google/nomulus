@@ -66,6 +66,7 @@ public class FeatureFlag extends ImmutableObject implements Buildable {
     TEST_FEATURE,
     MINIMUM_DATASET_CONTACTS_OPTIONAL,
     MINIMUM_DATASET_CONTACTS_PROHIBITED,
+    INCLUDE_PENDING_DELETE_DATE_FOR_DOMAINS
   }
 
   /** The name of the flag/feature. */
