@@ -374,6 +374,9 @@ credentialOAuth:
   - https://www.googleapis.com/auth/admin.directory.group
   # View and manage users in Google Workspace
   - https://www.googleapis.com/auth/admin.directory.user
+  # Security scope which seems to be required to create users via API,
+  # based on https://github.com/googleapis/google-api-nodejs-client/issues/1884
+  - https://www.googleapis.com/auth/admin.directory.user.security
   # View and manage group settings in Group Settings API.
   - https://www.googleapis.com/auth/apps.groups.settings
   # Send email through Gmail.
