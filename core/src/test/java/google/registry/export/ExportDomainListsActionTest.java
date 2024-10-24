@@ -15,11 +15,16 @@
 package google.registry.export;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.export.ExportDomainListsAction.REGISTERED_DOMAINS_FILENAME;
+import static google.registry.export.ExportDomainListsAction.REGISTERED_DOMAINS_CSV_FILENAME;
+import static google.registry.export.ExportDomainListsAction.REGISTERED_DOMAINS_TXT_FILENAME;
+import static google.registry.model.common.FeatureFlag.FeatureName.INCLUDE_PENDING_DELETE_DATE_FOR_DOMAINS;
+import static google.registry.model.common.FeatureFlag.FeatureStatus.ACTIVE;
+import static google.registry.model.common.FeatureFlag.FeatureStatus.INACTIVE;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistDeletedDomain;
 import static google.registry.testing.DatabaseHelper.persistResource;
+import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.eq;
@@ -31,8 +36,14 @@ import com.google.cloud.storage.BlobId;
 import com.google.cloud.storage.StorageException;
 import com.google.cloud.storage.contrib.nio.testing.LocalStorageHelper;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.net.MediaType;
 import google.registry.gcs.GcsUtils;
+import google.registry.model.common.FeatureFlag;
+import google.registry.model.domain.Domain;
+import google.registry.model.domain.GracePeriod;
+import google.registry.model.domain.rgp.GracePeriodStatus;
+import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.tld.Tld;
 import google.registry.model.tld.Tld.TldType;
 import google.registry.persistence.transaction.JpaTestExtensions;
@@ -56,7 +67,7 @@ class ExportDomainListsActionTest {
 
   @RegisterExtension
   final JpaIntegrationTestExtension jpa =
-      new JpaTestExtensions.Builder().buildIntegrationTestExtension();
+      new JpaTestExtensions.Builder().withClock(clock).buildIntegrationTestExtension();
 
   @BeforeEach
   void beforeEach() {
@@ -70,20 +81,21 @@ class ExportDomainListsActionTest {
     action.gcsUtils = gcsUtils;
     action.clock = clock;
     action.driveConnection = driveConnection;
+    persistFeatureFlag(INACTIVE);
   }
 
-  private void verifyExportedToDrive(String folderId, String domains) throws Exception {
+  private void verifyExportedToDrive(String folderId, String domains, boolean includeDeletionTimes)
+      throws Exception {
+    String filename =
+        includeDeletionTimes ? REGISTERED_DOMAINS_CSV_FILENAME : REGISTERED_DOMAINS_TXT_FILENAME;
     verify(driveConnection)
         .createOrUpdateFile(
-            eq(REGISTERED_DOMAINS_FILENAME),
-            eq(MediaType.PLAIN_TEXT_UTF_8),
-            eq(folderId),
-            bytesExportedToDrive.capture());
+            eq(filename), eq(MediaType.CSV_UTF_8), eq(folderId), bytesExportedToDrive.capture());
     assertThat(new String(bytesExportedToDrive.getValue(), UTF_8)).isEqualTo(domains);
   }
 
   @Test
-  void test_outputsOnlyActiveDomains() throws Exception {
+  void test_outputsOnlyActiveDomains_txt() throws Exception {
     persistActiveDomain("onetwo.tld");
     persistActiveDomain("rudnitzky.tld");
     persistDeletedDomain("mortuary.tld", DateTime.parse("2001-03-14T10:11:12Z"));
@@ -92,12 +104,27 @@ class ExportDomainListsActionTest {
     String tlds = new String(gcsUtils.readBytesFrom(existingFile), UTF_8);
     // Check that it only contains the active domains, not the dead one.
     assertThat(tlds).isEqualTo("onetwo.tld\nrudnitzky.tld");
-    verifyExportedToDrive("brouhaha", "onetwo.tld\nrudnitzky.tld");
+    verifyExportedToDrive("brouhaha", "onetwo.tld\nrudnitzky.tld", false);
     verifyNoMoreInteractions(driveConnection);
   }
 
   @Test
-  void test_outputsOnlyDomainsOnRealTlds() throws Exception {
+  void test_outputsOnlyActiveDomains_csv() throws Exception {
+    persistFeatureFlag(ACTIVE);
+    persistActiveDomain("onetwo.tld");
+    persistActiveDomain("rudnitzky.tld");
+    persistDeletedDomain("mortuary.tld", DateTime.parse("2001-03-14T10:11:12Z"));
+    action.run();
+    BlobId existingFile = BlobId.of("outputbucket", "tld.csv");
+    String tlds = new String(gcsUtils.readBytesFrom(existingFile), UTF_8);
+    // Check that it only contains the active domains, not the dead one.
+    assertThat(tlds).isEqualTo("onetwo.tld,\nrudnitzky.tld,");
+    verifyExportedToDrive("brouhaha", "onetwo.tld,\nrudnitzky.tld,", true);
+    verifyNoMoreInteractions(driveConnection);
+  }
+
+  @Test
+  void test_outputsOnlyDomainsOnRealTlds_txt() throws Exception {
     persistActiveDomain("onetwo.tld");
     persistActiveDomain("rudnitzky.tld");
     persistActiveDomain("wontgo.testtld");
@@ -111,12 +138,65 @@ class ExportDomainListsActionTest {
     assertThrows(StorageException.class, () -> gcsUtils.readBytesFrom(nonexistentFile));
     ImmutableList<String> ls = gcsUtils.listFolderObjects("outputbucket", "");
     assertThat(ls).containsExactly("tld.txt");
-    verifyExportedToDrive("brouhaha", "onetwo.tld\nrudnitzky.tld");
+    verifyExportedToDrive("brouhaha", "onetwo.tld\nrudnitzky.tld", false);
     verifyNoMoreInteractions(driveConnection);
   }
 
   @Test
-  void test_outputsDomainsFromDifferentTldsToMultipleFiles() throws Exception {
+  void test_outputsOnlyDomainsOnRealTlds_csv() throws Exception {
+    persistFeatureFlag(ACTIVE);
+    persistActiveDomain("onetwo.tld");
+    persistActiveDomain("rudnitzky.tld");
+    persistActiveDomain("wontgo.testtld");
+    action.run();
+    BlobId existingFile = BlobId.of("outputbucket", "tld.csv");
+    String tlds = new String(gcsUtils.readBytesFrom(existingFile), UTF_8).trim();
+    // Check that it only contains the domains on the real TLD, and not the test one.
+    assertThat(tlds).isEqualTo("onetwo.tld,\nrudnitzky.tld,");
+    // Make sure that the test TLD file wasn't written out.
+    BlobId nonexistentFile = BlobId.of("outputbucket", "testtld.csv");
+    assertThrows(StorageException.class, () -> gcsUtils.readBytesFrom(nonexistentFile));
+    ImmutableList<String> ls = gcsUtils.listFolderObjects("outputbucket", "");
+    assertThat(ls).containsExactly("tld.csv");
+    verifyExportedToDrive("brouhaha", "onetwo.tld,\nrudnitzky.tld,", true);
+    verifyNoMoreInteractions(driveConnection);
+  }
+
+  @Test
+  void test_outputIncludesDeletionTimes_forPendingDeletes_notRdemption() throws Exception {
+    persistFeatureFlag(ACTIVE);
+    // Domains pending delete (meaning the 5 day period, not counting the 30 day redemption period)
+    // should include their pending deletion date
+    persistActiveDomain("active.tld");
+    Domain redemption = persistActiveDomain("redemption.tld");
+    persistResource(
+        redemption
+            .asBuilder()
+            .addStatusValue(StatusValue.PENDING_DELETE)
+            .addGracePeriod(
+                GracePeriod.createWithoutBillingEvent(
+                    GracePeriodStatus.REDEMPTION,
+                    redemption.getRepoId(),
+                    clock.nowUtc().plusDays(20),
+                    redemption.getCurrentSponsorRegistrarId()))
+            .build());
+    persistResource(
+        persistActiveDomain("pendingdelete.tld")
+            .asBuilder()
+            .addStatusValue(StatusValue.PENDING_DELETE)
+            .setDeletionTime(clock.nowUtc().plusDays(3))
+            .build());
+
+    action.run();
+
+    verifyExportedToDrive(
+        "brouhaha",
+        "active.tld,\npendingdelete.tld,2020-02-05T02:02:02.000Z\nredemption.tld,",
+        true);
+  }
+
+  @Test
+  void test_outputsDomainsFromDifferentTldsToMultipleFiles_txt() throws Exception {
     createTld("tldtwo");
     persistResource(Tld.get("tldtwo").asBuilder().setDriveFolderId("hooray").build());
 
@@ -138,9 +218,48 @@ class ExportDomainListsActionTest {
     BlobId thirdTldFile = BlobId.of("outputbucket", "tldthree.txt");
     String evenMoreTlds = new String(gcsUtils.readBytesFrom(thirdTldFile), UTF_8).trim();
     assertThat(evenMoreTlds).isEqualTo("cupid.tldthree");
-    verifyExportedToDrive("brouhaha", "dasher.tld\nprancer.tld");
-    verifyExportedToDrive("hooray", "buddy.tldtwo\nrudolph.tldtwo\nsanta.tldtwo");
+    verifyExportedToDrive("brouhaha", "dasher.tld\nprancer.tld", false);
+    verifyExportedToDrive("hooray", "buddy.tldtwo\nrudolph.tldtwo\nsanta.tldtwo", false);
     // tldthree does not have a drive id, so no export to drive is performed.
     verifyNoMoreInteractions(driveConnection);
+  }
+
+  @Test
+  void test_outputsDomainsFromDifferentTldsToMultipleFiles_csv() throws Exception {
+    persistFeatureFlag(ACTIVE);
+    createTld("tldtwo");
+    persistResource(Tld.get("tldtwo").asBuilder().setDriveFolderId("hooray").build());
+
+    createTld("tldthree");
+    // You'd think this test was written around Christmas, but it wasn't.
+    persistActiveDomain("dasher.tld");
+    persistActiveDomain("prancer.tld");
+    persistActiveDomain("rudolph.tldtwo");
+    persistActiveDomain("santa.tldtwo");
+    persistActiveDomain("buddy.tldtwo");
+    persistActiveDomain("cupid.tldthree");
+    action.run();
+    BlobId firstTldFile = BlobId.of("outputbucket", "tld.csv");
+    String tlds = new String(gcsUtils.readBytesFrom(firstTldFile), UTF_8).trim();
+    assertThat(tlds).isEqualTo("dasher.tld,\nprancer.tld,");
+    BlobId secondTldFile = BlobId.of("outputbucket", "tldtwo.csv");
+    String moreTlds = new String(gcsUtils.readBytesFrom(secondTldFile), UTF_8).trim();
+    assertThat(moreTlds).isEqualTo("buddy.tldtwo,\nrudolph.tldtwo,\nsanta.tldtwo,");
+    BlobId thirdTldFile = BlobId.of("outputbucket", "tldthree.csv");
+    String evenMoreTlds = new String(gcsUtils.readBytesFrom(thirdTldFile), UTF_8).trim();
+    assertThat(evenMoreTlds).isEqualTo("cupid.tldthree,");
+    verifyExportedToDrive("brouhaha", "dasher.tld,\nprancer.tld,", true);
+    verifyExportedToDrive("hooray", "buddy.tldtwo,\nrudolph.tldtwo,\nsanta.tldtwo,", true);
+    // tldthree does not have a drive id, so no export to drive is performed.
+    verifyNoMoreInteractions(driveConnection);
+  }
+
+  private void persistFeatureFlag(FeatureFlag.FeatureStatus status) {
+    persistResource(
+        new FeatureFlag()
+            .asBuilder()
+            .setFeatureName(INCLUDE_PENDING_DELETE_DATE_FOR_DOMAINS)
+            .setStatusMap(ImmutableSortedMap.of(START_OF_TIME, status))
+            .build());
   }
 }
