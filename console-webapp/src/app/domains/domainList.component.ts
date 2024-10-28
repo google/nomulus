@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { SelectionModel } from '@angular/cdk/collections';
 import { HttpErrorResponse, HttpStatusCode } from '@angular/common/http';
 import { Component, ViewChild, effect } from '@angular/core';
 import { MatPaginator, PageEvent } from '@angular/material/paginator';
@@ -31,8 +32,10 @@ import { RegistryLockService } from './registryLock.service';
 export class DomainListComponent {
   public static PATH = 'domain-list';
   private readonly DEBOUNCE_MS = 500;
+  isAllSelected = false;
 
   displayedColumns: string[] = [
+    'select',
     'domainName',
     'creationTime',
     'registrationExpirationTime',
@@ -42,6 +45,7 @@ export class DomainListComponent {
   ];
 
   dataSource: MatTableDataSource<Domain> = new MatTableDataSource();
+  selection = new SelectionModel<Domain>(true, [], undefined, this.isChecked());
   isLoading = true;
 
   searchTermSubject = new Subject<string>();
@@ -135,5 +139,33 @@ export class DomainListComponent {
     this.pageNumber = event.pageIndex;
     this.resultsPerPage = event.pageSize;
     this.reloadData();
+  }
+
+  toggleAllRows() {
+    if (this.isAllSelected) {
+      this.selection.clear();
+      this.isAllSelected = false;
+      return;
+    }
+
+    this.selection.select(...this.dataSource.data);
+    this.isAllSelected = true;
+  }
+
+  checkboxLabel(row?: Domain): string {
+    if (!row) {
+      return `${this.isAllSelected ? 'deselect' : 'select'} all`;
+    }
+    return `${this.selection.isSelected(row) ? 'deselect' : 'select'} row ${row.domainName + 1}`;
+  }
+
+  private isChecked(): ((o1: Domain, o2: Domain) => boolean) | undefined {
+    return (o1: Domain, o2: Domain) => {
+      if (!o1.domainName || !o2.domainName) {
+        return false;
+      }
+
+      return this.isAllSelected || o1.domainName === o2.domainName;
+    };
   }
 }
