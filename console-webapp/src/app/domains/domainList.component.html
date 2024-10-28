@@ -65,11 +65,34 @@
             />
           </mat-form-field>
 
+          <div class="console-app__domains-selection" [ngClass]="{'active': selection.hasValue()}">
+            <div class="console-app__domains-selection-text">{{selection.selected.length}} Selected</div>
+            <div class="console-app__domains-selection-actions"></div>
+          </div>
+
           <mat-table
             [dataSource]="dataSource"
             class="mat-elevation-z0"
             class="console-app__domains-table"
           >
+            <!-- Checkbox Column -->
+            <ng-container matColumnDef="select">
+              <mat-header-cell *matHeaderCellDef>
+                <mat-checkbox (change)="$event ? toggleAllRows() : null"
+                              [checked]="selection.hasValue() && isAllSelected"
+                              [indeterminate]="selection.hasValue() && !isAllSelected"
+                              [aria-label]="checkboxLabel()">
+                </mat-checkbox>
+              </mat-header-cell>
+              <mat-cell *matCellDef="let row">
+                <mat-checkbox (click)="$event.stopPropagation()"
+                              (change)="$event ? selection.toggle(row) : null"
+                              [checked]="selection.isSelected(row)"
+                              [aria-label]="checkboxLabel(row)">
+                </mat-checkbox>
+              </mat-cell>
+            </ng-container>
+
             <ng-container matColumnDef="domainName">
               <mat-header-cell *matHeaderCellDef>Domain Name</mat-header-cell>
               <mat-cell *matCellDef="let element">{{
