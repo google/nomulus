@@ -90,20 +90,20 @@ public class ConsoleScreenshotTest extends WebDriverTestCase {
     driver.diffPage("actionsButtonClicked");
   }
 
-  // TODO: Reenable failing test after kokoro issue is resolved
-  // @RetryingTest(3)
-  // void settingsPage() throws Exception {
-  //   clickSidebarElementByName("Settings");
-  //   driver.diffPage("noRegistrarSelected");
-  //   selectRegistrar();
-  //   driver.diffPage("registrarSelected_contacts");
-  //   driver.findElement(By.cssSelector("a[routerLink=\"whois\"]")).click();
-  //   Thread.sleep(500);
-  //   driver.diffPage("registrarSelected_whois");
-  //   driver.findElement(By.cssSelector("a[routerLink=\"security\"]")).click();
-  //   Thread.sleep(500);
-  //   driver.diffPage("registrarSelected_security");
-  // }
+
+  @RetryingTest(3)
+  void settingsPage() throws Exception {
+    clickSidebarElementByName("Settings");
+    driver.diffPage("noRegistrarSelected");
+    selectRegistrar();
+    driver.diffPage("registrarSelected_contacts");
+    driver.findElement(By.cssSelector("a[routerLink=\"whois\"]")).click();
+    Thread.sleep(500);
+    driver.diffPage("registrarSelected_whois");
+    driver.findElement(By.cssSelector("a[routerLink=\"security\"]")).click();
+    Thread.sleep(500);
+    driver.diffPage("registrarSelected_security");
+  }
 
   @RetryingTest(3)
   void billingInfo() throws Exception {
