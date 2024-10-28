@@ -95,9 +95,9 @@
 
             <ng-container matColumnDef="statuses">
               <mat-header-cell *matHeaderCellDef>Statuses</mat-header-cell>
-              <mat-cell *matCellDef="let element">{{
-                element.statuses
-              }}</mat-cell>
+              <mat-cell *matCellDef="let element">
+                <span>{{ element.statuses?.join(", ") }}</span>
+              </mat-cell>
             </ng-container>
 
             <ng-container matColumnDef="registryLock">

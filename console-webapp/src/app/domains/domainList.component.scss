@@ -36,6 +36,11 @@
     .mat-column-registryLock {
       max-width: 150px;
     }
+    .mat-column-statuses span {
+      padding: 10px 0;
+      overflow: hidden;
+      word-break: break-word;
+    }
   }
 
   &__domains-spinner {
