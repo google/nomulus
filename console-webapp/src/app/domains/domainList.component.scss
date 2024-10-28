@@ -12,6 +12,15 @@
     }
   }
 
+  &__domains-selection {
+    height: 30px;
+    max-height: 0;
+    transition: max-height .2s linear;
+    &.active {
+      max-height: 30px;
+    }
+  }
+
   &-domains__download {
     position: absolute;
     top: -55px;
@@ -40,6 +49,10 @@
       padding: 10px 0;
       overflow: hidden;
       word-break: break-word;
+    }
+    .mat-column-select {
+      max-width: 60px;
+      padding-left: 15px;
     }
   }
 
