@@ -33,6 +33,8 @@ import google.registry.model.billing.BillingRecurrence;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.reporting.HistoryEntry;
+import google.registry.model.transfer.DomainTransferData;
+import google.registry.model.transfer.TransferStatus;
 import java.util.Optional;
 import javax.annotation.Nullable;
 import org.joda.money.CurrencyUnit;
@@ -119,6 +121,25 @@ public class UpdateRecurrenceCommandTest extends CommandTestCase<UpdateRecurrenc
         billingRecurrence.getId(),
         RenewalPriceBehavior.SPECIFIED,
         Money.of(CurrencyUnit.USD, 9001));
+  }
+
+  @Test
+  void testSuccess_completedTransfer() throws Exception {
+    Domain domain = persistDomain();
+    domain =
+        persistResource(
+            domain
+                .asBuilder()
+                .setTransferData(
+                    new DomainTransferData.Builder()
+                        .setTransferStatus(TransferStatus.CLIENT_APPROVED)
+                        .setPendingTransferExpirationTime(fakeClock.nowUtc().minusDays(8))
+                        .build())
+                .build());
+    BillingRecurrence billingRecurrence = loadByKey(domain.getAutorenewBillingEvent());
+    runCommandForced("domain.tld", "--renewal_price_behavior", "NONPREMIUM");
+    assertNewBillingEventAndHistory(
+        billingRecurrence.getId(), RenewalPriceBehavior.NONPREMIUM, null);
   }
 
   @Test
