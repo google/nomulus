@@ -14,11 +14,14 @@
 
 package google.registry.ui.server.console;
 
+import static com.google.common.base.Strings.isNullOrEmpty;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static google.registry.model.console.RegistrarRole.ACCOUNT_MANAGER;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+import static google.registry.request.Action.Method.DELETE;
 import static google.registry.request.Action.Method.GET;
 import static google.registry.request.Action.Method.POST;
+import static jakarta.servlet.http.HttpServletResponse.SC_CREATED;
 import static jakarta.servlet.http.HttpServletResponse.SC_FORBIDDEN;
 import static jakarta.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 import static jakarta.servlet.http.HttpServletResponse.SC_OK;
@@ -29,6 +32,8 @@ import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.gson.Gson;
+import com.google.gson.annotations.Expose;
+import google.registry.config.RegistryConfig.Config;
 import google.registry.model.console.ConsolePermission;
 import google.registry.model.console.User;
 import google.registry.model.console.UserRoles;
@@ -38,11 +43,13 @@ import google.registry.request.Action.GkeService;
 import google.registry.request.HttpException.BadRequestException;
 import google.registry.request.Parameter;
 import google.registry.request.auth.Auth;
+import google.registry.tools.IamClient;
 import google.registry.util.StringGenerator;
 import java.io.IOException;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
+import java.util.stream.IntStream;
 import javax.inject.Inject;
 import javax.inject.Named;
 
@@ -50,36 +57,42 @@ import javax.inject.Named;
     service = Action.GaeService.DEFAULT,
     gkeService = GkeService.CONSOLE,
     path = ConsoleUsersAction.PATH,
-    method = {GET, POST},
+    method = {GET, POST, DELETE},
     auth = Auth.AUTH_PUBLIC_LOGGED_IN)
 public class ConsoleUsersAction extends ConsoleApiAction {
   static final String PATH = "/console-api/users";
   private static final int PASSWORD_LENGTH = 16;
 
   private static final Splitter EMAIL_SPLITTER = Splitter.on('@').trimResults();
-
   private final Gson gson;
   private final String registrarId;
   private final Directory directory;
   private final StringGenerator passwordGenerator;
+  private final Optional<UserDeleteData> userDeleteData;
+  private final Optional<String> maybeGroupEmailAddress;
+  private final IamClient iamClient;
+  private final String gSuiteDomainName;
 
   @Inject
   public ConsoleUsersAction(
       ConsoleApiParams consoleApiParams,
       Gson gson,
       Directory directory,
+      IamClient iamClient,
+      @Config("gSuiteDomainName") String gSuiteDomainName,
+      @Config("gSuiteConsoleUserGroupEmailAddress") Optional<String> maybeGroupEmailAddress,
       @Named("base58StringGenerator") StringGenerator passwordGenerator,
+      @Parameter("userDeleteData") Optional<UserDeleteData> userDeleteData,
       @Parameter("registrarId") String registrarId) {
     super(consoleApiParams);
     this.gson = gson;
     this.registrarId = registrarId;
     this.directory = directory;
     this.passwordGenerator = passwordGenerator;
-  }
-
-  private static String generateNewEmailAddress(User user, String increment) {
-    List<String> emailParts = EMAIL_SPLITTER.splitToList(user.getEmailAddress());
-    return String.format("%s-%s@%s", emailParts.get(0), increment, emailParts.get(1));
+    this.userDeleteData = userDeleteData;
+    this.maybeGroupEmailAddress = maybeGroupEmailAddress;
+    this.iamClient = iamClient;
+    this.gSuiteDomainName = gSuiteDomainName;
   }
 
   @Override
@@ -87,7 +100,7 @@ public class ConsoleUsersAction extends ConsoleApiAction {
     // Temporary flag while testing
     if (user.getUserRoles().isAdmin()) {
       checkPermission(user, registrarId, ConsolePermission.MANAGE_USERS);
-      tm().transact(() -> runInTransaction(user));
+      tm().transact(() -> runCreateInTransaction());
     } else {
       consoleApiParams.response().setStatus(SC_FORBIDDEN);
     }
@@ -97,8 +110,7 @@ public class ConsoleUsersAction extends ConsoleApiAction {
   protected void getHandler(User user) {
     checkPermission(user, registrarId, ConsolePermission.MANAGE_USERS);
     List<ImmutableMap> users =
-        getAllUsers().stream()
-            .filter(u -> u.getUserRoles().getRegistrarRoles().containsKey(registrarId))
+        getAllRegistrarUsers(registrarId).stream()
             .map(
                 u ->
                     ImmutableMap.of(
@@ -112,24 +124,71 @@ public class ConsoleUsersAction extends ConsoleApiAction {
     consoleApiParams.response().setStatus(SC_OK);
   }
 
-  private void runInTransaction(User user) throws IOException {
-    String nextAvailableIncrement =
-        Stream.of("1", "2", "3")
-            .filter(
-                increment ->
-                    tm().loadByKeyIfPresent(
-                            VKey.create(User.class, generateNewEmailAddress(user, increment)))
-                        .isEmpty())
+  @Override
+  protected void deleteHandler(User user) {
+    // Temporary flag while testing
+    if (user.getUserRoles().isAdmin()) {
+      checkPermission(user, registrarId, ConsolePermission.MANAGE_USERS);
+      tm().transact(() -> runDeleteInTransaction());
+    } else {
+      consoleApiParams.response().setStatus(SC_FORBIDDEN);
+    }
+  }
+
+  private void runDeleteInTransaction() throws IOException {
+    if (userDeleteData.isEmpty() || isNullOrEmpty(userDeleteData.get().userEmail)) {
+      throw new BadRequestException("Missing user data param");
+    }
+    String email = userDeleteData.get().userEmail;
+    User userToDelete =
+        tm().loadByKeyIfPresent(VKey.create(User.class, email))
+            .orElseThrow(
+                () -> new BadRequestException(String.format("User %s doesn't exist", email)));
+
+    if (!userToDelete.getUserRoles().getRegistrarRoles().containsKey(registrarId)) {
+      setFailedResponse(
+          String.format("Can't delete user not associated with registrarId %s", registrarId),
+          SC_FORBIDDEN);
+      return;
+    }
+
+    try {
+      directory.users().delete(email).execute();
+    } catch (IOException e) {
+      setFailedResponse("Failed to delete the user workspace account", SC_INTERNAL_SERVER_ERROR);
+      throw e;
+    }
+
+    VKey<User> key = VKey.create(User.class, email);
+    tm().delete(key);
+    User.revokeIapPermission(email, maybeGroupEmailAddress, cloudTasksUtils, null, iamClient);
+
+    consoleApiParams.response().setStatus(SC_OK);
+  }
+
+  private void runCreateInTransaction() throws IOException {
+    ImmutableList<User> allRegistrarUsers = getAllRegistrarUsers(registrarId);
+    if (allRegistrarUsers.size() >= 4)
+      throw new BadRequestException("Total users amount per registrar is limited to 4");
+
+    String nextAvailableEmail =
+        IntStream.range(1, 20)
+            .mapToObj(i -> String.format("%s-user%s@%s", registrarId, i, gSuiteDomainName))
+            .filter(email -> tm().loadByKeyIfPresent(VKey.create(User.class, email)).isEmpty())
             .findFirst()
-            .orElseThrow(() -> new BadRequestException("Extra users amount is limited to 3"));
+            // Can only happen if registrar cycled through 20 users, which is unlikely
+            .orElseThrow(
+                () -> new BadRequestException("Failed to find available increment for new user"));
 
     com.google.api.services.directory.model.User newUser =
         new com.google.api.services.directory.model.User();
 
     newUser.setName(
-        new UserName().setFamilyName(registrarId).setGivenName("User" + nextAvailableIncrement));
+        new UserName()
+            .setFamilyName(registrarId)
+            .setGivenName(EMAIL_SPLITTER.splitToList(nextAvailableEmail).get(0)));
     newUser.setPassword(passwordGenerator.createString(PASSWORD_LENGTH));
-    newUser.setPrimaryEmail(generateNewEmailAddress(user, nextAvailableIncrement));
+    newUser.setPrimaryEmail(nextAvailableEmail);
 
     try {
       directory.users().insert(newUser).execute();
@@ -146,8 +205,10 @@ public class ConsoleUsersAction extends ConsoleApiAction {
     User.Builder builder =
         new User.Builder().setUserRoles(userRoles).setEmailAddress(newUser.getPrimaryEmail());
     tm().put(builder.build());
+    User.grantIapPermission(
+        nextAvailableEmail, maybeGroupEmailAddress, cloudTasksUtils, null, iamClient);
 
-    consoleApiParams.response().setStatus(SC_OK);
+    consoleApiParams.response().setStatus(SC_CREATED);
     consoleApiParams
         .response()
         .setPayload(
@@ -161,11 +222,13 @@ public class ConsoleUsersAction extends ConsoleApiAction {
                     ACCOUNT_MANAGER)));
   }
 
-  private ImmutableList<User> getAllUsers() {
+  private ImmutableList<User> getAllRegistrarUsers(String registrarId) {
     return tm().transact(
             () ->
                 tm().loadAllOf(User.class).stream()
-                    .filter(u -> !u.getUserRoles().getRegistrarRoles().isEmpty())
+                    .filter(u -> u.getUserRoles().getRegistrarRoles().containsKey(registrarId))
                     .collect(toImmutableList()));
   }
+
+  public record UserDeleteData(@Expose String userEmail) {}
 }
