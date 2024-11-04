@@ -86,6 +86,7 @@ export class UsersComponent {
     this.usersService.fetchUsers().subscribe({
       error: (err: HttpErrorResponse) => {
         this._snackBar.open(err.error || err.message);
+        this.isLoading = false;
       },
       complete: () => {
         this.isLoading = false;
@@ -96,17 +97,9 @@ export class UsersComponent {
   createNewUser() {
     this.isLoading = true;
     this.usersService.createNewUser().subscribe({
-      next: (newUser) => {
-        this._snackBar.open(
-          `New user with email ${newUser.emailAddress} has been created.`,
-          '',
-          {
-            duration: 2000,
-          }
-        );
-      },
       error: (err: HttpErrorResponse) => {
         this._snackBar.open(err.error || err.message);
+        this.isLoading = false;
       },
       complete: () => {
         this.isLoading = false;
@@ -115,6 +108,6 @@ export class UsersComponent {
   }
 
   openDetails(emailAddress: string) {
-    this.usersService.viewingUserEmail.set(emailAddress);
+    this.usersService.currentlyOpenUserEmail.set(emailAddress);
   }
 }

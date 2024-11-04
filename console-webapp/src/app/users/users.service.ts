@@ -38,7 +38,7 @@ export interface User {
 @Injectable()
 export class UsersService {
   users = signal<User[]>([]);
-  viewingUserEmail = signal<string>('');
+  currentlyOpenUserEmail = signal<string>('');
   isNewUser: boolean = false;
 
   constructor(
@@ -62,15 +62,15 @@ export class UsersService {
       .pipe(
         tap((newUser: User) => {
           this.users.set([...this.users(), newUser]);
-          this.viewingUserEmail.set(newUser.emailAddress);
+          this.currentlyOpenUserEmail.set(newUser.emailAddress);
           this.isNewUser = true;
         })
       );
   }
 
-  deleteUser(userEmail: string) {
+  deleteUser(emailAddress: string) {
     return this.backendService
-      .deleteUser(this.registrarService.registrarId(), userEmail)
+      .deleteUser(this.registrarService.registrarId(), emailAddress)
       .pipe(tap((_) => this.fetchUsers()));
   }
 }
