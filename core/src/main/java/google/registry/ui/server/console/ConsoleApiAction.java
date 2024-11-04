@@ -16,7 +16,9 @@ package google.registry.ui.server.console;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
+import static google.registry.request.Action.Method.DELETE;
 import static google.registry.request.Action.Method.GET;
+import static google.registry.request.Action.Method.HEAD;
 import static google.registry.request.Action.Method.POST;
 import static jakarta.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static jakarta.servlet.http.HttpServletResponse.SC_FORBIDDEN;
@@ -75,13 +77,19 @@ public abstract class ConsoleApiAction implements Runnable {
       return;
     }
     User user = consoleApiParams.authResult().user().get();
-
+    String requestMethod = consoleApiParams.request().getMethod();
     try {
-      if (consoleApiParams.request().getMethod().equals(GET.toString())) {
+      if (requestMethod.equals(GET.toString())) {
         getHandler(user);
+      } else if (requestMethod.equals(HEAD.toString())) {
+        headHandler(user);
       } else {
         if (verifyXSRF(user)) {
-          postHandler(user);
+          if (requestMethod.equals(DELETE.toString())) {
+            deleteHandler(user);
+          } else {
+            postHandler(user);
+          }
         }
       }
     } catch (ConsolePermissionForbiddenException e) {
@@ -111,6 +119,14 @@ public abstract class ConsoleApiAction implements Runnable {
 
   protected void getHandler(User user) {
     throw new UnsupportedOperationException("Console API GET handler not implemented");
+  }
+
+  protected void deleteHandler(User user) {
+    throw new UnsupportedOperationException("Console API DELETE handler not implemented");
+  }
+
+  protected void headHandler(User user) {
+    throw new UnsupportedOperationException("Console API HEAD handler not implemented");
   }
 
   protected void setFailedResponse(String message, int code) {
