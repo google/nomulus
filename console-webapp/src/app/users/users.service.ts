@@ -17,19 +17,29 @@ import { tap } from 'rxjs';
 import { RegistrarService } from '../registrar/registrar.service';
 import { BackendService } from '../shared/services/backend.service';
 
+export const roleToDescription = (role: string) => {
+  if (!role) return 'N/A';
+  else if (role.toLowerCase().startsWith('account_manager')) {
+    return 'Viewer';
+  }
+  return 'Editor';
+};
+
 export interface CreateAutoTimestamp {
   creationTime: string;
 }
 
 export interface User {
-  emailAddress: String;
-  role: String;
-  password?: String;
+  emailAddress: string;
+  role: string;
+  password?: string;
 }
 
 @Injectable()
 export class UsersService {
   users = signal<User[]>([]);
+  viewingUserEmail = signal<string>('');
+  isNewUser: boolean = false;
 
   constructor(
     private backendService: BackendService,
@@ -52,7 +62,15 @@ export class UsersService {
       .pipe(
         tap((newUser: User) => {
           this.users.set([...this.users(), newUser]);
+          this.viewingUserEmail.set(newUser.emailAddress);
+          this.isNewUser = true;
         })
       );
+  }
+
+  deleteUser(userEmail: string) {
+    return this.backendService
+      .deleteUser(this.registrarService.registrarId(), userEmail)
+      .pipe(tap((_) => this.fetchUsers()));
   }
 }

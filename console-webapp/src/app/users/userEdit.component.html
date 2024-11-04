@@ -1,0 +1,70 @@
+<div class="console-app__user-details">
+  @if(isNewUser) {
+  <h1 class="mat-headline-4">
+    {{ userDetails.emailAddress + " succesfully created" }}
+  </h1>
+  } @else {
+  <h1 class="mat-headline-4">User details</h1>
+  }
+  <mat-divider></mat-divider>
+  <div>
+    <div class="console-app__user-details-controls">
+      <button
+        mat-icon-button
+        aria-label="Back to users list"
+        (click)="goBack()"
+      >
+        <mat-icon>arrow_back</mat-icon>
+      </button>
+      <div class="spacer"></div>
+      <button mat-icon-button aria-label="Delete User" (click)="deleteUser()">
+        <mat-icon>delete</mat-icon>
+      </button>
+    </div>
+  </div>
+  <mat-card appearance="outlined">
+    <mat-card-content>
+      <mat-list role="list">
+        <mat-list-item role="listitem">
+          <h2>User details</h2>
+        </mat-list-item>
+        <mat-divider></mat-divider>
+        <mat-list-item role="listitem">
+          <span class="console-app__list-key">User email</span>
+          <span class="console-app__list-value">{{
+            userDetails.emailAddress
+          }}</span>
+        </mat-list-item>
+        <mat-divider></mat-divider>
+        <mat-list-item role="listitem">
+          <span class="console-app__list-key">User role</span>
+          <span class="console-app__list-value">{{
+            roleToDescription(userDetails.role)
+          }}</span>
+        </mat-list-item>
+        @if (userDetails.password) {
+        <mat-divider></mat-divider>
+        <mat-list-item role="listitem">
+          <span class="console-app__list-key">Password</span>
+          <span
+            class="console-app__list-value console-app__user-details-password"
+          >
+            <input
+              [type]="isPasswordVisible ? 'text' : 'password'"
+              [value]="userDetails.password"
+              disabled
+            />
+            <button
+              mat-button
+              aria-label="Show password"
+              (click)="isPasswordVisible = !isPasswordVisible"
+            >
+              {{ isPasswordVisible ? "Hide" : "View" }} password
+            </button>
+          </span>
+        </mat-list-item>
+        }
+      </mat-list>
+    </mat-card-content>
+  </mat-card>
+</div>

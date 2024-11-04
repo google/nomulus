@@ -1,5 +1,11 @@
 <app-selected-registrar-wrapper>
-  @if (!isLoading) {
+  @if(isLoading) {
+  <div class="console-app__users-spinner">
+    <mat-spinner />
+  </div>
+  } @else if(usersService.viewingUserEmail()) {
+  <app-user-edit></app-user-edit>
+  } @else {
   <div class="console-app__users">
     <div class="console-app__users-header">
       <h1 class="mat-headline-4">Users</h1>
@@ -32,12 +38,11 @@
         ></mat-cell>
       </ng-container>
       <mat-header-row *matHeaderRowDef="displayedColumns"></mat-header-row>
-      <mat-row *matRowDef="let row; columns: displayedColumns"></mat-row>
+      <mat-row
+        *matRowDef="let row; columns: displayedColumns"
+        (click)="openDetails(row.emailAddress)"
+      ></mat-row>
     </mat-table>
-  </div>
-  } @else {
-  <div class="console-app__users-spinner">
-    <mat-spinner />
   </div>
   }
 </app-selected-registrar-wrapper>

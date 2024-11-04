@@ -22,15 +22,8 @@ import { SelectedRegistrarModule } from '../app.module';
 import { MaterialModule } from '../material.module';
 import { RegistrarService } from '../registrar/registrar.service';
 import { SnackBarModule } from '../snackbar.module';
-import { User, UsersService } from './users.service';
-
-const roleToDescription = (role: String) => {
-  if (!role) return 'N/A';
-  else if (role.toLowerCase().startsWith('account_manager')) {
-    return 'Viewer';
-  }
-  return 'Editor';
-};
+import { UserEditComponent } from './userEdit.component';
+import { roleToDescription, User, UsersService } from './users.service';
 
 export const columns = [
   {
@@ -55,6 +48,7 @@ export const columns = [
     SnackBarModule,
     CommonModule,
     SelectedRegistrarModule,
+    UserEditComponent,
   ],
   providers: [UsersService],
 })
@@ -118,5 +112,9 @@ export class UsersComponent {
         this.isLoading = false;
       },
     });
+  }
+
+  openDetails(emailAddress: string) {
+    this.usersService.viewingUserEmail.set(emailAddress);
   }
 }

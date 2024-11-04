@@ -172,7 +172,7 @@ public class ConsoleUsersAction extends ConsoleApiAction {
       throw new BadRequestException("Total users amount per registrar is limited to 4");
 
     String nextAvailableEmail =
-        IntStream.range(1, 20)
+        IntStream.range(1, 5)
             .mapToObj(i -> String.format("%s-user%s@%s", registrarId, i, gSuiteDomainName))
             .filter(email -> tm().loadByKeyIfPresent(VKey.create(User.class, email)).isEmpty())
             .findFirst()
