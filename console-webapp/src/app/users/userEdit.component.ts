@@ -35,9 +35,10 @@ import { User, UsersService, roleToDescription } from './users.service';
   providers: [],
 })
 export class UserEditComponent {
-  inEdit: boolean = false;
-  isPasswordVisible: boolean = false;
-  isNewUser: boolean = false;
+  inEdit = false;
+  isPasswordVisible = false;
+  isNewUser = false;
+  isLoading = false;
   userDetails: User;
 
   constructor(
@@ -61,11 +62,14 @@ export class UserEditComponent {
   }
 
   deleteUser() {
+    this.isLoading = true;
     this.usersService.deleteUser(this.userDetails.emailAddress).subscribe({
       error: (err) => {
         this._snackBar.open(err.error || err.message);
+        this.isLoading = false;
       },
       complete: () => {
+        this.isLoading = false;
         this.goBack();
       },
     });

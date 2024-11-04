@@ -17,11 +17,20 @@
         <mat-icon>arrow_back</mat-icon>
       </button>
       <div class="spacer"></div>
-      <button mat-icon-button aria-label="Delete User" (click)="deleteUser()">
+      <button
+        mat-icon-button
+        aria-label="Delete User"
+        (click)="deleteUser()"
+        [disabled]="isLoading"
+      >
         <mat-icon>delete</mat-icon>
       </button>
     </div>
   </div>
+  <p *ngIf="isLoading">
+    <mat-progress-bar mode="query"></mat-progress-bar>
+  </p>
+
   <mat-card appearance="outlined">
     <mat-card-content>
       <mat-list role="list">
