@@ -185,4 +185,9 @@ public class TimedTransitionProperty<V extends Serializable> implements UnsafeSe
   public int hashCode() {
     return this.backingMap.hashCode();
   }
+
+  @Override
+  public String toString() {
+    return this.backingMap.toString();
+  }
 }
