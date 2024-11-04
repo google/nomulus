@@ -33,7 +33,8 @@ public @interface Action {
   enum Method {
     GET,
     HEAD,
-    POST
+    POST,
+    DELETE
   }
 
   interface Service {
