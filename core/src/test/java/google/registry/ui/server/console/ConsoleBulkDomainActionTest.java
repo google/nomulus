@@ -108,9 +108,10 @@ public class ConsoleBulkDomainActionTest {
     assertThat(fakeResponse.getStatus()).isEqualTo(SC_OK);
     assertThat(fakeResponse.getPayload())
         .isEqualTo(
-            "{\"example.tld\":{\"message\":\"Command completed"
-                + " successfully\",\"responseCode\":1000}}");
-    assertThat(loadByEntity(domain).getDeletionTime()).isEqualTo(clock.nowUtc());
+            """
+{"example.tld":{"message":"Command completed successfully; action pending",\
+"responseCode":1001}}""");
+    assertThat(loadByEntity(domain).getDeletionTime()).isEqualTo(clock.nowUtc().plusDays(35));
   }
 
   @Test
@@ -132,8 +133,8 @@ public class ConsoleBulkDomainActionTest {
     assertThat(fakeResponse.getStatus()).isEqualTo(SC_OK);
     assertThat(fakeResponse.getPayload())
         .isEqualTo(
-            "{\"example.tld\":{\"message\":\"Command completed"
-                + " successfully\",\"responseCode\":1000}}");
+            """
+            {"example.tld":{"message":"Command completed successfully","responseCode":1000}}""");
     assertThat(loadByEntity(domain).getStatusValues())
         .containsAtLeast(
             StatusValue.SERVER_RENEW_PROHIBITED,
@@ -158,11 +159,11 @@ public class ConsoleBulkDomainActionTest {
     assertThat(fakeResponse.getStatus()).isEqualTo(SC_OK);
     assertThat(fakeResponse.getPayload())
         .isEqualTo(
-            "{\"example.tld\":{\"message\":\"Command completed"
-                + " successfully\",\"responseCode\":1000},\"nonexistent.tld\":{\"message\":\"The"
-                + " domain with given ID (nonexistent.tld) doesn\\u0027t"
-                + " exist.\",\"responseCode\":2303}}");
-    assertThat(loadByEntity(domain).getDeletionTime()).isEqualTo(clock.nowUtc());
+            """
+{"example.tld":{"message":"Command completed successfully; action pending","responseCode":1001},\
+"nonexistent.tld":{"message":"The domain with given ID (nonexistent.tld) doesn\\u0027t exist.",\
+"responseCode":2303}}""");
+    assertThat(loadByEntity(domain).getDeletionTime()).isEqualTo(clock.nowUtc().plusDays(35));
   }
 
   @Test

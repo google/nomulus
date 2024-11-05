@@ -31,18 +31,21 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSetMultimap;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Ordering;
+import com.google.common.collect.Sets;
 import com.google.common.collect.Streams;
 import com.google.common.flogger.FluentLogger;
 import com.google.common.net.InetAddresses;
 import com.google.gson.JsonArray;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.model.EppResource;
+import google.registry.model.adapters.EnumToAttributeAdapter.EppEnum;
 import google.registry.model.contact.Contact;
 import google.registry.model.contact.ContactPhoneNumber;
 import google.registry.model.contact.PostalInfo;
 import google.registry.model.domain.DesignatedContact;
 import google.registry.model.domain.DesignatedContact.Type;
 import google.registry.model.domain.Domain;
+import google.registry.model.domain.rgp.GracePeriodStatus;
 import google.registry.model.eppcommon.Address;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.host.Host;
@@ -175,10 +178,8 @@ public class RdapJsonFormatter {
           + " repoId = '%repoIdValue%' and type is not null group by type)";
 
   /** Map of EPP status values to the RDAP equivalents. */
-  private static final ImmutableMap<StatusValue, RdapStatus> STATUS_TO_RDAP_STATUS_MAP =
-      new ImmutableMap.Builder<StatusValue, RdapStatus>()
-          // RdapStatus.ADD_PERIOD not defined in our system
-          // RdapStatus.AUTO_RENEW_PERIOD not defined in our system
+  private static final ImmutableMap<EppEnum, RdapStatus> STATUS_TO_RDAP_STATUS_MAP =
+      new ImmutableMap.Builder<EppEnum, RdapStatus>()
           .put(StatusValue.CLIENT_DELETE_PROHIBITED, RdapStatus.CLIENT_DELETE_PROHIBITED)
           .put(StatusValue.CLIENT_HOLD, RdapStatus.CLIENT_HOLD)
           .put(StatusValue.CLIENT_RENEW_PROHIBITED, RdapStatus.CLIENT_RENEW_PROHIBITED)
@@ -190,17 +191,21 @@ public class RdapJsonFormatter {
           .put(StatusValue.PENDING_CREATE, RdapStatus.PENDING_CREATE)
           .put(StatusValue.PENDING_DELETE, RdapStatus.PENDING_DELETE)
           // RdapStatus.PENDING_RENEW not defined in our system
-          // RdapStatus.PENDING_RESTORE not defined in our system
           .put(StatusValue.PENDING_TRANSFER, RdapStatus.PENDING_TRANSFER)
           .put(StatusValue.PENDING_UPDATE, RdapStatus.PENDING_UPDATE)
-          // RdapStatus.REDEMPTION_PERIOD not defined in our system
-          // RdapStatus.RENEW_PERIOD not defined in our system
           .put(StatusValue.SERVER_DELETE_PROHIBITED, RdapStatus.SERVER_DELETE_PROHIBITED)
           .put(StatusValue.SERVER_HOLD, RdapStatus.SERVER_HOLD)
           .put(StatusValue.SERVER_RENEW_PROHIBITED, RdapStatus.SERVER_RENEW_PROHIBITED)
           .put(StatusValue.SERVER_TRANSFER_PROHIBITED, RdapStatus.SERVER_TRANSFER_PROHIBITED)
           .put(StatusValue.SERVER_UPDATE_PROHIBITED, RdapStatus.SERVER_UPDATE_PROHIBITED)
-          // RdapStatus.TRANSFER_PERIOD not defined in our system
+          .put(GracePeriodStatus.ADD, RdapStatus.ADD_PERIOD)
+          .put(GracePeriodStatus.AUTO_RENEW, RdapStatus.AUTO_RENEW_PERIOD)
+          .put(GracePeriodStatus.REDEMPTION, RdapStatus.REDEMPTION_PERIOD)
+          .put(GracePeriodStatus.RENEW, RdapStatus.RENEW_PERIOD)
+          .put(GracePeriodStatus.PENDING_DELETE, RdapStatus.PENDING_DELETE)
+          // In practice, PENDING_RESTORE is unused. We just perform the restore immediately
+          .put(GracePeriodStatus.PENDING_RESTORE, RdapStatus.PENDING_RESTORE)
+          .put(GracePeriodStatus.TRANSFER, RdapStatus.TRANSFER_PERIOD)
           .build();
 
   /**
@@ -348,9 +353,11 @@ public class RdapJsonFormatter {
     }
     // RDAP Response Profile 2.6.1: must have at least one status member
     // makeStatusValueList should in theory always contain one of either "active" or "inactive".
+    Set<EppEnum> allStatusValues =
+        Sets.union(domain.getStatusValues(), domain.getGracePeriodStatuses());
     ImmutableSet<RdapStatus> status =
         makeStatusValueList(
-            domain.getStatusValues(),
+            allStatusValues,
             false, // isRedacted
             domain.getDeletionTime().isBefore(getRequestTime()));
     builder.statusBuilder().addAll(status);
@@ -1045,7 +1052,7 @@ public class RdapJsonFormatter {
    * redacted objects.
    */
   private static ImmutableSet<RdapStatus> makeStatusValueList(
-      ImmutableSet<StatusValue> statusValues, boolean isRedacted, boolean isDeleted) {
+      Set<? extends EppEnum> statusValues, boolean isRedacted, boolean isDeleted) {
     Stream<RdapStatus> stream =
         statusValues.stream()
             .map(status -> STATUS_TO_RDAP_STATUS_MAP.getOrDefault(status, RdapStatus.OBSCURED));

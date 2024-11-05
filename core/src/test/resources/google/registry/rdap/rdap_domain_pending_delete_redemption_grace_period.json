@@ -1,0 +1,161 @@
+{
+  "rdapConformance": [
+    "rdap_level_0",
+    "icann_rdap_response_profile_0",
+    "icann_rdap_technical_implementation_guide_0"
+  ],
+  "objectClassName": "domain",
+  "entities": [
+    {
+      "objectClassName": "entity",
+      "handle": "1",
+      "links": [
+        {
+          "href": "https://example.tld/rdap/entity/1",
+          "rel": "self",
+          "type": "application/rdap+json"
+        }
+      ],
+      "publicIds": [
+        {
+          "identifier": "1",
+          "type": "IANA Registrar ID"
+        }
+      ],
+      "remarks": [
+        {
+          "description": [
+            "Summary data only. For complete data, send a specific query for the object."
+          ],
+          "title": "Incomplete Data",
+          "type": "object truncated due to unexplainable reasons"
+        }
+      ],
+      "roles": [
+        "registrar"
+      ],
+      "vcardArray": [
+        "vcard",
+        [
+          [
+            "version",
+            {},
+            "text",
+            "4.0"
+          ],
+          [
+            "fn",
+            {},
+            "text",
+            "The Registrar"
+          ]
+        ]
+      ]
+    },
+    {
+      "objectClassName": "entity",
+      "handle": "",
+      "remarks": [
+        {
+          "description": [
+            "Some of the data in this object has been removed.",
+            "Contact personal data is visible only to the owning registrar."
+          ],
+          "links": [
+            {
+              "href": "https://github.com/google/nomulus/blob/master/docs/rdap.md#authentication",
+              "rel": "alternate",
+              "type": "text/html"
+            }
+          ],
+          "title": "REDACTED FOR PRIVACY",
+          "type": "object redacted due to authorization"
+        },
+        {
+          "description": [
+            "Please query the RDDS service of the Registrar of Record identifies in this output for information on how to contact the Registrant of the queried domain name."
+          ],
+          "title": "EMAIL REDACTED FOR PRIVACY",
+          "type": "object redacted due to authorization"
+        }
+      ],
+      "roles": [
+        "administrative",
+        "technical",
+        "registrant"
+      ],
+      "vcardArray": [
+        "vcard",
+        [
+          [
+            "version",
+            {},
+            "text",
+            "4.0"
+          ],
+          [
+            "fn",
+            {},
+            "text",
+            ""
+          ]
+        ]
+      ]
+    }
+  ],
+  "events": [
+    {
+      "eventAction": "registration",
+      "eventActor": "TheRegistrar",
+      "eventDate": "1999-01-01T00:00:00.000Z"
+    },
+    {
+      "eventAction": "expiration",
+      "eventDate": "294247-01-10T04:00:54.775Z"
+    },
+    {
+      "eventAction": "last update of RDAP database",
+      "eventDate": "2000-01-01T00:00:00.000Z"
+    }
+  ],
+  "handle": "28-LOL",
+  "ldhName": "redemption.lol",
+  "links": [
+    {
+      "href": "https://example.tld/rdap/domain/redemption.lol",
+      "rel": "self",
+      "type": "application/rdap+json"
+    }
+  ],
+  "nameservers": [
+    {
+      "objectClassName": "nameserver",
+      "handle": "8-ROID",
+      "ldhName": "ns1.cat.lol",
+      "links": [
+        {
+          "href": "https://example.tld/rdap/nameserver/ns1.cat.lol",
+          "rel": "self",
+          "type": "application/rdap+json"
+        }
+      ],
+      "remarks": [
+        {
+          "description": [
+            "Summary data only. For complete data, send a specific query for the object."
+          ],
+          "title": "Incomplete Data",
+          "type": "object truncated due to unexplainable reasons"
+        }
+      ]
+    }
+  ],
+  "secureDNS": {
+    "delegationSigned": false,
+    "zoneSigned": true
+  },
+  "status": [
+    "pending delete",
+    "redemption period"
+  ]
+}
