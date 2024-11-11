@@ -239,6 +239,12 @@ public final class ConsoleModule {
   }
 
   @Provides
+  @Parameter("bulkDomainAction")
+  public static String provideBulkDomainAction(HttpServletRequest req) {
+    return extractRequiredParameter(req, "bulkDomainAction");
+  }
+
+  @Provides
   @Parameter("eppPasswordChangeRequest")
   public static Optional<EppPasswordData> provideEppPasswordChangeRequest(
       Gson gson, @OptionalJsonPayload Optional<JsonElement> payload) {
