@@ -105,7 +105,7 @@ public final class ExtensionManager {
   }
 
   private static final ImmutableSet<EppRequestSource> ALLOWED_METADATA_EPP_REQUEST_SOURCES =
-      ImmutableSet.of(EppRequestSource.TOOL, EppRequestSource.BACKEND);
+      ImmutableSet.of(EppRequestSource.BACKEND, EppRequestSource.CONSOLE, EppRequestSource.TOOL);
 
   private void checkForRestrictedExtensions(
       ImmutableSet<Class<? extends CommandExtension>> suppliedExtensions)

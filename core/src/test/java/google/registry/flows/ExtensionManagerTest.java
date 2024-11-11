@@ -121,7 +121,7 @@ class ExtensionManagerTest {
   void testMetadataExtension_forbiddenWhenNotToolSource() {
     ExtensionManager manager =
         new TestInstanceBuilder()
-            .setEppRequestSource(EppRequestSource.CONSOLE)
+            .setEppRequestSource(EppRequestSource.TLS)
             .setDeclaredUris()
             .setSuppliedExtensions(MetadataExtension.class)
             .build();
