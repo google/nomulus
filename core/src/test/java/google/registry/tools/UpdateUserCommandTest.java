@@ -16,6 +16,7 @@ package google.registry.tools;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.testing.DatabaseHelper.loadExistingUser;
+import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.DatabaseHelper.putInDb;
 import static org.junit.Assert.assertThrows;
 
@@ -99,6 +100,43 @@ public class UpdateUserCommandTest extends CommandTestCase<UpdateUserCommand> {
   }
 
   @Test
+  void testSuccess_removePassword() throws Exception {
+    persistResource(
+        loadExistingUser("user@example.test")
+            .asBuilder()
+            .setUserRoles(
+                new UserRoles.Builder()
+                    .setRegistrarRoles(ImmutableMap.of("TheRegistrar", RegistrarRole.TECH_CONTACT))
+                    .build())
+            .setRegistryLockEmailAddress("registrylock@example.test")
+            .setRegistryLockPassword("password")
+            .build());
+    assertThat(loadExistingUser("user@example.test").hasRegistryLockPassword()).isTrue();
+    runCommandForced("--email", "user@example.test", "--remove_registry_lock_password");
+    assertThat(loadExistingUser("user@example.test").hasRegistryLockPassword()).isFalse();
+  }
+
+  @Test
+  void testSuccess_setsPassword() throws Exception {
+    persistResource(
+        loadExistingUser("user@example.test")
+            .asBuilder()
+            .setUserRoles(
+                new UserRoles.Builder()
+                    .setRegistrarRoles(ImmutableMap.of("TheRegistrar", RegistrarRole.TECH_CONTACT))
+                    .build())
+            .setRegistryLockEmailAddress("registrylock@example.test")
+            .setRegistryLockPassword("password")
+            .build());
+    assertThat(loadExistingUser("user@example.test").verifyRegistryLockPassword("password"))
+        .isTrue();
+    runCommandForced("--email", "user@example.test", "--registry_lock_password", "foobar");
+    assertThat(loadExistingUser("user@example.test").verifyRegistryLockPassword("password"))
+        .isFalse();
+    assertThat(loadExistingUser("user@example.test").verifyRegistryLockPassword("foobar")).isTrue();
+  }
+
+  @Test
   void testFailure_doesntExist() {
     assertThat(
             assertThrows(
@@ -121,5 +159,71 @@ public class UpdateUserCommandTest extends CommandTestCase<UpdateUserCommand> {
                         "this is not valid")))
         .hasMessageThat()
         .isEqualTo("Provided email this is not valid is not a valid email address");
+  }
+
+  @Test
+  void testFailure_removePassword_noEmail() {
+    assertThat(
+            assertThrows(
+                IllegalArgumentException.class,
+                () ->
+                    runCommandForced(
+                        "--email", "user@example.test", "--remove_registry_lock_password")))
+        .hasMessageThat()
+        .isEqualTo(
+            "Cannot set/remove registry lock password on a user without a registry lock email"
+                + " address");
+  }
+
+  @Test
+  void testFailure_setPassword_noEmail() {
+    assertThat(
+            assertThrows(
+                IllegalArgumentException.class,
+                () ->
+                    runCommandForced(
+                        "--email", "user@example.test", "--registry_lock_password", "foobar")))
+        .hasMessageThat()
+        .isEqualTo(
+            "Cannot set/remove registry lock password on a user without a registry lock email"
+                + " address");
+  }
+
+  @Test
+  void testFailure_setPassword_andRemove() {
+    persistResource(
+        loadExistingUser("user@example.test")
+            .asBuilder()
+            .setRegistryLockEmailAddress("registrylock@example.test")
+            .build());
+    assertThat(
+            assertThrows(
+                IllegalArgumentException.class,
+                () ->
+                    runCommandForced(
+                        "--email",
+                        "user@example.test",
+                        "--registry_lock_password",
+                        "foobar",
+                        "--remove_registry_lock_password")))
+        .hasMessageThat()
+        .isEqualTo("Cannot both remove and set a registry lock password");
+  }
+
+  @Test
+  void testFailure_setPassword_empty() {
+    persistResource(
+        loadExistingUser("user@example.test")
+            .asBuilder()
+            .setRegistryLockEmailAddress("registrylock@example.test")
+            .build());
+    assertThat(
+            assertThrows(
+                IllegalArgumentException.class,
+                () ->
+                    runCommandForced(
+                        "--email", "user@example.test", "--registry_lock_password", "")))
+        .hasMessageThat()
+        .isEqualTo("Non-null password cannot be empty");
   }
 }
