@@ -86,6 +86,8 @@ public abstract class CreateOrUpdateUserCommand extends ConfirmingCommand {
         (user == null) ? new User.Builder().setEmailAddress(email) : user.asBuilder();
     builder.setUserRoles(userRolesBuilder.build());
 
+    updateBuilderIfNecessary(builder, user);
+
     // An empty registryLockEmailAddress indicates that we should remove the field
     if (registryLockEmailAddress != null) {
       if (registryLockEmailAddress.isEmpty()) {
@@ -96,4 +98,6 @@ public abstract class CreateOrUpdateUserCommand extends ConfirmingCommand {
     }
     tm().put(builder.build());
   }
+
+  protected void updateBuilderIfNecessary(User.Builder builder, @Nullable User user) {}
 }
