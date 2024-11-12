@@ -14,9 +14,11 @@
 
 package google.registry.tools;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.PreconditionsUtils.checkArgumentPresent;
 
+import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import google.registry.model.console.User;
 import google.registry.persistence.VKey;
@@ -25,9 +27,20 @@ import google.registry.persistence.VKey;
 @Parameters(separators = " =", commandDescription = "Update a user account")
 public class UpdateUserCommand extends CreateOrUpdateUserCommand {
 
+  @Parameter(names = "--remove_registry_lock_password", description = "Removes the registry ")
+  private boolean removeRegistryLockPassword;
+
   @Override
   User getExistingUser(String email) {
-    return checkArgumentPresent(
-        tm().loadByKeyIfPresent(VKey.create(User.class, email)), "User %s not found", email);
+    User existingUser =
+        checkArgumentPresent(
+            tm().loadByKeyIfPresent(VKey.create(User.class, email)), "User %s not found", email);
+    if (removeRegistryLockPassword) {
+      checkArgument(
+          existingUser.getRegistryLockEmailAddress().isPresent(),
+          "Cannot remove registry lock password on a user without a registry lock email address");
+      return existingUser.asBuilder().removeRegistryLockPassword().build();
+    }
+    return existingUser;
   }
 }

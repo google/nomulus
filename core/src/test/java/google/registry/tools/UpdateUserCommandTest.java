@@ -16,6 +16,7 @@ package google.registry.tools;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.testing.DatabaseHelper.loadExistingUser;
+import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.DatabaseHelper.putInDb;
 import static org.junit.Assert.assertThrows;
 
@@ -99,6 +100,19 @@ public class UpdateUserCommandTest extends CommandTestCase<UpdateUserCommand> {
   }
 
   @Test
+  void testSuccess_removePassword() throws Exception {
+    persistResource(
+        loadExistingUser("user@example.test")
+            .asBuilder()
+            .setRegistryLockEmailAddress("registrylock@example.test")
+            .setRegistryLockPassword("password")
+            .build());
+    assertThat(loadExistingUser("user@example.test").hasRegistryLockPassword()).isTrue();
+    runCommandForced("--email", "user@example.test", "--remove_registry_lock_password");
+    assertThat(loadExistingUser("user@example.test").hasRegistryLockPassword()).isFalse();
+  }
+
+  @Test
   void testFailure_doesntExist() {
     assertThat(
             assertThrows(
@@ -121,5 +135,18 @@ public class UpdateUserCommandTest extends CommandTestCase<UpdateUserCommand> {
                         "this is not valid")))
         .hasMessageThat()
         .isEqualTo("Provided email this is not valid is not a valid email address");
+  }
+
+  @Test
+  void testFailure_removePassword_notEnabled() {
+    assertThat(
+            assertThrows(
+                IllegalArgumentException.class,
+                () ->
+                    runCommandForced(
+                        "--email", "user@example.test", "--remove_registry_lock_password")))
+        .hasMessageThat()
+        .isEqualTo(
+            "Cannot remove registry lock password on a user without a registry lock email address");
   }
 }
