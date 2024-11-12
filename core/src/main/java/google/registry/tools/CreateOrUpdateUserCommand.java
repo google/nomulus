@@ -14,6 +14,7 @@
 
 package google.registry.tools;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 
@@ -40,6 +41,15 @@ public abstract class CreateOrUpdateUserCommand extends ConfirmingCommand {
           "Optional external email address to use for registry lock confirmation emails, or empty"
               + " to remove the field.")
   private String registryLockEmailAddress;
+
+  @Nullable
+  @Parameter(
+      names = "--registry_lock_password",
+      description =
+          "Sets the registry lock password for this user, or removes it (allowing the user to"
+              + " re-set it). Do not set the password explicitly unless in exceptional"
+              + " circumstances.")
+  private String registryLockPassword;
 
   @Nullable
   @Parameter(
@@ -92,6 +102,25 @@ public abstract class CreateOrUpdateUserCommand extends ConfirmingCommand {
         builder.setRegistryLockEmailAddress(null);
       } else {
         builder.setRegistryLockEmailAddress(registryLockEmailAddress);
+      }
+    }
+    // Ditto the registry lock password
+    if (registryLockPassword != null) {
+      if (registryLockEmailAddress != null) {
+        // Edge case, make sure we're not removing an email and setting a password at the same time
+        checkArgument(
+            !registryLockEmailAddress.isEmpty(),
+            "Cannot set/remove registry lock password on a user without a registry lock email"
+                + " address");
+      } else {
+        checkArgument(
+            user != null && user.getRegistryLockEmailAddress().isPresent(),
+            "Cannot set/remove registry lock password on a user without a registry lock email"
+                + " address");
+      }
+      builder.removeRegistryLockPassword();
+      if (!registryLockPassword.isEmpty()) {
+        builder.setRegistryLockPassword(registryLockPassword);
       }
     }
     tm().put(builder.build());

@@ -36,9 +36,9 @@ import javax.annotation.Nullable;
 import javax.inject.Inject;
 
 /**
- * An authenticam mechanism that verifies the OIDC token.
+ * An authentication mechanism that verifies the OIDC token.
  *
- * <p>Currently, two flavors are supported: one that checkes for the OIDC token as a regular bearer
+ * <p>Currently, two flavors are supported: one that checks for the OIDC token as a regular bearer
  * token, and another that checks for the OIDC token passed by IAP. In both cases, the {@link
  * AuthResult} with the highest {@link AuthLevel} possible is returned. So, if the email address for
  * which the token is minted exists both as a {@link User} and as a service account, the returned

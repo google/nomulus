@@ -91,10 +91,16 @@ public class CreateUserCommandTest extends CommandTestCase<CreateUserCommand> {
     runCommandForced(
         "--email",
         "user@example.test",
+        "--registrar_roles",
+        "TheRegistrar=PRIMARY_CONTACT",
         "--registry_lock_email_address",
-        "registrylockemail@otherexample.test");
-    assertThat(loadExistingUser("user@example.test").getRegistryLockEmailAddress())
-        .hasValue("registrylockemail@otherexample.test");
+        "registrylockemail@otherexample.test",
+        "--registry_lock_password",
+        "password");
+    User user = loadExistingUser("user@example.test");
+    assertThat(user.getRegistryLockEmailAddress()).hasValue("registrylockemail@otherexample.test");
+    assertThat(user.verifyRegistryLockPassword("password")).isTrue();
+    assertThat(user.verifyRegistryLockPassword("foobar")).isFalse();
   }
 
   @Test
@@ -173,5 +179,19 @@ public class CreateUserCommandTest extends CommandTestCase<CreateUserCommand> {
                         "this is not valid")))
         .hasMessageThat()
         .isEqualTo("Provided email this is not valid is not a valid email address");
+  }
+
+  @Test
+  void testFailure_registryLockPassword_withoutEmail() {
+    assertThat(
+            assertThrows(
+                IllegalArgumentException.class,
+                () ->
+                    runCommandForced(
+                        "--email", "user@example.test", "--registry_lock_password", "password")))
+        .hasMessageThat()
+        .isEqualTo(
+            "Cannot set/remove registry lock password on a user without a registry lock email"
+                + " address");
   }
 }
