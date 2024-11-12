@@ -56,7 +56,7 @@
     </rdeHeader:count>
     </rdeHeader:header>
 
-    <!-- Domian: example1.test -->
+    <!-- Domain: example1.test -->
     <rdeDom:domain>
       <rdeDom:name>example1.test</rdeDom:name>
       <rdeDom:roid>Dexample1-TEST</rdeDom:roid>
@@ -74,7 +74,7 @@
       <rdeDom:exDate>2015-04-03T22:00:00.0Z</rdeDom:exDate>
     </rdeDom:domain>
 
-    <!-- Domian: example2.test -->
+    <!-- Domain: example2.test -->
     <rdeDom:domain>
       <rdeDom:name>example2.test</rdeDom:name>
       <rdeDom:roid>Dexample2-TEST</rdeDom:roid>
