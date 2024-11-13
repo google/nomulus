@@ -136,10 +136,10 @@ public class ConsoleUsersAction extends ConsoleApiAction {
   }
 
   private void runDeleteInTransaction() throws IOException {
-    if (userDeleteData.isEmpty() || isNullOrEmpty(userDeleteData.get().userEmail)) {
+    if (userDeleteData.isEmpty() || isNullOrEmpty(userDeleteData.get().emailAddress)) {
       throw new BadRequestException("Missing user data param");
     }
-    String email = userDeleteData.get().userEmail;
+    String email = userDeleteData.get().emailAddress;
     User userToDelete =
         tm().loadByKeyIfPresent(VKey.create(User.class, email))
             .orElseThrow(
@@ -230,5 +230,5 @@ public class ConsoleUsersAction extends ConsoleApiAction {
                     .collect(toImmutableList()));
   }
 
-  public record UserDeleteData(@Expose String userEmail) {}
+  public record UserDeleteData(@Expose String emailAddress) {}
 }

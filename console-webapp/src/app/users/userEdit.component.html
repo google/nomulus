@@ -1,7 +1,7 @@
 <div class="console-app__user-details">
   @if(isNewUser) {
   <h1 class="mat-headline-4">
-    {{ userDetails.emailAddress + " succesfully created" }}
+    {{ userDetails.emailAddress + " successfully created" }}
   </h1>
   } @else {
   <h1 class="mat-headline-4">User details</h1>
@@ -27,6 +27,11 @@
       </button>
     </div>
   </div>
+  <div *ngIf="isNewUser" class="console-app__user-details-save-password">
+    <mat-icon>priority_high</mat-icon>Please save the password. For your
+    security, we do not store passwords in a recoverable format.
+  </div>
+
   <p *ngIf="isLoading">
     <mat-progress-bar mode="query"></mat-progress-bar>
   </p>

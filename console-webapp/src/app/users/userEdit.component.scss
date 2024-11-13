@@ -25,6 +25,15 @@
         background: transparent;
       }
     }
+    &-save-password {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 15px 10px;
+      margin-bottom: 20px;
+      border: 1px solid #ddd;
+      border-radius: 10px;
+    }
     max-width: 616px;
   }
 }
