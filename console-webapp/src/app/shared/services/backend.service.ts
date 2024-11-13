@@ -172,11 +172,17 @@ export class BackendService {
       .pipe(catchError((err) => this.errorCatcher<User>(err)));
   }
 
-  deleteUser(registrarId: string, emailAddress: string): Observable<any> {
+  deleteUser(registrarId: string, user: User): Observable<any> {
     return this.http
       .delete<any>(`/console-api/users?registrarId=${registrarId}`, {
-        body: JSON.stringify({ emailAddress }),
+        body: JSON.stringify(user),
       })
+      .pipe(catchError((err) => this.errorCatcher<any>(err)));
+  }
+
+  updateUser(registrarId: string, updatedUser: User): Observable<any> {
+    return this.http
+      .put<User>(`/console-api/users?registrarId=${registrarId}`, updatedUser)
       .pipe(catchError((err) => this.errorCatcher<any>(err)));
   }
 

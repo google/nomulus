@@ -36,7 +36,7 @@ import google.registry.ui.server.SendEmailUtils;
 import google.registry.ui.server.console.ConsoleEppPasswordAction.EppPasswordData;
 import google.registry.ui.server.console.ConsoleOteAction.OteCreateData;
 import google.registry.ui.server.console.ConsoleRegistryLockAction.ConsoleRegistryLockPostInput;
-import google.registry.ui.server.console.ConsoleUsersAction.UserDeleteData;
+import google.registry.ui.server.console.ConsoleUsersAction.UserData;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.Optional;
 import org.joda.time.DateTime;
@@ -247,10 +247,10 @@ public final class ConsoleModule {
   }
 
   @Provides
-  @Parameter("userDeleteData")
-  public static Optional<UserDeleteData> provideUserDeleteData(
+  @Parameter("userData")
+  public static Optional<UserData> provideUserData(
       Gson gson, @OptionalJsonPayload Optional<JsonElement> payload) {
-    return payload.map(s -> gson.fromJson(s, UserDeleteData.class));
+    return payload.map(s -> gson.fromJson(s, UserData.class));
   }
 
   @Provides

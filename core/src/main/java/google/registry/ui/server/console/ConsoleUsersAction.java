@@ -21,6 +21,7 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import static google.registry.request.Action.Method.DELETE;
 import static google.registry.request.Action.Method.GET;
 import static google.registry.request.Action.Method.POST;
+import static google.registry.request.Action.Method.PUT;
 import static jakarta.servlet.http.HttpServletResponse.SC_CREATED;
 import static jakarta.servlet.http.HttpServletResponse.SC_FORBIDDEN;
 import static jakarta.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
@@ -35,6 +36,7 @@ import com.google.gson.Gson;
 import com.google.gson.annotations.Expose;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.model.console.ConsolePermission;
+import google.registry.model.console.RegistrarRole;
 import google.registry.model.console.User;
 import google.registry.model.console.UserRoles;
 import google.registry.persistence.VKey;
@@ -50,6 +52,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Named;
 
@@ -57,7 +60,7 @@ import javax.inject.Named;
     service = Action.GaeService.DEFAULT,
     gkeService = GkeService.CONSOLE,
     path = ConsoleUsersAction.PATH,
-    method = {GET, POST, DELETE},
+    method = {GET, POST, DELETE, PUT},
     auth = Auth.AUTH_PUBLIC_LOGGED_IN)
 public class ConsoleUsersAction extends ConsoleApiAction {
   static final String PATH = "/console-api/users";
@@ -68,7 +71,7 @@ public class ConsoleUsersAction extends ConsoleApiAction {
   private final String registrarId;
   private final Directory directory;
   private final StringGenerator passwordGenerator;
-  private final Optional<UserDeleteData> userDeleteData;
+  private final Optional<UserData> userData;
   private final Optional<String> maybeGroupEmailAddress;
   private final IamClient iamClient;
   private final String gSuiteDomainName;
@@ -82,14 +85,14 @@ public class ConsoleUsersAction extends ConsoleApiAction {
       @Config("gSuiteDomainName") String gSuiteDomainName,
       @Config("gSuiteConsoleUserGroupEmailAddress") Optional<String> maybeGroupEmailAddress,
       @Named("base58StringGenerator") StringGenerator passwordGenerator,
-      @Parameter("userDeleteData") Optional<UserDeleteData> userDeleteData,
+      @Parameter("userData") Optional<UserData> userData,
       @Parameter("registrarId") String registrarId) {
     super(consoleApiParams);
     this.gson = gson;
     this.registrarId = registrarId;
     this.directory = directory;
     this.passwordGenerator = passwordGenerator;
-    this.userDeleteData = userDeleteData;
+    this.userData = userData;
     this.maybeGroupEmailAddress = maybeGroupEmailAddress;
     this.iamClient = iamClient;
     this.gSuiteDomainName = gSuiteDomainName;
@@ -107,17 +110,27 @@ public class ConsoleUsersAction extends ConsoleApiAction {
   }
 
   @Override
+  protected void putHandler(User user) {
+    // Temporary flag while testing
+    if (user.getUserRoles().isAdmin()) {
+      checkPermission(user, registrarId, ConsolePermission.MANAGE_USERS);
+      tm().transact(() -> runUpdateInTransaction());
+    } else {
+      consoleApiParams.response().setStatus(SC_FORBIDDEN);
+    }
+  }
+
+  @Override
   protected void getHandler(User user) {
     checkPermission(user, registrarId, ConsolePermission.MANAGE_USERS);
-    List<ImmutableMap> users =
+    List<UserData> users =
         getAllRegistrarUsers(registrarId).stream()
             .map(
                 u ->
-                    ImmutableMap.of(
-                        "emailAddress",
+                    new UserData(
                         u.getEmailAddress(),
-                        "role",
-                        u.getUserRoles().getRegistrarRoles().get(registrarId)))
+                        u.getUserRoles().getRegistrarRoles().get(registrarId).toString(),
+                        null))
             .collect(Collectors.toList());
 
     consoleApiParams.response().setPayload(gson.toJson(users));
@@ -136,22 +149,10 @@ public class ConsoleUsersAction extends ConsoleApiAction {
   }
 
   private void runDeleteInTransaction() throws IOException {
-    if (userDeleteData.isEmpty() || isNullOrEmpty(userDeleteData.get().userEmail)) {
-      throw new BadRequestException("Missing user data param");
-    }
-    String email = userDeleteData.get().userEmail;
-    User userToDelete =
-        tm().loadByKeyIfPresent(VKey.create(User.class, email))
-            .orElseThrow(
-                () -> new BadRequestException(String.format("User %s doesn't exist", email)));
-
-    if (!userToDelete.getUserRoles().getRegistrarRoles().containsKey(registrarId)) {
-      setFailedResponse(
-          String.format("Can't delete user not associated with registrarId %s", registrarId),
-          SC_FORBIDDEN);
+    if (!isModifyingRequestValid()) {
       return;
     }
-
+    String email = this.userData.get().emailAddress;
     try {
       directory.users().delete(email).execute();
     } catch (IOException e) {
@@ -213,13 +214,50 @@ public class ConsoleUsersAction extends ConsoleApiAction {
         .response()
         .setPayload(
             gson.toJson(
-                ImmutableMap.of(
-                    "password",
-                    newUser.getPassword(),
-                    "emailAddress",
-                    newUser.getPrimaryEmail(),
-                    "role",
-                    ACCOUNT_MANAGER)));
+                new UserData(
+                    newUser.getPrimaryEmail(), ACCOUNT_MANAGER.toString(), newUser.getPassword())));
+  }
+
+  private void runUpdateInTransaction() {
+    if (!isModifyingRequestValid()) {
+      return;
+    }
+
+    UserData userData = this.userData.get();
+    UserRoles userRoles =
+        new UserRoles.Builder()
+            .setRegistrarRoles(ImmutableMap.of(registrarId, RegistrarRole.valueOf(userData.role)))
+            .build();
+    User updatedUser =
+        tm().loadByKeyIfPresent(VKey.create(User.class, userData.emailAddress))
+            .get()
+            .asBuilder()
+            .setUserRoles(userRoles)
+            .build();
+
+    tm().put(updatedUser);
+    consoleApiParams.response().setStatus(SC_OK);
+  }
+
+  private boolean isModifyingRequestValid() {
+    if (userData.isEmpty()
+        || isNullOrEmpty(userData.get().emailAddress)
+        || isNullOrEmpty(userData.get().role)) {
+      throw new BadRequestException("User data is missing or incomplete");
+    }
+    String email = userData.get().emailAddress;
+    User userToUpdate =
+        tm().loadByKeyIfPresent(VKey.create(User.class, email))
+            .orElseThrow(
+                () -> new BadRequestException(String.format("User %s doesn't exist", email)));
+
+    if (!userToUpdate.getUserRoles().getRegistrarRoles().containsKey(registrarId)) {
+      setFailedResponse(
+          String.format("Can't update user not associated with registrarId %s", registrarId),
+          SC_FORBIDDEN);
+      return false;
+    }
+    return true;
   }
 
   private ImmutableList<User> getAllRegistrarUsers(String registrarId) {
@@ -230,5 +268,6 @@ public class ConsoleUsersAction extends ConsoleApiAction {
                     .collect(toImmutableList()));
   }
 
-  public record UserDeleteData(@Expose String userEmail) {}
+  public record UserData(
+      @Expose String emailAddress, @Expose String role, @Expose @Nullable String password) {}
 }

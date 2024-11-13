@@ -1,32 +1,77 @@
 <div class="console-app__user-details">
-  @if(isNewUser) {
+  @if(isEditing) {
+  <h1 class="mat-headline-4">Editing {{ userDetails().emailAddress }}</h1>
+  <mat-divider></mat-divider>
+  <div class="console-app__user-details-controls">
+    <button
+      mat-icon-button
+      aria-label="Back to view user"
+      (click)="isEditing = false"
+    >
+      <mat-icon>arrow_back</mat-icon>
+    </button>
+  </div>
+  <form (ngSubmit)="saveEdit()">
+    <p>
+      <mat-form-field appearance="outline">
+        <mat-label
+          >User Role:
+          <mat-icon
+            matTooltip="Viewer role doesn't allow making updates; Editor role allows updates, like Contacts delete or SSL certificate change"
+            >help_outline</mat-icon
+          ></mat-label
+        >
+        <mat-select [(ngModel)]="userRole" name="userRole">
+          <mat-option value="PRIMARY_CONTACT">Editor</mat-option>
+          <mat-option value="ACCOUNT_MANAGER">Viewer</mat-option>
+        </mat-select>
+      </mat-form-field>
+    </p>
+    <button
+      mat-flat-button
+      color="primary"
+      aria-label="Save user"
+      type="submit"
+    >
+      Save
+    </button>
+  </form>
+  } @else { @if(isNewUser) {
   <h1 class="mat-headline-4">
-    {{ userDetails.emailAddress + " succesfully created" }}
+    {{ userDetails().emailAddress + " successfully created" }}
   </h1>
   } @else {
   <h1 class="mat-headline-4">User details</h1>
-  }
   <mat-divider></mat-divider>
-  <div>
-    <div class="console-app__user-details-controls">
-      <button
-        mat-icon-button
-        aria-label="Back to users list"
-        (click)="goBack()"
-      >
-        <mat-icon>arrow_back</mat-icon>
-      </button>
-      <div class="spacer"></div>
-      <button
-        mat-icon-button
-        aria-label="Delete User"
-        (click)="deleteUser()"
-        [disabled]="isLoading"
-      >
-        <mat-icon>delete</mat-icon>
-      </button>
-    </div>
+  <div class="console-app__user-details-controls">
+    <button mat-icon-button aria-label="Back to users list" (click)="goBack()">
+      <mat-icon>arrow_back</mat-icon>
+    </button>
+    <div class="spacer"></div>
+    <button
+      mat-flat-button
+      color="primary"
+      aria-label="Edit User"
+      (click)="userRole = userDetails().role; isEditing = true"
+    >
+      <mat-icon>edit</mat-icon>
+      Edit
+    </button>
+    <button
+      mat-icon-button
+      aria-label="Delete User"
+      (click)="deleteUser()"
+      [disabled]="isLoading"
+    >
+      <mat-icon>delete</mat-icon>
+    </button>
   </div>
+  <div *ngIf="isNewUser" class="console-app__user-details-save-password">
+    <mat-icon>priority_high</mat-icon>
+    Please save the password. For your security, we do not store passwords in a
+    recoverable format.
+  </div>
+
   <p *ngIf="isLoading">
     <mat-progress-bar mode="query"></mat-progress-bar>
   </p>
@@ -41,17 +86,17 @@
         <mat-list-item role="listitem">
           <span class="console-app__list-key">User email</span>
           <span class="console-app__list-value">{{
-            userDetails.emailAddress
+            userDetails().emailAddress
           }}</span>
         </mat-list-item>
         <mat-divider></mat-divider>
         <mat-list-item role="listitem">
           <span class="console-app__list-key">User role</span>
           <span class="console-app__list-value">{{
-            roleToDescription(userDetails.role)
+            roleToDescription(userDetails().role)
           }}</span>
         </mat-list-item>
-        @if (userDetails.password) {
+        @if (userDetails().password) {
         <mat-divider></mat-divider>
         <mat-list-item role="listitem">
           <span class="console-app__list-key">Password</span>
@@ -60,7 +105,7 @@
           >
             <input
               [type]="isPasswordVisible ? 'text' : 'password'"
-              [value]="userDetails.password"
+              [value]="userDetails().password"
               disabled
             />
             <button
@@ -76,4 +121,5 @@
       </mat-list>
     </mat-card-content>
   </mat-card>
+  }}
 </div>

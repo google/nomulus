@@ -13,13 +13,13 @@
 // limitations under the License.
 
 import { Injectable, signal } from '@angular/core';
-import { tap } from 'rxjs';
+import { switchMap, tap } from 'rxjs';
 import { RegistrarService } from '../registrar/registrar.service';
 import { BackendService } from '../shared/services/backend.service';
 
 export const roleToDescription = (role: string) => {
   if (!role) return 'N/A';
-  else if (role.toLowerCase().startsWith('account_manager')) {
+  else if (role === 'ACCOUNT_MANAGER') {
     return 'Viewer';
   }
   return 'Editor';
@@ -68,9 +68,15 @@ export class UsersService {
       );
   }
 
-  deleteUser(emailAddress: string) {
+  deleteUser(user: User) {
     return this.backendService
-      .deleteUser(this.registrarService.registrarId(), emailAddress)
-      .pipe(tap((_) => this.fetchUsers()));
+      .deleteUser(this.registrarService.registrarId(), user)
+      .pipe(switchMap((_) => this.fetchUsers()));
+  }
+
+  updateUser(updatedUser: User) {
+    return this.backendService
+      .updateUser(this.registrarService.registrarId(), updatedUser)
+      .pipe(switchMap((_) => this.fetchUsers()));
   }
 }

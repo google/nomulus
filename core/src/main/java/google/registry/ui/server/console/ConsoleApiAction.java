@@ -20,6 +20,7 @@ import static google.registry.request.Action.Method.DELETE;
 import static google.registry.request.Action.Method.GET;
 import static google.registry.request.Action.Method.HEAD;
 import static google.registry.request.Action.Method.POST;
+import static google.registry.request.Action.Method.PUT;
 import static jakarta.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static jakarta.servlet.http.HttpServletResponse.SC_FORBIDDEN;
 import static jakarta.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
@@ -87,6 +88,8 @@ public abstract class ConsoleApiAction implements Runnable {
         if (verifyXSRF(user)) {
           if (requestMethod.equals(DELETE.toString())) {
             deleteHandler(user);
+          } else if (requestMethod.equals(PUT.toString())) {
+            putHandler(user);
           } else {
             postHandler(user);
           }
@@ -115,6 +118,10 @@ public abstract class ConsoleApiAction implements Runnable {
 
   protected void postHandler(User user) {
     throw new UnsupportedOperationException("Console API POST handler not implemented");
+  }
+
+  protected void putHandler(User user) {
+    throw new UnsupportedOperationException("Console API PUT handler not implemented");
   }
 
   protected void getHandler(User user) {

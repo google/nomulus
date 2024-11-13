@@ -34,6 +34,7 @@ public @interface Action {
     GET,
     HEAD,
     POST,
+    PUT,
     DELETE
   }
 

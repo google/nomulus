@@ -44,7 +44,7 @@ import google.registry.testing.DatabaseHelper;
 import google.registry.testing.DeterministicStringGenerator;
 import google.registry.testing.FakeResponse;
 import google.registry.tools.IamClient;
-import google.registry.ui.server.console.ConsoleUsersAction.UserDeleteData;
+import google.registry.ui.server.console.ConsoleUsersAction.UserData;
 import google.registry.util.StringGenerator;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -176,7 +176,7 @@ class ConsoleUsersActionTest {
     assertThat(response.getStatus()).isEqualTo(SC_CREATED);
     assertThat(response.getPayload())
         .contains(
-            "{\"password\":\"abcdefghijklmnop\",\"emailAddress\":\"TheRegistrar-user1@email.com\",\"role\":\"ACCOUNT_MANAGER\"}");
+            "{\"emailAddress\":\"TheRegistrar-user1@email.com\",\"role\":\"ACCOUNT_MANAGER\",\"password\":\"abcdefghijklmnop\"}");
   }
 
   @Test
@@ -192,14 +192,15 @@ class ConsoleUsersActionTest {
         createAction(
             Optional.of(ConsoleApiParamsUtils.createFake(authResult)),
             Optional.of("DELETE"),
-            Optional.of(new UserDeleteData("test3@test.com")));
+            Optional.of(
+                new UserData("test3@test.com", RegistrarRole.ACCOUNT_MANAGER.toString(), null)));
     when(directory.users()).thenReturn(users);
     when(users.delete(any(String.class))).thenReturn(delete);
     action.run();
     var response = ((FakeResponse) consoleApiParams.response());
     assertThat(response.getStatus()).isEqualTo(SC_FORBIDDEN);
     assertThat(response.getPayload())
-        .contains("Can't delete user not associated with registrarId TheRegistrar");
+        .contains("Can't update user not associated with registrarId TheRegistrar");
   }
 
   @Test
@@ -210,7 +211,8 @@ class ConsoleUsersActionTest {
         createAction(
             Optional.of(ConsoleApiParamsUtils.createFake(authResult)),
             Optional.of("DELETE"),
-            Optional.of(new UserDeleteData("email-1@email.com")));
+            Optional.of(
+                new UserData("email-1@email.com", RegistrarRole.ACCOUNT_MANAGER.toString(), null)));
     when(directory.users()).thenReturn(users);
     when(users.delete(any(String.class))).thenReturn(delete);
     action.run();
@@ -232,7 +234,8 @@ class ConsoleUsersActionTest {
         createAction(
             Optional.of(ConsoleApiParamsUtils.createFake(authResult)),
             Optional.of("DELETE"),
-            Optional.of(new UserDeleteData("test2@test.com")));
+            Optional.of(
+                new UserData("test2@test.com", RegistrarRole.ACCOUNT_MANAGER.toString(), null)));
     action.cloudTasksUtils = cloudTasksHelper.getTestCloudTasksUtils();
     when(directory.users()).thenReturn(users);
     when(users.delete(any(String.class))).thenReturn(delete);
@@ -282,10 +285,66 @@ class ConsoleUsersActionTest {
     assertThat(response.getPayload()).contains("Total users amount per registrar is limited to 4");
   }
 
+  @Test
+  void testSuccess_updatesUserRole() throws IOException {
+    User user1 = DatabaseHelper.loadByKey(VKey.create(User.class, "test1@test.com"));
+    AuthResult authResult =
+        AuthResult.createUser(
+            user1
+                .asBuilder()
+                .setUserRoles(user1.getUserRoles().asBuilder().setIsAdmin(true).build())
+                .build());
+
+    assertThat(
+            DatabaseHelper.loadByKey(VKey.create(User.class, "test2@test.com"))
+                .getUserRoles()
+                .getRegistrarRoles()
+                .get("TheRegistrar"))
+        .isEqualTo(RegistrarRole.PRIMARY_CONTACT);
+    ConsoleUsersAction action =
+        createAction(
+            Optional.of(ConsoleApiParamsUtils.createFake(authResult)),
+            Optional.of("PUT"),
+            Optional.of(
+                new UserData("test2@test.com", RegistrarRole.ACCOUNT_MANAGER.toString(), null)));
+    action.cloudTasksUtils = cloudTasksHelper.getTestCloudTasksUtils();
+    action.run();
+    var response = ((FakeResponse) consoleApiParams.response());
+    assertThat(response.getStatus()).isEqualTo(SC_OK);
+    assertThat(
+            DatabaseHelper.loadByKey(VKey.create(User.class, "test2@test.com"))
+                .getUserRoles()
+                .getRegistrarRoles()
+                .get("TheRegistrar"))
+        .isEqualTo(RegistrarRole.ACCOUNT_MANAGER);
+  }
+
+  @Test
+  void testFailure_noPermissionToUpdateUser() throws IOException {
+    User user1 = DatabaseHelper.loadByKey(VKey.create(User.class, "test1@test.com"));
+    AuthResult authResult =
+        AuthResult.createUser(
+            user1
+                .asBuilder()
+                .setUserRoles(user1.getUserRoles().asBuilder().setIsAdmin(true).build())
+                .build());
+    ConsoleUsersAction action =
+        createAction(
+            Optional.of(ConsoleApiParamsUtils.createFake(authResult)),
+            Optional.of("PUT"),
+            Optional.of(
+                new UserData("test3@test.com", RegistrarRole.ACCOUNT_MANAGER.toString(), null)));
+    action.run();
+    var response = ((FakeResponse) consoleApiParams.response());
+    assertThat(response.getStatus()).isEqualTo(SC_FORBIDDEN);
+    assertThat(response.getPayload())
+        .contains("Can't update user not associated with registrarId TheRegistrar");
+  }
+
   private ConsoleUsersAction createAction(
       Optional<ConsoleApiParams> maybeConsoleApiParams,
       Optional<String> method,
-      Optional<UserDeleteData> userDeleteData)
+      Optional<UserData> userData)
       throws IOException {
     consoleApiParams =
         maybeConsoleApiParams.orElseGet(
@@ -299,7 +358,7 @@ class ConsoleUsersActionTest {
         "email.com",
         Optional.of("someRandomString"),
         passwordGenerator,
-        userDeleteData,
+        userData,
         "TheRegistrar");
   }
 }
