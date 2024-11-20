@@ -75,7 +75,8 @@ public class FlowRunner {
       flowReporter.recordToLogs();
     }
     eppMetricBuilder.setCommandNameFromFlow(flowClass.getSimpleName());
-    if (!isTransactional) {
+    // We may already be in a transaction, e.g., when invoked by DeleteExpiredDomainsAction.
+    if (!isTransactional || jpaTransactionManager.inTransaction()) {
       return EppOutput.create(flowProvider.get().run());
     }
     try {
