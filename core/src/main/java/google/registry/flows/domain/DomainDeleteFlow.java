@@ -45,6 +45,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedSet;
 import com.google.common.collect.Sets;
 import google.registry.batch.AsyncTaskEnqueuer;
+import google.registry.config.RegistryConfig;
 import google.registry.flows.EppException;
 import google.registry.flows.EppException.AssociationProhibitsOperationException;
 import google.registry.flows.ExtensionManager;
@@ -211,7 +212,10 @@ public final class DomainDeleteFlow implements MutatingFlow {
     // Enqueue the deletion poll message if the delete is asynchronous or if requested by a
     // superuser (i.e. the registrar didn't request this delete and thus should be notified even if
     // it is synchronous).
-    if (durationUntilDelete.isLongerThan(Duration.ZERO) || isSuperuser) {
+    // TODO (b/379331882): Figure out why poll messages (?) are sometimes causing failures
+    if (!RegistryConfig.getTieredPricingPromotionRegistrarIds()
+            .contains(existingDomain.getCurrentSponsorRegistrarId())
+        && (durationUntilDelete.isLongerThan(Duration.ZERO) || isSuperuser)) {
       PollMessage.OneTime deletePollMessage =
           createDeletePollMessage(existingDomain, domainHistoryId, deletionTime);
       entitiesToSave.add(deletePollMessage);

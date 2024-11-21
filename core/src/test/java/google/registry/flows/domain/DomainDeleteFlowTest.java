@@ -1247,4 +1247,15 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
     clock.advanceOneMilli();
     runFlowAssertResponse(loadFile("domain_delete_response_fee_free_grace.xml"));
   }
+
+  @Test
+  void testSuccess_skipsPollMessage_whenConfigured() throws Exception {
+    setUpSuccessfulTest();
+    domain =
+        persistResource(
+            domain.asBuilder().setPersistedCurrentSponsorRegistrarId("NewRegistrar").build());
+    setRegistrarIdForFlow("NewRegistrar");
+    runFlowAssertResponse(loadFile("domain_delete_response_pending.xml"));
+    assertPollMessages();
+  }
 }
