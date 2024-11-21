@@ -1168,6 +1168,10 @@ public final class DatabaseHelper {
     tm().transact(() -> tm().delete(resource));
   }
 
+  public static void deleteByKey(VKey<?> key) {
+    tm().transact(() -> tm().delete(key));
+  }
+
   /** Force the create and update timestamps to get written into the resource. */
   public static <R> R cloneAndSetAutoTimestamps(final R resource) {
     // We have to separate the read and write operation into different transactions otherwise JPA

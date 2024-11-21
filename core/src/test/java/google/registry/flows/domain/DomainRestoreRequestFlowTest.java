@@ -74,6 +74,7 @@ import google.registry.model.reporting.DomainTransactionRecord;
 import google.registry.model.reporting.DomainTransactionRecord.TransactionReportField;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.tld.Tld;
+import google.registry.persistence.VKey;
 import google.registry.testing.DatabaseHelper;
 import java.util.Map;
 import java.util.Optional;
@@ -103,12 +104,12 @@ class DomainRestoreRequestFlowTest extends ResourceFlowTestCase<DomainRestoreReq
     setEppInput("domain_update_restore_request.xml", ImmutableMap.of("DOMAIN", "example.tld"));
   }
 
-  void persistPendingDeleteDomain() throws Exception {
+  Domain persistPendingDeleteDomain() throws Exception {
     // The domain is now past what had been its expiration date at the time of deletion.
-    persistPendingDeleteDomain(clock.nowUtc().minusDays(5));
+    return persistPendingDeleteDomain(clock.nowUtc().minusDays(5));
   }
 
-  void persistPendingDeleteDomain(DateTime expirationTime) throws Exception {
+  Domain persistPendingDeleteDomain(DateTime expirationTime) throws Exception {
     Domain domain = persistResource(DatabaseHelper.newDomain(getUniqueIdFromCommand()));
     HistoryEntry historyEntry =
         persistResource(
@@ -118,29 +119,31 @@ class DomainRestoreRequestFlowTest extends ResourceFlowTestCase<DomainRestoreReq
                 .setRegistrarId(domain.getCurrentSponsorRegistrarId())
                 .setDomain(domain)
                 .build());
-    persistResource(
-        domain
-            .asBuilder()
-            .setRegistrationExpirationTime(expirationTime)
-            .setDeletionTime(clock.nowUtc().plusDays(35))
-            .addGracePeriod(
-                GracePeriod.create(
-                    GracePeriodStatus.REDEMPTION,
-                    domain.getRepoId(),
-                    clock.nowUtc().plusDays(1),
-                    "TheRegistrar",
-                    null))
-            .setStatusValues(ImmutableSet.of(StatusValue.PENDING_DELETE))
-            .setDeletePollMessage(
-                persistResource(
-                        new PollMessage.OneTime.Builder()
-                            .setRegistrarId("TheRegistrar")
-                            .setEventTime(clock.nowUtc().plusDays(5))
-                            .setHistoryEntry(historyEntry)
-                            .build())
-                    .createVKey())
-            .build());
+    domain =
+        persistResource(
+            domain
+                .asBuilder()
+                .setRegistrationExpirationTime(expirationTime)
+                .setDeletionTime(clock.nowUtc().plusDays(35))
+                .addGracePeriod(
+                    GracePeriod.create(
+                        GracePeriodStatus.REDEMPTION,
+                        domain.getRepoId(),
+                        clock.nowUtc().plusDays(1),
+                        "TheRegistrar",
+                        null))
+                .setStatusValues(ImmutableSet.of(StatusValue.PENDING_DELETE))
+                .setDeletePollMessage(
+                    persistResource(
+                            new PollMessage.OneTime.Builder()
+                                .setRegistrarId("TheRegistrar")
+                                .setEventTime(clock.nowUtc().plusDays(5))
+                                .setHistoryEntry(historyEntry)
+                                .build())
+                        .createVKey())
+                .build());
     clock.advanceOneMilli();
+    return domain;
   }
 
   @Test
@@ -489,6 +492,15 @@ class DomainRestoreRequestFlowTest extends ResourceFlowTestCase<DomainRestoreReq
         CommitMode.LIVE,
         UserPrivileges.SUPERUSER,
         loadFile("domain_update_restore_request_response_premium.xml"));
+  }
+
+  @Test
+  void testSuccess_worksWithoutPollMessage() throws Exception {
+    Domain domain = persistPendingDeleteDomain();
+    VKey<PollMessage.OneTime> deletePollMessage = domain.getDeletePollMessage();
+    persistResource(domain.asBuilder().setDeletePollMessage(null).build());
+    DatabaseHelper.deleteByKey(deletePollMessage);
+    runFlowAssertResponse(loadFile("generic_success_response.xml"));
   }
 
   @Test

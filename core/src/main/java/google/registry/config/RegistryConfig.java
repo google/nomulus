@@ -1744,6 +1744,17 @@ public final class RegistryConfig {
   }
 
   /**
+   * Set of registrars for which we do not send poll messages on standard domain deletion.
+   *
+   * <p>For these registrars we won't send a poll message in order to avoid database contention. See
+   * b/379331882 for more details.
+   */
+  public static ImmutableSet<String> getNoPollMessageOnDeletionRegistrarIds() {
+    return ImmutableSet.copyOf(
+        CONFIG_SETTINGS.get().registryPolicy.noPollMessageOnDeletionRegistrarIds);
+  }
+
+  /**
    * Memoizes loading of the {@link RegistryConfigSettings} POJO.
    *
    * <p>Memoizing without cache expiration is used because the app must be re-deployed in order to
