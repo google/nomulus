@@ -220,6 +220,9 @@ registryPolicy:
   # In addition, we will return the non-promotional (i.e. incorrect) price on
   # domain create requests.
   tieredPricingPromotionRegistrarIds: []
+  # List of registrars for which we won't send poll message on standard domain
+  # deletions.
+  noPollMessageOnDeletionRegistrarIds: []
 
 hibernate:
   # If set to false, calls to tm().transact() cannot be nested. If set to true,

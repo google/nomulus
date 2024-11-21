@@ -183,7 +183,9 @@ public final class DomainRestoreRequestFlow implements MutatingFlow {
     DomainHistory domainHistory = buildDomainHistory(newDomain, now);
     entitiesToSave.add(newDomain, domainHistory, autorenewEvent, autorenewPollMessage);
     tm().putAll(entitiesToSave.build());
-    tm().delete(existingDomain.getDeletePollMessage());
+    if (existingDomain.getDeletePollMessage() != null) {
+      tm().delete(existingDomain.getDeletePollMessage());
+    }
     requestDomainDnsRefresh(existingDomain.getDomainName());
     return responseBuilder
         .setExtensions(createResponseExtensions(feesAndCredits, feeUpdate, isExpired))

@@ -11,6 +11,8 @@ registryPolicy:
     Line 2 is this 1.
   tieredPricingPromotionRegistrarIds:
     - NewRegistrar
+  noPollMessageOnDeletionRegistrarIds:
+    - NewRegistrar
 
 caching:
   singletonCacheRefreshSeconds: 0
