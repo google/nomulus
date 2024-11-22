@@ -37,6 +37,8 @@ import google.registry.model.poll.MessageQueueInfo;
 import google.registry.model.poll.PollMessage;
 import google.registry.model.poll.PollMessageExternalKeyConverter;
 import google.registry.model.poll.PollMessageExternalKeyConverter.PollMessageExternalKeyParseException;
+import google.registry.persistence.IsolationLevel;
+import google.registry.persistence.PersistenceModule.TransactionIsolationLevel;
 import google.registry.persistence.VKey;
 import java.util.Optional;
 import javax.inject.Inject;
@@ -55,6 +57,7 @@ import org.joda.time.DateTime;
  * @error {@link PollAckFlow.MissingMessageIdException}
  * @error {@link PollAckFlow.NotAuthorizedToAckMessageException}
  */
+@IsolationLevel(value = TransactionIsolationLevel.TRANSACTION_READ_COMMITTED)
 public final class PollAckFlow implements MutatingFlow {
 
   @Inject ExtensionManager extensionManager;
