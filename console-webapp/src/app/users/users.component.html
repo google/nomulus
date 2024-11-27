@@ -3,6 +3,62 @@
   <div class="console-app__users-spinner">
     <mat-spinner />
   </div>
+  } @else if(selectingExistingUser) {
+
+  <div class="console-app__users">
+    <h1 class="mat-headline-4">Add existing user</h1>
+
+    <p>
+      <button
+        mat-icon-button
+        aria-label="Back to users list"
+        (click)="selectingExistingUser = false"
+      >
+        <mat-icon>arrow_back</mat-icon>
+      </button>
+    </p>
+    <h1>Select registrar from which to add a new user</h1>
+    <p>
+      <mat-form-field appearance="outline">
+        <mat-label>Registrar</mat-label>
+        <mat-select
+          [(ngModel)]="selectedRegistrarId"
+          name="selectedRegistrarId"
+          (selectionChange)="onRegistrarSelectionChange($event)"
+        >
+          @for (registrar of registrarService.registrars(); track registrar) {
+          <mat-option [value]="registrar.registrarId">{{
+            registrar.registrarId
+          }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+    </p>
+    @if(usersSelection.length) {
+    <app-users-list
+      [users]="usersSelection"
+      (onSelect)="existingUserSelected($event)"
+    />
+    <p class="console-app__users-add-existing">
+      <button
+        mat-flat-button
+        color="primary"
+        aria-label="Add user"
+        (click)="submitExistingUser()"
+        [disabled]="!selectedExistingUser"
+      >
+        Add user
+      </button>
+      <button
+        mat-stroked-button
+        aria-label="Cancel adding existing user"
+        (click)="selectingExistingUser = false"
+      >
+        Cancel
+      </button>
+    </p>
+    }
+  </div>
   } @else if(usersService.currentlyOpenUserEmail()) {
   <app-user-edit></app-user-edit>
   } @else {
@@ -10,39 +66,31 @@
     <div class="console-app__users-header">
       <h1 class="mat-headline-4">Users</h1>
       <div class="spacer"></div>
-      <button
-        mat-flat-button
-        (click)="createNewUser()"
-        aria-label="Create new user"
-        color="primary"
-      >
-        Create a Viewer User
-      </button>
+      <div class="console-app__users-header-buttons">
+        <button
+          class="console-app__users-header-add"
+          mat-stroked-button
+          (click)="addExistingUser()"
+          aria-label="Create new user"
+          color="primary"
+        >
+          <mat-icon>add</mat-icon>
+          Add existing user
+        </button>
+        <button
+          mat-flat-button
+          (click)="createNewUser()"
+          aria-label="Create new user"
+          color="primary"
+        >
+          Create a Viewer User
+        </button>
+      </div>
     </div>
-    <mat-table
-      [dataSource]="dataSource"
-      class="mat-elevation-z0"
-      class="console-app__users-table"
-      matSort
-    >
-      <ng-container
-        *ngFor="let column of columns"
-        [matColumnDef]="column.columnDef"
-      >
-        <mat-header-cell *matHeaderCellDef>
-          {{ column.header }}
-        </mat-header-cell>
-        <mat-cell
-          *matCellDef="let row"
-          [innerHTML]="column.cell(row)"
-        ></mat-cell>
-      </ng-container>
-      <mat-header-row *matHeaderRowDef="displayedColumns"></mat-header-row>
-      <mat-row
-        *matRowDef="let row; columns: displayedColumns"
-        (click)="openDetails(row.emailAddress)"
-      ></mat-row>
-    </mat-table>
+    <app-users-list
+      [users]="usersService.users()"
+      (onSelect)="openDetails($event)"
+    />
   </div>
   }
 </app-selected-registrar-wrapper>

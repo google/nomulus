@@ -46,6 +46,10 @@ export class UsersService {
     private registrarService: RegistrarService
   ) {}
 
+  fetchUsersForRegistrar(registrarId: string) {
+    return this.backendService.getUsers(registrarId);
+  }
+
   fetchUsers() {
     return this.backendService
       .getUsers(this.registrarService.registrarId())
@@ -56,14 +60,16 @@ export class UsersService {
       );
   }
 
-  createNewUser() {
+  createOrAddNewUser(maybeExistingUser: User | null) {
     return this.backendService
-      .createUser(this.registrarService.registrarId())
+      .createUser(this.registrarService.registrarId(), maybeExistingUser)
       .pipe(
         tap((newUser: User) => {
-          this.users.set([...this.users(), newUser]);
-          this.currentlyOpenUserEmail.set(newUser.emailAddress);
-          this.isNewUser = true;
+          if (newUser) {
+            this.users.set([...this.users(), newUser]);
+            this.currentlyOpenUserEmail.set(newUser.emailAddress);
+            this.isNewUser = true;
+          }
         })
       );
   }

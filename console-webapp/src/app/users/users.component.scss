@@ -13,26 +13,37 @@
 // limitations under the License.
 
 .console-app {
+  &__users {
+    max-width: 1024px;
+    overflow-x: auto;
+  }
+
   &__users-spinner {
     align-items: center;
     display: flex;
     justify-content: center;
   }
 
-  $min-width: 756px;
-  $max-width: 1024px;
-
-  &__users-table {
-    min-width: $min-width !important;
-    max-width: $max-width;
-  }
-
   &__users-new {
     margin-left: 20px;
   }
 
+  &__users-add-existing {
+    margin-top: 20px;
+    > button {
+      margin-right: 15px;
+    }
+  }
   &__users-header {
     display: flex;
     justify-content: space-between;
+    flex-wrap: wrap;
+    &-buttons {
+      display: flex;
+      flex-wrap: wrap;
+      button {
+        margin: 0 15px 15px 0;
+      }
+    }
   }
 }
