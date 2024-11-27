@@ -82,6 +82,8 @@ public class ConsoleUserDataAction extends ConsoleApiAction {
                 // auth checks.
                 "isAdmin", user.getUserRoles().isAdmin(),
                 "globalRole", user.getUserRoles().getGlobalRole(),
+                // registrar-specific roles
+                "userRoles", user.getUserRoles().getRegistrarRoles(),
                 // Include static contact resources in this call to minimize round trips
                 "productName", productName,
                 "supportEmail", supportEmail,

@@ -247,6 +247,50 @@ class ConsoleUsersActionTest {
   }
 
   @Test
+  void testSuccess_removesRole() throws IOException {
+    User user1 = DatabaseHelper.loadByKey(VKey.create(User.class, "test1@test.com"));
+    AuthResult authResult =
+        AuthResult.createUser(
+            user1
+                .asBuilder()
+                .setUserRoles(user1.getUserRoles().asBuilder().setIsAdmin(true).build())
+                .build());
+    DatabaseHelper.persistResource(
+        new User.Builder()
+            .setEmailAddress("test4@test.com")
+            .setUserRoles(
+                new UserRoles()
+                    .asBuilder()
+                    .setRegistrarRoles(
+                        ImmutableMap.of(
+                            "TheRegistrar",
+                            RegistrarRole.PRIMARY_CONTACT,
+                            "SomeRegistrar",
+                            RegistrarRole.PRIMARY_CONTACT))
+                    .build())
+            .build());
+
+    ConsoleUsersAction action =
+        createAction(
+            Optional.of(ConsoleApiParamsUtils.createFake(authResult)),
+            Optional.of("DELETE"),
+            Optional.of(
+                new UserData("test4@test.com", RegistrarRole.ACCOUNT_MANAGER.toString(), null)));
+
+    action.cloudTasksUtils = cloudTasksHelper.getTestCloudTasksUtils();
+    when(directory.users()).thenReturn(users);
+    when(users.delete(any(String.class))).thenReturn(delete);
+    action.run();
+    var response = ((FakeResponse) consoleApiParams.response());
+    assertThat(response.getStatus()).isEqualTo(SC_OK);
+    Optional<User> actualUser =
+        DatabaseHelper.loadByKeyIfPresent(VKey.create(User.class, "test4@test.com"));
+    assertThat(actualUser).isPresent();
+    assertThat(actualUser.get().getUserRoles().getRegistrarRoles().containsKey("TheRegistrar"))
+        .isFalse();
+  }
+
+  @Test
   void testFailure_limitedTo4UsersPerRegistrar() throws IOException {
     User user1 = DatabaseHelper.loadByKey(VKey.create(User.class, "test1@test.com"));
     AuthResult authResult =

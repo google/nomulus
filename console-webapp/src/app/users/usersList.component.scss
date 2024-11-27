@@ -1,0 +1,14 @@
+.console-app {
+  &__users-table {
+    min-width: 616px;
+    .rowSelected {
+      background-color: var(--light-highlight);
+      font-weight: bold;
+    }
+  }
+
+  &__users-table-wrapper {
+    width: 100%;
+    overflow: auto;
+  }
+}
