@@ -20,6 +20,7 @@ import static jakarta.servlet.http.HttpServletResponse.SC_OK;
 import static jakarta.servlet.http.HttpServletResponse.SC_UNAUTHORIZED;
 import static org.mockito.Mockito.when;
 
+import com.google.common.collect.ImmutableMap;
 import com.google.gson.Gson;
 import google.registry.model.console.User;
 import google.registry.persistence.transaction.JpaTestExtensions;
@@ -71,6 +72,8 @@ class ConsoleUserDataActionTest {
         GSON.fromJson(((FakeResponse) consoleApiParams.response()).getPayload(), Map.class);
     assertThat(jsonObject)
         .containsExactly(
+            "userRoles",
+            ImmutableMap.of(),
             "isAdmin",
             true,
             "technicalDocsUrl",

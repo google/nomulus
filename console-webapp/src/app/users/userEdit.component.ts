@@ -19,7 +19,7 @@ import { SelectedRegistrarModule } from '../app.module';
 import { MaterialModule } from '../material.module';
 import { RegistrarService } from '../registrar/registrar.service';
 import { SnackBarModule } from '../snackbar.module';
-import { User, UsersService, roleToDescription } from './users.service';
+import { UsersService, roleToDescription } from './users.service';
 import { FormsModule } from '@angular/forms';
 
 @Component({

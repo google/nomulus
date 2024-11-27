@@ -1,0 +1,24 @@
+<div class="console-app__users-table-wrapper">
+  <mat-table
+    [dataSource]="dataSource"
+    class="mat-elevation-z0"
+    class="console-app__users-table"
+    matSort
+  >
+    <ng-container
+      *ngFor="let column of columns"
+      [matColumnDef]="column.columnDef"
+    >
+      <mat-header-cell *matHeaderCellDef>
+        {{ column.header }}
+      </mat-header-cell>
+      <mat-cell *matCellDef="let row" [innerHTML]="column.cell(row)"></mat-cell>
+    </ng-container>
+    <mat-header-row *matHeaderRowDef="displayedColumns"></mat-header-row>
+    <mat-row
+      *matRowDef="let row; columns: displayedColumns"
+      [class.rowSelected]="isRowSelected(row)"
+      (click)="onClick(row)"
+    ></mat-row>
+  </mat-table>
+</div>

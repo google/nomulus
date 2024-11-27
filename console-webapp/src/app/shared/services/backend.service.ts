@@ -166,9 +166,9 @@ export class BackendService {
       .pipe(catchError((err) => this.errorCatcher<User[]>(err)));
   }
 
-  createUser(registrarId: string): Observable<User> {
+  createUser(registrarId: string, maybeUser: User | null): Observable<User> {
     return this.http
-      .post<User>(`/console-api/users?registrarId=${registrarId}`, {})
+      .post<User>(`/console-api/users?registrarId=${registrarId}`, maybeUser)
       .pipe(catchError((err) => this.errorCatcher<User>(err)));
   }
 

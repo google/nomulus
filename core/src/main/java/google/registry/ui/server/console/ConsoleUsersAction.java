@@ -48,6 +48,8 @@ import google.registry.tools.IamClient;
 import google.registry.util.StringGenerator;
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -100,7 +102,12 @@ public class ConsoleUsersAction extends ConsoleApiAction {
     // Temporary flag while testing
     if (user.getUserRoles().isAdmin()) {
       checkPermission(user, registrarId, ConsolePermission.MANAGE_USERS);
-      tm().transact(this::runCreateInTransaction);
+      if (userData.isPresent()) { // Adding existing user to registrar
+        tm().transact(this::runAppendUserInTransaction);
+      } else { // Adding new user to registrar
+        tm().transact(this::runCreateInTransaction);
+      }
+
     } else {
       consoleApiParams.response().setStatus(SC_FORBIDDEN);
     }
@@ -111,7 +118,7 @@ public class ConsoleUsersAction extends ConsoleApiAction {
     // Temporary flag while testing
     if (user.getUserRoles().isAdmin()) {
       checkPermission(user, registrarId, ConsolePermission.MANAGE_USERS);
-      tm().transact(() -> runUpdateInTransaction());
+      tm().transact(this::runUpdateInTransaction);
     } else {
       consoleApiParams.response().setStatus(SC_FORBIDDEN);
     }
@@ -145,21 +152,46 @@ public class ConsoleUsersAction extends ConsoleApiAction {
     }
   }
 
-  private void runDeleteInTransaction() throws IOException {
-    if (!isModifyingRequestValid()) {
+  private void runAppendUserInTransaction() {
+    if (!isModifyingRequestValid(false)) {
       return;
     }
-    String email = this.userData.get().emailAddress;
-    try {
-      directory.users().delete(email).execute();
-    } catch (IOException e) {
-      setFailedResponse("Failed to delete the user workspace account", SC_INTERNAL_SERVER_ERROR);
-      throw e;
+    ImmutableList<User> allRegistrarUsers = getAllRegistrarUsers(registrarId);
+    if (allRegistrarUsers.size() >= 4)
+      throw new BadRequestException("Total users amount per registrar is limited to 4");
+
+    updateUserRegistrarRoles(
+        this.userData.get().emailAddress,
+        registrarId,
+        RegistrarRole.valueOf(this.userData.get().role),
+        false);
+    consoleApiParams.response().setStatus(SC_OK);
+  }
+
+  private void runDeleteInTransaction() throws IOException {
+    if (!isModifyingRequestValid(true)) {
+      return;
     }
 
-    VKey<User> key = VKey.create(User.class, email);
-    tm().delete(key);
-    User.revokeIapPermission(email, maybeGroupEmailAddress, cloudTasksUtils, null, iamClient);
+    String email = this.userData.get().emailAddress;
+    User updatedUser =
+        updateUserRegistrarRoles(
+            email, registrarId, RegistrarRole.valueOf(this.userData.get().role), true);
+
+    // User has no registrars assigned
+    if (updatedUser.getUserRoles().getRegistrarRoles().size() == 0) {
+      try {
+        directory.users().delete(email).execute();
+      } catch (IOException e) {
+        setFailedResponse("Failed to delete the user workspace account", SC_INTERNAL_SERVER_ERROR);
+        throw e;
+      }
+
+      VKey<User> key = VKey.create(User.class, email);
+      tm().delete(key);
+      User.revokeIapPermission(email, maybeGroupEmailAddress, cloudTasksUtils, null, iamClient);
+    }
+
 
     consoleApiParams.response().setStatus(SC_OK);
   }
@@ -220,27 +252,19 @@ public class ConsoleUsersAction extends ConsoleApiAction {
   }
 
   private void runUpdateInTransaction() {
-    if (!isModifyingRequestValid()) {
+    if (!isModifyingRequestValid(true)) {
       return;
     }
 
-    UserData userData = this.userData.get();
-    UserRoles userRoles =
-        new UserRoles.Builder()
-            .setRegistrarRoles(ImmutableMap.of(registrarId, RegistrarRole.valueOf(userData.role)))
-            .build();
-    User updatedUser =
-        tm().loadByKeyIfPresent(VKey.create(User.class, userData.emailAddress))
-            .get()
-            .asBuilder()
-            .setUserRoles(userRoles)
-            .build();
-
-    tm().put(updatedUser);
+    updateUserRegistrarRoles(
+        this.userData.get().emailAddress,
+        registrarId,
+        RegistrarRole.valueOf(this.userData.get().role),
+        false);
     consoleApiParams.response().setStatus(SC_OK);
   }
 
-  private boolean isModifyingRequestValid() {
+  private boolean isModifyingRequestValid(boolean verifyAccess) {
     if (userData.isEmpty()
         || isNullOrEmpty(userData.get().emailAddress)
         || isNullOrEmpty(userData.get().role)) {
@@ -252,13 +276,43 @@ public class ConsoleUsersAction extends ConsoleApiAction {
             .orElseThrow(
                 () -> new BadRequestException(String.format("User %s doesn't exist", email)));
 
-    if (!userToUpdate.getUserRoles().getRegistrarRoles().containsKey(registrarId)) {
+    if (verifyAccess && !userToUpdate.getUserRoles().getRegistrarRoles().containsKey(registrarId)) {
       setFailedResponse(
           String.format("Can't update user not associated with registrarId %s", registrarId),
           SC_FORBIDDEN);
       return false;
     }
     return true;
+  }
+
+  private User updateUserRegistrarRoles(
+      String email, String registrarId, RegistrarRole newRole, boolean isDelete) {
+    User userToUpdate = tm().loadByKeyIfPresent(VKey.create(User.class, email)).get();
+    Map<String, RegistrarRole> updatedRegistrarRoles;
+    if (isDelete) {
+      updatedRegistrarRoles =
+          userToUpdate.getUserRoles().getRegistrarRoles().entrySet().stream()
+              .filter(entry -> !Objects.equals(entry.getKey(), registrarId))
+              .collect(ImmutableMap.toImmutableMap(Map.Entry::getKey, Map.Entry::getValue));
+    } else {
+      updatedRegistrarRoles =
+          ImmutableMap.<String, RegistrarRole>builder()
+              .putAll(userToUpdate.getUserRoles().getRegistrarRoles())
+              .put(registrarId, newRole)
+              .buildKeepingLast();
+    }
+    var updatedUser =
+        userToUpdate
+            .asBuilder()
+            .setUserRoles(
+                userToUpdate
+                    .getUserRoles()
+                    .asBuilder()
+                    .setRegistrarRoles(updatedRegistrarRoles)
+                    .build())
+            .build();
+    tm().put(updatedUser);
+    return updatedUser;
   }
 
   private ImmutableList<User> getAllRegistrarUsers(String registrarId) {

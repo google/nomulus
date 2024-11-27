@@ -27,6 +27,7 @@ export interface UserData {
   supportEmail: string;
   supportPhoneNumber: string;
   technicalDocsUrl: string;
+  userRoles?: Map<string, string>;
 }
 
 @Injectable({
