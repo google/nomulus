@@ -45,6 +45,11 @@ spec:
         - name: CONTAINER_NAME
           value: proxy
 ---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: nomulus
+---
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
