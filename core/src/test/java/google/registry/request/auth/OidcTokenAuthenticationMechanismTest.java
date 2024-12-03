@@ -26,12 +26,13 @@ import static org.mockito.Mockito.when;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken.Payload;
 import com.google.api.client.json.webtoken.JsonWebSignature;
 import com.google.api.client.json.webtoken.JsonWebSignature.Header;
+import com.google.auth.oauth2.GoogleCredentials;
 import com.google.auth.oauth2.TokenVerifier.VerificationException;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import dagger.Component;
 import dagger.Module;
 import dagger.Provides;
+import google.registry.config.CredentialModule.ApplicationDefaultCredential;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.model.console.GlobalRole;
 import google.registry.model.console.User;
@@ -40,8 +41,8 @@ import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.request.auth.AuthSettings.AuthLevel;
 import google.registry.request.auth.OidcTokenAuthenticationMechanism.IapOidcAuthenticationMechanism;
 import google.registry.request.auth.OidcTokenAuthenticationMechanism.RegularOidcAuthenticationMechanism;
+import google.registry.util.GoogleCredentialsBundle;
 import jakarta.servlet.http.HttpServletRequest;
-import java.util.Map;
 import javax.inject.Singleton;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -228,9 +229,9 @@ public class OidcTokenAuthenticationMechanismTest {
 
     @Provides
     @Singleton
-    @Config("backendServiceIds")
-    Map<String, Long> provideBackendServiceIds() {
-      return ImmutableMap.of();
+    @ApplicationDefaultCredential
+    GoogleCredentialsBundle provideGoogleCredentialBundle() {
+      return GoogleCredentialsBundle.create(GoogleCredentials.newBuilder().build());
     }
   }
 }

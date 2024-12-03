@@ -104,6 +104,7 @@ ext {
       'com.google.cloud.bigdataoss:util:[2.2.6,)',
       'com.google.cloud.sql:jdbc-socket-factory-core:[1.2.1,)',
       'com.google.cloud.sql:postgres-socket-factory:[1.2.1,)',
+      'com.google.cloud:google-cloud-compute:[1.64.0,)',
       'com.google.cloud:google-cloud-core-http:[1.94.3,)',
       'com.google.cloud:google-cloud-core:[1.94.3,)',
       'com.google.cloud:google-cloud-nio:[0.123.4,)',

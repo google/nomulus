@@ -45,6 +45,14 @@ spec:
         - name: CONTAINER_NAME
           value: proxy
 ---
+# Only need to define the service account once per cluster.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: nomulus
+  annotations:
+    iam.gke.io/gcp-service-account: "nomulus-service-account@GCP_PROJECT.iam.gserviceaccount.com"
+---
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:

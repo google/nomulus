@@ -49,11 +49,18 @@ do
   if [[ "${parts[1]}" == us-* ]]
   then
     kubectl apply -f "./kubernetes/gateway/nomulus-gateway.yaml"
-    for service in frontend backend pubapi console
+    for service in frontend backend console pubapi
     do
       sed s/BASE_DOMAIN/"${base_domain}"/g "./kubernetes/gateway/nomulus-route-${service}.yaml" | \
       kubectl apply -f -
+      # Don't enable IAP on pubapi.
+      if [[ "${service}" == pubapi ]]
+      then
+        continue
+      fi
       sed s/SERVICE/"${service}"/g "./kubernetes/gateway/nomulus-iap-${environment}.yaml" | \
+      kubectl apply -f -
+      sed s/SERVICE/"${service}-canary"/g "./kubernetes/gateway/nomulus-iap-${environment}.yaml" | \
       kubectl apply -f -
     done
   fi

@@ -157,8 +157,9 @@ public class ConsoleUsersAction extends ConsoleApiAction {
       return;
     }
     ImmutableList<User> allRegistrarUsers = getAllRegistrarUsers(registrarId);
-    if (allRegistrarUsers.size() >= 4)
+    if (allRegistrarUsers.size() >= 4) {
       throw new BadRequestException("Total users amount per registrar is limited to 4");
+    }
 
     updateUserRegistrarRoles(
         this.userData.get().emailAddress,
@@ -198,8 +199,9 @@ public class ConsoleUsersAction extends ConsoleApiAction {
 
   private void runCreateInTransaction() throws IOException {
     ImmutableList<User> allRegistrarUsers = getAllRegistrarUsers(registrarId);
-    if (allRegistrarUsers.size() >= 4)
+    if (allRegistrarUsers.size() >= 4) {
       throw new BadRequestException("Total users amount per registrar is limited to 4");
+    }
 
     String nextAvailableEmail =
         IntStream.range(1, 5)
