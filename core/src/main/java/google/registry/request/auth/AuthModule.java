@@ -14,19 +14,31 @@
 
 package google.registry.request.auth;
 
+import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.net.HttpHeaders.AUTHORIZATION;
+import static google.registry.util.RegistryEnvironment.UNITTEST;
 
+import com.google.cloud.compute.v1.BackendService;
+import com.google.cloud.compute.v1.BackendServicesClient;
+import com.google.cloud.compute.v1.BackendServicesSettings;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
+import com.google.re2j.Matcher;
+import com.google.re2j.Pattern;
+import dagger.Lazy;
 import dagger.Module;
 import dagger.Provides;
+import google.registry.config.CredentialModule.ApplicationDefaultCredential;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.request.auth.OidcTokenAuthenticationMechanism.IapOidcAuthenticationMechanism;
 import google.registry.request.auth.OidcTokenAuthenticationMechanism.RegularOidcAuthenticationMechanism;
 import google.registry.request.auth.OidcTokenAuthenticationMechanism.TokenExtractor;
 import google.registry.request.auth.OidcTokenAuthenticationMechanism.TokenVerifier;
+import google.registry.util.GoogleCredentialsBundle;
 import google.registry.util.RegistryEnvironment;
-import java.util.Map;
+import java.io.IOException;
 import javax.annotation.Nullable;
+import javax.inject.Named;
 import javax.inject.Qualifier;
 import javax.inject.Singleton;
 
@@ -44,6 +56,13 @@ public class AuthModule {
   private static final String IAP_GKE_AUDIENCE_FORMAT = "/projects/%d/global/backendServices/%d";
   private static final String IAP_ISSUER_URL = "https://cloud.google.com/iap";
   private static final String REGULAR_ISSUER_URL = "https://accounts.google.com";
+  // The backend service IDs created when setting up GKE routes. They will be included in the
+  // audience field in the JWT that IAP creates.
+  // See: https://cloud.google.com/iap/docs/signed-headers-howto#verifying_the_jwt_payload
+  // The automatically generated backend service ID has the following format:
+  // gkemcg1-default-console[-canary]-80-(some random string)
+  private static final Pattern BACKEND_END_PATTERN =
+      Pattern.compile(".*-default-((frontend|backend|console|pubapi)(-canary)?)-80-.*");
 
   /** Provides the custom authentication mechanisms. */
   @Provides
@@ -68,13 +87,18 @@ public class AuthModule {
   TokenVerifier provideIapTokenVerifier(
       @Config("projectId") String projectId,
       @Config("projectIdNumber") long projectIdNumber,
-      @Config("backendServiceIds") Map<String, Long> backendServiceIds) {
+      @Named("backendServiceIdMap") ImmutableMap<String, Long> backendServiceIdMap) {
     com.google.auth.oauth2.TokenVerifier.Builder tokenVerifierBuilder =
         com.google.auth.oauth2.TokenVerifier.newBuilder().setIssuer(IAP_ISSUER_URL);
     return (String service, String token) -> {
       String audience;
       if (RegistryEnvironment.isOnJetty()) {
-        long backendServiceId = backendServiceIds.get(service);
+        Long backendServiceId = backendServiceIdMap.get(service);
+        checkNotNull(
+            backendServiceId,
+            "Backend service ID not found for service: %s, available IDs are %s",
+            service,
+            backendServiceIdMap);
         audience = String.format(IAP_GKE_AUDIENCE_FORMAT, projectIdNumber, backendServiceId);
       } else {
         audience = String.format(IAP_GAE_AUDIENCE_FORMAT, projectIdNumber, projectId);
@@ -115,5 +139,39 @@ public class AuthModule {
       }
       return null;
     };
+  }
+
+  @Provides
+  @Singleton
+  static BackendServicesClient provideBackendServicesClients(
+      @ApplicationDefaultCredential GoogleCredentialsBundle credentialsBundle) {
+    try {
+      return BackendServicesClient.create(
+          BackendServicesSettings.newBuilder()
+              .setCredentialsProvider(credentialsBundle::getGoogleCredentials)
+              .build());
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  @Provides
+  @Singleton
+  @Named("backendServiceIdMap")
+  static ImmutableMap<String, Long> provideBackendServiceList(
+      Lazy<BackendServicesClient> client, @Config("projectId") String projectId) {
+    if (RegistryEnvironment.isInTestServer() || RegistryEnvironment.get() == UNITTEST) {
+      return ImmutableMap.of();
+    }
+    ImmutableMap.Builder<String, Long> builder = ImmutableMap.builder();
+    for (BackendService service : client.get().list(projectId).iterateAll()) {
+      String name = service.getName();
+      Matcher matcher = BACKEND_END_PATTERN.matcher(name);
+      if (!matcher.matches()) {
+        continue;
+      }
+      builder.put(matcher.group(1), service.getId());
+    }
+    return builder.build();
   }
 }

@@ -24,15 +24,6 @@ gcpProject:
   toolsServiceUrl: https://tools.example.com
   pubapiServiceUrl: https://pubapi.example.com
 
-  # The backend service IDs created when setting up GKE routes. They will be included in the
-  # audience field in the JWT that IAP creates.
-  # See: https://cloud.google.com/iap/docs/signed-headers-howto#verifying_the_jwt_payload
-  backendServiceIds:
-    frontend: 12345
-    backend: 12345
-    pubapi: 12345
-    console: 12345
-
   # The base domain name of the registry service. Services are reachable at [service].baseDomain.
   baseDomain: registry.test
 

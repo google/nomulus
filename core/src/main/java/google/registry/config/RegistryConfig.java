@@ -46,7 +46,6 @@ import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
 import java.net.URI;
 import java.net.URL;
-import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.function.Supplier;
@@ -116,12 +115,6 @@ public final class RegistryConfig {
     @Config("projectIdNumber")
     public static long provideProjectIdNumber(RegistryConfigSettings config) {
       return config.gcpProject.projectIdNumber;
-    }
-
-    @Provides
-    @Config("backendServiceIds")
-    public static Map<String, Long> provideBackendServiceIds(RegistryConfigSettings config) {
-      return config.gcpProject.backendServiceIds;
     }
 
     @Provides
