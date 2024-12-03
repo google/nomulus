@@ -65,8 +65,11 @@ public class ServiceConnection {
   private final HttpRequestFactory requestFactory;
 
   @Inject
-  ServiceConnection(@Config("useGke") boolean useGke, HttpRequestFactory requestFactory) {
-    this(useGke ? GkeService.BACKEND : GaeService.TOOLS, requestFactory, false);
+  ServiceConnection(
+      @Config("useGke") boolean useGke,
+      @Config("useCanary") boolean useCanary,
+      HttpRequestFactory requestFactory) {
+    this(useGke ? GkeService.BACKEND : GaeService.TOOLS, requestFactory, useCanary);
   }
 
   private ServiceConnection(Service service, HttpRequestFactory requestFactory, boolean useCanary) {

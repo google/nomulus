@@ -166,6 +166,7 @@ dependencies {
   // gradleLint.ignore('unused-dependency') {
   implementation deps['com.google.gwt:gwt-user']
   // }
+  implementation deps['com.google.cloud:google-cloud-compute']
   implementation deps['com.google.cloud:google-cloud-core']
   implementation deps['com.google.cloud:google-cloud-storage']
   implementation deps['com.google.cloud:google-cloud-tasks']

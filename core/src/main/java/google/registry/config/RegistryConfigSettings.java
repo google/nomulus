@@ -56,7 +56,6 @@ public class RegistryConfigSettings {
     public String bsaServiceUrl;
     public String toolsServiceUrl;
     public String pubapiServiceUrl;
-    public Map<String, Long> backendServiceIds;
     public String baseDomain;
   }
 
