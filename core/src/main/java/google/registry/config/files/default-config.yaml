@@ -29,9 +29,13 @@ gcpProject:
   # See: https://cloud.google.com/iap/docs/signed-headers-howto#verifying_the_jwt_payload
   backendServiceIds:
     frontend: 12345
+    frontend-canary: 12345
     backend: 12345
+    backend-canary: 12345
     pubapi: 12345
+    pubapi-canary: 12345
     console: 12345
+    console-canary: 12345
 
   # The base domain name of the registry service. Services are reachable at [service].baseDomain.
   baseDomain: registry.test

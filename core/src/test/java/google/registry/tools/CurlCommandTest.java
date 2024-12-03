@@ -158,19 +158,6 @@ class CurlCommandTest extends CommandTestCase<CurlCommand> {
   }
 
   @Test
-  void testCanaryInvocation() throws Exception {
-    runCommand("--path=/foo/bar?a=1&b=2", "--request=POST", "--service=TOOLS", "--canary");
-    verify(connection).withService(eq(TOOLS), eq(true));
-    verifyNoMoreInteractions(connection);
-    verify(connectionForService)
-        .sendPostRequest(
-            eq("/foo/bar?a=1&b=2"),
-            eq(ImmutableMap.<String, String>of()),
-            eq(MediaType.PLAIN_TEXT_UTF_8),
-            eq("".getBytes(UTF_8)));
-  }
-
-  @Test
   @MockitoSettings(strictness = Strictness.LENIENT)
   void testGetWithBody() {
     IllegalArgumentException thrown =
