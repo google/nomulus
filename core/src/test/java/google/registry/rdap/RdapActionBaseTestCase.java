@@ -42,9 +42,11 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 /** Common unit test code for actions inheriting {@link RdapActionBase}. */
 abstract class RdapActionBaseTestCase<A extends RdapActionBase> {
 
+  protected final FakeClock clock = new FakeClock(DateTime.parse("2000-01-01TZ"));
+
   @RegisterExtension
   final JpaIntegrationTestExtension jpa =
-      new JpaTestExtensions.Builder().buildIntegrationTestExtension();
+      new JpaTestExtensions.Builder().withClock(clock).buildIntegrationTestExtension();
 
   protected static final AuthResult AUTH_RESULT =
       AuthResult.createUser(
@@ -61,7 +63,6 @@ abstract class RdapActionBaseTestCase<A extends RdapActionBase> {
               .build());
 
   protected FakeResponse response = new FakeResponse();
-  protected final FakeClock clock = new FakeClock(DateTime.parse("2000-01-01TZ"));
   final RdapMetrics rdapMetrics = mock(RdapMetrics.class);
 
   RdapAuthorization.Role metricRole = PUBLIC;

@@ -593,30 +593,31 @@ public final class DatabaseHelper {
       DateTime expirationTime) {
     String domainName = String.format("%s.%s", label, tld);
     String repoId = generateNewDomainRoid(tld);
-    Domain domain =
-        persistResource(
-            new Domain.Builder()
-                .setRepoId(repoId)
-                .setDomainName(domainName)
-                .setPersistedCurrentSponsorRegistrarId("TheRegistrar")
-                .setCreationRegistrarId("TheRegistrar")
-                .setCreationTimeForTest(creationTime)
-                .setRegistrationExpirationTime(expirationTime)
-                .setRegistrant(Optional.of(contact.createVKey()))
-                .setContacts(
-                    ImmutableSet.of(
-                        DesignatedContact.create(Type.ADMIN, contact.createVKey()),
-                        DesignatedContact.create(Type.TECH, contact.createVKey())))
-                .setAuthInfo(DomainAuthInfo.create(PasswordAuth.create("fooBAR")))
-                .addGracePeriod(
-                    GracePeriod.create(
-                        GracePeriodStatus.ADD, repoId, now.plusDays(10), "TheRegistrar", null))
-                .build());
+    Domain.Builder domainBuilder =
+        new Domain.Builder()
+            .setRepoId(repoId)
+            .setDomainName(domainName)
+            .setPersistedCurrentSponsorRegistrarId("TheRegistrar")
+            .setCreationRegistrarId("TheRegistrar")
+            .setCreationTimeForTest(creationTime)
+            .setRegistrationExpirationTime(expirationTime)
+            .setRegistrant(Optional.of(contact.createVKey()))
+            .setContacts(
+                ImmutableSet.of(
+                    DesignatedContact.create(Type.ADMIN, contact.createVKey()),
+                    DesignatedContact.create(Type.TECH, contact.createVKey())))
+            .setAuthInfo(DomainAuthInfo.create(PasswordAuth.create("fooBAR")));
+    if (creationTime.plusDays(5).isAfter(now)) {
+      domainBuilder.addGracePeriod(
+          GracePeriod.create(
+              GracePeriodStatus.ADD, repoId, creationTime.plusDays(5), "TheRegistrar", null));
+    }
+    Domain domain = persistResource(domainBuilder.build());
     DomainHistory historyEntryDomainCreate =
         persistResource(
             new DomainHistory.Builder()
                 .setType(HistoryEntry.Type.DOMAIN_CREATE)
-                .setModificationTime(now)
+                .setModificationTime(creationTime)
                 .setDomain(domain)
                 .setRegistrarId(domain.getCreationRegistrarId())
                 .build());

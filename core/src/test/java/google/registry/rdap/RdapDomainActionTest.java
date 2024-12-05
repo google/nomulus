@@ -17,6 +17,8 @@ package google.registry.rdap;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.EppResourceUtils.loadByForeignKey;
 import static google.registry.testing.DatabaseHelper.createTld;
+import static google.registry.testing.DatabaseHelper.persistActiveDomain;
+import static google.registry.testing.DatabaseHelper.persistDomainWithDependentResources;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.DatabaseHelper.persistSimpleResources;
 import static google.registry.testing.FullFieldsTestEntityHelper.makeAndPersistHost;
@@ -31,7 +33,10 @@ import com.google.common.collect.ImmutableSet;
 import com.google.gson.JsonObject;
 import google.registry.model.contact.Contact;
 import google.registry.model.domain.Domain;
+import google.registry.model.domain.GracePeriod;
 import google.registry.model.domain.Period;
+import google.registry.model.domain.rgp.GracePeriodStatus;
+import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.host.Host;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.reporting.HistoryEntry;
@@ -43,6 +48,7 @@ import google.registry.rdap.RdapSearchResults.IncompletenessWarningType;
 import google.registry.request.Action;
 import google.registry.testing.FullFieldsTestEntityHelper;
 import java.util.Optional;
+import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -59,6 +65,9 @@ class RdapDomainActionTest extends RdapActionBaseTestCase<RdapDomainAction> {
     super(RdapDomainAction.class);
   }
 
+  private Contact registrantLol;
+  private Host host1;
+
   @BeforeEach
   void beforeEach() {
     // lol
@@ -66,7 +75,7 @@ class RdapDomainActionTest extends RdapActionBaseTestCase<RdapDomainAction> {
     Registrar registrarLol = persistResource(makeRegistrar(
         "evilregistrar", "Yes Virginia <script>", Registrar.State.ACTIVE));
     persistSimpleResources(makeRegistrarPocs(registrarLol));
-    Contact registrantLol =
+    registrantLol =
         FullFieldsTestEntityHelper.makeAndPersistContact(
             "5372808-ERL",
             "Goblin Market",
@@ -83,7 +92,7 @@ class RdapDomainActionTest extends RdapActionBaseTestCase<RdapDomainAction> {
     Contact techContactLol =
         FullFieldsTestEntityHelper.makeAndPersistContact(
             "5372808-TRL", "The Raven", "bog@cat.lol", clock.nowUtc().minusYears(3), registrarLol);
-    Host host1 = makeAndPersistHost("ns1.cat.lol", "1.2.3.4", null, clock.nowUtc().minusYears(1));
+    host1 = makeAndPersistHost("ns1.cat.lol", "1.2.3.4", null, clock.nowUtc().minusYears(1));
     Host host2 =
         makeAndPersistHost(
             "ns2.cat.lol", "bad:f00d:cafe:0:0:0:15:beef", clock.nowUtc().minusYears(2));
@@ -494,6 +503,93 @@ class RdapDomainActionTest extends RdapActionBaseTestCase<RdapDomainAction> {
   }
 
   @Test
+  void testAddGracePeriod() {
+    persistActiveDomainWithHost(
+        "addgraceperiod", "lol", clock.nowUtc(), clock.nowUtc().plusYears(1));
+    assertAboutJson()
+        .that(generateActualJson("addgraceperiod.lol"))
+        .isEqualTo(addBoilerplate(jsonFileBuilder().load("rdap_domain_add_grace_period.json")));
+  }
+
+  @Test
+  void testAutoRenewGracePeriod() {
+    persistActiveDomainWithHost(
+        "autorenew", "lol", clock.nowUtc().minusYears(1).minusDays(1), clock.nowUtc().minusDays(1));
+    assertAboutJson()
+        .that(generateActualJson("autorenew.lol"))
+        .isEqualTo(
+            addBoilerplate(jsonFileBuilder().load("rdap_domain_auto_renew_grace_period.json")));
+  }
+
+  @Test
+  void testRedemptionGracePeriod() {
+    Domain domain = persistActiveDomain("redemption.lol", clock.nowUtc().minusYears(1));
+    persistResource(
+        domain
+            .asBuilder()
+            .addNameserver(host1.createVKey())
+            .setDeletionTime(clock.nowUtc().plusDays(1))
+            .setStatusValues(ImmutableSet.of(StatusValue.PENDING_DELETE))
+            .setGracePeriods(
+                ImmutableSet.of(
+                    GracePeriod.createWithoutBillingEvent(
+                        GracePeriodStatus.REDEMPTION,
+                        domain.getRepoId(),
+                        clock.nowUtc().plusDays(4),
+                        "TheRegistrar")))
+            .build());
+    assertAboutJson()
+        .that(generateActualJson("redemption.lol"))
+        .isEqualTo(
+            addBoilerplate(
+                jsonFileBuilder().load("rdap_domain_pending_delete_redemption_grace_period.json")));
+  }
+
+  @Test
+  void testRenewGracePeriod() {
+    Domain domain =
+        persistActiveDomainWithHost(
+            "renew", "lol", clock.nowUtc().minusYears(1), clock.nowUtc().plusYears(1));
+    persistResource(
+        domain
+            .asBuilder()
+            .addGracePeriod(
+                GracePeriod.create(
+                    GracePeriodStatus.RENEW,
+                    domain.getRepoId(),
+                    clock.nowUtc().plusDays(1),
+                    "TheRegistrar",
+                    null))
+            .build());
+    assertAboutJson()
+        .that(generateActualJson("renew.lol"))
+        .isEqualTo(
+            addBoilerplate(jsonFileBuilder().load("rdap_domain_explicit_renew_grace_period.json")));
+  }
+
+  @Test
+  void testTransferGracePeriod() {
+    Domain domain =
+        persistActiveDomainWithHost(
+            "transfer", "lol", clock.nowUtc().minusMonths(6), clock.nowUtc().plusYears(1));
+    persistResource(
+        domain
+            .asBuilder()
+            .addGracePeriod(
+                GracePeriod.create(
+                    GracePeriodStatus.TRANSFER,
+                    domain.getRepoId(),
+                    clock.nowUtc().plusDays(1),
+                    "TheRegistrar",
+                    null))
+            .build());
+    assertAboutJson()
+        .that(generateActualJson("transfer.lol"))
+        .isEqualTo(
+            addBoilerplate(jsonFileBuilder().load("rdap_domain_transfer_grace_period.json")));
+  }
+
+  @Test
   void testMetrics() {
     generateActualJson("cat.lol");
     verify(rdapMetrics)
@@ -510,5 +606,15 @@ class RdapDomainActionTest extends RdapActionBaseTestCase<RdapDomainAction> {
                 .setStatusCode(200)
                 .setIncompletenessWarningType(IncompletenessWarningType.COMPLETE)
                 .build());
+  }
+
+  private Domain persistActiveDomainWithHost(
+      String label, String tld, DateTime creationTime, DateTime expirationTime) {
+    return persistResource(
+        persistDomainWithDependentResources(
+                label, tld, registrantLol, clock.nowUtc(), creationTime, expirationTime)
+            .asBuilder()
+            .addNameserver(host1.createVKey())
+            .build());
   }
 }
