@@ -37,7 +37,8 @@ public class ServiceConnectionTest {
 
   @Test
   void testSuccess_serverUrl_notCanary() {
-    ServiceConnection connection = new ServiceConnection(false, null).withService(DEFAULT, false);
+    ServiceConnection connection =
+        new ServiceConnection(false, false, null).withService(DEFAULT, false);
     String serverUrl = connection.getServer().toString();
     assertThat(serverUrl).isEqualTo("https://default.example.com"); // See default-config.yaml
   }
@@ -48,14 +49,15 @@ public class ServiceConnectionTest {
         assertThrows(
             IllegalArgumentException.class,
             () -> {
-              new ServiceConnection(true, null).withService(DEFAULT, true);
+              new ServiceConnection(true, false, null).withService(DEFAULT, true);
             });
     assertThat(thrown).hasMessageThat().contains("Cannot switch from GkeService to GaeService");
   }
 
   @Test
   void testSuccess_serverUrl_gae_canary() {
-    ServiceConnection connection = new ServiceConnection(false, null).withService(DEFAULT, true);
+    ServiceConnection connection =
+        new ServiceConnection(false, false, null).withService(DEFAULT, true);
     String serverUrl = connection.getServer().toString();
     assertThat(serverUrl).isEqualTo("https://nomulus-dot-default.example.com");
   }
@@ -71,7 +73,7 @@ public class ServiceConnectionTest {
     when(request.execute()).thenReturn(response);
     when(response.getContent()).thenReturn(ByteArrayInputStream.nullInputStream());
     ServiceConnection connection =
-        new ServiceConnection(true, factory).withService(GkeService.PUBAPI, true);
+        new ServiceConnection(true, false, factory).withService(GkeService.PUBAPI, true);
     String serverUrl = connection.getServer().toString();
     assertThat(serverUrl).isEqualTo("https://pubapi.registry.test");
     connection.sendGetRequest("/path", ImmutableMap.of());
