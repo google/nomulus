@@ -17,7 +17,7 @@ import java.util.Optional
 
 plugins {
   id 'java-library'
-  id "org.flywaydb.flyway" version "10.8.1"
+  id "org.flywaydb.flyway" version "11.0.1"
   id 'maven-publish'
 }
 

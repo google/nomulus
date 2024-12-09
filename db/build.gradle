@@ -23,7 +23,7 @@ buildscript {
 }
 
 plugins {
-  id "org.flywaydb.flyway" version "10.13.0"
+  id "org.flywaydb.flyway" version "11.0.1"
   id 'maven-publish'
 }
 
