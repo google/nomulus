@@ -180,7 +180,7 @@ public class GracePeriod extends GracePeriodBase {
 
   /** Entity class to represent a historic {@link GracePeriod}. */
   @Entity(name = "GracePeriodHistory")
-  @Table(indexes = @Index(columnList = "domainRepoId"))
+  @Table(indexes = {@Index(columnList = "domainRepoId"), @Index(columnList = "domainRepoId,domainHistoryRevisionId")})
   public static class GracePeriodHistory extends GracePeriodBase {
     @Id Long gracePeriodHistoryRevisionId;
 

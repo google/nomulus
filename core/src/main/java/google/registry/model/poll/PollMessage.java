@@ -89,8 +89,9 @@ import org.joda.time.DateTime;
 @Table(
     indexes = {
       @Index(columnList = "domainRepoId"),
-      @Index(columnList = "registrar_id"),
-      @Index(columnList = "eventTime")
+      @Index(columnList = "registrarId"),
+      @Index(columnList = "eventTime"),
+      @Index(columnList = "domainRepoId,domainHistoryRevisionId")
     })
 public abstract class PollMessage extends ImmutableObject
     implements Buildable, TransferServerApproveEntity, UnsafeSerializable {

@@ -46,7 +46,8 @@ import org.joda.time.DateTime;
       @Index(columnList = "domainRepoId"),
       @Index(columnList = "billingTime"),
       @Index(columnList = "billing_event_id"),
-      @Index(columnList = "billing_recurrence_id")
+      @Index(columnList = "billing_recurrence_id"),
+      @Index(columnList = "domainRepoId,domainHistoryRevisionId")
     })
 @AttributeOverride(name = "id", column = @Column(name = "billing_cancellation_id"))
 @WithVKey(Long.class)

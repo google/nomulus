@@ -1863,6 +1863,13 @@ CREATE INDEX domain_history_to_transaction_record_idx ON public."DomainTransacti
 
 
 --
+-- Name: idx1dyqmqb61xbnj7mt7bk27ds25; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx1dyqmqb61xbnj7mt7bk27ds25 ON public."DomainTransactionRecord" USING btree (domain_repo_id, history_revision_id);
+
+
+--
 -- Name: idx1iy7njgb7wjmj9piml4l2g0qi; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -2003,6 +2010,20 @@ CREATE INDEX idx73l103vc5900ig3p4odf0cngt ON public."BillingEvent" USING btree (
 
 
 --
+-- Name: idx77ceolnf7rok8ui957msmo6en; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx77ceolnf7rok8ui957msmo6en ON public."BillingEvent" USING btree (domain_repo_id, domain_history_revision_id);
+
+
+--
+-- Name: idx7v75e535c47mxfb2rk9o843bn; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx7v75e535c47mxfb2rk9o843bn ON public."BillingCancellation" USING btree (domain_repo_id, domain_history_revision_id);
+
+
+--
 -- Name: idx8gtvnbk64yskcvrdp61f5ied3; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -2122,6 +2143,13 @@ CREATE INDEX idxe7wu46c7wpvfmfnj4565abibp ON public."PollMessage" USING btree (r
 
 
 --
+-- Name: idxehp8ejwpbsooar0e8k32847m3; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idxehp8ejwpbsooar0e8k32847m3 ON public."BillingEvent" USING btree (domain_repo_id, recurrence_history_revision_id);
+
+
+--
 -- Name: idxeokttmxtpq2hohcioe5t2242b; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -2147,6 +2175,13 @@ CREATE INDEX idxfdk2xpil2x1gh0omt84k2y3o1 ON public."DnsRefreshRequest" USING bt
 --
 
 CREATE INDEX idxfg2nnjlujxo6cb9fha971bq2n ON public."HostHistory" USING btree (creation_time);
+
+
+--
+-- Name: idxfkg5lrxr5yg54jpii25a17v53; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idxfkg5lrxr5yg54jpii25a17v53 ON public."PollMessage" USING btree (domain_repo_id, domain_history_revision_id);
 
 
 --
@@ -2262,6 +2297,13 @@ CREATE INDEX idxl49vydnq0h5j1piefwjy4i8er ON public."Host" USING btree (current_
 
 
 --
+-- Name: idxl67y6wclc2uaupepnvkoo81fl; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idxl67y6wclc2uaupepnvkoo81fl ON public."GracePeriodHistory" USING btree (domain_repo_id, domain_history_revision_id);
+
+
+--
 -- Name: idxl8vobbecsd32k4ksavdfx8st6; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -2276,6 +2318,13 @@ CREATE INDEX idxlg6a5tp70nch9cp0gc11brc5o ON public."PackagePromotion" USING btr
 
 
 --
+-- Name: idxlh9lvmxb2dj3ti83buauwvbil; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idxlh9lvmxb2dj3ti83buauwvbil ON public."BillingRecurrence" USING btree (domain_repo_id, domain_history_revision_id);
+
+
+--
 -- Name: idxlrq7v63pc21uoh3auq6eybyhl; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -2287,6 +2336,13 @@ CREATE INDEX idxlrq7v63pc21uoh3auq6eybyhl ON public."Domain" USING btree (autore
 --
 
 CREATE INDEX idxm6k18dusy2lfi5y81k8g256sa ON public."RegistrarUpdateHistory" USING btree (history_acting_user);
+
+
+--
+-- Name: idxmk1d2ngdtfkg6odmw7l5ejisw; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idxmk1d2ngdtfkg6odmw7l5ejisw ON public."DomainDsDataHistory" USING btree (domain_repo_id, domain_history_revision_id);
 
 
 --
@@ -2570,14 +2626,6 @@ ALTER TABLE ONLY public."ClaimsEntry"
 
 
 --
--- Name: GracePeriodHistory fk7w3cx8d55q8bln80e716tr7b8; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public."GracePeriodHistory"
-    ADD CONSTRAINT fk7w3cx8d55q8bln80e716tr7b8 FOREIGN KEY (domain_repo_id, domain_history_revision_id) REFERENCES public."DomainHistory"(domain_repo_id, history_revision_id) DEFERRABLE INITIALLY DEFERRED;
-
-
---
 -- Name: Contact fk93c185fx7chn68uv7nl6uv2s0; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -2599,14 +2647,6 @@ ALTER TABLE ONLY public."BillingCancellation"
 
 ALTER TABLE ONLY public."BillingCancellation"
     ADD CONSTRAINT fk_billing_cancellation_billing_recurrence_id FOREIGN KEY (billing_recurrence_id) REFERENCES public."BillingRecurrence"(billing_recurrence_id) DEFERRABLE INITIALLY DEFERRED;
-
-
---
--- Name: BillingCancellation fk_billing_cancellation_domain_history; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public."BillingCancellation"
-    ADD CONSTRAINT fk_billing_cancellation_domain_history FOREIGN KEY (domain_repo_id, domain_history_revision_id) REFERENCES public."DomainHistory"(domain_repo_id, history_revision_id) DEFERRABLE INITIALLY DEFERRED;
 
 
 --
@@ -2634,35 +2674,11 @@ ALTER TABLE ONLY public."BillingEvent"
 
 
 --
--- Name: BillingEvent fk_billing_event_domain_history; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public."BillingEvent"
-    ADD CONSTRAINT fk_billing_event_domain_history FOREIGN KEY (domain_repo_id, domain_history_revision_id) REFERENCES public."DomainHistory"(domain_repo_id, history_revision_id) DEFERRABLE INITIALLY DEFERRED;
-
-
---
--- Name: BillingEvent fk_billing_event_recurrence_history; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public."BillingEvent"
-    ADD CONSTRAINT fk_billing_event_recurrence_history FOREIGN KEY (domain_repo_id, recurrence_history_revision_id) REFERENCES public."DomainHistory"(domain_repo_id, history_revision_id) DEFERRABLE INITIALLY DEFERRED;
-
-
---
 -- Name: BillingEvent fk_billing_event_registrar_id; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public."BillingEvent"
     ADD CONSTRAINT fk_billing_event_registrar_id FOREIGN KEY (registrar_id) REFERENCES public."Registrar"(registrar_id) DEFERRABLE INITIALLY DEFERRED;
-
-
---
--- Name: BillingRecurrence fk_billing_recurrence_domain_history; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public."BillingRecurrence"
-    ADD CONSTRAINT fk_billing_recurrence_domain_history FOREIGN KEY (domain_repo_id, domain_history_revision_id) REFERENCES public."DomainHistory"(domain_repo_id, history_revision_id) DEFERRABLE INITIALLY DEFERRED;
 
 
 --
@@ -2938,14 +2954,6 @@ ALTER TABLE ONLY public."PollMessage"
 
 
 --
--- Name: PollMessage fk_poll_message_domain_history; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public."PollMessage"
-    ADD CONSTRAINT fk_poll_message_domain_history FOREIGN KEY (domain_repo_id, domain_history_revision_id) REFERENCES public."DomainHistory"(domain_repo_id, history_revision_id) DEFERRABLE INITIALLY DEFERRED;
-
-
---
 -- Name: PollMessage fk_poll_message_domain_repo_id; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -3026,14 +3034,6 @@ ALTER TABLE ONLY public."BsaUnblockableDomain"
 
 
 --
--- Name: DomainTransactionRecord fkcjqe54u72kha71vkibvxhjye7; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public."DomainTransactionRecord"
-    ADD CONSTRAINT fkcjqe54u72kha71vkibvxhjye7 FOREIGN KEY (domain_repo_id, history_revision_id) REFERENCES public."DomainHistory"(domain_repo_id, history_revision_id) DEFERRABLE INITIALLY DEFERRED;
-
-
---
 -- Name: DomainHost fkfmi7bdink53swivs390m2btxg; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -3079,14 +3079,6 @@ ALTER TABLE ONLY public."Contact"
 
 ALTER TABLE ONLY public."PremiumEntry"
     ADD CONSTRAINT fko0gw90lpo1tuee56l0nb6y6g5 FOREIGN KEY (revision_id) REFERENCES public."PremiumList"(revision_id) DEFERRABLE INITIALLY DEFERRED;
-
-
---
--- Name: DomainDsDataHistory fko4ilgyyfnvppbpuivus565i0j; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public."DomainDsDataHistory"
-    ADD CONSTRAINT fko4ilgyyfnvppbpuivus565i0j FOREIGN KEY (domain_repo_id, domain_history_revision_id) REFERENCES public."DomainHistory"(domain_repo_id, history_revision_id) DEFERRABLE INITIALLY DEFERRED;
 
 
 --

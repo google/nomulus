@@ -50,7 +50,8 @@ import org.joda.time.DateTime;
       @Index(columnList = "domainRepoId"),
       @Index(columnList = "recurrenceEndTime"),
       @Index(columnList = "recurrenceLastExpansion"),
-      @Index(columnList = "recurrence_time_of_year")
+      @Index(columnList = "recurrenceTimeOfYear"),
+      @Index(columnList = "domainRepoId,domainHistoryRevisionId")
     })
 @AttributeOverride(name = "id", column = @Column(name = "billing_recurrence_id"))
 @WithVKey(Long.class)
