@@ -23,9 +23,12 @@ import jakarta.persistence.AccessType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
+import jakarta.persistence.Index;
+import jakarta.persistence.Table;
 
 /** Entity class to represent a historic {@link DomainDsData}. */
 @Entity
+@Table(indexes = @Index(columnList = "domainRepoId,domainHistoryRevisionId"))
 public class DomainDsDataHistory extends DomainDsDataBase {
 
   @Id Long dsDataHistoryRevisionId;

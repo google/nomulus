@@ -29,6 +29,8 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Index;
+import jakarta.persistence.Table;
 import org.joda.time.DateTime;
 
 /**
@@ -42,6 +44,7 @@ import org.joda.time.DateTime;
  * uses HistoryEntry.otherClientId because the losing party in a transfer is always the otherClient.
  */
 @Entity
+@Table(indexes = @Index(columnList = "domainRepoId,historyRevisionId"))
 public class DomainTransactionRecord extends ImmutableObject
     implements Buildable, UnsafeSerializable {
 
