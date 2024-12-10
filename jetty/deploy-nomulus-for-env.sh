@@ -42,6 +42,9 @@ do
     sed s/ENVIRONMENT/"${environment}"/g | \
     sed s/"${service}"/"${service}-canary"/g | \
     kubectl apply -f -
+    # Annotate the k8s service account to link it to GCP service account.
+    kubectl annotate serviceaccount nomulus \
+      iam.gke.io/gcp-service-account="nomulus-service-account@${project}.iam.gserviceaccount.com"
   done
   # Kills all running pods, new pods created will be pulling the new image.
   kubectl delete pods --all
@@ -49,11 +52,13 @@ do
   if [[ "${parts[1]}" == us-* ]]
   then
     kubectl apply -f "./kubernetes/gateway/nomulus-gateway.yaml"
-    for service in frontend backend pubapi console
+    for service in frontend backend console
     do
       sed s/BASE_DOMAIN/"${base_domain}"/g "./kubernetes/gateway/nomulus-route-${service}.yaml" | \
       kubectl apply -f -
       sed s/SERVICE/"${service}"/g "./kubernetes/gateway/nomulus-iap-${environment}.yaml" | \
+      kubectl apply -f -
+      sed s/SERVICE/"${service}-canary"/g "./kubernetes/gateway/nomulus-iap-${environment}.yaml" | \
       kubectl apply -f -
     done
   fi

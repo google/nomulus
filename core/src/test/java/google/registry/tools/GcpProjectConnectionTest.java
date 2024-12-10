@@ -85,7 +85,7 @@ final class GcpProjectConnectionTest {
     when(lowLevelHttpResponse.getStatusCode()).thenReturn(200);
 
     httpTransport = new TestHttpTransport();
-    connection = new ServiceConnection(false, httpTransport.createRequestFactory());
+    connection = new ServiceConnection(false, false, httpTransport.createRequestFactory());
   }
 
   @Test

@@ -80,14 +80,13 @@ class CurlCommand implements CommandWithConnection {
       required = true)
   private String serviceName;
 
-  @Parameter(
-      names = {"--canary"},
-      description = "If set, use the canary end-point; otherwise use the regular end-point.")
-  private Boolean canary = Boolean.FALSE;
-
   @Inject
   @Config("useGke")
   boolean useGke;
+
+  @Inject
+  @Config("useCanary")
+  boolean useCanary;
 
   @Override
   public void setConnection(ServiceConnection connection) {
@@ -109,7 +108,7 @@ class CurlCommand implements CommandWithConnection {
             ? GkeService.valueOf(Ascii.toUpperCase(serviceName))
             : GaeService.valueOf(Ascii.toUpperCase(serviceName));
 
-    ServiceConnection connectionToService = connection.withService(service, canary);
+    ServiceConnection connectionToService = connection.withService(service, useCanary);
     String response =
         (method == Method.GET)
             ? connectionToService.sendGetRequest(path, ImmutableMap.<String, String>of())
