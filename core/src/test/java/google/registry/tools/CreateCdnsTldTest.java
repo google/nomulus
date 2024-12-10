@@ -55,7 +55,7 @@ class CreateCdnsTldTest extends CommandTestCase<CreateCdnsTld> {
         .setDnsName(dnsName)
         .setDescription(description)
         .setName(name)
-        .setDnssecConfig(new ManagedZoneDnsSecConfig().setState("ON").setNonExistence("NSEC"));
+        .setDnssecConfig(new ManagedZoneDnsSecConfig().setState("on").setNonExistence("nsec"));
   }
 
   @Test
