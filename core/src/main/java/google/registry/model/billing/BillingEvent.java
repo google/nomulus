@@ -42,7 +42,9 @@ import org.joda.time.DateTime;
       @Index(columnList = "syntheticCreationTime"),
       @Index(columnList = "domainRepoId"),
       @Index(columnList = "allocationToken"),
-      @Index(columnList = "cancellation_matching_billing_recurrence_id")
+      @Index(columnList = "cancellationMatchingBillingRecurrenceId"),
+      @Index(columnList = "domainRepoId,domainHistoryRevisionId"),
+      @Index(columnList = "domainRepoId,recurrenceHistoryRevisionId")
     })
 @AttributeOverride(name = "id", column = @Column(name = "billing_event_id"))
 @WithVKey(Long.class)
