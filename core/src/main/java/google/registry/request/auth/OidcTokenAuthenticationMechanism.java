@@ -87,6 +87,9 @@ public abstract class OidcTokenAuthenticationMechanism implements Authentication
       if (RegistryEnvironment.isOnJetty()) {
         String hostname = request.getServerName();
         service = Splitter.on('.').split(hostname).iterator().next();
+        if (request.getHeader("canary") != null) {
+          service += "-canary";
+        }
       }
       token = tokenVerifier.verify(service, rawIdToken);
     } catch (Exception e) {

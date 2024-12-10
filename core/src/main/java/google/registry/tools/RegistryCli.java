@@ -73,6 +73,9 @@ final class RegistryCli implements CommandRunner {
   @Parameter(names = "--gke", description = "Whether to use GKE runtime, instead of GAE")
   private boolean useGke = false;
 
+  @Parameter(names = "--canary", description = "Whether to connect to the canary instances")
+  private boolean useCanary = false;
+
   // Do not make this final - compile-time constant inlining may interfere with JCommander.
   @ParametersDelegate private LoggingParameters loggingParams = new LoggingParameters();
 
@@ -166,6 +169,7 @@ final class RegistryCli implements CommandRunner {
             .credentialFilePath(credentialJson)
             .sqlAccessInfoFile(sqlAccessInfoFile)
             .useGke(useGke)
+            .useCanary(useCanary)
             .build();
 
     // JCommander stores sub-commands as nested JCommander objects containing a list of user objects
@@ -196,9 +200,9 @@ final class RegistryCli implements CommandRunner {
           System.err.println("===================================================================");
           System.err.println(
               """
-                  This error is likely the result of having another instance of
-                  nomulus running at the same time.  Check your system, shut down
-                  the other instance, and try again.""");
+              This error is likely the result of having another instance of
+              nomulus running at the same time.  Check your system, shut down
+              the other instance, and try again.""");
           System.err.println("===================================================================");
         } else {
           throw e;

@@ -195,6 +195,9 @@ interface RegistryToolComponent {
     @BindsInstance
     Builder useGke(@Config("useGke") boolean useGke);
 
+    @BindsInstance
+    Builder useCanary(@Config("useCanary") boolean useCanary);
+
     RegistryToolComponent build();
   }
 }
