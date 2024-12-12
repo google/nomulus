@@ -15,6 +15,7 @@
 package google.registry.request.auth;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Suppliers.memoizeWithExpiration;
 import static com.google.common.net.HttpHeaders.AUTHORIZATION;
 import static google.registry.util.RegistryEnvironment.UNITTEST;
 
@@ -37,8 +38,11 @@ import google.registry.request.auth.OidcTokenAuthenticationMechanism.TokenVerifi
 import google.registry.util.GoogleCredentialsBundle;
 import google.registry.util.RegistryEnvironment;
 import java.io.IOException;
+import java.time.Duration;
+import java.util.function.Supplier;
 import javax.annotation.Nullable;
 import javax.inject.Named;
+import javax.inject.Provider;
 import javax.inject.Qualifier;
 import javax.inject.Singleton;
 
@@ -156,7 +160,6 @@ public class AuthModule {
   }
 
   @Provides
-  @Singleton
   @Named("backendServiceIdMap")
   static ImmutableMap<String, Long> provideBackendServiceList(
       Lazy<BackendServicesClient> client, @Config("projectId") String projectId) {
@@ -173,5 +176,15 @@ public class AuthModule {
       builder.put(matcher.group(1), service.getId());
     }
     return builder.build();
+  }
+
+  // Use an expiring cache so that the backend service ID map can be refreshed without restarting
+  // the server. The map is very unlikely to change, except for when services are just deployed
+  // for the first time, because some pods might receive traffic before all services are deployed.
+  @Provides
+  @Singleton
+  static Supplier<ImmutableMap<String, Long>> provideBackendServiceIdMapSupplier(
+      @Named("backendServiceIdMap") Provider<ImmutableMap<String, Long>> backendServiceIdMap) {
+    return memoizeWithExpiration(backendServiceIdMap::get, Duration.ofMinutes(15));
   }
 }

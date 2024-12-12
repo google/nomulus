@@ -8,9 +8,6 @@
 # GCP project ID
 projectId: your-gcp-project-id
 
-# Whether to connect to the canary (instead of regular) service.
-canary: false
-
 # OAuth client ID set as the audience of the OIDC token. This value must be the
 # same as the auth.oauthClientId value in Nomulus config file, which usually is
 # the IAP client ID, to allow the request to access IAP protected endpoints.

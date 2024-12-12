@@ -281,8 +281,8 @@ public class ProxyModule {
   @Singleton
   @Provides
   @Named("canary")
-  static boolean provideIsCanary(ProxyConfig config) {
-    return config.canary;
+  boolean provideIsCanary(Environment env) {
+    return env.name().endsWith("_CANARY");
   }
 
   @Singleton
