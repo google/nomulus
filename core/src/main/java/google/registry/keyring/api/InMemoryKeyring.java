@@ -39,6 +39,8 @@ public final class InMemoryKeyring implements Keyring {
   private final String marksdbLordnPassword;
   private final String marksdbSmdrlLoginAndPassword;
   private final String bsaApiKey;
+  private final String sqlPrimaryConnectionName;
+  private final String sqlReplicaConnectionName;
 
   public InMemoryKeyring(
       PGPKeyPair rdeStagingKey,
@@ -55,7 +57,9 @@ public final class InMemoryKeyring implements Keyring {
       String marksdbSmdrlLoginAndPassword,
       String cloudSqlPassword,
       String toolsCloudSqlPassword,
-      String bsaApiKey) {
+      String bsaApiKey,
+      String sqlPrimaryConnectionName,
+      String sqlReplicaConnectionName) {
     checkArgument(PgpHelper.isSigningKey(rdeSigningKey.getPublicKey()),
         "RDE signing key must support signing: %s", rdeSigningKey.getKeyID());
     checkArgument(rdeStagingKey.getPublicKey().isEncryptionKey(),
@@ -81,6 +85,8 @@ public final class InMemoryKeyring implements Keyring {
     this.marksdbSmdrlLoginAndPassword =
         checkNotNull(marksdbSmdrlLoginAndPassword, "marksdbSmdrlLoginAndPassword");
     this.bsaApiKey = checkNotNull(bsaApiKey, "bsaApiKey");
+    this.sqlPrimaryConnectionName = sqlPrimaryConnectionName;
+    this.sqlReplicaConnectionName = sqlReplicaConnectionName;
   }
 
   @Override
@@ -151,6 +157,16 @@ public final class InMemoryKeyring implements Keyring {
   @Override
   public String getBsaApiKey() {
     return bsaApiKey;
+  }
+
+  @Override
+  public String getSqlPrimaryConnectionName() {
+    return sqlPrimaryConnectionName;
+  }
+
+  @Override
+  public String getSqlReplicaConnectionName() {
+    return sqlReplicaConnectionName;
   }
 
   /** Does nothing. */

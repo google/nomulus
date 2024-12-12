@@ -32,6 +32,8 @@ import static google.registry.keyring.secretmanager.SecretManagerKeyring.StringK
 import static google.registry.keyring.secretmanager.SecretManagerKeyring.StringKeyLabel.RDE_SSH_CLIENT_PRIVATE_STRING;
 import static google.registry.keyring.secretmanager.SecretManagerKeyring.StringKeyLabel.RDE_SSH_CLIENT_PUBLIC_STRING;
 import static google.registry.keyring.secretmanager.SecretManagerKeyring.StringKeyLabel.SAFE_BROWSING_API_KEY;
+import static google.registry.keyring.secretmanager.SecretManagerKeyring.StringKeyLabel.SQL_PRIMARY_CONN_NAME;
+import static google.registry.keyring.secretmanager.SecretManagerKeyring.StringKeyLabel.SQL_REPLICA_CONN_NAME;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 
 import com.google.common.flogger.FluentLogger;
@@ -122,6 +124,14 @@ public final class SecretManagerKeyringUpdater {
 
   public SecretManagerKeyringUpdater setBsaApiKey(String credential) {
     return setString(credential, BSA_API_KEY_STRING);
+  }
+
+  public SecretManagerKeyringUpdater setSqlPrimaryConnectionName(String name) {
+    return setString(name, SQL_PRIMARY_CONN_NAME);
+  }
+
+  public SecretManagerKeyringUpdater setSqlReplicaConnectionName(String name) {
+    return setString(name, SQL_REPLICA_CONN_NAME);
   }
 
   /**

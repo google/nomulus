@@ -124,7 +124,9 @@ public abstract class DummyKeyringModule {
         "not a real login",
         "not a real credential",
         "not a real password",
-        "not a real password");
+        "not a real password",
+        "not the real primary connection",
+        "not the real replica connection");
   }
 
   private DummyKeyringModule() {}

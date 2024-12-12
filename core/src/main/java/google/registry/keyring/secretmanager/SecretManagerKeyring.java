@@ -57,14 +57,16 @@ public class SecretManagerKeyring implements Keyring {
 
   /** Key labels for string secrets. */
   enum StringKeyLabel {
-    SAFE_BROWSING_API_KEY,
     BSA_API_KEY_STRING,
     ICANN_REPORTING_PASSWORD_STRING,
     MARKSDB_DNL_LOGIN_STRING,
     MARKSDB_LORDN_PASSWORD_STRING,
     MARKSDB_SMDRL_LOGIN_STRING,
     RDE_SSH_CLIENT_PRIVATE_STRING,
-    RDE_SSH_CLIENT_PUBLIC_STRING;
+    RDE_SSH_CLIENT_PUBLIC_STRING,
+    SAFE_BROWSING_API_KEY,
+    SQL_PRIMARY_CONN_NAME,
+    SQL_REPLICA_CONN_NAME;
 
     String getLabel() {
       return UPPER_UNDERSCORE.to(LOWER_HYPHEN, name());
@@ -146,6 +148,16 @@ public class SecretManagerKeyring implements Keyring {
   @Override
   public String getBsaApiKey() {
     return getString(StringKeyLabel.BSA_API_KEY_STRING);
+  }
+
+  @Override
+  public String getSqlPrimaryConnectionName() {
+    return getString(StringKeyLabel.SQL_PRIMARY_CONN_NAME);
+  }
+
+  @Override
+  public String getSqlReplicaConnectionName() {
+    return getString(StringKeyLabel.SQL_REPLICA_CONN_NAME);
   }
 
   /** No persistent resources are maintained for this Keyring implementation. */

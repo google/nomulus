@@ -90,12 +90,16 @@ final class UpdateKeyringSecretCommand implements Command {
           secretManagerKeyringUpdater.setRdeSshClientPublicKey(deserializeString(input));
       case RDE_STAGING_KEY_PAIR ->
           secretManagerKeyringUpdater.setRdeStagingKey(deserializeKeyPair(input));
-      case SAFE_BROWSING_API_KEY ->
-          secretManagerKeyringUpdater.setSafeBrowsingAPIKey(deserializeString(input));
       case RDE_STAGING_PUBLIC_KEY ->
           throw new IllegalArgumentException(
               "Can't update RDE_STAGING_PUBLIC_KEY directly."
                   + " Must update public and private keys together using RDE_STAGING_KEY_PAIR.");
+      case SAFE_BROWSING_API_KEY ->
+          secretManagerKeyringUpdater.setSafeBrowsingAPIKey(deserializeString(input));
+      case SQL_PRIMARY_CONN_NAME ->
+          secretManagerKeyringUpdater.setSqlPrimaryConnectionName(deserializeString(input));
+      case SQL_REPLICA_CONN_NAME ->
+          secretManagerKeyringUpdater.setSqlReplicaConnectionName(deserializeString(input));
     }
 
     secretManagerKeyringUpdater.update();

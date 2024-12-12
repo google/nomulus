@@ -64,8 +64,6 @@ final class GetKeyringSecretCommand implements Command {
       case BSA_API_KEY -> out.write(KeySerializer.serializeString(keyring.getBsaApiKey()));
       case ICANN_REPORTING_PASSWORD ->
           out.write(KeySerializer.serializeString(keyring.getIcannReportingPassword()));
-      case SAFE_BROWSING_API_KEY ->
-          out.write(KeySerializer.serializeString(keyring.getSafeBrowsingAPIKey()));
       case MARKSDB_DNL_LOGIN_AND_PASSWORD ->
           out.write(KeySerializer.serializeString(keyring.getMarksdbDnlLoginAndPassword()));
       case MARKSDB_LORDN_PASSWORD ->
@@ -91,6 +89,12 @@ final class GetKeyringSecretCommand implements Command {
                       keyring.getRdeStagingEncryptionKey(), keyring.getRdeStagingDecryptionKey())));
       case RDE_STAGING_PUBLIC_KEY ->
           out.write(KeySerializer.serializePublicKey(keyring.getRdeStagingEncryptionKey()));
+      case SAFE_BROWSING_API_KEY ->
+          out.write(KeySerializer.serializeString(keyring.getSafeBrowsingAPIKey()));
+      case SQL_PRIMARY_CONN_NAME ->
+          out.write(KeySerializer.serializeString(keyring.getSqlPrimaryConnectionName()));
+      case SQL_REPLICA_CONN_NAME ->
+          out.write(KeySerializer.serializeString(keyring.getSqlReplicaConnectionName()));
     }
   }
 }

@@ -103,6 +103,24 @@ public class SecretManagerKeyringUpdaterTest {
   }
 
   @Test
+  void sqlPrimaryConnectionName() {
+    String name = "name";
+    updater.setSqlPrimaryConnectionName(name).update();
+
+    assertThat(keyring.getSqlPrimaryConnectionName()).isEqualTo(name);
+    verifyPersistedSecret("sql-primary-conn-name", name);
+  }
+
+  @Test
+  void sqlReplicaConnectionName() {
+    String name = "name";
+    updater.setSqlReplicaConnectionName(name).update();
+
+    assertThat(keyring.getSqlReplicaConnectionName()).isEqualTo(name);
+    verifyPersistedSecret("sql-replica-conn-name", name);
+  }
+
+  @Test
   void marksdbDnlLoginAndPassword() {
     String secret = "marksdbDnlLoginAndPassword";
     updater.setMarksdbDnlLoginAndPassword(secret).update();

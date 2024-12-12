@@ -148,6 +148,12 @@ public interface Keyring extends AutoCloseable {
   /** Returns the API_KEY for authentication with the BSA portal. */
   String getBsaApiKey();
 
+  /** Returns the Cloud SQL connection name of the primary database instance. */
+  String getSqlPrimaryConnectionName();
+
+  /** Returns the Cloud SQL connection name of the replica database instance. */
+  String getSqlReplicaConnectionName();
+
   // Don't throw so try-with-resources works better.
   @Override
   void close();
