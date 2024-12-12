@@ -160,6 +160,24 @@ class ConsoleUsersActionTest {
   }
 
   @Test
+  void testFailure_invalidPrefix() throws IOException {
+    User user = DatabaseHelper.createAdminUser("email@email.com");
+    AuthResult authResult = AuthResult.createUser(user);
+    ConsoleUsersAction action =
+        createAction(
+            Optional.of(ConsoleApiParamsUtils.createFake(authResult)),
+            Optional.of("POST"),
+            Optional.of(new UserData("a@d", RegistrarRole.ACCOUNT_MANAGER.toString(), null)));
+    action.cloudTasksUtils = cloudTasksHelper.getTestCloudTasksUtils();
+    when(directory.users()).thenReturn(users);
+    when(users.insert(any(com.google.api.services.directory.model.User.class))).thenReturn(insert);
+    action.run();
+    var response = ((FakeResponse) consoleApiParams.response());
+    assertThat(response.getStatus()).isEqualTo(SC_BAD_REQUEST);
+    assertThat(response.getPayload()).contains("Email prefix is invalid");
+  }
+
+  @Test
   void testSuccess_createsUser() throws IOException {
     User user = DatabaseHelper.createAdminUser("email@email.com");
     AuthResult authResult = AuthResult.createUser(user);
@@ -167,7 +185,7 @@ class ConsoleUsersActionTest {
         createAction(
             Optional.of(ConsoleApiParamsUtils.createFake(authResult)),
             Optional.of("POST"),
-            Optional.empty());
+            Optional.of(new UserData("lol", RegistrarRole.ACCOUNT_MANAGER.toString(), null)));
     action.cloudTasksUtils = cloudTasksHelper.getTestCloudTasksUtils();
     when(directory.users()).thenReturn(users);
     when(users.insert(any(com.google.api.services.directory.model.User.class))).thenReturn(insert);
@@ -176,7 +194,7 @@ class ConsoleUsersActionTest {
     assertThat(response.getStatus()).isEqualTo(SC_CREATED);
     assertThat(response.getPayload())
         .contains(
-            "{\"emailAddress\":\"TheRegistrar-user1@email.com\",\"role\":\"ACCOUNT_MANAGER\",\"password\":\"abcdefghijklmnop\"}");
+            "{\"emailAddress\":\"lol.TheRegistrar@email.com\",\"role\":\"ACCOUNT_MANAGER\",\"password\":\"abcdefghijklmnop\"}");
   }
 
   @Test
@@ -319,7 +337,8 @@ class ConsoleUsersActionTest {
         createAction(
             Optional.of(ConsoleApiParamsUtils.createFake(authResult)),
             Optional.of("POST"),
-            Optional.empty());
+            Optional.of(
+                new UserData("test3@test.com", RegistrarRole.ACCOUNT_MANAGER.toString(), null)));
     action.cloudTasksUtils = cloudTasksHelper.getTestCloudTasksUtils();
     when(directory.users()).thenReturn(users);
     when(users.insert(any(com.google.api.services.directory.model.User.class))).thenReturn(insert);

@@ -11,31 +11,10 @@
       <mat-icon>arrow_back</mat-icon>
     </button>
   </div>
-  <form (ngSubmit)="saveEdit()">
-    <p>
-      <mat-form-field appearance="outline">
-        <mat-label
-          >User Role:
-          <mat-icon
-            matTooltip="Viewer role doesn't allow making updates; Editor role allows updates, like Contacts delete or SSL certificate change"
-            >help_outline</mat-icon
-          ></mat-label
-        >
-        <mat-select [(ngModel)]="userRole" name="userRole">
-          <mat-option value="PRIMARY_CONTACT">Editor</mat-option>
-          <mat-option value="ACCOUNT_MANAGER">Viewer</mat-option>
-        </mat-select>
-      </mat-form-field>
-    </p>
-    <button
-      mat-flat-button
-      color="primary"
-      aria-label="Save user"
-      type="submit"
-    >
-      Save
-    </button>
-  </form>
+  <app-user-edit-form
+    [user]="userDetails()"
+    (onEditComplete)="saveEdit($event)"
+  />
   } @else { @if(isNewUser) {
   <h1 class="mat-headline-4">
     {{ userDetails().emailAddress + " successfully created" }}
@@ -53,7 +32,7 @@
       mat-flat-button
       color="primary"
       aria-label="Edit User"
-      (click)="userRole = userDetails().role; isEditing = true"
+      (click)="isEditing = true"
     >
       <mat-icon>edit</mat-icon>
       Edit

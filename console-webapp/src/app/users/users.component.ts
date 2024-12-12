@@ -20,12 +20,13 @@ import { SelectedRegistrarModule } from '../app.module';
 import { MaterialModule } from '../material.module';
 import { RegistrarService } from '../registrar/registrar.service';
 import { SnackBarModule } from '../snackbar.module';
-import { UserEditComponent } from './userEdit.component';
+import { UserDetailsComponent } from './userDetails.component';
 import { User, UsersService } from './users.service';
 import { UserDataService } from '../shared/services/userData.service';
 import { FormsModule } from '@angular/forms';
 import { UsersListComponent } from './usersList.component';
 import { MatSelectChange } from '@angular/material/select';
+import { UserEditFormComponent } from './userEditForm.component';
 
 @Component({
   selector: 'app-users',
@@ -39,12 +40,14 @@ import { MatSelectChange } from '@angular/material/select';
     CommonModule,
     SelectedRegistrarModule,
     UsersListComponent,
-    UserEditComponent,
+    UserEditFormComponent,
+    UserDetailsComponent,
   ],
   providers: [UsersService],
 })
 export class UsersComponent {
   isLoading = false;
+  isNew = false;
   selectingExistingUser = false;
   selectedRegistrarId = '';
   usersSelection: User[] = [];
@@ -87,9 +90,9 @@ export class UsersComponent {
     });
   }
 
-  createNewUser() {
+  createNewUser(user: User) {
     this.isLoading = true;
-    this.usersService.createOrAddNewUser(null).subscribe({
+    this.usersService.createOrAddNewUser(user).subscribe({
       error: (err: HttpErrorResponse) => {
         this._snackBar.open(err.error || err.message);
         this.isLoading = false;
