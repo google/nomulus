@@ -167,7 +167,7 @@ class ConsoleUsersActionTest {
         createAction(
             Optional.of(ConsoleApiParamsUtils.createFake(authResult)),
             Optional.of("POST"),
-            Optional.empty());
+            Optional.of(new UserData("lol", RegistrarRole.ACCOUNT_MANAGER.toString(), null)));
     action.cloudTasksUtils = cloudTasksHelper.getTestCloudTasksUtils();
     when(directory.users()).thenReturn(users);
     when(users.insert(any(com.google.api.services.directory.model.User.class))).thenReturn(insert);
@@ -176,7 +176,7 @@ class ConsoleUsersActionTest {
     assertThat(response.getStatus()).isEqualTo(SC_CREATED);
     assertThat(response.getPayload())
         .contains(
-            "{\"emailAddress\":\"TheRegistrar-user1@email.com\",\"role\":\"ACCOUNT_MANAGER\",\"password\":\"abcdefghijklmnop\"}");
+            "{\"emailAddress\":\"lol.TheRegistrar@email.com\",\"role\":\"ACCOUNT_MANAGER\",\"password\":\"abcdefghijklmnop\"}");
   }
 
   @Test
@@ -319,7 +319,8 @@ class ConsoleUsersActionTest {
         createAction(
             Optional.of(ConsoleApiParamsUtils.createFake(authResult)),
             Optional.of("POST"),
-            Optional.empty());
+            Optional.of(
+                new UserData("test3@test.com", RegistrarRole.ACCOUNT_MANAGER.toString(), null)));
     action.cloudTasksUtils = cloudTasksHelper.getTestCloudTasksUtils();
     when(directory.users()).thenReturn(users);
     when(users.insert(any(com.google.api.services.directory.model.User.class))).thenReturn(insert);

@@ -19,13 +19,14 @@ import { SelectedRegistrarModule } from '../app.module';
 import { MaterialModule } from '../material.module';
 import { RegistrarService } from '../registrar/registrar.service';
 import { SnackBarModule } from '../snackbar.module';
-import { UsersService, roleToDescription } from './users.service';
+import { UsersService, roleToDescription, User } from './users.service';
 import { FormsModule } from '@angular/forms';
+import { UserEditFormComponent } from './userEditForm.component';
 
 @Component({
   selector: 'app-user-edit',
-  templateUrl: './userEdit.component.html',
-  styleUrls: ['./userEdit.component.scss'],
+  templateUrl: './userDetails.component.html',
+  styleUrls: ['./userDetails.component.scss'],
   standalone: true,
   imports: [
     FormsModule,
@@ -33,15 +34,15 @@ import { FormsModule } from '@angular/forms';
     SnackBarModule,
     CommonModule,
     SelectedRegistrarModule,
+    UserEditFormComponent,
   ],
   providers: [],
 })
-export class UserEditComponent {
+export class UserDetailsComponent {
   isEditing = false;
   isPasswordVisible = false;
   isNewUser = false;
   isLoading = false;
-  userRole = '';
 
   userDetails = computed(() => {
     return this.usersService
@@ -84,22 +85,17 @@ export class UserEditComponent {
     this.usersService.currentlyOpenUserEmail.set('');
   }
 
-  saveEdit() {
+  saveEdit(user: User) {
     this.isLoading = true;
-    this.usersService
-      .updateUser({
-        role: this.userRole,
-        emailAddress: this.userDetails().emailAddress,
-      })
-      .subscribe({
-        error: (err) => {
-          this._snackBar.open(err.error || err.message);
-          this.isLoading = false;
-        },
-        complete: () => {
-          this.isLoading = false;
-          this.isEditing = false;
-        },
-      });
+    this.usersService.updateUser(user).subscribe({
+      error: (err) => {
+        this._snackBar.open(err.error || err.message);
+        this.isLoading = false;
+      },
+      complete: () => {
+        this.isLoading = false;
+        this.isEditing = false;
+      },
+    });
   }
 }

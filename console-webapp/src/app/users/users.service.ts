@@ -60,7 +60,7 @@ export class UsersService {
       );
   }
 
-  createOrAddNewUser(maybeExistingUser: User | null) {
+  createOrAddNewUser(maybeExistingUser: User) {
     return this.backendService
       .createUser(this.registrarService.registrarId(), maybeExistingUser)
       .pipe(
