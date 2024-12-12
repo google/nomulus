@@ -60,9 +60,9 @@ export class UsersService {
       );
   }
 
-  createOrAddNewUser(maybeExistingUser: User | null) {
+  createOrAddNewUser(user: User) {
     return this.backendService
-      .createUser(this.registrarService.registrarId(), maybeExistingUser)
+      .createUser(this.registrarService.registrarId(), user)
       .pipe(
         tap((newUser: User) => {
           if (newUser) {

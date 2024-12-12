@@ -1,0 +1,39 @@
+<form (ngSubmit)="saveEdit($event)" #form>
+  <p *ngIf="isNew()">
+    <mat-form-field appearance="outline">
+      <mat-label
+        >User name prefix:
+        <mat-icon
+          matTooltip="Prefix will be combined with registrar ID to create a unique user name - {prefix}.{registrarId}@registry.google"
+          >help_outline</mat-icon
+        ></mat-label
+      >
+      <input
+        matInput
+        minlength="3"
+        maxlength="3"
+        [required]="true"
+        [(ngModel)]="user().emailAddress"
+        [ngModelOptions]="{ standalone: true }"
+      />
+    </mat-form-field>
+  </p>
+  <p>
+    <mat-form-field appearance="outline">
+      <mat-label
+        >User Role:
+        <mat-icon
+          matTooltip="Viewer role doesn't allow making updates; Editor role allows updates, like Contacts delete or SSL certificate change"
+          >help_outline</mat-icon
+        ></mat-label
+      >
+      <mat-select [(ngModel)]="user().role" name="userRole">
+        <mat-option value="PRIMARY_CONTACT">Editor</mat-option>
+        <mat-option value="ACCOUNT_MANAGER">Viewer</mat-option>
+      </mat-select>
+    </mat-form-field>
+  </p>
+  <button mat-flat-button color="primary" aria-label="Save user" type="submit">
+    Save
+  </button>
+</form>
