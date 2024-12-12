@@ -41,7 +41,6 @@ public class ProxyConfig {
 
   public String projectId;
   public String oauthClientId;
-  public boolean canary;
   public List<String> gcpScopes;
   public int serverCertificateCacheSeconds;
   public Gcs gcs;
