@@ -29,7 +29,6 @@ import static jakarta.servlet.http.HttpServletResponse.SC_OK;
 
 import com.google.api.services.directory.Directory;
 import com.google.api.services.directory.model.UserName;
-import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.gson.annotations.Expose;
@@ -52,7 +51,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -67,7 +65,6 @@ public class ConsoleUsersAction extends ConsoleApiAction {
   static final String PATH = "/console-api/users";
 
   private static final int PASSWORD_LENGTH = 16;
-  private static final Splitter EMAIL_SPLITTER = Splitter.on('@').trimResults();
 
   private final String registrarId;
   private final Directory directory;
@@ -102,12 +99,7 @@ public class ConsoleUsersAction extends ConsoleApiAction {
     // Temporary flag while testing
     if (user.getUserRoles().isAdmin()) {
       checkPermission(user, registrarId, ConsolePermission.MANAGE_USERS);
-      if (userData.isPresent()) { // Adding existing user to registrar
-        tm().transact(this::runAppendUserInTransaction);
-      } else { // Adding new user to registrar
-        tm().transact(this::runCreateInTransaction);
-      }
-
+      tm().transact(this::runPostInTransaction);
     } else {
       consoleApiParams.response().setStatus(SC_FORBIDDEN);
     }
@@ -152,10 +144,16 @@ public class ConsoleUsersAction extends ConsoleApiAction {
     }
   }
 
-  private void runAppendUserInTransaction() {
-    if (!isModifyingRequestValid(false)) {
-      return;
+  private void runPostInTransaction() throws IOException {
+    validateRequestParams();
+    if (!tm().exists(VKey.create(User.class, this.userData.get().emailAddress))) {
+      this.runCreate();
+    } else {
+      this.runAppendUserToExistingRegistrar();
     }
+  }
+
+  private void runAppendUserToExistingRegistrar() {
     ImmutableList<User> allRegistrarUsers = getAllRegistrarUsers(registrarId);
     if (allRegistrarUsers.size() >= 4) {
       throw new BadRequestException("Total users amount per registrar is limited to 4");
@@ -164,20 +162,17 @@ public class ConsoleUsersAction extends ConsoleApiAction {
     updateUserRegistrarRoles(
         this.userData.get().emailAddress,
         registrarId,
-        RegistrarRole.valueOf(this.userData.get().role),
-        false);
+        RegistrarRole.valueOf(this.userData.get().role));
     consoleApiParams.response().setStatus(SC_OK);
   }
 
   private void runDeleteInTransaction() throws IOException {
-    if (!isModifyingRequestValid(true)) {
+    if (!isModifyingRequestValid()) {
       return;
     }
 
     String email = this.userData.get().emailAddress;
-    User updatedUser =
-        updateUserRegistrarRoles(
-            email, registrarId, RegistrarRole.valueOf(this.userData.get().role), true);
+    User updatedUser = updateUserRegistrarRoles(email, registrarId, null);
 
     // User has no registrars assigned
     if (updatedUser.getUserRoles().getRegistrarRoles().size() == 0) {
@@ -193,34 +188,33 @@ public class ConsoleUsersAction extends ConsoleApiAction {
       User.revokeIapPermission(email, maybeGroupEmailAddress, cloudTasksUtils, null, iamClient);
     }
 
-
     consoleApiParams.response().setStatus(SC_OK);
   }
 
-  private void runCreateInTransaction() throws IOException {
+  private void runCreate() throws IOException {
     ImmutableList<User> allRegistrarUsers = getAllRegistrarUsers(registrarId);
     if (allRegistrarUsers.size() >= 4) {
       throw new BadRequestException("Total users amount per registrar is limited to 4");
     }
 
-    String nextAvailableEmail =
-        IntStream.range(1, 5)
-            .mapToObj(i -> String.format("%s-user%s@%s", registrarId, i, gSuiteDomainName))
-            .filter(email -> tm().loadByKeyIfPresent(VKey.create(User.class, email)).isEmpty())
-            .findFirst()
-            // Can only happen if registrar cycled through 20 users, which is unlikely
-            .orElseThrow(
-                () -> new BadRequestException("Failed to find available increment for new user"));
+    String newEmailPrefix = userData.get().emailAddress.trim();
+
+    if (!newEmailPrefix.matches("^[a-zA-Z0-9]{3}$")) {
+      throw new BadRequestException("Email prefix is invalid");
+    }
+
+    String newEmail = String.format("%s.%s@%s", newEmailPrefix, registrarId, gSuiteDomainName);
+    if (tm().loadByKeyIfPresent(VKey.create(User.class, newEmail)).isPresent()) {
+      throw new BadRequestException("Email prefix is not available");
+    }
 
     com.google.api.services.directory.model.User newUser =
         new com.google.api.services.directory.model.User();
 
     newUser.setName(
-        new UserName()
-            .setFamilyName(registrarId)
-            .setGivenName(EMAIL_SPLITTER.splitToList(nextAvailableEmail).get(0)));
+        new UserName().setFamilyName(registrarId).setGivenName(newEmailPrefix + "." + registrarId));
     newUser.setPassword(passwordGenerator.createString(PASSWORD_LENGTH));
-    newUser.setPrimaryEmail(nextAvailableEmail);
+    newUser.setPrimaryEmail(newEmail);
 
     try {
       directory.users().insert(newUser).execute();
@@ -234,11 +228,9 @@ public class ConsoleUsersAction extends ConsoleApiAction {
             .setRegistrarRoles(ImmutableMap.of(registrarId, ACCOUNT_MANAGER))
             .build();
 
-    User.Builder builder =
-        new User.Builder().setUserRoles(userRoles).setEmailAddress(newUser.getPrimaryEmail());
+    User.Builder builder = new User.Builder().setUserRoles(userRoles).setEmailAddress(newEmail);
     tm().put(builder.build());
-    User.grantIapPermission(
-        nextAvailableEmail, maybeGroupEmailAddress, cloudTasksUtils, null, iamClient);
+    User.grantIapPermission(newEmail, maybeGroupEmailAddress, cloudTasksUtils, null, iamClient);
 
     consoleApiParams.response().setStatus(SC_CREATED);
     consoleApiParams
@@ -246,72 +238,69 @@ public class ConsoleUsersAction extends ConsoleApiAction {
         .setPayload(
             consoleApiParams
                 .gson()
-                .toJson(
-                    new UserData(
-                        newUser.getPrimaryEmail(),
-                        ACCOUNT_MANAGER.toString(),
-                        newUser.getPassword())));
+                .toJson(new UserData(newEmail, ACCOUNT_MANAGER.toString(), newUser.getPassword())));
   }
 
   private void runUpdateInTransaction() {
-    if (!isModifyingRequestValid(true)) {
+    if (!isModifyingRequestValid()) {
       return;
     }
 
     updateUserRegistrarRoles(
         this.userData.get().emailAddress,
         registrarId,
-        RegistrarRole.valueOf(this.userData.get().role),
-        false);
+        RegistrarRole.valueOf(this.userData.get().role));
     consoleApiParams.response().setStatus(SC_OK);
   }
 
-  private boolean isModifyingRequestValid(boolean verifyAccess) {
+  private boolean isModifyingRequestValid() {
+    validateRequestParams();
+    User userToUpdate = verifyUserExists(userData.get().emailAddress);
+    return validateUserRegistrarAssociation(userToUpdate);
+  }
+
+  private void validateRequestParams() {
     if (userData.isEmpty()
         || isNullOrEmpty(userData.get().emailAddress)
         || isNullOrEmpty(userData.get().role)) {
       throw new BadRequestException("User data is missing or incomplete");
     }
-    String email = userData.get().emailAddress;
-    User userToUpdate =
-        tm().loadByKeyIfPresent(VKey.create(User.class, email))
-            .orElseThrow(
-                () -> new BadRequestException(String.format("User %s doesn't exist", email)));
-
-    if (verifyAccess && !userToUpdate.getUserRoles().getRegistrarRoles().containsKey(registrarId)) {
-      setFailedResponse(
-          String.format("Can't update user not associated with registrarId %s", registrarId),
-          SC_FORBIDDEN);
-      return false;
-    }
-    return true;
   }
 
-  private User updateUserRegistrarRoles(
-      String email, String registrarId, RegistrarRole newRole, boolean isDelete) {
-    User userToUpdate = tm().loadByKeyIfPresent(VKey.create(User.class, email)).get();
+  private User verifyUserExists(String email) {
+    return tm().loadByKeyIfPresent(VKey.create(User.class, email))
+        .orElseThrow(() -> new BadRequestException(String.format("User %s doesn't exist", email)));
+  }
+
+  private boolean validateUserRegistrarAssociation(User user) {
+    if (user.getUserRoles().getRegistrarRoles().containsKey(registrarId)) {
+      return true;
+    }
+    setFailedResponse(
+        String.format("Can't update user not associated with registrarId %s", registrarId),
+        SC_FORBIDDEN);
+    return false;
+  }
+
+  private User updateUserRegistrarRoles(String email, String registrarId, RegistrarRole newRole) {
     Map<String, RegistrarRole> updatedRegistrarRoles;
-    if (isDelete) {
+    User user = verifyUserExists(email);
+    if (newRole == null) {
       updatedRegistrarRoles =
-          userToUpdate.getUserRoles().getRegistrarRoles().entrySet().stream()
+          user.getUserRoles().getRegistrarRoles().entrySet().stream()
               .filter(entry -> !Objects.equals(entry.getKey(), registrarId))
               .collect(ImmutableMap.toImmutableMap(Map.Entry::getKey, Map.Entry::getValue));
     } else {
       updatedRegistrarRoles =
           ImmutableMap.<String, RegistrarRole>builder()
-              .putAll(userToUpdate.getUserRoles().getRegistrarRoles())
+              .putAll(user.getUserRoles().getRegistrarRoles())
               .put(registrarId, newRole)
               .buildKeepingLast();
     }
     var updatedUser =
-        userToUpdate
-            .asBuilder()
+        user.asBuilder()
             .setUserRoles(
-                userToUpdate
-                    .getUserRoles()
-                    .asBuilder()
-                    .setRegistrarRoles(updatedRegistrarRoles)
-                    .build())
+                user.getUserRoles().asBuilder().setRegistrarRoles(updatedRegistrarRoles).build())
             .build();
     tm().put(updatedUser);
     return updatedUser;

@@ -4,10 +4,8 @@
     <mat-spinner />
   </div>
   } @else if(selectingExistingUser) {
-
   <div class="console-app__users">
     <h1 class="mat-headline-4">Add existing user</h1>
-
     <p>
       <button
         mat-icon-button
@@ -61,6 +59,19 @@
   </div>
   } @else if(usersService.currentlyOpenUserEmail()) {
   <app-user-edit></app-user-edit>
+  } @else if(isNew) {
+  <h1 class="mat-headline-4">New User Form</h1>
+  <div class="spacer"></div>
+  <p>
+    <button
+      mat-icon-button
+      aria-label="Back to users list"
+      (click)="isNew = false"
+    >
+      <mat-icon>arrow_back</mat-icon>
+    </button>
+  </p>
+  <app-user-edit-form [isNew]="true" (onEditComplete)="createNewUser($event)" />
   } @else {
   <div class="console-app__users">
     <div class="console-app__users-header">
@@ -79,11 +90,11 @@
         </button>
         <button
           mat-flat-button
-          (click)="createNewUser()"
+          (click)="isNew = true"
           aria-label="Create new user"
           color="primary"
         >
-          Create a Viewer User
+          Create New User
         </button>
       </div>
     </div>

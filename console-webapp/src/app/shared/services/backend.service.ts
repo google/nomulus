@@ -163,13 +163,42 @@ export class BackendService {
   getUsers(registrarId: string): Observable<User[]> {
     return this.http
       .get<User[]>(`/console-api/users?registrarId=${registrarId}`)
-      .pipe(catchError((err) => this.errorCatcher<User[]>(err)));
+      .pipe(
+        catchError((err) =>
+          this.errorCatcher<User[]>(err, [
+            {
+              emailAddress: 'pavlotest-1@domainregistry-sandbox.co',
+              role: 'ACCOUNT_MANAGER',
+            },
+            {
+              emailAddress: 'pavlotest-3@domainregistry-sandbox.co',
+              role: 'ACCOUNT_MANAGER',
+            },
+            {
+              emailAddress: 'pavlotest-user1@domainregistry-sandbox.co',
+              role: 'ACCOUNT_MANAGER',
+            },
+            {
+              emailAddress: 'pavlotest-2@domainregistry-sandbox.co',
+              role: 'PRIMARY_CONTACT',
+            },
+          ])
+        )
+      );
   }
 
   createUser(registrarId: string, maybeUser: User | null): Observable<User> {
     return this.http
       .post<User>(`/console-api/users?registrarId=${registrarId}`, maybeUser)
-      .pipe(catchError((err) => this.errorCatcher<User>(err)));
+      .pipe(
+        catchError((err) =>
+          this.errorCatcher<User>(err, {
+            emailAddress: 'pavlotest-user2@domainregistry-sandbox.co',
+            role: 'ACCOUNT_MANAGER',
+            password: 'cqzKG7ZDxLR35mdi',
+          })
+        )
+      );
   }
 
   deleteUser(registrarId: string, user: User): Observable<any> {
