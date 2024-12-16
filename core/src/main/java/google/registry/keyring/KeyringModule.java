@@ -21,6 +21,7 @@ import dagger.Provides;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.keyring.api.Keyring;
 import java.util.Map;
+import java.util.Optional;
 import javax.inject.Singleton;
 
 /** Dagger module for {@link Keyring} */
@@ -37,5 +38,26 @@ public final class KeyringModule {
         activeKeyring,
         keyrings.keySet());
     return keyrings.get(activeKeyring);
+  }
+
+  @Provides
+  @Config("cloudSqlInstanceConnectionName")
+  public static String provideCloudSqlInstanceConnectionName(Keyring keyring) {
+    return keyring.getSqlPrimaryConnectionName();
+  }
+
+  @Provides
+  @Config("cloudSqlReplicaInstanceConnectionName")
+  public static Optional<String> provideCloudSqlReplicaInstanceConnectionName(Keyring keyring) {
+    return Optional.ofNullable(keyring.getSqlReplicaConnectionName());
+  }
+
+  @Provides
+  @Config("cloudSqlDbInstanceName")
+  public static String provideCloudSqlDbInstance(
+      @Config("cloudSqlInstanceConnectionName") String instanceConnectionName) {
+    // Format of instanceConnectionName: project-id:region:instance-name
+    int lastColonIndex = instanceConnectionName.lastIndexOf(':');
+    return instanceConnectionName.substring(lastColonIndex + 1);
   }
 }

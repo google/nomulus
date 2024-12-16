@@ -133,7 +133,7 @@ public class RegistryConfigSettings {
   /** Configuration for Cloud SQL. */
   public static class CloudSql {
     public String jdbcUrl;
-    // TODO(05012021): remove username field after it is removed from all yaml files.
+    // TODO(05012021): remove 3 fields below after they are removed from all yaml files.
     public String username;
     public String instanceConnectionName;
     public String replicaInstanceConnectionName;
