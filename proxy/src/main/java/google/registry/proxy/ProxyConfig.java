@@ -33,6 +33,7 @@ public class ProxyConfig {
     QA,
     QA_CANARY,
     ALPHA,
+    ALPHA_CANARY,
     LOCAL,
   }
 

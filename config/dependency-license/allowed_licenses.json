@@ -305,7 +305,6 @@
     {
       // "Apache License, Version 2.0".
       "moduleLicense": null,
-      "moduleVersion": "26.26.0",
       "moduleName": "com.google.cloud:libraries-bom"
     },
     {
@@ -370,7 +369,6 @@
     // "Apache License, Version 2.0".
     {
       "moduleLicense": null,
-      "moduleVersion": "1.33.0",
       "moduleName": "io.opentelemetry:opentelemetry-bom"
     },
     {

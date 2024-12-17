@@ -26,8 +26,8 @@ import dagger.Component;
 import dagger.Module;
 import dagger.Provides;
 import google.registry.proxy.ProxyConfig.Environment;
-import google.registry.proxy.metric.MetricParameters;
 import google.registry.util.GoogleCredentialsBundle;
+import google.registry.util.MetricParameters;
 import javax.inject.Singleton;
 
 /** Module that provides necessary bindings to instantiate a {@link MetricReporter} */

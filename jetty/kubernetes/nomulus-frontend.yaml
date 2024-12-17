@@ -22,17 +22,6 @@ spec:
           requests:
             cpu: "500m"
         args: [ENVIRONMENT]
-      - name: proxy
-        image: gcr.io/GCP_PROJECT/proxy
-        ports:
-        - containerPort: 30001
-          name: whois
-        - containerPort: 30002
-          name: epp
-        resources:
-          requests:
-            cpu: "500m"
-        args: [--env, ENVIRONMENT, --log, --local]
         env:
         - name: POD_ID
           valueFrom:
@@ -43,7 +32,27 @@ spec:
             fieldRef:
               fieldPath: metadata.namespace
         - name: CONTAINER_NAME
-          value: proxy
+          value: frontend
+      - name: PROXY_NAME
+        image: gcr.io/GCP_PROJECT/proxy
+        ports:
+        - containerPort: 30002
+          name: epp
+        resources:
+          requests:
+            cpu: "500m"
+        args: [--env, PROXY_ENV, --log, --local]
+        env:
+        - name: POD_ID
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: NAMESPACE_ID
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: CONTAINER_NAME
+          value: PROXY_NAME
 ---
 # Only need to define the service account once per cluster.
 apiVersion: v1
@@ -83,9 +92,6 @@ spec:
     - port: 80
       targetPort: http
       name: http
-    - port: 43
-      targetPort: whois
-      name: whois
     - port: 700
       targetPort: epp
       name: epp
