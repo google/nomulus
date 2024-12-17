@@ -12,16 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package google.registry.proxy.metric;
+package google.registry.util;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.proxy.metric.MetricParameters.CLUSTER_NAME_PATH;
-import static google.registry.proxy.metric.MetricParameters.CONTAINER_NAME_ENV;
-import static google.registry.proxy.metric.MetricParameters.INSTANCE_ID_PATH;
-import static google.registry.proxy.metric.MetricParameters.NAMESPACE_ID_ENV;
-import static google.registry.proxy.metric.MetricParameters.POD_ID_ENV;
-import static google.registry.proxy.metric.MetricParameters.PROJECT_ID_PATH;
-import static google.registry.proxy.metric.MetricParameters.ZONE_PATH;
+import static google.registry.util.MetricParameters.CLUSTER_NAME_PATH;
+import static google.registry.util.MetricParameters.CONTAINER_NAME_ENV;
+import static google.registry.util.MetricParameters.INSTANCE_ID_PATH;
+import static google.registry.util.MetricParameters.NAMESPACE_ID_ENV;
+import static google.registry.util.MetricParameters.POD_ID_ENV;
+import static google.registry.util.MetricParameters.PROJECT_ID_PATH;
+import static google.registry.util.MetricParameters.ZONE_PATH;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;

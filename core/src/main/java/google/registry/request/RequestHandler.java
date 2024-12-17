@@ -143,7 +143,8 @@ public class RequestHandler<C> {
       GkeService service = Action.ServiceGetter.get(route.get().action());
       String expectedDomain = RegistryConfig.getServiceUrl(service).getHost();
       String actualDomain = req.getServerName();
-      if (!Objects.equals(actualDomain, expectedDomain)) {
+      if (!Objects.equals("localhost", actualDomain)
+          && !Objects.equals(actualDomain, expectedDomain)) {
         logger.atWarning().log(
             "Actual domain %s does not match expected domain %s", actualDomain, expectedDomain);
         rsp.sendError(SC_NOT_FOUND);

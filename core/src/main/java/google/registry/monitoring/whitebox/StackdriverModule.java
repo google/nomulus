@@ -21,12 +21,15 @@ import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.monitoring.metrics.MetricReporter;
 import com.google.monitoring.metrics.MetricWriter;
 import com.google.monitoring.metrics.stackdriver.StackdriverWriter;
+import dagger.Lazy;
 import dagger.Module;
 import dagger.Provides;
 import google.registry.config.CredentialModule.ApplicationDefaultCredential;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.util.Clock;
 import google.registry.util.GoogleCredentialsBundle;
+import google.registry.util.MetricParameters;
+import google.registry.util.RegistryEnvironment;
 import javax.inject.Named;
 import javax.inject.Singleton;
 import org.joda.time.Duration;
@@ -66,23 +69,28 @@ public final class StackdriverModule {
   @Provides
   static MetricWriter provideMetricWriter(
       Monitoring monitoringClient,
+      Lazy<MetricParameters> gkeParameters,
       @Config("projectId") String projectId,
       @Config("stackdriverMaxQps") int maxQps,
       @Config("stackdriverMaxPointsPerRequest") int maxPointsPerRequest,
       @Named("spoofedGceInstanceId") String instanceId) {
-    // The MonitoredResource for GAE apps is not writable (and missing fields anyway) so we just
-    // use the gce_instance resource type instead.
+    MonitoredResource resource =
+        RegistryEnvironment.isOnJetty()
+            ? new MonitoredResource()
+                .setType("gke_container")
+                .setLabels(gkeParameters.get().makeLabelsMap())
+            :
+            // The MonitoredResource for GAE apps is not writable (and missing fields anyway) so we
+            // just use the gce_instance resource type instead.
+            new MonitoredResource()
+                .setType("gce_instance")
+                .setLabels(
+                    ImmutableMap.of(
+                        // The "zone" field MUST be a valid GCE zone, so we fake one.
+                        "zone", SPOOFED_GCE_ZONE, "instance_id", instanceId));
+
     return new StackdriverWriter(
-        monitoringClient,
-        projectId,
-        new MonitoredResource()
-            .setType("gce_instance")
-            .setLabels(
-                ImmutableMap.of(
-                    // The "zone" field MUST be a valid GCE zone, so we fake one.
-                    "zone", SPOOFED_GCE_ZONE, "instance_id", instanceId)),
-        maxQps,
-        maxPointsPerRequest);
+        monitoringClient, projectId, resource, maxQps, maxPointsPerRequest);
   }
 
   @Provides

@@ -111,7 +111,7 @@ tasks.register('deployQueue', Exec) {
 }
 
 tasks.register('deployNomulus', Exec) {
-    dependsOn('pushNomulusImage', 'deployCloudSchedulerAndQueue')
+    dependsOn('pushNomulusImage', ':proxy:pushProxyImage', 'deployCloudSchedulerAndQueue')
     configure verifyDeploymentConfig
     commandLine './deploy-nomulus-for-env.sh', "${rootProject.environment}", "${rootProject.baseDomain}"
 }

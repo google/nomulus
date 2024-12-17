@@ -22,6 +22,37 @@ spec:
           requests:
             cpu: "500m"
         args: [ENVIRONMENT]
+        env:
+        - name: POD_ID
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: NAMESPACE_ID
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: CONTAINER_NAME
+          value: pubapi
+      - name: PROXY_NAME
+        image: gcr.io/GCP_PROJECT/proxy
+        ports:
+        - containerPort: 30001
+          name: whois
+        resources:
+          requests:
+            cpu: "500m"
+        args: [ --env, PROXY_ENV, --log, --local ]
+        env:
+        - name: POD_ID
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: NAMESPACE_ID
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: CONTAINER_NAME
+          value: PROXY_NAME
 ---
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
@@ -53,6 +84,9 @@ spec:
     - port: 80
       targetPort: http
       name: http
+    - port: 43
+      targetPort: whois
+      name: whois
 ---
 apiVersion: net.gke.io/v1
 kind: ServiceExport
