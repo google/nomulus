@@ -116,4 +116,9 @@ tasks.register('deployNomulus', Exec) {
     commandLine './deploy-nomulus-for-env.sh', "${rootProject.environment}", "${rootProject.baseDomain}"
 }
 
+tasks.register('getEndpoints', Exec) {
+    configure verifyDeploymentConfig
+    commandLine './get-endpoints.py', "${rootProject.gcpProject}"
+}
+
 project.build.dependsOn(tasks.named('buildNomulusImage'))
