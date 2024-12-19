@@ -37,13 +37,15 @@ do
     sed s/GCP_PROJECT/"${project}"/g "./kubernetes/nomulus-${service}.yaml" | \
     sed s/ENVIRONMENT/"${environment}"/g | \
     sed s/PROXY_ENV/"${environment}"/g | \
-    sed s/PROXY_NAME/"proxy"/g | \
+    sed s/EPP/"epp"/g | \
+    sed s/WHOIS/"whois"/g | \
     kubectl apply -f -
     # canary
     sed s/GCP_PROJECT/"${project}"/g "./kubernetes/nomulus-${service}.yaml" | \
     sed s/ENVIRONMENT/"${environment}"/g | \
     sed s/PROXY_ENV/"${environment}_canary"/g | \
-    sed s/PROXY_NAME/"proxy-canary"/g | \
+    sed s/EPP/"epp-canary"/g | \
+    sed s/WHOIS/"whois-canary"/g | \
     sed s/"${service}"/"${service}-canary"/g | \
     kubectl apply -f -
   done
