@@ -71,6 +71,7 @@ import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Callable;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
@@ -177,9 +178,9 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
       if (!getHibernateAllowNestedTransactions()) {
         throw new IllegalStateException(NESTED_TRANSACTION_MESSAGE);
       }
-      if (RegistryEnvironment.get() != RegistryEnvironment.PRODUCTION
-          && RegistryEnvironment.get() != RegistryEnvironment.UNITTEST) {
-        logger.atWarning().withStackTrace(StackSize.MEDIUM).log(NESTED_TRANSACTION_MESSAGE);
+      if (RegistryEnvironment.get() != RegistryEnvironment.UNITTEST) {
+        logger.atWarning().withStackTrace(StackSize.MEDIUM).atMostEvery(1, TimeUnit.MINUTES).log(
+            NESTED_TRANSACTION_MESSAGE);
       }
       // This prevents inner transaction from retrying, thus avoiding a cascade retry effect.
       return transactNoRetry(isolationLevel, work);
