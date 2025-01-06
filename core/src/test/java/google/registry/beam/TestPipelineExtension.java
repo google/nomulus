@@ -1,4 +1,4 @@
-// Copyright 2020 The Nomulus Authors. All Rights Reserved.
+// Copyright 2025 The Nomulus Authors. All Rights Reserved.
 // This applies to our modifications; the base file's license header is:
 /*
  * Licensed to the Apache Software Foundation (ASF) under one
