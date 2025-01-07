@@ -37,6 +37,7 @@ import google.registry.ui.server.console.ConsoleUpdateRegistrarAction;
 import google.registry.ui.server.console.ConsoleUserDataAction;
 import google.registry.ui.server.console.ConsoleUsersAction;
 import google.registry.ui.server.console.RegistrarsAction;
+import google.registry.ui.server.console.domains.ConsoleBulkDomainAction;
 import google.registry.ui.server.console.settings.ContactAction;
 import google.registry.ui.server.console.settings.SecurityAction;
 import google.registry.ui.server.console.settings.WhoisRegistrarFieldsAction;
@@ -53,6 +54,8 @@ import google.registry.ui.server.console.settings.WhoisRegistrarFieldsAction;
       WhiteboxModule.class,
     })
 public interface FrontendRequestComponent {
+  ConsoleBulkDomainAction consoleBulkDomainAction();
+
   ConsoleDomainGetAction consoleDomainGetAction();
 
   ConsoleDomainListAction consoleDomainListAction();
