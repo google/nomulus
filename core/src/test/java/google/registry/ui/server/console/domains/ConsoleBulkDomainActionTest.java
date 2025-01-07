@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package google.registry.ui.server.console;
+package google.registry.ui.server.console.domains;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.common.FeatureFlag.FeatureName.MINIMUM_DATASET_CONTACTS_OPTIONAL;
@@ -49,6 +49,7 @@ import google.registry.testing.ConsoleApiParamsUtils;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeResponse;
 import google.registry.tools.GsonUtils;
+import google.registry.ui.server.console.ConsoleApiParams;
 import java.util.Optional;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
@@ -166,13 +167,13 @@ public class ConsoleBulkDomainActionTest {
 
   @Test
   void testFailure_badActionString() {
-    ConsoleBulkDomainAction action = createAction("bad", null);
+    ConsoleBulkDomainAction action = createAction("bad", GSON.toJsonTree(ImmutableMap.of()));
     action.run();
     assertThat(fakeResponse.getStatus()).isEqualTo(SC_BAD_REQUEST);
     assertThat(fakeResponse.getPayload())
         .isEqualTo(
             "No enum constant"
-                + " google.registry.ui.server.console.ConsoleBulkDomainAction.BulkAction.bad");
+                + " google.registry.ui.server.console.domains.ConsoleDomainActionType.BulkAction.bad");
   }
 
   @Test
@@ -186,7 +187,8 @@ public class ConsoleBulkDomainActionTest {
   @Test
   void testFailure_noPermission() {
     JsonElement payload =
-        GSON.toJsonTree(ImmutableMap.of("domainList", ImmutableList.of("domain.tld")));
+        GSON.toJsonTree(
+            ImmutableMap.of("domainList", ImmutableList.of("domain.tld"), "reason", "reason"));
     ConsoleBulkDomainAction action =
         createAction(
             "DELETE",
