@@ -1,5 +1,6 @@
 SERVICE  PATH                               CLASS                           METHODS             OK MIN  USER_POLICY
 FRONTEND /_dr/epp                           EppTlsAction                    POST                n  APP  ADMIN
+CONSOLE  /console-api/bulk-domain           ConsoleBulkDomainAction         POST                n  USER PUBLIC
 CONSOLE  /console-api/domain                ConsoleDomainGetAction          GET                 n  USER PUBLIC
 CONSOLE  /console-api/domain-list           ConsoleDomainListAction         GET                 n  USER PUBLIC
 CONSOLE  /console-api/dum-download          ConsoleDumDownloadAction        GET                 n  USER PUBLIC
