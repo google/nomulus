@@ -48,7 +48,6 @@ export class DomainListService {
     private backendService: BackendService,
     private registrarService: RegistrarService
   ) {}
-
   retrieveDomains(
     pageNumber?: number,
     resultsPerPage?: number,
@@ -70,5 +69,14 @@ export class DomainListService {
           this.domainsList = domainListResult?.domains;
         })
       );
+  }
+
+  deleteDomains(domains: Domain[], reason: string, registrarId: string) {
+    return this.backendService.bulkDomainAction(
+      domains.map((d) => d.domainName),
+      reason,
+      'DELETE',
+      registrarId
+    );
   }
 }
