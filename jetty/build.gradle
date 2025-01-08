@@ -87,7 +87,7 @@ tasks.register('buildDeployer', Exec) {
     commandLine 'go', 'build', '-o', "${buildDir}/deployer", 'deployCloudSchedulerAndQueue.go'
 }
 
-// Once GKE is the only option, we can use the same task in the root project instaead.
+// Once GKE is the only option, we can use the same task in the root project instead.
 tasks.register('deployCloudSchedulerAndQueue') {
     dependsOn(tasks.named('deployCloudScheduler'), tasks.named('deployQueue'))
 }
@@ -99,6 +99,8 @@ tasks.register('deployCloudScheduler', Exec) {
         "${rootDir}/core/src/main/java/google/registry/config/files/nomulus-config-${rootProject.environment}.yaml",
         "${rootDir}/core/src/main/java/google/registry/env/${rootProject.environment}/default/WEB-INF/cloud-scheduler-tasks.xml",
         rootProject.gcpProject, '--gke'
+    // Only deploy the tasks after Nomulus itself is deployed.
+    mustRunAfter(tasks.named('deployToGke'))
 }
 
 tasks.register('deployQueue', Exec) {
@@ -108,12 +110,18 @@ tasks.register('deployQueue', Exec) {
         "${rootDir}/core/src/main/java/google/registry/config/files/nomulus-config-${rootProject.environment}.yaml",
         "${rootDir}/core/src/main/java/google/registry/env/common/default/WEB-INF/cloud-tasks-queue.xml",
         rootProject.gcpProject, '--gke'
+    // Only deploy the queues after Nomulus itself is deployed.
+    mustRunAfter(tasks.named('deployToGke'))
 }
 
-tasks.register('deployNomulus', Exec) {
-    dependsOn('pushNomulusImage', ':proxy:pushProxyImage', 'deployCloudSchedulerAndQueue')
+tasks.register('deployToGke', Exec) {
+    dependsOn('pushNomulusImage', ':proxy:pushProxyImage')
     configure verifyDeploymentConfig
     commandLine './deploy-nomulus-for-env.sh', "${rootProject.environment}", "${rootProject.baseDomain}"
+}
+
+tasks.register('deployNomulus') {
+    dependsOn('deployToGke', 'deployCloudSchedulerAndQueue')
 }
 
 tasks.register('getEndpoints', Exec) {
