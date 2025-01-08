@@ -77,18 +77,20 @@ public class ConsoleScreenshotTest extends WebDriverTestCase {
     assertThat(driver.getCurrentUrl()).endsWith("?registrarId=TheRegistrar");
   }
 
-  @RetryingTest(3)
-  void dums_mainPage() throws Exception {
-    clickSidebarElementByName("Domains");
-    driver.diffPage("noRegistrarSelected");
-    selectRegistrar();
-    driver.waitForElementToNotExist(By.tagName("mat-spinner"));
-    Thread.sleep(50);
-    driver.diffPage("registrarSelected");
-    driver.findElement(By.cssSelector("mat-table button")).click();
-    Thread.sleep(100);
-    driver.diffPage("actionsButtonClicked");
-  }
+  // TODO: @ptkach enable after selection bulk delete is public
+  // @RetryingTest(3)
+  // void dums_mainPage() throws Exception {
+  //   server.setGlobalRole(GlobalRole.FTE);
+  //   clickSidebarElementByName("Domains");
+  //   driver.diffPage("noRegistrarSelected");
+  //   selectRegistrar();
+  //   driver.waitForElementToNotExist(By.tagName("mat-spinner"));
+  //   Thread.sleep(50);
+  //   driver.diffPage("registrarSelected");
+  //   driver.findElement(By.cssSelector("mat-table button")).click();
+  //   Thread.sleep(100);
+  //   driver.diffPage("actionsButtonClicked");
+  // }
 
   // TODO: Reenable failing test after kokoro issue is resolved
   // @RetryingTest(3)
