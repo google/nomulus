@@ -82,11 +82,6 @@ $typographyConfig: mat.m2-define-typography-config(
     ),
 );
 
-// Access and define a class with secondary color exposed
-.secondary-text {
-  color: $secondary-color;
-}
-
 .text-xl {
   font-size: 18px;
 }
@@ -113,6 +108,15 @@ mat-row:hover {
   --mat-tree-node-text-font: "Google Sans Text";
   --mat-tree-node-text-size: 0.95rem;
   --mat-sidenav-container-width: 280px;
+}
+
+// Access and define a class with secondary color exposed
+.secondary-text {
+  color: $secondary-color;
+}
+
+.primary-text {
+  color: var(--primary);
 }
 
 $theme: mat.define-theme(

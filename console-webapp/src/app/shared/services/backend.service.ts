@@ -180,6 +180,23 @@ export class BackendService {
       .pipe(catchError((err) => this.errorCatcher<any>(err)));
   }
 
+  bulkDomainAction(
+    domainNames: string[],
+    reason: string,
+    bulkDomainAction: string,
+    registrarId: string
+  ) {
+    return this.http
+      .post<any>(
+        `/console-api/bulk-domain?registrarId=${registrarId}&bulkDomainAction=${bulkDomainAction}`,
+        {
+          domainList: domainNames,
+          reason,
+        }
+      )
+      .pipe(catchError((err) => this.errorCatcher<any>(err)));
+  }
+
   updateUser(registrarId: string, updatedUser: User): Observable<any> {
     return this.http
       .put<User>(`/console-api/users?registrarId=${registrarId}`, updatedUser)
