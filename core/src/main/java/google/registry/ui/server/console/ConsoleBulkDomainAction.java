@@ -15,6 +15,7 @@
 package google.registry.ui.server.console;
 
 import static com.google.common.collect.ImmutableMap.toImmutableMap;
+import static jakarta.servlet.http.HttpServletResponse.SC_FORBIDDEN;
 import static jakarta.servlet.http.HttpServletResponse.SC_OK;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -52,6 +53,7 @@ import javax.inject.Inject;
     service = Action.GaeService.DEFAULT,
     gkeService = Action.GkeService.CONSOLE,
     path = ConsoleBulkDomainAction.PATH,
+    method = Action.Method.POST,
     auth = Auth.AUTH_PUBLIC_LOGGED_IN)
 public class ConsoleBulkDomainAction extends ConsoleApiAction {
 
@@ -144,6 +146,11 @@ public class ConsoleBulkDomainAction extends ConsoleApiAction {
 
   @Override
   protected void postHandler(User user) {
+    // Temporary flag while testing
+    if (!user.getUserRoles().isAdmin()) {
+      consoleApiParams.response().setStatus(SC_FORBIDDEN);
+      return;
+    }
     BulkAction bulkAction = BulkAction.valueOf(bulkDomainAction);
     JsonElement jsonPayload =
         optionalJsonPayload.orElseThrow(

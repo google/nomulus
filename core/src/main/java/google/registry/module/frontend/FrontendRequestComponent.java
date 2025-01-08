@@ -25,6 +25,7 @@ import google.registry.monitoring.whitebox.WhiteboxModule;
 import google.registry.request.RequestComponentBuilder;
 import google.registry.request.RequestModule;
 import google.registry.request.RequestScope;
+import google.registry.ui.server.console.ConsoleBulkDomainAction;
 import google.registry.ui.server.console.ConsoleDomainGetAction;
 import google.registry.ui.server.console.ConsoleDomainListAction;
 import google.registry.ui.server.console.ConsoleDumDownloadAction;
@@ -53,6 +54,8 @@ import google.registry.ui.server.console.settings.WhoisRegistrarFieldsAction;
       WhiteboxModule.class,
     })
 public interface FrontendRequestComponent {
+  ConsoleBulkDomainAction consoleBulkDomainAction();
+
   ConsoleDomainGetAction consoleDomainGetAction();
 
   ConsoleDomainListAction consoleDomainListAction();
