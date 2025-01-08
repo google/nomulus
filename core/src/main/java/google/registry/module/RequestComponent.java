@@ -109,6 +109,7 @@ import google.registry.tools.server.RefreshDnsForAllDomainsAction;
 import google.registry.tools.server.ToolsServerModule;
 import google.registry.tools.server.UpdateUserGroupAction;
 import google.registry.tools.server.VerifyOteAction;
+import google.registry.ui.server.console.ConsoleBulkDomainAction;
 import google.registry.ui.server.console.ConsoleDomainGetAction;
 import google.registry.ui.server.console.ConsoleDomainListAction;
 import google.registry.ui.server.console.ConsoleDumDownloadAction;
@@ -173,6 +174,8 @@ interface RequestComponent {
   CannedScriptExecutionAction cannedScriptExecutionAction();
 
   CheckApiAction checkApiAction();
+
+  ConsoleBulkDomainAction consoleBulkDomainAction();
 
   ConsoleDomainGetAction consoleDomainGetAction();
 
