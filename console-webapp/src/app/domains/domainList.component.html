@@ -65,9 +65,22 @@
             />
           </mat-form-field>
 
-          <div class="console-app__domains-selection" [ngClass]="{'active': selection.hasValue()}">
-            <div class="console-app__domains-selection-text">{{selection.selected.length}} Selected</div>
-            <div class="console-app__domains-selection-actions"></div>
+          <div
+            class="console-app__domains-selection"
+            [ngClass]="{ active: selection.hasValue() }"
+          >
+            <div class="console-app__domains-selection-text">
+              {{ selection.selected.length }} Selected
+            </div>
+            <div class="console-app__domains-selection-actions">
+              <button
+                mat-flat-button
+                aria-label="Delete Selected Domains"
+                (click)="deleteSelectedDomains()"
+              >
+                Delete Selected Domains
+              </button>
+            </div>
           </div>
 
           <mat-table
@@ -78,26 +91,37 @@
             <!-- Checkbox Column -->
             <ng-container matColumnDef="select">
               <mat-header-cell *matHeaderCellDef>
-                <mat-checkbox (change)="$event ? toggleAllRows() : null"
-                              [checked]="selection.hasValue() && isAllSelected"
-                              [indeterminate]="selection.hasValue() && !isAllSelected"
-                              [aria-label]="checkboxLabel()">
+                <mat-checkbox
+                  (change)="$event ? toggleAllRows() : null"
+                  [checked]="selection.hasValue() && isAllSelected"
+                  [indeterminate]="selection.hasValue() && !isAllSelected"
+                  [aria-label]="checkboxLabel()"
+                >
                 </mat-checkbox>
               </mat-header-cell>
               <mat-cell *matCellDef="let row">
-                <mat-checkbox (click)="$event.stopPropagation()"
-                              (change)="$event ? selection.toggle(row) : null"
-                              [checked]="selection.isSelected(row)"
-                              [aria-label]="checkboxLabel(row)">
+                <mat-checkbox
+                  (click)="$event.stopPropagation()"
+                  (change)="$event ? selection.toggle(row) : null"
+                  [checked]="selection.isSelected(row)"
+                  [aria-label]="checkboxLabel(row)"
+                >
                 </mat-checkbox>
               </mat-cell>
             </ng-container>
 
             <ng-container matColumnDef="domainName">
               <mat-header-cell *matHeaderCellDef>Domain Name</mat-header-cell>
-              <mat-cell *matCellDef="let element">{{
-                element.domainName
-              }}</mat-cell>
+              <mat-cell *matCellDef="let element">
+                <mat-icon
+                  *ngIf="getOperationMessage(element.domainName)"
+                  [matTooltip]="getOperationMessage(element.domainName)"
+                  matTooltipPosition="above"
+                  class="primary-text"
+                  >info</mat-icon
+                >
+                <span>{{ element.domainName }}</span>
+              </mat-cell>
             </ng-container>
 
             <ng-container matColumnDef="creationTime">
