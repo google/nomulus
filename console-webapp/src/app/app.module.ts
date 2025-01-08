@@ -26,7 +26,11 @@ import { BackendService } from './shared/services/backend.service';
 import { provideHttpClient } from '@angular/common/http';
 import { MAT_FORM_FIELD_DEFAULT_OPTIONS } from '@angular/material/form-field';
 import { BillingInfoComponent } from './billingInfo/billingInfo.component';
-import { DomainListComponent } from './domains/domainList.component';
+import {
+  DomainListComponent,
+  ReasonDialogComponent,
+  ResponseDialogComponent,
+} from './domains/domainList.component';
 import { RegistryLockComponent } from './domains/registryLock.component';
 import { HeaderComponent } from './header/header.component';
 import { HomeComponent } from './home/home.component';
@@ -92,6 +96,8 @@ export class SelectedRegistrarModule {}
     TldsComponent,
     WhoisComponent,
     WhoisEditComponent,
+    ReasonDialogComponent,
+    ResponseDialogComponent,
   ],
   bootstrap: [AppComponent],
   imports: [
