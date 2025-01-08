@@ -52,6 +52,7 @@ import javax.inject.Inject;
     service = Action.GaeService.DEFAULT,
     gkeService = Action.GkeService.CONSOLE,
     path = ConsoleBulkDomainAction.PATH,
+    method = Action.Method.POST,
     auth = Auth.AUTH_PUBLIC_LOGGED_IN)
 public class ConsoleBulkDomainAction extends ConsoleApiAction {
 
