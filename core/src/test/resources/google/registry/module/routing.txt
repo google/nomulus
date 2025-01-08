@@ -66,6 +66,7 @@ PUBAPI   /rdap/ip/(*)                                       RdapIpAction        
 PUBAPI   /rdap/nameserver/(*)                               RdapNameserverAction                           GET,HEAD            n  NONE PUBLIC
 PUBAPI   /rdap/nameservers                                  RdapNameserverSearchAction                     GET,HEAD            n  NONE PUBLIC
 PUBAPI   /whois/(*)                                         WhoisHttpAction                                GET                 n  NONE PUBLIC
+CONSOLE  /console-api/bulk-domain                           ConsoleBulkDomainAction                        POST                n  USER PUBLIC
 CONSOLE  /console-api/domain                                ConsoleDomainGetAction                         GET                 n  USER PUBLIC
 CONSOLE  /console-api/domain-list                           ConsoleDomainListAction                        GET                 n  USER PUBLIC
 CONSOLE  /console-api/dum-download                          ConsoleDumDownloadAction                       GET                 n  USER PUBLIC

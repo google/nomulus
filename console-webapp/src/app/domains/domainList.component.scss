@@ -13,11 +13,18 @@
   }
 
   &__domains-selection {
-    height: 30px;
+    height: 60px;
     max-height: 0;
-    transition: max-height .2s linear;
+    transition: max-height 0.2s linear;
+    display: flex;
+    align-items: center;
+    overflow: hidden;
+    gap: 20px;
+    &-text {
+      font-weight: bold;
+    }
     &.active {
-      max-height: 30px;
+      max-height: 60px;
     }
   }
 
@@ -53,6 +60,18 @@
     .mat-column-select {
       max-width: 60px;
       padding-left: 15px;
+    }
+    .mat-column-domainName {
+      position: relative;
+      padding-left: 25px;
+      mat-icon {
+        position: absolute;
+        left: 0;
+      }
+    }
+    mat-cell:has([style*="display: none"]),
+    mat-header-cell:has([style*="display: none"]) {
+      display: none;
     }
   }
 
