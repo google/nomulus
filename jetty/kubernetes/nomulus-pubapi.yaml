@@ -38,6 +38,10 @@ spec:
         ports:
         - containerPort: 30001
           name: whois
+        - containerPort: 30010
+          name: http-whois
+        - containerPort: 30011
+          name: https-whois
         resources:
           requests:
             cpu: "500m"
@@ -104,6 +108,12 @@ spec:
   - port: 43
     targetPort: whois
     name: whois
+  - port: 80
+    targetPort: http-whois
+    name: http-whois
+  - port: 443
+    targetPort: https-whois
+    name: https-whois
 ---
 apiVersion: net.gke.io/v1
 kind: ServiceExport
