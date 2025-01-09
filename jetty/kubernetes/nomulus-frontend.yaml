@@ -109,7 +109,8 @@ spec:
   selector:
     service: frontend
   ports:
-  - port: 700
+  - protocol: TCP
+    port: 700
     targetPort: epp
     name: epp
 ---
