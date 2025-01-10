@@ -27,9 +27,7 @@ import google.registry.dns.writer.VoidDnsWriterModule;
 import google.registry.dns.writer.clouddns.CloudDnsWriterModule;
 import google.registry.dns.writer.dnsupdate.DnsUpdateWriterModule;
 import google.registry.keyring.KeyringModule;
-import google.registry.keyring.api.DummyKeyringModule;
 import google.registry.keyring.api.KeyModule;
-import google.registry.keyring.secretmanager.SecretManagerKeyringModule;
 import google.registry.model.ModelModule;
 import google.registry.persistence.PersistenceModule;
 import google.registry.persistence.PersistenceModule.NomulusToolJpaTm;
@@ -60,7 +58,6 @@ import javax.inject.Singleton;
       ConfigModule.class,
       CloudDnsWriterModule.class,
       CloudTasksUtilsModule.class,
-      DummyKeyringModule.class,
       DnsUpdateWriterModule.class,
       GsonModule.class,
       KeyModule.class,
@@ -71,7 +68,6 @@ import javax.inject.Singleton;
       RdeModule.class,
       RegistryToolDataflowModule.class,
       RequestFactoryModule.class,
-      SecretManagerKeyringModule.class,
       SecretManagerModule.class,
       UrlConnectionServiceModule.class,
       UtilsModule.class,

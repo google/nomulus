@@ -20,7 +20,6 @@ import dagger.Component;
 import google.registry.config.CredentialModule;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.config.RegistryConfig.ConfigModule;
-import google.registry.keyring.secretmanager.SecretManagerKeyringModule;
 import google.registry.persistence.PersistenceModule.TransactionIsolationLevel;
 import google.registry.privileges.secretmanager.SecretManagerModule;
 import google.registry.util.UtilsModule;
@@ -84,7 +83,6 @@ class PersistenceModuleTest {
         ConfigModule.class,
         CredentialModule.class,
         PersistenceModule.class,
-        SecretManagerKeyringModule.class,
         SecretManagerModule.class,
         UtilsModule.class
       })

@@ -21,7 +21,6 @@ import google.registry.config.CredentialModule;
 import google.registry.config.RegistryConfig.ConfigModule;
 import google.registry.groups.GmailModule;
 import google.registry.keyring.KeyringModule;
-import google.registry.keyring.secretmanager.SecretManagerKeyringModule;
 import google.registry.module.bsa.BsaRequestComponent.BsaRequestComponentModule;
 import google.registry.monitoring.whitebox.StackdriverModule;
 import google.registry.persistence.PersistenceModule;
@@ -43,7 +42,6 @@ import javax.inject.Singleton;
       GsonModule.class,
       PersistenceModule.class,
       KeyringModule.class,
-      SecretManagerKeyringModule.class,
       SecretManagerModule.class,
       StackdriverModule.class,
       UrlConnectionServiceModule.class,

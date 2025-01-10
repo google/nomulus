@@ -14,31 +14,22 @@
 
 package google.registry.keyring;
 
-import static com.google.common.base.Preconditions.checkState;
-
+import dagger.Binds;
 import dagger.Module;
 import dagger.Provides;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.keyring.api.Keyring;
-import java.util.Map;
+import google.registry.keyring.secretmanager.SecretManagerKeyring;
 import java.util.Optional;
 import javax.inject.Singleton;
 
 /** Dagger module for {@link Keyring} */
 @Module
-public final class KeyringModule {
+public abstract class KeyringModule {
 
-  @Provides
+  @Binds
   @Singleton
-  public static Keyring provideKeyring(
-      Map<String, Keyring> keyrings, @Config("activeKeyring") String activeKeyring) {
-    checkState(
-        keyrings.containsKey(activeKeyring),
-        "Invalid Keyring %s is configured; valid choices are %s",
-        activeKeyring,
-        keyrings.keySet());
-    return keyrings.get(activeKeyring);
-  }
+  public abstract Keyring provideKeyring(SecretManagerKeyring keyring);
 
   @Provides
   @Config("cloudSqlInstanceConnectionName")

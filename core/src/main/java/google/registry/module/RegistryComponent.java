@@ -35,9 +35,7 @@ import google.registry.groups.GmailModule;
 import google.registry.groups.GroupsModule;
 import google.registry.groups.GroupssettingsModule;
 import google.registry.keyring.KeyringModule;
-import google.registry.keyring.api.DummyKeyringModule;
 import google.registry.keyring.api.KeyModule;
-import google.registry.keyring.secretmanager.SecretManagerKeyringModule;
 import google.registry.module.RegistryComponent.RegistryModule;
 import google.registry.module.RequestComponent.RequestComponentModule;
 import google.registry.monitoring.whitebox.StackdriverModule;
@@ -69,7 +67,6 @@ import javax.inject.Singleton;
       CustomLogicFactoryModule.class,
       DirectoryModule.class,
       DriveModule.class,
-      DummyKeyringModule.class,
       GmailModule.class,
       GroupsModule.class,
       GroupssettingsModule.class,
@@ -81,7 +78,6 @@ import javax.inject.Singleton;
       PersistenceModule.class,
       RegistryModule.class,
       RequestComponentModule.class,
-      SecretManagerKeyringModule.class,
       SecretManagerModule.class,
       ServerTridProviderModule.class,
       SheetsServiceModule.class,

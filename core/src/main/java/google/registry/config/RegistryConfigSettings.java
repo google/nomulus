@@ -215,6 +215,7 @@ public class RegistryConfigSettings {
   }
 
   /** Configuration for keyrings (used to store secrets outside of source). */
+  // TODO(b/388835696): remove section after updating config files.
   public static class Keyring {
     public String activeKeyring;
   }

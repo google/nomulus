@@ -20,6 +20,7 @@ import dagger.Lazy;
 import google.registry.config.CredentialModule;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.config.RegistryConfig.ConfigModule;
+import google.registry.keyring.KeyringModule;
 import google.registry.persistence.PersistenceModule;
 import google.registry.persistence.PersistenceModule.BeamJpaTm;
 import google.registry.persistence.PersistenceModule.BeamReadOnlyReplicaJpaTm;
@@ -36,6 +37,7 @@ import javax.inject.Singleton;
     modules = {
       ConfigModule.class,
       CredentialModule.class,
+      KeyringModule.class,
       PersistenceModule.class,
       SecretManagerModule.class,
       UtilsModule.class

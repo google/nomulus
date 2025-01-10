@@ -34,14 +34,10 @@ import dagger.BindsOptionalOf;
 import dagger.Module;
 import dagger.Provides;
 import google.registry.config.RegistryConfig.Config;
-import google.registry.keyring.KeyringModule;
-import google.registry.keyring.api.DummyKeyringModule;
-import google.registry.keyring.secretmanager.SecretManagerKeyringModule;
 import google.registry.persistence.transaction.CloudSqlCredentialSupplier;
 import google.registry.persistence.transaction.JpaTransactionManager;
 import google.registry.persistence.transaction.JpaTransactionManagerImpl;
 import google.registry.persistence.transaction.TransactionManager;
-import google.registry.privileges.secretmanager.SecretManagerModule;
 import google.registry.privileges.secretmanager.SqlCredential;
 import google.registry.privileges.secretmanager.SqlCredentialStore;
 import google.registry.privileges.secretmanager.SqlUser;
@@ -67,14 +63,7 @@ import javax.inject.Singleton;
 import org.hibernate.cfg.Environment;
 
 /** Dagger module class for the persistence layer. */
-// TODO(b/388835696): Use SecreteManagerKeyring in all environments and drop the `includes` below.
-@Module(
-    includes = {
-      KeyringModule.class,
-      SecretManagerModule.class,
-      DummyKeyringModule.class,
-      SecretManagerKeyringModule.class
-    })
+@Module
 public abstract class PersistenceModule {
 
   // This name must be the same as the one defined in persistence.xml.

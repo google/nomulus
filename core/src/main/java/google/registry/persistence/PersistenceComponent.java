@@ -17,7 +17,7 @@ package google.registry.persistence;
 import dagger.Component;
 import google.registry.config.CredentialModule;
 import google.registry.config.RegistryConfig.ConfigModule;
-import google.registry.keyring.secretmanager.SecretManagerKeyringModule;
+import google.registry.keyring.KeyringModule;
 import google.registry.persistence.PersistenceModule.DefaultJpaTm;
 import google.registry.persistence.PersistenceModule.ReadOnlyReplicaJpaTm;
 import google.registry.persistence.transaction.JpaTransactionManager;
@@ -32,8 +32,8 @@ import javax.inject.Singleton;
     modules = {
       ConfigModule.class,
       CredentialModule.class,
+      KeyringModule.class,
       PersistenceModule.class,
-      SecretManagerKeyringModule.class,
       SecretManagerModule.class,
       UtilsModule.class
     })
