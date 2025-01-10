@@ -22,7 +22,6 @@ import static google.registry.flows.FlowTestCase.UserPrivileges.SUPERUSER;
 import static google.registry.model.billing.BillingBase.Flag.ANCHOR_TENANT;
 import static google.registry.model.billing.BillingBase.Flag.RESERVED;
 import static google.registry.model.billing.BillingBase.Flag.SUNRISE;
-import static google.registry.model.billing.BillingBase.RenewalPriceBehavior.DEFAULT;
 import static google.registry.model.billing.BillingBase.RenewalPriceBehavior.NONPREMIUM;
 import static google.registry.model.billing.BillingBase.RenewalPriceBehavior.SPECIFIED;
 import static google.registry.model.common.FeatureFlag.FeatureName.MINIMUM_DATASET_CONTACTS_OPTIONAL;
@@ -87,7 +86,6 @@ import google.registry.flows.domain.DomainCreateFlow.BulkDomainRegisteredForTooM
 import google.registry.flows.domain.DomainCreateFlow.MustHaveSignedMarksInCurrentPhaseException;
 import google.registry.flows.domain.DomainCreateFlow.NoGeneralRegistrationsInCurrentPhaseException;
 import google.registry.flows.domain.DomainCreateFlow.NoTrademarkedRegistrationsBeforeSunriseException;
-import google.registry.flows.domain.DomainCreateFlow.RenewalPriceInfo;
 import google.registry.flows.domain.DomainCreateFlow.SignedMarksOnlyDuringSunriseException;
 import google.registry.flows.domain.DomainFlowTmchUtils.FoundMarkExpiredException;
 import google.registry.flows.domain.DomainFlowTmchUtils.FoundMarkNotYetValidException;
@@ -303,10 +301,8 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
 
     boolean isAnchorTenant = expectedBillingFlags.contains(ANCHOR_TENANT);
     // Set up the creation cost.
-    BigDecimal createCost =
-        isDomainPremium(getUniqueIdFromCommand(), clock.nowUtc())
-            ? BigDecimal.valueOf(200)
-            : BigDecimal.valueOf(24);
+    boolean isDomainPremium = isDomainPremium(getUniqueIdFromCommand(), clock.nowUtc());
+    BigDecimal createCost = isDomainPremium ? BigDecimal.valueOf(200) : BigDecimal.valueOf(24);
     if (isAnchorTenant) {
       createCost = BigDecimal.ZERO;
     }
@@ -314,6 +310,26 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
       createCost =
           createCost.multiply(
               BigDecimal.valueOf(1 - RegistryConfig.getSunriseDomainCreateDiscount()));
+    }
+    if (allocationToken != null) {
+      if (allocationToken
+          .getRegistrationBehavior()
+          .equals(RegistrationBehavior.NONPREMIUM_CREATE)) {
+        createCost =
+            createCost.subtract(
+                BigDecimal.valueOf(isDomainPremium ? 87 : 0)); // premium is 100, standard 13
+      }
+      if (allocationToken.getRenewalPriceBehavior().equals(NONPREMIUM)) {
+        createCost =
+            createCost.subtract(
+                BigDecimal.valueOf(isDomainPremium ? 89 : 0)); // premium is 100, standard 11
+      }
+      if (allocationToken.getRenewalPriceBehavior().equals(SPECIFIED)) {
+        createCost =
+            createCost
+                .subtract(BigDecimal.valueOf(isDomainPremium ? 100 : 11))
+                .add(allocationToken.getRenewalPrice().get().getAmount());
+      }
     }
     FeesAndCredits feesAndCredits =
         new FeesAndCredits.Builder()
@@ -343,8 +359,12 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
         .hasType(HistoryEntry.Type.DOMAIN_CREATE)
         .and()
         .hasPeriodYears(2);
-    RenewalPriceInfo renewalPriceInfo =
-        DomainCreateFlow.getRenewalPriceInfo(isAnchorTenant, Optional.ofNullable(allocationToken));
+    RenewalPriceBehavior expectedRenewalPriceBehavior =
+        isAnchorTenant
+            ? RenewalPriceBehavior.NONPREMIUM
+            : Optional.ofNullable(allocationToken)
+                .map(AllocationToken::getRenewalPriceBehavior)
+                .orElse(RenewalPriceBehavior.DEFAULT);
     // There should be one bill for the create and one for the recurrence autorenew event.
     BillingEvent createBillingEvent =
         new BillingEvent.Builder()
@@ -369,8 +389,11 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
             .setEventTime(domain.getRegistrationExpirationTime())
             .setRecurrenceEndTime(END_OF_TIME)
             .setDomainHistory(historyEntry)
-            .setRenewalPriceBehavior(renewalPriceInfo.renewalPriceBehavior())
-            .setRenewalPrice(renewalPriceInfo.renewalPrice())
+            .setRenewalPriceBehavior(expectedRenewalPriceBehavior)
+            .setRenewalPrice(
+                Optional.ofNullable(allocationToken)
+                    .flatMap(AllocationToken::getRenewalPrice)
+                    .orElse(null))
             .build();
 
     ImmutableSet.Builder<BillingBase> expectedBillingEvents =
@@ -3187,85 +3210,62 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
   }
 
   @Test
-  void testGetRenewalPriceInfo_isAnchorTenantWithoutToken_returnsNonPremiumAndNullPrice() {
-    assertThat(DomainCreateFlow.getRenewalPriceInfo(true, Optional.empty()))
-        .isEqualTo(RenewalPriceInfo.create(NONPREMIUM, null));
-  }
-
-  @Test
-  void testGetRenewalPriceInfo_isAnchorTenantWithDefaultToken_returnsNonPremiumAndNullPrice() {
-    assertThat(DomainCreateFlow.getRenewalPriceInfo(true, Optional.of(allocationToken)))
-        .isEqualTo(RenewalPriceInfo.create(NONPREMIUM, null));
-  }
-
-  @Test
-  void testGetRenewalPriceInfo_isNotAnchorTenantWithDefaultToken_returnsDefaultAndNullPrice() {
-    assertThat(DomainCreateFlow.getRenewalPriceInfo(false, Optional.of(allocationToken)))
-        .isEqualTo(RenewalPriceInfo.create(DEFAULT, null));
-  }
-
-  @Test
-  void testGetRenewalPriceInfo_isNotAnchorTenantWithoutToken_returnsDefaultAndNullPrice() {
-    assertThat(DomainCreateFlow.getRenewalPriceInfo(false, Optional.empty()))
-        .isEqualTo(RenewalPriceInfo.create(DEFAULT, null));
-  }
-
-  @Test
-  void
-      testGetRenewalPriceInfo_isNotAnchorTenantWithSpecifiedInToken_returnsSpecifiedAndCreatePrice() {
+  void testSuccess_anchorTenant_nonPremiumRenewal() throws Exception {
     AllocationToken token =
         persistResource(
             new AllocationToken.Builder()
                 .setToken("abc123")
                 .setTokenType(SINGLE_USE)
-                .setRenewalPriceBehavior(SPECIFIED)
-                .setRenewalPrice(Money.of(USD, 5))
+                .setDomainName("example.tld")
+                .setRegistrationBehavior(RegistrationBehavior.ANCHOR_TENANT)
                 .build());
-    assertThat(DomainCreateFlow.getRenewalPriceInfo(false, Optional.of(token)))
-        .isEqualTo(RenewalPriceInfo.create(SPECIFIED, Money.of(USD, 5)));
+    persistContactsAndHosts();
+    setEppInput(
+        "domain_create_allocationtoken.xml",
+        ImmutableMap.of("DOMAIN", "example.tld", "YEARS", "2"));
+    runFlow();
+    assertSuccessfulCreate("tld", ImmutableSet.of(ANCHOR_TENANT), token);
   }
 
   @Test
-  void testGetRenewalPriceInfo_isAnchorTenantWithSpecifiedStateInToken_throwsError() {
-    IllegalArgumentException thrown =
-        assertThrows(
-            IllegalArgumentException.class,
-            () ->
-                DomainCreateFlow.getRenewalPriceInfo(
-                    true,
-                    Optional.of(
-                        persistResource(
-                            new AllocationToken.Builder()
-                                .setToken("abc123")
-                                .setTokenType(SINGLE_USE)
-                                .setRenewalPriceBehavior(SPECIFIED)
-                                .setRenewalPrice(Money.of(USD, 0))
-                                .build()))));
-    assertThat(thrown)
-        .hasMessageThat()
-        .isEqualTo("Renewal price behavior cannot be SPECIFIED for anchor tenant");
+  void testSuccess_nonAnchorTenant_nonPremiumRenewal() throws Exception {
+    createTld("example");
+    AllocationToken token =
+        persistResource(
+            new AllocationToken.Builder()
+                .setToken("abc123")
+                .setTokenType(SINGLE_USE)
+                .setDomainName("rich.example")
+                .setRenewalPriceBehavior(NONPREMIUM)
+                .build());
+    persistContactsAndHosts();
+    // Creation is still $100 but it'll create a NONPREMIUM renewal
+    setEppInput(
+        "domain_create_premium_allocationtoken.xml",
+        ImmutableMap.of("YEARS", "2", "FEE", "111.00"));
+    runFlow();
+    assertSuccessfulCreate("example", ImmutableSet.of(), token);
   }
 
   @Test
-  void testGetRenewalPriceInfo_withInvalidRenewalPriceBehavior_throwsError() {
-    IllegalArgumentException thrown =
-        assertThrows(
-            IllegalArgumentException.class,
-            () ->
-                DomainCreateFlow.getRenewalPriceInfo(
-                    true,
-                    Optional.of(
-                        persistResource(
-                            new AllocationToken.Builder()
-                                .setToken("abc123")
-                                .setTokenType(SINGLE_USE)
-                                .setRenewalPriceBehavior(RenewalPriceBehavior.valueOf("INVALID"))
-                                .build()))));
-    assertThat(thrown)
-        .hasMessageThat()
-        .isEqualTo(
-            "No enum constant"
-                + " google.registry.model.billing.BillingBase.RenewalPriceBehavior.INVALID");
+  void testSuccess_specifiedRenewalPriceToken_specifiedRecurrencePrice() throws Exception {
+    createTld("example");
+    AllocationToken token =
+        persistResource(
+            new AllocationToken.Builder()
+                .setToken("abc123")
+                .setTokenType(SINGLE_USE)
+                .setDomainName("rich.example")
+                .setRenewalPriceBehavior(SPECIFIED)
+                .setRenewalPrice(Money.of(USD, 1))
+                .build());
+    persistContactsAndHosts();
+    // Creation is still $100 but it'll create a $1 renewal
+    setEppInput(
+        "domain_create_premium_allocationtoken.xml",
+        ImmutableMap.of("YEARS", "2", "FEE", "101.00"));
+    runFlow();
+    assertSuccessfulCreate("example", ImmutableSet.of(), token);
   }
 
   @Test
