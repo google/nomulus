@@ -85,14 +85,10 @@ public final class DomainPricingLogic {
       createFee = Fee.create(zeroInCurrency(currency), FeeType.CREATE, false);
     } else {
       DomainPrices domainPrices = getPricesForDomainName(domainName, dateTime);
-      if (allocationToken.isPresent()
-          && allocationToken
-              .get()
-              .getRegistrationBehavior()
-              .equals(RegistrationBehavior.NONPREMIUM_CREATE)) {
+      if (allocationToken.isPresent()) {
+        // Handle any special NONPREMIUM / SPECIFIED cases configured in the token
         domainPrices =
-            DomainPrices.create(
-                false, tld.getCreateBillingCost(dateTime), domainPrices.getRenewCost());
+            applyTokenToDomainPrices(domainPrices, tld, dateTime, years, allocationToken.get());
       }
       Money domainCreateCost =
           getDomainCreateCostWithDiscount(domainPrices, years, allocationToken, tld);
@@ -355,6 +351,27 @@ public final class DomainPricingLogic {
       }
     }
     return totalDomainFlowCost;
+  }
+
+  private DomainPrices applyTokenToDomainPrices(
+      DomainPrices domainPrices, Tld tld, DateTime dateTime, int years, AllocationToken token) {
+    // Convert to nonpremium iff no premium charges are included (either in create or any renewal)
+    boolean convertToNonPremium =
+        token.getRegistrationBehavior().equals(RegistrationBehavior.NONPREMIUM_CREATE)
+            && (years == 1
+                || !token.getRenewalPriceBehavior().equals(RenewalPriceBehavior.DEFAULT));
+    boolean isPremium = domainPrices.isPremium() && !convertToNonPremium;
+    Money createCost =
+        token.getRegistrationBehavior().equals(RegistrationBehavior.NONPREMIUM_CREATE)
+            ? tld.getCreateBillingCost(dateTime)
+            : domainPrices.getCreateCost();
+    Money renewCost =
+        token.getRenewalPriceBehavior().equals(RenewalPriceBehavior.NONPREMIUM)
+            ? tld.getStandardRenewCost(dateTime)
+            : token.getRenewalPriceBehavior().equals(RenewalPriceBehavior.SPECIFIED)
+                ? token.getRenewalPrice().get()
+                : domainPrices.getRenewCost();
+    return DomainPrices.create(isPremium, createCost, renewCost);
   }
 
   /** An allocation token was provided that is invalid for premium domains. */
