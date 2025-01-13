@@ -59,21 +59,16 @@ abstract class UpdateOrDeleteAllocationTokensCommand extends ConfirmingCommand {
               .map(token -> VKey.create(AllocationToken.class, token))
               .collect(toImmutableList());
       ImmutableList<VKey<AllocationToken>> nonexistentKeys =
-          tm().transact(
-                  () -> keys.stream().filter(key -> !tm().exists(key)).collect(toImmutableList()));
+          keys.stream().filter(key -> !tm().exists(key)).collect(toImmutableList());
       checkState(nonexistentKeys.isEmpty(), "Tokens with keys %s did not exist", nonexistentKeys);
       return keys;
     } else {
       checkArgument(!prefix.isEmpty(), "Provided prefix should not be blank");
-      return tm().transact(
-              () ->
-                  tm().query(
-                          "SELECT token FROM AllocationToken WHERE token LIKE :prefix",
-                          String.class)
-                      .setParameter("prefix", String.format("%s%%", prefix))
-                      .getResultStream()
-                      .map(token -> VKey.create(AllocationToken.class, token))
-                      .collect(toImmutableList()));
+      return tm().query("SELECT token FROM AllocationToken WHERE token LIKE :prefix", String.class)
+          .setParameter("prefix", String.format("%s%%", prefix))
+          .getResultStream()
+          .map(token -> VKey.create(AllocationToken.class, token))
+          .collect(toImmutableList());
     }
   }
 }

@@ -52,7 +52,7 @@ final class DeleteAllocationTokensCommand extends UpdateOrDeleteAllocationTokens
 
   @Override
   public void init() {
-    tokensToDelete = getTokenKeys(tokens, prefix);
+    tokensToDelete = tm().transact(() -> getTokenKeys(tokens, prefix));
   }
 
   @Override
