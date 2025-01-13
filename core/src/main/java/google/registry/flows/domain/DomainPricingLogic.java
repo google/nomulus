@@ -85,14 +85,30 @@ public final class DomainPricingLogic {
       createFee = Fee.create(zeroInCurrency(currency), FeeType.CREATE, false);
     } else {
       DomainPrices domainPrices = getPricesForDomainName(domainName, dateTime);
-      if (allocationToken.isPresent()
-          && allocationToken
-              .get()
-              .getRegistrationBehavior()
-              .equals(RegistrationBehavior.NONPREMIUM_CREATE)) {
-        domainPrices =
-            DomainPrices.create(
-                false, tld.getCreateBillingCost(dateTime), domainPrices.getRenewCost());
+      if (allocationToken.isPresent()) {
+        // Handle any special NONPREMIUM / SPECIFIED cases configured in the token
+        AllocationToken token = allocationToken.get();
+        // Convert to nonpremium iff no premium charges are included (either in create or renew)
+        boolean convertToNonPremium =
+            token.getRegistrationBehavior().equals(RegistrationBehavior.NONPREMIUM_CREATE)
+                && (years == 1
+                    || !token.getRenewalPriceBehavior().equals(RenewalPriceBehavior.DEFAULT));
+        boolean isPremium = domainPrices.isPremium() && !convertToNonPremium;
+        if (token.getRegistrationBehavior().equals(RegistrationBehavior.NONPREMIUM_CREATE)) {
+          domainPrices =
+              DomainPrices.create(
+                  isPremium, tld.getCreateBillingCost(dateTime), domainPrices.getRenewCost());
+        }
+        if (token.getRenewalPriceBehavior().equals(RenewalPriceBehavior.NONPREMIUM)) {
+          domainPrices =
+              DomainPrices.create(
+                  isPremium, domainPrices.getCreateCost(), tld.getStandardRenewCost(dateTime));
+        }
+        if (token.getRenewalPriceBehavior().equals(RenewalPriceBehavior.SPECIFIED)) {
+          domainPrices =
+              DomainPrices.create(
+                  isPremium, domainPrices.getCreateCost(), token.getRenewalPrice().get());
+        }
       }
       Money domainCreateCost =
           getDomainCreateCostWithDiscount(domainPrices, years, allocationToken, tld);

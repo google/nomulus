@@ -14,7 +14,6 @@
 
 package google.registry.flows.domain;
 
-import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static google.registry.dns.DnsUtils.requestDomainDnsRefresh;
 import static google.registry.flows.FlowUtils.persistEntityChanges;
@@ -120,9 +119,7 @@ import google.registry.model.tmch.ClaimsList;
 import google.registry.model.tmch.ClaimsListDao;
 import google.registry.tmch.LordnTaskUtils.LordnPhase;
 import java.util.Optional;
-import javax.annotation.Nullable;
 import javax.inject.Inject;
-import org.joda.money.Money;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
 
@@ -363,9 +360,7 @@ public final class DomainCreateFlow implements MutatingFlow {
     // Create a new autorenew billing event and poll message starting at the expiration time.
     BillingRecurrence autorenewBillingEvent =
         createAutorenewBillingEvent(
-            domainHistoryId,
-            registrationExpirationTime,
-            getRenewalPriceInfo(isAnchorTenant, allocationToken));
+            domainHistoryId, registrationExpirationTime, isAnchorTenant, allocationToken);
     PollMessage.Autorenew autorenewPollMessage =
         createAutorenewPollMessage(domainHistoryId, registrationExpirationTime);
     ImmutableSet.Builder<ImmutableObject> entitiesToSave = new ImmutableSet.Builder<>();
@@ -625,7 +620,14 @@ public final class DomainCreateFlow implements MutatingFlow {
   private BillingRecurrence createAutorenewBillingEvent(
       HistoryEntryId domainHistoryId,
       DateTime registrationExpirationTime,
-      RenewalPriceInfo renewalpriceInfo) {
+      boolean isAnchorTenant,
+      Optional<AllocationToken> allocationToken) {
+    RenewalPriceBehavior renewalPriceBehavior =
+        isAnchorTenant
+            ? RenewalPriceBehavior.NONPREMIUM
+            : allocationToken
+                .map(AllocationToken::getRenewalPriceBehavior)
+                .orElse(RenewalPriceBehavior.DEFAULT);
     return new BillingRecurrence.Builder()
         .setReason(Reason.RENEW)
         .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
@@ -634,8 +636,8 @@ public final class DomainCreateFlow implements MutatingFlow {
         .setEventTime(registrationExpirationTime)
         .setRecurrenceEndTime(END_OF_TIME)
         .setDomainHistoryId(domainHistoryId)
-        .setRenewalPriceBehavior(renewalpriceInfo.renewalPriceBehavior())
-        .setRenewalPrice(renewalpriceInfo.renewalPrice())
+        .setRenewalPriceBehavior(renewalPriceBehavior)
+        .setRenewalPrice(allocationToken.flatMap(AllocationToken::getRenewalPrice).orElse(null))
         .build();
   }
 
@@ -677,41 +679,6 @@ public final class DomainCreateFlow implements MutatingFlow {
                     domainName, true, historyEntry.getTrid(), now)))
         .setHistoryEntry(historyEntry)
         .build();
-  }
-
-  /**
-   * Determines the {@link RenewalPriceBehavior} and the renewal price that needs be stored in the
-   * {@link BillingRecurrence} billing events.
-   *
-   * <p>By default, the renewal price is calculated during the process of renewal. Renewal price
-   * should be the createCost if and only if the renewal price behavior in the {@link
-   * AllocationToken} is 'SPECIFIED'.
-   */
-  static RenewalPriceInfo getRenewalPriceInfo(
-      boolean isAnchorTenant, Optional<AllocationToken> allocationToken) {
-    if (isAnchorTenant) {
-      allocationToken.ifPresent(
-          token ->
-              checkArgument(
-                  token.getRenewalPriceBehavior() != RenewalPriceBehavior.SPECIFIED,
-                  "Renewal price behavior cannot be SPECIFIED for anchor tenant"));
-      return RenewalPriceInfo.create(RenewalPriceBehavior.NONPREMIUM, null);
-    } else if (allocationToken.isPresent()
-        && allocationToken.get().getRenewalPriceBehavior() == RenewalPriceBehavior.SPECIFIED) {
-      return RenewalPriceInfo.create(
-          RenewalPriceBehavior.SPECIFIED, allocationToken.get().getRenewalPrice().get());
-    } else {
-      return RenewalPriceInfo.create(RenewalPriceBehavior.DEFAULT, null);
-    }
-  }
-
-  /** A record to store renewal info used in {@link BillingRecurrence} billing events. */
-  public record RenewalPriceInfo(
-      RenewalPriceBehavior renewalPriceBehavior, @Nullable Money renewalPrice) {
-    static RenewalPriceInfo create(
-        RenewalPriceBehavior renewalPriceBehavior, @Nullable Money renewalPrice) {
-      return new RenewalPriceInfo(renewalPriceBehavior, renewalPrice);
-    }
   }
 
   private static ImmutableList<FeeTransformResponseExtension> createResponseExtensions(

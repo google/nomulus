@@ -1127,7 +1127,7 @@ public class DomainPricingLogicTest {
                 .setCurrency(USD)
                 .addFeeOrCredit(Fee.create(new BigDecimal("13.00"), CREATE, false))
                 .build());
-    // Two-year create should be 13 (standard price) + 100 (premium price)
+    // Two-year create should be 13 (standard price) + 100 (premium price), and it's premium
     assertThat(
             domainPricingLogic.getCreatePrice(
                 tld,
@@ -1140,7 +1140,7 @@ public class DomainPricingLogicTest {
         .isEqualTo(
             new FeesAndCredits.Builder()
                 .setCurrency(USD)
-                .addFeeOrCredit(Fee.create(new BigDecimal("113.00"), CREATE, false))
+                .addFeeOrCredit(Fee.create(new BigDecimal("113.00"), CREATE, true))
                 .build());
     assertThat(
             domainPricingLogic.getRenewPrice(
@@ -1154,6 +1154,92 @@ public class DomainPricingLogicTest {
             new FeesAndCredits.Builder()
                 .setCurrency(USD)
                 .addFeeOrCredit(Fee.create(new BigDecimal("100.00"), RENEW, true))
+                .build());
+  }
+
+  @Test
+  void testGetDomainCreatePrice_premium_multiYear_nonpremiumCreateAndRenewal() throws Exception {
+    AllocationToken allocationToken =
+        persistResource(
+            new AllocationToken.Builder()
+                .setToken("abc123")
+                .setTokenType(SINGLE_USE)
+                .setDomainName("premium.example")
+                .setRegistrationBehavior(AllocationToken.RegistrationBehavior.NONPREMIUM_CREATE)
+                .setRenewalPriceBehavior(NONPREMIUM)
+                .build());
+    // Two-year create should be standard create (13) + renewal (10) because both create and renewal
+    // are standard
+    assertThat(
+            domainPricingLogic.getCreatePrice(
+                tld,
+                "premium.example",
+                clock.nowUtc(),
+                2,
+                false,
+                false,
+                Optional.of(allocationToken)))
+        .isEqualTo(
+            new FeesAndCredits.Builder()
+                .setCurrency(USD)
+                .addFeeOrCredit(Fee.create(new BigDecimal("23.00"), CREATE, false))
+                .build());
+    // Similarly, 3 years should be 13 + 10 + 10
+    assertThat(
+            domainPricingLogic.getCreatePrice(
+                tld,
+                "premium.example",
+                clock.nowUtc(),
+                3,
+                false,
+                false,
+                Optional.of(allocationToken)))
+        .isEqualTo(
+            new FeesAndCredits.Builder()
+                .setCurrency(USD)
+                .addFeeOrCredit(Fee.create(new BigDecimal("33.00"), CREATE, false))
+                .build());
+  }
+
+  @Test
+  void testGetDomainCreatePrice_premium_multiYear_onlyNonpremiumRenewal() throws Exception {
+    AllocationToken allocationToken =
+        persistResource(
+            new AllocationToken.Builder()
+                .setToken("abc123")
+                .setTokenType(SINGLE_USE)
+                .setDomainName("premium.example")
+                .setRenewalPriceBehavior(NONPREMIUM)
+                .build());
+    // Two-year create should be 100 (premium 1st year) plus 10 (nonpremium 2nd year)
+    assertThat(
+            domainPricingLogic.getCreatePrice(
+                tld,
+                "premium.example",
+                clock.nowUtc(),
+                2,
+                false,
+                false,
+                Optional.of(allocationToken)))
+        .isEqualTo(
+            new FeesAndCredits.Builder()
+                .setCurrency(USD)
+                .addFeeOrCredit(Fee.create(new BigDecimal("110.00"), CREATE, true))
+                .build());
+    // Similarly, 3 years should be 100 + 10 + 10
+    assertThat(
+            domainPricingLogic.getCreatePrice(
+                tld,
+                "premium.example",
+                clock.nowUtc(),
+                3,
+                false,
+                false,
+                Optional.of(allocationToken)))
+        .isEqualTo(
+            new FeesAndCredits.Builder()
+                .setCurrency(USD)
+                .addFeeOrCredit(Fee.create(new BigDecimal("120.00"), CREATE, true))
                 .build());
   }
 }
