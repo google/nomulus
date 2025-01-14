@@ -17,6 +17,7 @@ package google.registry.batch;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.ImmutableList.toImmutableList;
+import static google.registry.config.RegistryConfig.CANARY_HEADER;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 import com.google.api.gax.rpc.ApiException;
@@ -190,6 +191,9 @@ public class CloudTasksUtils implements Serializable {
     requestBuilder.setOidcToken(oidcTokenBuilder.build());
     String totalPath = String.format("%s%s", service.getServiceUrl(), path);
     requestBuilder.setUrl(totalPath);
+    if (RegistryEnvironment.isCanary()) {
+      requestBuilder.putHeaders(CANARY_HEADER, "true");
+    }
     return Task.newBuilder().setHttpRequest(requestBuilder.build()).build();
   }
 
@@ -200,7 +204,7 @@ public class CloudTasksUtils implements Serializable {
    * default service account as the principal. That account must have permission to submit tasks to
    * Cloud Tasks.
    *
-   * <p>Prefer this overload over the one where the path and service are explicit defined, as this
+   * <p>Prefer this overload over the one where the path and service are explicitly defined, as this
    * class will automatically determine the service to use based on the action and the runtime.
    *
    * @param actionClazz the action class to run, must be annotated with {@link Action}.
@@ -269,7 +273,7 @@ public class CloudTasksUtils implements Serializable {
   /**
    * Create a {@link Task} to be enqueued with a random delay up to {@code jitterSeconds}.
    *
-   * <p>Prefer this overload over the one where the path and service are explicit defined, as this
+   * <p>Prefer this overload over the one where the path and service are explicitly defined, as this
    * class will automatically determine the service to use based on the action and the runtime.
    *
    * @param actionClazz the action class to run, must be annotated with {@link Action}.
@@ -306,7 +310,7 @@ public class CloudTasksUtils implements Serializable {
    * @param service the GAE/GKE service to route the request to.
    * @param params a multimap of URL query parameters. Duplicate keys are saved as is, and it is up
    *     to the server to process the duplicate keys.
-   * @param delay the amount of time that a task needs to delayed for.
+   * @param delay the amount of time that a task needs to be delayed for.
    * @return the enqueued task.
    * @see <a
    *     href=ttps://cloud.google.com/appengine/docs/standard/java/taskqueue/push/creating-tasks#target>Specifyinig
@@ -330,14 +334,14 @@ public class CloudTasksUtils implements Serializable {
   /**
    * Create a {@link Task} to be enqueued with delay of {@code duration}.
    *
-   * <p>Prefer this overload over the one where the path and service are explicit defined, as this
+   * <p>Prefer this overload over the one where the path and service are explicitly defined, as this
    * class will automatically determine the service to use based on the action and the runtime.
    *
    * @param actionClazz the action class to run, must be annotated with {@link Action}.
    * @param method the HTTP method to be used for the request.
    * @param params a multimap of URL query parameters. Duplicate keys are saved as is, and it is up
    *     to the server to process the duplicate keys.
-   * @param delay the amount of time that a task needs to delayed for.
+   * @param delay the amount of time that a task needs to be delayed for.
    * @return the enqueued task.
    * @see <a
    *     href=ttps://cloud.google.com/appengine/docs/standard/java/taskqueue/push/creating-tasks#target>Specifyinig

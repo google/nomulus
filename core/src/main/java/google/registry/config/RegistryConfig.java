@@ -71,6 +71,7 @@ import org.joda.time.Duration;
  */
 public final class RegistryConfig {
 
+  public static final String CANARY_HEADER = "canary";
   private static final String ENVIRONMENT_CONFIG_FORMAT = "files/nomulus-config-%s.yaml";
   private static final String YAML_CONFIG_PROD =
       readResourceUtf8(RegistryConfig.class, "files/default-config.yaml");

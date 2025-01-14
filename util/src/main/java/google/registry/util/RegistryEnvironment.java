@@ -58,8 +58,14 @@ public enum RegistryEnvironment {
    */
   private static final String JETTY_PROPERTY = "google.registry.jetty";
 
+  /** Name of the environmental variable of the container name. */
+  private static final String CONTAINER_ENV = "CONTAINER_NAME";
+
   private static final boolean ON_JETTY =
       Boolean.parseBoolean(System.getProperty(JETTY_PROPERTY, "false"));
+
+  private static final boolean IS_CANARY =
+      System.getenv().getOrDefault(CONTAINER_ENV, "").endsWith("-canary");
 
   /**
    * A thread local boolean that can be set in tests to indicate some code is running in a local
@@ -96,6 +102,10 @@ public enum RegistryEnvironment {
 
   public static boolean isOnJetty() {
     return ON_JETTY;
+  }
+
+  public static boolean isCanary() {
+    return IS_CANARY;
   }
 
   public static void setIsInTestDriver(boolean value) {
