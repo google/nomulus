@@ -20,6 +20,7 @@ import static com.google.common.base.Verify.verify;
 import static com.google.common.net.HttpHeaders.X_REQUESTED_WITH;
 import static com.google.common.net.MediaType.JSON_UTF_8;
 import static google.registry.config.ConfigUtils.makeUrl;
+import static google.registry.config.RegistryConfig.CANARY_HEADER;
 import static google.registry.security.JsonHttp.JSON_SAFETY_PREFIX;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -57,8 +58,6 @@ public class ServiceConnection {
 
   /** Pattern to heuristically extract title tag contents in HTML responses. */
   protected static final Pattern HTML_TITLE_TAG_PATTERN = Pattern.compile("<title>(.*?)</title>");
-
-  private static final String CANARY_HEADER = "canary";
 
   private final Service service;
   private final boolean useCanary;
