@@ -1100,12 +1100,6 @@ public final class RegistryConfig {
     }
 
     @Provides
-    @Config("activeKeyring")
-    public static String provideKeyring(RegistryConfigSettings config) {
-      return config.keyring.activeKeyring;
-    }
-
-    @Provides
     @Config("customLogicFactoryClass")
     public static String provideCustomLogicFactoryClass(RegistryConfigSettings config) {
       return config.registryPolicy.customLogicFactoryClass;

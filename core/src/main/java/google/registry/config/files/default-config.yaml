@@ -488,11 +488,6 @@ beam:
   initialWorkerCount: 24
   stagingBucketUrl: gcs-bucket-with-staged-templates
 
-keyring:
-  # The name of the active keyring, either "Dummy" or "CSM". The latter stands
-  # for Cloud SecretManager.
-  activeKeyring: Dummy
-
 # Configuration options relevant to the "nomulus" registry tool.
 registryTool:
   # OAuth client ID used by the tool.

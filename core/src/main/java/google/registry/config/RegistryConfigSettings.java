@@ -37,7 +37,6 @@ public class RegistryConfigSettings {
   public Monitoring monitoring;
   public Misc misc;
   public Beam beam;
-  public Keyring keyring;
   public RegistryTool registryTool;
   public SslCertificateValidation sslCertificateValidation;
   public ContactHistory contactHistory;
@@ -212,12 +211,6 @@ public class RegistryConfigSettings {
     public String spec11OutgoingEmailAddress;
     public List<String> spec11BccEmailAddresses;
     public int transientFailureRetries;
-  }
-
-  /** Configuration for keyrings (used to store secrets outside of source). */
-  // TODO(b/388835696): remove section after updating config files.
-  public static class Keyring {
-    public String activeKeyring;
   }
 
   /** Configuration options for the registry tool. */
