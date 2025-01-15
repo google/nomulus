@@ -96,6 +96,22 @@ class GcpJsonFormatterTest {
   }
 
   @Test
+  void testSuccess_currentRequest() {
+    GcpJsonFormatter.setCurrentRequest("GET", "/path", "My-Agent", "HTTP/1.1");
+    logger.atInfo().log("Something I have to say");
+    handler.close();
+    String output = ostream.toString(StandardCharsets.US_ASCII);
+    String expected =
+        makeJson("INFO", 101, "testSuccess_currentRequest", "Something I have to say");
+    // Remove the last two characters (}, \n) from the template and add the request.
+    expected =
+        expected.substring(0, expected.length() - 2)
+            + ",\"httRequest\":{\"requestMethod\":\"GET\",\"requestUrl\":\"/path\""
+            + ",\"userAgent\":\"My-Agent\",\"protocol\":\"HTTP/1.1\"}}\n";
+    assertThat(output).isEqualTo(expected);
+  }
+
+  @Test
   void testSuccess_logLevel() {
     logger.atSevere().log("Something went terribly wrong");
     handler.close();

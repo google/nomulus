@@ -26,6 +26,7 @@ import java.util.Optional;
 import java.util.logging.Formatter;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
+import javax.annotation.Nullable;
 
 /**
  * JUL formatter that formats log messages in a single-line JSON that Stackdriver logging can parse.
@@ -54,6 +55,9 @@ public class GcpJsonFormatter extends Formatter {
   /** JSON field that stores the trace associated with the log entry, if any. */
   private static final String TRACE = "logging.googleapis.com/trace";
 
+  /** JSON field that stores the parameters of the current request, if any. */
+  private static final String HTTP_REQUEST = "httRequest";
+
   /** JSON field that contains the content, this will show up as the main entry in a log. */
   private static final String MESSAGE = "message";
 
@@ -77,17 +81,34 @@ public class GcpJsonFormatter extends Formatter {
 
   private static final ThreadLocal<String> traceId = new ThreadLocal<>();
 
+  private static final ThreadLocal<HttpRequest> request = new ThreadLocal<>();
+
   /**
    * Set the Trace ID associated with any logging done by the current thread.
    *
    * @param id The traceID, in the form projects/[PROJECT_ID]/traces/[TRACE_ID]
    */
-  public static void setCurrentTraceId(String id) {
+  public static void setCurrentTraceId(@Nullable String id) {
     if (id == null) {
       traceId.remove();
     } else {
       traceId.set(id);
     }
+  }
+
+  /**
+   * Record the parameters of the current request.
+   *
+   * @see <a
+   *     href="https://cloud.google.com/logging/docs/reference/v2/rest/v2/LogEntry#httprequest">HttpRequest</a>
+   */
+  public static void setCurrentRequest(
+      String requestMethod, String requestUrl, String userAgent, String protocol) {
+    request.set(new HttpRequest(requestMethod, requestUrl, userAgent, protocol));
+  }
+
+  public static void unsetCurrentRequest() {
+    request.remove();
   }
 
   /**
@@ -156,6 +177,9 @@ public class GcpJsonFormatter extends Formatter {
     if (traceId.get() != null) {
       json.put(TRACE, traceId.get());
     }
+    if (request.get() != null) {
+      json.put(HTTP_REQUEST, request.get());
+    }
     // This trailing newline is required for the proxy because otherwise multiple logs might be
     // sent to Stackdriver together (due to the async nature of the proxy), and not parsed
     // correctly.
@@ -181,4 +205,7 @@ public class GcpJsonFormatter extends Formatter {
       default -> "DEFAULT";
     };
   }
+
+  private record HttpRequest(
+      String requestMethod, String requestUrl, String userAgent, String protocol) {}
 }
