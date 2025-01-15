@@ -14,7 +14,9 @@
 
 package google.registry.module;
 
+import static google.registry.util.GcpJsonFormatter.setCurrentRequest;
 import static google.registry.util.GcpJsonFormatter.setCurrentTraceId;
+import static google.registry.util.GcpJsonFormatter.unsetCurrentRequest;
 import static google.registry.util.RandomStringGenerator.insecureRandomStringGenerator;
 import static google.registry.util.StringGenerator.Alphabets.HEX_DIGITS_ONLY;
 
@@ -67,10 +69,16 @@ public class RegistryServlet extends ServletBase {
   @Override
   public void service(HttpServletRequest req, HttpServletResponse rsp) throws IOException {
     setCurrentTraceId(traceId());
+    String requestMethod = req.getMethod();
+    String requestUrl = req.getRequestURI();
+    String userAgent = String.valueOf(req.getHeader("User-Agent"));
+    String protocol = req.getProtocol();
+    setCurrentRequest(requestMethod, requestUrl, userAgent, protocol);
     try {
       super.service(req, rsp);
     } finally {
       setCurrentTraceId(null);
+      unsetCurrentRequest();
     }
   }
 

@@ -45,8 +45,8 @@ class GcpJsonFormatterTest {
 
   private static final String LOG_TEMPLATE =
       """
-      {"severity":"@@SEVERITY@@","logging.googleapis.com/sourceLocation":{"file":"GcpJsonFormatterTest.java","line":"@@LINE@@","function":"google.registry.util.GcpJsonFormatterTest.@@FUNCTION@@"},"message":"@@MESSAGE@@"}
-      """;
+{"severity":"@@SEVERITY@@","logging.googleapis.com/sourceLocation":{"file":"GcpJsonFormatterTest.java","line":"@@LINE@@","function":"google.registry.util.GcpJsonFormatterTest.@@FUNCTION@@"},"message":"@@MESSAGE@@"}
+""";
 
   private static String makeJson(String severity, int line, String function, String message) {
     return LOG_TEMPLATE
@@ -71,6 +71,7 @@ class GcpJsonFormatterTest {
   void afterEach() {
     jdkLogger.removeHandler(handler);
     GcpJsonFormatter.setCurrentTraceId(null);
+    GcpJsonFormatter.unsetCurrentRequest();
   }
 
   @Test
@@ -78,7 +79,7 @@ class GcpJsonFormatterTest {
     logger.atInfo().log("Something I have to say");
     handler.close();
     String output = ostream.toString(StandardCharsets.US_ASCII);
-    assertThat(output).isEqualTo(makeJson("INFO", 78, "testSuccess", "Something I have to say"));
+    assertThat(output).isEqualTo(makeJson("INFO", 79, "testSuccess", "Something I have to say"));
   }
 
   @Test
@@ -87,11 +88,27 @@ class GcpJsonFormatterTest {
     logger.atInfo().log("Something I have to say");
     handler.close();
     String output = ostream.toString(StandardCharsets.US_ASCII);
-    String expected = makeJson("INFO", 87, "testSuccess_traceId", "Something I have to say");
+    String expected = makeJson("INFO", 88, "testSuccess_traceId", "Something I have to say");
     // Remove the last two characters (}, \n) from the template and add the trace ID.
     expected =
         expected.substring(0, expected.length() - 2)
             + ",\"logging.googleapis.com/trace\":\"trace_id\"}\n";
+    assertThat(output).isEqualTo(expected);
+  }
+
+  @Test
+  void testSuccess_currentRequest() {
+    GcpJsonFormatter.setCurrentRequest("GET", "/path", "My-Agent", "HTTP/1.1");
+    logger.atInfo().log("Something I have to say");
+    handler.close();
+    String output = ostream.toString(StandardCharsets.US_ASCII);
+    String expected =
+        makeJson("INFO", 102, "testSuccess_currentRequest", "Something I have to say");
+    // Remove the last two characters (}, \n) from the template and add the request.
+    expected =
+        expected.substring(0, expected.length() - 2)
+            + ",\"httRequest\":{\"requestMethod\":\"GET\",\"requestUrl\":\"/path\""
+            + ",\"userAgent\":\"My-Agent\",\"protocol\":\"HTTP/1.1\"}}\n";
     assertThat(output).isEqualTo(expected);
   }
 
@@ -101,7 +118,7 @@ class GcpJsonFormatterTest {
     handler.close();
     String output = ostream.toString(StandardCharsets.US_ASCII);
     assertThat(output)
-        .isEqualTo(makeJson("ERROR", 100, "testSuccess_logLevel", "Something went terribly wrong"));
+        .isEqualTo(makeJson("ERROR", 117, "testSuccess_logLevel", "Something went terribly wrong"));
   }
 
   @Test
@@ -110,7 +127,7 @@ class GcpJsonFormatterTest {
     handler.close();
     String output = ostream.toString(StandardCharsets.US_ASCII);
     String prefix =
-        makeJson("ERROR", 109, "testSuccess_withCause", "Something went terribly wrong");
+        makeJson("ERROR", 126, "testSuccess_withCause", "Something went terribly wrong");
     // Remove the last two characters (}, \n) from the template as the actual output contains
     // the full stack trace.
     prefix = prefix.substring(0, prefix.length() - 2);
@@ -124,7 +141,7 @@ class GcpJsonFormatterTest {
     handler.close();
     String output = ostream.toString(StandardCharsets.US_ASCII);
     String prefix =
-        makeJson("ERROR", 123, "testSuccess_withStackTrace", "Something is worth checking");
+        makeJson("ERROR", 140, "testSuccess_withStackTrace", "Something is worth checking");
     // Remove the last three characters (}, \n) from the template as the actual output contains
     // the full stack trace.
     prefix = prefix.substring(0, prefix.length() - 2);
@@ -150,7 +167,7 @@ class GcpJsonFormatterTest {
     TimeLimiter.create().callWithTimeout(this::logSomething, 1, TimeUnit.SECONDS);
     handler.close();
     String output = ostream.toString(StandardCharsets.US_ASCII);
-    assertThat(output).isEqualTo(makeJson("INFO", 171, "logSomething", "Something I have to say"));
+    assertThat(output).isEqualTo(makeJson("INFO", 188, "logSomething", "Something I have to say"));
   }
 
   @Test
@@ -159,7 +176,7 @@ class GcpJsonFormatterTest {
     TimeLimiter.create().callWithTimeout(this::logSomething, 1, TimeUnit.SECONDS);
     handler.close();
     String output = ostream.toString(StandardCharsets.US_ASCII);
-    String expected = makeJson("INFO", 171, "logSomething", "Something I have to say");
+    String expected = makeJson("INFO", 188, "logSomething", "Something I have to say");
     // Remove the last two characters (}, \n) from the template and add the trace ID.
     expected =
         expected.substring(0, expected.length() - 2)
