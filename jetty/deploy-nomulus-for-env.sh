@@ -17,6 +17,9 @@
 # kills all running pods to force k8s to create new pods using the just-pushed
 # manifest.
 
+# Abort on error.
+set -e
+
 if [[ $# -ne 2 ]]; then
   echo "Usage: $0 alpha|crash|qa [base_domain]}"
   exit 1
@@ -30,8 +33,7 @@ while read line
 do
   parts=(${line})
   echo "Updating cluster ${parts[0]} in location ${parts[1]}..."
-  gcloud container clusters get-credentials "${parts[0]}" \
-    --project "${project}" --location "${parts[1]}"
+  gcloud container fleet memberships get-credentials "${parts[0]}" --project "${project}"
   for service in frontend backend pubapi console
   do
     sed s/GCP_PROJECT/"${project}"/g "./kubernetes/nomulus-${service}.yaml" | \
