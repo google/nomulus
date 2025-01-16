@@ -54,7 +54,8 @@ public class ExportPremiumTermsAction implements Runnable {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
   static final MediaType EXPORT_MIME_TYPE = MediaType.PLAIN_TEXT_UTF_8;
-  static final String PREMIUM_TERMS_FILENAME = "CONFIDENTIAL_premium_terms.txt";
+  static final String TLD_IDENTIFIER_FORMAT = "# TLD: %s";
+  static final String PREMIUM_TERMS_FILENAME_FORMAT = "CONFIDENTIAL_premium_terms_%s.txt";
 
   @Inject DriveConnection driveConnection;
 
@@ -127,7 +128,7 @@ public class ExportPremiumTermsAction implements Runnable {
     try {
       String fileId =
           driveConnection.createOrUpdateFile(
-              PREMIUM_TERMS_FILENAME,
+              String.format(PREMIUM_TERMS_FILENAME_FORMAT, tldStr),
               EXPORT_MIME_TYPE,
               tld.getDriveFolderId(),
               getFormattedPremiumTerms(tld).getBytes(UTF_8));
@@ -150,11 +151,9 @@ public class ExportPremiumTermsAction implements Runnable {
             .map(PremiumEntry::toString)
             .collect(ImmutableSortedSet.toImmutableSortedSet(String::compareTo));
 
-    return Joiner.on("\n")
-        .appendTo(
-            new StringBuilder(),
-            Iterables.concat(ImmutableList.of(exportDisclaimer.trim()), premiumTerms))
-        .append("\n")
-        .toString();
+    String tldIdentifier = String.format(TLD_IDENTIFIER_FORMAT, tldStr);
+    Iterable<String> commentsAndTerms =
+        Iterables.concat(ImmutableList.of(exportDisclaimer.trim(), tldIdentifier), premiumTerms);
+    return Joiner.on("\n").join(commentsAndTerms) + "\n";
   }
 }

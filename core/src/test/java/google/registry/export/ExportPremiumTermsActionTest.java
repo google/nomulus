@@ -17,7 +17,7 @@ package google.registry.export;
 import static com.google.common.net.MediaType.PLAIN_TEXT_UTF_8;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.export.ExportPremiumTermsAction.EXPORT_MIME_TYPE;
-import static google.registry.export.ExportPremiumTermsAction.PREMIUM_TERMS_FILENAME;
+import static google.registry.export.ExportPremiumTermsAction.TLD_IDENTIFIER_FORMAT;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.deleteTld;
 import static google.registry.testing.DatabaseHelper.persistResource;
@@ -53,10 +53,12 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 public class ExportPremiumTermsActionTest {
 
   private static final String DISCLAIMER_WITH_NEWLINE = "# Premium Terms Export Disclaimer\n";
+  private static final String TLD_IDENTIFIER_WITH_NEWLINE =
+      String.format(TLD_IDENTIFIER_FORMAT, "tld") + "\n";
   private static final ImmutableList<String> PREMIUM_NAMES =
       ImmutableList.of("2048,USD 549", "0,USD 549");
   private static final String EXPECTED_FILE_CONTENT =
-      DISCLAIMER_WITH_NEWLINE + "0, 549.00\n" + "2048, 549.00\n";
+      DISCLAIMER_WITH_NEWLINE + TLD_IDENTIFIER_WITH_NEWLINE + "0, 549.00\n" + "2048, 549.00\n";
 
   @RegisterExtension
   final JpaIntegrationTestExtension jpa =
@@ -94,7 +96,7 @@ public class ExportPremiumTermsActionTest {
 
     verify(driveConnection)
         .createOrUpdateFile(
-            PREMIUM_TERMS_FILENAME,
+            "CONFIDENTIAL_premium_terms_tld.txt",
             EXPORT_MIME_TYPE,
             "folder_id",
             EXPECTED_FILE_CONTENT.getBytes(UTF_8));
@@ -157,7 +159,7 @@ public class ExportPremiumTermsActionTest {
 
     verify(driveConnection)
         .createOrUpdateFile(
-            PREMIUM_TERMS_FILENAME,
+            "CONFIDENTIAL_premium_terms_tld.txt",
             EXPORT_MIME_TYPE,
             "bad_folder_id",
             EXPECTED_FILE_CONTENT.getBytes(UTF_8));
