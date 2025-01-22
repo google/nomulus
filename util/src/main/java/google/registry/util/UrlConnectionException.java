@@ -37,13 +37,14 @@ public class UrlConnectionException extends RuntimeException {
   @Override
   public String getMessage() {
     byte[] resultContent;
-    int responseCode;
+    int responseCode = 0;
     try {
-      resultContent = ByteStreams.toByteArray(connection.getInputStream());
       responseCode = connection.getResponseCode();
-    } catch (IOException e) {
-      resultContent = new byte[] {};
-      responseCode = 0;
+      resultContent =
+          ByteStreams.toByteArray(
+              responseCode < 400 ? connection.getInputStream() : connection.getErrorStream());
+    } catch (IOException | NullPointerException e) {
+      resultContent = "-- Response is missing or has malformed content --".getBytes(UTF_8);
     }
     StringBuilder result =
         new StringBuilder(2048 + resultContent.length)
