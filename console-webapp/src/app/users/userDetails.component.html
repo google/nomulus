@@ -1,4 +1,8 @@
-<div class="console-app__user-details">
+<div
+  class="console-app__user-details"
+  cdkTrapFocus
+  [cdkTrapFocusAutoCapture]="true"
+>
   @if(isEditing) {
   <h1 class="mat-headline-4">Editing {{ userDetails().emailAddress }}</h1>
   <mat-divider></mat-divider>

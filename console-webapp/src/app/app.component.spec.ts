@@ -20,12 +20,18 @@ import { AppComponent } from './app.component';
 import { MaterialModule } from './material.module';
 import { BackendService } from './shared/services/backend.service';
 import { AppRoutingModule } from './app-routing.module';
+import { AppModule } from './app.module';
 
 describe('AppComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       declarations: [AppComponent],
-      imports: [MaterialModule, BrowserAnimationsModule, AppRoutingModule],
+      imports: [
+        MaterialModule,
+        BrowserAnimationsModule,
+        AppRoutingModule,
+        AppModule,
+      ],
       providers: [
         BackendService,
         provideHttpClient(),
@@ -36,6 +42,7 @@ describe('AppComponent', () => {
 
   it('should create the app', () => {
     const fixture = TestBed.createComponent(AppComponent);
+    fixture.detectChanges();
     const app = fixture.componentInstance;
     expect(app).toBeTruthy();
   });

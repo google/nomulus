@@ -13,14 +13,6 @@
 // limitations under the License.
 
 .console-settings {
-  .mdc-tab {
-    &.active-link {
-      border-bottom: 2px solid var(--primary);
-      .mdc-tab__text-label {
-        color: var(--primary);
-      }
-    }
-  }
   nav {
     margin-bottom: 40px;
   }

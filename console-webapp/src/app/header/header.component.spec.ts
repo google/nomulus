@@ -17,6 +17,12 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { HeaderComponent } from './header.component';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { MaterialModule } from '../material.module';
+import { ActivatedRoute } from '@angular/router';
+import { AppModule, SelectedRegistrarModule } from '../app.module';
+import { AppRoutingModule } from '../app-routing.module';
+import { BackendService } from '../shared/services/backend.service';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 
 describe('HeaderComponent', () => {
   let component: HeaderComponent;
@@ -24,7 +30,19 @@ describe('HeaderComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [MaterialModule, BrowserAnimationsModule],
+      imports: [
+        SelectedRegistrarModule,
+        MaterialModule,
+        BrowserAnimationsModule,
+        AppRoutingModule,
+        AppModule,
+      ],
+      providers: [
+        BackendService,
+        { provide: ActivatedRoute, useValue: {} as ActivatedRoute },
+        provideHttpClient(),
+        provideHttpClientTesting(),
+      ],
       declarations: [HeaderComponent],
     }).compileComponents();
 

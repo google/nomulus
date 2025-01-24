@@ -42,7 +42,7 @@ describe('SecurityComponent', () => {
     fetchSecurityDetailsSpy =
       securityServiceSpy.fetchSecurityDetails.and.returnValue(of());
 
-    saveSpy = securityServiceSpy.saveChanges;
+    saveSpy = securityServiceSpy.saveChanges.and.returnValue(of());
 
     await TestBed.configureTestingModule({
       declarations: [SecurityEditComponent, SecurityComponent],

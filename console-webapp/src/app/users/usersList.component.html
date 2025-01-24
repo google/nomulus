@@ -19,6 +19,8 @@
       *matRowDef="let row; columns: displayedColumns"
       [class.rowSelected]="isRowSelected(row)"
       (click)="onClick(row)"
+      (keyup.enter)="onClick(row)"
+      tabindex="0"
     ></mat-row>
   </mat-table>
 </div>

@@ -10,22 +10,28 @@
       <a
         mat-tab-link
         routerLink="contact"
-        routerLinkActive="active-link"
+        routerLinkActive
         queryParamsHandling="merge"
+        #rla="routerLinkActive"
+        [active]="rla.isActive"
         >Contacts</a
       >
       <a
         mat-tab-link
         routerLink="whois"
-        routerLinkActive="active-link"
+        routerLinkActive
         queryParamsHandling="merge"
+        #rla2="routerLinkActive"
+        [active]="rla2.isActive"
         >WHOIS Info</a
       >
       <a
         mat-tab-link
         routerLink="security"
-        routerLinkActive="active-link"
+        routerLinkActive
         queryParamsHandling="merge"
+        #rla3="routerLinkActive"
+        [active]="rla3.isActive"
         >Security</a
       >
     </nav>
