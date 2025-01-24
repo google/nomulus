@@ -21,6 +21,7 @@ import { MaterialModule } from '../material.module';
 import { BackendService } from '../shared/services/backend.service';
 import { DomainListComponent } from './domainList.component';
 import { FormsModule } from '@angular/forms';
+import { AppModule } from '../app.module';
 
 describe('DomainListComponent', () => {
   let component: DomainListComponent;
@@ -29,7 +30,12 @@ describe('DomainListComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       declarations: [DomainListComponent],
-      imports: [MaterialModule, BrowserAnimationsModule, FormsModule],
+      imports: [
+        MaterialModule,
+        BrowserAnimationsModule,
+        FormsModule,
+        AppModule,
+      ],
       providers: [
         BackendService,
         provideHttpClient(),
