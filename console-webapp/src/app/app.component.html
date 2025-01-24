@@ -7,6 +7,11 @@
     ></mat-progress-bar>
   </div>
   <mat-sidenav-container class="console-app__container">
+    <mat-sidenav-content class="console-app__content-wrapper">
+      <div class="console-app__content" role="main">
+        <router-outlet></router-outlet>
+      </div>
+    </mat-sidenav-content>
     <mat-sidenav
       [mode]="breakpointObserver.isMobileView() ? 'over' : 'side'"
       [opened]="!breakpointObserver.isMobileView()"
@@ -15,10 +20,5 @@
     >
       <app-navigation />
     </mat-sidenav>
-    <mat-sidenav-content class="console-app__content-wrapper">
-      <div class="console-app__content">
-        <router-outlet></router-outlet>
-      </div>
-    </mat-sidenav-content>
   </mat-sidenav-container>
 </div>

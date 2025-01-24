@@ -6,7 +6,9 @@
   <mat-tree-node
     *matTreeNodeDef="let node"
     matTreeNodeToggle
+    tabindex="0"
     (click)="onClick(node)"
+    (keyup.enter)="onClick(node)"
     [class.active]="router.url.includes(node.path)"
     [elementId]="getElementId(node)"
   >

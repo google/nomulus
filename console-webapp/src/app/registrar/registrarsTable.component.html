@@ -59,6 +59,8 @@
         <mat-row
           *matRowDef="let row; columns: displayedColumns"
           (click)="openDetails(row.registrarId)"
+          tabindex="0"
+          (keyup.enter)="openDetails(row.registrarId)"
         ></mat-row>
       </mat-table>
 

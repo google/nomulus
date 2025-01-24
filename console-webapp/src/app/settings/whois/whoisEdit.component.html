@@ -1,4 +1,9 @@
-<div class="console-app__whois-edit" *ngIf="registrarInEdit">
+<div
+  class="console-app__whois-edit"
+  *ngIf="registrarInEdit"
+  cdkTrapFocus
+  [cdkTrapFocusAutoCapture]="true"
+>
   <button
     mat-icon-button
     class="console-app__whois-edit-back"
