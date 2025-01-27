@@ -56,7 +56,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 public abstract class ResourceFlowTestCase<F extends Flow, R extends EppResource>
     extends FlowTestCase<F> {
 
-  private final TestLogHandler logHandler = new TestLogHandler();
+  protected final TestLogHandler logHandler = new TestLogHandler();
 
   @RegisterExtension
   public final TestCacheExtension testCacheExtension =

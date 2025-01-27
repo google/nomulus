@@ -19,6 +19,7 @@ import static google.registry.xml.XmlTransformer.prettyPrint;
 import com.google.common.flogger.FluentLogger;
 import google.registry.flows.FlowModule.DryRun;
 import google.registry.flows.FlowModule.InputXml;
+import google.registry.flows.FlowModule.LogSqlStatements;
 import google.registry.flows.FlowModule.RegistrarId;
 import google.registry.flows.FlowModule.Superuser;
 import google.registry.flows.FlowModule.Transactional;
@@ -49,6 +50,7 @@ public class FlowRunner {
   @Inject @DryRun boolean isDryRun;
   @Inject @Superuser boolean isSuperuser;
   @Inject @Transactional boolean isTransactional;
+  @Inject @LogSqlStatements boolean logSqlStatements;
   @Inject SessionMetadata sessionMetadata;
   @Inject Trid trid;
   @Inject FlowReporter flowReporter;
@@ -97,7 +99,8 @@ public class FlowRunner {
             } catch (EppException e) {
               throw new EppRuntimeException(e);
             }
-          });
+          },
+          logSqlStatements);
     } catch (DryRunException e) {
       return e.output;
     } catch (EppRuntimeException e) {

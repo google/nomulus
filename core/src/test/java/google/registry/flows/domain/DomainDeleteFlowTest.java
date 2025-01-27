@@ -102,8 +102,10 @@ import google.registry.model.transfer.TransferResponse;
 import google.registry.model.transfer.TransferStatus;
 import google.registry.testing.CloudTasksHelper.TaskMatcher;
 import google.registry.testing.DatabaseHelper;
+import google.registry.testing.LogsSubject;
 import java.util.Map;
 import java.util.Optional;
+import java.util.logging.Level;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
@@ -1257,5 +1259,18 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
     setRegistrarIdForFlow("NewRegistrar");
     runFlowAssertResponse(loadFile("domain_delete_response_pending.xml"));
     assertPollMessages();
+  }
+
+  @Test
+  void testSuccess_logsSqlStatements() throws Exception {
+    setUpSuccessfulTest();
+    runFlowAssertResponse(loadFile("domain_delete_response_pending.xml"));
+    LogsSubject.assertAboutLogs()
+        .that(logHandler)
+        .hasLogAtLevelWithMessage(
+            Level.INFO,
+            "SQL_STATEMENT_LOG: insert into \"DomainHistory\" (history_by_superuser,"
+                + "history_registrar_id,history_modification_time,history_other_registrar_id,"
+                + "history_period_unit,history_period_value,history_reason,history");
   }
 }

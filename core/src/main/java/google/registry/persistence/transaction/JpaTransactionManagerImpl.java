@@ -78,6 +78,7 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import javax.annotation.Nullable;
 import org.hibernate.Session;
+import org.hibernate.SessionFactory;
 import org.hibernate.cfg.Environment;
 import org.joda.time.DateTime;
 
@@ -89,6 +90,7 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
   private static final String NESTED_TRANSACTION_MESSAGE =
       "Nested transaction detected. Try refactoring to avoid nested transactions. If unachievable,"
           + " use reTransact() in nested transactions";
+  private static final String SQL_STATEMENT_LOG_SENTINEL_FORMAT = "SQL_STATEMENT_LOG: %s";
 
   // EntityManagerFactory is thread safe.
   private final EntityManagerFactory emf;
@@ -174,6 +176,12 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
 
   @Override
   public <T> T transact(TransactionIsolationLevel isolationLevel, Callable<T> work) {
+    return transact(isolationLevel, work, false);
+  }
+
+  @Override
+  public <T> T transact(
+      TransactionIsolationLevel isolationLevel, Callable<T> work, boolean logSqlStatements) {
     if (inTransaction()) {
       if (!getHibernateAllowNestedTransactions()) {
         throw new IllegalStateException(NESTED_TRANSACTION_MESSAGE);
@@ -186,7 +194,8 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
       return transactNoRetry(isolationLevel, work);
     }
     return retrier.callWithRetry(
-        () -> transactNoRetry(isolationLevel, work), JpaRetries::isFailedTxnRetriable);
+        () -> transactNoRetry(isolationLevel, work, logSqlStatements),
+        JpaRetries::isFailedTxnRetriable);
   }
 
   @Override
@@ -202,6 +211,14 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
   @Override
   public <T> T transactNoRetry(
       @Nullable TransactionIsolationLevel isolationLevel, Callable<T> work) {
+    return transactNoRetry(isolationLevel, work, false);
+  }
+
+  @Override
+  public <T> T transactNoRetry(
+      @Nullable TransactionIsolationLevel isolationLevel,
+      Callable<T> work,
+      boolean logSqlStatements) {
     if (inTransaction()) {
       // This check will no longer be necessary when the transact() method always throws
       // inside a nested transaction, as the only way to pass a non-null isolation level
@@ -224,7 +241,18 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
       }
     }
     TransactionInfo txnInfo = transactionInfo.get();
-    txnInfo.entityManager = emf.createEntityManager();
+
+    txnInfo.entityManager =
+        logSqlStatements
+            ? emf.unwrap(SessionFactory.class)
+                .withOptions()
+                .statementInspector(
+                    s -> {
+                      logger.atInfo().log(SQL_STATEMENT_LOG_SENTINEL_FORMAT, s);
+                      return s;
+                    })
+                .openSession()
+            : emf.createEntityManager();
     if (readOnly) {
       // Disable Hibernate's dirty object check on flushing, it has become more aggressive in v6.
       txnInfo.entityManager.unwrap(Session.class).setDefaultReadOnly(true);
