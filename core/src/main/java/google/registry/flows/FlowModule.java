@@ -149,6 +149,13 @@ public class FlowModule {
 
   @Provides
   @FlowScope
+  @LogSqlStatements
+  boolean provideShouldLogSqlStatements(Class<? extends Flow> flowClass) {
+    return SqlStatementLoggingFlow.class.isAssignableFrom(flowClass);
+  }
+
+  @Provides
+  @FlowScope
   @Superuser
   boolean provideIsSuperuser() {
     return isSuperuser;
@@ -370,4 +377,9 @@ public class FlowModule {
   @Qualifier
   @Documented
   public @interface Transactional {}
+
+  /** Dagger qualifier for if we should log all SQL statements in a flow. */
+  @Qualifier
+  @Documented
+  public @interface LogSqlStatements {}
 }

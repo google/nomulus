@@ -21,6 +21,7 @@ import jakarta.persistence.Query;
 import jakarta.persistence.TypedQuery;
 import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.metamodel.Metamodel;
+import java.util.concurrent.Callable;
 
 /** Sub-interface of {@link TransactionManager} which defines JPA related methods. */
 public interface JpaTransactionManager extends TransactionManager {
@@ -92,4 +93,15 @@ public interface JpaTransactionManager extends TransactionManager {
 
   /** Return the {@link TransactionIsolationLevel} used in the current transaction. */
   TransactionIsolationLevel getCurrentTransactionIsolationLevel();
+
+  /** Executes the work with the given isolation level, possibly logging all SQL statements used. */
+  <T> T transact(
+      TransactionIsolationLevel isolationLevel, Callable<T> work, boolean logSqlStatements);
+
+  /**
+   * Executes the work with the given isolation level without retry, possibly logging all SQL
+   * statements used.
+   */
+  <T> T transactNoRetry(
+      TransactionIsolationLevel isolationLevel, Callable<T> work, boolean logSqlStatements);
 }

@@ -55,6 +55,7 @@ import google.registry.flows.FlowModule.Superuser;
 import google.registry.flows.FlowModule.TargetId;
 import google.registry.flows.MutatingFlow;
 import google.registry.flows.SessionMetadata;
+import google.registry.flows.SqlStatementLoggingFlow;
 import google.registry.flows.annotations.ReportingSpec;
 import google.registry.flows.custom.DomainDeleteFlowCustomLogic;
 import google.registry.flows.custom.DomainDeleteFlowCustomLogic.AfterValidationParameters;
@@ -117,7 +118,7 @@ import org.joda.time.Duration;
  * @error {@link DomainFlowUtils.NotAuthorizedForTldException}
  */
 @ReportingSpec(ActivityReportField.DOMAIN_DELETE)
-public final class DomainDeleteFlow implements MutatingFlow {
+public final class DomainDeleteFlow implements MutatingFlow, SqlStatementLoggingFlow {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
