@@ -1242,4 +1242,23 @@ public class DomainPricingLogicTest {
                 .addFeeOrCredit(Fee.create(new BigDecimal("120.00"), CREATE, true))
                 .build());
   }
+
+  @Test
+  void testDomainRenewPrice_specifiedToken() throws Exception {
+    AllocationToken allocationToken =
+        persistResource(
+            new AllocationToken.Builder()
+                .setToken("abc123")
+                .setTokenType(SINGLE_USE)
+                .setDomainName("premium.example")
+                .setRenewalPriceBehavior(SPECIFIED)
+                .setRenewalPrice(Money.of(USD, 5))
+                .build());
+    assertThat(
+            domainPricingLogic
+                .getRenewPrice(
+                    tld, "premium.example", clock.nowUtc(), 1, null, Optional.of(allocationToken))
+                .getRenewCost())
+        .isEqualTo(Money.of(USD, 5));
+  }
 }

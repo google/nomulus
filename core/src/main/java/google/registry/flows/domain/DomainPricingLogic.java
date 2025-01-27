@@ -287,6 +287,9 @@ public final class DomainPricingLogic {
           || token.getRenewalPriceBehavior().equals(RenewalPriceBehavior.NONPREMIUM)) {
         return tld.getStandardRenewCost(dateTime).multipliedBy(years);
       }
+      if (token.getRenewalPriceBehavior().equals(RenewalPriceBehavior.SPECIFIED)) {
+        return token.getRenewalPrice().get();
+      }
     }
     return getDomainCostWithDiscount(
         domainPrices.isPremium(),
