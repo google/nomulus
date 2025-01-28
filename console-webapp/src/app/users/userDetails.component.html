@@ -90,11 +90,12 @@
             <input
               [type]="isPasswordVisible ? 'text' : 'password'"
               [value]="userDetails().password"
-              disabled
+              aria-label="Password field"
+              readonly
             />
             <button
               mat-button
-              aria-label="Show password"
+              aria-hidden="true"
               (click)="isPasswordVisible = !isPasswordVisible"
             >
               {{ isPasswordVisible ? "Hide" : "View" }} password

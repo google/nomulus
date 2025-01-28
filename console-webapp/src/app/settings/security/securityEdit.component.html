@@ -23,7 +23,7 @@
       <button
         matSuffix
         mat-icon-button
-        aria-label="Remove"
+        [attr.aria-label]="'Remove IP entry ' + ip"
         (click)="removeIpEntry(ip)"
         [disabled]="isUpdating"
       >
@@ -36,6 +36,7 @@
       [disabled]="isUpdating"
       color="primary"
       (click)="createIpEntry()"
+      aria-label="Add new IP address"
       type="button"
     >
       + Add IP
