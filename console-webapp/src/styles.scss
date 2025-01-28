@@ -55,13 +55,13 @@ body {
       font-weight: bold;
       width: var(--list-item-title-width);
       display: inline-block;
-      font-size: 14px;
+      font-size: 0.85rem;
       white-space: pre-line;
       color: #202124;
       flex-shrink: 0;
     }
     .console-app__list-value {
-      font-size: 14px;
+      font-size: 0.85rem;
       white-space: pre-line;
       word-break: break-word;
       color: var(--text);

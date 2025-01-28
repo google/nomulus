@@ -25,7 +25,11 @@
     } @else {
     <mat-menu #actions="matMenu">
       <ng-template matMenuContent let-domainName="domainName">
-        <button mat-menu-item (click)="openRegistryLock(domainName)">
+        <button
+          mat-menu-item
+          (click)="openRegistryLock(domainName)"
+          aria-label="Access registry lock for domain"
+        >
           <mat-icon>key</mat-icon>
           <span>Registry Lock</span>
         </button>
