@@ -138,7 +138,7 @@ public final class DomainLockUtils {
                       createLockBuilder(domainName, registrarId, registrarPocId, isAdmin)
                           .setLockCompletionTime(now)
                           .build());
-              tm().transact(() -> applyLockStatuses(newLock, now, isAdmin));
+              applyLockStatuses(newLock, now, isAdmin);
               setAsRelock(newLock);
               return newLock;
             });
@@ -160,7 +160,7 @@ public final class DomainLockUtils {
                           createUnlockBuilder(domainName, registrarId, isAdmin, relockDuration)
                               .setUnlockCompletionTime(now)
                               .build());
-                  tm().transact(() -> removeLockStatuses(result, isAdmin, now));
+                  removeLockStatuses(result, isAdmin, now);
                   return result;
                 });
     // Submit relock outside the transaction to make sure that it fully succeeded

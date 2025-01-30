@@ -16,11 +16,9 @@ package google.registry.tools;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
-import static com.google.common.collect.Iterables.partition;
 import static google.registry.model.eppcommon.StatusValue.SERVER_DELETE_PROHIBITED;
 import static google.registry.model.eppcommon.StatusValue.SERVER_TRANSFER_PROHIBITED;
 import static google.registry.model.eppcommon.StatusValue.SERVER_UPDATE_PROHIBITED;
-import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.CollectionUtils.findDuplicates;
 
 import com.beust.jcommander.Parameter;
@@ -37,8 +35,6 @@ import javax.inject.Inject;
 public abstract class LockOrUnlockDomainCommand extends ConfirmingCommand {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
-
-  private static final int BATCH_SIZE = 10;
 
   public static final ImmutableSet<StatusValue> REGISTRY_LOCK_STATUSES =
       ImmutableSet.of(
@@ -79,26 +75,16 @@ public abstract class LockOrUnlockDomainCommand extends ConfirmingCommand {
   protected String execute() {
     ImmutableSet.Builder<String> successfulDomainsBuilder = new ImmutableSet.Builder<>();
     ImmutableMap.Builder<String, String> failedDomainsToReasons = new ImmutableMap.Builder<>();
-    partition(getDomains(), BATCH_SIZE)
-        .forEach(
-            batch ->
-                // we require that the jpaTm is the outer transaction in DomainLockUtils
-                tm().transact(
-                        () ->
-                            tm().transact(
-                                    () -> {
-                                      for (String domain : batch) {
-                                        try {
-                                          createAndApplyRequest(domain);
-                                        } catch (Throwable t) {
-                                          logger.atSevere().withCause(t).log(
-                                              "Error when (un)locking domain %s.", domain);
-                                          failedDomainsToReasons.put(domain, t.getMessage());
-                                          continue;
-                                        }
-                                        successfulDomainsBuilder.add(domain);
-                                      }
-                                    })));
+    for (String domain : getDomains()) {
+      try {
+        createAndApplyRequest(domain);
+      } catch (Throwable t) {
+        logger.atSevere().withCause(t).log("Error when (un)locking domain %s.", domain);
+        failedDomainsToReasons.put(domain, t.getMessage());
+        continue;
+      }
+      successfulDomainsBuilder.add(domain);
+    }
     ImmutableSet<String> successfulDomains = successfulDomainsBuilder.build();
     ImmutableSet<String> failedDomains =
         failedDomainsToReasons.build().entrySet().stream()
