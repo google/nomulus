@@ -59,6 +59,7 @@ import { UserDataService } from './shared/services/userData.service';
 import { SnackBarModule } from './snackbar.module';
 import { SupportComponent } from './support/support.component';
 import { TldsComponent } from './tlds/tlds.component';
+import { ForceFocusDirective } from './shared/directives/forceFocus.directive';
 
 @NgModule({
   declarations: [SelectedRegistrarWrapper],
@@ -78,6 +79,7 @@ export class SelectedRegistrarModule {}
     HeaderComponent,
     HomeComponent,
     LocationBackDirective,
+    ForceFocusDirective,
     UserLevelVisibility,
     NavigationComponent,
     NewRegistrarComponent,
