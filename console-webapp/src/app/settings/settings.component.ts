@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Component, ViewEncapsulation } from '@angular/core';
+import { Component, ElementRef, ViewEncapsulation } from '@angular/core';
 
 @Component({
   selector: 'app-settings',
@@ -28,4 +28,8 @@ export class SettingsComponent {
       ? url.startsWith(`/${this.PATH}`)
       : url.startsWith(this.PATH);
   }
+
+  constructor(private elementRef: ElementRef) {}
+
+  ngAfterViewInit() {}
 }
