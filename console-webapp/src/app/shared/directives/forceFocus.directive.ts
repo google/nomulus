@@ -1,4 +1,4 @@
-// Copyright 2024 The Nomulus Authors. All Rights Reserved.
+// Copyright 2025 The Nomulus Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,20 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Component, ElementRef, ViewEncapsulation } from '@angular/core';
+import { Directive, ElementRef, effect } from '@angular/core';
 
-@Component({
-  selector: 'app-settings',
-  templateUrl: './settings.component.html',
-  styleUrls: ['./settings.component.scss'],
-  encapsulation: ViewEncapsulation.None,
+@Directive({
+  selector: '[forceFocus]',
 })
-export class SettingsComponent {
-  public static PATH = 'settings';
+export class ForceFocusDirective {
+  constructor(private el: ElementRef) {
+    effect(this.processElement.bind(this));
+  }
 
-  public static matchesUrl(url: string): boolean {
-    return url[0] === '/'
-      ? url.startsWith(`/${this.PATH}`)
-      : url.startsWith(this.PATH);
+  processElement() {
+    this.el.nativeElement.tabIndex = '1';
+    this.el.nativeElement.focus();
+    this.el.nativeElement.tabIndex = '-1';
   }
 }
