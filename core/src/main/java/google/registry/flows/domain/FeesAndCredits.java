@@ -64,7 +64,7 @@ public class FeesAndCredits extends ImmutableObject implements Buildable {
   }
 
   public boolean hasAnyPremiumFees() {
-    return fees.stream().anyMatch(BaseFee::isPremium);
+    return fees.stream().anyMatch(fee -> fee.isPremium() && !fee.hasZeroCost());
   }
 
   /** Returns the create cost for the event. */

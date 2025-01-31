@@ -1742,6 +1742,27 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
   }
 
   @Test
+  void testSuccess_token_premiumDomainZeroPrice_noFeeExtension() throws Exception {
+    createTld("example");
+    persistContactsAndHosts();
+    persistResource(
+        new AllocationToken.Builder()
+            .setToken("abc123")
+            .setTokenType(SINGLE_USE)
+            .setDiscountFraction(1)
+            .setDiscountPremiums(true)
+            .setDomainName("rich.example")
+            .build());
+    setEppInput(
+        "domain_create_allocationtoken.xml",
+        ImmutableMap.of("YEARS", "1", "DOMAIN", "rich.example"));
+    // The response should be the standard successful create response, but with 1 year instead of 2
+    runFlowAssertResponse(
+        loadFile("domain_create_response.xml", ImmutableMap.of("DOMAIN", "rich.example"))
+            .replace("2001", "2000"));
+  }
+
+  @Test
   void testFailure_promotionNotActive() {
     persistContactsAndHosts();
     persistResource(
