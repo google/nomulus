@@ -26,7 +26,6 @@ export interface OteCreateResponse extends Map<string, string> {
 
 @Component({
   selector: 'app-ote',
-  standalone: true,
   imports: [MaterialModule, SnackBarModule],
   templateUrl: './newOte.component.html',
   styleUrls: ['./newOte.component.scss'],

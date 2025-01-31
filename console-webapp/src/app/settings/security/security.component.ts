@@ -23,6 +23,7 @@ import { SecurityService, apiToUiConverter } from './security.service';
   selector: 'app-security',
   templateUrl: './security.component.html',
   styleUrls: ['./security.component.scss'],
+  standalone: false,
 })
 export default class SecurityComponent {
   public static PATH = 'security';

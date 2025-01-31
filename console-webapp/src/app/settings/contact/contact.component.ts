@@ -27,6 +27,7 @@ import {
   templateUrl: './contact.component.html',
   styleUrls: ['./contact.component.scss'],
   encapsulation: ViewEncapsulation.None,
+  standalone: false,
 })
 export default class ContactComponent {
   public static PATH = 'contact';

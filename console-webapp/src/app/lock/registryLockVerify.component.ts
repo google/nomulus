@@ -25,6 +25,7 @@ import { DomainListComponent } from '../domains/domainList.component';
   templateUrl: './registryLockVerify.component.html',
   styleUrls: ['./registryLockVerify.component.scss'],
   providers: [RegistryLockVerifyService],
+  standalone: false,
 })
 export class RegistryLockVerifyComponent {
   public static PATH = 'registry-lock-verify';

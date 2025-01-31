@@ -43,7 +43,6 @@ export const columns = [
   selector: 'app-users-list',
   templateUrl: './usersList.component.html',
   styleUrls: ['./usersList.component.scss'],
-  standalone: true,
   imports: [MaterialModule, CommonModule],
   providers: [],
 })

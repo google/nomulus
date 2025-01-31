@@ -27,6 +27,7 @@ import { environment } from '../../environments/environment';
   selector: 'app-registrar-details',
   templateUrl: './registrarDetails.component.html',
   styleUrls: ['./registrarDetails.component.scss'],
+  standalone: false,
 })
 export class RegistrarDetailsComponent implements OnInit {
   public static PATH = 'registrars/:id';

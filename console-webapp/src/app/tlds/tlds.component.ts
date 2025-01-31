@@ -18,5 +18,6 @@ import { Component } from '@angular/core';
   selector: 'app-tlds',
   templateUrl: './tlds.component.html',
   styleUrls: ['./tlds.component.scss'],
+  standalone: false,
 })
 export class TldsComponent {}

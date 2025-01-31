@@ -19,6 +19,7 @@ import { BreakPointObserverService } from '../shared/services/breakPoint.service
   selector: 'app-header',
   templateUrl: './header.component.html',
   styleUrls: ['./header.component.scss'],
+  standalone: false,
 })
 export class HeaderComponent {
   private isNavOpen = false;

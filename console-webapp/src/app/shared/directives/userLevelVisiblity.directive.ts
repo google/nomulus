@@ -35,6 +35,7 @@ export const DISABLED_ELEMENTS_PER_ROLE = {
 
 @Directive({
   selector: '[elementId]',
+  standalone: false,
 })
 export class UserLevelVisibility {
   @Input() elementId!: RESTRICTED_ELEMENTS | null;

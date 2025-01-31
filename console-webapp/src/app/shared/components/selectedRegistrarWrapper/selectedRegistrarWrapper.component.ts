@@ -31,6 +31,7 @@ import { RegistrarService } from 'src/app/registrar/registrar.service';
     </div>
     }
   `,
+  standalone: false,
 })
 export class SelectedRegistrarWrapper {
   constructor(protected registrarService: RegistrarService) {}
