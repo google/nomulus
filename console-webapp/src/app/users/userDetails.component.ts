@@ -27,7 +27,6 @@ import { UserEditFormComponent } from './userEditForm.component';
   selector: 'app-user-edit',
   templateUrl: './userDetails.component.html',
   styleUrls: ['./userDetails.component.scss'],
-  standalone: true,
   imports: [
     FormsModule,
     MaterialModule,

@@ -21,6 +21,7 @@ import { WhoisService } from './whois.service';
   selector: 'app-whois',
   templateUrl: './whois.component.html',
   styleUrls: ['./whois.component.scss'],
+  standalone: false,
 })
 export default class WhoisComponent {
   public static PATH = 'whois';

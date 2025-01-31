@@ -33,6 +33,7 @@ interface NavMenuNode extends RouteWithIcon {
   selector: 'app-navigation',
   templateUrl: './navigation.component.html',
   styleUrls: ['./navigation.component.scss'],
+  standalone: false,
 })
 export class NavigationComponent {
   renderRouter: boolean = true;

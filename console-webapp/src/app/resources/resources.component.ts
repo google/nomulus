@@ -19,6 +19,7 @@ import { UserDataService } from '../shared/services/userData.service';
   selector: 'app-resources',
   templateUrl: './resources.component.html',
   styleUrls: ['./resources.component.scss'],
+  standalone: false,
 })
 export class ResourcesComponent {
   public static PATH = 'resources';

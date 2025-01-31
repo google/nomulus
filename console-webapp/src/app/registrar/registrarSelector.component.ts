@@ -19,6 +19,7 @@ import { RegistrarService } from './registrar.service';
   selector: 'app-registrar-selector',
   templateUrl: './registrarSelector.component.html',
   styleUrls: ['./registrarSelector.component.scss'],
+  standalone: false,
 })
 export class RegistrarSelectorComponent {
   registrarInput = signal<string>(this.registrarService.registrarId());

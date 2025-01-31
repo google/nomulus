@@ -25,6 +25,7 @@ import { RegistryLockService } from './registryLock.service';
   selector: 'app-registry-lock',
   templateUrl: './registryLock.component.html',
   styleUrls: ['./registryLock.component.scss'],
+  standalone: false,
 })
 export class RegistryLockComponent {
   readonly isLocked = computed(() =>

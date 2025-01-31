@@ -33,6 +33,7 @@ interface LocalizedAddressStreet {
   templateUrl: './newRegistrar.component.html',
   styleUrls: ['./newRegistrar.component.scss'],
   encapsulation: ViewEncapsulation.None,
+  standalone: false,
 })
 export default class NewRegistrarComponent {
   protected newRegistrar: Registrar;

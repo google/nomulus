@@ -26,6 +26,7 @@ import { WhoisService } from './whois.service';
   selector: 'app-whois-edit',
   templateUrl: './whoisEdit.component.html',
   styleUrls: ['./whoisEdit.component.scss'],
+  standalone: false,
 })
 export default class WhoisEditComponent {
   registrarInEdit: Registrar | undefined;

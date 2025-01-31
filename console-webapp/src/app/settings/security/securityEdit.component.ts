@@ -26,6 +26,7 @@ import { SecurityService, apiToUiConverter } from './security.service';
   selector: 'app-security-edit',
   templateUrl: './securityEdit.component.html',
   styleUrls: ['./securityEdit.component.scss'],
+  standalone: false,
 })
 export default class SecurityEditComponent {
   dataSource: SecuritySettings = {};

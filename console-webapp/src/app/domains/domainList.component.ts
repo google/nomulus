@@ -48,6 +48,7 @@ interface DomainData {
       <button mat-button (click)="onClose()">Close</button>
     </mat-dialog-actions>
   `,
+  standalone: false,
 })
 export class ResponseDialogComponent {
   constructor(
@@ -79,6 +80,7 @@ export class ResponseDialogComponent {
       </button>
     </mat-dialog-actions>
   `,
+  standalone: false,
 })
 export class ReasonDialogComponent {
   reason: string = '';
@@ -102,6 +104,7 @@ export class ReasonDialogComponent {
   selector: 'app-domain-list',
   templateUrl: './domainList.component.html',
   styleUrls: ['./domainList.component.scss'],
+  standalone: false,
 })
 export class DomainListComponent {
   public static PATH = 'domain-list';

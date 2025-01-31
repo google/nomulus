@@ -27,6 +27,7 @@ import {
   selector: 'app-contact-details',
   templateUrl: './contactDetails.component.html',
   styleUrls: ['./contactDetails.component.scss'],
+  standalone: false,
 })
 export class ContactDetailsComponent {
   protected contactTypeToTextMap = contactTypeToTextMap;

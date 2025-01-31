@@ -33,6 +33,7 @@ type errorFriendlyText = { [type in errorCode]: String };
   selector: 'app-epp-password-edit',
   templateUrl: './eppPasswordEdit.component.html',
   styleUrls: ['./eppPasswordEdit.component.scss'],
+  standalone: false,
 })
 export default class EppPasswordEditComponent {
   MIN_MAX_LENGHT = new String(
