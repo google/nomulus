@@ -29,19 +29,17 @@ import { User } from './users.service';
   selector: 'app-user-edit-form',
   templateUrl: './userEditForm.component.html',
   styleUrls: ['./userEditForm.component.scss'],
-  standalone: true,
   imports: [FormsModule, MaterialModule, CommonModule],
   providers: [],
 })
 export class UserEditFormComponent {
   @ViewChild('form') form!: ElementRef;
   isNew = input<boolean>(false);
-  user = input<User>(
+  user = input<User, User>(
     {
       emailAddress: '',
       role: 'ACCOUNT_MANAGER',
     },
-    // @ts-ignore - legit option, typescript fails to match it to a proper type
     { transform: (user: User) => structuredClone(user) }
   );
 

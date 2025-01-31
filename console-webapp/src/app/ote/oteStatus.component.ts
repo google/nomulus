@@ -31,7 +31,6 @@ export interface OteStatusResponse {
 
 @Component({
   selector: 'app-ote-status',
-  standalone: true,
   imports: [MaterialModule, SnackBarModule, CommonModule],
   templateUrl: './oteStatus.component.html',
   styleUrls: ['./oteStatus.component.scss'],

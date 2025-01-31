@@ -14,6 +14,7 @@
 
 .console-app {
   &__user-details {
+    max-width: 616px;
     &-controls {
       display: flex;
       align-items: center;
@@ -34,6 +35,5 @@
       border: 1px solid #ddd;
       border-radius: 10px;
     }
-    max-width: 616px;
   }
 }

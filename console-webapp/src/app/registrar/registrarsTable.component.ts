@@ -78,6 +78,7 @@ export const columns = [
   templateUrl: './registrarsTable.component.html',
   styleUrls: ['./registrarsTable.component.scss'],
   encapsulation: ViewEncapsulation.None,
+  standalone: false,
 })
 export class RegistrarComponent {
   public static PATH = 'registrars';

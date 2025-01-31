@@ -20,6 +20,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
   selector: 'app-billingInfo',
   templateUrl: './billingInfo.component.html',
   styleUrls: ['./billingInfo.component.scss'],
+  standalone: false,
 })
 export class BillingInfoComponent {
   public static PATH = 'billingInfo';

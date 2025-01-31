@@ -32,7 +32,6 @@ import { UserEditFormComponent } from './userEditForm.component';
   selector: 'app-users',
   templateUrl: './users.component.html',
   styleUrls: ['./users.component.scss'],
-  standalone: true,
   imports: [
     FormsModule,
     MaterialModule,

@@ -19,6 +19,7 @@ import { UserDataService } from '../shared/services/userData.service';
   selector: 'app-support',
   templateUrl: './support.component.html',
   styleUrls: ['./support.component.scss'],
+  standalone: false,
 })
 export class SupportComponent {
   public static PATH = 'support';
