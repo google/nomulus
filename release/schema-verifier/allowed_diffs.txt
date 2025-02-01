@@ -1,3 +1,5 @@
 CREATE EXTENSION IF NOT EXISTS pgaudit WITH SCHEMA public;
 COMMENT ON EXTENSION pgaudit IS 'provides auditing functionality';
 SET default_with_oids = false;
+CREATE EXTENSION IF NOT EXISTS pg_stat_statements WITH SCHEMA public;
+COMMENT ON EXTENSION pg_stat_statements IS 'track execution statistics of all SQL statements executed';
