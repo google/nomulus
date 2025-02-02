@@ -34,11 +34,11 @@ steps:
     else
       project_id="domain-registry-${_ENV}"
     fi
-    gsutil cp gs://$PROJECT_ID-deploy/${TAG_NAME}/${_ENV}.tar .
-    tar -xvf ${_ENV}.tar
-    unzip default/WEB-INF/lib/core.jar
-    deployCloudSchedulerAndQueue google/registry/config/files/nomulus-config-${_ENV}.yaml default/WEB-INF/cloud-scheduler-tasks.xml $project_id
-    deployCloudSchedulerAndQueue google/registry/config/files/nomulus-config-${_ENV}.yaml default/WEB-INF/cloud-tasks-queue.xml $project_id
+    gsutil cp gs://$PROJECT_ID-deploy/${TAG_NAME}/nomulus-config-${_ENV}.yaml .
+    gsutil cp gs://$PROJECT_ID-deploy/${TAG_NAME}/cloud-scheduler-tasks-${_ENV}.xml .
+    gsutil cp gs://$PROJECT_ID-deploy/${TAG_NAME}/cloud-tasks-queue.xml .
+    deployCloudSchedulerAndQueue nomulus-config-${_ENV}.yaml cloud-scheduler-tasks-${_ENV}.xml $project_id
+    deployCloudSchedulerAndQueue nomulus-config-${_ENV}.yaml cloud-tasks-queue.xml $project_id
 # Deploy the GAE config files.
 # First authorize the gcloud tool to use the credential json file, then
 # download and unzip the tarball that contains the relevant config files
@@ -54,6 +54,9 @@ steps:
     else
       project_id="domain-registry-${_ENV}"
     fi
+    gsutil cp gs://$PROJECT_ID-deploy/${TAG_NAME}/${_ENV}.tar .
+    tar -xvf ${_ENV}.tar
+    unzip default/WEB-INF/lib/core.jar
     gcloud -q --project $project_id app deploy default/WEB-INF/appengine-generated/dispatch.yaml
 # Save the deployed tag for the current environment on GCS, and update the
 # mappings from Nomulus releases to Appengine versions.

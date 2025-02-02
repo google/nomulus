@@ -1,4 +1,6 @@
 runtime: nodejs20
 service: console
+basic_scaling:
+  max_instances: 10
 build_env_variables:
   GOOGLE_NODE_RUN_SCRIPTS: ''

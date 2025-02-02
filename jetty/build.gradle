@@ -60,6 +60,7 @@ tasks.register('tagNomulusImage', Exec) {
 }
 
 tasks.register('pushNomulusImage', Exec) {
+    configure verifyDeploymentConfig
     commandLine 'docker', 'push', "gcr.io/${rootProject.gcpProject}/nomulus"
     dependsOn(tasks.named('tagNomulusImage'))
 }
@@ -89,6 +90,7 @@ tasks.register('buildDeployer', Exec) {
 
 // Once GKE is the only option, we can use the same task in the root project instead.
 tasks.register('deployCloudSchedulerAndQueue') {
+    configure verifyDeploymentConfig
     dependsOn(tasks.named('deployCloudScheduler'), tasks.named('deployQueue'))
 }
 
@@ -97,7 +99,7 @@ tasks.register('deployCloudScheduler', Exec) {
     workingDir("$buildDir")
     commandLine './deployer',
         "${rootDir}/core/src/main/java/google/registry/config/files/nomulus-config-${rootProject.environment}.yaml",
-        "${rootDir}/core/src/main/java/google/registry/env/${rootProject.environment}/default/WEB-INF/cloud-scheduler-tasks.xml",
+        "${rootDir}/core/src/main/java/google/registry/config/files/tasks/cloud-scheduler-tasks-${rootProject.environment}.xml",
         rootProject.gcpProject, '--gke'
     // Only deploy the tasks after Nomulus itself is deployed.
     mustRunAfter(tasks.named('deployToGke'))
@@ -108,7 +110,7 @@ tasks.register('deployQueue', Exec) {
     workingDir("$buildDir")
     commandLine './deployer',
         "${rootDir}/core/src/main/java/google/registry/config/files/nomulus-config-${rootProject.environment}.yaml",
-        "${rootDir}/core/src/main/java/google/registry/env/common/default/WEB-INF/cloud-tasks-queue.xml",
+        "${rootDir}/core/src/main/java/google/registry/config/files/cloud-tasks-queue.xml",
         rootProject.gcpProject, '--gke'
     // Only deploy the queues after Nomulus itself is deployed.
     mustRunAfter(tasks.named('deployToGke'))
@@ -116,7 +118,6 @@ tasks.register('deployQueue', Exec) {
 
 tasks.register('deployToGke', Exec) {
     dependsOn('pushNomulusImage', ':proxy:pushProxyImage')
-    configure verifyDeploymentConfig
     commandLine './deploy-nomulus-for-env.sh', "${rootProject.environment}", "${rootProject.baseDomain}"
 }
 
@@ -125,7 +126,13 @@ tasks.register('deployNomulus') {
 }
 
 tasks.register('getEndpoints', Exec) {
-    configure verifyDeploymentConfig
+    doFirst {
+        if (rootProject.ext.gcpProject == null) {
+            def error = 'You must specify -Penvironment={alpha,crash,qa}'
+            System.err.println("\033[33;1m${error}\033[0m")
+            throw GradleException("Aborting:  ${error}")
+        }
+    }
     commandLine './get-endpoints.py', "${rootProject.gcpProject}"
 }
 

@@ -23,11 +23,11 @@ task tagProxyImage(dependsOn: buildProxyImage, type: Exec) {
 }
 
 task pushProxyImage(dependsOn: tagProxyImage, type: Exec) {
+  configure verifyDeploymentConfig
   commandLine 'docker', 'push', "gcr.io/${rootProject.gcpProject}/proxy"
 }
 
 task deployProxy(dependsOn: pushProxyImage, type: Exec) {
-  configure verifyDeploymentConfig
   commandLine './deploy-proxy-for-env.sh', "${rootProject.environment}"
 }
 

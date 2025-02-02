@@ -83,6 +83,7 @@ steps:
     sed -i s/builder:latest/builder@$builder_digest/g release/cloudbuild-proxy.yaml
     sed -i s/builder:latest/builder@$builder_digest/g release/cloudbuild-nomulus.yaml
     sed -i s/builder:latest/builder@$builder_digest/g release/cloudbuild-deploy.yaml
+    sed -i s/builder:latest/builder@$builder_digest/g release/cloudbuild-deploy-gke.yaml
     sed -i s/builder:latest/builder@$builder_digest/g release/cloudbuild-sync-and-tag.yaml
     sed -i s/builder:latest/builder@$builder_digest/g release/cloudbuild-schema-deploy.yaml
     sed -i s/builder:latest/builder@$builder_digest/g release/cloudbuild-schema-verify.yaml
@@ -90,9 +91,12 @@ steps:
     sed -i s/GCP_PROJECT/${PROJECT_ID}/ proxy/kubernetes/proxy-*.yaml
     sed -i s/'$${TAG_NAME}'/${TAG_NAME}/g release/cloudbuild-sync-and-tag.yaml
     sed -i s/'$${TAG_NAME}'/${TAG_NAME}/g release/cloudbuild-deploy.yaml
+    sed -i s/'$${TAG_NAME}'/${TAG_NAME}/g release/cloudbuild-deploy-gke.yaml
     for environment in alpha crash qa sandbox production; do
       sed s/'$${_ENV}'/${environment}/g release/cloudbuild-deploy.yaml \
         > release/cloudbuild-deploy-${environment}.yaml
+      sed s/'$${_ENV}'/${environment}/g release/cloudbuild-deploy-gke.yaml \
+        > release/cloudbuild-deploy-gke-${environment}.yaml
       sed s/'$${_ENV}'/${environment}/g release/cloudbuild-delete.yaml \
         > release/cloudbuild-delete-${environment}.yaml
     done

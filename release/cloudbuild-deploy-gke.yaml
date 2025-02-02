@@ -1,0 +1,65 @@
+# This job deploys auxiliary resources for Nomulus, such as Cloud Scheduler tasks
+# and Cloud Tasks queues.
+#
+# To manually trigger a build on GCB, run:
+# gcloud builds submit --config=cloudbuild-deploy-gke.yaml \
+# --substitutions=TAG_NAME=[TAG],_ENV=[ENV] ..
+#
+# To trigger a build automatically, follow the instructions below and add a trigger:
+# https://cloud.google.com/cloud-build/docs/running-builds/automate-builds
+#
+# Note: to work around the issue in Spinnaker's 'Deployment Manifest' stage,
+# variable references must avoid the ${var} format. Valid formats include
+# $var or ${"${var}"}. This file uses the former. Since TAG_NAME and _ENV are
+# expanded in the copies sent to Spinnaker, we preserve the brackets around
+# them for safe pattern matching during release.
+# See https://github.com/spinnaker/spinnaker/issues/3028 for more information.
+steps:
+# Pull the credential for nomulus tool.
+- name: 'gcr.io/$PROJECT_ID/builder:latest'
+  entrypoint: /bin/bash
+  args:
+  - -c
+  - |
+    set -e
+    gcloud secrets versions access latest \
+      --secret nomulus-tool-cloudbuild-credential > tool-credential.json
+# Create/Update cloud scheduler and cloud tasks based on a cloud-scheduler-tasks.xml
+- name: 'gcr.io/$PROJECT_ID/builder:latest'
+  entrypoint: /bin/bash
+  args:
+  - -c
+  - |
+    set -e
+    gcloud auth activate-service-account --key-file=tool-credential.json
+    if [ ${_ENV} == production ]; then
+      project_id="domain-registry"
+    else
+      project_id="domain-registry-${_ENV}"
+    fi
+    gsutil cp gs://$PROJECT_ID-deploy/${TAG_NAME}/nomulus-config-${_ENV}.yaml .
+    gsutil cp gs://$PROJECT_ID-deploy/${TAG_NAME}/cloud-scheduler-tasks-${_ENV}.xml .
+    gsutil cp gs://$PROJECT_ID-deploy/${TAG_NAME}/cloud-tasks-queue.xml .
+    deployCloudSchedulerAndQueue nomulus-config-${_ENV}.yaml cloud-scheduler-tasks-${_ENV}.xml $project_id --gke
+    deployCloudSchedulerAndQueue nomulus-config-${_ENV}.yaml cloud-tasks-queue.xml $project_id --gke
+# Save the deployed tag for the current environment on GCS, and update the
+# mappings from Nomulus releases to deployment timestamp.
+- name: 'gcr.io/$PROJECT_ID/builder:latest'
+  entrypoint: /bin/bash
+  args:
+  - -c
+  - |
+    set -e
+    echo ${TAG_NAME} | \
+      gsutil cp - gs://$PROJECT_ID-deployed-tags/nomulus-gke.${_ENV}.tag
+    now=$(TZ=UTC date '+%Y-%m-%dT%H:%M:%S.%3NZ')
+    echo "${TAG_NAME},$now" | \
+      gsutil cp - gs://$PROJECT_ID-deployed-tags/nomulus-gke.${_ENV}.tmp
+    # Atomically append uploaded tmp file to nomulus-gke.${_ENV}.versions
+    gsutil compose \
+      gs://$PROJECT_ID-deployed-tags/nomulus-gke.${_ENV}.versions \
+      gs://$PROJECT_ID-deployed-tags/nomulus-gke.${_ENV}.tmp \
+      gs://$PROJECT_ID-deployed-tags/nomulus-gke.${_ENV}.versions
+timeout: 3600s
+options:
+  machineType: 'E2_HIGHCPU_32'

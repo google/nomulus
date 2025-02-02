@@ -45,7 +45,8 @@ class UseCluster(PreserveContext):
 
     def __enter__(self):
         super().__enter__()
-        cmd = f'gcloud container clusters get-credentials {self._cluster} --location {self._region} --project {self._project}'
+        cmd = (f'gcloud container fleet memberships get-credentials'
+                   f' {self._cluster} --project {self._project}')
         run_command(cmd)
 
 

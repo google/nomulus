@@ -561,7 +561,7 @@ task deployCloudSchedulerAndQueue {
         commandLine 'go', 'run',
                 "./deployCloudSchedulerAndQueue.go",
                 "${rootDir}/core/src/main/java/google/registry/config/files/nomulus-config-${env}.yaml",
-                "${rootDir}/core/src/main/java/google/registry/env/${env}/default/WEB-INF/cloud-scheduler-tasks.xml",
+                "${rootDir}/core/src/main/java/google/registry/config/files/tasks/cloud-scheduler-tasks-${env}.xml",
                 "domain-registry-${env}"
       }
       exec {
@@ -569,7 +569,7 @@ task deployCloudSchedulerAndQueue {
         commandLine 'go', 'run',
                 "./deployCloudSchedulerAndQueue.go",
                 "${rootDir}/core/src/main/java/google/registry/config/files/nomulus-config-${env}.yaml",
-                "${rootDir}/core/src/main/java/google/registry/env/common/default/WEB-INF/cloud-tasks-queue.xml",
+                "${rootDir}/core/src/main/java/google/registry/config/files/cloud-tasks-queue.xml",
                 "domain-registry-${env}"
       }
     }
