@@ -1,349 +1,607 @@
 {
     "swagger": "2.0",
     "info": {
-        "title": "Registry Console API",
-        "version": "1.0.0"
+        "version": "1.0.0",
+        "title": "Console API",
+        "description": "API for managing registrars, user data, registry locks, domain lists, users, and contact settings."
     },
+    "basePath": "/console-api",
     "schemes": [
         "https"
     ],
-    "consumes": [
-        "application/json"
-    ],
-    "produces": [
-        "application/json"
-    ],
     "paths": {
-        "/console-api/user": {
+        "/registrars": {
             "get": {
-                "summary": "Provides user type to UI",
+                "summary": "Retrieve a list of registrars",
+                "produces": [
+                    "application/json"
+                ],
                 "responses": {
                     "200": {
-                        "schema": {
-                            "type": "object",
-                            "properties": {
-                                "type": {
-                                    "type": "string",
-                                    "enum":[
-                                        "ADMIN",
-                                        "USER"
-                                    ]
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/console-api/poll": {
-            "post": {
-                "summary": "Every T minutes (1?) request/response to keep front-end in sync with the back-end",
-                "parameters": [{
-                    "name": "version",
-                    "in": "body",
-                    "required": true,
-                    "type": "string",
-                    "format": "string"
-                }, {
-                    "name": "registrarId",
-                    "in": "body",
-                    "required": false,
-                    "type": "string",
-                    "format": "string"
-                }, {
-                    "name": "notificationId",
-                    "in": "body",
-                    "required": false,
-                    "type": "string",
-                    "format": "string"
-                }],
-                "responses": {
-                    "200": {
+                        "description": "Successful retrieval of registrars.",
                         "schema": {
                             "type": "array",
                             "items": {
-                                "type": "object",
-                                "properties": {
-                                    "notificationText": {
-                                        "type": "string"
-                                    },
-                                    "notificationId": {
-                                        "type": "string"
-                                    },
-                                    "dismissable": {
-                                        "type": "boolean"
-                                    }
-                                }
+                                "$ref": "#/definitions/Registrar"
                             }
                         }
                     }
                 }
             }
         },
-        "/console-api/registrars": {
+        "/userdata": {
             "get": {
-                "summary": "Provides list of available registrars to UI",
+                "summary": "Retrieve user data",
+                "produces": [
+                    "application/json"
+                ],
                 "responses": {
                     "200": {
+                        "description": "Successful retrieval of user data.",
                         "schema": {
-                            "type": "array",
-                            "items": {
-                                "type": "object",
-                                "properties": {
-                                    "name": {
-                                        "type": "string"
-                                    },
-                                    "registrarId": {
-                                        "type": "string"
-                                    }
-                                }
-                            }
+                            "$ref": "#/definitions/UserData"
                         }
                     }
                 }
             }
         },
-        "/console-api/domains": {
+        "/registry-lock": {
             "get": {
-                "summary": "GET list of domains per registrar with pagination and filters",
-                "parameters": [{
-                    "name": "registrarId",
-                    "in": "query",
-                    "required": false,
-                    "type": "string",
-                    "format": "string"
-                }, {
-                    "name": "limit",
-                    "in": "query",
-                    "required": false,
-                    "type": "number",
-                    "default": 10
-                }, {
-                    "name": "marker",
-                    "description": "Name of the last domain retrieved by the user",
-                    "in": "query",
-                    "required": false,
-                    "type": "string"
-                }, {
-                    "name": "filterBy",
-                    "in": "query",
-                    "required": false,
-                    "content": {
-                        "schema": {
-                            "type": "object",
-                            "properties": {
-                                "name": {
-                                    "type": "string"
-                                },
-                                "tld": {
-                                    "type":"array",
-                                    "items": {
-                                        "type":"string"
-                                    }
-                                },
-                                "status":{
-                                    "type":"array",
-                                    "items": {
-                                        "type":"string"
-                                    }
-                                },
-                                "isLocked": {
-                                    "type": "boolean"
-                                }
-                            }
-                        }
-                    }
-                }],
-                "responses": {
-                    "200": {
-                        "description": "Provides list of domains per registrar",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "type": "object",
-                                "properties": {
-                                    "name": {
-                                        "type": "string"
-                                    },
-                                    "tld": {
-                                        "type": "string"
-                                    },
-                                    "status": {
-                                        "type": "array",
-                                        "items": {
-                                            "type": "string",
-                                            "enum":[
-                                                "CLIENT_DELETE_PROHIBITED",
-                                                "CLIENT_HOLD",
-                                                "CLIENT_RENEW_PROHIBITED",
-                                                "CLIENT_TRANSFER_PROHIBITED",
-                                                "CLIENT_UPDATE_PROHIBITED",
-                                                "INACTIVE",
-                                                "LINKED",
-                                                "OK",
-                                                "PENDING_CREATE",
-                                                "PENDING_DELETE",
-                                                "PENDING_TRANSFER",
-                                                "PENDING_UPDATE",
-                                                "SERVER_DELETE_PROHIBITED",
-                                                "SERVER_HOLD",
-                                                "SERVER_RENEW_PROHIBITED",
-                                                "SERVER_TRANSFER_PROHIBITED",
-                                                "SERVER_UPDATE_PROHIBITED"
-                                            ]
-                                        }
-                                    },
-                                    "isLocked": {
-                                        "type": "boolean"
-                                    },
-                                    "creationTime": {
-                                        "type": "string"
-                                    },
-                                    "expirationTime": {
-                                        "type": "string"
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/console-api/domain": {
-            "post": {
-                "summary": "Apply action on a domain",
-                "responses": {
-                    "200": {
-                        "description": "Action has been succesfully applied"
-                    }
-                },
-                "parameters": [
-                    {
-                        "name": "domain",
-                        "in": "path",
-                        "required": true,
-                        "type": "string",
-                        "format": "string"
-                    },
-                    {
-                        "name": "registrarId",
-                        "in": "body",
-                        "required": false,
-                        "type": "string",
-                        "format": "string"
-                    },
-                    {
-                        "name": "action",
-                        "in": "body",
-                        "required": true,
-                        "type": "string",
-                        "format": "string"
-                    }
-                ]
-            }
-        },
-        "/console-api/settings/contacts/get": {
-            "get": {
-                "summary": "GET settings contact page",
-                "responses": {
-                    "200": {
-                        "description": "Provides list of contacts per registrar",
-                        "schema": {
-                            "$ref": "#/definitions/settingsContacts"
-                        }
-                    }
-                },
+                "summary": "Retrieve registry lock information",
                 "parameters": [
                     {
                         "name": "registrarId",
                         "in": "query",
-                        "required": false,
-                        "type": "string",
-                        "format": "string"
+                        "description": "Unique identifier for the registrar.",
+                        "required": true,
+                        "type": "string"
                     }
-                ]
-            }
-        },
-        "/console-api/settings/contacts/upd": {
-            "post": {
-                "summary": "Creates, updates or delete registrar contacts",
+                ],
+                "produces": [
+                    "application/json"
+                ],
                 "responses": {
                     "200": {
+                        "description": "Successful retrieval of registry lock information.",
                         "schema": {
-                            "$ref": "#/definitions/settingsContacts"
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/RegistryLock"
+                            }
                         }
                     }
-                },
+                }
+            }
+        },
+        "/domain-list": {
+            "get": {
+                "summary": "Retrieve a list of domains",
                 "parameters": [
                     {
                         "name": "registrarId",
-                        "in": "body",
-                        "required": false,
-                        "type": "string",
-                        "format": "string"
+                        "in": "query",
+                        "description": "Unique identifier for the registrar.",
+                        "required": true,
+                        "type": "string"
                     },
                     {
-                        "name": "contacts",
-                        "in": "body",
+                        "name": "resultsPerPage",
+                        "in": "query",
+                        "description": "Number of results per page.",
                         "required": true,
-                        "type": "array",
+                        "type": "integer"
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful retrieval of domain list.",
                         "schema": {
-                            "$ref": "#/definitions/settingsContacts"
+                            "$ref": "#/definitions/DomainList"
                         }
                     }
-                ]
+                }
+            }
+        },
+        "/users": {
+            "get": {
+                "summary": "Retrieve a list of users",
+                "parameters": [
+                    {
+                        "name": "registrarId",
+                        "in": "query",
+                        "description": "Unique identifier for the registrar.",
+                        "required": true,
+                        "type": "string"
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful retrieval of users.",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/User"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/settings/contacts": {
+            "get": {
+                "summary": "Retrieve contact settings",
+                "parameters": [
+                    {
+                        "name": "registrarId",
+                        "in": "query",
+                        "description": "Unique identifier for the registrar.",
+                        "required": true,
+                        "type": "string"
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful retrieval of contact settings.",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/ContactSetting"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "summary": "Update contact settings",
+                "consumes": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "name": "body",
+                        "in": "body",
+                        "description": "Contact settings to update.",
+                        "required": true,
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/ContactSetting"
+                            }
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Contact settings updated successfully."
+                    }
+                }
+            }
+        },
+        "/settings/whois-fields": {
+            "post": {
+                "summary": "Update WHOIS fields",
+                "consumes": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "name": "body",
+                        "in": "body",
+                        "description": "WHOIS fields to update.",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/Registrar"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "WHOIS fields updated successfully."
+                    }
+                }
             }
         }
     },
-
     "definitions": {
-        "settingsContacts": {
-            "type": "array",
-            "items": {
-                "type": "object",
-                "properties": {
-                    "name": {
+        "Registrar": {
+            "type": "object",
+            "properties": {
+                "registrarId": {
+                    "type": "string",
+                    "description": "Unique identifier for the registrar."
+                },
+                "registrarName": {
+                    "type": "string",
+                    "description": "Name of the registrar."
+                },
+                "type": {
+                    "type": "string",
+                    "description": "Type of registrar (e.g., OTE, REAL)."
+                },
+                "allowedTlds": {
+                    "type": "array",
+                    "items": {
                         "type": "string"
                     },
-                    "emailAddress": {
+                    "description": "List of allowed Top-Level Domains."
+                },
+                "ipAddressAllowList": {
+                    "type": "array",
+                    "items": {
                         "type": "string"
                     },
-                    "registrarId": {
+                    "description": "List of allowed IP addresses."
+                },
+                "localizedAddress": {
+                    "type": "object",
+                    "properties": {
+                        "street": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            },
+                            "description": "Street address."
+                        },
+                        "city": {
+                            "type": "string",
+                            "description": "City."
+                        },
+                        "state": {
+                            "type": "string",
+                            "description": "State."
+                        },
+                        "zip": {
+                            "type": "string",
+                            "description": "Zip code."
+                        },
+                        "countryCode": {
+                            "type": "string",
+                            "description": "Country code."
+                        }
+                    },
+                    "required": [
+                        "street",
+                        "city",
+                        "state",
+                        "zip",
+                        "countryCode"
+                    ]
+                },
+                "phoneNumber": {
+                    "type": "string",
+                    "description": "Phone number."
+                },
+                "faxNumber": {
+                    "type": "string",
+                    "description": "Fax number."
+                },
+                "emailAddress": {
+                    "type": "string",
+                    "description": "Email address."
+                },
+                "icannReferralEmail": {
+                    "type": "string",
+                    "description": "ICANN referral email address."
+                },
+                "registryLockAllowed": {
+                    "type": "boolean",
+                    "description": "Whether registry lock is allowed."
+                },
+                "clientCertificate": {
+                    "type": "string",
+                    "description": "Client certificate (if applicable)."
+                },
+                "failoverClientCertificate": {
+                    "type": "string",
+                    "description": "Failover client certificate (if applicable)."
+                },
+                "whoisServer": {
+                    "type": "string",
+                    "description": "WHOIS server (if applicable)."
+                },
+                "url": {
+                    "type": "string",
+                    "description": "URL (if applicable)."
+                },
+                "ianaIdentifier": {
+                    "type": "integer",
+                    "description": "IANA identifier (if applicable)."
+                },
+                "billingAccountMap": {
+                    "type": "object",
+                    "additionalProperties": {
                         "type": "string"
                     },
-                    "registryLockEmailAddress": {
-                        "type": "string"
-                    },
-                    "phoneNumber": {
-                        "type": "string"
-                    },
-                    "faxNumber": {
-                        "type": "string"
-                    },
-                    "types": {
-                        "type": "string",
-                        "enum": [
-                            "ABUSE",
-                            "ADMIN",
-                            "BILLING",
-                            "LEGAL",
-                            "MARKETING",
-                            "TECH",
-                            "WHOIS"
-                        ]
-                    },
-                    "visibleInWhoisAsAdmin": {
-                        "type": "boolean"
-                    },
-                    "visibleInWhoisAsTech": {
-                        "type": "boolean"
-                    },
-                    "visibleInDomainWhoisAsAbuse": {
-                        "type": "boolean"
-                    },
-                    "allowedToSetRegistryLockPassword": {
-                        "type": "boolean"
+                    "description": "Mapping of billing accounts."
+                },
+                "driveFolderId": {
+                    "type": "string",
+                    "description": "Google Drive folder ID (if applicable)."
+                }
+            },
+            "required": [
+                "registrarId",
+                "registrarName",
+                "type",
+                "allowedTlds",
+                "localizedAddress",
+                "emailAddress",
+                "icannReferralEmail",
+                "registryLockAllowed"
+            ]
+        },
+        "UserData": {
+            "type": "object",
+            "properties": {
+                "userRoles": {
+                    "type": "object",
+                    "description": "User roles (currently empty)."
+                },
+                "supportEmail": {
+                    "type": "string",
+                    "description": "Support email address."
+                },
+                "supportPhoneNumber": {
+                    "type": "string",
+                    "description": "Support phone number."
+                },
+                "globalRole": {
+                    "type": "string",
+                    "description": "Global role of the user."
+                },
+                "isAdmin": {
+                    "type": "boolean",
+                    "description": "Whether the user is an admin."
+                },
+                "productName": {
+                    "type": "string",
+                    "description": "Name of the product."
+                },
+                "technicalDocsUrl": {
+                    "type": "string",
+                    "description": "URL for technical documentation."
+                }
+            }
+        },
+        "RegistryLock": {
+            "type": "object",
+            "properties": {
+                "domainName": {
+                    "type": "string",
+                    "description": "Name of the domain."
+                },
+                "registrarPocId": {
+                    "type": "string",
+                    "description": "Registrar point of contact ID."
+                },
+                "lockRequestTime": {
+                    "type": "object",
+                    "properties": {
+                        "creationTime": {
+                            "type": "string",
+                            "format": "date-time",
+                            "description": "Time of lock request."
+                        }
                     }
+                },
+                "unlockRequestTime": {
+                    "type": "null",
+                    "description": "Time of unlock request (null if not requested)."
+                },
+                "lockCompletionTime": {
+                    "type": "string",
+                    "format": "date-time",
+                    "description": "Time of lock completion."
+                },
+                "unlockCompletionTime": {
+                    "type": "null",
+                    "description": "Time of unlock completion (null if not completed)."
+                },
+                "isSuperuser": {
+                    "type": "boolean",
+                    "description": "Whether the user is a superuser."
+                }
+            }
+        },
+        "DomainList": {
+            "type": "object",
+            "properties": {
+                "domains": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/Domain"
+                    },
+                    "description": "List of domains."
+                },
+                "checkpointTime": {
+                    "type": "string",
+                    "format": "date-time",
+                    "description": "Checkpoint time for the domain list."
+                },
+                "totalResults": {
+                    "type": "integer",
+                    "description": "Total number of results."
+                }
+            }
+        },
+        "Domain": {
+            "type": "object",
+            "properties": {
+                "domainName": {
+                    "type": "string",
+                    "description": "Name of the domain."
+                },
+                "adminContact": {
+                    "type": "object",
+                    "properties": {
+                        "key": {
+                            "type": "string",
+                            "description": "Key for the admin contact."
+                        },
+                        "kind": {
+                            "type": "string",
+                            "description": "Kind of admin contact."
+                        }
+                    }
+                },
+                "techContact": {
+                    "type": "object",
+                    "properties": {
+                        "key": {
+                            "type": "string",
+                            "description": "Key for the tech contact."
+                        },
+                        "kind": {
+                            "type": "string",
+                            "description": "Kind of tech contact."
+                        }
+                    }
+                },
+                "registrantContact": {
+                    "type": "object",
+                    "properties": {
+                        "key": {
+                            "type": "string",
+                            "description": "Key for the registrant contact."
+                        },
+                        "kind": {
+                            "type": "string",
+                            "description": "Kind of registrant contact."
+                        }
+                    }
+                },
+                "registrationExpirationTime": {
+                    "type": "string",
+                    "format": "date-time",
+                    "description": "Expiration time for domain registration."
+                },
+                "lastTransferTime": {
+                    "type": "null",
+                    "description": "Time of last transfer (null if not transferred)."
+                },
+                "repoId": {
+                    "type": "string",
+                    "description": "Repository ID."
+                },
+                "currentSponsorRegistrarId": {
+                    "type": "string",
+                    "description": "Current sponsor registrar ID."
+                },
+                "creationRegistrarId": {
+                    "type": "string",
+                    "description": "Creation registrar ID."
+                },
+                "lastEppUpdateRegistrarId": {
+                    "type": "string",
+                    "description": "Last EPP update registrar ID."
+                },
+                "creationTime": {
+                    "type": "object",
+                    "properties": {
+                        "creationTime": {
+                            "type": "string",
+                            "format": "date-time",
+                            "description": "Creation time."
+                        }
+                    }
+                },
+                "lastEppUpdateTime": {
+                    "type": "string",
+                    "format": "date-time",
+                    "description": "Last EPP update time."
+                },
+                "statuses": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "description": "Domain statuses."
+                },
+                "nsHosts": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "key": {
+                                "type": "string",
+                                "description": "Key for the name server host."
+                            },
+                            "kind": {
+                                "type": "string",
+                                "description": "Kind of name server host."
+                            }
+                        }
+                    },
+                    "description": "Name server hosts."
+                }
+            }
+        },
+        "User": {
+            "type": "object",
+            "properties": {
+                "emailAddress": {
+                    "type": "string",
+                    "description": "Email address of the user."
+                },
+                "role": {
+                    "type": "string",
+                    "description": "Role of the user."
+                }
+            }
+        },
+        "ContactSetting": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "description": "Name of the contact."
+                },
+                "emailAddress": {
+                    "type": "string",
+                    "description": "Email address of the contact."
+                },
+                "registrarId": {
+                    "type": "string",
+                    "description": "Registrar ID."
+                },
+                "phoneNumber": {
+                    "type": "string",
+                    "description": "Phone number of the contact."
+                },
+                "types": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "description": "Contact types."
+                },
+                "visibleInWhoisAsAdmin": {
+                    "type": "boolean",
+                    "description": "Whether the contact is visible in WHOIS as admin."
+                },
+                "visibleInWhoisAsTech": {
+                    "type": "boolean",
+                    "description": "Whether the contact is visible in WHOIS as tech."
+                },
+                "visibleInDomainWhoisAsAbuse": {
+                    "type": "boolean",
+                    "description": "Whether the contact is visible in domain WHOIS as abuse."
+                },
+                "userFriendlyTypes": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "description": "User-friendly contact types."
                 }
             }
         }
