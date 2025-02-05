@@ -15,6 +15,7 @@
     <mat-sidenav
       [mode]="breakpointObserver.isMobileView() ? 'over' : 'side'"
       [opened]="!breakpointObserver.isMobileView()"
+      [disableClose]="!breakpointObserver.isMobileView()"
       #sidenav
       class="console-app__sidebar"
     >
