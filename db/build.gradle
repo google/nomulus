@@ -189,6 +189,7 @@ dependencies {
   testRuntimeOnly deps['io.github.java-diff-utils:java-diff-utils']
   testImplementation deps['org.junit.jupiter:junit-jupiter-api']
   testImplementation deps['org.junit.jupiter:junit-jupiter-engine']
+  testImplementation deps['org.junit.platform:junit-platform-launcher']
   testImplementation deps['org.testcontainers:postgresql']
   testImplementation deps['org.testcontainers:testcontainers']
   testImplementation deps['org.testcontainers:junit-jupiter']

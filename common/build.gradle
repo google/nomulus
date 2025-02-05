@@ -65,4 +65,5 @@ dependencies {
 
   testImplementation deps['org.junit.jupiter:junit-jupiter-api']
   testImplementation deps['org.junit.jupiter:junit-jupiter-engine']
+  testImplementation deps['org.junit.platform:junit-platform-launcher']
 }

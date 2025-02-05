@@ -203,6 +203,7 @@ ext {
       'org.junit.jupiter:junit-jupiter-migrationsupport:[5.6.2,)',
       'org.junit.jupiter:junit-jupiter-params:[5.6.2,)',
       'org.junit.platform:junit-platform-runner:[1.6.2,)',
+      'org.junit.platform:junit-platform-launcher:[1.6.2,)',
       'org.junit.platform:junit-platform-suite-api:[1.6.2,)',
       'org.mockito:mockito-core:[3.7.7,)',
       'org.mockito:mockito-junit-jupiter:[3.7.7,)',
