@@ -43,10 +43,6 @@ apt-get install openjdk-21-jdk-headless -y
 
 # Install Python
 apt-get install python3 -y
-# As of March 2021 python3 is at v3.6. Get pip then install dataclasses
-# (introduced in 3.7) for nom_build
-apt-get install python3-pip -y
-python3 -m pip install dataclasses
 
 # Install Node
 apt-get install npm -y
@@ -57,7 +53,7 @@ npm install -g n
 for i in {1..5}; do n 22.7.0 && break || sleep 15; done
 
 # Install gp_dump
-apt-get install postgresql-client-11 procps -y
+apt-get install postgresql-client-17 procps -y
 
 # Install gcloud
 apt-get install google-cloud-cli -y
