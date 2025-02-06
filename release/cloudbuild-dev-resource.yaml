@@ -19,15 +19,16 @@ steps:
 # uploading process.
 - name: 'gcr.io/${PROJECT_ID}/builder:live'
   entrypoint: /bin/bash
-  args: ['gsutil', '-m', 'rsync', '-d', '-r', 'build/docs/javadoc', 'gs://${PROJECT_ID}-javadoc']
+  args: ['gcloud', 'storage', 'rsync', '--delete-unmatched-destination-objects', '--recursive', 'build/docs/javadoc',
+         'gs://${PROJECT_ID}-javadoc']
 # Upload the files to GCS
 # We don't use GCB's built-in artifacts uploader because we want to delete
 # the existing files in the bucket first, and we want to parallelize the
 # uploading process.
 - name: 'gcr.io/${PROJECT_ID}/builder:live'
   entrypoint: /bin/bash
-  args: ['gsutil', '-m', 'rsync', '-d', '-r', 'db/src/main/resources/sql/er_diagram',
-         'gs://${PROJECT_ID}-er-diagram']
+  args: ['gcloud', 'storage', 'rsync', '--delete-unmatched-destination-objects', '--recursive',
+         'db/src/main/resources/sql/er_diagram', 'gs://${PROJECT_ID}-er-diagram']
 timeout: 3600s
 options:
   machineType: 'E2_HIGHCPU_32'
