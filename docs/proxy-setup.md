@@ -29,12 +29,11 @@ service like [Spinnaker](https://www.spinnaker.io/) for release management.
 ## Detailed Instruction
 
 We use [`gcloud`](https://cloud.google.com/sdk/gcloud/) and
-[`terraform`](https://terraform.io) to configure the proxy project on GCP. We
-use [`kubectl`](https://kubernetes.io/docs/tasks/tools/install-kubectl/) to
-deploy the proxy to the project. Additionally,
-[`gsutil`](https://cloud.google.com/storage/docs/gsutil) is used to create GCS
-bucket for storing the terraform state file. These instructions assume that all
-four tools are installed.
+[`terraform`](https://terraform.io) to configure the proxy project on GCP and to create a GCS 
+bucket for storing the terraform state file. We use 
+[`kubectl`](https://kubernetes.io/docs/tasks/tools/install-kubectl/) to deploy 
+the proxy to the project. These instructions assume that all three tools are 
+installed.
 
 ### Setup GCP project
 
@@ -59,8 +58,8 @@ environment.
 In the proxy project, create a GCS bucket to store the terraform state file:
 
 ```bash
-$ gsutil config # only if you haven't run gsutil before.
-$ gsutil mb -p <proxy-project> gs://<bucket-name>/
+$ gcloud auth login # only if you haven't run gcloud before.
+$ gcloud storage buckets create gs://<bucket-name>/ --project <proxy-project>
 ```
 
 ### Obtain a domain and SSL certificate
@@ -185,7 +184,7 @@ This encrypted file is then uploaded to a GCS bucket specified in the
 `config.tf` file.
 
 ```bash
-$ gsutil cp <combined_secret.pem.enc> gs://<your-certificate-bucket>
+$ gcloud storage cp <combined_secret.pem.enc> gs://<your-certificate-bucket>
 ```
 
 ### Edit proxy config file
@@ -379,8 +378,8 @@ A file named `ssl-cert-key.pem.enc` will be created. Upload it to a GCS bucket
 in the proxy project. To create a bucket and upload the file:
 
 ```bash
-$ gsutil mb -p <proxy-project> gs://<bucket-name>
-$ gustil cp ssl-cert-key.pem.enc gs://<bucket-name>
+$ gcloud storage buckets create gs://<bucket-name> --project <proxy-project> 
+$ gcloud storage cp ssl-cert-key.pem.enc gs://<bucket-name>
 ```
 
 The proxy service account needs the "Cloud KMS CryptoKey Decrypter" role to
@@ -396,9 +395,9 @@ The service account also needs the "Storage Object Viewer" role to retrieve the
 encrypted file from GCS:
 
 ```bash
-$ gsutil iam ch \
-serviceAccount:<service-account-email>:roles/storage.objectViewer \
-gs://<bucket-name>
+$ gcloud storage buckets add-iam-policy-binding gs://<bucket-name> \
+--member=serviceAccount:<service-account-email> \
+--role=roles/storage.objectViewer
 ```
 
 ### Proxy configuration

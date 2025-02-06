@@ -62,7 +62,7 @@ steps:
   - -c
   - |
     set -e
-    gsutil cp gs://$PROJECT_ID-deploy/${TAG_NAME}/schema.jar \
+    gcloud storage cp gs://$PROJECT_ID-deploy/${TAG_NAME}/schema.jar \
       /flyway/jars
 # Deploy SQL schema
 - name: 'gcr.io/$PROJECT_ID/schema_deployer:latest'
@@ -83,7 +83,7 @@ steps:
   - |
     set -e
     echo ${TAG_NAME} | \
-      gsutil cp - gs://$PROJECT_ID-deployed-tags/sql.${_ENV}.tag\
+      gcloud storage cp - gs://$PROJECT_ID-deployed-tags/sql.${_ENV}.tag\
 timeout: 3600s
 options:
   machineType: 'E2_HIGHCPU_32'

@@ -26,8 +26,8 @@ import common
 class RollbackStep:
     """One rollback step.
 
-    Most steps are implemented using commandline tools, e.g., gcloud and
-    gsutil, and execute their commands by forking a subprocess. Each step
+    Most steps are implemented using commandline tools, e.g., gcloud,
+    and execute their commands by forking a subprocess. Each step
     also has a info method that returns its command with a description.
 
     Two steps are handled differently. The _UpdateDeployTag step gets a piped
@@ -147,7 +147,7 @@ class _UpdateDeployTag(RollbackStep):
     destination: str
 
     def execute(self) -> None:
-        with subprocess.Popen(('gsutil', 'cp', '-', self.destination),
+        with subprocess.Popen(('gcloud', 'storage', 'cp', '-', self.destination),
                               stdin=subprocess.PIPE) as p:
             try:
                 p.communicate(self.nom_tag.encode('utf-8'))
@@ -165,7 +165,7 @@ def update_deploy_tags(dev_project: str, env: str,
 
     return _UpdateDeployTag(
         f'Update Nomulus tag in {env}',
-        (f'echo {nom_tag} | gsutil cp - {destination}', ''), nom_tag,
+        (f'echo {nom_tag} | gcloud storage cp - {destination}', ''), nom_tag,
         destination)
 
 
@@ -183,4 +183,4 @@ def sync_live_release(dev_project: str, nom_tag: str) -> RollbackStep:
 
     return RollbackStep(
         f'Syncing {artifacts_folder} to {live_folder}.',
-        ('gsutil', '-m', 'rsync', '-d', artifacts_folder, live_folder))
+        ('gcloud', 'storage', 'rsync', '--delete-unmatched-destination-objects', artifacts_folder, live_folder))

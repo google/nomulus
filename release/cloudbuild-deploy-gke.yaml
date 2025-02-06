@@ -37,9 +37,9 @@ steps:
     else
       project_id="domain-registry-${_ENV}"
     fi
-    gsutil cp gs://$PROJECT_ID-deploy/${TAG_NAME}/nomulus-config-${_ENV}.yaml .
-    gsutil cp gs://$PROJECT_ID-deploy/${TAG_NAME}/cloud-scheduler-tasks-${_ENV}.xml .
-    gsutil cp gs://$PROJECT_ID-deploy/${TAG_NAME}/cloud-tasks-queue.xml .
+    gcloud storage cp gs://$PROJECT_ID-deploy/${TAG_NAME}/nomulus-config-${_ENV}.yaml .
+    gcloud storage cp gs://$PROJECT_ID-deploy/${TAG_NAME}/cloud-scheduler-tasks-${_ENV}.xml .
+    gcloud storage cp gs://$PROJECT_ID-deploy/${TAG_NAME}/cloud-tasks-queue.xml .
     deployCloudSchedulerAndQueue nomulus-config-${_ENV}.yaml cloud-scheduler-tasks-${_ENV}.xml $project_id --gke
     deployCloudSchedulerAndQueue nomulus-config-${_ENV}.yaml cloud-tasks-queue.xml $project_id --gke
 # Save the deployed tag for the current environment on GCS, and update the
@@ -51,12 +51,12 @@ steps:
   - |
     set -e
     echo ${TAG_NAME} | \
-      gsutil cp - gs://$PROJECT_ID-deployed-tags/nomulus-gke.${_ENV}.tag
+      gcloud storage cp - gs://$PROJECT_ID-deployed-tags/nomulus-gke.${_ENV}.tag
     now=$(TZ=UTC date '+%Y-%m-%dT%H:%M:%S.%3NZ')
     echo "${TAG_NAME},$now" | \
-      gsutil cp - gs://$PROJECT_ID-deployed-tags/nomulus-gke.${_ENV}.tmp
+      gcloud storage cp - gs://$PROJECT_ID-deployed-tags/nomulus-gke.${_ENV}.tmp
     # Atomically append uploaded tmp file to nomulus-gke.${_ENV}.versions
-    gsutil compose \
+    gcloud storage objects compose \
       gs://$PROJECT_ID-deployed-tags/nomulus-gke.${_ENV}.versions \
       gs://$PROJECT_ID-deployed-tags/nomulus-gke.${_ENV}.tmp \
       gs://$PROJECT_ID-deployed-tags/nomulus-gke.${_ENV}.versions

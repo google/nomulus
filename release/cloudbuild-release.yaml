@@ -226,7 +226,7 @@ steps:
       done
     done
 # Upload the Gradle binary to GCS if it does not exist and point URL in Gradle wrapper to it.
-- name: 'gcr.io/cloud-builders/gsutil'
+- name: 'gcr.io/cloud-builders/gcloud'
   entrypoint: /bin/bash
   args:
   - -c
@@ -237,17 +237,17 @@ steps:
     gradle_bin=$(basename $gradle_url)
     gcs_loc="domain-registry-maven-repository/gradle"
     curl -O -L ${gradle_url}
-    if gsutil -q stat gs://${gcs_loc}/${gradle_bin}
+    if gcloud storage objects describe gs://${gcs_loc}/${gradle_bin}
     then
       local_md5=$(md5sum ${gradle_bin} | awk '{print $1}')
-      remote_md5=$(gsutil hash -h gs://${gcs_loc}/${gradle_bin} | grep md5 | awk '{print $3}')
+      remote_md5=$(gcloud storage hash -h gs://${gcs_loc}/${gradle_bin} | grep md5 | awk '{print $3}')
       if [[ ${local_md5} != ${remote_md5} ]]
       then
         echo "${gradle_bin} HAS CHANGED ON GRADLE WEBSITE, USING THE BINARY ON GCS."
       fi
     else
-      gsutil cp $gradle_bin gs://${gcs_loc}/
-      gsutil acl ch -u AllUsers:R gs://${gcs_loc}/${gradle_bin}
+      gcloud storage cp $gradle_bin gs://${gcs_loc}/
+      gcloud storage objects update --predefined-acl=publicRead gs://${gcs_loc}/${gradle_bin}
     fi
     rm ${gradle_bin}
     sed -i s%services.gradle.org/distributions%storage.googleapis.com/${gcs_loc}% \

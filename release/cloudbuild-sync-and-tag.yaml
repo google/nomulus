@@ -18,11 +18,11 @@ steps:
 # Rsync the folder where deployment artifacts are uploaded.
 - name: 'gcr.io/$PROJECT_ID/builder:latest'
   args:
-  - gsutil
-  - -m
+  - gcloud
+  - storage
   - rsync
-  - -d
-  - -r
+  - --delete-unmatched-destination-objects
+  - --recursive
   - gs://$PROJECT_ID-deploy/${TAG_NAME}
   - gs://$PROJECT_ID-deploy/live
 - # Tag nomulus

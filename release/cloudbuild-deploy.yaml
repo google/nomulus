@@ -34,9 +34,9 @@ steps:
     else
       project_id="domain-registry-${_ENV}"
     fi
-    gsutil cp gs://$PROJECT_ID-deploy/${TAG_NAME}/nomulus-config-${_ENV}.yaml .
-    gsutil cp gs://$PROJECT_ID-deploy/${TAG_NAME}/cloud-scheduler-tasks-${_ENV}.xml .
-    gsutil cp gs://$PROJECT_ID-deploy/${TAG_NAME}/cloud-tasks-queue.xml .
+    gcloud storage cp gs://$PROJECT_ID-deploy/${TAG_NAME}/nomulus-config-${_ENV}.yaml .
+    gcloud storage cp gs://$PROJECT_ID-deploy/${TAG_NAME}/cloud-scheduler-tasks-${_ENV}.xml .
+    gcloud storage cp gs://$PROJECT_ID-deploy/${TAG_NAME}/cloud-tasks-queue.xml .
     deployCloudSchedulerAndQueue nomulus-config-${_ENV}.yaml cloud-scheduler-tasks-${_ENV}.xml $project_id
     deployCloudSchedulerAndQueue nomulus-config-${_ENV}.yaml cloud-tasks-queue.xml $project_id
 # Deploy the GAE config files.
@@ -54,7 +54,7 @@ steps:
     else
       project_id="domain-registry-${_ENV}"
     fi
-    gsutil cp gs://$PROJECT_ID-deploy/${TAG_NAME}/${_ENV}.tar .
+    gcloud storage cp gs://$PROJECT_ID-deploy/${TAG_NAME}/${_ENV}.tar .
     tar -xvf ${_ENV}.tar
     unzip default/WEB-INF/lib/core.jar
     gcloud -q --project $project_id app deploy default/WEB-INF/appengine-generated/dispatch.yaml
@@ -67,7 +67,7 @@ steps:
   - |
     set -e
     echo ${TAG_NAME} | \
-      gsutil cp - gs://$PROJECT_ID-deployed-tags/nomulus.${_ENV}.tag
+      gcloud storage cp - gs://$PROJECT_ID-deployed-tags/nomulus.${_ENV}.tag
     # Update the release to AppEngine version mapping.
     if [ ${_ENV} == production ]; then
       project_id="domain-registry"
@@ -85,9 +85,9 @@ steps:
       echo "Expecting exactly five active services. Found $num_versions"
       exit 1
     fi
-    gsutil cp "$local_map" gs://$PROJECT_ID-deployed-tags/nomulus.${_ENV}.tmp
+    gcloud storage cp "$local_map" gs://$PROJECT_ID-deployed-tags/nomulus.${_ENV}.tmp
     # Atomically append uploaded tmp file to nomulus.${_ENV}.versions
-    gsutil compose \
+    gcloud storage objects compose \
       gs://$PROJECT_ID-deployed-tags/nomulus.${_ENV}.versions \
       gs://$PROJECT_ID-deployed-tags/nomulus.${_ENV}.tmp \
       gs://$PROJECT_ID-deployed-tags/nomulus.${_ENV}.versions

@@ -122,8 +122,8 @@ class RollbackTestCase(unittest.TestCase):
                          '.*gcloud app services set-traffic.*')
         self.assertRegex(steps[9].info(), '.*gcloud app versions stop.*')
         self.assertRegex(steps[13].info(),
-                         '.*echo nomulus-20201014-RC00 | gsutil cat -.*')
-        self.assertRegex(steps[14].info(), '.*gsutil -m rsync -d .*')
+                         '.*echo nomulus-20201014-RC00 | gcloud storage cat -.*')
+        self.assertRegex(steps[14].info(), '.*gcloud storage rsync --delete-unmatched-destination-objects .*')
 
 
 if __name__ == '__main__':

@@ -21,7 +21,7 @@ function fetchVersion() {
   local deployed_system=${1}
   local env=${2}
   local dev_project=${3}
-  echo $(gsutil cat \
+  echo $(gcloud storage cat \
       gs://${dev_project}-deployed-tags/${deployed_system}.${env}.tag)
 }
 

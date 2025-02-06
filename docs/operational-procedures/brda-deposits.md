@@ -61,7 +61,7 @@ $ mkdir /tmp/brda.$$; for date in 2015-02-26 2015-03-05; \
 *   Store the generated files to the GCS bucket.
 
 ```shell
-$ gsutil -m cp /tmp/brda.$$/*.{ryde,sig} gs://{PROJECT-ID}-icann-brda/`
+$ gcloud storage cp /tmp/brda.$$/*.{ryde,sig} gs://{PROJECT-ID}-icann-brda/`
 ```
 
 *   Mirror the files in the GCS bucket to the sFTP server.

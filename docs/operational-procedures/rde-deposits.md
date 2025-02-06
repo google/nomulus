@@ -99,12 +99,12 @@ that no cooldown period is necessary.
 
 ## Listing deposits in Cloud Storage
 
-You can list the files in Cloud Storage for a given TLD using the gsutil tool.
+You can list the files in Cloud Storage for a given TLD using the gcloud storage tool.
 All files are stored in the {PROJECT-ID}-rde bucket, where {PROJECT-ID} is the
 name of the App Engine project for the particular environment you are checking.
 
 ```shell
-$ gsutil ls gs://{PROJECT-ID}-rde/zip_2015-05-16*
+$ gcloud storage ls gs://{PROJECT-ID}-rde/zip_2015-05-16*
 gs://{PROJECT-ID}-rde/zip_2015-05-16-report.xml.ghostryde
 gs://{PROJECT-ID}-rde/zip_2015-05-16.xml.ghostryde
 gs://{PROJECT-ID}-rde/zip_2015-05-16.xml.length
@@ -167,7 +167,7 @@ Sometimes you'll want to take a peek at the contents of a deposit that's been
 staged to cloud storage. Use this command:
 
 ```shell
-$ gsutil cat gs://{PROJECT-ID}-rde/foo.ghostryde | nomulus -e production ghostryde --decrypt | less
+$ gcloud storage cat gs://{PROJECT-ID}-rde/foo.ghostryde | nomulus -e production ghostryde --decrypt | less
 ```
 
 ## Identifying which phase of the process failed
@@ -242,7 +242,7 @@ $ nomulus -e production ghostryde --encrypt \
 
 # 3. Copy to Cloud Storage so RdeUploadTask can find them.
 
-$ gsutil cp ${tld}_${date}_full_S1_R0{,-report}.xml.ghostryde gs://{PROJECT-ID}-rde/
+$ gcloud storage cp ${tld}_${date}_full_S1_R0{,-report}.xml.ghostryde gs://{PROJECT-ID}-rde/
 ```
 
 ## Updating an RDE cursor
