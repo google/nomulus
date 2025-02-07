@@ -79,7 +79,7 @@ class SchemaTest {
    */
   @Container
   private final PostgreSQLContainer<?> sqlContainer =
-      new PostgreSQLContainer<>(NomulusPostgreSql.getDockerTag())
+      new PostgreSQLContainer<>(NomulusPostgreSql.getDockerImageName())
           .withClasspathResourceMapping(
               MOUNTED_RESOURCE_PATH, CONTAINER_MOUNT_POINT, BindMode.READ_WRITE);
 

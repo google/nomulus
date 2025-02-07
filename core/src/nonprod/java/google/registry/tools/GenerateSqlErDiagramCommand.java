@@ -105,7 +105,7 @@ public class GenerateSqlErDiagramCommand implements Command {
     }
 
     try (PostgreSQLContainer<?> postgresContainer =
-        new PostgreSQLContainer<>(NomulusPostgreSql.getDockerTag())) {
+        new PostgreSQLContainer<>(NomulusPostgreSql.getDockerImageName())) {
       postgresContainer
           .withDatabaseName(DB_NAME)
           .withUsername(DB_USER)

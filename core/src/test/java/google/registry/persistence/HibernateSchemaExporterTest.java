@@ -38,7 +38,7 @@ class HibernateSchemaExporterTest {
 
   @Container
   private static final PostgreSQLContainer database =
-      new PostgreSQLContainer(NomulusPostgreSql.getDockerTag());
+      new PostgreSQLContainer(NomulusPostgreSql.getDockerImageName());
 
   private static HibernateSchemaExporter exporter;
 
@@ -61,12 +61,12 @@ class HibernateSchemaExporterTest {
         .isEqualTo(
             """
 
-                    create table "TestEntity" (
-                        name text not null,
-                        cu text,
-                        primary key (name)
-                    );
-                """
+    create table "TestEntity" (
+        name text not null,
+        cu text,
+        primary key (name)
+    );
+"""
                 .getBytes(StandardCharsets.UTF_8));
   }
 

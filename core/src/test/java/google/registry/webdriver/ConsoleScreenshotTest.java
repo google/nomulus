@@ -23,6 +23,7 @@ import google.registry.model.console.RegistrarRole;
 import google.registry.server.RegistryTestServer;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.junitpioneer.jupiter.RetryingTest;
 import org.openqa.selenium.By;
@@ -47,6 +48,8 @@ import org.openqa.selenium.WebElement;
  * the color fading over a short period of time. We must wait for the highlighting to fade to get
  * cnosistent images to avoid spurious failures.
  */
+// The Selenium image only supports amd64 architecture.
+@EnabledIfSystemProperty(named = "os.arch", matches = "amd64")
 public class ConsoleScreenshotTest extends WebDriverTestCase {
 
   @RegisterExtension

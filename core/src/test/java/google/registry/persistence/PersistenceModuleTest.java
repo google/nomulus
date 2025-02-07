@@ -42,7 +42,7 @@ class PersistenceModuleTest {
 
   @Container
   private final PostgreSQLContainer database =
-      new PostgreSQLContainer(NomulusPostgreSql.getDockerTag());
+      new PostgreSQLContainer(NomulusPostgreSql.getDockerImageName());
 
   private EntityManagerFactory emf;
 

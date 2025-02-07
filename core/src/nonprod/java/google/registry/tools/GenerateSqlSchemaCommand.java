@@ -83,7 +83,7 @@ public class GenerateSqlSchemaCommand implements Command {
 
       // Start the container and store the address information.
       postgresContainer =
-          new PostgreSQLContainer<>(NomulusPostgreSql.getDockerTag())
+          new PostgreSQLContainer<>(NomulusPostgreSql.getDockerImageName())
               .withDatabaseName(DB_NAME)
               .withUsername(DB_USERNAME)
               .withPassword(DB_PASSWORD);
@@ -93,20 +93,20 @@ public class GenerateSqlSchemaCommand implements Command {
     } else if (databaseHost == null) {
       System.err.println(
           """
-              You must specify either --start_postgresql to start a PostgreSQL database in a
-              docker instance, or specify --db_host (and, optionally, --db_port) to identify
-              the location of a running instance.  To start a long-lived instance (suitable
-              for running this command multiple times) run this:
+          You must specify either --start_postgresql to start a PostgreSQL database in a
+          docker instance, or specify --db_host (and, optionally, --db_port) to identify
+          the location of a running instance.  To start a long-lived instance (suitable
+          for running this command multiple times) run this:
 
-                docker run --rm --name some-postgres -e POSTGRES_PASSWORD=domain-registry \\
-                  -d postgres:9.6.12
+            docker run --rm --name some-postgres -e POSTGRES_PASSWORD=domain-registry \\
+              -d postgres:9.6.12
 
-              Copy the container id output from the command, then run:
+          Copy the container id output from the command, then run:
 
-                docker inspect <container-id> | grep IPAddress
+            docker inspect <container-id> | grep IPAddress
 
-              To obtain the value for --db-host.
-              """);
+          To obtain the value for --db-host.
+          """);
       // TODO(mmuller): need exit(1), see above.
       return;
     }
@@ -124,20 +124,20 @@ public class GenerateSqlSchemaCommand implements Command {
       // existing data in the file.
       String copyright =
           """
-              -- Copyright 2019 The Nomulus Authors. All Rights Reserved.
-              --
-              -- Licensed under the Apache License, Version 2.0 (the "License");
-              -- you may not use this file except in compliance with the License.
-              -- You may obtain a copy of the License at
-              --
-              --     http://www.apache.org/licenses/LICENSE-2.0
-              --
-              -- Unless required by applicable law or agreed to in writing, software
-              -- distributed under the License is distributed on an "AS IS" BASIS,
-              -- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-              -- See the License for the specific language governing permissions and
-              -- limitations under the License.
-              """;
+          -- Copyright 2019 The Nomulus Authors. All Rights Reserved.
+          --
+          -- Licensed under the Apache License, Version 2.0 (the "License");
+          -- you may not use this file except in compliance with the License.
+          -- You may obtain a copy of the License at
+          --
+          --     http://www.apache.org/licenses/LICENSE-2.0
+          --
+          -- Unless required by applicable law or agreed to in writing, software
+          -- distributed under the License is distributed on an "AS IS" BASIS,
+          -- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+          -- See the License for the specific language governing permissions and
+          -- limitations under the License.
+          """;
       try {
         Files.writeString(outputFile.toPath(), copyright);
       } catch (IOException e) {

@@ -37,7 +37,11 @@ class DockerWebDriverExtension implements BeforeAllCallback, AfterAllCallback {
   // This port number is defined in this Dockerfile:
   // https://github.com/SeleniumHQ/docker-selenium/blob/master/StandaloneChrome/Dockerfile#L21
   private static final int CHROME_DRIVER_SERVICE_PORT = 4444;
-  private static final URL WEB_DRIVER_URL = getWebDriverUrl();
+  // The selenium image only supports amd64 architecture. We disable the call to getWebDriverUrl()
+  // here as the extension is instantiated in the test class before the test runner had a chance to
+  // disable the tests.
+  private static final URL WEB_DRIVER_URL =
+      System.getProperty("os.arch").equals("amd64") ? getWebDriverUrl() : null;
   private WebDriver webDriver;
 
   private static URL getWebDriverUrl() {

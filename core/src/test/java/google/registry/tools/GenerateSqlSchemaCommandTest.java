@@ -39,7 +39,7 @@ class GenerateSqlSchemaCommandTest extends CommandTestCase<GenerateSqlSchemaComm
 
   @Container
   private static final PostgreSQLContainer<?> postgres =
-      new PostgreSQLContainer<>(NomulusPostgreSql.getDockerTag())
+      new PostgreSQLContainer<>(NomulusPostgreSql.getDockerImageName())
           .withDatabaseName("postgres")
           .withUsername("postgres")
           .withPassword("domain-registry");

@@ -140,7 +140,7 @@ public abstract class JpaTransactionManagerExtension
 
   private static JdbcDatabaseContainer<?> create() {
     PostgreSQLContainer<?> container =
-        new PostgreSQLContainer<>(NomulusPostgreSql.getDockerTag())
+        new PostgreSQLContainer<>(NomulusPostgreSql.getDockerImageName())
             .withDatabaseName(POSTGRES_DB_NAME);
     container.start();
     return container;

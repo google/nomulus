@@ -68,7 +68,7 @@ public abstract class PostgresqlCommand implements Command {
 
       // Start the container and store the address information.
       postgresContainer =
-          new PostgreSQLContainer<>(NomulusPostgreSql.getDockerTag())
+          new PostgreSQLContainer<>(NomulusPostgreSql.getDockerImageName())
               .withDatabaseName(DB_NAME)
               .withUsername(DB_USERNAME)
               .withPassword(DB_PASSWORD);
@@ -89,7 +89,7 @@ public abstract class PostgresqlCommand implements Command {
               + "for running this command multiple times) run this:\n\n"
               + "  docker run --rm --name some-postgres -e POSTGRES_PASSWORD=domain-registry \\\n"
               + "    -d "
-              + NomulusPostgreSql.getDockerTag()
+              + NomulusPostgreSql.getDockerImageName()
               + "\n\nCopy the container id output from the command, then run:\n\n"
               + "  docker inspect <container-id> | grep IPAddress\n\n"
               + "To obtain the value for --db-host.\n");
