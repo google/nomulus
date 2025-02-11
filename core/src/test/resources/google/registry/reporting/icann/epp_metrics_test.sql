@@ -25,7 +25,7 @@ SELECT
   REGEXP_EXTRACT(tld, '^"(.*)"$') AS tld,
   activityReportField AS metricName,
   COUNT(*) AS count
-FROM (
+FROM ((
   SELECT
     -- TODO(b/32486667): Replace with JSON.parse() UDF when available for views
     SPLIT(
@@ -42,7 +42,17 @@ FROM (
     FROM `domain-registry-alpha.appengine_logs._var_log_app_*`
     WHERE
       STARTS_WITH(textPayload, "FLOW-LOG-SIGNATURE-METADATA")
-      AND _TABLE_SUFFIX BETWEEN '20170901' AND '20170930')) AS regexes
+      AND _TABLE_SUFFIX BETWEEN '20170901' AND '20170930')
+  UNION ALL (
+    SELECT
+      -- Extract the logged JSON payload.
+      REGEXP_EXTRACT(jsonPayload.message, r'FLOW-LOG-SIGNATURE-METADATA: (.*)\n?$')
+      AS json
+    FROM `domain-registry-alpha.gke_logs.stderr_*`
+    WHERE
+      STARTS_WITH(jsonPayload.message, "FLOW-LOG-SIGNATURE-METADATA")
+      AND _TABLE_SUFFIX BETWEEN '20170901' AND '20170930')
+  )) AS regexes
 JOIN
   -- Unnest the JSON-parsed tlds.
   UNNEST(regexes.tlds) AS tld
