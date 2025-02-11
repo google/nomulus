@@ -35,14 +35,30 @@ FROM (
     JSON_EXTRACT_SCALAR(json,
       '$.icannActivityReportField') AS activityReportField
   FROM (
+    -- For reasons that I don't understand, if I directly select the three columns
+    -- from the union, BigQuery complains about column number mismatch, so I have to
+    -- make a temporary union table and select on it.
     SELECT
-      -- Extract the logged JSON payload.
-      REGEXP_EXTRACT(textPayload, r'FLOW-LOG-SIGNATURE-METADATA: (.*)\n?$')
-      AS json
-    FROM `domain-registry-alpha.appengine_logs._var_log_app_*`
-    WHERE
-      STARTS_WITH(textPayload, "FLOW-LOG-SIGNATURE-METADATA")
-      AND _TABLE_SUFFIX BETWEEN '20170901' AND '20170930')) AS regexes
+      *
+    FROM (
+      SELECT
+        -- Extract the logged JSON payload.
+        REGEXP_EXTRACT(textPayload, r'FLOW-LOG-SIGNATURE-METADATA: (.*)\n?$')
+        AS json
+      FROM `domain-registry-alpha.appengine_logs._var_log_app_*`
+      WHERE
+        STARTS_WITH(textPayload, "FLOW-LOG-SIGNATURE-METADATA")
+        AND _TABLE_SUFFIX BETWEEN '20170901' AND '20170930')
+    UNION ALL (
+      SELECT
+        -- Extract the logged JSON payload.
+        REGEXP_EXTRACT(jsonPayload.message, r'FLOW-LOG-SIGNATURE-METADATA: (.*)\n?$')
+        AS json
+      FROM `domain-registry-alpha.gke_logs.stderr_*`
+      WHERE
+        STARTS_WITH(jsonPayload.message, "FLOW-LOG-SIGNATURE-METADATA")
+        AND _TABLE_SUFFIX BETWEEN '20170901' AND '20170930')
+  )) AS regexes
 JOIN
   -- Unnest the JSON-parsed tlds.
   UNNEST(regexes.tlds) AS tld

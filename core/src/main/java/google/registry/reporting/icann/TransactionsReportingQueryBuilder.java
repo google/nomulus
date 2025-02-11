@@ -71,27 +71,27 @@ public final class TransactionsReportingQueryBuilder implements QueryBuilder {
 
     ImmutableMap.Builder<String, String> queriesBuilder = ImmutableMap.builder();
     String registrarIanaIdQuery =
-        SqlTemplate.create(getQueryFromFile("cloud_sql_registrar_iana_id.sql"))
+        SqlTemplate.create(getQueryFromFile(REGISTRAR_IANA_ID + ".sql"))
             .put("PROJECT_ID", projectId)
             .build();
     queriesBuilder.put(getTableName(REGISTRAR_IANA_ID, yearMonth), registrarIanaIdQuery);
 
     String totalDomainsQuery =
-        SqlTemplate.create(getQueryFromFile("cloud_sql_total_domains.sql"))
+        SqlTemplate.create(getQueryFromFile(TOTAL_DOMAINS + ".sql"))
             .put("PROJECT_ID", projectId)
             .build();
     queriesBuilder.put(getTableName(TOTAL_DOMAINS, yearMonth), totalDomainsQuery);
 
     DateTimeFormatter timestampFormatter = DateTimeFormat.forPattern("yyyy-MM-dd HH:mm:ss.SSS");
     String totalNameserversQuery =
-        SqlTemplate.create(getQueryFromFile("cloud_sql_total_nameservers.sql"))
+        SqlTemplate.create(getQueryFromFile(TOTAL_NAMESERVERS + ".sql"))
             .put("PROJECT_ID", projectId)
             .put("LATEST_REPORT_TIME", timestampFormatter.print(latestReportTime))
             .build();
     queriesBuilder.put(getTableName(TOTAL_NAMESERVERS, yearMonth), totalNameserversQuery);
 
     String transactionCountsQuery =
-        SqlTemplate.create(getQueryFromFile("cloud_sql_transaction_counts.sql"))
+        SqlTemplate.create(getQueryFromFile(TRANSACTION_COUNTS + ".sql"))
             .put("PROJECT_ID", projectId)
             .put("EARLIEST_REPORT_TIME", timestampFormatter.print(earliestReportTime))
             .put("LATEST_REPORT_TIME", timestampFormatter.print(latestReportTime))
@@ -99,7 +99,7 @@ public final class TransactionsReportingQueryBuilder implements QueryBuilder {
     queriesBuilder.put(getTableName(TRANSACTION_COUNTS, yearMonth), transactionCountsQuery);
 
     String transactionTransferLosingQuery =
-        SqlTemplate.create(getQueryFromFile("cloud_sql_transaction_transfer_losing.sql"))
+        SqlTemplate.create(getQueryFromFile(TRANSACTION_TRANSFER_LOSING + ".sql"))
             .put("PROJECT_ID", projectId)
             .put("EARLIEST_REPORT_TIME", timestampFormatter.print(earliestReportTime))
             .put("LATEST_REPORT_TIME", timestampFormatter.print(latestReportTime))
@@ -110,9 +110,10 @@ public final class TransactionsReportingQueryBuilder implements QueryBuilder {
     // App Engine log table suffixes use YYYYMMDD format
     DateTimeFormatter logTableFormatter = DateTimeFormat.forPattern("yyyyMMdd");
     String attemptedAddsQuery =
-        SqlTemplate.create(getQueryFromFile("cloud_sql_attempted_adds.sql"))
+        SqlTemplate.create(getQueryFromFile(ATTEMPTED_ADDS + ".sql"))
             .put("PROJECT_ID", projectId)
             .put("APPENGINE_LOGS_DATA_SET", "appengine_logs")
+            .put("GKE_LOGS_DATA_SET", "gke_logs")
             .put("APP_LOGS_TABLE", "_var_log_app_")
             .put("FIRST_DAY_OF_MONTH", logTableFormatter.print(earliestReportTime))
             .put("LAST_DAY_OF_MONTH", logTableFormatter.print(latestReportTime))
@@ -120,7 +121,7 @@ public final class TransactionsReportingQueryBuilder implements QueryBuilder {
     queriesBuilder.put(getTableName(ATTEMPTED_ADDS, yearMonth), attemptedAddsQuery);
 
     String aggregateQuery =
-        SqlTemplate.create(getQueryFromFile("cloud_sql_transactions_report_aggregation.sql"))
+        SqlTemplate.create(getQueryFromFile(TRANSACTIONS_REPORT_AGGREGATION + ".sql"))
             .put("PROJECT_ID", projectId)
             .put("ICANN_REPORTING_DATA_SET", icannReportingDataSet)
             .put("REGISTRAR_IANA_ID_TABLE", getTableName(REGISTRAR_IANA_ID, yearMonth))

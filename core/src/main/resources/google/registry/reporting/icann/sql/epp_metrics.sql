@@ -35,14 +35,30 @@ FROM (
     JSON_EXTRACT_SCALAR(json,
       '$.icannActivityReportField') AS activityReportField
   FROM (
+    -- For reasons that I don't understand, if I directly select the three columns
+    -- from the union, BigQuery complains about column number mismatch, so I have to
+    -- make a temporary union table and select on it.
     SELECT
-      -- Extract the logged JSON payload.
-      REGEXP_EXTRACT(textPayload, r'FLOW-LOG-SIGNATURE-METADATA: (.*)\n?$')
-      AS json
-    FROM `%PROJECT_ID%.%APPENGINE_LOGS_DATA_SET%.%APP_LOGS_TABLE%*`
-    WHERE
-      STARTS_WITH(textPayload, "FLOW-LOG-SIGNATURE-METADATA")
-      AND _TABLE_SUFFIX BETWEEN '%FIRST_DAY_OF_MONTH%' AND '%LAST_DAY_OF_MONTH%')) AS regexes
+      *
+    FROM (
+      SELECT
+        -- Extract the logged JSON payload.
+        REGEXP_EXTRACT(textPayload, r'FLOW-LOG-SIGNATURE-METADATA: (.*)\n?$')
+        AS json
+      FROM `%PROJECT_ID%.%APPENGINE_LOGS_DATA_SET%.%APP_LOGS_TABLE%*`
+      WHERE
+        STARTS_WITH(textPayload, "FLOW-LOG-SIGNATURE-METADATA")
+        AND _TABLE_SUFFIX BETWEEN '%FIRST_DAY_OF_MONTH%' AND '%LAST_DAY_OF_MONTH%')
+    UNION ALL (
+      SELECT
+        -- Extract the logged JSON payload.
+        REGEXP_EXTRACT(jsonPayload.message, r'FLOW-LOG-SIGNATURE-METADATA: (.*)\n?$')
+        AS json
+      FROM `%PROJECT_ID%.%GKE_LOGS_DATA_SET%.stderr_*`
+      WHERE
+        STARTS_WITH(jsonPayload.message, "FLOW-LOG-SIGNATURE-METADATA")
+        AND _TABLE_SUFFIX BETWEEN '%FIRST_DAY_OF_MONTH%' AND '%LAST_DAY_OF_MONTH%')
+  )) AS regexes
 JOIN
   -- Unnest the JSON-parsed tlds.
   UNNEST(regexes.tlds) AS tld
