@@ -13,13 +13,23 @@
   -- See the License for the specific language governing permissions and
   -- limitations under the License.
 
-  -- Query to fetch AppEngine request logs for the report month.
+  -- Query to fetch AppEngine and GKE request logs for the report month.
 
   -- START_OF_MONTH and END_OF_MONTH should be in YYYYMM01 format.
 
 SELECT
-  protoPayload.resource AS requestPath,
-FROM
-  `domain-registry-alpha.appengine_logs.appengine_googleapis_com_request_log_*`
-WHERE
-  _TABLE_SUFFIX BETWEEN '20170901' AND '20170930'
+  *
+FROM (
+  SELECT
+    jsonPayload.httrequest.requesturl AS requestPath
+  FROM
+    `domain-registry-alpha.gke_logs.stderr_*`
+  WHERE
+    _TABLE_SUFFIX BETWEEN '20170901' AND '20170930')
+UNION ALL (
+  SELECT
+    protoPayload.resource AS requestPath
+  FROM
+    `domain-registry-alpha.appengine_logs.appengine_googleapis_com_request_log_*`
+  WHERE
+    _TABLE_SUFFIX BETWEEN '20170901' AND '20170930')
