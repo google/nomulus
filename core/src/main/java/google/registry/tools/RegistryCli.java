@@ -44,7 +44,10 @@ final class RegistryCli implements CommandRunner {
 
   private static final ImmutableSet<RegistryToolEnvironment> DEFAULT_GKE_ENVIRONMENTS =
       ImmutableSet.of(
-          RegistryToolEnvironment.ALPHA, RegistryToolEnvironment.CRASH, RegistryToolEnvironment.QA);
+          RegistryToolEnvironment.ALPHA,
+          RegistryToolEnvironment.CRASH,
+          RegistryToolEnvironment.QA,
+          RegistryToolEnvironment.SANDBOX);
 
   // The environment parameter is parsed twice: once here, and once with {@link
   // RegistryToolEnvironment#parseFromArgs} in the {@link RegistryTool#main} function.
