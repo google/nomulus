@@ -27,6 +27,10 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: metadata.name
+        - name: JETTY_WORKER_INSTANCE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
         - name: NAMESPACE_ID
           valueFrom:
             fieldRef:
