@@ -14,13 +14,17 @@
 
 import { SelectionModel } from '@angular/cdk/collections';
 import { HttpErrorResponse, HttpStatusCode } from '@angular/common/http';
-import { Component, ViewChild, effect, Inject } from '@angular/core';
+import { Component, effect, Inject, ViewChild } from '@angular/core';
 import { MatPaginator, PageEvent } from '@angular/material/paginator';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTableDataSource } from '@angular/material/table';
-import { Subject, debounceTime, take, filter } from 'rxjs';
+import { debounceTime, filter, Subject, take } from 'rxjs';
 import { RegistrarService } from '../registrar/registrar.service';
-import { Domain, DomainListService } from './domainList.service';
+import {
+  BULK_ACTION_NAMES,
+  Domain,
+  DomainListService,
+} from './domainList.service';
 import { RegistryLockComponent } from './registryLock.component';
 import { RegistryLockService } from './registryLock.service';
 import {
@@ -62,6 +66,12 @@ export class ResponseDialogComponent {
   }
 }
 
+enum Operation {
+  deleting = 'deleting',
+  suspending = 'suspending',
+  unsuspending = 'unsuspending',
+}
+
 @Component({
   selector: 'app-reason-dialog',
   template: `
@@ -75,8 +85,8 @@ export class ResponseDialogComponent {
     </mat-dialog-content>
     <mat-dialog-actions>
       <button mat-button (click)="onCancel()">Cancel</button>
-      <button mat-button color="warn" (click)="onDelete()" [disabled]="!reason">
-        Delete
+      <button mat-button color="warn" (click)="onSave()" [disabled]="!reason">
+        Save
       </button>
     </mat-dialog-actions>
   `,
@@ -84,14 +94,13 @@ export class ResponseDialogComponent {
 })
 export class ReasonDialogComponent {
   reason: string = '';
-
   constructor(
     public dialogRef: MatDialogRef<ReasonDialogComponent>,
     @Inject(MAT_DIALOG_DATA)
-    public data: { operation: 'deleting' | 'suspending' }
+    public data: { operation: Operation }
   ) {}
 
-  onDelete(): void {
+  onSave(): void {
     this.dialogRef.close(this.reason);
   }
 
@@ -258,6 +267,10 @@ export class DomainListComponent {
     return RESTRICTED_ELEMENTS.BULK_DELETE;
   }
 
+  getElementIdForSuspendUnsuspend() {
+    return RESTRICTED_ELEMENTS.SUSPEND;
+  }
+
   getOperationMessage(domain: string) {
     if (this.operationResult && this.operationResult[domain])
       return this.operationResult[domain].message;
@@ -267,10 +280,11 @@ export class DomainListComponent {
   sendDeleteRequest(reason: string) {
     this.isLoading = true;
     this.domainListService
-      .deleteDomains(
-        this.selection.selected,
+      .bulkDomainAction(
+        this.selection.selected.map((d) => d.domainName),
         reason,
-        this.registrarService.registrarId()
+        this.registrarService.registrarId(),
+        BULK_ACTION_NAMES.DELETE
       )
       .pipe(take(1))
       .subscribe({
@@ -294,15 +308,17 @@ export class DomainListComponent {
           this.operationResult = result;
           this.reloadData();
         },
-        error: (err: HttpErrorResponse) =>
-          this._snackBar.open(err.error || err.message),
+        error: (err: HttpErrorResponse) => {
+          this.isLoading = false;
+          this._snackBar.open(err.error || err.message);
+        },
       });
   }
 
   deleteSelectedDomains() {
     const dialogRef = this.dialog.open(ReasonDialogComponent, {
       data: {
-        operation: 'deleting',
+        operation: Operation.deleting,
       },
     });
 
@@ -313,5 +329,70 @@ export class DomainListComponent {
         filter((reason) => !!reason)
       )
       .subscribe(this.sendDeleteRequest.bind(this));
+  }
+
+  sendSuspendUnsuspendRequest(
+    domainName: string,
+    reason: string,
+    isSuspend: boolean
+  ) {
+    this.isLoading = true;
+    this.domainListService
+      .bulkDomainAction(
+        [domainName],
+        reason,
+        this.registrarService.registrarId(),
+        isSuspend ? BULK_ACTION_NAMES.SUSPEND : BULK_ACTION_NAMES.UNSUSPEND
+      )
+      .pipe(take(1))
+      .subscribe({
+        next: (result: DomainData) => {
+          this.isLoading = false;
+          if (result[domainName].responseCode.toString().startsWith('2')) {
+            this._snackBar.open(result[domainName].message);
+          } else {
+            this.reloadData();
+          }
+        },
+        error: (err: HttpErrorResponse) => {
+          this.isLoading = false;
+          this._snackBar.open(err.error || err.message);
+        },
+      });
+  }
+  onSuspendClick(domainName: string) {
+    const dialogRef = this.dialog.open(ReasonDialogComponent, {
+      data: {
+        operation: Operation.suspending,
+      },
+    });
+
+    dialogRef
+      .afterClosed()
+      .pipe(
+        take(1),
+        filter((reason) => !!reason)
+      )
+      .subscribe((reason) => {
+        this.sendSuspendUnsuspendRequest(domainName, reason, true);
+      });
+  }
+
+  onUnsuspendClick(domainName: string) {
+    const dialogRef = this.dialog.open(ReasonDialogComponent, {
+      data: {
+        operation: Operation.unsuspending,
+      },
+    });
+
+    dialogRef
+      .afterClosed()
+      .pipe(
+        take(1),
+        filter((reason) => !!reason)
+      )
+      .subscribe((reason) => {
+        this.sendSuspendUnsuspendRequest(domainName, reason, false);
+      });
   }
 }
