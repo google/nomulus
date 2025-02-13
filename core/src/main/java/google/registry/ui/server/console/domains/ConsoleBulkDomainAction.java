@@ -43,9 +43,9 @@ import javax.inject.Inject;
 /**
  * Console endpoint to perform the same action to a list of domains.
  *
- * <p>All requests must include the {@link ConsoleDomainActionType.BulkAction} to perform as well as
- * a {@link BulkDomainList} of domains on which to apply the action. The remaining contents of the
- * request body depend on the type of action -- some requests may require more data than others.
+ * <p>All requests must include the {@link ConsoleDomeeeainActionType.BulkAction} to perform as well
+ * as a {@link BulkDomainList} of domains on which to apply the action. The remaining contents of
+ * the request body depend on the type of action -- some requests may require more data than others.
  */
 @Action(
     service = Action.GaeService.DEFAULT,

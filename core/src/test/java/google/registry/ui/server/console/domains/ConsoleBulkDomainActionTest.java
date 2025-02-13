@@ -30,6 +30,7 @@ import static org.mockito.Mockito.when;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
@@ -60,6 +61,14 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 public class ConsoleBulkDomainActionTest {
 
   private static final Gson GSON = GsonUtils.provideGson();
+
+  private static ImmutableSet<StatusValue> serverSuspesionStatuses =
+      ImmutableSet.of(
+          StatusValue.SERVER_RENEW_PROHIBITED,
+          StatusValue.SERVER_TRANSFER_PROHIBITED,
+          StatusValue.SERVER_UPDATE_PROHIBITED,
+          StatusValue.SERVER_DELETE_PROHIBITED,
+          StatusValue.SERVER_HOLD);
 
   private final FakeClock clock = new FakeClock(DateTime.parse("2024-05-13T00:00:00.000Z"));
 
@@ -135,12 +144,34 @@ public class ConsoleBulkDomainActionTest {
             """
             {"example.tld":{"message":"Command completed successfully","responseCode":1000}}""");
     assertThat(loadByEntity(domain).getStatusValues())
-        .containsAtLeast(
-            StatusValue.SERVER_RENEW_PROHIBITED,
-            StatusValue.SERVER_TRANSFER_PROHIBITED,
-            StatusValue.SERVER_UPDATE_PROHIBITED,
-            StatusValue.SERVER_DELETE_PROHIBITED,
-            StatusValue.SERVER_HOLD);
+        .containsAtLeastElementsIn(serverSuspesionStatuses);
+  }
+
+  @Test
+  void testSuccess_unsuspend() throws Exception {
+    User adminUser =
+        persistResource(
+            new User.Builder()
+                .setEmailAddress("email@email.com")
+                .setUserRoles(
+                    new UserRoles.Builder().setGlobalRole(GlobalRole.FTE).setIsAdmin(true).build())
+                .build());
+    persistResource(domain.asBuilder().addStatusValues(serverSuspesionStatuses).build());
+    ConsoleBulkDomainAction action =
+        createAction(
+            "UNSUSPEND",
+            GSON.toJsonTree(
+                ImmutableMap.of("domainList", ImmutableList.of("example.tld"), "reason", "test")),
+            adminUser);
+    assertThat(loadByEntity(domain).getStatusValues())
+        .containsAtLeastElementsIn(serverSuspesionStatuses);
+    action.run();
+    assertThat(fakeResponse.getStatus()).isEqualTo(SC_OK);
+    assertThat(fakeResponse.getPayload())
+        .isEqualTo(
+            """
+            {"example.tld":{"message":"Command completed successfully","responseCode":1000}}""");
+    assertThat(loadByEntity(domain).getStatusValues()).containsNoneIn(serverSuspesionStatuses);
   }
 
   @Test

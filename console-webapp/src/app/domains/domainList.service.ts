@@ -35,6 +35,12 @@ export interface DomainListResult {
   totalResults: number;
 }
 
+export enum BULK_ACTION_NAMES {
+  DELETE = 'DELETE',
+  SUSPEND = 'SUSPEND',
+  UNSUSPEND = 'UNSUSPEND',
+}
+
 @Injectable({
   providedIn: 'root',
 })
@@ -71,11 +77,16 @@ export class DomainListService {
       );
   }
 
-  deleteDomains(domains: Domain[], reason: string, registrarId: string) {
+  bulkDomainAction(
+    domains: string[],
+    reason: string,
+    registrarId: string,
+    actionName: BULK_ACTION_NAMES
+  ) {
     return this.backendService.bulkDomainAction(
-      domains.map((d) => d.domainName),
+      domains,
       reason,
-      'DELETE',
+      actionName,
       registrarId
     );
   }
