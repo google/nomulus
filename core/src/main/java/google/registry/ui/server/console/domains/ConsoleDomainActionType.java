@@ -31,7 +31,8 @@ public interface ConsoleDomainActionType {
 
   enum BulkAction {
     DELETE(ConsoleBulkDomainDeleteActionType.class),
-    SUSPEND(ConsoleBulkDomainSuspendActionType.class);
+    SUSPEND(ConsoleBulkDomainSuspendActionType.class),
+    UNSUSPEND(ConsoleBulkDomainUnsuspendActionType.class);
 
     private final Class<? extends ConsoleDomainActionType> actionClass;
 

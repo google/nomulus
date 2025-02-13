@@ -24,7 +24,11 @@
     </div>
     } @else {
     <mat-menu #actions="matMenu">
-      <ng-template matMenuContent let-domainName="domainName">
+      <ng-template
+        matMenuContent
+        let-domainName="domainName"
+        let-domain="domain"
+      >
         <button
           mat-menu-item
           (click)="openRegistryLock(domainName)"
@@ -32,6 +36,24 @@
         >
           <mat-icon>key</mat-icon>
           <span>Registry Lock</span>
+        </button>
+        <button
+          mat-menu-item
+          (click)="onSuspendClick(domainName)"
+          [elementId]="getElementIdForSuspendUnsuspend()"
+          [disabled]="isDomainUnsuspendable(domain)"
+        >
+          <mat-icon>lock_clock</mat-icon>
+          <span>Suspend</span>
+        </button>
+        <button
+          mat-menu-item
+          (click)="onUnsuspendClick(domainName)"
+          [elementId]="getElementIdForSuspendUnsuspend()"
+          [disabled]="!isDomainUnsuspendable(domain)"
+        >
+          <mat-icon>lock_open</mat-icon>
+          <span>Unsuspend</span>
         </button>
       </ng-template>
     </mat-menu>
@@ -170,7 +192,10 @@
                 <button
                   mat-icon-button
                   [matMenuTriggerFor]="actions"
-                  [matMenuTriggerData]="{ domainName: element.domainName }"
+                  [matMenuTriggerData]="{
+                    domainName: element.domainName,
+                    domain: element
+                  }"
                   aria-label="Domain actions"
                 >
                   <mat-icon>more_horiz</mat-icon>
