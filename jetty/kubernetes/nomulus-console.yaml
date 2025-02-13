@@ -44,7 +44,7 @@ spec:
     kind: Deployment
     name: console
   minReplicas: 1
-  maxReplicas: 20
+  maxReplicas: 5
   metrics:
     - type: Resource
       resource:

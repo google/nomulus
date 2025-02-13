@@ -182,10 +182,7 @@ steps:
       do
         # non-canary
         sed s/GCP_PROJECT/${PROJECT_ID}/g ./jetty/kubernetes/nomulus-${service}.yaml | \
-          sed s/ENVIRONMENT/${env}/g | \
-          sed s/PROXY_ENV/${env}/g | \
-          sed s/EPP/epp/g | \
-          sed s/WHOIS/whois/g > ./jetty/kubernetes/nomulus-${env}-${service}.yaml
+          sed s/ENVIRONMENT/${env}/g > ./jetty/kubernetes/nomulus-${env}-${service}.yaml
         # Proxy '--log' flag does not work on production.
         if [ ${env} == production ]
         then
@@ -199,9 +196,6 @@ steps:
         # canary
         sed s/GCP_PROJECT/${PROJECT_ID}/g ./jetty/kubernetes/nomulus-${service}.yaml | \
           sed s/ENVIRONMENT/${env}/g | \
-          sed s/PROXY_ENV/${env}_canary/g | \
-          sed s/EPP/epp-canary/g | \
-          sed s/WHOIS/whois-canary/g | \
           sed s/${service}/${service}-canary/g \
           > ./jetty/kubernetes/nomulus-${env}-${service}-canary.yaml
         # Proxy '--log' flag does not work on production.
@@ -218,11 +212,11 @@ steps:
         sed s/BASE_DOMAIN/${base_domain}/g \
           ./jetty/kubernetes/gateway/nomulus-route-${service}.yaml \
           > ./jetty/kubernetes/gateway/nomulus-route-${env}-${service}.yaml
-        # IAP
-          sed s/SERVICE/${service}/g ./jetty/kubernetes/gateway/nomulus-iap-${env}.yaml \
-            > ./jetty/kubernetes/gateway/nomulus-iap-${env}-${service}.yaml
-          sed s/SERVICE/${service}-canary/g ./jetty/kubernetes/gateway/nomulus-iap-${env}.yaml \
-            > ./jetty/kubernetes/gateway/nomulus-iap-${env}-${service}-canary.yaml
+        # GCP backend policy
+          sed s/SERVICE/${service}/g ./jetty/kubernetes/gateway/nomulus-backend-policy-${env}.yaml \
+            > ./jetty/kubernetes/gateway/nomulus-backend-policy-${env}-${service}.yaml
+          sed s/SERVICE/${service}-canary/g ./jetty/kubernetes/gateway/nomulus-backend-policy-${env}.yaml \
+            > ./jetty/kubernetes/gateway/nomulus-backend-policy-${env}-${service}-canary.yaml
       done
     done
 # Upload the Gradle binary to GCS if it does not exist and point URL in Gradle wrapper to it.
