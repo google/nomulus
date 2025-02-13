@@ -33,6 +33,22 @@
           <mat-icon>key</mat-icon>
           <span>Registry Lock</span>
         </button>
+        <button
+          mat-menu-item
+          (click)="onSuspendClick(domainName)"
+          [elementId]="getElementIdForSuspendUnsuspend()"
+        >
+          <mat-icon>lock_clock</mat-icon>
+          <span>Suspend</span>
+        </button>
+        <button
+          mat-menu-item
+          (click)="onUnsuspendClick(domainName)"
+          [elementId]="getElementIdForSuspendUnsuspend()"
+        >
+          <mat-icon>lock_open</mat-icon>
+          <span>Unsuspend</span>
+        </button>
       </ng-template>
     </mat-menu>
     <div
