@@ -225,7 +225,8 @@ public class ConsoleUsersAction extends ConsoleApiAction {
 
     UserRoles userRoles =
         new UserRoles.Builder()
-            .setRegistrarRoles(ImmutableMap.of(registrarId, ACCOUNT_MANAGER))
+            .setRegistrarRoles(
+                ImmutableMap.of(registrarId, RegistrarRole.valueOf(userData.get().role)))
             .build();
 
     User.Builder builder = new User.Builder().setUserRoles(userRoles).setEmailAddress(newEmail);
