@@ -28,7 +28,7 @@ COPY go.sum ./
 COPY go.mod ./
 RUN go build -o /deployCloudSchedulerAndQueue
 
-FROM marketplace.gcr.io/google/ubuntu2204
+FROM marketplace.gcr.io/google/ubuntu2404
 ENV DEBIAN_FRONTEND=noninteractive LANG=en_US.UTF-8
 # Add script for cloud scheduler and cloud tasks deployment
 COPY --from=deployCloudSchedulerAndQueueBuilder /deployCloudSchedulerAndQueue /usr/local/bin/deployCloudSchedulerAndQueue
