@@ -58,6 +58,8 @@ apt-get install postgresql-client-17 procps -y
 # Install gcloud
 apt-get install google-cloud-cli -y
 apt-get install google-cloud-sdk-app-engine-java -y
+apt-get install kubectl -y
+apt-get install google-cloud-cli-gke-gcloud-auth-plugin -y
 
 # Install git
 apt-get install git -y

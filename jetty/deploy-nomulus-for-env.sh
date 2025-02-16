@@ -37,10 +37,14 @@ for service in frontend backend pubapi console
 do
   sed s/GCP_PROJECT/"${project}"/g "./kubernetes/nomulus-${service}.yaml" | \
   sed s/ENVIRONMENT/"${environment}"/g | \
+  sed s/PROXY_ENV/"${environment}"/g | \
+  sed s/EPP/"epp"/g | \
   kubectl apply -f -
   # canary
   sed s/GCP_PROJECT/"${project}"/g "./kubernetes/nomulus-${service}.yaml" | \
   sed s/ENVIRONMENT/"${environment}"/g | \
+  sed s/PROXY_ENV/"${environment}_canary"/g | \
+  sed s/EPP/"epp-canary"/g | \
   sed s/"${service}"/"${service}-canary"/g | \
   kubectl apply -f -
 done

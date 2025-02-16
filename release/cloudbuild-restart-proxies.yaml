@@ -1,0 +1,46 @@
+# This will do rolling restarts of all proxies. This forces the client to reconnect
+# and resets the sessions.
+#
+# To manually trigger a build on GCB, run:
+# gcloud builds submit --config=cloudbuild-restart-proxies.yaml \
+# --substitutions=_ENV=[ENV] ..
+#
+# To trigger a build automatically, follow the instructions below and add a trigger:
+# https://cloud.google.com/cloud-build/docs/running-builds/automate-builds
+#
+steps:
+# Pull the credential for nomulus tool.
+- name: 'gcr.io/$PROJECT_ID/builder:latest'
+  entrypoint: /bin/bash
+  args:
+  - -c
+  - |
+    set -e
+    gcloud secrets versions access latest \
+      --secret nomulus-tool-cloudbuild-credential > tool-credential.json
+# Do rolling restarts of all proxies in all environments.
+- name: 'gcr.io/$PROJECT_ID/builder:latest'
+  entrypoint: /bin/bash
+  args:
+  - -c
+  - |
+    if [ ${_ENV} == production ]
+    then
+      project_id="domain-registry"
+    else
+      project_id="domain-registry-${_ENV}"
+    fi
+
+    gcloud auth activate-service-account --key-file=tool-credential.json
+
+    while read line
+    do
+    parts=(${line})
+    echo "Updating cluster ${parts[0]} in location ${parts[1]}..."
+    gcloud container clusters get-credentials ${parts[0]} \
+      --project ${project_id} --location ${parts[1]}
+    kubectl rollout restart deployment/proxy-deployment
+    done < <(gcloud container clusters list --project ${project_id} | grep proxy-cluster)
+timeout: 3600s
+options:
+  machineType: 'N1_HIGHCPU_8'

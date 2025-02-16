@@ -198,6 +198,7 @@ artifacts:
     - 'release/cloudbuild-delete-*.yaml'
     - 'release/cloudbuild-schema-deploy-*.yaml'
     - 'release/cloudbuild-schema-verify-*.yaml'
+    - 'release/cloudbuild-restart-proxies-*.yaml'
     - 'jetty/kubernetes/*.yaml'
     - 'jetty/kubernetes/gateway/*.yaml'
 # The images are already uploaded, but we still need to include them there so that

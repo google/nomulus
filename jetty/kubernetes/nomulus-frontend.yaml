@@ -12,6 +12,8 @@ spec:
         service: frontend
     spec:
       serviceAccountName: nomulus
+      nodeSelector:
+        cloud.google.com/compute-class: "Performance"
       containers:
       - name: frontend
         image: gcr.io/GCP_PROJECT/nomulus
@@ -20,7 +22,7 @@ spec:
           name: http
         resources:
           requests:
-            cpu: "500m"
+            cpu: "100m"
         args: [ENVIRONMENT]
         env:
         - name: POD_ID
@@ -37,6 +39,26 @@ spec:
               fieldPath: metadata.namespace
         - name: CONTAINER_NAME
           value: frontend
+      - name: EPP
+        image: gcr.io/GCP_PROJECT/proxy
+        ports:
+        - containerPort: 30002
+          name: epp
+        resources:
+          requests:
+            cpu: "100m"
+        args: [--env, PROXY_ENV, --log, --local]
+        env:
+        - name: POD_ID
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: NAMESPACE_ID
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: CONTAINER_NAME
+          value: EPP
 ---
 # Only need to define the service account once per cluster.
 apiVersion: v1
@@ -76,6 +98,26 @@ spec:
     - port: 80
       targetPort: http
       name: http
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: EPP
+  annotations:
+    cloud.google.com/l4-rbs: enabled
+    networking.gke.io/weighted-load-balancing: pods-per-node
+spec:
+  type: LoadBalancer
+  # Traffic is directly delivered to a node, preserving the original source IP.
+  externalTrafficPolicy: Local
+  ipFamilies: [IPv4, IPv6]
+  ipFamilyPolicy: RequireDualStack
+  selector:
+    service: frontend
+  ports:
+  - port: 700
+    targetPort: epp
+    name: epp
 ---
 apiVersion: net.gke.io/v1
 kind: ServiceExport
