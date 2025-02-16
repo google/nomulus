@@ -23,7 +23,7 @@ public class NomulusPostgreSql {
 
   /** The current PostgreSql version in Cloud SQL. */
   // TODO(weiminyu): setup periodic checks to detect version changes in Cloud SQL.
-  private static final String TARGET_VERSION = "11.21-alpine";
+  private static final String TARGET_VERSION = "17-alpine";
 
   /**
    * Returns the docker image of the targeted Postgresql server version.
