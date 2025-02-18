@@ -6,6 +6,7 @@ spec:
   parentRefs:
   - kind: Gateway
     name: nomulus
+    sectionName: https
   hostnames:
     - "backend.BASE_DOMAIN"
   rules:
