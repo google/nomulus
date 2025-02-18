@@ -20,11 +20,11 @@ import java.lang.annotation.RetentionPolicy;
 import javax.inject.Qualifier;
 
 /**
- * Dagger qualifier for the HTTP servlet path, prepended with scheme, host and port.
+ * Dagger qualifier for the server name of the HTTP request.
  *
- * <p>See {@link jakarta.servlet.http.HttpServletRequest#getServletPath}
+ * <p>See {@link jakarta.servlet.http.HttpServletRequest#getServerName()}
  */
 @Qualifier
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
-public @interface FullServletPath {}
+public @interface RequestServerName {}

@@ -70,7 +70,7 @@ import google.registry.rdap.RdapObjectClasses.RdapRegistrarEntity;
 import google.registry.rdap.RdapObjectClasses.SecureDns;
 import google.registry.rdap.RdapObjectClasses.Vcard;
 import google.registry.rdap.RdapObjectClasses.VcardArray;
-import google.registry.request.FullServletPath;
+import google.registry.request.RequestServerName;
 import google.registry.util.Clock;
 import jakarta.persistence.Entity;
 import java.net.Inet4Address;
@@ -114,7 +114,7 @@ public class RdapJsonFormatter {
   @Nullable
   String rdapTosStaticUrl;
 
-  @Inject @FullServletPath String fullServletPath;
+  @Inject @RequestServerName String serverName;
   @Inject RdapAuthorization rdapAuthorization;
   @Inject Clock clock;
 
@@ -267,7 +267,7 @@ public class RdapJsonFormatter {
             .setDescription(rdapTos)
             .addLink(selfLink);
     if (rdapTosStaticUrl != null) {
-      URI htmlBaseURI = URI.create(fullServletPath);
+      URI htmlBaseURI = URI.create("https//:" + serverName + "/rdap/");
       URI htmlUri = htmlBaseURI.resolve(rdapTosStaticUrl);
       noticeBuilder.addLink(
           Link.builder()
@@ -1071,7 +1071,7 @@ public class RdapJsonFormatter {
 
   /** Create a link relative to the RDAP server endpoint. */
   String makeRdapServletRelativeUrl(String part, String... moreParts) {
-    return makeServerRelativeUrl(fullServletPath, part, moreParts);
+    return makeServerRelativeUrl("https://" + serverName + "/rdap/", part, moreParts);
   }
 
   /** Create a link relative to some base server */

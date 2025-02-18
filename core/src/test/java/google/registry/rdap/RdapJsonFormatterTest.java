@@ -407,26 +407,6 @@ class RdapJsonFormatterTest {
   }
 
   @Test
-  void testRegistrant_baseHasNoTrailingSlash() {
-    // First, make sure we have a trailing slash at the end by default!
-    // This test tries to change the default state, if the default doesn't have a /, then this test
-    // doesn't help.
-    assertThat(rdapJsonFormatter.fullServletPath).endsWith("/");
-    rdapJsonFormatter.fullServletPath =
-        rdapJsonFormatter.fullServletPath.substring(
-            0, rdapJsonFormatter.fullServletPath.length() - 1);
-    assertAboutJson()
-        .that(
-            rdapJsonFormatter
-                .createRdapContactEntity(
-                    contactRegistrant,
-                    ImmutableSet.of(RdapEntity.Role.REGISTRANT),
-                    OutputDataType.FULL)
-                .toJson())
-        .isEqualTo(loadJson("rdapjson_registrant.json"));
-  }
-
-  @Test
   void testAdmin() {
     assertAboutJson()
         .that(

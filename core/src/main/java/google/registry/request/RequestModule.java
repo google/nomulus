@@ -151,17 +151,9 @@ public final class RequestModule {
    * query string.
    */
   @Provides
-  @FullServletPath
-  static String provideFullServletPath(HttpServletRequest req) {
-    // Include the port only if it differs from the default for the scheme.
-    if (("http".equals(req.getScheme()) && (req.getServerPort() == 80))
-        || ("https".equals(req.getScheme()) && (req.getServerPort() == 443))) {
-      return String.format("%s://%s%s", req.getScheme(), req.getServerName(), req.getServletPath());
-    } else {
-      return String.format(
-          "%s://%s:%d%s",
-          req.getScheme(), req.getServerName(), req.getServerPort(), req.getServletPath());
-    }
+  @RequestServerName
+  static String provideServerName(HttpServletRequest req) {
+    return req.getServerName();
   }
 
   @Provides
