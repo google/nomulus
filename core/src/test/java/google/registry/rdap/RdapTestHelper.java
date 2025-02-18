@@ -150,7 +150,7 @@ class RdapTestHelper {
   static RdapJsonFormatter getTestRdapJsonFormatter(Clock clock) {
     RdapJsonFormatter rdapJsonFormatter = new RdapJsonFormatter();
     rdapJsonFormatter.rdapAuthorization = RdapAuthorization.PUBLIC_AUTHORIZATION;
-    rdapJsonFormatter.fullServletPath = "https://example.tld/rdap/";
+    rdapJsonFormatter.serverName = "example.tld";
     rdapJsonFormatter.clock = clock;
     rdapJsonFormatter.rdapTos =
         ImmutableList.of(
