@@ -276,6 +276,10 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
       }
       T result = work.call();
       txn.commit();
+      long duration = clock.nowUtc().getMillis() - txnInfo.transactionTime.getMillis();
+      if (duration >= 100) {
+        logger.atInfo().log("Transaction duration: %d milliseconds", duration);
+      }
       return result;
     } catch (Throwable e) {
       // Catch a Throwable here so even Errors would lead to a rollback.
