@@ -76,7 +76,7 @@ enum Operation {
   selector: 'app-reason-dialog',
   template: `
     <h2 mat-dialog-title>
-      Please provide a reason for {{ data.operation }} the domain(s):
+      Please provide the (EPP) reason for {{ data.operation }} the domain(s):
     </h2>
     <mat-dialog-content>
       <mat-form-field appearance="outline" style="width:100%">

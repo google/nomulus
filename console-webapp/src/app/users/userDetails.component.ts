@@ -67,17 +67,24 @@ export class UserDetailsComponent {
   }
 
   deleteUser() {
-    this.isLoading = true;
-    this.usersService.deleteUser(this.userDetails()).subscribe({
-      error: (err) => {
-        this._snackBar.open(err.error || err.message);
-        this.isLoading = false;
-      },
-      complete: () => {
-        this.isLoading = false;
-        this.goBack();
-      },
-    });
+    if (
+      confirm(
+        'This will permanently delete the user ' +
+          this.userDetails().emailAddress
+      )
+    ) {
+      this.isLoading = true;
+      this.usersService.deleteUser(this.userDetails()).subscribe({
+        error: (err) => {
+          this._snackBar.open(err.error || err.message);
+          this.isLoading = false;
+        },
+        complete: () => {
+          this.isLoading = false;
+          this.goBack();
+        },
+      });
+    }
   }
 
   goBack() {
