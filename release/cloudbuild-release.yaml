@@ -188,6 +188,7 @@ steps:
       do
         # non-canary
         sed s/GCP_PROJECT/${PROJECT_ID}/g ./jetty/kubernetes/nomulus-${service}.yaml | \
+          sed s/latest/${TAG_NAME}/g | \
           sed s/ENVIRONMENT/${env}/g | \
           sed s/PROXY_ENV/"${env}"/g | \
           sed s/EPP/"epp"/g > ./jetty/kubernetes/nomulus-${env}-${service}.yaml
@@ -203,6 +204,7 @@ steps:
         fi
         # canary
         sed s/GCP_PROJECT/${PROJECT_ID}/g ./jetty/kubernetes/nomulus-${service}.yaml | \
+          sed s/latest/${TAG_NAME}/g | \
           sed s/ENVIRONMENT/${env}/g | \
           sed s/PROXY_ENV/"${env}_canary"/g | \
           sed s/EPP/"epp-canary"/g | \
