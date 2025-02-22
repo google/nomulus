@@ -48,7 +48,9 @@ steps:
       gcloud container clusters get-credentials $name \
         --project $project_id --location $location
       kubectl rollout restart deployment/proxy-deployment
+      # Sleep for 20 min for the rollout to stabilize.
+      sleep 1200
     done < <(gcloud container clusters list --project $project_id | grep proxy-cluster)
-timeout: 3600s
+timeout: 7200s
 options:
   machineType: 'N1_HIGHCPU_8'
