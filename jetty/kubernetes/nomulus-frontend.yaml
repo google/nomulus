@@ -110,6 +110,7 @@ metadata:
   annotations:
     cloud.google.com/l4-rbs: enabled
     networking.gke.io/weighted-load-balancing: pods-per-node
+    networking.gke.io/load-balancer-ip-addresses: "EPP-ipv6-main,EPP-ipv4-main"
 spec:
   type: LoadBalancer
   # Traffic is directly delivered to a node, preserving the original source IP.
