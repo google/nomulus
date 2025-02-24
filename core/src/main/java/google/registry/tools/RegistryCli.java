@@ -25,7 +25,6 @@ import com.beust.jcommander.Parameters;
 import com.beust.jcommander.ParametersDelegate;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import google.registry.persistence.transaction.JpaTransactionManager;
 import google.registry.persistence.transaction.TransactionManagerFactory;
@@ -41,13 +40,6 @@ import org.postgresql.util.PSQLException;
 /** Container class to create and run remote commands against a server instance. */
 @Parameters(separators = " =", commandDescription = "Command-line interface to the registry")
 final class RegistryCli implements CommandRunner {
-
-  private static final ImmutableSet<RegistryToolEnvironment> DEFAULT_GKE_ENVIRONMENTS =
-      ImmutableSet.of(
-          RegistryToolEnvironment.ALPHA,
-          RegistryToolEnvironment.CRASH,
-          RegistryToolEnvironment.QA,
-          RegistryToolEnvironment.SANDBOX);
 
   // The environment parameter is parsed twice: once here, and once with {@link
   // RegistryToolEnvironment#parseFromArgs} in the {@link RegistryTool#main} function.
@@ -162,9 +154,10 @@ final class RegistryCli implements CommandRunner {
     }
 
     checkState(!useGke || !useGae, "Cannot specify both --gke and --gae");
-    // Special logic to set the default based on the environment if neither --gae nor --gke is set.
+
+    // Connect to GKE by default if neither --gae nor --gke is set.
     if (!useGke && !useGae) {
-      useGke = DEFAULT_GKE_ENVIRONMENTS.contains(environment);
+      useGke = true;
     }
 
     String parsedCommand = jcommander.getParsedCommand();
