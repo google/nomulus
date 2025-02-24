@@ -25,7 +25,6 @@ import com.beust.jcommander.Parameters;
 import com.beust.jcommander.ParametersDelegate;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import google.registry.persistence.transaction.JpaTransactionManager;
 import google.registry.persistence.transaction.TransactionManagerFactory;
@@ -41,13 +40,6 @@ import org.postgresql.util.PSQLException;
 /** Container class to create and run remote commands against a server instance. */
 @Parameters(separators = " =", commandDescription = "Command-line interface to the registry")
 final class RegistryCli implements CommandRunner {
-
-  private static final ImmutableSet<RegistryToolEnvironment> DEFAULT_GKE_ENVIRONMENTS =
-      ImmutableSet.of(
-          RegistryToolEnvironment.ALPHA,
-          RegistryToolEnvironment.CRASH,
-          RegistryToolEnvironment.QA,
-          RegistryToolEnvironment.SANDBOX);
 
   // The environment parameter is parsed twice: once here, and once with {@link
   // RegistryToolEnvironment#parseFromArgs} in the {@link RegistryTool#main} function.
@@ -77,9 +69,6 @@ final class RegistryCli implements CommandRunner {
           "Name of a file containing space-separated SQL access info used when deploying "
               + "Beam pipelines")
   private String sqlAccessInfoFile = null;
-
-  @Parameter(names = "--gke", description = "Whether to use GKE runtime, instead of GAE")
-  private boolean useGke = false;
 
   @Parameter(names = "--gae", description = "Whether to use GAE runtime, instead of GKE")
   private boolean useGae = false;
@@ -161,12 +150,6 @@ final class RegistryCli implements CommandRunner {
       throw e;
     }
 
-    checkState(!useGke || !useGae, "Cannot specify both --gke and --gae");
-    // Special logic to set the default based on the environment if neither --gae nor --gke is set.
-    if (!useGke && !useGae) {
-      useGke = DEFAULT_GKE_ENVIRONMENTS.contains(environment);
-    }
-
     String parsedCommand = jcommander.getParsedCommand();
     // Show the list of all commands either if requested or if no subcommand name was specified
     // (which does not throw a ParameterException parse error above).
@@ -186,7 +169,7 @@ final class RegistryCli implements CommandRunner {
         DaggerRegistryToolComponent.builder()
             .credentialFilePath(credentialJson)
             .sqlAccessInfoFile(sqlAccessInfoFile)
-            .useGke(useGke)
+            .useGke(!useGae)
             .useCanary(useCanary)
             .build();
 
