@@ -161,8 +161,6 @@ import google.registry.model.common.FeatureFlag;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.GracePeriod;
-import google.registry.model.domain.fee.BaseFee.FeeType;
-import google.registry.model.domain.fee.Fee;
 import google.registry.model.domain.fee.FeeQueryCommandExtensionItem.CommandName;
 import google.registry.model.domain.launch.LaunchNotice;
 import google.registry.model.domain.rgp.GracePeriodStatus;
@@ -287,59 +285,45 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     persistContactsAndHosts("net"); // domain_create.xml uses hosts on "net".
   }
 
+  private void assertSuccessfulCreate(String domainTld, ImmutableSet<Flag> expectedBillingFlags)
+      throws Exception {
+    assertSuccessfulCreate(domainTld, expectedBillingFlags, null, 24, null);
+  }
+
   private void assertSuccessfulCreate(
-      String domainTld, ImmutableSet<BillingBase.Flag> expectedBillingFlags) throws Exception {
-    assertSuccessfulCreate(domainTld, expectedBillingFlags, null);
+      String domainTld, ImmutableSet<Flag> expectedBillingFlags, double createCost)
+      throws Exception {
+    assertSuccessfulCreate(domainTld, expectedBillingFlags, null, createCost, null);
+  }
+
+  private void assertSuccessfulCreate(
+      String domainTld, ImmutableSet<Flag> expectedBillingFlags, AllocationToken token)
+      throws Exception {
+    assertSuccessfulCreate(domainTld, expectedBillingFlags, token, 24, null);
   }
 
   private void assertSuccessfulCreate(
       String domainTld,
-      ImmutableSet<BillingBase.Flag> expectedBillingFlags,
-      @Nullable AllocationToken allocationToken)
+      ImmutableSet<Flag> expectedBillingFlags,
+      AllocationToken token,
+      double createCost)
+      throws Exception {
+    assertSuccessfulCreate(domainTld, expectedBillingFlags, token, createCost, null);
+  }
+
+  private void assertSuccessfulCreate(
+      String domainTld,
+      ImmutableSet<Flag> expectedBillingFlags,
+      @Nullable AllocationToken token,
+      double createCost,
+      @Nullable Integer specifiedRenewCost)
       throws Exception {
     Domain domain = reloadResourceByForeignKey();
 
     boolean isAnchorTenant = expectedBillingFlags.contains(ANCHOR_TENANT);
     // Set up the creation cost.
     boolean isDomainPremium = isDomainPremium(getUniqueIdFromCommand(), clock.nowUtc());
-    BigDecimal createCost = isDomainPremium ? BigDecimal.valueOf(200) : BigDecimal.valueOf(24);
-    if (isAnchorTenant) {
-      createCost = BigDecimal.ZERO;
-    }
-    if (expectedBillingFlags.contains(SUNRISE)) {
-      createCost =
-          createCost.multiply(
-              BigDecimal.valueOf(1 - RegistryConfig.getSunriseDomainCreateDiscount()));
-    }
-    if (allocationToken != null) {
-      if (allocationToken
-          .getRegistrationBehavior()
-          .equals(RegistrationBehavior.NONPREMIUM_CREATE)) {
-        createCost =
-            createCost.subtract(
-                BigDecimal.valueOf(isDomainPremium ? 87 : 0)); // premium is 100, standard 13
-      }
-      if (allocationToken.getRenewalPriceBehavior().equals(NONPREMIUM)) {
-        createCost =
-            createCost.subtract(
-                BigDecimal.valueOf(isDomainPremium ? 89 : 0)); // premium is 100, standard 11
-      }
-      if (allocationToken.getRenewalPriceBehavior().equals(SPECIFIED)) {
-        createCost =
-            createCost
-                .subtract(BigDecimal.valueOf(isDomainPremium ? 100 : 11))
-                .add(allocationToken.getRenewalPrice().get().getAmount());
-      }
-    }
-    FeesAndCredits feesAndCredits =
-        new FeesAndCredits.Builder()
-            .setCurrency(USD)
-            .addFeeOrCredit(
-                Fee.create(
-                    createCost,
-                    FeeType.CREATE,
-                    isDomainPremium(getUniqueIdFromCommand(), clock.nowUtc())))
-            .build();
+
     Money eapFee =
         Money.of(
             Tld.get(domainTld).getCurrency(),
@@ -362,7 +346,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     RenewalPriceBehavior expectedRenewalPriceBehavior =
         isAnchorTenant
             ? RenewalPriceBehavior.NONPREMIUM
-            : Optional.ofNullable(allocationToken)
+            : Optional.ofNullable(token)
                 .map(AllocationToken::getRenewalPriceBehavior)
                 .orElse(RenewalPriceBehavior.DEFAULT);
     // There should be one bill for the create and one for the recurrence autorenew event.
@@ -371,13 +355,13 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
             .setReason(Reason.CREATE)
             .setTargetId(getUniqueIdFromCommand())
             .setRegistrarId("TheRegistrar")
-            .setCost(feesAndCredits.getCreateCost())
+            .setCost(Money.of(USD, BigDecimal.valueOf(createCost)))
             .setPeriodYears(2)
             .setEventTime(clock.nowUtc())
             .setBillingTime(billingTime)
             .setFlags(expectedBillingFlags)
             .setDomainHistory(historyEntry)
-            .setAllocationToken(allocationToken == null ? null : allocationToken.createVKey())
+            .setAllocationToken(Optional.ofNullable(token).map(t -> t.createVKey()).orElse(null))
             .build();
 
     BillingRecurrence renewBillingEvent =
@@ -391,8 +375,8 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
             .setDomainHistory(historyEntry)
             .setRenewalPriceBehavior(expectedRenewalPriceBehavior)
             .setRenewalPrice(
-                Optional.ofNullable(allocationToken)
-                    .flatMap(AllocationToken::getRenewalPrice)
+                Optional.ofNullable(specifiedRenewCost)
+                    .map(r -> Money.of(USD, BigDecimal.valueOf(r)))
                     .orElse(null))
             .build();
 
@@ -480,7 +464,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     assertMutatingFlow(true);
     runFlowAssertResponse(
         CommitMode.LIVE, userPrivileges, loadFile(responseXmlFile, substitutions));
-    assertSuccessfulCreate(domainTld, ImmutableSet.of());
+    assertSuccessfulCreate(domainTld, ImmutableSet.of(), 24);
     assertNoLordn();
   }
 
@@ -886,10 +870,14 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
                     clock.nowUtc().plusDays(1),
                     Money.of(USD, 0)))
             .build());
-    doSuccessfulTest(
-        "example",
-        "domain_create_response_premium_eap.xml",
-        ImmutableMap.of("DOMAIN", "rich.example"));
+    assertMutatingFlow(true);
+    runFlowAssertResponse(
+        CommitMode.LIVE,
+        UserPrivileges.NORMAL,
+        loadFile(
+            "domain_create_response_premium_eap.xml", ImmutableMap.of("DOMAIN", "rich.example")));
+    assertSuccessfulCreate("example", ImmutableSet.of(), 200);
+    assertNoLordn();
   }
 
   /**
@@ -1336,7 +1324,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     setEppInput("domain_create_anchor_allocationtoken.xml");
     persistContactsAndHosts();
     runFlowAssertResponse(loadFile("domain_create_anchor_response.xml"));
-    assertSuccessfulCreate("tld", ImmutableSet.of(ANCHOR_TENANT), allocationToken);
+    assertSuccessfulCreate("tld", ImmutableSet.of(ANCHOR_TENANT), allocationToken, 0);
     assertNoLordn();
     assertAllocationTokenWasRedeemed("abcDEF23456");
   }
@@ -1350,7 +1338,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
                 .setTokenType(SINGLE_USE)
                 .setDomainName("resdom.tld")
                 .setRenewalPriceBehavior(SPECIFIED)
-                .setRenewalPrice(Money.of(USD, 0))
+                .setRenewalPrice(Money.of(USD, 1))
                 .build());
     // Despite the domain being FULLY_BLOCKED, the non-superuser create succeeds the domain is also
     // RESERVED_FOR_SPECIFIC_USE and the correct allocation token is passed.
@@ -1359,7 +1347,8 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     persistContactsAndHosts();
     runFlowAssertResponse(
         loadFile("domain_create_response.xml", ImmutableMap.of("DOMAIN", "resdom.tld")));
-    assertSuccessfulCreate("tld", ImmutableSet.of(RESERVED), allocationToken);
+    // $13 for the first year plus $1 renewal for the second year =
+    assertSuccessfulCreate("tld", ImmutableSet.of(RESERVED), allocationToken, 14, 1);
     assertNoLordn();
     assertAllocationTokenWasRedeemed("abc123");
   }
@@ -1379,7 +1368,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     setEppInput("domain_create_anchor_allocationtoken.xml");
     persistContactsAndHosts();
     runFlowAssertResponse(loadFile("domain_create_anchor_response.xml"));
-    assertSuccessfulCreate("tld", ImmutableSet.of(ANCHOR_TENANT), allocationToken);
+    assertSuccessfulCreate("tld", ImmutableSet.of(ANCHOR_TENANT), allocationToken, 0);
     assertNoLordn();
     assertAllocationTokenWasRedeemed("abcDEF23456");
   }
@@ -1402,7 +1391,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     clock.setTo(DateTime.parse("2009-08-16T09:00:00.0Z"));
     persistContactsAndHosts();
     runFlowAssertResponse(loadFile("domain_create_response_claims.xml"));
-    assertSuccessfulCreate("tld", ImmutableSet.of(ANCHOR_TENANT), allocationToken);
+    assertSuccessfulCreate("tld", ImmutableSet.of(ANCHOR_TENANT), allocationToken, 0);
     assertDomainDnsRequests("example-one.tld");
     assertClaimsLordn();
     assertAllocationTokenWasRedeemed("abcDEF23456");
@@ -1415,7 +1404,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     persistContactsAndHosts();
     runFlowAssertResponse(
         loadFile("domain_create_response.xml", ImmutableMap.of("DOMAIN", "example.tld")));
-    assertSuccessfulCreate("tld", ImmutableSet.of(ANCHOR_TENANT));
+    assertSuccessfulCreate("tld", ImmutableSet.of(ANCHOR_TENANT), 0);
     assertNoLordn();
   }
 
@@ -1450,7 +1439,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
                 SMD_VALID_TIME.toString(),
                 "EXPIRATION_TIME",
                 SMD_VALID_TIME.plusYears(2).toString())));
-    assertSuccessfulCreate("tld", ImmutableSet.of(SUNRISE, ANCHOR_TENANT));
+    assertSuccessfulCreate("tld", ImmutableSet.of(SUNRISE, ANCHOR_TENANT), 0);
   }
 
   @Test
@@ -1482,7 +1471,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
                 SMD_VALID_TIME.toString(),
                 "EXPIRATION_TIME",
                 SMD_VALID_TIME.plusYears(2).toString())));
-    assertSuccessfulCreate("tld", ImmutableSet.of(ANCHOR_TENANT, SUNRISE), allocationToken);
+    assertSuccessfulCreate("tld", ImmutableSet.of(ANCHOR_TENANT, SUNRISE), allocationToken, 0);
     assertDomainDnsRequests("test-validate.tld");
     assertSunriseLordn();
     assertAllocationTokenWasRedeemed("abcDEF23456");
@@ -1505,7 +1494,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     setEppInput("domain_create_anchor_allocationtoken.xml");
     persistContactsAndHosts();
     runFlowAssertResponse(loadFile("domain_create_anchor_response.xml"));
-    assertSuccessfulCreate("tld", ImmutableSet.of(ANCHOR_TENANT), allocationToken);
+    assertSuccessfulCreate("tld", ImmutableSet.of(ANCHOR_TENANT), allocationToken, 0);
     assertNoLordn();
     assertAllocationTokenWasRedeemed("abcDEF23456");
   }
@@ -1929,7 +1918,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
         loadFile(
             "domain_create_response_premium.xml",
             ImmutableMap.of("EXDATE", "2001-04-03T22:00:00.0Z", "FEE", "200.00")));
-    assertSuccessfulCreate("example", ImmutableSet.of());
+    assertSuccessfulCreate("example", ImmutableSet.of(), 200);
   }
 
   private BillingEvent runTest_defaultToken(String token) throws Exception {
@@ -2148,7 +2137,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
         loadFile(
             "domain_create_response_premium.xml",
             ImmutableMap.of("EXDATE", "2001-04-03T22:00:00.0Z", "FEE", "200.00")));
-    assertSuccessfulCreate("example", ImmutableSet.of());
+    assertSuccessfulCreate("example", ImmutableSet.of(), 200);
   }
 
   @Test
@@ -2572,7 +2561,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     persistContactsAndHosts();
     persistBsaLabel("anchor");
     runFlowAssertResponse(loadFile("domain_create_anchor_response.xml"));
-    assertSuccessfulCreate("tld", ImmutableSet.of(ANCHOR_TENANT), allocationToken);
+    assertSuccessfulCreate("tld", ImmutableSet.of(ANCHOR_TENANT), allocationToken, 0);
     assertNoLordn();
     assertAllocationTokenWasRedeemed("abcDEF23456");
   }
@@ -2738,7 +2727,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
                 SMD_VALID_TIME.toString(),
                 "EXPIRATION_TIME",
                 SMD_VALID_TIME.plusYears(2).toString())));
-    assertSuccessfulCreate("tld", ImmutableSet.of(SUNRISE));
+    assertSuccessfulCreate("tld", ImmutableSet.of(SUNRISE), 20.40);
     assertSunriseLordn();
   }
 
@@ -2761,7 +2750,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
                 SMD_VALID_TIME.toString(),
                 "EXPIRATION_TIME",
                 SMD_VALID_TIME.plusYears(2).toString())));
-    assertSuccessfulCreate("tld", ImmutableSet.of(SUNRISE));
+    assertSuccessfulCreate("tld", ImmutableSet.of(SUNRISE), 20.40);
     assertSunriseLordn();
   }
 
@@ -3245,7 +3234,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
         "domain_create_allocationtoken.xml",
         ImmutableMap.of("DOMAIN", "example.tld", "YEARS", "2"));
     runFlow();
-    assertSuccessfulCreate("tld", ImmutableSet.of(ANCHOR_TENANT), token);
+    assertSuccessfulCreate("tld", ImmutableSet.of(ANCHOR_TENANT), token, 0);
   }
 
   @Test
@@ -3265,7 +3254,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
         "domain_create_premium_allocationtoken.xml",
         ImmutableMap.of("YEARS", "2", "FEE", "111.00"));
     runFlow();
-    assertSuccessfulCreate("example", ImmutableSet.of(), token);
+    assertSuccessfulCreate("example", ImmutableSet.of(), token, 111);
   }
 
   @Test
@@ -3286,7 +3275,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
         "domain_create_premium_allocationtoken.xml",
         ImmutableMap.of("YEARS", "2", "FEE", "101.00"));
     runFlow();
-    assertSuccessfulCreate("example", ImmutableSet.of(), token);
+    assertSuccessfulCreate("example", ImmutableSet.of(), token, 101, 1);
   }
 
   @Test
@@ -3438,7 +3427,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
         ImmutableMap.of("DOMAIN", "example.tld", "YEARS", "2"));
     persistContactsAndHosts();
     runFlow();
-    assertSuccessfulCreate("tld", ImmutableSet.of(ANCHOR_TENANT), token);
+    assertSuccessfulCreate("tld", ImmutableSet.of(ANCHOR_TENANT), token, 0);
   }
 
   @Test
@@ -3492,7 +3481,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
         "domain_create_allocationtoken.xml",
         ImmutableMap.of("DOMAIN", "example.tld", "YEARS", "2"));
     runFlow();
-    assertSuccessfulCreate("tld", ImmutableSet.of(ANCHOR_TENANT), token);
+    assertSuccessfulCreate("tld", ImmutableSet.of(ANCHOR_TENANT), token, 0);
   }
 
   @Test
@@ -3510,7 +3499,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
             .build());
     persistContactsAndHosts();
     runFlow();
-    assertSuccessfulCreate("tld", ImmutableSet.of(SUNRISE, ANCHOR_TENANT), allocationToken);
+    assertSuccessfulCreate("tld", ImmutableSet.of(SUNRISE, ANCHOR_TENANT), allocationToken, 0);
   }
 
   @Test
@@ -3572,7 +3561,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
         "domain_create_allocationtoken.xml",
         ImmutableMap.of("DOMAIN", "example.tld", "YEARS", "2"));
     runFlow();
-    assertSuccessfulCreate("tld", ImmutableSet.of(ANCHOR_TENANT), token);
+    assertSuccessfulCreate("tld", ImmutableSet.of(ANCHOR_TENANT), token, 0);
   }
 
   @Test
@@ -3599,7 +3588,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     setEppInput("domain_create_allocationtoken_claims.xml");
     persistContactsAndHosts();
     runFlow();
-    assertSuccessfulCreate("tld", ImmutableSet.of(ANCHOR_TENANT), allocationToken);
+    assertSuccessfulCreate("tld", ImmutableSet.of(ANCHOR_TENANT), allocationToken, 0);
   }
 
   @Test
@@ -3649,7 +3638,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
         "domain_create_allocationtoken.xml",
         ImmutableMap.of("DOMAIN", "example.tld", "YEARS", "2"));
     runFlow();
-    assertSuccessfulCreate("tld", ImmutableSet.of(ANCHOR_TENANT), token);
+    assertSuccessfulCreate("tld", ImmutableSet.of(ANCHOR_TENANT), token, 0);
   }
 
   @Test
@@ -3663,7 +3652,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     setEppInput("domain_create_allocationtoken_claims.xml");
     persistContactsAndHosts();
     runFlow();
-    assertSuccessfulCreate("tld", ImmutableSet.of(ANCHOR_TENANT), allocationToken);
+    assertSuccessfulCreate("tld", ImmutableSet.of(ANCHOR_TENANT), allocationToken, 0);
   }
 
   @Test
