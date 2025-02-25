@@ -35,6 +35,7 @@ import com.google.common.truth.SimpleSubjectBuilder;
 import com.google.common.truth.Subject;
 import java.io.IOException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
@@ -63,6 +64,7 @@ public class TextDiffSubject extends Subject {
 
   private final ImmutableList<String> actual;
   private DiffFormat diffFormat = DiffFormat.SIDE_BY_SIDE_MARKDOWN;
+  private List<String> comments = new ArrayList<>();
 
   protected TextDiffSubject(FailureMetadata metadata, List<String> actual) {
     super(metadata, actual);
@@ -83,10 +85,22 @@ public class TextDiffSubject extends Subject {
     return this;
   }
 
+  /** If set, ignore lines that start with the given string. */
+  public TextDiffSubject ignoringLinesThatStartWith(String comment) {
+    comments.add(comment);
+    return this;
+  }
+
+  private ImmutableList<String> filterComments(List<String> lines) {
+    return lines.stream()
+        .filter(line -> comments.stream().noneMatch(line::startsWith))
+        .collect(ImmutableList.toImmutableList());
+  }
+
   public void hasSameContentAs(List<String> expectedContent) {
     checkNotNull(expectedContent, "expectedContent");
-    ImmutableList<String> expected = ImmutableList.copyOf(expectedContent);
-    if (expected.equals(actual)) {
+    ImmutableList<String> expected = filterComments(expectedContent);
+    if (filterComments(expected).equals(filterComments(actual))) {
       return;
     }
     String diffString = diffFormat.generateDiff(expected, actual);
