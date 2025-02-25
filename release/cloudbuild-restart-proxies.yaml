@@ -39,8 +39,17 @@ steps:
 
     gcloud auth activate-service-account --key-file=tool-credential.json
 
+    first=true
+
     while read line
     do
+      # Sleep for 60 min for the rollout to stabilize.
+      if [[ -v first ]]
+      then
+        unset first
+      else
+        sleep 3600
+      fi
       name=$(echo $line | awk '{print $1}')
       location=$(echo $line | awk '{print $2}')
       echo $name $region
@@ -48,9 +57,7 @@ steps:
       gcloud container clusters get-credentials $name \
         --project $project_id --location $location
       kubectl rollout restart deployment/proxy-deployment
-      # Sleep for 20 min for the rollout to stabilize.
-      sleep 1200
     done < <(gcloud container clusters list --project $project_id | grep proxy-cluster)
-timeout: 7200s
+timeout: 7500s
 options:
   machineType: 'N1_HIGHCPU_8'
