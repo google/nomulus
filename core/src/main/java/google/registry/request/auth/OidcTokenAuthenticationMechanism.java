@@ -106,7 +106,7 @@ public abstract class OidcTokenAuthenticationMechanism implements Authentication
 
     String email = (String) token.getPayload().get("email");
     if (email == null) {
-      logger.atWarning().log("No email address from the OIDC token:\n%s", token.getPayload());
+      logger.atInfo().log("No email address from the OIDC token:\n%s", token.getPayload());
       return AuthResult.NOT_AUTHENTICATED;
     }
     Optional<User> maybeUser =
