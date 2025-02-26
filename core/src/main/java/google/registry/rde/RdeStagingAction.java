@@ -251,7 +251,7 @@ public final class RdeStagingAction implements Runnable {
     ImmutableSetMultimap<String, PendingDeposit> pendings =
         manual ? getManualPendingDeposits() : getStandardPendingDeposits();
     if (pendings.isEmpty()) {
-      String message = "Nothing needs to be deposited.";
+      String message = "Nothing needs to be deposited foobar.";
       logger.atInfo().log(message);
       response.setStatus(SC_NO_CONTENT);
       // No need to set payload as HTTP 204 response status code does not allow a payload.
