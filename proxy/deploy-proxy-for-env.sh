@@ -40,7 +40,8 @@ do
     kubectl apply -f -
     kubectl apply -f "./kubernetes/proxy-service-canary.yaml" --force
   fi
-  # Kills all running pods, new pods created will be pulling the new image.
-  kubectl delete pods --all
+  # Restart all running pods, new pods created will be pulling the new image.
+  kubectl rollout restart deployment/proxy-deployment
+  kubectl rollout restart deployment/proxy-deployment-canary
 done < <(gcloud container clusters list --project ${project} | grep proxy-cluster)
 kubectl config use-context "$current_context"

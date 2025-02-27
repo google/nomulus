@@ -15,8 +15,10 @@
 package google.registry.proxy.handler;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static google.registry.proxy.handler.ProxyProtocolHandler.REMOTE_ADDRESS_KEY;
 
 import google.registry.proxy.metric.FrontendMetrics;
+import google.registry.util.ProxyHttpHeaders;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
@@ -29,6 +31,8 @@ import java.util.function.Supplier;
 
 /** Handler that processes WHOIS protocol logic. */
 public final class WhoisServiceHandler extends HttpsRelayServiceHandler {
+
+  private String clientAddress;
 
   public WhoisServiceHandler(
       String relayHost,
@@ -46,12 +50,24 @@ public final class WhoisServiceHandler extends HttpsRelayServiceHandler {
   }
 
   @Override
+  public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+    clientAddress = ctx.channel().attr(REMOTE_ADDRESS_KEY).get();
+    super.channelRead(ctx, msg);
+  }
+
+  @Override
   protected FullHttpRequest decodeFullHttpRequest(ByteBuf byteBuf) {
     FullHttpRequest request = super.decodeFullHttpRequest(byteBuf);
     request
         .headers()
         .set(HttpHeaderNames.CONTENT_TYPE, HttpHeaderValues.TEXT_PLAIN)
         .set(HttpHeaderNames.ACCEPT, HttpHeaderValues.TEXT_PLAIN);
+    if (clientAddress != null) {
+      request
+          .headers()
+          .set(ProxyHttpHeaders.IP_ADDRESS, clientAddress)
+          .set(ProxyHttpHeaders.FALLBACK_IP_ADDRESS, clientAddress);
+    }
     return request;
   }
 
