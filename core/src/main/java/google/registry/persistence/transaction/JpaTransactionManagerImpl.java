@@ -271,7 +271,7 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
                 String.format("SET TRANSACTION ISOLATION LEVEL %s", isolationLevel.getMode()))
             .executeUpdate();
         logger.atInfo().log(
-            "Overriding transaction isolation level from %s to %s",
+            "Overriding transaction isolation level from %s to %s foo",
             getDefaultTransactionIsolationLevel(), isolationLevel);
       }
       T result = work.call();
