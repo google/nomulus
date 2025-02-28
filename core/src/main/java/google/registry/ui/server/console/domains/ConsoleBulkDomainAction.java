@@ -81,11 +81,6 @@ public class ConsoleBulkDomainAction extends ConsoleApiAction {
 
   @Override
   protected void postHandler(User user) {
-    // Temporary flag while testing
-    if (!user.getUserRoles().isAdmin()) {
-      consoleApiParams.response().setStatus(SC_FORBIDDEN);
-      return;
-    }
     JsonElement jsonPayload =
         optionalJsonPayload.orElseThrow(
             () -> new IllegalArgumentException("Bulk action payload must be present"));
