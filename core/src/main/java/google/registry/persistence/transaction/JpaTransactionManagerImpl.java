@@ -89,7 +89,7 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
   private static final Retrier retrier = new Retrier(new SystemSleeper(), 3);
   private static final String NESTED_TRANSACTION_MESSAGE =
       "Nested transaction detected. Try refactoring to avoid nested transactions. If unachievable,"
-          + " use reTransact() in nested transactions";
+          + " use reTransact() in nested transactions. Test!";
   private static final String SQL_STATEMENT_LOG_SENTINEL_FORMAT = "SQL_STATEMENT_LOG: %s";
 
   // EntityManagerFactory is thread safe.
