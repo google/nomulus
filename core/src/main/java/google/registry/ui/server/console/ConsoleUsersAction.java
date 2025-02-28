@@ -31,12 +31,14 @@ import com.google.api.services.directory.Directory;
 import com.google.api.services.directory.model.UserName;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import com.google.gson.annotations.Expose;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.model.console.ConsolePermission;
 import google.registry.model.console.RegistrarRole;
 import google.registry.model.console.User;
 import google.registry.model.console.UserRoles;
+import google.registry.model.registrar.Registrar;
 import google.registry.persistence.VKey;
 import google.registry.request.Action;
 import google.registry.request.Action.GkeService;
@@ -44,6 +46,7 @@ import google.registry.request.HttpException.BadRequestException;
 import google.registry.request.Parameter;
 import google.registry.request.auth.Auth;
 import google.registry.tools.IamClient;
+import google.registry.util.DiffUtils;
 import google.registry.util.StringGenerator;
 import java.io.IOException;
 import java.util.List;
@@ -96,24 +99,14 @@ public class ConsoleUsersAction extends ConsoleApiAction {
 
   @Override
   protected void postHandler(User user) {
-    // Temporary flag while testing
-    if (user.getUserRoles().isAdmin()) {
-      checkPermission(user, registrarId, ConsolePermission.MANAGE_USERS);
-      tm().transact(this::runPostInTransaction);
-    } else {
-      consoleApiParams.response().setStatus(SC_FORBIDDEN);
-    }
+    checkPermission(user, registrarId, ConsolePermission.MANAGE_USERS);
+    tm().transact(this::runPostInTransaction);
   }
 
   @Override
   protected void putHandler(User user) {
-    // Temporary flag while testing
-    if (user.getUserRoles().isAdmin()) {
-      checkPermission(user, registrarId, ConsolePermission.MANAGE_USERS);
-      tm().transact(this::runUpdateInTransaction);
-    } else {
-      consoleApiParams.response().setStatus(SC_FORBIDDEN);
-    }
+    checkPermission(user, registrarId, ConsolePermission.MANAGE_USERS);
+    tm().transact(this::runUpdateInTransaction);
   }
 
   @Override
@@ -135,13 +128,8 @@ public class ConsoleUsersAction extends ConsoleApiAction {
 
   @Override
   protected void deleteHandler(User user) {
-    // Temporary flag while testing
-    if (user.getUserRoles().isAdmin()) {
-      checkPermission(user, registrarId, ConsolePermission.MANAGE_USERS);
-      tm().transact(this::runDeleteInTransaction);
-    } else {
-      consoleApiParams.response().setStatus(SC_FORBIDDEN);
-    }
+    checkPermission(user, registrarId, ConsolePermission.MANAGE_USERS);
+    tm().transact(this::runDeleteInTransaction);
   }
 
   private void runPostInTransaction() throws IOException {
@@ -163,6 +151,8 @@ public class ConsoleUsersAction extends ConsoleApiAction {
         this.userData.get().emailAddress,
         registrarId,
         RegistrarRole.valueOf(this.userData.get().role));
+
+    sendConfirmationEmail(registrarId, this.userData.get().emailAddress, "Added existing user");
     consoleApiParams.response().setStatus(SC_OK);
   }
 
@@ -186,6 +176,7 @@ public class ConsoleUsersAction extends ConsoleApiAction {
       VKey<User> key = VKey.create(User.class, email);
       tm().delete(key);
       User.revokeIapPermission(email, maybeGroupEmailAddress, cloudTasksUtils, null, iamClient);
+      sendConfirmationEmail(registrarId, email, "Deleted user");
     }
 
     consoleApiParams.response().setStatus(SC_OK);
@@ -232,7 +223,7 @@ public class ConsoleUsersAction extends ConsoleApiAction {
     User.Builder builder = new User.Builder().setUserRoles(userRoles).setEmailAddress(newEmail);
     tm().put(builder.build());
     User.grantIapPermission(newEmail, maybeGroupEmailAddress, cloudTasksUtils, null, iamClient);
-
+    sendConfirmationEmail(registrarId, newEmail, "Created user");
     consoleApiParams.response().setStatus(SC_CREATED);
     consoleApiParams
         .response()
@@ -251,6 +242,8 @@ public class ConsoleUsersAction extends ConsoleApiAction {
         this.userData.get().emailAddress,
         registrarId,
         RegistrarRole.valueOf(this.userData.get().role));
+
+    sendConfirmationEmail(registrarId, this.userData.get().emailAddress, "Updated user");
     consoleApiParams.response().setStatus(SC_OK);
   }
 
@@ -313,6 +306,20 @@ public class ConsoleUsersAction extends ConsoleApiAction {
                 tm().loadAllOf(User.class).stream()
                     .filter(u -> u.getUserRoles().getRegistrarRoles().containsKey(registrarId))
                     .collect(toImmutableList()));
+  }
+
+  private boolean sendConfirmationEmail(String registrarId, String emailAddress, String operation) {
+    Optional<Registrar> registrar = Registrar.loadByRegistrarId(registrarId);
+    if (registrar.isEmpty()) { // Shouldn't happen, but worth checking
+      setFailedResponse(
+          "Failed to send an email to registrar " + registrarId, SC_INTERNAL_SERVER_ERROR);
+      return false;
+    }
+    sendExternalUpdates(
+        ImmutableMap.of("Console users updated", new DiffUtils.DiffPair(operation, emailAddress)),
+        registrar.get(),
+        ImmutableSet.of());
+    return true;
   }
 
   public record UserData(
