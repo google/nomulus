@@ -63,8 +63,21 @@ public class RdapIcannStandardInformation {
                   .build())
           .build();
 
+  /** Not required, but provided when a domain is blocked by BSA. */
+  private static final Notice DOMAIN_BLOCKED_BY_BSA_NOTICE =
+      Notice.builder()
+          .setTitle("Blocked Domain")
+          .setDescription("This name has been blocked by a GlobalBlock service")
+          .addLink(
+              Link.builder()
+                  .setRel("alternate")
+                  .setHref("https://brandsafetyalliance.co")
+                  .setType("text/html")
+                  .build())
+          .build();
+
   /** Boilerplate notices required by domain responses. */
-  static final ImmutableList<Notice> domainBoilerplateNotices =
+  static final ImmutableList<Notice> DOMAIN_BOILERPLATE_NOTICES =
       ImmutableList.of(
           CONFORMANCE_NOTICE,
           // RDAP Response Profile 2.6.3
@@ -72,8 +85,12 @@ public class RdapIcannStandardInformation {
           // RDAP Response Profile 2.11
           INACCURACY_COMPLAINT_FORM_NOTICE);
 
+  /** Boilerplate notice for when a domain is blocked by BSA. */
+  static final ImmutableList<Notice> DOMAIN_BLOCKED_BY_BSA_BOILERPLATE_NOTICES =
+      ImmutableList.of(DOMAIN_BLOCKED_BY_BSA_NOTICE);
+
   /** Boilerplate remarks required by nameserver and entity responses. */
-  static final ImmutableList<Notice> nameserverAndEntityBoilerplateNotices =
+  static final ImmutableList<Notice> NAMESERVER_AND_ENTITY_BOILERPLATE_NOTICES =
       ImmutableList.of(CONFORMANCE_NOTICE);
 
   /**

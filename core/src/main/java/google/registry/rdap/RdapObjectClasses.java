@@ -39,6 +39,7 @@ import google.registry.rdap.RdapDataStructures.RdapConformance;
 import google.registry.rdap.RdapDataStructures.RdapStatus;
 import google.registry.rdap.RdapDataStructures.Remark;
 import google.registry.util.Idn;
+import jakarta.servlet.http.HttpServletResponse;
 import java.util.Optional;
 
 /** Object Classes defined in RFC 9083 section 5. */
@@ -137,10 +138,22 @@ final class RdapObjectClasses {
    * suppress them for other types of responses (e.g. help).
    */
   public enum BoilerplateType {
-    DOMAIN,
-    NAMESERVER,
-    ENTITY,
-    OTHER
+    DOMAIN(RdapIcannStandardInformation.DOMAIN_BOILERPLATE_NOTICES),
+    DOMAIN_BLOCKED_BY_BSA(RdapIcannStandardInformation.DOMAIN_BLOCKED_BY_BSA_BOILERPLATE_NOTICES),
+    NAMESERVER(RdapIcannStandardInformation.NAMESERVER_AND_ENTITY_BOILERPLATE_NOTICES),
+    ENTITY(RdapIcannStandardInformation.NAMESERVER_AND_ENTITY_BOILERPLATE_NOTICES),
+    OTHER(ImmutableList.of());
+
+    @SuppressWarnings("ImmutableEnumChecker") // immutable lists are, in fact, immutable
+    private final ImmutableList<Notice> notices;
+
+    BoilerplateType(ImmutableList<Notice> notices) {
+      this.notices = notices;
+    }
+
+    public ImmutableList<Notice> getNotices() {
+      return notices;
+    }
   }
 
   /**
@@ -173,14 +186,7 @@ final class RdapObjectClasses {
     @JsonableElement("notices[]") abstract Notice aTosNotice();
 
     @JsonableElement("notices") ImmutableList<Notice> boilerplateNotices() {
-      return switch (aAreplyObject().boilerplateType) {
-        case DOMAIN -> RdapIcannStandardInformation.domainBoilerplateNotices;
-        case NAMESERVER, ENTITY ->
-            RdapIcannStandardInformation.nameserverAndEntityBoilerplateNotices;
-        default -> // things other than domains, nameservers and entities do not yet have
-            // boilerplate
-            ImmutableList.of();
-      };
+      return aAreplyObject().boilerplateType.getNotices();
     }
 
     static TopLevelReplyObject create(ReplyPayloadBase replyObject, Notice tosNotice) {
@@ -529,6 +535,25 @@ final class RdapObjectClasses {
       abstract Builder setSecureDns(SecureDns secureDns);
 
       abstract RdapDomain build();
+    }
+  }
+
+  /** Specialized error response body for when a domain is blocked by BSA. */
+  @RestrictJsonNames({})
+  @SuppressWarnings("UnusedVariable")
+  public static class DomainBlockedByBsaErrorResponse extends ReplyPayloadBase {
+
+    @JsonableElement private static final LanguageIdentifier lang = LanguageIdentifier.EN;
+
+    @JsonableElement private static final int errorCode = HttpServletResponse.SC_NOT_FOUND;
+
+    @JsonableElement private static final String title = "Not Found";
+
+    @JsonableElement private final ImmutableList<String> description;
+
+    DomainBlockedByBsaErrorResponse(String message) {
+      super(BoilerplateType.DOMAIN_BLOCKED_BY_BSA);
+      this.description = ImmutableList.of(message);
     }
   }
 

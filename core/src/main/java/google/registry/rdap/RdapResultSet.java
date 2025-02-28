@@ -27,7 +27,7 @@ import java.util.List;
  * @param numResourcesRetrieved Number of resources retrieved from the database in the process of
  *     assembling the data set.
  */
-record RdapResultSet<T extends EppResource>(
+public record RdapResultSet<T extends EppResource>(
     ImmutableList<T> resources,
     IncompletenessWarningType incompletenessWarningType,
     int numResourcesRetrieved) {

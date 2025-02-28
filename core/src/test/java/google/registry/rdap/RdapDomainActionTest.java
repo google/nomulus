@@ -15,6 +15,7 @@
 package google.registry.rdap;
 
 import static com.google.common.truth.Truth.assertThat;
+import static google.registry.bsa.persistence.BsaTestingUtils.persistBsaLabel;
 import static google.registry.model.EppResourceUtils.loadByForeignKey;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
@@ -27,8 +28,11 @@ import static google.registry.testing.FullFieldsTestEntityHelper.makeHistoryEntr
 import static google.registry.testing.FullFieldsTestEntityHelper.makeRegistrar;
 import static google.registry.testing.FullFieldsTestEntityHelper.makeRegistrarPocs;
 import static google.registry.testing.GsonSubject.assertAboutJson;
+import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static org.mockito.Mockito.verify;
 
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.gson.JsonObject;
 import google.registry.model.contact.Contact;
@@ -606,6 +610,34 @@ class RdapDomainActionTest extends RdapActionBaseTestCase<RdapDomainAction> {
                 .setStatusCode(200)
                 .setIncompletenessWarningType(IncompletenessWarningType.COMPLETE)
                 .build());
+  }
+
+  @Test
+  void testBlockedByBsa() {
+    persistResource(
+        Tld.get("lol").asBuilder().setBsaEnrollStartTime(Optional.of(START_OF_TIME)).build());
+    persistBsaLabel("example");
+    ImmutableMap<?, ?> expectedBsaNotice =
+        ImmutableMap.of(
+            "description",
+            ImmutableList.of("This name has been blocked by a GlobalBlock service"),
+            "title",
+            "Blocked Domain",
+            "links",
+            ImmutableList.of(
+                ImmutableMap.of(
+                    "href",
+                    "https://brandsafetyalliance.co",
+                    "rel",
+                    "alternate",
+                    "type",
+                    "text/html")));
+    JsonObject expectedErrorResponse = generateExpectedJsonError("example.lol blocked by BSA", 404);
+    expectedErrorResponse
+        .getAsJsonArray("notices")
+        .add(RdapTestHelper.GSON.toJsonTree(expectedBsaNotice));
+    assertAboutJson().that(generateActualJson("example.lol")).isEqualTo(expectedErrorResponse);
+    assertThat(response.getStatus()).isEqualTo(404);
   }
 
   private Domain persistActiveDomainWithHost(

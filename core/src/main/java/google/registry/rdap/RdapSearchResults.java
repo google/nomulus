@@ -40,7 +40,7 @@ import java.util.Optional;
 abstract class RdapSearchResults {
 
   /** Responding To Searches defined in 8 of RFC 9083. */
-  abstract static class BaseSearchResponse extends ReplyPayloadBase {
+  public abstract static class BaseSearchResponse extends ReplyPayloadBase {
     abstract IncompletenessWarningType incompletenessWarningType();
     abstract ImmutableMap<String, URI> navigationLinks();
 

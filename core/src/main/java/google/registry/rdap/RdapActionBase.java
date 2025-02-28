@@ -14,14 +14,15 @@
 
 package google.registry.rdap;
 
-import static com.google.common.base.Charsets.UTF_8;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.net.HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN;
 import static google.registry.request.Actions.getPathForAction;
 import static google.registry.util.DomainNameUtils.canonicalizeHostname;
 import static jakarta.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static jakarta.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+import static jakarta.servlet.http.HttpServletResponse.SC_NOT_FOUND;
 import static jakarta.servlet.http.HttpServletResponse.SC_OK;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.flogger.FluentLogger;
 import com.google.common.net.MediaType;
@@ -41,6 +42,7 @@ import google.registry.request.Parameter;
 import google.registry.request.RequestMethod;
 import google.registry.request.RequestPath;
 import google.registry.request.Response;
+import google.registry.util.Clock;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Optional;
@@ -60,6 +62,10 @@ public abstract class RdapActionBase implements Runnable {
   private static final MediaType RESPONSE_MEDIA_TYPE =
       MediaType.create("application", "rdap+json").withCharset(UTF_8);
 
+  private static final Gson GSON = new GsonBuilder().disableHtmlEscaping().create();
+  private static final Gson FORMATTED_OUTPUT_GSON =
+      new GsonBuilder().disableHtmlEscaping().setPrettyPrinting().create();
+
   /** Whether to include or exclude deleted items from a query. */
   protected enum DeletedItemHandling {
     EXCLUDE,
@@ -75,6 +81,7 @@ public abstract class RdapActionBase implements Runnable {
   @Inject @Parameter("formatOutput") Optional<Boolean> formatOutputParam;
   @Inject @Config("rdapResultSetMaxSize") int rdapResultSetMaxSize;
   @Inject RdapMetrics rdapMetrics;
+  @Inject Clock clock;
 
   /** Builder for metric recording. */
   final RdapMetrics.RdapMetricInformation.Builder metricInformationBuilder =
@@ -152,6 +159,10 @@ public abstract class RdapActionBase implements Runnable {
       response.setStatus(SC_OK);
       setPayload(replyObject);
       metricInformationBuilder.setStatusCode(SC_OK);
+    } catch (RdapDomainAction.DomainBlockedByBsaException e) {
+      logger.atInfo().withCause(e).log("Domain blocked by BSA");
+      setErrorCodes(SC_NOT_FOUND);
+      setPayload(new RdapObjectClasses.DomainBlockedByBsaErrorResponse(e.getMessage()));
     } catch (HttpException e) {
       logger.atInfo().withCause(e).log("Error in RDAP.");
       setError(e.getResponseCode(), e.getResponseCodeString(), e.getMessage());
@@ -166,8 +177,7 @@ public abstract class RdapActionBase implements Runnable {
   }
 
   void setError(int status, String title, String description) {
-    metricInformationBuilder.setStatusCode(status);
-    response.setStatus(status);
+    setErrorCodes(status);
     try {
       setPayload(ErrorResponse.create(status, title, description));
     } catch (Exception ex) {
@@ -176,21 +186,18 @@ public abstract class RdapActionBase implements Runnable {
     }
   }
 
+  void setErrorCodes(int status) {
+    metricInformationBuilder.setStatusCode(status);
+    response.setStatus(status);
+  }
+
   void setPayload(ReplyPayloadBase replyObject) {
     if (requestMethod == Action.Method.HEAD) {
       return;
     }
-
-    GsonBuilder gsonBuilder = new GsonBuilder();
-    gsonBuilder.disableHtmlEscaping();
-    if (formatOutputParam.orElse(false)) {
-      gsonBuilder.setPrettyPrinting();
-    }
-    Gson gson = gsonBuilder.create();
-
     TopLevelReplyObject topLevelObject =
         TopLevelReplyObject.create(replyObject, rdapJsonFormatter.createTosNotice());
-
+    Gson gson = formatOutputParam.orElse(false) ? FORMATTED_OUTPUT_GSON : GSON;
     response.setPayload(gson.toJson(topLevelObject.toJson()));
   }
 

@@ -14,10 +14,10 @@
 
 package google.registry.model.tld.label;
 
-import static com.google.common.base.Charsets.US_ASCII;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static com.google.common.hash.Funnels.stringFunnel;
+import static java.nio.charset.StandardCharsets.US_ASCII;
 
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableMap;

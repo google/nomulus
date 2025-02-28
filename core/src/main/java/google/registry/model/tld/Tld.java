@@ -199,16 +199,16 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
 
   /** Returns the TLD entities for the given TLD strings, throwing if any don't exist. */
   public static ImmutableSet<Tld> get(Set<String> tlds) {
-    Map<String, Optional<Tld>> registries = CACHE.getAll(tlds);
-    ImmutableSet<String> missingRegistries =
-        registries.entrySet().stream()
+    Map<String, Optional<Tld>> tldObjects = CACHE.getAll(tlds);
+    ImmutableSet<String> missingTlds =
+        tldObjects.entrySet().stream()
             .filter(e -> e.getValue().isEmpty())
             .map(Map.Entry::getKey)
             .collect(toImmutableSet());
-    if (missingRegistries.isEmpty()) {
-      return registries.values().stream().map(Optional::get).collect(toImmutableSet());
+    if (missingTlds.isEmpty()) {
+      return tldObjects.values().stream().map(Optional::get).collect(toImmutableSet());
     } else {
-      throw new TldNotFoundException(missingRegistries);
+      throw new TldNotFoundException(missingTlds);
     }
   }
 

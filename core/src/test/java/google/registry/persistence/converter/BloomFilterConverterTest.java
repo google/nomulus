@@ -13,11 +13,11 @@
 // limitations under the License.
 package google.registry.persistence.converter;
 
-import static com.google.common.base.Charsets.US_ASCII;
 import static com.google.common.hash.Funnels.stringFunnel;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.insertInDb;
+import static java.nio.charset.StandardCharsets.US_ASCII;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.hash.BloomFilter;

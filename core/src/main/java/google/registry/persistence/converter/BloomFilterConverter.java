@@ -13,8 +13,8 @@
 // limitations under the License.
 package google.registry.persistence.converter;
 
-import static com.google.common.base.Charsets.US_ASCII;
 import static com.google.common.hash.Funnels.stringFunnel;
+import static java.nio.charset.StandardCharsets.US_ASCII;
 
 import com.google.common.hash.BloomFilter;
 import jakarta.persistence.AttributeConverter;

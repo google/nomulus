@@ -119,7 +119,7 @@ final class RdapDataStructures {
    */
   @AutoValue
   @RestrictJsonNames("notices[]")
-  abstract static class Notice extends NoticeOrRemark {
+  public abstract static class Notice extends NoticeOrRemark {
 
     /**
      * Notice and Remark Type are defined in 10.2.1 of RFC 9083.

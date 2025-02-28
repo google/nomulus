@@ -14,9 +14,9 @@
 
 package google.registry.rdap;
 
-import static com.google.common.base.Charsets.UTF_8;
 import static google.registry.persistence.transaction.TransactionManagerFactory.replicaTm;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableListMultimap;
@@ -69,7 +69,7 @@ public abstract class RdapSearchActionBase extends RdapActionBase {
   public final BaseSearchResponse getJsonObjectForResource(
       String pathSearchString, boolean isHeadRequest) {
     // The pathSearchString is not used by search commands.
-    if (pathSearchString.length() > 0) {
+    if (!pathSearchString.isEmpty()) {
       throw new BadRequestException("Unexpected path");
     }
     decodeCursorToken();
@@ -323,7 +323,8 @@ public abstract class RdapSearchActionBase extends RdapActionBase {
     if (partialStringQuery.getHasWildcard()) {
       builder =
           builder.where(
-              filterField, criteriaBuilder::like,
+              filterField,
+              criteriaBuilder::like,
               String.format("%s%%", partialStringQuery.getInitialString()));
     } else {
       // no wildcard means we use a standard equals query

@@ -33,8 +33,7 @@ import java.util.Map;
 /** Test helper methods for RDAP tests. */
 class RdapTestHelper {
 
-  private static final Gson GSON =
-      new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
+  static final Gson GSON = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
 
   static JsonElement createJson(String... lines) {
     return GSON.fromJson(Joiner.on("\n").join(lines), JsonElement.class);
@@ -240,5 +239,4 @@ class RdapTestHelper {
     obj.remove("rdapConformance");
     return reply;
   }
-
 }

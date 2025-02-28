@@ -85,6 +85,7 @@ abstract class RdapActionBaseTestCase<A extends RdapActionBase> {
     action.rdapJsonFormatter = RdapTestHelper.getTestRdapJsonFormatter(clock);
     action.rdapMetrics = rdapMetrics;
     action.requestMethod = GET;
+    action.clock = new FakeClock(DateTime.parse("2025-01-01T00:00:00.000Z"));
     logout();
   }
 

@@ -21,7 +21,6 @@ import static google.registry.testing.DatabaseHelper.insertSimpleResources;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.testcontainers.containers.PostgreSQLContainer.POSTGRESQL_PORT;
 
-import com.google.common.base.Charsets;
 import com.google.common.base.Joiner;
 import com.google.common.base.Suppliers;
 import com.google.common.collect.ImmutableList;
@@ -305,7 +304,7 @@ public abstract class JpaTransactionManagerExtension
 
   private static String readSqlInClassPath(String sqlScriptPath) {
     try {
-      return Resources.toString(Resources.getResource(sqlScriptPath), Charsets.UTF_8);
+      return Resources.toString(Resources.getResource(sqlScriptPath), UTF_8);
     } catch (IOException e) {
       throw new UncheckedIOException(e);
     }

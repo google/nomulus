@@ -20,8 +20,11 @@ import static google.registry.request.Action.Method.GET;
 import static google.registry.request.Action.Method.HEAD;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 
+import com.google.common.net.InternetDomainName;
 import google.registry.flows.EppException;
+import google.registry.flows.domain.DomainFlowUtils;
 import google.registry.model.domain.Domain;
+import google.registry.model.tld.Tld;
 import google.registry.rdap.RdapJsonFormatter.OutputDataType;
 import google.registry.rdap.RdapMetrics.EndpointType;
 import google.registry.rdap.RdapObjectClasses.RdapDomain;
@@ -51,8 +54,9 @@ public class RdapDomainAction extends RdapActionBase {
     // RDAP Technical Implementation Guide 2.1.1 - we must support A-label (Punycode) and U-label
     // (Unicode) formats. canonicalizeName will transform Unicode to Punycode so we support both.
     pathSearchString = canonicalizeName(pathSearchString);
+    InternetDomainName domainName;
     try {
-      validateDomainName(pathSearchString);
+      domainName = validateDomainName(pathSearchString);
     } catch (EppException e) {
       throw new BadRequestException(
           String.format(
@@ -66,6 +70,7 @@ public class RdapDomainAction extends RdapActionBase {
             pathSearchString,
             shouldIncludeDeleted() ? START_OF_TIME : rdapJsonFormatter.getRequestTime());
     if (domain.isEmpty() || !isAuthorized(domain.get())) {
+      handlePossibleBsaBlock(domainName);
       // RFC7480 5.3 - if the server wishes to respond that it doesn't have data satisfying the
       // query, it MUST reply with 404 response code.
       //
@@ -74,5 +79,18 @@ public class RdapDomainAction extends RdapActionBase {
       throw new NotFoundException(pathSearchString + " not found");
     }
     return rdapJsonFormatter.createRdapDomain(domain.get(), OutputDataType.FULL);
+  }
+
+  private void handlePossibleBsaBlock(InternetDomainName domainName) {
+    Tld tld = Tld.get(domainName.parent().toString());
+    if (DomainFlowUtils.isBlockedByBsa(domainName.parts().getFirst(), tld, clock.nowUtc())) {
+      throw new DomainBlockedByBsaException(domainName + " blocked by BSA");
+    }
+  }
+
+  static class DomainBlockedByBsaException extends RuntimeException {
+    DomainBlockedByBsaException(String message) {
+      super(message);
+    }
   }
 }
