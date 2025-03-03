@@ -27,11 +27,11 @@ apt-get install apt-transport-https ca-certificates -y
 curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | gpg --dearmor -o /usr/share/keyrings/cloud.google.gpg
 echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] https://packages.cloud.google.com/apt cloud-sdk main" |  tee -a /etc/apt/sources.list.d/google-cloud-sdk.list
 
-# Set up PostgreSQL repo. We need pg_dump v11 (same as current server version).
-# This needs to be downloaded from postgresql's own repo, because ubuntu2204
-# only provides v14.
-curl https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add -
-echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list
+# Set up PostgreSQL repo.
+sudo apt-get install -y postgresql-common
+sudo /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh
+apt-get install postgresql-17
+echo "Installed Postgres 17"
 
 apt-get update -y
 
