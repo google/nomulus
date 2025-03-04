@@ -32,7 +32,16 @@ FROM (
         WHEN field = 'TRANSFER_NACKED' THEN 'TRANSFER_GAINING_NACKED'
         ELSE field
         END AS metricName,
-        SUM(amount) AS metricValue
+        -- See b/290228682, there are edge cases in which the net_renew would be negative when
+        -- a domain is cancelled by superusers during renew grace period. The correct thing
+        -- to do is attribute the cancellation to the owning registrar, but that would require
+        -- changing the owing registrar of the the corresponding cancellation DomainHistory,
+        -- which has cascading effects that we don't want to deal with. As such we simply
+        -- floor the number here to zero to prevent any negative value from appearing, which
+        -- should have negligible impact as the edge cage happens very rarely, more specifically
+        -- when a cancellation happens during grace period by a registrar other than the the
+        -- owning one. All the numbers here should be positive to pass ICANN validation.
+        GREATEST(SUM(amount), 0) AS metricValue
     FROM (
         SELECT
             CASE
@@ -47,16 +56,7 @@ FROM (
             END AS clientId,
             tld,
             report_field AS field,
-            -- See b/290228682, there are edge cases in which the net_renew would be negative when
-            -- a domain is cancelled by superusers during renew grace period. The correct thing
-            -- to do is attribute the cancellation to the owning registrar, but that would require
-            -- changing the owing registrar of the the corresponding cancellation DomainHistory,
-            -- which has cascading effects that we don't want to deal with. As such we simply
-            -- floor the number here to zero to prevent any negative value from appearing, which
-            -- should have negligible impact as the edge cage happens very rarely, more specifically
-            -- when a cancellation happens during grace period by a registrar other than the the
-            -- owning one. All the numbers here should be positive to pass ICANN validation.
-            GREATEST(report_amount, 0) AS amount,
+            report_amount AS amount,
             reporting_time AS reportingTime
             FROM EXTERNAL_QUERY("projects/%PROJECT_ID%/locations/us/connections/%PROJECT_ID%-sql",
             ''' SELECT history_type, history_other_registrar_id, history_registrar_id, domain_repo_id, history_revision_id FROM "DomainHistory";''') AS dh
