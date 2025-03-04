@@ -111,7 +111,7 @@ fi
 if [[ "${SUT}" = "nomulus" ]]; then
   DEPLOYED_SYSTEM="sql"
 elif [[ "${SUT}" = "sql" ]]; then
-  DEPLOYED_SYSTEM="nomulus"
+  DEPLOYED_SYSTEM="nomulus-gke"
 else
   echo "${USAGE}"
   exit 1
