@@ -20,6 +20,7 @@ import com.google.common.flogger.backend.system.SimpleLogRecord;
 import com.google.gson.Gson;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -58,6 +59,13 @@ public class GcpJsonFormatter extends Formatter {
   /** JSON field that stores the parameters of the current request, if any. */
   private static final String HTTP_REQUEST = "httRequest";
 
+  /**
+   * JSON field that stores the arbitrary labels.
+   *
+   * <p>In practice, we store cookies so we can identify requests from the same session.
+   */
+  private static final String LABELS = "logging.googleapis.com/labels";
+
   /** JSON field that contains the content, this will show up as the main entry in a log. */
   private static final String MESSAGE = "message";
 
@@ -83,6 +91,9 @@ public class GcpJsonFormatter extends Formatter {
 
   private static final ThreadLocal<HttpRequest> request = new ThreadLocal<>();
 
+  private static final ThreadLocal<Map<String, String>> labels =
+      ThreadLocal.withInitial(HashMap::new);
+
   /**
    * Set the Trace ID associated with any logging done by the current thread.
    *
@@ -105,6 +116,19 @@ public class GcpJsonFormatter extends Formatter {
   public static void setCurrentRequest(
       String requestMethod, String requestUrl, String userAgent, String protocol) {
     request.set(new HttpRequest(requestMethod, requestUrl, userAgent, protocol));
+  }
+
+  /**
+   * Set an arbitrary key-value pair as a label for the current request.
+   *
+   * <p>Existing labels will be overwritten.
+   */
+  public static void setLabel(String key, String value) {
+    labels.get().put(key, value);
+  }
+
+  public static void unsetLabels() {
+    labels.get().clear();
   }
 
   public static void unsetCurrentRequest() {
@@ -179,6 +203,9 @@ public class GcpJsonFormatter extends Formatter {
     }
     if (request.get() != null) {
       json.put(HTTP_REQUEST, request.get());
+    }
+    if (!labels.get().isEmpty()) {
+      json.put(LABELS, labels.get());
     }
     // This trailing newline is required for the proxy because otherwise multiple logs might be
     // sent to Stackdriver together (due to the async nature of the proxy), and not parsed

@@ -17,9 +17,11 @@ package google.registry.module;
 import static google.registry.util.GcpJsonFormatter.setCurrentRequest;
 import static google.registry.util.GcpJsonFormatter.setCurrentTraceId;
 import static google.registry.util.GcpJsonFormatter.unsetCurrentRequest;
+import static google.registry.util.GcpJsonFormatter.unsetLabels;
 import static google.registry.util.RandomStringGenerator.insecureRandomStringGenerator;
 import static google.registry.util.StringGenerator.Alphabets.HEX_DIGITS_ONLY;
 
+import com.google.common.base.Splitter;
 import com.google.monitoring.metrics.MetricReporter;
 import dagger.Lazy;
 import google.registry.request.RequestHandler;
@@ -30,6 +32,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Optional;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.Handler;
 import java.util.logging.Level;
@@ -74,11 +77,22 @@ public class RegistryServlet extends ServletBase {
     String userAgent = String.valueOf(req.getHeader("User-Agent"));
     String protocol = req.getProtocol();
     setCurrentRequest(requestMethod, requestUrl, userAgent, protocol);
+    Optional<String> maybeCookie = Optional.ofNullable(req.getHeader("Cookie"));
+    if (maybeCookie.isPresent() && !maybeCookie.get().isEmpty()) {
+      // GCLB sets the value with a leading and trailing double quote.
+      String cookie = maybeCookie.get().replace("\"", "");
+      Splitter.on(';')
+          .trimResults()
+          .withKeyValueSeparator('=')
+          .split(cookie)
+          .forEach(GcpJsonFormatter::setLabel);
+    }
     try {
       super.service(req, rsp);
     } finally {
       setCurrentTraceId(null);
       unsetCurrentRequest();
+      unsetLabels();
     }
   }
 
