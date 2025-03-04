@@ -15,6 +15,7 @@
 package google.registry.reporting.icann;
 
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.common.truth.Truth.assertWithMessage;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -60,7 +61,8 @@ class TransactionsReportingQueryBuilderTest {
     for (String queryName : expectedQueryNames) {
       String actualTableName = String.format("%s_201709", queryName);
       String testFilename = String.format("%s_test.sql", queryName);
-      assertThat(actualQueries.get(actualTableName))
+      assertWithMessage("Query expected in test data file %s differs", testFilename)
+          .that(actualQueries.get(actualTableName))
           .isEqualTo(ReportingTestData.loadFile(testFilename));
     }
   }
