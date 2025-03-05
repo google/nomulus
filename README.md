@@ -12,16 +12,16 @@ Nomulus is an open source, scalable, cloud-based service for operating
 [top-level domains](https://en.wikipedia.org/wiki/Top-level_domain) (TLDs). It
 is the authoritative source for the TLDs that it runs, meaning that it is
 responsible for tracking domain name ownership and handling registrations,
-renewals, availability checks, and WHOIS requests. End-user registrants (i.e.
+renewals, availability checks, and WHOIS requests. End-user registrants (i.e.,
 people or companies that want to register a domain name) use an intermediate
 domain name registrar acting on their behalf to interact with the registry.
 
-Nomulus runs on [Google App Engine][gae] and is written primarily in Java. It is
-the software that [Google Registry](https://www.registry.google/) uses to
-operate TLDs such as .google, .app, .how, .soy, and .みんな. It can run any
-number of TLDs in a single shared registry system using horizontal scaling. Its
-source code is publicly available in this repository under the [Apache 2.0 free
-and open source license](https://www.apache.org/licenses/LICENSE-2.0).
+Nomulus runs on [Google Kubernetes Engine](https://cloud.google.com/kubernetes-engine)
+and is written primarily in Java. It is the software that
+[Google Registry](https://www.registry.google/) uses to operate TLDs such as .google,
+.app, .how, .soy, and .みんな. It can run any number of TLDs in a single shared registry
+system using horizontal scaling. Its source code is publicly available in this
+repository under the [Apache 2.0 free and open source license](https://www.apache.org/licenses/LICENSE-2.0).
 
 ## Getting started
 
@@ -54,9 +54,11 @@ Nomulus has the following capabilities:
     checking, updating, and transferring domain names.
 *   **[DNS](https://en.wikipedia.org/wiki/Domain_Name_System) interface**: The
     registry provides a pluggable interface that can be implemented to handle
-    different DNS providers. It includes a sample implementation using Google
-    Cloud DNS as well as an RFC 2136 compliant implementation that works with
-    BIND.
+    different DNS providers. It includes a sample implementation using [Google
+    Cloud DNS](https://cloud.google.com/dns/), as well as an RFC 2136 compliant
+    implementation that works with BIND. If you are using Google Cloud DNS, you
+    may need to understand its capabilities and provide your own
+    multi-[AS](https://en.wikipedia.org/wiki/Autonomous_system_\(Internet\)) solution.
 *   **[WHOIS](https://en.wikipedia.org/wiki/WHOIS)**: A text-based protocol that
     returns ownership and contact information on registered domain names.
 *   **[Registration Data Access Protocol
@@ -68,7 +70,7 @@ Nomulus has the following capabilities:
     provider to allow take-over by another registry operator in the event of
     serious failure. This is required by ICANN for all [new
     gTLDs](https://newgtlds.icann.org/).
-*   **Premium pricing**: Communicates prices for premium domain names (i.e.
+*   **Premium pricing**: Communicates prices for premium domain names (i.e.,
     those that are highly desirable) and supports configurable premium
     registration and renewal prices. An extensible interface allows fully
     programmatic pricing.
@@ -91,56 +93,50 @@ Nomulus has the following capabilities:
 *   **Administrative tool**: Performs the full range of administrative tasks
     needed to manage a running registry system, including creating and
     configuring new TLDs.
-*   **DNS interface**: An interface for DNS operations is provided so you can
-    write an implementation for your chosen provider, along with a sample
-    implementation that uses [Google Cloud DNS](https://cloud.google.com/dns/).
-    If you are using Google Cloud DNS you may need to understand its
-    capabilities and provide your own
-    multi-[AS](https://en.wikipedia.org/wiki/Autonomous_system_\(Internet\))
-    solution.
-*   **GAE Proxy**: App Engine Standard only serves HTTP/S traffic. A proxy to
-    forward traffic on EPP and WHOIS ports to App Engine via HTTPS is provided.
-    Instructions on setting up the proxy on
-    [Google Kubernetes Engine](https://cloud.google.com/kubernetes-engine/)
-    is [available](https://github.com/google/nomulus/blob/master/docs/proxy-setup.md).
-    Running the proxy on GKE supports IPv4 and IPv6 access, per ICANN's
-    requirements for gTLDs. The proxy can also run as a single jar file, or on
-    other Kubernetes providers, with modifications.
+*   **Secure storage of cryptographic keys**: A keyring interface is
+      provided for plugging in your own implementation (see [configuration
+      doc](https://github.com/google/nomulus/blob/master/docs/configuration.md)
+      for details), and an implementation based on
+      [Google Cloud Secret Manager](https://cloud.google.com/security/products/secret-manager) is
+      available.
+*   **TPC Proxy**: Nomulus is built on top of the [Jetty](https://jetty.org/)
+    container that implements the [Jakarta Servlet](https://jakarta.ee/specifications/servlet/)
+    specification and only serves HTTP/S traffic. A proxy to translate raw TCP traffic (e.g., EPP)
+    to and from HTTP is provided.
+    Instructions on setting up the proxy
+    are [available](https://github.com/google/nomulus/blob/master/docs/proxy-setup.md).
+    The proxy can either run in a separate cluster and communicate to Nomulus public HTTP
+    endpoints via the Internet, or as a sidecar with the Nomulus image in the same pod and
+    communicate to it via loopback.
 
 ## Additional components
 
 Registry operators interested in deploying Nomulus will likely require some
-additional components that are need to be configured separately.
+additional components that need to be configured separately.
 
 *   A way to invoice registrars for domain name registrations and accept
     payments. Nomulus records the information required to generate invoices in
     [billing
     events](https://github.com/google/nomulus/blob/master/docs/code-structure.md#billing-events).
 *   Fully automated reporting to meet ICANN's requirements for gTLDs. Nomulus
-    includes substantial reporting functionality but some additional work will
+    includes substantial reporting functionality, but some additional work will
     be required by the operator in this area.
-*   A secure method for storing cryptographic keys. A keyring interface is
-    provided for plugging in your own implementation (see [configuration
-    doc](https://github.com/google/nomulus/blob/master/docs/configuration.md)
-    for details).
+
 *   System status and uptime monitoring.
 
 ## Outside references
 
-*   [Donuts](http://donuts.domains) Registry has helped review the code and
-    provided valuable feedback
+*   [Identity Digital](http://identity.digital) has helped review the code and
+    provided valuable feedback.
 *   [CoCCa](http://cocca.org.nz) and [FRED](https://fred.nic.cz) are other
-    open-source registry platforms in use by many TLDs
+    open-source registry platforms in use by many TLDs.
 *   We are not aware of any fully open source domain registrar projects, but
     open source EPP Toolkits (not yet tested with Nomulus; may require
     integration work) include:
-    *   [EPP RTK Project](http://epp-rtk.sourceforge.net/)
-    *   [CentralNic](https://www.centralnic.com/registry/labs)
+    *   [Universal Registry/Registrar Toolkit](https://sourceforge.net/projects/epp-rtk/)
     *   [ari-toolkit](https://github.com/AusRegistry/ari-toolkit)
     *   [Net::DRI](https://metacpan.org/pod/Net::DRI)
 *   Some Open Source DNS Projects that may be useful, but which we have not
     tested:
-    *   [AtomiaDNS](http://atomiadns.com/)
-    *   [PowerDNS](https://doc.powerdns.com/md/)
-
-[gae]:https://cloud.google.com/appengine/docs/about-the-standard-environment
+    *   [AtomiaDNS](https://github.com/atomia/atomiadns)
+    *   [PowerDNS](https://github.com/PowerDNS/pdns)
