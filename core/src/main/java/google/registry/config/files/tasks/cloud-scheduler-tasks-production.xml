@@ -301,6 +301,7 @@
     <url><![CDATA[/_dr/task/bsaValidate]]></url>
     <name>bsaValidate</name>
     <service>bsa</service>
+    <timeout>10m</timeout>
     <description>
       Validates the processed BSA data in the database against the original
       block lists.
