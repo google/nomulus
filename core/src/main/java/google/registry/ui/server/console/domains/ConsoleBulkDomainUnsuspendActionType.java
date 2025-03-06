@@ -14,12 +14,11 @@
 
 package google.registry.ui.server.console.domains;
 
-import com.google.common.collect.ImmutableMap;
 import com.google.gson.JsonElement;
 import google.registry.model.console.ConsolePermission;
 
 /** An action that will unsuspend the given domain, removing all 5 server*Prohibited statuses. */
-public class ConsoleBulkDomainUnsuspendActionType implements ConsoleDomainActionType {
+public class ConsoleBulkDomainUnsuspendActionType extends ConsoleDomainActionType {
 
   private static final String DOMAIN_SUSPEND_XML =
       """
@@ -52,16 +51,13 @@ public class ConsoleBulkDomainUnsuspendActionType implements ConsoleDomainAction
   </command>
 </epp>""";
 
-  private final String reason;
-
   public ConsoleBulkDomainUnsuspendActionType(JsonElement jsonElement) {
-    this.reason = jsonElement.getAsJsonObject().get("reason").getAsString();
+    super(jsonElement);
   }
 
   @Override
-  public String getXmlContentsToRun(String domainName) {
-    return ConsoleDomainActionType.fillSubstitutions(
-        DOMAIN_SUSPEND_XML, ImmutableMap.of("DOMAIN_NAME", domainName, "REASON", reason));
+  protected String getXmlTemplate() {
+    return DOMAIN_SUSPEND_XML;
   }
 
   @Override

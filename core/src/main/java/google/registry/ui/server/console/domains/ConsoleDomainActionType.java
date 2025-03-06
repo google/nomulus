@@ -14,20 +14,18 @@
 
 package google.registry.ui.server.console.domains;
 
-import com.google.common.collect.ImmutableMap;
 import com.google.common.escape.Escaper;
 import com.google.common.xml.XmlEscapers;
 import com.google.gson.JsonElement;
 import google.registry.model.console.ConsolePermission;
-import java.util.Map;
 
 /**
  * A type of EPP action to perform on domain(s), run by the {@link ConsoleBulkDomainAction}.
  *
- * <p>Each {@link BulkAction} defines the class that implements that action, including the EPP XML
- * that will be run and the permission required.
+ * <p>Each {@link BulkAction} defines the class that extends that action, including the EPP XML that
+ * will be run and the permission required.
  */
-public interface ConsoleDomainActionType {
+public abstract class ConsoleDomainActionType {
 
   enum BulkAction {
     DELETE(ConsoleBulkDomainDeleteActionType.class),
@@ -45,20 +43,6 @@ public interface ConsoleDomainActionType {
     }
   }
 
-  Escaper XML_ESCAPER = XmlEscapers.xmlContentEscaper();
-
-  static String fillSubstitutions(String xmlTemplate, ImmutableMap<String, String> replacements) {
-    String xml = xmlTemplate;
-    for (Map.Entry<String, String> entry : replacements.entrySet()) {
-      xml = xml.replaceAll("%" + entry.getKey() + "%", XML_ESCAPER.escape(entry.getValue()));
-    }
-    return xml;
-  }
-
-  String getXmlContentsToRun(String domainName);
-
-  ConsolePermission getNecessaryPermission();
-
   static ConsoleDomainActionType parseActionType(String bulkDomainAction, JsonElement jsonElement) {
     BulkAction bulkAction = BulkAction.valueOf(bulkDomainAction);
     try {
@@ -66,5 +50,39 @@ public interface ConsoleDomainActionType {
     } catch (ReflectiveOperationException e) {
       throw new RuntimeException(e); // shouldn't happen
     }
+  }
+
+  private static final Escaper XML_ESCAPER = XmlEscapers.xmlContentEscaper();
+
+  private final String reason;
+
+  public ConsoleDomainActionType(JsonElement jsonElement) {
+    this.reason = jsonElement.getAsJsonObject().get("reason").getAsString();
+  }
+
+  /** Returns the full XML representing this action, including all substitutions. */
+  public String getXmlContentsToRun(String domainName) {
+    return fillSubstitutions(getXmlTemplate(), domainName);
+  }
+
+  /** Returns the permission necessary to successfully perform this action. */
+  public abstract ConsolePermission getNecessaryPermission();
+
+  /** Returns the XML template contents for this action. */
+  protected abstract String getXmlTemplate();
+
+  /**
+   * Fills out the default set of substitutions in the provided XML template.
+   *
+   * <p>Override this method if non-default substitutions are required.
+   */
+  protected String fillSubstitutions(String xmlTemplate, String domainName) {
+    String xml = xmlTemplate;
+    xml = replaceValue(xml, "DOMAIN_NAME", domainName);
+    return replaceValue(xml, "REASON", reason);
+  }
+
+  private String replaceValue(String xml, String key, String value) {
+    return xml.replaceAll("%" + key + "%", XML_ESCAPER.escape(value));
   }
 }

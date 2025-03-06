@@ -14,12 +14,11 @@
 
 package google.registry.ui.server.console.domains;
 
-import com.google.common.collect.ImmutableMap;
 import com.google.gson.JsonElement;
 import google.registry.model.console.ConsolePermission;
 
 /** An action that will run a delete EPP command on the given domain. */
-public class ConsoleBulkDomainDeleteActionType implements ConsoleDomainActionType {
+public class ConsoleBulkDomainDeleteActionType extends ConsoleDomainActionType {
 
   private static final String DOMAIN_DELETE_XML =
       """
@@ -42,16 +41,13 @@ public class ConsoleBulkDomainDeleteActionType implements ConsoleDomainActionTyp
   </command>
 </epp>""";
 
-  private final String reason;
-
   public ConsoleBulkDomainDeleteActionType(JsonElement jsonElement) {
-    this.reason = jsonElement.getAsJsonObject().get("reason").getAsString();
+    super(jsonElement);
   }
 
   @Override
-  public String getXmlContentsToRun(String domainName) {
-    return ConsoleDomainActionType.fillSubstitutions(
-        DOMAIN_DELETE_XML, ImmutableMap.of("DOMAIN_NAME", domainName, "REASON", reason));
+  protected String getXmlTemplate() {
+    return DOMAIN_DELETE_XML;
   }
 
   @Override
