@@ -70,6 +70,7 @@ type Task struct {
 	URL         string `xml:"url"`
 	Description string `xml:"description"`
 	Service     string `xml:"service"`
+	Timeout     string `xml:"timeout"`
 	Schedule    string `xml:"schedule"`
 	Name        string `xml:"name"`
 }
@@ -189,7 +190,9 @@ func (manager TasksSyncManager) getArgs(task Task, operationType string) []strin
 	description = strings.ReplaceAll(description, "\n", " ")
 
 	var service = "backend"
-	if task.Service != "backend" && task.Service != "" {
+	// Only BSA tasks run on the BSA service in GAE. GKE tasks are always
+	// on the backend service.
+	if task.Service != "backend" && task.Service != "" && !gke {
 		service = task.Service
 	}
 
@@ -200,7 +203,7 @@ func (manager TasksSyncManager) getArgs(task Task, operationType string) []strin
 		uri = fmt.Sprintf("https://%s-dot-%s.appspot.com%s", service, projectName, strings.TrimSpace(task.URL))
 	}
 
-	return []string{
+	args := []string{
 		"--project", projectName,
 		"scheduler", "jobs", operationType,
 		"http", task.Name,
@@ -212,6 +215,12 @@ func (manager TasksSyncManager) getArgs(task Task, operationType string) []strin
 		"--oidc-service-account-email", getCloudSchedulerServiceAccountEmail(),
 		"--oidc-token-audience", clientId,
 	}
+
+	if task.Timeout != "" {
+		args = append(args, "--attempt-deadline", task.Timeout)
+	}
+	log.Default().Println(args)
+	return args
 }
 
 func (manager TasksSyncManager) fetchExistingRecords() ExistingEntries {
