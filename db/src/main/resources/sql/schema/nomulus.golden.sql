@@ -273,6 +273,21 @@ CREATE TABLE public."ConsoleEppActionHistory" (
 
 
 --
+-- Name: ConsoleUpdateHistory; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public."ConsoleUpdateHistory" (
+    revision_id bigint NOT NULL,
+    modification_time timestamp with time zone NOT NULL,
+    method text NOT NULL,
+    type text NOT NULL,
+    url text NOT NULL,
+    description text,
+    acting_user text NOT NULL
+);
+
+
+--
 -- Name: Contact; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -1531,6 +1546,14 @@ ALTER TABLE ONLY public."ConsoleEppActionHistory"
 
 
 --
+-- Name: ConsoleUpdateHistory ConsoleUpdateHistory_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."ConsoleUpdateHistory"
+    ADD CONSTRAINT "ConsoleUpdateHistory_pkey" PRIMARY KEY (revision_id);
+
+
+--
 -- Name: ContactHistory ContactHistory_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -2050,6 +2073,27 @@ CREATE INDEX idx9g3s7mjv1yn4t06nqid39whss ON public."AllocationToken" USING btre
 --
 
 CREATE INDEX idx9q53px6r302ftgisqifmc6put ON public."ContactHistory" USING btree (history_type);
+
+
+--
+-- Name: idx_console_update_history_acting_user; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_console_update_history_acting_user ON public."ConsoleUpdateHistory" USING btree (acting_user);
+
+
+--
+-- Name: idx_console_update_history_modification_time; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_console_update_history_modification_time ON public."ConsoleUpdateHistory" USING btree (modification_time);
+
+
+--
+-- Name: idx_console_update_history_type; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_console_update_history_type ON public."ConsoleUpdateHistory" USING btree (type);
 
 
 --
@@ -2688,6 +2732,14 @@ ALTER TABLE ONLY public."BillingEvent"
 
 ALTER TABLE ONLY public."BillingRecurrence"
     ADD CONSTRAINT fk_billing_recurrence_registrar_id FOREIGN KEY (registrar_id) REFERENCES public."Registrar"(registrar_id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: ConsoleUpdateHistory fk_console_update_history_acting_user; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."ConsoleUpdateHistory"
+    ADD CONSTRAINT fk_console_update_history_acting_user FOREIGN KEY (acting_user) REFERENCES public."User"(email_address);
 
 
 --
