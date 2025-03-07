@@ -23,8 +23,6 @@ import static org.apache.http.HttpStatus.SC_OK;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableSet;
 import google.registry.model.console.ConsolePermission;
-import google.registry.model.console.ConsoleUpdateHistory;
-import google.registry.model.console.RegistrarUpdateHistory;
 import google.registry.model.console.User;
 import google.registry.model.registrar.Registrar;
 import google.registry.request.Action;
@@ -101,11 +99,6 @@ public class ConsoleUpdateRegistrarAction extends ConsoleApiAction {
                       .build();
 
               tm().put(updatedRegistrar);
-              finishAndPersistConsoleUpdateHistory(
-                  new RegistrarUpdateHistory.Builder()
-                      .setType(ConsoleUpdateHistory.Type.REGISTRAR_UPDATE)
-                      .setRegistrar(updatedRegistrar)
-                      .setRequestBody(consoleApiParams.gson().toJson(registrarParam)));
               sendExternalUpdatesIfNecessary(
                   EmailInfo.create(
                       existingRegistrar.get(),

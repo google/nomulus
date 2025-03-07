@@ -27,8 +27,6 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Streams;
 import google.registry.model.console.ConsolePermission;
-import google.registry.model.console.ConsoleUpdateHistory;
-import google.registry.model.console.RegistrarUpdateHistory;
 import google.registry.model.console.User;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarBase;
@@ -173,11 +171,6 @@ public class RegistrarsAction extends ConsoleApiAction {
                   "Registrar with registrarId %s already exists",
                   registrar.getRegistrarId());
               tm().putAll(registrar, contact);
-              finishAndPersistConsoleUpdateHistory(
-                  new RegistrarUpdateHistory.Builder()
-                      .setType(ConsoleUpdateHistory.Type.REGISTRAR_UPDATE)
-                      .setRegistrar(registrar)
-                      .setRequestBody(consoleApiParams.gson().toJson(registrar)));
             });
   }
 

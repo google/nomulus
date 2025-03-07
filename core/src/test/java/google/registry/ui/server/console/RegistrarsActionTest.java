@@ -15,10 +15,8 @@
 package google.registry.ui.server.console;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.model.ImmutableObjectSubject.assertAboutImmutableObjects;
 import static google.registry.testing.DatabaseHelper.loadAllOf;
 import static google.registry.testing.DatabaseHelper.loadRegistrar;
-import static google.registry.testing.DatabaseHelper.loadSingleton;
 import static google.registry.testing.DatabaseHelper.persistNewRegistrar;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.SqlHelper.saveRegistrar;
@@ -32,7 +30,6 @@ import com.google.common.collect.ImmutableMap;
 import com.google.gson.Gson;
 import google.registry.model.console.GlobalRole;
 import google.registry.model.console.RegistrarRole;
-import google.registry.model.console.RegistrarUpdateHistory;
 import google.registry.model.console.User;
 import google.registry.model.console.UserRoles;
 import google.registry.model.registrar.Registrar;
@@ -186,9 +183,6 @@ class RegistrarsActionTest {
                 .findAny()
                 .isPresent())
         .isTrue();
-    assertAboutImmutableObjects()
-        .that(r)
-        .isEqualExceptFields(loadSingleton(RegistrarUpdateHistory.class).get().getRegistrar());
   }
 
   @Test
@@ -248,10 +242,7 @@ class RegistrarsActionTest {
             .getReader();
       } catch (IOException e) {
         return new RegistrarsAction(
-            consoleApiParams,
-            Optional.ofNullable(null),
-            passwordGenerator,
-            passcodeGenerator);
+            consoleApiParams, Optional.ofNullable(null), passwordGenerator, passcodeGenerator);
       }
       Optional<Registrar> maybeRegistrar =
           ConsoleModule.provideRegistrar(

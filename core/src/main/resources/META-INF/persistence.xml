@@ -47,11 +47,7 @@
     <class>google.registry.model.billing.BillingRecurrence</class>
     <class>google.registry.model.common.Cursor</class>
     <class>google.registry.model.common.DnsRefreshRequest</class>
-    <class>google.registry.model.console.ConsoleEppActionHistory</class>
-    <class>google.registry.model.console.RegistrarPocUpdateHistory</class>
-    <class>google.registry.model.console.RegistrarUpdateHistory</class>
     <class>google.registry.model.console.User</class>
-    <class>google.registry.model.console.UserUpdateHistory</class>
     <class>google.registry.model.contact.ContactHistory</class>
     <class>google.registry.model.contact.Contact</class>
     <class>google.registry.model.domain.Domain</class>

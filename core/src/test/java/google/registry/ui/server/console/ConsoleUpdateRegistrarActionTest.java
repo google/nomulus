@@ -15,10 +15,8 @@
 package google.registry.ui.server.console;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.model.ImmutableObjectSubject.assertAboutImmutableObjects;
 import static google.registry.model.registrar.RegistrarPocBase.Type.WHOIS;
 import static google.registry.testing.DatabaseHelper.createTlds;
-import static google.registry.testing.DatabaseHelper.loadSingleton;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static jakarta.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static jakarta.servlet.http.HttpServletResponse.SC_OK;
@@ -31,7 +29,6 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.gson.Gson;
 import google.registry.model.console.GlobalRole;
-import google.registry.model.console.RegistrarUpdateHistory;
 import google.registry.model.console.User;
 import google.registry.model.console.UserRoles;
 import google.registry.model.registrar.Registrar;
@@ -108,9 +105,6 @@ class ConsoleUpdateRegistrarActionTest {
     assertThat(newRegistrar.getAllowedTlds()).containsExactly("app", "dev");
     assertThat(newRegistrar.isRegistryLockAllowed()).isFalse();
     assertThat(((FakeResponse) consoleApiParams.response()).getStatus()).isEqualTo(SC_OK);
-    assertAboutImmutableObjects()
-        .that(newRegistrar)
-        .hasFieldsEqualTo(loadSingleton(RegistrarUpdateHistory.class).get().getRegistrar());
   }
 
   @Test

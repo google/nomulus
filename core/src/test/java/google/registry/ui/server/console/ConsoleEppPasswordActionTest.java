@@ -17,7 +17,6 @@ package google.registry.ui.server.console;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.request.auth.AuthenticatedRegistrarAccessor.Role.OWNER;
 import static google.registry.testing.DatabaseHelper.loadRegistrar;
-import static google.registry.testing.DatabaseHelper.loadSingleton;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static jakarta.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static jakarta.servlet.http.HttpServletResponse.SC_FORBIDDEN;
@@ -33,7 +32,6 @@ import com.google.common.collect.ImmutableSetMultimap;
 import com.google.gson.Gson;
 import google.registry.flows.PasswordOnlyTransportCredentials;
 import google.registry.model.console.GlobalRole;
-import google.registry.model.console.RegistrarUpdateHistory;
 import google.registry.model.console.User;
 import google.registry.model.console.UserRoles;
 import google.registry.model.registrar.Registrar;
@@ -74,11 +72,7 @@ class ConsoleEppPasswordActionTest {
   @BeforeEach
   void beforeEach() {
     Registrar registrar = Registrar.loadByRegistrarId("TheRegistrar").get();
-    registrar =
-        registrar
-            .asBuilder()
-            .setPassword("foobar")
-            .build();
+    registrar = registrar.asBuilder().setPassword("foobar").build();
     persistResource(registrar);
   }
 
@@ -142,10 +136,6 @@ class ConsoleEppPasswordActionTest {
         () -> {
           credentials.validate(loadRegistrar("TheRegistrar"), "randomPassword");
         });
-    assertThat(loadSingleton(RegistrarUpdateHistory.class).get().getRequestBody())
-        .isEqualTo(
-            "{\"registrarId\":\"TheRegistrar\",\"oldPassword\":\"********\",\"newPassword\":"
-                + "\"••••••••\",\"newPasswordRepeat\":\"••••••••\"}");
   }
 
   private ConsoleEppPasswordAction createAction(
