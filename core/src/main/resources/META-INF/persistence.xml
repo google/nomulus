@@ -50,6 +50,7 @@
     <class>google.registry.model.console.ConsoleEppActionHistory</class>
     <class>google.registry.model.console.RegistrarPocUpdateHistory</class>
     <class>google.registry.model.console.RegistrarUpdateHistory</class>
+    <class>google.registry.model.console.SimpleConsoleUpdateHistory</class>
     <class>google.registry.model.console.User</class>
     <class>google.registry.model.console.UserUpdateHistory</class>
     <class>google.registry.model.contact.ContactHistory</class>

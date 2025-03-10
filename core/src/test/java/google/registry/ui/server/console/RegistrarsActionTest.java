@@ -15,7 +15,6 @@
 package google.registry.ui.server.console;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.model.ImmutableObjectSubject.assertAboutImmutableObjects;
 import static google.registry.testing.DatabaseHelper.loadAllOf;
 import static google.registry.testing.DatabaseHelper.loadRegistrar;
 import static google.registry.testing.DatabaseHelper.loadSingleton;
@@ -30,9 +29,10 @@ import static org.mockito.Mockito.when;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.gson.Gson;
+import google.registry.model.console.ConsoleUpdateHistory;
 import google.registry.model.console.GlobalRole;
 import google.registry.model.console.RegistrarRole;
-import google.registry.model.console.RegistrarUpdateHistory;
+import google.registry.model.console.SimpleConsoleUpdateHistory;
 import google.registry.model.console.User;
 import google.registry.model.console.UserRoles;
 import google.registry.model.registrar.Registrar;
@@ -186,9 +186,9 @@ class RegistrarsActionTest {
                 .findAny()
                 .isPresent())
         .isTrue();
-    assertAboutImmutableObjects()
-        .that(r)
-        .isEqualExceptFields(loadSingleton(RegistrarUpdateHistory.class).get().getRegistrar());
+    SimpleConsoleUpdateHistory history = loadSingleton(SimpleConsoleUpdateHistory.class).get();
+    assertThat(history.getType()).isEqualTo(ConsoleUpdateHistory.Type.REGISTRAR_CREATE);
+    assertThat(history.getDescription()).hasValue("regIdTest");
   }
 
   @Test

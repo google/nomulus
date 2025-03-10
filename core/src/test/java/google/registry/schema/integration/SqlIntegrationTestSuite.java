@@ -27,6 +27,7 @@ import google.registry.model.common.FeatureFlagTest;
 import google.registry.model.console.ConsoleEppActionHistoryTest;
 import google.registry.model.console.RegistrarPocUpdateHistoryTest;
 import google.registry.model.console.RegistrarUpdateHistoryTest;
+import google.registry.model.console.SimpleConsoleUpdateHistoryTest;
 import google.registry.model.console.UserTest;
 import google.registry.model.console.UserUpdateHistoryTest;
 import google.registry.model.contact.ContactTest;
@@ -113,12 +114,13 @@ import org.junit.runner.RunWith;
   RegistrarDaoTest.class,
   RegistrarPocUpdateHistoryTest.class,
   RegistrarUpdateHistoryTest.class,
-  TldTest.class,
   ReservedListDaoTest.class,
   RegistryLockDaoTest.class,
   ServerSecretTest.class,
+  SimpleConsoleUpdateHistoryTest.class,
   SignedMarkRevocationListDaoTest.class,
   Spec11ThreatMatchTest.class,
+  TldTest.class,
   TmchCrlTest.class,
   UserTest.class,
   UserUpdateHistoryTest.class,

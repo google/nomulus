@@ -19,6 +19,7 @@ import static google.registry.model.common.FeatureFlag.FeatureName.MINIMUM_DATAS
 import static google.registry.model.common.FeatureFlag.FeatureStatus.INACTIVE;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.loadByEntity;
+import static google.registry.testing.DatabaseHelper.loadSingleton;
 import static google.registry.testing.DatabaseHelper.persistActiveContact;
 import static google.registry.testing.DatabaseHelper.persistDomainWithDependentResources;
 import static google.registry.testing.DatabaseHelper.persistResource;
@@ -38,8 +39,10 @@ import google.registry.flows.DaggerEppTestComponent;
 import google.registry.flows.EppController;
 import google.registry.flows.EppTestComponent;
 import google.registry.model.common.FeatureFlag;
+import google.registry.model.console.ConsoleUpdateHistory;
 import google.registry.model.console.GlobalRole;
 import google.registry.model.console.RegistrarRole;
+import google.registry.model.console.SimpleConsoleUpdateHistory;
 import google.registry.model.console.User;
 import google.registry.model.console.UserRoles;
 import google.registry.model.domain.Domain;
@@ -120,6 +123,9 @@ public class ConsoleBulkDomainActionTest {
 {"example.tld":{"message":"Command completed successfully; action pending",\
 "responseCode":1001}}""");
     assertThat(loadByEntity(domain).getDeletionTime()).isEqualTo(clock.nowUtc().plusDays(35));
+    SimpleConsoleUpdateHistory history = loadSingleton(SimpleConsoleUpdateHistory.class).get();
+    assertThat(history.getType()).isEqualTo(ConsoleUpdateHistory.Type.DOMAIN_DELETE);
+    assertThat(history.getDescription()).hasValue("example.tld");
   }
 
   @Test
@@ -145,6 +151,9 @@ public class ConsoleBulkDomainActionTest {
             {"example.tld":{"message":"Command completed successfully","responseCode":1000}}""");
     assertThat(loadByEntity(domain).getStatusValues())
         .containsAtLeastElementsIn(serverSuspensionStatuses);
+    SimpleConsoleUpdateHistory history = loadSingleton(SimpleConsoleUpdateHistory.class).get();
+    assertThat(history.getType()).isEqualTo(ConsoleUpdateHistory.Type.DOMAIN_SUSPEND);
+    assertThat(history.getDescription()).hasValue("example.tld");
   }
 
   @Test
@@ -172,6 +181,9 @@ public class ConsoleBulkDomainActionTest {
             """
             {"example.tld":{"message":"Command completed successfully","responseCode":1000}}""");
     assertThat(loadByEntity(domain).getStatusValues()).containsNoneIn(serverSuspensionStatuses);
+    SimpleConsoleUpdateHistory history = loadSingleton(SimpleConsoleUpdateHistory.class).get();
+    assertThat(history.getType()).isEqualTo(ConsoleUpdateHistory.Type.DOMAIN_UNSUSPEND);
+    assertThat(history.getDescription()).hasValue("example.tld");
   }
 
   @Test
@@ -194,6 +206,9 @@ public class ConsoleBulkDomainActionTest {
 "nonexistent.tld":{"message":"The domain with given ID (nonexistent.tld) doesn\\u0027t exist.",\
 "responseCode":2303}}""");
     assertThat(loadByEntity(domain).getDeletionTime()).isEqualTo(clock.nowUtc().plusDays(35));
+    SimpleConsoleUpdateHistory history = loadSingleton(SimpleConsoleUpdateHistory.class).get();
+    assertThat(history.getType()).isEqualTo(ConsoleUpdateHistory.Type.DOMAIN_DELETE);
+    assertThat(history.getDescription()).hasValue("example.tld");
   }
 
   @Test
