@@ -16,6 +16,7 @@ package google.registry.ui.server.console.domains;
 
 import com.google.gson.JsonElement;
 import google.registry.model.console.ConsolePermission;
+import google.registry.model.console.ConsoleUpdateHistory;
 
 /** An action that will run a delete EPP command on the given domain. */
 public class ConsoleBulkDomainDeleteActionType extends ConsoleDomainActionType {
@@ -53,5 +54,10 @@ public class ConsoleBulkDomainDeleteActionType extends ConsoleDomainActionType {
   @Override
   public ConsolePermission getNecessaryPermission() {
     return ConsolePermission.EXECUTE_EPP_COMMANDS;
+  }
+
+  @Override
+  public ConsoleUpdateHistory.Type getConsoleUpdateHistoryType() {
+    return ConsoleUpdateHistory.Type.DOMAIN_DELETE;
   }
 }
