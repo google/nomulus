@@ -15,7 +15,6 @@
 package google.registry.ui.server.console.settings;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.model.ImmutableObjectSubject.assertAboutImmutableObjects;
 import static google.registry.testing.CertificateSamples.SAMPLE_CERT2;
 import static google.registry.testing.DatabaseHelper.loadRegistrar;
 import static google.registry.testing.DatabaseHelper.loadSingleton;
@@ -30,7 +29,8 @@ import com.google.common.collect.ImmutableSetMultimap;
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.gson.Gson;
 import google.registry.flows.certs.CertificateChecker;
-import google.registry.model.console.RegistrarUpdateHistory;
+import google.registry.model.console.ConsoleUpdateHistory;
+import google.registry.model.console.SimpleConsoleUpdateHistory;
 import google.registry.model.registrar.Registrar;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.request.Action;
@@ -101,9 +101,9 @@ class SecurityActionTest {
         .isEqualTo("GNd6ZP8/n91t9UTnpxR8aH7aAW4+CpvufYx9ViGbcMY");
     assertThat(r.getIpAddressAllowList().get(0).getIp()).isEqualTo("192.168.1.1");
     assertThat(r.getIpAddressAllowList().get(0).getNetmask()).isEqualTo(32);
-    assertAboutImmutableObjects()
-        .that(loadSingleton(RegistrarUpdateHistory.class).get().getRegistrar())
-        .hasFieldsEqualTo(r);
+    SimpleConsoleUpdateHistory history = loadSingleton(SimpleConsoleUpdateHistory.class).get();
+    assertThat(history.getType()).isEqualTo(ConsoleUpdateHistory.Type.REGISTRAR_SECURITY_UPDATE);
+    assertThat(history.getDescription()).hasValue("registrarId");
   }
 
   private SecurityAction createAction(AuthResult authResult, String registrarId)

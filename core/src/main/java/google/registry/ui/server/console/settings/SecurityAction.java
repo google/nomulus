@@ -26,7 +26,7 @@ import google.registry.flows.certs.CertificateChecker;
 import google.registry.flows.certs.CertificateChecker.InsecureCertificateException;
 import google.registry.model.console.ConsolePermission;
 import google.registry.model.console.ConsoleUpdateHistory;
-import google.registry.model.console.RegistrarUpdateHistory;
+import google.registry.model.console.SimpleConsoleUpdateHistory;
 import google.registry.model.console.User;
 import google.registry.model.registrar.Registrar;
 import google.registry.request.Action;
@@ -120,10 +120,9 @@ public class SecurityAction extends ConsoleApiAction {
     Registrar updatedRegistrar = updatedRegistrarBuilder.build();
     tm().put(updatedRegistrar);
     finishAndPersistConsoleUpdateHistory(
-        new RegistrarUpdateHistory.Builder()
-            .setType(ConsoleUpdateHistory.Type.REGISTRAR_UPDATE)
-            .setRegistrar(updatedRegistrar)
-            .setRequestBody(consoleApiParams.gson().toJson(registrar.get())));
+        new SimpleConsoleUpdateHistory.Builder()
+            .setType(ConsoleUpdateHistory.Type.REGISTRAR_SECURITY_UPDATE)
+            .setDescription(registrarId));
 
     sendExternalUpdatesIfNecessary(
         EmailInfo.create(savedRegistrar, updatedRegistrar, ImmutableSet.of(), ImmutableSet.of()));

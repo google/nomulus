@@ -53,7 +53,7 @@ public class ConsoleEppActionHistoryTest extends EntityTestCase {
     DomainHistory domainHistory = getOnlyElement(DatabaseHelper.loadAllOf(DomainHistory.class));
     ConsoleEppActionHistory history =
         new ConsoleEppActionHistory.Builder()
-            .setType(ConsoleUpdateHistory.Type.EPP_ACTION)
+            .setType(ConsoleUpdateHistory.Type.DOMAIN_DELETE)
             .setActingUser(user)
             .setModificationTime(fakeClock.nowUtc())
             .setMethod("POST")

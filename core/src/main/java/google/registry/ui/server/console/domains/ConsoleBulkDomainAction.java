@@ -15,6 +15,7 @@
 package google.registry.ui.server.console.domains;
 
 import static com.google.common.collect.ImmutableMap.toImmutableMap;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static jakarta.servlet.http.HttpServletResponse.SC_OK;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -25,6 +26,7 @@ import google.registry.flows.EppController;
 import google.registry.flows.EppRequestSource;
 import google.registry.flows.PasswordOnlyTransportCredentials;
 import google.registry.flows.StatelessRequestSessionMetadata;
+import google.registry.model.console.SimpleConsoleUpdateHistory;
 import google.registry.model.console.User;
 import google.registry.model.eppcommon.ProtocolDefinition;
 import google.registry.model.eppoutput.EppOutput;
@@ -93,9 +95,27 @@ public class ConsoleBulkDomainAction extends ConsoleApiAction {
         domainList.domainList.stream()
             .collect(
                 toImmutableMap(d -> d, d -> executeEpp(actionType.getXmlContentsToRun(d), user)));
+    handleHistoryAdditions(result, actionType);
     // Front end should parse situations where only some commands worked
     consoleApiParams.response().setPayload(consoleApiParams.gson().toJson(result));
     consoleApiParams.response().setStatus(SC_OK);
+  }
+
+  private void handleHistoryAdditions(
+      ImmutableMap<String, ConsoleEppOutput> result, ConsoleDomainActionType actionType) {
+    if (result.values().stream().noneMatch(ConsoleEppOutput::isSuccess)) {
+      return;
+    }
+    tm().transact(
+            () ->
+                result.entrySet().stream()
+                    .filter(e -> e.getValue().isSuccess())
+                    .forEach(
+                        e ->
+                            finishAndPersistConsoleUpdateHistory(
+                                new SimpleConsoleUpdateHistory.Builder()
+                                    .setDescription(e.getKey())
+                                    .setType(actionType.getConsoleUpdateHistoryType()))));
   }
 
   private ConsoleEppOutput executeEpp(String xml, User user) {
@@ -114,6 +134,10 @@ public class ConsoleBulkDomainAction extends ConsoleApiAction {
     static ConsoleEppOutput fromEppOutput(EppOutput eppOutput) {
       Result result = eppOutput.getResponse().getResult();
       return new ConsoleEppOutput(result.getMsg(), result.getCode().code);
+    }
+
+    boolean isSuccess() {
+      return responseCode < 2000;
     }
   }
 }
