@@ -22,8 +22,6 @@ import static google.registry.util.GcpJsonFormatter.unsetLabels;
 import static google.registry.util.RandomStringGenerator.insecureRandomStringGenerator;
 import static google.registry.util.StringGenerator.Alphabets.HEX_DIGITS_ONLY;
 
-import com.google.common.base.Splitter;
-import com.google.common.collect.ImmutableSet;
 import com.google.monitoring.metrics.MetricReporter;
 import dagger.Lazy;
 import google.registry.request.RequestHandler;
@@ -38,6 +36,8 @@ import java.util.Optional;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.Handler;
 import java.util.logging.Level;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /** Servlet that handles all requests. */
 public class RegistryServlet extends ServletBase {
@@ -53,8 +53,9 @@ public class RegistryServlet extends ServletBase {
   private static final RequestHandler<RequestComponent> requestHandler = component.requestHandler();
   private static final Lazy<MetricReporter> metricReporter = component.metricReporter();
 
-  // The names of the session cookies to log.
-  private static final ImmutableSet<String> COOKIES_TO_LOG = ImmutableSet.of("JSESSIONID", "GCLB");
+  // The regex pattern to capture the cookies that we want to log.
+  private static final Pattern COOKIE_REGEX_PATTERN =
+      Pattern.compile("(JSESSIONID|GCLB)=[\"]?([^;\"\\s]+)[\"]?");
 
   private final String projectId;
 
@@ -82,14 +83,14 @@ public class RegistryServlet extends ServletBase {
     String userAgent = String.valueOf(req.getHeader("User-Agent"));
     String protocol = req.getProtocol();
     setCurrentRequest(requestMethod, requestUrl, userAgent, protocol);
-    Optional<String> maybeCookie = Optional.ofNullable(req.getHeader("Cookie"));
-    if (maybeCookie.isPresent() && !maybeCookie.get().isEmpty()) {
-      // GCLB sets the value with a leading and trailing double quote.
-      String cookie = maybeCookie.get().replace("\"", "");
-      Splitter.on(';').trimResults().withKeyValueSeparator('=').split(cookie).entrySet().stream()
-          .filter(e -> COOKIES_TO_LOG.contains(e.getKey()))
-          .forEach(e -> setLabel(e.getKey(), e.getValue()));
-    }
+    Optional.ofNullable(req.getHeader("Cookie"))
+        .ifPresent(
+            cookie -> {
+              Matcher matcher = COOKIE_REGEX_PATTERN.matcher(cookie);
+              while (matcher.find()) {
+                setLabel(matcher.group(1), matcher.group(2));
+              }
+            });
     try {
       super.service(req, rsp);
     } finally {
