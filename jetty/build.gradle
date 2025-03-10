@@ -41,6 +41,7 @@ tasks.register('copyConsole', Copy) {
         include "**/*"
     }
     into layout.buildDirectory.dir('jetty-base/webapps/console')
+    //project(':console-webapp').ext.setProperty('configuration', rootProject.environment)
     dependsOn(':console-webapp:buildConsoleWebapp')
 }
 

@@ -40,9 +40,7 @@ task runConsoleWebappUnitTests(type: Exec) {
 task buildConsoleWebapp(type: Exec) {
   workingDir "${consoleDir}/"
   executable 'npm'
-  def configuration = project.hasProperty('configuration') ?
-    project.getProperty('configuration') :
-    'production'
+  def configuration = rootProject.environment
   args 'run', "build", "--configuration=${configuration}"
   doFirst {
     println "Building console for environment: ${configuration}"
