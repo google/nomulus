@@ -95,26 +95,22 @@ task stage {
   description = 'Generates application directories for all services.'
 }
 
-// App-engine environment configuration.  We set up all of the variables in
-// the root project.
-
-def environments = ['production', 'sandbox', 'alpha', 'crash', 'qa']
-
 def gcpProject = null
 
 apply from: "${rootDir.path}/projects.gradle"
 
 if (environment == '') {
-    // Keep the project null, this will prevent deployment.  Set the
+    // Keep the project null, this will prevent deployment. Set the
     // environment to "alpha" because other code needs this property to
     // explode the war file.
     environment = 'alpha'
-} else if (environment != 'production' && environment != 'sandbox') {
+} else {
     gcpProject = projects[environment]
     if (gcpProject == null) {
         throw new GradleException("-Penvironment must be one of " +
                                   "${projects.keySet()}.")
     }
+    project(':console-webapp').setProperty('configuration', environment)
 }
 
 rootProject.ext.environment = environment
