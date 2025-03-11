@@ -13,8 +13,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-environment=$1
+env=${1:-"alpha"}
 cd /jetty-base
-java -Dgoogle.registry.environment=${environment:-"alpha"} \
+cp -rf webapps/console-${env} webapps/console
+echo "Running ${env}"
+java -Dgoogle.registry.environment=${env} \
     -Djava.util.logging.config.file=/logging.properties \
     -jar /usr/local/jetty/start.jar

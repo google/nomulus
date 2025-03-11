@@ -47,6 +47,48 @@ task buildConsoleWebapp(type: Exec) {
   }
 }
 
+task buildConsoleForAll() {}
+
+def createConsoleTask = { env ->
+  project.tasks.register("buildConsoleFor${env.capitalize()}", Exec) {
+    workingDir "${consoleDir}/"
+    executable 'npm'
+    args 'run', 'build', "--configuration=${env}"
+    doFirst {
+      println "Building console for environment: ${env}"
+    }
+    doLast {
+      copy {
+        from "${consoleDir}/staged/dist/"
+        into "${consoleDir}/staged/console-${env}"
+      }
+      delete "${consoleDir}/staged/dist"
+    }
+    dependsOn(tasks.npmInstallDeps)
+  }
+  project.tasks.register("deleteConsoleFor${env.capitalize()}", Delete) {
+    delete "${consoleDir}/staged/console-${env}"
+  }
+  tasks.named('clean') {
+    dependsOn(tasks.named("deleteConsoleFor${env.capitalize()}"))
+  }
+  tasks.named('buildConsoleForAll') {
+    dependsOn(tasks.named("buildConsoleFor${env.capitalize()}"))
+  }
+}
+
+['alpha', 'crash', 'qa', 'sandbox', 'production'].forEach {env ->
+  createConsoleTask(env)
+}
+
+// Force an order so we don't run these tasks in parallel.
+tasks.buildConsoleForCrash.mustRunAfter(tasks.buildConsoleForAlpha)
+tasks.buildConsoleForQa.mustRunAfter(tasks.buildConsoleForCrash)
+tasks.buildConsoleForSandbox.mustRunAfter(tasks.buildConsoleForQa)
+tasks.buildConsoleForProduction.mustRunAfter(tasks.buildConsoleForSandbox)
+// This task must run last, otherwise the previous tasks will have deleted the "dist" folder.
+tasks.buildConsoleWebapp.mustRunAfter(tasks.buildConsoleForProduction)
+
 task applyFormatting(type: Exec) {
   workingDir "${consoleDir}/"
   executable 'npm'

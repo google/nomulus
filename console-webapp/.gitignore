@@ -44,3 +44,4 @@ Thumbs.db
 
 # Build artifact
 /staged/dist
+/staged/console-*

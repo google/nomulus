@@ -25,7 +25,7 @@ import textwrap
 import re
 
 # We should never analyze any generated files
-UNIVERSALLY_SKIPPED_PATTERNS = {"/build/", "cloudbuild-caches", "/out/", ".git/", ".gradle/", "/dist/", "karma.conf.js", "polyfills.ts", "test.ts", "/docs/console-endpoints/"}
+UNIVERSALLY_SKIPPED_PATTERNS = {"/build/", "cloudbuild-caches", "/out/", ".git/", ".gradle/", "/dist/", "/console-alpha/", "/console-crash/", "/console-qa", "/console-sandbox", "/console-production", "karma.conf.js", "polyfills.ts", "test.ts", "/docs/console-endpoints/"}
 # We can't rely on CI to have the Enum package installed so we do this instead.
 FORBIDDEN = 1
 REQUIRED = 2

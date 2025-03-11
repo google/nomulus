@@ -96,11 +96,17 @@
               "sourceMap": true,
               "namedChunks": true
             },
-            "development": {
+            "qa": {
               "optimization": false,
               "extractLicenses": false,
               "sourceMap": true,
               "namedChunks": true
+            },
+            "development": {
+              "optimization": false,
+              "extractLicenses": false,
+              "sourceMap": true,
+              "namedChunks": true,
             }
           },
           "defaultConfiguration": "production"
@@ -119,6 +125,9 @@
             },
             "sandbox": {
               "buildTarget": "console-webapp:build:sandbox"
+            },
+            "qa": {
+              "buildTarget": "console-webapp:build:qa"
             },
             "development": {
               "buildTarget": "console-webapp:build:development"
