@@ -96,6 +96,12 @@
               "sourceMap": true,
               "namedChunks": true
             },
+            "qa": {
+              "optimization": false,
+              "extractLicenses": false,
+              "sourceMap": true,
+              "namedChunks": true
+            },
             "development": {
               "optimization": false,
               "extractLicenses": false,
