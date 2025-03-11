@@ -687,6 +687,7 @@ artifacts {
 task runTestServer(type: JavaExec) {
   main = 'google.registry.server.RegistryTestServerMain'
   classpath = sourceSets.test.runtimeClasspath
+  dependsOn(rootProject.project('console-webapp').tasks.named('buildConsoleWebapp'))
 }
 
 /**
