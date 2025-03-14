@@ -1,0 +1,22 @@
+# This runs a simple dig request against the provided ZFA server and TLD
+# to verify that the server is up and responding to zone file requests.
+#
+# This build should be run on a schedule, with pub/sub notifications configured
+# so that some sort of alert is fired on failure.
+#
+# To manually trigger a build on GCB, run:
+# gcloud builds submit --config cloudbuild-monitor-zfa.yaml --substitutions \
+#   _ZFA_SERVER_IP=X.X.X.X,_TLD=gmail
+
+steps:
+# Note: the AXFR request should fail because we don't have the key,
+# but the request itself should go through
+- name: 'ubuntu'
+  entrypoint: '/bin/bash'
+  args:
+    - -c
+    - |
+      set -e
+      apt-get update
+      apt-get install dnsutils -y
+      dig @${_ZFA_SERVER_IP} ${_TLD} axfr | grep "Transfer failed"
