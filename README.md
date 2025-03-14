@@ -30,8 +30,8 @@ running system:
 
 *   [Install
     guide](https://github.com/google/nomulus/blob/master/docs/install.md)
-*   View the source code for the [GAE app](https://github.com/google/nomulus/tree/master/core/src/main/java/google/registry)
-    and for the [GKE proxy](https://github.com/google/nomulus/tree/master/proxy/src/main/java/google/registry)
+*   View the source code for the [Main HTTP server](https://github.com/google/nomulus/tree/master/core/src/main/java/google/registry)
+    and for the [EPP proxy](https://github.com/google/nomulus/tree/master/proxy/src/main/java/google/registry)
 *   [Other docs](https://github.com/google/nomulus/tree/master/docs)
 *   [Javadoc](https://javadoc.nomulus.foo/)
 *   [Nomulus discussion
