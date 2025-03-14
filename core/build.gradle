@@ -293,8 +293,6 @@ dependencies {
   jaxb deps['org.glassfish.jaxb:jaxb-xjc']
 
   // Dependency needed for soy to java compilation.
-  // Read dependencies.gradle on why the protobuf version is pinned directly.
-  soy 'com.google.protobuf:protobuf-java:[3.25.5, 4.0.0)!!'
   soy deps['com.google.template:soy']
 
   // Tool dependencies.  used for doc generation.

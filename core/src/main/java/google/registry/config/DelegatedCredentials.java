@@ -229,7 +229,7 @@ public class DelegatedCredentials extends GoogleCredentials {
     return HTTP_TRANSPORT;
   }
 
-  protected static <T> T getFromServiceLoader(Class<? extends T> clazz, T defaultInstance) {
+  public static <T> T getFromServiceLoader(Class<? extends T> clazz, T defaultInstance) {
     return Iterables.getFirst(ServiceLoader.load(clazz), defaultInstance);
   }
 

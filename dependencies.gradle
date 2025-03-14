@@ -73,6 +73,10 @@ ext {
       // google-api-client major version 1.
       'com.google.apis:google-api-services-dns:[v1-rev20240419-2.0.0, v2beta)',
 
+      // Soy requires a version below 4.0.0, as its (now unmaintained) dependency
+      // com.google.common.html.types:types does not work with higher versions of protobuf.
+      'com.google.protobuf:protobuf-java:[3.25.5, 4.0.0)!!',
+
       // DYNAMIC VERSIONS START HERE.
 
       'com.fasterxml.jackson.core:jackson-databind:[2.11.2,)',
@@ -128,11 +132,6 @@ ext {
       'com.google.oauth-client:google-oauth-client-jetty:[1.31.4,)',
       'com.google.oauth-client:google-oauth-client-servlet:[1.31.4,)',
       'com.google.oauth-client:google-oauth-client:[1.31.4,)',
-      // NOTE: soy requires a version below 4.0.0, as its (now unmaintained) dependency
-      // com.google.common.html.types:types does not work with higher versions of protobuf.
-      // This cap is defined in the soy configuration directly in core/gradle.build. The uncapped
-      // version here applies to nomulus itself.
-      'com.google.protobuf:protobuf-java:[3.25.5,)',
       'com.google.protobuf:protobuf-java-util:[3.17.3,)',
       'com.google.re2j:re2j:[1.6,)',
       'com.google.template:soy:[2024-02-26,)',
