@@ -293,11 +293,11 @@ class JpaTransactionManagerImplTest {
     assertThrows(
         OptimisticLockException.class,
         () -> spyJpaTm.transact(() -> spyJpaTm.delete(theEntityKey)));
-    verify(spyJpaTm, times(3)).delete(theEntityKey);
+    verify(spyJpaTm, times(6)).delete(theEntityKey);
     assertThrows(
         OptimisticLockException.class,
         () -> spyJpaTm.transact(() -> spyJpaTm.delete(theEntityKey)));
-    verify(spyJpaTm, times(6)).delete(theEntityKey);
+    verify(spyJpaTm, times(12)).delete(theEntityKey);
   }
 
   @Test
@@ -355,10 +355,10 @@ class JpaTransactionManagerImplTest {
     spyJpaTm.transact(() -> spyJpaTm.insert(theEntity));
     assertThrows(
         RuntimeException.class, () -> spyJpaTm.transact(() -> spyJpaTm.delete(theEntityKey)));
-    verify(spyJpaTm, times(3)).delete(theEntityKey);
+    verify(spyJpaTm, times(6)).delete(theEntityKey);
     assertThrows(
         RuntimeException.class, () -> spyJpaTm.transact(() -> spyJpaTm.delete(theEntityKey)));
-    verify(spyJpaTm, times(6)).delete(theEntityKey);
+    verify(spyJpaTm, times(12)).delete(theEntityKey);
   }
 
   @Test
@@ -759,11 +759,11 @@ class JpaTransactionManagerImplTest {
             spyJpaTm.transact(
                 () -> {
                   spyJpaTm.exists(theEntity);
-                  spyJpaTm.transact(() -> spyJpaTm.delete(theEntityKey));
+                  spyJpaTm.delete(theEntityKey);
                 }));
 
-    verify(spyJpaTm, times(3)).exists(theEntity);
-    verify(spyJpaTm, times(3)).delete(theEntityKey);
+    verify(spyJpaTm, times(6)).exists(theEntity);
+    verify(spyJpaTm, times(6)).delete(theEntityKey);
   }
 
   private static void insertPerson(int age) {

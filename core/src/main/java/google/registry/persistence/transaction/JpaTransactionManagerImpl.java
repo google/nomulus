@@ -86,7 +86,7 @@ import org.joda.time.DateTime;
 public class JpaTransactionManagerImpl implements JpaTransactionManager {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
-  private static final Retrier retrier = new Retrier(new SystemSleeper(), 3);
+  private static final Retrier retrier = new Retrier(new SystemSleeper(), 6);
   private static final String NESTED_TRANSACTION_MESSAGE =
       "Nested transaction detected. Try refactoring to avoid nested transactions. If unachievable,"
           + " use reTransact() in nested transactions";
