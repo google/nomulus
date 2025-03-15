@@ -21,7 +21,7 @@ import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPromise;
 import io.netty.handler.codec.http.FullHttpResponse;
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 /**
  * {@link io.netty.channel.ChannelHandler} that converts inbound {@link FullHttpResponse} to custom

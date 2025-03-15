@@ -23,9 +23,9 @@ import com.google.template.soy.data.SoyMapData;
 import google.registry.tools.params.PhoneNumberParameter;
 import google.registry.tools.soy.ContactCreateSoyInfo;
 import google.registry.util.StringGenerator;
+import jakarta.inject.Inject;
+import jakarta.inject.Named;
 import java.util.List;
-import javax.inject.Inject;
-import javax.inject.Named;
 
 /** A command to create a new contact via EPP. */
 @Parameters(separators = " =", commandDescription = "Create a new contact via EPP.")

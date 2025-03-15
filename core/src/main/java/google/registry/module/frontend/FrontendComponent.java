@@ -36,7 +36,7 @@ import google.registry.request.Modules.NetHttpTransportModule;
 import google.registry.request.auth.AuthModule;
 import google.registry.ui.ConsoleDebug.ConsoleConfigModule;
 import google.registry.util.UtilsModule;
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 
 /** Dagger component with instance lifetime for "default" App Engine module. */
 @Singleton

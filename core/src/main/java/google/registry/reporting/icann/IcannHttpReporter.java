@@ -32,6 +32,7 @@ import google.registry.xjc.XjcXmlTransformer;
 import google.registry.xjc.iirdea.XjcIirdeaResponseElement;
 import google.registry.xjc.iirdea.XjcIirdeaResult;
 import google.registry.xml.XmlException;
+import jakarta.inject.Inject;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.net.HttpURLConnection;
@@ -40,7 +41,6 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
 import java.util.List;
-import javax.inject.Inject;
 import org.joda.time.YearMonth;
 import org.joda.time.format.DateTimeFormat;
 

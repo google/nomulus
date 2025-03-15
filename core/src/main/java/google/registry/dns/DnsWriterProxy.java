@@ -20,8 +20,8 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.flogger.FluentLogger;
 import google.registry.dns.writer.DnsWriter;
 import google.registry.model.tld.Tld;
+import jakarta.inject.Inject;
 import java.util.Map;
-import javax.inject.Inject;
 
 /** Proxy for retrieving {@link DnsWriter} implementations. */
 public final class DnsWriterProxy {

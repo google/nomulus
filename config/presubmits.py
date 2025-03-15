@@ -208,6 +208,12 @@ PRESUBMITS = {
         {"/node_modules/"},
     ):
         "Do not use javax.servlet.* Use jakarta.servlet.* instead.",
+    PresubmitCheck(
+        r".*javax\.inject\..*",
+        "java",
+        {"/node_modules/"},
+    ):
+        "Do not use javax.inject.* Use jakarta.inject.* instead.",
 }
 
 # Note that this regex only works for one kind of Flyway file.  If we want to

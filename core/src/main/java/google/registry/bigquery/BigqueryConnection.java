@@ -62,13 +62,13 @@ import google.registry.util.NonFinalForTesting;
 import google.registry.util.Sleeper;
 import google.registry.util.SqlTemplate;
 import google.registry.util.SystemSleeper;
+import jakarta.inject.Inject;
 import java.io.IOException;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.ExecutorService;
 import javax.annotation.Nullable;
-import javax.inject.Inject;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
 

@@ -28,7 +28,7 @@ import google.registry.model.tld.Tlds;
 import google.registry.tldconfig.idn.IdnLabelValidator;
 import google.registry.tldconfig.idn.IdnTableEnum;
 import google.registry.util.Clock;
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import org.joda.time.DateTime;
 
 /**

@@ -21,7 +21,7 @@ import com.google.common.collect.ComparisonChain;
 import com.google.common.collect.Ordering;
 import google.registry.rde.PendingDeposit;
 import google.registry.rde.PendingDepositChecker;
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 /** Command to show what escrow deposits are pending generation on the server. */
 @Parameters(separators = " =", commandDescription = "List pending RDE/BRDA deposits.")

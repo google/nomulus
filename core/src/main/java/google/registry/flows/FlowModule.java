@@ -39,9 +39,9 @@ import google.registry.model.reporting.HistoryEntry;
 import google.registry.persistence.IsolationLevel;
 import google.registry.persistence.PersistenceModule.TransactionIsolationLevel;
 import google.registry.persistence.transaction.JpaTransactionManager;
+import jakarta.inject.Qualifier;
 import java.lang.annotation.Documented;
 import java.util.Optional;
-import javax.inject.Qualifier;
 
 /** Module to choose and instantiate an EPP flow. */
 @Module

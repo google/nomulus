@@ -26,10 +26,10 @@ import com.google.api.services.sheets.v4.model.ValueRange;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.flogger.FluentLogger;
+import jakarta.inject.Inject;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import javax.inject.Inject;
 
 /** Generic data synchronization utility for Google Spreadsheets. */
 class SheetSynchronizer {

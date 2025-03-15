@@ -23,8 +23,8 @@ import google.registry.config.CredentialModule.ApplicationDefaultCredential;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.util.GoogleCredentialsBundle;
 import google.registry.util.Retrier;
+import jakarta.inject.Singleton;
 import java.io.IOException;
-import javax.inject.Singleton;
 
 /** Provides bindings for {@link SecretManagerClient}. */
 @Module

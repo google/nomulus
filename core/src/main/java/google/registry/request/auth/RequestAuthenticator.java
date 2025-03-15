@@ -22,9 +22,9 @@ import static google.registry.request.auth.AuthSettings.UserPolicy.ADMIN;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.flogger.FluentLogger;
+import jakarta.inject.Inject;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.Optional;
-import javax.inject.Inject;
 
 /** Top-level authentication/authorization class; calls authentication mechanisms as needed. */
 public class RequestAuthenticator {

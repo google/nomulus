@@ -14,8 +14,8 @@
 
 package google.registry.dns.writer;
 
+import jakarta.inject.Qualifier;
 import java.lang.annotation.Documented;
-import javax.inject.Qualifier;
 
 /** Dagger qualifier for the fully-qualified zone name that's being updated. */
 @Qualifier

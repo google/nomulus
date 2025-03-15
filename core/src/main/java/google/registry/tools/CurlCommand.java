@@ -31,8 +31,8 @@ import google.registry.config.RegistryConfig.Config;
 import google.registry.request.Action.GaeService;
 import google.registry.request.Action.GkeService;
 import google.registry.request.Action.Service;
+import jakarta.inject.Inject;
 import java.util.List;
-import javax.inject.Inject;
 
 @Parameters(separators = " =", commandDescription = "Send an HTTP command to the nomulus server.")
 class CurlCommand implements CommandWithConnection {

@@ -37,7 +37,7 @@ import google.registry.tmch.TmchCertificateAuthority;
 import google.registry.tmch.TmchXmlSignature;
 import google.registry.util.Clock;
 import google.registry.util.Sleeper;
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 
 /** Dagger component for running EPP tests. */
 @Singleton

@@ -17,10 +17,10 @@ package google.registry.flows;
 import static com.google.common.primitives.Longs.BYTES;
 
 import com.google.common.io.BaseEncoding;
+import jakarta.inject.Inject;
 import java.nio.ByteBuffer;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicLong;
-import javax.inject.Inject;
 
 /** A server Trid provider that generates globally incrementing UUIDs. */
 public class ServerTridProviderImpl implements ServerTridProvider {

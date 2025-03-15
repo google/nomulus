@@ -34,8 +34,8 @@ import google.registry.model.domain.metadata.MetadataExtension;
 import google.registry.model.domain.superuser.SuperuserExtension;
 import google.registry.model.eppinput.EppInput;
 import google.registry.model.eppinput.EppInput.CommandExtension;
+import jakarta.inject.Inject;
 import java.util.Set;
-import javax.inject.Inject;
 
 /**
  * Helper to validate extensions on an EPP command.

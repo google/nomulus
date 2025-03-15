@@ -46,13 +46,13 @@ import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
 import io.netty.handler.codec.LengthFieldPrepender;
 import io.netty.handler.ssl.SslProvider;
+import jakarta.inject.Named;
+import jakarta.inject.Provider;
+import jakarta.inject.Qualifier;
+import jakarta.inject.Singleton;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.util.function.Supplier;
-import javax.inject.Named;
-import javax.inject.Provider;
-import javax.inject.Qualifier;
-import javax.inject.Singleton;
 import org.joda.time.Duration;
 
 /**

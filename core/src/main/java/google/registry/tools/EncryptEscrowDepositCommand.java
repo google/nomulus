@@ -20,9 +20,9 @@ import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import google.registry.model.rde.RdeMode;
 import google.registry.tools.params.PathParameter;
+import jakarta.inject.Inject;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import javax.inject.Inject;
 
 /** Command to encrypt an escrow deposit. */
 @Parameters(separators = " =", commandDescription = "Encrypt an escrow deposit")

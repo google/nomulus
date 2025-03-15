@@ -34,6 +34,7 @@ import com.google.common.flogger.FluentLogger;
 import google.registry.model.ImmutableObject;
 import google.registry.request.JsonResponse;
 import google.registry.request.Parameter;
+import jakarta.inject.Inject;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -43,7 +44,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Stream;
-import javax.inject.Inject;
 
 /**
  * Abstract base class for actions that list ImmutableObjects.

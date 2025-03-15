@@ -38,6 +38,7 @@ import google.registry.tools.params.OptionalStringParameter;
 import google.registry.tools.params.PathParameter.InputFile;
 import google.registry.tools.params.StringListParameter;
 import google.registry.util.CidrAddressBlock;
+import jakarta.inject.Inject;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -48,7 +49,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import javax.annotation.Nullable;
-import javax.inject.Inject;
 import org.joda.money.CurrencyUnit;
 import org.joda.time.DateTime;
 

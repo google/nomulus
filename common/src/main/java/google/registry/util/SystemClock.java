@@ -16,8 +16,8 @@ package google.registry.util;
 
 import static org.joda.time.DateTimeZone.UTC;
 
+import jakarta.inject.Inject;
 import javax.annotation.concurrent.ThreadSafe;
-import javax.inject.Inject;
 import org.joda.time.DateTime;
 
 /** Clock implementation that proxies to the real system clock. */

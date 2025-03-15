@@ -26,7 +26,7 @@ import com.google.common.net.MediaType;
 import google.registry.model.eppoutput.EppOutput;
 import google.registry.request.Response;
 import google.registry.util.ProxyHttpHeaders;
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 /** Handle an EPP request and response. */
 public class EppRequestHandler {

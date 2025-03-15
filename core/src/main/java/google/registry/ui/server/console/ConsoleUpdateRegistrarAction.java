@@ -35,9 +35,9 @@ import google.registry.request.Parameter;
 import google.registry.request.auth.Auth;
 import google.registry.util.DomainNameUtils;
 import google.registry.util.RegistryEnvironment;
+import jakarta.inject.Inject;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import javax.inject.Inject;
 
 @Action(
     service = GaeService.DEFAULT,

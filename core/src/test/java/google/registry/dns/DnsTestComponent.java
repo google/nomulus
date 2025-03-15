@@ -21,7 +21,7 @@ import google.registry.dns.writer.VoidDnsWriterModule;
 import google.registry.request.RequestModule;
 import google.registry.testing.CloudTasksHelper.CloudTasksHelperModule;
 import google.registry.util.UtilsModule;
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 
 @Singleton
 @Component(

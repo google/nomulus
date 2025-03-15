@@ -43,11 +43,11 @@ import io.netty.util.ReferenceCountUtil;
 import io.netty.util.concurrent.Future;
 import io.netty.util.internal.logging.InternalLoggerFactory;
 import io.netty.util.internal.logging.JdkLoggerFactory;
+import jakarta.inject.Provider;
 import java.util.ArrayDeque;
 import java.util.HashMap;
 import java.util.Queue;
 import java.util.concurrent.TimeoutException;
-import javax.inject.Provider;
 
 /**
  * A multi-protocol proxy server that listens for protocols in {@link

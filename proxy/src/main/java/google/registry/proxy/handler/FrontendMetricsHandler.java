@@ -24,10 +24,10 @@ import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPromise;
+import jakarta.inject.Inject;
 import java.util.ArrayDeque;
 import java.util.Optional;
 import java.util.Queue;
-import javax.inject.Inject;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
 

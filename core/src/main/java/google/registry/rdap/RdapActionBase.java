@@ -43,10 +43,10 @@ import google.registry.request.RequestMethod;
 import google.registry.request.RequestPath;
 import google.registry.request.Response;
 import google.registry.util.Clock;
+import jakarta.inject.Inject;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Optional;
-import javax.inject.Inject;
 import org.joda.time.DateTime;
 
 /**

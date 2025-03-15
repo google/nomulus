@@ -42,7 +42,7 @@ import google.registry.request.Parameter;
 import google.registry.request.auth.Auth;
 import google.registry.util.Clock;
 import google.registry.util.RegistryEnvironment;
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 /**
  * Hard deletes load-test Contacts, Hosts, their subordinate history entries, and the associated

@@ -22,10 +22,10 @@ import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ByteToMessageDecoder;
 import io.netty.util.AttributeKey;
+import jakarta.inject.Inject;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.util.List;
-import javax.inject.Inject;
 
 /**
  * Handler that processes possible existence of a PROXY protocol v1 header.

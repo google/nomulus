@@ -40,8 +40,8 @@ import google.registry.model.poll.PollMessageExternalKeyConverter.PollMessageExt
 import google.registry.persistence.IsolationLevel;
 import google.registry.persistence.PersistenceModule.TransactionIsolationLevel;
 import google.registry.persistence.VKey;
+import jakarta.inject.Inject;
 import java.util.Optional;
-import javax.inject.Inject;
 import org.joda.time.DateTime;
 
 /**

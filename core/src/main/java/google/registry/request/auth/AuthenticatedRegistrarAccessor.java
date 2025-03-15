@@ -28,9 +28,9 @@ import google.registry.groups.GroupsConnection;
 import google.registry.model.console.User;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarBase.State;
+import jakarta.inject.Inject;
 import java.util.Optional;
 import javax.annotation.concurrent.Immutable;
-import javax.inject.Inject;
 
 /**
  * Allows access only to {@link Registrar}s the current user has access to.

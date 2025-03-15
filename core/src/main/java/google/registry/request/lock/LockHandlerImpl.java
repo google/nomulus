@@ -26,6 +26,7 @@ import com.google.common.util.concurrent.UncheckedExecutionException;
 import google.registry.model.server.Lock;
 import google.registry.util.Clock;
 import google.registry.util.TimeLimiter;
+import jakarta.inject.Inject;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
@@ -34,7 +35,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import javax.annotation.Nullable;
-import javax.inject.Inject;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
 

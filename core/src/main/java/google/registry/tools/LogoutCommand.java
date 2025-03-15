@@ -18,8 +18,8 @@ import com.beust.jcommander.Parameters;
 import com.google.api.client.auth.oauth2.StoredCredential;
 import com.google.api.client.util.store.AbstractDataStoreFactory;
 import com.google.common.flogger.FluentLogger;
+import jakarta.inject.Inject;
 import java.io.IOException;
-import javax.inject.Inject;
 
 /** Logout (invalidates OAuth credentials). */
 @Parameters(commandDescription = "Remove local OAuth credentials")

@@ -25,9 +25,9 @@ import google.registry.model.tld.label.ReservedListDao;
 import google.registry.request.Action;
 import google.registry.request.Action.GaeService;
 import google.registry.request.auth.Auth;
+import jakarta.inject.Inject;
 import java.util.Comparator;
 import java.util.Optional;
-import javax.inject.Inject;
 
 /** A that lists reserved lists, for use by the {@code nomulus list_reserved_lists} command. */
 @Action(

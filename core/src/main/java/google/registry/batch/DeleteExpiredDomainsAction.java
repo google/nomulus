@@ -42,10 +42,10 @@ import google.registry.request.Response;
 import google.registry.request.auth.Auth;
 import google.registry.request.lock.LockHandler;
 import google.registry.util.Clock;
+import jakarta.inject.Inject;
 import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.logging.Level;
-import javax.inject.Inject;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
 

@@ -22,9 +22,9 @@ import google.registry.proxy.Protocol.FrontendProtocol;
 import google.registry.proxy.handler.HealthCheckHandler;
 import io.netty.channel.ChannelHandler;
 import io.netty.handler.codec.FixedLengthFrameDecoder;
-import javax.inject.Provider;
-import javax.inject.Qualifier;
-import javax.inject.Singleton;
+import jakarta.inject.Provider;
+import jakarta.inject.Qualifier;
+import jakarta.inject.Singleton;
 
 /**
  * Module that provides a {@link FrontendProtocol} used for GCP load balancer health checking.

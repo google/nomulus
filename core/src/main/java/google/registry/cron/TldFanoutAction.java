@@ -48,9 +48,9 @@ import google.registry.request.RequestParameters;
 import google.registry.request.Response;
 import google.registry.request.auth.Auth;
 import google.registry.util.RegistryEnvironment;
+import jakarta.inject.Inject;
 import java.util.Optional;
 import java.util.stream.Stream;
-import javax.inject.Inject;
 
 /**
  * Action for fanning out cron tasks shared by TLD.

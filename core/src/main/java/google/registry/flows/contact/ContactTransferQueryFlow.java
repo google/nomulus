@@ -32,8 +32,8 @@ import google.registry.model.eppcommon.AuthInfo;
 import google.registry.model.eppoutput.EppResponse;
 import google.registry.model.reporting.IcannReportingTypes.ActivityReportField;
 import google.registry.util.Clock;
+import jakarta.inject.Inject;
 import java.util.Optional;
-import javax.inject.Inject;
 
 /**
  * An EPP flow that queries a pending transfer on a contact.

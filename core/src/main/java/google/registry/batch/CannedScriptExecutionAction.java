@@ -26,8 +26,8 @@ import google.registry.request.Response;
 import google.registry.request.UrlConnectionService;
 import google.registry.request.UrlConnectionUtils;
 import google.registry.request.auth.Auth;
+import jakarta.inject.Inject;
 import java.net.URL;
-import javax.inject.Inject;
 import javax.net.ssl.HttpsURLConnection;
 
 /**

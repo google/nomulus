@@ -80,8 +80,8 @@ import google.registry.model.transfer.DomainTransferData;
 import google.registry.model.transfer.TransferData.TransferServerApproveEntity;
 import google.registry.model.transfer.TransferResponse.DomainTransferResponse;
 import google.registry.model.transfer.TransferStatus;
+import jakarta.inject.Inject;
 import java.util.Optional;
-import javax.inject.Inject;
 import org.joda.time.DateTime;
 
 /**

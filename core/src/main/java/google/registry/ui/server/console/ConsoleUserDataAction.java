@@ -25,8 +25,8 @@ import google.registry.request.Action.GaeService;
 import google.registry.request.Action.GkeService;
 import google.registry.request.auth.Auth;
 import google.registry.security.XsrfTokenManager;
+import jakarta.inject.Inject;
 import jakarta.servlet.http.Cookie;
-import javax.inject.Inject;
 import org.json.JSONObject;
 
 @Action(

@@ -20,7 +20,7 @@ import dagger.Provides;
 import google.registry.config.CredentialModule.GmailDelegatedCredential;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.util.GoogleCredentialsBundle;
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 
 /** Dagger module providing {@link Gmail} API. */
 @Module

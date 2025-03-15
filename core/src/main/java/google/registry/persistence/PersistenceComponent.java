@@ -23,8 +23,8 @@ import google.registry.persistence.PersistenceModule.ReadOnlyReplicaJpaTm;
 import google.registry.persistence.transaction.JpaTransactionManager;
 import google.registry.privileges.secretmanager.SecretManagerModule;
 import google.registry.util.UtilsModule;
+import jakarta.inject.Singleton;
 import jakarta.persistence.EntityManagerFactory;
-import javax.inject.Singleton;
 
 /** Dagger component to provide {@link EntityManagerFactory} instances. */
 @Singleton

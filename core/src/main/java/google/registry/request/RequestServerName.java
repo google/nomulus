@@ -14,10 +14,10 @@
 
 package google.registry.request;
 
+import jakarta.inject.Qualifier;
 import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
-import javax.inject.Qualifier;
 
 /**
  * Dagger qualifier for the server name of the HTTP request.
