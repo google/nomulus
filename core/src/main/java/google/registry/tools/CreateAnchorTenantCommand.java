@@ -27,8 +27,8 @@ import com.google.common.net.InternetDomainName;
 import com.google.template.soy.data.SoyMapData;
 import google.registry.tools.soy.CreateAnchorTenantSoyInfo;
 import google.registry.util.StringGenerator;
-import javax.inject.Inject;
-import javax.inject.Named;
+import jakarta.inject.Inject;
+import jakarta.inject.Named;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
 

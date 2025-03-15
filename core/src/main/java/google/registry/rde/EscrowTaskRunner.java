@@ -24,8 +24,8 @@ import google.registry.request.HttpException.NoContentException;
 import google.registry.request.HttpException.ServiceUnavailableException;
 import google.registry.request.lock.LockHandler;
 import google.registry.util.Clock;
+import jakarta.inject.Inject;
 import java.util.concurrent.Callable;
-import javax.inject.Inject;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
 

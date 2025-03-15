@@ -19,8 +19,8 @@ import google.registry.request.Action.GaeService;
 import google.registry.request.Action.Method;
 import google.registry.request.Payload;
 import google.registry.request.auth.Auth;
+import jakarta.inject.Inject;
 import jakarta.servlet.http.HttpSession;
-import javax.inject.Inject;
 
 /**
  * Establishes a transport for EPP+TLS over HTTP. All commands and responses are EPP XML according

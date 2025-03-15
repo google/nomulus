@@ -25,10 +25,10 @@ import google.registry.request.Action.GaeService;
 import google.registry.request.JsonActionRunner;
 import google.registry.request.JsonActionRunner.JsonAction;
 import google.registry.request.auth.Auth;
+import jakarta.inject.Inject;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import javax.inject.Inject;
 
 /**
  * A servlet that verifies a registrar's OTE status. Note that this is eventually consistent, so

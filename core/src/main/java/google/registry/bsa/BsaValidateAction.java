@@ -59,10 +59,10 @@ import google.registry.request.Action.GaeService;
 import google.registry.request.Response;
 import google.registry.request.auth.Auth;
 import google.registry.util.Clock;
+import jakarta.inject.Inject;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Stream;
-import javax.inject.Inject;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
 

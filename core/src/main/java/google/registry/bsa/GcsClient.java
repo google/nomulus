@@ -26,6 +26,7 @@ import google.registry.bsa.api.UnblockableDomain;
 import google.registry.bsa.api.UnblockableDomainChange;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.gcs.GcsUtils;
+import jakarta.inject.Inject;
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -36,7 +37,6 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.stream.Stream;
-import javax.inject.Inject;
 
 /** Stores and accesses BSA-related data, including original downloads and processed data. */
 public class GcsClient {

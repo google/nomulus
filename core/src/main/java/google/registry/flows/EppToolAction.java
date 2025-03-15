@@ -26,8 +26,8 @@ import google.registry.request.Action.GaeService;
 import google.registry.request.Action.Method;
 import google.registry.request.Parameter;
 import google.registry.request.auth.Auth;
+import jakarta.inject.Inject;
 import jakarta.servlet.http.HttpServletRequest;
-import javax.inject.Inject;
 
 /** Runs EPP commands directly without logging in, verifying an XSRF token from the tool. */
 @Action(

@@ -42,11 +42,11 @@ import google.registry.keyring.secretmanager.SecretManagerKeyring.PrivateKeyLabe
 import google.registry.keyring.secretmanager.SecretManagerKeyring.PublicKeyLabel;
 import google.registry.keyring.secretmanager.SecretManagerKeyring.StringKeyLabel;
 import google.registry.privileges.secretmanager.KeyringSecretStore;
+import jakarta.inject.Inject;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import javax.inject.Inject;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPKeyPair;
 import org.bouncycastle.openpgp.PGPPublicKey;

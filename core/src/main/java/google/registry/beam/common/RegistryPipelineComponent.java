@@ -28,8 +28,8 @@ import google.registry.persistence.PersistenceModule.TransactionIsolationLevel;
 import google.registry.persistence.transaction.JpaTransactionManager;
 import google.registry.privileges.secretmanager.SecretManagerModule;
 import google.registry.util.UtilsModule;
+import jakarta.inject.Singleton;
 import javax.annotation.Nullable;
-import javax.inject.Singleton;
 
 /** Component that provides everything needed on a Pipeline worker. */
 @Singleton

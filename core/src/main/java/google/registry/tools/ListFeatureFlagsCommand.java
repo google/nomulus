@@ -20,8 +20,8 @@ import com.beust.jcommander.Parameters;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
 import google.registry.model.common.FeatureFlag;
+import jakarta.inject.Inject;
 import java.io.PrintStream;
-import javax.inject.Inject;
 
 /** Command to list all {@link google.registry.model.common.FeatureFlag} objects. */
 @Parameters(separators = " =", commandDescription = "List all feature flags.")

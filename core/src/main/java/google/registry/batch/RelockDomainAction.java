@@ -42,10 +42,10 @@ import google.registry.request.auth.Auth;
 import google.registry.tools.DomainLockUtils;
 import google.registry.util.DateTimeUtils;
 import google.registry.util.EmailMessage;
+import jakarta.inject.Inject;
 import jakarta.mail.internet.AddressException;
 import jakarta.mail.internet.InternetAddress;
 import java.util.Optional;
-import javax.inject.Inject;
 import org.joda.time.Duration;
 
 /** Task that re-locks a previously-Registry-Locked domain after a predetermined period of time. */
@@ -68,14 +68,14 @@ public class RelockDomainAction implements Runnable {
 
   private static final String RELOCK_SUCCESS_EMAIL_TEMPLATE =
       """
-          The domain %s was successfully re-locked.
+      The domain %s was successfully re-locked.
 
-          Please contact support at %s if you have any questions.""";
+      Please contact support at %s if you have any questions.""";
   private static final String RELOCK_NON_RETRYABLE_FAILURE_EMAIL_TEMPLATE =
       """
-          There was an error when automatically re-locking %s. Error message: %s
+      There was an error when automatically re-locking %s. Error message: %s
 
-          Please contact support at %s if you have any questions.""";
+      Please contact support at %s if you have any questions.""";
   private static final String RELOCK_TRANSIENT_FAILURE_EMAIL_TEMPLATE =
       "There was an unexpected error when automatically re-locking %s. We will continue retrying "
           + "the lock for five hours. Please contact support at %s if you have any questions";

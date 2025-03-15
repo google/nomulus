@@ -25,8 +25,8 @@ import com.google.common.flogger.FluentLogger;
 import com.google.common.hash.Hashing;
 import google.registry.model.server.ServerSecret;
 import google.registry.util.Clock;
+import jakarta.inject.Inject;
 import java.util.List;
-import javax.inject.Inject;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
 

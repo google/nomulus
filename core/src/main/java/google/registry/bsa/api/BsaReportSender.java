@@ -26,11 +26,11 @@ import google.registry.config.RegistryConfig.Config;
 import google.registry.request.UrlConnectionService;
 import google.registry.request.UrlConnectionUtils;
 import google.registry.util.Retrier;
+import jakarta.inject.Inject;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.security.GeneralSecurityException;
-import javax.inject.Inject;
 import javax.net.ssl.HttpsURLConnection;
 
 /**

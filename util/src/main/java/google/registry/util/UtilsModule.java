@@ -17,12 +17,12 @@ package google.registry.util;
 import dagger.Binds;
 import dagger.Module;
 import dagger.Provides;
+import jakarta.inject.Named;
+import jakarta.inject.Singleton;
 import java.security.NoSuchAlgorithmException;
 import java.security.ProviderException;
 import java.security.SecureRandom;
 import java.util.Random;
-import javax.inject.Named;
-import javax.inject.Singleton;
 
 /** Dagger module to provide instances of various utils classes. */
 @Module

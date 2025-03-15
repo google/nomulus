@@ -40,7 +40,7 @@ import google.registry.model.eppoutput.CreateData.ContactCreateData;
 import google.registry.model.eppoutput.EppResponse;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.reporting.IcannReportingTypes.ActivityReportField;
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import org.joda.time.DateTime;
 
 /**

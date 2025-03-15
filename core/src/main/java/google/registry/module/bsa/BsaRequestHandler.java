@@ -16,8 +16,8 @@ package google.registry.module.bsa;
 
 import google.registry.request.RequestHandler;
 import google.registry.request.auth.RequestAuthenticator;
-import javax.inject.Inject;
-import javax.inject.Provider;
+import jakarta.inject.Inject;
+import jakarta.inject.Provider;
 
 public class BsaRequestHandler extends RequestHandler<BsaRequestComponent> {
   @Inject

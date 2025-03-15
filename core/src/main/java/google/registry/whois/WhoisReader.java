@@ -26,12 +26,12 @@ import com.google.common.io.CharStreams;
 import com.google.common.net.InetAddresses;
 import com.google.common.net.InternetDomainName;
 import google.registry.config.RegistryConfig.Config;
+import jakarta.inject.Inject;
 import java.io.IOException;
 import java.io.Reader;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import javax.inject.Inject;
 import org.joda.time.DateTime;
 
 /**

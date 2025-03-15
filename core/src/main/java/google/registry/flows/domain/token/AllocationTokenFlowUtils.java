@@ -40,9 +40,9 @@ import google.registry.model.domain.token.AllocationTokenExtension;
 import google.registry.model.reporting.HistoryEntry.HistoryEntryId;
 import google.registry.model.tld.Tld;
 import google.registry.persistence.VKey;
+import jakarta.inject.Inject;
 import java.util.List;
 import java.util.Optional;
-import javax.inject.Inject;
 import org.joda.time.DateTime;
 
 /** Utility functions for dealing with {@link AllocationToken}s in domain flows. */

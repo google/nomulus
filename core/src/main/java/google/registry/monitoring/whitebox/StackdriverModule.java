@@ -30,8 +30,8 @@ import google.registry.util.Clock;
 import google.registry.util.GoogleCredentialsBundle;
 import google.registry.util.MetricParameters;
 import google.registry.util.RegistryEnvironment;
-import javax.inject.Named;
-import javax.inject.Singleton;
+import jakarta.inject.Named;
+import jakarta.inject.Singleton;
 import org.joda.time.Duration;
 
 /** Dagger module for Google Stackdriver service connection objects. */

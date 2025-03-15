@@ -25,7 +25,7 @@ import com.google.common.flogger.FluentLogger;
 import google.registry.model.EppResource;
 import google.registry.persistence.VKey;
 import google.registry.request.Action;
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
 

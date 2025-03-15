@@ -38,6 +38,7 @@ import google.registry.model.eppcommon.StatusValue;
 import google.registry.tools.params.NameserversParameter;
 import google.registry.tools.soy.DomainUpdateSoyInfo;
 import google.registry.util.Clock;
+import jakarta.inject.Inject;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -45,7 +46,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import javax.annotation.Nullable;
-import javax.inject.Inject;
 import org.joda.time.DateTime;
 
 /** A command to update a new domain via EPP. */

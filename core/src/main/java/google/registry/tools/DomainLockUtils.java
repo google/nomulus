@@ -36,10 +36,10 @@ import google.registry.model.tld.RegistryLockDao;
 import google.registry.model.tld.Tld;
 import google.registry.request.Action;
 import google.registry.util.StringGenerator;
+import jakarta.inject.Inject;
+import jakarta.inject.Named;
 import java.util.Optional;
 import javax.annotation.Nullable;
-import javax.inject.Inject;
-import javax.inject.Named;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
 

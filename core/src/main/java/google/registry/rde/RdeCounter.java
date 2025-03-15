@@ -22,11 +22,11 @@ import google.registry.xjc.rdeheader.XjcRdeHeader;
 import google.registry.xjc.rdeheader.XjcRdeHeaderCount;
 import google.registry.xjc.rdeheader.XjcRdeHeaderElement;
 import google.registry.xjc.rdereport.XjcRdeReport;
+import jakarta.inject.Inject;
 import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.concurrent.atomic.AtomicLong;
 import javax.annotation.concurrent.NotThreadSafe;
-import javax.inject.Inject;
 import org.joda.time.DateTime;
 
 /** Utility class for generating a single {@link XjcRdeHeader} while marshalling a deposit. */

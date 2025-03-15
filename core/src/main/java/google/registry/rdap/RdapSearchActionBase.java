@@ -32,6 +32,7 @@ import google.registry.request.HttpException.UnprocessableEntityException;
 import google.registry.request.Parameter;
 import google.registry.request.ParameterMap;
 import google.registry.request.RequestUrl;
+import jakarta.inject.Inject;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
@@ -42,7 +43,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import javax.inject.Inject;
 
 /**
  * Base RDAP (new WHOIS) action for domain, nameserver and entity search requests.

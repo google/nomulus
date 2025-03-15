@@ -24,10 +24,10 @@ import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.google.common.flogger.FluentLogger;
 import com.google.common.net.MediaType;
+import jakarta.inject.Inject;
 import java.io.IOException;
 import java.util.List;
 import javax.annotation.Nullable;
-import javax.inject.Inject;
 
 /** Class encapsulating parameters and state for accessing the Drive API. */
 public class DriveConnection {

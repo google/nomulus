@@ -23,9 +23,9 @@ import com.beust.jcommander.Parameters;
 import google.registry.keyring.secretmanager.SecretManagerKeyringUpdater;
 import google.registry.tools.params.KeyringKeyName;
 import google.registry.tools.params.PathParameter;
+import jakarta.inject.Inject;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import javax.inject.Inject;
 
 /**
  * Command to set and update ASCII-armored secret from the active {@code Keyring} implementation.

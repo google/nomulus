@@ -47,6 +47,7 @@ import google.registry.tmch.LordnTaskUtils.LordnPhase;
 import google.registry.util.Clock;
 import google.registry.util.Retrier;
 import google.registry.util.UrlConnectionException;
+import jakarta.inject.Inject;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -55,7 +56,6 @@ import java.security.SecureRandom;
 import java.util.List;
 import java.util.Optional;
 import java.util.Random;
-import javax.inject.Inject;
 import org.joda.time.Duration;
 
 /**

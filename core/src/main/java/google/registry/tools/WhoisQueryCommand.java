@@ -18,8 +18,8 @@ import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import com.google.common.base.Joiner;
 import google.registry.whois.Whois;
+import jakarta.inject.Inject;
 import java.util.List;
-import javax.inject.Inject;
 
 /** Command to execute a WHOIS query. */
 @Parameters(separators = " =", commandDescription = "Manually perform a WHOIS query")

@@ -31,12 +31,12 @@ import google.registry.request.Response;
 import google.registry.request.UrlConnectionService;
 import google.registry.request.auth.Auth;
 import google.registry.util.UrlConnectionException;
+import jakarta.inject.Inject;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.security.GeneralSecurityException;
 import java.util.Map.Entry;
-import javax.inject.Inject;
 
 /**
  * NORDN CSV uploading system, verify operation.

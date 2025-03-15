@@ -43,8 +43,8 @@ import google.registry.model.eppcommon.Trid;
 import google.registry.model.eppoutput.EppResponse;
 import google.registry.model.reporting.HistoryEntry.Type;
 import google.registry.model.reporting.IcannReportingTypes.ActivityReportField;
+import jakarta.inject.Inject;
 import java.util.Optional;
-import javax.inject.Inject;
 import org.joda.time.DateTime;
 
 /**

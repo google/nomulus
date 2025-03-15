@@ -15,11 +15,11 @@
 package google.registry.request;
 
 import com.google.common.net.MediaType;
+import jakarta.inject.Inject;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
-import javax.inject.Inject;
 import org.joda.time.DateTime;
 
 /** HTTP response object. */

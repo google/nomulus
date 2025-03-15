@@ -34,7 +34,7 @@ import google.registry.model.host.Host;
 import google.registry.model.host.HostInfoData;
 import google.registry.model.reporting.IcannReportingTypes.ActivityReportField;
 import google.registry.util.Clock;
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import org.joda.time.DateTime;
 
 /**

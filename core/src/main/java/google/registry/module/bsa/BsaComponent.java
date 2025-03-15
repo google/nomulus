@@ -29,7 +29,7 @@ import google.registry.request.Modules.GsonModule;
 import google.registry.request.Modules.UrlConnectionServiceModule;
 import google.registry.request.auth.AuthModule;
 import google.registry.util.UtilsModule;
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 
 @Singleton
 @Component(

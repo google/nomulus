@@ -20,11 +20,11 @@ import google.registry.keyring.api.KeySerializer;
 import google.registry.keyring.api.Keyring;
 import google.registry.tools.params.KeyringKeyName;
 import google.registry.tools.params.PathParameter;
+import jakarta.inject.Inject;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
 import java.nio.file.Path;
 import java.security.Security;
-import javax.inject.Inject;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openpgp.PGPKeyPair;
 

@@ -35,9 +35,9 @@ import google.registry.request.Parameter;
 import google.registry.request.auth.Auth;
 import google.registry.ui.server.console.ConsoleApiAction;
 import google.registry.ui.server.console.ConsoleApiParams;
+import jakarta.inject.Inject;
 import java.util.List;
 import java.util.Optional;
-import javax.inject.Inject;
 
 /**
  * Console endpoint to perform the same action to a list of domains.

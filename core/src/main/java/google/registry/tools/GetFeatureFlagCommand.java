@@ -22,10 +22,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import google.registry.model.common.FeatureFlag;
 import google.registry.model.common.FeatureFlag.FeatureFlagNotFoundException;
 import google.registry.model.common.FeatureFlag.FeatureName;
+import jakarta.inject.Inject;
 import java.io.PrintStream;
 import java.util.List;
 import java.util.Optional;
-import javax.inject.Inject;
 
 /** Command to show a {@link FeatureFlag}. */
 @Parameters(separators = " =", commandDescription = "Show FeatureFlag record(s)")

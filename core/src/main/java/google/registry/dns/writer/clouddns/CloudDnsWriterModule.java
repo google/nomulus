@@ -26,8 +26,8 @@ import google.registry.config.CredentialModule.ApplicationDefaultCredential;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.dns.writer.DnsWriter;
 import google.registry.util.GoogleCredentialsBundle;
+import jakarta.inject.Named;
 import java.util.Optional;
-import javax.inject.Named;
 
 /** Dagger module for Google Cloud DNS service connection objects. */
 @Module

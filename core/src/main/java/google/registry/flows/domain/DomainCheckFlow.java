@@ -89,13 +89,13 @@ import google.registry.model.tld.label.ReservationType;
 import google.registry.persistence.VKey;
 import google.registry.pricing.PricingEngineProxy;
 import google.registry.util.Clock;
+import jakarta.inject.Inject;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
-import javax.inject.Inject;
 import org.joda.time.DateTime;
 
 /**

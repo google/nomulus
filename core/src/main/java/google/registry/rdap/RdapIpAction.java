@@ -23,7 +23,7 @@ import google.registry.request.Action;
 import google.registry.request.Action.GaeService;
 import google.registry.request.HttpException.NotImplementedException;
 import google.registry.request.auth.Auth;
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 /**
  * RDAP (new WHOIS) action for RDAP IP address requests.

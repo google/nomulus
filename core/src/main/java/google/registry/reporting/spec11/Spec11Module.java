@@ -19,9 +19,9 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 import dagger.Module;
 import dagger.Provides;
 import google.registry.beam.spec11.Spec11Pipeline;
+import jakarta.inject.Qualifier;
 import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
-import javax.inject.Qualifier;
 import org.joda.time.LocalDate;
 
 /** Module for dependencies required by Spec11 reporting. */

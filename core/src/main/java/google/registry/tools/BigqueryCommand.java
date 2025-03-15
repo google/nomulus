@@ -16,8 +16,8 @@ package google.registry.tools;
 
 import com.beust.jcommander.ParametersDelegate;
 import google.registry.bigquery.BigqueryConnection;
-import javax.inject.Inject;
-import javax.inject.Provider;
+import jakarta.inject.Inject;
+import jakarta.inject.Provider;
 
 /** A {@link Command} that uses the bigquery client API. */
 abstract class BigqueryCommand implements Command {

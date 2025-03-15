@@ -39,10 +39,10 @@ import google.registry.request.RequestParameters;
 import google.registry.request.Response;
 import google.registry.request.auth.Auth;
 import google.registry.storage.drive.DriveConnection;
+import jakarta.inject.Inject;
 import java.io.IOException;
 import java.util.Optional;
 import java.util.SortedSet;
-import javax.inject.Inject;
 
 /** Action that exports the premium terms list for a TLD to Google Drive. */
 @Action(

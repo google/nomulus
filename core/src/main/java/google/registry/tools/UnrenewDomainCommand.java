@@ -42,10 +42,10 @@ import google.registry.model.poll.PollMessage;
 import google.registry.model.reporting.HistoryEntry.Type;
 import google.registry.util.Clock;
 import google.registry.util.NonFinalForTesting;
+import jakarta.inject.Inject;
 import java.io.UnsupportedEncodingException;
 import java.util.List;
 import java.util.Optional;
-import javax.inject.Inject;
 import org.joda.time.DateTime;
 
 /**

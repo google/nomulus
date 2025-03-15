@@ -17,9 +17,9 @@ package google.registry.privileges.secretmanager;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Strings.isNullOrEmpty;
 
+import jakarta.inject.Inject;
 import java.nio.charset.StandardCharsets;
 import java.util.Optional;
-import javax.inject.Inject;
 
 /**
  * Storage for 'keyring' secrets, backed by the Secret Manager.

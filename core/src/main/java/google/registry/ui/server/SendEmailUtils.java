@@ -22,12 +22,12 @@ import com.google.common.flogger.FluentLogger;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.groups.GmailClient;
 import google.registry.util.EmailMessage;
+import jakarta.inject.Inject;
 import jakarta.mail.internet.AddressException;
 import jakarta.mail.internet.InternetAddress;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Stream;
-import javax.inject.Inject;
 
 /**
  * Utility class for sending emails from the app.

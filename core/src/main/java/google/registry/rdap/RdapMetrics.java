@@ -25,8 +25,8 @@ import com.google.monitoring.metrics.LabelDescriptor;
 import com.google.monitoring.metrics.MetricRegistryImpl;
 import google.registry.rdap.RdapSearchResults.IncompletenessWarningType;
 import google.registry.request.Action;
+import jakarta.inject.Inject;
 import java.util.Optional;
-import javax.inject.Inject;
 
 /** RDAP Instrumentation. */
 public class RdapMetrics {
