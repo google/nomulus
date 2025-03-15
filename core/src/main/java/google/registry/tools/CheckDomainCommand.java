@@ -22,9 +22,9 @@ import com.google.common.collect.Multimap;
 import com.google.template.soy.data.SoyMapData;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.tools.soy.DomainCheckSoyInfo;
+import jakarta.inject.Inject;
 import java.util.Collection;
 import java.util.List;
-import javax.inject.Inject;
 
 /** A command to execute a domain check EPP command (including cost of a 1 year create). */
 @Parameters(separators = " =", commandDescription = "Check domain availability")

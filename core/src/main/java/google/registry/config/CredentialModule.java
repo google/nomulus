@@ -24,13 +24,13 @@ import dagger.Provides;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.util.Clock;
 import google.registry.util.GoogleCredentialsBundle;
+import jakarta.inject.Qualifier;
+import jakarta.inject.Singleton;
 import java.io.IOException;
 import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.time.Duration;
-import javax.inject.Qualifier;
-import javax.inject.Singleton;
 
 /** Dagger module that provides all {@link GoogleCredentials} used in the application. */
 @Module

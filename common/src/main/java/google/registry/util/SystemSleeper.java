@@ -17,9 +17,9 @@ package google.registry.util;
 import static com.google.common.base.Preconditions.checkArgument;
 
 import com.google.common.util.concurrent.Uninterruptibles;
+import jakarta.inject.Inject;
 import java.io.Serializable;
 import javax.annotation.concurrent.ThreadSafe;
-import javax.inject.Inject;
 import org.joda.time.ReadableDuration;
 
 /** Implementation of {@link Sleeper} for production use. */

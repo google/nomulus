@@ -27,8 +27,8 @@ import google.registry.request.Action.GaeService;
 import google.registry.request.Action.GkeService;
 import google.registry.request.Parameter;
 import google.registry.request.auth.Auth;
+import jakarta.inject.Inject;
 import java.util.Optional;
-import javax.inject.Inject;
 
 /** Returns a JSON representation of a domain to the registrar console. */
 @Action(

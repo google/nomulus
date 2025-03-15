@@ -29,10 +29,10 @@ import google.registry.flows.certs.CertificateChecker;
 import google.registry.model.registrar.Registrar;
 import google.registry.tools.params.PathParameter;
 import google.registry.util.Clock;
+import jakarta.inject.Inject;
 import java.nio.file.Path;
 import java.util.Optional;
 import javax.annotation.Nullable;
-import javax.inject.Inject;
 
 /** A command to test registrar login credentials. */
 @Parameters(separators = " =", commandDescription = "Test registrar login credentials")

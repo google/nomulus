@@ -21,7 +21,7 @@ import dagger.multibindings.IntoMap;
 import dagger.multibindings.IntoSet;
 import dagger.multibindings.StringKey;
 import google.registry.dns.writer.DnsWriter;
-import javax.inject.Named;
+import jakarta.inject.Named;
 import javax.net.SocketFactory;
 
 /** Dagger module that provides a DnsUpdateWriter. */

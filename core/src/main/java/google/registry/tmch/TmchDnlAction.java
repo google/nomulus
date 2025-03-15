@@ -24,10 +24,10 @@ import google.registry.model.tmch.ClaimsListDao;
 import google.registry.request.Action;
 import google.registry.request.Action.GaeService;
 import google.registry.request.auth.Auth;
+import jakarta.inject.Inject;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.util.Optional;
-import javax.inject.Inject;
 import org.bouncycastle.openpgp.PGPException;
 
 /** Action to download the latest domain name list (aka claims list) from MarksDB. */

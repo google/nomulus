@@ -33,13 +33,13 @@ import com.google.common.flogger.FluentLogger;
 import com.google.common.net.MediaType;
 import google.registry.config.CredentialModule.ApplicationDefaultCredential;
 import google.registry.util.GoogleCredentialsBundle;
+import jakarta.inject.Inject;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.Serializable;
 import java.nio.channels.Channels;
 import javax.annotation.CheckReturnValue;
-import javax.inject.Inject;
 
 /**
  * Utilities for working with Google Cloud Storage.

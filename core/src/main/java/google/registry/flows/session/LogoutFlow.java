@@ -23,7 +23,7 @@ import google.registry.flows.Flow;
 import google.registry.flows.FlowModule.RegistrarId;
 import google.registry.flows.SessionMetadata;
 import google.registry.model.eppoutput.EppResponse;
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 /**
  * An EPP flow for logout.

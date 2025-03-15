@@ -24,7 +24,7 @@ import google.registry.config.RegistryConfig.Config;
 import google.registry.config.RegistryConfig.ConfigModule;
 import google.registry.storage.drive.DriveConnection;
 import google.registry.util.GoogleCredentialsBundle;
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 
 /** Dagger module for Google {@link Drive} service connection objects. */
 @Module

@@ -16,8 +16,8 @@ package google.registry.pricing;
 
 import dagger.Component;
 import google.registry.model.pricing.PremiumPricingEngine;
+import jakarta.inject.Singleton;
 import java.util.Map;
-import javax.inject.Singleton;
 
 /**
  * Dagger component with instance lifetime for pricing engines.

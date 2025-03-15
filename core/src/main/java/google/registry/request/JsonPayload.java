@@ -14,8 +14,8 @@
 
 package google.registry.request;
 
+import jakarta.inject.Qualifier;
 import java.lang.annotation.Documented;
-import javax.inject.Qualifier;
 
 /**
  * Dagger qualifier for the HTTP request payload as parsed JSON.

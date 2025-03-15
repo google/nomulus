@@ -17,8 +17,8 @@ package google.registry.privileges.secretmanager;
 import com.google.cloud.secretmanager.v1.SecretVersionName;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.privileges.secretmanager.SecretManagerClient.NoSuchSecretResourceException;
+import jakarta.inject.Inject;
 import java.util.Optional;
-import javax.inject.Inject;
 
 /**
  * Storage of SQL users' login credentials, backed by Cloud Secret Manager.

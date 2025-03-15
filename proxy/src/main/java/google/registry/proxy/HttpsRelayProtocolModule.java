@@ -29,10 +29,10 @@ import io.netty.handler.codec.http.HttpClientCodec;
 import io.netty.handler.codec.http.HttpObjectAggregator;
 import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.ssl.SslProvider;
+import jakarta.inject.Provider;
+import jakarta.inject.Qualifier;
 import java.security.cert.X509Certificate;
 import javax.annotation.Nullable;
-import javax.inject.Provider;
-import javax.inject.Qualifier;
 
 /**
  * Module that provides a {@link BackendProtocol.Builder} for HTTP(S) protocol.

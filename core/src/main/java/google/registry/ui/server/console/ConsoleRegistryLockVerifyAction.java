@@ -26,8 +26,8 @@ import google.registry.request.Action.GkeService;
 import google.registry.request.Parameter;
 import google.registry.request.auth.Auth;
 import google.registry.tools.DomainLockUtils;
+import jakarta.inject.Inject;
 import jakarta.servlet.http.HttpServletResponse;
-import javax.inject.Inject;
 
 /** Handler for verifying registry lock requests, a form of 2FA. */
 @Action(

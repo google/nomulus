@@ -47,9 +47,9 @@ import google.registry.model.eppinput.EppInput.Options;
 import google.registry.model.eppinput.EppInput.Services;
 import google.registry.model.eppoutput.EppResponse;
 import google.registry.model.registrar.Registrar;
+import jakarta.inject.Inject;
 import java.util.Optional;
 import java.util.Set;
-import javax.inject.Inject;
 
 /**
  * An EPP flow for login.

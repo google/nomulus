@@ -26,9 +26,9 @@ import dagger.Provides;
 import google.registry.bigquery.BigqueryConnection;
 import google.registry.request.HttpException.BadRequestException;
 import google.registry.request.Parameter;
+import jakarta.inject.Named;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.Optional;
-import javax.inject.Named;
 import org.joda.time.Duration;
 
 /** Module for dependencies required by ICANN monthly transactions/activity reporting. */

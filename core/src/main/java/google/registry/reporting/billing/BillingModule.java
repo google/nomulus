@@ -21,10 +21,10 @@ import dagger.Module;
 import dagger.Provides;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.request.Parameter;
+import jakarta.inject.Qualifier;
 import jakarta.servlet.http.HttpServletRequest;
 import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
-import javax.inject.Qualifier;
 import org.joda.time.YearMonth;
 
 /** Module for dependencies required by monthly billing actions. */

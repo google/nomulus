@@ -29,7 +29,7 @@ import google.registry.model.poll.PollMessage.Autorenew;
 import google.registry.model.poll.PollMessage.OneTime;
 import google.registry.persistence.transaction.QueryComposer;
 import google.registry.util.Clock;
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 /**
  * Command to acknowledge one-time poll messages for a registrar.

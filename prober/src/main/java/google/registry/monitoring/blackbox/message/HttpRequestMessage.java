@@ -19,8 +19,8 @@ import io.netty.handler.codec.http.DefaultFullHttpRequest;
 import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpVersion;
+import jakarta.inject.Inject;
 import java.util.Arrays;
-import javax.inject.Inject;
 
 /**
  * {@link OutboundMessageType} subtype that acts identically to {@link DefaultFullHttpRequest}.

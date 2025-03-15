@@ -29,9 +29,9 @@ import google.registry.model.eppoutput.EppOutput;
 import google.registry.monitoring.whitebox.EppMetric;
 import google.registry.persistence.PersistenceModule.TransactionIsolationLevel;
 import google.registry.persistence.transaction.JpaTransactionManager;
+import jakarta.inject.Inject;
+import jakarta.inject.Provider;
 import java.util.Optional;
-import javax.inject.Inject;
-import javax.inject.Provider;
 
 /** Run a flow, either transactionally or not, with logging and retrying as needed. */
 public class FlowRunner {

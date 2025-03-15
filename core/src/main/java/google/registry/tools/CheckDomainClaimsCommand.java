@@ -20,9 +20,9 @@ import com.google.common.collect.Multimap;
 import com.google.template.soy.data.SoyMapData;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.tools.soy.DomainCheckClaimsSoyInfo;
+import jakarta.inject.Inject;
 import java.util.Collection;
 import java.util.List;
-import javax.inject.Inject;
 
 /** A command to execute a domain check claims epp command. */
 @Parameters(separators = " =", commandDescription = "Check claims on domain(s)")

@@ -15,9 +15,9 @@
 package google.registry.dns.writer;
 
 import com.google.common.flogger.FluentLogger;
+import jakarta.inject.Inject;
 import java.util.HashSet;
 import java.util.Set;
-import javax.inject.Inject;
 
 /**
  * {@link DnsWriter} that doesn't actually update records in a DNS server.

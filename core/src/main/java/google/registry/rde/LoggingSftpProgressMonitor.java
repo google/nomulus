@@ -19,7 +19,7 @@ import com.google.common.flogger.FluentLogger;
 import com.jcraft.jsch.ChannelSftp;
 import com.jcraft.jsch.SftpProgressMonitor;
 import google.registry.util.Clock;
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
 

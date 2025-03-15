@@ -48,6 +48,8 @@ import google.registry.request.auth.Auth;
 import google.registry.tools.IamClient;
 import google.registry.util.DiffUtils;
 import google.registry.util.StringGenerator;
+import jakarta.inject.Inject;
+import jakarta.inject.Named;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
@@ -55,8 +57,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
-import javax.inject.Inject;
-import javax.inject.Named;
 
 @Action(
     service = Action.GaeService.DEFAULT,

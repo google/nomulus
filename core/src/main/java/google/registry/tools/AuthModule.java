@@ -39,6 +39,8 @@ import google.registry.config.CredentialModule.LocalCredential;
 import google.registry.config.CredentialModule.LocalCredentialJson;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.util.GoogleCredentialsBundle;
+import jakarta.inject.Qualifier;
+import jakarta.inject.Singleton;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
@@ -49,8 +51,6 @@ import java.lang.annotation.RetentionPolicy;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import javax.annotation.Nullable;
-import javax.inject.Qualifier;
-import javax.inject.Singleton;
 
 /** Module providing the dependency graph for authorization credentials. */
 @Module

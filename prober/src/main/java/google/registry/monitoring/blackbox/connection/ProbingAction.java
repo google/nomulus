@@ -35,13 +35,13 @@ import io.netty.channel.local.LocalAddress;
 import io.netty.util.AttributeKey;
 import io.netty.util.HashedWheelTimer;
 import io.netty.util.Timer;
+import jakarta.inject.Provider;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.net.UnknownHostException;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
-import javax.inject.Provider;
 import org.joda.time.Duration;
 
 /**
@@ -203,11 +203,11 @@ public abstract class ProbingAction implements Callable<ChannelFuture> {
   public final String toString() {
     return String.format(
         """
-            ProbingAction with delay: %d
-            outboundMessage: %s
-            protocol: %s
-            host: %s
-            """,
+        ProbingAction with delay: %d
+        outboundMessage: %s
+        protocol: %s
+        host: %s
+        """,
         delay().getStandardSeconds(), outboundMessage(), protocol(), host());
   }
 

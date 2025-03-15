@@ -32,9 +32,9 @@ import com.google.common.collect.ImmutableMultimap;
 import google.registry.batch.CloudTasksUtils;
 import google.registry.model.rde.RdeMode;
 import google.registry.rde.RdeStagingAction;
+import jakarta.inject.Inject;
 import java.util.List;
 import java.util.stream.Collectors;
-import javax.inject.Inject;
 import org.joda.time.DateTime;
 
 /**

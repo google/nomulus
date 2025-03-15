@@ -29,6 +29,7 @@ import google.registry.model.CacheUtils;
 import google.registry.model.tmch.TmchCrl;
 import google.registry.util.Clock;
 import google.registry.util.X509Utils;
+import jakarta.inject.Inject;
 import java.security.GeneralSecurityException;
 import java.security.cert.CertificateParsingException;
 import java.security.cert.X509CRL;
@@ -36,7 +37,6 @@ import java.security.cert.X509Certificate;
 import java.util.Optional;
 import javax.annotation.concurrent.Immutable;
 import javax.annotation.concurrent.ThreadSafe;
-import javax.inject.Inject;
 
 /**
  * Helper methods for accessing ICANN's TMCH root certificate and revocation list.

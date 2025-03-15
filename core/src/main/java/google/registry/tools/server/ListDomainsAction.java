@@ -33,7 +33,7 @@ import google.registry.request.Parameter;
 import google.registry.request.auth.Auth;
 import google.registry.util.Clock;
 import google.registry.util.NonFinalForTesting;
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 /** An action that lists domains, for use by the {@code nomulus list_domains} command. */
 @Action(

@@ -33,8 +33,8 @@ import google.registry.request.Action;
 import google.registry.request.Action.GaeService;
 import google.registry.request.HttpException.NotFoundException;
 import google.registry.request.auth.Auth;
+import jakarta.inject.Inject;
 import java.util.Optional;
-import javax.inject.Inject;
 
 /**
  * RDAP (new WHOIS) action for entity (contact and registrar) requests. the ICANN operational

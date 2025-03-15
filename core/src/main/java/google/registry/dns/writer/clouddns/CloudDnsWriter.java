@@ -45,6 +45,8 @@ import google.registry.model.tld.Tlds;
 import google.registry.util.Clock;
 import google.registry.util.Concurrent;
 import google.registry.util.Retrier;
+import jakarta.inject.Inject;
+import jakarta.inject.Named;
 import java.io.IOException;
 import java.net.Inet4Address;
 import java.net.Inet6Address;
@@ -57,8 +59,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
-import javax.inject.Inject;
-import javax.inject.Named;
 import org.joda.time.Duration;
 
 /**

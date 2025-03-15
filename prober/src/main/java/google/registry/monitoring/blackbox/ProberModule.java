@@ -31,8 +31,8 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.ssl.OpenSsl;
 import io.netty.handler.ssl.SslProvider;
+import jakarta.inject.Singleton;
 import java.util.Set;
-import javax.inject.Singleton;
 import org.joda.time.Duration;
 
 /**

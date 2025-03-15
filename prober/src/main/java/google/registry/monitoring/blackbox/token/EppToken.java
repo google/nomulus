@@ -19,9 +19,9 @@ import google.registry.monitoring.blackbox.exception.UndeterminedStateException;
 import google.registry.monitoring.blackbox.message.EppRequestMessage;
 import google.registry.monitoring.blackbox.message.OutboundMessageType;
 import io.netty.channel.Channel;
+import jakarta.inject.Inject;
+import jakarta.inject.Named;
 import java.util.concurrent.atomic.AtomicInteger;
-import javax.inject.Inject;
-import javax.inject.Named;
 
 /** {@link Token} subtype that deals performs specified actions for the EPP sequence. */
 public abstract class EppToken extends Token {

@@ -26,8 +26,8 @@ import com.google.template.soy.data.SoyMapData;
 import google.registry.model.pricing.PremiumPricingEngine.DomainPrices;
 import google.registry.tools.soy.DomainCreateSoyInfo;
 import google.registry.util.StringGenerator;
-import javax.inject.Inject;
-import javax.inject.Named;
+import jakarta.inject.Inject;
+import jakarta.inject.Named;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
 

@@ -34,8 +34,8 @@ import google.registry.request.Action.GaeService;
 import google.registry.request.Parameter;
 import google.registry.request.Response;
 import google.registry.request.auth.Auth;
+import jakarta.inject.Inject;
 import java.io.IOException;
-import javax.inject.Inject;
 import org.joda.time.YearMonth;
 
 /**

@@ -24,10 +24,10 @@ import google.registry.privileges.secretmanager.SqlCredentialStore;
 import google.registry.privileges.secretmanager.SqlUser;
 import google.registry.privileges.secretmanager.SqlUser.RobotUser;
 import google.registry.tools.params.PathParameter;
+import jakarta.inject.Inject;
 import java.io.FileOutputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
-import javax.inject.Inject;
 
 /**
  * Command to get a Cloud SQL credential in the Secret Manager.

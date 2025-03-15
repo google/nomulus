@@ -43,10 +43,10 @@ import google.registry.request.auth.Auth;
 import google.registry.tools.IamClient;
 import google.registry.util.RegistryEnvironment;
 import google.registry.util.StringGenerator;
+import jakarta.inject.Inject;
+import jakarta.inject.Named;
 import java.util.Map;
 import java.util.Optional;
-import javax.inject.Inject;
-import javax.inject.Named;
 
 @Action(
     service = Action.GaeService.DEFAULT,

@@ -34,11 +34,11 @@ import google.registry.request.Header;
 import google.registry.util.CidrAddressBlock;
 import google.registry.util.ProxyHttpHeaders;
 import google.registry.util.RegistryEnvironment;
+import jakarta.inject.Inject;
 import jakarta.servlet.http.HttpServletRequest;
 import java.net.InetAddress;
 import java.security.MessageDigest;
 import java.util.Optional;
-import javax.inject.Inject;
 
 /**
  * Container and validation for TLS certificate and IP-allow-listing.

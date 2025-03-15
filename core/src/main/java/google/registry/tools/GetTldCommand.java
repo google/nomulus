@@ -22,10 +22,10 @@ import com.beust.jcommander.Parameters;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import google.registry.model.tld.Tld;
+import jakarta.inject.Inject;
 import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
 import java.util.List;
-import javax.inject.Inject;
 
 /** Command to show a TLD record. */
 @Parameters(separators = " =", commandDescription = "Show TLD record(s)")

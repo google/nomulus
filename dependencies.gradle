@@ -53,17 +53,6 @@ ext {
       // OkHttp 5.0 is in alpha.
       'com.squareup.okhttp3:okhttp:[4.10.0, 5.0.0)!!',
 
-      // Dagger doesn't support the Jakarta namespace yet. Pre-2.0 Jakarta
-      // Inject still use the old javax namespace.
-      // TODO: Remove the cap when https://github.com/google/dagger/issues/2058
-      // is released.
-      'jakarta.inject:jakarta.inject-api:[1,2.0.0)!!',
-
-      // Version 2.51.1 is the last working version before dagger fully supports
-      // jakarta annotations. See comments on jakarta.inject below.
-      'com.google.dagger:dagger-compiler:[2.33,2.51.2)!!',
-      'com.google.dagger:dagger:[2.33,2.51.2)!!',
-
       // This packages has a broken versioning scheme. There are v1beta3-* and
       // v1b4-* packages that are way older than v1b3-rev2024MMDD-* that need to
       // be excluded.
@@ -117,6 +106,8 @@ ext {
       'com.google.cloud:google-cloud-tasks:[1.33.2,)',
       'com.google.code.findbugs:jsr305:[3.0.2,)',
       'com.google.code.gson:gson:[2.8.6,)',
+      'com.google.dagger:dagger-compiler:[2.55,)',
+      'com.google.dagger:dagger:[2.55,)',
       'com.google.errorprone:error_prone_annotations:[2.7.1,)',
       'com.google.flogger:flogger-system-backend:[0.7.4,)',
       'com.google.flogger:flogger:[0.7.4,)',
@@ -147,6 +138,7 @@ ext {
       'io.github.classgraph:classgraph:[4.8.102,)',
       'io.github.java-diff-utils:java-diff-utils:[4.9,)',
       'io.netty:netty-tcnative-boringssl-static:[2.0.36.Final,)',
+      'jakarta.inject:jakarta.inject-api:[2.0.0,)',
       'jakarta.mail:jakarta.mail-api:[2.1.3,)',
       'jakarta.persistence:jakarta.persistence-api:[3.2.0,)',
       'jakarta.servlet:jakarta.servlet-api:[6.0,)',

@@ -22,10 +22,10 @@ import com.google.api.services.dns.Dns;
 import com.google.api.services.dns.model.ManagedZone;
 import com.google.api.services.dns.model.ManagedZoneDnsSecConfig;
 import google.registry.config.RegistryConfig.Config;
+import jakarta.inject.Inject;
 import java.io.IOException;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
-import javax.inject.Inject;
 
 @Parameters(separators = " =", commandDescription = "Create a Managed Zone for a TLD in Cloud DNS.")
 final class CreateCdnsTld extends ConfirmingCommand {

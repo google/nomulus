@@ -46,6 +46,7 @@ import google.registry.request.HttpException;
 import google.registry.security.XsrfTokenManager;
 import google.registry.util.DiffUtils;
 import google.registry.util.RegistryEnvironment;
+import jakarta.inject.Inject;
 import jakarta.servlet.http.Cookie;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
@@ -53,7 +54,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
-import javax.inject.Inject;
 
 /** Base class for handling Console API requests */
 public abstract class ConsoleApiAction implements Runnable {

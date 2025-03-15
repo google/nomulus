@@ -37,12 +37,12 @@ import google.registry.bsa.api.BlockOrder.OrderType;
 import google.registry.bsa.persistence.DownloadSchedule;
 import google.registry.bsa.persistence.DownloadSchedule.CompletedJob;
 import google.registry.tldconfig.idn.IdnTableEnum;
+import jakarta.inject.Inject;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Stream;
-import javax.inject.Inject;
 
 /** Creates diffs between the most recent download and the previous one. */
 class BsaDiffCreator {

@@ -229,7 +229,7 @@ public final class RequestModule {
    *
    * <p>This performs a shallow copy of the {@code Map<String, String[]>} data structure from the
    * servlets API, each time this is provided. This is almost certainly less expensive than the
-   * thread synchronization expense of {@link javax.inject.Singleton @Singleton}.
+   * thread synchronization expense of {@link jakarta.inject.Singleton @Singleton}.
    *
    * <p><b>Note:</b> If a parameter is specified without a value, e.g. {@code /foo?lol} then an
    * empty string value is assumed, since Guava's multimap doesn't permit {@code null} mappings.

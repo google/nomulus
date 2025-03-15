@@ -20,8 +20,8 @@ import static com.google.common.collect.Lists.charactersOf;
 import com.google.common.collect.Iterators;
 import google.registry.util.RandomStringGenerator;
 import google.registry.util.StringGenerator;
+import jakarta.inject.Named;
 import java.util.Iterator;
-import javax.inject.Named;
 
 /**
  * A string generator that produces strings using sequential characters in its alphabet. This is

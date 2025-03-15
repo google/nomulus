@@ -21,12 +21,12 @@ import static google.registry.util.PredicateUtils.supertypeOf;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.flogger.FluentLogger;
+import jakarta.inject.Inject;
+import jakarta.inject.Named;
 import java.io.Serializable;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.function.Predicate;
-import javax.inject.Inject;
-import javax.inject.Named;
 import org.joda.time.Duration;
 
 /** Wrapper that does retry with exponential backoff. */

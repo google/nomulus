@@ -22,8 +22,8 @@ import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import google.registry.model.domain.Domain;
 import google.registry.util.Clock;
+import jakarta.inject.Inject;
 import java.util.List;
-import javax.inject.Inject;
 import org.joda.time.DateTime;
 
 /** Command to show the count of active domains on a given TLD. */

@@ -20,8 +20,8 @@ import com.google.api.client.json.JsonFactory;
 import com.google.api.client.json.gson.GsonFactory;
 import dagger.Module;
 import dagger.Provides;
+import jakarta.inject.Singleton;
 import java.net.HttpURLConnection;
-import javax.inject.Singleton;
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
 

@@ -37,11 +37,11 @@ import google.registry.request.Response;
 import google.registry.request.auth.Auth;
 import google.registry.storage.drive.DriveConnection;
 import google.registry.util.Retrier;
+import jakarta.inject.Inject;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import javax.inject.Inject;
 
 /** Copy all registrar detail reports in a given bucket's subdirectory from GCS to Drive. */
 @Action(

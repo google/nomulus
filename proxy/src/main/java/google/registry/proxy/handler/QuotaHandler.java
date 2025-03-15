@@ -28,8 +28,8 @@ import google.registry.proxy.quota.QuotaManager.QuotaRequest;
 import google.registry.proxy.quota.QuotaManager.QuotaResponse;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
+import jakarta.inject.Inject;
 import java.util.concurrent.Future;
-import javax.inject.Inject;
 
 /**
  * Handler that checks quota fulfillment and terminates connection if necessary.

@@ -33,11 +33,11 @@ import google.registry.request.Parameter;
 import google.registry.request.Response;
 import google.registry.request.auth.Auth;
 import google.registry.util.Concurrent;
+import jakarta.inject.Inject;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.List;
 import java.util.Optional;
-import javax.inject.Inject;
 
 /** Action that creates Google Groups for a registrar's mailing lists. */
 @Action(

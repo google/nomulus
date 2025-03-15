@@ -37,14 +37,14 @@ import google.registry.request.auth.OidcTokenAuthenticationMechanism.TokenExtrac
 import google.registry.request.auth.OidcTokenAuthenticationMechanism.TokenVerifier;
 import google.registry.util.GoogleCredentialsBundle;
 import google.registry.util.RegistryEnvironment;
+import jakarta.inject.Named;
+import jakarta.inject.Provider;
+import jakarta.inject.Qualifier;
+import jakarta.inject.Singleton;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.function.Supplier;
 import javax.annotation.Nullable;
-import javax.inject.Named;
-import javax.inject.Provider;
-import javax.inject.Qualifier;
-import javax.inject.Singleton;
 
 /** Dagger module for authentication routines. */
 @Module

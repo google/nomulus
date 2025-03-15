@@ -25,9 +25,9 @@ import google.registry.model.tld.label.PremiumListDao;
 import google.registry.request.Action;
 import google.registry.request.Action.GaeService;
 import google.registry.request.auth.Auth;
+import jakarta.inject.Inject;
 import java.util.Comparator;
 import java.util.Optional;
-import javax.inject.Inject;
 
 /**
  * An action that lists premium lists, for use by the {@code nomulus list_premium_lists} command.

@@ -29,11 +29,11 @@ import google.registry.tools.params.PathParameter;
 import google.registry.util.Clock;
 import google.registry.util.RegistryEnvironment;
 import google.registry.util.StringGenerator;
+import jakarta.inject.Inject;
+import jakarta.inject.Named;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
-import javax.inject.Inject;
-import javax.inject.Named;
 
 /** Composite command to set up OT&E TLDs and accounts. */
 @Parameters(separators = " =", commandDescription = "Set up OT&E TLDs and registrars")
@@ -127,8 +127,8 @@ final class SetupOteCommand extends ConfirmingCommand {
               """
 
 
-                  WARNING: Running against %s environment. Are \
-                  you sure you didn't mean to run this against sandbox (e.g. "-e SANDBOX")?""",
+WARNING: Running against %s environment. Are \
+you sure you didn't mean to run this against sandbox (e.g. "-e SANDBOX")?""",
               RegistryEnvironment.get()));
     }
 

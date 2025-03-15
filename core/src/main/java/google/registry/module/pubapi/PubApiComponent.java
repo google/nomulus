@@ -34,7 +34,7 @@ import google.registry.request.Modules.GsonModule;
 import google.registry.request.Modules.NetHttpTransportModule;
 import google.registry.request.auth.AuthModule;
 import google.registry.util.UtilsModule;
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 
 /** Dagger component with instance lifetime for "pubapi" App Engine module. */
 @Singleton

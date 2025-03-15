@@ -34,7 +34,7 @@ import google.registry.request.Response;
 import google.registry.request.auth.Auth;
 import google.registry.util.Clock;
 import google.registry.util.RegistryEnvironment;
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 /**
  * Starts a Dataflow pipeline that resaves all EPP resources projected to the current time.

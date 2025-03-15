@@ -40,8 +40,8 @@ import google.registry.request.Modules.UrlConnectionServiceModule;
 import google.registry.tools.AuthModule.LocalCredentialModule;
 import google.registry.util.UtilsModule;
 import google.registry.whois.NonCachingWhoisModule;
+import jakarta.inject.Singleton;
 import javax.annotation.Nullable;
-import javax.inject.Singleton;
 
 /**
  * Dagger component for Registry Tool.

@@ -23,9 +23,9 @@ import com.beust.jcommander.Parameters;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.model.console.User;
 import google.registry.persistence.VKey;
+import jakarta.inject.Inject;
 import java.util.Optional;
 import javax.annotation.Nullable;
-import javax.inject.Inject;
 
 /** Deletes a {@link User}. */
 @Parameters(separators = " =", commandDescription = "Delete a user account")

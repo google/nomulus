@@ -16,9 +16,9 @@ package google.registry.whois;
 
 import google.registry.config.RegistryConfig.Config;
 import google.registry.util.Clock;
+import jakarta.inject.Inject;
 import java.io.IOException;
 import java.io.StringReader;
-import javax.inject.Inject;
 import org.joda.time.DateTime;
 
 /** High-level WHOIS API for other packages. */

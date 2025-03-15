@@ -25,7 +25,7 @@ import com.google.monitoring.metrics.IncrementableMetric;
 import com.google.monitoring.metrics.LabelDescriptor;
 import com.google.monitoring.metrics.MetricRegistryImpl;
 import google.registry.util.RegistryEnvironment;
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import org.joda.time.Duration;
 
 /** DNS instrumentation. */

@@ -30,8 +30,8 @@ import google.registry.util.Retrier;
 import google.registry.whois.WhoisException.UncheckedWhoisException;
 import google.registry.whois.WhoisMetrics.WhoisMetric;
 import google.registry.whois.WhoisResponse.WhoisResponseResults;
+import jakarta.inject.Inject;
 import java.io.Reader;
-import javax.inject.Inject;
 import org.joda.time.DateTime;
 
 /**

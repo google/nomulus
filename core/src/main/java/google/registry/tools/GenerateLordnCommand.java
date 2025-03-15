@@ -25,10 +25,10 @@ import google.registry.model.domain.Domain;
 import google.registry.tmch.LordnTaskUtils;
 import google.registry.tools.params.PathParameter;
 import google.registry.util.Clock;
+import jakarta.inject.Inject;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import javax.inject.Inject;
 import org.joda.time.DateTime;
 
 /** Command to generate a LORDN CSV file for an entire TLD. */

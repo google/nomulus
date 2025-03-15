@@ -36,13 +36,13 @@ import google.registry.xjc.iirdea.XjcIirdeaResult;
 import google.registry.xjc.rdeheader.XjcRdeHeader;
 import google.registry.xjc.rdereport.XjcRdeReportReport;
 import google.registry.xml.XmlException;
+import jakarta.inject.Inject;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.security.GeneralSecurityException;
-import javax.inject.Inject;
 
 /**
  * Class that uploads a decrypted XML deposit report to ICANN's webserver.

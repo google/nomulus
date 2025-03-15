@@ -28,9 +28,9 @@ import io.netty.util.Attribute;
 import io.netty.util.AttributeKey;
 import io.netty.util.ReferenceCountUtil;
 import io.netty.util.ReferenceCounted;
+import jakarta.inject.Inject;
 import java.util.Deque;
 import java.util.Queue;
-import javax.inject.Inject;
 
 /**
  * Receives inbound massage of type {@code I}, and writes it to the {@code relayChannel} stored in

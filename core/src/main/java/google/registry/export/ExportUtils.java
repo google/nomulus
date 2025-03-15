@@ -20,9 +20,9 @@ import google.registry.model.tld.Tld;
 import google.registry.model.tld.label.ReservedList;
 import google.registry.model.tld.label.ReservedList.ReservedListEntry;
 import google.registry.model.tld.label.ReservedListDao;
+import jakarta.inject.Inject;
 import java.util.Set;
 import java.util.TreeSet;
-import javax.inject.Inject;
 
 /** Container class for exported-related utility methods. */
 public final class ExportUtils {

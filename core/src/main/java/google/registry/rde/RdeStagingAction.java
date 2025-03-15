@@ -59,9 +59,9 @@ import google.registry.request.auth.Auth;
 import google.registry.util.Clock;
 import google.registry.util.RegistryEnvironment;
 import google.registry.xml.ValidationMode;
+import jakarta.inject.Inject;
 import java.io.IOException;
 import java.util.Optional;
-import javax.inject.Inject;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
 

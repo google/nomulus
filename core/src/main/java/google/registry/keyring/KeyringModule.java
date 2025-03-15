@@ -20,8 +20,8 @@ import dagger.Provides;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.keyring.api.Keyring;
 import google.registry.keyring.secretmanager.SecretManagerKeyring;
+import jakarta.inject.Singleton;
 import java.util.Optional;
-import javax.inject.Singleton;
 
 /** Dagger module for {@link Keyring} */
 @Module

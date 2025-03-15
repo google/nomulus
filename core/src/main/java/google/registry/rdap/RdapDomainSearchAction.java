@@ -50,13 +50,13 @@ import google.registry.request.HttpException.UnprocessableEntityException;
 import google.registry.request.Parameter;
 import google.registry.request.auth.Auth;
 import google.registry.util.NonFinalForTesting;
+import jakarta.inject.Inject;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import java.net.InetAddress;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
-import javax.inject.Inject;
 import org.hibernate.Hibernate;
 
 /**

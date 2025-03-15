@@ -17,8 +17,8 @@ package google.registry.bsa;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.groups.GmailClient;
 import google.registry.util.EmailMessage;
+import jakarta.inject.Inject;
 import jakarta.mail.internet.InternetAddress;
-import javax.inject.Inject;
 
 /** Sends BSA-related email notifications. */
 class BsaEmailSender {

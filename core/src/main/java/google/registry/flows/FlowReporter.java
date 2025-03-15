@@ -28,8 +28,8 @@ import google.registry.flows.FlowModule.RegistrarId;
 import google.registry.flows.annotations.ReportingSpec;
 import google.registry.model.eppcommon.Trid;
 import google.registry.model.eppinput.EppInput;
+import jakarta.inject.Inject;
 import java.util.Optional;
-import javax.inject.Inject;
 import org.json.simple.JSONValue;
 
 /** Reporter used by {@link FlowRunner} to record flow execution data for reporting. */

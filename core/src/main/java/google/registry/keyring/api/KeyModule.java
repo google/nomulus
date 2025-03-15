@@ -18,9 +18,9 @@ import static com.google.common.base.Strings.emptyToNull;
 
 import dagger.Module;
 import dagger.Provides;
+import jakarta.inject.Qualifier;
 import java.lang.annotation.Documented;
 import java.util.Optional;
-import javax.inject.Qualifier;
 import org.bouncycastle.openpgp.PGPKeyPair;
 import org.bouncycastle.openpgp.PGPPrivateKey;
 import org.bouncycastle.openpgp.PGPPublicKey;

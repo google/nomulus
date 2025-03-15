@@ -20,9 +20,9 @@ import com.google.common.flogger.FluentLogger;
 import google.registry.keyring.api.KeyModule.Key;
 import google.registry.model.tld.Tld;
 import google.registry.request.UrlConnectionUtils;
+import jakarta.inject.Inject;
 import java.net.HttpURLConnection;
 import java.util.Optional;
-import javax.inject.Inject;
 
 /** Helper class for setting the authorization header on a MarksDB LORDN request. */
 final class LordnRequestInitializer {

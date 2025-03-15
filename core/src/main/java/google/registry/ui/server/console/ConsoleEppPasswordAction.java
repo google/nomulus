@@ -39,8 +39,8 @@ import google.registry.request.auth.Auth;
 import google.registry.request.auth.AuthenticatedRegistrarAccessor;
 import google.registry.request.auth.AuthenticatedRegistrarAccessor.RegistrarAccessDeniedException;
 import google.registry.util.DiffUtils;
+import jakarta.inject.Inject;
 import java.util.Optional;
-import javax.inject.Inject;
 
 @Action(
     service = GaeService.DEFAULT,

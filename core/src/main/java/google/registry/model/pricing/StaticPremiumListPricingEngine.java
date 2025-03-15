@@ -20,8 +20,8 @@ import static google.registry.util.DomainNameUtils.getTldFromDomainName;
 import com.google.common.net.InternetDomainName;
 import google.registry.model.tld.Tld;
 import google.registry.model.tld.label.PremiumListDao;
+import jakarta.inject.Inject;
 import java.util.Optional;
-import javax.inject.Inject;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
 

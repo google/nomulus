@@ -39,11 +39,11 @@ import google.registry.model.registrar.RegistrarPoc;
 import google.registry.model.registrar.RegistrarPocBase;
 import google.registry.util.Clock;
 import google.registry.util.DateTimeUtils;
+import jakarta.inject.Inject;
 import java.io.IOException;
 import java.util.Optional;
 import java.util.function.Predicate;
 import javax.annotation.Nullable;
-import javax.inject.Inject;
 import org.joda.time.DateTime;
 
 /**

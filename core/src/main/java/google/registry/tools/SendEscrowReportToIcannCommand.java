@@ -19,10 +19,10 @@ import com.beust.jcommander.Parameters;
 import dagger.Lazy;
 import google.registry.rde.RdeReporter;
 import google.registry.tools.params.PathParameter;
+import jakarta.inject.Inject;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
-import javax.inject.Inject;
 
 /** Command to send ICANN notification that an escrow deposit was uploaded. */
 @Parameters(separators = " =", commandDescription = "Send an ICANN report of an uploaded deposit.")

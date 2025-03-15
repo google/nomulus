@@ -36,13 +36,13 @@ import google.registry.request.Parameter;
 import google.registry.request.auth.Auth;
 import google.registry.security.XsrfTokenManager;
 import google.registry.util.RegistryEnvironment;
+import jakarta.inject.Inject;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
 import java.util.function.Function;
-import javax.inject.Inject;
 import org.joda.time.DateTime;
 
 /**

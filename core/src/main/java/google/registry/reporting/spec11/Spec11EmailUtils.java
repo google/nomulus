@@ -38,11 +38,11 @@ import google.registry.model.registrar.RegistrarPoc;
 import google.registry.reporting.spec11.soy.Spec11EmailSoyInfo;
 import google.registry.util.EmailMessage;
 import google.registry.util.Sleeper;
+import jakarta.inject.Inject;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.InternetAddress;
 import java.util.List;
 import java.util.Map;
-import javax.inject.Inject;
 import org.joda.time.Duration;
 import org.joda.time.LocalDate;
 

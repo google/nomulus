@@ -26,6 +26,7 @@ import google.registry.bsa.api.BsaException;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.request.UrlConnectionService;
 import google.registry.util.Retrier;
+import jakarta.inject.Inject;
 import java.io.BufferedInputStream;
 import java.io.Closeable;
 import java.io.IOException;
@@ -33,7 +34,6 @@ import java.io.InputStream;
 import java.net.URL;
 import java.security.GeneralSecurityException;
 import java.util.function.BiConsumer;
-import javax.inject.Inject;
 import javax.net.ssl.HttpsURLConnection;
 
 /** Fetches data from the BSA API. */

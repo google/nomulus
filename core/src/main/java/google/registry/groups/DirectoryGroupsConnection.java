@@ -31,9 +31,9 @@ import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.flogger.FluentLogger;
 import google.registry.config.RegistryConfig.Config;
+import jakarta.inject.Inject;
 import java.io.IOException;
 import java.util.Set;
-import javax.inject.Inject;
 
 /**
  * Class encapsulating methods to access Google Groups API.

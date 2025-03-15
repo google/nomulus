@@ -30,13 +30,13 @@ import google.registry.util.NonFinalForTesting;
 import google.registry.util.RegistryEnvironment;
 import google.registry.util.SystemClock;
 import google.registry.util.TypeUtils.TypeInstantiator;
+import jakarta.inject.Provider;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.Objects;
 import java.util.Optional;
 import javax.annotation.Nullable;
-import javax.inject.Provider;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
 

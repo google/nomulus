@@ -21,11 +21,11 @@ import google.registry.config.RegistryConfig.Config;
 import google.registry.request.Action;
 import google.registry.request.Action.GaeService;
 import google.registry.request.auth.Auth;
+import jakarta.inject.Inject;
 import java.io.IOException;
 import java.net.URL;
 import java.security.GeneralSecurityException;
 import java.util.Optional;
-import javax.inject.Inject;
 
 /** Action to download the latest ICANN TMCH CRL from MarksDB. */
 @Action(

@@ -22,9 +22,9 @@ import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.Session;
 import com.jcraft.jsch.SftpException;
 import google.registry.config.RegistryConfig.Config;
+import jakarta.inject.Inject;
 import java.io.Closeable;
 import java.net.URI;
-import javax.inject.Inject;
 import org.joda.time.Duration;
 
 /**

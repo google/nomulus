@@ -28,7 +28,7 @@ import google.registry.request.Action;
 import google.registry.request.Action.GaeService;
 import google.registry.request.auth.Auth;
 import google.registry.util.Clock;
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import org.joda.time.DateTime;
 
 /** An action that lists hosts, for use by the {@code nomulus list_hosts} command. */

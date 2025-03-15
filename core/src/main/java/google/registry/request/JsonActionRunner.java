@@ -16,8 +16,8 @@ package google.registry.request;
 
 import static com.google.common.base.Verify.verifyNotNull;
 
+import jakarta.inject.Inject;
 import java.util.Map;
-import javax.inject.Inject;
 
 /** Runner for actions that read and write JSON objects. */
 public final class JsonActionRunner {

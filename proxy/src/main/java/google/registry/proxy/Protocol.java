@@ -22,8 +22,8 @@ import io.netty.channel.ChannelHandler;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.util.Attribute;
 import io.netty.util.AttributeKey;
+import jakarta.inject.Provider;
 import javax.annotation.Nullable;
-import javax.inject.Provider;
 
 /** Value class that encapsulates parameters of a specific connection. */
 public interface Protocol {

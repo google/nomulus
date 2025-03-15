@@ -31,8 +31,8 @@ import google.registry.request.Action.GaeService;
 import google.registry.request.auth.Auth;
 import google.registry.ui.server.SendEmailUtils;
 import google.registry.util.Clock;
+import jakarta.inject.Inject;
 import java.util.Optional;
-import javax.inject.Inject;
 import org.joda.time.Days;
 
 /**

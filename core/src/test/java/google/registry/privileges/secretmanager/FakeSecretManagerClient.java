@@ -19,10 +19,10 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import com.google.cloud.secretmanager.v1.SecretVersion.State;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import jakarta.inject.Inject;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Optional;
-import javax.inject.Inject;
 
 /** Implements {@link SecretManagerClient} for tests. */
 public class FakeSecretManagerClient implements SecretManagerClient {

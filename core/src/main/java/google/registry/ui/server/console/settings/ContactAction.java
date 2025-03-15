@@ -43,12 +43,12 @@ import google.registry.ui.forms.FormException;
 import google.registry.ui.server.RegistrarFormFields;
 import google.registry.ui.server.console.ConsoleApiAction;
 import google.registry.ui.server.console.ConsoleApiParams;
+import jakarta.inject.Inject;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import javax.inject.Inject;
 
 @Action(
     service = GaeService.DEFAULT,

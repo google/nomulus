@@ -16,8 +16,8 @@ package google.registry.module.tools;
 
 import google.registry.request.RequestHandler;
 import google.registry.request.auth.RequestAuthenticator;
-import javax.inject.Inject;
-import javax.inject.Provider;
+import jakarta.inject.Inject;
+import jakarta.inject.Provider;
 
 /** Request handler for the tools module. */
 public class ToolsRequestHandler extends RequestHandler<ToolsRequestComponent> {

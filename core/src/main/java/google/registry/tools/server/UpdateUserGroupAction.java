@@ -24,7 +24,7 @@ import google.registry.request.Action.GaeService;
 import google.registry.request.Parameter;
 import google.registry.request.Response;
 import google.registry.request.auth.Auth;
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 /** Action that adds or deletes a console user to/from the group that has IAP permissions. */
 @Action(

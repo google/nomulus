@@ -21,6 +21,9 @@ import static google.registry.util.ResourceUtils.readResourceUtf8;
 import com.google.common.collect.ImmutableList;
 import dagger.Module;
 import dagger.Provides;
+import jakarta.inject.Provider;
+import jakarta.inject.Qualifier;
+import jakarta.inject.Singleton;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.GeneralSecurityException;
@@ -29,9 +32,6 @@ import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
-import javax.inject.Provider;
-import javax.inject.Qualifier;
-import javax.inject.Singleton;
 import org.joda.time.Duration;
 
 /**

@@ -40,12 +40,12 @@ import google.registry.config.RegistryConfig.Config;
 import google.registry.request.Action.GaeService;
 import google.registry.request.Action.GkeService;
 import google.registry.request.Action.Service;
+import jakarta.inject.Inject;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URL;
 import java.util.Map;
 import javax.annotation.Nullable;
-import javax.inject.Inject;
 import org.json.simple.JSONValue;
 
 /**

@@ -19,8 +19,8 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
+import jakarta.inject.Inject;
 import java.util.Optional;
-import javax.inject.Inject;
 import org.joda.time.DateTime;
 
 /** Assigns work for each cron invocation of domain refresh job. */

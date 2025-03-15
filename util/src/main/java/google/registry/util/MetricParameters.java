@@ -20,6 +20,7 @@ import com.google.api.services.monitoring.v3.model.MonitoredResource;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.flogger.FluentLogger;
 import com.google.common.io.CharStreams;
+import jakarta.inject.Inject;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
@@ -28,7 +29,6 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Map;
 import java.util.function.Function;
-import javax.inject.Inject;
 
 /**
  * Utility class to obtain labels for monitored resource of type {@code gke_container}.

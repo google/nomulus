@@ -27,9 +27,9 @@ import com.google.common.collect.ImmutableList;
 import google.registry.bsa.persistence.DownloadSchedule.CompletedJob;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.util.Clock;
+import jakarta.inject.Inject;
 import java.util.Objects;
 import java.util.Optional;
-import javax.inject.Inject;
 import org.joda.time.Duration;
 
 /**

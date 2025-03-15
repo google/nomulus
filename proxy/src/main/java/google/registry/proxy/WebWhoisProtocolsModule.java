@@ -26,12 +26,12 @@ import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.http.HttpServerCodec;
 import io.netty.handler.codec.http.HttpServerExpectContinueHandler;
 import io.netty.handler.ssl.SslProvider;
+import jakarta.inject.Provider;
+import jakarta.inject.Qualifier;
+import jakarta.inject.Singleton;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.util.function.Supplier;
-import javax.inject.Provider;
-import javax.inject.Qualifier;
-import javax.inject.Singleton;
 
 /** A module that provides the {@link FrontendProtocol}s to redirect HTTP(S) web WHOIS requests. */
 @Module

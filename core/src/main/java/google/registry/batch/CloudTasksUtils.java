@@ -49,6 +49,7 @@ import google.registry.util.CollectionUtils;
 import google.registry.util.GoogleCredentialsBundle;
 import google.registry.util.RegistryEnvironment;
 import google.registry.util.Retrier;
+import jakarta.inject.Inject;
 import java.io.Serial;
 import java.io.Serializable;
 import java.nio.charset.StandardCharsets;
@@ -58,7 +59,6 @@ import java.util.Random;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
-import javax.inject.Inject;
 import org.joda.time.Duration;
 
 /** Utilities for dealing with Cloud Tasks. */

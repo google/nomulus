@@ -22,9 +22,9 @@ import com.beust.jcommander.Parameters;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.model.console.User;
 import google.registry.persistence.VKey;
+import jakarta.inject.Inject;
 import java.util.Optional;
 import javax.annotation.Nullable;
-import javax.inject.Inject;
 
 /** Command to create a new User. */
 @Parameters(separators = " =", commandDescription = "Update a user account")

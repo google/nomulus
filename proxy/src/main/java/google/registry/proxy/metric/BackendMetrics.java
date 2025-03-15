@@ -21,8 +21,8 @@ import com.google.monitoring.metrics.LabelDescriptor;
 import com.google.monitoring.metrics.MetricRegistryImpl;
 import google.registry.util.NonFinalForTesting;
 import io.netty.handler.codec.http.FullHttpResponse;
-import javax.inject.Inject;
-import javax.inject.Singleton;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 import org.joda.time.Duration;
 
 /** Backend metrics instrumentation. */

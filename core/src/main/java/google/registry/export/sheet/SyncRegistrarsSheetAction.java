@@ -29,11 +29,11 @@ import google.registry.request.Parameter;
 import google.registry.request.Response;
 import google.registry.request.auth.Auth;
 import google.registry.request.lock.LockHandler;
+import jakarta.inject.Inject;
 import java.io.IOException;
 import java.util.Optional;
 import java.util.concurrent.Callable;
 import javax.annotation.Nullable;
-import javax.inject.Inject;
 import org.joda.time.Duration;
 
 /**

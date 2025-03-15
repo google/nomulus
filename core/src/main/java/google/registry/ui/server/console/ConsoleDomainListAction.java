@@ -30,10 +30,10 @@ import google.registry.request.Action.GaeService;
 import google.registry.request.Action.GkeService;
 import google.registry.request.Parameter;
 import google.registry.request.auth.Auth;
+import jakarta.inject.Inject;
 import jakarta.persistence.TypedQuery;
 import java.util.List;
 import java.util.Optional;
-import javax.inject.Inject;
 import org.joda.time.DateTime;
 
 /** Returns a (paginated) list of domains for a particular registrar. */
