@@ -28,7 +28,7 @@ import com.google.gson.annotations.Expose;
 import google.registry.flows.EppException.AuthenticationErrorException;
 import google.registry.flows.PasswordOnlyTransportCredentials;
 import google.registry.model.console.ConsoleUpdateHistory;
-import google.registry.model.console.RegistrarUpdateHistory;
+import google.registry.model.console.SimpleConsoleUpdateHistory;
 import google.registry.model.console.User;
 import google.registry.model.registrar.Registrar;
 import google.registry.request.Action;
@@ -107,14 +107,10 @@ public class ConsoleEppPasswordAction extends ConsoleApiAction {
               Registrar updatedRegistrar =
                   registrar.asBuilder().setPassword(eppRequestBody.newPassword()).build();
               tm().put(updatedRegistrar);
-              EppPasswordData sanitizedData =
-                  new EppPasswordData(
-                      eppRequestBody.registrarId, "********", "••••••••", "••••••••");
               finishAndPersistConsoleUpdateHistory(
-                  new RegistrarUpdateHistory.Builder()
-                      .setType(ConsoleUpdateHistory.Type.REGISTRAR_UPDATE)
-                      .setRegistrar(updatedRegistrar)
-                      .setRequestBody(consoleApiParams.gson().toJson(sanitizedData)));
+                  new SimpleConsoleUpdateHistory.Builder()
+                      .setType(ConsoleUpdateHistory.Type.EPP_PASSWORD_UPDATE)
+                      .setDescription(registrar.getRegistrarId()));
               sendExternalUpdates(
                   ImmutableMap.of("password", new DiffUtils.DiffPair("********", "••••••••")),
                   registrar,

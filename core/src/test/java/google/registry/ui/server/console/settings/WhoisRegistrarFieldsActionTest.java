@@ -27,8 +27,9 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSetMultimap;
 import com.google.common.collect.Maps;
 import com.google.gson.Gson;
+import google.registry.model.console.ConsoleUpdateHistory;
 import google.registry.model.console.RegistrarRole;
-import google.registry.model.console.RegistrarUpdateHistory;
+import google.registry.model.console.SimpleConsoleUpdateHistory;
 import google.registry.model.console.User;
 import google.registry.model.console.UserRoles;
 import google.registry.model.registrar.Registrar;
@@ -131,9 +132,9 @@ public class WhoisRegistrarFieldsActionTest {
         .that(newRegistrar)
         .isEqualExceptFields(
             oldRegistrar, "whoisServer", "url", "localizedAddress", "phoneNumber", "faxNumber");
-    assertAboutImmutableObjects()
-        .that(loadSingleton(RegistrarUpdateHistory.class).get().getRegistrar())
-        .hasFieldsEqualTo(newRegistrar);
+    SimpleConsoleUpdateHistory history = loadSingleton(SimpleConsoleUpdateHistory.class).get();
+    assertThat(history.getType()).isEqualTo(ConsoleUpdateHistory.Type.REGISTRAR_UPDATE);
+    assertThat(history.getDescription()).hasValue("TheRegistrar");
   }
 
   @Test

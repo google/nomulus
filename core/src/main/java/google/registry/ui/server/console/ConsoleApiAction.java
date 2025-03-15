@@ -37,7 +37,7 @@ import google.registry.batch.CloudTasksUtils;
 import google.registry.config.RegistryConfig;
 import google.registry.export.sheet.SyncRegistrarsSheetAction;
 import google.registry.model.console.ConsolePermission;
-import google.registry.model.console.ConsoleUpdateHistory;
+import google.registry.model.console.SimpleConsoleUpdateHistory;
 import google.registry.model.console.User;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarPoc;
@@ -262,7 +262,7 @@ public abstract class ConsoleApiAction implements Runnable {
     }
   }
 
-  protected void finishAndPersistConsoleUpdateHistory(ConsoleUpdateHistory.Builder<?, ?> builder) {
+  protected void finishAndPersistConsoleUpdateHistory(SimpleConsoleUpdateHistory.Builder builder) {
     builder.setActingUser(consoleApiParams.authResult().user().get());
     builder.setUrl(consoleApiParams.request().getRequestURI());
     builder.setMethod(consoleApiParams.request().getMethod());

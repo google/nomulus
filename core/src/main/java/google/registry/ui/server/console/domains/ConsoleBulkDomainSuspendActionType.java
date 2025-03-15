@@ -16,6 +16,7 @@ package google.registry.ui.server.console.domains;
 
 import com.google.gson.JsonElement;
 import google.registry.model.console.ConsolePermission;
+import google.registry.model.console.ConsoleUpdateHistory;
 
 /** An action that will suspend the given domain, assigning all 5 server*Prohibited statuses. */
 public class ConsoleBulkDomainSuspendActionType extends ConsoleDomainActionType {
@@ -63,5 +64,10 @@ public class ConsoleBulkDomainSuspendActionType extends ConsoleDomainActionType 
   @Override
   public ConsolePermission getNecessaryPermission() {
     return ConsolePermission.SUSPEND_DOMAIN;
+  }
+
+  @Override
+  public ConsoleUpdateHistory.Type getConsoleUpdateHistoryType() {
+    return ConsoleUpdateHistory.Type.DOMAIN_SUSPEND;
   }
 }

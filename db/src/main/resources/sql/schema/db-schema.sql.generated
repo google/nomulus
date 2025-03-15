@@ -139,13 +139,24 @@
         history_method text not null,
         history_modification_time timestamp(6) with time zone not null,
         history_request_body text,
-        history_type text not null check (history_type in ('EPP_ACTION','POC_CREATE','POC_UPDATE','POC_DELETE','REGISTRAR_UPDATE','USER_CREATE','USER_DELETE','USER_UPDATE')),
+        history_type text not null check (history_type in ('DOMAIN_DELETE','DOMAIN_SUSPEND','DOMAIN_UNSUSPEND','EPP_PASSWORD_UPDATE','REGISTRAR_CREATE','REGISTRAR_SECURITY_UPDATE','REGISTRAR_UPDATE','USER_CREATE','USER_DELETE','USER_UPDATE')),
         history_url text not null,
         history_entry_class text not null,
         repo_id text not null,
         revision_id bigint,
         history_acting_user text not null,
         primary key (history_revision_id)
+    );
+
+    create table "ConsoleUpdateHistory" (
+        revision_id bigint not null,
+        description text,
+        method text not null,
+        modification_time timestamp(6) with time zone not null,
+        type text not null check (type in ('DOMAIN_DELETE','DOMAIN_SUSPEND','DOMAIN_UNSUSPEND','EPP_PASSWORD_UPDATE','REGISTRAR_CREATE','REGISTRAR_SECURITY_UPDATE','REGISTRAR_UPDATE','USER_CREATE','USER_DELETE','USER_UPDATE')),
+        url text not null,
+        acting_user text not null,
+        primary key (revision_id)
     );
 
     create table "Contact" (
@@ -693,7 +704,7 @@
         history_method text not null,
         history_modification_time timestamp(6) with time zone not null,
         history_request_body text,
-        history_type text not null check (history_type in ('EPP_ACTION','POC_CREATE','POC_UPDATE','POC_DELETE','REGISTRAR_UPDATE','USER_CREATE','USER_DELETE','USER_UPDATE')),
+        history_type text not null check (history_type in ('DOMAIN_DELETE','DOMAIN_SUSPEND','DOMAIN_UNSUSPEND','EPP_PASSWORD_UPDATE','REGISTRAR_CREATE','REGISTRAR_SECURITY_UPDATE','REGISTRAR_UPDATE','USER_CREATE','USER_DELETE','USER_UPDATE')),
         history_url text not null,
         email_address text not null,
         registrar_id text not null,
@@ -717,7 +728,7 @@
         history_method text not null,
         history_modification_time timestamp(6) with time zone not null,
         history_request_body text,
-        history_type text not null check (history_type in ('EPP_ACTION','POC_CREATE','POC_UPDATE','POC_DELETE','REGISTRAR_UPDATE','USER_CREATE','USER_DELETE','USER_UPDATE')),
+        history_type text not null check (history_type in ('DOMAIN_DELETE','DOMAIN_SUSPEND','DOMAIN_UNSUSPEND','EPP_PASSWORD_UPDATE','REGISTRAR_CREATE','REGISTRAR_SECURITY_UPDATE','REGISTRAR_UPDATE','USER_CREATE','USER_DELETE','USER_UPDATE')),
         history_url text not null,
         allowed_tlds text[],
         billing_account_map hstore,
@@ -906,7 +917,7 @@
         history_method text not null,
         history_modification_time timestamp(6) with time zone not null,
         history_request_body text,
-        history_type text not null check (history_type in ('EPP_ACTION','POC_CREATE','POC_UPDATE','POC_DELETE','REGISTRAR_UPDATE','USER_CREATE','USER_DELETE','USER_UPDATE')),
+        history_type text not null check (history_type in ('DOMAIN_DELETE','DOMAIN_SUSPEND','DOMAIN_UNSUSPEND','EPP_PASSWORD_UPDATE','REGISTRAR_CREATE','REGISTRAR_SECURITY_UPDATE','REGISTRAR_UPDATE','USER_CREATE','USER_DELETE','USER_UPDATE')),
         history_url text not null,
         email_address text not null,
         registry_lock_email_address text,
@@ -1009,6 +1020,15 @@
 
     create index IDXiahqo1d1fqdfknywmj2xbxl7t 
        on "ConsoleEppActionHistory" (revision_id);
+
+    create index idx_console_update_history_acting_user 
+       on "ConsoleUpdateHistory" (acting_user);
+
+    create index idx_console_update_history_type 
+       on "ConsoleUpdateHistory" (type);
+
+    create index idx_console_update_history_modification_time 
+       on "ConsoleUpdateHistory" (modification_time);
 
     create index IDX3y752kr9uh4kh6uig54vemx0l 
        on "Contact" (creation_time);
@@ -1226,6 +1246,11 @@
     alter table if exists "ConsoleEppActionHistory" 
        add constraint FKb686b9os2nsjpv930npa4r3b4 
        foreign key (history_acting_user) 
+       references "User";
+
+    alter table if exists "ConsoleUpdateHistory" 
+       add constraint FKnhl1eolgix64u90xv3pj6xa3x 
+       foreign key (acting_user) 
        references "User";
 
     alter table if exists "DelegationSignerData" 

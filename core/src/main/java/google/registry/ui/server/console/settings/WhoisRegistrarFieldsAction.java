@@ -23,7 +23,7 @@ import static jakarta.servlet.http.HttpServletResponse.SC_OK;
 
 import google.registry.model.console.ConsolePermission;
 import google.registry.model.console.ConsoleUpdateHistory;
-import google.registry.model.console.RegistrarUpdateHistory;
+import google.registry.model.console.SimpleConsoleUpdateHistory;
 import google.registry.model.console.User;
 import google.registry.model.registrar.Registrar;
 import google.registry.request.Action;
@@ -107,10 +107,9 @@ public class WhoisRegistrarFieldsAction extends ConsoleApiAction {
             .build();
     tm().put(newRegistrar);
     finishAndPersistConsoleUpdateHistory(
-        new RegistrarUpdateHistory.Builder()
+        new SimpleConsoleUpdateHistory.Builder()
             .setType(ConsoleUpdateHistory.Type.REGISTRAR_UPDATE)
-            .setRegistrar(newRegistrar)
-            .setRequestBody(consoleApiParams.gson().toJson(registrar.get())));
+            .setDescription(newRegistrar.getRegistrarId()));
     sendExternalUpdatesIfNecessary(
         EmailInfo.create(
             savedRegistrar,

@@ -41,10 +41,12 @@ import org.joda.time.DateTime;
 public abstract class ConsoleUpdateHistory extends ImmutableObject implements Buildable {
 
   public enum Type {
-    EPP_ACTION,
-    POC_CREATE,
-    POC_UPDATE,
-    POC_DELETE,
+    DOMAIN_DELETE,
+    DOMAIN_SUSPEND,
+    DOMAIN_UNSUSPEND,
+    EPP_PASSWORD_UPDATE,
+    REGISTRAR_CREATE,
+    REGISTRAR_SECURITY_UPDATE,
     REGISTRAR_UPDATE,
     USER_CREATE,
     USER_DELETE,

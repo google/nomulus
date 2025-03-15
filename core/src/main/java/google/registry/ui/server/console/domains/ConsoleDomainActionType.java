@@ -18,6 +18,7 @@ import com.google.common.escape.Escaper;
 import com.google.common.xml.XmlEscapers;
 import com.google.gson.JsonElement;
 import google.registry.model.console.ConsolePermission;
+import google.registry.model.console.ConsoleUpdateHistory;
 
 /**
  * A type of EPP action to perform on domain(s), run by the {@link ConsoleBulkDomainAction}.
@@ -67,6 +68,9 @@ public abstract class ConsoleDomainActionType {
 
   /** Returns the permission necessary to successfully perform this action. */
   public abstract ConsolePermission getNecessaryPermission();
+
+  /** Returns the type of history / audit logging object to save. */
+  public abstract ConsoleUpdateHistory.Type getConsoleUpdateHistoryType();
 
   /** Returns the XML template contents for this action. */
   protected abstract String getXmlTemplate();

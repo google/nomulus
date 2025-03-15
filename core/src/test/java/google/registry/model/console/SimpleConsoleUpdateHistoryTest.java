@@ -1,4 +1,4 @@
-// Copyright 2024 The Nomulus Authors. All Rights Reserved.
+// Copyright 2025 The Nomulus Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,24 +14,21 @@
 
 package google.registry.model.console;
 
-import static com.google.common.collect.Iterables.getOnlyElement;
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.createTld;
+import static google.registry.testing.DatabaseHelper.loadByEntity;
 import static google.registry.testing.DatabaseHelper.persistActiveContact;
 import static google.registry.testing.DatabaseHelper.persistDomainWithDependentResources;
+import static google.registry.testing.DatabaseHelper.persistResource;
 
 import google.registry.model.EntityTestCase;
-import google.registry.model.domain.DomainHistory;
 import google.registry.testing.DatabaseHelper;
 import google.registry.util.DateTimeUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-/** Tests for {@link ConsoleEppActionHistory}. */
-public class ConsoleEppActionHistoryTest extends EntityTestCase {
-
-  ConsoleEppActionHistoryTest() {
+public class SimpleConsoleUpdateHistoryTest extends EntityTestCase {
+  SimpleConsoleUpdateHistoryTest() {
     super(JpaEntityCoverageCheck.ENABLED);
   }
 
@@ -49,20 +46,17 @@ public class ConsoleEppActionHistoryTest extends EntityTestCase {
 
   @Test
   void testPersistence() {
-    User user = DatabaseHelper.createAdminUser("email@email.com");
-    DomainHistory domainHistory = getOnlyElement(DatabaseHelper.loadAllOf(DomainHistory.class));
-    ConsoleEppActionHistory history =
-        new ConsoleEppActionHistory.Builder()
-            .setType(ConsoleUpdateHistory.Type.DOMAIN_DELETE)
+    User user = persistResource(DatabaseHelper.createAdminUser("email@email.com"));
+    SimpleConsoleUpdateHistory history =
+        new SimpleConsoleUpdateHistory.Builder()
+            .setType(ConsoleUpdateHistory.Type.DOMAIN_SUSPEND)
             .setActingUser(user)
-            .setModificationTime(fakeClock.nowUtc())
             .setMethod("POST")
-            .setUrl("https://some/url/for/creating/a/domain")
-            .setHistoryEntryClass(DomainHistory.class)
-            .setHistoryEntryId(domainHistory.getHistoryEntryId())
+            .setUrl("/console-api/bulk-domain")
+            .setDescription("example.tld")
+            .setModificationTime(fakeClock.nowUtc())
             .build();
-    tm().transact(() -> tm().put(history));
-    assertThat(getOnlyElement(DatabaseHelper.loadAllOf(ConsoleEppActionHistory.class)))
-        .isEqualTo(history);
+    persistResource(history);
+    assertThat(loadByEntity(history)).isEqualTo(history);
   }
 }
