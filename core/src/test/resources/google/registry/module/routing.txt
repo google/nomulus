@@ -56,6 +56,7 @@ BACKEND  /_dr/task/uploadBsaUnavailableNames                UploadBsaUnavailable
 BACKEND  /_dr/task/wipeOutContactHistoryPii                 WipeOutContactHistoryPiiAction                 GET                 n  APP  ADMIN
 PUBAPI   /_dr/whois                                         WhoisAction                                    POST                n  APP  ADMIN
 PUBAPI   /check                                             CheckApiAction                                 GET                 n  NONE PUBLIC
+PUBAPI   /rdap                                              RdapEmptyAction                                GET,HEAD            n  NONE PUBLIC
 PUBAPI   /rdap/autnum/(*)                                   RdapAutnumAction                               GET,HEAD            n  NONE PUBLIC
 PUBAPI   /rdap/domain/(*)                                   RdapDomainAction                               GET,HEAD            n  NONE PUBLIC
 PUBAPI   /rdap/domains                                      RdapDomainSearchAction                         GET,HEAD            n  NONE PUBLIC
