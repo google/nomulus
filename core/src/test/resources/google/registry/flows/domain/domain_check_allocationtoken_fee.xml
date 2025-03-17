@@ -6,6 +6,7 @@
         <domain:name>example1.tld</domain:name>
         <domain:name>example2.example</domain:name>
         <domain:name>reserved.tld</domain:name>
+        <domain:name>rich.example</domain:name>
       </domain:check>
     </check>
     <extension>
@@ -35,6 +36,12 @@
           <fee:period unit="y">1</fee:period>
         </fee:domain>
         <fee:domain>
+          <fee:name>rich.example</fee:name>
+          <fee:currency>USD</fee:currency>
+          <fee:command>create</fee:command>
+          <fee:period unit="y">1</fee:period>
+        </fee:domain>
+        <fee:domain>
           <fee:name>example1.tld</fee:name>
           <fee:currency>USD</fee:currency>
           <fee:command>renew</fee:command>
@@ -48,6 +55,12 @@
         </fee:domain>
         <fee:domain>
           <fee:name>reserved.tld</fee:name>
+          <fee:currency>USD</fee:currency>
+          <fee:command>renew</fee:command>
+          <fee:period unit="y">1</fee:period>
+        </fee:domain>
+        <fee:domain>
+          <fee:name>rich.example</fee:name>
           <fee:currency>USD</fee:currency>
           <fee:command>renew</fee:command>
           <fee:period unit="y">1</fee:period>

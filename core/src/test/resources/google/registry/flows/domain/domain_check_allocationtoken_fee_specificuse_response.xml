@@ -16,7 +16,7 @@
         </domain:cd>
         <domain:cd>
           <domain:name avail="false">reserved.tld</domain:name>
-          <domain:reason>Reserved</domain:reason>
+          <domain:reason>Alloc token invalid for domain</domain:reason>
         </domain:cd>
         <domain:cd>
           <domain:name avail="true">specificuse.tld</domain:name>
