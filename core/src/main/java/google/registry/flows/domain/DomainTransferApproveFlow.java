@@ -54,7 +54,6 @@ import google.registry.model.billing.BillingRecurrence;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.GracePeriod;
-import google.registry.model.domain.fee.FeeQueryCommandExtensionItem.CommandName;
 import google.registry.model.domain.metadata.MetadataExtension;
 import google.registry.model.domain.rgp.GracePeriodStatus;
 import google.registry.model.domain.token.AllocationTokenExtension;
@@ -94,14 +93,11 @@ import org.joda.time.DateTime;
  * @error {@link DomainFlowUtils.NotAuthorizedForTldException}
  * @error {@link
  *     google.registry.flows.domain.token.AllocationTokenFlowUtils.AllocationTokenNotValidForDomainException}
- * @error {@link
- *     google.registry.flows.domain.token.AllocationTokenFlowUtils.InvalidAllocationTokenException}
+ * @error {@link AllocationTokenFlowUtils.NonexistentAllocationTokenException}
  * @error {@link
  *     google.registry.flows.domain.token.AllocationTokenFlowUtils.AllocationTokenNotInPromotionException}
  * @error {@link
  *     google.registry.flows.domain.token.AllocationTokenFlowUtils.AllocationTokenNotValidForRegistrarException}
- * @error {@link
- *     google.registry.flows.domain.token.AllocationTokenFlowUtils.AllocationTokenNotValidForTldException}
  * @error {@link
  *     google.registry.flows.domain.token.AllocationTokenFlowUtils.AlreadyRedeemedAllocationTokenException}
  */
@@ -116,7 +112,6 @@ public final class DomainTransferApproveFlow implements MutatingFlow {
   @Inject DomainHistory.Builder historyBuilder;
   @Inject EppResponse.Builder responseBuilder;
   @Inject DomainPricingLogic pricingLogic;
-  @Inject AllocationTokenFlowUtils allocationTokenFlowUtils;
   @Inject EppInput eppInput;
 
   @Inject DomainTransferApproveFlow() {}
@@ -132,13 +127,8 @@ public final class DomainTransferApproveFlow implements MutatingFlow {
     extensionManager.validate();
     DateTime now = tm().getTransactionTime();
     Domain existingDomain = loadAndVerifyExistence(Domain.class, targetId, now);
-    allocationTokenFlowUtils.verifyAllocationTokenIfPresent(
-        existingDomain,
-        Tld.get(existingDomain.getTld()),
-        registrarId,
-        now,
-        CommandName.TRANSFER,
-        eppInput.getSingleExtension(AllocationTokenExtension.class));
+    AllocationTokenFlowUtils.loadAllocationTokenFromExtension(
+        registrarId, targetId, now, eppInput.getSingleExtension(AllocationTokenExtension.class));
     verifyOptionalAuthInfo(authInfo, existingDomain);
     verifyHasPendingTransfer(existingDomain);
     verifyResourceOwnership(registrarId, existingDomain);

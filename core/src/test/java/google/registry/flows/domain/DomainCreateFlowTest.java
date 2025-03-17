@@ -141,13 +141,10 @@ import google.registry.flows.domain.DomainFlowUtils.TrailingDashException;
 import google.registry.flows.domain.DomainFlowUtils.UnexpectedClaimsNoticeException;
 import google.registry.flows.domain.DomainFlowUtils.UnsupportedFeeAttributeException;
 import google.registry.flows.domain.DomainFlowUtils.UnsupportedMarkTypeException;
-import google.registry.flows.domain.DomainPricingLogic.AllocationTokenInvalidForPremiumNameException;
 import google.registry.flows.domain.token.AllocationTokenFlowUtils.AllocationTokenNotInPromotionException;
-import google.registry.flows.domain.token.AllocationTokenFlowUtils.AllocationTokenNotValidForDomainException;
 import google.registry.flows.domain.token.AllocationTokenFlowUtils.AllocationTokenNotValidForRegistrarException;
-import google.registry.flows.domain.token.AllocationTokenFlowUtils.AllocationTokenNotValidForTldException;
 import google.registry.flows.domain.token.AllocationTokenFlowUtils.AlreadyRedeemedAllocationTokenException;
-import google.registry.flows.domain.token.AllocationTokenFlowUtils.InvalidAllocationTokenException;
+import google.registry.flows.domain.token.AllocationTokenFlowUtils.NonexistentAllocationTokenException;
 import google.registry.flows.exceptions.OnlyToolCanPassMetadataException;
 import google.registry.flows.exceptions.ResourceAlreadyExistsForThisClientException;
 import google.registry.flows.exceptions.ResourceCreateContentionException;
@@ -529,49 +526,8 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
         "domain_create_allocationtoken.xml",
         ImmutableMap.of("DOMAIN", "example.tld", "YEARS", "2"));
     persistContactsAndHosts();
-    EppException thrown = assertThrows(InvalidAllocationTokenException.class, this::runFlow);
+    EppException thrown = assertThrows(NonexistentAllocationTokenException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
-  }
-
-  @Test
-  void testFailure_reservedDomainCreate_allocationTokenIsForADifferentDomain() {
-    // Try to register a reserved domain name with an allocation token valid for a different domain
-    // name.
-    setEppInput(
-        "domain_create_allocationtoken.xml", ImmutableMap.of("DOMAIN", "resdom.tld", "YEARS", "2"));
-    persistContactsAndHosts();
-    persistResource(
-        new AllocationToken.Builder()
-            .setToken("abc123")
-            .setTokenType(SINGLE_USE)
-            .setDomainName("otherdomain.tld")
-            .build());
-    clock.advanceOneMilli();
-    EppException thrown =
-        assertThrows(AllocationTokenNotValidForDomainException.class, this::runFlow);
-    assertAboutEppExceptions().that(thrown).marshalsToXml();
-    assertAllocationTokenWasNotRedeemed("abc123");
-  }
-
-  @Test
-  void testFailure_nonreservedDomainCreate_allocationTokenIsForADifferentDomain() {
-    // Try to register a non-reserved domain name with an allocation token valid for a different
-    // domain name.
-    setEppInput(
-        "domain_create_allocationtoken.xml",
-        ImmutableMap.of("DOMAIN", "example.tld", "YEARS", "2"));
-    persistContactsAndHosts();
-    persistResource(
-        new AllocationToken.Builder()
-            .setToken("abc123")
-            .setTokenType(SINGLE_USE)
-            .setDomainName("otherdomain.tld")
-            .build());
-    clock.advanceOneMilli();
-    EppException thrown =
-        assertThrows(AllocationTokenNotValidForDomainException.class, this::runFlow);
-    assertAboutEppExceptions().that(thrown).marshalsToXml();
-    assertAllocationTokenWasNotRedeemed("abc123");
   }
 
   @Test
@@ -1705,32 +1661,6 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
   }
 
   @Test
-  void testSuccess_promotionDoesNotApplyToPremiumPrice() {
-    // Discounts only apply to premium domains if the token is explicitly configured to allow it.
-    createTld("example");
-    persistContactsAndHosts();
-    persistResource(
-        new AllocationToken.Builder()
-            .setToken("abc123")
-            .setTokenType(UNLIMITED_USE)
-            .setDiscountFraction(0.5)
-            .setTokenStatusTransitions(
-                ImmutableSortedMap.<DateTime, TokenStatus>naturalOrder()
-                    .put(START_OF_TIME, TokenStatus.NOT_STARTED)
-                    .put(clock.nowUtc().plusMillis(1), TokenStatus.VALID)
-                    .put(clock.nowUtc().plusSeconds(1), TokenStatus.ENDED)
-                    .build())
-            .build());
-    clock.advanceOneMilli();
-    setEppInput(
-        "domain_create_premium_allocationtoken.xml",
-        ImmutableMap.of("YEARS", "2", "FEE", "193.50"));
-    assertAboutEppExceptions()
-        .that(assertThrows(AllocationTokenInvalidForPremiumNameException.class, this::runFlow))
-        .marshalsToXml();
-  }
-
-  @Test
   void testSuccess_token_premiumDomainZeroPrice_noFeeExtension() throws Exception {
     createTld("example");
     persistContactsAndHosts();
@@ -1771,30 +1701,6 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
         ImmutableMap.of("DOMAIN", "example.tld", "YEARS", "2"));
     assertAboutEppExceptions()
         .that(assertThrows(AllocationTokenNotInPromotionException.class, this::runFlow))
-        .marshalsToXml();
-  }
-
-  @Test
-  void testSuccess_promoTokenNotValidForTld() {
-    persistContactsAndHosts();
-    persistResource(
-        new AllocationToken.Builder()
-            .setToken("abc123")
-            .setTokenType(UNLIMITED_USE)
-            .setAllowedTlds(ImmutableSet.of("example"))
-            .setDiscountFraction(0.5)
-            .setTokenStatusTransitions(
-                ImmutableSortedMap.<DateTime, TokenStatus>naturalOrder()
-                    .put(START_OF_TIME, TokenStatus.NOT_STARTED)
-                    .put(clock.nowUtc().minusDays(1), TokenStatus.VALID)
-                    .put(clock.nowUtc().plusDays(1), TokenStatus.ENDED)
-                    .build())
-            .build());
-    setEppInput(
-        "domain_create_allocationtoken.xml",
-        ImmutableMap.of("DOMAIN", "example.tld", "YEARS", "2"));
-    assertAboutEppExceptions()
-        .that(assertThrows(AllocationTokenNotValidForTldException.class, this::runFlow))
         .marshalsToXml();
   }
 
@@ -3669,22 +3575,6 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
         "domain_create_allocationtoken.xml",
         ImmutableMap.of("DOMAIN", "example-one.tld", "YEARS", "2"));
     assertThrows(MissingClaimsNoticeException.class, this::runFlow);
-  }
-
-  @Test
-  void testFailure_anchorTenant_mismatchedName_viaToken() throws Exception {
-    persistResource(
-        new AllocationToken.Builder()
-            .setToken("abc123")
-            .setTokenType(SINGLE_USE)
-            .setRegistrationBehavior(RegistrationBehavior.ANCHOR_TENANT)
-            .setDomainName("example.tld")
-            .build());
-    persistContactsAndHosts();
-    setEppInput(
-        "domain_create_allocationtoken.xml",
-        ImmutableMap.of("DOMAIN", "example-one.tld", "YEARS", "2"));
-    assertThrows(AllocationTokenNotValidForDomainException.class, this::runFlow);
   }
 
   @Test
