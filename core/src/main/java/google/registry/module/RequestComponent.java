@@ -62,6 +62,7 @@ import google.registry.monitoring.whitebox.WhiteboxModule;
 import google.registry.rdap.RdapAutnumAction;
 import google.registry.rdap.RdapDomainAction;
 import google.registry.rdap.RdapDomainSearchAction;
+import google.registry.rdap.RdapEmptyAction;
 import google.registry.rdap.RdapEntityAction;
 import google.registry.rdap.RdapEntitySearchAction;
 import google.registry.rdap.RdapHelpAction;
@@ -260,6 +261,8 @@ interface RequestComponent {
   RdapDomainAction rdapDomainAction();
 
   RdapDomainSearchAction rdapDomainSearchAction();
+
+  RdapEmptyAction rdapEmptyAction();
 
   RdapEntityAction rdapEntityAction();
 

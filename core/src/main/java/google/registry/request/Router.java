@@ -56,10 +56,12 @@ final class Router {
   Optional<Route> route(String path) {
     Map.Entry<String, Route> floor = routes.floorEntry(path);
     if (floor != null) {
-      if (floor.getValue().action().isPrefix()
-          ? path.startsWith(floor.getKey())
-          : path.equals(floor.getKey())) {
-        return Optional.of(floor.getValue());
+      String key = floor.getKey();
+      Route value = floor.getValue();
+      if ((value.action().isPrefix() && path.startsWith(key))
+          || path.equals(key)
+          || path.equals(key + '/')) {
+        return Optional.of(value);
       }
     }
     return Optional.empty();
