@@ -42,7 +42,6 @@ import static google.registry.model.tld.label.ReservationType.RESERVED_FOR_ANCHO
 import static google.registry.model.tld.label.ReservationType.RESERVED_FOR_SPECIFIC_USE;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.pricing.PricingEngineProxy.isDomainPremium;
-import static google.registry.util.CollectionUtils.isNullOrEmpty;
 import static google.registry.util.CollectionUtils.nullToEmpty;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
 import static google.registry.util.DateTimeUtils.isAtOrAfter;
@@ -67,7 +66,6 @@ import com.google.common.collect.Sets;
 import com.google.common.collect.Streams;
 import com.google.common.net.InternetDomainName;
 import google.registry.flows.EppException;
-import google.registry.flows.EppException.AssociationProhibitsOperationException;
 import google.registry.flows.EppException.AuthorizationErrorException;
 import google.registry.flows.EppException.CommandUseErrorException;
 import google.registry.flows.EppException.ObjectDoesNotExistException;
@@ -77,8 +75,6 @@ import google.registry.flows.EppException.ParameterValueSyntaxErrorException;
 import google.registry.flows.EppException.RequiredParameterMissingException;
 import google.registry.flows.EppException.StatusProhibitsOperationException;
 import google.registry.flows.EppException.UnimplementedOptionException;
-import google.registry.flows.domain.DomainPricingLogic.AllocationTokenInvalidForPremiumNameException;
-import google.registry.flows.domain.token.AllocationTokenFlowUtils;
 import google.registry.flows.exceptions.ResourceHasClientUpdateProhibitedException;
 import google.registry.model.EppResource;
 import google.registry.model.billing.BillingBase.Flag;
@@ -101,7 +97,6 @@ import google.registry.model.domain.fee.BaseFee.FeeType;
 import google.registry.model.domain.fee.Credit;
 import google.registry.model.domain.fee.Fee;
 import google.registry.model.domain.fee.FeeQueryCommandExtensionItem;
-import google.registry.model.domain.fee.FeeQueryCommandExtensionItem.CommandName;
 import google.registry.model.domain.fee.FeeQueryResponseExtensionItem;
 import google.registry.model.domain.fee.FeeTransformCommandExtension;
 import google.registry.model.domain.fee.FeeTransformResponseExtension;
@@ -1231,52 +1226,6 @@ public class DomainFlowUtils {
         .setParameter("beginning", now.minus(maxSearchPeriod))
         .setParameter("repoId", domain.getRepoId())
         .getResultList();
-  }
-
-  /**
-   * Checks if there is a valid default token to be used for a domain create command.
-   *
-   * <p>If there is more than one valid default token for the registration, only the first valid
-   * token found on the TLD's default token list will be returned.
-   */
-  public static Optional<AllocationToken> checkForDefaultToken(
-      Tld tld, String domainName, CommandName commandName, String registrarId, DateTime now)
-      throws EppException {
-    if (isNullOrEmpty(tld.getDefaultPromoTokens())) {
-      return Optional.empty();
-    }
-    Map<VKey<AllocationToken>, Optional<AllocationToken>> tokens =
-        AllocationToken.getAll(tld.getDefaultPromoTokens());
-    ImmutableList<Optional<AllocationToken>> tokenList =
-        tld.getDefaultPromoTokens().stream()
-            .map(tokens::get)
-            .filter(Optional::isPresent)
-            .collect(toImmutableList());
-    checkState(
-        !isNullOrEmpty(tokenList),
-        "Failure while loading default TLD promotions from the database");
-    // Check if any of the tokens are valid for this domain registration
-    for (Optional<AllocationToken> token : tokenList) {
-      try {
-        AllocationTokenFlowUtils.validateToken(
-            InternetDomainName.from(domainName),
-            token.get(),
-            commandName,
-            registrarId,
-            isDomainPremium(domainName, now),
-            now);
-      } catch (AssociationProhibitsOperationException
-          | StatusProhibitsOperationException
-          | AllocationTokenInvalidForPremiumNameException e) {
-        // Allocation token was not valid for this registration, continue to check the next token in
-        // the list
-        continue;
-      }
-      // Only use the first valid token in the list
-      return token;
-    }
-    // No valid default token found
-    return Optional.empty();
   }
 
   /** Resource linked to this domain does not exist. */

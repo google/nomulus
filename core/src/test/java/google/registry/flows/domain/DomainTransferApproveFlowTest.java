@@ -52,12 +52,11 @@ import google.registry.flows.ResourceFlowUtils.BadAuthInfoForResourceException;
 import google.registry.flows.ResourceFlowUtils.ResourceDoesNotExistException;
 import google.registry.flows.ResourceFlowUtils.ResourceNotOwnedException;
 import google.registry.flows.domain.DomainFlowUtils.NotAuthorizedForTldException;
+import google.registry.flows.domain.token.AllocationTokenFlowUtils;
 import google.registry.flows.domain.token.AllocationTokenFlowUtils.AllocationTokenNotInPromotionException;
-import google.registry.flows.domain.token.AllocationTokenFlowUtils.AllocationTokenNotValidForDomainException;
 import google.registry.flows.domain.token.AllocationTokenFlowUtils.AllocationTokenNotValidForRegistrarException;
-import google.registry.flows.domain.token.AllocationTokenFlowUtils.AllocationTokenNotValidForTldException;
 import google.registry.flows.domain.token.AllocationTokenFlowUtils.AlreadyRedeemedAllocationTokenException;
-import google.registry.flows.domain.token.AllocationTokenFlowUtils.InvalidAllocationTokenException;
+import google.registry.flows.domain.token.AllocationTokenFlowUtils.NonexistentAllocationTokenException;
 import google.registry.flows.exceptions.NotPendingTransferException;
 import google.registry.model.billing.BillingBase;
 import google.registry.model.billing.BillingBase.Reason;
@@ -897,7 +896,7 @@ class DomainTransferApproveFlowTest
   @Test
   void testFailure_invalidAllocationToken() throws Exception {
     setEppInput("domain_transfer_approve_allocation_token.xml");
-    EppException thrown = assertThrows(InvalidAllocationTokenException.class, this::runFlow);
+    EppException thrown = assertThrows(NonexistentAllocationTokenException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
@@ -910,9 +909,12 @@ class DomainTransferApproveFlowTest
             .setDomainName("otherdomain.tld")
             .build());
     setEppInput("domain_transfer_approve_allocation_token.xml");
-    EppException thrown =
-        assertThrows(AllocationTokenNotValidForDomainException.class, this::runFlow);
-    assertAboutEppExceptions().that(thrown).marshalsToXml();
+    assertAboutEppExceptions()
+        .that(
+            assertThrows(
+                AllocationTokenFlowUtils.AllocationTokenNotValidForDomainException.class,
+                this::runFlow))
+        .marshalsToXml();
   }
 
   @Test
@@ -971,8 +973,7 @@ class DomainTransferApproveFlowTest
                     .build())
             .build());
     setEppInput("domain_transfer_approve_allocation_token.xml");
-    EppException thrown = assertThrows(AllocationTokenNotValidForTldException.class, this::runFlow);
-    assertAboutEppExceptions().that(thrown).marshalsToXml();
+    runFlowAssertResponse(loadFile("domain_transfer_approve_response.xml"));
   }
 
   @Test
