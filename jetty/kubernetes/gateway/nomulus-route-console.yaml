@@ -12,9 +12,6 @@ spec:
   rules:
   - matches:
     - path:
-        type: Exact
-        value: /
-    - path:
         type: PathPrefix
         value: /console-api
     - path:
@@ -26,12 +23,6 @@ spec:
       name: console
       port: 80
   - matches:
-    - path:
-        type: Exact
-        value: /
-      headers:
-      - name: "canary"
-        value: "true"
     - path:
         type: PathPrefix
         value: /console-api
