@@ -15,7 +15,7 @@ spec:
     spec:
       serviceAccountName: nomulus
       nodeSelector:
-        cloud.google.com/compute-class: "Performance"
+        cloud.google.com/compute-class: "Balanced"
       containers:
       - name: console
         image: gcr.io/GCP_PROJECT/nomulus
@@ -24,8 +24,11 @@ spec:
           name: http
         resources:
           requests:
-            cpu: "100m"
-            memory: "512Mi"
+            cpu: "500m"
+            memory: "2Gi"
+          limits:
+            cpu: "500m"
+            memory: "2Gi"
         args: [ENVIRONMENT]
         env:
         - name: POD_ID
@@ -60,7 +63,7 @@ spec:
         name: cpu
         target:
           type: Utilization
-          averageUtilization: 100
+          averageUtilization: 80
 ---
 apiVersion: v1
 kind: Service
