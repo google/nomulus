@@ -43,7 +43,7 @@ public class ExportReservedTermsAction implements Runnable {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
   static final MediaType EXPORT_MIME_TYPE = MediaType.PLAIN_TEXT_UTF_8;
-  static final String RESERVED_TERMS_FILENAME = "reserved_terms.txt";
+  static final String RESERVED_TERMS_FILENAME_FORMAT = "reserved_terms_%s.txt";
 
   @Inject DriveConnection driveConnection;
   @Inject ExportUtils exportUtils;
@@ -79,7 +79,7 @@ public class ExportReservedTermsAction implements Runnable {
       } else {
         resultMsg =
             driveConnection.createOrUpdateFile(
-                RESERVED_TERMS_FILENAME,
+                String.format(RESERVED_TERMS_FILENAME_FORMAT, tldStr),
                 EXPORT_MIME_TYPE,
                 tld.getDriveFolderId(),
                 exportUtils.exportReservedTerms(tld).getBytes(UTF_8));

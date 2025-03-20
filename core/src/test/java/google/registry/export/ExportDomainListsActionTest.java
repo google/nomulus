@@ -15,7 +15,6 @@
 package google.registry.export;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.export.ExportDomainListsAction.REGISTERED_DOMAINS_FILENAME;
 import static google.registry.model.common.FeatureFlag.FeatureName.INCLUDE_PENDING_DELETE_DATE_FOR_DOMAINS;
 import static google.registry.model.common.FeatureFlag.FeatureStatus.ACTIVE;
 import static google.registry.model.common.FeatureFlag.FeatureStatus.INACTIVE;
@@ -83,10 +82,11 @@ class ExportDomainListsActionTest {
     persistFeatureFlag(INACTIVE);
   }
 
-  private void verifyExportedToDrive(String folderId, String domains) throws Exception {
+  private void verifyExportedToDrive(String folderId, String filename, String domains)
+      throws Exception {
     verify(driveConnection)
         .createOrUpdateFile(
-            eq(REGISTERED_DOMAINS_FILENAME),
+            eq(filename),
             eq(MediaType.PLAIN_TEXT_UTF_8),
             eq(folderId),
             bytesExportedToDrive.capture());
@@ -103,7 +103,7 @@ class ExportDomainListsActionTest {
     String tlds = new String(gcsUtils.readBytesFrom(existingFile), UTF_8);
     // Check that it only contains the active domains, not the dead one.
     assertThat(tlds).isEqualTo("onetwo.tld\nrudnitzky.tld");
-    verifyExportedToDrive("brouhaha", "onetwo.tld\nrudnitzky.tld");
+    verifyExportedToDrive("brouhaha", "registered_domains_tld.txt", "onetwo.tld\nrudnitzky.tld");
     verifyNoMoreInteractions(driveConnection);
   }
 
@@ -118,7 +118,7 @@ class ExportDomainListsActionTest {
     String tlds = new String(gcsUtils.readBytesFrom(existingFile), UTF_8);
     // Check that it only contains the active domains, not the dead one.
     assertThat(tlds).isEqualTo("onetwo.tld,\nrudnitzky.tld,");
-    verifyExportedToDrive("brouhaha", "onetwo.tld,\nrudnitzky.tld,");
+    verifyExportedToDrive("brouhaha", "registered_domains_tld.txt", "onetwo.tld,\nrudnitzky.tld,");
     verifyNoMoreInteractions(driveConnection);
   }
 
@@ -137,7 +137,7 @@ class ExportDomainListsActionTest {
     assertThrows(StorageException.class, () -> gcsUtils.readBytesFrom(nonexistentFile));
     ImmutableList<String> ls = gcsUtils.listFolderObjects("outputbucket", "");
     assertThat(ls).containsExactly("tld.txt");
-    verifyExportedToDrive("brouhaha", "onetwo.tld\nrudnitzky.tld");
+    verifyExportedToDrive("brouhaha", "registered_domains_tld.txt", "onetwo.tld\nrudnitzky.tld");
     verifyNoMoreInteractions(driveConnection);
   }
 
@@ -157,7 +157,7 @@ class ExportDomainListsActionTest {
     assertThrows(StorageException.class, () -> gcsUtils.readBytesFrom(nonexistentFile));
     ImmutableList<String> ls = gcsUtils.listFolderObjects("outputbucket", "");
     assertThat(ls).containsExactly("tld.txt");
-    verifyExportedToDrive("brouhaha", "onetwo.tld,\nrudnitzky.tld,");
+    verifyExportedToDrive("brouhaha", "registered_domains_tld.txt", "onetwo.tld,\nrudnitzky.tld,");
     verifyNoMoreInteractions(driveConnection);
   }
 
@@ -189,7 +189,9 @@ class ExportDomainListsActionTest {
     action.run();
 
     verifyExportedToDrive(
-        "brouhaha", "active.tld,\npendingdelete.tld,2020-02-05T02:02:02.000Z\nredemption.tld,");
+        "brouhaha",
+        "registered_domains_tld.txt",
+        "active.tld,\npendingdelete.tld,2020-02-05T02:02:02.000Z\nredemption.tld,");
   }
 
   @Test
@@ -215,8 +217,9 @@ class ExportDomainListsActionTest {
     BlobId thirdTldFile = BlobId.of("outputbucket", "tldthree.txt");
     String evenMoreTlds = new String(gcsUtils.readBytesFrom(thirdTldFile), UTF_8).trim();
     assertThat(evenMoreTlds).isEqualTo("cupid.tldthree");
-    verifyExportedToDrive("brouhaha", "dasher.tld\nprancer.tld");
-    verifyExportedToDrive("hooray", "buddy.tldtwo\nrudolph.tldtwo\nsanta.tldtwo");
+    verifyExportedToDrive("brouhaha", "registered_domains_tld.txt", "dasher.tld\nprancer.tld");
+    verifyExportedToDrive(
+        "hooray", "registered_domains_tldtwo.txt", "buddy.tldtwo\nrudolph.tldtwo\nsanta.tldtwo");
     // tldthree does not have a drive id, so no export to drive is performed.
     verifyNoMoreInteractions(driveConnection);
   }
@@ -245,8 +248,9 @@ class ExportDomainListsActionTest {
     BlobId thirdTldFile = BlobId.of("outputbucket", "tldthree.txt");
     String evenMoreTlds = new String(gcsUtils.readBytesFrom(thirdTldFile), UTF_8).trim();
     assertThat(evenMoreTlds).isEqualTo("cupid.tldthree,");
-    verifyExportedToDrive("brouhaha", "dasher.tld,\nprancer.tld,");
-    verifyExportedToDrive("hooray", "buddy.tldtwo,\nrudolph.tldtwo,\nsanta.tldtwo,");
+    verifyExportedToDrive("brouhaha", "registered_domains_tld.txt", "dasher.tld,\nprancer.tld,");
+    verifyExportedToDrive(
+        "hooray", "registered_domains_tldtwo.txt", "buddy.tldtwo,\nrudolph.tldtwo,\nsanta.tldtwo,");
     // tldthree does not have a drive id, so no export to drive is performed.
     verifyNoMoreInteractions(driveConnection);
   }

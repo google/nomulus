@@ -78,7 +78,7 @@ public class ExportDomainListsAction implements Runnable {
         ORDER BY d.domain_name""";
 
   // This may be a CSV, but it is uses a .txt file extension for back-compatibility
-  static final String REGISTERED_DOMAINS_FILENAME = "registered_domains.txt";
+  static final String REGISTERED_DOMAINS_FILENAME_FORMAT = "registered_domains_%s.txt";
 
   @Inject Clock clock;
   @Inject DriveConnection driveConnection;
@@ -146,7 +146,7 @@ public class ExportDomainListsAction implements Runnable {
       } else {
         String resultMsg =
             driveConnection.createOrUpdateFile(
-                REGISTERED_DOMAINS_FILENAME,
+                String.format(REGISTERED_DOMAINS_FILENAME_FORMAT, tldStr),
                 MediaType.PLAIN_TEXT_UTF_8,
                 tld.getDriveFolderId(),
                 domains.getBytes(UTF_8));
