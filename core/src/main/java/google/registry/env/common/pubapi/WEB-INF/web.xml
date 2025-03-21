@@ -27,6 +27,10 @@
   <!-- RDAP (new WHOIS). -->
   <servlet-mapping>
     <servlet-name>pubapi-servlet</servlet-name>
+    <url-pattern>/rdap</url-pattern>
+  </servlet-mapping>
+  <servlet-mapping>
+    <servlet-name>pubapi-servlet</servlet-name>
     <url-pattern>/rdap/*</url-pattern>
   </servlet-mapping>
 

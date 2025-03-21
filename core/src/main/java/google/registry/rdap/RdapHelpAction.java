@@ -31,11 +31,13 @@ import java.util.Optional;
 /** RDAP (new WHOIS) action for help requests. */
 @Action(
     service = GaeService.PUBAPI,
-    path = "/rdap/help",
+    path = RdapHelpAction.PATH,
     method = {GET, HEAD},
     isPrefix = true,
     auth = Auth.AUTH_PUBLIC)
 public class RdapHelpAction extends RdapActionBase {
+
+  public static final String PATH = "/rdap/help";
 
   /** The help path for the RDAP terms of service. */
   public static final String TOS_PATH = "/tos";
