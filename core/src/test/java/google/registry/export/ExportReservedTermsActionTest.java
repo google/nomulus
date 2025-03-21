@@ -16,7 +16,6 @@ package google.registry.export;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.export.ExportReservedTermsAction.EXPORT_MIME_TYPE;
-import static google.registry.export.ExportReservedTermsAction.RESERVED_TERMS_FILENAME;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.persistReservedList;
 import static google.registry.testing.DatabaseHelper.persistResource;
@@ -77,7 +76,7 @@ public class ExportReservedTermsActionTest {
     runAction("tld");
     byte[] expected = "# This is a disclaimer.\ncat\nlol\n".getBytes(UTF_8);
     verify(driveConnection)
-        .createOrUpdateFile(RESERVED_TERMS_FILENAME, EXPORT_MIME_TYPE, "brouhaha", expected);
+        .createOrUpdateFile("reserved_terms_tld.txt", EXPORT_MIME_TYPE, "brouhaha", expected);
     assertThat(response.getStatus()).isEqualTo(SC_OK);
     assertThat(response.getPayload()).isEqualTo("1001");
   }
