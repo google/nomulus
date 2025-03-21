@@ -28,11 +28,9 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Streams;
 import google.registry.model.console.ConsolePermission;
 import google.registry.model.console.ConsoleUpdateHistory;
-import google.registry.model.console.SimpleConsoleUpdateHistory;
 import google.registry.model.console.User;
 import google.registry.model.registrar.Registrar;
-import google.registry.model.registrar.RegistrarBase;
-import google.registry.model.registrar.RegistrarBase.State;
+import google.registry.model.registrar.Registrar.State;
 import google.registry.model.registrar.RegistrarPoc;
 import google.registry.request.Action;
 import google.registry.request.Action.GaeService;
@@ -55,8 +53,8 @@ import java.util.Optional;
 public class RegistrarsAction extends ConsoleApiAction {
   private static final int PASSWORD_LENGTH = 16;
   private static final int PASSCODE_LENGTH = 5;
-  private static final ImmutableList<RegistrarBase.Type> allowedRegistrarTypes =
-      ImmutableList.of(Registrar.Type.REAL, RegistrarBase.Type.OTE);
+  private static final ImmutableList<Registrar.Type> allowedRegistrarTypes =
+      ImmutableList.of(Registrar.Type.REAL, Registrar.Type.OTE);
   private static final String SQL_TEMPLATE =
       """
             SELECT * FROM "Registrar"
@@ -174,7 +172,7 @@ public class RegistrarsAction extends ConsoleApiAction {
                   registrar.getRegistrarId());
               tm().putAll(registrar, contact);
               finishAndPersistConsoleUpdateHistory(
-                  new SimpleConsoleUpdateHistory.Builder()
+                  new ConsoleUpdateHistory.Builder()
                       .setType(ConsoleUpdateHistory.Type.REGISTRAR_CREATE)
                       .setDescription(registrar.getRegistrarId()));
             });

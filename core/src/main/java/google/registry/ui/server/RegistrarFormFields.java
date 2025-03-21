@@ -29,7 +29,6 @@ import com.google.re2j.Pattern;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarAddress;
 import google.registry.model.registrar.RegistrarPoc;
-import google.registry.model.registrar.RegistrarPocBase;
 import google.registry.ui.forms.FormException;
 import google.registry.ui.forms.FormField;
 import google.registry.ui.forms.FormFieldException;
@@ -201,10 +200,10 @@ public final class RegistrarFormFields {
   public static final FormField<String, String> CONTACT_REGISTRY_LOCK_PASSWORD_FIELD =
       FormFields.NAME.asBuilderNamed("registryLockPassword").build();
 
-  public static final FormField<String, Set<RegistrarPocBase.Type>> CONTACT_TYPES =
+  public static final FormField<String, Set<RegistrarPoc.Type>> CONTACT_TYPES =
       FormField.named("types")
           .uppercased()
-          .asEnum(RegistrarPocBase.Type.class)
+          .asEnum(RegistrarPoc.Type.class)
           .asSet(Splitter.on(',').omitEmptyStrings().trimResults())
           .build();
 

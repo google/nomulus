@@ -30,10 +30,9 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Streams;
 import com.google.common.io.Resources;
 import google.registry.model.registrar.Registrar;
+import google.registry.model.registrar.Registrar.State;
 import google.registry.model.registrar.RegistrarAddress;
-import google.registry.model.registrar.RegistrarBase.State;
 import google.registry.model.registrar.RegistrarPoc;
-import google.registry.model.registrar.RegistrarPocBase;
 import google.registry.persistence.HibernateSchemaExporter;
 import google.registry.persistence.NomulusPostgreSql;
 import google.registry.persistence.PersistenceModule;
@@ -410,7 +409,7 @@ public abstract class JpaTransactionManagerExtension
         .setVisibleInWhoisAsTech(false)
         .setEmailAddress("janedoe@theregistrar.com")
         .setPhoneNumber("+1.1234567890")
-        .setTypes(ImmutableSet.of(RegistrarPocBase.Type.ADMIN))
+        .setTypes(ImmutableSet.of(RegistrarPoc.Type.ADMIN))
         .build();
   }
 
@@ -424,7 +423,7 @@ public abstract class JpaTransactionManagerExtension
         .setName("John Doe")
         .setEmailAddress("johndoe@theregistrar.com")
         .setPhoneNumber("+1.1234567890")
-        .setTypes(ImmutableSet.of(RegistrarPocBase.Type.ADMIN))
+        .setTypes(ImmutableSet.of(RegistrarPoc.Type.ADMIN))
         .build();
   }
 
@@ -435,7 +434,7 @@ public abstract class JpaTransactionManagerExtension
         .setEmailAddress("Marla.Singer@crr.com")
         .setRegistryLockEmailAddress("Marla.Singer.RegistryLock@crr.com")
         .setPhoneNumber("+1.2128675309")
-        .setTypes(ImmutableSet.of(RegistrarPocBase.Type.TECH))
+        .setTypes(ImmutableSet.of(RegistrarPoc.Type.TECH))
         .setAllowedToSetRegistryLockPassword(true)
         .setRegistryLockPassword("hi")
         .build();

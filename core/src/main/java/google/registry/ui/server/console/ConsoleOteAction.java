@@ -35,7 +35,6 @@ import google.registry.model.OteStats.StatType;
 import google.registry.model.console.ConsolePermission;
 import google.registry.model.console.User;
 import google.registry.model.registrar.Registrar;
-import google.registry.model.registrar.RegistrarBase;
 import google.registry.request.Action;
 import google.registry.request.Action.GkeService;
 import google.registry.request.Parameter;
@@ -140,7 +139,7 @@ public class ConsoleOteAction extends ConsoleApiAction {
                     SC_BAD_REQUEST);
                 return;
               }
-              if (!RegistrarBase.Type.OTE.equals(registrar.get().getType())) {
+              if (!Registrar.Type.OTE.equals(registrar.get().getType())) {
                 setFailedResponse(
                     String.format("Registrar with ID %s is not an OT&E registrar", registrarId),
                     SC_BAD_REQUEST);

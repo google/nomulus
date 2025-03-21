@@ -29,7 +29,6 @@ import com.google.common.collect.Maps;
 import com.google.gson.Gson;
 import google.registry.model.console.ConsoleUpdateHistory;
 import google.registry.model.console.RegistrarRole;
-import google.registry.model.console.SimpleConsoleUpdateHistory;
 import google.registry.model.console.User;
 import google.registry.model.console.UserRoles;
 import google.registry.model.registrar.Registrar;
@@ -123,7 +122,7 @@ public class RdapRegistrarFieldsActionTest {
     assertAboutImmutableObjects()
         .that(newRegistrar)
         .isEqualExceptFields(oldRegistrar, "localizedAddress", "phoneNumber", "faxNumber");
-    SimpleConsoleUpdateHistory history = loadSingleton(SimpleConsoleUpdateHistory.class).get();
+    ConsoleUpdateHistory history = loadSingleton(ConsoleUpdateHistory.class).get();
     assertThat(history.getType()).isEqualTo(ConsoleUpdateHistory.Type.REGISTRAR_UPDATE);
     assertThat(history.getDescription()).hasValue("TheRegistrar");
   }
