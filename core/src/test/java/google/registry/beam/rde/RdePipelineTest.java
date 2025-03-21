@@ -70,7 +70,7 @@ import google.registry.model.rde.RdeMode;
 import google.registry.model.rde.RdeRevision;
 import google.registry.model.rde.RdeRevision.RdeRevisionId;
 import google.registry.model.registrar.Registrar;
-import google.registry.model.registrar.RegistrarBase.State;
+import google.registry.model.registrar.Registrar.State;
 import google.registry.model.reporting.DomainTransactionRecord;
 import google.registry.model.reporting.DomainTransactionRecord.TransactionReportField;
 import google.registry.model.reporting.HistoryEntry;
@@ -388,22 +388,22 @@ public class RdePipelineTest {
                       assertThat(domainFrags.stream().findFirst().get().xml().strip())
                           .isEqualTo(
                               """
-                          <rdeDomain:domain>
-                              <rdeDomain:name>cat.fun</rdeDomain:name>
-                              <rdeDomain:roid>15-FUN</rdeDomain:roid>
-                              <rdeDomain:uName>cat.fun</rdeDomain:uName>
-                              <rdeDomain:status s="ok"/>
-                              <rdeDomain:contact type="admin">contact456</rdeDomain:contact>
-                              <rdeDomain:contact type="tech">contact456</rdeDomain:contact>
-                              <rdeDomain:ns>
-                                  <domain:hostObj>ns1.external.tld</domain:hostObj>
-                                  <domain:hostObj>ns1.hello.soy</domain:hostObj>
-                              </rdeDomain:ns>
-                              <rdeDomain:clID>TheRegistrar</rdeDomain:clID>
-                              <rdeDomain:crRr>TheRegistrar</rdeDomain:crRr>
-                              <rdeDomain:crDate>1970-01-01T00:00:00Z</rdeDomain:crDate>
-                              <rdeDomain:exDate>294247-01-10T04:00:54Z</rdeDomain:exDate>
-                          </rdeDomain:domain>""");
+                              <rdeDomain:domain>
+                                  <rdeDomain:name>cat.fun</rdeDomain:name>
+                                  <rdeDomain:roid>15-FUN</rdeDomain:roid>
+                                  <rdeDomain:uName>cat.fun</rdeDomain:uName>
+                                  <rdeDomain:status s="ok"/>
+                                  <rdeDomain:contact type="admin">contact456</rdeDomain:contact>
+                                  <rdeDomain:contact type="tech">contact456</rdeDomain:contact>
+                                  <rdeDomain:ns>
+                                      <domain:hostObj>ns1.external.tld</domain:hostObj>
+                                      <domain:hostObj>ns1.hello.soy</domain:hostObj>
+                                  </rdeDomain:ns>
+                                  <rdeDomain:clID>TheRegistrar</rdeDomain:clID>
+                                  <rdeDomain:crRr>TheRegistrar</rdeDomain:crRr>
+                                  <rdeDomain:crDate>1970-01-01T00:00:00Z</rdeDomain:crDate>
+                                  <rdeDomain:exDate>294247-01-10T04:00:54Z</rdeDomain:exDate>
+                              </rdeDomain:domain>""");
                     }
                     if (kv.getKey().mode().equals(FULL)) {
                       // Contact fragments for hello.soy.
@@ -425,23 +425,23 @@ public class RdePipelineTest {
                         assertThat(domainFrags.stream().findFirst().get().xml().strip())
                             .isEqualTo(
                                 """
-                          <rdeDomain:domain>
-                              <rdeDomain:name>hello.soy</rdeDomain:name>
-                              <rdeDomain:roid>E-SOY</rdeDomain:roid>
-                              <rdeDomain:uName>hello.soy</rdeDomain:uName>
-                              <rdeDomain:status s="ok"/>
-                              <rdeDomain:registrant>contact1234</rdeDomain:registrant>
-                              <rdeDomain:contact type="admin">contact789</rdeDomain:contact>
-                              <rdeDomain:contact type="tech">contact1234</rdeDomain:contact>
-                              <rdeDomain:ns>
-                                  <domain:hostObj>ns1.external.tld</domain:hostObj>
-                                  <domain:hostObj>ns1.lol.cat</domain:hostObj>
-                              </rdeDomain:ns>
-                              <rdeDomain:clID>TheRegistrar</rdeDomain:clID>
-                              <rdeDomain:crRr>TheRegistrar</rdeDomain:crRr>
-                              <rdeDomain:crDate>1970-01-01T00:00:00Z</rdeDomain:crDate>
-                              <rdeDomain:exDate>294247-01-10T04:00:54Z</rdeDomain:exDate>
-                          </rdeDomain:domain>""");
+                                <rdeDomain:domain>
+                                    <rdeDomain:name>hello.soy</rdeDomain:name>
+                                    <rdeDomain:roid>E-SOY</rdeDomain:roid>
+                                    <rdeDomain:uName>hello.soy</rdeDomain:uName>
+                                    <rdeDomain:status s="ok"/>
+                                    <rdeDomain:registrant>contact1234</rdeDomain:registrant>
+                                    <rdeDomain:contact type="admin">contact789</rdeDomain:contact>
+                                    <rdeDomain:contact type="tech">contact1234</rdeDomain:contact>
+                                    <rdeDomain:ns>
+                                        <domain:hostObj>ns1.external.tld</domain:hostObj>
+                                        <domain:hostObj>ns1.lol.cat</domain:hostObj>
+                                    </rdeDomain:ns>
+                                    <rdeDomain:clID>TheRegistrar</rdeDomain:clID>
+                                    <rdeDomain:crRr>TheRegistrar</rdeDomain:crRr>
+                                    <rdeDomain:crDate>1970-01-01T00:00:00Z</rdeDomain:crDate>
+                                    <rdeDomain:exDate>294247-01-10T04:00:54Z</rdeDomain:exDate>
+                                </rdeDomain:domain>""");
                       } else {
                         // Contact fragments for cat.fun.
                         assertThat(
@@ -471,20 +471,20 @@ public class RdePipelineTest {
                       assertThat(domainFrags.stream().findFirst().get().xml().strip())
                           .isEqualTo(
                               """
-                          <rdeDomain:domain>
-                              <rdeDomain:name>hello.soy</rdeDomain:name>
-                              <rdeDomain:roid>E-SOY</rdeDomain:roid>
-                              <rdeDomain:uName>hello.soy</rdeDomain:uName>
-                              <rdeDomain:status s="ok"/>
-                              <rdeDomain:ns>
-                                  <domain:hostObj>ns1.external.tld</domain:hostObj>
-                                  <domain:hostObj>ns1.lol.cat</domain:hostObj>
-                              </rdeDomain:ns>
-                              <rdeDomain:clID>TheRegistrar</rdeDomain:clID>
-                              <rdeDomain:crRr>TheRegistrar</rdeDomain:crRr>
-                              <rdeDomain:crDate>1970-01-01T00:00:00Z</rdeDomain:crDate>
-                              <rdeDomain:exDate>294247-01-10T04:00:54Z</rdeDomain:exDate>
-                          </rdeDomain:domain>""");
+                              <rdeDomain:domain>
+                                  <rdeDomain:name>hello.soy</rdeDomain:name>
+                                  <rdeDomain:roid>E-SOY</rdeDomain:roid>
+                                  <rdeDomain:uName>hello.soy</rdeDomain:uName>
+                                  <rdeDomain:status s="ok"/>
+                                  <rdeDomain:ns>
+                                      <domain:hostObj>ns1.external.tld</domain:hostObj>
+                                      <domain:hostObj>ns1.lol.cat</domain:hostObj>
+                                  </rdeDomain:ns>
+                                  <rdeDomain:clID>TheRegistrar</rdeDomain:clID>
+                                  <rdeDomain:crRr>TheRegistrar</rdeDomain:crRr>
+                                  <rdeDomain:crDate>1970-01-01T00:00:00Z</rdeDomain:crDate>
+                                  <rdeDomain:exDate>294247-01-10T04:00:54Z</rdeDomain:exDate>
+                              </rdeDomain:domain>""");
                     }
                   });
               return null;

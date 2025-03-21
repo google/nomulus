@@ -30,7 +30,6 @@ import com.google.common.collect.ImmutableSortedMap;
 import com.google.gson.Gson;
 import google.registry.flows.certs.CertificateChecker;
 import google.registry.model.console.ConsoleUpdateHistory;
-import google.registry.model.console.SimpleConsoleUpdateHistory;
 import google.registry.model.registrar.Registrar;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.request.Action;
@@ -101,7 +100,7 @@ class SecurityActionTest {
         .isEqualTo("GNd6ZP8/n91t9UTnpxR8aH7aAW4+CpvufYx9ViGbcMY");
     assertThat(r.getIpAddressAllowList().get(0).getIp()).isEqualTo("192.168.1.1");
     assertThat(r.getIpAddressAllowList().get(0).getNetmask()).isEqualTo(32);
-    SimpleConsoleUpdateHistory history = loadSingleton(SimpleConsoleUpdateHistory.class).get();
+    ConsoleUpdateHistory history = loadSingleton(ConsoleUpdateHistory.class).get();
     assertThat(history.getType()).isEqualTo(ConsoleUpdateHistory.Type.REGISTRAR_SECURITY_UPDATE);
     assertThat(history.getDescription()).hasValue("registrarId");
   }

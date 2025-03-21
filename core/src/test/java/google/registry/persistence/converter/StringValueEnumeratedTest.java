@@ -19,7 +19,7 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import static google.registry.testing.DatabaseHelper.insertInDb;
 
 import google.registry.model.ImmutableObject;
-import google.registry.model.registrar.RegistrarBase.State;
+import google.registry.model.registrar.Registrar.State;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaUnitTestExtension;
 import jakarta.persistence.Entity;

@@ -38,7 +38,6 @@ import google.registry.model.common.Cursor;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarAddress;
 import google.registry.model.registrar.RegistrarPoc;
-import google.registry.model.registrar.RegistrarPocBase;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.testing.DatabaseHelper;
@@ -158,8 +157,7 @@ public class SyncRegistrarsSheetTest {
                 .setName("Jane Doe")
                 .setEmailAddress("contact@example.com")
                 .setPhoneNumber("+1.1234567890")
-                .setTypes(
-                    ImmutableSet.of(RegistrarPocBase.Type.ADMIN, RegistrarPocBase.Type.BILLING))
+                .setTypes(ImmutableSet.of(RegistrarPoc.Type.ADMIN, RegistrarPoc.Type.BILLING))
                 .build(),
             new RegistrarPoc.Builder()
                 .setRegistrar(registrar)
@@ -167,7 +165,7 @@ public class SyncRegistrarsSheetTest {
                 .setEmailAddress("john.doe@example.tld")
                 .setPhoneNumber("+1.1234567890")
                 .setFaxNumber("+1.1234567891")
-                .setTypes(ImmutableSet.of(RegistrarPocBase.Type.ADMIN))
+                .setTypes(ImmutableSet.of(RegistrarPoc.Type.ADMIN))
                 // Purposely flip the internal/external admin/tech
                 // distinction to make sure we're not relying on it.  Sigh.
                 .setVisibleInWhoisAsAdmin(false)
@@ -177,7 +175,7 @@ public class SyncRegistrarsSheetTest {
                 .setRegistrar(registrar)
                 .setName("Jane Smith")
                 .setEmailAddress("pride@example.net")
-                .setTypes(ImmutableSet.of(RegistrarPocBase.Type.TECH))
+                .setTypes(ImmutableSet.of(RegistrarPoc.Type.TECH))
                 .build());
     // Use registrar key for contacts' parent.
     DateTime registrarCreationTime = persistResource(registrar).getCreationTime();
@@ -199,37 +197,37 @@ public class SyncRegistrarsSheetTest {
         .containsEntry(
             "primaryContacts",
             """
-                Jane Doe
-                contact@example.com
-                Tel: +1.1234567890
-                Types: [ADMIN, BILLING]
-                Visible in registrar WHOIS query as Admin contact: No
-                Visible in registrar WHOIS query as Technical contact: No
-                Phone number and email visible in domain WHOIS query as Registrar Abuse contact\
-                 info: No
+            Jane Doe
+            contact@example.com
+            Tel: +1.1234567890
+            Types: [ADMIN, BILLING]
+            Visible in registrar WHOIS query as Admin contact: No
+            Visible in registrar WHOIS query as Technical contact: No
+            Phone number and email visible in domain WHOIS query as Registrar Abuse contact\
+             info: No
 
-                John Doe
-                john.doe@example.tld
-                Tel: +1.1234567890
-                Fax: +1.1234567891
-                Types: [ADMIN]
-                Visible in registrar WHOIS query as Admin contact: No
-                Visible in registrar WHOIS query as Technical contact: Yes
-                Phone number and email visible in domain WHOIS query as Registrar Abuse contact\
-                 info: No
-                """);
+            John Doe
+            john.doe@example.tld
+            Tel: +1.1234567890
+            Fax: +1.1234567891
+            Types: [ADMIN]
+            Visible in registrar WHOIS query as Admin contact: No
+            Visible in registrar WHOIS query as Technical contact: Yes
+            Phone number and email visible in domain WHOIS query as Registrar Abuse contact\
+             info: No
+            """);
     assertThat(row)
         .containsEntry(
             "techContacts",
             """
-                Jane Smith
-                pride@example.net
-                Types: [TECH]
-                Visible in registrar WHOIS query as Admin contact: No
-                Visible in registrar WHOIS query as Technical contact: No
-                Phone number and email visible in domain WHOIS query as Registrar Abuse contact\
-                 info: No
-                """);
+            Jane Smith
+            pride@example.net
+            Types: [TECH]
+            Visible in registrar WHOIS query as Admin contact: No
+            Visible in registrar WHOIS query as Technical contact: No
+            Phone number and email visible in domain WHOIS query as Registrar Abuse contact\
+             info: No
+            """);
     assertThat(row).containsEntry("marketingContacts", "");
     assertThat(row).containsEntry("abuseContacts", "");
     assertThat(row).containsEntry("whoisInquiryContacts", "");
@@ -238,30 +236,30 @@ public class SyncRegistrarsSheetTest {
         .containsEntry(
             "billingContacts",
             """
-                Jane Doe
-                contact@example.com
-                Tel: +1.1234567890
-                Types: [ADMIN, BILLING]
-                Visible in registrar WHOIS query as Admin contact: No
-                Visible in registrar WHOIS query as Technical contact: No
-                Phone number and email visible in domain WHOIS query as Registrar Abuse contact\
-                 info: No
-                """);
+            Jane Doe
+            contact@example.com
+            Tel: +1.1234567890
+            Types: [ADMIN, BILLING]
+            Visible in registrar WHOIS query as Admin contact: No
+            Visible in registrar WHOIS query as Technical contact: No
+            Phone number and email visible in domain WHOIS query as Registrar Abuse contact\
+             info: No
+            """);
     assertThat(row).containsEntry("contactsMarkedAsWhoisAdmin", "");
     assertThat(row)
         .containsEntry(
             "contactsMarkedAsWhoisTech",
             """
-                John Doe
-                john.doe@example.tld
-                Tel: +1.1234567890
-                Fax: +1.1234567891
-                Types: [ADMIN]
-                Visible in registrar WHOIS query as Admin contact: No
-                Visible in registrar WHOIS query as Technical contact: Yes
-                Phone number and email visible in domain WHOIS query as Registrar Abuse contact\
-                 info: No
-                """);
+            John Doe
+            john.doe@example.tld
+            Tel: +1.1234567890
+            Fax: +1.1234567891
+            Types: [ADMIN]
+            Visible in registrar WHOIS query as Admin contact: No
+            Visible in registrar WHOIS query as Technical contact: Yes
+            Phone number and email visible in domain WHOIS query as Registrar Abuse contact\
+             info: No
+            """);
     assertThat(row).containsEntry("emailAddress", "nowhere@example.org");
     assertThat(row).containsEntry(
         "address.street", "I get fallen back upon since there's no l10n addr");

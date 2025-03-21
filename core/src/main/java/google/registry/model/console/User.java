@@ -1,4 +1,4 @@
-// Copyright 2022 The Nomulus Authors. All Rights Reserved.
+// Copyright 2024 The Nomulus Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,23 +15,30 @@
 package google.registry.model.console;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Strings.isNullOrEmpty;
+import static com.google.common.io.BaseEncoding.base64;
+import static google.registry.model.registrar.Registrar.checkValidEmail;
 import static google.registry.tools.server.UpdateUserGroupAction.GROUP_UPDATE_QUEUE;
+import static google.registry.util.PasswordUtils.SALT_SUPPLIER;
+import static google.registry.util.PasswordUtils.hashPassword;
+import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 
 import com.google.cloud.tasks.v2.Task;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.flogger.FluentLogger;
 import com.google.common.net.MediaType;
+import com.google.gson.annotations.Expose;
 import google.registry.batch.CloudTasksUtils;
-import google.registry.persistence.VKey;
+import google.registry.model.Buildable;
+import google.registry.model.UpdateAutoTimestampEntity;
 import google.registry.request.Action;
 import google.registry.tools.IamClient;
 import google.registry.tools.ServiceConnection;
 import google.registry.tools.server.UpdateUserGroupAction;
-import google.registry.tools.server.UpdateUserGroupAction.Mode;
+import google.registry.util.PasswordUtils;
 import google.registry.util.RegistryEnvironment;
-import jakarta.persistence.Access;
-import jakarta.persistence.AccessType;
+import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
@@ -44,10 +51,32 @@ import javax.annotation.Nullable;
 @Embeddable
 @Entity
 @Table
-public class User extends UserBase {
+public class User extends UpdateAutoTimestampEntity implements Buildable {
 
   public static final String IAP_SECURED_WEB_APP_USER_ROLE = "roles/iap.httpsResourceAccessor";
+
+  private static final long serialVersionUID = 6936728603828566721L;
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
+
+  /** Email address of the user in question. */
+  @Id @Expose String emailAddress;
+
+  /** Optional external email address to use for registry lock confirmation emails. */
+  @Column String registryLockEmailAddress;
+
+  /** Roles (which grant permissions) associated with this user. */
+  @Expose
+  @Column(nullable = false)
+  UserRoles userRoles;
+
+  /**
+   * A hashed password that exists iff this contact is registry-lock-enabled. The hash is a base64
+   * encoded SHA256 string.
+   */
+  String registryLockPasswordHash;
+
+  /** Randomly generated hash salt. */
+  String registryLockPasswordSalt;
 
   /**
    * Grants the user permission to pass IAP.
@@ -113,9 +142,13 @@ public class User extends UserBase {
       logger.atInfo().log("Removing %s from group %s", emailAddress, groupEmailAddress.get());
       if (cloudTasksUtils != null) {
         modifyGroupMembershipAsync(
-            emailAddress, groupEmailAddress.get(), cloudTasksUtils, Mode.REMOVE);
+            emailAddress,
+            groupEmailAddress.get(),
+            cloudTasksUtils,
+            UpdateUserGroupAction.Mode.REMOVE);
       } else {
-        modifyGroupMembershipSync(emailAddress, groupEmailAddress.get(), connection, Mode.REMOVE);
+        modifyGroupMembershipSync(
+            emailAddress, groupEmailAddress.get(), connection, UpdateUserGroupAction.Mode.REMOVE);
       }
     }
   }
@@ -124,7 +157,7 @@ public class User extends UserBase {
       String userEmailAddress,
       String groupEmailAddress,
       CloudTasksUtils cloudTasksUtils,
-      Mode mode) {
+      UpdateUserGroupAction.Mode mode) {
     Task task =
         cloudTasksUtils.createTask(
             UpdateUserGroupAction.class,
@@ -140,7 +173,10 @@ public class User extends UserBase {
   }
 
   private static void modifyGroupMembershipSync(
-      String userEmailAddress, String groupEmailAddress, ServiceConnection connection, Mode mode) {
+      String userEmailAddress,
+      String groupEmailAddress,
+      ServiceConnection connection,
+      UpdateUserGroupAction.Mode mode) {
     try {
       connection.sendPostRequest(
           UpdateUserGroupAction.PATH,
@@ -158,30 +194,117 @@ public class User extends UserBase {
     }
   }
 
-  @Id
-  @Override
-  @Access(AccessType.PROPERTY)
+  /**
+   * Sets the user email address.
+   *
+   * <p>This should only be used for restoring an object being loaded in a PostLoad method
+   * (effectively, when it is still under construction by Hibernate). In all other cases, the object
+   * should be regarded as immutable and changes should go through a Builder.
+   *
+   * <p>In addition to this special case use, this method must exist to satisfy Hibernate.
+   */
+  void setEmailAddress(String emailAddress) {
+    this.emailAddress = emailAddress;
+  }
+
   public String getEmailAddress() {
-    return super.getEmailAddress();
+    return emailAddress;
+  }
+
+  public Optional<String> getRegistryLockEmailAddress() {
+    return Optional.ofNullable(registryLockEmailAddress);
+  }
+
+  public UserRoles getUserRoles() {
+    return userRoles;
+  }
+
+  public boolean hasRegistryLockPassword() {
+    return !isNullOrEmpty(registryLockPasswordHash) && !isNullOrEmpty(registryLockPasswordSalt);
+  }
+
+  public boolean verifyRegistryLockPassword(String registryLockPassword) {
+    if (isNullOrEmpty(registryLockPassword)
+        || isNullOrEmpty(registryLockPasswordSalt)
+        || isNullOrEmpty(registryLockPasswordHash)) {
+      return false;
+    }
+    return PasswordUtils.verifyPassword(
+        registryLockPassword, registryLockPasswordHash, registryLockPasswordSalt);
+  }
+
+  /**
+   * Whether the user has the registry lock permission on any registrar or globally.
+   *
+   * <p>If so, they should be allowed to (re)set their registry lock password.
+   */
+  public boolean hasAnyRegistryLockPermission() {
+    if (userRoles == null) {
+      return false;
+    }
+    if (userRoles.isAdmin() || userRoles.hasGlobalPermission(ConsolePermission.REGISTRY_LOCK)) {
+      return true;
+    }
+    return userRoles.getRegistrarRoles().values().stream()
+        .anyMatch(role -> role.hasPermission(ConsolePermission.REGISTRY_LOCK));
   }
 
   @Override
-  public Builder asBuilder() {
-    return new Builder(clone(this));
-  }
-
-  @Override
-  public VKey<User> createVKey() {
-    return VKey.create(User.class, getEmailAddress());
+  public Builder<? extends User, ?> asBuilder() {
+    return new Builder<>(clone(this));
   }
 
   /** Builder for constructing immutable {@link User} objects. */
-  public static class Builder extends UserBase.Builder<User, Builder> {
+  public static class Builder<T extends User, B extends Builder<T, B>>
+      extends GenericBuilder<T, B> {
 
     public Builder() {}
 
-    public Builder(User user) {
-      super(user);
+    public Builder(T abstractUser) {
+      super(abstractUser);
+    }
+
+    @Override
+    public T build() {
+      checkArgumentNotNull(getInstance().emailAddress, "Email address cannot be null");
+      checkArgumentNotNull(getInstance().userRoles, "User roles cannot be null");
+      return super.build();
+    }
+
+    public B setEmailAddress(String emailAddress) {
+      getInstance().emailAddress = checkValidEmail(emailAddress);
+      return thisCastToDerived();
+    }
+
+    public B setRegistryLockEmailAddress(@Nullable String registryLockEmailAddress) {
+      getInstance().registryLockEmailAddress =
+          registryLockEmailAddress == null ? null : checkValidEmail(registryLockEmailAddress);
+      return thisCastToDerived();
+    }
+
+    public B setUserRoles(UserRoles userRoles) {
+      checkArgumentNotNull(userRoles, "User roles cannot be null");
+      getInstance().userRoles = userRoles;
+      return thisCastToDerived();
+    }
+
+    public B removeRegistryLockPassword() {
+      getInstance().registryLockPasswordHash = null;
+      getInstance().registryLockPasswordSalt = null;
+      return thisCastToDerived();
+    }
+
+    public B setRegistryLockPassword(String registryLockPassword) {
+      checkArgument(
+          getInstance().hasAnyRegistryLockPermission(), "User has no registry lock permission");
+      checkArgument(
+          !getInstance().hasRegistryLockPassword(), "User already has a password, remove it first");
+      checkArgument(
+          !isNullOrEmpty(registryLockPassword), "Registry lock password was null or empty");
+      byte[] salt = SALT_SUPPLIER.get();
+      getInstance().registryLockPasswordSalt = base64().encode(salt);
+      getInstance().registryLockPasswordHash = hashPassword(registryLockPassword, salt);
+      return thisCastToDerived();
     }
   }
 }
