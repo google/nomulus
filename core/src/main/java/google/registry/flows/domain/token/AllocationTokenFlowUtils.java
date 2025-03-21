@@ -19,7 +19,6 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import static google.registry.pricing.PricingEngineProxy.isDomainPremium;
 
 import com.google.common.base.Strings;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 import com.google.common.net.InternetDomainName;
@@ -48,12 +47,8 @@ import org.joda.time.DateTime;
 /** Utility functions for dealing with {@link AllocationToken}s in domain flows. */
 public class AllocationTokenFlowUtils {
 
-  private final AllocationTokenCustomLogic tokenCustomLogic;
-
   @Inject
-  AllocationTokenFlowUtils(AllocationTokenCustomLogic tokenCustomLogic) {
-    this.tokenCustomLogic = tokenCustomLogic;
-  }
+  public AllocationTokenFlowUtils() {}
 
   /**
    * Checks if the allocation token applies to the given domain names, used for domain checks.
@@ -75,7 +70,6 @@ public class AllocationTokenFlowUtils {
 
     // If the token is only invalid for some domain names (e.g. an invalid TLD), include those error
     // results for only those domain names
-    ImmutableList.Builder<InternetDomainName> validDomainNames = new ImmutableList.Builder<>();
     ImmutableMap.Builder<InternetDomainName, String> resultsBuilder = new ImmutableMap.Builder<>();
     for (InternetDomainName domainName : domainNames) {
       try {
@@ -86,16 +80,10 @@ public class AllocationTokenFlowUtils {
             registrarId,
             isDomainPremium(domainName.toString(), now),
             now);
-        validDomainNames.add(domainName);
       } catch (EppException e) {
         resultsBuilder.put(domainName, e.getMessage());
       }
     }
-
-    // For all valid domain names, run the custom logic and include the results
-    resultsBuilder.putAll(
-        tokenCustomLogic.checkDomainsWithToken(
-            validDomainNames.build(), tokenEntity, registrarId, now));
     return new AllocationTokenDomainCheckResults(Optional.of(tokenEntity), resultsBuilder.build());
   }
 
@@ -209,7 +197,7 @@ public class AllocationTokenFlowUtils {
         registrarId,
         isDomainPremium(command.getDomainName(), now),
         now);
-    return Optional.of(tokenCustomLogic.validateToken(command, tokenEntity, tld, registrarId, now));
+    return Optional.of(tokenEntity);
   }
 
   /** Verifies and returns the allocation token if one is specified, otherwise does nothing. */
@@ -232,8 +220,7 @@ public class AllocationTokenFlowUtils {
         registrarId,
         isDomainPremium(existingDomain.getDomainName(), now),
         now);
-    return Optional.of(
-        tokenCustomLogic.validateToken(existingDomain, tokenEntity, tld, registrarId, now));
+    return Optional.of(tokenEntity);
   }
 
   public static void verifyTokenAllowedOnDomain(

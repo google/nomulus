@@ -91,7 +91,6 @@ public class RegistryConfigSettings {
     public String productName;
     public String customLogicFactoryClass;
     public String whoisCommandFactoryClass;
-    public String allocationTokenCustomLogicClass;
     public String dnsCountQueryCoordinatorClass;
     public int contactAutomaticTransferDays;
     public String greetingServerId;

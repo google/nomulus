@@ -35,7 +35,6 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
-import com.google.common.collect.Maps;
 import com.google.common.net.InternetDomainName;
 import google.registry.flows.EppException;
 import google.registry.flows.domain.token.AllocationTokenFlowUtils.AllocationTokenNotInPromotionException;
@@ -63,8 +62,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 /** Unit tests for {@link AllocationTokenFlowUtils}. */
 class AllocationTokenFlowUtilsTest {
 
-  private final AllocationTokenFlowUtils flowUtils =
-      new AllocationTokenFlowUtils(new AllocationTokenCustomLogic());
+  private final AllocationTokenFlowUtils flowUtils = new AllocationTokenFlowUtils();
 
   @RegisterExtension
   final JpaIntegrationTestExtension jpa =
@@ -183,47 +181,6 @@ class AllocationTokenFlowUtilsTest {
                         CommandName.RENEW,
                         Optional.of(allocationTokenExtension))))
         .marshalsToXml();
-  }
-
-  @Test
-  void test_validateTokenCreate_callsCustomLogic() {
-    AllocationTokenFlowUtils failingFlowUtils =
-        new AllocationTokenFlowUtils(new FailingAllocationTokenCustomLogic());
-    persistResource(
-        new AllocationToken.Builder().setToken("tokeN").setTokenType(SINGLE_USE).build());
-    when(allocationTokenExtension.getAllocationToken()).thenReturn("tokeN");
-    Exception thrown =
-        assertThrows(
-            IllegalStateException.class,
-            () ->
-                failingFlowUtils.verifyAllocationTokenCreateIfPresent(
-                    createCommand("blah.tld"),
-                    Tld.get("tld"),
-                    "TheRegistrar",
-                    DateTime.now(UTC),
-                    Optional.of(allocationTokenExtension)));
-    assertThat(thrown).hasMessageThat().isEqualTo("failed for tests");
-  }
-
-  @Test
-  void test_validateTokenExistingDomain_callsCustomLogic() {
-    AllocationTokenFlowUtils failingFlowUtils =
-        new AllocationTokenFlowUtils(new FailingAllocationTokenCustomLogic());
-    persistResource(
-        new AllocationToken.Builder().setToken("tokeN").setTokenType(SINGLE_USE).build());
-    when(allocationTokenExtension.getAllocationToken()).thenReturn("tokeN");
-    Exception thrown =
-        assertThrows(
-            IllegalStateException.class,
-            () ->
-                failingFlowUtils.verifyAllocationTokenIfPresent(
-                    DatabaseHelper.newDomain("blah.tld"),
-                    Tld.get("tld"),
-                    "TheRegistrar",
-                    DateTime.now(UTC),
-                    CommandName.RENEW,
-                    Optional.of(allocationTokenExtension)));
-    assertThat(thrown).hasMessageThat().isEqualTo("failed for tests");
   }
 
   @Test
@@ -383,49 +340,6 @@ class AllocationTokenFlowUtilsTest {
         .inOrder();
   }
 
-  @Test
-  void test_checkDomainsWithToken_callsCustomLogic() {
-    persistResource(
-        new AllocationToken.Builder().setToken("tokeN").setTokenType(SINGLE_USE).build());
-    AllocationTokenFlowUtils failingFlowUtils =
-        new AllocationTokenFlowUtils(new FailingAllocationTokenCustomLogic());
-    Exception thrown =
-        assertThrows(
-            IllegalStateException.class,
-            () ->
-                failingFlowUtils.checkDomainsWithToken(
-                    ImmutableList.of(
-                        InternetDomainName.from("blah.tld"), InternetDomainName.from("blah2.tld")),
-                    "tokeN",
-                    "TheRegistrar",
-                    DateTime.now(UTC)));
-    assertThat(thrown).hasMessageThat().isEqualTo("failed for tests");
-  }
-
-  @Test
-  void test_checkDomainsWithToken_resultsFromCustomLogicAreIntegrated() {
-    persistResource(
-        new AllocationToken.Builder().setToken("tokeN").setTokenType(SINGLE_USE).build());
-    AllocationTokenFlowUtils customResultFlowUtils =
-        new AllocationTokenFlowUtils(new CustomResultAllocationTokenCustomLogic());
-    assertThat(
-            customResultFlowUtils
-                .checkDomainsWithToken(
-                    ImmutableList.of(
-                        InternetDomainName.from("blah.tld"), InternetDomainName.from("bunny.tld")),
-                    "tokeN",
-                    "TheRegistrar",
-                    DateTime.now(UTC))
-                .domainCheckResults())
-        .containsExactlyEntriesIn(
-            ImmutableMap.of(
-                InternetDomainName.from("blah.tld"),
-                "",
-                InternetDomainName.from("bunny.tld"),
-                "fufu"))
-        .inOrder();
-  }
-
   private void assertValidateCreateThrowsEppException(Class<? extends EppException> clazz) {
     assertAboutEppExceptions()
         .that(
@@ -474,47 +388,5 @@ class AllocationTokenFlowUtilsTest {
                 .put(promoStart, VALID)
                 .put(promoStart.plusMonths(1), ENDED)
                 .build());
-  }
-
-  /** An {@link AllocationTokenCustomLogic} class that throws exceptions on every method. */
-  private static class FailingAllocationTokenCustomLogic extends AllocationTokenCustomLogic {
-
-    @Override
-    public AllocationToken validateToken(
-        DomainCommand.Create command,
-        AllocationToken token,
-        Tld tld,
-        String registrarId,
-        DateTime now) {
-      throw new IllegalStateException("failed for tests");
-    }
-
-    @Override
-    public AllocationToken validateToken(
-        Domain domain, AllocationToken token, Tld tld, String registrarId, DateTime now) {
-      throw new IllegalStateException("failed for tests");
-    }
-
-    @Override
-    public ImmutableMap<InternetDomainName, String> checkDomainsWithToken(
-        ImmutableList<InternetDomainName> domainNames,
-        AllocationToken tokenEntity,
-        String registrarId,
-        DateTime now) {
-      throw new IllegalStateException("failed for tests");
-    }
-  }
-
-  /** An {@link AllocationTokenCustomLogic} class that returns custom check results for bunnies. */
-  private static class CustomResultAllocationTokenCustomLogic extends AllocationTokenCustomLogic {
-
-    @Override
-    public ImmutableMap<InternetDomainName, String> checkDomainsWithToken(
-        ImmutableList<InternetDomainName> domainNames,
-        AllocationToken tokenEntity,
-        String registrarId,
-        DateTime now) {
-      return Maps.toMap(domainNames, domain -> domain.toString().contains("bunny") ? "fufu" : "");
-    }
   }
 }

@@ -1112,12 +1112,6 @@ public final class RegistryConfig {
     }
 
     @Provides
-    @Config("allocationTokenCustomLogicClass")
-    public static String provideAllocationTokenCustomLogicClass(RegistryConfigSettings config) {
-      return config.registryPolicy.allocationTokenCustomLogicClass;
-    }
-
-    @Provides
     @Config("dnsCountQueryCoordinatorClass")
     public static String dnsCountQueryCoordinatorClass(RegistryConfigSettings config) {
       return config.registryPolicy.dnsCountQueryCoordinatorClass;
