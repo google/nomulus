@@ -37,11 +37,10 @@ import google.registry.batch.CloudTasksUtils;
 import google.registry.config.RegistryConfig;
 import google.registry.export.sheet.SyncRegistrarsSheetAction;
 import google.registry.model.console.ConsolePermission;
-import google.registry.model.console.SimpleConsoleUpdateHistory;
+import google.registry.model.console.ConsoleUpdateHistory;
 import google.registry.model.console.User;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarPoc;
-import google.registry.model.registrar.RegistrarPocBase;
 import google.registry.request.HttpException;
 import google.registry.security.XsrfTokenManager;
 import google.registry.util.DiffUtils;
@@ -218,7 +217,7 @@ public abstract class ConsoleApiAction implements Runnable {
                 consoleApiParams.authResult().userIdForLogging(),
                 DiffUtils.prettyPrintDiffedMap(diffs, null)),
             contacts.stream()
-                .filter(c -> c.getTypes().contains(RegistrarPocBase.Type.ADMIN))
+                .filter(c -> c.getTypes().contains(RegistrarPoc.Type.ADMIN))
                 .map(RegistrarPoc::getEmailAddress)
                 .collect(toImmutableList()));
   }
@@ -262,7 +261,7 @@ public abstract class ConsoleApiAction implements Runnable {
     }
   }
 
-  protected void finishAndPersistConsoleUpdateHistory(SimpleConsoleUpdateHistory.Builder builder) {
+  protected void finishAndPersistConsoleUpdateHistory(ConsoleUpdateHistory.Builder builder) {
     builder.setActingUser(consoleApiParams.authResult().user().get());
     builder.setUrl(consoleApiParams.request().getRequestURI());
     builder.setMethod(consoleApiParams.request().getMethod());

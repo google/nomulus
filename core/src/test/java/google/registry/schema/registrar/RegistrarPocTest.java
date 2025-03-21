@@ -15,7 +15,7 @@
 package google.registry.schema.registrar;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.model.registrar.RegistrarPocBase.Type.WHOIS;
+import static google.registry.model.registrar.RegistrarPoc.Type.WHOIS;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.insertInDb;
 import static google.registry.testing.DatabaseHelper.loadByEntity;

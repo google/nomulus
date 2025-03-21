@@ -24,7 +24,7 @@ import google.registry.config.RegistryConfig.Config;
 import google.registry.groups.GroupsConnection;
 import google.registry.groups.GroupsConnection.Role;
 import google.registry.model.registrar.Registrar;
-import google.registry.model.registrar.RegistrarPocBase;
+import google.registry.model.registrar.RegistrarPoc;
 import google.registry.request.Action;
 import google.registry.request.Action.GaeService;
 import google.registry.request.HttpException.BadRequestException;
@@ -65,7 +65,7 @@ public class CreateGroupsAction implements Runnable {
     if (registrar == null) {
       return;
     }
-    List<RegistrarPocBase.Type> types = asList(RegistrarPocBase.Type.values());
+    List<RegistrarPoc.Type> types = asList(RegistrarPoc.Type.values());
     // Concurrently create the groups for each RegistrarContact.Type, collecting the results from
     // each call (which are either an Exception if it failed, or absent() if it succeeded).
     List<Optional<Exception>> results =

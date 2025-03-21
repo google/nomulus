@@ -34,7 +34,6 @@ import com.google.gson.Gson;
 import google.registry.flows.PasswordOnlyTransportCredentials;
 import google.registry.model.console.ConsoleUpdateHistory;
 import google.registry.model.console.GlobalRole;
-import google.registry.model.console.SimpleConsoleUpdateHistory;
 import google.registry.model.console.User;
 import google.registry.model.console.UserRoles;
 import google.registry.model.registrar.Registrar;
@@ -140,7 +139,7 @@ class ConsoleEppPasswordActionTest {
     action.run();
     assertThat(((FakeResponse) consoleApiParams.response()).getStatus()).isEqualTo(SC_OK);
     assertDoesNotThrow(() -> credentials.validate(loadRegistrar("TheRegistrar"), "randomPassword"));
-    SimpleConsoleUpdateHistory history = loadSingleton(SimpleConsoleUpdateHistory.class).get();
+    ConsoleUpdateHistory history = loadSingleton(ConsoleUpdateHistory.class).get();
     assertThat(history.getType()).isEqualTo(ConsoleUpdateHistory.Type.EPP_PASSWORD_UPDATE);
     assertThat(history.getDescription()).hasValue("TheRegistrar");
   }
