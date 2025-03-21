@@ -14,8 +14,6 @@ spec:
         service: frontend
     spec:
       serviceAccountName: nomulus
-      nodeSelector:
-        cloud.google.com/compute-class: "Performance"
       containers:
       - name: frontend
         image: gcr.io/GCP_PROJECT/nomulus
@@ -81,15 +79,15 @@ spec:
     apiVersion: apps/v1
     kind: Deployment
     name: frontend
-  minReplicas: 15
-  maxReplicas: 15
+  minReplicas: 20
+  maxReplicas: 20
   metrics:
     - type: Resource
       resource:
         name: cpu
         target:
           type: Utilization
-          averageUtilization: 100
+          averageUtilization: 80
 ---
 apiVersion: v1
 kind: Service
