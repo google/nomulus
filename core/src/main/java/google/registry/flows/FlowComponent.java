@@ -43,7 +43,6 @@ import google.registry.flows.domain.DomainTransferQueryFlow;
 import google.registry.flows.domain.DomainTransferRejectFlow;
 import google.registry.flows.domain.DomainTransferRequestFlow;
 import google.registry.flows.domain.DomainUpdateFlow;
-import google.registry.flows.domain.token.AllocationTokenModule;
 import google.registry.flows.host.HostCheckFlow;
 import google.registry.flows.host.HostCreateFlow;
 import google.registry.flows.host.HostDeleteFlow;
@@ -59,7 +58,6 @@ import google.registry.model.eppcommon.Trid;
 /** Dagger component for flow classes. */
 @FlowScope
 @Subcomponent(modules = {
-    AllocationTokenModule.class,
     BatchModule.class,
     CustomLogicModule.class,
     DnsModule.class,

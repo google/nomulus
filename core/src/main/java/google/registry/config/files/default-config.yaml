@@ -69,10 +69,6 @@ registryPolicy:
   # See whois/WhoisCommandFactory.java
   whoisCommandFactoryClass: google.registry.whois.WhoisCommandFactory
 
-  # Custom logic class for handling allocation tokens.
-  # See flows/domain/token/AllocationTokenCustomLogic.java
-  allocationTokenCustomLogicClass: google.registry.flows.domain.token.AllocationTokenCustomLogic
-
   # Custom logic class for handling DNS query count reporting for ICANN.
   # See reporting/icann/DnsCountQueryCoordinator.java
   dnsCountQueryCoordinatorClass: google.registry.reporting.icann.DummyDnsCountQueryCoordinator
