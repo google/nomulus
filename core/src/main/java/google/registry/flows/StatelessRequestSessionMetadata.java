@@ -14,16 +14,13 @@
 
 package google.registry.flows;
 
-import static com.google.common.base.MoreObjects.toStringHelper;
 import static com.google.common.base.Preconditions.checkNotNull;
-import static google.registry.util.CollectionUtils.nullToEmpty;
 
-import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableSet;
 import java.util.Set;
 
 /** A read-only {@link SessionMetadata} that doesn't support login/logout. */
-public class StatelessRequestSessionMetadata implements SessionMetadata {
+public class StatelessRequestSessionMetadata extends SessionMetadata {
 
   private final String registrarId;
   private final ImmutableSet<String> serviceExtensionUris;
@@ -74,13 +71,6 @@ public class StatelessRequestSessionMetadata implements SessionMetadata {
     throw new UnsupportedOperationException();
   }
 
-  @Override
-  public String toString() {
-    return toStringHelper(getClass())
-        .add("clientId", getRegistrarId())
-        .add("failedLoginAttempts", getFailedLoginAttempts())
-        .add("serviceExtensionUris", Joiner.on('.').join(nullToEmpty(getServiceExtensionUris())))
-        .toString();
-  }
+
 }
 

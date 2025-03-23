@@ -62,15 +62,4 @@ do
   kubectl apply -f -
 done
 
-# Restart proxies
-while read line
-do
-  parts=(${line})
-  echo "Updating cluster ${parts[0]} in location ${parts[1]}..."
-  gcloud container clusters get-credentials ${parts[0]} \
-    --project ${project} --location ${parts[1]}
-  kubectl rollout restart deployment/proxy-deployment
-  kubectl rollout restart deployment/proxy-deployment-canary
-done < <(gcloud container clusters list --project ${project} | grep proxy-cluster)
-
 kubectl config use-context "$current_context"
