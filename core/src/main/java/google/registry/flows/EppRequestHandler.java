@@ -78,6 +78,8 @@ public class EppRequestHandler {
     } catch (Exception e) {
       logger.atWarning().withCause(e).log("handleEppCommand general exception.");
       response.setStatus(SC_BAD_REQUEST);
+    } finally {
+      sessionMetadata.save(response);
     }
   }
 }

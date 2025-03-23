@@ -12,17 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 package google.registry.flows;
 
 import static com.google.common.truth.Truth.assertThat;
+import static java.nio.charset.StandardCharsets.US_ASCII;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
-import google.registry.testing.FakeHttpSession;
+import com.google.common.io.BaseEncoding;
+import jakarta.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
@@ -36,18 +38,23 @@ class EppTlsActionTest {
     EppTlsAction action = new EppTlsAction();
     action.inputXmlBytes = INPUT_XML_BYTES;
     action.tlsCredentials = mock(TlsCredentials.class);
-    action.session = new FakeHttpSession();
-    action.session.setAttribute("REGISTRAR_ID", "ClientIdentifier");
+    action.request = mock(HttpServletRequest.class);
+    when(action.request.getHeader("Cookie"))
+        .thenReturn(
+            "SESSION_INFO="
+                + BaseEncoding.base64Url()
+                    .encode("REGISTRAR_ID=ClientIdentifier".getBytes(US_ASCII)));
     action.eppRequestHandler = mock(EppRequestHandler.class);
     action.run();
     ArgumentCaptor<SessionMetadata> captor = ArgumentCaptor.forClass(SessionMetadata.class);
-    verify(action.eppRequestHandler).executeEpp(
-        captor.capture(),
-        same(action.tlsCredentials),
-        eq(EppRequestSource.TLS),
-        eq(false),
-        eq(false),
-        eq(INPUT_XML_BYTES));
+    verify(action.eppRequestHandler)
+        .executeEpp(
+            captor.capture(),
+            same(action.tlsCredentials),
+            eq(EppRequestSource.TLS),
+            eq(false),
+            eq(false),
+            eq(INPUT_XML_BYTES));
     assertThat(captor.getValue().getRegistrarId()).isEqualTo("ClientIdentifier");
   }
 }

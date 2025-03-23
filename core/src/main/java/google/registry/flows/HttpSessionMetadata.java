@@ -14,16 +14,14 @@
 
 package google.registry.flows;
 
-import static com.google.common.base.MoreObjects.toStringHelper;
 import static google.registry.util.CollectionUtils.nullToEmpty;
 
-import com.google.common.base.Joiner;
 import jakarta.servlet.http.HttpSession;
 import java.util.Optional;
 import java.util.Set;
 
 /** A metadata class that is a wrapper around {@link HttpSession}. */
-public class HttpSessionMetadata implements SessionMetadata {
+public class HttpSessionMetadata extends SessionMetadata {
 
   private static final String REGISTRAR_ID = "REGISTRAR_ID";
   private static final String SERVICE_EXTENSIONS = "SERVICE_EXTENSIONS";
@@ -74,14 +72,5 @@ public class HttpSessionMetadata implements SessionMetadata {
   @Override
   public void resetFailedLoginAttempts() {
     session.removeAttribute(FAILED_LOGIN_ATTEMPTS);
-  }
-
-  @Override
-  public String toString() {
-    return toStringHelper(getClass())
-        .add("clientId", getRegistrarId())
-        .add("failedLoginAttempts", getFailedLoginAttempts())
-        .add("serviceExtensionUris", Joiner.on('.').join(nullToEmpty(getServiceExtensionUris())))
-        .toString();
   }
 }
