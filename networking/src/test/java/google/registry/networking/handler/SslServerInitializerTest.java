@@ -42,7 +42,6 @@ import java.security.cert.CertificateException;
 import java.security.cert.CertificateExpiredException;
 import java.security.cert.CertificateNotYetValidException;
 import java.security.cert.X509Certificate;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Stream;
@@ -272,17 +271,11 @@ class SslServerInitializerTest {
         getClientHandler(
             sslProvider, serverSsc.cert(), clientSsc.key(), clientSsc.cert(), "TLSv1.1", null));
 
-    ImmutableList<Integer> jdkVersion =
-        Arrays.stream(System.getProperty("java.version").split("\\."))
-            .map(Integer::parseInt)
-            .collect(ImmutableList.toImmutableList());
-
     // In JDK v11.0.11 and above, TLS 1.1 is not supported anymore, in which case attempting to
     // connect with TLS 1.1 results in a ClosedChannelException instead of a SSLHandShakeException.
     // See https://www.oracle.com/java/technologies/javase/11-0-11-relnotes.html#JDK-8202343
     Class<? extends Exception> rootCause =
         sslProvider == SslProvider.JDK
-                && compareSemanticVersion(jdkVersion, ImmutableList.of(11, 0, 11))
             ? ClosedChannelException.class
             : SSLHandshakeException.class;
 
