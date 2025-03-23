@@ -14,29 +14,45 @@
 
 package google.registry.flows;
 
+import static com.google.common.base.MoreObjects.toStringHelper;
+import static google.registry.util.CollectionUtils.nullToEmpty;
+
+import com.google.common.base.Joiner;
+import google.registry.request.Response;
 import java.util.Set;
 
 /** Object to allow setting and retrieving session information in flows. */
-public interface SessionMetadata {
+public abstract class SessionMetadata {
 
   /**
    * Invalidates the session. A new instance must be created after this for future sessions.
-   * Attempts to invoke methods of this class after this method has been called will throw
-   * {@code IllegalStateException}.
+   * Attempts to invoke methods of this class after this method has been called will throw {@code
+   * IllegalStateException}.
    */
-  void invalidate();
+  public abstract void invalidate();
 
-  String getRegistrarId();
+  public abstract String getRegistrarId();
 
-  Set<String> getServiceExtensionUris();
+  public abstract Set<String> getServiceExtensionUris();
 
-  int getFailedLoginAttempts();
+  public abstract int getFailedLoginAttempts();
 
-  void setRegistrarId(String registrarId);
+  public abstract void setRegistrarId(String registrarId);
 
-  void setServiceExtensionUris(Set<String> serviceExtensionUris);
+  public abstract void setServiceExtensionUris(Set<String> serviceExtensionUris);
 
-  void incrementFailedLoginAttempts();
+  public abstract void incrementFailedLoginAttempts();
 
-  void resetFailedLoginAttempts();
+  public abstract void resetFailedLoginAttempts();
+
+  @Override
+  public String toString() {
+    return toStringHelper(getClass())
+        .add("clientId", getRegistrarId())
+        .add("failedLoginAttempts", getFailedLoginAttempts())
+        .add("serviceExtensionUris", Joiner.on('.').join(nullToEmpty(getServiceExtensionUris())))
+        .toString();
+  }
+
+  public void save(Response response) {}
 }
