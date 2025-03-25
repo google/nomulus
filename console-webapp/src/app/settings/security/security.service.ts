@@ -69,7 +69,7 @@ export class SecurityService {
         uiToApiConverter(newSecuritySettings)
       )
       .pipe(
-        timeout(2000),
+        timeout(25000),
         switchMap(() => {
           return this.registrarService.loadRegistrars();
         })
