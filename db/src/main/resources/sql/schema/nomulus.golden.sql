@@ -2615,14 +2615,6 @@ CREATE INDEX spec11threatmatch_tld_idx ON public."Spec11ThreatMatch" USING btree
 
 
 --
--- Name: UserUpdateHistory fk1s7bopbl3pwrhv3jkkofnv3o0; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public."UserUpdateHistory"
-    ADD CONSTRAINT fk1s7bopbl3pwrhv3jkkofnv3o0 FOREIGN KEY (history_acting_user) REFERENCES public."User"(email_address);
-
-
---
 -- Name: Contact fk1sfyj7o7954prbn1exk7lpnoe; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -3071,14 +3063,6 @@ ALTER TABLE ONLY public."DomainHistoryHost"
 
 
 --
--- Name: ConsoleEppActionHistory fkb686b9os2nsjpv930npa4r3b4; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public."ConsoleEppActionHistory"
-    ADD CONSTRAINT fkb686b9os2nsjpv930npa4r3b4 FOREIGN KEY (history_acting_user) REFERENCES public."User"(email_address);
-
-
---
 -- Name: BsaUnblockableDomain fkbsaunblockabledomainlabel; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -3092,14 +3076,6 @@ ALTER TABLE ONLY public."BsaUnblockableDomain"
 
 ALTER TABLE ONLY public."DomainHost"
     ADD CONSTRAINT fkfmi7bdink53swivs390m2btxg FOREIGN KEY (domain_repo_id) REFERENCES public."Domain"(repo_id) DEFERRABLE INITIALLY DEFERRED;
-
-
---
--- Name: RegistrarPocUpdateHistory fkftpbwctxtkc1i0njc0tdcaa2g; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public."RegistrarPocUpdateHistory"
-    ADD CONSTRAINT fkftpbwctxtkc1i0njc0tdcaa2g FOREIGN KEY (history_acting_user) REFERENCES public."User"(email_address);
 
 
 --
@@ -3151,27 +3127,11 @@ ALTER TABLE ONLY public."RegistrarUpdateHistory"
 
 
 --
--- Name: RegistrarUpdateHistory fksr7w342s7x5s5jvdti2axqeq8; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public."RegistrarUpdateHistory"
-    ADD CONSTRAINT fksr7w342s7x5s5jvdti2axqeq8 FOREIGN KEY (history_acting_user) REFERENCES public."User"(email_address);
-
-
---
 -- Name: DelegationSignerData fktr24j9v14ph2mfuw2gsmt12kq; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public."DelegationSignerData"
     ADD CONSTRAINT fktr24j9v14ph2mfuw2gsmt12kq FOREIGN KEY (domain_repo_id) REFERENCES public."Domain"(repo_id) DEFERRABLE INITIALLY DEFERRED;
-
-
---
--- Name: UserUpdateHistory fkuserupdatehistoryemailaddress; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public."UserUpdateHistory"
-    ADD CONSTRAINT fkuserupdatehistoryemailaddress FOREIGN KEY (email_address) REFERENCES public."User"(email_address);
 
 
 --
