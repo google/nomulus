@@ -36,7 +36,7 @@ import google.registry.flows.session.LoginFlow.TooManyFailedLoginsException;
 import google.registry.flows.session.LoginFlow.UnsupportedLanguageException;
 import google.registry.model.eppoutput.EppOutput;
 import google.registry.model.registrar.Registrar;
-import google.registry.model.registrar.RegistrarBase.State;
+import google.registry.model.registrar.Registrar.State;
 import google.registry.testing.DatabaseHelper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

@@ -24,7 +24,6 @@ import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableSet;
 import google.registry.model.console.ConsolePermission;
 import google.registry.model.console.ConsoleUpdateHistory;
-import google.registry.model.console.SimpleConsoleUpdateHistory;
 import google.registry.model.console.User;
 import google.registry.model.registrar.Registrar;
 import google.registry.request.Action;
@@ -102,7 +101,7 @@ public class ConsoleUpdateRegistrarAction extends ConsoleApiAction {
 
               tm().put(updatedRegistrar);
               finishAndPersistConsoleUpdateHistory(
-                  new SimpleConsoleUpdateHistory.Builder()
+                  new ConsoleUpdateHistory.Builder()
                       .setType(ConsoleUpdateHistory.Type.REGISTRAR_UPDATE)
                       .setDescription(updatedRegistrar.getRegistrarId()));
               sendExternalUpdatesIfNecessary(

@@ -25,7 +25,11 @@ import textwrap
 import re
 
 # We should never analyze any generated files
-UNIVERSALLY_SKIPPED_PATTERNS = {"/build/", "cloudbuild-caches", "/out/", ".git/", ".gradle/", "/dist/", "/console-alpha/", "/console-crash/", "/console-qa", "/console-sandbox", "/console-production", "karma.conf.js", "polyfills.ts", "test.ts", "/docs/console-endpoints/"}
+UNIVERSALLY_SKIPPED_PATTERNS = {"/build/", "cloudbuild-caches", "/out/", ".git/",
+     ".gradle/", "/dist/", "/console-alpha/", "/console-crash/", "/console-qa",
+     "/console-sandbox", "/console-production", "karma.conf.js", "polyfills.ts",
+     "test.ts", "/docs/console-endpoints/", "/bin/generated-sources/",
+     "/bin/generated-test-sources/", "src/main/generated", "src/test/generated"}
 # We can't rely on CI to have the Enum package installed so we do this instead.
 FORBIDDEN = 1
 REQUIRED = 2
@@ -87,11 +91,9 @@ PRESUBMITS = {
     PresubmitCheck(
         r".*Copyright 20\d{2} The Nomulus Authors\. All Rights Reserved\.",
         ("java", "js", "soy", "sql", "py", "sh", "gradle", "ts"), {
-            ".git", "/build/", "/bin/generated-sources/", "/bin/generated-test-sources/",
-            "node_modules/", "LoggerConfig.java", "registrar_bin.",
+            ".git", "/build/", "node_modules/", "LoggerConfig.java", "registrar_bin.",
             "registrar_dbg.", "google-java-format-diff.py",
-            "nomulus.golden.sql", "soyutils_usegoog.js", "javascript/checks.js",
-            "/src/main/generated", "/src/test/generated"
+            "nomulus.golden.sql", "soyutils_usegoog.js", "javascript/checks.js"
         }, REQUIRED):
         "File did not include the license header.",
 

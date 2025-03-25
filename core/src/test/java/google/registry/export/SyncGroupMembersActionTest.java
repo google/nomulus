@@ -16,9 +16,9 @@ package google.registry.export;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.export.SyncGroupMembersAction.getGroupEmailAddressForContactType;
-import static google.registry.model.registrar.RegistrarPocBase.Type.ADMIN;
-import static google.registry.model.registrar.RegistrarPocBase.Type.MARKETING;
-import static google.registry.model.registrar.RegistrarPocBase.Type.TECH;
+import static google.registry.model.registrar.RegistrarPoc.Type.ADMIN;
+import static google.registry.model.registrar.RegistrarPoc.Type.MARKETING;
+import static google.registry.model.registrar.RegistrarPoc.Type.TECH;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.loadRegistrar;
 import static google.registry.testing.DatabaseHelper.persistResource;

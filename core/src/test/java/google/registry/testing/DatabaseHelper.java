@@ -93,9 +93,8 @@ import google.registry.model.host.Host;
 import google.registry.model.poll.PollMessage;
 import google.registry.model.pricing.StaticPremiumListPricingEngine;
 import google.registry.model.registrar.Registrar;
+import google.registry.model.registrar.Registrar.State;
 import google.registry.model.registrar.RegistrarAddress;
-import google.registry.model.registrar.RegistrarBase;
-import google.registry.model.registrar.RegistrarBase.State;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.reporting.HistoryEntryDao;
 import google.registry.model.tld.Tld;
@@ -761,7 +760,7 @@ public final class DatabaseHelper {
   public static Registrar persistNewRegistrar(
       String registrarId,
       String registrarName,
-      RegistrarBase.Type type,
+      Registrar.Type type,
       @Nullable Long ianaIdentifier) {
     return persistSimpleResource(
         new Registrar.Builder()

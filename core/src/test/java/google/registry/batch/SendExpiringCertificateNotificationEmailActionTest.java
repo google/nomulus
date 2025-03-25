@@ -36,8 +36,7 @@ import google.registry.groups.GmailClient;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarAddress;
 import google.registry.model.registrar.RegistrarPoc;
-import google.registry.model.registrar.RegistrarPocBase;
-import google.registry.model.registrar.RegistrarPocBase.Type;
+import google.registry.model.registrar.RegistrarPoc.Type;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.testing.FakeClock;
@@ -57,13 +56,13 @@ class SendExpiringCertificateNotificationEmailActionTest {
 
   private static final String EXPIRATION_WARNING_EMAIL_BODY_TEXT =
       """
-           Dear %1$s,
+       Dear %1$s,
 
-          We would like to inform you that your %2$s certificate will expire at %3$s.
-           Kind update your account using the following steps:
-            1. Navigate to support and login using your %4$s@registry.example credentials.
-            2. Click Settings -> Privacy on the top left corner.
-            3. Click Edit and enter certificate string.  3. Click SaveRegards,Example Registry""";
+      We would like to inform you that your %2$s certificate will expire at %3$s.
+       Kind update your account using the following steps:
+        1. Navigate to support and login using your %4$s@registry.example credentials.
+        2. Click Settings -> Privacy on the top left corner.
+        3. Click Edit and enter certificate string.  3. Click SaveRegards,Example Registry""";
 
   private static final String EXPIRATION_WARNING_EMAIL_SUBJECT_TEXT = "Expiration Warning Email";
 
@@ -220,7 +219,7 @@ class SendExpiringCertificateNotificationEmailActionTest {
                 .setEmailAddress("will@example-registrar.tld")
                 .setPhoneNumber("+1.3105551213")
                 .setFaxNumber("+1.3105551213")
-                .setTypes(ImmutableSet.of(RegistrarPocBase.Type.TECH))
+                .setTypes(ImmutableSet.of(RegistrarPoc.Type.TECH))
                 .setVisibleInWhoisAsAdmin(true)
                 .setVisibleInWhoisAsTech(false)
                 .build());
@@ -510,7 +509,7 @@ class SendExpiringCertificateNotificationEmailActionTest {
                 .setEmailAddress("jd@example-registrar.tld")
                 .setPhoneNumber("+1.3105551213")
                 .setFaxNumber("+1.3105551213")
-                .setTypes(ImmutableSet.of(RegistrarPocBase.Type.TECH))
+                .setTypes(ImmutableSet.of(RegistrarPoc.Type.TECH))
                 .setVisibleInWhoisAsAdmin(true)
                 .setVisibleInWhoisAsTech(false)
                 .build(),
@@ -520,7 +519,7 @@ class SendExpiringCertificateNotificationEmailActionTest {
                 .setEmailAddress("js@example-registrar.tld")
                 .setPhoneNumber("+1.1111111111")
                 .setFaxNumber("+1.1111111111")
-                .setTypes(ImmutableSet.of(RegistrarPocBase.Type.TECH))
+                .setTypes(ImmutableSet.of(RegistrarPoc.Type.TECH))
                 .build(),
             new RegistrarPoc.Builder()
                 .setRegistrar(registrar)
@@ -528,7 +527,7 @@ class SendExpiringCertificateNotificationEmailActionTest {
                 .setEmailAddress("will@example-registrar.tld")
                 .setPhoneNumber("+1.3105551213")
                 .setFaxNumber("+1.3105551213")
-                .setTypes(ImmutableSet.of(RegistrarPocBase.Type.TECH))
+                .setTypes(ImmutableSet.of(RegistrarPoc.Type.TECH))
                 .setVisibleInWhoisAsAdmin(true)
                 .setVisibleInWhoisAsTech(false)
                 .build(),
@@ -538,7 +537,7 @@ class SendExpiringCertificateNotificationEmailActionTest {
                 .setEmailAddress("mike@example-registrar.tld")
                 .setPhoneNumber("+1.1111111111")
                 .setFaxNumber("+1.1111111111")
-                .setTypes(ImmutableSet.of(RegistrarPocBase.Type.ADMIN))
+                .setTypes(ImmutableSet.of(RegistrarPoc.Type.ADMIN))
                 .build(),
             new RegistrarPoc.Builder()
                 .setRegistrar(registrar)
@@ -546,7 +545,7 @@ class SendExpiringCertificateNotificationEmailActionTest {
                 .setEmailAddress("john@example-registrar.tld")
                 .setPhoneNumber("+1.3105551215")
                 .setFaxNumber("+1.3105551216")
-                .setTypes(ImmutableSet.of(RegistrarPocBase.Type.ADMIN))
+                .setTypes(ImmutableSet.of(RegistrarPoc.Type.ADMIN))
                 .setVisibleInWhoisAsTech(true)
                 .build());
     persistSimpleResources(contacts);
@@ -700,7 +699,7 @@ class SendExpiringCertificateNotificationEmailActionTest {
 
   /** Returns persisted sample contacts with a customized contact email type. */
   private static ImmutableList<RegistrarPoc> persistSampleContacts(
-      Registrar registrar, RegistrarPocBase.Type emailType) {
+      Registrar registrar, RegistrarPoc.Type emailType) {
     return persistSimpleResources(
         ImmutableList.of(
             new RegistrarPoc.Builder()

@@ -17,13 +17,13 @@ package google.registry.export.sheet;
 import static com.google.common.base.MoreObjects.firstNonNull;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static google.registry.model.common.Cursor.CursorType.SYNC_REGISTRAR_SHEET;
-import static google.registry.model.registrar.RegistrarPocBase.Type.ABUSE;
-import static google.registry.model.registrar.RegistrarPocBase.Type.ADMIN;
-import static google.registry.model.registrar.RegistrarPocBase.Type.BILLING;
-import static google.registry.model.registrar.RegistrarPocBase.Type.LEGAL;
-import static google.registry.model.registrar.RegistrarPocBase.Type.MARKETING;
-import static google.registry.model.registrar.RegistrarPocBase.Type.TECH;
-import static google.registry.model.registrar.RegistrarPocBase.Type.WHOIS;
+import static google.registry.model.registrar.RegistrarPoc.Type.ABUSE;
+import static google.registry.model.registrar.RegistrarPoc.Type.ADMIN;
+import static google.registry.model.registrar.RegistrarPoc.Type.BILLING;
+import static google.registry.model.registrar.RegistrarPoc.Type.LEGAL;
+import static google.registry.model.registrar.RegistrarPoc.Type.MARKETING;
+import static google.registry.model.registrar.RegistrarPoc.Type.TECH;
+import static google.registry.model.registrar.RegistrarPoc.Type.WHOIS;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 
@@ -36,7 +36,6 @@ import google.registry.model.common.Cursor;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarAddress;
 import google.registry.model.registrar.RegistrarPoc;
-import google.registry.model.registrar.RegistrarPocBase;
 import google.registry.util.Clock;
 import google.registry.util.DateTimeUtils;
 import jakarta.inject.Inject;
@@ -174,7 +173,7 @@ class SyncRegistrarsSheet {
     return result.toString();
   }
 
-  private static Predicate<RegistrarPoc> byType(final RegistrarPocBase.Type type) {
+  private static Predicate<RegistrarPoc> byType(final RegistrarPoc.Type type) {
     return contact -> contact.getTypes().contains(type);
   }
 

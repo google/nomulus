@@ -24,12 +24,8 @@ import google.registry.model.billing.BillingBaseTest;
 import google.registry.model.common.CursorTest;
 import google.registry.model.common.DnsRefreshRequestTest;
 import google.registry.model.common.FeatureFlagTest;
-import google.registry.model.console.ConsoleEppActionHistoryTest;
-import google.registry.model.console.RegistrarPocUpdateHistoryTest;
-import google.registry.model.console.RegistrarUpdateHistoryTest;
-import google.registry.model.console.SimpleConsoleUpdateHistoryTest;
+import google.registry.model.console.ConsoleUpdateHistoryTest;
 import google.registry.model.console.UserTest;
-import google.registry.model.console.UserUpdateHistoryTest;
 import google.registry.model.contact.ContactTest;
 import google.registry.model.domain.DomainSqlTest;
 import google.registry.model.domain.token.AllocationTokenTest;
@@ -98,7 +94,7 @@ import org.junit.runner.RunWith;
   BsaUnblockableDomainTest.class,
   BulkPricingPackageTest.class,
   ClaimsListDaoTest.class,
-  ConsoleEppActionHistoryTest.class,
+  ConsoleUpdateHistoryTest.class,
   ContactHistoryTest.class,
   ContactTest.class,
   CursorTest.class,
@@ -112,18 +108,14 @@ import org.junit.runner.RunWith;
   PremiumListDaoTest.class,
   RdeRevisionTest.class,
   RegistrarDaoTest.class,
-  RegistrarPocUpdateHistoryTest.class,
-  RegistrarUpdateHistoryTest.class,
   ReservedListDaoTest.class,
   RegistryLockDaoTest.class,
   ServerSecretTest.class,
-  SimpleConsoleUpdateHistoryTest.class,
   SignedMarkRevocationListDaoTest.class,
   Spec11ThreatMatchTest.class,
   TldTest.class,
   TmchCrlTest.class,
   UserTest.class,
-  UserUpdateHistoryTest.class,
   // AfterSuiteTest must be the last entry. See class javadoc for details.
   AfterSuiteTest.class
 })

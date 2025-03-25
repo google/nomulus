@@ -33,7 +33,6 @@ import google.registry.groups.GroupsConnection;
 import google.registry.groups.GroupsConnection.Role;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarPoc;
-import google.registry.model.registrar.RegistrarPocBase;
 import google.registry.request.Action;
 import google.registry.request.Action.GaeService;
 import google.registry.request.Response;
@@ -101,7 +100,7 @@ public final class SyncGroupMembersAction implements Runnable {
    * Returns the Google Groups email address for the given registrar ID and RegistrarContact.Type.
    */
   public static String getGroupEmailAddressForContactType(
-      String registrarId, RegistrarPocBase.Type type, String gSuiteDomainName) {
+      String registrarId, RegistrarPoc.Type type, String gSuiteDomainName) {
     // Take the registrar's ID, make it lowercase, and remove all characters that aren't
     // alphanumeric, hyphens, or underscores.
     return String.format(
@@ -176,7 +175,7 @@ public final class SyncGroupMembersAction implements Runnable {
       Set<RegistrarPoc> registrarPocs = registrar.getContacts();
       long totalAdded = 0;
       long totalRemoved = 0;
-      for (final RegistrarPocBase.Type type : RegistrarPocBase.Type.values()) {
+      for (final RegistrarPoc.Type type : RegistrarPoc.Type.values()) {
         groupKey =
             getGroupEmailAddressForContactType(registrar.getRegistrarId(), type, gSuiteDomainName);
         Set<String> currentMembers = groupsConnection.getMembersOfGroup(groupKey);
