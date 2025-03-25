@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import { Injectable } from '@angular/core';
-import { switchMap, timeout } from 'rxjs';
+import { switchMap } from 'rxjs';
 import {
   IpAllowListItem,
   RegistrarService,
@@ -69,7 +69,6 @@ export class SecurityService {
         uiToApiConverter(newSecuritySettings)
       )
       .pipe(
-        timeout(2000),
         switchMap(() => {
           return this.registrarService.loadRegistrars();
         })
