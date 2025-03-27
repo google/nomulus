@@ -14,8 +14,6 @@ spec:
         service: console
     spec:
       serviceAccountName: nomulus
-      nodeSelector:
-        cloud.google.com/compute-class: "Performance"
       containers:
       - name: console
         image: gcr.io/GCP_PROJECT/nomulus
@@ -24,8 +22,13 @@ spec:
           name: http
         resources:
           requests:
+            cloud.google.com/pod-slots: 0
             cpu: "100m"
             memory: "512Mi"
+          limits:
+            cloud.google.com/pod-slots: 0
+            cpu: "500m"
+            memory: "2Gi"
         args: [ENVIRONMENT]
         env:
         - name: POD_ID
