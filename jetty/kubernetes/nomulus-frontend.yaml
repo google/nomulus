@@ -16,6 +16,7 @@ spec:
       serviceAccountName: nomulus
       nodeSelector:
         cloud.google.com/compute-class: "Performance"
+        cloud.google.com/machine-family: c4
       containers:
       - name: frontend
         image: gcr.io/GCP_PROJECT/nomulus
