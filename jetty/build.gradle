@@ -38,7 +38,7 @@ dependencies {
 
 tasks.register('copyConsole', Copy) {
     from("${rootDir}/console-webapp/staged/") {
-        include "console-*/*"
+        include "console-*/", "console-*/**"
     }
     into layout.buildDirectory.dir('jetty-base/webapps/')
     dependsOn(':console-webapp:buildConsoleForAll')

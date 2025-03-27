@@ -15,7 +15,11 @@
 
 env=${1:-"alpha"}
 cd /jetty-base
-cp -rf webapps/console-${env} webapps/console
+cp -rf webapps/console-${env}/. webapps/console/
+cd webapps
+# Remove all environment builds not used in the deployment
+find . -maxdepth 1 -type d -name "console-*" -exec rm -rf {} +
+cd /jetty-base
 echo "Running ${env}"
 java -Dgoogle.registry.environment=${env} \
     -Djava.util.logging.config.file=/logging.properties \
