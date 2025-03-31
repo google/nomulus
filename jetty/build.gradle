@@ -50,7 +50,7 @@ tasks.register('stage') {
 }
 
 tasks.register('buildNomulusImage', Exec) {
-    commandLine 'docker', 'build', '-t', 'nomulus', '.'
+    commandLine 'docker', 'build', '-t', 'nomulus', '.', '--pull'
     dependsOn(tasks.named('stage'))
 }
 
@@ -137,3 +137,4 @@ tasks.register('getEndpoints', Exec) {
 }
 
 project.build.dependsOn(tasks.named('buildNomulusImage'))
+rootProject.deploy.dependsOn(tasks.named('deployNomulus'))

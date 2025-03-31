@@ -15,7 +15,7 @@
 createUberJar('deployJar', 'proxy_server', 'google.registry.proxy.ProxyServer')
 
 task buildProxyImage(dependsOn: deployJar, type: Exec) {
-  commandLine 'docker', 'build', '-t', 'proxy', '.'
+  commandLine 'docker', 'build', '-t', 'proxy', '.', '--pull'
 }
 
 task tagProxyImage(dependsOn: buildProxyImage, type: Exec) {

@@ -101,16 +101,9 @@ task checkFormatting(type: Exec) {
   args 'run', 'prettify:check'
 }
 
-task deploy(type: Exec) {
-  workingDir "${consoleDir}/staged"
-  executable 'gcloud'
-  args 'app', 'deploy', "${projectParam}", '--quiet'
-}
-
 tasks.buildConsoleWebapp.dependsOn(tasks.npmInstallDeps)
 tasks.runConsoleWebappUnitTests.dependsOn(tasks.npmInstallDeps)
 tasks.applyFormatting.dependsOn(tasks.npmInstallDeps)
 tasks.checkFormatting.dependsOn(tasks.npmInstallDeps)
 tasks.build.dependsOn(tasks.checkFormatting)
 tasks.build.dependsOn(tasks.runConsoleWebappUnitTests)
-tasks.deploy.dependsOn(tasks.buildConsoleWebapp)

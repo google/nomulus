@@ -90,7 +90,6 @@ explodeWar.doLast {
 
 appengineDeployAll.mustRunAfter ':console-webapp:deploy'
 appengineDeployAll.finalizedBy ':deployCloudSchedulerAndQueue'
-rootProject.deploy.dependsOn appengineDeployAll
 
 rootProject.stage.dependsOn appengineStage
 tasks['war'].dependsOn ':core:processResources'
