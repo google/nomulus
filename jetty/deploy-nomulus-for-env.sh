@@ -39,7 +39,7 @@ do
   sed s/ENVIRONMENT/"${environment}"/g | \
   sed s/PROXY_ENV/"${environment}"/g | \
   sed s/EPP/"epp"/g | \
-  kubectl apply -f -
+  kubectl apply --grace-period=1 -f -
   kubectl rollout restart deployment/${service}
   # canary
   sed s/GCP_PROJECT/"${project}"/g "./kubernetes/nomulus-${service}.yaml" | \
@@ -47,7 +47,7 @@ do
   sed s/PROXY_ENV/"${environment}_canary"/g | \
   sed s/EPP/"epp-canary"/g | \
   sed s/"${service}"/"${service}-canary"/g | \
-  kubectl apply -f -
+  kubectl apply --grace-period=1 -f -
   kubectl rollout restart deployment/${service}-canary
 done
 kubectl apply -f "./kubernetes/gateway/nomulus-gateway.yaml"
