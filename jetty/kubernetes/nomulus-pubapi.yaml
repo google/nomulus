@@ -20,6 +20,15 @@ spec:
         ports:
         - containerPort: 8080
           name: http
+        startupProbe:
+          httpGet:
+            port: 8080
+            path: /ready/pubapi
+          initialDelaySeconds: 1
+          timeoutSeconds: 60
+          successThreshold: 1
+          failureThreshold: 3
+          periodSeconds: 30
         resources:
           requests:
             # explicit pod-slots 0 is required in order to downgrade node 
@@ -62,12 +71,12 @@ spec:
   minReplicas: 5
   maxReplicas: 15
   metrics:
-    - type: Resource
-      resource:
-        name: cpu
-        target:
-          type: Utilization
-          averageUtilization: 100
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 100
 ---
 apiVersion: v1
 kind: Service
@@ -77,9 +86,9 @@ spec:
   selector:
     service: pubapi
   ports:
-    - port: 80
-      targetPort: http
-      name: http
+  - port: 80
+    targetPort: http
+    name: http
 ---
 apiVersion: net.gke.io/v1
 kind: ServiceExport
