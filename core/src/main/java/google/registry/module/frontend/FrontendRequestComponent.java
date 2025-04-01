@@ -21,6 +21,7 @@ import google.registry.dns.DnsModule;
 import google.registry.flows.EppTlsAction;
 import google.registry.flows.FlowComponent;
 import google.registry.flows.TlsCredentials.EppTlsModule;
+import google.registry.module.ReadinessProbeAction.ReadinessProbeConsoleAction;
 import google.registry.monitoring.whitebox.WhiteboxModule;
 import google.registry.request.RequestComponentBuilder;
 import google.registry.request.RequestModule;
@@ -81,6 +82,8 @@ public interface FrontendRequestComponent {
   EppTlsAction eppTlsAction();
 
   FlowComponent.Builder flowComponentBuilder();
+
+  ReadinessProbeConsoleAction readinessProbeConsoleAction();
 
   RegistrarsAction registrarsAction();
 

@@ -20,6 +20,17 @@ spec:
         ports:
         - containerPort: 8080
           name: http
+        startupProbe:
+          httpGet:
+            port: 8080
+            path: /console-api/readiness-probe
+            httpHeaders:
+            - name: K8S-Probe
+              value: "y"
+          initialDelaySeconds: 2
+          timeoutSeconds: 10
+          successThreshold: 1
+          failureThreshold: 3
         resources:
           requests:
             # explicit pod-slots 0 is required in order to downgrade node 
