@@ -11,4 +11,5 @@ PUBAPI  /rdap/help(*)        RdapHelpAction             GET,HEAD n  NONE PUBLIC
 PUBAPI  /rdap/ip/(*)         RdapIpAction               GET,HEAD n  NONE PUBLIC
 PUBAPI  /rdap/nameserver/(*) RdapNameserverAction       GET,HEAD n  NONE PUBLIC
 PUBAPI  /rdap/nameservers    RdapNameserverSearchAction GET,HEAD n  NONE PUBLIC
+PUBAPI  /ready/pubapi        ReadinessProbeActionPubApi GET      n  NONE PUBLIC
 PUBAPI  /whois/(*)           WhoisHttpAction            GET      n  NONE PUBLIC

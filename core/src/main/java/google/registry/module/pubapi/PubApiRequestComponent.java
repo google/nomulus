@@ -20,6 +20,7 @@ import google.registry.dns.DnsModule;
 import google.registry.flows.CheckApiAction;
 import google.registry.flows.CheckApiAction.CheckApiModule;
 import google.registry.flows.TlsCredentials.EppTlsModule;
+import google.registry.module.ReadinessProbeAction.ReadinessProbeActionPubApi;
 import google.registry.monitoring.whitebox.WhiteboxModule;
 import google.registry.rdap.RdapAutnumAction;
 import google.registry.rdap.RdapDomainAction;
@@ -56,15 +57,16 @@ public interface PubApiRequestComponent {
   RdapAutnumAction rdapAutnumAction();
   RdapDomainAction rdapDomainAction();
   RdapDomainSearchAction rdapDomainSearchAction();
-
   RdapEmptyAction rdapEmptyAction();
-
   RdapEntityAction rdapEntityAction();
   RdapEntitySearchAction rdapEntitySearchAction();
   RdapHelpAction rdapHelpAction();
   RdapIpAction rdapDefaultAction();
   RdapNameserverAction rdapNameserverAction();
   RdapNameserverSearchAction rdapNameserverSearchAction();
+
+  ReadinessProbeActionPubApi readinessProbeActionPubApi();
+
   WhoisHttpAction whoisHttpAction();
   WhoisAction whoisAction();
 

@@ -1,5 +1,6 @@
 SERVICE  PATH                               CLASS                           METHODS             OK MIN  USER_POLICY
 FRONTEND /_dr/epp                           EppTlsAction                    POST                n  APP  ADMIN
+FRONTEND /ready/frontend                    ReadinessProbeActionFrontend    GET                 n  NONE PUBLIC
 CONSOLE  /console-api/bulk-domain           ConsoleBulkDomainAction         POST                n  USER PUBLIC
 CONSOLE  /console-api/domain                ConsoleDomainGetAction          GET                 n  USER PUBLIC
 CONSOLE  /console-api/domain-list           ConsoleDomainListAction         GET                 n  USER PUBLIC
@@ -15,3 +16,4 @@ CONSOLE  /console-api/settings/security     SecurityAction                  POST
 CONSOLE  /console-api/settings/whois-fields WhoisRegistrarFieldsAction      POST                n  USER PUBLIC
 CONSOLE  /console-api/userdata              ConsoleUserDataAction           GET                 n  USER PUBLIC
 CONSOLE  /console-api/users                 ConsoleUsersAction              GET,POST,DELETE,PUT n  USER PUBLIC
+CONSOLE  /ready/console                     ReadinessProbeConsoleAction     GET                 n  NONE PUBLIC
