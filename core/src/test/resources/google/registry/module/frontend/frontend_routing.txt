@@ -6,6 +6,7 @@ CONSOLE  /console-api/domain-list           ConsoleDomainListAction         GET 
 CONSOLE  /console-api/dum-download          ConsoleDumDownloadAction        GET                 n  USER PUBLIC
 CONSOLE  /console-api/eppPassword           ConsoleEppPasswordAction        POST                n  USER PUBLIC
 CONSOLE  /console-api/ote                   ConsoleOteAction                GET,POST            n  USER PUBLIC
+CONSOLE  /console-api/readiness-probe       ReadinessProbeConsoleAction     GET                 n  NONE PUBLIC
 CONSOLE  /console-api/registrar             ConsoleUpdateRegistrarAction    POST                n  USER PUBLIC
 CONSOLE  /console-api/registrars            RegistrarsAction                GET,POST            n  USER PUBLIC
 CONSOLE  /console-api/registry-lock         ConsoleRegistryLockAction       GET,POST            n  USER PUBLIC
