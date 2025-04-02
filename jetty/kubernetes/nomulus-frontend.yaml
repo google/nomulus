@@ -82,8 +82,8 @@ spec:
     apiVersion: apps/v1
     kind: Deployment
     name: frontend
-  minReplicas: 15
-  maxReplicas: 15
+  minReplicas: 5
+  maxReplicas: 20
   metrics:
     - type: Resource
       resource:
