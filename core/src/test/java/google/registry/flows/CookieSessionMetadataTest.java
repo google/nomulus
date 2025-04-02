@@ -47,7 +47,7 @@ public class CookieSessionMetadataTest {
             "THIS_COOKIE=foo; SESSION_INFO="
                 + encode(
                     "CookieSessionMetadata{clientId=test_registrar, failedLoginAttempts=5, "
-                        + " serviceExtensionUris=A.B.C}")
+                        + " serviceExtensionUris=A|B|C}")
                 + "; THAT_COOKIE=bar");
     cookieSessionMetadata = new CookieSessionMetadata(request);
     assertThat(cookieSessionMetadata.getRegistrarId()).isEqualTo("test_registrar");
@@ -62,7 +62,7 @@ public class CookieSessionMetadataTest {
             "SESSION_INFO="
                 + encode(
                     "CookieSessionMetadata{clientId=null, failedLoginAttempts=5, "
-                        + " serviceExtensionUris=A.B.C}"));
+                        + " serviceExtensionUris=A|B|C}"));
     cookieSessionMetadata = new CookieSessionMetadata(request);
     assertThat(cookieSessionMetadata.getRegistrarId()).isNull();
     assertThat(cookieSessionMetadata.getFailedLoginAttempts()).isEqualTo(5);
@@ -151,10 +151,11 @@ public class CookieSessionMetadataTest {
                     "CookieSessionMetadata{clientId=test_registrar, failedLoginAttempts=5, "
                         + " serviceExtensionUris=Foo}"));
     cookieSessionMetadata = new CookieSessionMetadata(request);
-    cookieSessionMetadata.setServiceExtensionUris(ImmutableSet.of("Bar", "Baz"));
+    cookieSessionMetadata.setServiceExtensionUris(ImmutableSet.of("Bar", "Baz", "foo:bar:baz-1.3"));
     assertThat(cookieSessionMetadata.getRegistrarId()).isEqualTo("test_registrar");
     assertThat(cookieSessionMetadata.getFailedLoginAttempts()).isEqualTo(5);
-    assertThat(cookieSessionMetadata.getServiceExtensionUris()).containsExactly("Bar", "Baz");
+    assertThat(cookieSessionMetadata.getServiceExtensionUris())
+        .containsExactly("Bar", "Baz", "foo:bar:baz-1.3");
   }
 
   @Test
@@ -206,6 +207,6 @@ public class CookieSessionMetadataTest {
     assertThat(value)
         .isEqualTo(
             "CookieSessionMetadata{clientId=new_registrar, failedLoginAttempts=1,"
-                + " serviceExtensionUris=Bar.Baz}");
+                + " serviceExtensionUris=Bar|Baz}");
   }
 }

@@ -103,7 +103,7 @@ public class CookieSessionMetadata extends SessionMetadata {
   @Override
   public Set<String> getServiceExtensionUris() {
     return Optional.ofNullable(data.getOrDefault(SERVICE_EXTENSIONS, null))
-        .map(s -> Splitter.on('.').splitToList(s))
+        .map(s -> Splitter.on(URI_SEPARATOR).splitToList(s))
         .map(ImmutableSet::copyOf)
         .orElse(ImmutableSet.of());
   }
@@ -125,7 +125,7 @@ public class CookieSessionMetadata extends SessionMetadata {
     if (serviceExtensionUris == null || serviceExtensionUris.isEmpty()) {
       data.remove(SERVICE_EXTENSIONS);
     } else {
-      data.put(SERVICE_EXTENSIONS, Joiner.on('.').join(serviceExtensionUris));
+      data.put(SERVICE_EXTENSIONS, Joiner.on(URI_SEPARATOR).join(serviceExtensionUris));
     }
   }
 

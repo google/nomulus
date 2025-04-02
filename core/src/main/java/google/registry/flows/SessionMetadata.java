@@ -24,6 +24,8 @@ import java.util.Set;
 /** Object to allow setting and retrieving session information in flows. */
 public abstract class SessionMetadata {
 
+  protected static final char URI_SEPARATOR = '|';
+
   /**
    * Invalidates the session. A new instance must be created after this for future sessions.
    * Attempts to invoke methods of this class after this method has been called will throw {@code
@@ -50,7 +52,9 @@ public abstract class SessionMetadata {
     return toStringHelper(getClass())
         .add("clientId", getRegistrarId())
         .add("failedLoginAttempts", getFailedLoginAttempts())
-        .add("serviceExtensionUris", Joiner.on('.').join(nullToEmpty(getServiceExtensionUris())))
+        .add(
+            "serviceExtensionUris",
+            Joiner.on(URI_SEPARATOR).join(nullToEmpty(getServiceExtensionUris())))
         .toString();
   }
 
