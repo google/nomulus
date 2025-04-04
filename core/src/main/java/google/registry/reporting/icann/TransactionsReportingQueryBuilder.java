@@ -112,9 +112,6 @@ public final class TransactionsReportingQueryBuilder implements QueryBuilder {
     String attemptedAddsQuery =
         SqlTemplate.create(getQueryFromFile(ATTEMPTED_ADDS + ".sql"))
             .put("PROJECT_ID", projectId)
-            .put("APPENGINE_LOGS_DATA_SET", "appengine_logs")
-            .put("GKE_LOGS_DATA_SET", "gke_logs")
-            .put("APP_LOGS_TABLE", "_var_log_app_")
             .put("FIRST_DAY_OF_MONTH", logTableFormatter.print(earliestReportTime))
             .put("LAST_DAY_OF_MONTH", logTableFormatter.print(latestReportTime))
             .build();
