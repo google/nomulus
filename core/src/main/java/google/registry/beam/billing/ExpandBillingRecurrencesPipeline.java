@@ -36,8 +36,6 @@ import google.registry.config.RegistryConfig.ConfigModule;
 import google.registry.flows.custom.CustomLogicFactoryModule;
 import google.registry.flows.custom.CustomLogicModule;
 import google.registry.flows.domain.DomainPricingLogic;
-import google.registry.flows.domain.DomainPricingLogic.AllocationTokenInvalidForCurrencyException;
-import google.registry.flows.domain.DomainPricingLogic.AllocationTokenInvalidForPremiumNameException;
 import google.registry.model.ImmutableObject;
 import google.registry.model.billing.BillingBase.Flag;
 import google.registry.model.billing.BillingCancellation;
@@ -389,38 +387,30 @@ public class ExpandBillingRecurrencesPipeline implements Serializable {
       // It is OK to always create a OneTime, even though the domain might be deleted or transferred
       // later during autorenew grace period, as a cancellation will always be written out in those
       // instances.
-      BillingEvent billingEvent = null;
-      try {
-        billingEvent =
-            new BillingEvent.Builder()
-                .setBillingTime(billingTime)
-                .setRegistrarId(billingRecurrence.getRegistrarId())
-                // Determine the cost for a one-year renewal.
-                .setCost(
-                    domainPricingLogic
-                        .getRenewPrice(
-                            tld,
-                            billingRecurrence.getTargetId(),
-                            eventTime,
-                            1,
-                            billingRecurrence,
-                            Optional.empty())
-                        .getRenewCost())
-                .setEventTime(eventTime)
-                .setFlags(union(billingRecurrence.getFlags(), Flag.SYNTHETIC))
-                .setDomainHistory(historyEntry)
-                .setPeriodYears(1)
-                .setReason(billingRecurrence.getReason())
-                .setSyntheticCreationTime(endTime)
-                .setCancellationMatchingBillingEvent(billingRecurrence)
-                .setTargetId(billingRecurrence.getTargetId())
-                .build();
-      } catch (AllocationTokenInvalidForCurrencyException
-          | AllocationTokenInvalidForPremiumNameException e) {
-        // This should not be reached since we are not using an allocation token
-        return;
-      }
-      results.add(billingEvent);
+      results.add(
+          new BillingEvent.Builder()
+              .setBillingTime(billingTime)
+              .setRegistrarId(billingRecurrence.getRegistrarId())
+              // Determine the cost for a one-year renewal.
+              .setCost(
+                  domainPricingLogic
+                      .getRenewPrice(
+                          tld,
+                          billingRecurrence.getTargetId(),
+                          eventTime,
+                          1,
+                          billingRecurrence,
+                          Optional.empty())
+                      .getRenewCost())
+              .setEventTime(eventTime)
+              .setFlags(union(billingRecurrence.getFlags(), Flag.SYNTHETIC))
+              .setDomainHistory(historyEntry)
+              .setPeriodYears(1)
+              .setReason(billingRecurrence.getReason())
+              .setSyntheticCreationTime(endTime)
+              .setCancellationMatchingBillingEvent(billingRecurrence)
+              .setTargetId(billingRecurrence.getTargetId())
+              .build());
     }
     results.add(
         billingRecurrence

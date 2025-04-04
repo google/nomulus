@@ -19,7 +19,7 @@
           </fee:object>
           <fee:command name="create">
             <fee:period unit="y">1</fee:period>
-            <fee:fee description="create">13.00</fee:fee>
+            <fee:fee description="create">11.70</fee:fee>
           </fee:command>
         </fee:cd>
         <fee:cd>
@@ -28,7 +28,7 @@
           </fee:object>
           <fee:command name="renew">
             <fee:period unit="y">1</fee:period>
-            <fee:class>token-not-supported</fee:class>
+            <fee:fee description="renew">11.00</fee:fee>
           </fee:command>
         </fee:cd>
         <fee:cd>
@@ -46,7 +46,7 @@
           </fee:object>
           <fee:command name="restore">
             <fee:period unit="y">1</fee:period>
-            <fee:class>token-not-supported</fee:class>
+            <fee:fee description="restore">17.00</fee:fee>
           </fee:command>
         </fee:cd>
         <fee:cd>
@@ -55,7 +55,7 @@
           </fee:object>
           <fee:command name="update">
             <fee:period unit="y">1</fee:period>
-            <fee:class>token-not-supported</fee:class>
+            <fee:fee description="update">0.00</fee:fee>
           </fee:command>
         </fee:cd>
       </fee:chkData>

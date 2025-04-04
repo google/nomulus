@@ -31,7 +31,7 @@ import static google.registry.flows.domain.DomainFlowUtils.validateRegistrationP
 import static google.registry.flows.domain.DomainFlowUtils.verifyRegistrarIsActive;
 import static google.registry.flows.domain.DomainFlowUtils.verifyUnitIsYears;
 import static google.registry.flows.domain.token.AllocationTokenFlowUtils.maybeApplyBulkPricingRemovalToken;
-import static google.registry.flows.domain.token.AllocationTokenFlowUtils.verifyTokenAllowedOnDomain;
+import static google.registry.flows.domain.token.AllocationTokenFlowUtils.verifyBulkTokenAllowedOnDomain;
 import static google.registry.model.reporting.HistoryEntry.Type.DOMAIN_RENEW;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.DateTimeUtils.leapSafeAddYears;
@@ -124,14 +124,11 @@ import org.joda.time.Duration;
  * @error {@link RemoveBulkPricingTokenOnNonBulkPricingDomainException}
  * @error {@link
  *     google.registry.flows.domain.token.AllocationTokenFlowUtils.AllocationTokenNotValidForDomainException}
- * @error {@link
- *     google.registry.flows.domain.token.AllocationTokenFlowUtils.InvalidAllocationTokenException}
+ * @error {@link AllocationTokenFlowUtils.NonexistentAllocationTokenException}
  * @error {@link
  *     google.registry.flows.domain.token.AllocationTokenFlowUtils.AllocationTokenNotInPromotionException}
  * @error {@link
  *     google.registry.flows.domain.token.AllocationTokenFlowUtils.AllocationTokenNotValidForRegistrarException}
- * @error {@link
- *     google.registry.flows.domain.token.AllocationTokenFlowUtils.AllocationTokenNotValidForTldException}
  * @error {@link
  *     google.registry.flows.domain.token.AllocationTokenFlowUtils.AlreadyRedeemedAllocationTokenException}
  */
@@ -154,7 +151,6 @@ public final class DomainRenewFlow implements MutatingFlow {
   @Inject @Superuser boolean isSuperuser;
   @Inject DomainHistory.Builder historyBuilder;
   @Inject EppResponse.Builder responseBuilder;
-  @Inject AllocationTokenFlowUtils allocationTokenFlowUtils;
   @Inject DomainRenewFlowCustomLogic flowCustomLogic;
   @Inject DomainPricingLogic pricingLogic;
   @Inject DomainRenewFlow() {}
@@ -174,22 +170,17 @@ public final class DomainRenewFlow implements MutatingFlow {
     String tldStr = existingDomain.getTld();
     Tld tld = Tld.get(tldStr);
     Optional<AllocationToken> allocationToken =
-        allocationTokenFlowUtils.verifyAllocationTokenIfPresent(
-            existingDomain,
-            tld,
+        AllocationTokenFlowUtils.loadTokenFromExtensionOrGetDefault(
             registrarId,
             now,
-            CommandName.RENEW,
-            eppInput.getSingleExtension(AllocationTokenExtension.class));
-    boolean defaultTokenUsed = false;
-    if (allocationToken.isEmpty()) {
-      allocationToken =
-          DomainFlowUtils.checkForDefaultToken(
-              tld, existingDomain.getDomainName(), CommandName.RENEW, registrarId, now);
-      if (allocationToken.isPresent()) {
-        defaultTokenUsed = true;
-      }
-    }
+            eppInput.getSingleExtension(AllocationTokenExtension.class),
+            tld,
+            existingDomain.getDomainName(),
+            CommandName.RENEW);
+    boolean defaultTokenUsed =
+        allocationToken
+            .map(t -> t.getTokenType().equals(AllocationToken.TokenType.DEFAULT_PROMO))
+            .orElse(false);
     verifyRenewAllowed(authInfo, existingDomain, command, allocationToken);
 
     // If client passed an applicable static token this updates the domain
@@ -259,7 +250,7 @@ public final class DomainRenewFlow implements MutatingFlow {
         newDomain, domainHistory, explicitRenewEvent, newAutorenewEvent, newAutorenewPollMessage);
     if (allocationToken.isPresent() && allocationToken.get().getTokenType().isOneTimeUse()) {
       entitiesToSave.add(
-          allocationTokenFlowUtils.redeemToken(
+          AllocationTokenFlowUtils.redeemToken(
               allocationToken.get(), domainHistory.getHistoryEntryId()));
     }
     EntityChanges entityChanges =
@@ -327,7 +318,7 @@ public final class DomainRenewFlow implements MutatingFlow {
     }
     verifyUnitIsYears(command.getPeriod());
     // We only allow __REMOVE_BULK_PRICING__ token on bulk pricing domains for now
-    verifyTokenAllowedOnDomain(existingDomain, allocationToken);
+    verifyBulkTokenAllowedOnDomain(existingDomain, allocationToken);
     // If the date they specify doesn't match the expiration, fail. (This is an idempotence check).
     if (!command.getCurrentExpirationDate().equals(
         existingDomain.getRegistrationExpirationTime().toLocalDate())) {

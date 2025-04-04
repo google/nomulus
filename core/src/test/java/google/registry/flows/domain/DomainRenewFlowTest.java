@@ -69,13 +69,12 @@ import google.registry.flows.domain.DomainFlowUtils.NotAuthorizedForTldException
 import google.registry.flows.domain.DomainFlowUtils.RegistrarMustBeActiveForThisOperationException;
 import google.registry.flows.domain.DomainFlowUtils.UnsupportedFeeAttributeException;
 import google.registry.flows.domain.DomainRenewFlow.IncorrectCurrentExpirationDateException;
+import google.registry.flows.domain.token.AllocationTokenFlowUtils;
 import google.registry.flows.domain.token.AllocationTokenFlowUtils.AllocationTokenNotInPromotionException;
-import google.registry.flows.domain.token.AllocationTokenFlowUtils.AllocationTokenNotValidForDomainException;
 import google.registry.flows.domain.token.AllocationTokenFlowUtils.AllocationTokenNotValidForRegistrarException;
-import google.registry.flows.domain.token.AllocationTokenFlowUtils.AllocationTokenNotValidForTldException;
 import google.registry.flows.domain.token.AllocationTokenFlowUtils.AlreadyRedeemedAllocationTokenException;
-import google.registry.flows.domain.token.AllocationTokenFlowUtils.InvalidAllocationTokenException;
 import google.registry.flows.domain.token.AllocationTokenFlowUtils.MissingRemoveBulkPricingTokenOnBulkPricingDomainException;
+import google.registry.flows.domain.token.AllocationTokenFlowUtils.NonexistentAllocationTokenException;
 import google.registry.flows.domain.token.AllocationTokenFlowUtils.RemoveBulkPricingTokenOnNonBulkPricingDomainException;
 import google.registry.flows.exceptions.ResourceStatusProhibitsOperationException;
 import google.registry.model.billing.BillingBase.Flag;
@@ -459,10 +458,14 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
     ImmutableMap<String, String> customFeeMap =
         updateSubstitutions(
             FEE_06_MAP,
-            "NAME", "costly-renew.tld",
-            "PERIOD", "1",
-            "EX_DATE", "2001-04-03T22:00:00.0Z",
-            "FEE", "111.00");
+            "NAME",
+            "costly-renew.tld",
+            "PERIOD",
+            "1",
+            "EX_DATE",
+            "2001-04-03T22:00:00.0Z",
+            "FEE",
+            "111.00");
     setEppInput("domain_renew_fee.xml", customFeeMap);
     persistDomain();
     doSuccessfulTest(
@@ -694,7 +697,7 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
         "domain_renew_allocationtoken.xml",
         ImmutableMap.of("DOMAIN", "example.tld", "YEARS", "2", "TOKEN", "abc123"));
     persistDomain();
-    EppException thrown = assertThrows(InvalidAllocationTokenException.class, this::runFlow);
+    EppException thrown = assertThrows(NonexistentAllocationTokenException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
@@ -711,9 +714,12 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
             .setDomainName("otherdomain.tld")
             .build());
     clock.advanceOneMilli();
-    EppException thrown =
-        assertThrows(AllocationTokenNotValidForDomainException.class, this::runFlow);
-    assertAboutEppExceptions().that(thrown).marshalsToXml();
+    assertAboutEppExceptions()
+        .that(
+            assertThrows(
+                AllocationTokenFlowUtils.AllocationTokenNotValidForDomainException.class,
+                this::runFlow))
+        .marshalsToXml();
     assertAllocationTokenWasNotRedeemed("abc123");
   }
 
@@ -784,9 +790,10 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
                     .put(clock.nowUtc().plusDays(1), TokenStatus.ENDED)
                     .build())
             .build());
-    assertAboutEppExceptions()
-        .that(assertThrows(AllocationTokenNotValidForTldException.class, this::runFlow))
-        .marshalsToXml();
+    runFlowAssertResponse(
+        loadFile(
+            "domain_renew_response.xml",
+            ImmutableMap.of("DOMAIN", "example.tld", "EXDATE", "2002-04-03T22:00:00.0Z")));
     assertAllocationTokenWasNotRedeemed("abc123");
   }
 

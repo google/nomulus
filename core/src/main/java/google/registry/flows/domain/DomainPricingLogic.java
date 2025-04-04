@@ -16,14 +16,13 @@ package google.registry.flows.domain;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static google.registry.flows.domain.DomainFlowUtils.zeroInCurrency;
-import static google.registry.flows.domain.token.AllocationTokenFlowUtils.validateTokenForPossiblePremiumName;
+import static google.registry.flows.domain.token.AllocationTokenFlowUtils.discountTokenInvalidForPremiumName;
 import static google.registry.pricing.PricingEngineProxy.getPricesForDomainName;
 import static google.registry.util.PreconditionsUtils.checkArgumentPresent;
 
 import com.google.common.net.InternetDomainName;
 import google.registry.config.RegistryConfig;
 import google.registry.flows.EppException;
-import google.registry.flows.EppException.CommandUseErrorException;
 import google.registry.flows.custom.DomainPricingCustomLogic;
 import google.registry.flows.custom.DomainPricingCustomLogic.CreatePriceParameters;
 import google.registry.flows.custom.DomainPricingCustomLogic.RenewPriceParameters;
@@ -129,9 +128,7 @@ public final class DomainPricingLogic {
       DateTime dateTime,
       int years,
       @Nullable BillingRecurrence billingRecurrence,
-      Optional<AllocationToken> allocationToken)
-      throws AllocationTokenInvalidForCurrencyException,
-          AllocationTokenInvalidForPremiumNameException {
+      Optional<AllocationToken> allocationToken) {
     checkArgument(years > 0, "Number of years must be positive");
     Money renewCost;
     DomainPrices domainPrices = getPricesForDomainName(domainName, dateTime);
@@ -260,8 +257,7 @@ public final class DomainPricingLogic {
 
   /** Returns the domain create cost with allocation-token-related discounts applied. */
   private Money getDomainCreateCostWithDiscount(
-      DomainPrices domainPrices, int years, Optional<AllocationToken> allocationToken, Tld tld)
-      throws EppException {
+      DomainPrices domainPrices, int years, Optional<AllocationToken> allocationToken, Tld tld) {
     return getDomainCostWithDiscount(
         domainPrices.isPremium(),
         years,
@@ -277,9 +273,7 @@ public final class DomainPricingLogic {
       DomainPrices domainPrices,
       DateTime dateTime,
       int years,
-      Optional<AllocationToken> allocationToken)
-      throws AllocationTokenInvalidForCurrencyException,
-          AllocationTokenInvalidForPremiumNameException {
+      Optional<AllocationToken> allocationToken) {
     // Short-circuit if the user sent an anchor-tenant or otherwise NONPREMIUM-renewal token
     if (allocationToken.isPresent()) {
       AllocationToken token = allocationToken.get();
@@ -315,44 +309,41 @@ public final class DomainPricingLogic {
       Optional<AllocationToken> allocationToken,
       Money firstYearCost,
       Optional<Money> subsequentYearCost,
-      Tld tld)
-      throws AllocationTokenInvalidForCurrencyException,
-          AllocationTokenInvalidForPremiumNameException {
+      Tld tld) {
     checkArgument(years > 0, "Registration years to get cost for must be positive.");
-    validateTokenForPossiblePremiumName(allocationToken, isPremium);
     Money totalDomainFlowCost =
         firstYearCost.plus(subsequentYearCost.orElse(firstYearCost).multipliedBy(years - 1));
+    if (allocationToken.isEmpty()) {
+      return totalDomainFlowCost;
+    }
+    AllocationToken token = allocationToken.get();
+    if (discountTokenInvalidForPremiumName(token, isPremium)) {
+      return totalDomainFlowCost;
+    }
+    if (!token.getTokenBehavior().equals(TokenBehavior.DEFAULT)) {
+      return totalDomainFlowCost;
+    }
 
     // Apply the allocation token discount, if applicable.
-    if (allocationToken.isPresent()
-        && allocationToken.get().getTokenBehavior().equals(TokenBehavior.DEFAULT)) {
-      if (allocationToken.get().getDiscountPrice().isPresent()) {
-        if (!tld.getCurrency()
-            .equals(allocationToken.get().getDiscountPrice().get().getCurrencyUnit())) {
-          throw new AllocationTokenInvalidForCurrencyException();
-        }
-
-        int nonDiscountedYears = Math.max(0, years - allocationToken.get().getDiscountYears());
-        totalDomainFlowCost =
-            allocationToken
-                .get()
-                .getDiscountPrice()
-                .get()
-                .multipliedBy(allocationToken.get().getDiscountYears())
-                .plus(subsequentYearCost.orElse(firstYearCost).multipliedBy(nonDiscountedYears));
-      } else {
-        // Assumes token has discount fraction set.
-        int discountedYears = Math.min(years, allocationToken.get().getDiscountYears());
+    if (token.getDiscountPrice().isPresent()
+        && tld.getCurrency().equals(token.getDiscountPrice().get().getCurrencyUnit())) {
+      int nonDiscountedYears = Math.max(0, years - token.getDiscountYears());
+      totalDomainFlowCost =
+          token
+              .getDiscountPrice()
+              .get()
+              .multipliedBy(token.getDiscountYears())
+              .plus(subsequentYearCost.orElse(firstYearCost).multipliedBy(nonDiscountedYears));
+    } else if (token.getDiscountFraction() > 0) {
+      int discountedYears = Math.min(years, token.getDiscountYears());
         if (discountedYears > 0) {
-          var discount =
-              firstYearCost
-                  .plus(subsequentYearCost.orElse(firstYearCost).multipliedBy(discountedYears - 1))
-                  .multipliedBy(
-                      allocationToken.get().getDiscountFraction(), RoundingMode.HALF_EVEN);
+        var discount =
+            firstYearCost
+                .plus(subsequentYearCost.orElse(firstYearCost).multipliedBy(discountedYears - 1))
+                .multipliedBy(token.getDiscountFraction(), RoundingMode.HALF_EVEN);
           totalDomainFlowCost = totalDomainFlowCost.minus(discount);
         }
       }
-    }
     return totalDomainFlowCost;
   }
 
@@ -375,19 +366,5 @@ public final class DomainPricingLogic {
                 ? token.getRenewalPrice().get()
                 : domainPrices.getRenewCost();
     return DomainPrices.create(isPremium, createCost, renewCost);
-  }
-
-  /** An allocation token was provided that is invalid for premium domains. */
-  public static class AllocationTokenInvalidForPremiumNameException
-      extends CommandUseErrorException {
-    public AllocationTokenInvalidForPremiumNameException() {
-      super("Token not valid for premium name");
-    }
-  }
-
-  public static class AllocationTokenInvalidForCurrencyException extends CommandUseErrorException {
-    public AllocationTokenInvalidForCurrencyException() {
-      super("Token and domain currencies do not match.");
-    }
   }
 }
