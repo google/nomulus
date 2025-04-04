@@ -85,9 +85,6 @@ public final class ActivityReportingQueryBuilder implements QueryBuilder {
     String monthlyLogsQuery =
         SqlTemplate.create(getQueryFromFile(MONTHLY_LOGS + ".sql"))
             .put("PROJECT_ID", projectId)
-            .put("APPENGINE_LOGS_DATA_SET", "appengine_logs")
-            .put("GKE_LOGS_DATA_SET", "gke_logs")
-            .put("REQUEST_TABLE", "appengine_googleapis_com_request_log_")
             .put("FIRST_DAY_OF_MONTH", logTableFormatter.print(firstDayOfMonth))
             .put("LAST_DAY_OF_MONTH", logTableFormatter.print(lastDayOfMonth))
             .build();
@@ -96,9 +93,6 @@ public final class ActivityReportingQueryBuilder implements QueryBuilder {
     String eppQuery =
         SqlTemplate.create(getQueryFromFile(EPP_METRICS + ".sql"))
             .put("PROJECT_ID", projectId)
-            .put("APPENGINE_LOGS_DATA_SET", "appengine_logs")
-            .put("GKE_LOGS_DATA_SET", "gke_logs")
-            .put("APP_LOGS_TABLE", "_var_log_app_")
             .put("FIRST_DAY_OF_MONTH", logTableFormatter.print(firstDayOfMonth))
             .put("LAST_DAY_OF_MONTH", logTableFormatter.print(lastDayOfMonth))
             .build();

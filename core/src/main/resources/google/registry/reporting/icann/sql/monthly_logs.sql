@@ -13,7 +13,7 @@
   -- See the License for the specific language governing permissions and
   -- limitations under the License.
 
-  -- Query to fetch AppEngine and GKE request logs for the report month.
+  -- Query to fetch GKE request logs for the report month.
 
   -- START_OF_MONTH and END_OF_MONTH should be in YYYYMM01 format.
 
@@ -23,13 +23,6 @@ FROM (
   SELECT
     jsonPayload.httrequest.requesturl AS requestPath
   FROM
-    `%PROJECT_ID%.%GKE_LOGS_DATA_SET%.stderr_*`
-  WHERE
-    _TABLE_SUFFIX BETWEEN '%FIRST_DAY_OF_MONTH%' AND '%LAST_DAY_OF_MONTH%')
-UNION ALL (
-  SELECT
-    protoPayload.resource AS requestPath
-  FROM
-    `%PROJECT_ID%.%APPENGINE_LOGS_DATA_SET%.%REQUEST_TABLE%*`
+    `%PROJECT_ID%.gke_logs.stderr_*`
   WHERE
     _TABLE_SUFFIX BETWEEN '%FIRST_DAY_OF_MONTH%' AND '%LAST_DAY_OF_MONTH%')
