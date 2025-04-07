@@ -211,7 +211,10 @@ steps:
           sed s/ENVIRONMENT/${env}/g | \
           sed s/PROXY_ENV/"${env}_canary"/g | \
           sed s/EPP/"epp-canary"/g | \
-          sed s/${service}/${service}-canary/g \
+          sed s/${service}/${service}-canary/g | \
+          # Undo prober endpoint replacement done in the previous line.
+          # The link should stay as /ready/${service}.
+          sed s/"ready\/${service}-canary"/"ready\/${service}"/g \
           > ./jetty/kubernetes/nomulus-${env}-${service}-canary.yaml
         # Proxy '--log' flag does not work on production.
         if [ ${env} == production ]

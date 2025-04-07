@@ -47,6 +47,9 @@ do
   sed s/PROXY_ENV/"${environment}_canary"/g | \
   sed s/EPP/"epp-canary"/g | \
   sed s/"${service}"/"${service}-canary"/g | \
+  # Undo prober endpoint replacement done in the previous line.
+  # The link should stay as /ready/${service}.
+  sed s/"ready\/${service}-canary"/"ready\/${service}"/g | \
   kubectl apply --grace-period=1 -f -
   kubectl rollout restart deployment/${service}-canary
 done
