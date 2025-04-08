@@ -97,12 +97,12 @@
     </section>
 
     <section>
-      <h1>WHOIS Preferences</h1>
+      <h1>RDAP Preferences</h1>
       <div>
         <mat-checkbox
           [(ngModel)]="contactService.contactInEdit.visibleInWhoisAsAdmin"
           [ngModelOptions]="{ standalone: true }"
-          >Show in Registrar WHOIS record as admin contact</mat-checkbox
+          >Show in Registrar RDAP record as admin contact</mat-checkbox
         >
       </div>
 
@@ -110,7 +110,7 @@
         <mat-checkbox
           [(ngModel)]="contactService.contactInEdit.visibleInWhoisAsTech"
           [ngModelOptions]="{ standalone: true }"
-          >Show in Registrar WHOIS record as technical contact</mat-checkbox
+          >Show in Registrar RDAP record as technical contact</mat-checkbox
         >
       </div>
 
@@ -118,8 +118,8 @@
         <mat-checkbox
           [(ngModel)]="contactService.contactInEdit.visibleInDomainWhoisAsAbuse"
           [ngModelOptions]="{ standalone: true }"
-          >Show Phone and Email in Domain WHOIS Record as registrar abuse
-          contact (per CL&D requirements)</mat-checkbox
+          >Show Phone and Email in Domain RDAP Record as registrar abuse contact
+          (per CL&D requirements)</mat-checkbox
         >
       </div>
     </section>
@@ -176,13 +176,13 @@
     <mat-card-content>
       <mat-list role="list">
         <mat-list-item role="listitem">
-          <h2>WHOIS Preferences</h2>
+          <h2>RDAP Preferences</h2>
         </mat-list-item>
         @if(contactService.contactInEdit.visibleInWhoisAsAdmin) {
         <mat-divider></mat-divider>
         <mat-list-item role="listitem">
           <span class="console-app__list-value"
-            >Show in Registrar WHOIS record as admin contact</span
+            >Show in Registrar RDAP record as admin contact</span
           >
         </mat-list-item>
         } @if(contactService.contactInEdit.visibleInWhoisAsTech) {
@@ -192,14 +192,14 @@
           *ngIf="contactService.contactInEdit.visibleInWhoisAsTech"
         >
           <span class="console-app__list-value"
-            >Show in Registrar WHOIS record as technical contact</span
+            >Show in Registrar RDAP record as technical contact</span
           >
         </mat-list-item>
         } @if(contactService.contactInEdit.visibleInDomainWhoisAsAbuse) {
         <mat-divider></mat-divider>
         <mat-list-item role="listitem">
           <span class="console-app__list-value"
-            >Show Phone and Email in Domain WHOIS Record as registrar abuse
+            >Show Phone and Email in Domain RDAP Record as registrar abuse
             contact (per CL&D requirements)</span
           >
         </mat-list-item>

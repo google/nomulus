@@ -21,14 +21,8 @@ spec:
         ports:
         - containerPort: 30000
           name: health-check
-        - containerPort: 30001
-          name: whois
         - containerPort: 30002
           name: epp
-        - containerPort: 30010
-          name: http-whois
-        - containerPort: 30011
-          name: https-whois
         readinessProbe:
           tcpSocket:
             port: health-check

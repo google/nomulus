@@ -23,7 +23,7 @@ import { BackendService } from 'src/app/shared/services/backend.service';
 @Injectable({
   providedIn: 'root',
 })
-export class WhoisService {
+export class RdapService {
   editing: boolean = false;
 
   constructor(

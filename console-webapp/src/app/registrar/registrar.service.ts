@@ -56,7 +56,6 @@ export interface WhoisRegistrarFields {
   localizedAddress: Address;
   registrarId: string;
   url: string;
-  whoisServer: string;
 }
 
 export interface Registrar

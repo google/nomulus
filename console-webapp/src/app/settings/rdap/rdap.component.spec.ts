@@ -20,15 +20,15 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { MaterialModule } from 'src/app/material.module';
 import { RegistrarService } from 'src/app/registrar/registrar.service';
 import { BackendService } from 'src/app/shared/services/backend.service';
-import WhoisComponent from './whois.component';
+import RdapComponent from './rdap.component';
 
-describe('WhoisComponent', () => {
-  let component: WhoisComponent;
-  let fixture: ComponentFixture<WhoisComponent>;
+describe('RdapComponent', () => {
+  let component: RdapComponent;
+  let fixture: ComponentFixture<RdapComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [WhoisComponent],
+      declarations: [RdapComponent],
       imports: [MaterialModule, BrowserAnimationsModule],
       providers: [
         BackendService,
@@ -45,7 +45,7 @@ describe('WhoisComponent', () => {
       ],
     }).compileComponents();
 
-    fixture = TestBed.createComponent(WhoisComponent);
+    fixture = TestBed.createComponent(RdapComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });

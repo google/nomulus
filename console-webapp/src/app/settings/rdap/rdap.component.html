@@ -1,18 +1,18 @@
-@if(whoisService.editing) {
-<app-whois-edit></app-whois-edit>
+@if(rdapService.editing) {
+<app-rdap-edit></app-rdap-edit>
 } @else {
 <div class="console-app__whois">
   <div class="console-app__whois-controls">
     <span>
-      General registrar information for your WHOIS record. This information is
-      always visible in WHOIS.
+      General registrar information for your RDAP record. This information is
+      always visible in RDAP.
     </span>
     <div class="spacer"></div>
     <button
       mat-flat-button
       color="primary"
-      aria-label="Edit WHOIS record"
-      (click)="whoisService.editing = true"
+      aria-label="Edit RDAP record"
+      (click)="rdapService.editing = true"
     >
       <mat-icon>edit</mat-icon>
       Edit
@@ -57,46 +57,6 @@
         <mat-list-item role="listitem">
           <span class="console-app__list-key">Address</span>
           <span class="console-app__list-value">{{ formattedAddress() }}</span>
-        </mat-list-item>
-      </mat-list>
-    </mat-card-content>
-  </mat-card>
-
-  <mat-card appearance="outlined">
-    <mat-card-content>
-      <mat-list role="list">
-        <mat-list-item role="listitem">
-          <h2>Technical Info</h2>
-        </mat-list-item>
-        <mat-divider></mat-divider>
-        <mat-list-item role="listitem">
-          <span class="console-app__list-key">IANA Identifier</span>
-          <span class="console-app__list-value">{{
-            registrarService.registrar()?.ianaIdentifier
-          }}</span>
-        </mat-list-item>
-        <mat-divider></mat-divider>
-        <mat-list-item role="listitem">
-          <div>
-            <span class="console-app__list-key">ICANN Referral Email</span>
-            <span class="console-app__list-value">{{
-              registrarService.registrar()?.icannReferralEmail
-            }}</span>
-          </div>
-        </mat-list-item>
-        <mat-divider></mat-divider>
-        <mat-list-item role="listitem">
-          <span class="console-app__list-key">WHOIS server</span>
-          <span class="console-app__list-value">{{
-            registrarService.registrar()?.whoisServer
-          }}</span>
-        </mat-list-item>
-        <mat-divider></mat-divider>
-        <mat-list-item role="listitem">
-          <span class="console-app__list-key">Referral URL</span>
-          <span class="console-app__list-value">{{
-            registrarService.registrar()?.url
-          }}</span>
         </mat-list-item>
       </mat-list>
     </mat-card-content>
