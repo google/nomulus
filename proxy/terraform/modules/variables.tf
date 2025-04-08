@@ -8,7 +8,7 @@ variable "gcr_project_name" {
 
 variable "proxy_domain_name" {
   description = <<EOF
-    The base domain name of the proxy, without the whois. or epp. part.
+    The base domain name of the proxy, without the epp part.
     EOF
 }
 
@@ -35,10 +35,7 @@ variable "proxy_ports" {
 
   default = {
     health_check = 30000
-    whois        = 30001
     epp          = 30002
-    http-whois   = 30010
-    https-whois  = 30011
   }
 }
 
@@ -48,20 +45,7 @@ variable "proxy_ports_canary" {
 
   default = {
     health_check = 31000
-    whois        = 31001
     epp          = 31002
-    http-whois   = 31010
-    https-whois  = 31011
   }
 }
 
-variable "public_web_whois" {
-  type        = number
-  default     = 1
-  description = <<EOF
-    Set to 1 if the whois HTTP ports are external, 0 if not.  This is necessary
-    because our test projects are configured with
-    constraints/compute.restrictLoadBalancerCreationForTypes, which prohibits
-    forwarding external HTTP(s) connections.
-    EOF
-}
