@@ -20,20 +20,20 @@ import {
   RegistrarService,
 } from 'src/app/registrar/registrar.service';
 import { UserDataService } from 'src/app/shared/services/userData.service';
-import { WhoisService } from './whois.service';
+import { RdapService } from './rdap.service';
 
 @Component({
-  selector: 'app-whois-edit',
-  templateUrl: './whoisEdit.component.html',
-  styleUrls: ['./whoisEdit.component.scss'],
+  selector: 'app-rdap-edit',
+  templateUrl: './rdapEdit.component.html',
+  styleUrls: ['./rdapEdit.component.scss'],
   standalone: false,
 })
-export default class WhoisEditComponent {
+export default class RdapEditComponent {
   registrarInEdit: Registrar | undefined;
 
   constructor(
     public userDataService: UserDataService,
-    public whoisService: WhoisService,
+    public rdapService: RdapService,
     public registrarService: RegistrarService,
     private _snackBar: MatSnackBar
   ) {
@@ -49,9 +49,9 @@ export default class WhoisEditComponent {
     e.preventDefault();
     if (!this.registrarInEdit) return;
 
-    this.whoisService.saveChanges(this.registrarInEdit).subscribe({
+    this.rdapService.saveChanges(this.registrarInEdit).subscribe({
       complete: () => {
-        this.whoisService.editing = false;
+        this.rdapService.editing = false;
       },
       error: (err: HttpErrorResponse) => {
         this._snackBar.open(err.error);

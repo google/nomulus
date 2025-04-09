@@ -14,17 +14,16 @@
 
 import { Component, computed } from '@angular/core';
 import { RegistrarService } from 'src/app/registrar/registrar.service';
-
-import { WhoisService } from './whois.service';
+import { RdapService } from './rdap.service';
 
 @Component({
-  selector: 'app-whois',
-  templateUrl: './whois.component.html',
-  styleUrls: ['./whois.component.scss'],
+  selector: 'app-rdap',
+  templateUrl: './rdap.component.html',
+  styleUrls: ['./rdap.component.scss'],
   standalone: false,
 })
-export default class WhoisComponent {
-  public static PATH = 'whois';
+export default class RdapComponent {
+  public static PATH = 'rdap';
   formattedAddress = computed(() => {
     let result = '';
     const registrar = this.registrarService.registrar();
@@ -47,7 +46,7 @@ export default class WhoisComponent {
   });
 
   constructor(
-    public whoisService: WhoisService,
+    public rdapService: RdapService,
     public registrarService: RegistrarService
   ) {}
 }
