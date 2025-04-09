@@ -24,7 +24,7 @@ export type contactType =
   | 'LEGAL'
   | 'MARKETING'
   | 'TECH'
-  | 'WHOIS';
+  | 'RDAP';
 
 type contactTypesToUserFriendlyTypes = { [type in contactType]: string };
 
@@ -35,7 +35,7 @@ export const contactTypeToTextMap: contactTypesToUserFriendlyTypes = {
   LEGAL: 'Legal contact',
   MARKETING: 'Marketing contact',
   TECH: 'Technical contact',
-  WHOIS: 'WHOIS-Inquiry contact',
+  RDAP: 'RDAP-Inquiry contact',
 };
 
 type UserFriendlyType = (typeof contactTypeToTextMap)[contactType];

@@ -127,8 +127,8 @@ import google.registry.ui.server.console.ConsoleUsersAction;
 import google.registry.ui.server.console.RegistrarsAction;
 import google.registry.ui.server.console.domains.ConsoleBulkDomainAction;
 import google.registry.ui.server.console.settings.ContactAction;
+import google.registry.ui.server.console.settings.RdapRegistrarFieldsAction;
 import google.registry.ui.server.console.settings.SecurityAction;
-import google.registry.ui.server.console.settings.WhoisRegistrarFieldsAction;
 import google.registry.whois.WhoisAction;
 import google.registry.whois.WhoisHttpAction;
 import google.registry.whois.WhoisModule;
@@ -337,7 +337,7 @@ interface RequestComponent {
 
   WhoisHttpAction whoisHttpAction();
 
-  WhoisRegistrarFieldsAction whoisRegistrarFieldsAction();
+  RdapRegistrarFieldsAction rdapRegistrarFieldsAction();
 
   WipeOutContactHistoryPiiAction wipeOutContactHistoryPiiAction();
 

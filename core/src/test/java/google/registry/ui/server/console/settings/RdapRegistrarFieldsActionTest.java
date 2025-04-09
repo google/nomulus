@@ -53,8 +53,8 @@ import org.joda.time.DateTime;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
-/** Tests for {@link WhoisRegistrarFieldsAction}. */
-public class WhoisRegistrarFieldsActionTest {
+/** Tests for {@link RdapRegistrarFieldsAction}. */
+public class RdapRegistrarFieldsActionTest {
 
   private ConsoleApiParams consoleApiParams;
   private static final Gson GSON = RequestModule.provideGson();
@@ -89,8 +89,6 @@ public class WhoisRegistrarFieldsActionTest {
   @Test
   void testSuccess_setsAllFields() throws Exception {
     Registrar oldRegistrar = Registrar.loadRequiredRegistrarCached("TheRegistrar");
-    assertThat(oldRegistrar.getWhoisServer()).isEqualTo("whois.nic.fakewhois.example");
-    assertThat(oldRegistrar.getUrl()).isEqualTo("http://my.fake.url");
     ImmutableMap<String, Object> addressMap =
         ImmutableMap.of(
             "street",
@@ -105,33 +103,26 @@ public class WhoisRegistrarFieldsActionTest {
             "CA");
     uiRegistrarMap.putAll(
         ImmutableMap.of(
-            "whoisServer",
-            "whois.nic.google",
             "icannReferralEmail",
             "lol@sloth.test",
             "phoneNumber",
             "+1.4155552671",
             "faxNumber",
             "+1.4155552672",
-            "url",
-            "\"https://newurl.example\"",
             "localizedAddress",
             "{\"street\": [\"123 Fake St\"], \"city\": \"Fakeville\", \"state\":"
                 + " \"NL\", \"zip\": \"10011\", \"countryCode\": \"CA\"}"));
-    WhoisRegistrarFieldsAction action = createAction();
+    RdapRegistrarFieldsAction action = createAction();
     action.run();
     assertThat(((FakeResponse) consoleApiParams.response()).getStatus()).isEqualTo(SC_OK);
     Registrar newRegistrar = Registrar.loadByRegistrarId("TheRegistrar").get(); // skip cache
-    assertThat(newRegistrar.getWhoisServer()).isEqualTo("whois.nic.google");
-    assertThat(newRegistrar.getUrl()).isEqualTo("https://newurl.example");
     assertThat(newRegistrar.getLocalizedAddress().toJsonMap()).isEqualTo(addressMap);
     assertThat(newRegistrar.getPhoneNumber()).isEqualTo("+1.4155552671");
     assertThat(newRegistrar.getFaxNumber()).isEqualTo("+1.4155552672");
     // the non-changed fields should be the same
     assertAboutImmutableObjects()
         .that(newRegistrar)
-        .isEqualExceptFields(
-            oldRegistrar, "whoisServer", "url", "localizedAddress", "phoneNumber", "faxNumber");
+        .isEqualExceptFields(oldRegistrar, "localizedAddress", "phoneNumber", "faxNumber");
     SimpleConsoleUpdateHistory history = loadSingleton(SimpleConsoleUpdateHistory.class).get();
     assertThat(history.getType()).isEqualTo(ConsoleUpdateHistory.Type.REGISTRAR_UPDATE);
     assertThat(history.getDescription()).hasValue("TheRegistrar");
@@ -151,7 +142,7 @@ public class WhoisRegistrarFieldsActionTest {
                         .build())
                 .build());
     uiRegistrarMap.put("registrarId", "NewRegistrar");
-    WhoisRegistrarFieldsAction action = createAction(onlyTheRegistrar);
+    RdapRegistrarFieldsAction action = createAction(onlyTheRegistrar);
     action.run();
     assertThat(((FakeResponse) consoleApiParams.response()).getStatus()).isEqualTo(SC_FORBIDDEN);
     // should be no change
@@ -162,17 +153,17 @@ public class WhoisRegistrarFieldsActionTest {
     return AuthResult.createUser(DatabaseHelper.createAdminUser("email@email.example"));
   }
 
-  private WhoisRegistrarFieldsAction createAction() throws IOException {
+  private RdapRegistrarFieldsAction createAction() throws IOException {
     return createAction(defaultUserAuth());
   }
 
-  private WhoisRegistrarFieldsAction createAction(AuthResult authResult) throws IOException {
+  private RdapRegistrarFieldsAction createAction(AuthResult authResult) throws IOException {
     consoleApiParams = ConsoleApiParamsUtils.createFake(authResult);
     when(consoleApiParams.request().getMethod()).thenReturn(Action.Method.POST.toString());
     doReturn(new BufferedReader(new StringReader(uiRegistrarMap.toString())))
         .when(consoleApiParams.request())
         .getReader();
-    return new WhoisRegistrarFieldsAction(
+    return new RdapRegistrarFieldsAction(
         consoleApiParams,
         registrarAccessor,
         ConsoleModule.provideRegistrar(

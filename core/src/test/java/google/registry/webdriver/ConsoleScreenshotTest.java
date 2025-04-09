@@ -101,7 +101,7 @@ public class ConsoleScreenshotTest extends WebDriverTestCase {
     driver.diffPage("noRegistrarSelected");
     selectRegistrar();
     driver.diffPage("registrarSelected_contacts");
-    driver.findElement(By.cssSelector("a[routerLink=\"whois\"]")).click();
+    driver.findElement(By.cssSelector("a[routerLink=\"rdap\"]")).click();
     Thread.sleep(500);
     driver.diffPage("registrarSelected_whois");
     driver.findElement(By.cssSelector("a[routerLink=\"security\"]")).click();
