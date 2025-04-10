@@ -13,25 +13,10 @@ spec:
     targetPort: health-check
     name: health-check
   - protocol: TCP
-    port: 30001
-    nodePort: 30001
-    targetPort: whois
-    name: whois
-  - protocol: TCP
     port: 30002
     nodePort: 30002
     targetPort: epp
     name: epp
-  - protocol: TCP
-    port: 30010
-    nodePort: 30010
-    targetPort: http-whois
-    name: http-whois
-  - protocol: TCP
-    port: 30011
-    nodePort: 30011
-    targetPort: https-whois
-    name: https-whois
   type: NodePort
 ---
 apiVersion: autoscaling/v2

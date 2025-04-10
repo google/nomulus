@@ -13,13 +13,7 @@ spec:
   - matches:
     - path:
         type: PathPrefix
-        value: /_dr/whois
-    - path:
-        type: PathPrefix
         value: /check
-    - path:
-        type: PathPrefix
-        value: /whois
     - path:
         type: PathPrefix
         value: /rdap
@@ -31,19 +25,7 @@ spec:
   - matches:
     - path:
         type: PathPrefix
-        value: /_dr/whois
-      headers:
-      - name: "canary"
-        value: "true"
-    - path:
-        type: PathPrefix
         value: /check
-      headers:
-      - name: "canary"
-        value: "true"
-    - path:
-        type: PathPrefix
-        value: /whois
       headers:
       - name: "canary"
         value: "true"
