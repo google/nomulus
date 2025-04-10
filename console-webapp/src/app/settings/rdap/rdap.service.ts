@@ -16,14 +16,14 @@ import { Injectable } from '@angular/core';
 import { switchMap } from 'rxjs';
 import {
   RegistrarService,
-  WhoisRegistrarFields,
+  RdapRegistrarFields,
 } from 'src/app/registrar/registrar.service';
 import { BackendService } from 'src/app/shared/services/backend.service';
 
 @Injectable({
   providedIn: 'root',
 })
-export class WhoisService {
+export class RdapService {
   editing: boolean = false;
 
   constructor(
@@ -31,8 +31,8 @@ export class WhoisService {
     private registrarService: RegistrarService
   ) {}
 
-  saveChanges(newWhoisRegistrarFields: WhoisRegistrarFields) {
-    return this.backend.postWhoisRegistrarFields(newWhoisRegistrarFields).pipe(
+  saveChanges(newRdapRegistrarFields: RdapRegistrarFields) {
+    return this.backend.postRdapRegistrarFields(newRdapRegistrarFields).pipe(
       switchMap(() => {
         return this.registrarService.loadRegistrars();
       })

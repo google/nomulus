@@ -41,8 +41,8 @@ import google.registry.ui.server.console.ConsoleUsersAction;
 import google.registry.ui.server.console.RegistrarsAction;
 import google.registry.ui.server.console.domains.ConsoleBulkDomainAction;
 import google.registry.ui.server.console.settings.ContactAction;
+import google.registry.ui.server.console.settings.RdapRegistrarFieldsAction;
 import google.registry.ui.server.console.settings.SecurityAction;
-import google.registry.ui.server.console.settings.WhoisRegistrarFieldsAction;
 
 /** Dagger component with per-request lifetime for "default" App Engine module. */
 @RequestScope
@@ -92,7 +92,7 @@ public interface FrontendRequestComponent {
 
   SecurityAction securityAction();
 
-  WhoisRegistrarFieldsAction whoisRegistrarFieldsAction();
+  RdapRegistrarFieldsAction rdapRegistrarFieldsAction();
 
   @Subcomponent.Builder
   abstract class Builder implements RequestComponentBuilder<FrontendRequestComponent> {

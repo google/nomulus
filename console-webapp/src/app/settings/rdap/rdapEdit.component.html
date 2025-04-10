@@ -1,27 +1,27 @@
 <div
-  class="console-app__whois-edit"
+  class="console-app__rdap-edit"
   *ngIf="registrarInEdit"
   cdkTrapFocus
   [cdkTrapFocusAutoCapture]="true"
 >
   <button
     mat-icon-button
-    class="console-app__whois-edit-back"
-    aria-label="Back to whois view"
-    (click)="whoisService.editing = false"
+    class="console-app__rdap-edit-back"
+    aria-label="Back to rdap view"
+    (click)="rdapService.editing = false"
   >
     <mat-icon>arrow_back</mat-icon>
   </button>
 
-  <div class="console-app__whois-edit-controls">
+  <div class="console-app__rdap-edit-controls">
     <span>
-      General registrar information for your WHOIS record. This information is
-      always visible in WHOIS.
+      General registrar information for your RDAP record. This information is
+      always visible in RDAP.
     </span>
     <div class="spacer"></div>
   </div>
 
-  <div class="console-app__whois-edit">
+  <div class="console-app__rdap-edit">
     <h1>Personal info</h1>
 
     <form (ngSubmit)="save($event)">
@@ -115,45 +115,11 @@
         />
       </mat-form-field>
 
-      <h1>Technical info</h1>
-
-      <mat-form-field appearance="outline">
-        <mat-label>WHOIS server: </mat-label>
-        <input
-          matInput
-          type="text"
-          [(ngModel)]="registrarInEdit.whoisServer"
-          [ngModelOptions]="{ standalone: true }"
-        />
-      </mat-form-field>
-
-      <mat-form-field appearance="outline">
-        <mat-label>Referral URL: </mat-label>
-        <input
-          matInput
-          type="text"
-          [(ngModel)]="registrarInEdit.url"
-          [ngModelOptions]="{ standalone: true }"
-        />
-      </mat-form-field>
-
-      @if((userDataService.userData()?.globalRole || 'NONE') !== "NONE") {
-      <mat-form-field appearance="outline">
-        <mat-label>ICANN Referral Email: </mat-label>
-        <input
-          matInput
-          type="text"
-          [(ngModel)]="registrarInEdit.icannReferralEmail"
-          [ngModelOptions]="{ standalone: true }"
-        />
-      </mat-form-field>
-      }
-
       <button
         mat-flat-button
         color="primary"
         type="submit"
-        aria-label="Save WHOIS settings"
+        aria-label="Save RDAO settings"
       >
         Save
       </button>

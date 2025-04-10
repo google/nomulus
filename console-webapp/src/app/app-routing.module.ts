@@ -24,8 +24,8 @@ import { ResourcesComponent } from './resources/resources.component';
 import ContactComponent from './settings/contact/contact.component';
 import SecurityComponent from './settings/security/security.component';
 import { SettingsComponent } from './settings/settings.component';
-import WhoisComponent from './settings/whois/whois.component';
 import { SupportComponent } from './support/support.component';
+import RdapComponent from './settings/rdap/rdap.component';
 
 export interface RouteWithIcon extends Route {
   iconName?: string;
@@ -83,9 +83,9 @@ export const routes: RouteWithIcon[] = [
         title: 'Contacts',
       },
       {
-        path: WhoisComponent.PATH,
-        component: WhoisComponent,
-        title: 'WHOIS Info',
+        path: RdapComponent.PATH,
+        component: RdapComponent,
+        title: 'RDAP Info',
       },
       {
         path: SecurityComponent.PATH,

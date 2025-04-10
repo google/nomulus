@@ -25,7 +25,7 @@ import { User } from 'src/app/users/users.service';
 import {
   Registrar,
   SecuritySettingsBackendModel,
-  WhoisRegistrarFields,
+  RdapRegistrarFields,
 } from '../../registrar/registrar.service';
 import { Contact } from '../../settings/contact/contact.service';
 import { EppPasswordBackendModel } from '../../settings/security/security.service';
@@ -209,12 +209,12 @@ export class BackendService {
       .pipe(catchError((err) => this.errorCatcher<UserData>(err)));
   }
 
-  postWhoisRegistrarFields(
-    whoisRegistrarFields: WhoisRegistrarFields
-  ): Observable<WhoisRegistrarFields> {
-    return this.http.post<WhoisRegistrarFields>(
-      '/console-api/settings/whois-fields',
-      whoisRegistrarFields
+  postRdapRegistrarFields(
+    rdapRegistrarFields: RdapRegistrarFields
+  ): Observable<RdapRegistrarFields> {
+    return this.http.post<RdapRegistrarFields>(
+      '/console-api/settings/rdap-fields',
+      rdapRegistrarFields
     );
   }
 

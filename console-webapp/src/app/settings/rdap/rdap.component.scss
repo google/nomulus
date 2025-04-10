@@ -1,19 +1,17 @@
-.console-app__whois-edit {
+.console-app__rdap {
   max-width: 616px;
 
   &-controls {
     display: flex;
     align-items: center;
     gap: 1rem;
-    margin: 20px 0;
+    margin-bottom: 20px;
     button {
       flex-shrink: 0;
     }
   }
 
-  mat-form-field {
-    display: block;
-    width: 100%;
+  mat-card {
     margin-bottom: 30px;
   }
 }

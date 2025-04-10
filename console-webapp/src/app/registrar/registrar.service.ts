@@ -50,17 +50,16 @@ export interface SecuritySettings
   ipAddressAllowList?: Array<IpAllowListItem>;
 }
 
-export interface WhoisRegistrarFields {
+export interface RdapRegistrarFields {
   ianaIdentifier?: number;
   icannReferralEmail: string;
   localizedAddress: Address;
   registrarId: string;
   url: string;
-  whoisServer: string;
 }
 
 export interface Registrar
-  extends WhoisRegistrarFields,
+  extends RdapRegistrarFields,
     SecuritySettingsBackendModel {
   allowedTlds?: string[];
   billingAccountMap?: object;

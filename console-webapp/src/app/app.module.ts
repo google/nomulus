@@ -47,8 +47,6 @@ import EppPasswordEditComponent from './settings/security/eppPasswordEdit.compon
 import SecurityComponent from './settings/security/security.component';
 import SecurityEditComponent from './settings/security/securityEdit.component';
 import { SettingsComponent } from './settings/settings.component';
-import WhoisComponent from './settings/whois/whois.component';
-import WhoisEditComponent from './settings/whois/whoisEdit.component';
 import { NotificationsComponent } from './shared/components/notifications/notifications.component';
 import { SelectedRegistrarWrapper } from './shared/components/selectedRegistrarWrapper/selectedRegistrarWrapper.component';
 import { LocationBackDirective } from './shared/directives/locationBack.directive';
@@ -60,6 +58,8 @@ import { SnackBarModule } from './snackbar.module';
 import { SupportComponent } from './support/support.component';
 import { TldsComponent } from './tlds/tlds.component';
 import { ForceFocusDirective } from './shared/directives/forceFocus.directive';
+import RdapComponent from './settings/rdap/rdap.component';
+import RdapEditComponent from './settings/rdap/rdapEdit.component';
 
 @NgModule({
   declarations: [SelectedRegistrarWrapper],
@@ -76,30 +76,30 @@ export class SelectedRegistrarModule {}
     ContactDetailsComponent,
     DomainListComponent,
     EppPasswordEditComponent,
+    ForceFocusDirective,
     HeaderComponent,
     HomeComponent,
     LocationBackDirective,
-    ForceFocusDirective,
-    UserLevelVisibility,
     NavigationComponent,
     NewRegistrarComponent,
     NotificationsComponent,
+    RdapComponent,
+    RdapEditComponent,
+    ReasonDialogComponent,
     RegistrarComponent,
     RegistrarDetailsComponent,
-    RegistryLockComponent,
     RegistrarSelectorComponent,
+    RegistryLockComponent,
     RegistryLockVerifyComponent,
     ResourcesComponent,
+    ResponseDialogComponent,
     SecurityComponent,
     SecurityEditComponent,
     SettingsComponent,
     SettingsContactComponent,
     SupportComponent,
     TldsComponent,
-    WhoisComponent,
-    WhoisEditComponent,
-    ReasonDialogComponent,
-    ResponseDialogComponent,
+    UserLevelVisibility,
   ],
   bootstrap: [AppComponent],
   imports: [
@@ -108,8 +108,8 @@ export class SelectedRegistrarModule {}
     BrowserModule,
     FormsModule,
     MaterialModule,
-    SnackBarModule,
     SelectedRegistrarModule,
+    SnackBarModule,
   ],
   providers: [
     BackendService,

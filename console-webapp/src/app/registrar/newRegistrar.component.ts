@@ -48,7 +48,6 @@ export default class NewRegistrarComponent {
     this.newRegistrar = {
       registrarId: '',
       url: '',
-      whoisServer: '',
       registrarName: '',
       icannReferralEmail: '',
       localizedAddress: {
