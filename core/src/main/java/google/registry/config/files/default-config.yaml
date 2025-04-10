@@ -243,7 +243,7 @@ hibernate:
   # that BEAM pipelines are not subject to the maximumPoolSize value defined
   # here. See PersistenceModule.java for more information.
   hikariMinimumIdle: 1
-  hikariMaximumPoolSize: 10
+  hikariMaximumPoolSize: 20
   hikariIdleTimeout: 300000
   # The batch size is basically the number of insertions / updates in a single
   # transaction that will be batched together into one INSERT/UPDATE statement.
