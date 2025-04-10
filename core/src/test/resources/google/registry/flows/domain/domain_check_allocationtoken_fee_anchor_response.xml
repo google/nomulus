@@ -17,6 +17,10 @@
             <domain:name avail="false">reserved.tld</domain:name>
             <domain:reason>Alloc token invalid for domain</domain:reason>
         </domain:cd>
+        <domain:cd>
+          <domain:name avail="false">rich.example</domain:name>
+          <domain:reason>Alloc token invalid for domain</domain:reason>
+        </domain:cd>
       </domain:chkData>
     </resData>
     <extension>
@@ -43,6 +47,13 @@
           <fee:class>token-not-supported</fee:class>
         </fee:cd>
         <fee:cd>
+          <fee:name>rich.example</fee:name>
+          <fee:currency>USD</fee:currency>
+          <fee:command>create</fee:command>
+          <fee:period unit="y">1</fee:period>
+          <fee:class>token-not-supported</fee:class>
+        </fee:cd>
+        <fee:cd>
           <fee:name>example1.tld</fee:name>
           <fee:currency>USD</fee:currency>
           <fee:command>renew</fee:command>
@@ -59,6 +70,13 @@
         </fee:cd>
         <fee:cd>
           <fee:name>reserved.tld</fee:name>
+          <fee:currency>USD</fee:currency>
+          <fee:command>renew</fee:command>
+          <fee:period unit="y">1</fee:period>
+          <fee:class>token-not-supported</fee:class>
+        </fee:cd>
+        <fee:cd>
+          <fee:name>rich.example</fee:name>
           <fee:currency>USD</fee:currency>
           <fee:command>renew</fee:command>
           <fee:period unit="y">1</fee:period>
