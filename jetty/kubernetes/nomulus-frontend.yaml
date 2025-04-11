@@ -26,7 +26,7 @@ spec:
         resources:
           requests:
             cpu: "100m"
-            memory: "512Mi"
+            memory: "1Gi"
         args: [ENVIRONMENT]
         env:
         - name: POD_ID
