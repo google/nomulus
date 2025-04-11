@@ -26,6 +26,7 @@ import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTransactionManagerExtension;
 import google.registry.request.auth.AuthResult;
 import google.registry.request.auth.OidcTokenAuthenticationMechanism;
+import google.registry.testing.DatabaseHelper;
 import google.registry.tools.params.HostAndPortParameter;
 import google.registry.ui.ConsoleDebug;
 import java.util.List;
@@ -106,47 +107,48 @@ public final class RegistryTestServerMain {
     System.out.printf(
         """
 
-                    CHARLESTON ROAD REGISTRY SHARED REGISTRATION SYSTEM
-                                  ICANN-GTLD-AGB-20120604
+        CHARLESTON ROAD REGISTRY SHARED REGISTRATION SYSTEM
+                      ICANN-GTLD-AGB-20120604
 
-            %s        ▓█████▄  ▒█████   ███▄ ▄███▓ ▄▄▄       ██▓ ███▄    █
-                    ▒██▀ ██▌▒██▒  ██▒▓██▒▀█▀ ██▒▒████▄    ▓██▒ ██ ▀█   █
-                    ░██   █▌▒██░  ██▒▓██    ▓██░▒██  ▀█▄  ▒██▒▓██  ▀█ ██▒
-                    ░▓█▄   ▌▒██   ██░▒██    ▒██ ░██▄▄▄▄██ ░██░▓██▒  ▐▌██▒
-                    ░▒████▓ ░ ████▓▒░▒██▒   ░██▒ ▓█   ▓██▒░██░▒██░   ▓██░
-                     ▒▒▓  ▒ ░ ▒░▒░▒░ ░ ▒░   ░  ░ ▒▒   ▓▒█░░▓  ░ ▒░   ▒ ▒
-                     ░ ▒  ▒   ░ ▒ ▒░ ░  ░      ░  ▒   ▒▒ ░ ▒ ░░ ░░   ░ ▒░
-                     ░ ░  ░ ░ ░ ░ ▒  ░      ░     ░   ▒    ▒ ░   ░   ░ ░
-                       ░        ░ ░         ░         ░  ░ ░           ░
-                     ░
-            %s    ██▀███  ▓█████   ▄████  ██▓  ██████ ▄▄▄█████▓ ██▀███ ▓██   ██▓
-                ▓██ ▒ ██▒▓█   ▀  ██▒ ▀█▒▓██▒▒██    ▒ ▓  ██▒ ▓▒▓██ ▒ ██▒▒██  ██▒
-                ▓██ ░▄█ ▒▒███   ▒██░▄▄▄░▒██▒░ ▓██▄   ▒ ▓██░ ▒░▓██ ░▄█ ▒ ▒██ ██░
-                ▒██▀▀█▄  ▒▓█  ▄ ░▓█  ██▓░██░  ▒   ██▒░ ▓██▓ ░ ▒██▀▀█▄   ░ ▐██▓░
-                ░██▓ ▒██▒░▒████▒░▒▓███▀▒░██░▒██████▒▒  ▒██▒ ░ ░██▓ ▒██▒ ░ ██▒▓░
-                ░ ▒▓ ░▒▓░░░ ▒░ ░ ░▒   ▒ ░▓  ▒ ▒▓▒ ▒ ░  ▒ ░░   ░ ▒▓ ░▒▓░  ██▒▒▒
-                ░▒ ░ ▒░ ░ ░  ░  ░   ░  ▒ ░░ ░▒  ░ ░    ░      ░▒ ░ ▒░▓██ ░▒░
-                ░░   ░    ░   ░ ░   ░  ▒ ░░  ░  ░    ░        ░░   ░ ▒ ▒ ░░
-                 ░        ░  ░      ░  ░        ░              ░     ░ ░
-                                                                     ░ ░
-            %s(✿◕ ‿◕ )ノ%s
-            """,
+%s        ▓█████▄  ▒█████   ███▄ ▄███▓ ▄▄▄       ██▓ ███▄    █
+        ▒██▀ ██▌▒██▒  ██▒▓██▒▀█▀ ██▒▒████▄    ▓██▒ ██ ▀█   █
+        ░██   █▌▒██░  ██▒▓██    ▓██░▒██  ▀█▄  ▒██▒▓██  ▀█ ██▒
+        ░▓█▄   ▌▒██   ██░▒██    ▒██ ░██▄▄▄▄██ ░██░▓██▒  ▐▌██▒
+        ░▒████▓ ░ ████▓▒░▒██▒   ░██▒ ▓█   ▓██▒░██░▒██░   ▓██░
+         ▒▒▓  ▒ ░ ▒░▒░▒░ ░ ▒░   ░  ░ ▒▒   ▓▒█░░▓  ░ ▒░   ▒ ▒
+         ░ ▒  ▒   ░ ▒ ▒░ ░  ░      ░  ▒   ▒▒ ░ ▒ ░░ ░░   ░ ▒░
+         ░ ░  ░ ░ ░ ░ ▒  ░      ░     ░   ▒    ▒ ░   ░   ░ ░
+           ░        ░ ░         ░         ░  ░ ░           ░
+         ░
+%s    ██▀███  ▓█████   ▄████  ██▓  ██████ ▄▄▄█████▓ ██▀███ ▓██   ██▓
+    ▓██ ▒ ██▒▓█   ▀  ██▒ ▀█▒▓██▒▒██    ▒ ▓  ██▒ ▓▒▓██ ▒ ██▒▒██  ██▒
+    ▓██ ░▄█ ▒▒███   ▒██░▄▄▄░▒██▒░ ▓██▄   ▒ ▓██░ ▒░▓██ ░▄█ ▒ ▒██ ██░
+    ▒██▀▀█▄  ▒▓█  ▄ ░▓█  ██▓░██░  ▒   ██▒░ ▓██▓ ░ ▒██▀▀█▄   ░ ▐██▓░
+    ░██▓ ▒██▒░▒████▒░▒▓███▀▒░██░▒██████▒▒  ▒██▒ ░ ░██▓ ▒██▒ ░ ██▒▓░
+    ░ ▒▓ ░▒▓░░░ ▒░ ░ ░▒   ▒ ░▓  ▒ ▒▓▒ ▒ ░  ▒ ░░   ░ ▒▓ ░▒▓░  ██▒▒▒
+    ░▒ ░ ▒░ ░ ░  ░  ░   ░  ▒ ░░ ░▒  ░ ░    ░      ░▒ ░ ▒░▓██ ░▒░
+    ░░   ░    ░   ░ ░   ░  ▒ ░░  ░  ░    ░        ░░   ░ ▒ ▒ ░░
+     ░        ░  ░      ░  ░        ░              ░     ░ ░
+                                                         ░ ░
+%s(✿◕ ‿◕ )ノ%s
+""",
         LIGHT_PURPLE, ORANGE, PINK, RESET);
 
     final RegistryTestServer server = new RegistryTestServer(address);
 
     System.out.printf("%sLoading SQL fixtures setting User for authentication...%s\n", BLUE, RESET);
+    new JpaTestExtensions.Builder().buildIntegrationTestExtension().beforeEach(null);
+    JpaTransactionManagerExtension.loadInitialData();
     UserRoles userRoles =
         new UserRoles.Builder().setIsAdmin(loginIsAdmin).setGlobalRole(GlobalRole.FTE).build();
     User user =
-        new User.Builder()
-            .setEmailAddress(loginEmail)
-            .setUserRoles(userRoles)
-            .setRegistryLockPassword("registryLockPassword")
-            .build();
+        DatabaseHelper.persistResource(
+            new User.Builder()
+                .setEmailAddress(loginEmail)
+                .setUserRoles(userRoles)
+                .setRegistryLockPassword("registryLockPassword")
+                .build());
     OidcTokenAuthenticationMechanism.setAuthResultForTesting(AuthResult.createUser(user));
-    new JpaTestExtensions.Builder().buildIntegrationTestExtension().beforeEach(null);
-    JpaTransactionManagerExtension.loadInitialData();
     System.out.printf("%sLoading fixtures...%s\n", BLUE, RESET);
     for (Fixture fixture : fixtures) {
       fixture.load();

@@ -47,6 +47,7 @@ import google.registry.request.Parameter;
 import google.registry.request.auth.Auth;
 import google.registry.tools.IamClient;
 import google.registry.util.DiffUtils;
+import google.registry.util.RegistryEnvironment;
 import google.registry.util.StringGenerator;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
@@ -165,9 +166,11 @@ public class ConsoleUsersAction extends ConsoleApiAction {
     User updatedUser = updateUserRegistrarRoles(email, registrarId, null);
 
     // User has no registrars assigned
-    if (updatedUser.getUserRoles().getRegistrarRoles().size() == 0) {
+    if (updatedUser.getUserRoles().getRegistrarRoles().isEmpty()) {
       try {
-        directory.users().delete(email).execute();
+        if (!RegistryEnvironment.isInTestServer()) {
+          directory.users().delete(email).execute();
+        }
       } catch (IOException e) {
         setFailedResponse("Failed to delete the user workspace account", SC_INTERNAL_SERVER_ERROR);
         throw e;
@@ -208,7 +211,9 @@ public class ConsoleUsersAction extends ConsoleApiAction {
     newUser.setPrimaryEmail(newEmail);
 
     try {
-      directory.users().insert(newUser).execute();
+      if (!RegistryEnvironment.isInTestServer()) {
+        directory.users().insert(newUser).execute();
+      }
     } catch (IOException e) {
       setFailedResponse("Failed to create the user workspace account", SC_INTERNAL_SERVER_ERROR);
       throw e;

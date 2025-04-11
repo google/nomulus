@@ -24,6 +24,7 @@ import dagger.Provides;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.util.Clock;
 import google.registry.util.GoogleCredentialsBundle;
+import google.registry.util.RegistryEnvironment;
 import jakarta.inject.Qualifier;
 import jakarta.inject.Singleton;
 import java.io.IOException;
@@ -144,6 +145,10 @@ public abstract class CredentialModule {
       Duration tokenRefreshDelay,
       Clock clock) {
     GoogleCredentials signer = credentialsBundle.getGoogleCredentials();
+
+    if (RegistryEnvironment.isInTestServer()) {
+      return GoogleCredentialsBundle.create(signer);
+    }
 
     checkArgument(
         signer instanceof ServiceAccountSigner,
