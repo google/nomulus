@@ -23,6 +23,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.net.HostAndPort;
 import google.registry.module.backend.BackendServlet;
 import google.registry.module.frontend.FrontendServlet;
+import google.registry.module.frontend.FrontendTestServlet;
 import java.net.URL;
 import java.nio.file.Path;
 
@@ -49,7 +50,7 @@ public final class RegistryTestServer {
           route("/whois/*", FrontendServlet.class),
           route("/rdap/*", FrontendServlet.class),
           route("/check", FrontendServlet.class),
-          route("/console-api/*", FrontendServlet.class),
+          route("/console-api/*", FrontendTestServlet.class),
 
           // Proxy Services
           route("/_dr/epp", FrontendServlet.class),

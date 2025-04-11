@@ -153,9 +153,9 @@ public final class TestServer {
   private ServletContextHandler createHandler(
       Map<String, Path> runfiles, ImmutableList<Route> routes) {
     ServletContextHandler context = new ServletContextHandler(CONTEXT_PATH, WebAppContext.SESSIONS);
-    ServletHolder holder;
     context.setContextPath(CONTEXT_PATH);
     context.addServlet(HealthzServlet.class, "/healthz");
+    ServletHolder holder;
     for (Map.Entry<String, Path> runfile : runfiles.entrySet()) {
       holder = context.addServlet(StaticResourceServlet.class, runfile.getKey());
       StaticResourceServlet.configureServletHolder(holder, runfile.getKey(), runfile.getValue());

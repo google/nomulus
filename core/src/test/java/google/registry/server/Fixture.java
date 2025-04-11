@@ -26,8 +26,12 @@ import static google.registry.testing.DatabaseHelper.persistResource;
 import static org.joda.money.CurrencyUnit.USD;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import google.registry.model.OteStatsTestHelper;
+import google.registry.model.console.RegistrarRole;
+import google.registry.model.console.User;
+import google.registry.model.console.UserRoles;
 import google.registry.model.contact.Contact;
 import google.registry.model.contact.ContactAddress;
 import google.registry.model.contact.PostalInfo;
@@ -165,6 +169,30 @@ public enum Fixture {
           loadRegistrar("TheRegistrar")
               .asBuilder()
               .setAllowedTlds(ImmutableSet.of("example", "xn--q9jyb4c"))
+              .build());
+
+      persistResource(
+          new User.Builder()
+              .setEmailAddress("primary@registry.example")
+              .setRegistryLockEmailAddress("primary@theregistrar.com")
+              .setUserRoles(
+                  new UserRoles.Builder()
+                      .setRegistrarRoles(
+                          ImmutableMap.of("TheRegistrar", RegistrarRole.PRIMARY_CONTACT))
+                      .build())
+              .setRegistryLockPassword("registryLockPassword")
+              .build());
+      persistResource(
+          new User.Builder()
+              .setEmailAddress("accountmanager@registry.example")
+              .setRegistryLockEmailAddress("accountmanager@theregistrar.com")
+              .setUserRoles(
+                  new UserRoles.Builder()
+                      .setRegistrarRoles(
+                          ImmutableMap.of(
+                              "TheRegistrar", RegistrarRole.ACCOUNT_MANAGER_WITH_REGISTRY_LOCK))
+                      .build())
+              .setRegistryLockPassword("registryLockPassword")
               .build());
     }
   };
