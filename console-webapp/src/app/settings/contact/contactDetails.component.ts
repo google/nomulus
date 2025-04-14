@@ -82,6 +82,10 @@ export class ContactDetailsComponent {
     });
   }
 
+  shouldDisplayCheckbox(type: string) {
+    return type !== 'ADMIN' || this.checkboxIsChecked(type);
+  }
+
   checkboxIsChecked(type: string) {
     return this.contactService.contactInEdit.types.includes(
       type as contactType
@@ -89,6 +93,9 @@ export class ContactDetailsComponent {
   }
 
   checkboxIsDisabled(type: string) {
+    if (type === 'ADMIN') {
+      return true;
+    }
     return (
       this.contactService.contactInEdit.types.length === 1 &&
       this.contactService.contactInEdit.types[0] === (type as contactType)
@@ -104,5 +111,9 @@ export class ContactDetailsComponent {
           (t) => t != (type as contactType)
         );
     }
+  }
+
+  emailAddressIsDisabled() {
+    return this.contactService.contactInEdit.types.includes('ADMIN');
   }
 }

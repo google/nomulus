@@ -83,7 +83,7 @@ export class ContactService {
       : contactTypeToViewReadyContact({
           emailAddress: '',
           name: '',
-          types: ['ADMIN'],
+          types: ['TECH'],
           faxNumber: '',
           phoneNumber: '',
           registrarId: '',
