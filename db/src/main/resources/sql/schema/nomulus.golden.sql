@@ -983,7 +983,8 @@ CREATE TABLE public."Registrar" (
     url text,
     whois_server text,
     last_expiring_cert_notification_sent_date timestamp with time zone,
-    last_expiring_failover_cert_notification_sent_date timestamp with time zone
+    last_expiring_failover_cert_notification_sent_date timestamp with time zone,
+    last_poc_verification_date timestamp with time zone
 );
 
 
