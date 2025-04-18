@@ -68,7 +68,8 @@ class ConsoleUpdateRegistrarActionTest {
   private User user;
 
   private static String registrarPostData =
-      "{\"registrarId\":\"%s\",\"allowedTlds\":[%s],\"registryLockAllowed\":%s}";
+      "{\"registrarId\":\"%s\",\"allowedTlds\":[%s],\"registryLockAllowed\":%s,"
+          + " \"lastPocVerificationDate\":%s }";
 
   @RegisterExtension
   @Order(Integer.MAX_VALUE)
@@ -100,7 +101,14 @@ class ConsoleUpdateRegistrarActionTest {
 
   @Test
   void testSuccess_updatesRegistrar() throws IOException {
-    var action = createAction(String.format(registrarPostData, "TheRegistrar", "app, dev", false));
+    var action =
+        createAction(
+            String.format(
+                registrarPostData,
+                "TheRegistrar",
+                "app, dev",
+                false,
+                "\"2025-01-01T00:00:00.000Z\""));
     action.run();
     Registrar newRegistrar = Registrar.loadByRegistrarId("TheRegistrar").get();
     assertThat(newRegistrar.getAllowedTlds()).containsExactly("app", "dev");
@@ -114,7 +122,14 @@ class ConsoleUpdateRegistrarActionTest {
   @Test
   void testFails_missingWhoisContact() throws IOException {
     RegistryEnvironment.PRODUCTION.setup(systemPropertyExtension);
-    var action = createAction(String.format(registrarPostData, "TheRegistrar", "app, dev", false));
+    var action =
+        createAction(
+            String.format(
+                registrarPostData,
+                "TheRegistrar",
+                "app, dev",
+                false,
+                "\"2025-01-01T00:00:00.000Z\""));
     action.run();
     assertThat(((FakeResponse) consoleApiParams.response()).getStatus()).isEqualTo(SC_BAD_REQUEST);
     assertThat((String) ((FakeResponse) consoleApiParams.response()).getPayload())
@@ -137,7 +152,14 @@ class ConsoleUpdateRegistrarActionTest {
             .setVisibleInDomainWhoisAsAbuse(true)
             .build();
     persistResource(contact);
-    var action = createAction(String.format(registrarPostData, "TheRegistrar", "app, dev", false));
+    var action =
+        createAction(
+            String.format(
+                registrarPostData,
+                "TheRegistrar",
+                "app, dev",
+                false,
+                "\"2025-01-01T00:00:00.000Z\""));
     action.run();
     Registrar newRegistrar = Registrar.loadByRegistrarId("TheRegistrar").get();
     assertThat(newRegistrar.getAllowedTlds()).containsExactly("app", "dev");
@@ -147,7 +169,14 @@ class ConsoleUpdateRegistrarActionTest {
 
   @Test
   void testSuccess_sendsEmail() throws AddressException, IOException {
-    var action = createAction(String.format(registrarPostData, "TheRegistrar", "app, dev", false));
+    var action =
+        createAction(
+            String.format(
+                registrarPostData,
+                "TheRegistrar",
+                "app, dev",
+                false,
+                "\"2025-01-01T00:00:00.000Z\""));
     action.run();
     verify(consoleApiParams.sendEmailUtils().gmailClient, times(1))
         .sendEmail(
@@ -159,7 +188,9 @@ class ConsoleUpdateRegistrarActionTest {
                     "The following changes were made in registry unittest environment to the"
                         + " registrar TheRegistrar by user user@registrarId.com:\n"
                         + "\n"
-                        + "allowedTlds: null -> [app, dev]\n")
+                        + "allowedTlds: null -> [app, dev]\n"
+                        + "lastPocVerificationDate: 1970-01-01T00:00:00.000Z ->"
+                        + " 2025-01-01T00:00:00.000Z\n")
                 .setRecipients(ImmutableList.of(new InternetAddress("notification@test.example")))
                 .build());
   }
