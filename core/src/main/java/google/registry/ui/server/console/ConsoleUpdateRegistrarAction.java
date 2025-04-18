@@ -98,6 +98,7 @@ public class ConsoleUpdateRegistrarAction extends ConsoleApiAction {
                               .map(DomainNameUtils::canonicalizeHostname)
                               .collect(Collectors.toSet()))
                       .setRegistryLockAllowed(registrarParam.isRegistryLockAllowed())
+                      .setLastPocVerificationDate(registrarParam.getLastPocVerificationDate())
                       .build();
 
               tm().put(updatedRegistrar);
