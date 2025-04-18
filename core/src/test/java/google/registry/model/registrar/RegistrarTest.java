@@ -498,6 +498,28 @@ class RegistrarTest extends EntityTestCase {
   }
 
   @Test
+  void testSuccess_setLastPocVerificationDate() {
+    assertThat(
+            registrar
+                .asBuilder()
+                .setLastPocVerificationDate(fakeClock.nowUtc())
+                .build()
+                .getLastExpiringFailoverCertNotificationSentDate())
+        .isEqualTo(fakeClock.nowUtc());
+  }
+
+  @Test
+  void testFailure_setLastPocVerificationDate_nullDate() {
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> new Registrar.Builder().setLastPocVerificationDate(null).build());
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo("Registrar lastPocVerificationDate cannot be null");
+  }
+
+  @Test
   void testFailure_setLastExpiringFailoverCertNotificationSentDate_nullDate() {
     IllegalArgumentException thrown =
         assertThrows(
