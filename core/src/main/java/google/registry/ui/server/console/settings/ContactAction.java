@@ -169,6 +169,7 @@ public class ContactAction extends ConsoleApiAction {
         throw new ContactRequirementException(t);
       }
     }
+    enforcePrimaryContactRestrictions(oldContactsByType, newContactsByType);
     ensurePhoneNumberNotRemovedForContactTypes(oldContactsByType, newContactsByType, Type.TECH);
     Optional<RegistrarPoc> domainWhoisAbuseContact =
         getDomainWhoisVisibleAbuseContact(updatedContacts);
@@ -185,6 +186,23 @@ public class ContactAction extends ConsoleApiAction {
           "An abuse contact visible in domain WHOIS query must be designated");
     }
     checkContactRegistryLockRequirements(existingContacts, updatedContacts);
+  }
+
+  private static void enforcePrimaryContactRestrictions(
+      Multimap<Type, RegistrarPoc> oldContactsByType,
+      Multimap<Type, RegistrarPoc> newContactsByType) {
+    ImmutableSet<String> oldAdminEmails =
+        oldContactsByType.get(Type.ADMIN).stream()
+            .map(RegistrarPoc::getEmailAddress)
+            .collect(toImmutableSet());
+    ImmutableSet<String> newAdminEmails =
+        newContactsByType.get(Type.ADMIN).stream()
+            .map(RegistrarPoc::getEmailAddress)
+            .collect(toImmutableSet());
+    if (!newAdminEmails.containsAll(oldAdminEmails)) {
+      throw new ContactRequirementException(
+          "Cannot remove or change the email address of primary contacts");
+    }
   }
 
   private static void checkContactRegistryLockRequirements(

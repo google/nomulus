@@ -16,11 +16,7 @@ import { Component, effect, ViewEncapsulation } from '@angular/core';
 import { MatTableDataSource } from '@angular/material/table';
 import { take } from 'rxjs';
 import { RegistrarService } from 'src/app/registrar/registrar.service';
-import {
-  ContactService,
-  contactTypeToViewReadyContact,
-  ViewReadyContact,
-} from './contact.service';
+import { ContactService, ViewReadyContact } from './contact.service';
 
 @Component({
   selector: 'app-contact',

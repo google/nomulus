@@ -56,6 +56,7 @@
           [required]="true"
           [(ngModel)]="contactService.contactInEdit.emailAddress"
           [ngModelOptions]="{ standalone: true }"
+          [disabled]="emailAddressIsDisabled()"
         />
       </mat-form-field>
 

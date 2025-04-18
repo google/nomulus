@@ -23,6 +23,7 @@ import google.registry.model.console.RegistrarRole;
 import google.registry.server.RegistryTestServer;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.junitpioneer.jupiter.RetryingTest;
@@ -50,7 +51,15 @@ import org.openqa.selenium.WebElement;
  */
 // The Selenium image only supports amd64 architecture.
 @EnabledIfSystemProperty(named = "os.arch", matches = "amd64")
-public class ConsoleScreenshotTest extends WebDriverTestCase {
+@Timeout(120)
+public class ConsoleScreenshotTest {
+
+  @RegisterExtension
+  static final DockerWebDriverExtension webDriverProvider = new DockerWebDriverExtension();
+
+  @RegisterExtension
+  final WebDriverPlusScreenDifferExtension driver =
+      new WebDriverPlusScreenDifferExtension(webDriverProvider::getWebDriver);
 
   @RegisterExtension
   final TestServerExtension server =

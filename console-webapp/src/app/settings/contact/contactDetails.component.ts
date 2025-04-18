@@ -89,6 +89,9 @@ export class ContactDetailsComponent {
   }
 
   checkboxIsDisabled(type: string) {
+    if (!this.contactService.isContactNewView && type === 'ADMIN') {
+      return true;
+    }
     return (
       this.contactService.contactInEdit.types.length === 1 &&
       this.contactService.contactInEdit.types[0] === (type as contactType)
@@ -104,5 +107,12 @@ export class ContactDetailsComponent {
           (t) => t != (type as contactType)
         );
     }
+  }
+
+  emailAddressIsDisabled() {
+    if (this.contactService.isContactNewView) {
+      return true;
+    }
+    return this.contactService.contactInEdit.types.includes('ADMIN');
   }
 }
