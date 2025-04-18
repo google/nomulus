@@ -133,11 +133,8 @@ import org.joda.time.Duration;
  * @error {@link
  *     google.registry.flows.domain.token.AllocationTokenFlowUtils.AllocationTokenNotValidForRegistrarException}
  * @error {@link
- *     google.registry.flows.domain.token.AllocationTokenFlowUtils.AllocationTokenNotValidForTldException}
- * @error {@link
  *     google.registry.flows.domain.token.AllocationTokenFlowUtils.AlreadyRedeemedAllocationTokenException}
- * @error {@link
- *     google.registry.flows.domain.token.AllocationTokenFlowUtils.InvalidAllocationTokenException}
+ * @error {@link AllocationTokenFlowUtils.NonexistentAllocationTokenException}
  * @error {@link google.registry.flows.exceptions.OnlyToolCanPassMetadataException}
  * @error {@link ResourceAlreadyExistsForThisClientException}
  * @error {@link ResourceCreateContentionException}
@@ -205,7 +202,6 @@ import org.joda.time.Duration;
  * @error {@link DomainFlowUtils.UnexpectedClaimsNoticeException}
  * @error {@link DomainFlowUtils.UnsupportedFeeAttributeException}
  * @error {@link DomainFlowUtils.UnsupportedMarkTypeException}
- * @error {@link DomainPricingLogic.AllocationTokenInvalidForPremiumNameException}
  */
 @ReportingSpec(ActivityReportField.DOMAIN_CREATE)
 public final class DomainCreateFlow implements MutatingFlow {
@@ -221,7 +217,6 @@ public final class DomainCreateFlow implements MutatingFlow {
   @Inject @Superuser boolean isSuperuser;
   @Inject DomainHistory.Builder historyBuilder;
   @Inject EppResponse.Builder responseBuilder;
-  @Inject AllocationTokenFlowUtils allocationTokenFlowUtils;
   @Inject DomainCreateFlowCustomLogic flowCustomLogic;
   @Inject DomainFlowTmchUtils tmchUtils;
   @Inject DomainPricingLogic pricingLogic;
@@ -264,25 +259,20 @@ public final class DomainCreateFlow implements MutatingFlow {
     }
     boolean isSunriseCreate = hasSignedMarks && (tldState == START_DATE_SUNRISE);
     Optional<AllocationToken> allocationToken =
-        allocationTokenFlowUtils.verifyAllocationTokenCreateIfPresent(
-            command,
-            tld,
+        AllocationTokenFlowUtils.loadTokenFromExtensionOrGetDefault(
             registrarId,
             now,
-            eppInput.getSingleExtension(AllocationTokenExtension.class));
-    boolean defaultTokenUsed = false;
-    if (allocationToken.isEmpty()) {
-      allocationToken =
-          DomainFlowUtils.checkForDefaultToken(
-              tld, command.getDomainName(), CommandName.CREATE, registrarId, now);
-      if (allocationToken.isPresent()) {
-        defaultTokenUsed = true;
-      }
-    }
+            eppInput.getSingleExtension(AllocationTokenExtension.class),
+            tld,
+            command.getDomainName(),
+            CommandName.CREATE);
+    boolean defaultTokenUsed =
+        allocationToken.map(t -> t.getTokenType().equals(TokenType.DEFAULT_PROMO)).orElse(false);
     boolean isAnchorTenant =
         isAnchorTenant(
             domainName, allocationToken, eppInput.getSingleExtension(MetadataExtension.class));
     verifyAnchorTenantValidPeriod(isAnchorTenant, years);
+
     // Superusers can create reserved domains, force creations on domains that require a claims
     // notice without specifying a claims key, ignore the registry phase, and override blocks on
     // registering premium domains.
@@ -416,7 +406,7 @@ public final class DomainCreateFlow implements MutatingFlow {
     entitiesToSave.add(domain, domainHistory);
     if (allocationToken.isPresent() && allocationToken.get().getTokenType().isOneTimeUse()) {
       entitiesToSave.add(
-          allocationTokenFlowUtils.redeemToken(
+          AllocationTokenFlowUtils.redeemToken(
               allocationToken.get(), domainHistory.getHistoryEntryId()));
     }
     if (domain.shouldPublishToDns()) {
