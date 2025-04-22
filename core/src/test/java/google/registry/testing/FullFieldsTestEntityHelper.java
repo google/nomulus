@@ -38,9 +38,7 @@ import google.registry.model.eppcommon.Trid;
 import google.registry.model.host.Host;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarAddress;
-import google.registry.model.registrar.RegistrarBase;
 import google.registry.model.registrar.RegistrarPoc;
-import google.registry.model.registrar.RegistrarPocBase;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.persistence.VKey;
 import google.registry.util.Idn;
@@ -54,12 +52,12 @@ import org.joda.time.DateTime;
 public final class FullFieldsTestEntityHelper {
 
   public static Registrar makeRegistrar(
-      String registrarId, String registrarName, RegistrarBase.State state) {
+      String registrarId, String registrarName, Registrar.State state) {
     return makeRegistrar(registrarId, registrarName, state, 1L);
   }
 
   public static Registrar makeRegistrar(
-      String registrarId, String registrarName, RegistrarBase.State state, Long ianaIdentifier) {
+      String registrarId, String registrarName, Registrar.State state, Long ianaIdentifier) {
     return new Registrar.Builder()
         .setRegistrarId(registrarId)
         .setRegistrarName(registrarName)
@@ -101,7 +99,7 @@ public final class FullFieldsTestEntityHelper {
             .setEmailAddress("johndoe@example.com")
             .setPhoneNumber("+1.2125551213")
             .setFaxNumber("+1.2125551213")
-            .setTypes(ImmutableSet.of(RegistrarPocBase.Type.ADMIN))
+            .setTypes(ImmutableSet.of(RegistrarPoc.Type.ADMIN))
             // Purposely flip the internal/external admin/tech
             // distinction to make sure we're not relying on it.  Sigh.
             .setVisibleInWhoisAsAdmin(false)
@@ -113,7 +111,7 @@ public final class FullFieldsTestEntityHelper {
             .setEmailAddress("janedoe@example.com")
             .setPhoneNumber("+1.2125551215")
             .setFaxNumber("+1.2125551216")
-            .setTypes(ImmutableSet.of(RegistrarPocBase.Type.TECH))
+            .setTypes(ImmutableSet.of(RegistrarPoc.Type.TECH))
             // Purposely flip the internal/external admin/tech
             // distinction to make sure we're not relying on it.  Sigh.
             .setVisibleInWhoisAsAdmin(true)

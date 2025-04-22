@@ -17,7 +17,7 @@ package google.registry.whois;
 import static com.google.common.net.MediaType.PLAIN_TEXT_UTF_8;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.bsa.persistence.BsaTestingUtils.persistBsaLabel;
-import static google.registry.model.registrar.RegistrarBase.State.ACTIVE;
+import static google.registry.model.registrar.Registrar.State.ACTIVE;
 import static google.registry.testing.DatabaseHelper.createTlds;
 import static google.registry.testing.DatabaseHelper.loadRegistrar;
 import static google.registry.testing.DatabaseHelper.persistResource;

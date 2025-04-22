@@ -26,7 +26,7 @@ import google.registry.flows.EppController;
 import google.registry.flows.EppRequestSource;
 import google.registry.flows.PasswordOnlyTransportCredentials;
 import google.registry.flows.StatelessRequestSessionMetadata;
-import google.registry.model.console.SimpleConsoleUpdateHistory;
+import google.registry.model.console.ConsoleUpdateHistory;
 import google.registry.model.console.User;
 import google.registry.model.eppcommon.ProtocolDefinition;
 import google.registry.model.eppoutput.EppOutput;
@@ -113,7 +113,7 @@ public class ConsoleBulkDomainAction extends ConsoleApiAction {
                     .forEach(
                         e ->
                             finishAndPersistConsoleUpdateHistory(
-                                new SimpleConsoleUpdateHistory.Builder()
+                                new ConsoleUpdateHistory.Builder()
                                     .setDescription(e.getKey())
                                     .setType(actionType.getConsoleUpdateHistoryType()))));
   }

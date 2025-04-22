@@ -19,9 +19,8 @@ import static com.google.common.base.Preconditions.checkState;
 
 import com.google.common.collect.ImmutableMap;
 import google.registry.model.registrar.Registrar;
+import google.registry.model.registrar.Registrar.State;
 import google.registry.model.registrar.RegistrarAddress;
-import google.registry.model.registrar.RegistrarBase;
-import google.registry.model.registrar.RegistrarBase.State;
 import google.registry.xjc.contact.XjcContactE164Type;
 import google.registry.xjc.rderegistrar.XjcRdeRegistrar;
 import google.registry.xjc.rderegistrar.XjcRdeRegistrarAddrType;
@@ -41,7 +40,7 @@ final class RegistrarToXjcConverter {
   private static final String UNKNOWN_CC = "US";
 
   /** A conversion map between internal Registrar states and external RDE states. */
-  private static final ImmutableMap<RegistrarBase.State, XjcRdeRegistrarStatusType>
+  private static final ImmutableMap<Registrar.State, XjcRdeRegistrarStatusType>
       REGISTRAR_STATUS_CONVERSIONS =
           ImmutableMap.of(
               State.ACTIVE, XjcRdeRegistrarStatusType.OK,

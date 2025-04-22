@@ -38,7 +38,7 @@ import google.registry.model.console.GlobalRole;
 import google.registry.model.console.User;
 import google.registry.model.console.UserRoles;
 import google.registry.model.registrar.Registrar;
-import google.registry.model.registrar.RegistrarBase.State;
+import google.registry.model.registrar.Registrar.State;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.request.auth.AuthenticatedRegistrarAccessor.RegistrarAccessDeniedException;

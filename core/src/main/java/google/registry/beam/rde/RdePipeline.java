@@ -58,7 +58,7 @@ import google.registry.model.host.Host;
 import google.registry.model.host.HostHistory;
 import google.registry.model.rde.RdeMode;
 import google.registry.model.registrar.Registrar;
-import google.registry.model.registrar.RegistrarBase.Type;
+import google.registry.model.registrar.Registrar.Type;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.reporting.HistoryEntry.HistoryEntryId;
 import google.registry.persistence.PersistenceModule.TransactionIsolationLevel;

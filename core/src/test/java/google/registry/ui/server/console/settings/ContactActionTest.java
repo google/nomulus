@@ -16,9 +16,9 @@ package google.registry.ui.server.console.settings;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.model.registrar.RegistrarPocBase.Type.ABUSE;
-import static google.registry.model.registrar.RegistrarPocBase.Type.ADMIN;
-import static google.registry.model.registrar.RegistrarPocBase.Type.TECH;
+import static google.registry.model.registrar.RegistrarPoc.Type.ABUSE;
+import static google.registry.model.registrar.RegistrarPoc.Type.ADMIN;
+import static google.registry.model.registrar.RegistrarPoc.Type.TECH;
 import static google.registry.testing.DatabaseHelper.createAdminUser;
 import static google.registry.testing.DatabaseHelper.insertInDb;
 import static google.registry.testing.DatabaseHelper.loadAllOf;
