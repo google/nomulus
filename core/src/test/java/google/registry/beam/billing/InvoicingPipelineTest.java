@@ -199,6 +199,36 @@ class InvoicingPipelineTest {
               0,
               "USD",
               20.0,
+              ""),
+          google.registry.beam.billing.BillingEvent.create(
+              15,
+              DateTime.parse("2017-10-02T00:00:00.0Z"),
+              DateTime.parse("2017-10-04T00:00:00.0Z"),
+              "theRegistrarCopy",
+              "234",
+              "",
+              "test",
+              "CREATE",
+              "mydomainfromanotherclient.test",
+              "REPO-ID",
+              5,
+              "JPY",
+              70.0,
+              ""),
+          google.registry.beam.billing.BillingEvent.create(
+              16,
+              DateTime.parse("2017-10-04T00:00:00Z"),
+              DateTime.parse("2017-10-04T00:00:00Z"),
+              "theRegistrarCopy",
+              "234",
+              "",
+              "test",
+              "RENEW",
+              "mydomain2fromanotherclient.test",
+              "REPO-ID",
+              3,
+              "USD",
+              20.5,
               ""));
 
   private static final ImmutableMap<String, ImmutableList<String>> EXPECTED_DETAILED_REPORT_MAP =
@@ -224,18 +254,22 @@ class InvoicingPipelineTest {
           "invoice_details_2017-10_anotherRegistrar_test.csv",
           ImmutableList.of(
               "5,2017-10-04 00:00:00 UTC,2017-10-04 00:00:00 UTC,anotherRegistrar,789,,"
-                  + "test,CREATE,mydomain5.test,REPO-ID,1,USD,0.00,SUNRISE ANCHOR_TENANT"));
+                  + "test,CREATE,mydomain5.test,REPO-ID,1,USD,0.00,SUNRISE ANCHOR_TENANT"),
+          "invoice_details_2017-10_theRegistrarCopy_test.csv", ImmutableList.of( "15,2017-10-02 00:00:00 UTC,2017-10-04 00:00:00 UTC,theRegistrarCopy,234,,test,CREATE,mydomainfromanotherclient.test,REPO-ID,5,JPY,70.00,",
+              "16,2017-10-04 00:00:00 UTC,2017-10-04 00:00:00 UTC,theRegistrarCopy,234,,test,RENEW,mydomain2fromanotherclient.test,REPO-ID,3,USD,20.50,"));
 
   private static final ImmutableList<String> EXPECTED_INVOICE_OUTPUT =
       ImmutableList.of(
-          "2017-10-01,2020-09-30,234,41.00,USD,10125,1,PURCHASE,theRegistrar,2,"
+          "2017-10-01,2020-09-30,234,61.50,USD,10125,1,PURCHASE,,3,"
               + "RENEW | TLD: test | TERM: 3-year,20.50,USD,",
-          "2017-10-01,2022-09-30,234,70.00,JPY,10125,1,PURCHASE,theRegistrar,1,"
+          "2017-10-01,2022-09-30,234,70.00,JPY,10125,1,PURCHASE,,1,"
               + "CREATE | TLD: hello | TERM: 5-year,70.00,JPY,",
-          "2017-10-01,,234,20.00,USD,10125,1,PURCHASE,theRegistrar,1,"
+          "2017-10-01,,234,20.00,USD,10125,1,PURCHASE,,1,"
               + "SERVER_STATUS | TLD: test | TERM: 0-year,20.00,USD,",
-          "2017-10-01,2018-09-30,456,20.50,USD,10125,1,PURCHASE,bestdomains,1,"
-              + "RENEW | TLD: test | TERM: 1-year,20.50,USD,116688");
+          "2017-10-01,2018-09-30,456,20.50,USD,10125,1,PURCHASE,,1,"
+              + "RENEW | TLD: test | TERM: 1-year,20.50,USD,116688",
+          "2017-10-01,2022-09-30,234,70.00,JPY,10125,1,PURCHASE,,1,CREATE | TLD: test | TERM: 5-year,70.00,JPY,"
+          );
 
   private final InvoicingPipelineOptions options =
       PipelineOptionsFactory.create().as(InvoicingPipelineOptions.class);
@@ -391,6 +425,13 @@ class InvoicingPipelineTest {
             .setBillingAccountMap(ImmutableMap.of(JPY, "234", USD, "234"))
             .build();
     persistResource(registrar1);
+    Registrar registrar11 = persistNewRegistrar("theRegistrarCopy");
+    registrar11 =
+        registrar11
+            .asBuilder()
+            .setBillingAccountMap(ImmutableMap.of(JPY, "234", USD, "234"))
+            .build();
+    persistResource(registrar11);
     Registrar registrar2 = persistNewRegistrar("bestdomains");
     registrar2 =
         registrar2
@@ -547,7 +588,21 @@ class InvoicingPipelineTest {
             .setDomainHistory(domainHistoryRecurrence)
             .build();
     persistResource(cancellationRecurrence);
-  }
+
+    // Domains created for registrar with = key but != client id.
+    Domain domain14 = persistActiveDomain("mydomainfromanotherclient.test");
+    Domain domain15 = persistActiveDomain("mydomain2fromanotherclient.test");
+
+    persistBillingEvent(
+        15,
+        domain14,
+        registrar11,
+        Reason.CREATE,
+        5,
+        Money.ofMajor(JPY, 70),
+        DateTime.parse("2017-10-04T00:00:00.0Z"),
+        DateTime.parse("2017-10-02T00:00:00.0Z"));
+    persistBillingEvent(16, domain15, registrar11, Reason.RENEW, 3, Money.of(USD, 20.5));  }
 
   private static DomainHistory persistDomainHistory(Domain domain, Registrar registrar) {
     DomainHistory domainHistory =

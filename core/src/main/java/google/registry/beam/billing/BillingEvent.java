@@ -172,7 +172,7 @@ public record BillingEvent(
                 .minusDays(1)
                 .toString(),
         billingId(),
-        registrarId(),
+        "",
         String.format("%s | TLD: %s | TERM: %d-year", action(), tld(), years()),
         amount(),
         currency(),
