@@ -165,7 +165,7 @@ public class ConsoleUsersAction extends ConsoleApiAction {
     User updatedUser = updateUserRegistrarRoles(email, registrarId, null);
 
     // User has no registrars assigned
-    if (updatedUser.getUserRoles().getRegistrarRoles().size() == 0) {
+    if (updatedUser.getUserRoles().getRegistrarRoles().isEmpty()) {
       try {
         directory.users().delete(email).execute();
       } catch (IOException e) {

@@ -22,7 +22,6 @@ import static jakarta.servlet.http.HttpServletResponse.SC_OK;
 
 import google.registry.model.console.ConsolePermission;
 import google.registry.model.console.ConsoleUpdateHistory;
-import google.registry.model.console.SimpleConsoleUpdateHistory;
 import google.registry.model.console.User;
 import google.registry.model.registrar.Registrar;
 import google.registry.request.Action;
@@ -93,7 +92,7 @@ public class RdapRegistrarFieldsAction extends ConsoleApiAction {
             .build();
     tm().put(newRegistrar);
     finishAndPersistConsoleUpdateHistory(
-        new SimpleConsoleUpdateHistory.Builder()
+        new ConsoleUpdateHistory.Builder()
             .setType(ConsoleUpdateHistory.Type.REGISTRAR_UPDATE)
             .setDescription(newRegistrar.getRegistrarId()));
     sendExternalUpdatesIfNecessary(

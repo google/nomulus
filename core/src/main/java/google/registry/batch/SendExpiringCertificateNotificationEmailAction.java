@@ -33,7 +33,7 @@ import google.registry.flows.certs.CertificateChecker;
 import google.registry.groups.GmailClient;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarPoc;
-import google.registry.model.registrar.RegistrarPocBase.Type;
+import google.registry.model.registrar.RegistrarPoc.Type;
 import google.registry.request.Action;
 import google.registry.request.Action.GaeService;
 import google.registry.request.Response;

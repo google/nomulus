@@ -144,7 +144,6 @@ public abstract class CredentialModule {
       Duration tokenRefreshDelay,
       Clock clock) {
     GoogleCredentials signer = credentialsBundle.getGoogleCredentials();
-
     checkArgument(
         signer instanceof ServiceAccountSigner,
         "Expecting a ServiceAccountSigner, found %s.",
