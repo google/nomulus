@@ -255,8 +255,12 @@ class InvoicingPipelineTest {
           ImmutableList.of(
               "5,2017-10-04 00:00:00 UTC,2017-10-04 00:00:00 UTC,anotherRegistrar,789,,"
                   + "test,CREATE,mydomain5.test,REPO-ID,1,USD,0.00,SUNRISE ANCHOR_TENANT"),
-          "invoice_details_2017-10_theRegistrarCopy_test.csv", ImmutableList.of( "15,2017-10-02 00:00:00 UTC,2017-10-04 00:00:00 UTC,theRegistrarCopy,234,,test,CREATE,mydomainfromanotherclient.test,REPO-ID,5,JPY,70.00,",
-              "16,2017-10-04 00:00:00 UTC,2017-10-04 00:00:00 UTC,theRegistrarCopy,234,,test,RENEW,mydomain2fromanotherclient.test,REPO-ID,3,USD,20.50,"));
+          "invoice_details_2017-10_theRegistrarCopy_test.csv",
+          ImmutableList.of(
+              "15,2017-10-02 00:00:00 UTC,2017-10-04 00:00:00"
+                  + " UTC,theRegistrarCopy,234,,test,CREATE,mydomainfromanotherclient.test,REPO-ID,5,JPY,70.00,",
+              "16,2017-10-04 00:00:00 UTC,2017-10-04 00:00:00"
+                  + " UTC,theRegistrarCopy,234,,test,RENEW,mydomain2fromanotherclient.test,REPO-ID,3,USD,20.50,"));
 
   private static final ImmutableList<String> EXPECTED_INVOICE_OUTPUT =
       ImmutableList.of(
@@ -268,8 +272,8 @@ class InvoicingPipelineTest {
               + "SERVER_STATUS | TLD: test | TERM: 0-year,20.00,USD,",
           "2017-10-01,2018-09-30,456,20.50,USD,10125,1,PURCHASE,,1,"
               + "RENEW | TLD: test | TERM: 1-year,20.50,USD,116688",
-          "2017-10-01,2022-09-30,234,70.00,JPY,10125,1,PURCHASE,,1,CREATE | TLD: test | TERM: 5-year,70.00,JPY,"
-          );
+          "2017-10-01,2022-09-30,234,70.00,JPY,10125,1,PURCHASE,,1,CREATE | TLD: test | TERM:"
+              + " 5-year,70.00,JPY,");
 
   private final InvoicingPipelineOptions options =
       PipelineOptionsFactory.create().as(InvoicingPipelineOptions.class);
@@ -389,21 +393,21 @@ class InvoicingPipelineTest {
         .isEqualTo(
             """
 
-      SELECT b, r FROM BillingEvent b
-      JOIN Registrar r ON b.clientId = r.registrarId
-      JOIN Domain d ON b.domainRepoId = d.repoId
-      JOIN Tld t ON t.tldStr = d.tld
-      LEFT JOIN BillingCancellation c ON b.id = c.billingEvent
-      LEFT JOIN BillingCancellation cr ON b.cancellationMatchingBillingEvent = cr.billingRecurrence
-      WHERE r.billingAccountMap IS NOT NULL
-      AND r.type = 'REAL'
-      AND t.invoicingEnabled IS TRUE
-      AND CAST(b.billingTime AS timestamp)
-          BETWEEN CAST('2017-10-01T00:00:00Z' AS timestamp)
-          AND CAST('2017-11-01T00:00:00Z' AS timestamp)
-      AND c.id IS NULL
-      AND cr.id IS NULL
-      """);
+SELECT b, r FROM BillingEvent b
+JOIN Registrar r ON b.clientId = r.registrarId
+JOIN Domain d ON b.domainRepoId = d.repoId
+JOIN Tld t ON t.tldStr = d.tld
+LEFT JOIN BillingCancellation c ON b.id = c.billingEvent
+LEFT JOIN BillingCancellation cr ON b.cancellationMatchingBillingEvent = cr.billingRecurrence
+WHERE r.billingAccountMap IS NOT NULL
+AND r.type = 'REAL'
+AND t.invoicingEnabled IS TRUE
+AND CAST(b.billingTime AS timestamp)
+    BETWEEN CAST('2017-10-01T00:00:00Z' AS timestamp)
+    AND CAST('2017-11-01T00:00:00Z' AS timestamp)
+AND c.id IS NULL
+AND cr.id IS NULL
+""");
   }
 
   /** Returns the text contents of a file under the beamBucket/results directory. */
@@ -602,7 +606,8 @@ class InvoicingPipelineTest {
         Money.ofMajor(JPY, 70),
         DateTime.parse("2017-10-04T00:00:00.0Z"),
         DateTime.parse("2017-10-02T00:00:00.0Z"));
-    persistBillingEvent(16, domain15, registrar11, Reason.RENEW, 3, Money.of(USD, 20.5));  }
+    persistBillingEvent(16, domain15, registrar11, Reason.RENEW, 3, Money.of(USD, 20.5));
+  }
 
   private static DomainHistory persistDomainHistory(Domain domain, Registrar registrar) {
     DomainHistory domainHistory =
