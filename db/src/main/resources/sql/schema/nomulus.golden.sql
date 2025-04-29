@@ -843,6 +843,20 @@ ALTER SEQUENCE public."Package_promotion_id_seq" OWNED BY public."PackagePromoti
 
 
 --
+-- Name: PasswordResetRequest; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public."PasswordResetRequest" (
+    type text NOT NULL,
+    request_time timestamp with time zone NOT NULL,
+    requester text NOT NULL,
+    fulfillment_time timestamp with time zone,
+    destination_email text NOT NULL,
+    verification_code text NOT NULL
+);
+
+
+--
 -- Name: PollMessage; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -1680,6 +1694,14 @@ ALTER TABLE ONLY public."Lock"
 
 ALTER TABLE ONLY public."PackagePromotion"
     ADD CONSTRAINT "PackagePromotion_pkey" PRIMARY KEY (package_promotion_id);
+
+
+--
+-- Name: PasswordResetRequest PasswordResetRequest_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."PasswordResetRequest"
+    ADD CONSTRAINT "PasswordResetRequest_pkey" PRIMARY KEY (verification_code);
 
 
 --

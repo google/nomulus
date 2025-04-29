@@ -190,3 +190,4 @@ V189__remove_fk_consoleeppactionhistory.sql
 V190__remove_fk_registrarupdatehistory.sql
 V191__remove_fk_registrarpocupdatehistory.sql
 V192__add_last_poc_verification_date.sql
+V193__password_reset_request.sql
