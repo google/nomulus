@@ -58,7 +58,7 @@ public class FlowModuleTest {
 
   @Test
   void givenNonMutatingFlow_thenReplicaTmIsUsed() throws EppException {
-    String eppInputXmlFilename = "domain_info.xml";
+    String eppInputXmlFilename = "domain_check.xml";
     FlowModule flowModule =
         new FlowModule.Builder().setEppInput(getEppInput(eppInputXmlFilename)).build();
     JpaTransactionManager tm =
