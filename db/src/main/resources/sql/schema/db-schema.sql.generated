@@ -646,6 +646,7 @@
         last_certificate_update_time timestamp(6) with time zone,
         last_expiring_cert_notification_sent_date timestamp(6) with time zone,
         last_expiring_failover_cert_notification_sent_date timestamp(6) with time zone,
+        last_poc_verification_date timestamp(6) with time zone,
         localized_address_city text,
         localized_address_country_code text,
         localized_address_state text,

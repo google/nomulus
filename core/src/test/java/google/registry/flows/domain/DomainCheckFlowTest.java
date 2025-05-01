@@ -211,8 +211,8 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
     doCheckTest(
         create(true, "example1.tld", null),
         create(false, "example2.tld", "Alloc token invalid for domain"),
-        create(false, "reserved.tld", "Reserved"),
-        create(false, "specificuse.tld", "Reserved; alloc. token required"));
+        create(false, "reserved.tld", "Alloc token invalid for domain"),
+        create(false, "specificuse.tld", "Alloc token invalid for domain"));
   }
 
   @Test
@@ -230,8 +230,8 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
     doCheckTest(
         create(false, "example1.tld", "Blocked by a GlobalBlock service"),
         create(false, "example2.tld", "Alloc token invalid for domain"),
-        create(false, "reserved.tld", "Reserved"),
-        create(false, "specificuse.tld", "Reserved; alloc. token required"));
+        create(false, "reserved.tld", "Alloc token invalid for domain"),
+        create(false, "specificuse.tld", "Alloc token invalid for domain"));
   }
 
   @Test
@@ -255,17 +255,6 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
         create(false, "example1.tld", "In use"),
         create(true, "example2.tld", null),
         create(true, "example3.tld", null));
-  }
-
-  @Test
-  void testSuccess_oneExists_allocationTokenIsInvalid() throws Exception {
-    setEppInput("domain_check_allocationtoken.xml");
-    persistActiveDomain("example1.tld");
-    doCheckTest(
-        create(false, "example1.tld", "In use"),
-        create(false, "example2.tld", "The allocation token is invalid"),
-        create(false, "reserved.tld", "Reserved"),
-        create(false, "specificuse.tld", "Reserved; alloc. token required"));
   }
 
   @Test
@@ -301,24 +290,6 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
   }
 
   @Test
-  void testSuccess_oneExists_allocationTokenIsRedeemed() throws Exception {
-    setEppInput("domain_check_allocationtoken.xml");
-    Domain domain = persistActiveDomain("example1.tld");
-    HistoryEntryId historyEntryId = new HistoryEntryId(domain.getRepoId(), 1L);
-    persistResource(
-        new AllocationToken.Builder()
-            .setToken("abc123")
-            .setTokenType(SINGLE_USE)
-            .setRedemptionHistoryId(historyEntryId)
-            .build());
-    doCheckTest(
-        create(false, "example1.tld", "In use"),
-        create(false, "example2.tld", "Alloc token was already redeemed"),
-        create(false, "reserved.tld", "Reserved"),
-        create(false, "specificuse.tld", "Reserved; alloc. token required"));
-  }
-
-  @Test
   void testSuccess_oneExists_allocationTokenForReservedDomain() throws Exception {
     setEppInput("domain_check_allocationtoken.xml");
     persistActiveDomain("example1.tld");
@@ -329,9 +300,9 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
             .setTokenType(SINGLE_USE)
             .build());
     doCheckTest(
-        create(false, "example1.tld", "In use"),
+        create(false, "example1.tld", "Alloc token invalid for domain"),
         create(false, "example2.tld", "Alloc token invalid for domain"),
-        create(false, "reserved.tld", "Reserved"),
+        create(false, "reserved.tld", "Alloc token invalid for domain"),
         create(true, "specificuse.tld", null));
   }
 
@@ -348,23 +319,6 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
     // Fees are shown for all non-reserved domains and the reserved domain matching this
     // allocation token.
     runFlowAssertResponse(loadFile("domain_check_allocationtoken_fee_specificuse_response.xml"));
-  }
-
-  @Test
-  void testSuccess_oneExists_allocationTokenForWrongDomain() throws Exception {
-    setEppInput("domain_check_allocationtoken.xml");
-    persistActiveDomain("example1.tld");
-    persistResource(
-        new AllocationToken.Builder()
-            .setDomainName("someotherdomain.tld")
-            .setToken("abc123")
-            .setTokenType(SINGLE_USE)
-            .build());
-    doCheckTest(
-        create(false, "example1.tld", "In use"),
-        create(false, "example2.tld", "Alloc token invalid for domain"),
-        create(false, "reserved.tld", "Reserved"),
-        create(false, "specificuse.tld", "Reserved; alloc. token required"));
   }
 
   @Test
@@ -385,42 +339,8 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
     doCheckTest(
         create(false, "example1.tld", "Alloc token invalid for domain"),
         create(false, "example2.tld", "Alloc token invalid for domain"),
-        create(false, "reserved.tld", "Reserved"),
+        create(false, "reserved.tld", "Alloc token invalid for domain"),
         create(true, "specificuse.tld", null));
-  }
-
-  @Test
-  void testSuccess_outOfDateToken_forSpecificDomain() throws Exception {
-    setEppInput("domain_check_allocationtoken.xml");
-    persistResource(
-        new AllocationToken.Builder()
-            .setToken("abc123")
-            .setTokenType(SINGLE_USE)
-            .setDomainName("specificuse.tld")
-            .setTokenStatusTransitions(
-                ImmutableSortedMap.<DateTime, TokenStatus>naturalOrder()
-                    .put(START_OF_TIME, TokenStatus.NOT_STARTED)
-                    .put(clock.nowUtc().minusDays(2), TokenStatus.VALID)
-                    .put(clock.nowUtc().minusDays(1), TokenStatus.ENDED)
-                    .build())
-            .build());
-    doCheckTest(
-        create(false, "example1.tld", "Alloc token invalid for domain"),
-        create(false, "example2.tld", "Alloc token invalid for domain"),
-        create(false, "reserved.tld", "Reserved"),
-        create(false, "specificuse.tld", "Alloc token not in promo period"));
-  }
-
-  @Test
-  void testSuccess_nothingExists_reservationsOverrideInvalidAllocationTokens() throws Exception {
-    setEppInput("domain_check_reserved_allocationtoken.xml");
-    // Fill out these reasons
-    doCheckTest(
-        create(false, "collision.tld", "Cannot be delegated"),
-        create(false, "reserved.tld", "Reserved"),
-        create(false, "anchor.tld", "Reserved; alloc. token required"),
-        create(false, "allowedinsunrise.tld", "Reserved"),
-        create(false, "premiumcollision.tld", "Cannot be delegated"));
   }
 
   @Test
@@ -500,7 +420,75 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
   }
 
   @Test
-  void testFailure_allocationTokenPromotion_PremiumsNotSet() throws Exception {
+  void testSuccess_allocationTokenInvalid_overridesOtherErrors() throws Exception {
+    setEppInput("domain_check_allocationtoken.xml");
+    persistActiveDomain("example1.tld");
+    doCheckTest(
+        create(false, "example1.tld", "The allocation token is invalid"),
+        create(false, "example2.tld", "The allocation token is invalid"),
+        create(false, "reserved.tld", "The allocation token is invalid"),
+        create(false, "specificuse.tld", "The allocation token is invalid"));
+  }
+
+  @Test
+  void testSuccess_allocationTokenForWrongDomain_overridesOtherConcerns() throws Exception {
+    setEppInput("domain_check_allocationtoken.xml");
+    persistActiveDomain("example1.tld");
+    persistResource(
+        new AllocationToken.Builder()
+            .setDomainName("someotherdomain.tld")
+            .setToken("abc123")
+            .setTokenType(SINGLE_USE)
+            .build());
+    doCheckTest(
+        create(false, "example1.tld", "Alloc token invalid for domain"),
+        create(false, "example2.tld", "Alloc token invalid for domain"),
+        create(false, "reserved.tld", "Alloc token invalid for domain"),
+        create(false, "specificuse.tld", "Alloc token invalid for domain"));
+  }
+
+  @Test
+  void testSuccess_outOfDateToken_overridesOtherIssues() throws Exception {
+    setEppInput("domain_check_allocationtoken.xml");
+    persistResource(
+        new AllocationToken.Builder()
+            .setToken("abc123")
+            .setTokenType(SINGLE_USE)
+            .setDomainName("specificuse.tld")
+            .setTokenStatusTransitions(
+                ImmutableSortedMap.<DateTime, TokenStatus>naturalOrder()
+                    .put(START_OF_TIME, TokenStatus.NOT_STARTED)
+                    .put(clock.nowUtc().minusDays(2), TokenStatus.VALID)
+                    .put(clock.nowUtc().minusDays(1), TokenStatus.ENDED)
+                    .build())
+            .build());
+    doCheckTest(
+        create(false, "example1.tld", "Alloc token not in promo period"),
+        create(false, "example2.tld", "Alloc token not in promo period"),
+        create(false, "reserved.tld", "Alloc token not in promo period"),
+        create(false, "specificuse.tld", "Alloc token not in promo period"));
+  }
+
+  @Test
+  void testSuccess_redeemedTokenOverridesOtherConcerns() throws Exception {
+    setEppInput("domain_check_allocationtoken.xml");
+    Domain domain = persistActiveDomain("example1.tld");
+    HistoryEntryId historyEntryId = new HistoryEntryId(domain.getRepoId(), 1L);
+    persistResource(
+        new AllocationToken.Builder()
+            .setToken("abc123")
+            .setTokenType(SINGLE_USE)
+            .setRedemptionHistoryId(historyEntryId)
+            .build());
+    doCheckTest(
+        create(false, "example1.tld", "Alloc token was already redeemed"),
+        create(false, "example2.tld", "Alloc token was already redeemed"),
+        create(false, "reserved.tld", "Alloc token was already redeemed"),
+        create(false, "specificuse.tld", "Alloc token was already redeemed"));
+  }
+
+  @Test
+  void testSuccess_allocationTokenPromotion_noPremium_stillPasses() throws Exception {
     createTld("example");
     persistResource(
         new AllocationToken.Builder()
@@ -515,7 +503,7 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
         ImmutableMap.of("DOMAIN", "rich.example"));
     doCheckTest(
         create(true, "example1.example", null),
-        create(false, "rich.example", "Token not valid for premium name"),
+        create(true, "rich.example", null),
         create(true, "example3.example", null));
   }
 
@@ -572,7 +560,8 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
     doCheckTest(
         create(false, "example1.tld", "Alloc token not in promo period"),
         create(false, "example2.example", "Alloc token not in promo period"),
-        create(false, "reserved.tld", "Reserved"));
+        create(false, "reserved.tld", "Alloc token not in promo period"),
+        create(false, "rich.example", "Alloc token not in promo period"));
   }
 
   @Test
@@ -593,9 +582,10 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
             .build());
     setEppInput("domain_check_allocationtoken_fee.xml");
     doCheckTest(
-        create(false, "example1.tld", "Alloc token invalid for TLD"),
+        create(true, "example1.tld", null),
         create(true, "example2.example", null),
-        create(false, "reserved.tld", "Reserved"));
+        create(false, "reserved.tld", "Reserved"),
+        create(true, "rich.example", null));
   }
 
   @Test
@@ -618,7 +608,8 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
     doCheckTest(
         create(false, "example1.tld", "Alloc token invalid for client"),
         create(false, "example2.example", "Alloc token invalid for client"),
-        create(false, "reserved.tld", "Reserved"));
+        create(false, "reserved.tld", "Alloc token invalid for client"),
+        create(false, "rich.example", "Alloc token invalid for client"));
   }
 
   @Test
@@ -999,6 +990,7 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
             .setToken("abc123")
             .setTokenType(UNLIMITED_USE)
             .setAllowedEppActions(ImmutableSet.of(CommandName.CREATE, CommandName.TRANSFER))
+            .setDiscountFraction(0.1)
             .build());
     setEppInput("domain_check_fee_multiple_commands_allocationtoken_v06.xml");
     runFlowAssertResponse(
@@ -1028,6 +1020,7 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
             .setToken("abc123")
             .setTokenType(UNLIMITED_USE)
             .setAllowedEppActions(ImmutableSet.of(CommandName.CREATE, CommandName.TRANSFER))
+            .setDiscountFraction(0.1)
             .build());
     setEppInput("domain_check_fee_multiple_commands_allocationtoken_v12.xml");
     runFlowAssertResponse(

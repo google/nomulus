@@ -28,7 +28,6 @@ import static google.registry.testing.DatabaseHelper.persistPremiumList;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
-import static org.joda.money.CurrencyUnit.JPY;
 import static org.joda.money.CurrencyUnit.USD;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -39,8 +38,6 @@ import google.registry.flows.EppException;
 import google.registry.flows.HttpSessionMetadata;
 import google.registry.flows.SessionMetadata;
 import google.registry.flows.custom.DomainPricingCustomLogic;
-import google.registry.flows.domain.DomainPricingLogic.AllocationTokenInvalidForCurrencyException;
-import google.registry.flows.domain.DomainPricingLogic.AllocationTokenInvalidForPremiumNameException;
 import google.registry.model.billing.BillingBase.Reason;
 import google.registry.model.billing.BillingBase.RenewalPriceBehavior;
 import google.registry.model.billing.BillingRecurrence;
@@ -215,32 +212,6 @@ public class DomainPricingLogicTest {
   }
 
   @Test
-  void
-      testGetDomainCreatePrice_withDiscountPriceToken_domainCurrencyDoesNotMatchTokensCurrency_throwsException() {
-    AllocationToken allocationToken =
-        persistResource(
-            new AllocationToken.Builder()
-                .setToken("abc123")
-                .setTokenType(SINGLE_USE)
-                .setDiscountPrice(Money.of(JPY, new BigDecimal("250")))
-                .setDiscountPremiums(false)
-                .build());
-
-    // Domain's currency is not JPY (is USD).
-    assertThrows(
-        AllocationTokenInvalidForCurrencyException.class,
-        () ->
-            domainPricingLogic.getCreatePrice(
-                tld,
-                "default.example",
-                clock.nowUtc(),
-                3,
-                false,
-                false,
-                Optional.of(allocationToken)));
-  }
-
-  @Test
   void testGetDomainRenewPrice_oneYear_standardDomain_noBilling_isStandardPrice()
       throws EppException {
     assertThat(
@@ -336,77 +307,6 @@ public class DomainPricingLogicTest {
   }
 
   @Test
-  void
-      testGetDomainRenewPrice_oneYear_premiumDomain_default_withTokenNotValidForPremiums_throwsException() {
-    AllocationToken allocationToken =
-        persistResource(
-            new AllocationToken.Builder()
-                .setToken("abc123")
-                .setTokenType(SINGLE_USE)
-                .setDiscountFraction(0.5)
-                .setDiscountPremiums(false)
-                .build());
-    assertThrows(
-        AllocationTokenInvalidForPremiumNameException.class,
-        () ->
-            domainPricingLogic.getRenewPrice(
-                tld,
-                "premium.example",
-                clock.nowUtc(),
-                1,
-                persistDomainAndSetRecurrence("premium.example", DEFAULT, Optional.empty()),
-                Optional.of(allocationToken)));
-  }
-
-  @Test
-  void
-      testGetDomainRenewPrice_oneYear_premiumDomain_default_withDiscountPriceToken_throwsException() {
-    AllocationToken allocationToken =
-        persistResource(
-            new AllocationToken.Builder()
-                .setToken("abc123")
-                .setTokenType(SINGLE_USE)
-                .setDiscountPrice(Money.of(USD, 5))
-                .setDiscountPremiums(false)
-                .build());
-    assertThrows(
-        AllocationTokenInvalidForPremiumNameException.class,
-        () ->
-            domainPricingLogic.getRenewPrice(
-                tld,
-                "premium.example",
-                clock.nowUtc(),
-                1,
-                persistDomainAndSetRecurrence("premium.example", DEFAULT, Optional.empty()),
-                Optional.of(allocationToken)));
-  }
-
-  @Test
-  void
-      testGetDomainRenewPrice_withDiscountPriceToken_domainCurrencyDoesNotMatchTokensCurrency_throwsException() {
-    AllocationToken allocationToken =
-        persistResource(
-            new AllocationToken.Builder()
-                .setToken("abc123")
-                .setTokenType(SINGLE_USE)
-                .setDiscountPrice(Money.of(JPY, new BigDecimal("250")))
-                .setDiscountPremiums(false)
-                .build());
-
-    // Domain's currency is not JPY (is USD).
-    assertThrows(
-        AllocationTokenInvalidForCurrencyException.class,
-        () ->
-            domainPricingLogic.getRenewPrice(
-                tld,
-                "default.example",
-                clock.nowUtc(),
-                1,
-                persistDomainAndSetRecurrence("default.example", DEFAULT, Optional.empty()),
-                Optional.of(allocationToken)));
-  }
-
-  @Test
   void testGetDomainRenewPrice_multiYear_premiumDomain_default_isPremiumCost() throws EppException {
     assertThat(
             domainPricingLogic.getRenewPrice(
@@ -448,30 +348,6 @@ public class DomainPricingLogicTest {
                 .setCurrency(USD)
                 .addFeeOrCredit(Fee.create(new BigDecimal("400.00"), RENEW, true))
                 .build());
-  }
-
-  @Test
-  void
-      testGetDomainRenewPrice_multiYear_premiumDomain_default_withTokenNotValidForPremiums_throwsException() {
-    AllocationToken allocationToken =
-        persistResource(
-            new AllocationToken.Builder()
-                .setToken("abc123")
-                .setTokenType(SINGLE_USE)
-                .setDiscountFraction(0.5)
-                .setDiscountPremiums(false)
-                .setDiscountYears(2)
-                .build());
-    assertThrows(
-        AllocationTokenInvalidForPremiumNameException.class,
-        () ->
-            domainPricingLogic.getRenewPrice(
-                tld,
-                "premium.example",
-                clock.nowUtc(),
-                5,
-                persistDomainAndSetRecurrence("premium.example", DEFAULT, Optional.empty()),
-                Optional.of(allocationToken)));
   }
 
   @Test

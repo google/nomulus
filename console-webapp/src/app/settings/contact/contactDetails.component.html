@@ -56,6 +56,7 @@
           [required]="true"
           [(ngModel)]="contactService.contactInEdit.emailAddress"
           [ngModelOptions]="{ standalone: true }"
+          [disabled]="emailAddressIsDisabled()"
         />
       </mat-form-field>
 
@@ -85,14 +86,18 @@
         <mat-icon color="accent">error</mat-icon>Required to select at least one
       </p>
       <div class="">
-        <mat-checkbox
+        <ng-container
           *ngFor="let contactType of contactTypeToTextMap | keyvalue"
-          [checked]="checkboxIsChecked(contactType.key)"
-          (change)="checkboxOnChange($event, contactType.key)"
-          [disabled]="checkboxIsDisabled(contactType.key)"
         >
-          {{ contactType.value }}
-        </mat-checkbox>
+          <mat-checkbox
+            *ngIf="shouldDisplayCheckbox(contactType.key)"
+            [checked]="checkboxIsChecked(contactType.key)"
+            (change)="checkboxOnChange($event, contactType.key)"
+            [disabled]="checkboxIsDisabled(contactType.key)"
+          >
+            {{ contactType.value }}
+          </mat-checkbox>
+        </ng-container>
       </div>
     </section>
 

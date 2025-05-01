@@ -403,6 +403,9 @@ public class Registrar extends UpdateAutoTimestampEntity implements Buildable, J
    */
   DateTime lastExpiringFailoverCertNotificationSentDate = START_OF_TIME;
 
+  /** The time that the POCs have been reviewed last. */
+  @Expose DateTime lastPocVerificationDate = START_OF_TIME;
+
   /** Telephone support passcode (5-digit numeric) */
   String phonePasscode;
 
@@ -459,6 +462,10 @@ public class Registrar extends UpdateAutoTimestampEntity implements Buildable, J
 
   public String getRegistrarName() {
     return registrarName;
+  }
+
+  public DateTime getLastPocVerificationDate() {
+    return lastPocVerificationDate;
   }
 
   public Type getType() {
@@ -614,6 +621,7 @@ public class Registrar extends UpdateAutoTimestampEntity implements Buildable, J
         .putString(
             "lastExpiringFailoverCertNotificationSentDate",
             lastExpiringFailoverCertNotificationSentDate)
+        .putString("lastPocVerificationDate", lastPocVerificationDate)
         .put("registrarName", registrarName)
         .put("type", type)
         .put("state", state)
@@ -799,6 +807,12 @@ public class Registrar extends UpdateAutoTimestampEntity implements Buildable, J
         getInstance().failoverClientCertificateHash = clientCertificateHash;
         getInstance().lastCertificateUpdateTime = now;
       }
+      return thisCastToDerived();
+    }
+
+    public B setLastPocVerificationDate(DateTime now) {
+      checkArgumentNotNull(now, "Registrar lastPocVerificationDate cannot be null");
+      getInstance().lastPocVerificationDate = now;
       return thisCastToDerived();
     }
 

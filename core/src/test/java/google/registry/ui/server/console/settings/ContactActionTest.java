@@ -18,6 +18,7 @@ import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.registrar.RegistrarPoc.Type.ABUSE;
 import static google.registry.model.registrar.RegistrarPoc.Type.ADMIN;
+import static google.registry.model.registrar.RegistrarPoc.Type.MARKETING;
 import static google.registry.model.registrar.RegistrarPoc.Type.TECH;
 import static google.registry.testing.DatabaseHelper.createAdminUser;
 import static google.registry.testing.DatabaseHelper.insertInDb;
@@ -70,8 +71,9 @@ class ContactActionTest {
 
   private Registrar testRegistrar;
   private ConsoleApiParams consoleApiParams;
-  private RegistrarPoc testRegistrarPoc1;
-  private RegistrarPoc testRegistrarPoc2;
+  private RegistrarPoc adminPoc;
+  private RegistrarPoc techPoc;
+  private RegistrarPoc marketingPoc;
 
   private static final Gson GSON = RequestModule.provideGson();
 
@@ -82,7 +84,7 @@ class ContactActionTest {
   @BeforeEach
   void beforeEach() {
     testRegistrar = saveRegistrar("registrarId");
-    testRegistrarPoc1 =
+    adminPoc =
         new RegistrarPoc.Builder()
             .setRegistrar(testRegistrar)
             .setName("Test Registrar 1")
@@ -94,19 +96,32 @@ class ContactActionTest {
             .setVisibleInWhoisAsTech(false)
             .setVisibleInDomainWhoisAsAbuse(false)
             .build();
-    testRegistrarPoc2 =
-        testRegistrarPoc1
+    techPoc =
+        adminPoc
             .asBuilder()
             .setName("Test Registrar 2")
+            .setTypes(ImmutableSet.of(TECH))
+            .setVisibleInWhoisAsTech(true)
+            .setVisibleInWhoisAsAdmin(false)
             .setEmailAddress("test.registrar2@example.com")
             .setPhoneNumber("+1.1234567890")
             .setFaxNumber("+1.1234567891")
+            .build();
+    marketingPoc =
+        adminPoc
+            .asBuilder()
+            .setName("Test Registrar 3")
+            .setTypes(ImmutableSet.of(MARKETING))
+            .setVisibleInWhoisAsAdmin(false)
+            .setEmailAddress("test.registrar3@example.com")
+            .setPhoneNumber("+1.1238675309")
+            .setFaxNumber("+1.1238675309")
             .build();
   }
 
   @Test
   void testSuccess_getContactInfo() throws IOException {
-    insertInDb(testRegistrarPoc1);
+    insertInDb(adminPoc);
     ContactAction action =
         createAction(
             Action.Method.GET,
@@ -120,13 +135,13 @@ class ContactActionTest {
 
   @Test
   void testSuccess_noOp() throws IOException {
-    insertInDb(testRegistrarPoc1);
+    insertInDb(adminPoc);
     ContactAction action =
         createAction(
             Action.Method.POST,
             AuthResult.createUser(createAdminUser("email@email.com")),
             testRegistrar.getRegistrarId(),
-            testRegistrarPoc1);
+            adminPoc);
     action.run();
     assertThat(((FakeResponse) consoleApiParams.response()).getStatus()).isEqualTo(SC_OK);
     verify(consoleApiParams.sendEmailUtils().gmailClient, never()).sendEmail(any());
@@ -134,8 +149,8 @@ class ContactActionTest {
 
   @Test
   void testSuccess_onlyContactsWithNonEmptyType() throws IOException {
-    testRegistrarPoc1 = testRegistrarPoc1.asBuilder().setTypes(ImmutableSet.of()).build();
-    insertInDb(testRegistrarPoc1);
+    adminPoc = adminPoc.asBuilder().setTypes(ImmutableSet.of()).build();
+    insertInDb(adminPoc);
     ContactAction action =
         createAction(
             Action.Method.GET,
@@ -148,14 +163,14 @@ class ContactActionTest {
 
   @Test
   void testSuccess_postCreateContactInfo() throws IOException {
-    insertInDb(testRegistrarPoc1);
+    insertInDb(adminPoc);
     ContactAction action =
         createAction(
             Action.Method.POST,
             AuthResult.createUser(createAdminUser("email@email.com")),
             testRegistrar.getRegistrarId(),
-            testRegistrarPoc1,
-            testRegistrarPoc2);
+            adminPoc,
+            techPoc);
     action.run();
     assertThat(((FakeResponse) consoleApiParams.response()).getStatus()).isEqualTo(SC_OK);
     assertThat(
@@ -168,14 +183,14 @@ class ContactActionTest {
 
   @Test
   void testSuccess_postUpdateContactInfo() throws IOException {
-    insertInDb(testRegistrarPoc1.asBuilder().setEmailAddress("incorrect@email.com").build());
+    insertInDb(techPoc.asBuilder().setEmailAddress("incorrect@email.com").build());
     ContactAction action =
         createAction(
             Action.Method.POST,
             AuthResult.createUser(createAdminUser("email@email.com")),
             testRegistrar.getRegistrarId(),
-            testRegistrarPoc1,
-            testRegistrarPoc2);
+            adminPoc,
+            techPoc);
     action.run();
     assertThat(((FakeResponse) consoleApiParams.response()).getStatus()).isEqualTo(SC_OK);
     HashMap<String, String> testResult = new HashMap<>();
@@ -197,8 +212,8 @@ class ContactActionTest {
             Action.Method.POST,
             AuthResult.createUser(createAdminUser("email@email.com")),
             testRegistrar.getRegistrarId(),
-            testRegistrarPoc1,
-            testRegistrarPoc2.asBuilder().setEmailAddress("test.registrar1@example.com").build());
+            adminPoc,
+            techPoc.asBuilder().setEmailAddress("test.registrar1@example.com").build());
     action.run();
     assertThat(((FakeResponse) consoleApiParams.response()).getStatus()).isEqualTo(SC_BAD_REQUEST);
     assertThat(((FakeResponse) consoleApiParams.response()).getPayload())
@@ -213,13 +228,13 @@ class ContactActionTest {
 
   @Test
   void testFailure_postUpdateContactInfo_requiredContactRemoved() throws IOException {
-    insertInDb(testRegistrarPoc1);
+    insertInDb(adminPoc);
     ContactAction action =
         createAction(
             Action.Method.POST,
             AuthResult.createUser(createAdminUser("email@email.com")),
             testRegistrar.getRegistrarId(),
-            testRegistrarPoc1.asBuilder().setTypes(ImmutableSet.of(ABUSE)).build());
+            adminPoc.asBuilder().setTypes(ImmutableSet.of(ABUSE)).build());
     action.run();
     assertThat(((FakeResponse) consoleApiParams.response()).getStatus()).isEqualTo(SC_BAD_REQUEST);
     assertThat(((FakeResponse) consoleApiParams.response()).getPayload())
@@ -228,20 +243,19 @@ class ContactActionTest {
             loadAllOf(RegistrarPoc.class).stream()
                 .filter(r -> r.registrarId.equals(testRegistrar.getRegistrarId()))
                 .collect(toImmutableList()))
-        .containsExactly(testRegistrarPoc1);
+        .containsExactly(adminPoc);
   }
 
   @Test
   void testFailure_postUpdateContactInfo_phoneNumberRemoved() throws IOException {
-    testRegistrarPoc1 =
-        testRegistrarPoc1.asBuilder().setTypes(ImmutableSet.of(ADMIN, TECH)).build();
-    insertInDb(testRegistrarPoc1);
+    adminPoc = adminPoc.asBuilder().setTypes(ImmutableSet.of(ADMIN, TECH)).build();
+    insertInDb(adminPoc);
     ContactAction action =
         createAction(
             Action.Method.POST,
             AuthResult.createUser(createAdminUser("email@email.com")),
             testRegistrar.getRegistrarId(),
-            testRegistrarPoc1
+            adminPoc
                 .asBuilder()
                 .setPhoneNumber(null)
                 .setTypes(ImmutableSet.of(ADMIN, TECH))
@@ -254,7 +268,7 @@ class ContactActionTest {
             loadAllOf(RegistrarPoc.class).stream()
                 .filter(r -> r.registrarId.equals(testRegistrar.getRegistrarId()))
                 .collect(toImmutableList()))
-        .containsExactly(testRegistrarPoc1);
+        .containsExactly(adminPoc);
   }
 
   @Test
@@ -264,11 +278,7 @@ class ContactActionTest {
             Action.Method.POST,
             AuthResult.createUser(createAdminUser("email@email.com")),
             testRegistrar.getRegistrarId(),
-            testRegistrarPoc1
-                .asBuilder()
-                .setPhoneNumber(null)
-                .setVisibleInDomainWhoisAsAbuse(true)
-                .build());
+            adminPoc.asBuilder().setPhoneNumber(null).setVisibleInDomainWhoisAsAbuse(true).build());
     action.run();
     assertThat(((FakeResponse) consoleApiParams.response()).getStatus()).isEqualTo(SC_BAD_REQUEST);
     assertThat(((FakeResponse) consoleApiParams.response()).getPayload())
@@ -282,14 +292,14 @@ class ContactActionTest {
 
   @Test
   void testFailure_postUpdateContactInfo_whoisContactPhoneNumberRemoved() throws IOException {
-    testRegistrarPoc1 = testRegistrarPoc1.asBuilder().setVisibleInDomainWhoisAsAbuse(true).build();
-    insertInDb(testRegistrarPoc1);
+    adminPoc = adminPoc.asBuilder().setVisibleInDomainWhoisAsAbuse(true).build();
+    insertInDb(adminPoc);
     ContactAction action =
         createAction(
             Action.Method.POST,
             AuthResult.createUser(createAdminUser("email@email.com")),
             testRegistrar.getRegistrarId(),
-            testRegistrarPoc1.asBuilder().setVisibleInDomainWhoisAsAbuse(false).build());
+            adminPoc.asBuilder().setVisibleInDomainWhoisAsAbuse(false).build());
     action.run();
     assertThat(((FakeResponse) consoleApiParams.response()).getStatus()).isEqualTo(SC_BAD_REQUEST);
     assertThat(((FakeResponse) consoleApiParams.response()).getPayload())
@@ -298,7 +308,7 @@ class ContactActionTest {
             loadAllOf(RegistrarPoc.class).stream()
                 .filter(r -> r.registrarId.equals(testRegistrar.getRegistrarId()))
                 .collect(toImmutableList()))
-        .containsExactly(testRegistrarPoc1);
+        .containsExactly(adminPoc);
   }
 
   @Test
@@ -309,7 +319,7 @@ class ContactActionTest {
             Action.Method.POST,
             AuthResult.createUser(createAdminUser("email@email.com")),
             testRegistrar.getRegistrarId(),
-            testRegistrarPoc1
+            adminPoc
                 .asBuilder()
                 .setAllowedToSetRegistryLockPassword(true)
                 .setRegistryLockEmailAddress("lock@example.com")
@@ -327,22 +337,19 @@ class ContactActionTest {
 
   @Test
   void testFailure_postUpdateContactInfo_cannotModifyRegistryLockEmail() throws IOException {
-    testRegistrarPoc1 =
-        testRegistrarPoc1
+    adminPoc =
+        adminPoc
             .asBuilder()
             .setRegistryLockEmailAddress("lock@example.com")
             .setAllowedToSetRegistryLockPassword(true)
             .build();
-    insertInDb(testRegistrarPoc1);
+    insertInDb(adminPoc);
     ContactAction action =
         createAction(
             Action.Method.POST,
             AuthResult.createUser(createAdminUser("email@email.com")),
             testRegistrar.getRegistrarId(),
-            testRegistrarPoc1
-                .asBuilder()
-                .setRegistryLockEmailAddress("unlock@example.com")
-                .build());
+            adminPoc.asBuilder().setRegistryLockEmailAddress("unlock@example.com").build());
     action.run();
     assertThat(((FakeResponse) consoleApiParams.response()).getStatus()).isEqualTo(SC_BAD_REQUEST);
     assertThat(((FakeResponse) consoleApiParams.response()).getPayload())
@@ -351,25 +358,25 @@ class ContactActionTest {
             loadAllOf(RegistrarPoc.class).stream()
                 .filter(r -> r.registrarId.equals(testRegistrar.getRegistrarId()))
                 .collect(toImmutableList()))
-        .containsExactly(testRegistrarPoc1);
+        .containsExactly(adminPoc);
   }
 
   @Test
   void testFailure_postUpdateContactInfo_cannotSetIsAllowedToSetRegistryLockPassword()
       throws IOException {
-    testRegistrarPoc1 =
-        testRegistrarPoc1
+    adminPoc =
+        adminPoc
             .asBuilder()
             .setRegistryLockEmailAddress("lock@example.com")
             .setAllowedToSetRegistryLockPassword(false)
             .build();
-    insertInDb(testRegistrarPoc1);
+    insertInDb(adminPoc);
     ContactAction action =
         createAction(
             Action.Method.POST,
             AuthResult.createUser(createAdminUser("email@email.com")),
             testRegistrar.getRegistrarId(),
-            testRegistrarPoc1.asBuilder().setAllowedToSetRegistryLockPassword(true).build());
+            adminPoc.asBuilder().setAllowedToSetRegistryLockPassword(true).build());
     action.run();
     assertThat(((FakeResponse) consoleApiParams.response()).getStatus()).isEqualTo(SC_BAD_REQUEST);
     assertThat(((FakeResponse) consoleApiParams.response()).getPayload())
@@ -378,18 +385,18 @@ class ContactActionTest {
             loadAllOf(RegistrarPoc.class).stream()
                 .filter(r -> r.registrarId.equals(testRegistrar.getRegistrarId()))
                 .collect(toImmutableList()))
-        .containsExactly(testRegistrarPoc1);
+        .containsExactly(adminPoc);
   }
 
   @Test
   void testSuccess_sendsEmail() throws IOException, AddressException {
-    insertInDb(testRegistrarPoc1.asBuilder().setEmailAddress("incorrect@email.com").build());
+    insertInDb(techPoc.asBuilder().setEmailAddress("incorrect@email.com").build());
     ContactAction action =
         createAction(
             Action.Method.POST,
             AuthResult.createUser(createAdminUser("email@email.com")),
             testRegistrar.getRegistrarId(),
-            testRegistrarPoc1);
+            techPoc);
     action.run();
     assertThat(((FakeResponse) consoleApiParams.response()).getStatus()).isEqualTo(SC_OK);
     verify(consoleApiParams.sendEmailUtils().gmailClient, times(1))
@@ -404,44 +411,42 @@ class ContactActionTest {
                         + "\n"
                         + "contacts:\n"
                         + "    ADDED:\n"
-                        + "        {name=Test Registrar 1,"
-                        + " emailAddress=test.registrar1@example.com, registrarId=registrarId,"
-                        + " registryLockEmailAddress=null, phoneNumber=+1.9999999999,"
-                        + " faxNumber=+1.9999999991, types=[ADMIN],"
-                        + " visibleInWhoisAsAdmin=true, visibleInWhoisAsTech=false,"
+                        + "        {name=Test Registrar 2,"
+                        + " emailAddress=test.registrar2@example.com, registrarId=registrarId,"
+                        + " registryLockEmailAddress=null, phoneNumber=+1.1234567890,"
+                        + " faxNumber=+1.1234567891, types=[TECH],"
+                        + " visibleInWhoisAsAdmin=false, visibleInWhoisAsTech=true,"
                         + " visibleInDomainWhoisAsAbuse=false,"
                         + " allowedToSetRegistryLockPassword=false}\n"
                         + "    REMOVED:\n"
-                        + "        {name=Test Registrar 1, emailAddress=incorrect@email.com,"
+                        + "        {name=Test Registrar 2, emailAddress=incorrect@email.com,"
                         + " registrarId=registrarId, registryLockEmailAddress=null,"
-                        + " phoneNumber=+1.9999999999, faxNumber=+1.9999999991, types=[ADMIN],"
-                        + " visibleInWhoisAsAdmin=true,"
-                        + " visibleInWhoisAsTech=false, visibleInDomainWhoisAsAbuse=false,"
+                        + " phoneNumber=+1.1234567890, faxNumber=+1.1234567891, types=[TECH],"
+                        + " visibleInWhoisAsAdmin=false,"
+                        + " visibleInWhoisAsTech=true, visibleInDomainWhoisAsAbuse=false,"
                         + " allowedToSetRegistryLockPassword=false}\n"
                         + "    FINAL CONTENTS:\n"
-                        + "        {name=Test Registrar 1,"
-                        + " emailAddress=test.registrar1@example.com, registrarId=registrarId,"
-                        + " registryLockEmailAddress=null, phoneNumber=+1.9999999999,"
-                        + " faxNumber=+1.9999999991, types=[ADMIN],"
-                        + " visibleInWhoisAsAdmin=true, visibleInWhoisAsTech=false,"
+                        + "        {name=Test Registrar 2,"
+                        + " emailAddress=test.registrar2@example.com, registrarId=registrarId,"
+                        + " registryLockEmailAddress=null, phoneNumber=+1.1234567890,"
+                        + " faxNumber=+1.1234567891, types=[TECH],"
+                        + " visibleInWhoisAsAdmin=false, visibleInWhoisAsTech=true,"
                         + " visibleInDomainWhoisAsAbuse=false,"
                         + " allowedToSetRegistryLockPassword=false}\n")
-                .setRecipients(
-                    ImmutableList.of(
-                        new InternetAddress("notification@test.example"),
-                        new InternetAddress("incorrect@email.com")))
+                .setRecipients(ImmutableList.of(new InternetAddress("notification@test.example")))
                 .build());
   }
 
   @Test
   void testSuccess_postDeleteContactInfo() throws IOException {
-    insertInDb(testRegistrarPoc1);
+    insertInDb(adminPoc, techPoc, marketingPoc);
     ContactAction action =
         createAction(
             Action.Method.POST,
             AuthResult.createUser(createAdminUser("email@email.com")),
             testRegistrar.getRegistrarId(),
-            testRegistrarPoc2);
+            adminPoc,
+            techPoc);
     action.run();
     assertThat(((FakeResponse) consoleApiParams.response()).getStatus()).isEqualTo(SC_OK);
     assertThat(
@@ -449,12 +454,12 @@ class ContactActionTest {
                 .filter(r -> r.registrarId.equals(testRegistrar.getRegistrarId()))
                 .map(r -> r.getName())
                 .collect(toImmutableList()))
-        .containsExactly("Test Registrar 2");
+        .containsExactly("Test Registrar 1", "Test Registrar 2");
   }
 
   @Test
   void testFailure_postDeleteContactInfo_missingPermission() throws IOException {
-    insertInDb(testRegistrarPoc1);
+    insertInDb(adminPoc);
     ContactAction action =
         createAction(
             Action.Method.POST,
@@ -469,9 +474,25 @@ class ContactActionTest {
                             .build())
                     .build()),
             testRegistrar.getRegistrarId(),
-            testRegistrarPoc2);
+            techPoc);
     action.run();
     assertThat(((FakeResponse) consoleApiParams.response()).getStatus()).isEqualTo(SC_FORBIDDEN);
+  }
+
+  @Test
+  void testFailure_changesAdminEmail() throws Exception {
+    insertInDb(adminPoc.asBuilder().setEmailAddress("oldemail@example.com").build());
+    ContactAction action =
+        createAction(
+            Action.Method.POST,
+            AuthResult.createUser(createAdminUser("email@email.com")),
+            testRegistrar.getRegistrarId(),
+            adminPoc);
+    action.run();
+    FakeResponse fakeResponse = (FakeResponse) consoleApiParams.response();
+    assertThat(fakeResponse.getStatus()).isEqualTo(400);
+    assertThat(fakeResponse.getPayload())
+        .isEqualTo("Cannot remove or change the email address of primary contacts");
   }
 
   private ContactAction createAction(
