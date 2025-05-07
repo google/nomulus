@@ -61,9 +61,6 @@ public enum RegistryEnvironment {
   /** Name of the environmental variable of the container name. */
   private static final String CONTAINER_ENV = "CONTAINER_NAME";
 
-  private static final boolean ON_JETTY =
-      Boolean.parseBoolean(System.getProperty(JETTY_PROPERTY, "false"));
-
   private static final boolean IS_CANARY =
       System.getenv().getOrDefault(CONTAINER_ENV, "").endsWith("-canary");
 
@@ -100,8 +97,9 @@ public enum RegistryEnvironment {
     return valueOf(Ascii.toUpperCase(System.getProperty(PROPERTY, UNITTEST.name())));
   }
 
+  // TODO(b/416299900): remove method after GAE is removed.
   public static boolean isOnJetty() {
-    return ON_JETTY;
+    return Boolean.parseBoolean(System.getProperty(JETTY_PROPERTY, "false"));
   }
 
   public static boolean isCanary() {
