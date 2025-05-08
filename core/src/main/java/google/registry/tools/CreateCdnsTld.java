@@ -76,7 +76,7 @@ final class CreateCdnsTld extends ConfirmingCommand {
                 : "cloud-dns-registry-test")
             .setDnsName(dnsName)
             .setName((name != null) ? name : dnsName)
-            .setDnssecConfig(new ManagedZoneDnsSecConfig().setNonExistence("NSEC").setState("ON"));
+            .setDnssecConfig(new ManagedZoneDnsSecConfig().setNonExistence("nsec").setState("on"));
   }
 
   @Override
