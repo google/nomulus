@@ -179,7 +179,7 @@ class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, Domain> {
       ImmutableMap<String, String> substitutions,
       boolean expectHistoryAndBilling)
       throws Exception {
-    assertMutatingFlow(false);
+    assertMutatingFlow(true);
     String expected =
         loadFile(expectedXmlFilename, updateSubstitutions(substitutions, "ROID", "2FF-TLD"));
     if (inactive) {

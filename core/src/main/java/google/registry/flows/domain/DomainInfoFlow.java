@@ -31,6 +31,7 @@ import google.registry.flows.ExtensionManager;
 import google.registry.flows.FlowModule.RegistrarId;
 import google.registry.flows.FlowModule.Superuser;
 import google.registry.flows.FlowModule.TargetId;
+import google.registry.flows.MutatingFlow;
 import google.registry.flows.TransactionalFlow;
 import google.registry.flows.annotations.ReportingSpec;
 import google.registry.flows.custom.DomainInfoFlowCustomLogic;
@@ -53,6 +54,8 @@ import google.registry.model.eppinput.ResourceCommand;
 import google.registry.model.eppoutput.EppResponse;
 import google.registry.model.eppoutput.EppResponse.ResponseExtension;
 import google.registry.model.reporting.IcannReportingTypes.ActivityReportField;
+import google.registry.persistence.IsolationLevel;
+import google.registry.persistence.PersistenceModule;
 import google.registry.util.Clock;
 import jakarta.inject.Inject;
 import java.util.Optional;
@@ -62,8 +65,12 @@ import org.joda.time.DateTime;
  * An EPP flow that returns information about a domain.
  *
  * <p>The registrar that owns the domain, and any registrar presenting a valid authInfo for the
- * domain, will get a rich result with all of the domain's fields. All other requests will be
- * answered with a minimal result containing only basic information about the domain.
+ * domain, will get a rich result with all the domain's fields. All other requests will be answered
+ * with a minimal result containing only basic information about the domain.
+ *
+ * <p>This implements {@link MutatingFlow} instead of {@link TransactionalFlow} as a workaround so
+ * that the common workflow of "create domain, then immediately get domain info" does not run into
+ * replication lag issues where the info command claims the domain does not exist.
  *
  * @error {@link google.registry.flows.FlowUtils.NotLoggedInException}
  * @error {@link google.registry.flows.FlowUtils.UnknownCurrencyEppException}
@@ -76,7 +83,8 @@ import org.joda.time.DateTime;
  * @error {@link DomainFlowUtils.TransfersAreAlwaysForOneYearException}
  */
 @ReportingSpec(ActivityReportField.DOMAIN_INFO)
-public final class DomainInfoFlow implements TransactionalFlow {
+@IsolationLevel(PersistenceModule.TransactionIsolationLevel.TRANSACTION_REPEATABLE_READ)
+public final class DomainInfoFlow implements MutatingFlow {
 
   @Inject ExtensionManager extensionManager;
   @Inject ResourceCommand resourceCommand;
