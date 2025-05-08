@@ -17,6 +17,7 @@ package google.registry.ui.server.console;
 import static com.google.common.base.Preconditions.checkArgument;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.request.Action.Method.POST;
+import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static google.registry.util.PreconditionsUtils.checkArgumentPresent;
 import static org.apache.http.HttpStatus.SC_OK;
 
@@ -37,6 +38,7 @@ import google.registry.util.RegistryEnvironment;
 import jakarta.inject.Inject;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import org.joda.time.DateTime;
 
 @Action(
     service = GaeService.DEFAULT,
@@ -88,19 +90,35 @@ public class ConsoleUpdateRegistrarAction extends ConsoleApiAction {
                 }
               }
 
-              Registrar updatedRegistrar =
+              DateTime now = tm().getTransactionTime();
+              DateTime newLastPocVerificationDate =
+                  registrarParam.getLastPocVerificationDate() == null
+                      ? START_OF_TIME
+                      : registrarParam.getLastPocVerificationDate();
+
+              checkArgument(
+                  newLastPocVerificationDate.isBefore(now),
+                  "Invalid value of LastPocVerificationDate - value is in the future");
+
+              var updatedRegistrar =
                   existingRegistrar
                       .get()
                       .asBuilder()
-                      .setAllowedTlds(
-                          registrarParam.getAllowedTlds().stream()
-                              .map(DomainNameUtils::canonicalizeHostname)
-                              .collect(Collectors.toSet()))
-                      .setRegistryLockAllowed(registrarParam.isRegistryLockAllowed())
-                      .setLastPocVerificationDate(registrarParam.getLastPocVerificationDate())
-                      .build();
+                      .setLastPocVerificationDate(newLastPocVerificationDate);
 
-              tm().put(updatedRegistrar);
+              if (user.getUserRoles()
+                  .hasGlobalPermission(ConsolePermission.EDIT_REGISTRAR_DETAILS)) {
+                updatedRegistrar =
+                    updatedRegistrar
+                        .setAllowedTlds(
+                            registrarParam.getAllowedTlds().stream()
+                                .map(DomainNameUtils::canonicalizeHostname)
+                                .collect(Collectors.toSet()))
+                        .setRegistryLockAllowed(registrarParam.isRegistryLockAllowed())
+                        .setLastPocVerificationDate(newLastPocVerificationDate);
+              }
+
+              tm().put(updatedRegistrar.build());
               finishAndPersistConsoleUpdateHistory(
                   new ConsoleUpdateHistory.Builder()
                       .setType(ConsoleUpdateHistory.Type.REGISTRAR_UPDATE)
