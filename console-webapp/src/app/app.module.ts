@@ -60,6 +60,7 @@ import { TldsComponent } from './tlds/tlds.component';
 import { ForceFocusDirective } from './shared/directives/forceFocus.directive';
 import RdapComponent from './settings/rdap/rdap.component';
 import RdapEditComponent from './settings/rdap/rdapEdit.component';
+import { PocReminderComponent } from './shared/components/pocReminder/pocReminder.component';
 
 @NgModule({
   declarations: [SelectedRegistrarWrapper],
@@ -86,6 +87,7 @@ export class SelectedRegistrarModule {}
     RdapComponent,
     RdapEditComponent,
     ReasonDialogComponent,
+    PocReminderComponent,
     RegistrarComponent,
     RegistrarDetailsComponent,
     RegistrarSelectorComponent,
