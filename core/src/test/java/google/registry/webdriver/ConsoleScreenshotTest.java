@@ -16,12 +16,15 @@ package google.registry.webdriver;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.server.Fixture.BASIC;
+import static google.registry.testing.DatabaseHelper.persistResource;
 
 import com.google.common.collect.ImmutableMap;
 import google.registry.model.console.GlobalRole;
 import google.registry.model.console.RegistrarRole;
+import google.registry.model.registrar.Registrar;
 import google.registry.server.RegistryTestServer;
 import java.util.List;
+import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
@@ -74,6 +77,9 @@ public class ConsoleScreenshotTest {
   @BeforeEach
   void beforeEach() throws Exception {
     server.setRegistrarRoles(ImmutableMap.of("TheRegistrar", RegistrarRole.ACCOUNT_MANAGER));
+    Registrar registrar = Registrar.loadByRegistrarId("TheRegistrar").get();
+    registrar = registrar.asBuilder().setLastPocVerificationDate(DateTime.now()).build();
+    persistResource(registrar);
     loadHomePage();
   }
 

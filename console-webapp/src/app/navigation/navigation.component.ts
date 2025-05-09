@@ -57,7 +57,7 @@ export class NavigationComponent {
   }
 
   ngOnDestroy() {
-    this.subscription.unsubscribe();
+    this.subscription && this.subscription.unsubscribe();
   }
 
   getElementId(node: RouteWithIcon) {

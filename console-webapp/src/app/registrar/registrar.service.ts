@@ -71,6 +71,7 @@ export interface Registrar
   registrarName: string;
   registryLockAllowed?: boolean;
   type?: string;
+  lastPocVerificationDate?: string;
 }
 
 @Injectable({

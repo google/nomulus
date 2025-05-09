@@ -12,13 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { AfterViewInit, Component, ViewChild } from '@angular/core';
+import { AfterViewInit, Component, effect, ViewChild } from '@angular/core';
 import { MatSidenav } from '@angular/material/sidenav';
 import { NavigationEnd, Router } from '@angular/router';
 import { RegistrarService } from './registrar/registrar.service';
 import { BreakPointObserverService } from './shared/services/breakPoint.service';
 import { GlobalLoaderService } from './shared/services/globalLoader.service';
 import { UserDataService } from './shared/services/userData.service';
+import { MatSnackBar } from '@angular/material/snack-bar';
+import { PocReminderComponent } from './shared/components/pocReminder/pocReminder.component';
 
 @Component({
   selector: 'app-root',
@@ -35,8 +37,27 @@ export class AppComponent implements AfterViewInit {
     protected userDataService: UserDataService,
     protected globalLoader: GlobalLoaderService,
     protected breakpointObserver: BreakPointObserverService,
-    private router: Router
-  ) {}
+    private router: Router,
+    private _snackBar: MatSnackBar
+  ) {
+    effect(() => {
+      const registrar = this.registrarService.registrar();
+      const oneYearAgo = new Date();
+      oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+      if (
+        registrar &&
+        registrar.lastPocVerificationDate &&
+        new Date(registrar.lastPocVerificationDate) < oneYearAgo &&
+        this.userDataService?.userData()?.globalRole === 'NONE'
+      ) {
+        this._snackBar.openFromComponent(PocReminderComponent, {
+          horizontalPosition: 'center',
+          verticalPosition: 'top',
+          duration: 1000000000,
+        });
+      }
+    });
+  }
 
   ngAfterViewInit() {
     this.router.events.subscribe((event) => {

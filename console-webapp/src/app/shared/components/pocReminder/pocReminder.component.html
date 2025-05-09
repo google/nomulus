@@ -1,0 +1,14 @@
+<div class="console-app__pocReminder">
+  <p class="">
+    Please take a moment to complete annual review of
+    <a routerLink="/settings">contacts</a>.
+  </p>
+  <span matSnackBarActions>
+    <button mat-button matSnackBarAction (click)="confirmReviewed()">
+      Confirm reviewed
+    </button>
+    <button mat-button matSnackBarAction (click)="snackBarRef.dismiss()">
+      Close
+    </button>
+  </span>
+</div>
