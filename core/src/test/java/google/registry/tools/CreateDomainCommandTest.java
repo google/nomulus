@@ -15,16 +15,21 @@
 package google.registry.tools;
 
 import static com.google.common.truth.Truth.assertThat;
+import static google.registry.model.common.FeatureFlag.FeatureName.MINIMUM_DATASET_CONTACTS_OPTIONAL;
+import static google.registry.model.common.FeatureFlag.FeatureStatus.ACTIVE;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.persistPremiumList;
 import static google.registry.testing.DatabaseHelper.persistResource;
+import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static org.joda.money.CurrencyUnit.JPY;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.beust.jcommander.ParameterException;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.ImmutableSortedMap;
 import google.registry.dns.writer.VoidDnsWriter;
+import google.registry.model.common.FeatureFlag;
 import google.registry.model.pricing.StaticPremiumListPricingEngine;
 import google.registry.model.tld.Tld;
 import google.registry.model.tld.label.PremiumListDao;
@@ -111,12 +116,15 @@ class CreateDomainCommandTest extends EppToolCommandTestCase<CreateDomainCommand
 
   @Test
   void testSuccess_minimal() throws Exception {
+    persistResource(
+        new FeatureFlag()
+            .asBuilder()
+            .setFeatureName(MINIMUM_DATASET_CONTACTS_OPTIONAL)
+            .setStatusMap(ImmutableSortedMap.of(START_OF_TIME, ACTIVE))
+            .build());
     // Test that each optional field can be omitted. Also tests the auto-gen password.
     runCommandForced(
         "--client=NewRegistrar",
-        "--registrant=crr-admin",
-        "--admins=crr-admin",
-        "--techs=crr-tech",
         "example.tld");
     eppVerifier.verifySent("domain_create_minimal.xml");
   }
@@ -131,7 +139,9 @@ class CreateDomainCommandTest extends EppToolCommandTestCase<CreateDomainCommand
         "--techs=crr-tech",
         "example.tld",
         "example.abc");
-    eppVerifier.verifySent("domain_create_minimal.xml").verifySent("domain_create_minimal_abc.xml");
+    eppVerifier
+        .verifySent("domain_create_contacts.xml")
+        .verifySent("domain_create_contacts_abc.xml");
   }
 
   @Test
@@ -152,8 +162,8 @@ class CreateDomainCommandTest extends EppToolCommandTestCase<CreateDomainCommand
         "example.tld",
         "example.abc");
     eppVerifier
-        .verifySent("domain_create_minimal.xml")
-        .verifySent("domain_create_minimal_abc.xml");
+        .verifySent("domain_create_contacts.xml")
+        .verifySent("domain_create_contacts_abc.xml");
   }
 
   @Test
@@ -192,9 +202,9 @@ class CreateDomainCommandTest extends EppToolCommandTestCase<CreateDomainCommand
         "palladium.tld",
         "example.abc");
     eppVerifier
-        .verifySent("domain_create_minimal.xml")
+        .verifySent("domain_create_contacts.xml")
         .verifySent("domain_create_palladium.xml")
-        .verifySent("domain_create_minimal_abc.xml");
+        .verifySent("domain_create_contacts_abc.xml");
     assertInStdout(
         "palladium.tld is premium at USD 877.00 per year; "
             + "sending total cost for 1 year(s) of USD 877.00.");
@@ -225,6 +235,19 @@ class CreateDomainCommandTest extends EppToolCommandTestCase<CreateDomainCommand
         "--allocation_token=abc123",
         "example.tld");
     eppVerifier.verifySent("domain_create_token.xml");
+  }
+
+  @Test
+  void testSuccess_contactsStillRequired() throws Exception {
+    // Verify that if contacts are still required, the minimum+contacts request is sent
+    createTld("tld");
+    runCommandForced(
+        "--client=NewRegistrar",
+        "--registrant=crr-admin",
+        "--admins=crr-admin",
+        "--techs=crr-tech",
+        "example.tld");
+    eppVerifier.verifySent("domain_create_contacts.xml");
   }
 
   @Test

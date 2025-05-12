@@ -20,9 +20,9 @@
   {@param domain: string}
   {@param period: int}
   {@param nameservers: list<string>}
-  {@param registrant: string}
-  {@param admins: list<string>}
-  {@param techs: list<string>}
+  {@param? registrant: string|null}
+  {@param? admins: list<string>|null}
+  {@param? techs: list<string>|null}
   {@param password: string}
   {@param? currency: string|null}
   {@param? price: string|null}
@@ -45,13 +45,19 @@
               {/for}
             </domain:ns>
           {/if}
-          <domain:registrant>{$registrant}</domain:registrant>
-          {for $admin in $admins}
-            <domain:contact type="admin">{$admin}</domain:contact>
-          {/for}
-          {for $tech in $techs}
-            <domain:contact type="tech">{$tech}</domain:contact>
-          {/for}
+          {if $registrant != null}
+            <domain:registrant>{$registrant}</domain:registrant>
+          {/if}
+          {if $admins != null}
+            {for $admin in $admins}
+              <domain:contact type="admin">{$admin}</domain:contact>
+            {/for}
+          {/if}
+          {if $techs != null}
+            {for $tech in $techs}
+              <domain:contact type="tech">{$tech}</domain:contact>
+            {/for}
+          {/if}
           <domain:authInfo>
             <domain:pw>{$password}</domain:pw>
           </domain:authInfo>
