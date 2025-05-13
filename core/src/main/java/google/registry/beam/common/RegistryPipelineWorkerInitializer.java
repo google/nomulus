@@ -40,6 +40,8 @@ public class RegistryPipelineWorkerInitializer implements JvmInitializer {
 
   @Override
   public void beforeProcessing(PipelineOptions options) {
+    // TODO(b/416299900): remove next line after GAE is removed.
+    System.setProperty("google.registry.jetty", "true");
     RegistryPipelineOptions registryOptions = options.as(RegistryPipelineOptions.class);
     RegistryEnvironment environment = registryOptions.getRegistryEnvironment();
     if (environment == null || environment.equals(RegistryEnvironment.UNITTEST)) {

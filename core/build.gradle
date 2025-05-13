@@ -61,6 +61,7 @@ def fragileTestPatterns = [
     // Currently changes a global configuration parameter that for some reason
     // results in timestamp inversions for other tests.  TODO(mmuller): fix.
     "google/registry/flows/host/HostInfoFlowTest.*",
+    "google/registry/beam/common/RegistryPipelineWorkerInitializerTest.*",
 ] + dockerIncompatibleTestPatterns
 
 sourceSets {
