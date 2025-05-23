@@ -18,17 +18,20 @@
     {
       "href": "https://example.tld/rdap/domain/%DOMAIN_PUNYCODE_NAME_1%",
       "type": "application/rdap+json",
-      "rel": "self"
+      "rel": "self",
+      "value": "https://example.tld/rdap/domains"
     },
     {
       "href": "https://rdap.example.com/withSlash/domain/%DOMAIN_PUNYCODE_NAME_1%",
       "type": "application/rdap+json",
-      "rel": "related"
+      "rel": "related",
+      "value": "https://example.tld/rdap/domains"
     },
     {
       "href": "https://rdap.example.com/withoutSlash/domain/%DOMAIN_PUNYCODE_NAME_1%",
       "type": "application/rdap+json",
-      "rel": "related"
+      "rel": "related",
+      "value": "https://example.tld/rdap/domains"
     }
   ],
   "events": [
@@ -60,7 +63,8 @@
         {
           "href": "https://example.tld/rdap/nameserver/%NAMESERVER_NAME_1%",
           "type": "application/rdap+json",
-          "rel": "self"
+          "rel": "self",
+          "value": "https://example.tld/rdap/domains"
         }
       ],
       "remarks": [
@@ -80,7 +84,8 @@
         {
           "href": "https://example.tld/rdap/nameserver/%NAMESERVER_NAME_2%",
           "type": "application/rdap+json",
-          "rel": "self"
+          "rel": "self",
+          "value": "https://example.tld/rdap/domains"
         }
       ],
       "remarks": [
@@ -108,7 +113,8 @@
         {
           "rel" : "self",
           "href" : "https://example.tld/rdap/entity/1",
-          "type" : "application/rdap+json"
+          "type" : "application/rdap+json",
+          "value": "https://example.tld/rdap/domains"
         }
       ],
       "publicIds" : [
@@ -167,7 +173,8 @@
             {
               "href":"https://github.com/google/nomulus/blob/master/docs/rdap.md#authentication",
               "rel":"alternate",
-              "type":"text/html"
+              "type":"text/html",
+              "value": "https://example.tld/rdap/domains"
             }
           ]
         },
@@ -203,7 +210,8 @@
             {
               "href":"https://github.com/google/nomulus/blob/master/docs/rdap.md#authentication",
               "rel":"alternate",
-              "type":"text/html"
+              "type":"text/html",
+              "value": "https://example.tld/rdap/domains"
             }
           ]
         },
@@ -239,7 +247,8 @@
             {
               "href":"https://github.com/google/nomulus/blob/master/docs/rdap.md#authentication",
               "rel":"alternate",
-              "type":"text/html"
+              "type":"text/html",
+              "value": "https://example.tld/rdap/domains"
             }
           ]
         },

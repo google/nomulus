@@ -27,7 +27,8 @@
         {
           "type":"text\/html",
           "href": "https:\/\/github.com\/google\/nomulus\/blob\/master\/docs\/rdap.md#authentication",
-          "rel": "alternate"
+          "rel": "alternate",
+          "value": "%REQUEST_URL%"
         }
       ],
       "description": [

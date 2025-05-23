@@ -48,13 +48,15 @@ class RdapHelpActionTest extends RdapActionBaseTestCase<RdapHelpAction> {
 
   @Test
   void testHelpActionDefault_getsIndex() {
-    assertThat(generateActualJson("")).isEqualTo(loadJsonFile("rdap_help_index.json"));
+    assertThat(generateActualJson(""))
+        .isEqualTo(loadJsonFile("rdap_help_index.json", "POSSIBLE_SLASH", ""));
     assertThat(response.getStatus()).isEqualTo(200);
   }
 
   @Test
   void testHelpActionSlash_getsIndex() {
-    assertThat(generateActualJson("/")).isEqualTo(loadJsonFile("rdap_help_index.json"));
+    assertThat(generateActualJson("/"))
+        .isEqualTo(loadJsonFile("rdap_help_index.json", "POSSIBLE_SLASH", "/"));
     assertThat(response.getStatus()).isEqualTo(200);
   }
 

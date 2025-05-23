@@ -9,7 +9,8 @@
         {
           "rel" : "self",
           "href": "https://example.tld/rdap/entity/0001-ROID",
-          "type" : "application/rdap+json"
+          "type" : "application/rdap+json",
+          "value": "https://example.tld/rdap/entities"
         }
       ],
       "events": [
@@ -65,7 +66,8 @@
         {
           "rel" : "self",
           "href": "https://example.tld/rdap/entity/0002-ROID",
-          "type" : "application/rdap+json"
+          "type" : "application/rdap+json",
+          "value": "https://example.tld/rdap/entities"
         }
       ],
       "events": [
@@ -121,7 +123,8 @@
         {
           "rel" : "self",
           "href": "https://example.tld/rdap/entity/0003-ROID",
-          "type" : "application/rdap+json"
+          "type" : "application/rdap+json",
+          "value": "https://example.tld/rdap/entities"
         }
       ],
       "events": [
@@ -177,7 +180,8 @@
         {
           "rel" : "self",
           "href": "https://example.tld/rdap/entity/301",
-          "type" : "application/rdap+json"
+          "type" : "application/rdap+json",
+          "value": "https://example.tld/rdap/entities"
         }
       ],
       "publicIds" :
@@ -249,7 +253,8 @@
         {
           "type" : "application/rdap+json",
           "href" : "https://example.tld/rdap/entities?%NAME%",
-          "rel" : "next"
+          "rel" : "next",
+          "value": "https://example.tld/rdap/entities"
         }
       ],
       "description" : [ "Links to related pages." ]
@@ -274,12 +279,14 @@
         {
           "href": "https://example.tld/rdap/help/tos",
           "rel": "self",
-          "type": "application/rdap+json"
+          "type": "application/rdap+json",
+          "value": "https://example.tld/rdap/entities"
         },
         {
-          "href": "https://www.registry.tld/about/rdap/tos.html",
-          "rel": "alternate",
-          "type": "text/html"
+          "href": "https://www.example.tld/about/rdap/tos.html",
+          "rel": "terms-of-service",
+          "type": "text/html",
+          "value": "https://example.tld/rdap/entities"
         }
       ]
     },

@@ -7,15 +7,16 @@
   "status": [
     "active"
   ],
-  "handle": "%HANDLE%",
+  "handle": "%NAMESERVER_HANDLE_1%",
   "links": [
     {
-      "href": "https://example.tld/rdap/nameserver/%NAME%",
+      "href": "https://example.tld/rdap/nameserver/%NAMESERVER_NAME_1%",
       "type": "application/rdap+json",
-      "rel": "self"
+      "rel": "self",
+      "value": "%REQUEST_URL%"
     }
   ],
-  "ldhName": "%NAME%",
+  "ldhName": "%NAMESERVER_NAME_1%",
   "events": [
     {
       "eventAction": "last update of RDAP database",
@@ -33,7 +34,8 @@
         {
           "rel" : "self",
           "href" : "https://example.tld/rdap/entity/1",
-          "type" : "application/rdap+json"
+          "type" : "application/rdap+json",
+          "value": "%REQUEST_URL%"
         }
       ],
       "publicIds" :

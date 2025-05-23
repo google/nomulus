@@ -24,10 +24,14 @@ import static jakarta.servlet.http.HttpServletResponse.SC_NOT_FOUND;
 import static jakarta.servlet.http.HttpServletResponse.SC_OK;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
+import com.google.common.collect.Streams;
 import com.google.common.flogger.FluentLogger;
 import com.google.common.net.MediaType;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.model.EppResource;
 import google.registry.model.registrar.Registrar;
@@ -41,6 +45,7 @@ import google.registry.request.HttpException;
 import google.registry.request.Parameter;
 import google.registry.request.RequestMethod;
 import google.registry.request.RequestPath;
+import google.registry.request.RequestUrl;
 import google.registry.request.Response;
 import google.registry.util.Clock;
 import jakarta.inject.Inject;
@@ -75,6 +80,7 @@ public abstract class RdapActionBase implements Runnable {
   @Inject Response response;
   @Inject @RequestMethod Action.Method requestMethod;
   @Inject @RequestPath String requestPath;
+  @Inject @RequestUrl String requestUrl;
   @Inject RdapAuthorization rdapAuthorization;
   @Inject RdapJsonFormatter rdapJsonFormatter;
   @Inject @Parameter("includeDeleted") Optional<Boolean> includeDeletedParam;
@@ -198,7 +204,9 @@ public abstract class RdapActionBase implements Runnable {
     TopLevelReplyObject topLevelObject =
         TopLevelReplyObject.create(replyObject, rdapJsonFormatter.createTosNotice());
     Gson gson = formatOutputParam.orElse(false) ? FORMATTED_OUTPUT_GSON : GSON;
-    response.setPayload(gson.toJson(topLevelObject.toJson()));
+    JsonObject jsonResult = topLevelObject.toJson();
+    addLinkValuesRecursively(jsonResult);
+    response.setPayload(gson.toJson(jsonResult));
   }
 
   /**
@@ -264,4 +272,34 @@ public abstract class RdapActionBase implements Runnable {
     return rdapJsonFormatter.getRequestTime();
   }
 
+  /**
+   * Adds a request-referencing "value" to each link object.
+   *
+   * <p>This is the "context URI" as described in RFC 8288. Basically, this contains a reference to
+   * the request URL that generated this RDAP response.
+   *
+   * <p>This is required per the RDAP February 2024 response profile sections 2.6.3 and 2.10, and
+   * the technical implementation guide sections 3.2 and 3.3.2.
+   *
+   * <p>We must do this here (instead of where the links are generated) because many of the links
+   * (e.g. terms of service) are static constants, and thus cannot by default know what the request
+   * URL was.
+   */
+  private void addLinkValuesRecursively(JsonElement jsonElement) {
+    if (jsonElement instanceof JsonArray jsonArray) {
+      jsonArray.forEach(this::addLinkValuesRecursively);
+    } else if (jsonElement instanceof JsonObject jsonObject) {
+      if (jsonObject.get("links") instanceof JsonArray linksArray) {
+        addLinkValues(linksArray);
+      }
+      jsonObject.entrySet().forEach(entry -> addLinkValuesRecursively(entry.getValue()));
+    }
+  }
+
+  private void addLinkValues(JsonArray linksArray) {
+    Streams.stream(linksArray)
+        .map(JsonElement::getAsJsonObject)
+        .filter(o -> !o.has("value"))
+        .forEach(o -> o.addProperty("value", requestUrl));
+  }
 }

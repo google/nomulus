@@ -5,8 +5,8 @@
     "icann_rdap_technical_implementation_guide_0"
   ],
   "objectClassName" : "entity",
-  "handle" : "%NAME%",
-  "status" : ["%STATUS%"],
+  "handle" : "%REGISTRAR_HANDLE_1%",
+  "status" : ["%STATUS_1%"],
   "roles" : ["registrar"],
   "events": [
     {
@@ -19,7 +19,7 @@
     "vcard",
     [
       ["version", {}, "text", "4.0"],
-      ["fn", {}, "text", "%FULLNAME%"],
+      ["fn", {}, "text", "%REGISTRAR_FULLNAME_1%"],
       ["adr", {}, "text",
         [
           "",

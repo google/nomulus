@@ -15,7 +15,6 @@
 package google.registry.rdap;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.rdap.RdapTestHelper.loadJsonFile;
 import static google.registry.rdap.RdapTestHelper.parseJsonObject;
 import static google.registry.request.Action.Method.GET;
 import static google.registry.testing.DatabaseHelper.createTld;
@@ -30,7 +29,6 @@ import static google.registry.testing.GsonSubject.assertAboutJson;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableListMultimap;
-import com.google.common.collect.ImmutableMap;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -45,12 +43,14 @@ import google.registry.testing.FakeResponse;
 import google.registry.testing.FullFieldsTestEntityHelper;
 import java.net.URLDecoder;
 import java.util.Optional;
-import javax.annotation.Nullable;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link RdapEntitySearchAction}. */
 class RdapEntitySearchActionTest extends RdapSearchActionTestCase<RdapEntitySearchAction> {
+
+  private static final String BINKY_ADDRESS = "\"123 Blinky St\", \"Blinkyland\"";
+  private static final String BINKY_FULL_NAME = "Blinky (赤ベイ)";
 
   RdapEntitySearchActionTest() {
     super(RdapEntitySearchAction.class);
@@ -128,7 +128,7 @@ class RdapEntitySearchActionTest extends RdapSearchActionTestCase<RdapEntitySear
 
     FullFieldsTestEntityHelper.makeAndPersistContact(
         "blinky",
-        "Blinky (赤ベイ)",
+        BINKY_FULL_NAME,
         "blinky@b.tld",
         ImmutableList.of("123 Blinky St", "Blinkyland"),
         clock.nowUtc(),
@@ -150,45 +150,9 @@ class RdapEntitySearchActionTest extends RdapSearchActionTestCase<RdapEntitySear
     action.subtypeParam = Optional.empty();
   }
 
-  private JsonObject generateExpectedJson(String expectedOutputFile) {
-    return loadJsonFile(expectedOutputFile, "TYPE", "entity");
-  }
-
-  private JsonObject generateExpectedJson(
-      String handle,
-      String expectedOutputFile) {
-    return generateExpectedJson(handle, null, "active", null, expectedOutputFile);
-  }
-
-  private JsonObject generateExpectedJson(
-      String handle,
-      @Nullable String fullName,
-      String status,
-      @Nullable String address,
-      String expectedOutputFile) {
-    ImmutableMap.Builder<String, String> builder = new ImmutableMap.Builder<>();
-    builder.put("NAME", handle);
-    if (fullName != null) {
-      builder.put("FULLNAME", fullName);
-    }
-    if (address != null) {
-      builder.put("ADDRESS", address);
-    }
-    builder.put("TYPE", "entity");
-    builder.put("STATUS", status);
-    return loadJsonFile(expectedOutputFile, builder.build());
-  }
-
-  private JsonObject generateExpectedJsonForEntity(
-      String handle,
-      String fullName,
-      String status,
-      @Nullable String address,
-      String expectedOutputFile) {
-    JsonObject obj = generateExpectedJson(handle, fullName, status, address, expectedOutputFile);
-    obj = RdapTestHelper.wrapInSearchReply("entitySearchResults", obj);
-    RdapTestHelper.addNonDomainBoilerplateNotices(obj, "https://example.tld/rdap/");
-    return obj;
+  private JsonObject addBoilerplate(JsonObject jsonObject) {
+    jsonObject = RdapTestHelper.wrapInSearchReply("entitySearchResults", jsonObject);
+    return addPermanentBoilerplateNotices(jsonObject);
   }
 
   private void createManyContactsAndRegistrars(
@@ -259,76 +223,12 @@ class RdapEntitySearchActionTest extends RdapSearchActionTestCase<RdapEntitySear
     verifyMetrics(numContactsRetrieved);
   }
 
-  private void runSuccessfulNameTestWithBlinky(String queryString, String fileName) {
-    runSuccessfulNameTest(
-        queryString,
-        "2-ROID",
-        "Blinky (赤ベイ)",
-        "active",
-        "\"123 Blinky St\", \"Blinkyland\"",
-        fileName);
-  }
-
-  private void runSuccessfulNameTest(
-      String queryString,
-      String handle,
-      @Nullable String fullName,
-      String fileName) {
-    runSuccessfulNameTest(queryString, handle, fullName, "active", null, fileName);
-  }
-
-  private void runSuccessfulNameTest(
-      String queryString,
-      String handle,
-      @Nullable String fullName,
-      String status,
-      @Nullable String address,
-      String fileName) {
-    rememberWildcardType(queryString);
-    assertAboutJson()
-        .that(generateActualJsonWithFullName(queryString))
-        .isEqualTo(generateExpectedJsonForEntity(handle, fullName, status, address, fileName));
-    assertThat(response.getStatus()).isEqualTo(200);
-  }
-
   private void runNotFoundNameTest(String queryString) {
     rememberWildcardType(queryString);
     assertAboutJson()
         .that(generateActualJsonWithFullName(queryString))
         .isEqualTo(generateExpectedJsonError("No entities found", 404));
     assertThat(response.getStatus()).isEqualTo(404);
-  }
-
-  private void runSuccessfulHandleTestWithBlinky(String queryString, String fileName) {
-    runSuccessfulHandleTest(
-        queryString,
-        "2-ROID",
-        "Blinky (赤ベイ)",
-        "active",
-        "\"123 Blinky St\", \"Blinkyland\"",
-        fileName);
-  }
-
-  private void runSuccessfulHandleTest(
-      String queryString,
-      String handle,
-      @Nullable String fullName,
-      String fileName) {
-    runSuccessfulHandleTest(queryString, handle, fullName, "active", null, fileName);
-  }
-
-  private void runSuccessfulHandleTest(
-      String queryString,
-      String handle,
-      @Nullable String fullName,
-      String status,
-      @Nullable String address,
-      String fileName) {
-    rememberWildcardType(queryString);
-    assertAboutJson()
-        .that(generateActualJsonWithHandle(queryString))
-        .isEqualTo(generateExpectedJsonForEntity(handle, fullName, status, address, fileName));
-    assertThat(response.getStatus()).isEqualTo(200);
   }
 
   private void runNotFoundHandleTest(String queryString) {
@@ -470,7 +370,7 @@ class RdapEntitySearchActionTest extends RdapSearchActionTestCase<RdapEntitySear
   void testInvalidSubtype_rejected() {
     action.subtypeParam = Optional.of("Space Aliens");
     assertAboutJson()
-        .that(generateActualJsonWithFullName("Blinky (赤ベイ)"))
+        .that(generateActualJsonWithFullName(BINKY_FULL_NAME))
         .isEqualTo(
             generateExpectedJsonError(
                 "Subtype parameter must specify contacts, registrars or all", 400));
@@ -482,23 +382,44 @@ class RdapEntitySearchActionTest extends RdapSearchActionTestCase<RdapEntitySear
   @Test
   void testNameMatchContact_found() {
     login("2-RegistrarTest");
-    runSuccessfulNameTestWithBlinky("Blinky (赤ベイ)", "rdap_contact.json");
+    rememberWildcardType(BINKY_FULL_NAME);
+    assertAboutJson()
+        .that(generateActualJsonWithFullName(BINKY_FULL_NAME))
+        .isEqualTo(
+            addBoilerplate(
+                jsonFileBuilder()
+                    .addFullContact("2-ROID", "active", BINKY_FULL_NAME, BINKY_ADDRESS)
+                    .load("rdap_contact.json")));
     verifyMetrics(1);
   }
 
   @Test
   void testNameMatchContact_found_subtypeAll() {
     login("2-RegistrarTest");
+    rememberWildcardType(BINKY_FULL_NAME);
     action.subtypeParam = Optional.of("aLl");
-    runSuccessfulNameTestWithBlinky("Blinky (赤ベイ)", "rdap_contact.json");
+    assertAboutJson()
+        .that(generateActualJsonWithFullName(BINKY_FULL_NAME))
+        .isEqualTo(
+            addBoilerplate(
+                jsonFileBuilder()
+                    .addFullContact("2-ROID", "active", BINKY_FULL_NAME, BINKY_ADDRESS)
+                    .load("rdap_contact.json")));
     verifyMetrics(1);
   }
 
   @Test
   void testNameMatchContact_found_subtypeContacts() {
     login("2-RegistrarTest");
+    rememberWildcardType(BINKY_FULL_NAME);
     action.subtypeParam = Optional.of("cONTACTS");
-    runSuccessfulNameTestWithBlinky("Blinky (赤ベイ)", "rdap_contact.json");
+    assertAboutJson()
+        .that(generateActualJsonWithFullName(BINKY_FULL_NAME))
+        .isEqualTo(
+            addBoilerplate(
+                jsonFileBuilder()
+                    .addFullContact("2-ROID", "active", BINKY_FULL_NAME, BINKY_ADDRESS)
+                    .load("rdap_contact.json")));
     verifyMetrics(1);
   }
 
@@ -506,15 +427,22 @@ class RdapEntitySearchActionTest extends RdapSearchActionTestCase<RdapEntitySear
   void testNameMatchContact_notFound_subtypeRegistrars() {
     login("2-RegistrarTest");
     action.subtypeParam = Optional.of("Registrars");
-    runNotFoundNameTest("Blinky (赤ベイ)");
+    runNotFoundNameTest(BINKY_FULL_NAME);
     verifyErrorMetrics(0);
   }
 
   @Test
   void testNameMatchContact_found_specifyingSameRegistrar() {
     login("2-RegistrarTest");
+    rememberWildcardType(BINKY_FULL_NAME);
     action.registrarParam = Optional.of("2-RegistrarTest");
-    runSuccessfulNameTestWithBlinky("Blinky (赤ベイ)", "rdap_contact.json");
+    assertAboutJson()
+        .that(generateActualJsonWithFullName(BINKY_FULL_NAME))
+        .isEqualTo(
+            addBoilerplate(
+                jsonFileBuilder()
+                    .addFullContact("2-ROID", "active", BINKY_FULL_NAME, BINKY_ADDRESS)
+                    .load("rdap_contact.json")));
     verifyMetrics(1);
   }
 
@@ -522,35 +450,48 @@ class RdapEntitySearchActionTest extends RdapSearchActionTestCase<RdapEntitySear
   void testNameMatchContact_notFound_specifyingOtherRegistrar() {
     login("2-RegistrarTest");
     action.registrarParam = Optional.of("2-RegistrarInact");
-    runNotFoundNameTest("Blinky (赤ベイ)");
+    runNotFoundNameTest(BINKY_FULL_NAME);
     verifyErrorMetrics(0);
   }
 
   @Test
   void testNameMatchContact_found_asAdministrator() {
     loginAsAdmin();
-    rememberWildcardType("Blinky (赤ベイ)");
-    runSuccessfulNameTestWithBlinky("Blinky (赤ベイ)", "rdap_contact.json");
+    rememberWildcardType(BINKY_FULL_NAME);
+    assertAboutJson()
+        .that(generateActualJsonWithFullName(BINKY_FULL_NAME))
+        .isEqualTo(
+            addBoilerplate(
+                jsonFileBuilder()
+                    .addFullContact("2-ROID", "active", BINKY_FULL_NAME, BINKY_ADDRESS)
+                    .load("rdap_contact.json")));
     verifyMetrics(1);
   }
 
   @Test
   void testNameMatchContact_notFound_notLoggedIn() {
-    runNotFoundNameTest("Blinky (赤ベイ)");
+    runNotFoundNameTest(BINKY_FULL_NAME);
     verifyErrorMetrics(0);
   }
 
   @Test
   void testNameMatchContact_notFound_loggedInAsOtherRegistrar() {
     login("2-Registrar");
-    runNotFoundNameTest("Blinky (赤ベイ)");
+    runNotFoundNameTest(BINKY_FULL_NAME);
     verifyErrorMetrics(0);
   }
 
   @Test
   void testNameMatchContact_found_wildcard() {
     login("2-RegistrarTest");
-    runSuccessfulNameTestWithBlinky("Blinky*", "rdap_contact.json");
+    rememberWildcardType("Blinky*");
+    assertAboutJson()
+        .that(generateActualJsonWithFullName("Blinky*"))
+        .isEqualTo(
+            addBoilerplate(
+                jsonFileBuilder()
+                    .addFullContact("2-ROID", "active", BINKY_FULL_NAME, BINKY_ADDRESS)
+                    .load("rdap_contact.json")));
     verifyMetrics(1);
   }
 
@@ -558,7 +499,14 @@ class RdapEntitySearchActionTest extends RdapSearchActionTestCase<RdapEntitySear
   void testNameMatchContact_found_wildcardSpecifyingSameRegistrar() {
     login("2-RegistrarTest");
     action.registrarParam = Optional.of("2-RegistrarTest");
-    runSuccessfulNameTestWithBlinky("Blinky*", "rdap_contact.json");
+    rememberWildcardType("Blinky*");
+    assertAboutJson()
+        .that(generateActualJsonWithFullName("Blinky*"))
+        .isEqualTo(
+            addBoilerplate(
+                jsonFileBuilder()
+                    .addFullContact("2-ROID", "active", BINKY_FULL_NAME, BINKY_ADDRESS)
+                    .load("rdap_contact.json")));
     verifyMetrics(1);
   }
 
@@ -576,7 +524,7 @@ class RdapEntitySearchActionTest extends RdapSearchActionTestCase<RdapEntitySear
     rememberWildcardType("Blin*");
     assertAboutJson()
         .that(generateActualJsonWithFullName("Blin*"))
-        .isEqualTo(generateExpectedJson("rdap_multiple_contacts2.json"));
+        .isEqualTo(jsonFileBuilder().load("rdap_multiple_contacts2.json"));
     assertThat(response.getStatus()).isEqualTo(200);
     verifyMetrics(2);
   }
@@ -615,8 +563,14 @@ class RdapEntitySearchActionTest extends RdapSearchActionTestCase<RdapEntitySear
   @Test
   void testNameMatchRegistrar_found() {
     login("2-RegistrarTest");
-    runSuccessfulNameTest(
-        "Yes Virginia <script>", "20", "Yes Virginia <script>", "rdap_registrar.json");
+    rememberWildcardType("Yes Virginia <script>");
+    assertAboutJson()
+        .that(generateActualJsonWithFullName("Yes Virginia <script>"))
+        .isEqualTo(
+            addBoilerplate(
+                jsonFileBuilder()
+                    .addFullRegistrar("20", "Yes Virginia <script>", "active", null)
+                    .load("rdap_registrar.json")));
     verifyMetrics(0);
   }
 
@@ -624,8 +578,14 @@ class RdapEntitySearchActionTest extends RdapSearchActionTestCase<RdapEntitySear
   void testNameMatchRegistrar_found_subtypeAll() {
     login("2-RegistrarTest");
     action.subtypeParam = Optional.of("all");
-    runSuccessfulNameTest(
-        "Yes Virginia <script>", "20", "Yes Virginia <script>", "rdap_registrar.json");
+    rememberWildcardType("Yes Virginia <script>");
+    assertAboutJson()
+        .that(generateActualJsonWithFullName("Yes Virginia <script>"))
+        .isEqualTo(
+            addBoilerplate(
+                jsonFileBuilder()
+                    .addFullRegistrar("20", "Yes Virginia <script>", "active", null)
+                    .load("rdap_registrar.json")));
     verifyMetrics(0);
   }
 
@@ -633,8 +593,14 @@ class RdapEntitySearchActionTest extends RdapSearchActionTestCase<RdapEntitySear
   void testNameMatchRegistrar_found_subtypeRegistrars() {
     login("2-RegistrarTest");
     action.subtypeParam = Optional.of("REGISTRARS");
-    runSuccessfulNameTest(
-        "Yes Virginia <script>", "20", "Yes Virginia <script>", "rdap_registrar.json");
+    rememberWildcardType("Yes Virginia <script>");
+    assertAboutJson()
+        .that(generateActualJsonWithFullName("Yes Virginia <script>"))
+        .isEqualTo(
+            addBoilerplate(
+                jsonFileBuilder()
+                    .addFullRegistrar("20", "Yes Virginia <script>", "active", null)
+                    .load("rdap_registrar.json")));
     verifyMetrics(0);
   }
 
@@ -649,8 +615,14 @@ class RdapEntitySearchActionTest extends RdapSearchActionTestCase<RdapEntitySear
   @Test
   void testNameMatchRegistrar_found_specifyingSameRegistrar() {
     action.registrarParam = Optional.of("2-Registrar");
-    runSuccessfulNameTest(
-        "Yes Virginia <script>", "20", "Yes Virginia <script>", "rdap_registrar.json");
+    rememberWildcardType("Yes Virginia <script>");
+    assertAboutJson()
+        .that(generateActualJsonWithFullName("Yes Virginia <script>"))
+        .isEqualTo(
+            addBoilerplate(
+                jsonFileBuilder()
+                    .addFullRegistrar("20", "Yes Virginia <script>", "active", null)
+                    .load("rdap_registrar.json")));
     verifyMetrics(0);
   }
 
@@ -666,10 +638,9 @@ class RdapEntitySearchActionTest extends RdapSearchActionTestCase<RdapEntitySear
     login("2-RegistrarTest");
     createManyContactsAndRegistrars(4, 0, registrarTest);
     rememberWildcardType("Entity *");
-    // JsonObject foo = generateActualJsonWithFullName("Entity *");
     assertAboutJson()
         .that(generateActualJsonWithFullName("Entity *"))
-        .isEqualTo(generateExpectedJson("rdap_nontruncated_contacts.json"));
+        .isEqualTo(jsonFileBuilder().load("rdap_nontruncated_contacts.json"));
     assertThat(response.getStatus()).isEqualTo(200);
     verifyMetrics(4);
   }
@@ -682,8 +653,9 @@ class RdapEntitySearchActionTest extends RdapSearchActionTestCase<RdapEntitySear
     assertAboutJson()
         .that(generateActualJsonWithFullName("Entity *"))
         .isEqualTo(
-            generateExpectedJson(
-                "fn=Entity+*&cursor=YzpFbnRpdHkgNA%3D%3D", "rdap_truncated_contacts.json"));
+            jsonFileBuilder()
+                .put("NAME", "fn=Entity+*&cursor=YzpFbnRpdHkgNA%3D%3D")
+                .load("rdap_truncated_contacts.json"));
     assertThat(response.getStatus()).isEqualTo(200);
     verifyMetrics(5, IncompletenessWarningType.TRUNCATED);
   }
@@ -696,8 +668,9 @@ class RdapEntitySearchActionTest extends RdapSearchActionTestCase<RdapEntitySear
     assertAboutJson()
         .that(generateActualJsonWithFullName("Entity *"))
         .isEqualTo(
-            generateExpectedJson(
-                "fn=Entity+*&cursor=YzpFbnRpdHkgNA%3D%3D", "rdap_truncated_contacts.json"));
+            jsonFileBuilder()
+                .put("NAME", "fn=Entity+*&cursor=YzpFbnRpdHkgNA%3D%3D")
+                .load("rdap_truncated_contacts.json"));
     assertThat(response.getStatus()).isEqualTo(200);
     // For contacts, we only need to fetch one result set's worth (plus one).
     verifyMetrics(5, IncompletenessWarningType.TRUNCATED);
@@ -728,7 +701,7 @@ class RdapEntitySearchActionTest extends RdapSearchActionTestCase<RdapEntitySear
     rememberWildcardType("Entity *");
     assertAboutJson()
         .that(generateActualJsonWithFullName("Entity *"))
-        .isEqualTo(generateExpectedJson("rdap_nontruncated_registrars.json"));
+        .isEqualTo(jsonFileBuilder().load("rdap_nontruncated_registrars.json"));
     assertThat(response.getStatus()).isEqualTo(200);
     verifyMetrics(0);
   }
@@ -740,8 +713,9 @@ class RdapEntitySearchActionTest extends RdapSearchActionTestCase<RdapEntitySear
     assertAboutJson()
         .that(generateActualJsonWithFullName("Entity *"))
         .isEqualTo(
-            generateExpectedJson(
-                "fn=Entity+*&cursor=cjpFbnRpdHkgNA%3D%3D", "rdap_truncated_registrars.json"));
+            jsonFileBuilder()
+                .put("NAME", "fn=Entity+*&cursor=cjpFbnRpdHkgNA%3D%3D")
+                .load("rdap_truncated_registrars.json"));
     assertThat(response.getStatus()).isEqualTo(200);
     verifyMetrics(0, IncompletenessWarningType.TRUNCATED);
   }
@@ -753,8 +727,9 @@ class RdapEntitySearchActionTest extends RdapSearchActionTestCase<RdapEntitySear
     assertAboutJson()
         .that(generateActualJsonWithFullName("Entity *"))
         .isEqualTo(
-            generateExpectedJson(
-                "fn=Entity+*&cursor=cjpFbnRpdHkgNA%3D%3D", "rdap_truncated_registrars.json"));
+            jsonFileBuilder()
+                .put("NAME", "fn=Entity+*&cursor=cjpFbnRpdHkgNA%3D%3D")
+                .load("rdap_truncated_registrars.json"));
     assertThat(response.getStatus()).isEqualTo(200);
     verifyMetrics(0, IncompletenessWarningType.TRUNCATED);
   }
@@ -815,8 +790,9 @@ class RdapEntitySearchActionTest extends RdapSearchActionTestCase<RdapEntitySear
     assertAboutJson()
         .that(generateActualJsonWithFullName("Entity *"))
         .isEqualTo(
-            generateExpectedJson(
-                "fn=Entity+*&cursor=cjpFbnRpdHkgNA%3D%3D", "rdap_truncated_mixed_entities.json"));
+            jsonFileBuilder()
+                .put("NAME", "fn=Entity+*&cursor=cjpFbnRpdHkgNA%3D%3D")
+                .load("rdap_truncated_mixed_entities.json"));
     assertThat(response.getStatus()).isEqualTo(200);
     verifyMetrics(3, IncompletenessWarningType.TRUNCATED);
   }
@@ -845,7 +821,7 @@ class RdapEntitySearchActionTest extends RdapSearchActionTestCase<RdapEntitySear
     rememberWildcardType("Entity *");
     assertAboutJson()
         .that(generateActualJsonWithFullName("Entity *"))
-        .isEqualTo(generateExpectedJson("rdap_nontruncated_contacts.json"));
+        .isEqualTo(jsonFileBuilder().load("rdap_nontruncated_contacts.json"));
     assertThat(response.getStatus()).isEqualTo(200);
     verifyMetrics(4);
   }
@@ -855,8 +831,14 @@ class RdapEntitySearchActionTest extends RdapSearchActionTestCase<RdapEntitySear
     login("2-RegistrarTest");
     action.subtypeParam = Optional.of("registrars");
     createManyContactsAndRegistrars(1, 1, registrarTest);
-    runSuccessfulNameTest(
-        "Entity *", "301", "Entity 2", "rdap_registrar.json");
+    rememberWildcardType("Entity *");
+    assertAboutJson()
+        .that(generateActualJsonWithFullName("Entity *"))
+        .isEqualTo(
+            addBoilerplate(
+                jsonFileBuilder()
+                    .addFullRegistrar("301", "Entity 2", "active", null)
+                    .load("rdap_registrar.json")));
     verifyMetrics(0);
   }
 
@@ -878,7 +860,14 @@ class RdapEntitySearchActionTest extends RdapSearchActionTestCase<RdapEntitySear
   void testNameMatchRegistrar_found_inactiveAsSameRegistrar() {
     action.includeDeletedParam = Optional.of(true);
     login("2-RegistrarInact");
-    runSuccessfulNameTest("No Way", "21", "No Way", "inactive", null, "rdap_registrar.json");
+    rememberWildcardType("No Way");
+    assertAboutJson()
+        .that(generateActualJsonWithFullName("No Way"))
+        .isEqualTo(
+            addBoilerplate(
+                jsonFileBuilder()
+                    .addFullRegistrar("21", "No Way", "inactive", null)
+                    .load("rdap_registrar.json")));
     verifyMetrics(0);
   }
 
@@ -886,7 +875,14 @@ class RdapEntitySearchActionTest extends RdapSearchActionTestCase<RdapEntitySear
   void testNameMatchRegistrar_found_inactiveAsAdmin() {
     action.includeDeletedParam = Optional.of(true);
     loginAsAdmin();
-    runSuccessfulNameTest("No Way", "21", "No Way", "inactive", null, "rdap_registrar.json");
+    rememberWildcardType("No Way");
+    assertAboutJson()
+        .that(generateActualJsonWithFullName("No Way"))
+        .isEqualTo(
+            addBoilerplate(
+                jsonFileBuilder()
+                    .addFullRegistrar("21", "No Way", "inactive", null)
+                    .load("rdap_registrar.json")));
     verifyMetrics(0);
   }
 
@@ -908,8 +904,14 @@ class RdapEntitySearchActionTest extends RdapSearchActionTestCase<RdapEntitySear
   void testNameMatchRegistrar_found_testAsSameRegistrar() {
     action.includeDeletedParam = Optional.of(true);
     login("2-RegistrarTest");
-    runSuccessfulNameTest(
-        "Da Test Registrar", "not applicable", "Da Test Registrar", "rdap_registrar_test.json");
+    rememberWildcardType("Da Test Registrar");
+    assertAboutJson()
+        .that(generateActualJsonWithFullName("Da Test Registrar"))
+        .isEqualTo(
+            addBoilerplate(
+                jsonFileBuilder()
+                    .addFullRegistrar("not applicable", "Da Test Registrar", "active", null)
+                    .load("rdap_registrar_test.json")));
     verifyMetrics(0);
   }
 
@@ -917,15 +919,28 @@ class RdapEntitySearchActionTest extends RdapSearchActionTestCase<RdapEntitySear
   void testNameMatchRegistrar_found_testAsAdmin() {
     action.includeDeletedParam = Optional.of(true);
     loginAsAdmin();
-    runSuccessfulNameTest(
-        "Da Test Registrar", "not applicable", "Da Test Registrar", "rdap_registrar_test.json");
+    rememberWildcardType("Da Test Registrar");
+    assertAboutJson()
+        .that(generateActualJsonWithFullName("Da Test Registrar"))
+        .isEqualTo(
+            addBoilerplate(
+                jsonFileBuilder()
+                    .addFullRegistrar("not applicable", "Da Test Registrar", "active", null)
+                    .load("rdap_registrar_test.json")));
     verifyMetrics(0);
   }
 
   @Test
   void testHandleMatchContact_found() {
     login("2-RegistrarTest");
-    runSuccessfulHandleTestWithBlinky("2-ROID", "rdap_contact.json");
+    rememberWildcardType("2-ROID");
+    assertAboutJson()
+        .that(generateActualJsonWithHandle("2-ROID"))
+        .isEqualTo(
+            addBoilerplate(
+                jsonFileBuilder()
+                    .addFullContact("2-ROID", "active", BINKY_FULL_NAME, BINKY_ADDRESS)
+                    .load("rdap_contact.json")));
     verifyMetrics(1);
   }
 
@@ -933,7 +948,14 @@ class RdapEntitySearchActionTest extends RdapSearchActionTestCase<RdapEntitySear
   void testHandleMatchContact_found_subtypeAll() {
     login("2-RegistrarTest");
     action.subtypeParam = Optional.of("all");
-    runSuccessfulHandleTestWithBlinky("2-ROID", "rdap_contact.json");
+    rememberWildcardType("2-ROID");
+    assertAboutJson()
+        .that(generateActualJsonWithHandle("2-ROID"))
+        .isEqualTo(
+            addBoilerplate(
+                jsonFileBuilder()
+                    .addFullContact("2-ROID", "active", BINKY_FULL_NAME, BINKY_ADDRESS)
+                    .load("rdap_contact.json")));
     verifyMetrics(1);
   }
 
@@ -941,7 +963,14 @@ class RdapEntitySearchActionTest extends RdapSearchActionTestCase<RdapEntitySear
   void testHandleMatchContact_found_subtypeContacts() {
     login("2-RegistrarTest");
     action.subtypeParam = Optional.of("contacts");
-    runSuccessfulHandleTestWithBlinky("2-ROID", "rdap_contact.json");
+    rememberWildcardType("2-ROID");
+    assertAboutJson()
+        .that(generateActualJsonWithHandle("2-ROID"))
+        .isEqualTo(
+            addBoilerplate(
+                jsonFileBuilder()
+                    .addFullContact("2-ROID", "active", BINKY_FULL_NAME, BINKY_ADDRESS)
+                    .load("rdap_contact.json")));
     verifyMetrics(1);
   }
 
@@ -956,7 +985,12 @@ class RdapEntitySearchActionTest extends RdapSearchActionTestCase<RdapEntitySear
   @Test
   void testHandleMatchContact_found_specifyingSameRegistrar() {
     action.registrarParam = Optional.of("2-RegistrarTest");
-    runSuccessfulHandleTestWithBlinky("2-ROID", "rdap_contact_no_personal_data_with_remark.json");
+    rememberWildcardType("2-ROID");
+    assertAboutJson()
+        .that(generateActualJsonWithHandle("2-ROID"))
+        .isEqualTo(
+            addBoilerplate(
+                jsonFileBuilder().load("rdap_contact_no_personal_data_with_remark.json")));
     verifyMetrics(1);
   }
 
@@ -986,13 +1020,12 @@ class RdapEntitySearchActionTest extends RdapSearchActionTestCase<RdapEntitySear
   void testHandleMatchContact_found_deletedWhenLoggedInAsSameRegistrar() {
     login("2-Registrar");
     action.includeDeletedParam = Optional.of(true);
-    runSuccessfulHandleTest(
-        "6-ROID",
-        "6-ROID",
-        "",
-        "inactive",
-        "",
-        "rdap_contact_deleted.json");
+    rememberWildcardType("6-ROID");
+    assertAboutJson()
+        .that(generateActualJsonWithHandle("6-ROID"))
+        .isEqualTo(
+            addBoilerplate(
+                jsonFileBuilder().addContact("6-ROID").load("rdap_contact_deleted.json")));
     verifyMetrics(1);
   }
 
@@ -1000,13 +1033,12 @@ class RdapEntitySearchActionTest extends RdapSearchActionTestCase<RdapEntitySear
   void testHandleMatchContact_found_deletedWhenLoggedInAsAdmin() {
     loginAsAdmin();
     action.includeDeletedParam = Optional.of(true);
-    runSuccessfulHandleTest(
-        "6-ROID",
-        "6-ROID",
-        "",
-        "inactive",
-        "",
-        "rdap_contact_deleted.json");
+    rememberWildcardType("6-ROID");
+    assertAboutJson()
+        .that(generateActualJsonWithHandle("6-ROID"))
+        .isEqualTo(
+            addBoilerplate(
+                jsonFileBuilder().addContact("6-ROID").load("rdap_contact_deleted.json")));
     verifyMetrics(1);
   }
 
@@ -1029,13 +1061,12 @@ class RdapEntitySearchActionTest extends RdapSearchActionTestCase<RdapEntitySear
   void testHandleMatchContact_found_deletedWildcardWhenLoggedInAsSameRegistrar() {
     login("2-Registrar");
     action.includeDeletedParam = Optional.of(true);
-    runSuccessfulHandleTest(
-        "6-ROI*",
-        "6-ROID",
-        "",
-        "inactive",
-        "",
-        "rdap_contact_deleted.json");
+    rememberWildcardType("6-ROI*");
+    assertAboutJson()
+        .that(generateActualJsonWithHandle("6-ROI*"))
+        .isEqualTo(
+            addBoilerplate(
+                jsonFileBuilder().addContact("6-ROID").load("rdap_contact_deleted.json")));
     verifyMetrics(1);
   }
 
@@ -1043,33 +1074,53 @@ class RdapEntitySearchActionTest extends RdapSearchActionTestCase<RdapEntitySear
   void testHandleMatchContact_found_deletedWildcardWhenLoggedInAsAdmin() {
     loginAsAdmin();
     action.includeDeletedParam = Optional.of(true);
-    runSuccessfulHandleTest(
-        "6-ROI*",
-        "6-ROID",
-        "",
-        "inactive",
-        "",
-        "rdap_contact_deleted.json");
+    rememberWildcardType("6-ROI*");
+    assertAboutJson()
+        .that(generateActualJsonWithHandle("6-ROI*"))
+        .isEqualTo(
+            addBoilerplate(
+                jsonFileBuilder().addContact("6-ROID").load("rdap_contact_deleted.json")));
     verifyMetrics(1);
   }
 
   @Test
   void testHandleMatchRegistrar_found() {
-    runSuccessfulHandleTest("20", "20", "Yes Virginia <script>", "rdap_registrar.json");
+    rememberWildcardType("20");
+    assertAboutJson()
+        .that(generateActualJsonWithHandle("20"))
+        .isEqualTo(
+            addBoilerplate(
+                jsonFileBuilder()
+                    .addFullRegistrar("20", "Yes Virginia <script>", "active", null)
+                    .load("rdap_registrar.json")));
     verifyMetrics(0);
   }
 
   @Test
   void testHandleMatchRegistrar_found_subtypeAll() {
     action.subtypeParam = Optional.of("all");
-    runSuccessfulHandleTest("20", "20", "Yes Virginia <script>", "rdap_registrar.json");
+    rememberWildcardType("20");
+    assertAboutJson()
+        .that(generateActualJsonWithHandle("20"))
+        .isEqualTo(
+            addBoilerplate(
+                jsonFileBuilder()
+                    .addFullRegistrar("20", "Yes Virginia <script>", "active", null)
+                    .load("rdap_registrar.json")));
     verifyMetrics(0);
   }
 
   @Test
   void testHandleMatchRegistrar_found_subtypeRegistrars() {
     action.subtypeParam = Optional.of("registrars");
-    runSuccessfulHandleTest("20", "20", "Yes Virginia <script>", "rdap_registrar.json");
+    rememberWildcardType("20");
+    assertAboutJson()
+        .that(generateActualJsonWithHandle("20"))
+        .isEqualTo(
+            addBoilerplate(
+                jsonFileBuilder()
+                    .addFullRegistrar("20", "Yes Virginia <script>", "active", null)
+                    .load("rdap_registrar.json")));
     verifyMetrics(0);
   }
 
@@ -1083,7 +1134,14 @@ class RdapEntitySearchActionTest extends RdapSearchActionTestCase<RdapEntitySear
   @Test
   void testHandleMatchRegistrar_found_specifyingSameRegistrar() {
     action.registrarParam = Optional.of("2-Registrar");
-    runSuccessfulHandleTest("20", "20", "Yes Virginia <script>", "rdap_registrar.json");
+    rememberWildcardType("20");
+    assertAboutJson()
+        .that(generateActualJsonWithHandle("20"))
+        .isEqualTo(
+            addBoilerplate(
+                jsonFileBuilder()
+                    .addFullRegistrar("20", "Yes Virginia <script>", "active", null)
+                    .load("rdap_registrar.json")));
     verifyMetrics(0);
   }
 
@@ -1098,14 +1156,28 @@ class RdapEntitySearchActionTest extends RdapSearchActionTestCase<RdapEntitySear
   void testHandleMatchContact_found_wildcardWithResultSetSizeOne() {
     login("2-RegistrarTest");
     action.rdapResultSetMaxSize = 1;
-    runSuccessfulHandleTestWithBlinky("2-R*", "rdap_contact.json");
+    rememberWildcardType("2-R*");
+    assertAboutJson()
+        .that(generateActualJsonWithHandle("2-R*"))
+        .isEqualTo(
+            addBoilerplate(
+                jsonFileBuilder()
+                    .addFullContact("2-ROID", "active", BINKY_FULL_NAME, BINKY_ADDRESS)
+                    .load("rdap_contact.json")));
     verifyMetrics(1);
   }
 
   @Test
   void testHandleMatchContact_found_wildcard() {
     login("2-RegistrarTest");
-    runSuccessfulHandleTestWithBlinky("2-RO*", "rdap_contact.json");
+    rememberWildcardType("2-R*");
+    assertAboutJson()
+        .that(generateActualJsonWithHandle("2-R*"))
+        .isEqualTo(
+            addBoilerplate(
+                jsonFileBuilder()
+                    .addFullContact("2-ROID", "active", BINKY_FULL_NAME, BINKY_ADDRESS)
+                    .load("rdap_contact.json")));
     verifyMetrics(1);
   }
 
@@ -1113,7 +1185,14 @@ class RdapEntitySearchActionTest extends RdapSearchActionTestCase<RdapEntitySear
   void testHandleMatchContact_found_wildcardSpecifyingSameRegistrar() {
     action.registrarParam = Optional.of("2-RegistrarTest");
     login("2-RegistrarTest");
-    runSuccessfulHandleTestWithBlinky("2-RO*", "rdap_contact.json");
+    rememberWildcardType("2-RO*");
+    assertAboutJson()
+        .that(generateActualJsonWithHandle("2-RO*"))
+        .isEqualTo(
+            addBoilerplate(
+                jsonFileBuilder()
+                    .addFullContact("2-ROID", "active", BINKY_FULL_NAME, BINKY_ADDRESS)
+                    .load("rdap_contact.json")));
     verifyMetrics(1);
   }
 
@@ -1128,7 +1207,14 @@ class RdapEntitySearchActionTest extends RdapSearchActionTestCase<RdapEntitySear
   @Test
   void testHandleMatchContact_found_deleted() {
     login("2-RegistrarTest");
-    runSuccessfulHandleTestWithBlinky("2-RO*", "rdap_contact.json");
+    rememberWildcardType("2-R*");
+    assertAboutJson()
+        .that(generateActualJsonWithHandle("2-R*"))
+        .isEqualTo(
+            addBoilerplate(
+                jsonFileBuilder()
+                    .addFullContact("2-ROID", "active", BINKY_FULL_NAME, BINKY_ADDRESS)
+                    .load("rdap_contact.json")));
     verifyMetrics(1);
   }
 
@@ -1245,7 +1331,14 @@ class RdapEntitySearchActionTest extends RdapSearchActionTestCase<RdapEntitySear
   void testHandleMatchRegistrar_found_inactiveAsSameRegistrar() {
     action.includeDeletedParam = Optional.of(true);
     login("2-RegistrarInact");
-    runSuccessfulHandleTest("21", "21", "No Way", "inactive", null, "rdap_registrar.json");
+    rememberWildcardType("21");
+    assertAboutJson()
+        .that(generateActualJsonWithHandle("21"))
+        .isEqualTo(
+            addBoilerplate(
+                jsonFileBuilder()
+                    .addFullRegistrar("21", "No Way", "inactive", null)
+                    .load("rdap_registrar.json")));
     verifyMetrics(0);
   }
 
@@ -1253,7 +1346,14 @@ class RdapEntitySearchActionTest extends RdapSearchActionTestCase<RdapEntitySear
   void testHandleMatchRegistrar_found_inactiveAsAdmin() {
     action.includeDeletedParam = Optional.of(true);
     loginAsAdmin();
-    runSuccessfulHandleTest("21", "21", "No Way", "inactive", null, "rdap_registrar.json");
+    rememberWildcardType("21");
+    assertAboutJson()
+        .that(generateActualJsonWithHandle("21"))
+        .isEqualTo(
+            addBoilerplate(
+                jsonFileBuilder()
+                    .addFullRegistrar("21", "No Way", "inactive", null)
+                    .load("rdap_registrar.json")));
     verifyMetrics(0);
   }
 }

@@ -13,7 +13,8 @@
         {
           "href": "https://example.tld/rdap/entity/1",
           "rel": "self",
-          "type": "application/rdap+json"
+          "type": "application/rdap+json",
+          "value": "https://example.tld/rdap/domain/transfer.lol"
         }
       ],
       "publicIds": [
@@ -65,7 +66,8 @@
             {
               "href": "https://github.com/google/nomulus/blob/master/docs/rdap.md#authentication",
               "rel": "alternate",
-              "type": "text/html"
+              "type": "text/html",
+              "value": "https://example.tld/rdap/domain/transfer.lol"
             }
           ],
           "title": "REDACTED FOR PRIVACY",
@@ -124,7 +126,8 @@
     {
       "href": "https://example.tld/rdap/domain/transfer.lol",
       "rel": "self",
-      "type": "application/rdap+json"
+      "type": "application/rdap+json",
+      "value": "https://example.tld/rdap/domain/transfer.lol"
     }
   ],
   "nameservers": [
@@ -136,7 +139,8 @@
         {
           "href": "https://example.tld/rdap/nameserver/ns1.cat.lol",
           "rel": "self",
-          "type": "application/rdap+json"
+          "type": "application/rdap+json",
+          "value": "https://example.tld/rdap/domain/transfer.lol"
         }
       ],
       "remarks": [
