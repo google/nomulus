@@ -33,6 +33,7 @@ import google.registry.model.eppcommon.StatusValue;
 import google.registry.request.auth.AuthResult;
 import google.registry.testing.CloudTasksHelper;
 import google.registry.testing.ConsoleApiParamsUtils;
+import google.registry.testing.DatabaseHelper;
 import google.registry.testing.DeterministicStringGenerator;
 import google.registry.testing.FakeResponse;
 import google.registry.tools.DomainLockUtils;
@@ -66,6 +67,7 @@ public class ConsoleRegistryLockVerifyActionTest extends ConsoleActionBaseTestCa
                     .build())
             .setRegistryLockPassword("registryLockPassword")
             .build();
+    DatabaseHelper.putInDb(user);
     action = createAction(DEFAULT_CODE);
   }
 

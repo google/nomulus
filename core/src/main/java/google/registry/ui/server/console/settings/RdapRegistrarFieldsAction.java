@@ -35,6 +35,7 @@ import google.registry.ui.server.console.ConsoleApiAction;
 import google.registry.ui.server.console.ConsoleApiParams;
 import jakarta.inject.Inject;
 import java.util.Optional;
+import java.util.StringJoiner;
 
 /**
  * Console action for editing fields on a registrar that are visible in WHOIS/RDAP.
@@ -82,19 +83,37 @@ public class RdapRegistrarFieldsAction extends ConsoleApiAction {
       return;
     }
 
-    Registrar newRegistrar =
-        savedRegistrar
-            .asBuilder()
-            .setLocalizedAddress(providedRegistrar.getLocalizedAddress())
-            .setPhoneNumber(providedRegistrar.getPhoneNumber())
-            .setFaxNumber(providedRegistrar.getFaxNumber())
-            .setEmailAddress(providedRegistrar.getEmailAddress())
-            .build();
+    StringJoiner updates = new StringJoiner(",");
+
+    var newRegistrarBuilder = savedRegistrar.asBuilder();
+
+    if (!providedRegistrar.getLocalizedAddress().equals(savedRegistrar.getLocalizedAddress())) {
+      newRegistrarBuilder.setLocalizedAddress(providedRegistrar.getLocalizedAddress());
+      updates.add("ADDRESS");
+    }
+    if (!providedRegistrar.getPhoneNumber().equals(savedRegistrar.getPhoneNumber())) {
+      newRegistrarBuilder.setPhoneNumber(providedRegistrar.getPhoneNumber());
+      updates.add("PHONE");
+    }
+    if (!providedRegistrar.getFaxNumber().equals(savedRegistrar.getPhoneNumber())) {
+      newRegistrarBuilder.setFaxNumber(providedRegistrar.getFaxNumber());
+      updates.add("FAX");
+    }
+    if (!providedRegistrar.getEmailAddress().equals(savedRegistrar.getEmailAddress())) {
+      newRegistrarBuilder.setEmailAddress(providedRegistrar.getEmailAddress());
+      updates.add("EMAIL");
+    }
+    var newRegistrar = newRegistrarBuilder.build();
     tm().put(newRegistrar);
     finishAndPersistConsoleUpdateHistory(
         new ConsoleUpdateHistory.Builder()
             .setType(ConsoleUpdateHistory.Type.REGISTRAR_UPDATE)
-            .setDescription(newRegistrar.getRegistrarId()));
+            .setDescription(
+                String.format(
+                    "%s%s%s",
+                    newRegistrar.getRegistrarId(),
+                    ConsoleUpdateHistory.DESCRIPTION_SEPARATOR,
+                    updates)));
     sendExternalUpdatesIfNecessary(
         EmailInfo.create(
             savedRegistrar,

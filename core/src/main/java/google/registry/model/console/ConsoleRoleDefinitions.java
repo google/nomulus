@@ -67,6 +67,8 @@ public class ConsoleRoleDefinitions {
       new ImmutableSet.Builder<ConsolePermission>()
           .addAll(SUPPORT_LEAD_PERMISSIONS)
           .add(ConsolePermission.CHANGE_NOMULUS_PASSWORD)
+          .add(ConsolePermission.AUDIT_ACTIVITY_BY_USER)
+          .add(ConsolePermission.AUDIT_ACTIVITY_BY_REGISTRAR)
           .build();
 
   /** Permissions for a registrar partner account manager. */
@@ -111,6 +113,7 @@ public class ConsoleRoleDefinitions {
       new ImmutableSet.Builder<ConsolePermission>()
           .addAll(TECH_CONTACT_PERMISSIONS)
           .add(ConsolePermission.MANAGE_USERS)
+          .add(ConsolePermission.AUDIT_ACTIVITY_BY_REGISTRAR)
           .build();
 
   private ConsoleRoleDefinitions() {}
