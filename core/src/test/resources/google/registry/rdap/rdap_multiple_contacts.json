@@ -129,7 +129,7 @@
           "type": "application/rdap+json"
         },
         {
-          "href": "https://www.registry.tld/about/rdap/tos.html",
+          "href": "https://www.example.tld/about/rdap/tos.html",
           "rel": "alternate",
           "type": "text/html"
         }

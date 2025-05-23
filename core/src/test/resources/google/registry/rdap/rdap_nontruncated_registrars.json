@@ -9,7 +9,8 @@
         {
           "rel": "self",
           "href": "https://example.tld/rdap/entity/301",
-          "type": "application/rdap+json"
+          "type": "application/rdap+json",
+          "value": "https://example.tld/rdap/entities"
         }
       ],
       "publicIds":
@@ -66,7 +67,8 @@
         {
           "rel": "self",
           "href": "https://example.tld/rdap/entity/302",
-          "type": "application/rdap+json"
+          "type": "application/rdap+json",
+          "value": "https://example.tld/rdap/entities"
         }
       ],
       "publicIds":
@@ -123,7 +125,8 @@
         {
           "rel": "self",
           "href": "https://example.tld/rdap/entity/303",
-          "type": "application/rdap+json"
+          "type": "application/rdap+json",
+          "value": "https://example.tld/rdap/entities"
         }
       ],
       "publicIds":
@@ -180,7 +183,8 @@
         {
           "rel": "self",
           "href": "https://example.tld/rdap/entity/304",
-          "type": "application/rdap+json"
+          "type": "application/rdap+json",
+          "value": "https://example.tld/rdap/entities"
         }
       ],
       "publicIds":
@@ -257,12 +261,14 @@
         {
           "href": "https://example.tld/rdap/help/tos",
           "rel": "self",
-          "type": "application/rdap+json"
+          "type": "application/rdap+json",
+          "value": "https://example.tld/rdap/entities"
         },
         {
-          "href": "https://www.registry.tld/about/rdap/tos.html",
-          "rel": "alternate",
-          "type": "text/html"
+          "href": "https://www.example.tld/about/rdap/tos.html",
+          "rel": "terms-of-service",
+          "type": "text/html",
+          "value": "https://example.tld/rdap/entities"
         }
       ]
     },

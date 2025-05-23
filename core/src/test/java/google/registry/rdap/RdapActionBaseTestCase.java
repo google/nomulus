@@ -22,6 +22,11 @@ import static google.registry.request.Action.Method.GET;
 import static google.registry.request.Action.Method.HEAD;
 import static org.mockito.Mockito.mock;
 
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import google.registry.model.console.User;
 import google.registry.model.console.UserRoles;
@@ -35,6 +40,7 @@ import google.registry.util.Idn;
 import google.registry.util.TypeUtils;
 import java.util.HashMap;
 import java.util.Optional;
+import javax.annotation.Nullable;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -43,6 +49,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 abstract class RdapActionBaseTestCase<A extends RdapActionBase> {
 
   protected final FakeClock clock = new FakeClock(DateTime.parse("2000-01-01TZ"));
+  static final Gson GSON = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
 
   @RegisterExtension
   final JpaIntegrationTestExtension jpa =
@@ -107,18 +114,13 @@ abstract class RdapActionBaseTestCase<A extends RdapActionBase> {
     metricRole = ADMINISTRATOR;
   }
 
-  JsonObject generateActualJson(String domainName) {
-    action.requestPath = actionPath + domainName;
-    action.requestMethod = GET;
-    action.run();
-    return RdapTestHelper.parseJsonObject(response.getPayload());
+  JsonObject generateActualJson(String name) {
+    return RdapTestHelper.parseJsonObject(runAction(name));
   }
 
-  String generateHeadPayload(String domainName) {
-    action.requestPath = actionPath + domainName;
+  String generateHeadPayload(String name) {
     action.requestMethod = HEAD;
-    action.run();
-    return response.getPayload();
+    return runAction(name);
   }
 
   JsonObject generateExpectedJsonError(String description, int code) {
@@ -138,15 +140,128 @@ abstract class RdapActionBaseTestCase<A extends RdapActionBase> {
         "TITLE",
         title,
         "CODE",
-        String.valueOf(code));
+        String.valueOf(code),
+        "REQUEST_URL",
+        action.requestUrl);
   }
 
-  static JsonFileBuilder jsonFileBuilder() {
-    return new JsonFileBuilder();
+  JsonFileBuilder jsonFileBuilder() {
+    return new JsonFileBuilder(action.requestUrl);
+  }
+
+  private String runAction(String name) {
+    action.requestPath = actionPath + name;
+    action.requestUrl = "https://example.tld" + actionPath + name;
+    action.run();
+    return response.getPayload();
+  }
+
+  JsonObject createTosNotice() {
+    return GSON.toJsonTree(
+            ImmutableMap.of(
+                "title",
+                "RDAP Terms of Service",
+                "description",
+                ImmutableList.of(
+                    "By querying our Domain Database, you are agreeing to comply with these"
+                        + " terms so please read them carefully.",
+                    "Any information provided is 'as is' without any guarantee of accuracy.",
+                    "Please do not misuse the Domain Database. It is intended solely for"
+                        + " query-based access.",
+                    "Don't use the Domain Database to allow, enable, or otherwise support the"
+                        + " transmission of mass unsolicited, commercial advertising or"
+                        + " solicitations.",
+                    "Don't access our Domain Database through the use of high volume, automated"
+                        + " electronic processes that send queries or data to the systems of"
+                        + " any ICANN-accredited registrar.",
+                    "You may only use the information contained in the Domain Database for"
+                        + " lawful purposes.",
+                    "Do not compile, repackage, disseminate, or otherwise use the information"
+                        + " contained in the Domain Database in its entirety, or in any"
+                        + " substantial portion, without our prior written permission.",
+                    "We may retain certain details about queries to our Domain Database for the"
+                        + " purposes of detecting and preventing misuse.",
+                    "We reserve the right to restrict or deny your access to the database if we"
+                        + " suspect that you have failed to comply with these terms.",
+                    "We reserve the right to modify this agreement at any time."),
+                "links",
+                ImmutableList.of(
+                    ImmutableMap.of(
+                        "rel", "self",
+                        "href", "https://example.tld/rdap/help/tos",
+                        "type", "application/rdap+json",
+                        "value", action.requestUrl),
+                    ImmutableMap.of(
+                        "rel", "terms-of-service",
+                        "href", "https://www.example.tld/about/rdap/tos.html",
+                        "type", "text/html",
+                        "value", action.requestUrl))))
+        .getAsJsonObject();
+  }
+
+  JsonObject addPermanentBoilerplateNotices(JsonObject jsonObject) {
+    if (!jsonObject.has("notices")) {
+      jsonObject.add("notices", new JsonArray());
+    }
+    JsonArray notices = jsonObject.getAsJsonArray("notices");
+    notices.add(createTosNotice());
+    notices.add(
+        GSON.toJsonTree(
+            ImmutableMap.of(
+                "description",
+                ImmutableList.of(
+                    "This response conforms to the RDAP Operational Profile for gTLD"
+                        + " Registries and Registrars version 1.0"))));
+    return jsonObject;
+  }
+
+  JsonObject addDomainBoilerplateNotices(JsonObject jsonObject) {
+    addPermanentBoilerplateNotices(jsonObject);
+    JsonArray notices = jsonObject.getAsJsonArray("notices");
+    notices.add(
+        GSON.toJsonTree(
+            ImmutableMap.of(
+                "title",
+                "Status Codes",
+                "description",
+                ImmutableList.of(
+                    "For more information on domain status codes, please visit"
+                        + " https://icann.org/epp"),
+                "links",
+                ImmutableList.of(
+                    ImmutableMap.of(
+                        "rel", "glossary",
+                        "href", "https://icann.org/epp",
+                        "type", "text/html",
+                        "value", action.requestUrl)))));
+    notices.add(
+        GSON.toJsonTree(
+            ImmutableMap.of(
+                "title",
+                "RDDS Inaccuracy Complaint Form",
+                "description",
+                ImmutableList.of(
+                    "URL of the ICANN RDDS Inaccuracy Complaint Form: https://icann.org/wicf"),
+                "links",
+                ImmutableList.of(
+                    ImmutableMap.of(
+                        "rel",
+                        "help",
+                        "href",
+                        "https://icann.org/wicf",
+                        "type",
+                        "text/html",
+                        "value",
+                        action.requestUrl)))));
+    return jsonObject;
   }
 
   protected static final class JsonFileBuilder {
     private final HashMap<String, String> substitutions = new HashMap<>();
+
+    private JsonFileBuilder(String requestUrl) {
+      substitutions.put("REQUEST_URL", requestUrl);
+    }
 
     public JsonObject load(String filename) {
       return RdapTestHelper.loadJsonFile(filename, substitutions);
@@ -155,6 +270,14 @@ abstract class RdapActionBaseTestCase<A extends RdapActionBase> {
     public JsonFileBuilder put(String key, String value) {
       checkArgument(
           substitutions.put(key, value) == null, "substitutions already had key of %s", key);
+      return this;
+    }
+
+    public JsonFileBuilder putAll(String... keysAndValues) {
+      checkArgument(keysAndValues.length % 2 == 0);
+      for (int i = 0; i < keysAndValues.length; i += 2) {
+        put(keysAndValues[i], keysAndValues[i + 1]);
+      }
       return this;
     }
 
@@ -189,7 +312,35 @@ abstract class RdapActionBaseTestCase<A extends RdapActionBase> {
       return putNext("REGISTRAR_FULL_NAME_", fullName);
     }
 
+    JsonFileBuilder addFullRegistrar(
+        String handle, @Nullable String fullName, String status, @Nullable String address) {
+      if (fullName != null) {
+        putNext("REGISTRAR_FULLNAME_", fullName);
+      }
+      if (address != null) {
+        putNext("REGISTRAR_ADDRESS_", address);
+      }
+      return putNext("REGISTRAR_HANDLE_", handle, "STATUS_", status);
+    }
+
     JsonFileBuilder addContact(String handle) {
+      return putNext("CONTACT_HANDLE_", handle);
+    }
+
+    JsonFileBuilder addFullContact(
+        String handle,
+        @Nullable String status,
+        @Nullable String fullName,
+        @Nullable String address) {
+      if (fullName != null) {
+        putNext("CONTACT_FULLNAME_", fullName);
+      }
+      if (address != null) {
+        putNext("CONTACT_ADDRESS_", address);
+      }
+      if (status != null) {
+        putNext("STATUS_", status);
+      }
       return putNext("CONTACT_HANDLE_", handle);
     }
 

@@ -271,7 +271,7 @@ public class RdapJsonFormatter {
       URI htmlUri = htmlBaseURI.resolve(rdapTosStaticUrl);
       noticeBuilder.addLink(
           Link.builder()
-              .setRel("alternate")
+              .setRel("terms-of-service")
               .setHref(htmlUri.toString())
               .setType("text/html")
               .build());

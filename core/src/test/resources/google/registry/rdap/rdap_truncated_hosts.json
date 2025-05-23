@@ -10,7 +10,8 @@
         {
           "rel" : "self",
           "type" : "application/rdap+json",
-          "href" : "https://example.tld/rdap/nameserver/nsx1.cat.lol"
+          "href" : "https://example.tld/rdap/nameserver/nsx1.cat.lol",
+          "value": "https://example.tld/rdap/nameservers"
         }
       ],
       "ipAddresses" :
@@ -42,7 +43,8 @@
         {
           "rel" : "self",
           "type" : "application/rdap+json",
-          "href" : "https://example.tld/rdap/nameserver/nsx2.cat.lol"
+          "href" : "https://example.tld/rdap/nameserver/nsx2.cat.lol",
+          "value": "https://example.tld/rdap/nameservers"
         }
       ],
       "ipAddresses" :
@@ -74,7 +76,8 @@
         {
           "rel" : "self",
           "type" : "application/rdap+json",
-          "href" : "https://example.tld/rdap/nameserver/nsx3.cat.lol"
+          "href" : "https://example.tld/rdap/nameserver/nsx3.cat.lol",
+          "value": "https://example.tld/rdap/nameservers"
         }
       ],
       "ipAddresses" :
@@ -106,7 +109,8 @@
         {
           "rel" : "self",
           "type" : "application/rdap+json",
-          "href" : "https://example.tld/rdap/nameserver/nsx4.cat.lol"
+          "href" : "https://example.tld/rdap/nameserver/nsx4.cat.lol",
+          "value": "https://example.tld/rdap/nameservers"
         }
       ],
       "ipAddresses" :
@@ -153,7 +157,8 @@
         {
           "type" : "application/rdap+json",
           "rel" : "next",
-          "href" : "https://example.tld/rdap/nameservers?%QUERY%"
+          "href" : "https://example.tld/rdap/nameservers?%QUERY%",
+          "value": "https://example.tld/rdap/nameservers"
         }
       ]
     },
@@ -177,12 +182,14 @@
         {
           "href": "https://example.tld/rdap/help/tos",
           "rel": "self",
-          "type": "application/rdap+json"
+          "type": "application/rdap+json",
+          "value": "https://example.tld/rdap/nameservers"
         },
         {
-          "href": "https://www.registry.tld/about/rdap/tos.html",
-          "rel": "alternate",
-          "type": "text/html"
+          "href": "https://www.example.tld/about/rdap/tos.html",
+          "rel": "terms-of-service",
+          "type": "text/html",
+          "value": "https://example.tld/rdap/nameservers"
         }
       ]
     },

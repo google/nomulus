@@ -473,8 +473,7 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
 
   private JsonObject wrapInSearchReply(JsonObject obj) {
     obj = RdapTestHelper.wrapInSearchReply("domainSearchResults", obj);
-    RdapTestHelper.addDomainBoilerplateNotices(obj, "https://example.tld/rdap/");
-    return obj;
+    return addDomainBoilerplateNotices(obj);
   }
 
   private void runSuccessfulTest(RequestType requestType, String queryString, JsonObject expected) {

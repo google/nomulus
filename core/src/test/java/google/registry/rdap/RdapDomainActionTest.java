@@ -230,16 +230,11 @@ class RdapDomainActionTest extends RdapActionBaseTestCase<RdapDomainAction> {
             clock.nowUtc().minusMonths(6)));
   }
 
-  private JsonObject addBoilerplate(JsonObject obj) {
-    RdapTestHelper.addDomainBoilerplateNotices(obj, "https://example.tld/rdap/");
-    return obj;
-  }
-
   private void assertProperResponseForCatLol(String queryString, String expectedOutputFile) {
     assertAboutJson()
         .that(generateActualJson(queryString))
         .isEqualTo(
-            addBoilerplate(
+            addDomainBoilerplateNotices(
                 jsonFileBuilder()
                     .addDomain("cat.lol", "C-LOL")
                     .addContact("4-ROID")
@@ -357,7 +352,7 @@ class RdapDomainActionTest extends RdapActionBaseTestCase<RdapDomainAction> {
     assertAboutJson()
         .that(generateActualJson("cat.みんな"))
         .isEqualTo(
-            addBoilerplate(
+            addDomainBoilerplateNotices(
                 jsonFileBuilder()
                     .addDomain("cat.みんな", "1D-Q9JYB4C")
                     .addContact("19-ROID")
@@ -376,7 +371,7 @@ class RdapDomainActionTest extends RdapActionBaseTestCase<RdapDomainAction> {
     assertAboutJson()
         .that(generateActualJson("cat.%E3%81%BF%E3%82%93%E3%81%AA"))
         .isEqualTo(
-            addBoilerplate(
+            addDomainBoilerplateNotices(
                 jsonFileBuilder()
                     .addDomain("cat.みんな", "1D-Q9JYB4C")
                     .addContact("19-ROID")
@@ -395,7 +390,7 @@ class RdapDomainActionTest extends RdapActionBaseTestCase<RdapDomainAction> {
     assertAboutJson()
         .that(generateActualJson("cat.xn--q9jyb4c"))
         .isEqualTo(
-            addBoilerplate(
+            addDomainBoilerplateNotices(
                 jsonFileBuilder()
                     .addDomain("cat.みんな", "1D-Q9JYB4C")
                     .addContact("19-ROID")
@@ -414,7 +409,7 @@ class RdapDomainActionTest extends RdapActionBaseTestCase<RdapDomainAction> {
     assertAboutJson()
         .that(generateActualJson("cat.1.tld"))
         .isEqualTo(
-            addBoilerplate(
+            addDomainBoilerplateNotices(
                 jsonFileBuilder()
                     .addDomain("cat.1.tld", "25-1_TLD")
                     .addContact("21-ROID")
@@ -473,7 +468,7 @@ class RdapDomainActionTest extends RdapActionBaseTestCase<RdapDomainAction> {
     assertAboutJson()
         .that(generateActualJson("dodo.lol"))
         .isEqualTo(
-            addBoilerplate(
+            addDomainBoilerplateNotices(
                 jsonFileBuilder()
                     .addDomain("dodo.lol", "15-LOL")
                     .addContact("11-ROID")
@@ -493,7 +488,7 @@ class RdapDomainActionTest extends RdapActionBaseTestCase<RdapDomainAction> {
     assertAboutJson()
         .that(generateActualJson("dodo.lol"))
         .isEqualTo(
-            addBoilerplate(
+            addDomainBoilerplateNotices(
                 jsonFileBuilder()
                     .addDomain("dodo.lol", "15-LOL")
                     .addContact("11-ROID")
@@ -512,7 +507,9 @@ class RdapDomainActionTest extends RdapActionBaseTestCase<RdapDomainAction> {
         "addgraceperiod", "lol", clock.nowUtc(), clock.nowUtc().plusYears(1));
     assertAboutJson()
         .that(generateActualJson("addgraceperiod.lol"))
-        .isEqualTo(addBoilerplate(jsonFileBuilder().load("rdap_domain_add_grace_period.json")));
+        .isEqualTo(
+            addDomainBoilerplateNotices(
+                jsonFileBuilder().load("rdap_domain_add_grace_period.json")));
   }
 
   @Test
@@ -522,7 +519,8 @@ class RdapDomainActionTest extends RdapActionBaseTestCase<RdapDomainAction> {
     assertAboutJson()
         .that(generateActualJson("autorenew.lol"))
         .isEqualTo(
-            addBoilerplate(jsonFileBuilder().load("rdap_domain_auto_renew_grace_period.json")));
+            addDomainBoilerplateNotices(
+                jsonFileBuilder().load("rdap_domain_auto_renew_grace_period.json")));
   }
 
   @Test
@@ -545,7 +543,7 @@ class RdapDomainActionTest extends RdapActionBaseTestCase<RdapDomainAction> {
     assertAboutJson()
         .that(generateActualJson("redemption.lol"))
         .isEqualTo(
-            addBoilerplate(
+            addDomainBoilerplateNotices(
                 jsonFileBuilder().load("rdap_domain_pending_delete_redemption_grace_period.json")));
   }
 
@@ -568,7 +566,8 @@ class RdapDomainActionTest extends RdapActionBaseTestCase<RdapDomainAction> {
     assertAboutJson()
         .that(generateActualJson("renew.lol"))
         .isEqualTo(
-            addBoilerplate(jsonFileBuilder().load("rdap_domain_explicit_renew_grace_period.json")));
+            addDomainBoilerplateNotices(
+                jsonFileBuilder().load("rdap_domain_explicit_renew_grace_period.json")));
   }
 
   @Test
@@ -590,7 +589,8 @@ class RdapDomainActionTest extends RdapActionBaseTestCase<RdapDomainAction> {
     assertAboutJson()
         .that(generateActualJson("transfer.lol"))
         .isEqualTo(
-            addBoilerplate(jsonFileBuilder().load("rdap_domain_transfer_grace_period.json")));
+            addDomainBoilerplateNotices(
+                jsonFileBuilder().load("rdap_domain_transfer_grace_period.json")));
   }
 
   @Test
@@ -631,12 +631,15 @@ class RdapDomainActionTest extends RdapActionBaseTestCase<RdapDomainAction> {
                     "rel",
                     "alternate",
                     "type",
-                    "text/html")));
+                    "text/html",
+                    "value",
+                    "https://example.tld/rdap/domain/example.lol")));
+    JsonObject actuaResponse = generateActualJson("example.lol");
     JsonObject expectedErrorResponse = generateExpectedJsonError("example.lol blocked by BSA", 404);
     expectedErrorResponse
         .getAsJsonArray("notices")
         .add(RdapTestHelper.GSON.toJsonTree(expectedBsaNotice));
-    assertAboutJson().that(generateActualJson("example.lol")).isEqualTo(expectedErrorResponse);
+    assertAboutJson().that(actuaResponse).isEqualTo(expectedErrorResponse);
     assertThat(response.getStatus()).isEqualTo(404);
   }
 
