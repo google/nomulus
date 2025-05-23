@@ -115,6 +115,7 @@ import google.registry.ui.server.console.ConsoleDomainGetAction;
 import google.registry.ui.server.console.ConsoleDomainListAction;
 import google.registry.ui.server.console.ConsoleDumDownloadAction;
 import google.registry.ui.server.console.ConsoleEppPasswordAction;
+import google.registry.ui.server.console.ConsoleHistoryDataAction;
 import google.registry.ui.server.console.ConsoleModule;
 import google.registry.ui.server.console.ConsoleOteAction;
 import google.registry.ui.server.console.ConsoleRegistryLockAction;
@@ -182,6 +183,8 @@ interface RequestComponent {
   ConsoleDomainListAction consoleDomainListAction();
 
   ConsoleEppPasswordAction consoleEppPasswordAction();
+
+  ConsoleHistoryDataAction consoleHistoryDataAction();
 
   ConsoleOteAction consoleOteAction();
 

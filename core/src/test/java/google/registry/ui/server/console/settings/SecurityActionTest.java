@@ -87,7 +87,7 @@ class SecurityActionTest extends ConsoleActionBaseTestCase {
     assertThat(r.getIpAddressAllowList().get(0).getNetmask()).isEqualTo(32);
     ConsoleUpdateHistory history = loadSingleton(ConsoleUpdateHistory.class).get();
     assertThat(history.getType()).isEqualTo(ConsoleUpdateHistory.Type.REGISTRAR_SECURITY_UPDATE);
-    assertThat(history.getDescription()).hasValue("registrarId");
+    assertThat(history.getDescription()).hasValue("registrarId|IP_CHANGE,PRIMARY_SSL_CERT_CHANGE");
   }
 
   private SecurityAction createAction(String registrarId) throws IOException {
