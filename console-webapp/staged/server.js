@@ -13,22 +13,47 @@
 // limitations under the License.
 
 const express = require('express');
+const path = require('path');
+const fs = require('fs');
 
 const app = express();
 const PORT = process.env.PORT || 8080;
 
-app.use("/console", express.static('dist', {
-  etag: false,
-  lastModified: false,
-  maxAge: '1d',
-  setHeaders: setCustomCacheControl
-}));
+// Determine which environment's directory to use
+const environment = process.env.GAE_ENV === 'standard' ? 'console-alpha' : 'dist';
 
-function setCustomCacheControl (res, path) {
+function setCustomCacheControl(res, path) {
   // Custom Cache-Control for HTML files - we don't want to cache them
   if (express.static.mime.lookup(path) === 'text/html') {
     res.setHeader('Cache-Control', 'public, max-age=0');
   }
 }
 
+// Serve static files at root
+app.use(express.static(environment, {
+  etag: false,
+  lastModified: false,
+  maxAge: '1d',
+  setHeaders: setCustomCacheControl
+}));
+
+// Serve static files at /console
+app.use('/console', express.static(environment, {
+  etag: false,
+  lastModified: false,
+  maxAge: '1d',
+  setHeaders: setCustomCacheControl
+}));
+
+// For SPA routing - redirect all other routes to index.html
+app.get('*', (req, res) => {
+  const indexPath = path.join(environment, 'index.html');
+  if (fs.existsSync(indexPath)) {
+    res.sendFile(path.resolve(indexPath));
+  } else {
+    res.status(404).send(`Cannot find ${indexPath}`);
+  }
+});
+
 app.listen(PORT);
+

@@ -1,0 +1,13 @@
+dispatch:
+  # Route console-api requests to the default service
+  - url: "*/console-api/*"
+    service: default
+
+  # Route console requests to the console service
+  - url: "*/console/*"
+    service: console
+
+  # Requests to the root domain also go to the console service
+  - url: "*/"
+    service: console
+
