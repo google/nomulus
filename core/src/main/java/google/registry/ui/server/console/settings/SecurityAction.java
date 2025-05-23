@@ -39,6 +39,7 @@ import google.registry.ui.server.console.ConsoleApiAction;
 import google.registry.ui.server.console.ConsoleApiParams;
 import jakarta.inject.Inject;
 import java.util.Optional;
+import java.util.StringJoiner;
 
 @Action(
     service = GaeService.DEFAULT,
@@ -86,10 +87,15 @@ public class SecurityAction extends ConsoleApiAction {
 
   private void setResponse(Registrar savedRegistrar) {
     Registrar registrarParameter = registrar.get();
-    Registrar.Builder updatedRegistrarBuilder =
-        savedRegistrar
-            .asBuilder()
-            .setIpAddressAllowList(registrarParameter.getIpAddressAllowList());
+    Registrar.Builder updatedRegistrarBuilder = savedRegistrar.asBuilder();
+    StringJoiner updates = new StringJoiner(",");
+
+    if (!savedRegistrar
+        .getIpAddressAllowList()
+        .equals(registrarParameter.getIpAddressAllowList())) {
+      updatedRegistrarBuilder.setIpAddressAllowList(registrarParameter.getIpAddressAllowList());
+      updates.add("IP_CHANGE");
+    }
 
     try {
       if (!savedRegistrar
@@ -99,6 +105,7 @@ public class SecurityAction extends ConsoleApiAction {
           String newClientCert = registrarParameter.getClientCertificate().get();
           certificateChecker.validateCertificate(newClientCert);
           updatedRegistrarBuilder.setClientCertificate(newClientCert, tm().getTransactionTime());
+          updates.add("PRIMARY_SSL_CERT_CHANGE");
         }
       }
       if (!savedRegistrar
@@ -109,6 +116,7 @@ public class SecurityAction extends ConsoleApiAction {
           certificateChecker.validateCertificate(newFailoverCert);
           updatedRegistrarBuilder.setFailoverClientCertificate(
               newFailoverCert, tm().getTransactionTime());
+          updates.add("FAILOVER_SSL_CERT_CHANGE");
         }
       }
     } catch (InsecureCertificateException e) {
@@ -121,7 +129,9 @@ public class SecurityAction extends ConsoleApiAction {
     finishAndPersistConsoleUpdateHistory(
         new ConsoleUpdateHistory.Builder()
             .setType(ConsoleUpdateHistory.Type.REGISTRAR_SECURITY_UPDATE)
-            .setDescription(registrarId));
+            .setDescription(
+                String.format(
+                    "%s%s%s", registrarId, ConsoleUpdateHistory.DESCRIPTION_SEPARATOR, updates)));
 
     sendExternalUpdatesIfNecessary(
         EmailInfo.create(savedRegistrar, updatedRegistrar, ImmutableSet.of(), ImmutableSet.of()));

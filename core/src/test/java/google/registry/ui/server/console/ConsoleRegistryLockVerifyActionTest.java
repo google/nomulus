@@ -56,16 +56,17 @@ public class ConsoleRegistryLockVerifyActionTest extends ConsoleActionBaseTestCa
     createTld("test");
     defaultDomain = persistActiveDomain("example.test");
     user =
-        new User.Builder()
-            .setEmailAddress("user@theregistrar.com")
-            .setRegistryLockEmailAddress("registrylock@theregistrar.com")
-            .setUserRoles(
-                new UserRoles.Builder()
-                    .setRegistrarRoles(
-                        ImmutableMap.of("TheRegistrar", RegistrarRole.PRIMARY_CONTACT))
-                    .build())
-            .setRegistryLockPassword("registryLockPassword")
-            .build();
+        persistResource(
+            new User.Builder()
+                .setEmailAddress("user@theregistrar.com")
+                .setRegistryLockEmailAddress("registrylock@theregistrar.com")
+                .setUserRoles(
+                    new UserRoles.Builder()
+                        .setRegistrarRoles(
+                            ImmutableMap.of("TheRegistrar", RegistrarRole.PRIMARY_CONTACT))
+                        .build())
+                .setRegistryLockPassword("registryLockPassword")
+                .build());
     action = createAction(DEFAULT_CODE);
   }
 

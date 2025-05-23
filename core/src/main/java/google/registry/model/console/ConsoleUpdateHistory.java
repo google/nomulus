@@ -16,6 +16,7 @@ package google.registry.model.console;
 
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 
+import com.google.gson.annotations.Expose;
 import google.registry.model.Buildable;
 import google.registry.model.ImmutableObject;
 import google.registry.model.annotations.IdAllocation;
@@ -45,6 +46,7 @@ public class ConsoleUpdateHistory extends ImmutableObject implements Buildable {
   @Id @IdAllocation @Column Long revisionId;
 
   @Column(nullable = false)
+  @Expose
   DateTime modificationTime;
 
   /** The HTTP method (e.g. POST, PUT) used to make this modification. */
@@ -54,6 +56,7 @@ public class ConsoleUpdateHistory extends ImmutableObject implements Buildable {
   /** The type of modification. */
   @Column(nullable = false)
   @Enumerated(EnumType.STRING)
+  @Expose
   Type type;
 
   /** The URL of the action that was used to make the modification. */
@@ -61,11 +64,12 @@ public class ConsoleUpdateHistory extends ImmutableObject implements Buildable {
   String url;
 
   /** An optional further description of the action. */
-  String description;
+  @Expose String description;
 
   /** The user that performed the modification. */
   @JoinColumn(name = "actingUser", referencedColumnName = "emailAddress", nullable = false)
   @ManyToOne
+  @Expose
   User actingUser;
 
   public Long getRevisionId() {
@@ -102,17 +106,23 @@ public class ConsoleUpdateHistory extends ImmutableObject implements Buildable {
   }
 
   public enum Type {
+    DUM_DOWNLOAD,
     DOMAIN_DELETE,
     DOMAIN_SUSPEND,
     DOMAIN_UNSUSPEND,
     EPP_PASSWORD_UPDATE,
     REGISTRAR_CREATE,
+    REGISTRAR_CONTACTS_UPDATE,
     REGISTRAR_SECURITY_UPDATE,
     REGISTRAR_UPDATE,
+    REGISTRY_LOCK,
+    REGISTRY_UNLOCK,
     USER_CREATE,
     USER_DELETE,
-    USER_UPDATE
+    USER_UPDATE,
   }
+
+  public static final String DESCRIPTION_SEPARATOR = "|";
 
   public static class Builder extends Buildable.Builder<ConsoleUpdateHistory> {
     public Builder() {}

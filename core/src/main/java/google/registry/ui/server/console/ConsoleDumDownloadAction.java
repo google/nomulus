@@ -23,6 +23,7 @@ import com.google.common.flogger.FluentLogger;
 import com.google.common.net.MediaType;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.model.console.ConsolePermission;
+import google.registry.model.console.ConsoleUpdateHistory;
 import google.registry.model.console.User;
 import google.registry.request.Action;
 import google.registry.request.Action.GaeService;
@@ -98,6 +99,13 @@ public class ConsoleDumDownloadAction extends ConsoleApiAction {
       consoleApiParams.response().setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
       return;
     }
+    tm().transact(
+            () -> {
+              finishAndPersistConsoleUpdateHistory(
+                  new ConsoleUpdateHistory.Builder()
+                      .setType(ConsoleUpdateHistory.Type.DUM_DOWNLOAD)
+                      .setDescription(registrarId));
+            });
     consoleApiParams.response().setStatus(HttpServletResponse.SC_OK);
   }
 
