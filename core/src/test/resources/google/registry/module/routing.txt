@@ -74,6 +74,7 @@ CONSOLE  /console-api/domain                                ConsoleDomainGetActi
 CONSOLE  /console-api/domain-list                           ConsoleDomainListAction                        GET                 n  USER PUBLIC
 CONSOLE  /console-api/dum-download                          ConsoleDumDownloadAction                       GET                 n  USER PUBLIC
 CONSOLE  /console-api/eppPassword                           ConsoleEppPasswordAction                       POST                n  USER PUBLIC
+CONSOLE  /console-api/history                               ConsoleHistoryDataAction                       GET                 n  USER PUBLIC
 CONSOLE  /console-api/ote                                   ConsoleOteAction                               GET,POST            n  USER PUBLIC
 CONSOLE  /console-api/password-reset-request                PasswordResetRequestAction                     POST                n  USER PUBLIC
 CONSOLE  /console-api/password-reset-verify                 PasswordResetVerifyAction                      GET,POST            n  USER PUBLIC

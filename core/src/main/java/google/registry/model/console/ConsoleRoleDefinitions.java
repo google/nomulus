@@ -55,6 +55,8 @@ public class ConsoleRoleDefinitions {
       new ImmutableSet.Builder<ConsolePermission>()
           .addAll(SUPPORT_AGENT_PERMISSIONS)
           .add(
+              ConsolePermission.AUDIT_ACTIVITY_BY_USER,
+              ConsolePermission.AUDIT_ACTIVITY_BY_REGISTRAR,
               ConsolePermission.MANAGE_REGISTRARS,
               ConsolePermission.GET_REGISTRANT_EMAIL,
               ConsolePermission.SUSPEND_DOMAIN,
@@ -111,6 +113,7 @@ public class ConsoleRoleDefinitions {
       new ImmutableSet.Builder<ConsolePermission>()
           .addAll(TECH_CONTACT_PERMISSIONS)
           .add(ConsolePermission.MANAGE_USERS)
+          .add(ConsolePermission.AUDIT_ACTIVITY_BY_REGISTRAR)
           .build();
 
   private ConsoleRoleDefinitions() {}

@@ -30,6 +30,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Multimap;
 import com.google.common.flogger.FluentLogger;
 import google.registry.model.console.ConsolePermission;
+import google.registry.model.console.ConsoleUpdateHistory;
 import google.registry.model.console.User;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarPoc;
@@ -84,6 +85,7 @@ public class ContactAction extends ConsoleApiAction {
   protected void deleteHandler(User user) {
     updateContacts(
         user,
+        "Deleted " + contact.get().getEmailAddress(),
         (registrar, oldContacts) ->
             oldContacts.stream()
                 .filter(
@@ -96,6 +98,7 @@ public class ContactAction extends ConsoleApiAction {
   protected void postHandler(User user) {
     updateContacts(
         user,
+        "Created " + contact.get().getEmailAddress(),
         (registrar, oldContacts) -> {
           RegistrarPoc newContact = contact.get();
           return ImmutableSet.<RegistrarPoc>builder()
@@ -121,6 +124,7 @@ public class ContactAction extends ConsoleApiAction {
   protected void putHandler(User user) {
     updateContacts(
         user,
+        "Updated " + contact.get().getEmailAddress(),
         (registrar, oldContacts) -> {
           RegistrarPoc updatedContact = contact.get();
           return oldContacts.stream()
@@ -146,6 +150,7 @@ public class ContactAction extends ConsoleApiAction {
 
   private void updateContacts(
       User user,
+      String historyDescription,
       BiFunction<Registrar, ImmutableSet<RegistrarPoc>, ImmutableSet<RegistrarPoc>>
           contactsUpdater) {
     checkPermission(user, registrarId, ConsolePermission.EDIT_REGISTRAR_DETAILS);
@@ -176,6 +181,15 @@ public class ContactAction extends ConsoleApiAction {
               tm().put(updatedRegistrar);
               sendExternalUpdatesIfNecessary(
                   EmailInfo.create(registrar, updatedRegistrar, oldContacts, newContacts));
+              finishAndPersistConsoleUpdateHistory(
+                  new ConsoleUpdateHistory.Builder()
+                      .setType(ConsoleUpdateHistory.Type.REGISTRAR_CONTACTS_UPDATE)
+                      .setDescription(
+                          String.format(
+                              "%s%s%s",
+                              registrarId,
+                              ConsoleUpdateHistory.DESCRIPTION_SEPARATOR,
+                              historyDescription)));
             });
     consoleApiParams.response().setStatus(SC_OK);
   }

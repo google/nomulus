@@ -14,10 +14,12 @@
 
 package google.registry.ui.server.console;
 
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.request.Action.Method.GET;
 
 import com.google.common.base.Ascii;
 import com.google.gson.annotations.Expose;
+import google.registry.model.console.ConsoleUpdateHistory;
 import google.registry.model.console.User;
 import google.registry.model.domain.RegistryLock;
 import google.registry.request.Action;
@@ -64,6 +66,21 @@ public class ConsoleRegistryLockVerifyAction extends ConsoleApiAction {
     RegistryLockVerificationResponse lockResponse =
         new RegistryLockVerificationResponse(
             Ascii.toLowerCase(action.toString()), lock.getDomainName(), lock.getRegistrarId());
+    tm().transact(
+            () -> {
+              finishAndPersistConsoleUpdateHistory(
+                  new ConsoleUpdateHistory.Builder()
+                      .setType(
+                          action == RegistryLockAction.LOCKED
+                              ? ConsoleUpdateHistory.Type.REGISTRY_LOCK
+                              : ConsoleUpdateHistory.Type.REGISTRY_UNLOCK)
+                      .setDescription(
+                          String.format(
+                              "%s%s%s",
+                              lock.getRegistrarId(),
+                              ConsoleUpdateHistory.DESCRIPTION_SEPARATOR,
+                              lockResponse)));
+            });
     consoleApiParams.response().setPayload(consoleApiParams.gson().toJson(lockResponse));
     consoleApiParams.response().setStatus(HttpServletResponse.SC_OK);
   }

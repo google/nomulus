@@ -112,7 +112,7 @@ public class RdapRegistrarFieldsActionTest extends ConsoleActionBaseTestCase {
         .isEqualExceptFields(oldRegistrar, "localizedAddress", "phoneNumber", "faxNumber");
     ConsoleUpdateHistory history = loadSingleton(ConsoleUpdateHistory.class).get();
     assertThat(history.getType()).isEqualTo(ConsoleUpdateHistory.Type.REGISTRAR_UPDATE);
-    assertThat(history.getDescription()).hasValue("TheRegistrar");
+    assertThat(history.getDescription()).hasValue("TheRegistrar|ADDRESS,PHONE,FAX");
   }
 
   @Test
