@@ -336,7 +336,7 @@ abstract class AbstractJsonableObject implements Jsonable {
       // According to RFC 9083 section 3, the syntax of dates and times is defined in RFC3339.
       //
       // According to RFC3339, we should use ISO8601, which is what DateTime.toString does!
-      return new JsonPrimitive(((DateTime) object).toString());
+      return new JsonPrimitive(object.toString());
     }
     if (object == null) {
       return JsonNull.INSTANCE;
