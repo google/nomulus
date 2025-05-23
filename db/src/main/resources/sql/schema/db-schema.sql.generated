@@ -139,7 +139,7 @@
         description text,
         method text not null,
         modification_time timestamp(6) with time zone not null,
-        type text not null check (type in ('DOMAIN_DELETE','DOMAIN_SUSPEND','DOMAIN_UNSUSPEND','EPP_PASSWORD_UPDATE','REGISTRAR_CREATE','REGISTRAR_SECURITY_UPDATE','REGISTRAR_UPDATE','USER_CREATE','USER_DELETE','USER_UPDATE')),
+        type text not null check (type in ('DUM_DOWNLOAD','DOMAIN_DELETE','DOMAIN_SUSPEND','DOMAIN_UNSUSPEND','EPP_PASSWORD_UPDATE','REGISTRAR_CREATE','REGISTRAR_CONTACTS_UPDATE','REGISTRAR_SECURITY_UPDATE','REGISTRAR_UPDATE','REGISTRY_LOCK','REGISTRY_UNLOCK','USER_CREATE','USER_DELETE','USER_UPDATE')),
         url text not null,
         acting_user text not null,
         primary key (revision_id)

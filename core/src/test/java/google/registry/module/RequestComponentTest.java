@@ -29,6 +29,7 @@ import google.registry.testing.TestDataHelper;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link RequestComponent}. */
@@ -49,6 +50,7 @@ public class RequestComponentTest {
   }
 
   @Test
+  @Disabled("To be removed with GAE components")
   void testGaeToJettyRoutingCoverage() {
     Set<Route> jettyRoutes = getRoutes(RequestComponent.class, "routing.txt");
     Set<Route> gaeRoutes = new HashSet<>();
