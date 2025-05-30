@@ -263,7 +263,7 @@ cloudSql:
   # Using the default 'postgres' is bad practice. See bug for more information.
   # If jdbcUrl in this file is moved elsewhere, be sure to move this notice
   # with it until the change is applied.
-  jdbcUrl: jdbc:postgresql://localhost
+  jdbcUrl: jdbc:postgresql://localhost:15432/
   # This name is used by Cloud SQL when connecting to the database.
   instanceConnectionName: project-id:region:instance-id
   # If non-null, we will use this instance for certain read-only actions or

@@ -1,0 +1,56 @@
+addGracePeriodLength: "PT2592000S"
+allowedFullyQualifiedHostNames: []
+allowedRegistrantContactIds: []
+anchorTenantAddGracePeriodLength: "PT2592000S"
+autoRenewGracePeriodLength: "PT2592000S"
+automaticTransferLength: "PT2592000S"
+claimsPeriodEnd: "294247-01-10T04:00:54.775Z"
+creationTime: "2022-09-01T00:00:00.000Z"
+createBillingCostTransitions:
+  "1970-01-01T00:00:00.000Z":
+    currency: "USD"
+    amount: 13.00
+currency: "USD"
+defaultPromoTokens: []
+dnsAPlusAaaaTtl: "PT900S"
+dnsDsTtl: null
+dnsNsTtl: null
+dnsPaused: false
+dnsWriters:
+- "VoidDnsWriter"
+driveFolderId: "driveFolder"
+eapFeeSchedule:
+  "1970-01-01T00:00:00.000Z":
+    currency: "USD"
+    amount: 0.00
+escrowEnabled: false
+idnTables: []
+invoicingEnabled: false
+lordnUsername: null
+numDnsPublishLocks: 1
+pendingDeleteLength: "PT2592000S"
+premiumListName: "demo1"
+pricingEngineClassName: "google.registry.model.pricing.StaticPremiumListPricingEngine"
+redemptionGracePeriodLength: "PT2592000S"
+registryLockOrUnlockBillingCost:
+  currency: "USD"
+  amount: 0.00
+renewBillingCostTransitions:
+  "1970-01-01T00:00:00.000Z":
+    currency: "USD"
+    amount: 11.00
+renewGracePeriodLength: "PT2592000S"
+reservedListNames: []
+restoreBillingCost:
+  currency: "USD"
+  amount: 17.00
+roidSuffix: "DEMO1"
+serverStatusChangeBillingCost:
+  currency: "USD"
+  amount: 19.00
+tldStateTransitions:
+  "1970-01-01T00:00:00.000Z": "GENERAL_AVAILABILITY"
+tldStr: "demo1"
+tldType: "REAL"
+tldUnicode: "demo1"
+transferGracePeriodLength: "PT2592000S"

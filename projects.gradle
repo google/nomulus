@@ -18,7 +18,7 @@
 // The projects to run your deployment Nomulus application.
 rootProject.ext.projects = ['production': 'your-production-project',
                             'sandbox'   : 'your-sandbox-project',
-                            'alpha'     : 'your-alpha-project',
+                            'alpha'     : 'nomulus-pre-alpha2',
                             'crash'     : 'your-crash-project',
                             'qa'        : 'your-qa-project']
 

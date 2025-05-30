@@ -7,7 +7,7 @@
   <sessions-enabled>true</sessions-enabled>
   <instance-class>B4</instance-class>
   <basic-scaling>
-    <max-instances>5</max-instances>
+    <max-instances>1</max-instances>
     <idle-timeout>5m</idle-timeout>
   </basic-scaling>
 

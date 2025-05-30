@@ -7,7 +7,7 @@
   <sessions-enabled>true</sessions-enabled>
   <instance-class>B4</instance-class>
   <basic-scaling>
-    <max-instances>100</max-instances>
+    <max-instances>2</max-instances>
     <idle-timeout>10m</idle-timeout>
   </basic-scaling>
 
@@ -23,10 +23,12 @@
   </env-variables>
 
   <!-- Enable external traffic to go through VPC, required for static ip -->
-  <vpc-access-connector>
-    <name>projects/domain-registry-alpha/locations/us-central1/connectors/appengine-connector</name>
-    <egress-setting>all-traffic</egress-setting>
-  </vpc-access-connector>
+  <!-- <vpc-access-connector> -->
+    <!-- <name>projects/domain-registry-alpha/locations/us-central1/connectors/appengine-connector</name> -->
+    <!-- <name>projects/nomulus-pre-alpha2/locations/us-central1/connectors/vpc-connector-test</name> -->
+    <!-- <egress-setting>all-traffic</egress-setting> -->
+  <!-- </vpc-access-connector> -->
+
 
   <static-files>
     <include path="/*.html" expiration="1m"/>

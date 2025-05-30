@@ -18,9 +18,6 @@ import org.testcontainers.utility.DockerImageName;
 /** Information about Nomulus' Cloud SQL PostgreSql instance. */
 public class NomulusPostgreSql {
 
-  /** Get the current system architecture, used to deduce the docker image name. */
-  private static final String ARCH = System.getProperty("os.arch");
-
   /** The current PostgreSql version in Cloud SQL. */
   // TODO(weiminyu): setup periodic checks to detect version changes in Cloud SQL.
   private static final String TARGET_VERSION = "17-alpine";
@@ -33,7 +30,7 @@ public class NomulusPostgreSql {
    * @see <a href="https://hub.docker.com/_/postgres">Postgres Docker Hub</a>
    */
   public static DockerImageName getDockerImageName() {
-    String image = (ARCH.equals("amd64") ? "" : ARCH + "/") + "postgres:" + TARGET_VERSION;
+    String image = "postgres:" + TARGET_VERSION;
     return DockerImageName.parse(image).asCompatibleSubstituteFor("postgres");
   }
 }
