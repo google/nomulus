@@ -72,11 +72,11 @@ final class CreateCdnsTld extends ConfirmingCommand {
             .setDescription(description)
             .setNameServerSet(
                 RegistryToolEnvironment.get() == RegistryToolEnvironment.PRODUCTION
-                ? "cloud-dns-registry"
-                : "cloud-dns-registry-test")
+                    ? "cloud-dns-registry"
+                    : "cloud-dns-registry-test")
             .setDnsName(dnsName)
             .setName((name != null) ? name : dnsName)
-            .setDnssecConfig(new ManagedZoneDnsSecConfig().setNonExistence("NSEC").setState("ON"));
+            .setDnssecConfig(new ManagedZoneDnsSecConfig().setNonExistence("nsec").setState("on"));
   }
 
   @Override
