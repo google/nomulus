@@ -26,6 +26,7 @@ import google.registry.config.CredentialModule;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.config.RegistryConfig.ConfigModule;
 import google.registry.dns.writer.VoidDnsWriterModule;
+import google.registry.dns.writer.powerdns.PowerDnsConfig.PowerDnsConfigModule;
 import google.registry.export.DriveModule;
 import google.registry.export.sheet.SheetsServiceModule;
 import google.registry.flows.ServerTridProviderModule;
@@ -62,6 +63,7 @@ import jakarta.inject.Singleton;
       BigqueryModule.class,
       CloudTasksUtilsModule.class,
       ConfigModule.class,
+      PowerDnsConfigModule.class,
       ConsoleConfigModule.class,
       CredentialModule.class,
       CustomLogicFactoryModule.class,

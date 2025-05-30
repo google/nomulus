@@ -130,49 +130,6 @@ public final class RegistryConfig {
       return config.gcpProject.locationId;
     }
 
-    /** Base URL of the PowerDNS server. */
-    @Provides
-    @Config("powerDnsBaseUrl")
-    public static String providePowerDnsBaseUrl(RegistryConfigSettings config) {
-      return config.powerDns.baseUrl;
-    }
-
-    /** API key for the PowerDNS server. */
-    @Provides
-    @Config("powerDnsApiKey")
-    public static String providePowerDnsApiKey(RegistryConfigSettings config) {
-      return config.powerDns.apiKey;
-    }
-
-    /** Whether DNSSEC is enabled for the PowerDNS server. */
-    @Provides
-    @Config("powerDnsDnssecEnabled")
-    public static Boolean providePowerDnsDnssecEnabled(RegistryConfigSettings config) {
-      return config.powerDns.dnssecEnabled;
-    }
-
-    /** Whether TSIG is enabled for the PowerDNS server. */
-    @Provides
-    @Config("powerDnsTsigEnabled")
-    public static Boolean providePowerDnsTsigEnabled(RegistryConfigSettings config) {
-      return config.powerDns.tsigEnabled;
-    }
-
-    /** Default SOA MNAME for the TLD zone. */
-    @Provides
-    @Config("powerDnsRootNameServers")
-    public static ImmutableList<String> providePowerDnsRootNameServers(
-        RegistryConfigSettings config) {
-      return ImmutableList.copyOf(config.powerDns.rootNameServers);
-    }
-
-    /** Default SOA RNAME for the TLD zone. */
-    @Provides
-    @Config("powerDnsSoaName")
-    public static String providePowerDnsSoaName(RegistryConfigSettings config) {
-      return config.powerDns.soaName;
-    }
-
     /**
      * The product name of this specific registry. Used throughout the registrar console.
      *

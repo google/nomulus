@@ -27,16 +27,6 @@ gcpProject:
   # The base domain name of the registry service. Services are reachable at [service].baseDomain.
   baseDomain: registry.test
 
-powerDns:
-  baseUrl: http://localhost:8081/api/v1
-  apiKey: example-api-key
-  dnssecEnabled: false
-  tsigEnabled: true
-  rootNameServers:
-  - ns1.example.com.
-  - ns2.example.com.
-  soaName: nstld.example.com.
-
 gSuite:
   # Publicly accessible domain name of the running G Suite instance.
   domainName: domain-registry.example

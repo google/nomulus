@@ -43,7 +43,6 @@ public class RegistryConfigSettings {
   public DnsUpdate dnsUpdate;
   public BulkPricingPackageMonitoring bulkPricingPackageMonitoring;
   public Bsa bsa;
-  public PowerDns powerDns;
 
   /** Configuration options that apply to the entire GCP project. */
   public static class GcpProject {
@@ -57,16 +56,6 @@ public class RegistryConfigSettings {
     public String toolsServiceUrl;
     public String pubapiServiceUrl;
     public String baseDomain;
-  }
-
-  /** Configuration options for PowerDNS. */
-  public static class PowerDns {
-    public String baseUrl;
-    public String apiKey;
-    public Boolean dnssecEnabled;
-    public Boolean tsigEnabled;
-    public List<String> rootNameServers;
-    public String soaName;
   }
 
   /** Configuration options for authenticating users. */
