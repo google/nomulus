@@ -18,13 +18,11 @@ import static com.google.common.base.Suppliers.memoize;
 import static google.registry.util.ResourceUtils.readResourceUtf8;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.Ascii;
 import com.google.common.collect.ImmutableList;
 import dagger.Module;
 import dagger.Provides;
+import google.registry.config.RegistryConfig;
 import google.registry.config.RegistryConfig.Config;
-import google.registry.util.RegistryEnvironment;
-import google.registry.util.YamlUtils;
 import jakarta.inject.Singleton;
 import java.util.function.Supplier;
 
@@ -37,25 +35,9 @@ import java.util.function.Supplier;
 public final class PowerDnsConfig {
 
   // expected config file locations for PowerDNS
-  private static final String ENVIRONMENT_CONFIG_FORMAT = "files/power-dns/%s.yaml";
-  private static final String YAML_CONFIG_PROD =
-      readResourceUtf8(PowerDnsConfig.class, "files/power-dns/_default.yaml");
-
-  /**
-   * Loads the {@link PowerDnsConfigSettings} POJO from the YAML configuration files.
-   *
-   * <p>The {@code _default.yaml} file in this directory is loaded first, and a fatal error is
-   * thrown if it cannot be found or if there is an error parsing it. Separately, the
-   * environment-specific config file named {@code ENVIRONMENT.yaml} is also loaded and those values
-   * merged into the POJO.
-   */
-  static PowerDnsConfigSettings getConfigSettings() {
-    String configFilePath =
-        String.format(
-            ENVIRONMENT_CONFIG_FORMAT, Ascii.toLowerCase(RegistryEnvironment.get().name()));
-    String customYaml = readResourceUtf8(PowerDnsConfig.class, configFilePath);
-    return YamlUtils.getConfigSettings(YAML_CONFIG_PROD, customYaml, PowerDnsConfigSettings.class);
-  }
+  private static final String YAML_CONFIG_ENV_TEMPLATE = "files/power-dns/env-%s.yaml";
+  private static final String YAML_CONFIG_DEFAULT =
+      readResourceUtf8(RegistryConfig.class, "files/power-dns/default.yaml");
 
   /** Dagger module that provides DNS configuration settings. */
   @Module
@@ -122,7 +104,10 @@ public final class PowerDnsConfig {
    */
   @VisibleForTesting
   public static final Supplier<PowerDnsConfigSettings> CONFIG_SETTINGS =
-      memoize(PowerDnsConfig::getConfigSettings);
+      memoize(
+          () ->
+              RegistryConfig.getEnvironmentConfigSettings(
+                  YAML_CONFIG_DEFAULT, YAML_CONFIG_ENV_TEMPLATE, PowerDnsConfigSettings.class));
 
   private PowerDnsConfig() {}
 }
