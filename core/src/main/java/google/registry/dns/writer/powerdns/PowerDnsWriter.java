@@ -116,7 +116,7 @@ public class PowerDnsWriter extends DnsUpdateWriter {
     super(tldZoneName, dnsDefaultATtl, dnsDefaultNsTtl, dnsDefaultDsTtl, null, clock);
 
     // Initialize the PowerDNS client
-    this.tldZoneName = getCanonicalHostName(tldZoneName);
+    this.tldZoneName = getHostNameWithTrailingDot(tldZoneName);
     this.rootNameServers = powerDnsRootNameServers;
     this.soaName = powerDnsSoaName;
     this.dnssecEnabled = powerDnsDnssecEnabled;
@@ -132,7 +132,7 @@ public class PowerDnsWriter extends DnsUpdateWriter {
    */
   @Override
   public void publishDomain(String domainName) {
-    String normalizedDomainName = getSanitizedHostName(domainName);
+    String normalizedDomainName = getHostNameWithoutTrailingDot(domainName);
     logger.atInfo().log("Staging domain %s for PowerDNS", normalizedDomainName);
     super.publishDomain(normalizedDomainName);
   }
@@ -145,7 +145,7 @@ public class PowerDnsWriter extends DnsUpdateWriter {
    */
   @Override
   public void publishHost(String hostName) {
-    String normalizedHostName = getSanitizedHostName(hostName);
+    String normalizedHostName = getHostNameWithoutTrailingDot(hostName);
     logger.atInfo().log("Staging host %s for PowerDNS", normalizedHostName);
     super.publishHost(normalizedHostName);
   }
@@ -280,7 +280,7 @@ public class PowerDnsWriter extends DnsUpdateWriter {
   private RRSet appendRRSet(List<RRSet> rrsets, String name, String type, long ttl) {
     // create the base PowerDNS RRSet object
     RRSet rrset = new RRSet();
-    rrset.setName(name);
+    rrset.setName(getHostNameWithTrailingDot(name));
     rrset.setType(type);
     rrset.setTtl(ttl);
     rrset.setRecords(new ArrayList<RecordObject>());
@@ -303,14 +303,14 @@ public class PowerDnsWriter extends DnsUpdateWriter {
     // base TLD zone object
     logger.atInfo().log("Creating new PowerDNS TLD zone %s", tldZoneName);
     Zone newTldZone = new Zone();
-    newTldZone.setName(tldZoneName);
+    newTldZone.setName(getHostNameWithTrailingDot(tldZoneName));
     newTldZone.setKind(Zone.ZoneKind.Master);
 
     // create an initial SOA record, which may be modified later by an administrator
     // or an automated onboarding process
     RRSet soaRecord = new RRSet();
     soaRecord.setChangeType(RRSet.ChangeType.REPLACE);
-    soaRecord.setName(tldZoneName);
+    soaRecord.setName(getHostNameWithTrailingDot(tldZoneName));
     soaRecord.setTtl(defaultZoneTtl);
     soaRecord.setType("SOA");
 
@@ -318,14 +318,17 @@ public class PowerDnsWriter extends DnsUpdateWriter {
     RecordObject soaRecordContent = new RecordObject();
     soaRecordContent.setContent(
         String.format(
-            "%s %s 1 900 1800 6048000 %s", rootNameServers.get(0), soaName, defaultZoneTtl));
+            "%s %s 1 900 1800 6048000 %s",
+            getHostNameWithTrailingDot(rootNameServers.get(0)),
+            getHostNameWithTrailingDot(soaName),
+            defaultZoneTtl));
     soaRecordContent.setDisabled(false);
     soaRecord.setRecords(new ArrayList<RecordObject>(Arrays.asList(soaRecordContent)));
 
     // create NS records, which may be modified later by an administrator
     RRSet nsRecord = new RRSet();
     nsRecord.setChangeType(RRSet.ChangeType.REPLACE);
-    nsRecord.setName(tldZoneName);
+    nsRecord.setName(getHostNameWithTrailingDot(tldZoneName));
     nsRecord.setTtl(defaultZoneTtl);
     nsRecord.setType("NS");
 
@@ -336,7 +339,7 @@ public class PowerDnsWriter extends DnsUpdateWriter {
                 .map(
                     ns -> {
                       RecordObject nsRecordContent = new RecordObject();
-                      nsRecordContent.setContent(ns);
+                      nsRecordContent.setContent(getHostNameWithTrailingDot(ns));
                       nsRecordContent.setDisabled(false);
                       return nsRecordContent;
                     })
@@ -351,6 +354,169 @@ public class PowerDnsWriter extends DnsUpdateWriter {
 
     // return the created TLD zone
     return createdTldZone;
+  }
+
+  /**
+   * Validate and synchronize zone configuration for the provided TLD zone. includes SOA, NS, TSIG,
+   * and DNSSEC configuration.
+   *
+   * @param zone the TLD zone to validate
+   */
+  private void validateZoneConfig(Zone zone) throws IOException {
+    // validate the SOA and root NS records
+    validateSoaConfig(zone);
+
+    // validate the NS records
+    validateNsConfig(zone);
+
+    // validate the TSIG key configuration
+    validateTsigConfig(zone);
+
+    // validate the DNSSEC configuration
+    validateDnssecConfig(zone);
+  }
+
+  /**
+   * Validate the SOA record for the TLD zone.
+   *
+   * @param zone the TLD zone to validate
+   */
+  private void validateSoaConfig(Zone zone) throws IOException {
+    // retrieve the existing SOA record
+    logger.atInfo().log("Validating SOA record for PowerDNS TLD zone %s", zone.getName());
+    RRSet soaRecord =
+        zone.getRrsets().stream()
+            .filter(rrset -> rrset.getType().equals("SOA"))
+            .findFirst()
+            .orElse(null);
+    if (soaRecord == null || soaRecord.getRecords() == null) {
+      throw new IOException("Invalid SOA record state for PowerDNS TLD zone " + zone.getName());
+    }
+
+    // retrieve the SOA record RRSet content exists
+    RecordObject soaRecordContent = soaRecord.getRecords().get(0);
+    if (soaRecordContent == null || soaRecordContent.getContent() == null) {
+      throw new IOException(
+          "Invalid SOA record content state for PowerDNS TLD zone " + zone.getName());
+    }
+
+    // validate the SOA record content exists
+    String soaRecordContentString = soaRecordContent.getContent();
+    if (soaRecordContentString == null) {
+      throw new IOException(
+          "Invalid SOA record content data for PowerDNS TLD zone " + zone.getName());
+    }
+
+    // validate the SOA string starts with the first root name server and the SOA contact
+    // name found in the registry configuration
+    if (soaRecordContentString.startsWith(
+        String.format(
+            "%s %s ",
+            getHostNameWithTrailingDot(rootNameServers.get(0)),
+            getHostNameWithTrailingDot(soaName)))) {
+      logger.atInfo().log(
+          "Successfully validated SOA record for PowerDNS TLD zone %s", zone.getName());
+      return;
+    }
+
+    // update the SOA record to the expected value
+    logger.atWarning().log("Updating SOA record for PowerDNS TLD zone %s", zone.getName());
+    RRSet newSoaRecord = new RRSet();
+    newSoaRecord.setChangeType(RRSet.ChangeType.REPLACE);
+    newSoaRecord.setName(getHostNameWithTrailingDot(zone.getName()));
+    newSoaRecord.setTtl(defaultZoneTtl);
+    newSoaRecord.setType("SOA");
+
+    // add content to the SOA record content from default configuration
+    RecordObject newSoaRecordContent = new RecordObject();
+    newSoaRecordContent.setContent(
+        String.format(
+            "%s %s %s 900 1800 6048000 %s",
+            getHostNameWithTrailingDot(rootNameServers.get(0)),
+            getHostNameWithTrailingDot(soaName),
+            zone.getSerial(),
+            defaultZoneTtl));
+    newSoaRecordContent.setDisabled(false);
+    newSoaRecord.setRecords(new ArrayList<RecordObject>(Arrays.asList(newSoaRecordContent)));
+
+    // add the SOA to the TLD zone
+    zone.setRrsets(new ArrayList<RRSet>(Arrays.asList(newSoaRecord)));
+
+    // call the PowerDNS API to commit the changes
+    powerDnsClient.patchZone(zone);
+    logger.atInfo().log("Successfully updated SOA record for PowerDNS TLD zone %s", zone.getName());
+  }
+
+  /**
+   * Validate the NS records for the TLD zone.
+   *
+   * @param zone the TLD zone to validate
+   */
+  private void validateNsConfig(Zone zone) throws IOException {
+    // retrieve the existing NS records
+    logger.atInfo().log("Validating NS records for PowerDNS TLD zone %s", zone.getName());
+    RRSet nsRecord =
+        zone.getRrsets().stream()
+            .filter(
+                rrset ->
+                    rrset.getType().equals("NS")
+                        && getHostNameWithoutTrailingDot(rrset.getName())
+                            .equals(getHostNameWithoutTrailingDot(zone.getName())))
+            .findFirst()
+            .orElse(null);
+    if (nsRecord == null || nsRecord.getRecords() == null) {
+      throw new IOException("Invalid NS record state for PowerDNS TLD zone " + zone.getName());
+    }
+
+    // retrieve normalized list of existing NS record content
+    List<String> existingNsRecords =
+        nsRecord.getRecords().stream()
+            .map(r -> getHostNameWithoutTrailingDot(r.getContent()))
+            .collect(Collectors.toList());
+
+    // make normalized list of expected NS record content
+    List<String> expectedNsRecords =
+        rootNameServers.stream()
+            .map(r -> getHostNameWithoutTrailingDot(r))
+            .collect(Collectors.toList());
+
+    // validate the existing NS record array elements match the expected elements
+    // found in the root name servers list
+    if (existingNsRecords.equals(expectedNsRecords)) {
+      logger.atInfo().log(
+          "Successfully validated NS records for PowerDNS TLD zone %s", zone.getName());
+      return;
+    }
+
+    // update the NS records to the expected value
+    logger.atWarning().log(
+        "Updating NS records for PowerDNS TLD zone %s. Existing=%s, New=%s",
+        zone.getName(), existingNsRecords, expectedNsRecords);
+    RRSet newNsRecord = new RRSet();
+    newNsRecord.setChangeType(RRSet.ChangeType.REPLACE);
+    newNsRecord.setName(getHostNameWithTrailingDot(zone.getName()));
+    newNsRecord.setTtl(defaultZoneTtl);
+    newNsRecord.setType("NS");
+
+    // add content to the NS record content from default configuration
+    newNsRecord.setRecords(
+        new ArrayList<RecordObject>(
+            rootNameServers.stream()
+                .map(
+                    ns -> {
+                      RecordObject nsRecordContent = new RecordObject();
+                      nsRecordContent.setContent(getHostNameWithTrailingDot(ns));
+                      nsRecordContent.setDisabled(false);
+                      return nsRecordContent;
+                    })
+                .collect(Collectors.toList())));
+
+    // add the NS record to the TLD zone
+    zone.setRrsets(new ArrayList<RRSet>(Arrays.asList(newNsRecord)));
+
+    // call the PowerDNS API to commit the changes
+    powerDnsClient.patchZone(zone);
+    logger.atInfo().log("Successfully updated NS records for PowerDNS TLD zone %s", zone.getName());
   }
 
   /**
@@ -372,7 +538,7 @@ public class PowerDnsWriter extends DnsUpdateWriter {
     // calculate the zone TSIG key name
     logger.atInfo().log("Validating TSIG configuration for PowerDNS TLD zone %s", zone.getName());
     String zoneTsigKeyName =
-        String.format("%s-%s", getSanitizedHostName(zone.getName()), TSIG_KEY_NAME);
+        String.format("%s-%s", getHostNameWithoutTrailingDot(zone.getName()), TSIG_KEY_NAME);
 
     // validate the named TSIG key is present in the PowerDNS server
     try {
@@ -611,28 +777,28 @@ public class PowerDnsWriter extends DnsUpdateWriter {
   }
 
   /**
-   * Returns the presentation format ending in a dot used for an given hostname.
+   * Returns the host name with a trailing dot.
    *
    * @param hostName the fully qualified hostname
+   * @return the host name with a trailing dot
    */
-  private String getCanonicalHostName(String hostName) {
-    String normalizedHostName = hostName.endsWith(".") ? hostName : hostName + '.';
-    String canonicalHostName =
-        tldZoneName == null || normalizedHostName.endsWith(tldZoneName)
-            ? normalizedHostName
-            : normalizedHostName + tldZoneName;
-    return canonicalHostName.toLowerCase(Locale.US);
+  private String getHostNameWithTrailingDot(String hostName) {
+    String normalizedHostName = hostName.toLowerCase(Locale.US).trim();
+    return normalizedHostName.endsWith(".") ? normalizedHostName : normalizedHostName + '.';
   }
 
   /**
-   * Returns the sanitized host name, which is the host name without the trailing dot.
+   * Returns the host name without the trailing dot.
    *
    * @param hostName the fully qualified hostname
    * @return the sanitized host name
    */
-  private String getSanitizedHostName(String hostName) {
+  private String getHostNameWithoutTrailingDot(String hostName) {
     // return the host name without the trailing dot
-    return hostName.endsWith(".") ? hostName.substring(0, hostName.length() - 1) : hostName;
+    String normalizedHostName = hostName.toLowerCase(Locale.US).trim();
+    return normalizedHostName.endsWith(".")
+        ? normalizedHostName.substring(0, normalizedHostName.length() - 1)
+        : normalizedHostName;
   }
 
   /**
@@ -644,7 +810,7 @@ public class PowerDnsWriter extends DnsUpdateWriter {
   private Zone getTldZoneForUpdate(List<RRSet> records) throws IOException {
     Zone tldZone = new Zone();
     tldZone.setId(getTldZoneId());
-    tldZone.setName(getSanitizedHostName(tldZoneName));
+    tldZone.setName(getHostNameWithoutTrailingDot(tldZoneName));
     tldZone.setRrsets(records);
     return tldZone;
   }
@@ -658,13 +824,14 @@ public class PowerDnsWriter extends DnsUpdateWriter {
   private Zone getAndValidateTldZoneByName() throws IOException {
     // retrieve an existing TLD zone by name
     for (Zone zone : powerDnsClient.listZones()) {
-      if (getSanitizedHostName(zone.getName()).equals(getSanitizedHostName(tldZoneName))) {
-        // validate the zone's TSIG key configuration
-        validateTsigConfig(zone);
+      if (getHostNameWithoutTrailingDot(zone.getName())
+          .equals(getHostNameWithoutTrailingDot(tldZoneName))) {
+        // retrieve full zone details
+        Zone fullZone = powerDnsClient.getZone(zone.getId());
 
-        // validate the DNSSEC configuration and return the TLD zone
-        validateDnssecConfig(zone);
-        return zone;
+        // validate the zone's configuration
+        validateZoneConfig(fullZone);
+        return fullZone;
       }
     }
 
@@ -673,11 +840,8 @@ public class PowerDnsWriter extends DnsUpdateWriter {
       // create a new TLD zone
       Zone zone = createZone();
 
-      // validate the zone's TSIG key configuration
-      validateTsigConfig(zone);
-
-      // configure DNSSEC and return the TLD zone
-      validateDnssecConfig(zone);
+      // validate the zone's configuration
+      validateZoneConfig(zone);
       return zone;
     } catch (Exception e) {
       // log the error and continue
