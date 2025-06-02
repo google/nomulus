@@ -28,22 +28,17 @@ import static org.mockito.Mockito.when;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
-import com.google.gson.Gson;
 import google.registry.model.console.ConsoleUpdateHistory;
 import google.registry.model.console.GlobalRole;
 import google.registry.model.console.User;
 import google.registry.model.console.UserRoles;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarPoc;
-import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.request.Action;
 import google.registry.request.RequestModule;
 import google.registry.request.auth.AuthResult;
 import google.registry.testing.ConsoleApiParamsUtils;
-import google.registry.testing.FakeClock;
-import google.registry.testing.FakeResponse;
 import google.registry.testing.SystemPropertyExtension;
-import google.registry.tools.GsonUtils;
 import google.registry.util.EmailMessage;
 import google.registry.util.RegistryEnvironment;
 import jakarta.mail.internet.AddressException;
@@ -59,11 +54,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Tests for {@link google.registry.ui.server.console.ConsoleUpdateRegistrarAction}. */
-class ConsoleUpdateRegistrarActionTest {
-  private static final Gson GSON = GsonUtils.provideGson();
-  private final FakeClock clock = new FakeClock(DateTime.parse("2025-01-01T00:00:00.000Z"));
-  private ConsoleApiParams consoleApiParams;
-  private FakeResponse response;
+class ConsoleUpdateRegistrarActionTest extends ConsoleActionBaseTestCase {
 
   private Registrar registrar;
 
@@ -76,10 +67,6 @@ class ConsoleUpdateRegistrarActionTest {
   @RegisterExtension
   @Order(Integer.MAX_VALUE)
   final SystemPropertyExtension systemPropertyExtension = new SystemPropertyExtension();
-
-  @RegisterExtension
-  final JpaTestExtensions.JpaIntegrationTestExtension jpa =
-      new JpaTestExtensions.Builder().withClock(clock).buildIntegrationTestExtension();
 
   @BeforeEach
   void beforeEach() throws Exception {
@@ -98,7 +85,6 @@ class ConsoleUpdateRegistrarActionTest {
                 .setEmailAddress("user@registrarId.com")
                 .setUserRoles(new UserRoles.Builder().setGlobalRole(GlobalRole.FTE).build())
                 .build());
-    consoleApiParams = createParams();
   }
 
   @Test
@@ -110,12 +96,12 @@ class ConsoleUpdateRegistrarActionTest {
                 "TheRegistrar",
                 "app, dev",
                 false,
-                "\"2024-12-12T00:00:00.000Z\""));
+                "\"2023-12-12T00:00:00.000Z\""));
     action.run();
     Registrar newRegistrar = Registrar.loadByRegistrarId("TheRegistrar").get();
     assertThat(newRegistrar.getAllowedTlds()).containsExactly("app", "dev");
     assertThat(newRegistrar.isRegistryLockAllowed()).isFalse();
-    assertThat(((FakeResponse) consoleApiParams.response()).getStatus()).isEqualTo(SC_OK);
+    assertThat(response.getStatus()).isEqualTo(SC_OK);
     ConsoleUpdateHistory history = loadSingleton(ConsoleUpdateHistory.class).get();
     assertThat(history.getType()).isEqualTo(ConsoleUpdateHistory.Type.REGISTRAR_UPDATE);
     assertThat(history.getDescription()).hasValue("TheRegistrar");
@@ -143,8 +129,8 @@ class ConsoleUpdateRegistrarActionTest {
                 false,
                 "\"2025-02-01T00:00:00.000Z\""));
     action.run();
-    assertThat(((FakeResponse) consoleApiParams.response()).getStatus()).isEqualTo(SC_BAD_REQUEST);
-    assertThat((String) ((FakeResponse) consoleApiParams.response()).getPayload())
+    assertThat(response.getStatus()).isEqualTo(SC_BAD_REQUEST);
+    assertThat((String) response.getPayload())
         .contains("Invalid value of LastPocVerificationDate - value is in the future");
   }
 
@@ -160,8 +146,8 @@ class ConsoleUpdateRegistrarActionTest {
                 false,
                 "\"2024-12-12T00:00:00.000Z\""));
     action.run();
-    assertThat(((FakeResponse) consoleApiParams.response()).getStatus()).isEqualTo(SC_BAD_REQUEST);
-    assertThat((String) ((FakeResponse) consoleApiParams.response()).getPayload())
+    assertThat(response.getStatus()).isEqualTo(SC_BAD_REQUEST);
+    assertThat((String) response.getPayload())
         .contains("Cannot modify allowed TLDs if there is no WHOIS abuse contact set");
   }
 
@@ -188,12 +174,12 @@ class ConsoleUpdateRegistrarActionTest {
                 "TheRegistrar",
                 "app, dev",
                 false,
-                "\"2024-12-12T00:00:00.000Z\""));
+                "\"2023-12-12T00:00:00.000Z\""));
     action.run();
     Registrar newRegistrar = Registrar.loadByRegistrarId("TheRegistrar").get();
     assertThat(newRegistrar.getAllowedTlds()).containsExactly("app", "dev");
     assertThat(newRegistrar.isRegistryLockAllowed()).isFalse();
-    assertThat(((FakeResponse) consoleApiParams.response()).getStatus()).isEqualTo(SC_OK);
+    assertThat(response.getStatus()).isEqualTo(SC_OK);
   }
 
   @Test
@@ -205,7 +191,7 @@ class ConsoleUpdateRegistrarActionTest {
                 "TheRegistrar",
                 "app, dev",
                 false,
-                "\"2024-12-12T00:00:00.000Z\""));
+                "\"2023-12-12T00:00:00.000Z\""));
     action.run();
     verify(consoleApiParams.sendEmailUtils().gmailClient, times(1))
         .sendEmail(
@@ -215,11 +201,11 @@ class ConsoleUpdateRegistrarActionTest {
                         + " environment")
                 .setBody(
                     "The following changes were made in registry unittest environment to the"
-                        + " registrar TheRegistrar by user user@registrarId.com:\n"
+                        + " registrar TheRegistrar by admin fte@email.tld:\n"
                         + "\n"
                         + "allowedTlds: null -> [app, dev]\n"
                         + "lastPocVerificationDate: 1970-01-01T00:00:00.000Z ->"
-                        + " 2024-12-12T00:00:00.000Z\n")
+                        + " 2023-12-12T00:00:00.000Z\n")
                 .setRecipients(ImmutableList.of(new InternetAddress("notification@test.example")))
                 .build());
   }

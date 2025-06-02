@@ -27,20 +27,14 @@ import static org.mockito.Mockito.when;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSetMultimap;
 import com.google.common.collect.ImmutableSortedMap;
-import com.google.gson.Gson;
 import google.registry.flows.certs.CertificateChecker;
 import google.registry.model.console.ConsoleUpdateHistory;
 import google.registry.model.registrar.Registrar;
-import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.request.Action;
 import google.registry.request.RequestModule;
-import google.registry.request.auth.AuthResult;
 import google.registry.request.auth.AuthenticatedRegistrarAccessor;
-import google.registry.testing.ConsoleApiParamsUtils;
-import google.registry.testing.DatabaseHelper;
-import google.registry.testing.FakeClock;
 import google.registry.testing.FakeResponse;
-import google.registry.ui.server.console.ConsoleApiParams;
+import google.registry.ui.server.console.ConsoleActionBaseTestCase;
 import google.registry.ui.server.console.ConsoleModule;
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -49,19 +43,15 @@ import java.util.Optional;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Tests for {@link google.registry.ui.server.console.settings.SecurityAction}. */
-class SecurityActionTest {
+class SecurityActionTest extends ConsoleActionBaseTestCase {
 
   private static String jsonRegistrar1 =
       String.format(
           "{\"registrarId\": \"registrarId\", \"clientCertificate\": \"%s\","
               + " \"ipAddressAllowList\": [\"192.168.1.1/32\"]}",
           SAMPLE_CERT2);
-  private static final Gson GSON = RequestModule.provideGson();
-  private ConsoleApiParams consoleApiParams;
-  private final FakeClock clock = new FakeClock();
   private Registrar testRegistrar;
 
   private AuthenticatedRegistrarAccessor registrarAccessor =
@@ -77,10 +67,6 @@ class SecurityActionTest {
           ImmutableSet.of("secp256r1", "secp384r1"),
           clock);
 
-  @RegisterExtension
-  final JpaTestExtensions.JpaIntegrationTestExtension jpa =
-      new JpaTestExtensions.Builder().withClock(clock).buildIntegrationTestExtension();
-
   @BeforeEach
   void beforeEach() {
     testRegistrar = saveRegistrar("registrarId");
@@ -91,7 +77,6 @@ class SecurityActionTest {
     clock.setTo(DateTime.parse("2020-11-01T00:00:00Z"));
     SecurityAction action =
         createAction(
-            AuthResult.createUser(DatabaseHelper.createAdminUser("email@email.com")),
             testRegistrar.getRegistrarId());
     action.run();
     assertThat(((FakeResponse) consoleApiParams.response()).getStatus()).isEqualTo(SC_OK);
@@ -105,9 +90,7 @@ class SecurityActionTest {
     assertThat(history.getDescription()).hasValue("registrarId");
   }
 
-  private SecurityAction createAction(AuthResult authResult, String registrarId)
-      throws IOException {
-    consoleApiParams = ConsoleApiParamsUtils.createFake(authResult);
+  private SecurityAction createAction(String registrarId) throws IOException {
     when(consoleApiParams.request().getMethod()).thenReturn(Action.Method.POST.toString());
     doReturn(new BufferedReader(new StringReader(jsonRegistrar1)))
         .when(consoleApiParams.request())

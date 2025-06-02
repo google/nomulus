@@ -28,7 +28,6 @@ import static org.mockito.Mockito.when;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import com.google.gson.Gson;
 import google.registry.model.console.ConsoleUpdateHistory;
 import google.registry.model.console.GlobalRole;
 import google.registry.model.console.RegistrarRole;
@@ -36,7 +35,6 @@ import google.registry.model.console.User;
 import google.registry.model.console.UserRoles;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarPoc;
-import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.request.Action;
 import google.registry.request.RequestModule;
 import google.registry.request.auth.AuthResult;
@@ -51,13 +49,9 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Tests for {@link google.registry.ui.server.console.RegistrarsAction}. */
-class RegistrarsActionTest {
-
-  private static final Gson GSON = RequestModule.provideGson();
-  private ConsoleApiParams consoleApiParams;
+class RegistrarsActionTest extends ConsoleActionBaseTestCase {
 
   private StringGenerator passwordGenerator =
       new DeterministicStringGenerator("abcdefghijklmnopqrstuvwxyz");
@@ -94,10 +88,6 @@ class RegistrarsActionTest {
           "{ \"street\": [\"test street\"], \"city\": \"test city\", \"state\": \"test state\","
               + " \"zip\": \"00700\", \"countryCode\": \"US\" }");
 
-  @RegisterExtension
-  final JpaTestExtensions.JpaIntegrationTestExtension jpa =
-      new JpaTestExtensions.Builder().buildIntegrationTestExtension();
-
   @Test
   void testSuccess_onlyRealAndOteRegistrars() {
     Registrar registrar = persistNewRegistrar("registrarId");
@@ -115,8 +105,8 @@ class RegistrarsActionTest {
                 createUser(
                     new UserRoles.Builder().setGlobalRole(GlobalRole.SUPPORT_LEAD).build())));
     action.run();
-    assertThat(((FakeResponse) consoleApiParams.response()).getStatus()).isEqualTo(SC_OK);
-    String payload = ((FakeResponse) consoleApiParams.response()).getPayload();
+    assertThat(response.getStatus()).isEqualTo(SC_OK);
+    String payload = response.getPayload();
 
     var actualRegistrarIds =
         ImmutableList.copyOf(GSON.fromJson(payload, Registrar[].class)).stream()
@@ -135,8 +125,8 @@ class RegistrarsActionTest {
             AuthResult.createUser(
                 createUser(new UserRoles.Builder().setGlobalRole(GlobalRole.FTE).build())));
     action.run();
-    assertThat(((FakeResponse) consoleApiParams.response()).getStatus()).isEqualTo(SC_OK);
-    String payload = ((FakeResponse) consoleApiParams.response()).getPayload();
+    assertThat(response.getStatus()).isEqualTo(SC_OK);
+    String payload = response.getPayload();
     assertThat(
             ImmutableList.of(
                     "\"registrarId\":\"NewRegistrar\"",
@@ -162,8 +152,8 @@ class RegistrarsActionTest {
                         .build())));
 
     action.run();
-    assertThat(((FakeResponse) consoleApiParams.response()).getStatus()).isEqualTo(SC_OK);
-    String payload = ((FakeResponse) consoleApiParams.response()).getPayload();
+    assertThat(response.getStatus()).isEqualTo(SC_OK);
+    String payload = response.getPayload();
     Registrar[] registrars = GSON.fromJson(payload, Registrar[].class);
     assertThat(registrars).hasLength(1);
     assertThat(registrars[0].getRegistrarId()).isEqualTo("registrarId");
@@ -171,12 +161,9 @@ class RegistrarsActionTest {
 
   @Test
   void testSuccess_createRegistrar() {
-    RegistrarsAction action =
-        createAction(
-            Action.Method.POST,
-            AuthResult.createUser(createUser(new UserRoles.Builder().setIsAdmin(true).build())));
+    RegistrarsAction action = createAction(Action.Method.POST, AuthResult.createUser(fteUser));
     action.run();
-    assertThat(((FakeResponse) consoleApiParams.response()).getStatus()).isEqualTo(SC_OK);
+    assertThat(response.getStatus()).isEqualTo(SC_OK);
     Registrar r = loadRegistrar("regIdTest");
     assertThat(r).isNotNull();
     assertThat(
@@ -202,14 +189,10 @@ class RegistrarsActionTest {
                           .filter(entry -> !entry.getKey().equals(key))
                           .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)));
               RegistrarsAction action =
-                  createAction(
-                      Action.Method.POST,
-                      AuthResult.createUser(
-                          createUser(new UserRoles.Builder().setIsAdmin(true).build())));
+                  createAction(Action.Method.POST, AuthResult.createUser(fteUser));
               action.run();
-              assertThat(((FakeResponse) consoleApiParams.response()).getStatus())
-                  .isEqualTo(SC_BAD_REQUEST);
-              assertThat(((FakeResponse) consoleApiParams.response()).getPayload())
+              assertThat(response.getStatus()).isEqualTo(SC_BAD_REQUEST);
+              assertThat(response.getPayload())
                   .isEqualTo(
                       String.format(
                           "Missing value for %s", userFriendlyKeysToRegistrarKeys.get(key)));
@@ -219,13 +202,10 @@ class RegistrarsActionTest {
   @Test
   void testFailure_createRegistrar_existingRegistrar() {
     saveRegistrar("regIdTest");
-    RegistrarsAction action =
-        createAction(
-            Action.Method.POST,
-            AuthResult.createUser(createUser(new UserRoles.Builder().setIsAdmin(true).build())));
+    RegistrarsAction action = createAction(Action.Method.POST, AuthResult.createUser(fteUser));
     action.run();
-    assertThat(((FakeResponse) consoleApiParams.response()).getStatus()).isEqualTo(SC_BAD_REQUEST);
-    assertThat(((FakeResponse) consoleApiParams.response()).getPayload())
+    assertThat(response.getStatus()).isEqualTo(SC_BAD_REQUEST);
+    assertThat(response.getPayload())
         .isEqualTo("Registrar with registrarId regIdTest already exists");
   }
 
@@ -237,6 +217,7 @@ class RegistrarsActionTest {
   private RegistrarsAction createAction(Action.Method method, AuthResult authResult) {
     consoleApiParams = ConsoleApiParamsUtils.createFake(authResult);
     when(consoleApiParams.request().getMethod()).thenReturn(method.toString());
+    response = (FakeResponse) consoleApiParams.response();
     if (method.equals(Action.Method.GET)) {
       return new RegistrarsAction(
           consoleApiParams, Optional.ofNullable(null), passwordGenerator, passcodeGenerator);

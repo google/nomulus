@@ -15,7 +15,6 @@
 package google.registry.ui.server.console;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.testing.DatabaseHelper.createTld;
 import static jakarta.servlet.http.HttpServletResponse.SC_NOT_FOUND;
 import static jakarta.servlet.http.HttpServletResponse.SC_OK;
 import static jakarta.servlet.http.HttpServletResponse.SC_UNAUTHORIZED;
@@ -25,7 +24,6 @@ import com.google.common.collect.ImmutableMap;
 import google.registry.model.console.RegistrarRole;
 import google.registry.model.console.User;
 import google.registry.model.console.UserRoles;
-import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.request.Action;
 import google.registry.request.auth.AuthResult;
 import google.registry.testing.ConsoleApiParamsUtils;
@@ -33,20 +31,12 @@ import google.registry.testing.DatabaseHelper;
 import google.registry.testing.FakeResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Tests for {@link google.registry.ui.server.console.ConsoleDomainGetAction}. */
-public class ConsoleDomainGetActionTest {
-
-  private ConsoleApiParams consoleApiParams;
-
-  @RegisterExtension
-  final JpaTestExtensions.JpaIntegrationTestExtension jpa =
-      new JpaTestExtensions.Builder().buildIntegrationTestExtension();
+public class ConsoleDomainGetActionTest extends ConsoleActionBaseTestCase {
 
   @BeforeEach
   void beforeEach() {
-    createTld("tld");
     DatabaseHelper.persistActiveDomain("exists.tld");
   }
 
@@ -62,8 +52,8 @@ public class ConsoleDomainGetActionTest {
                         .build())),
             "exists.tld");
     action.run();
-    assertThat(((FakeResponse) consoleApiParams.response()).getStatus()).isEqualTo(SC_OK);
-    assertThat(((FakeResponse) consoleApiParams.response()).getPayload())
+    assertThat(response.getStatus()).isEqualTo(SC_OK);
+    assertThat(response.getPayload())
         .isEqualTo(
             "{\"domainName\":\"exists.tld\",\"adminContact\":{\"key\":\"3-ROID\",\"kind\":"
                 + "\"google.registry.model.contact.Contact\"},\"techContact\":{\"key\":\"3-ROID\","
@@ -81,7 +71,7 @@ public class ConsoleDomainGetActionTest {
   void testFailure_emptyAuth() {
     ConsoleDomainGetAction action = createAction(AuthResult.NOT_AUTHENTICATED, "exists.tld");
     action.run();
-    assertThat(((FakeResponse) consoleApiParams.response()).getStatus()).isEqualTo(SC_UNAUTHORIZED);
+    assertThat(response.getStatus()).isEqualTo(SC_UNAUTHORIZED);
   }
 
   @Test
@@ -89,7 +79,7 @@ public class ConsoleDomainGetActionTest {
     ConsoleDomainGetAction action =
         createAction(AuthResult.createApp("service@registry.example"), "exists.tld");
     action.run();
-    assertThat(((FakeResponse) consoleApiParams.response()).getStatus()).isEqualTo(SC_UNAUTHORIZED);
+    assertThat(response.getStatus()).isEqualTo(SC_UNAUTHORIZED);
   }
 
   @Test
@@ -98,17 +88,14 @@ public class ConsoleDomainGetActionTest {
         createAction(
             AuthResult.createUser(createUser(new UserRoles.Builder().build())), "exists.tld");
     action.run();
-    assertThat(((FakeResponse) consoleApiParams.response()).getStatus()).isEqualTo(SC_NOT_FOUND);
+    assertThat(response.getStatus()).isEqualTo(SC_NOT_FOUND);
   }
 
   @Test
   void testFailure_nonexistentDomain() {
-    ConsoleDomainGetAction action =
-        createAction(
-            AuthResult.createUser(createUser(new UserRoles.Builder().setIsAdmin(true).build())),
-            "nonexistent.tld");
+    ConsoleDomainGetAction action = createAction(AuthResult.createUser(fteUser), "nonexistent.tld");
     action.run();
-    assertThat(((FakeResponse) consoleApiParams.response()).getStatus()).isEqualTo(SC_NOT_FOUND);
+    assertThat(response.getStatus()).isEqualTo(SC_NOT_FOUND);
   }
 
   private User createUser(UserRoles userRoles) {
@@ -120,6 +107,7 @@ public class ConsoleDomainGetActionTest {
 
   private ConsoleDomainGetAction createAction(AuthResult authResult, String domain) {
     consoleApiParams = ConsoleApiParamsUtils.createFake(authResult);
+    response = (FakeResponse) consoleApiParams.response();
     when(consoleApiParams.request().getMethod()).thenReturn(Action.Method.GET.toString());
     return new ConsoleDomainGetAction(consoleApiParams, domain);
   }

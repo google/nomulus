@@ -30,22 +30,12 @@ import static org.mockito.Mockito.when;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSetMultimap;
-import com.google.gson.Gson;
 import google.registry.flows.PasswordOnlyTransportCredentials;
 import google.registry.model.console.ConsoleUpdateHistory;
-import google.registry.model.console.GlobalRole;
-import google.registry.model.console.User;
-import google.registry.model.console.UserRoles;
 import google.registry.model.registrar.Registrar;
-import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.request.Action;
 import google.registry.request.RequestModule;
-import google.registry.request.auth.AuthResult;
 import google.registry.request.auth.AuthenticatedRegistrarAccessor;
-import google.registry.testing.ConsoleApiParamsUtils;
-import google.registry.testing.DatabaseHelper;
-import google.registry.testing.FakeResponse;
-import google.registry.tools.GsonUtils;
 import google.registry.ui.server.console.ConsoleEppPasswordAction.EppPasswordData;
 import google.registry.util.EmailMessage;
 import jakarta.mail.internet.AddressException;
@@ -56,20 +46,12 @@ import java.io.StringReader;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.RegisterExtension;
 
-class ConsoleEppPasswordActionTest {
-  private static final Gson GSON = GsonUtils.provideGson();
+class ConsoleEppPasswordActionTest extends ConsoleActionBaseTestCase {
   private static String eppPostData =
       "{\"registrarId\":\"%s\",\"oldPassword\":\"%s\",\"newPassword\":\"%s\",\"newPasswordRepeat\":\"%s\"}";
 
-  private ConsoleApiParams consoleApiParams;
   protected PasswordOnlyTransportCredentials credentials = new PasswordOnlyTransportCredentials();
-  private FakeResponse response;
-
-  @RegisterExtension
-  final JpaTestExtensions.JpaIntegrationTestExtension jpa =
-      new JpaTestExtensions.Builder().buildIntegrationTestExtension();
 
   @BeforeEach
   void beforeEach() {
@@ -86,9 +68,8 @@ class ConsoleEppPasswordActionTest {
   void testFailure_emptyParams() throws IOException {
     ConsoleEppPasswordAction action = createAction("", "", "", "");
     action.run();
-    assertThat(((FakeResponse) consoleApiParams.response()).getStatus()).isEqualTo(SC_BAD_REQUEST);
-    assertThat(((FakeResponse) consoleApiParams.response()).getPayload())
-        .isEqualTo("Missing param(s): registrarId");
+    assertThat(response.getStatus()).isEqualTo(SC_BAD_REQUEST);
+    assertThat(response.getPayload()).isEqualTo("Missing param(s): registrarId");
   }
 
   @Test
@@ -96,9 +77,8 @@ class ConsoleEppPasswordActionTest {
     ConsoleEppPasswordAction action =
         createAction("TheRegistrar", "oldPassword", "newPassword", "newPasswordRepeat");
     action.run();
-    assertThat(((FakeResponse) consoleApiParams.response()).getStatus()).isEqualTo(SC_BAD_REQUEST);
-    assertThat(((FakeResponse) consoleApiParams.response()).getPayload())
-        .contains("New password fields don't match");
+    assertThat(response.getStatus()).isEqualTo(SC_BAD_REQUEST);
+    assertThat(response.getPayload()).contains("New password fields don't match");
   }
 
   @Test
@@ -106,9 +86,8 @@ class ConsoleEppPasswordActionTest {
     ConsoleEppPasswordAction action =
         createAction("TheRegistrar", "oldPassword", "randomPasword", "randomPasword");
     action.run();
-    assertThat(((FakeResponse) consoleApiParams.response()).getStatus()).isEqualTo(SC_FORBIDDEN);
-    assertThat(((FakeResponse) consoleApiParams.response()).getPayload())
-        .contains("Registrar password is incorrect");
+    assertThat(response.getStatus()).isEqualTo(SC_FORBIDDEN);
+    assertThat(response.getPayload()).contains("Registrar password is incorrect");
   }
 
   @Test
@@ -124,12 +103,12 @@ class ConsoleEppPasswordActionTest {
                         + " environment")
                 .setBody(
                     "The following changes were made in registry unittest environment to the"
-                        + " registrar TheRegistrar by user email@email.com:\n"
+                        + " registrar TheRegistrar by admin fte@email.tld:\n"
                         + "\n"
                         + "password: ******** -> ••••••••\n")
                 .setRecipients(ImmutableList.of(new InternetAddress("notification@test.example")))
                 .build());
-    assertThat(((FakeResponse) consoleApiParams.response()).getStatus()).isEqualTo(SC_OK);
+    assertThat(response.getStatus()).isEqualTo(SC_OK);
   }
 
   @Test
@@ -137,7 +116,7 @@ class ConsoleEppPasswordActionTest {
     ConsoleEppPasswordAction action =
         createAction("TheRegistrar", "foobar", "randomPassword", "randomPassword");
     action.run();
-    assertThat(((FakeResponse) consoleApiParams.response()).getStatus()).isEqualTo(SC_OK);
+    assertThat(response.getStatus()).isEqualTo(SC_OK);
     assertDoesNotThrow(() -> credentials.validate(loadRegistrar("TheRegistrar"), "randomPassword"));
     ConsoleUpdateHistory history = loadSingleton(ConsoleUpdateHistory.class).get();
     assertThat(history.getType()).isEqualTo(ConsoleUpdateHistory.Type.EPP_PASSWORD_UPDATE);
@@ -147,16 +126,6 @@ class ConsoleEppPasswordActionTest {
   private ConsoleEppPasswordAction createAction(
       String registrarId, String oldPassword, String newPassword, String newPasswordRepeat)
       throws IOException {
-    response = new FakeResponse();
-    User user =
-        new User.Builder()
-            .setEmailAddress("email@email.com")
-            .setUserRoles(new UserRoles.Builder().setGlobalRole(GlobalRole.FTE).build())
-            .build();
-    DatabaseHelper.putInDb(user);
-
-    AuthResult authResult = AuthResult.createUser(user);
-    consoleApiParams = ConsoleApiParamsUtils.createFake(authResult);
     AuthenticatedRegistrarAccessor authenticatedRegistrarAccessor =
         AuthenticatedRegistrarAccessor.createForTesting(
             ImmutableSetMultimap.of("TheRegistrar", OWNER));

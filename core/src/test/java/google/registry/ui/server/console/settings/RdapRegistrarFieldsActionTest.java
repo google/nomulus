@@ -26,13 +26,11 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSetMultimap;
 import com.google.common.collect.Maps;
-import com.google.gson.Gson;
 import google.registry.model.console.ConsoleUpdateHistory;
 import google.registry.model.console.RegistrarRole;
 import google.registry.model.console.User;
 import google.registry.model.console.UserRoles;
 import google.registry.model.registrar.Registrar;
-import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.request.Action;
 import google.registry.request.RequestModule;
 import google.registry.request.auth.AuthResult;
@@ -40,24 +38,18 @@ import google.registry.request.auth.AuthenticatedRegistrarAccessor;
 import google.registry.request.auth.AuthenticatedRegistrarAccessor.Role;
 import google.registry.testing.ConsoleApiParamsUtils;
 import google.registry.testing.DatabaseHelper;
-import google.registry.testing.FakeClock;
 import google.registry.testing.FakeResponse;
-import google.registry.ui.server.console.ConsoleApiParams;
+import google.registry.ui.server.console.ConsoleActionBaseTestCase;
 import google.registry.ui.server.console.ConsoleModule;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.StringReader;
 import java.util.HashMap;
-import org.joda.time.DateTime;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Tests for {@link RdapRegistrarFieldsAction}. */
-public class RdapRegistrarFieldsActionTest {
+public class RdapRegistrarFieldsActionTest extends ConsoleActionBaseTestCase {
 
-  private ConsoleApiParams consoleApiParams;
-  private static final Gson GSON = RequestModule.provideGson();
-  private final FakeClock clock = new FakeClock(DateTime.parse("2023-08-01T00:00:00.000Z"));
   private final AuthenticatedRegistrarAccessor registrarAccessor =
       AuthenticatedRegistrarAccessor.createForTesting(
           ImmutableSetMultimap.of("TheRegistrar", Role.OWNER, "NewRegistrar", Role.OWNER));
@@ -80,10 +72,6 @@ public class RdapRegistrarFieldsActionTest {
               "localizedAddress",
               "{\"street\": [\"123 Example Boulevard\"], \"city\": \"Williamsburg\", \"state\":"
                   + " \"NY\", \"zip\": \"11201\", \"countryCode\": \"US\"}"));
-
-  @RegisterExtension
-  final JpaTestExtensions.JpaIntegrationTestExtension jpa =
-      new JpaTestExtensions.Builder().withClock(clock).buildIntegrationTestExtension();
 
   @Test
   void testSuccess_setsAllFields() throws Exception {
@@ -113,7 +101,7 @@ public class RdapRegistrarFieldsActionTest {
                 + " \"NL\", \"zip\": \"10011\", \"countryCode\": \"CA\"}"));
     RdapRegistrarFieldsAction action = createAction();
     action.run();
-    assertThat(((FakeResponse) consoleApiParams.response()).getStatus()).isEqualTo(SC_OK);
+    assertThat(response.getStatus()).isEqualTo(SC_OK);
     Registrar newRegistrar = Registrar.loadByRegistrarId("TheRegistrar").get(); // skip cache
     assertThat(newRegistrar.getLocalizedAddress().toJsonMap()).isEqualTo(addressMap);
     assertThat(newRegistrar.getPhoneNumber()).isEqualTo("+1.4155552671");
@@ -130,34 +118,30 @@ public class RdapRegistrarFieldsActionTest {
   @Test
   void testFailure_noAccessToRegistrar() throws Exception {
     Registrar newRegistrar = Registrar.loadByRegistrarIdCached("NewRegistrar").get();
-    AuthResult onlyTheRegistrar =
-        AuthResult.createUser(
-            new User.Builder()
-                .setEmailAddress("email@email.example")
-                .setUserRoles(
-                    new UserRoles.Builder()
-                        .setRegistrarRoles(
-                            ImmutableMap.of("TheRegistrar", RegistrarRole.PRIMARY_CONTACT))
-                        .build())
-                .build());
+    User onlyTheRegistrar =
+        new User.Builder()
+            .setEmailAddress("email@email.example")
+            .setUserRoles(
+                new UserRoles.Builder()
+                    .setRegistrarRoles(
+                        ImmutableMap.of("TheRegistrar", RegistrarRole.PRIMARY_CONTACT))
+                    .build())
+            .build();
     uiRegistrarMap.put("registrarId", "NewRegistrar");
     RdapRegistrarFieldsAction action = createAction(onlyTheRegistrar);
     action.run();
-    assertThat(((FakeResponse) consoleApiParams.response()).getStatus()).isEqualTo(SC_FORBIDDEN);
+    assertThat(response.getStatus()).isEqualTo(SC_FORBIDDEN);
     // should be no change
     assertThat(DatabaseHelper.loadByEntity(newRegistrar)).isEqualTo(newRegistrar);
   }
 
-  private AuthResult defaultUserAuth() {
-    return AuthResult.createUser(DatabaseHelper.createAdminUser("email@email.example"));
-  }
-
   private RdapRegistrarFieldsAction createAction() throws IOException {
-    return createAction(defaultUserAuth());
+    return createAction(fteUser);
   }
 
-  private RdapRegistrarFieldsAction createAction(AuthResult authResult) throws IOException {
-    consoleApiParams = ConsoleApiParamsUtils.createFake(authResult);
+  private RdapRegistrarFieldsAction createAction(User user) throws IOException {
+    consoleApiParams = ConsoleApiParamsUtils.createFake(AuthResult.createUser(user));
+    response = (FakeResponse) consoleApiParams.response();
     when(consoleApiParams.request().getMethod()).thenReturn(Action.Method.POST.toString());
     doReturn(new BufferedReader(new StringReader(uiRegistrarMap.toString())))
         .when(consoleApiParams.request())

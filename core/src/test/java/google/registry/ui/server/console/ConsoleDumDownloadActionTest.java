@@ -15,7 +15,6 @@
 package google.registry.ui.server.console;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.testing.DatabaseHelper.createTld;
 import static jakarta.servlet.http.HttpServletResponse.SC_FORBIDDEN;
 import static jakarta.servlet.http.HttpServletResponse.SC_OK;
 import static org.mockito.Mockito.when;
@@ -24,32 +23,19 @@ import com.google.common.collect.ImmutableList;
 import google.registry.model.console.GlobalRole;
 import google.registry.model.console.User;
 import google.registry.model.console.UserRoles;
-import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.request.Action;
 import google.registry.request.auth.AuthResult;
 import google.registry.testing.ConsoleApiParamsUtils;
 import google.registry.testing.DatabaseHelper;
-import google.registry.testing.FakeClock;
 import google.registry.testing.FakeResponse;
 import java.io.IOException;
-import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.RegisterExtension;
 
-class ConsoleDumDownloadActionTest {
-
-  private final FakeClock clock = new FakeClock(DateTime.parse("2024-04-15T00:00:00.000Z"));
-
-  private ConsoleApiParams consoleApiParams;
-
-  @RegisterExtension
-  final JpaTestExtensions.JpaIntegrationTestExtension jpa =
-      new JpaTestExtensions.Builder().withClock(clock).buildIntegrationTestExtension();
+class ConsoleDumDownloadActionTest extends ConsoleActionBaseTestCase {
 
   @BeforeEach
   void beforeEach() {
-    createTld("tld");
     for (int i = 0; i < 3; i++) {
       DatabaseHelper.persistActiveDomain(
           i + "exists.tld", clock.nowUtc(), clock.nowUtc().plusDays(300));
@@ -60,13 +46,7 @@ class ConsoleDumDownloadActionTest {
 
   @Test
   void testSuccess_returnsCorrectDomains() throws IOException {
-    User user =
-        new User.Builder()
-            .setEmailAddress("email@email.com")
-            .setUserRoles(new UserRoles.Builder().setGlobalRole(GlobalRole.FTE).build())
-            .build();
-
-    AuthResult authResult = AuthResult.createUser(user);
+    AuthResult authResult = AuthResult.createUser(fteUser);
     ConsoleDumDownloadAction action = createAction(authResult);
     action.run();
     ImmutableList<String> expected =
@@ -75,7 +55,6 @@ class ConsoleDumDownloadActionTest {
             "2exists.tld,2024-04-15 00:00:00.002+00,2025-02-09 00:00:00.002+00,{INACTIVE}",
             "1exists.tld,2024-04-15 00:00:00.001+00,2025-02-09 00:00:00.001+00,{INACTIVE}",
             "0exists.tld,2024-04-15 00:00:00+00,2025-02-09 00:00:00+00,{INACTIVE}");
-    FakeResponse response = (FakeResponse) consoleApiParams.response();
     assertThat(response.getStatus()).isEqualTo(SC_OK);
     ImmutableList<String> actual =
         ImmutableList.copyOf(response.getStringWriter().toString().split("\r\n"));
@@ -93,11 +72,12 @@ class ConsoleDumDownloadActionTest {
     AuthResult authResult = AuthResult.createUser(user);
     ConsoleDumDownloadAction action = createAction(authResult);
     action.run();
-    assertThat(((FakeResponse) consoleApiParams.response()).getStatus()).isEqualTo(SC_FORBIDDEN);
+    assertThat(response.getStatus()).isEqualTo(SC_FORBIDDEN);
   }
 
   private ConsoleDumDownloadAction createAction(AuthResult authResult) {
     consoleApiParams = ConsoleApiParamsUtils.createFake(authResult);
+    response = (FakeResponse) consoleApiParams.response();
     when(consoleApiParams.request().getMethod()).thenReturn(Action.Method.GET.toString());
     return new ConsoleDumDownloadAction(clock, consoleApiParams, "TheRegistrar", "test_name");
   }
