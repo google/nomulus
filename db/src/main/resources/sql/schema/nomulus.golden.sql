@@ -1020,7 +1020,8 @@ CREATE TABLE public."RegistrarPoc" (
     visible_in_whois_as_admin boolean NOT NULL,
     visible_in_whois_as_tech boolean NOT NULL,
     registry_lock_email_address text,
-    registrar_id text NOT NULL
+    registrar_id text NOT NULL,
+    id bigint NOT NULL
 );
 
 
@@ -1051,6 +1052,25 @@ CREATE TABLE public."RegistrarPocUpdateHistory" (
     visible_in_whois_as_tech boolean NOT NULL,
     history_acting_user text NOT NULL
 );
+
+
+--
+-- Name: RegistrarPoc_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public."RegistrarPoc_id_seq"
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: RegistrarPoc_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public."RegistrarPoc_id_seq" OWNED BY public."RegistrarPoc".id;
 
 
 --
@@ -1443,6 +1463,13 @@ ALTER TABLE ONLY public."PackagePromotion" ALTER COLUMN package_promotion_id SET
 --
 
 ALTER TABLE ONLY public."PremiumList" ALTER COLUMN revision_id SET DEFAULT nextval('public."PremiumList_revision_id_seq"'::regclass);
+
+
+--
+-- Name: RegistrarPoc id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."RegistrarPoc" ALTER COLUMN id SET DEFAULT nextval('public."RegistrarPoc_id_seq"'::regclass);
 
 
 --
