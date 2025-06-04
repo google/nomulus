@@ -1042,6 +1042,8 @@ public final class DatabaseHelper {
                                   .setGlobalRole(GlobalRole.FTE)
                                   .setIsAdmin(true)
                                   .build())
+                          .setRegistryLockEmailAddress("registrylock" + emailAddress)
+                          .setRegistryLockPassword("password")
                           .build();
                   tm().put(user);
                   return user;
