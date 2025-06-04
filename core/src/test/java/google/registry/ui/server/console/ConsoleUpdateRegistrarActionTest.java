@@ -215,7 +215,7 @@ class ConsoleUpdateRegistrarActionTest extends ConsoleActionBaseTestCase {
     return ConsoleApiParamsUtils.createFake(authResult);
   }
 
-  ConsoleUpdateRegistrarAction createAction(String requestData) throws IOException {
+  private ConsoleUpdateRegistrarAction createAction(String requestData) throws IOException {
     when(consoleApiParams.request().getMethod()).thenReturn(Action.Method.POST.toString());
     doReturn(new BufferedReader(new StringReader(requestData)))
         .when(consoleApiParams.request())
