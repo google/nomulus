@@ -25,6 +25,7 @@ import google.registry.model.common.CursorTest;
 import google.registry.model.common.DnsRefreshRequestTest;
 import google.registry.model.common.FeatureFlagTest;
 import google.registry.model.console.ConsoleUpdateHistoryTest;
+import google.registry.model.console.PasswordResetRequestTest;
 import google.registry.model.console.UserTest;
 import google.registry.model.contact.ContactTest;
 import google.registry.model.domain.DomainSqlTest;
@@ -104,6 +105,7 @@ import org.junit.runner.RunWith;
   FeatureFlagTest.class,
   HostHistoryTest.class,
   LockTest.class,
+  PasswordResetRequestTest.class,
   PollMessageTest.class,
   PremiumListDaoTest.class,
   RdeRevisionTest.class,
