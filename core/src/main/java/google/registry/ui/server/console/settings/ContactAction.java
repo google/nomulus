@@ -15,7 +15,6 @@
 package google.registry.ui.server.console.settings;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.collect.Sets.difference;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
@@ -35,7 +34,6 @@ import google.registry.model.console.User;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarPoc;
 import google.registry.model.registrar.RegistrarPoc.Type;
-import google.registry.persistence.transaction.QueryComposer.Comparator;
 import google.registry.request.Action;
 import google.registry.request.Action.GaeService;
 import google.registry.request.Action.GkeService;
@@ -77,14 +75,7 @@ public class ContactAction extends ConsoleApiAction {
   protected void getHandler(User user) {
     checkPermission(user, registrarId, ConsolePermission.VIEW_REGISTRAR_DETAILS);
     ImmutableList<RegistrarPoc> contacts =
-        tm().transact(
-                () ->
-                    tm()
-                        .createQueryComposer(RegistrarPoc.class)
-                        .where("registrarId", Comparator.EQ, registrarId)
-                        .stream()
-                        .collect(toImmutableList()));
-
+        tm().transact(() -> RegistrarPoc.loadForRegistrar(registrarId));
     consoleApiParams.response().setStatus(SC_OK);
     consoleApiParams.response().setPayload(consoleApiParams.gson().toJson(contacts));
   }
