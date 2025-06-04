@@ -38,6 +38,8 @@ import google.registry.ui.server.console.ConsoleRegistryLockVerifyAction;
 import google.registry.ui.server.console.ConsoleUpdateRegistrarAction;
 import google.registry.ui.server.console.ConsoleUserDataAction;
 import google.registry.ui.server.console.ConsoleUsersAction;
+import google.registry.ui.server.console.PasswordResetRequestAction;
+import google.registry.ui.server.console.PasswordResetVerifyAction;
 import google.registry.ui.server.console.RegistrarsAction;
 import google.registry.ui.server.console.domains.ConsoleBulkDomainAction;
 import google.registry.ui.server.console.settings.ContactAction;
@@ -84,6 +86,12 @@ public interface FrontendRequestComponent {
 
   FlowComponent.Builder flowComponentBuilder();
 
+  PasswordResetRequestAction passwordResetRequestAction();
+
+  PasswordResetVerifyAction passwordResetVerifyAction();
+
+  RdapRegistrarFieldsAction rdapRegistrarFieldsAction();
+
   ReadinessProbeActionFrontend readinessProbeActionFrontend();
 
   ReadinessProbeConsoleAction readinessProbeConsoleAction();
@@ -91,8 +99,6 @@ public interface FrontendRequestComponent {
   RegistrarsAction registrarsAction();
 
   SecurityAction securityAction();
-
-  RdapRegistrarFieldsAction rdapRegistrarFieldsAction();
 
   @Subcomponent.Builder
   abstract class Builder implements RequestComponentBuilder<FrontendRequestComponent> {
