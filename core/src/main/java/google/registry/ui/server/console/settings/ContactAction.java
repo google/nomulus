@@ -33,7 +33,6 @@ import google.registry.model.console.User;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarPoc;
 import google.registry.model.registrar.RegistrarPoc.Type;
-import google.registry.persistence.transaction.QueryComposer.Comparator;
 import google.registry.request.Action;
 import google.registry.request.Action.GaeService;
 import google.registry.request.Action.GkeService;
@@ -75,18 +74,15 @@ public class ContactAction extends ConsoleApiAction {
   @Override
   protected void getHandler(User user) {
     checkPermission(user, registrarId, ConsolePermission.VIEW_REGISTRAR_DETAILS);
-    ImmutableList<RegistrarPoc> am =
+    ImmutableList<RegistrarPoc> allContacts =
         tm().transact(
                 () ->
-                    tm()
-                        .createQueryComposer(RegistrarPoc.class)
-                        .where("registrarId", Comparator.EQ, registrarId)
-                        .stream()
+                    RegistrarPoc.loadForRegistrar(registrarId).stream()
                         .filter(r -> !r.getTypes().isEmpty())
                         .collect(toImmutableList()));
 
     consoleApiParams.response().setStatus(SC_OK);
-    consoleApiParams.response().setPayload(consoleApiParams.gson().toJson(am));
+    consoleApiParams.response().setPayload(consoleApiParams.gson().toJson(allContacts));
   }
 
   @Override
