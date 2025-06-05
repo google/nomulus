@@ -40,7 +40,7 @@ where:
     show   show the effect of the formatting as unified diff"
 
 SCRIPT_DIR="$(realpath $(dirname $0))"
-JAR_NAME="google-java-format-1.23.0-all-deps.jar"
+JAR_NAME="google-java-format-1.27.0-all-deps.jar"
 
 # Make sure we have a valid python interpreter.
 if [ -z "$PYTHON" ]; then
