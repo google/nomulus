@@ -251,7 +251,7 @@ final class UniformRapidSuspensionCommand extends MutatingEppToolCommand {
     if (undo) {
       return "";
     }
-    StringBuilder undoBuilder = new StringBuilder("UNDO COMMAND:\n\n)")
+    StringBuilder undoBuilder = new StringBuilder("UNDO COMMAND:\n\n")
         .append("nomulus -e ")
         .append(RegistryToolEnvironment.get())
         .append(" uniform_rapid_suspension --undo --domain_name ")
