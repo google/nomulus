@@ -31,7 +31,6 @@ import google.registry.request.HttpException.BadRequestException;
 import google.registry.request.HttpException.UnprocessableEntityException;
 import google.registry.request.Parameter;
 import google.registry.request.ParameterMap;
-import google.registry.request.RequestUrl;
 import jakarta.inject.Inject;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import java.io.UnsupportedEncodingException;
@@ -54,7 +53,6 @@ public abstract class RdapSearchActionBase extends RdapActionBase {
 
   private static final int RESULT_SET_SIZE_SCALING_FACTOR = 30;
 
-  @Inject @RequestUrl String requestUrl;
   @Inject @ParameterMap ImmutableListMultimap<String, String> parameterMap;
   @Inject @Parameter("cursor") Optional<String> cursorTokenParam;
   @Inject @Parameter("registrar") Optional<String> registrarParam;

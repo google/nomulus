@@ -32,7 +32,8 @@
         {
           "rel" : "alternate",
           "href" : "https://github.com/google/nomulus/blob/master/docs/rdap.md#authentication",
-          "type" : "text/html"
+          "type" : "text/html",
+          "value": "https://example.tld/rdap/entities"
         }
       ]
     },

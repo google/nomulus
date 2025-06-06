@@ -9,7 +9,8 @@
         {
           "rel" : "self",
           "href": "https://example.tld/rdap/entity/4-ROID",
-          "type" : "application/rdap+json"
+          "type" : "application/rdap+json",
+          "value": "https://example.tld/rdap/entities"
         }
       ],
       "events": [
@@ -65,7 +66,8 @@
         {
           "rel" : "self",
           "href": "https://example.tld/rdap/entity/2-ROID",
-          "type" : "application/rdap+json"
+          "type" : "application/rdap+json",
+          "value": "https://example.tld/rdap/entities"
         }
       ],
       "events": [
@@ -141,12 +143,14 @@
         {
           "href": "https://example.tld/rdap/help/tos",
           "rel": "self",
-          "type": "application/rdap+json"
+          "type": "application/rdap+json",
+          "value": "https://example.tld/rdap/entities"
         },
         {
-          "href": "https://www.registry.tld/about/rdap/tos.html",
-          "rel": "alternate",
-          "type": "text/html"
+          "href": "https://www.example.tld/about/rdap/tos.html",
+          "rel": "terms-of-service",
+          "type": "text/html",
+          "value": "https://example.tld/rdap/entities"
         }
       ]
     },

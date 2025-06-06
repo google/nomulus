@@ -44,7 +44,7 @@ public class RdapIcannStandardInformation {
                   + " https://icann.org/epp")
           .addLink(
               Link.builder()
-                  .setRel("alternate")
+                  .setRel("glossary")
                   .setHref("https://icann.org/epp")
                   .setType("text/html")
                   .build())
@@ -57,7 +57,7 @@ public class RdapIcannStandardInformation {
           .setDescription("URL of the ICANN RDDS Inaccuracy Complaint Form: https://icann.org/wicf")
           .addLink(
               Link.builder()
-                  .setRel("alternate")
+                  .setRel("help")
                   .setHref("https://icann.org/wicf")
                   .setType("text/html")
                   .build())

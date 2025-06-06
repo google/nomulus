@@ -27,12 +27,14 @@
         {
           "rel" : "alternate",
           "type" : "text/html",
-          "href" : "https://github.com/google/nomulus/blob/master/docs/rdap.md"
+          "href" : "https://github.com/google/nomulus/blob/master/docs/rdap.md",
+          "value": "https://example.tld/rdap/help%POSSIBLE_SLASH%"
         },
         {
           "rel": "self",
           "type": "application/rdap+json",
-          "href": "https://example.tld/rdap/help"
+          "href": "https://example.tld/rdap/help",
+          "value": "https://example.tld/rdap/help%POSSIBLE_SLASH%"
         }
       ]
     },
@@ -56,12 +58,14 @@
         {
           "href": "https://example.tld/rdap/help/tos",
           "rel": "self",
-          "type": "application/rdap+json"
+          "type": "application/rdap+json",
+          "value": "https://example.tld/rdap/help%POSSIBLE_SLASH%"
         },
         {
-          "href": "https://www.registry.tld/about/rdap/tos.html",
-          "rel": "alternate",
-          "type": "text/html"
+          "href": "https://www.example.tld/about/rdap/tos.html",
+          "rel": "terms-of-service",
+          "type": "text/html",
+          "value": "https://example.tld/rdap/help%POSSIBLE_SLASH%"
         }
       ]
     }

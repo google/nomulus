@@ -5,14 +5,15 @@
     "icann_rdap_technical_implementation_guide_0"
   ],
   "objectClassName" : "entity",
-  "handle" : "%NAME%",
+  "handle" : "%CONTACT_HANDLE_1%",
   "status" : ["inactive"],
   "links" :
   [
     {
       "rel" : "self",
-      "href": "https://example.tld/rdap/entity/%NAME%",
-      "type" : "application/rdap+json"
+      "href": "https://example.tld/rdap/entity/%CONTACT_HANDLE_1%",
+      "type" : "application/rdap+json",
+      "value": "%REQUEST_URL%"
     }
   ],
   "events":
@@ -38,5 +39,4 @@
       ]
     }
   ]
-
 }

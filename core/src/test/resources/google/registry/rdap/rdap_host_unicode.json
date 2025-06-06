@@ -5,15 +5,16 @@
     "icann_rdap_technical_implementation_guide_0"
   ],
   "objectClassName": "nameserver",
-  "handle": "%HANDLE%",
-  "ldhName": "%PUNYCODENAME%",
-  "unicodeName": "%NAME%",
+  "handle": "%NAMESERVER_HANDLE_1%",
+  "ldhName": "%NAMESERVER_NAME_1%",
+  "unicodeName": "%NAMESERVER_UNICODE_NAME_1%",
   "status": ["active"],
   "links": [
     {
-      "href": "https://example.tld/rdap/nameserver/%PUNYCODENAME%",
+      "href": "https://example.tld/rdap/nameserver/%NAMESERVER_NAME_1%",
       "type": "application/rdap+json",
-      "rel": "self"
+      "rel": "self",
+      "value": "%REQUEST_URL%"
     }
   ],
   "ipAddresses": {
@@ -37,7 +38,8 @@
         {
           "rel" : "self",
           "href" : "https://example.tld/rdap/entity/1",
-          "type" : "application/rdap+json"
+          "type" : "application/rdap+json",
+          "value": "%REQUEST_URL%"
         }
       ],
       "publicIds" :

@@ -9,7 +9,8 @@
         {
           "rel":"self",
           "href":"https://example.tld/rdap/domain/%DOMAIN_PUNYCODE_NAME_1%",
-          "type":"application/rdap+json"
+          "type":"application/rdap+json",
+          "value": "https://example.tld/rdap/domains"
         }
       ],
       "remarks": [
@@ -31,7 +32,8 @@
         {
           "rel":"self",
           "href":"https://example.tld/rdap/domain/%DOMAIN_PUNYCODE_NAME_2%",
-          "type":"application/rdap+json"
+          "type":"application/rdap+json",
+          "value": "https://example.tld/rdap/domains"
         }
       ],
       "remarks": [
@@ -53,7 +55,8 @@
         {
           "rel":"self",
           "href":"https://example.tld/rdap/domain/%DOMAIN_PUNYCODE_NAME_3%",
-          "type":"application/rdap+json"
+          "type":"application/rdap+json",
+          "value": "https://example.tld/rdap/domains"
         }
       ],
       "remarks": [
@@ -97,12 +100,14 @@
         {
           "href": "https://example.tld/rdap/help/tos",
           "rel": "self",
-          "type": "application/rdap+json"
+          "type": "application/rdap+json",
+          "value": "https://example.tld/rdap/domains"
         },
         {
-          "href": "https://www.registry.tld/about/rdap/tos.html",
-          "rel": "alternate",
-          "type": "text/html"
+          "href": "https://www.example.tld/about/rdap/tos.html",
+          "rel": "terms-of-service",
+          "type": "text/html",
+          "value": "https://example.tld/rdap/domains"
         }
       ],
       "title":"RDAP Terms of Service"
@@ -121,9 +126,10 @@
       "links":
       [
         {
-          "rel":"alternate",
+          "rel":"glossary",
           "href":"https://icann.org/epp",
-          "type":"text/html"
+          "type":"text/html",
+          "value": "https://example.tld/rdap/domains"
         }
       ],
       "title":"Status Codes"
@@ -134,9 +140,10 @@
       "links":
       [
         {
-          "rel":"alternate",
+          "rel":"help",
           "href":"https://icann.org/wicf",
-          "type":"text/html"
+          "type":"text/html",
+          "value": "https://example.tld/rdap/domains"
         }
       ]
     }

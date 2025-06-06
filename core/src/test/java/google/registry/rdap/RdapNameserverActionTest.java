@@ -15,15 +15,12 @@
 package google.registry.rdap;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.rdap.RdapTestHelper.loadJsonFile;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.FullFieldsTestEntityHelper.makeRegistrar;
 import static google.registry.testing.GsonSubject.assertAboutJson;
 import static org.mockito.Mockito.verify;
 
-import com.google.common.collect.ImmutableMap;
-import com.google.gson.JsonObject;
 import google.registry.model.registrar.Registrar;
 import google.registry.rdap.RdapMetrics.EndpointType;
 import google.registry.rdap.RdapMetrics.SearchType;
@@ -32,7 +29,6 @@ import google.registry.rdap.RdapSearchResults.IncompletenessWarningType;
 import google.registry.request.Action;
 import google.registry.testing.FullFieldsTestEntityHelper;
 import java.util.Optional;
-import javax.annotation.Nullable;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -72,37 +68,6 @@ class RdapNameserverActionTest extends RdapActionBaseTestCase<RdapNameserverActi
         "ns1.domain.external", "9.10.11.12", clock.nowUtc().minusYears(1));
   }
 
-  private JsonObject generateExpectedJson(
-      String name,
-      @Nullable ImmutableMap<String, String> otherSubstitutions,
-      String expectedOutputFile) {
-    ImmutableMap.Builder<String, String> builder = new ImmutableMap.Builder<>();
-    builder.put("TYPE", "nameserver");
-    builder.put("NAME", name);
-    boolean punycodeSet = false;
-    if (otherSubstitutions != null) {
-      builder.putAll(otherSubstitutions);
-      if (otherSubstitutions.containsKey("PUNYCODENAME")) {
-        punycodeSet = true;
-      }
-    }
-    if (!punycodeSet) {
-      builder.put("PUNYCODENAME", name);
-    }
-    return loadJsonFile(
-        expectedOutputFile,
-        builder.build());
-  }
-
-  private JsonObject generateExpectedJsonWithTopLevelEntries(
-      String name,
-      @Nullable ImmutableMap<String, String> otherSubstitutions,
-      String expectedOutputFile) {
-    JsonObject obj = generateExpectedJson(name, otherSubstitutions, expectedOutputFile);
-    RdapTestHelper.addNonDomainBoilerplateNotices(obj, "https://example.tld/rdap/");
-    return obj;
-  }
-
   @Test
   void testInvalidNameserver_returns400() {
     assertAboutJson()
@@ -126,14 +91,11 @@ class RdapNameserverActionTest extends RdapActionBaseTestCase<RdapNameserverActi
     assertAboutJson()
         .that(generateActualJson("ns1.cat.lol"))
         .isEqualTo(
-            generateExpectedJsonWithTopLevelEntries(
-                "ns1.cat.lol",
-                ImmutableMap.of(
-                    "HANDLE", "2-ROID",
-                    "ADDRESSTYPE", "v4",
-                    "ADDRESS", "1.2.3.4",
-                    "STATUS", "active"),
-                "rdap_host.json"));
+            addPermanentBoilerplateNotices(
+                jsonFileBuilder()
+                    .addNameserver("ns1.cat.lol", "2-ROID")
+                    .putAll("ADDRESSTYPE", "v4", "ADDRESS", "1.2.3.4", "STATUS", "active")
+                    .load("rdap_host.json")));
     assertThat(response.getStatus()).isEqualTo(200);
   }
 
@@ -142,14 +104,11 @@ class RdapNameserverActionTest extends RdapActionBaseTestCase<RdapNameserverActi
     assertAboutJson()
         .that(generateActualJson("ns1.cat.lol."))
         .isEqualTo(
-            generateExpectedJsonWithTopLevelEntries(
-                "ns1.cat.lol",
-                ImmutableMap.of(
-                    "HANDLE", "2-ROID",
-                    "ADDRESSTYPE", "v4",
-                    "ADDRESS", "1.2.3.4",
-                    "STATUS", "active"),
-                "rdap_host.json"));
+            addPermanentBoilerplateNotices(
+                jsonFileBuilder()
+                    .addNameserver("ns1.cat.lol", "2-ROID")
+                    .putAll("ADDRESSTYPE", "v4", "ADDRESS", "1.2.3.4", "STATUS", "active")
+                    .load("rdap_host.json")));
     assertThat(response.getStatus()).isEqualTo(200);
   }
 
@@ -158,14 +117,11 @@ class RdapNameserverActionTest extends RdapActionBaseTestCase<RdapNameserverActi
     assertAboutJson()
         .that(generateActualJson("Ns1.CaT.lOl."))
         .isEqualTo(
-            generateExpectedJsonWithTopLevelEntries(
-                "ns1.cat.lol",
-                ImmutableMap.of(
-                    "HANDLE", "2-ROID",
-                    "ADDRESSTYPE", "v4",
-                    "ADDRESS", "1.2.3.4",
-                    "STATUS", "active"),
-                "rdap_host.json"));
+            addPermanentBoilerplateNotices(
+                jsonFileBuilder()
+                    .addNameserver("ns1.cat.lol", "2-ROID")
+                    .putAll("ADDRESSTYPE", "v4", "ADDRESS", "1.2.3.4", "STATUS", "active")
+                    .load("rdap_host.json")));
     assertThat(response.getStatus()).isEqualTo(200);
   }
 
@@ -174,14 +130,11 @@ class RdapNameserverActionTest extends RdapActionBaseTestCase<RdapNameserverActi
     assertAboutJson()
         .that(generateActualJson("ns1.cat.lol?key=value"))
         .isEqualTo(
-            generateExpectedJsonWithTopLevelEntries(
-                "ns1.cat.lol",
-                ImmutableMap.of(
-                    "HANDLE", "2-ROID",
-                    "ADDRESSTYPE", "v4",
-                    "ADDRESS", "1.2.3.4",
-                    "STATUS", "active"),
-                "rdap_host.json"));
+            addPermanentBoilerplateNotices(
+                jsonFileBuilder()
+                    .addNameserver("ns1.cat.lol", "2-ROID")
+                    .putAll("ADDRESSTYPE", "v4", "ADDRESS", "1.2.3.4", "STATUS", "active")
+                    .load("rdap_host.json")));
     assertThat(response.getStatus()).isEqualTo(200);
   }
 
@@ -190,15 +143,11 @@ class RdapNameserverActionTest extends RdapActionBaseTestCase<RdapNameserverActi
     assertAboutJson()
         .that(generateActualJson("ns1.cat.みんな"))
         .isEqualTo(
-            generateExpectedJsonWithTopLevelEntries(
-                "ns1.cat.みんな",
-                ImmutableMap.of(
-                    "PUNYCODENAME", "ns1.cat.xn--q9jyb4c",
-                    "HANDLE", "5-ROID",
-                    "ADDRESSTYPE", "v6",
-                    "ADDRESS", "bad:f00d:cafe::15:beef",
-                    "STATUS", "active"),
-                "rdap_host_unicode.json"));
+            addPermanentBoilerplateNotices(
+                jsonFileBuilder()
+                    .addNameserver("ns1.cat.みんな", "5-ROID")
+                    .putAll("ADDRESSTYPE", "v6", "ADDRESS", "bad:f00d:cafe::15:beef")
+                    .load("rdap_host_unicode.json")));
     assertThat(response.getStatus()).isEqualTo(200);
   }
 
@@ -207,15 +156,11 @@ class RdapNameserverActionTest extends RdapActionBaseTestCase<RdapNameserverActi
     assertAboutJson()
         .that(generateActualJson("ns1.cat.xn--q9jyb4c"))
         .isEqualTo(
-            generateExpectedJsonWithTopLevelEntries(
-                "ns1.cat.みんな",
-                ImmutableMap.of(
-                    "PUNYCODENAME", "ns1.cat.xn--q9jyb4c",
-                    "HANDLE", "5-ROID",
-                    "ADDRESSTYPE", "v6",
-                    "ADDRESS", "bad:f00d:cafe::15:beef",
-                    "STATUS", "active"),
-                "rdap_host_unicode.json"));
+            addPermanentBoilerplateNotices(
+                jsonFileBuilder()
+                    .addNameserver("ns1.cat.みんな", "5-ROID")
+                    .putAll("ADDRESSTYPE", "v6", "ADDRESS", "bad:f00d:cafe::15:beef")
+                    .load("rdap_host_unicode.json")));
     assertThat(response.getStatus()).isEqualTo(200);
   }
 
@@ -224,14 +169,11 @@ class RdapNameserverActionTest extends RdapActionBaseTestCase<RdapNameserverActi
     assertAboutJson()
         .that(generateActualJson("ns1.domain.1.tld"))
         .isEqualTo(
-            generateExpectedJsonWithTopLevelEntries(
-                "ns1.domain.1.tld",
-                ImmutableMap.of(
-                    "HANDLE", "8-ROID",
-                    "ADDRESSTYPE", "v4",
-                    "ADDRESS", "5.6.7.8",
-                    "STATUS", "active"),
-                "rdap_host.json"));
+            addPermanentBoilerplateNotices(
+                jsonFileBuilder()
+                    .addNameserver("ns1.domain.1.tld", "8-ROID")
+                    .putAll("ADDRESSTYPE", "v4", "ADDRESS", "5.6.7.8", "STATUS", "active")
+                    .load("rdap_host.json")));
     assertThat(response.getStatus()).isEqualTo(200);
   }
 
@@ -240,14 +182,11 @@ class RdapNameserverActionTest extends RdapActionBaseTestCase<RdapNameserverActi
     assertAboutJson()
         .that(generateActualJson("ns1.domain.external"))
         .isEqualTo(
-            generateExpectedJsonWithTopLevelEntries(
-                "ns1.domain.external",
-                ImmutableMap.of(
-                    "HANDLE", "C-ROID",
-                    "ADDRESSTYPE", "v4",
-                    "ADDRESS", "9.10.11.12",
-                    "STATUS", "active"),
-                "rdap_host.json"));
+            addPermanentBoilerplateNotices(
+                jsonFileBuilder()
+                    .addNameserver("ns1.domain.external", "C-ROID")
+                    .putAll("ADDRESSTYPE", "v4", "ADDRESS", "9.10.11.12", "STATUS", "active")
+                    .load("rdap_host.json")));
     assertThat(response.getStatus()).isEqualTo(200);
   }
 
@@ -287,14 +226,11 @@ class RdapNameserverActionTest extends RdapActionBaseTestCase<RdapNameserverActi
     assertAboutJson()
         .that(generateActualJson("nsdeleted.cat.lol"))
         .isEqualTo(
-            generateExpectedJsonWithTopLevelEntries(
-                "nsdeleted.cat.lol",
-                ImmutableMap.of(
-                    "HANDLE", "A-ROID",
-                    "ADDRESSTYPE", "v4",
-                    "ADDRESS", "1.2.3.4",
-                    "STATUS", "inactive"),
-                "rdap_host.json"));
+            addPermanentBoilerplateNotices(
+                jsonFileBuilder()
+                    .addNameserver("nsdeleted.cat.lol", "A-ROID")
+                    .putAll("ADDRESSTYPE", "v4", "ADDRESS", "1.2.3.4", "STATUS", "inactive")
+                    .load("rdap_host.json")));
     assertThat(response.getStatus()).isEqualTo(200);
   }
 
@@ -305,14 +241,11 @@ class RdapNameserverActionTest extends RdapActionBaseTestCase<RdapNameserverActi
     assertAboutJson()
         .that(generateActualJson("nsdeleted.cat.lol"))
         .isEqualTo(
-            generateExpectedJsonWithTopLevelEntries(
-                "nsdeleted.cat.lol",
-                ImmutableMap.of(
-                    "HANDLE", "A-ROID",
-                    "ADDRESSTYPE", "v4",
-                    "ADDRESS", "1.2.3.4",
-                    "STATUS", "inactive"),
-                "rdap_host.json"));
+            addPermanentBoilerplateNotices(
+                jsonFileBuilder()
+                    .addNameserver("nsdeleted.cat.lol", "A-ROID")
+                    .putAll("ADDRESSTYPE", "v4", "ADDRESS", "1.2.3.4", "STATUS", "inactive")
+                    .load("rdap_host.json")));
     assertThat(response.getStatus()).isEqualTo(200);
   }
 

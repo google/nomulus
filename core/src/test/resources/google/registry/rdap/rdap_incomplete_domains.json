@@ -17,7 +17,8 @@
         {
           "type":"application/rdap+json",
           "rel":"self",
-          "href":"https://example.tld/rdap/domain/%DOMAIN_PUNYCODE_NAME_1%"
+          "href":"https://example.tld/rdap/domain/%DOMAIN_PUNYCODE_NAME_1%",
+          "value": "https://example.tld/rdap/domains"
         }
       ]
     },
@@ -38,7 +39,8 @@
         {
           "type":"application/rdap+json",
           "rel":"self",
-          "href":"https://example.tld/rdap/domain/%DOMAIN_PUNYCODE_NAME_2%"
+          "href":"https://example.tld/rdap/domain/%DOMAIN_PUNYCODE_NAME_2%",
+          "value": "https://example.tld/rdap/domains"
         }
       ]
     }
@@ -69,12 +71,14 @@
         {
           "href": "https://example.tld/rdap/help/tos",
           "rel": "self",
-          "type": "application/rdap+json"
+          "type": "application/rdap+json",
+          "value": "https://example.tld/rdap/domains"
         },
         {
-          "href": "https://www.registry.tld/about/rdap/tos.html",
-          "rel": "alternate",
-          "type": "text/html"
+          "href": "https://www.example.tld/about/rdap/tos.html",
+          "rel": "terms-of-service",
+          "type": "text/html",
+          "value": "https://example.tld/rdap/domains"
         }
       ]
     },
@@ -91,8 +95,9 @@
          "links":[
            {
              "type":"text/html",
-             "rel":"alternate",
-             "href":"https://icann.org/epp"
+             "rel":"glossary",
+             "href":"https://icann.org/epp",
+             "value": "https://example.tld/rdap/domains"
            }
          ]
     },
@@ -102,8 +107,9 @@
       "links":[
         {
           "type":"text/html",
-          "rel":"alternate",
-          "href":"https://icann.org/wicf"
+          "rel":"help",
+          "href":"https://icann.org/wicf",
+          "value": "https://example.tld/rdap/domains"
         }
       ]
     }

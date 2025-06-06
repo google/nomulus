@@ -91,12 +91,6 @@ class RdapActionBaseTest extends RdapActionBaseTestCase<RdapActionBaseTest.RdapT
   }
 
   @Test
-  void testValidName_works() {
-    assertThat(generateActualJson("no.thing")).isEqualTo(loadJsonFile("rdapjson_toplevel.json"));
-    assertThat(response.getStatus()).isEqualTo(200);
-  }
-
-  @Test
   void testContentType_rdapjson_utf8() {
     generateActualJson("no.thing");
     assertThat(response.getContentType().toString())
