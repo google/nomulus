@@ -63,7 +63,7 @@ class RegistrarPocTest {
   @Test
   void testPersistence_succeeds() {
     insertInDb(testRegistrarPoc);
-    assertThat(loadByEntity(testRegistrarPoc)).isEqualTo(testRegistrarPoc);
+    assertThat(loadByEntity(testRegistrarPoc).toJsonMap()).isEqualTo(testRegistrarPoc.toJsonMap());
   }
 
   @Test

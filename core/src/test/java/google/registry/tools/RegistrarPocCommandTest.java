@@ -102,7 +102,7 @@ class RegistrarPocCommandTest extends CommandTestCase<RegistrarPocCommand> {
         "--visible_in_domain_whois_as_abuse=false",
         "NewRegistrar");
     RegistrarPoc registrarPoc = loadRegistrar("NewRegistrar").getContacts().asList().get(1);
-    assertThat(registrarPoc)
+    assertThat(registrarPoc.toJsonMap())
         .isEqualTo(
             new RegistrarPoc.Builder()
                 .setRegistrar(registrar)
@@ -115,7 +115,8 @@ class RegistrarPocCommandTest extends CommandTestCase<RegistrarPocCommand> {
                 .setVisibleInWhoisAsAdmin(true)
                 .setVisibleInWhoisAsTech(false)
                 .setVisibleInDomainWhoisAsAbuse(false)
-                .build());
+                .build()
+                .toJsonMap());
   }
 
   @Test
@@ -261,7 +262,7 @@ class RegistrarPocCommandTest extends CommandTestCase<RegistrarPocCommand> {
         "--visible_in_domain_whois_as_abuse=true",
         "NewRegistrar");
     RegistrarPoc registrarPoc = loadRegistrar("NewRegistrar").getContacts().asList().get(1);
-    assertThat(registrarPoc)
+    assertThat(registrarPoc.toJsonMap())
         .isEqualTo(
             new RegistrarPoc.Builder()
                 .setRegistrar(registrar)
@@ -272,7 +273,8 @@ class RegistrarPocCommandTest extends CommandTestCase<RegistrarPocCommand> {
                 .setVisibleInWhoisAsAdmin(true)
                 .setVisibleInWhoisAsTech(false)
                 .setVisibleInDomainWhoisAsAbuse(true)
-                .build());
+                .build()
+                .toJsonMap());
   }
 
   @Test
