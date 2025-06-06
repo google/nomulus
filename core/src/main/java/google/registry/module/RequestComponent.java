@@ -38,10 +38,8 @@ import google.registry.dns.PublishDnsUpdatesAction;
 import google.registry.dns.ReadDnsRefreshRequestsAction;
 import google.registry.dns.RefreshDnsAction;
 import google.registry.dns.RefreshDnsOnHostRenameAction;
-import google.registry.dns.writer.VoidDnsWriterModule;
-import google.registry.dns.writer.clouddns.CloudDnsWriterModule;
+import google.registry.dns.writer.DnsWritersModule;
 import google.registry.dns.writer.dnsupdate.DnsUpdateConfigModule;
-import google.registry.dns.writer.dnsupdate.DnsUpdateWriterModule;
 import google.registry.export.ExportDomainListsAction;
 import google.registry.export.ExportPremiumTermsAction;
 import google.registry.export.ExportReservedTermsAction;
@@ -140,14 +138,13 @@ import google.registry.whois.WhoisModule;
       BatchModule.class,
       BillingModule.class,
       CheckApiModule.class,
-      CloudDnsWriterModule.class,
       ConsoleModule.class,
       CronModule.class,
       CustomLogicModule.class,
       DnsCountQueryCoordinatorModule.class,
       DnsModule.class,
       DnsUpdateConfigModule.class,
-      DnsUpdateWriterModule.class,
+      DnsWritersModule.class,
       EppTlsModule.class,
       EppToolModule.class,
       IcannReportingModule.class,
@@ -160,7 +157,6 @@ import google.registry.whois.WhoisModule;
       Spec11Module.class,
       TmchModule.class,
       ToolsServerModule.class,
-      VoidDnsWriterModule.class,
       WhiteboxModule.class,
       WhoisModule.class,
     })

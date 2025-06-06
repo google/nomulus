@@ -23,9 +23,7 @@ import google.registry.config.CloudTasksUtilsModule;
 import google.registry.config.CredentialModule.LocalCredentialJson;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.config.RegistryConfig.ConfigModule;
-import google.registry.dns.writer.VoidDnsWriterModule;
-import google.registry.dns.writer.clouddns.CloudDnsWriterModule;
-import google.registry.dns.writer.dnsupdate.DnsUpdateWriterModule;
+import google.registry.dns.writer.DnsWritersModule;
 import google.registry.keyring.KeyringModule;
 import google.registry.keyring.api.KeyModule;
 import google.registry.model.ModelModule;
@@ -56,9 +54,8 @@ import javax.annotation.Nullable;
       BatchModule.class,
       BigqueryModule.class,
       ConfigModule.class,
-      CloudDnsWriterModule.class,
       CloudTasksUtilsModule.class,
-      DnsUpdateWriterModule.class,
+      DnsWritersModule.class,
       GsonModule.class,
       KeyModule.class,
       KeyringModule.class,
@@ -71,7 +68,6 @@ import javax.annotation.Nullable;
       SecretManagerModule.class,
       UrlConnectionServiceModule.class,
       UtilsModule.class,
-      VoidDnsWriterModule.class,
       NonCachingWhoisModule.class
     })
 interface RegistryToolComponent {
