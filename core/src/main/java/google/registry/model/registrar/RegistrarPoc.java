@@ -93,6 +93,10 @@ public class RegistrarPoc extends ImmutableObject implements Jsonifiable, Unsafe
     }
   }
 
+  @Expose
+  @Column(name = "id", insertable = false, updatable = false)
+  protected Long id;
+
   /** The name of the contact. */
   @Expose String name;
 
@@ -177,6 +181,10 @@ public class RegistrarPoc extends ImmutableObject implements Jsonifiable, Unsafe
         .executeUpdate();
 
     tm().putAll(contacts);
+  }
+
+  public Long getId() {
+    return id;
   }
 
   public String getName() {
@@ -295,6 +303,7 @@ public class RegistrarPoc extends ImmutableObject implements Jsonifiable, Unsafe
         .put("visibleInDomainWhoisAsAbuse", visibleInDomainWhoisAsAbuse)
         .put("allowedToSetRegistryLockPassword", allowedToSetRegistryLockPassword)
         .put("registryLockAllowed", isRegistryLockAllowed())
+        .put("id", getId())
         .build();
   }
 

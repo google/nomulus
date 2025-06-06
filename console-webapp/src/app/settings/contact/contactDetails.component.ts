@@ -71,7 +71,7 @@ export class ContactDetailsComponent {
     e.preventDefault();
     const request = this.contactService.isContactNewView
       ? this.contactService.addContact(this.contactService.contactInEdit)
-      : this.contactService.saveContacts(this.contactService.contacts());
+      : this.contactService.updateContact(this.contactService.contactInEdit);
     request.subscribe({
       complete: () => {
         this.goBack();

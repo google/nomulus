@@ -24,7 +24,7 @@ export type contactType =
   | 'LEGAL'
   | 'MARKETING'
   | 'TECH'
-  | 'RDAP';
+  | 'WHOIS';
 
 type contactTypesToUserFriendlyTypes = { [type in contactType]: string };
 
@@ -35,7 +35,7 @@ export const contactTypeToTextMap: contactTypesToUserFriendlyTypes = {
   LEGAL: 'Legal contact',
   MARKETING: 'Marketing contact',
   TECH: 'Technical contact',
-  RDAP: 'RDAP-Inquiry contact',
+  WHOIS: 'RDAP-Inquiry contact',
 };
 
 type UserFriendlyType = (typeof contactTypeToTextMap)[contactType];
@@ -98,19 +98,18 @@ export class ContactService {
     );
   }
 
-  saveContacts(contacts: ViewReadyContact[]): Observable<Contact[]> {
-    return this.backend
-      .postContacts(this.registrarService.registrarId(), contacts)
+  updateContact(contact: ViewReadyContact) {
+    return this.backend.updateContact(this.registrarService.registrarId(), contact)
       .pipe(switchMap((_) => this.fetchContacts()));
   }
 
   addContact(contact: ViewReadyContact) {
-    const newContacts = this.contacts().concat([contact]);
-    return this.saveContacts(newContacts);
+      return this.backend.createContact(this.registrarService.registrarId(), contact)
+        .pipe(switchMap((_) => this.fetchContacts()));
   }
 
   deleteContact(contact: ViewReadyContact) {
-    const newContacts = this.contacts().filter((c) => c !== contact);
-    return this.saveContacts(newContacts);
+    return this.backend.deleteContact(this.registrarService.registrarId(), contact)
+      .pipe(switchMap((_) => this.fetchContacts()));
   }
 }
