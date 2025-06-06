@@ -15,6 +15,7 @@
 package google.registry.schema.registrar;
 
 import static com.google.common.truth.Truth.assertThat;
+import static google.registry.model.ImmutableObjectSubject.assertAboutImmutableObjects;
 import static google.registry.model.registrar.RegistrarPoc.Type.WHOIS;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.insertInDb;
@@ -63,7 +64,7 @@ class RegistrarPocTest {
   @Test
   void testPersistence_succeeds() {
     insertInDb(testRegistrarPoc);
-    assertThat(loadByEntity(testRegistrarPoc)).isEqualTo(testRegistrarPoc);
+    assertAboutImmutableObjects().that(testRegistrarPoc).isEqualExceptFields(testRegistrarPoc, "id");
   }
 
   @Test

@@ -15,6 +15,7 @@
 package google.registry.tools;
 
 import static com.google.common.truth.Truth.assertThat;
+import static google.registry.model.ImmutableObjectSubject.assertAboutImmutableObjects;
 import static google.registry.model.registrar.RegistrarPoc.Type.ABUSE;
 import static google.registry.model.registrar.RegistrarPoc.Type.ADMIN;
 import static google.registry.model.registrar.RegistrarPoc.Type.TECH;
@@ -102,20 +103,19 @@ class RegistrarPocCommandTest extends CommandTestCase<RegistrarPocCommand> {
         "--visible_in_domain_whois_as_abuse=false",
         "NewRegistrar");
     RegistrarPoc registrarPoc = loadRegistrar("NewRegistrar").getContacts().asList().get(1);
-    assertThat(registrarPoc)
-        .isEqualTo(
-            new RegistrarPoc.Builder()
-                .setRegistrar(registrar)
-                .setName("Judith Registrar")
-                .setEmailAddress("judith.doe@example.com")
-                .setRegistryLockEmailAddress("judith.doe@external.com")
-                .setPhoneNumber("+1.2125650000")
-                .setFaxNumber("+1.2125650001")
-                .setTypes(ImmutableSet.of(WHOIS))
-                .setVisibleInWhoisAsAdmin(true)
-                .setVisibleInWhoisAsTech(false)
-                .setVisibleInDomainWhoisAsAbuse(false)
-                .build());
+    assertAboutImmutableObjects().that(registrarPoc).isEqualExceptFields(
+        new RegistrarPoc.Builder()
+        .setRegistrar(registrar)
+        .setName("Judith Registrar")
+        .setEmailAddress("judith.doe@example.com")
+        .setRegistryLockEmailAddress("judith.doe@external.com")
+        .setPhoneNumber("+1.2125650000")
+        .setFaxNumber("+1.2125650001")
+        .setTypes(ImmutableSet.of(WHOIS))
+        .setVisibleInWhoisAsAdmin(true)
+        .setVisibleInWhoisAsTech(false)
+        .setVisibleInDomainWhoisAsAbuse(false)
+        .build(), "id");
   }
 
   @Test
@@ -261,18 +261,16 @@ class RegistrarPocCommandTest extends CommandTestCase<RegistrarPocCommand> {
         "--visible_in_domain_whois_as_abuse=true",
         "NewRegistrar");
     RegistrarPoc registrarPoc = loadRegistrar("NewRegistrar").getContacts().asList().get(1);
-    assertThat(registrarPoc)
-        .isEqualTo(
-            new RegistrarPoc.Builder()
-                .setRegistrar(registrar)
-                .setName("Jim Doe")
-                .setEmailAddress("jim.doe@example.com")
-                .setRegistryLockEmailAddress("jim.doe@external.com")
-                .setTypes(ImmutableSet.of(ADMIN, ABUSE))
-                .setVisibleInWhoisAsAdmin(true)
-                .setVisibleInWhoisAsTech(false)
-                .setVisibleInDomainWhoisAsAbuse(true)
-                .build());
+    assertAboutImmutableObjects().that(registrarPoc).isEqualExceptFields(new RegistrarPoc.Builder()
+        .setRegistrar(registrar)
+        .setName("Jim Doe")
+        .setEmailAddress("jim.doe@example.com")
+        .setRegistryLockEmailAddress("jim.doe@external.com")
+        .setTypes(ImmutableSet.of(ADMIN, ABUSE))
+        .setVisibleInWhoisAsAdmin(true)
+        .setVisibleInWhoisAsTech(false)
+        .setVisibleInDomainWhoisAsAbuse(true)
+        .build(), "id");
   }
 
   @Test
