@@ -19,8 +19,10 @@ import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.collect.Sets.difference;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+import static google.registry.request.Action.Method.DELETE;
 import static google.registry.request.Action.Method.GET;
 import static google.registry.request.Action.Method.POST;
+import static google.registry.request.Action.Method.PUT;
 import static jakarta.servlet.http.HttpServletResponse.SC_OK;
 
 import com.google.common.collect.HashMultimap;
@@ -40,59 +42,123 @@ import google.registry.request.Action.GkeService;
 import google.registry.request.Parameter;
 import google.registry.request.auth.Auth;
 import google.registry.ui.forms.FormException;
-import google.registry.ui.server.RegistrarFormFields;
 import google.registry.ui.server.console.ConsoleApiAction;
 import google.registry.ui.server.console.ConsoleApiParams;
 import jakarta.inject.Inject;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.BiFunction;
 
 @Action(
     service = GaeService.DEFAULT,
     gkeService = GkeService.CONSOLE,
     path = ContactAction.PATH,
-    method = {GET, POST},
+    method = {GET, POST, DELETE, PUT},
     auth = Auth.AUTH_PUBLIC_LOGGED_IN)
 public class ContactAction extends ConsoleApiAction {
   static final String PATH = "/console-api/settings/contacts";
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
-  private final Optional<ImmutableSet<RegistrarPoc>> contacts;
+  private final Optional<RegistrarPoc> contact;
   private final String registrarId;
 
   @Inject
   public ContactAction(
       ConsoleApiParams consoleApiParams,
       @Parameter("registrarId") String registrarId,
-      @Parameter("contacts") Optional<ImmutableSet<RegistrarPoc>> contacts) {
+      @Parameter("contact") Optional<RegistrarPoc> contact) {
     super(consoleApiParams);
     this.registrarId = registrarId;
-    this.contacts = contacts;
+    this.contact = contact;
   }
 
   @Override
   protected void getHandler(User user) {
     checkPermission(user, registrarId, ConsolePermission.VIEW_REGISTRAR_DETAILS);
-    ImmutableList<RegistrarPoc> am =
+    ImmutableList<RegistrarPoc> contacts =
         tm().transact(
                 () ->
                     tm()
                         .createQueryComposer(RegistrarPoc.class)
                         .where("registrarId", Comparator.EQ, registrarId)
                         .stream()
-                        .filter(r -> !r.getTypes().isEmpty())
                         .collect(toImmutableList()));
 
     consoleApiParams.response().setStatus(SC_OK);
-    consoleApiParams.response().setPayload(consoleApiParams.gson().toJson(am));
+    consoleApiParams.response().setPayload(consoleApiParams.gson().toJson(contacts));
+  }
+
+  @Override
+  protected void deleteHandler(User user) {
+    updateContacts(
+        user,
+        (registrar, oldContacts) ->
+            oldContacts.stream()
+                .filter(
+                    oldContact ->
+                        !oldContact.getEmailAddress().equals(contact.get().getEmailAddress()))
+                .collect(toImmutableSet()));
   }
 
   @Override
   protected void postHandler(User user) {
+    updateContacts(
+        user,
+        (registrar, oldContacts) -> {
+          RegistrarPoc newContact = contact.get();
+          return ImmutableSet.<RegistrarPoc>builder()
+              .addAll(oldContacts)
+              .add(
+                  new RegistrarPoc()
+                      .asBuilder()
+                      .setTypes(newContact.getTypes())
+                      .setVisibleInWhoisAsTech(newContact.getVisibleInWhoisAsTech())
+                      .setVisibleInWhoisAsAdmin(newContact.getVisibleInWhoisAsAdmin())
+                      .setVisibleInDomainWhoisAsAbuse(newContact.getVisibleInDomainWhoisAsAbuse())
+                      .setFaxNumber(newContact.getFaxNumber())
+                      .setName(newContact.getName())
+                      .setEmailAddress(newContact.getEmailAddress())
+                      .setPhoneNumber(newContact.getPhoneNumber())
+                      .setRegistrar(registrar)
+                      .build())
+              .build();
+        });
+  }
+
+  @Override
+  protected void putHandler(User user) {
+    updateContacts(
+        user,
+        (registrar, oldContacts) -> {
+          RegistrarPoc updatedContact = contact.get();
+          return oldContacts.stream()
+              .map(
+                  oldContact ->
+                      oldContact.getId().equals(updatedContact.getId())
+                          ? oldContact
+                              .asBuilder()
+                              .setTypes(updatedContact.getTypes())
+                              .setVisibleInWhoisAsTech(updatedContact.getVisibleInWhoisAsTech())
+                              .setVisibleInWhoisAsAdmin(updatedContact.getVisibleInWhoisAsAdmin())
+                              .setVisibleInDomainWhoisAsAbuse(
+                                  updatedContact.getVisibleInDomainWhoisAsAbuse())
+                              .setFaxNumber(updatedContact.getFaxNumber())
+                              .setName(updatedContact.getName())
+                              .setEmailAddress(updatedContact.getEmailAddress())
+                              .setPhoneNumber(updatedContact.getPhoneNumber())
+                              .build()
+                          : oldContact)
+              .collect(toImmutableSet());
+        });
+  }
+
+  private void updateContacts(
+      User user,
+      BiFunction<Registrar, ImmutableSet<RegistrarPoc>, ImmutableSet<RegistrarPoc>>
+          contactsUpdater) {
     checkPermission(user, registrarId, ConsolePermission.EDIT_REGISTRAR_DETAILS);
-    checkArgument(contacts.isPresent(), "Contacts parameter is not present");
+    checkArgument(contact.isPresent(), "Contact parameter is not present");
     Registrar registrar =
         Registrar.loadByRegistrarId(registrarId)
             .orElseThrow(
@@ -101,20 +167,10 @@ public class ContactAction extends ConsoleApiAction {
                         String.format("Unknown registrar %s", registrarId)));
 
     ImmutableSet<RegistrarPoc> oldContacts = registrar.getContacts();
-    ImmutableSet<RegistrarPoc> updatedContacts =
-        RegistrarFormFields.getRegistrarContactBuilders(
-                oldContacts,
-                Collections.singletonMap(
-                    "contacts",
-                    contacts.get().stream()
-                        .map(RegistrarPoc::toJsonMap)
-                        .collect(toImmutableList())))
-            .stream()
-            .map(builder -> builder.setRegistrar(registrar).build())
-            .collect(toImmutableSet());
+    ImmutableSet<RegistrarPoc> newContacts = contactsUpdater.apply(registrar, oldContacts);
 
     try {
-      checkContactRequirements(oldContacts, updatedContacts);
+      checkContactRequirements(oldContacts, newContacts);
     } catch (FormException e) {
       logger.atWarning().withCause(e).log(
           "Error processing contacts post request for registrar: %s", registrarId);
@@ -123,14 +179,13 @@ public class ContactAction extends ConsoleApiAction {
 
     tm().transact(
             () -> {
-              RegistrarPoc.updateContacts(registrar, updatedContacts);
+              RegistrarPoc.updateContacts(registrar, newContacts);
               Registrar updatedRegistrar =
                   registrar.asBuilder().setContactsRequireSyncing(true).build();
               tm().put(updatedRegistrar);
               sendExternalUpdatesIfNecessary(
-                  EmailInfo.create(registrar, updatedRegistrar, oldContacts, updatedContacts));
+                  EmailInfo.create(registrar, updatedRegistrar, oldContacts, newContacts));
             });
-
     consoleApiParams.response().setStatus(SC_OK);
   }
 
@@ -169,6 +224,7 @@ public class ContactAction extends ConsoleApiAction {
         throw new ContactRequirementException(t);
       }
     }
+
     enforcePrimaryContactRestrictions(oldContactsByType, newContactsByType);
     ensurePhoneNumberNotRemovedForContactTypes(oldContactsByType, newContactsByType, Type.TECH);
     Optional<RegistrarPoc> domainWhoisAbuseContact =
