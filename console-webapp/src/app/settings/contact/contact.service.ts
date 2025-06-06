@@ -24,7 +24,7 @@ export type contactType =
   | 'LEGAL'
   | 'MARKETING'
   | 'TECH'
-  | 'RDAP';
+  | 'WHOIS';
 
 type contactTypesToUserFriendlyTypes = { [type in contactType]: string };
 
@@ -35,7 +35,7 @@ export const contactTypeToTextMap: contactTypesToUserFriendlyTypes = {
   LEGAL: 'Legal contact',
   MARKETING: 'Marketing contact',
   TECH: 'Technical contact',
-  RDAP: 'RDAP-Inquiry contact',
+  WHOIS: 'RDAP-Inquiry contact',
 };
 
 type UserFriendlyType = (typeof contactTypeToTextMap)[contactType];
@@ -59,7 +59,10 @@ export interface ViewReadyContact extends Contact {
 export function contactTypeToViewReadyContact(c: Contact): ViewReadyContact {
   return {
     ...c,
-    userFriendlyTypes: c.types?.map((cType) => contactTypeToTextMap[cType]),
+    userFriendlyTypes: (c.types || []).map(
+      (cType) => contactTypeToTextMap[cType]
+    ),
+    types: c.types || [],
   };
 }
 
@@ -98,19 +101,21 @@ export class ContactService {
     );
   }
 
-  saveContacts(contacts: ViewReadyContact[]): Observable<Contact[]> {
+  updateContact(contact: ViewReadyContact) {
     return this.backend
-      .postContacts(this.registrarService.registrarId(), contacts)
+      .updateContact(this.registrarService.registrarId(), contact)
       .pipe(switchMap((_) => this.fetchContacts()));
   }
 
   addContact(contact: ViewReadyContact) {
-    const newContacts = this.contacts().concat([contact]);
-    return this.saveContacts(newContacts);
+    return this.backend
+      .createContact(this.registrarService.registrarId(), contact)
+      .pipe(switchMap((_) => this.fetchContacts()));
   }
 
   deleteContact(contact: ViewReadyContact) {
-    const newContacts = this.contacts().filter((c) => c !== contact);
-    return this.saveContacts(newContacts);
+    return this.backend
+      .deleteContact(this.registrarService.registrarId(), contact)
+      .pipe(switchMap((_) => this.fetchContacts()));
   }
 }

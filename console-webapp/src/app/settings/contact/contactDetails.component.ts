@@ -69,9 +69,13 @@ export class ContactDetailsComponent {
 
   save(e: SubmitEvent) {
     e.preventDefault();
+    if ((this.contactService.contactInEdit.types || []).length === 0) {
+      this._snackBar.open('Required to select contact type');
+      return;
+    }
     const request = this.contactService.isContactNewView
       ? this.contactService.addContact(this.contactService.contactInEdit)
-      : this.contactService.saveContacts(this.contactService.contacts());
+      : this.contactService.updateContact(this.contactService.contactInEdit);
     request.subscribe({
       complete: () => {
         this.goBack();

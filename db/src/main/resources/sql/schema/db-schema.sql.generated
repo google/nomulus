@@ -674,6 +674,7 @@
         registrar_id text not null,
         allowed_to_set_registry_lock_password boolean not null,
         fax_number text,
+        id bigint,
         name text,
         phone_number text,
         registry_lock_email_address text,
