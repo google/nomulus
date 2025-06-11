@@ -11,6 +11,12 @@
           "href": "https://example.tld/rdap/entity/301",
           "type": "application/rdap+json",
           "value": "https://example.tld/rdap/entities"
+        },
+        {
+          "rel": "about",
+          "href": "http://my.fake.url",
+          "type": "text/html",
+          "value": "https://rdap.example.com/withSlash/"
         }
       ],
       "publicIds":
@@ -69,6 +75,12 @@
           "href": "https://example.tld/rdap/entity/302",
           "type": "application/rdap+json",
           "value": "https://example.tld/rdap/entities"
+        },
+        {
+          "rel": "about",
+          "href": "http://my.fake.url",
+          "type": "text/html",
+          "value": "https://rdap.example.com/withSlash/"
         }
       ],
       "publicIds":
@@ -127,6 +139,12 @@
           "href": "https://example.tld/rdap/entity/303",
           "type": "application/rdap+json",
           "value": "https://example.tld/rdap/entities"
+        },
+        {
+          "rel": "about",
+          "href": "http://my.fake.url",
+          "type": "text/html",
+          "value": "https://rdap.example.com/withSlash/"
         }
       ],
       "publicIds":
@@ -185,6 +203,12 @@
           "href": "https://example.tld/rdap/entity/304",
           "type": "application/rdap+json",
           "value": "https://example.tld/rdap/entities"
+        },
+        {
+          "rel": "about",
+          "href": "http://my.fake.url",
+          "type": "text/html",
+          "value": "https://rdap.example.com/withSlash/"
         }
       ],
       "publicIds":

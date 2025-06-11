@@ -721,6 +721,15 @@ public class RdapJsonFormatter {
       builder.linksBuilder().add(makeSelfLink("entity", ianaIdentifier.toString()));
     }
 
+    // RDAP Response Profile 2.4.6: must have a links entry pointing to the registrar URL, with a
+    // rel:about and a value containing the registrar RDAP base URL (if present)
+    if (registrar.getUrl() != null) {
+      Link.Builder registrarLinkBuilder =
+          Link.builder().setHref(registrar.getUrl()).setRel("about").setType("text/html");
+      registrar.getRdapBaseUrls().stream().findFirst().ifPresent(registrarLinkBuilder::setValue);
+      builder.linksBuilder().add(registrarLinkBuilder.build());
+    }
+
     // There's no mention of the registrar STATUS in the RDAP Response Profile, so we'll only add it
     // for FULL response
     // We could probably not add it at all, but it could be useful for us internally
