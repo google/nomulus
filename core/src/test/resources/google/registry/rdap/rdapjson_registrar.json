@@ -9,6 +9,12 @@
       "rel" : "self",
       "href" : "https://example.tld/rdap/entity/1",
       "type" : "application/rdap+json"
+    },
+    {
+      "rel": "about",
+      "href": "http://my.fake.url",
+      "type": "text/html",
+      "value": "https://rdap.example.com/withSlash/"
     }
   ],
   "events": [

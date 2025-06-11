@@ -21,11 +21,6 @@
       "href": "https://rdap.example.com/withSlash/domain/cat.xn--q9jyb4c",
       "type": "application/rdap+json",
       "rel": "related"
-    },
-    {
-      "href": "https://rdap.example.com/withoutSlash/domain/cat.xn--q9jyb4c",
-      "type": "application/rdap+json",
-      "rel": "related"
     }
   ],
   "events": [
@@ -109,6 +104,12 @@
           "rel": "self",
           "href": "https://example.tld/rdap/entity/1",
           "type": "application/rdap+json"
+        },
+        {
+          "rel": "about",
+          "href": "http://my.fake.url",
+          "type": "text/html",
+          "value": "https://rdap.example.com/withSlash/"
         }
       ],
       "publicIds": [

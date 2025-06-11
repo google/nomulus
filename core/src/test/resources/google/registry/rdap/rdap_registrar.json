@@ -15,6 +15,12 @@
       "href": "https://example.tld/rdap/entity/%REGISTRAR_HANDLE_1%",
       "type" : "application/rdap+json",
       "value": "%REQUEST_URL%"
+    },
+    {
+      "rel": "about",
+      "href": "http://my.fake.url",
+      "type": "text/html",
+      "value": "https://rdap.example.com/withSlash/"
     }
   ],
   "publicIds" :
