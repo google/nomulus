@@ -562,6 +562,17 @@
         primary key (package_promotion_id)
     );
 
+    create table "PasswordResetRequest" (
+        verification_code text not null,
+        destination_email text not null,
+        fulfillment_time timestamp(6) with time zone,
+        registrar_id text not null,
+        request_time timestamp(6) with time zone not null,
+        requester text not null,
+        type text not null check (type in ('EPP','REGISTRY_LOCK')),
+        primary key (verification_code)
+    );
+
     create table "PollMessage" (
         type text not null,
         poll_message_id bigint not null,

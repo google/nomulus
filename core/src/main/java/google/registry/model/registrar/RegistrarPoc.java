@@ -27,6 +27,7 @@ import static google.registry.util.PasswordUtils.hashPassword;
 import static java.util.stream.Collectors.joining;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedSet;
 import com.google.gson.annotations.Expose;
@@ -36,6 +37,7 @@ import google.registry.model.JsonMapBuilder;
 import google.registry.model.Jsonifiable;
 import google.registry.model.UnsafeSerializable;
 import google.registry.persistence.VKey;
+import google.registry.persistence.transaction.QueryComposer;
 import google.registry.util.PasswordUtils;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -421,6 +423,12 @@ public class RegistrarPoc extends ImmutableObject implements Jsonifiable, Unsafe
       getInstance().allowedToSetRegistryLockPassword = false;
       return thisCastToDerived();
     }
+  }
+
+  public static ImmutableList<RegistrarPoc> loadForRegistrar(String registrarId) {
+    return tm().createQueryComposer(RegistrarPoc.class)
+        .where("registrarId", QueryComposer.Comparator.EQ, registrarId)
+        .list();
   }
 
   /** Class to represent the composite primary key for {@link RegistrarPoc} entity. */
