@@ -15,6 +15,12 @@
           "rel": "self",
           "type": "application/rdap+json",
           "value": "https://example.tld/rdap/domain/renew.lol"
+        },
+        {
+          "rel": "about",
+          "href": "http://my.fake.url",
+          "type": "text/html",
+          "value": "https://rdap.theregistrar.com/"
         }
       ],
       "publicIds": [
@@ -126,6 +132,12 @@
     {
       "href": "https://example.tld/rdap/domain/renew.lol",
       "rel": "self",
+      "type": "application/rdap+json",
+      "value": "https://example.tld/rdap/domain/renew.lol"
+    },
+    {
+      "href": "https://rdap.theregistrar.com/domain/renew.lol",
+      "rel": "related",
       "type": "application/rdap+json",
       "value": "https://example.tld/rdap/domain/renew.lol"
     }

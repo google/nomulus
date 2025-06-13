@@ -36,7 +36,7 @@ import jakarta.inject.Inject;
 import java.io.IOException;
 import java.io.StringReader;
 import java.net.HttpURLConnection;
-import java.net.URL;
+import java.net.URI;
 import java.security.GeneralSecurityException;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
@@ -72,7 +72,7 @@ public final class UpdateRegistrarRdapBaseUrlsAction implements Runnable {
   public void run() {
     try {
       ImmutableMap<String, String> ianaIdsToUrls = getIanaIdsToUrls();
-      tm().transact(() -> processAllRegistrars(ianaIdsToUrls));
+      processAllRegistrars(ianaIdsToUrls);
     } catch (Exception e) {
       throw new InternalServerErrorException("Error when retrieving RDAP base URL CSV file", e);
     }
@@ -80,7 +80,10 @@ public final class UpdateRegistrarRdapBaseUrlsAction implements Runnable {
 
   private static void processAllRegistrars(ImmutableMap<String, String> ianaIdsToUrls) {
     int nonUpdatedRegistrars = 0;
-    for (Registrar registrar : Registrar.loadAll()) {
+    // Split into multiple transactions to avoid load-save-reload conflicts. Re-building a registrar
+    // requires a full (cached) load of all registrars to avoid IANA ID conflicts.
+    Iterable<Registrar> registrars = tm().transact(Registrar::loadAll);
+    for (Registrar registrar : registrars) {
       // Only update REAL registrars
       if (registrar.getType() != Registrar.Type.REAL) {
         continue;
@@ -100,7 +103,12 @@ public final class UpdateRegistrarRdapBaseUrlsAction implements Runnable {
               "Updating RDAP base URLs for registrar %s from %s to %s",
               registrar.getRegistrarId(), registrar.getRdapBaseUrls(), baseUrls);
         }
-        tm().put(registrar.asBuilder().setRdapBaseUrls(baseUrls).build());
+        tm().transact(
+                () -> {
+                  // Reload inside a transaction to avoid race conditions
+                  Registrar reloadedRegistrar = tm().loadByEntity(registrar);
+                  tm().put(reloadedRegistrar.asBuilder().setRdapBaseUrls(baseUrls).build());
+                });
       }
     }
     logger.atInfo().log("No change in RDAP base URLs for %d registrars", nonUpdatedRegistrars);
@@ -108,9 +116,9 @@ public final class UpdateRegistrarRdapBaseUrlsAction implements Runnable {
 
   private ImmutableMap<String, String> getIanaIdsToUrls()
       throws IOException, GeneralSecurityException {
-    CSVParser csv;
-    HttpURLConnection connection = urlConnectionService.createConnection(new URL(RDAP_IDS_URL));
-    // Explictly set the accepted encoding, as we know Brotli causes us problems when talking to
+    HttpURLConnection connection =
+        urlConnectionService.createConnection(URI.create(RDAP_IDS_URL).toURL());
+    // Explicitly set the accepted encoding, as we know Brotli causes us problems when talking to
     // ICANN.
     connection.setRequestProperty(ACCEPT_ENCODING, "gzip");
     String csvString;
@@ -128,11 +136,11 @@ public final class UpdateRegistrarRdapBaseUrlsAction implements Runnable {
     } finally {
       connection.disconnect();
     }
-    csv =
+    CSVParser csv =
         CSVFormat.Builder.create(CSVFormat.DEFAULT)
             .setHeader()
             .setSkipHeaderRecord(true)
-            .build()
+            .get()
             .parse(new StringReader(csvString));
     ImmutableMap.Builder<String, String> result = new ImmutableMap.Builder<>();
     for (CSVRecord record : csv) {
