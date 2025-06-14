@@ -251,11 +251,12 @@ final class UniformRapidSuspensionCommand extends MutatingEppToolCommand {
     if (undo) {
       return "";
     }
-    StringBuilder undoBuilder = new StringBuilder("UNDO COMMAND:\n\n)")
-        .append("nomulus -e ")
-        .append(RegistryToolEnvironment.get())
-        .append(" uniform_rapid_suspension --undo --domain_name ")
-        .append(domainName);
+    StringBuilder undoBuilder =
+        new StringBuilder("UNDO COMMAND:\n\n")
+            .append("nomulus -e ")
+            .append(RegistryToolEnvironment.get())
+            .append(" uniform_rapid_suspension --undo --domain_name ")
+            .append(domainName);
     if (!existingNameservers.isEmpty()) {
       undoBuilder.append(" --hosts ").append(Joiner.on(',').join(existingNameservers));
     }
