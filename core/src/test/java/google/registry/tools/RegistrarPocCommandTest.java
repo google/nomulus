@@ -15,6 +15,7 @@
 package google.registry.tools;
 
 import static com.google.common.truth.Truth.assertThat;
+import static google.registry.model.ImmutableObjectSubject.assertAboutImmutableObjects;
 import static google.registry.model.registrar.RegistrarPoc.Type.ABUSE;
 import static google.registry.model.registrar.RegistrarPoc.Type.ADMIN;
 import static google.registry.model.registrar.RegistrarPoc.Type.TECH;
@@ -102,8 +103,9 @@ class RegistrarPocCommandTest extends CommandTestCase<RegistrarPocCommand> {
         "--visible_in_domain_whois_as_abuse=false",
         "NewRegistrar");
     RegistrarPoc registrarPoc = loadRegistrar("NewRegistrar").getContacts().asList().get(1);
-    assertThat(registrarPoc)
-        .isEqualTo(
+    assertAboutImmutableObjects()
+        .that(registrarPoc)
+        .isEqualExceptFields(
             new RegistrarPoc.Builder()
                 .setRegistrar(registrar)
                 .setName("Judith Registrar")
@@ -115,7 +117,8 @@ class RegistrarPocCommandTest extends CommandTestCase<RegistrarPocCommand> {
                 .setVisibleInWhoisAsAdmin(true)
                 .setVisibleInWhoisAsTech(false)
                 .setVisibleInDomainWhoisAsAbuse(false)
-                .build());
+                .build(),
+            "id");
   }
 
   @Test
@@ -261,8 +264,9 @@ class RegistrarPocCommandTest extends CommandTestCase<RegistrarPocCommand> {
         "--visible_in_domain_whois_as_abuse=true",
         "NewRegistrar");
     RegistrarPoc registrarPoc = loadRegistrar("NewRegistrar").getContacts().asList().get(1);
-    assertThat(registrarPoc)
-        .isEqualTo(
+    assertAboutImmutableObjects()
+        .that(registrarPoc)
+        .isEqualExceptFields(
             new RegistrarPoc.Builder()
                 .setRegistrar(registrar)
                 .setName("Jim Doe")
@@ -272,7 +276,8 @@ class RegistrarPocCommandTest extends CommandTestCase<RegistrarPocCommand> {
                 .setVisibleInWhoisAsAdmin(true)
                 .setVisibleInWhoisAsTech(false)
                 .setVisibleInDomainWhoisAsAbuse(true)
-                .build());
+                .build(),
+            "id");
   }
 
   @Test

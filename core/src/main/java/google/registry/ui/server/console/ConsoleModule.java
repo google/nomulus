@@ -19,7 +19,6 @@ import static google.registry.request.RequestParameters.extractOptionalIntParame
 import static google.registry.request.RequestParameters.extractOptionalParameter;
 import static google.registry.request.RequestParameters.extractRequiredParameter;
 
-import com.google.common.collect.ImmutableSet;
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import dagger.Module;
@@ -192,10 +191,10 @@ public final class ConsoleModule {
   }
 
   @Provides
-  @Parameter("contacts")
-  public static Optional<ImmutableSet<RegistrarPoc>> provideContacts(
+  @Parameter("contact")
+  public static Optional<RegistrarPoc> provideContacts(
       Gson gson, @OptionalJsonPayload Optional<JsonElement> payload) {
-    return payload.map(s -> ImmutableSet.copyOf(gson.fromJson(s, RegistrarPoc[].class)));
+    return payload.map(s -> gson.fromJson(s, RegistrarPoc.class));
   }
 
   @Provides

@@ -44,6 +44,7 @@ import google.registry.model.registrar.Registrar.Type;
 import google.registry.model.tld.Tld;
 import google.registry.model.tld.Tld.TldType;
 import google.registry.model.tld.Tlds;
+import google.registry.testing.DatabaseHelper;
 import google.registry.util.CidrAddressBlock;
 import google.registry.util.SerializeUtils;
 import java.math.BigDecimal;
@@ -340,6 +341,7 @@ class RegistrarTest extends EntityTestCase {
                 .setFaxNumber("+1.2125551213")
                 .setTypes(ImmutableSet.of(RegistrarPoc.Type.TECH, RegistrarPoc.Type.ABUSE))
                 .build());
+    abuseAdminContact = DatabaseHelper.loadByKey(abuseAdminContact.createVKey());
     ImmutableSortedSet<RegistrarPoc> techContacts =
         registrar.getContactsOfType(RegistrarPoc.Type.TECH);
     assertThat(techContacts).containsExactly(newTechContact, newTechAbuseContact).inOrder();

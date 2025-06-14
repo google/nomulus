@@ -70,13 +70,26 @@ export class BackendService {
       .pipe(catchError((err) => this.errorCatcher<Contact[]>(err)));
   }
 
-  postContacts(
-    registrarId: string,
-    contacts: Contact[]
-  ): Observable<Contact[]> {
-    return this.http.post<Contact[]>(
+  updateContact(registrarId: string, contact: Contact): Observable<Contact> {
+    return this.http.put<Contact>(
       `/console-api/settings/contacts?registrarId=${registrarId}`,
-      contacts
+      contact
+    );
+  }
+
+  createContact(registrarId: string, contact: Contact): Observable<Contact> {
+    return this.http.post<Contact>(
+      `/console-api/settings/contacts?registrarId=${registrarId}`,
+      contact
+    );
+  }
+
+  deleteContact(registrarId: string, contact: Contact): Observable<Contact> {
+    return this.http.delete<Contact>(
+      `/console-api/settings/contacts?registrarId=${registrarId}`,
+      {
+        body: JSON.stringify(contact),
+      }
     );
   }
 

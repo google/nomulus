@@ -11,7 +11,7 @@ CONSOLE  /console-api/registrar            ConsoleUpdateRegistrarAction    POST 
 CONSOLE  /console-api/registrars           RegistrarsAction                GET,POST            n  USER PUBLIC
 CONSOLE  /console-api/registry-lock        ConsoleRegistryLockAction       GET,POST            n  USER PUBLIC
 CONSOLE  /console-api/registry-lock-verify ConsoleRegistryLockVerifyAction GET                 n  USER PUBLIC
-CONSOLE  /console-api/settings/contacts    ContactAction                   GET,POST            n  USER PUBLIC
+CONSOLE  /console-api/settings/contacts    ContactAction                   GET,POST,DELETE,PUT n  USER PUBLIC
 CONSOLE  /console-api/settings/rdap-fields RdapRegistrarFieldsAction       POST                n  USER PUBLIC
 CONSOLE  /console-api/settings/security    SecurityAction                  POST                n  USER PUBLIC
 CONSOLE  /console-api/userdata             ConsoleUserDataAction           GET                 n  USER PUBLIC
