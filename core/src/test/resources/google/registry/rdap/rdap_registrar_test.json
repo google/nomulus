@@ -6,6 +6,14 @@
   ],
   "objectClassName" : "entity",
   "handle" : "%REGISTRAR_HANDLE_1%",
+  "links" : [
+    {
+      "rel": "about",
+      "href": "http://my.fake.url",
+      "type": "text/html",
+      "value": "https://rdap.example.com/withSlash/"
+    }
+  ],
   "status" : ["%STATUS_1%"],
   "roles" : ["registrar"],
   "events": [
