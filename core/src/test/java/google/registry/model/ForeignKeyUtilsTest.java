@@ -121,7 +121,7 @@ class ForeignKeyUtilsTest {
     fakeClock.advanceOneMilli();
     Host newHost1 = persistActiveHost("ns1.example.com");
     assertThat(
-            ForeignKeyUtils.loadCached(
+            ForeignKeyUtils.loadByCacheIfEnabled(
                 Host.class,
                 ImmutableList.of("ns1.example.com", "ns2.example.com", "ns3.example.com"),
                 fakeClock.nowUtc()))
@@ -134,7 +134,7 @@ class ForeignKeyUtilsTest {
     Host host2 = persistActiveHost("ns2.example.com");
     persistResource(host2.asBuilder().setDeletionTime(fakeClock.nowUtc().minusDays(1)).build());
     assertThat(
-            ForeignKeyUtils.loadCached(
+            ForeignKeyUtils.loadByCacheIfEnabled(
                 Host.class,
                 ImmutableList.of("ns1.example.com", "ns2.example.com", "ns3.example.com"),
                 fakeClock.nowUtc()))
@@ -144,7 +144,7 @@ class ForeignKeyUtilsTest {
     persistActiveHost("ns1.example.com");
     // Even though a new host1 is now live, the cache still returns the VKey to the old one.
     assertThat(
-            ForeignKeyUtils.loadCached(
+            ForeignKeyUtils.loadByCacheIfEnabled(
                 Host.class,
                 ImmutableList.of("ns1.example.com", "ns2.example.com", "ns3.example.com"),
                 fakeClock.nowUtc()))

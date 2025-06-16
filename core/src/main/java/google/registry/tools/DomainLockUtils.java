@@ -16,7 +16,7 @@ package google.registry.tools;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static google.registry.batch.AsyncTaskEnqueuer.QUEUE_ASYNC_ACTIONS;
-import static google.registry.model.EppResourceUtils.loadByForeignKeyCached;
+import static google.registry.model.EppResourceUtils.loadByForeignKeyByCacheIfEnabled;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.tools.LockOrUnlockDomainCommand.REGISTRY_LOCK_STATUSES;
 
@@ -326,7 +326,7 @@ public final class DomainLockUtils {
 
   private Domain getDomain(String domainName, String registrarId, DateTime now) {
     Domain domain =
-        loadByForeignKeyCached(Domain.class, domainName, now)
+        loadByForeignKeyByCacheIfEnabled(Domain.class, domainName, now)
             .orElseThrow(() -> new IllegalArgumentException("Domain doesn't exist"));
     // The user must have specified either the correct registrar ID or the admin registrar ID
     checkArgument(

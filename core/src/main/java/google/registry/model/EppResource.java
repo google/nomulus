@@ -404,7 +404,7 @@ public abstract class EppResource extends UpdateAutoTimestampEntity implements B
    * <p>Don't use this unless you really need it for performance reasons, and be sure that you are
    * OK with the trade-offs in loss of transactional consistency.
    */
-  public static ImmutableMap<VKey<? extends EppResource>, EppResource> loadCached(
+  public static ImmutableMap<VKey<? extends EppResource>, EppResource> loadByCacheIfEnabled(
       Iterable<VKey<? extends EppResource>> keys) {
     if (!RegistryConfig.isEppResourceCachingEnabled()) {
       return tm().reTransact(() -> tm().loadByKeys(keys));
@@ -413,15 +413,12 @@ public abstract class EppResource extends UpdateAutoTimestampEntity implements B
   }
 
   /**
-   * Loads a given EppResource by its key using the cache (if enabled).
+   * Loads a given EppResource by its key using the cache.
    *
-   * <p>Don't use this unless you really need it for performance reasons, and be sure that you are
-   * OK with the trade-offs in loss of transactional consistency.
+   * <p>This method ignores the `isEppResourceCachingEnabled` config setting. It is reserved for use
+   * cases that can tolerate slightly stale data, e.g., RDAP queries.
    */
-  public static <T extends EppResource> T loadCached(VKey<T> key) {
-    if (!RegistryConfig.isEppResourceCachingEnabled()) {
-      return tm().reTransact(() -> tm().loadByKey(key));
-    }
+  public static <T extends EppResource> T loadByCache(VKey<T> key) {
     // Safe to cast because loading a Key<T> returns an entity of type T.
     @SuppressWarnings("unchecked")
     T resource = (T) cacheEppResources.get(key);

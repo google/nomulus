@@ -17,7 +17,7 @@ package google.registry.whois;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static google.registry.flows.domain.DomainFlowUtils.isBlockedByBsa;
 import static google.registry.model.EppResourceUtils.loadByForeignKey;
-import static google.registry.model.EppResourceUtils.loadByForeignKeyCached;
+import static google.registry.model.EppResourceUtils.loadByForeignKeyByCache;
 import static google.registry.model.tld.Tlds.findTldForName;
 import static google.registry.model.tld.Tlds.getTlds;
 import static google.registry.persistence.transaction.TransactionManagerFactory.replicaTm;
@@ -94,7 +94,7 @@ public class DomainLookupCommand implements WhoisCommand {
   private Optional<WhoisResponse> getResponse(InternetDomainName domainName, DateTime now) {
     Optional<Domain> domainResource =
         cached
-            ? loadByForeignKeyCached(Domain.class, domainName.toString(), now)
+            ? loadByForeignKeyByCache(Domain.class, domainName.toString(), now)
             : loadByForeignKey(Domain.class, domainName.toString(), now);
     return domainResource.map(
         domain -> new DomainWhoisResponse(domain, fullOutput, whoisRedactedEmailText, now));

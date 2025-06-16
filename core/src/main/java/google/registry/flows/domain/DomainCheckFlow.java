@@ -432,7 +432,7 @@ public final class DomainCheckFlow implements TransactionalFlow {
             .filter(existingDomains::containsKey)
             .collect(toImmutableMap(d -> d, existingDomains::get));
     ImmutableMap<VKey<? extends EppResource>, EppResource> loadedDomains =
-        EppResource.loadCached(ImmutableList.copyOf(existingDomainsToLoad.values()));
+        EppResource.loadByCacheIfEnabled(ImmutableList.copyOf(existingDomainsToLoad.values()));
     return ImmutableMap.copyOf(
         Maps.transformEntries(existingDomainsToLoad, (k, v) -> (Domain) loadedDomains.get(v)));
   }

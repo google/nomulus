@@ -55,7 +55,7 @@ public class ConsoleDomainGetAction extends ConsoleApiAction {
     Optional<Domain> possibleDomain =
         tm().transact(
                 () ->
-                    EppResourceUtils.loadByForeignKeyCached(
+                    EppResourceUtils.loadByForeignKeyByCacheIfEnabled(
                         Domain.class, paramDomain, tm().getTransactionTime()));
     if (possibleDomain.isEmpty()) {
       consoleApiParams.response().setStatus(SC_NOT_FOUND);

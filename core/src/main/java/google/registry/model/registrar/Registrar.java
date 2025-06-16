@@ -27,6 +27,7 @@ import static com.google.common.io.BaseEncoding.base64;
 import static google.registry.config.RegistryConfig.getDefaultRegistrarWhoisServer;
 import static google.registry.model.CacheUtils.memoizeWithShortExpiration;
 import static google.registry.model.tld.Tlds.assertTldsExist;
+import static google.registry.persistence.transaction.TransactionManagerFactory.replicaTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.CollectionUtils.nullToEmptyImmutableCopy;
 import static google.registry.util.CollectionUtils.nullToEmptyImmutableSortedCopy;
@@ -62,6 +63,7 @@ import google.registry.model.tld.Tld.TldType;
 import google.registry.persistence.VKey;
 import google.registry.persistence.converter.CidrBlockListUserType;
 import google.registry.persistence.converter.CurrencyToStringMapUserType;
+import google.registry.persistence.transaction.TransactionManager;
 import google.registry.util.CidrAddressBlock;
 import google.registry.util.PasswordUtils;
 import jakarta.mail.internet.AddressException;
@@ -576,7 +578,20 @@ public class Registrar extends UpdateAutoTimestampEntity implements Buildable, J
    * address.
    */
   public ImmutableSortedSet<RegistrarPoc> getContacts() {
-    return getContactPocs().stream()
+    return getContactPocs(tm()).stream()
+        .filter(Objects::nonNull)
+        .collect(toImmutableSortedSet(CONTACT_EMAIL_COMPARATOR));
+  }
+
+  /**
+   * Returns a list of all {@link RegistrarPoc} objects for this registrar sorted by their email
+   * address.
+   *
+   * <p>This method queries the replica database. It is reserved for use cases that can tolerate
+   * slightly stale data.
+   */
+  public ImmutableSortedSet<RegistrarPoc> getContactsFromReplica() {
+    return getContactPocs(replicaTm()).stream()
         .filter(Objects::nonNull)
         .collect(toImmutableSortedSet(CONTACT_EMAIL_COMPARATOR));
   }
@@ -586,7 +601,7 @@ public class Registrar extends UpdateAutoTimestampEntity implements Buildable, J
    * their email address.
    */
   public ImmutableSortedSet<RegistrarPoc> getContactsOfType(final RegistrarPoc.Type type) {
-    return getContactPocs().stream()
+    return getContactPocs(tm()).stream()
         .filter(Objects::nonNull)
         .filter((@Nullable RegistrarPoc contact) -> contact.getTypes().contains(type))
         .collect(toImmutableSortedSet(CONTACT_EMAIL_COMPARATOR));
@@ -600,8 +615,8 @@ public class Registrar extends UpdateAutoTimestampEntity implements Buildable, J
     return getContacts().stream().filter(RegistrarPoc::getVisibleInDomainWhoisAsAbuse).findFirst();
   }
 
-  private ImmutableList<RegistrarPoc> getContactPocs() {
-    return tm().transact(() -> RegistrarPoc.loadForRegistrar(registrarId));
+  private ImmutableList<RegistrarPoc> getContactPocs(TransactionManager txnManager) {
+    return txnManager.transact(() -> RegistrarPoc.loadForRegistrar(registrarId));
   }
 
   @Override

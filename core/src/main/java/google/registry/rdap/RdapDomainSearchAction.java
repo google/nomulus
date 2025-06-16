@@ -15,7 +15,7 @@
 package google.registry.rdap;
 
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
-import static google.registry.model.EppResourceUtils.loadByForeignKeyCached;
+import static google.registry.model.EppResourceUtils.loadByForeignKeyByCache;
 import static google.registry.persistence.transaction.TransactionManagerFactory.replicaTm;
 import static google.registry.request.Action.Method.GET;
 import static google.registry.request.Action.Method.HEAD;
@@ -184,7 +184,7 @@ public class RdapDomainSearchAction extends RdapSearchActionBase {
   private DomainSearchResponse searchByDomainNameWithoutWildcard(
       final RdapSearchPattern partialStringQuery) {
     Optional<Domain> domain =
-        loadByForeignKeyCached(
+        loadByForeignKeyByCache(
             Domain.class, partialStringQuery.getInitialString(), getRequestTime());
     return makeSearchResults(
         shouldBeVisible(domain) ? ImmutableList.of(domain.get()) : ImmutableList.of());
@@ -339,7 +339,7 @@ public class RdapDomainSearchAction extends RdapSearchActionBase {
     Optional<String> desiredRegistrar = getDesiredRegistrar();
     if (desiredRegistrar.isPresent()) {
       Optional<Host> host =
-          loadByForeignKeyCached(
+          loadByForeignKeyByCache(
               Host.class,
               partialStringQuery.getInitialString(),
               shouldIncludeDeleted() ? START_OF_TIME : getRequestTime());
@@ -364,7 +364,7 @@ public class RdapDomainSearchAction extends RdapSearchActionBase {
     // through the subordinate hosts. This is more efficient, and lets us permit wildcard searches
     // with no initial string.
     Domain domain =
-        loadByForeignKeyCached(
+        loadByForeignKeyByCache(
                 Domain.class,
                 partialStringQuery.getSuffix(),
                 shouldIncludeDeleted() ? START_OF_TIME : getRequestTime())
@@ -381,7 +381,7 @@ public class RdapDomainSearchAction extends RdapSearchActionBase {
       if (partialStringQuery.matches(fqhn)) {
         if (desiredRegistrar.isPresent()) {
           Optional<Host> host =
-              loadByForeignKeyCached(
+              loadByForeignKeyByCache(
                   Host.class, fqhn, shouldIncludeDeleted() ? START_OF_TIME : getRequestTime());
           if (host.isPresent()
               && desiredRegistrar

@@ -16,6 +16,7 @@ package google.registry.model;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
+import static google.registry.persistence.transaction.TransactionManagerFactory.replicaTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static google.registry.util.DateTimeUtils.isAtOrAfter;
@@ -40,6 +41,7 @@ import google.registry.model.transfer.DomainTransferData;
 import google.registry.model.transfer.TransferData;
 import google.registry.model.transfer.TransferStatus;
 import google.registry.persistence.VKey;
+import google.registry.persistence.transaction.TransactionManager;
 import jakarta.persistence.Query;
 import java.util.Collection;
 import java.util.Comparator;
@@ -109,12 +111,12 @@ public final class EppResourceUtils {
    */
   public static <T extends EppResource> Optional<T> loadByForeignKey(
       Class<T> clazz, String foreignKey, DateTime now) {
-    return loadByForeignKeyHelper(clazz, foreignKey, now, false);
+    return loadByForeignKeyHelper(tm(), clazz, foreignKey, now, false);
   }
 
   /**
    * Loads the last created version of an {@link EppResource} from the database by foreign key,
-   * using a cache.
+   * using a cache, if caching is enabled in config settings.
    *
    * <p>Returns null if no resource with this foreign key was ever created, or if the most recently
    * created resource was deleted before time "now".
@@ -134,20 +136,36 @@ public final class EppResourceUtils {
    * @param foreignKey id to match
    * @param now the current logical time to project resources at
    */
-  public static <T extends EppResource> Optional<T> loadByForeignKeyCached(
+  public static <T extends EppResource> Optional<T> loadByForeignKeyByCacheIfEnabled(
       Class<T> clazz, String foreignKey, DateTime now) {
     return loadByForeignKeyHelper(
-        clazz, foreignKey, now, RegistryConfig.isEppResourceCachingEnabled());
+        tm(), clazz, foreignKey, now, RegistryConfig.isEppResourceCachingEnabled());
+  }
+
+  /**
+   * Loads the last created version of an {@link EppResource} from the replica database by foreign
+   * key, using a cache.
+   *
+   * <p>This method ignores the config setting for caching, and is reserved for use cases that can
+   * tolerate slightly stale data.
+   */
+  public static <T extends EppResource> Optional<T> loadByForeignKeyByCache(
+      Class<T> clazz, String foreignKey, DateTime now) {
+    return loadByForeignKeyHelper(replicaTm(), clazz, foreignKey, now, true);
   }
 
   private static <T extends EppResource> Optional<T> loadByForeignKeyHelper(
-      Class<T> clazz, String foreignKey, DateTime now, boolean useCache) {
+      TransactionManager txnManager,
+      Class<T> clazz,
+      String foreignKey,
+      DateTime now,
+      boolean useCache) {
     checkArgument(
         ForeignKeyedEppResource.class.isAssignableFrom(clazz),
         "loadByForeignKey may only be called for foreign keyed EPP resources");
     VKey<T> key =
         useCache
-            ? ForeignKeyUtils.loadCached(clazz, ImmutableList.of(foreignKey), now).get(foreignKey)
+            ? ForeignKeyUtils.loadByCache(clazz, ImmutableList.of(foreignKey), now).get(foreignKey)
             : ForeignKeyUtils.load(clazz, foreignKey, now);
     // The returned key is null if the resource is hard deleted or soft deleted by the given time.
     if (key == null) {
@@ -155,10 +173,10 @@ public final class EppResourceUtils {
     }
     T resource =
         useCache
-            ? EppResource.loadCached(key)
+            ? EppResource.loadByCache(key)
             // This transaction is buried very deeply inside many outer nested calls, hence merits
             // the use of reTransact() for now pending a substantial refactoring.
-            : tm().reTransact(() -> tm().loadByKeyIfPresent(key).orElse(null));
+            : txnManager.reTransact(() -> txnManager.loadByKeyIfPresent(key).orElse(null));
     if (resource == null || isAtOrAfter(now, resource.getDeletionTime())) {
       return Optional.empty();
     }

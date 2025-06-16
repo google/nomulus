@@ -740,7 +740,7 @@ public class RdapJsonFormatter {
     //
     if (outputDataType != OutputDataType.SUMMARY) {
       ImmutableList<RdapContactEntity> registrarContacts =
-          registrar.getContacts().stream()
+          registrar.getContactsFromReplica().stream()
               .map(RdapJsonFormatter::makeRdapJsonForRegistrarContact)
               .filter(Optional::isPresent)
               .map(Optional::get)

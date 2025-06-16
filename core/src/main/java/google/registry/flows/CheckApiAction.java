@@ -185,7 +185,8 @@ public class CheckApiAction implements Runnable {
   }
 
   private boolean checkExists(String domainString, DateTime now) {
-    return !ForeignKeyUtils.loadCached(Domain.class, ImmutableList.of(domainString), now).isEmpty();
+    return !ForeignKeyUtils.loadByCache(Domain.class, ImmutableList.of(domainString), now)
+        .isEmpty();
   }
 
   private Optional<String> checkReserved(InternetDomainName domainName) {

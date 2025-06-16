@@ -15,7 +15,7 @@
 package google.registry.rdap;
 
 import static google.registry.flows.host.HostFlowUtils.validateHostName;
-import static google.registry.model.EppResourceUtils.loadByForeignKeyCached;
+import static google.registry.model.EppResourceUtils.loadByForeignKeyByCache;
 import static google.registry.request.Action.Method.GET;
 import static google.registry.request.Action.Method.HEAD;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
@@ -63,7 +63,7 @@ public class RdapNameserverAction extends RdapActionBase {
     // If there are no undeleted nameservers with the given name, the foreign key should point to
     // the most recently deleted one.
     Optional<Host> host =
-        loadByForeignKeyCached(
+        loadByForeignKeyByCache(
             Host.class,
             pathSearchString,
             shouldIncludeDeleted() ? START_OF_TIME : getRequestTime());

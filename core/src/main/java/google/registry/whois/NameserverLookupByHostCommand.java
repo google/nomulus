@@ -16,7 +16,7 @@ package google.registry.whois;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static google.registry.model.EppResourceUtils.loadByForeignKey;
-import static google.registry.model.EppResourceUtils.loadByForeignKeyCached;
+import static google.registry.model.EppResourceUtils.loadByForeignKeyByCache;
 import static google.registry.model.tld.Tlds.findTldForName;
 import static google.registry.model.tld.Tlds.getTlds;
 import static jakarta.servlet.http.HttpServletResponse.SC_NOT_FOUND;
@@ -57,7 +57,7 @@ public class NameserverLookupByHostCommand implements WhoisCommand {
   private Optional<WhoisResponse> getResponse(InternetDomainName hostName, DateTime now) {
     Optional<Host> host =
         cached
-            ? loadByForeignKeyCached(Host.class, hostName.toString(), now)
+            ? loadByForeignKeyByCache(Host.class, hostName.toString(), now)
             : loadByForeignKey(Host.class, hostName.toString(), now);
     return host.map(h -> new NameserverWhoisResponse(h, now));
   }

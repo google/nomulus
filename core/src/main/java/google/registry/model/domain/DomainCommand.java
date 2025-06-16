@@ -441,7 +441,8 @@ public class DomainCommand {
   private static <T extends EppResource> ImmutableMap<String, VKey<T>> loadByForeignKeysCached(
       final Set<String> foreignKeys, final Class<T> clazz, final DateTime now)
       throws InvalidReferencesException {
-    ImmutableMap<String, VKey<T>> fks = ForeignKeyUtils.loadCached(clazz, foreignKeys, now);
+    ImmutableMap<String, VKey<T>> fks =
+        ForeignKeyUtils.loadByCacheIfEnabled(clazz, foreignKeys, now);
     if (!fks.keySet().equals(foreignKeys)) {
       throw new InvalidReferencesException(
           clazz, ImmutableSet.copyOf(difference(foreignKeys, fks.keySet())));

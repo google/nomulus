@@ -81,7 +81,7 @@ final class DomainWhoisResponse extends WhoisResponseImpl {
         domain.getCurrentSponsorRegistrarId());
     Registrar registrar = registrarOptional.get();
     Optional<RegistrarPoc> abuseContact =
-        registrar.getContacts().stream()
+        registrar.getContactsFromReplica().stream()
             .filter(RegistrarPoc::getVisibleInDomainWhoisAsAbuse)
             .findFirst();
     return WhoisResponseResults.create(
@@ -154,7 +154,7 @@ final class DomainWhoisResponse extends WhoisResponseImpl {
       // If we refer to a contact that doesn't exist, that's a bug. It means referential integrity
       // has somehow been broken. We skip the rest of this contact, but log it to hopefully bring it
       // someone's attention.
-      Contact contact1 = EppResource.loadCached(contact.get());
+      Contact contact1 = EppResource.loadByCache(contact.get());
       if (contact1 == null) {
         logger.atSevere().log(
             "(BUG) Broken reference found from domain %s to contact %s.",

@@ -204,11 +204,25 @@ public final class ForeignKeyUtils {
    * <p>Don't use the cached version of this method unless you really need it for performance
    * reasons, and are OK with the trade-offs in loss of transactional consistency.
    */
-  public static <E extends EppResource> ImmutableMap<String, VKey<E>> loadCached(
+  public static <E extends EppResource> ImmutableMap<String, VKey<E>> loadByCacheIfEnabled(
       Class<E> clazz, Collection<String> foreignKeys, final DateTime now) {
     if (!RegistryConfig.isEppResourceCachingEnabled()) {
       return load(clazz, foreignKeys, now);
     }
+    return loadByCache(clazz, foreignKeys, now);
+  }
+
+  /**
+   * Load a list of {@link VKey} to {@link EppResource} instances by class and foreign key strings
+   * that are active at or after the specified moment in time, using the cache.
+   *
+   * <p>The returned map will omit any keys for which the {@link EppResource} doesn't exist or has
+   * been soft-deleted.
+   *
+   * <p>This method is reserved for use cases that can tolerate slightly stale data.
+   */
+  public static <E extends EppResource> ImmutableMap<String, VKey<E>> loadByCache(
+      Class<E> clazz, Collection<String> foreignKeys, final DateTime now) {
     return foreignKeyCache
         .getAll(foreignKeys.stream().map(fk -> VKey.create(clazz, fk)).collect(toImmutableList()))
         .entrySet()

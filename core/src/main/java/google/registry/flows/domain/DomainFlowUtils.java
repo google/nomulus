@@ -417,7 +417,7 @@ public class DomainFlowUtils {
     contacts.stream().map(DesignatedContact::getContactKey).forEach(keysToLoad::add);
     registrant.ifPresent(keysToLoad::add);
     keysToLoad.addAll(nameservers);
-    verifyNotInPendingDelete(EppResource.loadCached(keysToLoad.build()).values());
+    verifyNotInPendingDelete(EppResource.loadByCacheIfEnabled(keysToLoad.build()).values());
   }
 
   private static void verifyNotInPendingDelete(Iterable<EppResource> resources)

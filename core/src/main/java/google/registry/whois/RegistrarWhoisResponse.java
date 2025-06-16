@@ -44,7 +44,7 @@ class RegistrarWhoisResponse extends WhoisResponseImpl {
 
   @Override
   public WhoisResponseResults getResponse(boolean preferUnicode, String disclaimer) {
-    Set<RegistrarPoc> contacts = registrar.getContacts();
+    Set<RegistrarPoc> contacts = registrar.getContactsFromReplica();
     String plaintext =
         new RegistrarEmitter()
             .emitField("Registrar", registrar.getRegistrarName())

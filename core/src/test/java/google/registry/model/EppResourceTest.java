@@ -36,27 +36,27 @@ public class EppResourceTest extends EntityTestCase {
       new TestCacheExtension.Builder().withEppResourceCache(Duration.ofDays(1)).build();
 
   @Test
-  void test_loadCached_ignoresContactChange() {
+  void test_loadByCacheIfEnabled_ignoresContactChange() {
     Contact originalContact = persistActiveContact("contact123");
-    assertThat(EppResource.loadCached(ImmutableList.of(originalContact.createVKey())))
+    assertThat(EppResource.loadByCacheIfEnabled(ImmutableList.of(originalContact.createVKey())))
         .containsExactly(originalContact.createVKey(), originalContact);
     Contact modifiedContact =
         persistResource(originalContact.asBuilder().setEmailAddress("different@fake.lol").build());
-    assertThat(EppResource.loadCached(ImmutableList.of(originalContact.createVKey())))
+    assertThat(EppResource.loadByCacheIfEnabled(ImmutableList.of(originalContact.createVKey())))
         .containsExactly(originalContact.createVKey(), originalContact);
     assertThat(loadByForeignKey(Contact.class, "contact123", fakeClock.nowUtc()))
         .hasValue(modifiedContact);
   }
 
   @Test
-  void test_loadCached_ignoresHostChange() {
+  void test_loadByCacheIfEnabled_ignoresHostChange() {
     Host originalHost = persistActiveHost("ns1.example.com");
-    assertThat(EppResource.loadCached(ImmutableList.of(originalHost.createVKey())))
+    assertThat(EppResource.loadByCacheIfEnabled(ImmutableList.of(originalHost.createVKey())))
         .containsExactly(originalHost.createVKey(), originalHost);
     Host modifiedHost =
         persistResource(
             originalHost.asBuilder().setLastTransferTime(fakeClock.nowUtc().minusDays(60)).build());
-    assertThat(EppResource.loadCached(ImmutableList.of(originalHost.createVKey())))
+    assertThat(EppResource.loadByCacheIfEnabled(ImmutableList.of(originalHost.createVKey())))
         .containsExactly(originalHost.createVKey(), originalHost);
     assertThat(loadByForeignKey(Host.class, "ns1.example.com", fakeClock.nowUtc()))
         .hasValue(modifiedHost);

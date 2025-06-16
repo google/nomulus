@@ -14,7 +14,7 @@
 
 package google.registry.rdap;
 
-import static google.registry.model.EppResourceUtils.loadByForeignKeyCached;
+import static google.registry.model.EppResourceUtils.loadByForeignKeyByCache;
 import static google.registry.persistence.transaction.TransactionManagerFactory.replicaTm;
 import static google.registry.request.Action.Method.GET;
 import static google.registry.request.Action.Method.HEAD;
@@ -159,7 +159,8 @@ public class RdapNameserverSearchAction extends RdapSearchActionBase {
             .setIncompletenessWarningType(IncompletenessWarningType.COMPLETE);
 
     Optional<Host> host =
-        loadByForeignKeyCached(Host.class, partialStringQuery.getInitialString(), getRequestTime());
+        loadByForeignKeyByCache(
+            Host.class, partialStringQuery.getInitialString(), getRequestTime());
 
     metricInformationBuilder.setNumHostsRetrieved(host.isPresent() ? 1 : 0);
 
@@ -175,7 +176,7 @@ public class RdapNameserverSearchAction extends RdapSearchActionBase {
   private NameserverSearchResponse searchByNameUsingSuperordinateDomain(
       RdapSearchPattern partialStringQuery) {
     Optional<Domain> domain =
-        loadByForeignKeyCached(Domain.class, partialStringQuery.getSuffix(), getRequestTime());
+        loadByForeignKeyByCache(Domain.class, partialStringQuery.getSuffix(), getRequestTime());
     if (domain.isEmpty()) {
       // Don't allow wildcards with suffixes which are not domains we manage. That would risk a
       // table scan in many easily foreseeable cases. The user might ask for ns*.zombo.com,
@@ -193,7 +194,7 @@ public class RdapNameserverSearchAction extends RdapSearchActionBase {
       // We can't just check that the host name starts with the initial query string, because
       // then the query ns.exam*.example.com would match against nameserver ns.example.com.
       if (partialStringQuery.matches(fqhn)) {
-        Optional<Host> host = loadByForeignKeyCached(Host.class, fqhn, getRequestTime());
+        Optional<Host> host = loadByForeignKeyByCache(Host.class, fqhn, getRequestTime());
         if (shouldBeVisible(host)) {
           hostList.add(host.get());
           if (hostList.size() > rdapResultSetMaxSize) {
