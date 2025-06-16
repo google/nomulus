@@ -61,6 +61,7 @@ import java.time.Duration;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.Optional;
+import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -393,6 +394,26 @@ public class ProxyModule {
   @Named("remoteCertCachingDuration")
   static Duration provideCertCachingDuration(ProxyConfig config) {
     return Duration.ofSeconds(config.serverCertificateCacheSeconds);
+  }
+
+  @Singleton
+  @Provides
+  @Named("frontendMetricsRatio")
+  static double provideFrontendMetricsRatio(ProxyConfig config) {
+    return config.metrics.frontendMetricsRatio;
+  }
+
+  @Singleton
+  @Provides
+  @Named("backendMetricsRatio")
+  static double provideBackendMetricsRatio(ProxyConfig config) {
+    return config.metrics.backendMetricsRatio;
+  }
+
+  @Singleton
+  @Provides
+  static Random provideRandom() {
+    return new Random();
   }
 
   /** Root level component that exposes the port-to-protocol map. */
