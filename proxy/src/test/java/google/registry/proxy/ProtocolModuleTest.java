@@ -56,6 +56,7 @@ import jakarta.inject.Named;
 import jakarta.inject.Provider;
 import jakarta.inject.Singleton;
 import java.time.Duration;
+import java.util.Random;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -310,6 +311,26 @@ public abstract class ProtocolModuleTest {
     static Duration provideCertCachingDuration() {
       // Not used.
       return Duration.ofHours(1);
+    }
+
+    @Singleton
+    @Provides
+    @Named("frontendMetricsRatio")
+    static double provideFrontendMetricsRatio() {
+      return 1.0;
+    }
+
+    @Singleton
+    @Provides
+    @Named("backendMetricsRatio")
+    static double providebackendMetricsRatio() {
+      return 1.0;
+    }
+
+    @Singleton
+    @Provides
+    static Random provideRandom() {
+      return new Random();
     }
 
     // This method is only here to satisfy Dagger binding, but is never used. In test environment,
