@@ -20,6 +20,7 @@ import com.google.monitoring.metrics.EventMetric;
 import com.google.monitoring.metrics.IncrementableMetric;
 import com.google.monitoring.metrics.Metric;
 import com.google.monitoring.metrics.MetricRegistryImpl;
+import google.registry.proxy.ProxyConfig;
 import google.registry.util.NonFinalForTesting;
 import io.netty.channel.Channel;
 import io.netty.channel.group.ChannelGroup;
@@ -28,6 +29,7 @@ import io.netty.util.concurrent.GlobalEventExecutor;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import java.util.Map;
+import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import org.joda.time.Duration;
@@ -78,8 +80,14 @@ public class FrontendMetrics extends BaseMetrics {
               LABELS,
               DEFAULT_LATENCY_FITTER);
 
+  private static final Random random = new Random();
+
+  ProxyConfig.Metrics metricsConfig;
+
   @Inject
-  public FrontendMetrics() {}
+  FrontendMetrics(ProxyConfig proxyConfig) {
+    this.metricsConfig = proxyConfig.metrics;
+  }
 
   @Override
   void resetMetrics() {
@@ -109,6 +117,10 @@ public class FrontendMetrics extends BaseMetrics {
 
   @NonFinalForTesting
   public void responseSent(String protocol, String certHash, Duration latency) {
+    // Short-circuit metrics recording randomly according to the configured ratio.
+    if (random.nextDouble() > metricsConfig.frontendMetricsRatio) {
+      return;
+    }
     latencyMs.record(latency.getMillis(), protocol, certHash);
   }
 }
