@@ -18,11 +18,14 @@ import static com.google.monitoring.metrics.contrib.DistributionMetricSubject.as
 import static com.google.monitoring.metrics.contrib.LongMetricSubject.assertThat;
 import static google.registry.proxy.TestUtils.makeHttpPostRequest;
 import static google.registry.proxy.TestUtils.makeHttpResponse;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import com.google.common.collect.ImmutableSet;
 import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.FullHttpResponse;
 import io.netty.handler.codec.http.HttpResponseStatus;
+import java.util.Random;
 import org.joda.time.Duration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -34,7 +37,7 @@ class BackendMetricsTest {
   private final String certHash = "blah12345";
   private final String protocol = "frontend protocol";
 
-  private final BackendMetrics metrics = new BackendMetrics();
+  private final BackendMetrics metrics = new BackendMetrics(1.0);
 
   @BeforeEach
   void beforeEach() {
@@ -107,15 +110,21 @@ class BackendMetricsTest {
 
   @Test
   void testSuccess_multipleResponses() {
+    metrics.backendMetricsRatio = 0.2;
+    metrics.random = mock(Random.class);
+    // The third response won't be logged.
+    when(metrics.random.nextDouble()).thenReturn(.1, .04, .5, .15);
     String content1 = "some response";
     String content2 = "other response";
     String content3 = "a very bad response";
     FullHttpResponse response1 = makeHttpResponse(content1, HttpResponseStatus.OK);
     FullHttpResponse response2 = makeHttpResponse(content2, HttpResponseStatus.OK);
-    FullHttpResponse response3 = makeHttpResponse(content3, HttpResponseStatus.BAD_REQUEST);
+    FullHttpResponse response3 = makeHttpResponse(content2, HttpResponseStatus.OK);
+    FullHttpResponse response4 = makeHttpResponse(content3, HttpResponseStatus.BAD_REQUEST);
     metrics.responseReceived(protocol, certHash, response1, Duration.millis(5));
     metrics.responseReceived(protocol, certHash, response2, Duration.millis(8));
-    metrics.responseReceived(protocol, certHash, response3, Duration.millis(2));
+    metrics.responseReceived(protocol, certHash, response3, Duration.millis(15));
+    metrics.responseReceived(protocol, certHash, response4, Duration.millis(2));
 
     assertThat(BackendMetrics.requestsCounter).hasNoOtherValues();
     assertThat(BackendMetrics.requestBytes).hasNoOtherValues();

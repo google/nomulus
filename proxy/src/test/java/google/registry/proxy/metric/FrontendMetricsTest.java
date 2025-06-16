@@ -15,11 +15,17 @@
 package google.registry.proxy.metric;
 
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.monitoring.metrics.contrib.DistributionMetricSubject.assertThat;
 import static com.google.monitoring.metrics.contrib.LongMetricSubject.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
+import com.google.common.collect.ImmutableSet;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.DefaultChannelId;
 import io.netty.channel.embedded.EmbeddedChannel;
+import java.util.Random;
+import org.joda.time.Duration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -28,7 +34,7 @@ class FrontendMetricsTest {
 
   private static final String PROTOCOL = "some protocol";
   private static final String CERT_HASH = "abc_blah_1134zdf";
-  private final FrontendMetrics metrics = new FrontendMetrics();
+  private final FrontendMetrics metrics = new FrontendMetrics(1.0);
 
   @BeforeEach
   void beforeEach() {
@@ -60,8 +66,13 @@ class FrontendMetricsTest {
 
   @Test
   void testSuccess_twoConnections_sameClient() {
+    metrics.frontendMetricsRatio = 0.2;
+    metrics.random = mock(Random.class);
+    // The third response won't be logged.
+    when(metrics.random.nextDouble()).thenReturn(.1, .04, .5);
     EmbeddedChannel channel1 = new EmbeddedChannel();
     EmbeddedChannel channel2 = new EmbeddedChannel(DefaultChannelId.newInstance());
+    EmbeddedChannel channel3 = new EmbeddedChannel();
 
     metrics.registerActiveConnection(PROTOCOL, CERT_HASH, channel1);
     assertThat(channel1.isActive()).isTrue();
@@ -85,6 +96,27 @@ class FrontendMetricsTest {
         .and()
         .hasNoOtherValues();
 
+    metrics.responseSent(PROTOCOL, CERT_HASH, Duration.millis(10));
+    metrics.responseSent(PROTOCOL, CERT_HASH, Duration.millis(8));
+    metrics.responseSent(PROTOCOL, CERT_HASH, Duration.millis(13));
+
+    metrics.registerActiveConnection(PROTOCOL, CERT_HASH, channel3);
+    assertThat(channel3.isActive()).isTrue();
+    assertThat(FrontendMetrics.activeConnectionsGauge)
+        .hasValueForLabels(2, PROTOCOL, CERT_HASH)
+        .and()
+        .hasNoOtherValues();
+    // All connection counts are recorded as metrics, but ...
+    assertThat(FrontendMetrics.totalConnectionsCounter)
+        .hasValueForLabels(3, PROTOCOL, CERT_HASH)
+        .and()
+        .hasNoOtherValues();
+    // Latency stats are subject to the metrics ratio.
+    assertThat(FrontendMetrics.latencyMs).hasDataSetForLabels(ImmutableSet.of(10, 8), PROTOCOL,
+            CERT_HASH)
+        .and()
+        .hasNoOtherValues();
+
     @SuppressWarnings("unused")
     ChannelFuture unusedFuture1 = channel1.close();
     assertThat(channel1.isActive()).isFalse();
@@ -93,7 +125,7 @@ class FrontendMetricsTest {
         .and()
         .hasNoOtherValues();
     assertThat(FrontendMetrics.totalConnectionsCounter)
-        .hasValueForLabels(2, PROTOCOL, CERT_HASH)
+        .hasValueForLabels(3, PROTOCOL, CERT_HASH)
         .and()
         .hasNoOtherValues();
 
@@ -102,7 +134,15 @@ class FrontendMetricsTest {
     assertThat(channel2.isActive()).isFalse();
     assertThat(FrontendMetrics.activeConnectionsGauge).hasNoOtherValues();
     assertThat(FrontendMetrics.totalConnectionsCounter)
-        .hasValueForLabels(2, PROTOCOL, CERT_HASH)
+        .hasValueForLabels(3, PROTOCOL, CERT_HASH)
+        .and()
+        .hasNoOtherValues();
+
+    ChannelFuture unusedFuture3 = channel3.close();
+    assertThat(channel3.isActive()).isFalse();
+    assertThat(FrontendMetrics.activeConnectionsGauge).hasNoOtherValues();
+    assertThat(FrontendMetrics.totalConnectionsCounter)
+        .hasValueForLabels(3, PROTOCOL, CERT_HASH)
         .and()
         .hasNoOtherValues();
   }
