@@ -395,6 +395,20 @@ public class ProxyModule {
     return Duration.ofSeconds(config.serverCertificateCacheSeconds);
   }
 
+  @Singleton
+  @Provides
+  @Named("frontendMetricsRatio")
+  static double provideFrontendMetricsRatio(ProxyConfig config) {
+    return config.metrics.frontendMetricsRatio;
+  }
+
+  @Singleton
+  @Provides
+  @Named("backendMetricsRatio")
+  static double provideBackendMetricsRatio(ProxyConfig config) {
+    return config.metrics.backendMetricsRatio;
+  }
+
   /** Root level component that exposes the port-to-protocol map. */
   @Singleton
   @Component(

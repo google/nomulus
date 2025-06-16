@@ -200,3 +200,15 @@ metrics:
 
   # How often metrics are written.
   writeIntervalSeconds: 60
+
+  # What ratio of frontend request metrics should be stochastically recorded
+  # (0.0 means none, 1.0 means all). This is useful for reducing metrics volume,
+  # and thus cost, while still recording some information for performance
+  # monitoring purposes.
+  frontendMetricsRatio: 1.0
+
+  # What ratio of backend request metrics should be stochastically recorded
+  # (0.0 means none, 1.0 means all). This is useful for reducing metrics volume,
+  # and thus cost, while still recording some information for performance
+  # monitoring purposes.
+  backendMetricsRatio: 1.0

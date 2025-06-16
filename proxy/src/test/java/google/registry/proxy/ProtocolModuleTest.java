@@ -312,6 +312,20 @@ public abstract class ProtocolModuleTest {
       return Duration.ofHours(1);
     }
 
+    @Singleton
+    @Provides
+    @Named("frontendMetricsRatio")
+    static double provideFrontendMetricsRatio() {
+      return 1.0;
+    }
+
+    @Singleton
+    @Provides
+    @Named("backendMetricsRatio")
+    static double providebackendMetricsRatio() {
+      return 1.0;
+    }
+
     // This method is only here to satisfy Dagger binding, but is never used. In test environment,
     // it is the self-signed certificate and its key that ends up being used.
     @Singleton

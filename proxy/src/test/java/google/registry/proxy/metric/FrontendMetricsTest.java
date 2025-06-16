@@ -28,7 +28,7 @@ class FrontendMetricsTest {
 
   private static final String PROTOCOL = "some protocol";
   private static final String CERT_HASH = "abc_blah_1134zdf";
-  private final FrontendMetrics metrics = new FrontendMetrics();
+  private final FrontendMetrics metrics = new FrontendMetrics(1.0);
 
   @BeforeEach
   void beforeEach() {

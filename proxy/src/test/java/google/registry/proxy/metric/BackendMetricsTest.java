@@ -34,7 +34,7 @@ class BackendMetricsTest {
   private final String certHash = "blah12345";
   private final String protocol = "frontend protocol";
 
-  private final BackendMetrics metrics = new BackendMetrics();
+  private final BackendMetrics metrics = new BackendMetrics(1.0);
 
   @BeforeEach
   void beforeEach() {

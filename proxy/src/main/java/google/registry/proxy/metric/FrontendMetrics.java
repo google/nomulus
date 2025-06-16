@@ -26,8 +26,10 @@ import io.netty.channel.group.ChannelGroup;
 import io.netty.channel.group.DefaultChannelGroup;
 import io.netty.util.concurrent.GlobalEventExecutor;
 import jakarta.inject.Inject;
+import jakarta.inject.Named;
 import jakarta.inject.Singleton;
 import java.util.Map;
+import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import org.joda.time.Duration;
@@ -78,8 +80,14 @@ public class FrontendMetrics extends BaseMetrics {
               LABELS,
               DEFAULT_LATENCY_FITTER);
 
+  private static final Random random = new Random();
+
+  double frontendMetricsRatio;
+
   @Inject
-  public FrontendMetrics() {}
+  FrontendMetrics(@Named("frontendMetricsRatio") double frontendMetricsRatio) {
+    this.frontendMetricsRatio = frontendMetricsRatio;
+  }
 
   @Override
   void resetMetrics() {
@@ -109,6 +117,10 @@ public class FrontendMetrics extends BaseMetrics {
 
   @NonFinalForTesting
   public void responseSent(String protocol, String certHash, Duration latency) {
+    // Short-circuit metrics recording randomly according to the configured ratio.
+    if (random.nextDouble() > frontendMetricsRatio) {
+      return;
+    }
     latencyMs.record(latency.getMillis(), protocol, certHash);
   }
 }
