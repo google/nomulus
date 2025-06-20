@@ -113,6 +113,8 @@ public class ProxyConfig {
     public int stackdriverMaxQps;
     public int stackdriverMaxPointsPerRequest;
     public int writeIntervalSeconds;
+    public double frontendMetricsRatio;
+    public double backendMetricsRatio;
   }
 
   /** Configuration options that apply to quota management. */

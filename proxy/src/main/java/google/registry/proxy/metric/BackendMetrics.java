@@ -22,7 +22,9 @@ import com.google.monitoring.metrics.MetricRegistryImpl;
 import google.registry.util.NonFinalForTesting;
 import io.netty.handler.codec.http.FullHttpResponse;
 import jakarta.inject.Inject;
+import jakarta.inject.Named;
 import jakarta.inject.Singleton;
+import java.util.Random;
 import org.joda.time.Duration;
 
 /** Backend metrics instrumentation. */
@@ -75,8 +77,14 @@ public class BackendMetrics extends BaseMetrics {
               LABELS,
               DEFAULT_LATENCY_FITTER);
 
+  Random random;
+  double backendMetricsRatio;
+
   @Inject
-  BackendMetrics() {}
+  BackendMetrics(@Named("backendMetricsRatio") double backendMetricsRatio, Random random) {
+    this.backendMetricsRatio = backendMetricsRatio;
+    this.random = random;
+  }
 
   @Override
   void resetMetrics() {
@@ -89,6 +97,10 @@ public class BackendMetrics extends BaseMetrics {
 
   @NonFinalForTesting
   public void requestSent(String protocol, String certHash, int bytes) {
+    // Short-circuit metrics recording randomly according to the configured ratio.
+    if (random.nextDouble() > backendMetricsRatio) {
+      return;
+    }
     requestsCounter.increment(protocol, certHash);
     requestBytes.record(bytes, protocol, certHash);
   }
@@ -96,6 +108,10 @@ public class BackendMetrics extends BaseMetrics {
   @NonFinalForTesting
   public void responseReceived(
       String protocol, String certHash, FullHttpResponse response, Duration latency) {
+    // Short-circuit metrics recording randomly according to the configured ratio.
+    if (random.nextDouble() > backendMetricsRatio) {
+      return;
+    }
     latencyMs.record(latency.getMillis(), protocol, certHash);
     responseBytes.record(response.content().readableBytes(), protocol, certHash);
     responsesCounter.increment(protocol, certHash, response.status().toString());
