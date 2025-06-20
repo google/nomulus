@@ -36,6 +36,7 @@ import google.registry.ui.server.console.ConsoleEppPasswordAction.EppPasswordDat
 import google.registry.ui.server.console.ConsoleOteAction.OteCreateData;
 import google.registry.ui.server.console.ConsoleRegistryLockAction.ConsoleRegistryLockPostInput;
 import google.registry.ui.server.console.ConsoleUsersAction.UserData;
+import google.registry.ui.server.console.PasswordResetRequestAction.PasswordResetRequestData;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.Optional;
 import org.joda.time.DateTime;
@@ -247,6 +248,12 @@ public final class ConsoleModule {
   }
 
   @Provides
+  @Parameter("verificationCode")
+  public static String provideVerificationCode(HttpServletRequest req) {
+    return extractRequiredParameter(req, "verificationCode");
+  }
+
+  @Provides
   @Parameter("eppPasswordChangeRequest")
   public static Optional<EppPasswordData> provideEppPasswordChangeRequest(
       Gson gson, @OptionalJsonPayload Optional<JsonElement> payload) {
@@ -272,5 +279,22 @@ public final class ConsoleModule {
   public static Optional<ConsoleRegistryLockPostInput> provideRegistryLockPostInput(
       Gson gson, @OptionalJsonPayload Optional<JsonElement> payload) {
     return payload.map(e -> gson.fromJson(e, ConsoleRegistryLockPostInput.class));
+  }
+
+  @Provides
+  @Parameter("passwordResetRequestData")
+  public static PasswordResetRequestData providePasswordResetRequestData(
+      Gson gson, @OptionalJsonPayload Optional<JsonElement> payload) {
+    return payload
+        .map(e -> gson.fromJson(e, PasswordResetRequestData.class))
+        .orElseThrow(
+            () -> new IllegalArgumentException("Must provide password request reset data"));
+  }
+
+  @Provides
+  @Parameter("newPassword")
+  public static Optional<String> provideNewPassword(
+      Gson gson, @OptionalJsonPayload Optional<JsonElement> payload) {
+    return payload.map(e -> gson.fromJson(e, String.class));
   }
 }
