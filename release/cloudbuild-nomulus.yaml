@@ -196,6 +196,7 @@ artifacts:
     - 'release/cloudbuild-sync-and-tag.yaml'
     - 'release/cloudbuild-deploy-*.yaml'
     - 'release/cloudbuild-delete-*.yaml'
+    - 'release/cloudbuild-renew-prober-certs-*.yaml'
     - 'release/cloudbuild-schema-deploy-*.yaml'
     - 'release/cloudbuild-schema-verify-*.yaml'
     - 'release/cloudbuild-restart-proxies-*.yaml'

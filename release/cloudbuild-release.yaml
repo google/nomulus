@@ -166,6 +166,8 @@ steps:
         > release/cloudbuild-schema-deploy-${environment}.yaml
       sed s/'$${_ENV}'/${environment}/g release/cloudbuild-schema-verify.yaml \
         > release/cloudbuild-schema-verify-${environment}.yaml
+      sed s/'$${_ENV}'/${environment}/g release/cloudbuild-renew-prober-certs.yaml \
+        > release/cloudbuild-renew-prober-certs-${environment}.yaml
     done
 # Do text replacement in the k8s manifests.
 - name: 'gcr.io/cloud-builders/gcloud'
