@@ -55,7 +55,7 @@ import java.util.Optional;
 import org.joda.time.DateTime;
 
 /**
- * Base RDAP (new WHOIS) action for all requests.
+ * Base RDAP action for all requests.
  *
  * @see <a href="https://tools.ietf.org/html/rfc9082">RFC 9082: Registration Data Access Protocol
  *     (RDAP) Query Format</a>
@@ -138,7 +138,7 @@ public abstract class RdapActionBase implements Runnable {
     // RFC7480 4.2 - servers receiving an RDAP request return an entity with a Content-Type header
     // containing the RDAP-specific JSON media type.
     response.setContentType(RESPONSE_MEDIA_TYPE);
-    // RDAP Technical Implementation Guide 1.13 - when responding to RDAP valid requests, we MUST
+    // RDAP Technical Implementation Guide 1.14 - when responding to RDAP valid requests, we MUST
     // include the Access-Control-Allow-Origin, which MUST be "*" unless otherwise specified.
     response.setHeader(ACCESS_CONTROL_ALLOW_ORIGIN, "*");
     try {

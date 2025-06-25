@@ -28,7 +28,7 @@ import google.registry.request.auth.Auth;
 import jakarta.inject.Inject;
 import java.util.Optional;
 
-/** RDAP (new WHOIS) action for help requests. */
+/** RDAP action for help requests. */
 @Action(
     service = GaeService.PUBAPI,
     path = RdapHelpAction.PATH,

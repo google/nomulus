@@ -37,14 +37,12 @@ import jakarta.inject.Inject;
 import java.util.Optional;
 
 /**
- * RDAP (new WHOIS) action for entity (contact and registrar) requests. the ICANN operational
- * profile dictates that the "handle" for registrars is to be the IANA registrar ID:
+ * RDAP action for entity (contact and registrar) requests. the ICANN operational profile dictates
+ * that the "handle" for registrars is to be the IANA registrar ID:
  *
- * <p>2.8.3. Registries MUST support lookup for entities with the registrar role within other
- * objects using the handle (as described in 3.1.5 of RFC 9082). The handle of the entity with the
- * registrar role MUST be equal to IANA Registrar ID. The entity with the registrar role in the RDAP
- * response MUST contain a publicIDs member to identify the IANA Registrar ID from the IANA’s
- * Registrar ID registry. The type value of the publicID object MUST be equal to IANA Registrar ID.
+ * <p>2.4.1.Registry RDAP servers MUST support Registrar object lookup using an entity path request
+ * for entities with the registrar role using the handle (as described in 3.1.5 of RFC9082) where
+ * the handle of the entity with the registrar role is be [sic] equal to the IANA Registrar ID.
  */
 @Action(
     service = GaeService.PUBAPI,
@@ -104,7 +102,7 @@ public class RdapEntityAction extends RdapActionBase {
     // query, it MUST reply with 404 response code.
     //
     // Note we don't do RFC7480 5.3 - returning a different code if we wish to say "this info
-    // exists but we don't want to show it to you", because we DON'T wish to say that.
+    // exists, but we don't want to show it to you", because we DON'T wish to say that.
     throw new NotFoundException(pathSearchString + " not found");
   }
 }
