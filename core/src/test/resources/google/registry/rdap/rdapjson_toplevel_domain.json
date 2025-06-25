@@ -2,8 +2,8 @@
   "key": "value",
   "rdapConformance": [
     "rdap_level_0",
-    "icann_rdap_response_profile_0",
-    "icann_rdap_technical_implementation_guide_0"
+    "icann_rdap_response_profile_1",
+    "icann_rdap_technical_implementation_guide_1"
   ],
   "notices":
   [
@@ -34,12 +34,6 @@
           "rel": "terms-of-service",
           "type": "text/html"
         }
-      ]
-    },
-    {
-      "description":
-      [
-        "This response conforms to the RDAP Operational Profile for gTLD Registries and Registrars version 1.0"
       ]
     },
     {

@@ -39,8 +39,8 @@ public final class RdapSearchPattern {
   /**
    * Pattern for allowed LDH searches.
    *
-   * <p>Based on RFC 9082 4.1. Must contains only alphanumeric plus dots and hyphens. A single
-   * whildcard asterix is allowed - but if exists must be the last character of a domain name label
+   * <p>Based on RFC 9082 4.1. Must contain only alphanumeric plus dots and hyphens. A single
+   * wildcard asterix is allowed - but if exists must be the last character of a domain name label
    * (so exam* and exam*.com are allowed, but exam*le.com isn't allowd)
    *
    * <p>The prefix is in group(1), and the suffix without the dot (if it exists) is in group(4). If
@@ -123,7 +123,7 @@ public final class RdapSearchPattern {
    * Creates a SearchPattern using the provided domain search pattern in LDH format.
    *
    * <p>The domain search pattern can have a single wildcard asterix that can match 0 or more
-   * charecters. If such an asterix exists - it must be at the end of a domain label.
+   * characters. If such an asterix exists - it must be at the end of a domain label.
    *
    * @param searchQuery the string containing the partial match pattern
    * @throws UnprocessableEntityException if {@code pattern} does not meet the requirements of RFC
@@ -150,7 +150,7 @@ public final class RdapSearchPattern {
    * Creates a SearchPattern using the provided domain search pattern in LDH or Unicode format.
    *
    * <p>The domain search pattern can have a single wildcard asterix that can match 0 or more
-   * charecters. If such an asterix exists - it must be at the end of a domain label.
+   * characters. If such an asterix exists - it must be at the end of a domain label.
    *
    * <p>In theory, according to RFC 9082 4.1 - we should make some checks about partial matching in
    * unicode queries. We don't, but we might want to just disable partial matches for unicode inputs

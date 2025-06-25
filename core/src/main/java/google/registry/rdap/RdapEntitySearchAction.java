@@ -49,9 +49,9 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * RDAP (new WHOIS) action for entity (contact and registrar) search requests.
+ * RDAP action for entity (contact and registrar) search requests.
  *
- * <p>All commands and responses conform to the RDAP spec as defined in RFCs 7480 through 7485.
+ * <p>All commands and responses conform to the RDAP spec as defined in STD 95 and its RFCs.
  *
  * <p>The RDAP specification lumps contacts and registrars together and calls them "entities", which
  * is confusing for us, because "entity" means something else in SQL. But here, when we use the
@@ -76,8 +76,6 @@ import java.util.Optional;
  * @see <a href="http://tools.ietf.org/html/rfc9083">RFC 9083: JSON Responses for the Registration
  *     Data Access Protocol (RDAP)</a>
  */
-// TODO: This isn't required by the RDAP Technical Implementation Guide, and hence should be
-// deleted, at least until it's actually required.
 @Action(
     service = GaeService.PUBAPI,
     path = "/rdap/entities",

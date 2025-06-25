@@ -47,9 +47,9 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * RDAP (new WHOIS) action for nameserver search requests.
+ * RDAP action for nameserver search requests.
  *
- * <p>All commands and responses conform to the RDAP spec as defined in RFCs 7480 through 7485.
+ * <p>All commands and responses conform to the RDAP spec as defined in STD 95 and its RFCs.
  *
  * @see <a href="http://tools.ietf.org/html/rfc9082">RFC 9082: Registration Data Access Protocol
  *     (RDAP) Query Format</a>

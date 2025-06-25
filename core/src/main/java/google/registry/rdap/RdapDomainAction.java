@@ -36,7 +36,7 @@ import google.registry.request.auth.Auth;
 import jakarta.inject.Inject;
 import java.util.Optional;
 
-/** RDAP (new WHOIS) action for domain requests. */
+/** RDAP action for domain requests. */
 @Action(
     service = GaeService.PUBAPI,
     path = "/rdap/domain/",

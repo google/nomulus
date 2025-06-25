@@ -205,16 +205,6 @@ have failed to comply with these terms.",
     }
     JsonArray notices = jsonObject.getAsJsonArray("notices");
     notices.add(createTosNotice());
-    notices.add(
-        JsonParser.parseString(
-"""
-{
-  "description": [
-    "This response conforms to the RDAP Operational Profile for gTLD Registries and Registrars \
-version 1.0"
-  ]
-}
-"""));
     return jsonObject;
   }
 

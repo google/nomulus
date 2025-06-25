@@ -48,23 +48,22 @@ much internally for this reason.
 
 ## Do you support RDAP?
 
-We are working on an implementation of the Registry Data Access Protocol (RDAP),
-ICANN's proposed successor to WHOIS, which provides similar data to WHOIS, but
-in a structured format. The standard is defined in RFCs 7480 through 7484:
+We provide an implementation of the Registry Data Access Protocol (RDAP)  which provides 
+similar data to the outdated WHOIS protocol, but in a structured format. The 
+standard is defined in STD 95 and its RFCs:
 
 *   [RFC 7480: HTTP Usage in the Registration Data Access Protocol
     (RDAP)](https://tools.ietf.org/html/rfc7480)
 *   [RFC 7481: Security Services for the Registration Data Access Protocol
     (RDAP)](https://tools.ietf.org/html/rfc7481)
-*   [RFC 7482: Registration Data Access Protocol (RDAP) Query
-    Format](https://tools.ietf.org/html/rfc7482)
-*   [RFC 7483: JSON Responses for the Registration Data Access Protocol
-    (RDAP)](https://tools.ietf.org/html/rfc7483)
-*   [RFC 7484: Finding the Authoritative Registration Data (RDAP)
-    Service](https://tools.ietf.org/html/rfc7484)
+*   [RFC 9082: Registration Data Access Protocol (RDAP) Query
+    Format](https://tools.ietf.org/html/rfc9082)
+*   [RFC 9083: JSON Responses for the Registration Data Access Protocol
+    (RDAP)](https://tools.ietf.org/html/rfc9083)
+*   [RFC 9224: Finding the Authoritative Registration Data (RDAP)
+    Service](https://tools.ietf.org/html/rfc9224)
 
-Some gaps in the implementation remain, but most of the functionality is
-currently available. If you access this endpoint on a running Nomulus system:
+If you access this endpoint on a running Nomulus system:
 
 `https://{PROJECT-ID}.appspot.com/rdap/domains?name=ex*`
 
@@ -97,5 +96,4 @@ can specify a TLD after the domain name wildcard (e.g. abc*.tld), and you can
 specify .domain.tld after the nameserver wildcard (e.g. ns*.domain.tld). But you
 can't do anything else, like searching for nameservers with ns*.tld. When using
 a wildcard, we currently require a prefix of at least two characters, to avoid
-having someone search for *. There are other limitations to the system which we
-plan to address in the future.
+having someone search for *.

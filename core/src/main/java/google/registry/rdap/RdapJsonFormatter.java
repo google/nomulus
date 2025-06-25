@@ -221,7 +221,7 @@ public class RdapJsonFormatter {
    * Map of EPP event values to the RDAP equivalents.
    *
    * <p>Only has entries for optional events, either stated as optional in the RDAP Response Profile
-   * 15feb19, or not mentioned at all but thought to be useful anyway.
+   * section 2.3.2, or not mentioned at all but thought to be useful anyway.
    *
    * <p>Any required event should be added elsewhere, preferably without using HistoryEntries (so
    * that we don't need to load HistoryEntries for "summary" responses).
@@ -292,8 +292,8 @@ public class RdapJsonFormatter {
    * Creates a JSON object for a {@link Domain}.
    *
    * <p>NOTE that domain searches aren't in the spec yet - they're in the RFC 9082 that describes
-   * the query format, but they aren't in the RDAP Technical Implementation Guide 15feb19, meaning
-   * we don't have to implement them yet and the RDAP Response Profile doesn't apply to them.
+   * the query format, but they aren't in the RDAP Technical Implementation Guide, meaning we don't
+   * have to implement them yet and the RDAP Response Profile doesn't apply to them.
    *
    * <p>We're implementing domain searches anyway, BUT we won't have the response for searches
    * conform to the RDAP Response Profile.
@@ -307,9 +307,9 @@ public class RdapJsonFormatter {
     if (outputDataType != OutputDataType.FULL) {
       builder.remarksBuilder().add(RdapIcannStandardInformation.SUMMARY_DATA_REMARK);
     }
-    // RDAP Response Profile 15feb19 section 2.1 discusses the domain name.
+    // RDAP Response Profile section 2.1 discusses the domain name.
     builder.setLdhName(domain.getDomainName());
-    // RDAP Response Profile 15feb19 section 2.2:
+    // RDAP Response Profile section 2.2:
     // The domain handle MUST be the ROID
     builder.setHandle(domain.getRepoId());
     // If this is a summary (search result) - we'll return now. Since there's no requirement for
@@ -317,9 +317,9 @@ public class RdapJsonFormatter {
     if (outputDataType == OutputDataType.SUMMARY) {
       return builder.build();
     }
-    // RDAP Response Profile 15feb19 section 2.3.1:
+    // RDAP Response Profile section 2.3.1:
     // The domain object in the RDAP response MUST contain the following events:
-    // [registration, expiration, last update of RDAP database]
+    // [registration, expiration]
     builder
         .eventsBuilder()
         .add(
@@ -333,14 +333,18 @@ public class RdapJsonFormatter {
                 .setEventAction(EventAction.EXPIRATION)
                 .setEventDate(domain.getRegistrationExpirationTime())
                 .build(),
+            // RDAP response profile section 1.5:
+            // The topmost object in the RDAP response MUST contain an event of "eventAction" type
+            // "last update of RDAP database" with a value equal to the timestamp when the RDAP
+            // database was last updated
             Event.builder()
                 .setEventAction(EventAction.LAST_UPDATE_OF_RDAP_DATABASE)
                 .setEventDate(getRequestTime())
                 .build());
-    // RDAP Response Profile 15feb19 section 2.3.2 discusses optional events. We add some of those
+    // RDAP Response Profile section 2.3.2 discusses optional events. We add some of those
     // here. We also add a few others we find interesting.
     builder.eventsBuilder().addAll(makeOptionalEvents(domain));
-    // RDAP Response Profile 15feb19 section 2.4.1:
+    // RDAP Response Profile section 2.4.1:
     // The domain object in the RDAP response MUST contain an entity with the Registrar role.
     //
     // See {@link createRdapRegistrarEntity} for details of section 2.4 conformance
@@ -378,8 +382,6 @@ public class RdapJsonFormatter {
     // RDAP Response Profile 2.6.3, must have a notice about statuses. That is in {@link
     // RdapIcannStandardInformation#domainBoilerplateNotices}
 
-    // Kick off the database loads of the nameservers that we will need, so it can load
-    // asynchronously while we load and process the contacts.
     ImmutableSet<Host> loadedHosts =
         replicaTm()
             .transact(
@@ -424,12 +426,12 @@ public class RdapJsonFormatter {
     }
 
     // Add the nameservers to the data; the load was kicked off above for efficiency.
-    // RDAP Response Profile 2.9: we MUST have the nameservers
+    // RDAP Response Profile 2.8: we MUST have the nameservers
     for (Host host : HOST_RESOURCE_ORDERING.immutableSortedCopy(loadedHosts)) {
       builder.nameserversBuilder().add(createRdapNameserver(host, OutputDataType.INTERNAL));
     }
 
-    // RDAP Response Profile 2.10 - MUST contain a secureDns member including at least a
+    // RDAP Response Profile 2.9 - MUST contain a secureDns member including at least a
     // delegationSigned element. Other elements (e.g. dsData) MUST be included if the domain name is
     // signed and the elements are stored in the Registry
     //
@@ -454,13 +456,13 @@ public class RdapJsonFormatter {
       builder.remarksBuilder().add(RdapIcannStandardInformation.SUMMARY_DATA_REMARK);
     }
 
-    // We need the ldhName: RDAP Response Profile 2.9.1, 4.1
+    // We need the ldhName: RDAP Response Profile 2.8.1, 4.1
     builder.setLdhName(host.getHostName());
     // Handle is optional, but if given it MUST be the ROID.
     // We will set it always as it's important as a "self link"
     builder.setHandle(host.getRepoId());
 
-    // Status is optional for internal Nameservers - RDAP Response Profile 2.9.2
+    // Status is optional for internal Nameservers - RDAP Response Profile 2.8.2
     // It isn't mentioned at all anywhere else. So we can just not put it at all?
     //
     // To be safe, we'll put it on the "FULL" version anyway
@@ -492,7 +494,7 @@ public class RdapJsonFormatter {
 
     // For query responses - we MUST have all the ip addresses: RDAP Response Profile 4.2.
     //
-    // However, it is optional for internal responses: RDAP Response Profile 2.9.2
+    // However, it is optional for internal responses: RDAP Response Profile 2.8.2
     if (outputDataType != OutputDataType.INTERNAL) {
       for (InetAddress inetAddress : host.getInetAddresses()) {
         if (inetAddress instanceof Inet4Address) {
@@ -510,7 +512,7 @@ public class RdapJsonFormatter {
       builder.entitiesBuilder().add(createRdapRegistrarEntity(registrar, OutputDataType.INTERNAL));
     }
     if (outputDataType != OutputDataType.INTERNAL) {
-      // Rdap Response Profile 4.4, must have "last update of RDAP database" response. But this is
+      // Rdap Response Profile 1.5, must have "last update of RDAP database" response. But this is
       // only for direct query responses and not for internal objects.
       builder.setLastUpdateOfRdapDatabaseEvent(
           Event.builder()
@@ -535,10 +537,7 @@ public class RdapJsonFormatter {
       Contact contact, Iterable<RdapEntity.Role> roles, OutputDataType outputDataType) {
     RdapContactEntity.Builder contactBuilder = RdapContactEntity.builder();
 
-    // RDAP Response Profile 2.7.1, 2.7.3 - we MUST have the contacts. 2.7.4 discusses censoring of
-    // fields we don't want to show (as opposed to not having contacts at all) because of GDPR etc.
-    //
-    // 2.8 allows for unredacted output for authorized people.
+    // RDAP Response Profile 2.7.1, 2.7.3 - we MUST have the contacts
     boolean isAuthorized =
         rdapAuthorization.isAuthorizedForRegistrar(contact.getCurrentSponsorRegistrarId());
 
@@ -578,7 +577,7 @@ public class RdapJsonFormatter {
         .add(RdapIcannStandardInformation.CONTACT_EMAIL_REDACTED_FOR_DOMAIN);
 
     if (outputDataType != OutputDataType.INTERNAL) {
-      // Rdap Response Profile 2.7.6 must have "last update of RDAP database" response. But this is
+      // Rdap Response Profile 1.5 must have "last update of RDAP database" response. But this is
       // only for direct query responses and not for internal objects. I'm not sure why it's in that
       // section at all...
       contactBuilder.setLastUpdateOfRdapDatabaseEvent(
@@ -656,8 +655,8 @@ public class RdapJsonFormatter {
    * Creates a JSON object for a {@link Registrar}.
    *
    * <p>This object can be INTERNAL to the Domain and Nameserver responses, with requirements
-   * discussed in the RDAP Response Profile 15feb19 sections 2.4 (internal to Domain) and 4.3
-   * (internal to Namesever)
+   * discussed in the RDAP Response Profile sections 2.4 (internal to Domain) and 4.3 (internal to
+   * Namesever)
    *
    * @param registrar the registrar object from which the RDAP response
    * @param outputDataType whether to generate FULL, SUMMARY, or INTERNAL data.
@@ -755,7 +754,6 @@ public class RdapJsonFormatter {
     //
     // Write the minimum, meaning only ABUSE for INTERNAL registrars, nothing for SUMMARY and
     // everything for FULL.
-    //
     if (outputDataType != OutputDataType.SUMMARY) {
       ImmutableList<RdapContactEntity> registrarContacts =
           registrar.getContactsFromReplica().stream()
@@ -776,7 +774,7 @@ public class RdapJsonFormatter {
       builder.entitiesBuilder().addAll(registrarContacts);
     }
 
-    // Rdap Response Profile 3.3, must have "last update of RDAP database" response. But this is
+    // Rdap Response Profile 1.5, must have "last update of RDAP database" response. But this is
     // only for direct query responses and not for internal objects.
     if (outputDataType != OutputDataType.INTERNAL) {
       builder.setLastUpdateOfRdapDatabaseEvent(
@@ -934,8 +932,8 @@ public class RdapJsonFormatter {
    * Creates the list of optional events to list in domain, nameserver, or contact replies.
    *
    * <p>Only has entries for optional events that won't be shown in "SUMMARY" versions of these
-   * objects. These are either stated as optional in the RDAP Response Profile 15feb19, or not
-   * mentioned at all but thought to be useful anyway.
+   * objects. These are either stated as optional in the RDAP Response Profile, or not mentioned at
+   * all but thought to be useful anyway.
    *
    * <p>Any required event should be added elsewhere, preferably without using HistoryEntries (so
    * that we don't need to load HistoryEntries for "summary" responses).
@@ -974,7 +972,7 @@ public class RdapJsonFormatter {
         lastChangeTime = modificationTime;
       }
     }
-    // RDAP Response Profile 15feb19 section 2.3.2.2:
+    // RDAP Response Profile section 2.3.2.2:
     // The event of eventAction type last changed MUST be omitted if the domain name has not been
     // updated since it was created
     if (lastChangeTime.isAfter(creationTime)) {
@@ -991,7 +989,7 @@ public class RdapJsonFormatter {
   /**
    * Creates a vCard address entry: array of strings specifying the components of the address.
    *
-   * <p>Rdap Response Profile 3.1.1: MUST contain the following fields: Street, City, Country Rdap
+   * <p>RDAP Response Profile 3.1.1: MUST contain the following fields: Street, City, Country Rdap
    * Response Profile 3.1.2: optional fields: State/Province, Postal Code, Fax Number
    *
    * @see <a href="https://tools.ietf.org/html/rfc7095">RFC 7095: jCard: The JSON Format for

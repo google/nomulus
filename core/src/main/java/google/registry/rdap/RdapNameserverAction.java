@@ -33,7 +33,7 @@ import google.registry.request.auth.Auth;
 import jakarta.inject.Inject;
 import java.util.Optional;
 
-/** RDAP (new WHOIS) action for nameserver requests. */
+/** RDAP action for nameserver requests. */
 @Action(
     service = GaeService.PUBAPI,
     path = "/rdap/nameserver/",
@@ -48,7 +48,7 @@ public class RdapNameserverAction extends RdapActionBase {
 
   @Override
   public RdapNameserver getJsonObjectForResource(String pathSearchString, boolean isHeadRequest) {
-    // RDAP Technical Implementation Guide 2.2.1 - we must support A-label (Punycode) and U-label
+    // RDAP Technical Implementation Guide 2.1.1 - we must support A-label (Punycode) and U-label
     // (Unicode) formats. canonicalizeName will transform Unicode to Punycode so we support both.
     pathSearchString = canonicalizeName(pathSearchString);
     // The RDAP syntax is /rdap/nameserver/ns1.mydomain.com.

@@ -26,7 +26,7 @@ import google.registry.request.auth.Auth;
 import jakarta.inject.Inject;
 
 /**
- * RDAP (new WHOIS) action for RDAP autonomous system number requests.
+ * RDAP action for RDAP autonomous system number requests.
  *
  * <p>This feature is not implemented because it's only necessary for <i>address</i> registries like
  * ARIN, not domain registries.

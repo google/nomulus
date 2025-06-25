@@ -41,14 +41,13 @@ final class RdapDataStructures {
       // Conformance to RFC 9083
       jsonArray.add("rdap_level_0");
 
-      // Conformance to the RDAP Response Profile V2.1
+      // Conformance to the RDAP Response Profile V2.2 (February 2024)
+      // (see section 1.2)
+      jsonArray.add("icann_rdap_response_profile_1");
+
+      // Conformance to the RDAP Technical Implementation Guide V2.2 (February 2024)
       // (see section 1.3)
-      jsonArray.add("icann_rdap_response_profile_0");
-
-      // Conformance to the RDAP Technical Implementation Guide V2.1
-      // (see section 1.14)
-      jsonArray.add("icann_rdap_technical_implementation_guide_0");
-
+      jsonArray.add("icann_rdap_technical_implementation_guide_1");
       return jsonArray;
     }
   }

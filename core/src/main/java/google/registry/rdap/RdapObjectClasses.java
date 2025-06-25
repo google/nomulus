@@ -45,11 +45,7 @@ import java.util.Optional;
 /** Object Classes defined in RFC 9083 section 5. */
 final class RdapObjectClasses {
 
-  /**
-   * Temporary implementation of VCards.
-   *
-   * <p>Will create a better implementation soon.
-   */
+  /** Rough implementation of VCards. */
   @RestrictJsonNames({})
   @AutoValue
   public abstract static class Vcard implements Jsonable {
@@ -140,8 +136,8 @@ final class RdapObjectClasses {
   public enum BoilerplateType {
     DOMAIN(RdapIcannStandardInformation.DOMAIN_BOILERPLATE_NOTICES),
     DOMAIN_BLOCKED_BY_BSA(RdapIcannStandardInformation.DOMAIN_BLOCKED_BY_BSA_BOILERPLATE_NOTICES),
-    NAMESERVER(RdapIcannStandardInformation.NAMESERVER_AND_ENTITY_BOILERPLATE_NOTICES),
-    ENTITY(RdapIcannStandardInformation.NAMESERVER_AND_ENTITY_BOILERPLATE_NOTICES),
+    NAMESERVER(ImmutableList.of()),
+    ENTITY(ImmutableList.of()),
     OTHER(ImmutableList.of());
 
     @SuppressWarnings("ImmutableEnumChecker") // immutable lists are, in fact, immutable
@@ -173,8 +169,8 @@ final class RdapObjectClasses {
    * The Top Level JSON reply, Adds the required top-level boilerplate to a ReplyPayloadBase.
    *
    * <p>RFC 9083 specifies that the top-level object should include an entry indicating the
-   * conformance level. ICANN RDAP spec for 15feb19 mandates several additional entries, in sections
-   * 2.6.3, 2.11 of the Response Profile and 3.3, 3.5, of the Technical Implementation Guide.
+   * conformance level. The RDAP spec mandates several additional entries, in sections 2.6.3, 2.10
+   * of the Response Profile and 3.3, 3.5, of the Technical Implementation Guide.
    */
   @AutoValue
   @RestrictJsonNames({})
@@ -353,7 +349,7 @@ final class RdapObjectClasses {
    *
    * <p>Takes care of the name and unicode field.
    *
-   * <p>See RDAP Response Profile 15feb19 sections 2.1 and 4.1.
+   * <p>See RDAP Response Profile sections 2.1 and 4.1.
    *
    * <p>Note the ldhName field is only required for non-IDN names or IDN names when the query was an
    * A-label. It is optional for IDN names when the query was a U-label. Because we don't want to
@@ -471,7 +467,7 @@ final class RdapObjectClasses {
     }
 
     /**
-     * an integer representing the signature lifetime in seconds to be used when creating the RRSIG
+     * An integer representing the signature lifetime in seconds to be used when creating the RRSIG
      * DS record in the parent zone [RFC5910].
      *
      * <p>Note that although it isn't given as optional in RFC 9083, in RFC5910 it's mentioned as
