@@ -462,12 +462,12 @@ class RdapJsonFormatterTest {
   }
 
   @Test
-  void testGetLastHistoryEntryByType() {
+  void testGetLastHistoryByType() {
     // Expected data are from "rdapjson_domain_summary.json"
     assertThat(
             Maps.transformValues(
-                rdapJsonFormatter.getLastHistoryEntryByType(domainFull),
-                HistoryEntry::getModificationTime))
+                RdapJsonFormatter.getLastHistoryByType(domainFull),
+                RdapJsonFormatter.HistoryTimeAndRegistrar::modificationTime))
         .containsExactlyEntriesIn(
             ImmutableMap.of(TRANSFER, DateTime.parse("1999-12-01T00:00:00.000Z")));
   }

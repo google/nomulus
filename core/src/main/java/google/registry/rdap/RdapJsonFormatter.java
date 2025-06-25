@@ -23,20 +23,21 @@ import static google.registry.model.EppResourceUtils.isLinked;
 import static google.registry.persistence.transaction.TransactionManagerFactory.replicaTm;
 import static google.registry.util.CollectionUtils.union;
 
+import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSetMultimap;
-import com.google.common.collect.Maps;
 import com.google.common.collect.Ordering;
 import com.google.common.collect.Sets;
 import com.google.common.collect.Streams;
 import com.google.common.flogger.FluentLogger;
 import com.google.common.net.InetAddresses;
 import com.google.gson.JsonArray;
+import google.registry.config.RegistryConfig;
 import google.registry.config.RegistryConfig.Config;
+import google.registry.model.CacheUtils;
 import google.registry.model.EppResource;
 import google.registry.model.adapters.EnumToAttributeAdapter.EppEnum;
 import google.registry.model.contact.Contact;
@@ -73,13 +74,11 @@ import google.registry.rdap.RdapObjectClasses.VcardArray;
 import google.registry.request.RequestServerName;
 import google.registry.util.Clock;
 import jakarta.inject.Inject;
-import jakarta.persistence.Entity;
 import java.net.Inet4Address;
 import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.URI;
 import java.nio.file.Paths;
-import java.util.HashMap;
 import java.util.Locale;
 import java.util.Optional;
 import java.util.Set;
@@ -102,6 +101,16 @@ import org.joda.time.DateTime;
 public class RdapJsonFormatter {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
+
+  @VisibleForTesting
+  record HistoryTimeAndRegistrar(DateTime modificationTime, String registrarId) {}
+
+  private static final LoadingCache<String, ImmutableMap<EventAction, HistoryTimeAndRegistrar>>
+      DOMAIN_HISTORIES_BY_REPO_ID =
+          CacheUtils.newCacheBuilder(RegistryConfig.getEppResourceCachingDuration())
+              // Cache more than the EPP resource cache because we're only caching small objects
+              .maximumSize(RegistryConfig.getEppResourceMaxCachedEntries() * 4L)
+              .build(repoId -> getLastHistoryByType(repoId, Domain.class));
 
   private DateTime requestTime = null;
 
@@ -860,8 +869,18 @@ public class RdapJsonFormatter {
   }
 
   @VisibleForTesting
-  ImmutableMap<EventAction, HistoryEntry> getLastHistoryEntryByType(EppResource resource) {
-    HashMap<EventAction, HistoryEntry> lastEntryOfType = Maps.newHashMap();
+  static ImmutableMap<EventAction, HistoryTimeAndRegistrar> getLastHistoryByType(
+      EppResource eppResource) {
+    if (eppResource instanceof Domain) {
+      return DOMAIN_HISTORIES_BY_REPO_ID.get(eppResource.getRepoId());
+    }
+    return getLastHistoryByType(eppResource.getRepoId(), eppResource.getClass());
+  }
+
+  private static ImmutableMap<EventAction, HistoryTimeAndRegistrar> getLastHistoryByType(
+      String repoId, Class<? extends EppResource> resourceType) {
+    ImmutableMap.Builder<EventAction, HistoryTimeAndRegistrar> lastEntryOfType =
+        new ImmutableMap.Builder<>();
     // Events (such as transfer, but also create) can appear multiple times. We only want the last
     // time they appeared.
     //
@@ -873,35 +892,33 @@ public class RdapJsonFormatter {
     // 2.3.2.3 An event of *eventAction* type *transfer*, with the last date and time that the
     // domain was transferred. The event of *eventAction* type *transfer* MUST be omitted if the
     // domain name has not been transferred since it was created.
-    VKey<? extends EppResource> resourceVkey = resource.createVKey();
-    Class<? extends HistoryEntry> historyClass =
-        HistoryEntryDao.getHistoryClassFromParent(resourceVkey.getKind());
-    String entityName = historyClass.getAnnotation(Entity.class).name();
-    if (Strings.isNullOrEmpty(entityName)) {
-      entityName = historyClass.getSimpleName();
-    }
+    String entityName = HistoryEntryDao.getHistoryClassFromParent(resourceType).getSimpleName();
     String jpql =
         GET_LAST_HISTORY_BY_TYPE_JPQL_TEMPLATE
             .replace("%entityName%", entityName)
-            .replace("%repoIdValue%", resourceVkey.getKey().toString());
-    Iterable<HistoryEntry> historyEntries =
-        replicaTm()
-            .transact(
-                () ->
-                    replicaTm()
-                        .getEntityManager()
-                        .createQuery(jpql, HistoryEntry.class)
-                        .getResultList());
-    for (HistoryEntry historyEntry : historyEntries) {
-      EventAction rdapEventAction =
-          HISTORY_ENTRY_TYPE_TO_RDAP_EVENT_ACTION_MAP.get(historyEntry.getType());
-      // Only save the historyEntries if this is a type we care about.
-      if (rdapEventAction == null) {
-        continue;
-      }
-      lastEntryOfType.put(rdapEventAction, historyEntry);
-    }
-    return ImmutableMap.copyOf(lastEntryOfType);
+            .replace("%repoIdValue%", repoId);
+    replicaTm()
+        .transact(
+            () ->
+                replicaTm()
+                    .getEntityManager()
+                    .createQuery(jpql, HistoryEntry.class)
+                    .getResultStream()
+                    .forEach(
+                        historyEntry -> {
+                          EventAction rdapEventAction =
+                              HISTORY_ENTRY_TYPE_TO_RDAP_EVENT_ACTION_MAP.get(
+                                  historyEntry.getType());
+                          // Only save the entries if this is a type we care about.
+                          if (rdapEventAction != null) {
+                            lastEntryOfType.put(
+                                rdapEventAction,
+                                new HistoryTimeAndRegistrar(
+                                    historyEntry.getModificationTime(),
+                                    historyEntry.getRegistrarId()));
+                          }
+                        }));
+    return lastEntryOfType.buildKeepingLast();
   }
 
   /**
@@ -915,7 +932,8 @@ public class RdapJsonFormatter {
    * that we don't need to load HistoryEntries for "summary" responses).
    */
   private ImmutableList<Event> makeOptionalEvents(EppResource resource) {
-    ImmutableMap<EventAction, HistoryEntry> lastEntryOfType = getLastHistoryEntryByType(resource);
+    ImmutableMap<EventAction, HistoryTimeAndRegistrar> lastHistoryOfType =
+        getLastHistoryByType(resource);
     ImmutableList.Builder<Event> eventsBuilder = new ImmutableList.Builder<>();
     DateTime creationTime = resource.getCreationTime();
     DateTime lastChangeTime =
@@ -923,12 +941,12 @@ public class RdapJsonFormatter {
     // The order of the elements is stable - it's the order in which the enum elements are defined
     // in EventAction
     for (EventAction rdapEventAction : EventAction.values()) {
-      HistoryEntry historyEntry = lastEntryOfType.get(rdapEventAction);
+      HistoryTimeAndRegistrar historyTimeAndRegistrar = lastHistoryOfType.get(rdapEventAction);
       // Check if there was any entry of this type
-      if (historyEntry == null) {
+      if (historyTimeAndRegistrar == null) {
         continue;
       }
-      DateTime modificationTime = historyEntry.getModificationTime();
+      DateTime modificationTime = historyTimeAndRegistrar.modificationTime();
       // We will ignore all events that happened before the "creation time", since these events are
       // from a "previous incarnation of the domain" (for a domain that was owned by someone,
       // deleted, and then bought by someone else)
@@ -938,7 +956,7 @@ public class RdapJsonFormatter {
       eventsBuilder.add(
           Event.builder()
               .setEventAction(rdapEventAction)
-              .setEventActor(historyEntry.getRegistrarId())
+              .setEventActor(historyTimeAndRegistrar.registrarId())
               .setEventDate(modificationTime)
               .build());
       // The last change time might not be the lastEppUpdateTime, since some changes happen without
@@ -951,19 +969,14 @@ public class RdapJsonFormatter {
     // The event of eventAction type last changed MUST be omitted if the domain name has not been
     // updated since it was created
     if (lastChangeTime.isAfter(creationTime)) {
-      eventsBuilder.add(makeEvent(EventAction.LAST_CHANGED, null, lastChangeTime));
+      // Creates an RDAP event object as defined by RFC 9083
+      eventsBuilder.add(
+          Event.builder()
+              .setEventAction(EventAction.LAST_CHANGED)
+              .setEventDate(lastChangeTime)
+              .build());
     }
     return eventsBuilder.build();
-  }
-
-  /** Creates an RDAP event object as defined by RFC 9083. */
-  private static Event makeEvent(
-      EventAction eventAction, @Nullable String eventActor, DateTime eventDate) {
-    Event.Builder builder = Event.builder().setEventAction(eventAction).setEventDate(eventDate);
-    if (eventActor != null) {
-      builder.setEventActor(eventActor);
-    }
-    return builder.build();
   }
 
   /**
