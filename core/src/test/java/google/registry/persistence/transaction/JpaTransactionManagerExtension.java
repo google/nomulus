@@ -379,6 +379,7 @@ public abstract class JpaTransactionManagerExtension
         .setPassword("foo-BAR2")
         .setPhoneNumber("+1.3334445555")
         .setPhonePasscode("12345")
+        .setRdapBaseUrls(ImmutableSet.of("https://rdap.newregistrar.com/"))
         .setRegistryLockAllowed(false)
         .build();
   }
@@ -393,6 +394,7 @@ public abstract class JpaTransactionManagerExtension
         .setPassword("password2")
         .setPhoneNumber("+1.2223334444")
         .setPhonePasscode("22222")
+        .setRdapBaseUrls(ImmutableSet.of("https://rdap.theregistrar.com/"))
         .setRegistryLockAllowed(true)
         .build();
   }

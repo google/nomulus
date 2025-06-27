@@ -25,12 +25,6 @@
       "type": "application/rdap+json",
       "rel": "related",
       "value": "%REQUEST_URL%"
-    },
-    {
-      "href": "https://rdap.example.com/withoutSlash/domain/%DOMAIN_PUNYCODE_NAME_1%",
-      "type": "application/rdap+json",
-      "rel": "related",
-      "value": "%REQUEST_URL%"
     }
   ],
   "events": [
@@ -112,6 +106,12 @@
           "href" : "https://example.tld/rdap/entity/1",
           "type" : "application/rdap+json",
           "value": "%REQUEST_URL%"
+        },
+        {
+          "rel": "about",
+          "href": "http://my.fake.url",
+          "type": "text/html",
+          "value": "https://rdap.example.com/withSlash/"
         }
       ],
       "publicIds" : [
