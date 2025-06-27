@@ -37,7 +37,7 @@ public final class RdapUtils {
    *
    * <p>Used for RDAP Technical Implementation Guide 2.4.2 - search of registrar by the fn element.
    *
-   * <p>For convenience, we use case insensitive search.
+   * <p>For convenience, we use case-insensitive search.
    */
   static Optional<Registrar> getRegistrarByName(String registrarName) {
     return Streams.stream(Registrar.loadAllCached())

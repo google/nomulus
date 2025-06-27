@@ -51,6 +51,7 @@ import google.registry.request.Parameter;
 import google.registry.request.auth.Auth;
 import google.registry.util.NonFinalForTesting;
 import jakarta.inject.Inject;
+import jakarta.persistence.Query;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import java.net.InetAddress;
 import java.util.Comparator;
@@ -60,17 +61,15 @@ import java.util.stream.Stream;
 import org.hibernate.Hibernate;
 
 /**
- * RDAP (new WHOIS) action for domain search requests.
+ * RDAP action for domain search requests.
  *
- * <p>All commands and responses conform to the RDAP spec as defined in RFCs 7480 through 7485.
+ * <p>All commands and responses conform to the RDAP spec as defined in STD 95 and its RFCs.
  *
  * @see <a href="http://tools.ietf.org/html/rfc9082">RFC 9082: Registration Data Access Protocol
  *     (RDAP) Query Format</a>
  * @see <a href="http://tools.ietf.org/html/rfc9083">RFC 9083: JSON Responses for the Registration
  *     Data Access Protocol (RDAP)</a>
  */
-// TODO: This isn't required by the RDAP Technical Implementation Guide, and hence should be
-// deleted, at least until it's actually required.
 @Action(
     service = GaeService.PUBAPI,
     path = "/rdap/domains",
@@ -442,7 +441,7 @@ public class RdapDomainSearchAction extends RdapSearchActionBase {
         replicaTm()
             .transact(
                 () -> {
-                  jakarta.persistence.Query query =
+                  Query query =
                       replicaTm()
                           .getEntityManager()
                           .createNativeQuery(queryBuilder.toString())

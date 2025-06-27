@@ -115,12 +115,6 @@
     {
       "description":
       [
-        "This response conforms to the RDAP Operational Profile for gTLD Registries and Registrars version 1.0"
-      ]
-    },
-    {
-      "description":
-      [
         "For more information on domain status codes, please visit https://icann.org/epp"
       ],
       "links":
@@ -150,7 +144,7 @@
   ],
   "rdapConformance": [
     "rdap_level_0",
-    "icann_rdap_response_profile_0",
-    "icann_rdap_technical_implementation_guide_0"
+    "icann_rdap_response_profile_1",
+    "icann_rdap_technical_implementation_guide_1"
   ]
 }
