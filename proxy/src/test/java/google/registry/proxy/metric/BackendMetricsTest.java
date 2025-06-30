@@ -112,9 +112,18 @@ class BackendMetricsTest {
   @Test
   void testSuccess_multipleResponses() {
     Random mockRandom = mock(Random.class);
-    metrics = new BackendMetrics(0.2, mockRandom);
-    // The third response won't be logged.
-    when(mockRandom.nextDouble()).thenReturn(.1, .04, .5, .15);
+    metrics = new BackendMetrics(0.3, mockRandom);
+    // The reciprocal of this metrics ratio is 3.3..., so depending on stochastic rounding each
+    // response will be recorded as either 3 or 4 (which we hard-code in test by mocking the RNG).
+    when(mockRandom.nextDouble())
+        .thenReturn(
+            /* record response1 */ .1,
+            /* ... as 3 */ .5,
+            /* record response2 */ .04,
+            /* ... as 4 */ .2,
+            /* don't record response3 (skips stochastic rounding) */ .5,
+            /* record response4 */ .15,
+            /* ... as 3 */ .5);
     String content1 = "some response";
     String content2 = "other response";
     String content3 = "a very bad response";
@@ -130,9 +139,9 @@ class BackendMetricsTest {
     assertThat(BackendMetrics.requestsCounter).hasNoOtherValues();
     assertThat(BackendMetrics.requestBytes).hasNoOtherValues();
     assertThat(BackendMetrics.responsesCounter)
-        .hasValueForLabels(2, protocol, certHash, "200 OK")
+        .hasValueForLabels(7, protocol, certHash, "200 OK")
         .and()
-        .hasValueForLabels(1, protocol, certHash, "400 Bad Request")
+        .hasValueForLabels(3, protocol, certHash, "400 Bad Request")
         .and()
         .hasNoOtherValues();
     assertThat(BackendMetrics.responseBytes)
