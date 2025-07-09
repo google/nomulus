@@ -84,6 +84,8 @@ public interface FrontendRequestComponent {
 
   FlowComponent.Builder flowComponentBuilder();
 
+  RdapRegistrarFieldsAction rdapRegistrarFieldsAction();
+
   ReadinessProbeActionFrontend readinessProbeActionFrontend();
 
   ReadinessProbeConsoleAction readinessProbeConsoleAction();
@@ -91,8 +93,6 @@ public interface FrontendRequestComponent {
   RegistrarsAction registrarsAction();
 
   SecurityAction securityAction();
-
-  RdapRegistrarFieldsAction rdapRegistrarFieldsAction();
 
   @Subcomponent.Builder
   abstract class Builder implements RequestComponentBuilder<FrontendRequestComponent> {
