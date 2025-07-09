@@ -90,9 +90,9 @@ public class DnsUpdateWriter extends BaseDnsWriter {
   private final Duration dnsDefaultNsTtl;
   private final Duration dnsDefaultDsTtl;
   private final DnsMessageTransport transport;
-  private final Clock clock;
-  private final Update update;
-  private final String zoneName;
+  protected final Clock clock;
+  protected final Update update;
+  protected final String zoneName;
 
   /**
    * Class constructor.
