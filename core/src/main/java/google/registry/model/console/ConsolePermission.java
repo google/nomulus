@@ -16,6 +16,8 @@ package google.registry.model.console;
 
 /** Permissions that users may have in the UI, either per-registrar or globally. */
 public enum ConsolePermission {
+  AUDIT_ACTIVITY_BY_USER,
+  AUDIT_ACTIVITY_BY_REGISTRAR,
   /** View basic information about a registrar. */
   VIEW_REGISTRAR_DETAILS,
   /** Edit basic information about a registrar. */

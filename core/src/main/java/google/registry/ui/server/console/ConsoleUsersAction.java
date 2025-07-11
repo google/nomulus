@@ -35,6 +35,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.gson.annotations.Expose;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.model.console.ConsolePermission;
+import google.registry.model.console.ConsoleUpdateHistory;
 import google.registry.model.console.RegistrarRole;
 import google.registry.model.console.User;
 import google.registry.model.console.UserRoles;
@@ -177,6 +178,12 @@ public class ConsoleUsersAction extends ConsoleApiAction {
       tm().delete(key);
       User.revokeIapPermission(email, maybeGroupEmailAddress, cloudTasksUtils, null, iamClient);
       sendConfirmationEmail(registrarId, email, "Deleted user");
+      finishAndPersistConsoleUpdateHistory(
+          new ConsoleUpdateHistory.Builder()
+              .setType(ConsoleUpdateHistory.Type.USER_DELETE)
+              .setDescription(
+                  String.format(
+                      "%s%s%s", registrarId, ConsoleUpdateHistory.DESCRIPTION_SEPARATOR, email)));
     }
 
     consoleApiParams.response().setStatus(SC_OK);
@@ -231,6 +238,12 @@ public class ConsoleUsersAction extends ConsoleApiAction {
             consoleApiParams
                 .gson()
                 .toJson(new UserData(newEmail, ACCOUNT_MANAGER.toString(), newUser.getPassword())));
+    finishAndPersistConsoleUpdateHistory(
+        new ConsoleUpdateHistory.Builder()
+            .setType(ConsoleUpdateHistory.Type.USER_CREATE)
+            .setDescription(
+                String.format(
+                    "%s%s%s", registrarId, ConsoleUpdateHistory.DESCRIPTION_SEPARATOR, newEmail)));
   }
 
   private void runUpdateInTransaction() {
@@ -245,6 +258,15 @@ public class ConsoleUsersAction extends ConsoleApiAction {
 
     sendConfirmationEmail(registrarId, this.userData.get().emailAddress, "Updated user");
     consoleApiParams.response().setStatus(SC_OK);
+    finishAndPersistConsoleUpdateHistory(
+        new ConsoleUpdateHistory.Builder()
+            .setType(ConsoleUpdateHistory.Type.USER_UPDATE)
+            .setDescription(
+                String.format(
+                    "%s%s%s",
+                    registrarId,
+                    ConsoleUpdateHistory.DESCRIPTION_SEPARATOR,
+                    this.userData.get().emailAddress)));
   }
 
   private boolean isModifyingRequestValid() {
