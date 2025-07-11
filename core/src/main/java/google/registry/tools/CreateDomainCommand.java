@@ -16,6 +16,8 @@ package google.registry.tools;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Strings.isNullOrEmpty;
+import static google.registry.model.common.FeatureFlag.FeatureName.MINIMUM_DATASET_CONTACTS_OPTIONAL;
+import static google.registry.model.common.FeatureFlag.FeatureName.MINIMUM_DATASET_CONTACTS_PROHIBITED;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.pricing.PricingEngineProxy.getPricesForDomainName;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
@@ -62,8 +64,8 @@ final class CreateDomainCommand extends CreateOrUpdateDomainCommand {
   protected void initMutatingEppToolCommand() {
     tm().transact(
             () -> {
-              if (!FeatureFlag.isActiveNowOrElse(
-                  FeatureFlag.FeatureName.MINIMUM_DATASET_CONTACTS_OPTIONAL, false)) {
+              if (!FeatureFlag.isActiveNow(MINIMUM_DATASET_CONTACTS_OPTIONAL)
+                  && !FeatureFlag.isActiveNow(MINIMUM_DATASET_CONTACTS_PROHIBITED)) {
                 checkArgumentNotNull(registrant, "Registrant must be specified");
                 checkArgument(!admins.isEmpty(), "At least one admin must be specified");
                 checkArgument(!techs.isEmpty(), "At least one tech must be specified");

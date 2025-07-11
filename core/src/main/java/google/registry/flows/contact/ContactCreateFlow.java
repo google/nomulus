@@ -19,6 +19,7 @@ import static google.registry.flows.ResourceFlowUtils.verifyResourceDoesNotExist
 import static google.registry.flows.contact.ContactFlowUtils.validateAsciiPostalInfo;
 import static google.registry.flows.contact.ContactFlowUtils.validateContactAgainstPolicy;
 import static google.registry.model.EppResourceUtils.createRepoId;
+import static google.registry.model.common.FeatureFlag.FeatureName.MINIMUM_DATASET_CONTACTS_PROHIBITED;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import com.google.common.collect.ImmutableSet;
@@ -29,8 +30,10 @@ import google.registry.flows.FlowModule.RegistrarId;
 import google.registry.flows.FlowModule.TargetId;
 import google.registry.flows.MutatingFlow;
 import google.registry.flows.annotations.ReportingSpec;
+import google.registry.flows.exceptions.ContactsProhibitedException;
 import google.registry.flows.exceptions.ResourceAlreadyExistsForThisClientException;
 import google.registry.flows.exceptions.ResourceCreateContentionException;
+import google.registry.model.common.FeatureFlag;
 import google.registry.model.contact.Contact;
 import google.registry.model.contact.ContactCommand.Create;
 import google.registry.model.contact.ContactHistory;
@@ -47,6 +50,7 @@ import org.joda.time.DateTime;
  * An EPP flow that creates a new contact.
  *
  * @error {@link google.registry.flows.FlowUtils.NotLoggedInException}
+ * @error {@link ContactsProhibitedException}
  * @error {@link ResourceAlreadyExistsForThisClientException}
  * @error {@link ResourceCreateContentionException}
  * @error {@link ContactFlowUtils.BadInternationalizedPostalInfoException}
@@ -69,6 +73,9 @@ public final class ContactCreateFlow implements MutatingFlow {
     extensionManager.register(MetadataExtension.class);
     validateRegistrarIsLoggedIn(registrarId);
     extensionManager.validate();
+    if (FeatureFlag.isActiveNow(MINIMUM_DATASET_CONTACTS_PROHIBITED)) {
+      throw new ContactsProhibitedException();
+    }
     Create command = (Create) resourceCommand;
     DateTime now = tm().getTransactionTime();
     verifyResourceDoesNotExist(Contact.class, targetId, now, registrarId);
