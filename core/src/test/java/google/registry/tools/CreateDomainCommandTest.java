@@ -16,6 +16,7 @@ package google.registry.tools;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.common.FeatureFlag.FeatureName.MINIMUM_DATASET_CONTACTS_OPTIONAL;
+import static google.registry.model.common.FeatureFlag.FeatureName.MINIMUM_DATASET_CONTACTS_PROHIBITED;
 import static google.registry.model.common.FeatureFlag.FeatureStatus.ACTIVE;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.createTld;
@@ -115,11 +116,24 @@ class CreateDomainCommandTest extends EppToolCommandTestCase<CreateDomainCommand
   }
 
   @Test
-  void testSuccess_minimal() throws Exception {
+  void testSuccess_minimumDatasetPhase1_noContacts() throws Exception {
     persistResource(
         new FeatureFlag()
             .asBuilder()
             .setFeatureName(MINIMUM_DATASET_CONTACTS_OPTIONAL)
+            .setStatusMap(ImmutableSortedMap.of(START_OF_TIME, ACTIVE))
+            .build());
+    // Test that each optional field can be omitted. Also tests the auto-gen password.
+    runCommandForced("--client=NewRegistrar", "example.tld");
+    eppVerifier.verifySent("domain_create_minimal.xml");
+  }
+
+  @Test
+  void testSuccess_minimumDatasetPhase2_noContacts() throws Exception {
+    persistResource(
+        new FeatureFlag()
+            .asBuilder()
+            .setFeatureName(MINIMUM_DATASET_CONTACTS_PROHIBITED)
             .setStatusMap(ImmutableSortedMap.of(START_OF_TIME, ACTIVE))
             .build());
     // Test that each optional field can be omitted. Also tests the auto-gen password.

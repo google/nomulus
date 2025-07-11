@@ -15,6 +15,9 @@
 package google.registry.flows.contact;
 
 import static com.google.common.truth.Truth.assertThat;
+import static google.registry.model.common.FeatureFlag.FeatureName.MINIMUM_DATASET_CONTACTS_PROHIBITED;
+import static google.registry.model.common.FeatureFlag.FeatureStatus.ACTIVE;
+import static google.registry.model.common.FeatureFlag.FeatureStatus.INACTIVE;
 import static google.registry.testing.ContactSubject.assertAboutContacts;
 import static google.registry.testing.DatabaseHelper.assertNoBillingEvents;
 import static google.registry.testing.DatabaseHelper.newContact;
@@ -22,10 +25,12 @@ import static google.registry.testing.DatabaseHelper.persistActiveContact;
 import static google.registry.testing.DatabaseHelper.persistDeletedContact;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.EppExceptionSubject.assertAboutEppExceptions;
+import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.ImmutableSortedMap;
 import google.registry.flows.EppException;
 import google.registry.flows.FlowUtils.NotLoggedInException;
 import google.registry.flows.ResourceFlowTestCase;
@@ -35,8 +40,10 @@ import google.registry.flows.ResourceFlowUtils.ResourceNotOwnedException;
 import google.registry.flows.ResourceFlowUtils.StatusNotClientSettableException;
 import google.registry.flows.contact.ContactFlowUtils.BadInternationalizedPostalInfoException;
 import google.registry.flows.contact.ContactFlowUtils.DeclineContactDisclosureFieldDisallowedPolicyException;
+import google.registry.flows.exceptions.ContactsProhibitedException;
 import google.registry.flows.exceptions.ResourceHasClientUpdateProhibitedException;
 import google.registry.flows.exceptions.ResourceStatusProhibitsOperationException;
+import google.registry.model.common.FeatureFlag;
 import google.registry.model.contact.Contact;
 import google.registry.model.contact.ContactAddress;
 import google.registry.model.contact.PostalInfo;
@@ -84,6 +91,18 @@ class ContactUpdateFlowTest extends ResourceFlowTestCase<ContactUpdateFlow, Cont
   void testSuccess() throws Exception {
     persistActiveContact(getUniqueIdFromCommand());
     doSuccessfulTest();
+  }
+
+  @Test
+  void testFailure_minimumDatasetPhase2_cannotUpdateContacts() throws Exception {
+    persistResource(
+        new FeatureFlag.Builder()
+            .setFeatureName(MINIMUM_DATASET_CONTACTS_PROHIBITED)
+            .setStatusMap(
+                ImmutableSortedMap.of(START_OF_TIME, INACTIVE, clock.nowUtc().minusDays(5), ACTIVE))
+            .build());
+    EppException thrown = assertThrows(ContactsProhibitedException.class, this::runFlow);
+    assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
   @Test
