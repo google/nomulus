@@ -25,7 +25,7 @@ import static com.google.common.collect.Sets.intersection;
 import static com.google.common.collect.Sets.union;
 import static google.registry.bsa.persistence.BsaLabelUtils.isLabelBlocked;
 import static google.registry.model.common.FeatureFlag.FeatureName.MINIMUM_DATASET_CONTACTS_OPTIONAL;
-import static google.registry.model.common.FeatureFlag.isActiveNow;
+import static google.registry.model.common.FeatureFlag.FeatureName.MINIMUM_DATASET_CONTACTS_PROHIBITED;
 import static google.registry.model.domain.Domain.MAX_REGISTRATION_YEARS;
 import static google.registry.model.domain.token.AllocationToken.TokenType.REGISTER_BSA;
 import static google.registry.model.tld.Tld.TldState.GENERAL_AVAILABILITY;
@@ -75,11 +75,13 @@ import google.registry.flows.EppException.ParameterValueSyntaxErrorException;
 import google.registry.flows.EppException.RequiredParameterMissingException;
 import google.registry.flows.EppException.StatusProhibitsOperationException;
 import google.registry.flows.EppException.UnimplementedOptionException;
+import google.registry.flows.exceptions.ContactsProhibitedException;
 import google.registry.flows.exceptions.ResourceHasClientUpdateProhibitedException;
 import google.registry.model.EppResource;
 import google.registry.model.billing.BillingBase.Flag;
 import google.registry.model.billing.BillingBase.Reason;
 import google.registry.model.billing.BillingRecurrence;
+import google.registry.model.common.FeatureFlag;
 import google.registry.model.contact.Contact;
 import google.registry.model.domain.DesignatedContact;
 import google.registry.model.domain.DesignatedContact.Type;
@@ -478,27 +480,37 @@ public class DomainFlowUtils {
     }
   }
 
-  static void validateRequiredContactsPresentIfRequiredForDataset(
+  /**
+   * Enforces the presence/absence of contact data depending on the minimum data set migration
+   * schedule.
+   */
+  static void validateContactDataPresence(
       Optional<VKey<Contact>> registrant, Set<DesignatedContact> contacts)
-      throws RequiredParameterMissingException {
-    // TODO(b/353347632): Change this flag check to a registry config check.
-    if (isActiveNow(MINIMUM_DATASET_CONTACTS_OPTIONAL)) {
-      // Contacts are not required once we have begun the migration to the minimum dataset
-      return;
-    }
-    if (registrant.isEmpty()) {
-      throw new MissingRegistrantException();
-    }
+      throws RequiredParameterMissingException, ParameterValuePolicyErrorException {
+    // TODO(b/353347632): Change these flag checks to a registry config check once minimum data set
+    //                    migration is completed.
+    if (FeatureFlag.isActiveNow(MINIMUM_DATASET_CONTACTS_PROHIBITED)) {
+      if (registrant.isPresent()) {
+        throw new RegistrantsProhibitedException();
+      }
+      if (!contacts.isEmpty()) {
+        throw new ContactsProhibitedException();
+      }
+    } else if (!FeatureFlag.isActiveNow(MINIMUM_DATASET_CONTACTS_OPTIONAL)) {
+      if (registrant.isEmpty()) {
+        throw new MissingRegistrantException();
+      }
 
-    Set<Type> roles = new HashSet<>();
-    for (DesignatedContact contact : contacts) {
-      roles.add(contact.getType());
-    }
-    if (!roles.contains(Type.ADMIN)) {
-      throw new MissingAdminContactException();
-    }
-    if (!roles.contains(Type.TECH)) {
-      throw new MissingTechnicalContactException();
+      Set<Type> roles = new HashSet<>();
+      for (DesignatedContact contact : contacts) {
+        roles.add(contact.getType());
+      }
+      if (!roles.contains(Type.ADMIN)) {
+        throw new MissingAdminContactException();
+      }
+      if (!roles.contains(Type.TECH)) {
+        throw new MissingTechnicalContactException();
+      }
     }
   }
 
@@ -1042,8 +1054,7 @@ public class DomainFlowUtils {
     String tldStr = tld.getTldStr();
     validateRegistrantAllowedOnTld(tldStr, command.getRegistrantContactId());
     validateNoDuplicateContacts(command.getContacts());
-    validateRequiredContactsPresentIfRequiredForDataset(
-        command.getRegistrant(), command.getContacts());
+    validateContactDataPresence(command.getRegistrant(), command.getContacts());
     ImmutableSet<String> hostNames = command.getNameserverHostNames();
     validateNameserversCountForTld(tldStr, domainName, hostNames.size());
     validateNameserversAllowedOnTld(tldStr, hostNames);
@@ -1364,6 +1375,13 @@ public class DomainFlowUtils {
   static class MissingRegistrantException extends RequiredParameterMissingException {
     public MissingRegistrantException() {
       super("Registrant is required");
+    }
+  }
+
+  /** Having a registrant is prohibited by registry policy. */
+  static class RegistrantsProhibitedException extends ParameterValuePolicyErrorException {
+    public RegistrantsProhibitedException() {
+      super("Having a registrant is prohibited by registry policy");
     }
   }
 

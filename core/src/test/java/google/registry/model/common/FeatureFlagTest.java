@@ -56,6 +56,7 @@ public class FeatureFlagTest extends EntityTestCase {
     persistResource(featureFlag);
     FeatureFlag flagFromDb = loadByEntity(featureFlag);
     assertThat(featureFlag).isEqualTo(flagFromDb);
+    assertThat(featureFlag.getFeatureName()).isEqualTo(TEST_FEATURE);
   }
 
   @Test
@@ -217,23 +218,12 @@ public class FeatureFlagTest extends EntityTestCase {
             .build());
     tm().transact(
             () -> {
-              assertThat(FeatureFlag.isActiveNowOrElse(TEST_FEATURE, false)).isFalse();
-              assertThat(FeatureFlag.isActiveNowOrElse(TEST_FEATURE, true)).isFalse();
+              assertThat(FeatureFlag.isActiveNow(TEST_FEATURE)).isFalse();
             });
     fakeClock.advanceBy(Duration.standardDays(365));
     tm().transact(
             () -> {
-              assertThat(FeatureFlag.isActiveNowOrElse(TEST_FEATURE, false)).isTrue();
-              assertThat(FeatureFlag.isActiveNowOrElse(TEST_FEATURE, true)).isTrue();
-            });
-  }
-
-  @Test
-  void testSuccess_default_doesNotExist() {
-    tm().transact(
-            () -> {
-              assertThat(FeatureFlag.isActiveNowOrElse(TEST_FEATURE, false)).isFalse();
-              assertThat(FeatureFlag.isActiveNowOrElse(TEST_FEATURE, true)).isTrue();
+              assertThat(FeatureFlag.isActiveNow(TEST_FEATURE)).isTrue();
             });
   }
 }

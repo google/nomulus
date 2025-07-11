@@ -24,6 +24,7 @@ import static google.registry.flows.ResourceFlowUtils.verifyOptionalAuthInfo;
 import static google.registry.flows.ResourceFlowUtils.verifyResourceOwnership;
 import static google.registry.flows.contact.ContactFlowUtils.validateAsciiPostalInfo;
 import static google.registry.flows.contact.ContactFlowUtils.validateContactAgainstPolicy;
+import static google.registry.model.common.FeatureFlag.FeatureName.MINIMUM_DATASET_CONTACTS_PROHIBITED;
 import static google.registry.model.reporting.HistoryEntry.Type.CONTACT_UPDATE;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
@@ -35,7 +36,9 @@ import google.registry.flows.FlowModule.Superuser;
 import google.registry.flows.FlowModule.TargetId;
 import google.registry.flows.MutatingFlow;
 import google.registry.flows.annotations.ReportingSpec;
+import google.registry.flows.exceptions.ContactsProhibitedException;
 import google.registry.flows.exceptions.ResourceHasClientUpdateProhibitedException;
+import google.registry.model.common.FeatureFlag;
 import google.registry.model.contact.Contact;
 import google.registry.model.contact.ContactCommand.Update;
 import google.registry.model.contact.ContactCommand.Update.Change;
@@ -55,6 +58,7 @@ import org.joda.time.DateTime;
 /**
  * An EPP flow that updates a contact.
  *
+ * @error {@link ContactsProhibitedException}
  * @error {@link google.registry.flows.FlowUtils.NotLoggedInException}
  * @error {@link google.registry.flows.ResourceFlowUtils.AddRemoveSameValueException}
  * @error {@link google.registry.flows.ResourceFlowUtils.ResourceDoesNotExistException}
@@ -92,6 +96,9 @@ public final class ContactUpdateFlow implements MutatingFlow {
     extensionManager.register(MetadataExtension.class);
     validateRegistrarIsLoggedIn(registrarId);
     extensionManager.validate();
+    if (FeatureFlag.isActiveNow(MINIMUM_DATASET_CONTACTS_PROHIBITED)) {
+      throw new ContactsProhibitedException();
+    }
     Update command = (Update) resourceCommand;
     DateTime now = tm().getTransactionTime();
     Contact existingContact = loadAndVerifyExistence(Contact.class, targetId, now);

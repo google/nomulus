@@ -72,7 +72,9 @@ import google.registry.flows.custom.DomainCreateFlowCustomLogic;
 import google.registry.flows.custom.DomainCreateFlowCustomLogic.BeforeResponseParameters;
 import google.registry.flows.custom.DomainCreateFlowCustomLogic.BeforeResponseReturnData;
 import google.registry.flows.custom.EntityChanges;
+import google.registry.flows.domain.DomainFlowUtils.RegistrantsProhibitedException;
 import google.registry.flows.domain.token.AllocationTokenFlowUtils;
+import google.registry.flows.exceptions.ContactsProhibitedException;
 import google.registry.flows.exceptions.ResourceAlreadyExistsForThisClientException;
 import google.registry.flows.exceptions.ResourceCreateContentionException;
 import google.registry.model.ImmutableObject;
@@ -147,6 +149,7 @@ import org.joda.time.Duration;
  * @error {@link DomainCreateFlow.NoGeneralRegistrationsInCurrentPhaseException}
  * @error {@link DomainCreateFlow.NoTrademarkedRegistrationsBeforeSunriseException}
  * @error {@link BulkDomainRegisteredForTooManyYearsException}
+ * @error {@link ContactsProhibitedException}
  * @error {@link DomainCreateFlow.SignedMarksOnlyDuringSunriseException}
  * @error {@link DomainFlowTmchUtils.NoMarksFoundMatchingDomainException}
  * @error {@link DomainFlowTmchUtils.FoundMarkNotYetValidException}
@@ -194,6 +197,7 @@ import org.joda.time.Duration;
  * @error {@link DomainFlowUtils.NameserversNotSpecifiedForTldWithNameserverAllowListException}
  * @error {@link DomainFlowUtils.PremiumNameBlockedException}
  * @error {@link DomainFlowUtils.RegistrantNotAllowedException}
+ * @error {@link RegistrantsProhibitedException}
  * @error {@link DomainFlowUtils.RegistrarMustBeActiveForThisOperationException}
  * @error {@link DomainFlowUtils.TldDoesNotExistException}
  * @error {@link DomainFlowUtils.TooManyDsRecordsException}
@@ -244,7 +248,7 @@ public final class DomainCreateFlow implements MutatingFlow {
     verifyResourceDoesNotExist(Domain.class, targetId, now, registrarId);
     // Validate that this is actually a legal domain name on a TLD that the registrar has access to.
     InternetDomainName domainName = validateDomainName(command.getDomainName());
-    String domainLabel = domainName.parts().get(0);
+    String domainLabel = domainName.parts().getFirst();
     Tld tld = Tld.get(domainName.parent().toString());
     validateCreateCommandContactsAndNameservers(command, tld, domainName);
     TldState tldState = tld.getTldState(now);

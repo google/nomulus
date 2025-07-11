@@ -15,6 +15,7 @@
 package google.registry.export;
 
 import static com.google.common.base.Verify.verifyNotNull;
+import static google.registry.model.common.FeatureFlag.FeatureName.INCLUDE_PENDING_DELETE_DATE_FOR_DOMAINS;
 import static google.registry.model.tld.Tlds.getTldsOfType;
 import static google.registry.persistence.PersistenceModule.TransactionIsolationLevel.TRANSACTION_REPEATABLE_READ;
 import static google.registry.persistence.transaction.TransactionManagerFactory.replicaTm;
@@ -75,7 +76,8 @@ public class ExportDomainListsAction implements Runnable {
         ON d.repo_id = gp.domain_repo_id
         WHERE d.tld = :tld
         AND d.deletion_time > CAST(:now AS timestamptz)
-        ORDER BY d.domain_name""";
+        ORDER BY d.domain_name
+      """;
 
   // This may be a CSV, but it is uses a .txt file extension for back-compatibility
   static final String REGISTERED_DOMAINS_FILENAME_FORMAT = "registered_domains_%s.txt";
@@ -93,10 +95,7 @@ public class ExportDomainListsAction implements Runnable {
     logger.atInfo().log("Exporting domain lists for TLDs %s.", realTlds);
 
     boolean includeDeletionTimes =
-        tm().transact(
-                () ->
-                    FeatureFlag.isActiveNowOrElse(
-                        FeatureFlag.FeatureName.INCLUDE_PENDING_DELETE_DATE_FOR_DOMAINS, false));
+        tm().transact(() -> FeatureFlag.isActiveNow(INCLUDE_PENDING_DELETE_DATE_FOR_DOMAINS));
     realTlds.forEach(
         tld -> {
           List<String> domainsList =

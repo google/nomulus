@@ -62,11 +62,31 @@ public class FeatureFlag extends ImmutableObject implements Buildable {
     INACTIVE
   }
 
+  /** The names of the feature flags that can be individually set. */
   public enum FeatureName {
-    TEST_FEATURE,
-    MINIMUM_DATASET_CONTACTS_OPTIONAL,
-    MINIMUM_DATASET_CONTACTS_PROHIBITED,
-    INCLUDE_PENDING_DELETE_DATE_FOR_DOMAINS
+    /** Feature flag name used for testing only. */
+    TEST_FEATURE(FeatureStatus.INACTIVE),
+
+    /** If we're not requiring the presence of contact data on domain EPP commands. */
+    MINIMUM_DATASET_CONTACTS_OPTIONAL(FeatureStatus.INACTIVE),
+
+    /** If we're not permitting the presence of contact data on any EPP commands. */
+    MINIMUM_DATASET_CONTACTS_PROHIBITED(FeatureStatus.INACTIVE),
+
+    /**
+     * If we're including the upcoming domain drop date in the exported list of registered domains.
+     */
+    INCLUDE_PENDING_DELETE_DATE_FOR_DOMAINS(FeatureStatus.INACTIVE);
+
+    private final FeatureStatus defaultStatus;
+
+    FeatureName(FeatureStatus defaultStatus) {
+      this.defaultStatus = defaultStatus;
+    }
+
+    FeatureStatus getDefaultStatus() {
+      return this.defaultStatus;
+    }
   }
 
   /** The name of the flag/feature. */
@@ -155,24 +175,24 @@ public class FeatureFlag extends ImmutableObject implements Buildable {
     return status.getValueAtTime(time);
   }
 
-  /** Returns if the flag is active, or the default value if the flag does not exist. */
-  public static boolean isActiveNowOrElse(FeatureName featureName, boolean defaultValue) {
-    tm().assertInTransaction();
-    return CACHE
-        .get(featureName)
-        .map(flag -> flag.getStatus(tm().getTransactionTime()).equals(ACTIVE))
-        .orElse(defaultValue);
-  }
-
-  /** Returns if the FeatureFlag with the given FeatureName is active now. */
+  /**
+   * Returns whether the flag is active now, or else the flag's default value if it doesn't exist.
+   */
   public static boolean isActiveNow(FeatureName featureName) {
     tm().assertInTransaction();
     return isActiveAt(featureName, tm().getTransactionTime());
   }
 
-  /** Returns if the FeatureFlag with the given FeatureName is active at a given time. */
+  /**
+   * Returns whether the flag is active at the given time, or else the flag's default value if it
+   * doesn't exist.
+   */
   public static boolean isActiveAt(FeatureName featureName, DateTime dateTime) {
-    return FeatureFlag.get(featureName).getStatus(dateTime).equals(ACTIVE);
+    tm().assertInTransaction();
+    return CACHE
+        .get(featureName)
+        .map(flag -> flag.getStatus(dateTime).equals(ACTIVE))
+        .orElse(featureName.getDefaultStatus().equals(ACTIVE));
   }
 
   @Override
