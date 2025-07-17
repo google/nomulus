@@ -15,9 +15,10 @@
 package google.registry.beam.common;
 
 import static google.registry.persistence.transaction.JpaTransactionManagerExtension.makeRegistrar1;
-import static google.registry.testing.DatabaseHelper.insertInDb;
 import static google.registry.testing.DatabaseHelper.newContact;
 import static google.registry.testing.DatabaseHelper.newTld;
+import static google.registry.testing.DatabaseHelper.persistResource;
+import static google.registry.testing.DatabaseHelper.persistResources;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 
@@ -75,7 +76,7 @@ public class RegistryJpaReadTest {
   @BeforeEach
   void beforeEach() {
     Registrar ofyRegistrar = JpaIntegrationTestExtension.makeRegistrar2();
-    insertInDb(ofyRegistrar);
+    persistResource(ofyRegistrar);
 
     ImmutableList.Builder<Contact> builder = new ImmutableList.Builder<>();
 
@@ -84,7 +85,7 @@ public class RegistryJpaReadTest {
       builder.add(contact);
     }
     contacts = builder.build();
-    insertInDb(contacts);
+    persistResources(contacts);
   }
 
   @Test
@@ -211,6 +212,6 @@ public class RegistryJpaReadTest {
                     null,
                     100L))
             .build();
-    insertInDb(registry, registrar, contact, domain);
+    persistResources(registry, registrar, contact, domain);
   }
 }

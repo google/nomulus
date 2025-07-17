@@ -18,7 +18,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.ImmutableObjectSubject.assertAboutImmutableObjects;
 import static google.registry.model.registrar.RegistrarPoc.Type.WHOIS;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.testing.DatabaseHelper.insertInDb;
+import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.SqlHelper.saveRegistrar;
 
 import com.google.common.collect.ImmutableSet;
@@ -62,7 +62,7 @@ class RegistrarPocTest {
 
   @Test
   void testPersistence_succeeds() {
-    insertInDb(testRegistrarPoc);
+    persistResource(testRegistrarPoc);
     assertAboutImmutableObjects()
         .that(testRegistrarPoc)
         .isEqualExceptFields(testRegistrarPoc, "id");
@@ -70,7 +70,7 @@ class RegistrarPocTest {
 
   @Test
   void testSerializable_succeeds() {
-    insertInDb(testRegistrarPoc);
+    persistResource(testRegistrarPoc);
     RegistrarPoc persisted = tm().transact(() -> tm().loadByEntity(testRegistrarPoc));
     assertThat(SerializeUtils.serializeDeserialize(persisted)).isEqualTo(persisted);
   }

@@ -17,9 +17,9 @@ package google.registry.model.history;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.ImmutableObjectSubject.assertAboutImmutableObjects;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.testing.DatabaseHelper.insertInDb;
 import static google.registry.testing.DatabaseHelper.loadByEntity;
 import static google.registry.testing.DatabaseHelper.newHostWithRoid;
+import static google.registry.testing.DatabaseHelper.persistResource;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import google.registry.model.EntityTestCase;
@@ -41,10 +41,10 @@ public class HostHistoryTest extends EntityTestCase {
   @Test
   void testPersistence() {
     Host host = newHostWithRoid("ns1.example.com", "host1");
-    insertInDb(host);
+    persistResource(host);
     Host hostFromDb = loadByEntity(host);
     HostHistory hostHistory = createHostHistory(hostFromDb);
-    insertInDb(hostHistory);
+    persistResource(hostHistory);
     tm().transact(
             () -> {
               HostHistory fromDatabase = tm().loadByKey(hostHistory.createVKey());
@@ -56,10 +56,10 @@ public class HostHistoryTest extends EntityTestCase {
   @Test
   void testSerializable() {
     Host host = newHostWithRoid("ns1.example.com", "host1");
-    insertInDb(host);
+    persistResource(host);
     Host hostFromDb = loadByEntity(host);
     HostHistory hostHistory = createHostHistory(hostFromDb);
-    insertInDb(hostHistory);
+    persistResource(hostHistory);
     HostHistory fromDatabase = tm().transact(() -> tm().loadByKey(hostHistory.createVKey()));
     assertThat(SerializeUtils.serializeDeserialize(fromDatabase)).isEqualTo(fromDatabase);
   }

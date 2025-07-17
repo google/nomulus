@@ -16,7 +16,7 @@ package google.registry.persistence.transaction;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.testing.DatabaseHelper.insertInDb;
+import static google.registry.testing.DatabaseHelper.persistResources;
 
 import com.google.common.collect.ImmutableList;
 import google.registry.model.ImmutableObject;
@@ -50,7 +50,7 @@ class CriteriaQueryBuilderTest {
 
   @BeforeEach
   void beforeEach() {
-    insertInDb(entity1, entity2, entity3);
+    persistResources(entity1, entity2, entity3);
   }
 
   @Test

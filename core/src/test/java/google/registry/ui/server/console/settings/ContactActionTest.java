@@ -21,9 +21,9 @@ import static google.registry.model.registrar.RegistrarPoc.Type.ADMIN;
 import static google.registry.model.registrar.RegistrarPoc.Type.MARKETING;
 import static google.registry.model.registrar.RegistrarPoc.Type.TECH;
 import static google.registry.testing.DatabaseHelper.deleteResource;
-import static google.registry.testing.DatabaseHelper.insertInDb;
 import static google.registry.testing.DatabaseHelper.loadAllOf;
 import static google.registry.testing.DatabaseHelper.persistResource;
+import static google.registry.testing.DatabaseHelper.persistResources;
 import static google.registry.testing.SqlHelper.saveRegistrar;
 import static jakarta.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static jakarta.servlet.http.HttpServletResponse.SC_FORBIDDEN;
@@ -168,7 +168,7 @@ class ContactActionTest extends ConsoleActionBaseTestCase {
 
   @Test
   void testFailure_postUpdateContactInfo_duplicateEmails() throws IOException {
-    insertInDb(techPoc);
+    persistResource(techPoc);
     ContactAction action =
         createAction(
             Action.Method.POST,
@@ -323,7 +323,7 @@ class ContactActionTest extends ConsoleActionBaseTestCase {
 
   @Test
   void testSuccess_postDeleteContactInfo() throws IOException {
-    insertInDb(techPoc, marketingPoc);
+    persistResources(techPoc, marketingPoc);
     ContactAction action =
         createAction(Action.Method.DELETE, fteUser, testRegistrar.getRegistrarId(), marketingPoc);
     action.run();

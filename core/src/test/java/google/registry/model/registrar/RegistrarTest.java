@@ -25,8 +25,7 @@ import static google.registry.testing.DatabaseHelper.cloneAndSetAutoTimestamps;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.newTld;
 import static google.registry.testing.DatabaseHelper.persistResource;
-import static google.registry.testing.DatabaseHelper.persistSimpleResource;
-import static google.registry.testing.DatabaseHelper.persistSimpleResources;
+import static google.registry.testing.DatabaseHelper.persistResources;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static org.joda.money.CurrencyUnit.JPY;
 import static org.joda.money.CurrencyUnit.USD;
@@ -132,7 +131,7 @@ class RegistrarTest extends EntityTestCase {
             .setFaxNumber("+1.2125551213")
             .setTypes(ImmutableSet.of(RegistrarPoc.Type.ABUSE, RegistrarPoc.Type.ADMIN))
             .build();
-    persistSimpleResources(
+    persistResources(
         ImmutableList.of(
             abuseAdminContact,
             new RegistrarPoc.Builder()
@@ -301,7 +300,7 @@ class RegistrarTest extends EntityTestCase {
 
   @Test
   void testSuccess_emptyContactTypesAllowed() {
-    persistSimpleResource(
+    persistResource(
         new RegistrarPoc.Builder()
             .setRegistrar(registrar)
             .setName("John Abussy")
@@ -318,7 +317,7 @@ class RegistrarTest extends EntityTestCase {
   @Test
   void testSuccess_getContactsByType() {
     RegistrarPoc newTechContact =
-        persistSimpleResource(
+        persistResource(
             new RegistrarPoc.Builder()
                 .setRegistrar(registrar)
                 .setName("Jake Tech")
@@ -330,7 +329,7 @@ class RegistrarTest extends EntityTestCase {
                 .setTypes(ImmutableSet.of(RegistrarPoc.Type.TECH))
                 .build());
     RegistrarPoc newTechAbuseContact =
-        persistSimpleResource(
+        persistResource(
             new RegistrarPoc.Builder()
                 .setRegistrar(registrar)
                 .setName("Jim Tech-Abuse")

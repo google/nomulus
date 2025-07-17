@@ -17,9 +17,10 @@ package google.registry.model.reporting;
 import static google.registry.model.ImmutableObjectSubject.assertAboutImmutableObjects;
 import static google.registry.model.reporting.Spec11ThreatMatch.ThreatType.MALWARE;
 import static google.registry.model.reporting.Spec11ThreatMatch.ThreatType.UNWANTED_SOFTWARE;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.createTld;
-import static google.registry.testing.DatabaseHelper.insertInDb;
 import static google.registry.testing.DatabaseHelper.loadByEntity;
+import static google.registry.testing.DatabaseHelper.persistResources;
 import static google.registry.testing.SqlHelper.assertThrowForeignKeyViolation;
 import static google.registry.testing.SqlHelper.saveRegistrar;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -105,7 +106,7 @@ public final class Spec11ThreatMatchTest extends EntityTestCase {
   void testPersistence() {
     createTld("tld");
     saveRegistrar(REGISTRAR_ID);
-    insertInDb(registrantContact, domain, host, threat);
+    tm().transact(() -> tm().insertAll(registrantContact, domain, host, threat));
     assertAboutImmutableObjects().that(loadByEntity(threat)).isEqualExceptFields(threat, "id");
   }
 
@@ -113,12 +114,12 @@ public final class Spec11ThreatMatchTest extends EntityTestCase {
   @Disabled("We can't rely on foreign keys until we've migrated to SQL")
   void testThreatForeignKeyConstraints() {
     // Persist the threat without the associated registrar.
-    assertThrowForeignKeyViolation(() -> insertInDb(host, registrantContact, domain, threat));
+    assertThrowForeignKeyViolation(() -> persistResources(host, registrantContact, domain, threat));
 
     saveRegistrar(REGISTRAR_ID);
 
     // Persist the threat without the associated domain.
-    assertThrowForeignKeyViolation(() -> insertInDb(registrantContact, host, threat));
+    assertThrowForeignKeyViolation(() -> persistResources(registrantContact, host, threat));
   }
 
   @Test

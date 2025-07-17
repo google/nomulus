@@ -21,7 +21,7 @@ import static google.registry.model.registrar.Registrar.State.ACTIVE;
 import static google.registry.testing.DatabaseHelper.createTlds;
 import static google.registry.testing.DatabaseHelper.loadRegistrar;
 import static google.registry.testing.DatabaseHelper.persistResource;
-import static google.registry.testing.DatabaseHelper.persistSimpleResources;
+import static google.registry.testing.DatabaseHelper.persistResources;
 import static google.registry.testing.FullFieldsTestEntityHelper.makeDomain;
 import static google.registry.testing.FullFieldsTestEntityHelper.makeRegistrar;
 import static google.registry.testing.FullFieldsTestEntityHelper.makeRegistrarPocs;
@@ -137,7 +137,7 @@ class WhoisHttpActionTest {
             persistResource(
                 FullFieldsTestEntityHelper.makeHost("ns2.cat.lol", "bad:f00d:cafe::15:beef")),
             registrar));
-    persistSimpleResources(makeRegistrarPocs(registrar));
+    persistResources(makeRegistrarPocs(registrar));
     newWhoisHttpAction("/domain/cat.lol").run();
     assertThat(response.getStatus()).isEqualTo(404);
     assertThat(response.getContentType()).isEqualTo(PLAIN_TEXT_UTF_8);
@@ -162,7 +162,7 @@ class WhoisHttpActionTest {
             persistResource(
                 FullFieldsTestEntityHelper.makeHost("ns2.cat.みんな", "bad:f00d:cafe::15:beef")),
             registrar));
-    persistSimpleResources(makeRegistrarPocs(registrar));
+    persistResources(makeRegistrarPocs(registrar));
     newWhoisHttpAction("/domain/cat.みんな").run();
     assertThat(response.getStatus()).isEqualTo(200);
     assertThat(response.getPayload()).isEqualTo(loadFile("whois_action_idn_utf8.txt"));
@@ -243,7 +243,7 @@ class WhoisHttpActionTest {
             persistResource(
                 FullFieldsTestEntityHelper.makeHost("ns2.cat.lol", "bad:f00d:cafe::15:beef")),
             registrar));
-    persistSimpleResources(makeRegistrarPocs(registrar));
+    persistResources(makeRegistrarPocs(registrar));
     newWhoisHttpAction("domain cat.lol\r\n").run();
     assertThat(response.getStatus()).isEqualTo(200);
     assertThat(response.getPayload()).isEqualTo(loadFile("whois_action_domain.txt"));
@@ -288,7 +288,7 @@ class WhoisHttpActionTest {
             persistResource(
                 FullFieldsTestEntityHelper.makeHost("ns2.cat.みんな", "bad:f00d:cafe::15:beef")),
             registrar));
-    persistSimpleResources(makeRegistrarPocs(registrar));
+    persistResources(makeRegistrarPocs(registrar));
     newWhoisHttpAction("/domain/cat.xn--q9jyb4c").run();
     assertThat(response.getPayload()).isEqualTo(loadFile("whois_action_idn_utf8.txt"));
   }
@@ -392,7 +392,7 @@ class WhoisHttpActionTest {
   void testRun_registrarLookup_works() {
     Registrar registrar = persistResource(
         makeRegistrar("example", "Example Registrar, Inc.", Registrar.State.ACTIVE));
-    persistSimpleResources(makeRegistrarPocs(registrar));
+    persistResources(makeRegistrarPocs(registrar));
     // Notice the partial search without "inc".
     newWhoisHttpAction("/registrar/Example%20Registrar").run();
     assertThat(response.getStatus()).isEqualTo(200);
@@ -403,7 +403,7 @@ class WhoisHttpActionTest {
   void testRun_registrarLookupInPendingState_returnsNotFound() {
     Registrar registrar = persistResource(
         makeRegistrar("example", "Example Registrar, Inc.", Registrar.State.PENDING));
-    persistSimpleResources(makeRegistrarPocs(registrar));
+    persistResources(makeRegistrarPocs(registrar));
     newWhoisHttpAction("/registrar/Example%20Registrar,%20Inc.").run();
     assertThat(response.getStatus()).isEqualTo(404);
     assertThat(response.getPayload()).isEqualTo(loadFile("whois_action_registrar_not_found.txt"));
@@ -414,7 +414,7 @@ class WhoisHttpActionTest {
     Registrar registrar = persistResource(
         makeRegistrar("example", "Example Registrar, Inc.", Registrar.State.ACTIVE)
             .asBuilder().setType(Registrar.Type.TEST).setIanaIdentifier(null).build());
-    persistSimpleResources(makeRegistrarPocs(registrar));
+    persistResources(makeRegistrarPocs(registrar));
     newWhoisHttpAction("/registrar/Example%20Registrar,%20Inc.").run();
     assertThat(response.getStatus()).isEqualTo(404);
     assertThat(response.getPayload()).isEqualTo(loadFile("whois_action_registrar_not_found.txt"));

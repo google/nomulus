@@ -21,7 +21,6 @@ import static google.registry.request.Action.Method.GET;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.DatabaseHelper.persistResources;
-import static google.registry.testing.DatabaseHelper.persistSimpleResources;
 import static google.registry.testing.FullFieldsTestEntityHelper.makeDomain;
 import static google.registry.testing.FullFieldsTestEntityHelper.makeRegistrar;
 import static google.registry.testing.FullFieldsTestEntityHelper.makeRegistrarPocs;
@@ -103,7 +102,7 @@ class RdapNameserverSearchActionTest extends RdapSearchActionTestCase<RdapNamese
     Registrar registrar =
         persistResource(
             makeRegistrar("evilregistrar", "Yes Virginia <script>", Registrar.State.ACTIVE));
-    persistSimpleResources(makeRegistrarPocs(registrar));
+    persistResources(makeRegistrarPocs(registrar));
     hostNs1CatLol =
         FullFieldsTestEntityHelper.makeAndPersistHost(
             "ns1.cat.lol", "1.2.3.4", clock.nowUtc().minusYears(1));
@@ -118,14 +117,14 @@ class RdapNameserverSearchActionTest extends RdapSearchActionTestCase<RdapNamese
     // cat.みんな
     createTld("xn--q9jyb4c");
     registrar = persistResource(makeRegistrar("unicoderegistrar", "みんな", Registrar.State.ACTIVE));
-    persistSimpleResources(makeRegistrarPocs(registrar));
+    persistResources(makeRegistrarPocs(registrar));
     FullFieldsTestEntityHelper.makeAndPersistHost(
         "ns1.cat.みんな", "1.2.3.5", clock.nowUtc().minusYears(1));
 
     // cat.1.test
     createTld("1.test");
     registrar = persistResource(makeRegistrar("multiregistrar", "1.test", Registrar.State.ACTIVE));
-    persistSimpleResources(makeRegistrarPocs(registrar));
+    persistResources(makeRegistrarPocs(registrar));
     FullFieldsTestEntityHelper.makeAndPersistHost(
         "ns1.cat.1.test", "1.2.3.6", clock.nowUtc().minusYears(1));
 

@@ -30,7 +30,6 @@ import static google.registry.rde.RdeResourceType.DOMAIN;
 import static google.registry.rde.RdeResourceType.HOST;
 import static google.registry.rde.RdeResourceType.REGISTRAR;
 import static google.registry.testing.DatabaseHelper.createTld;
-import static google.registry.testing.DatabaseHelper.insertSimpleResources;
 import static google.registry.testing.DatabaseHelper.newDomain;
 import static google.registry.testing.DatabaseHelper.persistActiveContact;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
@@ -38,6 +37,7 @@ import static google.registry.testing.DatabaseHelper.persistActiveHost;
 import static google.registry.testing.DatabaseHelper.persistEppResource;
 import static google.registry.testing.DatabaseHelper.persistNewRegistrar;
 import static google.registry.testing.DatabaseHelper.persistResource;
+import static google.registry.testing.DatabaseHelper.persistResources;
 import static google.registry.util.ResourceUtils.readResourceUtf8;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertThrows;
@@ -223,7 +223,7 @@ public class RdePipelineTest {
 
   @BeforeEach
   void beforeEach() throws Exception {
-    insertSimpleResources(ImmutableList.of(makeRegistrar1(), makeRegistrar2()));
+    persistResources(ImmutableList.of(makeRegistrar1(), makeRegistrar2()));
 
     // Two real registrars have been created by loadInitialData(), named "New Registrar" and "The
     // Registrar". Create one included registrar (external_monitoring) and two excluded ones.
@@ -403,7 +403,8 @@ public class RdePipelineTest {
                                   <rdeDomain:crRr>TheRegistrar</rdeDomain:crRr>
                                   <rdeDomain:crDate>1970-01-01T00:00:00Z</rdeDomain:crDate>
                                   <rdeDomain:exDate>294247-01-10T04:00:54Z</rdeDomain:exDate>
-                              </rdeDomain:domain>""");
+                              </rdeDomain:domain>\
+                              """);
                     }
                     if (kv.getKey().mode().equals(FULL)) {
                       // Contact fragments for hello.soy.
@@ -441,7 +442,8 @@ public class RdePipelineTest {
                                     <rdeDomain:crRr>TheRegistrar</rdeDomain:crRr>
                                     <rdeDomain:crDate>1970-01-01T00:00:00Z</rdeDomain:crDate>
                                     <rdeDomain:exDate>294247-01-10T04:00:54Z</rdeDomain:exDate>
-                                </rdeDomain:domain>""");
+                                </rdeDomain:domain>\
+                                """);
                       } else {
                         // Contact fragments for cat.fun.
                         assertThat(
@@ -484,7 +486,8 @@ public class RdePipelineTest {
                                   <rdeDomain:crRr>TheRegistrar</rdeDomain:crRr>
                                   <rdeDomain:crDate>1970-01-01T00:00:00Z</rdeDomain:crDate>
                                   <rdeDomain:exDate>294247-01-10T04:00:54Z</rdeDomain:exDate>
-                              </rdeDomain:domain>""");
+                              </rdeDomain:domain>\
+                              """);
                     }
                   });
               return null;

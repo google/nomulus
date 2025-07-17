@@ -16,7 +16,7 @@ package google.registry.persistence.converter;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.testing.DatabaseHelper.insertInDb;
+import static google.registry.testing.DatabaseHelper.persistResource;
 import static java.time.ZoneOffset.UTC;
 
 import google.registry.model.ImmutableObject;
@@ -75,7 +75,7 @@ public class DateTimeConverterTest {
   void converter_generatesTimestampWithNormalizedZone() {
     DateTime dt = parseDateTime("2019-09-01T01:01:01Z");
     TestEntity entity = new TestEntity("normalized_utc_time", dt);
-    insertInDb(entity);
+    persistResource(entity);
     TestEntity retrievedEntity =
         tm().transact(() -> tm().getEntityManager().find(TestEntity.class, "normalized_utc_time"));
     assertThat(retrievedEntity.dt.toString()).isEqualTo("2019-09-01T01:01:01.000Z");
@@ -86,7 +86,7 @@ public class DateTimeConverterTest {
     DateTime dt = parseDateTime("2019-09-01T01:01:01-05:00");
     TestEntity entity = new TestEntity("new_york_time", dt);
 
-    insertInDb(entity);
+    persistResource(entity);
     TestEntity retrievedEntity =
         tm().transact(() -> tm().getEntityManager().find(TestEntity.class, "new_york_time"));
     assertThat(retrievedEntity.dt.toString()).isEqualTo("2019-09-01T06:01:01.000Z");

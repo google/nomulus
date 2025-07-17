@@ -17,7 +17,7 @@ package google.registry.persistence.transaction;
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.truth.Truth.assertWithMessage;
-import static google.registry.testing.DatabaseHelper.insertSimpleResources;
+import static google.registry.testing.DatabaseHelper.persistResources;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.testcontainers.containers.PostgreSQLContainer.POSTGRESQL_PORT;
 
@@ -444,7 +444,7 @@ public abstract class JpaTransactionManagerExtension
 
   /** Create some fake registrars. */
   public static void loadInitialData() {
-    insertSimpleResources(
+    persistResources(
         ImmutableList.of(
             makeRegistrar1(),
             makeRegistrarContact1(),

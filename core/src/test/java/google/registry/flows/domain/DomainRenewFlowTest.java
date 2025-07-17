@@ -150,53 +150,50 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
       StatusValue... statusValues)
       throws Exception {
     Domain domain = DatabaseHelper.newDomain(getUniqueIdFromCommand());
-    tm().transact(
-            () -> {
-              try {
-                DomainHistory historyEntryDomainCreate =
-                    new DomainHistory.Builder()
-                        .setDomain(domain)
-                        .setType(HistoryEntry.Type.DOMAIN_CREATE)
-                        .setModificationTime(clock.nowUtc())
-                        .setRegistrarId(domain.getCreationRegistrarId())
-                        .build();
-                BillingRecurrence autorenewEvent =
-                    new BillingRecurrence.Builder()
-                        .setReason(Reason.RENEW)
-                        .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
-                        .setTargetId(getUniqueIdFromCommand())
-                        .setRegistrarId("TheRegistrar")
-                        .setEventTime(expirationTime)
-                        .setRecurrenceEndTime(END_OF_TIME)
-                        .setDomainHistory(historyEntryDomainCreate)
-                        .setRenewalPriceBehavior(renewalPriceBehavior)
-                        .setRenewalPrice(renewalPrice)
-                        .build();
-                PollMessage.Autorenew autorenewPollMessage =
-                    new PollMessage.Autorenew.Builder()
-                        .setTargetId(getUniqueIdFromCommand())
-                        .setRegistrarId("TheRegistrar")
-                        .setEventTime(expirationTime)
-                        .setAutorenewEndTime(END_OF_TIME)
-                        .setMsg("Domain was auto-renewed.")
-                        .setHistoryEntry(historyEntryDomainCreate)
-                        .build();
-                Domain newDomain =
-                    domain
-                        .asBuilder()
-                        .setRegistrationExpirationTime(expirationTime)
-                        .setStatusValues(ImmutableSet.copyOf(statusValues))
-                        .setAutorenewBillingEvent(autorenewEvent.createVKey())
-                        .setAutorenewPollMessage(autorenewPollMessage.createVKey())
-                        .build();
-                persistResources(
-                    ImmutableSet.of(
-                        historyEntryDomainCreate, autorenewEvent,
-                        autorenewPollMessage, newDomain));
-              } catch (Exception e) {
-                throw new RuntimeException("Error persisting domain", e);
-              }
-            });
+    try {
+      DomainHistory historyEntryDomainCreate =
+          new DomainHistory.Builder()
+              .setDomain(domain)
+              .setType(HistoryEntry.Type.DOMAIN_CREATE)
+              .setModificationTime(clock.nowUtc())
+              .setRegistrarId(domain.getCreationRegistrarId())
+              .build();
+      BillingRecurrence autorenewEvent =
+          new BillingRecurrence.Builder()
+              .setReason(Reason.RENEW)
+              .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
+              .setTargetId(getUniqueIdFromCommand())
+              .setRegistrarId("TheRegistrar")
+              .setEventTime(expirationTime)
+              .setRecurrenceEndTime(END_OF_TIME)
+              .setDomainHistory(historyEntryDomainCreate)
+              .setRenewalPriceBehavior(renewalPriceBehavior)
+              .setRenewalPrice(renewalPrice)
+              .build();
+      PollMessage.Autorenew autorenewPollMessage =
+          new PollMessage.Autorenew.Builder()
+              .setTargetId(getUniqueIdFromCommand())
+              .setRegistrarId("TheRegistrar")
+              .setEventTime(expirationTime)
+              .setAutorenewEndTime(END_OF_TIME)
+              .setMsg("Domain was auto-renewed.")
+              .setHistoryEntry(historyEntryDomainCreate)
+              .build();
+      Domain newDomain =
+          domain
+              .asBuilder()
+              .setRegistrationExpirationTime(expirationTime)
+              .setStatusValues(ImmutableSet.copyOf(statusValues))
+              .setAutorenewBillingEvent(autorenewEvent.createVKey())
+              .setAutorenewPollMessage(autorenewPollMessage.createVKey())
+              .build();
+      persistResources(
+          ImmutableSet.of(
+              historyEntryDomainCreate, autorenewEvent,
+              autorenewPollMessage, newDomain));
+    } catch (Exception e) {
+      throw new RuntimeException("Error persisting domain", e);
+    }
     clock.advanceOneMilli();
   }
 

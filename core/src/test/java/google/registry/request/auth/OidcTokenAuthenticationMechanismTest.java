@@ -19,7 +19,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static google.registry.request.auth.AuthModule.BEARER_PREFIX;
 import static google.registry.request.auth.AuthModule.IAP_HEADER_NAME;
 import static google.registry.testing.DatabaseHelper.createAdminUser;
-import static google.registry.testing.DatabaseHelper.insertInDb;
+import static google.registry.testing.DatabaseHelper.persistResource;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -139,12 +139,12 @@ public class OidcTokenAuthenticationMechanismTest {
   @Test
   void testAuthenticate_bothUserAndServiceAccount() throws Exception {
     User serviceUser =
-        new User.Builder()
-            .setEmailAddress("service@email.test")
-            .setUserRoles(
-                new UserRoles.Builder().setIsAdmin(true).setGlobalRole(GlobalRole.FTE).build())
-            .build();
-    insertInDb(serviceUser);
+        persistResource(
+            new User.Builder()
+                .setEmailAddress("service@email.test")
+                .setUserRoles(
+                    new UserRoles.Builder().setIsAdmin(true).setGlobalRole(GlobalRole.FTE).build())
+                .build());
     payload.setEmail("service@email.test");
     authResult = authenticationMechanism.authenticate(request);
     assertThat(authResult.isAuthenticated()).isTrue();

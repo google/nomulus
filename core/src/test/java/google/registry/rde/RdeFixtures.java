@@ -18,7 +18,6 @@ import static com.google.common.io.BaseEncoding.base16;
 import static google.registry.testing.DatabaseHelper.generateNewContactHostRoid;
 import static google.registry.testing.DatabaseHelper.generateNewDomainRoid;
 import static google.registry.testing.DatabaseHelper.persistResource;
-import static google.registry.testing.DatabaseHelper.persistSimpleResource;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
 import static org.joda.money.CurrencyUnit.USD;
 
@@ -168,7 +167,7 @@ final class RdeFixtures {
                             .build())
                     .createVKey())
             .setAutorenewPollMessage(
-                persistSimpleResource(
+                persistResource(
                         new PollMessage.Autorenew.Builder()
                             .setTargetId(tld)
                             .setRegistrarId("TheRegistrar")

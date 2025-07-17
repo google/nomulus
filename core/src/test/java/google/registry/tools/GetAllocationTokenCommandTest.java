@@ -20,7 +20,7 @@ import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.createTlds;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistResource;
-import static google.registry.testing.DatabaseHelper.persistSimpleResources;
+import static google.registry.testing.DatabaseHelper.persistResources;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.beust.jcommander.ParameterException;
@@ -61,7 +61,7 @@ class GetAllocationTokenCommandTest extends CommandTestCase<GetAllocationTokenCo
                 .build());
     runCommand("foo");
     assertStdoutIs(
-        """
+"""
 AllocationToken: {
     allowedClientIds=[TheRegistrar]
     allowedEppActions=[CREATE]
@@ -94,7 +94,7 @@ Token foo was not redeemed.
   void testSuccess_multipleTokens() throws Exception {
     createTlds("baz");
     ImmutableList<AllocationToken> tokens =
-        persistSimpleResources(
+        persistResources(
             ImmutableList.of(
                 new AllocationToken.Builder()
                     .setToken("fee")

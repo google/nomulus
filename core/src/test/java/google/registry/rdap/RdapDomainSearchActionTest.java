@@ -21,7 +21,6 @@ import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.persistDomainAsDeleted;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.DatabaseHelper.persistResources;
-import static google.registry.testing.DatabaseHelper.persistSimpleResources;
 import static google.registry.testing.FullFieldsTestEntityHelper.makeDomain;
 import static google.registry.testing.FullFieldsTestEntityHelper.makeHistoryEntry;
 import static google.registry.testing.FullFieldsTestEntityHelper.makeRegistrar;
@@ -131,7 +130,7 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
     registrar =
         persistResource(
             makeRegistrar("evilregistrar", "Yes Virginia <script>", Registrar.State.ACTIVE));
-    persistSimpleResources(makeRegistrarPocs(registrar));
+    persistResources(makeRegistrarPocs(registrar));
     contact1 =
         FullFieldsTestEntityHelper.makeAndPersistContact(
             "5372808-ERL", "Goblin Market", "lol@cat.lol", clock.nowUtc().minusYears(1), registrar);
@@ -209,7 +208,7 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
     registrar =
         persistResource(
             makeRegistrar("goodregistrar", "St. John Chrysostom", Registrar.State.ACTIVE));
-    persistSimpleResources(makeRegistrarPocs(registrar));
+    persistResources(makeRegistrarPocs(registrar));
     domainCatExample =
         persistResource(
             makeDomain(
@@ -246,7 +245,7 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
     // cat.みんな
     createTld("xn--q9jyb4c");
     registrar = persistResource(makeRegistrar("unicoderegistrar", "みんな", Registrar.State.ACTIVE));
-    persistSimpleResources(makeRegistrarPocs(registrar));
+    persistResources(makeRegistrarPocs(registrar));
     domainIdn =
         persistResource(
             makeDomain(
@@ -285,7 +284,7 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
     // cat.1.test
     createTld("1.test");
     registrar = persistResource(makeRegistrar("multiregistrar", "1.test", Registrar.State.ACTIVE));
-    persistSimpleResources(makeRegistrarPocs(registrar));
+    persistResources(makeRegistrarPocs(registrar));
     domainMultipart =
         persistResource(
             makeDomain(

@@ -16,7 +16,7 @@ package google.registry.persistence.converter;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.testing.DatabaseHelper.insertInDb;
+import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -55,7 +55,7 @@ class TimedTransitionBaseUserTypeTest {
   @Test
   void roundTripConversion_returnsSameTimedTransitionProperty() {
     TestEntity testEntity = new TestEntity(TIMED_TRANSITION_PROPERTY);
-    insertInDb(testEntity);
+    persistResource(testEntity);
     TestEntity persisted =
         tm().transact(() -> tm().getEntityManager().find(TestEntity.class, "id"));
     assertThat(persisted.property.toValueMap())
@@ -65,7 +65,7 @@ class TimedTransitionBaseUserTypeTest {
   @Test
   void testUpdateColumn_succeeds() {
     TestEntity testEntity = new TestEntity(TIMED_TRANSITION_PROPERTY);
-    insertInDb(testEntity);
+    persistResource(testEntity);
     TestEntity persisted =
         tm().transact(() -> tm().getEntityManager().find(TestEntity.class, "id"));
     assertThat(persisted.property.toValueMap())
@@ -80,7 +80,7 @@ class TimedTransitionBaseUserTypeTest {
   @Test
   void testNullValue_writesAndReadsNullSuccessfully() {
     TestEntity testEntity = new TestEntity(null);
-    insertInDb(testEntity);
+    persistResource(testEntity);
     TestEntity persisted =
         tm().transact(() -> tm().getEntityManager().find(TestEntity.class, "id"));
     assertThat(persisted.property).isNull();

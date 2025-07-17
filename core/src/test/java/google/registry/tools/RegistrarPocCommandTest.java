@@ -23,9 +23,7 @@ import static google.registry.model.registrar.RegistrarPoc.Type.WHOIS;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.loadRegistrar;
 import static google.registry.testing.DatabaseHelper.persistResource;
-import static google.registry.testing.DatabaseHelper.persistSimpleResource;
-import static google.registry.testing.DatabaseHelper.persistSimpleResources;
-import static google.registry.testing.DatabaseHelper.putInDb;
+import static google.registry.testing.DatabaseHelper.persistResources;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -89,7 +87,7 @@ class RegistrarPocCommandTest extends CommandTestCase<RegistrarPocCommand> {
                 .setVisibleInWhoisAsTech(true)
                 .setVisibleInDomainWhoisAsAbuse(false)
                 .build());
-    persistSimpleResources(contacts);
+    persistResources(contacts);
     runCommandForced(
         "--mode=UPDATE",
         "--name=Judith Registrar",
@@ -124,13 +122,13 @@ class RegistrarPocCommandTest extends CommandTestCase<RegistrarPocCommand> {
   @Test
   void testUpdate_unsetOtherWhoisAbuseFlags() throws Exception {
     Registrar registrar = loadRegistrar("NewRegistrar");
-    persistSimpleResource(
+    persistResource(
         new RegistrarPoc.Builder()
             .setRegistrar(registrar)
             .setName("John Doe")
             .setEmailAddress("john.doe@example.com")
             .build());
-    persistSimpleResource(
+    persistResource(
         new RegistrarPoc.Builder()
             .setRegistrar(registrar)
             .setName("Johnna Doe")
@@ -156,7 +154,7 @@ class RegistrarPocCommandTest extends CommandTestCase<RegistrarPocCommand> {
   @Test
   void testUpdate_cannotUnsetOnlyWhoisAbuseContact() {
     Registrar registrar = loadRegistrar("NewRegistrar");
-    persistSimpleResource(
+    persistResource(
         new RegistrarPoc.Builder()
             .setRegistrar(registrar)
             .setName("John Doe")
@@ -183,7 +181,7 @@ class RegistrarPocCommandTest extends CommandTestCase<RegistrarPocCommand> {
   void testUpdate_emptyCommandModifiesNothing() throws Exception {
     Registrar registrar = loadRegistrar("NewRegistrar");
     RegistrarPoc existingContact =
-        persistSimpleResource(
+        persistResource(
             new RegistrarPoc.Builder()
                 .setRegistrar(registrar)
                 .setName("John Doe")
@@ -213,7 +211,7 @@ class RegistrarPocCommandTest extends CommandTestCase<RegistrarPocCommand> {
   @Test
   void testUpdate_listOfTypesWorks() throws Exception {
     Registrar registrar = loadRegistrar("NewRegistrar");
-    persistSimpleResource(
+    persistResource(
         new RegistrarPoc.Builder()
             .setRegistrar(registrar)
             .setName("John Doe")
@@ -237,7 +235,7 @@ class RegistrarPocCommandTest extends CommandTestCase<RegistrarPocCommand> {
   @Test
   void testUpdate_clearAllTypes() throws Exception {
     Registrar registrar = loadRegistrar("NewRegistrar");
-    persistSimpleResource(
+    persistResource(
         new RegistrarPoc.Builder()
             .setRegistrar(registrar)
             .setName("John Doe")
@@ -290,7 +288,7 @@ class RegistrarPocCommandTest extends CommandTestCase<RegistrarPocCommand> {
   @Test
   void testDelete_failsOnDomainWhoisAbuseContact() {
     RegistrarPoc registrarPoc = loadRegistrar("NewRegistrar").getContacts().asList().getFirst();
-    putInDb(registrarPoc.asBuilder().setVisibleInDomainWhoisAsAbuse(true).build());
+    persistResource(registrarPoc.asBuilder().setVisibleInDomainWhoisAsAbuse(true).build());
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
@@ -338,7 +336,7 @@ class RegistrarPocCommandTest extends CommandTestCase<RegistrarPocCommand> {
   void testUpdate_setAllowedToSetRegistryLockPassword() throws Exception {
     Registrar registrar = loadRegistrar("NewRegistrar");
     RegistrarPoc registrarPoc =
-        persistSimpleResource(
+        persistResource(
             new RegistrarPoc.Builder()
                 .setRegistrar(registrar)
                 .setName("Jim Doe")
@@ -381,7 +379,7 @@ class RegistrarPocCommandTest extends CommandTestCase<RegistrarPocCommand> {
   void testUpdate_setAllowedToSetRegistryLockPassword_removesOldPassword() throws Exception {
     Registrar registrar = loadRegistrar("NewRegistrar");
     RegistrarPoc registrarPoc =
-        persistSimpleResource(
+        persistResource(
             new RegistrarPoc.Builder()
                 .setRegistrar(registrar)
                 .setName("Jim Doe")

@@ -16,11 +16,9 @@ package google.registry.schema.registrar;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.testing.DatabaseHelper.existsInDb;
-import static google.registry.testing.DatabaseHelper.insertInDb;
 import static google.registry.testing.DatabaseHelper.loadByKey;
-import static google.registry.testing.DatabaseHelper.updateInDb;
+import static google.registry.testing.DatabaseHelper.persistResource;
 import static org.joda.time.DateTimeZone.UTC;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableList;
 import google.registry.model.registrar.Registrar;
@@ -68,30 +66,24 @@ public class RegistrarDaoTest {
   @Test
   void saveNew_worksSuccessfully() {
     assertThat(existsInDb(testRegistrar)).isFalse();
-    insertInDb(testRegistrar);
+    persistResource(testRegistrar);
     assertThat(existsInDb(testRegistrar)).isTrue();
   }
 
   @Test
   void update_worksSuccessfully() {
-    insertInDb(testRegistrar);
+    persistResource(testRegistrar);
     Registrar persisted = loadByKey(registrarKey);
     assertThat(persisted.getRegistrarName()).isEqualTo("registrarName");
-    updateInDb(persisted.asBuilder().setRegistrarName("changedRegistrarName").build());
+    persistResource(persisted.asBuilder().setRegistrarName("changedRegistrarName").build());
     Registrar updated = loadByKey(registrarKey);
     assertThat(updated.getRegistrarName()).isEqualTo("changedRegistrarName");
   }
 
   @Test
-  void update_throwsExceptionWhenEntityDoesNotExist() {
-    assertThat(existsInDb(testRegistrar)).isFalse();
-    assertThrows(IllegalArgumentException.class, () -> updateInDb(testRegistrar));
-  }
-
-  @Test
   void load_worksSuccessfully() {
     assertThat(existsInDb(testRegistrar)).isFalse();
-    insertInDb(testRegistrar);
+    persistResource(testRegistrar);
     Registrar persisted = loadByKey(registrarKey);
 
     assertThat(persisted.getRegistrarId()).isEqualTo("registrarId");

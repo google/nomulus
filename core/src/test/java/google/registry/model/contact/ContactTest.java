@@ -20,7 +20,6 @@ import static google.registry.model.ImmutableObjectSubject.assertAboutImmutableO
 import static google.registry.testing.ContactSubject.assertAboutContacts;
 import static google.registry.testing.DatabaseHelper.cloneAndSetAutoTimestamps;
 import static google.registry.testing.DatabaseHelper.createTld;
-import static google.registry.testing.DatabaseHelper.insertInDb;
 import static google.registry.testing.DatabaseHelper.loadByEntity;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.SqlHelper.assertThrowForeignKeyViolation;
@@ -132,7 +131,7 @@ public class ContactTest extends EntityTestCase {
   void testCloudSqlPersistence_failWhenViolateForeignKeyConstraint() {
     assertThrowForeignKeyViolation(
         () ->
-            insertInDb(
+            persistResource(
                 originalContact
                     .asBuilder()
                     .setRepoId("2-FOOBAR")

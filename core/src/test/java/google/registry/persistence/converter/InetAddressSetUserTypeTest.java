@@ -16,7 +16,7 @@ package google.registry.persistence.converter;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.testing.DatabaseHelper.insertInDb;
+import static google.registry.testing.DatabaseHelper.persistResource;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.net.InetAddresses;
@@ -64,7 +64,7 @@ public class InetAddressSetUserTypeTest {
 
   private void verifySaveAndLoad(@Nullable Set<InetAddress> inetAddresses) {
     InetAddressSetTestEntity testEntity = new InetAddressSetTestEntity(inetAddresses);
-    insertInDb(testEntity);
+    persistResource(testEntity);
     InetAddressSetTestEntity persisted =
         tm().transact(() -> tm().loadByKey(VKey.create(InetAddressSetTestEntity.class, "id")));
     assertThat(persisted.addresses).isEqualTo(inetAddresses);

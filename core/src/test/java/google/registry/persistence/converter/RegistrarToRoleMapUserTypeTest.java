@@ -48,7 +48,7 @@ public class RegistrarToRoleMapUserTypeTest {
             "FooRegistrar",
             RegistrarRole.TECH_CONTACT);
     TestEntity entity = new TestEntity(map);
-    DatabaseHelper.insertInDb(entity);
+    DatabaseHelper.persistResource(entity);
     TestEntity persisted = Iterables.getOnlyElement(DatabaseHelper.loadAllOf(TestEntity.class));
     assertThat(persisted.map).isEqualTo(map);
   }
