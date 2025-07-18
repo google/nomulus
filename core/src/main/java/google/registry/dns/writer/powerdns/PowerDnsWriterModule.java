@@ -12,24 +12,30 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package google.registry.dns.writer;
+package google.registry.dns.writer.powerdns;
 
+import dagger.Binds;
 import dagger.Module;
-import google.registry.dns.writer.clouddns.CloudDnsWriterModule;
-import google.registry.dns.writer.dnsupdate.DnsUpdateWriterModule;
-import google.registry.dns.writer.powerdns.PowerDnsWriterModule;
+import dagger.Provides;
+import dagger.multibindings.IntoMap;
+import dagger.multibindings.IntoSet;
+import dagger.multibindings.StringKey;
+import google.registry.dns.writer.DnsWriter;
+import jakarta.inject.Named;
 
-/**
- * Groups all {@link DnsWriter} implementations to be installed.
- *
- * <p>To cherry-pick the DNS writers to install, overwrite this file with your private version in
- * the release process.
- */
-@Module(
-    includes = {
-      CloudDnsWriterModule.class,
-      DnsUpdateWriterModule.class,
-      VoidDnsWriterModule.class,
-      PowerDnsWriterModule.class
-    })
-public class DnsWritersModule {}
+/** Dagger module that provides a PowerDnsWriter. */
+@Module
+public abstract class PowerDnsWriterModule {
+
+  @Binds
+  @IntoMap
+  @StringKey(PowerDnsWriter.NAME)
+  abstract DnsWriter provideWriter(PowerDnsWriter writer);
+
+  @Provides
+  @IntoSet
+  @Named("dnsWriterNames")
+  static String provideWriterName() {
+    return PowerDnsWriter.NAME;
+  }
+}
