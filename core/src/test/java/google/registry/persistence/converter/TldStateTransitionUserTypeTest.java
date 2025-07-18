@@ -16,7 +16,7 @@ package google.registry.persistence.converter;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.testing.DatabaseHelper.insertInDb;
+import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 
 import com.google.common.collect.ImmutableSortedMap;
@@ -55,7 +55,7 @@ class TldStateTransitionUserTypeTest {
     TimedTransitionProperty<TldState> timedTransitionProperty =
         TimedTransitionProperty.fromValueMap(values);
     TestEntity testEntity = new TestEntity(timedTransitionProperty);
-    insertInDb(testEntity);
+    persistResource(testEntity);
     TestEntity persisted =
         tm().transact(() -> tm().getEntityManager().find(TestEntity.class, "id"));
     assertThat(persisted.timedTransitionProperty.toValueMap())

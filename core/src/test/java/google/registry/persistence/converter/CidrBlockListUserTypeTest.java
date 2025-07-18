@@ -16,7 +16,7 @@ package google.registry.persistence.converter;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.testing.DatabaseHelper.insertInDb;
+import static google.registry.testing.DatabaseHelper.persistResource;
 
 import com.google.common.collect.ImmutableList;
 import google.registry.model.ImmutableObject;
@@ -47,7 +47,7 @@ public class CidrBlockListUserTypeTest {
             CidrAddressBlock.create("8000::/1"),
             CidrAddressBlock.create("ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff/128"));
     TestEntity testEntity = new TestEntity(addresses);
-    insertInDb(testEntity);
+    persistResource(testEntity);
     TestEntity persisted =
         tm().transact(() -> tm().getEntityManager().find(TestEntity.class, "id"));
     assertThat(persisted.addresses).isEqualTo(addresses);

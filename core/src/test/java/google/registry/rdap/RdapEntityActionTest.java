@@ -17,7 +17,7 @@ package google.registry.rdap;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.persistResource;
-import static google.registry.testing.DatabaseHelper.persistSimpleResources;
+import static google.registry.testing.DatabaseHelper.persistResources;
 import static google.registry.testing.FullFieldsTestEntityHelper.makeAndPersistDeletedContact;
 import static google.registry.testing.FullFieldsTestEntityHelper.makeDomain;
 import static google.registry.testing.FullFieldsTestEntityHelper.makeHost;
@@ -63,7 +63,7 @@ class RdapEntityActionTest extends RdapActionBaseTestCase<RdapEntityAction> {
     createTld("lol");
     registrarLol = persistResource(makeRegistrar(
         "evilregistrar", "Yes Virginia <script>", Registrar.State.ACTIVE, 101L));
-    persistSimpleResources(makeRegistrarPocs(registrarLol));
+    persistResources(makeRegistrarPocs(registrarLol));
     registrant =
         FullFieldsTestEntityHelper.makeAndPersistContact(
             "8372808-REG",
@@ -96,16 +96,16 @@ class RdapEntityActionTest extends RdapActionBaseTestCase<RdapEntityAction> {
     createTld("xn--q9jyb4c");
     Registrar registrarIdn = persistResource(
         makeRegistrar("idnregistrar", "IDN Registrar", Registrar.State.ACTIVE, 102L));
-    persistSimpleResources(makeRegistrarPocs(registrarIdn));
+    persistResources(makeRegistrarPocs(registrarIdn));
     // 1.tld
     createTld("1.tld");
     Registrar registrar1tld = persistResource(
         makeRegistrar("1tldregistrar", "Multilevel Registrar", Registrar.State.ACTIVE, 103L));
-    persistSimpleResources(makeRegistrarPocs(registrar1tld));
+    persistResources(makeRegistrarPocs(registrar1tld));
     // deleted registrar
     Registrar registrarDeleted = persistResource(
         makeRegistrar("deletedregistrar", "Yes Virginia <script>", Registrar.State.PENDING, 104L));
-    persistSimpleResources(makeRegistrarPocs(registrarDeleted));
+    persistResources(makeRegistrarPocs(registrarDeleted));
     // other contacts
     disconnectedContact =
         FullFieldsTestEntityHelper.makeAndPersistContact(

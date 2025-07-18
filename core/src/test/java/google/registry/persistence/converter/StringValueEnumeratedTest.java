@@ -16,7 +16,7 @@ package google.registry.persistence.converter;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.testing.DatabaseHelper.insertInDb;
+import static google.registry.testing.DatabaseHelper.persistResource;
 
 import google.registry.model.ImmutableObject;
 import google.registry.model.registrar.Registrar.State;
@@ -39,7 +39,7 @@ public class StringValueEnumeratedTest {
   @Test
   void roundTripConversion_returnsSameEnum() {
     TestEntity testEntity = new TestEntity(State.ACTIVE);
-    insertInDb(testEntity);
+    persistResource(testEntity);
     TestEntity persisted =
         tm().transact(() -> tm().getEntityManager().find(TestEntity.class, "id"));
     assertThat(persisted.state).isEqualTo(State.ACTIVE);
@@ -48,7 +48,7 @@ public class StringValueEnumeratedTest {
   @Test
   void testNativeQuery_succeeds() {
     TestEntity testEntity = new TestEntity(State.DISABLED);
-    insertInDb(testEntity);
+    persistResource(testEntity);
 
     assertThat(
             tm().transact(

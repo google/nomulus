@@ -18,7 +18,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.domain.token.AllocationToken.TokenType.SINGLE_USE;
 import static google.registry.model.domain.token.AllocationToken.TokenType.UNLIMITED_USE;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.testing.DatabaseHelper.insertInDb;
+import static google.registry.testing.DatabaseHelper.persistResource;
 
 import com.google.common.collect.ImmutableList;
 import google.registry.model.ImmutableObject;
@@ -51,7 +51,7 @@ public class AllocationTokenVkeyListUserTypeTest {
     List<VKey<AllocationToken>> tokens = ImmutableList.of(token1.createVKey(), token2.createVKey());
     TestAllocationTokenVKeyList testAllocationTokenVKeyList =
         new TestAllocationTokenVKeyList(tokens);
-    insertInDb(testAllocationTokenVKeyList);
+    persistResource(testAllocationTokenVKeyList);
     TestAllocationTokenVKeyList persisted =
         tm().transact(() -> tm().getEntityManager().find(TestAllocationTokenVKeyList.class, "id"));
     assertThat(persisted.tokenList).isEqualTo(tokens);

@@ -16,7 +16,7 @@ package google.registry.persistence.converter;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.testing.DatabaseHelper.insertInDb;
+import static google.registry.testing.DatabaseHelper.persistResource;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableList;
@@ -41,7 +41,7 @@ public class StringListConversionTest {
   void roundTripConversion_returnsSameStringList() {
     List<String> tlds = ImmutableList.of("app", "dev", "how");
     TestEntity testEntity = new TestEntity(tlds);
-    insertInDb(testEntity);
+    persistResource(testEntity);
     TestEntity persisted =
         tm().transact(() -> tm().getEntityManager().find(TestEntity.class, "id"));
     assertThat(persisted.tlds).containsExactly("app", "dev", "how");
@@ -51,7 +51,7 @@ public class StringListConversionTest {
   void testMerge_succeeds() {
     List<String> tlds = ImmutableList.of("app", "dev", "how");
     TestEntity testEntity = new TestEntity(tlds);
-    insertInDb(testEntity);
+    persistResource(testEntity);
     TestEntity persisted =
         tm().transact(() -> tm().getEntityManager().find(TestEntity.class, "id"));
     persisted.tlds = ImmutableList.of("com", "gov");
@@ -63,7 +63,7 @@ public class StringListConversionTest {
   @Test
   void testNullValue_writesAndReadsNullSuccessfully() {
     TestEntity testEntity = new TestEntity(null);
-    insertInDb(testEntity);
+    persistResource(testEntity);
     TestEntity persisted =
         tm().transact(() -> tm().getEntityManager().find(TestEntity.class, "id"));
     assertThat(persisted.tlds).isNull();
@@ -72,7 +72,7 @@ public class StringListConversionTest {
   @Test
   void testEmptyCollection_writesAndReadsEmptyCollectionSuccessfully() {
     TestEntity testEntity = new TestEntity(ImmutableList.of());
-    insertInDb(testEntity);
+    persistResource(testEntity);
     TestEntity persisted =
         tm().transact(() -> tm().getEntityManager().find(TestEntity.class, "id"));
     assertThat(persisted.tlds).isEmpty();

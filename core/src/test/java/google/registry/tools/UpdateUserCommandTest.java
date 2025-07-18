@@ -17,7 +17,6 @@ package google.registry.tools;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.testing.DatabaseHelper.loadExistingUser;
 import static google.registry.testing.DatabaseHelper.persistResource;
-import static google.registry.testing.DatabaseHelper.putInDb;
 import static org.junit.Assert.assertThrows;
 
 import com.google.common.collect.ImmutableMap;
@@ -33,7 +32,7 @@ public class UpdateUserCommandTest extends CommandTestCase<UpdateUserCommand> {
 
   @BeforeEach
   void beforeEach() throws Exception {
-    putInDb(
+    persistResource(
         new User.Builder()
             .setEmailAddress("user@example.test")
             .setUserRoles(new UserRoles.Builder().build())
@@ -53,7 +52,7 @@ public class UpdateUserCommandTest extends CommandTestCase<UpdateUserCommand> {
 
   @Test
   void testSuccess_removeRegistryLockEmail() throws Exception {
-    putInDb(
+    persistResource(
         loadExistingUser("user@example.test")
             .asBuilder()
             .setRegistryLockEmailAddress("registrylock@otherexample.test")

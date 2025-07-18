@@ -23,7 +23,6 @@ import static google.registry.model.rde.RdeMode.FULL;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.persistResource;
-import static google.registry.testing.DatabaseHelper.persistSimpleResource;
 import static google.registry.testing.GpgSystemCommandExtension.GPG_BINARY;
 import static google.registry.testing.SystemInfo.hasCommand;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -375,7 +374,7 @@ public class RdeUploadActionTest {
     URI uploadUrl = URI.create(String.format("sftp://user:password@localhost:%d/", port));
     DateTime stagingCursor = DateTime.parse("2010-10-18TZ");
     DateTime uploadCursor = DateTime.parse("2010-10-17TZ");
-    persistSimpleResource(Cursor.createScoped(RDE_STAGING, stagingCursor, Tld.get("tld")));
+    persistResource(Cursor.createScoped(RDE_STAGING, stagingCursor, Tld.get("tld")));
     BlobId ghostrydeR1FileWithPrefix =
         BlobId.of("bucket", JOB_PREFIX + "-job-name/tld_2010-10-17_full_S1_R1.xml.ghostryde");
     BlobId lengthR1FileWithPrefix =

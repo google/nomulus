@@ -26,7 +26,6 @@ import static google.registry.testing.DatabaseHelper.loadExistingUser;
 import static google.registry.testing.DatabaseHelper.loadRegistrar;
 import static google.registry.testing.DatabaseHelper.persistPremiumList;
 import static google.registry.testing.DatabaseHelper.persistResource;
-import static google.registry.testing.DatabaseHelper.putInDb;
 import static org.joda.money.CurrencyUnit.USD;
 import static org.joda.time.DateTimeZone.UTC;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -448,7 +447,7 @@ class SetupOteCommandTest extends CommandTestCase<SetupOteCommand> {
 
   @Test
   void testFailure_userExists() {
-    putInDb(
+    persistResource(
         new User.Builder()
             .setEmailAddress("contact@email.com")
             .setUserRoles(new UserRoles.Builder().setGlobalRole(GlobalRole.FTE).build())
@@ -494,7 +493,7 @@ class SetupOteCommandTest extends CommandTestCase<SetupOteCommand> {
 
   @Test
   void testSuccess_userExists_replaceExisting() throws Exception {
-    putInDb(
+    persistResource(
         new User.Builder()
             .setEmailAddress("contact@email.com")
             .setUserRoles(new UserRoles.Builder().setGlobalRole(GlobalRole.FTE).build())

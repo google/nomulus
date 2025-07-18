@@ -20,11 +20,10 @@ import static google.registry.model.domain.token.AllocationToken.TokenStatus.NOT
 import static google.registry.model.domain.token.AllocationToken.TokenType.BULK_PRICING;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.createTld;
-import static google.registry.testing.DatabaseHelper.insertInDb;
 import static google.registry.testing.DatabaseHelper.loadByEntity;
 import static google.registry.testing.DatabaseHelper.loadByKey;
 import static google.registry.testing.DatabaseHelper.persistResource;
-import static google.registry.testing.DatabaseHelper.updateInDb;
+import static google.registry.testing.DatabaseHelper.persistResources;
 import static google.registry.testing.SqlHelper.assertThrowForeignKeyViolation;
 import static google.registry.testing.SqlHelper.saveRegistrar;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
@@ -169,13 +168,13 @@ public class DomainSqlTest {
   @Test
   void testHostForeignKeyConstraints() {
     // Persist the domain without the associated host object.
-    assertThrowForeignKeyViolation(() -> insertInDb(contact, contact2, domain));
+    assertThrowForeignKeyViolation(() -> persistResources(contact, contact2, domain));
   }
 
   @Test
   void testContactForeignKeyConstraints() {
     // Persist the domain without the associated contact objects.
-    assertThrowForeignKeyViolation(() -> insertInDb(domain, host));
+    assertThrowForeignKeyViolation(() -> persistResources(domain, host));
   }
 
   @Test
@@ -358,7 +357,7 @@ public class DomainSqlTest {
   @Test
   void testSerializable() {
     createTld("com");
-    insertInDb(contact, contact2, domain, host);
+    persistResources(contact, contact2, domain, host);
     Domain persisted = tm().transact(() -> tm().loadByEntity(domain));
     assertThat(SerializeUtils.serializeDeserialize(persisted)).isEqualTo(persisted);
   }
@@ -366,9 +365,9 @@ public class DomainSqlTest {
   @Test
   void testUpdates() {
     createTld("com");
-    insertInDb(contact, contact2, domain, host);
+    persistResources(contact, contact2, domain, host);
     domain = domain.asBuilder().setNameservers(ImmutableSet.of()).build();
-    updateInDb(domain);
+    persistResource(domain);
     assertAboutImmutableObjects()
         .that(loadByEntity(domain))
         .isEqualExceptFields(domain, "updateTimestamp", "creationTime");
@@ -385,7 +384,7 @@ public class DomainSqlTest {
 
   private void persistDomain() {
     createTld("com");
-    insertInDb(contact, contact2, domain, host);
+    persistResources(contact, contact2, domain, host);
   }
 
   private <T> VKey<T> createKey(Class<T> clazz, String key) {
@@ -414,24 +413,19 @@ public class DomainSqlTest {
     Domain persisted = loadByKey(domain.createVKey());
     DateTime originalUpdateTime = persisted.getUpdateTimestamp().getTimestamp();
     fakeClock.advanceOneMilli();
-    DateTime transactionTime =
-        tm().transact(
-                () -> {
-                  Host host2 =
-                      new Host.Builder()
-                          .setRepoId("host2")
-                          .setHostName("ns2.example.com")
-                          .setCreationRegistrarId("registrar1")
-                          .setPersistedCurrentSponsorRegistrarId("registrar2")
-                          .build();
-                  insertInDb(host2);
+    Host host2 =
+        new Host.Builder()
+            .setRepoId("host2")
+            .setHostName("ns2.example.com")
+            .setCreationRegistrarId("registrar1")
+            .setPersistedCurrentSponsorRegistrarId("registrar2")
+            .build();
+    persistResource(host2);
                   domain = persisted.asBuilder().addNameserver(host2.createVKey()).build();
-                  updateInDb(domain);
-                  return tm().getTransactionTime();
-                });
+    persistResource(domain);
     domain = loadByKey(domain.createVKey());
-    assertThat(domain.getUpdateTimestamp().getTimestamp()).isEqualTo(transactionTime);
-    assertThat(domain.getUpdateTimestamp().getTimestamp()).isNotEqualTo(originalUpdateTime);
+    assertThat(domain.getUpdateTimestamp().getTimestamp())
+        .isEqualTo(originalUpdateTime.plusMillis(1));
   }
 
   @Test
@@ -440,20 +434,14 @@ public class DomainSqlTest {
     Domain persisted = loadByKey(domain.createVKey());
     DateTime originalUpdateTime = persisted.getUpdateTimestamp().getTimestamp();
     fakeClock.advanceOneMilli();
-    DateTime transactionTime =
-        tm().transact(
-                () -> {
-                  domain =
-                      persisted
-                          .asBuilder()
-                          .setDsData(
-                              ImmutableSet.of(DomainDsData.create(1, 2, 3, new byte[] {0, 1, 2})))
-                          .build();
-                  updateInDb(domain);
-                  return tm().getTransactionTime();
-                });
+    domain =
+        persisted
+            .asBuilder()
+            .setDsData(ImmutableSet.of(DomainDsData.create(1, 2, 3, new byte[] {0, 1, 2})))
+            .build();
+    persistResource(domain);
     domain = loadByKey(domain.createVKey());
-    assertThat(domain.getUpdateTimestamp().getTimestamp()).isEqualTo(transactionTime);
-    assertThat(domain.getUpdateTimestamp().getTimestamp()).isNotEqualTo(originalUpdateTime);
+    assertThat(domain.getUpdateTimestamp().getTimestamp())
+        .isEqualTo(originalUpdateTime.plusMillis(1));
   }
 }

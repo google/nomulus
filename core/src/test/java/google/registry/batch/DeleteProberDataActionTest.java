@@ -27,7 +27,6 @@ import static google.registry.testing.DatabaseHelper.persistActiveHost;
 import static google.registry.testing.DatabaseHelper.persistDeletedDomain;
 import static google.registry.testing.DatabaseHelper.persistDomainAsDeleted;
 import static google.registry.testing.DatabaseHelper.persistResource;
-import static google.registry.testing.DatabaseHelper.persistSimpleResource;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
 import static org.joda.time.DateTimeZone.UTC;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -287,7 +286,7 @@ class DeleteProberDataActionTest {
   private static Set<ImmutableObject> persistDomainAndDescendants(String fqdn) {
     Domain domain = persistDeletedDomain(fqdn, DELETION_TIME);
     DomainHistory historyEntry =
-        persistSimpleResource(
+        persistResource(
             new DomainHistory.Builder()
                 .setDomain(domain)
                 .setType(HistoryEntry.Type.DOMAIN_CREATE)
@@ -295,7 +294,7 @@ class DeleteProberDataActionTest {
                 .setModificationTime(DELETION_TIME.minusYears(3))
                 .build());
     BillingEvent billingEvent =
-        persistSimpleResource(
+        persistResource(
             new BillingEvent.Builder()
                 .setDomainHistory(historyEntry)
                 .setBillingTime(DELETION_TIME.plusYears(1))
@@ -307,7 +306,7 @@ class DeleteProberDataActionTest {
                 .setTargetId(fqdn)
                 .build());
     PollMessage.OneTime pollMessage =
-        persistSimpleResource(
+        persistResource(
             new PollMessage.OneTime.Builder()
                 .setHistoryEntry(historyEntry)
                 .setEventTime(DELETION_TIME)
@@ -315,7 +314,7 @@ class DeleteProberDataActionTest {
                 .setMsg("Domain registered")
                 .build());
     GracePeriod gracePeriod =
-        persistSimpleResource(
+        persistResource(
             GracePeriod.create(
                 ADD,
                 domain.getRepoId(),

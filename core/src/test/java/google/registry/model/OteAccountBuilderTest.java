@@ -24,7 +24,7 @@ import static google.registry.testing.CertificateSamples.SAMPLE_CERT_HASH;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.loadByKeyIfPresent;
 import static google.registry.testing.DatabaseHelper.persistPremiumList;
-import static google.registry.testing.DatabaseHelper.persistSimpleResource;
+import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static org.joda.money.CurrencyUnit.USD;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -275,7 +275,7 @@ public final class OteAccountBuilderTest {
 
   @Test
   void testCreateOteEntities_registrarExists_failsWhenNotReplaceExisting() {
-    persistSimpleResource(makeRegistrar1().asBuilder().setRegistrarId("myclientid-1").build());
+    persistResource(makeRegistrar1().asBuilder().setRegistrarId("myclientid-1").build());
 
     OteAccountBuilder oteSetupHelper = OteAccountBuilder.forRegistrarId("myclientid");
 
@@ -301,7 +301,7 @@ public final class OteAccountBuilderTest {
 
   @Test
   void testCreateOteEntities_entitiesExist_succeedsWhenReplaceExisting() {
-    persistSimpleResource(makeRegistrar1().asBuilder().setRegistrarId("myclientid-1").build());
+    persistResource(makeRegistrar1().asBuilder().setRegistrarId("myclientid-1").build());
     // we intentionally create the -ga TLD with the wrong state, to make sure it's overwritten.
     createTld("myclientid-ga", START_DATE_SUNRISE);
 

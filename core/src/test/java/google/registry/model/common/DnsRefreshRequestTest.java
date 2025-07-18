@@ -16,7 +16,7 @@ package google.registry.model.common;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.ImmutableObjectSubject.assertAboutImmutableObjects;
-import static google.registry.testing.DatabaseHelper.insertInDb;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.loadAllOf;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -41,7 +41,7 @@ public class DnsRefreshRequestTest extends EntityTestCase {
   void testPersistence() {
     assertThat(request.getLastProcessTime()).isEqualTo(START_OF_TIME);
     fakeClock.advanceOneMilli();
-    insertInDb(request);
+    tm().transact(() -> tm().insert(request));
     fakeClock.advanceOneMilli();
     ImmutableList<DnsRefreshRequest> requests = loadAllOf(DnsRefreshRequest.class);
     assertThat(requests.size()).isEqualTo(1);

@@ -17,7 +17,7 @@ package google.registry.rdap;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.loadRegistrar;
-import static google.registry.testing.DatabaseHelper.persistSimpleResource;
+import static google.registry.testing.DatabaseHelper.persistResource;
 import static jakarta.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 import static jakarta.servlet.http.HttpServletResponse.SC_OK;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -94,7 +94,7 @@ public final class UpdateRegistrarRdapBaseUrlsActionTest {
 
   private static void persistRegistrar(
       String registrarId, Long ianaId, Registrar.Type type, String... rdapBaseUrls) {
-    persistSimpleResource(
+    persistResource(
         new Registrar.Builder()
             .setRegistrarId(registrarId)
             .setRegistrarName(registrarId)

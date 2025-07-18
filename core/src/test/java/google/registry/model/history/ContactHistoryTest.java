@@ -17,9 +17,9 @@ package google.registry.model.history;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.ImmutableObjectSubject.assertAboutImmutableObjects;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.testing.DatabaseHelper.insertInDb;
 import static google.registry.testing.DatabaseHelper.loadByEntity;
 import static google.registry.testing.DatabaseHelper.newContactWithRoid;
+import static google.registry.testing.DatabaseHelper.persistResource;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.collect.ImmutableList;
@@ -45,10 +45,10 @@ public class ContactHistoryTest extends EntityTestCase {
   @Test
   void testPersistence() {
     Contact contact = newContactWithRoid("contactId", "contact1");
-    insertInDb(contact);
+    persistResource(contact);
     Contact contactFromDb = loadByEntity(contact);
     ContactHistory contactHistory = createContactHistory(contactFromDb);
-    insertInDb(contactHistory);
+    persistResource(contactHistory);
     tm().transact(
             () -> {
               ContactHistory fromDatabase = tm().loadByKey(contactHistory.createVKey());
@@ -60,10 +60,10 @@ public class ContactHistoryTest extends EntityTestCase {
   @Test
   void testSerializable() {
     Contact contact = newContactWithRoid("contactId", "contact1");
-    insertInDb(contact);
+    persistResource(contact);
     Contact contactFromDb = loadByEntity(contact);
     ContactHistory contactHistory = createContactHistory(contactFromDb);
-    insertInDb(contactHistory);
+    persistResource(contactHistory);
     ContactHistory fromDatabase = tm().transact(() -> tm().loadByKey(contactHistory.createVKey()));
     assertThat(SerializeUtils.serializeDeserialize(fromDatabase)).isEqualTo(fromDatabase);
   }

@@ -15,7 +15,7 @@ package google.registry.persistence.converter;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.testing.DatabaseHelper.insertInDb;
+import static google.registry.testing.DatabaseHelper.persistResource;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableMap;
@@ -57,7 +57,7 @@ public class JodaMoneyTypeTest {
     Money money = Money.of(CurrencyUnit.USD, 100.12);
     assertThat(money.getAmount().scale()).isEqualTo(2);
     TestEntity entity = new TestEntity(money);
-    insertInDb(entity);
+    persistResource(entity);
     List<?> result =
         tm().transact(
                 () ->
@@ -81,7 +81,7 @@ public class JodaMoneyTypeTest {
     Money money = Money.ofMajor(CurrencyUnit.JPY, 100);
     assertThat(money.getAmount().scale()).isEqualTo(0); // JPY's amount has scale at 0.
     TestEntity entity = new TestEntity(money);
-    insertInDb(entity);
+    persistResource(entity);
     List<?> result =
         tm().transact(
                 () ->
@@ -121,7 +121,7 @@ public class JodaMoneyTypeTest {
             "dos", Money.ofMajor(CurrencyUnit.JPY, 2000),
             "tres", Money.of(CurrencyUnit.GBP, 20));
     ComplexTestEntity entity = new ComplexTestEntity(moneyMap, myMoney, yourMoney);
-    insertInDb(entity);
+    persistResource(entity);
     List<?> result =
         tm().transact(
                 () ->

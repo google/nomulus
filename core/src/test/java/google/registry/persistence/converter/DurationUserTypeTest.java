@@ -16,7 +16,7 @@ package google.registry.persistence.converter;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.testing.DatabaseHelper.insertInDb;
+import static google.registry.testing.DatabaseHelper.persistResource;
 
 import google.registry.model.ImmutableObject;
 import google.registry.persistence.transaction.JpaTestExtensions;
@@ -39,7 +39,7 @@ public class DurationUserTypeTest {
   @Test
   void testNulls() {
     DurationTestEntity entity = new DurationTestEntity(null);
-    insertInDb(entity);
+    persistResource(entity);
     DurationTestEntity persisted =
         tm().transact(() -> tm().getEntityManager().find(DurationTestEntity.class, "id"));
     assertThat(persisted.duration).isNull();
@@ -90,7 +90,7 @@ public class DurationUserTypeTest {
 
   private void assertPersistedEntityHasSameDuration(Duration duration) {
     DurationTestEntity entity = new DurationTestEntity(duration);
-    insertInDb(entity);
+    persistResource(entity);
     DurationTestEntity persisted =
         tm().transact(() -> tm().getEntityManager().find(DurationTestEntity.class, "id"));
     assertThat(persisted.duration.getMillis()).isEqualTo(duration.getMillis());

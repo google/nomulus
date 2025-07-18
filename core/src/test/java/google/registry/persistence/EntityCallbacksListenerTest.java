@@ -18,7 +18,7 @@ import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.testing.DatabaseHelper.insertInDb;
+import static google.registry.testing.DatabaseHelper.persistResource;
 
 import com.google.common.collect.ImmutableSet;
 import google.registry.model.ImmutableObject;
@@ -51,7 +51,7 @@ class EntityCallbacksListenerTest {
   @Test
   void verifyAllCallbacks_executedExpectedTimes() {
     TestEntity testPersist = new TestEntity();
-    insertInDb(testPersist);
+    tm().transact(() -> tm().insert(testPersist));
     checkAll(testPersist, 1, 0, 0, 0);
 
     TestEntity testUpdate = new TestEntity();
@@ -99,7 +99,7 @@ class EntityCallbacksListenerTest {
 
   @Test
   void verifyCallbacksNotCalledOnCommit() {
-    insertInDb(new TestEntity());
+    persistResource(new TestEntity());
 
     TestEntity testLoad = tm().transact(() -> tm().loadByKey(VKey.create(TestEntity.class, "id")));
     assertThat(testLoad.entityPreUpdate).isEqualTo(0);

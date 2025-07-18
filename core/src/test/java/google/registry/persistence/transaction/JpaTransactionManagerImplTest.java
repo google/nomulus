@@ -24,8 +24,9 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.assertDetachedFromEntityManager;
 import static google.registry.testing.DatabaseHelper.existsInDb;
-import static google.registry.testing.DatabaseHelper.insertInDb;
 import static google.registry.testing.DatabaseHelper.loadByKey;
+import static google.registry.testing.DatabaseHelper.persistResource;
+import static google.registry.testing.DatabaseHelper.persistResources;
 import static google.registry.testing.TestDataHelper.fileClassPath;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
@@ -397,7 +398,7 @@ class JpaTransactionManagerImplTest {
   @Test
   void saveAllNew_succeeds() {
     moreEntities.forEach(entity -> assertThat(tm().transact(() -> tm().exists(entity))).isFalse());
-    insertInDb(moreEntities);
+    persistResources(moreEntities);
     moreEntities.forEach(entity -> assertThat(tm().transact(() -> tm().exists(entity))).isTrue());
     assertThat(tm().transact(() -> tm().loadAllOf(TestEntity.class)))
         .containsExactlyElementsIn(moreEntities);
@@ -406,8 +407,12 @@ class JpaTransactionManagerImplTest {
   @Test
   void saveAllNew_rollsBackWhenFailure() {
     moreEntities.forEach(entity -> assertThat(tm().transact(() -> tm().exists(entity))).isFalse());
-    insertInDb(moreEntities.get(0));
-    assertThat(assertThrows(PersistenceException.class, () -> insertInDb(moreEntities)).getCause())
+    persistResource(moreEntities.get(0));
+    assertThat(
+            assertThrows(
+                    PersistenceException.class,
+                    () -> tm().transact(() -> tm().insertAll(moreEntities)))
+                .getCause())
         .isInstanceOf(RollbackException.class);
     assertThat(tm().transact(() -> tm().exists(moreEntities.get(0)))).isTrue();
     assertThat(tm().transact(() -> tm().exists(moreEntities.get(1)))).isFalse();
@@ -424,7 +429,7 @@ class JpaTransactionManagerImplTest {
 
   @Test
   void put_updatesExistingEntity() {
-    insertInDb(theEntity);
+    persistResource(theEntity);
     TestEntity persisted = tm().transact(() -> tm().loadByKey(theEntityKey));
     assertThat(persisted.data).isEqualTo("foo");
     theEntity.data = "bar";
@@ -444,7 +449,7 @@ class JpaTransactionManagerImplTest {
 
   @Test
   void update_succeeds() {
-    insertInDb(theEntity);
+    persistResource(theEntity);
     TestEntity persisted =
         tm().transact(() -> tm().loadByKey(VKey.create(TestEntity.class, "theEntity")));
     assertThat(persisted.data).isEqualTo("foo");
@@ -456,7 +461,7 @@ class JpaTransactionManagerImplTest {
 
   @Test
   void updateCompoundIdEntity_succeeds() {
-    insertInDb(compoundIdEntity);
+    persistResource(compoundIdEntity);
     TestCompoundIdEntity persisted = tm().transact(() -> tm().loadByKey(compoundIdEntityKey));
     assertThat(persisted.data).isEqualTo("foo");
     compoundIdEntity.data = "bar";
@@ -474,7 +479,7 @@ class JpaTransactionManagerImplTest {
 
   @Test
   void updateAll_succeeds() {
-    insertInDb(moreEntities);
+    persistResources(moreEntities);
     ImmutableList<TestEntity> updated =
         ImmutableList.of(
             new TestEntity("entity1", "foo_updated"),
@@ -487,7 +492,7 @@ class JpaTransactionManagerImplTest {
 
   @Test
   void updateAll_rollsBackWhenFailure() {
-    insertInDb(moreEntities);
+    persistResources(moreEntities);
     ImmutableList<TestEntity> updated =
         ImmutableList.of(
             new TestEntity("entity1", "foo_updated"),
@@ -503,7 +508,7 @@ class JpaTransactionManagerImplTest {
   @Test
   void load_succeeds() {
     assertThat(tm().transact(() -> tm().exists(theEntity))).isFalse();
-    insertInDb(theEntity);
+    persistResource(theEntity);
     TestEntity persisted =
         tm().transact(() -> assertDetachedFromEntityManager(tm().loadByKey(theEntityKey)));
     assertThat(persisted.name).isEqualTo("theEntity");
@@ -519,7 +524,7 @@ class JpaTransactionManagerImplTest {
 
   @Test
   void loadByEntity_succeeds() {
-    insertInDb(theEntity);
+    persistResource(theEntity);
     TestEntity persisted =
         tm().transact(() -> assertDetachedFromEntityManager(tm().loadByEntity(theEntity)));
     assertThat(persisted.name).isEqualTo("theEntity");
@@ -529,7 +534,7 @@ class JpaTransactionManagerImplTest {
   @Test
   void maybeLoad_succeeds() {
     assertThat(tm().transact(() -> tm().exists(theEntity))).isFalse();
-    insertInDb(theEntity);
+    persistResource(theEntity);
     TestEntity persisted =
         tm().transact(
                 () -> assertDetachedFromEntityManager(tm().loadByKeyIfPresent(theEntityKey).get()));
@@ -546,7 +551,7 @@ class JpaTransactionManagerImplTest {
   @Test
   void loadCompoundIdEntity_succeeds() {
     assertThat(tm().transact(() -> tm().exists(compoundIdEntity))).isFalse();
-    insertInDb(compoundIdEntity);
+    persistResource(compoundIdEntity);
     TestCompoundIdEntity persisted =
         tm().transact(() -> assertDetachedFromEntityManager(tm().loadByKey(compoundIdEntityKey)));
     assertThat(persisted.name).isEqualTo("compoundIdEntity");
@@ -556,7 +561,7 @@ class JpaTransactionManagerImplTest {
 
   @Test
   void loadByKeysIfPresent() {
-    insertInDb(theEntity);
+    persistResource(theEntity);
     tm().transact(
             () -> {
               ImmutableMap<VKey<? extends TestEntity>, TestEntity> results =
@@ -571,7 +576,7 @@ class JpaTransactionManagerImplTest {
 
   @Test
   void loadByKeys_succeeds() {
-    insertInDb(theEntity);
+    persistResource(theEntity);
     tm().transact(
             () -> {
               ImmutableMap<VKey<? extends TestEntity>, TestEntity> results =
@@ -583,7 +588,7 @@ class JpaTransactionManagerImplTest {
 
   @Test
   void loadByEntitiesIfPresent_succeeds() {
-    insertInDb(theEntity);
+    persistResource(theEntity);
     tm().transact(
             () -> {
               ImmutableList<TestEntity> results =
@@ -596,7 +601,7 @@ class JpaTransactionManagerImplTest {
 
   @Test
   void loadByEntities_succeeds() {
-    insertInDb(theEntity);
+    persistResource(theEntity);
     tm().transact(
             () -> {
               ImmutableList<TestEntity> results = tm().loadByEntities(ImmutableList.of(theEntity));
@@ -607,7 +612,7 @@ class JpaTransactionManagerImplTest {
 
   @Test
   void loadAll_succeeds() {
-    insertInDb(moreEntities);
+    persistResources(moreEntities);
     ImmutableList<TestEntity> persisted =
         tm().transact(
                 () ->
@@ -619,7 +624,7 @@ class JpaTransactionManagerImplTest {
 
   @Test
   void loadSingleton_detaches() {
-    insertInDb(theEntity);
+    persistResource(theEntity);
     tm().transact(
             () ->
                 assertThat(
@@ -629,7 +634,7 @@ class JpaTransactionManagerImplTest {
 
   @Test
   void delete_succeeds() {
-    insertInDb(theEntity);
+    persistResource(theEntity);
     assertThat(tm().transact(() -> tm().exists(theEntity))).isTrue();
     tm().transact(() -> tm().delete(theEntityKey));
     assertThat(tm().transact(() -> tm().exists(theEntity))).isFalse();
@@ -644,7 +649,7 @@ class JpaTransactionManagerImplTest {
 
   @Test
   void deleteCompoundIdEntity_succeeds() {
-    insertInDb(compoundIdEntity);
+    persistResource(compoundIdEntity);
     assertThat(tm().transact(() -> tm().exists(compoundIdEntity))).isTrue();
     tm().transact(() -> tm().delete(compoundIdEntityKey));
     assertThat(tm().transact(() -> tm().exists(compoundIdEntity))).isFalse();
@@ -674,7 +679,7 @@ class JpaTransactionManagerImplTest {
 
   @Test
   void loadAfterUpdate_fails() {
-    insertInDb(theEntity);
+    persistResource(theEntity);
     assertThat(
             assertThrows(
                 IllegalStateException.class,
@@ -690,7 +695,7 @@ class JpaTransactionManagerImplTest {
 
   @Test
   void cqQuery_detaches() {
-    insertInDb(moreEntities);
+    persistResources(moreEntities);
     tm().transact(
             () ->
                 assertThat(
@@ -724,7 +729,7 @@ class JpaTransactionManagerImplTest {
 
   @Test
   void query_detachesResults() {
-    insertInDb(moreEntities);
+    persistResources(moreEntities);
     tm().transact(
             () ->
                 tm().query("FROM TestEntity", TestEntity.class)

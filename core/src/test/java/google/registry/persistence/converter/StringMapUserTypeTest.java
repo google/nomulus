@@ -16,7 +16,7 @@ package google.registry.persistence.converter;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.testing.DatabaseHelper.insertInDb;
+import static google.registry.testing.DatabaseHelper.persistResource;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableMap;
@@ -47,7 +47,7 @@ public class StringMapUserTypeTest {
   @Test
   void roundTripConversion_returnsSameMap() {
     TestEntity testEntity = new TestEntity(MAP);
-    insertInDb(testEntity);
+    persistResource(testEntity);
     TestEntity persisted =
         tm().transact(() -> tm().getEntityManager().find(TestEntity.class, "id"));
     assertThat(persisted.map).containsExactlyEntriesIn(MAP);
@@ -56,7 +56,7 @@ public class StringMapUserTypeTest {
   @Test
   void testUpdateColumn_succeeds() {
     TestEntity testEntity = new TestEntity(MAP);
-    insertInDb(testEntity);
+    persistResource(testEntity);
     TestEntity persisted =
         tm().transact(() -> tm().getEntityManager().find(TestEntity.class, "id"));
     assertThat(persisted.map).containsExactlyEntriesIn(MAP);
@@ -69,7 +69,7 @@ public class StringMapUserTypeTest {
   @Test
   void testNullValue_writesAndReadsNullSuccessfully() {
     TestEntity testEntity = new TestEntity(null);
-    insertInDb(testEntity);
+    persistResource(testEntity);
     TestEntity persisted =
         tm().transact(() -> tm().getEntityManager().find(TestEntity.class, "id"));
     assertThat(persisted.map).isNull();
@@ -78,7 +78,7 @@ public class StringMapUserTypeTest {
   @Test
   void testEmptyMap_writesAndReadsEmptyCollectionSuccessfully() {
     TestEntity testEntity = new TestEntity(ImmutableMap.of());
-    insertInDb(testEntity);
+    persistResource(testEntity);
     TestEntity persisted =
         tm().transact(() -> tm().getEntityManager().find(TestEntity.class, "id"));
     assertThat(persisted.map).isEmpty();

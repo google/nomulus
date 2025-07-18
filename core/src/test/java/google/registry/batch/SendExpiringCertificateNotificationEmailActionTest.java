@@ -18,7 +18,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static google.registry.persistence.transaction.JpaTransactionManagerExtension.makeRegistrar1;
 import static google.registry.testing.DatabaseHelper.loadByEntity;
 import static google.registry.testing.DatabaseHelper.persistResource;
-import static google.registry.testing.DatabaseHelper.persistSimpleResources;
+import static google.registry.testing.DatabaseHelper.persistResources;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static org.apache.http.HttpStatus.SC_OK;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -62,7 +62,8 @@ class SendExpiringCertificateNotificationEmailActionTest {
        Kind update your account using the following steps:
         1. Navigate to support and login using your %4$s@registry.example credentials.
         2. Click Settings -> Privacy on the top left corner.
-        3. Click Edit and enter certificate string.  3. Click SaveRegards,Example Registry""";
+        3. Click Edit and enter certificate string.  3. Click SaveRegards,Example Registry\
+      """;
 
   private static final String EXPIRATION_WARNING_EMAIL_SUBJECT_TEXT = "Expiration Warning Email";
 
@@ -223,7 +224,7 @@ class SendExpiringCertificateNotificationEmailActionTest {
                 .setVisibleInWhoisAsAdmin(true)
                 .setVisibleInWhoisAsTech(false)
                 .build());
-    persistSimpleResources(contacts);
+    persistResources(contacts);
     RuntimeException thrown =
         assertThrows(
             RuntimeException.class,
@@ -548,7 +549,7 @@ class SendExpiringCertificateNotificationEmailActionTest {
                 .setTypes(ImmutableSet.of(RegistrarPoc.Type.ADMIN))
                 .setVisibleInWhoisAsTech(true)
                 .build());
-    persistSimpleResources(contacts);
+    persistResources(contacts);
     assertThat(action.getEmailAddresses(registrar, Type.TECH))
         .containsExactly(
             new InternetAddress("will@example-registrar.tld"),
@@ -700,7 +701,7 @@ class SendExpiringCertificateNotificationEmailActionTest {
   /** Returns persisted sample contacts with a customized contact email type. */
   private static ImmutableList<RegistrarPoc> persistSampleContacts(
       Registrar registrar, RegistrarPoc.Type emailType) {
-    return persistSimpleResources(
+    return persistResources(
         ImmutableList.of(
             new RegistrarPoc.Builder()
                 .setRegistrar(registrar)

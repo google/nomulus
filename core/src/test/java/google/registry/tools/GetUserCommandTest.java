@@ -29,7 +29,7 @@ public class GetUserCommandTest extends CommandTestCase<GetUserCommand> {
 
   @BeforeEach
   void beforeEach() {
-    DatabaseHelper.putInDb(
+    DatabaseHelper.persistResources(
         new User.Builder()
             .setEmailAddress("johndoe@theregistrar.com")
             .setUserRoles(

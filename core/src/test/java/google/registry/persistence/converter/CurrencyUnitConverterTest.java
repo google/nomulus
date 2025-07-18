@@ -16,7 +16,7 @@ package google.registry.persistence.converter;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.testing.DatabaseHelper.insertInDb;
+import static google.registry.testing.DatabaseHelper.persistResource;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import google.registry.model.ImmutableObject;
@@ -39,7 +39,7 @@ public class CurrencyUnitConverterTest {
   @Test
   void roundTripConversion() {
     TestEntity entity = new TestEntity(CurrencyUnit.EUR);
-    insertInDb(entity);
+    persistResource(entity);
     assertThat(
             tm().transact(
                     () ->

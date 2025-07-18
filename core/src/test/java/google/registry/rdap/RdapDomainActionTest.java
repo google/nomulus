@@ -21,7 +21,7 @@ import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistDomainWithDependentResources;
 import static google.registry.testing.DatabaseHelper.persistResource;
-import static google.registry.testing.DatabaseHelper.persistSimpleResources;
+import static google.registry.testing.DatabaseHelper.persistResources;
 import static google.registry.testing.FullFieldsTestEntityHelper.makeAndPersistHost;
 import static google.registry.testing.FullFieldsTestEntityHelper.makeDomain;
 import static google.registry.testing.FullFieldsTestEntityHelper.makeHistoryEntry;
@@ -78,7 +78,7 @@ class RdapDomainActionTest extends RdapActionBaseTestCase<RdapDomainAction> {
     createTld("lol");
     Registrar registrarLol = persistResource(makeRegistrar(
         "evilregistrar", "Yes Virginia <script>", Registrar.State.ACTIVE));
-    persistSimpleResources(makeRegistrarPocs(registrarLol));
+    persistResources(makeRegistrarPocs(registrarLol));
     registrantLol =
         FullFieldsTestEntityHelper.makeAndPersistContact(
             "5372808-ERL",
@@ -152,7 +152,7 @@ class RdapDomainActionTest extends RdapActionBaseTestCase<RdapDomainAction> {
     createTld("xn--q9jyb4c");
     Registrar registrarIdn =
         persistResource(makeRegistrar("idnregistrar", "IDN Registrar", Registrar.State.ACTIVE));
-    persistSimpleResources(makeRegistrarPocs(registrarIdn));
+    persistResources(makeRegistrarPocs(registrarIdn));
     Contact registrantIdn =
         FullFieldsTestEntityHelper.makeAndPersistContact(
             "5372808-ERL",
@@ -188,7 +188,7 @@ class RdapDomainActionTest extends RdapActionBaseTestCase<RdapDomainAction> {
     createTld("1.tld");
     Registrar registrar1Tld = persistResource(
         makeRegistrar("1tldregistrar", "Multilevel Registrar", Registrar.State.ACTIVE));
-    persistSimpleResources(makeRegistrarPocs(registrar1Tld));
+    persistResources(makeRegistrarPocs(registrar1Tld));
     Contact registrant1Tld =
         FullFieldsTestEntityHelper.makeAndPersistContact(
             "5372808-ERL",

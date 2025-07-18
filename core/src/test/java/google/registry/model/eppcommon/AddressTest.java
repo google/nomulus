@@ -16,8 +16,8 @@ package google.registry.model.eppcommon;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.testing.DatabaseHelper.insertInDb;
 import static google.registry.testing.DatabaseHelper.loadByEntity;
+import static google.registry.testing.DatabaseHelper.persistResource;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableList;
@@ -50,25 +50,25 @@ class AddressTest {
 
   private static final String ENTITY_XML =
       """
-          <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-          <testEntity>
-              <address>
-                  <street>123 W 14th St</street>
-                  <street>8th Fl</street>
-                  <street>Rm 8</street>
-                  <city>New York</city>
-                  <sp>NY</sp>
-                  <pc>10011</pc>
-                  <cc>US</cc>
-              </address>
-          </testEntity>
-          """;
+      <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+      <testEntity>
+          <address>
+              <street>123 W 14th St</street>
+              <street>8th Fl</street>
+              <street>Rm 8</street>
+              <city>New York</city>
+              <sp>NY</sp>
+              <pc>10011</pc>
+              <cc>US</cc>
+          </address>
+      </testEntity>
+      """;
 
   private TestAddress address = createAddress("123 W 14th St", "8th Fl", "Rm 8");
   private TestEntity entity = new TestEntity(1L, address);
 
   private static TestEntity saveAndLoad(TestEntity entity) {
-    insertInDb(entity);
+    persistResource(entity);
     return loadByEntity(entity);
   }
 

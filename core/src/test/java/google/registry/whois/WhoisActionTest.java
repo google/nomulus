@@ -24,7 +24,7 @@ import static google.registry.testing.DatabaseHelper.createTlds;
 import static google.registry.testing.DatabaseHelper.loadRegistrar;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistResource;
-import static google.registry.testing.DatabaseHelper.persistSimpleResources;
+import static google.registry.testing.DatabaseHelper.persistResources;
 import static google.registry.testing.FullFieldsTestEntityHelper.makeDomain;
 import static google.registry.testing.FullFieldsTestEntityHelper.makeRegistrar;
 import static google.registry.testing.FullFieldsTestEntityHelper.makeRegistrarPocs;
@@ -134,7 +134,7 @@ public class WhoisActionTest {
     Registrar registrar =
         persistResource(makeRegistrar("evilregistrar", "Yes Virginia", ACTIVE));
     persistResource(makeDomainWithRegistrar(registrar));
-    persistSimpleResources(makeRegistrarPocs(registrar));
+    persistResources(makeRegistrarPocs(registrar));
     newWhoisAction("domain cat.lol\r\n").run();
     assertThat(response.getStatus()).isEqualTo(200);
     assertThat(response.getPayload()).isEqualTo(loadFile("whois_action_domain.txt"));
@@ -145,7 +145,7 @@ public class WhoisActionTest {
     Registrar registrar =
         persistResource(makeRegistrar("evilregistrar", "Yes Virginia", ACTIVE));
     persistResource(makeDomainWithRegistrar(registrar));
-    persistSimpleResources(makeRegistrarPocs(registrar));
+    persistResources(makeRegistrarPocs(registrar));
     // Populate the cache for both the domain and contact.
     Domain domain = loadByForeignKeyByCacheIfEnabled(Domain.class, "cat.lol", clock.nowUtc()).get();
     Contact contact =
@@ -178,7 +178,7 @@ public class WhoisActionTest {
 
     Registrar registrar = persistResource(makeRegistrar("evilregistrar", "Yes Virginia", ACTIVE));
     persistResource(makeDomainWithRegistrar(registrar));
-    persistSimpleResources(makeRegistrarPocs(registrar));
+    persistResources(makeRegistrarPocs(registrar));
     newWhoisAction("domain cat.lol\r\n").run();
     assertThat(response.getStatus()).isEqualTo(200);
     assertThat(response.getPayload()).isEqualTo(loadFile("whois_action_domain.txt"));
@@ -214,7 +214,7 @@ public class WhoisActionTest {
                     .setTransferRequestTrid(Trid.create("client-trid", "server-trid"))
                     .build())
             .build());
-    persistSimpleResources(makeRegistrarPocs(registrar));
+    persistResources(makeRegistrarPocs(registrar));
     clock.setTo(DateTime.parse("2011-01-01T00:00:00Z"));
 
     newWhoisAction("domain cat.lol\r\n").run();
@@ -241,7 +241,7 @@ public class WhoisActionTest {
             persistResource(
                 FullFieldsTestEntityHelper.makeHost("ns2.cat.みんな", "bad:f00d:cafe::15:beef")),
             registrar));
-    persistSimpleResources(makeRegistrarPocs(registrar));
+    persistResources(makeRegistrarPocs(registrar));
     newWhoisAction("domain cat.みんな\r\n").run();
     assertThat(response.getStatus()).isEqualTo(200);
     assertThat(response.getPayload()).isEqualTo(loadFile("whois_action_idn_punycode.txt"));
@@ -265,7 +265,7 @@ public class WhoisActionTest {
             persistResource(
                 FullFieldsTestEntityHelper.makeHost("ns2.cat.みんな", "bad:f00d:cafe::15:beef")),
             registrar));
-    persistSimpleResources(makeRegistrarPocs(registrar));
+    persistResources(makeRegistrarPocs(registrar));
     newWhoisAction("domain cat.xn--q9jyb4c\r\n").run();
     assertThat(response.getStatus()).isEqualTo(200);
     assertThat(response.getPayload()).isEqualTo(loadFile("whois_action_idn_punycode.txt"));
@@ -311,7 +311,7 @@ public class WhoisActionTest {
             persistResource(
                 FullFieldsTestEntityHelper.makeHost("ns2.cat.lol", "bad:f00d:cafe::15:beef")),
             registrar));
-    persistSimpleResources(makeRegistrarPocs(registrar));
+    persistResources(makeRegistrarPocs(registrar));
     newWhoisAction("domain cat.lol\r\n").run();
     assertThat(response.getStatus()).isEqualTo(200);
     assertThat(response.getPayload()).isEqualTo(loadFile("whois_action_domain_not_found.txt"));
@@ -339,7 +339,7 @@ public class WhoisActionTest {
             .asBuilder()
             .setDeletionTime(clock.nowUtc().minusDays(1))
             .build());
-    persistSimpleResources(makeRegistrarPocs(registrar));
+    persistResources(makeRegistrarPocs(registrar));
     newWhoisAction("domain cat.lol\r\n").run();
     assertThat(response.getStatus()).isEqualTo(200);
     assertThat(response.getPayload()).isEqualTo(loadFile("whois_action_domain_not_found.txt"));
@@ -396,7 +396,7 @@ public class WhoisActionTest {
                 .asBuilder()
                 .setCreationTimeForTest(clock.nowUtc())
                 .build());
-    persistSimpleResources(makeRegistrarPocs(registrar));
+    persistResources(makeRegistrarPocs(registrar));
     assertThat(domain1.getRepoId()).isNotEqualTo(domain2.getRepoId());
     newWhoisAction("domain cat.lol\r\n").run();
     assertThat(response.getStatus()).isEqualTo(200);
@@ -546,7 +546,7 @@ public class WhoisActionTest {
   void testRun_registrarLookup_works() {
     Registrar registrar = persistResource(
         makeRegistrar("example", "Example Registrar, Inc.", ACTIVE));
-    persistSimpleResources(makeRegistrarPocs(registrar));
+    persistResources(makeRegistrarPocs(registrar));
     // Notice the partial search without "inc".
     newWhoisAction("registrar example registrar").run();
     assertThat(response.getStatus()).isEqualTo(200);
@@ -562,7 +562,7 @@ public class WhoisActionTest {
                 .setIanaIdentifier(9995L)
                 .setType(PDT)
                 .build());
-    persistSimpleResources(makeRegistrarPocs(registrar));
+    persistResources(makeRegistrarPocs(registrar));
     // Notice the partial search without "inc".
     newWhoisAction("registrar example registrar").run();
     assertThat(response.getStatus()).isEqualTo(200);
@@ -573,7 +573,7 @@ public class WhoisActionTest {
   void testRun_registrarLookupInPendingState_returnsNotFound() {
     Registrar registrar = persistResource(
         makeRegistrar("example", "Example Registrar, Inc.", Registrar.State.PENDING));
-    persistSimpleResources(makeRegistrarPocs(registrar));
+    persistResources(makeRegistrarPocs(registrar));
     newWhoisAction("registrar Example Registrar, Inc.").run();
     assertThat(response.getStatus()).isEqualTo(200);
     assertThat(response.getPayload()).isEqualTo(loadFile("whois_action_registrar_not_found.txt"));
@@ -587,7 +587,7 @@ public class WhoisActionTest {
             .setIanaIdentifier(null)
             .setType(Registrar.Type.TEST)
             .build());
-    persistSimpleResources(makeRegistrarPocs(registrar));
+    persistResources(makeRegistrarPocs(registrar));
     newWhoisAction("registrar Example Registrar, Inc.").run();
     assertThat(response.getStatus()).isEqualTo(200);
     assertThat(response.getPayload()).isEqualTo(loadFile("whois_action_registrar_not_found.txt"));
@@ -612,7 +612,7 @@ public class WhoisActionTest {
             persistResource(
                 FullFieldsTestEntityHelper.makeHost("ns2.cat.1.test", "bad:f00d:cafe::15:beef")),
             registrar));
-    persistSimpleResources(makeRegistrarPocs(registrar));
+    persistResources(makeRegistrarPocs(registrar));
 
     newWhoisAction("domain cat.1.test\r\n").run();
     assertThat(response.getStatus()).isEqualTo(200);

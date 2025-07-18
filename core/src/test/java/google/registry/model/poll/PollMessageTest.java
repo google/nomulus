@@ -17,7 +17,6 @@ package google.registry.model.poll;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.createTld;
-import static google.registry.testing.DatabaseHelper.insertInDb;
 import static google.registry.testing.DatabaseHelper.loadByKey;
 import static google.registry.testing.DatabaseHelper.persistActiveContact;
 import static google.registry.testing.DatabaseHelper.persistResource;
@@ -90,12 +89,12 @@ public class PollMessageTest extends EntityTestCase {
 
   @Test
   void testCloudSqlSupportForPolymorphicVKey() {
-    insertInDb(oneTime);
+    persistResource(oneTime);
     PollMessage persistedOneTime = loadByKey(VKey.create(PollMessage.class, oneTime.getId()));
     assertThat(persistedOneTime).isInstanceOf(PollMessage.OneTime.class);
     assertThat(persistedOneTime).isEqualTo(oneTime);
 
-    insertInDb(autoRenew);
+    persistResource(autoRenew);
     PollMessage persistedAutoRenew = loadByKey(VKey.create(PollMessage.class, autoRenew.getId()));
     assertThat(persistedAutoRenew).isInstanceOf(PollMessage.Autorenew.class);
     assertThat(persistedAutoRenew).isEqualTo(autoRenew);

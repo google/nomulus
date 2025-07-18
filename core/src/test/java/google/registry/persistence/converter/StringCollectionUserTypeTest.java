@@ -17,7 +17,7 @@ package google.registry.persistence.converter;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.testing.DatabaseHelper.insertInDb;
+import static google.registry.testing.DatabaseHelper.persistResource;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableList;
@@ -45,7 +45,7 @@ public class StringCollectionUserTypeTest {
     List<ListElement> value =
         ImmutableList.of(new ListElement("app"), new ListElement("dev"), new ListElement("com"));
     TestEntity testEntity = new TestEntity(value);
-    insertInDb(testEntity);
+    persistResource(testEntity);
     TestEntity persisted =
         tm().transact(() -> tm().getEntityManager().find(TestEntity.class, "id"));
     assertThat(persisted.value).containsExactlyElementsIn(value);
@@ -56,7 +56,7 @@ public class StringCollectionUserTypeTest {
     List<ListElement> value =
         ImmutableList.of(new ListElement("app"), new ListElement("dev"), new ListElement("com"));
     TestEntity testEntity = new TestEntity(value);
-    insertInDb(testEntity);
+    persistResource(testEntity);
     TestEntity persisted =
         tm().transact(() -> tm().getEntityManager().find(TestEntity.class, "id"));
     persisted.value = ImmutableList.of(new ListElement("app"), new ListElement("org"));
@@ -68,7 +68,7 @@ public class StringCollectionUserTypeTest {
   @Test
   void testNullValue_writesAndReadsNullSuccessfully() {
     TestEntity testEntity = new TestEntity(null);
-    insertInDb(testEntity);
+    persistResource(testEntity);
     TestEntity persisted =
         tm().transact(() -> tm().getEntityManager().find(TestEntity.class, "id"));
     assertThat(persisted.value).isNull();
@@ -77,7 +77,7 @@ public class StringCollectionUserTypeTest {
   @Test
   void testEmptyCollection_writesAndReadsEmptyCollectionSuccessfully() {
     TestEntity testEntity = new TestEntity(ImmutableList.of());
-    insertInDb(testEntity);
+    persistResource(testEntity);
     TestEntity persisted =
         tm().transact(() -> tm().getEntityManager().find(TestEntity.class, "id"));
     assertThat(persisted.value).isEmpty();

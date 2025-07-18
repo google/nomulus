@@ -20,7 +20,6 @@ import static google.registry.request.Action.Method.GET;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.DatabaseHelper.persistResources;
-import static google.registry.testing.DatabaseHelper.persistSimpleResources;
 import static google.registry.testing.FullFieldsTestEntityHelper.makeAndPersistDeletedContact;
 import static google.registry.testing.FullFieldsTestEntityHelper.makeHistoryEntry;
 import static google.registry.testing.FullFieldsTestEntityHelper.makeRegistrar;
@@ -109,12 +108,12 @@ class RdapEntitySearchActionTest extends RdapSearchActionTestCase<RdapEntitySear
     registrarDeleted =
         persistResource(
             makeRegistrar("2-Registrar", "Yes Virginia <script>", Registrar.State.ACTIVE, 20L));
-    persistSimpleResources(makeRegistrarPocs(registrarDeleted));
+    persistResources(makeRegistrarPocs(registrarDeleted));
 
     // inactive
     registrarInactive =
         persistResource(makeRegistrar("2-RegistrarInact", "No Way", Registrar.State.PENDING, 21L));
-    persistSimpleResources(makeRegistrarPocs(registrarInactive));
+    persistResources(makeRegistrarPocs(registrarInactive));
 
     // test
     registrarTest =
@@ -124,7 +123,7 @@ class RdapEntitySearchActionTest extends RdapSearchActionTestCase<RdapEntitySear
                 .setType(Registrar.Type.TEST)
                 .setIanaIdentifier(null)
                 .build());
-    persistSimpleResources(makeRegistrarPocs(registrarTest));
+    persistResources(makeRegistrarPocs(registrarTest));
 
     FullFieldsTestEntityHelper.makeAndPersistContact(
         "blinky",
