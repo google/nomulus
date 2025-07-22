@@ -62,7 +62,7 @@ public class User extends UpdateAutoTimestampEntity implements Buildable {
   @Id @Expose String emailAddress;
 
   /** Optional external email address to use for registry lock confirmation emails. */
-  @Column String registryLockEmailAddress;
+  @Column @Expose String registryLockEmailAddress;
 
   /** Roles (which grant permissions) associated with this user. */
   @Expose
@@ -250,51 +250,50 @@ public class User extends UpdateAutoTimestampEntity implements Buildable {
   }
 
   @Override
-  public Builder<? extends User, ?> asBuilder() {
-    return new Builder<>(clone(this));
+  public Builder asBuilder() {
+    return new Builder(clone(this));
   }
 
   /** Builder for constructing immutable {@link User} objects. */
-  public static class Builder<T extends User, B extends Builder<T, B>>
-      extends GenericBuilder<T, B> {
+  public static class Builder extends Buildable.Builder<User> {
 
     public Builder() {}
 
-    public Builder(T abstractUser) {
-      super(abstractUser);
+    public Builder(User user) {
+      super(user);
     }
 
     @Override
-    public T build() {
+    public User build() {
       checkArgumentNotNull(getInstance().emailAddress, "Email address cannot be null");
       checkArgumentNotNull(getInstance().userRoles, "User roles cannot be null");
       return super.build();
     }
 
-    public B setEmailAddress(String emailAddress) {
+    public Builder setEmailAddress(String emailAddress) {
       getInstance().emailAddress = checkValidEmail(emailAddress);
-      return thisCastToDerived();
+      return this;
     }
 
-    public B setRegistryLockEmailAddress(@Nullable String registryLockEmailAddress) {
+    public Builder setRegistryLockEmailAddress(@Nullable String registryLockEmailAddress) {
       getInstance().registryLockEmailAddress =
           registryLockEmailAddress == null ? null : checkValidEmail(registryLockEmailAddress);
-      return thisCastToDerived();
+      return this;
     }
 
-    public B setUserRoles(UserRoles userRoles) {
+    public Builder setUserRoles(UserRoles userRoles) {
       checkArgumentNotNull(userRoles, "User roles cannot be null");
       getInstance().userRoles = userRoles;
-      return thisCastToDerived();
+      return this;
     }
 
-    public B removeRegistryLockPassword() {
+    public Builder removeRegistryLockPassword() {
       getInstance().registryLockPasswordHash = null;
       getInstance().registryLockPasswordSalt = null;
-      return thisCastToDerived();
+      return this;
     }
 
-    public B setRegistryLockPassword(String registryLockPassword) {
+    public Builder setRegistryLockPassword(String registryLockPassword) {
       checkArgument(
           getInstance().hasAnyRegistryLockPermission(), "User has no registry lock permission");
       checkArgument(
@@ -304,7 +303,7 @@ public class User extends UpdateAutoTimestampEntity implements Buildable {
       byte[] salt = SALT_SUPPLIER.get();
       getInstance().registryLockPasswordSalt = base64().encode(salt);
       getInstance().registryLockPasswordHash = hashPassword(registryLockPassword, salt);
-      return thisCastToDerived();
+      return this;
     }
   }
 }

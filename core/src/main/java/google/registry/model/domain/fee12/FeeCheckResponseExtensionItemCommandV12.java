@@ -18,7 +18,7 @@ import static google.registry.util.CollectionUtils.forceEmptyToNull;
 
 import com.google.common.base.Ascii;
 import com.google.common.collect.ImmutableList;
-import google.registry.model.Buildable.GenericBuilder;
+import google.registry.model.Buildable;
 import google.registry.model.ImmutableObject;
 import google.registry.model.domain.Period;
 import google.registry.model.domain.fee.Fee;
@@ -77,8 +77,7 @@ public class FeeCheckResponseExtensionItemCommandV12 extends ImmutableObject {
   }
 
   /** Builder for {@link FeeCheckResponseExtensionItemCommandV12}. */
-  public static class Builder
-      extends GenericBuilder<FeeCheckResponseExtensionItemCommandV12, Builder> {
+  public static class Builder extends Buildable.Builder<FeeCheckResponseExtensionItemCommandV12> {
 
     public Builder setCommandName(CommandName commandName) {
       getInstance().commandName = Ascii.toLowerCase(commandName.name());
