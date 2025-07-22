@@ -153,7 +153,7 @@ class ConsoleUsersActionTest extends ConsoleActionBaseTestCase {
         createAction(
             Optional.of(ConsoleApiParamsUtils.createFake(authResult)),
             Optional.of("POST"),
-            Optional.of(new UserData("a@d", RegistrarRole.ACCOUNT_MANAGER.toString(), null)));
+            Optional.of(new UserData("a@d", null, RegistrarRole.ACCOUNT_MANAGER.toString(), null)));
     action.cloudTasksUtils = cloudTasksHelper.getTestCloudTasksUtils();
     when(directory.users()).thenReturn(users);
     when(users.insert(any(com.google.api.services.directory.model.User.class))).thenReturn(insert);
@@ -170,7 +170,7 @@ class ConsoleUsersActionTest extends ConsoleActionBaseTestCase {
         createAction(
             Optional.of(ConsoleApiParamsUtils.createFake(authResult)),
             Optional.of("POST"),
-            Optional.of(new UserData("lol", RegistrarRole.ACCOUNT_MANAGER.toString(), null)));
+            Optional.of(new UserData("lol", null, RegistrarRole.ACCOUNT_MANAGER.toString(), null)));
     action.cloudTasksUtils = cloudTasksHelper.getTestCloudTasksUtils();
     when(directory.users()).thenReturn(users);
     when(users.insert(any(com.google.api.services.directory.model.User.class))).thenReturn(insert);
@@ -195,7 +195,8 @@ class ConsoleUsersActionTest extends ConsoleActionBaseTestCase {
             Optional.of(ConsoleApiParamsUtils.createFake(authResult)),
             Optional.of("DELETE"),
             Optional.of(
-                new UserData("test3@test.com", RegistrarRole.ACCOUNT_MANAGER.toString(), null)));
+                new UserData(
+                    "test3@test.com", null, RegistrarRole.ACCOUNT_MANAGER.toString(), null)));
     when(directory.users()).thenReturn(users);
     when(users.delete(any(String.class))).thenReturn(delete);
     action.run();
@@ -213,7 +214,8 @@ class ConsoleUsersActionTest extends ConsoleActionBaseTestCase {
             Optional.of(ConsoleApiParamsUtils.createFake(authResult)),
             Optional.of("DELETE"),
             Optional.of(
-                new UserData("email-1@email.com", RegistrarRole.ACCOUNT_MANAGER.toString(), null)));
+                new UserData(
+                    "email-1@email.com", null, RegistrarRole.ACCOUNT_MANAGER.toString(), null)));
     when(directory.users()).thenReturn(users);
     when(users.delete(any(String.class))).thenReturn(delete);
     action.run();
@@ -235,7 +237,8 @@ class ConsoleUsersActionTest extends ConsoleActionBaseTestCase {
             Optional.of(ConsoleApiParamsUtils.createFake(authResult)),
             Optional.of("DELETE"),
             Optional.of(
-                new UserData("test2@test.com", RegistrarRole.ACCOUNT_MANAGER.toString(), null)));
+                new UserData(
+                    "test2@test.com", null, RegistrarRole.ACCOUNT_MANAGER.toString(), null)));
     action.cloudTasksUtils = cloudTasksHelper.getTestCloudTasksUtils();
     when(directory.users()).thenReturn(users);
     when(users.delete(any(String.class))).thenReturn(delete);
@@ -274,7 +277,8 @@ class ConsoleUsersActionTest extends ConsoleActionBaseTestCase {
             Optional.of(ConsoleApiParamsUtils.createFake(authResult)),
             Optional.of("DELETE"),
             Optional.of(
-                new UserData("test4@test.com", RegistrarRole.ACCOUNT_MANAGER.toString(), null)));
+                new UserData(
+                    "test4@test.com", null, RegistrarRole.ACCOUNT_MANAGER.toString(), null)));
 
     action.cloudTasksUtils = cloudTasksHelper.getTestCloudTasksUtils();
     when(directory.users()).thenReturn(users);
@@ -318,7 +322,8 @@ class ConsoleUsersActionTest extends ConsoleActionBaseTestCase {
             Optional.of(ConsoleApiParamsUtils.createFake(authResult)),
             Optional.of("POST"),
             Optional.of(
-                new UserData("test3@test.com", RegistrarRole.ACCOUNT_MANAGER.toString(), null)));
+                new UserData(
+                    "test3@test.com", null, RegistrarRole.ACCOUNT_MANAGER.toString(), null)));
     action.cloudTasksUtils = cloudTasksHelper.getTestCloudTasksUtils();
     when(directory.users()).thenReturn(users);
     when(users.insert(any(com.google.api.services.directory.model.User.class))).thenReturn(insert);
@@ -348,7 +353,8 @@ class ConsoleUsersActionTest extends ConsoleActionBaseTestCase {
             Optional.of(ConsoleApiParamsUtils.createFake(authResult)),
             Optional.of("PUT"),
             Optional.of(
-                new UserData("test2@test.com", RegistrarRole.ACCOUNT_MANAGER.toString(), null)));
+                new UserData(
+                    "test2@test.com", null, RegistrarRole.ACCOUNT_MANAGER.toString(), null)));
     action.cloudTasksUtils = cloudTasksHelper.getTestCloudTasksUtils();
     action.run();
     assertThat(response.getStatus()).isEqualTo(SC_OK);
@@ -374,7 +380,8 @@ class ConsoleUsersActionTest extends ConsoleActionBaseTestCase {
             Optional.of(ConsoleApiParamsUtils.createFake(authResult)),
             Optional.of("PUT"),
             Optional.of(
-                new UserData("test3@test.com", RegistrarRole.ACCOUNT_MANAGER.toString(), null)));
+                new UserData(
+                    "test3@test.com", null, RegistrarRole.ACCOUNT_MANAGER.toString(), null)));
     action.run();
     assertThat(response.getStatus()).isEqualTo(SC_FORBIDDEN);
     assertThat(response.getPayload())

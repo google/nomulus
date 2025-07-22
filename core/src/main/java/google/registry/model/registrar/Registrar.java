@@ -690,8 +690,8 @@ public class Registrar extends UpdateAutoTimestampEntity implements Buildable, J
   }
 
   @Override
-  public Builder<? extends Registrar, ?> asBuilder() {
-    return new Builder<>(clone(this));
+  public Builder asBuilder() {
+    return new Builder(clone(this));
   }
 
   @Override
@@ -706,59 +706,58 @@ public class Registrar extends UpdateAutoTimestampEntity implements Buildable, J
   }
 
   /** A builder for constructing {@link Registrar}, since it is immutable. */
-  public static class Builder<T extends Registrar, B extends Builder<T, B>>
-      extends GenericBuilder<T, B> {
+  public static class Builder extends Buildable.Builder<Registrar> {
     public Builder() {}
 
-    public Builder(T instance) {
+    public Builder(Registrar instance) {
       super(instance);
     }
 
-    public B setRegistrarId(String registrarId) {
+    public Builder setRegistrarId(String registrarId) {
       // Registrar id must be [3,16] chars long. See "clIDType" in the base EPP schema of RFC 5730.
       // (Need to validate this here as there's no matching EPP XSD for validation.)
       checkArgument(
           Range.closed(3, 16).contains(registrarId.length()),
           "Registrar ID must be 3-16 characters long.");
       getInstance().registrarId = registrarId;
-      return thisCastToDerived();
+      return this;
     }
 
-    public B setIanaIdentifier(@Nullable Long ianaIdentifier) {
+    public Builder setIanaIdentifier(@Nullable Long ianaIdentifier) {
       checkArgument(
           ianaIdentifier == null || ianaIdentifier > 0, "IANA ID must be a positive number");
       getInstance().ianaIdentifier = ianaIdentifier;
-      return thisCastToDerived();
+      return this;
     }
 
-    public B setPoNumber(Optional<String> poNumber) {
+    public Builder setPoNumber(Optional<String> poNumber) {
       getInstance().poNumber = poNumber.orElse(null);
-      return thisCastToDerived();
+      return this;
     }
 
-    public B setBillingAccountMap(@Nullable Map<CurrencyUnit, String> billingAccountMap) {
+    public Builder setBillingAccountMap(@Nullable Map<CurrencyUnit, String> billingAccountMap) {
       getInstance().billingAccountMap = nullToEmptyImmutableCopy(billingAccountMap);
-      return thisCastToDerived();
+      return this;
     }
 
-    public B setRegistrarName(String registrarName) {
+    public Builder setRegistrarName(String registrarName) {
       getInstance().registrarName = registrarName;
-      return thisCastToDerived();
+      return this;
     }
 
-    public B setType(Type type) {
+    public Builder setType(Type type) {
       getInstance().type = type;
-      return thisCastToDerived();
+      return this;
     }
 
-    public B setState(State state) {
+    public Builder setState(State state) {
       getInstance().state = state;
-      return thisCastToDerived();
+      return this;
     }
 
-    public B setAllowedTlds(Set<String> allowedTlds) {
+    public Builder setAllowedTlds(Set<String> allowedTlds) {
       getInstance().allowedTlds = ImmutableSortedSet.copyOf(assertTldsExist(allowedTlds));
-      return thisCastToDerived();
+      return this;
     }
 
     /**
@@ -771,7 +770,7 @@ public class Registrar extends UpdateAutoTimestampEntity implements Buildable, J
      * {@code .now()} when saving the Registry entity to make sure it's actually saved before trying
      * to set the allowed TLDs.
      */
-    public B setAllowedTldsUncached(Set<String> allowedTlds) {
+    public Builder setAllowedTldsUncached(Set<String> allowedTlds) {
       ImmutableSet<VKey<Tld>> newTldKeys =
           Sets.difference(allowedTlds, getInstance().getAllowedTlds()).stream()
               .map(Tld::createVKey)
@@ -780,10 +779,10 @@ public class Registrar extends UpdateAutoTimestampEntity implements Buildable, J
           Sets.difference(newTldKeys, tm().loadByKeysIfPresent(newTldKeys).keySet());
       checkArgument(missingTldKeys.isEmpty(), "Trying to set nonexistent TLDs: %s", missingTldKeys);
       getInstance().allowedTlds = ImmutableSortedSet.copyOf(allowedTlds);
-      return thisCastToDerived();
+      return this;
     }
 
-    public B setClientCertificate(String clientCertificate, DateTime now) {
+    public Builder setClientCertificate(String clientCertificate, DateTime now) {
       clientCertificate = emptyToNull(clientCertificate);
       String clientCertificateHash = calculateHash(clientCertificate);
       if (!Objects.equals(clientCertificate, getInstance().clientCertificate)
@@ -792,23 +791,23 @@ public class Registrar extends UpdateAutoTimestampEntity implements Buildable, J
         getInstance().clientCertificateHash = clientCertificateHash;
         getInstance().lastCertificateUpdateTime = now;
       }
-      return thisCastToDerived();
+      return this;
     }
 
-    public B setLastExpiringCertNotificationSentDate(DateTime now) {
+    public Builder setLastExpiringCertNotificationSentDate(DateTime now) {
       checkArgumentNotNull(now, "Registrar lastExpiringCertNotificationSentDate cannot be null");
       getInstance().lastExpiringCertNotificationSentDate = now;
-      return thisCastToDerived();
+      return this;
     }
 
-    public B setLastExpiringFailoverCertNotificationSentDate(DateTime now) {
+    public Builder setLastExpiringFailoverCertNotificationSentDate(DateTime now) {
       checkArgumentNotNull(
           now, "Registrar lastExpiringFailoverCertNotificationSentDate cannot be null");
       getInstance().lastExpiringFailoverCertNotificationSentDate = now;
-      return thisCastToDerived();
+      return this;
     }
 
-    public B setFailoverClientCertificate(String clientCertificate, DateTime now) {
+    public Builder setFailoverClientCertificate(String clientCertificate, DateTime now) {
       clientCertificate = emptyToNull(clientCertificate);
       String clientCertificateHash = calculateHash(clientCertificate);
       if (!Objects.equals(clientCertificate, getInstance().failoverClientCertificate)
@@ -817,13 +816,13 @@ public class Registrar extends UpdateAutoTimestampEntity implements Buildable, J
         getInstance().failoverClientCertificateHash = clientCertificateHash;
         getInstance().lastCertificateUpdateTime = now;
       }
-      return thisCastToDerived();
+      return this;
     }
 
-    public B setLastPocVerificationDate(DateTime now) {
+    public Builder setLastPocVerificationDate(DateTime now) {
       checkArgumentNotNull(now, "Registrar lastPocVerificationDate cannot be null");
       getInstance().lastPocVerificationDate = now;
-      return thisCastToDerived();
+      return this;
     }
 
     private static String calculateHash(String clientCertificate) {
@@ -855,75 +854,75 @@ public class Registrar extends UpdateAutoTimestampEntity implements Buildable, J
                   Objects.equals(newInstance.ianaIdentifier, registrar.getIanaIdentifier()));
     }
 
-    public B setContactsRequireSyncing(boolean contactsRequireSyncing) {
+    public Builder setContactsRequireSyncing(boolean contactsRequireSyncing) {
       getInstance().contactsRequireSyncing = contactsRequireSyncing;
-      return thisCastToDerived();
+      return this;
     }
 
-    public B setIpAddressAllowList(Iterable<CidrAddressBlock> ipAddressAllowList) {
+    public Builder setIpAddressAllowList(Iterable<CidrAddressBlock> ipAddressAllowList) {
       getInstance().ipAddressAllowList = ImmutableList.copyOf(ipAddressAllowList);
-      return thisCastToDerived();
+      return this;
     }
 
-    public B setLocalizedAddress(RegistrarAddress localizedAddress) {
+    public Builder setLocalizedAddress(RegistrarAddress localizedAddress) {
       getInstance().localizedAddress = localizedAddress;
-      return thisCastToDerived();
+      return this;
     }
 
-    public B setInternationalizedAddress(RegistrarAddress internationalizedAddress) {
+    public Builder setInternationalizedAddress(RegistrarAddress internationalizedAddress) {
       getInstance().internationalizedAddress = internationalizedAddress;
-      return thisCastToDerived();
+      return this;
     }
 
-    public B setPhoneNumber(String phoneNumber) {
+    public Builder setPhoneNumber(String phoneNumber) {
       getInstance().phoneNumber = (phoneNumber == null) ? null : checkValidPhoneNumber(phoneNumber);
-      return thisCastToDerived();
+      return this;
     }
 
-    public B setFaxNumber(String faxNumber) {
+    public Builder setFaxNumber(String faxNumber) {
       getInstance().faxNumber = (faxNumber == null) ? null : checkValidPhoneNumber(faxNumber);
-      return thisCastToDerived();
+      return this;
     }
 
-    public B setEmailAddress(String emailAddress) {
+    public Builder setEmailAddress(String emailAddress) {
       getInstance().emailAddress = checkValidEmail(emailAddress);
-      return thisCastToDerived();
+      return this;
     }
 
-    public B setWhoisServer(String whoisServer) {
+    public Builder setWhoisServer(String whoisServer) {
       getInstance().whoisServer = whoisServer;
-      return thisCastToDerived();
+      return this;
     }
 
-    public B setRdapBaseUrls(Set<String> rdapBaseUrls) {
+    public Builder setRdapBaseUrls(Set<String> rdapBaseUrls) {
       getInstance().rdapBaseUrls = ImmutableSet.copyOf(rdapBaseUrls);
-      return thisCastToDerived();
+      return this;
     }
 
-    public B setBlockPremiumNames(boolean blockPremiumNames) {
+    public Builder setBlockPremiumNames(boolean blockPremiumNames) {
       getInstance().blockPremiumNames = blockPremiumNames;
-      return thisCastToDerived();
+      return this;
     }
 
-    public B setUrl(String url) {
+    public Builder setUrl(String url) {
       getInstance().url = url;
-      return thisCastToDerived();
+      return this;
     }
 
-    public B setIcannReferralEmail(String icannReferralEmail) {
+    public Builder setIcannReferralEmail(String icannReferralEmail) {
       getInstance().icannReferralEmail = checkValidEmail(icannReferralEmail);
-      return thisCastToDerived();
+      return this;
     }
 
-    public B setDriveFolderId(@Nullable String driveFolderId) {
+    public Builder setDriveFolderId(@Nullable String driveFolderId) {
       checkArgument(
           driveFolderId == null || !driveFolderId.contains("/"),
           "Drive folder ID must not be a full URL");
       getInstance().driveFolderId = driveFolderId;
-      return thisCastToDerived();
+      return this;
     }
 
-    public B setPassword(String password) {
+    public Builder setPassword(String password) {
       // Passwords must be [6,16] chars long. See "pwType" in the base EPP schema of RFC 5730.
       checkArgument(
           Range.closed(6, 16).contains(nullToEmpty(password).length()),
@@ -931,7 +930,7 @@ public class Registrar extends UpdateAutoTimestampEntity implements Buildable, J
       byte[] salt = SALT_SUPPLIER.get();
       getInstance().salt = base64().encode(salt);
       getInstance().passwordHash = hashPassword(password, salt);
-      return thisCastToDerived();
+      return this;
     }
 
     /**
@@ -939,18 +938,18 @@ public class Registrar extends UpdateAutoTimestampEntity implements Buildable, J
      *
      * @throws IllegalArgumentException if provided passcode is not 5-digit numeric
      */
-    public B setPhonePasscode(String phonePasscode) {
+    public Builder setPhonePasscode(String phonePasscode) {
       checkArgument(
           phonePasscode == null || PHONE_PASSCODE_PATTERN.matcher(phonePasscode).matches(),
           "Not a valid telephone passcode (must be 5 digits long): %s",
           phonePasscode);
       getInstance().phonePasscode = phonePasscode;
-      return thisCastToDerived();
+      return this;
     }
 
-    public B setRegistryLockAllowed(boolean registryLockAllowed) {
+    public Builder setRegistryLockAllowed(boolean registryLockAllowed) {
       getInstance().registryLockAllowed = registryLockAllowed;
-      return thisCastToDerived();
+      return this;
     }
 
     /**
@@ -958,14 +957,14 @@ public class Registrar extends UpdateAutoTimestampEntity implements Buildable, J
      * and breaks the verification that an object has not been updated since it was copied.
      */
     @VisibleForTesting
-    public B setLastUpdateTime(DateTime timestamp) {
+    public Builder setLastUpdateTime(DateTime timestamp) {
       getInstance().setUpdateTimestamp(UpdateAutoTimestamp.create(timestamp));
-      return thisCastToDerived();
+      return this;
     }
 
     /** Build the registrar, nullifying empty fields. */
     @Override
-    public T build() {
+    public Registrar build() {
       checkArgumentNotNull(getInstance().type, "Registrar type cannot be null");
       checkArgumentNotNull(getInstance().registrarName, "Registrar name cannot be null");
       checkArgument(

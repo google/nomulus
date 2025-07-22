@@ -119,6 +119,7 @@ public class ConsoleUsersAction extends ConsoleApiAction {
                 u ->
                     new UserData(
                         u.getEmailAddress(),
+                        u.getRegistryLockEmailAddress().orElse(null),
                         u.getUserRoles().getRegistrarRoles().get(registrarId).toString(),
                         null))
             .collect(Collectors.toList());
@@ -237,7 +238,9 @@ public class ConsoleUsersAction extends ConsoleApiAction {
         .setPayload(
             consoleApiParams
                 .gson()
-                .toJson(new UserData(newEmail, ACCOUNT_MANAGER.toString(), newUser.getPassword())));
+                .toJson(
+                    new UserData(
+                        newEmail, null, ACCOUNT_MANAGER.toString(), newUser.getPassword())));
     finishAndPersistConsoleUpdateHistory(
         new ConsoleUpdateHistory.Builder()
             .setType(ConsoleUpdateHistory.Type.USER_CREATE)
@@ -345,5 +348,8 @@ public class ConsoleUsersAction extends ConsoleApiAction {
   }
 
   public record UserData(
-      @Expose String emailAddress, @Expose String role, @Expose @Nullable String password) {}
+      @Expose String emailAddress,
+      @Expose String registryLockEmailAddress,
+      @Expose String role,
+      @Expose @Nullable String password) {}
 }
