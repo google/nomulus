@@ -31,7 +31,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedSet;
 import com.google.gson.annotations.Expose;
-import google.registry.model.Buildable.GenericBuilder;
+import google.registry.model.Buildable;
 import google.registry.model.ImmutableObject;
 import google.registry.model.JsonMapBuilder;
 import google.registry.model.Jsonifiable;
@@ -225,8 +225,8 @@ public class RegistrarPoc extends ImmutableObject implements Jsonifiable, Unsafe
     return visibleInDomainWhoisAsAbuse;
   }
 
-  public Builder<? extends RegistrarPoc, ?> asBuilder() {
-    return new Builder<>(clone(this));
+  public Builder asBuilder() {
+    return new Builder(clone(this));
   }
 
   public boolean isAllowedToSetRegistryLockPassword() {
@@ -332,17 +332,16 @@ public class RegistrarPoc extends ImmutableObject implements Jsonifiable, Unsafe
   }
 
   /** A builder for constructing a {@link RegistrarPoc}, since it is immutable. */
-  public static class Builder<T extends RegistrarPoc, B extends Builder<T, B>>
-      extends GenericBuilder<T, B> {
+  public static class Builder extends Buildable.Builder<RegistrarPoc> {
     public Builder() {}
 
-    protected Builder(T instance) {
+    protected Builder(RegistrarPoc instance) {
       super(instance);
     }
 
     /** Build the registrar, nullifying empty fields. */
     @Override
-    public T build() {
+    public RegistrarPoc build() {
       checkNotNull(getInstance().registrarId, "Registrar ID cannot be null");
       checkValidEmail(getInstance().emailAddress);
       // Check allowedToSetRegistryLockPassword here because if we want to allow the user to set
@@ -356,71 +355,71 @@ public class RegistrarPoc extends ImmutableObject implements Jsonifiable, Unsafe
       return cloneEmptyToNull(super.build());
     }
 
-    public B setName(String name) {
+    public Builder setName(String name) {
       getInstance().name = name;
-      return thisCastToDerived();
+      return this;
     }
 
-    public B setEmailAddress(String emailAddress) {
+    public Builder setEmailAddress(String emailAddress) {
       getInstance().emailAddress = emailAddress;
-      return thisCastToDerived();
+      return this;
     }
 
-    public B setRegistryLockEmailAddress(@Nullable String registryLockEmailAddress) {
+    public Builder setRegistryLockEmailAddress(@Nullable String registryLockEmailAddress) {
       getInstance().registryLockEmailAddress = registryLockEmailAddress;
-      return thisCastToDerived();
+      return this;
     }
 
-    public B setPhoneNumber(String phoneNumber) {
+    public Builder setPhoneNumber(String phoneNumber) {
       getInstance().phoneNumber = phoneNumber;
-      return thisCastToDerived();
+      return this;
     }
 
-    public B setRegistrarId(String registrarId) {
+    public Builder setRegistrarId(String registrarId) {
       getInstance().registrarId = registrarId;
-      return thisCastToDerived();
+      return this;
     }
 
-    public B setRegistrar(Registrar registrar) {
+    public Builder setRegistrar(Registrar registrar) {
       getInstance().registrarId = registrar.getRegistrarId();
-      return thisCastToDerived();
+      return this;
     }
 
-    public B setFaxNumber(String faxNumber) {
+    public Builder setFaxNumber(String faxNumber) {
       getInstance().faxNumber = faxNumber;
-      return thisCastToDerived();
+      return this;
     }
 
-    public B setTypes(Iterable<Type> types) {
+    public Builder setTypes(Iterable<Type> types) {
       getInstance().types = ImmutableSet.copyOf(types);
-      return thisCastToDerived();
+      return this;
     }
 
-    public B setVisibleInWhoisAsAdmin(boolean visible) {
+    public Builder setVisibleInWhoisAsAdmin(boolean visible) {
       getInstance().visibleInWhoisAsAdmin = visible;
-      return thisCastToDerived();
+      return this;
     }
 
-    public B setVisibleInWhoisAsTech(boolean visible) {
+    public Builder setVisibleInWhoisAsTech(boolean visible) {
       getInstance().visibleInWhoisAsTech = visible;
-      return thisCastToDerived();
+      return this;
     }
 
-    public B setVisibleInDomainWhoisAsAbuse(boolean visible) {
+    public Builder setVisibleInDomainWhoisAsAbuse(boolean visible) {
       getInstance().visibleInDomainWhoisAsAbuse = visible;
-      return thisCastToDerived();
+      return this;
     }
 
-    public B setAllowedToSetRegistryLockPassword(boolean allowedToSetRegistryLockPassword) {
+    public Builder setAllowedToSetRegistryLockPassword(boolean allowedToSetRegistryLockPassword) {
       if (allowedToSetRegistryLockPassword) {
         getInstance().registryLockPasswordSalt = null;
         getInstance().registryLockPasswordHash = null;
       }
       getInstance().allowedToSetRegistryLockPassword = allowedToSetRegistryLockPassword;
-      return thisCastToDerived();
+      return this;
     }
 
-    public B setRegistryLockPassword(String registryLockPassword) {
+    public Builder setRegistryLockPassword(String registryLockPassword) {
       checkArgument(
           getInstance().allowedToSetRegistryLockPassword,
           "Not allowed to set registry lock password for this contact");
@@ -430,7 +429,7 @@ public class RegistrarPoc extends ImmutableObject implements Jsonifiable, Unsafe
       getInstance().registryLockPasswordSalt = base64().encode(salt);
       getInstance().registryLockPasswordHash = hashPassword(registryLockPassword, salt);
       getInstance().allowedToSetRegistryLockPassword = false;
-      return thisCastToDerived();
+      return this;
     }
   }
 

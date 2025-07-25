@@ -280,4 +280,15 @@ export class BackendService {
       `/console-api/registry-lock-verify?lockVerificationCode=${lockVerificationCode}`
     );
   }
+
+  requestRegistryLockPasswordReset(
+    registrarId: string,
+    registryLockEmail: string
+  ) {
+    return this.http.post('/console-api/password-reset-request', {
+      type: 'REGISTRY_LOCK',
+      registrarId,
+      registryLockEmail,
+    });
+  }
 }

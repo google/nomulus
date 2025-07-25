@@ -33,6 +33,7 @@ export interface User {
   emailAddress: string;
   role: string;
   password?: string;
+  registryLockEmailAddress?: string;
 }
 
 @Injectable()
