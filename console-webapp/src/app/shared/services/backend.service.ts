@@ -291,4 +291,11 @@ export class BackendService {
       registryLockEmail,
     });
   }
+
+  requestEppPasswordReset(registrarId: string) {
+    return this.http.post('/console-api/password-reset-request', {
+      type: 'EPP',
+      registrarId,
+    });
+  }
 }
