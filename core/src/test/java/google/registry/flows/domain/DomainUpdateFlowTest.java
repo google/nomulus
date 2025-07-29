@@ -346,18 +346,18 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
   }
 
   @Test
-  void testFailure_minimumDatasetPhase2_nonRegistrantContactsStillExist() throws Exception {
+  void testFailure_minimumDatasetPhase2_whenAddingNewContacts() throws Exception {
     persistResource(
         new FeatureFlag.Builder()
             .setFeatureName(MINIMUM_DATASET_CONTACTS_PROHIBITED)
             .setStatusMap(
                 ImmutableSortedMap.of(START_OF_TIME, INACTIVE, clock.nowUtc().minusDays(5), ACTIVE))
             .build());
+    // This EPP adds a new technical contact mak21 that wasn't already present.
     setEppInput("domain_update_empty_registrant.xml");
     persistReferencedEntities();
     persistDomain();
-    // Fails because after the update the domain would still have some contacts on it even though
-    // the registrant has been removed.
+    // Fails because the update adds some new contacts, although the registrant has been removed.
     ContactsProhibitedException thrown =
         assertThrows(ContactsProhibitedException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
@@ -1574,14 +1574,13 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
   }
 
   @Test
-  void testFailure_minimumDatasetPhase2_registrantStillExists() throws Exception {
+  void testFailure_minimumDatasetPhase2_addingNewRegistrantFails() throws Exception {
     persistResource(
         new FeatureFlag.Builder()
             .setFeatureName(MINIMUM_DATASET_CONTACTS_PROHIBITED)
             .setStatusMap(
                 ImmutableSortedMap.of(START_OF_TIME, INACTIVE, clock.nowUtc().minusDays(5), ACTIVE))
             .build());
-    setEppInput("domain_update_remove_admin.xml");
     persistReferencedEntities();
     persistResource(
         DatabaseHelper.newDomain(getUniqueIdFromCommand())
@@ -1590,7 +1589,10 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
                 ImmutableSet.of(
                     DesignatedContact.create(Type.ADMIN, sh8013Contact.createVKey()),
                     DesignatedContact.create(Type.TECH, sh8013Contact.createVKey())))
+            .setRegistrant(Optional.empty())
             .build());
+    // This EPP sets the registrant to sh8013, whereas in our test setup it is absent.
+    setEppInput("domain_update_registrant.xml");
     RegistrantProhibitedException thrown =
         assertThrows(RegistrantProhibitedException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
@@ -1655,6 +1657,32 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
     Domain updatedDomain = reloadResourceByForeignKey();
     assertThat(updatedDomain.getRegistrant()).isEmpty();
     assertThat(updatedDomain.getContacts()).isEmpty();
+  }
+
+  @Test
+  void testSuccess_minimumDatasetPhase2_removeOneContact() throws Exception {
+    persistResource(
+        new FeatureFlag.Builder()
+            .setFeatureName(MINIMUM_DATASET_CONTACTS_PROHIBITED)
+            .setStatusMap(
+                ImmutableSortedMap.of(START_OF_TIME, INACTIVE, clock.nowUtc().minusDays(5), ACTIVE))
+            .build());
+    setEppInput("domain_update_remove_admin.xml");
+    persistReferencedEntities();
+    persistResource(
+        DatabaseHelper.newDomain(getUniqueIdFromCommand())
+            .asBuilder()
+            .setContacts(
+                ImmutableSet.of(
+                    DesignatedContact.create(Type.ADMIN, sh8013Contact.createVKey()),
+                    DesignatedContact.create(Type.TECH, sh8013Contact.createVKey())))
+            .build());
+    assertThat(reloadResourceByForeignKey().getRegistrant()).isPresent();
+    assertThat(reloadResourceByForeignKey().getContacts()).hasSize(2);
+    runFlowAssertResponse(loadFile("generic_success_response.xml"));
+    Domain updatedDomain = reloadResourceByForeignKey();
+    assertThat(updatedDomain.getRegistrant()).isPresent();
+    assertThat(updatedDomain.getContacts()).hasSize(1);
   }
 
   @Test
