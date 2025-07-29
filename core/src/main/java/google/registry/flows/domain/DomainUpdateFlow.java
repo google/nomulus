@@ -30,7 +30,6 @@ import static google.registry.flows.ResourceFlowUtils.verifyResourceOwnership;
 import static google.registry.flows.domain.DomainFlowUtils.checkAllowedAccessToTld;
 import static google.registry.flows.domain.DomainFlowUtils.cloneAndLinkReferences;
 import static google.registry.flows.domain.DomainFlowUtils.updateDsData;
-import static google.registry.flows.domain.DomainFlowUtils.validateContactDataPresence;
 import static google.registry.flows.domain.DomainFlowUtils.validateContactsHaveTypes;
 import static google.registry.flows.domain.DomainFlowUtils.validateDsData;
 import static google.registry.flows.domain.DomainFlowUtils.validateFeesAckedIfPresent;
@@ -38,6 +37,7 @@ import static google.registry.flows.domain.DomainFlowUtils.validateNameserversAl
 import static google.registry.flows.domain.DomainFlowUtils.validateNameserversCountForTld;
 import static google.registry.flows.domain.DomainFlowUtils.validateNoDuplicateContacts;
 import static google.registry.flows.domain.DomainFlowUtils.validateRegistrantAllowedOnTld;
+import static google.registry.flows.domain.DomainFlowUtils.validateUpdateContactData;
 import static google.registry.flows.domain.DomainFlowUtils.verifyClientUpdateNotProhibited;
 import static google.registry.flows.domain.DomainFlowUtils.verifyNotInPendingDelete;
 import static google.registry.model.common.FeatureFlag.FeatureName.MINIMUM_DATASET_CONTACTS_OPTIONAL;
@@ -186,7 +186,7 @@ public final class DomainUpdateFlow implements MutatingFlow {
     Domain newDomain = performUpdate(command, existingDomain, now);
     DomainHistory domainHistory =
         historyBuilder.setType(DOMAIN_UPDATE).setDomain(newDomain).build();
-    validateNewState(newDomain);
+    validateNewState(existingDomain, newDomain);
     if (requiresDnsUpdate(existingDomain, newDomain)) {
       requestDomainDnsRefresh(targetId);
     }
@@ -328,8 +328,13 @@ public final class DomainUpdateFlow implements MutatingFlow {
    * compliant with the additions or amendments, otherwise existing data can become invalid and
    * cause Domain update failure.
    */
-  private static void validateNewState(Domain newDomain) throws EppException {
-    validateContactDataPresence(newDomain.getRegistrant(), newDomain.getContacts());
+  private static void validateNewState(Domain existingDomain, Domain newDomain)
+      throws EppException {
+    validateUpdateContactData(
+        existingDomain.getRegistrant(),
+        newDomain.getRegistrant(),
+        existingDomain.getContacts(),
+        newDomain.getContacts());
     validateDsData(newDomain.getDsData());
     validateNameserversCountForTld(
         newDomain.getTld(),

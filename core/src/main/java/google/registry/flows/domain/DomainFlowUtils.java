@@ -481,10 +481,10 @@ public class DomainFlowUtils {
   }
 
   /**
-   * Enforces the presence/absence of contact data depending on the minimum data set migration
-   * schedule.
+   * Enforces the presence/absence of contact data on domain creates depending on the minimum data
+   * set migration schedule.
    */
-  static void validateContactDataPresence(
+  static void validateCreateContactData(
       Optional<VKey<Contact>> registrant, Set<DesignatedContact> contacts)
       throws RequiredParameterMissingException, ParameterValuePolicyErrorException {
     // TODO(b/353347632): Change these flag checks to a registry config check once minimum data set
@@ -509,6 +509,45 @@ public class DomainFlowUtils {
         throw new MissingAdminContactException();
       }
       if (!roles.contains(Type.TECH)) {
+        throw new MissingTechnicalContactException();
+      }
+    }
+  }
+
+  /**
+   * Enforces the presence/absence of contact data on domain updates depending on the minimum data
+   * set migration schedule.
+   */
+  static void validateUpdateContactData(
+      Optional<VKey<Contact>> existingRegistrant,
+      Optional<VKey<Contact>> newRegistrant,
+      Set<DesignatedContact> existingContacts,
+      Set<DesignatedContact> newContacts)
+      throws RequiredParameterMissingException, ParameterValuePolicyErrorException {
+    // TODO(b/353347632): Change these flag checks to a registry config check once minimum data set
+    //                    migration is completed.
+    if (FeatureFlag.isActiveNow(MINIMUM_DATASET_CONTACTS_PROHIBITED)) {
+      // Throw if the update specifies a new registrant that is different from the existing one.
+      if (newRegistrant.isPresent() && !newRegistrant.equals(existingRegistrant)) {
+        throw new RegistrantProhibitedException();
+      }
+      // Throw if the update specifies any new contacts that weren't already present on the domain.
+      if (!Sets.difference(newContacts, existingContacts).isEmpty()) {
+        throw new ContactsProhibitedException();
+      }
+    } else if (!FeatureFlag.isActiveNow(MINIMUM_DATASET_CONTACTS_OPTIONAL)) {
+      // Throw if the update empties out a registrant that had been present.
+      if (newRegistrant.isEmpty() && existingRegistrant.isPresent()) {
+        throw new MissingRegistrantException();
+      }
+      // Throw if the update contains no admin contact when one had been present.
+      if (existingContacts.stream().anyMatch(c -> c.getType().equals(Type.ADMIN))
+          && newContacts.stream().noneMatch(c -> c.getType().equals(Type.ADMIN))) {
+        throw new MissingAdminContactException();
+      }
+      // Throw if the update contains no tech contact when one had been present.
+      if (existingContacts.stream().anyMatch(c -> c.getType().equals(Type.TECH))
+          && newContacts.stream().noneMatch(c -> c.getType().equals(Type.TECH))) {
         throw new MissingTechnicalContactException();
       }
     }
@@ -1054,7 +1093,7 @@ public class DomainFlowUtils {
     String tldStr = tld.getTldStr();
     validateRegistrantAllowedOnTld(tldStr, command.getRegistrantContactId());
     validateNoDuplicateContacts(command.getContacts());
-    validateContactDataPresence(command.getRegistrant(), command.getContacts());
+    validateCreateContactData(command.getRegistrant(), command.getContacts());
     ImmutableSet<String> hostNames = command.getNameserverHostNames();
     validateNameserversCountForTld(tldStr, domainName, hostNames.size());
     validateNameserversAllowedOnTld(tldStr, hostNames);
