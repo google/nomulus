@@ -154,6 +154,43 @@ class HostDeleteFlowTest extends ResourceFlowTestCase<HostDeleteFlow, Host> {
   }
 
   @Test
+  void testSuccess_clientDeleteProhibited_superuser() throws Exception {
+    persistResource(
+        persistActiveHost("ns1.example.tld")
+            .asBuilder()
+            .addStatusValue(StatusValue.CLIENT_DELETE_PROHIBITED)
+            .build());
+    runFlowAssertResponse(
+        CommitMode.LIVE, UserPrivileges.SUPERUSER, loadFile("host_delete_response.xml"));
+  }
+
+  @Test
+  void testSuccess_serverDeleteProhibited_superuser() throws Exception {
+    persistResource(
+        persistActiveHost("ns1.example.tld")
+            .asBuilder()
+            .addStatusValue(StatusValue.SERVER_DELETE_PROHIBITED)
+            .build());
+    runFlowAssertResponse(
+        CommitMode.LIVE, UserPrivileges.SUPERUSER, loadFile("host_delete_response.xml"));
+  }
+
+  @Test
+  void testFailure_pendingDelete_superuser() throws Exception {
+    persistResource(
+        persistActiveHost("ns1.example.tld")
+            .asBuilder()
+            .addStatusValue(StatusValue.PENDING_DELETE)
+            .build());
+    assertAboutEppExceptions()
+        .that(
+            assertThrows(
+                ResourceStatusProhibitsOperationException.class,
+                () -> runFlow(CommitMode.LIVE, UserPrivileges.SUPERUSER)))
+        .marshalsToXml();
+  }
+
+  @Test
   void testSuccess_authorizedClientReadFromSuperordinate() throws Exception {
     sessionMetadata.setRegistrarId("TheRegistrar");
     createTld("tld");
