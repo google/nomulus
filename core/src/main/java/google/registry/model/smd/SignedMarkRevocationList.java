@@ -95,10 +95,4 @@ public class SignedMarkRevocationList extends ImmutableObject {
   public int size() {
     return revokes.size();
   }
-
-  /** Save this list to Cloud SQL. Returns {@code this}. */
-  public SignedMarkRevocationList save() {
-    SignedMarkRevocationListDao.save(this);
-    return this;
-  }
 }

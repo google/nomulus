@@ -16,9 +16,12 @@ package google.registry.model.smd;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.ImmutableObjectSubject.assertAboutImmutableObjects;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import com.google.common.collect.ImmutableMap;
 import google.registry.model.EntityTestCase;
+import jakarta.persistence.OptimisticLockException;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.junit.jupiter.api.Test;
 
 public class SignedMarkRevocationListDaoTest extends EntityTestCase {
@@ -32,9 +35,27 @@ public class SignedMarkRevocationListDaoTest extends EntityTestCase {
     SignedMarkRevocationList list =
         SignedMarkRevocationList.create(
             fakeClock.nowUtc(), ImmutableMap.of("mark", fakeClock.nowUtc().minusHours(1)));
-    SignedMarkRevocationListDao.save(list);
+    list = SignedMarkRevocationListDao.save(list);
     SignedMarkRevocationList fromDb = SignedMarkRevocationListDao.load();
     assertAboutImmutableObjects().that(fromDb).isEqualExceptFields(list);
+  }
+
+  @Test
+  void testSave_retrySuccess() {
+    SignedMarkRevocationList list =
+        SignedMarkRevocationList.create(
+            fakeClock.nowUtc(), ImmutableMap.of("mark", fakeClock.nowUtc().minusHours(1)));
+    AtomicBoolean isFirstAttempt = new AtomicBoolean(true);
+    tm().transact(
+            () -> {
+              SignedMarkRevocationListDao.save(list);
+              if (isFirstAttempt.get()) {
+                isFirstAttempt.set(false);
+                throw new OptimisticLockException();
+              }
+            });
+    SignedMarkRevocationList fromDb = SignedMarkRevocationListDao.load();
+    assertAboutImmutableObjects().that(fromDb).isEqualExceptFields(list, "revisionId");
   }
 
   @Test

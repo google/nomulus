@@ -179,6 +179,7 @@ import google.registry.model.reporting.DomainTransactionRecord;
 import google.registry.model.reporting.DomainTransactionRecord.TransactionReportField;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.reporting.HistoryEntry.HistoryEntryId;
+import google.registry.model.smd.SignedMarkRevocationListDao;
 import google.registry.model.tld.Tld;
 import google.registry.model.tld.Tld.TldState;
 import google.registry.model.tld.Tld.TldType;
@@ -2727,8 +2728,9 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
 
   @Test
   void testFail_startDateSunriseRegistration_revokedSignedMark() throws Exception {
-    SmdrlCsvParser.parse(TmchTestData.loadFile("smd/smdrl.csv").lines().collect(toImmutableList()))
-        .save();
+    SignedMarkRevocationListDao.save(
+        SmdrlCsvParser.parse(
+            TmchTestData.loadFile("smd/smdrl.csv").lines().collect(toImmutableList())));
     createTld("tld", START_DATE_SUNRISE);
     clock.setTo(SMD_VALID_TIME);
     String revokedSmd =
@@ -2753,9 +2755,9 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     if (labels.isEmpty()) {
       return;
     }
-    SmdrlCsvParser.parse(
-            TmchTestData.loadFile("idn/idn_smdrl.csv").lines().collect(toImmutableList()))
-        .save();
+    SignedMarkRevocationListDao.save(
+        SmdrlCsvParser.parse(
+            TmchTestData.loadFile("idn/idn_smdrl.csv").lines().collect(toImmutableList())));
     createTld("tld", START_DATE_SUNRISE);
     clock.setTo(SMD_VALID_TIME);
     String revokedSmd =

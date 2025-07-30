@@ -20,6 +20,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.flogger.FluentLogger;
 import google.registry.keyring.api.KeyModule.Key;
 import google.registry.model.smd.SignedMarkRevocationList;
+import google.registry.model.smd.SignedMarkRevocationListDao;
 import google.registry.request.Action;
 import google.registry.request.Action.GaeService;
 import google.registry.request.auth.Auth;
@@ -57,7 +58,7 @@ public final class TmchSmdrlAction implements Runnable {
     } catch (GeneralSecurityException | IOException | PGPException e) {
       throw new RuntimeException(e);
     }
-    smdrl.save();
+    smdrl = SignedMarkRevocationListDao.save(smdrl);
     logger.atInfo().log(
         "Inserted %,d smd revocations into the database, created at %s.",
         smdrl.size(), smdrl.getCreationTime());
