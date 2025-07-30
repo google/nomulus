@@ -26,6 +26,7 @@ import SecurityComponent from './settings/security/security.component';
 import { SettingsComponent } from './settings/settings.component';
 import { SupportComponent } from './support/support.component';
 import RdapComponent from './settings/rdap/rdap.component';
+import { PasswordResetVerifyComponent } from './shared/components/passwordReset/passwordResetVerify.component';
 
 export interface RouteWithIcon extends Route {
   iconName?: string;
@@ -38,6 +39,10 @@ export const PATHS = {
 };
 export const routes: RouteWithIcon[] = [
   { path: '', redirectTo: '/home', pathMatch: 'full' },
+  {
+    path: PasswordResetVerifyComponent.PATH,
+    component: PasswordResetVerifyComponent,
+  },
   {
     path: RegistryLockVerifyComponent.PATH,
     component: RegistryLockVerifyComponent,
