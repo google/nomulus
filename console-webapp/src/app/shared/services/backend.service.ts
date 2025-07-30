@@ -30,6 +30,7 @@ import {
 import { Contact } from '../../settings/contact/contact.service';
 import { EppPasswordBackendModel } from '../../settings/security/security.service';
 import { UserData } from './userData.service';
+import { PasswordResetVerifyResponse } from '../components/passwordReset/passwordResetVerify.component';
 
 @Injectable()
 export class BackendService {
@@ -297,5 +298,20 @@ export class BackendService {
       type: 'EPP',
       registrarId,
     });
+  }
+
+  getPasswordResetInformation(
+    verificationCode: string
+  ): Observable<PasswordResetVerifyResponse> {
+    return this.http.get<PasswordResetVerifyResponse>(
+      `/console-api/password-reset-verify?resetRequestVerificationCode=${verificationCode}`
+    );
+  }
+
+  finalizePasswordReset(verificationCode: string, newPassword: string) {
+    return this.http.post(
+      `/console-api/password-reset-verify?resetRequestVerificationCode=${verificationCode}`,
+      newPassword
+    );
   }
 }
