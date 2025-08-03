@@ -120,7 +120,7 @@ public class SecurityAction extends ConsoleApiAction {
         }
       }
     } catch (InsecureCertificateException e) {
-      setFailedResponse("Invalid certificate in parameter", SC_BAD_REQUEST);
+      setFailedResponse(e.getMessage(), SC_BAD_REQUEST);
       return;
     }
 
