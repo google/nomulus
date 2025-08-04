@@ -30,6 +30,9 @@ public final class ProxyHttpHeaders {
   /** HTTP header name used to pass the client IP address from the proxy to Nomulus. */
   public static final String IP_ADDRESS = "Nomulus-Client-Address";
 
+  /** HTTP header name used to pass the Registrar Id from the proxy to Nomulus. */
+  public static final String REGISTRAR_ID = "Nomulus-Registrar-Id";
+
   /**
    * Fallback HTTP header name used to pass the client IP address from the proxy to Nomulus.
    *
