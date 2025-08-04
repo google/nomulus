@@ -20,6 +20,7 @@ import static google.registry.proxy.TestUtils.assertHttpRequestEquivalent;
 import static google.registry.proxy.TestUtils.makeEppHttpResponse;
 import static google.registry.proxy.handler.ProxyProtocolHandler.REMOTE_ADDRESS_KEY;
 import static google.registry.util.X509Utils.getCertificateHash;
+import static java.nio.charset.StandardCharsets.US_ASCII;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
@@ -27,6 +28,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 import com.google.common.base.Throwables;
+import com.google.common.io.BaseEncoding;
 import google.registry.proxy.TestUtils;
 import google.registry.proxy.handler.HttpsRelayServiceHandler.NonOkHttpResponseException;
 import google.registry.proxy.metric.FrontendMetrics;
@@ -355,6 +357,84 @@ class EppServiceHandlerTest {
     // Nothing further to pass to the next handler.
     assertThat((Object) channel.readInbound()).isNull();
     assertThat((Object) channel.readOutbound()).isNull();
+    assertThat(channel.isActive()).isTrue();
+  }
+
+  @Test
+  void testSuccess_registrarIdHeader_isSetFromSessionInfoCookie() throws Exception {
+    setHandshakeSuccess();
+    channel.readInbound(); // Read and discard the initial hello request.
+
+    // Simulate a server response that sets the SESSION_INFO cookie.
+    String registrarId = "TheRegistrar";
+    String sessionInfoValue =
+        BaseEncoding.base64Url()
+            .encode(("alpha,clientId=" + registrarId + ",beta").getBytes(US_ASCII));
+    Cookie sessionCookie = new DefaultCookie("SESSION_INFO", sessionInfoValue);
+    channel.writeOutbound(
+        makeEppHttpResponse("<epp>greeting</epp>", HttpResponseStatus.OK, sessionCookie));
+    channel.readOutbound(); // Read and discard the response sent to the client.
+
+    // Simulate a subsequent client request and check for the registrar ID header.
+    String clientRequestContent = "<epp>login</epp>";
+    channel.writeInbound(Unpooled.wrappedBuffer(clientRequestContent.getBytes(UTF_8)));
+
+    FullHttpRequest relayedRequest = channel.readInbound();
+    FullHttpRequest expectedRequest = makeEppHttpRequest(clientRequestContent, sessionCookie);
+    expectedRequest.headers().set(ProxyHttpHeaders.REGISTRAR_ID, registrarId);
+
+    assertHttpRequestEquivalent(relayedRequest, expectedRequest);
+    assertThat((Object) channel.readInbound()).isNull();
+    assertThat(channel.isActive()).isTrue();
+  }
+
+  @Test
+  void testSuccess_registrarIdHeader_isNotSetWhenSessionInfoCookieIsMissing() throws Exception {
+    setHandshakeSuccess();
+    channel.readInbound(); // Read and discard the initial hello request.
+
+    // Simulate a server response that does NOT set the SESSION_INFO cookie.
+    Cookie otherCookie = new DefaultCookie("some_other_cookie", "some_value");
+    channel.writeOutbound(
+        makeEppHttpResponse("<epp>greeting</epp>", HttpResponseStatus.OK, otherCookie));
+    channel.readOutbound(); // Read and discard the response sent to the client.
+
+    // Simulate a subsequent client request and verify the header is absent.
+    String clientRequestContent = "<epp>login</epp>";
+    channel.writeInbound(Unpooled.wrappedBuffer(clientRequestContent.getBytes(UTF_8)));
+
+    FullHttpRequest relayedRequest = channel.readInbound();
+    FullHttpRequest expectedRequest = makeEppHttpRequest(clientRequestContent, otherCookie);
+
+    assertHttpRequestEquivalent(relayedRequest, expectedRequest);
+    assertThat(relayedRequest.headers().contains(ProxyHttpHeaders.REGISTRAR_ID)).isFalse();
+    assertThat((Object) channel.readInbound()).isNull();
+    assertThat(channel.isActive()).isTrue();
+  }
+
+  @Test
+  void testSuccess_registrarIdHeader_isNotSetWhenClientIdIsNull() throws Exception {
+    setHandshakeSuccess();
+    channel.readInbound(); // Read and discard the initial hello request.
+
+    // Simulate a server response with a SESSION_INFO cookie where clientId is "null".
+    String sessionInfoValue =
+        BaseEncoding.base64Url().encode("alpha,clientId=null,beta".getBytes(US_ASCII));
+    Cookie sessionCookie = new DefaultCookie("SESSION_INFO", sessionInfoValue);
+    channel.writeOutbound(
+        makeEppHttpResponse("<epp>greeting</epp>", HttpResponseStatus.OK, sessionCookie));
+    channel.readOutbound(); // Read and discard the response sent to the client.
+
+    // Simulate a subsequent client request and verify the header is absent.
+    String clientRequestContent = "<epp>login</epp>";
+    channel.writeInbound(Unpooled.wrappedBuffer(clientRequestContent.getBytes(UTF_8)));
+
+    FullHttpRequest relayedRequest = channel.readInbound();
+    FullHttpRequest expectedRequest = makeEppHttpRequest(clientRequestContent, sessionCookie);
+
+    assertHttpRequestEquivalent(relayedRequest, expectedRequest);
+    assertThat(relayedRequest.headers().contains(ProxyHttpHeaders.REGISTRAR_ID)).isFalse();
+    assertThat((Object) channel.readInbound()).isNull();
     assertThat(channel.isActive()).isTrue();
   }
 }
