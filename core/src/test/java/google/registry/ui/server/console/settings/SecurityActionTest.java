@@ -4,7 +4,7 @@
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//     http://www.apache.org/licenses/LICENSE-2.0
+//      http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -20,6 +20,7 @@ import static google.registry.testing.DatabaseHelper.loadRegistrar;
 import static google.registry.testing.DatabaseHelper.loadSingleton;
 import static google.registry.testing.SqlHelper.saveRegistrar;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
+import static jakarta.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static jakarta.servlet.http.HttpServletResponse.SC_OK;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.when;
@@ -53,6 +54,24 @@ class SecurityActionTest extends ConsoleActionBaseTestCase {
               + " \"ipAddressAllowList\": [\"192.168.1.1/32\"]}",
           SAMPLE_CERT2);
   private Registrar testRegistrar;
+
+  private static final String EXPIRED_CERT_PEM =
+      "-----BEGIN CERTIFICATE-----\\n"
+          + "MIIC/jCCAmQCCQD3249g9Nl9aTANBgkqhkiG9w0BAQsFADCBjjELMAkGA1UEBhMC\\n"
+          + "VVMxETAPBgNVBAgMCENhbGlmb3JuaWExFjAUBgNVBAcMDVNhbiBGcmFuY2lzY28x\\n"
+          + "GTAXBgNVBAoMEEJhZFNzbCwgSW5jLjogQ0ExGTAXBgNVBAsMEEJhZFNzbCwgSW5j\\n"
+          + "LjogQ0ExGTAXBgNVBAMMEGJhZHNzbC5jb206IENBMQswCQYDVQQGEwJVUzAeFw0x\\n"
+          + "NTAyMjAxODQ1NTVaFw0xNTAyMjUxODQ1NTVaMIGAMQswCQYDVQQGEwJVUzERMA8G\\n"
+          + "A1UECAwIQ2FsaWZvcm5pYTEWMBQGA1UEBwwNU2FuIEZyYW5jaXNjbzEaMBgGA1UE\\n"
+          + "CgwRQmFkU3NsLCBJbmMuOiBFQzEYMBYGA1UEAwwPKiouZXhwaXJlZC5iYWRzc2wx\\n"
+          + "CzAJBgNVBAYTAlVTMIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDP532p2L8V\\n"
+          + "/x02y5I65e3FbfiM85v63j2f9Jd9C17C0WKkAmvRFCjQ8q2PcyX2z6vi/pG4ZveG\\n"
+          + "L6Rjxf4u3V4h3cM3Wns2e4hFitN2aA4s2sJ3aPSlXgP9PN6A+Lwusnfk11n+r5wS\\n"
+          + "gT3y5xJNL9x2YyLgGz8iE2fV9j1R1wIDAQABMA0GCSqGSIb3DQEBCwUAA4IBAQAK\\n"
+          + "M/Q0GfLzozlwpi5iUSz/dcf4S/2ssUnRzkmvfVl4/NCwM95pB2fr6vM6Sc0vB3pC\\n"
+          + "nQ5NtVl4jI5qgC7NaI6bT8G2n48zI9b4ks4Kixb3eU6y3V5L0asIdC2XAPd/n2dg\\n"
+          + "x1sA81Yd368p36LhXXF0Q2v33qT8Z3s=\\n"
+          + "-----END CERTIFICATE-----";
 
   private AuthenticatedRegistrarAccessor registrarAccessor =
       AuthenticatedRegistrarAccessor.createForTesting(
@@ -90,9 +109,23 @@ class SecurityActionTest extends ConsoleActionBaseTestCase {
     assertThat(history.getDescription()).hasValue("registrarId|IP_CHANGE,PRIMARY_SSL_CERT_CHANGE");
   }
 
-  private SecurityAction createAction(String registrarId) throws IOException {
+  @Test
+  void testFailure_expiredCertificate_returnsSpecificError() throws IOException {
+    String jsonWithBadCert =
+        String.format(
+            "{\"registrarId\": \"registrarId\", \"clientCertificate\": \"%s\"}", EXPIRED_CERT_PEM);
+    SecurityAction action = createAction(testRegistrar.getRegistrarId(), jsonWithBadCert);
+
+    action.run();
+
+    FakeResponse response = (FakeResponse) consoleApiParams.response();
+    assertThat(response.getStatus()).isEqualTo(SC_BAD_REQUEST);
+    assertThat(response.getPayload()).isEqualTo("Certificate is expired.");
+  }
+
+  private SecurityAction createAction(String registrarId, String jsonBody) throws IOException {
     when(consoleApiParams.request().getMethod()).thenReturn(Action.Method.POST.toString());
-    doReturn(new BufferedReader(new StringReader(jsonRegistrar1)))
+    doReturn(new BufferedReader(new StringReader(jsonBody)))
         .when(consoleApiParams.request())
         .getReader();
     Optional<Registrar> maybeRegistrar =
@@ -100,5 +133,9 @@ class SecurityActionTest extends ConsoleActionBaseTestCase {
             GSON, RequestModule.provideJsonBody(consoleApiParams.request(), GSON));
     return new SecurityAction(
         consoleApiParams, certificateChecker, registrarAccessor, registrarId, maybeRegistrar);
+  }
+
+  private SecurityAction createAction(String registrarId) throws IOException {
+    return createAction(registrarId, jsonRegistrar1);
   }
 }
