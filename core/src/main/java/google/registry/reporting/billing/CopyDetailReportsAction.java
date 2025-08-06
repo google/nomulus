@@ -23,7 +23,6 @@ import static java.util.stream.Collectors.joining;
 import com.google.cloud.storage.BlobId;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.Iterables;
 import com.google.common.flogger.FluentLogger;
@@ -42,7 +41,6 @@ import google.registry.util.Retrier;
 import jakarta.inject.Inject;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Collection;
 import java.util.Optional;
 
 /** Copy all registrar detail reports in a given bucket's subdirectory from GCS to Drive. */
@@ -148,20 +146,18 @@ public final class CopyDetailReportsAction implements Runnable {
     response.setStatus(SC_OK);
     response.setContentType(MediaType.PLAIN_TEXT_UTF_8);
     StringBuilder payload = new StringBuilder().append("Copied detail reports.\n");
-    ImmutableMap<String, Collection<Throwable>> copyErrors = copyErrorsBuilder.build().asMap();
+    ImmutableMultimap<String, Throwable> copyErrors = copyErrorsBuilder.build();
     if (!copyErrors.isEmpty()) {
       payload.append("The following errors were encountered:\n");
-      payload.append(
-          copyErrors.entrySet().stream()
-              .map(
-                  entrySet ->
-                      String.format(
-                          "Registrar: %s\nError: %s\n",
-                          entrySet.getKey(),
-                          entrySet.getValue().stream()
-                              .map(Throwable::getMessage)
-                              .collect(joining("\n\t"))))
-              .collect(joining()));
+      for (var registrarId : copyErrors.keySet()) {
+        payload.append(
+            String.format(
+                "Registrar: %s\nError: %s\n",
+                registrarId,
+                copyErrors.get(registrarId).stream()
+                    .map(Throwable::getMessage)
+                    .collect(joining("\n\t"))));
+      }
     }
     response.setPayload(payload.toString());
     emailUtils.sendAlertEmail(payload.toString());
