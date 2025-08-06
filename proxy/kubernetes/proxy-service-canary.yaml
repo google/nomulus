@@ -33,3 +33,10 @@ spec:
     name: proxy-deployment-canary
   maxReplicas: 10
   minReplicas: 1
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 100
