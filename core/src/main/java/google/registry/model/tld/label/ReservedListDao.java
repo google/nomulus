@@ -27,14 +27,26 @@ public class ReservedListDao {
 
   private ReservedListDao() {}
 
-  /** Persist a new reserved list to Cloud SQL. */
-  public static void save(ReservedList reservedList) {
+  /**
+   * Persists a new reserved list to Cloud SQL and returns the persisted entity.
+   *
+   * <p>Note that the input parameter is untouched. Use the returned object if metadata fields like
+   * {@code revisionId} are needed.
+   */
+  public static ReservedList save(ReservedList reservedList) {
     checkArgumentNotNull(reservedList, "Must specify reservedList");
     logger.atInfo().log("Saving reserved list %s to Cloud SQL.", reservedList.getName());
-    tm().transact(() -> tm().insert(reservedList));
+    var persisted =
+        tm().transact(
+                () -> {
+                  var entity = reservedList.asBuilder().build();
+                  tm().insert(entity);
+                  return entity;
+                });
     logger.atInfo().log(
         "Saved reserved list %s with %d entries to Cloud SQL.",
         reservedList.getName(), reservedList.getReservedListEntries().size());
+    return persisted;
   }
 
   /** Deletes a reserved list from Cloud SQL. */

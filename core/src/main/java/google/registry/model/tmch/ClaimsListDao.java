@@ -49,10 +49,23 @@ public class ClaimsListDao {
     return CacheUtils.newCacheBuilder(expiry).build(ignored -> ClaimsListDao.getUncached());
   }
 
-  /** Saves the given {@link ClaimsList} to Cloud SQL. */
-  public static void save(ClaimsList claimsList) {
-    tm().transact(() -> tm().insert(claimsList));
-    CACHE.put(ClaimsListDao.class, claimsList);
+  /**
+   * Persists a {@link ClaimsList} instance and returns the persisted entity.
+   *
+   * <p>Note that the input parameter is untouched. Use the returned object if metadata fields like
+   * {@code revisionId} are needed.
+   */
+  public static ClaimsList save(ClaimsList claimsList) {
+    var persisted =
+        tm().transact(
+                () -> {
+                  var entity =
+                      ClaimsList.create(claimsList.tmdbGenerationTime, claimsList.labelsToKeys);
+                  tm().insert(entity);
+                  return entity;
+                });
+    CACHE.put(ClaimsListDao.class, persisted);
+    return persisted;
   }
 
   /** Returns the most recent revision of the {@link ClaimsList} from the cache. */

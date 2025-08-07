@@ -24,10 +24,42 @@ import {
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { RegistrarService } from 'src/app/registrar/registrar.service';
 import { SecurityService } from './security.service';
+import { UserDataService } from 'src/app/shared/services/userData.service';
+import { MatDialog, MatDialogRef } from '@angular/material/dialog';
+import { CommonModule } from '@angular/common';
+import { MaterialModule } from 'src/app/material.module';
+import { filter, switchMap, take } from 'rxjs';
+import { BackendService } from 'src/app/shared/services/backend.service';
 
 type errorCode = 'required' | 'maxlength' | 'minlength' | 'passwordsDontMatch';
 
 type errorFriendlyText = { [type in errorCode]: String };
+
+@Component({
+  selector: 'app-reset-epp-password-dialog',
+  template: `
+    <h2 mat-dialog-title>Please confirm the password reset:</h2>
+    <mat-dialog-content>
+      This will send an EPP password reset email to the admin POC.
+    </mat-dialog-content>
+    <mat-dialog-actions>
+      <button mat-button (click)="onCancel()">Cancel</button>
+      <button mat-button color="warn" (click)="onSave()">Confirm</button>
+    </mat-dialog-actions>
+  `,
+  imports: [CommonModule, MaterialModule],
+})
+export class ResetEppPasswordComponent {
+  constructor(public dialogRef: MatDialogRef<ResetEppPasswordComponent>) {}
+
+  onSave(): void {
+    this.dialogRef.close(true);
+  }
+
+  onCancel(): void {
+    this.dialogRef.close(false);
+  }
+}
 
 @Component({
   selector: 'app-epp-password-edit',
@@ -48,9 +80,12 @@ export default class EppPasswordEditComponent {
   };
 
   constructor(
+    public registrarService: RegistrarService,
     public securityService: SecurityService,
-    private _snackBar: MatSnackBar,
-    public registrarService: RegistrarService
+    protected userDataService: UserDataService,
+    private backendService: BackendService,
+    private resetPasswordDialog: MatDialog,
+    private _snackBar: MatSnackBar
   ) {}
 
   hasError(controlName: string) {
@@ -119,5 +154,27 @@ export default class EppPasswordEditComponent {
 
   goBack() {
     this.securityService.isEditingPassword = false;
+  }
+
+  sendEppPasswordResetRequest() {
+    return this.backendService.requestEppPasswordReset(
+      this.registrarService.registrarId()
+    );
+  }
+
+  requestEppPasswordReset() {
+    const dialogRef = this.resetPasswordDialog.open(ResetEppPasswordComponent);
+    dialogRef
+      .afterClosed()
+      .pipe(
+        take(1),
+        filter((result) => !!result)
+      )
+      .pipe(switchMap((_) => this.sendEppPasswordResetRequest()))
+      .subscribe({
+        next: (_) => this.goBack(),
+        error: (err: HttpErrorResponse) =>
+          this._snackBar.open(err.error || err.message),
+      });
   }
 }

@@ -15,6 +15,7 @@
 package google.registry.flows.host;
 
 import static google.registry.dns.DnsUtils.requestHostDnsRefresh;
+import static google.registry.flows.FlowUtils.DELETE_PROHIBITED_STATUSES;
 import static google.registry.flows.FlowUtils.validateRegistrarIsLoggedIn;
 import static google.registry.flows.ResourceFlowUtils.checkLinkedDomains;
 import static google.registry.flows.ResourceFlowUtils.loadAndVerifyExistence;
@@ -65,12 +66,6 @@ import org.joda.time.DateTime;
 @ReportingSpec(ActivityReportField.HOST_DELETE)
 public final class HostDeleteFlow implements MutatingFlow {
 
-  private static final ImmutableSet<StatusValue> DISALLOWED_STATUSES =
-      ImmutableSet.of(
-          StatusValue.CLIENT_DELETE_PROHIBITED,
-          StatusValue.PENDING_DELETE,
-          StatusValue.SERVER_DELETE_PROHIBITED);
-
   @Inject ExtensionManager extensionManager;
   @Inject @RegistrarId String registrarId;
   @Inject @TargetId String targetId;
@@ -91,8 +86,9 @@ public final class HostDeleteFlow implements MutatingFlow {
     validateHostName(targetId);
     checkLinkedDomains(targetId, now, Host.class);
     Host existingHost = loadAndVerifyExistence(Host.class, targetId, now);
-    verifyNoDisallowedStatuses(existingHost, DISALLOWED_STATUSES);
+    verifyNoDisallowedStatuses(existingHost, ImmutableSet.of(StatusValue.PENDING_DELETE));
     if (!isSuperuser) {
+      verifyNoDisallowedStatuses(existingHost, DELETE_PROHIBITED_STATUSES);
       // Hosts transfer with their superordinate domains, so for hosts with a superordinate domain,
       // the client id, needs to be read off of it.
       EppResource owningResource =

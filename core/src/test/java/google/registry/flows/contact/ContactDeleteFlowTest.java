@@ -183,6 +183,43 @@ class ContactDeleteFlowTest extends ResourceFlowTestCase<ContactDeleteFlow, Cont
   }
 
   @Test
+  void testSuccess_clientDeleteProhibited_superuser() throws Exception {
+    persistResource(
+        persistActiveContact(getUniqueIdFromCommand())
+            .asBuilder()
+            .addStatusValue(StatusValue.CLIENT_DELETE_PROHIBITED)
+            .build());
+    runFlowAssertResponse(
+        CommitMode.LIVE, UserPrivileges.SUPERUSER, loadFile("contact_delete_response.xml"));
+  }
+
+  @Test
+  void testSuccess_serverDeleteProhibited_superuser() throws Exception {
+    persistResource(
+        persistActiveContact(getUniqueIdFromCommand())
+            .asBuilder()
+            .addStatusValue(StatusValue.SERVER_DELETE_PROHIBITED)
+            .build());
+    runFlowAssertResponse(
+        CommitMode.LIVE, UserPrivileges.SUPERUSER, loadFile("contact_delete_response.xml"));
+  }
+
+  @Test
+  void testFailure_pendingDelete_superuser() throws Exception {
+    persistResource(
+        persistActiveContact(getUniqueIdFromCommand())
+            .asBuilder()
+            .addStatusValue(StatusValue.PENDING_DELETE)
+            .build());
+    assertAboutEppExceptions()
+        .that(
+            assertThrows(
+                ResourceStatusProhibitsOperationException.class,
+                () -> runFlow(CommitMode.LIVE, UserPrivileges.SUPERUSER)))
+        .marshalsToXml();
+  }
+
+  @Test
   void testFailure_unauthorizedClient() throws Exception {
     sessionMetadata.setRegistrarId("NewRegistrar");
     persistActiveContact(getUniqueIdFromCommand());

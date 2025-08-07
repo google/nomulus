@@ -14,6 +14,7 @@
 
 package google.registry.flows.contact;
 
+import static google.registry.flows.FlowUtils.DELETE_PROHIBITED_STATUSES;
 import static google.registry.flows.FlowUtils.validateRegistrarIsLoggedIn;
 import static google.registry.flows.ResourceFlowUtils.checkLinkedDomains;
 import static google.registry.flows.ResourceFlowUtils.loadAndVerifyExistence;
@@ -65,12 +66,6 @@ import org.joda.time.DateTime;
 @ReportingSpec(ActivityReportField.CONTACT_DELETE)
 public final class ContactDeleteFlow implements MutatingFlow {
 
-  private static final ImmutableSet<StatusValue> DISALLOWED_STATUSES =
-      ImmutableSet.of(
-          StatusValue.CLIENT_DELETE_PROHIBITED,
-          StatusValue.PENDING_DELETE,
-          StatusValue.SERVER_DELETE_PROHIBITED);
-
   @Inject ExtensionManager extensionManager;
   @Inject @RegistrarId String registrarId;
   @Inject @TargetId String targetId;
@@ -91,9 +86,10 @@ public final class ContactDeleteFlow implements MutatingFlow {
     DateTime now = tm().getTransactionTime();
     checkLinkedDomains(targetId, now, Contact.class);
     Contact existingContact = loadAndVerifyExistence(Contact.class, targetId, now);
-    verifyNoDisallowedStatuses(existingContact, DISALLOWED_STATUSES);
     verifyOptionalAuthInfo(authInfo, existingContact);
+    verifyNoDisallowedStatuses(existingContact, ImmutableSet.of(StatusValue.PENDING_DELETE));
     if (!isSuperuser) {
+      verifyNoDisallowedStatuses(existingContact, DELETE_PROHIBITED_STATUSES);
       verifyResourceOwnership(registrarId, existingContact);
     }
     // Handle pending transfers on contact deletion.

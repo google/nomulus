@@ -70,7 +70,7 @@ public abstract class HttpsRelayServiceHandler extends ByteToMessageCodec<FullHt
   protected static final ImmutableSet<Class<? extends Exception>> NON_FATAL_OUTBOUND_EXCEPTIONS =
       ImmutableSet.of(NonOkHttpResponseException.class);
 
-  private final Map<String, Cookie> cookieStore = new LinkedHashMap<>();
+  protected final Map<String, Cookie> cookieStore = new LinkedHashMap<>();
   private final String relayHost;
   private final String relayPath;
   private final boolean canary;

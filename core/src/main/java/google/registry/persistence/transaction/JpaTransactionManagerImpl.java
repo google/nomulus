@@ -344,6 +344,18 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
     return txnInfo.transactionTime;
   }
 
+  /**
+   * Inserts an object into the database.
+   *
+   * <p>If {@code entity} has an auto-generated identity field (i.e., a field annotated with {@link
+   * jakarta.persistence.GeneratedValue}), the caller must not assign a value to this field,
+   * otherwise Hibernate would mistake the entity as detached and raise an error.
+   *
+   * <p>The practical implication of the above is that when inserting such an entity using a
+   * retriable transaction , the entity should be instantiated inside the transaction body. A failed
+   * attempt may still assign and ID to the entity, therefore reusing the same entity would cause
+   * retries to fail.
+   */
   @Override
   public void insert(Object entity) {
     checkArgumentNotNull(entity, "entity must be specified");

@@ -17,6 +17,7 @@ package google.registry.flows.domain;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static google.registry.dns.DnsUtils.requestDomainDnsRefresh;
+import static google.registry.flows.FlowUtils.DELETE_PROHIBITED_STATUSES;
 import static google.registry.flows.FlowUtils.createHistoryEntryId;
 import static google.registry.flows.FlowUtils.persistEntityChanges;
 import static google.registry.flows.FlowUtils.validateRegistrarIsLoggedIn;
@@ -121,11 +122,6 @@ import org.joda.time.Duration;
 public final class DomainDeleteFlow implements MutatingFlow, SqlStatementLoggingFlow {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
-
-  private static final ImmutableSet<StatusValue> DISALLOWED_STATUSES = ImmutableSet.of(
-      StatusValue.CLIENT_DELETE_PROHIBITED,
-      StatusValue.PENDING_DELETE,
-      StatusValue.SERVER_DELETE_PROHIBITED);
 
   @Inject ExtensionManager extensionManager;
   @Inject EppInput eppInput;
@@ -304,9 +300,10 @@ public final class DomainDeleteFlow implements MutatingFlow, SqlStatementLogging
 
   private void verifyDeleteAllowed(Domain existingDomain, Tld tld, DateTime now)
       throws EppException {
-    verifyNoDisallowedStatuses(existingDomain, DISALLOWED_STATUSES);
     verifyOptionalAuthInfo(authInfo, existingDomain);
+    verifyNoDisallowedStatuses(existingDomain, ImmutableSet.of(StatusValue.PENDING_DELETE));
     if (!isSuperuser) {
+      verifyNoDisallowedStatuses(existingDomain, DELETE_PROHIBITED_STATUSES);
       verifyResourceOwnership(registrarId, existingDomain);
       verifyNotInPredelegation(tld, now);
       checkAllowedAccessToTld(registrarId, tld.getTld().toString());

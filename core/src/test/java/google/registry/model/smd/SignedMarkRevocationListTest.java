@@ -48,7 +48,8 @@ public class SignedMarkRevocationListTest {
     for (int i = 0; i < rows; i++) {
       revokes.put(Integer.toString(i), clock.nowUtc());
     }
-    SignedMarkRevocationList.create(clock.nowUtc(), revokes.build()).save();
+    SignedMarkRevocationListDao.save(
+        SignedMarkRevocationList.create(clock.nowUtc(), revokes.build()));
     SignedMarkRevocationList res = SignedMarkRevocationList.get();
     assertThat(res.size()).isEqualTo(rows);
     return res;

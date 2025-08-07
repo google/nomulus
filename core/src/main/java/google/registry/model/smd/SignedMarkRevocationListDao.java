@@ -44,11 +44,25 @@ public class SignedMarkRevocationListDao {
     return smdrl.orElseGet(() -> SignedMarkRevocationList.create(START_OF_TIME, ImmutableMap.of()));
   }
 
-  /** Save the given {@link SignedMarkRevocationList} */
-  static void save(SignedMarkRevocationList signedMarkRevocationList) {
-    tm().transact(() -> tm().insert(signedMarkRevocationList));
+  /**
+   * Persists a {@link SignedMarkRevocationList} instance and returns the persisted entity.
+   *
+   * <p>Note that the input parameter is untouched. Use the returned object if metadata fields like
+   * {@code revisionId} are needed.
+   */
+  public static SignedMarkRevocationList save(SignedMarkRevocationList signedMarkRevocationList) {
+    var persisted =
+        tm().transact(
+                () -> {
+                  var entity =
+                      SignedMarkRevocationList.create(
+                          signedMarkRevocationList.getCreationTime(),
+                          ImmutableMap.copyOf(signedMarkRevocationList.revokes));
+                  tm().insert(entity);
+                  return entity;
+                });
     logger.atInfo().log(
-        "Inserted %,d signed mark revocations into Cloud SQL.",
-        signedMarkRevocationList.revokes.size());
+        "Inserted %,d signed mark revocations into Cloud SQL.", persisted.revokes.size());
+    return persisted;
   }
 }

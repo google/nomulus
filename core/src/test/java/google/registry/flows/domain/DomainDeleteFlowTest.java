@@ -918,6 +918,52 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
   }
 
   @Test
+  void testSuccess_clientDeleteProhibited_superuser() throws Exception {
+    eppRequestSource = EppRequestSource.TOOL;
+    setEppInput(
+        "domain_delete_superuser_extension.xml",
+        ImmutableMap.of("REDEMPTION_GRACE_PERIOD_DAYS", "15", "PENDING_DELETE_DAYS", "0"));
+    setUpSuccessfulTest();
+
+    persistResource(
+        domain.asBuilder().addStatusValue(StatusValue.CLIENT_DELETE_PROHIBITED).build());
+    clock.advanceOneMilli();
+    runFlowAssertResponse(
+        CommitMode.LIVE, UserPrivileges.SUPERUSER, loadFile("domain_delete_response_pending.xml"));
+  }
+
+  @Test
+  void testSuccess_serverDeleteProhibited_superuser() throws Exception {
+    eppRequestSource = EppRequestSource.TOOL;
+    setEppInput(
+        "domain_delete_superuser_extension.xml",
+        ImmutableMap.of("REDEMPTION_GRACE_PERIOD_DAYS", "15", "PENDING_DELETE_DAYS", "0"));
+    setUpSuccessfulTest();
+
+    persistResource(
+        domain.asBuilder().addStatusValue(StatusValue.SERVER_DELETE_PROHIBITED).build());
+    clock.advanceOneMilli();
+    runFlowAssertResponse(
+        CommitMode.LIVE, UserPrivileges.SUPERUSER, loadFile("domain_delete_response_pending.xml"));
+  }
+
+  @Test
+  void testFailure_pendingDelete_superuser() throws Exception {
+    eppRequestSource = EppRequestSource.TOOL;
+    setEppInput(
+        "domain_delete_superuser_extension.xml",
+        ImmutableMap.of("REDEMPTION_GRACE_PERIOD_DAYS", "15", "PENDING_DELETE_DAYS", "0"));
+    setUpSuccessfulTest();
+    persistResource(domain.asBuilder().addStatusValue(StatusValue.PENDING_DELETE).build());
+
+    ResourceStatusProhibitsOperationException thrown =
+        assertThrows(
+            ResourceStatusProhibitsOperationException.class,
+            () -> runFlow(CommitMode.LIVE, UserPrivileges.SUPERUSER));
+    assertThat(thrown).hasMessageThat().contains("pendingDelete");
+  }
+
+  @Test
   void testSuccess_metadata() throws Exception {
     eppRequestSource = EppRequestSource.TOOL;
     setEppInput("domain_delete_metadata.xml");

@@ -19,8 +19,11 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static google.registry.networking.handler.SslServerInitializer.CLIENT_CERTIFICATE_PROMISE_KEY;
 import static google.registry.proxy.handler.ProxyProtocolHandler.REMOTE_ADDRESS_KEY;
 import static google.registry.util.X509Utils.getCertificateHash;
+import static java.nio.charset.StandardCharsets.US_ASCII;
 
+import com.google.common.base.Strings;
 import com.google.common.flogger.FluentLogger;
+import com.google.common.io.BaseEncoding;
 import google.registry.proxy.metric.FrontendMetrics;
 import google.registry.util.ProxyHttpHeaders;
 import io.netty.buffer.ByteBuf;
@@ -36,7 +39,11 @@ import io.netty.handler.ssl.SslHandshakeCompletionEvent;
 import io.netty.util.AttributeKey;
 import io.netty.util.concurrent.Promise;
 import java.security.cert.X509Certificate;
+import java.util.Optional;
 import java.util.function.Supplier;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import javax.annotation.Nullable;
 
 /** Handler that processes EPP protocol logic. */
 public class EppServiceHandler extends HttpsRelayServiceHandler {
@@ -56,6 +63,8 @@ public class EppServiceHandler extends HttpsRelayServiceHandler {
 
   private String sslClientCertificateHash;
   private String clientAddress;
+
+  private Optional<String> maybeRegistrarId = Optional.empty();
 
   public EppServiceHandler(
       String relayHost,
@@ -128,6 +137,9 @@ public class EppServiceHandler extends HttpsRelayServiceHandler {
         .set(ProxyHttpHeaders.FALLBACK_IP_ADDRESS, clientAddress)
         .set(HttpHeaderNames.CONTENT_TYPE, EPP_CONTENT_TYPE)
         .set(HttpHeaderNames.ACCEPT, EPP_CONTENT_TYPE);
+
+    maybeSetRegistrarIdHeader(request);
+
     return request;
   }
 
@@ -141,5 +153,55 @@ public class EppServiceHandler extends HttpsRelayServiceHandler {
       promise.addListener(ChannelFutureListener.CLOSE);
     }
     super.write(ctx, msg, promise);
+  }
+
+  /**
+   * Sets and caches the Registrar-ID header on the request if the ID can be found.
+   *
+   * <p>This method first checks if the registrar ID has already been determined. If not, it
+   * inspects the cookies for a "SESSION_INFO" cookie, from which it attempts to extract the
+   * registrar ID.
+   *
+   * @param request The {@link FullHttpRequest} on which to potentially set the registrar ID header.
+   * @see #extractRegistrarIdFromSessionInfo(String)
+   */
+  private void maybeSetRegistrarIdHeader(FullHttpRequest request) {
+    if (maybeRegistrarId.isEmpty()) {
+      maybeRegistrarId =
+          cookieStore.entrySet().stream()
+              .map(e -> e.getValue())
+              .filter(cookie -> "SESSION_INFO".equals(cookie.name()))
+              .findFirst()
+              .flatMap(cookie -> extractRegistrarIdFromSessionInfo(cookie.value()));
+    }
+
+    if (maybeRegistrarId.isPresent() && !Strings.isNullOrEmpty(maybeRegistrarId.get())) {
+      request.headers().set(ProxyHttpHeaders.REGISTRAR_ID, maybeRegistrarId.get());
+    }
+  }
+
+  /** Extracts the registrar ID from a Base64-encoded session info string. */
+  private Optional<String> extractRegistrarIdFromSessionInfo(@Nullable String sessionInfo) {
+    if (sessionInfo == null) {
+      return Optional.empty();
+    }
+
+    try {
+      String decodedString = new String(BaseEncoding.base64Url().decode(sessionInfo), US_ASCII);
+      Pattern pattern = Pattern.compile("clientId=([^,\\s]+)?");
+      Matcher matcher = pattern.matcher(decodedString);
+
+      if (matcher.find()) {
+        String maybeRegistrarIdMatch = matcher.group(1);
+        if (!maybeRegistrarIdMatch.equals("null")) {
+          return Optional.of(maybeRegistrarIdMatch);
+        }
+      }
+
+    } catch (Throwable e) {
+      logger.atSevere().withCause(e).log("Failed to decode session info from Base64");
+    }
+
+    return Optional.empty();
   }
 }
