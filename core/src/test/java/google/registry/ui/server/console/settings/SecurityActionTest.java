@@ -111,6 +111,7 @@ class SecurityActionTest extends ConsoleActionBaseTestCase {
 
   @Test
   void testFailure_expiredCertificate_returnsSpecificError() throws IOException {
+    clock.setTo(DateTime.parse("2020-01-01T00:00:00Z"));
     String jsonWithBadCert =
         String.format(
             "{\"registrarId\": \"registrarId\", \"clientCertificate\": \"%s\"}", EXPIRED_CERT_PEM);
