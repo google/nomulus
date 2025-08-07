@@ -55,22 +55,27 @@ class SecurityActionTest extends ConsoleActionBaseTestCase {
           SAMPLE_CERT2);
   private Registrar testRegistrar;
 
-  private static final String EXPIRED_CERT_PEM =
-      "-----BEGIN CERTIFICATE-----\\n"
-          + "MIIC/jCCAmQCCQD3249g9Nl9aTANBgkqhkiG9w0BAQsFADCBjjELMAkGA1UEBhMC\\n"
-          + "VVMxETAPBgNVBAgMCENhbGlmb3JuaWExFjAUBgNVBAcMDVNhbiBGcmFuY2lzY28x\\n"
-          + "GTAXBgNVBAoMEEJhZFNzbCwgSW5jLjogQ0ExGTAXBgNVBAsMEEJhZFNzbCwgSW5j\\n"
-          + "LjogQ0ExGTAXBgNVBAMMEGJhZHNzbC5jb206IENBMQswCQYDVQQGEwJVUzAeFw0x\\n"
-          + "NTAyMjAxODQ1NTVaFw0xNTAyMjUxODQ1NTVaMIGAMQswCQYDVQQGEwJVUzERMA8G\\n"
-          + "A1UECAwIQ2FsaWZvcm5pYTEWMBQGA1UEBwwNU2FuIEZyYW5jaXNjbzEaMBgGA1UE\\n"
-          + "CgwRQmFkU3NsLCBJbmMuOiBFQzEYMBYGA1UEAwwPKiouZXhwaXJlZC5iYWRzc2wx\\n"
-          + "CzAJBgNVBAYTAlVTMIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDP532p2L8V\\n"
-          + "/x02y5I65e3FbfiM85v63j2f9Jd9C17C0WKkAmvRFCjQ8q2PcyX2z6vi/pG4ZveG\\n"
-          + "L6Rjxf4u3V4h3cM3Wns2e4hFitN2aA4s2sJ3aPSlXgP9PN6A+Lwusnfk11n+r5wS\\n"
-          + "gT3y5xJNL9x2YyLgGz8iE2fV9j1R1wIDAQABMA0GCSqGSIb3DQEBCwUAA4IBAQAK\\n"
-          + "M/Q0GfLzozlwpi5iUSz/dcf4S/2ssUnRzkmvfVl4/NCwM95pB2fr6vM6Sc0vB3pC\\n"
-          + "nQ5NtVl4jI5qgC7NaI6bT8G2n48zI9b4ks4Kixb3eU6y3V5L0asIdC2XAPd/n2dg\\n"
-          + "x1sA81Yd368p36LhXXF0Q2v33qT8Z3s=\\n"
+  private static final String VALIDITY_TOO_LONG_CERT_PEM =
+      "-----BEGIN CERTIFICATE-----\n"
+          + "MIIDejCCAv+gAwIBAgIQHNcSEt4VENkSgtozEEoQLzAKBggqhkjOPQQDAzB8MQsw\n"
+          + "CQYDVQQGEwJVUzEOMAwGA1UECAwFVGV4YXMxEDAOBgNVBAcMB0hvdXN0b24xGDAW\n"
+          + "BgNVBAoMD1NTTCBDb3Jwb3JhdGlvbjExMC8GA1UEAwwoU1NMLmNvbSBSb290IENl\n"
+          + "cnRpZmljYXRpb24gQXV0aG9yaXR5IEVDQzAeFw0xOTAzMDcxOTQyNDJaFw0zNDAz\n"
+          + "MDMxOTQyNDJaMG8xCzAJBgNVBAYTAlVTMQ4wDAYDVQQIDAVUZXhhczEQMA4GA1UE\n"
+          + "BwwHSG91c3RvbjERMA8GA1UECgwIU1NMIENvcnAxKzApBgNVBAMMIlNTTC5jb20g\n"
+          + "U1NMIEludGVybWVkaWF0ZSBDQSBFQ0MgUjIwdjAQBgcqhkjOPQIBBgUrgQQAIgNi\n"
+          + "AASEOWn30uEYKDLFu4sCjFQ1VupFaeMtQjqVWyWSA7+KFljnsVaFQ2hgs4cQk1f/\n"
+          + "RQ2INSwdVCYU0i5qsbom20rigUhDh9dM/r6bEZ75eFE899kSCI14xqThYVLPdLEl\n"
+          + "+dyjggFRMIIBTTASBgNVHRMBAf8ECDAGAQH/AgEAMB8GA1UdIwQYMBaAFILRhXMw\n"
+          + "5zUE044CkvvlpNHEIejNMHgGCCsGAQUFBwEBBGwwajBGBggrBgEFBQcwAoY6aHR0\n"
+          + "cDovL3d3dy5zc2wuY29tL3JlcG9zaXRvcnkvU1NMY29tLVJvb3RDQS1FQ0MtMzg0\n"
+          + "LVIxLmNydDAgBggrBgEFBQcwAYYUaHR0cDovL29jc3BzLnNzbC5jb20wEQYDVR0g\n"
+          + "BAowCDAGBgRVHSAAMB0GA1UdJQQWMBQGCCsGAQUFBwMCBggrBgEFBQcDATA7BgNV\n"
+          + "HR8ENDAyMDCgLqAshipodHRwOi8vY3Jscy5zc2wuY29tL3NzbC5jb20tZWNjLVJv\n"
+          + "b3RDQS5jcmwwHQYDVR0OBBYEFA10Zgpen+Is7NXCXSUEf3Uyuv99MA4GA1UdDwEB\n"
+          + "/wQEAwIBhjAKBggqhkjOPQQDAwNpADBmAjEAxYt6Ylk/N8Fch/3fgKYKwI5A011Q\n"
+          + "MKW0h3F9JW/NX/F7oYtWrxljheH8n2BrkDybAjEAlCxkLE0vQTYcFzrR24oogyw6\n"
+          + "VkgTm92+jiqJTO5SSA9QUa092S5cTKiHkH2cOM6m\n"
           + "-----END CERTIFICATE-----";
 
   private AuthenticatedRegistrarAccessor registrarAccessor =
@@ -109,19 +114,44 @@ class SecurityActionTest extends ConsoleActionBaseTestCase {
     assertThat(history.getDescription()).hasValue("registrarId|IP_CHANGE,PRIMARY_SSL_CERT_CHANGE");
   }
 
-  @Test
-  void testFailure_expiredCertificate_returnsSpecificError() throws IOException {
-    clock.setTo(DateTime.parse("2020-01-01T00:00:00Z"));
+@Test
+  void testFailure_validityPeriodTooLong_returnsSpecificError() throws IOException {
+    CertificateChecker strictChecker =
+        new CertificateChecker(
+            ImmutableSortedMap.of(START_OF_TIME, 398), 
+            30,
+            15,
+            2048,
+            ImmutableSet.of("secp256r1", "secp384r1"),
+            clock);
+
+    clock.setTo(DateTime.parse("2025-01-01T00:00:00Z"));
+    String escapedCert = VALIDITY_TOO_LONG_CERT_PEM.replace("\n", "\\n");
     String jsonWithBadCert =
         String.format(
-            "{\"registrarId\": \"registrarId\", \"clientCertificate\": \"%s\"}", EXPIRED_CERT_PEM);
-    SecurityAction action = createAction(testRegistrar.getRegistrarId(), jsonWithBadCert);
+            "{\"registrarId\": \"registrarId\", \"clientCertificate\": \"%s\"}", escapedCert);
 
+    when(consoleApiParams.request().getMethod()).thenReturn(Action.Method.POST.toString());
+    doReturn(new BufferedReader(new StringReader(jsonWithBadCert)))
+        .when(consoleApiParams.request())
+        .getReader();
+    Optional<Registrar> maybeRegistrar =
+        ConsoleModule.provideRegistrar(
+            GSON, RequestModule.provideJsonBody(consoleApiParams.request(), GSON));
+    SecurityAction action =
+        new SecurityAction(
+            consoleApiParams,
+            strictChecker, 
+            registrarAccessor,
+            testRegistrar.getRegistrarId(),
+            maybeRegistrar);
     action.run();
 
+    String expectedError =
+        "Certificate validity period is too long; it must be less than or equal to 398 days.";
     FakeResponse response = (FakeResponse) consoleApiParams.response();
     assertThat(response.getStatus()).isEqualTo(SC_BAD_REQUEST);
-    assertThat(response.getPayload()).isEqualTo("Certificate is expired.");
+    assertThat(response.getPayload()).isEqualTo(expectedError);
   }
 
   private SecurityAction createAction(String registrarId, String jsonBody) throws IOException {
