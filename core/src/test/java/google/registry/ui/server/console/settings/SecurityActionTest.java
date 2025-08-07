@@ -114,11 +114,11 @@ class SecurityActionTest extends ConsoleActionBaseTestCase {
     assertThat(history.getDescription()).hasValue("registrarId|IP_CHANGE,PRIMARY_SSL_CERT_CHANGE");
   }
 
-@Test
+  @Test
   void testFailure_validityPeriodTooLong_returnsSpecificError() throws IOException {
     CertificateChecker strictChecker =
         new CertificateChecker(
-            ImmutableSortedMap.of(START_OF_TIME, 398), 
+            ImmutableSortedMap.of(START_OF_TIME, 398),
             30,
             15,
             2048,
@@ -141,7 +141,7 @@ class SecurityActionTest extends ConsoleActionBaseTestCase {
     SecurityAction action =
         new SecurityAction(
             consoleApiParams,
-            strictChecker, 
+            strictChecker,
             registrarAccessor,
             testRegistrar.getRegistrarId(),
             maybeRegistrar);
