@@ -25,8 +25,11 @@ spec:
           name: http
         resources:
           requests:
-            cpu: "100m"
+            cpu: "1000m"
             memory: "1Gi"
+          limits:
+            cpu: "1000m"
+            memory: "2Gi"
         args: [ENVIRONMENT]
         env:
         - name: POD_ID
@@ -50,7 +53,10 @@ spec:
           name: epp
         resources:
           requests:
-            cpu: "100m"
+            cpu: "1000m"
+            memory: "512Mi"
+          limits:
+            cpu: "1000m"
             memory: "512Mi"
         args: [--env, PROXY_ENV, --log, --local]
         env:
@@ -85,12 +91,12 @@ spec:
   minReplicas: 5
   maxReplicas: 20
   metrics:
-    - type: Resource
-      resource:
-        name: cpu
-        target:
-          type: Utilization
-          averageUtilization: 100
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 80
 ---
 apiVersion: v1
 kind: Service

@@ -34,13 +34,13 @@ spec:
             # explicit pod-slots 0 is required in order to downgrade node 
             # class from performance, which has implicit pod-slots 1
             cloud.google.com/pod-slots: 0
-            cpu: "100m"
+            cpu: "500m"
             memory: "1Gi"
           limits:
             # explicit pod-slots 0 is required in order to downgrade node 
             # class from performance, which has implicit pod-slots 1
             cloud.google.com/pod-slots: 0
-            cpu: "500m"
+            cpu: "1000m"
             memory: "2Gi"
         args: [ENVIRONMENT]
         env:
@@ -76,7 +76,7 @@ spec:
       name: cpu
       target:
         type: Utilization
-        averageUtilization: 100
+        averageUtilization: 80
 ---
 apiVersion: v1
 kind: Service

@@ -25,8 +25,11 @@ spec:
           name: http
         resources:
           requests:
-            cpu: "100m"
-            memory: "512Mi"
+            cpu: "500m"
+            memory: "1Gi"
+          limits:
+            cpu: "1000m"
+            memory: "1Gi"
         args: [ENVIRONMENT]
         env:
         - name: POD_ID
@@ -61,7 +64,7 @@ spec:
         name: cpu
         target:
           type: Utilization
-          averageUtilization: 100
+          averageUtilization: 80
 ---
 apiVersion: v1
 kind: Service
