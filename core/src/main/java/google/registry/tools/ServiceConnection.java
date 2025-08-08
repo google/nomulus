@@ -35,7 +35,6 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.io.CharStreams;
 import com.google.common.net.MediaType;
-import com.google.re2j.Pattern;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.request.Action.GaeService;
 import google.registry.request.Action.GkeService;
@@ -55,9 +54,6 @@ import org.json.simple.JSONValue;
  * Connection to another service, call the {@link #withService} function.
  */
 public class ServiceConnection {
-
-  /** Pattern to heuristically extract title tag contents in HTML responses. */
-  protected static final Pattern HTML_TITLE_TAG_PATTERN = Pattern.compile("<title>(.*?)</title>");
 
   private final Service service;
   private final boolean useCanary;

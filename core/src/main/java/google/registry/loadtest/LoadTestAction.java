@@ -17,10 +17,7 @@ package google.registry.loadtest;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.Lists.partition;
-import static google.registry.security.XsrfTokenManager.X_CSRF_TOKEN;
 import static google.registry.util.ResourceUtils.readResourceUtf8;
-import static java.util.Arrays.asList;
-import static org.joda.time.DateTimeZone.UTC;
 
 import com.google.cloud.tasks.v2.Task;
 import com.google.common.collect.ImmutableList;
@@ -34,7 +31,7 @@ import google.registry.request.Action;
 import google.registry.request.Action.GaeService;
 import google.registry.request.Parameter;
 import google.registry.request.auth.Auth;
-import google.registry.security.XsrfTokenManager;
+import google.registry.util.Clock;
 import google.registry.util.RegistryEnvironment;
 import jakarta.inject.Inject;
 import java.time.Instant;
@@ -67,11 +64,9 @@ public class LoadTestAction implements Runnable {
   private static final int NUM_QUEUES = 10;
   private static final int MAX_TASKS_PER_LOAD = 100;
   private static final int ARBITRARY_VALID_HOST_LENGTH = 40;
-  private static final int MAX_CONTACT_LENGTH = 13;
   private static final int MAX_DOMAIN_LABEL_LENGTH = 63;
 
   private static final String EXISTING_DOMAIN = "testdomain";
-  private static final String EXISTING_CONTACT = "contact";
   private static final String EXISTING_HOST = "ns1";
 
   private static final Random random = new Random();
@@ -85,8 +80,8 @@ public class LoadTestAction implements Runnable {
 
   /**
    * The number of seconds to delay the execution of the first load testing tasks by. Preparatory
-   * work of creating independent contacts and hosts that will be used for later domain creation
-   * testing occurs during this period, so make sure that it is long enough.
+   * work of creating independent hosts that will be used for later domain creation testing occurs
+   * during this period, so make sure that it is long enough.
    */
   @Inject
   @Parameter("delaySeconds")
@@ -120,21 +115,6 @@ public class LoadTestAction implements Runnable {
   @Parameter("domainChecks")
   int domainChecksPerSecond;
 
-  /** The number of successful contact creates to enqueue per second over the length of the test. */
-  @Inject
-  @Parameter("successfulContactCreates")
-  int successfulContactCreatesPerSecond;
-
-  /** The number of failed contact creates to enqueue per second over the length of the test. */
-  @Inject
-  @Parameter("failedContactCreates")
-  int failedContactCreatesPerSecond;
-
-  /** The number of successful contact infos to enqueue per second over the length of the test. */
-  @Inject
-  @Parameter("contactInfos")
-  int contactInfosPerSecond;
-
   /** The number of successful host creates to enqueue per second over the length of the test. */
   @Inject
   @Parameter("successfulHostCreates")
@@ -152,9 +132,8 @@ public class LoadTestAction implements Runnable {
 
   @Inject CloudTasksUtils cloudTasksUtils;
 
-  private final String xmlContactCreateTmpl;
-  private final String xmlContactCreateFail;
-  private final String xmlContactInfo;
+  @Inject Clock clock;
+
   private final String xmlDomainCheck;
   private final String xmlDomainCreateTmpl;
   private final String xmlDomainCreateFail;
@@ -163,53 +142,35 @@ public class LoadTestAction implements Runnable {
   private final String xmlHostCreateFail;
   private final String xmlHostInfo;
 
-  /**
-   * The XSRF token to be used for making requests to the epptool endpoint.
-   *
-   * <p>Note that the email address is set to empty, because the logged-in user hitting this
-   * endpoint will not be the same as when the tasks themselves fire and hit the epptool endpoint.
-   */
-  private final String xsrfToken;
-
   @Inject
-  LoadTestAction(@Parameter("tld") String tld, XsrfTokenManager xsrfTokenManager) {
-    xmlContactCreateTmpl = loadXml("contact_create");
-    xmlContactCreateFail = xmlContactCreateTmpl.replace("%contact%", EXISTING_CONTACT);
-    xmlContactInfo = loadXml("contact_info").replace("%contact%", EXISTING_CONTACT);
+  LoadTestAction(@Parameter("tld") String tld) {
     xmlDomainCheck =
         loadXml("domain_check").replace("%tld%", tld).replace("%domain%", EXISTING_DOMAIN);
     xmlDomainCreateTmpl = loadXml("domain_create").replace("%tld%", tld);
     xmlDomainCreateFail =
         xmlDomainCreateTmpl
             .replace("%domain%", EXISTING_DOMAIN)
-            .replace("%contact%", EXISTING_CONTACT)
             .replace("%host%", EXISTING_HOST);
     xmlDomainInfo =
         loadXml("domain_info").replace("%tld%", tld).replace("%domain%", EXISTING_DOMAIN);
     xmlHostCreateTmpl = loadXml("host_create");
     xmlHostCreateFail = xmlHostCreateTmpl.replace("%host%", EXISTING_HOST);
     xmlHostInfo = loadXml("host_info").replace("%host%", EXISTING_HOST);
-    xsrfToken = xsrfTokenManager.generateToken("");
   }
 
   @Override
   public void run() {
     validateAndLogRequest();
-    DateTime initialStartSecond = DateTime.now(UTC).plusSeconds(delaySeconds);
+    DateTime initialStartSecond = clock.nowUtc().plusSeconds(delaySeconds);
     ImmutableList.Builder<String> preTaskXmls = new ImmutableList.Builder<>();
-    ImmutableList.Builder<String> contactNamesBuilder = new ImmutableList.Builder<>();
     ImmutableList.Builder<String> hostPrefixesBuilder = new ImmutableList.Builder<>();
     for (int i = 0; i < successfulDomainCreatesPerSecond; i++) {
-      String contactName = getRandomLabel(MAX_CONTACT_LENGTH);
       String hostPrefix = getRandomLabel(ARBITRARY_VALID_HOST_LENGTH);
-      contactNamesBuilder.add(contactName);
       hostPrefixesBuilder.add(hostPrefix);
       preTaskXmls.add(
-          xmlContactCreateTmpl.replace("%contact%", contactName),
           xmlHostCreateTmpl.replace("%host%", hostPrefix));
     }
-    enqueue(createTasks(preTaskXmls.build(), DateTime.now(UTC)));
-    ImmutableList<String> contactNames = contactNamesBuilder.build();
+    enqueue(createTasks(preTaskXmls.build(), clock.nowUtc()));
     ImmutableList<String> hostPrefixes = hostPrefixesBuilder.build();
 
     ImmutableList.Builder<Task> tasks = new ImmutableList.Builder<>();
@@ -218,29 +179,16 @@ public class LoadTestAction implements Runnable {
       // The first "failed" creates might actually succeed if the object doesn't already exist, but
       // that shouldn't affect the load numbers.
       tasks.addAll(
-          createTasks(
-              createNumCopies(xmlContactCreateFail, failedContactCreatesPerSecond), startSecond));
-      tasks.addAll(
           createTasks(createNumCopies(xmlHostCreateFail, failedHostCreatesPerSecond), startSecond));
       tasks.addAll(
           createTasks(
               createNumCopies(xmlDomainCreateFail, failedDomainCreatesPerSecond), startSecond));
       // We can do infos on the known existing objects.
-      tasks.addAll(
-          createTasks(createNumCopies(xmlContactInfo, contactInfosPerSecond), startSecond));
       tasks.addAll(createTasks(createNumCopies(xmlHostInfo, hostInfosPerSecond), startSecond));
       tasks.addAll(createTasks(createNumCopies(xmlDomainInfo, domainInfosPerSecond), startSecond));
       // The domain check template uses "example.TLD" which won't exist, and one existing domain.
       tasks.addAll(
           createTasks(createNumCopies(xmlDomainCheck, domainChecksPerSecond), startSecond));
-      // Do successful creates on random names
-      tasks.addAll(
-          createTasks(
-              createNumCopies(xmlContactCreateTmpl, successfulContactCreatesPerSecond)
-                  .stream()
-                  .map(randomNameReplacer("%contact%", MAX_CONTACT_LENGTH))
-                  .collect(toImmutableList()),
-              startSecond));
       tasks.addAll(
           createTasks(
               createNumCopies(xmlHostCreateTmpl, successfulHostCreatesPerSecond)
@@ -253,7 +201,6 @@ public class LoadTestAction implements Runnable {
               createNumCopies(xmlDomainCreateTmpl, successfulDomainCreatesPerSecond)
                   .stream()
                   .map(randomNameReplacer("%domain%", MAX_DOMAIN_LABEL_LENGTH))
-                  .map(listNameReplacer("%contact%", contactNames))
                   .map(listNameReplacer("%host%", hostPrefixes))
                   .collect(toImmutableList()),
               startSecond));
@@ -272,9 +219,6 @@ public class LoadTestAction implements Runnable {
             || failedDomainCreatesPerSecond > 0
             || domainInfosPerSecond > 0
             || domainChecksPerSecond > 0
-            || successfulContactCreatesPerSecond > 0
-            || failedContactCreatesPerSecond > 0
-            || contactInfosPerSecond > 0
             || successfulHostCreatesPerSecond > 0
             || failedHostCreatesPerSecond > 0
             || hostInfosPerSecond > 0,
@@ -282,8 +226,7 @@ public class LoadTestAction implements Runnable {
     logger.atInfo().log(
         "Running load test with the following params. registrarId: %s, delaySeconds: %d, "
             + "runSeconds: %d, successful|failed domain creates/s: %d|%d, domain infos/s: %d, "
-            + "domain checks/s: %d, successful|failed contact creates/s: %d|%d, "
-            + "contact infos/s: %d, successful|failed host creates/s: %d|%d, host infos/s: %d.",
+            + "domain checks/s: %d, successful|failed host creates/s: %d|%d, host infos/s: %d.",
         registrarId,
         delaySeconds,
         runSeconds,
@@ -291,9 +234,6 @@ public class LoadTestAction implements Runnable {
         failedDomainCreatesPerSecond,
         domainInfosPerSecond,
         domainChecksPerSecond,
-        successfulContactCreatesPerSecond,
-        failedContactCreatesPerSecond,
-        contactInfosPerSecond,
         successfulHostCreatesPerSecond,
         failedHostCreatesPerSecond,
         hostInfosPerSecond);
@@ -303,10 +243,10 @@ public class LoadTestAction implements Runnable {
     return readResourceUtf8(LoadTestAction.class, String.format("templates/%s.xml", name));
   }
 
-  private List<String> createNumCopies(String xml, int numCopies) {
+  private ImmutableList<String> createNumCopies(String xml, int numCopies) {
     String[] xmls = new String[numCopies];
     Arrays.fill(xmls, xml);
-    return asList(xmls);
+    return ImmutableList.copyOf(xmls);
   }
 
   private Function<String, String> listNameReplacer(final String toReplace, List<String> choices) {
@@ -326,35 +266,27 @@ public class LoadTestAction implements Runnable {
     return name.toString();
   }
 
-  private List<Task> createTasks(List<String> xmls, DateTime start) {
+  private ImmutableList<Task> createTasks(ImmutableList<String> xmls, DateTime start) {
     ImmutableList.Builder<Task> tasks = new ImmutableList.Builder<>();
     for (int i = 0; i < xmls.size(); i++) {
       // Space tasks evenly within across a second.
       Instant scheduleTime =
           Instant.ofEpochMilli(start.plusMillis((int) (1000.0 / xmls.size() * i)).getMillis());
       tasks.add(
-          Task.newBuilder()
-              .setAppEngineHttpRequest(
-                  cloudTasksUtils
-                      .createTask(
-                          EppToolAction.class,
-                          Action.Method.POST,
-                          ImmutableMultimap.of(
-                              "clientId",
-                              registrarId,
-                              "superuser",
-                              Boolean.FALSE.toString(),
-                              "dryRun",
-                              Boolean.FALSE.toString(),
-                              "xml",
-                              xmls.get(i)))
-                      .toBuilder()
-                      .getAppEngineHttpRequest()
-                      .toBuilder()
-                      // TODO: investigate if the following is necessary now that
-                      // LegacyAuthenticationMechanism is gone.
-                      .putHeaders(X_CSRF_TOKEN, xsrfToken)
-                      .build())
+          cloudTasksUtils
+              .createTask(
+                  EppToolAction.class,
+                  Action.Method.POST,
+                  ImmutableMultimap.of(
+                      "clientId",
+                      registrarId,
+                      "superuser",
+                      Boolean.FALSE.toString(),
+                      "dryRun",
+                      Boolean.FALSE.toString(),
+                      "xml",
+                      xmls.get(i)))
+              .toBuilder()
               .setScheduleTime(
                   Timestamp.newBuilder()
                       .setSeconds(scheduleTime.getEpochSecond())
@@ -365,7 +297,7 @@ public class LoadTestAction implements Runnable {
     return tasks.build();
   }
 
-  private void enqueue(List<Task> tasks) {
+  private void enqueue(ImmutableList<Task> tasks) {
     List<List<Task>> chunks = partition(tasks, MAX_TASKS_PER_LOAD);
     // Farm out tasks to multiple queues to work around queue qps quotas.
     for (int i = 0; i < chunks.size(); i++) {

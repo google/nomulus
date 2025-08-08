@@ -50,10 +50,8 @@ class LoadTestCommandTest extends CommandTestCase<LoadTestCommand> {
             .put("clientId", "acme")
             .put("successfulHostCreates", 1)
             .put("successfulDomainCreates", 1)
-            .put("successfulContactCreates", 1)
             .put("hostInfos", 1)
             .put("domainInfos", 1)
-            .put("contactInfos", 1)
             .put("runSeconds", 9200)
             .build();
     verify(connection)
@@ -69,10 +67,8 @@ class LoadTestCommandTest extends CommandTestCase<LoadTestCommand> {
         "--client_id=NewRegistrar",
         "--successful_host_creates=10",
         "--successful_domain_creates=11",
-        "--successful_contact_creates=12",
         "--host_infos=13",
         "--domain_infos=14",
-        "--contact_infos=15",
         "--run_seconds=16");
     ImmutableMap<String, Object> params =
         new ImmutableMap.Builder<String, Object>()
@@ -80,10 +76,8 @@ class LoadTestCommandTest extends CommandTestCase<LoadTestCommand> {
             .put("clientId", "NewRegistrar")
             .put("successfulHostCreates", 10)
             .put("successfulDomainCreates", 11)
-            .put("successfulContactCreates", 12)
             .put("hostInfos", 13)
             .put("domainInfos", 14)
-            .put("contactInfos", 15)
             .put("runSeconds", 16)
             .build();
     verify(connection)

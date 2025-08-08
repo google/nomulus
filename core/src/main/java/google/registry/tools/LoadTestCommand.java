@@ -14,7 +14,6 @@
 
 package google.registry.tools;
 
-
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import com.google.common.collect.ImmutableMap;
@@ -53,11 +52,6 @@ class LoadTestCommand extends ConfirmingCommand implements CommandWithConnection
   int successfulDomainCreates = 1;
 
   @Parameter(
-      names = {"--successful_contact_creates"},
-      description = "Number of contact records to create per second.")
-  int successfulContactCreates = 1;
-
-  @Parameter(
       names = {"--host_infos"},
       description = "Number of successful host:info commands to send per second.")
   int hostInfos = 1;
@@ -66,11 +60,6 @@ class LoadTestCommand extends ConfirmingCommand implements CommandWithConnection
       names = {"--domain_infos"},
       description = "Number of successful domain:info commands to send per second.")
   int domainInfos = 1;
-
-  @Parameter(
-      names = {"--contact_infos"},
-      description = "Number of successful contact:info commands to send per second.")
-  int contactInfos = 1;
 
   @Parameter(
       names = {"--run_seconds"},
@@ -120,10 +109,8 @@ class LoadTestCommand extends ConfirmingCommand implements CommandWithConnection
         .put("clientId", clientId)
         .put("successfulHostCreates", successfulHostCreates)
         .put("successfulDomainCreates", successfulDomainCreates)
-        .put("successfulContactCreates", successfulContactCreates)
         .put("hostInfos", hostInfos)
         .put("domainInfos", domainInfos)
-        .put("contactInfos", contactInfos)
         .put("runSeconds", runSeconds)
         .build();
 
