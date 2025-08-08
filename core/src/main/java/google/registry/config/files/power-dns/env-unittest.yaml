@@ -1,0 +1,10 @@
+# Add environment-specific configuration here.
+powerDns:
+  baseUrl: http://unittest:8081/api/v1
+  apiKey: unittest-api-key
+  dnssecEnabled: true
+  tsigEnabled: true
+  rootNameServers:
+  - ns1.unittest.com.
+  - ns2.unittest.com.
+  soaName: nstld.unittest.com.
