@@ -33,6 +33,7 @@ do
     --project "${project}" --zone "${parts[1]}"
   sed s/GCP_PROJECT/${project}/g "./kubernetes/proxy-deployment-${environment}.yaml" | \
   kubectl apply -f -
+  kubectl apply -f "./kubernetes/proxy-limit-range.yaml" --force
   kubectl apply -f "./kubernetes/proxy-service.yaml" --force
   # Alpha does not have canary
   if [[ ${environment} != "alpha" ]]; then
