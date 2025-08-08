@@ -25,7 +25,7 @@ spec:
         value: /_dr/epptool
     - path:
         type: PathPrefix
-        value: /loadtest
+        value: /_dr/loadtest
     backendRefs:
     - group: net.gke.io
       kind: ServiceImport
@@ -58,7 +58,7 @@ spec:
         value: "true"
     - path:
         type: PathPrefix
-        value: /loadtest
+        value: /_dr/loadtest
       headers:
       - name: "canary"
         value: "true"
