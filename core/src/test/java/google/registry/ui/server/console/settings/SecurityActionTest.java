@@ -82,26 +82,25 @@ class SecurityActionTest extends ConsoleActionBaseTestCase {
       AuthenticatedRegistrarAccessor.createForTesting(
           ImmutableSetMultimap.of("registrarId", AuthenticatedRegistrarAccessor.Role.ADMIN));
 
-  private CertificateChecker certificateChecker =
-      new CertificateChecker(
-          ImmutableSortedMap.of(START_OF_TIME, 20825, DateTime.parse("2020-09-01T00:00:00Z"), 398),
-          30,
-          15,
-          2048,
-          ImmutableSet.of("secp256r1", "secp384r1"),
-          clock);
 
   @BeforeEach
   void beforeEach() {
     testRegistrar = saveRegistrar("registrarId");
   }
-
   @Test
   void testSuccess_postRegistrarInfo() throws IOException {
+    CertificateChecker lenientChecker =
+        new CertificateChecker(
+            ImmutableSortedMap.of(
+                START_OF_TIME, 20825, DateTime.parse("2020-09-01T00:00:00Z"), 398),
+            30,
+            15,
+            2048,
+            ImmutableSet.of("secp256r1", "secp384r1"),
+            clock);
+
     clock.setTo(DateTime.parse("2020-11-01T00:00:00Z"));
-    SecurityAction action =
-        createAction(
-            testRegistrar.getRegistrarId());
+    SecurityAction action = createAction(testRegistrar.getRegistrarId(), lenientChecker);
     action.run();
     assertThat(((FakeResponse) consoleApiParams.response()).getStatus()).isEqualTo(SC_OK);
     Registrar r = loadRegistrar(testRegistrar.getRegistrarId());
@@ -131,20 +130,8 @@ class SecurityActionTest extends ConsoleActionBaseTestCase {
         String.format(
             "{\"registrarId\": \"registrarId\", \"clientCertificate\": \"%s\"}", escapedCert);
 
-    when(consoleApiParams.request().getMethod()).thenReturn(Action.Method.POST.toString());
-    doReturn(new BufferedReader(new StringReader(jsonWithBadCert)))
-        .when(consoleApiParams.request())
-        .getReader();
-    Optional<Registrar> maybeRegistrar =
-        ConsoleModule.provideRegistrar(
-            GSON, RequestModule.provideJsonBody(consoleApiParams.request(), GSON));
     SecurityAction action =
-        new SecurityAction(
-            consoleApiParams,
-            strictChecker,
-            registrarAccessor,
-            testRegistrar.getRegistrarId(),
-            maybeRegistrar);
+        createAction(testRegistrar.getRegistrarId(), jsonWithBadCert, strictChecker);
     action.run();
 
     String expectedError =
@@ -154,7 +141,9 @@ class SecurityActionTest extends ConsoleActionBaseTestCase {
     assertThat(response.getPayload()).isEqualTo(expectedError);
   }
 
-  private SecurityAction createAction(String registrarId, String jsonBody) throws IOException {
+  private SecurityAction createAction(
+      String registrarId, String jsonBody, CertificateChecker certificateChecker)
+      throws IOException {
     when(consoleApiParams.request().getMethod()).thenReturn(Action.Method.POST.toString());
     doReturn(new BufferedReader(new StringReader(jsonBody)))
         .when(consoleApiParams.request())
@@ -166,7 +155,8 @@ class SecurityActionTest extends ConsoleActionBaseTestCase {
         consoleApiParams, certificateChecker, registrarAccessor, registrarId, maybeRegistrar);
   }
 
-  private SecurityAction createAction(String registrarId) throws IOException {
-    return createAction(registrarId, jsonRegistrar1);
+  private SecurityAction createAction(String registrarId, CertificateChecker certificateChecker)
+      throws IOException {
+    return createAction(registrarId, jsonRegistrar1, certificateChecker);
   }
 }
