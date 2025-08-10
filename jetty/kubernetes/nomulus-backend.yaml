@@ -14,9 +14,6 @@ spec:
         service: backend
     spec:
       serviceAccountName: nomulus
-      nodeSelector:
-        cloud.google.com/compute-class: "Performance"
-        cloud.google.com/machine-family: c4
       containers:
       - name: backend
         image: gcr.io/GCP_PROJECT/nomulus
@@ -25,9 +22,15 @@ spec:
           name: http
         resources:
           requests:
+            # explicit pod-slots 0 is required in order to downgrade node
+            # class from performance, which has implicit pod-slots 1
+            cloud.google.com/pod-slots: 0
             cpu: "500m"
             memory: "1Gi"
           limits:
+            # explicit pod-slots 0 is required in order to downgrade node
+            # class from performance, which has implicit pod-slots 1
+            cloud.google.com/pod-slots: 0
             cpu: "1000m"
             memory: "1Gi"
         args: [ENVIRONMENT]
