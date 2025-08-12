@@ -57,6 +57,6 @@
       This job runs an action that deletes domains that are past their
       autorenew end date.
     </description>
-    <schedule>7 3 * * *</schedule>
+    <schedule>30 2 * * *</schedule>
   </task>
 </entries>
