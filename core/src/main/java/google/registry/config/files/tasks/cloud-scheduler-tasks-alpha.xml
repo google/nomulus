@@ -88,6 +88,7 @@
       should exist between the RECURRING_BILLING cursor's time and the execution
       time of the action.
     </description>
+    <!-- Runs shortly after DeleteExpiredDomainsAction so it can delete domains before they renew -->
     <schedule>0 3 * * *</schedule>
   </task>
 
@@ -98,7 +99,8 @@
       This job runs an action that deletes domains that are past their
       autorenew end date.
     </description>
-    <schedule>7 3 * * *</schedule>
+    <!-- Runs shortly before ExpandBillingRecurrencesPipeline to catch and delete domains before they renew -->
+    <schedule>45 2 * * *</schedule>
   </task>
 
   <task>

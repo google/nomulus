@@ -57,6 +57,7 @@
       This job runs an action that deletes domains that are past their
       autorenew end date.
     </description>
-    <schedule>7 3 * * *</schedule>
+    <!-- Runs shortly before ExpandBillingRecurrencesPipeline to catch and delete domains before they renew -->
+    <schedule>45 2 * * *</schedule>
   </task>
 </entries>
