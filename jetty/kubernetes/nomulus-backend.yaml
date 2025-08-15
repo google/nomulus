@@ -29,7 +29,7 @@ spec:
             memory: "1Gi"
           limits:
             cpu: "1000m"
-            memory: "1Gi"
+            memory: "1.5Gi"
         args: [ENVIRONMENT]
         env:
         - name: POD_ID

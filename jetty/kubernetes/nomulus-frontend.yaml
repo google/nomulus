@@ -25,7 +25,7 @@ spec:
           name: http
         resources:
           requests:
-            cpu: "1000m"
+            cpu: "600m"
             memory: "1Gi"
           limits:
             cpu: "1000m"
@@ -53,11 +53,11 @@ spec:
           name: epp
         resources:
           requests:
-            cpu: "1000m"
+            cpu: "600m"
             memory: "512Mi"
           limits:
             cpu: "1000m"
-            memory: "512Mi"
+            memory: "1Gi"
         args: [--env, PROXY_ENV, --log, --local]
         env:
         - name: POD_ID
@@ -88,8 +88,8 @@ spec:
     apiVersion: apps/v1
     kind: Deployment
     name: frontend
-  minReplicas: 5
-  maxReplicas: 20
+  minReplicas: 8
+  maxReplicas: 16
   metrics:
   - type: Resource
     resource:
