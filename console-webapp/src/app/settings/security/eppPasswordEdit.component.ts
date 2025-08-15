@@ -14,13 +14,7 @@
 
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component } from '@angular/core';
-import {
-  AbstractControl,
-  FormControl,
-  FormGroup,
-  ValidatorFn,
-  Validators,
-} from '@angular/forms';
+import { FormControl, FormGroup, Validators } from '@angular/forms';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { RegistrarService } from 'src/app/registrar/registrar.service';
 import { SecurityService } from './security.service';
@@ -30,10 +24,10 @@ import { CommonModule } from '@angular/common';
 import { MaterialModule } from 'src/app/material.module';
 import { filter, switchMap, take } from 'rxjs';
 import { BackendService } from 'src/app/shared/services/backend.service';
-
-type errorCode = 'required' | 'maxlength' | 'minlength' | 'passwordsDontMatch';
-
-type errorFriendlyText = { [type in errorCode]: String };
+import {
+  PasswordInputForm,
+  PasswordResults,
+} from 'src/app/shared/components/passwordReset/passwordInputForm.component';
 
 @Component({
   selector: 'app-reset-epp-password-dialog',
@@ -68,16 +62,21 @@ export class ResetEppPasswordComponent {
   standalone: false,
 })
 export default class EppPasswordEditComponent {
-  MIN_MAX_LENGHT = new String(
-    'Passwords must be between 6 and 16 alphanumeric characters'
-  );
+  static EPP_VALIDATORS = [
+    Validators.required,
+    Validators.minLength(6),
+    Validators.maxLength(16),
+    PasswordInputForm.newPasswordsMatch,
+  ];
 
-  errorTextMap: errorFriendlyText = {
-    required: "This field can't be empty",
-    maxlength: this.MIN_MAX_LENGHT,
-    minlength: this.MIN_MAX_LENGHT,
-    passwordsDontMatch: "Passwords don't match",
-  };
+  passwordUpdateForm = new FormGroup({
+    oldPassword: new FormControl('', [Validators.required]),
+    newPassword: new FormControl('', EppPasswordEditComponent.EPP_VALIDATORS),
+    newPasswordRepeat: new FormControl(
+      '',
+      EppPasswordEditComponent.EPP_VALIDATORS
+    ),
+  });
 
   constructor(
     public registrarService: RegistrarService,
@@ -88,59 +87,13 @@ export default class EppPasswordEditComponent {
     private _snackBar: MatSnackBar
   ) {}
 
-  hasError(controlName: string) {
-    const maybeErrors = this.passwordUpdateForm.get(controlName)?.errors;
-    const maybeError =
-      maybeErrors && (Object.keys(maybeErrors)[0] as errorCode);
-    if (maybeError) {
-      return this.errorTextMap[maybeError];
-    }
-    return '';
-  }
-
-  newPasswordsMatch: ValidatorFn = (control: AbstractControl) => {
-    if (
-      this.passwordUpdateForm?.get('newPassword')?.value ===
-      this.passwordUpdateForm?.get('newPasswordRepeat')?.value
-    ) {
-      this.passwordUpdateForm?.get('newPasswordRepeat')?.setErrors(null);
-    } else {
-      // latest angular just won't detect the error without setTimeout
-      setTimeout(() => {
-        this.passwordUpdateForm
-          ?.get('newPasswordRepeat')
-          ?.setErrors({ passwordsDontMatch: control.value });
-      });
-    }
-    return null;
-  };
-
-  passwordUpdateForm = new FormGroup({
-    oldPassword: new FormControl('', [Validators.required]),
-    newPassword: new FormControl('', [
-      Validators.required,
-      Validators.minLength(6),
-      Validators.maxLength(16),
-      this.newPasswordsMatch,
-    ]),
-    newPasswordRepeat: new FormControl('', [
-      Validators.required,
-      Validators.minLength(6),
-      Validators.maxLength(16),
-      this.newPasswordsMatch,
-    ]),
-  });
-
-  save() {
-    const { oldPassword, newPassword, newPasswordRepeat } =
-      this.passwordUpdateForm.value;
-    if (!oldPassword || !newPassword || !newPasswordRepeat) return;
+  save(passwordResults: PasswordResults) {
     this.securityService
       .saveEppPassword({
         registrarId: this.registrarService.registrarId(),
-        oldPassword,
-        newPassword,
-        newPasswordRepeat,
+        oldPassword: passwordResults.oldPassword!,
+        newPassword: passwordResults.newPassword,
+        newPasswordRepeat: passwordResults.newPasswordRepeat,
       })
       .subscribe({
         complete: () => {

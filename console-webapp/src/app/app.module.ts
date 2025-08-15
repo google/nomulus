@@ -61,6 +61,8 @@ import { ForceFocusDirective } from './shared/directives/forceFocus.directive';
 import RdapComponent from './settings/rdap/rdap.component';
 import RdapEditComponent from './settings/rdap/rdapEdit.component';
 import { PocReminderComponent } from './shared/components/pocReminder/pocReminder.component';
+import { PasswordResetVerifyComponent } from './shared/components/passwordReset/passwordResetVerify.component';
+import { PasswordInputForm } from './shared/components/passwordReset/passwordInputForm.component';
 
 @NgModule({
   declarations: [SelectedRegistrarWrapper],
@@ -84,10 +86,12 @@ export class SelectedRegistrarModule {}
     NavigationComponent,
     NewRegistrarComponent,
     NotificationsComponent,
+    PasswordInputForm,
+    PasswordResetVerifyComponent,
+    PocReminderComponent,
     RdapComponent,
     RdapEditComponent,
     ReasonDialogComponent,
-    PocReminderComponent,
     RegistrarComponent,
     RegistrarDetailsComponent,
     RegistrarSelectorComponent,

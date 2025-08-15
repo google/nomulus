@@ -22,7 +22,6 @@ import { RegistrarService } from '../registrar/registrar.service';
 import { SnackBarModule } from '../snackbar.module';
 import { UserDetailsComponent } from './userDetails.component';
 import { User, UsersService } from './users.service';
-import { UserDataService } from '../shared/services/userData.service';
 import { FormsModule } from '@angular/forms';
 import { UsersListComponent } from './usersList.component';
 import { MatSelectChange } from '@angular/material/select';
@@ -55,7 +54,6 @@ export class UsersComponent {
   constructor(
     protected registrarService: RegistrarService,
     protected usersService: UsersService,
-    private userDataService: UserDataService,
     private _snackBar: MatSnackBar
   ) {
     effect(() => {
