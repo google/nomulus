@@ -255,7 +255,7 @@ hibernate:
   # The fetch size is the number of entities retrieved at a time from the
   # database cursor. Here we set a small default geared toward Nomulus server
   # transactions. Large queries can override the defaults on a per-query basis.
-  jdbcFetchSize: 20
+  jdbcFetchSize: 40
 
 cloudSql:
   # jdbc url for the Cloud SQL database.
