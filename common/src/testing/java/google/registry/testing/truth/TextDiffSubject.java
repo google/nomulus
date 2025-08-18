@@ -92,17 +92,19 @@ public class TextDiffSubject extends Subject {
 
   private ImmutableList<String> filterComments(List<String> lines) {
     return lines.stream()
+        .filter(line -> !line.isBlank())
         .filter(line -> comments.stream().noneMatch(line::startsWith))
         .collect(ImmutableList.toImmutableList());
   }
 
   public void hasSameContentAs(List<String> expectedContent) {
     checkNotNull(expectedContent, "expectedContent");
-    ImmutableList<String> expected = filterComments(expectedContent);
-    if (filterComments(expected).equals(filterComments(actual))) {
+    ImmutableList<String> filteredExpected = filterComments(expectedContent);
+    ImmutableList<String> filteredActual = filterComments(actual);
+    if (filteredExpected.equals(filteredActual)) {
       return;
     }
-    String diffString = diffFormat.generateDiff(expected, actual);
+    String diffString = diffFormat.generateDiff(filteredExpected, filteredActual);
     failWithoutActual(
         Fact.simpleFact(
             Joiner.on('\n')
