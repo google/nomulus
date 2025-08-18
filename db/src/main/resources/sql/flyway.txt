@@ -193,3 +193,4 @@ V192__add_last_poc_verification_date.sql
 V193__password_reset_request.sql
 V194__password_reset_request_registrar.sql
 V195__registrar_poc_id.sql
+V196__tld_expiry_access_period_enabled.sql
