@@ -21,11 +21,11 @@ import static org.apache.commons.text.StringEscapeUtils.escapeEcmaScript;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Predicates;
 import java.net.URL;
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 import org.junit.jupiter.api.extension.AfterEachCallback;
 import org.junit.jupiter.api.extension.BeforeEachCallback;
@@ -100,7 +100,7 @@ public final class WebDriverPlusScreenDifferExtension
     webDriverPlusScreenDiffer =
         new WebDriverScreenDiffer(driver, GOLDENS_PATH, MAX_COLOR_DIFF, MAX_PIXEL_DIFF);
     // non-zero timeout so findByElement will wait for the element to appear
-    driver.manage().timeouts().implicitlyWait(5, TimeUnit.SECONDS);
+    driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(5));
     driver.manage().window().setSize(DEFAULT_WINDOW_SIZE);
 
     if (imageNamePrefix == null) {

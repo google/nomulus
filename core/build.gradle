@@ -272,7 +272,6 @@ dependencies {
   testImplementation deps['org.hamcrest:hamcrest']
   testImplementation deps['org.hamcrest:hamcrest-core']
   testImplementation deps['org.hamcrest:hamcrest-library']
-  testImplementation deps['junit:junit']
   testImplementation deps['org.junit.jupiter:junit-jupiter-api']
   testImplementation deps['org.junit.jupiter:junit-jupiter-engine']
   testImplementation deps['org.junit.jupiter:junit-jupiter-migrationsupport']

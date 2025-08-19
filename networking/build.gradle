@@ -34,7 +34,6 @@ dependencies {
   runtimeOnly deps['io.netty:netty-tcnative-boringssl-static']
 
   testImplementation deps['com.google.truth:truth']
-  testImplementation deps['junit:junit']
   testImplementation deps['org.junit.jupiter:junit-jupiter-api']
   testImplementation deps['org.junit.jupiter:junit-jupiter-engine']
   testImplementation deps['org.junit.jupiter:junit-jupiter-params']

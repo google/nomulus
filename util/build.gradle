@@ -46,7 +46,6 @@ dependencies {
   runtimeOnly deps['com.google.auto.value:auto-value']
   testImplementation deps['com.google.guava:guava-testlib']
   testImplementation deps['com.google.truth:truth']
-  testImplementation deps['junit:junit']
   testImplementation deps['org.junit.jupiter:junit-jupiter-api']
   testImplementation deps['org.junit.jupiter:junit-jupiter-engine']
   testImplementation deps['org.junit.platform:junit-platform-runner']

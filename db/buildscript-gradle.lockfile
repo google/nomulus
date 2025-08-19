@@ -1,15 +1,12 @@
 # This is a Gradle generated file for dependency locking.
 # Manual edits can break the build and are not advised.
 # This file is expected to be part of source control.
-com.fasterxml.jackson.core:jackson-annotations:2.15.2=classpath
-com.fasterxml.jackson.core:jackson-core:2.15.2=classpath
-com.fasterxml.jackson.core:jackson-databind:2.15.2=classpath
-com.fasterxml.jackson.dataformat:jackson-dataformat-toml:2.15.2=classpath
-com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.15.2=classpath
-com.fasterxml.jackson:jackson-bom:2.15.2=classpath
+com.fasterxml.jackson.core:jackson-annotations:2.19.1=classpath
+com.fasterxml.jackson.core:jackson-core:2.19.1=classpath
+com.fasterxml.jackson.core:jackson-databind:2.19.1=classpath
+com.fasterxml.jackson:jackson-bom:2.19.1=classpath
 gradle.plugin.org.flywaydb:gradle-plugin-publishing:11.0.1=classpath
-org.antlr:antlr4-runtime:4.13.2=classpath
 org.flywaydb.flyway:org.flywaydb.flyway.gradle.plugin:11.0.1=classpath
-org.flywaydb:flyway-core:11.4.0=classpath
-org.flywaydb:flyway-database-postgresql:11.4.0=classpath
+org.flywaydb:flyway-core:11.11.1=classpath
+org.flywaydb:flyway-database-postgresql:11.11.1=classpath
 empty=
