@@ -135,7 +135,8 @@ public final class RequestModule {
   @Provides
   @RequestUrl
   static String provideRequestUrl(HttpServletRequest req) {
-    return req.getRequestURL().toString();
+    String url = req.getRequestURL().toString();
+    return url.startsWith("https") ? url : url.replaceFirst("http", "https");
   }
 
   @Provides
