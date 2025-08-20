@@ -57,12 +57,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
-/**
- * Unit tests for {@link RdapDomainAction}.
- *
- * <p>TODO(b/26872828): The next time we do any work on RDAP, consider adding the APNIC RDAP
- * conformance checker to the unit test suite.
- */
+/** Unit tests for {@link RdapDomainAction}. */
 class RdapDomainActionTest extends RdapActionBaseTestCase<RdapDomainAction> {
 
   RdapDomainActionTest() {
@@ -260,15 +255,11 @@ class RdapDomainActionTest extends RdapActionBaseTestCase<RdapDomainAction> {
   }
 
   @Test
-  void testUnknownDomain_returns400() {
+  void testUnknownDomain_returns404() {
     assertAboutJson()
         .that(generateActualJson("missingdomain.com"))
-        .isEqualTo(
-            generateExpectedJsonError(
-                "missingdomain.com is not a valid domain name: Domain name is under tld com which"
-                    + " doesn't exist",
-                400));
-    assertThat(response.getStatus()).isEqualTo(400);
+        .isEqualTo(generateExpectedJsonError("missingdomain.com not found", 404));
+    assertThat(response.getStatus()).isEqualTo(404);
   }
 
   @Test

@@ -57,6 +57,9 @@ public class RdapDomainAction extends RdapActionBase {
     InternetDomainName domainName;
     try {
       domainName = validateDomainName(pathSearchString);
+    } catch (DomainFlowUtils.TldDoesNotExistException e) {
+      // A special case where a valid domain name on a nonexistent TLD should return 404
+      throw new NotFoundException(pathSearchString + " not found");
     } catch (EppException e) {
       throw new BadRequestException(
           String.format(

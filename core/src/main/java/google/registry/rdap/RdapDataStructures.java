@@ -333,7 +333,6 @@ final class RdapDataStructures {
    */
   @RestrictJsonNames("status[]")
   enum RdapStatus implements Jsonable {
-
     // Status values specified in RFC 9083 § 10.2.2.
     VALIDATED("validated"),
     RENEW_PROHIBITED("renew prohibited"),

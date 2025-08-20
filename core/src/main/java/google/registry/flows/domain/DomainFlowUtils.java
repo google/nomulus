@@ -1397,7 +1397,7 @@ public class DomainFlowUtils {
   }
 
   /** Domain name is under tld which doesn't exist. */
-  static class TldDoesNotExistException extends ParameterValueRangeErrorException {
+  public static class TldDoesNotExistException extends ParameterValueRangeErrorException {
     public TldDoesNotExistException(String tld) {
       super(String.format("Domain name is under tld %s which doesn't exist", tld));
     }
