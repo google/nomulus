@@ -120,7 +120,7 @@ abstract class RdapSearchResults {
   }
 
   @AutoValue
-  abstract static class EntitySearchResponse extends BaseSearchResponse {
+  public abstract static class EntitySearchResponse extends BaseSearchResponse {
 
     @JsonableElement public abstract ImmutableList<RdapEntity> entitySearchResults();
 

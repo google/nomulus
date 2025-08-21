@@ -81,7 +81,7 @@ final class DomainWhoisResponse extends WhoisResponseImpl {
         domain.getCurrentSponsorRegistrarId());
     Registrar registrar = registrarOptional.get();
     Optional<RegistrarPoc> abuseContact =
-        registrar.getContactsFromReplica().stream()
+        registrar.getPocsFromReplica().stream()
             .filter(RegistrarPoc::getVisibleInDomainWhoisAsAbuse)
             .findFirst();
     return WhoisResponseResults.create(

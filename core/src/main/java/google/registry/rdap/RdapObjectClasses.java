@@ -253,8 +253,8 @@ final class RdapObjectClasses {
   /**
    * The Entity Object Class defined in 5.1 of RFC 9083.
    *
-   * <p>Entities are used both for Contacts and for Registrars. We will create different subobjects
-   * for each one for type safety.
+   * <p>Entities are used both for Registrar POCs and for Registrars. We will create different
+   * subobjects for each one for type safety.
    *
    * <p>We're missing the "autnums" and "networks" fields
    */
@@ -309,8 +309,8 @@ final class RdapObjectClasses {
   /**
    * Registrar version of the Entity Object Class defined in 5.1 of RFC 9083.
    *
-   * <p>Entities are used both for Contacts and for Registrars. We will create different subobjects
-   * for each one for type safety.
+   * <p>Entities are used both for Registrar POCs and for Registrars. We will create different
+   * subobjects for each one for type safety.
    */
   @AutoValue
   public abstract static class RdapRegistrarEntity extends RdapEntity {
@@ -326,21 +326,21 @@ final class RdapObjectClasses {
   }
 
   /**
-   * Contact version of the Entity Object Class defined in 5.1 of RFC 9083.
+   * RegistrarPoc version of the Entity Object Class defined in 5.1 of RFC 9083.
    *
-   * <p>Entities are used both for Contacts and for Registrars. We will create different subobjects
-   * for each one for type safety.
+   * <p>Entities are used both for Registrar POCs and for Registrars. We will create different
+   * subobjects for each one for type safety.
    */
   @AutoValue
-  public abstract static class RdapContactEntity extends RdapEntity {
+  public abstract static class RdapRegistrarPocEntity extends RdapEntity {
 
     static Builder builder() {
-      return new AutoValue_RdapObjectClasses_RdapContactEntity.Builder();
+      return new AutoValue_RdapObjectClasses_RdapRegistrarPocEntity.Builder();
     }
 
     @AutoValue.Builder
     abstract static class Builder extends RdapEntity.Builder<Builder> {
-      abstract RdapContactEntity build();
+      abstract RdapRegistrarPocEntity build();
     }
   }
 

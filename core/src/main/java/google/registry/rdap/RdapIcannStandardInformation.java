@@ -117,44 +117,4 @@ public class RdapIcannStandardInformation {
   /** Possibly incomplete notice as a singleton list, for easy use. */
   static final ImmutableList<Notice> POSSIBLY_INCOMPLETE_NOTICES =
       ImmutableList.of(POSSIBLY_INCOMPLETE_RESULT_SET_NOTICE);
-
-  /**
-   * Included when requester is not logged in as the owner of the contact being returned.
-   *
-   * <p>>Note: if we were keeping this around, we'd want/need to implement the <a
-   * href="https://datatracker.ietf.org/doc/rfc9537/">official RDAP redaction spec</a> for contacts.
-   * We are getting rid of contacts in 2025 though so this should be unnecessary.
-   */
-  static final Remark CONTACT_PERSONAL_DATA_HIDDEN_DATA_REMARK =
-      Remark.builder()
-          .setTitle("REDACTED FOR PRIVACY")
-          .setDescription(
-              "Some of the data in this object has been removed.",
-              "Contact personal data is visible only to the owning registrar.")
-          .setType(Remark.Type.OBJECT_REDACTED_AUTHORIZATION)
-          .addLink(
-              Link.builder()
-                  .setRel("alternate")
-                  .setHref(
-                      "https://github.com/google/nomulus/blob/master/docs/rdap.md#authentication")
-                  .setType("text/html")
-                  .build())
-          .build();
-
-  /**
-   * Included in ALL contact responses, even if the user is authorized.
-   *
-   * <p>>Note: if we were keeping this around, we'd want/need to implement the <a
-   * href="https://datatracker.ietf.org/doc/rfc9537/">official RDAP redaction spec</a> for contacts.
-   * We are getting rid of contacts in 2025 though so this should be unnecessary.
-   */
-  static final Remark CONTACT_EMAIL_REDACTED_FOR_DOMAIN =
-      Remark.builder()
-          .setTitle("EMAIL REDACTED FOR PRIVACY")
-          .setDescription(
-              "Please query the RDDS service of the Registrar of Record identifies in this output"
-                  + " for information on how to contact the Registrant of the queried domain"
-                  + " name.")
-          .setType(Remark.Type.OBJECT_REDACTED_AUTHORIZATION)
-          .build();
 }

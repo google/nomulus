@@ -16,7 +16,6 @@ package google.registry.rdap;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.bsa.persistence.BsaTestingUtils.persistBsaLabel;
-import static google.registry.model.EppResourceUtils.loadByForeignKey;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistDomainWithDependentResources;
@@ -35,7 +34,6 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.gson.JsonObject;
-import google.registry.model.contact.Contact;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.GracePeriod;
 import google.registry.model.domain.Period;
@@ -50,7 +48,6 @@ import google.registry.rdap.RdapMetrics.SearchType;
 import google.registry.rdap.RdapMetrics.WildcardType;
 import google.registry.rdap.RdapSearchResults.IncompletenessWarningType;
 import google.registry.request.Action;
-import google.registry.testing.FullFieldsTestEntityHelper;
 import java.util.Optional;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
@@ -64,46 +61,22 @@ class RdapDomainActionTest extends RdapActionBaseTestCase<RdapDomainAction> {
     super(RdapDomainAction.class);
   }
 
-  private Contact registrantLol;
   private Host host1;
 
   @BeforeEach
   void beforeEach() {
     // lol
     createTld("lol");
-    Registrar registrarLol = persistResource(makeRegistrar(
-        "evilregistrar", "Yes Virginia <script>", Registrar.State.ACTIVE));
+    Registrar registrarLol =
+        persistResource(
+            makeRegistrar("evilregistrar", "Yes Virginia <script>", Registrar.State.ACTIVE));
     persistResources(makeRegistrarPocs(registrarLol));
-    registrantLol =
-        FullFieldsTestEntityHelper.makeAndPersistContact(
-            "5372808-ERL",
-            "Goblin Market",
-            "lol@cat.lol",
-            clock.nowUtc().minusYears(1),
-            registrarLol);
-    Contact adminContactLol =
-        FullFieldsTestEntityHelper.makeAndPersistContact(
-            "5372808-IRL",
-            "Santa Claus",
-            "BOFH@cat.lol",
-            clock.nowUtc().minusYears(2),
-            registrarLol);
-    Contact techContactLol =
-        FullFieldsTestEntityHelper.makeAndPersistContact(
-            "5372808-TRL", "The Raven", "bog@cat.lol", clock.nowUtc().minusYears(3), registrarLol);
     host1 = makeAndPersistHost("ns1.cat.lol", "1.2.3.4", null, clock.nowUtc().minusYears(1));
     Host host2 =
         makeAndPersistHost(
             "ns2.cat.lol", "bad:f00d:cafe:0:0:0:15:beef", clock.nowUtc().minusYears(2));
     persistResource(
-        makeDomain(
-                "cat.lol",
-                registrantLol,
-                adminContactLol,
-                techContactLol,
-                host1,
-                host2,
-                registrarLol)
+        makeDomain("cat.lol", null, null, null, host1, host2, registrarLol)
             .asBuilder()
             .setCreationTimeForTest(clock.nowUtc().minusYears(3))
             .setCreationRegistrarId("TheRegistrar")
@@ -115,29 +88,7 @@ class RdapDomainActionTest extends RdapActionBaseTestCase<RdapDomainAction> {
             "ns2.dodo.lol", "bad:f00d:cafe:0:0:0:15:beef", clock.nowUtc().minusYears(2));
     Domain domainDeleted =
         persistResource(
-            makeDomain(
-                    "dodo.lol",
-                    FullFieldsTestEntityHelper.makeAndPersistContact(
-                        "5372808-ERL",
-                        "Goblin Market",
-                        "lol@cat.lol",
-                        clock.nowUtc().minusYears(1),
-                        registrarLol),
-                    FullFieldsTestEntityHelper.makeAndPersistContact(
-                        "5372808-IRL",
-                        "Santa Claus",
-                        "BOFH@cat.lol",
-                        clock.nowUtc().minusYears(2),
-                        registrarLol),
-                    FullFieldsTestEntityHelper.makeAndPersistContact(
-                        "5372808-TRL",
-                        "The Raven",
-                        "bog@cat.lol",
-                        clock.nowUtc().minusYears(3),
-                        registrarLol),
-                    host1,
-                    hostDodo2,
-                    registrarLol)
+            makeDomain("dodo.lol", null, null, null, host1, hostDodo2, registrarLol)
                 .asBuilder()
                 .setCreationTimeForTest(clock.nowUtc().minusYears(3))
                 .setCreationRegistrarId("TheRegistrar")
@@ -148,32 +99,8 @@ class RdapDomainActionTest extends RdapActionBaseTestCase<RdapDomainAction> {
     Registrar registrarIdn =
         persistResource(makeRegistrar("idnregistrar", "IDN Registrar", Registrar.State.ACTIVE));
     persistResources(makeRegistrarPocs(registrarIdn));
-    Contact registrantIdn =
-        FullFieldsTestEntityHelper.makeAndPersistContact(
-            "5372808-ERL",
-            "Goblin Market",
-            "lol@cat.lol",
-            clock.nowUtc().minusYears(1),
-            registrarIdn);
-    Contact adminContactIdn =
-        FullFieldsTestEntityHelper.makeAndPersistContact(
-            "5372808-IRL",
-            "Santa Claus",
-            "BOFH@cat.lol",
-            clock.nowUtc().minusYears(2),
-            registrarIdn);
-    Contact techContactIdn =
-        FullFieldsTestEntityHelper.makeAndPersistContact(
-            "5372808-TRL", "The Raven", "bog@cat.lol", clock.nowUtc().minusYears(3), registrarIdn);
     persistResource(
-        makeDomain(
-                "cat.みんな",
-                registrantIdn,
-                adminContactIdn,
-                techContactIdn,
-                host1,
-                host2,
-                registrarIdn)
+        makeDomain("cat.みんな", null, null, null, host1, host2, registrarIdn)
             .asBuilder()
             .setCreationTimeForTest(clock.nowUtc().minusYears(3))
             .setCreationRegistrarId("TheRegistrar")
@@ -181,35 +108,12 @@ class RdapDomainActionTest extends RdapActionBaseTestCase<RdapDomainAction> {
 
     // 1.tld
     createTld("1.tld");
-    Registrar registrar1Tld = persistResource(
-        makeRegistrar("1tldregistrar", "Multilevel Registrar", Registrar.State.ACTIVE));
+    Registrar registrar1Tld =
+        persistResource(
+            makeRegistrar("1tldregistrar", "Multilevel Registrar", Registrar.State.ACTIVE));
     persistResources(makeRegistrarPocs(registrar1Tld));
-    Contact registrant1Tld =
-        FullFieldsTestEntityHelper.makeAndPersistContact(
-            "5372808-ERL",
-            "Goblin Market",
-            "lol@cat.lol",
-            clock.nowUtc().minusYears(1),
-            registrar1Tld);
-    Contact adminContact1Tld =
-        FullFieldsTestEntityHelper.makeAndPersistContact(
-            "5372808-IRL",
-            "Santa Claus",
-            "BOFH@cat.lol",
-            clock.nowUtc().minusYears(2),
-            registrar1Tld);
-    Contact techContact1Tld =
-        FullFieldsTestEntityHelper.makeAndPersistContact(
-            "5372808-TRL", "The Raven", "bog@cat.lol", clock.nowUtc().minusYears(3), registrar1Tld);
     persistResource(
-        makeDomain(
-                "cat.1.tld",
-                registrant1Tld,
-                adminContact1Tld,
-                techContact1Tld,
-                host1,
-                host2,
-                registrar1Tld)
+        makeDomain("cat.1.tld", null, null, null, host1, host2, registrar1Tld)
             .asBuilder()
             .setCreationTimeForTest(clock.nowUtc().minusYears(3))
             .setCreationRegistrarId("TheRegistrar")
@@ -231,12 +135,9 @@ class RdapDomainActionTest extends RdapActionBaseTestCase<RdapDomainAction> {
         .isEqualTo(
             addDomainBoilerplateNotices(
                 jsonFileBuilder()
-                    .addDomain("cat.lol", "C-LOL")
-                    .addContact("4-ROID")
-                    .addContact("6-ROID")
-                    .addContact("2-ROID")
-                    .addNameserver("ns1.cat.lol", "8-ROID")
-                    .addNameserver("ns2.cat.lol", "A-ROID")
+                    .addDomain("cat.lol", "6-LOL")
+                    .addNameserver("ns1.cat.lol", "2-ROID")
+                    .addNameserver("ns2.cat.lol", "4-ROID")
                     .addRegistrar("Yes Virginia <script>")
                     .load(expectedOutputFile)));
     assertThat(response.getStatus()).isEqualTo(200);
@@ -275,66 +176,18 @@ class RdapDomainActionTest extends RdapActionBaseTestCase<RdapDomainAction> {
   }
 
   @Test
-  void testValidDomain_notLoggedIn_redactsAllContactInfo() {
-    assertProperResponseForCatLol("cat.lol", "rdap_domain_redacted_contacts_with_remark.json");
-  }
-
-  @Test
-  void testValidDomain_notLoggedIn_showsNoRegistrant_whenRegistrantDoesntExist() {
-    persistResource(
-        loadByForeignKey(Domain.class, "cat.lol", clock.nowUtc())
-            .get()
-            .asBuilder()
-            .setRegistrant(Optional.empty())
-            .build());
-    assertProperResponseForCatLol("cat.lol", "rdap_domain_no_registrant_with_remark.json");
-  }
-
-  @Test
-  void testValidDomain_notLoggedIn_containsNoContactEntities_whenNoContactsExist() {
-    persistResource(
-        loadByForeignKey(Domain.class, "cat.lol", clock.nowUtc())
-            .get()
-            .asBuilder()
-            .setRegistrant(Optional.empty())
-            .setContacts(ImmutableSet.of())
-            .build());
-    assertProperResponseForCatLol("cat.lol", "rdap_domain_no_contacts_exist_with_remark.json");
-  }
-
-  @Test
-  void testValidDomain_loggedIn_containsNoContactEntities_whenNoContactsExist() {
-    login("evilregistrar");
-    persistResource(
-        loadByForeignKey(Domain.class, "cat.lol", clock.nowUtc())
-            .get()
-            .asBuilder()
-            .setRegistrant(Optional.empty())
-            .setContacts(ImmutableSet.of())
-            .build());
-    assertProperResponseForCatLol("cat.lol", "rdap_domain_no_contacts_exist_with_remark.json");
-  }
-
-  @Test
-  void testValidDomain_loggedInAsOtherRegistrar_redactsAllContactInfo() {
-    login("idnregistrar");
-    assertProperResponseForCatLol("cat.lol", "rdap_domain_redacted_contacts_with_remark.json");
-  }
-
-  @Test
   void testUpperCase_ignored() {
-    assertProperResponseForCatLol("CaT.lOl", "rdap_domain_redacted_contacts_with_remark.json");
+    assertProperResponseForCatLol("CaT.lOl", "rdap_domain.json");
   }
 
   @Test
   void testTrailingDot_ignored() {
-    assertProperResponseForCatLol("cat.lol.", "rdap_domain_redacted_contacts_with_remark.json");
+    assertProperResponseForCatLol("cat.lol.", "rdap_domain.json");
   }
 
   @Test
   void testQueryParameter_ignored() {
-    assertProperResponseForCatLol(
-        "cat.lol?key=value", "rdap_domain_redacted_contacts_with_remark.json");
+    assertProperResponseForCatLol("cat.lol?key=value", "rdap_domain.json");
   }
 
   @Test
@@ -345,12 +198,9 @@ class RdapDomainActionTest extends RdapActionBaseTestCase<RdapDomainAction> {
         .isEqualTo(
             addDomainBoilerplateNotices(
                 jsonFileBuilder()
-                    .addDomain("cat.みんな", "1D-Q9JYB4C")
-                    .addContact("19-ROID")
-                    .addContact("1B-ROID")
-                    .addContact("17-ROID")
-                    .addNameserver("ns1.cat.lol", "8-ROID")
-                    .addNameserver("ns2.cat.lol", "A-ROID")
+                    .addDomain("cat.みんな", "B-Q9JYB4C")
+                    .addNameserver("ns1.cat.lol", "2-ROID")
+                    .addNameserver("ns2.cat.lol", "4-ROID")
                     .addRegistrar("IDN Registrar")
                     .load("rdap_domain_unicode.json")));
     assertThat(response.getStatus()).isEqualTo(200);
@@ -364,12 +214,9 @@ class RdapDomainActionTest extends RdapActionBaseTestCase<RdapDomainAction> {
         .isEqualTo(
             addDomainBoilerplateNotices(
                 jsonFileBuilder()
-                    .addDomain("cat.みんな", "1D-Q9JYB4C")
-                    .addContact("19-ROID")
-                    .addContact("1B-ROID")
-                    .addContact("17-ROID")
-                    .addNameserver("ns1.cat.lol", "8-ROID")
-                    .addNameserver("ns2.cat.lol", "A-ROID")
+                    .addDomain("cat.みんな", "B-Q9JYB4C")
+                    .addNameserver("ns1.cat.lol", "2-ROID")
+                    .addNameserver("ns2.cat.lol", "4-ROID")
                     .addRegistrar("IDN Registrar")
                     .load("rdap_domain_unicode.json")));
     assertThat(response.getStatus()).isEqualTo(200);
@@ -383,12 +230,9 @@ class RdapDomainActionTest extends RdapActionBaseTestCase<RdapDomainAction> {
         .isEqualTo(
             addDomainBoilerplateNotices(
                 jsonFileBuilder()
-                    .addDomain("cat.みんな", "1D-Q9JYB4C")
-                    .addContact("19-ROID")
-                    .addContact("1B-ROID")
-                    .addContact("17-ROID")
-                    .addNameserver("ns1.cat.lol", "8-ROID")
-                    .addNameserver("ns2.cat.lol", "A-ROID")
+                    .addDomain("cat.みんな", "B-Q9JYB4C")
+                    .addNameserver("ns1.cat.lol", "2-ROID")
+                    .addNameserver("ns2.cat.lol", "4-ROID")
                     .addRegistrar("IDN Registrar")
                     .load("rdap_domain_unicode.json")));
     assertThat(response.getStatus()).isEqualTo(200);
@@ -402,12 +246,9 @@ class RdapDomainActionTest extends RdapActionBaseTestCase<RdapDomainAction> {
         .isEqualTo(
             addDomainBoilerplateNotices(
                 jsonFileBuilder()
-                    .addDomain("cat.1.tld", "25-1_TLD")
-                    .addContact("21-ROID")
-                    .addContact("23-ROID")
-                    .addContact("1F-ROID")
-                    .addNameserver("ns1.cat.lol", "8-ROID")
-                    .addNameserver("ns2.cat.lol", "A-ROID")
+                    .addDomain("cat.1.tld", "D-1_TLD")
+                    .addNameserver("ns1.cat.lol", "2-ROID")
+                    .addNameserver("ns2.cat.lol", "4-ROID")
                     .addRegistrar("Multilevel Registrar")
                     .load("rdap_domain.json")));
     assertThat(response.getStatus()).isEqualTo(200);
@@ -461,12 +302,9 @@ class RdapDomainActionTest extends RdapActionBaseTestCase<RdapDomainAction> {
         .isEqualTo(
             addDomainBoilerplateNotices(
                 jsonFileBuilder()
-                    .addDomain("dodo.lol", "15-LOL")
-                    .addContact("11-ROID")
-                    .addContact("13-ROID")
-                    .addContact("F-ROID")
-                    .addNameserver("ns1.cat.lol", "8-ROID")
-                    .addNameserver("ns2.dodo.lol", "D-ROID")
+                    .addDomain("dodo.lol", "9-LOL")
+                    .addNameserver("ns1.cat.lol", "2-ROID")
+                    .addNameserver("ns2.dodo.lol", "7-ROID")
                     .addRegistrar("Yes Virginia <script>")
                     .load("rdap_domain_deleted.json")));
     assertThat(response.getStatus()).isEqualTo(200);
@@ -481,12 +319,9 @@ class RdapDomainActionTest extends RdapActionBaseTestCase<RdapDomainAction> {
         .isEqualTo(
             addDomainBoilerplateNotices(
                 jsonFileBuilder()
-                    .addDomain("dodo.lol", "15-LOL")
-                    .addContact("11-ROID")
-                    .addContact("13-ROID")
-                    .addContact("F-ROID")
-                    .addNameserver("ns1.cat.lol", "8-ROID")
-                    .addNameserver("ns2.dodo.lol", "D-ROID")
+                    .addDomain("dodo.lol", "9-LOL")
+                    .addNameserver("ns1.cat.lol", "2-ROID")
+                    .addNameserver("ns2.dodo.lol", "7-ROID")
                     .addRegistrar("Yes Virginia <script>")
                     .load("rdap_domain_deleted.json")));
     assertThat(response.getStatus()).isEqualTo(200);
@@ -638,7 +473,7 @@ class RdapDomainActionTest extends RdapActionBaseTestCase<RdapDomainAction> {
       String label, String tld, DateTime creationTime, DateTime expirationTime) {
     return persistResource(
         persistDomainWithDependentResources(
-                label, tld, registrantLol, clock.nowUtc(), creationTime, expirationTime)
+                label, tld, null, clock.nowUtc(), creationTime, expirationTime)
             .asBuilder()
             .addNameserver(host1.createVKey())
             .build());

@@ -1,6 +1,6 @@
 {
   "objectClassName": "domain",
-  "handle": "17-Q9JYB4C",
+  "handle": "F-Q9JYB4C",
   "ldhName": "cat.xn--q9jyb4c",
   "unicodeName": "cat.みんな",
   "status":
@@ -50,7 +50,7 @@
   "nameservers": [
     {
       "objectClassName": "nameserver",
-      "handle": "A-ROID",
+      "handle": "2-ROID",
       "ldhName": "ns1.cat.xn--q9jyb4c",
       "unicodeName": "ns1.cat.みんな",
       "links": [
@@ -70,7 +70,7 @@
     },
     {
       "objectClassName": "nameserver",
-      "handle": "C-ROID",
+      "handle": "4-ROID",
       "ldhName": "ns2.cat.xn--q9jyb4c",
       "unicodeName": "ns2.cat.みんな",
       "links": [
@@ -134,114 +134,6 @@
           ],
           "type": "object truncated due to unexplainable reasons"
         }
-      ]
-    },
-    {
-      "objectClassName": "entity",
-      "handle": "",
-      "roles": ["administrative"],
-      "remarks": [
-        {
-          "title": "REDACTED FOR PRIVACY",
-          "type": "object redacted due to authorization",
-          "description": [
-            "Some of the data in this object has been removed.",
-            "Contact personal data is visible only to the owning registrar."
-          ],
-          "links": [
-            {
-              "type": "text/html",
-              "href": "https://github.com/google/nomulus/blob/master/docs/rdap.md#authentication",
-              "rel": "alternate"
-            }
-          ]
-        },
-        {
-          "title": "EMAIL REDACTED FOR PRIVACY",
-          "type": "object redacted due to authorization",
-          "description": [
-            "Please query the RDDS service of the Registrar of Record identifies in this output for information on how to contact the Registrant of the queried domain name."
-          ]
-        }
-      ],
-      "vcardArray": [
-        "vcard",
-        [
-          ["version", {}, "text", "4.0"],
-          ["fn", {}, "text", ""]
-        ]
-      ]
-    },
-    {
-      "objectClassName": "entity",
-      "handle": "",
-      "roles": ["technical"],
-      "remarks": [
-        {
-          "title": "REDACTED FOR PRIVACY",
-          "type": "object redacted due to authorization",
-          "description": [
-            "Some of the data in this object has been removed.",
-            "Contact personal data is visible only to the owning registrar."
-          ],
-          "links": [
-            {
-              "type": "text/html",
-              "href": "https://github.com/google/nomulus/blob/master/docs/rdap.md#authentication",
-              "rel": "alternate"
-            }
-          ]
-        },
-        {
-          "title": "EMAIL REDACTED FOR PRIVACY",
-          "type": "object redacted due to authorization",
-          "description": [
-            "Please query the RDDS service of the Registrar of Record identifies in this output for information on how to contact the Registrant of the queried domain name."
-          ]
-        }
-      ],
-      "vcardArray": [
-        "vcard",
-        [
-          ["version", {}, "text", "4.0"],
-          ["fn", {}, "text", ""]
-        ]
-      ]
-    },
-    {
-      "objectClassName": "entity",
-      "handle": "",
-      "roles": ["registrant"],
-      "remarks": [
-        {
-          "title": "REDACTED FOR PRIVACY",
-          "type": "object redacted due to authorization",
-          "description": [
-            "Some of the data in this object has been removed.",
-            "Contact personal data is visible only to the owning registrar."
-          ],
-          "links": [
-            {
-              "type": "text/html",
-              "href": "https://github.com/google/nomulus/blob/master/docs/rdap.md#authentication",
-              "rel": "alternate"
-            }
-          ]
-        },
-        {
-          "title": "EMAIL REDACTED FOR PRIVACY",
-          "type": "object redacted due to authorization",
-          "description": [
-            "Please query the RDDS service of the Registrar of Record identifies in this output for information on how to contact the Registrant of the queried domain name."
-          ]
-        }
-      ],
-      "vcardArray": [
-        "vcard",
-        [
-          ["version", {}, "text", "4.0"],
-          ["fn", {}, "text", ""]
-        ]
       ]
     }
   ]

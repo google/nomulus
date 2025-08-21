@@ -14,18 +14,13 @@
 
 package google.registry.rdap;
 
-import static google.registry.persistence.transaction.TransactionManagerFactory.replicaTm;
 import static google.registry.rdap.RdapUtils.getRegistrarByIanaIdentifier;
 import static google.registry.rdap.RdapUtils.getRegistrarByName;
 import static google.registry.request.Action.Method.GET;
 import static google.registry.request.Action.Method.HEAD;
 
-import com.google.common.collect.ImmutableSet;
 import com.google.common.primitives.Longs;
-import com.google.re2j.Pattern;
-import google.registry.model.contact.Contact;
 import google.registry.model.registrar.Registrar;
-import google.registry.persistence.VKey;
 import google.registry.rdap.RdapJsonFormatter.OutputDataType;
 import google.registry.rdap.RdapMetrics.EndpointType;
 import google.registry.rdap.RdapObjectClasses.RdapEntity;
@@ -37,8 +32,8 @@ import jakarta.inject.Inject;
 import java.util.Optional;
 
 /**
- * RDAP action for entity (contact and registrar) requests. the ICANN operational profile dictates
- * that the "handle" for registrars is to be the IANA registrar ID:
+ * RDAP action for entity (i.e. registrar) requests. the ICANN operational profile dictates that the
+ * "handle" for registrars is to be the IANA registrar ID:
  *
  * <p>2.4.1.Registry RDAP servers MUST support Registrar object lookup using an entity path request
  * for entities with the registrar role using the handle (as described in 3.1.5 of RFC9082) where
@@ -52,8 +47,6 @@ import java.util.Optional;
     auth = Auth.AUTH_PUBLIC)
 public class RdapEntityAction extends RdapActionBase {
 
-  private static final Pattern ROID_PATTERN = Pattern.compile("[-_.a-zA-Z0-9]+");
-
   @Inject public RdapEntityAction() {
     super("entity", EndpointType.ENTITY);
   }
@@ -61,24 +54,6 @@ public class RdapEntityAction extends RdapActionBase {
   @Override
   public RdapEntity getJsonObjectForResource(
       String pathSearchString, boolean isHeadRequest) {
-    // The query string is not used; the RDAP syntax is /rdap/entity/handle (the handle is the roid
-    // for contacts and the client identifier/fn for registrars). Since RDAP's concept of an entity
-    // includes both contacts and registrars, search for one first, then the other.
-
-    // RDAP Technical Implementation Guide 2.3.1 - MUST support contact entity lookup using the
-    // handle
-    if (ROID_PATTERN.matcher(pathSearchString).matches()) {
-      VKey<Contact> contactVKey = VKey.create(Contact.class, pathSearchString);
-      Optional<Contact> contact =
-          replicaTm().transact(() -> replicaTm().loadByKeyIfPresent(contactVKey));
-      // As per Andy Newton on the regext mailing list, contacts by themselves have no role, since
-      // they are global, and might have different roles for different domains.
-      if (contact.isPresent() && isAuthorized(contact.get())) {
-        return rdapJsonFormatter.createRdapContactEntity(
-            contact.get(), ImmutableSet.of(), OutputDataType.FULL);
-      }
-    }
-
     // RDAP Technical Implementation Guide 2.4.1 - MUST support registrar entity lookup using the
     // IANA ID as handle
     Long ianaIdentifier = Longs.tryParse(pathSearchString);
@@ -96,7 +71,7 @@ public class RdapEntityAction extends RdapActionBase {
       return rdapJsonFormatter.createRdapRegistrarEntity(registrar.get(), OutputDataType.FULL);
     }
 
-    // At this point, we have failed to find either a contact or a registrar.
+    // At this point, we have failed to find a registrar.
     //
     // RFC7480 5.3 - if the server wishes to respond that it doesn't have data satisfying the
     // query, it MUST reply with 404 response code.

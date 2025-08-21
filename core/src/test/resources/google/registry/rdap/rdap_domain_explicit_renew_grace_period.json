@@ -58,57 +58,6 @@
           ]
         ]
       ]
-    },
-    {
-      "objectClassName": "entity",
-      "handle": "",
-      "remarks": [
-        {
-          "description": [
-            "Some of the data in this object has been removed.",
-            "Contact personal data is visible only to the owning registrar."
-          ],
-          "links": [
-            {
-              "href": "https://github.com/google/nomulus/blob/master/docs/rdap.md#authentication",
-              "rel": "alternate",
-              "type": "text/html",
-              "value": "https://example.tld/rdap/domain/renew.lol"
-            }
-          ],
-          "title": "REDACTED FOR PRIVACY",
-          "type": "object redacted due to authorization"
-        },
-        {
-          "description": [
-            "Please query the RDDS service of the Registrar of Record identifies in this output for information on how to contact the Registrant of the queried domain name."
-          ],
-          "title": "EMAIL REDACTED FOR PRIVACY",
-          "type": "object redacted due to authorization"
-        }
-      ],
-      "roles": [
-        "administrative",
-        "technical",
-        "registrant"
-      ],
-      "vcardArray": [
-        "vcard",
-        [
-          [
-            "version",
-            {},
-            "text",
-            "4.0"
-          ],
-          [
-            "fn",
-            {},
-            "text",
-            ""
-          ]
-        ]
-      ]
     }
   ],
   "events": [
@@ -126,7 +75,7 @@
       "eventDate": "2000-01-01T00:00:00.000Z"
     }
   ],
-  "handle": "28-LOL",
+  "handle": "10-LOL",
   "ldhName": "renew.lol",
   "links": [
     {
@@ -145,7 +94,7 @@
   "nameservers": [
     {
       "objectClassName": "nameserver",
-      "handle": "8-ROID",
+      "handle": "2-ROID",
       "ldhName": "ns1.cat.lol",
       "links": [
         {

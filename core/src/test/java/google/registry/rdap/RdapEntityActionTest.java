@@ -18,7 +18,6 @@ import static com.google.common.truth.Truth.assertThat;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.DatabaseHelper.persistResources;
-import static google.registry.testing.FullFieldsTestEntityHelper.makeAndPersistDeletedContact;
 import static google.registry.testing.FullFieldsTestEntityHelper.makeDomain;
 import static google.registry.testing.FullFieldsTestEntityHelper.makeHost;
 import static google.registry.testing.FullFieldsTestEntityHelper.makeRegistrar;
@@ -26,8 +25,6 @@ import static google.registry.testing.FullFieldsTestEntityHelper.makeRegistrarPo
 import static google.registry.testing.GsonSubject.assertAboutJson;
 import static org.mockito.Mockito.verify;
 
-import com.google.common.collect.ImmutableList;
-import google.registry.model.contact.Contact;
 import google.registry.model.host.Host;
 import google.registry.model.registrar.Registrar;
 import google.registry.rdap.RdapMetrics.EndpointType;
@@ -35,7 +32,6 @@ import google.registry.rdap.RdapMetrics.SearchType;
 import google.registry.rdap.RdapMetrics.WildcardType;
 import google.registry.rdap.RdapSearchResults.IncompletenessWarningType;
 import google.registry.request.Action;
-import google.registry.testing.FullFieldsTestEntityHelper;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -43,19 +39,11 @@ import org.junit.jupiter.api.Test;
 /** Unit tests for {@link RdapEntityAction}. */
 class RdapEntityActionTest extends RdapActionBaseTestCase<RdapEntityAction> {
 
-  private static final String CONTACT_NAME = "(◕‿◕)";
-  private static final String CONTACT_ADDRESS = "\"1 Smiley Row\", \"Suite みんな\"";
-
   RdapEntityActionTest() {
     super(RdapEntityAction.class);
   }
 
   private Registrar registrarLol;
-  private Contact registrant;
-  private Contact adminContact;
-  private Contact techContact;
-  private Contact disconnectedContact;
-  private Contact deletedContact;
 
   @BeforeEach
   void beforeEach() {
@@ -64,34 +52,9 @@ class RdapEntityActionTest extends RdapActionBaseTestCase<RdapEntityAction> {
     registrarLol = persistResource(makeRegistrar(
         "evilregistrar", "Yes Virginia <script>", Registrar.State.ACTIVE, 101L));
     persistResources(makeRegistrarPocs(registrarLol));
-    registrant =
-        FullFieldsTestEntityHelper.makeAndPersistContact(
-            "8372808-REG",
-            CONTACT_NAME,
-            "lol@cat.みんな",
-            ImmutableList.of("1 Smiley Row", "Suite みんな"),
-            clock.nowUtc(),
-            registrarLol);
-    adminContact =
-        FullFieldsTestEntityHelper.makeAndPersistContact(
-            "8372808-ADM",
-            CONTACT_NAME,
-            "lol@cat.みんな",
-            ImmutableList.of("1 Smiley Row", "Suite みんな"),
-            clock.nowUtc(),
-            registrarLol);
-    techContact =
-        FullFieldsTestEntityHelper.makeAndPersistContact(
-            "8372808-TEC",
-            CONTACT_NAME,
-            "lol@cat.みんな",
-            ImmutableList.of("1 Smiley Row", "Suite みんな"),
-            clock.nowUtc(),
-            registrarLol);
     Host host1 = persistResource(makeHost("ns1.cat.lol", "1.2.3.4"));
     Host host2 = persistResource(makeHost("ns2.cat.lol", "bad:f00d:cafe:0:0:0:15:beef"));
-    persistResource(
-        makeDomain("cat.lol", registrant, adminContact, techContact, host1, host2, registrarLol));
+    persistResource(makeDomain("cat.lol", null, null, null, host1, host2, registrarLol));
     // xn--q9jyb4c
     createTld("xn--q9jyb4c");
     Registrar registrarIdn = persistResource(
@@ -106,21 +69,6 @@ class RdapEntityActionTest extends RdapActionBaseTestCase<RdapEntityAction> {
     Registrar registrarDeleted = persistResource(
         makeRegistrar("deletedregistrar", "Yes Virginia <script>", Registrar.State.PENDING, 104L));
     persistResources(makeRegistrarPocs(registrarDeleted));
-    // other contacts
-    disconnectedContact =
-        FullFieldsTestEntityHelper.makeAndPersistContact(
-            "8372808-DIS",
-            CONTACT_NAME,
-            "lol@cat.みんな",
-            ImmutableList.of("1 Smiley Row", "Suite みんな"),
-            clock.nowUtc(),
-            registrarLol);
-    deletedContact =
-        makeAndPersistDeletedContact(
-            "8372808-DEL",
-            clock.nowUtc().minusYears(1),
-            registrarLol,
-            clock.nowUtc().minusMonths(6));
   }
 
   @Test
@@ -146,156 +94,6 @@ class RdapEntityActionTest extends RdapActionBaseTestCase<RdapEntityAction> {
         .that(generateActualJson("some,random,string"))
         .isEqualTo(generateExpectedJsonError("some,random,string not found", 404));
     assertThat(response.getStatus()).isEqualTo(404);
-  }
-
-  @Test
-  void testValidRegistrantContact_works() {
-    login("evilregistrar");
-    assertAboutJson()
-        .that(generateActualJson(registrant.getRepoId()))
-        .isEqualTo(
-            addPermanentBoilerplateNotices(
-                jsonFileBuilder()
-                    .addFullContact(registrant.getRepoId(), null, CONTACT_NAME, CONTACT_ADDRESS)
-                    .load("rdap_associated_contact.json")));
-  }
-
-  @Test
-  void testValidRegistrantContact_found_asAdministrator() {
-    loginAsAdmin();
-    assertAboutJson()
-        .that(generateActualJson(registrant.getRepoId()))
-        .isEqualTo(
-            addPermanentBoilerplateNotices(
-                jsonFileBuilder()
-                    .addFullContact(registrant.getRepoId(), null, CONTACT_NAME, CONTACT_ADDRESS)
-                    .load("rdap_associated_contact.json")));
-  }
-
-  @Test
-  void testValidRegistrantContact_found_notLoggedIn() {
-    assertAboutJson()
-        .that(generateActualJson(registrant.getRepoId()))
-        .isEqualTo(
-            addPermanentBoilerplateNotices(
-                jsonFileBuilder()
-                    .addFullContact(registrant.getRepoId(), "active", CONTACT_NAME, CONTACT_ADDRESS)
-                    .load("rdap_associated_contact_no_personal_data.json")));
-  }
-
-  @Test
-  void testValidRegistrantContact_found_loggedInAsOtherRegistrar() {
-    login("otherregistrar");
-    assertAboutJson()
-        .that(generateActualJson(registrant.getRepoId()))
-        .isEqualTo(
-            addPermanentBoilerplateNotices(
-                jsonFileBuilder()
-                    .addFullContact(registrant.getRepoId(), "active", CONTACT_NAME, CONTACT_ADDRESS)
-                    .load("rdap_associated_contact_no_personal_data.json")));
-  }
-
-  @Test
-  void testValidAdminContact_works() {
-    login("evilregistrar");
-    assertAboutJson()
-        .that(generateActualJson(adminContact.getRepoId()))
-        .isEqualTo(
-            addPermanentBoilerplateNotices(
-                jsonFileBuilder()
-                    .addFullContact(adminContact.getRepoId(), null, CONTACT_NAME, CONTACT_ADDRESS)
-                    .load("rdap_associated_contact.json")));
-  }
-
-  @Test
-  void testValidTechContact_works() {
-    login("evilregistrar");
-    assertAboutJson()
-        .that(generateActualJson(techContact.getRepoId()))
-        .isEqualTo(
-            addPermanentBoilerplateNotices(
-                jsonFileBuilder()
-                    .addFullContact(techContact.getRepoId(), null, CONTACT_NAME, CONTACT_ADDRESS)
-                    .load("rdap_associated_contact.json")));
-  }
-
-  @Test
-  void testValidDisconnectedContact_works() {
-    login("evilregistrar");
-    assertAboutJson()
-        .that(generateActualJson(disconnectedContact.getRepoId()))
-        .isEqualTo(
-            addPermanentBoilerplateNotices(
-                jsonFileBuilder()
-                    .addFullContact(
-                        disconnectedContact.getRepoId(), "active", CONTACT_NAME, CONTACT_ADDRESS)
-                    .load("rdap_contact.json")));
-  }
-
-  @Test
-  void testDeletedContact_notFound() {
-    String repoId = deletedContact.getRepoId();
-    assertAboutJson()
-        .that(generateActualJson(repoId))
-        .isEqualTo(generateExpectedJsonError(repoId + " not found", 404));
-    assertThat(response.getStatus()).isEqualTo(404);
-  }
-
-  @Test
-  void testDeletedContact_notFound_includeDeletedSetFalse() {
-    action.includeDeletedParam = Optional.of(false);
-    String repoId = deletedContact.getRepoId();
-    assertAboutJson()
-        .that(generateActualJson(repoId))
-        .isEqualTo(generateExpectedJsonError(repoId + " not found", 404));
-    assertThat(response.getStatus()).isEqualTo(404);
-  }
-
-  @Test
-  void testDeletedContact_notFound_notLoggedIn() {
-    action.includeDeletedParam = Optional.of(true);
-    String repoId = deletedContact.getRepoId();
-    assertAboutJson()
-        .that(generateActualJson(repoId))
-        .isEqualTo(generateExpectedJsonError(repoId + " not found", 404));
-    assertThat(response.getStatus()).isEqualTo(404);
-  }
-
-  @Test
-  void testDeletedContact_notFound_loggedInAsDifferentRegistrar() {
-    login("idnregistrar");
-    action.includeDeletedParam = Optional.of(true);
-    String repoId = deletedContact.getRepoId();
-    assertAboutJson()
-        .that(generateActualJson(repoId))
-        .isEqualTo(generateExpectedJsonError(repoId + " not found", 404));
-    assertThat(response.getStatus()).isEqualTo(404);
-  }
-
-  @Test
-  void testDeletedContact_found_loggedInAsCorrectRegistrar() {
-    login("evilregistrar");
-    action.includeDeletedParam = Optional.of(true);
-    assertAboutJson()
-        .that(generateActualJson(deletedContact.getRepoId()))
-        .isEqualTo(
-            addPermanentBoilerplateNotices(
-                jsonFileBuilder()
-                    .addContact(deletedContact.getRepoId())
-                    .load("rdap_contact_deleted.json")));
-  }
-
-  @Test
-  void testDeletedContact_found_loggedInAsAdmin() {
-    loginAsAdmin();
-    action.includeDeletedParam = Optional.of(true);
-    assertAboutJson()
-        .that(generateActualJson(deletedContact.getRepoId()))
-        .isEqualTo(
-            addPermanentBoilerplateNotices(
-                jsonFileBuilder()
-                    .addContact(deletedContact.getRepoId())
-                    .load("rdap_contact_deleted.json")));
   }
 
   @Test
@@ -412,18 +210,18 @@ class RdapEntityActionTest extends RdapActionBaseTestCase<RdapEntityAction> {
   void testQueryParameter_ignored() {
     login("evilregistrar");
     assertAboutJson()
-        .that(generateActualJson(techContact.getRepoId() + "?key=value"))
+        .that(generateActualJson("101?key=value"))
         .isEqualTo(
             addPermanentBoilerplateNotices(
                 jsonFileBuilder()
-                    .addFullContact(techContact.getRepoId(), null, CONTACT_NAME, CONTACT_ADDRESS)
-                    .load("rdap_associated_contact.json")));
+                    .addFullRegistrar("101", "Yes Virginia <script>", "active", null)
+                    .load("rdap_registrar.json")));
     assertThat(response.getStatus()).isEqualTo(200);
   }
 
   @Test
   void testMetrics() {
-    generateActualJson(registrant.getRepoId());
+    generateActualJson("101");
     verify(rdapMetrics)
         .updateMetrics(
             RdapMetrics.RdapMetricInformation.builder()

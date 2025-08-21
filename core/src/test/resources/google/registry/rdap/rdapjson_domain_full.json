@@ -1,6 +1,6 @@
 {
   "objectClassName" : "domain",
-  "handle" : "17-Q9JYB4C",
+  "handle" : "F-Q9JYB4C",
   "ldhName" : "cat.xn--q9jyb4c",
   "unicodeName" : "cat.みんな",
   "status" :
@@ -51,7 +51,7 @@
   [
     {
       "objectClassName" : "nameserver",
-      "handle" : "A-ROID",
+      "handle" : "2-ROID",
       "ldhName" : "ns1.cat.xn--q9jyb4c",
       "unicodeName" : "ns1.cat.みんな",
       "links" : [
@@ -71,7 +71,7 @@
     },
     {
       "objectClassName" : "nameserver",
-      "handle" : "C-ROID",
+      "handle" : "4-ROID",
       "ldhName" : "ns2.cat.xn--q9jyb4c",
       "unicodeName" : "ns2.cat.みんな",
       "links" : [
@@ -137,143 +137,6 @@
             "Summary data only. For complete data, send a specific query for the object."
           ],
           "type": "object truncated due to unexplainable reasons"
-        }
-      ]
-    },
-    {
-      "objectClassName" : "entity",
-      "handle" : "4-ROID",
-      "roles" : ["administrative"],
-      "links" :
-      [
-        {
-          "rel" : "self",
-          "href" : "https://example.tld/rdap/entity/4-ROID",
-          "type" : "application/rdap+json"
-        }
-      ],
-      "vcardArray" :
-      [
-        "vcard",
-        [
-          ["version", {}, "text", "4.0"],
-          ["fn", {}, "text", "Santa Claus"],
-          ["org", {}, "text", "GOOGLE INCORPORATED <script>"],
-          ["adr", {}, "text", [
-            "",
-            "",
-            [
-              "Santa Claus Tower",
-              "41st floor",
-              "Suite みんな"
-            ],
-            "KOKOMO",
-            "BM",
-            "31337",
-            "United States"]],
-          ["tel", {"type" : ["voice"]}, "uri", "tel:+1.2126660420"],
-          ["tel", {"type" : ["fax"]}, "uri", "tel:+1.2126660420"]
-        ]
-      ],
-      "remarks": [
-        {
-          "title": "Incomplete Data",
-          "type": "object truncated due to unexplainable reasons",
-          "description": ["Summary data only. For complete data, send a specific query for the object."]
-        },
-        {
-          "title": "EMAIL REDACTED FOR PRIVACY",
-          "type": "object redacted due to authorization",
-          "description": [
-            "Please query the RDDS service of the Registrar of Record identifies in this output for information on how to contact the Registrant of the queried domain name."
-          ]
-        }
-      ]
-    },
-    {
-      "objectClassName" : "entity",
-      "handle" : "6-ROID",
-      "roles" : ["technical"],
-      "links" :
-      [
-        {
-          "rel" : "self",
-          "href" : "https://example.tld/rdap/entity/6-ROID",
-          "type" : "application/rdap+json"
-        }
-      ],
-      "vcardArray" :
-      [
-        "vcard",
-        [
-          ["version", {}, "text", "4.0"],
-          ["fn", {}, "text", "The Raven"],
-          ["org", {}, "text", "GOOGLE INCORPORATED <script>"],
-          ["adr", {}, "text", [
-            "",
-            "",
-            [
-              "Chamber Door",
-              "upper level"
-            ],
-            "KOKOMO",
-            "BM",
-            "31337",
-            "United States"]],
-          ["tel", {"type" : ["voice"]}, "uri", "tel:+1.2126660420"],
-          ["tel", {"type" : ["fax"]}, "uri", "tel:+1.2126660420"]
-        ]
-      ],
-      "remarks": [
-        {
-          "title": "Incomplete Data",
-          "type": "object truncated due to unexplainable reasons",
-          "description": ["Summary data only. For complete data, send a specific query for the object."]
-        },
-        {
-          "title": "EMAIL REDACTED FOR PRIVACY",
-          "type": "object redacted due to authorization",
-          "description": [
-            "Please query the RDDS service of the Registrar of Record identifies in this output for information on how to contact the Registrant of the queried domain name."
-          ]
-        }
-      ]
-    },
-    {
-      "objectClassName" : "entity",
-      "handle" : "2-ROID",
-      "roles" : ["registrant"],
-      "links" :
-      [
-        {
-          "rel" : "self",
-          "href" : "https://example.tld/rdap/entity/2-ROID",
-          "type" : "application/rdap+json"
-        }
-      ],
-      "vcardArray" :
-      [
-        "vcard",
-        [
-          ["version", {}, "text", "4.0"],
-          ["fn", {}, "text", "(◕‿◕)"],
-          ["org", {}, "text", "GOOGLE INCORPORATED <script>"],
-          ["tel", {"type" : ["voice"]}, "uri", "tel:+1.2126660420"],
-          ["tel", {"type" : ["fax"]}, "uri", "tel:+1.2126660420"]
-        ]
-      ],
-      "remarks": [
-        {
-          "title": "Incomplete Data",
-          "type": "object truncated due to unexplainable reasons",
-          "description": ["Summary data only. For complete data, send a specific query for the object."]
-        },
-        {
-          "title": "EMAIL REDACTED FOR PRIVACY",
-          "type": "object redacted due to authorization",
-          "description": [
-            "Please query the RDDS service of the Registrar of Record identifies in this output for information on how to contact the Registrant of the queried domain name."
-          ]
         }
       ]
     }

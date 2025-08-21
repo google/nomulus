@@ -34,7 +34,6 @@ import com.google.common.collect.Range;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import google.registry.model.contact.Contact;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.Period;
 import google.registry.model.host.Host;
@@ -68,9 +67,6 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
   private Domain domainCatExample;
   private Domain domainIdn;
   private Domain domainMultipart;
-  private Contact contact1;
-  private Contact contact2;
-  private Contact contact3;
   private Host hostNs1CatLol;
   private Host hostNs2CatLol;
   private HashMap<String, Host> hostNameToHostMap = new HashMap<>();
@@ -131,15 +127,6 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
         persistResource(
             makeRegistrar("evilregistrar", "Yes Virginia <script>", Registrar.State.ACTIVE));
     persistResources(makeRegistrarPocs(registrar));
-    contact1 =
-        FullFieldsTestEntityHelper.makeAndPersistContact(
-            "5372808-ERL", "Goblin Market", "lol@cat.lol", clock.nowUtc().minusYears(1), registrar);
-    contact2 =
-        FullFieldsTestEntityHelper.makeAndPersistContact(
-            "5372808-IRL", "Santa Claus", "BOFH@cat.lol", clock.nowUtc().minusYears(2), registrar);
-    contact3 =
-        FullFieldsTestEntityHelper.makeAndPersistContact(
-            "5372808-TRL", "The Raven", "bog@cat.lol", clock.nowUtc().minusYears(3), registrar);
     hostNs1CatLol =
         addHostToMap(
             FullFieldsTestEntityHelper.makeAndPersistHost(
@@ -150,14 +137,7 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
                 "ns2.cat.lol", "bad:f00d:cafe:0:0:0:15:beef", clock.nowUtc().minusYears(2)));
     domainCatLol =
         persistResource(
-            makeDomain(
-                    "cat.lol",
-                    contact1,
-                    contact2,
-                    contact3,
-                    hostNs1CatLol,
-                    hostNs2CatLol,
-                    registrar)
+            makeDomain("cat.lol", null, null, null, hostNs1CatLol, hostNs2CatLol, registrar)
                 .asBuilder()
                 .setSubordinateHosts(ImmutableSet.of("ns1.cat.lol", "ns2.cat.lol"))
                 .setCreationTimeForTest(clock.nowUtc().minusYears(3))
@@ -172,24 +152,9 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
         persistResource(
             makeDomain(
                     "cat2.lol",
-                    FullFieldsTestEntityHelper.makeAndPersistContact(
-                        "6372808-ERL",
-                        "Siegmund",
-                        "siegmund@cat2.lol",
-                        clock.nowUtc().minusYears(1),
-                        registrar),
-                    FullFieldsTestEntityHelper.makeAndPersistContact(
-                        "6372808-IRL",
-                        "Sieglinde",
-                        "sieglinde@cat2.lol",
-                        clock.nowUtc().minusYears(2),
-                        registrar),
-                    FullFieldsTestEntityHelper.makeAndPersistContact(
-                        "6372808-TRL",
-                        "Siegfried",
-                        "siegfried@cat2.lol",
-                        clock.nowUtc().minusYears(3),
-                        registrar),
+                    null,
+                    null,
+                    null,
                     addHostToMap(
                         FullFieldsTestEntityHelper.makeAndPersistHost(
                             "ns1.cat.example", "10.20.30.40", clock.nowUtc().minusYears(1))),
@@ -213,24 +178,9 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
         persistResource(
             makeDomain(
                     "cat.example",
-                    FullFieldsTestEntityHelper.makeAndPersistContact(
-                        "7372808-ERL",
-                        "Matthew",
-                        "lol@cat.lol",
-                        clock.nowUtc().minusYears(1),
-                        registrar),
-                    FullFieldsTestEntityHelper.makeAndPersistContact(
-                        "7372808-IRL",
-                        "Mark",
-                        "BOFH@cat.lol",
-                        clock.nowUtc().minusYears(2),
-                        registrar),
-                    FullFieldsTestEntityHelper.makeAndPersistContact(
-                        "7372808-TRL",
-                        "Luke",
-                        "bog@cat.lol",
-                        clock.nowUtc().minusYears(3),
-                        registrar),
+                    null,
+                    null,
+                    null,
                     hostNs1CatLol,
                     addHostToMap(
                         FullFieldsTestEntityHelper.makeAndPersistHost(
@@ -250,24 +200,9 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
         persistResource(
             makeDomain(
                     "cat.みんな",
-                    FullFieldsTestEntityHelper.makeAndPersistContact(
-                        "8372808-ERL",
-                        "(◕‿◕)",
-                        "lol@cat.みんな",
-                        clock.nowUtc().minusYears(1),
-                        registrar),
-                    FullFieldsTestEntityHelper.makeAndPersistContact(
-                        "8372808-IRL",
-                        "Santa Claus",
-                        "BOFH@cat.みんな",
-                        clock.nowUtc().minusYears(2),
-                        registrar),
-                    FullFieldsTestEntityHelper.makeAndPersistContact(
-                        "8372808-TRL",
-                        "The Raven",
-                        "bog@cat.みんな",
-                        clock.nowUtc().minusYears(3),
-                        registrar),
+                    null,
+                    null,
+                    null,
                     addHostToMap(
                         FullFieldsTestEntityHelper.makeAndPersistHost(
                             "ns1.cat.みんな", "1.2.3.5", clock.nowUtc().minusYears(1))),
@@ -289,24 +224,9 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
         persistResource(
             makeDomain(
                     "cat.1.test",
-                    FullFieldsTestEntityHelper.makeAndPersistContact(
-                        "9372808-ERL",
-                        "(◕‿◕)",
-                        "lol@cat.みんな",
-                        clock.nowUtc().minusYears(1),
-                        registrar),
-                    FullFieldsTestEntityHelper.makeAndPersistContact(
-                        "9372808-IRL",
-                        "Santa Claus",
-                        "BOFH@cat.みんな",
-                        clock.nowUtc().minusYears(2),
-                        registrar),
-                    FullFieldsTestEntityHelper.makeAndPersistContact(
-                        "9372808-TRL",
-                        "The Raven",
-                        "bog@cat.みんな",
-                        clock.nowUtc().minusYears(3),
-                        registrar),
+                    null,
+                    null,
+                    null,
                     addHostToMap(
                         FullFieldsTestEntityHelper.makeAndPersistHost(
                             "ns1.cat.1.test", "1.2.3.5", clock.nowUtc().minusYears(1))),
@@ -371,15 +291,15 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
 
   private JsonObject generateExpectedJsonForTwoDomainsNsReply() {
     return jsonFileBuilder()
-        .addDomain("cat.example", "21-EXAMPLE")
-        .addDomain("cat.lol", "C-LOL")
+        .addDomain("cat.example", "F-EXAMPLE")
+        .addDomain("cat.lol", "6-LOL")
         .load("rdap_domains_two.json");
   }
 
   private JsonObject generateExpectedJsonForTwoDomainsCatStarReplySql() {
     return jsonFileBuilder()
-        .addDomain("cat.lol", "C-LOL")
-        .addDomain("cat2.lol", "17-LOL")
+        .addDomain("cat.lol", "6-LOL")
+        .addDomain("cat2.lol", "B-LOL")
         .load("rdap_domains_two.json");
   }
 
@@ -416,7 +336,7 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
     for (int i = numActiveDomains * numTotalDomainsPerActiveDomain; i >= 1; i--) {
       String domainName = String.format("domain%d.lol", i);
       Domain.Builder builder =
-          makeDomain(domainName, contact1, contact2, contact3, null, null, registrar)
+          makeDomain(domainName, null, null, null, null, null, registrar)
               .asBuilder()
               .setNameservers(hostKeys)
               .setCreationTimeForTest(clock.nowUtc().minusYears(3))
@@ -442,13 +362,10 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
         requestType,
         queryString,
         jsonFileBuilder()
-            .addDomain("cat.lol", "C-LOL")
+            .addDomain("cat.lol", "6-LOL")
             .addRegistrar("Yes Virginia <script>")
-            .addNameserver("ns1.cat.lol", "8-ROID")
-            .addNameserver("ns2.cat.lol", "A-ROID")
-            .addContact("4-ROID")
-            .addContact("6-ROID")
-            .addContact("2-ROID")
+            .addNameserver("ns1.cat.lol", "2-ROID")
+            .addNameserver("ns2.cat.lol", "4-ROID")
             .setNextQuery(queryString)
             .load(filename));
   }
@@ -459,13 +376,10 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
         requestType,
         queryString,
         jsonFileBuilder()
-            .addDomain("cat2.lol", "17-LOL")
+            .addDomain("cat2.lol", "B-LOL")
             .addRegistrar("Yes Virginia <script>")
-            .addNameserver("ns1.cat.example", "13-ROID")
-            .addNameserver("ns2.dog.lol", "15-ROID")
-            .addContact("F-ROID")
-            .addContact("11-ROID")
-            .addContact("D-ROID")
+            .addNameserver("ns1.cat.example", "7-ROID")
+            .addNameserver("ns2.dog.lol", "9-ROID")
             .setNextQuery(queryString)
             .load(filename));
   }
@@ -573,7 +487,6 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
         action.registrarParam.isPresent(),
         numDomainsRetrieved,
         numHostsRetrieved,
-        Optional.empty(),
         incompletenessWarningType);
   }
 
@@ -747,8 +660,7 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
   @Test
   void testDomainMatch_found_loggedInAsOtherRegistrar() {
     login("otherregistrar");
-    runSuccessfulTestWithCatLol(
-        RequestType.NAME, "cat.lol", "rdap_domain_redacted_contacts_with_remark.json");
+    runSuccessfulTestWithCatLol(RequestType.NAME, "cat.lol", "rdap_domain.json");
     verifyMetrics(SearchType.BY_DOMAIN_NAME, Optional.of(1L));
   }
 
@@ -776,11 +688,11 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
         RequestType.NAME,
         "cat.example",
         jsonFileBuilder()
-            .addDomain("cat.example", "21-EXAMPLE")
+            .addDomain("cat.example", "F-EXAMPLE")
             .addRegistrar("St. John Chrysostom")
-            .addNameserver("ns1.cat.lol", "8-ROID")
-            .addNameserver("ns2.external.tld", "1F-ROID")
-            .load("rdap_domain_redacted_contacts_with_remark.json"));
+            .addNameserver("ns1.cat.lol", "2-ROID")
+            .addNameserver("ns2.external.tld", "D-ROID")
+            .load("rdap_domain.json"));
     verifyMetrics(SearchType.BY_DOMAIN_NAME, Optional.of(1L));
   }
 
@@ -790,11 +702,11 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
         RequestType.NAME,
         "cat.みんな",
         jsonFileBuilder()
-            .addDomain("cat.みんな", "2D-Q9JYB4C")
+            .addDomain("cat.みんな", "15-Q9JYB4C")
             .addRegistrar("みんな")
-            .addNameserver("ns1.cat.みんな", "29-ROID")
-            .addNameserver("ns2.cat.みんな", "2B-ROID")
-            .load("rdap_domain_unicode_no_contacts_with_remark.json"));
+            .addNameserver("ns1.cat.みんな", "11-ROID")
+            .addNameserver("ns2.cat.みんな", "13-ROID")
+            .load("rdap_domain_unicode_with_unicode_nameservers.json"));
     // The unicode gets translated to ASCII before getting parsed into a search pattern.
     metricPrefixLength = 15;
     verifyMetrics(SearchType.BY_DOMAIN_NAME, Optional.of(1L));
@@ -806,11 +718,11 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
         RequestType.NAME,
         "cat.xn--q9jyb4c",
         jsonFileBuilder()
-            .addDomain("cat.みんな", "2D-Q9JYB4C")
+            .addDomain("cat.みんな", "15-Q9JYB4C")
             .addRegistrar("みんな")
-            .addNameserver("ns1.cat.みんな", "29-ROID")
-            .addNameserver("ns2.cat.みんな", "2B-ROID")
-            .load("rdap_domain_unicode_no_contacts_with_remark.json"));
+            .addNameserver("ns1.cat.みんな", "11-ROID")
+            .addNameserver("ns2.cat.みんな", "13-ROID")
+            .load("rdap_domain_unicode_with_unicode_nameservers.json"));
     verifyMetrics(SearchType.BY_DOMAIN_NAME, Optional.of(1L));
   }
 
@@ -820,11 +732,11 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
         RequestType.NAME,
         "cat.1.test",
         jsonFileBuilder()
-            .addDomain("cat.1.test", "39-1_TEST")
+            .addDomain("cat.1.test", "1B-1_TEST")
             .addRegistrar("1.test")
-            .addNameserver("ns1.cat.1.test", "35-ROID")
-            .addNameserver("ns2.cat.2.test", "37-ROID")
-            .load("rdap_domain_redacted_contacts_with_remark.json"));
+            .addNameserver("ns1.cat.1.test", "17-ROID")
+            .addNameserver("ns2.cat.2.test", "19-ROID")
+            .load("rdap_domain.json"));
     verifyMetrics(SearchType.BY_DOMAIN_NAME, Optional.of(1L));
   }
 
@@ -834,11 +746,11 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
         RequestType.NAME,
         "ca*.1.test",
         jsonFileBuilder()
-            .addDomain("cat.1.test", "39-1_TEST")
+            .addDomain("cat.1.test", "1B-1_TEST")
             .addRegistrar("1.test")
-            .addNameserver("ns1.cat.1.test", "35-ROID")
-            .addNameserver("ns2.cat.2.test", "37-ROID")
-            .load("rdap_domain_redacted_contacts_with_remark.json"));
+            .addNameserver("ns1.cat.1.test", "17-ROID")
+            .addNameserver("ns2.cat.2.test", "19-ROID")
+            .load("rdap_domain.json"));
     verifyMetrics(SearchType.BY_DOMAIN_NAME, Optional.of(1L));
   }
 
@@ -910,10 +822,10 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
         .that(generateActualJson(RequestType.NAME, "cat.*"))
         .isEqualTo(
             jsonFileBuilder()
-                .addDomain("cat.1.test", "39-1_TEST")
-                .addDomain("cat.example", "21-EXAMPLE")
-                .addDomain("cat.lol", "C-LOL")
-                .addDomain("cat.みんな", "2D-Q9JYB4C")
+                .addDomain("cat.1.test", "1B-1_TEST")
+                .addDomain("cat.example", "F-EXAMPLE")
+                .addDomain("cat.lol", "6-LOL")
+                .addDomain("cat.みんな", "15-Q9JYB4C")
                 .load("rdap_domains_four_with_one_unicode.json"));
     assertThat(response.getStatus()).isEqualTo(200);
     verifyMetrics(SearchType.BY_DOMAIN_NAME, Optional.of(4L));
@@ -948,10 +860,10 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
         .that(generateActualJson(RequestType.NAME, "cat*"))
         .isEqualTo(
             jsonFileBuilder()
-                .addDomain("cat.1.test", "39-1_TEST")
-                .addDomain("cat.example", "21-EXAMPLE")
-                .addDomain("cat.lol", "C-LOL")
-                .addDomain("cat.みんな", "2D-Q9JYB4C")
+                .addDomain("cat.1.test", "1B-1_TEST")
+                .addDomain("cat.example", "F-EXAMPLE")
+                .addDomain("cat.lol", "6-LOL")
+                .addDomain("cat.みんな", "15-Q9JYB4C")
                 .setNextQuery("name=cat*&cursor=Y2F0LnhuLS1xOWp5YjRj")
                 .load("rdap_domains_four_with_one_unicode_truncated.json"));
     assertThat(response.getStatus()).isEqualTo(200);
@@ -1031,7 +943,7 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
     verifyErrorMetrics(SearchType.BY_DOMAIN_NAME, Optional.of(2L), 404);
   }
 
-  // TODO(b/27378695): reenable or delete this test
+  // TODO(b/27376E-95): reenable or delete this test
   @Disabled
   @Test
   void testDomainMatchDomainInTestTld_notFound() {
@@ -1073,9 +985,9 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
         .that(generateActualJson(RequestType.NAME, "domain*.lol"))
         .isEqualTo(
             jsonFileBuilder()
-                .addDomain("domain100.lol", "AC-LOL")
-                .addDomain("domain150.lol", "7A-LOL")
-                .addDomain("domain200.lol", "48-LOL")
+                .addDomain("domain100.lol", "8E-LOL")
+                .addDomain("domain150.lol", "5C-LOL")
+                .addDomain("domain200.lol", "2A-LOL")
                 .addDomain("domainunused.lol", "unused-LOL")
                 .load("rdap_incomplete_domain_result_set.json"));
     assertThat(response.getStatus()).isEqualTo(200);
@@ -1091,10 +1003,10 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
     runSuccessfulTestWithFourDomains(
         RequestType.NAME,
         "domain*.lol",
-        "4B-LOL",
-        "4A-LOL",
-        "49-LOL",
-        "48-LOL",
+        "2D-LOL",
+        "2C-LOL",
+        "2B-LOL",
+        "2A-LOL",
         "rdap_nontruncated_domains.json");
     verifyMetrics(SearchType.BY_DOMAIN_NAME, Optional.of(4L));
   }
@@ -1105,10 +1017,10 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
     runSuccessfulTestWithFourDomains(
         RequestType.NAME,
         "domain*.lol",
-        "4C-LOL",
-        "4B-LOL",
-        "4A-LOL",
-        "49-LOL",
+        "2E-LOL",
+        "2D-LOL",
+        "2C-LOL",
+        "2B-LOL",
         "name=domain*.lol&cursor=ZG9tYWluNC5sb2w%3D",
         "rdap_domains_four_truncated.json");
     verifyMetrics(SearchType.BY_DOMAIN_NAME, Optional.of(5L), IncompletenessWarningType.TRUNCATED);
@@ -1122,10 +1034,10 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
         .that(generateActualJson(RequestType.NAME, "*.lol"))
         .isEqualTo(
             jsonFileBuilder()
-                .addDomain("cat.lol", "C-LOL")
-                .addDomain("cat2.lol", "17-LOL")
-                .addDomain("domain1.lol", "4B-LOL")
-                .addDomain("domain2.lol", "4A-LOL")
+                .addDomain("cat.lol", "6-LOL")
+                .addDomain("cat2.lol", "B-LOL")
+                .addDomain("domain1.lol", "2D-LOL")
+                .addDomain("domain2.lol", "2C-LOL")
                 .setNextQuery("name=*.lol&cursor=ZG9tYWluMi5sb2w%3D")
                 .load("rdap_domains_four_truncated.json"));
     verifyMetrics(SearchType.BY_DOMAIN_NAME, Optional.of(5L), IncompletenessWarningType.TRUNCATED);
@@ -1139,10 +1051,10 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
     runSuccessfulTestWithFourDomains(
         RequestType.NAME,
         "domain*.lol",
-        "50-LOL",
-        "4F-LOL",
-        "4E-LOL",
-        "4D-LOL",
+        "32-LOL",
+        "31-LOL",
+        "30-LOL",
+        "2F-LOL",
         "name=domain*.lol&cursor=ZG9tYWluNC5sb2w%3D",
         "rdap_domains_four_truncated.json");
     verifyMetrics(SearchType.BY_DOMAIN_NAME, Optional.of(5L), IncompletenessWarningType.TRUNCATED);
@@ -1156,10 +1068,10 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
         .that(generateActualJson(RequestType.NAME, "domain*.lol"))
         .isEqualTo(
             jsonFileBuilder()
-                .addDomain("domain12.lol", "5A-LOL")
-                .addDomain("domain18.lol", "54-LOL")
-                .addDomain("domain24.lol", "4E-LOL")
-                .addDomain("domain30.lol", "48-LOL")
+                .addDomain("domain12.lol", "3C-LOL")
+                .addDomain("domain18.lol", "36-LOL")
+                .addDomain("domain24.lol", "30-LOL")
+                .addDomain("domain30.lol", "2A-LOL")
                 .setNextQuery("name=domain*.lol&cursor=ZG9tYWluMzAubG9s")
                 .load("rdap_domains_four_truncated.json"));
     assertThat(response.getStatus()).isEqualTo(200);
@@ -1358,11 +1270,11 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
         RequestType.NS_LDH_NAME,
         "ns1.cat.xn--q9jyb4c",
         jsonFileBuilder()
-            .addDomain("cat.みんな", "2D-Q9JYB4C")
+            .addDomain("cat.みんな", "15-Q9JYB4C")
             .addRegistrar("みんな")
-            .addNameserver("ns1.cat.みんな", "29-ROID")
-            .addNameserver("ns2.cat.みんな", "2B-ROID")
-            .load("rdap_domain_unicode_no_contacts_with_remark.json"));
+            .addNameserver("ns1.cat.みんな", "11-ROID")
+            .addNameserver("ns2.cat.みんな", "13-ROID")
+            .load("rdap_domain_unicode_with_unicode_nameservers.json"));
     verifyMetrics(SearchType.BY_NAMESERVER_NAME, 1, 1);
   }
 
@@ -1372,11 +1284,11 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
         RequestType.NS_LDH_NAME,
         "ns1.cat.1.test",
         jsonFileBuilder()
-            .addDomain("cat.1.test", "39-1_TEST")
+            .addDomain("cat.1.test", "1B-1_TEST")
             .addRegistrar("1.test")
-            .addNameserver("ns1.cat.1.test", "35-ROID")
-            .addNameserver("ns2.cat.2.test", "37-ROID")
-            .load("rdap_domain_redacted_contacts_with_remark.json"));
+            .addNameserver("ns1.cat.1.test", "17-ROID")
+            .addNameserver("ns2.cat.2.test", "19-ROID")
+            .load("rdap_domain.json"));
     verifyMetrics(SearchType.BY_NAMESERVER_NAME, 1, 1);
   }
 
@@ -1386,11 +1298,11 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
         RequestType.NS_LDH_NAME,
         "ns*.cat.1.test",
         jsonFileBuilder()
-            .addDomain("cat.1.test", "39-1_TEST")
+            .addDomain("cat.1.test", "1B-1_TEST")
             .addRegistrar("1.test")
-            .addNameserver("ns1.cat.1.test", "35-ROID")
-            .addNameserver("ns2.cat.2.test", "37-ROID")
-            .load("rdap_domain_redacted_contacts_with_remark.json"));
+            .addNameserver("ns1.cat.1.test", "17-ROID")
+            .addNameserver("ns2.cat.2.test", "19-ROID")
+            .load("rdap_domain.json"));
     verifyMetrics(SearchType.BY_NAMESERVER_NAME, 1, 1);
   }
 
@@ -1408,7 +1320,7 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
     verifyErrorMetrics(SearchType.BY_NAMESERVER_NAME, Optional.empty(), Optional.of(0L), 404);
   }
 
-  // TODO(b/27378695): reenable or delete this test
+  // TODO(b/27376E-95): reenable or delete this test
   @Disabled
   @Test
   void testNameserverMatchDomainsInTestTld_notFound() {
@@ -1531,10 +1443,10 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
     runSuccessfulTestWithFourDomains(
         RequestType.NS_LDH_NAME,
         "ns1.domain1.lol",
-        "4B-LOL",
-        "4A-LOL",
-        "49-LOL",
-        "48-LOL",
+        "2D-LOL",
+        "2C-LOL",
+        "2B-LOL",
+        "2A-LOL",
         "rdap_nontruncated_domains.json");
     verifyMetrics(SearchType.BY_NAMESERVER_NAME, Optional.of(4L), Optional.of(1L));
   }
@@ -1545,10 +1457,10 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
     runSuccessfulTestWithFourDomains(
         RequestType.NS_LDH_NAME,
         "ns1.domain1.lol",
-        "4C-LOL",
-        "4B-LOL",
-        "4A-LOL",
-        "49-LOL",
+        "2E-LOL",
+        "2D-LOL",
+        "2C-LOL",
+        "2B-LOL",
         "nsLdhName=ns1.domain1.lol&cursor=ZG9tYWluNC5sb2w%3D",
         "rdap_domains_four_truncated.json");
     verifyMetrics(
@@ -1564,10 +1476,10 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
     runSuccessfulTestWithFourDomains(
         RequestType.NS_LDH_NAME,
         "ns1.domain1.lol",
-        "50-LOL",
-        "4F-LOL",
-        "4E-LOL",
-        "4D-LOL",
+        "32-LOL",
+        "31-LOL",
+        "30-LOL",
+        "2F-LOL",
         "nsLdhName=ns1.domain1.lol&cursor=ZG9tYWluNC5sb2w%3D",
         "rdap_domains_four_truncated.json");
     verifyMetrics(
@@ -1587,10 +1499,10 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
         .that(generateActualJson(RequestType.NS_LDH_NAME, "ns*.domain1.lol"))
         .isEqualTo(
             jsonFileBuilder()
-                .addDomain("domain1.lol", "8F-LOL")
-                .addDomain("domain2.lol", "8E-LOL")
-                .addDomain("domain3.lol", "8D-LOL")
-                .addDomain("domain4.lol", "8C-LOL")
+                .addDomain("domain1.lol", "71-LOL")
+                .addDomain("domain2.lol", "70-LOL")
+                .addDomain("domain3.lol", "6F-LOL")
+                .addDomain("domain4.lol", "6E-LOL")
                 .load("rdap_nontruncated_domains.json"));
     assertThat(response.getStatus()).isEqualTo(200);
     verifyMetrics(SearchType.BY_NAMESERVER_NAME, Optional.of(4L), Optional.of(36L));
@@ -1604,8 +1516,8 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
         .that(generateActualJson(RequestType.NS_LDH_NAME, "ns*.domain1.lol"))
         .isEqualTo(
             jsonFileBuilder()
-                .addDomain("domain1.lol", "97-LOL")
-                .addDomain("domain2.lol", "96-LOL")
+                .addDomain("domain1.lol", "79-LOL")
+                .addDomain("domain2.lol", "78-LOL")
                 .load("rdap_incomplete_domains.json"));
     assertThat(response.getStatus()).isEqualTo(200);
     verifyMetrics(
@@ -1671,9 +1583,7 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
   @Test
   void testAddressMatchV6Address_foundOne() {
     runSuccessfulTestWithCatLol(
-        RequestType.NS_IP,
-        "bad:f00d:cafe:0:0:0:15:beef",
-        "rdap_domain_redacted_contacts_with_remark.json");
+        RequestType.NS_IP, "bad:f00d:cafe:0:0:0:15:beef", "rdap_domain.json");
     verifyMetrics(SearchType.BY_NAMESERVER_ADDRESS, 1, 1);
   }
 
@@ -1683,7 +1593,7 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
     verifyErrorMetrics(SearchType.BY_NAMESERVER_ADDRESS, Optional.empty(), Optional.of(0L), 404);
   }
 
-  // TODO(b/27378695): reenable or delete this test
+  // TODO(b/27376E-95): reenable or delete this test
   @Disabled
   @Test
   void testAddressMatchDomainsInTestTld_notFound() {
@@ -1740,13 +1650,10 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
         .isEqualTo(
             wrapInSearchReply(
                 jsonFileBuilder()
-                    .addDomain("cat.lol", "C-LOL")
+                    .addDomain("cat.lol", "6-LOL")
                     .addRegistrar("Yes Virginia <script>")
-                    .addNameserver("ns1.cat.lol", "8-ROID")
-                    .addNameserver("ns2.cat.lol", "A-ROID")
-                    .addContact("4-ROID")
-                    .addContact("6-ROID")
-                    .addContact("2-ROID")
+                    .addNameserver("ns1.cat.lol", "2-ROID")
+                    .addNameserver("ns2.cat.lol", "4-ROID")
                     .load("rdap_domain.json")));
     assertThat(response.getStatus()).isEqualTo(200);
     verifyMetrics(SearchType.BY_NAMESERVER_ADDRESS, 1, 1);
@@ -1773,10 +1680,10 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
     runSuccessfulTestWithFourDomains(
         RequestType.NS_IP,
         "5.5.5.1",
-        "4B-LOL",
-        "4A-LOL",
-        "49-LOL",
-        "48-LOL",
+        "2D-LOL",
+        "2C-LOL",
+        "2B-LOL",
+        "2A-LOL",
         "rdap_nontruncated_domains.json");
     verifyMetrics(SearchType.BY_NAMESERVER_ADDRESS, 4, 1);
   }
@@ -1787,10 +1694,10 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
     runSuccessfulTestWithFourDomains(
         RequestType.NS_IP,
         "5.5.5.1",
-        "4C-LOL",
-        "4B-LOL",
-        "4A-LOL",
-        "49-LOL",
+        "2E-LOL",
+        "2D-LOL",
+        "2C-LOL",
+        "2B-LOL",
         "nsIp=5.5.5.1&cursor=ZG9tYWluNC5sb2w%3D",
         "rdap_domains_four_truncated.json");
     verifyMetrics(
@@ -1806,10 +1713,10 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
     runSuccessfulTestWithFourDomains(
         RequestType.NS_IP,
         "5.5.5.1",
-        "50-LOL",
-        "4F-LOL",
-        "4E-LOL",
-        "4D-LOL",
+        "32-LOL",
+        "31-LOL",
+        "30-LOL",
+        "2F-LOL",
         "nsIp=5.5.5.1&cursor=ZG9tYWluNC5sb2w%3D",
         "rdap_domains_four_truncated.json");
     verifyMetrics(

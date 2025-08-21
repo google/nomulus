@@ -319,27 +319,6 @@ have failed to comply with these terms.",
       return putNext("REGISTRAR_HANDLE_", handle, "STATUS_", status);
     }
 
-    JsonFileBuilder addContact(String handle) {
-      return putNext("CONTACT_HANDLE_", handle);
-    }
-
-    JsonFileBuilder addFullContact(
-        String handle,
-        @Nullable String status,
-        @Nullable String fullName,
-        @Nullable String address) {
-      if (fullName != null) {
-        putNext("CONTACT_FULLNAME_", fullName);
-      }
-      if (address != null) {
-        putNext("CONTACT_ADDRESS_", address);
-      }
-      if (status != null) {
-        putNext("STATUS_", status);
-      }
-      return putNext("CONTACT_HANDLE_", handle);
-    }
-
     JsonFileBuilder setNextQuery(String nextQuery) {
       return put("NEXT_QUERY", nextQuery);
     }

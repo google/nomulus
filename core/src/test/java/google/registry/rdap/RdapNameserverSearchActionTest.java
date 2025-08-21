@@ -131,20 +131,7 @@ class RdapNameserverSearchActionTest extends RdapSearchActionTestCase<RdapNamese
     // create a domain so that we can use it as a test nameserver search string suffix
     domainCatLol =
         persistResource(
-            makeDomain(
-                    "cat.lol",
-                    persistResource(
-                        FullFieldsTestEntityHelper.makeContact(
-                            "5372808-ERL", "Goblin Market", "lol@cat.lol", registrar)),
-                    persistResource(
-                        FullFieldsTestEntityHelper.makeContact(
-                            "5372808-IRL", "Santa Claus", "BOFH@cat.lol", registrar)),
-                    persistResource(
-                        FullFieldsTestEntityHelper.makeContact(
-                            "5372808-TRL", "The Raven", "bog@cat.lol", registrar)),
-                    hostNs1CatLol,
-                    hostNs2CatLol,
-                    registrar)
+            makeDomain("cat.lol", null, null, null, hostNs1CatLol, hostNs2CatLol, registrar)
                 .asBuilder()
                 .setSubordinateHosts(ImmutableSet.of("ns1.cat.lol", "ns2.cat.lol"))
                 .build());
@@ -203,7 +190,6 @@ class RdapNameserverSearchActionTest extends RdapSearchActionTestCase<RdapNamese
         action.registrarParam.isPresent(),
         Optional.empty(),
         numHostsRetrieved,
-        Optional.empty(),
         incompletenessWarningType);
   }
 
@@ -802,7 +788,7 @@ class RdapNameserverSearchActionTest extends RdapSearchActionTestCase<RdapNamese
         .that(generateActualJsonWithIp("5.5.5.1"))
         .isEqualTo(
             loadJsonFile(
-                "rdap_truncated_hosts.json", "QUERY", "ip=5.5.5.1&cursor=MTctUk9JRA%3D%3D"));
+                "rdap_truncated_hosts.json", "QUERY", "ip=5.5.5.1&cursor=MTQtUk9JRA%3D%3D"));
     assertThat(response.getStatus()).isEqualTo(200);
     verifyMetrics(5, IncompletenessWarningType.TRUNCATED);
   }
@@ -814,7 +800,7 @@ class RdapNameserverSearchActionTest extends RdapSearchActionTestCase<RdapNamese
         .that(generateActualJsonWithIp("5.5.5.1"))
         .isEqualTo(
             loadJsonFile(
-                "rdap_truncated_hosts.json", "QUERY", "ip=5.5.5.1&cursor=MTctUk9JRA%3D%3D"));
+                "rdap_truncated_hosts.json", "QUERY", "ip=5.5.5.1&cursor=MTQtUk9JRA%3D%3D"));
     assertThat(response.getStatus()).isEqualTo(200);
     // When searching by address and not including deleted, we don't need to search for extra
     // matches.

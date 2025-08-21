@@ -275,7 +275,7 @@ public class SendExpiringCertificateNotificationEmailAction implements Runnable 
    */
   @VisibleForTesting
   ImmutableSet<InternetAddress> getEmailAddresses(Registrar registrar, Type contactType) {
-    ImmutableSortedSet<RegistrarPoc> contacts = registrar.getContactsOfType(contactType);
+    ImmutableSortedSet<RegistrarPoc> contacts = registrar.getPocsOfType(contactType);
     ImmutableSet.Builder<InternetAddress> recipientEmails = new ImmutableSet.Builder<>();
     for (RegistrarPoc contact : contacts) {
       try {

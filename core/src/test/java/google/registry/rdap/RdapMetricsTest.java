@@ -37,7 +37,6 @@ class RdapMetricsTest {
     RdapMetrics.responses.reset();
     RdapMetrics.numberOfDomainsRetrieved.reset();
     RdapMetrics.numberOfHostsRetrieved.reset();
-    RdapMetrics.numberOfContactsRetrieved.reset();
   }
 
   private RdapMetrics.RdapMetricInformation.Builder getBuilder() {
@@ -188,7 +187,6 @@ class RdapMetricsTest {
         .and()
         .hasNoOtherValues();
     assertThat(RdapMetrics.numberOfHostsRetrieved).hasNoOtherValues();
-    assertThat(RdapMetrics.numberOfContactsRetrieved).hasNoOtherValues();
   }
 
   /**
@@ -225,7 +223,6 @@ class RdapMetricsTest {
             ImmutableSet.of(10), "DOMAINS", "BY_NAMESERVER_NAME", "PREFIX_AND_SUFFIX", "2", "YES")
         .and()
         .hasNoOtherValues();
-    assertThat(RdapMetrics.numberOfContactsRetrieved).hasNoOtherValues();
   }
 
   /** Tests what would happen in a nameserver search for "*.cat.lol", which found no matches. */
@@ -254,10 +251,8 @@ class RdapMetricsTest {
         ImmutableSet.of(0), "NAMESERVERS", "BY_NAMESERVER_NAME", "SUFFIX", "0", "NO")
     .and()
     .hasNoOtherValues();
-    assertThat(RdapMetrics.numberOfContactsRetrieved).hasNoOtherValues();
   }
 
-  /** Tests what would happen in an entity search for "Mike*" which found 50 contacts. */
   @Test
   void testEntitySearchByNameWithWildcard() {
     rdapMetrics.updateMetrics(
@@ -266,7 +261,6 @@ class RdapMetricsTest {
             .setSearchType(SearchType.BY_FULL_NAME)
             .setWildcardType(WildcardType.PREFIX)
             .setPrefixLength(4)
-            .setNumContactsRetrieved(50)
             .build());
     assertThat(RdapMetrics.requests)
         .hasValueForLabels(1, "ENTITIES", "NO", "NO", "PUBLIC", "GET")
@@ -279,10 +273,5 @@ class RdapMetricsTest {
         .hasNoOtherValues();
     assertThat(RdapMetrics.numberOfDomainsRetrieved).hasNoOtherValues();
     assertThat(RdapMetrics.numberOfHostsRetrieved).hasNoOtherValues();
-    assertThat(RdapMetrics.numberOfContactsRetrieved)
-        .hasDataSetForLabels(
-            ImmutableSet.of(50), "ENTITIES", "BY_FULL_NAME", "PREFIX", "4", "NO")
-        .and()
-        .hasNoOtherValues();
   }
 }

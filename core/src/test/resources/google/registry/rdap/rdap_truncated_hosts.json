@@ -3,7 +3,7 @@
   [
     {
       "objectClassName" : "nameserver",
-      "handle" : "14-ROID",
+      "handle" : "11-ROID",
       "ldhName" : "nsx1.cat.lol",
       "links" :
       [
@@ -36,7 +36,7 @@
     },
     {
       "objectClassName" : "nameserver",
-      "handle" : "15-ROID",
+      "handle" : "12-ROID",
       "ldhName" : "nsx2.cat.lol",
       "links" :
       [
@@ -69,7 +69,7 @@
     },
     {
       "objectClassName" : "nameserver",
-      "handle" : "16-ROID",
+      "handle" : "13-ROID",
       "ldhName" : "nsx3.cat.lol",
       "links" :
       [
@@ -102,7 +102,7 @@
     },
     {
       "objectClassName" : "nameserver",
-      "handle" : "17-ROID",
+      "handle" : "14-ROID",
       "ldhName" : "nsx4.cat.lol",
       "links" :
       [

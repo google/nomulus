@@ -341,11 +341,10 @@ class RegistrarTest extends EntityTestCase {
                 .setTypes(ImmutableSet.of(RegistrarPoc.Type.TECH, RegistrarPoc.Type.ABUSE))
                 .build());
     abuseAdminContact = DatabaseHelper.loadByKey(abuseAdminContact.createVKey());
-    ImmutableSortedSet<RegistrarPoc> techContacts =
-        registrar.getContactsOfType(RegistrarPoc.Type.TECH);
+    ImmutableSortedSet<RegistrarPoc> techContacts = registrar.getPocsOfType(RegistrarPoc.Type.TECH);
     assertThat(techContacts).containsExactly(newTechContact, newTechAbuseContact).inOrder();
     ImmutableSortedSet<RegistrarPoc> abuseContacts =
-        registrar.getContactsOfType(RegistrarPoc.Type.ABUSE);
+        registrar.getPocsOfType(RegistrarPoc.Type.ABUSE);
     assertThat(abuseContacts).containsExactly(newTechAbuseContact, abuseAdminContact).inOrder();
   }
 

@@ -1,6 +1,6 @@
 {
   "objectClassName" : "nameserver",
-  "handle" : "10-ROID",
+  "handle" : "8-ROID",
   "ldhName" : "ns4.cat.xn--q9jyb4c",
   "unicodeName" : "ns4.cat.みんな",
   "status" : ["active", "associated"],

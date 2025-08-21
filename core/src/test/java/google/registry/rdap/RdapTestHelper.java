@@ -39,12 +39,6 @@ class RdapTestHelper {
     return GSON.fromJson(Joiner.on("\n").join(lines), JsonElement.class);
   }
 
-  enum ContactNoticeType {
-    NONE,
-    DOMAIN,
-    CONTACT
-  }
-
   static RdapJsonFormatter getTestRdapJsonFormatter(Clock clock) {
     RdapJsonFormatter rdapJsonFormatter = new RdapJsonFormatter();
     rdapJsonFormatter.rdapAuthorization = RdapAuthorization.PUBLIC_AUTHORIZATION;

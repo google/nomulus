@@ -78,7 +78,6 @@ public abstract class RdapSearchActionTestCase<A extends RdapSearchActionBase>
       boolean registrarSpecified,
       Optional<Long> numDomainsRetrieved,
       Optional<Long> numHostsRetrieved,
-      Optional<Long> numContactsRetrieved,
       IncompletenessWarningType incompletenessWarningType) {
     RdapMetrics.RdapMetricInformation.Builder builder =
         RdapMetrics.RdapMetricInformation.builder()
@@ -94,7 +93,6 @@ public abstract class RdapSearchActionTestCase<A extends RdapSearchActionBase>
             .setIncompletenessWarningType(incompletenessWarningType);
     numDomainsRetrieved.ifPresent(builder::setNumDomainsRetrieved);
     numHostsRetrieved.ifPresent(builder::setNumHostsRetrieved);
-    numContactsRetrieved.ifPresent(builder::setNumContactsRetrieved);
     verify(rdapMetrics).updateMetrics(builder.build());
   }
 }

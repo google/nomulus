@@ -578,7 +578,7 @@ public class Registrar extends UpdateAutoTimestampEntity implements Buildable, J
    * address.
    */
   public ImmutableSortedSet<RegistrarPoc> getContacts() {
-    return getContactPocs(tm()).stream()
+    return getPocs(tm()).stream()
         .filter(Objects::nonNull)
         .collect(toImmutableSortedSet(CONTACT_EMAIL_COMPARATOR));
   }
@@ -590,8 +590,8 @@ public class Registrar extends UpdateAutoTimestampEntity implements Buildable, J
    * <p>This method queries the replica database. It is reserved for use cases that can tolerate
    * slightly stale data.
    */
-  public ImmutableSortedSet<RegistrarPoc> getContactsFromReplica() {
-    return getContactPocs(replicaTm()).stream()
+  public ImmutableSortedSet<RegistrarPoc> getPocsFromReplica() {
+    return getPocs(replicaTm()).stream()
         .filter(Objects::nonNull)
         .collect(toImmutableSortedSet(CONTACT_EMAIL_COMPARATOR));
   }
@@ -600,8 +600,8 @@ public class Registrar extends UpdateAutoTimestampEntity implements Buildable, J
    * Returns a list of {@link RegistrarPoc} objects of a given type for this registrar sorted by
    * their email address.
    */
-  public ImmutableSortedSet<RegistrarPoc> getContactsOfType(final RegistrarPoc.Type type) {
-    return getContactPocs(tm()).stream()
+  public ImmutableSortedSet<RegistrarPoc> getPocsOfType(final RegistrarPoc.Type type) {
+    return getPocs(tm()).stream()
         .filter(Objects::nonNull)
         .filter((@Nullable RegistrarPoc contact) -> contact.getTypes().contains(type))
         .collect(toImmutableSortedSet(CONTACT_EMAIL_COMPARATOR));
@@ -615,7 +615,7 @@ public class Registrar extends UpdateAutoTimestampEntity implements Buildable, J
     return getContacts().stream().filter(RegistrarPoc::getVisibleInDomainWhoisAsAbuse).findFirst();
   }
 
-  private ImmutableList<RegistrarPoc> getContactPocs(TransactionManager txnManager) {
+  private ImmutableList<RegistrarPoc> getPocs(TransactionManager txnManager) {
     return txnManager.transact(() -> RegistrarPoc.loadForRegistrar(registrarId));
   }
 

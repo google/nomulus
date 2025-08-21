@@ -133,16 +133,6 @@ public class RdapMetrics {
               LABEL_DESCRIPTORS_FOR_RETRIEVAL_COUNTS,
               FIBONACCI_FITTER);
 
-  @VisibleForTesting
-  static final EventMetric numberOfContactsRetrieved =
-      MetricRegistryImpl.getDefault()
-          .newEventMetric(
-              "/rdap/num_contacts_retrieved",
-              "Number of contacts retrieved",
-              "count",
-              LABEL_DESCRIPTORS_FOR_RETRIEVAL_COUNTS,
-              FIBONACCI_FITTER);
-
   @Inject
   public RdapMetrics() {}
 
@@ -191,15 +181,6 @@ public class RdapMetrics {
           getLabelStringForPrefixLength(rdapMetricInformation.prefixLength()),
           rdapMetricInformation.includeDeleted() ? "YES" : "NO");
     }
-    if (rdapMetricInformation.numContactsRetrieved().isPresent()) {
-      numberOfContactsRetrieved.record(
-          rdapMetricInformation.numContactsRetrieved().get(),
-          rdapMetricInformation.endpointType().toString(),
-          rdapMetricInformation.searchType().toString(),
-          rdapMetricInformation.wildcardType().toString(),
-          getLabelStringForPrefixLength(rdapMetricInformation.prefixLength()),
-          rdapMetricInformation.includeDeleted() ? "YES" : "NO");
-    }
   }
 
   /**
@@ -221,10 +202,8 @@ public class RdapMetrics {
    *     than were actually returned in the response; absent if a search was not performed.
    * @param numHostsRetrieved Number of hosts retrieved from the database; this might be more than
    *     were actually returned in the response; absent if a search was not performed.
-   * @param numContactsRetrieved Number of contacts retrieved from the database; this might be more
-   *     than were actually returned in the response; absent if a search was not performed.
    */
-  record RdapMetricInformation(
+  public record RdapMetricInformation(
       EndpointType endpointType,
       SearchType searchType,
       WildcardType wildcardType,
@@ -236,8 +215,7 @@ public class RdapMetrics {
       int statusCode,
       IncompletenessWarningType incompletenessWarningType,
       Optional<Long> numDomainsRetrieved,
-      Optional<Long> numHostsRetrieved,
-      Optional<Long> numContactsRetrieved) {
+      Optional<Long> numHostsRetrieved) {
 
     @AutoBuilder
     interface Builder {
@@ -264,8 +242,6 @@ public class RdapMetrics {
       Builder setNumDomainsRetrieved(long numDomainsRetrieved);
 
       Builder setNumHostsRetrieved(long numHostsRetrieved);
-
-      Builder setNumContactsRetrieved(long numContactRetrieved);
 
       RdapMetricInformation build();
     }

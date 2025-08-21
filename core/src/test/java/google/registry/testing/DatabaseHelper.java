@@ -587,7 +587,7 @@ public final class DatabaseHelper {
   public static Domain persistDomainWithDependentResources(
       String label,
       String tld,
-      Contact contact,
+      @Nullable Contact contact,
       DateTime now,
       DateTime creationTime,
       DateTime expirationTime) {
@@ -601,13 +601,16 @@ public final class DatabaseHelper {
             .setCreationRegistrarId("TheRegistrar")
             .setCreationTimeForTest(creationTime)
             .setRegistrationExpirationTime(expirationTime)
-            .setRegistrant(Optional.of(contact.createVKey()))
-            .setContacts(
-                ImmutableSet.of(
-                    DesignatedContact.create(Type.ADMIN, contact.createVKey()),
-                    DesignatedContact.create(Type.TECH, contact.createVKey())))
             .setAuthInfo(DomainAuthInfo.create(PasswordAuth.create("fooBAR")));
     Duration addGracePeriodLength = Tld.get(tld).getAddGracePeriodLength();
+    if (contact != null) {
+      domainBuilder
+          .setRegistrant(Optional.of(contact.createVKey()))
+          .setContacts(
+              ImmutableSet.of(
+                  DesignatedContact.create(Type.ADMIN, contact.createVKey()),
+                  DesignatedContact.create(Type.TECH, contact.createVKey())));
+    }
     if (creationTime.plus(addGracePeriodLength).isAfter(now)) {
       domainBuilder.addGracePeriod(
           GracePeriod.create(
