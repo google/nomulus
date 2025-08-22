@@ -29,6 +29,7 @@ import google.registry.model.eppoutput.EppOutput;
 import google.registry.monitoring.whitebox.EppMetric;
 import google.registry.persistence.PersistenceModule.TransactionIsolationLevel;
 import google.registry.persistence.transaction.JpaTransactionManager;
+import google.registry.util.StopwatchLogger;
 import jakarta.inject.Inject;
 import jakarta.inject.Provider;
 import java.util.Optional;
@@ -77,23 +78,32 @@ public class FlowRunner {
       flowReporter.recordToLogs();
     }
     eppMetricBuilder.setCommandNameFromFlow(flowClass.getSimpleName());
+    final StopwatchLogger stopwatch = new StopwatchLogger();
+
     // We may already be in a transaction, e.g., when invoked by DeleteExpiredDomainsAction.
     if (!isTransactional || jpaTransactionManager.inTransaction()) {
+      stopwatch.tick("We're in transaction, running the flow now.");
       return EppOutput.create(flowProvider.get().run());
     }
+
+    stopwatch.tick("We're not in transaction, calling transact.");
     try {
       return jpaTransactionManager.transact(
           isolationLevelOverride.orElse(null),
           () -> {
             try {
+              stopwatch.tick("Running the flow in transaction.");
               EppOutput output = EppOutput.create(flowProvider.get().run());
+              stopwatch.tick("Completed the flow in transaction.");
               if (isDryRun) {
                 throw new DryRunException(output);
               }
               if (flowClass.equals(LoginFlow.class)) {
                 // In LoginFlow, registrarId isn't known until after the flow executes, so save
                 // it then.
+                stopwatch.tick("Login flow started setting registrar id.");
                 eppMetricBuilder.setRegistrarId(sessionMetadata.getRegistrarId());
+                stopwatch.tick("Login flow finished setting registrar id.");
               }
               return output;
             } catch (EppException e) {

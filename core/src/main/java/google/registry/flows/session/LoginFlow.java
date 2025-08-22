@@ -47,6 +47,7 @@ import google.registry.model.eppinput.EppInput.Options;
 import google.registry.model.eppinput.EppInput.Services;
 import google.registry.model.eppoutput.EppResponse;
 import google.registry.model.registrar.Registrar;
+import google.registry.util.StopwatchLogger;
 import jakarta.inject.Inject;
 import java.util.Optional;
 import java.util.Set;
@@ -97,19 +98,25 @@ public class LoginFlow implements MutatingFlow {
 
   /** Run the flow without bothering to log errors. The {@link #run} method will do that for us. */
   private EppResponse runWithoutLogging() throws EppException {
+    final StopwatchLogger stopwatch = new StopwatchLogger();
     extensionManager.validate();  // There are no legal extensions for this flow.
+    stopwatch.tick("LoginFlow extension validate");
     Login login = (Login) eppInput.getCommandWrapper().getCommand();
+    stopwatch.tick("LoginFlow getCommand");
     if (!registrarId.isEmpty()) {
       throw new AlreadyLoggedInException();
     }
     Options options = login.getOptions();
+    stopwatch.tick("LoginFlow getOptions");
     if (!ProtocolDefinition.LANGUAGE.equals(options.getLanguage())) {
       throw new UnsupportedLanguageException();
     }
     Services services = login.getServices();
+    stopwatch.tick("LoginFlow getServices");
     Set<String> unsupportedObjectServices = difference(
         nullToEmpty(services.getObjectServices()),
         ProtocolDefinition.SUPPORTED_OBJECT_SERVICES);
+    stopwatch.tick("LoginFlow difference unsupportedObjectServices");
     if (!unsupportedObjectServices.isEmpty()) {
       throw new UnimplementedObjectServiceException();
     }
@@ -121,11 +128,12 @@ public class LoginFlow implements MutatingFlow {
       }
       serviceExtensionUrisBuilder.add(uri);
     }
+    stopwatch.tick("LoginFlow serviceExtensionUrisBuilder");
     Optional<Registrar> registrar = Registrar.loadByRegistrarIdCached(login.getClientId());
     if (registrar.isEmpty()) {
       throw new BadRegistrarIdException(login.getClientId());
     }
-
+    stopwatch.tick("LoginFlow loadByRegistrarIdCached");
     // AuthenticationErrorExceptions will propagate up through here.
     try {
       credentials.validate(registrar.get(), login.getPassword());
@@ -137,6 +145,7 @@ public class LoginFlow implements MutatingFlow {
         throw e;
       }
     }
+    stopwatch.tick("LoginFlow credentials.validate");
     if (!registrar.get().isLive()) {
       throw new RegistrarAccountNotActiveException();
     }
@@ -145,17 +154,24 @@ public class LoginFlow implements MutatingFlow {
       String newPassword = login.getNewPassword().get();
       // Load fresh from database (bypassing the cache) to ensure we don't save stale data.
       Optional<Registrar> freshRegistrar = Registrar.loadByRegistrarId(login.getClientId());
+      stopwatch.tick("LoginFlow reload freshRegistrar");
       if (freshRegistrar.isEmpty()) {
         throw new BadRegistrarIdException(login.getClientId());
       }
       tm().put(freshRegistrar.get().asBuilder().setPassword(newPassword).build());
+      stopwatch.tick("LoginFlow updated password");
     }
 
     // We are in!
     sessionMetadata.resetFailedLoginAttempts();
+    stopwatch.tick("LoginFlow resetFailedLoginAttempts");
     sessionMetadata.setRegistrarId(login.getClientId());
+    stopwatch.tick("LoginFlow setRegistrarId");
     sessionMetadata.setServiceExtensionUris(serviceExtensionUrisBuilder.build());
-    return responseBuilder.setIsLoginResponse().build();
+    stopwatch.tick("LoginFlow setServiceExtensionUris");
+    EppResponse eppResponse = responseBuilder.setIsLoginResponse().build();
+    stopwatch.tick("LoginFlow eppResponse build()");
+    return eppResponse;
   }
 
   /** Registrar with this ID could not be found. */

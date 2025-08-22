@@ -30,6 +30,7 @@ import google.registry.request.auth.AuthModule.IapOidc;
 import google.registry.request.auth.AuthModule.RegularOidc;
 import google.registry.request.auth.AuthSettings.AuthLevel;
 import google.registry.util.RegistryEnvironment;
+import google.registry.util.StopwatchLogger;
 import jakarta.inject.Inject;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.Optional;
@@ -77,7 +78,9 @@ public abstract class OidcTokenAuthenticationMechanism implements Authentication
       logger.atWarning().log("Using AuthResult %s for testing.", authResultForTesting);
       return authResultForTesting;
     }
+    final StopwatchLogger stopwatch = new StopwatchLogger();
     String rawIdToken = tokenExtractor.extract(request);
+    stopwatch.tick("OidcTokenAuthenticationMechanism tokenExtractor extracted");
     if (rawIdToken == null) {
       return AuthResult.NOT_AUTHENTICATED;
     }
@@ -99,7 +102,7 @@ public abstract class OidcTokenAuthenticationMechanism implements Authentication
               ? "Raw token redacted in prod"
               : rawIdToken);
     }
-
+    stopwatch.tick("OidcTokenAuthenticationMechanism token verified");
     if (token == null) {
       return AuthResult.NOT_AUTHENTICATED;
     }
@@ -111,6 +114,7 @@ public abstract class OidcTokenAuthenticationMechanism implements Authentication
     }
     Optional<User> maybeUser =
         tm().transact(() -> tm().loadByKeyIfPresent(VKey.create(User.class, email)));
+    stopwatch.tick("OidcTokenAuthenticationMechanism maybeUser loaded");
     if (maybeUser.isPresent()) {
       return AuthResult.createUser(maybeUser.get());
     }
