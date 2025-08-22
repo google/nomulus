@@ -26,6 +26,7 @@ import com.google.common.net.MediaType;
 import google.registry.model.eppoutput.EppOutput;
 import google.registry.request.Response;
 import google.registry.util.ProxyHttpHeaders;
+import google.registry.util.StopwatchLogger;
 import jakarta.inject.Inject;
 
 /** Handle an EPP request and response. */
@@ -55,7 +56,10 @@ public class EppRequestHandler {
           eppController.handleEppCommand(
               sessionMetadata, credentials, eppRequestSource, isDryRun, isSuperuser, inputXmlBytes);
       response.setContentType(APPLICATION_EPP_XML);
+      final StopwatchLogger stopwatch = new StopwatchLogger();
       byte[] eppResponseXmlBytes = marshalWithLenientRetry(eppOutput);
+      stopwatch.tick("Completed EPP output marshaling.");
+
       response.setPayload(new String(eppResponseXmlBytes, UTF_8));
       logger.atInfo().log(
           "EPP response: %s", prettyPrint(EppXmlSanitizer.sanitizeEppXml(eppResponseXmlBytes)));
