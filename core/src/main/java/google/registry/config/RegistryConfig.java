@@ -72,8 +72,8 @@ import org.joda.time.Duration;
 public final class RegistryConfig {
 
   public static final String CANARY_HEADER = "canary";
-  private static final String ENVIRONMENT_CONFIG_FORMAT = "files/nomulus-config-%s.yaml";
-  private static final String YAML_CONFIG_PROD =
+  private static final String YAML_CONFIG_ENV_TEMPLATE = "files/nomulus-config-%s.yaml";
+  private static final String YAML_CONFIG_DEFAULT =
       readResourceUtf8(RegistryConfig.class, "files/default-config.yaml");
 
   /** Dagger qualifier for configuration settings. */
@@ -85,19 +85,27 @@ public final class RegistryConfig {
   }
 
   /**
-   * Loads the {@link RegistryConfigSettings} POJO from the YAML configuration files.
+   * Loads a generic typed POJO from the YAML configuration files.
    *
-   * <p>The {@code default-config.yaml} file in this directory is loaded first, and a fatal error is
-   * thrown if it cannot be found or if there is an error parsing it. Separately, the
-   * environment-specific config file named {@code nomulus-config-ENVIRONMENT.yaml} is also loaded
-   * and those values merged into the POJO.
+   * <p>The {@code defaultYaml} file is loaded first, and a fatal error is thrown if it cannot be
+   * found or if there is an error parsing it. Separately, the environment-specific config file
+   * template {@code customYamlTemplate} is also loaded and those values merged into the POJO.
    */
-  static RegistryConfigSettings getConfigSettings() {
+  public static <T> T getEnvironmentConfigSettings(
+      String defaultYaml, String customYamlTemplate, Class<T> clazz) {
     String configFilePath =
-        String.format(
-            ENVIRONMENT_CONFIG_FORMAT, Ascii.toLowerCase(RegistryEnvironment.get().name()));
+        String.format(customYamlTemplate, Ascii.toLowerCase(RegistryEnvironment.get().name()));
     String customYaml = readResourceUtf8(RegistryConfig.class, configFilePath);
-    return YamlUtils.getConfigSettings(YAML_CONFIG_PROD, customYaml, RegistryConfigSettings.class);
+    return YamlUtils.getConfigSettings(defaultYaml, customYaml, clazz);
+  }
+
+  /**
+   * Shorthand method to retrieve the main registry config settings for the current environment. Can
+   * be changed to public scope if needed by other packages.
+   */
+  private static RegistryConfigSettings getConfigSettings() {
+    return RegistryConfig.getEnvironmentConfigSettings(
+        YAML_CONFIG_DEFAULT, YAML_CONFIG_ENV_TEMPLATE, RegistryConfigSettings.class);
   }
 
   /** Dagger module for providing configuration settings. */
