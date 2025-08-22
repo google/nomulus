@@ -391,7 +391,7 @@ class InvoicingPipelineTest {
     // Test that comments are removed from the .sql file correctly
     assertThat(InvoicingPipeline.makeCloudSqlQuery("2017-10"))
         .isEqualTo(
-            """
+"""
 
 SELECT b, r FROM BillingEvent b
 JOIN Registrar r ON b.clientId = r.registrarId
