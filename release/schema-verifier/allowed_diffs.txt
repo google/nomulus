@@ -6,3 +6,5 @@ COMMENT ON EXTENSION pg_stat_statements IS 'track execution statistics of all SQ
 SET transaction_timeout = 0;
 SET default_table_access_method = heap;
 SET default_with_oids = false;
+^\\restrict
+^\\unrestrict
