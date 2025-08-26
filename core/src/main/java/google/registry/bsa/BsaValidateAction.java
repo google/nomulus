@@ -215,10 +215,12 @@ public class BsaValidateAction implements Runnable {
     if (Objects.equals(expectedReason, domain.reason())) {
       return Optional.empty();
     }
-    if (isRegistered || domain.reason().equals(Reason.REGISTERED)) {
-      if (isStalenessAllowed(isRegistered, activeDomains.get(domain.domainName()))) {
+    // Registered name still reported with other reasons: Don't report if registration is recent.
+    // Note that staleness is not tolerated if deregistered name is still reported as registered:
+    // in this case we do not have the VKey on hand, and it is not worth the effort to find it
+    // out.
+    if (isRegistered && isStalenessAllowed(activeDomains.get(domain.domainName()))) {
         return Optional.empty();
-      }
     }
     return Optional.of(
         String.format(
@@ -228,15 +230,10 @@ public class BsaValidateAction implements Runnable {
             domain.reason()));
   }
 
-  boolean isStalenessAllowed(boolean isNewDomain, VKey<Domain> domainVKey) {
+  boolean isStalenessAllowed(VKey<Domain> domainVKey) {
     Domain domain = bsaQuery(() -> replicaTm().loadByKey(domainVKey));
     var now = clock.nowUtc();
-    if (isNewDomain) {
-      return domain.getCreationTime().plus(maxStaleness).isAfter(now);
-    } else {
-      return domain.getDeletionTime().isBefore(now)
-          && domain.getDeletionTime().plus(maxStaleness).isAfter(now);
-    }
+    return domain.getCreationTime().plus(maxStaleness).isAfter(now);
   }
 
   /** Returns unique labels across all block lists in the download specified by {@code jobName}. */

@@ -24,7 +24,6 @@ import static google.registry.bsa.persistence.BsaTestingUtils.persistDownloadSch
 import static google.registry.bsa.persistence.BsaTestingUtils.persistUnblockableDomain;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
-import static google.registry.testing.DatabaseHelper.persistDeletedDomain;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static org.mockito.ArgumentMatchers.any;
@@ -218,7 +217,8 @@ public class BsaValidateActionTest {
         test1,1;2
         test2,3
         """;
-    String blockPlusContent = """
+    String blockPlusContent =
+        """
         domainLabel,orderIDs
         test2,4
         """;
@@ -239,7 +239,7 @@ public class BsaValidateActionTest {
     persistBsaLabel("label");
     Domain domain = persistActiveDomain("label.app", fakeClock.nowUtc());
     fakeClock.advanceBy(MAX_STALENESS.minus(Duration.standardSeconds(1)));
-    assertThat(action.isStalenessAllowed(true, domain.createVKey())).isTrue();
+    assertThat(action.isStalenessAllowed(domain.createVKey())).isTrue();
   }
 
   @Test
@@ -247,23 +247,7 @@ public class BsaValidateActionTest {
     persistBsaLabel("label");
     Domain domain = persistActiveDomain("label.app", fakeClock.nowUtc());
     fakeClock.advanceBy(MAX_STALENESS);
-    assertThat(action.isStalenessAllowed(true, domain.createVKey())).isFalse();
-  }
-
-  @Test
-  void isStalenessAllowed_deletedDomain_allowed() {
-    persistBsaLabel("label");
-    Domain domain = persistDeletedDomain("label.app", fakeClock.nowUtc());
-    fakeClock.advanceBy(MAX_STALENESS.minus(Duration.standardSeconds(1)));
-    assertThat(action.isStalenessAllowed(false, domain.createVKey())).isTrue();
-  }
-
-  @Test
-  void isStalenessAllowed_deletedDomain_notAllowed() {
-    persistBsaLabel("label");
-    Domain domain = persistDeletedDomain("label.app", fakeClock.nowUtc());
-    fakeClock.advanceBy(MAX_STALENESS);
-    assertThat(action.isStalenessAllowed(false, domain.createVKey())).isFalse();
+    assertThat(action.isStalenessAllowed(domain.createVKey())).isFalse();
   }
 
   @Test
@@ -405,10 +389,11 @@ public class BsaValidateActionTest {
     assertThat(message.body())
         .isEqualTo(
             """
-                Most recent download is 2023-11-09t020857.880z.
+            Most recent download is 2023-11-09t020857.880z.
 
-                Error line 1.
-                Error line 2""");
+            Error line 1.
+            Error line 2\
+            """);
   }
 
   @Test
