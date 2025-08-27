@@ -15,7 +15,6 @@ spec:
     spec:
       serviceAccountName: nomulus
       nodeSelector:
-        cloud.google.com/compute-class: "Performance"
         cloud.google.com/machine-family: c4
       containers:
       - name: frontend
@@ -25,9 +24,15 @@ spec:
           name: http
         resources:
           requests:
+            # explicit pod-slots 0 is required in order to downgrade node
+            # class from performance, which has implicit pod-slots 1
+            cloud.google.com/pod-slots: 0
             cpu: "600m"
             memory: "1Gi"
           limits:
+            # explicit pod-slots 0 is required in order to downgrade node
+            # class from performance, which has implicit pod-slots 1
+            cloud.google.com/pod-slots: 0
             cpu: "1000m"
             memory: "2Gi"
         args: [ENVIRONMENT]
@@ -53,9 +58,15 @@ spec:
           name: epp
         resources:
           requests:
+            # explicit pod-slots 0 is required in order to downgrade node
+            # class from performance, which has implicit pod-slots 1
+            cloud.google.com/pod-slots: 0
             cpu: "600m"
             memory: "512Mi"
           limits:
+            # explicit pod-slots 0 is required in order to downgrade node
+            # class from performance, which has implicit pod-slots 1
+            cloud.google.com/pod-slots: 0
             cpu: "1000m"
             memory: "1Gi"
         args: [--env, PROXY_ENV, --log, --local]
