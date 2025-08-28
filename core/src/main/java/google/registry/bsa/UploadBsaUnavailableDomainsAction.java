@@ -25,16 +25,16 @@ import static google.registry.request.Action.Method.GET;
 import static google.registry.request.Action.Method.POST;
 import static jakarta.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 import static java.nio.charset.StandardCharsets.US_ASCII;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.cloud.storage.BlobId;
-import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedSet;
 import com.google.common.collect.Ordering;
 import com.google.common.flogger.FluentLogger;
+import com.google.common.hash.Hasher;
 import com.google.common.hash.Hashing;
-import com.google.common.io.ByteSource;
 import google.registry.bsa.api.BsaCredential;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.gcs.GcsUtils;
@@ -47,10 +47,13 @@ import google.registry.request.auth.Auth;
 import google.registry.util.Clock;
 import jakarta.inject.Inject;
 import jakarta.persistence.TypedQuery;
-import java.io.ByteArrayOutputStream;
+import java.io.BufferedInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
+import java.io.PipedInputStream;
+import java.io.PipedOutputStream;
 import java.io.Writer;
 import java.util.Optional;
 import java.util.zip.GZIPOutputStream;
@@ -60,14 +63,17 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
+import okio.BufferedSink;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.joda.time.DateTime;
 
 /**
  * Daily action that uploads unavailable domain names on applicable TLDs to BSA.
  *
  * <p>The upload is a single zipped text file containing combined details for all BSA-enrolled TLDs.
- * The text is a newline-delimited list of punycoded fully qualified domain names, and contains all
- * domains on each TLD that are registered and/or reserved.
+ * The text is a newline-delimited list of punycoded fully qualified domain names with a trailing
+ * newline at the end, and contains all domains on each TLD that are registered and/or reserved.
  *
  * <p>The file is also uploaded to GCS to preserve it as a record for ourselves.
  */
@@ -118,7 +124,7 @@ public class UploadBsaUnavailableDomainsAction implements Runnable {
     // TODO(mcilwain): Implement a date Cursor, have the cronjob run frequently, and short-circuit
     //                 the run if the daily upload is already completed.
     DateTime runTime = clock.nowUtc();
-    String unavailableDomains = Joiner.on("\n").join(getUnavailableDomains(runTime));
+    ImmutableSortedSet<String> unavailableDomains = getUnavailableDomains(runTime);
     if (unavailableDomains.isEmpty()) {
       logger.atWarning().log("No unavailable domains found; terminating.");
       emailSender.sendNotification(
@@ -136,12 +142,15 @@ public class UploadBsaUnavailableDomainsAction implements Runnable {
   }
 
   /** Uploads the unavailable domains list to GCS in the unavailable domains bucket. */
-  boolean uploadToGcs(String unavailableDomains, DateTime runTime) {
+  boolean uploadToGcs(ImmutableSortedSet<String> unavailableDomains, DateTime runTime) {
     logger.atInfo().log("Uploading unavailable names file to GCS in bucket %s", gcsBucket);
     BlobId blobId = BlobId.of(gcsBucket, createFilename(runTime));
     try (OutputStream gcsOutput = gcsUtils.openOutputStream(blobId);
         Writer osWriter = new OutputStreamWriter(gcsOutput, US_ASCII)) {
-      osWriter.write(unavailableDomains);
+      for (var domainName : unavailableDomains) {
+        osWriter.write(domainName);
+        osWriter.write("\n");
+      }
       return true;
     } catch (Exception e) {
       logger.atSevere().withCause(e).log(
@@ -150,10 +159,14 @@ public class UploadBsaUnavailableDomainsAction implements Runnable {
     }
   }
 
-  boolean uploadToBsa(String unavailableDomains, DateTime runTime) {
+  boolean uploadToBsa(ImmutableSortedSet<String> unavailableDomains, DateTime runTime) {
     try {
-      byte[] gzippedContents = gzipUnavailableDomains(unavailableDomains);
-      String sha512Hash = ByteSource.wrap(gzippedContents).hash(Hashing.sha512()).toString();
+      Hasher sha512Hasher = Hashing.sha512().newHasher();
+      unavailableDomains.stream()
+          .map(name -> name + "\n")
+          .forEachOrdered(line -> sha512Hasher.putString(line, UTF_8));
+      String sha512Hash = sha512Hasher.hash().toString();
+
       String filename = createFilename(runTime);
       OkHttpClient client = new OkHttpClient().newBuilder().build();
 
@@ -169,7 +182,9 @@ public class UploadBsaUnavailableDomainsAction implements Runnable {
               .addFormDataPart(
                   "file",
                   String.format("%s.gz", filename),
-                  RequestBody.create(gzippedContents, MediaType.parse("application/octet-stream")))
+                  new StreamingRequestBody(
+                      gzippedStream(unavailableDomains),
+                      MediaType.parse("application/octet-stream")))
               .build();
 
       Request request =
@@ -193,15 +208,6 @@ public class UploadBsaUnavailableDomainsAction implements Runnable {
       response.setStatus(SC_INTERNAL_SERVER_ERROR);
       response.setPayload("Error while attempting to upload to BSA: " + e.getMessage());
       return false;
-    }
-  }
-
-  private byte[] gzipUnavailableDomains(String unavailableDomains) throws IOException {
-    try (ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream()) {
-      try (GZIPOutputStream gzipOutputStream = new GZIPOutputStream(byteArrayOutputStream)) {
-        gzipOutputStream.write(unavailableDomains.getBytes(US_ASCII));
-      }
-      return byteArrayOutputStream.toByteArray();
     }
   }
 
@@ -279,5 +285,65 @@ public class UploadBsaUnavailableDomainsAction implements Runnable {
 
   private static String toDomain(String domainLabel, Tld tld) {
     return String.format("%s.%s", domainLabel, tld.getTldStr());
+  }
+
+  private InputStream gzippedStream(ImmutableSortedSet<String> unavailableDomains)
+      throws IOException {
+    PipedInputStream inputStream = new PipedInputStream();
+    PipedOutputStream outputStream = new PipedOutputStream(inputStream);
+
+    new Thread(
+            () -> {
+              try {
+                gzipUnavailableDomains(outputStream, unavailableDomains);
+              } catch (IOException e) {
+                logger.atSevere().withCause(e).log("Failed to gzip unavailable domains.");
+                try {
+                  // This will cause the next read to throw an IOException.
+                  inputStream.close();
+                } catch (IOException ignore) {
+                  //
+                }
+              }
+            })
+        .start();
+
+    return inputStream;
+  }
+
+  private void gzipUnavailableDomains(
+      PipedOutputStream outputStream, ImmutableSortedSet<String> unavailableDomains)
+      throws IOException {
+    try (GZIPOutputStream gzipOutputStream = new GZIPOutputStream(outputStream)) {
+      for (String name : unavailableDomains) {
+        var line = name + "\n";
+        gzipOutputStream.write(line.getBytes(US_ASCII));
+      }
+    }
+  }
+
+  private static class StreamingRequestBody extends RequestBody {
+    private final BufferedInputStream inputStream;
+    private final MediaType mediaType;
+
+    StreamingRequestBody(InputStream inputStream, MediaType mediaType) {
+      this.inputStream = new BufferedInputStream(inputStream);
+      this.mediaType = mediaType;
+    }
+
+    @Nullable
+    @Override
+    public MediaType contentType() {
+      return mediaType;
+    }
+
+    @Override
+    public void writeTo(@NotNull BufferedSink bufferedSink) throws IOException {
+      byte[] buffer = new byte[2048];
+      int bytesRead;
+      while ((bytesRead = inputStream.read(buffer)) != -1) {
+        bufferedSink.write(buffer, 0, bytesRead);
+      }
+    }
   }
 }
