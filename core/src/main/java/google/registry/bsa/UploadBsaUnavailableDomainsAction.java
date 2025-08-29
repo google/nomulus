@@ -145,6 +145,7 @@ public class UploadBsaUnavailableDomainsAction implements Runnable {
   boolean uploadToGcs(ImmutableSortedSet<String> unavailableDomains, DateTime runTime) {
     logger.atInfo().log("Uploading unavailable names file to GCS in bucket %s", gcsBucket);
     BlobId blobId = BlobId.of(gcsBucket, createFilename(runTime));
+    // `gcsUtils.openOutputStream` returns a buffered stream
     try (OutputStream gcsOutput = gcsUtils.openOutputStream(blobId);
         Writer osWriter = new OutputStreamWriter(gcsOutput, US_ASCII)) {
       for (var domainName : unavailableDomains) {
@@ -296,13 +297,13 @@ public class UploadBsaUnavailableDomainsAction implements Runnable {
             () -> {
               try {
                 gzipUnavailableDomains(outputStream, unavailableDomains);
-              } catch (IOException e) {
+              } catch (Throwable e) {
                 logger.atSevere().withCause(e).log("Failed to gzip unavailable domains.");
                 try {
                   // This will cause the next read to throw an IOException.
                   inputStream.close();
                 } catch (IOException ignore) {
-                  //
+                  // Won't happen for  `PipedInputStream.close()`
                 }
               }
             })
@@ -314,6 +315,7 @@ public class UploadBsaUnavailableDomainsAction implements Runnable {
   private void gzipUnavailableDomains(
       PipedOutputStream outputStream, ImmutableSortedSet<String> unavailableDomains)
       throws IOException {
+    // `GZIPOutputStream` is buffered.
     try (GZIPOutputStream gzipOutputStream = new GZIPOutputStream(outputStream)) {
       for (String name : unavailableDomains) {
         var line = name + "\n";
