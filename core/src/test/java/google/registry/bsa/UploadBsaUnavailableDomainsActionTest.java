@@ -68,7 +68,6 @@ import java.util.zip.GZIPInputStream;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.DisabledIfEnvironmentVariable;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.mockito.Mock;
@@ -138,8 +137,6 @@ public class UploadBsaUnavailableDomainsActionTest {
         .sendNotification("BSA daily upload completed with errors", "Please see logs for details.");
   }
 
-  // TODO(weiminyu): Breaks other tests on Kokoro. Investigate.
-  @DisabledIfEnvironmentVariable(named = "KOKORO_JOB_NAME", matches = ".*")
   @Test
   void uploadToBsaTest() throws Exception {
     TestLogHandler logHandler = new TestLogHandler();

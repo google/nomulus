@@ -296,7 +296,7 @@ public class UploadBsaUnavailableDomainsAction implements Runnable {
             () -> {
               try {
                 gzipUnavailableDomains(outputStream, unavailableDomains);
-              } catch (IOException e) {
+              } catch (Throwable e) {
                 logger.atSevere().withCause(e).log("Failed to gzip unavailable domains.");
                 try {
                   // This will cause the next read to throw an IOException.
