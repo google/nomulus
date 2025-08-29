@@ -26,10 +26,16 @@ import com.google.common.net.HostAndPort;
 import com.google.common.util.concurrent.SimpleTimeLimiter;
 import google.registry.util.RegistryEnvironment;
 import google.registry.util.UrlChecker;
+import jakarta.servlet.MultipartConfigElement;
+import jakarta.servlet.annotation.MultipartConfig;
 import jakarta.servlet.http.HttpServlet;
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.FutureTask;
@@ -48,6 +54,8 @@ import org.eclipse.jetty.server.ServerConnector;
  * <p>Using this server is similar to other server classes, in that it has {@link #start()} and
  * {@link #stop()} methods. However, a {@link #process()} method was added, which is used to process
  * requests made to servlets (not static files) in the calling thread.
+ *
+ * <p>A servlet that expects multi-part requests should be annotated with {@link MultipartConfig}.
  *
  * <p><b>Note:</b> This server is intended for development purposes. For the love all that is good,
  * do not make this public-facing.
@@ -70,6 +78,7 @@ public final class TestServer {
   private final HostAndPort urlAddress;
   private final Server server = new Server();
   private final BlockingQueue<FutureTask<Void>> requestQueue = new LinkedBlockingDeque<>();
+  private List<Path> multiPartTmpDirs = new ArrayList<>();
 
   /**
    * Creates a new instance, but does not begin serving.
@@ -134,6 +143,13 @@ public final class TestServer {
                   },
                   SHUTDOWN_TIMEOUT_MS,
                   TimeUnit.MILLISECONDS);
+      for (var dir : multiPartTmpDirs) {
+        try {
+          Files.delete(dir);
+        } catch (Exception e) {
+          // Ignore
+        }
+      }
     } catch (Exception e) {
       throwIfUnchecked(e);
       throw new RuntimeException(e);
@@ -161,7 +177,27 @@ public final class TestServer {
       StaticResourceServlet.configureServletHolder(holder, runfile.getKey(), runfile.getValue());
     }
     for (Route route : routes) {
-      context.addServlet(wrapServlet(route.servletClass()), route.path());
+      holder = context.addServlet(wrapServlet(route.servletClass()), route.path());
+      MultipartConfig multipartConfig = route.servletClass().getAnnotation(MultipartConfig.class);
+      if (multipartConfig != null) {
+        try {
+          var location = multipartConfig.location();
+          if (location == null || location.isBlank()) {
+            Path tmpDir = Files.createTempDirectory("TestServer_");
+            multiPartTmpDirs.add(tmpDir);
+            location = tmpDir.toString();
+          }
+          MultipartConfigElement multipartConfigElement =
+              new MultipartConfigElement(
+                  location,
+                  multipartConfig.maxFileSize(),
+                  multipartConfig.maxRequestSize(),
+                  multipartConfig.fileSizeThreshold());
+          holder.getRegistration().setMultipartConfig(multipartConfigElement);
+        } catch (IOException e) {
+          throw new RuntimeException(e);
+        }
+      }
     }
     holder = context.addServlet(DefaultServlet.class, "/*");
     holder.setInitParameter("aliases", "1");
