@@ -15,7 +15,6 @@
 package google.registry.batch;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.request.Action.Method.POST;
 import static google.registry.tools.LockOrUnlockDomainCommand.REGISTRY_LOCK_STATUSES;
@@ -30,8 +29,6 @@ import google.registry.groups.GmailClient;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.RegistryLock;
 import google.registry.model.eppcommon.StatusValue;
-import google.registry.model.registrar.Registrar;
-import google.registry.model.registrar.RegistrarPoc;
 import google.registry.model.tld.RegistryLockDao;
 import google.registry.persistence.VKey;
 import google.registry.request.Action;
@@ -70,12 +67,14 @@ public class RelockDomainAction implements Runnable {
       """
       The domain %s was successfully re-locked.
 
-      Please contact support at %s if you have any questions.""";
+      Please contact support at %s if you have any questions.\
+      """;
   private static final String RELOCK_NON_RETRYABLE_FAILURE_EMAIL_TEMPLATE =
       """
       There was an error when automatically re-locking %s. Error message: %s
 
-      Please contact support at %s if you have any questions.""";
+      Please contact support at %s if you have any questions.\
+      """;
   private static final String RELOCK_TRANSIENT_FAILURE_EMAIL_TEMPLATE =
       "There was an unexpected error when automatically re-locking %s. We will continue retrying "
           + "the lock for five hours. Please contact support at %s if you have any questions";
@@ -171,7 +170,7 @@ public class RelockDomainAction implements Runnable {
     domainLockUtils.administrativelyApplyLock(
         oldLock.getDomainName(),
         oldLock.getRegistrarId(),
-        oldLock.getRegistrarPocId(),
+        oldLock.getRegistryLockEmail(),
         oldLock.isSuperuser());
     logger.atInfo().log("Re-locked domain %s.", oldLock.getDomainName());
     response.setStatus(SC_OK);
@@ -221,7 +220,7 @@ public class RelockDomainAction implements Runnable {
         EmailMessage.newBuilder()
             .setBody(body)
             .setSubject(String.format("Error re-locking domain %s", oldLock.getDomainName()))
-            .setRecipients(getEmailRecipients(oldLock.getRegistrarId()))
+            .setRecipients(ImmutableSet.of(getEmailRecipient(oldLock)))
             .build());
   }
 
@@ -250,7 +249,7 @@ public class RelockDomainAction implements Runnable {
         EmailMessage.newBuilder()
             .setBody(body)
             .setSubject(String.format("Successful re-lock of domain %s", oldLock.getDomainName()))
-            .setRecipients(getEmailRecipients(oldLock.getRegistrarId()))
+            .setRecipients(ImmutableSet.of(getEmailRecipient(oldLock)))
             .build());
   }
 
@@ -261,7 +260,7 @@ public class RelockDomainAction implements Runnable {
     // For an unexpected failure, notify both the lock-enabled contacts and our alerting email
     ImmutableSet<InternetAddress> allRecipients =
         new ImmutableSet.Builder<InternetAddress>()
-            .addAll(getEmailRecipients(oldLock.getRegistrarId()))
+            .add(getEmailRecipient(oldLock))
             .add(alertRecipientAddress)
             .build();
     gmailClient.sendEmail(
@@ -281,31 +280,12 @@ public class RelockDomainAction implements Runnable {
             .build());
   }
 
-  private ImmutableSet<InternetAddress> getEmailRecipients(String registrarId) {
-    Registrar registrar =
-        Registrar.loadByRegistrarIdCached(registrarId)
-            .orElseThrow(
-                () ->
-                    new IllegalStateException(String.format("Unknown registrar %s", registrarId)));
-
-    ImmutableSet<String> registryLockEmailAddresses =
-        registrar.getContacts().stream()
-            .filter(RegistrarPoc::isRegistryLockAllowed)
-            .map(RegistrarPoc::getRegistryLockEmailAddress)
-            .filter(Optional::isPresent)
-            .map(Optional::get)
-            .collect(toImmutableSet());
-
-    ImmutableSet.Builder<InternetAddress> builder = new ImmutableSet.Builder<>();
-    // can't use streams due to the 'throws' in the InternetAddress constructor
-    for (String registryLockEmailAddress : registryLockEmailAddresses) {
-      try {
-        builder.add(new InternetAddress(registryLockEmailAddress));
-      } catch (AddressException e) {
-        // This shouldn't stop any other emails going out, so swallow it
-        logger.atWarning().log("Invalid email address '%s'.", registryLockEmailAddress);
-      }
+  private InternetAddress getEmailRecipient(RegistryLock lock) {
+    try {
+      return new InternetAddress(lock.getRegistryLockEmail());
+    } catch (AddressException e) {
+      // this really shouldn't happen
+      throw new RuntimeException(e);
     }
-    return builder.build();
   }
 }

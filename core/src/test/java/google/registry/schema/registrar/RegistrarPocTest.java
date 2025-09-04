@@ -50,7 +50,6 @@ class RegistrarPocTest {
             .setRegistrar(testRegistrar)
             .setName("Judith Registrar")
             .setEmailAddress("judith.doe@example.com")
-            .setRegistryLockEmailAddress("judith.doe@external.com")
             .setPhoneNumber("+1.2125650000")
             .setFaxNumber("+1.2125650001")
             .setTypes(ImmutableSet.of(WHOIS))

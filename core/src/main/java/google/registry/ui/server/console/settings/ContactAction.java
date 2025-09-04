@@ -45,7 +45,6 @@ import google.registry.ui.server.console.ConsoleApiAction;
 import google.registry.ui.server.console.ConsoleApiParams;
 import jakarta.inject.Inject;
 import java.util.HashSet;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiFunction;
@@ -246,7 +245,6 @@ public class ContactAction extends ConsoleApiAction {
       throw new ContactRequirementException(
           "An abuse contact visible in domain WHOIS query must be designated");
     }
-    checkContactRegistryLockRequirements(existingContacts, updatedContacts);
   }
 
   private static void enforcePrimaryContactRestrictions(
@@ -264,69 +262,6 @@ public class ContactAction extends ConsoleApiAction {
       throw new ContactRequirementException(
           "Cannot remove or change the email address of primary contacts");
     }
-  }
-
-  private static void checkContactRegistryLockRequirements(
-      ImmutableSet<RegistrarPoc> existingContacts, ImmutableSet<RegistrarPoc> updatedContacts) {
-    // Any contact(s) with new passwords must be allowed to set them
-    for (RegistrarPoc updatedContact : updatedContacts) {
-      if (updatedContact.isRegistryLockAllowed()
-          || updatedContact.isAllowedToSetRegistryLockPassword()) {
-        RegistrarPoc existingContact =
-            existingContacts.stream()
-                .filter(
-                    contact -> contact.getEmailAddress().equals(updatedContact.getEmailAddress()))
-                .findFirst()
-                .orElseThrow(
-                    () ->
-                        new FormException(
-                            "Cannot set registry lock password directly on new contact"));
-        // Can't modify registry lock email address
-        if (!Objects.equals(
-            updatedContact.getRegistryLockEmailAddress(),
-            existingContact.getRegistryLockEmailAddress())) {
-          throw new FormException("Cannot modify registryLockEmailAddress through the UI");
-        }
-        if (updatedContact.isRegistryLockAllowed()) {
-          // the password must have been set before or the user was allowed to set it now
-          if (!existingContact.isAllowedToSetRegistryLockPassword()
-              && !existingContact.isRegistryLockAllowed()) {
-            throw new FormException("Registrar contact not allowed to set registry lock password");
-          }
-        }
-        if (updatedContact.isAllowedToSetRegistryLockPassword()) {
-          if (!existingContact.isAllowedToSetRegistryLockPassword()) {
-            throw new FormException(
-                "Cannot modify isAllowedToSetRegistryLockPassword through the UI");
-          }
-        }
-      }
-    }
-
-    // Any previously-existing contacts with registry lock enabled cannot be deleted
-    existingContacts.stream()
-        .filter(RegistrarPoc::isRegistryLockAllowed)
-        .forEach(
-            contact -> {
-              Optional<RegistrarPoc> updatedContactOptional =
-                  updatedContacts.stream()
-                      .filter(
-                          updatedContact ->
-                              updatedContact.getEmailAddress().equals(contact.getEmailAddress()))
-                      .findFirst();
-              if (updatedContactOptional.isEmpty()) {
-                throw new FormException(
-                    String.format(
-                        "Cannot delete the contact %s that has registry lock enabled",
-                        contact.getEmailAddress()));
-              }
-              if (!updatedContactOptional.get().isRegistryLockAllowed()) {
-                throw new FormException(
-                    String.format(
-                        "Cannot remove the ability to use registry lock on the contact %s",
-                        contact.getEmailAddress()));
-              }
-            });
   }
 
   /**

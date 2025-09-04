@@ -187,7 +187,7 @@ public class ConsoleRegistryLockVerifyActionTest extends ConsoleActionBaseTestCa
         .setRepoId(defaultDomain.getRepoId())
         .setDomainName(defaultDomain.getDomainName())
         .setRegistrarId(defaultDomain.getCurrentSponsorRegistrarId())
-        .setRegistrarPocId("johndoe@theregistrar.com")
+        .setRegistryLockEmail("johndoe@theregistrar.com")
         .setVerificationCode(DEFAULT_CODE);
   }
 

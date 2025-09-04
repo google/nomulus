@@ -379,9 +379,9 @@
                     "type": "string",
                     "description": "Name of the domain."
                 },
-                "registrarPocId": {
+                "registryLockEmail": {
                     "type": "string",
-                    "description": "Registrar point of contact ID."
+                    "description": "Email address of the requester."
                 },
                 "lockRequestTime": {
                     "type": "object",

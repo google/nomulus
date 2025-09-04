@@ -75,7 +75,8 @@ public class ConsoleRegistryLockActionTest extends ConsoleActionBaseTestCase {
       Note: this code will expire in one hour.
 
       https://registrarconsole.tld/console/#/registry-lock-verify?lockVerificationCode=\
-      123456789ABCDEFGHJKLMNPQRSTUVWXY""";
+      123456789ABCDEFGHJKLMNPQRSTUVWXY\
+      """;
 
   @Mock GmailClient gmailClient;
   private ConsoleRegistryLockAction action;
@@ -112,8 +113,8 @@ public class ConsoleRegistryLockActionTest extends ConsoleActionBaseTestCase {
     assertThat(response.getStatus()).isEqualTo(SC_OK);
     assertThat(response.getPayload())
         .isEqualTo(
-            """
-[{"domainName":"example.test","registrarPocId":"johndoe@theregistrar.com","lockRequestTime":\
+"""
+[{"domainName":"example.test","registryLockEmail":"johndoe@theregistrar.com","lockRequestTime":\
 {"creationTime":"2024-04-15T00:00:00.000Z"},"unlockRequestTime":"null","lockCompletionTime":\
 "2024-04-15T00:00:00.000Z","unlockCompletionTime":"null","isSuperuser":false}]\
 """);
@@ -127,7 +128,7 @@ public class ConsoleRegistryLockActionTest extends ConsoleActionBaseTestCase {
             .setDomainName("expired.test")
             .setRegistrarId("TheRegistrar")
             .setVerificationCode("123456789ABCDEFGHJKLMNPQRSTUVWXY")
-            .setRegistrarPocId("johndoe@theregistrar.com")
+            .setRegistryLockEmail("johndoe@theregistrar.com")
             .build();
     saveRegistryLock(expiredLock);
     RegistryLock expiredUnlock =
@@ -136,7 +137,7 @@ public class ConsoleRegistryLockActionTest extends ConsoleActionBaseTestCase {
             .setDomainName("expiredunlock.test")
             .setRegistrarId("TheRegistrar")
             .setVerificationCode("123456789ABCDEFGHJKLMNPQRSTUVWXY")
-            .setRegistrarPocId("johndoe@theregistrar.com")
+            .setRegistryLockEmail("johndoe@theregistrar.com")
             .setLockCompletionTime(clock.nowUtc())
             .setUnlockRequestTime(clock.nowUtc())
             .build();
@@ -149,7 +150,7 @@ public class ConsoleRegistryLockActionTest extends ConsoleActionBaseTestCase {
             .setDomainName("example.test")
             .setRegistrarId("TheRegistrar")
             .setVerificationCode("123456789ABCDEFGHJKLMNPQRSTUVWXY")
-            .setRegistrarPocId("johndoe@theregistrar.com")
+            .setRegistryLockEmail("johndoe@theregistrar.com")
             .setLockCompletionTime(clock.nowUtc())
             .build();
     clock.advanceOneMilli();
@@ -168,7 +169,7 @@ public class ConsoleRegistryLockActionTest extends ConsoleActionBaseTestCase {
             .setDomainName("pending.test")
             .setRegistrarId("TheRegistrar")
             .setVerificationCode("111111111ABCDEFGHJKLMNPQRSTUVWXY")
-            .setRegistrarPocId("johndoe@theregistrar.com")
+            .setRegistryLockEmail("johndoe@theregistrar.com")
             .build();
 
     RegistryLock incompleteUnlock =
@@ -177,7 +178,7 @@ public class ConsoleRegistryLockActionTest extends ConsoleActionBaseTestCase {
             .setDomainName("incompleteunlock.test")
             .setRegistrarId("TheRegistrar")
             .setVerificationCode("123456789ABCDEFGHJKLMNPQRSTUVWXY")
-            .setRegistrarPocId("johndoe@theregistrar.com")
+            .setRegistryLockEmail("johndoe@theregistrar.com")
             .setLockCompletionTime(clock.nowUtc())
             .setUnlockRequestTime(clock.nowUtc())
             .build();
@@ -187,7 +188,7 @@ public class ConsoleRegistryLockActionTest extends ConsoleActionBaseTestCase {
             .setRepoId("repoId")
             .setDomainName("unlocked.test")
             .setRegistrarId("TheRegistrar")
-            .setRegistrarPocId("johndoe@theregistrar.com")
+            .setRegistryLockEmail("johndoe@theregistrar.com")
             .setVerificationCode("123456789ABCDEFGHJKLMNPQRSTUUUUU")
             .setLockCompletionTime(clock.nowUtc())
             .setUnlockRequestTime(clock.nowUtc())
@@ -206,26 +207,27 @@ public class ConsoleRegistryLockActionTest extends ConsoleActionBaseTestCase {
     // locks or completed unlocks
     assertThat(response.getPayload())
         .isEqualTo(
-            """
+"""
 [{"domainName":"adminexample.test","lockRequestTime":{"creationTime":"2024-04-16T00:00:00.001Z"},\
 "unlockRequestTime":"null","lockCompletionTime":"2024-04-16T00:00:00.001Z","unlockCompletionTime":\
 "null","isSuperuser":true},\
 \
-{"domainName":"example.test","registrarPocId":"johndoe@theregistrar.com","lockRequestTime":\
+{"domainName":"example.test","registryLockEmail":"johndoe@theregistrar.com","lockRequestTime":\
 {"creationTime":"2024-04-16T00:00:00.001Z"},"unlockRequestTime":"null","lockCompletionTime":\
 "2024-04-16T00:00:00.000Z","unlockCompletionTime":"null","isSuperuser":false},\
 \
-{"domainName":"expiredunlock.test","registrarPocId":"johndoe@theregistrar.com","lockRequestTime":\
+{"domainName":"expiredunlock.test","registryLockEmail":"johndoe@theregistrar.com","lockRequestTime":\
 {"creationTime":"2024-04-15T00:00:00.000Z"},"unlockRequestTime":"2024-04-15T00:00:00.000Z",\
 "lockCompletionTime":"2024-04-15T00:00:00.000Z","unlockCompletionTime":"null","isSuperuser":false},\
 \
-{"domainName":"incompleteunlock.test","registrarPocId":"johndoe@theregistrar.com","lockRequestTime":\
+{"domainName":"incompleteunlock.test","registryLockEmail":"johndoe@theregistrar.com","lockRequestTime":\
 {"creationTime":"2024-04-16T00:00:00.001Z"},"unlockRequestTime":"2024-04-16T00:00:00.001Z",\
 "lockCompletionTime":"2024-04-16T00:00:00.001Z","unlockCompletionTime":"null","isSuperuser":false},\
 \
-{"domainName":"pending.test","registrarPocId":"johndoe@theregistrar.com","lockRequestTime":\
+{"domainName":"pending.test","registryLockEmail":"johndoe@theregistrar.com","lockRequestTime":\
 {"creationTime":"2024-04-16T00:00:00.001Z"},"unlockRequestTime":"null","lockCompletionTime":"null",\
-"unlockCompletionTime":"null","isSuperuser":false}]""");
+"unlockCompletionTime":"null","isSuperuser":false}]\
+""");
   }
 
   @Test
@@ -500,7 +502,7 @@ public class ConsoleRegistryLockActionTest extends ConsoleActionBaseTestCase {
         .setRepoId(defaultDomain.getRepoId())
         .setDomainName(defaultDomain.getDomainName())
         .setRegistrarId(defaultDomain.getCurrentSponsorRegistrarId())
-        .setRegistrarPocId("johndoe@theregistrar.com")
+        .setRegistryLockEmail("johndoe@theregistrar.com")
         .setVerificationCode("123456789ABCDEFGHJKLMNPQRSTUUUUU");
   }
 

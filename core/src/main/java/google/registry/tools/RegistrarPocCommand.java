@@ -87,12 +87,6 @@ final class RegistrarPocCommand extends MutatingCommand {
 
   @Nullable
   @Parameter(
-      names = "--registry_lock_email",
-      description = "Email address used for registry lock confirmation emails")
-  String registryLockEmail;
-
-  @Nullable
-  @Parameter(
       names = "--phone",
       description = "E.164 phone number, e.g. +1.2125650666",
       converter = OptionalPhoneNumberParameter.class,
@@ -131,15 +125,6 @@ final class RegistrarPocCommand extends MutatingCommand {
           + "other contacts for the same registrar.",
       arity = 1)
   private Boolean visibleInDomainWhoisAsAbuse;
-
-  @Nullable
-  @Parameter(
-      names = "--allowed_to_set_registry_lock_password",
-      description =
-          "Allow this contact to set their registry lock password in the console,"
-              + " enabling registry lock",
-      arity = 1)
-  private Boolean allowedToSetRegistryLockPassword;
 
   @Parameter(
       names = {"-o", "--output"},
@@ -235,9 +220,6 @@ final class RegistrarPocCommand extends MutatingCommand {
     builder.setRegistrar(registrar);
     builder.setName(name);
     builder.setEmailAddress(email);
-    if (!isNullOrEmpty(registryLockEmail)) {
-      builder.setRegistryLockEmailAddress(registryLockEmail);
-    }
     if (phone != null) {
       builder.setPhoneNumber(phone.orElse(null));
     }
@@ -255,9 +237,6 @@ final class RegistrarPocCommand extends MutatingCommand {
     if (visibleInDomainWhoisAsAbuse != null) {
       builder.setVisibleInDomainWhoisAsAbuse(visibleInDomainWhoisAsAbuse);
     }
-    if (allowedToSetRegistryLockPassword != null) {
-      builder.setAllowedToSetRegistryLockPassword(allowedToSetRegistryLockPassword);
-    }
     return builder.build();
   }
 
@@ -268,9 +247,6 @@ final class RegistrarPocCommand extends MutatingCommand {
         contact.asBuilder().setEmailAddress(email).setRegistrar(registrar);
     if (!isNullOrEmpty(name)) {
       builder.setName(name);
-    }
-    if (!isNullOrEmpty(registryLockEmail)) {
-      builder.setRegistryLockEmailAddress(registryLockEmail);
     }
     if (phone != null) {
       builder.setPhoneNumber(phone.orElse(null));
@@ -289,9 +265,6 @@ final class RegistrarPocCommand extends MutatingCommand {
     }
     if (visibleInDomainWhoisAsAbuse != null) {
       builder.setVisibleInDomainWhoisAsAbuse(visibleInDomainWhoisAsAbuse);
-    }
-    if (allowedToSetRegistryLockPassword != null) {
-      builder.setAllowedToSetRegistryLockPassword(allowedToSetRegistryLockPassword);
     }
     return builder.build();
   }

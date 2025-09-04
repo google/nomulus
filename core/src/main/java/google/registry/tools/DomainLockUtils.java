@@ -74,11 +74,12 @@ public final class DomainLockUtils {
    * <p>The lock will not be applied until {@link #verifyVerificationCode} is called.
    */
   public RegistryLock saveNewRegistryLockRequest(
-      String domainName, String registrarId, @Nullable String registrarPocId, boolean isAdmin) {
+      String domainName, String registrarId, @Nullable String registryLockEmail, boolean isAdmin) {
     return tm().transact(
             () ->
                 RegistryLockDao.save(
-                    createLockBuilder(domainName, registrarId, registrarPocId, isAdmin).build()));
+                    createLockBuilder(domainName, registrarId, registryLockEmail, isAdmin)
+                        .build()));
   }
 
   /**
@@ -129,13 +130,13 @@ public final class DomainLockUtils {
    * the case of relocks, isAdmin is determined by the previous lock.
    */
   public RegistryLock administrativelyApplyLock(
-      String domainName, String registrarId, @Nullable String registrarPocId, boolean isAdmin) {
+      String domainName, String registrarId, @Nullable String registryLockEmail, boolean isAdmin) {
     return tm().transact(
             () -> {
               DateTime now = tm().getTransactionTime();
               RegistryLock newLock =
                   RegistryLockDao.save(
-                      createLockBuilder(domainName, registrarId, registrarPocId, isAdmin)
+                      createLockBuilder(domainName, registrarId, registryLockEmail, isAdmin)
                           .setLockCompletionTime(now)
                           .build());
               applyLockStatuses(newLock, now, isAdmin);
@@ -235,7 +236,7 @@ public final class DomainLockUtils {
   }
 
   private RegistryLock.Builder createLockBuilder(
-      String domainName, String registrarId, @Nullable String registrarPocId, boolean isAdmin) {
+      String domainName, String registrarId, @Nullable String registryLockEmail, boolean isAdmin) {
     DateTime now = tm().getTransactionTime();
     Domain domain = getDomain(domainName, registrarId, now);
     verifyDomainNotLocked(domain, isAdmin);
@@ -255,7 +256,7 @@ public final class DomainLockUtils {
         .setDomainName(domainName)
         .setRepoId(domain.getRepoId())
         .setRegistrarId(registrarId)
-        .setRegistrarPocId(registrarPocId)
+        .setRegistryLockEmail(registryLockEmail)
         .isSuperuser(isAdmin);
   }
 
