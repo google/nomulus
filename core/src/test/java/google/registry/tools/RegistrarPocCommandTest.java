@@ -92,7 +92,6 @@ class RegistrarPocCommandTest extends CommandTestCase<RegistrarPocCommand> {
         "--mode=UPDATE",
         "--name=Judith Registrar",
         "--email=judith.doe@example.com",
-        "--registry_lock_email=judith.doe@external.com",
         "--phone=+1.2125650000",
         "--fax=+1.2125650001",
         "--contact_type=WHOIS",
@@ -108,7 +107,6 @@ class RegistrarPocCommandTest extends CommandTestCase<RegistrarPocCommand> {
                 .setRegistrar(registrar)
                 .setName("Judith Registrar")
                 .setEmailAddress("judith.doe@example.com")
-                .setRegistryLockEmailAddress("judith.doe@external.com")
                 .setPhoneNumber("+1.2125650000")
                 .setFaxNumber("+1.2125650001")
                 .setTypes(ImmutableSet.of(WHOIS))
@@ -255,7 +253,6 @@ class RegistrarPocCommandTest extends CommandTestCase<RegistrarPocCommand> {
         "--mode=CREATE",
         "--name=Jim Doe",
         "--email=jim.doe@example.com",
-        "--registry_lock_email=jim.doe@external.com",
         "--contact_type=ADMIN,ABUSE",
         "--visible_in_whois_as_admin=true",
         "--visible_in_whois_as_tech=false",
@@ -269,7 +266,6 @@ class RegistrarPocCommandTest extends CommandTestCase<RegistrarPocCommand> {
                 .setRegistrar(registrar)
                 .setName("Jim Doe")
                 .setEmailAddress("jim.doe@example.com")
-                .setRegistryLockEmailAddress("jim.doe@external.com")
                 .setTypes(ImmutableSet.of(ADMIN, ABUSE))
                 .setVisibleInWhoisAsAdmin(true)
                 .setVisibleInWhoisAsTech(false)
@@ -316,87 +312,6 @@ class RegistrarPocCommandTest extends CommandTestCase<RegistrarPocCommand> {
     runCommandForced(
         "--mode=CREATE", "--name=Jim Doe", "--email=jim.doe@example.com", "NewRegistrar");
     assertThat(loadRegistrar("NewRegistrar").getContactsRequireSyncing()).isTrue();
-  }
-
-  @Test
-  void testCreate_setAllowedToSetRegistryLockPassword() throws Exception {
-    runCommandForced(
-        "--mode=CREATE",
-        "--name=Jim Doe",
-        "--email=jim.doe@example.com",
-        "--registry_lock_email=jim.doe.registry.lock@example.com",
-        "--allowed_to_set_registry_lock_password=true",
-        "NewRegistrar");
-    RegistrarPoc registrarPoc = loadRegistrar("NewRegistrar").getContacts().asList().get(1);
-    assertThat(registrarPoc.isAllowedToSetRegistryLockPassword()).isTrue();
-    registrarPoc.asBuilder().setRegistryLockPassword("foo");
-  }
-
-  @Test
-  void testUpdate_setAllowedToSetRegistryLockPassword() throws Exception {
-    Registrar registrar = loadRegistrar("NewRegistrar");
-    RegistrarPoc registrarPoc =
-        persistResource(
-            new RegistrarPoc.Builder()
-                .setRegistrar(registrar)
-                .setName("Jim Doe")
-                .setEmailAddress("jim.doe@example.com")
-                .build());
-    assertThat(registrarPoc.isAllowedToSetRegistryLockPassword()).isFalse();
-
-    // First, try (and fail) to set the password directly
-    assertThrows(
-        IllegalArgumentException.class,
-        () -> registrarPoc.asBuilder().setRegistryLockPassword("foo"));
-
-    // Next, try (and fail) to allow registry lock without a registry lock email
-    assertThat(
-            assertThrows(
-                IllegalArgumentException.class,
-                () ->
-                    runCommandForced(
-                        "--mode=UPDATE",
-                        "--email=jim.doe@example.com",
-                        "--allowed_to_set_registry_lock_password=true",
-                        "NewRegistrar")))
-        .hasMessageThat()
-        .isEqualTo("Registry lock email must not be null if allowing registry lock access");
-
-    // Next, include the email and it should succeed
-    runCommandForced(
-        "--mode=UPDATE",
-        "--email=jim.doe@example.com",
-        "--registry_lock_email=jim.doe.registry.lock@example.com",
-        "--allowed_to_set_registry_lock_password=true",
-        "NewRegistrar");
-    RegistrarPoc newContact = reloadResource(registrarPoc);
-    assertThat(newContact.isAllowedToSetRegistryLockPassword()).isTrue();
-    // should be allowed to set the password now
-    newContact.asBuilder().setRegistryLockPassword("foo");
-  }
-
-  @Test
-  void testUpdate_setAllowedToSetRegistryLockPassword_removesOldPassword() throws Exception {
-    Registrar registrar = loadRegistrar("NewRegistrar");
-    RegistrarPoc registrarPoc =
-        persistResource(
-            new RegistrarPoc.Builder()
-                .setRegistrar(registrar)
-                .setName("Jim Doe")
-                .setEmailAddress("jim.doe@example.com")
-                .setRegistryLockEmailAddress("jim.doe.registry.lock@example.com")
-                .setAllowedToSetRegistryLockPassword(true)
-                .setRegistryLockPassword("hi")
-                .build());
-    assertThat(registrarPoc.verifyRegistryLockPassword("hi")).isTrue();
-    assertThat(registrarPoc.verifyRegistryLockPassword("hello")).isFalse();
-    runCommandForced(
-        "--mode=UPDATE",
-        "--email=jim.doe@example.com",
-        "--allowed_to_set_registry_lock_password=true",
-        "NewRegistrar");
-    registrarPoc = reloadResource(registrarPoc);
-    assertThat(registrarPoc.verifyRegistryLockPassword("hi")).isFalse();
   }
 
   @Test

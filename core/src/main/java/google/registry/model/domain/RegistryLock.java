@@ -101,8 +101,15 @@ public final class RegistryLock extends UpdateAutoTimestampEntity implements Bui
   @Column(nullable = false)
   private String registrarId;
 
-  /** The POC that performed the action, or null if it was a superuser. */
-  @Expose private String registrarPocId;
+  /**
+   * The email address of the user that performed the action, or null if it was a superuser.
+   *
+   * <p>Note: this is misnamed in the database due to historical reasons, where we used the
+   * registrar POC ID as the email address rather than a separate specialized field.
+   */
+  @Column(name = "registrarPocId")
+  @Expose
+  private String registryLockEmail;
 
   /** When the lock is first requested. */
   @AttributeOverrides({
@@ -161,8 +168,8 @@ public final class RegistryLock extends UpdateAutoTimestampEntity implements Bui
     return registrarId;
   }
 
-  public String getRegistrarPocId() {
-    return registrarPocId;
+  public String getRegistryLockEmail() {
+    return registryLockEmail;
   }
 
   public DateTime getLockRequestTime() {
@@ -255,7 +262,7 @@ public final class RegistryLock extends UpdateAutoTimestampEntity implements Bui
       checkArgumentNotNull(getInstance().registrarId, "Registrar ID cannot be null");
       checkArgumentNotNull(getInstance().verificationCode, "Verification code cannot be null");
       checkArgument(
-          getInstance().registrarPocId != null || getInstance().isSuperuser,
+          getInstance().registryLockEmail != null || getInstance().isSuperuser,
           "Registrar POC ID must be provided if superuser is false");
       return super.build();
     }
@@ -275,8 +282,8 @@ public final class RegistryLock extends UpdateAutoTimestampEntity implements Bui
       return this;
     }
 
-    public Builder setRegistrarPocId(String registrarPocId) {
-      getInstance().registrarPocId = registrarPocId;
+    public Builder setRegistryLockEmail(String registryLockEmail) {
+      getInstance().registryLockEmail = registryLockEmail;
       return this;
     }
 

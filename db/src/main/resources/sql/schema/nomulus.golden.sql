@@ -1009,7 +1009,7 @@ CREATE TABLE public."Registrar" (
 
 CREATE TABLE public."RegistrarPoc" (
     email_address text NOT NULL,
-    allowed_to_set_registry_lock_password boolean NOT NULL,
+    allowed_to_set_registry_lock_password boolean,
     fax_number text,
     name text,
     phone_number text,

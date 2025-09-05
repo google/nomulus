@@ -194,3 +194,4 @@ V193__password_reset_request.sql
 V194__password_reset_request_registrar.sql
 V195__registrar_poc_id.sql
 V196__tld_expiry_access_period_enabled.sql
+V197__poc_rlock_drop_not_null.sql

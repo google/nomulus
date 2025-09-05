@@ -14,16 +14,11 @@
 
 package google.registry.model.registrar;
 
-import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
-import static com.google.common.base.Strings.isNullOrEmpty;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
-import static com.google.common.io.BaseEncoding.base64;
 import static google.registry.model.registrar.Registrar.checkValidEmail;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.CollectionUtils.nullToEmptyImmutableSortedCopy;
-import static google.registry.util.PasswordUtils.SALT_SUPPLIER;
-import static google.registry.util.PasswordUtils.hashPassword;
 import static java.util.stream.Collectors.joining;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -38,7 +33,6 @@ import google.registry.model.Jsonifiable;
 import google.registry.model.UnsafeSerializable;
 import google.registry.persistence.VKey;
 import google.registry.persistence.transaction.QueryComposer;
-import google.registry.util.PasswordUtils;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -47,9 +41,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.IdClass;
 import java.io.Serializable;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
-import javax.annotation.Nullable;
 
 /**
  * A contact for a Registrar. Note, equality, hashCode and comparable have been overridden to only
@@ -107,9 +99,6 @@ public class RegistrarPoc extends ImmutableObject implements Jsonifiable, Unsafe
 
   @Id @Expose public String registrarId;
 
-  /** External email address of this contact used for registry lock confirmations. */
-  String registryLockEmailAddress;
-
   /** The voice number of the contact. */
   @Expose String phoneNumber;
 
@@ -147,21 +136,9 @@ public class RegistrarPoc extends ImmutableObject implements Jsonifiable, Unsafe
   @Expose
   boolean visibleInDomainWhoisAsAbuse = false;
 
-  /**
-   * Whether the contact is allowed to set their registry lock password through the registrar
-   * console. This will be set to false on contact creation and when the user sets a password.
-   */
+  /** Legacy field, around until we can remove the non-null constraint and the column from SQL. */
   @Column(nullable = false)
   boolean allowedToSetRegistryLockPassword = false;
-
-  /**
-   * A hashed password that exists iff this contact is registry-lock-enabled. The hash is a base64
-   * encoded SHA256 string.
-   */
-  String registryLockPasswordHash;
-
-  /** Randomly generated hash salt. */
-  String registryLockPasswordSalt;
 
   /**
    * Helper to update the contacts associated with a Registrar. This requires querying for the
@@ -197,10 +174,6 @@ public class RegistrarPoc extends ImmutableObject implements Jsonifiable, Unsafe
     return emailAddress;
   }
 
-  public Optional<String> getRegistryLockEmailAddress() {
-    return Optional.ofNullable(registryLockEmailAddress);
-  }
-
   public String getPhoneNumber() {
     return phoneNumber;
   }
@@ -227,24 +200,6 @@ public class RegistrarPoc extends ImmutableObject implements Jsonifiable, Unsafe
 
   public Builder asBuilder() {
     return new Builder(clone(this));
-  }
-
-  public boolean isAllowedToSetRegistryLockPassword() {
-    return allowedToSetRegistryLockPassword;
-  }
-
-  public boolean isRegistryLockAllowed() {
-    return !isNullOrEmpty(registryLockPasswordHash) && !isNullOrEmpty(registryLockPasswordSalt);
-  }
-
-  public boolean verifyRegistryLockPassword(String registryLockPassword) {
-    if (isNullOrEmpty(registryLockPassword)
-        || isNullOrEmpty(registryLockPasswordSalt)
-        || isNullOrEmpty(registryLockPasswordHash)) {
-      return false;
-    }
-    return PasswordUtils.verifyPassword(
-        registryLockPassword, registryLockPasswordHash, registryLockPasswordSalt);
   }
 
   /**
@@ -296,15 +251,12 @@ public class RegistrarPoc extends ImmutableObject implements Jsonifiable, Unsafe
     return new JsonMapBuilder()
         .put("name", name)
         .put("emailAddress", emailAddress)
-        .put("registryLockEmailAddress", registryLockEmailAddress)
         .put("phoneNumber", phoneNumber)
         .put("faxNumber", faxNumber)
         .put("types", getTypes().stream().map(Object::toString).collect(joining(",")))
         .put("visibleInWhoisAsAdmin", visibleInWhoisAsAdmin)
         .put("visibleInWhoisAsTech", visibleInWhoisAsTech)
         .put("visibleInDomainWhoisAsAbuse", visibleInDomainWhoisAsAbuse)
-        .put("allowedToSetRegistryLockPassword", allowedToSetRegistryLockPassword)
-        .put("registryLockAllowed", isRegistryLockAllowed())
         .put("id", getId())
         .build();
   }
@@ -344,14 +296,6 @@ public class RegistrarPoc extends ImmutableObject implements Jsonifiable, Unsafe
     public RegistrarPoc build() {
       checkNotNull(getInstance().registrarId, "Registrar ID cannot be null");
       checkValidEmail(getInstance().emailAddress);
-      // Check allowedToSetRegistryLockPassword here because if we want to allow the user to set
-      // a registry lock password, we must also set up the correct registry lock email concurrently
-      // or beforehand.
-      if (getInstance().allowedToSetRegistryLockPassword) {
-        checkArgument(
-            !isNullOrEmpty(getInstance().registryLockEmailAddress),
-            "Registry lock email must not be null if allowing registry lock access");
-      }
       return cloneEmptyToNull(super.build());
     }
 
@@ -362,11 +306,6 @@ public class RegistrarPoc extends ImmutableObject implements Jsonifiable, Unsafe
 
     public Builder setEmailAddress(String emailAddress) {
       getInstance().emailAddress = emailAddress;
-      return this;
-    }
-
-    public Builder setRegistryLockEmailAddress(@Nullable String registryLockEmailAddress) {
-      getInstance().registryLockEmailAddress = registryLockEmailAddress;
       return this;
     }
 
@@ -407,28 +346,6 @@ public class RegistrarPoc extends ImmutableObject implements Jsonifiable, Unsafe
 
     public Builder setVisibleInDomainWhoisAsAbuse(boolean visible) {
       getInstance().visibleInDomainWhoisAsAbuse = visible;
-      return this;
-    }
-
-    public Builder setAllowedToSetRegistryLockPassword(boolean allowedToSetRegistryLockPassword) {
-      if (allowedToSetRegistryLockPassword) {
-        getInstance().registryLockPasswordSalt = null;
-        getInstance().registryLockPasswordHash = null;
-      }
-      getInstance().allowedToSetRegistryLockPassword = allowedToSetRegistryLockPassword;
-      return this;
-    }
-
-    public Builder setRegistryLockPassword(String registryLockPassword) {
-      checkArgument(
-          getInstance().allowedToSetRegistryLockPassword,
-          "Not allowed to set registry lock password for this contact");
-      checkArgument(
-          !isNullOrEmpty(registryLockPassword), "Registry lock password was null or empty");
-      byte[] salt = SALT_SUPPLIER.get();
-      getInstance().registryLockPasswordSalt = base64().encode(salt);
-      getInstance().registryLockPasswordHash = hashPassword(registryLockPassword, salt);
-      getInstance().allowedToSetRegistryLockPassword = false;
       return this;
     }
   }

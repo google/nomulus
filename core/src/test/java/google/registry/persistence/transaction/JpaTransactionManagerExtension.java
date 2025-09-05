@@ -434,11 +434,8 @@ public abstract class JpaTransactionManagerExtension
         .setRegistrar(makeRegistrar2())
         .setName("Marla Singer")
         .setEmailAddress("Marla.Singer@crr.com")
-        .setRegistryLockEmailAddress("Marla.Singer.RegistryLock@crr.com")
         .setPhoneNumber("+1.2128675309")
         .setTypes(ImmutableSet.of(RegistrarPoc.Type.TECH))
-        .setAllowedToSetRegistryLockPassword(true)
-        .setRegistryLockPassword("hi")
         .build();
   }
 

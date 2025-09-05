@@ -21,7 +21,6 @@ import static google.registry.util.DomainNameUtils.canonicalizeHostname;
 
 import com.google.common.base.Ascii;
 import com.google.common.base.Splitter;
-import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.net.InternetDomainName;
@@ -29,7 +28,6 @@ import com.google.re2j.Pattern;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarAddress;
 import google.registry.model.registrar.RegistrarPoc;
-import google.registry.ui.forms.FormException;
 import google.registry.ui.forms.FormField;
 import google.registry.ui.forms.FormFieldException;
 import google.registry.ui.forms.FormFields;
@@ -38,7 +36,6 @@ import google.registry.util.X509Utils;
 import java.security.cert.CertificateParsingException;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import javax.annotation.Nullable;
@@ -191,14 +188,6 @@ public final class RegistrarFormFields {
 
   public static final FormField<String, String> CONTACT_FAX_NUMBER_FIELD =
       FormFields.PHONE_NUMBER.asBuilderNamed("faxNumber").build();
-
-  public static final FormField<Object, Boolean> CONTACT_ALLOWED_TO_SET_REGISTRY_LOCK_PASSWORD =
-      FormField.named("allowedToSetRegistryLockPassword", Object.class)
-          .transform(Boolean.class, b -> Boolean.valueOf(Objects.toString(b)))
-          .build();
-
-  public static final FormField<String, String> CONTACT_REGISTRY_LOCK_PASSWORD_FIELD =
-      FormFields.NAME.asBuilderNamed("registryLockPassword").build();
 
   public static final FormField<String, Set<RegistrarPoc.Type>> CONTACT_TYPES =
       FormField.named("types")
@@ -369,8 +358,6 @@ public final class RegistrarFormFields {
   private static void applyRegistrarContactArgs(RegistrarPoc.Builder builder, Map<String, ?> args) {
     builder.setName(CONTACT_NAME_FIELD.extractUntyped(args).orElse(null));
     builder.setEmailAddress(CONTACT_EMAIL_ADDRESS_FIELD.extractUntyped(args).orElse(null));
-    builder.setRegistryLockEmailAddress(
-        REGISTRY_LOCK_EMAIL_ADDRESS_FIELD.extractUntyped(args).orElse(null));
     builder.setVisibleInWhoisAsAdmin(
         CONTACT_VISIBLE_IN_WHOIS_AS_ADMIN_FIELD.extractUntyped(args).orElse(false));
     builder.setVisibleInWhoisAsTech(
@@ -380,23 +367,5 @@ public final class RegistrarFormFields {
     builder.setPhoneNumber(CONTACT_PHONE_NUMBER_FIELD.extractUntyped(args).orElse(null));
     builder.setFaxNumber(CONTACT_FAX_NUMBER_FIELD.extractUntyped(args).orElse(null));
     builder.setTypes(CONTACT_TYPES.extractUntyped(args).orElse(ImmutableSet.of()));
-    // The parser is inconsistent with whether it retrieves boolean values as strings or booleans.
-    // As a result, use a potentially-redundant converter that can deal with both.
-    builder.setAllowedToSetRegistryLockPassword(
-        CONTACT_ALLOWED_TO_SET_REGISTRY_LOCK_PASSWORD.extractUntyped(args).orElse(false));
-
-    // Registry lock password does not need to be set every time
-    CONTACT_REGISTRY_LOCK_PASSWORD_FIELD
-        .extractUntyped(args)
-        .ifPresent(
-            password -> {
-              if (!Strings.isNullOrEmpty(password)) {
-                if (password.length() < 8) {
-                  throw new FormException(
-                      "Registry lock password must be at least 8 characters long");
-                }
-                builder.setRegistryLockPassword(password);
-              }
-            });
   }
 }

@@ -68,7 +68,7 @@ public class RelockDomainActionTest {
 
   private static final String DOMAIN_NAME = "example.tld";
   private static final String CLIENT_ID = "TheRegistrar";
-  private static final String POC_ID = "marla.singer@example.com";
+  private static final String LOCK_EMAIL_ADDRESS = "Marla.Singer.RegistryLock@crr.com";
 
   private final FakeResponse response = new FakeResponse();
   private final FakeClock clock = new FakeClock(DateTime.parse("2015-05-18T12:34:56Z"));
@@ -94,7 +94,9 @@ public class RelockDomainActionTest {
     Host host = persistActiveHost("ns1.example.net");
     domain = persistResource(DatabaseHelper.newDomain(DOMAIN_NAME, host));
 
-    oldLock = domainLockUtils.administrativelyApplyLock(DOMAIN_NAME, CLIENT_ID, POC_ID, false);
+    oldLock =
+        domainLockUtils.administrativelyApplyLock(
+            DOMAIN_NAME, CLIENT_ID, LOCK_EMAIL_ADDRESS, false);
     assertThat(loadByEntity(domain).getStatusValues())
         .containsAtLeastElementsIn(REGISTRY_LOCK_STATUSES);
     oldLock =
@@ -255,9 +257,10 @@ public class RelockDomainActionTest {
             .setSubject("Successful re-lock of domain example.tld")
             .setBody(
                 """
-                    The domain example.tld was successfully re-locked.
+                The domain example.tld was successfully re-locked.
 
-                    Please contact support at support@example.com if you have any questions.""")
+                Please contact support at support@example.com if you have any questions.\
+                """)
             .setRecipients(
                 ImmutableSet.of(new InternetAddress("Marla.Singer.RegistryLock@crr.com")))
             .build();
@@ -268,9 +271,10 @@ public class RelockDomainActionTest {
     String expectedBody =
         String.format(
             """
-                There was an error when automatically re-locking example.tld. Error message: %s
+            There was an error when automatically re-locking example.tld. Error message: %s
 
-                Please contact support at support@example.com if you have any questions.""",
+            Please contact support at support@example.com if you have any questions.\
+            """,
             exceptionMessage);
     assertFailureEmailWithBody(
         expectedBody, ImmutableSet.of(new InternetAddress("Marla.Singer.RegistryLock@crr.com")));

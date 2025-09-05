@@ -291,7 +291,7 @@ public final class DomainLockUtilsTest {
             .setRegistrarId("TheRegistrar")
             .setRepoId(domain.getRepoId())
             .isSuperuser(false)
-            .setRegistrarPocId(POC_ID)
+            .setRegistryLockEmail(POC_ID)
             .build());
     clock.advanceOneMilli();
     RegistryLock resultLock =
@@ -477,7 +477,7 @@ public final class DomainLockUtilsTest {
                 .setRepoId("repoId")
                 .setRelockDuration(standardHours(6))
                 .setRegistrarId("TheRegistrar")
-                .setRegistrarPocId("someone@example.com")
+                .setRegistryLockEmail("someone@example.com")
                 .setVerificationCode("hi")
                 .build());
     domainLockUtils.enqueueDomainRelock(lock.getRelockDuration().get(), lock.getRevisionId(), 0);
@@ -504,7 +504,7 @@ public final class DomainLockUtilsTest {
                 .setDomainName("example.tld")
                 .setRepoId("repoId")
                 .setRegistrarId("TheRegistrar")
-                .setRegistrarPocId("someone@example.com")
+                .setRegistryLockEmail("someone@example.com")
                 .setVerificationCode("hi")
                 .build());
     IllegalArgumentException thrown =

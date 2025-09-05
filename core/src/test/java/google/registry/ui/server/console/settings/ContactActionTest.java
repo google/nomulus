@@ -284,39 +284,27 @@ class ContactActionTest extends ConsoleActionBaseTestCase {
                     "Registrar New Registrar (registrarId) updated in registry unittest"
                         + " environment")
                 .setBody(
-                    "The following changes were made in registry unittest environment to the"
-                        + " registrar registrarId by admin fte@email.tld:\n"
-                        + "\n"
-                        + "contacts:\n"
-                        + "    ADDED:\n"
-                        + "        {id="
-                        + id
-                        + ", name=Test Registrar 2,"
-                        + " emailAddress=incorrect@example.com, registrarId=registrarId,"
-                        + " registryLockEmailAddress=null, phoneNumber=+1.1234567890,"
-                        + " faxNumber=+1.1234567891, types=[TECH],"
-                        + " visibleInWhoisAsAdmin=false, visibleInWhoisAsTech=true,"
-                        + " visibleInDomainWhoisAsAbuse=false,"
-                        + " allowedToSetRegistryLockPassword=false}\n"
-                        + "    REMOVED:\n"
-                        + "        {id="
-                        + id
-                        + ", name=Test Registrar 2, emailAddress=test.registrar2@example.com,"
-                        + " registrarId=registrarId, registryLockEmailAddress=null,"
-                        + " phoneNumber=+1.1234567890, faxNumber=+1.1234567891, types=[TECH],"
-                        + " visibleInWhoisAsAdmin=false,"
-                        + " visibleInWhoisAsTech=true, visibleInDomainWhoisAsAbuse=false,"
-                        + " allowedToSetRegistryLockPassword=false}\n"
-                        + "    FINAL CONTENTS:\n"
-                        + "        {id="
-                        + id
-                        + ", name=Test Registrar 2,"
-                        + " emailAddress=incorrect@example.com, registrarId=registrarId,"
-                        + " registryLockEmailAddress=null, phoneNumber=+1.1234567890,"
-                        + " faxNumber=+1.1234567891, types=[TECH],"
-                        + " visibleInWhoisAsAdmin=false, visibleInWhoisAsTech=true,"
-                        + " visibleInDomainWhoisAsAbuse=false,"
-                        + " allowedToSetRegistryLockPassword=false}\n")
+"""
+The following changes were made in registry unittest environment to the registrar registrarId \
+by admin fte@email.tld:
+
+contacts:
+    ADDED:
+        {id=5, name=Test Registrar 2, emailAddress=incorrect@example.com, registrarId=registrarId, \
+phoneNumber=+1.1234567890, faxNumber=+1.1234567891, types=[TECH], visibleInWhoisAsAdmin=false, \
+visibleInWhoisAsTech=true, visibleInDomainWhoisAsAbuse=false, \
+allowedToSetRegistryLockPassword=false}
+    REMOVED:
+        {id=5, name=Test Registrar 2, emailAddress=test.registrar2@example.com, \
+registrarId=registrarId, phoneNumber=+1.1234567890, faxNumber=+1.1234567891, types=[TECH], \
+visibleInWhoisAsAdmin=false, visibleInWhoisAsTech=true, visibleInDomainWhoisAsAbuse=false, \
+allowedToSetRegistryLockPassword=false}
+    FINAL CONTENTS:
+        {id=5, name=Test Registrar 2, emailAddress=incorrect@example.com, registrarId=registrarId, \
+phoneNumber=+1.1234567890, faxNumber=+1.1234567891, types=[TECH], visibleInWhoisAsAdmin=false, \
+visibleInWhoisAsTech=true, visibleInDomainWhoisAsAbuse=false, \
+allowedToSetRegistryLockPassword=false}
+""")
                 .setRecipients(ImmutableList.of(new InternetAddress("notification@test.example")))
                 .build());
   }
