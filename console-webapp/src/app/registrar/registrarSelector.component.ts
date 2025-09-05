@@ -25,7 +25,10 @@ export class RegistrarSelectorComponent {
   registrarInput = signal<string>(this.registrarService.registrarId());
   filteredOptions?: string[];
   allRegistrarIds = computed(() =>
-    this.registrarService.registrars().map((r) => r.registrarId)
+    this.registrarService
+      .registrars()
+      .map((r) => r.registrarId)
+      .sort()
   );
 
   constructor(protected registrarService: RegistrarService) {
