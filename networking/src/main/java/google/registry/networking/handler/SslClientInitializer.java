@@ -119,6 +119,7 @@ public class SslClientInitializer<C extends Channel> extends ChannelInitializer<
         sslContextBuilder
             .build()
             .newHandler(channel.alloc(), hostProvider.apply(channel), portProvider.apply(channel));
+    sslHandler.setHandshakeTimeoutMillis(20000);
 
     // Enable hostname verification.
     SSLEngine sslEngine = sslHandler.engine();

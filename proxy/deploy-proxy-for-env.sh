@@ -31,7 +31,6 @@ do
   echo "Updating cluster ${parts[0]} in zone ${parts[1]}..."
   gcloud container clusters get-credentials "${parts[0]}" \
     --project "${project}" --zone "${parts[1]}"
-  kubectl apply -f "./kubernetes/proxy-limit-range.yaml" --force
   sed s/GCP_PROJECT/${project}/g "./kubernetes/proxy-deployment-${environment}.yaml" | \
   kubectl apply -f -
   kubectl apply -f "./kubernetes/proxy-service.yaml" --force
