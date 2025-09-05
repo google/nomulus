@@ -101,9 +101,10 @@ public class ConsoleBulkDomainActionTest extends ConsoleActionBaseTestCase {
     assertThat(response.getStatus()).isEqualTo(SC_OK);
     assertThat(response.getPayload())
         .isEqualTo(
-            """
+"""
 {"example.tld":{"message":"Command completed successfully; action pending",\
-"responseCode":1001}}""");
+"responseCode":1001}}\
+""");
     assertThat(loadByEntity(domain).getDeletionTime()).isEqualTo(clock.nowUtc().plusDays(35));
     ConsoleUpdateHistory history = loadSingleton(ConsoleUpdateHistory.class).get();
     assertThat(history.getType()).isEqualTo(ConsoleUpdateHistory.Type.DOMAIN_DELETE);
@@ -122,7 +123,8 @@ public class ConsoleBulkDomainActionTest extends ConsoleActionBaseTestCase {
     assertThat(response.getPayload())
         .isEqualTo(
             """
-            {"example.tld":{"message":"Command completed successfully","responseCode":1000}}""");
+            {"example.tld":{"message":"Command completed successfully","responseCode":1000}}\
+            """);
     assertThat(loadByEntity(domain).getStatusValues())
         .containsAtLeastElementsIn(serverSuspensionStatuses);
     ConsoleUpdateHistory history = loadSingleton(ConsoleUpdateHistory.class).get();
@@ -145,7 +147,8 @@ public class ConsoleBulkDomainActionTest extends ConsoleActionBaseTestCase {
     assertThat(response.getPayload())
         .isEqualTo(
             """
-            {"example.tld":{"message":"Command completed successfully","responseCode":1000}}""");
+            {"example.tld":{"message":"Command completed successfully","responseCode":1000}}\
+            """);
     assertThat(loadByEntity(domain).getStatusValues()).containsNoneIn(serverSuspensionStatuses);
     ConsoleUpdateHistory history = loadSingleton(ConsoleUpdateHistory.class).get();
     assertThat(history.getType()).isEqualTo(ConsoleUpdateHistory.Type.DOMAIN_UNSUSPEND);
@@ -167,10 +170,11 @@ public class ConsoleBulkDomainActionTest extends ConsoleActionBaseTestCase {
     assertThat(response.getStatus()).isEqualTo(SC_OK);
     assertThat(response.getPayload())
         .isEqualTo(
-            """
+"""
 {"example.tld":{"message":"Command completed successfully; action pending","responseCode":1001},\
 "nonexistent.tld":{"message":"The domain with given ID (nonexistent.tld) doesn\\u0027t exist.",\
-"responseCode":2303}}""");
+"responseCode":2303}}\
+""");
     assertThat(loadByEntity(domain).getDeletionTime()).isEqualTo(clock.nowUtc().plusDays(35));
     ConsoleUpdateHistory history = loadSingleton(ConsoleUpdateHistory.class).get();
     assertThat(history.getType()).isEqualTo(ConsoleUpdateHistory.Type.DOMAIN_DELETE);
