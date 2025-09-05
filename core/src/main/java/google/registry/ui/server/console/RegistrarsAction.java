@@ -53,8 +53,10 @@ import java.util.Optional;
 public class RegistrarsAction extends ConsoleApiAction {
   private static final int PASSWORD_LENGTH = 16;
   private static final int PASSCODE_LENGTH = 5;
-  private static final ImmutableList<Registrar.Type> allowedRegistrarTypes =
-      ImmutableList.of(Registrar.Type.REAL, Registrar.Type.OTE);
+  private static final ImmutableSet<Registrar.Type> TYPES_ALLOWED_FOR_USERS =
+      ImmutableSet.of(Registrar.Type.REAL, Registrar.Type.OTE);
+  private static final ImmutableSet<Registrar.Type> TYPES_ALLOWED_FOR_ADMINS =
+      ImmutableSet.of(Registrar.Type.INTERNAL, Registrar.Type.REAL, Registrar.Type.OTE);
   private static final String SQL_TEMPLATE =
       """
             SELECT * FROM "Registrar"
@@ -80,6 +82,8 @@ public class RegistrarsAction extends ConsoleApiAction {
   @Override
   protected void getHandler(User user) {
     if (user.getUserRoles().hasGlobalPermission(ConsolePermission.VIEW_REGISTRARS)) {
+      ImmutableSet<Registrar.Type> allowedRegistrarTypes =
+          user.getUserRoles().isAdmin() ? TYPES_ALLOWED_FOR_ADMINS : TYPES_ALLOWED_FOR_USERS;
       ImmutableList<Registrar> registrars =
           Streams.stream(Registrar.loadAll())
               .filter(r -> allowedRegistrarTypes.contains(r.getType()))
@@ -94,6 +98,7 @@ public class RegistrarsAction extends ConsoleApiAction {
               .map(Map.Entry::getKey)
               .collect(toImmutableSet());
 
+      @SuppressWarnings("unchecked")
       List<Registrar> registrars =
           tm().transact(
                   () ->
