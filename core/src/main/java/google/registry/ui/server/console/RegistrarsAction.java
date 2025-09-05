@@ -53,8 +53,8 @@ import java.util.Optional;
 public class RegistrarsAction extends ConsoleApiAction {
   private static final int PASSWORD_LENGTH = 16;
   private static final int PASSCODE_LENGTH = 5;
-  private static final ImmutableList<Registrar.Type> allowedRegistrarTypes =
-      ImmutableList.of(Registrar.Type.REAL, Registrar.Type.OTE);
+  private static final ImmutableSet<Registrar.Type> allowedRegistrarTypes =
+      ImmutableSet.of(Registrar.Type.INTERNAL, Registrar.Type.REAL, Registrar.Type.OTE);
   private static final String SQL_TEMPLATE =
       """
             SELECT * FROM "Registrar"
@@ -94,6 +94,7 @@ public class RegistrarsAction extends ConsoleApiAction {
               .map(Map.Entry::getKey)
               .collect(toImmutableSet());
 
+      @SuppressWarnings("unchecked")
       List<Registrar> registrars =
           tm().transact(
                   () ->
