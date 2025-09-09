@@ -260,7 +260,7 @@ if (project.baseSchemaTag != '') {
 
   // Checks if Flyway scripts can be deployed to an existing database with
   // an older release. Please refer to SchemaTest.java for more information.
-  task schemaIncrementalDeployTest(dependsOn: processResources, type: Test) {
+  task schemaIncrementalDeployTest(dependsOn: processTestResources, type: Test) {
     useJUnitPlatform()
     include 'google/registry/sql/flyway/SchemaTest.*'
     classpath = configurations.testRuntimeClasspath
