@@ -1591,6 +1591,26 @@ public final class RegistryConfig {
     return CONFIG_SETTINGS.get().caching.eppResourceMaxCachedEntries;
   }
 
+  /** Returns if we have enabled caching for User Authentication */
+  public static boolean getUserAuthCachingEnabled() {
+    return CONFIG_SETTINGS.get().caching.userAuthCachingEnabled;
+  }
+
+  @VisibleForTesting
+  public static void overrideIsUserAuthCachingEnabledForTesting(boolean enabled) {
+    CONFIG_SETTINGS.get().caching.userAuthCachingEnabled = enabled;
+  }
+
+  /** Returns the expiry duration for the user authentication cache. */
+  public static java.time.Duration getUserAuthCachingDuration() {
+    return java.time.Duration.ofSeconds(CONFIG_SETTINGS.get().caching.userAuthCachingSeconds);
+  }
+
+  /** Returns the maximum number of entries in user authentication cache. */
+  public static int getUserAuthMaxCachedEntries() {
+    return CONFIG_SETTINGS.get().caching.userAuthMaxCachedEntries;
+  }
+
   /** Returns the amount of time that a particular claims list should be cached. */
   public static java.time.Duration getClaimsListCacheDuration() {
     return java.time.Duration.ofSeconds(CONFIG_SETTINGS.get().caching.claimsListCachingSeconds);

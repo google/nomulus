@@ -326,6 +326,20 @@ caching:
   # long duration is acceptable because claims lists don't change frequently.
   claimsListCachingSeconds: 21600 # six hours
 
+  #-- User Authentication Cache Settings --#
+
+  # Whether to cache User objects during OIDC token authentication to reduce database load.
+  # This helps mitigate high QPS from frequent hello commands and session-less requests.
+  userAuthCachingEnabled: true 
+
+  # The duration in seconds for which a User object is cached after being loaded.
+  # A short duration (e.g., 60 seconds) is recommended to avoid stale data.
+  userAuthCachingSeconds: 60
+
+  # The maximum number of User objects to store in the cache per pod.
+  # This helps limit the memory footprint of the cache.
+  userAuthMaxCachedEntries: 100
+
 # Note: Only allowedServiceAccountEmails and oauthClientId should be configured.
 # Other fields are related to OAuth-based authentication and will be removed.
 auth:
