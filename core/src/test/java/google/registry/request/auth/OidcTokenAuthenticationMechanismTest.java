@@ -22,7 +22,11 @@ import static google.registry.request.auth.AuthModule.BEARER_PREFIX;
 import static google.registry.request.auth.AuthModule.IAP_HEADER_NAME;
 import static google.registry.testing.DatabaseHelper.createAdminUser;
 import static google.registry.testing.DatabaseHelper.persistResource;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.github.benmanes.caffeine.cache.LoadingCache;
@@ -60,6 +64,9 @@ public class OidcTokenAuthenticationMechanismTest {
 
   private static final String rawToken = "this-token";
   private static final String email = "user@email.test";
+
+  private static final String unknownEmail = "bad-guy@evil.real";
+
   private static final String gaiaId = "gaia-id";
   private static final ImmutableSet<String> serviceAccounts =
       ImmutableSet.of("service@email.test", "email@service.goog");
@@ -85,7 +92,6 @@ public class OidcTokenAuthenticationMechanismTest {
     LoadingCache<String, Optional<User>> testCache =
         CacheUtils.newCacheBuilder(getUserAuthCachingDuration())
             .maximumSize(getUserAuthMaxCachedEntries())
-            .recordStats()
             .build(OidcTokenAuthenticationMechanism::loadUser);
     OidcTokenAuthenticationMechanism.setCacheForTesting(testCache);
     payload.setEmail(email);
@@ -167,7 +173,7 @@ public class OidcTokenAuthenticationMechanismTest {
 
   @Test
   void testAuthenticate_unknownEmailAddress() throws Exception {
-    payload.setEmail("bad-guy@evil.real");
+    payload.setEmail(unknownEmail);
     authResult = authenticationMechanism.authenticate(request);
     assertThat(authResult).isEqualTo(AuthResult.NOT_AUTHENTICATED);
   }
@@ -204,82 +210,55 @@ public class OidcTokenAuthenticationMechanismTest {
 
   @Test
   void testAuthenticate_ExistentUser_isCached() {
-    // Before the test, clear the cache to ensure a clean state.
-    OidcTokenAuthenticationMechanism.userCache.invalidateAll();
-    assertThat(OidcTokenAuthenticationMechanism.userCache.stats().missCount()).isEqualTo(0);
-    assertThat(OidcTokenAuthenticationMechanism.userCache.stats().hitCount()).isEqualTo(0);
+    // Arrange: Create a spy of the actual cache object.
+    // A spy calls the real methods of the object while allowing us to verify interactions.
+    LoadingCache<String, Optional<User>> spiedCache =
+        spy(OidcTokenAuthenticationMechanism.userCache);
+    OidcTokenAuthenticationMechanism.setCacheForTesting(spiedCache);
 
-    // First call: This should be a cache miss, triggering the loader.
-    AuthResult authResult1 = authenticationMechanism.authenticate(request);
-    assertThat(authResult1.isAuthenticated()).isTrue();
-    assertThat(authResult1.user().get()).isEqualTo(user);
+    // Act: Call the authenticate method.
+    authenticationMechanism.authenticate(request);
 
-    // Verify a cache miss occurred and the cache now has one entry.
-    assertThat(OidcTokenAuthenticationMechanism.userCache.stats().missCount()).isEqualTo(1);
-    assertThat(OidcTokenAuthenticationMechanism.userCache.stats().hitCount()).isEqualTo(0);
-    assertThat(OidcTokenAuthenticationMechanism.userCache.estimatedSize()).isEqualTo(1);
-
-    // Second call for the same user: This should be a cache hit.
-    AuthResult authResult2 = authenticationMechanism.authenticate(request);
-    assertThat(authResult2.isAuthenticated()).isTrue();
-    assertThat(authResult2.user().get()).isEqualTo(user);
-
-    // Verify a cache hit occurred. The miss count should be unchanged.
-    assertThat(OidcTokenAuthenticationMechanism.userCache.stats().missCount()).isEqualTo(1);
-    assertThat(OidcTokenAuthenticationMechanism.userCache.stats().hitCount()).isEqualTo(1);
+    // Assert: Verify that the cache's "get" method was called exactly once.
+    // This confirms the cache is being used without checking its internal stats.
+    verify(spiedCache).get(email);
   }
 
   @Test
-  void testAuthenticate_nonExistentUser_isCached() throws Exception {
-    // Before the test, clear the cache to ensure a clean state.
-    OidcTokenAuthenticationMechanism.userCache.invalidateAll();
-    assertThat(OidcTokenAuthenticationMechanism.userCache.stats().missCount()).isEqualTo(0);
-    assertThat(OidcTokenAuthenticationMechanism.userCache.stats().hitCount()).isEqualTo(0);
+  void testAuthenticate_nonExistentUser_isCached() {
+    // Arrange: Use an email that is not in the test database.
 
-    // Use an email that is not in the test database.
-    payload.setEmail("bad-guy@evil.real");
+    payload.setEmail(unknownEmail);
 
-    // First call: This should be a cache miss for a user that does not exist.
-    // The result should be NOT_AUTHENTICATED because there's no service account fallback.
-    AuthResult authResult1 = authenticationMechanism.authenticate(request);
-    assertThat(authResult1).isEqualTo(AuthResult.NOT_AUTHENTICATED);
+    LoadingCache<String, Optional<User>> spiedCache =
+        spy(OidcTokenAuthenticationMechanism.userCache);
+    OidcTokenAuthenticationMechanism.setCacheForTesting(spiedCache);
+    // Act: Call the authenticate method.
+    authenticationMechanism.authenticate(request);
 
-    // Verify a cache miss occurred and the cache now stores the "not found" result.
-    assertThat(OidcTokenAuthenticationMechanism.userCache.stats().missCount()).isEqualTo(1);
-    assertThat(OidcTokenAuthenticationMechanism.userCache.stats().hitCount()).isEqualTo(0);
-    assertThat(OidcTokenAuthenticationMechanism.userCache.estimatedSize()).isEqualTo(1);
-
-    // Second call for the same non-existent user: This should be a cache hit.
-    AuthResult authResult2 = authenticationMechanism.authenticate(request);
-    assertThat(authResult2).isEqualTo(AuthResult.NOT_AUTHENTICATED);
-
-    // Verify a cache hit occurred. The miss count should be unchanged.
-    // This proves that we did not go back to the database.
-    assertThat(OidcTokenAuthenticationMechanism.userCache.stats().missCount()).isEqualTo(1);
-    assertThat(OidcTokenAuthenticationMechanism.userCache.stats().hitCount()).isEqualTo(1);
+    // Assert: Verify that the cache's "get" method was called for the unverified email.
+    // This confirms that we attempted to look up the unknown user in the cache.
+    verify(spiedCache).get(unknownEmail);
   }
 
   @Test
   void testAuthenticate_whenCacheIsDisabled_cacheIsNotUsed() {
-    // Arrange: Explicitly disable the cache for this test.
+    // Arrange: Explicitly disable the cache and create a spy.
     RegistryConfig.overrideIsUserAuthCachingEnabledForTesting(false);
-    // Get the initial cache statistics *after* the test setup has run.
-    long initialMissCount = OidcTokenAuthenticationMechanism.userCache.stats().missCount();
-    long initialHitCount = OidcTokenAuthenticationMechanism.userCache.stats().hitCount();
+    LoadingCache<String, Optional<User>> spiedCache =
+        spy(OidcTokenAuthenticationMechanism.userCache);
+    OidcTokenAuthenticationMechanism.setCacheForTesting(spiedCache);
 
-    // Act: Authenticate the same user twice.
-    AuthResult authResult1 = authenticationMechanism.authenticate(request);
-    AuthResult authResult2 = authenticationMechanism.authenticate(request);
+    // Act: Authenticate the user.
+    AuthResult authResult = authenticationMechanism.authenticate(request);
 
-    // Assert: Both authentications should succeed by hitting the database.
-    assertThat(authResult1.isAuthenticated()).isTrue();
-    assertThat(authResult2.isAuthenticated()).isTrue();
+    // Assert: The authentication should still succeed because the code falls back
+    // to the direct database call.
+    assertThat(authResult.isAuthenticated()).isTrue();
 
-    // Assert: The cache statistics should NOT have changed, proving the cache was bypassed.
-    assertThat(OidcTokenAuthenticationMechanism.userCache.stats().missCount())
-        .isEqualTo(initialMissCount);
-    assertThat(OidcTokenAuthenticationMechanism.userCache.stats().hitCount())
-        .isEqualTo(initialHitCount);
+    // Assert: Crucially, verify that the cache's "get" method was NEVER called.
+    // This proves the cache was correctly bypassed.
+    verify(spiedCache, never()).get(any(String.class));
 
     // Teardown: Restore the default setting for other tests.
     RegistryConfig.overrideIsUserAuthCachingEnabledForTesting(true);

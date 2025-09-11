@@ -18,6 +18,7 @@ import static com.google.common.base.Preconditions.checkState;
 import static google.registry.config.RegistryConfig.getUserAuthCachingDuration;
 import static google.registry.config.RegistryConfig.getUserAuthCachingEnabled;
 import static google.registry.config.RegistryConfig.getUserAuthMaxCachedEntries;
+import static google.registry.model.CacheUtils.newCacheBuilder;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import com.github.benmanes.caffeine.cache.LoadingCache;
@@ -29,7 +30,6 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.flogger.FluentLogger;
 import google.registry.config.RegistryConfig;
 import google.registry.config.RegistryConfig.Config;
-import google.registry.model.CacheUtils;
 import google.registry.model.console.User;
 import google.registry.persistence.VKey;
 import google.registry.request.auth.AuthModule.IapOidc;
@@ -87,9 +87,8 @@ public abstract class OidcTokenAuthenticationMechanism implements Authentication
    */
   @VisibleForTesting
   static LoadingCache<String, Optional<User>> userCache =
-      CacheUtils.newCacheBuilder(getUserAuthCachingDuration())
+      newCacheBuilder(getUserAuthCachingDuration())
           .maximumSize(getUserAuthMaxCachedEntries())
-          .recordStats()
           .build(OidcTokenAuthenticationMechanism::loadUser);
 
   /**
@@ -159,7 +158,7 @@ public abstract class OidcTokenAuthenticationMechanism implements Authentication
       maybeUser = userCache.get(email);
     } else {
       // If caching is OFF, fall back to the original direct database call.
-      maybeUser = tm().transact(() -> tm().loadByKeyIfPresent(VKey.create(User.class, email)));
+      maybeUser = loadUser(email);
     }
 
     stopwatch.tick("OidcTokenAuthenticationMechanism maybeUser loaded");
