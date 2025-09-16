@@ -161,9 +161,6 @@ public class RegistryConfigSettings {
     public int eppResourceCachingSeconds;
     public int eppResourceMaxCachedEntries;
     public int claimsListCachingSeconds;
-    public boolean userAuthCachingEnabled;
-    public int userAuthCachingSeconds;
-    public int userAuthMaxCachedEntries;
   }
 
   /** Configuration for ICANN monthly reporting. */

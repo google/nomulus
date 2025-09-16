@@ -15,20 +15,14 @@
 package google.registry.request.auth;
 
 import static com.google.common.base.Preconditions.checkState;
-import static google.registry.config.RegistryConfig.getUserAuthCachingDuration;
-import static google.registry.config.RegistryConfig.getUserAuthCachingEnabled;
-import static google.registry.config.RegistryConfig.getUserAuthMaxCachedEntries;
-import static google.registry.model.CacheUtils.newCacheBuilder;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
-import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.google.api.client.json.webtoken.JsonWebSignature;
 import com.google.auth.oauth2.TokenVerifier.VerificationException;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.flogger.FluentLogger;
-import google.registry.config.RegistryConfig;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.model.console.User;
 import google.registry.persistence.VKey;
@@ -77,40 +71,6 @@ public abstract class OidcTokenAuthenticationMechanism implements Authentication
     this.tokenVerifier = tokenVerifier;
   }
 
-  /**
-   * An in-memory cache for User entities, built using the project's standard utility.
-   *
-   * <p>This cache reduces database load by temporarily storing User objects after they are fetched.
-   * It is configured to cache negative results (i.e., when a user is not found) to prevent repeated
-   * lookups for invalid users. The cache's behavior (enabled, expiry, size) is controlled by
-   * settings in {@link RegistryConfig}.
-   */
-  @VisibleForTesting
-  static LoadingCache<String, Optional<User>> userCache =
-      newCacheBuilder(getUserAuthCachingDuration())
-          .maximumSize(getUserAuthMaxCachedEntries())
-          .build(OidcTokenAuthenticationMechanism::loadUser);
-
-  /**
-   * A loader function that defines how to fetch a User from the database on a cache miss.
-   *
-   * <p>This is the single point of entry to the database for this authentication flow. It will only
-   * be invoked by the cache when a requested user is not already in memory.
-   */
-  @VisibleForTesting
-  static Optional<User> loadUser(String email) {
-    VKey<User> userVKey = VKey.create(User.class, email);
-    return tm().transact(() -> tm().loadByKeyIfPresent(userVKey));
-  }
-
-  @VisibleForTesting
-  public static void setCacheForTesting(LoadingCache<String, Optional<User>> cache) {
-    checkState(
-        RegistryEnvironment.get() == RegistryEnvironment.UNITTEST,
-        "Cannot set cache outside of a test environment");
-    OidcTokenAuthenticationMechanism.userCache = cache;
-  }
-
   @Override
   public AuthResult authenticate(HttpServletRequest request) {
     if (RegistryEnvironment.get().equals(RegistryEnvironment.UNITTEST)
@@ -152,24 +112,18 @@ public abstract class OidcTokenAuthenticationMechanism implements Authentication
       logger.atInfo().log("No email address from the OIDC token:\n%s", token.getPayload());
       return AuthResult.NOT_AUTHENTICATED;
     }
-    Optional<User> maybeUser;
-    if (getUserAuthCachingEnabled()) {
-      // If caching is ON, use the cache.
-      maybeUser = userCache.get(email);
-    } else {
-      // If caching is OFF, fall back to the original direct database call.
-      maybeUser = loadUser(email);
+    if (serviceAccountEmails.stream().anyMatch(e -> e.equals(email))) {
+      return AuthResult.createApp(email);
     }
-
+    logger.atInfo().log("No service account found for email address %s, loading the User", email);
+    Optional<User> maybeUser =
+        tm().transact(() -> tm().loadByKeyIfPresent(VKey.create(User.class, email)));
     stopwatch.tick("OidcTokenAuthenticationMechanism maybeUser loaded");
     if (maybeUser.isPresent()) {
       return AuthResult.createUser(maybeUser.get());
     }
     logger.atInfo().log("No end user found for email address %s", email);
-    if (serviceAccountEmails.stream().anyMatch(e -> e.equals(email))) {
-      return AuthResult.createApp(email);
-    }
-    logger.atInfo().log("No service account found for email address %s", email);
+
     logger.atWarning().log(
         "The email address %s is not tied to a principal with access to Nomulus", email);
     return AuthResult.NOT_AUTHENTICATED;

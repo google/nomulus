@@ -16,20 +16,13 @@ package google.registry.request.auth;
 
 import static com.google.common.net.HttpHeaders.AUTHORIZATION;
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.config.RegistryConfig.getUserAuthCachingDuration;
-import static google.registry.config.RegistryConfig.getUserAuthMaxCachedEntries;
 import static google.registry.request.auth.AuthModule.BEARER_PREFIX;
 import static google.registry.request.auth.AuthModule.IAP_HEADER_NAME;
 import static google.registry.testing.DatabaseHelper.createAdminUser;
 import static google.registry.testing.DatabaseHelper.persistResource;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken.Payload;
 import com.google.api.client.json.webtoken.JsonWebSignature;
 import com.google.api.client.json.webtoken.JsonWebSignature.Header;
@@ -40,9 +33,7 @@ import dagger.Component;
 import dagger.Module;
 import dagger.Provides;
 import google.registry.config.CredentialModule.ApplicationDefaultCredential;
-import google.registry.config.RegistryConfig;
 import google.registry.config.RegistryConfig.Config;
-import google.registry.model.CacheUtils;
 import google.registry.model.console.GlobalRole;
 import google.registry.model.console.User;
 import google.registry.model.console.UserRoles;
@@ -53,7 +44,6 @@ import google.registry.request.auth.OidcTokenAuthenticationMechanism.RegularOidc
 import google.registry.util.GoogleCredentialsBundle;
 import jakarta.inject.Singleton;
 import jakarta.servlet.http.HttpServletRequest;
-import java.util.Optional;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -88,12 +78,6 @@ public class OidcTokenAuthenticationMechanismTest {
 
   @BeforeEach
   void beforeEach() throws Exception {
-    // 1. Create a brand new cache.
-    LoadingCache<String, Optional<User>> testCache =
-        CacheUtils.newCacheBuilder(getUserAuthCachingDuration())
-            .maximumSize(getUserAuthMaxCachedEntries())
-            .build(OidcTokenAuthenticationMechanism::loadUser);
-    OidcTokenAuthenticationMechanism.setCacheForTesting(testCache);
     payload.setEmail(email);
     payload.setSubject(gaiaId);
     user = createAdminUser(email);
@@ -167,8 +151,7 @@ public class OidcTokenAuthenticationMechanismTest {
     payload.setEmail("service@email.test");
     authResult = authenticationMechanism.authenticate(request);
     assertThat(authResult.isAuthenticated()).isTrue();
-    assertThat(authResult.authLevel()).isEqualTo(AuthLevel.USER);
-    assertThat(authResult.user().get()).isEqualTo(serviceUser);
+    assertThat(authResult.authLevel()).isEqualTo(AuthLevel.APP);
   }
 
   @Test
@@ -206,62 +189,6 @@ public class OidcTokenAuthenticationMechanismTest {
   private void useRegularOidcMechanism() {
     TestComponent component = DaggerOidcTokenAuthenticationMechanismTest_TestComponent.create();
     authenticationMechanism = component.regularOidcAuthenticationMechanism();
-  }
-
-  @Test
-  void testAuthenticate_ExistentUser_isCached() {
-    // Arrange: Create a spy of the actual cache object.
-    // A spy calls the real methods of the object while allowing us to verify interactions.
-    LoadingCache<String, Optional<User>> spiedCache =
-        spy(OidcTokenAuthenticationMechanism.userCache);
-    OidcTokenAuthenticationMechanism.setCacheForTesting(spiedCache);
-
-    // Act: Call the authenticate method.
-    authenticationMechanism.authenticate(request);
-
-    // Assert: Verify that the cache's "get" method was called exactly once.
-    // This confirms the cache is being used without checking its internal stats.
-    verify(spiedCache).get(email);
-  }
-
-  @Test
-  void testAuthenticate_nonExistentUser_isCached() {
-    // Arrange: Use an email that is not in the test database.
-
-    payload.setEmail(unknownEmail);
-
-    LoadingCache<String, Optional<User>> spiedCache =
-        spy(OidcTokenAuthenticationMechanism.userCache);
-    OidcTokenAuthenticationMechanism.setCacheForTesting(spiedCache);
-    // Act: Call the authenticate method.
-    authenticationMechanism.authenticate(request);
-
-    // Assert: Verify that the cache's "get" method was called for the unverified email.
-    // This confirms that we attempted to look up the unknown user in the cache.
-    verify(spiedCache).get(unknownEmail);
-  }
-
-  @Test
-  void testAuthenticate_whenCacheIsDisabled_cacheIsNotUsed() {
-    // Arrange: Explicitly disable the cache and create a spy.
-    RegistryConfig.overrideIsUserAuthCachingEnabledForTesting(false);
-    LoadingCache<String, Optional<User>> spiedCache =
-        spy(OidcTokenAuthenticationMechanism.userCache);
-    OidcTokenAuthenticationMechanism.setCacheForTesting(spiedCache);
-
-    // Act: Authenticate the user.
-    AuthResult authResult = authenticationMechanism.authenticate(request);
-
-    // Assert: The authentication should still succeed because the code falls back
-    // to the direct database call.
-    assertThat(authResult.isAuthenticated()).isTrue();
-
-    // Assert: Crucially, verify that the cache's "get" method was NEVER called.
-    // This proves the cache was correctly bypassed.
-    verify(spiedCache, never()).get(any(String.class));
-
-    // Teardown: Restore the default setting for other tests.
-    RegistryConfig.overrideIsUserAuthCachingEnabledForTesting(true);
   }
 
   @Singleton
@@ -308,13 +235,5 @@ public class OidcTokenAuthenticationMechanismTest {
     GoogleCredentialsBundle provideGoogleCredentialBundle() {
       return GoogleCredentialsBundle.create(GoogleCredentials.newBuilder().build());
     }
-  }
-
-  private void reinitializeCache() {
-    OidcTokenAuthenticationMechanism.userCache =
-        CacheUtils.newCacheBuilder(getUserAuthCachingDuration())
-            .maximumSize(getUserAuthMaxCachedEntries())
-            .recordStats()
-            .build(OidcTokenAuthenticationMechanism::loadUser);
   }
 }
