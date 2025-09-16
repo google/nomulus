@@ -23,6 +23,7 @@ import google.registry.batch.DeleteLoadTestDataAction;
 import google.registry.batch.DeleteProberDataAction;
 import google.registry.batch.ExpandBillingRecurrencesAction;
 import google.registry.batch.RelockDomainAction;
+import google.registry.batch.RemoveAllDomainContactsAction;
 import google.registry.batch.ResaveAllEppResourcesPipelineAction;
 import google.registry.batch.ResaveEntityAction;
 import google.registry.batch.SendExpiringCertificateNotificationEmailAction;
@@ -269,6 +270,8 @@ interface RequestComponent {
   ReadinessProbeActionPubApi readinessProbeActionPubApi();
 
   ReadinessProbeActionFrontend readinessProbeActionFrontend();
+
+  RemoveAllDomainContactsAction removeAllDomainContactsAction();
 
   RdapAutnumAction rdapAutnumAction();
 

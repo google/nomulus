@@ -26,6 +26,7 @@ BACKEND /_dr/task/rdeUpload                                RdeUploadAction      
 BACKEND /_dr/task/readDnsRefreshRequests                   ReadDnsRefreshRequestsAction                   POST     y  APP ADMIN
 BACKEND /_dr/task/refreshDnsOnHostRename                   RefreshDnsOnHostRenameAction                   POST     n  APP ADMIN
 BACKEND /_dr/task/relockDomain                             RelockDomainAction                             POST     y  APP ADMIN
+BACKEND /_dr/task/removeAllDomainContacts                  RemoveAllDomainContactsAction                  POST     n  APP ADMIN
 BACKEND /_dr/task/resaveAllEppResourcesPipeline            ResaveAllEppResourcesPipelineAction            GET      n  APP ADMIN
 BACKEND /_dr/task/resaveEntity                             ResaveEntityAction                             POST     n  APP ADMIN
 BACKEND /_dr/task/sendExpiringCertificateNotificationEmail SendExpiringCertificateNotificationEmailAction GET      n  APP ADMIN
