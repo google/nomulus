@@ -112,7 +112,12 @@ public abstract class OidcTokenAuthenticationMechanism implements Authentication
       logger.atInfo().log("No email address from the OIDC token:\n%s", token.getPayload());
       return AuthResult.NOT_AUTHENTICATED;
     }
-    if (serviceAccountEmails.stream().anyMatch(e -> e.equals(email))) {
+    // Short-circuit the user lookup for the proxy service account.
+    // The vast majority of authentication requests are from the proxy service
+    // account for EPP "hello" and "login" commands. This check bypasses
+    // the database lookup for these high-volume requests.
+
+    if (serviceAccountEmails.contains(email)) {
       return AuthResult.createApp(email);
     }
     logger.atInfo().log("No service account found for email address %s, loading the User", email);
