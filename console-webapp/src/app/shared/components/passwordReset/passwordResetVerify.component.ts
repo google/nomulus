@@ -24,6 +24,7 @@ import {
   PasswordResults,
 } from './passwordInputForm.component';
 import EppPasswordEditComponent from 'src/app/settings/security/eppPasswordEdit.component';
+import { MatSnackBar } from '@angular/material/snack-bar';
 
 export interface PasswordResetVerifyResponse {
   registrarId: string;
@@ -54,7 +55,8 @@ export class PasswordResetVerifyComponent {
     protected backendService: BackendService,
     protected registrarService: RegistrarService,
     private route: ActivatedRoute,
-    private router: Router
+    private router: Router,
+    private _snackBar: MatSnackBar
   ) {}
 
   ngOnInit() {
@@ -99,7 +101,10 @@ export class PasswordResetVerifyComponent {
           this.isLoading = false;
           this.errorMessage = err.error;
         },
-        next: (_) => this.router.navigate(['']),
+        next: (_) => {
+          this.router.navigate(['']);
+          this._snackBar.open('Password reset completed successfully');
+        },
       });
   }
 }
