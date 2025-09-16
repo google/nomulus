@@ -1,0 +1,22 @@
+<epp xmlns="urn:ietf:params:xml:ns:epp-1.0">
+  <command>
+    <update>
+      <domain:update xmlns:domain="urn:ietf:params:xml:ns:domain-1.0" xsi:schemaLocation="urn:ietf:params:xml:ns:domain-1.0 domain-1.0.xsd">
+        <domain:name>%DOMAIN%</domain:name>
+        <domain:rem>
+          %CONTACTS%
+        </domain:rem>
+        <domain:chg>
+          <domain:registrant/>
+        </domain:chg>
+      </domain:update>
+    </update>
+    <extension>
+      <metadata:metadata xmlns:metadata="urn:google:params:xml:ns:metadata-1.0">
+        <metadata:reason>Registry minimum data set phase 3: Removed all contacts from domain.</metadata:reason>
+        <metadata:requestedByRegistrar>false</metadata:requestedByRegistrar>
+      </metadata:metadata>
+    </extension>
+    <clTRID>ABC-12345</clTRID>
+  </command>
+</epp>
