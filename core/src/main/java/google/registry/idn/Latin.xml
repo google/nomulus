@@ -1,0 +1,954 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<lgr xmlns="urn:ietf:params:xml:ns:lgr-1.0">
+  <meta>
+    <version comment="Second Level Reference LGR">1</version>
+    <date>2024-10-25</date>
+    <language>und-Latn</language>
+    <unicode-version>11.0.0</unicode-version>
+    <description type="text/html"><![CDATA[
+       <div class="instructions">
+<h2>INSTRUCTIONS</h2>
+  <ul>
+    <li>These instructions cover how to adopt an LGR based on this reference LGR for a given
+    zone and how to prepare the file for deposit in the IANA Repository of IDN Practices.</li>
+    <li>As described  the IANA procedure (https://www.iana.org/help/idn-repository-procedure) an 
+    LGR MUST contain the following elements in its header:
+      <ul style="list-style-type:square;">
+        <li>Script or Language Designator (see below for guidance) </li>
+        <li>Version Number (this must increase with each amendment to the LGR, even if the updates 
+            are limited to the header itself) </li>
+        <li>Effective Date (the date at which the policy becomes applicable in operational use) </li>
+        <li>Registry Contact Details (contact name, email address, and/or phone number)</li>
+      </ul>
+    </li>
+    <li>The following information is optional:
+    <ul style="list-style-type:square;">
+    <li>Document creation date</li>
+    <li>Applicable Domain(s)</li>
+    <li>Changes made to the Reference LGR before adopting</li>
+    </ul>
+    </li>
+  </ul>
+  <p>Please add or modify the following items in the <b>XML source code for this file</b> before 
+  depositing the document in the IANA Repository. (https://www.iana.org/domains/idn-tables)</p>
+<h3>Meta Data</h3>
+<p>Note: version numbers start at 1. RFC 7940 recommends using simple integers. The version comment is optional, 
+   please replace or delete the default comment. Version comments may be used by some tools as part of the page header.</p>
+  <p><code>&lt;version comment=&quot;</code>[Please replace (or delete) the optional comment]<code>&quot;&gt;</code>[Please fill in version number, starting at 1]<code>&lt;/version&gt;</code></p>
+  <p><code>&lt;date&gt;</code>[Please fill in with publication date, in YYYY-MM-DD format]<code>&lt;/date&gt;</code></p>
+  <p><code>&lt;validity-start&gt;</code>[Please fill in effective date, in YYYY-MM-DD format]<code>&lt;/validity-start&gt;</code></p>
+  <p>Note: the scope element may be repeated, so that the same document can serve for multiple domains.</p>
+  <p><code>&lt;scope type=&quot;domain&quot;&gt;</code>[Please provide, in &quot;.domain&quot; format]<code>&lt;/scope&gt;</code></p>
+<p><strong>Registry Contact Information:</strong></p>
+  <p>Please fill in the <a href="#registry_contact_details">Registry Contact Details</a>.</p>
+<p><strong>Change History</strong></p>
+  <p>If you made technical modifications to the LGR, please summarize them in the <a href="#change_history">Change History</a> (and also note the details in the appropriate section of the description).</p>
+<p>PLEASE DELETE THESE INSTRUCTIONS BEFORE DEPOSITING THE DOCUMENT</p></div>
+       
+       <section id="registry_contact_details">
+<h2>Registry Contact Details</h2>
+<ul style="list-style:none;">
+<li><b>Contact Name:</b> [Please fill in Contact Name]</li>
+<li><b>Email address:</b> [Please fill in Email address]</li>
+<li><b>Phone Number:</b> [Please fill in optional Phone Number]</li>
+</ul>
+</section>
+
+    <h1>Label Generation Rules for the Latin Script</h1>
+
+    <h2>Overview</h2>
+
+    <p>This document specifies a set of Label Generation Rules (LGR) for the Latin script for the second level domain or domains identified above. 
+    The starting point for the development of this LGR can be found in the related Root Zone LGR [RZ-LGR-Latn]. 
+    The format of this file follows [RFC 7940].
+    This LGR is adapted from the “Reference LGR for the Second Level for the Latin Script” [Ref-LGR-und-Latn], for details, see <a href="#change_history">Change History</a> below.</p>
+
+    <p>For details and additional background on the Latin script, see “Proposal for a Latin Script Root Zone Label Generation Rule-Set (LGR)” [Proposal-Latin].</p>
+
+    <h2>Repertoire</h2>
+
+    <p>The repertoire contains the 197 letters needed to write hundreds of languages in the Latin script.
+     An additional 7   combining diacritical marks are available as part of 21 explicitly defined combining sequences.
+     The repertoire is a subset of [Unicode 11.0.0]. For details, see Section 5, “Repertoire” in [Proposal-Latin].
+        (The proposal cited has been adopted for the Latin script portion of the Root Zone LGR.)</p>
+
+    <p>
+    Compared to that source,    an additional language is supported by adding the code point for the Middle Dot used
+    in the  Catalan Ela Geminada:    U+006C U+00B7 U+006C. Context rules limit U+00B7 MIDDLE DOT to being bracketed
+    by the letter “l”. (See also [280])</p>
+
+    <p>For the second level, the repertoire has been augmented with the ASCII digits, U+0030 to U+0039, plus U+002D HYPHEN-MINUS, for a total of 231 repertoire elements.</p>
+
+    <p>Any code points outside the Latin Script repertoire that are targets for
+     out-of-repertoire variants would be included here only if the variant is listed 
+     in this file. In this case they are identified as a reflexive (identity) variant
+     of type “out-of-repertoire-var”. Whether or not they are listed, they do not 
+     form part of the repertoire.</p>
+    
+    <p><b>Repertoire Listing:</b> Each code point or range is tagged with the script or scripts with which the code point is used and one or more other character categories. For each repertoire element,
+      one or more references document sufficient justification for inclusion in the repertoire; see the <a href="#ref_desc_sec_References">“References”</a> below.
+    For code points that are part of the repertoire, comments identify the languages using the code point along with their [EGIDS] level.</p>
+
+    <h3>Background on Script and Principal Languages Using It</h3>
+    <p>The Latin script is a major writing system of the world, and the most widely used in terms of 
+    the number of languages and speakers, with circa 70% of the world’s readers and writers making use of 
+    this script. From a list of 1,189 languages using the Latin script [Omniglot]
+    the 212 languages   that were taken into consideration contain all 182 languages with [EGIDS] 
+    level 1&ndash;4 together with many languages with EGIDS level 5, each spoken by more than 
+    1 million estimated speakers. Altogether over 100 languages are cited here to justify 
+    specific additions to the repertoire, but many other languages may also be written using 
+    some subset of the repertoire of this LGR. In a few cases, code points were excluded in [MSR-5] due to 
+    security concerns; for the affected languages, only a subrepertoire could be supported.
+    More details in Section 3, “Background on Script and Principal Languages Using It” 
+    of [Proposal-Latin].</p>
+
+    <h2>Variants</h2>
+
+    <p>The variants defined in this LGR are limited to those required for use in zones not shared with any other script. 
+    As such, this LGR does not define cross-script variants. However, using this LGR concurrently with any LGR for Armenian, Cyrillic, and Greek in the same zone will introduce some in-script variants due to cross-script variant transitivity. This will also create potential cross-script issues when used with the same LGRs. 
+    For details, see Section 6, “Variants” in [Proposal-Latin].
+     Mitigation of these in-script and cross-script variants can be addressed by using the Common LGR. 
+     For details, see Section 3, “Use of Multiple Reference LGRs in the Same Zone” in [Level-2-Overview].
+     In addition to variants defined by this LGR, the full variant information related to this script and added by concurrent use with the Armenian, Cyrillic, and Greek LGR(s) can be found 
+     in the following LGR: [Ref-LGR-Latin-Full-Variant-Script]
+    </p>
+    
+    <p>In particular, the Latin LGR contains a number of in-script variants resulting from transitivity with
+    variants needed if the LGR is used concurrently with other LGRs from the related scripts, primarily
+    due to variants with the Greek script. 
+    These variant definitions are required when using this LGR together with the Common LGR in label processing, 
+    but they also reflect a certain consistency in the approach to variants across typographically related scripts.
+    They can be removed if the LGR is used strictly as standalone.<p>
+
+    <p>All other in-script variants defined in this LGR largely follow the methodology defined in
+    Section 6, “Variants”, in [Proposal-Latin]. In a separate appendix  that proposal identifies additional 
+    candidates for visually confusable code points (see [Proposal-Latin-Appendices]). They provide data 
+    on the basis of which additional variants, or fallback variants (see following) might be defined. However, 
+    doing so would require additional review and analysis that has not been carried out for this version of the 
+    LGR.</p>
+
+    <p>The LGR defines certain allocatable fallback variants as
+    described in Section 4.5.5 “Allocatable Fallback Variants” in [Level-2-Overview]. A fallback variant is a variant label that uses 
+    substitute code points for code points or sequences not available (or not allowed) in some contexts, that would 
+    otherwise be required for a linguistically accurate rendering of some label.</p>
+
+    <p>When “fallback” variants are defined, two labels may be allocated: a single label with the spelling preferred by the 
+    applicant, plus a single fallback variant for that label. 
+    The fallback exclusively uses the fallback characters for any characters for which fallbacks are defined, while the
+    “preferred” label may use any otherwise valid mix of code points. 
+    If the fallback variant is the one applied for, no other variant label is allocatable.</p>
+
+    <p>An allocatable fallback variant exists for the following pairs where the second element of each pair is the fallback:</p>
+
+    <ul>
+    
+    <li><p><b>U+00B7 MIDDLE DOT and U+002D HYPHEN-MINUS</b> &mdash; 
+        the use of the hyphen as fallback for the middle dot in the Catalan Ela Geminada follows registry practice, see [281]. 
+        The variant is limited to an Ela Geminada context.</p></li>
+    <li><b>U+00DF LATIN SMALL LETTER SHARP S and the sequence of two letters “ss” (U+0073 U+0073)</b> &mdash;
+     IDNA2003 Compatibility: in IDNA2003, U+00DF LATIN SMALL LETTER SHARP S is mapped into “ss” (U+0073 U+0073).
+     Note: the fallback is also used outside domain names, but also used in locale variants of German and the 
+     standard spelling.</li>
+    <li><b>U+0131 LATIN SMALL LETTER DOTLESS I and U+0069 LATIN SMALL LETTER I</b>  &mdash;
+     IDNA2003 Compatibility: in IDNA2003, U+0131 LATIN SMALL LETTER DOTLESS I is mapped into 
+     U+0069 LATIN SMALL LETTER I.</li>
+    </ul>
+
+    <p>Some second level LGRs provide ASCII fallback variants for some or all accented Latin characters. 
+    Likewise the U+0153 Small OE Ligature and U+00E6 Small AE ligature have ASCII fallbacks consisting of the
+    non-ligated “oe” and “ae” sequences. None of these fallbacks have been added to the current version of the LGR.</p>
+
+    <p><b>Overlapped Variant Sequence:</b> Both “ss” and “s” coexist in the repertoire and “s” has variant 
+    relationships on its own. These variants thus overlap: making the variant set well-behaved for
+    index variant calculation requires that the sequence “ss” also be given variants to all permutations of 
+    variants for the letter s followed by itself, as well as all transitive variants due to other variants 
+    for U+00DF.</p>
+
+    <h3>In-script Variant Mapping Types</h3>
+    <p>In each of the fallback variant pairs defined above, the mapping type from the first element to the second is of type
+    “fallback”, while the variant type for the other direction is “blocked”. In addition, the first element of each pair uses the
+    reflexive mapping “r-original”.
+     (By convention, the prefix “r-” marks a type used in a reflexive variant mapping, that is, it represents an instance 
+     of the original code point at that location in a variant label, see Section 5.3.4 in [RFC 7940].)</p>
+
+    <p><b>Variant Disposition:</b> Except for limited exceptions for the fallback variants defined above, variants defined here result
+    in a variant label disposition of “blocked”.</p>
+    
+    <p>The specification of variants in this LGR follows the guidelines in [RFC 8228].</p>
+
+    <h2>Character Classes</h2>
+    <p>This LGR does not define named character classes.</p>
+    
+    <h2>Whole Label Evaluation (WLE) and Context rules</h2>
+
+   <h3>Default Whole Label Evaluation Rules and Actions</h3>
+
+    <p>By default, the LGR includes the rules and actions to implement the following restrictions mandated by the IDNA protocol. They are marked with &#x235F;.</p>
+       <ul>
+       <li><b>Hyphen Restrictions</b> &mdash; restrictions on the allowable placement of hyphens (no leading/ending hyphen
+             and no hyphen in positions 3 and 4). These restrictions are described in Section 4.2.3.1 of RFC 5891 [320]. 
+             They are implemented here as context rule on U+002D (-) HYPHEN-MINUS.</li>
+          <li><b>Leading Combining Marks</b>   &mdash;  restrictions on the allowable placement of combining marks
+             (no leading combining mark). This rule is described in Section 4.2.3.2 of RFC 5891 [320].</li>
+       </ul>
+
+    <h3>Latin-specific Rules</h3>
+
+    <p>The following context rule applies to U+00B7 MIDDLE DOT and its variants. 
+    It ensures that the middle dot is part of an Ela Geminada sequence and variants between it and HYPHEN-MINUS are only defined in that context.</p>
+    <ul>
+    <li><b>surrounded-by-L</b> &mdash; code points are invalid and variants undefined when not surrounded by “l”</li>
+    </ul>
+
+    <p>The following WLE rule invalidates labels in which two Ela Geminada sequences overlap.</p>
+    <ul>
+    <li><b>dot-L-dot</b> &mdash; labels sharing a single “l” with two different middle dots are invalid</li>
+    </ul>
+
+    <h2>Actions</h2>
+
+    <h3>Default Actions</h3>
+
+    <p>This LGR includes the default actions for LGRs as well as the action needed to
+        invalidate labels with misplaced combining marks. They are marked with &#x235F;.
+        For a description see [RFC 7940].</p>
+
+    <p>Because this LGR defines allocatable fallback variants the following default actions are applicable.</p>
+
+    <ul>
+    <li><b>blocked</b> &mdash;  a variant label containing a blocked variant will receive a disposition of “blocked”.</li>
+    <li><b>r-original</b> &mdash; a label containing one or more of this reflexive variant type 
+       and no others represents an original label 
+       and receives a disposition of “valid”.</li>
+    <li><b>fallback</b> &mdash; a label containing one or more of these variant types and no others 
+       represents a label that contains only fallback variants
+       and receives a disposition of “allocatable”.</li> 
+    <li><b>fallback plus other</b> &mdash; any label remaining containing both this variant type and any others
+        receives a disposition of “blocked”.</li>
+    </ul>
+    <p>These actions resolve as “allocatable” any label where all variants are of type “fallback”, and as “valid” any label 
+    where all variants are of type “r-original”. Labels with a mix of variant types are resolved as “blocked”.</p>
+    
+    <p>To account for original code points in a permuted variant, reflexive variant 
+    mappings with an “r-” prefix are used. (See [RFC 7940]). 
+    In particular, the mapping type “r-original” is given to any code point that has a fallback mapping, 
+    but that appears in its non-fallback form in the original label, and thus “maps to itself”.</p>
+
+     <p>Default actions that are
+     triggered by the LGR-specific variant types described above limit the “allocatable” variant
+     labels to those containing only “ss”, dotted “i” or hyphen variants, while
+     disallowing mixed use of “ss” and “ß”, Dotless i and “i”, or middle-dot and hyphen respectively, except
+     as in the original applied-for label.</p>
+
+    <p>Note that the mapping types for variants are not symmetric: they depend on which code point is considered
+     the source or the target in a given mapping. As specified in [RFC 7940], when mapping types are evaluated
+     code points in a label that are unchanged use the type of their “reflexive” mapping. 
+     Per [RFC 7940] the actions are always applied one after the other, and the evaluation stops at the first 
+     action that assigns a disposition to a given label.</p>
+    
+    <h3>Script-specific Actions</h3>
+    <p>An action has been defined to invalidate labels containing the sequence U+00B7 U+006C U+00B7 which could otherwise result in two Ela Geminada sequences overlapping.</p>
+
+    <h2>Methodology and Contributors</h2>
+    
+    <p>The LGR in this document has been adapted from the corresponding Reference LGR for the Second Level. The Second Level Reference LGR for the Latin Script was developed by Michel Suignard and Asmus Freytag, based on the Root Zone LGR for the Latin 
+       script and information contained or referenced therein; see [RZ-LGR-Latn]. Suitable extensions for the second level have been applied according to the [Guidelines] and with community input. 
+       The original proposal for a Root Zone LGR for the Latin script, that this LGR is based on, was developed by the Latin Generation Panel. 
+       For more information on methodology and contributors to the underlying Root Zone LGR, see Sections 4 and 8 in [Proposal-Latin], as well as [RZ-LGR-Overview].</p>
+
+    <section id="change_history">
+    <h3>Changes from Version Dated 25 October 2024</h3>
+        <p>Adopted from the Second Level Reference LGR for the Latin Script [Ref-LGR-und-Latn] without normative changes.</p>
+    </section>
+    
+    <h2>References</h2> 
+    <p>The following general references are cited in this document:</p>
+    <dl class="references">
+    <dt>[EGIDS]</dt>
+    <dd>Lewis and Simons, “EGIDS: Expanded Graded Intergenerational Disruption Scale,”
+      documented in [SIL-Ethnologue] and summarized here:
+      https://en.wikipedia.org/wiki/Expanded_Graded_Intergenerational_Disruption_Scale_(EGIDS)</dd>
+
+    <dt>[Guidelines]</dt>
+    <dd>ICANN, “Guidelines for Developing Reference LGRs for the Second Level”, (Los Angeles, California: ICANN, 27 May 2020), https://www.icann.org/en/system/files/files/lgr-guidelines-second-level-27may20-en.pdf</dd>
+
+    <dt>[Level-2-Overview]</dt>
+    <dd>Internet Corporation for Assigned Names and Numbers, (ICANN),“Reference Label Generation Rules (LGR) for the Second Level: Overview and Summary” (PDF), 
+     (Los Angeles, California: ICANN, 25 October 2024), https://www.icann.org/en/system/files/files/level2-lgr-overview-summary-25oct24-en.pdf
+      </dd>
+    
+    <dt>[MSR-5]</dt>
+    <dd>Integration Panel, “Maximal Starting Repertoire — MSR-5 Overview and Rationale”, 24 June 2021,
+     https://www.icann.org/en/system/files/files/msr-5-overview-24jun21-en.pdf</dd>
+
+    <dt>[Omniglot]</dt>
+    <dd>Omniglot, “Writing Systems by Language”, https://www.omniglot.com/writing/langalph.htm (accessed on 13 January 2022)</dd>
+
+    <dt>[Proposal-Latin]</dt> 
+    <dd>Latin Generation Panel, “Proposal for a Latin Script Root Zone Label Generation Rule-Set (LGR)”, 27 January 2022 (PDF), https://www.icann.org/en/system/files/files/proposal-latin-lgr-27jan22-en.pdf</dd>
+
+    <dt>[Proposal-Latin-Appendices]</dt> 
+    <dd>Appendices to   “Proposal for a Latin Script Root Zone Label Generation Rule-Set (LGR)”, 
+    27 January 2022 (ZIP), https://www.icann.org/en/system/files/files/proposal-latin-lgr-appendices-27jan22-en.zip</dd>
+
+    <dt>[Ref-LGR-und-Latn]</dt>
+    <dd>ICANN, Second Level Reference Label Generation Rules for the Latin Script (und-Latn), 25 October 2024 (XML)
+      https://www.icann.org/sites/default/files/packages/lgr/lgr-second-level-latin-script-25oct24-en.xml
+      non-normative HTML presentation: https://www.icann.org/sites/default/files/packages/lgr/lgr-second-level-latin-script-25oct24-en.html</dd>
+
+    <dt>[Ref-LGR-Latin-Full-Variant-Script]</dt>
+    <dd>ICANN, Second Level Reference Label Generation Rules for the Latin Script (und-Latn), 25 October 2024 (XML)
+      https://www.icann.org/sites/default/files/packages/lgr/lgr-second-level-latin-full-variant-script-25oct24-en.xml
+      non-normative HTML presentation: https://www.icann.org/sites/default/files/packages/lgr/lgr-second-level-latin-full-variant-script-25oct24-en.html</dd>
+
+    <dt>[RFC 7940]</dt>
+    <dd>Davies, K. and A. Freytag, “Representing Label Generation Rulesets Using XML”, 
+     RFC 7940, August 2016, https://www.rfc-editor.org/info/rfc7940</dd> 
+
+    <dt>[RFC 8228]</dt>
+    <dd>A. Freytag, “Guidance on Designing Label Generation Rulesets (LGRs) Supporting Variant Labels”, RFC 8228, August 2017,
+    https://www.rfc-editor.org/info/rfc8228</dd>
+
+    <dt>[RZ-LGR-Overview]</dt>
+    <dd>Integration Panel, “Root Zone Label Generation Rules (RZ LGR-5): Overview and Summary”, 26 May 2022 (PDF), https://www.icann.org/sites/default/files/lgr/rz-lgr-5-overview-26may22-en.pdf</dd>
+     
+    <dt>[RZ-LGR-5]</dt>
+    <dd>Integration Panel, “Root Zone Label Generation Rules (RZ-LGR-5)”, 26 May 2022 (XML), https://www.icann.org/sites/default/files/lgr/rz-lgr-5-common-26may22-en.xml <br/>
+     <i>non-normative HTML presentation: https://www.icann.org/sites/default/files/lgr/rz-lgr-5-common-26may22-en.html</i></dd>
+     
+    <dt>[RZ-LGR-Latn]</dt>
+    <dd>ICANN, Root Zone Label Generation Rules for the Latin Script (und-Latn), 26 May 2022 (XML)
+      https://www.icann.org/sites/default/files/lgr/rz-lgr-5-latin-script-26may22-en.xml</dd>
+
+    <dt>[SIL-Ethnologue]</dt>
+    <dd>David M. Eberhard, Gary F. Simons &amp; Charles D. Fennig (eds.). 2021.
+     Ethnologue: Languages of the World, Twenty fourth edition. Dallas, Texas: SIL
+     International. Online version available as https://www.ethnologue.com</dd>
+
+    <dt>[Unicode 11.0.0]</dt>
+    <dd>The Unicode Consortium. The Unicode Standard, Version 11.0.0, (Mountain View, CA: The Unicode Consortium, 2018. ISBN 978-1-936213-19-1) 
+     https://www.unicode.org/versions/Unicode11.0.0/</dd>
+    </dl>
+
+    <p>For references consulted particularly in designing the repertoire for the Latin Script for the second level 
+      please see details in the <a href="#table_of_references">Table of References</a> below.</p>
+
+     <p>References [0] and up refer to the Unicode Standard versions in which corresponding code points 
+     were initially encoded. References [101] and up correspond to a source given in [Proposal-Latin] for justifying 
+     the inclusion of the corresponding code points. In the listing of <a href="#whole_label_evaluation_and_context_rules">whole label evaluation and context rules</a>,
+     reference [320] indicates the source for common rules.</p>
+
+]]></description>
+    <references>
+      <reference id="0" comment="Any code point originally encoded in Unicode Version 1.1">The Unicode Standard, Version 1.1</reference>
+      <reference id="3" comment="Any code point originally encoded in Unicode Version 3.0">The Unicode Standard, Version 3.0</reference>
+      <reference id="8" comment="Any code point originally encoded in Unicode Version 5.0">The Unicode Standard, Version 5.0</reference>
+      <reference id="99" comment="Any code point cited is part of the Basic Latin (ASCII) set">C0 Controls and Basic Latin, The Unicode Standard https://unicode.org/charts/PDF/U0000.pdf</reference>
+      <reference id="100">ICANN, Second Level Reference Label Generation Rules for Spanish https://www.icann.org/sites/default/files/packages/lgr/lgr-second-level-spanish-30aug16-en.html (Accessed on 31 August 2018)</reference>
+      <reference id="101">Omniglot, Czech (čeština) https://www.omniglot.com/writing/czech.htm (Accessed on 31 August 2018)</reference>
+      <reference id="102">Omniglot, Icelandic (Íslenska) https://www.omniglot.com/writing/icelandic.htm (Accessed on 31 August 2018)</reference>
+      <reference id="103">Omniglot, Faroese (føroyskt mál) https://www.omniglot.com/writing/faroese.htm (Accessed on 31 August 2018)</reference>
+      <reference id="105">Omniglot, Chuukese (Chuuk) https://www.omniglot.com/writing/chuukese.htm (Accessed on 31 August 2018)</reference>
+      <reference id="106">ScriptSource, Galician written with Latin script https://scriptsource.org/cms/scripts/page.php?item_id=wrSys_detail&amp;key=gl-Latn (Accessed on 1 May 2023)</reference>
+      <reference id="107">Omniglot, Lule Sámi (julevsámegiella) https://www.omniglot.com/writing/lulesami.htm (Accessed on 31 August 2018)</reference>
+      <reference id="108">Wikipedia, Northern Sami https://en.wikipedia.org/wiki/Northern_Sami (Accessed on 4 September 2018)</reference>
+      <reference id="109">Omniglot, Vietnamese (tiếng việt / 㗂越) https://www.omniglot.com/writing/vietnamese.htm (Accessed on 4 September 2018)</reference>
+      <reference id="110">Omniglot, Romanian (limba română) https://www.omniglot.com/writing/romanian.htm (Accessed on 4 September 2018)</reference>
+      <reference id="113">Omniglot, Skolt Sámi (Sääˊmǩiõll / Nuõrttsää’m) https://www.omniglot.com/writing/skoltsami.htm (Accessed on 4 September 2018)</reference>
+      <reference id="114">Omniglot, French (français) https://www.omniglot.com/writing/french.htm (Accessed on 4 September 2018)</reference>
+      <reference id="115">Omniglot, West Frisian (Frysk) https://www.omniglot.com/writing/westfrisian.htm (Accessed on 4 September 2018)</reference>
+      <reference id="116">Omniglot, Friulian (furlan/marilenghe) https://www.omniglot.com/writing/friulian.htm (Accessed on 4 September 2018)</reference>
+      <reference id="117">Summer Institute of Linguistics, Pequeno dicionário: Xavante-Português, Português-Xavante https://www.sil.org/resources/archives/17019 (Accessed on 1 October 2020)</reference>
+      <reference id="119">Omniglot, German (Deutsch) https://www.omniglot.com/writing/german.htm (Accessed on 4 September 2018)</reference>
+      <reference id="120">Omniglot, Finnish (suomi) https://www.omniglot.com/writing/finnish.htm (Accessed on 4 September 2018)</reference>
+      <reference id="121">Omniglot, Turkmen (Türkmen dili / Түркмен дили) https://www.omniglot.com/writing/turkmen.htm (Accessed on 4 September 2018)</reference>
+      <reference id="122">Omniglot, Estonian (eesti keel) https://www.omniglot.com/writing/estonian.htm (Accessed on 4 September 2018)</reference>
+      <reference id="123">Omniglot, Swedish (svenska) https://www.omniglot.com/writing/swedish.htm (Accessed on 4 September 2018)</reference>
+      <reference id="124">Omniglot, Yapese (Waab) https://www.omniglot.com/writing/yapese.htm (Accessed on 4 September 2018)</reference>
+      <reference id="125">Omniglot, Dinka (Thuɔŋjäŋ) https://www.omniglot.com/writing/dinka.php (Accessed on 4 September 2018)</reference>
+      <reference id="126">Omniglot, Kaqchikel (Kaqchikel Ch’ab’äl) https://www.omniglot.com/writing/kaqchikel.htm (Accessed on 4 September 2018)</reference>
+      <reference id="127">Omniglot, Bashkir/Bashkort (Башҡорт теле / Başqort tele) https://www.omniglot.com/writing/bashkir.htm (Accessed on 4 September 2018)</reference>
+      <reference id="128">Omniglot, Alsatian (Ëlsässisch) https://www.omniglot.com/writing/alsatian.htm (Accessed on 4 September 2018)</reference>
+      <reference id="129">Wikipedia, Nuer language https://en.wikipedia.org/wiki/Nuer_language (Accessed on 4 September 2018)</reference>
+      <reference id="130">Omniglot, Italian (italiano) https://www.omniglot.com/writing/italian.htm (Accessed on 4 September 2018)</reference>
+      <reference id="131">Wikipedia, Italian orthography https://en.wikipedia.org/wiki/Italian_orthography (Accessed on 4 September 2018)</reference>
+      <reference id="132">Omniglot, Wolof (Wollof) https://www.omniglot.com/writing/wolof.htm (Accessed on 4 September 2018)</reference>
+      <reference id="133">Omniglot, Latvian (latviešu valoda) https://www.omniglot.com/writing/latvian.htm (Accessed on 4 September 2018)</reference>
+      <reference id="134">Omniglot, Tongan (Faka-Tonga) https://www.omniglot.com/writing/tongan.htm (Accessed on 4 September 2018)</reference>
+      <reference id="135">Omniglot, Hawaiian (ʻŌlelo Hawaiʻi) https://www.omniglot.com/writing/hawaiian.htm (Accessed on 4 September 2018)</reference>
+      <reference id="136">Omniglot, Marshallese (kajin m̧ajeļ) https://www.omniglot.com/writing/marshallese.php (Accessed on 4 September 2018)</reference>
+      <reference id="137">Omniglot, Polish (polski) https://www.omniglot.com/writing/polish.htm (Accessed on 4 September 2018)</reference>
+      <reference id="138">Omniglot, Lithuanian (lietuvių kalba) https://www.omniglot.com/writing/lithuanian.htm (Accessed on 4 September 2018)</reference>
+      <reference id="139">Omniglot, Danish (dansk) https://www.omniglot.com/writing/danish.htm (Accessed on 4 September 2018)</reference>
+      <reference id="140">Omniglot, Chamorro (chamoru) https://www.omniglot.com/writing/chamorro.htm (Accessed on 4 September 2018)</reference>
+      <reference id="141">Omniglot, Umbundu (Úmbúndú) https://www.omniglot.com/writing/umbundu.htm (Accessed on 4 September 2018)</reference>
+      <reference id="142">Omniglot, Guaraní (Avañe’ẽ) https://www.omniglot.com/writing/guarani.htm (Accessed on 4 September 2018)</reference>
+      <reference id="143">Wikipedia, Guarani alphabet https://en.wikipedia.org/wiki/Guarani_alphabet (Accessed on 4 September 2018)</reference>
+      <reference id="144">Omniglot, Nauruan (Ekaiairũ Naoero) https://www.omniglot.com/writing/nauruan.htm (Accessed on 4 September 2018)</reference>
+      <reference id="145">Omniglot, Khoekhoe (Khoekhoegowab) https://www.omniglot.com/writing/khoekhoe.htm (Accessed on 4 September 2018)</reference>
+      <reference id="146">Omniglot, Nuer (Naath) https://www.omniglot.com/writing/nuer.htm (Accessed on 4 September 2018)</reference>
+      <reference id="147">Omniglot, Hausa (Harshen Hausa / هَرْشَن هَوْسَ) https://www.omniglot.com/writing/hausa.htm  (Accessed on 4 September 2018)</reference>
+      <reference id="148">Omniglot, Dagaare https://www.omniglot.com/writing/dagaare.htm (Accessed on 4 September 2018)</reference>
+      <reference id="149">Omniglot, Fula (Fulfulde, Pulaar, Pular’Fulaare) https://www.omniglot.com/writing/fula.htm (Accessed on 4 September 2018)</reference>
+      <reference id="150">Omniglot, Croatian (Hrvatski) https://www.omniglot.com/writing/croatian.htm (Accessed on 4 September 2018)</reference>
+      <reference id="151">Omniglot, Serbian (српски / srpski) https://www.omniglot.com/writing/serbian.htm (Accessed on 4 September 2018)</reference>
+      <reference id="152">Wikipedia, Polish language https://en.wikipedia.org/wiki/Polish_language (Accessed on 4 September 2018)</reference>
+      <reference id="153">Omniglot, Slovak (slovenčina) https://www.omniglot.com/writing/slovak.htm (Accessed on 4 September 2018)</reference>
+      <reference id="154">Evertype Publishing, Lithuanian lietuvių kalba Version 1.1 https://www.evertype.com/alphabets/lithuanian.pdf (Accessed on 4 September 2018)</reference>
+      <reference id="157">Omniglot, Turkish (Türkçe) https://www.omniglot.com/writing/turkish.htm (Accessed on 4 September 2018)</reference>
+      <reference id="158">Omniglot, Kurdish (Kurdî / کوردی) https://www.omniglot.com/writing/kurdish.htm (Accessed on 4 September 2018)</reference>
+      <reference id="159">Omniglot, Azerbaijani (آذربايجانجا ديلي / Азәрбајҹан дили / Azərbaycan dili) https://www.omniglot.com/writing/azeri.htm (Accessed on 4 September 2018)</reference>
+      <reference id="160">Omniglot, Basque (euskara) https://www.omniglot.com/writing/basque.htm (Accessed on 4 September 2018)</reference>
+      <reference id="161">Wikipedia, Basque language https://en.wikipedia.org/wiki/Basque_language#Writing_system (Accessed on 4 September 2018)</reference>
+      <reference id="163">Omniglot, Maltese (Malti) https://www.omniglot.com/writing/maltese.htm (Accessed on 4 September 2018)</reference>
+      <reference id="164">Omniglot, Venda (Tshivenḓa / Luvenḓa) https://www.omniglot.com/writing/venda.htm (Accessed on 4 September 2018)</reference>
+      <reference id="168">Omniglot, Brahui (Bráhuí / براوی) https://www.omniglot.com/writing/brahui.htm (Accessed on 4 September 2018)</reference>
+      <reference id="169">Wikipedia, Fon language https://en.wikipedia.org/wiki/Fon_language  (Accessed on 4 September 2018)</reference>
+      <reference id="170">Omniglot, Ewe (Eʋegbe) https://www.omniglot.com/writing/ewe.htm (Accessed on 4 September 2018)</reference>
+      <reference id="172">Omniglot, Sorbian (hornjoserbsce/dolnoserbski) https://www.omniglot.com/writing/sorbian.htm (Accessed on 4 September 2018)</reference>
+      <reference id="173">Peace corps, Botswana, An Introduction to Setswana Language https://files.peacecorps.gov/multimedia/audio/languagelessons/botswana/Bw_Setswana_Language_Lessons.pdf (Accessed on 4 September 2018)</reference>
+      <reference id="174">Omniglot, Tswana (Setswana) https://www.omniglot.com/writing/tswana.php (Accessed on 4 September 2018)</reference>
+      <reference id="175">Wikipedia, Afrikaans https://en.wikipedia.org/wiki/Afrikaans (Accessed on 4 September 2018)</reference>
+      <reference id="176">Omniglot, Albanian (shqip / gjuha shqipe) https://www.omniglot.com/writing/albanian.htm (Accessed on 4 September 2018)</reference>
+      <reference id="177">Wikipedia, Albanian alphabet https://en.wikipedia.org/wiki/Albanian_alphabet (Accessed on 4 September 2018)</reference>
+      <reference id="179">Wikipedia, Uyghur Latin alphabet https://en.wikipedia.org/wiki/Uyghur_Latin_alphabet (Accessed on 4 September 2018)</reference>
+      <reference id="180">Omniglot, Drehu (Deʼu) https://www.omniglot.com/writing/drehu.php (Accessed on 4 September 2018)</reference>
+      <reference id="182">Omniglot, Haitian Creole (Kreyòl ayisyen) https://www.omniglot.com/writing/haitiancreole.htm (Accessed on 4 September 2018)</reference>
+      <reference id="183">Wikipedia, Haitian Creole https://en.wikipedia.org/wiki/Haitian_Creole#Orthography (Accessed on 4 September 2018)</reference>
+      <reference id="184">Omniglot, Minangkabau (Baso Minangkabau / باسو مينڠكاباو) https://www.omniglot.com/writing/minangkabau.htm (Accessed on 4 September 2018)</reference>
+      <reference id="185">Omniglot, Palauan (a tekoi er a Belau) https://www.omniglot.com/writing/palauan.htm (Accessed on 4 September 2018)</reference>
+      <reference id="186">Omniglot, Cubeo (pãmié) https://www.omniglot.com/writing/cubeo.htm (Accessed on 4 September 2018)</reference>
+      <reference id="187">Editorial Alberto Lleras Camargo, Diccionario Ilustrado Bilingüe cubeo-español español-cubeo https://www.sil.org/system/files/reapdata/10/58/27/10582785843693992331766506069073895620/40337_01.pdf (Accessed on 4 September 2018)</reference>
+      <reference id="188">Omniglot, Inari Saami (Anarâškielâ) https://www.omniglot.com/writing/inarisami.htm (Accessed on 4 September 2018)</reference>
+      <reference id="189">Omniglot, Compiled by Wolfram Siegel, DAGBANI https://www.omniglot.com/charts/dagbani.pdf (Accessed on 4 September 2018)</reference>
+      <reference id="190">Omniglot, Ewondo https://www.omniglot.com/writing/ewondo.php (Accessed on 4 September 2018)</reference>
+      <reference id="191">Omniglot, Luganda (Oluganda) https://www.omniglot.com/writing/ganda.php (Accessed on 4 September 2018)</reference>
+      <reference id="192">Omniglot, Adzera https://www.omniglot.com/writing/adzera.htm (Accessed on 4 September 2018)</reference>
+      <reference id="193">Omniglot, Ga (Gã) https://www.omniglot.com/writing/ga.htm (Accessed on 4 September 2018)</reference>
+      <reference id="194">Omniglot, Duala (Duálá) https://www.omniglot.com/writing/duala.php (Accessed on 4 September 2018)</reference>
+      <reference id="195">Omniglot, Soga (Lusoga) https://www.omniglot.com/writing/soga.htm (Accessed on 4 September 2018)</reference>
+      <reference id="196">Omniglot, Alur (Lur) https://www.omniglot.com/writing/alur.htm (Accessed on 4 September 2018)</reference>
+      <reference id="197">Omniglot, Mandinka (Mandi’nka kango / لغة مندنكا) https://www.omniglot.com/writing/mandinka.htm (Accessed on 4 September 2018)</reference>
+      <reference id="198">Omniglot, Acholi (Lwo) https://www.omniglot.com/writing/acholi.htm (Accessed on 4 September 2018)</reference>
+      <reference id="199">Omniglot, Bambara (Bamanankan) https://www.omniglot.com/writing/bambara.htm (Accessed on 4 September 2018)</reference>
+      <reference id="200">Omniglot, Raga (Hano) https://www.omniglot.com/writing/raga.htm (Accessed on 4 September 2018)</reference>
+      <reference id="201">Omniglot, Tatar (tatarça / татарча / تاتارچا) https://www.omniglot.com/writing/tatar.htm (Accessed on 4 September 2018)</reference>
+      <reference id="202">Omniglot, Zaza (Zazaki / زازاکی) https://www.omniglot.com/writing/zazaki.htm (Accessed on 4 September 2018)</reference>
+      <reference id="203">Wikipedia, Turkish alphabet https://en.wikipedia.org/wiki/Turkish_alphabet (Accessed on 4 September 2018)</reference>
+      <reference id="204">School of English, Adam Michiewicz University, Poznań, Poland, Poznań Studies in Contemporary Linguistics 43(1),2007, pp. 169-180, A Demographic Igbo Orthography https://www.degruyter.com/downloadpdf/j/psicl.2007.43.issue-1/v10010-007-0009-0/v10010-007-0009-0.pdf (Accessed on 4 September 2018)</reference>
+      <reference id="205">Omniglot, Igbo (Asụsụ Igbo) https://www.omniglot.com/writing/igbo.htm (Accessed on 4 September 2018)</reference>
+      <reference id="206">ItalianPod101, Italian Accents and Proper Italian Pronunciation https://www.italianpod101.com/italian-accents (Accessed on 4 September 2018)</reference>
+      <reference id="208">Reverso Dictionary, venerdì translation | Italian-English dictionary https://dictionary.reverso.net/italian-english/venerd%C3%AC (Accessed on 4 September 2018)</reference>
+      <reference id="209">Omniglot, Kikuyu (Gĩkũyũ) https://www.omniglot.com/writing/kikuyu.htm (Accessed on 4 September 2018)</reference>
+      <reference id="210">Omniglot, Hixkaryána https://www.omniglot.com/writing/hixkaryana.htm (Accessed on 4 September 2018)</reference>
+      <reference id="211">Omniglot, Maasai (ɔl Maa) https://www.omniglot.com/writing/maasai.htm (Accessed on 4 September 2018)</reference>
+      <reference id="212">Omniglot, Mossi (Mòoré) https://www.omniglot.com/writing/mossi.htm (Accessed on 4 September 2018)</reference>
+      <reference id="213">Omniglot, Jenesis. The Bible in Marshallese, 2009., Contributed by Wolfgang Kuhl https://www.omniglot.com/babel/marshallese.htm (Accessed on 4 September 2018)</reference>
+      <reference id="214">Wikipedia, Cedilla https://en.wikipedia.org/wiki/Cedilla#Marshallese (Accessed on 4 September 2018)</reference>
+      <reference id="215">Wikipedia, Marshallese language https://en.wikipedia.org/wiki/Marshallese_language#Display_issues (Accessed on 4 September 2018)</reference>
+      <reference id="216">Trussel, Marshallese-English Online Dictionary https://www.trussel2.com/MOD/ (Accessed on 4 September 2018)</reference>
+      <reference id="218">Omniglot, Susu (Sosoxi) https://www.omniglot.com/writing/susu.htm (Accessed on 4 September 2018)</reference>
+      <reference id="219">Omniglot, Zarma (Zarmaciine) https://www.omniglot.com/writing/zarma.htm (Accessed on 4 September 2018)</reference>
+      <reference id="220">Omniglot, Pitjantjatjara https://www.omniglot.com/writing/pitjantjatjara.htm (Accessed on 4 September 2018)</reference>
+      <reference id="221">Omniglot, Spanish (español/castellano) https://www.omniglot.com/writing/spanish.htm (Accessed on 4 September 2018)</reference>
+      <reference id="222">Omniglot, Filipino (wikang Filipino) https://www.omniglot.com/writing/filipino.htm (Accessed on 4 September 2018)</reference>
+      <reference id="223">Omniglot, Chavacano https://www.omniglot.com/writing/chavacano.php (Accessed on 4 September 2018)</reference>
+      <reference id="224">Wikipedia, Ilocano language https://en.wikipedia.org/wiki/Ilocano_language#Modern_alphabet (Accessed on 4 September 2018)</reference>
+      <reference id="225">Omniglot, Quechua (Runasimi) https://www.omniglot.com/writing/quechua.htm (Accessed on 4 September 2018)</reference>
+      <reference id="226">Wikipedia, Quechua alphabet https://en.wikipedia.org/wiki/Quechua_alphabet (Accessed on 4 September 2018)</reference>
+      <reference id="227">Omniglot, Cape Verdean Creole (Kriolu) https://www.omniglot.com/writing/kriol.php (Accessed on 4 September 2018)</reference>
+      <reference id="228">Omniglot, Waray-Waray https://www.omniglot.com/writing/waray.php (Accessed on 4 September 2018)</reference>
+      <reference id="229">Omniglot, Lozi (siLozi) https://www.omniglot.com/writing/lozi.htm (Accessed on 4 September 2018)</reference>
+      <reference id="230">africanlanguages.com, Sesotho sa Leboa (Northern Sotho) https://africanlanguages.com/northern_sotho/ (Accessed on 4 September 2018)</reference>
+      <reference id="232">Wikipedia, Chechen language https://en.wikipedia.org/wiki/Chechen_language (Accessed on 4 September 2018)</reference>
+      <reference id="233">Omniglot, Hungarian (magyar) https://www.omniglot.com/writing/hungarian.htm (Accessed on 4 September 2018)</reference>
+      <reference id="234">Wikipedia, Hungarian alphabet https://en.wikipedia.org/wiki/Hungarian_alphabet (Accessed on 4 September 2018)</reference>
+      <reference id="236">Omniglot, Lingala https://www.omniglot.com/writing/lingala.htm (Accessed on 4 September 2018)</reference>
+      <reference id="237">Omniglot, Akan https://www.omniglot.com/writing/akan.htm (Accessed on 4 September 2018)</reference>
+      <reference id="238">Wikipedia, Mossi language https://en.wikipedia.org/wiki/Mossi_language (Accessed on 4 September 2018)</reference>
+      <reference id="239">SIL-Sudan, OCCASIONAL PAPERS in the study of SUDANESE LANGUAGES No. 9 (p. 75) https://www.sil.org/system/files/reapdata/10/06/46/100646256099282892829790816212446104791/OPSL_9.pdf (Accessed on 4 September 2018)</reference>
+      <reference id="240">Omniglot, Kanuri https://www.omniglot.com/writing/kanuri.htm (Accessed on 4 September 2018)</reference>
+      <reference id="241">Omniglot, Bugis (Basa Ugi ) https://www.omniglot.com/writing/bugis.htm (Accessed on 4 September 2018)</reference>
+      <reference id="242">Omniglot, Mizo (Mizo ṭawng) https://www.omniglot.com/writing/mizo.htm (Accessed on 4 September 2018)</reference>
+      <reference id="243">Omniglot, Miskito (Mískitu) https://www.omniglot.com/writing/miskito.htm (Accessed on 4 September 2018)</reference>
+      <reference id="245">Wikipedia, Papiamento https://en.wikipedia.org/wiki/Papiamento (Accessed on 4 September 2018)</reference>
+      <reference id="246">Omniglot, Papiamento (Papiamentu) https://www.omniglot.com/writing/papiamento.php (Accessed on 4 September 2018)</reference>
+      <reference id="247">Omniglot, Chichewa (Chicheŵa) https://www.omniglot.com/writing/chichewa.php (Accessed on 4 September 2018)</reference>
+      <reference id="248">Native Languages of the Americas website, Vocabulary in Native American Languages: Mam Words https://www.native-languages.org/mam_words.htm (Accessed on 4 September 2018)</reference>
+      <reference id="249">Omniglot, Mam (Qyol Mam) https://www.omniglot.com/writing/mam.htm (Accessed on 4 September 2018)</reference>
+      <reference id="250">Wikipedia, Pulaar language https://en.wikipedia.org/wiki/Pulaar_language (Accessed on 4 September 2018)</reference>
+      <reference id="251">Wikipedia, Fula language https://en.wikipedia.org/wiki/Fula_language#Writing_systems (Accessed on 4 September 2018)</reference>
+      <reference id="252">Wikipedia, Polish alphabet https://en.wikipedia.org/wiki/Polish_alphabet (Accessed on 4 September 2018)</reference>
+      <reference id="253">Wikipedia, French orthography https://en.wikipedia.org/wiki/French_orthography (Accessed on 4 September 2018)</reference>
+      <reference id="254">Omniglot, Yoruba (Èdè Yorùbá) https://www.omniglot.com/writing/yoruba.htm (Accessed on 4 September 2018)</reference>
+      <reference id="255">Omniglot, Esperanto https://www.omniglot.com/writing/esperanto.htm (Accessed on 4 September 2018)</reference>
+      <reference id="256">Omniglot, Welsh (Cymraeg) https://www.omniglot.com/writing/welsh.htm (Accessed on 4 September 2018)</reference>
+      <reference id="257">Wikipedia, List of Latin-script letters https://en.wikipedia.org/wiki/List_of_Latin-script_letters (Accessed on 4 September 2018)</reference>
+      <reference id="258">Omniglot, Montenegrin https://www.omniglot.com/writing/montenegrin.htm (Accessed on 20 March 2019)</reference>
+      <reference id="275">Omniglot, Shavante https://www.omniglot.com/writing/shavante.php (Accessed on 24 September 2020)</reference>
+      <reference id="276">Wikipedia, Malagasy Language https://en.wikipedia.org/wiki/Malagasy_language (Accessed on 24 September 2020)</reference>
+      <reference id="277">Wikipedia, Serer language, https://en.wikipedia.org/wiki/Serer_language, accessed on 6 April 2021</reference>
+      <reference id="278">Wikipedia, Kpelle language, https://en.wikipedia.org/wiki/Kpelle_language, accessed on 6 April 2021</reference>
+      <reference id="279">Wikipedia, Catalan Orthography, https://en.wikipedia.org/wiki/Catalan_orthography, accessed on 28 November 2022</reference>
+      <reference id="280">Fundacio PuntCAT registry (.CAT), IDN table for CAT_ca Version 1.0, 12 February 2006, https://www.iana.org/domains/idn-tables/tables/cat_ca_1.0.html</reference>
+      <reference id="281">Fundacio PuntCAT registry (.CAT), Rules of the .cat domain, https://domini.cat/en/rules-of-the-cat-domain/</reference>
+      <reference id="320">RFC 5891, Internationalized Domain Names in Applications (IDNA): Protocol https://tools.ietf.org/html/rfc5891</reference>
+    </references>
+  </meta>
+  <data>
+    <char cp="002D" not-when="hyphen-minus-disallowed" tag="sc:Zyyy" ref="0" comment="HYPHEN-MINUS; &#x235F;">
+      <var cp="00B7" when="surrounded-by-L" type="blocked" ref="281" comment="Middle dot in Ela Geminada" />
+    </char>
+    <char cp="0030" tag="Common-digit sc:Zyyy" ref="0" comment="DIGIT ZERO; &#x235F;" />
+    <char cp="0031" tag="Common-digit sc:Zyyy" ref="0" comment="DIGIT ONE; &#x235F;" />
+    <char cp="0032" tag="Common-digit sc:Zyyy" ref="0" comment="DIGIT TWO; &#x235F;" />
+    <char cp="0033" tag="Common-digit sc:Zyyy" ref="0" comment="DIGIT THREE; &#x235F;" />
+    <char cp="0034" tag="Common-digit sc:Zyyy" ref="0" comment="DIGIT FOUR; &#x235F;" />
+    <char cp="0035" tag="Common-digit sc:Zyyy" ref="0" comment="DIGIT FIVE; &#x235F;" />
+    <char cp="0036" tag="Common-digit sc:Zyyy" ref="0" comment="DIGIT SIX; &#x235F;" />
+    <char cp="0037" tag="Common-digit sc:Zyyy" ref="0" comment="DIGIT SEVEN; &#x235F;" />
+    <char cp="0038" tag="Common-digit sc:Zyyy" ref="0" comment="DIGIT EIGHT; &#x235F;" />
+    <char cp="0039" tag="Common-digit sc:Zyyy" ref="0" comment="DIGIT NINE; &#x235F;" />
+    <char cp="0061" tag="sc:Latn" ref="0 99" comment="Basic Latin">
+      <var cp="00E1" type="blocked" comment="Required for use with Common LGR" />
+    </char>
+    <char cp="0061 0331" ref="129 146" comment="Nuer (4)" />
+    <char cp="0062" tag="sc:Latn" ref="0 99" comment="Basic Latin" />
+    <char cp="0063" tag="sc:Latn" ref="0 99" comment="Basic Latin" />
+    <char cp="0064" tag="sc:Latn" ref="0 99" comment="Basic Latin" />
+    <char cp="0065" tag="sc:Latn" ref="0 99" comment="Basic Latin" />
+    <char cp="0065 0331" ref="146" comment="Nuer (4)" />
+    <char cp="0066" tag="sc:Latn" ref="0 99" comment="Basic Latin">
+      <var cp="0192" type="blocked" comment="Generally acceptable alternate glyph" />
+    </char>
+    <char cp="0067" tag="sc:Latn" ref="0 99" comment="Basic Latin" />
+    <char cp="0067 0303" ref="142 143" comment="Guarani (1)">
+      <var cp="1E21" type="blocked" comment="Glyphs either homoglyph or nearly identical" />
+    </char>
+    <char cp="0068" tag="sc:Latn" ref="0 99" comment="Basic Latin" />
+    <char cp="0069" tag="sc:Latn" ref="0 99" comment="Basic Latin">
+      <var cp="00ED" type="blocked" comment="Required for use with Common LGR" />
+      <var cp="00EF" type="blocked" comment="Required for use with Common LGR" />
+      <var cp="0131" type="blocked" comment="IDNA2003 Compatibility" />
+      <var cp="0269" type="blocked" comment="Glyphs either homoglyph or nearly identical" />
+      <var cp="1EC9" type="blocked" comment="Glyphs either homoglyph or nearly identical" />
+    </char>
+    <char cp="0069 0331" ref="146" comment="Nuer (4)" />
+    <char cp="006A" tag="sc:Latn" ref="0 99" comment="Basic Latin" />
+    <char cp="006B" tag="sc:Latn" ref="0 99" comment="Basic Latin" />
+    <char cp="006C" tag="sc:Latn" ref="0 99" comment="Basic Latin" />
+    <char cp="006D" tag="sc:Latn" ref="0 99" comment="Basic Latin" />
+    <char cp="006D 0327" ref="136 213 214" comment="Marshallese (1)" />
+    <char cp="006E" tag="sc:Latn" ref="0 99" comment="Basic Latin">
+      <var cp="0144" type="blocked" comment="Required for use with Common LGR" />
+      <var cp="014B" type="blocked" comment="Required for use with Common LGR" />
+      <var cp="1E45" type="blocked" comment="Required for use with Common LGR" />
+    </char>
+    <char cp="006E 0304" ref="136 200 213" comment="Raga (Hano) (3), Marshallese (1)">
+      <var cp="00F1" type="blocked" comment="Glyphs either homoglyph or nearly identical" />
+    </char>
+    <char cp="006E 0308" ref="276" comment="Malagasy (1)" />
+    <char cp="006F" tag="sc:Latn" ref="0 99" comment="Basic Latin">
+      <var cp="00F3" type="blocked" comment="Required for use with Common LGR" />
+    </char>
+    <char cp="006F 0327" ref="136" comment="Marshallese (1)" />
+    <char cp="006F 0331" ref="129 146" comment="Nuer (4)" />
+    <char cp="0070" tag="sc:Latn" ref="0 99" comment="Basic Latin" />
+    <char cp="0071" tag="sc:Latn" ref="0 99" comment="Basic Latin" />
+    <char cp="0072" tag="sc:Latn" ref="0 99" comment="Basic Latin" />
+    <char cp="0072 0303" ref="147" comment="Hausa (2)" />
+    <char cp="0073" tag="sc:Latn" ref="0 99" comment="Basic Latin" />
+    <char cp="0073 0073" comment="Sequence added for variant mapping">
+      <var cp="00DF" type="blocked" comment="IDNA2003 Compatibility" />
+    </char>
+    <char cp="0074" tag="sc:Latn" ref="0 99" comment="Basic Latin" />
+    <char cp="0075" tag="sc:Latn" ref="0 99" comment="Basic Latin">
+      <var cp="00FA" type="blocked" comment="Required for use with Common LGR" />
+      <var cp="00FC" type="blocked" comment="Required for use with Common LGR" />
+      <var cp="028B" type="blocked" comment="Required for use with Common LGR" />
+    </char>
+    <char cp="0076" tag="sc:Latn" ref="0 99" comment="Basic Latin" />
+    <char cp="0077" tag="sc:Latn" ref="0 99" comment="Basic Latin" />
+    <char cp="0078" tag="sc:Latn" ref="0 99" comment="Basic Latin" />
+    <char cp="0079" tag="sc:Latn" ref="0 99" comment="Basic Latin">
+      <var cp="0263" type="blocked" comment="Required for use with Common LGR" />
+    </char>
+    <char cp="007A" tag="sc:Latn" ref="0 99" comment="Basic Latin" />
+    <char cp="00B7" when="surrounded-by-L" tag="sc:Zyyy" ref="0 100 279 280" comment="Catalan (2) L·L - CONTEXTO for MIDDLE DOT in RFC 5892">
+      <var cp="002D" when="surrounded-by-L" type="fallback" comment="Fallback" />
+      <var cp="00B7" when="surrounded-by-L" type="r-original" comment="Middle Dot in the original label" />
+    </char>
+    <char cp="00DF" tag="sc:Latn" ref="0 119" comment="German (1)">
+      <var cp="0073 0073" type="fallback" comment="IDNA2003 Compatibility" />
+      <var cp="00DF" type="r-original" comment="Eszett in the original label" />
+    </char>
+    <char cp="00E0" tag="sc:Latn" ref="0 106 114 130 131 132" comment="Italian (1), French (1), Galician (2), Wolof (4)">
+      <var cp="1EA3" type="blocked" comment="Glyphs either homoglyph or nearly identical" />
+    </char>
+    <char cp="00E1" tag="sc:Latn" ref="0 100 101 102 103 105 106 107 108" comment="Spanish (1), Czech (1), Icelandic (1), Faroese (2), Chuukese (2), Galician (2), Lule Sami (2), Northern Sami (2)">
+      <var cp="0061" type="blocked" comment="Required for use with Common LGR" />
+    </char>
+    <char cp="00E2" tag="sc:Latn" ref="0 106 109 110 113 114 115 116 117 275" comment="Vietnamese (1), Romanian (1), Skolt Sami (2), French (1), Galician (2), West Frisian (1), Friulian (4), Xavante (4)" />
+    <char cp="00E3" tag="sc:Latn" ref="0 141 142 143 144 145" comment="Umbundu (3), Guarani (1), Nauruan (3), Khoekhoe (4)">
+      <var cp="0101" type="blocked" comment="Glyphs either homoglyph or nearly identical" />
+    </char>
+    <char cp="00E4" tag="sc:Latn" ref="0 107 119 120 121 122 123 124 125 126 127 128 129" comment="German (1), Finnish (1), Turkmen (1), Estonian (1), Swedish (1), Lule Sami (2), Yapese (2), Dinka (4), Kaqchikel (4), Bashkir (4), Alsatian (5), Nuer (4)" />
+    <char cp="00E5" tag="sc:Latn" ref="0 107 120 123 139 140" comment="Danish (1), Finnish (1),  Chamorro (1), Swedish (1), Lule Sami (2)" />
+    <char cp="00E6" tag="sc:Latn" ref="0 102 103 139" comment="Danish (1), Icelandic (1), Faroese (2)" />
+    <char cp="00E7" tag="sc:Latn" ref="0 106 114 116 121 127 157 158 159 160 161" comment="Turkish (1), Turkmen (1), Kurdish (2), French (1), Azerbaijani (1), Basque (1), Galician (2), Friulian (4), Bashkir (4)" />
+    <char cp="00E8" tag="sc:Latn" ref="0 114 130 175 182 183" comment="French (1), Italian (1),  Afrikaans (1), Haitian Creole (1), French (1)" />
+    <char cp="00E9" tag="sc:Latn" ref="0 100 101 102 105 106 114 115 117 130 132 275" comment="French (1), Italian (1),  Spanish (1), Czech (1), Icelandic (1), Chuukese (2), Galician (2), Wolof (4), Xavante (4), West Frisian (2)" />
+    <char cp="00EA" tag="sc:Latn" ref="0 109 114 115 116 158 173 174 175" comment="French (1), Tswana (1), Afrikaans (1), Vietnamese (1), Kurdish (2), West Frisian (2), Friulian (4)" />
+    <char cp="00EB" tag="sc:Latn" ref="0 114 115 124 126 129 132 175 176 177 179 180" comment="Afrikaans (1), Albanian (1), French (1), Uyghur (2), Yapese (2), Wolof (4), Drehu (4), Kaqchikel (4), West Frisian (2), Nuer (4)" />
+    <char cp="00EC" tag="sc:Latn" ref="0 130 206 208" comment="Italian (1)" />
+    <char cp="00ED" tag="sc:Latn" ref="0 100 101 102 103 106 127" comment="Spanish (1), Czech (1),  Icelandic (1),  Faroese (2), Galician (2), Bashkir (4)">
+      <var cp="0069" type="blocked" comment="Required for use with Common LGR" />
+      <var cp="00EF" type="blocked" comment="Required for use with Common LGR" />
+      <var cp="0131" type="blocked" comment="Required for use with Common LGR" />
+      <var cp="0269" type="blocked" comment="Required for use with Common LGR" />
+      <var cp="1EC9" type="blocked" comment="Required for use with Common LGR" />
+    </char>
+    <char cp="00EE" tag="sc:Latn" ref="0 110 114 116 158 175" comment="Afrikaans (1), Romanian (1), Kurdish (2),  French (1), Friulian (4)" />
+    <char cp="00EF" tag="sc:Latn" ref="0 114 115 125 126 175" comment="Afrikaans (1), French (1), Kaqchikel (4), Dinka (4), West Frisian (2)">
+      <var cp="0069" type="blocked" comment="Required for use with Common LGR" />
+      <var cp="00ED" type="blocked" comment="Required for use with Common LGR" />
+      <var cp="0131" type="blocked" comment="Required for use with Common LGR" />
+      <var cp="0269" type="blocked" comment="Required for use with Common LGR" />
+      <var cp="1EC9" type="blocked" comment="Required for use with Common LGR" />
+    </char>
+    <char cp="00F0" tag="sc:Latn" ref="0 102 103" comment="Faroese (2), Icelandic (1)" />
+    <char cp="00F1" tag="sc:Latn" ref="0 106 127 132 136 142 143 144 149 160 197 205 221 222 223 224 225 226 227 228 229" comment="Spanish (1), Fula (3), Chamorro (1), Filipino (1), Guarani (1), Chavacano (4), Basque (1), Galician (2), Iloco (3), Quechua (3), Cape Verdean Creole (4), Waray-Waray (3), Wolof (4), Nauruan (3), Lozi (4), Bashkir (4), Marshallese (1), Mandinka (5), Igbo (2)">
+      <var cp="006E 0304" type="blocked" comment="Glyphs either homoglyph or nearly identical" />
+    </char>
+    <char cp="00F2" tag="sc:Latn" ref="0 130 182 183" comment="Italian (1), Haitian Creole (1)">
+      <var cp="1ECF" type="blocked" comment="Glyphs either homoglyph or nearly identical" />
+    </char>
+    <char cp="00F3" tag="sc:Latn" ref="0 100 101 102 105 106 132 152" comment="Spanish (1), Polish (1), Czech (1), Icelandic (1), Chuukese (2), Galician (2), Wolof (4)">
+      <var cp="006F" type="blocked" comment="Required for use with Common LGR" />
+    </char>
+    <char cp="00F4" tag="sc:Latn" ref="0 106 109 114 115 116 117 173 174 175 230 275" comment="Tswana (1), Afrikaans (1), Vietnamese (1), French (1), Northern Sotho (1), West Frisian (2), Galician (2), Friulian (4), Xavante (4)" />
+    <char cp="00F5" tag="sc:Latn" ref="0 113 117 122 141 142 143 144 145 275" comment="Estonian (1), Skolt Sami (2), Umbundu (3), Guarani (1), Nauruan (3), Xavante (4), Khoekhoe (4)">
+      <var cp="014D" type="blocked" comment="Glyphs either homoglyph or nearly identical" />
+    </char>
+    <char cp="00F6" tag="sc:Latn" ref="0 115 119 120 123 124 125 126 127 129 157 175 179 180 232" comment="German (1), Finnish (1), Afrikaans (1), Turkish (1), Swedish (1), Uygur (2), Yapese (2), Drehu (4), Kaqchikel (4), Dinka (4), Bashkir (4), Chechen (2),  1992 Version, West Frisian (2), Nuer (4)" />
+    <char cp="00F8" tag="sc:Latn" ref="0 103 139" comment="Danish (1), Faroese (2)" />
+    <char cp="00F9" tag="sc:Latn" ref="0 114 130 206 245 246 253" comment="Italian (1), French (1), Papiamento (1)">
+      <var cp="1EE7" type="blocked" comment="Glyphs either homoglyph or nearly identical" />
+    </char>
+    <char cp="00FA" tag="sc:Latn" ref="0 100 101 102 103 105 106 115" comment="Spanish (1), Czech (1), Icelandic (1), Faroese (2), Chuukese (2), West Frisian (2), Galician (2)">
+      <var cp="0075" type="blocked" comment="Required for use with Common LGR" />
+      <var cp="00FC" type="blocked" comment="Required for use with Common LGR" />
+      <var cp="028B" type="blocked" comment="Required for use with Common LGR" />
+    </char>
+    <char cp="00FB" tag="sc:Latn" ref="0 114 115 116 158 175 202 243" comment="Afrikaans (1),  Kurdish (2), French (1), Miskito (2), West Frisian (2), Friulian (4), Zazaki (4)" />
+    <char cp="00FC" tag="sc:Latn" ref="0 100 106 114 119 123 126 127 157 159 161 175 179" comment="German (1), Spanish (1), Afrikaans (1), Turkish (1), Swedish (1), French (1), Azeri (1), Basque (1), Galician (2), Uygur (2), Kaqchikel (4), Bashkir (4)">
+      <var cp="0075" type="blocked" comment="Required for use with Common LGR" />
+      <var cp="00FA" type="blocked" comment="Required for use with Common LGR" />
+      <var cp="028B" type="blocked" comment="Required for use with Common LGR" />
+    </char>
+    <char cp="00FD" tag="sc:Latn" ref="0 101 102 103 121 142 143" comment="Turkmen (1), Czech (1), Icelandic (1), Faroese (2), Guarani (1)">
+      <var cp="1EF3" type="blocked" comment="Variant due to transitivity" />
+      <var cp="1EF7" type="blocked" comment="Glyphs either homoglyph or nearly identical" />
+    </char>
+    <char cp="00FE" tag="sc:Latn" ref="0 102" comment="Icelandic (1)" />
+    <char cp="00FF" tag="sc:Latn" ref="0 114 253 257" comment="French (1)" />
+    <char cp="0101" tag="sc:Latn" ref="0 133 134 135 136" comment="Latvian (1), Tongan (1), Hawaiian (2), Marshallese (1)">
+      <var cp="00E3" type="blocked" comment="Glyphs either homoglyph or nearly identical" />
+    </char>
+    <char cp="0103" tag="sc:Latn" ref="0 109 110" comment="Vietnamese (1), Romanian (1)" />
+    <char cp="0105" tag="sc:Latn" ref="0 137 138" comment="Polish (1), Lithuanian (1)" />
+    <char cp="0107" tag="sc:Latn" ref="0 150 151 152" comment="Croatian (1), Serbian (1), Polish (1)">
+      <var cp="010B" type="blocked" comment="Glyphs either homoglyph or nearly identical" />
+    </char>
+    <char cp="0109" tag="sc:Latn" ref="0 255" comment="Esperanto (3)" />
+    <char cp="010B" tag="sc:Latn" ref="0 163" comment="Maltese (1)">
+      <var cp="0107" type="blocked" comment="Glyphs either homoglyph or nearly identical" />
+    </char>
+    <char cp="010D" tag="sc:Latn" ref="0 108 133 150 151 153 154" comment="Croatian (1), Serbian (1), Latvian (1), Slovak (1), Northern Sami (2), Lithuanian (1)" />
+    <char cp="010F" tag="sc:Latn" ref="0 101 153" comment="Czech (1), Slovak (1)" />
+    <char cp="0111" tag="sc:Latn" ref="0 108 109 150 151 168" comment="Croatian (1), Serbian (1), Vietnamese (1), Northern Sami (2), Brahui (5)" />
+    <char cp="0113" tag="sc:Latn" ref="0 133 134 135 184" comment="Latvian (1), Hawaiian (2), Tongan (1), Minangkabau (5)">
+      <var cp="1EBD" type="blocked" comment="Glyphs either homoglyph or nearly identical" />
+    </char>
+    <char cp="0117" tag="sc:Latn" ref="0 138 154" comment="Lithuanian (1)" />
+    <char cp="0119" tag="sc:Latn" ref="0 138 152 154 185" comment="Polish (1), Palauan (2), Lithuanian (1)" />
+    <char cp="011B" tag="sc:Latn" ref="0 101 172" comment="Czech (1), Sorbian (4)" />
+    <char cp="011D" tag="sc:Latn" ref="0 255" comment="Esperanto (3)" />
+    <char cp="011F" tag="sc:Latn" ref="0 127 157 159 201 202" comment="Turkish (1), Tatar (2),  Azeri (1), Bashkir (4), Zaza (5)">
+      <var cp="01E7" type="blocked" comment="Glyphs either homoglyph or nearly identical" />
+    </char>
+    <char cp="0121" tag="sc:Latn" ref="0 163" comment="Maltese (1)">
+      <var cp="0123" type="blocked" comment="Glyphs either homoglyph or nearly identical" />
+    </char>
+    <char cp="0123" tag="sc:Latn" ref="0 133 168" comment="Latvian (1), Brahui (5)">
+      <var cp="0121" type="blocked" comment="Glyphs either homoglyph or nearly identical" />
+    </char>
+    <char cp="0125" tag="sc:Latn" ref="0 255" comment="Esperanto (3)" />
+    <char cp="0127" tag="sc:Latn" ref="0 163" comment="Maltese (1)" />
+    <char cp="0129" tag="sc:Latn" ref="0 142 143 145 186 209" comment="Guarani (1), Cubeo (3), Khoekhoe (4), Kikuyu (5)">
+      <var cp="012B" type="blocked" comment="Glyphs either homoglyph or nearly identical" />
+    </char>
+    <char cp="012B" tag="sc:Latn" ref="0 133 134 135 138" comment="Latvian (1), Lithuanian (1),  Hawaiian (2), Tongan (1)">
+      <var cp="0129" type="blocked" comment="Glyphs either homoglyph or nearly identical" />
+    </char>
+    <char cp="012F" tag="sc:Latn" ref="0 154" comment="Lithuanian (1)" />
+    <char cp="0131" tag="sc:Latn" ref="0 157 159 201 203" comment="Turkish (1), Tatar (2),  Azeri (1)">
+      <var cp="0069" type="fallback" comment="IDNA2003 Compatibility" />
+      <var cp="00ED" type="blocked" comment="Required for use with Common LGR" />
+      <var cp="00EF" type="blocked" comment="Required for use with Common LGR" />
+      <var cp="0131" type="r-original" comment="Dotless form in the original label" />
+      <var cp="0269" type="blocked" comment="Glyphs either homoglyph or nearly identical" />
+      <var cp="1EC9" type="blocked" comment="Glyphs either homoglyph or nearly identical" />
+    </char>
+    <char cp="0135" tag="sc:Latn" ref="0 255" comment="Esperanto (3)" />
+    <char cp="0137" tag="sc:Latn" ref="0 133" comment="Latvian (1)" />
+    <char cp="013A" tag="sc:Latn" ref="0 153" comment="Slovak (1)" />
+    <char cp="013C" tag="sc:Latn" ref="0 133 168 213 214" comment="Latvian (1), Marshallese (1), Brahui (5)" />
+    <char cp="013E" tag="sc:Latn" ref="0 153" comment="Slovak (1)" />
+    <char cp="0142" tag="sc:Latn" ref="0 152" comment="Polish (1)" />
+    <char cp="0144" tag="sc:Latn" ref="0 107 152 168 172" comment="Polish (1), Lule Sami (2), Sorbian (4), Brahui (5)">
+      <var cp="006E" type="blocked" comment="Required for use with Common LGR" />
+      <var cp="014B" type="blocked" comment="Required for use with Common LGR" />
+      <var cp="1E45" type="blocked" comment="Glyphs either homoglyph or nearly identical" />
+    </char>
+    <char cp="0146" tag="sc:Latn" ref="0 133 136" comment="Latvian (1), Marshallese (1)" />
+    <char cp="0148" tag="sc:Latn" ref="0 101 121 153" comment="Turkmen (1), Czech (1), Slovak (1)" />
+    <char cp="014B" tag="sc:Latn" ref="0 108 125 129 132 146 148 170 188 189 190 191 192 193 194 195 196 197 198 199" comment="Inari Saami (2), Dagaare - Burkina Faso (4), Dagbani (Dagomba),  (4), Northern Sami (2), Ewondo (3), Luganda (3), Wolof (4), Adzera (4), Nuer (4), Ga (4), Dinka (4), Duala (3), Ewe (3), Soga (5),  Alur (5),  Mandinka (5),  Acholi (5), Bambara (4), Nuer (4)">
+      <var cp="006E" type="blocked" comment="Required for use with Common LGR" />
+      <var cp="0144" type="blocked" comment="Required for use with Common LGR" />
+      <var cp="1E45" type="blocked" comment="Required for use with Common LGR" />
+    </char>
+    <char cp="014D" tag="sc:Latn" ref="0 134 135 136" comment="Hawaiian (2), Marshallese (1), Tongan (1)">
+      <var cp="00F5" type="blocked" comment="Glyphs either homoglyph or nearly identical" />
+    </char>
+    <char cp="0151" tag="sc:Latn" ref="0 233 234" comment="Hungarian (1)" />
+    <char cp="0153" tag="sc:Latn" ref="0 114 253" comment="French (1)" />
+    <char cp="0155" tag="sc:Latn" ref="0 153 168" comment="Slovak (1), Brahui (5)" />
+    <char cp="0159" tag="sc:Latn" ref="0 101 172" comment="Czech (1), Sorbian (4)" />
+    <char cp="015B" tag="sc:Latn" ref="0 152 258" comment="Polish (1), Montenegrin (1)" />
+    <char cp="015D" tag="sc:Latn" ref="0 255" comment="Esperanto (3)" />
+    <char cp="015F" tag="sc:Latn" ref="0 121 127 157 158 159 168 201 202" comment="Turkish (1), Turkmen (1), Kurdish (2), Tatar (2), Azeri (1), Bashkir (4), Brahui (5), Zaza (5)" />
+    <char cp="0161" tag="sc:Latn" ref="0 108 133 150 151 154 174 230" comment="Tswana (1), Croatian (1), Serbian (1), Latvian (1), Northern Sotho (1), Northern Sami (2), Lithuanian (1)" />
+    <char cp="0165" tag="sc:Latn" ref="0 101 153" comment="Czech (1), Slovak (1)" />
+    <char cp="0167" tag="sc:Latn" ref="0 108 168" comment="Northern Sami (2), Brahui (5)" />
+    <char cp="0169" tag="sc:Latn" ref="0 141 142 143 144 145 209" comment="Umbundu (3), Guarani (1), Nauruan (3), Khoekhoe (4), Kikuyu (5)">
+      <var cp="016B" type="blocked" comment="Glyphs either homoglyph or nearly identical" />
+    </char>
+    <char cp="016B" tag="sc:Latn" ref="0 133 134 135 136 138 154" comment="Latvian (1), Hawaiian (2), Lithuanian (1), Marshallese (1), Tongan (1)">
+      <var cp="0169" type="blocked" comment="Glyphs either homoglyph or nearly identical" />
+    </char>
+    <char cp="016D" tag="sc:Latn" ref="0 255" comment="Esperanto (3)" />
+    <char cp="016F" tag="sc:Latn" ref="0 101" comment="Czech (1)" />
+    <char cp="0171" tag="sc:Latn" ref="0 233 234" comment="Hungarian (1)" />
+    <char cp="0173" tag="sc:Latn" ref="0 138 154" comment="Lithuanian (1)" />
+    <char cp="0175" tag="sc:Latn" ref="0 247 256" comment="Chichewa (3), Welsh (2)" />
+    <char cp="0177" tag="sc:Latn" ref="0 256" comment="Welsh (2)" />
+    <char cp="017A" tag="sc:Latn" ref="0 152 168 172 252 258" comment="Polish (1), Brahui (5), Sorbian (4), Montenegrin (1)">
+      <var cp="017C" type="blocked" comment="Glyphs either homoglyph or nearly identical" />
+    </char>
+    <char cp="017C" tag="sc:Latn" ref="0 152 163" comment="Polish (1), Maltese (1)">
+      <var cp="017A" type="blocked" comment="Glyphs either homoglyph or nearly identical" />
+    </char>
+    <char cp="017E" tag="sc:Latn" ref="0 108 121 133 150 151 153 154 232" comment="Lithuanian (1), Croatian (1), Serbian (1), Turkmen (1), Latvian (1), Slovak (1), Northern Sami (2), Chechen (2) 1925 Version" />
+    <char cp="0188" tag="sc:Latn" ref="0 277" comment="Serer (5)" />
+    <char cp="0192" tag="sc:Latn" ref="0 170" comment="Ewe (3)">
+      <var cp="0066" type="blocked" comment="Generally acceptable alternate glyph" />
+    </char>
+    <char cp="0199" tag="sc:Latn" ref="0 147" comment="Hausa (2)" />
+    <char cp="01A1" tag="sc:Latn" ref="0 109" comment="Vietnamese (1)" />
+    <char cp="01A5" tag="sc:Latn" ref="0 277" comment="Serer (5)" />
+    <char cp="01AD" tag="sc:Latn" ref="0 277" comment="Serer (5)" />
+    <char cp="01B0" tag="sc:Latn" ref="0 109" comment="Vietnamese (1)" />
+    <char cp="01B4" tag="sc:Latn" ref="0 148 149 251" comment="Dagaare - Burkina Faso (4), Fula (3)" />
+    <char cp="01DD" tag="sc:Latn" ref="0 240" comment="Kanuri (3)">
+      <var cp="0259" type="blocked" comment="Glyphs either homoglyph or nearly identical" />
+    </char>
+    <char cp="01E7" tag="sc:Latn" ref="0 113" comment="Skolt Sami (2)">
+      <var cp="011F" type="blocked" comment="Glyphs either homoglyph or nearly identical" />
+    </char>
+    <char cp="01E9" tag="sc:Latn" ref="0 113" comment="Skolt Sami (2)" />
+    <char cp="01EF" tag="sc:Latn" ref="0 113" comment="Skolt Sami (2)" />
+    <char cp="0219" tag="sc:Latn" ref="3 110" comment="Romanian (1)" />
+    <char cp="021B" tag="sc:Latn" ref="3 110" comment="Romanian (1)" />
+    <char cp="024D" tag="sc:Latn" ref="8 240" comment="Kanuri (3)" />
+    <char cp="0253" tag="sc:Latn" ref="0 147 148 250" comment="Hausa (2), Dagaare - Burkina Faso (4),  Pulaar (3)" />
+    <char cp="0254" tag="sc:Latn" ref="0 129 146 148 169 170 189 190 193 194 236 237" comment="Dagaare - Burkina Faso (4), Dagbani (Dagomba) (4), Lingala (2), Akan (3), Ewondo (3), Fon (3), Nuer (4), Ga (4), Duala (3), EWE (3), Nuer (4)" />
+    <char cp="0254 0308" ref="125" comment="DINKA (4)" />
+    <char cp="0254 0331" ref="129 146" comment="Nuer (4)" />
+    <char cp="0256" tag="sc:Latn" ref="0 169 170" comment="Fon (3), Ewe (3)" />
+    <char cp="0257" tag="sc:Latn" ref="0 147 149 250" comment="Hausa (2), Fula (3)" />
+    <char cp="0259" tag="sc:Latn" ref="0 159 170 190 241" comment="Azeri, Azerbaijani (1), Ewondo (3), Ewe (3), Bugis (3)">
+      <var cp="01DD" type="blocked" comment="Glyphs either homoglyph or nearly identical" />
+    </char>
+    <char cp="025B" tag="sc:Latn" ref="0 129 148 169 170 189 190 193 194 199 212 236 237 238" comment="Dagaare - Burkina Faso (4), Lingala (2), Akan (3), Ewondo (3), Dagbani (Dagomba),  (4), Fon (3), Mossi (3), Ga (4), Ewe (3), Duala (3), Bambara (4), Nuer (4)" />
+    <char cp="025B 0308" ref="125 129 146 239" comment="Nuer (4), Dinka (4)" />
+    <char cp="025B 0331" ref="129 146 239" comment="Nuer (4)" />
+    <char cp="025B 0331 0308" ref="129 146 239" comment="Nuer (4)" />
+    <char cp="0260" tag="sc:Latn" ref="0 278" comment="Kpelle (5)" />
+    <char cp="0263" tag="sc:Latn" ref="0 125 129 146 170 189" comment="Dagbani (Dagomba) (4), Nuer (4), Dinka (4), Ewe (3), Nuer (4)">
+      <var cp="0079" type="blocked" comment="Required for use with Common LGR" />
+    </char>
+    <char cp="0268" tag="sc:Latn" ref="0 186 189 210 211" comment="Cubeo (3), Dagbani (Dagomba) (4), HIxkaryána (4), Maasai (5)" />
+    <char cp="0268 0303" ref="186" comment="Cubeo (3)" />
+    <char cp="0269" tag="sc:Latn" ref="0 148 212" comment="Dagaare - Burkina Faso (4), Mossi (3)">
+      <var cp="0069" type="blocked" comment="Glyphs either homoglyph or nearly identical" />
+      <var cp="00ED" type="blocked" comment="Required for use with Common LGR" />
+      <var cp="00EF" type="blocked" comment="Required for use with Common LGR" />
+      <var cp="0131" type="blocked" comment="Glyphs either homoglyph or nearly identical" />
+      <var cp="1EC9" type="blocked" comment="Glyphs either homoglyph or nearly identical" />
+    </char>
+    <char cp="0272" tag="sc:Latn" ref="0 199 218 219" comment="Susu (4), Zarma (4), Bambara (4)" />
+    <char cp="0289" tag="sc:Latn" ref="0 186 187 211" comment="Cubeo (3), Maasai (5)" />
+    <char cp="0289 0303" ref="186 187" comment="Cubeo (3)" />
+    <char cp="028B" tag="sc:Latn" ref="0 148 170 212 238" comment="Dagaare - Burkina Faso (4), Mossi (3), Ewe (3)">
+      <var cp="0075" type="blocked" comment="Required for use with Common LGR" />
+      <var cp="00FA" type="blocked" comment="Required for use with Common LGR" />
+      <var cp="00FC" type="blocked" comment="Required for use with Common LGR" />
+    </char>
+    <char cp="0292" tag="sc:Latn" ref="0 113 189" comment="Skolt Sami (2), Dagbani (Dagomba) (4)" />
+    <char cp="1E13" tag="sc:Latn" ref="0 164 257" comment="Venda (1)" />
+    <char cp="1E21" tag="sc:Latn" ref="0 200" comment="Raga (Hano) (3)">
+      <var cp="0067 0303" type="blocked" comment="Glyphs either homoglyph or nearly identical" />
+    </char>
+    <char cp="1E3D" tag="sc:Latn" ref="0 164 257" comment="Venda (1)" />
+    <char cp="1E45" tag="sc:Latn" ref="0 164 257" comment="Venda (1)">
+      <var cp="006E" type="blocked" comment="Required for use with Common LGR" />
+      <var cp="0144" type="blocked" comment="Glyphs either homoglyph or nearly identical" />
+      <var cp="014B" type="blocked" comment="Required for use with Common LGR" />
+    </char>
+    <char cp="1E49" tag="sc:Latn" ref="0 220" comment="Pitjantjatjara (4)" />
+    <char cp="1E4B" tag="sc:Latn" ref="0 164 257" comment="Venda (1)" />
+    <char cp="1E63" tag="sc:Latn" ref="0 254" comment="Yoruba (2)" />
+    <char cp="1E6D" tag="sc:Latn" ref="0 242" comment="Mizo (4)" />
+    <char cp="1E71" tag="sc:Latn" ref="0 164 257" comment="Venda (1)" />
+    <char cp="1E8D" tag="sc:Latn" ref="0 248 249" comment="Mam (4)" />
+    <char cp="1EA1" tag="sc:Latn" ref="0 109" comment="Vietnamese (1)" />
+    <char cp="1EA3" tag="sc:Latn" ref="0 109" comment="Vietnamese (1)">
+      <var cp="00E0" type="blocked" comment="Glyphs either homoglyph or nearly identical" />
+    </char>
+    <char cp="1EA5" tag="sc:Latn" ref="0 109" comment="Vietnamese (1)" />
+    <char cp="1EA7" tag="sc:Latn" ref="0 109" comment="Vietnamese (1)" />
+    <char cp="1EA9" tag="sc:Latn" ref="0 109" comment="Vietnamese (1)" />
+    <char cp="1EAB" tag="sc:Latn" ref="0 109" comment="Vietnamese (1)" />
+    <char cp="1EAD" tag="sc:Latn" ref="0 109" comment="Vietnamese (1)" />
+    <char cp="1EAF" tag="sc:Latn" ref="0 109" comment="Vietnamese (1)" />
+    <char cp="1EB1" tag="sc:Latn" ref="0 109" comment="Vietnamese (1)" />
+    <char cp="1EB3" tag="sc:Latn" ref="0 109" comment="Vietnamese (1)" />
+    <char cp="1EB5" tag="sc:Latn" ref="0 109" comment="Vietnamese (1)" />
+    <char cp="1EB7" tag="sc:Latn" ref="0 109" comment="Vietnamese (1)" />
+    <char cp="1EB9" tag="sc:Latn" ref="0 254" comment="Yoruba (2)" />
+    <char cp="1EB9 0300" ref="254" comment="Yoruba (2)" />
+    <char cp="1EB9 0301" ref="254" comment="Yoruba (2)" />
+    <char cp="1EBB" tag="sc:Latn" ref="0 109" comment="Vietnamese (1)" />
+    <char cp="1EBD" tag="sc:Latn" ref="0 117 141 142 143 186 187 275" comment="Umbundu (3), Guarani (1), Cubeo (3), Xavante (4)">
+      <var cp="0113" type="blocked" comment="Glyphs either homoglyph or nearly identical" />
+    </char>
+    <char cp="1EBF" tag="sc:Latn" ref="0 109" comment="Vietnamese (1)" />
+    <char cp="1EC1" tag="sc:Latn" ref="0 109" comment="Vietnamese (1)" />
+    <char cp="1EC3" tag="sc:Latn" ref="0 109" comment="Vietnamese (1)" />
+    <char cp="1EC5" tag="sc:Latn" ref="0 109" comment="Vietnamese (1)" />
+    <char cp="1EC7" tag="sc:Latn" ref="0 109" comment="Vietnamese (1)" />
+    <char cp="1EC9" tag="sc:Latn" ref="0 109" comment="Vietnamese (1)">
+      <var cp="0069" type="blocked" comment="Glyphs either homoglyph or nearly identical" />
+      <var cp="00ED" type="blocked" comment="Required for use with Common LGR" />
+      <var cp="00EF" type="blocked" comment="Required for use with Common LGR" />
+      <var cp="0131" type="blocked" comment="Glyphs either homoglyph or nearly identical" />
+      <var cp="0269" type="blocked" comment="Glyphs either homoglyph or nearly identical" />
+    </char>
+    <char cp="1ECB" tag="sc:Latn" ref="0 205" comment="Igbo (2)" />
+    <char cp="1ECD" tag="sc:Latn" ref="0 136 204 205 215 216 254" comment="Igbo (2), Yoruba (2), Marshallese (1)" />
+    <char cp="1ECD 0300" ref="254" comment="Yoruba (2)" />
+    <char cp="1ECD 0301" ref="254" comment="Yoruba (2)" />
+    <char cp="1ECF" tag="sc:Latn" ref="0 109" comment="Vietnamese (1)">
+      <var cp="00F2" type="blocked" comment="Glyphs either homoglyph or nearly identical" />
+    </char>
+    <char cp="1ED1" tag="sc:Latn" ref="0 109" comment="Vietnamese (1)" />
+    <char cp="1ED3" tag="sc:Latn" ref="0 109" comment="Vietnamese (1)" />
+    <char cp="1ED5" tag="sc:Latn" ref="0 109" comment="Vietnamese (1)" />
+    <char cp="1ED7" tag="sc:Latn" ref="0 109" comment="Vietnamese (1)" />
+    <char cp="1ED9" tag="sc:Latn" ref="0 109" comment="Vietnamese (1)" />
+    <char cp="1EDB" tag="sc:Latn" ref="0 109" comment="Vietnamese (1)" />
+    <char cp="1EDD" tag="sc:Latn" ref="0 109" comment="Vietnamese (1)" />
+    <char cp="1EDF" tag="sc:Latn" ref="0 109" comment="Vietnamese (1)" />
+    <char cp="1EE1" tag="sc:Latn" ref="0 109" comment="Vietnamese (1)" />
+    <char cp="1EE3" tag="sc:Latn" ref="0 109" comment="Vietnamese (1)" />
+    <char cp="1EE5" tag="sc:Latn" ref="0 109 204 205" comment="Vietnamese (1), Igbo (2)" />
+    <char cp="1EE7" tag="sc:Latn" ref="0 109" comment="Vietnamese (1)">
+      <var cp="00F9" type="blocked" comment="Glyphs either homoglyph or nearly identical" />
+    </char>
+    <char cp="1EE9" tag="sc:Latn" ref="0 109" comment="Vietnamese (1)" />
+    <char cp="1EEB" tag="sc:Latn" ref="0 109" comment="Vietnamese (1)" />
+    <char cp="1EED" tag="sc:Latn" ref="0 109" comment="Vietnamese (1)" />
+    <char cp="1EEF" tag="sc:Latn" ref="0 109" comment="Vietnamese (1)" />
+    <char cp="1EF1" tag="sc:Latn" ref="0 109" comment="Vietnamese (1)" />
+    <char cp="1EF3" tag="sc:Latn" ref="0 109" comment="Vietnamese (1)">
+      <var cp="00FD" type="blocked" comment="Variant due to transitivity" />
+      <var cp="1EF7" type="blocked" comment="Glyphs either homoglyph or nearly identical" />
+    </char>
+    <char cp="1EF5" tag="sc:Latn" ref="0 109" comment="Vietnamese (1)" />
+    <char cp="1EF7" tag="sc:Latn" ref="0 109" comment="Vietnamese (1)">
+      <var cp="00FD" type="blocked" comment="Glyphs either homoglyph or nearly identical" />
+      <var cp="1EF3" type="blocked" comment="Glyphs either homoglyph or nearly identical" />
+    </char>
+    <char cp="1EF9" tag="sc:Latn" ref="0 109 142" comment="Vietnamese (1), Guarani (1)" />
+  </data>
+  <!--Rules section goes here-->
+  <rules>
+    <!--Character class definitions go here-->
+    <!--Whole label evaluation and context rules go here-->
+    <rule name="leading-combining-mark" ref="320" comment="RFC 5891 restrictions on placement of combining marks &#x235F;">
+      <start />
+      <union>
+        <class property="gc:Mn" />
+        <class property="gc:Mc" />
+      </union>
+    </rule>
+    <rule name="hyphen-minus-disallowed" ref="320" comment="RFC 5891 restrictions on placement of U+002D HYPHEN-MINUS &#x235F;">
+      <choice>
+        <rule comment="no leading hyphen">
+          <look-behind>
+            <start />
+          </look-behind>
+          <anchor />
+        </rule>
+        <rule comment="no trailing hyphen">
+          <anchor />
+          <look-ahead>
+            <end />
+          </look-ahead>
+        </rule>
+        <rule comment="no consecutive hyphens in third and fourth">
+          <look-behind>
+            <start />
+            <any />
+            <any />
+            <char cp="002D" comment="hyphen-minus" />
+          </look-behind>
+          <anchor />
+        </rule>
+      </choice>
+    </rule>
+    <rule name="surrounded-by-L" comment="code point both follows and precedes L, required context for Ela Geminada &#x235F;">
+      <look-behind>
+        <char cp="006C" />
+      </look-behind>
+      <anchor />
+      <look-ahead>
+        <char cp="006C" />
+      </look-ahead>
+    </rule>
+    <rule name="dot-L-dot" comment="labels with one L sharing two middle dots are invalid &#x235F;">
+      <char cp="00B7 006C 00B7" />
+    </rule>
+    <!--Action elements go here - order defines precedence-->
+    <action disp="invalid" match="leading-combining-mark" comment="labels with leading combining marks are invalid &#x235F;" />
+    <action disp="invalid" any-variant="out-of-repertoire-var" comment="any variant label with a code point out of repertoire is invalid &#x235F;" />
+    <action disp="invalid" match="dot-L-dot" comment="labels with one L sharing two middle dots are invalid" />
+    <action disp="blocked" any-variant="blocked" comment="any variant label containing blocked variants is blocked &#x235F;" />
+    <action disp="allocatable" all-variants="allocatable" comment="variant labels with all variants allocatable are allocatable &#x235F;" />
+    <action disp="allocatable" all-variants="fallback" comment="any label with all variants of type fallback is allocatable &#x235F;" />
+    <action disp="blocked" any-variant="fallback" comment="any variant label with a mix of variant forms is blocked &#x235F;" />
+    <action disp="valid" all-variants="r-original" comment="any remaining label containing only original code points is valid  &#x235F;" />
+    <action disp="valid" comment="catch all (default action) &#x235F;" />
+  </rules>
+</lgr>
