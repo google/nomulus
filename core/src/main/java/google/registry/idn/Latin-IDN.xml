@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <lgr xmlns="urn:ietf:params:xml:ns:lgr-1.0">
   <meta>
-    <version comment="Second Level Reference LGR">1</version>
-    <date>2024-10-25</date>
+    <version comment="Latin LGR">1</version>
+    <date>2025-10-01</date>
     <language>und-Latn</language>
-    <unicode-version>11.0.0</unicode-version>
+    <unicode-version>2</unicode-version>
     <description type="text/html"><![CDATA[
        <div class="instructions">
 <h2>INSTRUCTIONS</h2>
@@ -35,22 +35,21 @@
 <p>Note: version numbers start at 1. RFC 7940 recommends using simple integers. The version comment is optional, 
    please replace or delete the default comment. Version comments may be used by some tools as part of the page header.</p>
   <p><code>&lt;version comment=&quot;</code>[Please replace (or delete) the optional comment]<code>&quot;&gt;</code>[Please fill in version number, starting at 1]<code>&lt;/version&gt;</code></p>
-  <p><code>&lt;date&gt;</code>[Please fill in with publication date, in YYYY-MM-DD format]<code>&lt;/date&gt;</code></p>
-  <p><code>&lt;validity-start&gt;</code>[Please fill in effective date, in YYYY-MM-DD format]<code>&lt;/validity-start&gt;</code></p>
+  <p><code>&lt;date&gt;</code>2025-10-01<code>&lt;/date&gt;</code></p>
+  <p><code>&lt;validity-start&gt;</code>2025-10-01<code>&lt;/validity-start&gt;</code></p>
   <p>Note: the scope element may be repeated, so that the same document can serve for multiple domains.</p>
   <p><code>&lt;scope type=&quot;domain&quot;&gt;</code>[Please provide, in &quot;.domain&quot; format]<code>&lt;/scope&gt;</code></p>
 <p><strong>Registry Contact Information:</strong></p>
   <p>Please fill in the <a href="#registry_contact_details">Registry Contact Details</a>.</p>
 <p><strong>Change History</strong></p>
   <p>If you made technical modifications to the LGR, please summarize them in the <a href="#change_history">Change History</a> (and also note the details in the appropriate section of the description).</p>
-<p>PLEASE DELETE THESE INSTRUCTIONS BEFORE DEPOSITING THE DOCUMENT</p></div>
+
        
        <section id="registry_contact_details">
 <h2>Registry Contact Details</h2>
 <ul style="list-style:none;">
-<li><b>Contact Name:</b> [Please fill in Contact Name]</li>
-<li><b>Email address:</b> [Please fill in Email address]</li>
-<li><b>Phone Number:</b> [Please fill in optional Phone Number]</li>
+<li><b>Contact Name:</b> Ben McIlwain</li>
+<li><b>Email address:</b> nomulus-discuss@google.com</li>
 </ul>
 </section>
 
@@ -67,17 +66,11 @@
 
     <h2>Repertoire</h2>
 
-    <p>The repertoire contains the 197 letters needed to write hundreds of languages in the Latin script.
-     An additional 7   combining diacritical marks are available as part of 21 explicitly defined combining sequences.
+    <p>The repertoire contains the 164 letters needed to write hundreds of languages in the Latin script.
      The repertoire is a subset of [Unicode 11.0.0]. For details, see Section 5, “Repertoire” in [Proposal-Latin].
         (The proposal cited has been adopted for the Latin script portion of the Root Zone LGR.)</p>
 
-    <p>
-    Compared to that source,    an additional language is supported by adding the code point for the Middle Dot used
-    in the  Catalan Ela Geminada:    U+006C U+00B7 U+006C. Context rules limit U+00B7 MIDDLE DOT to being bracketed
-    by the letter “l”. (See also [280])</p>
-
-    <p>For the second level, the repertoire has been augmented with the ASCII digits, U+0030 to U+0039, plus U+002D HYPHEN-MINUS, for a total of 231 repertoire elements.</p>
+    <p>For the second level, the repertoire has been augmented with the ASCII digits, U+0030 to U+0039, plus U+002D HYPHEN-MINUS, for a total of 175 repertoire elements.</p>
 
     <p>Any code points outside the Latin Script repertoire that are targets for
      out-of-repertoire variants would be included here only if the variant is listed 
@@ -142,28 +135,6 @@
 
     <ul>
     
-    <li><p><b>U+00B7 MIDDLE DOT and U+002D HYPHEN-MINUS</b> &mdash; 
-        the use of the hyphen as fallback for the middle dot in the Catalan Ela Geminada follows registry practice, see [281]. 
-        The variant is limited to an Ela Geminada context.</p></li>
-    <li><b>U+00DF LATIN SMALL LETTER SHARP S and the sequence of two letters “ss” (U+0073 U+0073)</b> &mdash;
-     IDNA2003 Compatibility: in IDNA2003, U+00DF LATIN SMALL LETTER SHARP S is mapped into “ss” (U+0073 U+0073).
-     Note: the fallback is also used outside domain names, but also used in locale variants of German and the 
-     standard spelling.</li>
-    <li><b>U+0131 LATIN SMALL LETTER DOTLESS I and U+0069 LATIN SMALL LETTER I</b>  &mdash;
-     IDNA2003 Compatibility: in IDNA2003, U+0131 LATIN SMALL LETTER DOTLESS I is mapped into 
-     U+0069 LATIN SMALL LETTER I.</li>
-    </ul>
-
-    <p>Some second level LGRs provide ASCII fallback variants for some or all accented Latin characters. 
-    Likewise the U+0153 Small OE Ligature and U+00E6 Small AE ligature have ASCII fallbacks consisting of the
-    non-ligated “oe” and “ae” sequences. None of these fallbacks have been added to the current version of the LGR.</p>
-
-    <p><b>Overlapped Variant Sequence:</b> Both “ss” and “s” coexist in the repertoire and “s” has variant 
-    relationships on its own. These variants thus overlap: making the variant set well-behaved for
-    index variant calculation requires that the sequence “ss” also be given variants to all permutations of 
-    variants for the letter s followed by itself, as well as all transitive variants due to other variants 
-    for U+00DF.</p>
-
     <h3>In-script Variant Mapping Types</h3>
     <p>In each of the fallback variant pairs defined above, the mapping type from the first element to the second is of type
     “fallback”, while the variant type for the other direction is “blocked”. In addition, the first element of each pair uses the
@@ -194,17 +165,6 @@
 
     <h3>Latin-specific Rules</h3>
 
-    <p>The following context rule applies to U+00B7 MIDDLE DOT and its variants. 
-    It ensures that the middle dot is part of an Ela Geminada sequence and variants between it and HYPHEN-MINUS are only defined in that context.</p>
-    <ul>
-    <li><b>surrounded-by-L</b> &mdash; code points are invalid and variants undefined when not surrounded by “l”</li>
-    </ul>
-
-    <p>The following WLE rule invalidates labels in which two Ela Geminada sequences overlap.</p>
-    <ul>
-    <li><b>dot-L-dot</b> &mdash; labels sharing a single “l” with two different middle dots are invalid</li>
-    </ul>
-
     <h2>Actions</h2>
 
     <h3>Default Actions</h3>
@@ -212,27 +172,6 @@
     <p>This LGR includes the default actions for LGRs as well as the action needed to
         invalidate labels with misplaced combining marks. They are marked with &#x235F;.
         For a description see [RFC 7940].</p>
-
-    <p>Because this LGR defines allocatable fallback variants the following default actions are applicable.</p>
-
-    <ul>
-    <li><b>blocked</b> &mdash;  a variant label containing a blocked variant will receive a disposition of “blocked”.</li>
-    <li><b>r-original</b> &mdash; a label containing one or more of this reflexive variant type 
-       and no others represents an original label 
-       and receives a disposition of “valid”.</li>
-    <li><b>fallback</b> &mdash; a label containing one or more of these variant types and no others 
-       represents a label that contains only fallback variants
-       and receives a disposition of “allocatable”.</li> 
-    <li><b>fallback plus other</b> &mdash; any label remaining containing both this variant type and any others
-        receives a disposition of “blocked”.</li>
-    </ul>
-    <p>These actions resolve as “allocatable” any label where all variants are of type “fallback”, and as “valid” any label 
-    where all variants are of type “r-original”. Labels with a mix of variant types are resolved as “blocked”.</p>
-    
-    <p>To account for original code points in a permuted variant, reflexive variant 
-    mappings with an “r-” prefix are used. (See [RFC 7940]). 
-    In particular, the mapping type “r-original” is given to any code point that has a fallback mapping, 
-    but that appears in its non-fallback form in the original label, and thus “maps to itself”.</p>
 
      <p>Default actions that are
      triggered by the LGR-specific variant types described above limit the “allocatable” variant
@@ -258,7 +197,7 @@
 
     <section id="change_history">
     <h3>Changes from Version Dated 25 October 2024</h3>
-        <p>Adopted from the Second Level Reference LGR for the Latin Script [Ref-LGR-und-Latn] without normative changes.</p>
+        <p>Adopted from the Second Level Reference LGR for the Latin Script [Ref-LGR-und-Latn] with security improvements implemented by removing confusable variants.</p>
     </section>
     
     <h2>References</h2> 
@@ -496,9 +435,7 @@
     </references>
   </meta>
   <data>
-    <char cp="002D" not-when="hyphen-minus-disallowed" tag="sc:Zyyy" ref="0" comment="HYPHEN-MINUS; &#x235F;">
-      <var cp="00B7" when="surrounded-by-L" type="blocked" ref="281" comment="Middle dot in Ela Geminada" />
-    </char>
+    <char cp="002D" not-when="hyphen-minus-disallowed" tag="sc:Zyyy" ref="0" comment="HYPHEN-MINUS; &#x235F;" />
     <char cp="0030" tag="Common-digit sc:Zyyy" ref="0" comment="DIGIT ZERO; &#x235F;" />
     <char cp="0031" tag="Common-digit sc:Zyyy" ref="0" comment="DIGIT ONE; &#x235F;" />
     <char cp="0032" tag="Common-digit sc:Zyyy" ref="0" comment="DIGIT TWO; &#x235F;" />
@@ -509,89 +446,35 @@
     <char cp="0037" tag="Common-digit sc:Zyyy" ref="0" comment="DIGIT SEVEN; &#x235F;" />
     <char cp="0038" tag="Common-digit sc:Zyyy" ref="0" comment="DIGIT EIGHT; &#x235F;" />
     <char cp="0039" tag="Common-digit sc:Zyyy" ref="0" comment="DIGIT NINE; &#x235F;" />
-    <char cp="0061" tag="sc:Latn" ref="0 99" comment="Basic Latin">
-      <var cp="00E1" type="blocked" comment="Required for use with Common LGR" />
-    </char>
-    <char cp="0061 0331" ref="129 146" comment="Nuer (4)" />
+    <char cp="0061" tag="sc:Latn" ref="0 99" comment="Basic Latin" />
     <char cp="0062" tag="sc:Latn" ref="0 99" comment="Basic Latin" />
     <char cp="0063" tag="sc:Latn" ref="0 99" comment="Basic Latin" />
     <char cp="0064" tag="sc:Latn" ref="0 99" comment="Basic Latin" />
     <char cp="0065" tag="sc:Latn" ref="0 99" comment="Basic Latin" />
-    <char cp="0065 0331" ref="146" comment="Nuer (4)" />
-    <char cp="0066" tag="sc:Latn" ref="0 99" comment="Basic Latin">
-      <var cp="0192" type="blocked" comment="Generally acceptable alternate glyph" />
-    </char>
+    <char cp="0066" tag="sc:Latn" ref="0 99" comment="Basic Latin" />
     <char cp="0067" tag="sc:Latn" ref="0 99" comment="Basic Latin" />
-    <char cp="0067 0303" ref="142 143" comment="Guarani (1)">
-      <var cp="1E21" type="blocked" comment="Glyphs either homoglyph or nearly identical" />
-    </char>
     <char cp="0068" tag="sc:Latn" ref="0 99" comment="Basic Latin" />
-    <char cp="0069" tag="sc:Latn" ref="0 99" comment="Basic Latin">
-      <var cp="00ED" type="blocked" comment="Required for use with Common LGR" />
-      <var cp="00EF" type="blocked" comment="Required for use with Common LGR" />
-      <var cp="0131" type="blocked" comment="IDNA2003 Compatibility" />
-      <var cp="0269" type="blocked" comment="Glyphs either homoglyph or nearly identical" />
-      <var cp="1EC9" type="blocked" comment="Glyphs either homoglyph or nearly identical" />
-    </char>
-    <char cp="0069 0331" ref="146" comment="Nuer (4)" />
+    <char cp="0069" tag="sc:Latn" ref="0 99" comment="Basic Latin" />
     <char cp="006A" tag="sc:Latn" ref="0 99" comment="Basic Latin" />
     <char cp="006B" tag="sc:Latn" ref="0 99" comment="Basic Latin" />
     <char cp="006C" tag="sc:Latn" ref="0 99" comment="Basic Latin" />
     <char cp="006D" tag="sc:Latn" ref="0 99" comment="Basic Latin" />
-    <char cp="006D 0327" ref="136 213 214" comment="Marshallese (1)" />
-    <char cp="006E" tag="sc:Latn" ref="0 99" comment="Basic Latin">
-      <var cp="0144" type="blocked" comment="Required for use with Common LGR" />
-      <var cp="014B" type="blocked" comment="Required for use with Common LGR" />
-      <var cp="1E45" type="blocked" comment="Required for use with Common LGR" />
-    </char>
-    <char cp="006E 0304" ref="136 200 213" comment="Raga (Hano) (3), Marshallese (1)">
-      <var cp="00F1" type="blocked" comment="Glyphs either homoglyph or nearly identical" />
-    </char>
-    <char cp="006E 0308" ref="276" comment="Malagasy (1)" />
-    <char cp="006F" tag="sc:Latn" ref="0 99" comment="Basic Latin">
-      <var cp="00F3" type="blocked" comment="Required for use with Common LGR" />
-    </char>
-    <char cp="006F 0327" ref="136" comment="Marshallese (1)" />
-    <char cp="006F 0331" ref="129 146" comment="Nuer (4)" />
+    <char cp="006E" tag="sc:Latn" ref="0 99" comment="Basic Latin" />
+    <char cp="006F" tag="sc:Latn" ref="0 99" comment="Basic Latin" />
     <char cp="0070" tag="sc:Latn" ref="0 99" comment="Basic Latin" />
     <char cp="0071" tag="sc:Latn" ref="0 99" comment="Basic Latin" />
     <char cp="0072" tag="sc:Latn" ref="0 99" comment="Basic Latin" />
-    <char cp="0072 0303" ref="147" comment="Hausa (2)" />
     <char cp="0073" tag="sc:Latn" ref="0 99" comment="Basic Latin" />
-    <char cp="0073 0073" comment="Sequence added for variant mapping">
-      <var cp="00DF" type="blocked" comment="IDNA2003 Compatibility" />
-    </char>
     <char cp="0074" tag="sc:Latn" ref="0 99" comment="Basic Latin" />
-    <char cp="0075" tag="sc:Latn" ref="0 99" comment="Basic Latin">
-      <var cp="00FA" type="blocked" comment="Required for use with Common LGR" />
-      <var cp="00FC" type="blocked" comment="Required for use with Common LGR" />
-      <var cp="028B" type="blocked" comment="Required for use with Common LGR" />
-    </char>
+    <char cp="0075" tag="sc:Latn" ref="0 99" comment="Basic Latin" />
     <char cp="0076" tag="sc:Latn" ref="0 99" comment="Basic Latin" />
     <char cp="0077" tag="sc:Latn" ref="0 99" comment="Basic Latin" />
     <char cp="0078" tag="sc:Latn" ref="0 99" comment="Basic Latin" />
-    <char cp="0079" tag="sc:Latn" ref="0 99" comment="Basic Latin">
-      <var cp="0263" type="blocked" comment="Required for use with Common LGR" />
-    </char>
+    <char cp="0079" tag="sc:Latn" ref="0 99" comment="Basic Latin" />
     <char cp="007A" tag="sc:Latn" ref="0 99" comment="Basic Latin" />
-    <char cp="00B7" when="surrounded-by-L" tag="sc:Zyyy" ref="0 100 279 280" comment="Catalan (2) L·L - CONTEXTO for MIDDLE DOT in RFC 5892">
-      <var cp="002D" when="surrounded-by-L" type="fallback" comment="Fallback" />
-      <var cp="00B7" when="surrounded-by-L" type="r-original" comment="Middle Dot in the original label" />
-    </char>
-    <char cp="00DF" tag="sc:Latn" ref="0 119" comment="German (1)">
-      <var cp="0073 0073" type="fallback" comment="IDNA2003 Compatibility" />
-      <var cp="00DF" type="r-original" comment="Eszett in the original label" />
-    </char>
-    <char cp="00E0" tag="sc:Latn" ref="0 106 114 130 131 132" comment="Italian (1), French (1), Galician (2), Wolof (4)">
-      <var cp="1EA3" type="blocked" comment="Glyphs either homoglyph or nearly identical" />
-    </char>
-    <char cp="00E1" tag="sc:Latn" ref="0 100 101 102 103 105 106 107 108" comment="Spanish (1), Czech (1), Icelandic (1), Faroese (2), Chuukese (2), Galician (2), Lule Sami (2), Northern Sami (2)">
-      <var cp="0061" type="blocked" comment="Required for use with Common LGR" />
-    </char>
+    <char cp="00E0" tag="sc:Latn" ref="0 106 114 130 131 132" comment="Italian (1), French (1), Galician (2), Wolof (4)" />
     <char cp="00E2" tag="sc:Latn" ref="0 106 109 110 113 114 115 116 117 275" comment="Vietnamese (1), Romanian (1), Skolt Sami (2), French (1), Galician (2), West Frisian (1), Friulian (4), Xavante (4)" />
-    <char cp="00E3" tag="sc:Latn" ref="0 141 142 143 144 145" comment="Umbundu (3), Guarani (1), Nauruan (3), Khoekhoe (4)">
-      <var cp="0101" type="blocked" comment="Glyphs either homoglyph or nearly identical" />
-    </char>
+    <char cp="00E3" tag="sc:Latn" ref="0 141 142 143 144 145" comment="Umbundu (3), Guarani (1), Nauruan (3), Khoekhoe (4)" />
     <char cp="00E4" tag="sc:Latn" ref="0 107 119 120 121 122 123 124 125 126 127 128 129" comment="German (1), Finnish (1), Turkmen (1), Estonian (1), Swedish (1), Lule Sami (2), Yapese (2), Dinka (4), Kaqchikel (4), Bashkir (4), Alsatian (5), Nuer (4)" />
     <char cp="00E5" tag="sc:Latn" ref="0 107 120 123 139 140" comment="Danish (1), Finnish (1),  Chamorro (1), Swedish (1), Lule Sami (2)" />
     <char cp="00E6" tag="sc:Latn" ref="0 102 103 139" comment="Danish (1), Icelandic (1), Faroese (2)" />
@@ -601,126 +484,44 @@
     <char cp="00EA" tag="sc:Latn" ref="0 109 114 115 116 158 173 174 175" comment="French (1), Tswana (1), Afrikaans (1), Vietnamese (1), Kurdish (2), West Frisian (2), Friulian (4)" />
     <char cp="00EB" tag="sc:Latn" ref="0 114 115 124 126 129 132 175 176 177 179 180" comment="Afrikaans (1), Albanian (1), French (1), Uyghur (2), Yapese (2), Wolof (4), Drehu (4), Kaqchikel (4), West Frisian (2), Nuer (4)" />
     <char cp="00EC" tag="sc:Latn" ref="0 130 206 208" comment="Italian (1)" />
-    <char cp="00ED" tag="sc:Latn" ref="0 100 101 102 103 106 127" comment="Spanish (1), Czech (1),  Icelandic (1),  Faroese (2), Galician (2), Bashkir (4)">
-      <var cp="0069" type="blocked" comment="Required for use with Common LGR" />
-      <var cp="00EF" type="blocked" comment="Required for use with Common LGR" />
-      <var cp="0131" type="blocked" comment="Required for use with Common LGR" />
-      <var cp="0269" type="blocked" comment="Required for use with Common LGR" />
-      <var cp="1EC9" type="blocked" comment="Required for use with Common LGR" />
-    </char>
     <char cp="00EE" tag="sc:Latn" ref="0 110 114 116 158 175" comment="Afrikaans (1), Romanian (1), Kurdish (2),  French (1), Friulian (4)" />
-    <char cp="00EF" tag="sc:Latn" ref="0 114 115 125 126 175" comment="Afrikaans (1), French (1), Kaqchikel (4), Dinka (4), West Frisian (2)">
-      <var cp="0069" type="blocked" comment="Required for use with Common LGR" />
-      <var cp="00ED" type="blocked" comment="Required for use with Common LGR" />
-      <var cp="0131" type="blocked" comment="Required for use with Common LGR" />
-      <var cp="0269" type="blocked" comment="Required for use with Common LGR" />
-      <var cp="1EC9" type="blocked" comment="Required for use with Common LGR" />
-    </char>
     <char cp="00F0" tag="sc:Latn" ref="0 102 103" comment="Faroese (2), Icelandic (1)" />
-    <char cp="00F1" tag="sc:Latn" ref="0 106 127 132 136 142 143 144 149 160 197 205 221 222 223 224 225 226 227 228 229" comment="Spanish (1), Fula (3), Chamorro (1), Filipino (1), Guarani (1), Chavacano (4), Basque (1), Galician (2), Iloco (3), Quechua (3), Cape Verdean Creole (4), Waray-Waray (3), Wolof (4), Nauruan (3), Lozi (4), Bashkir (4), Marshallese (1), Mandinka (5), Igbo (2)">
-      <var cp="006E 0304" type="blocked" comment="Glyphs either homoglyph or nearly identical" />
-    </char>
-    <char cp="00F2" tag="sc:Latn" ref="0 130 182 183" comment="Italian (1), Haitian Creole (1)">
-      <var cp="1ECF" type="blocked" comment="Glyphs either homoglyph or nearly identical" />
-    </char>
-    <char cp="00F3" tag="sc:Latn" ref="0 100 101 102 105 106 132 152" comment="Spanish (1), Polish (1), Czech (1), Icelandic (1), Chuukese (2), Galician (2), Wolof (4)">
-      <var cp="006F" type="blocked" comment="Required for use with Common LGR" />
-    </char>
+    <char cp="00F2" tag="sc:Latn" ref="0 130 182 183" comment="Italian (1), Haitian Creole (1)" />
     <char cp="00F4" tag="sc:Latn" ref="0 106 109 114 115 116 117 173 174 175 230 275" comment="Tswana (1), Afrikaans (1), Vietnamese (1), French (1), Northern Sotho (1), West Frisian (2), Galician (2), Friulian (4), Xavante (4)" />
-    <char cp="00F5" tag="sc:Latn" ref="0 113 117 122 141 142 143 144 145 275" comment="Estonian (1), Skolt Sami (2), Umbundu (3), Guarani (1), Nauruan (3), Xavante (4), Khoekhoe (4)">
-      <var cp="014D" type="blocked" comment="Glyphs either homoglyph or nearly identical" />
-    </char>
+    <char cp="00F5" tag="sc:Latn" ref="0 113 117 122 141 142 143 144 145 275" comment="Estonian (1), Skolt Sami (2), Umbundu (3), Guarani (1), Nauruan (3), Xavante (4), Khoekhoe (4)" />
     <char cp="00F6" tag="sc:Latn" ref="0 115 119 120 123 124 125 126 127 129 157 175 179 180 232" comment="German (1), Finnish (1), Afrikaans (1), Turkish (1), Swedish (1), Uygur (2), Yapese (2), Drehu (4), Kaqchikel (4), Dinka (4), Bashkir (4), Chechen (2),  1992 Version, West Frisian (2), Nuer (4)" />
     <char cp="00F8" tag="sc:Latn" ref="0 103 139" comment="Danish (1), Faroese (2)" />
-    <char cp="00F9" tag="sc:Latn" ref="0 114 130 206 245 246 253" comment="Italian (1), French (1), Papiamento (1)">
-      <var cp="1EE7" type="blocked" comment="Glyphs either homoglyph or nearly identical" />
-    </char>
-    <char cp="00FA" tag="sc:Latn" ref="0 100 101 102 103 105 106 115" comment="Spanish (1), Czech (1), Icelandic (1), Faroese (2), Chuukese (2), West Frisian (2), Galician (2)">
-      <var cp="0075" type="blocked" comment="Required for use with Common LGR" />
-      <var cp="00FC" type="blocked" comment="Required for use with Common LGR" />
-      <var cp="028B" type="blocked" comment="Required for use with Common LGR" />
-    </char>
+    <char cp="00F9" tag="sc:Latn" ref="0 114 130 206 245 246 253" comment="Italian (1), French (1), Papiamento (1)" />
     <char cp="00FB" tag="sc:Latn" ref="0 114 115 116 158 175 202 243" comment="Afrikaans (1),  Kurdish (2), French (1), Miskito (2), West Frisian (2), Friulian (4), Zazaki (4)" />
-    <char cp="00FC" tag="sc:Latn" ref="0 100 106 114 119 123 126 127 157 159 161 175 179" comment="German (1), Spanish (1), Afrikaans (1), Turkish (1), Swedish (1), French (1), Azeri (1), Basque (1), Galician (2), Uygur (2), Kaqchikel (4), Bashkir (4)">
-      <var cp="0075" type="blocked" comment="Required for use with Common LGR" />
-      <var cp="00FA" type="blocked" comment="Required for use with Common LGR" />
-      <var cp="028B" type="blocked" comment="Required for use with Common LGR" />
-    </char>
-    <char cp="00FD" tag="sc:Latn" ref="0 101 102 103 121 142 143" comment="Turkmen (1), Czech (1), Icelandic (1), Faroese (2), Guarani (1)">
-      <var cp="1EF3" type="blocked" comment="Variant due to transitivity" />
-      <var cp="1EF7" type="blocked" comment="Glyphs either homoglyph or nearly identical" />
-    </char>
+    <char cp="00FD" tag="sc:Latn" ref="0 101 102 103 121 142 143" comment="Turkmen (1), Czech (1), Icelandic (1), Faroese (2), Guarani (1)" />
     <char cp="00FE" tag="sc:Latn" ref="0 102" comment="Icelandic (1)" />
     <char cp="00FF" tag="sc:Latn" ref="0 114 253 257" comment="French (1)" />
-    <char cp="0101" tag="sc:Latn" ref="0 133 134 135 136" comment="Latvian (1), Tongan (1), Hawaiian (2), Marshallese (1)">
-      <var cp="00E3" type="blocked" comment="Glyphs either homoglyph or nearly identical" />
-    </char>
     <char cp="0103" tag="sc:Latn" ref="0 109 110" comment="Vietnamese (1), Romanian (1)" />
     <char cp="0105" tag="sc:Latn" ref="0 137 138" comment="Polish (1), Lithuanian (1)" />
-    <char cp="0107" tag="sc:Latn" ref="0 150 151 152" comment="Croatian (1), Serbian (1), Polish (1)">
-      <var cp="010B" type="blocked" comment="Glyphs either homoglyph or nearly identical" />
-    </char>
+    <char cp="0107" tag="sc:Latn" ref="0 150 151 152" comment="Croatian (1), Serbian (1), Polish (1)" />
     <char cp="0109" tag="sc:Latn" ref="0 255" comment="Esperanto (3)" />
-    <char cp="010B" tag="sc:Latn" ref="0 163" comment="Maltese (1)">
-      <var cp="0107" type="blocked" comment="Glyphs either homoglyph or nearly identical" />
-    </char>
     <char cp="010D" tag="sc:Latn" ref="0 108 133 150 151 153 154" comment="Croatian (1), Serbian (1), Latvian (1), Slovak (1), Northern Sami (2), Lithuanian (1)" />
     <char cp="010F" tag="sc:Latn" ref="0 101 153" comment="Czech (1), Slovak (1)" />
     <char cp="0111" tag="sc:Latn" ref="0 108 109 150 151 168" comment="Croatian (1), Serbian (1), Vietnamese (1), Northern Sami (2), Brahui (5)" />
-    <char cp="0113" tag="sc:Latn" ref="0 133 134 135 184" comment="Latvian (1), Hawaiian (2), Tongan (1), Minangkabau (5)">
-      <var cp="1EBD" type="blocked" comment="Glyphs either homoglyph or nearly identical" />
-    </char>
+    <char cp="0113" tag="sc:Latn" ref="0 133 134 135 184" comment="Latvian (1), Hawaiian (2), Tongan (1), Minangkabau (5)" />
     <char cp="0117" tag="sc:Latn" ref="0 138 154" comment="Lithuanian (1)" />
     <char cp="0119" tag="sc:Latn" ref="0 138 152 154 185" comment="Polish (1), Palauan (2), Lithuanian (1)" />
     <char cp="011B" tag="sc:Latn" ref="0 101 172" comment="Czech (1), Sorbian (4)" />
     <char cp="011D" tag="sc:Latn" ref="0 255" comment="Esperanto (3)" />
-    <char cp="011F" tag="sc:Latn" ref="0 127 157 159 201 202" comment="Turkish (1), Tatar (2),  Azeri (1), Bashkir (4), Zaza (5)">
-      <var cp="01E7" type="blocked" comment="Glyphs either homoglyph or nearly identical" />
-    </char>
-    <char cp="0121" tag="sc:Latn" ref="0 163" comment="Maltese (1)">
-      <var cp="0123" type="blocked" comment="Glyphs either homoglyph or nearly identical" />
-    </char>
-    <char cp="0123" tag="sc:Latn" ref="0 133 168" comment="Latvian (1), Brahui (5)">
-      <var cp="0121" type="blocked" comment="Glyphs either homoglyph or nearly identical" />
-    </char>
+    <char cp="011F" tag="sc:Latn" ref="0 127 157 159 201 202" comment="Turkish (1), Tatar (2),  Azeri (1), Bashkir (4), Zaza (5)" />
+    <char cp="0123" tag="sc:Latn" ref="0 133 168" comment="Latvian (1), Brahui (5)" />
     <char cp="0125" tag="sc:Latn" ref="0 255" comment="Esperanto (3)" />
     <char cp="0127" tag="sc:Latn" ref="0 163" comment="Maltese (1)" />
-    <char cp="0129" tag="sc:Latn" ref="0 142 143 145 186 209" comment="Guarani (1), Cubeo (3), Khoekhoe (4), Kikuyu (5)">
-      <var cp="012B" type="blocked" comment="Glyphs either homoglyph or nearly identical" />
-    </char>
-    <char cp="012B" tag="sc:Latn" ref="0 133 134 135 138" comment="Latvian (1), Lithuanian (1),  Hawaiian (2), Tongan (1)">
-      <var cp="0129" type="blocked" comment="Glyphs either homoglyph or nearly identical" />
-    </char>
+    <char cp="012B" tag="sc:Latn" ref="0 133 134 135 138" comment="Latvian (1), Lithuanian (1),  Hawaiian (2), Tongan (1)" />
     <char cp="012F" tag="sc:Latn" ref="0 154" comment="Lithuanian (1)" />
-    <char cp="0131" tag="sc:Latn" ref="0 157 159 201 203" comment="Turkish (1), Tatar (2),  Azeri (1)">
-      <var cp="0069" type="fallback" comment="IDNA2003 Compatibility" />
-      <var cp="00ED" type="blocked" comment="Required for use with Common LGR" />
-      <var cp="00EF" type="blocked" comment="Required for use with Common LGR" />
-      <var cp="0131" type="r-original" comment="Dotless form in the original label" />
-      <var cp="0269" type="blocked" comment="Glyphs either homoglyph or nearly identical" />
-      <var cp="1EC9" type="blocked" comment="Glyphs either homoglyph or nearly identical" />
-    </char>
     <char cp="0135" tag="sc:Latn" ref="0 255" comment="Esperanto (3)" />
     <char cp="0137" tag="sc:Latn" ref="0 133" comment="Latvian (1)" />
     <char cp="013A" tag="sc:Latn" ref="0 153" comment="Slovak (1)" />
     <char cp="013C" tag="sc:Latn" ref="0 133 168 213 214" comment="Latvian (1), Marshallese (1), Brahui (5)" />
     <char cp="013E" tag="sc:Latn" ref="0 153" comment="Slovak (1)" />
     <char cp="0142" tag="sc:Latn" ref="0 152" comment="Polish (1)" />
-    <char cp="0144" tag="sc:Latn" ref="0 107 152 168 172" comment="Polish (1), Lule Sami (2), Sorbian (4), Brahui (5)">
-      <var cp="006E" type="blocked" comment="Required for use with Common LGR" />
-      <var cp="014B" type="blocked" comment="Required for use with Common LGR" />
-      <var cp="1E45" type="blocked" comment="Glyphs either homoglyph or nearly identical" />
-    </char>
     <char cp="0146" tag="sc:Latn" ref="0 133 136" comment="Latvian (1), Marshallese (1)" />
     <char cp="0148" tag="sc:Latn" ref="0 101 121 153" comment="Turkmen (1), Czech (1), Slovak (1)" />
-    <char cp="014B" tag="sc:Latn" ref="0 108 125 129 132 146 148 170 188 189 190 191 192 193 194 195 196 197 198 199" comment="Inari Saami (2), Dagaare - Burkina Faso (4), Dagbani (Dagomba),  (4), Northern Sami (2), Ewondo (3), Luganda (3), Wolof (4), Adzera (4), Nuer (4), Ga (4), Dinka (4), Duala (3), Ewe (3), Soga (5),  Alur (5),  Mandinka (5),  Acholi (5), Bambara (4), Nuer (4)">
-      <var cp="006E" type="blocked" comment="Required for use with Common LGR" />
-      <var cp="0144" type="blocked" comment="Required for use with Common LGR" />
-      <var cp="1E45" type="blocked" comment="Required for use with Common LGR" />
-    </char>
-    <char cp="014D" tag="sc:Latn" ref="0 134 135 136" comment="Hawaiian (2), Marshallese (1), Tongan (1)">
-      <var cp="00F5" type="blocked" comment="Glyphs either homoglyph or nearly identical" />
-    </char>
     <char cp="0151" tag="sc:Latn" ref="0 233 234" comment="Hungarian (1)" />
     <char cp="0153" tag="sc:Latn" ref="0 114 253" comment="French (1)" />
     <char cp="0155" tag="sc:Latn" ref="0 153 168" comment="Slovak (1), Brahui (5)" />
@@ -731,41 +532,22 @@
     <char cp="0161" tag="sc:Latn" ref="0 108 133 150 151 154 174 230" comment="Tswana (1), Croatian (1), Serbian (1), Latvian (1), Northern Sotho (1), Northern Sami (2), Lithuanian (1)" />
     <char cp="0165" tag="sc:Latn" ref="0 101 153" comment="Czech (1), Slovak (1)" />
     <char cp="0167" tag="sc:Latn" ref="0 108 168" comment="Northern Sami (2), Brahui (5)" />
-    <char cp="0169" tag="sc:Latn" ref="0 141 142 143 144 145 209" comment="Umbundu (3), Guarani (1), Nauruan (3), Khoekhoe (4), Kikuyu (5)">
-      <var cp="016B" type="blocked" comment="Glyphs either homoglyph or nearly identical" />
-    </char>
-    <char cp="016B" tag="sc:Latn" ref="0 133 134 135 136 138 154" comment="Latvian (1), Hawaiian (2), Lithuanian (1), Marshallese (1), Tongan (1)">
-      <var cp="0169" type="blocked" comment="Glyphs either homoglyph or nearly identical" />
-    </char>
+    <char cp="016B" tag="sc:Latn" ref="0 133 134 135 136 138 154" comment="Latvian (1), Hawaiian (2), Lithuanian (1), Marshallese (1), Tongan (1)" />
     <char cp="016D" tag="sc:Latn" ref="0 255" comment="Esperanto (3)" />
     <char cp="016F" tag="sc:Latn" ref="0 101" comment="Czech (1)" />
     <char cp="0171" tag="sc:Latn" ref="0 233 234" comment="Hungarian (1)" />
     <char cp="0173" tag="sc:Latn" ref="0 138 154" comment="Lithuanian (1)" />
     <char cp="0175" tag="sc:Latn" ref="0 247 256" comment="Chichewa (3), Welsh (2)" />
     <char cp="0177" tag="sc:Latn" ref="0 256" comment="Welsh (2)" />
-    <char cp="017A" tag="sc:Latn" ref="0 152 168 172 252 258" comment="Polish (1), Brahui (5), Sorbian (4), Montenegrin (1)">
-      <var cp="017C" type="blocked" comment="Glyphs either homoglyph or nearly identical" />
-    </char>
-    <char cp="017C" tag="sc:Latn" ref="0 152 163" comment="Polish (1), Maltese (1)">
-      <var cp="017A" type="blocked" comment="Glyphs either homoglyph or nearly identical" />
-    </char>
+    <char cp="017A" tag="sc:Latn" ref="0 152 168 172 252 258" comment="Polish (1), Brahui (5), Sorbian (4), Montenegrin (1)" />
     <char cp="017E" tag="sc:Latn" ref="0 108 121 133 150 151 153 154 232" comment="Lithuanian (1), Croatian (1), Serbian (1), Turkmen (1), Latvian (1), Slovak (1), Northern Sami (2), Chechen (2) 1925 Version" />
     <char cp="0188" tag="sc:Latn" ref="0 277" comment="Serer (5)" />
-    <char cp="0192" tag="sc:Latn" ref="0 170" comment="Ewe (3)">
-      <var cp="0066" type="blocked" comment="Generally acceptable alternate glyph" />
-    </char>
     <char cp="0199" tag="sc:Latn" ref="0 147" comment="Hausa (2)" />
     <char cp="01A1" tag="sc:Latn" ref="0 109" comment="Vietnamese (1)" />
     <char cp="01A5" tag="sc:Latn" ref="0 277" comment="Serer (5)" />
     <char cp="01AD" tag="sc:Latn" ref="0 277" comment="Serer (5)" />
     <char cp="01B0" tag="sc:Latn" ref="0 109" comment="Vietnamese (1)" />
     <char cp="01B4" tag="sc:Latn" ref="0 148 149 251" comment="Dagaare - Burkina Faso (4), Fula (3)" />
-    <char cp="01DD" tag="sc:Latn" ref="0 240" comment="Kanuri (3)">
-      <var cp="0259" type="blocked" comment="Glyphs either homoglyph or nearly identical" />
-    </char>
-    <char cp="01E7" tag="sc:Latn" ref="0 113" comment="Skolt Sami (2)">
-      <var cp="011F" type="blocked" comment="Glyphs either homoglyph or nearly identical" />
-    </char>
     <char cp="01E9" tag="sc:Latn" ref="0 113" comment="Skolt Sami (2)" />
     <char cp="01EF" tag="sc:Latn" ref="0 113" comment="Skolt Sami (2)" />
     <char cp="0219" tag="sc:Latn" ref="3 110" comment="Romanian (1)" />
@@ -773,49 +555,17 @@
     <char cp="024D" tag="sc:Latn" ref="8 240" comment="Kanuri (3)" />
     <char cp="0253" tag="sc:Latn" ref="0 147 148 250" comment="Hausa (2), Dagaare - Burkina Faso (4),  Pulaar (3)" />
     <char cp="0254" tag="sc:Latn" ref="0 129 146 148 169 170 189 190 193 194 236 237" comment="Dagaare - Burkina Faso (4), Dagbani (Dagomba) (4), Lingala (2), Akan (3), Ewondo (3), Fon (3), Nuer (4), Ga (4), Duala (3), EWE (3), Nuer (4)" />
-    <char cp="0254 0308" ref="125" comment="DINKA (4)" />
-    <char cp="0254 0331" ref="129 146" comment="Nuer (4)" />
     <char cp="0256" tag="sc:Latn" ref="0 169 170" comment="Fon (3), Ewe (3)" />
     <char cp="0257" tag="sc:Latn" ref="0 147 149 250" comment="Hausa (2), Fula (3)" />
-    <char cp="0259" tag="sc:Latn" ref="0 159 170 190 241" comment="Azeri, Azerbaijani (1), Ewondo (3), Ewe (3), Bugis (3)">
-      <var cp="01DD" type="blocked" comment="Glyphs either homoglyph or nearly identical" />
-    </char>
+    <char cp="0259" tag="sc:Latn" ref="0 159 170 190 241" comment="Azeri, Azerbaijani (1), Ewondo (3), Ewe (3), Bugis (3)" />
     <char cp="025B" tag="sc:Latn" ref="0 129 148 169 170 189 190 193 194 199 212 236 237 238" comment="Dagaare - Burkina Faso (4), Lingala (2), Akan (3), Ewondo (3), Dagbani (Dagomba),  (4), Fon (3), Mossi (3), Ga (4), Ewe (3), Duala (3), Bambara (4), Nuer (4)" />
-    <char cp="025B 0308" ref="125 129 146 239" comment="Nuer (4), Dinka (4)" />
-    <char cp="025B 0331" ref="129 146 239" comment="Nuer (4)" />
-    <char cp="025B 0331 0308" ref="129 146 239" comment="Nuer (4)" />
     <char cp="0260" tag="sc:Latn" ref="0 278" comment="Kpelle (5)" />
-    <char cp="0263" tag="sc:Latn" ref="0 125 129 146 170 189" comment="Dagbani (Dagomba) (4), Nuer (4), Dinka (4), Ewe (3), Nuer (4)">
-      <var cp="0079" type="blocked" comment="Required for use with Common LGR" />
-    </char>
     <char cp="0268" tag="sc:Latn" ref="0 186 189 210 211" comment="Cubeo (3), Dagbani (Dagomba) (4), HIxkaryána (4), Maasai (5)" />
-    <char cp="0268 0303" ref="186" comment="Cubeo (3)" />
-    <char cp="0269" tag="sc:Latn" ref="0 148 212" comment="Dagaare - Burkina Faso (4), Mossi (3)">
-      <var cp="0069" type="blocked" comment="Glyphs either homoglyph or nearly identical" />
-      <var cp="00ED" type="blocked" comment="Required for use with Common LGR" />
-      <var cp="00EF" type="blocked" comment="Required for use with Common LGR" />
-      <var cp="0131" type="blocked" comment="Glyphs either homoglyph or nearly identical" />
-      <var cp="1EC9" type="blocked" comment="Glyphs either homoglyph or nearly identical" />
-    </char>
     <char cp="0272" tag="sc:Latn" ref="0 199 218 219" comment="Susu (4), Zarma (4), Bambara (4)" />
     <char cp="0289" tag="sc:Latn" ref="0 186 187 211" comment="Cubeo (3), Maasai (5)" />
-    <char cp="0289 0303" ref="186 187" comment="Cubeo (3)" />
-    <char cp="028B" tag="sc:Latn" ref="0 148 170 212 238" comment="Dagaare - Burkina Faso (4), Mossi (3), Ewe (3)">
-      <var cp="0075" type="blocked" comment="Required for use with Common LGR" />
-      <var cp="00FA" type="blocked" comment="Required for use with Common LGR" />
-      <var cp="00FC" type="blocked" comment="Required for use with Common LGR" />
-    </char>
     <char cp="0292" tag="sc:Latn" ref="0 113 189" comment="Skolt Sami (2), Dagbani (Dagomba) (4)" />
     <char cp="1E13" tag="sc:Latn" ref="0 164 257" comment="Venda (1)" />
-    <char cp="1E21" tag="sc:Latn" ref="0 200" comment="Raga (Hano) (3)">
-      <var cp="0067 0303" type="blocked" comment="Glyphs either homoglyph or nearly identical" />
-    </char>
     <char cp="1E3D" tag="sc:Latn" ref="0 164 257" comment="Venda (1)" />
-    <char cp="1E45" tag="sc:Latn" ref="0 164 257" comment="Venda (1)">
-      <var cp="006E" type="blocked" comment="Required for use with Common LGR" />
-      <var cp="0144" type="blocked" comment="Glyphs either homoglyph or nearly identical" />
-      <var cp="014B" type="blocked" comment="Required for use with Common LGR" />
-    </char>
     <char cp="1E49" tag="sc:Latn" ref="0 220" comment="Pitjantjatjara (4)" />
     <char cp="1E4B" tag="sc:Latn" ref="0 164 257" comment="Venda (1)" />
     <char cp="1E63" tag="sc:Latn" ref="0 254" comment="Yoruba (2)" />
@@ -823,9 +573,6 @@
     <char cp="1E71" tag="sc:Latn" ref="0 164 257" comment="Venda (1)" />
     <char cp="1E8D" tag="sc:Latn" ref="0 248 249" comment="Mam (4)" />
     <char cp="1EA1" tag="sc:Latn" ref="0 109" comment="Vietnamese (1)" />
-    <char cp="1EA3" tag="sc:Latn" ref="0 109" comment="Vietnamese (1)">
-      <var cp="00E0" type="blocked" comment="Glyphs either homoglyph or nearly identical" />
-    </char>
     <char cp="1EA5" tag="sc:Latn" ref="0 109" comment="Vietnamese (1)" />
     <char cp="1EA7" tag="sc:Latn" ref="0 109" comment="Vietnamese (1)" />
     <char cp="1EA9" tag="sc:Latn" ref="0 109" comment="Vietnamese (1)" />
@@ -837,31 +584,14 @@
     <char cp="1EB5" tag="sc:Latn" ref="0 109" comment="Vietnamese (1)" />
     <char cp="1EB7" tag="sc:Latn" ref="0 109" comment="Vietnamese (1)" />
     <char cp="1EB9" tag="sc:Latn" ref="0 254" comment="Yoruba (2)" />
-    <char cp="1EB9 0300" ref="254" comment="Yoruba (2)" />
-    <char cp="1EB9 0301" ref="254" comment="Yoruba (2)" />
     <char cp="1EBB" tag="sc:Latn" ref="0 109" comment="Vietnamese (1)" />
-    <char cp="1EBD" tag="sc:Latn" ref="0 117 141 142 143 186 187 275" comment="Umbundu (3), Guarani (1), Cubeo (3), Xavante (4)">
-      <var cp="0113" type="blocked" comment="Glyphs either homoglyph or nearly identical" />
-    </char>
     <char cp="1EBF" tag="sc:Latn" ref="0 109" comment="Vietnamese (1)" />
     <char cp="1EC1" tag="sc:Latn" ref="0 109" comment="Vietnamese (1)" />
     <char cp="1EC3" tag="sc:Latn" ref="0 109" comment="Vietnamese (1)" />
     <char cp="1EC5" tag="sc:Latn" ref="0 109" comment="Vietnamese (1)" />
     <char cp="1EC7" tag="sc:Latn" ref="0 109" comment="Vietnamese (1)" />
-    <char cp="1EC9" tag="sc:Latn" ref="0 109" comment="Vietnamese (1)">
-      <var cp="0069" type="blocked" comment="Glyphs either homoglyph or nearly identical" />
-      <var cp="00ED" type="blocked" comment="Required for use with Common LGR" />
-      <var cp="00EF" type="blocked" comment="Required for use with Common LGR" />
-      <var cp="0131" type="blocked" comment="Glyphs either homoglyph or nearly identical" />
-      <var cp="0269" type="blocked" comment="Glyphs either homoglyph or nearly identical" />
-    </char>
     <char cp="1ECB" tag="sc:Latn" ref="0 205" comment="Igbo (2)" />
     <char cp="1ECD" tag="sc:Latn" ref="0 136 204 205 215 216 254" comment="Igbo (2), Yoruba (2), Marshallese (1)" />
-    <char cp="1ECD 0300" ref="254" comment="Yoruba (2)" />
-    <char cp="1ECD 0301" ref="254" comment="Yoruba (2)" />
-    <char cp="1ECF" tag="sc:Latn" ref="0 109" comment="Vietnamese (1)">
-      <var cp="00F2" type="blocked" comment="Glyphs either homoglyph or nearly identical" />
-    </char>
     <char cp="1ED1" tag="sc:Latn" ref="0 109" comment="Vietnamese (1)" />
     <char cp="1ED3" tag="sc:Latn" ref="0 109" comment="Vietnamese (1)" />
     <char cp="1ED5" tag="sc:Latn" ref="0 109" comment="Vietnamese (1)" />
@@ -873,23 +603,12 @@
     <char cp="1EE1" tag="sc:Latn" ref="0 109" comment="Vietnamese (1)" />
     <char cp="1EE3" tag="sc:Latn" ref="0 109" comment="Vietnamese (1)" />
     <char cp="1EE5" tag="sc:Latn" ref="0 109 204 205" comment="Vietnamese (1), Igbo (2)" />
-    <char cp="1EE7" tag="sc:Latn" ref="0 109" comment="Vietnamese (1)">
-      <var cp="00F9" type="blocked" comment="Glyphs either homoglyph or nearly identical" />
-    </char>
     <char cp="1EE9" tag="sc:Latn" ref="0 109" comment="Vietnamese (1)" />
     <char cp="1EEB" tag="sc:Latn" ref="0 109" comment="Vietnamese (1)" />
     <char cp="1EED" tag="sc:Latn" ref="0 109" comment="Vietnamese (1)" />
     <char cp="1EEF" tag="sc:Latn" ref="0 109" comment="Vietnamese (1)" />
     <char cp="1EF1" tag="sc:Latn" ref="0 109" comment="Vietnamese (1)" />
-    <char cp="1EF3" tag="sc:Latn" ref="0 109" comment="Vietnamese (1)">
-      <var cp="00FD" type="blocked" comment="Variant due to transitivity" />
-      <var cp="1EF7" type="blocked" comment="Glyphs either homoglyph or nearly identical" />
-    </char>
     <char cp="1EF5" tag="sc:Latn" ref="0 109" comment="Vietnamese (1)" />
-    <char cp="1EF7" tag="sc:Latn" ref="0 109" comment="Vietnamese (1)">
-      <var cp="00FD" type="blocked" comment="Glyphs either homoglyph or nearly identical" />
-      <var cp="1EF3" type="blocked" comment="Glyphs either homoglyph or nearly identical" />
-    </char>
     <char cp="1EF9" tag="sc:Latn" ref="0 109 142" comment="Vietnamese (1), Guarani (1)" />
   </data>
   <!--Rules section goes here-->
@@ -927,18 +646,6 @@
           <anchor />
         </rule>
       </choice>
-    </rule>
-    <rule name="surrounded-by-L" comment="code point both follows and precedes L, required context for Ela Geminada &#x235F;">
-      <look-behind>
-        <char cp="006C" />
-      </look-behind>
-      <anchor />
-      <look-ahead>
-        <char cp="006C" />
-      </look-ahead>
-    </rule>
-    <rule name="dot-L-dot" comment="labels with one L sharing two middle dots are invalid &#x235F;">
-      <char cp="00B7 006C 00B7" />
     </rule>
     <!--Action elements go here - order defines precedence-->
     <action disp="invalid" match="leading-combining-mark" comment="labels with leading combining marks are invalid &#x235F;" />
