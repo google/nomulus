@@ -50,11 +50,11 @@ steps:
   - |
     set -e
     sed -i \
-        -e '\#core/src/main/java/google/registry/config/files/nomulus-config-sandbox.yaml#d' \
         -e '\#core/src/main/java/google/registry/config/files/nomulus-config-alpha.yaml#d' \
         -e '\#core/src/main/java/google/registry/config/files/nomulus-config-crash.yaml#d' \
-        -e '\#core/src/main/java/google/registry/config/files/nomulus-config-qa.yaml#d' \
         -e '\#core/src/main/java/google/registry/config/files/nomulus-config-production.yaml#d' \
+        -e '\#core/src/main/java/google/registry/config/files/nomulus-config-qa.yaml#d' \
+        -e '\#core/src/main/java/google/registry/config/files/nomulus-config-sandbox.yaml#d' \
         .gitignore
 # Build the builder image and pull the base images, them upload them to GCR.
 - name: 'gcr.io/cloud-builders/docker'
