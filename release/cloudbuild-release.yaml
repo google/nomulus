@@ -266,27 +266,25 @@ steps:
     rm ${gradle_bin}
     sed -i s%services.gradle.org/distributions%storage.googleapis.com/${gcs_loc}% \
       gradle/wrapper/gradle-wrapper.properties
-# Check out the release repo.
+# Conditionally trigger the appropriate build based on the tag format.
 - name: 'gcr.io/cloud-builders/gcloud'
-  args: ['source', 'repos', 'clone', 'nomulus-release']
-# Tag and check in the release repo.
-- name: 'gcr.io/cloud-builders/git'
-  entrypoint: /bin/bash
+  entrypoint: 'bash'
   args:
   - -c
   - |
     set -e
-    rm -rf gcompute-tools
-    cp -rf nomulus-release/.git .
-    rm -rf nomulus-release
-    git config --global user.name "Cloud Build"
-    git config --global user.email \
-      $(gcloud auth list --format='get(account)' --filter=active)
-    git add .
-    git commit -m "Release commit for tag ${TAG_NAME}"
-    git push -o nokeycheck origin master
-    git tag ${TAG_NAME}
-    git push -o nokeycheck origin ${TAG_NAME}
+    # Check for a nomulus release tag (e.g., "v1.2.3")
+    if [[ "$TAG_NAME" == proxy-* ]]; then
+      echo "Tag format matches a nomulus release. Triggering nomulus build..."
+      gcloud builds submit . --config=release/cloudbuild-nomulus.yaml --substitutions=TAG_NAME=$TAG_NAME
+    # Check for a proxy release tag (e.g., "proxy-v1.2.3")
+    elif [[ "$TAG_NAME" == proxy-* ]]; then
+      echo "Tag format matches a proxy release. Triggering proxy build..."
+      gcloud builds submit . --config=release/cloudbuild-proxy.yaml --substitutions=TAG_NAME=$TAG_NAME
+    else
+      echo "Tag format '$TAG_NAME' does not match a known release type. Exiting."
+      exit 1
+    fi
 timeout: 3600s
 options:
   machineType: 'E2_HIGHCPU_32'
