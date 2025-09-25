@@ -274,11 +274,11 @@ steps:
   - |
     set -e
     # Check for a nomulus release tag (e.g., "v1.2.3")
-    if [[ "$TAG_NAME" == proxy-* ]]; then
+    if [[ "${TAG_NAME}" == proxy-* ]]; then
       echo "Tag format matches a nomulus release. Triggering nomulus build..."
       gcloud builds submit . --config=release/cloudbuild-nomulus.yaml --substitutions=TAG_NAME=$TAG_NAME
     # Check for a proxy release tag (e.g., "proxy-v1.2.3")
-    elif [[ "$TAG_NAME" == proxy-* ]]; then
+    elif [[ "${TAG_NAME}" == proxy-* ]]; then
       echo "Tag format matches a proxy release. Triggering proxy build..."
       gcloud builds submit . --config=release/cloudbuild-proxy.yaml --substitutions=TAG_NAME=$TAG_NAME
     else
