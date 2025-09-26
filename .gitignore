@@ -18,6 +18,13 @@ gjf.out
 # virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
 hs_err_pid*
 
+# Environment-specific configuration files
+core/src/main/java/google/registry/config/files/nomulus-config-alpha.yaml
+core/src/main/java/google/registry/config/files/nomulus-config-crash.yaml
+core/src/main/java/google/registry/config/files/nomulus-config-production.yaml
+core/src/main/java/google/registry/config/files/nomulus-config-qa.yaml
+core/src/main/java/google/registry/config/files/nomulus-config-sandbox.yaml
+
 ######################################################################
 # Eclipse Ignores
 
