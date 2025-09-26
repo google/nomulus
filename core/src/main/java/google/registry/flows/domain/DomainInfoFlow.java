@@ -103,6 +103,7 @@ public final class DomainInfoFlow implements MutatingFlow {
 
   @Override
   public EppResponse run() throws EppException {
+    tm().getEntityManager().createNativeQuery("SET TRANSACTION READ ONLY").executeUpdate();
     extensionManager.register(FeeInfoCommandExtensionV06.class, BulkTokenExtension.class);
     flowCustomLogic.beforeValidation();
     validateRegistrarIsLoggedIn(registrarId);
