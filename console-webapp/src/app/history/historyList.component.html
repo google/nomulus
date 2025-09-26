@@ -1,0 +1,50 @@
+@if (!isLoading && historyRecords.length == 0) {
+<div class="history-list__no-records">
+  <mat-icon class="history-list__no-records-icon secondary-text"
+    >apps_outage</mat-icon
+  >
+  <h1>No records found</h1>
+</div>
+} @else {
+<mat-card>
+  <mat-card-content>
+    <mat-list role="list">
+      <ng-container *ngFor="let item of historyRecords; let last = last">
+        <mat-list-item class="history-list__item">
+          <mat-icon
+            [ngClass]="getIconClass(item.type)"
+            class="history-list__icon"
+          >
+            {{ getIconForType(item.type) }}
+          </mat-icon>
+
+          <div class="history-list__content">
+            <div class="history-list__description">
+              <span class="history-list__description--main">{{
+                item.type
+              }}</span>
+              <div>
+                <mat-chip
+                  *ngIf="parseDescription(item.description).detail"
+                  class="history-list__chip"
+                >
+                  {{ parseDescription(item.description).detail }}
+                </mat-chip>
+              </div>
+            </div>
+            <div class="history-list__user">
+              <b>User - {{ item.actingUser.emailAddress }}</b>
+            </div>
+          </div>
+
+          <span class="history-list__timestamp">
+            {{ item.modificationTime | date : "MMM d, y, h:mm a" }}
+          </span>
+        </mat-list-item>
+
+        <mat-divider *ngIf="!last"></mat-divider>
+      </ng-container>
+    </mat-list>
+  </mat-card-content>
+</mat-card>
+}

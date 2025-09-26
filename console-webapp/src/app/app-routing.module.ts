@@ -26,6 +26,7 @@ import SecurityComponent from './settings/security/security.component';
 import { SettingsComponent } from './settings/settings.component';
 import { SupportComponent } from './support/support.component';
 import RdapComponent from './settings/rdap/rdap.component';
+import { HistoryComponent } from './history/history.component';
 import { PasswordResetVerifyComponent } from './shared/components/passwordReset/passwordResetVerify.component';
 
 export interface RouteWithIcon extends Route {
@@ -64,12 +65,17 @@ export const routes: RouteWithIcon[] = [
     title: 'Dashboard',
     iconName: 'view_comfy_alt',
   },
-  // { path: 'tlds', component: TldsComponent, title: "TLDs", iconName: "event_list" },
   {
     path: DomainListComponent.PATH,
     component: DomainListComponent,
     title: 'Domains',
     iconName: 'view_list',
+  },
+  {
+    path: HistoryComponent.PATH,
+    component: HistoryComponent,
+    // title: 'History',
+    // iconName: 'history',
   },
   {
     path: SettingsComponent.PATH,
