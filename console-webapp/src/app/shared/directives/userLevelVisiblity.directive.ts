@@ -16,6 +16,7 @@ import { Directive, ElementRef, Input, effect } from '@angular/core';
 import { UserDataService } from '../services/userData.service';
 
 export enum RESTRICTED_ELEMENTS {
+  ACTIVITY_PER_USER,
   REGISTRAR_ELEMENT,
   OTE,
   USERS,
@@ -28,9 +29,10 @@ export const DISABLED_ELEMENTS_PER_ROLE = {
     RESTRICTED_ELEMENTS.REGISTRAR_ELEMENT,
     RESTRICTED_ELEMENTS.OTE,
     RESTRICTED_ELEMENTS.SUSPEND,
+    RESTRICTED_ELEMENTS.ACTIVITY_PER_USER,
   ],
   SUPPORT_LEAD: [],
-  SUPPORT_AGENT: [],
+  SUPPORT_AGENT: [RESTRICTED_ELEMENTS.ACTIVITY_PER_USER],
 };
 
 @Directive({
@@ -39,6 +41,8 @@ export const DISABLED_ELEMENTS_PER_ROLE = {
 })
 export class UserLevelVisibility {
   @Input() elementId!: RESTRICTED_ELEMENTS | null;
+
+  @Input() isReverse: boolean = false;
 
   constructor(
     private userDataService: UserDataService,
@@ -56,9 +60,9 @@ export class UserLevelVisibility {
       // @ts-ignore
       (DISABLED_ELEMENTS_PER_ROLE[globalRole] || []).includes(this.elementId)
     ) {
-      this.el.nativeElement.style.display = 'none';
+      this.el.nativeElement.style.display = this.isReverse ? '' : 'none';
     } else {
-      this.el.nativeElement.style.display = '';
+      this.el.nativeElement.style.display = this.isReverse ? 'none' : '';
     }
   }
 }

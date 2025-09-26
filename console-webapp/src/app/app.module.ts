@@ -56,13 +56,14 @@ import { GlobalLoaderService } from './shared/services/globalLoader.service';
 import { UserDataService } from './shared/services/userData.service';
 import { SnackBarModule } from './snackbar.module';
 import { SupportComponent } from './support/support.component';
-import { TldsComponent } from './tlds/tlds.component';
 import { ForceFocusDirective } from './shared/directives/forceFocus.directive';
 import RdapComponent from './settings/rdap/rdap.component';
 import RdapEditComponent from './settings/rdap/rdapEdit.component';
 import { PocReminderComponent } from './shared/components/pocReminder/pocReminder.component';
 import { PasswordResetVerifyComponent } from './shared/components/passwordReset/passwordResetVerify.component';
 import { PasswordInputForm } from './shared/components/passwordReset/passwordInputForm.component';
+import { HistoryComponent } from './history/history.component';
+import { HistoryListComponent } from './history/historyList.component';
 
 @NgModule({
   declarations: [SelectedRegistrarWrapper],
@@ -81,6 +82,8 @@ export class SelectedRegistrarModule {}
     EppPasswordEditComponent,
     ForceFocusDirective,
     HeaderComponent,
+    HistoryComponent,
+    HistoryListComponent,
     HomeComponent,
     LocationBackDirective,
     NavigationComponent,
@@ -104,7 +107,6 @@ export class SelectedRegistrarModule {}
     SettingsComponent,
     SettingsContactComponent,
     SupportComponent,
-    TldsComponent,
     UserLevelVisibility,
   ],
   bootstrap: [AppComponent],

@@ -1,0 +1,62 @@
+<app-selected-registrar-wrapper>
+  <div class="history-log">
+    <h1 class="mat-headline-4" forceFocus>
+      Registrar Console Activity History
+    </h1>
+    <mat-tab-group
+      [elementId]="getElementIdForUserLog()"
+      class="history-log__tabs"
+    >
+      <mat-tab label="Registrar Activity">
+        <div class="spacer"></div>
+
+        <app-history-list
+          [historyRecords]="historyService.historyRecordsRegistrar()"
+          [isLoading]="isLoading"
+        />
+      </mat-tab>
+      <mat-tab label="User Activity">
+        <div class="spacer"></div>
+        <form (ngSubmit)="loadHistory()" #form="ngForm">
+          <section>
+            <mat-form-field appearance="outline">
+              <mat-label>Console User Email: </mat-label>
+              <input
+                matInput
+                id="email"
+                type="email"
+                name="consoleUserEmail"
+                required
+                email
+                [(ngModel)]="consoleUserEmail"
+                #emailControl="ngModel"
+              />
+            </mat-form-field>
+          </section>
+          <div class="spacer"></div>
+          <button
+            mat-flat-button
+            color="primary"
+            type="submit"
+            aria-label="Search user history"
+            [disabled]="!form.valid"
+          >
+            Search
+          </button>
+        </form>
+        <div class="spacer"></div>
+        <app-history-list
+          [historyRecords]="historyService.historyRecordsUser()"
+          [isLoading]="isLoading"
+        />
+      </mat-tab>
+    </mat-tab-group>
+  </div>
+
+  <app-history-list
+    [elementId]="getElementIdForUserLog()"
+    [isReverse]="true"
+    [historyRecords]="historyService.historyRecordsUser()"
+    [isLoading]="isLoading"
+  />
+</app-selected-registrar-wrapper>
