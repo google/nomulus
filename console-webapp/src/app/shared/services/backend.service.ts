@@ -31,6 +31,7 @@ import { Contact } from '../../settings/contact/contact.service';
 import { EppPasswordBackendModel } from '../../settings/security/security.service';
 import { UserData } from './userData.service';
 import { PasswordResetVerifyResponse } from '../components/passwordReset/passwordResetVerify.component';
+import { HistoryRecord } from '../../history/history.service';
 
 @Injectable()
 export class BackendService {
@@ -121,6 +122,16 @@ export class BackendService {
     return this.http
       .get<DomainListResult>(url)
       .pipe(catchError((err) => this.errorCatcher<DomainListResult>(err)));
+  }
+
+  getHistoryLog(registrarId: string, userEmail?: string) {
+    return this.http
+      .get<HistoryRecord[]>(
+        userEmail
+          ? `/console-api/history?consoleUserEmail=${userEmail}`
+          : `/console-api/history?registrarId=${registrarId}`
+      )
+      .pipe(catchError((err) => this.errorCatcher<HistoryRecord[]>(err)));
   }
 
   getRegistrars(): Observable<Registrar[]> {

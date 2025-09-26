@@ -1,0 +1,67 @@
+.history-list {
+  font-family: "Roboto", sans-serif;
+  &__item {
+    display: flex;
+    align-items: center;
+    // Override default mat-list-item height to fit content
+    height: auto !important;
+    padding: 16px 0;
+  }
+
+  &__no-records {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+  }
+  &__no-records-icon {
+    width: 4rem;
+    height: 4rem;
+    font-size: 4rem;
+    margin-top: 1.5rem;
+  }
+
+  &__icon {
+    margin-right: 16px;
+
+    &--update {
+      color: #1976d2;
+    }
+
+    &--security {
+      color: #d32f2f;
+    }
+  }
+
+  &__description {
+    &--main {
+      font-size: 1rem;
+      font-weight: 500;
+      color: rgba(0, 0, 0, 0.87);
+      margin-bottom: 1em;
+    }
+  }
+
+  &__content {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-right: 16px;
+  }
+
+  &__chip {
+    margin: 0.5rem 0;
+  }
+
+  &__user {
+    font-size: 0.9rem;
+    color: rgba(0, 0, 0, 0.6);
+  }
+
+  &__timestamp {
+    color: rgba(0, 0, 0, 0.6);
+    white-space: nowrap;
+    text-align: right;
+  }
+}
