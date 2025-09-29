@@ -1925,6 +1925,48 @@ CREATE INDEX allocation_token_domain_name_idx ON public."AllocationToken" USING 
 
 
 --
+-- Name: billingcancellation_billing_cancellation_id_hash; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX billingcancellation_billing_cancellation_id_hash ON public."BillingCancellation" USING hash (billing_cancellation_id);
+
+
+--
+-- Name: billingevent_billing_event_id_hash; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX billingevent_billing_event_id_hash ON public."BillingEvent" USING hash (billing_event_id);
+
+
+--
+-- Name: billingrecurrence_billing_recurrence_id_hash; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX billingrecurrence_billing_recurrence_id_hash ON public."BillingRecurrence" USING hash (billing_recurrence_id);
+
+
+--
+-- Name: delegationsignerdata_domain_repo_id_hash; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX delegationsignerdata_domain_repo_id_hash ON public."DelegationSignerData" USING hash (domain_repo_id);
+
+
+--
+-- Name: domain_domain_name_hash; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX domain_domain_name_hash ON public."Domain" USING hash (domain_name);
+
+
+--
+-- Name: domain_domain_repo_id_hash; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX domain_domain_repo_id_hash ON public."Domain" USING hash (repo_id);
+
+
+--
 -- Name: domain_history_to_ds_data_history_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -1936,6 +1978,76 @@ CREATE INDEX domain_history_to_ds_data_history_idx ON public."DomainDsDataHistor
 --
 
 CREATE INDEX domain_history_to_transaction_record_idx ON public."DomainTransactionRecord" USING btree (domain_repo_id, history_revision_id);
+
+
+--
+-- Name: domainhistory_domain_repo_id_hash; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX domainhistory_domain_repo_id_hash ON public."DomainHistory" USING hash (domain_repo_id);
+
+
+--
+-- Name: domainhistory_history_revision_id_hash; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX domainhistory_history_revision_id_hash ON public."DomainHistory" USING hash (history_revision_id);
+
+
+--
+-- Name: domainhost_domain_repo_id_hash; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX domainhost_domain_repo_id_hash ON public."DomainHost" USING hash (domain_repo_id);
+
+
+--
+-- Name: domaintransactionrecord_domain_history_revision_id_hash; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX domaintransactionrecord_domain_history_revision_id_hash ON public."DomainTransactionRecord" USING hash (history_revision_id);
+
+
+--
+-- Name: domaintransactionrecord_id_hash; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX domaintransactionrecord_id_hash ON public."DomainTransactionRecord" USING hash (id);
+
+
+--
+-- Name: graceperiod_domain_repo_id_hash; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX graceperiod_domain_repo_id_hash ON public."GracePeriod" USING hash (domain_repo_id);
+
+
+--
+-- Name: graceperiod_grace_period_id_hash; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX graceperiod_grace_period_id_hash ON public."GracePeriod" USING hash (grace_period_id);
+
+
+--
+-- Name: graceperiodhistory_grace_period_history_revision_id_hash; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX graceperiodhistory_grace_period_history_revision_id_hash ON public."GracePeriodHistory" USING hash (grace_period_history_revision_id);
+
+
+--
+-- Name: host_host_name_hash; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX host_host_name_hash ON public."Host" USING hash (host_name);
+
+
+--
+-- Name: host_repo_id_hash; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX host_repo_id_hash ON public."Host" USING hash (repo_id);
 
 
 --
@@ -2615,6 +2727,13 @@ CREATE INDEX idxtmlqd31dpvvd2g1h9i7erw6aj ON public."AllocationToken" USING btre
 --
 
 CREATE INDEX idxy98mebut8ix1v07fjxxdkqcx ON public."Host" USING btree (creation_time);
+
+
+--
+-- Name: pollmessage_poll_message_id_hash; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX pollmessage_poll_message_id_hash ON public."PollMessage" USING hash (poll_message_id);
 
 
 --
