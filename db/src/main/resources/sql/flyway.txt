@@ -195,3 +195,15 @@ V194__password_reset_request_registrar.sql
 V195__registrar_poc_id.sql
 V196__tld_expiry_access_period_enabled.sql
 V197__poc_rlock_drop_not_null.sql
+V198__billing_cancellation_hash.sql
+V199__billing_event_hash.sql
+V200__billing_recurrence_hash.sql
+V201__domain_hash.sql
+V202__delegation_signer_data_hash.sql
+V203__domain_history_hash.sql
+V204__domain_host_hash.sql
+V205__domain_transaction_record_hash.sql
+V206__grace_period_hash.sql
+V207__grace_period_history_hash.sql
+V208__host_hash.sql
+V209__poll_message_hash.sql
