@@ -76,11 +76,37 @@ class CreateCdnsTldTest extends CommandTestCase<CreateCdnsTld> {
 
   @Test
   @MockitoSettings(strictness = Strictness.LENIENT)
-  void testSandboxTldRestrictions() {
+  void testSandboxTldRestrictions_Disallowed() {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
-            () -> runCommandInEnvironment(RegistryToolEnvironment.SANDBOX, "--dns_name=foobar."));
-    assertThat(thrown).hasMessageThat().contains("Sandbox TLDs must be of the form \"*.test.\"");
+            () ->
+                runCommandInEnvironment(
+                    RegistryToolEnvironment.SANDBOX,
+                    "--dns_name=foobar.",
+                    "--description=test run",
+                    "--force"));
+    assertThat(thrown)
+        .hasMessageThat()
+        .contains("Sandbox TLDs must be approved or in the form \"*.test.\"");
+  }
+
+  @Test
+  void testSandboxTldRestrictions_tldCheckSkipped() throws Exception {
+    runCommandInEnvironment(
+        RegistryToolEnvironment.SANDBOX,
+        "--dns_name=foobar.",
+        "--description=test run",
+        "--force",
+        "--skip_sandbox_tld_check");
+  }
+
+  @Test
+  void testSandboxTldRestrictions_testTld() throws Exception {
+    runCommandInEnvironment(
+        RegistryToolEnvironment.SANDBOX,
+        "--dns_name=abc.test.",
+        "--description=test run",
+        "--force");
   }
 }

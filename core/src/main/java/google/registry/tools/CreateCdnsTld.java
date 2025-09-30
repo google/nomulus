@@ -47,6 +47,11 @@ final class CreateCdnsTld extends ConfirmingCommand {
   )
   String name;
 
+  @Parameter(
+      names = "--skip_sandbox_tld_check",
+      description = "In Sandbox, skip the dns_name format check.")
+  boolean skipSandboxTldCheck;
+
   @Inject
   @Config("projectId")
   String projectId;
@@ -61,10 +66,15 @@ final class CreateCdnsTld extends ConfirmingCommand {
   protected void init() {
     // Sandbox talks to production Cloud DNS.  As a result, we can't configure any domains with a
     // suffix that might be used by customers on the same nameserver set.  Limit the user to setting
-    // up *.test TLDs.
-    if (RegistryToolEnvironment.get() == RegistryToolEnvironment.SANDBOX
-        && !dnsName.endsWith(".test.")) {
-      throw new IllegalArgumentException("Sandbox TLDs must be of the form \"*.test.\"");
+    // up *.test TLDs unless the user declares that the name is approved.
+    //
+    // The name format check simply provides a user-friendly error message. If the user wrongly
+    // declares name approval, the request to the Cloud DNS API will still fail.
+    if (RegistryToolEnvironment.get() == RegistryToolEnvironment.SANDBOX) {
+      if (!skipSandboxTldCheck && !dnsName.endsWith(".test.")) {
+        throw new IllegalArgumentException(
+            "Sandbox TLDs must be approved or in the form \"*.test.\"");
+      }
     }
 
     managedZone =
