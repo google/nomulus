@@ -15,6 +15,7 @@
 package google.registry.tools;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.collect.Sets.difference;
 import static google.registry.model.billing.BillingBase.RenewalPriceBehavior.DEFAULT;
@@ -46,6 +47,9 @@ import google.registry.model.domain.token.AllocationToken;
 import google.registry.model.domain.token.AllocationToken.RegistrationBehavior;
 import google.registry.model.domain.token.AllocationToken.TokenStatus;
 import google.registry.model.domain.token.AllocationToken.TokenType;
+import google.registry.model.registrar.Registrar;
+import google.registry.model.tld.Tld;
+import google.registry.model.tld.Tlds;
 import google.registry.persistence.VKey;
 import google.registry.tools.params.MoneyParameter;
 import google.registry.tools.params.TransitionListParameter.TokenStatusTransitions;
@@ -291,10 +295,12 @@ class GenerateAllocationTokensCommand implements Command {
         !ImmutableList.of("").equals(allowedClientIds),
         "Either omit --allowed_client_ids if all registrars are allowed, or include a"
             + " comma-separated list");
+    verifyAllRegistrarIdsExist(allowedClientIds);
 
     checkArgument(
         !ImmutableList.of("").equals(allowedTlds),
         "Either omit --allowed_tlds if all TLDs are allowed, or include a comma-separated list");
+    verifyAllTldsExist(allowedTlds);
 
     if (ImmutableList.of("").equals(allowedEppActions)) {
       allowedEppActions = ImmutableList.of();
@@ -324,6 +330,34 @@ class GenerateAllocationTokensCommand implements Command {
     if (tokenStrings != null) {
       verifyTokenStringsDoNotExist();
     }
+  }
+
+  static void verifyAllRegistrarIdsExist(@Nullable List<String> allowedClientIds) {
+    // a null/empty list means that all registrars are allowed
+    if (isNullOrEmpty(allowedClientIds)) {
+      return;
+    }
+    ImmutableSet<String> allRegistrarIds =
+        Registrar.loadAllKeysCached().stream()
+            .map(VKey::getKey)
+            .map(Object::toString)
+            .collect(toImmutableSet());
+    ImmutableList<String> badRegistrarIds =
+        allowedClientIds.stream()
+            .filter(id -> !allRegistrarIds.contains(id))
+            .collect(toImmutableList());
+    checkArgument(badRegistrarIds.isEmpty(), "Unknown registrar ID(s) %s", badRegistrarIds);
+  }
+
+  static void verifyAllTldsExist(@Nullable List<String> allowedTlds) {
+    // a null/empty list means that all TLDs are allowed
+    if (isNullOrEmpty(allowedTlds)) {
+      return;
+    }
+    ImmutableSet<String> allTlds = Tlds.getTldsOfType(Tld.TldType.REAL);
+    ImmutableList<String> badTlds =
+        allowedTlds.stream().filter(tld -> !allTlds.contains(tld)).collect(toImmutableList());
+    checkArgument(badTlds.isEmpty(), "Unknown REAL TLD(s) %s", badTlds);
   }
 
   private void verifyTokenStringsDoNotExist() {

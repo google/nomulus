@@ -39,6 +39,7 @@ import google.registry.model.domain.fee.FeeQueryCommandExtensionItem.CommandName
 import google.registry.model.domain.token.AllocationToken;
 import google.registry.model.domain.token.AllocationToken.TokenStatus;
 import google.registry.model.reporting.HistoryEntry.HistoryEntryId;
+import google.registry.testing.DatabaseHelper;
 import google.registry.testing.DeterministicStringGenerator;
 import google.registry.testing.DeterministicStringGenerator.Rule;
 import google.registry.util.StringGenerator.Alphabets;
@@ -56,6 +57,7 @@ class GenerateAllocationTokensCommandTest extends CommandTestCase<GenerateAlloca
 
   @BeforeEach
   void beforeEach() {
+    DatabaseHelper.createTlds("tld", "example");
     command.stringGenerator = new DeterministicStringGenerator(Alphabets.BASE_58);
   }
 
@@ -529,6 +531,26 @@ class GenerateAllocationTokensCommandTest extends CommandTestCase<GenerateAlloca
                 () -> runCommand("--number", "999", "--type", "DEFAULT_PROMO")))
         .hasMessageThat()
         .isEqualTo("For DEFAULT_PROMO tokens, must specify --token_status_transitions");
+  }
+
+  @Test
+  void testFailure_badTld() {
+    assertThat(
+            assertThrows(
+                IllegalArgumentException.class,
+                () -> runCommand("--number", "10", "--allowed_tlds", "badtld")))
+        .hasMessageThat()
+        .isEqualTo("Unknown REAL TLD(s) [badtld]");
+  }
+
+  @Test
+  void testFailure_badRegistrar() {
+    assertThat(
+            assertThrows(
+                IllegalArgumentException.class,
+                () -> runCommand("--number", "10", "--allowed_client_ids", "badregistrar")))
+        .hasMessageThat()
+        .isEqualTo("Unknown registrar ID(s) [badregistrar]");
   }
 
   private AllocationToken createToken(

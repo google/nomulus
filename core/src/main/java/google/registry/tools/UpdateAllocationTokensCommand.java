@@ -157,6 +157,9 @@ final class UpdateAllocationTokensCommand extends UpdateOrDeleteAllocationTokens
       endToken = true;
     }
 
+    GenerateAllocationTokensCommand.verifyAllRegistrarIdsExist(allowedClientIds);
+    GenerateAllocationTokensCommand.verifyAllTldsExist(allowedTlds);
+
     tokensToSave =
         tm().transact(
                 () ->
