@@ -23,6 +23,7 @@ import google.registry.config.RegistryConfig.ConfigModule;
 import google.registry.export.DriveModule;
 import google.registry.flows.ServerTridProviderModule;
 import google.registry.flows.custom.CustomLogicFactoryModule;
+import google.registry.flows.domain.DomainDeletionTimeCacheModule;
 import google.registry.groups.DirectoryModule;
 import google.registry.groups.GroupsModule;
 import google.registry.groups.GroupssettingsModule;
@@ -47,6 +48,7 @@ import jakarta.inject.Singleton;
       CustomLogicFactoryModule.class,
       CloudTasksUtilsModule.class,
       DirectoryModule.class,
+      DomainDeletionTimeCacheModule.class,
       DriveModule.class,
       GroupsModule.class,
       GroupssettingsModule.class,

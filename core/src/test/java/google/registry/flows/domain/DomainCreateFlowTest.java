@@ -149,7 +149,6 @@ import google.registry.flows.domain.token.AllocationTokenFlowUtils.AlreadyRedeem
 import google.registry.flows.domain.token.AllocationTokenFlowUtils.NonexistentAllocationTokenException;
 import google.registry.flows.exceptions.ContactsProhibitedException;
 import google.registry.flows.exceptions.OnlyToolCanPassMetadataException;
-import google.registry.flows.exceptions.ResourceAlreadyExistsForThisClientException;
 import google.registry.flows.exceptions.ResourceCreateContentionException;
 import google.registry.model.billing.BillingBase;
 import google.registry.model.billing.BillingBase.Flag;
@@ -1238,8 +1237,8 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
   void testFailure_alreadyExists() throws Exception {
     persistContactsAndHosts();
     persistActiveDomain(getUniqueIdFromCommand());
-    ResourceAlreadyExistsForThisClientException thrown =
-        assertThrows(ResourceAlreadyExistsForThisClientException.class, this::runFlow);
+    ResourceCreateContentionException thrown =
+        assertThrows(ResourceCreateContentionException.class, this::runFlow);
     assertAboutEppExceptions()
         .that(thrown)
         .marshalsToXml()

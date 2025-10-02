@@ -86,7 +86,7 @@ public final class ForeignKeyUtils {
    */
   public static <E extends EppResource> ImmutableMap<String, VKey<E>> load(
       Class<E> clazz, Collection<String> foreignKeys, final DateTime now) {
-    return load(clazz, foreignKeys, false).entrySet().stream()
+    return loadMostRecentResources(clazz, foreignKeys, false).entrySet().stream()
         .filter(e -> now.isBefore(e.getValue().deletionTime()))
         .collect(toImmutableMap(Entry::getKey, e -> VKey.create(clazz, e.getValue().repoId())));
   }
@@ -104,8 +104,9 @@ public final class ForeignKeyUtils {
    * same max {@code deleteTime}, usually {@code END_OF_TIME}, lest this method throws an error due
    * to duplicate keys.
    */
-  private static <E extends EppResource> ImmutableMap<String, MostRecentResource> load(
-      Class<E> clazz, Collection<String> foreignKeys, boolean useReplicaTm) {
+  public static <E extends EppResource>
+      ImmutableMap<String, MostRecentResource> loadMostRecentResources(
+          Class<E> clazz, Collection<String> foreignKeys, boolean useReplicaTm) {
     String fkProperty = RESOURCE_TYPE_TO_FK_PROPERTY.get(clazz);
     JpaTransactionManager tmToUse = useReplicaTm ? replicaTm() : tm();
     return tmToUse.reTransact(
@@ -148,7 +149,7 @@ public final class ForeignKeyUtils {
               ImmutableList<String> foreignKeys =
                   keys.stream().map(key -> (String) key.getKey()).collect(toImmutableList());
               ImmutableMap<String, MostRecentResource> existingKeys =
-                  ForeignKeyUtils.load(clazz, foreignKeys, true);
+                  ForeignKeyUtils.loadMostRecentResources(clazz, foreignKeys, true);
               // The above map only contains keys that exist in the database, so we re-add the
               // missing ones with Optional.empty() values for caching.
               return Maps.asMap(
@@ -234,7 +235,7 @@ public final class ForeignKeyUtils {
                 e -> VKey.create(clazz, e.getValue().get().repoId())));
   }
 
-  record MostRecentResource(String repoId, DateTime deletionTime) {
+  public record MostRecentResource(String repoId, DateTime deletionTime) {
 
     static MostRecentResource create(String repoId, DateTime deletionTime) {
       return new MostRecentResource(repoId, deletionTime);
