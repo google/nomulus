@@ -32,6 +32,7 @@ import google.registry.model.poll.PollMessage;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.testing.CertificateSamples;
+import google.registry.testing.DatabaseHelper;
 import google.registry.testing.FakeClock;
 import google.registry.testing.SystemPropertyExtension;
 import google.registry.tools.params.ParameterFactory;
@@ -76,6 +77,7 @@ public abstract class CommandTestCase<C extends Command> {
 
   @BeforeEach
   public final void beforeEachCommandTestCase() throws Exception {
+    DatabaseHelper.createTlds("tld", "example");
     // Ensure the UNITTEST environment has been set before constructing a new command instance.
     RegistryToolEnvironment.UNITTEST.setup(systemPropertyExtension);
     command = newCommandInstance();

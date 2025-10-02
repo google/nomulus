@@ -65,13 +65,23 @@ class UpdateAllocationTokensCommandTest extends CommandTestCase<UpdateAllocation
   }
 
   @Test
+  void testUpdateTlds_badTlds() {
+    persistResource(builderWithPromo().build());
+    assertThat(
+            assertThrows(
+                IllegalArgumentException.class, () -> runCommandForced("--allowed_tlds=badtld")))
+        .hasMessageThat()
+        .isEqualTo("Unknown REAL TLD(s) [badtld]");
+  }
+
+  @Test
   void testUpdateClientIds_setClientIds() throws Exception {
     AllocationToken token =
         persistResource(
             builderWithPromo().setAllowedRegistrarIds(ImmutableSet.of("toRemove")).build());
-    runCommandForced("--prefix", "token", "--allowed_client_ids", "clientone,clienttwo");
+    runCommandForced("--prefix", "token", "--allowed_client_ids", "TheRegistrar,NewRegistrar");
     assertThat(reloadResource(token).getAllowedRegistrarIds())
-        .containsExactly("clientone", "clienttwo");
+        .containsExactly("TheRegistrar", "NewRegistrar");
   }
 
   @Test
@@ -81,6 +91,17 @@ class UpdateAllocationTokensCommandTest extends CommandTestCase<UpdateAllocation
             builderWithPromo().setAllowedRegistrarIds(ImmutableSet.of("toRemove")).build());
     runCommandForced("--prefix", "token", "--allowed_client_ids", "");
     assertThat(reloadResource(token).getAllowedRegistrarIds()).isEmpty();
+  }
+
+  @Test
+  void testUpdateClientIds_badClientId() {
+    persistResource(builderWithPromo().build());
+    assertThat(
+            assertThrows(
+                IllegalArgumentException.class,
+                () -> runCommandForced("--allowed_client_ids=badregistrar")))
+        .hasMessageThat()
+        .isEqualTo("Unknown registrar ID(s) [badregistrar]");
   }
 
   @Test

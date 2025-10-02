@@ -531,6 +531,26 @@ class GenerateAllocationTokensCommandTest extends CommandTestCase<GenerateAlloca
         .isEqualTo("For DEFAULT_PROMO tokens, must specify --token_status_transitions");
   }
 
+  @Test
+  void testFailure_badTld() {
+    assertThat(
+            assertThrows(
+                IllegalArgumentException.class,
+                () -> runCommand("--number", "10", "--allowed_tlds", "badtld")))
+        .hasMessageThat()
+        .isEqualTo("Unknown REAL TLD(s) [badtld]");
+  }
+
+  @Test
+  void testFailure_badRegistrar() {
+    assertThat(
+            assertThrows(
+                IllegalArgumentException.class,
+                () -> runCommand("--number", "10", "--allowed_client_ids", "badregistrar")))
+        .hasMessageThat()
+        .isEqualTo("Unknown registrar ID(s) [badregistrar]");
+  }
+
   private AllocationToken createToken(
       String token,
       @Nullable HistoryEntryId redemptionHistoryEntryId,
