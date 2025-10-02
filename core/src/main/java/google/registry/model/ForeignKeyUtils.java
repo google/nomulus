@@ -104,7 +104,7 @@ public final class ForeignKeyUtils {
    * same max {@code deleteTime}, usually {@code END_OF_TIME}, lest this method throws an error due
    * to duplicate keys.
    */
-  private static <E extends EppResource> ImmutableMap<String, MostRecentResource> load(
+  public static <E extends EppResource> ImmutableMap<String, MostRecentResource> load(
       Class<E> clazz, Collection<String> foreignKeys, boolean useReplicaTm) {
     String fkProperty = RESOURCE_TYPE_TO_FK_PROPERTY.get(clazz);
     JpaTransactionManager tmToUse = useReplicaTm ? replicaTm() : tm();
@@ -234,7 +234,7 @@ public final class ForeignKeyUtils {
                 e -> VKey.create(clazz, e.getValue().get().repoId())));
   }
 
-  record MostRecentResource(String repoId, DateTime deletionTime) {
+  public record MostRecentResource(String repoId, DateTime deletionTime) {
 
     static MostRecentResource create(String repoId, DateTime deletionTime) {
       return new MostRecentResource(repoId, deletionTime);

@@ -20,6 +20,7 @@ import google.registry.config.CredentialModule;
 import google.registry.config.RegistryConfig;
 import google.registry.flows.ServerTridProviderModule;
 import google.registry.flows.custom.CustomLogicFactoryModule;
+import google.registry.flows.domain.DomainDeletionTimeCacheModule;
 import google.registry.groups.GmailModule;
 import google.registry.groups.GroupsModule;
 import google.registry.groups.GroupssettingsModule;
@@ -43,6 +44,7 @@ import jakarta.inject.Singleton;
       CredentialModule.class,
       CustomLogicFactoryModule.class,
       CloudTasksUtilsModule.class,
+      DomainDeletionTimeCacheModule.class,
       FrontendRequestComponent.FrontendRequestComponentModule.class,
       GmailModule.class,
       GroupsModule.class,
