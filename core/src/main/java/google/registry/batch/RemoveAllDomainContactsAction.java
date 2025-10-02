@@ -159,12 +159,18 @@ public class RemoveAllDomainContactsAction implements Runnable {
   private void runDomainUpdateFlow(String repoId) {
     // Create a new transaction that the flow's execution will be enlisted in that loads the domain
     // transactionally. This way we can ensure that nothing else has modified the domain in question
-    // in the intervening period since the query above found it.
-    boolean success = tm().transact(() -> runDomainUpdateFlowInner(repoId));
-    if (success) {
-      successes++;
-    } else {
-      failures++;
+    // in the intervening period since the query above found it. If a single domain update fails
+    // permanently, log it and move on to not block processing all the other domains.
+    try {
+      boolean success = tm().transact(() -> runDomainUpdateFlowInner(repoId));
+      if (success) {
+        successes++;
+      } else {
+        failures++;
+      }
+    } catch (Throwable t) {
+      logger.atWarning().withCause(t).log(
+          "Failed updating domain with repoId %s; skipping.", repoId);
     }
   }
 
