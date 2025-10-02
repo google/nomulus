@@ -18,7 +18,6 @@ import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static google.registry.dns.DnsUtils.requestDomainDnsRefresh;
 import static google.registry.flows.FlowUtils.persistEntityChanges;
 import static google.registry.flows.FlowUtils.validateRegistrarIsLoggedIn;
-import static google.registry.flows.ResourceFlowUtils.verifyResourceDoesNotExist;
 import static google.registry.flows.domain.DomainFlowUtils.COLLISION_MESSAGE;
 import static google.registry.flows.domain.DomainFlowUtils.checkAllowedAccessToTld;
 import static google.registry.flows.domain.DomainFlowUtils.checkHasBillingAccount;
@@ -224,6 +223,7 @@ public final class DomainCreateFlow implements MutatingFlow {
   @Inject DomainCreateFlowCustomLogic flowCustomLogic;
   @Inject DomainFlowTmchUtils tmchUtils;
   @Inject DomainPricingLogic pricingLogic;
+  @Inject DomainDeletionTimeCache domainDeletionTimeCache;
 
   @Inject DomainCreateFlow() {}
 
@@ -239,13 +239,13 @@ public final class DomainCreateFlow implements MutatingFlow {
     validateRegistrarIsLoggedIn(registrarId);
     verifyRegistrarIsActive(registrarId);
     extensionManager.validate();
+    verifyDomainDoesNotExist();
     DateTime now = tm().getTransactionTime();
     DomainCommand.Create command = cloneAndLinkReferences((Create) resourceCommand, now);
     Period period = command.getPeriod();
     verifyUnitIsYears(period);
     int years = period.getValue();
     validateRegistrationPeriod(years);
-    verifyResourceDoesNotExist(Domain.class, targetId, now, registrarId);
     // Validate that this is actually a legal domain name on a TLD that the registrar has access to.
     InternetDomainName domainName = validateDomainName(command.getDomainName());
     String domainLabel = domainName.parts().getFirst();
@@ -647,6 +647,13 @@ public final class DomainCreateFlow implements MutatingFlow {
         .setMsg("Domain was auto-renewed.")
         .setDomainHistoryId(domainHistoryId)
         .build();
+  }
+
+  private void verifyDomainDoesNotExist() throws ResourceCreateContentionException {
+    DateTime previousDeletionTime = domainDeletionTimeCache.getDeletionTimeForDomain(targetId);
+    if (previousDeletionTime != null && !tm().getTransactionTime().isAfter(previousDeletionTime)) {
+      throw new ResourceCreateContentionException(targetId);
+    }
   }
 
   private static BillingEvent createEapBillingEvent(

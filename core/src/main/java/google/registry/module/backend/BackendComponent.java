@@ -26,6 +26,7 @@ import google.registry.export.DriveModule;
 import google.registry.export.sheet.SheetsServiceModule;
 import google.registry.flows.ServerTridProviderModule;
 import google.registry.flows.custom.CustomLogicFactoryModule;
+import google.registry.flows.domain.DomainDeletionTimeCacheModule;
 import google.registry.groups.DirectoryModule;
 import google.registry.groups.GmailModule;
 import google.registry.groups.GroupsModule;
@@ -56,6 +57,7 @@ import jakarta.inject.Singleton;
       CloudTasksUtilsModule.class,
       CredentialModule.class,
       CustomLogicFactoryModule.class,
+      DomainDeletionTimeCacheModule.class,
       DirectoryModule.class,
       DriveModule.class,
       GmailModule.class,
