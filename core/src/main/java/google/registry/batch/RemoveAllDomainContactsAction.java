@@ -30,6 +30,7 @@ import com.google.common.base.Ascii;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.flogger.FluentLogger;
+import com.google.common.util.concurrent.RateLimiter;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.flows.EppController;
 import google.registry.flows.EppRequestSource;
@@ -48,6 +49,7 @@ import google.registry.request.Response;
 import google.registry.request.auth.Auth;
 import google.registry.request.lock.LockHandler;
 import jakarta.inject.Inject;
+import jakarta.inject.Named;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.logging.Level;
@@ -79,6 +81,7 @@ public class RemoveAllDomainContactsAction implements Runnable {
   private final EppController eppController;
   private final String registryAdminClientId;
   private final LockHandler lockHandler;
+  private final RateLimiter rateLimiter;
   private final Response response;
   private final String updateDomainXml;
   private int successes = 0;
@@ -91,10 +94,12 @@ public class RemoveAllDomainContactsAction implements Runnable {
       EppController eppController,
       @Config("registryAdminClientId") String registryAdminClientId,
       LockHandler lockHandler,
+      @Named("removeAllDomainContacts") RateLimiter rateLimiter,
       Response response) {
     this.eppController = eppController;
     this.registryAdminClientId = registryAdminClientId;
     this.lockHandler = lockHandler;
+    this.rateLimiter = rateLimiter;
     this.response = response;
     this.updateDomainXml =
         readResourceUtf8(RemoveAllDomainContactsAction.class, "domain_remove_contacts.xml");
@@ -146,7 +151,10 @@ public class RemoveAllDomainContactsAction implements Runnable {
                           .setMaxResults(BATCH_SIZE)
                           .getResultList());
 
-      domainRepoIdsBatch.forEach(this::runDomainUpdateFlow);
+      for (String domainRepoId : domainRepoIdsBatch) {
+        rateLimiter.acquire();
+        runDomainUpdateFlow(domainRepoId);
+      }
     } while (!domainRepoIdsBatch.isEmpty());
     String msg =
         String.format(

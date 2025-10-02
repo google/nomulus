@@ -29,9 +29,11 @@ import static google.registry.request.RequestParameters.extractRequiredParameter
 import static google.registry.request.RequestParameters.extractSetOfDatetimeParameters;
 
 import com.google.common.collect.ImmutableSet;
+import com.google.common.util.concurrent.RateLimiter;
 import dagger.Module;
 import dagger.Provides;
 import google.registry.request.Parameter;
+import jakarta.inject.Named;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.Optional;
 import org.joda.time.DateTime;
@@ -136,5 +138,19 @@ public class BatchModule {
   @Parameter(PARAM_FAST)
   static boolean provideIsFast(HttpServletRequest req) {
     return extractBooleanParameter(req, PARAM_FAST);
+  }
+
+  private static final int DEFAULT_MAX_QPS = 10;
+
+  @Provides
+  @Parameter("maxQps")
+  static int provideMaxQps(HttpServletRequest req) {
+    return extractOptionalIntParameter(req, "maxQps").orElse(DEFAULT_MAX_QPS);
+  }
+
+  @Provides
+  @Named("removeAllDomainContacts")
+  static RateLimiter provideRemoveAllDomainContactsRateLimiter(@Parameter("maxQps") int maxQps) {
+    return RateLimiter.create(maxQps);
   }
 }

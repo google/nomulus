@@ -23,9 +23,11 @@ import static google.registry.testing.DatabaseHelper.newDomain;
 import static google.registry.testing.DatabaseHelper.persistActiveContact;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
+import static org.mockito.Mockito.mock;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
+import com.google.common.util.concurrent.RateLimiter;
 import google.registry.flows.DaggerEppTestComponent;
 import google.registry.flows.EppController;
 import google.registry.flows.EppTestComponent.FakesAndMocksModule;
@@ -51,6 +53,7 @@ class RemoveAllDomainContactsActionTest {
       new JpaTestExtensions.Builder().buildIntegrationTestExtension();
 
   private final FakeResponse response = new FakeResponse();
+  private final RateLimiter rateLimiter = mock(RateLimiter.class);
   private RemoveAllDomainContactsAction action;
 
   @BeforeEach
@@ -69,7 +72,7 @@ class RemoveAllDomainContactsActionTest {
             .eppController();
     action =
         new RemoveAllDomainContactsAction(
-            eppController, "NewRegistrar", new FakeLockHandler(true), response);
+            eppController, "NewRegistrar", new FakeLockHandler(true), rateLimiter, response);
   }
 
   @Test
