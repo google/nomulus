@@ -75,6 +75,8 @@ public abstract class ConsoleApiAction implements Runnable {
   public final void run() {
     // Shouldn't be even possible because of Auth annotations on the various implementing classes
     if (consoleApiParams.authResult().user().isEmpty()) {
+      logger.atWarning().log("harshta User object is empty, failing with UNAUTHORIZED.");
+ logger.atWarning().log("harshita logs ",consoleApiParams.authResult());
       consoleApiParams.response().setStatus(SC_UNAUTHORIZED);
       return;
     }
