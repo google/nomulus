@@ -15,7 +15,6 @@
 package google.registry.model.tmch;
 
 import static google.registry.config.RegistryConfig.getClaimsListCacheDuration;
-import static google.registry.persistence.transaction.QueryComposer.Comparator.EQ;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 
@@ -79,14 +78,11 @@ public class ClaimsListDao {
    */
   private static ClaimsList getUncached() {
     return tm().reTransact(
-            () -> {
-              Long revisionId =
-                  tm().query("SELECT MAX(revisionId) FROM ClaimsList", Long.class)
-                      .getSingleResult();
-              return tm().createQueryComposer(ClaimsList.class)
-                  .where("revisionId", EQ, revisionId)
-                  .first();
-            })
+            () ->
+                tm().query("FROM ClaimsList ORDER BY revisionId DESC LIMIT 1", ClaimsList.class)
+                    .setMaxResults(1)
+                    .getResultStream()
+                    .findFirst())
         .orElse(ClaimsList.create(START_OF_TIME, ImmutableMap.of()));
   }
 
