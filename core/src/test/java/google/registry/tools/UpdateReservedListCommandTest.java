@@ -63,9 +63,11 @@ class UpdateReservedListCommandTest
     assertThat(ReservedList.get("xn--q9jyb4c_common-reserved")).isPresent();
     ReservedList reservedList = ReservedList.get("xn--q9jyb4c_common-reserved").get();
     assertThat(reservedList.getReservedListEntries()).hasSize(2);
-    assertThat(reservedList.getReservationInList("baddies")).hasValue(FULLY_BLOCKED);
-    assertThat(reservedList.getReservationInList("ford")).hasValue(FULLY_BLOCKED);
-    assertThat(reservedList.getReservationInList("helicopter")).isEmpty();
+    assertThat(reservedList.getReservedEntryForLabel("baddies").get().getValue())
+        .isEqualTo(FULLY_BLOCKED);
+    assertThat(reservedList.getReservedEntryForLabel("ford").get().getValue())
+        .isEqualTo(FULLY_BLOCKED);
+    assertThat(reservedList.getReservedEntryForLabel("helicopter")).isEmpty();
     assertInStdout("Update reserved list for xn--q9jyb4c_common-reserved?");
     assertInStdout("helicopter: helicopter,FULLY_BLOCKED -> null");
     assertInStdout("baddies: null -> baddies,FULLY_BLOCKED");
@@ -127,7 +129,8 @@ class UpdateReservedListCommandTest
     assertThat(ReservedList.get("xn--q9jyb4c_common-reserved")).isPresent();
     ReservedList reservedList = ReservedList.get("xn--q9jyb4c_common-reserved").get();
     assertThat(reservedList.getReservedListEntries()).hasSize(1);
-    assertThat(reservedList.getReservationInList("helicopter")).hasValue(FULLY_BLOCKED);
+    assertThat(reservedList.getReservedEntryForLabel("helicopter").get().getValue())
+        .isEqualTo(FULLY_BLOCKED);
   }
 
   @Test
@@ -157,9 +160,11 @@ class UpdateReservedListCommandTest
     assertThat(ReservedList.get("xn--q9jyb4c_common-reserved")).isPresent();
     ReservedList reservedList = ReservedList.get("xn--q9jyb4c_common-reserved").get();
     assertThat(reservedList.getReservedListEntries()).hasSize(2);
-    assertThat(reservedList.getReservationInList("baddies")).hasValue(FULLY_BLOCKED);
-    assertThat(reservedList.getReservationInList("ford")).hasValue(FULLY_BLOCKED);
-    assertThat(reservedList.getReservationInList("helicopter")).isEmpty();
+    assertThat(reservedList.getReservedEntryForLabel("baddies").get().getValue())
+        .isEqualTo(FULLY_BLOCKED);
+    assertThat(reservedList.getReservedEntryForLabel("ford").get().getValue())
+        .isEqualTo(FULLY_BLOCKED);
+    assertThat(reservedList.getReservedEntryForLabel("helicopter")).isEmpty();
     assertInStdout("Update reserved list for xn--q9jyb4c_common-reserved?");
     assertInStdout("helicopter: helicopter,FULLY_BLOCKED -> null");
     assertInStdout("baddies: null -> baddies,FULLY_BLOCKED");

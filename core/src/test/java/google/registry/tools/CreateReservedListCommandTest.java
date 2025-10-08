@@ -45,8 +45,10 @@ class CreateReservedListCommandTest
     assertThat(ReservedList.get("xn--q9jyb4c_common-reserved")).isPresent();
     ReservedList reservedList = ReservedList.get("xn--q9jyb4c_common-reserved").get();
     assertThat(reservedList.getReservedListEntries()).hasSize(2);
-    assertThat(reservedList.getReservationInList("baddies")).hasValue(FULLY_BLOCKED);
-    assertThat(reservedList.getReservationInList("ford")).hasValue(FULLY_BLOCKED);
+    assertThat(reservedList.getReservedEntryForLabel("baddies").get().getValue())
+        .isEqualTo(FULLY_BLOCKED);
+    assertThat(reservedList.getReservedEntryForLabel("ford").get().getValue())
+        .isEqualTo(FULLY_BLOCKED);
   }
 
   @Test

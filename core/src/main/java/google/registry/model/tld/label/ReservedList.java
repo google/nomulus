@@ -149,7 +149,7 @@ public final class ReservedList
     }
 
     /** A builder for constructing {@link ReservedListEntry} objects, since they are immutable. */
-    private static class Builder
+    public static class Builder
         extends DomainLabelEntry.Builder<ReservedListEntry, ReservedListEntry.Builder> {
 
       public Builder() {}
@@ -200,6 +200,19 @@ public final class ReservedList
     return ImmutableMap.copyOf(nullToEmpty(reservedListMap));
   }
 
+  /** Returns a reserved entry for this list and label, if one exists. */
+  public Optional<ReservedListEntry> getReservedEntryForLabel(String label) {
+    if (reservedListMap != null) {
+      return Optional.ofNullable(reservedListMap.get(label));
+    }
+    return tm().reTransact(
+            () ->
+                tm().createQueryComposer(ReservedListEntry.class)
+                    .where("revisionId", EQ, revisionId)
+                    .where("domainLabel", EQ, label)
+                    .first());
+  }
+
   /**
    * Gets a ReservedList by name using the caching layer.
    *
@@ -220,7 +233,7 @@ public final class ReservedList
    */
   public static ImmutableSet<ReservationType> getReservationTypes(String label, String tld) {
     checkNotNull(label, "label");
-    if (label.length() == 0) {
+    if (label.isEmpty()) {
       return ImmutableSet.of(FULLY_BLOCKED);
     }
     return getReservedListEntries(label, tld)
@@ -243,12 +256,13 @@ public final class ReservedList
 
     // Loop through all reservation lists and add each of them.
     for (ReservedList rl : loadReservedLists(tld.getReservedListNames())) {
-      if (rl.getReservedListEntries().containsKey(label)) {
-        ReservedListEntry entry = rl.getReservedListEntries().get(label);
-        entriesBuilder.add(entry);
-        metricMatchesBuilder.add(
-            MetricsReservedListMatch.create(rl.getName(), entry.reservationType));
-      }
+      rl.getReservedEntryForLabel(label)
+          .ifPresent(
+              entry -> {
+                entriesBuilder.add(entry);
+                metricMatchesBuilder.add(
+                    MetricsReservedListMatch.create(rl.getName(), entry.reservationType));
+              });
     }
     ImmutableSet<ReservedListEntry> entries = entriesBuilder.build();
     DomainLabelMetrics.recordReservedListCheckOutcome(
@@ -270,19 +284,6 @@ public final class ReservedList
   private static final LoadingCache<String, Optional<ReservedList>> cache =
       CacheUtils.newCacheBuilder(getDomainLabelListCacheDuration())
           .build(ReservedListDao::getLatestRevision);
-
-  /**
-   * Gets the {@link ReservationType} of a label in a single ReservedList, or returns an absent
-   * Optional if none exists in the list.
-   *
-   * <p>Note that this logic is significantly less complicated than the {@link #getReservationTypes}
-   * methods, which are applicable to an entire Registry, and need to check across multiple reserved
-   * lists.
-   */
-  public Optional<ReservationType> getReservationInList(String label) {
-    ReservedListEntry entry = getReservedListEntries().get(label);
-    return Optional.ofNullable(entry == null ? null : entry.reservationType);
-  }
 
   @Override
   @Nullable
