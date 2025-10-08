@@ -78,11 +78,10 @@ public class ReservedListDao {
   public static boolean checkExists(String reservedListName) {
     return tm().transact(
             () ->
-                tm().query("SELECT 1 FROM ReservedList WHERE name = :name", Integer.class)
-                        .setParameter("name", reservedListName)
-                        .setMaxResults(1)
-                        .getResultList()
-                        .size()
-                    > 0);
+                !tm().query("SELECT 1 FROM ReservedList WHERE name = :name", Integer.class)
+                    .setParameter("name", reservedListName)
+                    .setMaxResults(1)
+                    .getResultList()
+                    .isEmpty());
   }
 }

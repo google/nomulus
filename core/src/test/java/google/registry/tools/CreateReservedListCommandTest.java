@@ -16,6 +16,7 @@ package google.registry.tools;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.tld.label.ReservationType.FULLY_BLOCKED;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.createTlds;
 import static google.registry.testing.DatabaseHelper.persistReservedList;
 import static google.registry.testing.DatabaseHelper.persistResource;
@@ -42,11 +43,14 @@ class CreateReservedListCommandTest
   @Test
   void testSuccess() throws Exception {
     runCommandForced("--name=xn--q9jyb4c_common-reserved", "--input=" + reservedTermsPath);
-    assertThat(ReservedList.get("xn--q9jyb4c_common-reserved")).isPresent();
-    ReservedList reservedList = ReservedList.get("xn--q9jyb4c_common-reserved").get();
-    assertThat(reservedList.getReservedListEntries()).hasSize(2);
-    assertThat(reservedList.getReservationInList("baddies")).hasValue(FULLY_BLOCKED);
-    assertThat(reservedList.getReservationInList("ford")).hasValue(FULLY_BLOCKED);
+    tm().transact(
+            () -> {
+              assertThat(ReservedList.get("xn--q9jyb4c_common-reserved")).isPresent();
+              ReservedList reservedList = ReservedList.get("xn--q9jyb4c_common-reserved").get();
+              assertThat(reservedList.getReservedListEntries()).hasSize(2);
+              assertThat(reservedList.getReservedEntryForLabel("baddies")).hasValue(FULLY_BLOCKED);
+              assertThat(reservedList.getReservedEntryForLabel("ford")).hasValue(FULLY_BLOCKED);
+            });
   }
 
   @Test

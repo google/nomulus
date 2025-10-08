@@ -16,6 +16,7 @@ package google.registry.tools;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.tld.label.ReservationType.FULLY_BLOCKED;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.persistReservedList;
 import static google.registry.testing.TestDataHelper.loadFile;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
@@ -63,9 +64,9 @@ class UpdateReservedListCommandTest
     assertThat(ReservedList.get("xn--q9jyb4c_common-reserved")).isPresent();
     ReservedList reservedList = ReservedList.get("xn--q9jyb4c_common-reserved").get();
     assertThat(reservedList.getReservedListEntries()).hasSize(2);
-    assertThat(reservedList.getReservationInList("baddies")).hasValue(FULLY_BLOCKED);
-    assertThat(reservedList.getReservationInList("ford")).hasValue(FULLY_BLOCKED);
-    assertThat(reservedList.getReservationInList("helicopter")).isEmpty();
+    assertThat(reservedList.getReservedEntryForLabel("baddies")).hasValue(FULLY_BLOCKED);
+    assertThat(reservedList.getReservedEntryForLabel("ford")).hasValue(FULLY_BLOCKED);
+    assertThat(reservedList.getReservedEntryForLabel("helicopter")).isEmpty();
     assertInStdout("Update reserved list for xn--q9jyb4c_common-reserved?");
     assertInStdout("helicopter: helicopter,FULLY_BLOCKED -> null");
     assertInStdout("baddies: null -> baddies,FULLY_BLOCKED");
@@ -125,9 +126,13 @@ class UpdateReservedListCommandTest
     runCommandForced("--input=" + reservedTermsPath, "--dry_run");
     assertThat(command.prompt()).contains("Update reserved list for xn--q9jyb4c_common-reserved?");
     assertThat(ReservedList.get("xn--q9jyb4c_common-reserved")).isPresent();
-    ReservedList reservedList = ReservedList.get("xn--q9jyb4c_common-reserved").get();
-    assertThat(reservedList.getReservedListEntries()).hasSize(1);
-    assertThat(reservedList.getReservationInList("helicopter")).hasValue(FULLY_BLOCKED);
+    tm().transact(
+            () -> {
+              ReservedList reservedList = ReservedList.get("xn--q9jyb4c_common-reserved").get();
+              assertThat(reservedList.getReservedListEntries()).hasSize(1);
+              assertThat(reservedList.getReservedEntryForLabel("helicopter"))
+                  .hasValue(FULLY_BLOCKED);
+            });
   }
 
   @Test
@@ -155,11 +160,14 @@ class UpdateReservedListCommandTest
         "--build_environment",
         "-f");
     assertThat(ReservedList.get("xn--q9jyb4c_common-reserved")).isPresent();
-    ReservedList reservedList = ReservedList.get("xn--q9jyb4c_common-reserved").get();
-    assertThat(reservedList.getReservedListEntries()).hasSize(2);
-    assertThat(reservedList.getReservationInList("baddies")).hasValue(FULLY_BLOCKED);
-    assertThat(reservedList.getReservationInList("ford")).hasValue(FULLY_BLOCKED);
-    assertThat(reservedList.getReservationInList("helicopter")).isEmpty();
+    tm().transact(
+            () -> {
+              ReservedList reservedList = ReservedList.get("xn--q9jyb4c_common-reserved").get();
+              assertThat(reservedList.getReservedListEntries()).hasSize(2);
+              assertThat(reservedList.getReservedEntryForLabel("baddies")).hasValue(FULLY_BLOCKED);
+              assertThat(reservedList.getReservedEntryForLabel("ford")).hasValue(FULLY_BLOCKED);
+              assertThat(reservedList.getReservedEntryForLabel("helicopter")).isEmpty();
+            });
     assertInStdout("Update reserved list for xn--q9jyb4c_common-reserved?");
     assertInStdout("helicopter: helicopter,FULLY_BLOCKED -> null");
     assertInStdout("baddies: null -> baddies,FULLY_BLOCKED");
