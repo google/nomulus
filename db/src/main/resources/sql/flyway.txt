@@ -207,3 +207,7 @@ V206__grace_period_hash.sql
 V207__grace_period_history_hash.sql
 V208__host_hash.sql
 V209__poll_message_hash.sql
+V210__allocationtoken_token_hash.sql
+V211__domainhistoryhost_history_revision_id_hash.sql
+V212__domaindsdatahistory_history_revision_id_hash.sql
+V213__graceperiodhistory_history_revision_id_hash.sql

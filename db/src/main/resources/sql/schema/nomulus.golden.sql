@@ -1925,6 +1925,13 @@ CREATE INDEX allocation_token_domain_name_idx ON public."AllocationToken" USING 
 
 
 --
+-- Name: allocationtoken_token_hash; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX allocationtoken_token_hash ON public."AllocationToken" USING hash (token);
+
+
+--
 -- Name: billingcancellation_billing_cancellation_id_hash; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -1981,6 +1988,13 @@ CREATE INDEX domain_history_to_transaction_record_idx ON public."DomainTransacti
 
 
 --
+-- Name: domaindsdatahistory_domain_history_revision_id_hash; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX domaindsdatahistory_domain_history_revision_id_hash ON public."DomainDsDataHistory" USING hash (domain_history_revision_id);
+
+
+--
 -- Name: domainhistory_domain_repo_id_hash; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -1992,6 +2006,13 @@ CREATE INDEX domainhistory_domain_repo_id_hash ON public."DomainHistory" USING h
 --
 
 CREATE INDEX domainhistory_history_revision_id_hash ON public."DomainHistory" USING hash (history_revision_id);
+
+
+--
+-- Name: domainhistoryhost_domain_history_history_revision_id_hash; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX domainhistoryhost_domain_history_history_revision_id_hash ON public."DomainHistoryHost" USING hash (domain_history_history_revision_id);
 
 
 --
@@ -2027,6 +2048,13 @@ CREATE INDEX graceperiod_domain_repo_id_hash ON public."GracePeriod" USING hash 
 --
 
 CREATE INDEX graceperiod_grace_period_id_hash ON public."GracePeriod" USING hash (grace_period_id);
+
+
+--
+-- Name: graceperiodhistory_domain_history_revision_id_hash; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX graceperiodhistory_domain_history_revision_id_hash ON public."GracePeriodHistory" USING hash (domain_history_revision_id);
 
 
 --
