@@ -40,8 +40,9 @@ public class TestDomainCreateFlowCustomLogic extends DomainCreateFlowCustomLogic
               .setMsg("Custom logic was triggered")
               .build();
       return EntityChanges.newBuilder()
-          .setSaves(parameters.entityChanges().getSaves())
-          .addSave(extraPollMessage)
+          .setInserts(parameters.entityChanges().getInserts())
+          .addInsert(extraPollMessage)
+          .setUpdates(parameters.entityChanges().getUpdates())
           .setDeletes(parameters.entityChanges().getDeletes())
           .build();
     }

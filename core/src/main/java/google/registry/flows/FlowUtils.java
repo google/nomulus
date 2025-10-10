@@ -56,9 +56,10 @@ public final class FlowUtils {
     }
   }
 
-  /** Persists the saves and deletes in an {@link EntityChanges} to the DB. */
+  /** Persists the inserts, updates, and deletes in an {@link EntityChanges} to the DB. */
   public static void persistEntityChanges(EntityChanges entityChanges) {
-    tm().putAll(entityChanges.getSaves());
+    tm().insertAll(entityChanges.getInserts());
+    tm().updateAll(entityChanges.getUpdates());
     tm().delete(entityChanges.getDeletes());
   }
 

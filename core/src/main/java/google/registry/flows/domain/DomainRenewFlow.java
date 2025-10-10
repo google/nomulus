@@ -245,11 +245,13 @@ public final class DomainRenewFlow implements MutatingFlow {
             .build();
     DomainHistory domainHistory =
         buildDomainHistory(newDomain, now, command.getPeriod(), tld.getRenewGracePeriodLength());
-    ImmutableSet.Builder<ImmutableObject> entitiesToSave = new ImmutableSet.Builder<>();
-    entitiesToSave.add(
-        newDomain, domainHistory, explicitRenewEvent, newAutorenewEvent, newAutorenewPollMessage);
+    ImmutableSet.Builder<ImmutableObject> entitiesToInsert = new ImmutableSet.Builder<>();
+    ImmutableSet.Builder<ImmutableObject> entitiesToUpdate = new ImmutableSet.Builder<>();
+    entitiesToInsert.add(
+        domainHistory, explicitRenewEvent, newAutorenewEvent, newAutorenewPollMessage);
+    entitiesToUpdate.add(newDomain);
     if (allocationToken.isPresent() && allocationToken.get().getTokenType().isOneTimeUse()) {
-      entitiesToSave.add(
+      entitiesToUpdate.add(
           AllocationTokenFlowUtils.redeemToken(
               allocationToken.get(), domainHistory.getHistoryEntryId()));
     }
@@ -262,7 +264,10 @@ public final class DomainRenewFlow implements MutatingFlow {
                 .setYears(years)
                 .setHistoryEntry(domainHistory)
                 .setEntityChanges(
-                    EntityChanges.newBuilder().setSaves(entitiesToSave.build()).build())
+                    EntityChanges.newBuilder()
+                        .setInserts(entitiesToInsert.build())
+                        .setUpdates(entitiesToUpdate.build())
+                        .build())
                 .build());
     BeforeResponseReturnData responseData =
         flowCustomLogic.beforeResponse(

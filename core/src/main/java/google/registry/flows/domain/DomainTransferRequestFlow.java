@@ -283,11 +283,9 @@ public final class DomainTransferRequestFlow implements MutatingFlow {
 
     asyncTaskEnqueuer.enqueueAsyncResave(
         newDomain.createVKey(), now, ImmutableSortedSet.of(automaticTransferTime));
-    tm().putAll(
-            new ImmutableSet.Builder<>()
-                .add(newDomain, domainHistory, requestPollMessage)
-                .addAll(serverApproveEntities)
-                .build());
+    tm().put(newDomain);
+    tm().putAll(serverApproveEntities);
+    tm().insertAll(domainHistory, requestPollMessage);
     return responseBuilder
         .setResultFromCode(SUCCESS_WITH_ACTION_PENDING)
         .setResData(createResponse(period, existingDomain, newDomain, now))

@@ -146,18 +146,18 @@ public final class DomainRestoreRequestFlow implements MutatingFlow {
     verifyRestoreAllowed(command, existingDomain, feeUpdate, feesAndCredits, now);
     HistoryEntryId domainHistoryId = createHistoryEntryId(existingDomain);
     historyBuilder.setRevisionId(domainHistoryId.getRevisionId());
-    ImmutableSet.Builder<ImmutableObject> entitiesToSave = new ImmutableSet.Builder<>();
+    ImmutableSet.Builder<ImmutableObject> entitiesToInsert = new ImmutableSet.Builder<>();
 
     DateTime newExpirationTime =
         existingDomain.getRegistrationExpirationTime().plusYears(isExpired ? 1 : 0);
     // Restore the expiration time on the deleted domain, except if that's already passed, then add
     // a year and bill for it immediately, with no grace period.
     if (isExpired) {
-      entitiesToSave.add(
+      entitiesToInsert.add(
           createRenewBillingEvent(domainHistoryId, feesAndCredits.getRenewCost(), now));
     }
     // Always bill for the restore itself.
-    entitiesToSave.add(
+    entitiesToInsert.add(
         createRestoreBillingEvent(domainHistoryId, feesAndCredits.getRestoreCost(), now));
 
     BillingRecurrence autorenewEvent =
@@ -166,12 +166,14 @@ public final class DomainRestoreRequestFlow implements MutatingFlow {
             .setRecurrenceEndTime(END_OF_TIME)
             .setDomainHistoryId(domainHistoryId)
             .build();
+    entitiesToInsert.add(autorenewEvent);
     PollMessage.Autorenew autorenewPollMessage =
         newAutorenewPollMessage(existingDomain)
             .setEventTime(newExpirationTime)
             .setAutorenewEndTime(END_OF_TIME)
             .setDomainHistoryId(domainHistoryId)
             .build();
+    entitiesToInsert.add(autorenewPollMessage);
     Domain newDomain =
         performRestore(
             existingDomain,
@@ -181,8 +183,9 @@ public final class DomainRestoreRequestFlow implements MutatingFlow {
             now,
             registrarId);
     DomainHistory domainHistory = buildDomainHistory(newDomain, now);
-    entitiesToSave.add(newDomain, domainHistory, autorenewEvent, autorenewPollMessage);
-    tm().putAll(entitiesToSave.build());
+    entitiesToInsert.add(domainHistory);
+    tm().update(newDomain);
+    tm().insertAll(entitiesToInsert.build());
     if (existingDomain.getDeletePollMessage() != null) {
       tm().delete(existingDomain.getDeletePollMessage());
     }

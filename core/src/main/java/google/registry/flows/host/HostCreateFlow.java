@@ -126,7 +126,8 @@ public final class HostCreateFlow implements MutatingFlow {
             .setSuperordinateDomain(superordinateDomain.map(Domain::createVKey).orElse(null))
             .build();
     historyBuilder.setType(HOST_CREATE).setHost(newHost);
-    ImmutableSet<ImmutableObject> entitiesToSave = ImmutableSet.of(newHost, historyBuilder.build());
+    ImmutableSet<ImmutableObject> entitiesToInsert =
+        ImmutableSet.of(newHost, historyBuilder.build());
     if (superordinateDomain.isPresent()) {
       tm().update(
               superordinateDomain
@@ -138,7 +139,7 @@ public final class HostCreateFlow implements MutatingFlow {
       // they are only written as NS records from the referencing domain.
       requestHostDnsRefresh(targetId);
     }
-    tm().insertAll(entitiesToSave);
+    tm().insertAll(entitiesToInsert);
     return responseBuilder.setResData(HostCreateData.create(targetId, now)).build();
   }
 

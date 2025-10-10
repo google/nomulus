@@ -52,7 +52,6 @@ import google.registry.flows.annotations.ReportingSpec;
 import google.registry.flows.exceptions.ResourceHasClientUpdateProhibitedException;
 import google.registry.model.EppResource;
 import google.registry.model.ForeignKeyUtils;
-import google.registry.model.ImmutableObject;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.metadata.MetadataExtension;
 import google.registry.model.eppcommon.StatusValue;
@@ -198,16 +197,12 @@ public final class HostUpdateFlow implements MutatingFlow {
             .setPersistedCurrentSponsorRegistrarId(newPersistedRegistrarId)
             .build();
     verifyHasIpsIffIsExternal(command, existingHost, newHost);
-    ImmutableSet.Builder<ImmutableObject> entitiesToInsert = new ImmutableSet.Builder<>();
-    ImmutableSet.Builder<ImmutableObject> entitiesToUpdate = new ImmutableSet.Builder<>();
-    entitiesToUpdate.add(newHost);
     if (isHostRename) {
       updateSuperordinateDomains(existingHost, newHost);
     }
     enqueueTasks(existingHost, newHost);
-    entitiesToInsert.add(historyBuilder.setType(HOST_UPDATE).setHost(newHost).build());
-    tm().updateAll(entitiesToUpdate.build());
-    tm().insertAll(entitiesToInsert.build());
+    tm().update(newHost);
+    tm().insert(historyBuilder.setType(HOST_UPDATE).setHost(newHost).build());
     return responseBuilder.build();
   }
 
@@ -290,7 +285,7 @@ public final class HostUpdateFlow implements MutatingFlow {
         && newHost.isSubordinate()
         && Objects.equals(
             existingHost.getSuperordinateDomain(), newHost.getSuperordinateDomain())) {
-      tm().put(
+      tm().update(
               tm().loadByKey(existingHost.getSuperordinateDomain())
                   .asBuilder()
                   .removeSubordinateHost(existingHost.getHostName())
@@ -299,14 +294,14 @@ public final class HostUpdateFlow implements MutatingFlow {
       return;
     }
     if (existingHost.isSubordinate()) {
-      tm().put(
+      tm().update(
               tm().loadByKey(existingHost.getSuperordinateDomain())
                   .asBuilder()
                   .removeSubordinateHost(existingHost.getHostName())
                   .build());
     }
     if (newHost.isSubordinate()) {
-      tm().put(
+      tm().update(
               tm().loadByKey(newHost.getSuperordinateDomain())
                   .asBuilder()
                   .addSubordinateHost(newHost.getHostName())

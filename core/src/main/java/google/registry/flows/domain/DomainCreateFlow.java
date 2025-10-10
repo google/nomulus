@@ -357,11 +357,11 @@ public final class DomainCreateFlow implements MutatingFlow {
             domainHistoryId, registrationExpirationTime, isAnchorTenant, allocationToken);
     PollMessage.Autorenew autorenewPollMessage =
         createAutorenewPollMessage(domainHistoryId, registrationExpirationTime);
-    ImmutableSet.Builder<ImmutableObject> entitiesToSave = new ImmutableSet.Builder<>();
-    entitiesToSave.add(createBillingEvent, autorenewBillingEvent, autorenewPollMessage);
+    ImmutableSet.Builder<ImmutableObject> entitiesToInsert = new ImmutableSet.Builder<>();
+    entitiesToInsert.add(createBillingEvent, autorenewBillingEvent, autorenewPollMessage);
     // Bill for EAP cost, if any.
     if (!feesAndCredits.getEapCost().isZero()) {
-      entitiesToSave.add(createEapBillingEvent(feesAndCredits, createBillingEvent));
+      entitiesToInsert.add(createEapBillingEvent(feesAndCredits, createBillingEvent));
     }
 
     ImmutableSet<ReservationType> reservationTypes = getReservationTypes(domainName);
@@ -404,12 +404,13 @@ public final class DomainCreateFlow implements MutatingFlow {
     DomainHistory domainHistory =
         buildDomainHistory(domain, tld, now, period, tld.getAddGracePeriodLength());
     if (reservationTypes.contains(NAME_COLLISION)) {
-      entitiesToSave.add(
+      entitiesToInsert.add(
           createNameCollisionOneTimePollMessage(targetId, domainHistory, registrarId, now));
     }
-    entitiesToSave.add(domain, domainHistory);
+    entitiesToInsert.add(domain, domainHistory);
+    ImmutableSet.Builder<ImmutableObject> entitiesToUpdate = new ImmutableSet.Builder<>();
     if (allocationToken.isPresent() && allocationToken.get().getTokenType().isOneTimeUse()) {
-      entitiesToSave.add(
+      entitiesToUpdate.add(
           AllocationTokenFlowUtils.redeemToken(
               allocationToken.get(), domainHistory.getHistoryEntryId()));
     }
@@ -422,7 +423,10 @@ public final class DomainCreateFlow implements MutatingFlow {
                 .setNewDomain(domain)
                 .setHistoryEntry(domainHistory)
                 .setEntityChanges(
-                    EntityChanges.newBuilder().setSaves(entitiesToSave.build()).build())
+                    EntityChanges.newBuilder()
+                        .setInserts(entitiesToInsert.build())
+                        .setUpdates(entitiesToUpdate.build())
+                        .build())
                 .setYears(years)
                 .build());
     persistEntityChanges(entityChanges);

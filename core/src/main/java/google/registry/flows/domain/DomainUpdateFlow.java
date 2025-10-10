@@ -190,14 +190,16 @@ public final class DomainUpdateFlow implements MutatingFlow {
     if (requiresDnsUpdate(existingDomain, newDomain)) {
       requestDomainDnsRefresh(targetId);
     }
-    ImmutableSet.Builder<ImmutableObject> entitiesToSave = new ImmutableSet.Builder<>();
-    entitiesToSave.add(newDomain, domainHistory);
+    ImmutableSet.Builder<ImmutableObject> entitiesToInsert = new ImmutableSet.Builder<>();
+    ImmutableSet.Builder<ImmutableObject> entitiesToUpdate = new ImmutableSet.Builder<>();
+    entitiesToUpdate.add(newDomain);
+    entitiesToInsert.add(domainHistory);
     Optional<BillingEvent> statusUpdateBillingEvent =
         createBillingEventForStatusUpdates(existingDomain, newDomain, domainHistory, now);
-    statusUpdateBillingEvent.ifPresent(entitiesToSave::add);
+    statusUpdateBillingEvent.ifPresent(entitiesToInsert::add);
     Optional<PollMessage.OneTime> serverStatusUpdatePollMessage =
         createPollMessageForServerStatusUpdates(existingDomain, newDomain, domainHistory, now);
-    serverStatusUpdatePollMessage.ifPresent(entitiesToSave::add);
+    serverStatusUpdatePollMessage.ifPresent(entitiesToInsert::add);
     EntityChanges entityChanges =
         flowCustomLogic.beforeSave(
             BeforeSaveParameters.newBuilder()
@@ -205,7 +207,10 @@ public final class DomainUpdateFlow implements MutatingFlow {
                 .setNewDomain(newDomain)
                 .setExistingDomain(existingDomain)
                 .setEntityChanges(
-                    EntityChanges.newBuilder().setSaves(entitiesToSave.build()).build())
+                    EntityChanges.newBuilder()
+                        .setInserts(entitiesToInsert.build())
+                        .setUpdates(entitiesToUpdate.build())
+                        .build())
                 .build());
     persistEntityChanges(entityChanges);
     return responseBuilder.build();

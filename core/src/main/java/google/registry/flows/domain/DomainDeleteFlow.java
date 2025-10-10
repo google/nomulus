@@ -151,7 +151,7 @@ public final class DomainDeleteFlow implements MutatingFlow, SqlStatementLogging
     verifyDeleteAllowed(existingDomain, tld, now);
     flowCustomLogic.afterValidation(
         AfterValidationParameters.newBuilder().setExistingDomain(existingDomain).build());
-    ImmutableSet.Builder<ImmutableObject> entitiesToSave = new ImmutableSet.Builder<>();
+    ImmutableSet.Builder<ImmutableObject> entitiesToInsert = new ImmutableSet.Builder<>();
     Domain.Builder builder;
     if (existingDomain.getStatusValues().contains(StatusValue.PENDING_TRANSFER)) {
       builder =
@@ -221,7 +221,7 @@ public final class DomainDeleteFlow implements MutatingFlow, SqlStatementLogging
       } else {
         PollMessage.OneTime deletePollMessage =
             createDeletePollMessage(existingDomain, domainHistoryId, deletionTime);
-        entitiesToSave.add(deletePollMessage);
+        entitiesToInsert.add(deletePollMessage);
         builder.setDeletePollMessage(deletePollMessage.createVKey());
       }
     }
@@ -230,7 +230,7 @@ public final class DomainDeleteFlow implements MutatingFlow, SqlStatementLogging
     // registrar other than the sponsoring registrar (which will necessarily be a superuser).
     if (durationUntilDelete.isLongerThan(Duration.ZERO)
         && !registrarId.equals(existingDomain.getPersistedCurrentSponsorRegistrarId())) {
-      entitiesToSave.add(
+      entitiesToInsert.add(
           createImmediateDeletePollMessage(existingDomain, domainHistoryId, now, deletionTime));
     }
 
@@ -239,7 +239,7 @@ public final class DomainDeleteFlow implements MutatingFlow, SqlStatementLogging
     for (GracePeriod gracePeriod : existingDomain.getGracePeriods()) {
       // No cancellation is written if the grace period was not for a billable event.
       if (gracePeriod.hasBillingEvent()) {
-        entitiesToSave.add(
+        entitiesToInsert.add(
             BillingCancellation.forGracePeriod(gracePeriod, now, domainHistoryId, targetId));
         if (gracePeriod.getBillingEvent() != null) {
           // Take the amount of registration time being refunded off the expiration time.
@@ -271,7 +271,7 @@ public final class DomainDeleteFlow implements MutatingFlow, SqlStatementLogging
     // ResourceDeleteFlow since it's listed in serverApproveEntities.
     requestDomainDnsRefresh(existingDomain.getDomainName());
 
-    entitiesToSave.add(newDomain, domainHistory);
+    entitiesToInsert.add(domainHistory);
     EntityChanges entityChanges =
         flowCustomLogic.beforeSave(
             BeforeSaveParameters.newBuilder()
@@ -279,7 +279,10 @@ public final class DomainDeleteFlow implements MutatingFlow, SqlStatementLogging
                 .setNewDomain(newDomain)
                 .setHistoryEntry(domainHistory)
                 .setEntityChanges(
-                    EntityChanges.newBuilder().setSaves(entitiesToSave.build()).build())
+                    EntityChanges.newBuilder()
+                        .setInserts(entitiesToInsert.build())
+                        .addUpdate(newDomain)
+                        .build())
                 .build());
     BeforeResponseReturnData responseData =
         flowCustomLogic.beforeResponse(

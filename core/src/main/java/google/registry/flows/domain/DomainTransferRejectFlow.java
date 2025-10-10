@@ -109,8 +109,8 @@ public final class DomainTransferRejectFlow implements MutatingFlow {
     Domain newDomain =
         denyPendingTransfer(existingDomain, TransferStatus.CLIENT_REJECTED, now, registrarId);
     DomainHistory domainHistory = buildDomainHistory(newDomain, tld, now);
-    tm().putAll(
-            newDomain,
+    tm().update(newDomain);
+    tm().insertAll(
             domainHistory,
             createGainingTransferPollMessage(
                 targetId, newDomain.getTransferData(), null, now, domainHistoryId));

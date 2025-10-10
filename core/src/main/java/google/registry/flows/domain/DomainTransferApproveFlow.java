@@ -172,7 +172,7 @@ public final class DomainTransferApproveFlow implements MutatingFlow {
                     .setDomainHistoryId(domainHistoryId)
                     .build());
 
-    ImmutableList.Builder<ImmutableObject> entitiesToSave = new ImmutableList.Builder<>();
+    ImmutableList.Builder<ImmutableObject> entitiesToInsert = new ImmutableList.Builder<>();
     // If we are within an autorenew grace period, cancel the autorenew billing event and don't
     // increase the registration time, since the transfer subsumes the autorenew's extra year.
     GracePeriod autorenewGrace =
@@ -184,7 +184,7 @@ public final class DomainTransferApproveFlow implements MutatingFlow {
       // then the gaining registrar is not charged for the one-year renewal and the losing registrar
       // still needs to be charged for the auto-renew.
       if (billingEvent.isPresent()) {
-        entitiesToSave.add(
+        entitiesToInsert.add(
             BillingCancellation.forGracePeriod(autorenewGrace, now, domainHistoryId, targetId));
       }
     }
@@ -259,14 +259,11 @@ public final class DomainTransferApproveFlow implements MutatingFlow {
     PollMessage gainingClientPollMessage =
         createGainingTransferPollMessage(
             targetId, newDomain.getTransferData(), newExpirationTime, now, domainHistoryId);
-    billingEvent.ifPresent(entitiesToSave::add);
-    entitiesToSave.add(
-        autorenewEvent,
-        gainingClientPollMessage,
-        gainingClientAutorenewPollMessage,
-        newDomain,
-        domainHistory);
-    tm().putAll(entitiesToSave.build());
+    billingEvent.ifPresent(entitiesToInsert::add);
+    entitiesToInsert.add(
+        autorenewEvent, gainingClientPollMessage, gainingClientAutorenewPollMessage, domainHistory);
+    tm().update(newDomain);
+    tm().insertAll(entitiesToInsert.build());
     // Delete the billing event and poll messages that were written in case the transfer would have
     // been implicitly server approved.
     tm().delete(existingDomain.getTransferData().getServerApproveEntities());

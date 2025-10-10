@@ -19,25 +19,30 @@ import com.google.common.collect.ImmutableSet;
 import google.registry.model.ImmutableObject;
 import google.registry.persistence.VKey;
 
-/** A record that encapsulates database entities to both save and delete. */
+/** A record that encapsulates database entities to insert, update, and delete. */
 public record EntityChanges(
-    ImmutableSet<ImmutableObject> saves, ImmutableSet<VKey<ImmutableObject>> deletes) {
+    ImmutableSet<ImmutableObject> inserts,
+    ImmutableSet<ImmutableObject> updates,
+    ImmutableSet<VKey<ImmutableObject>> deletes) {
 
-  public ImmutableSet<ImmutableObject> getSaves() {
-    return saves;
+  public ImmutableSet<ImmutableObject> getInserts() {
+    return inserts;
   }
-  ;
+
+  public ImmutableSet<ImmutableObject> getUpdates() {
+    return updates;
+  }
 
   public ImmutableSet<VKey<ImmutableObject>> getDeletes() {
     return deletes;
   }
-  ;
 
   public static Builder newBuilder() {
-    // Default both entities to save and entities to delete to empty sets, so that the build()
-    // method won't subsequently throw an exception if one doesn't end up being applicable.
+    // Default inserts, updates, and deletes to empty sets, so that the build() method won't
+    // subsequently throw an exception if one doesn't end up being applicable.
     return new AutoBuilder_EntityChanges_Builder()
-        .setSaves(ImmutableSet.of())
+        .setInserts(ImmutableSet.of())
+        .setUpdates(ImmutableSet.of())
         .setDeletes(ImmutableSet.of());
   }
 
@@ -45,12 +50,21 @@ public record EntityChanges(
   @AutoBuilder
   public interface Builder {
 
-    Builder setSaves(ImmutableSet<ImmutableObject> entitiesToSave);
+    Builder setInserts(ImmutableSet<ImmutableObject> entitiesToInsert);
 
-    ImmutableSet.Builder<ImmutableObject> savesBuilder();
+    ImmutableSet.Builder<ImmutableObject> insertsBuilder();
 
-    default Builder addSave(ImmutableObject entityToSave) {
-      savesBuilder().add(entityToSave);
+    default Builder addInsert(ImmutableObject entityToInsert) {
+      insertsBuilder().add(entityToInsert);
+      return this;
+    }
+
+    Builder setUpdates(ImmutableSet<ImmutableObject> entitiesToUpdate);
+
+    ImmutableSet.Builder<ImmutableObject> updatesBuilder();
+
+    default Builder addUpdate(ImmutableObject entityToUpdate) {
+      updatesBuilder().add(entityToUpdate);
       return this;
     }
 

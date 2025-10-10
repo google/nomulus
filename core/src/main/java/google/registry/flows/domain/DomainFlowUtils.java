@@ -711,7 +711,7 @@ public class DomainFlowUtils {
 
     BillingRecurrence newBillingRecurrence =
         existingBillingRecurrence.asBuilder().setRecurrenceEndTime(newEndTime).build();
-    tm().put(newBillingRecurrence);
+    tm().update(newBillingRecurrence);
     return newBillingRecurrence;
   }
 

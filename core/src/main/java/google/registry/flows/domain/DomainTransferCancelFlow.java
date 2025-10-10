@@ -110,8 +110,8 @@ public final class DomainTransferCancelFlow implements MutatingFlow {
     Domain newDomain =
         denyPendingTransfer(existingDomain, TransferStatus.CLIENT_CANCELLED, now, registrarId);
     DomainHistory domainHistory = buildDomainHistory(newDomain, tld, now);
-    tm().putAll(
-            newDomain,
+    tm().update(newDomain);
+    tm().insertAll(
             domainHistory,
             createLosingTransferPollMessage(
                 targetId, newDomain.getTransferData(), null, domainHistoryId));
