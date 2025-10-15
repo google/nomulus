@@ -154,7 +154,7 @@ public final class HostUpdateFlow implements MutatingFlow {
     EppResource owningResource = firstNonNull(oldSuperordinateDomain, existingHost);
     verifyUpdateAllowed(
         command, existingHost, newSuperordinateDomain.orElse(null), owningResource, isHostRename);
-    if (isHostRename && ForeignKeyUtils.load(Host.class, newHostName, now) != null) {
+    if (isHostRename && ForeignKeyUtils.loadKey(Host.class, newHostName, now).isPresent()) {
       throw new HostAlreadyExistsException(newHostName);
     }
     AddRemove add = command.getInnerAdd();

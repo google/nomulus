@@ -17,7 +17,7 @@ package google.registry.model.domain;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.collect.Iterables.getOnlyElement;
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.model.EppResourceUtils.loadByForeignKey;
+import static google.registry.model.ForeignKeyUtils.loadResource;
 import static google.registry.model.billing.BillingBase.RenewalPriceBehavior.SPECIFIED;
 import static google.registry.model.domain.token.AllocationToken.TokenType.BULK_PRICING;
 import static google.registry.model.domain.token.AllocationToken.TokenType.SINGLE_USE;
@@ -238,7 +238,7 @@ public class DomainTest {
     // Note that this only verifies that the value stored under the foreign key is the same as that
     // stored under the primary key ("domain" is the domain loaded from the the database, not the
     // original domain object).
-    assertThat(loadByForeignKey(Domain.class, domain.getForeignKey(), fakeClock.nowUtc()))
+    assertThat(loadResource(Domain.class, domain.getForeignKey(), fakeClock.nowUtc()))
         .hasValue(domain);
   }
 
@@ -246,7 +246,7 @@ public class DomainTest {
   void testRegistrantNotRequired() {
     persistResource(domain.asBuilder().setRegistrant(Optional.empty()).build());
     assertThat(
-            loadByForeignKey(Domain.class, domain.getForeignKey(), fakeClock.nowUtc())
+            loadResource(Domain.class, domain.getForeignKey(), fakeClock.nowUtc())
                 .get()
                 .getRegistrant())
         .isEmpty();

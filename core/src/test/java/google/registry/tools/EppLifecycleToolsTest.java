@@ -14,7 +14,7 @@
 
 package google.registry.tools;
 
-import static google.registry.model.EppResourceUtils.loadByForeignKey;
+import static google.registry.model.ForeignKeyUtils.loadResource;
 import static google.registry.model.common.FeatureFlag.FeatureName.MINIMUM_DATASET_CONTACTS_OPTIONAL;
 import static google.registry.model.common.FeatureFlag.FeatureStatus.INACTIVE;
 import static google.registry.testing.DatabaseHelper.assertBillingEventsForResource;
@@ -157,7 +157,7 @@ class EppLifecycleToolsTest extends EppTestCase {
     // Assert about billing events.
     DateTime createTime = DateTime.parse("2000-06-01T00:02:00Z");
     Domain domain =
-        loadByForeignKey(Domain.class, "example.tld", DateTime.parse("2003-06-02T00:02:00Z")).get();
+        loadResource(Domain.class, "example.tld", DateTime.parse("2003-06-02T00:02:00Z")).get();
     BillingEvent renewBillingEvent =
         new BillingEvent.Builder()
             .setReason(Reason.RENEW)

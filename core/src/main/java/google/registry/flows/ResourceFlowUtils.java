@@ -16,7 +16,6 @@ package google.registry.flows;
 
 import static com.google.common.collect.Sets.intersection;
 import static google.registry.model.EppResourceUtils.isLinked;
-import static google.registry.model.EppResourceUtils.loadByForeignKey;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import com.google.common.collect.ImmutableSet;
@@ -72,11 +71,11 @@ public final class ResourceFlowUtils {
    */
   public static <R extends EppResource> void checkLinkedDomains(
       final String targetId, final DateTime now, final Class<R> resourceClass) throws EppException {
-    VKey<R> key = ForeignKeyUtils.load(resourceClass, targetId, now);
-    if (key == null) {
+    Optional<VKey<R>> key = ForeignKeyUtils.loadKey(resourceClass, targetId, now);
+    if (key.isEmpty()) {
       throw new ResourceDoesNotExistException(resourceClass, targetId);
     }
-    if (isLinked(key, now)) {
+    if (isLinked(key.get(), now)) {
       throw new ResourceToDeleteIsReferencedException();
     }
   }
@@ -97,7 +96,7 @@ public final class ResourceFlowUtils {
 
   public static <R extends EppResource & ForeignKeyedEppResource> R loadAndVerifyExistence(
       Class<R> clazz, String targetId, DateTime now) throws ResourceDoesNotExistException {
-    return verifyExistence(clazz, targetId, loadByForeignKey(clazz, targetId, now));
+    return verifyExistence(clazz, targetId, ForeignKeyUtils.loadResource(clazz, targetId, now));
   }
 
   public static <R extends EppResource> R verifyExistence(
@@ -107,11 +106,10 @@ public final class ResourceFlowUtils {
 
   public static <R extends EppResource> void verifyResourceDoesNotExist(
       Class<R> clazz, String targetId, DateTime now, String registrarId) throws EppException {
-    VKey<R> key = ForeignKeyUtils.load(clazz, targetId, now);
-    if (key != null) {
-      R resource = tm().loadByKey(key);
+    Optional<R> resource = ForeignKeyUtils.loadResource(clazz, targetId, now);
+    if (resource.isPresent()) {
       // These are similar exceptions, but we can track them internally as log-based metrics.
-      if (Objects.equals(registrarId, resource.getPersistedCurrentSponsorRegistrarId())) {
+      if (Objects.equals(registrarId, resource.get().getPersistedCurrentSponsorRegistrarId())) {
         throw new ResourceAlreadyExistsForThisClientException(targetId);
       } else {
         throw new ResourceCreateContentionException(targetId);

@@ -18,7 +18,7 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import static jakarta.servlet.http.HttpServletResponse.SC_NOT_FOUND;
 import static jakarta.servlet.http.HttpServletResponse.SC_OK;
 
-import google.registry.model.EppResourceUtils;
+import google.registry.model.ForeignKeyUtils;
 import google.registry.model.console.ConsolePermission;
 import google.registry.model.console.User;
 import google.registry.model.domain.Domain;
@@ -55,7 +55,7 @@ public class ConsoleDomainGetAction extends ConsoleApiAction {
     Optional<Domain> possibleDomain =
         tm().transact(
                 () ->
-                    EppResourceUtils.loadByForeignKeyByCacheIfEnabled(
+                    ForeignKeyUtils.loadResourceByCacheIfEnabled(
                         Domain.class, paramDomain, tm().getTransactionTime()));
     if (possibleDomain.isEmpty()) {
       consoleApiParams.response().setStatus(SC_NOT_FOUND);

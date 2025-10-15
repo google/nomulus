@@ -41,7 +41,8 @@ class CommandUtilities {
     }
 
     public VKey<? extends EppResource> getKey(String uniqueId, DateTime now) {
-      return ForeignKeyUtils.load(clazz, uniqueId, now);
+      return ForeignKeyUtils.loadKey(clazz, uniqueId, now)
+          .orElseThrow(() -> new IllegalArgumentException("Invalid resource ID"));
     }
   }
 

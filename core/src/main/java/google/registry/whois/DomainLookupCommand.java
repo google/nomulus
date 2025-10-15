@@ -16,8 +16,6 @@ package google.registry.whois;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static google.registry.flows.domain.DomainFlowUtils.isBlockedByBsa;
-import static google.registry.model.EppResourceUtils.loadByForeignKey;
-import static google.registry.model.EppResourceUtils.loadByForeignKeyByCache;
 import static google.registry.model.tld.Tlds.findTldForName;
 import static google.registry.model.tld.Tlds.getTlds;
 import static google.registry.persistence.transaction.TransactionManagerFactory.replicaTm;
@@ -26,6 +24,7 @@ import static jakarta.servlet.http.HttpServletResponse.SC_NOT_FOUND;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Verify;
 import com.google.common.net.InternetDomainName;
+import google.registry.model.ForeignKeyUtils;
 import google.registry.model.domain.Domain;
 import google.registry.model.tld.Tld;
 import java.util.Optional;
@@ -94,8 +93,8 @@ public class DomainLookupCommand implements WhoisCommand {
   private Optional<WhoisResponse> getResponse(InternetDomainName domainName, DateTime now) {
     Optional<Domain> domainResource =
         cached
-            ? loadByForeignKeyByCache(Domain.class, domainName.toString(), now)
-            : loadByForeignKey(Domain.class, domainName.toString(), now);
+            ? ForeignKeyUtils.loadResourceByCache(Domain.class, domainName.toString(), now)
+            : ForeignKeyUtils.loadResource(Domain.class, domainName.toString(), now);
     return domainResource.map(
         domain -> new DomainWhoisResponse(domain, fullOutput, whoisRedactedEmailText, now));
   }

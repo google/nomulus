@@ -14,7 +14,6 @@
 
 package google.registry.rdap;
 
-import static google.registry.model.EppResourceUtils.loadByForeignKeyByCache;
 import static google.registry.persistence.transaction.TransactionManagerFactory.replicaTm;
 import static google.registry.request.Action.Method.GET;
 import static google.registry.request.Action.Method.HEAD;
@@ -25,6 +24,7 @@ import com.google.common.collect.ImmutableSortedSet;
 import com.google.common.collect.Iterables;
 import com.google.common.net.InetAddresses;
 import com.google.common.primitives.Booleans;
+import google.registry.model.ForeignKeyUtils;
 import google.registry.model.domain.Domain;
 import google.registry.model.host.Host;
 import google.registry.persistence.transaction.CriteriaQueryBuilder;
@@ -159,7 +159,7 @@ public class RdapNameserverSearchAction extends RdapSearchActionBase {
             .setIncompletenessWarningType(IncompletenessWarningType.COMPLETE);
 
     Optional<Host> host =
-        loadByForeignKeyByCache(
+        ForeignKeyUtils.loadResourceByCache(
             Host.class, partialStringQuery.getInitialString(), getRequestTime());
 
     metricInformationBuilder.setNumHostsRetrieved(host.isPresent() ? 1 : 0);
@@ -176,7 +176,8 @@ public class RdapNameserverSearchAction extends RdapSearchActionBase {
   private NameserverSearchResponse searchByNameUsingSuperordinateDomain(
       RdapSearchPattern partialStringQuery) {
     Optional<Domain> domain =
-        loadByForeignKeyByCache(Domain.class, partialStringQuery.getSuffix(), getRequestTime());
+        ForeignKeyUtils.loadResourceByCache(
+            Domain.class, partialStringQuery.getSuffix(), getRequestTime());
     if (domain.isEmpty()) {
       // Don't allow wildcards with suffixes which are not domains we manage. That would risk a
       // table scan in many easily foreseeable cases. The user might ask for ns*.zombo.com,
@@ -194,7 +195,8 @@ public class RdapNameserverSearchAction extends RdapSearchActionBase {
       // We can't just check that the host name starts with the initial query string, because
       // then the query ns.exam*.example.com would match against nameserver ns.example.com.
       if (partialStringQuery.matches(fqhn)) {
-        Optional<Host> host = loadByForeignKeyByCache(Host.class, fqhn, getRequestTime());
+        Optional<Host> host =
+            ForeignKeyUtils.loadResourceByCache(Host.class, fqhn, getRequestTime());
         if (shouldBeVisible(host)) {
           hostList.add(host.get());
           if (hostList.size() > rdapResultSetMaxSize) {

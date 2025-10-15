@@ -16,12 +16,12 @@ package google.registry.dns;
 
 import static google.registry.dns.DnsUtils.requestDomainDnsRefresh;
 import static google.registry.dns.DnsUtils.requestHostDnsRefresh;
-import static google.registry.model.EppResourceUtils.loadByForeignKey;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import google.registry.dns.DnsUtils.TargetType;
 import google.registry.model.EppResource;
 import google.registry.model.EppResource.ForeignKeyedEppResource;
+import google.registry.model.ForeignKeyUtils;
 import google.registry.model.annotations.ExternalMessagingName;
 import google.registry.model.domain.Domain;
 import google.registry.model.host.Host;
@@ -79,7 +79,7 @@ public final class RefreshDnsAction implements Runnable {
 
   private <T extends EppResource & ForeignKeyedEppResource>
       T loadAndVerifyExistence(Class<T> clazz, String foreignKey) {
-    return loadByForeignKey(clazz, foreignKey, clock.nowUtc())
+    return ForeignKeyUtils.loadResource(clazz, foreignKey, clock.nowUtc())
         .orElseThrow(
             () ->
                 new NotFoundException(

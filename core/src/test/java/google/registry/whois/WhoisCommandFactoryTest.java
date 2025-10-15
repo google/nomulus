@@ -49,7 +49,7 @@ class WhoisCommandFactoryTest {
 
   @RegisterExtension
   final TestCacheExtension testCacheExtension =
-      new TestCacheExtension.Builder().withEppResourceCache(Duration.ofSeconds(1000000)).build();
+      new TestCacheExtension.Builder().withForeignKeyResourceCache(Duration.ofDays(1)).build();
 
   WhoisCommandFactory noncachedFactory = WhoisCommandFactory.createNonCached();
   WhoisCommandFactory cachedFactory = WhoisCommandFactory.createCached();

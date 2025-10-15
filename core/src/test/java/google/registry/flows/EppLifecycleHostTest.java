@@ -15,7 +15,7 @@
 package google.registry.flows;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.model.EppResourceUtils.loadByForeignKey;
+import static google.registry.model.ForeignKeyUtils.loadResource;
 import static google.registry.model.common.FeatureFlag.FeatureName.MINIMUM_DATASET_CONTACTS_OPTIONAL;
 import static google.registry.model.common.FeatureFlag.FeatureStatus.INACTIVE;
 import static google.registry.model.eppoutput.Result.Code.SUCCESS;
@@ -230,9 +230,9 @@ class EppLifecycleHostTest extends EppTestCase {
     DateTime timeAfterCreates = DateTime.parse("2000-06-01T00:06:00Z");
 
     Host exampleBarFooTldHost =
-        loadByForeignKey(Host.class, "ns1.example.bar.foo.tld", timeAfterCreates).get();
+        loadResource(Host.class, "ns1.example.bar.foo.tld", timeAfterCreates).get();
     Domain exampleBarFooTldDomain =
-        loadByForeignKey(Domain.class, "example.bar.foo.tld", timeAfterCreates).get();
+        loadResource(Domain.class, "example.bar.foo.tld", timeAfterCreates).get();
     assertAboutHosts()
         .that(exampleBarFooTldHost)
         .hasSuperordinateDomain(exampleBarFooTldDomain.createVKey());
@@ -240,16 +240,16 @@ class EppLifecycleHostTest extends EppTestCase {
         .containsExactly("ns1.example.bar.foo.tld");
 
     Host exampleFooTldHost =
-        loadByForeignKey(Host.class, "ns1.example.foo.tld", timeAfterCreates).get();
+        loadResource(Host.class, "ns1.example.foo.tld", timeAfterCreates).get();
     Domain exampleFooTldDomain =
-        loadByForeignKey(Domain.class, "example.foo.tld", timeAfterCreates).get();
+        loadResource(Domain.class, "example.foo.tld", timeAfterCreates).get();
     assertAboutHosts()
         .that(exampleFooTldHost)
         .hasSuperordinateDomain(exampleFooTldDomain.createVKey());
     assertThat(exampleFooTldDomain.getSubordinateHosts()).containsExactly("ns1.example.foo.tld");
 
-    Host exampleTldHost = loadByForeignKey(Host.class, "ns1.example.tld", timeAfterCreates).get();
-    Domain exampleTldDomain = loadByForeignKey(Domain.class, "example.tld", timeAfterCreates).get();
+    Host exampleTldHost = loadResource(Host.class, "ns1.example.tld", timeAfterCreates).get();
+    Domain exampleTldDomain = loadResource(Domain.class, "example.tld", timeAfterCreates).get();
     assertAboutHosts().that(exampleTldHost).hasSuperordinateDomain(exampleTldDomain.createVKey());
     assertThat(exampleTldDomain.getSubordinateHosts()).containsExactly("ns1.example.tld");
 

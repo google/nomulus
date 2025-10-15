@@ -16,21 +16,19 @@ package google.registry.tools;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Strings.isNullOrEmpty;
-import static google.registry.model.EppResourceUtils.loadByForeignKey;
 import static google.registry.util.CollectionUtils.findDuplicates;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
-import static google.registry.util.PreconditionsUtils.checkArgumentPresent;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import com.google.common.base.Joiner;
 import com.google.template.soy.data.SoyMapData;
+import google.registry.flows.ResourceFlowUtils;
 import google.registry.model.domain.Domain;
 import google.registry.tools.soy.DomainRenewSoyInfo;
 import google.registry.util.Clock;
 import jakarta.inject.Inject;
 import java.util.List;
-import java.util.Optional;
 import org.joda.time.DateTime;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
@@ -71,17 +69,15 @@ final class RenewDomainCommand extends MutatingEppToolCommand {
   private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormat.forPattern("YYYY-MM-dd");
 
   @Override
-  protected void initMutatingEppToolCommand() {
+  protected void initMutatingEppToolCommand()
+      throws ResourceFlowUtils.ResourceDoesNotExistException {
     String duplicates = Joiner.on(", ").join(findDuplicates(mainParameters));
     checkArgument(duplicates.isEmpty(), "Duplicate domain arguments found: '%s'", duplicates);
     checkArgument(period < 10, "Cannot renew domains for 10 or more years");
     DateTime now = clock.nowUtc();
     for (String domainName : mainParameters) {
-      Optional<Domain> domainOptional = loadByForeignKey(Domain.class, domainName, now);
-      checkArgumentPresent(domainOptional, "Domain '%s' does not exist or is deleted", domainName);
       setSoyTemplate(DomainRenewSoyInfo.getInstance(), DomainRenewSoyInfo.RENEWDOMAIN);
-      Domain domain = domainOptional.get();
-
+      Domain domain = ResourceFlowUtils.loadAndVerifyExistence(Domain.class, domainName, now);
       SoyMapData soyMapData =
           new SoyMapData(
               "domainName", domain.getDomainName(),

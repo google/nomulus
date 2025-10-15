@@ -14,7 +14,7 @@
 
 package google.registry.flows;
 
-import static google.registry.model.EppResourceUtils.loadByForeignKey;
+import static google.registry.model.ForeignKeyUtils.loadResource;
 import static google.registry.model.ImmutableObjectSubject.assertAboutImmutableObjects;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.LogsSubject.assertAboutLogs;
@@ -72,7 +72,7 @@ public abstract class ResourceFlowTestCase<F extends Flow, R extends EppResource
 
   @Nullable
   protected R reloadResourceByForeignKey(DateTime now) throws Exception {
-    return loadByForeignKey(getResourceClass(), getUniqueIdFromCommand(), now).orElse(null);
+    return loadResource(getResourceClass(), getUniqueIdFromCommand(), now).orElse(null);
   }
 
   @Nullable

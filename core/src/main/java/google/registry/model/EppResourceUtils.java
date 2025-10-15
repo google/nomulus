@@ -16,19 +16,14 @@ package google.registry.model;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
-import static google.registry.persistence.transaction.TransactionManagerFactory.replicaTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static google.registry.util.DateTimeUtils.isAtOrAfter;
 import static google.registry.util.DateTimeUtils.isBeforeOrAt;
-import static google.registry.util.DateTimeUtils.latestOf;
 
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.flogger.FluentLogger;
-import google.registry.config.RegistryConfig;
 import google.registry.model.EppResource.BuilderWithTransferData;
-import google.registry.model.EppResource.ForeignKeyedEppResource;
 import google.registry.model.EppResource.ResourceWithTransferData;
 import google.registry.model.contact.Contact;
 import google.registry.model.domain.Domain;
@@ -41,13 +36,9 @@ import google.registry.model.transfer.DomainTransferData;
 import google.registry.model.transfer.TransferData;
 import google.registry.model.transfer.TransferStatus;
 import google.registry.persistence.VKey;
-import google.registry.persistence.transaction.TransactionManager;
 import jakarta.persistence.Query;
-import java.util.Collection;
 import java.util.Comparator;
-import java.util.Optional;
 import java.util.function.Function;
-import java.util.function.Supplier;
 import javax.annotation.Nullable;
 import org.joda.time.DateTime;
 import org.joda.time.Interval;
@@ -88,123 +79,6 @@ public final class EppResourceUtils {
   @SuppressWarnings("unchecked")
   private static <T extends EppResource> T cloneProjectedAtTime(T resource, DateTime now) {
     return (T) resource.cloneProjectedAtTime(now);
-  }
-
-  /**
-   * Loads the last created version of an {@link EppResource} from the database by foreign key.
-   *
-   * <p>Returns empty if no resource with this foreign key was ever created, or if the most recently
-   * created resource was deleted before time "now".
-   *
-   * <p>Loading an {@link EppResource} by itself is not sufficient to know its current state since
-   * it may have various expirable conditions and status values that might implicitly change its
-   * state as time progresses even if it has not been updated in the database. Rather, the resource
-   * must be combined with a timestamp to view its current state. We use a global last updated
-   * timestamp on the resource's entity group (which is essentially free since all writes to the
-   * entity group must be serialized anyways) to guarantee monotonically increasing write times, and
-   * forward our projected time to the greater of this timestamp or "now". This guarantees that
-   * we're not projecting into the past.
-   *
-   * @param clazz the resource type to load
-   * @param foreignKey id to match
-   * @param now the current logical time to project resources at
-   */
-  public static <T extends EppResource> Optional<T> loadByForeignKey(
-      Class<T> clazz, String foreignKey, DateTime now) {
-    return loadByForeignKeyHelper(tm(), clazz, foreignKey, now, false);
-  }
-
-  /**
-   * Loads the last created version of an {@link EppResource} from the database by foreign key,
-   * using a cache, if caching is enabled in config settings.
-   *
-   * <p>Returns null if no resource with this foreign key was ever created, or if the most recently
-   * created resource was deleted before time "now".
-   *
-   * <p>Loading an {@link EppResource} by itself is not sufficient to know its current state since
-   * it may have various expirable conditions and status values that might implicitly change its
-   * state as time progresses even if it has not been updated in the database. Rather, the resource
-   * must be combined with a timestamp to view its current state. We use a global last updated
-   * timestamp to guarantee monotonically increasing write times, and forward our projected time to
-   * the greater of this timestamp or "now". This guarantees that we're not projecting into the
-   * past.
-   *
-   * <p>Do not call this cached version for anything that needs transactional consistency. It should
-   * only be used when it's OK if the data is potentially being out of date, e.g. WHOIS.
-   *
-   * @param clazz the resource type to load
-   * @param foreignKey id to match
-   * @param now the current logical time to project resources at
-   */
-  public static <T extends EppResource> Optional<T> loadByForeignKeyByCacheIfEnabled(
-      Class<T> clazz, String foreignKey, DateTime now) {
-    return loadByForeignKeyHelper(
-        tm(), clazz, foreignKey, now, RegistryConfig.isEppResourceCachingEnabled());
-  }
-
-  /**
-   * Loads the last created version of an {@link EppResource} from the replica database by foreign
-   * key, using a cache.
-   *
-   * <p>This method ignores the config setting for caching, and is reserved for use cases that can
-   * tolerate slightly stale data.
-   */
-  public static <T extends EppResource> Optional<T> loadByForeignKeyByCache(
-      Class<T> clazz, String foreignKey, DateTime now) {
-    return loadByForeignKeyHelper(replicaTm(), clazz, foreignKey, now, true);
-  }
-
-  private static <T extends EppResource> Optional<T> loadByForeignKeyHelper(
-      TransactionManager txnManager,
-      Class<T> clazz,
-      String foreignKey,
-      DateTime now,
-      boolean useCache) {
-    checkArgument(
-        ForeignKeyedEppResource.class.isAssignableFrom(clazz),
-        "loadByForeignKey may only be called for foreign keyed EPP resources");
-    VKey<T> key =
-        useCache
-            ? ForeignKeyUtils.loadByCache(clazz, ImmutableList.of(foreignKey), now).get(foreignKey)
-            : ForeignKeyUtils.load(clazz, foreignKey, now);
-    // The returned key is null if the resource is hard deleted or soft deleted by the given time.
-    if (key == null) {
-      return Optional.empty();
-    }
-    T resource =
-        useCache
-            ? EppResource.loadByCache(key)
-            // This transaction is buried very deeply inside many outer nested calls, hence merits
-            // the use of reTransact() for now pending a substantial refactoring.
-            : txnManager.reTransact(() -> txnManager.loadByKeyIfPresent(key).orElse(null));
-    if (resource == null || isAtOrAfter(now, resource.getDeletionTime())) {
-      return Optional.empty();
-    }
-    // When setting status values based on a time, choose the greater of "now" and the resource's
-    // UpdateAutoTimestamp. For non-mutating uses (info, whois, etc.), this is equivalent to rolling
-    // "now" forward to at least the last update on the resource, so that a read right after a write
-    // doesn't appear stale. For mutating flows, if we had to roll now forward then the flow will
-    // fail when it tries to save anything, since "now" is needed to be > the last update time for
-    // writes.
-    return Optional.of(
-        cloneProjectedAtTime(
-            resource, latestOf(now, resource.getUpdateTimestamp().getTimestamp())));
-  }
-
-  /**
-   * Checks multiple {@link EppResource} objects from the database by unique ids.
-   *
-   * <p>There are currently no resources that support checks and do not use foreign keys. If we need
-   * to support that case in the future, we can loosen the type to allow any {@link EppResource} and
-   * add code to do the lookup by id directly.
-   *
-   * @param clazz the resource type to load
-   * @param uniqueIds a list of ids to match
-   * @param now the logical time of the check
-   */
-  public static <T extends EppResource> ImmutableSet<String> checkResourcesExist(
-      Class<T> clazz, Collection<String> uniqueIds, final DateTime now) {
-    return ForeignKeyUtils.load(clazz, uniqueIds, now).keySet();
   }
 
   /**
@@ -307,21 +181,6 @@ public final class EppResourceUtils {
   }
 
   /**
-   * Rewinds an {@link EppResource} object to a given point in time.
-   *
-   * <p>This method costs nothing if {@code resource} is already current. Otherwise, it returns an
-   * async operation that performs a single fetch operation.
-   *
-   * @return an asynchronous operation returning resource at {@code timestamp} or {@code null} if
-   *     resource is deleted or not yet created
-   * @see #loadAtPointInTime(EppResource, DateTime)
-   */
-  public static <T extends EppResource> Supplier<T> loadAtPointInTimeAsync(
-      final T resource, final DateTime timestamp) {
-    return () -> loadAtPointInTime(resource, timestamp);
-  }
-
-  /**
    * Returns the most recent revision of a given EppResource before or at the provided timestamp,
    * falling back to using the resource as-is if there are no revisions.
    *
@@ -395,13 +254,11 @@ public final class EppResourceUtils {
   /**
    * Returns whether the given contact or host is linked to (that is, referenced by) a domain.
    *
-   * <p>This is an eventually consistent query.
-   *
    * @param key the referent key
    * @param now the logical time of the check
    */
   public static boolean isLinked(VKey<? extends EppResource> key, DateTime now) {
-    return getLinkedDomainKeys(key, now, 1).size() > 0;
+    return !getLinkedDomainKeys(key, now, 1).isEmpty();
   }
 
   private EppResourceUtils() {}

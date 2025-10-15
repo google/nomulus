@@ -22,7 +22,7 @@ import static jakarta.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static org.mockito.Mockito.when;
 
 import com.google.common.collect.Iterables;
-import google.registry.model.EppResourceUtils;
+import google.registry.model.ForeignKeyUtils;
 import google.registry.model.domain.Domain;
 import google.registry.request.Action;
 import google.registry.request.auth.AuthResult;
@@ -125,7 +125,7 @@ public class ConsoleDomainListActionTest extends ConsoleActionBaseTestCase {
 
     clock.advanceOneMilli();
     Domain toDelete =
-        EppResourceUtils.loadByForeignKey(Domain.class, "0exists.tld", clock.nowUtc()).get();
+        ForeignKeyUtils.loadResource(Domain.class, "0exists.tld", clock.nowUtc()).get();
     persistDomainAsDeleted(toDelete, clock.nowUtc());
 
     // Second page should include the domain that is now deleted due to the checkpoint time
