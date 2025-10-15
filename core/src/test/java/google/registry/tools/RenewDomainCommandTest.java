@@ -24,6 +24,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import com.beust.jcommander.ParameterException;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import google.registry.flows.ResourceFlowUtils;
 import google.registry.model.domain.Domain;
 import google.registry.model.registrar.Registrar;
 import google.registry.testing.DatabaseHelper;
@@ -174,19 +175,23 @@ public class RenewDomainCommandTest extends EppToolCommandTestCase<RenewDomainCo
 
   @Test
   void testFailure_domainDoesntExist() {
-    IllegalArgumentException e =
-        assertThrows(IllegalArgumentException.class, () -> runCommandForced("nonexistent.tld"));
-    assertThat(e)
+    assertThat(
+            assertThrows(
+                ResourceFlowUtils.ResourceDoesNotExistException.class,
+                () -> runCommandForced("nonexistent.tld")))
         .hasMessageThat()
-        .isEqualTo("Domain 'nonexistent.tld' does not exist or is deleted");
+        .isEqualTo("The domain with given ID (nonexistent.tld) doesn't exist.");
   }
 
   @Test
   void testFailure_domainIsDeleted() {
     persistDeletedDomain("deleted.tld", DateTime.parse("2012-10-05T05:05:05Z"));
-    IllegalArgumentException e =
-        assertThrows(IllegalArgumentException.class, () -> runCommandForced("deleted.tld"));
-    assertThat(e).hasMessageThat().isEqualTo("Domain 'deleted.tld' does not exist or is deleted");
+    assertThat(
+            assertThrows(
+                ResourceFlowUtils.ResourceDoesNotExistException.class,
+                () -> runCommandForced("deleted.tld")))
+        .hasMessageThat()
+        .isEqualTo("The domain with given ID (deleted.tld) doesn't exist.");
   }
 
   @Test

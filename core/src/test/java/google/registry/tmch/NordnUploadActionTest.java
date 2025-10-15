@@ -19,9 +19,7 @@ import static com.google.common.net.HttpHeaders.CONTENT_TYPE;
 import static com.google.common.net.HttpHeaders.LOCATION;
 import static com.google.common.net.MediaType.FORM_DATA;
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.model.ForeignKeyUtils.load;
 import static google.registry.testing.DatabaseHelper.createTld;
-import static google.registry.testing.DatabaseHelper.loadByKey;
 import static google.registry.testing.DatabaseHelper.loadRegistrar;
 import static google.registry.testing.DatabaseHelper.newDomain;
 import static google.registry.testing.DatabaseHelper.persistResource;
@@ -40,10 +38,10 @@ import static org.mockito.Mockito.when;
 
 import com.google.common.base.VerifyException;
 import google.registry.batch.CloudTasksUtils;
+import google.registry.model.ForeignKeyUtils;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.launch.LaunchNotice;
 import google.registry.model.tld.Tld;
-import google.registry.persistence.VKey;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.request.RequestParameters;
@@ -72,19 +70,19 @@ class NordnUploadActionTest {
 
   private static final String CLAIMS_CSV =
       """
-          1,2010-05-04T10:11:12.000Z,2
-          roid,domain-name,notice-id,registrar-id,registration-datetime,ack-datetime,application-datetime
-          6-TLD,claims-landrush2.tld,landrush2tcn,88888,2010-05-03T10:11:12.000Z,2010-05-03T08:11:12.000Z
-          8-TLD,claims-landrush1.tld,landrush1tcn,99999,2010-05-04T10:11:12.000Z,2010-05-04T09:11:12.000Z
-          """;
+      1,2010-05-04T10:11:12.000Z,2
+      roid,domain-name,notice-id,registrar-id,registration-datetime,ack-datetime,application-datetime
+      6-TLD,claims-landrush2.tld,landrush2tcn,88888,2010-05-03T10:11:12.000Z,2010-05-03T08:11:12.000Z
+      8-TLD,claims-landrush1.tld,landrush1tcn,99999,2010-05-04T10:11:12.000Z,2010-05-04T09:11:12.000Z
+      """;
 
   private static final String SUNRISE_CSV =
       """
-          1,2010-05-04T10:11:12.000Z,2
-          roid,domain-name,SMD-id,registrar-id,registration-datetime,application-datetime
-          2-TLD,sunrise2.tld,new-smdid,88888,2010-05-01T10:11:12.000Z
-          4-TLD,sunrise1.tld,my-smdid,99999,2010-05-02T10:11:12.000Z
-          """;
+      1,2010-05-04T10:11:12.000Z,2
+      roid,domain-name,SMD-id,registrar-id,registration-datetime,application-datetime
+      2-TLD,sunrise2.tld,new-smdid,88888,2010-05-01T10:11:12.000Z
+      4-TLD,sunrise1.tld,my-smdid,99999,2010-05-02T10:11:12.000Z
+      """;
 
   private static final String LOCATION_URL = "http://trololol";
 
@@ -142,12 +140,14 @@ class NordnUploadActionTest {
   @Test
   void testSuccess_nothingScheduled() {
     persistResource(
-        loadByKey(load(Domain.class, "claims-landrush1.tld", clock.nowUtc()))
+        ForeignKeyUtils.loadResource(Domain.class, "claims-landrush1.tld", clock.nowUtc())
+            .get()
             .asBuilder()
             .setLordnPhase(LordnPhase.NONE)
             .build());
     persistResource(
-        loadByKey(load(Domain.class, "claims-landrush2.tld", clock.nowUtc()))
+        ForeignKeyUtils.loadResource(Domain.class, "claims-landrush2.tld", clock.nowUtc())
+            .get()
             .asBuilder()
             .setLordnPhase(LordnPhase.NONE)
             .build());
@@ -233,8 +233,7 @@ class NordnUploadActionTest {
   }
 
   private void verifyColumnCleared(String domainName) {
-    VKey<Domain> domainKey = load(Domain.class, domainName, clock.nowUtc());
-    Domain domain = loadByKey(domainKey);
+    Domain domain = ForeignKeyUtils.loadResource(Domain.class, domainName, clock.nowUtc()).get();
     assertThat(domain.getLordnPhase()).isEqualTo(LordnPhase.NONE);
   }
 

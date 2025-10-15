@@ -48,7 +48,10 @@ class ForeignKeyUtilsTest {
 
   @RegisterExtension
   public final TestCacheExtension testCacheExtension =
-      new TestCacheExtension.Builder().withForeignKeyCache(Duration.ofDays(1)).build();
+      new TestCacheExtension.Builder()
+          .withForeignKeyRepoIdCache(Duration.ofDays(1))
+          .withForeignKeyResourceCache(Duration.ofDays(1))
+          .build();
 
   @BeforeEach
   void setUp() {
@@ -56,46 +59,48 @@ class ForeignKeyUtilsTest {
   }
 
   @Test
-  void testSuccess_loadHost() {
+  void testSuccess_loadHostKey() {
     Host host = persistActiveHost("ns1.example.com");
-    assertThat(ForeignKeyUtils.load(Host.class, "ns1.example.com", fakeClock.nowUtc()))
-        .isEqualTo(host.createVKey());
+    assertThat(ForeignKeyUtils.loadKey(Host.class, "ns1.example.com", fakeClock.nowUtc()))
+        .hasValue(host.createVKey());
   }
 
   @Test
-  void testSuccess_loadDomain() {
+  void testSuccess_loadDomainKey() {
     Domain domain = persistActiveDomain("example.com");
-    assertThat(ForeignKeyUtils.load(Domain.class, "example.com", fakeClock.nowUtc()))
-        .isEqualTo(domain.createVKey());
+    assertThat(ForeignKeyUtils.loadKey(Domain.class, "example.com", fakeClock.nowUtc()))
+        .hasValue(domain.createVKey());
   }
 
   @Test
-  void testSuccess_loadContact() {
+  void testSuccess_loadContactKey() {
     Contact contact = persistActiveContact("john-doe");
-    assertThat(ForeignKeyUtils.load(Contact.class, "john-doe", fakeClock.nowUtc()))
-        .isEqualTo(contact.createVKey());
+    assertThat(ForeignKeyUtils.loadKey(Contact.class, "john-doe", fakeClock.nowUtc()))
+        .hasValue(contact.createVKey());
   }
 
   @Test
-  void testSuccess_loadMostRecentResource() {
+  void testSuccess_loadKeyMostRecentResource() {
     Host host = persistActiveHost("ns1.example.com");
     persistResource(host.asBuilder().setDeletionTime(fakeClock.nowUtc().minusDays(1)).build());
     fakeClock.advanceOneMilli();
     Host newHost = persistActiveHost("ns1.example.com");
-    assertThat(ForeignKeyUtils.load(Host.class, "ns1.example.com", fakeClock.nowUtc()))
-        .isEqualTo(newHost.createVKey());
+    assertThat(ForeignKeyUtils.loadKey(Host.class, "ns1.example.com", fakeClock.nowUtc()))
+        .hasValue(newHost.createVKey());
   }
 
   @Test
-  void testSuccess_loadNonexistentForeignKey_returnsNull() {
-    assertThat(ForeignKeyUtils.load(Host.class, "ns1.example.com", fakeClock.nowUtc())).isNull();
+  void testSuccess_loadKeyNonexistentForeignKey_returnsNull() {
+    assertThat(ForeignKeyUtils.loadKey(Host.class, "ns1.example.com", fakeClock.nowUtc()))
+        .isEmpty();
   }
 
   @Test
-  void testSuccess_loadDeletedForeignKey_returnsNull() {
+  void testSuccess_loadKeyDeletedForeignKey_returnsNull() {
     Host host = persistActiveHost("ns1.example.com");
     persistResource(host.asBuilder().setDeletionTime(fakeClock.nowUtc().minusDays(1)).build());
-    assertThat(ForeignKeyUtils.load(Host.class, "ns1.example.com", fakeClock.nowUtc())).isNull();
+    assertThat(ForeignKeyUtils.loadKey(Host.class, "ns1.example.com", fakeClock.nowUtc()))
+        .isEmpty();
   }
 
   @Test
@@ -103,16 +108,17 @@ class ForeignKeyUtilsTest {
     Host host1 = persistActiveHost("ns1.example.com");
     fakeClock.advanceOneMilli();
     persistResource(host1.asBuilder().setDeletionTime(fakeClock.nowUtc()).build());
-    assertThat(ForeignKeyUtils.load(Host.class, "ns1.example.com", fakeClock.nowUtc())).isNull();
+    assertThat(ForeignKeyUtils.loadKey(Host.class, "ns1.example.com", fakeClock.nowUtc()))
+        .isEmpty();
   }
 
   @Test
-  void testSuccess_batchLoad_skipsDeletedAndNonexistent() {
+  void testSuccess_batchLoadKeys_skipsDeletedAndNonexistent() {
     Host host1 = persistActiveHost("ns1.example.com");
     Host host2 = persistActiveHost("ns2.example.com");
     persistResource(host2.asBuilder().setDeletionTime(fakeClock.nowUtc().minusDays(1)).build());
     assertThat(
-            ForeignKeyUtils.load(
+            ForeignKeyUtils.loadKeys(
                 Host.class,
                 ImmutableList.of("ns1.example.com", "ns2.example.com", "ns3.example.com"),
                 fakeClock.nowUtc()))
@@ -121,7 +127,7 @@ class ForeignKeyUtilsTest {
     fakeClock.advanceOneMilli();
     Host newHost1 = persistActiveHost("ns1.example.com");
     assertThat(
-            ForeignKeyUtils.loadByCacheIfEnabled(
+            ForeignKeyUtils.loadKeysByCacheIfEnabled(
                 Host.class,
                 ImmutableList.of("ns1.example.com", "ns2.example.com", "ns3.example.com"),
                 fakeClock.nowUtc()))
@@ -129,12 +135,12 @@ class ForeignKeyUtilsTest {
   }
 
   @Test
-  void testSuccess_loadHostsCached_cacheIsStale() {
+  void testSuccess_loadHostKeysCached_cacheIsStale() {
     Host host1 = persistActiveHost("ns1.example.com");
     Host host2 = persistActiveHost("ns2.example.com");
     persistResource(host2.asBuilder().setDeletionTime(fakeClock.nowUtc().minusDays(1)).build());
     assertThat(
-            ForeignKeyUtils.loadByCacheIfEnabled(
+            ForeignKeyUtils.loadKeysByCacheIfEnabled(
                 Host.class,
                 ImmutableList.of("ns1.example.com", "ns2.example.com", "ns3.example.com"),
                 fakeClock.nowUtc()))
@@ -144,7 +150,7 @@ class ForeignKeyUtilsTest {
     persistActiveHost("ns1.example.com");
     // Even though a new host1 is now live, the cache still returns the VKey to the old one.
     assertThat(
-            ForeignKeyUtils.loadByCacheIfEnabled(
+            ForeignKeyUtils.loadKeysByCacheIfEnabled(
                 Host.class,
                 ImmutableList.of("ns1.example.com", "ns2.example.com", "ns3.example.com"),
                 fakeClock.nowUtc()))

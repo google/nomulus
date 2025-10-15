@@ -20,7 +20,6 @@ import static google.registry.model.domain.rgp.GracePeriodStatus.AUTO_RENEW;
 import static google.registry.model.eppcommon.StatusValue.PENDING_DELETE;
 import static google.registry.model.eppcommon.StatusValue.SERVER_UPDATE_PROHIBITED;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.util.PreconditionsUtils.checkArgumentPresent;
 import static java.util.function.Predicate.isEqual;
 
 import com.beust.jcommander.Parameter;
@@ -30,7 +29,7 @@ import com.google.common.collect.ImmutableSortedSet;
 import com.google.common.collect.Sets;
 import com.google.common.flogger.FluentLogger;
 import com.google.template.soy.data.SoyMapData;
-import google.registry.model.ForeignKeyUtils;
+import google.registry.flows.ResourceFlowUtils;
 import google.registry.model.domain.DesignatedContact;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.GracePeriodBase;
@@ -42,7 +41,6 @@ import jakarta.inject.Inject;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import javax.annotation.Nullable;
@@ -146,7 +144,8 @@ final class UpdateDomainCommand extends CreateOrUpdateDomainCommand {
   boolean forceInPendingDelete;
 
   @Override
-  protected void initMutatingEppToolCommand() {
+  protected void initMutatingEppToolCommand()
+      throws ResourceFlowUtils.ResourceDoesNotExistException {
     if (!nameservers.isEmpty()) {
       checkArgument(
           addNameservers.isEmpty() && removeNameservers.isEmpty(),
@@ -184,9 +183,7 @@ final class UpdateDomainCommand extends CreateOrUpdateDomainCommand {
     ImmutableSet.Builder<String> autorenewGracePeriodWarningDomains = new ImmutableSet.Builder<>();
     DateTime now = clock.nowUtc();
     for (String domainName : domains) {
-      Optional<Domain> domainOptional = ForeignKeyUtils.loadResource(Domain.class, domainName, now);
-      checkArgumentPresent(domainOptional, "Domain '%s' does not exist or is deleted", domainName);
-      Domain domain = domainOptional.get();
+      Domain domain = ResourceFlowUtils.loadAndVerifyExistence(Domain.class, domainName, now);
       checkArgument(
           !domain.getStatusValues().contains(SERVER_UPDATE_PROHIBITED),
           "The domain '%s' has status SERVER_UPDATE_PROHIBITED. Verify that you are allowed "

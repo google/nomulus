@@ -442,7 +442,7 @@ public class DomainCommand {
       final Set<String> foreignKeys, final Class<T> clazz, final DateTime now)
       throws InvalidReferencesException {
     ImmutableMap<String, VKey<T>> fks =
-        ForeignKeyUtils.loadByCacheIfEnabled(clazz, foreignKeys, now);
+        ForeignKeyUtils.loadKeysByCacheIfEnabled(clazz, foreignKeys, now);
     if (!fks.keySet().equals(foreignKeys)) {
       throw new InvalidReferencesException(
           clazz, ImmutableSet.copyOf(difference(foreignKeys, fks.keySet())));

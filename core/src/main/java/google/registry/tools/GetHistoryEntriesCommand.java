@@ -17,7 +17,6 @@ package google.registry.tools;
 import static com.google.common.base.Preconditions.checkArgument;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
-import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 import static org.joda.time.DateTimeZone.UTC;
 
 import com.beust.jcommander.Parameter;
@@ -60,7 +59,6 @@ final class GetHistoryEntriesCommand implements Command {
           type != null && uniqueId != null,
           "If either of 'type' or 'id' are set then both must be");
       VKey<? extends EppResource> parentKey = type.getKey(uniqueId, DateTime.now(UTC));
-      checkArgumentNotNull(parentKey, "Invalid resource ID");
       historyEntries = HistoryEntryDao.loadHistoryObjectsForResource(parentKey, after, before);
     } else {
       historyEntries = HistoryEntryDao.loadAllHistoryObjects(after, before);

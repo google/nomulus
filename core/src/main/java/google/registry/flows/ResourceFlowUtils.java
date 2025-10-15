@@ -71,10 +71,9 @@ public final class ResourceFlowUtils {
    */
   public static <R extends EppResource> void checkLinkedDomains(
       final String targetId, final DateTime now, final Class<R> resourceClass) throws EppException {
-    VKey<R> key = ForeignKeyUtils.load(resourceClass, targetId, now);
-    if (key == null) {
-      throw new ResourceDoesNotExistException(resourceClass, targetId);
-    }
+    VKey<R> key =
+        ForeignKeyUtils.loadKey(resourceClass, targetId, now)
+            .orElseThrow(() -> new ResourceDoesNotExistException(resourceClass, targetId));
     if (isLinked(key, now)) {
       throw new ResourceToDeleteIsReferencedException();
     }
@@ -106,11 +105,10 @@ public final class ResourceFlowUtils {
 
   public static <R extends EppResource> void verifyResourceDoesNotExist(
       Class<R> clazz, String targetId, DateTime now, String registrarId) throws EppException {
-    VKey<R> key = ForeignKeyUtils.load(clazz, targetId, now);
-    if (key != null) {
-      R resource = tm().loadByKey(key);
+    Optional<R> resource = ForeignKeyUtils.loadResource(clazz, targetId, now);
+    if (resource.isPresent()) {
       // These are similar exceptions, but we can track them internally as log-based metrics.
-      if (Objects.equals(registrarId, resource.getPersistedCurrentSponsorRegistrarId())) {
+      if (Objects.equals(registrarId, resource.get().getPersistedCurrentSponsorRegistrarId())) {
         throw new ResourceAlreadyExistsForThisClientException(targetId);
       } else {
         throw new ResourceCreateContentionException(targetId);

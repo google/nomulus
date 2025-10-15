@@ -87,7 +87,7 @@ class UnrenewDomainCommand extends ConfirmingCommand {
         new ImmutableMap.Builder<>();
 
     for (String domainName : mainParameters) {
-      if (ForeignKeyUtils.load(Domain.class, domainName, START_OF_TIME) == null) {
+      if (ForeignKeyUtils.loadKey(Domain.class, domainName, START_OF_TIME).isEmpty()) {
         domainsNonexistentBuilder.add(domainName);
         continue;
       }

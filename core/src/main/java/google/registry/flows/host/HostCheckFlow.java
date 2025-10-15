@@ -16,7 +16,6 @@ package google.registry.flows.host;
 
 import static google.registry.flows.FlowUtils.validateRegistrarIsLoggedIn;
 import static google.registry.flows.ResourceFlowUtils.verifyTargetIdCount;
-import static google.registry.model.EppResourceUtils.checkResourcesExist;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -26,6 +25,7 @@ import google.registry.flows.ExtensionManager;
 import google.registry.flows.FlowModule.RegistrarId;
 import google.registry.flows.TransactionalFlow;
 import google.registry.flows.annotations.ReportingSpec;
+import google.registry.model.ForeignKeyUtils;
 import google.registry.model.eppinput.ResourceCommand;
 import google.registry.model.eppoutput.CheckData.HostCheck;
 import google.registry.model.eppoutput.CheckData.HostCheckData;
@@ -61,7 +61,8 @@ public final class HostCheckFlow implements TransactionalFlow {
     extensionManager.validate(); // There are no legal extensions for this flow.
     ImmutableList<String> hostnames = ((Check) resourceCommand).getTargetIds();
     verifyTargetIdCount(hostnames, maxChecks);
-    ImmutableSet<String> existingIds = checkResourcesExist(Host.class, hostnames, clock.nowUtc());
+    ImmutableSet<String> existingIds =
+        ForeignKeyUtils.loadKeys(Host.class, hostnames, clock.nowUtc()).keySet();
     ImmutableList.Builder<HostCheck> checks = new ImmutableList.Builder<>();
     for (String hostname : hostnames) {
       boolean unused = !existingIds.contains(hostname);

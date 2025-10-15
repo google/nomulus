@@ -740,11 +740,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
     persistResource(
         DatabaseHelper.newDomain("example1.tld")
             .asBuilder()
-            .setRegistrant(
-                Optional.of(
-                    ForeignKeyUtils.loadResource(Contact.class, "sh8013", clock.nowUtc())
-                        .get()
-                        .createVKey()))
+            .setRegistrant(ForeignKeyUtils.loadKey(Contact.class, "sh8013", clock.nowUtc()))
             .setNameservers(ImmutableSet.of(host.createVKey()))
             .setDeletionTime(START_OF_TIME)
             .build());

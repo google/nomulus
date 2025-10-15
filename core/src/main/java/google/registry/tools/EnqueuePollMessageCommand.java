@@ -24,7 +24,7 @@ import com.beust.jcommander.Parameters;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Streams;
 import google.registry.config.RegistryConfig.Config;
-import google.registry.model.ForeignKeyUtils;
+import google.registry.flows.ResourceFlowUtils;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.poll.PollMessage;
@@ -33,7 +33,6 @@ import google.registry.model.reporting.HistoryEntry;
 import google.registry.util.DomainNameUtils;
 import jakarta.inject.Inject;
 import java.util.List;
-import java.util.Optional;
 
 /**
  * Tool to enqueue a poll message for a registrar.
@@ -85,11 +84,9 @@ class EnqueuePollMessageCommand extends MutatingCommand {
         !sendToAll || isNullOrEmpty(clientIds), "Cannot specify both --all and --clients");
     tm().transact(
             () -> {
-              Optional<Domain> domainOpt =
-                  ForeignKeyUtils.loadResource(Domain.class, domainName, tm().getTransactionTime());
-              checkArgument(
-                  domainOpt.isPresent(), "Domain %s doesn't exist or isn't active", domainName);
-              Domain domain = domainOpt.get();
+              Domain domain =
+                  ResourceFlowUtils.loadAndVerifyExistence(
+                      Domain.class, domainName, tm().getTransactionTime());
               ImmutableList<String> registrarIds;
               if (sendToAll) {
                 registrarIds =

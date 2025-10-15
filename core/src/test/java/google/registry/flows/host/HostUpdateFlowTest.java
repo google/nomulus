@@ -76,7 +76,6 @@ import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.tld.Tld;
 import google.registry.model.transfer.DomainTransferData;
 import google.registry.model.transfer.TransferStatus;
-import google.registry.persistence.VKey;
 import google.registry.testing.CloudTasksHelper.TaskMatcher;
 import google.registry.testing.DatabaseHelper;
 import javax.annotation.Nullable;
@@ -185,8 +184,7 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, Host> {
     Host renamedHost = doSuccessfulTest();
     assertThat(renamedHost.isSubordinate()).isTrue();
     assertHostDnsRequests("ns1.example.tld", "ns2.example.tld");
-    VKey<Host> oldVKeyAfterRename = ForeignKeyUtils.load(Host.class, oldHostName(), clock.nowUtc());
-    assertThat(oldVKeyAfterRename).isNull();
+    assertThat(ForeignKeyUtils.loadKey(Host.class, oldHostName(), clock.nowUtc())).isEmpty();
   }
 
   @Test
