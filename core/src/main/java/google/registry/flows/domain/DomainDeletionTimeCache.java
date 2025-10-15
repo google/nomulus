@@ -20,9 +20,11 @@ import com.github.benmanes.caffeine.cache.CacheLoader;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.Expiry;
 import com.github.benmanes.caffeine.cache.LoadingCache;
+import com.github.benmanes.caffeine.cache.Ticker;
 import com.google.common.collect.ImmutableSet;
 import google.registry.model.ForeignKeyUtils;
 import google.registry.model.domain.Domain;
+import google.registry.util.DateTimeUtils;
 import java.util.Optional;
 import org.joda.time.DateTime;
 
@@ -55,9 +57,9 @@ import org.joda.time.DateTime;
 public class DomainDeletionTimeCache {
 
   // Max expiry time is ten minutes
-  private static final int MAX_EXPIRY_MILLIS = 10 * 60 * 1000;
+  private static final long NANOS_IN_ONE_MILLISECOND = 100000L;
+  private static final long MAX_EXPIRY_NANOS = 10L * 60L * 1000L * NANOS_IN_ONE_MILLISECOND;
   private static final int MAX_ENTRIES = 500;
-  private static final int NANOS_IN_ONE_MILLISECOND = 100000;
 
   /**
    * Expire after the max duration, or after the domain is set to drop (whichever comes first).
@@ -71,9 +73,13 @@ public class DomainDeletionTimeCache {
       new Expiry<>() {
         @Override
         public long expireAfterCreate(String key, DateTime value, long currentTime) {
-          long millisUntilDeletion = value.getMillis() - tm().getTransactionTime().getMillis();
-          return NANOS_IN_ONE_MILLISECOND
-              * Math.max(0L, Math.min(MAX_EXPIRY_MILLIS, millisUntilDeletion));
+          // Watch out for Long overflow
+          long deletionTimeNanos =
+              value.equals(DateTimeUtils.END_OF_TIME)
+                  ? Long.MAX_VALUE
+                  : value.getMillis() * NANOS_IN_ONE_MILLISECOND;
+          long nanosUntilDeletion = deletionTimeNanos - currentTime;
+          return Math.max(0L, Math.min(MAX_EXPIRY_NANOS, nanosUntilDeletion));
         }
 
         /** Reset the time entirely on update, as if we were creating the entry anew. */
@@ -101,9 +107,14 @@ public class DomainDeletionTimeCache {
         return mostRecentResource == null ? null : mostRecentResource.deletionTime();
       };
 
+  // Unfortunately, maintenance tasks aren't necessarily already in a transaction
+  private static final Ticker TRANSACTION_TIME_TICKER =
+      () -> tm().reTransact(() -> tm().getTransactionTime().getMillis() * NANOS_IN_ONE_MILLISECOND);
+
   public static DomainDeletionTimeCache create() {
     return new DomainDeletionTimeCache(
         Caffeine.newBuilder()
+            .ticker(TRANSACTION_TIME_TICKER)
             .expireAfter(EXPIRY_POLICY)
             .maximumSize(MAX_ENTRIES)
             .build(CACHE_LOADER));

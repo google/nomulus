@@ -26,6 +26,7 @@ import google.registry.testing.DatabaseHelper;
 import google.registry.testing.FakeClock;
 import java.util.Optional;
 import org.joda.time.DateTime;
+import org.joda.time.Duration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -67,7 +68,8 @@ public class DomainDeletionTimeCacheTest {
     Domain domain = persistActiveDomain("domain.tld");
     assertThat(getDeletionTimeFromCache("domain.tld")).hasValue(END_OF_TIME);
     persistDomainAsDeleted(domain, clock.nowUtc().plusDays(1));
-    // Without intervention, the cache should have the old data
+    // Without intervention, the cache should have the old data, even if a few minutes have passed
+    clock.advanceBy(Duration.standardMinutes(5));
     assertThat(getDeletionTimeFromCache("domain.tld")).hasValue(END_OF_TIME);
   }
 
@@ -77,6 +79,16 @@ public class DomainDeletionTimeCacheTest {
     assertThat(getDeletionTimeFromCache("domain.tld")).isEmpty();
     persistDomainAsDeleted(persistActiveDomain("domain.tld"), clock.nowUtc().plusDays(1));
     assertThat(getDeletionTimeFromCache("domain.tld")).hasValue(clock.nowUtc().plusDays(1));
+  }
+
+  @Test
+  void testCache_expires() {
+    Domain domain = persistActiveDomain("domain.tld");
+    assertThat(getDeletionTimeFromCache("domain.tld")).hasValue(END_OF_TIME);
+    DateTime elevenMinutesFromNow = clock.nowUtc().plusMinutes(11);
+    persistDomainAsDeleted(domain, elevenMinutesFromNow);
+    clock.advanceBy(Duration.standardMinutes(30));
+    assertThat(getDeletionTimeFromCache("domain.tld")).hasValue(elevenMinutesFromNow);
   }
 
   private Optional<DateTime> getDeletionTimeFromCache(String domainName) {
