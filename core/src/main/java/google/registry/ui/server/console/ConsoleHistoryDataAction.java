@@ -15,6 +15,7 @@
 package google.registry.ui.server.console;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.collect.ImmutableList.toImmutableList;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.request.Action.Method.GET;
 import static jakarta.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
@@ -23,7 +24,9 @@ import static jakarta.servlet.http.HttpServletResponse.SC_OK;
 import com.google.common.base.Strings;
 import google.registry.model.console.ConsolePermission;
 import google.registry.model.console.ConsoleUpdateHistory;
+import google.registry.model.console.GlobalRole;
 import google.registry.model.console.User;
+import google.registry.model.console.UserRoles;
 import google.registry.request.Action;
 import google.registry.request.Action.GaeService;
 import google.registry.request.Action.GkeService;
@@ -43,8 +46,8 @@ public class ConsoleHistoryDataAction extends ConsoleApiAction {
 
   private static final String SQL_USER_HISTORY =
       """
-            SELECT * FROM "ConsoleUpdateHistory"
-            WHERE acting_user = :actingUser
+        SELECT * FROM "ConsoleUpdateHistory"
+        WHERE acting_user = :actingUser
       """;
 
   private static final String SQL_REGISTRAR_HISTORY =
@@ -95,7 +98,9 @@ public class ConsoleHistoryDataAction extends ConsoleApiAction {
                         .setHint("org.hibernate.fetchSize", 1000)
                         .getResultList());
 
-    consoleApiParams.response().setPayload(consoleApiParams.gson().toJson(queryResult));
+    List<ConsoleUpdateHistory> formattedHistoryList =
+        replaceActiveUserIfNecessary(queryResult, user);
+    consoleApiParams.response().setPayload(consoleApiParams.gson().toJson(formattedHistoryList));
     consoleApiParams.response().setStatus(SC_OK);
   }
 
@@ -110,7 +115,39 @@ public class ConsoleHistoryDataAction extends ConsoleApiAction {
                         .setParameter("registrarId", registrarId)
                         .setHint("org.hibernate.fetchSize", 1000)
                         .getResultList());
-    consoleApiParams.response().setPayload(consoleApiParams.gson().toJson(queryResult));
+
+    List<ConsoleUpdateHistory> formattedHistoryList =
+        replaceActiveUserIfNecessary(queryResult, user);
+    consoleApiParams.response().setPayload(consoleApiParams.gson().toJson(formattedHistoryList));
     consoleApiParams.response().setStatus(SC_OK);
+  }
+
+  /** Anonymizes support users in history logs if the user viewing the log is a registrar user. */
+  private List<ConsoleUpdateHistory> replaceActiveUserIfNecessary(
+      List<ConsoleUpdateHistory> historyList, User requestingUser) {
+    // Check if the user *viewing* the history is a registrar user (not a support user)
+    if (GlobalRole.NONE.equals(requestingUser.getUserRoles().getGlobalRole())) {
+      User genericSupportUser = // Fixed typo
+          new User.Builder()
+              .setEmailAddress("registry-support@google.com")
+              .setUserRoles(new UserRoles.Builder().build()) // Simplified roles
+              .build();
+
+      return historyList.stream()
+          .map(
+              historyEntry -> {
+                // Check if the user who performed the action was a support user
+                if (!GlobalRole.NONE.equals(
+                    historyEntry.getActingUser().getUserRoles().getGlobalRole())) {
+                  return historyEntry.asBuilder().setActingUser(genericSupportUser).build();
+                }
+                // Ff acting user was a registrar user show them as-is
+                return historyEntry;
+              })
+          .collect(toImmutableList());
+    }
+
+    // If the viewing user is a support user, return the list unmodified
+    return historyList;
   }
 }

@@ -56,7 +56,7 @@ export class HistoryListComponent {
       return { main: 'N/A', detail: null };
     }
     const parts = description.split('|');
-    const detail = parts.length > 1 ? parts[1].replace(/_/g, ' ') : null;
+    const detail = parts.length > 1 ? parts[1].replace(/_/g, ' ') : parts[0];
 
     return {
       main: parts[0],

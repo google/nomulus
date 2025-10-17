@@ -23,6 +23,7 @@ import static org.apache.http.HttpStatus.SC_OK;
 
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.flogger.FluentLogger;
 import google.registry.model.console.ConsolePermission;
 import google.registry.model.console.ConsoleUpdateHistory;
 import google.registry.model.console.User;
@@ -47,6 +48,8 @@ import org.joda.time.DateTime;
     method = {POST},
     auth = Auth.AUTH_PUBLIC_LOGGED_IN)
 public class ConsoleUpdateRegistrarAction extends ConsoleApiAction {
+  private static final FluentLogger logger = FluentLogger.forEnclosingClass();
+  private static final String CHANGE_LOG_ENTRY = "%s updated on %s, old -> %s, new -> %s";
   static final String PATH = "/console-api/registrar";
   private final Optional<Registrar> registrar;
 
@@ -124,6 +127,9 @@ public class ConsoleUpdateRegistrarAction extends ConsoleApiAction {
                   new ConsoleUpdateHistory.Builder()
                       .setType(ConsoleUpdateHistory.Type.REGISTRAR_UPDATE)
                       .setDescription(updatedRegistrar.getRegistrarId()));
+
+              logConsoleChangesIfNecessary(updatedRegistrar, existingRegistrar.get());
+
               sendExternalUpdatesIfNecessary(
                   EmailInfo.create(
                       existingRegistrar.get(),
@@ -133,5 +139,26 @@ public class ConsoleUpdateRegistrarAction extends ConsoleApiAction {
             });
 
     consoleApiParams.response().setStatus(SC_OK);
+  }
+
+  private void logConsoleChangesIfNecessary(
+      Registrar updatedRegistrar, Registrar existingRegistrar) {
+    if (!updatedRegistrar.getAllowedTlds().containsAll(existingRegistrar.getAllowedTlds())) {
+      logger.atInfo().log(
+          CHANGE_LOG_ENTRY,
+          "Allowed TLDs",
+          updatedRegistrar.getRegistrarId(),
+          existingRegistrar.getAllowedTlds(),
+          updatedRegistrar.getAllowedTlds());
+    }
+
+    if (updatedRegistrar.isRegistryLockAllowed() != existingRegistrar.isRegistryLockAllowed()) {
+      logger.atInfo().log(
+          CHANGE_LOG_ENTRY,
+          "Registry lock",
+          updatedRegistrar.getRegistrarId(),
+          existingRegistrar.isRegistryLockAllowed(),
+          updatedRegistrar.isRegistryLockAllowed());
+    }
   }
 }

@@ -57,6 +57,11 @@
           [(ngModel)]="contactService.contactInEdit.emailAddress"
           [ngModelOptions]="{ standalone: true }"
           [disabled]="emailAddressIsDisabled()"
+          [matTooltip]="
+            emailAddressIsDisabled()
+              ? 'Reach out to registry customer support to update email address'
+              : ''
+          "
         />
       </mat-form-field>
 
@@ -84,6 +89,7 @@
       <h1>Contact Type</h1>
       <p class="console-app__contact-required">
         <mat-icon color="accent">error</mat-icon>Required to select at least one
+        (primary contact can't be updated)
       </p>
       <div class="">
         <ng-container
