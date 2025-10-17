@@ -40,8 +40,10 @@ import org.junit.jupiter.api.Test;
 
 class ConsoleHistoryDataActionTest extends ConsoleActionBaseTestCase {
 
+  private static final String SUPPORT_EMAIL = "supportEmailTest@test.com";
   private static final Gson GSON = new Gson();
   private User noPermissionUser;
+  private User registrarPrimaryUser;
 
   @BeforeEach
   void beforeEach() {
@@ -53,6 +55,17 @@ class ConsoleHistoryDataActionTest extends ConsoleActionBaseTestCase {
                     new UserRoles.Builder()
                         .setRegistrarRoles(
                             ImmutableMap.of("TheRegistrar", RegistrarRole.ACCOUNT_MANAGER))
+                        .build())
+                .build());
+
+    registrarPrimaryUser =
+        DatabaseHelper.persistResource(
+            new User.Builder()
+                .setEmailAddress("primary@example.com")
+                .setUserRoles(
+                    new UserRoles.Builder()
+                        .setRegistrarRoles(
+                            ImmutableMap.of("TheRegistrar", RegistrarRole.PRIMARY_CONTACT))
                         .build())
                 .build());
 
@@ -85,7 +98,7 @@ class ConsoleHistoryDataActionTest extends ConsoleActionBaseTestCase {
   }
 
   @Test
-  void testSuccess_getByRegistrar() {
+  void testSuccess_getByRegistrar_notAnonymizedForSupportUser() {
     ConsoleHistoryDataAction action =
         createAction(AuthResult.createUser(fteUser), "TheRegistrar", Optional.empty());
     action.run();
@@ -93,6 +106,35 @@ class ConsoleHistoryDataActionTest extends ConsoleActionBaseTestCase {
     List<Map<String, Object>> payload = GSON.fromJson(response.getPayload(), List.class);
     assertThat(payload.stream().map(record -> record.get("description")).collect(toImmutableList()))
         .containsExactly("TheRegistrar|Some change", "TheRegistrar|Another change");
+
+    // Assert that the support user sees the real acting users
+    List<String> actingUserEmails =
+        payload.stream()
+            .map(record -> (Map<String, Object>) record.get("actingUser"))
+            .map(userMap -> (String) userMap.get("emailAddress"))
+            .collect(toImmutableList());
+
+    assertThat(actingUserEmails).containsExactly("fte@email.tld", "no.perms@example.com");
+  }
+
+  @Test
+  void testSuccess_getByRegistrar_anonymizedForRegistrarUser() {
+    ConsoleHistoryDataAction action =
+        createAction(AuthResult.createUser(registrarPrimaryUser), "TheRegistrar", Optional.empty());
+    action.run();
+    assertThat(response.getStatus()).isEqualTo(SC_OK);
+    List<Map<String, Object>> payload = GSON.fromJson(response.getPayload(), List.class);
+    assertThat(payload.stream().map(record -> record.get("description")).collect(toImmutableList()))
+        .containsExactly("TheRegistrar|Some change", "TheRegistrar|Another change");
+
+    // Assert that the registrar user sees the anonymized support user
+    List<String> actingUserEmails =
+        payload.stream()
+            .map(record -> (Map<String, Object>) record.get("actingUser"))
+            .map(userMap -> (String) userMap.get("emailAddress"))
+            .collect(toImmutableList());
+
+    assertThat(actingUserEmails).containsExactly(SUPPORT_EMAIL, "no.perms@example.com");
   }
 
   @Test
@@ -104,6 +146,13 @@ class ConsoleHistoryDataActionTest extends ConsoleActionBaseTestCase {
     List<Map<String, Object>> payload = GSON.fromJson(response.getPayload(), List.class);
     assertThat(payload.stream().map(record -> record.get("description")).collect(toImmutableList()))
         .containsExactly("TheRegistrar|Some change", "OtherRegistrar|Some change");
+
+    List<String> actingUserEmails =
+        payload.stream()
+            .map(record -> (Map<String, Object>) record.get("actingUser"))
+            .map(userMap -> (String) userMap.get("emailAddress"))
+            .collect(toImmutableList());
+    assertThat(actingUserEmails).containsExactly("fte@email.tld", "fte@email.tld");
   }
 
   @Test
@@ -148,6 +197,7 @@ class ConsoleHistoryDataActionTest extends ConsoleActionBaseTestCase {
     consoleApiParams = ConsoleApiParamsUtils.createFake(authResult);
     when(consoleApiParams.request().getMethod()).thenReturn("GET");
     response = (FakeResponse) consoleApiParams.response();
-    return new ConsoleHistoryDataAction(consoleApiParams, registrarId, consoleUserEmail);
+    return new ConsoleHistoryDataAction(
+        consoleApiParams, SUPPORT_EMAIL, registrarId, consoleUserEmail);
   }
 }
