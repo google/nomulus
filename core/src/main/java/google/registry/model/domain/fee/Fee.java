@@ -64,6 +64,7 @@ public class Fee extends BaseFee {
 
   public static final ImmutableSet<String> FEE_EXTENSION_URIS =
       ImmutableSet.of(
+          ServiceExtension.FEE_STD_1_0.getUri(),
           ServiceExtension.FEE_0_12.getUri(),
           ServiceExtension.FEE_0_11.getUri(),
           ServiceExtension.FEE_0_6.getUri());

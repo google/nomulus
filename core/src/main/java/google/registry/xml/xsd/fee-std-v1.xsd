@@ -1,0 +1,242 @@
+<?xml version="1.0" encoding="utf-8"?>
+<schema xmlns="http://www.w3.org/2001/XMLSchema"
+  xmlns:fee="urn:ietf:params:xml:ns:epp:fee-1.0"
+  xmlns:eppcom="urn:ietf:params:xml:ns:eppcom-1.0"
+  xmlns:domain="urn:ietf:params:xml:ns:domain-1.0"
+  targetNamespace="urn:ietf:params:xml:ns:epp:fee-1.0"
+  elementFormDefault="qualified">
+
+  <import namespace="urn:ietf:params:xml:ns:eppcom-1.0" />
+  <import namespace="urn:ietf:params:xml:ns:domain-1.0" />
+
+  <annotation>
+    <documentation>Extensible Provisioning Protocol
+    v1.0 extension schema for fee
+    information.</documentation>
+  </annotation>
+
+  <!--
+  Child elements found in EPP commands and responses
+  -->
+  <element name="check"    type="fee:checkType" />
+  <element name="chkData"  type="fee:chkDataType" />
+  <element name="create"   type="fee:transformCommandType" />
+  <element name="creData"  type="fee:transformResultType" />
+  <element name="renew"    type="fee:transformCommandType" />
+  <element name="renData"  type="fee:transformResultType" />
+  <element name="transfer" type="fee:transformCommandType" />
+  <element name="trnData"  type="fee:transferResultType" />
+  <element name="update"   type="fee:transformCommandType" />
+  <element name="updData"  type="fee:transformResultType" />
+  <element name="delData"  type="fee:transformResultType" />
+
+  <!--
+  client <check> command
+  -->
+  <complexType name="checkType">
+    <sequence>
+      <element name="currency"
+        type="fee:currencyType"
+        minOccurs="0" />
+      <element name="command"
+  type="fee:commandCheckType"
+        maxOccurs="unbounded" />
+    </sequence>
+  </complexType>
+
+  <complexType name="commandCheckType">
+    <sequence>
+      <element name="period"
+        type="domain:periodType"
+        minOccurs="0" />
+      <element name="class"
+        type="token"
+        minOccurs="0" />
+      <element name="date"
+        type="dateTime"
+        minOccurs="0" />
+    </sequence>
+    <attribute name="name" type="fee:commandTypeValue" />
+    <attribute name="phase" type="token" />
+    <attribute name="subphase" type="token" />
+  </complexType>
+
+  <!--
+  server <check> result
+  -->
+  <complexType name="chkDataType">
+    <sequence>
+      <!--
+      Dialog is ongoing with Gavin Brown about this. His XSD has a
+      mandatory currency field. But what if the different domains being
+      checked have different currencies? I am trying to figure out what
+      he intends here. - Brian
+      -->
+      <element name="currency" type="fee:currencyType" minOccurs="0"/>
+      <element name="cd" type="fee:objectCDType"
+        maxOccurs="unbounded" />
+    </sequence>
+  </complexType>
+
+  <complexType name="objectCDType">
+    <sequence>
+      <element name="object">
+        <complexType>
+          <sequence>
+            <any namespace="##other" processContents="lax"/>
+          </sequence>
+        </complexType>
+      </element>
+      <element name="command"
+        type="fee:commandCDType"
+        maxOccurs="unbounded" />
+    </sequence>
+  </complexType>
+
+  <complexType name="commandCDType">
+    <sequence>
+      <element name="period"
+        type="domain:periodType"
+        minOccurs="0" maxOccurs="1" />
+      <element name="fee"
+        type="fee:feeType"
+        minOccurs="0" maxOccurs="unbounded" />
+      <element name="credit"
+        type="fee:creditType"
+        minOccurs="0" maxOccurs="unbounded" />
+      <element name="class"
+        type="token"
+        minOccurs="0" />
+      <element name="reason"
+        type="token"
+        minOccurs="0" />
+      <element name="date"
+        type="dateTime"
+        minOccurs="0" />
+      <element name="notAfter"
+        type="dateTime"
+        minOccurs="0" />
+    </sequence>
+    <attribute name="avail" type="boolean" default="1" />
+    <attribute name="name" type="fee:commandTypeValue" />
+    <attribute name="phase" type="token" />
+    <attribute name="subphase" type="token" />
+  </complexType>
+
+  <!--
+    general transform (create, renew, update, transfer) command
+  -->
+  <complexType name="transformCommandType">
+    <sequence>
+      <element name="currency" type="fee:currencyType"
+        minOccurs="0" />
+      <element name="fee" type="fee:feeType"
+        maxOccurs="unbounded" />
+      <element name="credit" type="fee:creditType"
+        minOccurs="0" maxOccurs="unbounded" />
+    </sequence>
+  </complexType>
+
+  <!--
+    general transform (create, renew, update, delete) result
+  -->
+  <complexType name="transformResultType">
+    <sequence>
+      <element name="currency" type="fee:currencyType" />
+      <element name="fee" type="fee:feeType"
+        minOccurs="0" maxOccurs="unbounded" />
+      <element name="credit" type="fee:creditType"
+        minOccurs="0" maxOccurs="unbounded" />
+      <element name="balance" type="fee:balanceType"
+        minOccurs="0" />
+      <element name="creditLimit" type="fee:creditLimitType"
+        minOccurs="0" />
+    </sequence>
+  </complexType>
+
+  <!--
+    transfer result
+  -->
+  <complexType name="transferResultType">
+    <sequence>
+      <element name="currency" type="fee:currencyType" />
+
+      <!-- only used op="query" responses -->
+      <element name="period" type="domain:periodType"
+        minOccurs="0" />
+
+      <element name="fee" type="fee:feeType"
+        maxOccurs="unbounded" />
+      <element name="credit" type="fee:creditType"
+        minOccurs="0" maxOccurs="unbounded" />
+
+      <element name="balance" type="fee:balanceType"
+        minOccurs="0" />
+      <element name="creditLimit" type="fee:creditLimitType"
+        minOccurs="0" />
+    </sequence>
+  </complexType>
+
+  <!--
+    common types
+  -->
+  <simpleType name="currencyType">
+    <restriction base="string">
+      <pattern value="[A-Z]{3}" />
+    </restriction>
+  </simpleType>
+
+  <simpleType name="commandTypeValue">
+    <restriction base="token">
+      <minLength value="3"/>
+      <maxLength value="16"/>
+    </restriction>
+  </simpleType>
+
+  <simpleType name="nonNegativeDecimal">
+    <restriction base="decimal">
+      <minInclusive value="0" />
+    </restriction>
+  </simpleType>
+
+  <simpleType name="negativeDecimal">
+    <restriction base="decimal">
+      <maxInclusive value="0" />
+    </restriction>
+  </simpleType>
+
+  <complexType name="feeType">
+    <simpleContent>
+      <extension base="fee:nonNegativeDecimal">
+        <attribute name="description"/>
+        <attribute name="refundable" type="boolean" />
+        <attribute name="grace-period" type="duration" />
+        <attribute name="applied" default="immediate">
+          <simpleType>
+            <restriction base="token">
+              <enumeration value="immediate" />
+              <enumeration value="delayed" />
+            </restriction>
+          </simpleType>
+        </attribute>
+      </extension>
+    </simpleContent>
+  </complexType>
+
+  <complexType name="creditType">
+    <simpleContent>
+      <extension base="fee:negativeDecimal">
+        <attribute name="description"/>
+      </extension>
+    </simpleContent>
+  </complexType>
+
+  <simpleType name="balanceType">
+    <restriction base="decimal" />
+  </simpleType>
+
+  <simpleType name="creditLimitType">
+    <restriction base="decimal" />
+  </simpleType>
+
+</schema>
