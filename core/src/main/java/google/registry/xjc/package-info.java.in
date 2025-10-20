@@ -27,6 +27,9 @@
             prefix = "fee12",
             namespaceURI = "urn:ietf:params:xml:ns:fee-0.12"),
         @jakarta.xml.bind.annotation.XmlNs(
+            prefix = "feestdv1",
+            namespaceURI = "urn:ietf:params:xml:ns:epp:fee-1.0"),
+        @jakarta.xml.bind.annotation.XmlNs(
             prefix = "host",
             namespaceURI = "urn:ietf:params:xml:ns:host-1.0"),
         @jakarta.xml.bind.annotation.XmlNs(
