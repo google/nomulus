@@ -112,6 +112,11 @@ class RdapJsonFormatterTest {
     hostNotLinked =
         makeAndPersistHost(
             "ns5.cat.みんな", null, null, clock.nowUtc().minusYears(5), "unicoderegistrar");
+    // Create an unused domain that references hostBoth and hostNoAddresses so that
+    // they will have "associated" (ie, StatusValue.LINKED) status.
+    Domain dog =
+        persistResource(
+            makeDomain("dog.みんな", null, null, null, hostBoth, hostNoAddresses, registrar));
     hostSuperordinatePendingTransfer =
         persistResource(
             makeAndPersistHost(
@@ -119,8 +124,7 @@ class RdapJsonFormatterTest {
                 .asBuilder()
                 .setSuperordinateDomain(
                     persistResource(
-                            makeDomain("dog.みんな", null, null, null, null, null, registrar)
-                                .asBuilder()
+                            dog.asBuilder()
                                 .addStatusValue(StatusValue.PENDING_TRANSFER)
                                 .setTransferData(
                                     new DomainTransferData.Builder()
@@ -150,9 +154,6 @@ class RdapJsonFormatterTest {
                 .setCreationTimeForTest(clock.nowUtc())
                 .setLastEppUpdateTime(null)
                 .build());
-    // Create an unused domain that references hostBoth and hostNoAddresses so that
-    // they will have "associated" (ie, StatusValue.LINKED) status.
-    persistResource(makeDomain("dog.みんな", null, null, null, hostBoth, hostNoAddresses, registrar));
 
     // history entries
     // We create 3 "transfer approved" entries, to make sure we only save the last one

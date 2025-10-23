@@ -1988,6 +1988,13 @@ CREATE INDEX domain_history_to_transaction_record_idx ON public."DomainTransacti
 
 
 --
+-- Name: domain_no_duplicate_active; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX domain_no_duplicate_active ON public."Domain" USING btree (domain_name) WHERE (deletion_time = '294247-01-10 04:00:54.775+00'::timestamp with time zone);
+
+
+--
 -- Name: domaindsdatahistory_domain_history_revision_id_hash; Type: INDEX; Schema: public; Owner: -
 --
 

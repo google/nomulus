@@ -253,7 +253,7 @@ class Spec11EmailUtilsTest {
     // Create an inactive domain and an active domain with the same name.
     persistResource(loadByEntity(aDomain).asBuilder().addStatusValue(SERVER_HOLD).build());
     Host host = persistActiveHost("ns1.example.com");
-    aDomain = persistDomainWithHost("a.com", host);
+    aDomain = persistResource(aDomain.asBuilder().setNameservers(host.createVKey()).build());
 
     emailUtils.emailSpec11Reports(
         date,

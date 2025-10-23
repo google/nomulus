@@ -43,10 +43,14 @@ class DeleteAllocationTokensCommandTest extends CommandTestCase<DeleteAllocation
   private AllocationToken preNot2;
   private AllocationToken othrRed;
   private AllocationToken othrNot;
+  private Domain exampleDomain;
+  private Domain foobarDomain;
 
   @BeforeEach
   void beforeEach() {
     createTlds("foo", "bar");
+    exampleDomain = persistActiveDomain("example.foo");
+    foobarDomain = persistActiveDomain("foo.bar");
     preRed1 = persistToken("prefix12345AA", null, true);
     preRed2 = persistToken("prefixgh8907a", null, true);
     preNot1 = persistToken("prefix2978204", null, false);
@@ -97,8 +101,8 @@ class DeleteAllocationTokensCommandTest extends CommandTestCase<DeleteAllocation
 
   @Test
   void test_defaultOptions_doesntDeletePerDomainTokens() throws Exception {
-    AllocationToken preDom1 = persistToken("prefixasdfg897as", "foo.bar", false);
-    AllocationToken preDom2 = persistToken("prefix98HAZXadbn", "foo.bar", true);
+    AllocationToken preDom1 = persistToken("prefixasdfg897as", foobarDomain, false);
+    AllocationToken preDom2 = persistToken("prefix98HAZXadbn", foobarDomain, true);
     runCommandForced("--prefix", "prefix");
     assertNonexistent(preNot1, preNot2);
     assertThat(reloadTokens(preRed1, preRed2, preDom1, preDom2, othrRed, othrNot))
@@ -107,8 +111,8 @@ class DeleteAllocationTokensCommandTest extends CommandTestCase<DeleteAllocation
 
   @Test
   void test_withDomains_doesDeletePerDomainTokens() throws Exception {
-    AllocationToken preDom1 = persistToken("prefixasdfg897as", "foo.bar", false);
-    AllocationToken preDom2 = persistToken("prefix98HAZXadbn", "foo.bar", true);
+    AllocationToken preDom1 = persistToken("prefixasdfg897as", foobarDomain, false);
+    AllocationToken preDom2 = persistToken("prefix98HAZXadbn", foobarDomain, true);
     runCommandForced("--prefix", "prefix", "--with_domains");
     assertNonexistent(preNot1, preNot2, preDom1);
     assertThat(reloadTokens(preRed1, preRed2, preDom2, othrRed, othrNot))
@@ -164,17 +168,15 @@ class DeleteAllocationTokensCommandTest extends CommandTestCase<DeleteAllocation
     assertThat(thrown).hasMessageThat().isEqualTo("Provided prefix should not be blank");
   }
 
-  private static AllocationToken persistToken(
-      String token, @Nullable String domainName, boolean redeemed) {
+  private AllocationToken persistToken(String token, @Nullable Domain domain, boolean redeemed) {
     AllocationToken.Builder builder =
         new AllocationToken.Builder()
             .setToken(token)
             .setTokenType(SINGLE_USE)
-            .setDomainName(domainName);
+            .setDomainName(domain == null ? null : domain.getDomainName());
     if (redeemed) {
-      String domainToPersist = domainName != null ? domainName : "example.foo";
-      Domain domain = persistActiveDomain(domainToPersist);
-      HistoryEntryId historyEntryId = new HistoryEntryId(domain.getRepoId(), 1051L);
+      String repoId = domain == null ? exampleDomain.getRepoId() : domain.getRepoId();
+      HistoryEntryId historyEntryId = new HistoryEntryId(repoId, 1051L);
       builder.setRedemptionHistoryId(historyEntryId);
     }
     return persistResource(builder.build());

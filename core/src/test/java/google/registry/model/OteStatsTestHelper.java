@@ -14,17 +14,19 @@
 
 package google.registry.model;
 
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistActiveHost;
-import static google.registry.testing.DatabaseHelper.persistDeletedDomain;
 import static google.registry.testing.DatabaseHelper.persistDeletedHost;
+import static google.registry.testing.DatabaseHelper.persistDomainAsDeleted;
 import static google.registry.testing.DatabaseHelper.persistPremiumList;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.TestDataHelper.loadBytes;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
 import static org.joda.money.CurrencyUnit.USD;
 
+import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.eppcommon.Trid;
 import google.registry.model.host.HostHistory;
@@ -49,7 +51,7 @@ public final class OteStatsTestHelper {
             .build());
     persistResource(
         new DomainHistory.Builder()
-            .setDomain(persistActiveDomain("example.tld"))
+            .setDomain(persistActiveDomain("restored.tld"))
             .setRegistrarId(oteAccount1)
             .setType(Type.DOMAIN_RESTORE)
             .setXmlBytes(getBytes("domain_restore.xml"))
@@ -84,7 +86,7 @@ public final class OteStatsTestHelper {
     DateTime now = DateTime.now(DateTimeZone.UTC);
     persistResource(
         new DomainHistory.Builder()
-            .setDomain(persistActiveDomain("exampleone.tld"))
+            .setDomain(loadOrCreateDomain("exampleone.tld"))
             .setRegistrarId(oteAccount1)
             .setType(Type.DOMAIN_CREATE)
             .setXmlBytes(getBytes("domain_create_sunrise.xml"))
@@ -92,15 +94,16 @@ public final class OteStatsTestHelper {
             .build());
     persistResource(
         new DomainHistory.Builder()
-            .setDomain(persistActiveDomain("example-one.tld"))
+            .setDomain(loadOrCreateDomain("example-one.tld"))
             .setRegistrarId(oteAccount1)
             .setType(Type.DOMAIN_CREATE)
             .setXmlBytes(getBytes("domain_create_claim_notice.xml"))
             .setModificationTime(now)
             .build());
+    Domain exampleDomain = loadOrCreateDomain("example.tld");
     persistResource(
         new DomainHistory.Builder()
-            .setDomain(persistActiveDomain("example.tld"))
+            .setDomain(exampleDomain)
             .setRegistrarId(oteAccount1)
             .setType(Type.DOMAIN_CREATE)
             .setXmlBytes(getBytes("domain_create_anchor_tenant_fee_standard.xml"))
@@ -108,7 +111,7 @@ public final class OteStatsTestHelper {
             .build());
     persistResource(
         new DomainHistory.Builder()
-            .setDomain(persistActiveDomain("example.tld"))
+            .setDomain(exampleDomain)
             .setRegistrarId(oteAccount1)
             .setType(Type.DOMAIN_CREATE)
             .setXmlBytes(getBytes("domain_create_dsdata.xml"))
@@ -116,7 +119,7 @@ public final class OteStatsTestHelper {
             .build());
     persistResource(
         new DomainHistory.Builder()
-            .setDomain(persistDeletedDomain("example.tld", now))
+            .setDomain(persistDomainAsDeleted(loadOrCreateDomain("deleted.tld"), now))
             .setRegistrarId(oteAccount1)
             .setType(Type.DOMAIN_DELETE)
             .setXmlBytes(getBytes("domain_delete.xml"))
@@ -124,7 +127,7 @@ public final class OteStatsTestHelper {
             .build());
     persistResource(
         new DomainHistory.Builder()
-            .setDomain(persistActiveDomain("example.tld"))
+            .setDomain(exampleDomain)
             .setRegistrarId(oteAccount1)
             .setType(Type.DOMAIN_TRANSFER_APPROVE)
             .setXmlBytes(getBytes("domain_transfer_approve.xml"))
@@ -132,7 +135,7 @@ public final class OteStatsTestHelper {
             .build());
     persistResource(
         new DomainHistory.Builder()
-            .setDomain(persistActiveDomain("example.tld"))
+            .setDomain(exampleDomain)
             .setRegistrarId(oteAccount1)
             .setType(Type.DOMAIN_TRANSFER_CANCEL)
             .setXmlBytes(getBytes("domain_transfer_cancel.xml"))
@@ -140,7 +143,7 @@ public final class OteStatsTestHelper {
             .build());
     persistResource(
         new DomainHistory.Builder()
-            .setDomain(persistActiveDomain("example.tld"))
+            .setDomain(exampleDomain)
             .setRegistrarId(oteAccount1)
             .setType(Type.DOMAIN_TRANSFER_REJECT)
             .setXmlBytes(getBytes("domain_transfer_reject.xml"))
@@ -148,7 +151,7 @@ public final class OteStatsTestHelper {
             .build());
     persistResource(
         new DomainHistory.Builder()
-            .setDomain(persistActiveDomain("example.tld"))
+            .setDomain(exampleDomain)
             .setRegistrarId(oteAccount1)
             .setType(Type.DOMAIN_TRANSFER_REQUEST)
             .setXmlBytes(getBytes("domain_transfer_request.xml"))
@@ -156,7 +159,7 @@ public final class OteStatsTestHelper {
             .build());
     persistResource(
         new DomainHistory.Builder()
-            .setDomain(persistActiveDomain("example.tld"))
+            .setDomain(exampleDomain)
             .setRegistrarId(oteAccount1)
             .setType(Type.DOMAIN_UPDATE)
             .setXmlBytes(getBytes("domain_update_with_secdns.xml"))
@@ -188,5 +191,13 @@ public final class OteStatsTestHelper {
 
   private static byte[] getBytes(String filename) throws IOException {
     return loadBytes(OteStatsTestHelper.class, filename).read();
+  }
+
+  private static Domain loadOrCreateDomain(String domainName) {
+    return tm().transact(
+            () ->
+                EppResourceUtils.loadByForeignKey(
+                    Domain.class, domainName, tm().getTransactionTime()))
+        .orElseGet(() -> persistActiveDomain(domainName));
   }
 }
