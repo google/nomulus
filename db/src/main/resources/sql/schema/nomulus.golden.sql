@@ -2941,14 +2941,6 @@ ALTER TABLE ONLY public."ConsoleUpdateHistory"
 
 
 --
--- Name: ContactHistory fk_contact_history_contact_repo_id; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public."ContactHistory"
-    ADD CONSTRAINT fk_contact_history_contact_repo_id FOREIGN KEY (contact_repo_id) REFERENCES public."Contact"(repo_id) DEFERRABLE INITIALLY DEFERRED;
-
-
---
 -- Name: ContactHistory fk_contact_history_registrar_id; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -2970,22 +2962,6 @@ ALTER TABLE ONLY public."Contact"
 
 ALTER TABLE ONLY public."Contact"
     ADD CONSTRAINT fk_contact_transfer_losing_registrar_id FOREIGN KEY (transfer_losing_registrar_id) REFERENCES public."Registrar"(registrar_id) DEFERRABLE INITIALLY DEFERRED;
-
-
---
--- Name: Domain fk_domain_admin_contact; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public."Domain"
-    ADD CONSTRAINT fk_domain_admin_contact FOREIGN KEY (admin_contact) REFERENCES public."Contact"(repo_id) DEFERRABLE INITIALLY DEFERRED;
-
-
---
--- Name: Domain fk_domain_billing_contact; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public."Domain"
-    ADD CONSTRAINT fk_domain_billing_contact FOREIGN KEY (billing_contact) REFERENCES public."Contact"(repo_id) DEFERRABLE INITIALLY DEFERRED;
 
 
 --
@@ -3026,22 +3002,6 @@ ALTER TABLE ONLY public."DomainHistory"
 
 ALTER TABLE ONLY public."DomainHistory"
     ADD CONSTRAINT fk_domain_history_registrar_id FOREIGN KEY (history_registrar_id) REFERENCES public."Registrar"(registrar_id) DEFERRABLE INITIALLY DEFERRED;
-
-
---
--- Name: Domain fk_domain_registrant_contact; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public."Domain"
-    ADD CONSTRAINT fk_domain_registrant_contact FOREIGN KEY (registrant_contact) REFERENCES public."Contact"(repo_id) DEFERRABLE INITIALLY DEFERRED;
-
-
---
--- Name: Domain fk_domain_tech_contact; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public."Domain"
-    ADD CONSTRAINT fk_domain_tech_contact FOREIGN KEY (tech_contact) REFERENCES public."Contact"(repo_id) DEFERRABLE INITIALLY DEFERRED;
 
 
 --
@@ -3186,22 +3146,6 @@ ALTER TABLE ONLY public."Host"
 
 ALTER TABLE ONLY public."HostHistory"
     ADD CONSTRAINT fk_hosthistory_host FOREIGN KEY (host_repo_id) REFERENCES public."Host"(repo_id) DEFERRABLE INITIALLY DEFERRED;
-
-
---
--- Name: PollMessage fk_poll_message_contact_history; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public."PollMessage"
-    ADD CONSTRAINT fk_poll_message_contact_history FOREIGN KEY (contact_repo_id, contact_history_revision_id) REFERENCES public."ContactHistory"(contact_repo_id, history_revision_id) DEFERRABLE INITIALLY DEFERRED;
-
-
---
--- Name: PollMessage fk_poll_message_contact_repo_id; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public."PollMessage"
-    ADD CONSTRAINT fk_poll_message_contact_repo_id FOREIGN KEY (contact_repo_id) REFERENCES public."Contact"(repo_id) DEFERRABLE INITIALLY DEFERRED;
 
 
 --
