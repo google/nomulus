@@ -170,7 +170,26 @@ class ConsoleUsersActionTest extends ConsoleActionBaseTestCase {
         createAction(
             Optional.of(ConsoleApiParamsUtils.createFake(authResult)),
             Optional.of("POST"),
-            Optional.of(new UserData("lol", null, RegistrarRole.ACCOUNT_MANAGER.toString(), null)));
+            Optional.of(new UserData("lol", null, RegistrarRole.TECH_CONTACT.name(), null)));
+    action.cloudTasksUtils = cloudTasksHelper.getTestCloudTasksUtils();
+    when(directory.users()).thenReturn(users);
+    when(users.insert(any(com.google.api.services.directory.model.User.class))).thenReturn(insert);
+    action.run();
+    assertThat(response.getStatus()).isEqualTo(SC_CREATED);
+    assertThat(response.getPayload())
+        .contains(
+            "{\"emailAddress\":\"lol.TheRegistrar@email.com\",\"role\":\"TECH_CONTACT\",\"password\":\"abcdefghijklmnop\"}");
+  }
+
+  @Test
+  void testSuccess_roleEnforcementCreate() throws IOException {
+    User user = DatabaseHelper.createAdminUser("email@email.com");
+    AuthResult authResult = AuthResult.createUser(user);
+    ConsoleUsersAction action =
+        createAction(
+            Optional.of(ConsoleApiParamsUtils.createFake(authResult)),
+            Optional.of("POST"),
+            Optional.of(new UserData("lol", null, RegistrarRole.PRIMARY_CONTACT.name(), null)));
     action.cloudTasksUtils = cloudTasksHelper.getTestCloudTasksUtils();
     when(directory.users()).thenReturn(users);
     when(users.insert(any(com.google.api.services.directory.model.User.class))).thenReturn(insert);
