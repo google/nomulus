@@ -77,6 +77,7 @@ import google.registry.model.domain.fee.FeeTransformResponseExtension;
 import google.registry.model.domain.fee06.FeeDeleteResponseExtensionV06;
 import google.registry.model.domain.fee11.FeeDeleteResponseExtensionV11;
 import google.registry.model.domain.fee12.FeeDeleteResponseExtensionV12;
+import google.registry.model.domain.feestdv1.FeeDeleteResponseExtensionStdV1;
 import google.registry.model.domain.metadata.MetadataExtension;
 import google.registry.model.domain.rgp.GracePeriodStatus;
 import google.registry.model.domain.secdns.SecDnsCreateExtension;
@@ -428,6 +429,9 @@ public final class DomainDeleteFlow implements MutatingFlow, SqlStatementLogging
   @Nullable
   private FeeTransformResponseExtension.Builder getDeleteResponseBuilder() {
     Set<String> uris = nullToEmpty(sessionMetadata.getServiceExtensionUris());
+    if (uris.contains(ServiceExtension.FEE_STD_1_0.getUri())) {
+      return new FeeDeleteResponseExtensionStdV1.Builder();
+    }
     if (uris.contains(ServiceExtension.FEE_0_12.getUri())) {
       return new FeeDeleteResponseExtensionV12.Builder();
     }

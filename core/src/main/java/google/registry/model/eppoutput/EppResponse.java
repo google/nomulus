@@ -43,6 +43,12 @@ import google.registry.model.domain.fee12.FeeDeleteResponseExtensionV12;
 import google.registry.model.domain.fee12.FeeRenewResponseExtensionV12;
 import google.registry.model.domain.fee12.FeeTransferResponseExtensionV12;
 import google.registry.model.domain.fee12.FeeUpdateResponseExtensionV12;
+import google.registry.model.domain.feestdv1.FeeCheckResponseExtensionStdV1;
+import google.registry.model.domain.feestdv1.FeeCreateResponseExtensionStdV1;
+import google.registry.model.domain.feestdv1.FeeDeleteResponseExtensionStdV1;
+import google.registry.model.domain.feestdv1.FeeRenewResponseExtensionStdV1;
+import google.registry.model.domain.feestdv1.FeeTransferResponseExtensionStdV1;
+import google.registry.model.domain.feestdv1.FeeUpdateResponseExtensionStdV1;
 import google.registry.model.domain.launch.LaunchCheckResponseExtension;
 import google.registry.model.domain.rgp.RgpInfoExtension;
 import google.registry.model.domain.secdns.SecDnsInfoExtension;
@@ -142,6 +148,12 @@ public class EppResponse extends ImmutableObject implements ResponseOrGreeting {
     @XmlElementRef(type = FeeRenewResponseExtensionV12.class),
     @XmlElementRef(type = FeeTransferResponseExtensionV12.class),
     @XmlElementRef(type = FeeUpdateResponseExtensionV12.class),
+    @XmlElementRef(type = FeeCheckResponseExtensionStdV1.class),
+    @XmlElementRef(type = FeeCreateResponseExtensionStdV1.class),
+    @XmlElementRef(type = FeeDeleteResponseExtensionStdV1.class),
+    @XmlElementRef(type = FeeRenewResponseExtensionStdV1.class),
+    @XmlElementRef(type = FeeTransferResponseExtensionStdV1.class),
+    @XmlElementRef(type = FeeUpdateResponseExtensionStdV1.class),
     @XmlElementRef(type = LaunchCheckResponseExtension.class),
     @XmlElementRef(type = RgpInfoExtension.class),
     @XmlElementRef(type = SecDnsInfoExtension.class)

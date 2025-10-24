@@ -112,6 +112,10 @@ public abstract class FlowTestCase<F extends Flow> {
     eppLoader = new EppLoader(this, inputFilename, substitutions);
   }
 
+  protected void setEppInputXml(String eppXml) {
+    eppLoader = new EppLoader(eppXml);
+  }
+
   /** Returns the EPP data loaded by a previous call to setEppInput. */
   protected EppInput getEppInput() throws EppException {
     return eppLoader.getEpp();
@@ -128,6 +132,28 @@ public abstract class FlowTestCase<F extends Flow> {
 
   protected String loadFile(String filename, Map<String, String> substitutions) {
     return TestDataHelper.loadFile(getClass(), filename, substitutions);
+  }
+
+  /**
+   * Converts an input or response EPP message with draft fee extension v12 to std v1.
+   *
+   * <p>There is no practical changes between draft v12 and the v1 standard. This method allows us
+   * to reuse v12 test data.
+   */
+  protected String loadFeeV12FileAsStdV1(String filename) {
+    String content = loadFile(filename);
+    return content.replace("urn:ietf:params:xml:ns:fee-0.12", "urn:ietf:params:xml:ns:epp:fee-1.0");
+  }
+
+  /**
+   * Converts an input or response EPP message with draft fee extension v12 to std v1.
+   *
+   * <p>There is no practical changes between draft v12 and the v1 standard. This method allows us
+   * to reuse v12 test data.
+   */
+  protected String loadFeeV12FileAsStdV1(String filename, Map<String, String> substitutions) {
+    String content = loadFile(filename, substitutions);
+    return content.replace("urn:ietf:params:xml:ns:fee-0.12", "urn:ietf:params:xml:ns:epp:fee-1.0");
   }
 
   @Nullable

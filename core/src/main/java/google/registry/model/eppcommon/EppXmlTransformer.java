@@ -43,6 +43,7 @@ public class EppXmlTransformer  {
           "fee06.xsd",
           "fee11.xsd",
           "fee12.xsd",
+          "fee-std-v1.xsd",
           "metadata.xsd",
           "mark.xsd",
           "dsig.xsd",

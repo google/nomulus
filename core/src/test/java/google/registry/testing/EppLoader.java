@@ -36,6 +36,10 @@ public class EppLoader {
     this.eppXml = loadFile(context.getClass(), eppXmlFilename, substitutions);
   }
 
+  public EppLoader(String eppXml) {
+    this.eppXml = eppXml;
+  }
+
   public EppInput getEpp() throws EppException {
     /*
      * TODO(b/120837374): we shouldn't use EppException in non-Flow tests. Find a way to use {@link

@@ -29,38 +29,40 @@ import java.nio.charset.Charset;
 /** Static methods for marshalling to and from the generated classes.  */
 public class XjcXmlTransformer {
 
-  private static final XmlTransformer INSTANCE = new XmlTransformer(
-      XjcXmlTransformer.class.getPackage(),
-      // Hardcoded XML schemas, ordered with respect to dependency.
-      new ImmutableMap.Builder<String, String>()
-          .put("eppcom", "eppcom.xsd")
-          .put("epp", "epp.xsd")
-          .put("contact", "contact.xsd")
-          .put("host", "host.xsd")
-          .put("domain", "domain.xsd")
-          .put("rgp", "rgp.xsd")
-          .put("secdns", "secdns.xsd")
-          .put("mark", "mark.xsd")
-          .put("dsig", "dsig.xsd")
-          .put("smd", "smd.xsd")
-          .put("fee06", "fee06.xsd")
-          .put("fee11", "fee11.xsd")
-          .put("fee12", "fee12.xsd")
-          .put("launch", "launch.xsd")
-          .put("rde", "rde.xsd")
-          .put("rdeheader", "rde-header.xsd")
-          .put("rdereport", "rde-report.xsd")
-          .put("rdecontact", "rde-contact.xsd")
-          .put("rdehost", "rde-host.xsd")
-          .put("rdeidn", "rde-idn.xsd")
-          .put("rdedomain", "rde-domain.xsd")
-          .put("rdeeppparams", "rde-eppparams.xsd")
-          .put("rdenndn", "rde-nndn.xsd")
-          .put("rdenotification", "rde-notification.xsd")
-          .put("rdepolicy", "rde-policy.xsd")
-          .put("rderegistrar", "rde-registrar.xsd")
-          .put("iirdea", "iirdea.xsd")
-          .build());
+  private static final XmlTransformer INSTANCE =
+      new XmlTransformer(
+          XjcXmlTransformer.class.getPackage(),
+          // Hardcoded XML schemas, ordered with respect to dependency.
+          new ImmutableMap.Builder<String, String>()
+              .put("eppcom", "eppcom.xsd")
+              .put("epp", "epp.xsd")
+              .put("contact", "contact.xsd")
+              .put("host", "host.xsd")
+              .put("domain", "domain.xsd")
+              .put("rgp", "rgp.xsd")
+              .put("secdns", "secdns.xsd")
+              .put("mark", "mark.xsd")
+              .put("dsig", "dsig.xsd")
+              .put("smd", "smd.xsd")
+              .put("fee06", "fee06.xsd")
+              .put("fee11", "fee11.xsd")
+              .put("fee12", "fee12.xsd")
+              .put("feestdv1", "fee-std-v1.xsd")
+              .put("launch", "launch.xsd")
+              .put("rde", "rde.xsd")
+              .put("rdeheader", "rde-header.xsd")
+              .put("rdereport", "rde-report.xsd")
+              .put("rdecontact", "rde-contact.xsd")
+              .put("rdehost", "rde-host.xsd")
+              .put("rdeidn", "rde-idn.xsd")
+              .put("rdedomain", "rde-domain.xsd")
+              .put("rdeeppparams", "rde-eppparams.xsd")
+              .put("rdenndn", "rde-nndn.xsd")
+              .put("rdenotification", "rde-notification.xsd")
+              .put("rdepolicy", "rde-policy.xsd")
+              .put("rderegistrar", "rde-registrar.xsd")
+              .put("iirdea", "iirdea.xsd")
+              .build());
 
   public static XmlTransformer get() {
     return INSTANCE;
