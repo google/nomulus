@@ -37,7 +37,6 @@ import google.registry.request.Modules.GsonModule;
 import google.registry.request.Modules.UrlConnectionServiceModule;
 import google.registry.tools.AuthModule.LocalCredentialModule;
 import google.registry.util.UtilsModule;
-import google.registry.whois.NonCachingWhoisModule;
 import jakarta.inject.Singleton;
 import javax.annotation.Nullable;
 
@@ -67,8 +66,7 @@ import javax.annotation.Nullable;
       RequestFactoryModule.class,
       SecretManagerModule.class,
       UrlConnectionServiceModule.class,
-      UtilsModule.class,
-      NonCachingWhoisModule.class
+      UtilsModule.class
     })
 interface RegistryToolComponent {
   void inject(AckPollMessagesCommand command);
@@ -162,8 +160,6 @@ interface RegistryToolComponent {
   void inject(ValidateEscrowDepositCommand command);
 
   void inject(ValidateLoginCredentialsCommand command);
-
-  void inject(WhoisQueryCommand command);
 
   ServiceConnection serviceConnection();
 

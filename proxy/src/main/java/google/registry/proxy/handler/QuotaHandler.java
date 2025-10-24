@@ -17,10 +17,8 @@ package google.registry.proxy.handler;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static google.registry.proxy.Protocol.PROTOCOL_KEY;
 import static google.registry.proxy.handler.EppServiceHandler.CLIENT_CERTIFICATE_HASH_KEY;
-import static google.registry.proxy.handler.ProxyProtocolHandler.REMOTE_ADDRESS_KEY;
 
 import google.registry.proxy.EppProtocolModule.EppProtocol;
-import google.registry.proxy.WhoisProtocolModule.WhoisProtocol;
 import google.registry.proxy.metric.FrontendMetrics;
 import google.registry.proxy.quota.QuotaManager;
 import google.registry.proxy.quota.QuotaManager.QuotaRebate;
@@ -80,42 +78,6 @@ public abstract class QuotaHandler extends ChannelInboundHandlerAdapter {
   static class OverQuotaException extends Exception {
     OverQuotaException(String protocol, String userId) {
       super(String.format("Quota exceeded for: PROTOCOL: %s, USER ID: %s", protocol, userId));
-    }
-  }
-
-  /** Quota Handler for WHOIS protocol. */
-  public static class WhoisQuotaHandler extends QuotaHandler {
-
-    @Inject
-    WhoisQuotaHandler(@WhoisProtocol QuotaManager quotaManager, FrontendMetrics metrics) {
-      super(quotaManager, metrics);
-    }
-
-    /**
-     * Reads user ID from channel attribute {@code REMOTE_ADDRESS_KEY}.
-     *
-     * <p>This attribute is set by {@link ProxyProtocolHandler} when the first frame of message is
-     * read.
-     */
-    @Override
-    String getUserId(ChannelHandlerContext ctx) {
-      return ctx.channel().attr(REMOTE_ADDRESS_KEY).get();
-    }
-
-    @Override
-    boolean isUserIdPii() {
-      return true;
-    }
-
-    /**
-     * Do nothing when connection terminates.
-     *
-     * <p>WHOIS protocol is configured with a QPS type quota, there is no need to return the tokens
-     * back to the quota store because the quota store will auto-refill tokens based on the QPS.
-     */
-    @Override
-    public void channelInactive(ChannelHandlerContext ctx) {
-      ctx.fireChannelInactive();
     }
   }
 

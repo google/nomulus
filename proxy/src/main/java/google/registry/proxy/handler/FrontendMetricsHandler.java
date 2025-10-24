@@ -52,18 +52,14 @@ public class FrontendMetricsHandler extends ChannelDuplexHandler {
    *
    * <p>This queue is used to calculate frontend request-response latency.
    *
-   * <p>For the WHOIS protocol, the TCP connection closes after one request-response round trip and
-   * the request always comes first. The queue for WHOIS therefore only need to store one value.
-   *
    * <p>For the EPP protocol, the specification allows for pipelining, in which a client can sent
-   * multiple requests without waiting for each responses. Therefore a queue is needed to record all
+   * multiple requests without waiting for each response. Therefore, a queue is needed to record all
    * the requests that are sent but have not yet received a response.
    *
    * <p>A server must send its response in the same order it receives requests. This invariance
    * guarantees that the request time at the head of the queue always corresponds to the response
    * received in {@link #channelRead}.
    *
-   * @see <a href="https://tools.ietf.org/html/rfc3912">RFC 3912 WHOIS Protocol Specification</a>
    * @see <a href="https://tools.ietf.org/html/rfc5734#section-3">RFC 5734 Extensible Provisioning
    *     Protocol (EPP) Transport over TCP</a>
    */
@@ -97,7 +93,6 @@ public class FrontendMetricsHandler extends ChannelDuplexHandler {
     // increase in size if more requests are received from the client, but that does not invalidate
     // this check.
     checkState(!requestReceivedTimeQueue.isEmpty(), "Response sent before request is received.");
-    // For WHOIS, client certificate hash is always set to "none".
     // For EPP, the client hash attribute is set upon handshake completion, before the first HELLO
     // is sent to the server. Therefore the first call to write() with HELLO payload has access to
     // the hash in its channel attribute.

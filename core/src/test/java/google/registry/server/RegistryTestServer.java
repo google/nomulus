@@ -47,14 +47,12 @@ public final class RegistryTestServer {
   public static final ImmutableList<Route> ROUTES =
       ImmutableList.of(
           // Frontend Services
-          route("/whois/*", FrontendServlet.class),
           route("/rdap/*", FrontendServlet.class),
           route("/check", FrontendServlet.class),
           route("/console-api/*", FrontendTestServlet.class),
 
           // Proxy Services
           route("/_dr/epp", FrontendServlet.class),
-          route("/_dr/whois", FrontendServlet.class),
 
           // Registry Data Escrow (RDE)
           route("/_dr/cron/rdeCreate", BackendServlet.class),

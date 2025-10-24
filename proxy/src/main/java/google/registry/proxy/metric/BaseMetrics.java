@@ -27,9 +27,8 @@ public abstract class BaseMetrics {
   /**
    * Labels to register metrics with.
    *
-   * <p>The client certificate hash value is only used for EPP metrics. For WHOIS metrics, it will
-   * always be {@code "none"}. In order to get the actual registrar name, one can use the {@code
-   * nomulus} tool:
+   * <p>The client certificate hash value is only used for EPP metrics. In order to get the actual
+   * registrar name, one can use the {@code nomulus} tool:
    *
    * <pre>
    * nomulus -e production list_registrars -f clientCertificateHash | grep $HASH

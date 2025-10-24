@@ -977,17 +977,6 @@ public final class RegistryConfig {
     }
 
     /**
-     * Amount of time public HTTP proxies are permitted to cache our WHOIS responses.
-     *
-     * @see google.registry.whois.WhoisHttpAction
-     */
-    @Provides
-    @Config("whoisHttpExpires")
-    public static Duration provideWhoisHttpExpires() {
-      return Duration.standardDays(1);
-    }
-
-    /**
      * Maximum number of results to return for an RDAP search query
      *
      * @see google.registry.rdap.RdapActionBase
@@ -996,39 +985,6 @@ public final class RegistryConfig {
     @Config("rdapResultSetMaxSize")
     public static int provideRdapResultSetMaxSize() {
       return 100;
-    }
-
-    /**
-     * Redaction text for email address in WHOIS
-     *
-     * @see google.registry.whois.WhoisResponse
-     */
-    @Provides
-    @Config("whoisRedactedEmailText")
-    public static String provideWhoisRedactedEmailText(RegistryConfigSettings config) {
-      return config.registryPolicy.whoisRedactedEmailText;
-    }
-
-    /**
-     * Disclaimer displayed at the end of WHOIS query results.
-     *
-     * @see google.registry.whois.WhoisResponse
-     */
-    @Provides
-    @Config("whoisDisclaimer")
-    public static String provideWhoisDisclaimer(RegistryConfigSettings config) {
-      return config.registryPolicy.whoisDisclaimer;
-    }
-
-    /**
-     * Message template for whois response when queried domain is blocked by BSA.
-     *
-     * @see google.registry.whois.WhoisResponse
-     */
-    @Provides
-    @Config("domainBlockedByBsaTemplate")
-    public static String provideDomainBlockedByBsaTemplate(RegistryConfigSettings config) {
-      return config.registryPolicy.domainBlockedByBsaTemplate;
     }
 
     /**
@@ -1103,12 +1059,6 @@ public final class RegistryConfig {
     @Config("customLogicFactoryClass")
     public static String provideCustomLogicFactoryClass(RegistryConfigSettings config) {
       return config.registryPolicy.customLogicFactoryClass;
-    }
-
-    @Provides
-    @Config("whoisCommandFactoryClass")
-    public static String provideWhoisCommandFactoryClass(RegistryConfigSettings config) {
-      return config.registryPolicy.whoisCommandFactoryClass;
     }
 
     @Provides

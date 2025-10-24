@@ -118,54 +118,6 @@ epp:
     # defaultQuota for list entries.
     customQuota: []
 
-whois:
-  port: 30001
-  relayHost: registry-project-id.appspot.com
-  relayPath: /_dr/whois
-
-  # Maximum input message length in bytes.
-  #
-  # Domain name cannot be longer than 256 characters. 512-character message
-  # length should be safe for most cases, including registrar queries.
-  #
-  # See also: RFC 1035 2.3.4 Size limits
-  # (http://www.freesoft.org/CIE/RFC/1035/9.htm).
-  maxMessageLengthBytes: 512
-
-  # Whois protocol is transient, the client should not establish a long-lasting
-  # idle connection.
-  readTimeoutSeconds: 60
-
-  # Quota configuration for WHOIS
-  quota:
-
-    # Token database refresh period. Set to 0 to disable refresh.
-    #
-    # After the set time period, inactive token buckets will be deleted.
-    refreshSeconds: 3600
-
-    # Default quota for any userId not matched in customQuota.
-    defaultQuota:
-
-      # List of identifiers, e.g. IP address, certificate hash.
-      #
-      # userId for defaultQuota should always be an empty list.
-      userId: []
-
-      # Number of tokens allotted to the matched user. Set to -1 to allow
-      # infinite quota.
-      tokenAmount: 100
-
-      # Token refill period. Set to 0 to disable refill.
-      #
-      # After the set time period, the token for the given user will be
-      # reset to tokenAmount.
-      refillSeconds: 600
-
-    # List of custom quotas for specific userId. Use the same schema as
-    # defaultQuota for list entries.
-    customQuota: []
-
 healthCheck:
   port: 30000
 
@@ -180,14 +132,6 @@ httpsRelay:
   localPort: 8080
   # Maximum size of an HTTP message in bytes.
   maxMessageLengthBytes: 524288
-
-webWhois:
-  httpPort: 30010
-  httpsPort: 30011
-
-  # The 302 redirect destination of HTTPS web WHOIS GET requests.
-  # HTTP web WHOIS GET requests will be 301 redirected to HTTPS first.
-  redirectHost: whois.yourdomain.tld
 
 metrics:
   # Max queries per second for the Google Cloud Monitoring V3 (aka Stackdriver)

@@ -93,8 +93,7 @@ public class ProxyServer implements Runnable {
       addHandlers(inboundChannel.pipeline(), inboundProtocol.handlerProviders());
 
       if (!inboundProtocol.hasBackend()) {
-        // If the frontend has no backend to relay to (health check, web WHOIS redirect, etc), start
-        // reading immediately.
+        // If the frontend has no backend to relay to (e.g. health check) start reading immediately.
         inboundChannel.config().setAutoRead(true);
       } else {
         logger.atInfo().log(

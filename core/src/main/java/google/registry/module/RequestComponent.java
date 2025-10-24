@@ -131,9 +131,6 @@ import google.registry.ui.server.console.domains.ConsoleBulkDomainAction;
 import google.registry.ui.server.console.settings.ContactAction;
 import google.registry.ui.server.console.settings.RdapRegistrarFieldsAction;
 import google.registry.ui.server.console.settings.SecurityAction;
-import google.registry.whois.WhoisAction;
-import google.registry.whois.WhoisHttpAction;
-import google.registry.whois.WhoisModule;
 
 /** Dagger component with per-request lifetime. */
 @RequestScope
@@ -161,8 +158,7 @@ import google.registry.whois.WhoisModule;
       Spec11Module.class,
       TmchModule.class,
       ToolsServerModule.class,
-      WhiteboxModule.class,
-      WhoisModule.class,
+      WhiteboxModule.class
     })
 interface RequestComponent {
   FlowComponent.Builder flowComponentBuilder();
@@ -343,10 +339,6 @@ interface RequestComponent {
 
   VerifyOteAction verifyOteAction();
 
-  WhoisAction whoisAction();
-
-  WhoisHttpAction whoisHttpAction();
-  
   WipeOutContactHistoryPiiAction wipeOutContactHistoryPiiAction();
 
   @Subcomponent.Builder

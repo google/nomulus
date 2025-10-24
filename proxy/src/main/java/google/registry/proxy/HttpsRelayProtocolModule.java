@@ -39,7 +39,7 @@ import javax.annotation.Nullable;
  *
  * <p>Only a builder is provided because the client protocol itself depends on the remote host
  * address, which is provided in the server protocol module that relays to this client protocol
- * module, e.g., {@link WhoisProtocolModule}.
+ * module, e.g., {@link EppProtocolModule}.
  *
  * <p>The protocol can be configured without TLS. In this case, the remote host has to be
  * "localhost". Plan HTTP is only expected to be used when communication with Nomulus is via local

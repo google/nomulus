@@ -122,7 +122,6 @@ public final class RegistryTool {
           .put("validate_escrow_deposit", ValidateEscrowDepositCommand.class)
           .put("validate_login_credentials", ValidateLoginCredentialsCommand.class)
           .put("verify_ote", VerifyOteCommand.class)
-          .put("whois_query", WhoisQueryCommand.class)
           .build();
 
   public static void main(String[] args) throws Exception {

@@ -1,6 +1,0 @@
-Malformed path query.
->>> Last update of WHOIS database: 2009-06-29T20:13:00Z <<<
-
-Doodle Disclaimer
-I exist so that carriage return
-in disclaimer can be tested.

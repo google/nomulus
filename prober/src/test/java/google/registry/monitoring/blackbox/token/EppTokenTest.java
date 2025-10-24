@@ -23,7 +23,7 @@ import io.netty.channel.Channel;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
-/** Unit Tests for each {@link Token} subtype (just {@link WebWhoisToken} for now) */
+/** Unit Tests for each {@link Token} subtype (just {@link EppToken} for now) */
 class EppTokenTest {
 
   private static String TEST_HOST = "host";

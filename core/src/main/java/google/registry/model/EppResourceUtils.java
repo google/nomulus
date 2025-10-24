@@ -130,7 +130,7 @@ public final class EppResourceUtils {
    * past.
    *
    * <p>Do not call this cached version for anything that needs transactional consistency. It should
-   * only be used when it's OK if the data is potentially being out of date, e.g. WHOIS.
+   * only be used when it's OK if the data is potentially being out of date, e.g. RDAP.
    *
    * @param clazz the resource type to load
    * @param foreignKey id to match
@@ -181,7 +181,7 @@ public final class EppResourceUtils {
       return Optional.empty();
     }
     // When setting status values based on a time, choose the greater of "now" and the resource's
-    // UpdateAutoTimestamp. For non-mutating uses (info, whois, etc.), this is equivalent to rolling
+    // UpdateAutoTimestamp. For non-mutating uses (info, RDAP, etc.), this is equivalent to rolling
     // "now" forward to at least the last update on the resource, so that a read right after a write
     // doesn't appear stale. For mutating flows, if we had to roll now forward then the flow will
     // fail when it tries to save anything, since "now" is needed to be > the last update time for

@@ -492,7 +492,7 @@ public class Registrar extends UpdateAutoTimestampEntity implements Buildable, J
     return LIVE_STATES.contains(state);
   }
 
-  /** Returns {@code true} if registrar should be visible in WHOIS results. */
+  /** Returns {@code true} if registrar should be visible in RDAP results. */
   public boolean isLiveAndPubliclyVisible() {
     return LIVE_STATES.contains(state) && PUBLICLY_VISIBLE_TYPES.contains(type);
   }

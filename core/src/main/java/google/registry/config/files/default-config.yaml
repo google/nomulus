@@ -65,10 +65,6 @@ registryPolicy:
   # See flows/custom/CustomLogicFactory.java
   customLogicFactoryClass: google.registry.flows.custom.CustomLogicFactory
 
-  # WHOIS command factory fully-qualified class name.
-  # See whois/WhoisCommandFactory.java
-  whoisCommandFactoryClass: google.registry.whois.WhoisCommandFactory
-
   # Custom logic class for handling DNS query count reporting for ICANN.
   # See reporting/icann/DnsCountQueryCoordinator.java
   dnsCountQueryCoordinatorClass: google.registry.reporting.icann.DummyDnsCountQueryCoordinator
@@ -113,31 +109,6 @@ registryPolicy:
     but not included in this list, including terms the registry chooses not
     to publish. This list is subject to change. The most up-to-date source
     is always the registry itself, by sending domain check EPP commands.
-
-  # Redaction text for email address in WHOIS
-  whoisRedactedEmailText: |
-    Please query the WHOIS server of the owning registrar identified in this
-    output for information on how to contact the Registrant, Admin, or Tech
-    contact of the queried domain name.
-
-  # Disclaimer at the top of WHOIS results.
-  whoisDisclaimer: |
-    WHOIS information is provided by the registry solely for query-based,
-    informational purposes. Any information provided is "as is" without any
-    guarantee of accuracy. You may not use such information to (a) allow,
-    enable, or otherwise support the transmission of mass unsolicited,
-    commercial advertising or solicitations; (b) enable high volume, automated,
-    electronic processes that access the registry's systems or any
-    ICANN-Accredited Registrar, except as reasonably necessary to register
-    domain names or modify existing registrations; or (c) engage in or support
-    unlawful behavior. We reserve the right to restrict or deny your access to
-    the WHOIS database, and may modify these terms at any time.
-
-  # BSA blocked domain name template.
-  domainBlockedByBsaTemplate: |
-    Domain Name: %s
-    >>> This name is not available for registration.
-    >>> This name has been blocked by a GlobalBlock service.
 
   # RDAP Terms of Service text displayed at the /rdap/help/tos endpoint.
   rdapTos: >
