@@ -15,7 +15,7 @@
 package google.registry.model.contact;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.model.EppResourceUtils.loadByForeignKey;
+import static google.registry.model.ForeignKeyUtils.loadResource;
 import static google.registry.model.ImmutableObjectSubject.assertAboutImmutableObjects;
 import static google.registry.testing.ContactSubject.assertAboutContacts;
 import static google.registry.testing.DatabaseHelper.cloneAndSetAutoTimestamps;
@@ -158,14 +158,14 @@ public class ContactTest extends EntityTestCase {
 
   @Test
   void testPersistence() {
-    assertThat(loadByForeignKey(Contact.class, contact.getForeignKey(), fakeClock.nowUtc()))
+    assertThat(loadResource(Contact.class, contact.getForeignKey(), fakeClock.nowUtc()))
         .hasValue(contact);
   }
 
   @Test
   void testSerializable() {
     Contact persisted =
-        loadByForeignKey(Contact.class, contact.getForeignKey(), fakeClock.nowUtc()).get();
+        loadResource(Contact.class, contact.getForeignKey(), fakeClock.nowUtc()).get();
     assertThat(SerializeUtils.serializeDeserialize(persisted)).isEqualTo(persisted);
   }
 

@@ -15,14 +15,13 @@
 package google.registry.whois;
 
 import static com.google.common.base.Preconditions.checkNotNull;
-import static google.registry.model.EppResourceUtils.loadByForeignKey;
-import static google.registry.model.EppResourceUtils.loadByForeignKeyByCache;
 import static google.registry.model.tld.Tlds.findTldForName;
 import static google.registry.model.tld.Tlds.getTlds;
 import static jakarta.servlet.http.HttpServletResponse.SC_NOT_FOUND;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.net.InternetDomainName;
+import google.registry.model.ForeignKeyUtils;
 import google.registry.model.host.Host;
 import java.util.Optional;
 import org.joda.time.DateTime;
@@ -57,8 +56,8 @@ public class NameserverLookupByHostCommand implements WhoisCommand {
   private Optional<WhoisResponse> getResponse(InternetDomainName hostName, DateTime now) {
     Optional<Host> host =
         cached
-            ? loadByForeignKeyByCache(Host.class, hostName.toString(), now)
-            : loadByForeignKey(Host.class, hostName.toString(), now);
+            ? ForeignKeyUtils.loadResourceByCache(Host.class, hostName.toString(), now)
+            : ForeignKeyUtils.loadResource(Host.class, hostName.toString(), now);
     return host.map(h -> new NameserverWhoisResponse(h, now));
   }
 }

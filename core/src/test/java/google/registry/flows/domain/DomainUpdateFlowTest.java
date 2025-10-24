@@ -18,7 +18,7 @@ import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.collect.Sets.union;
 import static com.google.common.io.BaseEncoding.base16;
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.model.EppResourceUtils.loadByForeignKey;
+import static google.registry.model.ForeignKeyUtils.loadResource;
 import static google.registry.model.common.FeatureFlag.FeatureName.MINIMUM_DATASET_CONTACTS_OPTIONAL;
 import static google.registry.model.common.FeatureFlag.FeatureName.MINIMUM_DATASET_CONTACTS_PROHIBITED;
 import static google.registry.model.common.FeatureFlag.FeatureStatus.ACTIVE;
@@ -161,7 +161,7 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
   }
 
   private void persistDomainWithRegistrant() throws Exception {
-    Host host = loadByForeignKey(Host.class, "ns1.example.foo", clock.nowUtc()).get();
+    Host host = loadResource(Host.class, "ns1.example.foo", clock.nowUtc()).get();
     Domain domain =
         persistResource(
             DatabaseHelper.newDomain(getUniqueIdFromCommand())
@@ -185,7 +185,7 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
   }
 
   private Domain persistDomain() throws Exception {
-    Host host = loadByForeignKey(Host.class, "ns1.example.foo", clock.nowUtc()).get();
+    Host host = loadResource(Host.class, "ns1.example.foo", clock.nowUtc()).get();
     Domain domain =
         persistResource(
             DatabaseHelper.newDomain(getUniqueIdFromCommand())
@@ -368,7 +368,7 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
     for (int i = 1; i < 15; i++) {
       if (i != 2) { // Skip 2 since that's the one that the tests will add.
         nameservers.add(
-            loadByForeignKey(Host.class, String.format("ns%d.example.foo", i), clock.nowUtc())
+            loadResource(Host.class, String.format("ns%d.example.foo", i), clock.nowUtc())
                 .get()
                 .createVKey());
       }
@@ -476,9 +476,7 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
             .addSubordinateHost("ns2.example.tld")
             .setNameservers(
                 ImmutableSet.of(
-                    loadByForeignKey(Host.class, "ns1.example.tld", clock.nowUtc())
-                        .get()
-                        .createVKey()))
+                    loadResource(Host.class, "ns1.example.tld", clock.nowUtc()).get().createVKey()))
             .build());
     clock.advanceOneMilli();
     assertMutatingFlow(true);
@@ -486,8 +484,8 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
     domain = reloadResourceByForeignKey();
     assertThat(domain.getNameservers()).containsExactly(addedHost.createVKey());
     assertThat(domain.getSubordinateHosts()).containsExactly("ns1.example.tld", "ns2.example.tld");
-    Host existingHost = loadByForeignKey(Host.class, "ns1.example.tld", clock.nowUtc()).get();
-    addedHost = loadByForeignKey(Host.class, "ns2.example.tld", clock.nowUtc()).get();
+    Host existingHost = loadResource(Host.class, "ns1.example.tld", clock.nowUtc()).get();
+    addedHost = loadResource(Host.class, "ns2.example.tld", clock.nowUtc()).get();
     assertThat(existingHost.getSuperordinateDomain()).isEqualTo(domain.createVKey());
     assertThat(addedHost.getSuperordinateDomain()).isEqualTo(domain.createVKey());
   }
@@ -496,7 +494,7 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
   void testSuccess_registrantMovedToTechContact() throws Exception {
     setEppInput("domain_update_registrant_to_tech.xml");
     persistReferencedEntities();
-    Contact sh8013 = loadByForeignKey(Contact.class, "sh8013", clock.nowUtc()).get();
+    Contact sh8013 = loadResource(Contact.class, "sh8013", clock.nowUtc()).get();
     persistResource(
         DatabaseHelper.newDomain(getUniqueIdFromCommand())
             .asBuilder()
@@ -510,7 +508,7 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
   void testSuccess_multipleReferencesToSameContactRemoved() throws Exception {
     setEppInput("domain_update_remove_multiple_contacts.xml");
     persistReferencedEntities();
-    Contact sh8013 = loadByForeignKey(Contact.class, "sh8013", clock.nowUtc()).get();
+    Contact sh8013 = loadResource(Contact.class, "sh8013", clock.nowUtc()).get();
     VKey<Contact> sh8013Key = sh8013.createVKey();
     persistResource(
         DatabaseHelper.newDomain(getUniqueIdFromCommand())
@@ -1207,7 +1205,7 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
             .setContacts(
                 DesignatedContact.create(
                     Type.TECH,
-                    loadByForeignKey(Contact.class, "foo", clock.nowUtc()).get().createVKey()))
+                    loadResource(Contact.class, "foo", clock.nowUtc()).get().createVKey()))
             .build());
     EppException thrown = assertThrows(DuplicateContactForRoleException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
@@ -1511,9 +1509,7 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
             .asBuilder()
             .setNameservers(
                 ImmutableSet.of(
-                    loadByForeignKey(Host.class, "ns1.example.foo", clock.nowUtc())
-                        .get()
-                        .createVKey()))
+                    loadResource(Host.class, "ns1.example.foo", clock.nowUtc()).get().createVKey()))
             .build());
     EppException thrown = assertThrows(AddRemoveSameValueException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
@@ -1530,7 +1526,7 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
             .setContacts(
                 DesignatedContact.create(
                     Type.TECH,
-                    loadByForeignKey(Contact.class, "sh8013", clock.nowUtc()).get().createVKey()))
+                    loadResource(Contact.class, "sh8013", clock.nowUtc()).get().createVKey()))
             .build());
     EppException thrown = assertThrows(AddRemoveSameValueException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
@@ -1690,7 +1686,7 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
     persistReferencedEntities();
     persistDomain();
     persistResource(
-        loadByForeignKey(Contact.class, "mak21", clock.nowUtc())
+        loadResource(Contact.class, "mak21", clock.nowUtc())
             .get()
             .asBuilder()
             .addStatusValue(PENDING_DELETE)
@@ -1706,7 +1702,7 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
     persistReferencedEntities();
     persistDomain();
     persistResource(
-        loadByForeignKey(Host.class, "ns2.example.foo", clock.nowUtc())
+        loadResource(Host.class, "ns2.example.foo", clock.nowUtc())
             .get()
             .asBuilder()
             .addStatusValue(PENDING_DELETE)
@@ -1761,11 +1757,10 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
             .build());
     assertThat(reloadResourceByForeignKey().getNameservers())
         .doesNotContain(
-            loadByForeignKey(Host.class, "ns2.example.foo", clock.nowUtc()).get().createVKey());
+            loadResource(Host.class, "ns2.example.foo", clock.nowUtc()).get().createVKey());
     runFlow();
     assertThat(reloadResourceByForeignKey().getNameservers())
-        .contains(
-            loadByForeignKey(Host.class, "ns2.example.foo", clock.nowUtc()).get().createVKey());
+        .contains(loadResource(Host.class, "ns2.example.foo", clock.nowUtc()).get().createVKey());
   }
 
   @Test
@@ -1832,7 +1827,7 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
         reloadResourceByForeignKey()
             .asBuilder()
             .addNameserver(
-                loadByForeignKey(Host.class, "ns2.example.foo", clock.nowUtc()).get().createVKey())
+                loadResource(Host.class, "ns2.example.foo", clock.nowUtc()).get().createVKey())
             .build());
     persistResource(
         Tld.get("tld")
@@ -1841,13 +1836,12 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
                 ImmutableSet.of("ns1.example.foo", "ns2.example.foo"))
             .build());
     assertThat(reloadResourceByForeignKey().getNameservers())
-        .contains(
-            loadByForeignKey(Host.class, "ns1.example.foo", clock.nowUtc()).get().createVKey());
+        .contains(loadResource(Host.class, "ns1.example.foo", clock.nowUtc()).get().createVKey());
     clock.advanceOneMilli();
     runFlow();
     assertThat(reloadResourceByForeignKey().getNameservers())
         .doesNotContain(
-            loadByForeignKey(Host.class, "ns1.example.foo", clock.nowUtc())
+            loadResource(Host.class, "ns1.example.foo", clock.nowUtc())
                 .map(ImmutableObject::createVKey)
                 .get());
   }

@@ -28,7 +28,6 @@ import static google.registry.bsa.persistence.Queries.queryMissedRegisteredUnblo
 import static google.registry.bsa.persistence.Queries.queryUnblockableDomainByLabels;
 import static google.registry.model.tld.Tld.isEnrolledWithBsa;
 import static google.registry.model.tld.Tlds.getTldEntitiesOfType;
-import static google.registry.persistence.transaction.TransactionManagerFactory.replicaTm;
 import static google.registry.request.Action.Method.GET;
 import static google.registry.request.Action.Method.POST;
 import static google.registry.util.BatchedStreams.toBatches;
@@ -53,7 +52,6 @@ import google.registry.model.ForeignKeyUtils;
 import google.registry.model.domain.Domain;
 import google.registry.model.tld.Tld;
 import google.registry.model.tld.Tld.TldType;
-import google.registry.persistence.VKey;
 import google.registry.request.Action;
 import google.registry.request.Action.GaeService;
 import google.registry.request.Response;
@@ -185,8 +183,8 @@ public class BsaValidateAction implements Runnable {
     ImmutableList<UnblockableDomain> batch;
     do {
       batch = Queries.batchReadUnblockableDomains(lastRead, transactionBatchSize);
-      ImmutableMap<String, VKey<Domain>> activeDomains =
-          ForeignKeyUtils.load(
+      ImmutableMap<String, Domain> activeDomains =
+          ForeignKeyUtils.loadResources(
               Domain.class,
               batch.stream().map(UnblockableDomain::domainName).collect(toImmutableList()),
               clock.nowUtc());
@@ -201,7 +199,7 @@ public class BsaValidateAction implements Runnable {
   }
 
   Optional<String> verifyDomainStillUnblockableWithReason(
-      UnblockableDomain domain, ImmutableMap<String, VKey<Domain>> activeDomains) {
+      UnblockableDomain domain, ImmutableMap<String, Domain> activeDomains) {
     DateTime now = clock.nowUtc();
     boolean isRegistered = activeDomains.containsKey(domain.domainName());
     boolean isReserved = isReservedDomain(domain.domainName(), now);
@@ -230,10 +228,8 @@ public class BsaValidateAction implements Runnable {
             domain.reason()));
   }
 
-  boolean isStalenessAllowed(VKey<Domain> domainVKey) {
-    Domain domain = bsaQuery(() -> replicaTm().loadByKey(domainVKey));
-    var now = clock.nowUtc();
-    return domain.getCreationTime().plus(maxStaleness).isAfter(now);
+  boolean isStalenessAllowed(Domain domain) {
+    return domain.getCreationTime().plus(maxStaleness).isAfter(clock.nowUtc());
   }
 
   /** Returns unique labels across all block lists in the download specified by {@code jobName}. */

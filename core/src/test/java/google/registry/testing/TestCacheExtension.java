@@ -60,8 +60,13 @@ public class TestCacheExtension implements BeforeEachCallback, AfterEachCallback
       return this;
     }
 
-    public Builder withForeignKeyCache(Duration expiry) {
-      cacheHandlers.add(new TestCacheHandler(ForeignKeyUtils::setCacheForTest, expiry));
+    public Builder withForeignKeyRepoIdCache(Duration expiry) {
+      cacheHandlers.add(new TestCacheHandler(ForeignKeyUtils::setRepoIdCacheForTest, expiry));
+      return this;
+    }
+
+    public Builder withForeignKeyResourceCache(Duration expiry) {
+      cacheHandlers.add(new TestCacheHandler(ForeignKeyUtils::setResourceCacheForTest, expiry));
       return this;
     }
 

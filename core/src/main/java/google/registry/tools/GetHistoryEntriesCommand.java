@@ -61,6 +61,7 @@ final class GetHistoryEntriesCommand implements Command {
           "If either of 'type' or 'id' are set then both must be");
       VKey<? extends EppResource> parentKey = type.getKey(uniqueId, DateTime.now(UTC));
       checkArgumentNotNull(parentKey, "Invalid resource ID");
+
       historyEntries = HistoryEntryDao.loadHistoryObjectsForResource(parentKey, after, before);
     } else {
       historyEntries = HistoryEntryDao.loadAllHistoryObjects(after, before);

@@ -16,7 +16,6 @@ package google.registry.flows.contact;
 
 import static google.registry.flows.FlowUtils.validateRegistrarIsLoggedIn;
 import static google.registry.flows.ResourceFlowUtils.verifyTargetIdCount;
-import static google.registry.model.EppResourceUtils.checkResourcesExist;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -26,6 +25,7 @@ import google.registry.flows.ExtensionManager;
 import google.registry.flows.FlowModule.RegistrarId;
 import google.registry.flows.TransactionalFlow;
 import google.registry.flows.annotations.ReportingSpec;
+import google.registry.model.ForeignKeyUtils;
 import google.registry.model.contact.Contact;
 import google.registry.model.contact.ContactCommand.Check;
 import google.registry.model.eppinput.ResourceCommand;
@@ -62,7 +62,7 @@ public final class ContactCheckFlow implements TransactionalFlow {
     ImmutableList<String> targetIds = ((Check) resourceCommand).getTargetIds();
     verifyTargetIdCount(targetIds, maxChecks);
     ImmutableSet<String> existingIds =
-        checkResourcesExist(Contact.class, targetIds, clock.nowUtc());
+        ForeignKeyUtils.loadKeys(Contact.class, targetIds, clock.nowUtc()).keySet();
     ImmutableList.Builder<ContactCheck> checks = new ImmutableList.Builder<>();
     for (String id : targetIds) {
       boolean unused = !existingIds.contains(id);

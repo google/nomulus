@@ -156,7 +156,7 @@ public final class DomainsRefresher {
             .collect(toImmutableSet());
     ImmutableSet<String> currRegistered =
         ImmutableSet.copyOf(
-            ForeignKeyUtils.load(Domain.class, nameToEntity.keySet(), now).keySet());
+            ForeignKeyUtils.loadKeys(Domain.class, nameToEntity.keySet(), now).keySet());
     SetView<String> noLongerRegistered = Sets.difference(prevRegistered, currRegistered);
     SetView<String> newlyRegistered = Sets.difference(currRegistered, prevRegistered);
 

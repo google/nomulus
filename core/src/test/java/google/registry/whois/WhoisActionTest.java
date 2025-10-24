@@ -16,7 +16,7 @@ package google.registry.whois;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.bsa.persistence.BsaTestingUtils.persistBsaLabel;
-import static google.registry.model.EppResourceUtils.loadByForeignKeyByCacheIfEnabled;
+import static google.registry.model.ForeignKeyUtils.loadResourceByCacheIfEnabled;
 import static google.registry.model.registrar.Registrar.State.ACTIVE;
 import static google.registry.model.registrar.Registrar.Type.PDT;
 import static google.registry.model.tld.Tlds.getTlds;
@@ -40,6 +40,7 @@ import static org.mockito.Mockito.when;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.net.InetAddresses;
+import google.registry.model.EppResource;
 import google.registry.model.contact.Contact;
 import google.registry.model.domain.Domain;
 import google.registry.model.eppcommon.Trid;
@@ -81,7 +82,8 @@ public class WhoisActionTest {
   public final TestCacheExtension testCacheExtension =
       new TestCacheExtension.Builder()
           .withEppResourceCache(Duration.ofDays(1))
-          .withForeignKeyCache(Duration.ofDays(1))
+          .withForeignKeyRepoIdCache(Duration.ofDays(1))
+          .withForeignKeyResourceCache(Duration.ofDays(1))
           .build();
 
   private final FakeResponse response = new FakeResponse();
@@ -147,9 +149,8 @@ public class WhoisActionTest {
     persistResource(makeDomainWithRegistrar(registrar));
     persistResources(makeRegistrarPocs(registrar));
     // Populate the cache for both the domain and contact.
-    Domain domain = loadByForeignKeyByCacheIfEnabled(Domain.class, "cat.lol", clock.nowUtc()).get();
-    Contact contact =
-        loadByForeignKeyByCacheIfEnabled(Contact.class, "5372808-ERL", clock.nowUtc()).get();
+    Domain domain = loadResourceByCacheIfEnabled(Domain.class, "cat.lol", clock.nowUtc()).get();
+    Contact contact = EppResource.loadByCache(domain.getRegistrant().get());
     // Make a change to the domain and contact that won't be seen because the cache will be hit.
     persistResource(domain.asBuilder().setDeletionTime(clock.nowUtc().minusDays(1)).build());
     persistResource(
@@ -281,7 +282,7 @@ public class WhoisActionTest {
   @Test
   void testRun_domainNotFound_usesCache() {
     // Populate the cache with the nonexistence of this domain.
-    assertThat(loadByForeignKeyByCacheIfEnabled(Domain.class, "cat.lol", clock.nowUtc())).isEmpty();
+    assertThat(loadResourceByCacheIfEnabled(Domain.class, "cat.lol", clock.nowUtc())).isEmpty();
     // Add a new valid cat.lol domain that won't be found because the cache will be hit instead.
     persistActiveDomain("cat.lol");
     newWhoisAction("domain cat.lol\r\n").run();
@@ -437,7 +438,7 @@ public class WhoisActionTest {
     persistResource(FullFieldsTestEntityHelper.makeHost("ns1.cat.xn--q9jyb4c", "1.2.3.4"));
     // Populate the cache.
     Host host =
-        loadByForeignKeyByCacheIfEnabled(Host.class, "ns1.cat.xn--q9jyb4c", clock.nowUtc()).get();
+        loadResourceByCacheIfEnabled(Host.class, "ns1.cat.xn--q9jyb4c", clock.nowUtc()).get();
     // Make a change to the persisted host that won't be seen because the cache will be hit.
     persistResource(
         host.asBuilder()

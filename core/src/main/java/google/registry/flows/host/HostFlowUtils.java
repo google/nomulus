@@ -15,7 +15,6 @@
 package google.registry.flows.host;
 
 import static google.registry.model.EppResourceUtils.isActive;
-import static google.registry.model.EppResourceUtils.loadByForeignKey;
 import static google.registry.model.tld.Tlds.findTldForName;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 import static java.util.stream.Collectors.joining;
@@ -29,6 +28,7 @@ import google.registry.flows.EppException.ParameterValuePolicyErrorException;
 import google.registry.flows.EppException.ParameterValueRangeErrorException;
 import google.registry.flows.EppException.ParameterValueSyntaxErrorException;
 import google.registry.flows.EppException.StatusProhibitsOperationException;
+import google.registry.model.ForeignKeyUtils;
 import google.registry.model.domain.Domain;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.util.Idn;
@@ -90,7 +90,8 @@ public class HostFlowUtils {
         hostName.parts().stream()
             .skip(hostName.parts().size() - (tld.get().parts().size() + 1))
             .collect(joining("."));
-    Optional<Domain> superordinateDomain = loadByForeignKey(Domain.class, domainName, now);
+    Optional<Domain> superordinateDomain =
+        ForeignKeyUtils.loadResource(Domain.class, domainName, now);
     if (superordinateDomain.isEmpty() || !isActive(superordinateDomain.get(), now)) {
       throw new SuperordinateDomainDoesNotExistException(domainName);
     }

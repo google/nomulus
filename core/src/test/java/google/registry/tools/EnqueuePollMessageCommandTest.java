@@ -169,13 +169,14 @@ class EnqueuePollMessageCommandTest extends CommandTestCase<EnqueuePollMessageCo
 
   @Test
   void testNonexistentDomain() throws Exception {
-    IllegalArgumentException thrown =
+    RuntimeException thrown =
         assertThrows(
-            IllegalArgumentException.class,
+            RuntimeException.class,
             () -> runCommandForced("--domain=example2.tld", "--message=This domain needs help"));
     assertThat(thrown)
+        .hasCauseThat()
         .hasMessageThat()
-        .isEqualTo("Domain example2.tld doesn't exist or isn't active");
+        .isEqualTo("The domain with given ID (example2.tld) doesn't exist.");
   }
 
   @Test

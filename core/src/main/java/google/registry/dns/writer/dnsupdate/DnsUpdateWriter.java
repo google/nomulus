@@ -19,7 +19,6 @@ import static com.google.common.base.Verify.verify;
 import static com.google.common.collect.Sets.intersection;
 import static com.google.common.collect.Sets.union;
 import static google.registry.dns.DnsUtils.getDnsAPlusAAAATtlForHost;
-import static google.registry.model.EppResourceUtils.loadByForeignKey;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
@@ -28,6 +27,7 @@ import com.google.common.net.InternetDomainName;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.dns.writer.BaseDnsWriter;
 import google.registry.dns.writer.DnsWriterZone;
+import google.registry.model.ForeignKeyUtils;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.secdns.DomainDsData;
 import google.registry.model.host.Host;
@@ -129,7 +129,8 @@ public class DnsUpdateWriter extends BaseDnsWriter {
    *     this domain refresh request
    */
   private void publishDomain(String domainName, String requestingHostName) {
-    Optional<Domain> domainOptional = loadByForeignKey(Domain.class, domainName, clock.nowUtc());
+    Optional<Domain> domainOptional =
+        ForeignKeyUtils.loadResource(Domain.class, domainName, clock.nowUtc());
     update.delete(toAbsoluteName(domainName), Type.ANY);
     // If the domain is now deleted, then don't update DNS for it.
     if (domainOptional.isPresent()) {
@@ -218,7 +219,7 @@ public class DnsUpdateWriter extends BaseDnsWriter {
   private void addInBailiwickNameServerSet(Domain domain, Update update) {
     for (String hostName :
         intersection(domain.loadNameserverHostNames(), domain.getSubordinateHosts())) {
-      Optional<Host> host = loadByForeignKey(Host.class, hostName, clock.nowUtc());
+      Optional<Host> host = ForeignKeyUtils.loadResource(Host.class, hostName, clock.nowUtc());
       checkState(host.isPresent(), "Host %s cannot be loaded", hostName);
       update.add(makeAddressSet(host.get()));
       update.add(makeV6AddressSet(host.get()));

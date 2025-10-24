@@ -239,7 +239,7 @@ public class BsaValidateActionTest {
     persistBsaLabel("label");
     Domain domain = persistActiveDomain("label.app", fakeClock.nowUtc());
     fakeClock.advanceBy(MAX_STALENESS.minus(Duration.standardSeconds(1)));
-    assertThat(action.isStalenessAllowed(domain.createVKey())).isTrue();
+    assertThat(action.isStalenessAllowed(domain)).isTrue();
   }
 
   @Test
@@ -247,7 +247,7 @@ public class BsaValidateActionTest {
     persistBsaLabel("label");
     Domain domain = persistActiveDomain("label.app", fakeClock.nowUtc());
     fakeClock.advanceBy(MAX_STALENESS);
-    assertThat(action.isStalenessAllowed(domain.createVKey())).isFalse();
+    assertThat(action.isStalenessAllowed(domain)).isFalse();
   }
 
   @Test

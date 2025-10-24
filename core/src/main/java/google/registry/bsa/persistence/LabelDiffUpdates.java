@@ -145,11 +145,10 @@ public final class LabelDiffUpdates {
 
     ImmutableSet<String> validDomainNames =
         labels.stream()
-            .map(label -> validDomainNamesForLabel(label, idnChecker))
-            .flatMap(x -> x)
+            .flatMap(label -> validDomainNamesForLabel(label, idnChecker))
             .collect(toImmutableSet());
     ImmutableSet<String> registeredDomainNames =
-        ImmutableSet.copyOf(ForeignKeyUtils.load(Domain.class, validDomainNames, now).keySet());
+        ForeignKeyUtils.loadKeys(Domain.class, validDomainNames, now).keySet();
     for (String domain : registeredDomainNames) {
       nonBlockedDomains.add(new UnblockableDomain(domain, Reason.REGISTERED));
       tm().put(BsaUnblockableDomain.of(domain, BsaUnblockableDomain.Reason.REGISTERED));

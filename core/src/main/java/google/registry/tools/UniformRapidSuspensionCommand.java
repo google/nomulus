@@ -17,10 +17,7 @@ package google.registry.tools;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.Sets.difference;
-import static google.registry.model.EppResourceUtils.checkResourcesExist;
-import static google.registry.model.EppResourceUtils.loadByForeignKey;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.util.PreconditionsUtils.checkArgumentPresent;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
@@ -31,6 +28,8 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedSet;
 import com.google.template.soy.data.SoyListData;
 import com.google.template.soy.data.SoyMapData;
+import google.registry.flows.ResourceFlowUtils;
+import google.registry.model.ForeignKeyUtils;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.secdns.DomainDsData;
 import google.registry.model.eppcommon.StatusValue;
@@ -44,7 +43,6 @@ import jakarta.xml.bind.annotation.adapters.HexBinaryAdapter;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 import org.joda.time.DateTime;
 import org.joda.time.format.DateTimeFormat;
@@ -127,13 +125,13 @@ final class UniformRapidSuspensionCommand extends MutatingEppToolCommand {
   @Inject Clock clock;
 
   @Override
-  protected void initMutatingEppToolCommand() {
+  protected void initMutatingEppToolCommand()
+      throws ResourceFlowUtils.ResourceDoesNotExistException {
     superuser = true;
     DateTime now = clock.nowUtc();
-    Optional<Domain> domainOpt = loadByForeignKey(Domain.class, domainName, now);
-    checkArgumentPresent(domainOpt, "Domain '%s' does not exist or is deleted", domainName);
-    Domain domain = domainOpt.get();
-    Set<String> missingHosts = difference(newHosts, checkResourcesExist(Host.class, newHosts, now));
+    Domain domain = ResourceFlowUtils.loadAndVerifyExistence(Domain.class, domainName, now);
+    Set<String> missingHosts =
+        difference(newHosts, ForeignKeyUtils.loadKeys(Host.class, newHosts, now).keySet());
     checkArgument(missingHosts.isEmpty(), "Hosts do not exist: %s", missingHosts);
     checkArgument(
         locksToPreserve.isEmpty() || undo,

@@ -25,7 +25,6 @@ import static google.registry.dns.DnsModule.PARAM_REFRESH_REQUEST_TIME;
 import static google.registry.dns.DnsUtils.DNS_PUBLISH_PUSH_QUEUE_NAME;
 import static google.registry.dns.DnsUtils.requestDomainDnsRefresh;
 import static google.registry.dns.DnsUtils.requestHostDnsRefresh;
-import static google.registry.model.EppResourceUtils.loadByForeignKey;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.request.Action.Method.POST;
 import static google.registry.request.RequestParameters.PARAM_TLD;
@@ -46,6 +45,7 @@ import google.registry.dns.DnsMetrics.CommitStatus;
 import google.registry.dns.DnsMetrics.PublishStatus;
 import google.registry.dns.writer.DnsWriter;
 import google.registry.groups.GmailClient;
+import google.registry.model.ForeignKeyUtils;
 import google.registry.model.domain.Domain;
 import google.registry.model.host.Host;
 import google.registry.model.registrar.Registrar;
@@ -237,7 +237,8 @@ public final class PublishDnsUpdatesAction implements Runnable, Callable<Void> {
             .findFirst()
             .ifPresent(
                 dn -> {
-                  Optional<Domain> domain = loadByForeignKey(Domain.class, dn, clock.nowUtc());
+                  Optional<Domain> domain =
+                      ForeignKeyUtils.loadResource(Domain.class, dn, clock.nowUtc());
                   if (domain.isPresent()) {
                     notifyWithEmailAboutDnsUpdateFailure(
                         domain.get().getCurrentSponsorRegistrarId(), dn, false);
@@ -250,7 +251,8 @@ public final class PublishDnsUpdatesAction implements Runnable, Callable<Void> {
             .findFirst()
             .ifPresent(
                 hn -> {
-                  Optional<Host> host = loadByForeignKey(Host.class, hn, clock.nowUtc());
+                  Optional<Host> host =
+                      ForeignKeyUtils.loadResource(Host.class, hn, clock.nowUtc());
                   if (host.isPresent()) {
                     notifyWithEmailAboutDnsUpdateFailure(
                         host.get().getPersistedCurrentSponsorRegistrarId(), hn, true);

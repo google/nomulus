@@ -181,7 +181,7 @@ public final class DomainCheckFlow implements TransactionalFlow {
             .setAsOfDate(now)
             .build());
     ImmutableMap<String, VKey<Domain>> existingDomains =
-        ForeignKeyUtils.load(Domain.class, domainNames, now);
+        ForeignKeyUtils.loadKeys(Domain.class, domainNames, now);
     // Check block labels only when there are unregistered domains, since "In use" goes before
     // "Blocked by BSA".
     ImmutableSet<InternetDomainName> bsaBlockedDomainNames =

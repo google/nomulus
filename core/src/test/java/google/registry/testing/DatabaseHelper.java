@@ -61,7 +61,7 @@ import google.registry.dns.DnsUtils.TargetType;
 import google.registry.dns.writer.VoidDnsWriter;
 import google.registry.model.Buildable;
 import google.registry.model.EppResource;
-import google.registry.model.EppResourceUtils;
+import google.registry.model.ForeignKeyUtils;
 import google.registry.model.ImmutableObject;
 import google.registry.model.billing.BillingBase;
 import google.registry.model.billing.BillingBase.Flag;
@@ -462,7 +462,7 @@ public final class DatabaseHelper {
                   .forEach(
                       hostname ->
                           deleteResource(
-                              EppResourceUtils.loadByForeignKey(Host.class, hostname, now).get()));
+                              ForeignKeyUtils.loadResource(Host.class, hostname, now).get()));
               for (HistoryEntry hist : historyEntries) {
                 deleteResource(hist);
               }

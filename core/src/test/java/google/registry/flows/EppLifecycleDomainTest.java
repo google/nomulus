@@ -15,7 +15,7 @@
 package google.registry.flows;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.model.EppResourceUtils.loadByForeignKey;
+import static google.registry.model.ForeignKeyUtils.loadResource;
 import static google.registry.model.common.FeatureFlag.FeatureName.MINIMUM_DATASET_CONTACTS_OPTIONAL;
 import static google.registry.model.common.FeatureFlag.FeatureStatus.INACTIVE;
 import static google.registry.model.eppoutput.Result.Code.SUCCESS;
@@ -349,7 +349,7 @@ class EppLifecycleDomainTest extends EppTestCase {
                 "UPDATE", "2000-06-03T00:00:00Z"));
 
     Domain domain =
-        loadByForeignKey(Domain.class, "example.tld", DateTime.parse("2000-06-03T04:00:00Z")).get();
+        loadResource(Domain.class, "example.tld", DateTime.parse("2000-06-03T04:00:00Z")).get();
 
     DateTime deleteTime = DateTime.parse("2000-06-04T00:00:00Z");
     // Delete domain example.tld during both grace periods.
@@ -410,7 +410,7 @@ class EppLifecycleDomainTest extends EppTestCase {
                 "CRDATE", "2000-06-01T00:02:00.0Z",
                 "EXDATE", "2002-06-01T00:02:00.0Z"));
 
-    Domain domain = loadByForeignKey(Domain.class, "example.tld", createTime.plusHours(1)).get();
+    Domain domain = loadResource(Domain.class, "example.tld", createTime.plusHours(1)).get();
 
     // Delete domain example.tld within the add grace period.
     DateTime deleteTime = createTime.plusDays(1);
@@ -492,7 +492,7 @@ class EppLifecycleDomainTest extends EppTestCase {
                 "CODE", "2303", "MSG", "The domain with given ID (example.tld) doesn't exist."));
 
     Domain domain =
-        loadByForeignKey(Domain.class, "example.tld", DateTime.parse("2000-08-01T00:02:00Z")).get();
+        loadResource(Domain.class, "example.tld", DateTime.parse("2000-08-01T00:02:00Z")).get();
     // Verify that the autorenew was ended and that the one-time billing event is not canceled.
     assertBillingEventsForResource(
         domain,
@@ -532,7 +532,7 @@ class EppLifecycleDomainTest extends EppTestCase {
         .hasResponse("domain_create_response_eap_fee.xml");
 
     Domain domain =
-        loadByForeignKey(Domain.class, "example.tld", DateTime.parse("2000-06-01T00:03:00Z")).get();
+        loadResource(Domain.class, "example.tld", DateTime.parse("2000-06-01T00:03:00Z")).get();
 
     // Delete domain example.tld within the add grade period.
     DateTime deleteTime = createTime.plusDays(1);

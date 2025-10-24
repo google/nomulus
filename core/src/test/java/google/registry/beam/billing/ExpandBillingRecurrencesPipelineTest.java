@@ -16,7 +16,7 @@ package google.registry.beam.billing;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.model.EppResourceUtils.loadByForeignKey;
+import static google.registry.model.ForeignKeyUtils.loadResource;
 import static google.registry.model.ImmutableObjectSubject.immutableObjectCorrespondence;
 import static google.registry.model.common.Cursor.CursorType.RECURRING_BILLING;
 import static google.registry.model.domain.Period.Unit.YEARS;
@@ -115,7 +115,7 @@ public class ExpandBillingRecurrencesPipelineTest {
     // Set up the database.
     createTld("tld");
     billingRecurrence = createDomainAtTime("example.tld", startTime.minusYears(1).plusHours(12));
-    domain = loadByForeignKey(Domain.class, "example.tld", clock.nowUtc()).get();
+    domain = loadResource(Domain.class, "example.tld", clock.nowUtc()).get();
   }
 
   @Test
@@ -321,7 +321,7 @@ public class ExpandBillingRecurrencesPipelineTest {
             .build());
     DateTime otherCreateTime = startTime.minusYears(1).plusHours(5);
     BillingRecurrence otherBillingRecurrence = createDomainAtTime("other.test", otherCreateTime);
-    Domain otherDomain = loadByForeignKey(Domain.class, "other.test", clock.nowUtc()).get();
+    Domain otherDomain = loadResource(Domain.class, "other.test", clock.nowUtc()).get();
 
     options.setTargetParallelism(numOfThreads);
     runPipeline();

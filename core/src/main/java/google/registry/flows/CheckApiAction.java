@@ -38,7 +38,6 @@ import static google.registry.pricing.PricingEngineProxy.isDomainPremium;
 import static google.registry.util.DomainNameUtils.canonicalizeHostname;
 import static org.json.simple.JSONValue.toJSONString;
 
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.flogger.FluentLogger;
@@ -185,8 +184,7 @@ public class CheckApiAction implements Runnable {
   }
 
   private boolean checkExists(String domainString, DateTime now) {
-    return !ForeignKeyUtils.loadByCache(Domain.class, ImmutableList.of(domainString), now)
-        .isEmpty();
+    return ForeignKeyUtils.loadKeyByCache(Domain.class, domainString, now).isPresent();
   }
 
   private Optional<String> checkReserved(InternetDomainName domainName) {
