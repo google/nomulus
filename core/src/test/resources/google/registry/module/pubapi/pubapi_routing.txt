@@ -1,5 +1,4 @@
 SERVICE PATH                 CLASS                      METHODS  OK MIN  USER_POLICY
-PUBAPI  /_dr/whois           WhoisAction                POST     n  APP  ADMIN
 PUBAPI  /check               CheckApiAction             GET      n  NONE PUBLIC
 PUBAPI  /rdap/               RdapEmptyAction            GET,HEAD n  NONE PUBLIC
 PUBAPI  /rdap/autnum/(*)     RdapAutnumAction           GET,HEAD n  NONE PUBLIC
@@ -12,4 +11,3 @@ PUBAPI  /rdap/ip/(*)         RdapIpAction               GET,HEAD n  NONE PUBLIC
 PUBAPI  /rdap/nameserver/(*) RdapNameserverAction       GET,HEAD n  NONE PUBLIC
 PUBAPI  /rdap/nameservers    RdapNameserverSearchAction GET,HEAD n  NONE PUBLIC
 PUBAPI  /ready/pubapi        ReadinessProbeActionPubApi GET      n  NONE PUBLIC
-PUBAPI  /whois/(*)           WhoisHttpAction            GET      n  NONE PUBLIC

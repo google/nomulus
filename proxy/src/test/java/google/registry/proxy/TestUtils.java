@@ -88,22 +88,6 @@ public final class TestUtils {
     return response;
   }
 
-  public static FullHttpRequest makeWhoisHttpRequest(
-      String content, String host, String path, boolean canary, String idToken) throws IOException {
-    FullHttpRequest request = makeHttpPostRequest(content, host, path, canary);
-    request
-        .headers()
-        .set("authorization", "Bearer " + idToken)
-        .set("content-type", "text/plain")
-        .set("accept", "text/plain");
-    return request;
-  }
-
-  public static FullHttpRequest makeWhoisHttpRequest(
-      String content, String host, String path, String idToken) throws IOException {
-    return makeWhoisHttpRequest(content, host, path, false, idToken);
-  }
-
   public static FullHttpRequest makeEppHttpRequest(
       String content,
       String host,
@@ -140,12 +124,6 @@ public final class TestUtils {
       throws IOException {
     return makeEppHttpRequest(
         content, host, path, false, idToken, sslClientCertificateHash, clientAddress, cookies);
-  }
-
-  public static FullHttpResponse makeWhoisHttpResponse(String content, HttpResponseStatus status) {
-    FullHttpResponse response = makeHttpResponse(content, status);
-    response.headers().set("content-type", "text/plain");
-    return response;
   }
 
   public static FullHttpResponse makeEppHttpResponse(

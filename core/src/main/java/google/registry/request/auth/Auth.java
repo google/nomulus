@@ -23,7 +23,7 @@ public enum Auth {
   /**
    * Allows anyone to access.
    *
-   * <p>This is used for public HTML endpoints like RDAP, the check API, and web WHOIS.
+   * <p>This is used for public HTML endpoints like RDAP and the check API.
    */
   AUTH_PUBLIC(AuthLevel.NONE, UserPolicy.PUBLIC),
 

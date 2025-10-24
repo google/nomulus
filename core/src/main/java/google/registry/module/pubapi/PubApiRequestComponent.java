@@ -36,9 +36,6 @@ import google.registry.rdap.RdapNameserverSearchAction;
 import google.registry.request.RequestComponentBuilder;
 import google.registry.request.RequestModule;
 import google.registry.request.RequestScope;
-import google.registry.whois.WhoisAction;
-import google.registry.whois.WhoisHttpAction;
-import google.registry.whois.WhoisModule;
 
 /** Dagger component with per-request lifetime for "pubapi" App Engine module. */
 @RequestScope
@@ -49,8 +46,7 @@ import google.registry.whois.WhoisModule;
       EppTlsModule.class,
       RdapModule.class,
       RequestModule.class,
-      WhiteboxModule.class,
-      WhoisModule.class,
+      WhiteboxModule.class
     })
 public interface PubApiRequestComponent {
   CheckApiAction checkApiAction();
@@ -66,9 +62,6 @@ public interface PubApiRequestComponent {
   RdapNameserverSearchAction rdapNameserverSearchAction();
 
   ReadinessProbeActionPubApi readinessProbeActionPubApi();
-
-  WhoisHttpAction whoisHttpAction();
-  WhoisAction whoisAction();
 
   @Subcomponent.Builder
   abstract class Builder implements RequestComponentBuilder<PubApiRequestComponent> {

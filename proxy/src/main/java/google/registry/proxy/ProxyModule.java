@@ -40,9 +40,6 @@ import google.registry.proxy.HealthCheckProtocolModule.HealthCheckProtocol;
 import google.registry.proxy.HttpsRelayProtocolModule.HttpsRelayProtocol;
 import google.registry.proxy.Protocol.FrontendProtocol;
 import google.registry.proxy.ProxyConfig.Environment;
-import google.registry.proxy.WebWhoisProtocolsModule.HttpWhoisProtocol;
-import google.registry.proxy.WebWhoisProtocolsModule.HttpsWhoisProtocol;
-import google.registry.proxy.WhoisProtocolModule.WhoisProtocol;
 import google.registry.proxy.handler.ProxyProtocolHandler;
 import google.registry.util.Clock;
 import google.registry.util.GcpJsonFormatter;
@@ -79,25 +76,16 @@ import java.util.logging.Level;
 @Module
 public class ProxyModule {
 
-  @Parameter(names = "--whois", description = "Port for WHOIS")
-  private Integer whoisPort;
-
   @Parameter(names = "--epp", description = "Port for EPP")
   private Integer eppPort;
 
   @Parameter(names = "--health_check", description = "Port for health check")
   private Integer healthCheckPort;
 
-  @Parameter(names = "--http_whois", description = "Port for HTTP WHOIS")
-  private Integer httpWhoisPort;
-
-  @Parameter(names = "--https_whois", description = "Port for HTTPS WHOIS")
-  private Integer httpsWhoisPort;
-
   @Parameter(
       names = "--local",
       description =
-          "Whether EPP/WHOIS traffic should be forwarded to localhost using HTTP on port defined in"
+          "Whether EPP traffic should be forwarded to localhost using HTTP on port defined in"
               + " httpsRelay.localPort")
   private boolean local = false;
 
@@ -185,12 +173,6 @@ public class ProxyModule {
   }
 
   @Provides
-  @WhoisProtocol
-  int provideWhoisPort(ProxyConfig config) {
-    return Optional.ofNullable(whoisPort).orElse(config.whois.port);
-  }
-
-  @Provides
   @EppProtocol
   int provideEppPort(ProxyConfig config) {
     return Optional.ofNullable(eppPort).orElse(config.epp.port);
@@ -200,18 +182,6 @@ public class ProxyModule {
   @HealthCheckProtocol
   int provideHealthCheckPort(ProxyConfig config) {
     return Optional.ofNullable(healthCheckPort).orElse(config.healthCheck.port);
-  }
-
-  @Provides
-  @HttpWhoisProtocol
-  int provideHttpWhoisProtocol(ProxyConfig config) {
-    return Optional.ofNullable(httpWhoisPort).orElse(config.webWhois.httpPort);
-  }
-
-  @Provides
-  @HttpsWhoisProtocol
-  int provideHttpsWhoisProtocol(ProxyConfig config) {
-    return Optional.ofNullable(httpsWhoisPort).orElse(config.webWhois.httpsPort);
   }
 
   @Provides
@@ -423,8 +393,6 @@ public class ProxyModule {
         ProxyModule.class,
         CertificateSupplierModule.class,
         HttpsRelayProtocolModule.class,
-        WhoisProtocolModule.class,
-        WebWhoisProtocolsModule.class,
         EppProtocolModule.class,
         HealthCheckProtocolModule.class,
         MetricsModule.class

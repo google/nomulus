@@ -29,7 +29,6 @@ public class Prober {
 
   public static void main(String[] args) {
 
-    // Obtains WebWhois Sequence provided by proberComponent
     ImmutableSet<ProbingSequence> sequences = ImmutableSet.copyOf(proberComponent.sequences());
 
     // Tells Sequences to start running

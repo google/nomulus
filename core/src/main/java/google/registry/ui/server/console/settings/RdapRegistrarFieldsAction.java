@@ -38,10 +38,10 @@ import java.util.Optional;
 import java.util.StringJoiner;
 
 /**
- * Console action for editing fields on a registrar that are visible in WHOIS/RDAP.
+ * Console action for editing fields on a registrar that are visible in RDAP.
  *
- * <p>This doesn't cover many of the registrar fields but rather only those that are visible in
- * WHOIS/RDAP and don't have any other obvious means of edit.
+ * <p>This doesn't cover many of the registrar fields but rather only those that are visible in RDAP
+ * and don't have any other obvious means of edit.
  */
 @Action(
     service = GaeService.DEFAULT,

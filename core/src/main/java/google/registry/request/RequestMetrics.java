@@ -67,15 +67,13 @@ class RequestMetrics {
   private static String truncatePath(String path) {
     // We want to bucket RDAP requests by type to use less metric space,
     // e.g. "/rdap/domains" rather than "/rdap/domains/foo.tld"
-
     if (path.startsWith("/rdap")) {
       List<String> splitPath = Splitter.on("/").omitEmptyStrings().splitToList(path);
       return Streams.stream(Iterables.limit(splitPath, 2))
           .collect(Collectors.joining("/", "/", "/"));
-      // Similarly, we put all web WHOIS requests under the same path because otherwise its
-      // cardinality is unbound, and it is possible to generate a huge amount of metrics with all
-      // the different paths.
     } else if (path.startsWith("/whois")) {
+      // Though we don't serve WHOIS requests anymore, bucket any non-served WHOIS requests together
+      // to avoid an unbound cardinality
       return "/whois";
     }
     return path;

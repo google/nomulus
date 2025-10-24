@@ -55,9 +55,6 @@ def dockerIncompatibleTestPatterns = [
 // objects retained by frameworks.
 // TODO(weiminyu): identify cause and fix offending tests.
 def fragileTestPatterns = [
-    // Changes cache timeouts and for some reason appears to have contention
-    // with other tests.
-    "google/registry/whois/WhoisCommandFactoryTest.*",
     // Breaks random other tests when running with standardTests.
     "google/registry/bsa/UploadBsaUnavailableDomainsActionTest.*",
     // Currently changes a global configuration parameter that for some reason
