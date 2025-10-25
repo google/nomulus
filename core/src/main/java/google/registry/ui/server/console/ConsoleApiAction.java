@@ -74,7 +74,13 @@ public abstract class ConsoleApiAction implements Runnable {
   @Override
   public final void run() {
     // Shouldn't be even possible because of Auth annotations on the various implementing classes
+    logger.atInfo().log("Har AuthResult received in ConsoleApiAction.");
+    logger.atInfo().log("Har AuthLevel: %s", consoleApiParams.authResult().authLevel());
+    logger.atInfo().log("User object: %s", consoleApiParams.authResult().user());
+    logger.atInfo().log("ServiceAccountEmail: %s", consoleApiParams.authResult().serviceAccountEmail());
     if (consoleApiParams.authResult().user().isEmpty()) {
+      logger.atWarning().log("harshta User object is empty, failing with UNAUTHORIZED.");
+      logger.atInfo().log("harshita logs: %s", consoleApiParams.authResult());
       consoleApiParams.response().setStatus(SC_UNAUTHORIZED);
       return;
     }
@@ -211,7 +217,8 @@ public abstract class ConsoleApiAction implements Runnable {
                 The following changes were made in registry %s environment to the registrar %s by\
                  %s:
 
-                %s""",
+                %s\
+                """,
                 environment,
                 registrar.getRegistrarId(),
                 consoleApiParams.authResult().userIdForLogging(),
