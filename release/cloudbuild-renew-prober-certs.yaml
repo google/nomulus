@@ -5,20 +5,9 @@
 # gcloud builds submit --config=cloudbuild-renew-prober-certs.yaml \
 # --substitutions=_ENV=[ENV] ..
 #
-# To manually trigger a build on GCB using a released version, with TAG being
-# the release tag and _ENV being the environment, run:
-# cd $(mktemp -d);
-# gcloud storage cp \
-#   gs://domain-registry-dev-deploy/{TAG}/cloudbuild-renew-prober-certs-{_ENV}.yaml .
-# gcloud builds submit --config="./cloudbuild-renew-prober-certs-{_ENV}.yaml"
-#
 # To trigger a build automatically, follow the instructions below and add a trigger:
 # https://cloud.google.com/cloud-build/docs/running-builds/automate-builds
 #
-# Note that the release process hardens the tags and variables in this file:
-# - The 'latest' tag on docker images will be replaced by their image digests.
-# - The ${_ENV} pattern will be replaced by the actual environment name.
-# Please refer to ./cloudbuild-release.yaml for more details.
 steps:
 # Generate new SSL certs
 - name: 'gcr.io/$PROJECT_ID/builder:live'
