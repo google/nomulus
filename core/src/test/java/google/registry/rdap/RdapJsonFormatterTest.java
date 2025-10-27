@@ -198,8 +198,8 @@ class RdapJsonFormatterTest {
             .setPhoneNumber("+1.2125551217")
             .setFaxNumber("+1.2125551218")
             .setTypes(ImmutableSet.of(RegistrarPoc.Type.ADMIN))
-            .setVisibleInWhoisAsAdmin(false)
-            .setVisibleInWhoisAsTech(false)
+            .setVisibleInRdapAsAdmin(false)
+            .setVisibleInRdapAsTech(false)
             .build(),
         new RegistrarPoc.Builder()
             .setRegistrar(registrar)
@@ -207,8 +207,8 @@ class RdapJsonFormatterTest {
             .setEmailAddress("johndoe@example.com")
             .setFaxNumber("+1.2125551213")
             .setTypes(ImmutableSet.of(RegistrarPoc.Type.ADMIN))
-            .setVisibleInWhoisAsAdmin(false)
-            .setVisibleInWhoisAsTech(true)
+            .setVisibleInRdapAsAdmin(false)
+            .setVisibleInRdapAsTech(true)
             .build(),
         new RegistrarPoc.Builder()
             .setRegistrar(registrar)
@@ -216,8 +216,8 @@ class RdapJsonFormatterTest {
             .setEmailAddress("janedoe@example.com")
             .setPhoneNumber("+1.2125551215")
             .setTypes(ImmutableSet.of(RegistrarPoc.Type.TECH, RegistrarPoc.Type.ADMIN))
-            .setVisibleInWhoisAsAdmin(true)
-            .setVisibleInWhoisAsTech(false)
+            .setVisibleInRdapAsAdmin(true)
+            .setVisibleInRdapAsTech(false)
             .build(),
         new RegistrarPoc.Builder()
             .setRegistrar(registrar)
@@ -226,8 +226,8 @@ class RdapJsonFormatterTest {
             .setPhoneNumber("+1.2125551217")
             .setFaxNumber("+1.2125551218")
             .setTypes(ImmutableSet.of(RegistrarPoc.Type.BILLING))
-            .setVisibleInWhoisAsAdmin(true)
-            .setVisibleInWhoisAsTech(true)
+            .setVisibleInRdapAsAdmin(true)
+            .setVisibleInRdapAsTech(true)
             .build());
   }
 

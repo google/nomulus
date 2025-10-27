@@ -59,7 +59,7 @@ class RegistrarPocCommandTest extends CommandTestCase<RegistrarPocCommand> {
                             .setName("John Doe")
                             .setEmailAddress("john.doe@example.com")
                             .setTypes(ImmutableSet.of(ADMIN))
-                            .setVisibleInWhoisAsAdmin(true)
+                            .setVisibleInRdapAsAdmin(true)
                             .build())));
     runCommandForced("--mode=LIST", "--output=" + output, "NewRegistrar");
     assertThat(Files.readAllLines(Paths.get(output), UTF_8))
@@ -67,9 +67,9 @@ class RegistrarPocCommandTest extends CommandTestCase<RegistrarPocCommand> {
             "John Doe",
             "john.doe@example.com",
             "Types: [ADMIN]",
-            "Visible in registrar WHOIS query as Admin contact: Yes",
-            "Visible in registrar WHOIS query as Technical contact: No",
-            "Phone number and email visible in domain WHOIS query as "
+            "Visible in registrar RDAP query as Admin contact: Yes",
+            "Visible in registrar RDAP query as Technical contact: No",
+            "Phone number and email visible in domain RDAP query as "
                 + "Registrar Abuse contact info: No");
   }
 
@@ -83,9 +83,9 @@ class RegistrarPocCommandTest extends CommandTestCase<RegistrarPocCommand> {
                 .setName("Judith Doe")
                 .setEmailAddress("judith.doe@example.com")
                 .setTypes(ImmutableSet.of(WHOIS))
-                .setVisibleInWhoisAsAdmin(true)
-                .setVisibleInWhoisAsTech(true)
-                .setVisibleInDomainWhoisAsAbuse(false)
+                .setVisibleInRdapAsAdmin(true)
+                .setVisibleInRdapAsTech(true)
+                .setVisibleInDomainRdapAsAbuse(false)
                 .build());
     persistResources(contacts);
     runCommandForced(
@@ -95,9 +95,9 @@ class RegistrarPocCommandTest extends CommandTestCase<RegistrarPocCommand> {
         "--phone=+1.2125650000",
         "--fax=+1.2125650001",
         "--contact_type=WHOIS",
-        "--visible_in_whois_as_admin=true",
-        "--visible_in_whois_as_tech=false",
-        "--visible_in_domain_whois_as_abuse=false",
+        "--visible_in_rdap_as_admin=true",
+        "--visible_in_rdap_as_tech=false",
+        "--visible_in_domain_rdap_as_abuse=false",
         "NewRegistrar");
     RegistrarPoc registrarPoc = loadRegistrar("NewRegistrar").getContacts().asList().get(1);
     assertAboutImmutableObjects()
@@ -110,15 +110,15 @@ class RegistrarPocCommandTest extends CommandTestCase<RegistrarPocCommand> {
                 .setPhoneNumber("+1.2125650000")
                 .setFaxNumber("+1.2125650001")
                 .setTypes(ImmutableSet.of(WHOIS))
-                .setVisibleInWhoisAsAdmin(true)
-                .setVisibleInWhoisAsTech(false)
-                .setVisibleInDomainWhoisAsAbuse(false)
+                .setVisibleInRdapAsAdmin(true)
+                .setVisibleInRdapAsTech(false)
+                .setVisibleInDomainRdapAsAbuse(false)
                 .build(),
             "id");
   }
 
   @Test
-  void testUpdate_unsetOtherWhoisAbuseFlags() throws Exception {
+  void testUpdate_unsetOtherRdapAbuseFlags() throws Exception {
     Registrar registrar = loadRegistrar("NewRegistrar");
     persistResource(
         new RegistrarPoc.Builder()
@@ -131,33 +131,33 @@ class RegistrarPocCommandTest extends CommandTestCase<RegistrarPocCommand> {
             .setRegistrar(registrar)
             .setName("Johnna Doe")
             .setEmailAddress("johnna.doe@example.com")
-            .setVisibleInDomainWhoisAsAbuse(true)
+            .setVisibleInDomainRdapAsAbuse(true)
             .build());
     runCommandForced(
         "--mode=UPDATE",
         "--email=john.doe@example.com",
-        "--visible_in_domain_whois_as_abuse=true",
+        "--visible_in_domain_rdap_as_abuse=true",
         "NewRegistrar");
     ImmutableList<RegistrarPoc> registrarPocs =
         loadRegistrar("NewRegistrar").getContacts().asList();
     for (RegistrarPoc registrarPoc : registrarPocs) {
       if ("John Doe".equals(registrarPoc.getName())) {
-        assertThat(registrarPoc.getVisibleInDomainWhoisAsAbuse()).isTrue();
+        assertThat(registrarPoc.getVisibleInDomainRdapAsAbuse()).isTrue();
       } else {
-        assertThat(registrarPoc.getVisibleInDomainWhoisAsAbuse()).isFalse();
+        assertThat(registrarPoc.getVisibleInDomainRdapAsAbuse()).isFalse();
       }
     }
   }
 
   @Test
-  void testUpdate_cannotUnsetOnlyWhoisAbuseContact() {
+  void testUpdate_cannotUnsetOnlyRdapAbuseContact() {
     Registrar registrar = loadRegistrar("NewRegistrar");
     persistResource(
         new RegistrarPoc.Builder()
             .setRegistrar(registrar)
             .setName("John Doe")
             .setEmailAddress("john.doe@example.com")
-            .setVisibleInDomainWhoisAsAbuse(true)
+            .setVisibleInDomainRdapAsAbuse(true)
             .build());
     IllegalArgumentException thrown =
         assertThrows(
@@ -166,13 +166,13 @@ class RegistrarPocCommandTest extends CommandTestCase<RegistrarPocCommand> {
                 runCommandForced(
                     "--mode=UPDATE",
                     "--email=john.doe@example.com",
-                    "--visible_in_domain_whois_as_abuse=false",
+                    "--visible_in_domain_rdap_as_abuse=false",
                     "NewRegistrar"));
     assertThat(thrown)
         .hasMessageThat()
-        .contains("Cannot clear visible_in_domain_whois_as_abuse flag");
+        .contains("Cannot clear visible_in_domain_rdap_as_abuse flag");
     RegistrarPoc registrarPoc = loadRegistrar("NewRegistrar").getContacts().asList().get(1);
-    assertThat(registrarPoc.getVisibleInDomainWhoisAsAbuse()).isTrue();
+    assertThat(registrarPoc.getVisibleInDomainRdapAsAbuse()).isTrue();
   }
 
   @Test
@@ -187,9 +187,9 @@ class RegistrarPocCommandTest extends CommandTestCase<RegistrarPocCommand> {
                 .setPhoneNumber("123-456-7890")
                 .setFaxNumber("123-456-7890")
                 .setTypes(ImmutableSet.of(ADMIN, ABUSE))
-                .setVisibleInWhoisAsAdmin(true)
-                .setVisibleInWhoisAsTech(true)
-                .setVisibleInDomainWhoisAsAbuse(true)
+                .setVisibleInRdapAsAdmin(true)
+                .setVisibleInRdapAsTech(true)
+                .setVisibleInDomainRdapAsAbuse(true)
                 .build());
     runCommandForced("--mode=UPDATE", "--email=john.doe@example.com", "NewRegistrar");
     RegistrarPoc registrarPoc = loadRegistrar("NewRegistrar").getContacts().asList().get(1);
@@ -198,12 +198,12 @@ class RegistrarPocCommandTest extends CommandTestCase<RegistrarPocCommand> {
     assertThat(registrarPoc.getPhoneNumber()).isEqualTo(existingContact.getPhoneNumber());
     assertThat(registrarPoc.getFaxNumber()).isEqualTo(existingContact.getFaxNumber());
     assertThat(registrarPoc.getTypes()).isEqualTo(existingContact.getTypes());
-    assertThat(registrarPoc.getVisibleInWhoisAsAdmin())
-        .isEqualTo(existingContact.getVisibleInWhoisAsAdmin());
-    assertThat(registrarPoc.getVisibleInWhoisAsTech())
-        .isEqualTo(existingContact.getVisibleInWhoisAsTech());
-    assertThat(registrarPoc.getVisibleInDomainWhoisAsAbuse())
-        .isEqualTo(existingContact.getVisibleInDomainWhoisAsAbuse());
+    assertThat(registrarPoc.getVisibleInRdapAsAdmin())
+        .isEqualTo(existingContact.getVisibleInRdapAsAdmin());
+    assertThat(registrarPoc.getVisibleInRdapAsTech())
+        .isEqualTo(existingContact.getVisibleInRdapAsTech());
+    assertThat(registrarPoc.getVisibleInDomainRdapAsAbuse())
+        .isEqualTo(existingContact.getVisibleInDomainRdapAsAbuse());
   }
 
   @Test
@@ -217,9 +217,9 @@ class RegistrarPocCommandTest extends CommandTestCase<RegistrarPocCommand> {
             .setPhoneNumber("123-456-7890")
             .setFaxNumber("123-456-7890")
             .setTypes(ImmutableSet.of(ADMIN, ABUSE))
-            .setVisibleInWhoisAsAdmin(true)
-            .setVisibleInWhoisAsTech(true)
-            .setVisibleInDomainWhoisAsAbuse(true)
+            .setVisibleInRdapAsAdmin(true)
+            .setVisibleInRdapAsTech(true)
+            .setVisibleInDomainRdapAsAbuse(true)
             .build());
     runCommandForced(
         "--mode=UPDATE",
@@ -254,9 +254,9 @@ class RegistrarPocCommandTest extends CommandTestCase<RegistrarPocCommand> {
         "--name=Jim Doe",
         "--email=jim.doe@example.com",
         "--contact_type=ADMIN,ABUSE",
-        "--visible_in_whois_as_admin=true",
-        "--visible_in_whois_as_tech=false",
-        "--visible_in_domain_whois_as_abuse=true",
+        "--visible_in_rdap_as_admin=true",
+        "--visible_in_rdap_as_tech=false",
+        "--visible_in_domain_rdap_as_abuse=true",
         "NewRegistrar");
     RegistrarPoc registrarPoc = loadRegistrar("NewRegistrar").getContacts().asList().get(1);
     assertAboutImmutableObjects()
@@ -267,9 +267,9 @@ class RegistrarPocCommandTest extends CommandTestCase<RegistrarPocCommand> {
                 .setName("Jim Doe")
                 .setEmailAddress("jim.doe@example.com")
                 .setTypes(ImmutableSet.of(ADMIN, ABUSE))
-                .setVisibleInWhoisAsAdmin(true)
-                .setVisibleInWhoisAsTech(false)
-                .setVisibleInDomainWhoisAsAbuse(true)
+                .setVisibleInRdapAsAdmin(true)
+                .setVisibleInRdapAsTech(false)
+                .setVisibleInDomainRdapAsAbuse(true)
                 .build(),
             "id");
   }
@@ -282,16 +282,16 @@ class RegistrarPocCommandTest extends CommandTestCase<RegistrarPocCommand> {
   }
 
   @Test
-  void testDelete_failsOnDomainWhoisAbuseContact() {
+  void testDelete_failsOnDomainRdapAbuseContact() {
     RegistrarPoc registrarPoc = loadRegistrar("NewRegistrar").getContacts().asList().getFirst();
-    persistResource(registrarPoc.asBuilder().setVisibleInDomainWhoisAsAbuse(true).build());
+    persistResource(registrarPoc.asBuilder().setVisibleInDomainRdapAsAbuse(true).build());
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
             () ->
                 runCommandForced(
                     "--mode=DELETE", "--email=janedoe@theregistrar.com", "NewRegistrar"));
-    assertThat(thrown).hasMessageThat().contains("Cannot delete the domain WHOIS abuse contact");
+    assertThat(thrown).hasMessageThat().contains("Cannot delete the domain RDAP abuse contact");
     assertThat(loadRegistrar("NewRegistrar").getContacts()).isNotEmpty();
   }
 

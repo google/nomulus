@@ -658,7 +658,7 @@ public class RdapJsonFormatter {
   }
 
   /**
-   * Creates the list of RDAP roles for a registrar POC, using the visibleInWhoisAs* flags.
+   * Creates the list of RDAP roles for a registrar POC, using the visibleInRdapAs* flags.
    *
    * <p>Only POCs with a non-empty role list should be visible.
    *
@@ -672,13 +672,13 @@ public class RdapJsonFormatter {
    */
   private static ImmutableList<RdapEntity.Role> makeRdapRoleList(RegistrarPoc registrarPoc) {
     ImmutableList.Builder<RdapEntity.Role> rolesBuilder = new ImmutableList.Builder<>();
-    if (registrarPoc.getVisibleInWhoisAsAdmin()) {
+    if (registrarPoc.getVisibleInRdapAsAdmin()) {
       rolesBuilder.add(RdapEntity.Role.ADMIN);
     }
-    if (registrarPoc.getVisibleInWhoisAsTech()) {
+    if (registrarPoc.getVisibleInRdapAsTech()) {
       rolesBuilder.add(RdapEntity.Role.TECH);
     }
-    if (registrarPoc.getVisibleInDomainWhoisAsAbuse()) {
+    if (registrarPoc.getVisibleInDomainRdapAsAbuse()) {
       rolesBuilder.add(RdapEntity.Role.ABUSE);
     }
     return rolesBuilder.build();

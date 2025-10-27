@@ -221,8 +221,8 @@ class SendExpiringCertificateNotificationEmailActionTest {
                 .setPhoneNumber("+1.3105551213")
                 .setFaxNumber("+1.3105551213")
                 .setTypes(ImmutableSet.of(RegistrarPoc.Type.TECH))
-                .setVisibleInWhoisAsAdmin(true)
-                .setVisibleInWhoisAsTech(false)
+                .setVisibleInRdapAsAdmin(true)
+                .setVisibleInRdapAsTech(false)
                 .build());
     persistResources(contacts);
     RuntimeException thrown =
@@ -511,8 +511,8 @@ class SendExpiringCertificateNotificationEmailActionTest {
                 .setPhoneNumber("+1.3105551213")
                 .setFaxNumber("+1.3105551213")
                 .setTypes(ImmutableSet.of(RegistrarPoc.Type.TECH))
-                .setVisibleInWhoisAsAdmin(true)
-                .setVisibleInWhoisAsTech(false)
+                .setVisibleInRdapAsAdmin(true)
+                .setVisibleInRdapAsTech(false)
                 .build(),
             new RegistrarPoc.Builder()
                 .setRegistrar(registrar)
@@ -529,8 +529,8 @@ class SendExpiringCertificateNotificationEmailActionTest {
                 .setPhoneNumber("+1.3105551213")
                 .setFaxNumber("+1.3105551213")
                 .setTypes(ImmutableSet.of(RegistrarPoc.Type.TECH))
-                .setVisibleInWhoisAsAdmin(true)
-                .setVisibleInWhoisAsTech(false)
+                .setVisibleInRdapAsAdmin(true)
+                .setVisibleInRdapAsTech(false)
                 .build(),
             new RegistrarPoc.Builder()
                 .setRegistrar(registrar)
@@ -547,7 +547,7 @@ class SendExpiringCertificateNotificationEmailActionTest {
                 .setPhoneNumber("+1.3105551215")
                 .setFaxNumber("+1.3105551216")
                 .setTypes(ImmutableSet.of(RegistrarPoc.Type.ADMIN))
-                .setVisibleInWhoisAsTech(true)
+                .setVisibleInRdapAsTech(true)
                 .build());
     persistResources(contacts);
     assertThat(action.getEmailAddresses(registrar, Type.TECH))

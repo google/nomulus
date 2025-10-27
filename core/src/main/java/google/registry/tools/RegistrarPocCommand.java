@@ -103,28 +103,27 @@ final class RegistrarPocCommand extends MutatingCommand {
 
   @Nullable
   @Parameter(
-      names = "--visible_in_whois_as_admin",
-      description = " Whether this contact is publicly visible in WHOIS results as an "
-          + "Admin contact.",
+      names = "--visible_in_rdap_as_admin",
+      description = "If this contact is publicly visible in RDAP results as an " + "Admin contact.",
       arity = 1)
-  private Boolean visibleInWhoisAsAdmin;
+  private Boolean visibleInRdapAsAdmin;
 
   @Nullable
   @Parameter(
-      names = "--visible_in_whois_as_tech",
-      description = " Whether this contact is publicly visible in WHOIS results as a "
-          + "Tech contact.",
+      names = "--visible_in_rdap_as_tech",
+      description = "If this contact is publicly visible in RDAP results as a " + "Tech contact.",
       arity = 1)
-  private Boolean visibleInWhoisAsTech;
+  private Boolean visibleInRdapAsTech;
 
   @Nullable
   @Parameter(
-      names = "--visible_in_domain_whois_as_abuse",
-      description = " Whether this contact is publicly visible in WHOIS domain results as the "
-          + "registry abuse phone and email. If this flag is set, it will be cleared from all "
-          + "other contacts for the same registrar.",
+      names = "--visible_in_domain_rdap_as_abuse",
+      description =
+          " Whether this contact is publicly visible in RDAP domain results as the "
+              + "registry abuse phone and email. If this flag is set, it will be cleared from all "
+              + "other contacts for the same registrar.",
       arity = 1)
-  private Boolean visibleInDomainWhoisAsAbuse;
+  private Boolean visibleInDomainRdapAsAbuse;
 
   @Parameter(
       names = {"-o", "--output"},
@@ -166,8 +165,8 @@ final class RegistrarPocCommand extends MutatingCommand {
       case LIST -> listContacts(contacts);
       case CREATE -> {
         stageEntityChange(null, createContact(registrar));
-        if (visibleInDomainWhoisAsAbuse != null && visibleInDomainWhoisAsAbuse) {
-          unsetOtherWhoisAbuseFlags(contacts, null);
+        if (visibleInDomainRdapAsAbuse != null && visibleInDomainRdapAsAbuse) {
+          unsetOtherRdapAbuseFlags(contacts, null);
         }
       }
       case UPDATE -> {
@@ -178,13 +177,13 @@ final class RegistrarPocCommand extends MutatingCommand {
                 email);
         RegistrarPoc newContact = updateContact(oldContact, registrar);
         checkArgument(
-            !oldContact.getVisibleInDomainWhoisAsAbuse()
-                || newContact.getVisibleInDomainWhoisAsAbuse(),
-            "Cannot clear visible_in_domain_whois_as_abuse flag, as that would leave no domain"
-                + " WHOIS abuse contacts; instead, set the flag on another contact");
+            !oldContact.getVisibleInDomainRdapAsAbuse()
+                || newContact.getVisibleInDomainRdapAsAbuse(),
+            "Cannot clear visible_in_domain_rdap_as_abuse flag, as that would leave no domain"
+                + " RDAP abuse contacts; instead, set the flag on another contact");
         stageEntityChange(oldContact, newContact);
-        if (visibleInDomainWhoisAsAbuse != null && visibleInDomainWhoisAsAbuse) {
-          unsetOtherWhoisAbuseFlags(contacts, oldContact.getEmailAddress());
+        if (visibleInDomainRdapAsAbuse != null && visibleInDomainRdapAsAbuse) {
+          unsetOtherRdapAbuseFlags(contacts, oldContact.getEmailAddress());
         }
       }
       case DELETE -> {
@@ -194,8 +193,8 @@ final class RegistrarPocCommand extends MutatingCommand {
                 "No contact with the given email: %s",
                 email);
         checkArgument(
-            !oldContact.getVisibleInDomainWhoisAsAbuse(),
-            "Cannot delete the domain WHOIS abuse contact; set the flag on another contact first");
+            !oldContact.getVisibleInDomainRdapAsAbuse(),
+            "Cannot delete the domain RDAP abuse contact; set the flag on another contact first");
         stageEntityChange(oldContact, null);
       }
       default -> throw new AssertionError();
@@ -228,14 +227,14 @@ final class RegistrarPocCommand extends MutatingCommand {
     }
     builder.setTypes(nullToEmpty(contactTypes));
 
-    if (visibleInWhoisAsAdmin != null) {
-      builder.setVisibleInWhoisAsAdmin(visibleInWhoisAsAdmin);
+    if (visibleInRdapAsAdmin != null) {
+      builder.setVisibleInRdapAsAdmin(visibleInRdapAsAdmin);
     }
-    if (visibleInWhoisAsTech != null) {
-      builder.setVisibleInWhoisAsTech(visibleInWhoisAsTech);
+    if (visibleInRdapAsTech != null) {
+      builder.setVisibleInRdapAsTech(visibleInRdapAsTech);
     }
-    if (visibleInDomainWhoisAsAbuse != null) {
-      builder.setVisibleInDomainWhoisAsAbuse(visibleInDomainWhoisAsAbuse);
+    if (visibleInDomainRdapAsAbuse != null) {
+      builder.setVisibleInDomainRdapAsAbuse(visibleInDomainRdapAsAbuse);
     }
     return builder.build();
   }
@@ -257,24 +256,24 @@ final class RegistrarPocCommand extends MutatingCommand {
     if (contactTypes != null) {
       builder.setTypes(contactTypes);
     }
-    if (visibleInWhoisAsAdmin != null) {
-      builder.setVisibleInWhoisAsAdmin(visibleInWhoisAsAdmin);
+    if (visibleInRdapAsAdmin != null) {
+      builder.setVisibleInRdapAsAdmin(visibleInRdapAsAdmin);
     }
-    if (visibleInWhoisAsTech != null) {
-      builder.setVisibleInWhoisAsTech(visibleInWhoisAsTech);
+    if (visibleInRdapAsTech != null) {
+      builder.setVisibleInRdapAsTech(visibleInRdapAsTech);
     }
-    if (visibleInDomainWhoisAsAbuse != null) {
-      builder.setVisibleInDomainWhoisAsAbuse(visibleInDomainWhoisAsAbuse);
+    if (visibleInDomainRdapAsAbuse != null) {
+      builder.setVisibleInDomainRdapAsAbuse(visibleInDomainRdapAsAbuse);
     }
     return builder.build();
   }
 
-  private void unsetOtherWhoisAbuseFlags(
+  private void unsetOtherRdapAbuseFlags(
       ImmutableSet<RegistrarPoc> contacts, @Nullable String emailAddressNotToChange) {
     for (RegistrarPoc contact : contacts) {
       if (!contact.getEmailAddress().equals(emailAddressNotToChange)
-          && contact.getVisibleInDomainWhoisAsAbuse()) {
-        RegistrarPoc newContact = contact.asBuilder().setVisibleInDomainWhoisAsAbuse(false).build();
+          && contact.getVisibleInDomainRdapAsAbuse()) {
+        RegistrarPoc newContact = contact.asBuilder().setVisibleInDomainRdapAsAbuse(false).build();
         stageEntityChange(contact, newContact);
       }
     }

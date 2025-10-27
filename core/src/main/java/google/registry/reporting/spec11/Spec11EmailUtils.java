@@ -226,7 +226,7 @@ public class Spec11EmailUtils {
 
   private InternetAddress getEmailAddressForRegistrar(String registrarId)
       throws MessagingException {
-    // Attempt to use the registrar's WHOIS abuse contact, then fall back to the regular address.
+    // Attempt to use the registrar's RDAP abuse contact, then fall back to the regular address.
     Registrar registrar =
         Registrar.loadByRegistrarIdCached(registrarId)
             .orElseThrow(
@@ -235,7 +235,7 @@ public class Spec11EmailUtils {
                         String.format("Could not find registrar %s", registrarId)));
     return new InternetAddress(
         registrar
-            .getWhoisAbuseContact()
+            .getRdapAbuseContact()
             .map(RegistrarPoc::getEmailAddress)
             .orElse(registrar.getEmailAddress()));
   }

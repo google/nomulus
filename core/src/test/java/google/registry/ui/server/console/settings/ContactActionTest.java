@@ -14,7 +14,6 @@
 
 package google.registry.ui.server.console.settings;
 
-import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.registrar.RegistrarPoc.Type.ABUSE;
 import static google.registry.model.registrar.RegistrarPoc.Type.ADMIN;
@@ -63,8 +62,8 @@ class ContactActionTest extends ConsoleActionBaseTestCase {
           + "\"emailAddress\":\"test.registrar1@example.com\","
           + "\"registrarId\":\"registrarId\","
           + "\"phoneNumber\":\"+1.9999999999\",\"faxNumber\":\"+1.9999999991\","
-          + "\"types\":[\"ADMIN\"],\"visibleInWhoisAsAdmin\":true,"
-          + "\"visibleInWhoisAsTech\":false,\"visibleInDomainWhoisAsAbuse\":false}";
+          + "\"types\":[\"ADMIN\"],\"visibleInRdapAsAdmin\":true,"
+          + "\"visibleInRdapAsTech\":false,\"visibleInDomainRdapAsAbuse\":false}";
 
   private Registrar testRegistrar;
   private RegistrarPoc adminPoc;
@@ -83,17 +82,17 @@ class ContactActionTest extends ConsoleActionBaseTestCase {
                 .setPhoneNumber("+1.9999999999")
                 .setFaxNumber("+1.9999999991")
                 .setTypes(ImmutableSet.of(ADMIN))
-                .setVisibleInWhoisAsAdmin(true)
-                .setVisibleInWhoisAsTech(false)
-                .setVisibleInDomainWhoisAsAbuse(false)
+                .setVisibleInRdapAsAdmin(true)
+                .setVisibleInRdapAsTech(false)
+                .setVisibleInDomainRdapAsAbuse(false)
                 .build());
     techPoc =
         adminPoc
             .asBuilder()
             .setName("Test Registrar 2")
             .setTypes(ImmutableSet.of(TECH))
-            .setVisibleInWhoisAsTech(true)
-            .setVisibleInWhoisAsAdmin(false)
+            .setVisibleInRdapAsTech(true)
+            .setVisibleInRdapAsAdmin(false)
             .setEmailAddress("test.registrar2@example.com")
             .setPhoneNumber("+1.1234567890")
             .setFaxNumber("+1.1234567891")
@@ -103,7 +102,7 @@ class ContactActionTest extends ConsoleActionBaseTestCase {
             .asBuilder()
             .setName("Test Registrar 3")
             .setTypes(ImmutableSet.of(MARKETING))
-            .setVisibleInWhoisAsAdmin(false)
+            .setVisibleInRdapAsAdmin(false)
             .setEmailAddress("test.registrar3@example.com")
             .setPhoneNumber("+1.1238675309")
             .setFaxNumber("+1.1238675309")
@@ -137,8 +136,7 @@ class ContactActionTest extends ConsoleActionBaseTestCase {
     assertThat(
             loadAllOf(RegistrarPoc.class).stream()
                 .filter(r -> r.registrarId.equals(testRegistrar.getRegistrarId()))
-                .map(r -> r.getName())
-                .collect(toImmutableList()))
+                .map(r -> r.getName()))
         .containsExactly("Test Registrar 1", "Test Registrar 2");
   }
 
@@ -183,8 +181,7 @@ class ContactActionTest extends ConsoleActionBaseTestCase {
     assertThat(
             loadAllOf(RegistrarPoc.class).stream()
                 .filter(r -> r.registrarId.equals(testRegistrar.getRegistrarId()))
-                .map(r -> r.getName())
-                .collect(toImmutableList()))
+                .map(r -> r.getName()))
         .containsExactly("Test Registrar 1", "Test Registrar 2");
   }
 
@@ -201,8 +198,7 @@ class ContactActionTest extends ConsoleActionBaseTestCase {
     assertThat(response.getPayload()).isEqualTo("Must have at least one primary contact");
     assertThat(
             loadAllOf(RegistrarPoc.class).stream()
-                .filter(r -> r.registrarId.equals(testRegistrar.getRegistrarId()))
-                .collect(toImmutableList()))
+                .filter(r -> r.registrarId.equals(testRegistrar.getRegistrarId())))
         .containsExactly(adminPoc);
   }
 
@@ -225,42 +221,40 @@ class ContactActionTest extends ConsoleActionBaseTestCase {
         .isEqualTo("Please provide a phone number for at least one technical contact");
     assertThat(
             loadAllOf(RegistrarPoc.class).stream()
-                .filter(r -> r.registrarId.equals(testRegistrar.getRegistrarId()))
-                .collect(toImmutableList()))
+                .filter(r -> r.registrarId.equals(testRegistrar.getRegistrarId())))
         .containsExactly(adminPoc);
   }
 
   @Test
-  void testFailure_postUpdateContactInfo_whoisContactMissingPhoneNumber() throws IOException {
+  void testFailure_postUpdateContactInfo_rdapContactMissingPhoneNumber() throws IOException {
     ContactAction action =
         createAction(
             Action.Method.POST,
             fteUser,
             testRegistrar.getRegistrarId(),
-            techPoc.asBuilder().setPhoneNumber(null).setVisibleInDomainWhoisAsAbuse(true).build());
+            techPoc.asBuilder().setPhoneNumber(null).setVisibleInDomainRdapAsAbuse(true).build());
     action.run();
     assertThat(response.getStatus()).isEqualTo(SC_BAD_REQUEST);
     assertThat(response.getPayload())
-        .isEqualTo("The abuse contact visible in domain WHOIS query must have a phone number");
+        .isEqualTo("The abuse contact visible in domain RDAP query must have a phone number");
   }
 
   @Test
-  void testFailure_postUpdateContactInfo_whoisContactPhoneNumberRemoved() throws IOException {
-    adminPoc = persistResource(adminPoc.asBuilder().setVisibleInDomainWhoisAsAbuse(true).build());
+  void testFailure_postUpdateContactInfo_rdapContactPhoneNumberRemoved() throws IOException {
+    adminPoc = persistResource(adminPoc.asBuilder().setVisibleInDomainRdapAsAbuse(true).build());
     ContactAction action =
         createAction(
             Action.Method.PUT,
             fteUser,
             testRegistrar.getRegistrarId(),
-            adminPoc.asBuilder().setVisibleInDomainWhoisAsAbuse(false).build());
+            adminPoc.asBuilder().setVisibleInDomainRdapAsAbuse(false).build());
     action.run();
     assertThat(response.getStatus()).isEqualTo(SC_BAD_REQUEST);
     assertThat(response.getPayload())
-        .isEqualTo("An abuse contact visible in domain WHOIS query must be designated");
+        .isEqualTo("An abuse contact visible in domain RDAP query must be designated");
     assertThat(
             loadAllOf(RegistrarPoc.class).stream()
-                .filter(r -> r.registrarId.equals(testRegistrar.getRegistrarId()))
-                .collect(toImmutableList()))
+                .filter(r -> r.registrarId.equals(testRegistrar.getRegistrarId())))
         .containsExactly(adminPoc);
   }
 
@@ -291,19 +285,16 @@ by admin fte@email.tld:
 contacts:
     ADDED:
         {id=5, name=Test Registrar 2, emailAddress=incorrect@example.com, registrarId=registrarId, \
-phoneNumber=+1.1234567890, faxNumber=+1.1234567891, types=[TECH], visibleInWhoisAsAdmin=false, \
-visibleInWhoisAsTech=true, visibleInDomainWhoisAsAbuse=false, \
-allowedToSetRegistryLockPassword=false}
+phoneNumber=+1.1234567890, faxNumber=+1.1234567891, types=[TECH], visibleInRdapAsAdmin=false, \
+visibleInRdapAsTech=true, visibleInDomainRdapAsAbuse=false}
     REMOVED:
         {id=5, name=Test Registrar 2, emailAddress=test.registrar2@example.com, \
 registrarId=registrarId, phoneNumber=+1.1234567890, faxNumber=+1.1234567891, types=[TECH], \
-visibleInWhoisAsAdmin=false, visibleInWhoisAsTech=true, visibleInDomainWhoisAsAbuse=false, \
-allowedToSetRegistryLockPassword=false}
+visibleInRdapAsAdmin=false, visibleInRdapAsTech=true, visibleInDomainRdapAsAbuse=false}
     FINAL CONTENTS:
         {id=5, name=Test Registrar 2, emailAddress=incorrect@example.com, registrarId=registrarId, \
-phoneNumber=+1.1234567890, faxNumber=+1.1234567891, types=[TECH], visibleInWhoisAsAdmin=false, \
-visibleInWhoisAsTech=true, visibleInDomainWhoisAsAbuse=false, \
-allowedToSetRegistryLockPassword=false}
+phoneNumber=+1.1234567890, faxNumber=+1.1234567891, types=[TECH], visibleInRdapAsAdmin=false, \
+visibleInRdapAsTech=true, visibleInDomainRdapAsAbuse=false}
 """)
                 .setRecipients(ImmutableList.of(new InternetAddress("notification@test.example")))
                 .build());
@@ -319,8 +310,7 @@ allowedToSetRegistryLockPassword=false}
     assertThat(
             loadAllOf(RegistrarPoc.class).stream()
                 .filter(r -> r.registrarId.equals(testRegistrar.getRegistrarId()))
-                .map(r -> r.getName())
-                .collect(toImmutableList()))
+                .map(r -> r.getName()))
         .containsExactly("Test Registrar 1", "Test Registrar 2");
   }
 

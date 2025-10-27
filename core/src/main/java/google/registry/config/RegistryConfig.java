@@ -1556,12 +1556,7 @@ public final class RegistryConfig {
     return CONFIG_SETTINGS.get().gSuite.outgoingEmailDisplayName;
   }
 
-  /**
-   * Returns default WHOIS server to use when {@code Registrar#getWhoisServer()} is {@code null}.
-   *
-   * @see "google.registry.whois.DomainWhoisResponse"
-   * @see "google.registry.whois.RegistrarWhoisResponse"
-   */
+  /** Returns default WHOIS server to use when {@code Registrar#getWhoisServer()} is null. */
   public static String getDefaultRegistrarWhoisServer() {
     return CONFIG_SETTINGS.get().registryPolicy.defaultRegistrarWhoisServer;
   }

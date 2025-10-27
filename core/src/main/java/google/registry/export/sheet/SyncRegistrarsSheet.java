@@ -128,10 +128,10 @@ class SyncRegistrarsSheet {
                   builder.put("billingContacts", convertContacts(contacts, byType(BILLING)));
                   builder.put(
                       "contactsMarkedAsWhoisAdmin",
-                      convertContacts(contacts, RegistrarPoc::getVisibleInWhoisAsAdmin));
+                      convertContacts(contacts, RegistrarPoc::getVisibleInRdapAsAdmin));
                   builder.put(
                       "contactsMarkedAsWhoisTech",
-                      convertContacts(contacts, RegistrarPoc::getVisibleInWhoisAsTech));
+                      convertContacts(contacts, RegistrarPoc::getVisibleInRdapAsTech));
                   builder.put("emailAddress", convert(registrar.getEmailAddress()));
                   builder.put("address.street", convert(address.getStreet()));
                   builder.put("address.city", convert(address.getCity()));
