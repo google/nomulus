@@ -27,6 +27,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedSet;
 import com.google.gson.annotations.Expose;
 import google.registry.model.Buildable;
+import google.registry.model.GetterDelegate;
 import google.registry.model.ImmutableObject;
 import google.registry.model.JsonMapBuilder;
 import google.registry.model.Jsonifiable;
@@ -110,6 +111,7 @@ public class RegistrarPoc extends ImmutableObject implements Jsonifiable, Unsafe
    * data is internal to the registry.
    */
   @Enumerated(EnumType.STRING)
+  @GetterDelegate(methodName = "getTypes")
   @Expose
   Set<Type> types;
 
