@@ -1,4 +1,4 @@
-// Copyright 2017 The Nomulus Authors. All Rights Reserved.
+// Copyright 2025 The Nomulus Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -29,7 +29,7 @@ import jakarta.xml.bind.annotation.XmlType;
 import java.util.List;
 import org.joda.time.DateTime;
 
-/** The version 0.12 response command entity for a domain check on a single resource. */
+/** The version 1.0 response command entity for a domain check on a single resource. */
 @XmlType(propOrder = {"period", "fee", "feeClass", "effectiveDate", "notAfterDate"})
 public class FeeCheckResponseExtensionItemCommandStdV1 extends ImmutableObject {
 

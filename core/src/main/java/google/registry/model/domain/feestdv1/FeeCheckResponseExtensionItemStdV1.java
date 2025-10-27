@@ -1,4 +1,4 @@
-// Copyright 2017 The Nomulus Authors. All Rights Reserved.
+// Copyright 2025 The Nomulus Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -25,7 +25,7 @@ import google.registry.model.domain.fee.FeeQueryCommandExtensionItem.CommandName
 import jakarta.xml.bind.annotation.XmlType;
 import org.joda.time.DateTime;
 
-/** The version 0.12 response for a domain check on a single resource. */
+/** The version 1.0 response for a domain check on a single resource. */
 @XmlType(propOrder = {"object", "command"})
 public class FeeCheckResponseExtensionItemStdV1 extends FeeCheckResponseExtensionItem {
 

@@ -1,4 +1,4 @@
-// Copyright 2017 The Nomulus Authors. All Rights Reserved.
+// Copyright 2025 The Nomulus Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
 
 @XmlSchema(
     namespace = "urn:ietf:params:xml:ns:epp:fee-1.0",
-    xmlns = @XmlNs(prefix = "feestdv1", namespaceURI = "urn:ietf:params:xml:ns:epp:fee-1.0"),
+    xmlns = @XmlNs(prefix = "fee_1_00", namespaceURI = "urn:ietf:params:xml:ns:epp:fee-1.0"),
     elementFormDefault = XmlNsForm.QUALIFIED)
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlJavaTypeAdapters({

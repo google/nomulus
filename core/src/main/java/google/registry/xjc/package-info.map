@@ -6,7 +6,7 @@ eppcom urn:ietf:params:xml:ns:eppcom-1.0
 fee06 urn:ietf:params:xml:ns:fee-0.6
 fee11 urn:ietf:params:xml:ns:fee-0.11
 fee12 urn:ietf:params:xml:ns:fee-0.12
-feestdv1 urn:ietf:params:xml:ns:epp:fee-1.0
+fee_1_00 urn:ietf:params:xml:ns:epp:fee-1.0
 host urn:ietf:params:xml:ns:host-1.0
 iirdea urn:ietf:params:xml:ns:iirdea-1.0
 launch urn:ietf:params:xml:ns:launch-1.0

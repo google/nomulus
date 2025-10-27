@@ -1,4 +1,4 @@
-// Copyright 2017 The Nomulus Authors. All Rights Reserved.
+// Copyright 2025 The Nomulus Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -26,7 +26,7 @@ import jakarta.xml.bind.annotation.XmlType;
 import java.util.List;
 import org.joda.money.CurrencyUnit;
 
-/** Version 0.12 of the fee extension that may be present on domain check commands. */
+/** Version 1.0 of the fee extension that may be present on domain check commands. */
 @XmlRootElement(name = "check")
 @XmlType(propOrder = {"currency", "items"})
 public class FeeCheckCommandExtensionStdV1 extends ImmutableObject

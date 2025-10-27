@@ -429,7 +429,7 @@ public final class DomainDeleteFlow implements MutatingFlow, SqlStatementLogging
   @Nullable
   private FeeTransformResponseExtension.Builder getDeleteResponseBuilder() {
     Set<String> uris = nullToEmpty(sessionMetadata.getServiceExtensionUris());
-    if (uris.contains(ServiceExtension.FEE_STD_1_0.getUri())) {
+    if (uris.contains(ServiceExtension.FEE_1_00.getUri())) {
       return new FeeDeleteResponseExtensionStdV1.Builder();
     }
     if (uris.contains(ServiceExtension.FEE_0_12.getUri())) {

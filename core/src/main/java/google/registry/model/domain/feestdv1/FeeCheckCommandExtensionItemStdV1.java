@@ -1,4 +1,4 @@
-// Copyright 2017 The Nomulus Authors. All Rights Reserved.
+// Copyright 2025 The Nomulus Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -26,7 +26,7 @@ import org.joda.money.CurrencyUnit;
 import org.joda.time.DateTime;
 
 /**
- * An individual price check item in version 0.12 of the fee extension on domain check commands.
+ * An individual price check item in version 1.0 of the fee extension on domain check commands.
  * Items look like:
  *
  * <pre>{@code
@@ -36,9 +36,6 @@ import org.joda.time.DateTime;
  *   <fee:date>2017-05-17T13:22:21.0Z</fee:date>
  * </fee:command>
  * }</pre>
- *
- * In a change from previous versions of the extension, items do not contain domain names; instead,
- * the names from the non-extension check element are used.
  */
 @XmlType(propOrder = {"period", "feeClass", "feeDate"})
 public class FeeCheckCommandExtensionItemStdV1 extends FeeCheckCommandExtensionItem {
@@ -59,7 +56,7 @@ public class FeeCheckCommandExtensionItemStdV1 extends FeeCheckCommandExtensionI
   @XmlElement(name = "date")
   DateTime feeDate;
 
-  /** Version .12 does not support domain name or currency in fee extension items. */
+  /** Version 1.0 does not support domain name or currency in fee extension items. */
   @Override
   public boolean isDomainNameSupported() {
     return false;
