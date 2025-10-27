@@ -30,7 +30,6 @@ def screenshotsForGoldensDir = "${project.buildDir}/screenshots_for_goldens"
 def newGoldensDir = "${project.buildDir}/new_golden_images"
 def goldensDir =
   "${javaTestDir}/google/registry/webdriver/goldens/chrome-linux"
-def jsDir = "${project.projectDir}/src/main/javascript"
 
 // Tests that fail when running Gradle in a docker container, e. g. when
 // building the release artifacts in Google Cloud Build.

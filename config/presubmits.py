@@ -105,9 +105,8 @@ PRESUBMITS = {
     # System.(out|err).println should only appear in tools/ or load-testing/
     PresubmitCheck(
         r".*\bSystem\.(out|err)\.print", "java", {
-            "StackdriverDashboardBuilder.java", "/tools/", "/example/",
-            "/load-testing/", "RegistryTestServerMain.java",
-            "TestServerExtension.java", "FlowDocumentationTool.java"
+            "/tools/", "/example/", "/load-testing/",
+            "RegistryTestServerMain.java", "TestServerExtension.java"
         }):
         "System.(out|err).println is only allowed in tools/ packages. Please "
         "use a logger instead.",
@@ -120,7 +119,7 @@ PRESUBMITS = {
     ):
         "In SOY please use the ({@param name: string} /** User name. */) style"
         " parameter passing instead of the ( * @param name User name.) style "
-        "parameter pasing.",
+        "parameter passing.",
     PresubmitCheck(
         r'.*\{[^}]+\w+:\s+"',
         "soy",
@@ -139,41 +138,6 @@ PRESUBMITS = {
         {},
     ):
         "All soy templates must use strict autoescaping",
-
-    # various JS linting checks
-    PresubmitCheck(
-        r".*goog\.base\(",
-        "js",
-        {"/node_modules/"},
-    ):
-        "Use of goog.base is not allowed.",
-    PresubmitCheck(
-        r".*goog\.dom\.classes",
-        "js",
-        {"/node_modules/"},
-    ):
-        "Instead of goog.dom.classes, use goog.dom.classlist which is smaller "
-        "and faster.",
-    PresubmitCheck(
-        r".*goog\.getMsg",
-        "js",
-        {"/node_modules/"},
-    ):
-        "Put messages in Soy, instead of using goog.getMsg().",
-    PresubmitCheck(
-        r".*(innerHTML|outerHTML)\s*(=|[+]=)([^=]|$)",
-        "js",
-        {"/node_modules/", "registrar_bin."},
-    ):
-        "Do not assign directly to the dom. Use goog.dom.setTextContent to set"
-        " to plain text, goog.dom.removeChildren to clear, or "
-        "soy.renderElement to render anything else",
-    PresubmitCheck(
-        r".*console\.(log|info|warn|error)",
-        "js",
-        {"/node_modules/", "google/registry/ui/js/util.js", "registrar_bin."},
-    ):
-        "JavaScript files should not include console logging.",
     PresubmitCheck(
         r".*\nimport (static )?.*\.shaded\..*",
         "java",
@@ -303,26 +267,6 @@ def verify_flyway_index():
   return not success
 
 
-def verify_javascript_deps():
-  """Verifies that we haven't introduced any new javascript dependencies."""
-  with open('package.json') as f:
-    package = json.load(f)
-
-  deps = list(package['dependencies'].keys())
-  if deps != EXPECTED_JS_PACKAGES:
-    print('Unexpected javascript dependencies.  Was expecting '
-          '%s, got %s.' % (EXPECTED_JS_PACKAGES, deps))
-    print(textwrap.dedent("""
-        * If the new dependencies are intentional, please verify that the
-        * license is one of the allowed licenses (see
-        * config/dependency-license/allowed_licenses.json) and add an entry
-        * for the package (with the license in a comment) to the
-        * EXPECTED_JS_PACKAGES variable in config/presubmits.py.
-        """))
-    return True
-  return False
-
-
 def get_files():
   for root, dirnames, filenames in os.walk("."):
     for filename in filenames:
@@ -346,9 +290,6 @@ if __name__ == "__main__":
   # index is up-to-date.  It's quicker to do it here than in the unit tests:
   # when we put it here it fails fast before all of the tests are run.
   failed |= verify_flyway_index()
-
-  # Make sure we haven't introduced any javascript dependencies.
-  failed |= verify_javascript_deps()
 
   if failed:
     sys.exit(1)
