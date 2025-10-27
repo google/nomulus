@@ -17,6 +17,7 @@ package google.registry.ui.server.console;
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static google.registry.model.console.RegistrarRole.ACCOUNT_MANAGER;
+import static google.registry.model.console.RegistrarRole.TECH_CONTACT;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.request.Action.Method.DELETE;
 import static google.registry.request.Action.Method.GET;
@@ -152,7 +153,7 @@ public class ConsoleUsersAction extends ConsoleApiAction {
     updateUserRegistrarRoles(
         this.userData.get().emailAddress,
         registrarId,
-        RegistrarRole.valueOf(this.userData.get().role));
+        requestRoleToAllowedRoles(this.userData.get().role));
 
     sendConfirmationEmail(registrarId, this.userData.get().emailAddress, "Added existing user");
     consoleApiParams.response().setStatus(SC_OK);
@@ -222,11 +223,9 @@ public class ConsoleUsersAction extends ConsoleApiAction {
       throw e;
     }
 
+    RegistrarRole newRole = requestRoleToAllowedRoles(userData.get().role);
     UserRoles userRoles =
-        new UserRoles.Builder()
-            .setRegistrarRoles(
-                ImmutableMap.of(registrarId, RegistrarRole.valueOf(userData.get().role)))
-            .build();
+        new UserRoles.Builder().setRegistrarRoles(ImmutableMap.of(registrarId, newRole)).build();
 
     User.Builder builder = new User.Builder().setUserRoles(userRoles).setEmailAddress(newEmail);
     tm().put(builder.build());
@@ -238,9 +237,7 @@ public class ConsoleUsersAction extends ConsoleApiAction {
         .setPayload(
             consoleApiParams
                 .gson()
-                .toJson(
-                    new UserData(
-                        newEmail, null, ACCOUNT_MANAGER.toString(), newUser.getPassword())));
+                .toJson(new UserData(newEmail, null, newRole.toString(), newUser.getPassword())));
     finishAndPersistConsoleUpdateHistory(
         new ConsoleUpdateHistory.Builder()
             .setType(ConsoleUpdateHistory.Type.USER_CREATE)
@@ -257,7 +254,7 @@ public class ConsoleUsersAction extends ConsoleApiAction {
     updateUserRegistrarRoles(
         this.userData.get().emailAddress,
         registrarId,
-        RegistrarRole.valueOf(this.userData.get().role));
+        requestRoleToAllowedRoles(this.userData.get().role));
 
     sendConfirmationEmail(registrarId, this.userData.get().emailAddress, "Updated user");
     consoleApiParams.response().setStatus(SC_OK);
@@ -331,6 +328,11 @@ public class ConsoleUsersAction extends ConsoleApiAction {
                 tm().loadAllOf(User.class).stream()
                     .filter(u -> u.getUserRoles().getRegistrarRoles().containsKey(registrarId))
                     .collect(toImmutableList()));
+  }
+
+  /** Maps a request role string to a RegistrarRole, using ACCOUNT_MANAGER as the default. */
+  private RegistrarRole requestRoleToAllowedRoles(String role) {
+    return TECH_CONTACT.name().equals(role) ? TECH_CONTACT : ACCOUNT_MANAGER;
   }
 
   private boolean sendConfirmationEmail(String registrarId, String emailAddress, String operation) {

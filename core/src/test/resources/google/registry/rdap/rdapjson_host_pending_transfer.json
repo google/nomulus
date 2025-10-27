@@ -1,6 +1,6 @@
 {
   "objectClassName" : "nameserver",
-  "handle" : "C-ROID",
+  "handle" : "D-ROID",
   "ldhName" : "ns1.dog.xn--q9jyb4c",
   "unicodeName" : "ns1.dog.みんな",
   "status" : ["active", "pending transfer"],

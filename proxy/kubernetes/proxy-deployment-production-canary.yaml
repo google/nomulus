@@ -35,10 +35,10 @@ spec:
           periodSeconds: 20
         resources:
           requests:
-            cpu: "400m"
+            cpu: "300m"
             memory: "350Mi"
           limits:
-            cpu: "600m"
+            cpu: "500m"
             memory: "512Mi"
         imagePullPolicy: Always
         args: ["--env", "production_canary"]
