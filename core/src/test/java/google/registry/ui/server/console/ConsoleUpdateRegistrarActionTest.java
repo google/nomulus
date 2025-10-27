@@ -203,7 +203,9 @@ class ConsoleUpdateRegistrarActionTest extends ConsoleActionBaseTestCase {
                     "The following changes were made in registry unittest environment to the"
                         + " registrar TheRegistrar by admin fte@email.tld:\n"
                         + "\n"
-                        + "allowedTlds: null -> [app, dev]\n"
+                        + "allowedTlds:\n"
+                        + "    ADDED: [app, dev]\n"
+                        + "    FINAL CONTENTS: [app, dev]\n"
                         + "lastPocVerificationDate: 1970-01-01T00:00:00.000Z ->"
                         + " 2023-12-12T00:00:00.000Z\n")
                 .setRecipients(ImmutableList.of(new InternetAddress("notification@test.example")))
