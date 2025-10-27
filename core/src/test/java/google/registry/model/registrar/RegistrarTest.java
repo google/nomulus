@@ -23,6 +23,7 @@ import static google.registry.testing.CertificateSamples.SAMPLE_CERT2_HASH;
 import static google.registry.testing.CertificateSamples.SAMPLE_CERT_HASH;
 import static google.registry.testing.DatabaseHelper.cloneAndSetAutoTimestamps;
 import static google.registry.testing.DatabaseHelper.createTld;
+import static google.registry.testing.DatabaseHelper.createTlds;
 import static google.registry.testing.DatabaseHelper.newTld;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.DatabaseHelper.persistResources;
@@ -759,5 +760,17 @@ class RegistrarTest extends EntityTestCase {
         .setBillingAccountMap(ImmutableMap.of(USD, "abc123"))
         .setAllowedTlds(ImmutableSet.of("tld", "xn--q9jyb4c"))
         .build();
+  }
+
+  @Test
+  void testToString_sortsAllowedTlds() {
+    createTlds("foo", "bar", "baz", "gon", "tri");
+    persistResource(
+        registrar
+            .asBuilder()
+            .setAllowedTlds(ImmutableSet.of("gon", "bar", "foo", "tri", "baz"))
+            .build());
+    assertThat(Registrar.loadByRegistrarId("registrar").toString())
+        .contains("allowedTlds=[bar, baz, foo, gon, tri]");
   }
 }

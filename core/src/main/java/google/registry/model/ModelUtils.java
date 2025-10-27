@@ -76,11 +76,20 @@ public class ModelUtils {
     return ALL_FIELDS_CACHE.get(clazz);
   }
 
-  /** Retrieves a field value via reflection. */
+  /**
+   * Retrieves a field value via reflection, using the field's {@link GetterDelegate} if present.
+   */
   static Object getFieldValue(Object instance, Field field) {
     try {
-      return field.get(instance);
-    } catch (IllegalAccessException e) {
+      if (field.isAnnotationPresent(GetterDelegate.class)) {
+        return instance
+            .getClass()
+            .getMethod(field.getAnnotation(GetterDelegate.class).methodName())
+            .invoke(instance);
+      } else {
+        return field.get(instance);
+      }
+    } catch (Exception e) {
       throw new IllegalStateException(e);
     }
   }

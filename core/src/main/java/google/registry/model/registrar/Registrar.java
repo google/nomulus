@@ -54,6 +54,7 @@ import com.google.gson.annotations.Expose;
 import com.google.re2j.Pattern;
 import google.registry.model.Buildable;
 import google.registry.model.CreateAutoTimestamp;
+import google.registry.model.GetterDelegate;
 import google.registry.model.JsonMapBuilder;
 import google.registry.model.Jsonifiable;
 import google.registry.model.UpdateAutoTimestamp;
@@ -245,12 +246,15 @@ public class Registrar extends UpdateAutoTimestampEntity implements Buildable, J
   State state;
 
   /** The set of TLDs which this registrar is allowed to access. */
-  @Expose Set<String> allowedTlds;
+  @GetterDelegate(methodName = "getAllowedTlds")
+  @Expose
+  Set<String> allowedTlds;
 
   /** Host name of WHOIS server. */
   @Expose String whoisServer;
 
   /** Base URLs for the registrar's RDAP servers. */
+  @GetterDelegate(methodName = "getRdapBaseUrls")
   Set<String> rdapBaseUrls;
 
   /**
