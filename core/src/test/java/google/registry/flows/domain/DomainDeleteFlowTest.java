@@ -21,7 +21,6 @@ import static google.registry.batch.AsyncTaskEnqueuer.PARAM_RESAVE_TIMES;
 import static google.registry.batch.AsyncTaskEnqueuer.PARAM_RESOURCE_KEY;
 import static google.registry.batch.AsyncTaskEnqueuer.QUEUE_ASYNC_ACTIONS;
 import static google.registry.flows.domain.DomainTransferFlowTestCase.persistWithPendingTransfer;
-import static google.registry.model.EppResourceUtils.loadByForeignKey;
 import static google.registry.model.reporting.DomainTransactionRecord.TransactionReportField.DELETED_DOMAINS_GRACE;
 import static google.registry.model.reporting.DomainTransactionRecord.TransactionReportField.DELETED_DOMAINS_NOGRACE;
 import static google.registry.model.reporting.DomainTransactionRecord.TransactionReportField.NET_ADDS_10_YR;
@@ -76,6 +75,7 @@ import google.registry.flows.domain.DomainFlowUtils.BadCommandForRegistryPhaseEx
 import google.registry.flows.domain.DomainFlowUtils.NotAuthorizedForTldException;
 import google.registry.flows.exceptions.OnlyToolCanPassMetadataException;
 import google.registry.flows.exceptions.ResourceStatusProhibitsOperationException;
+import google.registry.model.ForeignKeyUtils;
 import google.registry.model.billing.BillingBase.Flag;
 import google.registry.model.billing.BillingBase.Reason;
 import google.registry.model.billing.BillingCancellation;
@@ -731,7 +731,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
     // Add a nameserver.
     Host host = persistResource(newHost("ns1.example.tld"));
     persistResource(
-        loadByForeignKey(Domain.class, getUniqueIdFromCommand(), clock.nowUtc())
+        ForeignKeyUtils.loadResource(Domain.class, getUniqueIdFromCommand(), clock.nowUtc())
             .get()
             .asBuilder()
             .setNameservers(ImmutableSet.of(host.createVKey()))
@@ -742,7 +742,9 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
             .asBuilder()
             .setRegistrant(
                 Optional.of(
-                    loadByForeignKey(Contact.class, "sh8013", clock.nowUtc()).get().createVKey()))
+                    ForeignKeyUtils.loadResource(Contact.class, "sh8013", clock.nowUtc())
+                        .get()
+                        .createVKey()))
             .setNameservers(ImmutableSet.of(host.createVKey()))
             .setDeletionTime(START_OF_TIME)
             .build());

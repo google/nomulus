@@ -19,7 +19,6 @@ import static com.google.common.base.Preconditions.checkState;
 import static google.registry.flows.domain.DomainFlowUtils.newAutorenewBillingEvent;
 import static google.registry.flows.domain.DomainFlowUtils.newAutorenewPollMessage;
 import static google.registry.flows.domain.DomainFlowUtils.updateAutorenewRecurrenceEndTime;
-import static google.registry.model.EppResourceUtils.loadByForeignKey;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static google.registry.util.DateTimeUtils.isBeforeOrAt;
@@ -92,7 +91,7 @@ class UnrenewDomainCommand extends ConfirmingCommand {
         domainsNonexistentBuilder.add(domainName);
         continue;
       }
-      Optional<Domain> domain = loadByForeignKey(Domain.class, domainName, now);
+      Optional<Domain> domain = ForeignKeyUtils.loadResource(Domain.class, domainName, now);
       if (domain.isEmpty() || domain.get().getStatusValues().contains(StatusValue.PENDING_DELETE)) {
         domainsDeletingBuilder.add(domainName);
         continue;
@@ -143,7 +142,7 @@ class UnrenewDomainCommand extends ConfirmingCommand {
     StringBuilder resultBuilder = new StringBuilder();
     DateTime now = clock.nowUtc();
     for (String domainName : mainParameters) {
-      Domain domain = loadByForeignKey(Domain.class, domainName, now).get();
+      Domain domain = ForeignKeyUtils.loadResource(Domain.class, domainName, now).get();
       DateTime previousTime = domain.getRegistrationExpirationTime();
       DateTime newTime = leapSafeSubtractYears(previousTime, period);
       resultBuilder.append(
@@ -166,7 +165,7 @@ class UnrenewDomainCommand extends ConfirmingCommand {
   private void unrenewDomain(String domainName) {
     tm().assertInTransaction();
     DateTime now = tm().getTransactionTime();
-    Optional<Domain> domainOptional = loadByForeignKey(Domain.class, domainName, now);
+    Optional<Domain> domainOptional = ForeignKeyUtils.loadResource(Domain.class, domainName, now);
     // Transactional sanity checks on the off chance that something changed between init() running
     // and here.
     checkState(

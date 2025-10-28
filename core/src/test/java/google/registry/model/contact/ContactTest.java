@@ -15,7 +15,6 @@
 package google.registry.model.contact;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.model.EppResourceUtils.loadByForeignKey;
 import static google.registry.model.ImmutableObjectSubject.assertAboutImmutableObjects;
 import static google.registry.testing.ContactSubject.assertAboutContacts;
 import static google.registry.testing.DatabaseHelper.cloneAndSetAutoTimestamps;
@@ -29,6 +28,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import google.registry.model.EntityTestCase;
+import google.registry.model.ForeignKeyUtils;
 import google.registry.model.contact.Disclose.PostalInfoChoice;
 import google.registry.model.contact.PostalInfo.Type;
 import google.registry.model.eppcommon.AuthInfo.PasswordAuth;
@@ -158,14 +158,17 @@ public class ContactTest extends EntityTestCase {
 
   @Test
   void testPersistence() {
-    assertThat(loadByForeignKey(Contact.class, contact.getForeignKey(), fakeClock.nowUtc()))
+    assertThat(
+            ForeignKeyUtils.loadResource(
+                Contact.class, contact.getForeignKey(), fakeClock.nowUtc()))
         .hasValue(contact);
   }
 
   @Test
   void testSerializable() {
     Contact persisted =
-        loadByForeignKey(Contact.class, contact.getForeignKey(), fakeClock.nowUtc()).get();
+        ForeignKeyUtils.loadResource(Contact.class, contact.getForeignKey(), fakeClock.nowUtc())
+            .get();
     assertThat(SerializeUtils.serializeDeserialize(persisted)).isEqualTo(persisted);
   }
 

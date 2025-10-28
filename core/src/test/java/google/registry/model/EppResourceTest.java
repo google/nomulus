@@ -15,7 +15,6 @@
 package google.registry.model;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.model.EppResourceUtils.loadByForeignKey;
 import static google.registry.testing.DatabaseHelper.persistActiveContact;
 import static google.registry.testing.DatabaseHelper.persistActiveHost;
 import static google.registry.testing.DatabaseHelper.persistResource;
@@ -44,7 +43,7 @@ public class EppResourceTest extends EntityTestCase {
         persistResource(originalContact.asBuilder().setEmailAddress("different@fake.lol").build());
     assertThat(EppResource.loadByCacheIfEnabled(ImmutableList.of(originalContact.createVKey())))
         .containsExactly(originalContact.createVKey(), originalContact);
-    assertThat(loadByForeignKey(Contact.class, "contact123", fakeClock.nowUtc()))
+    assertThat(ForeignKeyUtils.loadResource(Contact.class, "contact123", fakeClock.nowUtc()))
         .hasValue(modifiedContact);
   }
 
@@ -58,7 +57,7 @@ public class EppResourceTest extends EntityTestCase {
             originalHost.asBuilder().setLastTransferTime(fakeClock.nowUtc().minusDays(60)).build());
     assertThat(EppResource.loadByCacheIfEnabled(ImmutableList.of(originalHost.createVKey())))
         .containsExactly(originalHost.createVKey(), originalHost);
-    assertThat(loadByForeignKey(Host.class, "ns1.example.com", fakeClock.nowUtc()))
+    assertThat(ForeignKeyUtils.loadResource(Host.class, "ns1.example.com", fakeClock.nowUtc()))
         .hasValue(modifiedHost);
   }
 }

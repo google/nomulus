@@ -23,7 +23,7 @@ import com.beust.jcommander.Parameters;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import google.registry.model.EppResourceUtils;
+import google.registry.model.ForeignKeyUtils;
 import google.registry.model.billing.BillingBase.RenewalPriceBehavior;
 import google.registry.model.billing.BillingRecurrence;
 import google.registry.model.domain.Domain;
@@ -164,7 +164,7 @@ public class UpdateRecurrenceCommand extends ConfirmingCommand {
     DateTime now = tm().getTransactionTime();
     for (String domainName : mainParameters) {
       Domain domain =
-          EppResourceUtils.loadByForeignKey(Domain.class, domainName, now)
+          ForeignKeyUtils.loadResource(Domain.class, domainName, now)
               .orElseThrow(
                   () ->
                       new IllegalArgumentException(

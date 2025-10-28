@@ -15,7 +15,6 @@
 package google.registry.tools;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static google.registry.model.EppResourceUtils.loadByForeignKey;
 import static google.registry.model.reporting.HistoryEntry.Type.SYNTHETIC;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.CollectionUtils.isNullOrEmpty;
@@ -25,6 +24,7 @@ import com.beust.jcommander.Parameters;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Streams;
 import google.registry.config.RegistryConfig.Config;
+import google.registry.model.ForeignKeyUtils;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.poll.PollMessage;
@@ -86,7 +86,7 @@ class EnqueuePollMessageCommand extends MutatingCommand {
     tm().transact(
             () -> {
               Optional<Domain> domainOpt =
-                  loadByForeignKey(Domain.class, domainName, tm().getTransactionTime());
+                  ForeignKeyUtils.loadResource(Domain.class, domainName, tm().getTransactionTime());
               checkArgument(
                   domainOpt.isPresent(), "Domain %s doesn't exist or isn't active", domainName);
               Domain domain = domainOpt.get();

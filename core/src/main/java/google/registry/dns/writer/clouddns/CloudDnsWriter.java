@@ -17,7 +17,6 @@ package google.registry.dns.writer.clouddns;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static google.registry.dns.DnsUtils.getDnsAPlusAAAATtlForHost;
-import static google.registry.model.EppResourceUtils.loadByForeignKey;
 import static google.registry.util.DomainNameUtils.getSecondLevelDomain;
 
 import com.google.api.client.googleapis.json.GoogleJsonError;
@@ -37,6 +36,7 @@ import google.registry.config.RegistryConfig.Config;
 import google.registry.dns.writer.BaseDnsWriter;
 import google.registry.dns.writer.DnsWriter;
 import google.registry.dns.writer.DnsWriterZone;
+import google.registry.model.ForeignKeyUtils;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.secdns.DomainDsData;
 import google.registry.model.host.Host;
@@ -123,7 +123,8 @@ public class CloudDnsWriter extends BaseDnsWriter {
     String absoluteDomainName = getAbsoluteHostName(domainName);
 
     // Load the target domain. Note that it can be absent if this domain was just deleted.
-    Optional<Domain> domain = loadByForeignKey(Domain.class, domainName, clock.nowUtc());
+    Optional<Domain> domain =
+        ForeignKeyUtils.loadResource(Domain.class, domainName, clock.nowUtc());
 
     // Return early if no DNS records should be published.
     // desiredRecordsBuilder is populated with an empty set to indicate that all existing records
@@ -189,7 +190,7 @@ public class CloudDnsWriter extends BaseDnsWriter {
     // Load the target host. Note that it can be absent if this host was just deleted.
     // desiredRecords is populated with an empty set to indicate that all existing records
     // should be deleted.
-    Optional<Host> host = loadByForeignKey(Host.class, hostName, clock.nowUtc());
+    Optional<Host> host = ForeignKeyUtils.loadResource(Host.class, hostName, clock.nowUtc());
 
     // Return early if the host is deleted.
     if (host.isEmpty()) {

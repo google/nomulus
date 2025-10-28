@@ -15,7 +15,6 @@
 package google.registry.flows.host;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.model.EppResourceUtils.loadByForeignKey;
 import static google.registry.testing.DatabaseHelper.assertHostDnsRequests;
 import static google.registry.testing.DatabaseHelper.assertNoBillingEvents;
 import static google.registry.testing.DatabaseHelper.assertNoDnsRequests;
@@ -48,6 +47,7 @@ import google.registry.flows.host.HostFlowUtils.HostNameTooShallowException;
 import google.registry.flows.host.HostFlowUtils.InvalidHostNameException;
 import google.registry.flows.host.HostFlowUtils.SuperordinateDomainDoesNotExistException;
 import google.registry.flows.host.HostFlowUtils.SuperordinateDomainInPendingDeleteException;
+import google.registry.model.ForeignKeyUtils;
 import google.registry.model.domain.Domain;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.host.Host;
@@ -69,9 +69,10 @@ class HostCreateFlowTest extends ResourceFlowTestCase<HostCreateFlow, Host> {
     setEppHostCreateInput(
         hostName,
         """
-            <host:addr ip="v4">192.0.2.2</host:addr>
-            <host:addr ip="v4">192.0.2.29</host:addr>
-            <host:addr ip="v6">1080:0:0:0:8:800:200C:417A</host:addr>""");
+        <host:addr ip="v4">192.0.2.2</host:addr>
+        <host:addr ip="v4">192.0.2.29</host:addr>
+        <host:addr ip="v6">1080:0:0:0:8:800:200C:417A</host:addr>\
+        """);
   }
 
   HostCreateFlowTest() {
@@ -126,7 +127,7 @@ class HostCreateFlowTest extends ResourceFlowTestCase<HostCreateFlow, Host> {
     doSuccessfulInternalTest("tld");
     Host host = reloadResourceByForeignKey();
     Domain superordinateDomain =
-        loadByForeignKey(Domain.class, "example.tld", clock.nowUtc()).get();
+        ForeignKeyUtils.loadResource(Domain.class, "example.tld", clock.nowUtc()).get();
     assertAboutHosts().that(host).hasSuperordinateDomain(superordinateDomain.createVKey());
     assertThat(superordinateDomain.getSubordinateHosts()).containsExactly("ns1.example.tld");
     assertHostDnsRequests("ns1.example.tld");
@@ -155,7 +156,7 @@ class HostCreateFlowTest extends ResourceFlowTestCase<HostCreateFlow, Host> {
     doSuccessfulInternalTest("tld");
     Host host = reloadResourceByForeignKey();
     Domain superordinateDomain =
-        loadByForeignKey(Domain.class, "example.tld", clock.nowUtc()).get();
+        ForeignKeyUtils.loadResource(Domain.class, "example.tld", clock.nowUtc()).get();
     assertAboutHosts().that(host).hasSuperordinateDomain(superordinateDomain.createVKey());
     assertThat(superordinateDomain.getSubordinateHosts()).containsExactly("ns1.example.tld");
     assertHostDnsRequests("ns1.example.tld");
@@ -269,9 +270,10 @@ class HostCreateFlowTest extends ResourceFlowTestCase<HostCreateFlow, Host> {
     setEppHostCreateInput(
         "ns1.example.tld",
         """
-            <host:addr ip="v4">192.0.2.2</host:addr>
-            <host:addr ip="v6">192.0.2.29</host:addr>
-            <host:addr ip="v6">1080:0:0:0:8:800:200C:417A</host:addr>""");
+        <host:addr ip="v4">192.0.2.2</host:addr>
+        <host:addr ip="v6">192.0.2.29</host:addr>
+        <host:addr ip="v6">1080:0:0:0:8:800:200C:417A</host:addr>\
+        """);
     EppException thrown = assertThrows(IpAddressVersionMismatchException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }

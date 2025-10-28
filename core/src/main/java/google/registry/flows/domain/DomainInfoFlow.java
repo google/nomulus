@@ -20,7 +20,6 @@ import static google.registry.flows.ResourceFlowUtils.verifyOptionalAuthInfo;
 import static google.registry.flows.domain.DomainFlowUtils.addSecDnsExtensionIfPresent;
 import static google.registry.flows.domain.DomainFlowUtils.handleFeeRequest;
 import static google.registry.flows.domain.DomainFlowUtils.loadForeignKeyedDesignatedContacts;
-import static google.registry.model.EppResourceUtils.loadByForeignKey;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import com.google.common.collect.ImmutableList;
@@ -38,6 +37,7 @@ import google.registry.flows.custom.DomainInfoFlowCustomLogic;
 import google.registry.flows.custom.DomainInfoFlowCustomLogic.AfterValidationParameters;
 import google.registry.flows.custom.DomainInfoFlowCustomLogic.BeforeResponseParameters;
 import google.registry.flows.custom.DomainInfoFlowCustomLogic.BeforeResponseReturnData;
+import google.registry.model.ForeignKeyUtils;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainCommand.Info;
 import google.registry.model.domain.DomainCommand.Info.HostsRequest;
@@ -109,7 +109,8 @@ public final class DomainInfoFlow implements MutatingFlow {
     extensionManager.validate();
     DateTime now = clock.nowUtc();
     Domain domain =
-        verifyExistence(Domain.class, targetId, loadByForeignKey(Domain.class, targetId, now));
+        verifyExistence(
+            Domain.class, targetId, ForeignKeyUtils.loadResource(Domain.class, targetId, now));
     verifyOptionalAuthInfo(authInfo, domain);
     flowCustomLogic.afterValidation(
         AfterValidationParameters.newBuilder().setDomain(domain).build());

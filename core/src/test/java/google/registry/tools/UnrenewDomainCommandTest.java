@@ -15,7 +15,6 @@
 package google.registry.tools;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.model.EppResourceUtils.loadByForeignKey;
 import static google.registry.model.eppcommon.StatusValue.PENDING_DELETE;
 import static google.registry.model.eppcommon.StatusValue.PENDING_TRANSFER;
 import static google.registry.model.reporting.HistoryEntry.Type.SYNTHETIC;
@@ -34,6 +33,7 @@ import static google.registry.testing.HistoryEntrySubject.assertAboutHistoryEntr
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableSet;
+import google.registry.model.ForeignKeyUtils;
 import google.registry.model.billing.BillingBase.Flag;
 import google.registry.model.billing.BillingBase.Reason;
 import google.registry.model.billing.BillingRecurrence;
@@ -81,12 +81,12 @@ public class UnrenewDomainCommandTest extends CommandTestCase<UnrenewDomainComma
     runCommandForced("-p", "2", "foo.tld", "bar.tld");
     fakeClock.disableAutoIncrement();
     assertThat(
-            loadByForeignKey(Domain.class, "foo.tld", fakeClock.nowUtc())
+            ForeignKeyUtils.loadResource(Domain.class, "foo.tld", fakeClock.nowUtc())
                 .get()
                 .getRegistrationExpirationTime())
         .isEqualTo(DateTime.parse("2019-12-06T13:55:01.001Z"));
     assertThat(
-            loadByForeignKey(Domain.class, "bar.tld", fakeClock.nowUtc())
+            ForeignKeyUtils.loadResource(Domain.class, "bar.tld", fakeClock.nowUtc())
                 .get()
                 .getRegistrationExpirationTime())
         .isEqualTo(DateTime.parse("2018-12-06T13:55:01.002Z"));
@@ -109,7 +109,7 @@ public class UnrenewDomainCommandTest extends CommandTestCase<UnrenewDomainComma
     runCommandForced("-p", "2", "foo.tld");
     DateTime unrenewTime = fakeClock.nowUtc();
     fakeClock.advanceOneMilli();
-    Domain domain = loadByForeignKey(Domain.class, "foo.tld", fakeClock.nowUtc()).get();
+    Domain domain = ForeignKeyUtils.loadResource(Domain.class, "foo.tld", fakeClock.nowUtc()).get();
 
     assertAboutHistoryEntries()
         .that(getOnlyHistoryEntryOfType(domain, SYNTHETIC))

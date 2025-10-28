@@ -91,30 +91,6 @@ public final class EppResourceUtils {
   }
 
   /**
-   * Loads the last created version of an {@link EppResource} from the database by foreign key.
-   *
-   * <p>Returns empty if no resource with this foreign key was ever created, or if the most recently
-   * created resource was deleted before time "now".
-   *
-   * <p>Loading an {@link EppResource} by itself is not sufficient to know its current state since
-   * it may have various expirable conditions and status values that might implicitly change its
-   * state as time progresses even if it has not been updated in the database. Rather, the resource
-   * must be combined with a timestamp to view its current state. We use a global last updated
-   * timestamp on the resource's entity group (which is essentially free since all writes to the
-   * entity group must be serialized anyways) to guarantee monotonically increasing write times, and
-   * forward our projected time to the greater of this timestamp or "now". This guarantees that
-   * we're not projecting into the past.
-   *
-   * @param clazz the resource type to load
-   * @param foreignKey id to match
-   * @param now the current logical time to project resources at
-   */
-  public static <T extends EppResource> Optional<T> loadByForeignKey(
-      Class<T> clazz, String foreignKey, DateTime now) {
-    return loadByForeignKeyHelper(tm(), clazz, foreignKey, now, false);
-  }
-
-  /**
    * Loads the last created version of an {@link EppResource} from the database by foreign key,
    * using a cache, if caching is enabled in config settings.
    *
@@ -132,7 +108,6 @@ public final class EppResourceUtils {
    * <p>Do not call this cached version for anything that needs transactional consistency. It should
    * only be used when it's OK if the data is potentially being out of date, e.g. RDAP.
    *
-   * @param clazz the resource type to load
    * @param foreignKey id to match
    * @param now the current logical time to project resources at
    */
@@ -154,7 +129,7 @@ public final class EppResourceUtils {
     return loadByForeignKeyHelper(replicaTm(), clazz, foreignKey, now, true);
   }
 
-  private static <T extends EppResource> Optional<T> loadByForeignKeyHelper(
+  static <T extends EppResource> Optional<T> loadByForeignKeyHelper(
       TransactionManager txnManager,
       Class<T> clazz,
       String foreignKey,

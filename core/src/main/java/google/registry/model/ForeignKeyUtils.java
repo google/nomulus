@@ -18,6 +18,7 @@ import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static google.registry.config.RegistryConfig.getEppResourceCachingDuration;
 import static google.registry.config.RegistryConfig.getEppResourceMaxCachedEntries;
+import static google.registry.model.EppResourceUtils.loadByForeignKeyHelper;
 import static google.registry.persistence.transaction.TransactionManagerFactory.replicaTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
@@ -89,6 +90,17 @@ public final class ForeignKeyUtils {
     return loadMostRecentResources(clazz, foreignKeys, false).entrySet().stream()
         .filter(e -> now.isBefore(e.getValue().deletionTime()))
         .collect(toImmutableMap(Entry::getKey, e -> VKey.create(clazz, e.getValue().repoId())));
+  }
+
+  /**
+   * Loads an {@link EppResource} from the database by foreign key.
+   *
+   * <p>Returns null if no resource with this foreign key was ever created or if the most recently
+   * created resource was deleted before time "now".
+   */
+  public static <E extends EppResource> Optional<E> loadResource(
+      Class<E> clazz, String foreignKey, DateTime now) {
+    return loadByForeignKeyHelper(tm(), clazz, foreignKey, now, false);
   }
 
   /**

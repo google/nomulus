@@ -14,11 +14,11 @@
 
 package google.registry.tools;
 
-import static google.registry.model.EppResourceUtils.loadByForeignKey;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
+import google.registry.model.ForeignKeyUtils;
 import google.registry.model.domain.Domain;
 import google.registry.persistence.transaction.QueryComposer.Comparator;
 import google.registry.util.DomainNameUtils;
@@ -57,7 +57,7 @@ final class GetDomainCommand extends GetEppResourceCommand {
         printResource(
             "Domain",
             canonicalDomain,
-            loadByForeignKey(Domain.class, canonicalDomain, readTimestamp));
+            ForeignKeyUtils.loadResource(Domain.class, canonicalDomain, readTimestamp));
       }
     }
   }

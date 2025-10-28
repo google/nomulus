@@ -14,10 +14,9 @@
 
 package google.registry.tools;
 
-import static google.registry.model.EppResourceUtils.loadByForeignKey;
-
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
+import google.registry.model.ForeignKeyUtils;
 import google.registry.model.contact.Contact;
 import java.util.List;
 
@@ -34,7 +33,9 @@ final class GetContactCommand extends GetEppResourceCommand {
   public void runAndPrint() {
     for (String contactId : mainParameters) {
       printResource(
-          "Contact", contactId, loadByForeignKey(Contact.class, contactId, readTimestamp));
+          "Contact",
+          contactId,
+          ForeignKeyUtils.loadResource(Contact.class, contactId, readTimestamp));
     }
   }
 }

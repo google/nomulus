@@ -195,9 +195,7 @@ public final class OteStatsTestHelper {
 
   private static Domain loadOrCreateDomain(String domainName) {
     return tm().transact(
-            () ->
-                EppResourceUtils.loadByForeignKey(
-                    Domain.class, domainName, tm().getTransactionTime()))
+            () -> ForeignKeyUtils.loadResource(Domain.class, domainName, tm().getTransactionTime()))
         .orElseGet(() -> persistActiveDomain(domainName));
   }
 }

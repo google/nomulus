@@ -16,7 +16,6 @@ package google.registry.batch;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
-import static google.registry.model.EppResourceUtils.loadByForeignKey;
 import static google.registry.model.domain.rgp.GracePeriodStatus.ADD;
 import static google.registry.testing.DatabaseHelper.assertDomainDnsRequests;
 import static google.registry.testing.DatabaseHelper.createTld;
@@ -32,6 +31,7 @@ import static org.joda.time.DateTimeZone.UTC;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableSet;
+import google.registry.model.ForeignKeyUtils;
 import google.registry.model.ImmutableObject;
 import google.registry.model.billing.BillingBase.Reason;
 import google.registry.model.billing.BillingEvent;
@@ -202,7 +202,8 @@ class DeleteProberDataActionTest {
                 .build());
     action.run();
     DateTime timeAfterDeletion = DateTime.now(UTC);
-    assertThat(loadByForeignKey(Domain.class, "blah.ib-any.test", timeAfterDeletion)).isEmpty();
+    assertThat(ForeignKeyUtils.loadResource(Domain.class, "blah.ib-any.test", timeAfterDeletion))
+        .isEmpty();
     assertThat(loadByEntity(domain).getDeletionTime()).isLessThan(timeAfterDeletion);
     assertDomainDnsRequests("blah.ib-any.test");
   }
@@ -219,7 +220,8 @@ class DeleteProberDataActionTest {
     DateTime timeAfterDeletion = DateTime.now(UTC);
     resetAction();
     action.run();
-    assertThat(loadByForeignKey(Domain.class, "blah.ib-any.test", timeAfterDeletion)).isEmpty();
+    assertThat(ForeignKeyUtils.loadResource(Domain.class, "blah.ib-any.test", timeAfterDeletion))
+        .isEmpty();
     assertThat(loadByEntity(domain).getDeletionTime()).isLessThan(timeAfterDeletion);
     assertDomainDnsRequests("blah.ib-any.test");
   }
@@ -232,7 +234,8 @@ class DeleteProberDataActionTest {
             .setCreationTimeForTest(DateTime.now(UTC).minusSeconds(1))
             .build());
     action.run();
-    Optional<Domain> domain = loadByForeignKey(Domain.class, "blah.ib-any.test", DateTime.now(UTC));
+    Optional<Domain> domain =
+        ForeignKeyUtils.loadResource(Domain.class, "blah.ib-any.test", DateTime.now(UTC));
     assertThat(domain).isPresent();
     assertThat(domain.get().getDeletionTime()).isEqualTo(END_OF_TIME);
   }

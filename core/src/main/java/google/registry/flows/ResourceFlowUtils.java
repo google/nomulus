@@ -16,7 +16,6 @@ package google.registry.flows;
 
 import static com.google.common.collect.Sets.intersection;
 import static google.registry.model.EppResourceUtils.isLinked;
-import static google.registry.model.EppResourceUtils.loadByForeignKey;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import com.google.common.collect.ImmutableSet;
@@ -97,7 +96,7 @@ public final class ResourceFlowUtils {
 
   public static <R extends EppResource & ForeignKeyedEppResource> R loadAndVerifyExistence(
       Class<R> clazz, String targetId, DateTime now) throws ResourceDoesNotExistException {
-    return verifyExistence(clazz, targetId, loadByForeignKey(clazz, targetId, now));
+    return verifyExistence(clazz, targetId, ForeignKeyUtils.loadResource(clazz, targetId, now));
   }
 
   public static <R extends EppResource> R verifyExistence(
