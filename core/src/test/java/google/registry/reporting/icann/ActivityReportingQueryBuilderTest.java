@@ -50,7 +50,7 @@ class ActivityReportingQueryBuilderTest {
             ActivityReportingQueryBuilder.MONTHLY_LOGS,
             ActivityReportingQueryBuilder.DNS_COUNTS,
             ActivityReportingQueryBuilder.EPP_METRICS,
-            ActivityReportingQueryBuilder.WHOIS_COUNTS,
+            ActivityReportingQueryBuilder.RDAP_COUNTS,
             ActivityReportingQueryBuilder.ACTIVITY_REPORT_AGGREGATION);
 
     ActivityReportingQueryBuilder queryBuilder = createQueryBuilder("cloud_sql_icann_reporting");

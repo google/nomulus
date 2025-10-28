@@ -13,22 +13,12 @@
   -- See the License for the specific language governing permissions and
   -- limitations under the License.
 
-  -- Query for WHOIS metrics.
-
-  -- This searches the monthly appengine logs for Whois requests, and
-  -- counts the number of hits via both endpoints (port 43 and the web).
+  -- Query for RDAP metrics.
+  -- This searches the monthly GKE logs for RDAP requests and counts the number of hits
 
 SELECT
   STRING(NULL) AS tld,
-  CASE
-    WHEN requestPath = '/_dr/whois' THEN 'whois-43-queries'
-    WHEN SUBSTR(requestPath, 0, 7) = '/whois/' THEN 'web-whois-queries'
-    WHEN SUBSTR(requestPath, 0, 6) = '/rdap/' THEN 'rdap-queries'
-  END AS metricName,
-  COUNT(requestPath) AS count
-FROM
-  `domain-registry-alpha.cloud_sql_icann_reporting.monthly_logs_201709`
-GROUP BY
-  metricName
-HAVING
-  metricName IS NOT NULL
+  'rdap-queries' AS metricName,
+  count(*)
+FROM `domain-registry-alpha.cloud_sql_icann_reporting.monthly_logs_201709`
+WHERE SUBSTR(requestPath, 0, 6) = '/rdap/'

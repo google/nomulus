@@ -21,9 +21,9 @@ SELECT
   SUM(IF(metricName = 'operational-registrars', count, 0)) AS operational_registrars,
   -- We use the Centralized Zone Data Service.
   "CZDS" AS zfa_passwords,
-  SUM(IF(metricName = 'whois-43-queries', count, 0)) AS whois_43_queries,
-  SUM(IF(metricName = 'web-whois-queries', count, 0)) AS web_whois_queries,
-  -- We don't support searchable WHOIS.
+  -- We don't support WHOIS queries any more.
+  0 AS whois_43_queries,
+  0 AS web_whois_queries,
   0 AS searchable_whois_queries,
   -- DNS queries for UDP/TCP are all assumed to be received/responded.
   SUM(IF(metricName = 'dns-udp-queries', count, 0)) AS dns_udp_queries_received,
@@ -96,7 +96,7 @@ CROSS JOIN(
   `domain-registry-alpha.cloud_sql_icann_reporting.epp_metrics_201709`
   UNION ALL
   SELECT * FROM
-  `domain-registry-alpha.cloud_sql_icann_reporting.whois_counts_201709`
+  `domain-registry-alpha.cloud_sql_icann_reporting.rdap_counts_201709`
   -- END INTERMEDIARY DATA SOURCES --
   )) AS TldMetrics
 WHERE RealTlds.tld = TldMetrics.tld OR TldMetrics.tld IS NULL

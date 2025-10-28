@@ -120,7 +120,7 @@ public class ConsoleScreenshotTest {
     driver.diffPage("registrarSelected_contacts");
     driver.findElement(By.cssSelector("a[routerLink=\"rdap\"]")).click();
     Thread.sleep(500);
-    driver.diffPage("registrarSelected_whois");
+    driver.diffPage("registrarSelected_rdap");
     driver.findElement(By.cssSelector("a[routerLink=\"security\"]")).click();
     Thread.sleep(500);
     driver.diffPage("registrarSelected_security");

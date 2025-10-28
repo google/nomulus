@@ -36,7 +36,7 @@ public final class ActivityReportingQueryBuilder implements QueryBuilder {
   static final String DNS_COUNTS = "dns_counts";
   static final String MONTHLY_LOGS = "monthly_logs";
   static final String EPP_METRICS = "epp_metrics";
-  static final String WHOIS_COUNTS = "whois_counts";
+  static final String RDAP_COUNTS = "rdap_counts";
   static final String ACTIVITY_REPORT_AGGREGATION = "activity_report_aggregation";
 
   private final String projectId;
@@ -98,13 +98,13 @@ public final class ActivityReportingQueryBuilder implements QueryBuilder {
             .build();
     queriesBuilder.put(getTableName(EPP_METRICS, yearMonth), eppQuery);
 
-    String whoisQuery =
-        SqlTemplate.create(getQueryFromFile(WHOIS_COUNTS + ".sql"))
+    String rdapQuery =
+        SqlTemplate.create(getQueryFromFile(RDAP_COUNTS + ".sql"))
             .put("PROJECT_ID", projectId)
             .put("ICANN_REPORTING_DATA_SET", icannReportingDataSet)
             .put("MONTHLY_LOGS_TABLE", getTableName(MONTHLY_LOGS, yearMonth))
             .build();
-    queriesBuilder.put(getTableName(WHOIS_COUNTS, yearMonth), whoisQuery);
+    queriesBuilder.put(getTableName(RDAP_COUNTS, yearMonth), rdapQuery);
 
     SqlTemplate aggregateQuery =
         SqlTemplate.create(getQueryFromFile(ACTIVITY_REPORT_AGGREGATION + ".sql"))
@@ -115,7 +115,7 @@ public final class ActivityReportingQueryBuilder implements QueryBuilder {
             .put("ICANN_REPORTING_DATA_SET", icannReportingDataSet)
             .put("DNS_COUNTS_TABLE", getTableName(DNS_COUNTS, yearMonth))
             .put("EPP_METRICS_TABLE", getTableName(EPP_METRICS, yearMonth))
-            .put("WHOIS_COUNTS_TABLE", getTableName(WHOIS_COUNTS, yearMonth));
+            .put("RDAP_COUNTS_TABLE", getTableName(RDAP_COUNTS, yearMonth));
 
     queriesBuilder.put(
         getTableName(ACTIVITY_REPORT_AGGREGATION, yearMonth), aggregateQuery.build());
