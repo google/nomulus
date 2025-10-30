@@ -19,7 +19,6 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 import google.registry.config.RegistryConfig.Config;
 import google.registry.request.Action;
-import google.registry.request.Action.GaeService;
 import google.registry.request.auth.Auth;
 import jakarta.inject.Inject;
 import java.io.IOException;
@@ -29,7 +28,7 @@ import java.util.Optional;
 
 /** Action to download the latest ICANN TMCH CRL from MarksDB. */
 @Action(
-    service = GaeService.BACKEND,
+    service = Action.Service.BACKEND,
     path = "/_dr/task/tmchCrl",
     method = POST,
     automaticallyPrintOk = true,

@@ -33,8 +33,7 @@ import google.registry.model.domain.RegistryLock;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.tld.RegistryLockDao;
 import google.registry.request.Action;
-import google.registry.request.Action.GaeService;
-import google.registry.request.Action.GkeService;
+import google.registry.request.Action.Service;
 import google.registry.request.Parameter;
 import google.registry.request.Response;
 import google.registry.request.auth.Auth;
@@ -54,8 +53,7 @@ import org.joda.time.Duration;
  * action).
  */
 @Action(
-    service = GaeService.DEFAULT,
-    gkeService = GkeService.CONSOLE,
+    service = Service.CONSOLE,
     path = ConsoleRegistryLockAction.PATH,
     method = {GET, POST},
     auth = Auth.AUTH_PUBLIC_LOGGED_IN)
@@ -67,7 +65,8 @@ public class ConsoleRegistryLockAction extends ConsoleApiAction {
       Please click the link below to perform the lock / unlock action on domain %s. Note: this\
        code will expire in one hour.
 
-      %s""";
+      %s\
+      """;
 
   private final DomainLockUtils domainLockUtils;
   private final GmailClient gmailClient;

@@ -27,7 +27,6 @@ import com.google.common.flogger.FluentLogger;
 import google.registry.model.registrar.Registrar;
 import google.registry.persistence.PersistenceModule;
 import google.registry.request.Action;
-import google.registry.request.Action.GaeService;
 import google.registry.request.HttpException.InternalServerErrorException;
 import google.registry.request.UrlConnectionService;
 import google.registry.request.UrlConnectionUtils;
@@ -54,7 +53,7 @@ import org.apache.commons.csv.CSVRecord;
  * CSV endpoint requires no authentication.
  */
 @Action(
-    service = GaeService.BACKEND,
+    service = Action.Service.BACKEND,
     path = "/_dr/task/updateRegistrarRdapBaseUrls",
     automaticallyPrintOk = true,
     auth = Auth.AUTH_ADMIN)

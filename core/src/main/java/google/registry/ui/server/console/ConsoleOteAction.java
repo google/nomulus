@@ -36,7 +36,7 @@ import google.registry.model.console.ConsolePermission;
 import google.registry.model.console.User;
 import google.registry.model.registrar.Registrar;
 import google.registry.request.Action;
-import google.registry.request.Action.GkeService;
+import google.registry.request.Action.Service;
 import google.registry.request.Parameter;
 import google.registry.request.auth.Auth;
 import google.registry.tools.IamClient;
@@ -48,8 +48,7 @@ import java.util.Map;
 import java.util.Optional;
 
 @Action(
-    service = Action.GaeService.DEFAULT,
-    gkeService = GkeService.CONSOLE,
+    service = Service.CONSOLE,
     path = ConsoleOteAction.PATH,
     method = {GET, POST},
     auth = Auth.AUTH_PUBLIC_LOGGED_IN)

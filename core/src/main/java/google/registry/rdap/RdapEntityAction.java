@@ -25,7 +25,6 @@ import google.registry.rdap.RdapJsonFormatter.OutputDataType;
 import google.registry.rdap.RdapMetrics.EndpointType;
 import google.registry.rdap.RdapObjectClasses.RdapEntity;
 import google.registry.request.Action;
-import google.registry.request.Action.GaeService;
 import google.registry.request.HttpException.NotFoundException;
 import google.registry.request.auth.Auth;
 import jakarta.inject.Inject;
@@ -40,7 +39,7 @@ import java.util.Optional;
  * the handle of the entity with the registrar role is be [sic] equal to the IANA Registrar ID.
  */
 @Action(
-    service = GaeService.PUBAPI,
+    service = Action.Service.PUBAPI,
     path = "/rdap/entity/",
     method = {GET, HEAD},
     isPrefix = true,

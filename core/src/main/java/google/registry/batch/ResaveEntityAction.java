@@ -25,7 +25,6 @@ import com.google.common.flogger.FluentLogger;
 import google.registry.model.EppResource;
 import google.registry.persistence.VKey;
 import google.registry.request.Action;
-import google.registry.request.Action.GaeService;
 import google.registry.request.Action.Method;
 import google.registry.request.Parameter;
 import google.registry.request.Response;
@@ -40,7 +39,7 @@ import org.joda.time.DateTime;
  * <p>{@link EppResource}s will be projected forward to the current time.
  */
 @Action(
-    service = GaeService.BACKEND,
+    service = Action.Service.BACKEND,
     path = ResaveEntityAction.PATH,
     auth = Auth.AUTH_ADMIN,
     method = Method.POST)

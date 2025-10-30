@@ -35,7 +35,6 @@ import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingRecurrence;
 import google.registry.model.common.Cursor;
 import google.registry.request.Action;
-import google.registry.request.Action.GaeService;
 import google.registry.request.Parameter;
 import google.registry.request.Response;
 import google.registry.request.auth.Auth;
@@ -51,7 +50,7 @@ import org.joda.time.DateTime;
  * BillingRecurrence} billing events into synthetic {@link BillingEvent} events.
  */
 @Action(
-    service = GaeService.BACKEND,
+    service = Action.Service.BACKEND,
     path = "/_dr/task/expandBillingRecurrences",
     auth = Auth.AUTH_ADMIN)
 public class ExpandBillingRecurrencesAction implements Runnable {

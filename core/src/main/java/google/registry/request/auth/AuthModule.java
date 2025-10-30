@@ -54,10 +54,7 @@ public class AuthModule {
   // See https://cloud.google.com/iap/docs/signed-headers-howto#securing_iap_headers.
   public static final String IAP_HEADER_NAME = "X-Goog-IAP-JWT-Assertion";
   public static final String BEARER_PREFIX = "Bearer ";
-  // TODO (jianglai): Only use GKE audience once we are fully migrated to GKE.
-  // See: https://cloud.google.com/iap/docs/signed-headers-howto#verifying_the_jwt_payload
-  private static final String IAP_GAE_AUDIENCE_FORMAT = "/projects/%d/apps/%s";
-  private static final String IAP_GKE_AUDIENCE_FORMAT = "/projects/%d/global/backendServices/%d";
+  private static final String IAP_AUDIENCE_FORMAT = "/projects/%d/global/backendServices/%d";
   private static final String IAP_ISSUER_URL = "https://cloud.google.com/iap";
   private static final String REGULAR_ISSUER_URL = "https://accounts.google.com";
   // The backend service IDs created when setting up GKE routes. They will be included in the
@@ -89,24 +86,18 @@ public class AuthModule {
   @IapOidc
   @Singleton
   TokenVerifier provideIapTokenVerifier(
-      @Config("projectId") String projectId,
       @Config("projectIdNumber") long projectIdNumber,
       @Named("backendServiceIdMap") Supplier<ImmutableMap<String, Long>> backendServiceIdMap) {
     com.google.auth.oauth2.TokenVerifier.Builder tokenVerifierBuilder =
         com.google.auth.oauth2.TokenVerifier.newBuilder().setIssuer(IAP_ISSUER_URL);
     return (String service, String token) -> {
-      String audience;
-      if (RegistryEnvironment.isOnJetty()) {
-        Long backendServiceId = backendServiceIdMap.get().get(service);
-        checkNotNull(
-            backendServiceId,
-            "Backend service ID not found for service: %s, available IDs are %s",
-            service,
-            backendServiceIdMap);
-        audience = String.format(IAP_GKE_AUDIENCE_FORMAT, projectIdNumber, backendServiceId);
-      } else {
-        audience = String.format(IAP_GAE_AUDIENCE_FORMAT, projectIdNumber, projectId);
-      }
+      Long backendServiceId = backendServiceIdMap.get().get(service);
+      checkNotNull(
+          backendServiceId,
+          "Backend service ID not found for service: %s, available IDs are %s",
+          service,
+          backendServiceIdMap);
+      String audience = String.format(IAP_AUDIENCE_FORMAT, projectIdNumber, backendServiceId);
       return tokenVerifierBuilder.setAudience(audience).build().verify(token);
     };
   }

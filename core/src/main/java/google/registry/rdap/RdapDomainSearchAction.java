@@ -42,7 +42,6 @@ import google.registry.rdap.RdapMetrics.WildcardType;
 import google.registry.rdap.RdapSearchResults.DomainSearchResponse;
 import google.registry.rdap.RdapSearchResults.IncompletenessWarningType;
 import google.registry.request.Action;
-import google.registry.request.Action.GaeService;
 import google.registry.request.HttpException.BadRequestException;
 import google.registry.request.HttpException.NotFoundException;
 import google.registry.request.HttpException.UnprocessableEntityException;
@@ -71,7 +70,7 @@ import org.joda.time.DateTime;
  *     Data Access Protocol (RDAP)</a>
  */
 @Action(
-    service = GaeService.PUBAPI,
+    service = Action.Service.PUBAPI,
     path = "/rdap/domains",
     method = {GET, HEAD},
     auth = Auth.AUTH_PUBLIC)

@@ -52,7 +52,6 @@ import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarPoc;
 import google.registry.model.tld.Tld;
 import google.registry.request.Action;
-import google.registry.request.Action.GaeService;
 import google.registry.request.Header;
 import google.registry.request.HttpException.ServiceUnavailableException;
 import google.registry.request.Parameter;
@@ -72,7 +71,7 @@ import org.joda.time.Duration;
 
 /** Task that sends domain and host updates to the DNS server. */
 @Action(
-    service = GaeService.BACKEND,
+    service = Action.Service.BACKEND,
     path = PublishDnsUpdatesAction.PATH,
     method = POST,
     automaticallyPrintOk = true,
