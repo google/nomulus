@@ -1309,7 +1309,6 @@ CREATE TABLE public."Tld" (
     tld_name text NOT NULL,
     add_grace_period_length interval NOT NULL,
     allowed_fully_qualified_host_names text[],
-    allowed_registrant_contact_ids text[],
     anchor_tenant_add_grace_period_length interval NOT NULL,
     auto_renew_grace_period_length interval NOT NULL,
     automatic_transfer_length interval NOT NULL,
