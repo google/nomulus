@@ -28,7 +28,6 @@ import google.registry.request.auth.AuthResult;
 import google.registry.request.auth.OidcTokenAuthenticationMechanism;
 import google.registry.testing.DatabaseHelper;
 import google.registry.tools.params.HostAndPortParameter;
-import google.registry.ui.ConsoleDebug;
 import java.util.List;
 
 /** Command-line interface for {@link RegistryTestServer}. */
@@ -41,11 +40,6 @@ public final class RegistryTestServerMain {
   private static final String PINK = "\u001b[1;38;5;205m";
   private static final String LIGHT_PURPLE = "\u001b[38;5;139m";
   private static final String ORANGE = "\u001b[1;38;5;172m";
-
-  @Parameter(
-      names = "--mode",
-      description = "UI console debug mode. RAW allows live editing; DEBUG allows rename testing.")
-  private ConsoleDebug mode = ConsoleDebug.PRODUCTION;
 
   @Parameter(
       names = "--address",
@@ -67,14 +61,10 @@ public final class RegistryTestServerMain {
       arity = 1)
   private boolean loginIsAdmin = true;
 
-  @Parameter(
-      names = "--jetty_debug",
-      description = "Enables Jetty debug logging.")
+  @Parameter(names = "--jetty_debug", description = "Enables Jetty debug logging.")
   private boolean jettyDebug;
 
-  @Parameter(
-      names = "--jetty_verbose",
-      description = "Enables Jetty verbose logging.")
+  @Parameter(names = "--jetty_verbose", description = "Enables Jetty verbose logging.")
   private boolean jettyVerbose;
 
   @Parameter(
@@ -96,7 +86,6 @@ public final class RegistryTestServerMain {
   }
 
   private void run() throws Throwable {
-    ConsoleDebug.set(mode);
     if (jettyDebug) {
       System.setProperty("DEBUG", "true");
     }
@@ -105,7 +94,7 @@ public final class RegistryTestServerMain {
     }
 
     System.out.printf(
-        """
+"""
 
         CHARLESTON ROAD REGISTRY SHARED REGISTRATION SYSTEM
                       ICANN-GTLD-AGB-20120604
