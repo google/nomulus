@@ -521,11 +521,6 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
   @Column(nullable = false)
   DateTime claimsPeriodEnd = END_OF_TIME;
 
-  /** An allowlist of clients allowed to be used on domains on this TLD (ignored if empty). */
-  @Nullable
-  @JsonSerialize(using = SortedSetSerializer.class)
-  Set<String> allowedRegistrantContactIds;
-
   /** An allowlist of hosts allowed to be used on domains on this TLD (ignored if empty). */
   @Nullable
   @JsonSerialize(using = SortedSetSerializer.class)
@@ -784,10 +779,6 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
   /** Retrieve the TLD unicode representation. */
   public String getTldUnicode() {
     return tldUnicode;
-  }
-
-  public ImmutableSet<String> getAllowedRegistrantContactIds() {
-    return nullToEmptyImmutableCopy(allowedRegistrantContactIds);
   }
 
   public ImmutableSet<String> getAllowedFullyQualifiedHostNames() {
@@ -1074,12 +1065,6 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
 
     public Builder setClaimsPeriodEnd(DateTime claimsPeriodEnd) {
       getInstance().claimsPeriodEnd = checkArgumentNotNull(claimsPeriodEnd);
-      return this;
-    }
-
-    public Builder setAllowedRegistrantContactIds(
-        ImmutableSet<String> allowedRegistrantContactIds) {
-      getInstance().allowedRegistrantContactIds = allowedRegistrantContactIds;
       return this;
     }
 

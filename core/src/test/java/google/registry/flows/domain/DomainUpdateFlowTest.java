@@ -89,7 +89,6 @@ import google.registry.flows.domain.DomainFlowUtils.MissingTechnicalContactExcep
 import google.registry.flows.domain.DomainFlowUtils.NameserversNotAllowedForTldException;
 import google.registry.flows.domain.DomainFlowUtils.NameserversNotSpecifiedForTldWithNameserverAllowListException;
 import google.registry.flows.domain.DomainFlowUtils.NotAuthorizedForTldException;
-import google.registry.flows.domain.DomainFlowUtils.RegistrantNotAllowedException;
 import google.registry.flows.domain.DomainFlowUtils.RegistrantProhibitedException;
 import google.registry.flows.domain.DomainFlowUtils.SecDnsAllUsageException;
 import google.registry.flows.domain.DomainFlowUtils.TooManyDsRecordsException;
@@ -1714,20 +1713,6 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
   }
 
   @Test
-  void testFailure_newRegistrantNotAllowListed() throws Exception {
-    persistReferencedEntities();
-    persistDomain();
-    persistResource(
-        Tld.get("tld")
-            .asBuilder()
-            .setAllowedRegistrantContactIds(ImmutableSet.of("contact1234"))
-            .build());
-    clock.advanceOneMilli();
-    EppException thrown = assertThrows(RegistrantNotAllowedException.class, this::runFlow);
-    assertAboutEppExceptions().that(thrown).marshalsToXml();
-  }
-
-  @Test
   void testFailure_addedNameserverDisallowedInTld() throws Exception {
     persistReferencedEntities();
     persistDomain();
@@ -1740,44 +1725,6 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
         assertThrows(NameserversNotAllowedForTldException.class, this::runFlow);
     assertThat(thrown).hasMessageThat().contains("ns2.example.foo");
     assertAboutEppExceptions().that(thrown).marshalsToXml();
-  }
-
-  @Test
-  void testSuccess_newNameserverAllowListed() throws Exception {
-    setEppInput("domain_update_add_nameserver.xml");
-    persistReferencedEntities();
-    persistDomain();
-    // No registrant is given but both nameserver and registrant allow list exist.
-    persistResource(
-        Tld.get("tld")
-            .asBuilder()
-            .setAllowedRegistrantContactIds(ImmutableSet.of("sh8013"))
-            .setAllowedFullyQualifiedHostNames(
-                ImmutableSet.of("ns1.example.foo", "ns2.example.foo"))
-            .build());
-    assertThat(reloadResourceByForeignKey().getNameservers())
-        .doesNotContain(
-            loadResource(Host.class, "ns2.example.foo", clock.nowUtc()).get().createVKey());
-    runFlow();
-    assertThat(reloadResourceByForeignKey().getNameservers())
-        .contains(loadResource(Host.class, "ns2.example.foo", clock.nowUtc()).get().createVKey());
-  }
-
-  @Test
-  void testSuccess_changeRegistrantAllowListed() throws Exception {
-    setEppInput("domain_update_registrant.xml");
-    persistReferencedEntities();
-    persistDomain();
-    // Only changes registrant, with both nameserver and registrant allow list on the TLD.
-    persistResource(
-        Tld.get("tld")
-            .asBuilder()
-            .setAllowedRegistrantContactIds(ImmutableSet.of("sh8013"))
-            .setAllowedFullyQualifiedHostNames(ImmutableSet.of("ns1.example.foo"))
-            .build());
-    runFlow();
-    assertThat(loadByKey(reloadResourceByForeignKey().getRegistrant().get()).getContactId())
-        .isEqualTo("sh8013");
   }
 
   @Test
@@ -1803,19 +1750,6 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
                 assertThat(loadByKey(contact.getContactKey()).getContactId()).isEqualTo("sh8013"));
     assertThat(loadByKey(reloadResourceByForeignKey().getRegistrant().get()).getContactId())
         .isEqualTo("sh8013");
-  }
-
-  @Test
-  void testSuccess_nameserverAndRegistrantAllowListed() throws Exception {
-    persistReferencedEntities();
-    persistDomain();
-    persistResource(
-        Tld.get("tld")
-            .asBuilder()
-            .setAllowedRegistrantContactIds(ImmutableSet.of("sh8013"))
-            .setAllowedFullyQualifiedHostNames(ImmutableSet.of("ns2.example.foo"))
-            .build());
-    doSuccessfulTest();
   }
 
   @Test

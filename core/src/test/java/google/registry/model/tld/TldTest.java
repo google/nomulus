@@ -186,7 +186,6 @@ public final class TldTest extends EntityTestCase {
             "dnsWriters",
             "idnTables",
             "reservedListNames",
-            "allowedRegistrantContactIds",
             "allowedFullyQualifiedHostNames",
             "defaultPromoTokens");
     assertThat(constructedTld.getDnsWriters())
@@ -194,8 +193,6 @@ public final class TldTest extends EntityTestCase {
     assertThat(constructedTld.getIdnTables()).containsExactlyElementsIn(existingTld.getIdnTables());
     assertThat(constructedTld.getReservedListNames())
         .containsExactlyElementsIn(existingTld.getReservedListNames());
-    assertThat(constructedTld.getAllowedRegistrantContactIds())
-        .containsExactlyElementsIn(existingTld.getAllowedRegistrantContactIds());
     assertThat(constructedTld.getAllowedFullyQualifiedHostNames())
         .containsExactlyElementsIn(existingTld.getAllowedFullyQualifiedHostNames());
     assertThat(constructedTld.getDefaultPromoTokens())

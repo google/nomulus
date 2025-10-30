@@ -4,7 +4,6 @@ allowedFullyQualifiedHostNames:
 - "beta"
 - "gamma"
 - "zeta"
-allowedRegistrantContactIds: []
 anchorTenantAddGracePeriodLength: "PT2592000S"
 autoRenewGracePeriodLength: "PT3888000S"
 automaticTransferLength: "PT432000S"

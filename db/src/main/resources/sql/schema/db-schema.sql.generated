@@ -763,7 +763,6 @@
         tld_name text not null,
         add_grace_period_length interval not null,
         allowed_fully_qualified_host_names text[],
-        allowed_registrant_contact_ids text[],
         anchor_tenant_add_grace_period_length interval not null,
         auto_renew_grace_period_length interval not null,
         automatic_transfer_length interval not null,

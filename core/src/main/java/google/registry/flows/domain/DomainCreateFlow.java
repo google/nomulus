@@ -195,7 +195,6 @@ import org.joda.time.Duration;
  * @error {@link DomainFlowUtils.NameserversNotAllowedForTldException}
  * @error {@link DomainFlowUtils.NameserversNotSpecifiedForTldWithNameserverAllowListException}
  * @error {@link DomainFlowUtils.PremiumNameBlockedException}
- * @error {@link DomainFlowUtils.RegistrantNotAllowedException}
  * @error {@link RegistrantProhibitedException}
  * @error {@link DomainFlowUtils.RegistrarMustBeActiveForThisOperationException}
  * @error {@link DomainFlowUtils.TldDoesNotExistException}

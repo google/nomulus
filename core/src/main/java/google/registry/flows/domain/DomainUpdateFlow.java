@@ -36,7 +36,6 @@ import static google.registry.flows.domain.DomainFlowUtils.validateFeesAckedIfPr
 import static google.registry.flows.domain.DomainFlowUtils.validateNameserversAllowedOnTld;
 import static google.registry.flows.domain.DomainFlowUtils.validateNameserversCountForTld;
 import static google.registry.flows.domain.DomainFlowUtils.validateNoDuplicateContacts;
-import static google.registry.flows.domain.DomainFlowUtils.validateRegistrantAllowedOnTld;
 import static google.registry.flows.domain.DomainFlowUtils.validateUpdateContactData;
 import static google.registry.flows.domain.DomainFlowUtils.verifyClientUpdateNotProhibited;
 import static google.registry.flows.domain.DomainFlowUtils.verifyNotInPendingDelete;
@@ -131,7 +130,6 @@ import org.joda.time.DateTime;
  * @error {@link DomainFlowUtils.NameserversNotAllowedForTldException}
  * @error {@link NameserversNotSpecifiedForTldWithNameserverAllowListException}
  * @error {@link DomainFlowUtils.NotAuthorizedForTldException}
- * @error {@link DomainFlowUtils.RegistrantNotAllowedException}
  * @error {@link RegistrantProhibitedException}
  * @error {@link DomainFlowUtils.SecDnsAllUsageException}
  * @error {@link DomainFlowUtils.TooManyDsRecordsException}
@@ -248,7 +246,6 @@ public final class DomainUpdateFlow implements MutatingFlow {
         add.getNameservers());
     validateContactsHaveTypes(add.getContacts());
     validateContactsHaveTypes(remove.getContacts());
-    validateRegistrantAllowedOnTld(tldStr, command.getInnerChange().getRegistrantContactId());
     validateNameserversAllowedOnTld(tldStr, add.getNameserverHostNames());
   }
 

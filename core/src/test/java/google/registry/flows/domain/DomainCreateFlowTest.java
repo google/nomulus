@@ -133,7 +133,6 @@ import google.registry.flows.domain.DomainFlowUtils.NameserversNotAllowedForTldE
 import google.registry.flows.domain.DomainFlowUtils.NameserversNotSpecifiedForTldWithNameserverAllowListException;
 import google.registry.flows.domain.DomainFlowUtils.NotAuthorizedForTldException;
 import google.registry.flows.domain.DomainFlowUtils.PremiumNameBlockedException;
-import google.registry.flows.domain.DomainFlowUtils.RegistrantNotAllowedException;
 import google.registry.flows.domain.DomainFlowUtils.RegistrantProhibitedException;
 import google.registry.flows.domain.DomainFlowUtils.RegistrarMustBeActiveForThisOperationException;
 import google.registry.flows.domain.DomainFlowUtils.TldDoesNotExistException;
@@ -2840,20 +2839,6 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
   }
 
   @Test
-  void testFailure_registrantNotAllowListed() {
-    persistActiveContact("someone");
-    persistContactsAndHosts();
-    persistResource(
-        Tld.get("tld")
-            .asBuilder()
-            .setAllowedRegistrantContactIds(ImmutableSet.of("someone"))
-            .build());
-    RegistrantNotAllowedException thrown =
-        assertThrows(RegistrantNotAllowedException.class, this::runFlow);
-    assertThat(thrown).hasMessageThat().contains("jd1234");
-  }
-
-  @Test
   void testFailure_nameserverNotAllowListed() {
     persistContactsAndHosts();
     persistResource(
@@ -2879,19 +2864,6 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
         assertThrows(
             NameserversNotSpecifiedForTldWithNameserverAllowListException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
-  }
-
-  @Test
-  void testSuccess_nameserverAndRegistrantAllowListed() throws Exception {
-    persistResource(
-        Tld.get("tld")
-            .asBuilder()
-            .setAllowedRegistrantContactIds(ImmutableSet.of("jd1234"))
-            .setAllowedFullyQualifiedHostNames(
-                ImmutableSet.of("ns1.example.net", "ns2.example.net"))
-            .build());
-    persistContactsAndHosts();
-    doSuccessfulTest();
   }
 
   @Test

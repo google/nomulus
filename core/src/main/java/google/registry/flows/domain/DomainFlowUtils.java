@@ -553,17 +553,6 @@ public class DomainFlowUtils {
     }
   }
 
-  static void validateRegistrantAllowedOnTld(String tld, Optional<String> registrantContactId)
-      throws RegistrantNotAllowedException {
-    ImmutableSet<String> allowedRegistrants = Tld.get(tld).getAllowedRegistrantContactIds();
-    // Empty allow list or null registrantContactId are ignored.
-    if (registrantContactId.isPresent()
-        && !allowedRegistrants.isEmpty()
-        && !allowedRegistrants.contains(registrantContactId.get())) {
-      throw new RegistrantNotAllowedException(registrantContactId.get());
-    }
-  }
-
   static void validateNameserversAllowedOnTld(String tld, Set<String> fullyQualifiedHostNames)
       throws EppException {
     ImmutableSet<String> allowedHostNames = Tld.get(tld).getAllowedFullyQualifiedHostNames();
@@ -1091,7 +1080,6 @@ public class DomainFlowUtils {
         command.getContacts(), command.getRegistrant(), command.getNameservers());
     validateContactsHaveTypes(command.getContacts());
     String tldStr = tld.getTldStr();
-    validateRegistrantAllowedOnTld(tldStr, command.getRegistrantContactId());
     validateNoDuplicateContacts(command.getContacts());
     validateCreateContactData(command.getRegistrant(), command.getContacts());
     ImmutableSet<String> hostNames = command.getNameserverHostNames();
@@ -1627,13 +1615,6 @@ public class DomainFlowUtils {
   public static class MissingBillingAccountMapException extends AuthorizationErrorException {
     public MissingBillingAccountMapException(CurrencyUnit currency) {
       super("Registrar is not fully onboarded for TLDs that bill in " + currency);
-    }
-  }
-
-  /** Registrant is not allow-listed for this TLD. */
-  public static class RegistrantNotAllowedException extends StatusProhibitsOperationException {
-    public RegistrantNotAllowedException(String contactId) {
-      super(String.format("Registrant with id %s is not allow-listed for this TLD", contactId));
     }
   }
 

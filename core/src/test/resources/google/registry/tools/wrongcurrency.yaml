@@ -46,7 +46,6 @@ renewBillingCostTransitions:
     amount: 11.00
 lordnUsername: null
 claimsPeriodEnd: "294247-01-10T04:00:54.775Z"
-allowedRegistrantContactIds: []
 allowedFullyQualifiedHostNames: []
 defaultPromoTokens: []
 idnTables: []

@@ -1,7 +1,6 @@
 addGracePeriodLength: "PT432000S"
 allowedFullyQualifiedHostNames:
 - "foo"
-allowedRegistrantContactIds: []
 anchorTenantAddGracePeriodLength: "PT2592000S"
 autoRenewGracePeriodLength: "PT3888000S"
 automaticTransferLength: "PT432000S"
