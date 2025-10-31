@@ -22,31 +22,13 @@ import google.registry.flows.EppTlsAction;
 import google.registry.flows.FlowComponent;
 import google.registry.flows.TlsCredentials.EppTlsModule;
 import google.registry.module.ReadinessProbeAction.ReadinessProbeActionFrontend;
-import google.registry.module.ReadinessProbeAction.ReadinessProbeConsoleAction;
 import google.registry.monitoring.whitebox.WhiteboxModule;
 import google.registry.request.RequestComponentBuilder;
 import google.registry.request.RequestModule;
 import google.registry.request.RequestScope;
-import google.registry.ui.server.console.ConsoleDomainGetAction;
-import google.registry.ui.server.console.ConsoleDomainListAction;
-import google.registry.ui.server.console.ConsoleDumDownloadAction;
-import google.registry.ui.server.console.ConsoleEppPasswordAction;
 import google.registry.ui.server.console.ConsoleModule;
-import google.registry.ui.server.console.ConsoleOteAction;
-import google.registry.ui.server.console.ConsoleRegistryLockAction;
-import google.registry.ui.server.console.ConsoleRegistryLockVerifyAction;
-import google.registry.ui.server.console.ConsoleUpdateRegistrarAction;
-import google.registry.ui.server.console.ConsoleUserDataAction;
-import google.registry.ui.server.console.ConsoleUsersAction;
-import google.registry.ui.server.console.PasswordResetRequestAction;
-import google.registry.ui.server.console.PasswordResetVerifyAction;
-import google.registry.ui.server.console.RegistrarsAction;
-import google.registry.ui.server.console.domains.ConsoleBulkDomainAction;
-import google.registry.ui.server.console.settings.ContactAction;
-import google.registry.ui.server.console.settings.RdapRegistrarFieldsAction;
-import google.registry.ui.server.console.settings.SecurityAction;
 
-/** Dagger component with per-request lifetime for "default" App Engine module. */
+/** Dagger component with per-request lifetime for "frontend" App Engine module. */
 @RequestScope
 @Subcomponent(
     modules = {
@@ -58,47 +40,12 @@ import google.registry.ui.server.console.settings.SecurityAction;
       WhiteboxModule.class,
     })
 public interface FrontendRequestComponent {
-  ConsoleBulkDomainAction consoleBulkDomainAction();
-
-  ConsoleDomainGetAction consoleDomainGetAction();
-
-  ConsoleDomainListAction consoleDomainListAction();
-
-  ConsoleEppPasswordAction consoleEppPasswordAction();
-
-  ConsoleOteAction consoleOteAction();
-
-  ConsoleRegistryLockAction consoleRegistryLockAction();
-
-  ConsoleRegistryLockVerifyAction consoleRegistryLockVerifyAction();
-
-  ConsoleUpdateRegistrarAction consoleUpdateRegistrarAction();
-
-  ConsoleUserDataAction consoleUserDataAction();
-
-  ConsoleUsersAction consoleUsersAction();
-
-  ConsoleDumDownloadAction consoleDumDownloadAction();
-
-  ContactAction contactAction();
 
   EppTlsAction eppTlsAction();
 
   FlowComponent.Builder flowComponentBuilder();
 
-  PasswordResetRequestAction passwordResetRequestAction();
-
-  PasswordResetVerifyAction passwordResetVerifyAction();
-
-  RdapRegistrarFieldsAction rdapRegistrarFieldsAction();
-
   ReadinessProbeActionFrontend readinessProbeActionFrontend();
-
-  ReadinessProbeConsoleAction readinessProbeConsoleAction();
-
-  RegistrarsAction registrarsAction();
-
-  SecurityAction securityAction();
 
   @Subcomponent.Builder
   abstract class Builder implements RequestComponentBuilder<FrontendRequestComponent> {

@@ -30,7 +30,6 @@ import google.registry.beam.wipeout.WipeOutContactHistoryPiiPipeline;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.model.contact.ContactHistory;
 import google.registry.request.Action;
-import google.registry.request.Action.GaeService;
 import google.registry.request.Parameter;
 import google.registry.request.Response;
 import google.registry.request.auth.Auth;
@@ -49,7 +48,7 @@ import org.joda.time.DateTime;
  * time.
  */
 @Action(
-    service = GaeService.BACKEND,
+    service = Action.Service.BACKEND,
     path = WipeOutContactHistoryPiiAction.PATH,
     auth = Auth.AUTH_ADMIN)
 public class WipeOutContactHistoryPiiAction implements Runnable {

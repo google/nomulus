@@ -26,7 +26,6 @@ import google.registry.model.domain.Domain;
 import google.registry.model.host.Host;
 import google.registry.persistence.VKey;
 import google.registry.request.Action;
-import google.registry.request.Action.GaeService;
 import google.registry.request.Parameter;
 import google.registry.request.Response;
 import google.registry.request.auth.Auth;
@@ -34,7 +33,7 @@ import jakarta.inject.Inject;
 import org.joda.time.DateTime;
 
 @Action(
-    service = GaeService.BACKEND,
+    service = Action.Service.BACKEND,
     path = PATH,
     method = Action.Method.POST,
     auth = Auth.AUTH_ADMIN)

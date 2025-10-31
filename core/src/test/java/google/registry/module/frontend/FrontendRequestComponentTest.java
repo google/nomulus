@@ -16,7 +16,7 @@ package google.registry.module.frontend;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import google.registry.request.Action.GaeService;
+import google.registry.request.Action;
 import google.registry.request.RouterDisplayHelper;
 import google.registry.testing.GoldenFileTestHelper;
 import org.junit.jupiter.api.Test;
@@ -35,7 +35,7 @@ class FrontendRequestComponentTest {
   void testRoutingService() {
     assertThat(
             RouterDisplayHelper.extractHumanReadableRoutesWithWrongService(
-                FrontendRequestComponent.class, GaeService.DEFAULT))
+                FrontendRequestComponent.class, Action.Service.FRONTEND))
         .isEmpty();
   }
 }

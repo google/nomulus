@@ -1,5 +1,0 @@
-SERVICE PATH                                CLASS                             METHODS  OK MIN USER_POLICY
-BACKEND /_dr/task/bsaDownload               BsaDownloadAction                 GET,POST n  APP ADMIN
-BACKEND /_dr/task/bsaRefresh                BsaRefreshAction                  GET,POST n  APP ADMIN
-BACKEND /_dr/task/bsaValidate               BsaValidateAction                 GET,POST n  APP ADMIN
-BACKEND /_dr/task/uploadBsaUnavailableNames UploadBsaUnavailableDomainsAction GET,POST n  APP ADMIN

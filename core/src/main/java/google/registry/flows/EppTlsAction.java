@@ -15,7 +15,6 @@
 package google.registry.flows;
 
 import google.registry.request.Action;
-import google.registry.request.Action.GaeService;
 import google.registry.request.Action.Method;
 import google.registry.request.Payload;
 import google.registry.request.auth.Auth;
@@ -27,7 +26,7 @@ import jakarta.servlet.http.HttpServletRequest;
  * to RFC 5730. Commands must be requested via POST.
  */
 @Action(
-    service = GaeService.DEFAULT,
+    service = Action.Service.FRONTEND,
     path = "/_dr/epp",
     method = Method.POST,
     auth = Auth.AUTH_ADMIN)

@@ -2,40 +2,6 @@
   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
   xsi:schemaLocation="https://jakarta.ee/xml/ns/jakartaee https://jakarta.ee/xml/ns/jakartaee/web-app_6_0.xsd"
   version="6.0">
-  <!-- Servlets -->
-
-  <!-- Servlet for injected backends actions -->
-  <servlet>
-    <display-name>BsaServlet</display-name>
-    <servlet-name>bsa-servlet</servlet-name>
-    <servlet-class>google.registry.module.bsa.BsaServlet</servlet-class>
-    <load-on-startup>1</load-on-startup>
-  </servlet>
-
-  <!-- Download action -->
-  <servlet-mapping>
-    <servlet-name>bsa-servlet</servlet-name>
-    <url-pattern>/_dr/task/bsaDownload</url-pattern>
-  </servlet-mapping>
-
-  <!-- Refresh action -->
-  <servlet-mapping>
-    <servlet-name>bsa-servlet</servlet-name>
-    <url-pattern>/_dr/task/bsaRefresh</url-pattern>
-  </servlet-mapping>
-
-  <!-- Refresh action -->
-  <servlet-mapping>
-    <servlet-name>bsa-servlet</servlet-name>
-    <url-pattern>/_dr/task/bsaValidate</url-pattern>
-  </servlet-mapping>
-
-  <!-- Upload unavailable domains to BSA action -->
-  <servlet-mapping>
-    <servlet-name>bsa-servlet</servlet-name>
-    <url-pattern>/_dr/task/uploadBsaUnavailableNames</url-pattern>
-  </servlet-mapping>
-
   <!-- Security config -->
   <security-constraint>
     <web-resource-collection>

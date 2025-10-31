@@ -28,8 +28,6 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.net.MediaType;
 import google.registry.config.RegistryConfig.Config;
-import google.registry.request.Action.GaeService;
-import google.registry.request.Action.GkeService;
 import google.registry.request.Action.Service;
 import jakarta.inject.Inject;
 import java.util.List;
@@ -81,10 +79,6 @@ class CurlCommand implements CommandWithConnection {
   private String serviceName;
 
   @Inject
-  @Config("useGke")
-  boolean useGke;
-
-  @Inject
   @Config("useCanary")
   boolean useCanary;
 
@@ -103,11 +97,7 @@ class CurlCommand implements CommandWithConnection {
       throw new IllegalArgumentException("You may not specify a body for a get method.");
     }
 
-    Service service =
-        useGke
-            ? GkeService.valueOf(Ascii.toUpperCase(serviceName))
-            : GaeService.valueOf(Ascii.toUpperCase(serviceName));
-
+    Service service = Service.valueOf(Ascii.toUpperCase(serviceName));
     ServiceConnection connectionToService = connection.withService(service, useCanary);
     String response =
         (method == Method.GET)

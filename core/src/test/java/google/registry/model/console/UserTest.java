@@ -166,7 +166,7 @@ public class UserTest extends EntityTestCase {
     cloudTasksHelper.assertTasksEnqueued(
         "console-user-group-update",
         new TaskMatcher()
-            .service("TOOLS")
+            .service("BACKEND")
             .method(HttpMethod.POST)
             .path("/_dr/admin/updateUserGroup")
             .param("userEmailAddress", "email@example.com")
@@ -222,7 +222,7 @@ public class UserTest extends EntityTestCase {
     cloudTasksHelper.assertTasksEnqueued(
         "console-user-group-update",
         new TaskMatcher()
-            .service("TOOLS")
+            .service("BACKEND")
             .method(HttpMethod.POST)
             .path("/_dr/admin/updateUserGroup")
             .param("userEmailAddress", "email@example.com")

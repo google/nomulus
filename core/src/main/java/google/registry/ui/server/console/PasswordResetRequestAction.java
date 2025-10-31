@@ -34,8 +34,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import javax.annotation.Nullable;
 
 @Action(
-    service = Action.GaeService.DEFAULT,
-    gkeService = Action.GkeService.CONSOLE,
+    service = Action.Service.CONSOLE,
     path = PasswordResetRequestAction.PATH,
     method = Action.Method.POST,
     auth = Auth.AUTH_PUBLIC_LOGGED_IN)

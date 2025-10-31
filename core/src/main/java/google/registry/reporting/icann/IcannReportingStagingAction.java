@@ -34,7 +34,6 @@ import google.registry.groups.GmailClient;
 import google.registry.reporting.ReportingModule;
 import google.registry.reporting.icann.IcannReportingModule.ReportType;
 import google.registry.request.Action;
-import google.registry.request.Action.GaeService;
 import google.registry.request.Parameter;
 import google.registry.request.Response;
 import google.registry.request.auth.Auth;
@@ -66,7 +65,7 @@ import org.joda.time.format.DateTimeFormat;
  * 'transactions'. If none specified - defaults to generating both.
  */
 @Action(
-    service = GaeService.BACKEND,
+    service = Action.Service.BACKEND,
     path = IcannReportingStagingAction.PATH,
     method = POST,
     auth = Auth.AUTH_ADMIN)

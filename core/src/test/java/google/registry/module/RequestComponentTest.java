@@ -18,46 +18,20 @@ import static com.google.common.truth.Truth.assertThat;
 
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
-import google.registry.module.backend.BackendRequestComponent;
-import google.registry.module.bsa.BsaRequestComponent;
-import google.registry.module.frontend.FrontendRequestComponent;
-import google.registry.module.pubapi.PubApiRequestComponent;
-import google.registry.module.tools.ToolsRequestComponent;
 import google.registry.testing.GoldenFileTestHelper;
 import google.registry.testing.TestDataHelper;
-import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link RequestComponent}. */
 public class RequestComponentTest {
-  private static final ImmutableMap<Class<?>, String> GaeComponents =
-      ImmutableMap.of(
-          FrontendRequestComponent.class, "frontend",
-          BackendRequestComponent.class, "backend",
-          ToolsRequestComponent.class, "tools",
-          PubApiRequestComponent.class, "pubapi",
-          BsaRequestComponent.class, "bsa");
 
   @Test
   void testRoutingMap() {
     GoldenFileTestHelper.assertThatRoutesFromComponent(RequestComponent.class)
         .describedAs("routing map")
         .isEqualToGolden(RequestComponentTest.class, "routing.txt");
-  }
-
-  @Test
-  @Disabled("To be removed with GAE components")
-  void testGaeToJettyRoutingCoverage() {
-    Set<Route> jettyRoutes = getRoutes(RequestComponent.class, "routing.txt");
-    Set<Route> gaeRoutes = new HashSet<>();
-    for (var component : GaeComponents.entrySet()) {
-      gaeRoutes.addAll(getRoutes(component.getKey(), component.getValue() + "_routing.txt"));
-    }
-    assertThat(jettyRoutes).isEqualTo(gaeRoutes);
   }
 
   private Set<Route> getRoutes(Class<?> context, String filename) {
