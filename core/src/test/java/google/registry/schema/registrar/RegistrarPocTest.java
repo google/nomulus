@@ -53,9 +53,9 @@ class RegistrarPocTest {
             .setPhoneNumber("+1.2125650000")
             .setFaxNumber("+1.2125650001")
             .setTypes(ImmutableSet.of(WHOIS))
-            .setVisibleInWhoisAsAdmin(true)
-            .setVisibleInWhoisAsTech(false)
-            .setVisibleInDomainWhoisAsAbuse(false)
+            .setVisibleInRdapAsAdmin(true)
+            .setVisibleInRdapAsTech(false)
+            .setVisibleInDomainRdapAsAbuse(false)
             .build();
   }
 

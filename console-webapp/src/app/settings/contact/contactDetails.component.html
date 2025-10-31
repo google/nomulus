@@ -111,7 +111,7 @@
       <h1>RDAP Preferences</h1>
       <div>
         <mat-checkbox
-          [(ngModel)]="contactService.contactInEdit.visibleInWhoisAsAdmin"
+          [(ngModel)]="contactService.contactInEdit.visibleInRdapAsAdmin"
           [ngModelOptions]="{ standalone: true }"
           >Show in Registrar RDAP record as admin contact</mat-checkbox
         >
@@ -119,7 +119,7 @@
 
       <div>
         <mat-checkbox
-          [(ngModel)]="contactService.contactInEdit.visibleInWhoisAsTech"
+          [(ngModel)]="contactService.contactInEdit.visibleInRdapAsTech"
           [ngModelOptions]="{ standalone: true }"
           >Show in Registrar RDAP record as technical contact</mat-checkbox
         >
@@ -127,7 +127,7 @@
 
       <div>
         <mat-checkbox
-          [(ngModel)]="contactService.contactInEdit.visibleInDomainWhoisAsAbuse"
+          [(ngModel)]="contactService.contactInEdit.visibleInDomainRdapAsAbuse"
           [ngModelOptions]="{ standalone: true }"
           >Show Phone and Email in Domain RDAP Record as registrar abuse contact
           (per CL&D requirements)</mat-checkbox
@@ -189,24 +189,24 @@
         <mat-list-item role="listitem">
           <h2>RDAP Preferences</h2>
         </mat-list-item>
-        @if(contactService.contactInEdit.visibleInWhoisAsAdmin) {
+        @if(contactService.contactInEdit.visibleInRdapAsAdmin) {
         <mat-divider></mat-divider>
         <mat-list-item role="listitem">
           <span class="console-app__list-value"
             >Show in Registrar RDAP record as admin contact</span
           >
         </mat-list-item>
-        } @if(contactService.contactInEdit.visibleInWhoisAsTech) {
+        } @if(contactService.contactInEdit.visibleInRdapAsTech) {
         <mat-divider></mat-divider>
         <mat-list-item
           role="listitem"
-          *ngIf="contactService.contactInEdit.visibleInWhoisAsTech"
+          *ngIf="contactService.contactInEdit.visibleInRdapAsTech"
         >
           <span class="console-app__list-value"
             >Show in Registrar RDAP record as technical contact</span
           >
         </mat-list-item>
-        } @if(contactService.contactInEdit.visibleInDomainWhoisAsAbuse) {
+        } @if(contactService.contactInEdit.visibleInDomainRdapAsAbuse) {
         <mat-divider></mat-divider>
         <mat-list-item role="listitem">
           <span class="console-app__list-value"

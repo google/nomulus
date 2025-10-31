@@ -105,7 +105,7 @@ final class CreateRegistrarCommand extends CreateOrUpdateRegistrarCommand
         "Cannot add allowed TLDs when creating a REAL registrar in a production environment."
             + " Please create the registrar without allowed TLDs, then use `nomulus"
             + " registrar_contact` to create a registrar contact for it that is visible as the"
-            + " abuse contact in WHOIS. Then use `nomulus update_registrar` to add the allowed"
+            + " abuse contact in RDAP. Then use `nomulus update_registrar` to add the allowed"
             + " TLDs.");
   }
 

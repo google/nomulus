@@ -354,13 +354,13 @@ class Spec11EmailUtilsTest {
   }
 
   @Test
-  void testSuccess_useWhoisAbuseEmailIfAvailable() throws Exception {
-    // if John Doe is the whois abuse contact, email them instead of the regular email
+  void testSuccess_useRdapAbuseEmailIfAvailable() throws Exception {
+    // if John Doe is the RDAP abuse contact, email them instead of the regular email
     persistResource(
         makeRegistrarContact2()
             .asBuilder()
             .setEmailAddress("johndoe@theregistrar.com")
-            .setVisibleInDomainWhoisAsAbuse(true)
+            .setVisibleInDomainRdapAsAbuse(true)
             .build());
     emailUtils.emailSpec11Reports(
         date,

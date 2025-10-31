@@ -48,7 +48,7 @@ import java.util.Optional;
 import javax.annotation.Nullable;
 import org.joda.time.DateTime;
 
-/** Test helper methods for the rdap and whois packages. */
+/** Test helper methods for the RDAP package. */
 public final class FullFieldsTestEntityHelper {
 
   public static Registrar makeRegistrar(
@@ -100,8 +100,8 @@ public final class FullFieldsTestEntityHelper {
             .setTypes(ImmutableSet.of(RegistrarPoc.Type.ADMIN))
             // Purposely flip the internal/external admin/tech
             // distinction to make sure we're not relying on it.  Sigh.
-            .setVisibleInWhoisAsAdmin(false)
-            .setVisibleInWhoisAsTech(true)
+            .setVisibleInRdapAsAdmin(false)
+            .setVisibleInRdapAsTech(true)
             .build(),
         new RegistrarPoc.Builder()
             .setRegistrar(registrar)
@@ -112,8 +112,8 @@ public final class FullFieldsTestEntityHelper {
             .setTypes(ImmutableSet.of(RegistrarPoc.Type.TECH))
             // Purposely flip the internal/external admin/tech
             // distinction to make sure we're not relying on it.  Sigh.
-            .setVisibleInWhoisAsAdmin(true)
-            .setVisibleInWhoisAsTech(false)
+            .setVisibleInRdapAsAdmin(true)
+            .setVisibleInRdapAsTech(false)
             .build(),
         new RegistrarPoc.Builder()
             .setRegistrar(registrar)
@@ -121,7 +121,7 @@ public final class FullFieldsTestEntityHelper {
             .setEmailAddress("jakedoe@example.com")
             .setPhoneNumber("+1.2125551216")
             .setFaxNumber("+1.2125551216")
-            .setVisibleInDomainWhoisAsAbuse(true)
+            .setVisibleInDomainRdapAsAbuse(true)
             .build());
   }
 

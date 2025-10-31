@@ -683,7 +683,6 @@
     create table "RegistrarPoc" (
         email_address text not null,
         registrar_id text not null,
-        allowed_to_set_registry_lock_password boolean not null,
         fax_number text,
         id bigint,
         name text,

@@ -48,9 +48,9 @@ import java.util.Set;
  * A contact for a Registrar. Note, equality, hashCode and comparable have been overridden to only
  * enable key equality.
  *
- * <p>IMPORTANT NOTE: Any time that you change, update, or delete RegistrarContact entities, you
- * *MUST* also modify the persisted Registrar entity with {@link Registrar#contactsRequireSyncing}
- * set to true.
+ * <p>IMPORTANT NOTE: Any time that you change, update, or delete RegistrarPoc entities, you *MUST*
+ * also modify the persisted Registrar entity with {@link Registrar#contactsRequireSyncing} set to
+ * true.
  */
 @Entity
 @IdClass(RegistrarPoc.RegistrarPocId.class)
@@ -58,8 +58,8 @@ public class RegistrarPoc extends ImmutableObject implements Jsonifiable, Unsafe
   /**
    * Registrar contacts types for partner communication tracking.
    *
-   * <p><b>Note:</b> These types only matter to the registry. They are not meant to be used for
-   * WHOIS or RDAP results.
+   * <p><b>Note:</b> These types only matter to the registry. They are not meant to be used for RDAP
+   * results.
    */
   public enum Type {
     ABUSE("abuse", true),
@@ -115,32 +115,23 @@ public class RegistrarPoc extends ImmutableObject implements Jsonifiable, Unsafe
   @Expose
   Set<Type> types;
 
-  /**
-   * Whether this contact is publicly visible in WHOIS registrar query results as an Admin contact.
-   */
-  @Column(nullable = false)
+  /** If this contact is publicly visible in RDAP registrar query results as an Admin contact */
+  @Column(nullable = false, name = "visibleInWhoisAsAdmin")
   @Expose
-  boolean visibleInWhoisAsAdmin = false;
+  boolean visibleInRdapAsAdmin = false;
+
+  /** If this contact is publicly visible in RDAP registrar query results as a Technical contact */
+  @Column(nullable = false, name = "visibleInWhoisAsTech")
+  @Expose
+  boolean visibleInRdapAsTech = false;
 
   /**
-   * Whether this contact is publicly visible in WHOIS registrar query results as a Technical
-   * contact.
-   */
-  @Column(nullable = false)
-  @Expose
-  boolean visibleInWhoisAsTech = false;
-
-  /**
-   * Whether this contact's phone number and email address is publicly visible in WHOIS domain query
+   * If this contact's phone number and email address are publicly visible in RDAP domain query
    * results as registrar abuse contact info.
    */
-  @Column(nullable = false)
+  @Column(nullable = false, name = "visibleInDomainWhoisAsAbuse")
   @Expose
-  boolean visibleInDomainWhoisAsAbuse = false;
-
-  /** Legacy field, around until we can remove the non-null constraint and the column from SQL. */
-  @Column(nullable = false)
-  boolean allowedToSetRegistryLockPassword = false;
+  boolean visibleInDomainRdapAsAbuse = false;
 
   /**
    * Helper to update the contacts associated with a Registrar. This requires querying for the
@@ -188,16 +179,16 @@ public class RegistrarPoc extends ImmutableObject implements Jsonifiable, Unsafe
     return nullToEmptyImmutableSortedCopy(types);
   }
 
-  public boolean getVisibleInWhoisAsAdmin() {
-    return visibleInWhoisAsAdmin;
+  public boolean getVisibleInRdapAsAdmin() {
+    return visibleInRdapAsAdmin;
   }
 
-  public boolean getVisibleInWhoisAsTech() {
-    return visibleInWhoisAsTech;
+  public boolean getVisibleInRdapAsTech() {
+    return visibleInRdapAsTech;
   }
 
-  public boolean getVisibleInDomainWhoisAsAbuse() {
-    return visibleInDomainWhoisAsAbuse;
+  public boolean getVisibleInDomainRdapAsAbuse() {
+    return visibleInDomainRdapAsAbuse;
   }
 
   public Builder asBuilder() {
@@ -214,8 +205,8 @@ public class RegistrarPoc extends ImmutableObject implements Jsonifiable, Unsafe
    * person@example.com
    * Tel: +1.2125650666
    * Types: [ADMIN, WHOIS]
-   * Visible in WHOIS as Admin contact: Yes
-   * Visible in WHOIS as Technical contact: No
+   * Visible in RDAP as Admin contact: Yes
+   * Visible in RDAP as Technical contact: No
    * Registrar-Console access: Yes
    * Login Email Address: person@registry.example
    * }</pre>
@@ -232,18 +223,18 @@ public class RegistrarPoc extends ImmutableObject implements Jsonifiable, Unsafe
     }
     result.append("Types: ").append(getTypes()).append('\n');
     result
-        .append("Visible in registrar WHOIS query as Admin contact: ")
-        .append(getVisibleInWhoisAsAdmin() ? "Yes" : "No")
+        .append("Visible in registrar RDAP query as Admin contact: ")
+        .append(getVisibleInRdapAsAdmin() ? "Yes" : "No")
         .append('\n');
     result
-        .append("Visible in registrar WHOIS query as Technical contact: ")
-        .append(getVisibleInWhoisAsTech() ? "Yes" : "No")
+        .append("Visible in registrar RDAP query as Technical contact: ")
+        .append(getVisibleInRdapAsTech() ? "Yes" : "No")
         .append('\n');
     result
         .append(
-            "Phone number and email visible in domain WHOIS query as "
+            "Phone number and email visible in domain RDAP query as "
                 + "Registrar Abuse contact info: ")
-        .append(getVisibleInDomainWhoisAsAbuse() ? "Yes" : "No")
+        .append(getVisibleInDomainRdapAsAbuse() ? "Yes" : "No")
         .append('\n');
     return result.toString();
   }
@@ -256,9 +247,9 @@ public class RegistrarPoc extends ImmutableObject implements Jsonifiable, Unsafe
         .put("phoneNumber", phoneNumber)
         .put("faxNumber", faxNumber)
         .put("types", getTypes().stream().map(Object::toString).collect(joining(",")))
-        .put("visibleInWhoisAsAdmin", visibleInWhoisAsAdmin)
-        .put("visibleInWhoisAsTech", visibleInWhoisAsTech)
-        .put("visibleInDomainWhoisAsAbuse", visibleInDomainWhoisAsAbuse)
+        .put("visibleInRdapAsAdmin", visibleInRdapAsAdmin)
+        .put("visibleInRdapAsTech", visibleInRdapAsTech)
+        .put("visibleInDomainRdapAsAbuse", visibleInDomainRdapAsAbuse)
         .put("id", getId())
         .build();
   }
@@ -336,18 +327,18 @@ public class RegistrarPoc extends ImmutableObject implements Jsonifiable, Unsafe
       return this;
     }
 
-    public Builder setVisibleInWhoisAsAdmin(boolean visible) {
-      getInstance().visibleInWhoisAsAdmin = visible;
+    public Builder setVisibleInRdapAsAdmin(boolean visible) {
+      getInstance().visibleInRdapAsAdmin = visible;
       return this;
     }
 
-    public Builder setVisibleInWhoisAsTech(boolean visible) {
-      getInstance().visibleInWhoisAsTech = visible;
+    public Builder setVisibleInRdapAsTech(boolean visible) {
+      getInstance().visibleInRdapAsTech = visible;
       return this;
     }
 
-    public Builder setVisibleInDomainWhoisAsAbuse(boolean visible) {
-      getInstance().visibleInDomainWhoisAsAbuse = visible;
+    public Builder setVisibleInDomainRdapAsAbuse(boolean visible) {
+      getInstance().visibleInDomainRdapAsAbuse = visible;
       return this;
     }
   }

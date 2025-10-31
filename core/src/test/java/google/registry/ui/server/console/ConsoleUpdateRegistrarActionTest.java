@@ -135,7 +135,7 @@ class ConsoleUpdateRegistrarActionTest extends ConsoleActionBaseTestCase {
   }
 
   @Test
-  void testFails_missingWhoisContact() throws IOException {
+  void testFails_missingRdapContact() throws IOException {
     RegistryEnvironment.PRODUCTION.setup(systemPropertyExtension);
     var action =
         createAction(
@@ -148,11 +148,11 @@ class ConsoleUpdateRegistrarActionTest extends ConsoleActionBaseTestCase {
     action.run();
     assertThat(response.getStatus()).isEqualTo(SC_BAD_REQUEST);
     assertThat((String) response.getPayload())
-        .contains("Cannot modify allowed TLDs if there is no WHOIS abuse contact set");
+        .contains("Cannot modify allowed TLDs if there is no RDAP abuse contact set");
   }
 
   @Test
-  void testSuccess_presentWhoisContact() throws IOException {
+  void testSuccess_presentRdapContact() throws IOException {
     RegistryEnvironment.PRODUCTION.setup(systemPropertyExtension);
     RegistrarPoc contact =
         new RegistrarPoc.Builder()
@@ -162,9 +162,9 @@ class ConsoleUpdateRegistrarActionTest extends ConsoleActionBaseTestCase {
             .setPhoneNumber("+1.9999999999")
             .setFaxNumber("+1.9999999991")
             .setTypes(ImmutableSet.of(WHOIS))
-            .setVisibleInWhoisAsAdmin(true)
-            .setVisibleInWhoisAsTech(true)
-            .setVisibleInDomainWhoisAsAbuse(true)
+            .setVisibleInRdapAsAdmin(true)
+            .setVisibleInRdapAsTech(true)
+            .setVisibleInDomainRdapAsAbuse(true)
             .build();
     persistResource(contact);
     var action =

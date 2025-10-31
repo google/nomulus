@@ -47,9 +47,9 @@ export interface Contact {
   registrarId?: string;
   faxNumber?: string;
   types: Array<contactType>;
-  visibleInWhoisAsAdmin?: boolean;
-  visibleInWhoisAsTech?: boolean;
-  visibleInDomainWhoisAsAbuse?: boolean;
+  visibleInRdapAsAdmin?: boolean;
+  visibleInRdapAsTech?: boolean;
+  visibleInDomainRdapAsAbuse?: boolean;
 }
 
 export interface ViewReadyContact extends Contact {

@@ -192,7 +192,7 @@ public class Registrar extends UpdateAutoTimestampEntity implements Buildable, J
       immutableEnumSet(State.ACTIVE, State.SUSPENDED);
 
   /**
-   * The types for which a {@link Registrar} should be included in WHOIS and RDAP output. We exclude
+   * The types for which a {@link Registrar} should be included in RDAP output. We exclude
    * registrars of type TEST. We considered excluding INTERNAL as well, but decided that
    * troubleshooting would be easier with INTERNAL registrars visible. Before removing other types
    * from view, carefully consider the effect on things like prober monitoring and OT&E.
@@ -416,13 +416,13 @@ public class Registrar extends UpdateAutoTimestampEntity implements Buildable, J
   String phonePasscode;
 
   /**
-   * A dirty bit for whether RegistrarContact changes have been made that haven't been synced to
-   * Google Groups yet. When creating a new instance, contacts require syncing by default.
+   * A dirty bit for whether RegistrarPoc changes have been made that haven't been synced to Google
+   * Groups yet. When creating a new instance, contacts require syncing by default.
    */
   @Column(nullable = false)
   boolean contactsRequireSyncing = true;
 
-  /** Whether or not registry lock is allowed for this registrar. */
+  /** Whether registry lock is allowed for this registrar. */
   @Column(nullable = false)
   @Expose
   boolean registryLockAllowed = false;
@@ -612,11 +612,11 @@ public class Registrar extends UpdateAutoTimestampEntity implements Buildable, J
   }
 
   /**
-   * Returns the {@link RegistrarPoc} that is the WHOIS abuse contact for this registrar, or empty
-   * if one does not exist.
+   * Returns the {@link RegistrarPoc} that is the RDAP abuse contact for this registrar, or empty if
+   * one does not exist.
    */
-  public Optional<RegistrarPoc> getWhoisAbuseContact() {
-    return getContacts().stream().filter(RegistrarPoc::getVisibleInDomainWhoisAsAbuse).findFirst();
+  public Optional<RegistrarPoc> getRdapAbuseContact() {
+    return getContacts().stream().filter(RegistrarPoc::getVisibleInDomainRdapAsAbuse).findFirst();
   }
 
   private ImmutableList<RegistrarPoc> getPocs(TransactionManager txnManager) {

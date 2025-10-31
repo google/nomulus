@@ -79,17 +79,17 @@ public class ConsoleUpdateRegistrarAction extends ConsoleApiAction {
                   registrarParam.getRegistrarId());
 
               // Only allow modifying allowed TLDs if we're in a non-PRODUCTION environment, if the
-              // registrar is not REAL, or the registrar has a WHOIS abuse contact set.
+              // registrar is not REAL, or the registrar has a RDAP abuse contact set.
               if (!registrarParam.getAllowedTlds().isEmpty()) {
                 boolean isRealRegistrar =
                     Registrar.Type.REAL.equals(existingRegistrar.get().getType());
                 if (RegistryEnvironment.PRODUCTION.equals(RegistryEnvironment.get())
                     && isRealRegistrar) {
                   checkArgumentPresent(
-                      existingRegistrar.get().getWhoisAbuseContact(),
-                      "Cannot modify allowed TLDs if there is no WHOIS abuse contact set. Please"
+                      existingRegistrar.get().getRdapAbuseContact(),
+                      "Cannot modify allowed TLDs if there is no RDAP abuse contact set. Please"
                           + " use the \"nomulus registrar_contact\" command on this registrar to"
-                          + " set a WHOIS abuse contact.");
+                          + " set a RDAP abuse contact.");
                 }
               }
 

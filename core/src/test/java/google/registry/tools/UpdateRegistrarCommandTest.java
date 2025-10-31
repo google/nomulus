@@ -108,7 +108,7 @@ class UpdateRegistrarCommandTest extends CommandTestCase<UpdateRegistrarCommand>
 
   @Test
   void testSuccess_allowedTlds() throws Exception {
-    persistWhoisAbuseContact();
+    persistRdapAbuseContact();
     createTlds("xn--q9jyb4c", "foobar");
     persistResource(
         loadRegistrar("NewRegistrar")
@@ -126,7 +126,7 @@ class UpdateRegistrarCommandTest extends CommandTestCase<UpdateRegistrarCommand>
 
   @Test
   void testSuccess_addAllowedTlds() throws Exception {
-    persistWhoisAbuseContact();
+    persistRdapAbuseContact();
     createTlds("xn--q9jyb4c", "foo", "bar");
     persistResource(
         loadRegistrar("NewRegistrar")
@@ -144,7 +144,7 @@ class UpdateRegistrarCommandTest extends CommandTestCase<UpdateRegistrarCommand>
 
   @Test
   void testSuccess_addAllowedTldsWithDupes() throws Exception {
-    persistWhoisAbuseContact();
+    persistRdapAbuseContact();
     createTlds("xn--q9jyb4c", "foo", "bar");
     persistResource(
         loadRegistrar("NewRegistrar")
@@ -968,11 +968,11 @@ class UpdateRegistrarCommandTest extends CommandTestCase<UpdateRegistrarCommand>
         .isEqualTo("Provided email lolcat is not a valid email address");
   }
 
-  private void persistWhoisAbuseContact() {
+  private void persistRdapAbuseContact() {
     persistResource(
         JpaTransactionManagerExtension.makeRegistrarContact1()
             .asBuilder()
-            .setVisibleInDomainWhoisAsAbuse(true)
+            .setVisibleInDomainRdapAsAbuse(true)
             .build());
   }
 }
