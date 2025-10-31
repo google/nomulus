@@ -35,7 +35,6 @@ import google.registry.privileges.secretmanager.SecretManagerModule;
 import google.registry.request.Modules.GsonModule;
 import google.registry.request.Modules.NetHttpTransportModule;
 import google.registry.request.auth.AuthModule;
-import google.registry.ui.ConsoleDebug.ConsoleConfigModule;
 import google.registry.util.UtilsModule;
 import jakarta.inject.Singleton;
 
@@ -46,7 +45,6 @@ import jakarta.inject.Singleton;
       AuthModule.class,
       CloudTasksUtilsModule.class,
       ConfigModule.class,
-      ConsoleConfigModule.class,
       CredentialModule.class,
       CustomLogicFactoryModule.class,
       CloudTasksUtilsModule.class,

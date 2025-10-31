@@ -40,7 +40,6 @@ import google.registry.request.Action.GaeService;
 import google.registry.request.Action.GkeService;
 import google.registry.request.Parameter;
 import google.registry.request.auth.Auth;
-import google.registry.ui.forms.FormException;
 import google.registry.ui.server.console.ConsoleApiAction;
 import google.registry.ui.server.console.ConsoleApiParams;
 import jakarta.inject.Inject;
@@ -166,7 +165,7 @@ public class ContactAction extends ConsoleApiAction {
 
     try {
       checkContactRequirements(oldContacts, newContacts);
-    } catch (FormException e) {
+    } catch (ContactRequirementException e) {
       logger.atWarning().withCause(e).log(
           "Error processing contacts post request for registrar: %s", registrarId);
       throw new IllegalArgumentException(e);
@@ -196,7 +195,7 @@ public class ContactAction extends ConsoleApiAction {
   /**
    * Enforces business logic checks on registrar contacts.
    *
-   * @throws FormException if the checks fail.
+   * @throws ContactRequirementException if the checks fail.
    */
   private static void checkContactRequirements(
       ImmutableSet<RegistrarPoc> existingContacts, ImmutableSet<RegistrarPoc> updatedContacts) {
@@ -299,7 +298,7 @@ public class ContactAction extends ConsoleApiAction {
   }
 
   /** Thrown when a set of contacts doesn't meet certain constraints. */
-  private static class ContactRequirementException extends FormException {
+  private static class ContactRequirementException extends RuntimeException {
     ContactRequirementException(String msg) {
       super(msg);
     }
