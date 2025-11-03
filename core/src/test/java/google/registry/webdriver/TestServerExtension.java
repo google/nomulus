@@ -247,11 +247,6 @@ public final class TestServerExtension implements BeforeEachCallback, AfterEachC
       return this;
     }
 
-    /** Sets the list of servlet {@link Route} objects for {@link TestServer}. */
-    public Builder setRoutes(Route... routes) {
-      return setRoutes(ImmutableList.copyOf(routes));
-    }
-
     /** Sets an ordered list of fixtures that should be loaded on startup. */
     public Builder setFixtures(Fixture... fixtures) {
       this.fixtures = ImmutableList.copyOf(fixtures);

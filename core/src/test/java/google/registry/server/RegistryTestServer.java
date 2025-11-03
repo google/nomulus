@@ -21,9 +21,7 @@ import static google.registry.util.BuildPathUtils.getResourcesDir;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.net.HostAndPort;
-import google.registry.module.backend.BackendServlet;
-import google.registry.module.frontend.FrontendServlet;
-import google.registry.module.frontend.FrontendTestServlet;
+import google.registry.module.TestServlet;
 import java.net.URL;
 import java.nio.file.Path;
 
@@ -40,29 +38,28 @@ public final class RegistryTestServer {
 
   public static final ImmutableList<Route> ROUTES =
       ImmutableList.of(
+          route("/rdap/*", TestServlet.class),
           // Frontend Services
-          route("/rdap/*", FrontendServlet.class),
-          route("/check", FrontendServlet.class),
-          route("/console-api/*", FrontendTestServlet.class),
+          route("/console-api/*", TestServlet.class),
 
           // Proxy Services
-          route("/_dr/epp", FrontendServlet.class),
+          route("/_dr/epp", TestServlet.class),
 
           // Registry Data Escrow (RDE)
-          route("/_dr/cron/rdeCreate", BackendServlet.class),
-          route("/_dr/task/rdeStaging", BackendServlet.class),
-          route("/_dr/task/rdeUpload", BackendServlet.class),
-          route("/_dr/task/rdeReport", BackendServlet.class),
-          route("/_dr/task/brdaCopy", BackendServlet.class),
+          route("/_dr/cron/rdeCreate", TestServlet.class),
+          route("/_dr/task/rdeStaging", TestServlet.class),
+          route("/_dr/task/rdeUpload", TestServlet.class),
+          route("/_dr/task/rdeReport", TestServlet.class),
+          route("/_dr/task/brdaCopy", TestServlet.class),
 
           // Trademark Clearinghouse (TMCH)
-          route("/_dr/cron/tmchDnl", BackendServlet.class),
-          route("/_dr/task/tmchSmdrl", BackendServlet.class),
-          route("/_dr/task/tmchCrl", BackendServlet.class),
+          route("/_dr/cron/tmchDnl", TestServlet.class),
+          route("/_dr/task/tmchSmdrl", TestServlet.class),
+          route("/_dr/task/tmchCrl", TestServlet.class),
 
           // Notification of Registered Domain Names (NORDN)
-          route("/_dr/task/nordnUpload", BackendServlet.class),
-          route("/_dr/task/nordnVerify", BackendServlet.class));
+          route("/_dr/task/nordnUpload", TestServlet.class),
+          route("/_dr/task/nordnVerify", TestServlet.class));
 
   private final TestServer server;
 

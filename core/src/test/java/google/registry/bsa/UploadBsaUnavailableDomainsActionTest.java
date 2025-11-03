@@ -169,7 +169,7 @@ public class UploadBsaUnavailableDomainsActionTest {
         new TestServer(
             HostAndPort.fromParts(InetAddress.getLocalHost().getHostAddress(), pickUnusedPort()),
             ImmutableMap.of(),
-            ImmutableList.of(Route.route("/upload", Servelet.class)));
+            ImmutableList.of(Route.route("/upload", Servlet.class)));
     testServer.start();
     newSingleThreadExecutor()
         .execute(
@@ -191,7 +191,7 @@ public class UploadBsaUnavailableDomainsActionTest {
       maxRequestSize = 20971520L, // 20MB
       fileSizeThreshold = 1048576 // Save in memory if file size < 1MB
       )
-  public static class Servelet extends HttpServlet {
+  public static class Servlet extends HttpServlet {
     private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
     @Override
