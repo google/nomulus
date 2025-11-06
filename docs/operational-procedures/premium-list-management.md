@@ -69,6 +69,18 @@ Perform this command? (y/N): y
 Successfully saved premium list exampletld
 ```
 
+### Note:
+
+We recommend only updating premium lists manually in the case of emergencies.
+Instead, we run the `update_premium_list` command (as well as `configure_tld`
+and `update_reserved_list` commands) as part of the build process after a pull
+request has been merged into the private source code repository that contains
+the files. The `--build_environment` flag is used to signal that the command is
+being run in one of those automated environments, and thus allowed to modify
+production. Without that flag, commands against production will fail.
+
+This is similar to the process for [updating TLDs](modifying-tlds.md).
+
 If this premium list is already applied to a TLD, then changes will take up to
 60 minutes to take effect (depending on how you've configured the relevant
 caching interval; 60 minutes is the default).
@@ -80,16 +92,15 @@ premium list must first be applied to a TLD before it will take effect. You will
 only need to do this when first creating a premium list; once it has been
 applied, it stays applied, and updates to the list are effective automatically.
 Note that each TLD can have no more than one premium list applied to it. To
-apply a premium list to a TLD, run the `update_tld` command with the following
-parameter:
+apply a premium list to a TLD,
+[update the TLD to set the premium list](modifying-tlds.md):
 
 ```shell
-$ nomulus -e {ENVIRONMENT} update_tld exampletld --premium_list exampletld
-Update Registry@exampletld
-premiumList: null -> Key<?>(EntityGroupRoot("cross-tld")/PremiumList("exampletld"))
-
-Perform this command? (y/N): y
-Updated 1 entities.
+...
+pendingDeleteLength: "PT432000S"
+premiumListName: "test"
+pricingEngineClassName: "google.registry.model.pricing.StaticPremiumListPricingEngine"
+...
 ```
 
 ## Checking which premium list is applied to a TLD
@@ -100,7 +111,7 @@ all other information about a TLD). It is used as follows:
 ```shell
 $ nomulus -e {ENVIRONMENT} get_tld exampletld
 [ ... snip output ... ]
-premiumList=Key<?>(EntityGroupRoot("cross-tld")/PremiumList("exampletld"))
+premiumListName: "test"
 [ ... snip output ... ]
 ```
 
@@ -127,10 +138,10 @@ $ nomulus -e production check_domain {domain_name}
 [ ... snip output ... ]
 ```
 
- **Note that the list can be cached for up to 60 minutes, so the old value may
+**Note that the list can be cached for up to 60 minutes, so the old value may
 still be returned for a little while**. If it is urgent that the new pricing
 changes be applied, and it's OK to potentially interrupt client connections,
-then you can use the App Engine web console to kill instances of the `default`
+then you can use the GCP web console to kill instances of the `frontend`
 service, as the cache is per-instance. Once you've killed all the existing
-instances (don't kill them all at once!), all of the newly spun up instances
-will now be using the new values you've configured.
+instances (don't kill them all at once!), all the newly spun up instances will
+now be using the new values you've configured.

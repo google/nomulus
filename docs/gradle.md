@@ -22,15 +22,17 @@ To upgrade to a new Gradle version for this project, use:
 gradle wrapper --gradle-version version-number
 ```
 
-## Deploy to AppEngine
+## Deploy to GCP Test Projects
 
-Use the Gradle task 'appengineDeploy' to build and deploy to AppEngine. For now
-you must update the appengine.deploy.project in build.gradle to your
-GCP project ID.
+If your [configuration](configuration.md) is up to date with the proper test
+projects configured, you can deploy to GCP through the Gradle command line.
 
-To deploy the Gradle build, you will need the Google Cloud SDK and its
-app-engine-java component.
+Use the Gradle task `deployNomulus` to build and deploy to a GCP test project
+providing the test project as an argument, e.g.
 
+```shell
+./gradlew deployNomulus -Penvironment=alpha
+```
 
 ### Notable Issues
 
@@ -40,13 +42,8 @@ is easier to exclude the suite classes than individual test classes. This is the
 reason why all test tasks in the :core project contain the exclude pattern
 '"**/*TestCase.*", "**/*TestSuite.*"'
 
-Many Nomulus tests are not hermetic: they modify global state, but do not clean
+Some Nomulus tests are not hermetic: they modify global state, but do not clean
 up on completion. This becomes a problem with Gradle. In the beginning we forced
 Gradle to run every test class in a new process, and incurred heavy overheads.
-Since then, we have fixed some tests, and manged to divide all tests into three
-suites that do not have intra-suite conflicts. We will revisit the remaining
-tests soon.
-
-Note that it is unclear if all conflicting tests have been identified. More may
-be exposed if test execution order changes, e.g., when new tests are added or
-execution parallelism level changes.
+Since then, we have fixed some tests, and manged to divide all tests into two
+suites that do not have intra-suite conflicts (`fragileTest` and `standardTest`)

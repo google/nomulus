@@ -3,52 +3,87 @@
 This document contains some of the questions that registrars are likely to ask
 about the system. In most cases, the question can be answered generally for
 Nomulus systems. In some cases, the details depend on things outside the scope
-of Nomulus, such as EPP and WHOIS proxies and DNS systems.
+of Nomulus, such as EPP proxies and DNS systems.
 
 ## Technical onboarding
 
-**1.1 Do you provide a web based interface for registrars to manage domain names
+**1.1 Do you provide documentation for OT&E?**
+
+Yes, a document titled, “OT&E Instructions” is included as part of the
+onboarding package. It explains what the test cases are, how to start a test,
+and how to conduct a test.
+
+**1.2 Do you offer a second OT&E account available to test domain transfers?**
+
+Yes, we will be offering sandbox credentials for a test TLD that can be used to
+test domain transfers.
+
+**1.3 Do you provide a web based interface for registrars to manage domain names
 (URL)?**
 
-There is no web based interface to manage domains at this time; registrars must
-use EPP commands.
+There is no web based interface to manage domains at this time, registrars must
+be EPP integrated.
 
-**1.2 Will a Registrar Tool Kit be made available? If yes, what is included in
+There is, however, a support console available only to registrars with
+production EPP access (who have passed OT&E) which provide registrars with basic
+self-service configuration management of their account with Google Registry.
+
+**1.4 Will a Registrar Tool Kit be made available? If yes, what is included in
 the Tool Kit?**
 
-Registry has provided this technical FAQ documentation on how to use the core
-EPP protocols and supported extensions. An EPP SDK is not provided. The
-registrar can develop EPP client using any existing EPP client libraries (e.g.
-Verisign, Afilias, or any Open Source variants).
+Google Registry has provided this technical FAQ documentation on how to use the
+core EPP protocols and supported extensions. Google Registry will not provide an
+EPP SDK. Registrar can develop EPP client using any existing EPP client
+libraries (e.g. Verisign, Afilias, or any Open Source variants).
 
-**1.3 Does the registry provide a secure certificate? Are multiple
-certifications required across gTLDs?**
+**1.5 Do I have to complete OT&E again for each new TLD launched by Google
+Registry?**
+
+You will only need to complete OT&E once. Any new functionality released with
+new TLD launches will be communicated by email, and updated technical material
+will be provided. We highly recommend that you test any new functionality in our
+Sandbox. If you want to conduct a full test, or only test specific sections
+related to new features, please contact technical support.
+
+**1.6 Do you provide reports about the domains under management?**
+
+Yes, Google Registry will provide a detailed activity report accompanying every
+monthly invoice via Google Drive. For reports about domains under management,
+please request through our technical support.
+
+**1.7 How long is the absolute timeout for a registry connection?**
+
+An idle connection will be disconnected after 60 minutes.
+
+**1.8 Will the registry provide a secure certificate? Will multiple
+certifications be required across gTLDs?**
 
 *[ The answer to this question depends on the details of your EPP proxy
 implementation. Here is how we answer it: ]*
 
-The registry does not provide a secure certificate. Registrars must provide
-their own certificate during onboarding, which will be allow-listed for the
+The registry will not provide a secure certificate. Registrars must provide
+their own certificate during onboarding, which will be allowlisted for the
 connection. A single certificate can be used for multiple TLDs.
 
-**1.4 Locks and statuses: do lock and status rules follow RFC specifications?**
+**1.9 Locks and statuses: will lock and status rules follow RFC
+specifications?**
 
-Yes, lock and status rules follow RFC specifications.
+Yes, lock and status rules will follow RFC specifications.
 
-**1.5 How can we receive the registry zone file (SFTP, web-based download)?**
+**1.10 How can we receive the registry zone file (SFTP, web-based download)?**
 
-The zone file is available by requesting through ICANN’s [Centralized Zone Data
-Service](https://czds.icann.org).
+The zone file will be available by requesting it through ICANN’s
+[Centralized Zone Data Service](https://czds.icann.org).
 
 ## Domain names
 
 **2.1 Are second level IDNs supported?**
 
-For open TLDs launched by Registry, Latin script (which includes all Spanish
-alphabet characters) and the Kanji, Hiragana, and Katakana scripts are supported
-at the second level. Please refer to the IDN tables on [IANA
-website](http://www.iana.org/domains/idn-tables) for the list of IDNs supported
-for each specific TLD.
+All open TLDs launched by Google Registry support Latin script (which includes
+all Spanish alphabet characters) at the second level. The following TLDs also
+support the Kanji, Hiragana, and Katakana scripts: .app, .boo, .channel, .day,
+.dev, .how, .new, .page, .rsvp, .soy, and .みんな . Please refer to the IDN tables
+on the [IANA website](https://www.iana.org/domains/idn-tables).
 
 **2.2 Are variants of the domain name allowed?**
 
@@ -60,15 +95,27 @@ we currently support (Japanese and Latin) do not have variants.
 No, the restrictions for an IDN domain are the same as those for an ASCII
 domain.
 
-**2.4 Is NDN (for example, 1234.tld) allowed for registration?**
+**2.4 Are domains on ICANN’s collision list available for application or
+registration under Sunrise, Landrush, and General Launch?**
+
+The controlled interruption period for our available open TLDs have ended .
+Collision names for .app, .HOW, .MINNA and .SOY are currently available for
+registration.
+
+**2.5 Is NDN (for example, 1234.tld) allowed for registration?**
 
 Yes. Numeric Domain Names are allowed.
 
-**2.5 What are the restrictions on the length of a domain?**
+**2.6 What are the restrictions on the length of a domain?**
 
 A second level domain can be any length up to 15 characters if it contains any
 Japanese codepoints, or 63 characters if it only contains ASCII or Latin script
 codepoints.
+
+**2.7 Is Google Registry MIIT Accredited?**
+
+Google Registry does not have, nor intend to pursue at this time, MIIT
+accreditation.
 
 ## DNSSEC
 
@@ -88,7 +135,8 @@ No, DNSSEC nameservers are not be pre-checked for DNSSEC data.
 
 **3.4 What are the valid algorithm values for a DS record?**
 
-We do not validate DS records, so any value is accepted.
+Algorithm values 0-3, 5-8, 10, 12-16, and 252-253 are supported. Digest values 1
+(SHA-1), 2 (SHA-256), and 4 (SHA-384) are supported.
 
 **3.5 Is the maxSigLife attribute enabled?**
 
@@ -96,13 +144,13 @@ No, the maxSigLife attribute is not supported.
 
 **3.6 What is the maximum number of DNSSEC records allowed per domain?**
 
-A maximum of eight DNSSEC records are allowed per domain.
+Eight is the maximum number of DNSSEC records allowed per domain.
 
 ## Nameservers
 
 **4.1 Do you support host objects or host attributes for the domain:ns tag?**
 
-Registry supports host objects. Host attributes are not supported.
+Google Registry supports host objects. Host attributes are not supported.
 
 **4.2 Are there any restrictions on the length of the host?**
 
@@ -154,77 +202,66 @@ the same domain?**
 Yes, duplicate IP addresses can be listed between different host objects for the
 same domain.
 
-**4.12 How many nameservers can be set on a domain?**
+**4.12 Will the registration of nameservers be charged?**
+
+No, there is no charge for the registration of nameservers.
+
+**4.13 Will the update of nameservers be charged?**
+
+No, nameservers can be updated free of charge.
+
+**4.14 How many nameservers can be set on a domain?**
 
 Thirteen nameservers can be set on a domain.
 
-**4.13 Do you allow the usage of glue nameservers?**
+**4.15 Do you allow the usage of glue nameservers?**
 
 We require IP address information for nameservers subordinate to a TLD, and do
 not allow it otherwise.
 
-**4.14 What is your procedure for the handling of Orphan Glue Records?**
+**4.16 What is your procedure for the handling of Orphan Glue Records?**
 
 We do not have a procedure for the handling of Orphan Glue records because we
 will not have Orphan Glue Records. When a host object is no longer referred to
 by any domain, its glue is removed.
 
-**4.15 What are the authoritative domain name servers for Registry TLDs?**
+**4.17 What are the authoritative domain name servers for Registry TLDs?**
 
 *[ The answer to this question will depend on your DNS implementation. ]*
 
 ## Contacts
 
-**5.1 What contacts are required to register a domain?**
+As of the beginning of 2026, the registry has transitioned to the Minimum Data
+Set, also known as a "thin registry". This means that contact information is not
+stored, including registrant information.
 
-A registrant, administrative, and technical contact are required to register a
-domain. A billing contact is not required. An abuse contact will be required
-beginning in 2017, as per ICANN directive. All contacts may point at the same
-contact ID. Note that multiple contacts of the same type are not allowed.
+## WHOIS / RDAP
 
-**5.2 Can contact information be updated at anytime without a fee?**
+**6.1 Is the WHOIS protocol supported?**
 
-Yes, contact information can be updated at any time without a fee.
+No. We have discontinued support for the legacy WHOIS protocol (Port 43) in
+favor of RDAP (Registration Data Access Protocol). Please update your systems to
+query our RDAP service.
 
-**5.3 Are proxy contacts allowed on the domain?**
+**6.2: What is the base URL for RDAP requests?**
 
-Yes, proxy contacts are allowed on the domain.
-
-**5.4 Do contact attributes follow the RFC standard?**
-
-Yes, contact attributes follow the RFC standard.
-
-**5.5 Are ISO country codes used?**
-
-Yes, ISO country codes are used.
-
-**5.6 Is a transfer of Contacts possible?**
-
-Yes, contacts may be transferred.
-
-## WHOIS
-
-**6.1 What is the URL and port number for WHOIS requests?**
-
-*[ The answer to this question will depend on your WHOIS proxy implementation.
+*[ The answer to this question will depend on your implementation.Here is ours:
 ]*
 
-**6.2 Does your policy allow WHOIS Privacy?**
+The base URL for RDAP requests is https://pubapi.registry.google/rdap/.
 
-Whois Privacy is allowed.
+**6.3: Is any authentication required for RDAP requests?**
 
-**6.3 Is a Bulk WHOIS available?**
+No, there is no authentication process currently implemented for our RDAP
+server.
 
-No, Bulk WHOIS is not available.
+**6.4: What will be the output of RDAP requests?**
 
-**6.4 What are the WHOIS rate limitations?**
+Responses from the RDAP server will be in JSON format, conforming to STD 95.
 
-*[ The answer to this question will depend on your WHOIS proxy implementation.
-]*
+**6.5 How often is RDAP information updated?**
 
-**6.5 How often is WHOIS information updated?**
-
-WHOIS is updated in near real time.
+RDAP is updated in near real time.
 
 ## EPP - General
 
@@ -232,70 +269,70 @@ WHOIS is updated in near real time.
 
 *[ The answer to this question will depend on your EPP proxy implementation. ]*
 
-**7.2 Will you provide a standard Pool and Batch account (e.g. as VeriSign)?**
+**7.2 What version of EPP is supported?**
+
+The registry supports EPP version 1.0.
+
+**7.3 Will you provide a standard Pool and Batch account (e.g. as VeriSign)?**
 
 No, we will not provide a standard Pool and Batch account.
 
-**7.3 Does the registry support thick domain registrations?**
+**7.4 Does the registry support thick domain registrations?**
 
-Yes, Registry supports thick domain registrations.
+No, we have moved to the Minimum Data Set allowed by ICANN’s Registration Data
+Policy and no longer store any contact information.
 
-**7.4 What EPP commands exist to retrieve the account balance of the
+**7.5 What EPP commands exist to retrieve the account balance of the
 registrar?**
 
 None at the current time.
 
-**7.5 Are there any restrictions on the volume of commands allowed during a
+**7.6 Are there any restrictions on the volume of commands allowed during a
 session?**
 
 No, there are no restriction on the volume of commands allowed during a session.
 
-**7.6 Are you using special extensions for your EPP API?**
+**7.7 Are you using special extensions for your EPP API?**
 
-[Launch Phase
-Mapping](http://tools.ietf.org/html/draft-ietf-eppext-launchphase-01) and
-Registry Fee Extension (versions 0.6 and 0.11, as described below) are
-supported.
+[Launch Phase Mapping](http://tools.ietf.org/html/draft-ietf-eppext-launchphase-01)
+and Registry Fee Extension (version 1.0, as described below) are supported.
 
-**7.7 Which domain status are allowed for the domains?**
+**7.8 Which domain status are allowed for the domains?**
 
 Standard EPP statuses are allowed.
 
-**7.8 Do you use a real-time or non real-time registration system?**
+**7.9 Do you use a real-time or non real-time registration system?**
 
 Registry uses a real-time registration system.
 
-**7.9 What are your connection policies to the registry system (e.g., how many
+**7.10 What are your connection policies to the registry system (e.g., how many
 connections are allowed)?**
 
-*[ The answer to this question will depend on your App Engine configuration. ]*
+*[ The answer to this question will depend on your deployment configuration. ]*
 
-**7.10 Are you using a Shared Registry System or a Dedicated Registry System
+**7.11 Are you using a Shared Registry System or a Dedicated Registry System
 (separate EPP servers for each TLD)?**
 
 We have a shared registry system for EPP, with a shared namespace across all
-supported TLDs. Contacts and hosts are shared across all TLDs; for instance, the
-same contact can be used for all of a registrar's domains in the system.
+supported TLDs.
 
-**7.11 If using a DRS, are login credentials, IP allow listing, etc. configured
+**7.12 If using a DRS, are login credentials, IP allow listing, etc. configured
 separately or will these be the same for all TLDs in your system?**
 
-These will be the same for all TLDs, because we are a shared registry system.
-There is a single login regardless of TLD, and the same login session can be
-used to send EPP commands for all TLDs.
+These will be the same for all TLDs.
 
-**7.12 What types of signed marks do you accept for sunrise applications?**
+**7.13 What types of signed marks do you accept for sunrise applications?**
 
 We only accept encoded signed marks that are signed by the TMCH. Non-encoded
 signed marks are not supported.
 
-**7.13 Where do I get encoded signed marks to use during the OT&E process?**
+**7.14 Where do I get encoded signed marks to use during the OT&E process?**
 
 You can use any of the active test SMDs provided by ICANN, which can be found by
-following the link in [this ICANN PDF
-document](http://newgtlds.icann.org/en/about/trademark-clearinghouse/smd-test-repository-02oct13-en.pdf).
+following the link in
+[this ICANN PDF document](http://newgtlds.icann.org/en/about/trademark-clearinghouse/smd-test-repository-02oct13-en.pdf).
 
-**7.14 How do I specify the EPP launch phases (i.e. Sunrise and Landrush)?**
+**7.15 How do I specify the EPP launch phases (i.e. Sunrise and Landrush)?**
 
 For applications during the Sunrise phase, the launch phase should be specified
 as follows:
@@ -307,7 +344,7 @@ as follows:
 
 `<launch:phase>landrush</launch:phase>`
 
-**7.15 Do you accept domain labels with upper-case characters?**
+**7.16 Do you accept domain labels with upper-case characters?**
 
 No, the registry will reject domain labels with any uppercase characters. While
 DNS labels are inherently case-insensitive
@@ -315,20 +352,20 @@ DNS labels are inherently case-insensitive
 canonicalize to lowercase to avoid confusion matching up labels on EPP responses
 and poll messages.
 
-**7.16 When should I run a claims check?**
+**7.17 When should I run a claims check?**
 
 Claims checks are required during the General Availability and Landrush periods
 for domains matching a label existing in the TMCH claims database. Otherwise,
 the registration/application will be rejected. Claims checks are not allowed
 during Sunrise.
 
-**7.17 How can I get the claims notice from TMDB using the TCNID?**
+**7.18 How can I get the claims notice from TMDB using the TCNID?**
 
-Section 3.1 of [this ICANN PDF
-document](http://newgtlds.icann.org/en/about/trademark-clearinghouse/scsvcs/db-registrar-06dec13-en.pdf)
+Section 3.1 of
+[this ICANN PDF document](http://newgtlds.icann.org/en/about/trademark-clearinghouse/scsvcs/db-registrar-06dec13-en.pdf)
 provides an overview of how you can access the TMDB system.
 
-**7.18 What happens if I send an explicit renew command during the auto-renew
+**7.19 What happens if I send an explicit renew command during the auto-renew
 grace period?**
 
 If an explicit renewal command is sent through during the auto-renew grace
@@ -338,7 +375,7 @@ expiration date (not overrule the auto-renew).
 Note however that this is not the case for transfers; a transfer during the
 auto-renew grace period overrules the auto-renew.
 
-**7.19 What testing environments are available to registrars on sandbox?**
+**7.20 What testing environments are available to registrars on sandbox?**
 
 In addition to the existing registrar-specific OTE EPP accounts and TLDs, we
 provide a production-like development environment. All registrars are able to
@@ -350,28 +387,35 @@ These development TLDs can be accessed at:
 *   EPP hostname: *[ this depends on your EPP proxy implementation ]*
 *   Using OTE EPP accounts: `<registrarid>-3` and `<registrarid>-4`
 
-**7.20 When using the Verisign EPP Tool to test access to the registry, I see
-an "Error Reading Server Greeting" message.**
+These TLDs will be shared across all onboarded registrars and configured with
+similar settings to the respective TLDs in the production environment to enable
+registrars to perform any required tests.
 
-This is usually the result of the connection being terminated by the server
-because no security certificate is present. The EPP Tool's Getting Started Guide
-describes how to configure the connection profile to include a certificate using
-the ssl.\* parameters. A certificate is required in order to connect to
-the registry.
+**7.21 Do you support in-band registrar password update (updating passwords
+within an EPP command)?**
+
+No, the registrar will need to contact the registry directly to update a
+password.
+
+**7.22 What happens to a deleted domain’s expiration date when it is restored?**
+
+Successful restore requests reinstate the domain’s original expiration date,
+unless the domain has already expired. Expired domain restores include a
+mandatory 1 year renewal (billed separately) applied to the original expiration
+date.
+
+**7.23 What is the maximum number of objects that can be checked with a single
+<domain:check> command?**
+
+There is a maximum of 50 objects that can be checked per <domain:check> command.
 
 ## EPP - Fee extension
 
-**8.1 Which version of the Fee Extension draft do you support?**
+**8.1 Which version of the Fee Extension do you support?**
 
-We currently support two versions of the Registry Fee Extension:
+We currently support the Fee Extension version 1.0:
 
-[urn:ietf:params:xml:ns:fee-0.6](https://tools.ietf.org/html/draft-brown-epp-fees-03)
-
-[urn:ietf:params:xml:ns:fee-0.11](https://tools.ietf.org/html/draft-ietf-regext-epp-fees-00)
-
-Note that the version of the specification document is not the same as the
-version of the fee extension URI itself. Also, version 0.11 is still in the
-process of being finalized, so for the moment, version 0.6 is to be preferred.
+[urn:ietf:params:xml:ns:epp:fee-1.0](https://datatracker.ietf.org/doc/rfc8748/)
 
 **8.2 Where is the Fee Extension supported?**
 
@@ -382,7 +426,7 @@ environment.
 
 *   Declare the fee extension in the `<login>` command:
 
-    `<extURI>urn:ietf:params:xml:ns:fee-0.6</extURI>`
+    `<extURI>urn:ietf:params:xml:ns:epp:fee-1.0</extURI>`
 
 *   Use of the fee extension is optional for EPP query commands. If the client
     request includes the fee extension, fee information will be included in the
@@ -458,8 +502,7 @@ command phases or subphases.
 include fee and claim extensions in the same `<domain:check>` command?**
 
 Fee and claim checks are not allowed in the same `<domain:check>` command.The
-[Launch
-Phase](http://tools.ietf.org/html/draft-tan-epp-launchphase-12#section-3.1)
+[Launch Phase](http://tools.ietf.org/html/draft-tan-epp-launchphase-12#section-3.1)
 extension defines two types of domain checks: availability checks and claim
 checks. The `<fee:check>` command is only allowed in availability check
 commands.
@@ -470,9 +513,24 @@ commands.
 *   Renew - 5 days
 *   Transfer - 5 days
 *   Pending Delete - 5 days
-*   Sunrise and Landrush Add/Drop - 30 days
+*   Sunrise Add/Drop - 30 days
 *   Redemption - 30 days
 *   Auto-Renew - 45 days
+
+**8.13 How do I use the fee extension during the Early Access Period?**
+
+The use of the fee extension is mandatory in EAP for all registrations. You will
+need to specify two items in <domain:create> requests, one for the normal price,
+one for the Early Access Fee. These should be specified as in the following
+example:
+
+```
+<fee:create xmlns:fee="urn:ietf:params:xml:ns:fee-0.6">
+  <fee:currency>USD</fee:currency>
+  <fee:fee description="create">70</fee:fee>
+  <fee:fee description="Early Access Period">80.00</fee:fee>
+</fee:create>
+```
 
 ## Security
 
@@ -489,10 +547,26 @@ support console to manage the IP allow list for your production account.
 
 **9.2 What SSL certificates will you accept for EPP connections?**
 
-We will accept any SSL certificate. You will be asked to submit your certificate
-for allow-listing during the onboarding process. After completion of the
-onboarding process, you can use the support console to manage the certificate
-for your production account.
+You must connect via TLS v1.2 or higher. All TLS v1.3 cipher suites are
+supported. For TLS v1.2, only the following cipher suites are supported:
+
+*   TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256
+*   TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
+*   TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256
+*   TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256
+*   TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384
+*   TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
+
+In addition, only RSA certificates with a public key length of 2048 bits or
+above, and ECDSA certificates using secp256r1 and secp384r1 curves are
+supported. Certificates must be valid at the time of the connection.
+Certificates issued on or after 2020-09-01 must have a validity period of 398 or
+fewer days. Certificates issued before 2020-09-01 must have a validity period of
+825 or fewer days.
+
+You will be asked to submit your certificate for allowlisting during the
+onboarding process. After completion of the onboarding process, you can use the
+support console to manage the certificate for your production account.
 
 **9.3 Is the use of SNI (Server Name Indication) required when connecting to the
 EPP endpoint?**
@@ -515,11 +589,20 @@ following code snippet for illustration:
 SSLContext sslContext = SSLContext.getInstance("TLSv1");
 SSLSocketFactory sslSocketFactory = sslContext.getSocketFactory();
 SSLSocket sslSocket = (SSLSocket) sslSocketFactory.createSocket();
-if (sslSocket instanceof sun.security.ssl.SSLSocketImpl) {
-    ((sun.security.ssl.SSLSocketImpl) sslSocket).setHost(server);
+if(sslSocket instanceof sun.security.ssl.SSLSocketImpl){
+    ((sun.security.ssl.SSLSocketImpl)sslSocket).
+
+setHost(server);
 }
-socket.connect(new InetSocketAddress(server, port), timeout);
+    socket.
+
+connect(new InetSocketAddress(server, port),timeout);
 ```
 
 We recommend that registrars use Java7 or later, as they have native SNI
 support, unlike previous versions of the JDK.
+
+**9.5 When do I get a username/password for the production EPP system?**
+
+You will receive a username and password upon passing OT&E and creation of your
+registrar account.

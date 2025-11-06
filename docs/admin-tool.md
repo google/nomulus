@@ -1,13 +1,12 @@
 # Admin tool
 
-Nomulus includes a command-line registry administration tool that is invoked
-using the `nomulus` command. It has the ability to view and change a large
-number of things in a live Nomulus environment, including creating registrars,
-updating premium and reserved lists, running an EPP command from a given XML
-file, and performing various backend tasks like re-running RDE if the most
+Nomulus includes a command-line registry administration tool. It has the ability
+to view and change a large number of things in a live Nomulus environment,
+including creating registrars, running arbitrary EPP commands from given XML
+files, and performing various backend tasks like re-running RDE if the most
 recent export failed. Its code lives inside the tools package
-(`java/google/registry/tools`), and is compiled by building the `nomulus` target
-in the Bazel BUILD file in that package.
+(`core/src/main/java/google/registry/tools`), and is compiled by building the
+`nomulus` Gradle target in the `core` project, e.g. `./gradlew core:nomulus`.
 
 The tool connects to the Google Cloud Platform project (identified by project
 ID) that was configured in your implementation of `RegistryConfig` when the tool
@@ -21,18 +20,25 @@ ID is also "acme-registry", and the project ID for the sandbox environment is
 
 ## Build the tool
 
-To build the `nomulus` tool, execute the following `bazel build` command inside
-any directory of the codebase. You must rebuild the tool any time that you edit
-configuration or make database schema changes.
+To build the `nomulus` tool's jarfile, execute the following Gradle command
+inside the project's home directory: `./gradlew core:nomulus`. You must rebuild
+the tool any time that you edit configuration or make database schema changes.
+Note that proper project configuration is necessary for building the tool --
+this includes the specialized configuration such as GCP project names.
+
+It's recommended that you alias the compiled jarfile located at
+`core/build/libs/nomulus.jar` (or add it to your shell path) so that you can run
+it easily, e.g.
 
 ```shell
-$ bazel build //java/google/registry/tools:nomulus
+$ alias nomulus="java -jar core/build/libs/nomulus.jar"
 ```
 
-It's recommended that you alias the compiled binary located at
-`bazel-genfiles/java/google/registry/nomulus` (or add it to your shell path) so
-that you can run it easily. The rest of this guide assumes that it has been
-aliased to `nomulus`.
+The rest of this guide assumes that it has been aliased to `nomulus`.
+
+Note: for Google Registry employees, the nomulus tool is built as part of the
+weekly deployment process and the nomulus jarfile is located at
+`/google/data/ro/teams/domain-registry/tools/live/nomulus.jar`
 
 ## Running the tool
 
@@ -56,33 +62,27 @@ metadata contained within the code to yield documentation.
 
 ## Local and server-side commands
 
-There are two broad ways that commands are implemented: some that send requests
-to `ToolsServlet` to execute the action on the server (these commands implement
-`ServerSideCommand`), and others that execute the command locally using the
-[Remote API](https://cloud.google.com/appengine/docs/java/tools/remoteapi)
-(these commands implement `RemoteApiCommand`). Server-side commands take more
-work to implement because they require both a client and a server-side
-component.
-However, they are fully capable of doing anything that is possible with App
-Engine, including running a large MapReduce, because they execute on the tools
-service in the App Engine cloud.
+There are two broad ways that commands are implemented: some send requests to
+the backend server to execute the action on the server (these commands implement
+`CommandWithConnection`), and others that execute the command locally using
+access to the database. Commands that send requests to the backend server are
+more work to implement because they require both a client-side and server-side
+component, but they are more powerful -- even running Flow pipelines or other
+long-running intensive jobs.
 
-Local commands, by contrast, are easier to implement, because there is only a
-local component to write, but they aren't as powerful. A general rule of thumb
-for making this determination is to use a local command if possible, or a
-server-side command otherwise.
+Local commands are easier to implement (because there is only a local component
+to write) but they aren't as powerful. As a rule of thumb, use a local command
+if possible.
 
 ## Common tool patterns
 
 All tools ultimately implement the `Command` interface located in the `tools`
 package. If you use an integrated development environment (IDE) such as IntelliJ
-to view the type hierarchy of that interface, you'll see all of the commands
-that exist, as well as how a lot of them are grouped using sub-interfaces or
-abstract classes that provide additional functionality. The most common patterns
-that are used by a large number of other tools are:
+to view the type hierarchy of that interface, you'll see all the commands that
+exist, as well as how a lot of them are grouped using sub-interfaces or abstract
+classes that provide additional functionality. The most common patterns that are
+used by a large number of other tools are:
 
-*   **`BigqueryCommand`** -- Provides a connection to BigQuery for tools that
-    need it.
 *   **`ConfirmingCommand`** -- Provides the methods `prompt()` and `execute()`
     to override. `prompt()` outputs a message (usually what the command is going
     to do) and prompts the user to confirm execution of the command, and then
@@ -90,10 +90,9 @@ that are used by a large number of other tools are:
 *   **`EppToolCommand`** -- Commands that work by executing EPP commands against
     the server, usually by filling in a template with parameters that were
     passed on the command-line.
-*   **`MutatingEppToolCommand`** -- A sub-class of `EppToolCommand` that
-    provides a `--dry_run` flag, that, if passed, will display the output from
-    the server of what the command would've done without actually committing
-    those changes.
+*   **`MutatingEppToolCommand`** -- A subclass of `EppToolCommand` that provides
+    a `--dry_run` flag, that, if passed, will display the output from the server
+    of what the command would've done without actually committing those changes.
 *   **`GetEppResourceCommand`** -- Gets individual EPP resources from the server
     and outputs them.
 *   **`ListObjectsCommand`** -- Lists all objects of a specific type from the

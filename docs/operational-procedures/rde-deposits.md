@@ -16,9 +16,9 @@ phases:
 3.  [Report](https://github.com/google/nomulus/blob/master/java/google/registry/rde/RdeReportAction.java):
     Transmit XML *report* file to ICANN via HTTPS.
 
-Each phase happens with an App Engine task queue entry that retries on failure.
-When each task succeeds, it automatically enqueues a task for the next phase in
-the process. The staging files are stored in Google Cloud Storage indefinitely,
+Each phase happens with an GCP task queue entry that retries on failure. When
+each task succeeds, it automatically enqueues a task for the next phase in the
+process. The staging files are stored in Google Cloud Storage indefinitely,
 encrypted with the GhostRyDE container format.
 
 Note that in order for the automated RDE processing to work correctly, you will
@@ -99,9 +99,10 @@ that no cooldown period is necessary.
 
 ## Listing deposits in Cloud Storage
 
-You can list the files in Cloud Storage for a given TLD using the gcloud storage tool.
-All files are stored in the {PROJECT-ID}-rde bucket, where {PROJECT-ID} is the
-name of the App Engine project for the particular environment you are checking.
+You can list the files in Cloud Storage for a given TLD using the gcloud storage
+tool. All files are stored in the {PROJECT-ID}-rde bucket, where {PROJECT-ID} is
+the name of the App Engine project for the particular environment you are
+checking.
 
 ```shell
 $ gcloud storage ls gs://{PROJECT-ID}-rde/zip_2015-05-16*
@@ -116,10 +117,12 @@ Under normal circumstances, RDE is launched by TldFanoutAction, configured in
 cron.xml. If the App Engine's cron executor isn't working, you can spawn it
 manually by visiting the following URL:
 
-    https://backend-dot-{PROJECT-ID}.appspot.com/_dr/task/rdeStaging
+```
+https://backend.mydomain.com/_dr/task/rdeStaging
+```
 
-That will spawn a staging task for each TLD under the backend module in that App
-Engine project. You can also run the task from the cron tab of the GAE console.
+That will spawn a staging task for each TLD under the backend module in that GCP
+project. You can also run the task from the GCP Cloud Scheduler UI.
 
 ## Notification of upload problems
 
@@ -157,7 +160,7 @@ space the uploading at least two hours apart.
 
 Note that this warning only applies when you (re)upload files directly to the
 sFTP server. There's an RDE_UPLOAD_SFTP cursor that prevents the production
-system from uploading twice in a two hour window, so when you let the production
+system from uploading twice in a two-hour window, so when you let the production
 job upload missing deposits, it will be safe. Therefore, one safe approach is to
 reset the cursor, then kick off the production job manually.
 
@@ -172,7 +175,7 @@ $ gcloud storage cat gs://{PROJECT-ID}-rde/foo.ghostryde | nomulus -e production
 
 ## Identifying which phase of the process failed
 
-Analyze the GAE logs on the backend module.
+Analyze the GCP logs on the backend module.
 
 If the rdeStaging task failed, then it's likely the files do not exist in cloud
 storage.
@@ -308,8 +311,8 @@ sftp> put ${tld}_2015-05-16_full_S1_R0.sig
 
 It would be convenient to have the following in your `~/.ssh/config` file and
 store the SSH private key that you stored in `rde-ssh-client-private` as
-`~/.ssh/id_rsa_rde` so that you can simply run `$ sftp rde` to connect to
-the sFTP server.
+`~/.ssh/id_rsa_rde` so that you can simply run `$ sftp rde` to connect to the
+sFTP server.
 
 ```
 Host rde

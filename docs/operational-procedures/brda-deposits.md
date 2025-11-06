@@ -28,8 +28,8 @@ The BRDA copy task reads the previous file and creates two files:
 ```
 
 If you see an `xml.ghostryde` file but not the others, an error has occurred
-during the process. If you see the files in the
-{PROJECT-ID}-icann-brda bucket as well, the process has completed successfully.
+during the process. If you see the files in the {PROJECT-ID}-icann-brda bucket
+as well, the process has completed successfully.
 
 Once the files have been created, they must be stored on an sFTP server from
 which ICANN can pull the files. The Nomulus project does not provide this last
@@ -40,11 +40,11 @@ The cursor can be checked using the `nomulus pending_escrow` command.
 
 ## Generating BRDA deposits manually
 
-*   Get a list of "REAL" (as opposed to TEST) TLDs. Doublecheck that the command
-    output doesn't contain any TLDs for tests.
+*   Get a list of "REAL" (as opposed to TEST) TLDs. Double-check that the
+    command output doesn't contain any TLDs for tests.
 
 ```shell
-$ registry-tool -e production list_tlds --fields=tldStr,tldType | grep REAL | awk '{print $1}' > realtlds.txt`
+$ nomulus -e production list_tlds --fields=tldStr,tldType | grep REAL | awk '{print $1}' > realtlds.txt`
 ```
 
 *   Generate .ryde and .sig files of TLDs specified for given date(s) in the
