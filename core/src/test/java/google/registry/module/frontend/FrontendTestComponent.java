@@ -30,7 +30,6 @@ import google.registry.monitoring.whitebox.StackdriverModule;
 import google.registry.privileges.secretmanager.SecretManagerModule;
 import google.registry.request.Modules;
 import google.registry.request.auth.AuthModule;
-import google.registry.ui.ConsoleDebug;
 import google.registry.util.UtilsModule;
 import jakarta.inject.Singleton;
 
@@ -40,7 +39,6 @@ import jakarta.inject.Singleton;
       AuthModule.class,
       CloudTasksUtilsModule.class,
       RegistryConfig.ConfigModule.class,
-      ConsoleDebug.ConsoleConfigModule.class,
       CredentialModule.class,
       CustomLogicFactoryModule.class,
       CloudTasksUtilsModule.class,

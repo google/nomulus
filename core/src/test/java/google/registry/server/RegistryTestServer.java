@@ -35,12 +35,6 @@ public final class RegistryTestServer {
 
   public static final ImmutableMap<String, Path> RUNFILES =
       new ImmutableMap.Builder<String, Path>()
-          .put(
-              "/index.html",
-              PROJECT_ROOT.resolve("core/src/main/java/google/registry/ui/html/index.html"))
-          .put(
-              "/error.html",
-              PROJECT_ROOT.resolve("core/src/main/java/google/registry/ui/html/error.html"))
           .put("/console/*", PROJECT_ROOT.resolve("console-webapp/staged/dist"))
           .build();
 

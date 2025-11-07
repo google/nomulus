@@ -177,10 +177,11 @@ steps:
       -PpluginsUrl=gcs://domain-registry-maven-repository/plugins \
       -Ppublish_repo=gcs://${PROJECT_ID}-deployed-tags/maven \
       -Pnomulus_version=${TAG_NAME}
-    # Upload schema jar for use by schema deployment.
-    # TODO(weiminyu): consider using the jar in maven repo during deployment and
-    # stop the  upload here.
+    # Upload jars for use by schema deployment and schema compatibility test.
+    # The jars published to GCS will be unaccessible to Kokoro once public access is removed.
     cp db/build/libs/schema.jar output/
+    cp core/build/libs/nomulus-public.jar output/
+    cp core/build/libs/nomulus-tests-alldeps.jar output/
 # The tarballs and jars to upload to GCS.
 artifacts:
   objects:
@@ -189,6 +190,8 @@ artifacts:
     - 'output/*.tar'
     - 'output/tag_name'
     - 'output/nomulus.jar'
+    - 'output/nomulus-public.jar'
+    - 'output/nomulus-tests-alldeps.jar'
     - 'output/schema.jar'
     - 'core/src/main/java/google/registry/config/files/nomulus-config-*.yaml'
     - 'core/src/main/java/google/registry/config/files/cloud-tasks-queue.xml'
