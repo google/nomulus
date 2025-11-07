@@ -23,6 +23,7 @@ import static jakarta.servlet.http.HttpServletResponse.SC_OK;
 import static jakarta.servlet.http.HttpServletResponse.SC_UNAUTHORIZED;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.flogger.FluentLogger;
 import com.google.gson.annotations.Expose;
 import google.registry.flows.EppException;
 import google.registry.flows.domain.DomainFlowUtils;
@@ -40,6 +41,7 @@ import google.registry.request.Response;
 import google.registry.request.auth.Auth;
 import google.registry.tools.DomainLockUtils;
 import google.registry.util.EmailMessage;
+import google.registry.util.PasswordUtils.HashAlgorithm;
 import jakarta.inject.Inject;
 import jakarta.mail.internet.AddressException;
 import jakarta.mail.internet.InternetAddress;
@@ -61,13 +63,16 @@ import org.joda.time.Duration;
     auth = Auth.AUTH_PUBLIC_LOGGED_IN)
 public class ConsoleRegistryLockAction extends ConsoleApiAction {
 
+  private static final FluentLogger logger = FluentLogger.forEnclosingClass();
+
   static final String PATH = "/console-api/registry-lock";
   static final String VERIFICATION_EMAIL_TEMPLATE =
       """
       Please click the link below to perform the lock / unlock action on domain %s. Note: this\
        code will expire in one hour.
 
-      %s""";
+      %s\
+      """;
 
   private final DomainLockUtils domainLockUtils;
   private final GmailClient gmailClient;
@@ -114,7 +119,6 @@ public class ConsoleRegistryLockAction extends ConsoleApiAction {
         optionalPostInput.orElseThrow(() -> new IllegalArgumentException("No POST input provided"));
     String domainName = postInput.domainName();
     boolean isLock = postInput.isLock();
-    Optional<String> maybePassword = Optional.ofNullable(postInput.password());
     Optional<Long> relockDurationMillis = Optional.ofNullable(postInput.relockDurationMillis());
 
     try {
@@ -126,10 +130,24 @@ public class ConsoleRegistryLockAction extends ConsoleApiAction {
     // Passwords aren't required for admin users, otherwise we need to validate it
     boolean isAdmin = user.getUserRoles().isAdmin();
     if (!isAdmin) {
-      checkArgument(maybePassword.isPresent(), "No password provided");
-      if (!user.verifyRegistryLockPassword(maybePassword.get())) {
+      checkArgument(postInput.password != null, "No password provided");
+      Optional<HashAlgorithm> hashAlgorithm = user.getCurrentHashAlgorithm(postInput.password);
+      if (hashAlgorithm.isEmpty()) {
         setFailedResponse("Incorrect registry lock password", SC_UNAUTHORIZED);
         return;
+      }
+      // TODO(b/458423787): Remove this circa March 2026 after enough time has passed for the logins
+      // to have transitioned to Argon2 hashing.
+      if (hashAlgorithm.get() != HashAlgorithm.ARGON_2_ID) {
+        logger.atInfo().log("Rehashing existing registry lock password with ARGON_2_ID.");
+        tm().transact(
+                () ->
+                    tm().update(
+                            tm().loadByEntity(user)
+                                .asBuilder()
+                                .removeRegistryLockPassword()
+                                .setRegistryLockPassword(postInput.password)
+                                .build()));
       }
     }
 
