@@ -4,7 +4,7 @@
     <version comment="Latin LGR">1</version>
     <date>2025-10-01</date>
     <language>und-Latn</language>
-    <unicode-version>2</unicode-version>
+    <unicode-version>11.1.0</unicode-version>
     <description type="text/html"><![CDATA[
        <div class="instructions">
 <h2>INSTRUCTIONS</h2>
@@ -650,7 +650,6 @@
     <!--Action elements go here - order defines precedence-->
     <action disp="invalid" match="leading-combining-mark" comment="labels with leading combining marks are invalid &#x235F;" />
     <action disp="invalid" any-variant="out-of-repertoire-var" comment="any variant label with a code point out of repertoire is invalid &#x235F;" />
-    <action disp="invalid" match="dot-L-dot" comment="labels with one L sharing two middle dots are invalid" />
     <action disp="blocked" any-variant="blocked" comment="any variant label containing blocked variants is blocked &#x235F;" />
     <action disp="allocatable" all-variants="allocatable" comment="variant labels with all variants allocatable are allocatable &#x235F;" />
     <action disp="allocatable" all-variants="fallback" comment="any label with all variants of type fallback is allocatable &#x235F;" />
