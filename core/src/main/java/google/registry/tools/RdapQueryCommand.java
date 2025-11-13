@@ -29,6 +29,9 @@
 // In google.registry.tools.RdapQueryCommand.java
 // ...
 package google.registry.tools;
+
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import com.google.common.base.Ascii;
