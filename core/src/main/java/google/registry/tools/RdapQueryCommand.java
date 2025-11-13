@@ -60,7 +60,7 @@ public final class RdapQueryCommand implements CommandWithConnection {
   private static final ImmutableSet<String> LOOKUP_TYPES =
       ImmutableSet.of("domain", "nameserver", "entity");
   private static final ImmutableSet<String> SEARCH_TYPES =
-      ImmutableSet.of("domains", "nameservers", "entities");
+      ImmutableSet.of("domains", "nameservers", "entities", "autnum");
 
   @Parameter(
       description =
