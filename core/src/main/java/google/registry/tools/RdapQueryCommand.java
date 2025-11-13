@@ -58,9 +58,9 @@ public final class RdapQueryCommand implements CommandWithConnection {
   private static final GoogleLogger logger = GoogleLogger.forEnclosingClass();
 
   private static final ImmutableSet<String> LOOKUP_TYPES =
-      ImmutableSet.of("domain", "nameserver", "entity");
+      ImmutableSet.of("domain", "nameserver", "entity", "autnum");
   private static final ImmutableSet<String> SEARCH_TYPES =
-      ImmutableSet.of("domains", "nameservers", "entities", "autnum");
+      ImmutableSet.of("domains", "nameservers", "entities");
 
   @Parameter(
       description =
