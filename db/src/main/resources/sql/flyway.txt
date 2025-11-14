@@ -215,3 +215,4 @@ V214__domain_unique_domain_name_active.sql
 V215__drop_contact_fks_contacthistory.sql
 V216__drop_contact_fks_domain.sql
 V217__drop_contact_fks_pollmessage.sql
+V218__tld_drop_allowedregistrantcontactids.sql
