@@ -1,4 +1,4 @@
-// Copyright 2017 The Nomulus Authors. All Rights Reserved.
+// Copyright 2025 The Nomulus Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,18 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package google.registry.module.frontend;
+package google.registry.module;
 
 import google.registry.request.RequestHandler;
 import google.registry.request.auth.RequestAuthenticator;
 import jakarta.inject.Inject;
 import jakarta.inject.Provider;
 
-/** Request handler for the frontend module. */
-public class FrontendRequestHandler extends RequestHandler<FrontendRequestComponent> {
+/** Request handler for the specialized test server. */
+public class TestRequestHandler extends RequestHandler<TestRequestComponent> {
 
-  @Inject FrontendRequestHandler(
-      Provider<FrontendRequestComponent.Builder> componentBuilderProvider,
+  @Inject
+  public TestRequestHandler(
+      Provider<TestRequestComponent.Builder> componentBuilderProvider,
       RequestAuthenticator requestAuthenticator) {
     super(componentBuilderProvider, requestAuthenticator);
   }

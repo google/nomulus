@@ -12,12 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package google.registry.module.frontend;
+package google.registry.module;
 
+import com.google.monitoring.metrics.MetricReporter;
 import dagger.Component;
+import dagger.Lazy;
+import google.registry.batch.BatchModule;
+import google.registry.bigquery.BigqueryModule;
 import google.registry.config.CloudTasksUtilsModule;
 import google.registry.config.CredentialModule;
-import google.registry.config.RegistryConfig;
+import google.registry.config.RegistryConfig.ConfigModule;
+import google.registry.export.DriveModule;
+import google.registry.export.sheet.SheetsServiceModule;
 import google.registry.flows.ServerTridProviderModule;
 import google.registry.flows.custom.CustomLogicFactoryModule;
 import google.registry.flows.domain.DomainDeletionTimeCacheModule;
@@ -26,35 +32,51 @@ import google.registry.groups.GroupsModule;
 import google.registry.groups.GroupssettingsModule;
 import google.registry.keyring.KeyringModule;
 import google.registry.keyring.api.KeyModule;
+import google.registry.module.TestRequestComponent.TestRequestComponentModule;
 import google.registry.monitoring.whitebox.StackdriverModule;
+import google.registry.persistence.PersistenceModule;
 import google.registry.privileges.secretmanager.SecretManagerModule;
-import google.registry.request.Modules;
+import google.registry.rde.JSchModule;
+import google.registry.request.Modules.GsonModule;
+import google.registry.request.Modules.NetHttpTransportModule;
+import google.registry.request.Modules.UrlConnectionServiceModule;
 import google.registry.request.auth.AuthModule;
 import google.registry.util.UtilsModule;
 import jakarta.inject.Singleton;
 
+/** Dagger component with instance lifetime for the test server. */
 @Singleton
 @Component(
     modules = {
       AuthModule.class,
+      BatchModule.class,
+      BigqueryModule.class,
       CloudTasksUtilsModule.class,
-      RegistryConfig.ConfigModule.class,
+      ConfigModule.class,
       CredentialModule.class,
       CustomLogicFactoryModule.class,
-      CloudTasksUtilsModule.class,
       DomainDeletionTimeCacheModule.class,
-      FrontendRequestComponent.FrontendRequestComponentModule.class,
+      DriveModule.class,
       GmailModule.class,
       GroupsModule.class,
       GroupssettingsModule.class,
-      MockDirectoryModule.class,
-      Modules.GsonModule.class,
+      GsonModule.class,
+      JSchModule.class,
       KeyModule.class,
       KeyringModule.class,
-      Modules.NetHttpTransportModule.class,
+      MockDirectoryModule.class,
+      NetHttpTransportModule.class,
+      PersistenceModule.class,
       SecretManagerModule.class,
       ServerTridProviderModule.class,
+      SheetsServiceModule.class,
       StackdriverModule.class,
+      TestRequestComponentModule.class,
+      UrlConnectionServiceModule.class,
       UtilsModule.class
     })
-interface FrontendTestComponent extends FrontendComponent {}
+interface TestRegistryComponent {
+  TestRequestHandler requestHandler();
+
+  Lazy<MetricReporter> metricReporter();
+}

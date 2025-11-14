@@ -31,11 +31,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import java.util.Optional;
 import org.joda.time.DateTime;
 
-/**
- * Dagger module for RDE package.
- *
- * @see "google.registry.module.backend.BackendRequestComponent"
- */
+/** Dagger module for RDE package. */
 @Module
 public abstract class RdeModule {
 

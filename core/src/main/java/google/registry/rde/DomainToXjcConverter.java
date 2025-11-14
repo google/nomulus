@@ -168,20 +168,18 @@ final class DomainToXjcConverter {
         //    as the holder of the domain name object.
         Optional<VKey<Contact>> registrant = model.getRegistrant();
         if (registrant.isPresent()) {
-          Contact registrantContact = tm().transact(() -> tm().loadByKey(registrant.get()));
-          checkState(
-              registrantContact != null,
-              "Registrant contact %s on domain %s does not exist",
-              registrant,
-              domainName);
-          bean.setRegistrant(registrantContact.getContactId());
+          Optional<Contact> registrantContact =
+              tm().transact(() -> tm().loadByKeyIfPresent(registrant.get()));
+          registrantContact.ifPresent(c -> bean.setRegistrant(c.getContactId()));
         }
 
         // o  Zero or more OPTIONAL <contact> elements that contain identifiers
         //    for the human or organizational social information objects
         //    associated with the domain name object.
         for (DesignatedContact contact : model.getContacts()) {
-          bean.getContacts().add(convertDesignatedContact(contact, domainName));
+          Optional<XjcDomainContactType> contactType =
+              convertDesignatedContact(contact, domainName);
+          contactType.ifPresent(c -> bean.getContacts().add(c));
         }
 
         // o  An OPTIONAL <secDNS> element that contains the public key
@@ -292,7 +290,7 @@ final class DomainToXjcConverter {
   }
 
   /** Converts {@link DesignatedContact} to {@link XjcDomainContactType}. */
-  private static XjcDomainContactType convertDesignatedContact(
+  private static Optional<XjcDomainContactType> convertDesignatedContact(
       DesignatedContact model, String domainName) {
     XjcDomainContactType bean = new XjcDomainContactType();
     checkState(
@@ -300,15 +298,13 @@ final class DomainToXjcConverter {
         "Contact key for type %s is null on domain %s",
         model.getType(),
         domainName);
-    Contact contact = tm().transact(() -> tm().loadByKey(model.getContactKey()));
-    checkState(
-        contact != null,
-        "Contact %s on domain %s does not exist",
-        model.getContactKey(),
-        domainName);
+    Optional<Contact> contact = tm().transact(() -> tm().loadByKeyIfPresent(model.getContactKey()));
+    if (contact.isEmpty()) {
+      return Optional.empty();
+    }
     bean.setType(XjcDomainContactAttrType.fromValue(Ascii.toLowerCase(model.getType().toString())));
-    bean.setValue(contact.getContactId());
-    return bean;
+    bean.setValue(contact.get().getContactId());
+    return Optional.of(bean);
   }
 
   private DomainToXjcConverter() {}

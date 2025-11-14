@@ -14,9 +14,11 @@
 
 package google.registry.rde;
 
+import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.io.BaseEncoding.base16;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.persistEppResource;
 import static google.registry.testing.DatabaseHelper.persistResource;
@@ -69,6 +71,7 @@ import google.registry.xjc.rdedomain.XjcRdeDomain;
 import google.registry.xjc.rdedomain.XjcRdeDomainElement;
 import google.registry.xjc.rgp.XjcRgpStatusType;
 import google.registry.xjc.secdns.XjcSecdnsDsDataType;
+import google.registry.xml.XmlException;
 import java.io.ByteArrayOutputStream;
 import java.util.Optional;
 import org.joda.money.Money;
@@ -195,6 +198,21 @@ public class DomainToXjcConverterTest {
   @Test
   void testMarshalThin() throws Exception {
     XjcRdeDomain bean = DomainToXjcConverter.convertDomain(makeDomain(clock), RdeMode.THIN);
+    wrapDeposit(bean).marshal(new ByteArrayOutputStream(), UTF_8);
+  }
+
+  @Test
+  void testConvertAbsentContacts() throws XmlException {
+    Domain domain = makeDomain(clock);
+    tm().transact(
+            () ->
+                tm().delete(
+                        domain.getAllContacts().stream()
+                            .map(DesignatedContact::getContactKey)
+                            .collect(toImmutableSet())));
+    XjcRdeDomain bean = DomainToXjcConverter.convertDomain(domain, RdeMode.FULL);
+    assertThat(bean.getRegistrant()).isNull();
+    assertThat(bean.getContacts()).isEmpty();
     wrapDeposit(bean).marshal(new ByteArrayOutputStream(), UTF_8);
   }
 

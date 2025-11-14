@@ -46,16 +46,8 @@ else
     -PmavenUrl="${gcs_prefix}"/maven \
     -PpluginsUrl="${gcs_prefix}"/plugins
 
-  for service in default pubapi backend bsa tools
-  do
-    mv services/"${service}"/build/staged-app "${dest}/${service}"
-  done
-
   ./gradlew :console-webapp:buildConsoleWebapp -Penvironment="${environment}"
   mkdir -p "${dest}/console" && cp -r console-webapp/staged/* "${dest}/console"
-
-  mv core/build/resources/main/google/registry/env/common/META-INF \
-    "${dest}/META-INF"
 
   cd "${dest}"
   tar cvf ../"${environment}.tar" .
