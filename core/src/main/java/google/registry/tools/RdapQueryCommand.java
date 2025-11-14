@@ -19,14 +19,10 @@ import static com.google.common.collect.ImmutableMap.toImmutableMap;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
-import com.google.common.base.Ascii;
 import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
 import com.google.common.flogger.GoogleLogger;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -44,11 +40,6 @@ import java.util.Map;
 public final class RdapQueryCommand implements CommandWithConnection {
 
   private static final GoogleLogger logger = GoogleLogger.forEnclosingClass();
-
-  private static final ImmutableSet<String> LOOKUP_TYPES =
-      ImmutableSet.of("domain", "nameserver", "entity", "autnum", "ip", "help");
-  private static final ImmutableSet<String> SEARCH_TYPES =
-      ImmutableSet.of("domains", "nameservers", "entities");
 
   @Parameter(
       description = "The ordered RDAP path segments that form the path (e.g., 'domain foo.dev').",
@@ -76,51 +67,17 @@ public final class RdapQueryCommand implements CommandWithConnection {
   public void run() {
     checkArgument(!mainParameters.isEmpty(), "Missing RDAP path segments.");
 
-    String path;
-    ImmutableMap<String, String> queryParams = ImmutableMap.of();
+    String path = "/rdap/" + String.join("/", mainParameters);
 
-    String firstParam = Ascii.toLowerCase(mainParameters.get(0));
-
-    if (SEARCH_TYPES.contains(firstParam)) {
-      checkArgument(
-          mainParameters.size() == 1,
-          "Search types like '%s' do not accept additional positional arguments.",
-          firstParam);
-      path = "/rdap/" + firstParam;
-      if (!params.isEmpty()) {
-        queryParams =
-            params.stream()
-                .map(
-                    p -> {
-                      List<String> parts = Splitter.on('=').limit(2).splitToList(p);
-                      checkArgument(parts.size() == 2, "Invalid parameter format: %s", p);
-                      return parts;
-                    })
-                .collect(toImmutableMap(parts -> parts.get(0), parts -> parts.get(1)));
-      } else {
-        logger.atWarning().log(
-            "Performing an RDAP search for '%s' without any query parameters.", firstParam);
-      }
-    } else if (LOOKUP_TYPES.contains(firstParam)) {
-      checkArgument(params.isEmpty(), "Lookup queries do not accept --params.");
-      String type = firstParam;
-      String name = "";
-      if (mainParameters.size() > 1) {
-        name = mainParameters.get(1);
-        checkArgument(
-            mainParameters.size() == 2, "Lookup type '%s' requires exactly one query term.", type);
-      } else if (!type.equals("help")) {
-        throw new IllegalArgumentException(String.format("Lookup type '%s' requires a query term.", type));
-      }
-      path = String.format("/rdap/%s%s", type, name.isEmpty() ? "" : "/" + name);
-    } else {
-      throw new IllegalArgumentException(
-          "Usage: nomulus rdap_query <type> <query_term> OR nomulus rdap_query <search_type> --params <key=value>[,...]\n"
-              + "  Lookup types: "
-              + LOOKUP_TYPES
-              + "\n  Search types: "
-              + SEARCH_TYPES);
-    }
+    ImmutableMap<String, String> queryParams =
+        params.stream()
+            .map(
+                p -> {
+                  List<String> parts = Splitter.on('=').limit(2).splitToList(p);
+                  checkArgument(parts.size() == 2, "Invalid parameter format: %s", p);
+                  return parts;
+                })
+            .collect(toImmutableMap(parts -> parts.get(0), parts -> parts.get(1)));
 
     logger.atInfo().log("Starting RDAP query for path: %s with params: %s", path, queryParams);
 
@@ -134,13 +91,12 @@ public final class RdapQueryCommand implements CommandWithConnection {
       String rdapResponse = pubapiConnection.sendGetRequest(path, queryParams);
       JsonElement rdapJson = JsonParser.parseString(rdapResponse);
 
-      // This now calls the custom formatter instead of Gson.
       System.out.println(formatJsonElement(rdapJson, ""));
 
-      logger.atInfo().log("Successfully completed RDAP query for path: %s", path);
     } catch (IOException e) {
-      // Always log the full exception for backend records.
-      logger.atSevere().withCause(e).log("Request failed for path: %s", path);
+      // Log the full exception for backend records, but without withCause(e) to
+      // prevent automatic stack trace printing to the console.
+      logger.atSevere().log("Request failed for path: %s: %s", path, e.getMessage());
 
       String errorMessage = e.getMessage();
       String userFriendlyError;
@@ -182,28 +138,25 @@ public final class RdapQueryCommand implements CommandWithConnection {
               userFriendlyError = "Request failed for " + path + ": " + errorMessage;
             }
           } else {
+            // Fallback if no JSON, try to extract HTTP status from the message
             if (errorMessage.contains(": 501 Not Implemented")) {
               userFriendlyError =
                   "RDAP Request Failed (Code 501): Not Implemented\n"
-                      + "  Description: The query for '" + path + "' was understood, but is not implemented by this registry.";
+                      + "  Description: The query for '"
+                      + path
+                      + "' was understood, but is not implemented by this registry.";
             } else if (errorMessage.contains(": 404 Not Found")) {
               userFriendlyError =
                   "RDAP Request Failed (Code 404): Not Found\n"
-                      + "  Description: The resource at path '" + path + "' does not exist or no results matched the query.";
-            } else if (errorMessage.contains(": 422 Unprocessable Entity")) {
-              userFriendlyError =
-                  "RDAP Request Failed (Code 422): Unprocessable Entity\n"
-                      + "  Description: The server understood the request, but cannot process the included entities.";
-            } else if (errorMessage.contains(": 500 Internal Server Error")) {
-              userFriendlyError =
-                  "RDAP Request Failed (Code 500): Internal Server Error\n"
-                      + "  Description: An unexpected error occurred on the server. Check server logs for details.";
-            } else if (errorMessage.contains(": 503 Service Unavailable")) {
-              userFriendlyError =
-                  "RDAP Request Failed (Code 503): Service Unavailable\n"
-                      + "  Description: The RDAP service is temporarily unavailable. Please try again later.";
+                      + "  Description: The resource at path '"
+                      + path
+                      + "' does not exist or no results matched the query.";
             } else {
-              userFriendlyError = "Request failed for " + path + ": " + errorMessage.substring(0, Math.min(errorMessage.length(), 150));
+              userFriendlyError =
+                  "Request failed for "
+                      + path
+                      + ": "
+                      + errorMessage.substring(0, Math.min(errorMessage.length(), 150));
             }
           }
         } catch (Exception jsonEx) {
@@ -211,8 +164,9 @@ public final class RdapQueryCommand implements CommandWithConnection {
           userFriendlyError = "Request failed for " + path + ": " + errorMessage;
         }
       } else {
-        userFriendlyError = "Request failed for " + path + ": " + "No error message available.";
+        userFriendlyError = "Request failed for " + path + ": No error message available.";
       }
+      // ONLY print the userFriendlyError to System.err
       System.err.println(userFriendlyError);
     }
   }
@@ -250,7 +204,7 @@ public final class RdapQueryCommand implements CommandWithConnection {
         }
       }
     } else if (element.isJsonPrimitive()) {
-      sb.append(indent).append(element.getAsString()).append("\n"); // Handle top-level or standalone primitives
+      sb.append(indent).append(element.getAsString()).append("\n");
     }
     return sb.toString();
   }
