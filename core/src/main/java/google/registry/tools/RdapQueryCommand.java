@@ -96,67 +96,88 @@ public final class RdapQueryCommand implements CommandWithConnection {
 
       logger.atInfo().log("Successfully completed RDAP query for path: %s", path);
     } catch (IOException e) {
+      // Always log the full exception for backend records.
       logger.atSevere().withCause(e).log("Request failed for path: %s", path);
+
       String errorMessage = e.getMessage();
-      String userFriendlyError = "Request failed for " + path + ": " + errorMessage;
+      String userFriendlyError = "RDAP Request failed for " + path + ".";
 
-      try {
-        int jsonStartIndex = errorMessage != null ? errorMessage.indexOf('{') : -1;
-        if (jsonStartIndex != -1) {
-          String jsonString = errorMessage.substring(jsonStartIndex);
-          JsonElement errorJsonElement = JsonParser.parseString(jsonString);
+      if (errorMessage != null) {
+        try {
+          int jsonStartIndex = errorMessage.indexOf('{');
+          if (jsonStartIndex != -1) {
+            String jsonString = errorMessage.substring(jsonStartIndex);
+            JsonElement errorJsonElement = JsonParser.parseString(jsonString);
 
-          if (errorJsonElement.isJsonObject()) {
-            JsonObject errorObj = errorJsonElement.getAsJsonObject();
-            String title = errorObj.has("title") ? errorObj.get("title").getAsString() : "Error";
-            int errorCode = errorObj.has("errorCode") ? errorObj.get("errorCode").getAsInt() : -1;
-            String description = "";
-            if (errorObj.has("description")) {
-              JsonElement descElement = errorObj.get("description");
-              if (descElement.isJsonArray()) {
-                StringBuilder sb = new StringBuilder();
-                for (JsonElement element : descElement.getAsJsonArray()) {
-                  if (sb.length() > 0) {
-                    sb.append("\n  ");
+            if (errorJsonElement.isJsonObject()) {
+              JsonObject errorObj = errorJsonElement.getAsJsonObject();
+              String title = errorObj.has("title") ? errorObj.get("title").getAsString() : "Error";
+              int errorCode = errorObj.has("errorCode") ? errorObj.get("errorCode").getAsInt() : -1;
+              String description = "";
+              if (errorObj.has("description")) {
+                JsonElement descElement = errorObj.get("description");
+                if (descElement.isJsonArray()) {
+                  StringBuilder sb = new StringBuilder();
+                  for (JsonElement element : descElement.getAsJsonArray()) {
+                    if (sb.length() > 0) sb.append("\n  ");
+                    sb.append(element.getAsString());
                   }
-                  sb.append(element.getAsString());
+                  description = sb.toString();
+                } else if (descElement.isJsonPrimitive()) {
+                  description = descElement.getAsString();
                 }
-                description = sb.toString();
-              } else if (descElement.isJsonPrimitive()) {
-                description = descElement.getAsString();
               }
-            }
 
-            StringBuilder improvedError = new StringBuilder();
-            improvedError.append("RDAP Request Failed (Code ").append(errorCode).append("): ");
-            improvedError.append(title);
-            if (!Strings.isNullOrEmpty(description)) {
-              improvedError.append("\n  Description: ").append(description);
+              StringBuilder improvedError = new StringBuilder();
+              improvedError.append("RDAP Request Failed (Code ").append(errorCode).append("): ");
+              improvedError.append(title);
+              if (!Strings.isNullOrEmpty(description)) {
+                improvedError.append("\n  Description: ").append(description);
+              }
+              userFriendlyError = improvedError.toString();
             }
-            userFriendlyError = improvedError.toString();
-          }
-        } else {
-          if (errorMessage != null) {
-            if (errorMessage.contains("501 Not Implemented")) {
+          } else {
+            // Fallback if no JSON, try to extract HTTP status from the message
+            if (errorMessage.contains(": 501 Not Implemented")) {
               userFriendlyError =
                   "RDAP Request Failed (Code 501): Not Implemented\n"
                       + "  Description: The query for '"
                       + path
                       + "' was understood, but is not implemented by this registry.\n"
                       + "  This is expected for 'ip' and 'autnum' queries, as this is a domain name registry.";
-            } else if (errorMessage.contains("404 Not Found")) {
+            } else if (errorMessage.contains(": 404 Not Found")) {
               userFriendlyError =
                   "RDAP Request Failed (Code 404): Not Found\n"
                       + "  Description: The resource at path '"
                       + path
-                      + "' does not exist.";
+                      + "' does not exist or no results matched the query.";
+            } else if (errorMessage.contains(": 422 Unprocessable Entity")) {
+              userFriendlyError =
+                  "RDAP Request Failed (Code 422): Unprocessable Entity\n"
+                      + "  Description: The server understood the request, but cannot process the included entities.";
+            } else if (errorMessage.contains(": 500 Internal Server Error")) {
+              userFriendlyError =
+                  "RDAP Request Failed (Code 500): Internal Server Error\n"
+                      + "  Description: An unexpected error occurred on the server. Check server logs for details.";
+            } else if (errorMessage.contains(": 503 Service Unavailable")) {
+              userFriendlyError =
+                  "RDAP Request Failed (Code 503): Service Unavailable\n"
+                      + "  Description: The RDAP service is temporarily unavailable. Please try again later.";
+            } else {
+              userFriendlyError =
+                  "Request failed for "
+                      + path
+                      + ": "
+                      + errorMessage.substring(0, Math.min(errorMessage.length(), 150));
             }
           }
+        } catch (Exception jsonEx) {
+          // If JSON parsing fails, fall back to a clean message.
+          logger.atWarning().withCause(jsonEx).log("Failed to parse error response as JSON, showing raw error.");
+          userFriendlyError = "Request failed for " + path + ": " + errorMessage;
         }
-      } catch (Exception jsonEx) {
-        logger.atWarning().withCause(jsonEx).log("Failed to parse error response as JSON.");
-        userFriendlyError = "Request failed for " + path + ": " + errorMessage;
       }
+      // ONLY print the userFriendlyError to System.err
       System.err.println(userFriendlyError);
     }
   }
