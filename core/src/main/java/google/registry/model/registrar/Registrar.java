@@ -67,6 +67,7 @@ import google.registry.persistence.converter.CurrencyToStringMapUserType;
 import google.registry.persistence.transaction.TransactionManager;
 import google.registry.util.CidrAddressBlock;
 import google.registry.util.PasswordUtils;
+import google.registry.util.PasswordUtils.HashAlgorithm;
 import jakarta.mail.internet.AddressException;
 import jakarta.mail.internet.InternetAddress;
 import jakarta.persistence.AttributeOverride;
@@ -672,6 +673,10 @@ public class Registrar extends UpdateAutoTimestampEntity implements Buildable, J
   }
 
   public boolean verifyPassword(String password) {
+    return getCurrentHashAlgorithm(password).isPresent();
+  }
+
+  public Optional<HashAlgorithm> getCurrentHashAlgorithm(String password) {
     return PasswordUtils.verifyPassword(password, passwordHash, salt);
   }
 

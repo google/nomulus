@@ -47,6 +47,7 @@ import google.registry.model.eppinput.EppInput.Options;
 import google.registry.model.eppinput.EppInput.Services;
 import google.registry.model.eppoutput.EppResponse;
 import google.registry.model.registrar.Registrar;
+import google.registry.util.PasswordUtils;
 import google.registry.util.StopwatchLogger;
 import jakarta.inject.Inject;
 import java.util.Optional;
@@ -150,8 +151,17 @@ public class LoginFlow implements MutatingFlow {
       throw new RegistrarAccountNotActiveException();
     }
 
-    if (login.getNewPassword().isPresent()) {
-      String newPassword = login.getNewPassword().get();
+    if (login.getNewPassword().isPresent()
+        || registrar.get().getCurrentHashAlgorithm(login.getPassword()).orElse(null)
+            != PasswordUtils.HashAlgorithm.ARGON_2_ID) {
+      String newPassword =
+          login
+              .getNewPassword()
+              .orElseGet(
+                  () -> {
+                    logger.atInfo().log("Rehashing existing registrar password with ARGON_2_ID");
+                    return login.getPassword();
+                  });
       // Load fresh from database (bypassing the cache) to ensure we don't save stale data.
       Optional<Registrar> freshRegistrar = Registrar.loadByRegistrarId(login.getClientId());
       stopwatch.tick("LoginFlow reload freshRegistrar");
