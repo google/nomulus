@@ -20,11 +20,13 @@ import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import com.google.common.base.Splitter;
+import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.flogger.GoogleLogger;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.request.Action.GkeService;
@@ -32,7 +34,6 @@ import jakarta.inject.Inject;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 /** Command to manually perform an authenticated RDAP query for any path. */
 @Parameters(separators = " =", commandDescription = "Manually perform an authenticated RDAP query")
@@ -66,11 +67,8 @@ public final class RdapQueryCommand implements CommandWithConnection {
   public void run() {
     checkArgument(!mainParameters.isEmpty(), "Missing RDAP path segments.");
 
-    // Universally construct the path from all main parameters.
-    // E.g., ["domain", "foo.dev"] becomes "/rdap/domain/foo.dev"
     String path = "/rdap/" + String.join("/", mainParameters);
 
-    // Universally parse all optional --params into a map.
     ImmutableMap<String, String> queryParams =
         params.stream()
             .map(
@@ -87,7 +85,6 @@ public final class RdapQueryCommand implements CommandWithConnection {
       if (defaultConnection == null) {
         throw new IllegalStateException("ServiceConnection was not set by RegistryCli.");
       }
-      // This is the core fix: always create a new connection targeting the PUBAPI service.
       ServiceConnection pubapiConnection =
           defaultConnection.withService(GkeService.PUBAPI, useCanary);
 
@@ -100,7 +97,67 @@ public final class RdapQueryCommand implements CommandWithConnection {
       logger.atInfo().log("Successfully completed RDAP query for path: %s", path);
     } catch (IOException e) {
       logger.atSevere().withCause(e).log("Request failed for path: %s", path);
-      System.err.println("Request failed for " + path + ": " + e.getMessage());
+      String errorMessage = e.getMessage();
+      String userFriendlyError = "Request failed for " + path + ": " + errorMessage;
+
+      try {
+        int jsonStartIndex = errorMessage != null ? errorMessage.indexOf('{') : -1;
+        if (jsonStartIndex != -1) {
+          String jsonString = errorMessage.substring(jsonStartIndex);
+          JsonElement errorJsonElement = JsonParser.parseString(jsonString);
+
+          if (errorJsonElement.isJsonObject()) {
+            JsonObject errorObj = errorJsonElement.getAsJsonObject();
+            String title = errorObj.has("title") ? errorObj.get("title").getAsString() : "Error";
+            int errorCode = errorObj.has("errorCode") ? errorObj.get("errorCode").getAsInt() : -1;
+            String description = "";
+            if (errorObj.has("description")) {
+              JsonElement descElement = errorObj.get("description");
+              if (descElement.isJsonArray()) {
+                StringBuilder sb = new StringBuilder();
+                for (JsonElement element : descElement.getAsJsonArray()) {
+                  if (sb.length() > 0) {
+                    sb.append("\n  ");
+                  }
+                  sb.append(element.getAsString());
+                }
+                description = sb.toString();
+              } else if (descElement.isJsonPrimitive()) {
+                description = descElement.getAsString();
+              }
+            }
+
+            StringBuilder improvedError = new StringBuilder();
+            improvedError.append("RDAP Request Failed (Code ").append(errorCode).append("): ");
+            improvedError.append(title);
+            if (!Strings.isNullOrEmpty(description)) {
+              improvedError.append("\n  Description: ").append(description);
+            }
+            userFriendlyError = improvedError.toString();
+          }
+        } else {
+          if (errorMessage != null) {
+            if (errorMessage.contains("501 Not Implemented")) {
+              userFriendlyError =
+                  "RDAP Request Failed (Code 501): Not Implemented\n"
+                      + "  Description: The query for '"
+                      + path
+                      + "' was understood, but is not implemented by this registry.\n"
+                      + "  This is expected for 'ip' and 'autnum' queries, as this is a domain name registry.";
+            } else if (errorMessage.contains("404 Not Found")) {
+              userFriendlyError =
+                  "RDAP Request Failed (Code 404): Not Found\n"
+                      + "  Description: The resource at path '"
+                      + path
+                      + "' does not exist.";
+            }
+          }
+        }
+      } catch (Exception jsonEx) {
+        logger.atWarning().withCause(jsonEx).log("Failed to parse error response as JSON.");
+        userFriendlyError = "Request failed for " + path + ": " + errorMessage;
+      }
+      System.err.println(userFriendlyError);
     }
   }
 }
