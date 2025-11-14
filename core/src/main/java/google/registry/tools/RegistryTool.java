@@ -98,6 +98,7 @@ public final class RegistryTool {
           .put("login", LoginCommand.class)
           .put("logout", LogoutCommand.class)
           .put("pending_escrow", PendingEscrowCommand.class)
+          .put("rdap_query", RdapQueryCommand.class)
           .put("recreate_billing_recurrences", RecreateBillingRecurrencesCommand.class)
           .put("registrar_poc", RegistrarPocCommand.class)
           .put("renew_domain", RenewDomainCommand.class)
