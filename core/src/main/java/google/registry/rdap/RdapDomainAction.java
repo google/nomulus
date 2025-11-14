@@ -19,6 +19,7 @@ import static google.registry.request.Action.Method.GET;
 import static google.registry.request.Action.Method.HEAD;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 
+import com.google.common.flogger.FluentLogger;
 import com.google.common.net.InternetDomainName;
 import google.registry.flows.EppException;
 import google.registry.flows.domain.DomainFlowUtils;
@@ -45,12 +46,16 @@ import java.util.Optional;
     auth = Auth.AUTH_PUBLIC)
 public class RdapDomainAction extends RdapActionBase {
 
+  private static final FluentLogger logger = FluentLogger.forEnclosingClass();
+
   @Inject public RdapDomainAction() {
     super("domain name", EndpointType.DOMAIN);
   }
 
   @Override
   public RdapDomain getJsonObjectForResource(String pathSearchString, boolean isHeadRequest) {
+    logger.atInfo().log("RDAP domain lookup for: %s", pathSearchString);
+
     // RDAP Technical Implementation Guide 2.1.1 - we must support A-label (Punycode) and U-label
     // (Unicode) formats. canonicalizeName will transform Unicode to Punycode so we support both.
     pathSearchString = canonicalizeName(pathSearchString);
@@ -72,7 +77,13 @@ public class RdapDomainAction extends RdapActionBase {
             Domain.class,
             pathSearchString,
             shouldIncludeDeleted() ? START_OF_TIME : rdapJsonFormatter.getRequestTime());
+
+    logger.atInfo().log("Domain lookup result: %s", domain.isPresent() ? "FOUND" : "NOT FOUND");
+
     if (domain.isEmpty() || !isAuthorized(domain.get())) {
+      if (domain.isPresent()) {
+        logger.atInfo().log("Authorization result for domain: %s", isAuthorized(domain.get()));
+      }
       handlePossibleBsaBlock(domainName);
       // RFC7480 5.3 - if the server wishes to respond that it doesn't have data satisfying the
       // query, it MUST reply with 404 response code.
