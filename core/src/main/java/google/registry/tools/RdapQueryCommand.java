@@ -132,6 +132,8 @@ public final class RdapQueryCommand implements CommandWithConnection {
         }
       }
     } catch (Exception jsonEx) {
+      System.err.println(
+          "RDAP Internal Warning: Failed to parse error JSON: " + jsonEx.getMessage());
     }
     return Optional.empty();
   }
