@@ -43,7 +43,9 @@ steps:
     deployCloudSchedulerAndQueue nomulus-config-${_ENV}.yaml cloud-scheduler-tasks-${_ENV}.xml $project_id --gke
     deployCloudSchedulerAndQueue nomulus-config-${_ENV}.yaml cloud-tasks-queue.xml $project_id --gke
 # Save the deployed tag for the current environment on GCS, and update the
-# mappings from Nomulus releases to deployment timestamp.
+# mappings from Nomulus releases to deployment timestamp. Also copy the
+# artifacts for schema tests to here. They will be mapped into Kokoro for
+# presubmit tests.
 - name: 'gcr.io/$PROJECT_ID/builder:latest'
   entrypoint: /bin/bash
   args:
@@ -60,6 +62,11 @@ steps:
       gs://$PROJECT_ID-deployed-tags/nomulus-gke.${_ENV}.versions \
       gs://$PROJECT_ID-deployed-tags/nomulus-gke.${_ENV}.tmp \
       gs://$PROJECT_ID-deployed-tags/nomulus-gke.${_ENV}.versions
+    # Copy the nomulus artifacts for schema test: nomulus foss jars and the uberjar of nomulus test classes.
+    gcloud storage cp gs://$PROJECT_ID-deploy/${TAG_NAME}/nomulus-public.jar \
+          gs://$PROJECT_ID-deployed-tags/schema-test-artifacts/nomulus-public.${_ENV}.jar
+    gcloud storage cp gs://$PROJECT_ID-deploy/${TAG_NAME}/nomulus-tests-alldeps.jar \
+          gs://$PROJECT_ID-deployed-tags/schema-test-artifacts/nomulus-tests-alldeps.${_ENV}.jar
 timeout: 3600s
 options:
   machineType: 'E2_HIGHCPU_32'

@@ -75,7 +75,7 @@ steps:
 # Save the deployed tag for the current environment on GCS to a well-known.
 # location. Do not use the 'artifacts' section for this since it will
 # upload an extra metadata file every time and pollute the folder.
-# TODO(weiminyu): modify this step so that TAG_NAME may be 'live'.
+# Also copy the schema jar here. It will be mapped into Kokoro for presubmit tests.
 - name: 'gcr.io/$PROJECT_ID/builder:latest'
   entrypoint: /bin/bash
   args:
@@ -84,6 +84,9 @@ steps:
     set -e
     echo ${TAG_NAME} | \
       gcloud storage cp - gs://$PROJECT_ID-deployed-tags/sql.${_ENV}.tag\
+    # Copy the schema jar here
+    gcloud storage cp gs://$PROJECT_ID-deploy/${TAG_NAME}/schema.jar \
+      gs://$PROJECT_ID-deployed-tags/schema-test-artifacts/schema.${_ENV}.jar
 timeout: 3600s
 options:
   machineType: 'E2_HIGHCPU_32'
