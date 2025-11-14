@@ -22,7 +22,6 @@ import com.beust.jcommander.Parameters;
 import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.flogger.GoogleLogger;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -34,12 +33,11 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 /** Command to manually perform an RDAP query for any path. */
-@Parameters(separators = " =", commandDescription = "Manually perform an authenticated RDAP query")
+@Parameters(separators = " =", commandDescription = "Manually perform an RDAP query")
 public final class RdapQueryCommand implements CommandWithConnection {
-
-  private static final GoogleLogger logger = GoogleLogger.forEnclosingClass();
 
   @Parameter(
       description = "The ordered RDAP path segments that form the path (e.g., 'domain foo.dev').",
@@ -65,21 +63,10 @@ public final class RdapQueryCommand implements CommandWithConnection {
 
   @Override
   public void run() {
-    checkArgument(!mainParameters.isEmpty(), "Missing RDAP path segments.");
 
     String path = "/rdap/" + String.join("/", mainParameters);
 
-    ImmutableMap<String, String> queryParams =
-        params.stream()
-            .map(
-                p -> {
-                  List<String> parts = Splitter.on('=').limit(2).splitToList(p);
-                  checkArgument(parts.size() == 2, "Invalid parameter format: %s", p);
-                  return parts;
-                })
-            .collect(toImmutableMap(parts -> parts.get(0), parts -> parts.get(1)));
-
-    logger.atInfo().log("Starting RDAP query for path: %s with params: %s", path, queryParams);
+    ImmutableMap<String, String> queryParams = parseParams(params);
 
     try {
       if (defaultConnection == null) {
@@ -94,80 +81,124 @@ public final class RdapQueryCommand implements CommandWithConnection {
       System.out.println(formatJsonElement(rdapJson, ""));
 
     } catch (IOException e) {
-      // Log the full exception for backend records, but without withCause(e) to
-      // prevent automatic stack trace printing to the console.
-      logger.atSevere().log("Request failed for path: %s: %s", path, e.getMessage());
+      handleIOException(path, e);
+    }
+  }
 
-      String errorMessage = e.getMessage();
-      String userFriendlyError;
+  /** Parses the --params list into an ImmutableMap of query parameters. */
+  private ImmutableMap<String, String> parseParams(List<String> paramsList) {
+    return paramsList.stream()
+        .map(
+            p -> {
+              List<String> parts = Splitter.on('=').limit(2).splitToList(p);
+              checkArgument(parts.size() == 2, "Invalid parameter format: %s", p);
+              return parts;
+            })
+        .collect(toImmutableMap(parts -> parts.get(0), parts -> parts.get(1)));
+  }
 
-      if (errorMessage != null) {
-        try {
-          int jsonStartIndex = errorMessage.indexOf('{');
-          if (jsonStartIndex != -1) {
-            String jsonString = errorMessage.substring(jsonStartIndex);
-            JsonElement errorJsonElement = JsonParser.parseString(jsonString);
+  /** Handles and formats IOException, printing a user-friendly message to System.err. */
+  private void handleIOException(String path, IOException e) {
 
-            if (errorJsonElement.isJsonObject()) {
-              JsonObject errorObj = errorJsonElement.getAsJsonObject();
-              String title = errorObj.has("title") ? errorObj.get("title").getAsString() : "Error";
-              int errorCode = errorObj.has("errorCode") ? errorObj.get("errorCode").getAsInt() : -1;
-              String description = "";
-              if (errorObj.has("description")) {
-                JsonElement descElement = errorObj.get("description");
-                if (descElement.isJsonArray()) {
-                  StringBuilder sb = new StringBuilder();
-                  for (JsonElement element : descElement.getAsJsonArray()) {
-                    if (sb.length() > 0) sb.append("\n  ");
-                    sb.append(element.getAsString());
-                  }
-                  description = sb.toString();
-                } else if (descElement.isJsonPrimitive()) {
-                  description = descElement.getAsString();
-                }
-              }
+    String errorMessage = e.getMessage();
+    String userFriendlyError = formatUserFriendlyError(path, errorMessage);
+    System.err.println(userFriendlyError);
+  }
 
-              StringBuilder improvedError = new StringBuilder();
-              improvedError.append("RDAP Request Failed (Code ").append(errorCode).append("): ");
-              improvedError.append(title);
-              if (!Strings.isNullOrEmpty(description)) {
-                improvedError.append("\n  Description: ").append(description);
-              }
-              userFriendlyError = improvedError.toString();
-            } else {
-              userFriendlyError = "Request failed for " + path + ": " + errorMessage;
-            }
-          } else {
-            // Fallback if no JSON, try to extract HTTP status from the message
-            if (errorMessage.contains(": 501 Not Implemented")) {
-              userFriendlyError =
-                  "RDAP Request Failed (Code 501): Not Implemented\n"
-                      + "  Description: The query for '"
-                      + path
-                      + "' was understood, but is not implemented by this registry.";
-            } else if (errorMessage.contains(": 404 Not Found")) {
-              userFriendlyError =
-                  "RDAP Request Failed (Code 404): Not Found\n"
-                      + "  Description: The resource at path '"
-                      + path
-                      + "' does not exist or no results matched the query.";
-            } else {
-              userFriendlyError =
-                  "Request failed for "
-                      + path
-                      + ": "
-                      + errorMessage.substring(0, Math.min(errorMessage.length(), 150));
-            }
-          }
-        } catch (Exception jsonEx) {
-          logger.atWarning().withCause(jsonEx).log("Failed to parse error response as JSON, showing raw error.");
-          userFriendlyError = "Request failed for " + path + ": " + errorMessage;
+  /** Formats a user-friendly error message from the IOException details. */
+  private String formatUserFriendlyError(String path, String errorMessage) {
+    if (errorMessage == null) {
+      return "Request failed for " + path + ": No error message available.";
+    }
+
+    Optional<JsonObject> errorJson = parseErrorJson(errorMessage);
+
+    if (errorJson.isPresent()) {
+      return formatJsonError(errorJson.get());
+    } else {
+      return formatFallbackError(path, errorMessage);
+    }
+  }
+
+  /** Attempts to parse a JSON object from the IOException message. */
+  private Optional<JsonObject> parseErrorJson(String errorMessage) {
+    try {
+      int jsonStartIndex = errorMessage.indexOf('{');
+      if (jsonStartIndex != -1) {
+        String jsonString = errorMessage.substring(jsonStartIndex);
+        JsonElement errorJsonElement = JsonParser.parseString(jsonString);
+        if (errorJsonElement.isJsonObject()) {
+          return Optional.of(errorJsonElement.getAsJsonObject());
         }
-      } else {
-        userFriendlyError = "Request failed for " + path + ": No error message available.";
       }
-      // ONLY print the userFriendlyError to System.err
-      System.err.println(userFriendlyError);
+    } catch (Exception jsonEx) {
+    }
+    return Optional.empty();
+  }
+
+  /** Formats a user-friendly error string from a parsed JSON error object. */
+  private String formatJsonError(JsonObject errorObj) {
+    String title = errorObj.has("title") ? errorObj.get("title").getAsString() : "Error";
+    int errorCode = errorObj.has("errorCode") ? errorObj.get("errorCode").getAsInt() : -1;
+    String description = parseJsonDescription(errorObj);
+
+    StringBuilder improvedError =
+        new StringBuilder()
+            .append("RDAP Request Failed (Code ")
+            .append(errorCode)
+            .append("): ")
+            .append(title);
+    if (!Strings.isNullOrEmpty(description)) {
+      improvedError.append("\n  Description: ").append(description);
+    }
+    return improvedError.toString();
+  }
+
+  /** Extracts and formats the 'description' field from a JSON error object. */
+  private String parseJsonDescription(JsonObject errorObj) {
+    if (!errorObj.has("description")) {
+      return "";
+    }
+    JsonElement descElement = errorObj.get("description");
+    if (descElement.isJsonArray()) {
+      StringBuilder sb = new StringBuilder();
+      for (JsonElement element : descElement.getAsJsonArray()) {
+        if (sb.length() > 0) sb.append("\n  ");
+        sb.append(element.getAsString());
+      }
+      return sb.toString();
+    } else if (descElement.isJsonPrimitive()) {
+      return descElement.getAsString();
+    }
+    return "";
+  }
+
+  /** Formats a fallback error message when JSON parsing fails. */
+  private String formatFallbackError(String path, String errorMessage) {
+    if (errorMessage.contains(": 501 Not Implemented")) {
+      return "RDAP Request Failed (Code 501): Not Implemented\n"
+          + "  Description: The query for '"
+          + path
+          + "' was understood, but is not implemented by this registry.";
+    } else if (errorMessage.contains(": 404 Not Found")) {
+      return "RDAP Request Failed (Code 404): Not Found\n"
+          + "  Description: The resource at path '"
+          + path
+          + "' does not exist or no results matched the query.";
+    } else if (errorMessage.contains(": 422 Unprocessable Entity")) {
+      return "RDAP Request Failed (Code 422): Unprocessable Entity\n"
+          + "  Description: The server understood the request, but cannot process the"
+          + " included entities.";
+    } else if (errorMessage.contains(": 500 Internal Server Error")) {
+      return "RDAP Request Failed (Code 500): Internal Server Error\n"
+          + "  Description: An unexpected error occurred on the server. Check server logs"
+          + " for details.";
+    } else if (errorMessage.contains(": 503 Service Unavailable")) {
+      return "RDAP Request Failed (Code 503): Service Unavailable\n"
+          + "  Description: The RDAP service is temporarily unavailable. Please try again later.";
+    } else {
+      String rawMessage = errorMessage.substring(0, Math.min(errorMessage.length(), 150));
+      return "Request failed for " + path + ": " + rawMessage;
     }
   }
 
@@ -175,11 +206,10 @@ public final class RdapQueryCommand implements CommandWithConnection {
   private String formatJsonElement(JsonElement element, String indent) {
     StringBuilder sb = new StringBuilder();
     if (element == null || element.isJsonNull()) {
-      // Omit nulls for cleaner output
     } else if (element.isJsonObject()) {
       JsonObject obj = element.getAsJsonObject();
       obj.entrySet().stream()
-          .sorted(Map.Entry.comparingByKey()) // Sort keys for consistent output
+          .sorted(Map.Entry.comparingByKey())
           .forEach(
               entry -> {
                 if (!entry.getValue().isJsonNull()) {

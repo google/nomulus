@@ -136,6 +136,7 @@ interface RegistryToolComponent {
   void inject(PendingEscrowCommand command);
 
   void inject(RdapQueryCommand command);
+
   void inject(RenewDomainCommand command);
 
   void inject(SaveSqlCredentialCommand command);
