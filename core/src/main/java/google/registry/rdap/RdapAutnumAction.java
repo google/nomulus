@@ -20,7 +20,6 @@ import static google.registry.request.Action.Method.HEAD;
 import google.registry.rdap.RdapMetrics.EndpointType;
 import google.registry.rdap.RdapObjectClasses.ReplyPayloadBase;
 import google.registry.request.Action;
-import google.registry.request.Action.GaeService;
 import google.registry.request.HttpException.NotImplementedException;
 import google.registry.request.auth.Auth;
 import jakarta.inject.Inject;
@@ -32,7 +31,7 @@ import jakarta.inject.Inject;
  * ARIN, not domain registries.
  */
 @Action(
-    service = GaeService.PUBAPI,
+    service = Action.Service.PUBAPI,
     path = "/rdap/autnum/",
     method = {GET, HEAD},
     isPrefix = true,

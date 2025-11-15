@@ -86,13 +86,10 @@ public abstract class OidcTokenAuthenticationMechanism implements Authentication
     }
     JsonWebSignature token = null;
     try {
-      String service = null;
-      if (RegistryEnvironment.isOnJetty()) {
-        String hostname = request.getServerName();
-        service = Splitter.on('.').split(hostname).iterator().next();
-        if (request.getHeader("canary") != null) {
-          service += "-canary";
-        }
+      String hostname = request.getServerName();
+      String service = Splitter.on('.').split(hostname).iterator().next();
+      if (request.getHeader("canary") != null) {
+        service += "-canary";
       }
       token = tokenVerifier.verify(service, rawIdToken);
     } catch (Exception e) {

@@ -29,7 +29,6 @@ import google.registry.rdap.RdapJsonFormatter.OutputDataType;
 import google.registry.rdap.RdapMetrics.EndpointType;
 import google.registry.rdap.RdapObjectClasses.RdapDomain;
 import google.registry.request.Action;
-import google.registry.request.Action.GaeService;
 import google.registry.request.HttpException.BadRequestException;
 import google.registry.request.HttpException.NotFoundException;
 import google.registry.request.auth.Auth;
@@ -38,7 +37,7 @@ import java.util.Optional;
 
 /** RDAP action for domain requests. */
 @Action(
-    service = GaeService.PUBAPI,
+    service = Action.Service.PUBAPI,
     path = "/rdap/domain/",
     method = {GET, HEAD},
     isPrefix = true,

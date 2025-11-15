@@ -18,7 +18,6 @@ import static com.google.common.truth.Truth.assertThat;
 import static google.registry.request.auth.Auth.AUTH_ADMIN;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import google.registry.request.Action.GaeService;
 import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.function.Function;
@@ -42,7 +41,7 @@ public final class RouterTest {
 
   ////////////////////////////////////////////////////////////////////////////////////////////////
 
-  @Action(service = GaeService.DEFAULT, path = "/sloth", auth = AUTH_ADMIN)
+  @Action(service = Action.Service.FRONTEND, path = "/sloth", auth = AUTH_ADMIN)
   public static final class SlothTask implements Runnable {
     @Override
     public void run() {}
@@ -72,7 +71,7 @@ public final class RouterTest {
 
   ////////////////////////////////////////////////////////////////////////////////////////////////
 
-  @Action(service = GaeService.DEFAULT, path = "/prefix", isPrefix = true, auth = AUTH_ADMIN)
+  @Action(service = Action.Service.FRONTEND, path = "/prefix", isPrefix = true, auth = AUTH_ADMIN)
   public static final class PrefixTask implements Runnable {
     @Override
     public void run() {}
@@ -98,7 +97,11 @@ public final class RouterTest {
 
   ////////////////////////////////////////////////////////////////////////////////////////////////
 
-  @Action(service = GaeService.DEFAULT, path = "/prefix/long", isPrefix = true, auth = AUTH_ADMIN)
+  @Action(
+      service = Action.Service.FRONTEND,
+      path = "/prefix/long",
+      isPrefix = true,
+      auth = AUTH_ADMIN)
   public static final class LongTask implements Runnable {
     @Override
     public void run() {}
@@ -150,13 +153,13 @@ public final class RouterTest {
 
   ////////////////////////////////////////////////////////////////////////////////////////////////
 
-  @Action(service = GaeService.DEFAULT, path = "/samePathAsOtherTask", auth = AUTH_ADMIN)
+  @Action(service = Action.Service.FRONTEND, path = "/samePathAsOtherTask", auth = AUTH_ADMIN)
   public static final class DuplicateTask1 implements Runnable {
     @Override
     public void run() {}
   }
 
-  @Action(service = GaeService.DEFAULT, path = "/samePathAsOtherTask", auth = AUTH_ADMIN)
+  @Action(service = Action.Service.FRONTEND, path = "/samePathAsOtherTask", auth = AUTH_ADMIN)
   public static final class DuplicateTask2 implements Runnable {
     @Override
     public void run() {}

@@ -28,7 +28,6 @@ import com.google.protobuf.Timestamp;
 import google.registry.batch.CloudTasksUtils;
 import google.registry.flows.EppToolAction;
 import google.registry.request.Action;
-import google.registry.request.Action.GaeService;
 import google.registry.request.Parameter;
 import google.registry.request.auth.Auth;
 import google.registry.util.Clock;
@@ -52,7 +51,7 @@ import org.joda.time.DateTime;
  * least one must be specified in order for load testing to do anything.
  */
 @Action(
-    service = GaeService.TOOLS,
+    service = Action.Service.BACKEND,
     path = LoadTestAction.PATH,
     method = Action.Method.POST,
     automaticallyPrintOk = true,

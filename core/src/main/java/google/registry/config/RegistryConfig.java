@@ -37,7 +37,7 @@ import google.registry.bsa.UploadBsaUnavailableDomainsAction;
 import google.registry.dns.ReadDnsRefreshRequestsAction;
 import google.registry.model.common.DnsRefreshRequest;
 import google.registry.persistence.transaction.JpaTransactionManager;
-import google.registry.request.Action.GkeService;
+import google.registry.request.Action.Service;
 import google.registry.util.RegistryEnvironment;
 import google.registry.util.YamlUtils;
 import jakarta.inject.Named;
@@ -1444,7 +1444,7 @@ public final class RegistryConfig {
     return CONFIG_SETTINGS.get().gcpProject.baseDomain;
   }
 
-  public static URL getServiceUrl(GkeService service) {
+  public static URL getServiceUrl(Service service) {
     return makeUrl(String.format("https://%s.%s", service.getServiceId(), getBaseDomain()));
   }
 

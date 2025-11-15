@@ -37,7 +37,6 @@ import google.registry.batch.CloudTasksUtils;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.model.domain.Domain;
 import google.registry.request.Action;
-import google.registry.request.Action.GaeService;
 import google.registry.request.Parameter;
 import google.registry.request.RequestParameters;
 import google.registry.request.UrlConnectionService;
@@ -66,7 +65,7 @@ import org.joda.time.Duration;
  * @see NordnVerifyAction
  */
 @Action(
-    service = GaeService.BACKEND,
+    service = Action.Service.BACKEND,
     path = NordnUploadAction.PATH,
     method = Action.Method.POST,
     automaticallyPrintOk = true,

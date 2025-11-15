@@ -15,8 +15,6 @@
 package google.registry.tools;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.request.Action.GaeService.DEFAULT;
-import static org.junit.Assert.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -28,7 +26,7 @@ import com.google.api.client.http.HttpRequest;
 import com.google.api.client.http.HttpRequestFactory;
 import com.google.api.client.http.HttpResponse;
 import com.google.common.collect.ImmutableMap;
-import google.registry.request.Action.GkeService;
+import google.registry.request.Action.Service;
 import java.io.ByteArrayInputStream;
 import org.junit.jupiter.api.Test;
 
@@ -38,28 +36,9 @@ public class ServiceConnectionTest {
   @Test
   void testSuccess_serverUrl_notCanary() {
     ServiceConnection connection =
-        new ServiceConnection(false, false, null).withService(DEFAULT, false);
+        new ServiceConnection(false, null).withService(Service.FRONTEND, false);
     String serverUrl = connection.getServer().toString();
-    assertThat(serverUrl).isEqualTo("https://default.example.com"); // See default-config.yaml
-  }
-
-  @Test
-  void testFailure_mixedService() throws Exception {
-    IllegalArgumentException thrown =
-        assertThrows(
-            IllegalArgumentException.class,
-            () -> {
-              new ServiceConnection(true, false, null).withService(DEFAULT, true);
-            });
-    assertThat(thrown).hasMessageThat().contains("Cannot switch from GkeService to GaeService");
-  }
-
-  @Test
-  void testSuccess_serverUrl_gae_canary() {
-    ServiceConnection connection =
-        new ServiceConnection(false, false, null).withService(DEFAULT, true);
-    String serverUrl = connection.getServer().toString();
-    assertThat(serverUrl).isEqualTo("https://nomulus-dot-default.example.com");
+    assertThat(serverUrl).isEqualTo("https://frontend.registry.test"); // See default-config.yaml
   }
 
   @Test
@@ -73,7 +52,7 @@ public class ServiceConnectionTest {
     when(request.execute()).thenReturn(response);
     when(response.getContent()).thenReturn(ByteArrayInputStream.nullInputStream());
     ServiceConnection connection =
-        new ServiceConnection(true, false, factory).withService(GkeService.PUBAPI, true);
+        new ServiceConnection(false, factory).withService(Service.PUBAPI, true);
     String serverUrl = connection.getServer().toString();
     assertThat(serverUrl).isEqualTo("https://pubapi.registry.test");
     connection.sendGetRequest("/path", ImmutableMap.of());
