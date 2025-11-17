@@ -16,6 +16,8 @@ package google.registry.util;
 
 import static com.google.common.io.BaseEncoding.base64;
 import static com.google.common.truth.Truth.assertThat;
+import static google.registry.util.PasswordUtils.HashAlgorithm.ARGON_2_ID;
+import static google.registry.util.PasswordUtils.HashAlgorithm.SCRYPT_P_1;
 import static google.registry.util.PasswordUtils.SALT_SUPPLIER;
 import static google.registry.util.PasswordUtils.hashPassword;
 import static google.registry.util.PasswordUtils.verifyPassword;
@@ -47,12 +49,22 @@ final class PasswordUtilsTest {
   }
 
   @Test
-  void testVerify_scrypt_default() {
+  void testVerify_argon2_default() {
     byte[] salt = SALT_SUPPLIER.get();
     String password = "mySuperSecurePassword";
     String hashedPassword = hashPassword(password, salt);
-    assertThat(hashedPassword).isEqualTo(hashPassword(password, salt));
-    assertThat(verifyPassword(password, hashedPassword, base64().encode(salt))).isTrue();
+    assertThat(hashedPassword).isEqualTo(hashPassword(password, salt, ARGON_2_ID));
+    assertThat(verifyPassword(password, hashedPassword, base64().encode(salt)))
+        .hasValue(ARGON_2_ID);
+  }
+
+  @Test
+  void testVerify_scrypt() {
+    byte[] salt = SALT_SUPPLIER.get();
+    String password = "mySuperSecurePassword";
+    String hashedPassword = hashPassword(password, salt, SCRYPT_P_1);
+    assertThat(verifyPassword(password, hashedPassword, base64().encode(salt)))
+        .hasValue(SCRYPT_P_1);
   }
 
   @Test
@@ -60,6 +72,6 @@ final class PasswordUtilsTest {
     byte[] salt = SALT_SUPPLIER.get();
     String password = "mySuperSecurePassword";
     String hashedPassword = hashPassword(password, salt);
-    assertThat(verifyPassword(password + "a", hashedPassword, base64().encode(salt))).isFalse();
+    assertThat(verifyPassword(password + "a", hashedPassword, base64().encode(salt))).isEmpty();
   }
 }

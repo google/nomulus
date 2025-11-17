@@ -14,7 +14,9 @@
 
 package google.registry.ui.server.console;
 
+import static com.google.common.io.BaseEncoding.base64;
 import static com.google.common.truth.Truth.assertThat;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.loadByEntity;
 import static google.registry.testing.DatabaseHelper.loadRegistrar;
@@ -49,6 +51,8 @@ import google.registry.testing.DeterministicStringGenerator;
 import google.registry.testing.FakeResponse;
 import google.registry.tools.DomainLockUtils;
 import google.registry.util.EmailMessage;
+import google.registry.util.PasswordUtils;
+import google.registry.util.PasswordUtils.HashAlgorithm;
 import google.registry.util.StringGenerator;
 import jakarta.mail.internet.InternetAddress;
 import java.io.IOException;
@@ -88,16 +92,17 @@ public class ConsoleRegistryLockActionTest extends ConsoleActionBaseTestCase {
     createTld("test");
     defaultDomain = persistActiveDomain("example.test");
     user =
-        new User.Builder()
-            .setEmailAddress("user@theregistrar.com")
-            .setRegistryLockEmailAddress("registrylock@theregistrar.com")
-            .setUserRoles(
-                new UserRoles.Builder()
-                    .setRegistrarRoles(
-                        ImmutableMap.of("TheRegistrar", RegistrarRole.PRIMARY_CONTACT))
-                    .build())
-            .setRegistryLockPassword("registryLockPassword")
-            .build();
+        persistResource(
+            new User.Builder()
+                .setEmailAddress("user@theregistrar.com")
+                .setRegistryLockEmailAddress("registrylock@theregistrar.com")
+                .setUserRoles(
+                    new UserRoles.Builder()
+                        .setRegistrarRoles(
+                            ImmutableMap.of("TheRegistrar", RegistrarRole.PRIMARY_CONTACT))
+                        .build())
+                .setRegistryLockPassword("registryLockPassword")
+                .build());
     action = createGetAction();
   }
 
@@ -275,6 +280,40 @@ public class ConsoleRegistryLockActionTest extends ConsoleActionBaseTestCase {
     verifyEmail();
     // Doesn't actually change the status values (hasn't been verified)
     assertThat(loadByEntity(defaultDomain).getStatusValues()).containsExactly(StatusValue.INACTIVE);
+  }
+
+  @Test
+  void testPost_lock_scryptPasswordToArgon2() throws Exception {
+    tm().transact(
+            () -> {
+              // The salt is not exposed by User (nor should it be), so we query it directly.
+              String encodedSalt =
+                  tm().query(
+                          "SELECT registryLockPasswordSalt FROM User WHERE emailAddress ="
+                              + " :emailAddress",
+                          String.class)
+                      .setParameter("emailAddress", user.getEmailAddress())
+                      .getSingleResult();
+              byte[] salt = base64().decode(encodedSalt);
+              String newHash =
+                  PasswordUtils.hashPassword(
+                      "registryLockPassword", salt, HashAlgorithm.SCRYPT_P_1);
+              // Set password directly, as the Java method would have used Argon2.
+              tm().query("UPDATE User SET registryLockPasswordHash = :hash")
+                  .setParameter("hash", newHash)
+                  .executeUpdate();
+            });
+    user = loadByEntity(user);
+    assertThat(user.getCurrentHashAlgorithm("registryLockPassword").get())
+        .isEqualTo(HashAlgorithm.SCRYPT_P_1);
+    action = createDefaultPostAction(true);
+    action.run();
+    verifyEmail();
+    assertThat(response.getStatus()).isEqualTo(SC_OK);
+    assertThat(getMostRecentRegistryLockByRepoId(defaultDomain.getRepoId())).isPresent();
+    user = loadByEntity(user);
+    assertThat(user.getCurrentHashAlgorithm("registryLockPassword").get())
+        .isEqualTo(HashAlgorithm.ARGON_2_ID);
   }
 
   @Test
