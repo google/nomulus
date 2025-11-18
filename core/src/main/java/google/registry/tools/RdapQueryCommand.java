@@ -36,7 +36,6 @@ public final class RdapQueryCommand implements CommandWithConnection {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
-  // The simplified enum, now including ENTITYSEARCH
   enum RdapQueryType {
     DOMAIN,
     DOMAINSEARCH,
@@ -52,7 +51,7 @@ public final class RdapQueryCommand implements CommandWithConnection {
 
   @Parameter(
       description = "The main query term (e.g., a domain name or search pattern).",
-      required = false) // Not required for HELP
+      required = false)
   private String queryTerm;
 
   private ServiceConnection defaultConnection;
@@ -114,8 +113,6 @@ public final class RdapQueryCommand implements CommandWithConnection {
         throw new IllegalStateException("Unsupported query type: " + type);
     }
 
-    logger.atInfo().log("Starting RDAP query for path: %s with params: %s", path, queryParams);
-
     ServiceConnection pubapiConnection =
         defaultConnection.withService(GkeService.PUBAPI, useCanary);
     String rdapResponse = pubapiConnection.sendGetRequest(path, queryParams);
@@ -123,7 +120,5 @@ public final class RdapQueryCommand implements CommandWithConnection {
     JsonElement rdapJson = JsonParser.parseString(rdapResponse);
     Gson gson = new GsonBuilder().setPrettyPrinting().create();
     logger.atInfo().log(gson.toJson(rdapJson));
-
-    logger.atInfo().log("Successfully completed RDAP query.");
   }
 }
