@@ -64,6 +64,7 @@ import static google.registry.testing.DomainSubject.assertAboutDomains;
 import static google.registry.testing.EppExceptionSubject.assertAboutEppExceptions;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
+import static google.registry.xml.XmlTestUtils.assertXmlEquals;
 import static org.joda.money.CurrencyUnit.JPY;
 import static org.joda.money.CurrencyUnit.USD;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -2543,8 +2544,9 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
                     .setResult(thrown.getResult())
                     .build()),
             ValidationMode.STRICT);
-    assertThat(new String(responseXmlBytes, StandardCharsets.UTF_8))
-        .isEqualTo(loadFile("domain_create_blocked_by_bsa.xml"));
+    assertXmlEquals(
+        new String(responseXmlBytes, StandardCharsets.UTF_8),
+        loadFile("domain_create_blocked_by_bsa.xml"));
   }
 
   @Test
@@ -2577,8 +2579,9 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
                     .setResult(thrown.getResult())
                     .build()),
             ValidationMode.STRICT);
-    assertThat(new String(responseXmlBytes, StandardCharsets.UTF_8))
-        .isEqualTo(loadFile("domain_create_blocked_by_bsa.xml"));
+    assertXmlEquals(
+        new String(responseXmlBytes, StandardCharsets.UTF_8),
+        loadFile("domain_create_blocked_by_bsa.xml"));
   }
 
   @Test
