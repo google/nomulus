@@ -104,7 +104,6 @@ class RdapQueryCommandTest extends CommandTestCase<RdapQueryCommand> {
 
   @Test
   void testFailure_missingMainParameter() {
-    // JCommander throws a ParameterException if a required parameter is missing.
     assertThrows(ParameterException.class, this::runCommand);
   }
 }

@@ -101,7 +101,6 @@ public final class RdapQueryCommand implements CommandWithConnection {
       case ENTITYSEARCH:
         checkArgument(queryTerm != null, "A search term is required for an ENTITYSEARCH.");
         path = "/rdap/entities";
-        // Per RdapEntitySearchAction, the parameter for searching by name is "fn".
         queryParams = ImmutableMap.of("fn", queryTerm);
         break;
       case HELP:
