@@ -25,7 +25,6 @@ import com.google.common.flogger.FluentLogger;
 import com.google.common.net.MediaType;
 import google.registry.model.tld.Tld;
 import google.registry.request.Action;
-import google.registry.request.Action.GaeService;
 import google.registry.request.Parameter;
 import google.registry.request.RequestParameters;
 import google.registry.request.Response;
@@ -35,7 +34,7 @@ import jakarta.inject.Inject;
 
 /** Action that exports the publicly viewable reserved terms list for a TLD to Google Drive. */
 @Action(
-    service = GaeService.BACKEND,
+    service = Action.Service.BACKEND,
     path = "/_dr/task/exportReservedTerms",
     method = POST,
     auth = Auth.AUTH_ADMIN)

@@ -25,8 +25,7 @@ import google.registry.model.console.ConsoleUpdateHistory;
 import google.registry.model.console.User;
 import google.registry.model.registrar.Registrar;
 import google.registry.request.Action;
-import google.registry.request.Action.GaeService;
-import google.registry.request.Action.GkeService;
+import google.registry.request.Action.Service;
 import google.registry.request.Parameter;
 import google.registry.request.auth.Auth;
 import google.registry.request.auth.AuthenticatedRegistrarAccessor;
@@ -44,8 +43,7 @@ import java.util.StringJoiner;
  * and don't have any other obvious means of edit.
  */
 @Action(
-    service = GaeService.DEFAULT,
-    gkeService = GkeService.CONSOLE,
+    service = Service.CONSOLE,
     path = RdapRegistrarFieldsAction.PATH,
     method = {POST},
     auth = Auth.AUTH_PUBLIC_LOGGED_IN)

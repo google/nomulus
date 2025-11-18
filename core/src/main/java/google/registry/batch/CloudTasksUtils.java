@@ -43,7 +43,6 @@ import google.registry.config.CredentialModule.ApplicationDefaultCredential;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.request.Action;
 import google.registry.request.Action.Method;
-import google.registry.request.Action.Service;
 import google.registry.util.Clock;
 import google.registry.util.CollectionUtils;
 import google.registry.util.GoogleCredentialsBundle;
@@ -175,7 +174,7 @@ public class CloudTasksUtils implements Serializable {
    *     the worker service</a>
    */
   protected Task createTask(
-      String path, Method method, Service service, Multimap<String, String> params) {
+      String path, Method method, Action.Service service, Multimap<String, String> params) {
     checkArgument(
         path != null && !path.isEmpty() && path.charAt(0) == '/',
         "The path must start with a '/'.");
@@ -231,9 +230,7 @@ public class CloudTasksUtils implements Serializable {
         method,
         actionClazz.getSimpleName(),
         allowedMethods);
-    Service service =
-        RegistryEnvironment.isOnJetty() ? Action.ServiceGetter.get(action) : action.service();
-    return createTask(path, method, service, params);
+    return createTask(path, method, action.service(), params);
   }
 
   /**
@@ -256,7 +253,7 @@ public class CloudTasksUtils implements Serializable {
   public Task createTaskWithJitter(
       String path,
       Method method,
-      Service service,
+      Action.Service service,
       Multimap<String, String> params,
       Optional<Integer> jitterSeconds) {
     if (jitterSeconds.isEmpty() || jitterSeconds.get() <= 0) {
@@ -297,9 +294,7 @@ public class CloudTasksUtils implements Serializable {
         "Action class %s is not annotated with @Action",
         actionClazz.getSimpleName());
     String path = action.path();
-    Service service =
-        RegistryEnvironment.isOnJetty() ? Action.ServiceGetter.get(action) : action.service();
-    return createTaskWithJitter(path, method, service, params, jitterSeconds);
+    return createTaskWithJitter(path, method, action.service(), params, jitterSeconds);
   }
 
   /**
@@ -319,7 +314,7 @@ public class CloudTasksUtils implements Serializable {
   private Task createTaskWithDelay(
       String path,
       Method method,
-      Service service,
+      Action.Service service,
       Multimap<String, String> params,
       Duration delay) {
     if (delay.isEqual(Duration.ZERO)) {
@@ -354,9 +349,7 @@ public class CloudTasksUtils implements Serializable {
       Duration delay) {
     Action action = getAction(actionClazz);
     String path = action.path();
-    Service service =
-        RegistryEnvironment.isOnJetty() ? Action.ServiceGetter.get(action) : action.service();
-    return createTaskWithDelay(path, method, service, params, delay);
+    return createTaskWithDelay(path, method, action.service(), params, delay);
   }
 
   private static Action getAction(Class<? extends Runnable> actionClazz) {

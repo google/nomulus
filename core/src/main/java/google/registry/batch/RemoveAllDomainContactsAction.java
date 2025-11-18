@@ -44,7 +44,6 @@ import google.registry.model.eppcommon.ProtocolDefinition;
 import google.registry.model.eppoutput.EppOutput;
 import google.registry.persistence.VKey;
 import google.registry.request.Action;
-import google.registry.request.Action.GaeService;
 import google.registry.request.Response;
 import google.registry.request.auth.Auth;
 import google.registry.request.lock.LockHandler;
@@ -67,7 +66,7 @@ import org.joda.time.Duration;
  * leaving behind a record recording that update.
  */
 @Action(
-    service = GaeService.BACKEND,
+    service = Action.Service.BACKEND,
     path = RemoveAllDomainContactsAction.PATH,
     method = Action.Method.POST,
     auth = Auth.AUTH_ADMIN)

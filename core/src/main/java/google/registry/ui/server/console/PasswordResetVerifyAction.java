@@ -36,8 +36,7 @@ import java.util.Optional;
 import org.joda.time.Duration;
 
 @Action(
-    service = Action.GaeService.DEFAULT,
-    gkeService = Action.GkeService.CONSOLE,
+    service = Action.Service.CONSOLE,
     path = PasswordResetVerifyAction.PATH,
     method = {GET, POST},
     auth = Auth.AUTH_PUBLIC_LOGGED_IN)

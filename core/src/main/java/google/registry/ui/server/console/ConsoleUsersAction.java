@@ -43,7 +43,7 @@ import google.registry.model.console.UserRoles;
 import google.registry.model.registrar.Registrar;
 import google.registry.persistence.VKey;
 import google.registry.request.Action;
-import google.registry.request.Action.GkeService;
+import google.registry.request.Action.Service;
 import google.registry.request.HttpException.BadRequestException;
 import google.registry.request.Parameter;
 import google.registry.request.auth.Auth;
@@ -61,8 +61,7 @@ import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 
 @Action(
-    service = Action.GaeService.DEFAULT,
-    gkeService = GkeService.CONSOLE,
+    service = Service.CONSOLE,
     path = ConsoleUsersAction.PATH,
     method = {GET, POST, DELETE, PUT},
     auth = Auth.AUTH_PUBLIC_LOGGED_IN)

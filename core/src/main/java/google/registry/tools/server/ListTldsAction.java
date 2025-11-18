@@ -24,7 +24,6 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import google.registry.model.tld.Tld;
 import google.registry.request.Action;
-import google.registry.request.Action.GaeService;
 import google.registry.request.auth.Auth;
 import google.registry.util.Clock;
 import jakarta.inject.Inject;
@@ -32,7 +31,7 @@ import org.joda.time.DateTime;
 
 /** An action that lists top-level domains, for use by the {@code nomulus list_tlds} command. */
 @Action(
-    service = GaeService.TOOLS,
+    service = Action.Service.BACKEND,
     path = ListTldsAction.PATH,
     method = {GET, POST},
     auth = Auth.AUTH_ADMIN)

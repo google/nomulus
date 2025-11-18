@@ -35,7 +35,6 @@ import google.registry.model.tld.Tld.TldType;
 import google.registry.model.tld.Tlds;
 import google.registry.persistence.VKey;
 import google.registry.request.Action;
-import google.registry.request.Action.GaeService;
 import google.registry.request.HttpException.ServiceUnavailableException;
 import google.registry.request.Response;
 import google.registry.request.auth.Auth;
@@ -68,7 +67,7 @@ import org.joda.time.Duration;
  * Defaults to "icann/monthly/[last month in yyyy-MM format]".
  */
 @Action(
-    service = GaeService.BACKEND,
+    service = Action.Service.BACKEND,
     path = IcannReportingUploadAction.PATH,
     method = POST,
     auth = Auth.AUTH_ADMIN)

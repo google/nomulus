@@ -246,7 +246,7 @@ public class CloudTasksHelper implements Serializable {
   private static class MatchableTask extends ImmutableObject {
 
     private static final Pattern HOSTNAME_PATTERN =
-        Pattern.compile("(?<=https://)[a-z]+(?=\\.example\\.com)");
+        Pattern.compile("(?<=https://)[a-z]+(?=\\.registry\\.test)");
     String taskName;
     String service;
     HttpMethod method;
@@ -271,7 +271,7 @@ public class CloudTasksHelper implements Serializable {
       Matcher hostnameMatcher = HOSTNAME_PATTERN.matcher(url);
       assertThat(hostnameMatcher.find()).isTrue();
       service = Ascii.toLowerCase(hostnameMatcher.group());
-      path = url.substring(String.format("https://%s.example.com", service).length());
+      path = url.substring(String.format("https://%s.registry.test", service).length());
       method = request.getHttpMethod();
       scheduleTime = task.getScheduleTime();
       ImmutableMultimap.Builder<String, String> headerBuilder = new ImmutableMultimap.Builder<>();

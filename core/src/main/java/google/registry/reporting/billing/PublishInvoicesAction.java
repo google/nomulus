@@ -30,7 +30,6 @@ import google.registry.batch.CloudTasksUtils;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.reporting.ReportingModule;
 import google.registry.request.Action;
-import google.registry.request.Action.GaeService;
 import google.registry.request.Parameter;
 import google.registry.request.Response;
 import google.registry.request.auth.Auth;
@@ -49,7 +48,7 @@ import org.joda.time.YearMonth;
  *     Job States</a>
  */
 @Action(
-    service = GaeService.BACKEND,
+    service = Action.Service.BACKEND,
     path = PublishInvoicesAction.PATH,
     method = POST,
     auth = Auth.AUTH_ADMIN)

@@ -32,7 +32,6 @@ import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.tld.RegistryLockDao;
 import google.registry.persistence.VKey;
 import google.registry.request.Action;
-import google.registry.request.Action.GaeService;
 import google.registry.request.Parameter;
 import google.registry.request.Response;
 import google.registry.request.auth.Auth;
@@ -47,7 +46,7 @@ import org.joda.time.Duration;
 
 /** Task that re-locks a previously-Registry-Locked domain after a predetermined period of time. */
 @Action(
-    service = GaeService.BACKEND,
+    service = Action.Service.BACKEND,
     path = RelockDomainAction.PATH,
     method = POST,
     automaticallyPrintOk = true,

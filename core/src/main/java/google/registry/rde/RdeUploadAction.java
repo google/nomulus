@@ -50,7 +50,6 @@ import google.registry.model.tld.Tld;
 import google.registry.rde.EscrowTaskRunner.EscrowTask;
 import google.registry.rde.JSchSshSession.JSchSshSessionFactory;
 import google.registry.request.Action;
-import google.registry.request.Action.GaeService;
 import google.registry.request.HttpException.NoContentException;
 import google.registry.request.Parameter;
 import google.registry.request.RequestParameters;
@@ -84,7 +83,7 @@ import org.joda.time.Duration;
  * RdeReportAction}.
  */
 @Action(
-    service = GaeService.BACKEND,
+    service = Action.Service.BACKEND,
     path = RdeUploadAction.PATH,
     method = POST,
     auth = Auth.AUTH_ADMIN)

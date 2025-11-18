@@ -42,7 +42,6 @@ import google.registry.model.tld.Tld;
 import google.registry.model.tld.Tld.TldType;
 import google.registry.model.tld.label.ReservedList;
 import google.registry.request.Action;
-import google.registry.request.Action.GaeService;
 import google.registry.request.auth.Auth;
 import google.registry.util.Clock;
 import jakarta.inject.Inject;
@@ -78,7 +77,7 @@ import org.joda.time.DateTime;
  * <p>The file is also uploaded to GCS to preserve it as a record for ourselves.
  */
 @Action(
-    service = GaeService.BSA,
+    service = Action.Service.BACKEND,
     path = "/_dr/task/uploadBsaUnavailableNames",
     method = {GET, POST},
     auth = Auth.AUTH_ADMIN)

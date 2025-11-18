@@ -28,7 +28,6 @@ import com.google.common.collect.ImmutableSet;
 import google.registry.model.EppResourceUtils;
 import google.registry.model.domain.Domain;
 import google.registry.request.Action;
-import google.registry.request.Action.GaeService;
 import google.registry.request.Parameter;
 import google.registry.request.auth.Auth;
 import google.registry.util.Clock;
@@ -37,7 +36,7 @@ import jakarta.inject.Inject;
 
 /** An action that lists domains, for use by the {@code nomulus list_domains} command. */
 @Action(
-    service = GaeService.TOOLS,
+    service = Action.Service.BACKEND,
     path = ListDomainsAction.PATH,
     method = {GET, POST},
     auth = Auth.AUTH_ADMIN)

@@ -26,7 +26,6 @@ import google.registry.groups.GroupsConnection.Role;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarPoc;
 import google.registry.request.Action;
-import google.registry.request.Action.GaeService;
 import google.registry.request.HttpException.BadRequestException;
 import google.registry.request.HttpException.InternalServerErrorException;
 import google.registry.request.Parameter;
@@ -41,7 +40,7 @@ import java.util.Optional;
 
 /** Action that creates Google Groups for a registrar's mailing lists. */
 @Action(
-    service = GaeService.TOOLS,
+    service = Action.Service.BACKEND,
     path = CreateGroupsAction.PATH,
     method = POST,
     auth = Auth.AUTH_ADMIN)

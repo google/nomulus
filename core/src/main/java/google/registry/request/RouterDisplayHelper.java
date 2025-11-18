@@ -94,7 +94,7 @@ public class RouterDisplayHelper {
   private static String routeToString(Route route, String formatString) {
     return String.format(
         formatString,
-        Action.ServiceGetter.get(route.action()).name(),
+        route.action().service().name(),
         route.action().isPrefix() ? (route.action().path() + "(*)") : route.action().path(),
         route.actionClass().getSimpleName(),
         Joiner.on(",").join(route.action().method()),
@@ -112,7 +112,7 @@ public class RouterDisplayHelper {
     int methodsWidth = 7;
     int minLevelWidth = 3;
     for (Route route : routes) {
-      int len = Action.ServiceGetter.get(route.action()).name().length();
+      int len = route.action().service().name().length();
       if (len > serviceWidth) {
         serviceWidth = len;
       }
@@ -148,9 +148,7 @@ public class RouterDisplayHelper {
     return headerToString(formatString)
         + String.format("%n")
         + Streams.stream(routes)
-            .sorted(
-                Comparator.comparing(
-                    (Route route) -> Action.ServiceGetter.get(route.action()).ordinal()))
+            .sorted(Comparator.comparing((Route route) -> route.action().service().ordinal()))
             .map(route -> routeToString(route, formatString))
             .collect(joining(String.format("%n")));
   }

@@ -29,8 +29,7 @@ import google.registry.model.console.ConsoleUpdateHistory;
 import google.registry.model.console.User;
 import google.registry.model.registrar.Registrar;
 import google.registry.request.Action;
-import google.registry.request.Action.GaeService;
-import google.registry.request.Action.GkeService;
+import google.registry.request.Action.Service;
 import google.registry.request.HttpException.BadRequestException;
 import google.registry.request.Parameter;
 import google.registry.request.auth.Auth;
@@ -42,8 +41,7 @@ import java.util.stream.Collectors;
 import org.joda.time.DateTime;
 
 @Action(
-    service = GaeService.DEFAULT,
-    gkeService = GkeService.CONSOLE,
+    service = Service.CONSOLE,
     path = ConsoleUpdateRegistrarAction.PATH,
     method = {POST},
     auth = Auth.AUTH_PUBLIC_LOGGED_IN)

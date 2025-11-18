@@ -15,10 +15,6 @@
 package google.registry.tools;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.request.Action.GaeService.BACKEND;
-import static google.registry.request.Action.GaeService.DEFAULT;
-import static google.registry.request.Action.GaeService.PUBAPI;
-import static google.registry.request.Action.GaeService.TOOLS;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
@@ -30,7 +26,7 @@ import static org.mockito.Mockito.when;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.net.MediaType;
-import google.registry.request.Action.Service;
+import google.registry.request.Action;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -48,15 +44,16 @@ class CurlCommandTest extends CommandTestCase<CurlCommand> {
   @BeforeEach
   void beforeEach() {
     command.setConnection(connection);
-    when(connection.withService(any(Service.class), anyBoolean())).thenReturn(connectionForService);
+    when(connection.withService(any(Action.Service.class), anyBoolean()))
+        .thenReturn(connectionForService);
   }
 
   @Captor ArgumentCaptor<ImmutableMap<String, String>> urlParamCaptor;
 
   @Test
   void testGetInvocation() throws Exception {
-    runCommand("--path=/foo/bar?a=1&b=2", "--service=TOOLS");
-    verify(connection).withService(eq(TOOLS), eq(false));
+    runCommand("--path=/foo/bar?a=1&b=2", "--service=BACKEND");
+    verify(connection).withService(eq(Action.Service.BACKEND), eq(false));
     verifyNoMoreInteractions(connection);
     verify(connectionForService)
         .sendGetRequest(eq("/foo/bar?a=1&b=2"), eq(ImmutableMap.<String, String>of()));
@@ -65,7 +62,7 @@ class CurlCommandTest extends CommandTestCase<CurlCommand> {
   @Test
   void testExplicitGetInvocation() throws Exception {
     runCommand("--path=/foo/bar?a=1&b=2", "--request=GET", "--service=BACKEND");
-    verify(connection).withService(eq(BACKEND), eq(false));
+    verify(connection).withService(eq(Action.Service.BACKEND), eq(false));
     verifyNoMoreInteractions(connection);
     verify(connectionForService)
         .sendGetRequest(eq("/foo/bar?a=1&b=2"), eq(ImmutableMap.<String, String>of()));
@@ -73,8 +70,8 @@ class CurlCommandTest extends CommandTestCase<CurlCommand> {
 
   @Test
   void testPostInvocation() throws Exception {
-    runCommand("--path=/foo/bar?a=1&b=2", "--data=some data", "--service=DEFAULT");
-    verify(connection).withService(eq(DEFAULT), eq(false));
+    runCommand("--path=/foo/bar?a=1&b=2", "--data=some data", "--service=FRONTEND");
+    verify(connection).withService(eq(Action.Service.FRONTEND), eq(false));
     verifyNoMoreInteractions(connection);
     verify(connectionForService)
         .sendPostRequest(
@@ -89,9 +86,9 @@ class CurlCommandTest extends CommandTestCase<CurlCommand> {
     runCommand(
         "--path=/foo/bar?a=1&b=2",
         "--data=some data",
-        "--service=DEFAULT",
+        "--service=FRONTEND",
         "--content-type=application/json");
-    verify(connection).withService(eq(DEFAULT), eq(false));
+    verify(connection).withService(eq(Action.Service.FRONTEND), eq(false));
     verifyNoMoreInteractions(connection);
     verify(connectionForService)
         .sendPostRequest(
@@ -110,7 +107,7 @@ class CurlCommandTest extends CommandTestCase<CurlCommand> {
             runCommand(
                 "--path=/foo/bar?a=1&b=2",
                 "--data=some data",
-                "--service=DEFAULT",
+                "--service=FRONTEND",
                 "--content-type=bad"));
     verifyNoMoreInteractions(connection);
     verifyNoMoreInteractions(connectionForService);
@@ -120,7 +117,7 @@ class CurlCommandTest extends CommandTestCase<CurlCommand> {
   void testMultiDataPost() throws Exception {
     runCommand(
         "--path=/foo/bar?a=1&b=2", "--data=first=100", "-d", "second=200", "--service=PUBAPI");
-    verify(connection).withService(eq(PUBAPI), eq(false));
+    verify(connection).withService(eq(Action.Service.PUBAPI), eq(false));
     verifyNoMoreInteractions(connection);
     verify(connectionForService)
         .sendPostRequest(
@@ -134,7 +131,7 @@ class CurlCommandTest extends CommandTestCase<CurlCommand> {
   void testDataDoesntSplit() throws Exception {
     runCommand(
         "--path=/foo/bar?a=1&b=2", "--data=one,two", "--service=PUBAPI");
-    verify(connection).withService(eq(PUBAPI), eq(false));
+    verify(connection).withService(eq(Action.Service.PUBAPI), eq(false));
     verifyNoMoreInteractions(connection);
     verify(connectionForService)
         .sendPostRequest(
@@ -146,8 +143,8 @@ class CurlCommandTest extends CommandTestCase<CurlCommand> {
 
   @Test
   void testExplicitPostInvocation() throws Exception {
-    runCommand("--path=/foo/bar?a=1&b=2", "--request=POST", "--service=TOOLS");
-    verify(connection).withService(eq(TOOLS), eq(false));
+    runCommand("--path=/foo/bar?a=1&b=2", "--request=POST", "--service=PUBAPI");
+    verify(connection).withService(eq(Action.Service.PUBAPI), eq(false));
     verifyNoMoreInteractions(connection);
     verify(connectionForService)
         .sendPostRequest(
@@ -168,7 +165,7 @@ class CurlCommandTest extends CommandTestCase<CurlCommand> {
                     "--path=/foo/bar?a=1&b=2",
                     "--request=GET",
                     "--data=inappropriate data",
-                    "--service=TOOLS"));
+                    "--service=BACKEND"));
     assertThat(thrown).hasMessageThat().contains("You may not specify a body for a get method.");
   }
 }

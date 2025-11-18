@@ -130,7 +130,7 @@ public final class OteAccountBuilderTest {
         cloudTasksHelper.assertTasksEnqueued(
             "console-user-group-update",
             new TaskMatcher()
-                .service("TOOLS")
+                .service("BACKEND")
                 .method(HttpMethod.POST)
                 .path("/_dr/admin/updateUserGroup")
                 .param("userEmailAddress", emailAddress)

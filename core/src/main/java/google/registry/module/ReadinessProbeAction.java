@@ -19,8 +19,7 @@ import static jakarta.servlet.http.HttpServletResponse.SC_OK;
 
 import com.google.common.flogger.FluentLogger;
 import google.registry.request.Action;
-import google.registry.request.Action.GaeService;
-import google.registry.request.Action.GkeService;
+import google.registry.request.Action.Service;
 import google.registry.request.auth.Auth;
 import jakarta.inject.Inject;
 import jakarta.servlet.http.HttpServletResponse;
@@ -53,8 +52,7 @@ public class ReadinessProbeAction implements Runnable {
   }
 
   @Action(
-      service = GaeService.DEFAULT,
-      gkeService = GkeService.CONSOLE,
+      service = Service.CONSOLE,
       path = ReadinessProbeConsoleAction.PATH,
       auth = Auth.AUTH_PUBLIC)
   public static class ReadinessProbeConsoleAction extends ReadinessProbeAction {
@@ -66,11 +64,7 @@ public class ReadinessProbeAction implements Runnable {
     }
   }
 
-  @Action(
-      service = GaeService.PUBAPI,
-      gkeService = GkeService.PUBAPI,
-      path = ReadinessProbeActionPubApi.PATH,
-      auth = Auth.AUTH_PUBLIC)
+  @Action(service = Service.PUBAPI, path = ReadinessProbeActionPubApi.PATH, auth = Auth.AUTH_PUBLIC)
   public static class ReadinessProbeActionPubApi extends ReadinessProbeAction {
     public static final String PATH = "/ready/pubapi";
 
@@ -81,8 +75,7 @@ public class ReadinessProbeAction implements Runnable {
   }
 
   @Action(
-      service = GaeService.DEFAULT,
-      gkeService = GkeService.FRONTEND,
+      service = Service.FRONTEND,
       path = ReadinessProbeActionFrontend.PATH,
       auth = Auth.AUTH_PUBLIC)
   public static final class ReadinessProbeActionFrontend extends ReadinessProbeAction {

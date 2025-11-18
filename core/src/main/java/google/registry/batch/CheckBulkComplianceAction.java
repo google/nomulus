@@ -27,7 +27,6 @@ import google.registry.model.domain.token.AllocationToken;
 import google.registry.model.domain.token.BulkPricingPackage;
 import google.registry.model.registrar.Registrar;
 import google.registry.request.Action;
-import google.registry.request.Action.GaeService;
 import google.registry.request.auth.Auth;
 import google.registry.ui.server.SendEmailUtils;
 import google.registry.util.Clock;
@@ -39,7 +38,10 @@ import org.joda.time.Days;
  * An action that checks all {@link BulkPricingPackage} objects for compliance with their max create
  * limit.
  */
-@Action(service = GaeService.BACKEND, path = CheckBulkComplianceAction.PATH, auth = Auth.AUTH_ADMIN)
+@Action(
+    service = Action.Service.BACKEND,
+    path = CheckBulkComplianceAction.PATH,
+    auth = Auth.AUTH_ADMIN)
 public class CheckBulkComplianceAction implements Runnable {
 
   public static final String PATH = "/_dr/task/checkBulkCompliance";
