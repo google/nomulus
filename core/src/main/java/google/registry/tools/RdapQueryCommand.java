@@ -4,7 +4,7 @@
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//     http://www.apache.org/licenses/LICENSE-2.0
+//      http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -36,14 +36,66 @@ public final class RdapQueryCommand implements CommandWithConnection {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
+  /**
+   * A simple data class to hold the path and query parameters for an RDAP request.
+   *
+   * <p>This is used as a return type for the {@code RdapQueryType.getRequestData} method to
+   * bundle the two distinct return values into a single object.
+   */
+  private static class RequestData {
+    final String path;
+    final ImmutableMap<String, String> queryParams;
+
+    private RequestData(String path, ImmutableMap<String, String> queryParams) {
+      this.path = path;
+      this.queryParams = queryParams;
+    }
+
+    static RequestData create(String path, ImmutableMap<String, String> queryParams) {
+      return new RequestData(path, queryParams);
+    }
+  }
+
+  /** Defines the RDAP query types, encapsulating their path logic and parameter requirements. */
   enum RdapQueryType {
-    DOMAIN,
-    DOMAINSEARCH,
-    NAMESERVER,
-    NAMESERVERSEARCH,
-    ENTITY,
-    ENTITYSEARCH,
-    HELP
+    DOMAIN_LOOKUP(true, "/rdap/domain/%s"),
+    DOMAIN_SEARCH(true, "/rdap/domains", "name"),
+    NAMESERVER_LOOKUP(true, "/rdap/nameserver/%s"),
+    NAMESERVER_SEARCH(true, "/rdap/nameservers", "name"),
+    ENTITY_LOOKUP(true, "/rdap/entity/%s"),
+    ENTITY_SEARCH(true, "/rdap/entities", "fn"),
+    HELP(false, "/rdap/help");
+
+    private final boolean requiresQueryTerm;
+    private final String pathFormat;
+    private final String searchParamKey;
+
+    RdapQueryType(boolean requiresQueryTerm, String pathFormat) {
+      this(requiresQueryTerm, pathFormat, null);
+    }
+
+    RdapQueryType(boolean requiresQueryTerm, String pathFormat, String searchParamKey) {
+      this.requiresQueryTerm = requiresQueryTerm;
+      this.pathFormat = pathFormat;
+      this.searchParamKey = searchParamKey;
+    }
+
+    /** Returns a RequestData object containing the path and query parameters for the request. */
+    public RequestData getRequestData(String queryTerm) {
+      if (requiresQueryTerm) {
+        checkArgument(queryTerm != null, "A query term is required for the %s query.", this);
+      } else {
+        checkArgument(queryTerm == null, "The %s query does not take a query term.", this);
+      }
+
+      if (searchParamKey != null) {
+        return RequestData.create(pathFormat, ImmutableMap.of(searchParamKey, queryTerm));
+      } else if (requiresQueryTerm) {
+        return RequestData.create(String.format(pathFormat, queryTerm), ImmutableMap.of());
+      } else {
+        return RequestData.create(pathFormat, ImmutableMap.of());
+      }
+    }
   }
 
   @Parameter(names = "--type", description = "The type of RDAP query to perform.", required = true)
@@ -69,55 +121,16 @@ public final class RdapQueryCommand implements CommandWithConnection {
   public void run() throws IOException {
     checkState(defaultConnection != null, "ServiceConnection was not set by RegistryCli.");
 
-    String path;
-    ImmutableMap<String, String> queryParams;
-
-    switch (type) {
-      case DOMAIN:
-        checkArgument(queryTerm != null, "A query term is required for a DOMAIN lookup.");
-        path = "/rdap/domain/" + queryTerm;
-        queryParams = ImmutableMap.of();
-        break;
-      case DOMAINSEARCH:
-        checkArgument(queryTerm != null, "A search term is required for a DOMAINSEARCH.");
-        path = "/rdap/domains";
-        queryParams = ImmutableMap.of("name", queryTerm);
-        break;
-      case NAMESERVER:
-        checkArgument(queryTerm != null, "A query term is required for a NAMESERVER lookup.");
-        path = "/rdap/nameserver/" + queryTerm;
-        queryParams = ImmutableMap.of();
-        break;
-      case NAMESERVERSEARCH:
-        checkArgument(queryTerm != null, "A search term is required for a NAMESERVERSEARCH.");
-        path = "/rdap/nameservers";
-        queryParams = ImmutableMap.of("name", queryTerm);
-        break;
-      case ENTITY:
-        checkArgument(queryTerm != null, "A query term is required for an ENTITY lookup.");
-        path = "/rdap/entity/" + queryTerm;
-        queryParams = ImmutableMap.of();
-        break;
-      case ENTITYSEARCH:
-        checkArgument(queryTerm != null, "A search term is required for an ENTITYSEARCH.");
-        path = "/rdap/entities";
-        queryParams = ImmutableMap.of("fn", queryTerm);
-        break;
-      case HELP:
-        checkArgument(queryTerm == null, "The HELP query does not take a query term.");
-        path = "/rdap/help";
-        queryParams = ImmutableMap.of();
-        break;
-      default:
-        throw new IllegalStateException("Unsupported query type: " + type);
-    }
+    RequestData requestData = type.getRequestData(queryTerm);
 
     ServiceConnection pubapiConnection =
         defaultConnection.withService(GkeService.PUBAPI, useCanary);
-    String rdapResponse = pubapiConnection.sendGetRequest(path, queryParams);
+    String rdapResponse =
+        pubapiConnection.sendGetRequest(requestData.path, requestData.queryParams);
 
     JsonElement rdapJson = JsonParser.parseString(rdapResponse);
     Gson gson = new GsonBuilder().setPrettyPrinting().create();
     logger.atInfo().log(gson.toJson(rdapJson));
+
   }
 }
