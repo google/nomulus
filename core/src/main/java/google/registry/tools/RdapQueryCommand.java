@@ -58,11 +58,11 @@ public final class RdapQueryCommand implements CommandWithConnection {
 
   /** Defines the RDAP query types, encapsulating their path logic and parameter requirements. */
   enum RdapQueryType {
-    DOMAIN_LOOKUP(true, "/rdap/domain/%s"),
+    DOMAIN(true, "/rdap/domain/%s"),
     DOMAIN_SEARCH(true, "/rdap/domains", "name"),
-    NAMESERVER_LOOKUP(true, "/rdap/nameserver/%s"),
+    NAMESERVER(true, "/rdap/nameserver/%s"),
     NAMESERVER_SEARCH(true, "/rdap/nameservers", "name"),
-    ENTITY_LOOKUP(true, "/rdap/entity/%s"),
+    ENTITY(true, "/rdap/entity/%s"),
     ENTITY_SEARCH(true, "/rdap/entities", "fn"),
     HELP(false, "/rdap/help");
 
