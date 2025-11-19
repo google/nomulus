@@ -59,11 +59,6 @@ public class PasswordResetVerifyAction extends ConsoleApiAction {
 
   @Override
   protected void getHandler(User user) {
-    // Temporary flag when testing email sending etc
-    if (!user.getUserRoles().isAdmin()) {
-      setFailedResponse("", HttpServletResponse.SC_FORBIDDEN);
-      return;
-    }
     PasswordResetRequest request = tm().transact(() -> loadAndValidateResetRequest(user));
     ImmutableMap<String, ?> result =
         ImmutableMap.of("type", request.getType(), "registrarId", request.getRegistrarId());
@@ -73,11 +68,6 @@ public class PasswordResetVerifyAction extends ConsoleApiAction {
 
   @Override
   protected void postHandler(User user) {
-    // Temporary flag when testing email sending etc
-    if (!user.getUserRoles().isAdmin()) {
-      setFailedResponse("", HttpServletResponse.SC_FORBIDDEN);
-      return;
-    }
     checkArgument(!Strings.isNullOrEmpty(newPassword.orElse(null)), "Password must be provided");
     tm().transact(
             () -> {
