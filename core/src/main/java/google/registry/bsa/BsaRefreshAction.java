@@ -31,7 +31,6 @@ import google.registry.bsa.persistence.RefreshScheduler;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.model.tld.Tlds;
 import google.registry.request.Action;
-import google.registry.request.Action.GaeService;
 import google.registry.request.Response;
 import google.registry.request.auth.Auth;
 import google.registry.util.BatchedStreams;
@@ -42,7 +41,7 @@ import java.util.stream.Stream;
 import org.joda.time.Duration;
 
 @Action(
-    service = GaeService.BSA,
+    service = Action.Service.BACKEND,
     path = BsaRefreshAction.PATH,
     method = {GET, POST},
     auth = Auth.AUTH_ADMIN)

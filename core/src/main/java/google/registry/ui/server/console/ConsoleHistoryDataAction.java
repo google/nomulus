@@ -29,8 +29,7 @@ import google.registry.model.console.GlobalRole;
 import google.registry.model.console.User;
 import google.registry.model.console.UserRoles;
 import google.registry.request.Action;
-import google.registry.request.Action.GaeService;
-import google.registry.request.Action.GkeService;
+import google.registry.request.Action.Service;
 import google.registry.request.Parameter;
 import google.registry.request.auth.Auth;
 import jakarta.inject.Inject;
@@ -38,8 +37,7 @@ import java.util.List;
 import java.util.Optional;
 
 @Action(
-    service = GaeService.DEFAULT,
-    gkeService = GkeService.CONSOLE,
+    service = Service.CONSOLE,
     path = ConsoleHistoryDataAction.PATH,
     method = {GET},
     auth = Auth.AUTH_PUBLIC_LOGGED_IN)

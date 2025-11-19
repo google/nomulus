@@ -45,7 +45,6 @@ import google.registry.dns.DnsUtils.TargetType;
 import google.registry.model.common.DnsRefreshRequest;
 import google.registry.model.tld.Tld;
 import google.registry.request.Action;
-import google.registry.request.Action.GaeService;
 import google.registry.request.Parameter;
 import google.registry.request.auth.Auth;
 import google.registry.util.Clock;
@@ -60,7 +59,7 @@ import org.joda.time.Duration;
  * table.
  */
 @Action(
-    service = GaeService.BACKEND,
+    service = Action.Service.BACKEND,
     path = "/_dr/task/readDnsRefreshRequests",
     automaticallyPrintOk = true,
     method = POST,

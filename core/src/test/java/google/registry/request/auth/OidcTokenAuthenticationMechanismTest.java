@@ -81,6 +81,7 @@ public class OidcTokenAuthenticationMechanismTest {
     payload.setEmail(email);
     payload.setSubject(gaiaId);
     user = createAdminUser(email);
+    when(request.getServerName()).thenReturn("frontend.registry.test");
   }
 
   @AfterEach

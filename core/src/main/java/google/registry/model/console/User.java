@@ -37,6 +37,7 @@ import google.registry.tools.IamClient;
 import google.registry.tools.ServiceConnection;
 import google.registry.tools.server.UpdateUserGroupAction;
 import google.registry.util.PasswordUtils;
+import google.registry.util.PasswordUtils.HashAlgorithm;
 import google.registry.util.RegistryEnvironment;
 import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
@@ -229,6 +230,10 @@ public class User extends UpdateAutoTimestampEntity implements Buildable {
         || isNullOrEmpty(registryLockPasswordHash)) {
       return false;
     }
+    return getCurrentHashAlgorithm(registryLockPassword).isPresent();
+  }
+
+  public Optional<HashAlgorithm> getCurrentHashAlgorithm(String registryLockPassword) {
     return PasswordUtils.verifyPassword(
         registryLockPassword, registryLockPasswordHash, registryLockPasswordSalt);
   }

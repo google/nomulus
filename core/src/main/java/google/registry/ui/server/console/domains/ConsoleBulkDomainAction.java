@@ -49,8 +49,7 @@ import java.util.Optional;
  * request body depend on the type of action -- some requests may require more data than others.
  */
 @Action(
-    service = Action.GaeService.DEFAULT,
-    gkeService = Action.GkeService.CONSOLE,
+    service = Action.Service.CONSOLE,
     path = ConsoleBulkDomainAction.PATH,
     method = Action.Method.POST,
     auth = Auth.AUTH_PUBLIC_LOGGED_IN)

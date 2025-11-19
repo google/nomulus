@@ -36,7 +36,6 @@ import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.tld.Tld;
 import google.registry.model.tld.Tld.TldType;
 import google.registry.request.Action;
-import google.registry.request.Action.GaeService;
 import google.registry.request.auth.Auth;
 import google.registry.storage.drive.DriveConnection;
 import google.registry.util.Clock;
@@ -58,7 +57,7 @@ import org.joda.time.DateTimeZone;
  * name TLD.txt into the domain-lists bucket. Note that this overwrites the files in place.
  */
 @Action(
-    service = GaeService.BACKEND,
+    service = Action.Service.BACKEND,
     path = "/_dr/task/exportDomainLists",
     method = POST,
     auth = Auth.AUTH_ADMIN)

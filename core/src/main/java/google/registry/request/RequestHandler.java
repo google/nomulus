@@ -23,7 +23,7 @@ import static jakarta.servlet.http.HttpServletResponse.SC_NOT_FOUND;
 
 import com.google.common.flogger.FluentLogger;
 import google.registry.config.RegistryConfig;
-import google.registry.request.Action.GkeService;
+import google.registry.request.Action.Service;
 import google.registry.request.auth.AuthResult;
 import google.registry.request.auth.RequestAuthenticator;
 import google.registry.util.NonFinalForTesting;
@@ -139,21 +139,20 @@ public class RequestHandler<C> {
       rsp.sendError(SC_NOT_FOUND);
       return;
     }
-    if (RegistryEnvironment.isOnJetty()) {
-      GkeService service = Action.ServiceGetter.get(route.get().action());
-      String expectedDomain = RegistryConfig.getServiceUrl(service).getHost();
-      String actualDomain = req.getServerName();
-      // If the request doesn't come from GKE readiness prober
-      String maybeUserAgent = Optional.ofNullable(req.getHeader("User-Agent")).orElse("");
-      if (!maybeUserAgent.startsWith("kube-probe")
-          // If the hostname is "localhost", it must have come from the sidecar proxy.
-          && !Objects.equals("localhost", actualDomain)
-          && !Objects.equals(actualDomain, expectedDomain)) {
-        logger.atWarning().log(
-            "Actual domain %s does not match expected domain %s", actualDomain, expectedDomain);
-        rsp.sendError(SC_NOT_FOUND);
-        return;
-      }
+    Service service = route.get().action().service();
+    String expectedDomain = RegistryConfig.getServiceUrl(service).getHost();
+    String actualDomain = req.getServerName();
+    // If the request doesn't come from GKE readiness prober
+    String maybeUserAgent = Optional.ofNullable(req.getHeader("User-Agent")).orElse("");
+    if (!maybeUserAgent.startsWith("kube-probe")
+        // If the hostname is "localhost", it must have come from the sidecar proxy.
+        && !Objects.equals("localhost", actualDomain)
+        && !Objects.equals(actualDomain, expectedDomain)
+        && !RegistryEnvironment.isInTestServer()) {
+      logger.atWarning().log(
+          "Actual domain %s does not match expected domain %s", actualDomain, expectedDomain);
+      rsp.sendError(SC_NOT_FOUND);
+      return;
     }
     if (!route.get().isMethodAllowed(method)) {
       logger.atWarning().log("Method %s not allowed for: %s", method, path);

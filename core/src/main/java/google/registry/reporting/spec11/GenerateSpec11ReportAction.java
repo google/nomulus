@@ -32,7 +32,6 @@ import google.registry.config.RegistryConfig.Config;
 import google.registry.keyring.api.KeyModule.Key;
 import google.registry.reporting.ReportingModule;
 import google.registry.request.Action;
-import google.registry.request.Action.GaeService;
 import google.registry.request.Parameter;
 import google.registry.request.Response;
 import google.registry.request.auth.Auth;
@@ -50,7 +49,7 @@ import org.joda.time.LocalDate;
  * generates the specified month's Spec11 report and stores it on GCS.
  */
 @Action(
-    service = GaeService.BACKEND,
+    service = Action.Service.BACKEND,
     path = GenerateSpec11ReportAction.PATH,
     method = POST,
     auth = Auth.AUTH_ADMIN)

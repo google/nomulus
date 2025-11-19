@@ -23,7 +23,6 @@ import com.google.common.collect.ImmutableSet;
 import google.registry.model.tld.label.PremiumList;
 import google.registry.model.tld.label.PremiumListDao;
 import google.registry.request.Action;
-import google.registry.request.Action.GaeService;
 import google.registry.request.auth.Auth;
 import jakarta.inject.Inject;
 import java.util.Comparator;
@@ -33,7 +32,7 @@ import java.util.Optional;
  * An action that lists premium lists, for use by the {@code nomulus list_premium_lists} command.
  */
 @Action(
-    service = GaeService.TOOLS,
+    service = Action.Service.BACKEND,
     path = ListPremiumListsAction.PATH,
     method = {GET, POST},
     auth = Auth.AUTH_ADMIN)

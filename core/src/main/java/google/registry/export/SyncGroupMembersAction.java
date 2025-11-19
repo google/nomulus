@@ -34,7 +34,6 @@ import google.registry.groups.GroupsConnection.Role;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarPoc;
 import google.registry.request.Action;
-import google.registry.request.Action.GaeService;
 import google.registry.request.Response;
 import google.registry.request.auth.Auth;
 import google.registry.util.Retrier;
@@ -53,7 +52,7 @@ import javax.annotation.Nullable;
  * <p>This uses the <a href="https://developers.google.com/admin-sdk/directory/">Directory API</a>.
  */
 @Action(
-    service = GaeService.BACKEND,
+    service = Action.Service.BACKEND,
     path = "/_dr/task/syncGroupMembers",
     method = POST,
     auth = Auth.AUTH_ADMIN)

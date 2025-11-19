@@ -26,8 +26,7 @@ import google.registry.model.console.ConsolePermission;
 import google.registry.model.console.ConsoleUpdateHistory;
 import google.registry.model.console.User;
 import google.registry.request.Action;
-import google.registry.request.Action.GaeService;
-import google.registry.request.Action.GkeService;
+import google.registry.request.Action.Service;
 import google.registry.request.Parameter;
 import google.registry.request.auth.Auth;
 import google.registry.util.Clock;
@@ -39,8 +38,7 @@ import org.apache.commons.csv.CSVPrinter;
 import org.joda.time.DateTime;
 
 @Action(
-    service = GaeService.DEFAULT,
-    gkeService = GkeService.CONSOLE,
+    service = Service.CONSOLE,
     path = ConsoleDumDownloadAction.PATH,
     method = {GET},
     auth = Auth.AUTH_PUBLIC_LOGGED_IN)

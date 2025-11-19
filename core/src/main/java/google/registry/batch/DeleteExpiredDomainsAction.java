@@ -37,7 +37,6 @@ import google.registry.model.eppcommon.ProtocolDefinition;
 import google.registry.model.eppoutput.EppOutput;
 import google.registry.persistence.transaction.QueryComposer.Comparator;
 import google.registry.request.Action;
-import google.registry.request.Action.GaeService;
 import google.registry.request.Response;
 import google.registry.request.auth.Auth;
 import google.registry.request.lock.LockHandler;
@@ -68,7 +67,7 @@ import org.joda.time.Duration;
  * this action runs, thus alerting us that human action is needed to correctly process the delete.
  */
 @Action(
-    service = GaeService.BACKEND,
+    service = Action.Service.BACKEND,
     path = DeleteExpiredDomainsAction.PATH,
     auth = Auth.AUTH_ADMIN)
 public class DeleteExpiredDomainsAction implements Runnable {

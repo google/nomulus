@@ -33,7 +33,6 @@ import google.registry.gcs.GcsUtils;
 import google.registry.model.registrar.Registrar;
 import google.registry.reporting.billing.BillingModule.InvoiceDirectoryPrefix;
 import google.registry.request.Action;
-import google.registry.request.Action.GaeService;
 import google.registry.request.Response;
 import google.registry.request.auth.Auth;
 import google.registry.storage.drive.DriveConnection;
@@ -45,7 +44,7 @@ import java.util.Optional;
 
 /** Copy all registrar detail reports in a given bucket's subdirectory from GCS to Drive. */
 @Action(
-    service = GaeService.BACKEND,
+    service = Action.Service.BACKEND,
     path = CopyDetailReportsAction.PATH,
     method = POST,
     auth = Auth.AUTH_ADMIN)

@@ -30,7 +30,7 @@ import java.io.IOException;
  * them the help response.
  */
 @Action(
-    service = Action.GaeService.PUBAPI,
+    service = Action.Service.PUBAPI,
     path = "/rdap/",
     method = {GET, HEAD},
     auth = Auth.AUTH_PUBLIC)
