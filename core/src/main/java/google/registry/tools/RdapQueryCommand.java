@@ -21,12 +21,12 @@ import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.flogger.FluentLogger;
-import google.registry.request.Action.Service;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 import google.registry.config.RegistryConfig.Config;
+import google.registry.request.Action.Service;
 import jakarta.inject.Inject;
 import java.io.IOException;
 
@@ -123,8 +123,7 @@ public final class RdapQueryCommand implements CommandWithConnection {
 
     RequestData requestData = type.getRequestData(queryTerm);
 
-    ServiceConnection pubapiConnection =
-        defaultConnection.withService(Service.PUBAPI, useCanary);
+    ServiceConnection pubapiConnection = defaultConnection.withService(Service.PUBAPI, useCanary);
     String rdapResponse =
         pubapiConnection.sendGetRequest(requestData.path, requestData.queryParams);
 
