@@ -39,8 +39,8 @@ public final class RdapQueryCommand implements CommandWithConnection {
   /**
    * A simple data class to hold the path and query parameters for an RDAP request.
    *
-   * <p>This is used as a return type for the {@code RdapQueryType.getRequestData} method to
-   * bundle the two distinct return values into a single object.
+   * <p>This is used as a return type for the {@code RdapQueryType.getRequestData} method to bundle
+   * the two distinct return values into a single object.
    */
   private static class RequestData {
     final String path;
@@ -131,6 +131,5 @@ public final class RdapQueryCommand implements CommandWithConnection {
     JsonElement rdapJson = JsonParser.parseString(rdapResponse);
     Gson gson = new GsonBuilder().setPrettyPrinting().create();
     logger.atInfo().log(gson.toJson(rdapJson));
-
   }
 }
