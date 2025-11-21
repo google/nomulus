@@ -41,16 +41,17 @@ public final class RdapQueryCommand implements CommandWithConnection {
 
   /** Defines the RDAP query types, encapsulating their path logic and parameter requirements. */
   enum RdapQueryType {
-    DOMAIN_LOOKUP("/rdap/domain/%s"),
+    DOMAI("/rdap/domain/%s"),
     DOMAIN_SEARCH("/rdap/domains", queryTerm -> ImmutableMap.of("name", queryTerm)),
-    NAMESERVER_LOOKUP("/rdap/nameserver/%s"),
+    NAMESERVER("/rdap/nameserver/%s"),
     NAMESERVER_SEARCH("/rdap/nameservers", queryTerm -> ImmutableMap.of("name", queryTerm)),
-    ENTITY_LOOKUP("/rdap/entity/%s"),
+    ENTITY("/rdap/entity/%s"),
     ENTITY_SEARCH("/rdap/entities", queryTerm -> ImmutableMap.of("fn", queryTerm)),
     HELP("/rdap/help", false);
 
     private final String pathFormat;
     private final boolean requiresQueryTerm;
+
     @SuppressWarnings("ImmutableEnumChecker")
     private final Function<String, ImmutableMap<String, String>> queryParametersFunction;
 
