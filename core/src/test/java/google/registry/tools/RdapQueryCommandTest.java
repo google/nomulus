@@ -22,8 +22,11 @@ import static org.mockito.Mockito.when;
 
 import com.beust.jcommander.ParameterException;
 import com.google.common.collect.ImmutableMap;
-import google.registry.request.Action.GkeService;
+import com.google.common.testing.TestLogHandler;
+import google.registry.request.Action.Service;
 import java.io.IOException;
+import java.util.logging.Logger;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -40,13 +43,22 @@ class RdapQueryCommandTest extends CommandTestCase<RdapQueryCommand> {
   @Mock private ServiceConnection mockDefaultConnection;
   @Mock private ServiceConnection mockPubapiConnection;
 
+  private final TestLogHandler logHandler = new TestLogHandler();
+  private static final Logger logger = Logger.getLogger(RdapQueryCommand.class.getName());
+
   @BeforeEach
   void beforeEach() {
     command.setConnection(mockDefaultConnection);
     command.useCanary = false;
+    logger.addHandler(logHandler);
 
-    when(mockDefaultConnection.withService(eq(GkeService.PUBAPI), eq(false)))
+    when(mockDefaultConnection.withService(eq(Service.PUBAPI), eq(false)))
         .thenReturn(mockPubapiConnection);
+  }
+
+  @AfterEach
+  void afterEach() {
+    logger.removeHandler(logHandler);
   }
 
   private void mockGetResponse(
@@ -54,20 +66,49 @@ class RdapQueryCommandTest extends CommandTestCase<RdapQueryCommand> {
     when(mockPubapiConnection.sendGetRequest(eq(path), eq(queryParams))).thenReturn(responseBody);
   }
 
+  private String getJsonLogOutput() {
+    return logHandler.getStoredLogRecords().stream()
+        .map(record -> record.getMessage())
+        .filter(message -> message.startsWith("{\n"))
+        .findFirst()
+        .orElse("");
+  }
+
   @Test
   void testSuccess_domainLookup() throws Exception {
     String path = "/rdap/domain/example.dev";
-    mockGetResponse(path, ImmutableMap.of(), "{}");
+    String responseJson = "{\"ldhName\":\"example.dev\"}";
+    mockGetResponse(path, ImmutableMap.of(), responseJson);
     runCommand("--type=DOMAIN", "example.dev");
     verify(mockPubapiConnection).sendGetRequest(eq(path), eq(ImmutableMap.of()));
+    assertThat(getJsonLogOutput()).isEqualTo("{\n  \"ldhName\": \"example.dev\"\n}");
   }
 
   @Test
   void testSuccess_domainSearch() throws Exception {
     String path = "/rdap/domains";
     ImmutableMap<String, String> query = ImmutableMap.of("name", "exam*.dev");
+    String responseJson = "{\"domainSearchResults\":[{\"ldhName\":\"example.dev\"}]}";
+    mockGetResponse(path, query, responseJson);
+    runCommand("--type=DOMAIN_SEARCH", "exam*.dev");
+    verify(mockPubapiConnection).sendGetRequest(eq(path), eq(query));
+    assertThat(getJsonLogOutput())
+        .isEqualTo(
+            "{\n"
+                + "  \"domainSearchResults\": [\n"
+                + "    {\n"
+                + "      \"ldhName\": \"example.dev\"\n"
+                + "    }\n"
+                + "  ]\n"
+                + "}");
+  }
+
+  @Test
+  void testSuccess_nameserverSearch() throws Exception {
+    String path = "/rdap/nameservers";
+    ImmutableMap<String, String> query = ImmutableMap.of("name", "ns1.example.com");
     mockGetResponse(path, query, "{}");
-    runCommand("--type=DOMAINSEARCH", "exam*.dev");
+    runCommand("--type=NAMESERVER_SEARCH", "ns1.example.com");
     verify(mockPubapiConnection).sendGetRequest(eq(path), eq(query));
   }
 
@@ -76,7 +117,7 @@ class RdapQueryCommandTest extends CommandTestCase<RdapQueryCommand> {
     String path = "/rdap/entities";
     ImmutableMap<String, String> query = ImmutableMap.of("fn", "John*");
     mockGetResponse(path, query, "{}");
-    runCommand("--type=ENTITYSEARCH", "John*");
+    runCommand("--type=ENTITY_SEARCH", "John*");
     verify(mockPubapiConnection).sendGetRequest(eq(path), eq(query));
   }
 
@@ -89,21 +130,31 @@ class RdapQueryCommandTest extends CommandTestCase<RdapQueryCommand> {
   }
 
   @Test
-  void testFailure_missingQueryTerm_forDomain() {
+  void testFailure_propagatesIoException() throws IOException {
+    String path = "/rdap/domain/fail.dev";
+    when(mockPubapiConnection.sendGetRequest(eq(path), eq(ImmutableMap.of())))
+        .thenThrow(new IOException("HTTP 500: Server on fire"));
+    IOException thrown =
+        assertThrows(IOException.class, () -> runCommand("--type=DOMAIN", "fail.dev"));
+    assertThat(thrown).hasMessageThat().contains("HTTP 500: Server on fire");
+  }
+
+  @Test
+  void testFailure_missingQueryTerm() {
     IllegalArgumentException thrown =
         assertThrows(IllegalArgumentException.class, () -> runCommand("--type=DOMAIN"));
-    assertThat(thrown).hasMessageThat().contains("A query term is required for a DOMAIN lookup.");
+    assertThat(thrown).hasMessageThat().contains("A query term is required");
   }
 
   @Test
-  void testFailure_hasQueryTerm_forHelp() {
+  void testFailure_queryTermProvidedForHelp() {
     IllegalArgumentException thrown =
         assertThrows(IllegalArgumentException.class, () -> runCommand("--type=HELP", "foo"));
-    assertThat(thrown).hasMessageThat().contains("The HELP query does not take a query term.");
+    assertThat(thrown).hasMessageThat().contains("A query term is not required for type HELP");
   }
 
   @Test
-  void testFailure_missingMainParameter() {
-    assertThrows(ParameterException.class, this::runCommand);
+  void testFailure_missingType() {
+    assertThrows(ParameterException.class, () -> runCommand("some-term"));
   }
 }
