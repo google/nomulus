@@ -51,6 +51,7 @@ public final class RdapQueryCommand implements CommandWithConnection {
 
     private final String pathFormat;
     private final boolean requiresQueryTerm;
+    @SuppressWarnings("ImmutableEnumChecker")
     private final Function<String, ImmutableMap<String, String>> queryParametersFunction;
 
     /** Constructor for lookup queries that require a query term. */
