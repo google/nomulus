@@ -41,7 +41,7 @@ public final class RdapQueryCommand implements CommandWithConnection {
 
   /** Defines the RDAP query types, encapsulating their path logic and parameter requirements. */
   enum RdapQueryType {
-    DOMAI("/rdap/domain/%s"),
+    DOMAIN("/rdap/domain/%s"),
     DOMAIN_SEARCH("/rdap/domains", queryTerm -> ImmutableMap.of("name", queryTerm)),
     NAMESERVER("/rdap/nameserver/%s"),
     NAMESERVER_SEARCH("/rdap/nameservers", queryTerm -> ImmutableMap.of("name", queryTerm)),
