@@ -71,7 +71,7 @@ class CreateCdnsTldTest extends CommandTestCase<CreateCdnsTld> {
   void testNameDefault() throws Exception {
     runCommand("--dns_name=tld.", "--description=test run", "--force");
     ManagedZone zone = requestBody.getValue();
-    assertThat(zone).isEqualTo(createZone("cloud-dns-registry-test", "test run", "tld.", "tld."));
+    assertThat(zone).isEqualTo(createZone("cloud-dns-registry-test", "test run", "tld.", "tld"));
   }
 
   @Test
@@ -108,5 +108,40 @@ class CreateCdnsTldTest extends CommandTestCase<CreateCdnsTld> {
         "--dns_name=abc.test.",
         "--description=test run",
         "--force");
+  }
+
+  @Test
+  void testSandbox_defaultNameServer() throws Exception {
+    runCommandInEnvironment(
+        RegistryToolEnvironment.SANDBOX,
+        "--dns_name=abc.test.",
+        "--description=test run",
+        "--force");
+    ManagedZone zone = requestBody.getValue();
+    assertThat(zone.getNameServerSet()).isEqualTo("cloud-dns-registry-test");
+  }
+
+  @Test
+  void testSandbox_useProdNameServer() throws Exception {
+    runCommandInEnvironment(
+        RegistryToolEnvironment.SANDBOX,
+        "--use_prod_name_servers_in_sandbox",
+        "--dns_name=abc.test.",
+        "--description=test run",
+        "--force");
+    ManagedZone zone = requestBody.getValue();
+    assertThat(zone.getNameServerSet()).isEqualTo("cloud-dns-registry");
+  }
+
+  @Test
+  void testProdNameServerFlag_ignoredIfNotSandbox() throws Exception {
+    runCommandInEnvironment(
+        RegistryToolEnvironment.QA,
+        "--use_prod_name_servers_in_sandbox",
+        "--dns_name=abc.test.",
+        "--description=test run",
+        "--force");
+    ManagedZone zone = requestBody.getValue();
+    assertThat(zone.getNameServerSet()).isEqualTo("cloud-dns-registry-test");
   }
 }
