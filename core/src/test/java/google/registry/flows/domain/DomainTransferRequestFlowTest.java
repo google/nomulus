@@ -1005,6 +1005,40 @@ class DomainTransferRequestFlowTest
   }
 
   @Test
+  void testSuccess_superuserExtension_clientTransferProhibited() throws Exception {
+    setupDomain("example", "tld");
+    eppRequestSource = EppRequestSource.TOOL;
+    domain =
+        persistResource(
+            domain.asBuilder().addStatusValue(StatusValue.CLIENT_TRANSFER_PROHIBITED).build());
+    doSuccessfulSuperuserExtensionTest(
+        "domain_transfer_request_superuser_extension.xml",
+        "domain_transfer_request_response_su_ext_zero_period_zero_transfer_length.xml",
+        domain.getRegistrationExpirationTime().plusYears(0),
+        ImmutableMap.of("PERIOD", "0", "AUTOMATIC_TRANSFER_LENGTH", "0"),
+        Optional.empty(),
+        Period.create(0, Unit.YEARS),
+        Duration.ZERO);
+  }
+
+  @Test
+  void testSuccess_superuserExtension_serverTransferProhibited() throws Exception {
+    setupDomain("example", "tld");
+    eppRequestSource = EppRequestSource.TOOL;
+    domain =
+        persistResource(
+            domain.asBuilder().addStatusValue(StatusValue.SERVER_TRANSFER_PROHIBITED).build());
+    doSuccessfulSuperuserExtensionTest(
+        "domain_transfer_request_superuser_extension.xml",
+        "domain_transfer_request_response_su_ext_zero_period_zero_transfer_length.xml",
+        domain.getRegistrationExpirationTime().plusYears(0),
+        ImmutableMap.of("PERIOD", "0", "AUTOMATIC_TRANSFER_LENGTH", "0"),
+        Optional.empty(),
+        Period.create(0, Unit.YEARS),
+        Duration.ZERO);
+  }
+
+  @Test
   void testSuccess_cappedExpiration() throws Exception {
     setupDomain("example", "tld");
     // Set the domain to expire 10 years from now (as if it were just created with a 10-year term).
@@ -1806,6 +1840,22 @@ class DomainTransferRequestFlowTest
         assertThrows(
             ResourceStatusProhibitsOperationException.class,
             () -> doFailingTest("domain_transfer_request.xml"));
+    assertThat(thrown).hasMessageThat().contains("pendingDelete");
+  }
+
+  @Test
+  void testFailure_pendingDelete_evenWhenSuperuser() {
+    setupDomain("example", "tld");
+    eppRequestSource = EppRequestSource.TOOL;
+    domain = persistResource(domain.asBuilder().addStatusValue(StatusValue.PENDING_DELETE).build());
+    ResourceStatusProhibitsOperationException thrown =
+        assertThrows(
+            ResourceStatusProhibitsOperationException.class,
+            () ->
+                runTest(
+                    "domain_transfer_request_superuser_extension.xml",
+                    UserPrivileges.SUPERUSER,
+                    ImmutableMap.of("PERIOD", "0", "AUTOMATIC_TRANSFER_LENGTH", "0")));
     assertThat(thrown).hasMessageThat().contains("pendingDelete");
   }
 
