@@ -19,6 +19,7 @@ import static google.registry.batch.AsyncTaskEnqueuer.PARAM_RESAVE_TIMES;
 import static google.registry.batch.AsyncTaskEnqueuer.PARAM_RESOURCE_KEY;
 import static google.registry.request.RequestParameters.extractBooleanParameter;
 import static google.registry.request.RequestParameters.extractIntParameter;
+import static google.registry.request.RequestParameters.extractListOfParameters;
 import static google.registry.request.RequestParameters.extractLongParameter;
 import static google.registry.request.RequestParameters.extractOptionalBooleanParameter;
 import static google.registry.request.RequestParameters.extractOptionalDatetimeParameter;
@@ -28,6 +29,7 @@ import static google.registry.request.RequestParameters.extractRequiredDatetimeP
 import static google.registry.request.RequestParameters.extractRequiredParameter;
 import static google.registry.request.RequestParameters.extractSetOfDatetimeParameters;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.RateLimiter;
 import dagger.Module;
@@ -43,6 +45,8 @@ import org.joda.time.DateTime;
 public class BatchModule {
 
   public static final String PARAM_FAST = "fast";
+
+  static final int DEFAULT_MAX_QPS = 10;
 
   @Provides
   @Parameter("url")
@@ -140,8 +144,6 @@ public class BatchModule {
     return extractBooleanParameter(req, PARAM_FAST);
   }
 
-  private static final int DEFAULT_MAX_QPS = 10;
-
   @Provides
   @Parameter("maxQps")
   static int provideMaxQps(HttpServletRequest req) {
@@ -149,8 +151,38 @@ public class BatchModule {
   }
 
   @Provides
-  @Named("removeAllDomainContacts")
-  static RateLimiter provideRemoveAllDomainContactsRateLimiter(@Parameter("maxQps") int maxQps) {
+  @Named("standardRateLimiter")
+  static RateLimiter provideStandardRateLimiter(@Parameter("maxQps") int maxQps) {
     return RateLimiter.create(maxQps);
+  }
+
+  @Provides
+  @Parameter("gainingRegistrarId")
+  static String provideGainingRegistrarId(HttpServletRequest req) {
+    return extractRequiredParameter(req, "gainingRegistrarId");
+  }
+
+  @Provides
+  @Parameter("losingRegistrarId")
+  static String provideLosingRegistrarId(HttpServletRequest req) {
+    return extractRequiredParameter(req, "losingRegistrarId");
+  }
+
+  @Provides
+  @Parameter("bulkTransferDomainNames")
+  static ImmutableList<String> provideBulkTransferDomainNames(HttpServletRequest req) {
+    return extractListOfParameters(req, "bulkTransferDomainNames");
+  }
+
+  @Provides
+  @Parameter("requestedByRegistrar")
+  static boolean provideRequestedByRegistrar(HttpServletRequest req) {
+    return extractBooleanParameter(req, "requestedByRegistrar");
+  }
+
+  @Provides
+  @Parameter("reason")
+  static String provideReason(HttpServletRequest req) {
+    return extractRequiredParameter(req, "reason");
   }
 }

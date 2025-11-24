@@ -18,10 +18,12 @@ import static com.google.common.base.Predicates.not;
 import static com.google.common.base.Strings.emptyToNull;
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static com.google.common.base.Strings.nullToEmpty;
+import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 
 import com.google.common.base.Ascii;
 import com.google.common.base.Splitter;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import google.registry.request.HttpException.BadRequestException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -133,6 +135,42 @@ public final class RequestParameters {
       throw new BadRequestException(
           String.format("Expected long for parameter %s but received %s", name, stringParam));
     }
+  }
+
+  /**
+   * Returns all GET or POST parameters associated with {@code name}.
+   *
+   * <p>The parameter value is assumed to be a comma-delimited set of values - so tlds=com,net would
+   * result in ImmutableList.of("com", "net").
+   *
+   * <p>Empty strings are not supported, and are automatically removed from the result.
+   *
+   * <p>Both missing parameter and parameter with empty value result in an empty set.
+   *
+   * @param req the request that has the parameter
+   * @param name the name of the parameter (should be in plural form. e.g., tlds=, not tld=)
+   */
+  public static ImmutableList<String> extractListOfParameters(HttpServletRequest req, String name) {
+    // First, we make sure the user didn't accidentally try to pass the "set of parameters" as
+    // multiple tld=a&tld=b parameters instead of tld=a,b
+    String[] parameters = req.getParameterValues(name);
+    if (parameters != null && parameters.length > 1) {
+      throw new BadRequestException(
+          String.format(
+              "Bad 'set of parameters' input! Received multiple values instead of single "
+                  + "comma-delimited value for parameter %s",
+              name));
+    }
+    // Now we parse the single parameter.
+    // We use the req.getParameter(name) instead of parameters[0] to make tests more consistent (all
+    // extractXxx read the data from req.getParameter, so mocking the parameter is consistent)
+    String parameter = req.getParameter(name);
+    if (parameter == null || parameter.isEmpty()) {
+      return ImmutableList.of();
+    }
+    return Splitter.on(',').splitToList(parameter).stream()
+        .filter(s -> !s.isEmpty())
+        .collect(toImmutableList());
   }
 
   /**
