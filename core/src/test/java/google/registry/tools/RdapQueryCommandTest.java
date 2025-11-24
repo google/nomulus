@@ -58,7 +58,7 @@ class RdapQueryCommandTest extends CommandTestCase<RdapQueryCommand> {
     String responseJson = "{\"ldhName\":\"example.dev\"}";
     mockGetResponse(path, ImmutableMap.of(), responseJson);
 
-    runCommand("--type=DOMAIN_LOOKUP", "example.dev");
+    runCommand("--type=DOMAIN", "example.dev");
     verify(mockPubapiConnection).sendGetRequest(path, ImmutableMap.of());
 
     assertInStdout("{\n  \"ldhName\": \"example.dev\"\n}");
@@ -88,7 +88,7 @@ class RdapQueryCommandTest extends CommandTestCase<RdapQueryCommand> {
   void testSuccess_nameserverLookup() throws Exception {
     String path = "/rdap/nameserver/ns1.example.com";
     mockGetResponse(path, ImmutableMap.of(), "{}");
-    runCommand("--type=NAMESERVER_LOOKUP", "ns1.example.com");
+    runCommand("--type=NAMESERVER", "ns1.example.com");
     verify(mockPubapiConnection).sendGetRequest(path, ImmutableMap.of());
     assertInStdout("{}\n");
   }
@@ -107,7 +107,7 @@ class RdapQueryCommandTest extends CommandTestCase<RdapQueryCommand> {
   void testSuccess_entityLookup() throws Exception {
     String path = "/rdap/entity/123-FOO";
     mockGetResponse(path, ImmutableMap.of(), "{}");
-    runCommand("--type=ENTITY_LOOKUP", "123-FOO");
+    runCommand("--type=ENTITY", "123-FOO");
     verify(mockPubapiConnection).sendGetRequest(path, ImmutableMap.of());
     assertInStdout("{}\n");
   }
@@ -129,7 +129,7 @@ class RdapQueryCommandTest extends CommandTestCase<RdapQueryCommand> {
 
   @Test
   void testFailure_missingQueryTerm() {
-    assertThrows(ParameterException.class, () -> runCommand("--type=DOMAIN_LOOKUP"));
+    assertThrows(ParameterException.class, () -> runCommand("--type=DOMAIN"));
   }
 
   @Test
@@ -139,7 +139,7 @@ class RdapQueryCommandTest extends CommandTestCase<RdapQueryCommand> {
         .thenThrow(new IOException("HTTP 500: Server on fire"));
 
     IOException thrown =
-        assertThrows(IOException.class, () -> runCommand("--type=DOMAIN_LOOKUP", "fail.dev"));
+        assertThrows(IOException.class, () -> runCommand("--type=DOMAIN", "fail.dev"));
     assertThat(thrown).hasMessageThat().contains("HTTP 500: Server on fire");
   }
 }

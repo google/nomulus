@@ -37,11 +37,11 @@ public final class RdapQueryCommand implements CommandWithConnection {
   private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 
   enum RdapQueryType {
-    DOMAIN_LOOKUP("/rdap/domain/%s"),
+    DOMAIN("/rdap/domain/%s"),
     DOMAIN_SEARCH("/rdap/domains", "name"),
-    NAMESERVER_LOOKUP("/rdap/nameserver/%s"),
+    NAMESERVER("/rdap/nameserver/%s"),
     NAMESERVER_SEARCH("/rdap/nameservers", "name"),
-    ENTITY_LOOKUP("/rdap/entity/%s"),
+    ENTITY("/rdap/entity/%s"),
     ENTITY_SEARCH("/rdap/entities", "fn");
 
     private final String pathFormat;
