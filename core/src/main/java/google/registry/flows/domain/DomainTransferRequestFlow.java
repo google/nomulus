@@ -135,7 +135,6 @@ public final class DomainTransferRequestFlow implements MutatingFlow {
 
   private static final ImmutableSet<StatusValue> DISALLOWED_STATUSES = ImmutableSet.of(
       StatusValue.CLIENT_TRANSFER_PROHIBITED,
-      StatusValue.PENDING_DELETE,
       StatusValue.SERVER_TRANSFER_PROHIBITED);
 
   @Inject ResourceCommand resourceCommand;
@@ -299,8 +298,9 @@ public final class DomainTransferRequestFlow implements MutatingFlow {
       DateTime now,
       Optional<DomainTransferRequestSuperuserExtension> superuserExtension)
       throws EppException {
-    verifyNoDisallowedStatuses(existingDomain, DISALLOWED_STATUSES);
+    verifyNoDisallowedStatuses(existingDomain, ImmutableSet.of(StatusValue.PENDING_DELETE));
     if (!isSuperuser) {
+      verifyNoDisallowedStatuses(existingDomain, DISALLOWED_STATUSES);
       verifyAuthInfoPresentForResourceTransfer(authInfo);
       verifyAuthInfo(authInfo.get(), existingDomain);
     }
