@@ -14,7 +14,6 @@
 
 package google.registry.tools;
 
-import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 
 import com.beust.jcommander.Parameter;
@@ -29,7 +28,7 @@ import google.registry.config.RegistryConfig.Config;
 import google.registry.request.Action.Service;
 import jakarta.inject.Inject;
 import java.io.IOException;
-import java.util.function.Function;
+import java.util.Optional;
 import javax.annotation.Nullable;
 
 /** Command to manually perform an authenticated RDAP query. */
@@ -39,63 +38,33 @@ public final class RdapQueryCommand implements CommandWithConnection {
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
   private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 
-  /** Defines the RDAP query types, encapsulating their path logic and parameter requirements. */
   enum RdapQueryType {
-    DOMAIN("/rdap/domain/%s"),
-    DOMAIN_SEARCH("/rdap/domains", queryTerm -> ImmutableMap.of("name", queryTerm)),
-    NAMESERVER("/rdap/nameserver/%s"),
-    NAMESERVER_SEARCH("/rdap/nameservers", queryTerm -> ImmutableMap.of("name", queryTerm)),
-    ENTITY("/rdap/entity/%s"),
-    ENTITY_SEARCH("/rdap/entities", queryTerm -> ImmutableMap.of("fn", queryTerm)),
-    HELP("/rdap/help", false);
+    DOMAIN_LOOKUP("/rdap/domain/%s"),
+    DOMAIN_SEARCH("/rdap/domains", "name"),
+    NAMESERVER_LOOKUP("/rdap/nameserver/%s"),
+    NAMESERVER_SEARCH("/rdap/nameservers", "name"),
+    ENTITY_LOOKUP("/rdap/entity/%s"),
+    ENTITY_SEARCH("/rdap/entities", "fn");
 
     private final String pathFormat;
-    private final boolean requiresQueryTerm;
+    private final Optional<String> searchParamKey;
 
-    @SuppressWarnings("ImmutableEnumChecker")
-    private final Function<String, ImmutableMap<String, String>> queryParametersFunction;
-
-    /** Constructor for lookup queries that require a query term. */
     RdapQueryType(String pathFormat) {
-      this(pathFormat, true, queryTerm -> ImmutableMap.of());
+      this(pathFormat, null);
     }
 
-    /** Constructor for search queries that require a query term. */
-    RdapQueryType(
-        String pathFormat, Function<String, ImmutableMap<String, String>> queryParametersFunction) {
-      this(pathFormat, true, queryParametersFunction);
-    }
-
-    /** Constructor for queries that may not require a query term (e.g., HELP). */
-    RdapQueryType(String pathFormat, boolean requiresQueryTerm) {
-      this(pathFormat, requiresQueryTerm, queryTerm -> ImmutableMap.of());
-    }
-
-    RdapQueryType(
-        String pathFormat,
-        boolean requiresQueryTerm,
-        Function<String, ImmutableMap<String, String>> queryParametersFunction) {
+    RdapQueryType(String pathFormat, @Nullable String searchParamKey) {
       this.pathFormat = pathFormat;
-      this.requiresQueryTerm = requiresQueryTerm;
-      this.queryParametersFunction = queryParametersFunction;
+      this.searchParamKey = Optional.ofNullable(searchParamKey);
     }
 
-    void validate(@Nullable String queryTerm) {
-      checkArgument(
-          requiresQueryTerm == (queryTerm != null),
-          "A query term is %srequired for type %s",
-          requiresQueryTerm ? "" : "not ",
-          this.name());
+    String getQueryPath(String queryTerm) {
+      // Logic is now simplified as suggested.
+      return searchParamKey.isPresent() ? pathFormat : String.format(pathFormat, queryTerm);
     }
 
-    String getQueryPath(@Nullable String queryTerm) {
-      return getQueryParameters(queryTerm).isEmpty()
-          ? String.format(pathFormat, queryTerm)
-          : pathFormat;
-    }
-
-    ImmutableMap<String, String> getQueryParameters(@Nullable String queryTerm) {
-      return queryParametersFunction.apply(queryTerm);
+    ImmutableMap<String, String> getQueryParameters(String queryTerm) {
+      return searchParamKey.map(key -> ImmutableMap.of(key, queryTerm)).orElse(ImmutableMap.of());
     }
   }
 
@@ -104,7 +73,7 @@ public final class RdapQueryCommand implements CommandWithConnection {
 
   @Parameter(
       description = "The main query term (e.g., a domain name or search pattern).",
-      required = false)
+      required = true)
   private String queryTerm;
 
   @Inject ServiceConnection defaultConnection;
@@ -121,15 +90,19 @@ public final class RdapQueryCommand implements CommandWithConnection {
   @Override
   public void run() throws IOException {
     checkState(defaultConnection != null, "ServiceConnection was not set by RegistryCli.");
-    type.validate(queryTerm);
 
     String path = type.getQueryPath(queryTerm);
     ImmutableMap<String, String> queryParams = type.getQueryParameters(queryTerm);
+
+    logger.atInfo().log("Starting RDAP query for path: %s with params: %s", path, queryParams);
 
     ServiceConnection pubapiConnection = defaultConnection.withService(Service.PUBAPI, useCanary);
     String rdapResponse = pubapiConnection.sendGetRequest(path, queryParams);
 
     JsonElement rdapJson = JsonParser.parseString(rdapResponse);
-    logger.atInfo().log(GSON.toJson(rdapJson));
+    // Print to System.out to allow for simple testing with CommandTestCase helpers.
+    System.out.println(GSON.toJson(rdapJson));
+
+    logger.atInfo().log("Successfully completed RDAP query.");
   }
 }
