@@ -19,7 +19,6 @@ import static com.google.common.base.Preconditions.checkState;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.flogger.FluentLogger;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
@@ -35,7 +34,6 @@ import javax.annotation.Nullable;
 @Parameters(separators = " =", commandDescription = "Manually perform an authenticated RDAP query")
 public final class RdapQueryCommand implements CommandWithConnection {
 
-  private static final FluentLogger logger = FluentLogger.forEnclosingClass();
   private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 
   enum RdapQueryType {
@@ -59,7 +57,6 @@ public final class RdapQueryCommand implements CommandWithConnection {
     }
 
     String getQueryPath(String queryTerm) {
-      // Logic is now simplified as suggested.
       return searchParamKey.isPresent() ? pathFormat : String.format(pathFormat, queryTerm);
     }
 
@@ -94,15 +91,10 @@ public final class RdapQueryCommand implements CommandWithConnection {
     String path = type.getQueryPath(queryTerm);
     ImmutableMap<String, String> queryParams = type.getQueryParameters(queryTerm);
 
-    logger.atInfo().log("Starting RDAP query for path: %s with params: %s", path, queryParams);
-
     ServiceConnection pubapiConnection = defaultConnection.withService(Service.PUBAPI, useCanary);
     String rdapResponse = pubapiConnection.sendGetRequest(path, queryParams);
 
     JsonElement rdapJson = JsonParser.parseString(rdapResponse);
-    // Print to System.out to allow for simple testing with CommandTestCase helpers.
     System.out.println(GSON.toJson(rdapJson));
-
-    logger.atInfo().log("Successfully completed RDAP query.");
   }
 }
