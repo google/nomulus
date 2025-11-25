@@ -33,10 +33,10 @@ import org.joda.time.Duration;
  * Runner applying guaranteed reliability to an {@link EscrowTask}.
  *
  * <p>This class implements the <i>Locking Rolling Cursor</i> pattern, which solves the problem of
- * how to reliably execute App Engine tasks which can't be made idempotent.
+ * how to reliably execute Cloud Tasks which can't be made idempotent.
  *
  * <p>{@link LockHandler} is used to ensure only one task executes at a time for a given {@code
- * LockedCursorTask} subclass + TLD combination. This is necessary because App Engine tasks might
+ * LockedCursorTask} subclass + TLD combination. This is necessary because Cloud Task tasks might
  * double-execute. Normally tasks solve this by being idempotent, but that's not possible for RDE,
  * which writes to a GCS filename with a deterministic name. So locks are used to guarantee
  * isolation. If we can't acquire the lock, it means the task is already running, so {@link

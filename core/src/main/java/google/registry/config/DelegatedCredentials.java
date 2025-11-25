@@ -55,8 +55,9 @@ import org.apache.commons.codec.binary.Base64;
  *
  * <p>This class accepts the application-default-credential as {@code ServiceAccountSigner},
  * avoiding the need for exported private keys. In this case, the default credential user itself
- * (project-id@appspot.gserviceaccount.com on AppEngine) must have domain-wide delegation to the
- * Workspace APIs. The default credential user also must have the Token Creator role to itself.
+ * (nomulus-service-account@{project-id}.iam.gserviceaccount.com on GCP) must have domain-wide
+ * delegation to the Workspace APIs. The default credential user also must have the Token Creator
+ * role to itself.
  *
  * <p>If the user provides a credential {@code S} that carries its own private key, such as {@link
  * com.google.auth.oauth2.ServiceAccountCredentials}, this class can use {@code S} to impersonate

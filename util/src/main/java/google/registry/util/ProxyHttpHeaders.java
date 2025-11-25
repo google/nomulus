@@ -36,9 +36,9 @@ public final class ProxyHttpHeaders {
   /**
    * Fallback HTTP header name used to pass the client IP address from the proxy to Nomulus.
    *
-   * <p>Note that Java 17's servlet implementation (at least on App Engine) injects some seemingly
-   * unrelated addresses into this header. We only use this as a fallback so the proxy can
-   * transition to use the above header that should not be interfered with.
+   * <p>Note that Java 17's servlet implementation may inject some seemingly unrelated addresses
+   * into this header. We only use this as a fallback so the proxy can transition to use the above
+   * header that should not be interfered with.
    */
   public static final String FALLBACK_IP_ADDRESS = HttpHeaders.X_FORWARDED_FOR;
 

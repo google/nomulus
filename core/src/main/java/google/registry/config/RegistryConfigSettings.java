@@ -50,11 +50,6 @@ public class RegistryConfigSettings {
     public long projectIdNumber;
     public String locationId;
     public boolean isLocal;
-    public String defaultServiceUrl;
-    public String backendServiceUrl;
-    public String bsaServiceUrl;
-    public String toolsServiceUrl;
-    public String pubapiServiceUrl;
     public String baseDomain;
   }
 

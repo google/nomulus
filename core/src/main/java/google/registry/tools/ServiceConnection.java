@@ -47,8 +47,8 @@ import org.json.simple.JSONValue;
 /**
  * An HTTP connection to a service.
  *
- * <p>By default - connects to the TOOLS service in GAE and the BACKEND service in GKE. To create a
- * Connection to another service, call the {@link #withService} function.
+ * <p>By default - connects the BACKEND service. To create a connection to another service, call the
+ * {@link #withService} function.
  */
 public class ServiceConnection {
 

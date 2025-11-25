@@ -181,9 +181,6 @@ interface RegistryToolComponent {
     Builder sqlAccessInfoFile(@Nullable @Config("sqlAccessInfoFile") String sqlAccessInfoFile);
 
     @BindsInstance
-    Builder useGke(@Config("useGke") boolean useGke);
-
-    @BindsInstance
     Builder useCanary(@Config("useCanary") boolean useCanary);
 
     RegistryToolComponent build();

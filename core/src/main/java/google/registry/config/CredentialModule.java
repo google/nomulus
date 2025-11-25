@@ -44,8 +44,6 @@ public abstract class CredentialModule {
    * <p>The credential returned by the Cloud Runtime depends on the runtime environment:
    *
    * <ul>
-   *   <li>On App Engine, returns a scope-less {@code ComputeEngineCredentials} for
-   *       PROJECT_ID@appspot.gserviceaccount.com
    *   <li>On Compute Engine, returns a scope-less {@code ComputeEngineCredentials} for
    *       PROJECT_NUMBER-compute@developer.gserviceaccount.com
    *   <li>On end user host, this returns the credential downloaded by gcloud. Please refer to <a
@@ -87,8 +85,8 @@ public abstract class CredentialModule {
    * the application default credential user.
    *
    * <p>The Workspace domain must grant delegated admin access to the default service account user
-   * (project-id@appspot.gserviceaccount.com on AppEngine) with all scopes in {@code defaultScopes}
-   * and {@code delegationScopes}.
+   * (nomulus-service-account@{project-id}.iam.gserviceaccount.com on GCP) with all scopes in {@code
+   * defaultScopes} and {@code delegationScopes}.
    */
   @AdcDelegatedCredential
   @Provides
@@ -113,9 +111,9 @@ public abstract class CredentialModule {
    * Provides a {@link GoogleCredentialsBundle} for sending emails through Google Workspace.
    *
    * <p>The Workspace domain must grant delegated admin access to the default service account user
-   * (project-id@appspot.gserviceaccount.com on AppEngine) with all scopes in {@code defaultScopes}
-   * and {@code delegationScopes}. In addition, the user {@code gSuiteOutgoingEmailAddress} must
-   * have the permission to send emails.
+   * (nomulus-service-account@{project-id}.iam.gserviceaccount.com on GCP) with all scopes in {@code
+   * defaultScopes} and {@code delegationScopes}. In addition, the user {@code
+   * gSuiteOutgoingEmailAddress} must have the permission to send emails.
    */
   @GmailDelegatedCredential
   @Provides

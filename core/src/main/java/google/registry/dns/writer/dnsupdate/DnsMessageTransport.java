@@ -36,8 +36,10 @@ import org.xbill.DNS.Opcode;
 /**
  * A transport for DNS messages. Sends/receives DNS messages over TCP using old-style {@link Socket}
  * s and the message framing defined in <a href="https://tools.ietf.org/html/rfc1035">RFC 1035</a>.
- * We would like use the dnsjava library's {@link org.xbill.DNS.SimpleResolver} class for this, but
- * it requires {@link java.nio.channels.SocketChannel} which is not supported on AppEngine.
+ *
+ * <p>TODO(b/463732345): now that we're no longer on AppEngine, see if we can use the dnsjava
+ * library's {@link org.xbill.DNS.SimpleResolver} class instead of this (that requires {@link
+ * java.nio.channels.SocketChannel} which is not supported on AppEngine).
  */
 public class DnsMessageTransport {
 

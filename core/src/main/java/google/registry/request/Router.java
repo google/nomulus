@@ -69,7 +69,7 @@ final class Router {
     ImmutableSortedMap.Builder<String, Route> routes =
         new ImmutableSortedMap.Builder<>(Ordering.natural());
     for (Method method : componentClass.getMethods()) {
-      // Make App Engine's security manager happy.
+      // Make the security manager happy.
       method.setAccessible(true);
       if (!isDaggerInstantiatorOfType(Runnable.class, method)) {
         continue;

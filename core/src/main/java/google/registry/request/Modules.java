@@ -25,7 +25,7 @@ import java.net.HttpURLConnection;
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
 
-/** Dagger modules for App Engine services and other vendor classes. */
+/** Dagger modules for services and other vendor classes. */
 public final class Modules {
 
   /** Dagger module for {@link UrlConnectionService}. */

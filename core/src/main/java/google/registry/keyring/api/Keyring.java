@@ -44,7 +44,7 @@ public interface Keyring extends AutoCloseable {
    * Returns public key for encrypting escrow deposits being staged to cloud storage.
    *
    * <p>This adds an additional layer of security so cloud storage administrators won't be tempted
-   * to go poking around the App Engine Cloud Console and see a dump of the entire database.
+   * to go poking around the Pantheon Cloud Console and see a dump of the entire database.
    *
    * <p>This keypair should only be known to the domain registry shared registry system.
    *

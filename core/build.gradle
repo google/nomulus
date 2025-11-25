@@ -110,7 +110,7 @@ configurations {
   // for details.
   nomulus_test
 
-  // Exclude non-canonical servlet-api jars. Our AppEngine deployment uses
+  // Exclude non-canonical servlet-api jars. Our deployment uses
   // javax.servlet:servlet-api:2.5
   // For reasons we do not understand, marking the following dependencies as
   // compileOnly instead of compile does not exclude them from runtimeClasspath.

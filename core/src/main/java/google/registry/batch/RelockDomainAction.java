@@ -112,11 +112,11 @@ public class RelockDomainAction implements Runnable {
   public void run() {
     /* We wish to manually control our retry behavior, in order to limit the number of retries
      * and/or notify registrars / support only after a certain number of retries, or only
-     * with a certain type of failure. AppEngine will automatically retry on any non-2xx status
+     * with a certain type of failure. Cloud Tasks will automatically retry on any non-2xx status
      * code, so return SC_NO_CONTENT (204) by default to avoid this auto-retry.
      *
-     * See https://cloud.google.com/appengine/docs/standard/java/taskqueue/push/retrying-tasks
-     * for more details on retry behavior. */
+     * See https://docs.cloud.google.com/tasks/docs/configuring-queues#retry for more details on
+     * retry behavior. */
     response.setStatus(SC_NO_CONTENT);
     response.setContentType(MediaType.PLAIN_TEXT_UTF_8);
     tm().transact(this::relockDomain);

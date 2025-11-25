@@ -70,9 +70,6 @@ final class RegistryCli implements CommandRunner {
               + "Beam pipelines")
   private String sqlAccessInfoFile = null;
 
-  @Parameter(names = "--gae", description = "Whether to use GAE runtime, instead of GKE")
-  private boolean useGae = false;
-
   @Parameter(names = "--canary", description = "Whether to connect to the canary instances")
   private boolean useCanary = false;
 
@@ -169,7 +166,6 @@ final class RegistryCli implements CommandRunner {
         DaggerRegistryToolComponent.builder()
             .credentialFilePath(credentialJson)
             .sqlAccessInfoFile(sqlAccessInfoFile)
-            .useGke(!useGae)
             .useCanary(useCanary)
             .build();
 
@@ -203,7 +199,8 @@ final class RegistryCli implements CommandRunner {
               """
               This error is likely the result of having another instance of
               nomulus running at the same time.  Check your system, shut down
-              the other instance, and try again.""");
+              the other instance, and try again.\
+              """);
           System.err.println("===================================================================");
         } else {
           throw e;
@@ -213,7 +210,7 @@ final class RegistryCli implements CommandRunner {
   }
 
   private ServiceConnection getConnection() {
-    // Get the App Engine connection, advise the user if they are not currently logged in.
+    // Get the service connection, advise the user if they are not currently logged in.
     if (connection == null) {
       connection = component.serviceConnection();
     }

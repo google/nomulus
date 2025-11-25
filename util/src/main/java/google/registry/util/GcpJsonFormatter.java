@@ -32,7 +32,7 @@ import javax.annotation.Nullable;
 /**
  * JUL formatter that formats log messages in a single-line JSON that Stackdriver logging can parse.
  *
- * <p>The structured logs written to {@code STDOUT} and {@code STDERR} will be picked up by GAE/GKE
+ * <p>The structured logs written to {@code STDOUT} and {@code STDERR} will be picked up by GKE
  * logging agent and automatically ingested by Stackdriver. Certain fields (see below) in the JSON
  * will be converted to the corresponding <a
  * href="https://cloud.google.com/logging/docs/reference/v2/rest/v2/LogEntry">{@code Log Entry}</a>

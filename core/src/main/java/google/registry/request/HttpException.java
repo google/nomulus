@@ -73,8 +73,8 @@ public abstract class HttpException extends RuntimeException {
   /**
    * Exception that causes a 204 response.
    *
-   * <p>This is useful for App Engine task queue handlers that want to display an error, but don't
-   * want the task to automatically retry, since the status code is less than 300.
+   * <p>This is useful for task queue handlers that want to display an error, but don't want the
+   * task to automatically retry, since the status code is less than 300.
    */
   public static final class NoContentException extends HttpException {
     public NoContentException(String message) {

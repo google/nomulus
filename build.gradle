@@ -84,10 +84,10 @@ tasks.build.dependsOn(tasks.checkLicense)
 // Paths to main and test sources.
 ext.projectRootDir = "${rootDir}"
 
-// Tasks to deploy/stage all App Engine services
+// Tasks to deploy/stage all services
 task deploy {
   group = 'deployment'
-  description = 'Deploys all services to App Engine.'
+  description = 'Deploys all services.'
 }
 
 task stage {

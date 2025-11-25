@@ -22,7 +22,7 @@ gcpScopes:
   # Cloud KMS and Stackdriver Monitoring APIs.
   - https://www.googleapis.com/auth/cloud-platform
 
-  # The OAuth scope required to be included in the access token for the GAE app
+  # The OAuth scope required to be included in the access token for the app
   # to authenticate.
   - https://www.googleapis.com/auth/userinfo.email
 

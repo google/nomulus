@@ -27,12 +27,12 @@ import java.util.Map;
 /**
  * Utility class to help in dumping routing maps.
  *
- * <p>Each of the App Engine services (frontend, backend, and tools) has a Dagger component used for
- * routing requests (e.g., FrontendRequestComponent). This class produces a text file representation
- * of the routing configuration, showing what paths map to what action classes, as well as the
- * properties of the action classes' annotations (which cover things like allowable HTTP methods,
- * authentication settings, etc.). The text file can be useful for documentation, and is also used
- * in unit tests to check against golden routing maps to find possibly unexpected changes.
+ * <p>The request-handling service has a Dagger component (RequestComponent) used for routing
+ * requests. This class produces a text file representation of the routing configuration, showing
+ * what paths map to what action classes, as well as the properties of the action classes'
+ * annotations (which cover things like allowable HTTP methods, authentication settings, etc.). The
+ * text file can be useful for documentation, and is also used in unit tests to check against golden
+ * routing maps to find possibly unexpected changes.
  *
  * <p>The file has fixed-width columns with a header row. The width of the columns is determined by
  * the content to be displayed. The columns are:

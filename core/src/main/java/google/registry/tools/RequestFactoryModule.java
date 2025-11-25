@@ -29,8 +29,8 @@ import google.registry.util.OidcTokenUtils;
 /**
  * Module for providing the HttpRequestFactory.
  *
- * <p>Localhost connections go to the App Engine dev server. The dev server differs from most HTTP
- * connections in that they don't require OAuth2 credentials, but instead require a special cookie.
+ * <p>Localhost connections go to the dev server. The dev server differs from most HTTP connections
+ * in that it doesn't require OAuth2 credentials, but instead requires a special cookie.
  */
 @Module
 final class RequestFactoryModule {
@@ -61,10 +61,9 @@ final class RequestFactoryModule {
                         AUTHORIZATION,
                         "Bearer "
                             + OidcTokenUtils.createOidcToken(credentialsBundle, oauthClientId));
-                // GAE request times out after 10 min, so here we set the timeout to 10 min. This is
+                // Requests time out after 10 min, so here we set the timeout to 10 min. This is
                 // needed to support some nomulus commands like updating premium lists that take
-                // a lot of time to complete.
-                // See
+                // a lot of time to complete. See
                 // https://developers.google.com/api-client-library/java/google-api-java-client/errors
                 request.setConnectTimeout(REQUEST_TIMEOUT_MS);
                 request.setReadTimeout(REQUEST_TIMEOUT_MS);

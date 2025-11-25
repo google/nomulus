@@ -28,7 +28,7 @@ import java.util.concurrent.TimeoutException;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.joda.time.DateTime;
 
-/** Base for Servlets that handle all requests to our App Engine modules. */
+/** Base for Servlets that handle all requests to our modules. */
 public class ServletBase extends HttpServlet {
 
   private final RequestHandler<?> requestHandler;

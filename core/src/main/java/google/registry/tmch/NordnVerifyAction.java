@@ -112,7 +112,7 @@ public final class NordnVerifyAction implements Runnable {
       logger.atInfo().log(
           "LORDN verify task %s response: HTTP response code %d", actionLogId, responseCode);
       if (responseCode == SC_NO_CONTENT) {
-        // Send a 400+ status code so App Engine will retry the task.
+        // Send a 400+ status code so Cloud Tasks will retry the task.
         throw new ConflictException("Not ready");
       }
       if (responseCode != SC_OK) {

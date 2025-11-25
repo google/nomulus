@@ -9,7 +9,7 @@ expected to change.
 
 ## Deployment
 
-Webapp is deployed with the nomulus default service war to Google App Engine.
+The webapp is deployed with the nomulus default service war to GKE.
 During nomulus default service war build task, gradle script triggers the
 following:
 

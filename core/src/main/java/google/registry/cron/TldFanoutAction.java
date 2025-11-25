@@ -57,8 +57,7 @@ import java.util.stream.Stream;
  *
  * <ul>
  *   <li>{@code endpoint} (Required) URL path of servlet to launch. This may contain pathargs.
- *   <li>{@code queue} (Required) Name of the App Engine push queue to which this task should be
- *       sent.
+ *   <li>{@code queue} (Required) Name of the queue to which this task should be sent.
  *   <li>{@code forEachRealTld} Launch the task in each real TLD namespace.
  *   <li>{@code forEachTestTld} Launch the task in each test TLD namespace.
  *   <li>{@code runInEmpty} Launch the task once, without the TLD argument.

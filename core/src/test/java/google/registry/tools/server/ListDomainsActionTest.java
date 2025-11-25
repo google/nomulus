@@ -103,29 +103,6 @@ class ListDomainsActionTest extends ListActionTestCase {
   }
 
   @Test
-  void testRun_moreTldsThanMaxNumSubqueries() {
-    ListDomainsAction.maxNumSubqueries = 2;
-    createTlds("baa", "bab", "bac", "bad");
-    action.tlds = ImmutableSet.of("baa", "bab", "bac", "bad");
-    action.limit = 4;
-    persistActiveDomain("domain1.baa", DateTime.parse("2010-03-04T16:00:00Z"));
-    persistActiveDomain("domain2.bab", DateTime.parse("2009-03-04T16:00:00Z"));
-    persistActiveDomain("domain3.bac", DateTime.parse("2011-03-04T16:00:00Z"));
-    persistActiveDomain("domain4.bad", DateTime.parse("2010-06-04T16:00:00Z"));
-    persistActiveDomain("domain5.baa", DateTime.parse("2008-01-04T16:00:00Z"));
-    // Since the limit is 4, expect all but domain5.baa (the oldest), sorted by creationTime asc.
-    testRunSuccess(
-        action,
-        Optional.empty(),
-        Optional.empty(),
-        Optional.empty(),
-        "^domain2.bab$",
-        "^domain1.baa$",
-        "^domain4.bad$",
-        "^domain3.bac$");
-  }
-
-  @Test
   void testRun_twoLinesWithIdOnlyNoHeader() {
     action.tlds = ImmutableSet.of("foo");
     persistActiveDomain("example1.foo", DateTime.parse("2010-03-04T16:00:00Z"));

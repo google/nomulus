@@ -72,7 +72,7 @@ class PersistenceModuleTest {
   }
 
   @Test
-  void appengineIsolation() {
+  void connectionIsolation() {
     assertThat(PersistenceModule.provideDefaultDatabaseConfigs().get(Environment.ISOLATION))
         .isEqualTo(TransactionIsolationLevel.TRANSACTION_SERIALIZABLE.name());
   }

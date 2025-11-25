@@ -71,9 +71,7 @@ class BsaDiffCreator {
     Optional<String> previousJobName = schedule.latestCompleted().map(CompletedJob::jobName);
     /*
      * Memory usage is a concern when creating a diff, when the newest download needs to be held in
-     * memory in its entirety. The top-grade AppEngine VM has 3GB of memory, leaving less than 1.5GB
-     * to application memory footprint after subtracting overheads due to copying garbage collection
-     * and non-heap data etc. Assuming 400K labels, each of which on average included in 5 orders,
+     * memory in its entirety. Assuming 400K labels, each of which on average included in 5 orders,
      * the memory footprint is at least 300MB when loaded into a Hashset-backed Multimap (64-bit
      * JVM, with 12-byte object header, 16-byte array header, and 16-byte alignment).
      *

@@ -51,7 +51,7 @@ public final class TypeUtils {
   public static <T> T instantiate(Class<? extends T> clazz) {
     checkArgument(
         Modifier.isPublic(clazz.getModifiers()),
-        "AppEngine's custom security manager won't let us reflectively access non-public types");
+        "GCP's custom security manager won't let us reflectively access non-public types");
     try {
       return clazz.getConstructor().newInstance();
     } catch (ReflectiveOperationException e) {
@@ -68,7 +68,7 @@ public final class TypeUtils {
   public static <T, U> T instantiate(Class<? extends T> clazz, U arg) {
     checkArgument(
         Modifier.isPublic(clazz.getModifiers()),
-        "AppEngine's custom security manager won't let us reflectively access non-public types");
+        "GCP's custom security manager won't let us reflectively access non-public types");
     try {
       return clazz.getConstructor(arg.getClass()).newInstance(arg);
     } catch (ReflectiveOperationException e) {

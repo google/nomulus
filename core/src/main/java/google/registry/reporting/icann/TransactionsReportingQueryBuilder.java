@@ -107,7 +107,7 @@ public final class TransactionsReportingQueryBuilder implements QueryBuilder {
     queriesBuilder.put(
         getTableName(TRANSACTION_TRANSFER_LOSING, yearMonth), transactionTransferLosingQuery);
 
-    // App Engine log table suffixes use YYYYMMDD format
+    // Log table suffixes use YYYYMMDD format
     DateTimeFormatter logTableFormatter = DateTimeFormat.forPattern("yyyyMMdd");
     String attemptedAddsQuery =
         SqlTemplate.create(getQueryFromFile(ATTEMPTED_ADDS + ".sql"))

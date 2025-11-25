@@ -51,7 +51,7 @@ public class FlowReporter {
   @Inject Class<? extends Flow> flowClass;
   @Inject FlowReporter() {}
 
-  /** Records information about the current flow execution in the GAE request logs. */
+  /** Records information about the current flow execution in the request logs. */
   public void recordToLogs() {
     // Explicitly log flow metadata separately from the EPP XML itself so that it stays compact
     // enough to be sure to fit in a single log entry (the XML part in rare cases could be long

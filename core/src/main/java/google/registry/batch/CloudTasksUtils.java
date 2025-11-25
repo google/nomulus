@@ -55,8 +55,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Optional;
 import java.util.Random;
-import java.util.function.BiConsumer;
-import java.util.function.Consumer;
 import java.util.function.Supplier;
 import org.joda.time.Duration;
 
@@ -118,19 +116,13 @@ public class CloudTasksUtils implements Serializable {
    * <p>For GET requests we add them on to the URL, and for POST requests we add them in the body of
    * the request.
    *
-   * <p>The parameters {@code putHeadersFunction} and {@code setBodyFunction} are used so that this
-   * method can be called with either an AppEngine HTTP request or a standard non-AppEngine HTTP
-   * request. The two objects do not have the same methods, but both have ways of setting headers /
-   * body.
-   *
    * @return the resulting path (unchanged for POST requests, with params added for GET requests)
    */
   private static String processRequestParameters(
       String path,
       Method method,
       Multimap<String, String> params,
-      BiConsumer<String, String> putHeadersFunction,
-      Consumer<ByteString> setBodyFunction) {
+      HttpRequest.Builder requestBuilder) {
     if (CollectionUtils.isNullOrEmpty(params)) {
       return path;
     }
@@ -148,8 +140,8 @@ public class CloudTasksUtils implements Serializable {
     if (method.equals(Method.GET)) {
       return String.format("%s?%s", path, encodedParams);
     }
-    putHeadersFunction.accept(HttpHeaders.CONTENT_TYPE, MediaType.FORM_DATA.toString());
-    setBodyFunction.accept(ByteString.copyFrom(encodedParams, StandardCharsets.UTF_8));
+    requestBuilder.putHeaders(HttpHeaders.CONTENT_TYPE, MediaType.FORM_DATA.toString());
+    requestBuilder.setBody(ByteString.copyFrom(encodedParams, StandardCharsets.UTF_8));
     return path;
   }
 
@@ -160,18 +152,17 @@ public class CloudTasksUtils implements Serializable {
    * default service account as the principal. That account must have permission to submit tasks to
    * Cloud Tasks.
    *
-   * <p>The caller of this method is responsible for passing in the appropriate service based on the
-   * runtime (GAE/GKE). Use the overload that takes an action class if possible.
+   * <p>The caller of this method is responsible for passing in the appropriate service. Use the
+   * overload that takes an action class if possible.
    *
    * @param path the relative URI (staring with a slash and ending without one).
    * @param method the HTTP method to be used for the request.
-   * @param service the GAE/GKE service to route the request to.
+   * @param service the service to route the request to.
    * @param params a multimap of URL query parameters. Duplicate keys are saved as is, and it is up
    *     to the server to process the duplicate keys.
    * @return the enqueued task.
-   * @see <a
-   *     href=ttps://cloud.google.com/appengine/docs/standard/java/taskqueue/push/creating-tasks#target>Specifyinig
-   *     the worker service</a>
+   * @see <a href=https://docs.cloud.google.com/tasks/docs/creating-http-target-tasks#java>Creating
+   *     HTTP target tasks</a>
    */
   protected Task createTask(
       String path, Method method, Action.Service service, Multimap<String, String> params) {
@@ -180,9 +171,7 @@ public class CloudTasksUtils implements Serializable {
         "The path must start with a '/'.");
     HttpRequest.Builder requestBuilder =
         HttpRequest.newBuilder().setHttpMethod(HttpMethod.valueOf(method.name()));
-    path =
-        processRequestParameters(
-            path, method, params, requestBuilder::putHeaders, requestBuilder::setBody);
+    path = processRequestParameters(path, method, params, requestBuilder);
     OidcToken.Builder oidcTokenBuilder =
         OidcToken.newBuilder()
             .setServiceAccountEmail(credential.serviceAccount())
@@ -204,16 +193,15 @@ public class CloudTasksUtils implements Serializable {
    * Cloud Tasks.
    *
    * <p>Prefer this overload over the one where the path and service are explicitly defined, as this
-   * class will automatically determine the service to use based on the action and the runtime.
+   * class will automatically determine the service to use based on the action.
    *
    * @param actionClazz the action class to run, must be annotated with {@link Action}.
    * @param method the HTTP method to be used for the request.
    * @param params a multimap of URL query parameters. Duplicate keys are saved as is, and it is up
    *     to the server to process the duplicate keys.
    * @return the enqueued task.
-   * @see <a
-   *     href=ttps://cloud.google.com/appengine/docs/standard/java/taskqueue/push/creating-tasks#target>Specifyinig
-   *     the worker service</a>
+   * @see <a href=https://docs.cloud.google.com/tasks/docs/creating-http-target-tasks#java>Creating
+   *     HTTP target tasks</a>
    */
   public Task createTask(
       Class<? extends Runnable> actionClazz, Method method, Multimap<String, String> params) {
@@ -236,19 +224,18 @@ public class CloudTasksUtils implements Serializable {
   /**
    * Create a {@link Task} to be enqueued with a random delay up to {@code jitterSeconds}.
    *
-   * <p>The caller of this method is responsible for passing in the appropriate service based on the
-   * runtime (GAE/GKE). Use the overload that takes an action class if possible.
+   * <p>The caller of this method is responsible for passing in the appropriate service. Use the
+   * overload that takes an action class if possible.
    *
    * @param path the relative URI (staring with a slash and ending without one).
    * @param method the HTTP method to be used for the request.
-   * @param service the GAE/GKE service to route the request to.
+   * @param service the service to route the request to.
    * @param params a multimap of URL query parameters. Duplicate keys are saved as is, and it is up
    *     to the server to process the duplicate keys.
    * @param jitterSeconds the number of seconds that a task is randomly delayed up to.
    * @return the enqueued task.
-   * @see <a
-   *     href=ttps://cloud.google.com/appengine/docs/standard/java/taskqueue/push/creating-tasks#target>Specifyinig
-   *     the worker service</a>
+   * @see <a href=https://docs.cloud.google.com/tasks/docs/creating-http-target-tasks#java>Creating
+   *     HTTP target tasks</a>
    */
   public Task createTaskWithJitter(
       String path,
@@ -271,7 +258,7 @@ public class CloudTasksUtils implements Serializable {
    * Create a {@link Task} to be enqueued with a random delay up to {@code jitterSeconds}.
    *
    * <p>Prefer this overload over the one where the path and service are explicitly defined, as this
-   * class will automatically determine the service to use based on the action and the runtime.
+   * class will automatically determine the service to use based on the action.
    *
    * @param actionClazz the action class to run, must be annotated with {@link Action}.
    * @param method the HTTP method to be used for the request.
@@ -279,9 +266,8 @@ public class CloudTasksUtils implements Serializable {
    *     to the server to process the duplicate keys.
    * @param jitterSeconds the number of seconds that a task is randomly delayed up to.
    * @return the enqueued task.
-   * @see <a
-   *     href=ttps://cloud.google.com/appengine/docs/standard/java/taskqueue/push/creating-tasks#target>Specifyinig
-   *     the worker service</a>
+   * @see <a href=https://docs.cloud.google.com/tasks/docs/creating-http-target-tasks#java>Creating
+   *     HTTP target tasks</a>
    */
   public Task createTaskWithJitter(
       Class<? extends Runnable> actionClazz,
@@ -302,14 +288,13 @@ public class CloudTasksUtils implements Serializable {
    *
    * @param path the relative URI (staring with a slash and ending without one).
    * @param method the HTTP method to be used for the request.
-   * @param service the GAE/GKE service to route the request to.
+   * @param service the service to route the request to.
    * @param params a multimap of URL query parameters. Duplicate keys are saved as is, and it is up
    *     to the server to process the duplicate keys.
    * @param delay the amount of time that a task needs to be delayed for.
    * @return the enqueued task.
-   * @see <a
-   *     href=ttps://cloud.google.com/appengine/docs/standard/java/taskqueue/push/creating-tasks#target>Specifyinig
-   *     the worker service</a>
+   * @see <a href=https://docs.cloud.google.com/tasks/docs/creating-http-target-tasks#java>Creating
+   *     HTTP target tasks</a>
    */
   private Task createTaskWithDelay(
       String path,
@@ -330,7 +315,7 @@ public class CloudTasksUtils implements Serializable {
    * Create a {@link Task} to be enqueued with delay of {@code duration}.
    *
    * <p>Prefer this overload over the one where the path and service are explicitly defined, as this
-   * class will automatically determine the service to use based on the action and the runtime.
+   * class will automatically determine the service to use based on the action.
    *
    * @param actionClazz the action class to run, must be annotated with {@link Action}.
    * @param method the HTTP method to be used for the request.
@@ -338,9 +323,8 @@ public class CloudTasksUtils implements Serializable {
    *     to the server to process the duplicate keys.
    * @param delay the amount of time that a task needs to be delayed for.
    * @return the enqueued task.
-   * @see <a
-   *     href=ttps://cloud.google.com/appengine/docs/standard/java/taskqueue/push/creating-tasks#target>Specifyinig
-   *     the worker service</a>
+   * @see <a href=https://docs.cloud.google.com/tasks/docs/creating-http-target-tasks#java>Creating
+   *     HTTP target tasks</a>
    */
   public Task createTaskWithDelay(
       Class<? extends Runnable> actionClazz,

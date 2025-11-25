@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-# This script builds the GAE artifacts for a given environment, moves the
+# This script builds the artifacts for a given environment, moves the
 # artifacts for all services to a designated location, and then creates a
 # tarball from there.
 

@@ -112,7 +112,7 @@ public interface Protocol {
   }
 
   /**
-   * Connection parameters for a connection from the proxy to the GAE app.
+   * Connection parameters for a connection from the proxy to Nomulus.
    *
    * <p>This protocol is associated to a {@link NioSocketChannel} established by the proxy
    * connecting to a remote peer.

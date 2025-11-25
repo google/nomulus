@@ -50,7 +50,7 @@ import java.util.Queue;
 import java.util.concurrent.TimeoutException;
 
 /**
- * A multi-protocol proxy server that listens for protocols in {@link
+ * A multiprotocol proxy server that listens for protocols in {@link
  * ProxyModule.ProxyComponent#protocols()} }.
  */
 public class ProxyServer implements Runnable {
@@ -157,8 +157,8 @@ public class ProxyServer implements Runnable {
      * Establishes an outbound relay channel and sets the relevant metadata on both channels.
      *
      * <p>This method also adds a listener that is called when the established outbound connection
-     * is closed. The outbound connection to GAE is *not* guaranteed to persist. In case that the
-     * outbound connection closes but the inbound connection is still active, the listener calls
+     * is closed. The outbound connection to Nomulus is *not* guaranteed to persist. In case that
+     * the outbound connection closes but the inbound connection is still active, the listener calls
      * this function again to re-establish another outbound connection. The metadata is also reset
      * so that the inbound channel knows to relay to the new outbound channel.
      */
@@ -226,7 +226,7 @@ public class ProxyServer implements Runnable {
                             }
                           });
             } else {
-              // We cannot connect to GAE for unknown reasons, no relay can be done so drop the
+              // We cannot connect to Nomulus for unknown reasons, no relay can be done so drop the
               // inbound connection as well.
               logger.atSevere().withCause(future.cause()).log(
                   "Cannot connect to relay channel for %s channel: %s.",

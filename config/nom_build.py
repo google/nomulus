@@ -104,7 +104,7 @@ PROPERTIES = [
     Property('testFilter',
              'Comma separated list of test patterns, if specified run only '
              'these.'),
-    Property('environment', 'GAE Environment for deployment and staging.'),
+    Property('environment', 'Environment for deployment and staging.'),
 
     # Cloud SQL properties
     Property('dbServer',

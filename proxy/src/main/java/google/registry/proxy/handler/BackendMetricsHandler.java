@@ -57,7 +57,7 @@ public class BackendMetricsHandler extends ChannelDuplexHandler {
   private Channel relayedChannel;
 
   /**
-   * A queue that saves the time at which a request is sent to the GAE app.
+   * A queue that saves the time at which a request is sent to Nomulus.
    *
    * <p>This queue is used to calculate HTTP request-response latency. HTTP 1.1 specification allows
    * for pipelining, in which a client can sent multiple requests without waiting for each
@@ -123,7 +123,7 @@ public class BackendMetricsHandler extends ChannelDuplexHandler {
             .addListener(
                 future -> {
                   if (future.isSuccess()) {
-                    // Only instrument request metrics when the request is actually sent to GAE.
+                    // Only instrument request metrics when the request is actually sent to Nomulus
                     metrics.requestSent(relayedProtocolName, clientCertHash, bytes);
                     requestSentTimeQueue.add(clock.nowUtc());
                   }

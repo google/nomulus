@@ -961,7 +961,7 @@ public final class RegistryConfig {
     }
 
     /**
-     * Number of times to retry a GAE operation when {@code TransientFailureException} is thrown.
+     * Number of times to retry an operation when {@code TransientFailureException} is thrown.
      *
      * <p>The number of milliseconds it'll sleep before giving up is {@code (2^n - 2) * 100}.
      *
@@ -1422,7 +1422,7 @@ public final class RegistryConfig {
     }
   }
 
-  /** Returns the App Engine project ID, which is based off the environment name. */
+  /** Returns the project ID, which is based off the environment name. */
   public static String getProjectId() {
     return CONFIG_SETTINGS.get().gcpProject.projectId;
   }
@@ -1446,51 +1446,6 @@ public final class RegistryConfig {
 
   public static URL getServiceUrl(Service service) {
     return makeUrl(String.format("https://%s.%s", service.getServiceId(), getBaseDomain()));
-  }
-
-  /**
-   * Returns the address of the Nomulus app default HTTP server.
-   *
-   * <p>This is used by the {@code nomulus} tool to connect to the App Engine remote API.
-   */
-  public static URL getDefaultServer() {
-    return makeUrl(CONFIG_SETTINGS.get().gcpProject.defaultServiceUrl);
-  }
-
-  /**
-   * Returns the address of the Nomulus app backend HTTP server.
-   *
-   * <p>This is used by the {@code nomulus} tool to connect to the App Engine remote API.
-   */
-  public static URL getBackendServer() {
-    return makeUrl(CONFIG_SETTINGS.get().gcpProject.backendServiceUrl);
-  }
-
-  /**
-   * Returns the address of the Nomulus app bsa HTTP server.
-   *
-   * <p>This is used by the {@code nomulus} tool to connect to the App Engine remote API.
-   */
-  public static URL getBsaServer() {
-    return makeUrl(CONFIG_SETTINGS.get().gcpProject.bsaServiceUrl);
-  }
-
-  /**
-   * Returns the address of the Nomulus app tools HTTP server.
-   *
-   * <p>This is used by the {@code nomulus} tool to connect to the App Engine remote API.
-   */
-  public static URL getToolsServer() {
-    return makeUrl(CONFIG_SETTINGS.get().gcpProject.toolsServiceUrl);
-  }
-
-  /**
-   * Returns the address of the Nomulus app pubapi HTTP server.
-   *
-   * <p>This is used by the {@code nomulus} tool to connect to the App Engine remote API.
-   */
-  public static URL getPubapiServer() {
-    return makeUrl(CONFIG_SETTINGS.get().gcpProject.pubapiServiceUrl);
   }
 
   /** Returns the amount of time a singleton should be cached, before expiring. */

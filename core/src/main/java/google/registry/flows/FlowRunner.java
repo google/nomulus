@@ -73,7 +73,7 @@ public class FlowRunner {
         eppRequestSource,
         isDryRun ? "DRY_RUN" : "LIVE",
         isSuperuser ? "SUPERUSER" : "NORMAL");
-    // Record flow info to the GAE request logs for reporting purposes if it's not a dry run.
+    // Record flow info to the request logs for reporting purposes if it's not a dry run.
     if (!isDryRun) {
       flowReporter.recordToLogs();
     }

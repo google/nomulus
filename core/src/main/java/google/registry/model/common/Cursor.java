@@ -76,7 +76,7 @@ public class Cursor extends UpdateAutoTimestampEntity {
      *
      * <p>The way we solve this problem is by having {@code RdeUploadAction} check this cursor
      * before performing an upload for a given TLD. If the cursor is less than two hours old, the
-     * action will fail with a status code above 300 and App Engine will keep retrying the action
+     * action will fail with a status code above 300 and Cloud Tasks will keep retrying the action
      * until it's ready.
      */
     RDE_UPLOAD_SFTP(true),

@@ -100,8 +100,8 @@ import org.joda.time.Duration;
  *
  * <h2>Logging</h2>
  *
- * <p>To identify the reduce worker request for a deposit in App Engine's log viewer, you can use
- * search text like {@code tld=soy}, {@code watermark=2015-01-01}, and {@code mode=FULL}.
+ * <p>To identify the reduce worker request for a deposit in the log viewer, you can use search text
+ * like {@code tld=soy}, {@code watermark=2015-01-01}, and {@code mode=FULL}.
  *
  * <h3>Error Handling</h3>
  *

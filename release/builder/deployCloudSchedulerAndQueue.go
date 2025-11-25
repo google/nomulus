@@ -30,8 +30,6 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-var gke bool = false
-
 var projectName string
 
 var baseDomain string
@@ -190,18 +188,8 @@ func (manager TasksSyncManager) getArgs(task Task, operationType string) []strin
 	description = strings.ReplaceAll(description, "\n", " ")
 
 	var service = "backend"
-	// Only BSA tasks run on the BSA service in GAE. GKE tasks are always
-	// on the backend service.
-	if task.Service != "backend" && task.Service != "" && !gke {
-		service = task.Service
-	}
-
 	var uri string
-	if gke {
-		uri = fmt.Sprintf("https://%s.%s%s", service, baseDomain, strings.TrimSpace(task.URL))
-	} else {
-		uri = fmt.Sprintf("https://%s-dot-%s.appspot.com%s", service, projectName, strings.TrimSpace(task.URL))
-	}
+	uri = fmt.Sprintf("https://%s.%s%s", service, baseDomain, strings.TrimSpace(task.URL))
 
 	args := []string{
 		"--project", projectName,
@@ -342,8 +330,7 @@ func getExistingEntries(cmd *exec.Cmd) ExistingEntries {
 func main() {
 	if len(os.Args) < 4 || os.Args[1] == "" || os.Args[2] == "" || os.Args[3] == "" {
 		panic("Error - Invalid Parameters.\n" +
-			"Required params: 1 - Nomulus config YAML path; 2 - config XML path; 3 - project name;\n" +
-			"Optional params: 5 - [--gke]")
+			"Required params: 1 - Nomulus config YAML path; 2 - config XML path; 3 - project name;\n")
 	}
 	// Nomulus YAML config file path, used to extract OAuth client ID.
 	nomulusConfigFileLocation := os.Args[1]
@@ -351,11 +338,6 @@ func main() {
 	configFileLocation := os.Args[2]
 	// Project name where to submit the tasks
 	projectName = os.Args[3]
-	// Whether to deploy cloud scheduler tasks to run on GKE
-	if len(os.Args) > 4 && os.Args[4] == "--gke" {
-		gke = true
-		log.Default().Println("GKE mode enabled")
-	}
 
 	log.Default().Println("YAML Filepath " + nomulusConfigFileLocation)
 	yamlFile, err := os.Open(nomulusConfigFileLocation)

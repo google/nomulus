@@ -209,7 +209,7 @@ public abstract class HttpsRelayServiceHandler extends ByteToMessageCodec<FullHt
     super.write(ctx, msg, promise);
   }
 
-  /** Exception thrown when the response status from GAE is not 200. */
+  /** Exception thrown when the response status from Nomulus is not 200. */
   public static class NonOkHttpResponseException extends Exception {
 
     private static final long serialVersionUID = 5340993059579288708L;
