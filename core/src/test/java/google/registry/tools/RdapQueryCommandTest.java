@@ -39,14 +39,10 @@ class RdapQueryCommandTest extends CommandTestCase<RdapQueryCommand> {
   @Mock private ServiceConnection mockPubapiConnection;
 
   @BeforeEach
-  void beforeEach() {
+  void beforeEach() throws IOException {
     command.setConnection(mockDefaultConnection);
     command.useCanary = false;
     when(mockDefaultConnection.withService(Service.PUBAPI, false)).thenReturn(mockPubapiConnection);
-  }
-
-  // Helper to provide a safe, non-null return value to prevent NullPointerExceptions.
-  private void mockGetRequest() throws IOException {
     when(mockPubapiConnection.sendGetRequest(
             (String) org.mockito.ArgumentMatchers.any(),
             (ImmutableMap<String, ?>) org.mockito.ArgumentMatchers.any()))
@@ -55,22 +51,19 @@ class RdapQueryCommandTest extends CommandTestCase<RdapQueryCommand> {
 
   @Test
   void testSuccess_domainLookup() throws Exception {
-    mockGetRequest();
     runCommand("--type=DOMAIN", "example.dev");
     verify(mockPubapiConnection).sendGetRequest("/rdap/domain/example.dev", ImmutableMap.of());
   }
 
   @Test
   void testSuccess_domainSearch() throws Exception {
-    mockGetRequest();
-    ImmutableMap<String, String> query = ImmutableMap.of("name", "exam*.dev");
     runCommand("--type=DOMAIN_SEARCH", "exam*.dev");
-    verify(mockPubapiConnection).sendGetRequest("/rdap/domains", query);
+    verify(mockPubapiConnection)
+        .sendGetRequest("/rdap/domains", ImmutableMap.of("name", "exam*.dev"));
   }
 
   @Test
   void testSuccess_nameserverLookup() throws Exception {
-    mockGetRequest();
     runCommand("--type=NAMESERVER", "ns1.example.com");
     verify(mockPubapiConnection)
         .sendGetRequest("/rdap/nameserver/ns1.example.com", ImmutableMap.of());
@@ -78,25 +71,21 @@ class RdapQueryCommandTest extends CommandTestCase<RdapQueryCommand> {
 
   @Test
   void testSuccess_nameserverSearch() throws Exception {
-    mockGetRequest();
-    ImmutableMap<String, String> query = ImmutableMap.of("name", "ns*.example.com");
     runCommand("--type=NAMESERVER_SEARCH", "ns*.example.com");
-    verify(mockPubapiConnection).sendGetRequest("/rdap/nameservers", query);
+    verify(mockPubapiConnection)
+        .sendGetRequest("/rdap/nameservers", ImmutableMap.of("name", "ns*.example.com"));
   }
 
   @Test
   void testSuccess_entityLookup() throws Exception {
-    mockGetRequest();
     runCommand("--type=ENTITY", "123-FOO");
     verify(mockPubapiConnection).sendGetRequest("/rdap/entity/123-FOO", ImmutableMap.of());
   }
 
   @Test
   void testSuccess_entitySearch() throws Exception {
-    mockGetRequest();
-    ImmutableMap<String, String> query = ImmutableMap.of("fn", "John*");
     runCommand("--type=ENTITY_SEARCH", "John*");
-    verify(mockPubapiConnection).sendGetRequest("/rdap/entities", query);
+    verify(mockPubapiConnection).sendGetRequest("/rdap/entities", ImmutableMap.of("fn", "John*"));
   }
 
   @Test
