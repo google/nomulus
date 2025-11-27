@@ -57,7 +57,7 @@ public final class RdapQueryCommand implements CommandWithConnection {
     }
 
     String getQueryPath(String queryTerm) {
-      return searchParamKey.isPresent() ? pathFormat : String.format(pathFormat, queryTerm);
+      return String.format(pathFormat, queryTerm);
     }
 
     ImmutableMap<String, String> getQueryParameters(String queryTerm) {
