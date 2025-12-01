@@ -15,6 +15,8 @@
 package google.registry.tools;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -22,6 +24,7 @@ import com.beust.jcommander.ParameterException;
 import com.google.common.collect.ImmutableMap;
 import google.registry.request.Action.Service;
 import java.io.IOException;
+import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -41,12 +44,8 @@ class RdapQueryCommandTest extends CommandTestCase<RdapQueryCommand> {
   @BeforeEach
   void beforeEach() throws IOException {
     command.setConnection(mockDefaultConnection);
-    command.useCanary = false;
     when(mockDefaultConnection.withService(Service.PUBAPI, false)).thenReturn(mockPubapiConnection);
-    when(mockPubapiConnection.sendGetRequest(
-            (String) org.mockito.ArgumentMatchers.any(),
-            (ImmutableMap<String, ?>) org.mockito.ArgumentMatchers.any()))
-        .thenReturn("");
+    when(mockPubapiConnection.sendGetRequest(anyString(), any(Map.class))).thenReturn("");
   }
 
   @Test
