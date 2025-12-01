@@ -68,6 +68,7 @@ sourceSets {
       srcDirs += generatedDir
     }
     resources {
+      srcDirs = ['src/main/resources']
       exclude '**/*.xjb'
     }
   }
