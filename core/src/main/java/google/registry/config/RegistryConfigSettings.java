@@ -266,7 +266,9 @@ public class RegistryConfigSettings {
 
   /** Configuration for Mosapi. */
   public static class MosApi {
-    public String mosapiUrl;
+    public String serviceUrl;
+    public String tlsCertSecretName;
+    public String tlsKeySecretName;
     public String entityType;
     public List<String> tlds;
     public List<String> services;

@@ -619,11 +619,21 @@ bsa:
 
 mosapi:
   # URL for the MosAPI
-  mosapiUrl: https://mosapi.icann.org
+  serviceUrl: https://mosapi.icann.org
+  # The type of entity being monitored.
+  # For registries, this is 'ry'
+  # For registrars, this is 'rr'
   entityType: ry
-  # List of TLDs to be monitored.
+  # Add your List of TLDs to be monitored
   tlds:
-  - "test"
+  - YOUR_TLD1
+  - YOUR_TLD2
+  # Add tls cert secret name
+  # you configured in secret manager
+  tlsCertSecretName: YOUR_TLS_CERT_SECRET_NAME
+  # Add tls key secret name
+  # you configured in secret manager
+  tlsKeySecretName:  YOUR_TLS_KEY_SECRET_NAME
   # List of services to check for each TLD.
   services:
   - "dns"
