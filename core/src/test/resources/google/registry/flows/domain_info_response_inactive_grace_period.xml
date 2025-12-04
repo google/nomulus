@@ -9,9 +9,6 @@
         <domain:name>%DOMAIN%</domain:name>
         <domain:roid>8-TLD</domain:roid>
         <domain:status s="inactive"/>
-        <domain:registrant>jd1234</domain:registrant>
-        <domain:contact type="tech">sh8013</domain:contact>
-        <domain:contact type="admin">sh8013</domain:contact>
         <domain:clID>NewRegistrar</domain:clID>
         <domain:crID>NewRegistrar</domain:crID>
         <domain:crDate>2000-06-01T00:02:00Z</domain:crDate>

@@ -3,7 +3,7 @@
     <result code="1301">
       <msg>Command completed successfully; ack to dequeue</msg>
     </result>
-    <msgQ count="1" id="16-2000">
+    <msgQ count="1" id="12-2000">
       <qDate>2000-06-02T13:00:00Z</qDate>
       <msg>The registry administrator has added the status(es) [serverHold].
       </msg>

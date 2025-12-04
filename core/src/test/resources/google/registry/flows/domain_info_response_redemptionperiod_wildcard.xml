@@ -11,9 +11,6 @@
         <domain:roid>8-TLD</domain:roid>
         <domain:status s="pendingDelete"/>
         <domain:status s="inactive"/>
-        <domain:registrant>jd1234</domain:registrant>
-        <domain:contact type="admin">sh8013</domain:contact>
-        <domain:contact type="tech">sh8013</domain:contact>
         <domain:clID>NewRegistrar</domain:clID>
         <domain:crID>NewRegistrar</domain:crID>
         <domain:crDate>%CRDATE%</domain:crDate>

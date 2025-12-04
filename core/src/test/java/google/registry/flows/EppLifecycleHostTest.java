@@ -16,8 +16,8 @@ package google.registry.flows;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.ForeignKeyUtils.loadResource;
-import static google.registry.model.common.FeatureFlag.FeatureName.MINIMUM_DATASET_CONTACTS_OPTIONAL;
-import static google.registry.model.common.FeatureFlag.FeatureStatus.INACTIVE;
+import static google.registry.model.common.FeatureFlag.FeatureName.MINIMUM_DATASET_CONTACTS_PROHIBITED;
+import static google.registry.model.common.FeatureFlag.FeatureStatus.ACTIVE;
 import static google.registry.model.eppoutput.Result.Code.SUCCESS;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.createTlds;
@@ -34,6 +34,7 @@ import google.registry.model.host.Host;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import org.joda.time.DateTime;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
@@ -43,6 +44,16 @@ class EppLifecycleHostTest extends EppTestCase {
   @RegisterExtension
   final JpaIntegrationTestExtension jpa =
       new JpaTestExtensions.Builder().withClock(clock).buildIntegrationTestExtension();
+
+  @BeforeEach
+  void beforeEach() {
+    persistResource(
+        new FeatureFlag()
+            .asBuilder()
+            .setFeatureName(MINIMUM_DATASET_CONTACTS_PROHIBITED)
+            .setStatusMap(ImmutableSortedMap.of(START_OF_TIME, ACTIVE))
+            .build());
+  }
 
   @Test
   void testLifecycle() throws Exception {
@@ -94,23 +105,9 @@ class EppLifecycleHostTest extends EppTestCase {
 
   @Test
   void testRenamingHostToExistingHost_fails() throws Exception {
-    persistResource(
-        new FeatureFlag()
-            .asBuilder()
-            .setFeatureName(MINIMUM_DATASET_CONTACTS_OPTIONAL)
-            .setStatusMap(ImmutableSortedMap.of(START_OF_TIME, INACTIVE))
-            .build());
     createTld("example");
     assertThatLoginSucceeds("NewRegistrar", "foo-BAR2");
     // Create the fakesite domain.
-    assertThatCommand("contact_create_sh8013.xml")
-        .atTime("2000-06-01T00:00:00Z")
-        .hasResponse(
-            "contact_create_response_sh8013.xml",
-            ImmutableMap.of("CRDATE", "2000-06-01T00:00:00Z"));
-    assertThatCommand("contact_create_jd1234.xml")
-        .atTime("2000-06-01T00:01:00Z")
-        .hasResponse("contact_create_response_jd1234.xml");
     assertThatCommand("domain_create_fakesite_no_nameservers.xml")
         .atTime("2000-06-01T00:04:00Z")
         .hasResponse(
@@ -150,24 +147,9 @@ class EppLifecycleHostTest extends EppTestCase {
 
   @Test
   void testSuccess_multipartTldsWithSharedSuffixes() throws Exception {
-    persistResource(
-        new FeatureFlag()
-            .asBuilder()
-            .setFeatureName(MINIMUM_DATASET_CONTACTS_OPTIONAL)
-            .setStatusMap(ImmutableSortedMap.of(START_OF_TIME, INACTIVE))
-            .build());
     createTlds("bar.foo.tld", "foo.tld", "tld");
 
     assertThatLoginSucceeds("NewRegistrar", "foo-BAR2");
-
-    assertThatCommand("contact_create_sh8013.xml")
-        .atTime("2000-06-01T00:00:00Z")
-        .hasResponse(
-            "contact_create_response_sh8013.xml",
-            ImmutableMap.of("CRDATE", "2000-06-01T00:00:00Z"));
-    assertThatCommand("contact_create_jd1234.xml")
-        .atTime("2000-06-01T00:01:00Z")
-        .hasResponse("contact_create_response_jd1234.xml");
 
     // Create domain example.bar.foo.tld
     assertThatCommand(
