@@ -36,7 +36,7 @@ import dagger.Provides;
 import google.registry.bsa.UploadBsaUnavailableDomainsAction;
 import google.registry.dns.ReadDnsRefreshRequestsAction;
 import google.registry.model.common.DnsRefreshRequest;
-import google.registry.mosapi.client.MosApiClient;
+import google.registry.mosapi.MosApiClient;
 import google.registry.persistence.transaction.JpaTransactionManager;
 import google.registry.request.Action.Service;
 import google.registry.util.RegistryEnvironment;
@@ -50,7 +50,6 @@ import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
 import java.net.URI;
 import java.net.URL;
-import java.util.List;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.function.Supplier;
@@ -1423,9 +1422,9 @@ public final class RegistryConfig {
      * @see MosApiClient
      */
     @Provides
-    @Config("mosapiUrl")
-    public static String provideMosapiUrl(RegistryConfigSettings config) {
-      return config.mosapi.mosapiUrl;
+    @Config("mosapiServiceUrl")
+    public static String provideMosapiServiceUrl(RegistryConfigSettings config) {
+      return config.mosapi.serviceUrl;
     }
 
     /**
@@ -1434,21 +1433,33 @@ public final class RegistryConfig {
      * @see MosApiClient
      */
     @Provides
-    @Config("entityType")
+    @Config("mosapiEntityType")
     public static String provideMosapiEntityType(RegistryConfigSettings config) {
       return config.mosapi.entityType;
     }
 
     @Provides
+    @Config("mosapiTlsCertSecretName")
+    public static String provideMosapiTlsCertSecretName(RegistryConfigSettings config) {
+      return config.mosapi.tlsCertSecretName;
+    }
+
+    @Provides
+    @Config("mosapiTlsCertKeyName")
+    public static String provideMosapiTlsKeySecretName(RegistryConfigSettings config) {
+      return config.mosapi.tlsKeySecretName;
+    }
+
+    @Provides
     @Config("mosapiTlds")
-    public static List<String> provideMosapiTlds(RegistryConfigSettings config) {
-      return ImmutableList.copyOf(config.mosapi.tlds);
+    public static ImmutableSet<String> provideMosapiTlds(RegistryConfigSettings config) {
+      return ImmutableSet.copyOf(config.mosapi.tlds);
     }
 
     @Provides
     @Config("mosapiServices")
-    public static List<String> provideMosapiServices(RegistryConfigSettings config) {
-      return ImmutableList.copyOf(config.mosapi.services);
+    public static ImmutableSet<String> provideMosapiServices(RegistryConfigSettings config) {
+      return ImmutableSet.copyOf(config.mosapi.services);
     }
 
     private static String formatComments(String text) {

@@ -4,7 +4,7 @@
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//     http://www.apache.org/licenses/LICENSE-2.0
+//      http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -12,36 +12,42 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package google.registry.mosapi.client;
+package google.registry.mosapi;
 
 import google.registry.config.RegistryConfig.Config;
 import google.registry.mosapi.exception.MosApiException;
 import google.registry.mosapi.exception.MosApiException.MosApiAuthorizationException;
-import google.registry.util.HttpUtils;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import jakarta.inject.Singleton;
+import java.io.IOException;
 import java.net.HttpURLConnection;
-import java.net.URLEncoder;
-import java.net.http.HttpClient;
-import java.net.http.HttpResponse;
-import java.nio.charset.StandardCharsets;
 import java.util.Map;
-import java.util.stream.Collectors;
+import okhttp3.HttpUrl;
+import okhttp3.MediaType;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.RequestBody;
+import okhttp3.Response;
 
 @Singleton
 public class MosApiClient {
 
-  private final HttpClient httpClient;
+  private final OkHttpClient httpClient;
   private final String baseUrl;
 
   @Inject
   public MosApiClient(
-      @Named("mosapiHttpClient") HttpClient httpClient,
-      @Config("mosapiUrl") String mosapiUrl,
-      @Config("entityType") String entityType) {
+      @Named("mosapiHttpClient") OkHttpClient httpClient,
+      @Config("mosapiServiceUrl") String mosapiUrl,
+      @Config("mosapiEntityType") String entityType) {
     this.httpClient = httpClient;
-    this.baseUrl = String.format("%s/%s", mosapiUrl, entityType);
+    // Pre-calculate base URL and validate it to fail fast on bad config
+    String fullUrl = String.format("%s/%s", mosapiUrl, entityType);
+    if (HttpUrl.parse(fullUrl) == null) {
+      throw new IllegalArgumentException("Invalid MoSAPI Service URL configuration: " + fullUrl);
+    }
+    this.baseUrl = fullUrl;
   }
 
   /**
@@ -51,45 +57,27 @@ public class MosApiClient {
    * @param endpoint The specific API endpoint path (e.g., "v2/monitoring/state").
    * @param params A map of query parameters to be URL-encoded and appended to the request.
    * @param headers A map of HTTP headers to be included in the request.
-   * @return The {@link HttpResponse} from the server if the request is successful.
+   * @return The {@link Response} from the server if the request is successful. <b>The caller is
+   *     responsible for closing this response.</b>
    * @throws MosApiException if the request fails due to a network error or an unhandled HTTP
    *     status.
    * @throws MosApiAuthorizationException if the server returns a 401 Unauthorized status.
    */
-  public HttpResponse<String> sendGetRequest(
+  public Response sendGetRequest(
       String entityId, String endpoint, Map<String, String> params, Map<String, String> headers)
       throws MosApiException {
-    String url = buildUrl(entityId, endpoint, params);
+    HttpUrl url = buildUri(entityId, endpoint, params);
+    Request.Builder requestBuilder = new Request.Builder().url(url).get();
+    headers.forEach(requestBuilder::addHeader);
     try {
-      HttpResponse<String> response = HttpUtils.sendGetRequest(httpClient, url, headers);
+      Response response = httpClient.newCall(requestBuilder.build()).execute();
       return checkResponseForAuthError(response);
+    } catch (MosApiAuthorizationException e) {
+      throw e;
     } catch (RuntimeException e) {
       throw new MosApiException("Error during GET request to " + url, e);
-    }
-  }
-
-  /**
-   * Sends a GET request and decompresses the GZIP-encoded response body.
-   *
-   * @param entityId The TLD or registrar ID the request is for.
-   * @param endpoint The specific API endpoint path.
-   * @param params A map of query parameters to be URL-encoded.
-   * @param headers A map of HTTP headers to be included in the request.
-   * @return The decompressed {@link HttpResponse} from the server.
-   * @throws MosApiException if the request fails.
-   * @throws MosApiAuthorizationException if the server returns a 401 Unauthorized status.
-   */
-  public HttpResponse<String> sendGetRequestWithDecompression(
-      String entityId, String endpoint, Map<String, String> params, Map<String, String> headers)
-      throws MosApiException {
-    String url = buildUrl(entityId, endpoint, params);
-    try {
-      HttpResponse<String> response =
-          HttpUtils.sendGetRequestWithDecompression(httpClient, url, headers);
-      return checkResponseForAuthError(response);
-
-    } catch (RuntimeException e) {
-      throw new MosApiException("Error during GET request to " + url, e);
+    } catch (IOException e) {
+      throw new MosApiException("IOException during GET request to " + url, e);
     }
   }
 
@@ -104,29 +92,39 @@ public class MosApiClient {
    * @param params A map of query parameters to be URL-encoded.
    * @param headers A map of HTTP headers to be included in the request.
    * @param body The request body to be sent with the POST request.
-   * @return The {@link HttpResponse} from the server.
+   * @return The {@link Response} from the server. <b>The caller is responsible for closing this
+   *     response.</b>
    * @throws MosApiException if the request fails.
    * @throws MosApiAuthorizationException if the server returns a 401 Unauthorized status.
    */
-  public HttpResponse<String> sendPostRequest(
+  public Response sendPostRequest(
       String entityId,
       String endpoint,
       Map<String, String> params,
       Map<String, String> headers,
       String body)
       throws MosApiException {
-    String url = buildUrl(entityId, endpoint, params);
+    HttpUrl url = buildUri(entityId, endpoint, params);
+    RequestBody requestBody = RequestBody.create(body, MediaType.parse("application/json"));
+
+    Request.Builder requestBuilder = new Request.Builder().url(url).post(requestBody);
+    headers.forEach(requestBuilder::addHeader);
     try {
-      HttpResponse<String> response = HttpUtils.sendPostRequest(httpClient, url, headers, body);
+      Response response = httpClient.newCall(requestBuilder.build()).execute();
       return checkResponseForAuthError(response);
+    } catch (MosApiAuthorizationException e) {
+      throw e;
     } catch (RuntimeException e) {
       throw new MosApiException("Error during POST request to " + url, e);
+    } catch (IOException e) {
+      throw new MosApiException("IOException during POST request to " + url, e);
     }
   }
 
-  private HttpResponse<String> checkResponseForAuthError(HttpResponse<String> response)
+  private Response checkResponseForAuthError(Response response)
       throws MosApiAuthorizationException {
-    if (response.statusCode() == HttpURLConnection.HTTP_UNAUTHORIZED) {
+    if (response.code() == HttpURLConnection.HTTP_UNAUTHORIZED) {
+      response.close();
       throw new MosApiAuthorizationException(
           "Authorization failed for the requested resource. The client certificate may not be"
               + " authorized for the specified TLD or Registrar.");
@@ -137,21 +135,16 @@ public class MosApiClient {
   /**
    * Builds the full URL for a request, including the base URL, entityId, path, and query params.
    */
-  private String buildUrl(String entityId, String path, Map<String, String> queryParams) {
-    String sanitizedPath = path.startsWith("/") ? path : "/" + path;
-    String fullPath = "/" + entityId + sanitizedPath;
+  private HttpUrl buildUri(String entityId, String path, Map<String, String> queryParams) {
+    String sanitizedPath = path.startsWith("/") ? path.substring(1) : path;
 
-    if (queryParams == null || queryParams.isEmpty()) {
-      return baseUrl + fullPath;
+    // We can safely use get() here because we validated baseUrl in the constructor
+    HttpUrl.Builder urlBuilder =
+        HttpUrl.get(baseUrl).newBuilder().addPathSegment(entityId).addPathSegments(sanitizedPath);
+
+    if (queryParams != null) {
+      queryParams.forEach(urlBuilder::addQueryParameter);
     }
-    String queryString =
-        queryParams.entrySet().stream()
-            .map(
-                entry ->
-                    entry.getKey()
-                        + "="
-                        + URLEncoder.encode(entry.getValue(), StandardCharsets.UTF_8))
-            .collect(Collectors.joining("&"));
-    return baseUrl + fullPath + "?" + queryString;
+    return urlBuilder.build();
   }
 }

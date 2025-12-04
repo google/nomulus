@@ -15,83 +15,87 @@ package google.registry.mosapi.service;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import google.registry.mosapi.dto.MosApiErrorResponse;
 import google.registry.mosapi.exception.MosApiException;
+import google.registry.mosapi.exception.MosApiException.DateDurationInvalidException;
+import google.registry.mosapi.exception.MosApiException.DateOrderInvalidException;
+import google.registry.mosapi.exception.MosApiException.EndDateSyntaxInvalidException;
 import google.registry.mosapi.exception.MosApiException.MosApiAuthorizationException;
+import google.registry.mosapi.exception.MosApiException.StartDateSyntaxInvalidException;
+import google.registry.mosapi.model.MosApiErrorResponse;
 import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link MosApiException}. */
 public class MosApiExceptionTest {
+
   @Test
-  void testConstructor_messageOnly() {
-    MosApiException exception = new MosApiException("Something went wrong");
-    assertThat(exception).hasMessageThat().isEqualTo("Something went wrong");
+  void testConstructor_withErrorResponse() {
+    MosApiErrorResponse errorResponse =
+        new MosApiErrorResponse("1234", "Test Message", "Test Description");
+    MosApiException exception = new MosApiException(errorResponse);
+    assertThat(exception)
+        .hasMessageThat()
+        .isEqualTo("MoSAPI returned an error (code: 1234): Test Message");
+    assertThat(exception.getErrorResponse()).hasValue(errorResponse);
   }
 
   @Test
-  void testConstructor_messageAndCause() {
-    Throwable cause = new RuntimeException("Root cause");
-    MosApiException exception = new MosApiException("Wrapper message", cause);
-
-    assertThat(exception).hasMessageThat().isEqualTo("Wrapper message");
+  void testConstructor_withMessageAndCause() {
+    RuntimeException cause = new RuntimeException("Root Cause");
+    MosApiException exception = new MosApiException("Wrapper Message", cause);
+    assertThat(exception).hasMessageThat().isEqualTo("Wrapper Message");
     assertThat(exception).hasCauseThat().isEqualTo(cause);
+    assertThat(exception.getErrorResponse()).isEmpty();
   }
 
   @Test
   void testAuthorizationException() {
-    MosApiAuthorizationException exception =
-        new MosApiAuthorizationException("Unauthorized access");
-
+    MosApiAuthorizationException exception = new MosApiAuthorizationException("Unauthorized");
     assertThat(exception).isInstanceOf(MosApiException.class);
-    assertThat(exception).hasMessageThat().isEqualTo("Unauthorized access");
+    assertThat(exception).hasMessageThat().isEqualTo("Unauthorized");
+    assertThat(exception.getErrorResponse()).isEmpty();
   }
 
   @Test
-  void testCreate_code2012_dateOrderInvalid() {
-    // Code 2012: Date order is invalid
-    MosApiErrorResponse error =
-        new MosApiErrorResponse("2012", "The endDate is before startDate", "Description");
-
-    MosApiException exception = MosApiException.create(error);
-
-    assertThat(exception).hasMessageThat().startsWith("Date order is invalid:");
-    assertThat(exception).hasMessageThat().contains("The endDate is before startDate");
+  void testCreate_forDateDurationInvalid() {
+    MosApiErrorResponse errorResponse =
+        new MosApiErrorResponse("2011", "Duration invalid", "Description");
+    MosApiException exception = MosApiException.create(errorResponse);
+    assertThat(exception).isInstanceOf(DateDurationInvalidException.class);
+    assertThat(exception.getErrorResponse()).hasValue(errorResponse);
   }
 
   @Test
-  void testCreate_code2013_dateSyntaxInvalid() {
-    // Code 2013: Date syntax is invalid
-    MosApiErrorResponse error =
-        new MosApiErrorResponse("2013", "Invalid format YYYY", "Description");
-
-    MosApiException exception = MosApiException.create(error);
-
-    assertThat(exception).hasMessageThat().startsWith("Date syntax is invalid:");
-    assertThat(exception).hasMessageThat().contains("Invalid format YYYY");
+  void testCreate_forDateOrderInvalid() {
+    MosApiErrorResponse errorResponse =
+        new MosApiErrorResponse("2012", "End date before start date", "Description");
+    MosApiException exception = MosApiException.create(errorResponse);
+    assertThat(exception).isInstanceOf(DateOrderInvalidException.class);
+    assertThat(exception.getErrorResponse()).hasValue(errorResponse);
   }
 
   @Test
-  void testCreate_code2014_dateSyntaxInvalid() {
-    // Code 2014: Also Date syntax invalid
-    MosApiErrorResponse error =
-        new MosApiErrorResponse("2014", "Invalid characters", "Description");
-
-    MosApiException exception = MosApiException.create(error);
-
-    assertThat(exception).hasMessageThat().startsWith("Date syntax is invalid:");
-    assertThat(exception).hasMessageThat().contains("Invalid characters");
+  void testCreate_forStartDateSyntaxInvalid() {
+    MosApiErrorResponse errorResponse =
+        new MosApiErrorResponse("2013", "Invalid start date format", "Description");
+    MosApiException exception = MosApiException.create(errorResponse);
+    assertThat(exception).isInstanceOf(StartDateSyntaxInvalidException.class);
+    assertThat(exception.getErrorResponse()).hasValue(errorResponse);
   }
 
   @Test
-  void testCreate_defaultCode_genericMessage() {
-    // Default case: "Bad Request (code: ...): ..."
-    MosApiErrorResponse error =
-        new MosApiErrorResponse("400", "Generic bad request", "Description");
+  void testCreate_forEndDateSyntaxInvalid() {
+    MosApiErrorResponse errorResponse =
+        new MosApiErrorResponse("2014", "Invalid end date format", "Description");
+    MosApiException exception = MosApiException.create(errorResponse);
+    assertThat(exception).isInstanceOf(EndDateSyntaxInvalidException.class);
+    assertThat(exception.getErrorResponse()).hasValue(errorResponse);
+  }
 
-    MosApiException exception = MosApiException.create(error);
-
-    assertThat(exception)
-        .hasMessageThat()
-        .isEqualTo("Bad Request (code: 400): Generic bad request");
+  @Test
+  void testCreate_forUnknownCode() {
+    MosApiErrorResponse errorResponse = new MosApiErrorResponse("9999", "Unknown", "Description");
+    MosApiException exception = MosApiException.create(errorResponse);
+    assertThat(exception.getClass()).isEqualTo(MosApiException.class);
+    assertThat(exception.getErrorResponse()).hasValue(errorResponse);
   }
 }
