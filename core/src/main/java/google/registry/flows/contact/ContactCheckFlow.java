@@ -14,60 +14,19 @@
 
 package google.registry.flows.contact;
 
-import static google.registry.flows.FlowUtils.validateRegistrarIsLoggedIn;
-import static google.registry.flows.ResourceFlowUtils.verifyTargetIdCount;
 
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
-import google.registry.config.RegistryConfig.Config;
-import google.registry.flows.EppException;
-import google.registry.flows.ExtensionManager;
-import google.registry.flows.FlowModule.RegistrarId;
-import google.registry.flows.TransactionalFlow;
 import google.registry.flows.annotations.ReportingSpec;
-import google.registry.model.ForeignKeyUtils;
-import google.registry.model.contact.Contact;
-import google.registry.model.contact.ContactCommand.Check;
-import google.registry.model.eppinput.ResourceCommand;
-import google.registry.model.eppoutput.CheckData.ContactCheck;
-import google.registry.model.eppoutput.CheckData.ContactCheckData;
-import google.registry.model.eppoutput.EppResponse;
+import google.registry.flows.exceptions.ContactsProhibitedException;
 import google.registry.model.reporting.IcannReportingTypes.ActivityReportField;
-import google.registry.util.Clock;
 import jakarta.inject.Inject;
 
 /**
- * An EPP flow that checks whether a contact can be provisioned.
+ * An EPP flow that is meant to check whether a contact can be provisioned.
  *
- * <p>This flows can check the existence of multiple contacts simultaneously.
- *
- * @error {@link google.registry.flows.exceptions.TooManyResourceChecksException}
- * @error {@link google.registry.flows.FlowUtils.NotLoggedInException}
+ * @error {@link ContactsProhibitedException}
  */
+@Deprecated
 @ReportingSpec(ActivityReportField.CONTACT_CHECK)
-public final class ContactCheckFlow implements TransactionalFlow {
-
-  @Inject ResourceCommand resourceCommand;
-  @Inject @RegistrarId String registrarId;
-  @Inject ExtensionManager extensionManager;
-  @Inject Clock clock;
-  @Inject @Config("maxChecks") int maxChecks;
-  @Inject EppResponse.Builder responseBuilder;
+public final class ContactCheckFlow extends ContactsProhibitedFlow {
   @Inject ContactCheckFlow() {}
-
-  @Override
-  public EppResponse run() throws EppException {
-    validateRegistrarIsLoggedIn(registrarId);
-    extensionManager.validate(); // There are no legal extensions for this flow.
-    ImmutableList<String> targetIds = ((Check) resourceCommand).getTargetIds();
-    verifyTargetIdCount(targetIds, maxChecks);
-    ImmutableSet<String> existingIds =
-        ForeignKeyUtils.loadKeys(Contact.class, targetIds, clock.nowUtc()).keySet();
-    ImmutableList.Builder<ContactCheck> checks = new ImmutableList.Builder<>();
-    for (String id : targetIds) {
-      boolean unused = !existingIds.contains(id);
-      checks.add(ContactCheck.create(unused, id, unused ? null : "In use"));
-    }
-    return responseBuilder.setResData(ContactCheckData.create(checks.build())).build();
-  }
 }

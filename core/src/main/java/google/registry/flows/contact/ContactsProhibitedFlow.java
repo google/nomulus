@@ -1,4 +1,4 @@
-// Copyright 2017 The Nomulus Authors. All Rights Reserved.
+// Copyright 2025 The Nomulus Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,19 +14,15 @@
 
 package google.registry.flows.contact;
 
-
-import google.registry.flows.annotations.ReportingSpec;
+import google.registry.flows.EppException;
+import google.registry.flows.Flow;
 import google.registry.flows.exceptions.ContactsProhibitedException;
-import google.registry.model.reporting.IcannReportingTypes.ActivityReportField;
-import jakarta.inject.Inject;
+import google.registry.model.eppoutput.EppResponse;
 
-/**
- * An EPP flow that is meant to query a pending transfer on a contact.
- *
- * @error {@link ContactsProhibitedException}
- */
-@Deprecated
-@ReportingSpec(ActivityReportField.CONTACT_TRANSFER_QUERY)
-public final class ContactTransferQueryFlow extends ContactsProhibitedFlow {
-  @Inject ContactTransferQueryFlow() {}
+/** Nomulus follows the Minimum Dataset Requirements, meaning it stores no contact information. */
+public abstract class ContactsProhibitedFlow implements Flow {
+  @Override
+  public EppResponse run() throws EppException {
+    throw new ContactsProhibitedException();
+  }
 }

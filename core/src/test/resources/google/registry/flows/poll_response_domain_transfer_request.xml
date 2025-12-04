@@ -20,7 +20,7 @@
         </resData>
         <trID>
             <clTRID>ABC-12345</clTRID>
-            <svTRID>BYiJH5vHRRW6EuYXo/Kdsg==-23</svTRID>
+            <svTRID>server-trid</svTRID>
         </trID>
     </response>
 </epp>

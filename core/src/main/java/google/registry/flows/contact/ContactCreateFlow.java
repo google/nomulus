@@ -14,94 +14,19 @@
 
 package google.registry.flows.contact;
 
-import static google.registry.flows.FlowUtils.validateRegistrarIsLoggedIn;
-import static google.registry.flows.ResourceFlowUtils.verifyResourceDoesNotExist;
-import static google.registry.flows.contact.ContactFlowUtils.validateAsciiPostalInfo;
-import static google.registry.flows.contact.ContactFlowUtils.validateContactAgainstPolicy;
-import static google.registry.model.EppResourceUtils.createRepoId;
-import static google.registry.model.common.FeatureFlag.FeatureName.MINIMUM_DATASET_CONTACTS_PROHIBITED;
-import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
-import com.google.common.collect.ImmutableSet;
-import google.registry.config.RegistryConfig.Config;
-import google.registry.flows.EppException;
-import google.registry.flows.ExtensionManager;
-import google.registry.flows.FlowModule.RegistrarId;
-import google.registry.flows.FlowModule.TargetId;
-import google.registry.flows.MutatingFlow;
 import google.registry.flows.annotations.ReportingSpec;
 import google.registry.flows.exceptions.ContactsProhibitedException;
-import google.registry.flows.exceptions.ResourceAlreadyExistsForThisClientException;
-import google.registry.flows.exceptions.ResourceCreateContentionException;
-import google.registry.model.common.FeatureFlag;
-import google.registry.model.contact.Contact;
-import google.registry.model.contact.ContactCommand.Create;
-import google.registry.model.contact.ContactHistory;
-import google.registry.model.domain.metadata.MetadataExtension;
-import google.registry.model.eppinput.ResourceCommand;
-import google.registry.model.eppoutput.CreateData.ContactCreateData;
-import google.registry.model.eppoutput.EppResponse;
-import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.reporting.IcannReportingTypes.ActivityReportField;
 import jakarta.inject.Inject;
-import org.joda.time.DateTime;
 
 /**
- * An EPP flow that creates a new contact.
+ * An EPP flow meant to create a new contact.
  *
- * @error {@link google.registry.flows.FlowUtils.NotLoggedInException}
  * @error {@link ContactsProhibitedException}
- * @error {@link ResourceAlreadyExistsForThisClientException}
- * @error {@link ResourceCreateContentionException}
- * @error {@link ContactFlowUtils.BadInternationalizedPostalInfoException}
- * @error {@link ContactFlowUtils.DeclineContactDisclosureFieldDisallowedPolicyException}
  */
+@Deprecated
 @ReportingSpec(ActivityReportField.CONTACT_CREATE)
-public final class ContactCreateFlow implements MutatingFlow {
-
-  @Inject ResourceCommand resourceCommand;
-  @Inject ExtensionManager extensionManager;
-  @Inject @RegistrarId String registrarId;
-  @Inject @TargetId String targetId;
-  @Inject ContactHistory.Builder historyBuilder;
-  @Inject EppResponse.Builder responseBuilder;
-  @Inject @Config("contactAndHostRoidSuffix") String roidSuffix;
+public final class ContactCreateFlow extends ContactsProhibitedFlow {
   @Inject ContactCreateFlow() {}
-
-  @Override
-  public EppResponse run() throws EppException {
-    extensionManager.register(MetadataExtension.class);
-    validateRegistrarIsLoggedIn(registrarId);
-    extensionManager.validate();
-    if (FeatureFlag.isActiveNow(MINIMUM_DATASET_CONTACTS_PROHIBITED)) {
-      throw new ContactsProhibitedException();
-    }
-    Create command = (Create) resourceCommand;
-    DateTime now = tm().getTransactionTime();
-    verifyResourceDoesNotExist(Contact.class, targetId, now, registrarId);
-    Contact newContact =
-        new Contact.Builder()
-            .setContactId(targetId)
-            .setAuthInfo(command.getAuthInfo())
-            .setCreationRegistrarId(registrarId)
-            .setPersistedCurrentSponsorRegistrarId(registrarId)
-            .setRepoId(createRepoId(tm().allocateId(), roidSuffix))
-            .setFaxNumber(command.getFax())
-            .setVoiceNumber(command.getVoice())
-            .setDisclose(command.getDisclose())
-            .setEmailAddress(command.getEmail())
-            .setInternationalizedPostalInfo(command.getInternationalizedPostalInfo())
-            .setLocalizedPostalInfo(command.getLocalizedPostalInfo())
-            .build();
-    validateAsciiPostalInfo(newContact.getInternationalizedPostalInfo());
-    validateContactAgainstPolicy(newContact);
-    historyBuilder
-        .setType(HistoryEntry.Type.CONTACT_CREATE)
-        .setXmlBytes(null) // We don't want to store contact details in the history entry.
-        .setContact(newContact);
-    tm().insertAll(ImmutableSet.of(newContact, historyBuilder.build()));
-    return responseBuilder
-        .setResData(ContactCreateData.create(newContact.getContactId(), now))
-        .build();
-  }
 }

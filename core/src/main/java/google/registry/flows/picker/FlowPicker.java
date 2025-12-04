@@ -135,7 +135,6 @@ public class FlowPicker {
           return switch (((Poll) innerCommand).getPollOp()) {
             case ACK -> PollAckFlow.class;
             case REQUEST -> PollRequestFlow.class;
-            default -> UnimplementedFlow.class;
           };
         }
       };
