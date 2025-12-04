@@ -223,7 +223,7 @@ public class EppTestCase {
     return eppMetricBuilder.build();
   }
 
-  /** Create the two administrative contacts and two hosts. */
+  /** Create the two hosts. */
   void createHosts() throws Exception {
     DateTime createTime = DateTime.parse("2000-06-01T00:00:00Z");
     assertThatCommand("host_create.xml", ImmutableMap.of("HOSTNAME", "ns1.example.external"))

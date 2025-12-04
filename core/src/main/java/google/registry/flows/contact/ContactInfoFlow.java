@@ -14,91 +14,32 @@
 
 package google.registry.flows.contact;
 
-import static google.registry.flows.FlowUtils.validateRegistrarIsLoggedIn;
-import static google.registry.flows.ResourceFlowUtils.loadAndVerifyExistence;
-import static google.registry.flows.ResourceFlowUtils.verifyResourceOwnership;
-import static google.registry.model.EppResourceUtils.isLinked;
 
-import com.google.common.collect.ImmutableSet;
 import google.registry.flows.EppException;
-import google.registry.flows.ExtensionManager;
-import google.registry.flows.FlowModule.RegistrarId;
-import google.registry.flows.FlowModule.Superuser;
-import google.registry.flows.FlowModule.TargetId;
-import google.registry.flows.TransactionalFlow;
+import google.registry.flows.Flow;
 import google.registry.flows.annotations.ReportingSpec;
-import google.registry.model.contact.Contact;
-import google.registry.model.contact.ContactInfoData;
-import google.registry.model.eppcommon.AuthInfo;
-import google.registry.model.eppcommon.StatusValue;
+import google.registry.flows.exceptions.ContactsProhibitedException;
 import google.registry.model.eppoutput.EppResponse;
 import google.registry.model.reporting.IcannReportingTypes.ActivityReportField;
-import google.registry.util.Clock;
 import jakarta.inject.Inject;
-import java.util.Optional;
-import org.joda.time.DateTime;
 
 /**
- * An EPP flow that returns information about a contact.
+ * An EPP flow that is meant to return information about a contact.
  *
- * <p>The response includes the contact's postal info, phone numbers, emails, the authInfo which can
- * be used to request a transfer and the details of the contact's most recent transfer if it has
- * ever been transferred. Any registrar can see any contact's information, but the authInfo is only
- * visible to the registrar that owns the contact or to a registrar that already supplied it.
+ * <p>This is no longer in use, because Nomulus follows the Minimum Dataset requirements, removing
+ * all contact information.
  *
- * @error {@link google.registry.flows.FlowUtils.NotLoggedInException}
- * @error {@link google.registry.flows.ResourceFlowUtils.ResourceDoesNotExistException}
- * @error {@link google.registry.flows.ResourceFlowUtils.ResourceNotOwnedException}
+ * @error {@link ContactsProhibitedException}
  */
+@Deprecated
 @ReportingSpec(ActivityReportField.CONTACT_INFO)
-public final class ContactInfoFlow implements TransactionalFlow {
-
-  @Inject ExtensionManager extensionManager;
-  @Inject Clock clock;
-  @Inject @RegistrarId String registrarId;
-  @Inject @TargetId String targetId;
-  @Inject Optional<AuthInfo> authInfo;
-  @Inject @Superuser boolean isSuperuser;
-  @Inject EppResponse.Builder responseBuilder;
+public final class ContactInfoFlow implements Flow {
 
   @Inject
   ContactInfoFlow() {}
 
   @Override
   public EppResponse run() throws EppException {
-    DateTime now = clock.nowUtc();
-    validateRegistrarIsLoggedIn(registrarId);
-    extensionManager.validate(); // There are no legal extensions for this flow.
-    Contact contact = loadAndVerifyExistence(Contact.class, targetId, now);
-    if (!isSuperuser) {
-      verifyResourceOwnership(registrarId, contact);
-    }
-    boolean includeAuthInfo =
-        registrarId.equals(contact.getCurrentSponsorRegistrarId()) || authInfo.isPresent();
-    ImmutableSet.Builder<StatusValue> statusValues = new ImmutableSet.Builder<>();
-    statusValues.addAll(contact.getStatusValues());
-    if (isLinked(contact.createVKey(), now)) {
-      statusValues.add(StatusValue.LINKED);
-    }
-    return responseBuilder
-        .setResData(
-            ContactInfoData.newBuilder()
-                .setContactId(contact.getContactId())
-                .setRepoId(contact.getRepoId())
-                .setStatusValues(statusValues.build())
-                .setPostalInfos(contact.getPostalInfosAsList())
-                .setVoiceNumber(contact.getVoiceNumber())
-                .setFaxNumber(contact.getFaxNumber())
-                .setEmailAddress(contact.getEmailAddress())
-                .setCurrentSponsorRegistrarId(contact.getCurrentSponsorRegistrarId())
-                .setCreationRegistrarId(contact.getCreationRegistrarId())
-                .setCreationTime(contact.getCreationTime())
-                .setLastEppUpdateRegistrarId(contact.getLastEppUpdateRegistrarId())
-                .setLastEppUpdateTime(contact.getLastEppUpdateTime())
-                .setLastTransferTime(contact.getLastTransferTime())
-                .setAuthInfo(includeAuthInfo ? contact.getAuthInfo() : null)
-                .setDisclose(contact.getDisclose())
-                .build())
-        .build();
+    throw new ContactsProhibitedException();
   }
 }
