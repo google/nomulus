@@ -40,6 +40,7 @@ import google.registry.keyring.api.KeyModule;
 import google.registry.module.RegistryComponent.RegistryModule;
 import google.registry.module.RequestComponent.RequestComponentModule;
 import google.registry.monitoring.whitebox.StackdriverModule;
+import google.registry.mosapi.module.MosApiModule;
 import google.registry.persistence.PersistenceModule;
 import google.registry.privileges.secretmanager.SecretManagerModule;
 import google.registry.rde.JSchModule;
@@ -71,6 +72,7 @@ import jakarta.inject.Singleton;
       GroupsModule.class,
       GroupssettingsModule.class,
       GsonModule.class,
+      MosApiModule.class,
       JSchModule.class,
       KeyModule.class,
       KeyringModule.class,

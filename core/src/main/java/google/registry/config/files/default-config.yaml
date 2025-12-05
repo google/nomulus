@@ -616,3 +616,30 @@ bsa:
   unblockableDomainsUrl: "https://"
   # API endpoint for uploading the list of unavailable domain names.
   uploadUnavailableDomainsUrl: "https://"
+
+mosapi:
+  # URL for the MosAPI
+  serviceUrl: https://mosapi.icann.org
+  # The type of entity being monitored.
+  # For registries, this is 'ry'
+  # For registrars, this is 'rr'
+  entityType: ry
+  # Add your List of TLDs to be monitored
+  tlds:
+  - your_tld1
+  - your_tld2
+  # Add tls cert secret name
+  # you configured in secret manager
+  tlsCertSecretName: YOUR_TLS_CERT_SECRET_NAME
+  # Add tls key secret name
+  # you configured in secret manager
+  tlsKeySecretName:  YOUR_TLS_KEY_SECRET_NAME
+  # List of services to check for each TLD.
+  services:
+  - "dns"
+  - "rdap"
+  - "rdds"
+  - "epp"
+  - "dnssec"
+
+

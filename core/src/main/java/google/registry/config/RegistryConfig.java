@@ -36,6 +36,7 @@ import dagger.Provides;
 import google.registry.bsa.UploadBsaUnavailableDomainsAction;
 import google.registry.dns.ReadDnsRefreshRequestsAction;
 import google.registry.model.common.DnsRefreshRequest;
+import google.registry.mosapi.MosApiClient;
 import google.registry.persistence.transaction.JpaTransactionManager;
 import google.registry.request.Action.Service;
 import google.registry.util.RegistryEnvironment;
@@ -1413,6 +1414,52 @@ public final class RegistryConfig {
     @Config("bsaUploadUnavailableDomainsUrl")
     public static String provideBsaUploadUnavailableDomainsUrl(RegistryConfigSettings config) {
       return config.bsa.uploadUnavailableDomainsUrl;
+    }
+
+    /**
+     * Returns the URL we send HTTP requests for MoSAPI.
+     *
+     * @see MosApiClient
+     */
+    @Provides
+    @Config("mosapiServiceUrl")
+    public static String provideMosapiServiceUrl(RegistryConfigSettings config) {
+      return config.mosapi.serviceUrl;
+    }
+
+    /**
+     * Returns the entityType we send HTTP requests for MoSAPI.
+     *
+     * @see MosApiClient
+     */
+    @Provides
+    @Config("mosapiEntityType")
+    public static String provideMosapiEntityType(RegistryConfigSettings config) {
+      return config.mosapi.entityType;
+    }
+
+    @Provides
+    @Config("mosapiTlsCertSecretName")
+    public static String provideMosapiTlsCertSecretName(RegistryConfigSettings config) {
+      return config.mosapi.tlsCertSecretName;
+    }
+
+    @Provides
+    @Config("mosapiTlsCertKeyName")
+    public static String provideMosapiTlsKeySecretName(RegistryConfigSettings config) {
+      return config.mosapi.tlsKeySecretName;
+    }
+
+    @Provides
+    @Config("mosapiTlds")
+    public static ImmutableSet<String> provideMosapiTlds(RegistryConfigSettings config) {
+      return ImmutableSet.copyOf(config.mosapi.tlds);
+    }
+
+    @Provides
+    @Config("mosapiServices")
+    public static ImmutableSet<String> provideMosapiServices(RegistryConfigSettings config) {
+      return ImmutableSet.copyOf(config.mosapi.services);
     }
 
     private static String formatComments(String text) {
