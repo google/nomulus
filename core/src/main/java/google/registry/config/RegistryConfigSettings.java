@@ -43,6 +43,7 @@ public class RegistryConfigSettings {
   public DnsUpdate dnsUpdate;
   public BulkPricingPackageMonitoring bulkPricingPackageMonitoring;
   public Bsa bsa;
+  public MosApi mosapi;
 
   /** Configuration options that apply to the entire GCP project. */
   public static class GcpProject {
@@ -261,5 +262,13 @@ public class RegistryConfigSettings {
     public String orderStatusUrl;
     public String unblockableDomainsUrl;
     public String uploadUnavailableDomainsUrl;
+  }
+
+  /** Configuration for Mosapi. */
+  public static class MosApi {
+    public String mosapiUrl;
+    public String entityType;
+    public List<String> tlds;
+    public List<String> services;
   }
 }

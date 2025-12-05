@@ -34,6 +34,7 @@ import google.registry.keyring.KeyringModule;
 import google.registry.keyring.api.KeyModule;
 import google.registry.module.TestRequestComponent.TestRequestComponentModule;
 import google.registry.monitoring.whitebox.StackdriverModule;
+import google.registry.mosapi.module.MosApiModule;
 import google.registry.persistence.PersistenceModule;
 import google.registry.privileges.secretmanager.SecretManagerModule;
 import google.registry.rde.JSchModule;
@@ -41,6 +42,7 @@ import google.registry.request.Modules.GsonModule;
 import google.registry.request.Modules.NetHttpTransportModule;
 import google.registry.request.Modules.UrlConnectionServiceModule;
 import google.registry.request.auth.AuthModule;
+import google.registry.util.HttpModule;
 import google.registry.util.UtilsModule;
 import jakarta.inject.Singleton;
 
@@ -61,6 +63,8 @@ import jakarta.inject.Singleton;
       GroupsModule.class,
       GroupssettingsModule.class,
       GsonModule.class,
+      HttpModule.class,
+      MosApiModule.class,
       JSchModule.class,
       KeyModule.class,
       KeyringModule.class,
