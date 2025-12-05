@@ -22,8 +22,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.google.common.collect.ImmutableMap;
-import google.registry.mosapi.exception.MosApiException;
-import google.registry.mosapi.exception.MosApiException.MosApiAuthorizationException;
+import google.registry.mosapi.MosApiException.MosApiAuthorizationException;
 import java.io.IOException;
 import java.util.Map;
 import okhttp3.Call;
@@ -33,12 +32,12 @@ import okhttp3.Protocol;
 import okhttp3.Request;
 import okhttp3.Response;
 import okhttp3.ResponseBody;
+import okio.Buffer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
 public class MosApiClientTest {
-
   private static final String SERVICE_URL = "https://mosapi.example.com/v1";
   private static final String ENTITY_TYPE = "registries";
 
@@ -52,10 +51,7 @@ public class MosApiClientTest {
   void setUp() {
     mockHttpClient = mock(OkHttpClient.class);
     mockCall = mock(Call.class);
-
-    // Default behavior: return the mock call for any request
     when(mockHttpClient.newCall(any(Request.class))).thenReturn(mockCall);
-
     mosApiClient = new MosApiClient(mockHttpClient, SERVICE_URL, ENTITY_TYPE);
   }
 
@@ -65,9 +61,10 @@ public class MosApiClientTest {
         assertThrows(
             IllegalArgumentException.class,
             () -> new MosApiClient(mockHttpClient, "ht tp://bad-url", ENTITY_TYPE));
-
     assertThat(thrown).hasMessageThat().contains("Invalid MoSAPI Service URL");
   }
+
+  // --- GET Request Tests ---
 
   @Test
   void testSendGetRequest_success() throws Exception {
@@ -86,13 +83,12 @@ public class MosApiClientTest {
       assertThat(response.isSuccessful()).isTrue();
       assertThat(response.body().string()).isEqualTo("{\"status\":\"ok\"}");
 
-      // 3. Verify Request Construction using ArgumentCaptor
+      // 3. Verify Request Construction
       ArgumentCaptor<Request> requestCaptor = ArgumentCaptor.forClass(Request.class);
       verify(mockHttpClient).newCall(requestCaptor.capture());
       Request capturedRequest = requestCaptor.getValue();
 
-      // Check URL: base + entityType + entityId + endpoint
-      // Expected: https://mosapi.example.com/v1/registries/tld-1/monitoring/state?since=2024-01-01
+      // Check URL:
       assertThat(capturedRequest.method()).isEqualTo("GET");
       assertThat(capturedRequest.url().encodedPath())
           .isEqualTo("/v1/registries/tld-1/monitoring/state");
@@ -109,7 +105,6 @@ public class MosApiClientTest {
     Response unauthorizedResponse = createResponse(401, "Unauthorized");
     when(mockCall.execute()).thenReturn(unauthorizedResponse);
 
-    // Execute & Assert
     MosApiAuthorizationException thrown =
         assertThrows(
             MosApiAuthorizationException.class,
@@ -131,9 +126,11 @@ public class MosApiClientTest {
             () ->
                 mosApiClient.sendGetRequest("tld-1", "path", ImmutableMap.of(), ImmutableMap.of()));
 
-    assertThat(thrown).hasMessageThat().contains("IOException during GET request");
+    assertThat(thrown).hasMessageThat().contains("Error during GET request to");
     assertThat(thrown).hasCauseThat().isInstanceOf(IOException.class);
   }
+
+  // --- POST Request Tests ---
 
   @Test
   void testSendPostRequest_success() throws Exception {
@@ -144,27 +141,53 @@ public class MosApiClientTest {
     String requestBody = "{\"data\":\"update\"}";
     Map<String, String> headers = ImmutableMap.of("Content-Type", "application/json");
 
-    // 2. Execute
     try (Response response =
         mosApiClient.sendPostRequest("tld-1", "update", null, headers, requestBody)) {
 
       assertThat(response.isSuccessful()).isTrue();
 
-      // 3. Verify Request
       ArgumentCaptor<Request> requestCaptor = ArgumentCaptor.forClass(Request.class);
       verify(mockHttpClient).newCall(requestCaptor.capture());
       Request capturedRequest = requestCaptor.getValue();
 
       assertThat(capturedRequest.method()).isEqualTo("POST");
-
-      // Verify path
       assertThat(capturedRequest.url().encodedPath()).isEqualTo("/v1/registries/tld-1/update");
 
-      // Verify Body content (Need to use a Buffer to read the request body)
-      okio.Buffer buffer = new okio.Buffer();
+      // Verify Body content
+      Buffer buffer = new Buffer();
       capturedRequest.body().writeTo(buffer);
       assertThat(buffer.readUtf8()).isEqualTo(requestBody);
     }
+  }
+
+  @Test
+  void testSendPostRequest_throwsOn401() throws IOException {
+    // Prepare 401 Response
+    Response unauthorizedResponse = createResponse(401, "Unauthorized");
+    when(mockCall.execute()).thenReturn(unauthorizedResponse);
+
+    MosApiAuthorizationException thrown =
+        assertThrows(
+            MosApiAuthorizationException.class,
+            () ->
+                mosApiClient.sendPostRequest(
+                    "tld-1", "path", ImmutableMap.of(), ImmutableMap.of(), "{}"));
+
+    assertThat(thrown).hasMessageThat().contains("Authorization failed");
+  }
+
+  @Test
+  void testSendPostRequest_wrapsIoException() throws IOException {
+    // Simulate Network Failure
+    when(mockCall.execute()).thenThrow(new IOException("Network error"));
+    MosApiException thrown =
+        assertThrows(
+            MosApiException.class,
+            () ->
+                mosApiClient.sendPostRequest(
+                    "tld-1", "path", ImmutableMap.of(), ImmutableMap.of(), "{}"));
+    assertThat(thrown).hasMessageThat().contains("Error during POST request to");
+    assertThat(thrown).hasCauseThat().isInstanceOf(IOException.class);
   }
 
   /** Helper to build a real OkHttp Response object manually. */

@@ -12,12 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package google.registry.mosapi.exception;
+package google.registry.mosapi;
 
 import static java.lang.annotation.ElementType.TYPE;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
-import google.registry.mosapi.MosApiResponse;
 import google.registry.mosapi.model.MosApiErrorResponse;
 import java.io.IOException;
 import java.lang.annotation.Documented;
@@ -71,6 +70,7 @@ public class MosApiException extends IOException {
         case DATE_ORDER_INVALID -> new DateOrderInvalidException(errorResponse);
         case START_DATE_SYNTAX_INVALID -> new StartDateSyntaxInvalidException(errorResponse);
         case END_DATE_SYNTAX_INVALID -> new EndDateSyntaxInvalidException(errorResponse);
+        default -> new MosApiException(errorResponse);
       };
     }
     return new MosApiException(errorResponse);

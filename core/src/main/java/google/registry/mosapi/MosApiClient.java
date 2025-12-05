@@ -15,8 +15,7 @@
 package google.registry.mosapi;
 
 import google.registry.config.RegistryConfig.Config;
-import google.registry.mosapi.exception.MosApiException;
-import google.registry.mosapi.exception.MosApiException.MosApiAuthorizationException;
+import google.registry.mosapi.MosApiException.MosApiAuthorizationException;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import jakarta.inject.Singleton;
@@ -72,12 +71,13 @@ public class MosApiClient {
     try {
       Response response = httpClient.newCall(requestBuilder.build()).execute();
       return checkResponseForAuthError(response);
-    } catch (MosApiAuthorizationException e) {
-      throw e;
-    } catch (RuntimeException e) {
+    } catch (RuntimeException | IOException e) {
+      // Check if it's the specific authorization exception (re-thrown or caught here)
+      if (e instanceof MosApiAuthorizationException) {
+        throw (MosApiAuthorizationException) e;
+      }
+      // Otherwise, treat as a generic connection/API error
       throw new MosApiException("Error during GET request to " + url, e);
-    } catch (IOException e) {
-      throw new MosApiException("IOException during GET request to " + url, e);
     }
   }
 
@@ -112,12 +112,13 @@ public class MosApiClient {
     try {
       Response response = httpClient.newCall(requestBuilder.build()).execute();
       return checkResponseForAuthError(response);
-    } catch (MosApiAuthorizationException e) {
-      throw e;
-    } catch (RuntimeException e) {
+    } catch (RuntimeException | IOException e) {
+      // Check if it's the specific authorization exception (re-thrown or caught here)
+      if (e instanceof MosApiAuthorizationException) {
+        throw (MosApiAuthorizationException) e;
+      }
+      // Otherwise, treat as a generic connection/API error
       throw new MosApiException("Error during POST request to " + url, e);
-    } catch (IOException e) {
-      throw new MosApiException("IOException during POST request to " + url, e);
     }
   }
 

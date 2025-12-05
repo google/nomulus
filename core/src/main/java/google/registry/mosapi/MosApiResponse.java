@@ -30,7 +30,7 @@ import java.util.stream.Collectors;
  */
 public enum MosApiResponse {
   DATE_DURATION_INVALID(
-      "2011", "The difference between endDate and startDate is" + "more than 31 days"),
+      "2011", "The difference between endDate and startDate is " + "more than 31 days"),
   DATE_ORDER_INVALID("2012", "The EndDate is before startDate"),
   START_DATE_SYNTAX_INVALID("2013", "StartDate syntax is invalid"),
   END_DATE_SYNTAX_INVALID("2014", "EndDate syntax is invalid");

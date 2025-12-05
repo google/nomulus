@@ -11,16 +11,15 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-package google.registry.mosapi.service;
+package google.registry.mosapi;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import google.registry.mosapi.exception.MosApiException;
-import google.registry.mosapi.exception.MosApiException.DateDurationInvalidException;
-import google.registry.mosapi.exception.MosApiException.DateOrderInvalidException;
-import google.registry.mosapi.exception.MosApiException.EndDateSyntaxInvalidException;
-import google.registry.mosapi.exception.MosApiException.MosApiAuthorizationException;
-import google.registry.mosapi.exception.MosApiException.StartDateSyntaxInvalidException;
+import google.registry.mosapi.MosApiException.DateDurationInvalidException;
+import google.registry.mosapi.MosApiException.DateOrderInvalidException;
+import google.registry.mosapi.MosApiException.EndDateSyntaxInvalidException;
+import google.registry.mosapi.MosApiException.MosApiAuthorizationException;
+import google.registry.mosapi.MosApiException.StartDateSyntaxInvalidException;
 import google.registry.mosapi.model.MosApiErrorResponse;
 import org.junit.jupiter.api.Test;
 

@@ -626,8 +626,8 @@ mosapi:
   entityType: ry
   # Add your List of TLDs to be monitored
   tlds:
-  - YOUR_TLD1
-  - YOUR_TLD2
+  - your_tld1
+  - your_tld2
   # Add tls cert secret name
   # you configured in secret manager
   tlsCertSecretName: YOUR_TLS_CERT_SECRET_NAME
