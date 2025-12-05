@@ -93,7 +93,7 @@ public class RemoveAllDomainContactsAction implements Runnable {
       EppController eppController,
       @Config("registryAdminClientId") String registryAdminClientId,
       LockHandler lockHandler,
-      @Named("removeAllDomainContacts") RateLimiter rateLimiter,
+      @Named("standardRateLimiter") RateLimiter rateLimiter,
       Response response) {
     this.eppController = eppController;
     this.registryAdminClientId = registryAdminClientId;
