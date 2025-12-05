@@ -31,6 +31,7 @@ public class RegistryConfigSettings {
   public CloudDns cloudDns;
   public Caching caching;
   public IcannReporting icannReporting;
+  public Mosapi mosapi;
   public Billing billing;
   public Rde rde;
   public RegistrarConsole registrarConsole;
@@ -158,6 +159,12 @@ public class RegistryConfigSettings {
   public static class IcannReporting {
     public String icannTransactionsReportingUploadUrl;
     public String icannActivityReportingUploadUrl;
+  }
+
+  /** Configuration for Mosapi. */
+  public static class Mosapi {
+    public String mosapiUrl;
+    public String entityType;
   }
 
   /** Configuration for monthly invoices. */

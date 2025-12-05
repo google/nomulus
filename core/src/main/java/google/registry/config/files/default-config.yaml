@@ -616,3 +616,8 @@ bsa:
   unblockableDomainsUrl: "https://"
   # API endpoint for uploading the list of unavailable domain names.
   uploadUnavailableDomainsUrl: "https://"
+
+mosapi:
+    # URL for the MosAPI OT&E environment.
+  mosapiUrl: https://mosapi-ote.icann.org
+  entityType: ry
