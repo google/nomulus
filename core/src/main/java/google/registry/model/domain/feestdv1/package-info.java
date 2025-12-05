@@ -14,7 +14,7 @@
 
 @XmlSchema(
     namespace = "urn:ietf:params:xml:ns:epp:fee-1.0",
-    xmlns = @XmlNs(prefix = "fee_1_00", namespaceURI = "urn:ietf:params:xml:ns:epp:fee-1.0"),
+    xmlns = @XmlNs(prefix = "fee", namespaceURI = "urn:ietf:params:xml:ns:epp:fee-1.0"),
     elementFormDefault = XmlNsForm.QUALIFIED)
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlJavaTypeAdapters({
