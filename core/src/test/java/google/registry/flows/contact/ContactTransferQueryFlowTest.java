@@ -14,206 +14,24 @@
 
 package google.registry.flows.contact;
 
-import static com.google.common.truth.Truth.assertThat;
-import static google.registry.testing.ContactSubject.assertAboutContacts;
-import static google.registry.testing.DatabaseHelper.assertNoBillingEvents;
-import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.EppExceptionSubject.assertAboutEppExceptions;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import google.registry.flows.EppException;
-import google.registry.flows.FlowUtils.NotLoggedInException;
-import google.registry.flows.ResourceFlowUtils.BadAuthInfoForResourceException;
-import google.registry.flows.ResourceFlowUtils.ResourceDoesNotExistException;
-import google.registry.flows.exceptions.NoTransferHistoryToQueryException;
-import google.registry.flows.exceptions.NotAuthorizedToViewTransferException;
-import google.registry.model.contact.Contact;
-import google.registry.model.contact.ContactAuthInfo;
-import google.registry.model.eppcommon.AuthInfo.PasswordAuth;
-import google.registry.model.reporting.HistoryEntry;
-import google.registry.model.transfer.TransferStatus;
-import org.joda.time.DateTime;
-import org.junit.jupiter.api.BeforeEach;
+import google.registry.flows.FlowTestCase;
+import google.registry.flows.exceptions.ContactsProhibitedException;
 import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link ContactTransferQueryFlow}. */
-class ContactTransferQueryFlowTest
-    extends ContactTransferFlowTestCase<ContactTransferQueryFlow, Contact> {
+class ContactTransferQueryFlowTest extends FlowTestCase<ContactTransferQueryFlow> {
 
-  @BeforeEach
-  void setUp() {
+  ContactTransferQueryFlowTest() {
     setEppInput("contact_transfer_query.xml");
-    clock.setTo(DateTime.parse("2000-06-10T22:00:00.0Z"));
-    setRegistrarIdForFlow("NewRegistrar");
-    setupContactWithPendingTransfer();
-  }
-
-  private void doSuccessfulTest(String commandFilename, String expectedXmlFilename)
-      throws Exception {
-    setEppInput(commandFilename);
-    eppLoader.replaceAll("JD1234-REP", contact.getRepoId());
-    // Setup done; run the test.
-    assertMutatingFlow(false);
-    runFlowAssertResponse(loadFile(expectedXmlFilename));
-    assertAboutContacts().that(reloadResourceByForeignKey(clock.nowUtc().minusDays(1)))
-        .hasOneHistoryEntryEachOfTypes(HistoryEntry.Type.CONTACT_TRANSFER_REQUEST);
-    assertNoBillingEvents();
-  }
-
-  private void doFailingTest(String commandFilename) throws Exception {
-    setEppInput(commandFilename);
-    eppLoader.replaceAll("JD1234-REP", contact.getRepoId());
-    // Setup done; run the test.
-    assertMutatingFlow(false);
-    runFlow();
   }
 
   @Test
-  void testNotLoggedIn() {
-    sessionMetadata.setRegistrarId(null);
-    EppException thrown = assertThrows(NotLoggedInException.class, this::runFlow);
-    assertAboutEppExceptions().that(thrown).marshalsToXml();
-  }
-
-  @Test
-  void testSuccess() throws Exception {
-    doSuccessfulTest("contact_transfer_query.xml", "contact_transfer_query_response.xml");
-  }
-
-  @Test
-  void testSuccess_withContactRoid() throws Exception {
-    doSuccessfulTest("contact_transfer_query_with_roid.xml", "contact_transfer_query_response.xml");
-  }
-
-  @Test
-  void testSuccess_sponsoringClient() throws Exception {
-    setRegistrarIdForFlow("TheRegistrar");
-    doSuccessfulTest("contact_transfer_query.xml", "contact_transfer_query_response.xml");
-  }
-
-  @Test
-  void testSuccess_withAuthinfo() throws Exception {
-    setRegistrarIdForFlow("ClientZ");
-    doSuccessfulTest("contact_transfer_query_with_authinfo.xml",
-        "contact_transfer_query_response.xml");
-  }
-
-  @Test
-  void testSuccess_clientApproved() throws Exception {
-    changeTransferStatus(TransferStatus.CLIENT_APPROVED);
-    doSuccessfulTest("contact_transfer_query.xml",
-        "contact_transfer_query_response_client_approved.xml");
-  }
-
-  @Test
-  void testSuccess_clientRejected() throws Exception {
-    changeTransferStatus(TransferStatus.CLIENT_REJECTED);
-    doSuccessfulTest("contact_transfer_query.xml",
-        "contact_transfer_query_response_client_rejected.xml");
-  }
-
-  @Test
-  void testSuccess_clientCancelled() throws Exception {
-    changeTransferStatus(TransferStatus.CLIENT_CANCELLED);
-    doSuccessfulTest("contact_transfer_query.xml",
-        "contact_transfer_query_response_client_cancelled.xml");
-  }
-
-  @Test
-  void testSuccess_serverApproved() throws Exception {
-    changeTransferStatus(TransferStatus.SERVER_APPROVED);
-    doSuccessfulTest("contact_transfer_query.xml",
-        "contact_transfer_query_response_server_approved.xml");
-  }
-
-  @Test
-  void testSuccess_serverCancelled() throws Exception {
-    changeTransferStatus(TransferStatus.SERVER_CANCELLED);
-    doSuccessfulTest("contact_transfer_query.xml",
-        "contact_transfer_query_response_server_cancelled.xml");
-  }
-
-  @Test
-  void testFailure_pendingDeleteContact() throws Exception {
-    changeTransferStatus(TransferStatus.SERVER_CANCELLED);
-    contact = persistResource(
-        contact.asBuilder().setDeletionTime(clock.nowUtc().plusDays(1)).build());
-    doSuccessfulTest("contact_transfer_query.xml",
-        "contact_transfer_query_response_server_cancelled.xml");
-  }
-
-  @Test
-  void testFailure_badContactPassword() {
-    // Change the contact's password so it does not match the password in the file.
-    contact =
-        persistResource(
-            contact
-                .asBuilder()
-                .setAuthInfo(ContactAuthInfo.create(PasswordAuth.create("badpassword")))
-                .build());
-    EppException thrown =
-        assertThrows(
-            BadAuthInfoForResourceException.class,
-            () -> doFailingTest("contact_transfer_query_with_authinfo.xml"));
-    assertAboutEppExceptions().that(thrown).marshalsToXml();
-  }
-
-  @Test
-  void testFailure_badContactRoid() {
-    // Set the contact to a different ROID, but don't persist it; this is just so the substitution
-    // code above will write the wrong ROID into the file.
-    contact = contact.asBuilder().setRepoId("DEADBEEF_TLD-ROID").build();
-    EppException thrown =
-        assertThrows(
-            BadAuthInfoForResourceException.class,
-            () -> doFailingTest("contact_transfer_query_with_roid.xml"));
-    assertAboutEppExceptions().that(thrown).marshalsToXml();
-  }
-
-  @Test
-  void testFailure_neverBeenTransferred() {
-    changeTransferStatus(null);
-    EppException thrown =
-        assertThrows(
-            NoTransferHistoryToQueryException.class,
-            () -> doFailingTest("contact_transfer_query.xml"));
-    assertAboutEppExceptions().that(thrown).marshalsToXml();
-  }
-
-  @Test
-  void testFailure_unrelatedClient() {
-    setRegistrarIdForFlow("ClientZ");
-    EppException thrown =
-        assertThrows(
-            NotAuthorizedToViewTransferException.class,
-            () -> doFailingTest("contact_transfer_query.xml"));
-    assertAboutEppExceptions().that(thrown).marshalsToXml();
-  }
-
-  @Test
-  void testFailure_deletedContact() throws Exception {
-    contact =
-        persistResource(contact.asBuilder().setDeletionTime(clock.nowUtc().minusDays(1)).build());
-    ResourceDoesNotExistException thrown =
-        assertThrows(
-            ResourceDoesNotExistException.class, () -> doFailingTest("contact_transfer_query.xml"));
-    assertThat(thrown).hasMessageThat().contains(String.format("(%s)", getUniqueIdFromCommand()));
-    assertAboutEppExceptions().that(thrown).marshalsToXml();
-  }
-
-  @Test
-  void testFailure_nonexistentContact() throws Exception {
-    persistResource(contact.asBuilder().setDeletionTime(clock.nowUtc().minusDays(1)).build());
-    ResourceDoesNotExistException thrown =
-        assertThrows(
-            ResourceDoesNotExistException.class, () -> doFailingTest("contact_transfer_query.xml"));
-    assertThat(thrown).hasMessageThat().contains(String.format("(%s)", getUniqueIdFromCommand()));
-    assertAboutEppExceptions().that(thrown).marshalsToXml();
-  }
-
-  @Test
-  void testIcannActivityReportField_getsLogged() throws Exception {
-    runFlow();
-    assertIcannReportingActivityFieldLogged("srs-cont-transfer-query");
+  void testThrowsException() {
+    assertAboutEppExceptions()
+        .that(assertThrows(ContactsProhibitedException.class, this::runFlow))
+        .marshalsToXml();
   }
 }

@@ -9,9 +9,6 @@
         <domain:name>fakesite.example</domain:name>
         <domain:roid>IGNORED</domain:roid>
         <domain:status s="pendingTransfer"/>
-        <domain:registrant>jd1234</domain:registrant>
-        <domain:contact type="admin">sh8013</domain:contact>
-        <domain:contact type="tech">sh8013</domain:contact>
         <domain:ns>
           <domain:hostObj>ns1.example.external</domain:hostObj>
           <domain:hostObj>ns2.example.external</domain:hostObj>

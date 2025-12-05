@@ -223,10 +223,9 @@ public class EppTestCase {
     return eppMetricBuilder.build();
   }
 
-  /** Create the two administrative contacts and two hosts. */
-  void createContactsAndHosts() throws Exception {
+  /** Create the two hosts. */
+  void createHosts() throws Exception {
     DateTime createTime = DateTime.parse("2000-06-01T00:00:00Z");
-    createContacts(createTime);
     assertThatCommand("host_create.xml", ImmutableMap.of("HOSTNAME", "ns1.example.external"))
         .atTime(createTime.plusMinutes(2))
         .hasResponse(
@@ -243,21 +242,9 @@ public class EppTestCase {
                 "CRDATE", createTime.plusMinutes(3).toString()));
   }
 
-  protected void createContacts(DateTime createTime) throws Exception {
-    assertThatCommand("contact_create_sh8013.xml")
-        .atTime(createTime)
-        .hasResponse(
-            "contact_create_response_sh8013.xml", ImmutableMap.of("CRDATE", createTime.toString()));
-    assertThatCommand("contact_create_jd1234.xml")
-        .atTime(createTime.plusMinutes(1))
-        .hasResponse(
-            "contact_create_response_jd1234.xml",
-            ImmutableMap.of("CRDATE", createTime.plusMinutes(1).toString()));
-  }
-
   /** Creates the domain fakesite.example with two nameservers on it. */
   void createFakesite() throws Exception {
-    createContactsAndHosts();
+    createHosts();
     assertThatCommand("domain_create_fakesite.xml")
         .atTime("2000-06-01T00:04:00Z")
         .hasResponse(

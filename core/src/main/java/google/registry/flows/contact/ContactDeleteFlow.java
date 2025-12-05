@@ -14,97 +14,32 @@
 
 package google.registry.flows.contact;
 
-import static google.registry.flows.FlowUtils.DELETE_PROHIBITED_STATUSES;
-import static google.registry.flows.FlowUtils.validateRegistrarIsLoggedIn;
-import static google.registry.flows.ResourceFlowUtils.checkLinkedDomains;
-import static google.registry.flows.ResourceFlowUtils.loadAndVerifyExistence;
-import static google.registry.flows.ResourceFlowUtils.verifyNoDisallowedStatuses;
-import static google.registry.flows.ResourceFlowUtils.verifyOptionalAuthInfo;
-import static google.registry.flows.ResourceFlowUtils.verifyResourceOwnership;
-import static google.registry.model.ResourceTransferUtils.denyPendingTransfer;
-import static google.registry.model.ResourceTransferUtils.handlePendingTransferOnDelete;
-import static google.registry.model.eppoutput.Result.Code.SUCCESS;
-import static google.registry.model.transfer.TransferStatus.SERVER_CANCELLED;
-import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
-import com.google.common.collect.ImmutableSet;
 import google.registry.flows.EppException;
-import google.registry.flows.ExtensionManager;
-import google.registry.flows.FlowModule.RegistrarId;
-import google.registry.flows.FlowModule.Superuser;
-import google.registry.flows.FlowModule.TargetId;
-import google.registry.flows.MutatingFlow;
+import google.registry.flows.Flow;
 import google.registry.flows.annotations.ReportingSpec;
-import google.registry.model.contact.Contact;
-import google.registry.model.contact.ContactHistory;
-import google.registry.model.domain.metadata.MetadataExtension;
-import google.registry.model.eppcommon.AuthInfo;
-import google.registry.model.eppcommon.StatusValue;
-import google.registry.model.eppcommon.Trid;
+import google.registry.flows.exceptions.ContactsProhibitedException;
 import google.registry.model.eppoutput.EppResponse;
-import google.registry.model.reporting.HistoryEntry.Type;
 import google.registry.model.reporting.IcannReportingTypes.ActivityReportField;
 import jakarta.inject.Inject;
-import java.util.Optional;
-import org.joda.time.DateTime;
 
 /**
- * An EPP flow that deletes a contact.
+ * An EPP flow that is meant to delete a contact.
  *
- * <p>Contacts that are in use by any domain cannot be deleted. The flow may return immediately if a
- * quick smoke check determines that deletion is impossible due to an existing reference. However, a
- * successful delete will always be asynchronous, as all existing domains must be checked for
- * references to the host before the deletion is allowed to proceed. A poll message will be written
- * with the success or failure message when the process is complete.
+ * <p>This is no longer in use, because Nomulus follows the Minimum Dataset requirements, removing
+ * all contact information.
  *
- * @error {@link google.registry.flows.FlowUtils.NotLoggedInException}
- * @error {@link google.registry.flows.ResourceFlowUtils.ResourceDoesNotExistException}
- * @error {@link google.registry.flows.ResourceFlowUtils.ResourceNotOwnedException}
- * @error {@link google.registry.flows.exceptions.ResourceStatusProhibitsOperationException}
- * @error {@link google.registry.flows.exceptions.ResourceToDeleteIsReferencedException}
+ * @error {@link ContactsProhibitedException}
  */
+@Deprecated
 @ReportingSpec(ActivityReportField.CONTACT_DELETE)
-public final class ContactDeleteFlow implements MutatingFlow {
-
-  @Inject ExtensionManager extensionManager;
-  @Inject @RegistrarId String registrarId;
-  @Inject @TargetId String targetId;
-  @Inject Trid trid;
-  @Inject @Superuser boolean isSuperuser;
-  @Inject Optional<AuthInfo> authInfo;
-  @Inject ContactHistory.Builder historyBuilder;
-  @Inject EppResponse.Builder responseBuilder;
+public final class ContactDeleteFlow implements Flow {
 
   @Inject
   ContactDeleteFlow() {}
 
   @Override
   public EppResponse run() throws EppException {
-    extensionManager.register(MetadataExtension.class);
-    validateRegistrarIsLoggedIn(registrarId);
-    extensionManager.validate();
-    DateTime now = tm().getTransactionTime();
-    checkLinkedDomains(targetId, now, Contact.class);
-    Contact existingContact = loadAndVerifyExistence(Contact.class, targetId, now);
-    verifyOptionalAuthInfo(authInfo, existingContact);
-    verifyNoDisallowedStatuses(existingContact, ImmutableSet.of(StatusValue.PENDING_DELETE));
-    if (!isSuperuser) {
-      verifyNoDisallowedStatuses(existingContact, DELETE_PROHIBITED_STATUSES);
-      verifyResourceOwnership(registrarId, existingContact);
-    }
-    // Handle pending transfers on contact deletion.
-    Contact newContact =
-        existingContact.getStatusValues().contains(StatusValue.PENDING_TRANSFER)
-            ? denyPendingTransfer(existingContact, SERVER_CANCELLED, now, registrarId)
-            : existingContact;
-    // Wipe out PII on contact deletion.
-    newContact =
-        newContact.asBuilder().wipeOut().setStatusValues(null).setDeletionTime(now).build();
-    ContactHistory contactHistory =
-        historyBuilder.setType(Type.CONTACT_DELETE).setContact(newContact).build();
-    handlePendingTransferOnDelete(existingContact, newContact, now, contactHistory);
-    tm().insert(contactHistory);
-    tm().update(newContact);
-    return responseBuilder.setResultFromCode(SUCCESS).build();
+    throw new ContactsProhibitedException();
   }
 }
