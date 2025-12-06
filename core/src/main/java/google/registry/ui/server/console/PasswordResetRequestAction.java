@@ -61,10 +61,6 @@ public class PasswordResetRequestAction extends ConsoleApiAction {
 
   @Override
   protected void postHandler(User user) {
-    // Temporary flag when testing email sending etc
-    if (!user.getUserRoles().isAdmin()) {
-      setFailedResponse("", HttpServletResponse.SC_FORBIDDEN);
-    }
     tm().transact(() -> performRequest(user));
     consoleApiParams.response().setStatus(HttpServletResponse.SC_OK);
   }
