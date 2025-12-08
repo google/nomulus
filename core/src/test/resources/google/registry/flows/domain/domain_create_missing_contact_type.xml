@@ -9,9 +9,7 @@
           <domain:hostObj>ns1.example.net</domain:hostObj>
           <domain:hostObj>ns2.example.net</domain:hostObj>
         </domain:ns>
-        <domain:registrant>jd1234</domain:registrant>
         <domain:contact>sh8013</domain:contact>
-        <domain:contact type="tech">sh8013</domain:contact>
         <domain:authInfo>
           <domain:pw>2fooBAR</domain:pw>
         </domain:authInfo>

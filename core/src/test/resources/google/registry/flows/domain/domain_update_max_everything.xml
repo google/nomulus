@@ -20,9 +20,6 @@
             <domain:hostObj>max_test_24.example.tld</domain:hostObj>
             <domain:hostObj>max_test_25.example.tld</domain:hostObj>
           </domain:ns>
-          <domain:contact type="admin">max_test_4</domain:contact>
-          <domain:contact type="billing">max_test_5</domain:contact>
-          <domain:contact type="tech">max_test_6</domain:contact>
         </domain:add>
         <domain:rem>
           <domain:ns>
@@ -40,13 +37,7 @@
             <domain:hostObj>max_test_11.example.tld</domain:hostObj>
             <domain:hostObj>max_test_12.example.tld</domain:hostObj>
           </domain:ns>
-          <domain:contact type="admin">max_test_0</domain:contact>
-          <domain:contact type="billing">max_test_1</domain:contact>
-          <domain:contact type="tech">max_test_2</domain:contact>
         </domain:rem>
-        <domain:chg>
-          <domain:registrant>max_test_7</domain:registrant>
-        </domain:chg>
       </domain:update>
     </update>
     <clTRID>ABC-12345</clTRID>

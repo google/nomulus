@@ -186,12 +186,9 @@ import org.joda.time.Duration;
  * @error {@link DomainFlowUtils.LinkedResourceInPendingDeleteProhibitsOperationException}
  * @error {@link DomainFlowUtils.MalformedTcnIdException}
  * @error {@link DomainFlowUtils.MaxSigLifeNotSupportedException}
- * @error {@link DomainFlowUtils.MissingAdminContactException}
  * @error {@link DomainFlowUtils.MissingBillingAccountMapException}
  * @error {@link DomainFlowUtils.MissingClaimsNoticeException}
  * @error {@link DomainFlowUtils.MissingContactTypeException}
- * @error {@link DomainFlowUtils.MissingRegistrantException}
- * @error {@link DomainFlowUtils.MissingTechnicalContactException}
  * @error {@link DomainFlowUtils.NameserversNotAllowedForTldException}
  * @error {@link DomainFlowUtils.NameserversNotSpecifiedForTldWithNameserverAllowListException}
  * @error {@link DomainFlowUtils.PremiumNameBlockedException}

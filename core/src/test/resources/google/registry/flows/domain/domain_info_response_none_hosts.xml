@@ -9,9 +9,6 @@
         <domain:name>example.tld</domain:name>
         <domain:roid>%ROID%</domain:roid>
         <domain:status s="ok"/>
-        <domain:registrant>jd1234</domain:registrant>
-        <domain:contact type="admin">sh8013</domain:contact>
-        <domain:contact type="tech">sh8013</domain:contact>
         <domain:clID>NewRegistrar</domain:clID>
         <domain:crID>TheRegistrar</domain:crID>
         <domain:crDate>1999-04-03T22:00:00.0Z</domain:crDate>

@@ -15,22 +15,16 @@
 package google.registry.tools;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.model.common.FeatureFlag.FeatureName.MINIMUM_DATASET_CONTACTS_OPTIONAL;
-import static google.registry.model.common.FeatureFlag.FeatureName.MINIMUM_DATASET_CONTACTS_PROHIBITED;
-import static google.registry.model.common.FeatureFlag.FeatureStatus.ACTIVE;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.persistPremiumList;
 import static google.registry.testing.DatabaseHelper.persistResource;
-import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static org.joda.money.CurrencyUnit.JPY;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.beust.jcommander.ParameterException;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.ImmutableSortedMap;
 import google.registry.dns.writer.VoidDnsWriter;
-import google.registry.model.common.FeatureFlag;
 import google.registry.model.pricing.StaticPremiumListPricingEngine;
 import google.registry.model.tld.Tld;
 import google.registry.model.tld.label.PremiumListDao;
@@ -116,26 +110,7 @@ class CreateDomainCommandTest extends EppToolCommandTestCase<CreateDomainCommand
   }
 
   @Test
-  void testSuccess_minimumDatasetPhase1_noContacts() throws Exception {
-    persistResource(
-        new FeatureFlag()
-            .asBuilder()
-            .setFeatureName(MINIMUM_DATASET_CONTACTS_OPTIONAL)
-            .setStatusMap(ImmutableSortedMap.of(START_OF_TIME, ACTIVE))
-            .build());
-    // Test that each optional field can be omitted. Also tests the auto-gen password.
-    runCommandForced("--client=NewRegistrar", "example.tld");
-    eppVerifier.verifySent("domain_create_minimal.xml");
-  }
-
-  @Test
-  void testSuccess_minimumDatasetPhase2_noContacts() throws Exception {
-    persistResource(
-        new FeatureFlag()
-            .asBuilder()
-            .setFeatureName(MINIMUM_DATASET_CONTACTS_PROHIBITED)
-            .setStatusMap(ImmutableSortedMap.of(START_OF_TIME, ACTIVE))
-            .build());
+  void testSuccess_minimumDataset_noContacts() throws Exception {
     // Test that each optional field can be omitted. Also tests the auto-gen password.
     runCommandForced(
         "--client=NewRegistrar",
@@ -306,48 +281,6 @@ class CreateDomainCommandTest extends EppToolCommandTestCase<CreateDomainCommand
                     "--registrant=crr-admin",
                     "example.tld"));
     assertThat(thrown).hasMessageThat().contains("--client");
-  }
-
-  @Test
-  void testFailure_missingRegistrant() {
-    IllegalArgumentException thrown =
-        assertThrows(
-            IllegalArgumentException.class,
-            () ->
-                runCommandForced(
-                    "--client=NewRegistrar",
-                    "--admins=crr-admin",
-                    "--techs=crr-tech",
-                    "example.tld"));
-    assertThat(thrown).hasMessageThat().contains("Registrant must be specified");
-  }
-
-  @Test
-  void testFailure_missingAdmins() {
-    IllegalArgumentException thrown =
-        assertThrows(
-            IllegalArgumentException.class,
-            () ->
-                runCommandForced(
-                    "--client=NewRegistrar",
-                    "--registrant=crr-admin",
-                    "--techs=crr-tech",
-                    "example.tld"));
-    assertThat(thrown).hasMessageThat().contains("At least one admin must be specified");
-  }
-
-  @Test
-  void testFailure_missingTechs() {
-    IllegalArgumentException thrown =
-        assertThrows(
-            IllegalArgumentException.class,
-            () ->
-                runCommandForced(
-                    "--client=NewRegistrar",
-                    "--registrant=crr-admin",
-                    "--admins=crr-admin",
-                    "example.tld"));
-    assertThat(thrown).hasMessageThat().contains("At least one tech must be specified");
   }
 
   @Test
