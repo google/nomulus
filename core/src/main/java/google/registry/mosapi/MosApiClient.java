@@ -14,6 +14,9 @@
 
 package google.registry.mosapi;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
+import com.google.common.base.Throwables;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.mosapi.MosApiException.MosApiAuthorizationException;
 import jakarta.inject.Inject;
@@ -43,9 +46,9 @@ public class MosApiClient {
     this.httpClient = httpClient;
     // Pre-calculate base URL and validate it to fail fast on bad config
     String fullUrl = String.format("%s/%s", mosapiUrl, entityType);
-    if (HttpUrl.parse(fullUrl) == null) {
-      throw new IllegalArgumentException("Invalid MoSAPI Service URL configuration: " + fullUrl);
-    }
+    checkArgument(
+        HttpUrl.parse(fullUrl) != null, "Invalid MoSAPI Service URL configuration: %s", fullUrl);
+
     this.baseUrl = fullUrl;
   }
 
@@ -73,9 +76,7 @@ public class MosApiClient {
       return checkResponseForAuthError(response);
     } catch (RuntimeException | IOException e) {
       // Check if it's the specific authorization exception (re-thrown or caught here)
-      if (e instanceof MosApiAuthorizationException) {
-        throw (MosApiAuthorizationException) e;
-      }
+      Throwables.throwIfInstanceOf(e, MosApiAuthorizationException.class);
       // Otherwise, treat as a generic connection/API error
       throw new MosApiException("Error during GET request to " + url, e);
     }
@@ -114,9 +115,7 @@ public class MosApiClient {
       return checkResponseForAuthError(response);
     } catch (RuntimeException | IOException e) {
       // Check if it's the specific authorization exception (re-thrown or caught here)
-      if (e instanceof MosApiAuthorizationException) {
-        throw (MosApiAuthorizationException) e;
-      }
+      Throwables.throwIfInstanceOf(e, MosApiAuthorizationException.class);
       // Otherwise, treat as a generic connection/API error
       throw new MosApiException("Error during POST request to " + url, e);
     }
