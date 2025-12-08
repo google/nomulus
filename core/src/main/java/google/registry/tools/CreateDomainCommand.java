@@ -16,17 +16,12 @@ package google.registry.tools;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Strings.isNullOrEmpty;
-import static google.registry.model.common.FeatureFlag.FeatureName.MINIMUM_DATASET_CONTACTS_OPTIONAL;
-import static google.registry.model.common.FeatureFlag.FeatureName.MINIMUM_DATASET_CONTACTS_PROHIBITED;
-import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.pricing.PricingEngineProxy.getPricesForDomainName;
-import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 import static org.joda.time.DateTimeZone.UTC;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import com.google.template.soy.data.SoyMapData;
-import google.registry.model.common.FeatureFlag;
 import google.registry.model.pricing.PremiumPricingEngine.DomainPrices;
 import google.registry.tools.soy.DomainCreateSoyInfo;
 import google.registry.util.StringGenerator;
@@ -62,15 +57,6 @@ final class CreateDomainCommand extends CreateOrUpdateDomainCommand {
 
   @Override
   protected void initMutatingEppToolCommand() {
-    tm().transact(
-            () -> {
-              if (!FeatureFlag.isActiveNow(MINIMUM_DATASET_CONTACTS_OPTIONAL)
-                  && !FeatureFlag.isActiveNow(MINIMUM_DATASET_CONTACTS_PROHIBITED)) {
-                checkArgumentNotNull(registrant, "Registrant must be specified");
-                checkArgument(!admins.isEmpty(), "At least one admin must be specified");
-                checkArgument(!techs.isEmpty(), "At least one tech must be specified");
-              }
-            });
     if (isNullOrEmpty(password)) {
       password = passwordGenerator.createString(PASSWORD_LENGTH);
     }

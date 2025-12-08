@@ -18,7 +18,6 @@
           <domain:status s="clientUpdateProhibited"/>
         </domain:rem>
         <domain:chg>
-          <domain:registrant>sh8013</domain:registrant>
           <domain:authInfo>
             <domain:pw>2BARfoo</domain:pw>
           </domain:authInfo>

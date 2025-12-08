@@ -14,10 +14,7 @@
 
 package google.registry.batch;
 
-import static com.google.common.base.Preconditions.checkState;
-import static com.google.common.net.MediaType.PLAIN_TEXT_UTF_8;
 import static google.registry.flows.FlowUtils.marshalWithLenientRetry;
-import static google.registry.model.common.FeatureFlag.FeatureName.MINIMUM_DATASET_CONTACTS_PROHIBITED;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
 import static google.registry.util.ResourceUtils.readResourceUtf8;
@@ -36,7 +33,6 @@ import google.registry.flows.EppController;
 import google.registry.flows.EppRequestSource;
 import google.registry.flows.PasswordOnlyTransportCredentials;
 import google.registry.flows.StatelessRequestSessionMetadata;
-import google.registry.model.common.FeatureFlag;
 import google.registry.model.contact.Contact;
 import google.registry.model.domain.DesignatedContact;
 import google.registry.model.domain.Domain;
@@ -106,11 +102,6 @@ public class RemoveAllDomainContactsAction implements Runnable {
 
   @Override
   public void run() {
-    checkState(
-        tm().transact(() -> FeatureFlag.isActiveNow(MINIMUM_DATASET_CONTACTS_PROHIBITED)),
-        "Minimum dataset migration must be completed prior to running this action");
-    response.setContentType(PLAIN_TEXT_UTF_8);
-
     Callable<Void> runner =
         () -> {
           try {

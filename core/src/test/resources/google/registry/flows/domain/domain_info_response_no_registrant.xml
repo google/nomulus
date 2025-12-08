@@ -9,8 +9,6 @@
         <domain:name>example.tld</domain:name>
         <domain:roid>%ROID%</domain:roid>
         <domain:status s="ok"/>
-        <domain:contact type="admin">sh8013</domain:contact>
-        <domain:contact type="tech">sh8013</domain:contact>
         <domain:ns>
           <domain:hostObj>ns1.example.tld</domain:hostObj>
           <domain:hostObj>ns1.example.net</domain:hostObj>

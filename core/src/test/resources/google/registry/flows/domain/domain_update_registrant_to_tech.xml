@@ -5,13 +5,10 @@
        xmlns:domain="urn:ietf:params:xml:ns:domain-1.0">
         <domain:name>example.tld</domain:name>
         <domain:add>
-          <domain:contact type="tech">sh8013</domain:contact>
         </domain:add>
         <domain:rem>
-          <domain:contact type="tech">contact1234</domain:contact>
         </domain:rem>
         <domain:chg>
-          <domain:registrant>mak21</domain:registrant>
         </domain:chg>
       </domain:update>
     </update>
