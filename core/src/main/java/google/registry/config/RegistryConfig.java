@@ -654,6 +654,28 @@ public final class RegistryConfig {
     }
 
     /**
+     * Returns the URL we send HTTP requests for MoSAPI.
+     *
+     * @see google.registry.reporting.mosapi.MosApiClient
+     */
+    @Provides
+    @Config("mosapiUrl")
+    public static String provideMosapiUrl(RegistryConfigSettings config) {
+      return config.mosapi.mosapiUrl;
+    }
+
+    /**
+     * Returns the entityType we send HTTP requests for MoSAPI.
+     *
+     * @see google.registry.reporting.mosapi.MosApiClient
+     */
+    @Provides
+    @Config("entityType")
+    public static String provideMosapiEntityType(RegistryConfigSettings config) {
+      return config.mosapi.entityType;
+    }
+
+    /**
      * Returns name of the GCS bucket we store invoices and detail reports in.
      *
      * @see google.registry.reporting.billing.CopyDetailReportsAction
