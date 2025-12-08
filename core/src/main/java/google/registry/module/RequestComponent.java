@@ -61,6 +61,12 @@ import google.registry.module.ReadinessProbeAction.ReadinessProbeActionFrontend;
 import google.registry.module.ReadinessProbeAction.ReadinessProbeActionPubApi;
 import google.registry.module.ReadinessProbeAction.ReadinessProbeConsoleAction;
 import google.registry.monitoring.whitebox.WhiteboxModule;
+import google.registry.mosapi.action.GetAlarmsStateAction;
+import google.registry.mosapi.action.GetMetricaReportAction;
+import google.registry.mosapi.action.GetServiceDowntimeAction;
+import google.registry.mosapi.action.GetServiceStateAction;
+import google.registry.mosapi.action.ListMetricaReportsAction;
+import google.registry.mosapi.module.MosApiRequestModule;
 import google.registry.rdap.RdapAutnumAction;
 import google.registry.rdap.RdapDomainAction;
 import google.registry.rdap.RdapDomainSearchAction;
@@ -150,6 +156,7 @@ import google.registry.ui.server.console.settings.SecurityAction;
       EppToolModule.class,
       IcannReportingModule.class,
       LoadTestModule.class,
+      MosApiRequestModule.class,
       RdapModule.class,
       RdeModule.class,
       ReportingModule.class,
@@ -229,6 +236,14 @@ interface RequestComponent {
 
   GenerateZoneFilesAction generateZoneFilesAction();
 
+  GetAlarmsStateAction checkMosApiAlarmsAction();
+
+  GetMetricaReportAction getMetricaReportAction();
+
+  GetServiceDowntimeAction getServiceDowntimeAction();
+
+  GetServiceStateAction getServiceStateAction();
+
   IcannReportingStagingAction icannReportingStagingAction();
 
   IcannReportingUploadAction icannReportingUploadAction();
@@ -236,6 +251,8 @@ interface RequestComponent {
   ListDomainsAction listDomainsAction();
 
   ListHostsAction listHostsAction();
+
+  ListMetricaReportsAction listMetricaReportsAction();
 
   ListPremiumListsAction listPremiumListsAction();
 
@@ -340,6 +357,7 @@ interface RequestComponent {
   VerifyOteAction verifyOteAction();
 
   WipeOutContactHistoryPiiAction wipeOutContactHistoryPiiAction();
+
 
   @Subcomponent.Builder
   abstract class Builder implements RequestComponentBuilder<RequestComponent> {

@@ -26,6 +26,9 @@ spec:
     - path:
         type: PathPrefix
         value: /_dr/loadtest
+    - path:
+        type: PathPrefix
+        value: /_dr/mosapi
     backendRefs:
     - group: net.gke.io
       kind: ServiceImport
@@ -59,6 +62,12 @@ spec:
     - path:
         type: PathPrefix
         value: /_dr/loadtest
+      headers:
+      - name: "canary"
+        value: "true"
+    - path:
+        type: PathPrefix
+        value: /_dr/mosapi
       headers:
       - name: "canary"
         value: "true"

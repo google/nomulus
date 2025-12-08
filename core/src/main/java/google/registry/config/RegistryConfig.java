@@ -36,6 +36,7 @@ import dagger.Provides;
 import google.registry.bsa.UploadBsaUnavailableDomainsAction;
 import google.registry.dns.ReadDnsRefreshRequestsAction;
 import google.registry.model.common.DnsRefreshRequest;
+import google.registry.mosapi.client.MosApiClient;
 import google.registry.persistence.transaction.JpaTransactionManager;
 import google.registry.request.Action.Service;
 import google.registry.util.RegistryEnvironment;
@@ -49,6 +50,7 @@ import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
 import java.net.URI;
 import java.net.URL;
+import java.util.List;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.function.Supplier;
@@ -1413,6 +1415,40 @@ public final class RegistryConfig {
     @Config("bsaUploadUnavailableDomainsUrl")
     public static String provideBsaUploadUnavailableDomainsUrl(RegistryConfigSettings config) {
       return config.bsa.uploadUnavailableDomainsUrl;
+    }
+
+    /**
+     * Returns the URL we send HTTP requests for MoSAPI.
+     *
+     * @see MosApiClient
+     */
+    @Provides
+    @Config("mosapiUrl")
+    public static String provideMosapiUrl(RegistryConfigSettings config) {
+      return config.mosapi.mosapiUrl;
+    }
+
+    /**
+     * Returns the entityType we send HTTP requests for MoSAPI.
+     *
+     * @see MosApiClient
+     */
+    @Provides
+    @Config("entityType")
+    public static String provideMosapiEntityType(RegistryConfigSettings config) {
+      return config.mosapi.entityType;
+    }
+
+    @Provides
+    @Config("mosapiTlds")
+    public static List<String> provideMosapiTlds(RegistryConfigSettings config) {
+      return ImmutableList.copyOf(config.mosapi.tlds);
+    }
+
+    @Provides
+    @Config("mosapiServices")
+    public static List<String> provideMosapiServices(RegistryConfigSettings config) {
+      return ImmutableList.copyOf(config.mosapi.services);
     }
 
     private static String formatComments(String text) {

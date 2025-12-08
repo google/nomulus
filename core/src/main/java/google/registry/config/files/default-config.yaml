@@ -616,3 +616,20 @@ bsa:
   unblockableDomainsUrl: "https://"
   # API endpoint for uploading the list of unavailable domain names.
   uploadUnavailableDomainsUrl: "https://"
+
+mosapi:
+  # URL for the MosAPI
+  mosapiUrl: https://mosapi.icann.org
+  entityType: ry
+  # List of TLDs to be monitored.
+  tlds:
+  - "test"
+  # List of services to check for each TLD.
+  services:
+  - "dns"
+  - "rdap"
+  - "rdds"
+  - "epp"
+  - "dnssec"
+
+
