@@ -14,7 +14,7 @@
 
 package google.registry.mosapi;
 
-import static com.google.common.base.Preconditions.checkArgument;
+import static org.apache.beam.sdk.util.Preconditions.checkArgumentNotNull;
 
 import com.google.common.base.Throwables;
 import google.registry.config.RegistryConfig.Config;
@@ -46,8 +46,8 @@ public class MosApiClient {
     this.httpClient = httpClient;
     // Pre-calculate base URL and validate it to fail fast on bad config
     String fullUrl = String.format("%s/%s", mosapiUrl, entityType);
-    checkArgument(
-        HttpUrl.parse(fullUrl) != null, "Invalid MoSAPI Service URL configuration: %s", fullUrl);
+    checkArgumentNotNull(
+        HttpUrl.parse(fullUrl), "Invalid MoSAPI Service URL configuration: %s", fullUrl);
 
     this.baseUrl = fullUrl;
   }
