@@ -17,6 +17,7 @@ package google.registry.module;
 import dagger.Module;
 import dagger.Subcomponent;
 import google.registry.batch.BatchModule;
+import google.registry.batch.BulkDomainTransferAction;
 import google.registry.batch.CannedScriptExecutionAction;
 import google.registry.batch.DeleteExpiredDomainsAction;
 import google.registry.batch.DeleteLoadTestDataAction;
@@ -170,6 +171,8 @@ interface RequestComponent {
   BsaRefreshAction bsaRefreshAction();
 
   BsaValidateAction bsaValidateAction();
+
+  BulkDomainTransferAction bulkDomainTransferAction();
 
   CannedScriptExecutionAction cannedScriptExecutionAction();
 

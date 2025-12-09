@@ -17,6 +17,7 @@ BACKEND  /_dr/task/brdaCopy                                 BrdaCopyAction      
 BACKEND  /_dr/task/bsaDownload                              BsaDownloadAction                              GET,POST            n  APP  ADMIN
 BACKEND  /_dr/task/bsaRefresh                               BsaRefreshAction                               GET,POST            n  APP  ADMIN
 BACKEND  /_dr/task/bsaValidate                              BsaValidateAction                              GET,POST            n  APP  ADMIN
+BACKEND  /_dr/task/bulkDomainTransfer                       BulkDomainTransferAction                       POST                n  APP  ADMIN
 BACKEND  /_dr/task/copyDetailReports                        CopyDetailReportsAction                        POST                n  APP  ADMIN
 BACKEND  /_dr/task/deleteExpiredDomains                     DeleteExpiredDomainsAction                     GET                 n  APP  ADMIN
 BACKEND  /_dr/task/deleteLoadTestData                       DeleteLoadTestDataAction                       POST                n  APP  ADMIN
