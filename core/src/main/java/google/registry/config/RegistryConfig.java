@@ -1462,6 +1462,12 @@ public final class RegistryConfig {
       return ImmutableSet.copyOf(config.mosapi.services);
     }
 
+    @Provides
+    @Config("mosapiTldThreadCnt")
+    public static Integer provideMosapiTldThreads(RegistryConfigSettings config) {
+      return config.mosapi.tldThreadCnt;
+    }
+
     private static String formatComments(String text) {
       return Splitter.on('\n').omitEmptyStrings().trimResults().splitToList(text).stream()
           .map(s -> "# " + s)
