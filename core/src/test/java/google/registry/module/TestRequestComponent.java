@@ -28,6 +28,7 @@ import google.registry.flows.TlsCredentials.EppTlsModule;
 import google.registry.flows.custom.CustomLogicModule;
 import google.registry.loadtest.LoadTestModule;
 import google.registry.monitoring.whitebox.WhiteboxModule;
+import google.registry.mosapi.module.MosApiRequestModule;
 import google.registry.rdap.RdapModule;
 import google.registry.rde.RdeModule;
 import google.registry.reporting.ReportingModule;
@@ -60,6 +61,7 @@ import google.registry.ui.server.console.ConsoleModule;
       EppToolModule.class,
       IcannReportingModule.class,
       LoadTestModule.class,
+      MosApiRequestModule.class,
       RdapModule.class,
       RdeModule.class,
       ReportingModule.class,
