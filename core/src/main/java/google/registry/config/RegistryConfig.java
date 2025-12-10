@@ -1445,7 +1445,7 @@ public final class RegistryConfig {
     }
 
     @Provides
-    @Config("mosapiTlsCertKeyName")
+    @Config("mosapiTlsKeySecretName")
     public static String provideMosapiTlsKeySecretName(RegistryConfigSettings config) {
       return config.mosapi.tlsKeySecretName;
     }
