@@ -13,6 +13,7 @@ BACKEND  /_dr/admin/verifyOte                               VerifyOteAction     
 BACKEND  /_dr/cron/fanout                                   TldFanoutAction                                GET                 y  APP  ADMIN
 BACKEND  /_dr/epptool                                       EppToolAction                                  POST                n  APP  ADMIN
 BACKEND  /_dr/loadtest                                      LoadTestAction                                 POST                y  APP  ADMIN
+BACKEND  /_dr/mosapi/getServiceState                        GetServiceStateAction                          GET                 n  APP  ADMIN
 BACKEND  /_dr/task/brdaCopy                                 BrdaCopyAction                                 POST                y  APP  ADMIN
 BACKEND  /_dr/task/bsaDownload                              BsaDownloadAction                              GET,POST            n  APP  ADMIN
 BACKEND  /_dr/task/bsaRefresh                               BsaRefreshAction                               GET,POST            n  APP  ADMIN
