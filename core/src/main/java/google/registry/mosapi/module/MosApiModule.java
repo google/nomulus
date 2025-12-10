@@ -32,6 +32,8 @@ import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.util.Optional;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManagerFactory;
@@ -183,5 +185,22 @@ public final class MosApiModule {
     return new OkHttpClient.Builder()
         .sslSocketFactory(sslContext.getSocketFactory(), trustManager)
         .build();
+  }
+
+  /**
+   * Provides a fixed thread pool for parallel TLD processing.
+   *
+   * <p>Strictly bound to 4 threads to comply with MoSAPI session limits (4 concurrent sessions per
+   * certificate). This is used by MosApiStateService to fetch data in parallel.
+   *
+   * @see <a href="https://www.icann.org/mosapi-specification.pdf">ICANN MoSAPI Specification,
+   *     Section 12.3</a>
+   */
+  @Provides
+  @Singleton
+  @Named("mosapiTldExecutor")
+  static ExecutorService provideMosapiTldExecutor(
+      @Config("mosapiTldThreadCnt") int threadPoolSize) {
+    return Executors.newFixedThreadPool(threadPoolSize);
   }
 }
