@@ -14,74 +14,31 @@
 
 package google.registry.flows.contact;
 
-import static google.registry.flows.FlowUtils.validateRegistrarIsLoggedIn;
-import static google.registry.flows.ResourceFlowUtils.loadAndVerifyExistence;
-import static google.registry.flows.ResourceFlowUtils.verifyOptionalAuthInfo;
-import static google.registry.flows.contact.ContactFlowUtils.createTransferResponse;
 
 import google.registry.flows.EppException;
-import google.registry.flows.ExtensionManager;
-import google.registry.flows.FlowModule.RegistrarId;
-import google.registry.flows.FlowModule.TargetId;
-import google.registry.flows.TransactionalFlow;
+import google.registry.flows.Flow;
 import google.registry.flows.annotations.ReportingSpec;
-import google.registry.flows.exceptions.NoTransferHistoryToQueryException;
-import google.registry.flows.exceptions.NotAuthorizedToViewTransferException;
-import google.registry.model.contact.Contact;
-import google.registry.model.eppcommon.AuthInfo;
+import google.registry.flows.exceptions.ContactsProhibitedException;
 import google.registry.model.eppoutput.EppResponse;
 import google.registry.model.reporting.IcannReportingTypes.ActivityReportField;
-import google.registry.util.Clock;
 import jakarta.inject.Inject;
-import java.util.Optional;
 
 /**
- * An EPP flow that queries a pending transfer on a contact.
+ * An EPP flow that is meant to query a pending transfer on a contact.
  *
- * <p>The "gaining" registrar requests a transfer from the "losing" (aka current) registrar. The
- * losing registrar has a "transfer" time period to respond (by default five days) after which the
- * transfer is automatically approved. This flow can be used by the gaining or losing registrars (or
- * anyone with the correct authId) to see the status of a transfer, which may still be pending or
- * may have been approved, rejected, cancelled or implicitly approved by virtue of the transfer
- * period expiring.
+ * <p>This is no longer in use, because Nomulus follows the Minimum Dataset requirements, removing
+ * all contact information.
  *
- * @error {@link google.registry.flows.FlowUtils.NotLoggedInException}
- * @error {@link google.registry.flows.ResourceFlowUtils.BadAuthInfoForResourceException}
- * @error {@link google.registry.flows.ResourceFlowUtils.ResourceDoesNotExistException}
- * @error {@link google.registry.flows.exceptions.NoTransferHistoryToQueryException}
- * @error {@link google.registry.flows.exceptions.NotAuthorizedToViewTransferException}
+ * @error {@link ContactsProhibitedException}
  */
+@Deprecated
 @ReportingSpec(ActivityReportField.CONTACT_TRANSFER_QUERY)
-public final class ContactTransferQueryFlow implements TransactionalFlow {
+public final class ContactTransferQueryFlow implements Flow {
 
-  @Inject ExtensionManager extensionManager;
-  @Inject Optional<AuthInfo> authInfo;
-  @Inject @RegistrarId String registrarId;
-  @Inject @TargetId String targetId;
-  @Inject Clock clock;
-  @Inject EppResponse.Builder responseBuilder;
   @Inject ContactTransferQueryFlow() {}
 
   @Override
   public EppResponse run() throws EppException {
-    validateRegistrarIsLoggedIn(registrarId);
-    extensionManager.validate(); // There are no legal extensions for this flow.
-    Contact contact = loadAndVerifyExistence(Contact.class, targetId, clock.nowUtc());
-    verifyOptionalAuthInfo(authInfo, contact);
-    // Most of the fields on the transfer response are required, so there's no way to return valid
-    // XML if the object has never been transferred (and hence the fields aren't populated).
-    if (contact.getTransferData().getTransferStatus() == null) {
-      throw new NoTransferHistoryToQueryException();
-    }
-    // Note that the authorization info on the command (if present) has already been verified. If
-    // it's present, then the other checks are unnecessary.
-    if (authInfo.isEmpty()
-        && !registrarId.equals(contact.getTransferData().getGainingRegistrarId())
-        && !registrarId.equals(contact.getTransferData().getLosingRegistrarId())) {
-      throw new NotAuthorizedToViewTransferException();
-    }
-    return responseBuilder
-        .setResData(createTransferResponse(targetId, contact.getTransferData()))
-        .build();
+    throw new ContactsProhibitedException();
   }
 }

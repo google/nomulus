@@ -91,14 +91,6 @@ class EppLifecycleHostTest extends EppTestCase {
     createTld("example");
     assertThatLoginSucceeds("NewRegistrar", "foo-BAR2");
     // Create the fakesite domain.
-    assertThatCommand("contact_create_sh8013.xml")
-        .atTime("2000-06-01T00:00:00Z")
-        .hasResponse(
-            "contact_create_response_sh8013.xml",
-            ImmutableMap.of("CRDATE", "2000-06-01T00:00:00Z"));
-    assertThatCommand("contact_create_jd1234.xml")
-        .atTime("2000-06-01T00:01:00Z")
-        .hasResponse("contact_create_response_jd1234.xml");
     assertThatCommand("domain_create_fakesite_no_nameservers.xml")
         .atTime("2000-06-01T00:04:00Z")
         .hasResponse(
@@ -141,15 +133,6 @@ class EppLifecycleHostTest extends EppTestCase {
     createTlds("bar.foo.tld", "foo.tld", "tld");
 
     assertThatLoginSucceeds("NewRegistrar", "foo-BAR2");
-
-    assertThatCommand("contact_create_sh8013.xml")
-        .atTime("2000-06-01T00:00:00Z")
-        .hasResponse(
-            "contact_create_response_sh8013.xml",
-            ImmutableMap.of("CRDATE", "2000-06-01T00:00:00Z"));
-    assertThatCommand("contact_create_jd1234.xml")
-        .atTime("2000-06-01T00:01:00Z")
-        .hasResponse("contact_create_response_jd1234.xml");
 
     // Create domain example.bar.foo.tld
     assertThatCommand(
