@@ -646,23 +646,6 @@ artifacts {
   nomulus_test testUberJar
 }
 
-publishing {
-  repositories {
-    maven {
-      url project.publish_repo
-    }
-  }
-  publications {
-    nomulusTestsPublication(MavenPublication) {
-      groupId 'google.registry'
-      artifactId 'nomulus_test'
-      version project.nomulus_version
-      artifact nomulusFossJar
-      artifact testUberJar
-    }
-  }
-}
-
 task buildToolImage(dependsOn: nomulus, type: Exec) {
   commandLine 'docker', 'build', '-t', 'nomulus-tool', '.'
 }

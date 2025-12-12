@@ -126,22 +126,6 @@ artifacts {
   schema schemaJar
 }
 
-publishing {
-  repositories {
-    maven {
-      url project.publish_repo
-    }
-  }
-  publications {
-    sqlSchemaPublication(MavenPublication) {
-      groupId 'google.registry'
-      artifactId 'schema'
-      version project.schema_version
-      artifact schemaJar
-    }
-  }
-}
-
 // Adds flyway tasks such as: flywayInfo, flywayValidate, flywayMigrate (
 // deploying the schema in local repository), and flywayClean (dropping all data
 // in the database). The latter two commands are disallowed in environments
@@ -248,14 +232,10 @@ if (ext.isRestricted()) {
   }
 }
 
-if (project.baseSchemaTag != '') {
-  repositories {
-    maven {
-      url project.publish_repo
-    }
-  }
+if (project.schemaTestArtifactsDir != '') {
   dependencies {
-    integration "google.registry:schema:${project.baseSchemaTag}"
+    // For schemaIncrementalDeployTest, which only uses sandbox schema
+    integration files("${project.schemaTestArtifactsDir}/schema.sandbox.jar")
   }
 
   // Checks if Flyway scripts can be deployed to an existing database with

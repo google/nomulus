@@ -56,37 +56,50 @@ function runTest() {
   local deployed_system=${1}
   local version=${2}
   local dev_project=${3}
+  local env=${4}
 
-  local changes=$(getChangeCountSinceVersion ${deployed_system} ${version})
-  if [[ ${changes} = 0 ]]; then
-    echo "No relevant changes in ${deployed_system} since ${version}"
-    return 0
+#  local changes=$(getChangeCountSinceVersion ${deployed_system} ${version})
+#  if [[ ${changes} = 0 ]]; then
+#    echo "No relevant changes in ${deployed_system} since ${version}"
+#    return 0
+#  fi
+#
+#  echo "Found relevant changes in ${deployed_system} since ${version}"
+
+  if [[ -n "${SCHEMA_TEST_ARTIFACTS_DIR}" ]]; then
+    echo "Using schema test jars downloaded to ${SCHEMA_TEST_ARTIFACTS_DIR}"
+  else
+    SCHEMA_TEST_ARTIFACTS_DIR=$(mktemp -d)
+    echo "Created working dir ${SCHEMA_TEST_ARTIFACTS_DIR} for downloaded test jars."
+    trap 'rm -rf ${SCHEMA_TEST_ARTIFACTS_DIR}' EXIT
+    gcloud storage cp --verbosity=none \
+        "gs://${DEV_PROJECT}-deployed-tags/schema-test-artifacts/*.jar" \
+        "${SCHEMA_TEST_ARTIFACTS_DIR}"
   fi
 
-  echo "Found relevant changes in ${deployed_system} since ${version}"
-
-  local nomulus_version
-  local schema_version
+  local nomulus_env
+  local schema_env
 
   if [[ ${deployed_system} = "sql" ]]; then
-    schema_version=${version}
-    nomulus_version="local"
+    schema_env=${env}
+    nomulus_env="local"
   else
-    nomulus_version=${version}
-    schema_version="local"
+    nomulus_env=${env}
+    schema_env="local"
   fi
 
-  echo "Running test with -Pnomulus_version=${nomulus_version}" \
-      "-Pschema_version=${schema_version}"
+  echo "Running test with -Pnomulus_env=${nomulus_env}" \
+      "-Pschema_env=${schema_env}" \
+      "-PschemaTestArtifactsDir=${SCHEMA_TEST_ARTIFACTS_DIR}" \
 
   # The https scheme in the Maven repo URL below is required for Kokoro. See
   # ./run_schema_check.sh for more information.
   (cd ${SCRIPT_DIR}/..; \
       ./gradlew :integration:sqlIntegrationTest \
           -PdevProject=${dev_project} \
-          -Pnomulus_version=${nomulus_version} \
-          -Pschema_version=${schema_version} \
-          -Ppublish_repo=https://storage.googleapis.com/${dev_project}-deployed-tags/maven)
+          -Pnomulus_env=${nomulus_env} \
+          -Pschema_env=${schema_env} \
+          -PschemaTestArtifactsDir=${SCHEMA_TEST_ARTIFACTS_DIR})
 }
 
 set -e
@@ -128,19 +141,16 @@ if [[ -z "${ENV}" ]]; then
   SANDBOX_VERSION=$(fetchVersion ${DEPLOYED_SYSTEM} sandbox ${DEV_PROJECT})
   PROD_VERSION=$(fetchVersion ${DEPLOYED_SYSTEM} production ${DEV_PROJECT})
   if [[ ${SANDBOX_VERSION} = ${PROD_VERSION} ]]; then
-    VERSIONS=(${PROD_VERSION})
     echo "- sandbox and production at ${PROD_VERSION}"
+    runTest ${DEPLOYED_SYSTEM} ${SANDBOX_VERSION} ${DEV_PROJECT} sandbox
   else
-    VERSIONS=(${PROD_VERSION} ${SANDBOX_VERSION})
     echo "- sandbox at ${SANDBOX_VERSION}"
+    runTest ${DEPLOYED_SYSTEM} ${SANDBOX_VERSION} ${DEV_PROJECT} sandbox
     echo "- production at ${PROD_VERSION}"
+    runTest ${DEPLOYED_SYSTEM} ${PROD_VERSION} ${DEV_PROJECT} production
   fi
 else
   TARGET_VERSION=$(fetchVersion ${DEPLOYED_SYSTEM} ${ENV} ${DEV_PROJECT})
-  VERSIONS=(${TARGET_VERSION})
-    echo "- ${ENV} at ${TARGET_VERSION}"
+  echo "- ${ENV} at ${TARGET_VERSION}"
+  runTest ${DEPLOYED_SYSTEM} ${TARGET_VERSION} ${DEV_PROJECT} ${ENV}
 fi
-
-for v in "${VERSIONS[@]}"; do
-  runTest ${DEPLOYED_SYSTEM} ${v} ${DEV_PROJECT}
-done

@@ -154,8 +154,7 @@ steps:
       google/registry/beam/resave_all_epp_resources_pipeline_metadata.json \
       google.registry.beam.wipeout.WipeOutContactHistoryPiiPipeline \
       google/registry/beam/wipe_out_contact_history_pii_pipeline_metadata.json
-# Tentatively build and publish Cloud SQL schema jar here, before the schema release process is
-# finalized. Also publish nomulus:core jars that are needed for server/schema compatibility tests.
+# Build and upload the schema jar as well as other artifacts needed by the schema tests.
 - name: 'gcr.io/${PROJECT_ID}/builder:latest'
   entrypoint: /bin/bash
   # Set home for Gradle caches. Must be consistent with previous steps above
@@ -165,20 +164,8 @@ steps:
   - -c
   - |
     set -e
-    ./gradlew \
-      :db:publish \
-      -PmavenUrl=gcs://domain-registry-maven-repository/maven \
-      -PpluginsUrl=gcs://domain-registry-maven-repository/plugins \
-      -Ppublish_repo=gcs://${PROJECT_ID}-deployed-tags/maven \
-      -Pschema_version=${TAG_NAME}
-    ./gradlew \
-      :core:publish \
-      -PmavenUrl=gcs://domain-registry-maven-repository/maven \
-      -PpluginsUrl=gcs://domain-registry-maven-repository/plugins \
-      -Ppublish_repo=gcs://${PROJECT_ID}-deployed-tags/maven \
-      -Pnomulus_version=${TAG_NAME}
-    # Upload jars for use by schema deployment and schema compatibility test.
-    # The jars published to GCS will be unaccessible to Kokoro once public access is removed.
+    ./gradlew :db:schemaJar
+    ./gradlew :core:nomulusFossJar :core:testUberJar
     cp db/build/libs/schema.jar output/
     cp core/build/libs/nomulus-public.jar output/
     cp core/build/libs/nomulus-tests-alldeps.jar output/

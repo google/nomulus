@@ -117,28 +117,19 @@ PROPERTIES = [
     Property('dbUser', 'Database user name for use in connection'),
     Property('dbPassword', 'Database password for use in connection'),
 
-    Property('publish_repo',
-             'Maven repository that hosts the Cloud SQL schema jar and the '
-             'registry server test jars. Such jars are needed for '
-             'server/schema integration tests. Please refer to <a '
-             'href="./integration/README.md">integration project</a> for more '
-             'information.'),
-    Property('baseSchemaTag',
-             'The nomulus version tag of the schema for use in the schema'
-             'deployment integration test (:db:schemaIncrementalDeployTest)'),
-    Property('schema_version',
-             'The nomulus version tag of the schema for use in a database'
-             'integration test.'),
-    Property('nomulus_version',
-             'The version of nomulus to test against in a database '
-             'integration test.'),
     Property('dot_path',
              'The path to "dot", part of the graphviz package that converts '
              'a BEAM pipeline to image. Setting this property to empty string '
              'will disable image generation.',
              '/usr/bin/dot'),
     Property('pipeline',
-             'The name of the Beam pipeline being staged.')
+             'The name of the Beam pipeline being staged.'),
+    Property('nomulus_env',
+             'For use by scripts. Normally not set manually.'),
+    Property('schema_env',
+             'For use by scripts. Normally not set manually.'),
+    Property('schemaTestArtifactsDir',
+             'For use by scripts. Normally not set manually.')
 ]
 
 GRADLE_FLAGS = [

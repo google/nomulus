@@ -67,13 +67,17 @@ fi
 sandbox_tag=$(fetchVersion sql sandbox ${DEV_PROJECT})
 echo "Checking Flyway scripts against schema in Sandbox (${sandbox_tag})."
 
-# The URL of the Maven repo on GCS for the publish_repo parameter must use the
-# https scheme (https://storage.googleapis.com/{BUCKET}/{PATH}) in order to work
-# with Kokoro. Gradle's alternative gcs scheme does not work on Kokoro: a GCP
-# credential with proper scopes for GCS access is required even for public
-# buckets, however, Kokoro VM instances are not set up with such credentials.
-# Incidentally, gcs can be used on Cloud Build.
+if [[ -n "${SCHEMA_TEST_ARTIFACTS_DIR}" ]]; then
+  echo "Using schema test jars downloaded to ${SCHEMA_TEST_ARTIFACTS_DIR}"
+else
+  SCHEMA_TEST_ARTIFACTS_DIR=$(mktemp -d)
+  echo "Created working dir ${SCHEMA_TEST_ARTIFACTS_DIR} for downloaded test jars."
+  trap 'rm -rf ${SCHEMA_TEST_ARTIFACTS_DIR}' EXIT
+  gcloud storage cp --verbosity=none \
+      "gs://${DEV_PROJECT}-deployed-tags/schema-test-artifacts/*.jar" \
+      "${SCHEMA_TEST_ARTIFACTS_DIR}"
+fi
+
 (cd ${SCRIPT_DIR}/..; \
     ./gradlew :db:schemaIncrementalDeployTest \
-        -PbaseSchemaTag=${sandbox_tag} \
-        -Ppublish_repo=https://storage.googleapis.com/${DEV_PROJECT}-deployed-tags/maven)
+        -PschemaTestArtifactsDir="${SCHEMA_TEST_ARTIFACTS_DIR}")

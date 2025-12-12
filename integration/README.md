@@ -1,50 +1,38 @@
 ## Summary
 
-This project runs cross-version server/schema integration tests with arbitrary
-version pairs. It may be used by presubmit tests and continuous-integration
-tests, or as a gating test during release and/or deployment.
+This subproject provides two integration tests that ensure schema safety:
 
-## Maven Dependencies
+*  One test checks for edits to Flyway scripts already deployed to Sandbox
+   Production. Such edits will cause schema deployment failure.
+*  Another test runs cross-version server/schema integration tests between a
+   pull request and the deployed release in Sandbox or Production. If a pull
+   request fails this test, it either contains schema changes not compatible
+   with Sandbox/Production binaries, or binaries not compatible with the
+   current schema in Sandbox/Production. This test may be include in presubmit
+   testing.
 
-This release process is expected to publish the following Maven dependencies to
-a well-known repository:
+## Test Artifacts
 
-*   google.registry:schema, which contains the schema DDL scripts. This is done
-    by the ':db:publish' task.
-*   google.registry:nomulus_test, which contains the nomulus classes and
-    dependencies needed for the integration tests. This is done by the
-    ':core:publish' task.
+To support the tests above, each release generates the following test artifacts:
 
-After each deployment in sandbox or production, the deployment process is
-expected to save the version tag of the binary or schema along with the
-environment. These tags will be made available to test runners.
+*  schema.jar: The flyway scripts.
+*  nomulus-public.jar:  The open-source java classes.
+*  nomulus-tests-alldeps.jar: Uber jar with schema test classes and all
+   third-party dependencies.
+
+After each deployment in sandbox or production, the deployment process copies
+these artifacts to a well-known location, and appends the environment tag to
+the file names.
 
 ## Usage
 
-The ':integration:sqlIntegrationTest' task is the test runner. It uses the
-following properties:
+Use the convenience scripts in the `integration` folder to run the tests. 
 
-*   nomulus_version: a Registry server release tag, or 'local' if the code in
-    the local Git tree should be used.
-*   schema_version: a schema release tag, or 'local' if the code in the local
-    Git tree should be used.
-*   publish_repo: the Maven repository where release jars may be found. This is
-    required if neither of the above is 'local'.
+```bash
+./integration/run_schema_check.sh -p domain-registry-dev
 
-Given a program 'fetch_version_tag' that retrieves the currently deployed
-version tag of SQL schema or server binary in a particular environment (which as
-mentioned earlier are saved by the deployment process), the following code
-snippet checks if the current PR or local clone has schema changes, and if yes,
-tests the production server's version with the new schema.
-
-```shell
-current_prod_schema=$(fetch_version_tag schema production)
-current_prod_server=$(fetch_version_tag server production)
-schema_changes=$(git diff ${current_prod_schema} --name-only \
-  ./db/src/main/resources/sql/flyway/ | wc -l)
-[[ schema_changes -gt  0 ]] && ./gradlew :integration:sqlIntegrationTest \
-  -Ppublish_repo=${REPO} -Pschema_version=local \
-  -Pnomulus_version=current_prod_server
+./integration/run_compatibility_tests.sh -p domain-registry-dev -s sql
+./integration/run_compatibility_tests.sh -p domain-registry-dev -s nomulus
 ```
 
 ## Implementation Notes

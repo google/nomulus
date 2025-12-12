@@ -18,22 +18,16 @@
 import static com.google.common.base.Preconditions.checkArgument
 import static com.google.common.base.Strings.isNullOrEmpty
 
-if (schema_version == '' || nomulus_version == '') {
+if (schema_env == '' || nomulus_env == '') {
   return
 }
 
 def USE_LOCAL = 'local'
 
-if (schema_version != USE_LOCAL || nomulus_version != USE_LOCAL) {
+if (schema_env != USE_LOCAL || nomulus_env != USE_LOCAL) {
   checkArgument(
-      !isNullOrEmpty(publish_repo),
-      'The publish_repo is required when remote jars are needed.')
-
-  repositories {
-    maven {
-      url project.publish_repo
-    }
-  }
+      !isNullOrEmpty(schemaTestArtifactsDir),
+      'The schemaTestArtifactsDir is required when deployed jars are needed.')
 }
 
 def testUberJarName = ''
@@ -41,25 +35,25 @@ def testUberJarName = ''
 // Might need to add this back if we re-add nebula-lint
 // gradleLint.ignore('unused-dependency') {
 dependencies {
-  if (schema_version == USE_LOCAL) {
+  if (schema_env == USE_LOCAL) {
     testRuntimeOnly project(path: ':db', configuration: 'schema')
   } else {
-    testRuntimeOnly "google.registry:schema:${schema_version}"
+    testRuntimeOnly files("${project.schemaTestArtifactsDir}/schema.${schema_env}.jar")
   }
-  if (nomulus_version == USE_LOCAL) {
+  if (nomulus_env == USE_LOCAL) {
     testRuntimeOnly project(path: ':core', configuration: 'nomulus_test')
     testUberJarName = 'nomulus-tests-alldeps.jar'
   } else {
-    testRuntimeOnly "google.registry:nomulus_test:${nomulus_version}:public"
-    testRuntimeOnly "google.registry:nomulus_test:${nomulus_version}:alldeps"
-    testUberJarName = "nomulus_test-${nomulus_version}-alldeps.jar"
+    testRuntimeOnly files("${project.schemaTestArtifactsDir}/nomulus-public.${nomulus_env}.jar")
+    testRuntimeOnly files("${project.schemaTestArtifactsDir}/nomulus-tests-alldeps.${nomulus_env}.jar")
+    testUberJarName = "nomulus-tests-alldeps.${nomulus_env}.jar"
   }
 }
 // }
 
 configurations.testRuntimeOnly.transitive = false
 
-def unpackedTestDir = "${projectDir}/build/unpackedTests/${nomulus_version}"
+def unpackedTestDir = "${projectDir}/build/unpackedTests/${nomulus_env}"
 
 // Extracts SqlIntegrationTestSuite.class to a temp folder. Gradle's test
 // runner only looks for runnable tests on a regular file system. However,
@@ -78,7 +72,7 @@ task extractSqlIntegrationTestSuite (type: Copy) {
   into unpackedTestDir
   includeEmptyDirs = false
 
-  if (nomulus_version == USE_LOCAL) {
+  if (nomulus_env == USE_LOCAL) {
     dependsOn ':core:testUberJar'
   }
 }
