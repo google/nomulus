@@ -642,4 +642,8 @@ mosapi:
   - "epp"
   - "dnssec"
 
+  #Provides a fixed thread pool for parallel TLD processing.
+  # @see <a href="https://www.icann.org/mosapi-specification.pdf">
+  # ICANN MoSAPI Specification, Section 12.3</a>
+  tldThreadCnt: 4
 
