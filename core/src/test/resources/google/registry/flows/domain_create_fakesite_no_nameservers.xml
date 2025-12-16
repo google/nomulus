@@ -5,9 +5,6 @@
        xmlns:domain="urn:ietf:params:xml:ns:domain-1.0">
         <domain:name>fakesite.example</domain:name>
         <domain:period unit="y">2</domain:period>
-        <domain:registrant>jd1234</domain:registrant>
-        <domain:contact type="admin">sh8013</domain:contact>
-        <domain:contact type="tech">sh8013</domain:contact>
         <domain:authInfo>
           <domain:pw>2fooBAR</domain:pw>
         </domain:authInfo>

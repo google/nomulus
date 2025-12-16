@@ -24,8 +24,6 @@ import static com.google.common.collect.Sets.difference;
 import static com.google.common.collect.Sets.intersection;
 import static com.google.common.collect.Sets.union;
 import static google.registry.bsa.persistence.BsaLabelUtils.isLabelBlocked;
-import static google.registry.model.common.FeatureFlag.FeatureName.MINIMUM_DATASET_CONTACTS_OPTIONAL;
-import static google.registry.model.common.FeatureFlag.FeatureName.MINIMUM_DATASET_CONTACTS_PROHIBITED;
 import static google.registry.model.domain.Domain.MAX_REGISTRATION_YEARS;
 import static google.registry.model.domain.token.AllocationToken.TokenType.REGISTER_BSA;
 import static google.registry.model.tld.Tld.TldState.GENERAL_AVAILABILITY;
@@ -81,7 +79,6 @@ import google.registry.model.EppResource;
 import google.registry.model.billing.BillingBase.Flag;
 import google.registry.model.billing.BillingBase.Reason;
 import google.registry.model.billing.BillingRecurrence;
-import google.registry.model.common.FeatureFlag;
 import google.registry.model.contact.Contact;
 import google.registry.model.domain.DesignatedContact;
 import google.registry.model.domain.DesignatedContact.Type;
@@ -138,7 +135,6 @@ import google.registry.util.Idn;
 import java.math.BigDecimal;
 import java.util.Collection;
 import java.util.Comparator;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -486,31 +482,12 @@ public class DomainFlowUtils {
    */
   static void validateCreateContactData(
       Optional<VKey<Contact>> registrant, Set<DesignatedContact> contacts)
-      throws RequiredParameterMissingException, ParameterValuePolicyErrorException {
-    // TODO(b/353347632): Change these flag checks to a registry config check once minimum data set
-    //                    migration is completed.
-    if (FeatureFlag.isActiveNow(MINIMUM_DATASET_CONTACTS_PROHIBITED)) {
-      if (registrant.isPresent()) {
-        throw new RegistrantProhibitedException();
-      }
-      if (!contacts.isEmpty()) {
-        throw new ContactsProhibitedException();
-      }
-    } else if (!FeatureFlag.isActiveNow(MINIMUM_DATASET_CONTACTS_OPTIONAL)) {
-      if (registrant.isEmpty()) {
-        throw new MissingRegistrantException();
-      }
-
-      Set<Type> roles = new HashSet<>();
-      for (DesignatedContact contact : contacts) {
-        roles.add(contact.getType());
-      }
-      if (!roles.contains(Type.ADMIN)) {
-        throw new MissingAdminContactException();
-      }
-      if (!roles.contains(Type.TECH)) {
-        throw new MissingTechnicalContactException();
-      }
+      throws ParameterValuePolicyErrorException {
+    if (registrant.isPresent()) {
+      throw new RegistrantProhibitedException();
+    }
+    if (!contacts.isEmpty()) {
+      throw new ContactsProhibitedException();
     }
   }
 
@@ -523,33 +500,14 @@ public class DomainFlowUtils {
       Optional<VKey<Contact>> newRegistrant,
       Set<DesignatedContact> existingContacts,
       Set<DesignatedContact> newContacts)
-      throws RequiredParameterMissingException, ParameterValuePolicyErrorException {
-    // TODO(b/353347632): Change these flag checks to a registry config check once minimum data set
-    //                    migration is completed.
-    if (FeatureFlag.isActiveNow(MINIMUM_DATASET_CONTACTS_PROHIBITED)) {
-      // Throw if the update specifies a new registrant that is different from the existing one.
-      if (newRegistrant.isPresent() && !newRegistrant.equals(existingRegistrant)) {
-        throw new RegistrantProhibitedException();
-      }
-      // Throw if the update specifies any new contacts that weren't already present on the domain.
-      if (!Sets.difference(newContacts, existingContacts).isEmpty()) {
-        throw new ContactsProhibitedException();
-      }
-    } else if (!FeatureFlag.isActiveNow(MINIMUM_DATASET_CONTACTS_OPTIONAL)) {
-      // Throw if the update empties out a registrant that had been present.
-      if (newRegistrant.isEmpty() && existingRegistrant.isPresent()) {
-        throw new MissingRegistrantException();
-      }
-      // Throw if the update contains no admin contact when one had been present.
-      if (existingContacts.stream().anyMatch(c -> c.getType().equals(Type.ADMIN))
-          && newContacts.stream().noneMatch(c -> c.getType().equals(Type.ADMIN))) {
-        throw new MissingAdminContactException();
-      }
-      // Throw if the update contains no tech contact when one had been present.
-      if (existingContacts.stream().anyMatch(c -> c.getType().equals(Type.TECH))
-          && newContacts.stream().noneMatch(c -> c.getType().equals(Type.TECH))) {
-        throw new MissingTechnicalContactException();
-      }
+      throws ParameterValuePolicyErrorException {
+    // Throw if the update specifies a new registrant that is different from the existing one.
+    if (newRegistrant.isPresent() && !newRegistrant.equals(existingRegistrant)) {
+      throw new RegistrantProhibitedException();
+    }
+    // Throw if the update specifies any new contacts that weren't already present on the domain.
+    if (!Sets.difference(newContacts, existingContacts).isEmpty()) {
+      throw new ContactsProhibitedException();
     }
   }
 
@@ -1398,31 +1356,10 @@ public class DomainFlowUtils {
     }
   }
 
-  /** Registrant is required. */
-  static class MissingRegistrantException extends RequiredParameterMissingException {
-    public MissingRegistrantException() {
-      super("Registrant is required");
-    }
-  }
-
   /** Having a registrant is prohibited by registry policy. */
   static class RegistrantProhibitedException extends ParameterValuePolicyErrorException {
     public RegistrantProhibitedException() {
       super("Having a registrant is prohibited by registry policy");
-    }
-  }
-
-  /** Admin contact is required. */
-  static class MissingAdminContactException extends RequiredParameterMissingException {
-    public MissingAdminContactException() {
-      super("Admin contact is required");
-    }
-  }
-
-  /** Technical contact is required. */
-  static class MissingTechnicalContactException extends RequiredParameterMissingException {
-    public MissingTechnicalContactException() {
-      super("Technical contact is required");
     }
   }
 

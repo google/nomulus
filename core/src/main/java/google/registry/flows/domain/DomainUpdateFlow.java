@@ -39,8 +39,6 @@ import static google.registry.flows.domain.DomainFlowUtils.validateNoDuplicateCo
 import static google.registry.flows.domain.DomainFlowUtils.validateUpdateContactData;
 import static google.registry.flows.domain.DomainFlowUtils.verifyClientUpdateNotProhibited;
 import static google.registry.flows.domain.DomainFlowUtils.verifyNotInPendingDelete;
-import static google.registry.model.common.FeatureFlag.FeatureName.MINIMUM_DATASET_CONTACTS_OPTIONAL;
-import static google.registry.model.common.FeatureFlag.FeatureName.MINIMUM_DATASET_CONTACTS_PROHIBITED;
 import static google.registry.model.reporting.HistoryEntry.Type.DOMAIN_UPDATE;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
@@ -61,13 +59,11 @@ import google.registry.flows.custom.DomainUpdateFlowCustomLogic;
 import google.registry.flows.custom.DomainUpdateFlowCustomLogic.AfterValidationParameters;
 import google.registry.flows.custom.DomainUpdateFlowCustomLogic.BeforeSaveParameters;
 import google.registry.flows.custom.EntityChanges;
-import google.registry.flows.domain.DomainFlowUtils.MissingRegistrantException;
 import google.registry.flows.domain.DomainFlowUtils.NameserversNotSpecifiedForTldWithNameserverAllowListException;
 import google.registry.flows.domain.DomainFlowUtils.RegistrantProhibitedException;
 import google.registry.model.ImmutableObject;
 import google.registry.model.billing.BillingBase.Reason;
 import google.registry.model.billing.BillingEvent;
-import google.registry.model.common.FeatureFlag;
 import google.registry.model.contact.Contact;
 import google.registry.model.domain.DesignatedContact;
 import google.registry.model.domain.Domain;
@@ -123,10 +119,7 @@ import org.joda.time.DateTime;
  * @error {@link DomainFlowUtils.LinkedResourcesDoNotExistException}
  * @error {@link DomainFlowUtils.LinkedResourceInPendingDeleteProhibitsOperationException}
  * @error {@link DomainFlowUtils.MaxSigLifeChangeNotSupportedException}
- * @error {@link DomainFlowUtils.MissingAdminContactException}
  * @error {@link DomainFlowUtils.MissingContactTypeException}
- * @error {@link DomainFlowUtils.MissingTechnicalContactException}
- * @error {@link DomainFlowUtils.MissingRegistrantException}
  * @error {@link DomainFlowUtils.NameserversNotAllowedForTldException}
  * @error {@link NameserversNotSpecifiedForTldWithNameserverAllowListException}
  * @error {@link DomainFlowUtils.NotAuthorizedForTldException}
@@ -307,18 +300,11 @@ public final class DomainUpdateFlow implements MutatingFlow {
     return domainBuilder.build();
   }
 
-  private Optional<VKey<Contact>> determineUpdatedRegistrant(Change change, Domain domain)
-      throws EppException {
+  private Optional<VKey<Contact>> determineUpdatedRegistrant(Change change, Domain domain) {
     // During or after the minimum dataset transition, allow registrant to be removed.
     if (change.getRegistrantContactId().isPresent()
         && change.getRegistrantContactId().get().isEmpty()) {
-      // TODO(b/353347632): Change this flag check to a registry config check.
-      if (FeatureFlag.isActiveNow(MINIMUM_DATASET_CONTACTS_OPTIONAL)
-          || FeatureFlag.isActiveNow(MINIMUM_DATASET_CONTACTS_PROHIBITED)) {
-        return Optional.empty();
-      } else {
-        throw new MissingRegistrantException();
-      }
+      return Optional.empty();
     }
     return change.getRegistrant().or(domain::getRegistrant);
   }

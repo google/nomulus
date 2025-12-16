@@ -24,10 +24,6 @@ import static google.registry.model.billing.BillingBase.Flag.RESERVED;
 import static google.registry.model.billing.BillingBase.Flag.SUNRISE;
 import static google.registry.model.billing.BillingBase.RenewalPriceBehavior.NONPREMIUM;
 import static google.registry.model.billing.BillingBase.RenewalPriceBehavior.SPECIFIED;
-import static google.registry.model.common.FeatureFlag.FeatureName.MINIMUM_DATASET_CONTACTS_OPTIONAL;
-import static google.registry.model.common.FeatureFlag.FeatureName.MINIMUM_DATASET_CONTACTS_PROHIBITED;
-import static google.registry.model.common.FeatureFlag.FeatureStatus.ACTIVE;
-import static google.registry.model.common.FeatureFlag.FeatureStatus.INACTIVE;
 import static google.registry.model.domain.fee.Fee.FEE_EXTENSION_URIS;
 import static google.registry.model.domain.token.AllocationToken.TokenType.BULK_PRICING;
 import static google.registry.model.domain.token.AllocationToken.TokenType.DEFAULT_PROMO;
@@ -53,7 +49,6 @@ import static google.registry.testing.DatabaseHelper.deleteTld;
 import static google.registry.testing.DatabaseHelper.getHistoryEntries;
 import static google.registry.testing.DatabaseHelper.loadAllOf;
 import static google.registry.testing.DatabaseHelper.loadRegistrar;
-import static google.registry.testing.DatabaseHelper.newContact;
 import static google.registry.testing.DatabaseHelper.newHost;
 import static google.registry.testing.DatabaseHelper.persistActiveContact;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
@@ -104,7 +99,6 @@ import google.registry.flows.domain.DomainFlowUtils.DomainLabelBlockedByBsaExcep
 import google.registry.flows.domain.DomainFlowUtils.DomainLabelTooLongException;
 import google.registry.flows.domain.DomainFlowUtils.DomainNameExistsAsTldException;
 import google.registry.flows.domain.DomainFlowUtils.DomainReservedException;
-import google.registry.flows.domain.DomainFlowUtils.DuplicateContactForRoleException;
 import google.registry.flows.domain.DomainFlowUtils.EmptyDomainNamePartException;
 import google.registry.flows.domain.DomainFlowUtils.ExceedsMaxRegistrationYearsException;
 import google.registry.flows.domain.DomainFlowUtils.ExpiredClaimException;
@@ -123,12 +117,9 @@ import google.registry.flows.domain.DomainFlowUtils.LinkedResourceInPendingDelet
 import google.registry.flows.domain.DomainFlowUtils.LinkedResourcesDoNotExistException;
 import google.registry.flows.domain.DomainFlowUtils.MalformedTcnIdException;
 import google.registry.flows.domain.DomainFlowUtils.MaxSigLifeNotSupportedException;
-import google.registry.flows.domain.DomainFlowUtils.MissingAdminContactException;
 import google.registry.flows.domain.DomainFlowUtils.MissingBillingAccountMapException;
 import google.registry.flows.domain.DomainFlowUtils.MissingClaimsNoticeException;
 import google.registry.flows.domain.DomainFlowUtils.MissingContactTypeException;
-import google.registry.flows.domain.DomainFlowUtils.MissingRegistrantException;
-import google.registry.flows.domain.DomainFlowUtils.MissingTechnicalContactException;
 import google.registry.flows.domain.DomainFlowUtils.NameserversNotAllowedForTldException;
 import google.registry.flows.domain.DomainFlowUtils.NameserversNotSpecifiedForTldWithNameserverAllowListException;
 import google.registry.flows.domain.DomainFlowUtils.NotAuthorizedForTldException;
@@ -155,7 +146,6 @@ import google.registry.model.billing.BillingBase.Reason;
 import google.registry.model.billing.BillingBase.RenewalPriceBehavior;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingRecurrence;
-import google.registry.model.common.FeatureFlag;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.GracePeriod;
@@ -1946,28 +1936,6 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
   }
 
   @Test
-  void testFailure_missingContact() {
-    persistActiveHost("ns1.example.net");
-    persistActiveHost("ns2.example.net");
-    persistActiveContact("jd1234");
-    LinkedResourcesDoNotExistException thrown =
-        assertThrows(LinkedResourcesDoNotExistException.class, this::runFlow);
-    assertThat(thrown).hasMessageThat().contains("(sh8013)");
-  }
-
-  @Test
-  void testFailure_pendingDeleteContact() {
-    persistActiveHost("ns1.example.net");
-    persistActiveHost("ns2.example.net");
-    persistActiveContact("sh8013");
-    persistResource(newContact("jd1234").asBuilder().addStatusValue(PENDING_DELETE).build());
-    clock.advanceOneMilli();
-    LinkedResourceInPendingDeleteProhibitsOperationException thrown =
-        assertThrows(LinkedResourceInPendingDeleteProhibitsOperationException.class, this::runFlow);
-    assertThat(thrown).hasMessageThat().contains("jd1234");
-  }
-
-  @Test
   void testFailure_wrongTld() {
     persistContactsAndHosts("net");
     deleteTld("tld");
@@ -2073,14 +2041,6 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
   }
 
   @Test
-  void testFailure_duplicateContact() {
-    setEppInput("domain_create_duplicate_contact.xml");
-    persistContactsAndHosts();
-    EppException thrown = assertThrows(DuplicateContactForRoleException.class, this::runFlow);
-    assertAboutEppExceptions().that(thrown).marshalsToXml();
-  }
-
-  @Test
   void testFailure_missingContactType() {
     // We need to test for missing type, but not for invalid - the schema enforces that for us.
     setEppInput("domain_create_missing_contact_type.xml");
@@ -2090,147 +2050,19 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
   }
 
   @Test
-  void testFailure_missingRegistrant() {
-    setEppInput("domain_create_missing_registrant.xml");
-    persistContactsAndHosts();
-    EppException thrown = assertThrows(MissingRegistrantException.class, this::runFlow);
-    assertAboutEppExceptions().that(thrown).marshalsToXml();
-  }
-
-  @Test
-  void testSuccess_minimumDatasetPhase1_missingRegistrant() throws Exception {
-    persistResource(
-        new FeatureFlag.Builder()
-            .setFeatureName(MINIMUM_DATASET_CONTACTS_OPTIONAL)
-            .setStatusMap(
-                ImmutableSortedMap.of(START_OF_TIME, INACTIVE, clock.nowUtc().minusDays(5), ACTIVE))
-            .build());
-    setEppInput("domain_create_missing_registrant.xml");
-    persistContactsAndHosts();
-    runFlowAssertResponse(
-        loadFile("domain_create_response.xml", ImmutableMap.of("DOMAIN", "example.tld")));
-  }
-
-  @Test
-  void testFailure_minimumDatasetPhase2_noRegistrantButSomeOtherContactTypes() throws Exception {
-    persistResource(
-        new FeatureFlag.Builder()
-            .setFeatureName(MINIMUM_DATASET_CONTACTS_PROHIBITED)
-            .setStatusMap(
-                ImmutableSortedMap.of(START_OF_TIME, INACTIVE, clock.nowUtc().minusDays(5), ACTIVE))
-            .build());
-    setEppInput("domain_create_missing_registrant.xml");
+  void testFailure_minimumDataset_noRegistrantButSomeOtherContactTypes() throws Exception {
+    setEppInput("domain_create_other_contact_types.xml");
     persistContactsAndHosts();
     EppException thrown = assertThrows(ContactsProhibitedException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
   @Test
-  void testFailure_missingAdmin() {
-    setEppInput("domain_create_missing_admin.xml");
-    persistContactsAndHosts();
-    EppException thrown = assertThrows(MissingAdminContactException.class, this::runFlow);
-    assertAboutEppExceptions().that(thrown).marshalsToXml();
-  }
-
-  @Test
-  void testSuccess_minimumDatasetPhase1_missingAdmin() throws Exception {
-    persistResource(
-        new FeatureFlag.Builder()
-            .setFeatureName(MINIMUM_DATASET_CONTACTS_OPTIONAL)
-            .setStatusMap(
-                ImmutableSortedMap.of(START_OF_TIME, INACTIVE, clock.nowUtc().minusDays(5), ACTIVE))
-            .build());
-    setEppInput("domain_create_missing_admin.xml");
-    persistContactsAndHosts();
-    runFlowAssertResponse(
-        loadFile("domain_create_response.xml", ImmutableMap.of("DOMAIN", "example.tld")));
-  }
-
-  @Test
-  void testFailure_minimumDatasetPhase2_registrantAndOtherContactsSent() throws Exception {
-    persistResource(
-        new FeatureFlag.Builder()
-            .setFeatureName(MINIMUM_DATASET_CONTACTS_PROHIBITED)
-            .setStatusMap(
-                ImmutableSortedMap.of(START_OF_TIME, INACTIVE, clock.nowUtc().minusDays(5), ACTIVE))
-            .build());
-    setEppInput("domain_create_missing_admin.xml");
+  void testFailure_minimumDataset_registrantNotPermitted() throws Exception {
+    setEppInput("domain_create_has_registrant_contact.xml");
     persistContactsAndHosts();
     EppException thrown = assertThrows(RegistrantProhibitedException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
-  }
-
-  @Test
-  void testFailure_missingTech() {
-    setEppInput("domain_create_missing_tech.xml");
-    persistContactsAndHosts();
-    EppException thrown = assertThrows(MissingTechnicalContactException.class, this::runFlow);
-    assertAboutEppExceptions().that(thrown).marshalsToXml();
-  }
-
-  @Test
-  void testSuccess_minimumDatasetPhase1_missingTech() throws Exception {
-    persistResource(
-        new FeatureFlag.Builder()
-            .setFeatureName(MINIMUM_DATASET_CONTACTS_OPTIONAL)
-            .setStatusMap(
-                ImmutableSortedMap.of(START_OF_TIME, INACTIVE, clock.nowUtc().minusDays(5), ACTIVE))
-            .build());
-    setEppInput("domain_create_missing_tech.xml");
-    persistContactsAndHosts();
-    runFlowAssertResponse(
-        loadFile("domain_create_response.xml", ImmutableMap.of("DOMAIN", "example.tld")));
-  }
-
-  @Test
-  void testFailure_missingNonRegistrantContacts() {
-    setEppInput("domain_create_missing_non_registrant_contacts.xml");
-    persistContactsAndHosts();
-    EppException thrown = assertThrows(MissingAdminContactException.class, this::runFlow);
-    assertAboutEppExceptions().that(thrown).marshalsToXml();
-  }
-
-  @Test
-  void testSuccess_minimumDatasetPhase1_missingNonRegistrantContacts() throws Exception {
-    persistResource(
-        new FeatureFlag.Builder()
-            .setFeatureName(MINIMUM_DATASET_CONTACTS_OPTIONAL)
-            .setStatusMap(
-                ImmutableSortedMap.of(START_OF_TIME, INACTIVE, clock.nowUtc().minusDays(5), ACTIVE))
-            .build());
-    setEppInput("domain_create_missing_non_registrant_contacts.xml");
-    persistContactsAndHosts();
-    runFlowAssertResponse(
-        loadFile("domain_create_response.xml", ImmutableMap.of("DOMAIN", "example.tld")));
-  }
-
-  @Test
-  void testFailure_minimumDatasetPhase2_registrantNotPermitted() throws Exception {
-    persistResource(
-        new FeatureFlag.Builder()
-            .setFeatureName(MINIMUM_DATASET_CONTACTS_PROHIBITED)
-            .setStatusMap(
-                ImmutableSortedMap.of(START_OF_TIME, INACTIVE, clock.nowUtc().minusDays(5), ACTIVE))
-            .build());
-    setEppInput("domain_create_missing_non_registrant_contacts.xml");
-    persistContactsAndHosts();
-    EppException thrown = assertThrows(RegistrantProhibitedException.class, this::runFlow);
-    assertAboutEppExceptions().that(thrown).marshalsToXml();
-  }
-
-  @Test
-  void testSuccess_minimumDatasetPhase2_noContactsWhatsoever() throws Exception {
-    persistResource(
-        new FeatureFlag.Builder()
-            .setFeatureName(MINIMUM_DATASET_CONTACTS_PROHIBITED)
-            .setStatusMap(
-                ImmutableSortedMap.of(START_OF_TIME, INACTIVE, clock.nowUtc().minusDays(5), ACTIVE))
-            .build());
-    setEppInput("domain_create_no_contacts.xml");
-    persistContactsAndHosts();
-    runFlowAssertResponse(
-        loadFile("domain_create_response.xml", ImmutableMap.of("DOMAIN", "example.tld")));
   }
 
   @Test

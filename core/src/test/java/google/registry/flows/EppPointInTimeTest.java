@@ -17,24 +17,18 @@ package google.registry.flows;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.EppResourceUtils.loadAtPointInTime;
 import static google.registry.model.ImmutableObjectSubject.assertAboutImmutableObjects;
-import static google.registry.model.common.FeatureFlag.FeatureName.MINIMUM_DATASET_CONTACTS_OPTIONAL;
-import static google.registry.model.common.FeatureFlag.FeatureStatus.INACTIVE;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.loadAllOf;
 import static google.registry.testing.DatabaseHelper.loadByEntity;
 import static google.registry.testing.DatabaseHelper.persistActiveContact;
 import static google.registry.testing.DatabaseHelper.persistActiveHost;
-import static google.registry.testing.DatabaseHelper.persistResource;
-import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.joda.time.DateTimeZone.UTC;
 import static org.joda.time.Duration.standardDays;
 
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.collect.Iterables;
 import google.registry.flows.EppTestComponent.FakesAndMocksModule;
-import google.registry.model.common.FeatureFlag;
 import google.registry.model.domain.Domain;
 import google.registry.monitoring.whitebox.EppMetric;
 import google.registry.persistence.transaction.JpaTestExtensions;
@@ -60,12 +54,6 @@ class EppPointInTimeTest {
 
   @BeforeEach
   void beforeEach() {
-    persistResource(
-        new FeatureFlag()
-            .asBuilder()
-            .setFeatureName(MINIMUM_DATASET_CONTACTS_OPTIONAL)
-            .setStatusMap(ImmutableSortedMap.of(START_OF_TIME, INACTIVE))
-            .build());
     createTld("tld");
   }
 

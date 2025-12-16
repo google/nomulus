@@ -54,13 +54,15 @@ import org.joda.time.Duration;
  * Acquisition) process in order to transfer a (possibly large) list of domains from one registrar
  * to another, though it may be used in other situations as well.
  *
+ * <p>The body of the HTTP post request should be a JSON list of the domains to be transferred.
+ * Because the list of domains to process can be quite large, this action should be called by a tool
+ * that batches the list of domains into reasonable sizes if necessary. The recommended usage path
+ * is to call this through the {@link google.registry.tools.BulkDomainTransferCommand}, which
+ * handles batching and input handling.
+ *
  * <p>This runs as a single-threaded idempotent action that runs a superuser domain transfer on each
  * domain to process. We go through the standard EPP process to make sure that we have an accurate
  * historical representation of events (rather than force-modifying the domains in place).
- *
- * <p>The body of the HTTP post request should be a JSON list of the domains to be transferred.
- * Because the list of domains to process can be quite large, this action should be called by a tool
- * that batches the list of domains into reasonable sizes if necessary.
  *
  * <p>Consider passing in an "maxQps" parameter based on the number of domains being transferred,
  * otherwise the default is {@link BatchModule#DEFAULT_MAX_QPS}.
