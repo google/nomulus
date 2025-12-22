@@ -202,4 +202,4 @@ images:
   - 'gcr.io/${PROJECT_ID}/proxy:${TAG_NAME}'
 timeout: 7200s
 options:
-  machineType: 'E2_STANDARD_32d'
+  machineType: 'E2_STANDARD_32'
