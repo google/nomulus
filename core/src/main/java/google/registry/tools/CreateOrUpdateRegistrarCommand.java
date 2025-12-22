@@ -19,12 +19,12 @@ import static com.google.common.base.Strings.isNullOrEmpty;
 import static com.google.common.base.Verify.verify;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
-import static google.registry.util.DomainNameUtils.canonicalizeHostname;
 import static google.registry.util.RegistrarUtils.normalizeRegistrarName;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 import static org.joda.time.DateTimeZone.UTC;
 
 import com.beust.jcommander.Parameter;
+import com.google.common.base.Ascii;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import google.registry.flows.certs.CertificateChecker;
@@ -305,20 +305,16 @@ abstract class CreateOrUpdateRegistrarCommand extends MutatingCommand {
       if (!allowedTlds.isEmpty()) {
         checkArgument(
             addAllowedTlds.isEmpty(), "Can't specify both --allowedTlds and --addAllowedTlds");
-        ImmutableSet.Builder<String> allowedTldsBuilder = new ImmutableSet.Builder<>();
-        for (String allowedTld : allowedTlds) {
-          allowedTldsBuilder.add(canonicalizeHostname(allowedTld));
-        }
-        builder.setAllowedTlds(allowedTldsBuilder.build());
+        builder.setAllowedTlds(
+            allowedTlds.stream().map(Ascii::toLowerCase).collect(toImmutableSet()));
       }
       if (!addAllowedTlds.isEmpty()) {
         ImmutableSet.Builder<String> allowedTldsBuilder = new ImmutableSet.Builder<>();
         if (oldRegistrar != null) {
           allowedTldsBuilder.addAll(oldRegistrar.getAllowedTlds());
         }
-        for (String allowedTld : addAllowedTlds) {
-          allowedTldsBuilder.add(canonicalizeHostname(allowedTld));
-        }
+        allowedTldsBuilder.addAll(
+            addAllowedTlds.stream().map(Ascii::toLowerCase).collect(toImmutableSet()));
         builder.setAllowedTlds(allowedTldsBuilder.build());
       }
       if (ipAllowList != null) {

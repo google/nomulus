@@ -125,6 +125,24 @@ class UpdateRegistrarCommandTest extends CommandTestCase<UpdateRegistrarCommand>
   }
 
   @Test
+  void testSuccess_allowedTlds_tldNameWithHyphens() throws Exception {
+    persistRdapAbuseContact();
+    createTlds("zz-main-1611", "foobar");
+    persistResource(
+        loadRegistrar("NewRegistrar")
+            .asBuilder()
+            .setAllowedTlds(ImmutableSet.of("foobar"))
+            .build());
+    runCommandInEnvironment(
+        RegistryToolEnvironment.PRODUCTION,
+        "--allowed_tlds=zz-main-1611,foobar",
+        "--force",
+        "NewRegistrar");
+    assertThat(loadRegistrar("NewRegistrar").getAllowedTlds())
+        .containsExactly("zz-main-1611", "foobar");
+  }
+
+  @Test
   void testSuccess_addAllowedTlds() throws Exception {
     persistRdapAbuseContact();
     createTlds("xn--q9jyb4c", "foo", "bar");
@@ -140,6 +158,19 @@ class UpdateRegistrarCommandTest extends CommandTestCase<UpdateRegistrarCommand>
         "NewRegistrar");
     assertThat(loadRegistrar("NewRegistrar").getAllowedTlds())
         .containsExactly("xn--q9jyb4c", "foo", "bar");
+  }
+
+  @Test
+  void testSuccess_addAllowedTlds_tldNameWithHyphens() throws Exception {
+    persistRdapAbuseContact();
+    createTlds("foo", "bar", "zz-main-1611");
+    runCommandInEnvironment(
+        RegistryToolEnvironment.PRODUCTION,
+        "--add_allowed_tlds=foo,bar",
+        "--force",
+        "NewRegistrar");
+    assertThat(loadRegistrar("NewRegistrar").getAllowedTlds())
+        .containsExactly("foo", "bar", "zz-main-1611");
   }
 
   @Test
