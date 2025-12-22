@@ -14,9 +14,15 @@
 
 package google.registry.util;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 import com.google.common.base.Joiner;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Sets;
 import com.ibm.icu.text.IDNA;
+import com.ibm.icu.text.IDNA.Error;
 import com.ibm.icu.text.IDNA.Info;
+import java.util.Set;
 
 /**
  * A partial API-compatible replacement for {@link java.net.IDN} that replaces <a
@@ -51,8 +57,26 @@ public final class Idn {
     StringBuilder result = new StringBuilder();
     UTS46_INSTANCE.nameToASCII(name, result, info);
     if (info.hasErrors()) {
-      throw new IllegalArgumentException("Errors: " + Joiner.on(',').join(info.getErrors()));
+      throw new IllegalArgumentException(
+          String.format(
+              "Errors ASCIIfying label %s: %s", name, Joiner.on(',').join(info.getErrors())));
     }
+    return result.toString();
+  }
+
+  /**
+   * Translates a TLD string from Unicode to Punycoded ASCII.
+   *
+   * <p>Unlike {@link #toASCII}, this method does NOT enforce the restriction that hyphens may only
+   * be present on the third and fourth characters for "xn--" ACE-formatted domains.
+   */
+  public static String tldToASCII(String name) {
+    Info info = new Info();
+    StringBuilder result = new StringBuilder();
+    UTS46_INSTANCE.nameToASCII(name, result, info);
+    Set<Error> errors = Sets.difference(info.getErrors(), ImmutableSet.of(Error.HYPHEN_3_4));
+    checkArgument(
+        errors.isEmpty(), "Errors ASCIIfying label %s: %s", name, Joiner.on(',').join(errors));
     return result.toString();
   }
 

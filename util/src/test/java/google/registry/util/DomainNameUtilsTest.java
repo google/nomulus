@@ -51,7 +51,13 @@ class DomainNameUtilsTest {
         assertThrows(
             IllegalArgumentException.class,
             () -> canonicalizeHostname("119.63.227.45--ns1.jhz-tt.uk"));
-    assertThat(thrown).hasCauseThat().hasMessageThat().contains("HYPHEN_3_4");
+    assertThat(thrown).hasMessageThat().contains("HYPHEN_3_4");
+  }
+
+  @Test
+  void testCanonicalizeHostname_allows34HyphenOnTld() {
+    assertThat(canonicalizeHostname("foobar.zz--main-2262")).isEqualTo("foobar.zz--main-2262");
+    assertThat(canonicalizeHostname("みんな.45--foo")).isEqualTo("xn--q9jyb4c.45--foo");
   }
 
   @Test
