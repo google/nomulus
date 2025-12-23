@@ -14,6 +14,7 @@ steps:
   env: [ 'GRADLE_USER_HOME=/workspace/cloudbuild-caches' ]
   args: ['./gradlew',
          'test',
+         '--max-workers=8',
          '-PskipDockerIncompatibleTests=true',
          '-PmavenUrl=gcs://domain-registry-maven-repository/maven',
          '-PpluginsUrl=gcs://domain-registry-maven-repository/plugins'
