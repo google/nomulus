@@ -1034,7 +1034,7 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
       return this;
     }
 
-    public static final Pattern ROID_SUFFIX_PATTERN = Pattern.compile("^[A-Z\\d_]{1,8}$");
+    public static final Pattern ROID_SUFFIX_PATTERN = Pattern.compile("^[A-Z\\d]{1,8}$");
 
     public Builder setRoidSuffix(String roidSuffix) {
       checkArgument(
