@@ -751,7 +751,9 @@ public final class TldTest extends EntityTestCase {
         assertThrows(
             IllegalArgumentException.class,
             () -> Tld.get("tld").asBuilder().setRoidSuffix("123456789"));
-    assertThat(e).hasMessageThat().isEqualTo("ROID suffix must be in format ^[A-Z\\d_]{1,8}$");
+    assertThat(e)
+        .hasMessageThat()
+        .isEqualTo("ROID suffix 123456789 must be in format ^[A-Z\\d]{1,8}$");
   }
 
   @Test
@@ -764,6 +766,12 @@ public final class TldTest extends EntityTestCase {
   void testFailure_roidSuffixContainsInvalidCharacters() {
     assertThrows(
         IllegalArgumentException.class, () -> Tld.get("tld").asBuilder().setRoidSuffix("ABC-DEF"));
+  }
+
+  @Test
+  void testFailure_roidSuffixContainsUnderscores() {
+    assertThrows(
+        IllegalArgumentException.class, () -> Tld.get("tld").asBuilder().setRoidSuffix("ABC_DEF"));
   }
 
   @Test

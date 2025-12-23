@@ -420,8 +420,7 @@ public final class DatabaseHelper {
   public static Tld createTld(String tld, ImmutableSortedMap<DateTime, TldState> tldStates) {
     // Coerce the TLD string into a valid ROID suffix.
     String roidSuffix =
-        Ascii.toUpperCase(tld.replaceFirst(ACE_PREFIX_REGEX, "").replace('.', '_'))
-            .replace('-', '_');
+        Ascii.toUpperCase(tld.replaceFirst(ACE_PREFIX_REGEX, "").replace(".", "")).replace("-", "");
     return createTld(
         tld, roidSuffix.length() > 8 ? roidSuffix.substring(0, 8) : roidSuffix, tldStates);
   }

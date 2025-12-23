@@ -163,7 +163,7 @@ public class RegistryJpaReadTest {
   }
 
   private void setupForJoinQuery() {
-    Tld registry = newTld("com", "ABCD_APP");
+    Tld registry = newTld("com", "ABCDAPP");
     Registrar registrar =
         makeRegistrar1()
             .asBuilder()

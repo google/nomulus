@@ -1034,12 +1034,13 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
       return this;
     }
 
-    public static final Pattern ROID_SUFFIX_PATTERN = Pattern.compile("^[A-Z\\d_]{1,8}$");
+    public static final Pattern ROID_SUFFIX_PATTERN = Pattern.compile("^[A-Z\\d]{1,8}$");
 
     public Builder setRoidSuffix(String roidSuffix) {
       checkArgument(
           ROID_SUFFIX_PATTERN.matcher(roidSuffix).matches(),
-          "ROID suffix must be in format %s",
+          "ROID suffix %s must be in format %s",
+          roidSuffix,
           ROID_SUFFIX_PATTERN.pattern());
       getInstance().roidSuffix = roidSuffix;
       return this;

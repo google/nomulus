@@ -246,7 +246,7 @@ class RdapDomainActionTest extends RdapActionBaseTestCase<RdapDomainAction> {
         .isEqualTo(
             addDomainBoilerplateNotices(
                 jsonFileBuilder()
-                    .addDomain("cat.1.tld", "D-1_TLD")
+                    .addDomain("cat.1.tld", "D-1TLD")
                     .addNameserver("ns1.cat.lol", "2-ROID")
                     .addNameserver("ns2.cat.lol", "4-ROID")
                     .addRegistrar("Multilevel Registrar")

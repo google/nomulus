@@ -368,7 +368,7 @@ public class ConfigureTldCommandTest extends CommandTestCase<ConfigureTldCommand
                     "TLDSTR", name, "TLDUNICODE", name, "ROIDSUFFIX", "TLLLLLLLLLLLLLLLLLLLLLLD")));
     IllegalArgumentException thrown =
         assertThrows(IllegalArgumentException.class, () -> runCommandForced("--input=" + tldFile));
-    assertThat(thrown.getMessage()).isEqualTo("ROID suffix must be in format ^[A-Z\\d_]{1,8}$");
+    assertThat(thrown.getMessage()).isEqualTo("ROID suffix must be in format ^[A-Z\\d]{1,8}$");
   }
 
   @Test

@@ -732,7 +732,7 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
         RequestType.NAME,
         "cat.1.test",
         jsonFileBuilder()
-            .addDomain("cat.1.test", "1B-1_TEST")
+            .addDomain("cat.1.test", "1B-1TEST")
             .addRegistrar("1.test")
             .addNameserver("ns1.cat.1.test", "17-ROID")
             .addNameserver("ns2.cat.2.test", "19-ROID")
@@ -746,7 +746,7 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
         RequestType.NAME,
         "ca*.1.test",
         jsonFileBuilder()
-            .addDomain("cat.1.test", "1B-1_TEST")
+            .addDomain("cat.1.test", "1B-1TEST")
             .addRegistrar("1.test")
             .addNameserver("ns1.cat.1.test", "17-ROID")
             .addNameserver("ns2.cat.2.test", "19-ROID")
@@ -822,7 +822,7 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
         .that(generateActualJson(RequestType.NAME, "cat.*"))
         .isEqualTo(
             jsonFileBuilder()
-                .addDomain("cat.1.test", "1B-1_TEST")
+                .addDomain("cat.1.test", "1B-1TEST")
                 .addDomain("cat.example", "F-EXAMPLE")
                 .addDomain("cat.lol", "6-LOL")
                 .addDomain("cat.みんな", "15-Q9JYB4C")
@@ -860,7 +860,7 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
         .that(generateActualJson(RequestType.NAME, "cat*"))
         .isEqualTo(
             jsonFileBuilder()
-                .addDomain("cat.1.test", "1B-1_TEST")
+                .addDomain("cat.1.test", "1B-1TEST")
                 .addDomain("cat.example", "F-EXAMPLE")
                 .addDomain("cat.lol", "6-LOL")
                 .addDomain("cat.みんな", "15-Q9JYB4C")
@@ -1284,7 +1284,7 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
         RequestType.NS_LDH_NAME,
         "ns1.cat.1.test",
         jsonFileBuilder()
-            .addDomain("cat.1.test", "1B-1_TEST")
+            .addDomain("cat.1.test", "1B-1TEST")
             .addRegistrar("1.test")
             .addNameserver("ns1.cat.1.test", "17-ROID")
             .addNameserver("ns2.cat.2.test", "19-ROID")
@@ -1298,7 +1298,7 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
         RequestType.NS_LDH_NAME,
         "ns*.cat.1.test",
         jsonFileBuilder()
-            .addDomain("cat.1.test", "1B-1_TEST")
+            .addDomain("cat.1.test", "1B-1TEST")
             .addRegistrar("1.test")
             .addNameserver("ns1.cat.1.test", "17-ROID")
             .addNameserver("ns2.cat.2.test", "19-ROID")
