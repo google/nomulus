@@ -1240,49 +1240,49 @@ public class DomainFlowUtils {
   }
 
   /** Domain names can only contain a-z, 0-9, '.' and '-'. */
-  static class BadDomainNameCharacterException extends ParameterValuePolicyErrorException {
+  static class BadDomainNameCharacterException extends ParameterValueSyntaxErrorException {
     public BadDomainNameCharacterException() {
       super("Domain names can only contain a-z, 0-9, '.' and '-'");
     }
   }
 
   /** Non-IDN domain names cannot contain hyphens in the third or fourth position. */
-  static class DashesInThirdAndFourthException extends ParameterValuePolicyErrorException {
+  static class DashesInThirdAndFourthException extends ParameterValueSyntaxErrorException {
     public DashesInThirdAndFourthException() {
       super("Non-IDN domain names cannot contain dashes in the third or fourth position");
     }
   }
 
   /** Domain labels cannot begin with a dash. */
-  static class LeadingDashException extends ParameterValuePolicyErrorException {
+  static class LeadingDashException extends ParameterValueSyntaxErrorException {
     public LeadingDashException() {
       super("Domain labels cannot begin with a dash");
     }
   }
 
   /** Domain labels cannot end with a dash. */
-  static class TrailingDashException extends ParameterValuePolicyErrorException {
+  static class TrailingDashException extends ParameterValueSyntaxErrorException {
     public TrailingDashException() {
       super("Domain labels cannot end with a dash");
     }
   }
 
   /** Domain labels cannot be longer than 63 characters. */
-  static class DomainLabelTooLongException extends ParameterValuePolicyErrorException {
+  static class DomainLabelTooLongException extends ParameterValueSyntaxErrorException {
     public DomainLabelTooLongException() {
       super("Domain labels cannot be longer than 63 characters");
     }
   }
 
   /** No part of a domain name can be empty. */
-  static class EmptyDomainNamePartException extends ParameterValuePolicyErrorException {
+  static class EmptyDomainNamePartException extends ParameterValueSyntaxErrorException {
     public EmptyDomainNamePartException() {
       super("No part of a domain name can be empty");
     }
   }
 
   /** Domain name starts with xn-- but is not a valid IDN. */
-  static class InvalidPunycodeException extends ParameterValuePolicyErrorException {
+  static class InvalidPunycodeException extends ParameterValueSyntaxErrorException {
     public InvalidPunycodeException() {
       super("Domain name starts with xn-- but is not a valid IDN");
     }
