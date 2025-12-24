@@ -1,4 +1,4 @@
-# URL: https://www.iana.org/domains/idn-tables/tables/google_latn_1.0.txt
+# URL: https://www.iana.org/domains/idn-tables/tables/google_latn_3.0.txt
 # Policy: https://www.registry.google/about/policies/domainabuse/
 U+002D                         # HYPHEN-MINUS
 U+0030                         # DIGIT ZERO

@@ -17,6 +17,7 @@ package google.registry.bsa;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.persistResource;
+import static google.registry.tldconfig.idn.IdnTableEnum.AUGMENTED_LATIN;
 import static google.registry.tldconfig.idn.IdnTableEnum.EXTENDED_LATIN;
 import static google.registry.tldconfig.idn.IdnTableEnum.JA;
 import static google.registry.tldconfig.idn.IdnTableEnum.UNCONFUSABLE_LATIN;
@@ -43,6 +44,7 @@ public class IdnCheckerTest {
   Tld jaonly;
   Tld jandelatin;
   Tld strictlatin;
+  Tld auglatin;
   IdnChecker idnChecker;
 
   @BeforeEach
@@ -50,6 +52,7 @@ public class IdnCheckerTest {
     jaonly = createTld("jaonly");
     jandelatin = createTld("jandelatin");
     strictlatin = createTld("strictlatin");
+    auglatin = createTld("auglatin");
 
     jaonly =
         persistResource(
@@ -72,6 +75,13 @@ public class IdnCheckerTest {
                 .setBsaEnrollStartTime(Optional.of(fakeClock.nowUtc()))
                 .setIdnTables(ImmutableSet.of(UNCONFUSABLE_LATIN))
                 .build());
+    auglatin =
+        persistResource(
+            auglatin
+                .asBuilder()
+                .setBsaEnrollStartTime(Optional.of(fakeClock.nowUtc()))
+                .setIdnTables(ImmutableSet.of(AUGMENTED_LATIN))
+                .build());
     fakeClock.advanceOneMilli();
     idnChecker = new IdnChecker(fakeClock);
   }
@@ -79,12 +89,13 @@ public class IdnCheckerTest {
   @Test
   void getAllValidIdns_allTlds() {
     assertThat(idnChecker.getAllValidIdns("all"))
-        .containsExactly(EXTENDED_LATIN, JA, UNCONFUSABLE_LATIN);
+        .containsExactly(EXTENDED_LATIN, JA, UNCONFUSABLE_LATIN, AUGMENTED_LATIN);
   }
 
   @Test
   void getAllValidIdns_notJa() {
-    assertThat(idnChecker.getAllValidIdns("à")).containsExactly(EXTENDED_LATIN, UNCONFUSABLE_LATIN);
+    assertThat(idnChecker.getAllValidIdns("à"))
+        .containsExactly(EXTENDED_LATIN, UNCONFUSABLE_LATIN, AUGMENTED_LATIN);
   }
 
   @Test
@@ -116,6 +127,7 @@ public class IdnCheckerTest {
 
   @Test
   void getForbiddingTlds_success() {
-    assertThat(idnChecker.getForbiddingTlds(ImmutableSet.of("JA"))).containsExactly(strictlatin);
+    assertThat(idnChecker.getForbiddingTlds(ImmutableSet.of("JA")))
+        .containsExactly(strictlatin, auglatin);
   }
 }

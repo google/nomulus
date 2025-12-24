@@ -26,6 +26,11 @@
     <rdeIDN:urlPolicy>https://www.registry.google/about/policies/domainabuse/</rdeIDN:urlPolicy>
 </rdeIDN:idnTableRef>
 
+<rdeIDN:idnTableRef id="augmented_latin">
+    <rdeIDN:url>https://www.iana.org/domains/idn-tables/tables/google_latn_3.0.txt</rdeIDN:url>
+    <rdeIDN:urlPolicy>https://www.registry.google/about/policies/domainabuse/</rdeIDN:urlPolicy>
+</rdeIDN:idnTableRef>
+
 <rdeIDN:idnTableRef id="ja">
     <rdeIDN:url>https://www.iana.org/domains/idn-tables/tables/google_ja_1.0.txt</rdeIDN:url>
     <rdeIDN:urlPolicy>https://www.registry.google/about/policies/domainabuse/</rdeIDN:urlPolicy>
@@ -37,7 +42,7 @@
     <rdeHeader:count uri="urn:ietf:params:xml:ns:rdeDomain-1.0">1</rdeHeader:count>
     <rdeHeader:count uri="urn:ietf:params:xml:ns:rdeHost-1.0">1</rdeHeader:count>
     <rdeHeader:count uri="urn:ietf:params:xml:ns:rdeRegistrar-1.0">1</rdeHeader:count>
-    <rdeHeader:count uri="urn:ietf:params:xml:ns:rdeIDN-1.0">3</rdeHeader:count>
+    <rdeHeader:count uri="urn:ietf:params:xml:ns:rdeIDN-1.0">4</rdeHeader:count>
 </rdeHeader:header>
 
 </rde:contents>
