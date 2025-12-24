@@ -14,6 +14,6 @@
         <rdeHeader:count uri="urn:ietf:params:xml:ns:rdeDomain-1.0">1</rdeHeader:count>
         <rdeHeader:count uri="urn:ietf:params:xml:ns:rdeHost-1.0">1</rdeHeader:count>
         <rdeHeader:count uri="urn:ietf:params:xml:ns:rdeRegistrar-1.0">1</rdeHeader:count>
-        <rdeHeader:count uri="urn:ietf:params:xml:ns:rdeIDN-1.0">3</rdeHeader:count>
+        <rdeHeader:count uri="urn:ietf:params:xml:ns:rdeIDN-1.0">4</rdeHeader:count>
     </rdeHeader:header>
 </rdeReport:report>

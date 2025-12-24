@@ -44,6 +44,15 @@ public enum IdnTableEnum {
   UNCONFUSABLE_LATIN("unconfusable_latin.txt"),
 
   /**
+   * ICANN LGR 2025 Latin, but with confusable characters removed.
+   *
+   * <p>This is based on <a
+   * href="https://www.icann.org/sites/default/files/packages/lgr/lgr-second-level-latin-full-variant-script-24jan24-en.html">ICANN's
+   * LGR table</a>, but is simpler.
+   */
+  AUGMENTED_LATIN("augmented_latin.txt"),
+
+  /**
    * Japanese, as used on our existing TLD launches prior to 2023.
    *
    * <p>As of 2023 this table is no longer conformant with ICANN's IDN policies for new launches, so
