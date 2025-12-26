@@ -39,12 +39,12 @@ import google.registry.flows.exceptions.ResourceAlreadyExistsForThisClientExcept
 import google.registry.flows.exceptions.ResourceCreateContentionException;
 import google.registry.flows.host.HostCreateFlow.SubordinateHostMustHaveIpException;
 import google.registry.flows.host.HostCreateFlow.UnexpectedExternalHostIpException;
+import google.registry.flows.host.HostFlowUtils.BadHostNameCharacterException;
 import google.registry.flows.host.HostFlowUtils.HostNameNotLowerCaseException;
 import google.registry.flows.host.HostFlowUtils.HostNameNotNormalizedException;
 import google.registry.flows.host.HostFlowUtils.HostNameNotPunyCodedException;
 import google.registry.flows.host.HostFlowUtils.HostNameTooLongException;
 import google.registry.flows.host.HostFlowUtils.HostNameTooShallowException;
-import google.registry.flows.host.HostFlowUtils.InvalidHostNameException;
 import google.registry.flows.host.HostFlowUtils.SuperordinateDomainDoesNotExistException;
 import google.registry.flows.host.HostFlowUtils.SuperordinateDomainInPendingDeleteException;
 import google.registry.model.ForeignKeyUtils;
@@ -286,7 +286,7 @@ class HostCreateFlowTest extends ResourceFlowTestCase<HostCreateFlow, Host> {
 
   @Test
   void testFailure_badCharacter() {
-    doFailingHostNameTest("foo bar", InvalidHostNameException.class);
+    doFailingHostNameTest("foo bar", BadHostNameCharacterException.class);
   }
 
   @Test

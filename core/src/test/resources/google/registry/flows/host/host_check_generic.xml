@@ -1,0 +1,11 @@
+<epp xmlns="urn:ietf:params:xml:ns:epp-1.0">
+    <command>
+        <check>
+            <host:check
+                    xmlns:host="urn:ietf:params:xml:ns:host-1.0">
+                <host:name>%HOSTNAME%</host:name>
+            </host:check>
+        </check>
+        <clTRID>ABC-12345</clTRID>
+    </command>
+</epp>
