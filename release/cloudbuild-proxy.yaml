@@ -7,6 +7,9 @@
 # To trigger a build automatically, follow the instructions below and add a trigger:
 # https://cloud.google.com/cloud-build/docs/running-builds/automate-builds
 steps:
+# Download saved Gradle distribution from GCS and install it.
+- name: 'gcr.io/${PROJECT_ID}/builder:latest'
+  entrypoint: ./release/install_gradle.sh
 # Build the proxy docker image.
 - name: 'gcr.io/${PROJECT_ID}/builder:latest'
   args:

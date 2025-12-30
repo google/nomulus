@@ -265,7 +265,6 @@ steps:
       fi
     else
       gcloud storage cp $gradle_bin gs://${gcs_loc}/
-      gcloud storage objects update --predefined-acl=publicRead gs://${gcs_loc}/${gradle_bin}
     fi
     rm ${gradle_bin}
     sed -i s%services.gradle.org/distributions%storage.googleapis.com/${gcs_loc}% \

@@ -41,6 +41,7 @@ steps:
     export KYTHE_OUTPUT_DIRECTORY="$${PWD}/kythe_output"
     mkdir -p $${KYTHE_OUTPUT_DIRECTORY}
     mkdir -p $${KYTHE_OUTPUT_DIRECTORY}/merged
+    ./release/install_gradle.sh
     ./gradlew clean testClasses \
       -Dno_werror=true -PenableCrossReferencing=true
 # Merge kzip files
