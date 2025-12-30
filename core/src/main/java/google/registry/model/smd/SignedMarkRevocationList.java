@@ -21,6 +21,7 @@ import static google.registry.util.DateTimeUtils.isBeforeOrAt;
 import com.google.common.base.Supplier;
 import com.google.common.collect.ImmutableMap;
 import google.registry.model.ImmutableObject;
+import google.registry.tmch.RstTmchUtils;
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
 import jakarta.persistence.ElementCollection;
@@ -69,6 +70,11 @@ public class SignedMarkRevocationList extends ImmutableObject {
 
   public static SignedMarkRevocationList get() {
     return CACHE.get();
+  }
+
+  // TODO(b/412715713): remove the tld parameter when RST completes.
+  public static SignedMarkRevocationList get(String tld) {
+    return RstTmchUtils.getSmdrList(tld).orElseGet(SignedMarkRevocationList::get);
   }
 
   /** Create a new {@link SignedMarkRevocationList} without saving it. */
