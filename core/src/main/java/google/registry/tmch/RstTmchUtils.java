@@ -17,8 +17,8 @@ package google.registry.tmch;
 import static com.google.common.base.Suppliers.memoize;
 import static com.google.common.io.Resources.getResource;
 import static com.google.common.io.Resources.readLines;
-import static google.registry.tmch.RstTmchUtils.RstType.OTE;
-import static google.registry.tmch.RstTmchUtils.RstType.PROD;
+import static google.registry.tmch.RstTmchUtils.RstEnvironment.OTE;
+import static google.registry.tmch.RstTmchUtils.RstEnvironment.PROD;
 import static google.registry.util.RegistryEnvironment.SANDBOX;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -44,37 +44,36 @@ import java.util.Optional;
 public class RstTmchUtils {
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
-  enum RstType {
+  /**
+   * The RST environments.
+   *
+   * <p>We conduct both OTE and PROD RST tests in Sandbox.
+   */
+  enum RstEnvironment {
     OTE,
     PROD
   }
 
-  private static final ImmutableMap<RstType, Supplier<Optional<ClaimsList>>> CLAIMS_CACHE =
+  private static final ImmutableMap<RstEnvironment, Supplier<Optional<ClaimsList>>> CLAIMS_CACHE =
       ImmutableMap.of(
-          OTE, memoize(() -> getClaimList(OTE)), PROD, memoize(() -> getClaimList(PROD)));
+          OTE, memoize(() -> getClaimsList(OTE)), PROD, memoize(() -> getClaimsList(PROD)));
 
-  private static final ImmutableMap<RstType, Supplier<Optional<SignedMarkRevocationList>>>
+  private static final ImmutableMap<RstEnvironment, Supplier<Optional<SignedMarkRevocationList>>>
       SMDRL_CACHE =
           ImmutableMap.of(
               OTE, memoize(() -> getSmdrList(OTE)), PROD, memoize(() -> getSmdrList(PROD)));
 
-  /**
-   * Returns appropriate test labels if {@code tld} is for RST testing; otherwise returns {@code
-   * defaultList}.
-   */
+  /** Returns appropriate test labels if {@code tld} is for RST testing; otherwise returns empty. */
   public static Optional<ClaimsList> getClaimsList(String tld) {
-    return getRstType(tld).map(CLAIMS_CACHE::get).flatMap(Supplier::get);
+    return getRstEnvironment(tld).map(CLAIMS_CACHE::get).flatMap(Supplier::get);
   }
 
-  /**
-   * Returns appropriate test labels if {@code tld} is for RST testing; otherwise returns {@code
-   * defaultList}.
-   */
+  /** Returns appropriate test labels if {@code tld} is for RST testing; otherwise returns empty. */
   public static Optional<SignedMarkRevocationList> getSmdrList(String tld) {
-    return getRstType(tld).map(SMDRL_CACHE::get).flatMap(Supplier::get);
+    return getRstEnvironment(tld).map(SMDRL_CACHE::get).flatMap(Supplier::get);
   }
 
-  static Optional<RstType> getRstType(String tld) {
+  static Optional<RstEnvironment> getRstEnvironment(String tld) {
     if (!RegistryEnvironment.get().equals(SANDBOX)) {
       return Optional.empty();
     }
@@ -87,32 +86,34 @@ public class RstTmchUtils {
     return Optional.empty();
   }
 
-  private static Optional<ClaimsList> getClaimList(RstType rstType) {
+  private static Optional<ClaimsList> getClaimsList(RstEnvironment rstEnvironment) {
     if (!RegistryEnvironment.get().equals(SANDBOX)) {
       return Optional.empty();
     }
-    String resourceName = rstType.name().toLowerCase(Locale.ROOT) + ".rst.dnl.csv";
+    String resourceName = rstEnvironment.name().toLowerCase(Locale.ROOT) + ".rst.dnl.csv";
     URL resource = getResource(RstTmchUtils.class, resourceName);
     try {
       return Optional.of(ClaimsListParser.parse(readLines(resource, UTF_8)));
-    } catch (IOException fnfe) {
+    } catch (IOException e) {
       // Do not throw.
-      logger.atSevere().log("Could not load Claims list for %s in Sandbox.", rstType);
+      logger.atSevere().withCause(e).log(
+          "Could not load Claims list for %s in Sandbox.", rstEnvironment);
       return Optional.empty();
     }
   }
 
-  private static Optional<SignedMarkRevocationList> getSmdrList(RstType rstType) {
+  private static Optional<SignedMarkRevocationList> getSmdrList(RstEnvironment rstEnvironment) {
     if (!RegistryEnvironment.get().equals(SANDBOX)) {
       return Optional.empty();
     }
-    String resourceName = rstType.name().toLowerCase(Locale.ROOT) + ".rst.smdrl.csv";
+    String resourceName = rstEnvironment.name().toLowerCase(Locale.ROOT) + ".rst.smdrl.csv";
     URL resource = getResource(RstTmchUtils.class, resourceName);
     try {
       return Optional.of(SmdrlCsvParser.parse(readLines(resource, UTF_8)));
-    } catch (IOException fnfe) {
+    } catch (IOException e) {
       // Do not throw.
-      logger.atSevere().log("Could not load Claims list for %s in Sandbox.", rstType);
+      logger.atSevere().withCause(e).log(
+          "Could not load Claims list for %s in Sandbox.", rstEnvironment);
       return Optional.empty();
     }
   }
