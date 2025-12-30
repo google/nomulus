@@ -97,7 +97,7 @@ public class RstTmchUtils {
     } catch (IOException e) {
       // Do not throw.
       logger.atSevere().withCause(e).log(
-          "Could not load Claims list for %s in Sandbox.", rstEnvironment);
+          "Could not load Claims list %s for %s in Sandbox.", resourceName, rstEnvironment);
       return Optional.empty();
     }
   }
@@ -113,7 +113,7 @@ public class RstTmchUtils {
     } catch (IOException e) {
       // Do not throw.
       logger.atSevere().withCause(e).log(
-          "Could not load Claims list for %s in Sandbox.", rstEnvironment);
+          "Could not load SMDR list %s for %s in Sandbox.", resourceName, rstEnvironment);
       return Optional.empty();
     }
   }
