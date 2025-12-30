@@ -22,6 +22,7 @@ import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
 import google.registry.model.CacheUtils;
+import google.registry.tmch.RstTmchUtils;
 import java.time.Duration;
 import java.util.Optional;
 
@@ -70,6 +71,11 @@ public class ClaimsListDao {
   /** Returns the most recent revision of the {@link ClaimsList} from the cache. */
   public static ClaimsList get() {
     return CACHE.get(ClaimsListDao.class);
+  }
+
+  // TODO(b/412715713): remove the tld parameter when RST completes.
+  public static ClaimsList get(String tld) {
+    return RstTmchUtils.getClaimsList(tld).orElseGet(ClaimsListDao::get);
   }
 
   /**

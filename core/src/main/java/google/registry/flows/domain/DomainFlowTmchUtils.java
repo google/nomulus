@@ -55,7 +55,7 @@ public final class DomainFlowTmchUtils {
   }
 
   public SignedMark verifySignedMarks(
-      ImmutableList<AbstractSignedMark> signedMarks, String domainLabel, DateTime now)
+      String tld, ImmutableList<AbstractSignedMark> signedMarks, String domainLabel, DateTime now)
       throws EppException {
     if (signedMarks.size() > 1) {
       throw new TooManySignedMarksException();
@@ -64,7 +64,7 @@ public final class DomainFlowTmchUtils {
       throw new SignedMarksMustBeEncodedException();
     }
     SignedMark signedMark =
-        verifyEncodedSignedMark((EncodedSignedMark) signedMarks.get(0), now);
+        verifyEncodedSignedMark(tld, (EncodedSignedMark) signedMarks.get(0), now);
     return verifySignedMarkValidForDomainLabel(signedMark, domainLabel);
   }
 
@@ -76,8 +76,9 @@ public final class DomainFlowTmchUtils {
     return signedMark;
   }
 
-  public SignedMark verifyEncodedSignedMark(EncodedSignedMark encodedSignedMark, DateTime now)
-      throws EppException {
+  // TODO(b/412715713): remove the tld parameter when RST completes.
+  public SignedMark verifyEncodedSignedMark(
+      String tld, EncodedSignedMark encodedSignedMark, DateTime now) throws EppException {
     if (!encodedSignedMark.getEncoding().equals("base64")) {
       throw new Base64RequiredForEncodedSignedMarksException();
     }
@@ -95,7 +96,7 @@ public final class DomainFlowTmchUtils {
       throw new SignedMarkParsingErrorException();
     }
 
-    if (SignedMarkRevocationList.get().isSmdRevoked(signedMark.getId(), now)) {
+    if (SignedMarkRevocationList.get(tld).isSmdRevoked(signedMark.getId(), now)) {
       throw new SignedMarkRevokedErrorException();
     }
 
