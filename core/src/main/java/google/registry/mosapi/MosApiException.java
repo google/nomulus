@@ -41,6 +41,11 @@ public class MosApiException extends IOException {
     this.errorResponse = null;
   }
 
+  public MosApiException(String message) {
+    super(message);
+    this.errorResponse = null;
+  }
+
   public Optional<MosApiErrorResponse> getErrorResponse() {
     return Optional.ofNullable(errorResponse);
   }

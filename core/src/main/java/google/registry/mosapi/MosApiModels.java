@@ -38,7 +38,7 @@ public final class MosApiModels {
    */
   public record AllServicesStateResponse(
       // A list of state summaries for each monitored service (e.g. DNS, RDDS, etc.)
-      @Expose @SerializedName("serviceStates") List<ServiceStateSummary> serviceStates) {
+      @Expose List<ServiceStateSummary> serviceStates) {
 
     public AllServicesStateResponse {
       serviceStates = (serviceStates == null) ? ImmutableList.of() : serviceStates;
@@ -52,11 +52,11 @@ public final class MosApiModels {
    *     Section 5.1</a>
    */
   public record IncidentSummary(
-      @Expose @SerializedName("incidentID") String incidentID,
-      @Expose @SerializedName("startTime") long startTime,
-      @Expose @SerializedName("falsePositive") boolean falsePositive,
-      @Expose @SerializedName("state") String state,
-      @Expose @SerializedName("endTime") @Nullable Long endTime) {}
+      @Expose String incidentID,
+      @Expose long startTime,
+      @Expose boolean falsePositive,
+      @Expose String state,
+      @Expose @Nullable Long endTime) {}
 
   /**
    * A curated summary of the service state for a TLD.
@@ -69,9 +69,9 @@ public final class MosApiModels {
    *     Section 5.1</a>
    */
   public record ServiceStateSummary(
-      @Expose @SerializedName("tld") String tld,
-      @Expose @SerializedName("overallStatus") String overallStatus,
-      @Expose @SerializedName("activeIncidents") List<ServiceStatus> activeIncidents) {
+      @Expose String tld,
+      @Expose String overallStatus,
+      @Expose List<ServiceStatus> activeIncidents) {
 
     public ServiceStateSummary {
       activeIncidents = activeIncidents == null ? ImmutableList.of() : activeIncidents;
@@ -84,13 +84,13 @@ public final class MosApiModels {
        * A JSON string that contains the status of the Service as seen from the monitoring system.
        * Possible values include "Up", "Down", "Disabled", "UP-inconclusive-no-data", etc.
        */
-      @Expose @SerializedName("status") String status,
+      @Expose String status,
 
       //  A JSON number that contains the current percentage of the Emergency Threshold
       //  of the Service. A value of "0" specifies that there are no Incidents
       //  affecting the threshold.
-      @Expose @SerializedName("emergencyThreshold") double emergencyThreshold,
-      @Expose @SerializedName("incidents") List<IncidentSummary> incidents) {
+      @Expose double emergencyThreshold,
+      @Expose List<IncidentSummary> incidents) {
 
     public ServiceStatus {
       incidents = incidents == null ? ImmutableList.of() : incidents;
@@ -104,11 +104,11 @@ public final class MosApiModels {
    *     Section 5.1</a>
    */
   public record TldServiceState(
-      @Expose @SerializedName("tld") String tld,
+      @Expose String tld,
       long lastUpdateApiDatabase,
 
       // A JSON string that contains the status of the TLD as seen from the monitoring system
-      @Expose @SerializedName("status") String status,
+      @Expose String status,
 
       // A JSON object containing detailed information for each potential monitored service (i.e.,
       // DNS,

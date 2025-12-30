@@ -14,17 +14,20 @@
 
 package google.registry.mosapi;
 
+import com.google.common.base.Throwables;
 import com.google.gson.Gson;
-import com.google.gson.JsonIOException;
-import com.google.gson.JsonSyntaxException;
+import com.google.gson.JsonParseException;
 import google.registry.mosapi.MosApiModels.TldServiceState;
 import jakarta.inject.Inject;
+import java.io.IOException;
 import java.util.Collections;
 import okhttp3.Response;
+import okhttp3.ResponseBody;
 
 /** Facade for MoSAPI's service monitoring endpoints. */
 public class ServiceMonitoringClient {
 
+  private static final String MONITORING_STATE_ENDPOINT = "v2/monitoring/state";
   private final MosApiClient mosApiClient;
   private final Gson gson;
 
@@ -41,18 +44,37 @@ public class ServiceMonitoringClient {
    *     Section 5.1</a>
    */
   public TldServiceState getTldServiceState(String tld) throws MosApiException {
-    String endpoint = "v2/monitoring/state";
     try (Response response =
         mosApiClient.sendGetRequest(
-            tld, endpoint, Collections.emptyMap(), Collections.emptyMap())) {
-      if (!response.isSuccessful()) {
-        throw MosApiException.create(
-            gson.fromJson(response.body().charStream(), MosApiErrorResponse.class));
+            tld, MONITORING_STATE_ENDPOINT, Collections.emptyMap(), Collections.emptyMap())) {
+
+      ResponseBody responseBody = response.body();
+      if (responseBody == null) {
+        throw new MosApiException(
+            String.format(
+                "MoSAPI Service Monitoring API " + "returned an empty body with status: %d",
+                response.code()));
       }
-      return gson.fromJson(response.body().charStream(), TldServiceState.class);
-    } catch (JsonIOException | JsonSyntaxException e) {
+      String bodyString = responseBody.string();
+      if (!response.isSuccessful()) {
+        throw parseErrorResponse(response.code(), bodyString);
+      }
+      return gson.fromJson(bodyString, TldServiceState.class);
+    } catch (IOException | JsonParseException e) {
+      Throwables.throwIfInstanceOf(e, MosApiException.class);
       // Catch Gson's runtime exceptions (parsing errors) and wrap them
       throw new MosApiException("Failed to parse TLD service state response", e);
+    }
+  }
+
+  /** Parses an unsuccessful MoSAPI response into a domain-specific {@link MosApiException}. */
+  private MosApiException parseErrorResponse(int statusCode, String bodyString) {
+    try {
+      MosApiErrorResponse error = gson.fromJson(bodyString, MosApiErrorResponse.class);
+      return MosApiException.create(error);
+    } catch (JsonParseException e) {
+      return new MosApiException(
+          String.format("MoSAPI json parsing error (%d): %s", statusCode, bodyString), e);
     }
   }
 }

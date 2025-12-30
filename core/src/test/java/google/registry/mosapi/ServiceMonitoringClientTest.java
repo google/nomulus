@@ -15,21 +15,15 @@
 package google.registry.mosapi;
 
 import static com.google.common.truth.Truth.assertThat;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyMap;
-import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.google.gson.Gson;
-import com.google.gson.JsonSyntaxException;
 import google.registry.mosapi.MosApiModels.TldServiceState;
-import java.io.IOException;
-import java.io.Reader;
+import google.registry.tools.GsonUtils;
 import okhttp3.MediaType;
 import okhttp3.Protocol;
 import okhttp3.Request;
@@ -40,106 +34,107 @@ import org.junit.jupiter.api.Test;
 
 public class ServiceMonitoringClientTest {
 
+  private static final String TLD = "example";
+  private static final String ENDPOINT = "v2/monitoring/state";
   private final MosApiClient mosApiClient = mock(MosApiClient.class);
-  private final Gson gson = new Gson();
+  private final Gson gson = GsonUtils.provideGson();
   private ServiceMonitoringClient client;
 
   @BeforeEach
-  void setUp() {
+  void beforeEach() {
     client = new ServiceMonitoringClient(mosApiClient, gson);
   }
 
   @Test
-  void getTldServiceState_success() throws Exception {
-    String json = "{ \"service\": \"RDAP\", \"status\": \"ACTIVE\" }";
+  void testGetTldServiceState_success() throws Exception {
+    String jsonResponse =
+        """
+        {
+          "tld": "example",
+          "services": [
+            {
+              "service": "DNS",
+              "status": "OPERATIONAL"
+            }
+          ]
+        }
+        """;
 
-    Response realResponse = createResponse(200, json);
+    try (Response response = createMockResponse(200, jsonResponse)) {
+      when(mosApiClient.sendGetRequest(eq(TLD), eq(ENDPOINT), anyMap(), anyMap()))
+          .thenReturn(response);
 
-    when(mosApiClient.sendGetRequest(anyString(), anyString(), anyMap(), anyMap()))
-        .thenReturn(realResponse);
-
-    TldServiceState result = client.getTldServiceState("example");
-
-    assertNotNull(result);
+      TldServiceState result = client.getTldServiceState(TLD);
+      assertThat(gson.toJson(result)).contains("example");
+    }
   }
 
   @Test
-  void getTldServiceState_apiErrorResponse_throwsMosApiException() throws Exception {
-    String errorJson = "{ \"code\": 400, \"message\": \"Invalid TLD\" }";
+  void testGetTldServiceState_apiError_throwsMosApiException() throws Exception {
+    String errorJson =
+        """
+        {
+          "resultCode": "2011",
+          "message": "Invalid duration"
+        }
+        """;
 
-    Response realResponse = createResponse(400, errorJson);
+    try (Response response = createMockResponse(400, errorJson)) {
+      when(mosApiClient.sendGetRequest(eq(TLD), eq(ENDPOINT), anyMap(), anyMap()))
+          .thenReturn(response);
 
-    when(mosApiClient.sendGetRequest(anyString(), anyString(), anyMap(), anyMap()))
-        .thenReturn(realResponse);
-
-    MosApiException thrown =
-        assertThrows(
-            MosApiException.class,
-            () -> {
-              client.getTldServiceState("invalid");
-            });
-    assertThat(thrown).hasMessageThat().contains("Invalid TLD");
+      MosApiException thrown =
+          assertThrows(MosApiException.class, () -> client.getTldServiceState(TLD));
+      assertThat(thrown.getMessage()).contains("2011");
+      assertThat(thrown.getMessage()).contains("Invalid duration");
+    }
   }
 
   @Test
-  void getTldServiceState_malformedJson_throwsMosApiException() throws Exception {
-    String garbage = "<html><body>Gateway Timeout</body></html>";
-    Response realResponse = createResponse(200, garbage);
+  void testGetTldServiceState_nonJsonError_throwsMosApiException() throws Exception {
+    String htmlError =
+        """
+        <html>
+          <body>502 Bad Gateway</body>
+        </html>
+        """;
 
-    when(mosApiClient.sendGetRequest(anyString(), anyString(), anyMap(), anyMap()))
-        .thenReturn(realResponse);
+    try (Response response = createMockResponse(502, htmlError)) {
+      when(mosApiClient.sendGetRequest(eq(TLD), eq(ENDPOINT), anyMap(), anyMap()))
+          .thenReturn(response);
 
-    MosApiException thrown =
-        assertThrows(
-            MosApiException.class,
-            () -> {
-              client.getTldServiceState("example");
-            });
-
-    assertEquals("Failed to parse TLD service state response", thrown.getMessage());
-    assertEquals(JsonSyntaxException.class, thrown.getCause().getClass());
+      MosApiException thrown =
+          assertThrows(MosApiException.class, () -> client.getTldServiceState(TLD));
+      assertThat(thrown.getMessage()).contains("MoSAPI json parsing error (502)");
+      assertThat(thrown.getMessage()).contains("502 Bad Gateway");
+    }
   }
 
   @Test
-  void getTldServiceState_networkFailureDuringRead_throwsMosApiException() throws Exception {
-
-    ResponseBody mockBody = mock(ResponseBody.class);
-    Reader mockReader = mock(Reader.class);
-
-    Response mixedResponse =
+  void testGetTldServiceState_emptyBody_throwsMosApiException() throws Exception {
+    Response response =
         new Response.Builder()
-            .request(new Request.Builder().url("http://localhost/").build())
+            .request(new Request.Builder().url("http://localhost").build())
             .protocol(Protocol.HTTP_1_1)
-            .code(200)
-            .message("OK")
-            .body(mockBody)
+            .code(204)
+            .message("No Content")
             .build();
 
-    when(mosApiClient.sendGetRequest(anyString(), anyString(), anyMap(), anyMap()))
-        .thenReturn(mixedResponse);
-    when(mockBody.charStream()).thenReturn(mockReader);
-
-    when(mockReader.read(any(char[].class), anyInt(), anyInt()))
-        .thenThrow(new IOException("Network failure during read"));
+    when(mosApiClient.sendGetRequest(eq(TLD), eq(ENDPOINT), anyMap(), anyMap()))
+        .thenReturn(response);
 
     MosApiException thrown =
-        assertThrows(
-            MosApiException.class,
-            () -> {
-              client.getTldServiceState("example");
-            });
-
-    assertEquals("Failed to parse TLD service state response", thrown.getMessage());
-    assertEquals("Network failure during read", thrown.getCause().getCause().getMessage());
+        assertThrows(MosApiException.class, () -> client.getTldServiceState(TLD));
+    assertThat(thrown.getMessage()).contains("returned an empty body");
   }
 
-  private Response createResponse(int code, String jsonBody) {
+  private Response createMockResponse(int code, String body) {
     return new Response.Builder()
-        .request(new Request.Builder().url("http://localhost/").build())
+        .request(new Request.Builder().url("http://localhost").build())
         .protocol(Protocol.HTTP_1_1)
         .code(code)
         .message(code == 200 ? "OK" : "Error")
-        .body(ResponseBody.create(jsonBody, MediaType.get("application/json")))
+        .body(ResponseBody.create(body, MediaType.parse("application/json")))
         .build();
   }
 }

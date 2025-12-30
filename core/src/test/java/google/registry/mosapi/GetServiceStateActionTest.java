@@ -52,7 +52,12 @@ public class GetServiceStateActionTest {
     action.run();
 
     assertThat(response.getContentType()).isEqualTo(MediaType.JSON_UTF_8);
-    assertThat(response.getPayload()).contains("\"overallStatus\":\"Up\"");
+    assertThat(response.getPayload())
+        .contains(
+            """
+            "overallStatus":"Up"
+            """
+                .trim());
     verify(stateService).getServiceStateSummary("example");
   }
 
@@ -67,7 +72,12 @@ public class GetServiceStateActionTest {
     action.run();
 
     assertThat(response.getContentType()).isEqualTo(MediaType.JSON_UTF_8);
-    assertThat(response.getPayload()).contains("\"serviceStates\":[]");
+    assertThat(response.getPayload())
+        .contains(
+            """
+            "serviceStates":[]
+            """
+                .trim());
     verify(stateService).getAllServiceStateSummaries();
   }
 

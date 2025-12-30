@@ -14,10 +14,13 @@
 
 package google.registry.mosapi;
 
+import com.google.gson.annotations.Expose;
+
 /**
  * Represents the generic JSON error response from the MoSAPI service for a 400 Bad Request.
  *
  * @see <a href="https://www.icann.org/mosapi-specification.pdf">ICANN MoSAPI Specification, Section
  *     8</a>
  */
-public record MosApiErrorResponse(String resultCode, String message, String description) {}
+public record MosApiErrorResponse(
+    @Expose String resultCode, @Expose String message, @Expose String description) {}
