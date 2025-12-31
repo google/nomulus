@@ -49,7 +49,8 @@ public class FeeCheckResponseExtensionStdV1 extends ImmutableObject
     return items;
   }
 
-  static FeeCheckResponseExtensionStdV1 create(
+  @VisibleForTesting
+  public static FeeCheckResponseExtensionStdV1 create(
       CurrencyUnit currency, ImmutableList<FeeCheckResponseExtensionItemStdV1> items) {
     FeeCheckResponseExtensionStdV1 instance = new FeeCheckResponseExtensionStdV1();
     instance.currency = currency;
