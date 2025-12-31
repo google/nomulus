@@ -14,8 +14,8 @@
 
 package google.registry.mosapi;
 
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
+import static google.registry.util.CollectionUtils.nullToEmptyImmutableCopy;
+
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 import java.util.List;
@@ -41,7 +41,7 @@ public final class MosApiModels {
       @Expose List<ServiceStateSummary> serviceStates) {
 
     public AllServicesStateResponse {
-      serviceStates = (serviceStates == null) ? ImmutableList.of() : serviceStates;
+      serviceStates = nullToEmptyImmutableCopy(serviceStates);
     }
   }
 
@@ -74,7 +74,7 @@ public final class MosApiModels {
       @Expose List<ServiceStatus> activeIncidents) {
 
     public ServiceStateSummary {
-      activeIncidents = activeIncidents == null ? ImmutableList.of() : activeIncidents;
+      activeIncidents = nullToEmptyImmutableCopy(activeIncidents);
     }
   }
 
@@ -93,7 +93,7 @@ public final class MosApiModels {
       @Expose List<IncidentSummary> incidents) {
 
     public ServiceStatus {
-      incidents = incidents == null ? ImmutableList.of() : incidents;
+      incidents = nullToEmptyImmutableCopy(incidents);
     }
   }
 
@@ -116,7 +116,7 @@ public final class MosApiModels {
       @Expose @SerializedName("testedServices") Map<String, ServiceStatus> serviceStatuses) {
 
     public TldServiceState {
-      serviceStatuses = (serviceStatuses == null) ? ImmutableMap.of() : serviceStatuses;
+      serviceStatuses = nullToEmptyImmutableCopy(serviceStatuses);
     }
   }
 }
