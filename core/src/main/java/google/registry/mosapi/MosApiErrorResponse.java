@@ -12,7 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package google.registry.mosapi.model;
+package google.registry.mosapi;
+
+import com.google.gson.annotations.Expose;
 
 /**
  * Represents the generic JSON error response from the MoSAPI service for a 400 Bad Request.
@@ -20,4 +22,5 @@ package google.registry.mosapi.model;
  * @see <a href="https://www.icann.org/mosapi-specification.pdf">ICANN MoSAPI Specification, Section
  *     8</a>
  */
-public record MosApiErrorResponse(String resultCode, String message, String description) {}
+public record MosApiErrorResponse(
+    @Expose String resultCode, @Expose String message, @Expose String description) {}

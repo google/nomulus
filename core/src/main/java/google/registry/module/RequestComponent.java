@@ -62,6 +62,8 @@ import google.registry.module.ReadinessProbeAction.ReadinessProbeActionFrontend;
 import google.registry.module.ReadinessProbeAction.ReadinessProbeActionPubApi;
 import google.registry.module.ReadinessProbeAction.ReadinessProbeConsoleAction;
 import google.registry.monitoring.whitebox.WhiteboxModule;
+import google.registry.mosapi.GetServiceStateAction;
+import google.registry.mosapi.module.MosApiRequestModule;
 import google.registry.rdap.RdapAutnumAction;
 import google.registry.rdap.RdapDomainAction;
 import google.registry.rdap.RdapDomainSearchAction;
@@ -151,6 +153,7 @@ import google.registry.ui.server.console.settings.SecurityAction;
       EppToolModule.class,
       IcannReportingModule.class,
       LoadTestModule.class,
+      MosApiRequestModule.class,
       RdapModule.class,
       RdeModule.class,
       ReportingModule.class,
@@ -231,6 +234,8 @@ interface RequestComponent {
   GenerateSpec11ReportAction generateSpec11ReportAction();
 
   GenerateZoneFilesAction generateZoneFilesAction();
+
+  GetServiceStateAction getServiceStateAction();
 
   IcannReportingStagingAction icannReportingStagingAction();
 

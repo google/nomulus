@@ -20,7 +20,6 @@ import google.registry.mosapi.MosApiException.DateOrderInvalidException;
 import google.registry.mosapi.MosApiException.EndDateSyntaxInvalidException;
 import google.registry.mosapi.MosApiException.MosApiAuthorizationException;
 import google.registry.mosapi.MosApiException.StartDateSyntaxInvalidException;
-import google.registry.mosapi.model.MosApiErrorResponse;
 import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link MosApiException}. */
