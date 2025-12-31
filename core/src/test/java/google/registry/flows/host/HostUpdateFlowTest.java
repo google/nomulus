@@ -54,13 +54,13 @@ import google.registry.flows.ResourceFlowUtils.ResourceNotOwnedException;
 import google.registry.flows.ResourceFlowUtils.StatusNotClientSettableException;
 import google.registry.flows.exceptions.ResourceHasClientUpdateProhibitedException;
 import google.registry.flows.exceptions.ResourceStatusProhibitsOperationException;
+import google.registry.flows.host.HostFlowUtils.BadHostNameCharacterException;
 import google.registry.flows.host.HostFlowUtils.HostDomainNotOwnedException;
 import google.registry.flows.host.HostFlowUtils.HostNameNotLowerCaseException;
 import google.registry.flows.host.HostFlowUtils.HostNameNotNormalizedException;
 import google.registry.flows.host.HostFlowUtils.HostNameNotPunyCodedException;
 import google.registry.flows.host.HostFlowUtils.HostNameTooLongException;
 import google.registry.flows.host.HostFlowUtils.HostNameTooShallowException;
-import google.registry.flows.host.HostFlowUtils.InvalidHostNameException;
 import google.registry.flows.host.HostFlowUtils.SuperordinateDomainDoesNotExistException;
 import google.registry.flows.host.HostFlowUtils.SuperordinateDomainInPendingDeleteException;
 import google.registry.flows.host.HostUpdateFlow.CannotAddIpToExternalHostException;
@@ -1259,7 +1259,7 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, Host> {
 
   @Test
   void testFailure_renameToBadCharacter() throws Exception {
-    doFailingHostNameTest("foo bar", InvalidHostNameException.class);
+    doFailingHostNameTest("foo bar", BadHostNameCharacterException.class);
   }
 
   @Test

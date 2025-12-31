@@ -20,7 +20,9 @@ import static google.registry.testing.DatabaseHelper.persistDeletedHost;
 import static google.registry.testing.EppExceptionSubject.assertAboutEppExceptions;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import com.google.common.collect.ImmutableMap;
 import google.registry.flows.EppException;
+import google.registry.flows.EppException.ParameterValueSyntaxErrorException;
 import google.registry.flows.FlowUtils.NotLoggedInException;
 import google.registry.flows.ResourceCheckFlowTestCase;
 import google.registry.flows.exceptions.TooManyResourceChecksException;
@@ -94,5 +96,37 @@ class HostCheckFlowTest extends ResourceCheckFlowTestCase<HostCheckFlow, Host> {
   void testIcannActivityReportField_getsLogged() throws Exception {
     runFlow();
     assertIcannReportingActivityFieldLogged("srs-host-check");
+  }
+
+  @Test
+  void testFailure_dotHost() throws Exception {
+    setEppInput("host_check_generic.xml", ImmutableMap.of("HOSTNAME", ".host"));
+    assertAboutEppExceptions()
+        .that(assertThrows(ParameterValueSyntaxErrorException.class, this::runFlow))
+        .marshalsToXml();
+  }
+
+  @Test
+  void testFailure_dashHost() {
+    setEppInput("host_check_generic.xml", ImmutableMap.of("HOSTNAME", "-host"));
+    assertAboutEppExceptions()
+        .that(assertThrows(ParameterValueSyntaxErrorException.class, this::runFlow))
+        .marshalsToXml();
+  }
+
+  @Test
+  void testFailure_underscoreHost() {
+    setEppInput("host_check_generic.xml", ImmutableMap.of("HOSTNAME", "_host"));
+    assertAboutEppExceptions()
+        .that(assertThrows(ParameterValueSyntaxErrorException.class, this::runFlow))
+        .marshalsToXml();
+  }
+
+  @Test
+  void testFailure_hostDash() {
+    setEppInput("host_check_generic.xml", ImmutableMap.of("HOSTNAME", "host-"));
+    assertAboutEppExceptions()
+        .that(assertThrows(ParameterValueSyntaxErrorException.class, this::runFlow))
+        .marshalsToXml();
   }
 }

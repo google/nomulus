@@ -7,6 +7,9 @@ steps:
 # Create a directory to store the artifacts
 - name: 'gcr.io/${PROJECT_ID}/builder:latest'
   args: ['mkdir', 'nomulus']
+# Download saved Gradle distribution from GCS and install it.
+- name: 'gcr.io/${PROJECT_ID}/builder:latest'
+  entrypoint: ./release/install_gradle.sh
 # Run tests
 - name: 'gcr.io/${PROJECT_ID}/builder:latest'
   # Set home for Gradle caches. Must be consistent with last step below

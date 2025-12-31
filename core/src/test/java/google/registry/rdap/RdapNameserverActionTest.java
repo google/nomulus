@@ -74,7 +74,9 @@ class RdapNameserverActionTest extends RdapActionBaseTestCase<RdapNameserverActi
         .that(generateActualJson("invalid/host/name"))
         .isEqualTo(
             generateExpectedJsonError(
-                "invalid/host/name is not a valid nameserver: Invalid host name", 400));
+                "invalid/host/name is not a valid nameserver: Host names can only contain a-z, 0-9,"
+                    + " '.', '_', and '-'",
+                400));
     assertThat(response.getStatus()).isEqualTo(400);
   }
 

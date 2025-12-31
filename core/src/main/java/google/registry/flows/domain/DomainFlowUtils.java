@@ -218,7 +218,7 @@ public class DomainFlowUtils {
     return domainName;
   }
 
-  private static void validateFirstLabel(String firstLabel) throws EppException {
+  public static void validateFirstLabel(String firstLabel) throws EppException {
     if (firstLabel.length() > MAX_LABEL_SIZE) {
       throw new DomainLabelTooLongException();
     }

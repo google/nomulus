@@ -65,6 +65,7 @@ public final class HostCheckFlow implements TransactionalFlow {
         ForeignKeyUtils.loadKeys(Host.class, hostnames, clock.nowUtc()).keySet();
     ImmutableList.Builder<HostCheck> checks = new ImmutableList.Builder<>();
     for (String hostname : hostnames) {
+      HostFlowUtils.validateHostName(hostname);
       boolean unused = !existingIds.contains(hostname);
       checks.add(HostCheck.create(unused, hostname, unused ? null : "In use"));
     }

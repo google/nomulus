@@ -57,7 +57,7 @@ class TmchTestDataExpirationTest {
     String tmchData = loadFile(TmchTestDataExpirationTest.class, filePath);
     EncodedSignedMark smd = TmchData.readEncodedSignedMark(tmchData);
     try {
-      tmchUtils.verifyEncodedSignedMark(smd, DateTime.now(UTC));
+      tmchUtils.verifyEncodedSignedMark("", smd, DateTime.now(UTC));
     } catch (EppException e) {
       throw new AssertionError("Error verifying signed mark " + filePath, e);
     }
