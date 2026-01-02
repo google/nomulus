@@ -116,6 +116,7 @@ public final class HostCreateFlow implements MutatingFlow {
           ? new SubordinateHostMustHaveIpException()
           : new UnexpectedExternalHostIpException();
     }
+    HostFlowUtils.validateInetAddresses(command.getInetAddresses());
     Host newHost =
         new Host.Builder()
             .setCreationRegistrarId(registrarId)
