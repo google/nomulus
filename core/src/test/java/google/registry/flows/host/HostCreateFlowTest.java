@@ -45,6 +45,7 @@ import google.registry.flows.host.HostFlowUtils.HostNameNotNormalizedException;
 import google.registry.flows.host.HostFlowUtils.HostNameNotPunyCodedException;
 import google.registry.flows.host.HostFlowUtils.HostNameTooLongException;
 import google.registry.flows.host.HostFlowUtils.HostNameTooShallowException;
+import google.registry.flows.host.HostFlowUtils.LoopbackIpNotValidForHostException;
 import google.registry.flows.host.HostFlowUtils.SuperordinateDomainDoesNotExistException;
 import google.registry.flows.host.HostFlowUtils.SuperordinateDomainInPendingDeleteException;
 import google.registry.model.ForeignKeyUtils;
@@ -320,6 +321,26 @@ class HostCreateFlowTest extends ResourceFlowTestCase<HostCreateFlow, Host> {
     setEppHostCreateInputWithIps("foo.co.uk");
     EppException thrown = assertThrows(HostNameTooShallowException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
+  }
+
+  @Test
+  void testFailure_localhostInetAddress_ipv4() {
+    createTld("tld");
+    persistActiveDomain("example.tld");
+    setEppHostCreateInput("ns1.example.tld", "<host:addr ip=\"v4\">127.0.0.1</host:addr>");
+    assertAboutEppExceptions()
+        .that(assertThrows(LoopbackIpNotValidForHostException.class, this::runFlow))
+        .marshalsToXml();
+  }
+
+  @Test
+  void testFailure_localhostInetAddress_ipv6() {
+    createTld("tld");
+    persistActiveDomain("example.tld");
+    setEppHostCreateInput("ns1.example.tld", "<host:addr ip=\"v6\">::1</host:addr>");
+    assertAboutEppExceptions()
+        .that(assertThrows(LoopbackIpNotValidForHostException.class, this::runFlow))
+        .marshalsToXml();
   }
 
   @Test
