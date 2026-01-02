@@ -22,6 +22,7 @@ import static java.util.stream.Collectors.joining;
 
 import com.google.common.base.Ascii;
 import com.google.common.base.CharMatcher;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.net.InternetDomainName;
 import google.registry.flows.EppException;
 import google.registry.flows.EppException.AuthorizationErrorException;
@@ -34,6 +35,7 @@ import google.registry.model.ForeignKeyUtils;
 import google.registry.model.domain.Domain;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.util.Idn;
+import java.net.InetAddress;
 import java.util.Optional;
 import org.joda.time.DateTime;
 
@@ -106,6 +108,21 @@ public class HostFlowUtils {
       throw new SuperordinateDomainDoesNotExistException(domainName);
     }
     return superordinateDomain;
+  }
+
+  /** Makes sure that no provided IP addresses are local / loopback addresses. */
+  public static void validateInetAddresses(ImmutableSet<InetAddress> inetAddresses)
+      throws EppException {
+    if (inetAddresses.stream().anyMatch(InetAddress::isLoopbackAddress)) {
+      throw new LoopbackIpNotValidForHostException();
+    }
+  }
+
+  /** Loopback IPs are not valid for hosts. */
+  static class LoopbackIpNotValidForHostException extends ParameterValuePolicyErrorException {
+    public LoopbackIpNotValidForHostException() {
+      super("Loopback IPs are not valid for hosts");
+    }
   }
 
   /** Superordinate domain for this hostname does not exist. */

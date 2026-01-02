@@ -161,6 +161,7 @@ public final class HostUpdateFlow implements MutatingFlow {
     AddRemove remove = command.getInnerRemove();
     checkSameValuesNotAddedAndRemoved(add.getStatusValues(), remove.getStatusValues());
     checkSameValuesNotAddedAndRemoved(add.getInetAddresses(), remove.getInetAddresses());
+    HostFlowUtils.validateInetAddresses(add.getInetAddresses());
     VKey<Domain> newSuperordinateDomainKey =
         newSuperordinateDomain.map(Domain::createVKey).orElse(null);
     // If the superordinateDomain field is changing, set the lastSuperordinateChange to now.
