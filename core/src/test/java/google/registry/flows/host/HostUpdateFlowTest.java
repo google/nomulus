@@ -61,6 +61,7 @@ import google.registry.flows.host.HostFlowUtils.HostNameNotNormalizedException;
 import google.registry.flows.host.HostFlowUtils.HostNameNotPunyCodedException;
 import google.registry.flows.host.HostFlowUtils.HostNameTooLongException;
 import google.registry.flows.host.HostFlowUtils.HostNameTooShallowException;
+import google.registry.flows.host.HostFlowUtils.LoopbackIpNotValidForHostException;
 import google.registry.flows.host.HostFlowUtils.SuperordinateDomainDoesNotExistException;
 import google.registry.flows.host.HostFlowUtils.SuperordinateDomainInPendingDeleteException;
 import google.registry.flows.host.HostUpdateFlow.CannotAddIpToExternalHostException;
@@ -1304,6 +1305,28 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, Host> {
   void testFailure_ccTldInBailiwick() throws Exception {
     createTld("co.uk");
     doFailingHostNameTest("foo.co.uk", HostNameTooShallowException.class);
+  }
+
+  @Test
+  void testFailure_localhostInetAddress_ipv4() throws Exception {
+    createTld("tld");
+    persistActiveSubordinateHost(oldHostName(), persistActiveDomain("example.tld"));
+    setEppHostUpdateInput(
+        "ns1.example.tld", "ns2.example.tld", "<host:addr ip=\"v4\">127.0.0.1</host:addr>", null);
+    assertAboutEppExceptions()
+        .that(assertThrows(LoopbackIpNotValidForHostException.class, this::runFlow))
+        .marshalsToXml();
+  }
+
+  @Test
+  void testFailure_localhostInetAddress_ipv6() throws Exception {
+    createTld("tld");
+    persistActiveSubordinateHost(oldHostName(), persistActiveDomain("example.tld"));
+    setEppHostUpdateInput(
+        "ns1.example.tld", "ns2.example.tld", "<host:addr ip=\"v6\">::1</host:addr>", null);
+    assertAboutEppExceptions()
+        .that(assertThrows(LoopbackIpNotValidForHostException.class, this::runFlow))
+        .marshalsToXml();
   }
 
   @Test
