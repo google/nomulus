@@ -17,6 +17,9 @@ package google.registry.model.domain.feestdv1;
 import static google.registry.util.CollectionUtils.nullToEmptyImmutableCopy;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
+import google.registry.flows.EppException;
+import google.registry.flows.EppException.ParameterValuePolicyErrorException;
 import google.registry.model.ImmutableObject;
 import google.registry.model.domain.fee.FeeCheckCommandExtension;
 import google.registry.model.domain.fee.FeeCheckResponseExtensionItem;
@@ -51,13 +54,33 @@ public class FeeCheckCommandExtensionStdV1 extends ImmutableObject
   @Override
   public FeeCheckResponseExtensionStdV1 createResponse(
       ImmutableList<? extends FeeCheckResponseExtensionItem> items) {
+    throw new UnsupportedOperationException("FeeCheckCommandExtensionStdV1 requires a currency");
+  }
+
+  @Override
+  public FeeCheckResponseExtensionStdV1 createResponse(
+      ImmutableList<? extends FeeCheckResponseExtensionItem> items,
+      ImmutableSet<CurrencyUnit> currenciesSeen)
+      throws EppException {
     ImmutableList.Builder<FeeCheckResponseExtensionItemStdV1> builder =
         new ImmutableList.Builder<>();
     for (FeeCheckResponseExtensionItem item : items) {
-      if (item instanceof FeeCheckResponseExtensionItemStdV1) {
-        builder.add((FeeCheckResponseExtensionItemStdV1) item);
+      if (item instanceof FeeCheckResponseExtensionItemStdV1 stdv1Item) {
+        builder.add(stdv1Item);
       }
     }
-    return FeeCheckResponseExtensionStdV1.create(currency, builder.build());
+    if (currenciesSeen.size() > 1) {
+      throw new MultipleCurrenciesCannotBeCheckedException();
+    }
+    return FeeCheckResponseExtensionStdV1.create(currenciesSeen.iterator().next(), builder.build());
+  }
+
+  /** Domains across multiple currencies cannot be checked simultaneously. */
+  static class MultipleCurrenciesCannotBeCheckedException
+      extends ParameterValuePolicyErrorException {
+    public MultipleCurrenciesCannotBeCheckedException() {
+      // The fee extension 1.0 only supports one currency shared across all results
+      super("Domains across multiple currencies cannot be checked simultaneously");
+    }
   }
 }

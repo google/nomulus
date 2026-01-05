@@ -15,6 +15,8 @@
 package google.registry.model.domain.fee;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
+import google.registry.flows.EppException;
 import google.registry.model.eppinput.EppInput.CommandExtension;
 import org.joda.money.CurrencyUnit;
 
@@ -42,4 +44,11 @@ public interface FeeCheckCommandExtension<
   ImmutableList<C> getItems();
 
   R createResponse(ImmutableList<? extends FeeCheckResponseExtensionItem> items);
+
+  default R createResponse(
+      ImmutableList<? extends FeeCheckResponseExtensionItem> items,
+      ImmutableSet<CurrencyUnit> currenciesSeen)
+      throws EppException {
+    return createResponse(items);
+  }
 }

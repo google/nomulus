@@ -1,0 +1,45 @@
+<epp xmlns="urn:ietf:params:xml:ns:epp-1.0">
+<response>
+    <result code="1000">
+      <msg>Command completed successfully</msg>
+    </result>
+    <resData>
+      <domain:chkData xmlns:domain="urn:ietf:params:xml:ns:domain-1.0">
+        <domain:cd>
+          <domain:name avail="true">example.example</domain:name>
+        </domain:cd>
+        <domain:cd>
+          <domain:name avail="true">example.tld</domain:name>
+        </domain:cd>
+      </domain:chkData>
+    </resData>
+    <extension>
+      <fee:chkData xmlns:fee="urn:ietf:params:xml:ns:fee-0.12"
+                   xmlns:domain="urn:ietf:params:xml:ns:domain-1.0">
+        <fee:cd>
+          <fee:object>
+            <domain:name>example.example</domain:name>
+          </fee:object>
+          <fee:command name="create">
+            <fee:period unit="y">1</fee:period>
+            <fee:fee description="create">800</fee:fee>
+            <fee:fee description="Early Access Period, fee expires: 294247-01-10T04:00:54.775Z">800</fee:fee>
+          </fee:command>
+        </fee:cd>
+        <fee:cd>
+          <fee:object>
+            <domain:name>example.tld</domain:name>
+          </fee:object>
+          <fee:command name="create">
+            <fee:period unit="y">1</fee:period>
+            <fee:fee description="create">13.00</fee:fee>
+          </fee:command>
+        </fee:cd>
+      </fee:chkData>
+    </extension>
+    <trID>
+      <clTRID>ABC-12345</clTRID>
+      <svTRID>server-trid</svTRID>
+    </trID>
+  </response>
+</epp>
