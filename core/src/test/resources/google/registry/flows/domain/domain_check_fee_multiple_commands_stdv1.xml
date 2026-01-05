@@ -1,0 +1,19 @@
+<epp xmlns="urn:ietf:params:xml:ns:epp-1.0">
+  <command>
+    <check>
+      <domain:check xmlns:domain="urn:ietf:params:xml:ns:domain-1.0">
+        <domain:name>example1.tld</domain:name>
+      </domain:check>
+    </check>
+    <extension>
+      <fee:check xmlns:fee="urn:ietf:params:xml:ns:epp:fee-1.0">
+        <fee:command name="create" />
+        <fee:command name="renew" />
+        <fee:command name="transfer" />
+        <fee:command name="restore" />
+        <fee:command name="update" />
+      </fee:check>
+    </extension>
+    <clTRID>ABC-12345</clTRID>
+  </command>
+</epp>

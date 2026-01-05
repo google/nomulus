@@ -76,7 +76,7 @@ public class FeeCheckCommandExtensionStdV1 extends ImmutableObject
   }
 
   /** Domains across multiple currencies cannot be checked simultaneously. */
-  static class MultipleCurrenciesCannotBeCheckedException
+  public static class MultipleCurrenciesCannotBeCheckedException
       extends ParameterValuePolicyErrorException {
     public MultipleCurrenciesCannotBeCheckedException() {
       // The fee extension 1.0 only supports one currency shared across all results

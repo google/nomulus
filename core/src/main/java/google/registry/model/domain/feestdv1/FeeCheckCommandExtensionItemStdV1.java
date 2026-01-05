@@ -18,7 +18,6 @@ import com.google.common.base.Ascii;
 import google.registry.model.domain.Period;
 import google.registry.model.domain.fee.FeeCheckCommandExtensionItem;
 import jakarta.xml.bind.annotation.XmlAttribute;
-import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlType;
 import java.util.Locale;
 import java.util.Optional;
@@ -32,12 +31,13 @@ import org.joda.time.DateTime;
  * <pre>{@code
  * <fee:command name="renew" phase="sunrise" subphase="hello">
  *   <fee:period unit="y">1</fee:period>
- *   <fee:class>premium</fee:class>
- *   <fee:date>2017-05-17T13:22:21.0Z</fee:date>
  * </fee:command>
  * }</pre>
+ *
+ * <p>The `feeClass` and `feeDate` attributes that are present in version 0.12 are removed from this
+ * version.
  */
-@XmlType(propOrder = {"period", "feeClass", "feeDate"})
+@XmlType(propOrder = {"period"})
 public class FeeCheckCommandExtensionItemStdV1 extends FeeCheckCommandExtensionItem {
 
   /** The default validity period (if not specified) is 1 year for all operations. */
@@ -49,12 +49,6 @@ public class FeeCheckCommandExtensionItemStdV1 extends FeeCheckCommandExtensionI
   @XmlAttribute String phase;
 
   @XmlAttribute String subphase;
-
-  @XmlElement(name = "class")
-  String feeClass;
-
-  @XmlElement(name = "date")
-  DateTime feeDate;
 
   /** Version 1.0 does not support domain name or currency in fee extension items. */
   @Override
@@ -107,6 +101,6 @@ public class FeeCheckCommandExtensionItemStdV1 extends FeeCheckCommandExtensionI
 
   @Override
   public Optional<DateTime> getEffectiveDate() {
-    return Optional.ofNullable(feeDate);
+    return Optional.empty();
   }
 }
