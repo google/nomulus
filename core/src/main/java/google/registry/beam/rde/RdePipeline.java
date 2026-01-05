@@ -184,10 +184,10 @@ public class RdePipeline implements Serializable {
   private final CloudTasksUtils cloudTasksUtils;
   private final RdeMarshaller marshaller;
 
-  // Registrars to be excluded from data escrow. Not including the sandbox-only OTE type so that
-  // if sneaks into production we would get an extra signal.
+  // Registrars to be excluded from data escrow (i.e. all registrar types that have a null IANA
+  // identifier and thus would not be valid according to the RDE schema).
   private static final ImmutableSet<Type> IGNORED_REGISTRAR_TYPES =
-      Sets.immutableEnumSet(Registrar.Type.MONITORING, Registrar.Type.TEST);
+      Sets.immutableEnumSet(Registrar.Type.MONITORING, Registrar.Type.OTE, Registrar.Type.TEST);
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
