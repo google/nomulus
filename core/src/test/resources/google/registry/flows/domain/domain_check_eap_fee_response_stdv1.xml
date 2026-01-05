@@ -1,0 +1,55 @@
+<epp xmlns="urn:ietf:params:xml:ns:epp-1.0">
+  <response>
+    <result code="1000">
+      <msg>Command completed successfully</msg>
+    </result>
+    <resData>
+      <domain:chkData xmlns:domain="urn:ietf:params:xml:ns:domain-1.0">
+        <domain:cd>
+          <domain:name avail="0">example1.tld</domain:name>
+          <domain:reason>In use</domain:reason>
+        </domain:cd>
+        <domain:cd>
+          <domain:name avail="1">example2.tld</domain:name>
+        </domain:cd>
+        <domain:cd>
+          <domain:name avail="1">example3.tld</domain:name>
+        </domain:cd>
+      </domain:chkData>
+    </resData>
+    <extension>
+      <fee:chkData xmlns:fee="urn:ietf:params:xml:ns:epp:fee-1.0"
+          xmlns:domain="urn:ietf:params:xml:ns:domain-1.0">
+        <fee:currency>USD</fee:currency>
+        <fee:cd>
+          <fee:objID>example1.tld</fee:objID>
+          <fee:command name="create">
+            <fee:period unit="y">1</fee:period>
+            <fee:fee description="create">13.00</fee:fee>
+            <fee:fee description="Early Access Period, fee expires: 2010-01-02T10:00:00.002Z">100.00</fee:fee>
+          </fee:command>
+        </fee:cd>
+        <fee:cd>
+          <fee:objID>example2.tld</fee:objID>
+          <fee:command name="create">
+            <fee:period unit="y">1</fee:period>
+            <fee:fee description="create">13.00</fee:fee>
+            <fee:fee description="Early Access Period, fee expires: 2010-01-02T10:00:00.002Z">100.00</fee:fee>
+          </fee:command>
+        </fee:cd>
+        <fee:cd>
+          <fee:objID>example3.tld</fee:objID>
+          <fee:command name="create">
+            <fee:period unit="y">1</fee:period>
+            <fee:fee description="create">13.00</fee:fee>
+            <fee:fee description="Early Access Period, fee expires: 2010-01-02T10:00:00.002Z">100.00</fee:fee>
+          </fee:command>
+        </fee:cd>
+      </fee:chkData>
+    </extension>
+    <trID>
+      <clTRID>ABC-12345</clTRID>
+      <svTRID>server-trid</svTRID>
+    </trID>
+  </response>
+</epp>
