@@ -88,6 +88,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import org.joda.money.CurrencyUnit;
 import org.joda.time.DateTime;
 
 /**
@@ -298,11 +299,13 @@ public final class DomainCheckFlow implements TransactionalFlow {
 
     boolean shouldUseTieredPricingPromotion =
         RegistryConfig.getTieredPricingPromotionRegistrarIds().contains(registrarId);
+    ImmutableSet.Builder<CurrencyUnit> currenciesBuilder = new ImmutableSet.Builder<>();
     for (FeeCheckCommandExtensionItem feeCheckItem : feeCheck.getItems()) {
       for (String domainName : getDomainNamesToCheckForFee(feeCheckItem, domainNames.keySet())) {
         FeeCheckResponseExtensionItem.Builder<?> builder = feeCheckItem.createResponseBuilder();
         Optional<Domain> domain = Optional.ofNullable(domainObjs.get(domainName));
         Tld tld = Tld.get(domainNames.get(domainName).parent().toString());
+        currenciesBuilder.add(tld.getCurrency());
         Optional<AllocationToken> token;
         try {
           // The precise token to use for this fee request may vary based on the domain or even the
@@ -385,7 +388,12 @@ public final class DomainCheckFlow implements TransactionalFlow {
         responseItems.add(builder.setDomainNameIfSupported(domainName).build());
       }
     }
-    return ImmutableList.of(feeCheck.createResponse(responseItems.build()));
+    ImmutableSet<CurrencyUnit> seenCurrencies = currenciesBuilder.build();
+    if (seenCurrencies.size() > 1) {
+      throw new MultipleCurrenciesCannotBeCheckedException();
+    }
+    return ImmutableList.of(
+        feeCheck.createResponse(responseItems.build(), seenCurrencies.iterator().next()));
   }
 
   /**
@@ -491,6 +499,15 @@ public final class DomainCheckFlow implements TransactionalFlow {
   static class OnlyCheckedNamesCanBeFeeCheckedException extends ParameterValuePolicyErrorException {
     OnlyCheckedNamesCanBeFeeCheckedException() {
       super("By server policy, fee check names must be listed in the availability check");
+    }
+  }
+
+  /** Domains across multiple currencies cannot be checked simultaneously. */
+  static class MultipleCurrenciesCannotBeCheckedException
+      extends ParameterValuePolicyErrorException {
+    public MultipleCurrenciesCannotBeCheckedException() {
+      // The fee extension 1.0 only supports one currency shared across all results
+      super("Domains across multiple currencies cannot be checked simultaneously");
     }
   }
 }

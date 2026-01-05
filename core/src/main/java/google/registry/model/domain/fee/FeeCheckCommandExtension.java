@@ -42,4 +42,9 @@ public interface FeeCheckCommandExtension<
   ImmutableList<C> getItems();
 
   R createResponse(ImmutableList<? extends FeeCheckResponseExtensionItem> items);
+
+  default R createResponse(
+      ImmutableList<? extends FeeCheckResponseExtensionItem> items, CurrencyUnit currency) {
+    return createResponse(items);
+  }
 }

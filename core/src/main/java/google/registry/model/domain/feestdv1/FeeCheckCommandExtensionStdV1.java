@@ -51,11 +51,17 @@ public class FeeCheckCommandExtensionStdV1 extends ImmutableObject
   @Override
   public FeeCheckResponseExtensionStdV1 createResponse(
       ImmutableList<? extends FeeCheckResponseExtensionItem> items) {
+    return createResponse(items, CurrencyUnit.USD);
+  }
+
+  @Override
+  public FeeCheckResponseExtensionStdV1 createResponse(
+      ImmutableList<? extends FeeCheckResponseExtensionItem> items, CurrencyUnit currency) {
     ImmutableList.Builder<FeeCheckResponseExtensionItemStdV1> builder =
         new ImmutableList.Builder<>();
     for (FeeCheckResponseExtensionItem item : items) {
-      if (item instanceof FeeCheckResponseExtensionItemStdV1) {
-        builder.add((FeeCheckResponseExtensionItemStdV1) item);
+      if (item instanceof FeeCheckResponseExtensionItemStdV1 stdv1Item) {
+        builder.add(stdv1Item);
       }
     }
     return FeeCheckResponseExtensionStdV1.create(currency, builder.build());
