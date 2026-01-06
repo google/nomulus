@@ -26,7 +26,7 @@ import jakarta.xml.bind.annotation.XmlType;
 import org.joda.time.DateTime;
 
 /** The version 1.0 response for a domain check on a single resource. */
-@XmlType(propOrder = {"object", "command"})
+@XmlType(propOrder = {"object", "feeClass", "command"})
 public class FeeCheckResponseExtensionItemStdV1 extends FeeCheckResponseExtensionItem {
 
   /** The domain that was checked. */
@@ -51,15 +51,6 @@ public class FeeCheckResponseExtensionItemStdV1 extends FeeCheckResponseExtensio
   @Override
   public ImmutableList<Fee> getFees() {
     return super.getFees();
-  }
-
-  /**
-   * This method is not annotated for JAXB because this version of the extension doesn't support
-   * "feeClass" and because the data comes off of the command object rather than a field.
-   */
-  @Override
-  public String getFeeClass() {
-    return command.getFeeClass();
   }
 
   /** Builder for {@link FeeCheckResponseExtensionItemStdV1}. */
@@ -91,7 +82,7 @@ public class FeeCheckResponseExtensionItemStdV1 extends FeeCheckResponseExtensio
 
     @Override
     public Builder setClass(String feeClass) {
-      commandBuilder.setClass(feeClass);
+      super.setClass(feeClass);
       return this;
     }
 
