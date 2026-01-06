@@ -63,6 +63,7 @@ import google.registry.module.ReadinessProbeAction.ReadinessProbeActionPubApi;
 import google.registry.module.ReadinessProbeAction.ReadinessProbeConsoleAction;
 import google.registry.monitoring.whitebox.WhiteboxModule;
 import google.registry.mosapi.GetServiceStateAction;
+import google.registry.mosapi.TriggerServiceStateAction;
 import google.registry.mosapi.module.MosApiRequestModule;
 import google.registry.rdap.RdapAutnumAction;
 import google.registry.rdap.RdapDomainAction;
@@ -338,6 +339,8 @@ interface RequestComponent {
   TmchDnlAction tmchDnlAction();
 
   TmchSmdrlAction tmchSmdrlAction();
+
+  TriggerServiceStateAction triggerServiceStateAction();
 
   UpdateRegistrarRdapBaseUrlsAction updateRegistrarRdapBaseUrlsAction();
 

@@ -55,6 +55,7 @@ BACKEND  /_dr/task/syncRegistrarsSheet                      SyncRegistrarsSheetA
 BACKEND  /_dr/task/tmchCrl                                  TmchCrlAction                                  POST                y  APP  ADMIN
 BACKEND  /_dr/task/tmchDnl                                  TmchDnlAction                                  POST                y  APP  ADMIN
 BACKEND  /_dr/task/tmchSmdrl                                TmchSmdrlAction                                POST                y  APP  ADMIN
+BACKEND  /_dr/task/triggerMosApiServiceState                TriggerServiceStateAction                      GET                 n  APP  ADMIN
 BACKEND  /_dr/task/updateRegistrarRdapBaseUrls              UpdateRegistrarRdapBaseUrlsAction              GET                 y  APP  ADMIN
 BACKEND  /_dr/task/uploadBsaUnavailableNames                UploadBsaUnavailableDomainsAction              GET,POST            n  APP  ADMIN
 BACKEND  /_dr/task/wipeOutContactHistoryPii                 WipeOutContactHistoryPiiAction                 GET                 n  APP  ADMIN
