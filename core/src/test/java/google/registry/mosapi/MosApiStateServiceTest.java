@@ -16,6 +16,8 @@ package google.registry.mosapi;
 
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.google.common.collect.ImmutableList;
@@ -39,6 +41,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 class MosApiStateServiceTest {
 
   @Mock private ServiceMonitoringClient client;
+  @Mock private MosApiMetrics metrics;
 
   private final ExecutorService executor = MoreExecutors.newDirectExecutorService();
 
@@ -46,7 +49,7 @@ class MosApiStateServiceTest {
 
   @BeforeEach
   void setUp() {
-    service = new MosApiStateService(client, ImmutableSet.of("tld1", "tld2"), executor);
+    service = new MosApiStateService(client, metrics, ImmutableSet.of("tld1", "tld2"), executor);
   }
 
   @Test
@@ -126,5 +129,44 @@ class MosApiStateServiceTest {
 
     assertThat(summary2.overallStatus()).isEqualTo("ERROR");
     assertThat(summary2.activeIncidents()).isEmpty();
+  }
+
+  @Test
+  void testTriggerMetricsForAllServiceStateSummaries_success() throws Exception {
+    TldServiceState state1 = new TldServiceState("tld1", 1L, "Up", ImmutableMap.of());
+    TldServiceState state2 = new TldServiceState("tld2", 2L, "Up", ImmutableMap.of());
+
+    when(client.getTldServiceState("tld1")).thenReturn(state1);
+    when(client.getTldServiceState("tld2")).thenReturn(state2);
+
+    service.triggerMetricsForAllServiceStateSummaries();
+
+    verify(metrics)
+        .recordStates(
+            argThat(
+                states ->
+                    states.size() == 2
+                        && states.stream()
+                            .anyMatch(s -> s.tld().equals("tld1") && s.status().equals("Up"))
+                        && states.stream()
+                            .anyMatch(s -> s.tld().equals("tld2") && s.status().equals("Up"))));
+  }
+
+  @Test
+  void testTriggerMetricsForAllServiceStateSummaries_partialFailure_recordsErrorMetric()
+      throws Exception {
+    TldServiceState state1 = new TldServiceState("tld1", 1L, "Up", ImmutableMap.of());
+    when(client.getTldServiceState("tld1")).thenReturn(state1);
+    when(client.getTldServiceState("tld2")).thenThrow(new MosApiException("Network Error", null));
+
+    service.triggerMetricsForAllServiceStateSummaries();
+
+    verify(metrics)
+        .recordStates(
+            argThat(
+                states ->
+                    states.size() == 1
+                        && states.stream()
+                            .anyMatch(s -> s.tld().equals("tld1") && s.status().equals("Up"))));
   }
 }
