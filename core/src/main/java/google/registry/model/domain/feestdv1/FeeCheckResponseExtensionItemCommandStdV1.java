@@ -30,7 +30,7 @@ import java.util.List;
 import org.joda.time.DateTime;
 
 /** The version 1.0 response command entity for a domain check on a single resource. */
-@XmlType(propOrder = {"period", "fee", "feeClass", "effectiveDate", "notAfterDate"})
+@XmlType(propOrder = {"period", "fee", "effectiveDate", "notAfterDate"})
 public class FeeCheckResponseExtensionItemCommandStdV1 extends ImmutableObject {
 
   /** The command that was checked. */
@@ -53,14 +53,6 @@ public class FeeCheckResponseExtensionItemCommandStdV1 extends ImmutableObject {
    */
   List<Fee> fee;
 
-  /**
-   * The type of the fee.
-   *
-   * <p>We will use "premium" for fees on premium names, and omit the field otherwise.
-   */
-  @XmlElement(name = "class")
-  String feeClass;
-
   /** The effective date that the check is to be performed on (if specified in the query). */
   @XmlElement(name = "date")
   DateTime effectiveDate;
@@ -68,10 +60,6 @@ public class FeeCheckResponseExtensionItemCommandStdV1 extends ImmutableObject {
   /** The date after which the quoted fee is no longer valid (if applicable). */
   @XmlElement(name = "notAfter")
   DateTime notAfterDate;
-
-  public String getFeeClass() {
-    return feeClass;
-  }
 
   /** Builder for {@link FeeCheckResponseExtensionItemCommandStdV1}. */
   public static class Builder extends Buildable.Builder<FeeCheckResponseExtensionItemCommandStdV1> {
@@ -108,11 +96,6 @@ public class FeeCheckResponseExtensionItemCommandStdV1 extends ImmutableObject {
 
     public Builder setFee(List<Fee> fees) {
       getInstance().fee = forceEmptyToNull(ImmutableList.copyOf(fees));
-      return this;
-    }
-
-    public Builder setClass(String feeClass) {
-      getInstance().feeClass = feeClass;
       return this;
     }
   }

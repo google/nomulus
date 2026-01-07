@@ -73,6 +73,7 @@
           </sequence>
         </complexType>
       </element>
+      <element name="class" type="token" minOccurs="0" />
       <element name="command"
         type="fee:commandCDType"
         maxOccurs="unbounded" />
@@ -90,9 +91,6 @@
       <element name="credit"
         type="fee:creditType"
         minOccurs="0" maxOccurs="unbounded" />
-      <element name="class"
-        type="token"
-        minOccurs="0" />
       <element name="reason"
         type="token"
         minOccurs="0" />
