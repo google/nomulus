@@ -44,8 +44,9 @@ public class FeeCheckResponseExtensionV11
     return items;
   }
 
-  static FeeCheckResponseExtensionV11
-      create(ImmutableList<FeeCheckResponseExtensionItemV11> items) {
+  @VisibleForTesting
+  public static FeeCheckResponseExtensionV11 create(
+      ImmutableList<FeeCheckResponseExtensionItemV11> items) {
     FeeCheckResponseExtensionV11 instance = new FeeCheckResponseExtensionV11();
     instance.items = items;
     return instance;

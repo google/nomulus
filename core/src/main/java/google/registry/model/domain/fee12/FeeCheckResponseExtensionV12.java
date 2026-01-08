@@ -49,8 +49,9 @@ public class FeeCheckResponseExtensionV12
     return items;
   }
 
-  static FeeCheckResponseExtensionV12
-      create(CurrencyUnit currency, ImmutableList<FeeCheckResponseExtensionItemV12> items) {
+  @VisibleForTesting
+  public static FeeCheckResponseExtensionV12 create(
+      CurrencyUnit currency, ImmutableList<FeeCheckResponseExtensionItemV12> items) {
     FeeCheckResponseExtensionV12 instance = new FeeCheckResponseExtensionV12();
     instance.currency = currency;
     instance.items = items;
