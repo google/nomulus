@@ -48,6 +48,7 @@ public class TriggerServiceStateAction implements Runnable {
   public void run() {
     response.setContentType(MediaType.PLAIN_TEXT_UTF_8);
     try {
+      logger.atInfo().log("Beginning to trigger MoSAPI metrics for all TLDs.");
       stateService.triggerMetricsForAllServiceStateSummaries();
       response.setStatus(200);
       response.setPayload("MoSAPI metrics triggered successfully for all TLDs.");

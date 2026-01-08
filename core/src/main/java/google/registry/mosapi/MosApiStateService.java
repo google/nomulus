@@ -143,6 +143,7 @@ public class MosApiStateService {
 
     if (!allStates.isEmpty()) {
       try {
+        logger.atInfo().log("Triggering MoSAPI status to cloud monitoring for all TLDs.");
         mosApiMetrics.recordStates(allStates);
       } catch (Exception e) {
         logger.atSevere().withCause(e).log("Failed to submit MoSAPI metrics batch.");

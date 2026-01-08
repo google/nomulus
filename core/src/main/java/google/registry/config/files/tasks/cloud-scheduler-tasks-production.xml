@@ -322,4 +322,15 @@
     <service>bsa</service>
     <schedule>23 8,20 * * *</schedule>
   </task>
+
+  <task>
+    <url><![CDATA[/_dr/task/triggerMosApiServiceState]]></url>
+    <name>triggerMosApiServiceState</name>
+    <description>
+      Fetches the service state from MosAPI and triggers the metrics status for all TLDs.
+    </description>
+    <!-- Runs every 3 minutes. -->
+    <schedule>*/3 * * * *</schedule>
+  </task>
+
 </entries>
