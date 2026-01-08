@@ -21,6 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import google.registry.model.eppinput.EppInput;
 import google.registry.model.eppoutput.EppOutput;
+import google.registry.util.RegistryEnvironment;
 import org.junit.jupiter.api.Test;
 
 /** Tests for {@link EppXmlTransformer}. */
@@ -37,5 +38,27 @@ class EppXmlTransformerTest {
     assertThrows(
         ClassCastException.class,
         () -> unmarshal(EppOutput.class, loadBytes(getClass(), "contact_info.xml").read()));
+  }
+
+  @Test
+  void testSchemas_inNonProduction_includesFee1Point0() {
+    var currentEnv = RegistryEnvironment.get();
+    try {
+      RegistryEnvironment.SANDBOX.setup();
+      assertThat(EppXmlTransformer.getSchemas()).contains("fee-std-v1.xsd");
+    } finally {
+      currentEnv.setup();
+    }
+  }
+
+  @Test
+  void testSchemas_inProduction_skipsFee1Point0() {
+    var currentEnv = RegistryEnvironment.get();
+    try {
+      RegistryEnvironment.PRODUCTION.setup();
+      assertThat(EppXmlTransformer.getSchemas()).doesNotContain("fee-std-v1.xsd");
+    } finally {
+      currentEnv.setup();
+    }
   }
 }
