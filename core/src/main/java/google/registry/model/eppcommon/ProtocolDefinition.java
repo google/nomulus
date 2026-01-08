@@ -33,6 +33,7 @@ import google.registry.model.domain.rgp.RgpUpdateExtension;
 import google.registry.model.domain.secdns.SecDnsCreateExtension;
 import google.registry.model.eppinput.EppInput.CommandExtension;
 import google.registry.model.eppoutput.EppResponse.ResponseExtension;
+import google.registry.util.RegistryEnvironment;
 import jakarta.xml.bind.annotation.XmlSchema;
 import java.util.EnumSet;
 
@@ -48,30 +49,50 @@ public class ProtocolDefinition {
           "urn:ietf:params:xml:ns:domain-1.0",
           "urn:ietf:params:xml:ns:contact-1.0");
 
-  /** Enums repesenting valid service extensions that are recognized by the server. */
+  /** Enum representing which environments should have which service extensions enabled. */
+  private enum ServiceExtensionVisibility {
+    ALL,
+    ONLY_IN_PRODUCTION,
+    ONLY_IN_NON_PRODUCTION,
+    NONE
+  }
+
+  /** Enum representing valid service extensions that are recognized by the server. */
   public enum ServiceExtension {
-    LAUNCH_EXTENSION_1_0(LaunchCreateExtension.class, null, true),
-    REDEMPTION_GRACE_PERIOD_1_0(RgpUpdateExtension.class, null, true),
-    SECURE_DNS_1_1(SecDnsCreateExtension.class, null, true),
-    FEE_0_6(FeeCheckCommandExtensionV06.class, FeeCheckResponseExtensionV06.class, true),
-    FEE_0_11(FeeCheckCommandExtensionV11.class, FeeCheckResponseExtensionV11.class, true),
-    FEE_0_12(FeeCheckCommandExtensionV12.class, FeeCheckResponseExtensionV12.class, true),
-    FEE_1_00(FeeCheckCommandExtensionStdV1.class, FeeCheckResponseExtensionStdV1.class, false),
-    METADATA_1_0(MetadataExtension.class, null, false);
+    LAUNCH_EXTENSION_1_0(LaunchCreateExtension.class, null, ServiceExtensionVisibility.ALL),
+    REDEMPTION_GRACE_PERIOD_1_0(RgpUpdateExtension.class, null, ServiceExtensionVisibility.ALL),
+    SECURE_DNS_1_1(SecDnsCreateExtension.class, null, ServiceExtensionVisibility.ALL),
+    FEE_0_6(
+        FeeCheckCommandExtensionV06.class,
+        FeeCheckResponseExtensionV06.class,
+        ServiceExtensionVisibility.ALL),
+    FEE_0_11(
+        FeeCheckCommandExtensionV11.class,
+        FeeCheckResponseExtensionV11.class,
+        ServiceExtensionVisibility.ALL),
+    FEE_0_12(
+        FeeCheckCommandExtensionV12.class,
+        FeeCheckResponseExtensionV12.class,
+        ServiceExtensionVisibility.ALL),
+    FEE_1_00(
+        FeeCheckCommandExtensionStdV1.class,
+        FeeCheckResponseExtensionStdV1.class,
+        ServiceExtensionVisibility.ONLY_IN_NON_PRODUCTION),
+    METADATA_1_0(MetadataExtension.class, null, ServiceExtensionVisibility.NONE);
 
     private final Class<? extends CommandExtension> commandExtensionClass;
     private final Class<? extends ResponseExtension> responseExtensionClass;
     private final String uri;
-    private final boolean visible;
+    private final ServiceExtensionVisibility visibility;
 
     ServiceExtension(
         Class<? extends CommandExtension> commandExtensionClass,
         Class<? extends ResponseExtension> responseExtensionClass,
-        boolean visible) {
+        ServiceExtensionVisibility visibility) {
       this.commandExtensionClass = commandExtensionClass;
       this.responseExtensionClass = responseExtensionClass;
       this.uri = getCommandExtensionUri(commandExtensionClass);
-      this.visible = visible;
+      this.visibility = visibility;
     }
 
     public Class<? extends CommandExtension> getCommandExtensionClass() {
@@ -87,7 +108,13 @@ public class ProtocolDefinition {
     }
 
     public boolean getVisible() {
-      return visible;
+      return switch (visibility) {
+        case ALL -> true;
+        case ONLY_IN_PRODUCTION -> RegistryEnvironment.get().equals(RegistryEnvironment.PRODUCTION);
+        case ONLY_IN_NON_PRODUCTION ->
+            !RegistryEnvironment.get().equals(RegistryEnvironment.PRODUCTION);
+        case NONE -> false;
+      };
     }
 
     /** Returns the namespace URI of the command extension class. */

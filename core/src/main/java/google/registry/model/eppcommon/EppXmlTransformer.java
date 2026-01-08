@@ -14,13 +14,16 @@
 
 package google.registry.model.eppcommon;
 
+import static com.google.common.collect.ImmutableList.toImmutableList;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import google.registry.model.ImmutableObject;
 import google.registry.model.eppinput.EppInput;
 import google.registry.model.eppoutput.EppOutput;
+import google.registry.util.RegistryEnvironment;
 import google.registry.xml.ValidationMode;
 import google.registry.xml.XmlException;
 import google.registry.xml.XmlTransformer;
@@ -31,7 +34,7 @@ import java.io.ByteArrayOutputStream;
 public class EppXmlTransformer  {
 
   // Hardcoded XML schemas, ordered with respect to dependency.
-  private static final ImmutableList<String> SCHEMAS =
+  private static final ImmutableList<String> ALL_SCHEMAS =
       ImmutableList.of(
           "eppcom.xsd",
           "epp.xsd",
@@ -54,11 +57,24 @@ public class EppXmlTransformer  {
           "allocationToken-1.0.xsd",
           "bulkToken.xsd");
 
+  // XML schemas that should not be used in production (yet)
+  private static final ImmutableSet<String> NON_PROD_SCHEMAS = ImmutableSet.of("fee-std-v1.xsd");
+
   private static final XmlTransformer INPUT_TRANSFORMER =
-      new XmlTransformer(SCHEMAS, EppInput.class);
+      new XmlTransformer(getSchemas(), EppInput.class);
 
   private static final XmlTransformer OUTPUT_TRANSFORMER =
-      new XmlTransformer(SCHEMAS, EppOutput.class);
+      new XmlTransformer(getSchemas(), EppOutput.class);
+
+  @VisibleForTesting
+  public static ImmutableList<String> getSchemas() {
+    if (RegistryEnvironment.get().equals(RegistryEnvironment.PRODUCTION)) {
+      return ALL_SCHEMAS.stream()
+          .filter(s -> !NON_PROD_SCHEMAS.contains(s))
+          .collect(toImmutableList());
+    }
+    return ALL_SCHEMAS;
+  }
 
   public static void validateOutput(String xml) throws XmlException {
     OUTPUT_TRANSFORMER.validate(xml);
