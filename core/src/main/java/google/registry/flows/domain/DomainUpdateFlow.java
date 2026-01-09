@@ -21,6 +21,8 @@ import static com.google.common.collect.Sets.union;
 import static google.registry.dns.DnsUtils.requestDomainDnsRefresh;
 import static google.registry.flows.FlowUtils.persistEntityChanges;
 import static google.registry.flows.FlowUtils.validateRegistrarIsLoggedIn;
+import static google.registry.flows.ResourceFlowUtils.checkExistingValueNotAdded;
+import static google.registry.flows.ResourceFlowUtils.checkNonexistentValueNotRemoved;
 import static google.registry.flows.ResourceFlowUtils.checkSameValuesNotAddedAndRemoved;
 import static google.registry.flows.ResourceFlowUtils.loadAndVerifyExistence;
 import static google.registry.flows.ResourceFlowUtils.verifyAllStatusesAreClientSettable;
@@ -248,6 +250,8 @@ public final class DomainUpdateFlow implements MutatingFlow {
     checkSameValuesNotAddedAndRemoved(add.getNameservers(), remove.getNameservers());
     checkSameValuesNotAddedAndRemoved(add.getContacts(), remove.getContacts());
     checkSameValuesNotAddedAndRemoved(add.getStatusValues(), remove.getStatusValues());
+    checkExistingValueNotAdded(add.getNameservers(), domain.getNameservers());
+    checkNonexistentValueNotRemoved(remove.getNameservers(), domain.getNameservers());
     Change change = command.getInnerChange();
     Optional<SecDnsUpdateExtension> secDnsUpdate =
         eppInput.getSingleExtension(SecDnsUpdateExtension.class);
