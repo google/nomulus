@@ -38,7 +38,6 @@ import java.io.StringWriter;
 import java.io.Writer;
 import java.nio.charset.Charset;
 import java.util.Collection;
-import java.util.List;
 import java.util.Map;
 import javax.annotation.Nullable;
 import javax.xml.XMLConstants;
@@ -82,7 +81,7 @@ public class XmlTransformer {
    * @param schemaFilenames schema files, used only for validating, and relative to this package.
    * @param recognizedClasses the classes that can be used to marshal to and from
    */
-  public XmlTransformer(List<String> schemaFilenames, Class<?>... recognizedClasses) {
+  public XmlTransformer(ImmutableList<String> schemaFilenames, Class<?>... recognizedClasses) {
     try {
       this.jaxbContext = JAXBContext.newInstance(recognizedClasses);
       this.schema = loadXmlSchemas(schemaFilenames);
@@ -251,7 +250,7 @@ public class XmlTransformer {
   }
 
   /** Creates a single {@link Schema} from multiple {@code .xsd} files. */
-  public static Schema loadXmlSchemas(List<String> schemaFilenames) {
+  public static Schema loadXmlSchemas(ImmutableList<String> schemaFilenames) {
     try (Closer closer = Closer.create()) {
       StreamSource[] sources = new StreamSource[schemaFilenames.size()];
       for (int i = 0; i < schemaFilenames.size(); ++i) {

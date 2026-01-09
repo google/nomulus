@@ -14,7 +14,6 @@
 
 package google.registry.flows;
 
-import static org.joda.time.DateTimeZone.UTC;
 import static org.joda.time.format.ISODateTimeFormat.dateTimeNoMillis;
 
 import com.google.common.collect.ImmutableMap;
@@ -26,7 +25,7 @@ class EppLoggedOutTest extends EppTestCase {
 
   @Test
   void testHello() throws Exception {
-    DateTime now = DateTime.now(UTC);
+    DateTime now = clock.nowUtc();
     assertThatCommand("hello.xml", null)
         .atTime(now)
         .hasResponse("greeting.xml", ImmutableMap.of("DATE", now.toString(dateTimeNoMillis())));
