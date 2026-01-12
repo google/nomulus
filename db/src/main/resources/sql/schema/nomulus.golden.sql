@@ -1959,6 +1959,13 @@ CREATE INDEX delegationsignerdata_domain_repo_id_hash ON public."DelegationSigne
 
 
 --
+-- Name: domain_current_package_token_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX domain_current_package_token_idx ON public."Domain" USING hash (current_package_token);
+
+
+--
 -- Name: domain_domain_name_hash; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -1998,6 +2005,13 @@ CREATE UNIQUE INDEX domain_no_duplicate_active ON public."Domain" USING btree (d
 --
 
 CREATE INDEX domaindsdatahistory_domain_history_revision_id_hash ON public."DomainDsDataHistory" USING hash (domain_history_revision_id);
+
+
+--
+-- Name: domainhistory_current_package_token_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX domainhistory_current_package_token_idx ON public."DomainHistory" USING hash (current_package_token);
 
 
 --

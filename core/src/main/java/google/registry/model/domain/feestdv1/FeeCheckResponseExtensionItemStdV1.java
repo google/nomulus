@@ -17,20 +17,18 @@ package google.registry.model.domain.feestdv1;
 import static google.registry.util.CollectionUtils.forceEmptyToNull;
 
 import com.google.common.collect.ImmutableList;
-import google.registry.model.domain.DomainObjectSpec;
 import google.registry.model.domain.Period;
 import google.registry.model.domain.fee.Fee;
 import google.registry.model.domain.fee.FeeCheckResponseExtensionItem;
 import google.registry.model.domain.fee.FeeQueryCommandExtensionItem.CommandName;
 import jakarta.xml.bind.annotation.XmlType;
-import org.joda.time.DateTime;
 
 /** The version 1.0 response for a domain check on a single resource. */
-@XmlType(propOrder = {"object", "feeClass", "command"})
+@XmlType(propOrder = {"objID", "feeClass", "command"})
 public class FeeCheckResponseExtensionItemStdV1 extends FeeCheckResponseExtensionItem {
 
   /** The domain that was checked. */
-  DomainObjectSpec object;
+  String objID;
 
   /** The command that was checked. */
   FeeCheckResponseExtensionItemCommandStdV1 command;
@@ -88,7 +86,7 @@ public class FeeCheckResponseExtensionItemStdV1 extends FeeCheckResponseExtensio
 
     @Override
     public Builder setDomainNameIfSupported(String name) {
-      getInstance().object = new DomainObjectSpec(name);
+      getInstance().objID = name;
       return this;
     }
 
@@ -96,18 +94,6 @@ public class FeeCheckResponseExtensionItemStdV1 extends FeeCheckResponseExtensio
     public FeeCheckResponseExtensionItemStdV1 build() {
       getInstance().command = commandBuilder.build();
       return super.build();
-    }
-
-    @Override
-    public Builder setEffectiveDateIfSupported(DateTime effectiveDate) {
-      commandBuilder.setEffectiveDate(effectiveDate);
-      return this;
-    }
-
-    @Override
-    public Builder setNotAfterDateIfSupported(DateTime notAfterDate) {
-      commandBuilder.setNotAfterDate(notAfterDate);
-      return this;
     }
   }
 }

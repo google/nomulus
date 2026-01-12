@@ -67,7 +67,9 @@ import google.registry.flows.FlowTestCase.CommitMode;
 import google.registry.flows.FlowTestCase.UserPrivileges;
 import google.registry.flows.FlowUtils.NotLoggedInException;
 import google.registry.flows.ResourceFlowTestCase;
+import google.registry.flows.ResourceFlowUtils.AddExistingValueException;
 import google.registry.flows.ResourceFlowUtils.AddRemoveSameValueException;
+import google.registry.flows.ResourceFlowUtils.RemoveNonexistentValueException;
 import google.registry.flows.ResourceFlowUtils.ResourceDoesNotExistException;
 import google.registry.flows.ResourceFlowUtils.ResourceNotOwnedException;
 import google.registry.flows.ResourceFlowUtils.StatusNotClientSettableException;
@@ -1371,6 +1373,30 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
             .build());
     EppException thrown = assertThrows(AddRemoveSameValueException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
+  }
+
+  @Test
+  void testFailure_addExistingNameserver() throws Exception {
+    Host host = persistActiveHost("ns2.example.foo");
+    persistResource(
+        DatabaseHelper.newDomain(getUniqueIdFromCommand())
+            .asBuilder()
+            .setNameservers(ImmutableSet.of(host.createVKey()))
+            .build());
+    setEppInput("domain_update_add_nameserver.xml");
+    assertAboutEppExceptions()
+        .that(assertThrows(AddExistingValueException.class, this::runFlow))
+        .marshalsToXml();
+  }
+
+  @Test
+  void testFailure_removeNonexistentValue() throws Exception {
+    persistActiveDomain(getUniqueIdFromCommand());
+    persistActiveHost("ns1.example.foo");
+    setEppInput("domain_update_remove_nameserver.xml");
+    assertAboutEppExceptions()
+        .that(assertThrows(RemoveNonexistentValueException.class, this::runFlow))
+        .marshalsToXml();
   }
 
   @Test

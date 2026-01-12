@@ -195,11 +195,28 @@ public final class ResourceFlowUtils {
   }
 
   /** Check that the same values aren't being added and removed in an update command. */
-  public static void checkSameValuesNotAddedAndRemoved(
-      ImmutableSet<?> fieldsToAdd, ImmutableSet<?> fieldsToRemove)
+  public static <T> void checkSameValuesNotAddedAndRemoved(
+      ImmutableSet<T> fieldsToAdd, ImmutableSet<T> fieldsToRemove)
       throws AddRemoveSameValueException {
     if (!intersection(fieldsToAdd, fieldsToRemove).isEmpty()) {
       throw new AddRemoveSameValueException();
+    }
+  }
+
+  /** Check that we aren't adding a value that is already present. */
+  public static <T> void checkExistingValueNotAdded(
+      ImmutableSet<T> fieldsToAdd, ImmutableSet<T> existingFields)
+      throws AddExistingValueException {
+    if (!intersection(fieldsToAdd, existingFields).isEmpty()) {
+      throw new AddExistingValueException();
+    }
+  }
+
+  public static <T> void checkNonexistentValueNotRemoved(
+      ImmutableSet<T> fieldsToRemove, ImmutableSet<T> existingFields)
+      throws RemoveNonexistentValueException {
+    if (intersection(fieldsToRemove, existingFields).size() != fieldsToRemove.size()) {
+      throw new RemoveNonexistentValueException();
     }
   }
 
@@ -263,6 +280,20 @@ public final class ResourceFlowUtils {
   public static class AddRemoveSameValueException extends ParameterValuePolicyErrorException {
     public AddRemoveSameValueException() {
       super("Cannot add and remove the same value");
+    }
+  }
+
+  /** Cannot add a value that is already present. */
+  public static class AddExistingValueException extends ParameterValuePolicyErrorException {
+    public AddExistingValueException() {
+      super("Cannot add a value that is already present");
+    }
+  }
+
+  /** Cannot remove a value that does not exist. */
+  public static class RemoveNonexistentValueException extends ParameterValuePolicyErrorException {
+    public RemoveNonexistentValueException() {
+      super("Cannot remove a value that does not exist");
     }
   }
 

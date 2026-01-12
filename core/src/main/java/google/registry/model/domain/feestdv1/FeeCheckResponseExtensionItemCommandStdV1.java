@@ -24,13 +24,11 @@ import google.registry.model.domain.Period;
 import google.registry.model.domain.fee.Fee;
 import google.registry.model.domain.fee.FeeQueryCommandExtensionItem.CommandName;
 import jakarta.xml.bind.annotation.XmlAttribute;
-import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlType;
 import java.util.List;
-import org.joda.time.DateTime;
 
 /** The version 1.0 response command entity for a domain check on a single resource. */
-@XmlType(propOrder = {"period", "fee", "effectiveDate", "notAfterDate"})
+@XmlType(propOrder = {"period", "fee"})
 public class FeeCheckResponseExtensionItemCommandStdV1 extends ImmutableObject {
 
   /** The command that was checked. */
@@ -53,14 +51,6 @@ public class FeeCheckResponseExtensionItemCommandStdV1 extends ImmutableObject {
    */
   List<Fee> fee;
 
-  /** The effective date that the check is to be performed on (if specified in the query). */
-  @XmlElement(name = "date")
-  DateTime effectiveDate;
-
-  /** The date after which the quoted fee is no longer valid (if applicable). */
-  @XmlElement(name = "notAfter")
-  DateTime notAfterDate;
-
   /** Builder for {@link FeeCheckResponseExtensionItemCommandStdV1}. */
   public static class Builder extends Buildable.Builder<FeeCheckResponseExtensionItemCommandStdV1> {
 
@@ -81,16 +71,6 @@ public class FeeCheckResponseExtensionItemCommandStdV1 extends ImmutableObject {
 
     public Builder setPeriod(Period period) {
       getInstance().period = period;
-      return this;
-    }
-
-    public Builder setEffectiveDate(DateTime effectiveDate) {
-      getInstance().effectiveDate = effectiveDate;
-      return this;
-    }
-
-    public Builder setNotAfterDate(DateTime notAfterDate) {
-      getInstance().notAfterDate = notAfterDate;
       return this;
     }
 
