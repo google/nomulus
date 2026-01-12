@@ -6,7 +6,7 @@
       </domain:check>
     </check>
     <extension>
-      <fee:check xmlns:fee="urn:ietf:params:xml:ns:fee-0.12">
+      <fee:check xmlns:fee="urn:ietf:params:xml:ns:epp:fee-1.0">
         <fee:command name="Create">
           <fee:period unit="y">1</fee:period>
         </fee:command>

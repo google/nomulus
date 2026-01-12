@@ -11,7 +11,7 @@
       </domain:transfer>
     </transfer>
     <extension>
-      <fee:transfer xmlns:fee="urn:ietf:params:xml:ns:fee-0.6">
+      <fee:transfer xmlns:fee="urn:ietf:params:xml:ns:%FEE_VERSION%">
         <fee:currency>USD</fee:currency>
         <fee:fee applied="delayed">11.00</fee:fee>
       </fee:transfer>

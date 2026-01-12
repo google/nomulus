@@ -24,12 +24,9 @@ import google.registry.testing.EppLoader;
 /** Unit tests for {@code ResourceCommand}. */
 public abstract class ResourceCommandTestCase extends EntityTestCase {
 
-  protected void doXmlRoundtripTest(String inputFilename, String... ignoredPaths)
-      throws Exception {
+  protected void doXmlRoundtripTest(String inputFilename) throws Exception {
     EppLoader eppLoader = new EppLoader(this, inputFilename);
     assertXmlEquals(
-        eppLoader.getEppXml(),
-        new String(marshalInput(eppLoader.getEpp(), STRICT), UTF_8),
-        ignoredPaths);
+        eppLoader.getEppXml(), new String(marshalInput(eppLoader.getEpp(), STRICT), UTF_8));
   }
 }

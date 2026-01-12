@@ -1,0 +1,63 @@
+<epp xmlns="urn:ietf:params:xml:ns:epp-1.0">
+<response>
+    <result code="1000">
+      <msg>Command completed successfully</msg>
+    </result>
+    <resData>
+      <domain:chkData xmlns:domain="urn:ietf:params:xml:ns:domain-1.0">
+        <domain:cd>
+          <domain:name avail="false">example1.tld</domain:name>
+          <domain:reason>Alloc token invalid for domain</domain:reason>
+        </domain:cd>
+        <domain:cd>
+          <domain:name avail="false">example2.example</domain:name>
+          <domain:reason>Alloc token invalid for domain</domain:reason>
+        </domain:cd>
+        <domain:cd>
+          <domain:name avail="false">reserved.tld</domain:name>
+          <domain:reason>Alloc token invalid for domain</domain:reason>
+        </domain:cd>
+        <domain:cd>
+          <domain:name avail="true">specificuse.tld</domain:name>
+        </domain:cd>
+      </domain:chkData>
+    </resData>
+    <extension>
+      <fee:chkData xmlns:fee="urn:ietf:params:xml:ns:epp:fee-1.0">
+        <fee:currency>USD</fee:currency>
+        <fee:cd>
+          <fee:objID>example1.tld</fee:objID>
+          <fee:class>token-not-supported</fee:class>
+          <fee:command name="create">
+            <fee:period unit="y">1</fee:period>
+          </fee:command>
+        </fee:cd>
+        <fee:cd>
+          <fee:objID>example2.example</fee:objID>
+          <fee:class>token-not-supported</fee:class>
+          <fee:command name="create">
+            <fee:period unit="y">1</fee:period>
+          </fee:command>
+        </fee:cd>
+        <fee:cd>
+          <fee:objID>reserved.tld</fee:objID>
+          <fee:class>token-not-supported</fee:class>
+          <fee:command name="create">
+            <fee:period unit="y">1</fee:period>
+          </fee:command>
+        </fee:cd>
+        <fee:cd>
+          <fee:objID>specificuse.tld</fee:objID>
+          <fee:command name="create">
+            <fee:period unit="y">1</fee:period>
+            <fee:fee description="create">13.00</fee:fee>
+          </fee:command>
+        </fee:cd>
+      </fee:chkData>
+    </extension>
+    <trID>
+      <clTRID>ABC-12345</clTRID>
+      <svTRID>server-trid</svTRID>
+    </trID>
+  </response>
+</epp>

@@ -9,7 +9,7 @@
       </domain:renew>
     </renew>
     <extension>
-      <fee:renew xmlns:fee="urn:ietf:params:xml:ns:fee-0.6">
+      <fee:renew xmlns:fee="urn:ietf:params:xml:ns:%FEE_VERSION%">
         <fee:currency>USD</fee:currency>
         <fee:fee>55.000</fee:fee>
       </fee:renew>

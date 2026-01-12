@@ -114,11 +114,6 @@ class DomainCommandTest extends ResourceCommandTestCase {
   }
 
   @Test
-  void testUpdate_fee() throws Exception {
-    doXmlRoundtripTest("domain_update_fee.xml");
-  }
-
-  @Test
   void testUpdate_emptyCommand() throws Exception {
     // This EPP command wouldn't be allowed for policy reasons, but should marshal/unmarshal fine.
     doXmlRoundtripTest("domain_update_empty.xml");
@@ -151,11 +146,6 @@ class DomainCommandTest extends ResourceCommandTestCase {
   @Test
   void testInfo_sunrise() throws Exception {
     doXmlRoundtripTest("domain_info_sunrise.xml");
-  }
-
-  @Test
-  void testInfo_feeExtension() throws Exception {
-    doXmlRoundtripTest("domain_info_fee.xml");
   }
 
   @Test
