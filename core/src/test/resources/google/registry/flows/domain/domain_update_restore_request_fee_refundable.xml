@@ -11,7 +11,7 @@
       <rgp:update xmlns:rgp="urn:ietf:params:xml:ns:rgp-1.0">
         <rgp:restore op="request"/>
       </rgp:update>
-      <fee:update xmlns:fee="urn:ietf:params:xml:ns:fee-%FEE_VERSION%">
+      <fee:update xmlns:fee="urn:ietf:params:xml:ns:%FEE_VERSION%">
         <fee:currency>USD</fee:currency>
         <fee:fee refundable="false">28.00</fee:fee>
       </fee:update>

@@ -4,36 +4,15 @@
       <domain:check
         xmlns:domain="urn:ietf:params:xml:ns:domain-1.0">
         <domain:name>example.com</domain:name>
-        <domain:name>example.net</domain:name>
-        <domain:name>example.org</domain:name>
       </domain:check>
     </check>
     <extension>
       <fee:check
-        xmlns:fee="urn:ietf:params:xml:ns:fee-0.6">
-        <fee:domain>
-          <fee:name>example.com</fee:name>
-          <fee:currency>USD</fee:currency>
-          <fee:command phase="sunrise">create</fee:command>
+        xmlns:fee="urn:ietf:params:xml:ns:epp:fee-1.0">
+        <fee:currency>USD</fee:currency>
+        <fee:command phase="sunrise" name="create">
           <fee:period unit="y">1</fee:period>
-        </fee:domain>
-        <fee:domain>
-          <fee:name>example.net</fee:name>
-          <fee:currency>EUR</fee:currency>
-          <fee:command phase="claims" subphase="landrush">
-          create</fee:command>
-          <fee:period unit="y">2</fee:period>
-        </fee:domain>
-        <fee:domain>
-          <fee:name>example.org</fee:name>
-          <fee:currency>EUR</fee:currency>
-          <fee:command>transfer</fee:command>
-        </fee:domain>
-        <fee:domain>
-          <fee:name>example.xyz</fee:name>
-          <fee:command>restore</fee:command>
-          <fee:period unit="y">1</fee:period>
-        </fee:domain>
+        </fee:command>
       </fee:check>
     </extension>
     <clTRID>ABC-12345</clTRID>

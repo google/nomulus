@@ -86,7 +86,6 @@ import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.GracePeriod;
 import google.registry.model.domain.rgp.GracePeriodStatus;
-import google.registry.model.eppcommon.ProtocolDefinition.ServiceExtension;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.eppcommon.Trid;
 import google.registry.model.host.Host;
@@ -122,12 +121,8 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
   private static final DateTime A_MONTH_AGO = TIME_BEFORE_FLOW.minusMonths(1);
   private static final DateTime A_MONTH_FROM_NOW = TIME_BEFORE_FLOW.plusMonths(1);
 
-  private static final ImmutableMap<String, String> FEE_06_MAP =
-      ImmutableMap.of("FEE_VERSION", "0.6", "FEE_NS", "fee");
-  private static final ImmutableMap<String, String> FEE_11_MAP =
-      ImmutableMap.of("FEE_VERSION", "0.11", "FEE_NS", "fee11");
-  private static final ImmutableMap<String, String> FEE_12_MAP =
-      ImmutableMap.of("FEE_VERSION", "0.12", "FEE_NS", "fee12");
+  private static final ImmutableMap<String, String> FEE_STD_1_0_MAP =
+      ImmutableMap.of("FEE_VERSION", "epp:fee-1.0", "FEE_NS", "fee1_00");
 
   DomainDeleteFlowTest() {
     setEppInput("domain_delete.xml");
@@ -396,24 +391,9 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
   }
 
   @Test
-  void testSuccess_addGracePeriodCredit_v06() throws Exception {
-    removeServiceExtensionUri(ServiceExtension.FEE_0_11.getUri());
-    removeServiceExtensionUri(ServiceExtension.FEE_0_12.getUri());
-    removeServiceExtensionUri(ServiceExtension.FEE_1_00.getUri());
-    doAddGracePeriodDeleteTest(GracePeriodStatus.ADD, "domain_delete_response_fee.xml", FEE_06_MAP);
-  }
-
-  @Test
-  void testSuccess_addGracePeriodCredit_v11() throws Exception {
-    removeServiceExtensionUri(ServiceExtension.FEE_0_12.getUri());
-    removeServiceExtensionUri(ServiceExtension.FEE_1_00.getUri());
-    doAddGracePeriodDeleteTest(GracePeriodStatus.ADD, "domain_delete_response_fee.xml", FEE_11_MAP);
-  }
-
-  @Test
-  void testSuccess_addGracePeriodCredit_v12() throws Exception {
-    removeServiceExtensionUri(ServiceExtension.FEE_1_00.getUri());
-    doAddGracePeriodDeleteTest(GracePeriodStatus.ADD, "domain_delete_response_fee.xml", FEE_12_MAP);
+  void testSuccess_addGracePeriodCredit_std_v1() throws Exception {
+    doAddGracePeriodDeleteTest(
+        GracePeriodStatus.ADD, "domain_delete_response_fee.xml", FEE_STD_1_0_MAP);
   }
 
   private void doSuccessfulTest_noAddGracePeriod(String responseFilename) throws Exception {
@@ -497,24 +477,8 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
   }
 
   @Test
-  void testSuccess_renewGracePeriodCredit_v06() throws Exception {
-    removeServiceExtensionUri(ServiceExtension.FEE_0_11.getUri());
-    removeServiceExtensionUri(ServiceExtension.FEE_0_12.getUri());
-    removeServiceExtensionUri(ServiceExtension.FEE_1_00.getUri());
-    doSuccessfulTest_noAddGracePeriod("domain_delete_response_pending_fee.xml", FEE_06_MAP);
-  }
-
-  @Test
-  void testSuccess_renewGracePeriodCredit_v11() throws Exception {
-    removeServiceExtensionUri(ServiceExtension.FEE_0_12.getUri());
-    removeServiceExtensionUri(ServiceExtension.FEE_1_00.getUri());
-    doSuccessfulTest_noAddGracePeriod("domain_delete_response_pending_fee.xml", FEE_11_MAP);
-  }
-
-  @Test
-  void testSuccess_renewGracePeriodCredit_v12() throws Exception {
-    removeServiceExtensionUri(ServiceExtension.FEE_1_00.getUri());
-    doSuccessfulTest_noAddGracePeriod("domain_delete_response_pending_fee.xml", FEE_12_MAP);
+  void testSuccess_renewGracePeriodCredit_std_v1() throws Exception {
+    doSuccessfulTest_noAddGracePeriod("domain_delete_response_pending_fee.xml", FEE_STD_1_0_MAP);
   }
 
   @Test
@@ -556,37 +520,14 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
   }
 
   @Test
-  void testSuccess_autoRenewGracePeriod_v06() throws Exception {
-    removeServiceExtensionUri(ServiceExtension.FEE_0_11.getUri());
-    removeServiceExtensionUri(ServiceExtension.FEE_0_12.getUri());
-    removeServiceExtensionUri(ServiceExtension.FEE_1_00.getUri());
+  void testSuccess_autoRenewGracePeriod_std_v1() throws Exception {
     setUpAutorenewGracePeriod();
     clock.advanceOneMilli();
-    runFlowAssertResponse(loadFile("domain_delete_response_autorenew_fee.xml", FEE_06_MAP));
+    runFlowAssertResponse(loadFile("domain_delete_response_autorenew_fee.xml", FEE_STD_1_0_MAP));
   }
 
   @Test
-  void testSuccess_autoRenewGracePeriod_v11() throws Exception {
-    removeServiceExtensionUri(ServiceExtension.FEE_0_12.getUri());
-    removeServiceExtensionUri(ServiceExtension.FEE_1_00.getUri());
-    setUpAutorenewGracePeriod();
-    clock.advanceOneMilli();
-    runFlowAssertResponse(loadFile("domain_delete_response_autorenew_fee.xml", FEE_11_MAP));
-  }
-
-  @Test
-  void testSuccess_autoRenewGracePeriod_v12() throws Exception {
-    removeServiceExtensionUri(ServiceExtension.FEE_1_00.getUri());
-    setUpAutorenewGracePeriod();
-    clock.advanceOneMilli();
-    runFlowAssertResponse(loadFile("domain_delete_response_autorenew_fee.xml", FEE_12_MAP));
-  }
-
-  @Test
-  void testSuccess_autoRenewGracePeriod_priceChanges_v06() throws Exception {
-    removeServiceExtensionUri(ServiceExtension.FEE_0_11.getUri());
-    removeServiceExtensionUri(ServiceExtension.FEE_0_12.getUri());
-    removeServiceExtensionUri(ServiceExtension.FEE_1_00.getUri());
+  void testSuccess_autoRenewGracePeriod_priceChanges_std_v1() throws Exception {
     persistResource(
         Tld.get("tld")
             .asBuilder()
@@ -599,44 +540,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
             .build());
     setUpAutorenewGracePeriod();
     clock.advanceOneMilli();
-    runFlowAssertResponse(loadFile("domain_delete_response_autorenew_fee.xml", FEE_06_MAP));
-  }
-
-  @Test
-  void testSuccess_autoRenewGracePeriod_priceChanges_v11() throws Exception {
-    removeServiceExtensionUri(ServiceExtension.FEE_0_12.getUri());
-    removeServiceExtensionUri(ServiceExtension.FEE_1_00.getUri());
-    persistResource(
-        Tld.get("tld")
-            .asBuilder()
-            .setRenewBillingCostTransitions(
-                ImmutableSortedMap.of(
-                    START_OF_TIME,
-                    Money.of(USD, 11),
-                    TIME_BEFORE_FLOW.minusDays(5),
-                    Money.of(USD, 20)))
-            .build());
-    setUpAutorenewGracePeriod();
-    clock.advanceOneMilli();
-    runFlowAssertResponse(loadFile("domain_delete_response_autorenew_fee.xml", FEE_11_MAP));
-  }
-
-  @Test
-  void testSuccess_autoRenewGracePeriod_priceChanges_v12() throws Exception {
-    removeServiceExtensionUri(ServiceExtension.FEE_1_00.getUri());
-    persistResource(
-        Tld.get("tld")
-            .asBuilder()
-            .setRenewBillingCostTransitions(
-                ImmutableSortedMap.of(
-                    START_OF_TIME,
-                    Money.of(USD, 11),
-                    TIME_BEFORE_FLOW.minusDays(5),
-                    Money.of(USD, 20)))
-            .build());
-    setUpAutorenewGracePeriod();
-    clock.advanceOneMilli();
-    runFlowAssertResponse(loadFile("domain_delete_response_autorenew_fee.xml", FEE_12_MAP));
+    runFlowAssertResponse(loadFile("domain_delete_response_autorenew_fee.xml", FEE_STD_1_0_MAP));
   }
 
   @Test
@@ -1296,7 +1200,6 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
 
   @Test
   void testSuccess_freeCreation_deletionDuringGracePeriod() throws Exception {
-    removeServiceExtensionUri(ServiceExtension.FEE_1_00.getUri());
     // Deletion during the add grace period should still work even if the credit is 0
     setUpSuccessfulTest();
     BillingEvent graceBillingEvent =
@@ -1304,7 +1207,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
     setUpGracePeriods(
         GracePeriod.forBillingEvent(GracePeriodStatus.ADD, domain.getRepoId(), graceBillingEvent));
     clock.advanceOneMilli();
-    runFlowAssertResponse(loadFile("domain_delete_response_fee_free_grace.xml"));
+    runFlowAssertResponse(loadFile("domain_delete_response_fee_free_grace_stdv1.xml"));
   }
 
   @Test

@@ -4,7 +4,7 @@
       <msg>Command completed successfully</msg>
     </result>
     <extension>
-      <%FEE_NS%:updData xmlns:%FEE_NS%="urn:ietf:params:xml:ns:fee-%FEE_VERSION%">
+      <%FEE_NS%:updData xmlns:%FEE_NS%="urn:ietf:params:xml:ns:%FEE_VERSION%">
         <%FEE_NS%:currency>USD</%FEE_NS%:currency>
         <%FEE_NS%:fee description="restore">17.00</%FEE_NS%:fee>
       </%FEE_NS%:updData>

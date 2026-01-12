@@ -1,0 +1,47 @@
+<epp xmlns="urn:ietf:params:xml:ns:epp-1.0">
+<response>
+    <result code="1000">
+      <msg>Command completed successfully</msg>
+    </result>
+    <resData>
+      <domain:chkData xmlns:domain="urn:ietf:params:xml:ns:domain-1.0">
+        <domain:cd>
+          <domain:name avail="true">%DOMAIN%</domain:name>
+        </domain:cd>
+      </domain:chkData>
+    </resData>
+    <extension>
+      <fee:chkData xmlns:fee="urn:ietf:params:xml:ns:epp:fee-1.0">
+        <fee:currency>USD</fee:currency>
+        <fee:cd>
+          <fee:objID>%DOMAIN%</fee:objID>
+          %FEE_CLASS%
+          <fee:command name="create">
+            <fee:period unit="y">1</fee:period>
+            <fee:fee description="create">%COST_1YR%</fee:fee>
+          </fee:command>
+        </fee:cd>
+        <fee:cd>
+          <fee:objID>%DOMAIN%</fee:objID>
+          %FEE_CLASS%
+          <fee:command name="create">
+            <fee:period unit="y">2</fee:period>
+            <fee:fee description="create">%COST_2YR%</fee:fee>
+          </fee:command>
+        </fee:cd>
+        <fee:cd>
+          <fee:objID>%DOMAIN%</fee:objID>
+          %FEE_CLASS%
+          <fee:command name="create">
+            <fee:period unit="y">5</fee:period>
+            <fee:fee description="create">%COST_5YR%</fee:fee>
+          </fee:command>
+        </fee:cd>
+      </fee:chkData>
+    </extension>
+    <trID>
+      <clTRID>ABC-12345</clTRID>
+      <svTRID>server-trid</svTRID>
+    </trID>
+  </response>
+</epp>

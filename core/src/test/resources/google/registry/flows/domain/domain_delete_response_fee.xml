@@ -5,7 +5,7 @@
     </result>
     <extension>
       <fee:delData
-        xmlns:fee="urn:ietf:params:xml:ns:fee-%FEE_VERSION%">
+        xmlns:fee="urn:ietf:params:xml:ns:%FEE_VERSION%">
         <fee:currency>USD</fee:currency>
         <fee:credit description="addPeriod credit">-123.00</fee:credit>
       </fee:delData>

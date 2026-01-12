@@ -11,14 +11,15 @@
       </domain:chkData>
     </resData>
     <extension>
-      <fee:chkData xmlns:fee="urn:ietf:params:xml:ns:fee-0.6">
-        <fee:cd xmlns:fee="urn:ietf:params:xml:ns:fee-0.6">
-          <fee:name>rich.example</fee:name>
-          <fee:currency>USD</fee:currency>
-          <fee:command>create</fee:command>
-          <fee:period unit="y">1</fee:period>
-          <fee:fee description="create">100.00</fee:fee>
+      <fee:chkData xmlns:fee="urn:ietf:params:xml:ns:epp:fee-1.0">
+        <fee:currency>USD</fee:currency>
+        <fee:cd>
+          <fee:objID>rich.example</fee:objID>
           <fee:class>premium</fee:class>
+          <fee:command name="create">
+            <fee:period unit="y">1</fee:period>
+            <fee:fee description="create">100.00</fee:fee>
+          </fee:command>
         </fee:cd>
       </fee:chkData>
     </extension>
