@@ -21,6 +21,8 @@ cd webapps
 find . -maxdepth 1 -type d -name "console-*" -exec rm -rf {} +
 cd /jetty-base
 echo "Running ${env}"
-java -Dgoogle.registry.environment=${env} \
+# Use the CONTAINER_NAME variable from Kubernetes YAML to set the profiler service name.
+java -agentpath:/opt/cprof/profiler_java_agent.so=-cprof_service=${CONTAINER_NAME},-cprof_enable_heap_sampling=true \
+    -Dgoogle.registry.environment=${env} \
     -Djava.util.logging.config.file=/logging.properties \
     -jar /usr/local/jetty/start.jar
