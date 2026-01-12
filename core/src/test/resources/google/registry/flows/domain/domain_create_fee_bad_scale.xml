@@ -15,7 +15,7 @@
       </domain:create>
     </create>
     <extension>
-      <fee:create xmlns:fee="urn:ietf:params:xml:ns:fee-%FEE_VERSION%">
+      <fee:create xmlns:fee="urn:ietf:params:xml:ns:%FEE_VERSION%">
         <fee:currency>USD</fee:currency>
         <fee:fee>26.000</fee:fee>
       </fee:create>

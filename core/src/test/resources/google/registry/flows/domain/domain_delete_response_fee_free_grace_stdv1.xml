@@ -1,0 +1,18 @@
+<epp xmlns="urn:ietf:params:xml:ns:epp-1.0">
+  <response>
+    <result code="1000">
+      <msg>Command completed successfully</msg>
+    </result>
+    <extension>
+      <fee:delData
+              xmlns:fee="urn:ietf:params:xml:ns:epp:fee-1.0">
+        <fee:currency>USD</fee:currency>
+        <fee:credit description="addPeriod credit">0.00</fee:credit>
+      </fee:delData>
+    </extension>
+    <trID>
+      <clTRID>ABC-12345</clTRID>
+      <svTRID>server-trid</svTRID>
+    </trID>
+  </response>
+</epp>

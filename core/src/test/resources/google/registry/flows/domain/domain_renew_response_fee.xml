@@ -11,7 +11,7 @@
       </domain:renData>
     </resData>
     <extension>
-      <%FEE_NS%:renData xmlns:%FEE_NS%="urn:ietf:params:xml:ns:fee-%FEE_VERSION%">
+      <%FEE_NS%:renData xmlns:%FEE_NS%="urn:ietf:params:xml:ns:%FEE_VERSION%">
         <%FEE_NS%:currency>%CURRENCY%</%FEE_NS%:currency>
         <%FEE_NS%:fee description="renew">%FEE%</%FEE_NS%:fee>
       </%FEE_NS%:renData>
