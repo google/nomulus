@@ -20,10 +20,8 @@ import static google.registry.dns.DnsUtils.requestHostDnsRefresh;
 import static google.registry.dns.RefreshDnsOnHostRenameAction.PARAM_HOST_KEY;
 import static google.registry.dns.RefreshDnsOnHostRenameAction.QUEUE_HOST_RENAME;
 import static google.registry.flows.FlowUtils.validateRegistrarIsLoggedIn;
-import static google.registry.flows.ResourceFlowUtils.checkExistingValueNotAdded;
-import static google.registry.flows.ResourceFlowUtils.checkNonexistentValueNotRemoved;
-import static google.registry.flows.ResourceFlowUtils.checkSameValuesNotAddedAndRemoved;
 import static google.registry.flows.ResourceFlowUtils.loadAndVerifyExistence;
+import static google.registry.flows.ResourceFlowUtils.verifyAddsAndRemoves;
 import static google.registry.flows.ResourceFlowUtils.verifyAllStatusesAreClientSettable;
 import static google.registry.flows.ResourceFlowUtils.verifyNoDisallowedStatuses;
 import static google.registry.flows.ResourceFlowUtils.verifyResourceOwnership;
@@ -161,10 +159,10 @@ public final class HostUpdateFlow implements MutatingFlow {
     }
     AddRemove add = command.getInnerAdd();
     AddRemove remove = command.getInnerRemove();
-    checkSameValuesNotAddedAndRemoved(add.getStatusValues(), remove.getStatusValues());
-    checkSameValuesNotAddedAndRemoved(add.getInetAddresses(), remove.getInetAddresses());
-    checkExistingValueNotAdded(add.getInetAddresses(), existingHost.getInetAddresses());
-    checkNonexistentValueNotRemoved(remove.getInetAddresses(), existingHost.getInetAddresses());
+    verifyAddsAndRemoves(
+        existingHost.getStatusValues(), add.getStatusValues(), remove.getStatusValues());
+    verifyAddsAndRemoves(
+        existingHost.getInetAddresses(), add.getInetAddresses(), remove.getInetAddresses());
     HostFlowUtils.validateInetAddresses(add.getInetAddresses());
     VKey<Domain> newSuperordinateDomainKey =
         newSuperordinateDomain.map(Domain::createVKey).orElse(null);

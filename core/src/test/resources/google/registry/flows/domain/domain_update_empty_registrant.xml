@@ -17,7 +17,6 @@
             <domain:hostObj>ns1.example.foo</domain:hostObj>
           </domain:ns>
           <domain:contact type="tech">sh8013</domain:contact>
-          <domain:status s="clientUpdateProhibited"/>
         </domain:rem>
         <domain:chg>
           <domain:registrant/>
