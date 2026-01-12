@@ -11,7 +11,7 @@
       </domain:creData>
     </resData>
     <extension>
-      <fee:creData xmlns:fee="urn:ietf:params:xml:ns:fee-0.6">
+      <fee:creData xmlns:fee="urn:ietf:params:xml:ns:epp:fee-1.0">
         <fee:currency>USD</fee:currency>
         <fee:fee description="create">24.00</fee:fee>
         <fee:fee description="Early Access Period, fee expires: 2000-06-02T00:00:00.000Z">100.00</fee:fee>

@@ -11,7 +11,7 @@
       </domain:transfer>
     </transfer>
     <extension>
-      <fee:transfer xmlns:fee="urn:ietf:params:xml:ns:fee-%FEE_VERSION%">
+      <fee:transfer xmlns:fee="urn:ietf:params:xml:ns:%FEE_VERSION%">
         <fee:currency>USD</fee:currency>
         <fee:fee refundable="true" grace-period="P0D" applied="immediate">11.00</fee:fee>
       </fee:transfer>
