@@ -194,27 +194,24 @@ public final class ResourceFlowUtils {
     }
   }
 
-  /** Check that the same values aren't being added and removed in an update command. */
-  public static <T> void checkSameValuesNotAddedAndRemoved(
-      ImmutableSet<T> fieldsToAdd, ImmutableSet<T> fieldsToRemove)
-      throws AddRemoveSameValueException {
+  /**
+   * Verifies the adds and removes on a resource.
+   *
+   * <p>This throws an exception in three different situations: if the same value is being both
+   * added and removed, if a value is being added that is already present, or if a value is being
+   * removed that isn't present.
+   */
+  public static <T> void verifyAddsAndRemoves(
+      ImmutableSet<T> existingFields, ImmutableSet<T> fieldsToAdd, ImmutableSet<T> fieldsToRemove)
+      throws AddRemoveSameValueException,
+          AddExistingValueException,
+          RemoveNonexistentValueException {
     if (!intersection(fieldsToAdd, fieldsToRemove).isEmpty()) {
       throw new AddRemoveSameValueException();
     }
-  }
-
-  /** Check that we aren't adding a value that is already present. */
-  public static <T> void checkExistingValueNotAdded(
-      ImmutableSet<T> fieldsToAdd, ImmutableSet<T> existingFields)
-      throws AddExistingValueException {
     if (!intersection(fieldsToAdd, existingFields).isEmpty()) {
       throw new AddExistingValueException();
     }
-  }
-
-  public static <T> void checkNonexistentValueNotRemoved(
-      ImmutableSet<T> fieldsToRemove, ImmutableSet<T> existingFields)
-      throws RemoveNonexistentValueException {
     if (intersection(fieldsToRemove, existingFields).size() != fieldsToRemove.size()) {
       throw new RemoveNonexistentValueException();
     }

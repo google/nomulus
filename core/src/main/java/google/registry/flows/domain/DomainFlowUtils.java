@@ -976,23 +976,21 @@ public class DomainFlowUtils {
       throw new UrgentAttributeNotSupportedException();
     }
     // There must be at least one of add/rem/chg, and chg isn't actually supported.
-    if (secDnsUpdate.getChange() != null) {
+    if (secDnsUpdate.getChange().isPresent()) {
       // The only thing you can change is maxSigLife, and we don't support that at all.
       throw new MaxSigLifeChangeNotSupportedException();
     }
-    Add add = secDnsUpdate.getAdd();
-    Remove remove = secDnsUpdate.getRemove();
-    if (add == null && remove == null) {
+    Optional<Add> add = secDnsUpdate.getAdd();
+    Optional<Remove> remove = secDnsUpdate.getRemove();
+    if (add.isEmpty() && remove.isEmpty()) {
       throw new EmptySecDnsUpdateException();
     }
-    if (remove != null && Boolean.FALSE.equals(remove.getAll())) {
+    if (remove.isPresent() && Boolean.FALSE.equals(remove.get().getAll())) {
       throw new SecDnsAllUsageException(); // Explicit all=false is meaningless.
     }
-    Set<DomainDsData> toAdd = (add == null) ? ImmutableSet.of() : add.getDsData();
+    Set<DomainDsData> toAdd = add.map(Add::getDsData).orElse(ImmutableSet.of());
     Set<DomainDsData> toRemove =
-        (remove == null)
-            ? ImmutableSet.of()
-            : (remove.getAll() == null) ? remove.getDsData() : oldDsData;
+        remove.map(r -> (r.getAll() == null) ? r.getDsData() : oldDsData).orElse(ImmutableSet.of());
     // RFC 5910 specifies that removes are processed before adds.
     return ImmutableSet.copyOf(union(difference(oldDsData, toRemove), toAdd));
   }

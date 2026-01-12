@@ -31,7 +31,7 @@ import jakarta.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 @Access(AccessType.FIELD)
 public abstract class DomainDsDataBase extends ImmutableObject implements UnsafeSerializable {
 
-  @XmlTransient @Transient String domainRepoId;
+  @XmlTransient @Transient @Insignificant String domainRepoId;
 
   /** The identifier for this particular key in the domain. */
   @Transient int keyTag;

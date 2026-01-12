@@ -24,6 +24,7 @@ import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlRootElement;
 import jakarta.xml.bind.annotation.XmlTransient;
 import jakarta.xml.bind.annotation.XmlType;
+import java.util.Optional;
 import java.util.Set;
 
 /** The EPP secDNS extension that may be present on domain update commands. */
@@ -55,16 +56,16 @@ public class SecDnsUpdateExtension extends ImmutableObject implements CommandExt
     return urgent;
   }
 
-  public Remove getRemove() {
-    return remove;
+  public Optional<Remove> getRemove() {
+    return Optional.ofNullable(remove);
   }
 
-  public Add getAdd() {
-    return add;
+  public Optional<Add> getAdd() {
+    return Optional.ofNullable(add);
   }
 
-  public Change getChange() {
-    return change;
+  public Optional<Change> getChange() {
+    return Optional.ofNullable(change);
   }
 
   @XmlTransient
