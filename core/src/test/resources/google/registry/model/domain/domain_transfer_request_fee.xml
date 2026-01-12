@@ -11,7 +11,7 @@
       </domain:transfer>
     </transfer>
     <extension>
-      <fee:transfer xmlns:fee="urn:ietf:params:xml:ns:fee-0.6">
+      <fee:transfer xmlns:fee="urn:ietf:params:xml:ns:epp:fee-1.0">
         <fee:currency>USD</fee:currency>
         <fee:fee>5.00</fee:fee>
         <fee:fee>8.00</fee:fee>

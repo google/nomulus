@@ -72,7 +72,6 @@ import google.registry.flows.ResourceFlowUtils.ResourceDoesNotExistException;
 import google.registry.flows.ResourceFlowUtils.ResourceNotOwnedException;
 import google.registry.flows.ResourceFlowUtils.StatusNotClientSettableException;
 import google.registry.flows.domain.DomainFlowUtils.EmptySecDnsUpdateException;
-import google.registry.flows.domain.DomainFlowUtils.FeesMismatchException;
 import google.registry.flows.domain.DomainFlowUtils.FeesRequiredForNonFreeOperationException;
 import google.registry.flows.domain.DomainFlowUtils.InvalidDsRecordException;
 import google.registry.flows.domain.DomainFlowUtils.LinkedResourceInPendingDeleteProhibitsOperationException;
@@ -359,10 +358,7 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
       }
     }
     persistResource(
-        reloadResourceByForeignKey()
-            .asBuilder()
-            .setNameservers(nameservers.build())
-            .build());
+        reloadResourceByForeignKey().asBuilder().setNameservers(nameservers.build()).build());
     clock.advanceOneMilli();
     assertMutatingFlow(true);
     runFlowAssertResponse(loadFile("generic_success_response.xml"));
@@ -1532,15 +1528,6 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
     persistDomain();
     doSuccessfulTest();
     assertAboutDomains().that(reloadResourceByForeignKey()).hasExactlyStatusValues(CLIENT_HOLD);
-  }
-
-  @Test
-  void testFailure_freePremium_wrongFee() throws Exception {
-    setEppInput("domain_update_fee.xml", ImmutableMap.of("FEE_VERSION", "0.11"));
-    persistReferencedEntities();
-    persistDomain();
-    EppException thrown = assertThrows(FeesMismatchException.class, this::runFlow);
-    assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
   // This test should throw an exception, because the fee extension is required when the fee is not

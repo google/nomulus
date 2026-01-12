@@ -13,7 +13,7 @@
         <svcExtension>
           <extURI>urn:ietf:params:xml:ns:launch-1.0</extURI>
           <extURI>urn:ietf:params:xml:ns:rgp-1.0</extURI>
-          <extURI>urn:ietf:params:xml:ns:fee-0.6</extURI>
+          <extURI>urn:ietf:params:xml:ns:epp:fee-1.0</extURI>
         </svcExtension>
       </svcs>
     </login>

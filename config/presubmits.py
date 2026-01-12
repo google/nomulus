@@ -98,8 +98,8 @@ PRESUBMITS = {
         "File did not include the license header.",
 
     # Files must end in a newline
-    PresubmitCheck(r".*\n$", ("java", "js", "soy", "sql", "py", "sh", "gradle", "ts"),
-                   {"node_modules/"}, REQUIRED):
+    PresubmitCheck(r".*\n$", ("java", "js", "soy", "sql", "py", "sh", "gradle", "ts", "xml"),
+                   {"node_modules/", ".idea"}, REQUIRED):
         "Source files must end in a newline.",
 
     # System.(out|err).println should only appear in tools/ or load-testing/

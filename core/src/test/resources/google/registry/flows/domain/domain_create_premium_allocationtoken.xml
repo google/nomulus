@@ -20,7 +20,7 @@
               "urn:ietf:params:xml:ns:allocationToken-1.0">
         abc123
       </allocationToken:allocationToken>
-      <fee:create xmlns:fee="urn:ietf:params:xml:ns:fee-0.12">
+      <fee:create xmlns:fee="urn:ietf:params:xml:ns:%FEE_VERSION%">
         <fee:currency>USD</fee:currency>
         <fee:fee>%FEE%</fee:fee>
       </fee:create>

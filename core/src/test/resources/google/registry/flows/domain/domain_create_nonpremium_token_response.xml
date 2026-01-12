@@ -1,7 +1,4 @@
-<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<epp xmlns:domain="urn:ietf:params:xml:ns:domain-1.0" xmlns="urn:ietf:params:xml:ns:epp-1.0"
-     xmlns:fee12="urn:ietf:params:xml:ns:fee-0.12"
->
+<epp xmlns:domain="urn:ietf:params:xml:ns:domain-1.0" xmlns="urn:ietf:params:xml:ns:epp-1.0">
     <response>
         <result code="1000">
             <msg>Command completed successfully</msg>
@@ -14,10 +11,10 @@
             </domain:creData>
         </resData>
         <extension>
-            <fee12:creData>
-                <fee12:currency>USD</fee12:currency>
-                <fee12:fee description="create">13.00</fee12:fee>
-            </fee12:creData>
+            <fee:creData xmlns:fee="urn:ietf:params:xml:ns:%FEE_VERSION%">
+                <fee:currency>USD</fee:currency>
+                <fee:fee description="create">13.00</fee:fee>
+            </fee:creData>
         </extension>
         <trID>
             <clTRID>ABC-12345</clTRID>
