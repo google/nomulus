@@ -329,8 +329,8 @@
     <description>
       Fetches the service state from MosAPI and triggers the metrics status for all TLDs.
     </description>
-    <!-- Runs every 3 minutes. -->
-    <schedule>*/3 * * * *</schedule>
+    <!-- Runs every 5 minutes. -->
+    <schedule>*/5 * * * *</schedule>
   </task>
 
 </entries>
