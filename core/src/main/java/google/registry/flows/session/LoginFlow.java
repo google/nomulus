@@ -15,6 +15,7 @@
 package google.registry.flows.session;
 
 import static com.google.common.collect.Sets.difference;
+import static google.registry.model.common.FeatureFlag.FeatureName.PROHIBIT_CONTACT_OBJECTS_ON_LOGIN;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.CollectionUtils.nullToEmpty;
 
@@ -39,6 +40,7 @@ import google.registry.flows.TlsCredentials.BadRegistrarIpAddressException;
 import google.registry.flows.TlsCredentials.MissingRegistrarCertificateException;
 import google.registry.flows.TransportCredentials;
 import google.registry.flows.TransportCredentials.BadRegistrarPasswordException;
+import google.registry.model.common.FeatureFlag;
 import google.registry.model.eppcommon.ProtocolDefinition;
 import google.registry.model.eppcommon.ProtocolDefinition.ServiceExtension;
 import google.registry.model.eppinput.EppInput;
@@ -114,9 +116,13 @@ public class LoginFlow implements MutatingFlow {
     }
     Services services = login.getServices();
     stopwatch.tick("LoginFlow getServices");
-    Set<String> unsupportedObjectServices = difference(
-        nullToEmpty(services.getObjectServices()),
-        ProtocolDefinition.SUPPORTED_OBJECT_SERVICES);
+
+    Set<String> unsupportedObjectServices =
+        difference(
+            nullToEmpty(services.getObjectServices()),
+            FeatureFlag.isActiveNow(PROHIBIT_CONTACT_OBJECTS_ON_LOGIN)
+                ? ProtocolDefinition.SUPPORTED_OBJECT_SERVICES
+                : ProtocolDefinition.SUPPORTED_OBJECT_SERVICES_WITH_CONTACT);
     stopwatch.tick("LoginFlow difference unsupportedObjectServices");
     if (!unsupportedObjectServices.isEmpty()) {
       throw new UnimplementedObjectServiceException();

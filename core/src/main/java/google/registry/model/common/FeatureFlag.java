@@ -64,6 +64,7 @@ public class FeatureFlag extends ImmutableObject implements Buildable {
 
   /** The names of the feature flags that can be individually set. */
   public enum FeatureName {
+
     /** Feature flag name used for testing only. */
     TEST_FEATURE(FeatureStatus.INACTIVE),
 
@@ -76,7 +77,10 @@ public class FeatureFlag extends ImmutableObject implements Buildable {
     /**
      * If we're including the upcoming domain drop date in the exported list of registered domains.
      */
-    INCLUDE_PENDING_DELETE_DATE_FOR_DOMAINS(FeatureStatus.INACTIVE);
+    INCLUDE_PENDING_DELETE_DATE_FOR_DOMAINS(FeatureStatus.INACTIVE),
+
+    /** If we're prohibiting the inclusion of the contact object URI on login. */
+    PROHIBIT_CONTACT_OBJECTS_ON_LOGIN(FeatureStatus.INACTIVE);
 
     private final FeatureStatus defaultStatus;
 
