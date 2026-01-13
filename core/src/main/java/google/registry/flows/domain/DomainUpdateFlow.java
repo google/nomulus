@@ -21,10 +21,8 @@ import static com.google.common.collect.Sets.union;
 import static google.registry.dns.DnsUtils.requestDomainDnsRefresh;
 import static google.registry.flows.FlowUtils.persistEntityChanges;
 import static google.registry.flows.FlowUtils.validateRegistrarIsLoggedIn;
-import static google.registry.flows.ResourceFlowUtils.checkExistingValueNotAdded;
-import static google.registry.flows.ResourceFlowUtils.checkNonexistentValueNotRemoved;
-import static google.registry.flows.ResourceFlowUtils.checkSameValuesNotAddedAndRemoved;
 import static google.registry.flows.ResourceFlowUtils.loadAndVerifyExistence;
+import static google.registry.flows.ResourceFlowUtils.verifyAddsAndRemoves;
 import static google.registry.flows.ResourceFlowUtils.verifyAllStatusesAreClientSettable;
 import static google.registry.flows.ResourceFlowUtils.verifyNoDisallowedStatuses;
 import static google.registry.flows.ResourceFlowUtils.verifyOptionalAuthInfo;
@@ -77,6 +75,8 @@ import google.registry.model.domain.fee.FeeUpdateCommandExtension;
 import google.registry.model.domain.metadata.MetadataExtension;
 import google.registry.model.domain.secdns.DomainDsData;
 import google.registry.model.domain.secdns.SecDnsUpdateExtension;
+import google.registry.model.domain.secdns.SecDnsUpdateExtension.Add;
+import google.registry.model.domain.secdns.SecDnsUpdateExtension.Remove;
 import google.registry.model.domain.superuser.DomainUpdateSuperuserExtension;
 import google.registry.model.eppcommon.AuthInfo;
 import google.registry.model.eppcommon.StatusValue;
@@ -247,14 +247,19 @@ public final class DomainUpdateFlow implements MutatingFlow {
   private Domain performUpdate(Update command, Domain domain, DateTime now) throws EppException {
     AddRemove add = command.getInnerAdd();
     AddRemove remove = command.getInnerRemove();
-    checkSameValuesNotAddedAndRemoved(add.getNameservers(), remove.getNameservers());
-    checkSameValuesNotAddedAndRemoved(add.getContacts(), remove.getContacts());
-    checkSameValuesNotAddedAndRemoved(add.getStatusValues(), remove.getStatusValues());
-    checkExistingValueNotAdded(add.getNameservers(), domain.getNameservers());
-    checkNonexistentValueNotRemoved(remove.getNameservers(), domain.getNameservers());
-    Change change = command.getInnerChange();
     Optional<SecDnsUpdateExtension> secDnsUpdate =
         eppInput.getSingleExtension(SecDnsUpdateExtension.class);
+    verifyAddsAndRemoves(domain.getNameservers(), add.getNameservers(), remove.getNameservers());
+    verifyAddsAndRemoves(domain.getContacts(), add.getContacts(), remove.getContacts());
+    verifyAddsAndRemoves(domain.getStatusValues(), add.getStatusValues(), remove.getStatusValues());
+    if (secDnsUpdate.isPresent()) {
+      SecDnsUpdateExtension ext = secDnsUpdate.get();
+      verifyAddsAndRemoves(
+          domain.getDsData(),
+          ext.getAdd().map(Add::getDsData).orElse(ImmutableSet.of()),
+          ext.getRemove().map(Remove::getDsData).orElse(ImmutableSet.of()));
+    }
+    Change change = command.getInnerChange();
 
     // We have to verify no duplicate contacts _before_ constructing the domain because it is
     // illegal to construct a domain with duplicate contacts.

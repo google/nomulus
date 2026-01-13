@@ -63,8 +63,6 @@ import google.registry.config.RegistryConfig;
 import google.registry.flows.EppException;
 import google.registry.flows.EppException.UnimplementedExtensionException;
 import google.registry.flows.EppRequestSource;
-import google.registry.flows.FlowTestCase.CommitMode;
-import google.registry.flows.FlowTestCase.UserPrivileges;
 import google.registry.flows.FlowUtils.NotLoggedInException;
 import google.registry.flows.ResourceFlowTestCase;
 import google.registry.flows.ResourceFlowUtils.AddExistingValueException;
@@ -454,6 +452,7 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
 
   @Test
   void testSuccess_removeClientUpdateProhibited() throws Exception {
+    setEppInput("domain_update_remove_client_update_prohibited.xml");
     persistReferencedEntities();
     persistResource(
         persistDomain()
@@ -549,21 +548,26 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
   }
 
   @Test
-  void testSuccess_secDnsAddSameDoesNothing() throws Exception {
-    doSecDnsSuccessfulTest(
-        "domain_update_dsdata_add.xml",
-        ImmutableSet.of(SOME_DSDATA),
-        ImmutableSet.of(SOME_DSDATA),
-        ImmutableMap.of(
-            "KEY_TAG",
-            "1",
-            "ALG",
-            "2",
-            "DIGEST_TYPE",
-            "2",
-            "DIGEST",
-            "9F86D081884C7D659A2FEAA0C55AD015A3BF4F1B2B0B822CD15D6C15B0F00A08"),
-        false);
+  void testFailure_secDnsAddSame_throwsException() throws Exception {
+    EppException thrown =
+        assertThrows(
+            AddExistingValueException.class,
+            () ->
+                doSecDnsSuccessfulTest(
+                    "domain_update_dsdata_add.xml",
+                    ImmutableSet.of(SOME_DSDATA),
+                    ImmutableSet.of(SOME_DSDATA),
+                    ImmutableMap.of(
+                        "KEY_TAG",
+                        "1",
+                        "ALG",
+                        "2",
+                        "DIGEST_TYPE",
+                        "2",
+                        "DIGEST",
+                        "9F86D081884C7D659A2FEAA0C55AD015A3BF4F1B2B0B822CD15D6C15B0F00A08"),
+                    false));
+    assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
   @Test
@@ -681,7 +685,7 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
                 2,
                 2,
                 base16()
-                    .decode("9F86D081884C7D659A2FEAA0C55AD015A3BF4F1B2B0B822CD15D6C15B0F00A08"))),
+                    .decode("0F86D081884C7D659A2FEAA0C55AD015A3BF4F1B2B0B822CD15D6C15B0F00A08"))),
         ImmutableMap.of(
             "KEY_TAG",
             "1",
@@ -690,8 +694,8 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
             "DIGEST_TYPE",
             "2",
             "DIGEST",
-            "9F86D081884C7D659A2FEAA0C55AD015A3BF4F1B2B0B822CD15D6C15B0F00A08"),
-        false);
+            "0F86D081884C7D659A2FEAA0C55AD015A3BF4F1B2B0B822CD15D6C15B0F00A08"),
+        true);
   }
 
   @Test
@@ -799,29 +803,43 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
   }
 
   @Test
-  void testSuccess_secDnsAddRemoveSame() throws Exception {
-    // Adding and removing the same dsData is a no-op because removes are processed first.
-    doSecDnsSuccessfulTest(
-        "domain_update_dsdata_add_rem_same.xml",
-        ImmutableSet.of(
-            SOME_DSDATA,
-            DomainDsData.create(
-                12345, 3, 1, base16().decode("A94A8FE5CCB19BA61C4C0873D391E987982FBBD3"))),
-        ImmutableSet.of(
-            SOME_DSDATA,
-            DomainDsData.create(
-                12345, 3, 1, base16().decode("A94A8FE5CCB19BA61C4C0873D391E987982FBBD3"))),
-        false);
+  void testFailure_secDnsAddRemoveSame_throwsException() throws Exception {
+    EppException thrown =
+        assertThrows(
+            AddRemoveSameValueException.class,
+            () ->
+                doSecDnsSuccessfulTest(
+                    "domain_update_dsdata_add_rem_same.xml",
+                    ImmutableSet.of(
+                        SOME_DSDATA,
+                        DomainDsData.create(
+                            12345,
+                            3,
+                            1,
+                            base16().decode("A94A8FE5CCB19BA61C4C0873D391E987982FBBD3"))),
+                    ImmutableSet.of(
+                        SOME_DSDATA,
+                        DomainDsData.create(
+                            12345,
+                            3,
+                            1,
+                            base16().decode("A94A8FE5CCB19BA61C4C0873D391E987982FBBD3"))),
+                    false));
+    assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
   @Test
-  void testSuccess_secDnsRemoveAlreadyNotThere() throws Exception {
-    // Removing a dsData that isn't there is a no-op.
-    doSecDnsSuccessfulTest(
-        "domain_update_dsdata_rem.xml",
-        ImmutableSet.of(SOME_DSDATA),
-        ImmutableSet.of(SOME_DSDATA),
-        false);
+  void testFailure_secDnsRemoveAlreadyNotThere_throwsException() throws Exception {
+    EppException thrown =
+        assertThrows(
+            RemoveNonexistentValueException.class,
+            () ->
+                doSecDnsSuccessfulTest(
+                    "domain_update_dsdata_rem.xml",
+                    ImmutableSet.of(SOME_DSDATA),
+                    ImmutableSet.of(SOME_DSDATA),
+                    false));
+    assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
   void doServerStatusBillingTest(String xmlFilename, boolean isBillable) throws Exception {
@@ -854,14 +872,6 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
     persistReferencedEntities();
     persistDomain();
     doServerStatusBillingTest("domain_update_add_server_status.xml", true);
-  }
-
-  @Test
-  void testSuccess_noBillingOnPreExistingServerStatus() throws Exception {
-    eppRequestSource = EppRequestSource.TOOL;
-    Domain addStatusDomain = persistActiveDomain(getUniqueIdFromCommand());
-    persistResource(addStatusDomain.asBuilder().addStatusValue(SERVER_RENEW_PROHIBITED).build());
-    doServerStatusBillingTest("domain_update_add_server_status.xml", false);
   }
 
   @Test
@@ -1390,10 +1400,32 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
   }
 
   @Test
-  void testFailure_removeNonexistentValue() throws Exception {
+  void testFailure_addExistingStatusValue() throws Exception {
+    persistResource(
+        DatabaseHelper.newDomain(getUniqueIdFromCommand())
+            .asBuilder()
+            .setStatusValues(ImmutableSet.of(CLIENT_RENEW_PROHIBITED))
+            .build());
+    setEppInput("domain_update_add_non_server_status.xml");
+    assertAboutEppExceptions()
+        .that(assertThrows(AddExistingValueException.class, this::runFlow))
+        .marshalsToXml();
+  }
+
+  @Test
+  void testFailure_removeNonexistentNameserver() throws Exception {
     persistActiveDomain(getUniqueIdFromCommand());
     persistActiveHost("ns1.example.foo");
     setEppInput("domain_update_remove_nameserver.xml");
+    assertAboutEppExceptions()
+        .that(assertThrows(RemoveNonexistentValueException.class, this::runFlow))
+        .marshalsToXml();
+  }
+
+  @Test
+  void testFailure_removeNonexistentStatusValue() throws Exception {
+    persistActiveDomain(getUniqueIdFromCommand());
+    setEppInput("domain_update_remove_client_update_prohibited.xml");
     assertAboutEppExceptions()
         .that(assertThrows(RemoveNonexistentValueException.class, this::runFlow))
         .marshalsToXml();
