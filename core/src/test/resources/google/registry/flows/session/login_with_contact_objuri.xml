@@ -4,12 +4,13 @@
       <clID>NewRegistrar</clID>
       <pw>foo-BAR2</pw>
       <options>
-        <version>1.1</version>
+        <version>1.0</version>
         <lang>en</lang>
       </options>
       <svcs>
         <objURI>urn:ietf:params:xml:ns:host-1.0</objURI>
         <objURI>urn:ietf:params:xml:ns:domain-1.0</objURI>
+        <objURI>urn:ietf:params:xml:ns:contact-1.0</objURI>
       </svcs>
     </login>
     <clTRID>ABC-12345</clTRID>

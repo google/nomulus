@@ -1151,7 +1151,6 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
         .marshalsToXml();
   }
 
-
   @Test
   void testSuccess_eapFeeCheck_std_v1() throws Exception {
     runEapFeeCheckTestWithXmlInputOutput(
