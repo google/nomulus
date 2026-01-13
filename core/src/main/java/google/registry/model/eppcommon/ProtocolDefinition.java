@@ -44,10 +44,7 @@ public class ProtocolDefinition {
   public static final String LANGUAGE = "en";
 
   public static final ImmutableSet<String> SUPPORTED_OBJECT_SERVICES =
-      ImmutableSet.of(
-          "urn:ietf:params:xml:ns:host-1.0",
-          "urn:ietf:params:xml:ns:domain-1.0",
-          "urn:ietf:params:xml:ns:contact-1.0");
+      ImmutableSet.of("urn:ietf:params:xml:ns:host-1.0", "urn:ietf:params:xml:ns:domain-1.0");
 
   /** Enum representing which environments should have which service extensions enabled. */
   private enum ServiceExtensionVisibility {
