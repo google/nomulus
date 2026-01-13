@@ -7,7 +7,6 @@
   xmlns:rdeHeader="urn:ietf:params:xml:ns:rdeHeader-1.0"
   xmlns:rdeDom="urn:ietf:params:xml:ns:rdeDomain-1.0"
   xmlns:rdeHost="urn:ietf:params:xml:ns:rdeHost-1.0"
-  xmlns:rdeContact="urn:ietf:params:xml:ns:rdeContact-1.0"
   xmlns:rdeRegistrar="urn:ietf:params:xml:ns:rdeRegistrar-1.0"
   xmlns:rdeIDN="urn:ietf:params:xml:ns:rdeIDN-1.0"
   xmlns:rdeNNDN="urn:ietf:params:xml:ns:rdeNNDN-1.0"
@@ -19,7 +18,6 @@
   <rde:rdeMenu>
     <rde:version>1.0</rde:version>
     <rde:objURI>urn:ietf:params:xml:ns:rdeHeader-1.0</rde:objURI>
-    <rde:objURI>urn:ietf:params:xml:ns:rdeContact-1.0</rde:objURI>
     <rde:objURI>urn:ietf:params:xml:ns:rdeHost-1.0</rde:objURI>
     <rde:objURI>urn:ietf:params:xml:ns:rdeDomain-1.0</rde:objURI>
     <rde:objURI>urn:ietf:params:xml:ns:rdeRegistrar-1.0</rde:objURI>
@@ -106,44 +104,6 @@
       <rdeHost:upDate>2009-10-03T09:34:00.0Z</rdeHost:upDate>
     </rdeHost:host>
 
-    <!-- Contact: sh8013 -->
-    <rdeContact:contact>
-      <rdeContact:id>sh8013</rdeContact:id>
-      <rdeContact:roid>Csh8013-TEST</rdeContact:roid>
-      <rdeContact:status s="linked"/>
-      <rdeContact:status s="clientDeleteProhibited"/>
-      <rdeContact:postalInfo type="int">
-        <contact:name>Jane Doe</contact:name>
-        <contact:org>Example Inc.</contact:org>
-        <contact:addr>
-          <contact:street>123 Example Dr.</contact:street>
-          <contact:street>Suite 100</contact:street>
-          <contact:city>Dulles</contact:city>
-          <contact:sp>VA</contact:sp>
-          <contact:pc>20166-6503</contact:pc>
-          <contact:cc>US</contact:cc>
-        </contact:addr>
-      </rdeContact:postalInfo>
-      <rdeContact:voice x="1234">+1.7035555555
-      </rdeContact:voice>
-      <rdeContact:fax>+1.7035555556
-      </rdeContact:fax>
-      <rdeContact:email>jdoe@example.test
-      </rdeContact:email>
-      <rdeContact:clID>RegistrarX</rdeContact:clID>
-      <rdeContact:crRr client="jdoe">RegistrarX
-      </rdeContact:crRr>
-      <rdeContact:crDate>2009-09-13T08:01:00.0Z</rdeContact:crDate>
-      <rdeContact:upRr client="jdoe">RegistrarX
-      </rdeContact:upRr>
-      <rdeContact:upDate>2009-11-26T09:10:00.0Z</rdeContact:upDate>
-      <rdeContact:trDate>2009-12-03T09:05:00.0Z</rdeContact:trDate>
-      <rdeContact:disclose flag="0">
-        <contact:voice/>
-        <contact:email/>
-      </rdeContact:disclose>
-    </rdeContact:contact>
-
     <!-- Registrar: RegistrarX -->
     <rdeRegistrar:registrar>
       <rdeRegistrar:id>RegistrarX</rdeRegistrar:id>
@@ -205,9 +165,6 @@ http://www.iana.org/domains/idn-tables/tables/br_pt-br_1.0.html
       <rdeEppParams:lang>en</rdeEppParams:lang>
       <rdeEppParams:objURI>
         urn:ietf:params:xml:ns:domain-1.0
-      </rdeEppParams:objURI>
-      <rdeEppParams:objURI>
-        urn:ietf:params:xml:ns:contact-1.0
       </rdeEppParams:objURI>
       <rdeEppParams:objURI>
         urn:ietf:params:xml:ns:host-1.0

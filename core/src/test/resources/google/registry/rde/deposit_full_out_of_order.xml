@@ -1,13 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <rde:deposit type="FULL" id="20101017001" prevId="20101010001"
   xmlns:domain="urn:ietf:params:xml:ns:domain-1.0"
-  xmlns:contact="urn:ietf:params:xml:ns:contact-1.0"
   xmlns:secDNS="urn:ietf:params:xml:ns:secDNS-1.1"
   xmlns:rde="urn:ietf:params:xml:ns:rde-1.0"
   xmlns:rdeHeader="urn:ietf:params:xml:ns:rdeHeader-1.0"
   xmlns:rdeDom="urn:ietf:params:xml:ns:rdeDomain-1.0"
   xmlns:rdeHost="urn:ietf:params:xml:ns:rdeHost-1.0"
-  xmlns:rdeContact="urn:ietf:params:xml:ns:rdeContact-1.0"
   xmlns:rdeRegistrar="urn:ietf:params:xml:ns:rdeRegistrar-1.0"
   xmlns:rdeIDN="urn:ietf:params:xml:ns:rdeIDN-1.0"
   xmlns:rdeNNDN="urn:ietf:params:xml:ns:rdeNNDN-1.0"
@@ -19,7 +17,6 @@
   <rde:rdeMenu>
     <rde:version>1.0</rde:version>
     <rde:objURI>urn:ietf:params:xml:ns:rdeHeader-1.0</rde:objURI>
-    <rde:objURI>urn:ietf:params:xml:ns:rdeContact-1.0</rde:objURI>
     <rde:objURI>urn:ietf:params:xml:ns:rdeHost-1.0</rde:objURI>
     <rde:objURI>urn:ietf:params:xml:ns:rdeDomain-1.0</rde:objURI>
     <rde:objURI>urn:ietf:params:xml:ns:rdeRegistrar-1.0</rde:objURI>
@@ -38,9 +35,6 @@
         </rdeHeader:count>
       <rdeHeader:count
         uri="urn:ietf:params:xml:ns:rdeHost-1.0">1
-        </rdeHeader:count>
-      <rdeHeader:count
-        uri="urn:ietf:params:xml:ns:rdeContact-1.0">1
         </rdeHeader:count>
       <rdeHeader:count
         uri="urn:ietf:params:xml:ns:rdeRegistrar-1.0">1
@@ -62,9 +56,6 @@
       <rdeDom:roid>Dexample2-TEST</rdeDom:roid>
       <rdeDom:status s="ok"/>
       <rdeDom:status s="clientUpdateProhibited"/>
-      <rdeDom:registrant>jd1234</rdeDom:registrant>
-      <rdeDom:contact type="admin">sh8013</rdeDom:contact>
-      <rdeDom:contact type="tech">sh8013</rdeDom:contact>
       <rdeDom:clID>RegistrarX</rdeDom:clID>
       <rdeDom:crRr>RegistrarX</rdeDom:crRr>
       <rdeDom:crDate>1999-04-03T22:00:00.0Z</rdeDom:crDate>
@@ -76,9 +67,6 @@
       <rdeDom:name>example1.test</rdeDom:name>
       <rdeDom:roid>Dexample1-TEST</rdeDom:roid>
       <rdeDom:status s="ok"/>
-      <rdeDom:registrant>jd1234</rdeDom:registrant>
-      <rdeDom:contact type="admin">sh8013</rdeDom:contact>
-      <rdeDom:contact type="tech">sh8013</rdeDom:contact>
       <rdeDom:ns>
         <domain:hostObj>ns1.example.com</domain:hostObj>
         <domain:hostObj>ns1.example1.test</domain:hostObj>
@@ -124,44 +112,6 @@
       <rdeHost:upRr>RegistrarX</rdeHost:upRr>
       <rdeHost:upDate>2009-10-03T09:34:00.0Z</rdeHost:upDate>
     </rdeHost:host>
-
-    <!-- Contact: sh8013 -->
-    <rdeContact:contact>
-      <rdeContact:id>sh8013</rdeContact:id>
-      <rdeContact:roid>Csh8013-TEST</rdeContact:roid>
-      <rdeContact:status s="linked"/>
-      <rdeContact:status s="clientDeleteProhibited"/>
-      <rdeContact:postalInfo type="int">
-        <contact:name>John Doe</contact:name>
-        <contact:org>Example Inc.</contact:org>
-        <contact:addr>
-          <contact:street>123 Example Dr.</contact:street>
-          <contact:street>Suite 100</contact:street>
-          <contact:city>Dulles</contact:city>
-          <contact:sp>VA</contact:sp>
-          <contact:pc>20166-6503</contact:pc>
-          <contact:cc>US</contact:cc>
-        </contact:addr>
-      </rdeContact:postalInfo>
-      <rdeContact:voice x="1234">+1.7035555555
-      </rdeContact:voice>
-      <rdeContact:fax>+1.7035555556
-      </rdeContact:fax>
-      <rdeContact:email>jdoe@example.test
-      </rdeContact:email>
-      <rdeContact:clID>RegistrarX</rdeContact:clID>
-      <rdeContact:crRr client="jdoe">RegistrarX
-      </rdeContact:crRr>
-      <rdeContact:crDate>2009-09-13T08:01:00.0Z</rdeContact:crDate>
-      <rdeContact:upRr client="jdoe">RegistrarX
-      </rdeContact:upRr>
-      <rdeContact:upDate>2009-11-26T09:10:00.0Z</rdeContact:upDate>
-      <rdeContact:trDate>2009-12-03T09:05:00.0Z</rdeContact:trDate>
-      <rdeContact:disclose flag="0">
-        <contact:voice/>
-        <contact:email/>
-      </rdeContact:disclose>
-    </rdeContact:contact>
 
     <!-- Registrar: RegistrarX -->
     <rdeRegistrar:registrar>
@@ -224,9 +174,6 @@ http://www.iana.org/domains/idn-tables/tables/br_pt-br_1.0.html
       <rdeEppParams:lang>en</rdeEppParams:lang>
       <rdeEppParams:objURI>
         urn:ietf:params:xml:ns:domain-1.0
-      </rdeEppParams:objURI>
-      <rdeEppParams:objURI>
-        urn:ietf:params:xml:ns:contact-1.0
       </rdeEppParams:objURI>
       <rdeEppParams:objURI>
         urn:ietf:params:xml:ns:host-1.0

@@ -25,7 +25,6 @@ import java.util.EnumSet;
 
 /** Types of objects that get embedded in an escrow deposit. */
 public enum RdeResourceType {
-  CONTACT("urn:ietf:params:xml:ns:rdeContact-1.0", EnumSet.of(FULL)),
   DOMAIN("urn:ietf:params:xml:ns:rdeDomain-1.0", EnumSet.of(FULL, THIN)),
   HOST("urn:ietf:params:xml:ns:rdeHost-1.0", EnumSet.of(FULL)),
   REGISTRAR("urn:ietf:params:xml:ns:rdeRegistrar-1.0", EnumSet.of(FULL, THIN)),

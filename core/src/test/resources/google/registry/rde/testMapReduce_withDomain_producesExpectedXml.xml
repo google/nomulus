@@ -19,16 +19,13 @@
              xmlns:rdeRegistrar="urn:ietf:params:xml:ns:rdeRegistrar-1.0"
              xmlns:rgp="urn:ietf:params:xml:ns:rgp-1.0"
              xmlns:epp="urn:ietf:params:xml:ns:epp-1.0"
-             xmlns:rdeContact="urn:ietf:params:xml:ns:rdeContact-1.0"
              xmlns:rdeDomain="urn:ietf:params:xml:ns:rdeDomain-1.0"
-             xmlns:contact="urn:ietf:params:xml:ns:contact-1.0"
              xmlns:domain="urn:ietf:params:xml:ns:domain-1.0"
              type="FULL"
              id="AAAABXDKZ6WAA">
     <rde:watermark>2000-01-01T00:00:00Z</rde:watermark>
     <rde:rdeMenu>
         <rde:version>1.0</rde:version>
-        <rde:objURI>urn:ietf:params:xml:ns:rdeContact-1.0</rde:objURI>
         <rde:objURI>urn:ietf:params:xml:ns:rdeDomain-1.0</rde:objURI>
         <rde:objURI>urn:ietf:params:xml:ns:rdeHeader-1.0</rde:objURI>
         <rde:objURI>urn:ietf:params:xml:ns:rdeHost-1.0</rde:objURI>
@@ -170,75 +167,6 @@
         <rdeDomain:exDate>1995-01-01T00:00:00Z</rdeDomain:exDate>
     </rdeDomain:trnData>
 </rdeDomain:domain>
-
-<rdeContact:contact>
-    <rdeContact:id>5372808-IRL</rdeContact:id>
-    <rdeContact:roid>6-ROID</rdeContact:roid>
-    <rdeContact:status s="ok"/>
-    <rdeContact:postalInfo type="int">
-        <contact:name>be that word our sign in parting</contact:name>
-        <contact:org>DOGE INCORPORATED</contact:org>
-        <contact:addr>
-            <contact:street>123 Example Boulevard</contact:street>
-            <contact:city>KOKOMO</contact:city>
-            <contact:sp>BM</contact:sp>
-            <contact:pc>31337</contact:pc>
-            <contact:cc>US</contact:cc>
-        </contact:addr>
-    </rdeContact:postalInfo>
-    <rdeContact:voice>+1.5558675309</rdeContact:voice>
-    <rdeContact:fax>+1.5558675310</rdeContact:fax>
-    <rdeContact:email>BOFH@cat.みんな</rdeContact:email>
-    <rdeContact:clID>GetTheeBack</rdeContact:clID>
-    <rdeContact:crRr>GetTheeBack</rdeContact:crRr>
-    <rdeContact:crDate>1999-12-31T00:00:00Z</rdeContact:crDate>
-</rdeContact:contact>
-
-<rdeContact:contact>
-    <rdeContact:id>5372808-TRL</rdeContact:id>
-    <rdeContact:roid>7-ROID</rdeContact:roid>
-    <rdeContact:status s="ok"/>
-    <rdeContact:postalInfo type="int">
-        <contact:name>bird or fiend!? i shrieked upstarting</contact:name>
-        <contact:org>DOGE INCORPORATED</contact:org>
-        <contact:addr>
-            <contact:street>123 Example Boulevard</contact:street>
-            <contact:city>KOKOMO</contact:city>
-            <contact:sp>BM</contact:sp>
-            <contact:pc>31337</contact:pc>
-            <contact:cc>US</contact:cc>
-        </contact:addr>
-    </rdeContact:postalInfo>
-    <rdeContact:voice>+1.5558675309</rdeContact:voice>
-    <rdeContact:fax>+1.5558675310</rdeContact:fax>
-    <rdeContact:email>bog@cat.みんな</rdeContact:email>
-    <rdeContact:clID>GetTheeBack</rdeContact:clID>
-    <rdeContact:crRr>GetTheeBack</rdeContact:crRr>
-    <rdeContact:crDate>1999-12-31T00:00:00Z</rdeContact:crDate>
-</rdeContact:contact>
-
-<rdeContact:contact>
-    <rdeContact:id>5372808-ERL</rdeContact:id>
-    <rdeContact:roid>3-ROID</rdeContact:roid>
-    <rdeContact:status s="ok"/>
-    <rdeContact:postalInfo type="int">
-        <contact:name>(◕‿◕) nevermore</contact:name>
-        <contact:org>DOGE INCORPORATED</contact:org>
-        <contact:addr>
-            <contact:street>123 Example Boulevard</contact:street>
-            <contact:city>KOKOMO</contact:city>
-            <contact:sp>BM</contact:sp>
-            <contact:pc>31337</contact:pc>
-            <contact:cc>US</contact:cc>
-        </contact:addr>
-    </rdeContact:postalInfo>
-    <rdeContact:voice>+1.5558675309</rdeContact:voice>
-    <rdeContact:fax>+1.5558675310</rdeContact:fax>
-    <rdeContact:email>prophet@evil.みんな</rdeContact:email>
-    <rdeContact:clID>GetTheeBack</rdeContact:clID>
-    <rdeContact:crRr>GetTheeBack</rdeContact:crRr>
-    <rdeContact:crDate>1999-12-31T00:00:00Z</rdeContact:crDate>
-</rdeContact:contact>
 
 <rdeIDN:idnTableRef id="extended_latin">
     <rdeIDN:url>https://www.iana.org/domains/idn-tables/tables/google_latn_1.0.txt</rdeIDN:url>

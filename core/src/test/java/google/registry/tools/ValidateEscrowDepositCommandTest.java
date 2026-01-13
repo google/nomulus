@@ -31,35 +31,33 @@ class ValidateEscrowDepositCommandTest extends CommandTestCase<ValidateEscrowDep
     assertThat(getStdoutAsString())
         .isEqualTo(
             """
-        ID: 20101017001
-        Previous ID: 20101010001
-        Type: FULL
-        Watermark: 2010-10-17T00:00:00.000Z
-        RDE Version: 1.0
+            ID: 20101017001
+            Previous ID: 20101010001
+            Type: FULL
+            Watermark: 2010-10-17T00:00:00.000Z
+            RDE Version: 1.0
 
-        RDE Object URIs:
-          - urn:ietf:params:xml:ns:rdeContact-1.0
-          - urn:ietf:params:xml:ns:rdeDomain-1.0
-          - urn:ietf:params:xml:ns:rdeEppParams-1.0
-          - urn:ietf:params:xml:ns:rdeHeader-1.0
-          - urn:ietf:params:xml:ns:rdeHost-1.0
-          - urn:ietf:params:xml:ns:rdeIDN-1.0
-          - urn:ietf:params:xml:ns:rdeNNDN-1.0
-          - urn:ietf:params:xml:ns:rdeRegistrar-1.0
+            RDE Object URIs:
+              - urn:ietf:params:xml:ns:rdeDomain-1.0
+              - urn:ietf:params:xml:ns:rdeEppParams-1.0
+              - urn:ietf:params:xml:ns:rdeHeader-1.0
+              - urn:ietf:params:xml:ns:rdeHost-1.0
+              - urn:ietf:params:xml:ns:rdeIDN-1.0
+              - urn:ietf:params:xml:ns:rdeNNDN-1.0
+              - urn:ietf:params:xml:ns:rdeRegistrar-1.0
 
-        Contents:
-          - XjcRdeContact: 1 entry
-          - XjcRdeDomain: 2 entries
-          - XjcRdeEppParams: 1 entry
-          - XjcRdeHeader: 1 entry
-          - XjcRdeHost: 2 entries
-          - XjcRdeIdn: 1 entry
-          - XjcRdeNndn: 1 entry
-          - XjcRdePolicy: 1 entry
-          - XjcRdeRegistrar: 1 entry
+            Contents:
+              - XjcRdeDomain: 2 entries
+              - XjcRdeEppParams: 1 entry
+              - XjcRdeHeader: 1 entry
+              - XjcRdeHost: 2 entries
+              - XjcRdeIdn: 1 entry
+              - XjcRdeNndn: 1 entry
+              - XjcRdePolicy: 1 entry
+              - XjcRdeRegistrar: 1 entry
 
-        RDE deposit is XML schema valid
-        """);
+            RDE deposit is XML schema valid
+            """);
   }
 
   @Test
@@ -69,46 +67,44 @@ class ValidateEscrowDepositCommandTest extends CommandTestCase<ValidateEscrowDep
     assertThat(getStdoutAsString())
         .isEqualTo(
             """
-        ID: 20101017001
-        Previous ID: 20101010001
-        Type: FULL
-        Watermark: 2010-10-17T00:00:00.000Z
-        RDE Version: 1.0
+            ID: 20101017001
+            Previous ID: 20101010001
+            Type: FULL
+            Watermark: 2010-10-17T00:00:00.000Z
+            RDE Version: 1.0
 
-        RDE Object URIs:
-          - urn:ietf:params:xml:ns:rdeContact-1.0
-          - urn:ietf:params:xml:ns:rdeDomain-1.0
-          - urn:ietf:params:xml:ns:rdeEppParams-1.0
-          - urn:ietf:params:xml:ns:rdeHeader-1.0
-          - urn:ietf:params:xml:ns:rdeHost-1.0
-          - urn:ietf:params:xml:ns:rdeIDN-1.0
-          - urn:ietf:params:xml:ns:rdeNNDN-1.0
-          - urn:ietf:params:xml:ns:rdeRegistrar-1.0
+            RDE Object URIs:
+              - urn:ietf:params:xml:ns:rdeDomain-1.0
+              - urn:ietf:params:xml:ns:rdeEppParams-1.0
+              - urn:ietf:params:xml:ns:rdeHeader-1.0
+              - urn:ietf:params:xml:ns:rdeHost-1.0
+              - urn:ietf:params:xml:ns:rdeIDN-1.0
+              - urn:ietf:params:xml:ns:rdeNNDN-1.0
+              - urn:ietf:params:xml:ns:rdeRegistrar-1.0
 
-        Contents:
-          - XjcRdeContact: 1 entry
-          - XjcRdeDomain: 2 entries
-          - XjcRdeEppParams: 1 entry
-          - XjcRdeHeader: 1 entry
-          - XjcRdeHost: 2 entries
-          - XjcRdeIdn: 1 entry
-          - XjcRdeNndn: 1 entry
-          - XjcRdePolicy: 1 entry
-          - XjcRdeRegistrar: 1 entry
+            Contents:
+              - XjcRdeDomain: 2 entries
+              - XjcRdeEppParams: 1 entry
+              - XjcRdeHeader: 1 entry
+              - XjcRdeHost: 2 entries
+              - XjcRdeIdn: 1 entry
+              - XjcRdeNndn: 1 entry
+              - XjcRdePolicy: 1 entry
+              - XjcRdeRegistrar: 1 entry
 
-        Bad host refs: ns1.LAFFO.com
-        RDE deposit is XML schema valid but has bad references
-        """);
+            Bad host refs: ns1.LAFFO.com
+            RDE deposit is XML schema valid but has bad references
+            """);
   }
 
   @Test
-  void testRun_badXml() throws Exception {
+  void testRun_badXml_truncatedFile() throws Exception {
     String file = writeToTmpFile(RdeTestData.loadFile("deposit_full.xml").substring(0, 2000));
     XmlException thrown = assertThrows(XmlException.class, () -> runCommand("--input=" + file));
     assertThat(thrown)
         .hasMessageThat()
         .contains(
-            "Syntax error at line 46, column 38: "
+            "Syntax error at line 49, column 18: "
                 + "XML document structures must start and end within the same entity.");
   }
 }

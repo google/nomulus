@@ -1,7 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <rde:deposit xmlns:domain="urn:ietf:params:xml:ns:domain-1.0"
-             xmlns:contact="urn:ietf:params:xml:ns:contact-1.0"
-             xmlns:rdeContact="urn:ietf:params:xml:ns:rdeContact-1.0"
              xmlns:rdeDomain="urn:ietf:params:xml:ns:rdeDomain-1.0"
              xmlns:epp="urn:ietf:params:xml:ns:epp-1.0"
              xmlns:rdeNNDN="urn:ietf:params:xml:ns:rdeNNDN-1.0"
@@ -28,7 +26,6 @@
     <rde:watermark>2010-10-17T00:00:00Z</rde:watermark>
     <rde:rdeMenu>
         <rde:version>1.0</rde:version>
-        <rde:objURI>urn:ietf:params:xml:ns:rdeContact-1.0</rde:objURI>
         <rde:objURI>urn:ietf:params:xml:ns:rdeDomain-1.0</rde:objURI>
         <rde:objURI>urn:ietf:params:xml:ns:rdeHost-1.0</rde:objURI>
         <rde:objURI>urn:ietf:params:xml:ns:rdeRegistrar-1.0</rde:objURI>
@@ -132,7 +129,6 @@
 <rdeHeader:header>
   <rdeHeader:tld>xn--q9jyb4c</rdeHeader:tld>
   <rdeHeader:count uri="urn:ietf:params:xml:ns:rdeDomain-1.0">0</rdeHeader:count>
-  <rdeHeader:count uri="urn:ietf:params:xml:ns:rdeContact-1.0">0</rdeHeader:count>
   <rdeHeader:count uri="urn:ietf:params:xml:ns:rdeHost-1.0">1</rdeHeader:count>
   <rdeHeader:count uri="urn:ietf:params:xml:ns:rdeRegistrar-1.0">2</rdeHeader:count>
   <rdeHeader:count uri="urn:ietf:params:xml:ns:rdeIDN-1.0">4</rdeHeader:count>

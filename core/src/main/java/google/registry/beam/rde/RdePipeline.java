@@ -50,8 +50,6 @@ import google.registry.config.CredentialModule;
 import google.registry.config.RegistryConfig.ConfigModule;
 import google.registry.gcs.GcsUtils;
 import google.registry.model.EppResource;
-import google.registry.model.contact.Contact;
-import google.registry.model.contact.ContactHistory;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.host.Host;
@@ -73,7 +71,6 @@ import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import java.io.IOException;
 import java.io.Serializable;
-import java.util.HashSet;
 import org.apache.beam.sdk.Pipeline;
 import org.apache.beam.sdk.PipelineResult;
 import org.apache.beam.sdk.coders.KvCoder;
@@ -138,25 +135,21 @@ import org.joda.time.DateTime;
  * pairs of (contact/host repo ID: pending deposit) for all RDE pending deposits for further
  * processing.
  *
- * <h3>{@link Contact}</h3>
- *
- * We first join most recent contact histories, represented by (contact repo ID: contact history
- * revision ID) pairs, with referenced contacts, represented by (contact repo ID: pending deposit)
- * pairs, on the contact repo ID, to remove unreferenced contact histories. Contact resources are
- * then loaded from the remaining referenced contact histories, and marshalled into (pending
- * deposit: deposit fragment) pairs.
- *
  * <h3>{@link Host}</h3>
  *
- * Similar to {@link Contact}, we join the most recent host history with referenced hosts to find
- * most recent referenced hosts. For external hosts we do the same treatment as we did on contacts
- * and obtain the (pending deposit: deposit fragment) pairs. For subordinate hosts, we need to find
- * the superordinate domain in order to properly handle pending transfer in the deposit as well. So
- * we first find the superordinate domain repo ID from the host and join the (superordinate domain
- * repo ID: (subordinate host repo ID: (pending deposit: revision ID))) pair with the (domain repo
- * ID: revision ID) pair obtained from the domain history query in order to map the host at
- * watermark to the domain at watermark. We then proceed to create the (pending deposit: deposit
- * fragment) pair for subordinate hosts using the added domain information.
+ * <p>We first join most recent host histories, represented by (host repo ID: host history revision
+ * ID) pairs, with referenced hosts, represented by (host repo ID: pending deposit) pairs, on the
+ * host repo ID, to remove unreferenced host histories. Host resources are then loaded from the
+ * remaining referenced host histories, and marshalled into (pending deposit: deposit fragment)
+ * pairs.
+ *
+ * <p>For subordinate hosts, we need to find the superordinate domain in order to properly handle
+ * pending transfer in the deposit as well. So we first find the superordinate domain repo ID from
+ * the host and join the (superordinate domain repo ID: (subordinate host repo ID: (pending deposit:
+ * revision ID))) pair with the (domain repo ID: revision ID) pair obtained from the domain history
+ * query in order to map the host at watermark to the domain at watermark. We then proceed to create
+ * the (pending deposit: deposit fragment) pair for subordinate hosts using the added domain
+ * information.
  *
  * <h2>Processing {@link DepositFragment}</h2>
  *
@@ -230,9 +223,6 @@ public class RdePipeline implements Serializable {
     PCollection<KV<String, Long>> domainHistories =
         getMostRecentHistoryEntries(pipeline, DomainHistory.class);
 
-    PCollection<KV<String, Long>> contactHistories =
-        getMostRecentHistoryEntries(pipeline, ContactHistory.class);
-
     PCollection<KV<String, Long>> hostHistories =
         getMostRecentHistoryEntries(pipeline, HostHistory.class);
 
@@ -240,10 +230,6 @@ public class RdePipeline implements Serializable {
 
     PCollection<KV<PendingDeposit, DepositFragment>> domainFragments =
         processedDomainHistories.get(DOMAIN_FRAGMENTS);
-
-    PCollection<KV<PendingDeposit, DepositFragment>> contactFragments =
-        processContactHistories(
-            processedDomainHistories.get(REFERENCED_CONTACTS), contactHistories);
 
     PCollectionTuple processedHosts =
         processHostHistories(processedDomainHistories.get(REFERENCED_HOSTS), hostHistories);
@@ -256,7 +242,6 @@ public class RdePipeline implements Serializable {
 
     return PCollectionList.of(registrarFragments)
         .and(domainFragments)
-        .and(contactFragments)
         .and(externalHostFragments)
         .and(subordinateHostFragments)
         .apply(
@@ -437,7 +422,6 @@ public class RdePipeline implements Serializable {
   private PCollectionTuple processDomainHistories(PCollection<KV<String, Long>> domainHistories) {
     Counter activeDomainCounter = Metrics.counter("RDE", "ActiveDomainBase");
     Counter domainFragmentCounter = Metrics.counter("RDE", "DomainFragment");
-    Counter referencedContactCounter = Metrics.counter("RDE", "ReferencedContact");
     Counter referencedHostCounter = Metrics.counter("RDE", "ReferencedHost");
     return domainHistories.apply(
         "Map DomainHistory to DepositFragment " + "and emit referenced Contact and Host",
@@ -463,19 +447,8 @@ public class RdePipeline implements Serializable {
                                       KV.of(
                                           pendingDeposit,
                                           marshaller.marshalDomain(domain, pendingDeposit.mode())));
-                              // Contacts and hosts are only deposited in RDE, not BRDA.
+                              // Hosts are only deposited in RDE, not BRDA.
                               if (pendingDeposit.mode() == RdeMode.FULL) {
-                                HashSet<Serializable> contacts = new HashSet<>();
-                                domain.getAdminContact().ifPresent(c -> contacts.add(c.getKey()));
-                                domain.getTechContact().ifPresent(c -> contacts.add(c.getKey()));
-                                domain.getRegistrant().ifPresent(c -> contacts.add(c.getKey()));
-                                domain.getBillingContact().ifPresent(c -> contacts.add(c.getKey()));
-                                referencedContactCounter.inc(contacts.size());
-                                contacts.forEach(
-                                    contactRepoId ->
-                                        receiver
-                                            .get(REFERENCED_CONTACTS)
-                                            .output(KV.of((String) contactRepoId, pendingDeposit)));
                                 if (domain.getNsHosts() != null) {
                                   referencedHostCounter.inc(domain.getNsHosts().size());
                                   domain
@@ -495,38 +468,6 @@ public class RdePipeline implements Serializable {
                 })
             .withOutputTags(
                 DOMAIN_FRAGMENTS, TupleTagList.of(REFERENCED_CONTACTS).and(REFERENCED_HOSTS)));
-  }
-
-  private PCollection<KV<PendingDeposit, DepositFragment>> processContactHistories(
-      PCollection<KV<String, PendingDeposit>> referencedContacts,
-      PCollection<KV<String, Long>> contactHistories) {
-    Counter contactFragmentCounter = Metrics.counter("RDE", "ContactFragment");
-    return removeUnreferencedResource(referencedContacts, contactHistories, Contact.class)
-        .apply(
-            "Map Contact to DepositFragment",
-            FlatMapElements.into(
-                    kvs(
-                        TypeDescriptor.of(PendingDeposit.class),
-                        TypeDescriptor.of(DepositFragment.class)))
-                .via(
-                    (KV<String, CoGbkResult> kv) -> {
-                      Contact contact =
-                          (Contact)
-                              loadResourceByHistoryEntryId(
-                                  ContactHistory.class,
-                                  kv.getKey(),
-                                  kv.getValue().getAll(REVISION_ID));
-                      DepositFragment fragment = marshaller.marshalContact(contact);
-                      ImmutableSet<KV<PendingDeposit, DepositFragment>> fragments =
-                          Streams.stream(kv.getValue().getAll(PENDING_DEPOSIT))
-                              // The same contact could be used by multiple domains, therefore
-                              // matched to the same pending deposit multiple times.
-                              .distinct()
-                              .map(pendingDeposit -> KV.of(pendingDeposit, fragment))
-                              .collect(toImmutableSet());
-                      contactFragmentCounter.inc(fragments.size());
-                      return fragments;
-                    }));
   }
 
   private PCollectionTuple processHostHistories(

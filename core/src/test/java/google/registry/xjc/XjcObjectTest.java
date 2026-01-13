@@ -45,7 +45,7 @@ class XjcObjectTest {
     String xml = out.toString(UTF_8.toString());
     Pattern pat = Pattern.compile("^<\\?xml version=\"1\\.0\" encoding=\"UTF[-_]?8\"");
     assertWithMessage("bad xml declaration: " + xml).that(pat.matcher(xml).find()).isTrue();
-    assertWithMessage("encode/decode didn't work: " + xml).that(xml).contains("Jane Doe");
+    assertWithMessage("encode/decode didn't work: " + xml).that(xml).contains("jdoe@example.test");
   }
 
   @Test
@@ -56,7 +56,7 @@ class XjcObjectTest {
     String xml = out.toString(UTF_16.toString());
     Pattern pat = Pattern.compile("^<\\?xml version=\"1\\.0\" encoding=\"UTF[-_]?16\"");
     assertWithMessage(xml).that(pat.matcher(xml).find()).isTrue();
-    assertWithMessage("encode/decode didn't work: " + xml).that(xml).contains("Jane Doe");
+    assertWithMessage("encode/decode didn't work: " + xml).that(xml).contains("jdoe@example.test");
   }
 
   @Test

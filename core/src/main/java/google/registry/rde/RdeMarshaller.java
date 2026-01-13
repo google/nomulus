@@ -19,7 +19,6 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.flogger.FluentLogger;
 import google.registry.model.ImmutableObject;
-import google.registry.model.contact.Contact;
 import google.registry.model.domain.Domain;
 import google.registry.model.host.Host;
 import google.registry.model.rde.RdeMode;
@@ -116,12 +115,6 @@ public final class RdeMarshaller implements Serializable {
     } catch (MarshalException e) {
       throw new RuntimeException(e);
     }
-  }
-
-  /** Turns {@link Contact} object into an XML fragment. */
-  public DepositFragment marshalContact(Contact contact) {
-    return marshalResource(
-        RdeResourceType.CONTACT, contact, ContactToXjcConverter.convert(contact));
   }
 
   /** Turns {@link Domain} object into an XML fragment. */

@@ -7,7 +7,6 @@
   xmlns:rdeHeader="urn:ietf:params:xml:ns:rdeHeader-1.0"
   xmlns:rdeDom="urn:ietf:params:xml:ns:rdeDomain-1.0"
   xmlns:rdeHost="urn:ietf:params:xml:ns:rdeHost-1.0"
-  xmlns:rdeContact="urn:ietf:params:xml:ns:rdeContact-1.0"
   xmlns:rdeRegistrar="urn:ietf:params:xml:ns:rdeRegistrar-1.0"
   xmlns:rdeIDN="urn:ietf:params:xml:ns:rdeIDN-1.0"
   xmlns:rdeNNDN="urn:ietf:params:xml:ns:rdeNNDN-1.0"
@@ -18,7 +17,6 @@
   <rde:rdeMenu>
     <rde:version>1.0</rde:version>
     <rde:objURI>urn:ietf:params:xml:ns:rdeHeader-1.0</rde:objURI>
-    <rde:objURI>urn:ietf:params:xml:ns:rdeContact-1.0</rde:objURI>
     <rde:objURI>urn:ietf:params:xml:ns:rdeHost-1.0</rde:objURI>
     <rde:objURI>urn:ietf:params:xml:ns:rdeDomain-1.0</rde:objURI>
     <rde:objURI>urn:ietf:params:xml:ns:rdeRegistrar-1.0</rde:objURI>
