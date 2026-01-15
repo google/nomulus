@@ -1,27 +1,41 @@
+// Copyright 2017 The Nomulus Authors. All Rights Reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package google.registry.monitoring.whitebox;
 
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryMXBean;
 import java.lang.management.MemoryUsage;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
+import com.google.monitoring.metrics.MetricRegistry;
+import com.google.monitoring.metrics.MetricRegistryImpl;
+import com.google.monitoring.metrics.LabelDescriptor;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.base.Supplier;
+
 
 
 /** Exposes JVM metrics. */
 @Singleton
 class JvmMetrics {
 
-  private static final LabelDescriptor TYPE_LABEL = LabelDescriptor.create("type", "Memory type (e.g., heap, non_heap)");
-
-  // Memory Metrics
-  private final GaugeMetric<Long> memoryUsed;
-  private final GaugeMetric<Long> memoryCommitted;
-  private final GaugeMetric<Long> memoryMax;
-
+  private static final ImmutableSet<LabelDescriptor> TYPE_LABEL_SET =
+      ImmutableSet.of(LabelDescriptor.create("type", "Memory type (e.g., heap, non_heap)"));
   private final MemoryMXBean memoryMxBean;
-  long heapUsed = heapUsage.getUsed();
-  long heapMax = heapUsage.getMax();
-  long nonHeapUsed = nonHeapUsage.getUsed();
-
-
   @Inject
   JvmMetrics() {
     this(ManagementFactory.getMemoryMXBean());
@@ -32,45 +46,54 @@ class JvmMetrics {
     this.memoryMxBean = memoryMxBean;
     MetricRegistry registry = MetricRegistryImpl.getDefault();
 
-    memoryUsed =
-        registry.newGaugeMetric(
-            "/jvm/memory/used",
-            "Current memory usage in bytes",
-            "bytes",
-            null,
-            TYPE_LABEL);
+    registry.newGauge(
+        "/jvm/memory/used",
+        "Current memory usage in bytes",
+        "bytes",
+        TYPE_LABEL_SET,
+        (Supplier<ImmutableMap<ImmutableList<String>, Long>>) this::getUsedMemory,
+        Long.class);
 
-    memoryCommitted =
-        registry.newGaugeMetric(
-            "/jvm/memory/committed",
-            "Committed memory in bytes",
-            "bytes",
-            null,
-            TYPE_LABEL);
+    registry.newGauge(
+        "/jvm/memory/committed",
+        "Committed memory in bytes",
+        "bytes",
+        TYPE_LABEL_SET,
+        (Supplier<ImmutableMap<ImmutableList<String>, Long>>) this::getCommittedMemory,
+        Long.class);
 
-    memoryMax =
-        registry.newGaugeMetric(
-            "/jvm/memory/max",
-            "Maximum memory in bytes",
-            "bytes",
-            null,
-            TYPE_LABEL);
-
-    registry.registerCallback(this::updateMemoryMetrics);
+    registry.newGauge(
+        "/jvm/memory/max",
+        "Maximum memory in bytes",
+        "bytes",
+        TYPE_LABEL_SET,
+        (Supplier<ImmutableMap<ImmutableList<String>, Long>>) this::getMaxMemory,
+        Long.class);
   }
 
-  private void updateMemoryMetrics() {
-    // Heap Memory
-    MemoryUsage heapUsage = memoryMxBean.getHeapMemoryUsage();
-    memoryUsed.set(heapUsage.getUsed(), "heap");
-    memoryCommitted.set(heapUsage.getCommitted(), "heap");
-    memoryMax.set(heapUsage.getMax(), "heap");
 
-    // Non-Heap Memory
+  ImmutableMap<ImmutableList<String>, Long> getUsedMemory() {
+    MemoryUsage heapUsage = memoryMxBean.getHeapMemoryUsage();
     MemoryUsage nonHeapUsage = memoryMxBean.getNonHeapMemoryUsage();
-    memoryUsed.set(nonHeapUsage.getUsed(), "non_heap");
-    memoryCommitted.set(nonHeapUsage.getCommitted(), "non_heap");
-    memoryMax.set(nonHeapUsage.getMax(), "non_heap");
+    return ImmutableMap.of(
+        ImmutableList.of("heap"), heapUsage.getUsed(),
+        ImmutableList.of("non_heap"), nonHeapUsage.getUsed());
+  }
+
+  ImmutableMap<ImmutableList<String>, Long> getCommittedMemory() {
+    MemoryUsage heapUsage = memoryMxBean.getHeapMemoryUsage();
+    MemoryUsage nonHeapUsage = memoryMxBean.getNonHeapMemoryUsage();
+    return ImmutableMap.of(
+        ImmutableList.of("heap"), heapUsage.getCommitted(),
+        ImmutableList.of("non_heap"), nonHeapUsage.getCommitted());
+  }
+
+  ImmutableMap<ImmutableList<String>, Long> getMaxMemory() {
+    MemoryUsage heapUsage = memoryMxBean.getHeapMemoryUsage();
+    MemoryUsage nonHeapUsage = memoryMxBean.getNonHeapMemoryUsage();
+    return ImmutableMap.of(
+        ImmutableList.of("heap"), heapUsage.getMax(),
+        ImmutableList.of("non_heap"), nonHeapUsage.getMax());
   }
 
 }
