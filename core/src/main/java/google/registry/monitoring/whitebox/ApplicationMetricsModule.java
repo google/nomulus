@@ -12,12 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package google.registry.monitoring.whitebox; // Or a more suitable package
+package google.registry.monitoring.whitebox;
 
 import dagger.Module;
 import dagger.Provides;
 import jakarta.inject.Singleton;
 
+/** Provide application-level metrics in this module. */
 @Module
 public final class ApplicationMetricsModule {
 

@@ -14,20 +14,18 @@
 
 package google.registry.monitoring.whitebox;
 
-import java.lang.management.ManagementFactory;
-import java.lang.management.MemoryMXBean;
-import java.lang.management.MemoryUsage;
-import jakarta.inject.Inject;
-import jakarta.inject.Singleton;
-import com.google.monitoring.metrics.MetricRegistry;
-import com.google.monitoring.metrics.MetricRegistryImpl;
-import com.google.monitoring.metrics.LabelDescriptor;
+import com.google.common.base.Supplier;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.base.Supplier;
-
-
+import com.google.monitoring.metrics.LabelDescriptor;
+import com.google.monitoring.metrics.MetricRegistry;
+import com.google.monitoring.metrics.MetricRegistryImpl;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
+import java.lang.management.ManagementFactory;
+import java.lang.management.MemoryMXBean;
+import java.lang.management.MemoryUsage;
 
 /** Exposes JVM metrics. */
 @Singleton
