@@ -34,6 +34,7 @@ class JvmMetrics {
   private static final ImmutableSet<LabelDescriptor> TYPE_LABEL_SET =
       ImmutableSet.of(LabelDescriptor.create("type", "Memory type (e.g., heap, non_heap)"));
   private final MemoryMXBean memoryMxBean;
+
   @Inject
   JvmMetrics() {
     this(ManagementFactory.getMemoryMXBean());
@@ -73,6 +74,7 @@ class JvmMetrics {
   ImmutableMap<ImmutableList<String>, Long> getUsedMemory() {
     MemoryUsage heapUsage = memoryMxBean.getHeapMemoryUsage();
     MemoryUsage nonHeapUsage = memoryMxBean.getNonHeapMemoryUsage();
+
     return ImmutableMap.of(
         ImmutableList.of("heap"), heapUsage.getUsed(),
         ImmutableList.of("non_heap"), nonHeapUsage.getUsed());
@@ -81,6 +83,7 @@ class JvmMetrics {
   ImmutableMap<ImmutableList<String>, Long> getCommittedMemory() {
     MemoryUsage heapUsage = memoryMxBean.getHeapMemoryUsage();
     MemoryUsage nonHeapUsage = memoryMxBean.getNonHeapMemoryUsage();
+
     return ImmutableMap.of(
         ImmutableList.of("heap"), heapUsage.getCommitted(),
         ImmutableList.of("non_heap"), nonHeapUsage.getCommitted());
@@ -89,9 +92,9 @@ class JvmMetrics {
   ImmutableMap<ImmutableList<String>, Long> getMaxMemory() {
     MemoryUsage heapUsage = memoryMxBean.getHeapMemoryUsage();
     MemoryUsage nonHeapUsage = memoryMxBean.getNonHeapMemoryUsage();
+
     return ImmutableMap.of(
         ImmutableList.of("heap"), heapUsage.getMax(),
         ImmutableList.of("non_heap"), nonHeapUsage.getMax());
   }
-
 }

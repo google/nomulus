@@ -62,6 +62,7 @@ class JvmMetricsTests {
   @Test
   public void testGetUsedMemory() {
     ImmutableMap<ImmutableList<String>, Long> values = jvmMetrics.getUsedMemory();
+
     assertThat(values).containsExactly(
         ImmutableList.of("heap"), 200L,
         ImmutableList.of("non_heap"), 100L);
@@ -70,6 +71,7 @@ class JvmMetricsTests {
   @Test
   public void testGetCommittedMemory() {
     ImmutableMap<ImmutableList<String>, Long> values = jvmMetrics.getCommittedMemory();
+
     assertThat(values).containsExactly(
         ImmutableList.of("heap"), 500L,
         ImmutableList.of("non_heap"), 250L);
@@ -78,6 +80,7 @@ class JvmMetricsTests {
   @Test
   public void testGetMaxMemory() {
     ImmutableMap<ImmutableList<String>, Long> values = jvmMetrics.getMaxMemory();
+    
     assertThat(values).containsExactly(
         ImmutableList.of("heap"), 1000L,
         ImmutableList.of("non_heap"), 500L);
