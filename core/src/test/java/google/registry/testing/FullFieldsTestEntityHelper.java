@@ -135,10 +135,15 @@ public final class FullFieldsTestEntityHelper {
 
   public static Host makeHost(
       String fqhn, @Nullable String ip1, @Nullable String ip2, String registrarClientId) {
+    return makePunycodedHost(Idn.toASCII(fqhn), ip1, ip2, registrarClientId);
+  }
+
+  public static Host makePunycodedHost(
+      String fqhn, @Nullable String ip1, @Nullable String ip2, String registrarClientId) {
     Host.Builder builder =
         new Host.Builder()
             .setRepoId(generateNewContactHostRoid())
-            .setHostName(Idn.toASCII(fqhn))
+            .setHostName(fqhn)
             .setCreationTimeForTest(DateTime.parse("2000-10-08T00:45:00Z"))
             .setPersistedCurrentSponsorRegistrarId(registrarClientId);
     if ((ip1 != null) || (ip2 != null)) {

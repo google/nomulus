@@ -298,9 +298,13 @@ have failed to comply with these terms.",
     }
 
     JsonFileBuilder addNameserver(String name, String handle) {
+      return addNameserver(Idn.toASCII(name), name, handle);
+    }
+
+    JsonFileBuilder addNameserver(String punycodeName, String unicodeName, String handle) {
       return putNext(
-          "NAMESERVER_NAME_", Idn.toASCII(name),
-          "NAMESERVER_UNICODE_NAME_", name,
+          "NAMESERVER_NAME_", punycodeName,
+          "NAMESERVER_UNICODE_NAME_", unicodeName,
           "NAMESERVER_HANDLE_", handle);
     }
 
