@@ -32,7 +32,7 @@ import jakarta.inject.Named;
 import jakarta.inject.Singleton;
 import org.joda.time.Duration;
 
-/** Dagger module for Google Stackdriver service connection objects. */
+/** Dagger module for monitoring and Google Stackdriver service connection objects. */
 @Module
 public final class StackdriverModule {
 
@@ -77,10 +77,17 @@ public final class StackdriverModule {
 
   @Provides
   static MetricReporter provideMetricReporter(
-      MetricWriter metricWriter, @Config("metricsWriteInterval") Duration writeInterval) {
+      MetricWriter metricWriter, @Config("metricsWriteInterval") Duration writeInterval,
+      JvmMetrics unusedJvmMetrics) {
     return new MetricReporter(
         metricWriter,
         writeInterval.getStandardSeconds(),
         new ThreadFactoryBuilder().setDaemon(true).build());
+  }
+
+  @Singleton
+  @Provides
+  static JvmMetrics provideJvmMetrics() {
+    return new JvmMetrics();
   }
 }

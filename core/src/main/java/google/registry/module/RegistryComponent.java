@@ -39,7 +39,6 @@ import google.registry.keyring.KeyringModule;
 import google.registry.keyring.api.KeyModule;
 import google.registry.module.RegistryComponent.RegistryModule;
 import google.registry.module.RequestComponent.RequestComponentModule;
-import google.registry.monitoring.whitebox.ApplicationMetricsModule;
 import google.registry.monitoring.whitebox.StackdriverModule;
 import google.registry.mosapi.module.MosApiModule;
 import google.registry.persistence.PersistenceModule;
@@ -59,7 +58,6 @@ import jakarta.inject.Singleton;
 @Singleton
 @Component(
     modules = {
-      ApplicationMetricsModule.class,
       AuthModule.class,
       BatchModule.class,
       BigqueryModule.class,

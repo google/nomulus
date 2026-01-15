@@ -80,7 +80,7 @@ class JvmMetricsTests {
   @Test
   public void testGetMaxMemory() {
     ImmutableMap<ImmutableList<String>, Long> values = jvmMetrics.getMaxMemory();
-    
+
     assertThat(values).containsExactly(
         ImmutableList.of("heap"), 1000L,
         ImmutableList.of("non_heap"), 500L);
