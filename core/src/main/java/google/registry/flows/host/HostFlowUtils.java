@@ -17,6 +17,7 @@ package google.registry.flows.host;
 import static google.registry.flows.domain.DomainFlowUtils.validateFirstLabel;
 import static google.registry.model.EppResourceUtils.isActive;
 import static google.registry.model.tld.Tlds.findTldForName;
+import static google.registry.util.DomainNameUtils.canonicalizeHostname;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 import static java.util.stream.Collectors.joining;
 
@@ -34,7 +35,6 @@ import google.registry.flows.EppException.StatusProhibitsOperationException;
 import google.registry.model.ForeignKeyUtils;
 import google.registry.model.domain.Domain;
 import google.registry.model.eppcommon.StatusValue;
-import google.registry.util.Idn;
 import java.net.InetAddress;
 import java.util.Optional;
 import org.joda.time.DateTime;
@@ -57,7 +57,7 @@ public class HostFlowUtils {
       throw new HostNameNotLowerCaseException(hostNameLowerCase);
     }
     try {
-      String hostNamePunyCoded = Idn.toASCII(name);
+      String hostNamePunyCoded = canonicalizeHostname(name);
       if (!name.equals(hostNamePunyCoded)) {
         throw new HostNameNotPunyCodedException(hostNamePunyCoded);
       }

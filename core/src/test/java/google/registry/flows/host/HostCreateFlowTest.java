@@ -45,6 +45,7 @@ import google.registry.flows.host.HostFlowUtils.HostNameNotNormalizedException;
 import google.registry.flows.host.HostFlowUtils.HostNameNotPunyCodedException;
 import google.registry.flows.host.HostFlowUtils.HostNameTooLongException;
 import google.registry.flows.host.HostFlowUtils.HostNameTooShallowException;
+import google.registry.flows.host.HostFlowUtils.InvalidHostNameException;
 import google.registry.flows.host.HostFlowUtils.LoopbackIpNotValidForHostException;
 import google.registry.flows.host.HostFlowUtils.SuperordinateDomainDoesNotExistException;
 import google.registry.flows.host.HostFlowUtils.SuperordinateDomainInPendingDeleteException;
@@ -82,9 +83,14 @@ class HostCreateFlowTest extends ResourceFlowTestCase<HostCreateFlow, Host> {
   }
 
   private void doSuccessfulTest() throws Exception {
+    doSuccessfulTest("host_create_response.xml", ImmutableMap.of());
+  }
+
+  private void doSuccessfulTest(String responseFile, ImmutableMap<String, String> substitutions)
+      throws Exception {
     clock.advanceOneMilli();
     assertMutatingFlow(true);
-    runFlowAssertResponse(loadFile("host_create_response.xml"));
+    runFlowAssertResponse(loadFile(responseFile, substitutions));
     Host host = reloadResourceByForeignKey();
     // Check that the host was created and persisted with a history entry.
     assertAboutHosts()
@@ -132,6 +138,28 @@ class HostCreateFlowTest extends ResourceFlowTestCase<HostCreateFlow, Host> {
     assertAboutHosts().that(host).hasSuperordinateDomain(superordinateDomain.createVKey());
     assertThat(superordinateDomain.getSubordinateHosts()).containsExactly("ns1.example.tld");
     assertHostDnsRequests("ns1.example.tld");
+  }
+
+  @Test
+  void testSuccess_tldWithHyphenOn3And4() throws Exception {
+    setEppHostCreateInput("ns1.example.zz--main-2262", null);
+    doSuccessfulTest(
+        "host_create_response_wildcard.xml",
+        ImmutableMap.of("HOSTNAME", "ns1.example.zz--main-2262"));
+  }
+
+  @Test
+  void testFailure_domainWithHyphenOn3And4() throws Exception {
+    setEppHostCreateInput("ns1.zz--main-2262.tld", null);
+    EppException thrown = assertThrows(InvalidHostNameException.class, this::runFlow);
+    assertAboutEppExceptions().that(thrown).marshalsToXml();
+  }
+
+  @Test
+  void testFailure_hostnameWithHyphenOn3And4() throws Exception {
+    setEppHostCreateInput("zz--ns1.domain.tld", null);
+    EppException thrown = assertThrows(InvalidHostNameException.class, this::runFlow);
+    assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
   @Test
