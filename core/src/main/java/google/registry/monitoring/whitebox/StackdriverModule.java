@@ -77,7 +77,8 @@ public final class StackdriverModule {
 
   @Provides
   static MetricReporter provideMetricReporter(
-      MetricWriter metricWriter, @Config("metricsWriteInterval") Duration writeInterval,
+      MetricWriter metricWriter,
+      @Config("metricsWriteInterval") Duration writeInterval,
       JvmMetrics jvmMetrics) {
     jvmMetrics.register();
 

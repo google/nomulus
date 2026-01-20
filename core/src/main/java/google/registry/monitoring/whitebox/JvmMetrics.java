@@ -74,7 +74,6 @@ class JvmMetrics {
         Long.class);
   }
 
-
   ImmutableMap<ImmutableList<String>, Long> getUsedMemory() {
     MemoryUsage heapUsage = memoryMxBean.getHeapMemoryUsage();
     MemoryUsage nonHeapUsage = memoryMxBean.getNonHeapMemoryUsage();

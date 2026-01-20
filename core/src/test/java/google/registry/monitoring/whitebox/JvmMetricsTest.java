@@ -34,10 +34,10 @@ class JvmMetricsTests {
   private JvmMetrics jvmMetrics;
   private MemoryMXBean mockMemoryMXBean = mock(MemoryMXBean.class);
 
-  private static final MemoryUsage HEAP_USAGE = new MemoryUsage(/*init*/ 100,
-      /*used*/ 200, /*commited*/ 500, /*max*/ 1000);
-  private static final MemoryUsage NON_HEAP_USAGE = new MemoryUsage(/*init*/ 50,
-      /*used*/ 100, /*commited*/ 250, /*max*/ 500);
+  private static final MemoryUsage HEAP_USAGE =
+      new MemoryUsage(/*init*/ 100, /*used*/ 200, /*commited*/ 500, /*max*/ 1000);
+  private static final MemoryUsage NON_HEAP_USAGE =
+      new MemoryUsage(/*init*/ 50, /*used*/ 100, /*commited*/ 250, /*max*/ 500);
 
   @BeforeEach
   public void setUp() {
@@ -66,9 +66,10 @@ class JvmMetricsTests {
     jvmMetrics.register();
     ImmutableMap<ImmutableList<String>, Long> values = jvmMetrics.getUsedMemory();
 
-    assertThat(values).containsExactly(
-        ImmutableList.of("heap"), 200L,
-        ImmutableList.of("non_heap"), 100L);
+    assertThat(values)
+        .containsExactly(
+            ImmutableList.of("heap"), 200L,
+            ImmutableList.of("non_heap"), 100L);
   }
 
   @Test
@@ -76,9 +77,10 @@ class JvmMetricsTests {
     jvmMetrics.register();
     ImmutableMap<ImmutableList<String>, Long> values = jvmMetrics.getCommittedMemory();
 
-    assertThat(values).containsExactly(
-        ImmutableList.of("heap"), 500L,
-        ImmutableList.of("non_heap"), 250L);
+    assertThat(values)
+        .containsExactly(
+            ImmutableList.of("heap"), 500L,
+            ImmutableList.of("non_heap"), 250L);
   }
 
   @Test
@@ -86,8 +88,9 @@ class JvmMetricsTests {
     jvmMetrics.register();
     ImmutableMap<ImmutableList<String>, Long> values = jvmMetrics.getMaxMemory();
 
-    assertThat(values).containsExactly(
-        ImmutableList.of("heap"), 1000L,
-        ImmutableList.of("non_heap"), 500L);
+    assertThat(values)
+        .containsExactly(
+            ImmutableList.of("heap"), 1000L,
+            ImmutableList.of("non_heap"), 500L);
   }
 }
