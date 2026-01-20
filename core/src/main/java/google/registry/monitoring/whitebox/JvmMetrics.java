@@ -40,10 +40,11 @@ class JvmMetrics {
     this(ManagementFactory.getMemoryMXBean());
   }
 
-  // Constructor for testing
+  /** Constructor for testing. */
   JvmMetrics(MemoryMXBean memoryMxBean) {
     this.memoryMxBean = memoryMxBean;
   }
+
   /** Registers JVM gauges with the default registry. */
   void register() {
     MetricRegistry registry = MetricRegistryImpl.getDefault();
