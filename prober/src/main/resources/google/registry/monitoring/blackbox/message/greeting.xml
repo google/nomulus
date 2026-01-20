@@ -5,6 +5,7 @@
     <svcMenu>
       <version>1.0</version>
       <lang>en</lang>
+      <objURI>urn:ietf:params:xml:ns:contact-1.0</objURI>
       <objURI>urn:ietf:params:xml:ns:domain-1.0</objURI>
       <objURI>urn:ietf:params:xml:ns:host-1.0</objURI>
     </svcMenu>

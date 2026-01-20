@@ -68,7 +68,10 @@ class EppInputTest {
     assertThat(loginCommand.options.version).isEqualTo("1.0");
     assertThat(loginCommand.options.language).isEqualTo("en");
     assertThat(loginCommand.services.objectServices)
-        .containsExactly("urn:ietf:params:xml:ns:host-1.0", "urn:ietf:params:xml:ns:domain-1.0");
+        .containsExactly(
+            "urn:ietf:params:xml:ns:host-1.0",
+            "urn:ietf:params:xml:ns:domain-1.0",
+            "urn:ietf:params:xml:ns:contact-1.0");
     assertThat(loginCommand.services.serviceExtensions)
         .containsExactly("urn:ietf:params:xml:ns:launch-1.0", "urn:ietf:params:xml:ns:rgp-1.0");
   }
