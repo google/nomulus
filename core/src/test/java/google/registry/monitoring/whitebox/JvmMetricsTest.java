@@ -52,6 +52,8 @@ class JvmMetricsTests {
 
   @Test
   public void metricsRegistered() {
+    jvmMetrics.register();
+
     assertThat(registry.getRegisteredMetrics()).hasSize(3);
 
     for (var metric : registry.getRegisteredMetrics()) {
@@ -61,6 +63,7 @@ class JvmMetricsTests {
 
   @Test
   public void testGetUsedMemory() {
+    jvmMetrics.register();
     ImmutableMap<ImmutableList<String>, Long> values = jvmMetrics.getUsedMemory();
 
     assertThat(values).containsExactly(
@@ -70,6 +73,7 @@ class JvmMetricsTests {
 
   @Test
   public void testGetCommittedMemory() {
+    jvmMetrics.register();
     ImmutableMap<ImmutableList<String>, Long> values = jvmMetrics.getCommittedMemory();
 
     assertThat(values).containsExactly(
@@ -79,6 +83,7 @@ class JvmMetricsTests {
 
   @Test
   public void testGetMaxMemory() {
+    jvmMetrics.register();
     ImmutableMap<ImmutableList<String>, Long> values = jvmMetrics.getMaxMemory();
 
     assertThat(values).containsExactly(
