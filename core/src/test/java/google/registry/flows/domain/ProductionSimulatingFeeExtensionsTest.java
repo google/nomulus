@@ -14,43 +14,62 @@
 
 package google.registry.flows.domain;
 
-import google.registry.flows.Flow;
-import google.registry.flows.ResourceFlowTestCase;
-import google.registry.model.domain.Domain;
-import google.registry.model.eppcommon.EppXmlTransformer;
+import static com.google.common.truth.Truth.assertThat;
+
 import google.registry.model.eppcommon.ProtocolDefinition;
 import google.registry.util.RegistryEnvironment;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-/**
- * Abstract class for tests that require old versions of the fee extension (0.6, 0.11, 0.12).
- *
- * <p>These are enabled only in the production environment so in order to test them, we need to
- * simulate the production environment for each test (and reset it to the test environment
- * afterward).
- */
-public abstract class ProductionSimulatingFeeExtensionsTest<F extends Flow>
-    extends ResourceFlowTestCase<F, Domain> {
+/** Class for testing the XML extension definitions loaded in the prod environment. */
+public class ProductionSimulatingFeeExtensionsTest {
 
   private RegistryEnvironment previousEnvironment;
 
   @BeforeEach
   void beforeEach() {
     previousEnvironment = RegistryEnvironment.get();
-    RegistryEnvironment.PRODUCTION.setup();
-    reloadServiceExtensionUris();
   }
 
   @AfterEach
   void afterEach() {
     previousEnvironment.setup();
-    reloadServiceExtensionUris();
+    ProtocolDefinition.reloadServiceExtensionUris();
   }
 
-  void reloadServiceExtensionUris() {
+  @Test
+  void testNonProdEnvironments() {
+    for (RegistryEnvironment env : RegistryEnvironment.values()) {
+      if (env.equals(RegistryEnvironment.PRODUCTION)) {
+        continue;
+      }
+      env.setup();
+      ProtocolDefinition.reloadServiceExtensionUris();
+      assertThat(ProtocolDefinition.getVisibleServiceExtensionUris())
+          .containsExactly(
+              "urn:ietf:params:xml:ns:launch-1.0",
+              "urn:ietf:params:xml:ns:rgp-1.0",
+              "urn:ietf:params:xml:ns:secDNS-1.1",
+              "urn:ietf:params:xml:ns:fee-0.6",
+              "urn:ietf:params:xml:ns:fee-0.11",
+              "urn:ietf:params:xml:ns:fee-0.12",
+              "urn:ietf:params:xml:ns:epp:fee-1.0");
+    }
+  }
+
+  @Test
+  void testProdEnvironment() {
+    RegistryEnvironment.PRODUCTION.setup();
     ProtocolDefinition.reloadServiceExtensionUris();
-    sessionMetadata.setServiceExtensionUris(ProtocolDefinition.getVisibleServiceExtensionUris());
-    EppXmlTransformer.reloadTransformers();
+    // prod shouldn't have the fee extension version 1.0
+    assertThat(ProtocolDefinition.getVisibleServiceExtensionUris())
+        .containsExactly(
+            "urn:ietf:params:xml:ns:launch-1.0",
+            "urn:ietf:params:xml:ns:rgp-1.0",
+            "urn:ietf:params:xml:ns:secDNS-1.1",
+            "urn:ietf:params:xml:ns:fee-0.6",
+            "urn:ietf:params:xml:ns:fee-0.11",
+            "urn:ietf:params:xml:ns:fee-0.12");
   }
 }

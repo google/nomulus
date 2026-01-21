@@ -147,6 +147,24 @@ class DomainTransferRequestFlowTest
           .put("AMOUNT", "11.00")
           .put("CURRENCY", "USD")
           .build();
+  private static final ImmutableMap<String, String> FEE_06_MAP =
+      new ImmutableMap.Builder<String, String>()
+          .putAll(BASE_FEE_MAP)
+          .put("FEE_VERSION", "fee-0.6")
+          .put("FEE_NS", "fee")
+          .build();
+  private static final ImmutableMap<String, String> FEE_11_MAP =
+      new ImmutableMap.Builder<String, String>()
+          .putAll(BASE_FEE_MAP)
+          .put("FEE_VERSION", "fee-0.11")
+          .put("FEE_NS", "fee11")
+          .build();
+  private static final ImmutableMap<String, String> FEE_12_MAP =
+      new ImmutableMap.Builder<String, String>()
+          .putAll(BASE_FEE_MAP)
+          .put("FEE_VERSION", "fee-0.12")
+          .put("FEE_NS", "fee12")
+          .build();
   private static final ImmutableMap<String, String> FEE_STD_1_0_MAP =
       updateSubstitutions(BASE_FEE_MAP, "FEE_VERSION", "epp:fee-1.0", "FEE_NS", "fee1_00");
   private static final ImmutableMap<String, String> RICH_DOMAIN_MAP =
@@ -1825,5 +1843,251 @@ class DomainTransferRequestFlowTest
     EppException thrown =
         assertThrows(AlreadyRedeemedAllocationTokenException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
+  }
+
+  @Test
+  void testFailure_wrongFeeAmount_v06() {
+    setupDomain("example", "tld");
+    runWrongFeeAmountTest(FEE_06_MAP);
+  }
+
+  @Test
+  void testFailure_wrongFeeAmount_v11() {
+    setupDomain("example", "tld");
+    runWrongFeeAmountTest(FEE_11_MAP);
+  }
+
+  @Test
+  void testFailure_wrongFeeAmount_v12() {
+    setupDomain("example", "tld");
+    runWrongFeeAmountTest(FEE_12_MAP);
+  }
+
+  @Test
+  void testFailure_appliedFee_v06() {
+    setupDomain("example", "tld");
+    EppException thrown =
+        assertThrows(
+            UnsupportedFeeAttributeException.class,
+            () -> doFailingTest("domain_transfer_request_fee_applied.xml", FEE_06_MAP));
+    assertAboutEppExceptions().that(thrown).marshalsToXml();
+  }
+
+  @Test
+  void testFailure_appliedFee_v11() {
+    setupDomain("example", "tld");
+    EppException thrown =
+        assertThrows(
+            UnsupportedFeeAttributeException.class,
+            () -> doFailingTest("domain_transfer_request_fee_applied.xml", FEE_11_MAP));
+    assertAboutEppExceptions().that(thrown).marshalsToXml();
+  }
+
+  @Test
+  void testFailure_appliedFee_v12() {
+    setupDomain("example", "tld");
+    EppException thrown =
+        assertThrows(
+            UnsupportedFeeAttributeException.class,
+            () -> doFailingTest("domain_transfer_request_fee_applied.xml", FEE_12_MAP));
+    assertAboutEppExceptions().that(thrown).marshalsToXml();
+  }
+
+  @Test
+  void testFailure_gracePeriodFee_v06() {
+    setupDomain("example", "tld");
+    EppException thrown =
+        assertThrows(
+            UnsupportedFeeAttributeException.class,
+            () -> doFailingTest("domain_transfer_request_fee_grace_period.xml", FEE_06_MAP));
+    assertAboutEppExceptions().that(thrown).marshalsToXml();
+  }
+
+  @Test
+  void testFailure_gracePeriodFee_v11() {
+    setupDomain("example", "tld");
+    EppException thrown =
+        assertThrows(
+            UnsupportedFeeAttributeException.class,
+            () -> doFailingTest("domain_transfer_request_fee_grace_period.xml", FEE_11_MAP));
+    assertAboutEppExceptions().that(thrown).marshalsToXml();
+  }
+
+  @Test
+  void testFailure_gracePeriodFee_v12() {
+    setupDomain("example", "tld");
+    EppException thrown =
+        assertThrows(
+            UnsupportedFeeAttributeException.class,
+            () -> doFailingTest("domain_transfer_request_fee_grace_period.xml", FEE_12_MAP));
+    assertAboutEppExceptions().that(thrown).marshalsToXml();
+  }
+
+  @Test
+  void testSuccess_fee_withDefaultAttributes_v06() throws Exception {
+    setupDomain("example", "tld");
+    doSuccessfulTest(
+        "domain_transfer_request_fee_defaults.xml",
+        "domain_transfer_request_response_fee.xml",
+        FEE_06_MAP);
+  }
+
+  @Test
+  void testSuccess_fee_withDefaultAttributes_v11() throws Exception {
+    setupDomain("example", "tld");
+    doSuccessfulTest(
+        "domain_transfer_request_fee_defaults.xml",
+        "domain_transfer_request_response_fee.xml",
+        FEE_11_MAP);
+  }
+
+  @Test
+  void testSuccess_fee_withDefaultAttributes_v12() throws Exception {
+    setupDomain("example", "tld");
+    doSuccessfulTest(
+        "domain_transfer_request_fee_defaults.xml",
+        "domain_transfer_request_response_fee.xml",
+        FEE_12_MAP);
+  }
+
+  @Test
+  void testFailure_refundableFee_v06() {
+    setupDomain("example", "tld");
+    EppException thrown =
+        assertThrows(
+            UnsupportedFeeAttributeException.class,
+            () -> doFailingTest("domain_transfer_request_fee_refundable.xml", FEE_06_MAP));
+    assertAboutEppExceptions().that(thrown).marshalsToXml();
+  }
+
+  @Test
+  void testFailure_refundableFee_v11() {
+    setupDomain("example", "tld");
+    EppException thrown =
+        assertThrows(
+            UnsupportedFeeAttributeException.class,
+            () -> doFailingTest("domain_transfer_request_fee_refundable.xml", FEE_11_MAP));
+    assertAboutEppExceptions().that(thrown).marshalsToXml();
+  }
+
+  @Test
+  void testFailure_refundableFee_v12() {
+    setupDomain("example", "tld");
+    EppException thrown =
+        assertThrows(
+            UnsupportedFeeAttributeException.class,
+            () -> doFailingTest("domain_transfer_request_fee_refundable.xml", FEE_12_MAP));
+    assertAboutEppExceptions().that(thrown).marshalsToXml();
+  }
+
+  @Test
+  void testFailure_wrongCurrency_v06() {
+    runWrongCurrencyTest(FEE_06_MAP);
+  }
+
+  @Test
+  void testFailure_wrongCurrency_v11() {
+    runWrongCurrencyTest(FEE_11_MAP);
+  }
+
+  @Test
+  void testFailure_wrongCurrency_v12() {
+    runWrongCurrencyTest(FEE_12_MAP);
+  }
+
+  @Test
+  void testFailure_feeGivenInWrongScale_v06() {
+    setupDomain("example", "tld");
+    EppException thrown =
+        assertThrows(
+            CurrencyValueScaleException.class,
+            () -> doFailingTest("domain_transfer_request_fee_bad_scale.xml", FEE_06_MAP));
+    assertAboutEppExceptions().that(thrown).marshalsToXml();
+  }
+
+  @Test
+  void testFailure_feeGivenInWrongScale_v11() {
+    setupDomain("example", "tld");
+    EppException thrown =
+        assertThrows(
+            CurrencyValueScaleException.class,
+            () -> doFailingTest("domain_transfer_request_fee_bad_scale.xml", FEE_11_MAP));
+    assertAboutEppExceptions().that(thrown).marshalsToXml();
+  }
+
+  @Test
+  void testFailure_feeGivenInWrongScale_v12() {
+    setupDomain("example", "tld");
+    EppException thrown =
+        assertThrows(
+            CurrencyValueScaleException.class,
+            () -> doFailingTest("domain_transfer_request_fee_bad_scale.xml", FEE_12_MAP));
+    assertAboutEppExceptions().that(thrown).marshalsToXml();
+  }
+
+  @Test
+  void testSuccess_fee_v06() throws Exception {
+    setupDomain("example", "tld");
+    doSuccessfulTest(
+        "domain_transfer_request_fee.xml", "domain_transfer_request_response_fee.xml", FEE_06_MAP);
+  }
+
+  @Test
+  void testSuccess_fee_v11() throws Exception {
+    setupDomain("example", "tld");
+    doSuccessfulTest(
+        "domain_transfer_request_fee.xml", "domain_transfer_request_response_fee.xml", FEE_11_MAP);
+  }
+
+  @Test
+  void testSuccess_fee_v12() throws Exception {
+    setupDomain("example", "tld");
+    doSuccessfulTest(
+        "domain_transfer_request_fee.xml", "domain_transfer_request_response_fee.xml", FEE_12_MAP);
+  }
+
+  @Test
+  void testSuccess_customLogicFee_v06() throws Exception {
+    setupDomain("expensive-domain", "foo");
+    clock.advanceOneMilli();
+    doSuccessfulTest(
+        "domain_transfer_request_separate_fees.xml",
+        "domain_transfer_request_response_fees.xml",
+        domain.getRegistrationExpirationTime().plusYears(1),
+        new ImmutableMap.Builder<String, String>()
+            .put("DOMAIN", "expensive-domain.foo")
+            .put("YEARS", "1")
+            .put("AMOUNT", "111.00")
+            .put("EXDATE", "2002-09-08T22:00:00.0Z")
+            .put("FEE_VERSION", "fee-0.6")
+            .put("FEE_NS", "fee")
+            .build(),
+        Optional.of(Money.of(USD, 111)));
+  }
+
+  @Test
+  void testSuccess_premiumNotBlocked_v12() throws Exception {
+    setupDomain("rich", "example");
+    clock.advanceOneMilli();
+    // We don't verify the results; just check that the flow doesn't fail.
+    runTest("domain_transfer_request_fee.xml", UserPrivileges.NORMAL, RICH_DOMAIN_MAP);
+  }
+
+  @Test
+  void testFailure_superuserExtension_zeroPeriod_feeTransferExtension_v12() {
+    setupDomain("example", "tld");
+    eppRequestSource = EppRequestSource.TOOL;
+    clock.advanceOneMilli();
+    assertThrows(
+        TransferPeriodZeroAndFeeTransferExtensionException.class,
+        () ->
+            runTest(
+                "domain_transfer_request_fee_and_superuser_extension.xml",
+                UserPrivileges.SUPERUSER,
+                new ImmutableMap.Builder<String, String>()
+                    .putAll(FEE_12_MAP)
+                    .put("PERIOD", "0")
+                    .put("AUTOMATIC_TRANSFER_LENGTH", "5")
+                    .build()));
   }
 }

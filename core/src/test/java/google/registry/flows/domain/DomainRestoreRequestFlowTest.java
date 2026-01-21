@@ -86,6 +86,12 @@ import org.junit.jupiter.api.Test;
 /** Unit tests for {@link DomainRestoreRequestFlow}. */
 class DomainRestoreRequestFlowTest extends ResourceFlowTestCase<DomainRestoreRequestFlow, Domain> {
 
+  private static final ImmutableMap<String, String> FEE_06_MAP =
+      ImmutableMap.of("FEE_VERSION", "fee-0.6", "FEE_NS", "fee", "CURRENCY", "USD");
+  private static final ImmutableMap<String, String> FEE_11_MAP =
+      ImmutableMap.of("FEE_VERSION", "fee-0.11", "FEE_NS", "fee11", "CURRENCY", "USD");
+  private static final ImmutableMap<String, String> FEE_12_MAP =
+      ImmutableMap.of("FEE_VERSION", "fee-0.12", "FEE_NS", "fee12", "CURRENCY", "USD");
   private static final ImmutableMap<String, String> FEE_STD_1_0_MAP =
       ImmutableMap.of("FEE_VERSION", "epp:fee-1.0", "FEE_NS", "fee1_00", "CURRENCY", "USD");
 
@@ -675,6 +681,224 @@ class DomainRestoreRequestFlowTest extends ResourceFlowTestCase<DomainRestoreReq
     EppException thrown = assertThrows(
         google.registry.flows.EppException.UnimplementedCommandException.class, this::runFlow);
     assertThat(thrown).hasMessageThat().contains("domain restore reports are not supported");
+    assertAboutEppExceptions().that(thrown).marshalsToXml();
+  }
+
+  @Test
+  void testFailure_wrongFeeAmount_v06() throws Exception {
+    setEppInput("domain_update_restore_request_fee.xml", FEE_06_MAP);
+    persistPendingDeleteDomain();
+    persistResource(Tld.get("tld").asBuilder().setRestoreBillingCost(Money.of(USD, 100)).build());
+    EppException thrown = assertThrows(FeesMismatchException.class, this::runFlow);
+    assertAboutEppExceptions().that(thrown).marshalsToXml();
+  }
+
+  @Test
+  void testFailure_wrongFeeAmount_v11() throws Exception {
+    setEppInput("domain_update_restore_request_fee.xml", FEE_11_MAP);
+    persistPendingDeleteDomain();
+    persistResource(Tld.get("tld").asBuilder().setRestoreBillingCost(Money.of(USD, 100)).build());
+    EppException thrown = assertThrows(FeesMismatchException.class, this::runFlow);
+    assertAboutEppExceptions().that(thrown).marshalsToXml();
+  }
+
+  @Test
+  void testFailure_wrongFeeAmount_v12() throws Exception {
+    setEppInput("domain_update_restore_request_fee.xml", FEE_12_MAP);
+    persistPendingDeleteDomain();
+    persistResource(Tld.get("tld").asBuilder().setRestoreBillingCost(Money.of(USD, 100)).build());
+    EppException thrown = assertThrows(FeesMismatchException.class, this::runFlow);
+    assertAboutEppExceptions().that(thrown).marshalsToXml();
+  }
+
+  @Test
+  void testFailure_feeGivenInWrongScale_v06() throws Exception {
+    setEppInput("domain_update_restore_request_fee_bad_scale.xml", FEE_06_MAP);
+    persistPendingDeleteDomain();
+    EppException thrown = assertThrows(CurrencyValueScaleException.class, this::runFlow);
+    assertAboutEppExceptions().that(thrown).marshalsToXml();
+  }
+
+  @Test
+  void testFailure_feeGivenInWrongScale_v11() throws Exception {
+    setEppInput("domain_update_restore_request_fee_bad_scale.xml", FEE_11_MAP);
+    persistPendingDeleteDomain();
+    EppException thrown = assertThrows(CurrencyValueScaleException.class, this::runFlow);
+    assertAboutEppExceptions().that(thrown).marshalsToXml();
+  }
+
+  @Test
+  void testFailure_feeGivenInWrongScale_v12() throws Exception {
+    setEppInput("domain_update_restore_request_fee_bad_scale.xml", FEE_12_MAP);
+    persistPendingDeleteDomain();
+    EppException thrown = assertThrows(CurrencyValueScaleException.class, this::runFlow);
+    assertAboutEppExceptions().that(thrown).marshalsToXml();
+  }
+
+  @Test
+  void testFailure_appliedFee_v06() throws Exception {
+    setEppInput("domain_update_restore_request_fee_applied.xml", FEE_06_MAP);
+    persistPendingDeleteDomain();
+    EppException thrown = assertThrows(UnsupportedFeeAttributeException.class, this::runFlow);
+    assertAboutEppExceptions().that(thrown).marshalsToXml();
+  }
+
+  @Test
+  void testFailure_appliedFee_v11() throws Exception {
+    setEppInput("domain_update_restore_request_fee_applied.xml", FEE_11_MAP);
+    persistPendingDeleteDomain();
+    EppException thrown = assertThrows(UnsupportedFeeAttributeException.class, this::runFlow);
+    assertAboutEppExceptions().that(thrown).marshalsToXml();
+  }
+
+  @Test
+  void testFailure_appliedFee_v12() throws Exception {
+    setEppInput("domain_update_restore_request_fee_applied.xml", FEE_12_MAP);
+    persistPendingDeleteDomain();
+    EppException thrown = assertThrows(UnsupportedFeeAttributeException.class, this::runFlow);
+    assertAboutEppExceptions().that(thrown).marshalsToXml();
+  }
+
+  @Test
+  void testSuccess_fee_withDefaultAttributes_v06() throws Exception {
+    setEppInput("domain_update_restore_request_fee_defaults.xml", FEE_06_MAP);
+    persistPendingDeleteDomain();
+    runFlowAssertResponse(loadFile("domain_update_restore_request_response_fee.xml", FEE_06_MAP));
+  }
+
+  @Test
+  void testSuccess_fee_withDefaultAttributes_v11() throws Exception {
+    setEppInput("domain_update_restore_request_fee_defaults.xml", FEE_11_MAP);
+    persistPendingDeleteDomain();
+    runFlowAssertResponse(loadFile("domain_update_restore_request_response_fee.xml", FEE_11_MAP));
+  }
+
+  @Test
+  void testSuccess_fee_withDefaultAttributes_v12() throws Exception {
+    setEppInput("domain_update_restore_request_fee_defaults.xml", FEE_12_MAP);
+    persistPendingDeleteDomain();
+    runFlowAssertResponse(loadFile("domain_update_restore_request_response_fee.xml", FEE_12_MAP));
+  }
+
+  @Test
+  void testSuccess_fee_v06() throws Exception {
+    setEppInput("domain_update_restore_request_fee.xml", FEE_06_MAP);
+    persistPendingDeleteDomain();
+    runFlowAssertResponse(loadFile("domain_update_restore_request_response_fee.xml", FEE_06_MAP));
+  }
+
+  @Test
+  void testSuccess_fee_v06_noRenewal() throws Exception {
+    setEppInput("domain_update_restore_request_fee_no_renewal.xml", FEE_06_MAP);
+    persistPendingDeleteDomain(clock.nowUtc().plusMonths(6));
+    runFlowAssertResponse(
+        loadFile("domain_update_restore_request_response_fee_no_renewal.xml", FEE_06_MAP));
+  }
+
+  @Test
+  void testSuccess_fee_v11() throws Exception {
+    setEppInput("domain_update_restore_request_fee.xml", FEE_11_MAP);
+    persistPendingDeleteDomain();
+    runFlowAssertResponse(loadFile("domain_update_restore_request_response_fee.xml", FEE_11_MAP));
+  }
+
+  @Test
+  void testSuccess_fee_v12() throws Exception {
+    setEppInput("domain_update_restore_request_fee.xml", FEE_12_MAP);
+    persistPendingDeleteDomain();
+    runFlowAssertResponse(loadFile("domain_update_restore_request_response_fee.xml", FEE_12_MAP));
+  }
+
+  @Test
+  void testFailure_refundableFee_v06() throws Exception {
+    setEppInput("domain_update_restore_request_fee_refundable.xml", FEE_06_MAP);
+    persistPendingDeleteDomain();
+    EppException thrown = assertThrows(UnsupportedFeeAttributeException.class, this::runFlow);
+    assertAboutEppExceptions().that(thrown).marshalsToXml();
+  }
+
+  @Test
+  void testFailure_refundableFee_v11() throws Exception {
+    setEppInput("domain_update_restore_request_fee_refundable.xml", FEE_11_MAP);
+    persistPendingDeleteDomain();
+    EppException thrown = assertThrows(UnsupportedFeeAttributeException.class, this::runFlow);
+    assertAboutEppExceptions().that(thrown).marshalsToXml();
+  }
+
+  @Test
+  void testFailure_refundableFee_v12() throws Exception {
+    setEppInput("domain_update_restore_request_fee_refundable.xml", FEE_12_MAP);
+    persistPendingDeleteDomain();
+    EppException thrown = assertThrows(UnsupportedFeeAttributeException.class, this::runFlow);
+    assertAboutEppExceptions().that(thrown).marshalsToXml();
+  }
+
+  @Test
+  void testFailure_gracePeriodFee_v06() throws Exception {
+    setEppInput("domain_update_restore_request_fee_grace_period.xml", FEE_06_MAP);
+    persistPendingDeleteDomain();
+    EppException thrown = assertThrows(UnsupportedFeeAttributeException.class, this::runFlow);
+    assertAboutEppExceptions().that(thrown).marshalsToXml();
+  }
+
+  @Test
+  void testFailure_gracePeriodFee_v11() throws Exception {
+    setEppInput("domain_update_restore_request_fee_grace_period.xml", FEE_11_MAP);
+    persistPendingDeleteDomain();
+    EppException thrown = assertThrows(UnsupportedFeeAttributeException.class, this::runFlow);
+    assertAboutEppExceptions().that(thrown).marshalsToXml();
+  }
+
+  @Test
+  void testFailure_gracePeriodFee_v12() throws Exception {
+    setEppInput("domain_update_restore_request_fee_grace_period.xml", FEE_12_MAP);
+    persistPendingDeleteDomain();
+    EppException thrown = assertThrows(UnsupportedFeeAttributeException.class, this::runFlow);
+    assertAboutEppExceptions().that(thrown).marshalsToXml();
+  }
+
+  @Test
+  void testFailure_wrongCurrency_v06() throws Exception {
+    runWrongCurrencyTest(FEE_06_MAP);
+  }
+
+  @Test
+  void testFailure_wrongCurrency_v11() throws Exception {
+    runWrongCurrencyTest(FEE_11_MAP);
+  }
+
+  @Test
+  void testFailure_wrongCurrency_v12() throws Exception {
+    runWrongCurrencyTest(FEE_12_MAP);
+  }
+
+  @Test
+  void testFailure_premiumBlocked_v12() throws Exception {
+    createTld("example");
+    setEppInput("domain_update_restore_request_premium.xml", FEE_12_MAP);
+    persistPendingDeleteDomain();
+    // Modify the Registrar to block premium names.
+    persistResource(loadRegistrar("TheRegistrar").asBuilder().setBlockPremiumNames(true).build());
+    EppException thrown = assertThrows(PremiumNameBlockedException.class, this::runFlow);
+    assertAboutEppExceptions().that(thrown).marshalsToXml();
+  }
+
+  @Test
+  void testSuccess_premiumNotBlocked_andNoRenewal_v12() throws Exception {
+    createTld("example");
+    setEppInput("domain_update_restore_request_premium_no_renewal.xml", FEE_12_MAP);
+    persistPendingDeleteDomain(clock.nowUtc().plusYears(2));
+    runFlowAssertResponse(
+        loadFile("domain_update_restore_request_response_fee_no_renewal.xml", FEE_12_MAP));
+  }
+
+  @Test
+  void testFailure_fee_unknownCurrency_v12() {
+    ImmutableMap<String, String> substitutions =
+        ImmutableMap.of("FEE_VERSION", "fee-0.12", "FEE_NS", "fee12", "CURRENCY", "BAD");
+    setEppInput("domain_update_restore_request_fee.xml", substitutions);
+    EppException thrown =
+        assertThrows(UnknownCurrencyEppException.class, this::persistPendingDeleteDomain);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 }

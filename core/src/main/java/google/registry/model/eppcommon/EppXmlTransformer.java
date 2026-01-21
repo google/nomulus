@@ -23,7 +23,6 @@ import com.google.common.collect.ImmutableSet;
 import google.registry.model.ImmutableObject;
 import google.registry.model.eppinput.EppInput;
 import google.registry.model.eppoutput.EppOutput;
-import google.registry.util.NonFinalForTesting;
 import google.registry.util.RegistryEnvironment;
 import google.registry.xml.ValidationMode;
 import google.registry.xml.XmlException;
@@ -61,35 +60,20 @@ public class EppXmlTransformer  {
   // XML schemas that should not be used in production (yet)
   private static final ImmutableSet<String> NON_PROD_SCHEMAS = ImmutableSet.of("fee-std-v1.xsd");
 
-  // XML schemas that should only be used in production (for backcompat)
-  private static final ImmutableSet<String> ONLY_PROD_SCHEMAS =
-      ImmutableSet.of("fee06.xsd", "fee11.xsd", "fee12.xsd");
-
-  // TODO(gbrodman): make this final when we can actually remove the old fee extensions and aren't
-  // relying on switching by environment
-  @NonFinalForTesting
-  private static XmlTransformer INPUT_TRANSFORMER =
+  private static final XmlTransformer INPUT_TRANSFORMER =
       new XmlTransformer(getSchemas(), EppInput.class);
 
-  // TODO(gbrodman): make this final when we can actually remove the old fee extensions and aren't
-  // relying on switching by environment
-  @NonFinalForTesting
-  private static XmlTransformer OUTPUT_TRANSFORMER =
+  private static final XmlTransformer OUTPUT_TRANSFORMER =
       new XmlTransformer(getSchemas(), EppOutput.class);
 
   @VisibleForTesting
   public static ImmutableList<String> getSchemas() {
-    ImmutableSet<String> schemasToSkip =
-        RegistryEnvironment.get().equals(RegistryEnvironment.PRODUCTION)
-            ? NON_PROD_SCHEMAS
-            : ONLY_PROD_SCHEMAS;
-    return ALL_SCHEMAS.stream().filter(s -> !schemasToSkip.contains(s)).collect(toImmutableList());
-  }
-
-  @VisibleForTesting
-  public static void reloadTransformers() {
-    INPUT_TRANSFORMER = new XmlTransformer(getSchemas(), EppInput.class);
-    OUTPUT_TRANSFORMER = new XmlTransformer(getSchemas(), EppOutput.class);
+    if (RegistryEnvironment.get().equals(RegistryEnvironment.PRODUCTION)) {
+      return ALL_SCHEMAS.stream()
+          .filter(s -> !NON_PROD_SCHEMAS.contains(s))
+          .collect(toImmutableList());
+    }
+    return ALL_SCHEMAS;
   }
 
   public static void validateOutput(String xml) throws XmlException {
