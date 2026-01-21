@@ -51,7 +51,6 @@ public class ProtocolDefinition {
   /** Enum representing which environments should have which service extensions enabled. */
   private enum ServiceExtensionVisibility {
     ALL,
-    ONLY_IN_PRODUCTION,
     ONLY_IN_NON_PRODUCTION,
     NONE
   }
@@ -64,15 +63,15 @@ public class ProtocolDefinition {
     FEE_0_6(
         FeeCheckCommandExtensionV06.class,
         FeeCheckResponseExtensionV06.class,
-        ServiceExtensionVisibility.ONLY_IN_PRODUCTION),
+        ServiceExtensionVisibility.ALL),
     FEE_0_11(
         FeeCheckCommandExtensionV11.class,
         FeeCheckResponseExtensionV11.class,
-        ServiceExtensionVisibility.ONLY_IN_PRODUCTION),
+        ServiceExtensionVisibility.ALL),
     FEE_0_12(
         FeeCheckCommandExtensionV12.class,
         FeeCheckResponseExtensionV12.class,
-        ServiceExtensionVisibility.ONLY_IN_PRODUCTION),
+        ServiceExtensionVisibility.ALL),
     FEE_1_00(
         FeeCheckCommandExtensionStdV1.class,
         FeeCheckResponseExtensionStdV1.class,
@@ -114,7 +113,6 @@ public class ProtocolDefinition {
     public boolean isVisible() {
       return switch (visibility) {
         case ALL -> true;
-        case ONLY_IN_PRODUCTION -> RegistryEnvironment.get().equals(RegistryEnvironment.PRODUCTION);
         case ONLY_IN_NON_PRODUCTION ->
             !RegistryEnvironment.get().equals(RegistryEnvironment.PRODUCTION);
         case NONE -> false;
