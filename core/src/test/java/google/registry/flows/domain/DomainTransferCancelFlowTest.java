@@ -43,7 +43,6 @@ import google.registry.flows.ResourceFlowUtils.ResourceDoesNotExistException;
 import google.registry.flows.domain.DomainFlowUtils.NotAuthorizedForTldException;
 import google.registry.flows.exceptions.NotPendingTransferException;
 import google.registry.flows.exceptions.NotTransferInitiatorException;
-import google.registry.model.contact.ContactAuthInfo;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainAuthInfo;
 import google.registry.model.domain.DomainHistory;
@@ -75,8 +74,6 @@ class DomainTransferCancelFlowTest
   private void doSuccessfulTest(String commandFilename) throws Exception {
     setEppInput(commandFilename);
 
-    // Replace the ROID in the xml file with the one generated in our test.
-    eppLoader.replaceAll("JD1234-REP", contact.getRepoId());
     // Make sure the implicit billing event is there; it will be deleted by the flow.
     // We also expect to see autorenew events for the gaining and losing registrars.
     assertBillingEvents(
@@ -187,8 +184,6 @@ class DomainTransferCancelFlowTest
 
   private void doFailingTest(String commandFilename) throws Exception {
     setEppInput(commandFilename);
-    // Replace the ROID in the xml file with the one generated in our test.
-    eppLoader.replaceAll("JD1234-REP", contact.getRepoId());
     // Setup done; run the test.
     assertMutatingFlow(true);
     runFlow();
@@ -204,7 +199,6 @@ class DomainTransferCancelFlowTest
   @Test
   void testDryRun() throws Exception {
     setEppInput("domain_transfer_cancel.xml");
-    eppLoader.replaceAll("JD1234-REP", contact.getRepoId());
     dryRunFlowAssertResponse(loadFile("domain_transfer_cancel_response.xml"));
   }
 
@@ -219,19 +213,8 @@ class DomainTransferCancelFlowTest
   }
 
   @Test
-  void testSuccess_contactAuthInfo() throws Exception {
-    doSuccessfulTest("domain_transfer_cancel_contact_authinfo.xml");
-  }
-
-  @Test
-  void testFailure_badContactPassword() {
-    // Change the contact's password so it does not match the password in the file.
-    contact =
-        persistResource(
-            contact
-                .asBuilder()
-                .setAuthInfo(ContactAuthInfo.create(PasswordAuth.create("badpassword")))
-                .build());
+  void testFailure_contactPassword() {
+    // Contact passwords cannot be provided because we don't store contacts
     EppException thrown =
         assertThrows(
             BadAuthInfoForResourceException.class,

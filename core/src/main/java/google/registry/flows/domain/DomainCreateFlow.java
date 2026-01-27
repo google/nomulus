@@ -167,7 +167,6 @@ import org.joda.time.Duration;
  * @error {@link DomainFlowUtils.DomainLabelBlockedByBsaException}
  * @error {@link DomainFlowUtils.DomainLabelTooLongException}
  * @error {@link DomainFlowUtils.DomainReservedException}
- * @error {@link DomainFlowUtils.DuplicateContactForRoleException}
  * @error {@link DomainFlowUtils.EmptyDomainNamePartException}
  * @error {@link DomainFlowUtils.ExceedsMaxRegistrationYearsException}
  * @error {@link DomainFlowUtils.ExpiredClaimException}
@@ -188,7 +187,6 @@ import org.joda.time.Duration;
  * @error {@link DomainFlowUtils.MaxSigLifeNotSupportedException}
  * @error {@link DomainFlowUtils.MissingBillingAccountMapException}
  * @error {@link DomainFlowUtils.MissingClaimsNoticeException}
- * @error {@link DomainFlowUtils.MissingContactTypeException}
  * @error {@link DomainFlowUtils.NameserversNotAllowedForTldException}
  * @error {@link DomainFlowUtils.NameserversNotSpecifiedForTldWithNameserverAllowListException}
  * @error {@link DomainFlowUtils.PremiumNameBlockedException}
@@ -221,7 +219,8 @@ public final class DomainCreateFlow implements MutatingFlow {
   @Inject DomainPricingLogic pricingLogic;
   @Inject DomainDeletionTimeCache domainDeletionTimeCache;
 
-  @Inject DomainCreateFlow() {}
+  @Inject
+  DomainCreateFlow() {}
 
   @Override
   public EppResponse run() throws EppException {
@@ -378,12 +377,10 @@ public final class DomainCreateFlow implements MutatingFlow {
             .setLaunchNotice(hasClaimsNotice ? launchCreate.get().getNotice() : null)
             .setSmdId(signedMarkId)
             .setDsData(secDnsCreate.map(SecDnsCreateExtension::getDsData).orElse(null))
-            .setRegistrant(command.getRegistrant())
             .setAuthInfo(command.getAuthInfo())
             .setDomainName(targetId)
             .setNameservers(command.getNameservers().stream().collect(toImmutableSet()))
             .setStatusValues(statuses)
-            .setContacts(command.getContacts())
             .addGracePeriod(
                 GracePeriod.forBillingEvent(GracePeriodStatus.ADD, repoId, createBillingEvent))
             .setLordnPhase(

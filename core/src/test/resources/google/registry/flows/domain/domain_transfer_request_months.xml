@@ -6,7 +6,7 @@
         <domain:name>example.tld</domain:name>
         <domain:period unit="m">1</domain:period>
         <domain:authInfo>
-          <domain:pw roid="JD1234-REP">2fooBAR</domain:pw>
+          <domain:pw>fooBAR</domain:pw>
         </domain:authInfo>
       </domain:transfer>
     </transfer>

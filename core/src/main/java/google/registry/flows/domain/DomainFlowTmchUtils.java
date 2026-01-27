@@ -157,7 +157,8 @@ public final class DomainFlowTmchUtils {
   }
 
   /** The provided mark does not match the desired domain label. */
-  static class NoMarksFoundMatchingDomainException extends RequiredParameterMissingException {
+  public static class NoMarksFoundMatchingDomainException
+      extends RequiredParameterMissingException {
     public NoMarksFoundMatchingDomainException() {
       super("The provided mark does not match the desired domain label");
     }

@@ -16,7 +16,6 @@ package google.registry.flows;
 
 import static com.google.common.collect.Sets.intersection;
 import static google.registry.model.EppResourceUtils.isLinked;
-import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
@@ -37,7 +36,6 @@ import google.registry.model.EppResource;
 import google.registry.model.EppResource.ForeignKeyedEppResource;
 import google.registry.model.EppResource.ResourceWithTransferData;
 import google.registry.model.ForeignKeyUtils;
-import google.registry.model.contact.Contact;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.Period;
@@ -125,14 +123,6 @@ public final class ResourceFlowUtils {
   }
 
   /** Check that the given AuthInfo is either missing or else is valid for the given resource. */
-  public static void verifyOptionalAuthInfo(Optional<AuthInfo> authInfo, Contact contact)
-      throws EppException {
-    if (authInfo.isPresent()) {
-      verifyAuthInfo(authInfo.get(), contact);
-    }
-  }
-
-  /** Check that the given AuthInfo is either missing or else is valid for the given resource. */
   public static void verifyOptionalAuthInfo(Optional<AuthInfo> authInfo, Domain domain)
       throws EppException {
     if (authInfo.isPresent()) {
@@ -142,37 +132,14 @@ public final class ResourceFlowUtils {
 
   /** Check that the given {@link AuthInfo} is valid for the given domain. */
   public static void verifyAuthInfo(AuthInfo authInfo, Domain domain) throws EppException {
-    final String authRepoId = authInfo.getPw().getRepoId();
-    String authPassword = authInfo.getPw().getValue();
-    if (authRepoId == null) {
-      // If no roid is specified, check the password against the domain's password.
-      String domainPassword = domain.getAuthInfo().getPw().getValue();
-      if (!domainPassword.equals(authPassword)) {
-        throw new BadAuthInfoForResourceException();
-      }
-      return;
-    }
-    // The roid should match one of the contacts.
-    Optional<VKey<Contact>> foundContact =
-        domain.getReferencedContacts().stream()
-            .filter(key -> key.getKey().equals(authRepoId))
-            .findFirst();
-    if (foundContact.isEmpty()) {
+    String authRepoId = authInfo.getPw().getRepoId();
+    // Previously one could auth against a contact, but we no longer hold any contact info
+    if (authRepoId != null) {
       throw new BadAuthInfoForResourceException();
     }
-    // Check the authInfo against the contact.
-    verifyAuthInfo(authInfo, tm().loadByKey(foundContact.get()));
-  }
-
-  /** Check that the given {@link AuthInfo} is valid for the given contact. */
-  public static void verifyAuthInfo(AuthInfo authInfo, Contact contact) throws EppException {
-    String authRepoId = authInfo.getPw().getRepoId();
     String authPassword = authInfo.getPw().getValue();
-    String contactPassword = contact.getAuthInfo().getPw().getValue();
-    if (!contactPassword.equals(authPassword)
-        // It's unnecessary to specify a repoId on a contact auth info, but if it's there validate
-        // it. The usual case of this is validating a domain's auth using this method.
-        || (authRepoId != null && !authRepoId.equals(contact.getRepoId()))) {
+    String domainPassword = domain.getAuthInfo().getPw().getValue();
+    if (!domainPassword.equals(authPassword)) {
       throw new BadAuthInfoForResourceException();
     }
   }

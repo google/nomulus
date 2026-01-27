@@ -5,7 +5,7 @@
        xmlns:domain="urn:ietf:params:xml:ns:domain-1.0">
         <domain:name>example.tld</domain:name>
         <domain:authInfo>
-          <domain:pw roid="JD1234-REP">2fooBAR</domain:pw>
+          <domain:pw>fooBAR</domain:pw>
         </domain:authInfo>
       </domain:transfer>
     </transfer>
