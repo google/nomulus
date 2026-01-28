@@ -1463,9 +1463,9 @@ public final class RegistryConfig {
     }
 
     @Provides
-    @Config("mosapiTldThreadCnt")
+    @Config("mosapiTldThreadCount")
     public static int provideMosapiTldThreads(RegistryConfigSettings config) {
-      return config.mosapi.tldThreadCnt;
+      return config.mosapi.tldThreadCount;
     }
 
     private static String formatComments(String text) {

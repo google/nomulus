@@ -26,11 +26,9 @@ import google.registry.mosapi.MosApiModels.ServiceStatus;
 import google.registry.mosapi.MosApiModels.TldServiceState;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
-import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
-import java.util.stream.Collectors;
 
 /** A service that provides business logic for interacting with MoSAPI Service State. */
 public class MosApiStateService {
@@ -135,11 +133,12 @@ public class MosApiStateService {
                         tldExecutor))
             .collect(toImmutableList());
 
-    List<TldServiceState> allStates =
+    ImmutableList<TldServiceState> allStates =
         futures.stream()
             .map(CompletableFuture::join)
             .filter(Objects::nonNull)
-            .collect(Collectors.toList());
+            .filter(this::isValidForMetrics)
+            .collect(toImmutableList());
 
     if (!allStates.isEmpty()) {
       try {
@@ -151,5 +150,15 @@ public class MosApiStateService {
     } else {
       logger.atWarning().log("No successful TLD states fetched; skipping metrics push.");
     }
+  }
+
+  private boolean isValidForMetrics(TldServiceState state) {
+    if (state.tld() == null || state.status() == null) {
+      logger.atSevere().log(
+          "Contract Violation: Received invalid state (TLD=%s, Status=%s). Skipping.",
+          state.tld(), state.status());
+      return false;
+    }
+    return true;
   }
 }

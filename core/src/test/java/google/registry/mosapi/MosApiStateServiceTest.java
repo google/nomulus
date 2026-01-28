@@ -169,4 +169,23 @@ class MosApiStateServiceTest {
                         && states.stream()
                             .anyMatch(s -> s.tld().equals("tld1") && s.status().equals("Up"))));
   }
+
+  @Test
+  void testTriggerMetrics_filtersOutInvalidContractStates() throws Exception {
+    // 1. Valid State
+    TldServiceState validState = new TldServiceState("tld1", 1L, "Up", ImmutableMap.of());
+
+    // 2. Invalid State (Status is NULL)
+    // We instantiate it directly to simulate a bad response object.
+    TldServiceState invalidState = new TldServiceState("tld2", 2L, null, ImmutableMap.of());
+
+    when(client.getTldServiceState("tld1")).thenReturn(validState);
+    when(client.getTldServiceState("tld2")).thenReturn(invalidState);
+
+    service.triggerMetricsForAllServiceStateSummaries();
+
+    // Verify: Only the valid state (tld1) is passed to recordStates
+    verify(metrics)
+        .recordStates(argThat(states -> states.size() == 1 && states.get(0).tld().equals("tld1")));
+  }
 }

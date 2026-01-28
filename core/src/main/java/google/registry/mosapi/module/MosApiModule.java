@@ -200,7 +200,7 @@ public final class MosApiModule {
   @Singleton
   @Named("mosapiTldExecutor")
   static ExecutorService provideMosapiTldExecutor(
-      @Config("mosapiTldThreadCnt") int threadPoolSize) {
+      @Config("mosapiTldThreadCount") int threadPoolSize) {
     return Executors.newFixedThreadPool(threadPoolSize);
   }
 }
