@@ -40,7 +40,6 @@ import static google.registry.testing.DatabaseHelper.loadByEntity;
 import static google.registry.testing.DatabaseHelper.loadByKey;
 import static google.registry.testing.DatabaseHelper.loadByKeys;
 import static google.registry.testing.DatabaseHelper.loadRegistrar;
-import static google.registry.testing.DatabaseHelper.persistActiveContact;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.DomainSubject.assertAboutDomains;
 import static google.registry.testing.EppExceptionSubject.assertAboutEppExceptions;
@@ -96,7 +95,6 @@ import google.registry.model.billing.BillingBase.RenewalPriceBehavior;
 import google.registry.model.billing.BillingCancellation;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingRecurrence;
-import google.registry.model.contact.ContactAuthInfo;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainAuthInfo;
 import google.registry.model.domain.DomainHistory;
@@ -470,8 +468,6 @@ class DomainTransferRequestFlowTest
       throws Exception {
     setEppInput(commandFilename, substitutions);
     ImmutableSet<GracePeriod> originalGracePeriods = domain.getGracePeriods();
-    // Replace the ROID in the xml file with the one generated in our test.
-    eppLoader.replaceAll("JD1234-REP", contact.getRepoId());
     // For all of the other transfer flow tests, 'now' corresponds to day 3 of the transfer, but
     // for the request test we want that same 'now' to be the initial request time, so we shift
     // the transfer timeline 3 days later by adjusting the implicit transfer time here.
@@ -571,8 +567,6 @@ class DomainTransferRequestFlowTest
     eppRequestSource = EppRequestSource.TOOL;
     setEppInput(commandFilename, substitutions);
     ImmutableSet<GracePeriod> originalGracePeriods = domain.getGracePeriods();
-    // Replace the ROID in the xml file with the one generated in our test.
-    eppLoader.replaceAll("JD1234-REP", contact.getRepoId());
     // For all of the other transfer flow tests, 'now' corresponds to day 3 of the transfer, but
     // for the request test we want that same 'now' to be the initial request time, so we shift
     // the transfer timeline 3 days later by adjusting the implicit transfer time here.
@@ -626,8 +620,6 @@ class DomainTransferRequestFlowTest
       String commandFilename, UserPrivileges userPrivileges, Map<String, String> substitutions)
       throws Exception {
     setEppInput(commandFilename, substitutions);
-    // Replace the ROID in the xml file with the one generated in our test.
-    eppLoader.replaceAll("JD1234-REP", contact.getRepoId());
     // Setup done; run the test.
     assertMutatingFlow(true);
     runFlow(CommitMode.LIVE, userPrivileges);
@@ -657,7 +649,6 @@ class DomainTransferRequestFlowTest
   void testDryRun() throws Exception {
     setupDomain("example", "tld");
     setEppInput("domain_transfer_request.xml");
-    eppLoader.replaceAll("JD1234-REP", contact.getRepoId());
     dryRunFlowAssertResponse(loadFile("domain_transfer_request_response.xml"));
   }
 
@@ -1184,7 +1175,6 @@ class DomainTransferRequestFlowTest
     // This ensures that the transfer has non-premium cost, as otherwise, the fee extension would be
     // required to ack the premium price.
     setEppInput("domain_transfer_request.xml");
-    eppLoader.replaceAll("JD1234-REP", contact.getRepoId());
     runFlowAssertResponse(loadFile("domain_transfer_request_response.xml"));
     domain = loadByEntity(domain);
 
@@ -1238,7 +1228,6 @@ class DomainTransferRequestFlowTest
     DateTime now = clock.nowUtc();
 
     setEppInput("domain_transfer_request.xml");
-    eppLoader.replaceAll("JD1234-REP", contact.getRepoId());
     runFlowAssertResponse(loadFile("domain_transfer_request_response.xml"));
     domain = loadByEntity(domain);
 
@@ -1300,7 +1289,6 @@ class DomainTransferRequestFlowTest
     DateTime now = clock.nowUtc();
 
     setEppInput("domain_transfer_request.xml");
-    eppLoader.replaceAll("JD1234-REP", contact.getRepoId());
     runFlowAssertResponse(loadFile("domain_transfer_request_response.xml"));
     domain = loadByEntity(domain);
 
@@ -1361,7 +1349,6 @@ class DomainTransferRequestFlowTest
     DateTime now = clock.nowUtc();
 
     setEppInput("domain_transfer_request.xml");
-    eppLoader.replaceAll("JD1234-REP", contact.getRepoId());
     runFlowAssertResponse(loadFile("domain_transfer_request_response.xml"));
     domain = loadByEntity(domain);
 
@@ -1519,36 +1506,6 @@ class DomainTransferRequestFlowTest
   }
 
   @Test
-  void testFailure_badContactPassword() {
-    setupDomain("example", "tld");
-    // Change the contact's password so it does not match the password in the file.
-    contact =
-        persistResource(
-            contact
-                .asBuilder()
-                .setAuthInfo(ContactAuthInfo.create(PasswordAuth.create("badpassword")))
-                .build());
-    EppException thrown =
-        assertThrows(
-            BadAuthInfoForResourceException.class,
-            () -> doFailingTest("domain_transfer_request.xml"));
-    assertAboutEppExceptions().that(thrown).marshalsToXml();
-  }
-
-  @Test
-  void testFailure_badContactRepoId() {
-    setupDomain("example", "tld");
-    // Set the contact to a different ROID, but don't persist it; this is just so the substitution
-    // code above will write the wrong ROID into the file.
-    contact = contact.asBuilder().setRepoId("DEADBEEF_TLD-ROID").build();
-    EppException thrown =
-        assertThrows(
-            BadAuthInfoForResourceException.class,
-            () -> doFailingTest("domain_transfer_request.xml"));
-    assertAboutEppExceptions().that(thrown).marshalsToXml();
-  }
-
-  @Test
   void testSuccess_clientApproved() throws Exception {
     setupDomain("example", "tld");
     changeTransferStatus(TransferStatus.CLIENT_APPROVED);
@@ -1651,7 +1608,6 @@ class DomainTransferRequestFlowTest
     setEppInput(
         "domain_transfer_request_wildcard.xml",
         ImmutableMap.of("YEARS", "1", "DOMAIN", "--invalid", "EXDATE", "2002-09-08T22:00:00.0Z"));
-    eppLoader.replaceAll("JD1234-REP", contact.getRepoId());
     assertMutatingFlow(true);
     ResourceDoesNotExistException thrown =
         assertThrows(
@@ -1663,12 +1619,27 @@ class DomainTransferRequestFlowTest
   @Test
   void testFailure_nonexistentDomain() {
     createTld("tld");
-    contact = persistActiveContact("jd1234");
     ResourceDoesNotExistException thrown =
         assertThrows(
             ResourceDoesNotExistException.class,
             () -> doFailingTest("domain_transfer_request.xml"));
     assertThat(thrown).hasMessageThat().contains(String.format("(%s)", "example.tld"));
+  }
+
+  @Test
+  void testFailure_cannotUseContactAuthInfo() {
+    // RFC 5731: "An OPTIONAL "roid" attribute MUST be used to identify the registrant or contact
+    // object if and only if the given authInfo is associated with a registrant or contact object,
+    // and not the domain object itself."
+    //
+    // We have no contacts, so it cannot be valid to specify a roid
+    setupDomain("example", "tld");
+    assertAboutEppExceptions()
+        .that(
+            assertThrows(
+                BadAuthInfoForResourceException.class,
+                () -> doFailingTest("domain_transfer_request_contact_auth_info_failure.xml")))
+        .marshalsToXml();
   }
 
   @Test

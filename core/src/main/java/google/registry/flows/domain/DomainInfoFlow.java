@@ -19,7 +19,6 @@ import static google.registry.flows.ResourceFlowUtils.loadAndVerifyExistence;
 import static google.registry.flows.ResourceFlowUtils.verifyOptionalAuthInfo;
 import static google.registry.flows.domain.DomainFlowUtils.addSecDnsExtensionIfPresent;
 import static google.registry.flows.domain.DomainFlowUtils.handleFeeRequest;
-import static google.registry.flows.domain.DomainFlowUtils.loadForeignKeyedDesignatedContacts;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import com.google.common.collect.ImmutableList;
@@ -126,15 +125,11 @@ public final class DomainInfoFlow implements MutatingFlow {
             .setLastEppUpdateTime(domain.getLastEppUpdateTime())
             .setRegistrationExpirationTime(domain.getRegistrationExpirationTime())
             .setLastTransferTime(domain.getLastTransferTime());
-    domain
-        .getRegistrant()
-        .ifPresent(r -> infoBuilder.setRegistrant(tm().loadByKey(r).getContactId()));
 
     // If authInfo is non-null, then the caller is authorized to see the full information since we
     // will have already verified the authInfo is valid.
     if (registrarId.equals(domain.getCurrentSponsorRegistrarId()) || authInfo.isPresent()) {
       infoBuilder
-          .setContacts(loadForeignKeyedDesignatedContacts(domain.getContacts()))
           .setSubordinateHosts(
               hostsRequest.requestSubordinate() ? domain.getSubordinateHosts() : null)
           .setCreationRegistrarId(domain.getCreationRegistrarId())

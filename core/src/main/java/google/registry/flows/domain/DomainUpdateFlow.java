@@ -29,14 +29,12 @@ import static google.registry.flows.ResourceFlowUtils.verifyOptionalAuthInfo;
 import static google.registry.flows.ResourceFlowUtils.verifyResourceOwnership;
 import static google.registry.flows.domain.DomainFlowUtils.checkAllowedAccessToTld;
 import static google.registry.flows.domain.DomainFlowUtils.cloneAndLinkReferences;
+import static google.registry.flows.domain.DomainFlowUtils.enforceContactAbsencesOnUpdate;
 import static google.registry.flows.domain.DomainFlowUtils.updateDsData;
-import static google.registry.flows.domain.DomainFlowUtils.validateContactsHaveTypes;
 import static google.registry.flows.domain.DomainFlowUtils.validateDsData;
 import static google.registry.flows.domain.DomainFlowUtils.validateFeesAckedIfPresent;
 import static google.registry.flows.domain.DomainFlowUtils.validateNameserversAllowedOnTld;
 import static google.registry.flows.domain.DomainFlowUtils.validateNameserversCountForTld;
-import static google.registry.flows.domain.DomainFlowUtils.validateNoDuplicateContacts;
-import static google.registry.flows.domain.DomainFlowUtils.validateUpdateContactData;
 import static google.registry.flows.domain.DomainFlowUtils.verifyClientUpdateNotProhibited;
 import static google.registry.flows.domain.DomainFlowUtils.verifyNotInPendingDelete;
 import static google.registry.model.reporting.HistoryEntry.Type.DOMAIN_UPDATE;
@@ -64,8 +62,6 @@ import google.registry.flows.domain.DomainFlowUtils.RegistrantProhibitedExceptio
 import google.registry.model.ImmutableObject;
 import google.registry.model.billing.BillingBase.Reason;
 import google.registry.model.billing.BillingEvent;
-import google.registry.model.contact.Contact;
-import google.registry.model.domain.DesignatedContact;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainCommand.Update;
 import google.registry.model.domain.DomainCommand.Update.AddRemove;
@@ -88,7 +84,6 @@ import google.registry.model.poll.PendingActionNotificationResponse.DomainPendin
 import google.registry.model.poll.PollMessage;
 import google.registry.model.reporting.IcannReportingTypes.ActivityReportField;
 import google.registry.model.tld.Tld;
-import google.registry.persistence.VKey;
 import jakarta.inject.Inject;
 import java.util.Objects;
 import java.util.Optional;
@@ -97,8 +92,8 @@ import org.joda.time.DateTime;
 /**
  * An EPP flow that updates a domain.
  *
- * <p>Updates can change contacts, nameservers and delegation signer data of a domain. Updates
- * cannot change the domain's name.
+ * <p>Updates can change nameservers and delegation signer data of a domain. Updates cannot change
+ * the domain's name.
  *
  * <p>Some status values (those of the form "serverSomethingProhibited") can only be applied by the
  * superuser. As such, adding or removing these statuses incurs a billing event. There will be only
@@ -113,7 +108,6 @@ import org.joda.time.DateTime;
  * @error {@link google.registry.flows.exceptions.OnlyToolCanPassMetadataException}
  * @error {@link google.registry.flows.exceptions.ResourceHasClientUpdateProhibitedException}
  * @error {@link google.registry.flows.exceptions.ResourceStatusProhibitsOperationException}
- * @error {@link DomainFlowUtils.DuplicateContactForRoleException}
  * @error {@link DomainFlowUtils.EmptySecDnsUpdateException}
  * @error {@link DomainFlowUtils.FeesMismatchException}
  * @error {@link DomainFlowUtils.FeesRequiredForNonFreeOperationException}
@@ -121,7 +115,6 @@ import org.joda.time.DateTime;
  * @error {@link DomainFlowUtils.LinkedResourcesDoNotExistException}
  * @error {@link DomainFlowUtils.LinkedResourceInPendingDeleteProhibitsOperationException}
  * @error {@link DomainFlowUtils.MaxSigLifeChangeNotSupportedException}
- * @error {@link DomainFlowUtils.MissingContactTypeException}
  * @error {@link DomainFlowUtils.NameserversNotAllowedForTldException}
  * @error {@link NameserversNotSpecifiedForTldWithNameserverAllowListException}
  * @error {@link DomainFlowUtils.NotAuthorizedForTldException}
@@ -158,7 +151,9 @@ public final class DomainUpdateFlow implements MutatingFlow {
   @Inject EppResponse.Builder responseBuilder;
   @Inject DomainUpdateFlowCustomLogic flowCustomLogic;
   @Inject DomainPricingLogic pricingLogic;
-  @Inject DomainUpdateFlow() {}
+
+  @Inject
+  DomainUpdateFlow() {}
 
   @Override
   public EppResponse run() throws EppException {
@@ -179,7 +174,7 @@ public final class DomainUpdateFlow implements MutatingFlow {
     Domain newDomain = performUpdate(command, existingDomain, now);
     DomainHistory domainHistory =
         historyBuilder.setType(DOMAIN_UPDATE).setDomain(newDomain).build();
-    validateNewState(existingDomain, newDomain);
+    validateNewState(newDomain);
     if (requiresDnsUpdate(existingDomain, newDomain)) {
       requestDomainDnsRefresh(targetId);
     }
@@ -235,12 +230,7 @@ public final class DomainUpdateFlow implements MutatingFlow {
         eppInput.getSingleExtension(FeeUpdateCommandExtension.class);
     FeesAndCredits feesAndCredits = pricingLogic.getUpdatePrice(tld, targetId, now);
     validateFeesAckedIfPresent(feeUpdate, feesAndCredits, false);
-    verifyNotInPendingDelete(
-        add.getContacts(),
-        command.getInnerChange().getRegistrant(),
-        add.getNameservers());
-    validateContactsHaveTypes(add.getContacts());
-    validateContactsHaveTypes(remove.getContacts());
+    verifyNotInPendingDelete(add.getNameservers());
     validateNameserversAllowedOnTld(tldStr, add.getNameserverHostNames());
   }
 
@@ -250,7 +240,6 @@ public final class DomainUpdateFlow implements MutatingFlow {
     Optional<SecDnsUpdateExtension> secDnsUpdate =
         eppInput.getSingleExtension(SecDnsUpdateExtension.class);
     verifyAddsAndRemoves(domain.getNameservers(), add.getNameservers(), remove.getNameservers());
-    verifyAddsAndRemoves(domain.getContacts(), add.getContacts(), remove.getContacts());
     verifyAddsAndRemoves(domain.getStatusValues(), add.getStatusValues(), remove.getStatusValues());
     if (secDnsUpdate.isPresent()) {
       SecDnsUpdateExtension ext = secDnsUpdate.get();
@@ -260,12 +249,7 @@ public final class DomainUpdateFlow implements MutatingFlow {
           ext.getRemove().map(Remove::getDsData).orElse(ImmutableSet.of()));
     }
     Change change = command.getInnerChange();
-
-    // We have to verify no duplicate contacts _before_ constructing the domain because it is
-    // illegal to construct a domain with duplicate contacts.
-    Sets.SetView<DesignatedContact> newContacts =
-        union(Sets.difference(domain.getContacts(), remove.getContacts()), add.getContacts());
-    validateNoDuplicateContacts(newContacts);
+    enforceContactAbsencesOnUpdate(command);
 
     Domain.Builder domainBuilder =
         domain
@@ -285,9 +269,6 @@ public final class DomainUpdateFlow implements MutatingFlow {
             .setLastEppUpdateRegistrarId(registrarId)
             .addStatusValues(add.getStatusValues())
             .removeStatusValues(remove.getStatusValues())
-            .removeContacts(remove.getContacts())
-            .addContacts(add.getContacts())
-            .setRegistrant(determineUpdatedRegistrant(change, domain))
             .setAuthInfo(Optional.ofNullable(change.getAuthInfo()).orElse(domain.getAuthInfo()));
 
     if (!add.getNameservers().isEmpty()) {
@@ -309,15 +290,6 @@ public final class DomainUpdateFlow implements MutatingFlow {
     return domainBuilder.build();
   }
 
-  private Optional<VKey<Contact>> determineUpdatedRegistrant(Change change, Domain domain) {
-    // During or after the minimum dataset transition, allow registrant to be removed.
-    if (change.getRegistrantContactId().isPresent()
-        && change.getRegistrantContactId().get().isEmpty()) {
-      return Optional.empty();
-    }
-    return change.getRegistrant().or(domain::getRegistrant);
-  }
-
   /**
    * Checks whether the new state of the domain is valid.
    *
@@ -325,13 +297,7 @@ public final class DomainUpdateFlow implements MutatingFlow {
    * compliant with the additions or amendments, otherwise existing data can become invalid and
    * cause Domain update failure.
    */
-  private static void validateNewState(Domain existingDomain, Domain newDomain)
-      throws EppException {
-    validateUpdateContactData(
-        existingDomain.getRegistrant(),
-        newDomain.getRegistrant(),
-        existingDomain.getContacts(),
-        newDomain.getContacts());
+  private static void validateNewState(Domain newDomain) throws EppException {
     validateDsData(newDomain.getDsData());
     validateNameserversCountForTld(
         newDomain.getTld(),
@@ -345,8 +311,8 @@ public final class DomainUpdateFlow implements MutatingFlow {
     Optional<MetadataExtension> metadataExtension =
         eppInput.getSingleExtension(MetadataExtension.class);
     if (metadataExtension.isPresent() && metadataExtension.get().getRequestedByRegistrar()) {
-      for (StatusValue statusValue
-          : symmetricDifference(existingDomain.getStatusValues(), newDomain.getStatusValues())) {
+      for (StatusValue statusValue :
+          symmetricDifference(existingDomain.getStatusValues(), newDomain.getStatusValues())) {
         if (statusValue.isChargedStatus()) {
           // Only charge once.
           return Optional.of(

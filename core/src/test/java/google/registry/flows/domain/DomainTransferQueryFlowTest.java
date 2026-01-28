@@ -29,7 +29,6 @@ import google.registry.flows.ResourceFlowUtils.BadAuthInfoForResourceException;
 import google.registry.flows.ResourceFlowUtils.ResourceDoesNotExistException;
 import google.registry.flows.exceptions.NoTransferHistoryToQueryException;
 import google.registry.flows.exceptions.NotAuthorizedToViewTransferException;
-import google.registry.model.contact.ContactAuthInfo;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainAuthInfo;
 import google.registry.model.eppcommon.AuthInfo.PasswordAuth;
@@ -52,8 +51,6 @@ class DomainTransferQueryFlowTest
   private void doSuccessfulTest(
       String commandFilename, String expectedXmlFilename, int numPollMessages) throws Exception {
     setEppInput(commandFilename);
-    // Replace the ROID in the xml file with the one generated in our test.
-    eppLoader.replaceAll("JD1234-REP", contact.getRepoId());
     // Setup done; run the test.
     assertMutatingFlow(false);
     runFlowAssertResponse(loadFile(expectedXmlFilename));
@@ -73,8 +70,6 @@ class DomainTransferQueryFlowTest
 
   private void doFailingTest(String commandFilename) throws Exception {
     setEppInput(commandFilename);
-    // Replace the ROID in the xml file with the one generated in our test.
-    eppLoader.replaceAll("JD1234-REP", contact.getRepoId());
     // Setup done; run the test.
     assertMutatingFlow(false);
     runFlow();
@@ -103,13 +98,6 @@ class DomainTransferQueryFlowTest
     setRegistrarIdForFlow("ClientZ");
     doSuccessfulTest(
         "domain_transfer_query_domain_authinfo.xml", "domain_transfer_query_response.xml", 1);
-  }
-
-  @Test
-  void testSuccess_contactAuthInfo() throws Exception {
-    setRegistrarIdForFlow("ClientZ");
-    doSuccessfulTest(
-        "domain_transfer_query_contact_authinfo.xml", "domain_transfer_query_response.xml", 1);
   }
 
   @Test
@@ -170,14 +158,7 @@ class DomainTransferQueryFlowTest
   }
 
   @Test
-  void testFailure_badContactPassword() {
-    // Change the contact's password so it does not match the password in the file.
-    contact =
-        persistResource(
-            contact
-                .asBuilder()
-                .setAuthInfo(ContactAuthInfo.create(PasswordAuth.create("badpassword")))
-                .build());
+  void testFailure_contactPasswordNotAllowed() {
     EppException thrown =
         assertThrows(
             BadAuthInfoForResourceException.class,

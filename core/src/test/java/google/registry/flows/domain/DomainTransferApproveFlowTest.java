@@ -64,7 +64,6 @@ import google.registry.model.billing.BillingBase.RenewalPriceBehavior;
 import google.registry.model.billing.BillingCancellation;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingRecurrence;
-import google.registry.model.contact.ContactAuthInfo;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainAuthInfo;
 import google.registry.model.domain.DomainHistory;
@@ -153,12 +152,6 @@ class DomainTransferApproveFlowTest
                 .build());
   }
 
-  private void setEppLoader(String commandFilename) {
-    setEppInput(commandFilename);
-    // Replace the ROID in the xml file with the one generated in our test.
-    eppLoader.replaceAll("JD1234-REP", contact.getRepoId());
-  }
-
   /**
    * Runs a successful test, with the expectedCancellationBillingEvents parameter containing a list
    * of billing event builders that will be filled out with the correct HistoryEntry parent as it is
@@ -184,7 +177,7 @@ class DomainTransferApproveFlowTest
       String expectedXmlFilename,
       DateTime expectedExpirationTime)
       throws Exception {
-    setEppLoader(commandFilename);
+    setEppInput(commandFilename);
     Tld registry = Tld.get(tld);
     domain = reloadResourceByForeignKey();
     // Make sure the implicit billing event is there; it will be deleted by the flow.
@@ -361,7 +354,7 @@ class DomainTransferApproveFlowTest
   }
 
   private void doFailingTest(String commandFilename) throws Exception {
-    setEppLoader(commandFilename);
+    setEppInput(commandFilename);
     // Setup done; run the test.
     assertMutatingFlow(true);
     runFlow();
@@ -376,7 +369,7 @@ class DomainTransferApproveFlowTest
 
   @Test
   void testDryRun() throws Exception {
-    setEppLoader("domain_transfer_approve.xml");
+    setEppInput("domain_transfer_approve.xml");
     dryRunFlowAssertResponse(loadFile("domain_transfer_approve_response.xml"));
   }
 
@@ -489,14 +482,6 @@ class DomainTransferApproveFlowTest
     doSuccessfulTest(
         "tld",
         "domain_transfer_approve_domain_authinfo.xml",
-        "domain_transfer_approve_response.xml");
-  }
-
-  @Test
-  void testSuccess_contactAuthInfo() throws Exception {
-    doSuccessfulTest(
-        "tld",
-        "domain_transfer_approve_contact_authinfo.xml",
         "domain_transfer_approve_response.xml");
   }
 
@@ -619,14 +604,8 @@ class DomainTransferApproveFlowTest
   }
 
   @Test
-  void testFailure_badContactPassword() {
-    // Change the contact's password so it does not match the password in the file.
-    contact =
-        persistResource(
-            contact
-                .asBuilder()
-                .setAuthInfo(ContactAuthInfo.create(PasswordAuth.create("badpassword")))
-                .build());
+  void testFailure_contactPassword() {
+    // Contact passwords cannot be provided because we don't store contacts
     EppException thrown =
         assertThrows(
             BadAuthInfoForResourceException.class,

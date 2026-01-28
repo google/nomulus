@@ -119,7 +119,6 @@ import google.registry.flows.domain.DomainFlowUtils.MalformedTcnIdException;
 import google.registry.flows.domain.DomainFlowUtils.MaxSigLifeNotSupportedException;
 import google.registry.flows.domain.DomainFlowUtils.MissingBillingAccountMapException;
 import google.registry.flows.domain.DomainFlowUtils.MissingClaimsNoticeException;
-import google.registry.flows.domain.DomainFlowUtils.MissingContactTypeException;
 import google.registry.flows.domain.DomainFlowUtils.NameserversNotAllowedForTldException;
 import google.registry.flows.domain.DomainFlowUtils.NameserversNotSpecifiedForTldWithNameserverAllowListException;
 import google.registry.flows.domain.DomainFlowUtils.NotAuthorizedForTldException;
@@ -1872,15 +1871,6 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
             .setMsg("Custom logic was triggered")
             .setId(1L)
             .build());
-  }
-
-  @Test
-  void testFailure_missingContactType() {
-    // We need to test for missing type, but not for invalid - the schema enforces that for us.
-    setEppInput("domain_create_missing_contact_type.xml");
-    persistContactsAndHosts();
-    EppException thrown = assertThrows(MissingContactTypeException.class, this::runFlow);
-    assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
   @Test
