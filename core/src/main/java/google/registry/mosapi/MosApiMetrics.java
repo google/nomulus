@@ -35,6 +35,7 @@ import com.google.common.flogger.FluentLogger;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.mosapi.MosApiModels.ServiceStatus;
 import google.registry.mosapi.MosApiModels.TldServiceState;
+import google.registry.request.lock.LockHandler;
 import google.registry.util.Clock;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
@@ -44,6 +45,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Stream;
+import org.joda.time.Duration;
 
 /** Metrics Exporter for MoSAPI. */
 @Singleton
@@ -64,6 +66,9 @@ public class MosApiMetrics {
   private static final String LABEL_TLD = "tld";
   private static final String LABEL_SERVICE_TYPE = "service_type";
 
+  // Lock Constants
+  private static final String LOCK_NAME = "MosApiMetricCreation";
+  private static final Duration LOCK_LEASE_TIME = Duration.standardSeconds(30);
   // Metric Names
   private static final String METRIC_TLD_STATUS = "tld_status";
   private static final String METRIC_SERVICE_STATUS = "service_status";
@@ -96,16 +101,19 @@ public class MosApiMetrics {
   private final String projectName;
   private final Clock clock;
   private final MonitoredResource monitoredResource;
+  private final LockHandler lockHandler;
   // Flag to ensure we only create descriptors once, lazily
   private final AtomicBoolean isDescriptorInitialized = new AtomicBoolean(false);
 
   @Inject
   public MosApiMetrics(
-      Monitoring monitoringClient, @Config("projectId") String projectId, Clock clock) {
+      Monitoring monitoringClient, @Config("projectId") String projectId,
+      Clock clock,LockHandler lockHandler) {
     this.monitoringClient = monitoringClient;
     this.projectId = projectId;
     this.clock = clock;
     this.projectName = PROJECT_RESOURCE_PREFIX + projectId;
+    this.lockHandler = lockHandler;
     this.monitoredResource =
         new MonitoredResource()
             .setType(RESOURCE_TYPE_GLOBAL)
@@ -115,20 +123,40 @@ public class MosApiMetrics {
   /** Accepts a list of states and processes them in a single async batch task. */
   public void recordStates(ImmutableList<TldServiceState> states) {
     // If this is the first time we are recording, ensure descriptors exist.
-    if (isDescriptorInitialized.compareAndSet(false, true)) {
-      createCustomMetricDescriptors();
+    if (!isDescriptorInitialized.get()) {
+      ensureMetricDescriptorsWithLock();
     }
 
     try {
       pushBatchMetrics(states);
     } catch (Exception e) {
-      logger.atSevere().withCause(e).log("MosApi Batch metric push failed.");
       throw new RuntimeException("Batch metric push failed", e);
     }
   }
+  /**
+   * Attempts to create metric descriptors using a distributed lock.
+   *
+   * <p>If the lock is acquired, this instance creates the descriptors and marks itself initialized.
+   * If the lock is busy, it implies another instance is handling it, so we skip and proceed.
+   */
+  private void ensureMetricDescriptorsWithLock() {
+    boolean lockAcquired =
+        lockHandler.executeWithLocks(
+            this::createCustomMetricDescriptors,
+            null,
+            LOCK_LEASE_TIME,
+            LOCK_NAME);
 
+    if (lockAcquired) {
+      isDescriptorInitialized.set(true);
+    } else {
+      // Another instance holds the lock. We skip creation
+      logger.atInfo().log(
+          "Lock '%s' in use. Another instance is handling metric creation. Skipping.", LOCK_NAME);
+    }
+  }
   // Defines the custom metrics in Cloud Monitoring
-  private void createCustomMetricDescriptors() {
+  private Void createCustomMetricDescriptors() {
     // 1. TLD Status Descriptor
     createMetricDescriptor(
         METRIC_TLD_STATUS,

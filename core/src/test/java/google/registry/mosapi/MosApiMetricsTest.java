@@ -18,6 +18,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -30,9 +31,11 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import google.registry.mosapi.MosApiModels.ServiceStatus;
 import google.registry.mosapi.MosApiModels.TldServiceState;
+import google.registry.request.lock.LockHandler;
 import google.registry.testing.FakeClock;
 import java.io.IOException;
 import java.util.List;
+import java.util.concurrent.Callable;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -44,6 +47,7 @@ public class MosApiMetricsTest {
 
   private final Monitoring monitoringClient = mock(Monitoring.class);
   private final Monitoring.Projects projects = mock(Monitoring.Projects.class);
+  private final LockHandler lockHandler = mock(LockHandler.class);
   private final Monitoring.Projects.TimeSeries timeSeriesResource =
       mock(Monitoring.Projects.TimeSeries.class);
   private final Monitoring.Projects.TimeSeries.Create createRequest =
@@ -59,6 +63,7 @@ public class MosApiMetricsTest {
   private final FakeClock clock = new FakeClock(DateTime.parse("2026-01-01T12:00:00Z"));
   private MosApiMetrics mosApiMetrics;
 
+
   @BeforeEach
   void setUp() throws IOException {
     when(monitoringClient.projects()).thenReturn(projects);
@@ -70,8 +75,12 @@ public class MosApiMetricsTest {
     when(projects.metricDescriptors()).thenReturn(metricDescriptorsResource);
     when(metricDescriptorsResource.create(anyString(), any(MetricDescriptor.class)))
         .thenReturn(createDescriptorRequest);
-
-    mosApiMetrics = new MosApiMetrics(monitoringClient, PROJECT_ID, clock);
+    when(lockHandler.executeWithLocks(any(Callable.class), any(), any(), any()))
+        .thenAnswer(invocation -> {
+          ((Callable<?>) invocation.getArgument(0)).call();
+          return true;
+        });
+    mosApiMetrics = new MosApiMetrics(monitoringClient, PROJECT_ID, clock,lockHandler);
   }
 
   @Test
@@ -198,6 +207,16 @@ public class MosApiMetricsTest {
               return (Number) ts.getPoints().get(0).getValue().getInt64Value();
             })
         .get();
+  }
+  @Test
+  void testRecordStates_skipsInitialization_ifLockNotAcquired() throws IOException {
+    when(lockHandler.executeWithLocks(any(Callable.class), any(), any(), any()))
+        .thenReturn(false);
+
+    TldServiceState state = createTldState("test.tld", "UP", "UP");
+    mosApiMetrics.recordStates(ImmutableList.of(state));
+
+    verify(metricDescriptorsResource, never()).create(anyString(), any());
   }
 
   /** Mocks a TldServiceState with a single service status. */
