@@ -54,7 +54,7 @@ class RdapEntityActionTest extends RdapActionBaseTestCase<RdapEntityAction> {
     persistResources(makeRegistrarPocs(registrarLol));
     Host host1 = persistResource(makeHost("ns1.cat.lol", "1.2.3.4"));
     Host host2 = persistResource(makeHost("ns2.cat.lol", "bad:f00d:cafe:0:0:0:15:beef"));
-    persistResource(makeDomain("cat.lol", null, null, null, host1, host2, registrarLol));
+    persistResource(makeDomain("cat.lol", host1, host2, registrarLol));
     // xn--q9jyb4c
     createTld("xn--q9jyb4c");
     Registrar registrarIdn = persistResource(

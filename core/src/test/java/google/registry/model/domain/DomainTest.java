@@ -23,7 +23,6 @@ import static google.registry.model.domain.token.AllocationToken.TokenType.SINGL
 import static google.registry.testing.DatabaseHelper.cloneAndSetAutoTimestamps;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.newHost;
-import static google.registry.testing.DatabaseHelper.persistActiveContact;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistActiveHost;
 import static google.registry.testing.DatabaseHelper.persistResource;
@@ -49,8 +48,6 @@ import google.registry.model.billing.BillingBase.Flag;
 import google.registry.model.billing.BillingBase.Reason;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingRecurrence;
-import google.registry.model.contact.Contact;
-import google.registry.model.domain.DesignatedContact.Type;
 import google.registry.model.domain.fee.FeeQueryCommandExtensionItem.CommandName;
 import google.registry.model.domain.launch.LaunchNotice;
 import google.registry.model.domain.rgp.GracePeriodStatus;
@@ -91,7 +88,6 @@ public class DomainTest {
   private VKey<BillingEvent> oneTimeBillKey;
   private VKey<BillingRecurrence> recurrenceBillKey;
   private DomainHistory domainHistory;
-  private VKey<Contact> contact1Key, contact2Key;
 
   @BeforeEach
   void setUp() {
@@ -102,8 +98,6 @@ public class DomainTest {
     createTld("com");
     domain = persistActiveDomain("example.com");
     VKey<Host> hostKey = persistActiveHost("ns1.example.com").createVKey();
-    contact1Key = persistActiveContact("contact_id1").createVKey();
-    contact2Key = persistActiveContact("contact_id1").createVKey();
     domainHistory =
         persistResource(
             new DomainHistory.Builder()
@@ -185,7 +179,6 @@ public class DomainTest {
                             StatusValue.SERVER_UPDATE_PROHIBITED,
                             StatusValue.SERVER_RENEW_PROHIBITED,
                             StatusValue.SERVER_HOLD))
-                    .setRegistrant(Optional.of(contact1Key))
                     .setNameservers(ImmutableSet.of(hostKey))
                     .setSubordinateHosts(ImmutableSet.of("ns1.example.com"))
                     .setPersistedCurrentSponsorRegistrarId("NewRegistrar")
@@ -1013,51 +1006,6 @@ public class DomainTest {
       this.recurrence = recurrence;
       this.billingEventOneTime = billingEventOneTime;
     }
-  }
-
-  @Test
-  void testContactFields() {
-    VKey<Contact> contact3Key = persistActiveContact("contact_id3").createVKey();
-    VKey<Contact> contact4Key = persistActiveContact("contact_id4").createVKey();
-
-    // Set all of the contacts.
-    domain.setContactFields(
-        ImmutableSet.of(
-            DesignatedContact.create(Type.REGISTRANT, contact1Key),
-            DesignatedContact.create(Type.ADMIN, contact2Key),
-            DesignatedContact.create(Type.BILLING, contact3Key),
-            DesignatedContact.create(Type.TECH, contact4Key)),
-        true);
-    assertThat(domain.getRegistrant()).hasValue(contact1Key);
-    assertThat(domain.getAdminContact()).hasValue(contact2Key);
-    assertThat(domain.getBillingContact()).hasValue(contact3Key);
-    assertThat(domain.getTechContact()).hasValue(contact4Key);
-
-    // Make sure everything gets nulled out.
-    domain.setContactFields(ImmutableSet.of(), true);
-    assertThat(domain.getRegistrant()).isEmpty();
-    assertThat(domain.getAdminContact()).isEmpty();
-    assertThat(domain.getBillingContact()).isEmpty();
-    assertThat(domain.getTechContact()).isEmpty();
-
-    // Make sure that changes don't affect the registrant unless requested.
-    domain.setContactFields(
-        ImmutableSet.of(
-            DesignatedContact.create(Type.REGISTRANT, contact1Key),
-            DesignatedContact.create(Type.ADMIN, contact2Key),
-            DesignatedContact.create(Type.BILLING, contact3Key),
-            DesignatedContact.create(Type.TECH, contact4Key)),
-        false);
-    assertThat(domain.getRegistrant()).isEmpty();
-    assertThat(domain.getAdminContact()).hasValue(contact2Key);
-    assertThat(domain.getBillingContact()).hasValue(contact3Key);
-    assertThat(domain.getTechContact()).hasValue(contact4Key);
-    domain = domain.asBuilder().setRegistrant(Optional.of(contact1Key)).build();
-    domain.setContactFields(ImmutableSet.of(), false);
-    assertThat(domain.getRegistrant()).hasValue(contact1Key);
-    assertThat(domain.getAdminContact()).isEmpty();
-    assertThat(domain.getBillingContact()).isEmpty();
-    assertThat(domain.getTechContact()).isEmpty();
   }
 
   @Test

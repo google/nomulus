@@ -114,9 +114,7 @@ class RdapJsonFormatterTest {
             "ns5.cat.みんな", null, null, clock.nowUtc().minusYears(5), "unicoderegistrar");
     // Create an unused domain that references hostBoth and hostNoAddresses so that
     // they will have "associated" (ie, StatusValue.LINKED) status.
-    Domain dog =
-        persistResource(
-            makeDomain("dog.みんな", null, null, null, hostBoth, hostNoAddresses, registrar));
+    Domain dog = persistResource(makeDomain("dog.みんな", hostBoth, hostNoAddresses, registrar));
     hostSuperordinatePendingTransfer =
         persistResource(
             makeAndPersistHost(
@@ -142,14 +140,14 @@ class RdapJsonFormatterTest {
                 .build());
     domainFull =
         persistResource(
-            makeDomain("cat.みんな", null, null, null, hostIpv4, hostIpv6, registrar)
+            makeDomain("cat.みんな", hostIpv4, hostIpv6, registrar)
                 .asBuilder()
                 .setCreationTimeForTest(clock.nowUtc().minusMonths(4))
                 .setLastEppUpdateTime(clock.nowUtc().minusMonths(3))
                 .build());
     domainNoNameserversNoTransfers =
         persistResource(
-            makeDomain("fish.みんな", null, null, null, null, null, registrar)
+            makeDomain("fish.みんな", null, null, registrar)
                 .asBuilder()
                 .setCreationTimeForTest(clock.nowUtc())
                 .setLastEppUpdateTime(null)

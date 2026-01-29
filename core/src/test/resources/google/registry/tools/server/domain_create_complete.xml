@@ -12,9 +12,6 @@
           <domain:hostObj>ns3.zdns.google</domain:hostObj>
           <domain:hostObj>ns4.zdns.google</domain:hostObj>
         </domain:ns>
-        <domain:registrant>crr-admin</domain:registrant>
-        <domain:contact type="admin">crr-admin</domain:contact>
-        <domain:contact type="tech">crr-tech</domain:contact>
         <domain:authInfo>
           <domain:pw>2fooBAR</domain:pw>
         </domain:authInfo>

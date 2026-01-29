@@ -86,7 +86,6 @@ public class RegistryConfigSettings {
     public String productName;
     public String customLogicFactoryClass;
     public String dnsCountQueryCoordinatorClass;
-    public int contactAutomaticTransferDays;
     public String greetingServerId;
     public List<String> registrarChangesNotificationEmailAddresses;
     public String defaultRegistrarWhoisServer;

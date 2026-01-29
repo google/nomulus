@@ -6,9 +6,6 @@
        xmlns:domain="urn:ietf:params:xml:ns:domain-1.0">
         <domain:name>example.abc</domain:name>
         <domain:period unit="y">1</domain:period>
-        <domain:registrant>crr-admin</domain:registrant>
-        <domain:contact type="admin">crr-admin</domain:contact>
-        <domain:contact type="tech">crr-tech</domain:contact>
         <domain:authInfo>
           <domain:pw>abcdefghijklmnop</domain:pw>
         </domain:authInfo>
