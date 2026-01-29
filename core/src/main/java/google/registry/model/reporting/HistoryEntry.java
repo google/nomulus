@@ -23,8 +23,6 @@ import google.registry.model.EppResource;
 import google.registry.model.ImmutableObject;
 import google.registry.model.UnsafeSerializable;
 import google.registry.model.annotations.IdAllocation;
-import google.registry.model.contact.ContactBase;
-import google.registry.model.contact.ContactHistory;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.eppcommon.Trid;
@@ -348,8 +346,6 @@ public abstract class HistoryEntry extends ImmutableObject
       HistoryEntry.Builder<? extends HistoryEntry, ?> createBuilderForResource(E parent) {
     if (parent instanceof DomainBase) {
       return new DomainHistory.Builder().setDomain((DomainBase) parent);
-    } else if (parent instanceof ContactBase) {
-      return new ContactHistory.Builder().setContact((ContactBase) parent);
     } else if (parent instanceof HostBase) {
       return new HostHistory.Builder().setHost((HostBase) parent);
     } else {

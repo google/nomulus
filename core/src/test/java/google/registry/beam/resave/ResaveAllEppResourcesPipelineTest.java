@@ -22,7 +22,6 @@ import static google.registry.testing.DatabaseHelper.loadAllOf;
 import static google.registry.testing.DatabaseHelper.loadByEntity;
 import static google.registry.testing.DatabaseHelper.persistActiveContact;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
-import static google.registry.testing.DatabaseHelper.persistContactWithPendingTransfer;
 import static google.registry.testing.DatabaseHelper.persistDomainWithDependentResources;
 import static google.registry.testing.DatabaseHelper.persistDomainWithPendingTransfer;
 import static google.registry.testing.DatabaseHelper.persistNewRegistrars;
@@ -87,18 +86,6 @@ public class ResaveAllEppResourcesPipelineTest {
     fakeClock.advanceOneMilli();
     runPipeline();
     assertThat(loadByEntity(contact)).isEqualTo(contact);
-  }
-
-  @Test
-  void testPipeline_fulfilledContactTransfer() {
-    Contact contact = persistActiveContact("test123");
-    DateTime now = fakeClock.nowUtc();
-    contact = persistContactWithPendingTransfer(contact, now, now.plusDays(5), now);
-    fakeClock.advanceBy(Duration.standardDays(10));
-    assertThat(loadByEntity(contact).getStatusValues()).contains(StatusValue.PENDING_TRANSFER);
-    runPipeline();
-    assertThat(loadByEntity(contact).getStatusValues())
-        .doesNotContain(StatusValue.PENDING_TRANSFER);
   }
 
   @Test

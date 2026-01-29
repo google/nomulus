@@ -25,8 +25,6 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Streams;
 import google.registry.model.EppResource;
-import google.registry.model.contact.Contact;
-import google.registry.model.contact.ContactHistory;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.host.Host;
@@ -46,8 +44,6 @@ public class HistoryEntryDao {
   public static ImmutableMap<Class<? extends EppResource>, Class<? extends HistoryEntry>>
       RESOURCE_TYPES_TO_HISTORY_TYPES =
           ImmutableMap.of(
-              Contact.class,
-              ContactHistory.class,
               Domain.class,
               DomainHistory.class,
               Host.class,
@@ -59,7 +55,6 @@ public class HistoryEntryDao {
     return tm().transact(
             () ->
                 new ImmutableList.Builder<HistoryEntry>()
-                    .addAll(loadAllHistoryObjects(ContactHistory.class, afterTime, beforeTime))
                     .addAll(loadAllHistoryObjects(DomainHistory.class, afterTime, beforeTime))
                     .addAll(loadAllHistoryObjects(HostHistory.class, afterTime, beforeTime))
                     .build());
@@ -121,7 +116,6 @@ public class HistoryEntryDao {
     return tm().reTransact(
             () ->
                 Streams.concat(
-                        loadHistoryObjectByRegistrarsInternal(ContactHistory.class, registrarIds),
                         loadHistoryObjectByRegistrarsInternal(DomainHistory.class, registrarIds),
                         loadHistoryObjectByRegistrarsInternal(HostHistory.class, registrarIds))
                     .sorted(Comparator.comparing(HistoryEntry::getModificationTime))

@@ -25,7 +25,6 @@ import static com.google.common.collect.MoreCollectors.onlyElement;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
 import static google.registry.config.RegistryConfig.getContactAndHostRoidSuffix;
-import static google.registry.config.RegistryConfig.getContactAutomaticTransferLength;
 import static google.registry.model.EppResourceUtils.createDomainRepoId;
 import static google.registry.model.EppResourceUtils.createRepoId;
 import static google.registry.model.ImmutableObjectSubject.assertAboutImmutableObjects;
@@ -76,7 +75,6 @@ import google.registry.model.console.User;
 import google.registry.model.console.UserRoles;
 import google.registry.model.contact.Contact;
 import google.registry.model.contact.ContactAuthInfo;
-import google.registry.model.contact.ContactHistory;
 import google.registry.model.domain.DesignatedContact;
 import google.registry.model.domain.DesignatedContact.Type;
 import google.registry.model.domain.Domain;
@@ -534,53 +532,6 @@ public final class DatabaseHelper {
         .setCost(getDomainRenewCost(domain.getDomainName(), costLookupTime, 1))
         .setDomainHistory(historyEntry)
         .build();
-  }
-
-  public static Contact persistContactWithPendingTransfer(
-      Contact contact, DateTime requestTime, DateTime expirationTime, DateTime now) {
-    ContactHistory historyEntryContactTransfer =
-        persistResource(
-            new ContactHistory.Builder()
-                .setType(HistoryEntry.Type.CONTACT_TRANSFER_REQUEST)
-                .setContact(persistResource(contact))
-                .setModificationTime(now)
-                .setRegistrarId(contact.getCurrentSponsorRegistrarId())
-                .build());
-    return persistResource(
-        contact
-            .asBuilder()
-            .setPersistedCurrentSponsorRegistrarId("TheRegistrar")
-            .addStatusValue(StatusValue.PENDING_TRANSFER)
-            .setTransferData(
-                createContactTransferDataBuilder(requestTime, expirationTime)
-                    .setPendingTransferExpirationTime(now.plus(getContactAutomaticTransferLength()))
-                    .setServerApproveEntities(
-                        historyEntryContactTransfer.getRepoId(),
-                        historyEntryContactTransfer.getRevisionId(),
-                        ImmutableSet.of(
-                            // Pretend it's 3 days since the request
-                            persistResource(
-                                    createPollMessageForImplicitTransfer(
-                                        contact,
-                                        historyEntryContactTransfer,
-                                        "NewRegistrar",
-                                        requestTime,
-                                        expirationTime,
-                                        null))
-                                .createVKey(),
-                            persistResource(
-                                    createPollMessageForImplicitTransfer(
-                                        contact,
-                                        historyEntryContactTransfer,
-                                        "TheRegistrar",
-                                        requestTime,
-                                        expirationTime,
-                                        null))
-                                .createVKey()))
-                    .setTransferRequestTrid(
-                        Trid.create("transferClient-trid", "transferServer-trid"))
-                    .build())
-            .build());
   }
 
   public static Domain persistDomainWithDependentResources(

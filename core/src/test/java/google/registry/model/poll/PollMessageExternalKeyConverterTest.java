@@ -18,7 +18,6 @@ import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.poll.PollMessageExternalKeyConverter.makePollMessageExternalId;
 import static google.registry.model.poll.PollMessageExternalKeyConverter.parsePollMessageExternalId;
 import static google.registry.testing.DatabaseHelper.createTld;
-import static google.registry.testing.DatabaseHelper.persistActiveContact;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistActiveHost;
 import static google.registry.testing.DatabaseHelper.persistResource;
@@ -81,23 +80,6 @@ public class PollMessageExternalKeyConverterTest {
                 .build());
     assertThat(makePollMessageExternalId(pollMessage)).isEqualTo("5-2007");
     assertVKeysEqual(parsePollMessageExternalId("5-2007"), pollMessage.createVKey());
-  }
-
-  @Test
-  void testSuccess_contact() {
-    historyEntry =
-        persistResource(
-            DatabaseHelper.createHistoryEntryForEppResource(persistActiveContact("tim")));
-    PollMessage.OneTime pollMessage =
-        persistResource(
-            new PollMessage.OneTime.Builder()
-                .setRegistrarId("TheRegistrar")
-                .setEventTime(clock.nowUtc())
-                .setMsg("Test poll message")
-                .setHistoryEntry(historyEntry)
-                .build());
-    assertThat(makePollMessageExternalId(pollMessage)).isEqualTo("7-2007");
-    assertVKeysEqual(parsePollMessageExternalId("7-2007"), pollMessage.createVKey());
   }
 
   @Test

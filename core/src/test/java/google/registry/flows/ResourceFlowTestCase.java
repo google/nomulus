@@ -24,13 +24,10 @@ import com.google.common.collect.Iterables;
 import com.google.common.testing.TestLogHandler;
 import google.registry.model.EppResource;
 import google.registry.model.ForeignKeyUtils;
-import google.registry.model.contact.ContactBase;
-import google.registry.model.contact.ContactHistory;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.eppinput.EppInput.ResourceCommandWrapper;
 import google.registry.model.eppinput.ResourceCommand;
-import google.registry.model.host.HostBase;
 import google.registry.model.host.HostHistory;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.tmch.ClaimsList;
@@ -131,18 +128,12 @@ public abstract class ResourceFlowTestCase<F extends Flow, R extends EppResource
 
   protected void assertLastHistoryContainsResource(EppResource resource) {
     HistoryEntry historyEntry = Iterables.getLast(DatabaseHelper.getHistoryEntries(resource));
-    if (resource instanceof ContactBase) {
-      ContactHistory contactHistory = (ContactHistory) historyEntry;
-      // Don't use direct equals comparison since one might be a subclass of the other
-      assertAboutImmutableObjects()
-          .that(contactHistory.getContactBase().get())
-          .hasFieldsEqualTo(resource);
-    } else if (resource instanceof DomainBase) {
+    if (resource instanceof DomainBase) {
       DomainHistory domainHistory = (DomainHistory) historyEntry;
       assertAboutImmutableObjects()
           .that(domainHistory.getDomainBase().get())
           .isEqualExceptFields(resource, "gracePeriods", "dsData", "nsHosts");
-    } else if (resource instanceof HostBase) {
+    } else {
       HostHistory hostHistory = (HostHistory) historyEntry;
       // Don't use direct equals comparison since one might be a subclass of the other
       assertAboutImmutableObjects()

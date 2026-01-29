@@ -27,7 +27,6 @@ import google.registry.model.UnsafeSerializable;
 import google.registry.model.annotations.ExternalMessagingName;
 import google.registry.model.annotations.IdAllocation;
 import google.registry.model.contact.Contact;
-import google.registry.model.contact.ContactHistory;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.DomainRenewData;
@@ -272,12 +271,6 @@ public abstract class PollMessage extends ImmutableObject
       return thisCastToDerived();
     }
 
-    public B setContactHistoryId(HistoryEntryId historyId) {
-      getInstance().contactRepoId = historyId.getRepoId();
-      getInstance().contactHistoryRevisionId = historyId.getRevisionId();
-      return thisCastToDerived();
-    }
-
     public B setHostHistoryId(HistoryEntryId historyId) {
       getInstance().hostRepoId = historyId.getRepoId();
       getInstance().hostHistoryRevisionId = historyId.getRevisionId();
@@ -289,9 +282,6 @@ public abstract class PollMessage extends ImmutableObject
       // Set the appropriate field based on the history entry type.
       if (history instanceof DomainHistory) {
         return setDomainHistoryId(historyId);
-      }
-      if (history instanceof ContactHistory) {
-        return setContactHistoryId(historyId);
       }
       if (history instanceof HostHistory) {
         return setHostHistoryId(historyId);
