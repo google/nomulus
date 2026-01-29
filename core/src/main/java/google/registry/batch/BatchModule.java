@@ -132,12 +132,6 @@ public class BatchModule {
   }
 
   @Provides
-  @Parameter(WipeOutContactHistoryPiiAction.PARAM_CUTOFF_TIME)
-  static Optional<DateTime> provideCutoffTime(HttpServletRequest req) {
-    return extractOptionalDatetimeParameter(req, WipeOutContactHistoryPiiAction.PARAM_CUTOFF_TIME);
-  }
-
-  @Provides
   @Parameter(ExpandBillingRecurrencesAction.PARAM_ADVANCE_CURSOR)
   static boolean provideAdvanceCursor(HttpServletRequest req) {
     return extractBooleanParameter(req, ExpandBillingRecurrencesAction.PARAM_ADVANCE_CURSOR);

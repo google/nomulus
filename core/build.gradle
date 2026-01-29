@@ -569,11 +569,6 @@ if (environment == 'alpha') {
               mainClass: 'google.registry.beam.resave.ResaveAllEppResourcesPipeline',
               metaData: 'google/registry/beam/resave_all_epp_resources_pipeline_metadata.json'
           ],
-      wipeOutContactHistoryPii:
-              [
-                      mainClass: 'google.registry.beam.wipeout.WipeOutContactHistoryPiiPipeline',
-                      metaData: 'google/registry/beam/wipe_out_contact_history_pii_pipeline_metadata.json'
-              ],
   ]
   project.tasks.create("stageBeamPipelines") {
     doLast {

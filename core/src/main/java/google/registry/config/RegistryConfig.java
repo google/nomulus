@@ -1265,12 +1265,6 @@ public final class RegistryConfig {
     }
 
     @Provides
-    @Config("minMonthsBeforeWipeOut")
-    public static int provideMinMonthsBeforeWipeOut(RegistryConfigSettings config) {
-      return config.contactHistory.minMonthsBeforeWipeOut;
-    }
-
-    @Provides
     @Config("jdbcBatchSize")
     public static int provideHibernateJdbcBatchSize(RegistryConfigSettings config) {
       return config.hibernate.jdbcBatchSize;

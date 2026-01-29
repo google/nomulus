@@ -450,11 +450,6 @@ registryTool:
   # OAuth client secret used by the tool.
   clientSecret: YOUR_CLIENT_SECRET
 
-# Configuration options for handling contact history.
-contactHistory:
-  # The number of months that a ContactHistory entity should be stored in the database.
-  minMonthsBeforeWipeOut: 18
-
 # Configuration options relevant to the DNS update functionality.
 dnsUpdate:
   dnsUpdateFailRegistryName: Example name

@@ -28,7 +28,6 @@ import google.registry.batch.RemoveAllDomainContactsAction;
 import google.registry.batch.ResaveAllEppResourcesPipelineAction;
 import google.registry.batch.ResaveEntityAction;
 import google.registry.batch.SendExpiringCertificateNotificationEmailAction;
-import google.registry.batch.WipeOutContactHistoryPiiAction;
 import google.registry.bsa.BsaDownloadAction;
 import google.registry.bsa.BsaRefreshAction;
 import google.registry.bsa.BsaValidateAction;
@@ -349,8 +348,6 @@ interface RequestComponent {
   UploadBsaUnavailableDomainsAction uploadBsaUnavailableDomains();
 
   VerifyOteAction verifyOteAction();
-
-  WipeOutContactHistoryPiiAction wipeOutContactHistoryPiiAction();
 
   @Subcomponent.Builder
   abstract class Builder implements RequestComponentBuilder<RequestComponent> {

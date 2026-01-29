@@ -58,7 +58,6 @@ BACKEND  /_dr/task/tmchSmdrl                                TmchSmdrlAction     
 BACKEND  /_dr/task/triggerMosApiServiceState                TriggerServiceStateAction                      GET                 n  APP  ADMIN
 BACKEND  /_dr/task/updateRegistrarRdapBaseUrls              UpdateRegistrarRdapBaseUrlsAction              GET                 y  APP  ADMIN
 BACKEND  /_dr/task/uploadBsaUnavailableNames                UploadBsaUnavailableDomainsAction              GET,POST            n  APP  ADMIN
-BACKEND  /_dr/task/wipeOutContactHistoryPii                 WipeOutContactHistoryPiiAction                 GET                 n  APP  ADMIN
 PUBAPI   /check                                             CheckApiAction                                 GET                 n  NONE PUBLIC
 PUBAPI   /rdap/                                             RdapEmptyAction                                GET,HEAD            n  NONE PUBLIC
 PUBAPI   /rdap/autnum/(*)                                   RdapAutnumAction                               GET,HEAD            n  NONE PUBLIC
