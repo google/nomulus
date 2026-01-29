@@ -87,7 +87,7 @@ public final class HostCreateFlow implements MutatingFlow {
   @Inject EppResponse.Builder responseBuilder;
 
   @Inject
-  @Config("contactAndHostRoidSuffix")
+  @Config("hostRoidSuffix")
   String roidSuffix;
 
   @Inject

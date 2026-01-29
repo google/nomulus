@@ -63,9 +63,6 @@ registryPolicy:
   # See reporting/icann/DnsCountQueryCoordinator.java
   dnsCountQueryCoordinatorClass: google.registry.reporting.icann.DummyDnsCountQueryCoordinator
 
-  # Length of time after which contact transfers automatically conclude.
-  contactAutomaticTransferDays: 5
-
   # Server ID used in the 'svID' element of an EPP 'greeting'.
   greetingServerId: Nomulus Registry
 

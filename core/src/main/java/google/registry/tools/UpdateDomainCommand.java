@@ -15,11 +15,9 @@
 package google.registry.tools;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static google.registry.model.domain.rgp.GracePeriodStatus.AUTO_RENEW;
 import static google.registry.model.eppcommon.StatusValue.PENDING_DELETE;
 import static google.registry.model.eppcommon.StatusValue.SERVER_UPDATE_PROHIBITED;
-import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static java.util.function.Predicate.isEqual;
 
 import com.beust.jcommander.Parameter;
@@ -30,7 +28,6 @@ import com.google.common.collect.Sets;
 import com.google.common.flogger.FluentLogger;
 import com.google.template.soy.data.SoyMapData;
 import google.registry.flows.ResourceFlowUtils;
-import google.registry.model.domain.DesignatedContact;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.GracePeriodBase;
 import google.registry.model.eppcommon.StatusValue;
@@ -66,15 +63,6 @@ final class UpdateDomainCommand extends CreateOrUpdateDomainCommand {
       validateWith = NameserversParameter.class)
   private Set<String> addNameservers = new HashSet<>();
 
-  // TODO(b/184067241): enforce only one of each type of contact
-  @Parameter(
-      names = "--add_admins",
-      description = "Admins to add. Cannot be set if --admins is set.")
-  private List<String> addAdmins = new ArrayList<>();
-
-  @Parameter(names = "--add_techs", description = "Techs to add. Cannot be set if --techs is set.")
-  private List<String> addTechs = new ArrayList<>();
-
   @Parameter(
     names = "--add_statuses",
     description = "Statuses to add. Cannot be set if --statuses is set."
@@ -96,18 +84,6 @@ final class UpdateDomainCommand extends CreateOrUpdateDomainCommand {
       listConverter = NameserversParameter.class,
       validateWith = NameserversParameter.class)
   private Set<String> removeNameservers = new HashSet<>();
-
-  @Parameter(
-    names = "--remove_admins",
-    description = "Admins to remove. Cannot be set if --admins is set."
-  )
-  private List<String> removeAdmins = new ArrayList<>();
-
-  @Parameter(
-    names = "--remove_techs",
-    description = "Techs to remove. Cannot be set if --techs is set."
-  )
-  private List<String> removeTechs = new ArrayList<>();
 
   @Parameter(
     names = "--remove_statuses",
@@ -154,16 +130,6 @@ final class UpdateDomainCommand extends CreateOrUpdateDomainCommand {
     } else {
       checkArgument(addNameservers.size() <= 13, "You can add at most 13 nameservers.");
     }
-    if (!admins.isEmpty()) {
-      checkArgument(
-          addAdmins.isEmpty() && removeAdmins.isEmpty(),
-          "If you provide the admins flag, you cannot use the add_admins and remove_admins flags.");
-    }
-    if (!techs.isEmpty()) {
-      checkArgument(
-          addTechs.isEmpty() && removeTechs.isEmpty(),
-          "If you provide the techs flag, you cannot use the add_techs and remove_techs flags.");
-    }
     if (!statuses.isEmpty()) {
       checkArgument(
           addStatuses.isEmpty() && removeStatuses.isEmpty(),
@@ -197,16 +163,12 @@ final class UpdateDomainCommand extends CreateOrUpdateDomainCommand {
           domainName);
 
       // Use TreeSets so that the results are always in the same order (this makes testing easier).
-      Set<String> addAdminsThisDomain = new TreeSet<>(addAdmins);
-      Set<String> removeAdminsThisDomain = new TreeSet<>(removeAdmins);
-      Set<String> addTechsThisDomain = new TreeSet<>(addTechs);
-      Set<String> removeTechsThisDomain = new TreeSet<>(removeTechs);
       Set<String> addNameserversThisDomain = new TreeSet<>(addNameservers);
       Set<String> removeNameserversThisDomain = new TreeSet<>(removeNameservers);
       Set<String> addStatusesThisDomain = new TreeSet<>(addStatuses);
       Set<String> removeStatusesThisDomain = new TreeSet<>(removeStatuses);
 
-      if (!nameservers.isEmpty() || !admins.isEmpty() || !techs.isEmpty() || !statuses.isEmpty()) {
+      if (!nameservers.isEmpty() || !statuses.isEmpty()) {
         if (!nameservers.isEmpty()) {
           ImmutableSortedSet<String> existingNameservers = domain.loadNameserverHostNames();
           populateAddRemoveLists(
@@ -223,27 +185,7 @@ final class UpdateDomainCommand extends CreateOrUpdateDomainCommand {
               "The resulting nameservers count for domain %s would be more than 13",
               domainName);
         }
-        if (!admins.isEmpty() || !techs.isEmpty()) {
-          ImmutableSet<String> existingAdmins =
-              getContactsOfType(domain, DesignatedContact.Type.ADMIN);
-          ImmutableSet<String> existingTechs =
-              getContactsOfType(domain, DesignatedContact.Type.TECH);
 
-          if (!admins.isEmpty()) {
-            populateAddRemoveLists(
-                ImmutableSet.copyOf(admins),
-                existingAdmins,
-                addAdminsThisDomain,
-                removeAdminsThisDomain);
-          }
-          if (!techs.isEmpty()) {
-            populateAddRemoveLists(
-                ImmutableSet.copyOf(techs),
-                existingTechs,
-                addTechsThisDomain,
-                removeTechsThisDomain);
-          }
-        }
         if (!statuses.isEmpty()) {
           Set<String> currentStatusValues = new HashSet<>();
           for (StatusValue statusValue : domain.getStatusValues()) {
@@ -259,17 +201,13 @@ final class UpdateDomainCommand extends CreateOrUpdateDomainCommand {
 
       boolean add =
           (!addNameserversThisDomain.isEmpty()
-              || !addAdminsThisDomain.isEmpty()
-              || !addTechsThisDomain.isEmpty()
               || !addStatusesThisDomain.isEmpty());
 
       boolean remove =
           (!removeNameserversThisDomain.isEmpty()
-              || !removeAdminsThisDomain.isEmpty()
-              || !removeTechsThisDomain.isEmpty()
               || !removeStatusesThisDomain.isEmpty());
 
-      boolean change = (registrant != null || password != null);
+      boolean change = password != null;
       boolean secDns =
           (!addDsRecords.isEmpty()
               || !removeDsRecords.isEmpty()
@@ -297,16 +235,11 @@ final class UpdateDomainCommand extends CreateOrUpdateDomainCommand {
               "domain", domainName,
               "add", add,
               "addNameservers", addNameserversThisDomain,
-              "addAdmins", addAdminsThisDomain,
-              "addTechs", addTechsThisDomain,
               "addStatuses", addStatusesThisDomain,
               "remove", remove,
               "removeNameservers", removeNameserversThisDomain,
-              "removeAdmins", removeAdminsThisDomain,
-              "removeTechs", removeTechsThisDomain,
               "removeStatuses", removeStatusesThisDomain,
               "change", change,
-              "registrant", registrant,
               "password", password,
               "secdns", secDns,
               "addDsRecords", DsRecord.convertToSoy(addDsRecords),
@@ -336,14 +269,5 @@ final class UpdateDomainCommand extends CreateOrUpdateDomainCommand {
       Set<String> targetSet, Set<String> oldSet, Set<String> addSet, Set<String> removeSet) {
     addSet.addAll(Sets.difference(targetSet, oldSet));
     removeSet.addAll(Sets.difference(oldSet, targetSet));
-  }
-
-  ImmutableSet<String> getContactsOfType(Domain domain, final DesignatedContact.Type contactType) {
-    return tm().transact(
-            () ->
-                domain.getContacts().stream()
-                    .filter(contact -> contact.getType().equals(contactType))
-                    .map(contact -> tm().loadByKey(contact.getContactKey()).getContactId())
-                    .collect(toImmutableSet()));
   }
 }

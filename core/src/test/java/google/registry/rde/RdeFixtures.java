@@ -15,8 +15,8 @@
 package google.registry.rde;
 
 import static com.google.common.io.BaseEncoding.base16;
-import static google.registry.testing.DatabaseHelper.generateNewContactHostRoid;
 import static google.registry.testing.DatabaseHelper.generateNewDomainRoid;
+import static google.registry.testing.DatabaseHelper.generateNewHostRoid;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
 import static org.joda.money.CurrencyUnit.USD;
@@ -226,7 +226,7 @@ final class RdeFixtures {
     return persistResource(
         new Contact.Builder()
             .setContactId(id)
-            .setRepoId(generateNewContactHostRoid())
+            .setRepoId(generateNewHostRoid())
             .setEmailAddress(email)
             .setStatusValues(ImmutableSet.of(StatusValue.OK))
             .setPersistedCurrentSponsorRegistrarId("GetTheeBack")
@@ -256,7 +256,7 @@ final class RdeFixtures {
     clock.advanceOneMilli();
     return persistResource(
         new Host.Builder()
-            .setRepoId(generateNewContactHostRoid())
+            .setRepoId(generateNewHostRoid())
             .setCreationRegistrarId("LawyerCat")
             .setCreationTimeForTest(clock.nowUtc())
             .setPersistedCurrentSponsorRegistrarId("BusinessCat")

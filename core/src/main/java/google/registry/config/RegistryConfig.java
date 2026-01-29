@@ -143,15 +143,15 @@ public final class RegistryConfig {
     }
 
     /**
-     * Returns the roid suffix to be used for the roids of all contacts and hosts. E.g. a value of
-     * "ROID" would end up creating roids that look like "ABC123-ROID".
+     * Returns the roid suffix to be used for the roids of all hosts. E.g. a value of "ROID" would
+     * end up creating roids that look like "ABC123-ROID".
      *
      * @see <a href="http://www.iana.org/assignments/epp-repository-ids/epp-repository-ids.xhtml">
      *     Extensible Provisioning Protocol (EPP) Repository Identifiers</a>
      */
     @Provides
-    @Config("contactAndHostRoidSuffix")
-    public static String provideContactAndHostRoidSuffix(RegistryConfigSettings config) {
+    @Config("hostRoidSuffix")
+    public static String provideHostRoidSuffix(RegistryConfigSettings config) {
       return config.registryPolicy.contactAndHostRoidSuffix;
     }
 
@@ -1025,18 +1025,6 @@ public final class RegistryConfig {
     }
 
     /**
-     * The global automatic transfer length for contacts. After this amount of time has elapsed, the
-     * transfer is automatically approved.
-     *
-     * @see google.registry.flows.contact.ContactTransferRequestFlow
-     */
-    @Provides
-    @Config("contactAutomaticTransferLength")
-    public static Duration provideContactAutomaticTransferLength(RegistryConfigSettings config) {
-      return Duration.standardDays(config.registryPolicy.contactAutomaticTransferDays);
-    }
-
-    /**
      * Returns the maximum number of entities that can be checked at one time in an EPP check flow.
      */
     @Provides
@@ -1623,15 +1611,11 @@ public final class RegistryConfig {
     return CONFIG_SETTINGS.get().hibernate.jdbcFetchSize;
   }
 
-  /** Returns the roid suffix to be used for the roids of all contacts and hosts. */
-  public static String getContactAndHostRoidSuffix() {
+  /** Returns the roid suffix to be used for the roids of all hosts. */
+  public static String getHostRoidSuffix() {
     return CONFIG_SETTINGS.get().registryPolicy.contactAndHostRoidSuffix;
   }
 
-  /** Returns the global automatic transfer length for contacts. */
-  public static Duration getContactAutomaticTransferLength() {
-    return Duration.standardDays(CONFIG_SETTINGS.get().registryPolicy.contactAutomaticTransferDays);
-  }
 
   /** A discount for all sunrise domain creates, between 0.0 (no discount) and 1.0 (free). */
   public static double getSunriseDomainCreateDiscount() {

@@ -137,7 +137,7 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
                 "ns2.cat.lol", "bad:f00d:cafe:0:0:0:15:beef", clock.nowUtc().minusYears(2)));
     domainCatLol =
         persistResource(
-            makeDomain("cat.lol", null, null, null, hostNs1CatLol, hostNs2CatLol, registrar)
+            makeDomain("cat.lol", hostNs1CatLol, hostNs2CatLol, registrar)
                 .asBuilder()
                 .setSubordinateHosts(ImmutableSet.of("ns1.cat.lol", "ns2.cat.lol"))
                 .setCreationTimeForTest(clock.nowUtc().minusYears(3))
@@ -152,9 +152,6 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
         persistResource(
             makeDomain(
                     "cat2.lol",
-                    null,
-                    null,
-                    null,
                     addHostToMap(
                         FullFieldsTestEntityHelper.makeAndPersistHost(
                             "ns1.cat.example", "10.20.30.40", clock.nowUtc().minusYears(1))),
@@ -178,9 +175,6 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
         persistResource(
             makeDomain(
                     "cat.example",
-                    null,
-                    null,
-                    null,
                     hostNs1CatLol,
                     addHostToMap(
                         FullFieldsTestEntityHelper.makeAndPersistHost(
@@ -200,9 +194,6 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
         persistResource(
             makeDomain(
                     "cat.みんな",
-                    null,
-                    null,
-                    null,
                     addHostToMap(
                         FullFieldsTestEntityHelper.makeAndPersistHost(
                             "ns1.cat.みんな", "1.2.3.5", clock.nowUtc().minusYears(1))),
@@ -224,9 +215,6 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
         persistResource(
             makeDomain(
                     "cat.1.test",
-                    null,
-                    null,
-                    null,
                     addHostToMap(
                         FullFieldsTestEntityHelper.makeAndPersistHost(
                             "ns1.cat.1.test", "1.2.3.5", clock.nowUtc().minusYears(1))),
@@ -336,7 +324,7 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
     for (int i = numActiveDomains * numTotalDomainsPerActiveDomain; i >= 1; i--) {
       String domainName = String.format("domain%d.lol", i);
       Domain.Builder builder =
-          makeDomain(domainName, null, null, null, null, null, registrar)
+          makeDomain(domainName, null, null, registrar)
               .asBuilder()
               .setNameservers(hostKeys)
               .setCreationTimeForTest(clock.nowUtc().minusYears(3))

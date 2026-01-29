@@ -6,7 +6,6 @@
        xmlns:domain="urn:ietf:params:xml:ns:domain-1.0">
         <domain:name>example.tld</domain:name>
         <domain:chg>
-          <domain:registrant>crr-admin</domain:registrant>
           <domain:authInfo>
             <domain:pw>2fooBAR</domain:pw>
           </domain:authInfo>
