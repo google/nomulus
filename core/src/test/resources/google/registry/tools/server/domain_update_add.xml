@@ -10,8 +10,6 @@
             <domain:hostObj>ns2.zdns.google</domain:hostObj>
             <domain:hostObj>ns3.zdns.google</domain:hostObj>
           </domain:ns>
-          <domain:contact type="admin">crr-admin2</domain:contact>
-          <domain:contact type="tech">crr-tech2</domain:contact>
           <domain:status s="serverDeleteProhibited"/>
         </domain:add>
       </domain:update>

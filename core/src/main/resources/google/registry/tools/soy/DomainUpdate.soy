@@ -20,16 +20,11 @@
   {@param domain: string}
   {@param add: bool}
   {@param addNameservers: list<string>}
-  {@param addAdmins: list<string>}
-  {@param addTechs: list<string>}
   {@param addStatuses: list<string>}
   {@param remove: bool}
   {@param removeNameservers: list<string>}
-  {@param removeAdmins: list<string>}
-  {@param removeTechs: list<string>}
   {@param removeStatuses: list<string>}
   {@param change: bool}
-  {@param? registrant: string|null}
   {@param? password: string|null}
   {@param secdns: bool}
   {@param addDsRecords: list<[keyTag:int, alg:int, digestType:int, digest:string]>}
@@ -54,12 +49,6 @@
                   {/for}
                 </domain:ns>
               {/if}
-              {for $admin in $addAdmins}
-                <domain:contact type="admin">{$admin}</domain:contact>
-              {/for}
-              {for $tech in $addTechs}
-                <domain:contact type="tech">{$tech}</domain:contact>
-              {/for}
               {for $status in $addStatuses}
                 <domain:status s="{$status}"/>
               {/for}
@@ -74,12 +63,6 @@
                   {/for}
                 </domain:ns>
               {/if}
-              {for $admin in $removeAdmins}
-                <domain:contact type="admin">{$admin}</domain:contact>
-              {/for}
-              {for $tech in $removeTechs}
-                <domain:contact type="tech">{$tech}</domain:contact>
-              {/for}
               {for $status in $removeStatuses}
                 <domain:status s="{$status}"/>
               {/for}
@@ -87,9 +70,6 @@
           {/if}
           {if $change}
             <domain:chg>
-              {if $registrant}
-                <domain:registrant>{$registrant}</domain:registrant>
-              {/if}
               {if $password}
                 <domain:authInfo>
                     <domain:pw>{$password}</domain:pw>

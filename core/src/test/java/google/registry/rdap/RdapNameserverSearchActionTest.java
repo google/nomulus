@@ -131,7 +131,7 @@ class RdapNameserverSearchActionTest extends RdapSearchActionTestCase<RdapNamese
     // create a domain so that we can use it as a test nameserver search string suffix
     domainCatLol =
         persistResource(
-            makeDomain("cat.lol", null, null, null, hostNs1CatLol, hostNs2CatLol, registrar)
+            makeDomain("cat.lol", hostNs1CatLol, hostNs2CatLol, registrar)
                 .asBuilder()
                 .setSubordinateHosts(ImmutableSet.of("ns1.cat.lol", "ns2.cat.lol"))
                 .build());

@@ -36,7 +36,6 @@ import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.collect.Sets;
 import google.registry.model.billing.BillingBase.RenewalPriceBehavior;
 import google.registry.model.contact.Contact;
-import google.registry.model.domain.DesignatedContact.Type;
 import google.registry.model.domain.fee.FeeQueryCommandExtensionItem.CommandName;
 import google.registry.model.domain.launch.LaunchNotice;
 import google.registry.model.domain.rgp.GracePeriodStatus;
@@ -53,7 +52,6 @@ import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationW
 import google.registry.testing.FakeClock;
 import google.registry.util.SerializeUtils;
 import java.util.Arrays;
-import java.util.Optional;
 import org.joda.money.CurrencyUnit;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
@@ -71,12 +69,8 @@ public class DomainSqlTest {
       new JpaTestExtensions.Builder().withClock(fakeClock).buildIntegrationWithCoverageExtension();
 
   private Domain domain;
-  private Optional<VKey<Contact>> contactKey;
-  private VKey<Contact> contact2Key;
   private VKey<Host> host1VKey;
   private Host host;
-  private Contact contact;
-  private Contact contact2;
   private AllocationToken allocationToken;
 
   @BeforeEach
@@ -84,9 +78,6 @@ public class DomainSqlTest {
     saveRegistrar("registrar1");
     saveRegistrar("registrar2");
     saveRegistrar("registrar3");
-    contactKey = Optional.of(createKey(Contact.class, "contact_id1"));
-    contact2Key = createKey(Contact.class, "contact_id2");
-
     host1VKey = createKey(Host.class, "host1");
 
     domain =
@@ -106,8 +97,6 @@ public class DomainSqlTest {
                     StatusValue.SERVER_UPDATE_PROHIBITED,
                     StatusValue.SERVER_RENEW_PROHIBITED,
                     StatusValue.SERVER_HOLD))
-            .setRegistrant(contactKey)
-            .setContacts(ImmutableSet.of(DesignatedContact.create(Type.ADMIN, contact2Key)))
             .setSubordinateHosts(ImmutableSet.of("ns1.example.com"))
             .setPersistedCurrentSponsorRegistrarId("registrar3")
             .setRegistrationExpirationTime(fakeClock.nowUtc().plusYears(1))
@@ -128,8 +117,6 @@ public class DomainSqlTest {
             .setCreationRegistrarId("registrar1")
             .setPersistedCurrentSponsorRegistrarId("registrar2")
             .build();
-    contact = makeContact("contact_id1");
-    contact2 = makeContact("contact_id2");
 
     allocationToken =
         new AllocationToken.Builder()
@@ -168,7 +155,7 @@ public class DomainSqlTest {
   @Test
   void testHostForeignKeyConstraints() {
     // Persist the domain without the associated host object.
-    assertThrowForeignKeyViolation(() -> persistResources(contact, contact2, domain));
+    assertThrowForeignKeyViolation(() -> persistResources(domain));
   }
 
   @Test
@@ -357,7 +344,7 @@ public class DomainSqlTest {
   @Test
   void testSerializable() {
     createTld("com");
-    persistResources(contact, contact2, domain, host);
+    persistResources(domain, host);
     Domain persisted = tm().transact(() -> tm().loadByEntity(domain));
     assertThat(SerializeUtils.serializeDeserialize(persisted)).isEqualTo(persisted);
   }
@@ -365,7 +352,7 @@ public class DomainSqlTest {
   @Test
   void testUpdates() {
     createTld("com");
-    persistResources(contact, contact2, domain, host);
+    persistResources(domain, host);
     domain = domain.asBuilder().setNameservers(ImmutableSet.of()).build();
     persistResource(domain);
     assertAboutImmutableObjects()
@@ -384,7 +371,7 @@ public class DomainSqlTest {
 
   private void persistDomain() {
     createTld("com");
-    persistResources(contact, contact2, domain, host);
+    persistResources(domain, host);
   }
 
   private <T> VKey<T> createKey(Class<T> clazz, String key) {
