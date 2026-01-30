@@ -21,8 +21,13 @@ cd webapps
 find . -maxdepth 1 -type d -name "console-*" -exec rm -rf {} +
 cd /jetty-base
 echo "Running ${env}"
-# Use the CONTAINER_NAME variable from Kubernetes YAML to set the profiler service name.
-java -agentpath:/opt/cprof/profiler_java_agent.so=-cprof_service=${CONTAINER_NAME},-cprof_enable_heap_sampling=true \
+PROFILER_ARGS=""
+# # Use the CONTAINER_NAME variable from Kubernetes YAML to set Cloud profiler args, enable it only in frontend and console.
+case "${CONTAINER_NAME}" in
+  "frontend"|"console")
+  PROFILER_ARGS="-agentpath:/opt/cprof/profiler_java_agent.so=-cprof_service=${CONTAINER_NAME},-cprof_enable_heap_sampling=true"
+esac
+java $PROFILER_ARGS \
     -Dgoogle.registry.environment=${env} \
     -Djava.util.logging.config.file=/logging.properties \
     -jar /usr/local/jetty/start.jar
