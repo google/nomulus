@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<epp xmlns="urn:ietf:params:xml:ns:epp-1.0" xmlns:domain="urn:ietf:params:xml:ns:domain-1.0" xmlns:contact="urn:ietf:params:xml:ns:contact-1.0" xmlns:fee="urn:ietf:params:xml:ns:epp:fee-1.0" xmlns:rgp="urn:ietf:params:xml:ns:rgp-1.0" xmlns:bulkToken="urn:google:params:xml:ns:bulkToken-1.0" xmlns:launch="urn:ietf:params:xml:ns:launch-1.0" xmlns:secDNS="urn:ietf:params:xml:ns:secDNS-1.1" xmlns:host="urn:ietf:params:xml:ns:host-1.0">
+    <response>
+        <result code="1000">
+            <msg>Command completed successfully</msg>
+        </result>
+        <resData>
+            <domain:chkData>
+                <domain:cd>
+                    <domain:name avail="false">example.tld</domain:name>
+                    <domain:reason>Reserved; alloc. token required</domain:reason>
+                </domain:cd>
+            </domain:chkData>
+        </resData>
+        <extension>
+            <fee:chkData>
+                <fee:currency>USD</fee:currency>
+                <fee:cd>
+                    <fee:objID>example.tld</fee:objID>
+                    <fee:class>reserved</fee:class>
+                    <fee:command name="create">
+                        <fee:period unit="y">1</fee:period>
+                    </fee:command>
+                </fee:cd>
+                <fee:cd>
+                    <fee:objID>example.tld</fee:objID>
+                    <fee:class>premium</fee:class>
+                    <fee:command name="renew">
+                        <fee:period unit="y">1</fee:period>
+                        <fee:fee description="renew">499.00</fee:fee>
+                    </fee:command>
+                </fee:cd>
+                <fee:cd>
+                    <fee:objID>example.tld</fee:objID>
+                    <fee:class>premium</fee:class>
+                    <fee:command name="transfer">
+                        <fee:period unit="y">1</fee:period>
+                        <fee:fee description="renew">499.00</fee:fee>
+                    </fee:command>
+                </fee:cd>
+            </fee:chkData>
+        </extension>
+        <trID>
+            <clTRID>ff25dfc7-2025-469a-baec-bedde73e74de</clTRID>
+            <svTRID>k5VIs5JMR1SRbx3TY6pAxQ==-2c52e</svTRID>
+        </trID>
+    </response>
+</epp>
