@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<epp xmlns="urn:ietf:params:xml:ns:epp-1.0" xmlns:domain="urn:ietf:params:xml:ns:domain-1.0" xmlns:contact="urn:ietf:params:xml:ns:contact-1.0" xmlns:fee="urn:ietf:params:xml:ns:fee-0.6" xmlns:fee_1_00="urn:ietf:params:xml:ns:epp:fee-1.0" xmlns:rgp="urn:ietf:params:xml:ns:rgp-1.0" xmlns:bulkToken="urn:google:params:xml:ns:bulkToken-1.0" xmlns:fee11="urn:ietf:params:xml:ns:fee-0.11" xmlns:fee12="urn:ietf:params:xml:ns:fee-0.12" xmlns:launch="urn:ietf:params:xml:ns:launch-1.0" xmlns:secDNS="urn:ietf:params:xml:ns:secDNS-1.1" xmlns:host="urn:ietf:params:xml:ns:host-1.0">
+    <response>
+        <result code="1000">
+            <msg>Command completed successfully</msg>
+        </result>
+        <resData>
+            <domain:chkData>
+                <domain:cd>
+                    <domain:name avail="true">example.tld</domain:name>
+                </domain:cd>
+            </domain:chkData>
+        </resData>
+        <extension>
+            <fee11:chkData>
+                <fee11:cd avail="true">
+                    <fee11:object>
+                        <domain:name>example.tld</domain:name>
+                    </fee11:object>
+                    <fee11:command>create</fee11:command>
+                    <fee11:currency>USD</fee11:currency>
+                    <fee11:period unit="y">1</fee11:period>
+                    <fee11:fee description="create">59.00</fee11:fee>
+                    <fee11:class>premium</fee11:class>
+                </fee11:cd>
+            </fee11:chkData>
+        </extension>
+        <trID>
+            <svTRID>zpFtnGFRSKi9GbnQgwWvHQ==-398f30</svTRID>
+        </trID>
+    </response>
+</epp>
