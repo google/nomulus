@@ -155,9 +155,7 @@ steps:
       google.registry.beam.rde.RdePipeline \
       google/registry/beam/rde_pipeline_metadata.json \
       google.registry.beam.resave.ResaveAllEppResourcesPipeline \
-      google/registry/beam/resave_all_epp_resources_pipeline_metadata.json \
-      google.registry.beam.wipeout.WipeOutContactHistoryPiiPipeline \
-      google/registry/beam/wipe_out_contact_history_pii_pipeline_metadata.json
+      google/registry/beam/resave_all_epp_resources_pipeline_metadata.json
 # Build and upload the schema jar as well as other artifacts needed by the schema tests.
 - name: 'gcr.io/${PROJECT_ID}/builder:latest'
   entrypoint: /bin/bash
