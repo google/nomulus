@@ -52,9 +52,8 @@ import javax.xml.stream.events.XMLEvent;
  * use a unique XML tag. E.g., fee for extension v0.6, and fee12 for extension v0.12.
  *
  * <p>Some registrars are not XML namespace-aware and rely on the XML tags being specific literals.
- * This makes it impossible to perform seamless rollout of new versions. Nomulus and the all
- * registrars using the same tag must make coordinated rollouts to minimize disruption to the
- * registrars.
+ * This makes it difficult to perform seamless rollout of new versions: if Nomulus reassigns a tag
+ * literal to a different version, it effectively forces all these registrars to upgrade.
  *
  * <p>This class can be used to normalize the namespace tag in EPP responses. Since every response
  * message may use at most one version of the Fee extension, we can remove declared but unused
