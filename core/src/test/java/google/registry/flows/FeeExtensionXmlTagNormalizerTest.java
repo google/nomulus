@@ -15,11 +15,10 @@
 package google.registry.flows;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.flows.FeeExtensionXmlTagNormalizer.normalizeFeeExtensionTag;
+import static google.registry.flows.FeeExtensionXmlTagNormalizer.feeExtensionInUseRegex;
+import static google.registry.flows.FeeExtensionXmlTagNormalizer.normalize;
 import static google.registry.model.eppcommon.EppXmlTransformer.validateOutput;
-import static google.registry.testing.TestDataHelper.loadBytes;
 import static google.registry.testing.TestDataHelper.loadFile;
-import static java.nio.charset.StandardCharsets.UTF_8;
 
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
@@ -29,25 +28,31 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 class FeeExtensionXmlTagNormalizerTest {
 
-  @ParameterizedTest
+  @Test
+  void feeExtensionInUseRegex_correct() {
+    assertThat(feeExtensionInUseRegex())
+        .isEqualTo("\\b(fee):|\\b(fee11):|\\b(fee12):|\\b(fee_1_00):");
+  }
+
+  @Test
+  void normalize_noFeeExtensions() throws Exception {
+    String xml = loadFile(getClass(), "domain_create.xml");
+    String normalized = normalize(xml);
+    assertThat(normalized).isEqualTo(xml);
+  }
+
+  @ParameterizedTest(name = "normalize_withFeeExtension-{0}")
   @MethodSource("provideTestCombinations")
   @SuppressWarnings("unused") // Parameter 'name' is part of test case name
-  void success_withFeeExtension(String name, String inputXmlFilename, String expectedXmlFilename)
+  void normalize_withFeeExtension(String name, String inputXmlFilename, String expectedXmlFilename)
       throws Exception {
-    byte[] xmlBytes = loadBytes(getClass(), inputXmlFilename).read();
-    String normalized = normalizeFeeExtensionTag(xmlBytes);
+    String original = loadFile(getClass(), inputXmlFilename);
+    String normalized = normalize(original);
     String expected = loadFile(getClass(), expectedXmlFilename);
     // Verify that expected xml is syntatically correct.
     validateOutput(expected);
 
     assertThat(normalized).isEqualTo(expected);
-  }
-
-  @Test
-  void success_noFeeExtensions() throws Exception {
-    byte[] xmlBytes = loadBytes(getClass(), "domain_create.xml").read();
-    String normalized = normalizeFeeExtensionTag(xmlBytes);
-    assertThat(normalized).isEqualTo(new String(xmlBytes, UTF_8));
   }
 
   @SuppressWarnings("unused")
