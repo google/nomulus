@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<epp xmlns="urn:ietf:params:xml:ns:epp-1.0" xmlns:domain="urn:ietf:params:xml:ns:domain-1.0" xmlns:contact="urn:ietf:params:xml:ns:contact-1.0" xmlns:fee="urn:ietf:params:xml:ns:fee-0.6" xmlns:fee_1_00="urn:ietf:params:xml:ns:epp:fee-1.0" xmlns:rgp="urn:ietf:params:xml:ns:rgp-1.0" xmlns:bulkToken="urn:google:params:xml:ns:bulkToken-1.0" xmlns:fee11="urn:ietf:params:xml:ns:fee-0.11" xmlns:fee12="urn:ietf:params:xml:ns:fee-0.12" xmlns:launch="urn:ietf:params:xml:ns:launch-1.0" xmlns:secDNS="urn:ietf:params:xml:ns:secDNS-1.1" xmlns:host="urn:ietf:params:xml:ns:host-1.0">
+    <response>
+        <result code="1000">
+            <msg>Command completed successfully</msg>
+        </result>
+        <resData>
+            <domain:chkData>
+                <domain:cd>
+                    <domain:name avail="false">example.tld</domain:name>
+                    <domain:reason>Reserved; alloc. token required</domain:reason>
+                </domain:cd>
+            </domain:chkData>
+        </resData>
+        <extension>
+            <fee_1_00:chkData>
+                <fee_1_00:currency>USD</fee_1_00:currency>
+                <fee_1_00:cd>
+                    <fee_1_00:objID>example.tld</fee_1_00:objID>
+                    <fee_1_00:class>reserved</fee_1_00:class>
+                    <fee_1_00:command name="create">
+                        <fee_1_00:period unit="y">1</fee_1_00:period>
+                    </fee_1_00:command>
+                </fee_1_00:cd>
+                <fee_1_00:cd>
+                    <fee_1_00:objID>example.tld</fee_1_00:objID>
+                    <fee_1_00:class>premium</fee_1_00:class>
+                    <fee_1_00:command name="renew">
+                        <fee_1_00:period unit="y">1</fee_1_00:period>
+                        <fee_1_00:fee description="renew">499.00</fee_1_00:fee>
+                    </fee_1_00:command>
+                </fee_1_00:cd>
+                <fee_1_00:cd>
+                    <fee_1_00:objID>example.tld</fee_1_00:objID>
+                    <fee_1_00:class>premium</fee_1_00:class>
+                    <fee_1_00:command name="transfer">
+                        <fee_1_00:period unit="y">1</fee_1_00:period>
+                        <fee_1_00:fee description="renew">499.00</fee_1_00:fee>
+                    </fee_1_00:command>
+                </fee_1_00:cd>
+            </fee_1_00:chkData>
+        </extension>
+        <trID>
+            <clTRID>ff25dfc7-2025-469a-baec-bedde73e74de</clTRID>
+            <svTRID>k5VIs5JMR1SRbx3TY6pAxQ==-2c52e</svTRID>
+        </trID>
+    </response>
+</epp>
