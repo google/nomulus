@@ -76,7 +76,7 @@ class RdapDomainActionTest extends RdapActionBaseTestCase<RdapDomainAction> {
         makeAndPersistHost(
             "ns2.cat.lol", "bad:f00d:cafe:0:0:0:15:beef", clock.nowUtc().minusYears(2));
     persistResource(
-        makeDomain("cat.lol", null, null, null, host1, host2, registrarLol)
+        makeDomain("cat.lol", host1, host2, registrarLol)
             .asBuilder()
             .setCreationTimeForTest(clock.nowUtc().minusYears(3))
             .setCreationRegistrarId("TheRegistrar")
@@ -88,7 +88,7 @@ class RdapDomainActionTest extends RdapActionBaseTestCase<RdapDomainAction> {
             "ns2.dodo.lol", "bad:f00d:cafe:0:0:0:15:beef", clock.nowUtc().minusYears(2));
     Domain domainDeleted =
         persistResource(
-            makeDomain("dodo.lol", null, null, null, host1, hostDodo2, registrarLol)
+            makeDomain("dodo.lol", host1, hostDodo2, registrarLol)
                 .asBuilder()
                 .setCreationTimeForTest(clock.nowUtc().minusYears(3))
                 .setCreationRegistrarId("TheRegistrar")
@@ -100,7 +100,7 @@ class RdapDomainActionTest extends RdapActionBaseTestCase<RdapDomainAction> {
         persistResource(makeRegistrar("idnregistrar", "IDN Registrar", Registrar.State.ACTIVE));
     persistResources(makeRegistrarPocs(registrarIdn));
     persistResource(
-        makeDomain("cat.みんな", null, null, null, host1, host2, registrarIdn)
+        makeDomain("cat.みんな", host1, host2, registrarIdn)
             .asBuilder()
             .setCreationTimeForTest(clock.nowUtc().minusYears(3))
             .setCreationRegistrarId("TheRegistrar")
@@ -113,7 +113,7 @@ class RdapDomainActionTest extends RdapActionBaseTestCase<RdapDomainAction> {
             makeRegistrar("1tldregistrar", "Multilevel Registrar", Registrar.State.ACTIVE));
     persistResources(makeRegistrarPocs(registrar1Tld));
     persistResource(
-        makeDomain("cat.1.tld", null, null, null, host1, host2, registrar1Tld)
+        makeDomain("cat.1.tld", host1, host2, registrar1Tld)
             .asBuilder()
             .setCreationTimeForTest(clock.nowUtc().minusYears(3))
             .setCreationRegistrarId("TheRegistrar")

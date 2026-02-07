@@ -6,13 +6,10 @@
        xmlns:domain="urn:ietf:params:xml:ns:domain-1.0">
         <domain:name>example.tld</domain:name>
         <domain:add>
-          <domain:contact type="admin">crr-admin3</domain:contact>
-          <domain:contact type="tech">crr-tech3</domain:contact>
+          <domain:ns>
+            <domain:hostObj>ns2.zdns.google</domain:hostObj>
+          </domain:ns>
         </domain:add>
-        <domain:rem>
-          <domain:contact type="admin">crr-admin1</domain:contact>
-          <domain:contact type="tech">crr-tech1</domain:contact>
-        </domain:rem>
       </domain:update>
     </update>
     <clTRID>RegistryTool</clTRID>

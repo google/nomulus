@@ -9,8 +9,6 @@
           <domain:ns>
             <domain:hostObj>ns4.zdns.google</domain:hostObj>
           </domain:ns>
-          <domain:contact type="admin">crr-admin1</domain:contact>
-          <domain:contact type="tech">crr-tech1</domain:contact>
           <domain:status s="serverHold"/>
         </domain:rem>
       </domain:update>

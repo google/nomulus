@@ -24,7 +24,7 @@ import static com.google.common.collect.Iterables.toArray;
 import static com.google.common.collect.MoreCollectors.onlyElement;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
-import static google.registry.config.RegistryConfig.getContactAndHostRoidSuffix;
+import static google.registry.config.RegistryConfig.getHostRoidSuffix;
 import static google.registry.model.EppResourceUtils.createDomainRepoId;
 import static google.registry.model.EppResourceUtils.createRepoId;
 import static google.registry.model.ImmutableObjectSubject.assertAboutImmutableObjects;
@@ -150,7 +150,7 @@ public final class DatabaseHelper {
   }
 
   public static Host newHost(String hostName) {
-    return newHostWithRoid(hostName, generateNewContactHostRoid());
+    return newHostWithRoid(hostName, generateNewHostRoid());
   }
 
   public static Host newHostWithRoid(String hostName, String repoId) {
@@ -201,7 +201,7 @@ public final class DatabaseHelper {
    * an auto-generated repoId.
    */
   public static Contact newContact(String contactId) {
-    return newContactWithRoid(contactId, generateNewContactHostRoid());
+    return newContactWithRoid(contactId, generateNewHostRoid());
   }
 
   public static Contact newContactWithRoid(String contactId, String repoId) {
@@ -924,8 +924,8 @@ public final class DatabaseHelper {
   }
 
   /** Returns a newly allocated, globally unique contact/host repoId of the format HEX_TLD-ROID. */
-  public static String generateNewContactHostRoid() {
-    return createRepoId(tm().reTransact(tm()::allocateId), getContactAndHostRoidSuffix());
+  public static String generateNewHostRoid() {
+    return createRepoId(tm().reTransact(tm()::allocateId), getHostRoidSuffix());
   }
 
   /** Persists an object in the DB for tests. */
