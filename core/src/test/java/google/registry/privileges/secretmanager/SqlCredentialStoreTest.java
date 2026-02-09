@@ -16,7 +16,6 @@ package google.registry.privileges.secretmanager;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import com.google.cloud.secretmanager.v1.SecretVersionName;
 import google.registry.privileges.secretmanager.SqlUser.RobotId;
 import google.registry.privileges.secretmanager.SqlUser.RobotUser;
 import java.util.Optional;
@@ -32,15 +31,18 @@ public class SqlCredentialStoreTest {
   @Test
   void createSecret() {
     credentialStore.createOrUpdateCredential(user, "password");
-    assertThat(client.secretExists("sql-cred-live-label-nomulus-db")).isTrue();
-    assertThat(
-            SecretVersionName.parse(
-                    client.getSecretData("sql-cred-live-label-nomulus-db", Optional.empty()))
-                .getSecret())
-        .isEqualTo("sql-cred-data-nomulus-db");
-    assertThat(client.secretExists("sql-cred-data-nomulus-db")).isTrue();
-    assertThat(client.getSecretData("sql-cred-data-nomulus-db", Optional.empty()))
+    assertThat(client.secretExists("sql-password-for-nomulus-on-db")).isTrue();
+    assertThat(client.getSecretData("sql-password-for-nomulus-on-db", Optional.empty()))
         .isEqualTo("nomulus password");
+  }
+
+  @Test
+  void updateSecret() {
+    credentialStore.createOrUpdateCredential(user, "password");
+    credentialStore.createOrUpdateCredential(user, "new-password");
+    assertThat(client.secretExists("sql-password-for-nomulus-on-db")).isTrue();
+    assertThat(client.getSecretData("sql-password-for-nomulus-on-db", Optional.empty()))
+        .isEqualTo("nomulus new-password");
   }
 
   @Test
@@ -49,15 +51,5 @@ public class SqlCredentialStoreTest {
     SqlCredential credential = credentialStore.getCredential(user);
     assertThat(credential.login()).isEqualTo("nomulus");
     assertThat(credential.password()).isEqualTo("password");
-  }
-
-  @Test
-  void deleteCredential() {
-    credentialStore.createOrUpdateCredential(user, "password");
-    assertThat(client.secretExists("sql-cred-live-label-nomulus-db")).isTrue();
-    assertThat(client.secretExists("sql-cred-data-nomulus-db")).isTrue();
-    credentialStore.deleteCredential(user);
-    assertThat(client.secretExists("sql-cred-live-label-nomulus-db")).isFalse();
-    assertThat(client.secretExists("sql-cred-data-nomulus-db")).isFalse();
   }
 }

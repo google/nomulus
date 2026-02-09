@@ -14,28 +14,12 @@
 
 package google.registry.privileges.secretmanager;
 
-import com.google.cloud.secretmanager.v1.SecretVersionName;
 import google.registry.config.RegistryConfig.Config;
-import google.registry.privileges.secretmanager.SecretManagerClient.NoSuchSecretResourceException;
 import jakarta.inject.Inject;
 import java.util.Optional;
 
 /**
  * Storage of SQL users' login credentials, backed by Cloud Secret Manager.
- *
- * <p>A user's credential is stored with one level of indirection using two secret IDs: Each version
- * of the <em>credential data</em> is stored as follows: its secret ID is determined by {@link
- * #getCredentialDataSecretId(SqlUser, String dbInstance)}, and the value of each version is a
- * {@link SqlCredential}, serialized using {@link SqlCredential#toFormattedString}. The 'live'
- * version of the credential is saved under the 'live pointer' secret explained below.
- *
- * <p>The pointer to the 'live' version of the credential data is stored as follows: its secret ID
- * is determined by {@link #getLiveLabelSecretId(SqlUser, String dbInstance)}; and the value of each
- * version is a {@link SecretVersionName} in String form, pointing to a version of the credential
- * data. Only the 'latest' version of this secret should be used. It is guaranteed to be valid.
- *
- * <p>The indirection in credential storage makes it easy to handle failures in the credential
- * change process.
  */
 public class SqlCredentialStore {
   private final SecretManagerClient csmClient;
@@ -49,61 +33,19 @@ public class SqlCredentialStore {
   }
 
   public SqlCredential getCredential(SqlUser user) {
-    SecretVersionName credentialName = getLiveCredentialSecretVersion(user);
-    return SqlCredential.fromFormattedString(
-        csmClient.getSecretData(
-            credentialName.getSecret(), Optional.of(credentialName.getSecretVersion())));
+    var secretId = getSecretIdForUserPassword(user);
+    var secretData = csmClient.getSecretData(secretId, Optional.empty());
+    return SqlCredential.fromFormattedString(secretData);
   }
 
   public void createOrUpdateCredential(SqlUser user, String password) {
-    SecretVersionName dataName = saveCredentialData(user, password);
-    saveLiveLabel(user, dataName);
+    var secretId = getSecretIdForUserPassword(user);
+    csmClient.createSecretIfAbsent(secretId);
+    csmClient.addSecretVersion(
+        secretId, SqlCredential.create(user.geUserName(), password).toFormattedString());
   }
 
-  public void deleteCredential(SqlUser user) {
-    try {
-      csmClient.deleteSecret(getCredentialDataSecretId(user, dbInstance));
-    } catch (NoSuchSecretResourceException e) {
-      // ok
-    }
-    try {
-      csmClient.deleteSecret(getLiveLabelSecretId(user, dbInstance));
-    } catch (NoSuchSecretResourceException e) {
-      // ok.
-    }
-  }
-
-  private SecretVersionName saveCredentialData(SqlUser user, String password) {
-    String credentialDataSecretId = getCredentialDataSecretId(user, dbInstance);
-    csmClient.createSecretIfAbsent(credentialDataSecretId);
-    String credentialVersion =
-        csmClient.addSecretVersion(
-            credentialDataSecretId,
-            SqlCredential.create(createDatabaseLoginName(user), password).toFormattedString());
-    return SecretVersionName.of(csmClient.getProject(), credentialDataSecretId, credentialVersion);
-  }
-
-  private void saveLiveLabel(SqlUser user, SecretVersionName dataVersionName) {
-    String liveLabelSecretId = getLiveLabelSecretId(user, dbInstance);
-    csmClient.createSecretIfAbsent(liveLabelSecretId);
-    csmClient.addSecretVersion(liveLabelSecretId, dataVersionName.toString());
-  }
-
-  private SecretVersionName getLiveCredentialSecretVersion(SqlUser user) {
-    return SecretVersionName.parse(
-        csmClient.getSecretData(getLiveLabelSecretId(user, dbInstance), Optional.empty()));
-  }
-
-  private static String getLiveLabelSecretId(SqlUser user, String dbInstance) {
-    return String.format("sql-cred-live-label-%s-%s", user.geUserName(), dbInstance);
-  }
-
-  private static String getCredentialDataSecretId(SqlUser user, String dbInstance) {
-    return String.format("sql-cred-data-%s-%s", user.geUserName(), dbInstance);
-  }
-
-  // WIP: when b/170230882 is complete, login will be versioned.
-  private static String createDatabaseLoginName(SqlUser user) {
-    return user.geUserName();
+  private String getSecretIdForUserPassword(SqlUser user) {
+    return String.format("sql-password-for-%s-on-%s", user.geUserName(), this.dbInstance);
   }
 }
