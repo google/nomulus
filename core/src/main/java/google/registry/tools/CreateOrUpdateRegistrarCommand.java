@@ -400,7 +400,10 @@ abstract class CreateOrUpdateRegistrarCommand extends MutatingCommand {
       if (registrarName != null && !registrarName.equals(oldRegistrarName)) {
         String normalizedName = normalizeRegistrarName(registrarName);
         for (Registrar registrar : Registrar.loadAll()) {
-          if (registrar.getRegistrarName() != null) {
+          // Only check against other registrars (i.e. not the existing version of this one), and
+          // which also have a display name set.
+          if (!registrar.getRegistrarId().equals(clientId)
+              && registrar.getRegistrarName() != null) {
             checkArgument(
                 !normalizedName.equals(normalizeRegistrarName(registrar.getRegistrarName())),
                 "The registrar name %s normalizes identically to existing registrar name %s",

@@ -969,6 +969,14 @@ class UpdateRegistrarCommandTest extends CommandTestCase<UpdateRegistrarCommand>
   }
 
   @Test
+  void testSuccess_updateSameRegistrar_registrarNameSimilarToExisting() throws Exception {
+    // Note that "The -- registrar" normalizes identically to "The Registrar", which is created by
+    // JpaTransactionManagerExtension.
+    runCommand("--name The -- registrar", "--force", "TheRegistrar");
+    assertThat(loadRegistrar("TheRegistrar").getRegistrarName()).isEqualTo("The -- registrar");
+  }
+
+  @Test
   void testSuccess_poNumberNotSpecified_doesntWipeOutExisting() throws Exception {
     Registrar registrar =
         persistResource(
