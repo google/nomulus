@@ -16,7 +16,6 @@ package google.registry.model.contact;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.ImmutableList.toImmutableList;
-import static google.registry.model.EppResourceUtils.projectResourceOntoBuilderAtTime;
 
 import com.google.common.collect.ImmutableList;
 import google.registry.model.EppResource;
@@ -254,17 +253,8 @@ public class ContactBase extends EppResource
 
   @Override
   public ContactBase cloneProjectedAtTime(DateTime now) {
-    return cloneContactProjectedAtTime(this, now);
-  }
-
-  /**
-   * Clones the contact (or subclass). A separate static method so that we can pass in and return a
-   * T without the compiler complaining.
-   */
-  protected static <T extends ContactBase> T cloneContactProjectedAtTime(T contact, DateTime now) {
-    Builder builder = contact.asBuilder();
-    projectResourceOntoBuilderAtTime(contact, builder, now);
-    return (T) builder.build();
+    // Contacts no longer exist and thus do not need to be projected
+    return this;
   }
 
   @Override

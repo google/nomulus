@@ -15,12 +15,10 @@
 package google.registry.model;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.testing.DatabaseHelper.persistActiveContact;
 import static google.registry.testing.DatabaseHelper.persistActiveHost;
 import static google.registry.testing.DatabaseHelper.persistResource;
 
 import com.google.common.collect.ImmutableList;
-import google.registry.model.contact.Contact;
 import google.registry.model.host.Host;
 import google.registry.testing.TestCacheExtension;
 import java.time.Duration;
@@ -33,19 +31,6 @@ public class EppResourceTest extends EntityTestCase {
   @RegisterExtension
   public final TestCacheExtension testCacheExtension =
       new TestCacheExtension.Builder().withEppResourceCache(Duration.ofDays(1)).build();
-
-  @Test
-  void test_loadByCacheIfEnabled_ignoresContactChange() {
-    Contact originalContact = persistActiveContact("contact123");
-    assertThat(EppResource.loadByCacheIfEnabled(ImmutableList.of(originalContact.createVKey())))
-        .containsExactly(originalContact.createVKey(), originalContact);
-    Contact modifiedContact =
-        persistResource(originalContact.asBuilder().setEmailAddress("different@fake.lol").build());
-    assertThat(EppResource.loadByCacheIfEnabled(ImmutableList.of(originalContact.createVKey())))
-        .containsExactly(originalContact.createVKey(), originalContact);
-    assertThat(ForeignKeyUtils.loadResource(Contact.class, "contact123", fakeClock.nowUtc()))
-        .hasValue(modifiedContact);
-  }
 
   @Test
   void test_loadByCacheIfEnabled_ignoresHostChange() {

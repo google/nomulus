@@ -83,8 +83,6 @@ interface RegistryToolComponent {
 
   void inject(CreateCdnsTld command);
 
-  void inject(CreateContactCommand command);
-
   void inject(CreateDomainCommand command);
 
   void inject(CreateRegistrarCommand command);
@@ -106,8 +104,6 @@ interface RegistryToolComponent {
   void inject(GenerateEscrowDepositCommand command);
 
   void inject(GetBulkPricingPackageCommand command);
-
-  void inject(GetContactCommand command);
 
   void inject(GetDomainCommand command);
 

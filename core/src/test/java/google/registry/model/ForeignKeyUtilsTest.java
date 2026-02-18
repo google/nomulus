@@ -16,7 +16,6 @@ package google.registry.model;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.testing.DatabaseHelper.createTld;
-import static google.registry.testing.DatabaseHelper.persistActiveContact;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistActiveHost;
 import static google.registry.testing.DatabaseHelper.persistResource;
@@ -24,7 +23,6 @@ import static org.joda.time.DateTimeZone.UTC;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import google.registry.model.contact.Contact;
 import google.registry.model.domain.Domain;
 import google.registry.model.host.Host;
 import google.registry.persistence.transaction.JpaTestExtensions;
@@ -70,13 +68,6 @@ class ForeignKeyUtilsTest {
     Domain domain = persistActiveDomain("example.com");
     assertThat(ForeignKeyUtils.loadKey(Domain.class, "example.com", fakeClock.nowUtc()))
         .hasValue(domain.createVKey());
-  }
-
-  @Test
-  void testSuccess_loadContactKey() {
-    Contact contact = persistActiveContact("john-doe");
-    assertThat(ForeignKeyUtils.loadKey(Contact.class, "john-doe", fakeClock.nowUtc()))
-        .hasValue(contact.createVKey());
   }
 
   @Test

@@ -72,8 +72,8 @@ class NordnUploadActionTest {
       """
       1,2010-05-04T10:11:12.000Z,2
       roid,domain-name,notice-id,registrar-id,registration-datetime,ack-datetime,application-datetime
-      6-TLD,claims-landrush2.tld,landrush2tcn,88888,2010-05-03T10:11:12.000Z,2010-05-03T08:11:12.000Z
-      8-TLD,claims-landrush1.tld,landrush1tcn,99999,2010-05-04T10:11:12.000Z,2010-05-04T09:11:12.000Z
+      4-TLD,claims-landrush2.tld,landrush2tcn,88888,2010-05-03T10:11:12.000Z,2010-05-03T08:11:12.000Z
+      5-TLD,claims-landrush1.tld,landrush1tcn,99999,2010-05-04T10:11:12.000Z,2010-05-04T09:11:12.000Z
       """;
 
   private static final String SUNRISE_CSV =
@@ -81,7 +81,7 @@ class NordnUploadActionTest {
       1,2010-05-04T10:11:12.000Z,2
       roid,domain-name,SMD-id,registrar-id,registration-datetime,application-datetime
       2-TLD,sunrise2.tld,new-smdid,88888,2010-05-01T10:11:12.000Z
-      4-TLD,sunrise1.tld,my-smdid,99999,2010-05-02T10:11:12.000Z
+      3-TLD,sunrise1.tld,my-smdid,99999,2010-05-02T10:11:12.000Z
       """;
 
   private static final String LOCATION_URL = "http://trololol";

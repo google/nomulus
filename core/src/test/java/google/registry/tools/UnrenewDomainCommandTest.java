@@ -24,7 +24,6 @@ import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.getOnlyHistoryEntryOfType;
 import static google.registry.testing.DatabaseHelper.getPollMessages;
 import static google.registry.testing.DatabaseHelper.loadByKey;
-import static google.registry.testing.DatabaseHelper.persistActiveContact;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistDeletedDomain;
 import static google.registry.testing.DatabaseHelper.persistDomainWithDependentResources;
@@ -37,7 +36,6 @@ import google.registry.model.ForeignKeyUtils;
 import google.registry.model.billing.BillingBase.Flag;
 import google.registry.model.billing.BillingBase.Reason;
 import google.registry.model.billing.BillingRecurrence;
-import google.registry.model.contact.Contact;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.eppcommon.StatusValue;
@@ -60,12 +58,10 @@ public class UnrenewDomainCommandTest extends CommandTestCase<UnrenewDomainComma
 
   @Test
   void test_unrenewTwoDomains_worksSuccessfully() throws Exception {
-    Contact contact = persistActiveContact("jd1234");
     fakeClock.advanceOneMilli();
     persistDomainWithDependentResources(
         "foo",
         "tld",
-        contact,
         fakeClock.nowUtc(),
         fakeClock.nowUtc(),
         fakeClock.nowUtc().plusYears(5));
@@ -73,7 +69,6 @@ public class UnrenewDomainCommandTest extends CommandTestCase<UnrenewDomainComma
     persistDomainWithDependentResources(
         "bar",
         "tld",
-        contact,
         fakeClock.nowUtc(),
         fakeClock.nowUtc(),
         fakeClock.nowUtc().plusYears(4));
@@ -95,12 +90,10 @@ public class UnrenewDomainCommandTest extends CommandTestCase<UnrenewDomainComma
 
   @Test
   void test_unrenewDomain_savesDependentEntitiesCorrectly() throws Exception {
-    Contact contact = persistActiveContact("jd1234");
     fakeClock.advanceOneMilli();
     persistDomainWithDependentResources(
         "foo",
         "tld",
-        contact,
         fakeClock.nowUtc(),
         fakeClock.nowUtc(),
         fakeClock.nowUtc().plusYears(5));

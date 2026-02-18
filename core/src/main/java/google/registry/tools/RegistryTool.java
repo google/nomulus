@@ -44,7 +44,6 @@ public final class RegistryTool {
               "create_cancellations_for_billing_events",
               CreateCancellationsForBillingEventsCommand.class)
           .put("create_cdns_tld", CreateCdnsTld.class)
-          .put("create_contact", CreateContactCommand.class)
           .put("create_domain", CreateDomainCommand.class)
           .put("create_host", CreateHostCommand.class)
           .put("create_premium_list", CreatePremiumListCommand.class)
@@ -72,7 +71,6 @@ public final class RegistryTool {
           .put("get_allocation_token", GetAllocationTokenCommand.class)
           .put("get_bulk_pricing_package", GetBulkPricingPackageCommand.class)
           .put("get_claims_list", GetClaimsListCommand.class)
-          .put("get_contact", GetContactCommand.class)
           .put("get_domain", GetDomainCommand.class)
           .put("get_feature_flag", GetFeatureFlagCommand.class)
           .put("get_history_entries", GetHistoryEntriesCommand.class)

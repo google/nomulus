@@ -16,7 +16,6 @@ package google.registry.batch;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.createTld;
-import static google.registry.testing.DatabaseHelper.persistActiveContact;
 import static google.registry.testing.DatabaseHelper.persistEppResource;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.LogsSubject.assertAboutLogs;
@@ -32,7 +31,6 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.testing.TestLogHandler;
 import google.registry.groups.GmailClient;
 import google.registry.model.billing.BillingBase.RenewalPriceBehavior;
-import google.registry.model.contact.Contact;
 import google.registry.model.domain.fee.FeeQueryCommandExtensionItem.CommandName;
 import google.registry.model.domain.token.AllocationToken;
 import google.registry.model.domain.token.AllocationToken.TokenType;
@@ -79,7 +77,6 @@ public class CheckBulkComplianceActionTest {
   private final Logger loggerToIntercept =
       Logger.getLogger(CheckBulkComplianceAction.class.getCanonicalName());
   private final GmailClient gmailClient = mock(GmailClient.class);
-  private Contact contact;
   private BulkPricingPackage bulkPricingPackage;
   private SendEmailUtils sendEmailUtils;
   private ArgumentCaptor<EmailMessage> emailCaptor = ArgumentCaptor.forClass(EmailMessage.class);
@@ -125,8 +122,6 @@ public class CheckBulkComplianceActionTest {
             .setNextBillingDate(DateTime.parse("2012-11-12T05:00:00Z"))
             .setLastNotificationSent(DateTime.parse("2010-11-12T05:00:00Z"))
             .build();
-
-    contact = persistActiveContact("contact1234");
   }
 
   @AfterEach
@@ -138,7 +133,7 @@ public class CheckBulkComplianceActionTest {
   void testSuccess_noBulkPackageOverCreateLimit() {
     tm().transact(() -> tm().put(bulkPricingPackage));
     persistEppResource(
-        DatabaseHelper.newDomain("foo.tld", contact)
+        DatabaseHelper.newDomain("foo.tld")
             .asBuilder()
             .setCurrentBulkToken(token.createVKey())
             .build());
@@ -156,12 +151,12 @@ public class CheckBulkComplianceActionTest {
     tm().transact(() -> tm().put(bulkPricingPackage));
     // Create limit is 1, creating 2 domains to go over the limit
     persistEppResource(
-        DatabaseHelper.newDomain("foo.tld", contact)
+        DatabaseHelper.newDomain("foo.tld")
             .asBuilder()
             .setCurrentBulkToken(token.createVKey())
             .build());
     persistEppResource(
-        DatabaseHelper.newDomain("buzz.tld", contact)
+        DatabaseHelper.newDomain("buzz.tld")
             .asBuilder()
             .setCurrentBulkToken(token.createVKey())
             .build());
@@ -189,12 +184,12 @@ public class CheckBulkComplianceActionTest {
     tm().transact(() -> tm().put(bulkPricingPackage));
     // Create limit is 1, creating 2 domains to go over the limit
     persistEppResource(
-        DatabaseHelper.newDomain("foo.tld", contact)
+        DatabaseHelper.newDomain("foo.tld")
             .asBuilder()
             .setCurrentBulkToken(token.createVKey())
             .build());
     persistEppResource(
-        DatabaseHelper.newDomain("buzz.tld", contact)
+        DatabaseHelper.newDomain("buzz.tld")
             .asBuilder()
             .setCurrentBulkToken(token.createVKey())
             .build());
@@ -223,12 +218,12 @@ public class CheckBulkComplianceActionTest {
     tm().transact(() -> tm().put(bulkPricingPackage2));
 
     persistEppResource(
-        DatabaseHelper.newDomain("foo2.tld", contact)
+        DatabaseHelper.newDomain("foo2.tld")
             .asBuilder()
             .setCurrentBulkToken(token2.createVKey())
             .build());
     persistEppResource(
-        DatabaseHelper.newDomain("buzz2.tld", contact)
+        DatabaseHelper.newDomain("buzz2.tld")
             .asBuilder()
             .setCurrentBulkToken(token2.createVKey())
             .build());
@@ -282,12 +277,12 @@ public class CheckBulkComplianceActionTest {
 
     // Create limit is 1, creating 2 domains to go over the limit
     persistEppResource(
-        DatabaseHelper.newDomain("foo.tld", contact)
+        DatabaseHelper.newDomain("foo.tld")
             .asBuilder()
             .setCurrentBulkToken(token2.createVKey())
             .build());
     persistEppResource(
-        DatabaseHelper.newDomain("buzz.tld", contact)
+        DatabaseHelper.newDomain("buzz.tld")
             .asBuilder()
             .setCurrentBulkToken(token2.createVKey())
             .build());
@@ -304,7 +299,7 @@ public class CheckBulkComplianceActionTest {
   void testSuccess_noBulkPricingPackageOverActiveDomainsLimit() {
     tm().transact(() -> tm().put(bulkPricingPackage));
     persistEppResource(
-        DatabaseHelper.newDomain("foo.tld", contact)
+        DatabaseHelper.newDomain("foo.tld")
             .asBuilder()
             .setCurrentBulkToken(token.createVKey())
             .build());
@@ -323,12 +318,12 @@ public class CheckBulkComplianceActionTest {
     tm().transact(() -> tm().put(bulkPricingPackage));
     // Domains limit is 1, creating 2 domains to go over the limit
     persistEppResource(
-        DatabaseHelper.newDomain("foo.tld", contact)
+        DatabaseHelper.newDomain("foo.tld")
             .asBuilder()
             .setCurrentBulkToken(token.createVKey())
             .build());
     persistEppResource(
-        DatabaseHelper.newDomain("buzz.tld", contact)
+        DatabaseHelper.newDomain("buzz.tld")
             .asBuilder()
             .setCurrentBulkToken(token.createVKey())
             .build());
@@ -356,7 +351,7 @@ public class CheckBulkComplianceActionTest {
             .build();
     tm().transact(() -> tm().put(bulkPricingPackage2));
     persistEppResource(
-        DatabaseHelper.newDomain("foo2.tld", contact)
+        DatabaseHelper.newDomain("foo2.tld")
             .asBuilder()
             .setCurrentBulkToken(token2.createVKey())
             .build());
@@ -390,12 +385,12 @@ public class CheckBulkComplianceActionTest {
                 tm().put(bulkPricingPackage.asBuilder().setMaxDomains(1).setMaxCreates(4).build()));
     // Domains limit is 1, creating 2 domains to go over the limit
     persistEppResource(
-        DatabaseHelper.newDomain("foo.tld", contact)
+        DatabaseHelper.newDomain("foo.tld")
             .asBuilder()
             .setCurrentBulkToken(token.createVKey())
             .build());
     persistEppResource(
-        DatabaseHelper.newDomain("buzz.tld", contact)
+        DatabaseHelper.newDomain("buzz.tld")
             .asBuilder()
             .setCurrentBulkToken(token.createVKey())
             .build());
@@ -424,12 +419,12 @@ public class CheckBulkComplianceActionTest {
     tm().transact(() -> tm().put(bulkPricingPackage2));
 
     persistEppResource(
-        DatabaseHelper.newDomain("foo2.tld", contact)
+        DatabaseHelper.newDomain("foo2.tld")
             .asBuilder()
             .setCurrentBulkToken(token2.createVKey())
             .build());
     persistEppResource(
-        DatabaseHelper.newDomain("buzz2.tld", contact)
+        DatabaseHelper.newDomain("buzz2.tld")
             .asBuilder()
             .setCurrentBulkToken(token2.createVKey())
             .build());
@@ -467,12 +462,12 @@ public class CheckBulkComplianceActionTest {
     tm().transact(() -> tm().put(bulkPricingPackage));
     // Domains limit is 1, creating 2 domains to go over the limit
     persistEppResource(
-        DatabaseHelper.newDomain("foo.tld", contact)
+        DatabaseHelper.newDomain("foo.tld")
             .asBuilder()
             .setCurrentBulkToken(token.createVKey())
             .build());
     persistEppResource(
-        DatabaseHelper.newDomain("buzz.tld", contact)
+        DatabaseHelper.newDomain("buzz.tld")
             .asBuilder()
             .setCurrentBulkToken(token.createVKey())
             .build());
@@ -508,12 +503,12 @@ public class CheckBulkComplianceActionTest {
     tm().transact(() -> tm().put(bulkPricingPackage));
     // Domains limit is 1, creating 2 domains to go over the limit
     persistEppResource(
-        DatabaseHelper.newDomain("foo.tld", contact)
+        DatabaseHelper.newDomain("foo.tld")
             .asBuilder()
             .setCurrentBulkToken(token.createVKey())
             .build());
     persistEppResource(
-        DatabaseHelper.newDomain("buzz.tld", contact)
+        DatabaseHelper.newDomain("buzz.tld")
             .asBuilder()
             .setCurrentBulkToken(token.createVKey())
             .build());
@@ -553,12 +548,12 @@ public class CheckBulkComplianceActionTest {
     tm().transact(() -> tm().put(bulkPricingPackage));
     // Domains limit is 1, creating 2 domains to go over the limit
     persistEppResource(
-        DatabaseHelper.newDomain("foo.tld", contact)
+        DatabaseHelper.newDomain("foo.tld")
             .asBuilder()
             .setCurrentBulkToken(token.createVKey())
             .build());
     persistEppResource(
-        DatabaseHelper.newDomain("buzz.tld", contact)
+        DatabaseHelper.newDomain("buzz.tld")
             .asBuilder()
             .setCurrentBulkToken(token.createVKey())
             .build());

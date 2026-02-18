@@ -20,7 +20,6 @@ import static google.registry.model.ImmutableObjectSubject.immutableObjectCorres
 import static google.registry.persistence.transaction.JpaTransactionManagerExtension.makeRegistrar1;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.createTld;
-import static google.registry.testing.DatabaseHelper.persistActiveContact;
 import static google.registry.testing.DatabaseHelper.persistNewRegistrar;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static org.mockito.ArgumentMatchers.any;
@@ -37,7 +36,6 @@ import com.google.common.truth.Correspondence.BinaryPredicate;
 import google.registry.beam.TestPipelineExtension;
 import google.registry.beam.spec11.SafeBrowsingTransforms.EvaluateSafeBrowsingFn;
 import google.registry.beam.spec11.SafeBrowsingTransformsTest.HttpResponder;
-import google.registry.model.contact.Contact;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainAuthInfo;
 import google.registry.model.eppcommon.AuthInfo.PasswordAuth;
@@ -54,7 +52,6 @@ import google.registry.util.Retrier;
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Optional;
 import org.apache.beam.sdk.coders.KvCoder;
 import org.apache.beam.sdk.coders.SerializableCoder;
 import org.apache.beam.sdk.options.PipelineOptionsFactory;
@@ -252,16 +249,11 @@ class Spec11PipelineTest {
     createTld("bank");
     createTld("dev");
 
-    Contact contact1 = persistActiveContact(registrar1.getRegistrarId());
-    Contact contact2 = persistActiveContact(registrar2.getRegistrarId());
-    Contact contact3 = persistActiveContact(registrar3.getRegistrarId());
-
-    persistResource(createDomain("111.com", "123456789-COM", registrar1, contact1));
-    persistResource(createDomain("party-night.net", "2244AABBC-NET", registrar2, contact2));
-    persistResource(createDomain("bitcoin.bank", "1C3D5E7F9-BANK", registrar1, contact1));
-    persistResource(createDomain("no-email.com", "2A4BA9BBC-COM", registrar2, contact2));
-    persistResource(
-        createDomain("anti-anti-anti-virus.dev", "555666888-DEV", registrar3, contact3));
+    persistResource(createDomain("111.com", "123456789-COM", registrar1));
+    persistResource(createDomain("party-night.net", "2244AABBC-NET", registrar2));
+    persistResource(createDomain("bitcoin.bank", "1C3D5E7F9-BANK", registrar1));
+    persistResource(createDomain("no-email.com", "2A4BA9BBC-COM", registrar2));
+    persistResource(createDomain("anti-anti-anti-virus.dev", "555666888-DEV", registrar3));
   }
 
   private void verifySaveToGcs() throws Exception {
@@ -289,8 +281,7 @@ class Spec11PipelineTest {
             });
   }
 
-  private Domain createDomain(
-      String domainName, String repoId, Registrar registrar, Contact contact) {
+  private Domain createDomain(String domainName, String repoId, Registrar registrar) {
     return new Domain.Builder()
         .setDomainName(domainName)
         .setRepoId(repoId)
@@ -298,7 +289,6 @@ class Spec11PipelineTest {
         .setLastEppUpdateTime(fakeClock.nowUtc())
         .setLastEppUpdateRegistrarId(registrar.getRegistrarId())
         .setLastTransferTime(fakeClock.nowUtc())
-        .setRegistrant(Optional.of(contact.createVKey()))
         .setPersistedCurrentSponsorRegistrarId(registrar.getRegistrarId())
         .setRegistrationExpirationTime(fakeClock.nowUtc().plusYears(1))
         .setAuthInfo(DomainAuthInfo.create(PasswordAuth.create("password")))

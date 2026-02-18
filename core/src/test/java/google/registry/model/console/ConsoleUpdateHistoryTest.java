@@ -17,7 +17,6 @@ package google.registry.model.console;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.loadByEntity;
-import static google.registry.testing.DatabaseHelper.persistActiveContact;
 import static google.registry.testing.DatabaseHelper.persistDomainWithDependentResources;
 import static google.registry.testing.DatabaseHelper.persistResource;
 
@@ -38,7 +37,6 @@ public class ConsoleUpdateHistoryTest extends EntityTestCase {
     persistDomainWithDependentResources(
         "example",
         "tld",
-        persistActiveContact("contact1234"),
         fakeClock.nowUtc(),
         fakeClock.nowUtc(),
         DateTimeUtils.END_OF_TIME);

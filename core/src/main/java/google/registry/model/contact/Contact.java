@@ -24,7 +24,6 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Index;
 import jakarta.persistence.Table;
-import org.joda.time.DateTime;
 
 /**
  * A persistable contact resource including mutable and non-mutable fields.
@@ -56,11 +55,6 @@ public class Contact extends ContactBase implements ForeignKeyedEppResource {
   @Access(AccessType.PROPERTY)
   public String getRepoId() {
     return super.getRepoId();
-  }
-
-  @Override
-  public Contact cloneProjectedAtTime(DateTime now) {
-    return ContactBase.cloneContactProjectedAtTime(this, now);
   }
 
   @Override

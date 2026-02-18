@@ -17,7 +17,6 @@ package google.registry.tools.server;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.testing.DatabaseHelper.createTlds;
 import static google.registry.testing.DatabaseHelper.newHost;
-import static google.registry.testing.DatabaseHelper.persistActiveContact;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistActiveHost;
 import static google.registry.testing.DatabaseHelper.persistResource;
@@ -132,7 +131,6 @@ class GenerateZoneFilesActionTest {
             .asBuilder()
             .setDsData(ImmutableSet.of(DomainDsData.create(1, 2, 3, new byte[] {0, 1, 2})))
             .build());
-    persistActiveContact("ignored_contact");
     persistActiveHost("ignored.host.tld");  // No ips.
     persistActiveDomain("ignored_domain.tld");  // No hosts or DS data.
     persistResource(newHost("ignored.foo.com").asBuilder().addInetAddresses(ips).build());

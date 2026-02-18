@@ -78,8 +78,8 @@ public class PollMessageExternalKeyConverterTest {
                 .setMsg("Test poll message")
                 .setHistoryEntry(historyEntry)
                 .build());
-    assertThat(makePollMessageExternalId(pollMessage)).isEqualTo("5-2007");
-    assertVKeysEqual(parsePollMessageExternalId("5-2007"), pollMessage.createVKey());
+    assertThat(makePollMessageExternalId(pollMessage)).isEqualTo("4-2007");
+    assertVKeysEqual(parsePollMessageExternalId("4-2007"), pollMessage.createVKey());
   }
 
   @Test
@@ -95,8 +95,8 @@ public class PollMessageExternalKeyConverterTest {
                 .setMsg("Test poll message")
                 .setHistoryEntry(historyEntry)
                 .build());
-    assertThat(makePollMessageExternalId(pollMessage)).isEqualTo("7-2007");
-    assertVKeysEqual(parsePollMessageExternalId("7-2007"), pollMessage.createVKey());
+    assertThat(makePollMessageExternalId(pollMessage)).isEqualTo("6-2007");
+    assertVKeysEqual(parsePollMessageExternalId("6-2007"), pollMessage.createVKey());
   }
 
   @Test

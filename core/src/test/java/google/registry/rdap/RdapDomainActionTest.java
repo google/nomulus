@@ -473,7 +473,7 @@ class RdapDomainActionTest extends RdapActionBaseTestCase<RdapDomainAction> {
       String label, String tld, DateTime creationTime, DateTime expirationTime) {
     return persistResource(
         persistDomainWithDependentResources(
-                label, tld, null, clock.nowUtc(), creationTime, expirationTime)
+                label, tld, clock.nowUtc(), creationTime, expirationTime)
             .asBuilder()
             .addNameserver(host1.createVKey())
             .build());

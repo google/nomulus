@@ -18,7 +18,6 @@ import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.ImmutableObjectSubject.assertAboutImmutableObjects;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.createTld;
-import static google.registry.testing.DatabaseHelper.newContactWithRoid;
 import static google.registry.testing.DatabaseHelper.newDomain;
 import static google.registry.testing.DatabaseHelper.newHostWithRoid;
 import static google.registry.testing.DatabaseHelper.persistResource;
@@ -27,7 +26,6 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.collect.ImmutableSet;
 import google.registry.model.EntityTestCase;
-import google.registry.model.contact.Contact;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.DomainHistory;
@@ -58,7 +56,7 @@ public class DomainHistoryTest extends EntityTestCase {
 
   @Test
   void testPersistence() {
-    Domain domain = addGracePeriodForSql(createDomainWithContactsAndHosts());
+    Domain domain = addGracePeriodForSql(createDomainWithHosts());
     DomainHistory domainHistory = createDomainHistory(domain);
     persistResource(domainHistory);
 
@@ -72,26 +70,18 @@ public class DomainHistoryTest extends EntityTestCase {
 
   @Test
   void testSerializable() {
-    Domain domain = addGracePeriodForSql(createDomainWithContactsAndHosts());
+    Domain domain = addGracePeriodForSql(createDomainWithHosts());
     DomainHistory domainHistory = createDomainHistory(domain);
     persistResource(domainHistory);
     DomainHistory fromDatabase = tm().transact(() -> tm().loadByKey(domainHistory.createVKey()));
     assertThat(SerializeUtils.serializeDeserialize(fromDatabase)).isEqualTo(fromDatabase);
   }
 
-  static Domain createDomainWithContactsAndHosts() {
+  static Domain createDomainWithHosts() {
     createTld("tld");
-    Host host = newHostWithRoid("ns1.example.com", "host1");
-    Contact contact = newContactWithRoid("contactId", "contact1");
-
-    tm().transact(
-            () -> {
-              tm().insert(host);
-              tm().insert(contact);
-            });
-
+    Host host = persistResource(newHostWithRoid("ns1.example.com", "host1"));
     Domain domain =
-        newDomain("example.tld", "domainRepoId", contact)
+        newDomain("example.tld", "domainRepoId")
             .asBuilder()
             .setNameservers(host.createVKey())
             .setDsData(ImmutableSet.of(DomainDsData.create(1, 2, 3, new byte[] {0, 1, 2})))

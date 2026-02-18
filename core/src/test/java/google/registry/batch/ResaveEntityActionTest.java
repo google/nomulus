@@ -21,7 +21,6 @@ import static google.registry.batch.AsyncTaskEnqueuer.QUEUE_ASYNC_ACTIONS;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.loadByEntity;
 import static google.registry.testing.DatabaseHelper.newDomain;
-import static google.registry.testing.DatabaseHelper.persistActiveContact;
 import static google.registry.testing.DatabaseHelper.persistDomainWithDependentResources;
 import static google.registry.testing.DatabaseHelper.persistDomainWithPendingTransfer;
 import static google.registry.testing.DatabaseHelper.persistResource;
@@ -87,7 +86,6 @@ public class ResaveEntityActionTest {
             persistDomainWithDependentResources(
                 "domain",
                 "tld",
-                persistActiveContact("jd1234"),
                 DateTime.parse("2016-02-06T10:00:00Z"),
                 DateTime.parse("2016-02-06T10:00:00Z"),
                 DateTime.parse("2017-01-02T10:11:00Z")),

@@ -72,7 +72,6 @@ public class ConsoleBulkDomainActionTest extends ConsoleActionBaseTestCase {
         persistDomainWithDependentResources(
             "example",
             "tld",
-            null,
             clock.nowUtc(),
             clock.nowUtc().minusMonths(1),
             clock.nowUtc().plusMonths(11));

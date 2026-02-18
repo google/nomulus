@@ -20,7 +20,6 @@ import static google.registry.model.ImmutableObjectSubject.assertAboutImmutableO
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.loadAllOf;
 import static google.registry.testing.DatabaseHelper.loadByEntity;
-import static google.registry.testing.DatabaseHelper.persistActiveContact;
 import static google.registry.testing.DatabaseHelper.persistActiveHost;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.joda.time.DateTimeZone.UTC;
@@ -86,8 +85,6 @@ class EppPointInTimeTest {
 
     persistActiveHost("ns1.example.net");
     persistActiveHost("ns2.example.net");
-    persistActiveContact("jd1234");
-    persistActiveContact("sh8013");
 
     clock.advanceBy(standardDays(1));
     DateTime timeAtCreate = clock.nowUtc();

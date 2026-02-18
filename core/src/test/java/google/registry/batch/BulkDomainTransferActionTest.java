@@ -65,23 +65,18 @@ public class BulkDomainTransferActionTest {
     // The default registrar is TheRegistrar, which will be the losing registrar
     activeDomain =
         persistDomainWithDependentResources(
-            "active", "tld", null, now, now.minusDays(1), DateTimeUtils.END_OF_TIME);
+            "active", "tld", now, now.minusDays(1), DateTimeUtils.END_OF_TIME);
     alreadyTransferredDomain =
         persistResource(
             persistDomainWithDependentResources(
-                    "alreadytransferred",
-                    "tld",
-                    null,
-                    now,
-                    now.minusDays(1),
-                    DateTimeUtils.END_OF_TIME)
+                    "alreadytransferred", "tld", now, now.minusDays(1), DateTimeUtils.END_OF_TIME)
                 .asBuilder()
                 .setPersistedCurrentSponsorRegistrarId("NewRegistrar")
                 .build());
     pendingDeleteDomain =
         persistResource(
             persistDomainWithDependentResources(
-                    "pendingdelete", "tld", null, now, now.minusDays(1), now.plusMonths(1))
+                    "pendingdelete", "tld", now, now.minusDays(1), now.plusMonths(1))
                 .asBuilder()
                 .setStatusValues(ImmutableSet.of(StatusValue.PENDING_DELETE))
                 .build());

@@ -75,8 +75,6 @@ import google.registry.model.console.User;
 import google.registry.model.console.UserRoles;
 import google.registry.model.contact.Contact;
 import google.registry.model.contact.ContactAuthInfo;
-import google.registry.model.domain.DesignatedContact;
-import google.registry.model.domain.DesignatedContact.Type;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainAuthInfo;
 import google.registry.model.domain.DomainBase;
@@ -103,9 +101,7 @@ import google.registry.model.tld.label.PremiumList.PremiumEntry;
 import google.registry.model.tld.label.PremiumListDao;
 import google.registry.model.tld.label.ReservedList;
 import google.registry.model.tld.label.ReservedListDao;
-import google.registry.model.transfer.ContactTransferData;
 import google.registry.model.transfer.DomainTransferData;
-import google.registry.model.transfer.TransferData;
 import google.registry.model.transfer.TransferStatus;
 import google.registry.persistence.VKey;
 import java.util.Arrays;
@@ -165,11 +161,7 @@ public final class DatabaseHelper {
 
   public static Domain newDomain(String domainName) {
     String repoId = generateNewDomainRoid(getTldFromDomainName(domainName));
-    return newDomain(domainName, repoId, persistActiveContact("contact1234"));
-  }
-
-  public static Domain newDomain(String domainName, Contact contact) {
-    return newDomain(domainName, generateNewDomainRoid(getTldFromDomainName(domainName)), contact);
+    return newDomain(domainName, repoId);
   }
 
   public static Domain newDomain(String domainName, Host... hosts) {
@@ -178,8 +170,7 @@ public final class DatabaseHelper {
     return newDomain(domainName).asBuilder().setNameservers(hostKeys).build();
   }
 
-  public static Domain newDomain(String domainName, String repoId, Contact contact) {
-    VKey<Contact> contactKey = contact.createVKey();
+  public static Domain newDomain(String domainName, String repoId) {
     return new Domain.Builder()
         .setRepoId(repoId)
         .setDomainName(domainName)
@@ -187,21 +178,8 @@ public final class DatabaseHelper {
         .setPersistedCurrentSponsorRegistrarId("TheRegistrar")
         .setCreationTimeForTest(START_OF_TIME)
         .setAuthInfo(DomainAuthInfo.create(PasswordAuth.create("2fooBAR")))
-        .setRegistrant(Optional.of(contactKey))
-        .setContacts(
-            ImmutableSet.of(
-                DesignatedContact.create(Type.ADMIN, contactKey),
-                DesignatedContact.create(Type.TECH, contactKey)))
         .setRegistrationExpirationTime(END_OF_TIME)
         .build();
-  }
-
-  /**
-   * Returns a newly created {@link Contact} for the given contactId (which is the foreign key) with
-   * an auto-generated repoId.
-   */
-  public static Contact newContact(String contactId) {
-    return newContactWithRoid(contactId, generateNewHostRoid());
   }
 
   public static Contact newContactWithRoid(String contactId, String repoId) {
@@ -255,12 +233,7 @@ public final class DatabaseHelper {
   }
 
   public static Contact persistActiveContact(String contactId) {
-    return persistResource(newContact(contactId));
-  }
-
-  /** Persists a contact resource with the given contact id deleted at the specified time. */
-  public static Contact persistDeletedContact(String contactId, DateTime deletionTime) {
-    return persistResource(newContact(contactId).asBuilder().setDeletionTime(deletionTime).build());
+    return persistResource(newContactWithRoid(contactId, generateNewHostRoid()));
   }
 
   public static Host persistActiveHost(String hostName) {
@@ -490,24 +463,14 @@ public final class DatabaseHelper {
         .setPendingTransferExpirationTime(expirationTime);
   }
 
-  private static ContactTransferData.Builder createContactTransferDataBuilder(
-      DateTime requestTime, DateTime expirationTime) {
-    return new ContactTransferData.Builder()
-        .setTransferStatus(TransferStatus.PENDING)
-        .setGainingRegistrarId("NewRegistrar")
-        .setTransferRequestTime(requestTime)
-        .setLosingRegistrarId("TheRegistrar")
-        .setPendingTransferExpirationTime(expirationTime);
-  }
-
   public static PollMessage.OneTime createPollMessageForImplicitTransfer(
-      EppResource resource,
+      Domain domain,
       HistoryEntry historyEntry,
       String registrarId,
       DateTime requestTime,
       DateTime expirationTime,
       @Nullable DateTime extendedRegistrationExpirationTime) {
-    TransferData transferData =
+    DomainTransferData transferData =
         createDomainTransferDataBuilder(requestTime, expirationTime)
             .setTransferredRegistrationExpirationTime(extendedRegistrationExpirationTime)
             .build();
@@ -515,7 +478,7 @@ public final class DatabaseHelper {
         .setRegistrarId(registrarId)
         .setEventTime(expirationTime)
         .setMsg("Transfer server approved.")
-        .setResponseData(ImmutableList.of(createTransferResponse(resource, transferData)))
+        .setResponseData(ImmutableList.of(createTransferResponse(domain, transferData)))
         .setHistoryEntry(historyEntry)
         .build();
   }
@@ -537,7 +500,6 @@ public final class DatabaseHelper {
   public static Domain persistDomainWithDependentResources(
       String label,
       String tld,
-      @Nullable Contact contact,
       DateTime now,
       DateTime creationTime,
       DateTime expirationTime) {
@@ -553,14 +515,6 @@ public final class DatabaseHelper {
             .setRegistrationExpirationTime(expirationTime)
             .setAuthInfo(DomainAuthInfo.create(PasswordAuth.create("fooBAR")));
     Duration addGracePeriodLength = Tld.get(tld).getAddGracePeriodLength();
-    if (contact != null) {
-      domainBuilder
-          .setRegistrant(Optional.of(contact.createVKey()))
-          .setContacts(
-              ImmutableSet.of(
-                  DesignatedContact.create(Type.ADMIN, contact.createVKey()),
-                  DesignatedContact.create(Type.TECH, contact.createVKey())));
-    }
     if (creationTime.plus(addGracePeriodLength).isAfter(now)) {
       domainBuilder.addGracePeriod(
           GracePeriod.create(
@@ -923,7 +877,7 @@ public final class DatabaseHelper {
     return createDomainRepoId(tm().reTransact(tm()::allocateId), tld);
   }
 
-  /** Returns a newly allocated, globally unique contact/host repoId of the format HEX_TLD-ROID. */
+  /** Returns a newly allocated, globally unique host repoId of the format HEX_TLD-ROID. */
   public static String generateNewHostRoid() {
     return createRepoId(tm().reTransact(tm()::allocateId), getHostRoidSuffix());
   }

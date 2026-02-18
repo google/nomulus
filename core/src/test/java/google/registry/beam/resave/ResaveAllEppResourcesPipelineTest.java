@@ -20,8 +20,8 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.loadAllOf;
 import static google.registry.testing.DatabaseHelper.loadByEntity;
-import static google.registry.testing.DatabaseHelper.persistActiveContact;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
+import static google.registry.testing.DatabaseHelper.persistActiveHost;
 import static google.registry.testing.DatabaseHelper.persistDomainWithDependentResources;
 import static google.registry.testing.DatabaseHelper.persistDomainWithPendingTransfer;
 import static google.registry.testing.DatabaseHelper.persistNewRegistrars;
@@ -31,10 +31,10 @@ import static org.mockito.Mockito.verify;
 
 import google.registry.beam.TestPipelineExtension;
 import google.registry.model.EppResource;
-import google.registry.model.contact.Contact;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.GracePeriod;
 import google.registry.model.eppcommon.StatusValue;
+import google.registry.model.host.Host;
 import google.registry.persistence.PersistenceModule.TransactionIsolationLevel;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
@@ -79,13 +79,13 @@ public class ResaveAllEppResourcesPipelineTest {
 
   @Test
   void testPipeline_unchangedEntity() {
-    Contact contact = persistActiveContact("test123");
-    DateTime creationTime = contact.getUpdateTimestamp().getTimestamp();
+    Host host = persistActiveHost("ns1.example.tld");
+    DateTime creationTime = host.getUpdateTimestamp().getTimestamp();
     fakeClock.advanceOneMilli();
-    assertThat(loadByEntity(contact).getUpdateTimestamp().getTimestamp()).isEqualTo(creationTime);
+    assertThat(loadByEntity(host).getUpdateTimestamp().getTimestamp()).isEqualTo(creationTime);
     fakeClock.advanceOneMilli();
     runPipeline();
-    assertThat(loadByEntity(contact)).isEqualTo(contact);
+    assertThat(loadByEntity(host)).isEqualTo(host);
   }
 
   @Test
@@ -95,12 +95,7 @@ public class ResaveAllEppResourcesPipelineTest {
     Domain domain =
         persistDomainWithPendingTransfer(
             persistDomainWithDependentResources(
-                "domain",
-                "tld",
-                persistActiveContact("jd1234"),
-                now.minusDays(5),
-                now.minusDays(5),
-                now.plusYears(2)),
+                "domain", "tld", now.minusDays(5), now.minusDays(5), now.plusYears(2)),
             now.minusDays(4),
             now.minusDays(1),
             now.plusYears(2));
@@ -117,8 +112,7 @@ public class ResaveAllEppResourcesPipelineTest {
   void testPipeline_autorenewedDomain() {
     DateTime now = fakeClock.nowUtc();
     Domain domain =
-        persistDomainWithDependentResources(
-            "domain", "tld", persistActiveContact("jd1234"), now, now, now.plusYears(1));
+        persistDomainWithDependentResources("domain", "tld", now, now, now.plusYears(1));
     assertThat(domain.getRegistrationExpirationTime()).isEqualTo(now.plusYears(1));
     fakeClock.advanceBy(Duration.standardDays(500));
     runPipeline();
@@ -129,8 +123,7 @@ public class ResaveAllEppResourcesPipelineTest {
   @Test
   void testPipeline_expiredGracePeriod() {
     DateTime now = fakeClock.nowUtc();
-    persistDomainWithDependentResources(
-        "domain", "tld", persistActiveContact("jd1234"), now, now, now.plusYears(1));
+    persistDomainWithDependentResources("domain", "tld", now, now, now.plusYears(1));
     assertThat(loadAllOf(GracePeriod.class)).hasSize(1);
     fakeClock.advanceBy(Duration.standardDays(500));
     runPipeline();
@@ -140,8 +133,7 @@ public class ResaveAllEppResourcesPipelineTest {
   @Test
   void testPipeline_fastOnlySavesChanged() {
     DateTime now = fakeClock.nowUtc();
-    Contact contact = persistActiveContact("jd1234");
-    persistDomainWithDependentResources("renewed", "tld", contact, now, now, now.plusYears(1));
+    persistDomainWithDependentResources("renewed", "tld", now, now, now.plusYears(1));
     persistActiveDomain("nonrenewed.tld", now, now.plusYears(20));
     // Spy the transaction manager so we can be sure we're only saving the renewed domain
     JpaTransactionManager spy = spy(tm());
@@ -157,24 +149,22 @@ public class ResaveAllEppResourcesPipelineTest {
   void testPipeline_notFastResavesAll() {
     options.setFast(false);
     DateTime now = fakeClock.nowUtc();
-    Contact contact = persistActiveContact("jd1234");
     Domain renewed =
-        persistDomainWithDependentResources("renewed", "tld", contact, now, now, now.plusYears(1));
+        persistDomainWithDependentResources("renewed", "tld", now, now, now.plusYears(1));
     Domain nonRenewed =
-        persistDomainWithDependentResources(
-            "nonrenewed", "tld", contact, now, now, now.plusYears(20));
+        persistDomainWithDependentResources("nonrenewed", "tld", now, now, now.plusYears(20));
     // Spy the transaction manager so we can be sure we're attempting to save everything
     JpaTransactionManager spy = spy(tm());
     TransactionManagerFactory.setJpaTm(() -> spy);
     ArgumentCaptor<EppResource> eppResourcePutCaptor = ArgumentCaptor.forClass(EppResource.class);
     runPipeline();
-    // We should be attempting to put both domains (and the contact) in, even the unchanged ones
-    verify(spy, times(3)).put(eppResourcePutCaptor.capture());
+    // We should be attempting to put both domains in, even the unchanged one
+    verify(spy, times(2)).put(eppResourcePutCaptor.capture());
     assertThat(
             eppResourcePutCaptor.getAllValues().stream()
                 .map(EppResource::getRepoId)
                 .collect(toImmutableSet()))
-        .containsExactly(contact.getRepoId(), renewed.getRepoId(), nonRenewed.getRepoId());
+        .containsExactly(renewed.getRepoId(), nonRenewed.getRepoId());
   }
 
   private void runPipeline() {

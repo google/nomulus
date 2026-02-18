@@ -103,7 +103,7 @@ public class DomainToXjcConverterTest {
     assertThat(
             bean.getContacts().stream()
                 .map(input -> String.format("%s %s", input.getType().toString(), input.getValue())))
-        .containsExactly("ADMIN contact1234", "TECH contact1234");
+        .isEmpty();
 
     assertThat(bean.getCrDate()).isEqualTo(DateTime.parse("1900-01-01T00:00:00Z"));
 
@@ -132,7 +132,7 @@ public class DomainToXjcConverterTest {
     //    name used to generate the IDN variant.
     // TODO(b/26125498): bean.getOriginalName()
 
-    assertThat(bean.getRegistrant()).isEqualTo("contact1234");
+    assertThat(bean.getRegistrant()).isNull();
 
     // o  Zero or more OPTIONAL <rgpStatus> element to represent
     //    "pendingDelete" sub-statuses, including "redemptionPeriod",

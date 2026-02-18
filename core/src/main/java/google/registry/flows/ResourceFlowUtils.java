@@ -34,7 +34,6 @@ import google.registry.flows.exceptions.ResourceToDeleteIsReferencedException;
 import google.registry.flows.exceptions.TooManyResourceChecksException;
 import google.registry.model.EppResource;
 import google.registry.model.EppResource.ForeignKeyedEppResource;
-import google.registry.model.EppResource.ResourceWithTransferData;
 import google.registry.model.ForeignKeyUtils;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainBase;
@@ -42,6 +41,7 @@ import google.registry.model.domain.Period;
 import google.registry.model.domain.rgp.GracePeriodStatus;
 import google.registry.model.eppcommon.AuthInfo;
 import google.registry.model.eppcommon.StatusValue;
+import google.registry.model.host.Host;
 import google.registry.model.transfer.TransferStatus;
 import google.registry.persistence.VKey;
 import java.util.List;
@@ -63,30 +63,26 @@ public final class ResourceFlowUtils {
     }
   }
 
-  /**
-   * Check whether if there are domains linked to the resource to be deleted. Throws an exception if
-   * so.
-   */
-  public static <R extends EppResource> void checkLinkedDomains(
-      final String targetId, final DateTime now, final Class<R> resourceClass) throws EppException {
-    VKey<R> key =
-        ForeignKeyUtils.loadKey(resourceClass, targetId, now)
-            .orElseThrow(() -> new ResourceDoesNotExistException(resourceClass, targetId));
+  /** Check if there are domains linked to the host to be deleted. Throws an exception if so. */
+  public static void checkLinkedDomains(final String targetId, final DateTime now)
+      throws EppException {
+    VKey<Host> key =
+        ForeignKeyUtils.loadKey(Host.class, targetId, now)
+            .orElseThrow(() -> new ResourceDoesNotExistException(Host.class, targetId));
     if (isLinked(key, now)) {
       throw new ResourceToDeleteIsReferencedException();
     }
   }
 
-  public static <R extends EppResource & ResourceWithTransferData> void verifyHasPendingTransfer(
-      R resource) throws NotPendingTransferException {
-    if (resource.getTransferData().getTransferStatus() != TransferStatus.PENDING) {
-      throw new NotPendingTransferException(resource.getForeignKey());
+  public static void verifyHasPendingTransfer(Domain domain) throws NotPendingTransferException {
+    if (domain.getTransferData().getTransferStatus() != TransferStatus.PENDING) {
+      throw new NotPendingTransferException(domain.getForeignKey());
     }
   }
 
-  public static <R extends EppResource & ResourceWithTransferData> void verifyTransferInitiator(
-      String registrarId, R resource) throws NotTransferInitiatorException {
-    if (!resource.getTransferData().getGainingRegistrarId().equals(registrarId)) {
+  public static void verifyTransferInitiator(String registrarId, Domain domain)
+      throws NotTransferInitiatorException {
+    if (!domain.getTransferData().getGainingRegistrarId().equals(registrarId)) {
       throw new NotTransferInitiatorException();
     }
   }

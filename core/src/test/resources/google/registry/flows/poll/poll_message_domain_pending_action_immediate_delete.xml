@@ -3,9 +3,9 @@
     <result code="1301">
       <msg>Command completed successfully; ack to dequeue</msg>
     </result>
-    <msgQ count="1" id="6-2011">
+    <msgQ count="1" id="5-2011">
       <qDate>2011-01-02T01:01:01Z</qDate>
-      <msg>Domain test.example was deleted by registry administrator with final deletion effective: 2011-01-02T00:56:01.008Z</msg>
+      <msg>Domain test.example was deleted by registry administrator with final deletion effective: 2011-01-02T00:56:01.007Z</msg>
     </msgQ>
     <resData>
       <domain:panData>

@@ -29,7 +29,6 @@ import com.google.common.flogger.FluentLogger;
 import google.registry.flows.poll.PollFlowUtils;
 import google.registry.model.EppResource;
 import google.registry.model.EppResourceUtils;
-import google.registry.model.contact.Contact;
 import google.registry.model.domain.Domain;
 import google.registry.model.host.Host;
 import google.registry.model.poll.PollMessage;
@@ -94,7 +93,6 @@ public class DeleteLoadTestDataAction implements Runnable {
             TRANSACTION_REPEATABLE_READ,
             () -> {
               LOAD_TEST_REGISTRARS.forEach(this::deletePollMessages);
-              tm().loadAllOfStream(Contact.class).forEach(this::deleteContact);
               tm().loadAllOfStream(Host.class).forEach(this::deleteHost);
             });
   }
@@ -108,21 +106,6 @@ public class DeleteLoadTestDataAction implements Runnable {
     } else {
       pollMessages.forEach(tm()::delete);
     }
-  }
-
-  private void deleteContact(Contact contact) {
-    if (!LOAD_TEST_REGISTRARS.contains(contact.getPersistedCurrentSponsorRegistrarId())) {
-      return;
-    }
-    // We cannot remove contacts from domains in the general case, so we cannot delete contacts
-    // that are linked to domains (since it would break the foreign keys)
-    if (EppResourceUtils.isLinked(contact.createVKey(), clock.nowUtc())) {
-      logger.atWarning().log(
-          "Cannot delete contact with repo ID %s since it is referenced from a domain.",
-          contact.getRepoId());
-      return;
-    }
-    deleteResource(contact);
   }
 
   private void deleteHost(Host host) {

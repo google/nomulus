@@ -15,7 +15,7 @@
 package google.registry.beam.common;
 
 import static google.registry.persistence.transaction.JpaTransactionManagerExtension.makeRegistrar1;
-import static google.registry.testing.DatabaseHelper.newContact;
+import static google.registry.testing.DatabaseHelper.newHost;
 import static google.registry.testing.DatabaseHelper.newTld;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.DatabaseHelper.persistResources;
@@ -27,8 +27,6 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import google.registry.beam.TestPipelineExtension;
 import google.registry.beam.common.RegistryJpaIO.Read;
-import google.registry.model.contact.Contact;
-import google.registry.model.contact.ContactBase;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainAuthInfo;
 import google.registry.model.domain.GracePeriod;
@@ -37,14 +35,14 @@ import google.registry.model.domain.rgp.GracePeriodStatus;
 import google.registry.model.domain.secdns.DomainDsData;
 import google.registry.model.eppcommon.AuthInfo.PasswordAuth;
 import google.registry.model.eppcommon.StatusValue;
+import google.registry.model.host.Host;
+import google.registry.model.host.HostBase;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.tld.Tld;
-import google.registry.model.transfer.ContactTransferData;
 import google.registry.persistence.transaction.CriteriaQueryBuilder;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.testing.FakeClock;
-import java.util.Optional;
 import org.apache.beam.sdk.coders.StringUtf8Coder;
 import org.apache.beam.sdk.testing.PAssert;
 import org.apache.beam.sdk.values.PCollection;
@@ -71,32 +69,33 @@ public class RegistryJpaReadTest {
   final transient TestPipelineExtension testPipeline =
       TestPipelineExtension.create().enableAbandonedNodeEnforcement(true);
 
-  private transient ImmutableList<Contact> contacts;
+  private transient ImmutableList<Host> hosts;
 
   @BeforeEach
   void beforeEach() {
     Registrar ofyRegistrar = JpaIntegrationTestExtension.makeRegistrar2();
     persistResource(ofyRegistrar);
 
-    ImmutableList.Builder<Contact> builder = new ImmutableList.Builder<>();
+    ImmutableList.Builder<Host> builder = new ImmutableList.Builder<>();
 
     for (int i = 0; i < 3; i++) {
-      Contact contact = newContact("contact_" + i);
-      builder.add(contact);
+      Host host = newHost(String.format("ns%d.example.tld", i));
+      builder.add(host);
     }
-    contacts = builder.build();
-    persistResources(contacts);
+    hosts = builder.build();
+    persistResources(hosts);
   }
 
   @Test
   void readWithCriteriaQuery() {
-    Read<Contact, String> read =
+    Read<Host, String> read =
         RegistryJpaIO.read(
-                () -> CriteriaQueryBuilder.create(Contact.class).build(), ContactBase::getContactId)
+                () -> CriteriaQueryBuilder.create(Host.class).build(), HostBase::getHostName)
             .withCoder(StringUtf8Coder.of());
     PCollection<String> repoIds = testPipeline.apply(read);
 
-    PAssert.that(repoIds).containsInAnyOrder("contact_0", "contact_1", "contact_2");
+    PAssert.that(repoIds)
+        .containsInAnyOrder("ns0.example.tld", "ns1.example.tld", "ns2.example.tld");
     testPipeline.run();
   }
 
@@ -170,13 +169,6 @@ public class RegistryJpaReadTest {
             .setRegistrarId("registrar1")
             .setEmailAddress("me@google.com")
             .build();
-    Contact contact =
-        new Contact.Builder()
-            .setRepoId("contactid_1")
-            .setCreationRegistrarId(registrar.getRegistrarId())
-            .setTransferData(new ContactTransferData.Builder().build())
-            .setPersistedCurrentSponsorRegistrarId(registrar.getRegistrarId())
-            .build();
     Domain domain =
         new Domain.Builder()
             .setDomainName("example.com")
@@ -193,7 +185,6 @@ public class RegistryJpaReadTest {
                     StatusValue.SERVER_UPDATE_PROHIBITED,
                     StatusValue.SERVER_RENEW_PROHIBITED,
                     StatusValue.SERVER_HOLD))
-            .setRegistrant(Optional.of(contact.createVKey()))
             .setContacts(ImmutableSet.of())
             .setSubordinateHosts(ImmutableSet.of("ns1.example.com"))
             .setPersistedCurrentSponsorRegistrarId(registrar.getRegistrarId())
@@ -212,6 +203,6 @@ public class RegistryJpaReadTest {
                     null,
                     100L))
             .build();
-    persistResources(registry, registrar, contact, domain);
+    persistResources(registry, registrar, domain);
   }
 }

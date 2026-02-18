@@ -164,7 +164,7 @@ public class EppInput extends ImmutableObject {
         .findFirst();
   }
 
-  /** A tag that goes inside of an EPP {@literal <command>}. */
+  /** A tag that goes inside an EPP {@literal <command>}. */
   public static class InnerCommand extends ImmutableObject {}
 
   /** A command that has an extension inside of it. */

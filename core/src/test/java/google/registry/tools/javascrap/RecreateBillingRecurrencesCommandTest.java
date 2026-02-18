@@ -19,7 +19,6 @@ import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.loadAllOf;
 import static google.registry.testing.DatabaseHelper.loadByEntity;
 import static google.registry.testing.DatabaseHelper.loadByKey;
-import static google.registry.testing.DatabaseHelper.persistActiveContact;
 import static google.registry.testing.DatabaseHelper.persistDomainWithDependentResources;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
@@ -27,7 +26,6 @@ import static org.junit.Assert.assertThrows;
 
 import google.registry.model.ImmutableObjectSubject;
 import google.registry.model.billing.BillingRecurrence;
-import google.registry.model.contact.Contact;
 import google.registry.model.domain.Domain;
 import google.registry.tools.CommandTestCase;
 import org.joda.time.DateTime;
@@ -38,7 +36,6 @@ import org.junit.jupiter.api.Test;
 public class RecreateBillingRecurrencesCommandTest
     extends CommandTestCase<RecreateBillingRecurrencesCommand> {
 
-  private Contact contact;
   private Domain domain;
   private BillingRecurrence oldRecurrence;
 
@@ -46,12 +43,10 @@ public class RecreateBillingRecurrencesCommandTest
   void beforeEach() {
     fakeClock.setTo(DateTime.parse("2022-09-05TZ"));
     createTld("tld");
-    contact = persistActiveContact("contact1234");
     domain =
         persistDomainWithDependentResources(
             "example",
             "tld",
-            contact,
             fakeClock.nowUtc(),
             fakeClock.nowUtc(),
             fakeClock.nowUtc().plusYears(1));
@@ -82,7 +77,6 @@ public class RecreateBillingRecurrencesCommandTest
         persistDomainWithDependentResources(
             "other",
             "tld",
-            contact,
             DateTime.parse("2022-09-07TZ"),
             DateTime.parse("2022-09-07TZ"),
             DateTime.parse("2023-09-07TZ"));
@@ -137,7 +131,7 @@ public class RecreateBillingRecurrencesCommandTest
     assertThat(assertThrows(IllegalArgumentException.class, () -> runCommandForced("example.tld")))
         .hasMessageThat()
         .isEqualTo(
-            "There exists a recurrence with id 9 for domain example.tld with an end date of"
+            "There exists a recurrence with id 8 for domain example.tld with an end date of"
                 + " END_OF_TIME");
   }
 }

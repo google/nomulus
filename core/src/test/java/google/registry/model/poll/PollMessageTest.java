@@ -18,13 +18,11 @@ import static com.google.common.truth.Truth.assertThat;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.loadByKey;
-import static google.registry.testing.DatabaseHelper.persistActiveContact;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.collect.ImmutableList;
 import google.registry.model.EntityTestCase;
-import google.registry.model.contact.Contact;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.Period;
@@ -51,8 +49,7 @@ public class PollMessageTest extends EntityTestCase {
   @BeforeEach
   void setUp() {
     createTld("foobar");
-    Contact contact = persistActiveContact("contact1234");
-    Domain domain = persistResource(DatabaseHelper.newDomain("foo.foobar", contact));
+    Domain domain = persistResource(DatabaseHelper.newDomain("foo.foobar"));
     historyEntry =
         persistResource(
             new DomainHistory.Builder()

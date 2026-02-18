@@ -18,12 +18,12 @@ import static google.registry.batch.AsyncTaskEnqueuer.PARAM_REQUESTED_TIME;
 import static google.registry.batch.AsyncTaskEnqueuer.PARAM_RESAVE_TIMES;
 import static google.registry.batch.AsyncTaskEnqueuer.PARAM_RESOURCE_KEY;
 import static google.registry.batch.AsyncTaskEnqueuer.QUEUE_ASYNC_ACTIONS;
-import static google.registry.testing.DatabaseHelper.persistActiveContact;
+import static google.registry.testing.DatabaseHelper.persistActiveHost;
 import static google.registry.testing.TestLogHandlerUtils.assertLogMessage;
 
 import com.google.cloud.tasks.v2.HttpMethod;
 import com.google.common.collect.ImmutableSortedSet;
-import google.registry.model.contact.Contact;
+import google.registry.model.host.Host;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.testing.CloudTasksHelper;
@@ -67,9 +67,9 @@ public class AsyncTaskEnqueuerTest {
 
   @Test
   void test_enqueueAsyncResave_success() {
-    Contact contact = persistActiveContact("jd23456");
+    Host host = persistActiveHost("ns1.example.tld");
     asyncTaskEnqueuer.enqueueAsyncResave(
-        contact.createVKey(), clock.nowUtc(), ImmutableSortedSet.of(clock.nowUtc().plusDays(5)));
+        host.createVKey(), clock.nowUtc(), ImmutableSortedSet.of(clock.nowUtc().plusDays(5)));
     cloudTasksHelper.assertTasksEnqueued(
         QUEUE_ASYNC_ACTIONS,
         new CloudTasksHelper.TaskMatcher()
@@ -77,17 +77,17 @@ public class AsyncTaskEnqueuerTest {
             .method(HttpMethod.POST)
             .service("backend")
             .header("content-type", "application/x-www-form-urlencoded")
-            .param(PARAM_RESOURCE_KEY, contact.createVKey().stringify())
+            .param(PARAM_RESOURCE_KEY, host.createVKey().stringify())
             .param(PARAM_REQUESTED_TIME, clock.nowUtc().toString())
             .scheduleTime(clock.nowUtc().plus(Duration.standardDays(5))));
   }
 
   @Test
   void test_enqueueAsyncResave_multipleResaves() {
-    Contact contact = persistActiveContact("jd23456");
+    Host host = persistActiveHost("ns1.example.tld");
     DateTime now = clock.nowUtc();
     asyncTaskEnqueuer.enqueueAsyncResave(
-        contact.createVKey(),
+        host.createVKey(),
         now,
         ImmutableSortedSet.of(now.plusHours(24), now.plusHours(50), now.plusHours(75)));
     cloudTasksHelper.assertTasksEnqueued(
@@ -97,7 +97,7 @@ public class AsyncTaskEnqueuerTest {
             .method(HttpMethod.POST)
             .service("backend")
             .header("content-type", "application/x-www-form-urlencoded")
-            .param(PARAM_RESOURCE_KEY, contact.createVKey().stringify())
+            .param(PARAM_RESOURCE_KEY, host.createVKey().stringify())
             .param(PARAM_REQUESTED_TIME, now.toString())
             .param(PARAM_RESAVE_TIMES, "2015-05-20T14:34:56.000Z,2015-05-21T15:34:56.000Z")
             .scheduleTime(clock.nowUtc().plus(Duration.standardHours(24))));
@@ -106,9 +106,9 @@ public class AsyncTaskEnqueuerTest {
   @MockitoSettings(strictness = Strictness.LENIENT)
   @Test
   void test_enqueueAsyncResave_ignoresTasksTooFarIntoFuture() {
-    Contact contact = persistActiveContact("jd23456");
+    Host host = persistActiveHost("ns1.example.tld");
     asyncTaskEnqueuer.enqueueAsyncResave(
-        contact.createVKey(), clock.nowUtc(), ImmutableSortedSet.of(clock.nowUtc().plusDays(31)));
+        host.createVKey(), clock.nowUtc(), ImmutableSortedSet.of(clock.nowUtc().plusDays(31)));
     cloudTasksHelper.assertNoTasksEnqueued(QUEUE_ASYNC_ACTIONS);
     assertLogMessage(logHandler, Level.INFO, "Ignoring async re-save");
   }

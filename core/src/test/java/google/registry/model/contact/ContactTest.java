@@ -16,7 +16,6 @@ package google.registry.model.contact;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.ImmutableObjectSubject.assertAboutImmutableObjects;
-import static google.registry.testing.ContactSubject.assertAboutContacts;
 import static google.registry.testing.DatabaseHelper.cloneAndSetAutoTimestamps;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.loadByEntity;
@@ -210,47 +209,6 @@ public class ContactTest extends EntityTestCase {
     Contact withEmpty = withNull.asBuilder().setTransferData(ContactTransferData.EMPTY).build();
     assertThat(withNull).isEqualTo(withEmpty);
     assertThat(withEmpty.transferData).isNull();
-  }
-
-  @Test
-  void testImplicitStatusValues() {
-    // OK is implicit if there's no other statuses.
-    assertAboutContacts()
-        .that(new Contact.Builder().build())
-        .hasExactlyStatusValues(StatusValue.OK);
-    // If there are other status values, OK should be suppressed.
-    assertAboutContacts()
-        .that(
-            new Contact.Builder().setStatusValues(ImmutableSet.of(StatusValue.CLIENT_HOLD)).build())
-        .hasExactlyStatusValues(StatusValue.CLIENT_HOLD);
-    // When OK is suppressed, it should be removed even if it was originally there.
-    assertAboutContacts()
-        .that(
-            new Contact.Builder()
-                .setStatusValues(ImmutableSet.of(StatusValue.OK, StatusValue.CLIENT_HOLD))
-                .build())
-        .hasExactlyStatusValues(StatusValue.CLIENT_HOLD);
-  }
-
-  @Test
-  void testExpiredTransfer() {
-    Contact afterTransfer =
-        contact
-            .asBuilder()
-            .setTransferData(
-                contact
-                    .getTransferData()
-                    .asBuilder()
-                    .setTransferStatus(TransferStatus.PENDING)
-                    .setPendingTransferExpirationTime(fakeClock.nowUtc().plusDays(1))
-                    .setGainingRegistrarId("winner")
-                    .build())
-            .build()
-            .cloneProjectedAtTime(fakeClock.nowUtc().plusDays(1));
-    assertThat(afterTransfer.getTransferData().getTransferStatus())
-        .isEqualTo(TransferStatus.SERVER_APPROVED);
-    assertThat(afterTransfer.getCurrentSponsorRegistrarId()).isEqualTo("winner");
-    assertThat(afterTransfer.getLastTransferTime()).isEqualTo(fakeClock.nowUtc().plusDays(1));
   }
 
   @Test

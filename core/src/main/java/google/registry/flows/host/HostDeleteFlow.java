@@ -84,7 +84,7 @@ public final class HostDeleteFlow implements MutatingFlow {
     extensionManager.validate();
     DateTime now = tm().getTransactionTime();
     validateHostName(targetId);
-    checkLinkedDomains(targetId, now, Host.class);
+    checkLinkedDomains(targetId, now);
     Host existingHost = loadAndVerifyExistence(Host.class, targetId, now);
     verifyNoDisallowedStatuses(existingHost, ImmutableSet.of(StatusValue.PENDING_DELETE));
     if (!isSuperuser) {

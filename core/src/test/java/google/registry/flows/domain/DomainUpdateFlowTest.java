@@ -92,9 +92,6 @@ import google.registry.flows.exceptions.ResourceStatusProhibitsOperationExceptio
 import google.registry.model.ImmutableObject;
 import google.registry.model.billing.BillingBase.Reason;
 import google.registry.model.billing.BillingEvent;
-import google.registry.model.contact.Contact;
-import google.registry.model.domain.DesignatedContact;
-import google.registry.model.domain.DesignatedContact.Type;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainAuthInfo;
 import google.registry.model.domain.DomainHistory;
@@ -129,14 +126,9 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
           "DIGEST_TYPE", "1",
           "DIGEST", "A94A8FE5CCB19BA61C4C0873D391E987982FBBD3");
 
-  private Contact sh8013Contact;
-  private Contact mak21Contact;
-  private Contact unusedContact;
-
   @BeforeEach
   void beforeEach() {
     createTld("tld");
-    // Note that "domain_update.xml" tests adding and removing the same contact type.
     setEppInput("domain_update.xml");
   }
 
@@ -144,33 +136,6 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
     for (int i = 1; i <= 14; ++i) {
       persistActiveHost(String.format("ns%d.example.foo", i));
     }
-    sh8013Contact = persistActiveContact("sh8013");
-    mak21Contact = persistActiveContact("mak21");
-    unusedContact = persistActiveContact("unused");
-  }
-
-  private void persistDomainWithRegistrant() throws Exception {
-    Host host = loadResource(Host.class, "ns1.example.foo", clock.nowUtc()).get();
-    Domain domain =
-        persistResource(
-            DatabaseHelper.newDomain(getUniqueIdFromCommand())
-                .asBuilder()
-                .setContacts(
-                    ImmutableSet.of(
-                        DesignatedContact.create(Type.TECH, mak21Contact.createVKey()),
-                        DesignatedContact.create(Type.ADMIN, mak21Contact.createVKey()),
-                        DesignatedContact.create(Type.BILLING, mak21Contact.createVKey())))
-                .setRegistrant(Optional.of(mak21Contact.createVKey()))
-                .setNameservers(ImmutableSet.of(host.createVKey()))
-                .build());
-    persistResource(
-        new DomainHistory.Builder()
-            .setType(DOMAIN_CREATE)
-            .setModificationTime(clock.nowUtc())
-            .setRegistrarId(domain.getCreationRegistrarId())
-            .setDomain(domain)
-            .build());
-    clock.advanceOneMilli();
   }
 
   private Domain persistDomain() throws Exception {
@@ -179,10 +144,6 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
         persistResource(
             DatabaseHelper.newDomain(getUniqueIdFromCommand())
                 .asBuilder()
-                .setContacts(
-                    ImmutableSet.of(
-                        DesignatedContact.create(Type.TECH, sh8013Contact.createVKey()),
-                        DesignatedContact.create(Type.ADMIN, unusedContact.createVKey())))
                 .setNameservers(ImmutableSet.of(host.createVKey()))
                 .build());
     persistResource(
@@ -311,6 +272,7 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
 
   @Test
   void testFailure_minimumDataset_whenAddingNewContacts() throws Exception {
+    persistActiveContact("mak21");
     // This EPP adds a new technical contact mak21 that wasn't already present.
     setEppInput("domain_update_empty_registrant.xml");
     persistReferencedEntities();
@@ -349,7 +311,7 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
     persistReferencedEntities();
     persistDomain();
     setEppInput("domain_update_max_everything.xml");
-    // Create 26 hosts and 8 contacts. Start the domain with half of them.
+    // Create 26 hosts. Start the domain with half of them.
     ImmutableSet.Builder<VKey<Host>> nameservers = new ImmutableSet.Builder<>();
     for (int i = 0; i < 26; i++) {
       Host host = persistActiveHost(String.format("max_test_%d.example.tld", i));
@@ -430,20 +392,6 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
     addedHost = loadResource(Host.class, "ns2.example.tld", clock.nowUtc()).get();
     assertThat(existingHost.getSuperordinateDomain()).isEqualTo(domain.createVKey());
     assertThat(addedHost.getSuperordinateDomain()).isEqualTo(domain.createVKey());
-  }
-
-  @Test
-  void testSuccess_registrantMovedToTechContact() throws Exception {
-    setEppInput("domain_update_registrant_to_tech.xml");
-    persistReferencedEntities();
-    Contact sh8013 = loadResource(Contact.class, "sh8013", clock.nowUtc()).get();
-    persistResource(
-        DatabaseHelper.newDomain(getUniqueIdFromCommand())
-            .asBuilder()
-            .setRegistrant(Optional.of(sh8013.createVKey()))
-            .build());
-    clock.advanceOneMilli();
-    runFlowAssertResponse(loadFile("generic_success_response.xml"));
   }
 
   @Test
@@ -1107,8 +1055,6 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
   @Test
   void testFailure_missingHost() throws Exception {
     persistActiveHost("ns1.example.foo");
-    persistActiveContact("sh8013");
-    persistActiveContact("mak21");
     persistActiveDomain(getUniqueIdFromCommand());
     LinkedResourcesDoNotExistException thrown =
         assertThrows(LinkedResourcesDoNotExistException.class, this::runFlow);
@@ -1429,14 +1375,11 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
 
   @Test
   void testFailure_minimumDataset_addingNewRegistrantFails() throws Exception {
+    persistActiveContact("sh8013");
     persistReferencedEntities();
     persistResource(
         DatabaseHelper.newDomain(getUniqueIdFromCommand())
             .asBuilder()
-            .setContacts(
-                ImmutableSet.of(
-                    DesignatedContact.create(Type.ADMIN, sh8013Contact.createVKey()),
-                    DesignatedContact.create(Type.TECH, sh8013Contact.createVKey())))
             .setRegistrant(Optional.empty())
             .build());
     // This EPP sets the registrant to sh8013, whereas in our test setup it is absent.

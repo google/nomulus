@@ -23,17 +23,14 @@ import static google.registry.util.DateTimeUtils.isBeforeOrAt;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.flogger.FluentLogger;
-import google.registry.model.EppResource.BuilderWithTransferData;
-import google.registry.model.EppResource.ResourceWithTransferData;
-import google.registry.model.contact.Contact;
 import google.registry.model.domain.Domain;
+import google.registry.model.domain.DomainBase;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.host.Host;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.reporting.HistoryEntryDao;
 import google.registry.model.tld.Tld;
 import google.registry.model.transfer.DomainTransferData;
-import google.registry.model.transfer.TransferData;
 import google.registry.model.transfer.TransferStatus;
 import google.registry.persistence.VKey;
 import jakarta.persistence.Query;
@@ -47,14 +44,6 @@ import org.joda.time.Interval;
 public final class EppResourceUtils {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
-
-  private static final String CONTACT_LINKED_DOMAIN_QUERY =
-      "SELECT repoId FROM Domain "
-          + "WHERE (adminContact = :fkRepoId "
-          + "OR billingContact = :fkRepoId "
-          + "OR techContact = :fkRepoId "
-          + "OR registrantContact = :fkRepoId) "
-          + "AND deletionTime > :now";
 
   // We have to use the native SQL query here because DomainHost table doesn't have its entity
   // class, so we cannot reference its property like domainHost.hostRepoId in a JPQL query.
@@ -105,41 +94,34 @@ public final class EppResourceUtils {
     return !isActive(resource, time);
   }
 
-  /** Process an automatic transfer on a resource. */
-  public static <
-          T extends TransferData,
-          B extends EppResource.Builder<?, B> & BuilderWithTransferData<T, B>>
-      void setAutomaticTransferSuccessProperties(B builder, TransferData transferData) {
+  /** Process an automatic transfer on a domain. */
+  public static void setAutomaticTransferSuccessProperties(
+      DomainBase.Builder<?, ?> builder, DomainTransferData transferData) {
     checkArgument(TransferStatus.PENDING.equals(transferData.getTransferStatus()));
-    TransferData.Builder transferDataBuilder = transferData.asBuilder();
+    DomainTransferData.Builder transferDataBuilder = transferData.asBuilder();
     transferDataBuilder.setTransferStatus(TransferStatus.SERVER_APPROVED);
-    transferDataBuilder.setServerApproveEntities(null, null, null);
-    if (transferData instanceof DomainTransferData) {
-      ((DomainTransferData.Builder) transferDataBuilder)
-          .setServerApproveBillingEvent(null)
-          .setServerApproveAutorenewEvent(null)
-          .setServerApproveAutorenewPollMessage(null);
-    }
+    transferDataBuilder
+        .setServerApproveEntities(null, null, null)
+        .setServerApproveBillingEvent(null)
+        .setServerApproveAutorenewEvent(null)
+        .setServerApproveAutorenewPollMessage(null);
     builder
         .removeStatusValue(StatusValue.PENDING_TRANSFER)
-        .setTransferData((T) transferDataBuilder.build())
+        .setTransferData(transferDataBuilder.build())
         .setLastTransferTime(transferData.getPendingTransferExpirationTime())
         .setPersistedCurrentSponsorRegistrarId(transferData.getGainingRegistrarId());
   }
 
   /**
-   * Perform common operations for projecting an {@link EppResource} at a given time:
+   * Perform common operations for projecting a {@link Domain} at a given time:
    *
    * <ul>
    *   <li>Process an automatic transfer.
    * </ul>
    */
-  public static <
-          T extends TransferData,
-          E extends EppResource & ResourceWithTransferData<T>,
-          B extends EppResource.Builder<?, B> & BuilderWithTransferData<T, B>>
-      void projectResourceOntoBuilderAtTime(E resource, B builder, DateTime now) {
-    T transferData = resource.getTransferData();
+  public static void projectResourceOntoBuilderAtTime(
+      DomainBase domain, DomainBase.Builder<?, ?> builder, DateTime now) {
+    DomainTransferData transferData = domain.getTransferData();
     // If there's a pending transfer that has expired, process it.
     DateTime expirationTime = transferData.getPendingTransferExpirationTime();
     if (TransferStatus.PENDING.equals(transferData.getTransferStatus())
@@ -207,36 +189,21 @@ public final class EppResourceUtils {
   }
 
   /**
-   * Returns a set of {@link VKey} for domains that reference a specified contact or host.
-   *
-   * <p>This is an eventually consistent query if used for the database.
+   * Returns a set of {@link VKey} for domains that reference a specified host.
    *
    * @param key the referent key
    * @param now the logical time of the check
    * @param limit the maximum number of returned keys, unlimited if null
    */
   public static ImmutableSet<VKey<Domain>> getLinkedDomainKeys(
-      VKey<? extends EppResource> key, DateTime now, @Nullable Integer limit) {
-    checkArgument(
-        key.getKind().equals(Contact.class) || key.getKind().equals(Host.class),
-        "key must be either VKey<Contact> or VKey<Host>, but it is %s",
-        key);
-    boolean isContactKey = key.getKind().equals(Contact.class);
+      VKey<Host> key, DateTime now, @Nullable Integer limit) {
     return tm().reTransact(
             () -> {
-              Query query;
-              if (isContactKey) {
-                query =
-                    tm().query(CONTACT_LINKED_DOMAIN_QUERY, String.class)
-                        .setParameter("fkRepoId", key)
-                        .setParameter("now", now);
-              } else {
-                query =
-                    tm().getEntityManager()
-                        .createNativeQuery(HOST_LINKED_DOMAIN_QUERY)
-                        .setParameter("fkRepoId", key.getKey())
-                        .setParameter("now", now.toDate());
-              }
+              Query query =
+                  tm().getEntityManager()
+                      .createNativeQuery(HOST_LINKED_DOMAIN_QUERY)
+                      .setParameter("fkRepoId", key.getKey())
+                      .setParameter("now", now.toDate());
               if (limit != null) {
                 query.setMaxResults(limit);
               }
@@ -252,12 +219,12 @@ public final class EppResourceUtils {
   }
 
   /**
-   * Returns whether the given contact or host is linked to (that is, referenced by) a domain.
+   * Returns whether the given host is linked to (that is, referenced by) a domain.
    *
    * @param key the referent key
    * @param now the logical time of the check
    */
-  public static boolean isLinked(VKey<? extends EppResource> key, DateTime now) {
+  public static boolean isLinked(VKey<Host> key, DateTime now) {
     return !getLinkedDomainKeys(key, now, 1).isEmpty();
   }
 

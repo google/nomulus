@@ -348,7 +348,7 @@ public class RdePipelineTest {
                               """
                               <rdeDomain:domain>
                                   <rdeDomain:name>cat.fun</rdeDomain:name>
-                                  <rdeDomain:roid>10-FUN</rdeDomain:roid>
+                                  <rdeDomain:roid>F-FUN</rdeDomain:roid>
                                   <rdeDomain:uName>cat.fun</rdeDomain:uName>
                                   <rdeDomain:status s="ok"/>
                                   <rdeDomain:ns>

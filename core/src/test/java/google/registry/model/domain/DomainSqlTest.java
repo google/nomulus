@@ -35,7 +35,6 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.collect.Sets;
 import google.registry.model.billing.BillingBase.RenewalPriceBehavior;
-import google.registry.model.contact.Contact;
 import google.registry.model.domain.fee.FeeQueryCommandExtensionItem.CommandName;
 import google.registry.model.domain.launch.LaunchNotice;
 import google.registry.model.domain.rgp.GracePeriodStatus;
@@ -45,7 +44,6 @@ import google.registry.model.domain.token.AllocationToken.TokenStatus;
 import google.registry.model.eppcommon.AuthInfo.PasswordAuth;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.host.Host;
-import google.registry.model.transfer.ContactTransferData;
 import google.registry.persistence.VKey;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationWithCoverageExtension;
@@ -360,15 +358,6 @@ public class DomainSqlTest {
         .isEqualExceptFields(domain, "updateTimestamp", "creationTime");
   }
 
-  static Contact makeContact(String repoId) {
-    return new Contact.Builder()
-        .setRepoId(repoId)
-        .setCreationRegistrarId("registrar1")
-        .setTransferData(new ContactTransferData.Builder().build())
-        .setPersistedCurrentSponsorRegistrarId("registrar1")
-        .build();
-  }
-
   private void persistDomain() {
     createTld("com");
     persistResources(domain, host);
@@ -408,7 +397,7 @@ public class DomainSqlTest {
             .setPersistedCurrentSponsorRegistrarId("registrar2")
             .build();
     persistResource(host2);
-                  domain = persisted.asBuilder().addNameserver(host2.createVKey()).build();
+    domain = persisted.asBuilder().addNameserver(host2.createVKey()).build();
     persistResource(domain);
     domain = loadByKey(domain.createVKey());
     assertThat(domain.getUpdateTimestamp().getTimestamp())

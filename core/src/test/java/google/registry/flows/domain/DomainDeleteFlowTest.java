@@ -44,7 +44,6 @@ import static google.registry.testing.DatabaseHelper.loadByKeyIfPresent;
 import static google.registry.testing.DatabaseHelper.loadByKeysIfPresent;
 import static google.registry.testing.DatabaseHelper.loadRegistrar;
 import static google.registry.testing.DatabaseHelper.newHost;
-import static google.registry.testing.DatabaseHelper.persistActiveContact;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistDeletedDomain;
 import static google.registry.testing.DatabaseHelper.persistResource;
@@ -81,7 +80,6 @@ import google.registry.model.billing.BillingBase.Reason;
 import google.registry.model.billing.BillingCancellation;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingRecurrence;
-import google.registry.model.contact.Contact;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.GracePeriod;
@@ -104,7 +102,6 @@ import google.registry.testing.CloudTasksHelper.TaskMatcher;
 import google.registry.testing.DatabaseHelper;
 import google.registry.testing.LogsSubject;
 import java.util.Map;
-import java.util.Optional;
 import java.util.logging.Level;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
@@ -160,14 +157,11 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
   }
 
   private void createReferencedEntities(DateTime expirationTime) throws Exception {
-    // Persist a linked contact.
-    Contact contact = persistActiveContact("sh8013");
     domain =
         persistResource(
             DatabaseHelper.newDomain(getUniqueIdFromCommand())
                 .asBuilder()
                 .setCreationTimeForTest(TIME_BEFORE_FLOW)
-                .setRegistrant(Optional.of(contact.createVKey()))
                 .setRegistrationExpirationTime(expirationTime)
                 .build());
     earlierHistoryEntry =
@@ -659,11 +653,10 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
             .asBuilder()
             .setNameservers(ImmutableSet.of(host.createVKey()))
             .build());
-    // Persist another domain that's already been deleted and references this contact and host.
+    // Persist another domain that's already been deleted and references this  host.
     persistResource(
         DatabaseHelper.newDomain("example1.tld")
             .asBuilder()
-            .setRegistrant(ForeignKeyUtils.loadKey(Contact.class, "sh8013", clock.nowUtc()))
             .setNameservers(ImmutableSet.of(host.createVKey()))
             .setDeletionTime(START_OF_TIME)
             .build());
@@ -762,7 +755,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
             .setEventTime(now)
             .setMsg(
                 "Domain example.tld was deleted by registry administrator with final deletion"
-                    + " effective: 2000-07-11T22:00:00.012Z")
+                    + " effective: 2000-07-11T22:00:00.010Z")
             .setResponseData(
                 ImmutableList.of(
                     DomainPendingActionNotificationResponse.create(
@@ -771,7 +764,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
         new PollMessage.OneTime.Builder()
             .setRegistrarId("TheRegistrar")
             .setHistoryEntry(deleteHistoryEntry)
-            .setEventTime(DateTime.parse("2000-07-11T22:00:00.012Z"))
+            .setEventTime(DateTime.parse("2000-07-11T22:00:00.010Z"))
             .setMsg("Deleted by registry administrator.")
             .setResponseData(
                 ImmutableList.of(
@@ -779,7 +772,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
                         "example.tld",
                         true,
                         deleteHistoryEntry.getTrid(),
-                        DateTime.parse("2000-07-11T22:00:00.012Z"))))
+                        DateTime.parse("2000-07-11T22:00:00.010Z"))))
             .build());
   }
 

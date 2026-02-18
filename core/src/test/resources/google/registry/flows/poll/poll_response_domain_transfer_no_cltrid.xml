@@ -3,7 +3,7 @@
     <result code="1301">
       <msg>Command completed successfully; ack to dequeue</msg>
     </result>
-    <msgQ count="1" id="6-2011">
+    <msgQ count="1" id="5-2011">
       <qDate>2011-01-01T01:01:01Z</qDate>
       <msg>Transfer approved.</msg>
     </msgQ>

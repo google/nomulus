@@ -18,13 +18,11 @@ import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.ImmutableObjectSubject.immutableObjectCorrespondence;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.createTlds;
-import static google.registry.testing.DatabaseHelper.persistActiveContact;
 import static google.registry.testing.DatabaseHelper.persistResource;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import google.registry.model.EntityTestCase;
-import google.registry.model.contact.Contact;
 import google.registry.model.domain.Domain;
 import google.registry.model.reporting.Spec11ThreatMatch.ThreatType;
 import google.registry.testing.DatabaseHelper;
@@ -46,11 +44,10 @@ class Spec11ThreatMatchDaoTest extends EntityTestCase {
   @BeforeEach
   void setUp() {
     createTlds("com", "org");
-    Contact contact = persistActiveContact("jd1234");
-    todayComDomain = persistResource(DatabaseHelper.newDomain("today.com", contact));
-    todayOrgDomain = persistResource(DatabaseHelper.newDomain("today.org", contact));
-    yesterdayComDomain = persistResource(DatabaseHelper.newDomain("yesterday.com", contact));
-    yesterdayOrgDomain = persistResource(DatabaseHelper.newDomain("yesterday.org", contact));
+    todayComDomain = persistResource(DatabaseHelper.newDomain("today.com"));
+    todayOrgDomain = persistResource(DatabaseHelper.newDomain("today.org"));
+    yesterdayComDomain = persistResource(DatabaseHelper.newDomain("yesterday.com"));
+    yesterdayOrgDomain = persistResource(DatabaseHelper.newDomain("yesterday.org"));
     tm().transact(
             () -> {
               tm().insertAll(getThreatMatchesToday());

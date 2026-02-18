@@ -39,7 +39,6 @@ class GetDomainCommandTest extends CommandTestCase<GetDomainCommand> {
     persistActiveDomain("example.tld");
     runCommand("example.tld");
     assertInStdout("domainName=example.tld");
-    assertInStdout("Contact=VKey<Contact>(sql:3-ROID");
     assertInStdout("Websafe key: " + "kind:Domain" + "@sql:rO0ABXQABTItVExE");
   }
 
@@ -48,7 +47,6 @@ class GetDomainCommandTest extends CommandTestCase<GetDomainCommand> {
     persistActiveDomain("example.tld");
     runCommand("example.tld", "--expand");
     assertInStdout("domainName=example.tld");
-    assertInStdout("key=3-ROID");
     assertInStdout("Websafe key: " + "kind:Domain" + "@sql:rO0ABXQABTItVExE");
     assertNotInStdout("LiveRef");
   }
@@ -59,7 +57,6 @@ class GetDomainCommandTest extends CommandTestCase<GetDomainCommand> {
     persistActiveDomain("xn--aualito-txac.xn--q9jyb4c");
     runCommand("çauçalito.みんな", "--expand");
     assertInStdout("domainName=xn--aualito-txac.xn--q9jyb4c");
-    assertInStdout("key=4-ROID");
   }
 
   @Test
@@ -70,7 +67,7 @@ class GetDomainCommandTest extends CommandTestCase<GetDomainCommand> {
     assertInStdout("domainName=example.tld");
     assertInStdout("domainName=example2.tld");
     assertInStdout("Websafe key: kind:Domain@sql:rO0ABXQABTItVExE");
-    assertInStdout("Websafe key: kind:Domain@sql:rO0ABXQABTQtVExE");
+    assertInStdout("Websafe key: kind:Domain@sql:rO0ABXQABTMtVExE");
   }
 
   @Test
@@ -134,7 +131,7 @@ class GetDomainCommandTest extends CommandTestCase<GetDomainCommand> {
     // Active
     assertInStdout("Websafe key: kind:Domain@sql:rO0ABXQABTItVExE");
     // Deleted
-    assertInStdout("Websafe key: kind:Domain@sql:rO0ABXQABTQtVExE");
+    assertInStdout("Websafe key: kind:Domain@sql:rO0ABXQABTMtVExE");
   }
 }
 

@@ -26,7 +26,6 @@ import google.registry.model.ImmutableObject;
 import google.registry.model.UnsafeSerializable;
 import google.registry.model.annotations.ExternalMessagingName;
 import google.registry.model.annotations.IdAllocation;
-import google.registry.model.contact.Contact;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.DomainRenewData;
@@ -98,7 +97,7 @@ public abstract class PollMessage extends ImmutableObject
   /** Indicates the type of entity the poll message is for. */
   public enum Type {
     DOMAIN(1L, Domain.class),
-    CONTACT(2L, Contact.class),
+    // Contacts would be 2L but have since been removed. Host is kept at 3 for consistency.
     HOST(3L, Host.class);
 
     private final long id;
@@ -180,16 +179,6 @@ public abstract class PollMessage extends ImmutableObject
   }
 
   /**
-   * Returns the contact repo id.
-   *
-   * <p>This may only be used on a {@link Contact} poll event.
-   */
-  public String getContactRepoId() {
-    checkArgument(getType() == Type.CONTACT);
-    return contactRepoId;
-  }
-
-  /**
    * Returns the host repo id.
    *
    * <p>This may only be used on a Host poll event.
@@ -215,7 +204,7 @@ public abstract class PollMessage extends ImmutableObject
   }
 
   public Type getType() {
-    return domainRepoId != null ? Type.DOMAIN : contactRepoId != null ? Type.CONTACT : Type.HOST;
+    return domainRepoId != null ? Type.DOMAIN : Type.HOST;
   }
 
   @Override

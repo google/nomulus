@@ -19,7 +19,6 @@ import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.loadAllOf;
 import static google.registry.testing.DatabaseHelper.loadByEntity;
 import static google.registry.testing.DatabaseHelper.loadByKey;
-import static google.registry.testing.DatabaseHelper.persistActiveContact;
 import static google.registry.testing.DatabaseHelper.persistDomainWithDependentResources;
 import static google.registry.testing.DatabaseHelper.persistDomainWithPendingTransfer;
 import static google.registry.testing.DatabaseHelper.persistResource;
@@ -244,7 +243,6 @@ public class UpdateRecurrenceCommandTest extends CommandTestCase<UpdateRecurrenc
         persistDomainWithDependentResources(
             "domain",
             "tld",
-            persistActiveContact("contact1234"),
             fakeClock.nowUtc(),
             fakeClock.nowUtc(),
             END_OF_TIME);

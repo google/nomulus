@@ -14,14 +14,9 @@
 
 package google.registry.rde;
 
-import static com.google.common.base.Preconditions.checkState;
-import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
-import com.google.common.base.Ascii;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableSet;
-import google.registry.model.contact.Contact;
-import google.registry.model.domain.DesignatedContact;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.rgp.GracePeriodStatus;
 import google.registry.model.domain.secdns.DomainDsData;
@@ -29,10 +24,7 @@ import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.rde.RdeMode;
 import google.registry.model.transfer.DomainTransferData;
 import google.registry.model.transfer.TransferData;
-import google.registry.persistence.VKey;
 import google.registry.util.Idn;
-import google.registry.xjc.domain.XjcDomainContactAttrType;
-import google.registry.xjc.domain.XjcDomainContactType;
 import google.registry.xjc.domain.XjcDomainNsType;
 import google.registry.xjc.domain.XjcDomainStatusType;
 import google.registry.xjc.domain.XjcDomainStatusValueType;
@@ -44,7 +36,6 @@ import google.registry.xjc.rgp.XjcRgpStatusType;
 import google.registry.xjc.rgp.XjcRgpStatusValueType;
 import google.registry.xjc.secdns.XjcSecdnsDsDataType;
 import google.registry.xjc.secdns.XjcSecdnsDsOrKeyType;
-import java.util.Optional;
 
 /** Utility class that turns {@link Domain} as {@link XjcRdeDomainElement}. */
 final class DomainToXjcConverter {
@@ -152,8 +143,6 @@ final class DomainToXjcConverter {
 
     switch (mode) {
       case FULL:
-        String domainName = model.getDomainName();
-
         // o  Zero or more OPTIONAL <rgpStatus> element to represent
         //    "pendingDelete" sub-statuses, including "redemptionPeriod",
         //    "pendingRestore", and "pendingDelete", that a domain name can be
@@ -161,25 +150,6 @@ final class DomainToXjcConverter {
         //    [RFC3915].
         for (GracePeriodStatus status : model.getGracePeriodStatuses()) {
           bean.getRgpStatuses().add(convertGracePeriodStatus(status));
-        }
-
-        // o  An OPTIONAL <registrant> element that contain the identifier for
-        //    the human or organizational social information object associated
-        //    as the holder of the domain name object.
-        Optional<VKey<Contact>> registrant = model.getRegistrant();
-        if (registrant.isPresent()) {
-          Optional<Contact> registrantContact =
-              tm().transact(() -> tm().loadByKeyIfPresent(registrant.get()));
-          registrantContact.ifPresent(c -> bean.setRegistrant(c.getContactId()));
-        }
-
-        // o  Zero or more OPTIONAL <contact> elements that contain identifiers
-        //    for the human or organizational social information objects
-        //    associated with the domain name object.
-        for (DesignatedContact contact : model.getContacts()) {
-          Optional<XjcDomainContactType> contactType =
-              convertDesignatedContact(contact, domainName);
-          contactType.ifPresent(c -> bean.getContacts().add(c));
         }
 
         // o  An OPTIONAL <secDNS> element that contains the public key
@@ -287,24 +257,6 @@ final class DomainToXjcConverter {
     bean.setDigest(model.getDigest());
     bean.setKeyData(null);
     return bean;
-  }
-
-  /** Converts {@link DesignatedContact} to {@link XjcDomainContactType}. */
-  private static Optional<XjcDomainContactType> convertDesignatedContact(
-      DesignatedContact model, String domainName) {
-    XjcDomainContactType bean = new XjcDomainContactType();
-    checkState(
-        model.getContactKey() != null,
-        "Contact key for type %s is null on domain %s",
-        model.getType(),
-        domainName);
-    Optional<Contact> contact = tm().transact(() -> tm().loadByKeyIfPresent(model.getContactKey()));
-    if (contact.isEmpty()) {
-      return Optional.empty();
-    }
-    bean.setType(XjcDomainContactAttrType.fromValue(Ascii.toLowerCase(model.getType().toString())));
-    bean.setValue(contact.get().getContactId());
-    return Optional.of(bean);
   }
 
   private DomainToXjcConverter() {}

@@ -105,7 +105,6 @@ abstract class DomainTransferFlowTestCase<F extends Flow, R extends EppResource>
         persistDomainWithDependentResources(
             label,
             tld,
-            null,
             clock.nowUtc(),
             DateTime.parse("1999-04-03T22:00:00.0Z"),
             REGISTRATION_EXPIRATION_TIME);

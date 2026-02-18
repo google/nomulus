@@ -16,7 +16,6 @@ package google.registry.tools.javascrap;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.testing.DatabaseHelper.createTld;
-import static google.registry.testing.DatabaseHelper.persistActiveContact;
 import static google.registry.testing.DatabaseHelper.persistDomainWithDependentResources;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -27,7 +26,6 @@ import com.google.common.collect.Iterables;
 import google.registry.model.billing.BillingBase.Reason;
 import google.registry.model.billing.BillingCancellation;
 import google.registry.model.billing.BillingEvent;
-import google.registry.model.contact.Contact;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.reporting.HistoryEntryDao;
@@ -50,12 +48,10 @@ public class CreateCancellationsForBillingEventsCommandTest
   @BeforeEach
   void beforeEach() {
     createTld("tld");
-    Contact contact = persistActiveContact("contact1234");
     domain =
         persistDomainWithDependentResources(
             "example",
             "tld",
-            contact,
             fakeClock.nowUtc(),
             fakeClock.nowUtc(),
             fakeClock.nowUtc().plusYears(2));
@@ -68,7 +64,7 @@ public class CreateCancellationsForBillingEventsCommandTest
     assertThat(DatabaseHelper.loadAllOf(BillingCancellation.class)).isEmpty();
     runCommandForced(String.valueOf(billingEventToCancel.getId()));
     assertBillingEventCancelled();
-    assertInStdout("Added BillingCancellation for BillingEvent with ID 9");
+    assertInStdout("Added BillingCancellation for BillingEvent with ID 8");
     assertInStdout("Created 1 BillingCancellation event(s)");
   }
 
@@ -78,7 +74,7 @@ public class CreateCancellationsForBillingEventsCommandTest
     assertBillingEventCancelled();
     assertInStdout("Found 1 BillingEvent(s) to cancel");
     assertInStdout("Missing BillingEvent(s) for IDs [9001]");
-    assertInStdout("Added BillingCancellation for BillingEvent with ID 9");
+    assertInStdout("Added BillingCancellation for BillingEvent with ID 8");
     assertInStdout("Created 1 BillingCancellation event(s)");
   }
 
@@ -91,8 +87,8 @@ public class CreateCancellationsForBillingEventsCommandTest
     assertBillingEventCancelled(billingEventToCancel.getId());
     assertBillingEventCancelled(secondToCancel.getId());
     assertInStdout("Create cancellations for 2 BillingEvent(s)?");
+    assertInStdout("Added BillingCancellation for BillingEvent with ID 8");
     assertInStdout("Added BillingCancellation for BillingEvent with ID 9");
-    assertInStdout("Added BillingCancellation for BillingEvent with ID 10");
     assertInStdout("Created 2 BillingCancellation event(s)");
   }
 
@@ -107,7 +103,7 @@ public class CreateCancellationsForBillingEventsCommandTest
     assertBillingEventCancelled();
     assertThat(DatabaseHelper.loadAllOf(BillingCancellation.class)).hasSize(1);
     assertInStdout("Found 0 BillingEvent(s) to cancel");
-    assertInStdout("The following BillingEvent IDs were already cancelled: [9]");
+    assertInStdout("The following BillingEvent IDs were already cancelled: [8]");
   }
 
   @Test

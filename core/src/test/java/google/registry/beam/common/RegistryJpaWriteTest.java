@@ -18,22 +18,18 @@ import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.ImmutableObjectSubject.immutableObjectCorrespondence;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.loadAllOf;
-import static google.registry.testing.DatabaseHelper.newContact;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static google.registry.testing.DatabaseHelper.newHost;
 
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Iterables;
 import google.registry.beam.TestPipelineExtension;
-import google.registry.model.contact.Contact;
+import google.registry.model.host.Host;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.persistence.transaction.JpaTransactionManagerExtension;
 import google.registry.testing.FakeClock;
 import java.io.Serializable;
-import org.apache.beam.sdk.Pipeline.PipelineExecutionException;
 import org.apache.beam.sdk.transforms.Create;
 import org.joda.time.DateTime;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
@@ -53,42 +49,18 @@ class RegistryJpaWriteTest implements Serializable {
   @Test
   void writeToSql_twoWriters() {
     tm().transact(() -> tm().put(JpaTransactionManagerExtension.makeRegistrar2()));
-    ImmutableList.Builder<Contact> contactsBuilder = new ImmutableList.Builder<>();
+    ImmutableList.Builder<Host> hostsBuilder = new ImmutableList.Builder<>();
     for (int i = 0; i < 3; i++) {
-      contactsBuilder.add(newContact("contact_" + i));
+      hostsBuilder.add(newHost(String.format("ns%d.example.tld", i)));
     }
-    ImmutableList<Contact> contacts = contactsBuilder.build();
+    ImmutableList<Host> hosts = hostsBuilder.build();
     testPipeline
-        .apply(Create.of(contacts))
-        .apply(RegistryJpaIO.<Contact>write().withName("Contact").withBatchSize(4));
+        .apply(Create.of(hosts))
+        .apply(RegistryJpaIO.<Host>write().withName("Host").withBatchSize(4));
     testPipeline.run().waitUntilFinish();
 
-    assertThat(loadAllOf(Contact.class))
+    assertThat(loadAllOf(Host.class))
         .comparingElementsUsing(immutableObjectCorrespondence("revisions", "updateTimestamp"))
-        .containsExactlyElementsIn(contacts);
-  }
-
-  @Disabled("b/263502442")
-  @Test
-  void testFailure_writeExistingEntity() {
-    // RegistryJpaIO.Write actions should not write existing objects to the database because the
-    // object could have been mutated in between creation and when the Write actually occurs,
-    // causing a race condition
-    tm().transact(
-            () -> {
-              tm().put(JpaTransactionManagerExtension.makeRegistrar2());
-              tm().put(newContact("contact"));
-            });
-    Contact contact = Iterables.getOnlyElement(loadAllOf(Contact.class));
-    testPipeline
-        .apply(Create.of(contact))
-        .apply(RegistryJpaIO.<Contact>write().withName("Contact"));
-    // PipelineExecutionException caused by a RuntimeException caused by an IllegalArgumentException
-    assertThat(
-            assertThrows(
-                PipelineExecutionException.class, () -> testPipeline.run().waitUntilFinish()))
-        .hasCauseThat()
-        .hasCauseThat()
-        .isInstanceOf(IllegalArgumentException.class);
+        .containsExactlyElementsIn(hosts);
   }
 }

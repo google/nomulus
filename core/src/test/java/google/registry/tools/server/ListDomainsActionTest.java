@@ -145,7 +145,7 @@ class ListDomainsActionTest extends ListActionTestCase {
         "^domainName\\s+repoId\\s*$",
         "^-+\\s+-+\\s*$",
         "^example1.foo\\s+2-FOO\\s*$",
-        "^example3.foo\\s+4-FOO\\s*$");
+        "^example3.foo\\s+3-FOO\\s*$");
   }
 
   @Test
@@ -159,7 +159,7 @@ class ListDomainsActionTest extends ListActionTestCase {
         Optional.of(false),
         Optional.empty(),
         "^example1.foo  2-FOO$",
-        "^example3.foo  4-FOO$");
+        "^example3.foo  3-FOO$");
   }
 
   @Test
@@ -175,7 +175,7 @@ class ListDomainsActionTest extends ListActionTestCase {
         "^domainName\\s+repoId\\s*$",
         "^-+\\s+-+\\s*$",
         "^example1.foo\\s+2-FOO\\s*$",
-        "^example3.foo\\s+4-FOO\\s*$");
+        "^example3.foo\\s+3-FOO\\s*$");
   }
 
   @Test
@@ -191,7 +191,7 @@ class ListDomainsActionTest extends ListActionTestCase {
         "^domainName\\s+.*repoId",
         "^-+\\s+-+",
         "^example1.foo\\s+.*2-FOO",
-        "^example3.foo\\s+.*4-FOO");
+        "^example3.foo\\s+.*3-FOO");
   }
 
   @Test
@@ -207,7 +207,7 @@ class ListDomainsActionTest extends ListActionTestCase {
         "^domainName\\s+.*repoId",
         "^-+\\s+-+",
         "^example1.foo\\s+.*2-FOO",
-        "^example3.foo\\s+.*4-FOO");
+        "^example3.foo\\s+.*3-FOO");
   }
 
   @Test
