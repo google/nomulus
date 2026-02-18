@@ -14,4 +14,6 @@ RUN mkdir -p /opt/cprof && \
 USER jetty
 
 EXPOSE 8080
-ENTRYPOINT ["/bin/sh", "/start.sh"]
+# jetty:12-jdk21 has bash. We can afford the extra 200M in image size over
+# the -alpine flavor.
+ENTRYPOINT ["/bin/bash", "/start.sh"]
