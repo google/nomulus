@@ -15,17 +15,47 @@
 package google.registry.model.eppcommon;
 
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.common.truth.Truth.assertWithMessage;
+import static google.registry.model.eppcommon.EppXmlTransformer.isFeeExtension;
 import static google.registry.model.eppcommon.EppXmlTransformer.unmarshal;
 import static google.registry.testing.TestDataHelper.loadBytes;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import com.google.common.collect.ImmutableSet;
+import google.registry.model.domain.bulktoken.BulkTokenResponseExtension;
+import google.registry.model.domain.launch.LaunchCheckResponseExtension;
+import google.registry.model.domain.rgp.RgpInfoExtension;
+import google.registry.model.domain.secdns.SecDnsInfoExtension;
 import google.registry.model.eppinput.EppInput;
 import google.registry.model.eppoutput.EppOutput;
+import google.registry.model.eppoutput.EppResponse;
 import google.registry.util.RegistryEnvironment;
+import jakarta.xml.bind.annotation.XmlElementRef;
+import jakarta.xml.bind.annotation.XmlElementRefs;
+import java.util.Arrays;
 import org.junit.jupiter.api.Test;
 
 /** Tests for {@link EppXmlTransformer}. */
 class EppXmlTransformerTest {
+
+  // Non-fee extensions allowed in {@code Response.extensions}.
+  private static final ImmutableSet<Class<?>> NON_FEE_EXTENSIONS =
+      ImmutableSet.of(
+          BulkTokenResponseExtension.class,
+          LaunchCheckResponseExtension.class,
+          RgpInfoExtension.class,
+          SecDnsInfoExtension.class);
+
+  @Test
+  void isFeeExtension_eppResponse() throws Exception {
+    var xmlRefs =
+        EppResponse.class.getDeclaredField("extensions").getAnnotation(XmlElementRefs.class);
+    Arrays.stream(xmlRefs.value())
+        .map(XmlElementRef::type)
+        .filter(type -> !NON_FEE_EXTENSIONS.contains(type))
+        .forEach(
+            type -> assertWithMessage(type.getSimpleName()).that(isFeeExtension(type)).isTrue());
+  }
 
   @Test
   void testUnmarshalingEppInput() throws Exception {

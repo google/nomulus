@@ -19,6 +19,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.collect.Sets.difference;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
+import static google.registry.flows.FlowUtils.marshalWithLenientRetry;
 import static google.registry.model.eppcommon.EppXmlTransformer.marshal;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.stripBillingEventId;
@@ -55,6 +56,7 @@ import google.registry.xml.ValidationMode;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 import javax.annotation.Nullable;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
@@ -284,6 +286,7 @@ public abstract class FlowTestCase<F extends Flow> {
               Arrays.toString(marshal(output, ValidationMode.LENIENT))),
           e);
     }
+    verifyFeeTagNormalized(new String(marshalWithLenientRetry(output), UTF_8));
     return output;
   }
 
@@ -297,5 +300,15 @@ public abstract class FlowTestCase<F extends Flow> {
 
   public EppOutput runFlowAssertResponse(String xml, String... ignoredPaths) throws Exception {
     return runFlowAssertResponse(CommitMode.LIVE, UserPrivileges.NORMAL, xml, ignoredPaths);
+  }
+
+  // Pattern for non-normalized tags in use. Occurrences in namespace declarations ignored.
+  private static final Pattern NON_NORMALIZED_FEE_TAGS =
+      Pattern.compile("\\bfee11:|\\bfee12:|\\bfee_1_00:");
+
+  static void verifyFeeTagNormalized(String xml) {
+    assertWithMessage("Unexpected un-normalized Fee tags found in message.")
+        .that(NON_NORMALIZED_FEE_TAGS.matcher(xml).find())
+        .isFalse();
   }
 }

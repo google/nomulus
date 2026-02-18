@@ -20,9 +20,14 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import google.registry.flows.FeeExtensionXmlTagNormalizer;
 import google.registry.model.ImmutableObject;
+import google.registry.model.domain.fee.FeeCheckResponseExtension;
+import google.registry.model.domain.fee.FeeTransformResponseExtension;
+import google.registry.model.domain.fee06.FeeInfoResponseExtensionV06;
 import google.registry.model.eppinput.EppInput;
 import google.registry.model.eppoutput.EppOutput;
+import google.registry.model.eppoutput.EppResponse;
 import google.registry.util.RegistryEnvironment;
 import google.registry.xml.ValidationMode;
 import google.registry.xml.XmlException;
@@ -98,8 +103,31 @@ public class EppXmlTransformer  {
     return byteArrayOutputStream.toByteArray();
   }
 
+  private static boolean hasFeeExtension(EppOutput eppOutput) {
+    if (!eppOutput.isResponse()) {
+      return false;
+    }
+    return eppOutput.getResponse().getExtensions().stream()
+        .map(EppResponse.ResponseExtension::getClass)
+        .filter(EppXmlTransformer::isFeeExtension)
+        .findAny()
+        .isPresent();
+  }
+
+  @VisibleForTesting
+  static boolean isFeeExtension(Class<?> clazz) {
+    return FeeCheckResponseExtension.class.isAssignableFrom(clazz)
+        || FeeTransformResponseExtension.class.isAssignableFrom(clazz)
+        || FeeInfoResponseExtensionV06.class.isAssignableFrom(clazz);
+  }
+
   public static byte[] marshal(EppOutput root, ValidationMode validation) throws XmlException {
-    return marshal(OUTPUT_TRANSFORMER, root, validation);
+    byte[] bytes = marshal(OUTPUT_TRANSFORMER, root, validation);
+    if (!RegistryEnvironment.PRODUCTION.equals(RegistryEnvironment.get())
+        && hasFeeExtension(root)) {
+      return FeeExtensionXmlTagNormalizer.normalize(new String(bytes, UTF_8)).getBytes(UTF_8);
+    }
+    return bytes;
   }
 
   @VisibleForTesting
