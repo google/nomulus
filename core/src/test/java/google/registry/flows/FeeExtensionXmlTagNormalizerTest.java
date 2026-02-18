@@ -17,8 +17,10 @@ package google.registry.flows;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.flows.FeeExtensionXmlTagNormalizer.feeExtensionInUseRegex;
 import static google.registry.flows.FeeExtensionXmlTagNormalizer.normalize;
+import static google.registry.flows.FlowTestCase.verifyFeeTagNormalized;
 import static google.registry.model.eppcommon.EppXmlTransformer.validateOutput;
 import static google.registry.testing.TestDataHelper.loadFile;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
@@ -41,6 +43,13 @@ class FeeExtensionXmlTagNormalizerTest {
     assertThat(normalized).isEqualTo(xml);
   }
 
+  @Test
+  void normalize_greetingUnchanged() throws Exception {
+    String xml = loadFile(getClass(), "greeting.xml");
+    String normalized = normalize(xml);
+    assertThat(normalized).isEqualTo(xml);
+  }
+
   @ParameterizedTest(name = "normalize_withFeeExtension-{0}")
   @MethodSource("provideTestCombinations")
   @SuppressWarnings("unused") // Parameter 'name' is part of test case name
@@ -53,6 +62,29 @@ class FeeExtensionXmlTagNormalizerTest {
     validateOutput(expected);
 
     assertThat(normalized).isEqualTo(expected);
+  }
+
+  // Piggyback tests for FlowTestCase.verifyFeeTagNormalized here.
+  @ParameterizedTest(name = "verifyFeeTagNormalized-{0}")
+  @MethodSource("provideTestCombinations")
+  @SuppressWarnings("unused") // Parameter 'name' is part of test case name
+  void verifyFeeTagNormalized_success(
+      String name, String inputXmlFilename, String expectedXmlFilename) throws Exception {
+    String original = loadFile(getClass(), inputXmlFilename);
+    String normalized = normalize(original);
+    String expected = loadFile(getClass(), expectedXmlFilename);
+
+    if (name.equals("v06")) {
+      // Fee-06 already uses 'fee'. Non-normalized tags only appear in header.
+      verifyFeeTagNormalized(original);
+    } else {
+      assertThrows(
+          AssertionError.class,
+          () -> {
+            verifyFeeTagNormalized(original);
+          });
+    }
+    verifyFeeTagNormalized(expected);
   }
 
   @SuppressWarnings("unused")
