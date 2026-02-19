@@ -16,7 +16,10 @@ package google.registry.model.domain;
 
 import static google.registry.testing.DatabaseHelper.persistActiveContact;
 import static google.registry.testing.DatabaseHelper.persistActiveHost;
+import static org.junit.Assert.assertThrows;
 
+import google.registry.flows.domain.DomainFlowUtils.RegistrantProhibitedException;
+import google.registry.flows.exceptions.ContactsProhibitedException;
 import google.registry.model.ResourceCommandTestCase;
 import google.registry.model.eppinput.EppInput;
 import google.registry.model.eppinput.EppInput.ResourceCommandWrapper;
@@ -82,7 +85,9 @@ class DomainCommandTest extends ResourceCommandTestCase {
     persistActiveContact("jd1234");
     DomainCommand.Create create =
         (DomainCommand.Create) loadEppResourceCommand("domain_create.xml");
-    create.cloneAndLinkReferences(fakeClock.nowUtc());
+    assertThrows(
+        RegistrantProhibitedException.class,
+        () -> create.cloneAndLinkReferences(fakeClock.nowUtc()));
   }
 
   @Test
@@ -96,11 +101,12 @@ class DomainCommandTest extends ResourceCommandTestCase {
   @Test
   void testCreate_missingNonRegistrantContacts_cloneAndLinkReferences() throws Exception {
     persistActiveContact("jd1234");
-    // This EPP command wouldn't be allowed for policy reasons, but should clone-and-link fine.
     DomainCommand.Create create =
         (DomainCommand.Create)
             loadEppResourceCommand("domain_create_missing_non_registrant_contacts.xml");
-    create.cloneAndLinkReferences(fakeClock.nowUtc());
+    assertThrows(
+        RegistrantProhibitedException.class,
+        () -> create.cloneAndLinkReferences(fakeClock.nowUtc()));
   }
 
   @Test
@@ -127,7 +133,8 @@ class DomainCommandTest extends ResourceCommandTestCase {
     persistActiveContact("sh8013");
     DomainCommand.Update update =
         (DomainCommand.Update) loadEppResourceCommand("domain_update.xml");
-    update.cloneAndLinkReferences(fakeClock.nowUtc());
+    assertThrows(
+        ContactsProhibitedException.class, () -> update.cloneAndLinkReferences(fakeClock.nowUtc()));
   }
 
   @Test
