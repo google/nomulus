@@ -14,9 +14,11 @@
 
 package google.registry.model.domain;
 
-import static google.registry.testing.DatabaseHelper.persistActiveContact;
 import static google.registry.testing.DatabaseHelper.persistActiveHost;
+import static org.junit.Assert.assertThrows;
 
+import google.registry.flows.domain.DomainFlowUtils.RegistrantProhibitedException;
+import google.registry.flows.exceptions.ContactsProhibitedException;
 import google.registry.model.ResourceCommandTestCase;
 import google.registry.model.eppinput.EppInput;
 import google.registry.model.eppinput.EppInput.ResourceCommandWrapper;
@@ -29,6 +31,7 @@ class DomainCommandTest extends ResourceCommandTestCase {
 
   @Test
   void testCreate() throws Exception {
+    // This EPP command wouldn't be allowed for policy reasons, but should marshal/unmarshal fine.
     doXmlRoundtripTest("domain_create.xml");
   }
 
@@ -64,42 +67,48 @@ class DomainCommandTest extends ResourceCommandTestCase {
 
   @Test
   void testCreate_emptyCommand() throws Exception {
-    // This EPP command wouldn't be allowed for policy reasons, but should marshal/unmarshal fine.
     doXmlRoundtripTest("domain_create_empty.xml");
   }
 
   @Test
   void testCreate_missingNonRegistrantContacts() throws Exception {
-    // This EPP command wouldn't be allowed for policy reasons, but should marshal/unmarshal fine.
     doXmlRoundtripTest("domain_create_missing_non_registrant_contacts.xml");
   }
 
   @Test
-  void testCreate_cloneAndLinkReferences() throws Exception {
+  void testCreate_cloneAndLinkReferences_withHosts() throws Exception {
     persistActiveHost("ns1.example.net");
     persistActiveHost("ns2.example.net");
-    persistActiveContact("sh8013");
-    persistActiveContact("jd1234");
     DomainCommand.Create create =
         (DomainCommand.Create) loadEppResourceCommand("domain_create.xml");
     create.cloneAndLinkReferences(fakeClock.nowUtc());
   }
 
   @Test
-  void testCreate_emptyCommand_cloneAndLinkReferences() throws Exception {
-    // This EPP command wouldn't be allowed for policy reasons, but should clone-and-link fine.
+  void testCreate_cloneAndLinkReferences_failsWithContacts() throws Exception {
+    persistActiveHost("ns1.example.net");
+    persistActiveHost("ns2.example.net");
     DomainCommand.Create create =
-        (DomainCommand.Create) loadEppResourceCommand("domain_create_empty.xml");
-    create.cloneAndLinkReferences(fakeClock.nowUtc());
+        (DomainCommand.Create) loadEppResourceCommand("domain_create_with_contacts.xml");
+    assertThrows(
+        RegistrantProhibitedException.class,
+        () -> create.cloneAndLinkReferences(fakeClock.nowUtc()));
   }
 
   @Test
-  void testCreate_missingNonRegistrantContacts_cloneAndLinkReferences() throws Exception {
-    persistActiveContact("jd1234");
-    // This EPP command wouldn't be allowed for policy reasons, but should clone-and-link fine.
+  void testCreate_cloneAndLinkReferences_failsWithRegistrant() throws Exception {
     DomainCommand.Create create =
         (DomainCommand.Create)
             loadEppResourceCommand("domain_create_missing_non_registrant_contacts.xml");
+    assertThrows(
+        RegistrantProhibitedException.class,
+        () -> create.cloneAndLinkReferences(fakeClock.nowUtc()));
+  }
+
+  @Test
+  void testCreate_emptyCommand_cloneAndLinkReferences() throws Exception {
+    DomainCommand.Create create =
+        (DomainCommand.Create) loadEppResourceCommand("domain_create_empty.xml");
     create.cloneAndLinkReferences(fakeClock.nowUtc());
   }
 
@@ -120,14 +129,22 @@ class DomainCommandTest extends ResourceCommandTestCase {
   }
 
   @Test
-  void testUpdate_cloneAndLinkReferences() throws Exception {
+  void testUpdate_cloneAndLinkReferences_hosts() throws Exception {
     persistActiveHost("ns1.example.com");
     persistActiveHost("ns2.example.com");
-    persistActiveContact("mak21");
-    persistActiveContact("sh8013");
     DomainCommand.Update update =
         (DomainCommand.Update) loadEppResourceCommand("domain_update.xml");
     update.cloneAndLinkReferences(fakeClock.nowUtc());
+  }
+
+  @Test
+  void testUpdate_cloneAndLinkReferences_failsWithContacts() throws Exception {
+    persistActiveHost("ns1.example.com");
+    persistActiveHost("ns2.example.com");
+    DomainCommand.Update update =
+        (DomainCommand.Update) loadEppResourceCommand("domain_update_with_contacts.xml");
+    assertThrows(
+        ContactsProhibitedException.class, () -> update.cloneAndLinkReferences(fakeClock.nowUtc()));
   }
 
   @Test

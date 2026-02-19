@@ -1252,7 +1252,7 @@ public class DomainFlowUtils {
   }
 
   /** Having a registrant is prohibited by registry policy. */
-  static class RegistrantProhibitedException extends ParameterValuePolicyErrorException {
+  public static class RegistrantProhibitedException extends ParameterValuePolicyErrorException {
     public RegistrantProhibitedException() {
       super("Having a registrant is prohibited by registry policy");
     }
