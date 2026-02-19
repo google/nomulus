@@ -67,14 +67,11 @@ import google.registry.flows.EppException.ParameterValueSyntaxErrorException;
 import google.registry.flows.EppException.RequiredParameterMissingException;
 import google.registry.flows.EppException.StatusProhibitsOperationException;
 import google.registry.flows.EppException.UnimplementedOptionException;
-import google.registry.flows.exceptions.ContactsProhibitedException;
 import google.registry.flows.exceptions.ResourceHasClientUpdateProhibitedException;
 import google.registry.model.EppResource;
 import google.registry.model.billing.BillingBase.Flag;
 import google.registry.model.billing.BillingBase.Reason;
 import google.registry.model.billing.BillingRecurrence;
-import google.registry.model.contact.Contact;
-import google.registry.model.domain.DesignatedContact;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainCommand.Create;
 import google.registry.model.domain.DomainCommand.CreateOrUpdate;
@@ -420,33 +417,6 @@ public class DomainFlowUtils {
           String.format("Only %d nameservers are allowed per domain", MAX_NAMESERVERS_PER_DOMAIN));
     }
   }
-
-  /** Enforces absence of contact data on creation as part of the Minimum Dataset requirements. */
-  static void enforceContactAbsencesOnCreate(Create create)
-      throws ParameterValuePolicyErrorException {
-    enforceContactAbsences(create.getRegistrant(), create.getContacts());
-  }
-
-  /** Enforces absence of contact data on update as part of the Minimum Dataset requirements. */
-  static void enforceContactAbsencesOnUpdate(Update update)
-      throws ParameterValuePolicyErrorException {
-    Set<DesignatedContact> allDesignatedContacts =
-        Sets.union(update.getInnerAdd().getContacts(), update.getInnerRemove().getContacts());
-    enforceContactAbsences(update.getInnerChange().getRegistrant(), allDesignatedContacts);
-  }
-
-  /** Enforces the absence of contact data as part of the Minimum Dataset requirements. */
-  static void enforceContactAbsences(
-      Optional<VKey<Contact>> registrant, Set<DesignatedContact> contacts)
-      throws ParameterValuePolicyErrorException {
-    if (registrant.isPresent()) {
-      throw new RegistrantProhibitedException();
-    }
-    if (!contacts.isEmpty()) {
-      throw new ContactsProhibitedException();
-    }
-  }
-
 
   static void validateNameserversAllowedOnTld(String tld, Set<String> fullyQualifiedHostNames)
       throws EppException {
@@ -971,7 +941,6 @@ public class DomainFlowUtils {
       Create command, Tld tld, InternetDomainName domainName) throws EppException {
     verifyNotInPendingDelete(command.getNameservers());
     String tldStr = tld.getTldStr();
-    enforceContactAbsencesOnCreate(command);
     ImmutableSet<String> hostNames = command.getNameserverHostNames();
     validateNameserversCountForTld(tldStr, domainName, hostNames.size());
     validateNameserversAllowedOnTld(tldStr, hostNames);

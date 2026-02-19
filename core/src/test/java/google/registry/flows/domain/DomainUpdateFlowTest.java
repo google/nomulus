@@ -42,7 +42,6 @@ import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.getOnlyHistoryEntryOfType;
 import static google.registry.testing.DatabaseHelper.getPollMessages;
 import static google.registry.testing.DatabaseHelper.loadRegistrar;
-import static google.registry.testing.DatabaseHelper.persistActiveContact;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistActiveHost;
 import static google.registry.testing.DatabaseHelper.persistActiveSubordinateHost;
@@ -272,7 +271,6 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
 
   @Test
   void testFailure_minimumDataset_whenAddingNewContacts() throws Exception {
-    persistActiveContact("mak21");
     // This EPP adds a new technical contact mak21 that wasn't already present.
     setEppInput("domain_update_empty_registrant.xml");
     persistReferencedEntities();
@@ -1375,13 +1373,8 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
 
   @Test
   void testFailure_minimumDataset_addingNewRegistrantFails() throws Exception {
-    persistActiveContact("sh8013");
     persistReferencedEntities();
-    persistResource(
-        DatabaseHelper.newDomain(getUniqueIdFromCommand())
-            .asBuilder()
-            .setRegistrant(Optional.empty())
-            .build());
+    persistResource(DatabaseHelper.newDomain(getUniqueIdFromCommand()));
     // This EPP sets the registrant to sh8013, whereas in our test setup it is absent.
     setEppInput("domain_update_registrant.xml");
     RegistrantProhibitedException thrown =

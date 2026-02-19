@@ -29,7 +29,6 @@ import static google.registry.flows.ResourceFlowUtils.verifyOptionalAuthInfo;
 import static google.registry.flows.ResourceFlowUtils.verifyResourceOwnership;
 import static google.registry.flows.domain.DomainFlowUtils.checkAllowedAccessToTld;
 import static google.registry.flows.domain.DomainFlowUtils.cloneAndLinkReferences;
-import static google.registry.flows.domain.DomainFlowUtils.enforceContactAbsencesOnUpdate;
 import static google.registry.flows.domain.DomainFlowUtils.updateDsData;
 import static google.registry.flows.domain.DomainFlowUtils.validateDsData;
 import static google.registry.flows.domain.DomainFlowUtils.validateFeesAckedIfPresent;
@@ -249,8 +248,6 @@ public final class DomainUpdateFlow implements MutatingFlow {
           ext.getRemove().map(Remove::getDsData).orElse(ImmutableSet.of()));
     }
     Change change = command.getInnerChange();
-    enforceContactAbsencesOnUpdate(command);
-
     Domain.Builder domainBuilder =
         domain
             .asBuilder()

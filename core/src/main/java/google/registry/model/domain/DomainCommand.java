@@ -30,7 +30,6 @@ import google.registry.flows.domain.DomainFlowUtils.RegistrantProhibitedExceptio
 import google.registry.flows.exceptions.ContactsProhibitedException;
 import google.registry.model.ForeignKeyUtils;
 import google.registry.model.ImmutableObject;
-import google.registry.model.contact.Contact;
 import google.registry.model.eppinput.ResourceCommand.AbstractSingleResourceCommand;
 import google.registry.model.eppinput.ResourceCommand.ResourceCheck;
 import google.registry.model.eppinput.ResourceCommand.ResourceCreateOrChange;
@@ -79,18 +78,11 @@ public class DomainCommand {
     @Nullable
     String registrantContactId;
 
-    /** A resolved key to the registrant who registered this domain. */
-    @Nullable @XmlTransient VKey<Contact> registrant;
-
     /** Authorization info (aka transfer secret) of the domain. */
     DomainAuthInfo authInfo;
 
     public Optional<String> getRegistrantContactId() {
       return Optional.ofNullable(registrantContactId);
-    }
-
-    public Optional<VKey<Contact>> getRegistrant() {
-      return Optional.ofNullable(registrant);
     }
 
     public DomainAuthInfo getAuthInfo() {
@@ -131,10 +123,6 @@ public class DomainCommand {
     @XmlElement(name = "contact")
     Set<ForeignKeyedDesignatedContact> foreignKeyedDesignatedContacts;
 
-    /** Resolved keys to associated contacts for the domain (other than registrant). */
-    @XmlTransient
-    Set<DesignatedContact> contacts;
-
     /** The period that this domain's state was set to last for (e.g. 1-10 years). */
     Period period;
 
@@ -157,10 +145,6 @@ public class DomainCommand {
 
     public ImmutableSet<VKey<Host>> getNameservers() {
       return nullToEmptyImmutableCopy(nameservers);
-    }
-
-    public ImmutableSet<DesignatedContact> getContacts() {
-      return nullToEmptyImmutableCopy(contacts);
     }
 
     @Override
@@ -340,20 +324,12 @@ public class DomainCommand {
       @XmlElement(name = "contact")
       Set<ForeignKeyedDesignatedContact> foreignKeyedDesignatedContacts;
 
-      /** Resolved keys to associated contacts for the domain (other than registrant). */
-      @XmlTransient
-      Set<DesignatedContact> contacts;
-
       public ImmutableSet<String> getNameserverHostNames() {
         return nullSafeImmutableCopy(nameserverHostNames);
       }
 
       public ImmutableSet<VKey<Host>> getNameservers() {
         return nullToEmptyImmutableCopy(nameservers);
-      }
-
-      public ImmutableSet<DesignatedContact> getContacts() {
-        return nullToEmptyImmutableCopy(contacts);
       }
 
       /** Creates a copy of this {@link AddRemove} with hard links to hosts and contacts. */

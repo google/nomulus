@@ -18,6 +18,7 @@ import static com.google.common.base.Preconditions.checkState;
 import static google.registry.util.CollectionUtils.nullToEmpty;
 
 import com.google.common.collect.Maps;
+import google.registry.model.EppResource;
 import google.registry.model.ImmutableObject;
 import google.registry.model.contact.PostalInfo.Type;
 import google.registry.model.eppinput.ResourceCommand.AbstractSingleResourceCommand;
@@ -34,13 +35,13 @@ import jakarta.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 import java.util.List;
 import java.util.Map;
 
-/** A collection of {@link Contact} commands. */
+/** A collection of (vestigial) Contact commands. */
 public class ContactCommand {
 
   /** The fields on "chgType" from <a href="http://tools.ietf.org/html/rfc5733">RFC5733</a>. */
   @XmlTransient
   public static class ContactCreateOrChange extends ImmutableObject
-      implements ResourceCreateOrChange<Contact.Builder> {
+      implements ResourceCreateOrChange<EppResource.Builder<?, ?>> {
 
     /** Postal info for the contact. */
     List<PostalInfo> postalInfo;
@@ -111,13 +112,13 @@ public class ContactCommand {
   }
 
   /**
-   * A create command for a {@link Contact}, mapping "createType" from <a
+   * A create command for a (vestigial) Contact, mapping "createType" from <a
    * href="http://tools.ietf.org/html/rfc5733">RFC5733</a>}.
    */
   @XmlType(propOrder = {"contactId", "postalInfo", "voice", "fax", "email", "authInfo", "disclose"})
   @XmlRootElement
   public static class Create extends ContactCreateOrChange
-      implements SingleResourceCommand, ResourceCreateOrChange<Contact.Builder> {
+      implements SingleResourceCommand, ResourceCreateOrChange<EppResource.Builder<?, ?>> {
     /**
      * Unique identifier for this contact.
      *
@@ -139,29 +140,29 @@ public class ContactCommand {
     }
   }
 
-  /** A delete command for a {@link Contact}. */
+  /** A delete command for a (vestigial) Contact. */
   @XmlRootElement
   public static class Delete extends AbstractSingleResourceCommand {}
 
-  /** An info request for a {@link Contact}. */
+  /** An info request for a (vestigial) Contact. */
   @XmlRootElement
   @XmlType(propOrder = {"targetId", "authInfo"})
   public static class Info extends AbstractContactAuthCommand {}
 
-  /** A check request for {@link Contact}. */
+  /** A check request for (vestigial) Contact. */
   @XmlRootElement
   public static class Check extends ResourceCheck {}
 
-  /** A transfer operation for a {@link Contact}. */
+  /** A transfer operation for a (vestigial) Contact. */
   @XmlRootElement
   @XmlType(propOrder = {"targetId", "authInfo"})
   public static class Transfer extends AbstractContactAuthCommand {}
 
-  /** An update to a {@link Contact}. */
+  /** An update to a (vestigial) Contact. */
   @XmlRootElement
   @XmlType(propOrder = {"targetId", "innerAdd", "innerRemove", "innerChange"})
   public static class Update
-      extends ResourceUpdate<Update.AddRemove, Contact.Builder, Update.Change> {
+      extends ResourceUpdate<Update.AddRemove, EppResource.Builder<?, ?>, Update.Change> {
 
     @XmlElement(name = "chg")
     protected Change innerChange;

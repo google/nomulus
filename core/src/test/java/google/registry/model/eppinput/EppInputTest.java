@@ -19,7 +19,6 @@ import static google.registry.model.eppcommon.EppXmlTransformer.unmarshal;
 import static google.registry.testing.TestDataHelper.loadBytes;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import google.registry.model.contact.ContactTest;
 import google.registry.model.domain.DomainTest;
 import google.registry.model.eppinput.EppInput.InnerCommand;
 import google.registry.model.eppinput.EppInput.Login;
@@ -28,17 +27,6 @@ import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link EppInput}. */
 class EppInputTest {
-
-  @Test
-  void testUnmarshalling_contactInfo() throws Exception {
-    EppInput input =
-        unmarshal(EppInput.class, loadBytes(ContactTest.class, "contact_info.xml").read());
-    assertThat(input.getCommandWrapper().getClTrid()).hasValue("ABC-12345");
-    assertThat(input.getCommandType()).isEqualTo("info");
-    assertThat(input.getResourceType()).hasValue("contact");
-    assertThat(input.getSingleTargetId()).hasValue("sh8013");
-    assertThat(input.getTargetIds()).containsExactly("sh8013");
-  }
 
   @Test
   void testUnmarshalling_domainCheck() throws Exception {

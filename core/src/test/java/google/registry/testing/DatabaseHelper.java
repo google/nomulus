@@ -73,8 +73,6 @@ import google.registry.model.common.DnsRefreshRequest;
 import google.registry.model.console.GlobalRole;
 import google.registry.model.console.User;
 import google.registry.model.console.UserRoles;
-import google.registry.model.contact.Contact;
-import google.registry.model.contact.ContactAuthInfo;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainAuthInfo;
 import google.registry.model.domain.DomainBase;
@@ -182,17 +180,6 @@ public final class DatabaseHelper {
         .build();
   }
 
-  public static Contact newContactWithRoid(String contactId, String repoId) {
-    return new Contact.Builder()
-        .setRepoId(repoId)
-        .setContactId(contactId)
-        .setCreationRegistrarId("TheRegistrar")
-        .setPersistedCurrentSponsorRegistrarId("TheRegistrar")
-        .setAuthInfo(ContactAuthInfo.create(PasswordAuth.create("2fooBAR")))
-        .setCreationTimeForTest(START_OF_TIME)
-        .build();
-  }
-
   public static Tld newTld(String tld, String roidSuffix) {
     return newTld(tld, roidSuffix, ImmutableSortedMap.of(START_OF_TIME, GENERAL_AVAILABILITY));
   }
@@ -230,10 +217,6 @@ public final class DatabaseHelper {
         .setPremiumPricingEngine(StaticPremiumListPricingEngine.NAME)
         .setDnsWriters(ImmutableSet.of(VoidDnsWriter.NAME))
         .build();
-  }
-
-  public static Contact persistActiveContact(String contactId) {
-    return persistResource(newContactWithRoid(contactId, generateNewHostRoid()));
   }
 
   public static Host persistActiveHost(String hostName) {
@@ -1019,11 +1002,7 @@ public final class DatabaseHelper {
   }
 
   private static HistoryEntry.Type getHistoryEntryType(EppResource resource) {
-    if (resource instanceof Contact) {
-      return resource.getRepoId() != null
-          ? HistoryEntry.Type.CONTACT_CREATE
-          : HistoryEntry.Type.CONTACT_UPDATE;
-    } else if (resource instanceof Host) {
+    if (resource instanceof Host) {
       return resource.getRepoId() != null
           ? HistoryEntry.Type.HOST_CREATE
           : HistoryEntry.Type.HOST_UPDATE;

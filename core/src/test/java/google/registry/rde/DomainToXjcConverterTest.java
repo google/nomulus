@@ -14,11 +14,9 @@
 
 package google.registry.rde;
 
-import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.io.BaseEncoding.base16;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
-import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.persistEppResource;
 import static google.registry.testing.DatabaseHelper.persistResource;
@@ -34,7 +32,6 @@ import google.registry.model.billing.BillingBase.Flag;
 import google.registry.model.billing.BillingBase.Reason;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingRecurrence;
-import google.registry.model.domain.DesignatedContact;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainAuthInfo;
 import google.registry.model.domain.DomainHistory;
@@ -198,12 +195,6 @@ public class DomainToXjcConverterTest {
   @Test
   void testConvertAbsentContacts() throws XmlException {
     Domain domain = makeDomain(clock);
-    tm().transact(
-            () ->
-                tm().delete(
-                        domain.getAllContacts().stream()
-                            .map(DesignatedContact::getContactKey)
-                            .collect(toImmutableSet())));
     XjcRdeDomain bean = DomainToXjcConverter.convertDomain(domain, RdeMode.FULL);
     assertThat(bean.getRegistrant()).isNull();
     assertThat(bean.getContacts()).isEmpty();

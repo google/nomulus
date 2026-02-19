@@ -50,7 +50,6 @@ import static google.registry.testing.DatabaseHelper.getHistoryEntries;
 import static google.registry.testing.DatabaseHelper.loadAllOf;
 import static google.registry.testing.DatabaseHelper.loadRegistrar;
 import static google.registry.testing.DatabaseHelper.newHost;
-import static google.registry.testing.DatabaseHelper.persistActiveContact;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistActiveHost;
 import static google.registry.testing.DatabaseHelper.persistReservedList;
@@ -1869,7 +1868,6 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
 
   @Test
   void testFailure_minimumDataset_noRegistrantButSomeOtherContactTypes() throws Exception {
-    persistActiveContact("sh8013");
     setEppInput("domain_create_other_contact_types.xml");
     persistHosts();
     EppException thrown = assertThrows(ContactsProhibitedException.class, this::runFlow);
@@ -1878,7 +1876,6 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
 
   @Test
   void testFailure_minimumDataset_registrantNotPermitted() throws Exception {
-    persistActiveContact("jd1234");
     setEppInput("domain_create_has_registrant_contact.xml");
     persistHosts();
     EppException thrown = assertThrows(RegistrantProhibitedException.class, this::runFlow);

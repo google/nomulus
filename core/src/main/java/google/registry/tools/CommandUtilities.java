@@ -19,7 +19,6 @@ import static com.google.common.base.Preconditions.checkState;
 import com.google.common.base.Ascii;
 import google.registry.model.EppResource;
 import google.registry.model.ForeignKeyUtils;
-import google.registry.model.contact.Contact;
 import google.registry.model.domain.Domain;
 import google.registry.model.host.Host;
 import google.registry.persistence.VKey;
@@ -30,7 +29,6 @@ class CommandUtilities {
 
   /** A useful parameter enum for commands that operate on {@link EppResource} objects. */
   public enum ResourceType {
-    CONTACT(Contact.class),
     HOST(Host.class),
     DOMAIN(Domain.class);
 

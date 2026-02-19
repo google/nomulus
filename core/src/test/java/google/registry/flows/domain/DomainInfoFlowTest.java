@@ -73,7 +73,6 @@ import google.registry.persistence.VKey;
 import google.registry.persistence.transaction.JpaTransactionManagerExtension;
 import google.registry.testing.DatabaseHelper;
 import google.registry.xml.ValidationMode;
-import java.util.Optional;
 import java.util.regex.Pattern;
 import javax.annotation.Nullable;
 import org.joda.money.Money;
@@ -215,22 +214,8 @@ class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, Domain> {
   }
 
   @Test
-  void testSuccess_noRegistrant() throws Exception {
-    persistTestEntities(false);
-    domain = persistResource(domain.asBuilder().setRegistrant(Optional.empty()).build());
-    doSuccessfulTest("domain_info_response_no_registrant.xml", false);
-  }
-
-  @Test
   void testSuccess_noContacts() throws Exception {
     persistTestEntities(false);
-    domain =
-        persistResource(
-            domain
-                .asBuilder()
-                .setRegistrant(Optional.empty())
-                .setContacts(ImmutableSet.of())
-                .build());
     doSuccessfulTest("domain_info_response_no_contacts.xml", false);
   }
 

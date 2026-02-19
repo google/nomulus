@@ -27,7 +27,6 @@ import com.google.common.collect.ImmutableMap;
 import com.google.gson.annotations.Expose;
 import google.registry.model.EppResource;
 import google.registry.model.ImmutableObject;
-import google.registry.model.contact.Contact;
 import google.registry.model.domain.Domain;
 import google.registry.model.host.Host;
 import google.registry.util.SerializeUtils;
@@ -51,7 +50,7 @@ public class VKey<T> extends ImmutableObject implements Serializable {
   private static final String DELIMITER = "@";
 
   private static final ImmutableMap<String, Class<? extends EppResource>> EPP_RESOURCE_CLASS_MAP =
-      ImmutableList.of(Domain.class, Host.class, Contact.class).stream()
+      ImmutableList.of(Domain.class, Host.class).stream()
           .collect(toImmutableMap(Class::getSimpleName, identity()));
 
   // The primary key for the referenced entity.

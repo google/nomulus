@@ -29,7 +29,6 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
 import google.registry.config.RegistryConfig;
-import google.registry.model.contact.Contact;
 import google.registry.model.domain.Domain;
 import google.registry.model.host.Host;
 import google.registry.persistence.VKey;
@@ -60,7 +59,6 @@ public final class ForeignKeyUtils {
   private static final ImmutableMap<Class<? extends EppResource>, String>
       RESOURCE_TYPE_TO_FK_PROPERTY =
           ImmutableMap.of(
-              Contact.class, "contactId",
               Domain.class, "domainName",
               Host.class, "hostName");
 

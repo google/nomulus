@@ -20,11 +20,9 @@ import jakarta.persistence.Embeddable;
 /**
  * EPP Contact Phone Number
  *
- * <p>This class is embedded inside a {@link Contact} hold the phone number of an EPP contact. The
- * fields are all defined in the parent class {@link PhoneNumber}, but the subclass is still
- * necessary to pick up the contact namespace.
- *
- * @see Contact
+ * <p>This class is embedded inside a (vestigial) Contact to hold the phone number of an EPP
+ * contact. The fields are all defined in the parent class {@link PhoneNumber}, but the subclass is
+ * still necessary to pick up the contact namespace.
  */
 @Embeddable
 public class ContactPhoneNumber extends PhoneNumber {

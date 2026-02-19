@@ -185,7 +185,6 @@ public class RegistryJpaReadTest {
                     StatusValue.SERVER_UPDATE_PROHIBITED,
                     StatusValue.SERVER_RENEW_PROHIBITED,
                     StatusValue.SERVER_HOLD))
-            .setContacts(ImmutableSet.of())
             .setSubordinateHosts(ImmutableSet.of("ns1.example.com"))
             .setPersistedCurrentSponsorRegistrarId(registrar.getRegistrarId())
             .setRegistrationExpirationTime(fakeClock.nowUtc().plusYears(1))

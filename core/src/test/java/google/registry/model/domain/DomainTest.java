@@ -237,17 +237,6 @@ public class DomainTest {
   }
 
   @Test
-  void testRegistrantNotRequired() {
-    persistResource(domain.asBuilder().setRegistrant(Optional.empty()).build());
-    String foreignKey = domain.getForeignKey();
-    assertThat(
-            ForeignKeyUtils.loadResource(Domain.class, foreignKey, fakeClock.nowUtc())
-                .get()
-                .getRegistrant())
-        .isEmpty();
-  }
-
-  @Test
   void testEmptyStringsBecomeNull() {
     assertThat(
             DatabaseHelper.newDomain("example.com")
