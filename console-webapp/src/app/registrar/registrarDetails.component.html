@@ -11,9 +11,8 @@
         <mat-icon>arrow_back</mat-icon>
       </button>
       <div class="spacer"></div>
-      @if(!inEdit && !registrarNotFound) {
+      @if(!inEdit && !registrarNotFound) { @if (oteButtonVisible) {
       <button
-        *ngIf="oteButtonVisible"
         mat-stroked-button
         (click)="checkOteStatus()"
         aria-label="Check OT&E account status"
@@ -21,6 +20,7 @@
       >
         Check OT&E Status
       </button>
+      }
       <button
         mat-flat-button
         color="primary"
@@ -39,10 +39,11 @@
     <h1>Registrar not found</h1>
     } @else {
     <h1>{{ registrarInEdit.registrarId }}</h1>
-    <h2 *ngIf="registrarInEdit.registrarName !== registrarInEdit.registrarId">
+    @if (registrarInEdit.registrarName !== registrarInEdit.registrarId) {
+    <h2>
       {{ registrarInEdit.registrarName }}
     </h2>
-    @if(inEdit) {
+    } @if(inEdit) {
     <form (ngSubmit)="saveAndClose()">
       <div>
         <mat-form-field appearance="outline">
@@ -60,15 +61,14 @@
         <mat-form-field appearance="outline">
           <mat-label>Onboarded TLDs: </mat-label>
           <mat-chip-grid #chipGrid aria-label="Enter TLD">
-            <mat-chip-row
-              *ngFor="let tld of registrarInEdit.allowedTlds"
-              (removed)="removeTLD(tld)"
-            >
+            @for (tld of registrarInEdit.allowedTlds; track tld) {
+            <mat-chip-row (removed)="removeTLD(tld)">
               {{ tld }}
               <button matChipRemove aria-label="'remove ' + tld">
                 <mat-icon>cancel</mat-icon>
               </button>
             </mat-chip-row>
+            }
           </mat-chip-grid>
           <input
             placeholder="New tld..."

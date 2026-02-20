@@ -1,25 +1,28 @@
 <h1 class="mat-headline-4">OT&E Status Check</h1>
 @if(registrarId() === null) {
 <h1>Missing registrarId param</h1>
-} @else if(isOte()) {
-<h1 *ngIf="oteStatusResponse().length">
+} @else if(isOte()) { @if (oteStatusResponse().length) {
+<h1>
   Status:
   <span>{{ oteStatusUnfinished().length ? "Unfinished" : "Completed" }}</span>
 </h1>
+}
 <div class="console-app__ote-status">
   @if(oteStatusCompleted().length) {
   <div class="console-app__ote-status_completed">
     <h1>Completed</h1>
-    <div *ngFor="let entry of oteStatusCompleted()">
-      <mat-icon>check_box</mat-icon>{{ entry.description }}
-    </div>
+    @for (entry of oteStatusCompleted(); track entry) {
+    <div><mat-icon>check_box</mat-icon>{{ entry.description }}</div>
+    }
   </div>
   } @if(oteStatusUnfinished().length) {
   <div class="console-app__ote-status_unfinished">
     <h1>Unfinished</h1>
-    <div *ngFor="let entry of oteStatusUnfinished()">
+    @for (entry of oteStatusUnfinished(); track entry) {
+    <div>
       <mat-icon>check_box_outline_blank</mat-icon>{{ entry.description }}
     </div>
+    }
   </div>
   }
 </div>

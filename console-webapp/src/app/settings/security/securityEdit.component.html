@@ -23,9 +23,11 @@
       <button
         matSuffix
         mat-icon-button
+        class="console-app__removeIp"
         [attr.aria-label]="'Remove IP entry ' + ip.value"
         (click)="removeIpEntry(ip)"
         [disabled]="isUpdating"
+        type="button"
       >
         <mat-icon>close</mat-icon>
       </button>

@@ -68,7 +68,7 @@
           >
         </mat-list-item>
         <mat-divider></mat-divider>
-        @for (item of dataSource.ipAddressAllowList; track item.value) {
+        @for (item of dataSource.ipAddressAllowList; track $index){
         <mat-list-item role="listitem">
           <span class="console-app__list-value">{{ item.value }}</span>
         </mat-list-item>

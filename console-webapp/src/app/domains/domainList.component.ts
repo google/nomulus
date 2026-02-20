@@ -33,6 +33,7 @@ import {
   MatDialogRef,
 } from '@angular/material/dialog';
 import { RESTRICTED_ELEMENTS } from '../shared/directives/userLevelVisiblity.directive';
+import { CdkColumnDef } from '@angular/cdk/table';
 
 interface DomainResponse {
   message: string;
@@ -114,6 +115,7 @@ export class ReasonDialogComponent {
   templateUrl: './domainList.component.html',
   styleUrls: ['./domainList.component.scss'],
   standalone: false,
+  providers: [CdkColumnDef],
 })
 export class DomainListComponent {
   public static PATH = 'domain-list';

@@ -1,6 +1,7 @@
 <div class="console-app__user-edit">
   <form (ngSubmit)="saveEdit($event)" #form>
-    <p *ngIf="isNew()">
+    @if (isNew()) {
+    <p>
       <mat-form-field appearance="outline">
         <mat-label
           >User name prefix:
@@ -19,6 +20,7 @@
         />
       </mat-form-field>
     </p>
+    }
     <p>
       <mat-form-field appearance="outline">
         <mat-label
