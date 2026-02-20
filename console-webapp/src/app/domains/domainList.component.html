@@ -143,13 +143,14 @@
             <ng-container matColumnDef="domainName">
               <mat-header-cell *matHeaderCellDef>Domain Name</mat-header-cell>
               <mat-cell *matCellDef="let element">
+                @if (getOperationMessage(element.domainName)) {
                 <mat-icon
-                  *ngIf="getOperationMessage(element.domainName)"
                   [matTooltip]="getOperationMessage(element.domainName)"
                   matTooltipPosition="above"
                   class="primary-text"
                   >info</mat-icon
                 >
+                }
                 <span>{{ element.domainName }}</span>
               </mat-cell>
             </ng-container>

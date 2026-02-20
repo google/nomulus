@@ -1,14 +1,15 @@
 <p class="console-app__header">
   <mat-toolbar>
+    @if (breakpointObserver.isMobileView()) {
     <button
       mat-icon-button
       aria-label="Open navigation menu"
       (click)="toggleNavPane()"
-      *ngIf="breakpointObserver.isMobileView()"
       class="console-app__menu-btn"
     >
       <mat-icon>menu</mat-icon>
     </button>
+    }
     <a
       [routerLink]="'/home'"
       routerLinkActive="active"
@@ -65,7 +66,9 @@
       </svg>
     </a>
     <span class="spacer"></span>
-    <app-registrar-selector *ngIf="!breakpointObserver.isMobileView()" />
+    @if (!breakpointObserver.isMobileView()) {
+    <app-registrar-selector />
+    }
     <button
       class="console-app__header-user-icon"
       mat-mini-fab
@@ -79,5 +82,7 @@
       <button mat-menu-item (click)="logOut()">Log out</button>
     </mat-menu>
   </mat-toolbar>
-  <app-registrar-selector *ngIf="breakpointObserver.isMobileView()" />
+  @if (breakpointObserver.isMobileView()) {
+  <app-registrar-selector />
+  }
 </p>

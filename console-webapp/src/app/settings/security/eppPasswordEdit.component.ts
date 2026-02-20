@@ -20,7 +20,7 @@ import { RegistrarService } from 'src/app/registrar/registrar.service';
 import { SecurityService } from './security.service';
 import { UserDataService } from 'src/app/shared/services/userData.service';
 import { MatDialog, MatDialogRef } from '@angular/material/dialog';
-import { CommonModule } from '@angular/common';
+
 import { MaterialModule } from 'src/app/material.module';
 import { filter, switchMap, take } from 'rxjs';
 import { BackendService } from 'src/app/shared/services/backend.service';
@@ -41,7 +41,7 @@ import {
       <button mat-button color="warn" (click)="onSave()">Confirm</button>
     </mat-dialog-actions>
   `,
-  imports: [CommonModule, MaterialModule],
+  imports: [MaterialModule],
 })
 export class ResetEppPasswordComponent {
   constructor(public dialogRef: MatDialogRef<ResetEppPasswordComponent>) {}
