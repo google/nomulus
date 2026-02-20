@@ -76,7 +76,7 @@ import google.registry.model.reporting.HistoryEntry.HistoryEntryId;
 import google.registry.model.reporting.IcannReportingTypes.ActivityReportField;
 import google.registry.model.tld.Tld;
 import google.registry.model.transfer.DomainTransferData;
-import google.registry.model.transfer.TransferData.TransferServerApproveEntity;
+import google.registry.model.transfer.DomainTransferData.TransferServerApproveEntity;
 import google.registry.model.transfer.TransferResponse.DomainTransferResponse;
 import google.registry.model.transfer.TransferStatus;
 import jakarta.inject.Inject;

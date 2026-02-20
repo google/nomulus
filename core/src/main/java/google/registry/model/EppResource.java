@@ -34,7 +34,6 @@ import com.google.common.collect.ImmutableSet;
 import com.google.gson.annotations.Expose;
 import google.registry.config.RegistryConfig;
 import google.registry.model.eppcommon.StatusValue;
-import google.registry.model.transfer.TransferData;
 import google.registry.persistence.VKey;
 import google.registry.util.NonFinalForTesting;
 import jakarta.persistence.Access;
@@ -206,27 +205,6 @@ public abstract class EppResource extends UpdateAutoTimestampEntity implements B
 
   /** EppResources that are loaded via foreign keys should implement this marker interface. */
   public interface ForeignKeyedEppResource {}
-
-  /** An interface for resources that have transfer data. */
-  public interface ResourceWithTransferData<T extends TransferData> {
-    T getTransferData();
-
-    /**
-     * The time that this resource was last transferred.
-     *
-     * <p>Can be null if the resource has never been transferred.
-     */
-    DateTime getLastTransferTime();
-  }
-
-  /** An interface for builders of resources that have transfer data. */
-  public interface BuilderWithTransferData<
-      T extends TransferData, B extends BuilderWithTransferData<T, B>> {
-    B setTransferData(T transferData);
-
-    /** Set the time when this resource was transferred. */
-    B setLastTransferTime(DateTime lastTransferTime);
-  }
 
   /** Abstract builder for {@link EppResource} types. */
   public abstract static class Builder<T extends EppResource, B extends Builder<T, B>>

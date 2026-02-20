@@ -29,7 +29,6 @@ import google.registry.model.poll.PendingActionNotificationResponse.DomainPendin
 import google.registry.model.poll.PollMessage;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.transfer.DomainTransferData;
-import google.registry.model.transfer.TransferData;
 import google.registry.model.transfer.TransferResponse;
 import google.registry.model.transfer.TransferResponse.DomainTransferResponse;
 import google.registry.model.transfer.TransferStatus;
@@ -79,7 +78,7 @@ public final class ResourceTransferUtils {
     if (!domain.getStatusValues().contains(StatusValue.PENDING_TRANSFER)) {
       return;
     }
-    TransferData oldTransferData = domain.getTransferData();
+    DomainTransferData oldTransferData = domain.getTransferData();
     tm().delete(oldTransferData.getServerApproveEntities());
     tm().put(
             new PollMessage.OneTime.Builder()
@@ -99,8 +98,8 @@ public final class ResourceTransferUtils {
    * Turn a domain into a builder with its pending transfer resolved.
    *
    * <p>This removes the {@link StatusValue#PENDING_TRANSFER} status, sets the {@link
-   * TransferStatus}, clears all the server-approve fields on the {@link TransferData}, and sets the
-   * expiration time of the last pending transfer to now.
+   * TransferStatus}, clears all the server-approve fields on the {@link DomainTransferData}, and
+   * sets the expiration time of the last pending transfer to now.
    */
   private static Domain.Builder resolvePendingTransfer(
       Domain domain, TransferStatus transferStatus, DateTime now) {
@@ -125,9 +124,9 @@ public final class ResourceTransferUtils {
    * Resolve a pending transfer by awarding it to the gaining client.
    *
    * <p>This removes the {@link StatusValue#PENDING_TRANSFER} status, sets the {@link
-   * TransferStatus}, clears all the server-approve fields on the {@link TransferData}, sets the new
-   * client id, and sets the last transfer time and the expiration time of the last pending transfer
-   * to now.
+   * TransferStatus}, clears all the server-approve fields on the {@link DomainTransferData}, sets
+   * the new client id, and sets the last transfer time and the expiration time of the last pending
+   * transfer to now.
    */
   public static Domain approvePendingTransfer(
       Domain domain, TransferStatus transferStatus, DateTime now) {
@@ -143,9 +142,9 @@ public final class ResourceTransferUtils {
    * Resolve a pending transfer by denying it.
    *
    * <p>This removes the {@link StatusValue#PENDING_TRANSFER} status, sets the {@link
-   * TransferStatus}, clears all the server-approve fields on the {@link TransferData}, sets the
-   * expiration time of the last pending transfer to now, sets the last EPP update time to now, and
-   * sets the last EPP update client id to the given client id.
+   * TransferStatus}, clears all the server-approve fields on the {@link DomainTransferData}, sets
+   * the expiration time of the last pending transfer to now, sets the last EPP update time to now,
+   * and sets the last EPP update client id to the given client id.
    */
   public static Domain denyPendingTransfer(
       Domain domain, TransferStatus transferStatus, DateTime now, String lastEppUpdateRegistrarId) {

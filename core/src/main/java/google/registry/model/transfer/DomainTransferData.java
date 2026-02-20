@@ -14,14 +14,20 @@
 
 package google.registry.model.transfer;
 
+import static com.google.common.base.Preconditions.checkState;
+import static com.google.common.collect.ImmutableList.toImmutableList;
 import static google.registry.util.CollectionUtils.isNullOrEmpty;
+import static google.registry.util.CollectionUtils.nullToEmpty;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import google.registry.model.Buildable;
 import google.registry.model.billing.BillingCancellation;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingRecurrence;
 import google.registry.model.domain.Period;
 import google.registry.model.domain.Period.Unit;
+import google.registry.model.eppcommon.Trid;
 import google.registry.model.poll.PollMessage;
 import google.registry.persistence.VKey;
 import google.registry.util.NullIgnoringCollectionBuilder;
@@ -36,8 +42,40 @@ import org.joda.time.DateTime;
 
 /** Transfer data for domain. */
 @Embeddable
-public class DomainTransferData extends TransferData {
+public class DomainTransferData extends BaseTransferObject implements Buildable {
   public static final DomainTransferData EMPTY = new DomainTransferData();
+
+  /** The transaction id of the most recent transfer request (or null if there never was one). */
+  @Embedded
+  @AttributeOverrides({
+    @AttributeOverride(
+        name = "serverTransactionId",
+        column = @Column(name = "transfer_server_txn_id")),
+    @AttributeOverride(
+        name = "clientTransactionId",
+        column = @Column(name = "transfer_client_txn_id"))
+  })
+  Trid transferRequestTrid;
+
+  @Column(name = "transfer_repo_id")
+  String repoId;
+
+  @Column(name = "transfer_history_entry_id")
+  Long historyEntryId;
+
+  // The pollMessageId1 and pollMessageId2 are used to store the IDs for gaining and losing poll
+  // messages in Cloud SQL.
+  //
+  // In addition, there may be a third poll message for the autorenew poll message on domain
+  // transfer if applicable.
+  @Column(name = "transfer_poll_message_id_1")
+  Long pollMessageId1;
+
+  @Column(name = "transfer_poll_message_id_2")
+  Long pollMessageId2;
+
+  @Column(name = "transfer_poll_message_id_3")
+  Long pollMessageId3;
 
   /**
    * The period to extend the registration upon completion of the transfer.
@@ -107,13 +145,17 @@ public class DomainTransferData extends TransferData {
   @Column(name = "transfer_autorenew_poll_message_history_id")
   Long serverApproveAutorenewPollMessageHistoryId;
 
-  @Override
-  public Builder copyConstantFieldsToBuilder() {
-    return ((Builder) super.copyConstantFieldsToBuilder()).setTransferPeriod(transferPeriod);
-  }
-
   public Period getTransferPeriod() {
     return transferPeriod;
+  }
+
+  public Long getHistoryEntryId() {
+    return historyEntryId;
+  }
+
+  @Nullable
+  public Trid getTransferRequestTrid() {
+    return transferRequestTrid;
   }
 
   @Nullable
@@ -141,12 +183,13 @@ public class DomainTransferData extends TransferData {
     return serverApproveAutorenewPollMessageHistoryId;
   }
 
-  @Override
   public ImmutableSet<VKey<? extends TransferServerApproveEntity>> getServerApproveEntities() {
     ImmutableSet.Builder<VKey<? extends TransferServerApproveEntity>> builder =
         new ImmutableSet.Builder<>();
-    builder.addAll(super.getServerApproveEntities());
     return NullIgnoringCollectionBuilder.create(builder)
+        .add(pollMessageId1 != null ? VKey.create(PollMessage.class, pollMessageId1) : null)
+        .add(pollMessageId2 != null ? VKey.create(PollMessage.class, pollMessageId2) : null)
+        .add(pollMessageId3 != null ? VKey.create(PollMessage.class, pollMessageId3) : null)
         .add(serverApproveBillingEvent)
         .add(serverApproveAutorenewEvent)
         .add(billingCancellationId)
@@ -154,14 +197,8 @@ public class DomainTransferData extends TransferData {
         .build();
   }
 
-  @Override
   public boolean isEmpty() {
     return EMPTY.equals(this);
-  }
-
-  @Override
-  protected Builder createEmptyBuilder() {
-    return new Builder();
   }
 
   @Override
@@ -186,13 +223,92 @@ public class DomainTransferData extends TransferData {
     }
   }
 
-  public static class Builder extends TransferData.Builder<DomainTransferData, Builder> {
+  /**
+   * Returns a fresh Builder populated only with the constant fields of this TransferData, i.e.
+   * those that are fixed and unchanging throughout the transfer process.
+   *
+   * <p>These fields are:
+   *
+   * <ul>
+   *   <li>transferRequestTrid
+   *   <li>transferRequestTime
+   *   <li>gainingClientId
+   *   <li>losingClientId
+   *   <li>transferPeriod
+   * </ul>
+   */
+  public Builder copyConstantFieldsToBuilder() {
+    return new Builder()
+        .setTransferPeriod(transferPeriod)
+        .setTransferRequestTrid(transferRequestTrid)
+        .setTransferRequestTime(transferRequestTime)
+        .setGainingRegistrarId(gainingClientId)
+        .setLosingRegistrarId(losingClientId);
+  }
+
+  /** Maps serverApproveEntities set to the individual fields. */
+  static void mapServerApproveEntitiesToFields(
+      Set<VKey<? extends TransferServerApproveEntity>> serverApproveEntities,
+      DomainTransferData transferData) {
+    if (isNullOrEmpty(serverApproveEntities)) {
+      transferData.pollMessageId1 = null;
+      transferData.pollMessageId2 = null;
+      transferData.pollMessageId3 = null;
+      return;
+    }
+    ImmutableList<Long> sortedPollMessageIds = getSortedPollMessageIds(serverApproveEntities);
+    if (!sortedPollMessageIds.isEmpty()) {
+      transferData.pollMessageId1 = sortedPollMessageIds.get(0);
+    }
+    if (sortedPollMessageIds.size() >= 2) {
+      transferData.pollMessageId2 = sortedPollMessageIds.get(1);
+    }
+    if (sortedPollMessageIds.size() >= 3) {
+      transferData.pollMessageId3 = sortedPollMessageIds.get(2);
+    }
+  }
+
+  /**
+   * Gets poll message IDs from the given serverApproveEntities and sorts the IDs in natural order.
+   */
+  private static ImmutableList<Long> getSortedPollMessageIds(
+      Set<VKey<? extends TransferServerApproveEntity>> serverApproveEntities) {
+    return nullToEmpty(serverApproveEntities).stream()
+        .filter(vKey -> PollMessage.class.isAssignableFrom(vKey.getKind()))
+        .map(vKey -> (long) vKey.getKey())
+        .sorted()
+        .collect(toImmutableList());
+  }
+
+  /**
+   * Marker interface for objects that are written in anticipation of a server approval, and
+   * therefore need to be deleted under any other outcome.
+   */
+  public interface TransferServerApproveEntity {
+    VKey<? extends TransferServerApproveEntity> createVKey();
+  }
+
+  public static class Builder extends BaseTransferObject.Builder<DomainTransferData, Builder> {
     /** Create a {@link Builder} wrapping a new instance. */
     public Builder() {}
 
     /** Create a {@link Builder} wrapping the given instance. */
     private Builder(DomainTransferData instance) {
       super(instance);
+    }
+
+    @Override
+    public DomainTransferData build() {
+      if (getInstance().pollMessageId1 != null) {
+        checkState(getInstance().repoId != null, "Repo id undefined");
+        checkState(getInstance().historyEntryId != null, "History entry undefined");
+      }
+      return super.build();
+    }
+
+    public Builder setTransferRequestTrid(Trid transferRequestTrid) {
+      getInstance().transferRequestTrid = transferRequestTrid;
+      return this;
     }
 
     public Builder setTransferPeriod(Period transferPeriod) {
@@ -223,12 +339,13 @@ public class DomainTransferData extends TransferData {
       return this;
     }
 
-    @Override
     public Builder setServerApproveEntities(
         String repoId,
         Long historyId,
         ImmutableSet<VKey<? extends TransferServerApproveEntity>> serverApproveEntities) {
-      super.setServerApproveEntities(repoId, historyId, serverApproveEntities);
+      getInstance().repoId = repoId;
+      getInstance().historyEntryId = historyId;
+      mapServerApproveEntitiesToFields(serverApproveEntities, getInstance());
       mapBillingCancellationEntityToField(serverApproveEntities, getInstance());
       return this;
     }

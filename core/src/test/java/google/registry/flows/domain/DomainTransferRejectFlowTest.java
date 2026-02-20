@@ -54,7 +54,7 @@ import google.registry.model.poll.PollMessage;
 import google.registry.model.reporting.DomainTransactionRecord;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.tld.Tld;
-import google.registry.model.transfer.TransferData;
+import google.registry.model.transfer.DomainTransferData;
 import google.registry.model.transfer.TransferResponse;
 import google.registry.model.transfer.TransferStatus;
 import org.joda.time.DateTime;
@@ -90,7 +90,7 @@ class DomainTransferRejectFlowTest
     assertMutatingFlow(true);
     DateTime originalExpirationTime = domain.getRegistrationExpirationTime();
     ImmutableSet<GracePeriod> originalGracePeriods = domain.getGracePeriods();
-    TransferData originalTransferData = domain.getTransferData();
+    DomainTransferData originalTransferData = domain.getTransferData();
     runFlowAssertResponse(loadFile(expectedXmlFilename));
     // Transfer should have been rejected. Verify correct fields were set.
     domain = reloadResourceByForeignKey();

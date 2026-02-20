@@ -26,7 +26,7 @@ import google.registry.model.UnsafeSerializable;
 import google.registry.model.annotations.IdAllocation;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.reporting.HistoryEntry.HistoryEntryId;
-import google.registry.model.transfer.TransferData.TransferServerApproveEntity;
+import google.registry.model.transfer.DomainTransferData.TransferServerApproveEntity;
 import google.registry.persistence.VKey;
 import jakarta.persistence.Column;
 import jakarta.persistence.EnumType;

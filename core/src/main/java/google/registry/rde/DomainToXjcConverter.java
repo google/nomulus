@@ -23,7 +23,6 @@ import google.registry.model.domain.secdns.DomainDsData;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.rde.RdeMode;
 import google.registry.model.transfer.DomainTransferData;
-import google.registry.model.transfer.TransferData;
 import google.registry.util.Idn;
 import google.registry.xjc.domain.XjcDomainNsType;
 import google.registry.xjc.domain.XjcDomainStatusType;
@@ -221,7 +220,7 @@ final class DomainToXjcConverter {
         && !Strings.isNullOrEmpty(model.getTransferData().getLosingRegistrarId());
   }
 
-  /** Converts {@link TransferData} to {@link XjcRdeDomainTransferDataType}. */
+  /** Converts {@link DomainTransferData} to {@link XjcRdeDomainTransferDataType}. */
   private static XjcRdeDomainTransferDataType convertTransferData(DomainTransferData model) {
     XjcRdeDomainTransferDataType bean = new XjcRdeDomainTransferDataType();
     bean.setTrStatus(

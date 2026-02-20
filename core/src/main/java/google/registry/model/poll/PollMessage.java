@@ -32,14 +32,12 @@ import google.registry.model.domain.DomainRenewData;
 import google.registry.model.eppoutput.EppResponse.ResponseData;
 import google.registry.model.host.Host;
 import google.registry.model.host.HostHistory;
-import google.registry.model.poll.PendingActionNotificationResponse.ContactPendingActionNotificationResponse;
 import google.registry.model.poll.PendingActionNotificationResponse.DomainPendingActionNotificationResponse;
 import google.registry.model.poll.PendingActionNotificationResponse.HostPendingActionNotificationResponse;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.reporting.HistoryEntry.HistoryEntryId;
-import google.registry.model.transfer.TransferData.TransferServerApproveEntity;
+import google.registry.model.transfer.DomainTransferData.TransferServerApproveEntity;
 import google.registry.model.transfer.TransferResponse;
-import google.registry.model.transfer.TransferResponse.ContactTransferResponse;
 import google.registry.model.transfer.TransferResponse.DomainTransferResponse;
 import google.registry.persistence.VKey;
 import google.registry.persistence.WithVKey;
@@ -406,12 +404,8 @@ public abstract class PollMessage extends ImmutableObject
       if (pendingActionNotificationResponse != null) {
         // Promote the pending action notification response to its specialized type.
         if (contactId != null) {
-          pendingActionNotificationResponse =
-              ContactPendingActionNotificationResponse.create(
-                  pendingActionNotificationResponse.nameOrId.value,
-                  pendingActionNotificationResponse.getActionResult(),
-                  pendingActionNotificationResponse.getTrid(),
-                  pendingActionNotificationResponse.processedDate);
+          // Contacts are no longer supported
+          pendingActionNotificationResponse = null;
         } else if (domainName != null) {
           pendingActionNotificationResponse =
               DomainPendingActionNotificationResponse.create(
@@ -432,16 +426,8 @@ public abstract class PollMessage extends ImmutableObject
         // The transferResponse is currently an unspecialized TransferResponse instance, create the
         // appropriate subclass so that the value is consistently specialized
         if (contactId != null) {
-          transferResponse =
-              new ContactTransferResponse.Builder()
-                  .setContactId(contactId)
-                  .setGainingRegistrarId(transferResponse.getGainingRegistrarId())
-                  .setLosingRegistrarId(transferResponse.getLosingRegistrarId())
-                  .setTransferStatus(transferResponse.getTransferStatus())
-                  .setTransferRequestTime(transferResponse.getTransferRequestTime())
-                  .setPendingTransferExpirationTime(
-                      transferResponse.getPendingTransferExpirationTime())
-                  .build();
+          // Contacts are no longer supported
+          transferResponse = null;
         } else if (domainName != null) {
           transferResponse =
               new DomainTransferResponse.Builder()
@@ -488,9 +474,6 @@ public abstract class PollMessage extends ImmutableObject
 
         // Set identifier fields based on the type of the notification response.
         if (instance.pendingActionNotificationResponse
-            instanceof ContactPendingActionNotificationResponse) {
-          instance.contactId = instance.pendingActionNotificationResponse.nameOrId.value;
-        } else if (instance.pendingActionNotificationResponse
             instanceof DomainPendingActionNotificationResponse) {
           instance.domainName = instance.pendingActionNotificationResponse.nameOrId.value;
         } else if (instance.pendingActionNotificationResponse
@@ -507,9 +490,7 @@ public abstract class PollMessage extends ImmutableObject
                 .orElse(null);
 
         // Set the identifier according to the TransferResponse type.
-        if (instance.transferResponse instanceof ContactTransferResponse) {
-          instance.contactId = ((ContactTransferResponse) instance.transferResponse).getContactId();
-        } else if (instance.transferResponse instanceof DomainTransferResponse response) {
+        if (instance.transferResponse instanceof DomainTransferResponse response) {
           instance.domainName = response.getDomainName();
           instance.extendedRegistrationExpirationTime =
               response.getExtendedRegistrationExpirationTime();
