@@ -43,7 +43,6 @@ import com.google.common.collect.Sets;
 import com.google.gson.annotations.Expose;
 import google.registry.flows.ResourceFlowUtils;
 import google.registry.model.EppResource;
-import google.registry.model.EppResource.ResourceWithTransferData;
 import google.registry.model.billing.BillingRecurrence;
 import google.registry.model.domain.launch.LaunchNotice;
 import google.registry.model.domain.rgp.GracePeriodStatus;
@@ -96,8 +95,7 @@ import org.joda.time.Interval;
 @MappedSuperclass
 @Embeddable
 @Access(AccessType.FIELD)
-public class DomainBase extends EppResource
-    implements ResourceWithTransferData<DomainTransferData> {
+public class DomainBase extends EppResource {
 
   /** The max number of years that a domain can be registered for, as set by ICANN policy. */
   public static final int MAX_REGISTRATION_YEARS = 10;
@@ -319,12 +317,10 @@ public class DomainBase extends EppResource
     return Optional.ofNullable(autorenewEndTime.equals(END_OF_TIME) ? null : autorenewEndTime);
   }
 
-  @Override
   public DomainTransferData getTransferData() {
     return Optional.ofNullable(transferData).orElse(DomainTransferData.EMPTY);
   }
 
-  @Override
   public DateTime getLastTransferTime() {
     return lastTransferTime;
   }
@@ -605,7 +601,7 @@ public class DomainBase extends EppResource
 
   /** A builder for constructing {@link Domain}, since it is immutable. */
   public static class Builder<T extends DomainBase, B extends Builder<T, B>>
-      extends EppResource.Builder<T, B> implements BuilderWithTransferData<DomainTransferData, B> {
+      extends EppResource.Builder<T, B> {
 
     public Builder() {}
 
@@ -783,13 +779,11 @@ public class DomainBase extends EppResource
       return thisCastToDerived();
     }
 
-    @Override
     public B setTransferData(DomainTransferData transferData) {
       getInstance().transferData = transferData;
       return thisCastToDerived();
     }
 
-    @Override
     public B setLastTransferTime(DateTime lastTransferTime) {
       getInstance().lastTransferTime = lastTransferTime;
       return thisCastToDerived();

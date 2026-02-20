@@ -29,8 +29,8 @@ import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-/** Unit tests for {@link TransferData}. */
-public class TransferDataTest {
+/** Unit tests for {@link DomainTransferData}. */
+public class DomainTransferDataTest {
 
   private final DateTime now = DateTime.now(UTC);
 

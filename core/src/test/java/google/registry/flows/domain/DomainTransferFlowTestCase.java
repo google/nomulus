@@ -41,7 +41,7 @@ import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.host.Host;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.tld.Tld;
-import google.registry.model.transfer.TransferData;
+import google.registry.model.transfer.DomainTransferData;
 import google.registry.model.transfer.TransferStatus;
 import google.registry.persistence.transaction.JpaTransactionManagerExtension;
 import org.joda.time.DateTime;
@@ -161,7 +161,8 @@ abstract class DomainTransferFlowTestCase<F extends Flow, R extends EppResource>
         .build();
   }
 
-  void assertTransferFailed(Domain domain, TransferStatus status, TransferData oldTransferData) {
+  void assertTransferFailed(
+      Domain domain, TransferStatus status, DomainTransferData oldTransferData) {
     assertAboutDomains()
         .that(domain)
         .doesNotHaveStatusValue(StatusValue.PENDING_TRANSFER)

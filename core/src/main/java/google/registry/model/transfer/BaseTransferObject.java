@@ -25,7 +25,7 @@ import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlTransient;
 import org.joda.time.DateTime;
 
-/** Fields common to {@link TransferData} and {@link TransferResponse}. */
+/** Fields common to {@link DomainTransferData} and {@link TransferResponse}. */
 @XmlTransient
 @MappedSuperclass
 public abstract class BaseTransferObject extends ImmutableObject implements UnsafeSerializable {

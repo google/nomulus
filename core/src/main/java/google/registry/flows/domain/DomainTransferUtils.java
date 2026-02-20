@@ -36,8 +36,7 @@ import google.registry.model.poll.PollMessage;
 import google.registry.model.reporting.HistoryEntry.HistoryEntryId;
 import google.registry.model.tld.Tld;
 import google.registry.model.transfer.DomainTransferData;
-import google.registry.model.transfer.TransferData;
-import google.registry.model.transfer.TransferData.TransferServerApproveEntity;
+import google.registry.model.transfer.DomainTransferData.TransferServerApproveEntity;
 import google.registry.model.transfer.TransferResponse.DomainTransferResponse;
 import google.registry.model.transfer.TransferStatus;
 import google.registry.persistence.VKey;
@@ -51,7 +50,7 @@ import org.joda.time.DateTime;
  */
 public final class DomainTransferUtils {
 
-  /** Sets up {@link TransferData} for a domain with links to entities for server approval. */
+  /** Sets up {@link DomainTransferData} for a domain with links to entities for server approval. */
   public static DomainTransferData createPendingTransferData(
       String domainRepoId,
       Long historyId,
@@ -179,7 +178,7 @@ public final class DomainTransferUtils {
   /** Create a poll message for the gaining client in a transfer. */
   public static PollMessage createGainingTransferPollMessage(
       String targetId,
-      TransferData transferData,
+      DomainTransferData transferData,
       @Nullable DateTime extendedRegistrationExpirationTime,
       DateTime now,
       HistoryEntryId domainHistoryId) {
@@ -202,7 +201,7 @@ public final class DomainTransferUtils {
   /** Create a poll message for the losing client in a transfer. */
   public static PollMessage createLosingTransferPollMessage(
       String targetId,
-      TransferData transferData,
+      DomainTransferData transferData,
       @Nullable DateTime extendedRegistrationExpirationTime,
       HistoryEntryId domainHistoryId) {
     return new PollMessage.OneTime.Builder()
@@ -216,10 +215,10 @@ public final class DomainTransferUtils {
         .build();
   }
 
-  /** Create a {@link DomainTransferResponse} off of the info in a {@link TransferData}. */
+  /** Create a {@link DomainTransferResponse} off of the info in a {@link DomainTransferData}. */
   static DomainTransferResponse createTransferResponse(
       String targetId,
-      TransferData transferData,
+      DomainTransferData transferData,
       @Nullable DateTime extendedRegistrationExpirationTime) {
     return new DomainTransferResponse.Builder()
         .setDomainName(targetId)

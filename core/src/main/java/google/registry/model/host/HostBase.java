@@ -24,7 +24,6 @@ import static google.registry.util.DomainNameUtils.canonicalizeHostname;
 import com.google.common.collect.ImmutableSet;
 import google.registry.model.EppResource;
 import google.registry.model.domain.Domain;
-import google.registry.model.transfer.TransferData;
 import google.registry.persistence.VKey;
 import google.registry.persistence.converter.InetAddressSetUserType;
 import jakarta.persistence.Access;
@@ -41,8 +40,8 @@ import org.joda.time.DateTime;
 /**
  * A persistable Host resource including mutable and non-mutable fields.
  *
- * <p>A host's {@link TransferData} is stored on the superordinate domain. Non-subordinate hosts
- * don't carry a full set of TransferData; all they have is lastTransferTime.
+ * <p>A host's full transfer data is stored on the superordinate domain. Non-subordinate hosts don't
+ * carry a full set of TransferData; all they have is lastTransferTime.
  *
  * <p>This class deliberately does not include an {@link jakarta.persistence.Id} so that any
  * foreign-keyed fields can refer to the proper parent entity's ID, whether we're storing this in
