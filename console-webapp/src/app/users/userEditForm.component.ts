@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { CommonModule } from '@angular/common';
 import {
   Component,
   ElementRef,
@@ -50,7 +49,7 @@ import { HttpErrorResponse } from '@angular/common/http';
       <button mat-button color="warn" (click)="onSave()">Confirm</button>
     </mat-dialog-actions>
   `,
-  imports: [CommonModule, MaterialModule],
+  imports: [MaterialModule],
 })
 export class ResetRegistryLockPasswordComponent {
   constructor(
@@ -72,7 +71,7 @@ export class ResetRegistryLockPasswordComponent {
   selector: 'app-user-edit-form',
   templateUrl: './userEditForm.component.html',
   styleUrls: ['./userEditForm.component.scss'],
-  imports: [FormsModule, MaterialModule, CommonModule],
+  imports: [FormsModule, MaterialModule],
   providers: [],
 })
 export class UserEditFormComponent {

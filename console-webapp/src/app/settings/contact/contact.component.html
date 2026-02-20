@@ -22,13 +22,12 @@
   </div>
   } @else {
   <mat-table [dataSource]="dataSource" class="mat-elevation-z0">
-    <ng-container
-      *ngFor="let column of columns"
-      [matColumnDef]="column.columnDef"
-    >
+    @for (column of columns; track column) {
+    <ng-container [matColumnDef]="column.columnDef">
       <mat-header-cell *matHeaderCellDef> {{ column.header }} </mat-header-cell>
       <mat-cell *matCellDef="let row" [innerHTML]="column.cell(row)"></mat-cell>
     </ng-container>
+    }
     <mat-header-row *matHeaderRowDef="displayedColumns"></mat-header-row>
     <mat-row
       *matRowDef="let row; columns: displayedColumns"

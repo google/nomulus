@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { CommonModule } from '@angular/common';
 import { Component, computed } from '@angular/core';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { SelectedRegistrarModule } from '../app.module';
@@ -31,7 +30,6 @@ import { UserEditFormComponent } from './userEditForm.component';
     FormsModule,
     MaterialModule,
     SnackBarModule,
-    CommonModule,
     SelectedRegistrarModule,
     UserEditFormComponent,
   ],

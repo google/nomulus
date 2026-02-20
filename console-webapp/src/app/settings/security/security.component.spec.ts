@@ -12,7 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
+import {
+  ComponentFixture,
+  fakeAsync,
+  TestBed,
+  tick,
+  waitForAsync,
+} from '@angular/core/testing';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -30,43 +36,32 @@ import { MOCK_REGISTRAR_SERVICE } from 'src/testdata/registrar/registrar.service
 describe('SecurityComponent', () => {
   let component: SecurityComponent;
   let fixture: ComponentFixture<SecurityComponent>;
-  let fetchSecurityDetailsSpy: Function;
   let saveSpy: Function;
+  let securityServiceStub: Partial<SecurityService>;
 
   beforeEach(async () => {
-    const securityServiceSpy = jasmine.createSpyObj(SecurityService, [
-      'fetchSecurityDetails',
-      'saveChanges',
-    ]);
-
-    fetchSecurityDetailsSpy =
-      securityServiceSpy.fetchSecurityDetails.and.returnValue(of());
-
-    saveSpy = securityServiceSpy.saveChanges.and.returnValue(of());
+    securityServiceStub = {
+      isEditingSecurity: false,
+      isEditingPassword: false,
+      saveChanges: jasmine.createSpy('saveChanges').and.returnValue(of({})),
+    };
 
     await TestBed.configureTestingModule({
       declarations: [SecurityEditComponent, SecurityComponent],
       imports: [MaterialModule, BrowserAnimationsModule, FormsModule],
       providers: [
         BackendService,
-        SecurityService,
+        { provide: SecurityService, useValue: securityServiceStub },
         { provide: RegistrarService, useValue: MOCK_REGISTRAR_SERVICE },
         provideHttpClient(),
         provideHttpClientTesting(),
       ],
-    })
-      .overrideComponent(SecurityComponent, {
-        set: {
-          providers: [
-            { provide: SecurityService, useValue: securityServiceSpy },
-          ],
-        },
-      })
-      .compileComponents();
+    }).compileComponents();
+
+    saveSpy = securityServiceStub.saveChanges as jasmine.Spy;
 
     fixture = TestBed.createComponent(SecurityComponent);
     component = fixture.componentInstance;
-    fixture.detectChanges();
   });
 
   it('should create', () => {
@@ -93,17 +88,36 @@ describe('SecurityComponent', () => {
     });
   }));
 
-  it('should remove ip', waitForAsync(() => {
-    component.dataSource.ipAddressAllowList =
-      component.dataSource.ipAddressAllowList?.splice(1);
-    fixture.whenStable().then(() => {
-      fixture.detectChanges();
-      let listElems: Array<HTMLElement> = Array.from(
-        fixture.nativeElement.querySelectorAll('span.console-app__list-value')
-      );
-      expect(listElems.map((e) => e.textContent)).toContain(
-        'No IP addresses on file.'
-      );
+  it('should remove ip', fakeAsync(() => {
+    fixture.detectChanges();
+    tick();
+
+    const editBtn = fixture.nativeElement.querySelector(
+      'button[aria-label="Edit security settings"]'
+    );
+    editBtn.click();
+
+    tick();
+    fixture.detectChanges();
+
+    const removeIpBtn = fixture.nativeElement.querySelector(
+      '.console-app__removeIp'
+    );
+    removeIpBtn.click();
+
+    tick();
+    fixture.detectChanges();
+
+    const saveBtn = fixture.nativeElement.querySelector(
+      '.settings-security__edit-save'
+    );
+    saveBtn.click();
+
+    tick();
+    fixture.detectChanges();
+
+    expect(saveSpy).toHaveBeenCalledWith({
+      ipAddressAllowList: [],
     });
   }));
 
@@ -119,21 +133,34 @@ describe('SecurityComponent', () => {
     expect(component.securityService.isEditingPassword).toBeTrue();
   });
 
-  it('should call save', waitForAsync(async () => {
-    component.editSecurity();
-    await fixture.whenStable();
+  it('should call save', fakeAsync(() => {
     fixture.detectChanges();
+    tick();
+
+    const editBtn = fixture.nativeElement.querySelector(
+      'button[aria-label="Edit security settings"]'
+    );
+    editBtn.click();
+
+    tick();
+    fixture.detectChanges();
+
     const el = fixture.nativeElement.querySelector(
       '.console-app__clientCertificateValue'
     );
     el.value = 'test';
     el.dispatchEvent(new Event('input'));
+
+    tick();
     fixture.detectChanges();
-    await fixture.whenStable();
-    fixture.nativeElement
-      .querySelector('.settings-security__edit-save')
-      .click();
-    expect(saveSpy).toHaveBeenCalledOnceWith({
+
+    const saveBtn = fixture.nativeElement.querySelector(
+      '.settings-security__edit-save'
+    );
+    saveBtn.click();
+
+    tick();
+    expect(saveSpy).toHaveBeenCalledWith({
       ipAddressAllowList: [{ value: '123.123.123.123' }],
       clientCertificate: 'test',
     });

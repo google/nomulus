@@ -17,6 +17,9 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { HomeComponent } from './home.component';
 import { MaterialModule } from '../material.module';
 import { AppModule } from '../app.module';
+import { BackendService } from '../shared/services/backend.service';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 
 describe('HomeComponent', () => {
   let component: HomeComponent;
@@ -26,6 +29,11 @@ describe('HomeComponent', () => {
     await TestBed.configureTestingModule({
       imports: [MaterialModule, AppModule],
       declarations: [HomeComponent],
+      providers: [
+        BackendService,
+        provideHttpClient(),
+        provideHttpClientTesting(),
+      ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(HomeComponent);

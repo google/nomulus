@@ -1,6 +1,6 @@
+@if (registrarInEdit) {
 <div
   class="console-app__rdap-edit"
-  *ngIf="registrarInEdit"
   cdkTrapFocus
   [cdkTrapFocusAutoCapture]="true"
 >
@@ -12,7 +12,6 @@
   >
     <mat-icon>arrow_back</mat-icon>
   </button>
-
   <div class="console-app__rdap-edit-controls">
     <span>
       General registrar information for your RDAP record. This information is
@@ -20,10 +19,8 @@
     </span>
     <div class="spacer"></div>
   </div>
-
   <div class="console-app__rdap-edit">
     <h1>Personal info</h1>
-
     <form (ngSubmit)="save($event)">
       <mat-form-field appearance="outline">
         <mat-label>Email: </mat-label>
@@ -34,7 +31,6 @@
           [ngModelOptions]="{ standalone: true }"
         />
       </mat-form-field>
-
       <mat-form-field appearance="outline">
         <mat-label>Phone: </mat-label>
         <input
@@ -44,7 +40,6 @@
           [ngModelOptions]="{ standalone: true }"
         />
       </mat-form-field>
-
       <mat-form-field appearance="outline">
         <mat-label>Fax: </mat-label>
         <input
@@ -54,7 +49,6 @@
           [ngModelOptions]="{ standalone: true }"
         />
       </mat-form-field>
-
       <mat-form-field appearance="outline">
         <mat-label>Street Address (line 1): </mat-label>
         <input
@@ -64,7 +58,6 @@
           [(ngModel)]="registrarInEdit.localizedAddress.street![0]"
         />
       </mat-form-field>
-
       <mat-form-field appearance="outline">
         <mat-label>Street Address (line 2): </mat-label>
         <input
@@ -74,7 +67,6 @@
           [(ngModel)]="registrarInEdit.localizedAddress.street![1]"
         />
       </mat-form-field>
-
       <mat-form-field appearance="outline">
         <mat-label>City: </mat-label>
         <input
@@ -84,7 +76,6 @@
           [(ngModel)]="(registrarInEdit.localizedAddress || {}).city"
         />
       </mat-form-field>
-
       <mat-form-field appearance="outline">
         <mat-label>State or Province: </mat-label>
         <input
@@ -94,7 +85,6 @@
           [(ngModel)]="(registrarInEdit.localizedAddress || {}).state"
         />
       </mat-form-field>
-
       <mat-form-field appearance="outline">
         <mat-label>Country: </mat-label>
         <input
@@ -104,7 +94,6 @@
           [(ngModel)]="(registrarInEdit.localizedAddress || {}).countryCode"
         />
       </mat-form-field>
-
       <mat-form-field appearance="outline">
         <mat-label>Postal code: </mat-label>
         <input
@@ -114,7 +103,6 @@
           [(ngModel)]="(registrarInEdit.localizedAddress || {}).zip"
         />
       </mat-form-field>
-
       <button
         mat-flat-button
         color="primary"
@@ -126,3 +114,4 @@
     </form>
   </div>
 </div>
+}

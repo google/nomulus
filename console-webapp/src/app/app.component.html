@@ -1,10 +1,9 @@
 <div class="console-app mat-typography">
   <app-header (toggleNavOpen)="toggleSidenav()"></app-header>
   <div class="console-app__global-spinner">
-    <mat-progress-bar
-      mode="indeterminate"
-      *ngIf="globalLoader.isLoading"
-    ></mat-progress-bar>
+    @if (globalLoader.isLoading) {
+    <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+    }
   </div>
   <mat-sidenav-container class="console-app__container">
     <mat-sidenav-content class="console-app__content-wrapper">

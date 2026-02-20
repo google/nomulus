@@ -143,13 +143,14 @@
             <ng-container matColumnDef="domainName">
               <mat-header-cell *matHeaderCellDef>Domain Name</mat-header-cell>
               <mat-cell *matCellDef="let element">
+                @if (getOperationMessage(element.domainName)) {
                 <mat-icon
-                  *ngIf="getOperationMessage(element.domainName)"
                   [matTooltip]="getOperationMessage(element.domainName)"
                   matTooltipPosition="above"
                   class="primary-text"
                   >info</mat-icon
                 >
+                }
                 <span>{{ element.domainName }}</span>
               </mat-cell>
             </ng-container>
@@ -209,9 +210,9 @@
             <mat-row *matRowDef="let row; columns: displayedColumns"></mat-row>
 
             <!-- Row shown when there is no matching data. -->
-            <mat-row *matNoDataRow>
-              <mat-cell colspan="6">No domains found</mat-cell>
-            </mat-row>
+            <tr class="mat-row" *matNoDataRow>
+              <td class="mat-cell" colspan="6">No domains found</td>
+            </tr>
           </mat-table>
           <mat-paginator
             [length]="totalResults"

@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { CommonModule } from '@angular/common';
 import {
   Component,
   effect,
@@ -43,7 +42,7 @@ export const columns = [
   selector: 'app-users-list',
   templateUrl: './usersList.component.html',
   styleUrls: ['./usersList.component.scss'],
-  imports: [MaterialModule, CommonModule],
+  imports: [MaterialModule],
   providers: [],
 })
 export class UsersListComponent {
