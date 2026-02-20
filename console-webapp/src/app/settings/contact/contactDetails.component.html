@@ -1,9 +1,5 @@
-<div
-  class="console-app__contact"
-  *ngIf="contactService.contactInEdit"
-  cdkTrapFocus
-  [cdkTrapFocusAutoCapture]="true"
->
+@if (contactService.contactInEdit) {
+<div class="console-app__contact" cdkTrapFocus [cdkTrapFocusAutoCapture]="true">
   <div class="console-app__contact-controls">
     <button
       mat-icon-button
@@ -32,7 +28,6 @@
     </button>
     }
   </div>
-
   @if(isEditing || contactService.isContactNewView) {
   <h1>Contact Details</h1>
   <form (ngSubmit)="save($event)">
@@ -46,7 +41,6 @@
           [ngModelOptions]="{ standalone: true }"
         />
       </mat-form-field>
-
       <mat-form-field appearance="outline">
         <mat-label>Primary account email: </mat-label>
         <input
@@ -64,7 +58,6 @@
           "
         />
       </mat-form-field>
-
       <mat-form-field appearance="outline">
         <mat-label>Phone: </mat-label>
         <input
@@ -74,7 +67,6 @@
           placeholder="+0.0000000000"
         />
       </mat-form-field>
-
       <mat-form-field appearance="outline">
         <mat-label>Fax: </mat-label>
         <input
@@ -84,7 +76,6 @@
         />
       </mat-form-field>
     </section>
-
     <section>
       <h1>Contact Type</h1>
       <p class="console-app__contact-required">
@@ -92,21 +83,18 @@
         (primary contact can't be updated)
       </p>
       <div class="">
-        <ng-container
-          *ngFor="let contactType of contactTypeToTextMap | keyvalue"
+        @for (contactType of contactTypeToTextMap | keyvalue; track contactType)
+        { @if (shouldDisplayCheckbox(contactType.key)) {
+        <mat-checkbox
+          [checked]="checkboxIsChecked(contactType.key)"
+          (change)="checkboxOnChange($event, contactType.key)"
+          [disabled]="checkboxIsDisabled(contactType.key)"
         >
-          <mat-checkbox
-            *ngIf="shouldDisplayCheckbox(contactType.key)"
-            [checked]="checkboxIsChecked(contactType.key)"
-            (change)="checkboxOnChange($event, contactType.key)"
-            [disabled]="checkboxIsDisabled(contactType.key)"
-          >
-            {{ contactType.value }}
-          </mat-checkbox>
-        </ng-container>
+          {{ contactType.value }}
+        </mat-checkbox>
+        } }
       </div>
     </section>
-
     <section>
       <h1>RDAP Preferences</h1>
       <div>
@@ -116,7 +104,6 @@
           >Show in Registrar RDAP record as admin contact</mat-checkbox
         >
       </div>
-
       <div>
         <mat-checkbox
           [(ngModel)]="contactService.contactInEdit.visibleInRdapAsTech"
@@ -124,7 +111,6 @@
           >Show in Registrar RDAP record as technical contact</mat-checkbox
         >
       </div>
-
       <div>
         <mat-checkbox
           [(ngModel)]="contactService.contactInEdit.visibleInDomainRdapAsAbuse"
@@ -198,15 +184,13 @@
         </mat-list-item>
         } @if(contactService.contactInEdit.visibleInRdapAsTech) {
         <mat-divider></mat-divider>
-        <mat-list-item
-          role="listitem"
-          *ngIf="contactService.contactInEdit.visibleInRdapAsTech"
-        >
+        @if (contactService.contactInEdit.visibleInRdapAsTech) {
+        <mat-list-item role="listitem">
           <span class="console-app__list-value"
             >Show in Registrar RDAP record as technical contact</span
           >
         </mat-list-item>
-        } @if(contactService.contactInEdit.visibleInDomainRdapAsAbuse) {
+        } } @if(contactService.contactInEdit.visibleInDomainRdapAsAbuse) {
         <mat-divider></mat-divider>
         <mat-list-item role="listitem">
           <span class="console-app__list-value"
@@ -220,3 +204,4 @@
   </mat-card>
   }
 </div>
+}

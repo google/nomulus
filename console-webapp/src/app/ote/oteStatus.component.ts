@@ -18,7 +18,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { RegistrarService } from '../registrar/registrar.service';
 import { MaterialModule } from '../material.module';
 import { SnackBarModule } from '../snackbar.module';
-import { CommonModule } from '@angular/common';
+
 import { ActivatedRoute, ParamMap } from '@angular/router';
 import { take } from 'rxjs';
 
@@ -31,7 +31,7 @@ export interface OteStatusResponse {
 
 @Component({
   selector: 'app-ote-status',
-  imports: [MaterialModule, SnackBarModule, CommonModule],
+  imports: [MaterialModule, SnackBarModule],
   templateUrl: './oteStatus.component.html',
   styleUrls: ['./oteStatus.component.scss'],
 })

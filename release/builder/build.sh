@@ -50,7 +50,7 @@ npm cache clean -f
 npm install -g n
 # Retrying because fails are possible for node.js intallation. See
 # https://github.com/nodejs/build/issues/1993
-for i in {1..5}; do n 22.7.0 && break || sleep 15; done
+for i in {1..5}; do n 22.12.0 && break || sleep 15; done
 
 # Install gp_dump
 apt-get install postgresql-client-17 procps -y

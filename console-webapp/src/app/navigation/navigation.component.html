@@ -12,9 +12,11 @@
     [class.active]="router.url.includes(node.path)"
     [elementId]="getElementId(node)"
   >
-    <mat-icon class="console-app__nav-icon" *ngIf="node.iconName">
+    @if (node.iconName) {
+    <mat-icon class="console-app__nav-icon">
       {{ node.iconName }}
     </mat-icon>
+    }
     {{ node.title }}
   </mat-tree-node>
   <mat-nested-tree-node
@@ -34,9 +36,11 @@
           {{ treeControl.isExpanded(node) ? "expand_more" : "chevron_right" }}
         </mat-icon>
       </button>
-      <mat-icon class="console-app__nav-icon" *ngIf="node.iconName">
+      @if (node.iconName) {
+      <mat-icon class="console-app__nav-icon">
         {{ node.iconName }}
       </mat-icon>
+      }
       {{ node.title }}
     </div>
     <div
