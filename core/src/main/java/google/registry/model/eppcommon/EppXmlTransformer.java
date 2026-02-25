@@ -123,8 +123,7 @@ public class EppXmlTransformer  {
 
   public static byte[] marshal(EppOutput root, ValidationMode validation) throws XmlException {
     byte[] bytes = marshal(OUTPUT_TRANSFORMER, root, validation);
-    if (!RegistryEnvironment.PRODUCTION.equals(RegistryEnvironment.get())
-        && hasFeeExtension(root)) {
+    if (hasFeeExtension(root)) {
       return FeeExtensionXmlTagNormalizer.normalize(new String(bytes, UTF_8)).getBytes(UTF_8);
     }
     return bytes;

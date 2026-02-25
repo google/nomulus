@@ -235,10 +235,7 @@ public class RdePipelineTest {
     persistHostHistory(host1);
     Domain helloDomain =
         persistEppResource(
-            newDomain("hello.soy")
-                .asBuilder()
-                .addNameserver(host1.createVKey())
-                .build());
+            newDomain("hello.soy").asBuilder().addNameserver(host1.createVKey()).build());
     persistDomainHistory(helloDomain);
     persistHostHistory(persistActiveHost("not-used-subordinate.hello.soy"));
     Host host2 = persistActiveHost("ns1.hello.soy");
