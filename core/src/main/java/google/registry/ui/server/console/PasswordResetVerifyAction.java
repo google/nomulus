@@ -23,6 +23,7 @@ import static google.registry.ui.server.console.PasswordResetRequestAction.check
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
 import google.registry.model.console.ConsolePermission;
+import google.registry.model.console.ConsoleUpdateHistory;
 import google.registry.model.console.PasswordResetRequest;
 import google.registry.model.console.User;
 import google.registry.model.registrar.Registrar;
@@ -59,11 +60,6 @@ public class PasswordResetVerifyAction extends ConsoleApiAction {
 
   @Override
   protected void getHandler(User user) {
-    // Temporary flag when testing email sending etc
-    if (!user.getUserRoles().isAdmin()) {
-      setFailedResponse("", HttpServletResponse.SC_FORBIDDEN);
-      return;
-    }
     PasswordResetRequest request = tm().transact(() -> loadAndValidateResetRequest(user));
     ImmutableMap<String, ?> result =
         ImmutableMap.of("type", request.getType(), "registrarId", request.getRegistrarId());
@@ -73,11 +69,6 @@ public class PasswordResetVerifyAction extends ConsoleApiAction {
 
   @Override
   protected void postHandler(User user) {
-    // Temporary flag when testing email sending etc
-    if (!user.getUserRoles().isAdmin()) {
-      setFailedResponse("", HttpServletResponse.SC_FORBIDDEN);
-      return;
-    }
     checkArgument(!Strings.isNullOrEmpty(newPassword.orElse(null)), "Password must be provided");
     tm().transact(
             () -> {
@@ -87,6 +78,16 @@ public class PasswordResetVerifyAction extends ConsoleApiAction {
                 case REGISTRY_LOCK -> handleRegistryLockPasswordReset(request);
               }
               tm().put(request.asBuilder().setFulfillmentTime(tm().getTransactionTime()).build());
+
+              finishAndPersistConsoleUpdateHistory(
+                  new ConsoleUpdateHistory.Builder()
+                      .setType(ConsoleUpdateHistory.Type.EPP_PASSWORD_UPDATE)
+                      .setDescription(
+                          String.format(
+                              "%s%s%s",
+                              request.getRegistrarId(),
+                              ConsoleUpdateHistory.DESCRIPTION_SEPARATOR,
+                              "Password reset fulfilled via verification code")));
             });
     consoleApiParams.response().setStatus(HttpServletResponse.SC_OK);
   }
@@ -110,6 +111,11 @@ public class PasswordResetVerifyAction extends ConsoleApiAction {
     PasswordResetRequest request =
         tm().loadByKeyIfPresent(VKey.create(PasswordResetRequest.class, verificationCode))
             .orElseThrow(this::createVerificationCodeException);
+
+    if (request.getFulfillmentTime().isPresent()) {
+      throw new IllegalArgumentException("This reset request has already been used.");
+    }
+
     ConsolePermission requiredVerifyPermission =
         switch (request.getType()) {
           case EPP -> ConsolePermission.MANAGE_USERS;
