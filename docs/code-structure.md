@@ -3,54 +3,46 @@
 This document contains information on the overall structure of the code, and how
 particularly important pieces of the system are implemented.
 
-## Bazel build system
+## Gradle build system
 
-[Bazel](https://www.bazel.io/) is used to build and test the Nomulus codebase.
+[Gradle](https://gradle.org/) is used to build and test the Nomulus codebase.
 
-Bazel builds are described using [BUILD
-files](https://www.bazel.io/versions/master/docs/build-ref.html). A directory
-containing a BUILD file defines a package consisting of all files and
-directories underneath it, except those directories which themselves also
-contain BUILD files. A package contains targets. Most targets in the codebase
-are of the type `java_library`, which generates `JAR` files, or `java_test`,
-which runs tests.
+Nomulus, for the most part, uses fairly standard Gradle task naming for building
+and running tests, with the various tasks defined in various `build.gradle`
+files.
 
-The key to Bazel's ability to create reproducible builds is the requirement that
-each build target must declare its direct dependencies. Each of those
-dependencies is a target, which, in turn, must also declare its dependencies.
-This recursive description of a target's dependencies forms an acyclic graph
-that fully describes the targets which must be built in order to build any
-target in the graph.
+Dependencies and their version restrictions are defined in the
+`dependencies.gradle` file. Within each subproject's `build.gradle` file, the
+actual dependencies used by that subproject are listed along with the type of
+dependency (e.g. implementation, testImplementation). Versions of each
+dependency are locked to avoid frequent dependency churn, with the locked
+versions stored in the various `gradle.lockfile` files. To update these
+versions, run any Gradle command (e.g. `./gradlew build`) with the
+`--write-locks` argument.
 
-A wrinkle in this system is managing external dependencies. Bazel was designed
-first and foremost to manage builds where all code lives in a single source
-repository and is compiled from `HEAD`. In order to mesh with other build and
-packaging schemes, such as libraries distributed as compiled `JAR`s, Bazel
-supports [external target
-declarations](https://www.bazel.io/versions/master/docs/external.html#transitive-dependencies).
-The Nomulus codebase uses external targets pulled in from Maven Central, these
-are declared in `java/google/registry/repositories.bzl`. The dependencies of
-these external targets are not managed by Bazel; you must manually add all of
-the dependencies or use the
-[generate_workspace](https://docs.bazel.build/versions/master/generate-workspace.html)
-tool to do it.
+### Generating WAR archives for deployment
 
-### Generating EAR/WAR archives for deployment
+The `jetty` project is the main entry point for building the Nomulus WAR files,
+and one can use the `war` gradle task to build the base WAR file. The various
+deployment/release files use Docker to deploy this, in a system that is too
+Google-specialized to replicate directly here.
 
-There are special build target types for generating `WAR` and `EAR` files for
-deploying Nomulus to GAE. These targets, `zip_file` and `registry_ear_file` respectively, are used in `java/google/registry/BUILD`. To generate archives suitable for deployment on GAE:
+## Subprojects
 
-```shell
-$ bazel build java/google/registry:registry_ear
-  ...
-  bazel-genfiles/java/google/registry/registry.ear
-INFO: Elapsed time: 0.216s, Critical Path: 0.00s
-# This will also generate the per-module WAR files:
-$ ls bazel-genfiles/java/google/registry/*.war
-bazel-genfiles/java/google/registry/registry_backend.war
-bazel-genfiles/java/google/registry/registry_default.war
-bazel-genfiles/java/google/registry/registry_tools.war
-```
+Within the Nomulus repository there are a few notable subprojects:
+
+*   `util` contains tools that don't depend on any of our other code, e.g.
+    libraries or raw utilities
+*   `db` contains database-related code, managing the schema and
+    deployment/testing of the database.
+*   `integration` contains tests to make sure that schema rollouts won't break
+    Nomulus, that code versions and schema versions are cross-compatible
+*   `console-webapp` contains the Typescript/HTML/CSS/Angular code for the
+    registrar console frontend
+*   `proxy` contains code for the EPP proxy, which relays port 700 requests to
+    the core EPP services
+*   `core` contains the bulk of the core Nomulus code, including request
+    handling+serving, backend, actions, etc
 
 ## Cursors
 
@@ -72,8 +64,8 @@ The following cursor types are defined:
 *   **`RDE_UPLOAD`** - RDE (thick) escrow deposit upload
 *   **`RDE_UPLOAD_SFTP`** - Cursor that tracks the last time we talked to the
     escrow provider's SFTP server for a given TLD.
-*   **`RECURRING_BILLING`** - Expansion of `BillingRecurrence` (renew) billing events
-    into one-time `BillingEvent`s.
+*   **`RECURRING_BILLING`** - Expansion of `BillingRecurrence` (renew) billing
+    events into one-time `BillingEvent`s.
 *   **`SYNC_REGISTRAR_SHEET`** - Tracks the last time the registrar spreadsheet
     was successfully synced.
 
@@ -82,16 +74,9 @@ next timestamp at which an operation should resume processing and a `CursorType`
 that identifies which operation the cursor is associated with. In many cases,
 there are multiple cursors per operation; for instance, the cursors related to
 RDE reporting, staging, and upload are per-TLD cursors. To accomplish this, each
-`Cursor` also has a scope, a `Key<ImmutableObject>` to which the particular
-cursor applies (this can be e.g. a `Registry` or any other `ImmutableObject` in
-the database, depending on the operation). If the `Cursor` applies to the entire
-registry environment, it is considered a global cursor and has a scope of
-`EntityGroupRoot.getCrossTldKey()`.
-
-Cursors are singleton entities by type and scope. The id for a `Cursor` is a
-deterministic string that consists of the websafe string of the Key of the scope
-object concatenated with the name of the name of the cursor type, separated by
-an underscore.
+`Cursor` also has a scope, a string to which the particular cursor applies (this
+can be anything, but in practice is either a TLD or `GLOBAL` for cross-TLD
+cursors. Cursors are singleton entities by type and scope.
 
 ## Guava
 
@@ -101,8 +86,7 @@ idiomatic, well-tested, and performant add-ons to the JDK. There are several
 libraries in particular that you should familiarize yourself with, as they are
 used extensively throughout the codebase:
 
-*   [Immutable
-    Collections](https://github.com/google/guava/wiki/ImmutableCollectionsExplained):
+*   [Immutable Collections](https://github.com/google/guava/wiki/ImmutableCollectionsExplained):
     Immutable collections are a useful defensive programming technique. When an
     Immutable collection type is used as a parameter type, it immediately
     indicates that the given collection will not be modified in the method.
@@ -144,11 +128,10 @@ as follows:
 
 *   `Domain` ([RFC 5731](https://tools.ietf.org/html/rfc5731))
 *   `Host` ([RFC 5732](https://tools.ietf.org/html/rfc5732))
-*   `Contact` ([RFC 5733](https://tools.ietf.org/html/rfc5733))
 
 All `EppResource` entities use a Repository Object Identifier (ROID) as its
-unique id, in the format specified by [RFC
-5730](https://tools.ietf.org/html/rfc5730#section-2.8) and defined in
+unique id, in the format specified by
+[RFC 5730](https://tools.ietf.org/html/rfc5730#section-2.8) and defined in
 `EppResourceUtils.createRoid()`.
 
 Each entity also tracks a number of timestamps related to its lifecycle (in
@@ -164,12 +147,9 @@ the status of a resource at a given point in time.
 
 ## Foreign key indexes
 
-Foreign key indexes provide a means of loading active instances of `EppResource`
-objects by their unique IDs:
-
-*   `Domain`: fully-qualified domain name
-*   `Contact`: contact id
-*   `Host`: fully-qualified host name
+`Domain` and `Host` each are foreign-keyed, meaning we often wish to query them
+by their foreign keys (fully-qualified domain name and fully-qualified host
+name, respectively).
 
 Since all `EppResource` entities are indexed on ROID (which is also unique, but
 not as useful as the resource's name), the `ForeignKeyUtils` provides a way to
@@ -203,10 +183,9 @@ events that are recorded as history entries, including:
 
 The full list is captured in the `HistoryEntry.Type` enum.
 
-Each `HistoryEntry` has a parent `Key<EppResource>`, the EPP resource that was
-mutated by the event. A `HistoryEntry` will also contain the complete EPP XML
-command that initiated the mutation, stored as a byte array to be agnostic of
-encoding.
+Each `HistoryEntry` has a reference to a singular EPP resource that was mutated
+by the event. A `HistoryEntry` will also contain the complete EPP XML command
+that initiated the mutation, stored as a byte array to be agnostic of encoding.
 
 A `HistoryEntry` also captures other event metadata, such as the `DateTime` of
 the change, whether the change was created by a superuser, and the ID of the
@@ -215,9 +194,9 @@ registrar that sent the command.
 ## Poll messages
 
 Poll messages are the mechanism by which EPP handles asynchronous communication
-between the registry and registrars. Refer to [RFC 5730 Section
-2.9.2.3](https://tools.ietf.org/html/rfc5730#section-2.9.2.3) for their protocol
-specification.
+between the registry and registrars. Refer to
+[RFC 5730 Section 2.9.2.3](https://tools.ietf.org/html/rfc5730#section-2.9.2.3)
+for their protocol specification.
 
 Poll messages are stored by the system as entities in the database. All poll
 messages have an event time at which they become active; any poll request before
@@ -245,8 +224,9 @@ poll messages are ACKed (and thus deleted) in `PollAckFlow`.
 ## Billing events
 
 Billing events capture all events in a domain's lifecycle for which a registrar
-will be charged. A `BillingEvent` will be created for the following reasons (the
-full list of which is represented by `BillingEvent.Reason`):
+will be charged. A one-time `BillingEvent` will (or can) be created for the
+following reasons (the full list of which is represented by
+`BillingBase.Reason`):
 
 *   Domain creates
 *   Domain renewals
@@ -254,19 +234,19 @@ full list of which is represented by `BillingEvent.Reason`):
 *   Server status changes
 *   Domain transfers
 
-A `BillingBase` can also contain one or more `BillingBase.Flag` flags that
-provide additional metadata about the billing event (e.g. the application phase
-during which the domain was applied for).
-
-All `BillingBase` entities contain a parent `VKey<HistoryEntry>` to identify the
-mutation that spawned the `BillingBase`.
-
 There are 4 types of billing events, all of which extend the abstract
 `BillingBase` base class:
 
 *   **`BillingEvent`**, a one-time billing event.
-*   **`BillingRecurrence`**, a recurring billing event (used for events such as domain
-    renewals).
-*   **`BillingCancellation`**, which represents the cancellation of either a `OneTime`
-    or `BillingRecurrence` billing event. This is implemented as a distinct event to
-    preserve the immutability of billing events.
+*   **`BillingRecurrence`**, a recurring billing event (used for events such as
+    domain renewals).
+*   **`BillingCancellation`**, which represents the cancellation of either a
+    `BillingEvent` or `BillingRecurrence` billing event. This is implemented as
+    a distinct event to preserve the immutability of billing events.
+
+A `BillingBase` can also contain one or more `BillingBase.Flag` flags that
+provide additional metadata about the billing event (e.g. the application phase
+during which the domain was applied for).
+
+All `BillingBase` entities contain reference to a given ROID (`EppResource`
+reference) to identify the mutation that spawned the `BillingBase`.

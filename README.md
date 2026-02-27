@@ -59,8 +59,6 @@ Nomulus has the following capabilities:
     implementation that works with BIND. If you are using Google Cloud DNS, you
     may need to understand its capabilities and provide your own
     multi-[AS](https://en.wikipedia.org/wiki/Autonomous_system_\(Internet\)) solution.
-*   **[WHOIS](https://en.wikipedia.org/wiki/WHOIS)**: A text-based protocol that
-    returns ownership and contact information on registered domain names.
 *   **[Registration Data Access Protocol
     (RDAP)](https://en.wikipedia.org/wiki/Registration_Data_Access_Protocol)**:
     A JSON API that returns structured, machine-readable information about
