@@ -111,28 +111,24 @@ public class PasswordResetVerifyActionTest extends ConsoleActionBaseTestCase {
   }
 
   @Test
-  @Disabled("Enable when testing is done in sandbox and isAdmin check is removed")
   void testFailure_get_epp_badPermission() throws Exception {
     createAction(createTechUser(), "GET", verificationCode, null).run();
     assertThat(response.getStatus()).isEqualTo(HttpServletResponse.SC_FORBIDDEN);
   }
 
   @Test
-  @Disabled("Enable when testing is done in sandbox and isAdmin check is removed")
   void testFailure_get_lock_badPermission() throws Exception {
     createAction(createAccountManager(), "GET", verificationCode, null).run();
     assertThat(response.getStatus()).isEqualTo(HttpServletResponse.SC_FORBIDDEN);
   }
 
   @Test
-  @Disabled("Enable when testing is done in sandbox and isAdmin check is removed")
   void testFailure_post_epp_badPermission() throws Exception {
     createAction(createTechUser(), "POST", verificationCode, "newPassword").run();
     assertThat(response.getStatus()).isEqualTo(HttpServletResponse.SC_FORBIDDEN);
   }
 
   @Test
-  @Disabled("Enable when testing is done in sandbox and isAdmin check is removed")
   void testFailure_post_lock_badPermission() throws Exception {
     createAction(createAccountManager(), "POST", verificationCode, "newPassword").run();
     assertThat(response.getStatus()).isEqualTo(HttpServletResponse.SC_FORBIDDEN);
