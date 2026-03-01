@@ -99,7 +99,7 @@ Nomulus has the following capabilities:
       for details), and an implementation based on
       [Google Cloud Secret Manager](https://cloud.google.com/security/products/secret-manager) is
       available.
-*   **TPC Proxy**: Nomulus is built on top of the [Jetty](https://jetty.org/)
+*   **TCP Proxy**: Nomulus is built on top of the [Jetty](https://jetty.org/)
     container that implements the [Jakarta Servlet](https://jakarta.ee/specifications/servlet/)
     specification and only serves HTTP/S traffic. A proxy to translate raw TCP traffic (e.g., EPP)
     to and from HTTP is provided.
