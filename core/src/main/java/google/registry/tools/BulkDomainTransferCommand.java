@@ -65,7 +65,7 @@ public class BulkDomainTransferCommand extends ConfirmingCommand implements Comm
 
   @Parameter(
       names = {"-d", "--domain_names_file"},
-      description = "A file with a list of newline-delimited domain names to create tokens for")
+      description = "A file with a list of newline-delimited domain names to transfer")
   private String domainNamesFile;
 
   @Parameter(
@@ -82,7 +82,7 @@ public class BulkDomainTransferCommand extends ConfirmingCommand implements Comm
 
   @Parameter(
       names = {"--reason"},
-      description = "Reason to transfer the domains",
+      description = "Reason to transfer the domains, possibly a bug number",
       required = true)
   private String reason;
 
