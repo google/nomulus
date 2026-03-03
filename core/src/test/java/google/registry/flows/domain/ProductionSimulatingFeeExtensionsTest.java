@@ -15,15 +15,21 @@
 package google.registry.flows.domain;
 
 import static com.google.common.truth.Truth.assertThat;
+import static google.registry.model.common.FeatureFlag.FeatureName.FEE_EXTENSION_1_DOT_0_IN_PROD;
+import static google.registry.tools.RegistryToolEnvironment.PRODUCTION;
+import static google.registry.util.DateTimeUtils.START_OF_TIME;
 
 import google.registry.model.eppcommon.ProtocolDefinition;
+import google.registry.tools.CommandTestCase;
+import google.registry.tools.ConfigureFeatureFlagCommand;
 import google.registry.util.RegistryEnvironment;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /** Class for testing the XML extension definitions loaded in the prod environment. */
-public class ProductionSimulatingFeeExtensionsTest {
+public class ProductionSimulatingFeeExtensionsTest
+    extends CommandTestCase<ConfigureFeatureFlagCommand> {
 
   private RegistryEnvironment previousEnvironment;
 
@@ -59,7 +65,7 @@ public class ProductionSimulatingFeeExtensionsTest {
   }
 
   @Test
-  void testProdEnvironment() {
+  void testProdEnvironment_feeExtensionFeatureNotSet() {
     RegistryEnvironment.PRODUCTION.setup();
     ProtocolDefinition.reloadServiceExtensionUris();
     // prod shouldn't have the fee extension version 1.0
@@ -71,5 +77,48 @@ public class ProductionSimulatingFeeExtensionsTest {
             "urn:ietf:params:xml:ns:fee-0.6",
             "urn:ietf:params:xml:ns:fee-0.11",
             "urn:ietf:params:xml:ns:fee-0.12");
+  }
+
+  @Test
+  void testProdEnvironment_feeExtensionFeatureActiveInTheFuture() throws Exception {
+    runCommandInEnvironment(
+        PRODUCTION,
+        FEE_EXTENSION_1_DOT_0_IN_PROD.name(),
+        "--force",
+        "--status_map",
+        String.format("%s=INACTIVE,%s=ACTIVE", START_OF_TIME, fakeClock.nowUtc().plusMillis(1)));
+    RegistryEnvironment.PRODUCTION.setup();
+    ProtocolDefinition.reloadServiceExtensionUris();
+    // prod shouldn't have the fee extension version 1.0
+    assertThat(ProtocolDefinition.getVisibleServiceExtensionUris())
+        .containsExactly(
+            "urn:ietf:params:xml:ns:launch-1.0",
+            "urn:ietf:params:xml:ns:rgp-1.0",
+            "urn:ietf:params:xml:ns:secDNS-1.1",
+            "urn:ietf:params:xml:ns:fee-0.6",
+            "urn:ietf:params:xml:ns:fee-0.11",
+            "urn:ietf:params:xml:ns:fee-0.12");
+  }
+
+  @Test
+  void testProdEnvironment_feeExtensionFeatureActiveInThePast() throws Exception {
+    runCommandInEnvironment(
+        PRODUCTION,
+        FEE_EXTENSION_1_DOT_0_IN_PROD.name(),
+        "--force",
+        "--status_map",
+        String.format("%s=INACTIVE,%s=ACTIVE", START_OF_TIME, fakeClock.nowUtc().minusMillis(1)));
+    RegistryEnvironment.PRODUCTION.setup();
+    ProtocolDefinition.reloadServiceExtensionUris();
+    // prod should have the fee extension version 1.0
+    assertThat(ProtocolDefinition.getVisibleServiceExtensionUris())
+        .containsExactly(
+            "urn:ietf:params:xml:ns:launch-1.0",
+            "urn:ietf:params:xml:ns:rgp-1.0",
+            "urn:ietf:params:xml:ns:secDNS-1.1",
+            "urn:ietf:params:xml:ns:fee-0.6",
+            "urn:ietf:params:xml:ns:fee-0.11",
+            "urn:ietf:params:xml:ns:fee-0.12",
+            "urn:ietf:params:xml:ns:epp:fee-1.0");
   }
 }

@@ -68,6 +68,10 @@ public class FeatureFlag extends ImmutableObject implements Buildable {
     /** Feature flag name used for testing only. */
     TEST_FEATURE(FeatureStatus.INACTIVE),
 
+    /** True if Fee Extension 1.0 (RFC 8748) is enabled in production. */
+    // TODO(b/159033801) Delete this flag after 1.0 is hardened in prod.
+    FEE_EXTENSION_1_DOT_0_IN_PROD(FeatureStatus.INACTIVE),
+
     /** If we're not requiring the presence of contact data on domain EPP commands. */
     MINIMUM_DATASET_CONTACTS_OPTIONAL(FeatureStatus.INACTIVE),
 
