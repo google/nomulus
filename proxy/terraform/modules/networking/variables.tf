@@ -20,13 +20,3 @@ variable "proxy_domain" {
 variable "proxy_domain_name" {
   description = "Domain name of the zone."
 }
-
-variable "public_web_whois" {
-  type        = number
-  description = <<EOF
-    Set to 1 if the whois HTTP ports are external, 0 if not.  This is necessary
-    because our test projects are configured with
-    constraints/compute.restrictLoadBalancerCreationForTypes, which prohibits
-    forwarding external HTTP(s) connections.
-    EOF
-}

@@ -9,7 +9,6 @@ module "proxy_networking" {
   proxy_ports           = var.proxy_ports
   proxy_domain          = google_dns_managed_zone.proxy_domain.name
   proxy_domain_name     = google_dns_managed_zone.proxy_domain.dns_name
-  public_web_whois      = var.public_web_whois
 }
 
 module "proxy_networking_canary" {
@@ -19,5 +18,4 @@ module "proxy_networking_canary" {
   proxy_ports           = var.proxy_ports_canary
   proxy_domain          = google_dns_managed_zone.proxy_domain.name
   proxy_domain_name     = google_dns_managed_zone.proxy_domain.dns_name
-  public_web_whois      = var.public_web_whois
 }

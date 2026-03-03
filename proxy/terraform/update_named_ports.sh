@@ -18,9 +18,8 @@
 # the project, zone and instance group names, and then call gcloud to add the
 # named ports.
 
-PROD_PORTS="whois:30001,epp:30002,http-whois:30010,https-whois:30011"
-CANARY_PORTS="whois-canary:31001,epp-canary:31002,"\
-"http-whois-canary:31010,https-whois-canary:31011"
+PROD_PORTS="epp:30002"
+CANARY_PORTS="epp-canary:31002"
 
 while read line
 do
