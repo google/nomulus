@@ -333,7 +333,7 @@
     );
 
     create table "FeatureFlag" (
-        feature_name text not null check (feature_name in ('TEST_FEATURE','MINIMUM_DATASET_CONTACTS_OPTIONAL','MINIMUM_DATASET_CONTACTS_PROHIBITED','INCLUDE_PENDING_DELETE_DATE_FOR_DOMAINS','PROHIBIT_CONTACT_OBJECTS_ON_LOGIN')),
+        feature_name text not null check (feature_name in ('TEST_FEATURE','FEE_EXTENSION_1_DOT_0_IN_PROD','MINIMUM_DATASET_CONTACTS_OPTIONAL','MINIMUM_DATASET_CONTACTS_PROHIBITED','INCLUDE_PENDING_DELETE_DATE_FOR_DOMAINS','PROHIBIT_CONTACT_OBJECTS_ON_LOGIN')),
         status hstore not null,
         primary key (feature_name)
     );
