@@ -82,7 +82,7 @@ public class ProtocolDefinition {
     FEE_1_00(
         FeeCheckCommandExtensionStdV1.class,
         FeeCheckResponseExtensionStdV1.class,
-        ServiceExtensionVisibility.ONLY_IN_NON_PRODUCTION),
+        ServiceExtensionVisibility.ALL),
     METADATA_1_0(MetadataExtension.class, null, ServiceExtensionVisibility.NONE);
 
     private final Class<? extends CommandExtension> commandExtensionClass;
