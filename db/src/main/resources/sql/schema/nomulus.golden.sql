@@ -288,150 +288,6 @@ CREATE TABLE public."ConsoleUpdateHistory" (
 
 
 --
--- Name: Contact; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public."Contact" (
-    repo_id text NOT NULL,
-    creation_registrar_id text NOT NULL,
-    creation_time timestamp with time zone NOT NULL,
-    current_sponsor_registrar_id text NOT NULL,
-    deletion_time timestamp with time zone,
-    last_epp_update_registrar_id text,
-    last_epp_update_time timestamp with time zone,
-    statuses text[],
-    auth_info_repo_id text,
-    auth_info_value text,
-    contact_id text,
-    disclose_types_addr text[],
-    disclose_show_email boolean,
-    disclose_show_fax boolean,
-    disclose_mode_flag boolean,
-    disclose_types_name text[],
-    disclose_types_org text[],
-    disclose_show_voice boolean,
-    email text,
-    fax_phone_extension text,
-    fax_phone_number text,
-    addr_i18n_city text,
-    addr_i18n_country_code text,
-    addr_i18n_state text,
-    addr_i18n_street_line1 text,
-    addr_i18n_street_line2 text,
-    addr_i18n_street_line3 text,
-    addr_i18n_zip text,
-    addr_i18n_name text,
-    addr_i18n_org text,
-    addr_i18n_type text,
-    last_transfer_time timestamp with time zone,
-    addr_local_city text,
-    addr_local_country_code text,
-    addr_local_state text,
-    addr_local_street_line1 text,
-    addr_local_street_line2 text,
-    addr_local_street_line3 text,
-    addr_local_zip text,
-    addr_local_name text,
-    addr_local_org text,
-    addr_local_type text,
-    search_name text,
-    voice_phone_extension text,
-    voice_phone_number text,
-    transfer_poll_message_id_1 bigint,
-    transfer_poll_message_id_2 bigint,
-    transfer_client_txn_id text,
-    transfer_server_txn_id text,
-    transfer_gaining_registrar_id text,
-    transfer_losing_registrar_id text,
-    transfer_pending_expiration_time timestamp with time zone,
-    transfer_request_time timestamp with time zone,
-    transfer_status text,
-    update_timestamp timestamp with time zone,
-    transfer_history_entry_id bigint,
-    transfer_repo_id text,
-    transfer_poll_message_id_3 bigint,
-    last_update_time_via_epp timestamp with time zone
-);
-
-
---
--- Name: ContactHistory; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public."ContactHistory" (
-    history_revision_id bigint NOT NULL,
-    history_by_superuser boolean NOT NULL,
-    history_registrar_id text,
-    history_modification_time timestamp with time zone NOT NULL,
-    history_reason text,
-    history_requested_by_registrar boolean,
-    history_client_transaction_id text,
-    history_server_transaction_id text,
-    history_type text NOT NULL,
-    history_xml_bytes bytea,
-    auth_info_repo_id text,
-    auth_info_value text,
-    contact_id text,
-    disclose_types_addr text[],
-    disclose_show_email boolean,
-    disclose_show_fax boolean,
-    disclose_mode_flag boolean,
-    disclose_types_name text[],
-    disclose_types_org text[],
-    disclose_show_voice boolean,
-    email text,
-    fax_phone_extension text,
-    fax_phone_number text,
-    addr_i18n_city text,
-    addr_i18n_country_code text,
-    addr_i18n_state text,
-    addr_i18n_street_line1 text,
-    addr_i18n_street_line2 text,
-    addr_i18n_street_line3 text,
-    addr_i18n_zip text,
-    addr_i18n_name text,
-    addr_i18n_org text,
-    addr_i18n_type text,
-    last_transfer_time timestamp with time zone,
-    addr_local_city text,
-    addr_local_country_code text,
-    addr_local_state text,
-    addr_local_street_line1 text,
-    addr_local_street_line2 text,
-    addr_local_street_line3 text,
-    addr_local_zip text,
-    addr_local_name text,
-    addr_local_org text,
-    addr_local_type text,
-    search_name text,
-    transfer_poll_message_id_1 bigint,
-    transfer_poll_message_id_2 bigint,
-    transfer_client_txn_id text,
-    transfer_server_txn_id text,
-    transfer_gaining_registrar_id text,
-    transfer_losing_registrar_id text,
-    transfer_pending_expiration_time timestamp with time zone,
-    transfer_request_time timestamp with time zone,
-    transfer_status text,
-    voice_phone_extension text,
-    voice_phone_number text,
-    creation_registrar_id text,
-    creation_time timestamp with time zone,
-    current_sponsor_registrar_id text,
-    deletion_time timestamp with time zone,
-    last_epp_update_registrar_id text,
-    last_epp_update_time timestamp with time zone,
-    statuses text[],
-    contact_repo_id text NOT NULL,
-    update_timestamp timestamp with time zone,
-    transfer_history_entry_id bigint,
-    transfer_repo_id text,
-    transfer_poll_message_id_3 bigint,
-    last_update_time_via_epp timestamp with time zone
-);
-
-
---
 -- Name: Cursor; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -1597,22 +1453,6 @@ ALTER TABLE ONLY public."ConsoleUpdateHistory"
 
 
 --
--- Name: ContactHistory ContactHistory_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public."ContactHistory"
-    ADD CONSTRAINT "ContactHistory_pkey" PRIMARY KEY (contact_repo_id, history_revision_id);
-
-
---
--- Name: Contact Contact_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public."Contact"
-    ADD CONSTRAINT "Contact_pkey" PRIMARY KEY (repo_id);
-
-
---
 -- Name: Cursor Cursor_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -2113,13 +1953,6 @@ CREATE INDEX idx1iy7njgb7wjmj9piml4l2g0qi ON public."HostHistory" USING btree (h
 
 
 --
--- Name: idx1p3esngcwwu6hstyua6itn6ff; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx1p3esngcwwu6hstyua6itn6ff ON public."Contact" USING btree (search_name);
-
-
---
 -- Name: idx1rcgkdd777bpvj0r94sltwd5y; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -2145,13 +1978,6 @@ CREATE INDEX idx3d1mucv7axrhud8w8jl4vsu62 ON public."RegistrarUpdateHistory" USI
 --
 
 CREATE INDEX idx3y3k7m2bkgahm9sixiohgyrga ON public."Domain" USING btree (transfer_billing_event_id);
-
-
---
--- Name: idx3y752kr9uh4kh6uig54vemx0l; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx3y752kr9uh4kh6uig54vemx0l ON public."Contact" USING btree (creation_time);
 
 
 --
@@ -2281,13 +2107,6 @@ CREATE INDEX idx9g3s7mjv1yn4t06nqid39whss ON public."AllocationToken" USING btre
 
 
 --
--- Name: idx9q53px6r302ftgisqifmc6put; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx9q53px6r302ftgisqifmc6put ON public."ContactHistory" USING btree (history_type);
-
-
---
 -- Name: idx_console_update_history_acting_user; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -2362,13 +2181,6 @@ CREATE INDEX idxbgssjudpm428mrv0xfpvgifps ON public."GracePeriod" USING btree (b
 --
 
 CREATE INDEX idxbjacjlm8ianc4kxxvamnu94k5 ON public."UserUpdateHistory" USING btree (history_acting_user);
-
-
---
--- Name: idxbn8t4wp85fgxjl8q4ctlscx55; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idxbn8t4wp85fgxjl8q4ctlscx55 ON public."Contact" USING btree (current_sponsor_registrar_id);
 
 
 --
@@ -2453,13 +2265,6 @@ CREATE INDEX idxhlqqd5uy98cjyos72d81x9j95 ON public."DelegationSignerData" USING
 --
 
 CREATE INDEX idxhmv411mdqo5ibn4vy7ykxpmlv ON public."BillingEvent" USING btree (allocation_token);
-
-
---
--- Name: idxhp33wybmb6tbpr1bq7ttwk8je; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idxhp33wybmb6tbpr1bq7ttwk8je ON public."ContactHistory" USING btree (history_registrar_id);
 
 
 --
@@ -2596,13 +2401,6 @@ CREATE INDEX idxmk1d2ngdtfkg6odmw7l5ejisw ON public."DomainDsDataHistory" USING 
 
 
 --
--- Name: idxn1f711wicdnooa2mqb7g1m55o; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idxn1f711wicdnooa2mqb7g1m55o ON public."Contact" USING btree (deletion_time);
-
-
---
 -- Name: idxn898pb9mwcg359cdwvolb11ck; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -2628,20 +2426,6 @@ CREATE INDEX idxnjhib7v6fj7dhj5qydkefkl2u ON public."Domain" USING btree (lordn_
 --
 
 CREATE INDEX idxnuyqo6hrtuvbcmuecf7vkfmle ON public."PollMessage" USING btree (domain_repo_id, domain_history_revision_id);
-
-
---
--- Name: idxo1xdtpij2yryh0skxe9v91sep; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idxo1xdtpij2yryh0skxe9v91sep ON public."ContactHistory" USING btree (creation_time);
-
-
---
--- Name: idxoqd7n4hbx86hvlgkilq75olas; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idxoqd7n4hbx86hvlgkilq75olas ON public."Contact" USING btree (contact_id);
 
 
 --
@@ -2757,13 +2541,6 @@ CREATE INDEX idxsu1nam10cjes9keobapn5jvxj ON public."DomainHistory" USING btree 
 
 
 --
--- Name: idxsudwswtwqnfnx2o1hx4s0k0g5; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idxsudwswtwqnfnx2o1hx4s0k0g5 ON public."ContactHistory" USING btree (history_modification_time);
-
-
---
 -- Name: idxtmlqd31dpvvd2g1h9i7erw6aj; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -2834,14 +2611,6 @@ CREATE INDEX spec11threatmatch_tld_idx ON public."Spec11ThreatMatch" USING btree
 
 
 --
--- Name: Contact fk1sfyj7o7954prbn1exk7lpnoe; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public."Contact"
-    ADD CONSTRAINT fk1sfyj7o7954prbn1exk7lpnoe FOREIGN KEY (creation_registrar_id) REFERENCES public."Registrar"(registrar_id) DEFERRABLE INITIALLY DEFERRED;
-
-
---
 -- Name: Domain fk2jc69qyg2tv9hhnmif6oa1cx1; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -2879,14 +2648,6 @@ ALTER TABLE ONLY public."SignedMarkRevocationEntry"
 
 ALTER TABLE ONLY public."ClaimsEntry"
     ADD CONSTRAINT fk6sc6at5hedffc0nhdcab6ivuq FOREIGN KEY (revision_id) REFERENCES public."ClaimsList"(revision_id) DEFERRABLE INITIALLY DEFERRED;
-
-
---
--- Name: Contact fk93c185fx7chn68uv7nl6uv2s0; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public."Contact"
-    ADD CONSTRAINT fk93c185fx7chn68uv7nl6uv2s0 FOREIGN KEY (current_sponsor_registrar_id) REFERENCES public."Registrar"(registrar_id) DEFERRABLE INITIALLY DEFERRED;
 
 
 --
@@ -2951,30 +2712,6 @@ ALTER TABLE ONLY public."BillingRecurrence"
 
 ALTER TABLE ONLY public."ConsoleUpdateHistory"
     ADD CONSTRAINT fk_console_update_history_acting_user FOREIGN KEY (acting_user) REFERENCES public."User"(email_address);
-
-
---
--- Name: ContactHistory fk_contact_history_registrar_id; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public."ContactHistory"
-    ADD CONSTRAINT fk_contact_history_registrar_id FOREIGN KEY (history_registrar_id) REFERENCES public."Registrar"(registrar_id) DEFERRABLE INITIALLY DEFERRED;
-
-
---
--- Name: Contact fk_contact_transfer_gaining_registrar_id; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public."Contact"
-    ADD CONSTRAINT fk_contact_transfer_gaining_registrar_id FOREIGN KEY (transfer_gaining_registrar_id) REFERENCES public."Registrar"(registrar_id) DEFERRABLE INITIALLY DEFERRED;
-
-
---
--- Name: Contact fk_contact_transfer_losing_registrar_id; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public."Contact"
-    ADD CONSTRAINT fk_contact_transfer_losing_registrar_id FOREIGN KEY (transfer_losing_registrar_id) REFERENCES public."Registrar"(registrar_id) DEFERRABLE INITIALLY DEFERRED;
 
 
 --
@@ -3255,14 +2992,6 @@ ALTER TABLE ONLY public."ReservedEntry"
 
 ALTER TABLE ONLY public."Domain"
     ADD CONSTRAINT fkjc0r9r5y1lfbt4gpbqw4wsuvq FOREIGN KEY (last_epp_update_registrar_id) REFERENCES public."Registrar"(registrar_id) DEFERRABLE INITIALLY DEFERRED;
-
-
---
--- Name: Contact fkmb7tdiv85863134w1wogtxrb2; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public."Contact"
-    ADD CONSTRAINT fkmb7tdiv85863134w1wogtxrb2 FOREIGN KEY (last_epp_update_registrar_id) REFERENCES public."Registrar"(registrar_id) DEFERRABLE INITIALLY DEFERRED;
 
 
 --
