@@ -94,7 +94,8 @@ public abstract class CommandTestCase<C extends Command> {
     System.setErr(oldStderr);
   }
 
-  void runCommandInEnvironment(RegistryToolEnvironment env, String... args) throws Exception {
+  protected void runCommandInEnvironment(RegistryToolEnvironment env, String... args)
+      throws Exception {
     env.setup(systemPropertyExtension);
     try {
       JCommander jcommander = new JCommander(command);

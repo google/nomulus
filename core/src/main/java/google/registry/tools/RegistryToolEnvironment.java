@@ -91,7 +91,7 @@ public enum RegistryToolEnvironment {
 
   /** Sets up execution environment. Call this method before any classes are loaded. */
   @VisibleForTesting
-  void setup(SystemPropertySetter systemPropertySetter) {
+  public void setup(SystemPropertySetter systemPropertySetter) {
     instance = this;
     actualEnvironment.setup(systemPropertySetter);
     for (Map.Entry<String, String> entry : extraProperties.entrySet()) {
