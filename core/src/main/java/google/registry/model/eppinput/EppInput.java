@@ -21,7 +21,6 @@ import com.google.common.base.Ascii;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import google.registry.model.ImmutableObject;
-import google.registry.model.contact.ContactCommand;
 import google.registry.model.domain.DomainCommand;
 import google.registry.model.domain.bulktoken.BulkTokenExtension;
 import google.registry.model.domain.fee06.FeeCheckCommandExtensionV06;
@@ -170,12 +169,6 @@ public class EppInput extends ImmutableObject {
   /** A command that has an extension inside of it. */
   public static class ResourceCommandWrapper extends InnerCommand {
     @XmlElementRefs({
-        @XmlElementRef(type = ContactCommand.Check.class),
-        @XmlElementRef(type = ContactCommand.Create.class),
-        @XmlElementRef(type = ContactCommand.Delete.class),
-        @XmlElementRef(type = ContactCommand.Info.class),
-        @XmlElementRef(type = ContactCommand.Transfer.class),
-        @XmlElementRef(type = ContactCommand.Update.class),
         @XmlElementRef(type = DomainCommand.Check.class),
         @XmlElementRef(type = DomainCommand.Create.class),
         @XmlElementRef(type = DomainCommand.Delete.class),

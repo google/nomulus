@@ -220,13 +220,11 @@ Type: FULL
 Watermark: 2015-05-16T00:00:00.000Z
 RDE Version: 1.0
 RDE Object URIs:
-  - urn:ietf:params:xml:ns:rdeContact-1.0
   - urn:ietf:params:xml:ns:rdeDomain-1.0
   - urn:ietf:params:xml:ns:rdeHeader-1.0
   - urn:ietf:params:xml:ns:rdeHost-1.0
   - urn:ietf:params:xml:ns:rdeRegistrar-1.0
 Contents:
-  - XjcRdeContact: 4,224 entries
   - XjcRdeDomain: 2,667 entries
   - XjcRdeHeader: 1 entry
   - XjcRdeHost: 35,932 entries

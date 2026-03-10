@@ -182,7 +182,7 @@ public class Registrar extends UpdateAutoTimestampEntity implements Buildable, J
     DISABLED
   }
 
-  /** Regex for E.164 phone number format specified by {@code contact.xsd}. */
+  /** Regex for E.164 phone number format. */
   private static final Pattern E164_PATTERN = Pattern.compile("\\+[0-9]{1,3}\\.[0-9]{1,14}");
 
   /** Regex for telephone support passcode (5 digit string). */

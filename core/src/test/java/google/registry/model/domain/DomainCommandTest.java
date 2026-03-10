@@ -17,8 +17,8 @@ package google.registry.model.domain;
 import static google.registry.testing.DatabaseHelper.persistActiveHost;
 import static org.junit.Assert.assertThrows;
 
+import google.registry.flows.FlowUtils;
 import google.registry.flows.domain.DomainFlowUtils.RegistrantProhibitedException;
-import google.registry.flows.exceptions.ContactsProhibitedException;
 import google.registry.model.ResourceCommandTestCase;
 import google.registry.model.eppinput.EppInput;
 import google.registry.model.eppinput.EppInput.ResourceCommandWrapper;
@@ -88,10 +88,9 @@ class DomainCommandTest extends ResourceCommandTestCase {
   void testCreate_cloneAndLinkReferences_failsWithContacts() throws Exception {
     persistActiveHost("ns1.example.net");
     persistActiveHost("ns2.example.net");
-    DomainCommand.Create create =
-        (DomainCommand.Create) loadEppResourceCommand("domain_create_with_contacts.xml");
     assertThrows(
-        RegistrantProhibitedException.class, () -> create.cloneAndLinkReferences(fakeClock.now()));
+        FlowUtils.GenericXmlSyntaxErrorException.class,
+        () -> loadEppResourceCommand("domain_create_with_contacts.xml"));
   }
 
   @Test
@@ -139,10 +138,9 @@ class DomainCommandTest extends ResourceCommandTestCase {
   void testUpdate_cloneAndLinkReferences_failsWithContacts() throws Exception {
     persistActiveHost("ns1.example.com");
     persistActiveHost("ns2.example.com");
-    DomainCommand.Update update =
-        (DomainCommand.Update) loadEppResourceCommand("domain_update_with_contacts.xml");
     assertThrows(
-        ContactsProhibitedException.class, () -> update.cloneAndLinkReferences(fakeClock.now()));
+        FlowUtils.GenericXmlSyntaxErrorException.class,
+        () -> loadEppResourceCommand("domain_update_with_contacts.xml"));
   }
 
   @Test

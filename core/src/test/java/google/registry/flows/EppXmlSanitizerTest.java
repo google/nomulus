@@ -73,21 +73,11 @@ class EppXmlSanitizerTest {
   }
 
   @Test
-  void testSanitize_contactAuthInfo_sanitized() throws Exception {
-    byte[] inputXmlBytes = loadBytes(getClass(), "contact_info.xml").read();
+  void testSanitize_domainAuthInfo_sanitized() throws Exception {
+    byte[] inputXmlBytes = loadBytes(getClass(), "domain_info_response.xml").read();
     String expectedXml =
         UTF8_HEADER
-            + new EppLoader(this, "contact_info_sanitized.xml", ImmutableMap.of()).getEppXml();
-    assertXmlEqualsIgnoreHeader(expectedXml, sanitizeEppXml(inputXmlBytes));
-  }
-
-  @Test
-  void testSanitize_contactCreateResponseAuthInfo_sanitized() throws Exception {
-    byte[] inputXmlBytes = loadBytes(getClass(), "contact_info_from_create_response.xml").read();
-    String expectedXml =
-        UTF8_HEADER
-            + new EppLoader(
-                    this, "contact_info_from_create_response_sanitized.xml", ImmutableMap.of())
+            + new EppLoader(this, "domain_info_response_sanitized.xml", ImmutableMap.of())
                 .getEppXml();
     assertXmlEqualsIgnoreHeader(expectedXml, sanitizeEppXml(inputXmlBytes));
   }
@@ -124,7 +114,6 @@ class EppXmlSanitizerTest {
     String inputXml =
         "<?xml version=\"1.0\" encoding=\"UTF-16LE\" standalone=\"no\"?>" + "<p>\u03bc</p>\n";
     String sanitizedXml = sanitizeEppXml(inputXml.getBytes(UTF_16LE));
-
     assertThat(sanitizedXml).isEqualTo(inputXml);
   }
 }

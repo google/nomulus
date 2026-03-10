@@ -1,16 +1,18 @@
-<epp xmlns="urn:ietf:params:xml:ns:epp-1.0"
-     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+<?xml version="1.0" encoding="UTF-8"?>
+<epp xmlns="urn:ietf:params:xml:ns:epp-1.0">
   <response>
     <result code="1000">
       <msg>Command completed successfully</msg>
     </result>
     <resData>
       <domain:infData
-       xmlns:domain="urn:ietf:params:xml:ns:domain-1.0">
+          xmlns:domain="urn:ietf:params:xml:ns:domain-1.0">
         <domain:name>example.com</domain:name>
         <domain:roid>EXAMPLE1-REP</domain:roid>
-        <domain:status s="pendingDelete"/>
+        <domain:status s="ok"/>
         <domain:registrant>jd1234</domain:registrant>
+        <domain:contact type="admin">sh8013</domain:contact>
+        <domain:contact type="tech">sh8013</domain:contact>
         <domain:ns>
           <domain:hostObj>ns1.example.com</domain:hostObj>
           <domain:hostObj>ns1.example.net</domain:hostObj>
@@ -25,15 +27,10 @@
         <domain:exDate>2005-04-03T22:00:00.0Z</domain:exDate>
         <domain:trDate>2000-04-08T09:00:00.0Z</domain:trDate>
         <domain:authInfo>
-          <domain:pw>2fooBAR</domain:pw>
+          <domain:pw>*******</domain:pw>
         </domain:authInfo>
       </domain:infData>
     </resData>
-    <extension>
-      <rgp:infData xmlns:rgp="urn:ietf:params:xml:ns:rgp-1.0">
-        <rgp:rgpStatus s="pendingDelete"/>
-      </rgp:infData>
-    </extension>
     <trID>
       <clTRID>ABC-12345</clTRID>
       <svTRID>server-trid</svTRID>
