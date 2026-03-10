@@ -28,21 +28,6 @@ public abstract class CreateData implements ResponseData {
   @XmlElement(name = "crDate")
   protected DateTime creationDate;
 
-  /** An acknowledgment message indicating that a contact was created. */
-  @XmlRootElement(name = "creData", namespace = "urn:ietf:params:xml:ns:contact-1.0")
-  @XmlType(propOrder = {"id", "creationDate"}, namespace = "urn:ietf:params:xml:ns:contact-1.0")
-  public static class ContactCreateData extends CreateData {
-
-    String id;
-
-    public static ContactCreateData create(String id, DateTime creationDate) {
-      ContactCreateData instance = new ContactCreateData();
-      instance.id = id;
-      instance.creationDate = creationDate;
-      return instance;
-    }
-  }
-
   /** An acknowledgment message indicating that a domain was created. */
   @XmlRootElement(name = "creData", namespace = "urn:ietf:params:xml:ns:domain-1.0")
   @XmlType(

@@ -170,7 +170,6 @@ public class EppMessage {
             new StreamSource(readResource(path + "eppcom.xsd")),
             new StreamSource(readResource(path + "epp.xsd")),
             new StreamSource(readResource(path + "host.xsd")),
-            new StreamSource(readResource(path + "contact.xsd")),
             new StreamSource(readResource(path + "domain.xsd")),
             new StreamSource(readResource(path + "rgp.xsd")),
             new StreamSource(readResource(path + "mark.xsd")),
@@ -412,7 +411,6 @@ public class EppMessage {
         addNamespace(XMLConstants.XML_NS_PREFIX, XMLConstants.XML_NS_URI);
         addNamespace(XMLConstants.XMLNS_ATTRIBUTE, XMLConstants.XMLNS_ATTRIBUTE_NS_URI);
         addNamespace("eppns", "urn:ietf:params:xml:ns:epp-1.0");
-        addNamespace("contactns", "urn:ietf:params:xml:ns:contact-1.0");
         addNamespace("domainns", "urn:ietf:params:xml:ns:domain-1.0");
         addNamespace("hostns", "urn:ietf:params:xml:ns:host-1.0");
         addNamespace("launchns", "urn:ietf:params:xml:ns:launch-1.0");

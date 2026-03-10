@@ -21,7 +21,7 @@ import com.google.common.collect.ImmutableMap;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.Registrar.State;
 import google.registry.model.registrar.RegistrarAddress;
-import google.registry.xjc.contact.XjcContactE164Type;
+import google.registry.xjc.eppcom.XjcEppcomE164Type;
 import google.registry.xjc.rderegistrar.XjcRdeRegistrar;
 import google.registry.xjc.rderegistrar.XjcRdeRegistrarAddrType;
 import google.registry.xjc.rderegistrar.XjcRdeRegistrarElement;
@@ -103,7 +103,7 @@ final class RegistrarToXjcConverter {
     //    telephone number.
     // XXX: Make Registrar use PhoneNumber.
     if (model.getPhoneNumber() != null) {
-      XjcContactE164Type phone = new XjcContactE164Type();
+      XjcEppcomE164Type phone = new XjcEppcomE164Type();
       phone.setValue(model.getPhoneNumber());
       bean.setVoice(phone);
     }
@@ -111,7 +111,7 @@ final class RegistrarToXjcConverter {
     // o  An OPTIONAL <fax> element that contains the registrar's facsimile
     //    telephone number.
     if (model.getFaxNumber() != null) {
-      XjcContactE164Type fax = new XjcContactE164Type();
+      XjcEppcomE164Type fax = new XjcEppcomE164Type();
       fax.setValue(model.getFaxNumber());
       bean.setFax(fax);
     }

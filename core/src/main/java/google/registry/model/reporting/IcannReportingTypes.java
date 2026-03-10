@@ -43,17 +43,7 @@ public final class IcannReportingTypes {
     HOST_CREATE("srs-host-create"),
     HOST_DELETE("srs-host-delete"),
     HOST_INFO("srs-host-info"),
-    HOST_UPDATE("srs-host-update"),
-    CONTACT_CHECK("srs-cont-check"),
-    CONTACT_CREATE("srs-cont-create"),
-    CONTACT_DELETE("srs-cont-delete"),
-    CONTACT_INFO("srs-cont-info"),
-    CONTACT_TRANSFER_APPROVE("srs-cont-transfer-approve"),
-    CONTACT_TRANSFER_CANCEL("srs-cont-transfer-cancel"),
-    CONTACT_TRANSFER_QUERY("srs-cont-transfer-query"),
-    CONTACT_TRANSFER_REJECT("srs-cont-transfer-reject"),
-    CONTACT_TRANSFER_REQUEST("srs-cont-transfer-request"),
-    CONTACT_UPDATE("srs-cont-update");
+    HOST_UPDATE("srs-host-update");
 
     /** Returns the actual field name from the specification. */
     private final String fieldName;

@@ -22,16 +22,6 @@ import google.registry.flows.EppException;
 import google.registry.flows.EppException.SyntaxErrorException;
 import google.registry.flows.EppException.UnimplementedCommandException;
 import google.registry.flows.Flow;
-import google.registry.flows.contact.ContactCheckFlow;
-import google.registry.flows.contact.ContactCreateFlow;
-import google.registry.flows.contact.ContactDeleteFlow;
-import google.registry.flows.contact.ContactInfoFlow;
-import google.registry.flows.contact.ContactTransferApproveFlow;
-import google.registry.flows.contact.ContactTransferCancelFlow;
-import google.registry.flows.contact.ContactTransferQueryFlow;
-import google.registry.flows.contact.ContactTransferRejectFlow;
-import google.registry.flows.contact.ContactTransferRequestFlow;
-import google.registry.flows.contact.ContactUpdateFlow;
 import google.registry.flows.domain.DomainCheckFlow;
 import google.registry.flows.domain.DomainClaimsCheckFlow;
 import google.registry.flows.domain.DomainCreateFlow;
@@ -55,7 +45,6 @@ import google.registry.flows.poll.PollRequestFlow;
 import google.registry.flows.session.HelloFlow;
 import google.registry.flows.session.LoginFlow;
 import google.registry.flows.session.LogoutFlow;
-import google.registry.model.contact.ContactCommand;
 import google.registry.model.domain.DomainCommand;
 import google.registry.model.domain.launch.LaunchCheckExtension;
 import google.registry.model.domain.launch.LaunchCheckExtension.CheckType;
@@ -198,11 +187,6 @@ public class FlowPicker {
   private static final FlowProvider RESOURCE_CRUD_FLOW_PROVIDER = new FlowProvider() {
     private final Map<Class<?>, Class<? extends Flow>> resourceCrudFlows =
         new ImmutableMap.Builder<Class<?>, Class<? extends Flow>>()
-            .put(ContactCommand.Check.class, ContactCheckFlow.class)
-            .put(ContactCommand.Create.class, ContactCreateFlow.class)
-            .put(ContactCommand.Delete.class, ContactDeleteFlow.class)
-            .put(ContactCommand.Info.class, ContactInfoFlow.class)
-            .put(ContactCommand.Update.class, ContactUpdateFlow.class)
             .put(DomainCommand.Create.class, DomainCreateFlow.class)
             .put(DomainCommand.Delete.class, DomainDeleteFlow.class)
             .put(DomainCommand.Info.class, DomainInfoFlow.class)
@@ -225,11 +209,6 @@ public class FlowPicker {
   private static final FlowProvider TRANSFER_FLOW_PROVIDER = new FlowProvider() {
     private final Table<Class<?>, TransferOp, Class<? extends Flow>> transferFlows = ImmutableTable
         .<Class<?>, TransferOp, Class<? extends Flow>>builder()
-        .put(ContactCommand.Transfer.class, TransferOp.APPROVE, ContactTransferApproveFlow.class)
-        .put(ContactCommand.Transfer.class, TransferOp.CANCEL, ContactTransferCancelFlow.class)
-        .put(ContactCommand.Transfer.class, TransferOp.QUERY, ContactTransferQueryFlow.class)
-        .put(ContactCommand.Transfer.class, TransferOp.REJECT, ContactTransferRejectFlow.class)
-        .put(ContactCommand.Transfer.class, TransferOp.REQUEST, ContactTransferRequestFlow.class)
         .put(DomainCommand.Transfer.class, TransferOp.APPROVE, DomainTransferApproveFlow.class)
         .put(DomainCommand.Transfer.class, TransferOp.CANCEL, DomainTransferCancelFlow.class)
         .put(DomainCommand.Transfer.class, TransferOp.QUERY, DomainTransferQueryFlow.class)

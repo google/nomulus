@@ -26,7 +26,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import com.google.re2j.Pattern;
 import google.registry.xjc.rde.XjcRdeDeposit;
 import google.registry.xjc.rde.XjcRdeDepositTypeType;
-import google.registry.xjc.rdecontact.XjcRdeContact;
+import google.registry.xjc.rdedomain.XjcRdeDomain;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import org.junit.jupiter.api.Test;
@@ -109,8 +109,8 @@ class XjcObjectTest {
 
   @Test
   void testToStringNoValidation() {
-    String xml = new XjcRdeContact().toString();
-    assertWithMessage(xml).that(xml).startsWith("<XjcRdeContact ");
+    String xml = new XjcRdeDomain().toString();
+    assertWithMessage(xml).that(xml).startsWith("<XjcRdeDomain ");
   }
 
   @Test
