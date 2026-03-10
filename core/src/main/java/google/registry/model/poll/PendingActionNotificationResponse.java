@@ -101,30 +101,6 @@ public class PendingActionNotificationResponse extends ImmutableObject
     }
   }
 
-  /** An adapter to output the XML in response to resolving a pending command on a contact. */
-  @XmlRootElement(name = "panData", namespace = "urn:ietf:params:xml:ns:contact-1.0")
-  @XmlType(
-      propOrder = {"id", "trid", "processedDate"},
-      namespace = "urn:ietf:params:xml:ns:contact-1.0")
-  public static class ContactPendingActionNotificationResponse
-      extends PendingActionNotificationResponse {
-
-    @XmlElement
-    NameOrId getId() {
-      return nameOrId;
-    }
-
-    public static ContactPendingActionNotificationResponse create(
-        String contactId, boolean actionResult, Trid trid, DateTime processedDate) {
-      return init(
-          new ContactPendingActionNotificationResponse(),
-          contactId,
-          actionResult,
-          trid,
-          processedDate);
-    }
-  }
-
   /** An adapter to output the XML in response to resolving a pending command on a host. */
   @XmlRootElement(name = "panData", namespace = "urn:ietf:params:xml:ns:domain-1.0")
   @XmlType(

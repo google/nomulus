@@ -21,7 +21,6 @@ import static google.registry.beam.rde.RdePipeline.TupleTags.DOMAIN_FRAGMENTS;
 import static google.registry.beam.rde.RdePipeline.TupleTags.EXTERNAL_HOST_FRAGMENTS;
 import static google.registry.beam.rde.RdePipeline.TupleTags.HOST_TO_PENDING_DEPOSIT;
 import static google.registry.beam.rde.RdePipeline.TupleTags.PENDING_DEPOSIT;
-import static google.registry.beam.rde.RdePipeline.TupleTags.REFERENCED_CONTACTS;
 import static google.registry.beam.rde.RdePipeline.TupleTags.REFERENCED_HOSTS;
 import static google.registry.beam.rde.RdePipeline.TupleTags.REVISION_ID;
 import static google.registry.beam.rde.RdePipeline.TupleTags.SUPERORDINATE_DOMAINS;
@@ -131,9 +130,8 @@ import org.joda.time.DateTime;
  *
  * After the most recent (live) domain resources are loaded from the corresponding history objects,
  * we marshall them to deposit fragments and emit the (pending deposit: deposit fragment) pairs for
- * further processing. We also find all the contacts and hosts referenced by a given domain and emit
- * pairs of (contact/host repo ID: pending deposit) for all RDE pending deposits for further
- * processing.
+ * further processing. We also find all the hosts referenced by a given domain and emit pairs of
+ * (host repo ID: pending deposit) for all RDE pending deposits for further processing.
  *
  * <h3>{@link Host}</h3>
  *
@@ -373,8 +371,8 @@ public class RdePipeline implements Serializable {
    * Remove unreferenced resources by joining the (repoId, pendingDeposit) pair with the (repoId,
    * revisionId) on the repoId.
    *
-   * <p>The (repoId, pendingDeposit) pairs denote resources (contact, host) that are referenced from
-   * a domain, that are to be included in the corresponding pending deposit.
+   * <p>The (repoId, pendingDeposit) pairs denote hosts that are referenced from a domain, that are
+   * to be included in the corresponding pending deposit.
    *
    * <p>The (repoId, revisionId) paris come from the most recent history entry query, which can be
    * used to load the embedded resources themselves.
@@ -424,7 +422,7 @@ public class RdePipeline implements Serializable {
     Counter domainFragmentCounter = Metrics.counter("RDE", "DomainFragment");
     Counter referencedHostCounter = Metrics.counter("RDE", "ReferencedHost");
     return domainHistories.apply(
-        "Map DomainHistory to DepositFragment " + "and emit referenced Contact and Host",
+        "Map DomainHistory to DepositFragment and emit referenced Host",
         ParDo.of(
                 new DoFn<KV<String, Long>, KV<PendingDeposit, DepositFragment>>() {
                   @ProcessElement
@@ -466,8 +464,7 @@ public class RdePipeline implements Serializable {
                             });
                   }
                 })
-            .withOutputTags(
-                DOMAIN_FRAGMENTS, TupleTagList.of(REFERENCED_CONTACTS).and(REFERENCED_HOSTS)));
+            .withOutputTags(DOMAIN_FRAGMENTS, TupleTagList.of(REFERENCED_HOSTS)));
   }
 
   private PCollectionTuple processHostHistories(
@@ -626,9 +623,6 @@ public class RdePipeline implements Serializable {
   protected abstract static class TupleTags {
 
     protected static final TupleTag<KV<PendingDeposit, DepositFragment>> DOMAIN_FRAGMENTS =
-        new TupleTag<>() {};
-
-    protected static final TupleTag<KV<String, PendingDeposit>> REFERENCED_CONTACTS =
         new TupleTag<>() {};
 
     protected static final TupleTag<KV<String, PendingDeposit>> REFERENCED_HOSTS =

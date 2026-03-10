@@ -44,7 +44,6 @@ import jakarta.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
  *
  * </blockquote>
  *
- * @see google.registry.model.contact.ContactPhoneNumber
  * @see google.registry.model.mark.MarkPhoneNumber
  */
 @XmlTransient

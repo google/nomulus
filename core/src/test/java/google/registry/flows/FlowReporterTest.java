@@ -45,7 +45,7 @@ class FlowReporterTest {
     }
   }
 
-  @ReportingSpec(ActivityReportField.CONTACT_CHECK)
+  @ReportingSpec(ActivityReportField.DOMAIN_CHECK)
   static class TestReportingSpecCommandFlow implements Flow {
     @Override
     public ResponseOrGreeting run() {
@@ -96,7 +96,7 @@ class FlowReporterTest {
     Map<String, Object> json =
         parseJsonMap(findFirstLogMessageByPrefix(handler, "FLOW-LOG-SIGNATURE-METADATA: "));
     assertThat(json).containsEntry("flowClassName", "TestReportingSpecCommandFlow");
-    assertThat(json).containsEntry("icannActivityReportField", "srs-cont-check");
+    assertThat(json).containsEntry("icannActivityReportField", "srs-dom-check");
   }
 
   @Test
