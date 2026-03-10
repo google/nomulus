@@ -47,8 +47,6 @@ Child elements of the <create> command.
     minOccurs="0"/>
    <element name="registrant" type="eppcom:clIDType"
     minOccurs="0"/>
-   <element name="contact" type="domain:contactType"
-    minOccurs="0" maxOccurs="unbounded"/>
    <element name="authInfo" type="domain:authInfoType"/>
  </sequence>
 </complexType>
@@ -99,22 +97,6 @@ Name servers are either host objects or attributes.
 If attributes, addresses are optional and follow the
 structure defined in the host mapping.
 -->
-
-<complexType name="contactType">
- <simpleContent>
-   <extension base="eppcom:clIDType">
-     <attribute name="type" type="domain:contactAttrType"/>
-   </extension>
- </simpleContent>
-</complexType>
-
-<simpleType name="contactAttrType">
- <restriction base="token">
-   <enumeration value="admin"/>
-   <enumeration value="billing"/>
-   <enumeration value="tech"/>
- </restriction>
-</simpleType>
 
 <complexType name="authInfoType">
  <choice>
@@ -216,8 +198,6 @@ Data elements that can be added or removed.
  <sequence>
    <element name="ns" type="domain:nsType"
     minOccurs="0"/>
-   <element name="contact" type="domain:contactType"
-    minOccurs="0" maxOccurs="unbounded"/>
    <element name="status" type="domain:statusType"
     minOccurs="0" maxOccurs="11"/>
  </sequence>
@@ -319,8 +299,6 @@ Child response elements.
     minOccurs="0" maxOccurs="11"/>
    <element name="registrant" type="eppcom:clIDType"
     minOccurs="0"/>
-   <element name="contact" type="domain:contactType"
-    minOccurs="0" maxOccurs="unbounded"/>
    <element name="ns" type="domain:nsType"
     minOccurs="0"/>
    <element name="host" type="eppcom:labelType"

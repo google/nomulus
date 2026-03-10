@@ -60,15 +60,6 @@
       </nameXmlTransform>
     </schemaBindings>
   </bindings>
-  <bindings schemaLocation="contact.xsd" node="/xsd:schema">
-    <schemaBindings>
-      <package name="google.registry.xjc.contact"/>
-      <nameXmlTransform>
-        <elementName prefix="XjcContact"/>
-        <typeName prefix="XjcContact"/>
-      </nameXmlTransform>
-    </schemaBindings>
-  </bindings>
   <bindings schemaLocation="rgp.xsd" node="/xsd:schema">
     <schemaBindings>
       <package name="google.registry.xjc.rgp"/>
@@ -201,24 +192,6 @@
     </schemaBindings>
     <bindings node="//xsd:complexType[@name='rdeMenuType']">
       <class name="XjcRdeMenuType"/>
-    </bindings>
-  </bindings>
-  <bindings schemaLocation="rde-contact.xsd" node="/xsd:schema">
-    <schemaBindings>
-      <package name="google.registry.xjc.rdecontact"/>
-      <nameXmlTransform>
-        <elementName prefix="XjcRdeContact"/>
-        <typeName prefix="XjcRdeContact"/>
-      </nameXmlTransform>
-    </schemaBindings>
-    <bindings node="//xsd:complexType[@name='abstractContentType']">
-      <class name="XjcRdeContact"/>
-    </bindings>
-    <bindings node="//xsd:element[@name='contact']">
-      <class name="XjcRdeContactElement"/>
-    </bindings>
-    <bindings node="//xsd:element[@name='abstractContact']">
-      <class name="XjcRdeContactAbstract"/>
     </bindings>
   </bindings>
   <bindings schemaLocation="rde-domain.xsd" node="/xsd:schema">

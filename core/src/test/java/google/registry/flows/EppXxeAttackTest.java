@@ -30,12 +30,14 @@ class EppXxeAttackTest extends EppTestCase {
   @Test
   void testRemoteXmlExternalEntity() throws Exception {
     assertThatLoginSucceeds("NewRegistrar", "foo-BAR2");
-    assertThatCommand("contact_create_remote_xxe.xml")
+    assertThatCommand("host_create_remote_xxe.xml")
         .hasResponse(
             "response_error_no_cltrid.xml",
             ImmutableMap.of(
-                "CODE", "2001",
-                "MSG", "Syntax error at line 11, column 34: "
+                "CODE",
+                "2001",
+                "MSG",
+                "Syntax error at line 8, column 41: "
                     + "The entity &quot;remote&quot; was referenced, but not declared."));
     assertThatLogoutSucceeds();
   }
@@ -43,12 +45,14 @@ class EppXxeAttackTest extends EppTestCase {
   @Test
   void testLocalXmlExtrernalEntity() throws Exception {
     assertThatLoginSucceeds("NewRegistrar", "foo-BAR2");
-    assertThatCommand("contact_create_local_xxe.xml")
+    assertThatCommand("host_create_local_xxe.xml")
         .hasResponse(
             "response_error_no_cltrid.xml",
             ImmutableMap.of(
-                "CODE", "2001",
-                "MSG", "Syntax error at line 11, column 31: "
+                "CODE",
+                "2001",
+                "MSG",
+                "Syntax error at line 8, column 38: "
                     + "The entity &quot;ent&quot; was referenced, but not declared."));
     assertThatLogoutSucceeds();
   }
@@ -56,12 +60,14 @@ class EppXxeAttackTest extends EppTestCase {
   @Test
   void testBillionLaughsAttack() throws Exception {
     assertThatLoginSucceeds("NewRegistrar", "foo-BAR2");
-    assertThatCommand("contact_create_billion_laughs.xml")
+    assertThatCommand("host_create_billion_laughs.xml")
         .hasResponse(
             "response_error_no_cltrid.xml",
             ImmutableMap.of(
-                "CODE", "2001",
-                "MSG", "Syntax error at line 20, column 32: "
+                "CODE",
+                "2001",
+                "MSG",
+                "Syntax error at line 17, column 39: "
                     + "The entity &quot;lol9&quot; was referenced, but not declared."));
     assertThatLogoutSucceeds();
   }

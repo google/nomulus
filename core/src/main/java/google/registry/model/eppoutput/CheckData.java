@@ -33,8 +33,6 @@ public abstract class CheckData extends ImmutableObject implements ResponseData 
   /** The check responses. We must explicitly list the namespaced versions of {@link Check}. */
   @XmlElements({
       @XmlElement(
-          name = "cd", namespace = "urn:ietf:params:xml:ns:contact-1.0", type = ContactCheck.class),
-      @XmlElement(
           name = "cd", namespace = "urn:ietf:params:xml:ns:domain-1.0", type = DomainCheck.class),
       @XmlElement(
           name = "cd", namespace = "urn:ietf:params:xml:ns:host-1.0", type = HostCheck.class)})
@@ -114,14 +112,6 @@ public abstract class CheckData extends ImmutableObject implements ResponseData 
     }
   }
 
-  /** A version with contact namespacing. */
-  @XmlType(namespace = "urn:ietf:params:xml:ns:contact-1.0")
-  public static class ContactCheck extends Check {
-    public static ContactCheck create(boolean avail, String id, String reason) {
-      return init(new ContactCheck(), CheckID.create(avail, id), reason);
-    }
-  }
-
   /** A version with domain namespacing. */
   @XmlType(namespace = "urn:ietf:params:xml:ns:domain-1.0")
   public static class DomainCheck extends Check {
@@ -143,14 +133,6 @@ public abstract class CheckData extends ImmutableObject implements ResponseData 
   public static class HostCheck extends Check {
     public static HostCheck create(boolean avail, String name, String reason) {
       return init(new HostCheck(), CheckName.create(avail, name), reason);
-    }
-  }
-
-  /** A version with contact namespacing. */
-  @XmlRootElement(name = "chkData", namespace = "urn:ietf:params:xml:ns:contact-1.0")
-  public static class ContactCheckData extends CheckData {
-    public static ContactCheckData create(ImmutableList<ContactCheck> checks) {
-      return init(new ContactCheckData(), checks);
     }
   }
 

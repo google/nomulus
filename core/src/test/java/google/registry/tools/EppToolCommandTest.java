@@ -52,10 +52,8 @@ public class EppToolCommandTest extends EppToolCommandTestCase<EppToolCommand> {
   @Test
   void testSuccess_singleXmlCommand() throws Exception {
     // The choice of xml file is arbitrary.
-    runCommandForced(
-        "--client=NewRegistrar",
-        ToolsTestData.loadFile("contact_create.xml"));
-    eppVerifier.verifySent("contact_create.xml");
+    runCommandForced("--client=NewRegistrar", ToolsTestData.loadFile("domain_create_minimal.xml"));
+    eppVerifier.verifySent("domain_create_minimal.xml");
   }
 
   @Test
@@ -63,11 +61,11 @@ public class EppToolCommandTest extends EppToolCommandTestCase<EppToolCommand> {
     // The choice of xml files is arbitrary.
     runCommandForced(
         "--client=NewRegistrar",
-        ToolsTestData.loadFile("contact_create.xml"),
+        ToolsTestData.loadFile("domain_create_minimal.xml"),
         ToolsTestData.loadFile("domain_check.xml"),
         ToolsTestData.loadFile("domain_check_fee.xml"));
     eppVerifier
-        .verifySent("contact_create.xml")
+        .verifySent("domain_create_minimal.xml")
         .verifySent("domain_check.xml")
         .verifySent("domain_check_fee.xml");
   }

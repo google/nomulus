@@ -9,9 +9,6 @@
             prefix = "eppcom",
             namespaceURI = "urn:ietf:params:xml:ns:eppcom-1.0"),
         @jakarta.xml.bind.annotation.XmlNs(
-            prefix = "contact",
-            namespaceURI = "urn:ietf:params:xml:ns:contact-1.0"),
-        @jakarta.xml.bind.annotation.XmlNs(
             prefix = "domain",
             namespaceURI = "urn:ietf:params:xml:ns:domain-1.0"),
         @jakarta.xml.bind.annotation.XmlNs(
@@ -44,9 +41,6 @@
         @jakarta.xml.bind.annotation.XmlNs(
             prefix = "rde",
             namespaceURI = "urn:ietf:params:xml:ns:rde-1.0"),
-        @jakarta.xml.bind.annotation.XmlNs(
-            prefix = "rdeContact",
-            namespaceURI = "urn:ietf:params:xml:ns:rdeContact-1.0"),
         @jakarta.xml.bind.annotation.XmlNs(
             prefix = "rdeDomain",
             namespaceURI = "urn:ietf:params:xml:ns:rdeDomain-1.0"),

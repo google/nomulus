@@ -6,8 +6,6 @@
         <domain:name>example.tld</domain:name>
         <domain:period unit="y">2</domain:period>
         <domain:registrant>jd1234</domain:registrant>
-        <domain:contact type="admin">jd1234</domain:contact>
-        <domain:contact type="tech">jd1234</domain:contact>
         <domain:authInfo>
           <domain:pw>abcdefghijklmnop</domain:pw>
         </domain:authInfo>
