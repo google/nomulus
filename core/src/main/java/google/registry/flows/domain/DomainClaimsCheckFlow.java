@@ -108,8 +108,7 @@ public final class DomainClaimsCheckFlow implements TransactionalFlow {
           verifyClaimsPeriodNotEnded(tld, now);
         }
       }
-      Optional<String> claimKey =
-          ClaimsListDao.get(tldStr).getClaimKey(parsedDomain.parts().get(0));
+      Optional<String> claimKey = ClaimsListDao.get().getClaimKey(parsedDomain.parts().get(0));
       launchChecksBuilder.add(
           LaunchCheck.create(
               LaunchCheckName.create(claimKey.isPresent(), domainName), claimKey.orElse(null)));
