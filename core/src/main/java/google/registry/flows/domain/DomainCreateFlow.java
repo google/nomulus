@@ -279,7 +279,7 @@ public final class DomainCreateFlow implements MutatingFlow {
       checkAllowedAccessToTld(registrarId, tld.getTldStr());
       checkHasBillingAccount(registrarId, tld.getTldStr());
       boolean isValidReservedCreate = isValidReservedCreate(domainName, allocationToken);
-      ClaimsList claimsList = ClaimsListDao.get(tld.getTldStr());
+      ClaimsList claimsList = ClaimsListDao.get();
       verifyIsGaOrSpecialCase(
           tld,
           claimsList,
@@ -311,8 +311,7 @@ public final class DomainCreateFlow implements MutatingFlow {
       // at this point so that we can verify it before the "after validation" extension point.
       signedMarkId =
           tmchUtils
-              .verifySignedMarks(
-                  tld.getTldStr(), launchCreate.get().getSignedMarks(), domainLabel, now)
+              .verifySignedMarks(launchCreate.get().getSignedMarks(), domainLabel, now)
               .getId();
     }
     verifyNotBlockedByBsa(domainName, tld, now, allocationToken);
