@@ -39,6 +39,7 @@ import google.registry.model.reporting.HistoryEntry.HistoryEntryId;
 import google.registry.model.transfer.DomainTransferData.TransferServerApproveEntity;
 import google.registry.model.transfer.TransferResponse;
 import google.registry.model.transfer.TransferResponse.DomainTransferResponse;
+import google.registry.persistence.EntityCallbacksListener.RecursivePostLoad;
 import google.registry.persistence.VKey;
 import google.registry.persistence.WithVKey;
 import google.registry.util.NullIgnoringCollectionBuilder;
@@ -53,7 +54,6 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Index;
 import jakarta.persistence.Inheritance;
 import jakarta.persistence.InheritanceType;
-import jakarta.persistence.PostLoad;
 import jakarta.persistence.Table;
 import java.util.Optional;
 import org.joda.time.DateTime;
@@ -399,7 +399,7 @@ public abstract class PollMessage extends ImmutableObject
           .build();
     }
 
-    @PostLoad
+    @RecursivePostLoad
     void postLoad() {
       if (pendingActionNotificationResponse != null) {
         // Promote the pending action notification response to its specialized type.

@@ -143,7 +143,7 @@ class BsaDownloadFunctionalTest {
         tm().transact(
                 () ->
                     tm().getEntityManager()
-                        .createNativeQuery("SELECT label from \"BsaLabel\"")
+                        .createNativeQuery("SELECT label from \"BsaLabel\"", String.class)
                         .getResultList()));
   }
 

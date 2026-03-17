@@ -23,6 +23,7 @@ import google.registry.model.console.RegistrarRole;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaUnitTestExtension;
 import google.registry.testing.DatabaseHelper;
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import java.util.Map;
@@ -59,6 +60,7 @@ public class RegistrarToRoleMapUserTypeTest {
     @Id String name = "id";
 
     @Type(RegistrarToRoleMapUserType.class)
+    @Column(columnDefinition = "hstore")
     Map<String, RegistrarRole> map;
 
     private TestEntity() {}

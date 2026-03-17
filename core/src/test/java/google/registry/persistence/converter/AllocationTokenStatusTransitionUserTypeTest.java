@@ -28,6 +28,7 @@ import google.registry.model.common.TimedTransitionProperty;
 import google.registry.model.domain.token.AllocationToken.TokenStatus;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaUnitTestExtension;
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import org.hibernate.annotations.Type;
@@ -75,6 +76,7 @@ public class AllocationTokenStatusTransitionUserTypeTest {
     @Id String name = "id";
 
     @Type(AllocationTokenStatusTransitionUserType.class)
+    @Column(columnDefinition = "hstore")
     TimedTransitionProperty<TokenStatus> timedTransitionProperty;
 
     private AllocationTokenStatusTransitionConverterTestEntity() {}

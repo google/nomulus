@@ -19,7 +19,6 @@ import java.io.Serializable;
 import java.math.BigDecimal;
 import java.util.Objects;
 import org.hibernate.HibernateException;
-import org.hibernate.engine.spi.SessionFactoryImplementor;
 import org.hibernate.metamodel.spi.ValueAccess;
 import org.hibernate.usertype.CompositeUserType;
 import org.joda.money.CurrencyUnit;
@@ -105,7 +104,7 @@ public class JodaMoneyType implements CompositeUserType<Money> {
   }
 
   @Override
-  public Money instantiate(ValueAccess values, SessionFactoryImplementor sessionFactory) {
+  public Money instantiate(ValueAccess values) {
     final String currency = values.getValue(CURRENCY_ID, String.class);
     final BigDecimal amount = values.getValue(AMOUNT_ID, BigDecimal.class);
     if (amount == null && currency == null) {

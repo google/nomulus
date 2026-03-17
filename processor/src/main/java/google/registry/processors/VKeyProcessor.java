@@ -137,11 +137,8 @@ public class VKeyProcessor extends AbstractProcessor {
 
     TypeSpec.Builder classBuilder =
         TypeSpec.classBuilder(converterClassName)
-            .addAnnotation(
-                AnnotationSpec.builder(ClassName.get(Converter.class))
-                    .addMember("autoApply", "true")
-                    .build())
-            .addModifiers(Modifier.FINAL)
+            .addAnnotation(AnnotationSpec.builder(ClassName.get(Converter.class)).build())
+            .addModifiers(Modifier.FINAL, Modifier.PUBLIC)
             .superclass(attributeConverter)
             .addMethod(getEntityClass)
             .addMethod(getKeyClass);

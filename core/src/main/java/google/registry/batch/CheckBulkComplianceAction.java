@@ -104,15 +104,14 @@ public class CheckBulkComplianceAction implements Runnable {
         bulkPricingPackagesOverActiveDomainsLimitBuilder = new ImmutableMap.Builder<>();
     for (BulkPricingPackage bulkPricingPackage : bulkPricingPackages) {
       Long creates =
-          (Long)
-              tm().query(
-                      "SELECT COUNT(*) FROM DomainHistory WHERE resource.currentBulkToken ="
-                          + " :token AND modificationTime >= :lastBilling AND type ="
-                          + " 'DOMAIN_CREATE'")
-                  .setParameter("token", bulkPricingPackage.getToken())
-                  .setParameter(
-                      "lastBilling", bulkPricingPackage.getNextBillingDate().minusYears(1))
-                  .getSingleResult();
+          tm().query(
+                  "SELECT COUNT(*) FROM DomainHistory WHERE resource.currentBulkToken ="
+                      + " :token AND modificationTime >= :lastBilling AND type ="
+                      + " 'DOMAIN_CREATE'",
+                  Long.class)
+              .setParameter("token", bulkPricingPackage.getToken())
+              .setParameter("lastBilling", bulkPricingPackage.getNextBillingDate().minusYears(1))
+              .getSingleResult();
       if (creates > bulkPricingPackage.getMaxCreates()) {
         long overage = creates - bulkPricingPackage.getMaxCreates();
         logger.atInfo().log(

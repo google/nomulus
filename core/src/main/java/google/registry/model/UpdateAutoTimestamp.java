@@ -17,10 +17,10 @@ package google.registry.model;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 
+import google.registry.persistence.EntityCallbacksListener.RecursivePrePersist;
+import google.registry.persistence.EntityCallbacksListener.RecursivePreUpdate;
 import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
-import jakarta.persistence.PrePersist;
-import jakarta.persistence.PreUpdate;
 import java.util.Optional;
 import javax.annotation.Nullable;
 import org.joda.time.DateTime;
@@ -35,9 +35,9 @@ public class UpdateAutoTimestamp extends ImmutableObject implements UnsafeSerial
   // Unfortunately, we cannot use the @UpdateTimestamp annotation on "lastUpdateTime" in this class
   // because Hibernate does not allow it to be used on @Embeddable classes, see
   // https://hibernate.atlassian.net/browse/HHH-13235. This is a workaround.
-  @PrePersist
-  @PreUpdate
-  void setTimestamp() {
+  @RecursivePrePersist
+  @RecursivePreUpdate
+  public void setTimestamp() {
     lastUpdateTime = tm().getTransactionTime();
   }
 

@@ -74,6 +74,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
+import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import javax.annotation.Nullable;
@@ -247,9 +248,12 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
             ? emf.unwrap(SessionFactory.class)
                 .withOptions()
                 .statementInspector(
-                    s -> {
-                      logger.atInfo().log(SQL_STATEMENT_LOG_SENTINEL_FORMAT, s);
-                      return s;
+                    new UnaryOperator<String>() {
+                      @Override
+                      public String apply(String s) {
+                        logger.atInfo().log(SQL_STATEMENT_LOG_SENTINEL_FORMAT, s);
+                        return s;
+                      }
                     })
                 .openSession()
             : emf.createEntityManager();

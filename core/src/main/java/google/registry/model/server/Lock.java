@@ -24,13 +24,13 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Strings;
 import com.google.common.flogger.FluentLogger;
 import google.registry.model.ImmutableObject;
+import google.registry.persistence.EntityCallbacksListener.RecursivePostLoad;
 import google.registry.persistence.VKey;
 import google.registry.persistence.transaction.TransactionManager.ThrowingRunnable;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.IdClass;
-import jakarta.persistence.PostLoad;
 import jakarta.persistence.Table;
 import jakarta.persistence.Transient;
 import java.io.Serializable;
@@ -99,7 +99,7 @@ public class Lock extends ImmutableObject implements Serializable {
     return expirationTime;
   }
 
-  @PostLoad
+  @RecursivePostLoad
   void postLoad() {
     lockId = makeLockId(resourceName, scope);
   }

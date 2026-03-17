@@ -56,6 +56,7 @@ public class UserRoles extends ImmutableObject implements Buildable {
   /** Any per-registrar roles that this user may have. */
   @Expose
   @Type(RegistrarToRoleMapUserType.class)
+  @Column(columnDefinition = "hstore")
   private Map<String, RegistrarRole> registrarRoles = ImmutableMap.of();
 
   /** Whether the user is a global admin, who has access to everything. */

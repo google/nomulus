@@ -26,6 +26,9 @@ import com.google.common.collect.ImmutableMap;
 import google.registry.model.CacheUtils;
 import google.registry.model.CreateAutoTimestamp;
 import google.registry.model.ImmutableObject;
+import google.registry.persistence.EntityCallbacksListener.RecursivePostPersist;
+import google.registry.persistence.EntityCallbacksListener.RecursivePostUpdate;
+import google.registry.persistence.EntityCallbacksListener.RecursivePreRemove;
 import jakarta.persistence.AttributeOverride;
 import jakarta.persistence.AttributeOverrides;
 import jakarta.persistence.Column;
@@ -33,9 +36,6 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.PostPersist;
-import jakarta.persistence.PostUpdate;
-import jakarta.persistence.PreRemove;
 import jakarta.persistence.Table;
 import jakarta.persistence.Transient;
 import java.util.Map;
@@ -102,7 +102,7 @@ public class ClaimsList extends ImmutableObject {
   final LoadingCache<String, Optional<String>> claimKeyCache =
       CacheUtils.newCacheBuilder().build(this::getClaimKeyUncached);
 
-  @PreRemove
+  @RecursivePreRemove
   void preRemove() {
     tm().query("DELETE FROM ClaimsEntry WHERE revisionId = :revisionId")
         .setParameter("revisionId", revisionId)
@@ -114,10 +114,10 @@ public class ClaimsList extends ImmutableObject {
    * ClaimsEntry}'s.
    *
    * <p>We need to persist the list entries, but only on the initial insert (not on update) since
-   * the entries themselves never get changed, so we only annotate it with {@link PostPersist}, not
-   * {@link PostUpdate}.
+   * the entries themselves never get changed, so we only annotate it with {@link
+   * RecursivePostPersist}, not {@link RecursivePostUpdate}.
    */
-  @PostPersist
+  @RecursivePostPersist
   void postPersist() {
     if (labelsToKeys != null) {
       labelsToKeys.forEach(

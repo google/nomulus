@@ -54,7 +54,8 @@ public class StringValueEnumeratedTest {
             tm().transact(
                     () ->
                         tm().getEntityManager()
-                            .createNativeQuery("SELECT state FROM \"TestEntity\" WHERE name = 'id'")
+                            .createNativeQuery(
+                                "SELECT state FROM \"TestEntity\" WHERE name = 'id'", String.class)
                             .getSingleResult()))
         .isEqualTo("DISABLED");
   }
