@@ -133,13 +133,23 @@ public abstract class LoginFlowTestCase extends FlowTestCase<LoginFlow> {
   }
 
   @Test
-  void testSuccess_contactObjectUri_worksWhenNotProhibited() throws Exception {
+  void testSuccess_contactObjectUriSent_worksWhenNotProhibited() throws Exception {
     persistResource(
         FeatureFlag.get(PROHIBIT_CONTACT_OBJECTS_ON_LOGIN)
             .asBuilder()
             .setStatusMap(ImmutableSortedMap.of(START_OF_TIME, FeatureStatus.INACTIVE))
             .build());
     doSuccessfulTest("login_with_contact_objuri.xml");
+  }
+
+  @Test
+  void testSuccess_contactObjectUriNotSent_worksWhenNotProhibited() throws Exception {
+    persistResource(
+        FeatureFlag.get(PROHIBIT_CONTACT_OBJECTS_ON_LOGIN)
+            .asBuilder()
+            .setStatusMap(ImmutableSortedMap.of(START_OF_TIME, FeatureStatus.INACTIVE))
+            .build());
+    doSuccessfulTest("login_valid.xml");
   }
 
   @Test
