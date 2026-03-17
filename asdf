@@ -1,0 +1,38 @@
+Could not determine the dependencies of task ':core:nomulus'.
+> Could not resolve all dependencies for configuration ':core:runtimeClasspath'.
+   > Could not resolve com.google.protobuf:protobuf-java-util:3.25.8.
+     Required by:
+         project :core > com.google.api:gax:2.67.3
+         project :core > com.google.cloud:google-cloud-compute:1.82.0
+         project :core > org.apache.beam:beam-sdks-java-io-google-cloud-platform:2.67.0 > com.google.cloud:google-cloud-bigquerystorage:3.15.0
+         project :core > org.apache.beam:beam-sdks-java-io-google-cloud-platform:2.67.0 > com.google.cloud:google-cloud-bigtable:2.60.0
+         project :core > org.apache.beam:beam-sdks-java-io-google-cloud-platform:2.67.0 > com.google.cloud:google-cloud-firestore:3.31.6
+         project :core > org.apache.beam:beam-sdks-java-io-google-cloud-platform:2.67.0 > com.google.cloud:google-cloud-pubsublite:1.15.9
+         project :core > org.apache.beam:beam-sdks-java-io-google-cloud-platform:2.67.0 > com.google.cloud:google-cloud-pubsub:1.140.1
+         project :core > org.apache.beam:beam-sdks-java-io-google-cloud-platform:2.67.0 > com.google.cloud:google-cloud-spanner:6.95.1
+         project :core > com.google.cloud:google-cloud-core:2.57.0
+         project :core > com.google.cloud:google-cloud-storage:2.44.1 > com.google.cloud:google-cloud-monitoring:3.65.0
+         project :core > com.google.cloud:google-cloud-compute:1.82.0 > com.google.api:gax-httpjson:2.69.0
+      > Cannot find a version of 'com.google.protobuf:protobuf-java-util' that satisfies the version constraints:
+           Dependency path 'nomulus:core:unspecified' --> 'com.google.api:gax:2.67.3' (runtime) --> 'com.google.protobuf:protobuf-java-util:3.25.8'
+           Dependency path 'nomulus:core:unspecified' --> 'com.google.cloud:google-cloud-compute:1.82.0' (runtime) --> 'com.google.protobuf:protobuf-java-util:3.25.8'
+           Dependency path 'nomulus:core:unspecified' --> 'com.google.cloud:google-cloud-tasks:2.51.0' (runtime) --> 'com.google.protobuf:protobuf-java-util:3.25.5'
+           Dependency path 'nomulus:core:unspecified' --> 'org.apache.beam:beam-sdks-java-io-google-cloud-platform:2.67.0' (runtime) --> 'com.google.protobuf:protobuf-java-util:4.29.4'
+           Dependency path 'nomulus:core:unspecified' --> 'nomulus:util:unspecified' (runtimeElements) --> 'com.google.protobuf:protobuf-java-util:{strictly [3.17.3, 4.0.0)}'
+           Dependency path 'nomulus:core:unspecified' --> 'org.apache.beam:beam-sdks-java-extensions-google-cloud-platform-core:2.67.0' (runtime) --> 'com.google.cloud.bigdataoss:gcsio:2.2.26' (runtime) --> 'com.google.protobuf:protobuf-java-util:3.25.3'
+           Dependency path 'nomulus:core:unspecified' --> 'org.apache.beam:beam-sdks-java-io-google-cloud-platform:2.67.0' (runtime) --> 'com.google.cloud:google-cloud-bigquerystorage:3.15.0' (runtime) --> 'com.google.protobuf:protobuf-java-util:3.25.8'
+           Dependency path 'nomulus:core:unspecified' --> 'org.apache.beam:beam-sdks-java-io-google-cloud-platform:2.67.0' (runtime) --> 'com.google.cloud:google-cloud-bigtable:2.60.0' (runtime) --> 'com.google.protobuf:protobuf-java-util:3.25.8'
+           Dependency path 'nomulus:core:unspecified' --> 'org.apache.beam:beam-sdks-java-io-google-cloud-platform:2.67.0' (runtime) --> 'com.google.cloud:google-cloud-firestore:3.31.6' (runtime) --> 'com.google.protobuf:protobuf-java-util:3.25.8'
+           Dependency path 'nomulus:core:unspecified' --> 'org.apache.beam:beam-sdks-java-io-google-cloud-platform:2.67.0' (runtime) --> 'com.google.cloud:google-cloud-pubsublite:1.15.9' (runtime) --> 'com.google.protobuf:protobuf-java-util:3.25.8'
+           Dependency path 'nomulus:core:unspecified' --> 'org.apache.beam:beam-sdks-java-io-google-cloud-platform:2.67.0' (runtime) --> 'com.google.cloud:google-cloud-pubsub:1.140.1' (runtime) --> 'com.google.protobuf:protobuf-java-util:3.25.8'
+           Dependency path 'nomulus:core:unspecified' --> 'org.apache.beam:beam-sdks-java-io-google-cloud-platform:2.67.0' (runtime) --> 'com.google.cloud:google-cloud-spanner:6.95.1' (runtime) --> 'com.google.protobuf:protobuf-java-util:3.25.8'
+           Dependency path 'nomulus:core:unspecified' --> 'com.google.cloud:google-cloud-core:2.57.0' (runtime) --> 'com.google.protobuf:protobuf-java-util:3.25.8'
+           Dependency path 'nomulus:core:unspecified' --> 'com.google.cloud:google-cloud-storage:2.44.1' (runtime) --> 'com.google.protobuf:protobuf-java-util:3.25.5'
+           Dependency path 'nomulus:core:unspecified' --> 'org.apache.beam:beam-sdks-java-io-google-cloud-platform:2.67.0' (runtime) --> 'com.google.cloud:google-cloud-bigtable:2.60.0' (runtime) --> 'com.google.cloud:google-cloud-monitoring:3.65.0' (runtime) --> 'com.google.protobuf:protobuf-java-util:3.25.8'
+           Dependency path 'nomulus:core:unspecified' --> 'org.apache.beam:beam-sdks-java-io-google-cloud-platform:2.67.0' (runtime) --> 'com.google.cloud:google-cloud-firestore:3.31.6' (runtime) --> 'com.google.cloud.opentelemetry:exporter-metrics:0.33.0' (runtimeElements) --> 'com.google.cloud:libraries-bom:26.48.0' (platform-runtime) --> 'com.google.protobuf:protobuf-java-util:3.25.5'
+           Dependency path 'nomulus:core:unspecified' --> 'com.google.cloud:google-cloud-tasks:2.51.0' (runtime) --> 'io.grpc:grpc-grpclb:1.71.0' (runtime) --> 'com.google.protobuf:protobuf-java-util:3.25.5'
+           Dependency path 'nomulus:core:unspecified' --> 'com.google.cloud:google-cloud-tasks:2.51.0' (runtime) --> 'io.grpc:grpc-xds:1.71.0' (runtime) --> 'com.google.protobuf:protobuf-java-util:3.25.5'
+           Dependency path 'nomulus:core:unspecified' --> 'com.google.cloud:google-cloud-tasks:2.51.0' (runtime) --> 'io.grpc:grpc-services:1.71.0' (runtime) --> 'com.google.protobuf:protobuf-java-util:3.25.5'
+           Dependency path 'nomulus:core:unspecified' --> 'com.google.cloud:google-cloud-compute:1.82.0' (runtime) --> 'com.google.api:gax-httpjson:2.69.0' (runtime) --> 'com.google.protobuf:protobuf-java-util:3.25.8'
+           Dependency path 'nomulus:core:unspecified' --> 'com.google.cloud:google-cloud-secretmanager:2.51.0' (runtime) --> 'com.google.protobuf:protobuf-java-util:3.25.5'
+

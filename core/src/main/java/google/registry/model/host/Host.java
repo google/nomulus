@@ -80,21 +80,5 @@ public class Host extends HostBase implements ForeignKeyedEppResource {
     private Builder(Host instance) {
       super(instance);
     }
-
-    public Builder copyFrom(HostBase hostBase) {
-      return setCreationRegistrarId(hostBase.getCreationRegistrarId())
-          .setCreationTime(hostBase.getCreationTime())
-          .setDeletionTime(hostBase.getDeletionTime())
-          .setHostName(hostBase.getHostName())
-          .setInetAddresses(hostBase.getInetAddresses())
-          .setLastTransferTime(hostBase.getLastTransferTime())
-          .setLastSuperordinateChange(hostBase.getLastSuperordinateChange())
-          .setLastEppUpdateRegistrarId(hostBase.getLastEppUpdateRegistrarId())
-          .setLastEppUpdateTime(hostBase.getLastEppUpdateTime())
-          .setPersistedCurrentSponsorRegistrarId(hostBase.getPersistedCurrentSponsorRegistrarId())
-          .setRepoId(hostBase.getRepoId())
-          .setSuperordinateDomain(hostBase.getSuperordinateDomain())
-          .setStatusValues(hostBase.getStatusValues());
-    }
   }
 }

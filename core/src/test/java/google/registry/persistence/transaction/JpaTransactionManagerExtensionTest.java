@@ -68,7 +68,7 @@ public class JpaTransactionManagerExtensionTest {
                     () -> replicaTm().transact(() -> replicaTm().put(testEntity)))
                 .getCause())
         .hasMessageThat()
-        .isEqualTo("Error while committing the transaction");
+        .startsWith("Error while committing the transaction");
   }
 
   @Test

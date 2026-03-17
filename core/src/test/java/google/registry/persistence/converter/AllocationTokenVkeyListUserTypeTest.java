@@ -23,9 +23,12 @@ import static google.registry.testing.DatabaseHelper.persistResource;
 import com.google.common.collect.ImmutableList;
 import google.registry.model.ImmutableObject;
 import google.registry.model.domain.token.AllocationToken;
+import google.registry.model.domain.token.VKeyConverter_AllocationToken;
 import google.registry.persistence.VKey;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaUnitTestExtension;
+import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import java.util.List;
@@ -62,6 +65,8 @@ public class AllocationTokenVkeyListUserTypeTest {
     @Id String id = "id";
 
     @Type(AllocationTokenVkeyListUserType.class)
+    @Convert(converter = VKeyConverter_AllocationToken.class)
+    @Column(columnDefinition = "text[]")
     List<VKey<AllocationToken>> tokenList;
 
     TestAllocationTokenVKeyList() {}

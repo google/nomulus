@@ -26,7 +26,7 @@ import java.util.Optional;
  * status code) in the {@link #getMessage message}.
  *
  * <p>The {@link SQLException} class has its own chain of exceptions that describe multiple error
- * conditions encontered during a transaction. A typical logger relying on the {@link
+ * conditions encountered during a transaction. A typical logger relying on the {@link
  * Throwable#getCause() chain of causes} in {@code Throwable} instances cannot capture all details
  * of errors thrown from the database drivers. This exception captures all error details in its
  * message text.

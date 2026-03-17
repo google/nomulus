@@ -61,12 +61,11 @@ public final class Tlds {
             tm().reTransact(
                     () -> {
                       EntityManager entityManager = tm().getEntityManager();
-                      Stream<?> resultStream =
+                      Stream<Object[]> resultStream =
                           entityManager
-                              .createQuery("SELECT tldStr, tldType FROM Tld")
+                              .createQuery("SELECT tldStr, tldType FROM Tld", Object[].class)
                               .getResultStream();
                       return resultStream
-                          .map(e -> ((Object[]) e))
                           .map(e -> Maps.immutableEntry((String) e[0], ((TldType) e[1])))
                           .collect(entriesToImmutableMap());
                     }));

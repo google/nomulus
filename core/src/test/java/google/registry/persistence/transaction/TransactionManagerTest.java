@@ -26,7 +26,6 @@ import google.registry.model.ImmutableObject;
 import google.registry.persistence.VKey;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaUnitTestExtension;
 import google.registry.testing.FakeClock;
-import jakarta.persistence.Embeddable;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.MappedSuperclass;
@@ -376,7 +375,6 @@ public class TransactionManagerTest {
    * We put the id field into a base class to test that id fields can be discovered in a base class.
    */
   @MappedSuperclass
-  @Embeddable
   private static class TestEntityBase extends ImmutableObject {
     @Id protected String name;
 

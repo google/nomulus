@@ -43,8 +43,7 @@ public class HostHistoryTest extends EntityTestCase {
     Host host = newHostWithRoid("ns1.example.com", "host1");
     persistResource(host);
     Host hostFromDb = loadByEntity(host);
-    HostHistory hostHistory = createHostHistory(hostFromDb);
-    persistResource(hostHistory);
+    HostHistory hostHistory = persistResource(createHostHistory(hostFromDb));
     tm().transact(
             () -> {
               HostHistory fromDatabase = tm().loadByKey(hostHistory.createVKey());

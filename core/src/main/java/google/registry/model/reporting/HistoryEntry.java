@@ -40,7 +40,6 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.IdClass;
 import jakarta.persistence.MappedSuperclass;
-import jakarta.persistence.PostLoad;
 import java.util.Optional;
 import javax.annotation.Nullable;
 import org.apache.commons.lang3.BooleanUtils;
@@ -118,8 +117,8 @@ public abstract class HistoryEntry extends ImmutableObject
    *
    * <p>Note that the embedded EPP resource is of a base type for which the repo ID field is
    * {@code @Transient}, which is NOT persisted as part of the embedded entity. After a {@link
-   * HistoryEntry} is loaded from SQL, the {@link #postLoad()} methods re-populates the field inside
-   * the EPP resource.
+   * HistoryEntry} is loaded from SQL, the {@link #processResourcePostLoad()} methods re-populates
+   * the field inside the EPP resource.
    */
   @Id protected String repoId;
 
@@ -233,11 +232,6 @@ public abstract class HistoryEntry extends ImmutableObject
       // from SQL.
       getResource().setRepoId(repoId);
     }
-  }
-
-  @PostLoad
-  protected void postLoad() {
-    processResourcePostLoad();
   }
 
   @Override

@@ -74,6 +74,7 @@ public abstract class StringCollectionUserType<V, C extends Collection<V>> imple
   }
 
   @Override
+  @SuppressWarnings("removal")
   public C nullSafeGet(
       ResultSet resultSet,
       int i,
@@ -89,6 +90,7 @@ public abstract class StringCollectionUserType<V, C extends Collection<V>> imple
   }
 
   @Override
+  @SuppressWarnings("removal")
   public void nullSafeSet(
       PreparedStatement preparedStatement,
       C collection,

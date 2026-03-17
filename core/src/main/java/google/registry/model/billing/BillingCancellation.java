@@ -27,6 +27,7 @@ import google.registry.persistence.VKey;
 import google.registry.persistence.WithVKey;
 import jakarta.persistence.AttributeOverride;
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Index;
 import jakarta.persistence.Table;
@@ -58,10 +59,12 @@ public class BillingCancellation extends BillingBase {
 
   /** The one-time billing event to cancel, or null for autorenew cancellations. */
   @Column(name = "billing_event_id")
+  @Convert(converter = VKeyConverter_BillingEvent.class)
   VKey<BillingEvent> billingEvent;
 
   /** The Recurrence to cancel, or null for non-autorenew cancellations. */
   @Column(name = "billing_recurrence_id")
+  @Convert(converter = VKeyConverter_BillingRecurrence.class)
   VKey<BillingRecurrence> billingRecurrence;
 
   public DateTime getBillingTime() {

@@ -24,11 +24,13 @@ import static google.registry.util.DomainNameUtils.canonicalizeHostname;
 import com.google.common.collect.ImmutableSet;
 import google.registry.model.EppResource;
 import google.registry.model.domain.Domain;
+import google.registry.model.domain.VKeyConverter_Domain;
 import google.registry.persistence.VKey;
 import google.registry.persistence.converter.InetAddressSetUserType;
 import jakarta.persistence.Access;
 import jakarta.persistence.AccessType;
-import jakarta.persistence.Embeddable;
+import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.persistence.MappedSuperclass;
 import java.net.InetAddress;
 import java.util.Optional;
@@ -50,7 +52,6 @@ import org.joda.time.DateTime;
  * @see <a href="https://tools.ietf.org/html/rfc5732">RFC 5732</a>
  */
 @MappedSuperclass
-@Embeddable
 @Access(AccessType.FIELD)
 public class HostBase extends EppResource {
 
@@ -65,10 +66,12 @@ public class HostBase extends EppResource {
 
   /** IP Addresses for this host. Can be null if this is an external host. */
   @Type(InetAddressSetUserType.class)
+  @Column(columnDefinition = "text[]")
   Set<InetAddress> inetAddresses;
 
   /** The superordinate domain of this host, or null if this is an external host. */
   @DoNotHydrate
+  @Convert(converter = VKeyConverter_Domain.class)
   VKey<Domain> superordinateDomain;
 
   /**
@@ -224,6 +227,22 @@ public class HostBase extends EppResource {
     public B setLastTransferTime(DateTime lastTransferTime) {
       getInstance().lastTransferTime = lastTransferTime;
       return thisCastToDerived();
+    }
+
+    public B copyFrom(HostBase hostBase) {
+      return setCreationRegistrarId(hostBase.getCreationRegistrarId())
+          .setCreationTime(hostBase.getCreationTime())
+          .setDeletionTime(hostBase.getDeletionTime())
+          .setHostName(hostBase.getHostName())
+          .setInetAddresses(hostBase.getInetAddresses())
+          .setLastTransferTime(hostBase.getLastTransferTime())
+          .setLastSuperordinateChange(hostBase.getLastSuperordinateChange())
+          .setLastEppUpdateRegistrarId(hostBase.getLastEppUpdateRegistrarId())
+          .setLastEppUpdateTime(hostBase.getLastEppUpdateTime())
+          .setPersistedCurrentSponsorRegistrarId(hostBase.getPersistedCurrentSponsorRegistrarId())
+          .setRepoId(hostBase.getRepoId())
+          .setSuperordinateDomain(hostBase.getSuperordinateDomain())
+          .setStatusValues(hostBase.getStatusValues());
     }
   }
 }

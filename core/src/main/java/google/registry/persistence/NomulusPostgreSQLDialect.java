@@ -29,9 +29,6 @@ public class NomulusPostgreSQLDialect extends PostgreSQLDialect {
   // definitions. See `contributeTypes` below.
   // These codes may take arbitrary values as long as they do not conflict with existing codes.
 
-  /** Represents a type backed by an `hstore` column in the database. */
-  public static final int NATIVE_MAP_TYPE = Integer.MAX_VALUE - 1;
-
   /** Represents a type backed by an `text[]` column in the database. */
   public static final int NATIVE_ARRAY_OF_POJO_TYPE = Integer.MAX_VALUE - 2;
 
@@ -58,8 +55,7 @@ public class NomulusPostgreSQLDialect extends PostgreSQLDialect {
     typeContributions.contributeType(new JodaMoneyType());
 
     // Verify that custom codes do not conflict with built-in types.
-    for (int customType :
-        new int[] {NATIVE_MAP_TYPE, NATIVE_ARRAY_OF_POJO_TYPE, NATIVE_INTERVAL_TYPE}) {
+    for (int customType : new int[] {NATIVE_ARRAY_OF_POJO_TYPE, NATIVE_INTERVAL_TYPE}) {
       try {
         super.columnType(customType);
         throw new IllegalStateException(
@@ -68,11 +64,7 @@ public class NomulusPostgreSQLDialect extends PostgreSQLDialect {
         // OK
       }
     }
-
     DdlTypeRegistry ddlTypes = typeContributions.getTypeConfiguration().getDdlTypeRegistry();
-    ddlTypes.addDescriptor(new DdlTypeImpl(NATIVE_MAP_TYPE, "hstore", this));
-    ddlTypes.addDescriptor(new DdlTypeImpl(NATIVE_ARRAY_OF_POJO_TYPE, "text[]", this));
-    ddlTypes.addDescriptor(new DdlTypeImpl(NATIVE_INTERVAL_TYPE, "interval", this));
     // Use text instead of varchar to match real schema from psql dump.
     ddlTypes.addDescriptor(new DdlTypeImpl(SqlTypes.VARCHAR, "text", this));
   }

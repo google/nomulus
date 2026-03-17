@@ -36,8 +36,6 @@
       with an NOOP one for Nomulus tool.
     -->
 
-    <mapping-file>META-INF/orm.xml</mapping-file>
-
     <class>google.registry.bsa.persistence.BsaDomainRefresh</class>
     <class>google.registry.bsa.persistence.BsaDownload</class>
     <class>google.registry.bsa.persistence.BsaLabel</class>
@@ -59,8 +57,8 @@
     <class>google.registry.model.domain.secdns.DomainDsDataHistory</class>
     <class>google.registry.model.domain.token.AllocationToken</class>
     <class>google.registry.model.domain.token.BulkPricingPackage</class>
-    <class>google.registry.model.host.HostHistory</class>
     <class>google.registry.model.host.Host</class>
+    <class>google.registry.model.host.HostHistory</class>
     <class>google.registry.model.poll.PollMessage</class>
     <class>google.registry.model.poll.PollMessage$OneTime</class>
     <class>google.registry.model.poll.PollMessage$Autorenew</class>
@@ -105,7 +103,7 @@
       <property name="hibernate.archive.autodetection" value=""/>
       <!-- NOOP scanner needed for Nomulus tool. -->
       <property name="hibernate.archive.scanner"
-          value="google.registry.persistence.NoopJpaEntityScanner"/>
+          value="org.hibernate.boot.archive.scan.internal.DisabledScanner"/>
     </properties>
   </persistence-unit>
 </persistence>
