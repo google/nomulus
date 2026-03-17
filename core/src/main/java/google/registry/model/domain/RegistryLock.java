@@ -154,6 +154,7 @@ public final class RegistryLock extends UpdateAutoTimestampEntity implements Bui
   private RegistryLock relock;
 
   /** The duration after which we will re-lock this domain after it is unlocked. */
+  @Column(columnDefinition = "interval")
   private Duration relockDuration;
 
   public String getRepoId() {

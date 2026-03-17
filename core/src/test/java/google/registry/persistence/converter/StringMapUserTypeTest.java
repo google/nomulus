@@ -23,6 +23,7 @@ import com.google.common.collect.ImmutableMap;
 import google.registry.model.ImmutableObject;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaUnitTestExtension;
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.NoResultException;
@@ -127,6 +128,7 @@ public class StringMapUserTypeTest {
     @Id String name = "id";
 
     @Type(StringMapUserType.class)
+    @Column(columnDefinition = "hstore")
     Map<String, String> map;
 
     private TestEntity() {}

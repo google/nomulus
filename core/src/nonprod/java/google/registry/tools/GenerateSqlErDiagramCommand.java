@@ -189,7 +189,7 @@ public class GenerateSqlErDiagramCommand implements Command {
         DatabaseConnectionSources.newDatabaseConnectionSource(
             container.getJdbcUrl(),
             new MultiUseUserCredentials(container.getUsername(), container.getPassword()));
-    executable.setDataSource(connection);
+    executable.setConnectionSource(connection);
     try {
       executable.execute();
     } catch (Exception e) {

@@ -23,6 +23,7 @@ import google.registry.model.ImmutableObject;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaUnitTestExtension;
 import google.registry.util.CidrAddressBlock;
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import java.util.List;
@@ -59,6 +60,7 @@ public class CidrBlockListUserTypeTest {
     @Id String name = "id";
 
     @Type(CidrBlockListUserType.class)
+    @Column(columnDefinition = "text[]")
     List<CidrAddressBlock> addresses;
 
     private TestEntity() {}

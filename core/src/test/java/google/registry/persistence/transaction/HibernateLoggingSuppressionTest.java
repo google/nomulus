@@ -41,8 +41,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
  */
 public class HibernateLoggingSuppressionTest {
 
-  private static final String LOG_SUPPRESSION_TARGET =
-      "org.hibernate.engine.jdbc.spi.SqlExceptionHelper";
+  private static final String LOG_SUPPRESSION_TARGET = "org.hibernate.orm.jdbc.error";
 
   // The line that should be added to the `logging.properties` file.
   private static final String LOGGING_PROPERTIES_LINE = LOG_SUPPRESSION_TARGET + ".level=OFF\n";
@@ -115,7 +114,7 @@ public class HibernateLoggingSuppressionTest {
             testLogHandler.getStoredLogRecords().stream()
                 .anyMatch(
                     logRecord ->
-                        logRecord.getLevel().equals(Level.SEVERE)
+                        logRecord.getLevel().equals(Level.WARNING)
                             && logRecord.getMessage().contains("duplicate key")))
         .isTrue();
   }
@@ -133,7 +132,7 @@ public class HibernateLoggingSuppressionTest {
             testLogHandler.getStoredLogRecords().stream()
                 .anyMatch(
                     logRecord ->
-                        logRecord.getLevel().equals(Level.SEVERE)
+                        logRecord.getLevel().equals(Level.WARNING)
                             && logRecord.getMessage().contains("duplicate key")))
         .isFalse();
     revertSuppressionOfHibernateLogs();

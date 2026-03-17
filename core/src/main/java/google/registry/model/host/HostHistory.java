@@ -18,6 +18,7 @@ import jakarta.persistence.Access;
 import jakarta.persistence.AccessType;
 import jakarta.persistence.AttributeOverride;
 import jakarta.persistence.Column;
+import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Index;
 import jakarta.persistence.Table;
@@ -46,7 +47,7 @@ public class HostHistory extends HistoryEntry {
 
   // Store HostBase instead of Host, so we don't pick up its @Id
   // @Nullable for the sake of pre-Registry-3.0 history objects
-  @Nullable HostBase resource;
+  @Nullable @Embedded EmbeddedHostBase resource;
 
   @Override
   protected HostBase getResource() {
@@ -79,8 +80,6 @@ public class HostHistory extends HistoryEntry {
     return new Builder(clone(this));
   }
 
-
-
   public static class Builder extends HistoryEntry.Builder<HostHistory, Builder> {
 
     public Builder() {}
@@ -90,7 +89,7 @@ public class HostHistory extends HistoryEntry {
     }
 
     public Builder setHost(HostBase hostBase) {
-      getInstance().resource = hostBase;
+      getInstance().resource = new EmbeddedHostBase.Builder().copyFrom(hostBase).build();
       return setRepoId(hostBase);
     }
   }

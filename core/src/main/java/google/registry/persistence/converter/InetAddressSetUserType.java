@@ -28,10 +28,7 @@ public class InetAddressSetUserType
 
   @Override
   String[] toJdbcObject(Set<InetAddress> collection) {
-    return collection.stream()
-        .map(addr -> InetAddresses.toAddrString(addr))
-        .toList()
-        .toArray(new String[0]);
+    return collection.stream().map(InetAddresses::toAddrString).toList().toArray(new String[0]);
   }
 
   @Nullable

@@ -40,7 +40,6 @@ import google.registry.util.PasswordUtils;
 import google.registry.util.PasswordUtils.HashAlgorithm;
 import google.registry.util.RegistryEnvironment;
 import jakarta.persistence.Column;
-import jakarta.persistence.Embeddable;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
@@ -49,7 +48,6 @@ import java.util.Optional;
 import javax.annotation.Nullable;
 
 /** A console user, either a registry employee or a registrar partner. */
-@Embeddable
 @Entity
 @Table
 public class User extends UpdateAutoTimestampEntity implements Buildable {

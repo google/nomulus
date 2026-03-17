@@ -185,7 +185,7 @@ public abstract class JpaTransactionManagerExtension
    * <p>Test that create {@code EntityManagerFactory} instances are responsible for tearing them
    * down.
    */
-  public ImmutableMap<String, String> getJpaProperties() {
+  public ImmutableMap<String, Object> getJpaProperties() {
     Map<String, String> mergedProperties =
         Maps.newHashMap(PersistenceModule.provideDefaultDatabaseConfigs());
     if (!userProperties.isEmpty()) {
@@ -451,7 +451,7 @@ public abstract class JpaTransactionManagerExtension
   }
 
   /** Constructs the {@link EntityManagerFactory} instance. */
-  private EntityManagerFactory createEntityManagerFactory(ImmutableMap<String, String> properties) {
+  private EntityManagerFactory createEntityManagerFactory(ImmutableMap<String, Object> properties) {
     ParsedPersistenceXmlDescriptor descriptor =
         PersistenceXmlUtility.getParsedPersistenceXmlDescriptor();
 

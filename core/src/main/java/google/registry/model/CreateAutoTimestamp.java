@@ -17,10 +17,10 @@ package google.registry.model;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import com.google.gson.annotations.Expose;
+import google.registry.persistence.EntityCallbacksListener.RecursivePrePersist;
+import google.registry.persistence.EntityCallbacksListener.RecursivePreUpdate;
 import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
-import jakarta.persistence.PrePersist;
-import jakarta.persistence.PreUpdate;
 import javax.annotation.Nullable;
 import org.joda.time.DateTime;
 
@@ -32,9 +32,9 @@ public class CreateAutoTimestamp extends ImmutableObject implements UnsafeSerial
   @Expose
   DateTime creationTime;
 
-  @PrePersist
-  @PreUpdate
-  void setTimestamp() {
+  @RecursivePrePersist
+  @RecursivePreUpdate
+  public void setTimestamp() {
     if (creationTime == null) {
       creationTime = tm().getTransactionTime();
     }

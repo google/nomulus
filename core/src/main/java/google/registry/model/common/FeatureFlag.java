@@ -103,9 +103,9 @@ public class FeatureFlag extends ImmutableObject implements Buildable {
   FeatureName featureName;
 
   /** A map of times for each {@link FeatureStatus} the FeatureFlag should hold. */
-  @Column(nullable = false)
   @Type(FeatureStatusTransitionUserType.class)
   @JsonDeserialize(using = TimedTransitionPropertyFeatureStatusDeserializer.class)
+  @Column(columnDefinition = "hstore", nullable = false)
   TimedTransitionProperty<FeatureStatus> status =
       TimedTransitionProperty.withInitialValue(FeatureStatus.INACTIVE);
 

@@ -20,10 +20,12 @@ import static com.google.common.base.Preconditions.checkState;
 
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.token.AllocationToken;
+import google.registry.model.domain.token.VKeyConverter_AllocationToken;
 import google.registry.persistence.VKey;
 import google.registry.persistence.WithVKey;
 import jakarta.persistence.AttributeOverride;
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Index;
 import jakarta.persistence.Table;
@@ -81,6 +83,7 @@ public class BillingEvent extends BillingBase {
    * properly match billing events against {@link BillingCancellation}s.
    */
   @Column(name = "cancellation_matching_billing_recurrence_id")
+  @Convert(converter = VKeyConverter_BillingRecurrence.class)
   VKey<BillingRecurrence> cancellationMatchingBillingEvent;
 
   /**
@@ -94,7 +97,9 @@ public class BillingEvent extends BillingBase {
   /**
    * The {@link AllocationToken} used in the creation of this event, or null if one was not used.
    */
-  @Nullable VKey<AllocationToken> allocationToken;
+  @Convert(converter = VKeyConverter_AllocationToken.class)
+  @Nullable
+  VKey<AllocationToken> allocationToken;
 
   public Money getCost() {
     return cost;

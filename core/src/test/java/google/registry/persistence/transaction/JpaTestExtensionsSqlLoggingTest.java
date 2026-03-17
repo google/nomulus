@@ -51,7 +51,11 @@ class JpaTestExtensionsSqlLoggingTest {
 
   @Test
   void sqlLog_displayed() throws UnsupportedEncodingException {
-    tm().transact(() -> tm().getEntityManager().createNativeQuery("select 1").getSingleResult());
+    tm().transact(
+            () ->
+                tm().getEntityManager()
+                    .createNativeQuery("select 1", long.class)
+                    .getSingleResult());
     assertThat(stdoutBuffer.toString(UTF_8.name())).contains("select 1");
   }
 }

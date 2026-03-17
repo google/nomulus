@@ -25,15 +25,20 @@ import google.registry.model.Buildable;
 import google.registry.model.billing.BillingCancellation;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingRecurrence;
+import google.registry.model.billing.VKeyConverter_BillingCancellation;
+import google.registry.model.billing.VKeyConverter_BillingEvent;
+import google.registry.model.billing.VKeyConverter_BillingRecurrence;
 import google.registry.model.domain.Period;
 import google.registry.model.domain.Period.Unit;
 import google.registry.model.eppcommon.Trid;
 import google.registry.model.poll.PollMessage;
+import google.registry.model.poll.VKeyConverter_Autorenew;
 import google.registry.persistence.VKey;
 import google.registry.util.NullIgnoringCollectionBuilder;
 import jakarta.persistence.AttributeOverride;
 import jakarta.persistence.AttributeOverrides;
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.persistence.Embeddable;
 import jakarta.persistence.Embedded;
 import java.util.Set;
@@ -109,6 +114,7 @@ public class DomainTransferData extends BaseTransferObject implements Buildable 
   DateTime transferredRegistrationExpirationTime;
 
   @Column(name = "transfer_billing_cancellation_id")
+  @Convert(converter = VKeyConverter_BillingCancellation.class)
   public VKey<BillingCancellation> billingCancellationId;
 
   /**
@@ -118,6 +124,7 @@ public class DomainTransferData extends BaseTransferObject implements Buildable 
    * being transferred is not a domain.
    */
   @Column(name = "transfer_billing_event_id")
+  @Convert(converter = VKeyConverter_BillingEvent.class)
   VKey<BillingEvent> serverApproveBillingEvent;
 
   /**
@@ -127,6 +134,7 @@ public class DomainTransferData extends BaseTransferObject implements Buildable 
    * being transferred is not a domain.
    */
   @Column(name = "transfer_billing_recurrence_id")
+  @Convert(converter = VKeyConverter_BillingRecurrence.class)
   VKey<BillingRecurrence> serverApproveAutorenewEvent;
 
   /**
@@ -136,6 +144,7 @@ public class DomainTransferData extends BaseTransferObject implements Buildable 
    * being transferred is not a domain.
    */
   @Column(name = "transfer_autorenew_poll_message_id")
+  @Convert(converter = VKeyConverter_Autorenew.class)
   VKey<PollMessage.Autorenew> serverApproveAutorenewPollMessage;
 
   /**

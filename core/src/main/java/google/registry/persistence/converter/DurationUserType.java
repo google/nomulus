@@ -58,6 +58,7 @@ public class DurationUserType implements UserType<Duration> {
   }
 
   @Override
+  @SuppressWarnings("removal")
   public Duration nullSafeGet(
       ResultSet resultSet,
       int i,
@@ -72,6 +73,7 @@ public class DurationUserType implements UserType<Duration> {
   }
 
   @Override
+  @SuppressWarnings("removal")
   public void nullSafeSet(
       PreparedStatement preparedStatement,
       Duration duration,

@@ -26,10 +26,10 @@ import google.registry.model.ImmutableObject;
 import google.registry.model.JsonMapBuilder;
 import google.registry.model.Jsonifiable;
 import google.registry.model.UnsafeSerializable;
+import google.registry.persistence.EntityCallbacksListener.RecursivePostLoad;
 import google.registry.tools.GsonUtils.GsonPostProcessable;
 import jakarta.persistence.Embeddable;
 import jakarta.persistence.MappedSuperclass;
-import jakarta.persistence.PostLoad;
 import jakarta.persistence.Transient;
 import jakarta.xml.bind.Unmarshaller;
 import jakarta.xml.bind.annotation.XmlElement;
@@ -222,7 +222,7 @@ public class Address extends ImmutableObject
    * our code base, whereas the individual {@code streetLine} fields are only used by Hibernate for
    * persistence. Also, setting/reading a list of strings is more convenient.
    */
-  @PostLoad
+  @RecursivePostLoad
   void postLoad() {
     street =
         streetLine1 == null

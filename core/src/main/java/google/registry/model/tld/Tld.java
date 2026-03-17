@@ -66,8 +66,10 @@ import google.registry.model.domain.fee.BaseFee.FeeType;
 import google.registry.model.domain.fee.Fee;
 import google.registry.model.domain.token.AllocationToken;
 import google.registry.model.domain.token.AllocationToken.TokenType;
+import google.registry.model.domain.token.VKeyConverter_AllocationToken;
 import google.registry.model.tld.label.PremiumList;
 import google.registry.model.tld.label.ReservedList;
+import google.registry.persistence.EntityCallbacksListener.RecursivePostPersist;
 import google.registry.persistence.VKey;
 import google.registry.persistence.converter.AllocationTokenVkeyListUserType;
 import google.registry.persistence.converter.BillingCostTransitionUserType;
@@ -76,11 +78,11 @@ import google.registry.tldconfig.idn.IdnTableEnum;
 import google.registry.util.Idn;
 import jakarta.persistence.AttributeOverride;
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
-import jakarta.persistence.PostPersist;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -218,7 +220,7 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
    * <p>This is called automatically when the tld is saved. One should also call it when a tld is
    * deleted.
    */
-  @PostPersist
+  @RecursivePostPersist
   public void invalidateInCache() {
     CACHE.invalidate(tldStr);
   }
@@ -318,6 +320,7 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
    *
    * <p>When this field is null, the "dnsDefaultATtl" value from the config file will be used.
    */
+  @Column(columnDefinition = "interval")
   @JsonSerialize(using = OptionalDurationSerializer.class)
   Duration dnsAPlusAaaaTtl;
 
@@ -326,6 +329,7 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
    *
    * <p>When this field is null, the "dnsDefaultNsTtl" value from the config file will be used.
    */
+  @Column(columnDefinition = "interval")
   @JsonSerialize(using = OptionalDurationSerializer.class)
   Duration dnsNsTtl;
 
@@ -334,6 +338,7 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
    *
    * <p>When this field is null, the "dnsDefaultDsTtl" value from the config file will be used.
    */
+  @Column(columnDefinition = "interval")
   @JsonSerialize(using = OptionalDurationSerializer.class)
   Duration dnsDsTtl;
 
@@ -368,7 +373,7 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
   boolean invoicingEnabled;
 
   /** A property that transitions to different {@link TldState}s at different times. */
-  @Column(nullable = false)
+  @Column(nullable = false, columnDefinition = "hstore")
   @Type(TldStateTransitionUserType.class)
   @JsonDeserialize(using = TimedTransitionPropertyTldStateDeserializer.class)
   TimedTransitionProperty<TldState> tldStateTransitions =
@@ -421,35 +426,35 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
    * <p>Domain deletes are free and effective immediately so long as they take place within this
    * amount of time following creation.
    */
-  @Column(nullable = false)
+  @Column(nullable = false, columnDefinition = "interval")
   Duration addGracePeriodLength = DEFAULT_ADD_GRACE_PERIOD;
 
   /** The length of the anchor tenant add grace period for this TLD. */
-  @Column(nullable = false)
+  @Column(nullable = false, columnDefinition = "interval")
   Duration anchorTenantAddGracePeriodLength = DEFAULT_ANCHOR_TENANT_ADD_GRACE_PERIOD;
 
   /** The length of the autorenew grace period for this TLD. */
-  @Column(nullable = false)
+  @Column(nullable = false, columnDefinition = "interval")
   Duration autoRenewGracePeriodLength = DEFAULT_AUTO_RENEW_GRACE_PERIOD;
 
   /** The length of the redemption grace period for this TLD. */
-  @Column(nullable = false)
+  @Column(nullable = false, columnDefinition = "interval")
   Duration redemptionGracePeriodLength = DEFAULT_REDEMPTION_GRACE_PERIOD;
 
   /** The length of the renew grace period for this TLD. */
-  @Column(nullable = false)
+  @Column(nullable = false, columnDefinition = "interval")
   Duration renewGracePeriodLength = DEFAULT_RENEW_GRACE_PERIOD;
 
   /** The length of the transfer grace period for this TLD. */
-  @Column(nullable = false)
+  @Column(nullable = false, columnDefinition = "interval")
   Duration transferGracePeriodLength = DEFAULT_TRANSFER_GRACE_PERIOD;
 
   /** The length of time before a transfer is automatically approved for this TLD. */
-  @Column(nullable = false)
+  @Column(nullable = false, columnDefinition = "interval")
   Duration automaticTransferLength = DEFAULT_AUTOMATIC_TRANSFER_LENGTH;
 
   /** The length of time a domain spends in the non-redeemable pending delete phase for this TLD. */
-  @Column(nullable = false)
+  @Column(nullable = false, columnDefinition = "interval")
   Duration pendingDeleteLength = DEFAULT_PENDING_DELETE_LENGTH;
 
   /** The currency unit for all costs associated with this TLD. */
@@ -459,7 +464,7 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
   CurrencyUnit currency = DEFAULT_CURRENCY;
 
   /** A property that transitions to different create billing costs at different times. */
-  @Column(nullable = false)
+  @Column(nullable = false, columnDefinition = "hstore")
   @Type(BillingCostTransitionUserType.class)
   @JsonDeserialize(using = TimedTransitionPropertyMoneyDeserializer.class)
   TimedTransitionProperty<Money> createBillingCostTransitions =
@@ -501,14 +506,14 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
    * name. This cost is also used to compute costs for transfers, since each transfer includes a
    * renewal to ensure transfers have a cost.
    */
-  @Column(nullable = false)
+  @Column(nullable = false, columnDefinition = "hstore")
   @Type(BillingCostTransitionUserType.class)
   @JsonDeserialize(using = TimedTransitionPropertyMoneyDeserializer.class)
   TimedTransitionProperty<Money> renewBillingCostTransitions =
       TimedTransitionProperty.withInitialValue(DEFAULT_RENEW_BILLING_COST);
 
   /** A property that tracks the EAP fee schedule (if any) for the TLD. */
-  @Column(nullable = false)
+  @Column(nullable = false, columnDefinition = "hstore")
   @Type(BillingCostTransitionUserType.class)
   @JsonDeserialize(using = TimedTransitionPropertyMoneyDeserializer.class)
   TimedTransitionProperty<Money> eapFeeSchedule =
@@ -547,6 +552,7 @@ public class Tld extends ImmutableObject implements Buildable, UnsafeSerializabl
   @Type(AllocationTokenVkeyListUserType.class)
   @JsonSerialize(using = TokenVKeyListSerializer.class)
   @JsonDeserialize(using = TokenVKeyListDeserializer.class)
+  @Convert(converter = VKeyConverter_AllocationToken.class)
   List<VKey<AllocationToken>> defaultPromoTokens;
 
   /** A set of allowed {@link IdnTableEnum}s for this TLD, or empty if we should use the default. */
