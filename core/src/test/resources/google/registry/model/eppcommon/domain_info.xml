@@ -3,7 +3,7 @@
     <info>
       <domain:info
               xmlns:domain="urn:ietf:params:xml:ns:domain-1.0">
-        <domain:name hosts="all">%DOMAIN%</domain:name>
+        <domain:name hosts="all">example.tld</domain:name>
       </domain:info>
     </info>
     <clTRID>ABC-12345</clTRID>

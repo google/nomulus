@@ -53,10 +53,8 @@ public class MutatingEppToolCommandTest extends EppToolCommandTestCase<MutatingE
   void testSuccess_dryrun() throws Exception {
     // The choice of xml file is arbitrary.
     runCommand(
-        "--client=NewRegistrar",
-        "--dry_run",
-        ToolsTestData.loadFile("contact_create.xml"));
-    eppVerifier.expectDryRun().verifySent("contact_create.xml");
+        "--client=NewRegistrar", "--dry_run", ToolsTestData.loadFile("domain_create_minimal.xml"));
+    eppVerifier.expectDryRun().verifySent("domain_create_minimal.xml");
   }
 
   @Test

@@ -80,33 +80,4 @@ public class TransferResponse extends BaseTransferObject implements ResponseData
       }
     }
   }
-
-  /** An adapter to output the XML in response to a transfer command on a contact. */
-  @XmlRootElement(name = "trnData", namespace = "urn:ietf:params:xml:ns:contact-1.0")
-  @XmlType(propOrder = {
-      "contactId",
-      "transferStatus",
-      "gainingClientId",
-      "transferRequestTime",
-      "losingClientId",
-      "pendingTransferExpirationTime"},
-    namespace = "urn:ietf:params:xml:ns:contact-1.0")
-  public static class ContactTransferResponse extends TransferResponse {
-
-    @XmlElement(name = "id")
-    String contactId;
-
-    public String getContactId() {
-      return contactId;
-    }
-
-    /** Builder for {@link ContactTransferResponse}. */
-    public static class Builder
-        extends BaseTransferObject.Builder<ContactTransferResponse, Builder> {
-      public Builder setContactId(String contactId) {
-        getInstance().contactId = contactId;
-        return this;
-      }
-    }
-  }
 }

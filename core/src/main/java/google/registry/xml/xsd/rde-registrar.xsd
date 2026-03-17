@@ -2,7 +2,6 @@
 <schema targetNamespace="urn:ietf:params:xml:ns:rdeRegistrar-1.0"
   xmlns:rdeRegistrar="urn:ietf:params:xml:ns:rdeRegistrar-1.0"
   xmlns:rde="urn:ietf:params:xml:ns:rde-1.0"
-  xmlns:contact="urn:ietf:params:xml:ns:contact-1.0"
   xmlns:domain="urn:ietf:params:xml:ns:domain-1.0"
   xmlns:eppcom="urn:ietf:params:xml:ns:eppcom-1.0"
   xmlns="http://www.w3.org/2001/XMLSchema"
@@ -13,8 +12,6 @@
     schemaLocation="eppcom.xsd"/>
   <import namespace="urn:ietf:params:xml:ns:domain-1.0"
     schemaLocation="domain.xsd"/>
-  <import namespace="urn:ietf:params:xml:ns:contact-1.0"
-    schemaLocation="contact.xsd"/>
   <import namespace="urn:ietf:params:xml:ns:rde-1.0"
     schemaLocation="rde.xsd"/>
 
@@ -49,9 +46,9 @@
             type="rdeRegistrar:postalInfoType"
             maxOccurs="2"/>
           <element name="voice"
-            type="contact:e164Type" minOccurs="0"/>
+            type="eppcom:e164Type" minOccurs="0"/>
           <element name="fax"
-            type="contact:e164Type" minOccurs="0"/>
+            type="eppcom:e164Type" minOccurs="0"/>
           <element name="email"
             type="eppcom:minTokenType"/>
           <element name="url"

@@ -59,7 +59,7 @@ class EppXmlTransformerTest {
 
   @Test
   void testUnmarshalingEppInput() throws Exception {
-    EppInput input = unmarshal(EppInput.class, loadBytes(getClass(), "contact_info.xml").read());
+    EppInput input = unmarshal(EppInput.class, loadBytes(getClass(), "domain_info.xml").read());
     assertThat(input.getCommandType()).isEqualTo("info");
   }
 
@@ -67,7 +67,7 @@ class EppXmlTransformerTest {
   void testUnmarshalingWrongClassThrows() {
     assertThrows(
         ClassCastException.class,
-        () -> unmarshal(EppOutput.class, loadBytes(getClass(), "contact_info.xml").read()));
+        () -> unmarshal(EppOutput.class, loadBytes(getClass(), "domain_info.xml").read()));
   }
 
   @Test

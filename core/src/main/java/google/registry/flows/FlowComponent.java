@@ -19,16 +19,6 @@ import dagger.Provides;
 import dagger.Subcomponent;
 import google.registry.batch.BatchModule;
 import google.registry.dns.DnsModule;
-import google.registry.flows.contact.ContactCheckFlow;
-import google.registry.flows.contact.ContactCreateFlow;
-import google.registry.flows.contact.ContactDeleteFlow;
-import google.registry.flows.contact.ContactInfoFlow;
-import google.registry.flows.contact.ContactTransferApproveFlow;
-import google.registry.flows.contact.ContactTransferCancelFlow;
-import google.registry.flows.contact.ContactTransferQueryFlow;
-import google.registry.flows.contact.ContactTransferRejectFlow;
-import google.registry.flows.contact.ContactTransferRequestFlow;
-import google.registry.flows.contact.ContactUpdateFlow;
 import google.registry.flows.custom.CustomLogicModule;
 import google.registry.flows.domain.DomainCheckFlow;
 import google.registry.flows.domain.DomainClaimsCheckFlow;
@@ -54,6 +44,8 @@ import google.registry.flows.session.HelloFlow;
 import google.registry.flows.session.LoginFlow;
 import google.registry.flows.session.LogoutFlow;
 import google.registry.model.eppcommon.Trid;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 
 /** Dagger component for flow classes. */
 @FlowScope
@@ -69,16 +61,6 @@ public interface FlowComponent {
   FlowRunner flowRunner();
 
   // Flows must be added here and in FlowComponentModule below.
-  ContactCheckFlow contactCheckFlow();
-  ContactCreateFlow contactCreateFlow();
-  ContactDeleteFlow contactDeleteFlow();
-  ContactInfoFlow contactInfoFlow();
-  ContactTransferApproveFlow contactTransferApproveFlow();
-  ContactTransferCancelFlow contactTransferCancelFlow();
-  ContactTransferQueryFlow contactTransferQueryFlow();
-  ContactTransferRejectFlow contactTransferRejectFlow();
-  ContactTransferRequestFlow contactTransferRequestFlow();
-  ContactUpdateFlow contactUpdateFlow();
   DomainCheckFlow domainCheckFlow();
   DomainClaimsCheckFlow domainClaimsCheckFlow();
   DomainCreateFlow domainCreateFlow();
@@ -118,40 +100,16 @@ public interface FlowComponent {
     // TODO(b/29874464): fix this in a cleaner way.
     @Provides
     static Flow provideFlow(FlowComponent flows, Class<? extends Flow> clazz) {
-      return clazz.equals(ContactCheckFlow.class) ? flows.contactCheckFlow()
-          : clazz.equals(ContactCreateFlow.class) ? flows.contactCreateFlow()
-          : clazz.equals(ContactDeleteFlow.class) ? flows.contactDeleteFlow()
-          : clazz.equals(ContactInfoFlow.class) ? flows.contactInfoFlow()
-          : clazz.equals(ContactTransferApproveFlow.class) ? flows.contactTransferApproveFlow()
-          : clazz.equals(ContactTransferCancelFlow.class) ? flows.contactTransferCancelFlow()
-          : clazz.equals(ContactTransferQueryFlow.class) ? flows.contactTransferQueryFlow()
-          : clazz.equals(ContactTransferRejectFlow.class) ? flows.contactTransferRejectFlow()
-          : clazz.equals(ContactTransferRequestFlow.class) ? flows.contactTransferRequestFlow()
-          : clazz.equals(ContactUpdateFlow.class) ? flows.contactUpdateFlow()
-          : clazz.equals(DomainCheckFlow.class) ? flows.domainCheckFlow()
-          : clazz.equals(DomainClaimsCheckFlow.class) ? flows.domainClaimsCheckFlow()
-          : clazz.equals(DomainCreateFlow.class) ? flows.domainCreateFlow()
-          : clazz.equals(DomainDeleteFlow.class) ? flows.domainDeleteFlow()
-          : clazz.equals(DomainInfoFlow.class) ? flows.domainInfoFlow()
-          : clazz.equals(DomainRenewFlow.class) ? flows.domainRenewFlow()
-          : clazz.equals(DomainRestoreRequestFlow.class) ? flows.domainRestoreRequestFlow()
-          : clazz.equals(DomainTransferApproveFlow.class) ? flows.domainTransferApproveFlow()
-          : clazz.equals(DomainTransferCancelFlow.class) ? flows.domainTransferCancelFlow()
-          : clazz.equals(DomainTransferQueryFlow.class) ? flows.domainTransferQueryFlow()
-          : clazz.equals(DomainTransferRejectFlow.class) ? flows.domainTransferRejectFlow()
-          : clazz.equals(DomainTransferRequestFlow.class) ? flows.domainTransferRequestFlow()
-          : clazz.equals(DomainUpdateFlow.class) ? flows.domainUpdateFlow()
-          : clazz.equals(HostCheckFlow.class) ? flows.hostCheckFlow()
-          : clazz.equals(HostCreateFlow.class) ? flows.hostCreateFlow()
-          : clazz.equals(HostDeleteFlow.class) ? flows.hostDeleteFlow()
-          : clazz.equals(HostInfoFlow.class) ? flows.hostInfoFlow()
-          : clazz.equals(HostUpdateFlow.class) ? flows.hostUpdateFlow()
-          : clazz.equals(PollAckFlow.class) ? flows.pollAckFlow()
-          : clazz.equals(PollRequestFlow.class) ? flows.pollRequestFlow()
-          : clazz.equals(HelloFlow.class) ? flows.helloFlow()
-          : clazz.equals(LoginFlow.class) ? flows.loginFlow()
-          : clazz.equals(LogoutFlow.class) ? flows.logoutFlow()
-          : null;
+      String simpleName = clazz.getSimpleName();
+      // The method name is the same as the class name but with the first character being lowercase
+      String methodName = Character.toLowerCase(simpleName.charAt(0)) + simpleName.substring(1);
+      try {
+        Method method = FlowComponent.class.getMethod(methodName);
+        method.setAccessible(true);
+        return (Flow) method.invoke(flows);
+      } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException e) {
+        throw new RuntimeException(e);
+      }
     }
   }
 }
