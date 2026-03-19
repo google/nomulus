@@ -83,7 +83,7 @@ dependencies {
   testImplementation deps['org.testcontainers:junit-jupiter']
   testImplementation deps['org.yaml:snakeyaml']
   testImplementation project(path: ':common', configuration: 'testing')
-  testImplementation project(path: ':networking', configuration: 'testRuntimeOnly')
+  testImplementation project(path: ':networking', configuration: 'testRuntimeElements')
 
   // Include auto-value in compile until nebula-lint understands
   // annotationProcessor

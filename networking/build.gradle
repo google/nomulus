@@ -56,12 +56,14 @@ task testJar(type: Jar) {
   from sourceSets.test.output
 }
 
-artifacts {
-  testRuntimeOnly testJar
+configurations {
+  testRuntimeElements {
+    canBeConsumed = true
+    canBeResolved = false
+    extendsFrom testRuntimeOnly
+  }
 }
 
-configurations {
-  testRuntimeOnly {
-    canBeConsumed = true
-  }
+artifacts {
+  add('testRuntimeElements', testJar)
 }

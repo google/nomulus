@@ -108,7 +108,15 @@ configurations {
   // Published jars that are used for server/schema compatibility tests.
   // See <a href="../integration/README.md">the integration project</a>
   // for details.
-  nomulus_test
+  nomulus_test {
+    canBeConsumed = true
+    canBeResolved = false
+  }
+  testRuntimeElements {
+    canBeConsumed = true
+    canBeResolved = false
+    extendsFrom testRuntimeOnly
+  }
 
   // Exclude non-canonical servlet-api jars. Our deployment uses
   // javax.servlet:servlet-api:2.5
@@ -339,7 +347,7 @@ task jaxbToJava {
             destdir: "${generatedDir}",
             binding: "${xjcTempSourceDir}/bindings.xjb",
             removeOldOutput: 'yes', extension: 'true') {
-      project.fileTree(
+      fileTree(
               dir: new File("$xjcTempSourceDir"),
               include: ['**/*.xsd'])
               .addToAntBuilder(ant, 'schema', FileCollection.AntType.FileSet)
@@ -377,13 +385,13 @@ task soyToJava {
   }
 
   ext.soyToJava = { javaPackage, outputDirectory, soyFiles ->
-    javaexec {
-      main = "com.google.template.soy.SoyParseInfoGenerator"
-      classpath configurations.soy
-      args "--javaPackage", "${javaPackage}",
+    project.services.get(ExecOperations).javaexec {
+      mainClass = "com.google.template.soy.SoyParseInfoGenerator"
+      classpath = configurations.soy
+      args = ["--javaPackage", "${javaPackage}",
               "--outputDirectory", "${outputDirectory}",
               "--javaClassNameSource", "filename",
-              "--srcs", "${soyFiles.join(',')}"
+              "--srcs", "${soyFiles.join(',')}"]
     }
 
     // Replace the "@link" tags after the "@deprecated" tags in the generated
@@ -397,8 +405,8 @@ task soyToJava {
     }
 
     outputs.each { file ->
-      exec {
-        commandLine 'sed', '-i""', '-e', 's/@link/LINK/g', file.getCanonicalPath()
+      project.services.get(ExecOperations).exec {
+        commandLine = ['sed', '-i""', '-e', 's/@link/LINK/g', file.getCanonicalPath()]
       }
     }
   }
@@ -429,12 +437,12 @@ task testJar(type: Jar) {
 }
 
 artifacts {
-  testRuntimeOnly testJar
+  add('testRuntimeElements', testJar)
 }
 
 task findGoldenImages(type: JavaExec) {
   classpath = sourceSets.test.runtimeClasspath
-  main = 'google.registry.webdriver.GoldenImageFinder'
+  mainClass = 'google.registry.webdriver.GoldenImageFinder'
 
   def arguments = []
   arguments << "--screenshots_for_goldens_dir=${screenshotsForGoldensDir}"
@@ -481,11 +489,11 @@ Optional<List<String>> getToolArgsList() {
 // parameter.
 ext.createToolTask = {
     taskName,
-    mainClass,
+    mainClassName,
     sourceSet = sourceSets.main ->
   project.tasks.create(taskName, JavaExec) {
     classpath = sourceSet.runtimeClasspath
-    main = mainClass
+    mainClass = mainClassName
 
     doFirst {
       getToolArgsList().ifPresent {
@@ -502,7 +510,7 @@ createToolTask(
 
 project.tasks.create('generateSqlSchema', JavaExec) {
   classpath = sourceSets.nonprod.runtimeClasspath
-  main = 'google.registry.tools.DevTool'
+  mainClass = 'google.registry.tools.DevTool'
   args = [
       '-e', 'alpha',
       'generate_sql_schema', '--start_postgresql', '-o',
@@ -515,7 +523,7 @@ task generateGoldenImages(type: FilteringTest) {
   tests = ["**/webdriver/*"]
 
   // Sets the maximum number of test executors that may exist at the same time.
-  maxParallelForks 5
+  maxParallelForks = 5
 
   systemProperty 'test.screenshot.dir', screenshotsForGoldensDir
   systemProperty 'test.screenshot.runAllAttempts', 'true'
@@ -659,7 +667,7 @@ artifacts {
 }
 
 task runTestServer(type: JavaExec) {
-  main = 'google.registry.server.RegistryTestServerMain'
+  mainClass = 'google.registry.server.RegistryTestServerMain'
   classpath = sourceSets.test.runtimeClasspath
   dependsOn(rootProject.project('console-webapp').tasks.named('buildConsoleWebapp'))
 }
@@ -685,6 +693,8 @@ abstract class FilteringTest extends Test {
 
   FilteringTest() {
     useJUnitPlatform();
+    testClassesDirs = project.sourceSets.test.output.classesDirs
+    classpath = project.sourceSets.test.runtimeClasspath
   }
 
   private void applyTestFilter() {
@@ -739,7 +749,7 @@ task fragileTest(type: FilteringTest) {
   }
 
   // Run every test class in a freshly started process.
-  forkEvery 1
+  forkEvery = 1
 
   doFirst {
     new File(screenshotsDir).deleteDir()
@@ -754,6 +764,9 @@ task sqlIntegrationTest(type: FilteringTest) {
   useJUnit()
   excludeTestCases = false
   tests = ['google/registry/schema/integration/SqlIntegrationTestSuite.*']
+
+  testClassesDirs = sourceSets.test.output.classesDirs
+  classpath = sourceSets.test.runtimeClasspath
 }
 
 // Verifies that RegistryTool can be instantiated:
@@ -779,13 +792,13 @@ task standardTest(type: FilteringTest) {
   // Run every test class in its own process.
   // Uncomment to unblock build while troubleshooting inexplicable test errors.
   // This setting makes the build take 35 minutes, without it it takes about 10.
-  // forkEvery 1
+  // forkEvery = 1
 
   // Sets the maximum number of test executors that may exist at the same time.
   // Also, Gradle executes tests in 1 thread and some of our test infrastructures
   // depend on that, e.g. DualDatabaseTestInvocationContextProvider injects
   // different implementation of TransactionManager into TransactionManagerFactory.
-  maxParallelForks 64
+  maxParallelForks = 64
 
   systemProperty 'test.projectRoot', rootProject.projectRootDir
   systemProperty 'test.resourcesDir', resourcesDir

@@ -18,10 +18,10 @@ rootProject.ext {
   // to stdout as a string. This method allows pipes in shell command.
   execInBash = { shellCommand, bashWorkingDir ->
     return new ByteArrayOutputStream().withStream { os ->
-      exec {
-        workingDir bashWorkingDir
-        commandLine 'bash', '-c', "${shellCommand}"
-        standardOutput os
+      project.services.get(ExecOperations).exec {
+        workingDir = bashWorkingDir
+        commandLine = ['bash', '-c', "${shellCommand}"]
+        standardOutput = os
       }.assertNormalExitValue()
       return os
     }.toString().trim()

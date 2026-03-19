@@ -153,7 +153,7 @@ allprojects {
     if (!mavenUrl.isEmpty()) {
       maven {
         println "Java dependencies: Using repo ${mavenUrl}..."
-        url mavenUrl
+        url = mavenUrl
         allowInsecureProtocol = allowInsecure == "true"
       }
     } else {
@@ -161,7 +161,7 @@ allprojects {
       mavenCentral()
       google()
       maven {
-        url "https://packages.confluent.io/maven/"
+        url = "https://packages.confluent.io/maven/"
         content {
           includeGroup "io.confluent"
         }
@@ -291,7 +291,7 @@ subprojects {
       // We do seem to get duplicates when constructing uber-jars, either
       // this is a product of something in gradle 7 or a product of gradle 7
       // now giving an error about them when it didn't previously.
-      duplicatesStrategy DuplicatesStrategy.WARN
+      duplicatesStrategy = DuplicatesStrategy.WARN
     }
   }
 
@@ -341,8 +341,10 @@ subprojects {
   // search for `flex-template-base-image` and update the parameter value.
   // There are at least two instances, one in core/build.gradle, one in
   // release/stage_beam_pipeline.sh
-  sourceCompatibility = JavaVersion.VERSION_21
-  targetCompatibility = JavaVersion.VERSION_21
+  java {
+    sourceCompatibility = JavaVersion.VERSION_21
+    targetCompatibility = JavaVersion.VERSION_21
+  }
 
   project.tasks.test.dependsOn runPresubmits
 
@@ -369,11 +371,16 @@ subprojects {
 
   // No need to produce javadoc for the jetty subproject, which has no APIs to
   // expose to users.
-  if (project.name != 'jetty') {
+  if (project.name != 'jetty' && !services.contains(project.path)) {
     javadocSource << project.sourceSets.main.allJava
-    javadocClasspath << project.sourceSets.main.runtimeClasspath
+    javadocClasspath << { project.sourceSets.main.runtimeClasspath.files }
     javadocClasspath << "${buildDir}/generated/sources/annotationProcessor/java/main"
-    javadocDependentTasks << project.tasks.compileJava
+    if (project.tasks.findByName('compileJava')) {
+      javadocDependentTasks << project.tasks.compileJava
+    }
+    if (project.tasks.findByName('processResources')) {
+      javadocDependentTasks << project.tasks.processResources
+    }
   }
 }
 
