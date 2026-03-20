@@ -45,6 +45,7 @@ public class RegistryConfigSettings {
   public Bsa bsa;
   public MosApi mosapi;
   public Valkey valkey;
+  public EppServer eppServer;
 
   /** Configuration options that apply to the entire GCP project. */
   public static class GcpProject {
@@ -199,6 +200,42 @@ public class RegistryConfigSettings {
     public int stackdriverMaxQps;
     public int stackdriverMaxPointsPerRequest;
     public int writeIntervalSeconds;
+    public double frontendMetricsRatio;
+    public double backendMetricsRatio;
+  }
+
+  /** Configuration for EppServer. */
+  public static class EppServer {
+    public int port;
+    public int healthCheckPort;
+    public String sslPemFilename;
+    public String sslPemBucket;
+    public String kmsLocation;
+    public String kmsKeyRing;
+    public String kmsCryptoKey;
+    public int maxMessageLengthBytes;
+    public int headerLengthBytes;
+    public int readTimeoutSeconds;
+    public int maxConnectionsPerIp;
+    public int maxConnectionsPerCert;
+    public int serverCertificateCacheSeconds;
+    public Quota quota;
+  }
+
+  /** Configuration options that apply to quota management. */
+  public static class Quota {
+
+    /** Quota configuration for a specific set of users. */
+    public static class QuotaGroup {
+      public List<String> userId;
+      public int tokenAmount;
+      public int refillSeconds;
+      public int batchSize;
+    }
+
+    public int refreshSeconds;
+    public QuotaGroup defaultQuota;
+    public List<QuotaGroup> customQuota;
   }
 
   /** Miscellaneous configuration that doesn't quite fit in anywhere else. */
