@@ -420,6 +420,57 @@ monitoring:
   # How often metrics are exported to BigQuery.
   writeIntervalSeconds: 60
 
+  # What ratio of frontend request metrics should be stochastically recorded
+  # (0.0 means none, 1.0 means all). This is useful for reducing metrics volume,
+  # and thus cost, while still recording some information for performance
+  # monitoring purposes.
+  frontendMetricsRatio: 1.0
+
+  # What ratio of backend request metrics should be stochastically recorded
+  # (0.0 means none, 1.0 means all). This is useful for reducing metrics volume,
+  # and thus cost, while still recording some information for performance
+  # monitoring purposes.
+  backendMetricsRatio: 1.0
+
+eppServer:
+  # The integrated EPP server listens on this port.
+  port: 30002
+  # Health check port used by GCP load balancer.
+  healthCheckPort: 30000
+  # GCS bucket that stores the encrypted PEM file.
+  sslPemBucket: your-gcs-bucket
+  # Name of the encrypted PEM file.
+  sslPemFilename: your-pem-filename
+  # Cloud KMS details for certificate decryption.
+  kmsLocation: your-kms-location
+  kmsKeyRing: your-kms-keyRing
+  kmsCryptoKey: your-kms-cryptoKey
+
+  # Maximum input message length in bytes.
+  maxMessageLengthBytes: 1073741824
+  # Length of the header field in bytes (RFC 5734).
+  headerLengthBytes: 4
+  # Time after which an idle connection will be closed.
+  readTimeoutSeconds: 3600
+  # Max concurrent connections per IP address.
+  maxConnectionsPerIp: 10
+  # Max concurrent connections per authenticated certificate.
+  maxConnectionsPerCert: 10
+  # Server certificate cache duration.
+  serverCertificateCacheSeconds: 1800
+
+  # Quota configuration for EPP
+  quota:
+    refreshSeconds: 0
+    defaultQuota:
+      userId: []
+      tokenAmount: 100
+      refillSeconds: 0
+    # To implement a shared quota group across multiple registrars, place a virtual 
+    # group name as the FIRST element of the userId list. 
+    # e.g., userId: ["my_group", "registrar1", "registrar2"]
+    customQuota: []
+
 misc:
   # The ID of the Google Sheet (as found in the URL) to export registrar details
   # to. Leave this null to disable syncing.

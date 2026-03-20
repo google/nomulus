@@ -1,0 +1,105 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: epp-server
+  annotations:
+    tag: "latest"
+spec:
+  selector:
+    matchLabels:
+      service: epp-server
+  template:
+    metadata:
+      labels:
+        service: epp-server
+    spec:
+      serviceAccountName: nomulus
+      nodeSelector:
+        cloud.google.com/machine-family: c4
+      containers:
+      - name: frontend
+        image: gcr.io/GCP_PROJECT/nomulus
+        ports:
+        - containerPort: 8080
+          name: http
+        - containerPort: 30002
+          name: epp
+        - containerPort: 30000
+          name: health-check
+        readinessProbe:
+          tcpSocket:
+            port: health-check
+          initialDelaySeconds: 15
+          periodSeconds: 10
+        resources:
+          requests:
+            # explicit pod-slots 0 is required in order to downgrade node
+            # class from performance, which has implicit pod-slots 1
+            cloud.google.com/pod-slots: 0
+            cpu: "1200m"
+            memory: "3Gi"
+          limits:
+            # explicit pod-slots 0 is required in order to downgrade node
+            # class from performance, which has implicit pod-slots 1
+            cloud.google.com/pod-slots: 0
+            cpu: "2000m"
+            memory: "6Gi"
+        args: [ENVIRONMENT]
+        env:
+        - name: TCP_SERVER_ENABLED
+          value: "true"
+        - name: POD_ID
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: JETTY_WORKER_INSTANCE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: NAMESPACE_ID
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: CONTAINER_NAME
+          value: frontend
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: epp-server
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: epp-server
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: epp-server
+  annotations:
+    cloud.google.com/l4-rbs: enabled
+    networking.gke.io/weighted-load-balancing: pods-per-node
+    # MUST RESERVE THESE NEW IPS IN GCP BEFORE DEPLOYING
+    networking.gke.io/load-balancer-ip-addresses: "EPP-v2-ipv6-main,EPP-v2-ipv4-main"
+spec:
+  type: LoadBalancer
+  # Traffic is directly delivered to a node, preserving the original source IP.
+  externalTrafficPolicy: Local
+  ipFamilies: [IPv4, IPv6]
+  ipFamilyPolicy: RequireDualStack
+  selector:
+    service: epp-server
+  ports:
+  - port: 700
+    targetPort: epp
+    name: epp

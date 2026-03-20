@@ -1521,6 +1521,103 @@ public final class RegistryConfig {
           .map(valkey -> ImmutableList.copyOf(valkey.hostsAndPorts));
     }
 
+    @Provides
+    @Config("eppServerPort")
+    public static int provideEppServerPort(RegistryConfigSettings config) {
+      return config.eppServer.port;
+    }
+
+    @Provides
+    @Config("eppServerHealthCheckPort")
+    public static int provideEppServerHealthCheckPort(RegistryConfigSettings config) {
+      return config.eppServer.healthCheckPort;
+    }
+
+    @Provides
+    @Config("eppServerSslPemBucket")
+    public static String provideEppServerSslPemBucket(RegistryConfigSettings config) {
+      return config.eppServer.sslPemBucket;
+    }
+
+    @Provides
+    @Config("eppServerSslPemFilename")
+    public static String provideEppServerSslPemFilename(RegistryConfigSettings config) {
+      return config.eppServer.sslPemFilename;
+    }
+
+    @Provides
+    @Config("eppServerKmsLocation")
+    public static String provideEppServerKmsLocation(RegistryConfigSettings config) {
+      return config.eppServer.kmsLocation;
+    }
+
+    @Provides
+    @Config("eppServerKmsKeyRing")
+    public static String provideEppServerKmsKeyRing(RegistryConfigSettings config) {
+      return config.eppServer.kmsKeyRing;
+    }
+
+    @Provides
+    @Config("eppServerKmsCryptoKey")
+    public static String provideEppServerKmsCryptoKey(RegistryConfigSettings config) {
+      return config.eppServer.kmsCryptoKey;
+    }
+
+    @Provides
+    @Config("eppServerMaxMessageLengthBytes")
+    public static int provideEppServerMaxMessageLengthBytes(RegistryConfigSettings config) {
+      return config.eppServer.maxMessageLengthBytes;
+    }
+
+    @Provides
+    @Config("eppServerHeaderLengthBytes")
+    public static int provideEppServerHeaderLengthBytes(RegistryConfigSettings config) {
+      return config.eppServer.headerLengthBytes;
+    }
+
+    @Provides
+    @Config("eppServerReadTimeoutSeconds")
+    public static int provideEppServerReadTimeoutSeconds(RegistryConfigSettings config) {
+      return config.eppServer.readTimeoutSeconds;
+    }
+
+    @Provides
+    @Config("eppServerMaxConnectionsPerIp")
+    public static int provideEppServerMaxConnectionsPerIp(RegistryConfigSettings config) {
+      return config.eppServer.maxConnectionsPerIp;
+    }
+
+    @Provides
+    @Config("eppServerMaxConnectionsPerCert")
+    public static int provideEppServerMaxConnectionsPerCert(RegistryConfigSettings config) {
+      return config.eppServer.maxConnectionsPerCert;
+    }
+
+    @Provides
+    @Config("eppServerCertificateCacheSeconds")
+    public static int provideEppServerCertificateCacheSeconds(RegistryConfigSettings config) {
+      return config.eppServer.serverCertificateCacheSeconds;
+    }
+
+    @Provides
+    @Config("eppServerQuota")
+    public static RegistryConfigSettings.Quota provideEppServerQuota(
+        RegistryConfigSettings config) {
+      return config.eppServer.quota;
+    }
+
+    @Provides
+    @Config("eppServerFrontendMetricsRatio")
+    public static double provideEppServerFrontendMetricsRatio(RegistryConfigSettings config) {
+      return config.monitoring.frontendMetricsRatio;
+    }
+
+    @Provides
+    @Config("writeIntervalSeconds")
+    public static int provideWriteIntervalSeconds(RegistryConfigSettings config) {
+      return config.monitoring.writeIntervalSeconds;
+    }
+
     private static String formatComments(String text) {
       return Splitter.on('\n').omitEmptyStrings().trimResults().splitToList(text).stream()
           .map(s -> "# " + s)
