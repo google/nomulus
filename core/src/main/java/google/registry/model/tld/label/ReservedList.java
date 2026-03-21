@@ -35,11 +35,11 @@ import google.registry.model.Buildable;
 import google.registry.model.CacheUtils;
 import google.registry.model.tld.Tld;
 import google.registry.model.tld.label.DomainLabelMetrics.MetricsReservedListMatch;
+import google.registry.persistence.EntityCallbacksListener.RecursivePostPersist;
+import google.registry.persistence.EntityCallbacksListener.RecursivePreRemove;
 import jakarta.persistence.Column;
 import jakarta.persistence.Id;
 import jakarta.persistence.Index;
-import jakarta.persistence.PostPersist;
-import jakarta.persistence.PreRemove;
 import jakarta.persistence.Table;
 import jakarta.persistence.Transient;
 import java.io.Serializable;
@@ -71,7 +71,7 @@ public final class ReservedList
    */
   @Insignificant @Transient Map<String, ReservedListEntry> reservedListMap;
 
-  @PreRemove
+  @RecursivePreRemove
   void preRemove() {
     tm().query("DELETE FROM ReservedEntry WHERE revisionId = :revisionId")
         .setParameter("revisionId", revisionId)
@@ -83,10 +83,10 @@ public final class ReservedList
    * ReservedListEntry}'s.
    *
    * <p>We need to persist the list entries, but only on the initial insert (not on update) since
-   * the entries themselves never get changed, so we only annotate it with {@link PostPersist}, not
-   * PostUpdate.
+   * the entries themselves never get changed, so we only annotate it with {@link
+   * RecursivePostPersist}, not PostUpdate.
    */
-  @PostPersist
+  @RecursivePostPersist
   void postPersist() {
     if (reservedListMap != null) {
       reservedListMap
@@ -223,8 +223,7 @@ public final class ReservedList
     if (label.length() == 0) {
       return ImmutableSet.of(FULLY_BLOCKED);
     }
-    return getReservedListEntries(label, tld)
-        .stream()
+    return getReservedListEntries(label, tld).stream()
         .map(ReservedListEntry::getValue)
         .collect(toImmutableSet());
   }
@@ -294,8 +293,10 @@ public final class ReservedList
     String line = lineAndComment.get(0);
     String comment = lineAndComment.get(1);
     List<String> parts = Splitter.on(',').trimResults().splitToList(line);
-    checkArgument(parts.size() == 2 || parts.size() == 3,
-        "Could not parse line in reserved list: %s", originalLine);
+    checkArgument(
+        parts.size() == 2 || parts.size() == 3,
+        "Could not parse line in reserved list: %s",
+        originalLine);
     String label = parts.get(0);
     ReservationType reservationType = ReservationType.valueOf(parts.get(1));
     return ReservedListEntry.create(label, reservationType, comment);
@@ -306,9 +307,7 @@ public final class ReservedList
     return new Builder(clone(this));
   }
 
-  /**
-   * A builder for constructing {@link ReservedList} objects, since they are immutable.
-   */
+  /** A builder for constructing {@link ReservedList} objects, since they are immutable. */
   public static class Builder extends BaseDomainLabelList.Builder<ReservedList, Builder> {
 
     public Builder() {}

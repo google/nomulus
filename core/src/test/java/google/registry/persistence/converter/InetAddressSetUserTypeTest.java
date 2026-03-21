@@ -24,6 +24,7 @@ import google.registry.model.ImmutableObject;
 import google.registry.persistence.VKey;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaUnitTestExtension;
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import java.net.InetAddress;
@@ -76,6 +77,7 @@ public class InetAddressSetUserTypeTest {
     @Id String name = "id";
 
     @Type(InetAddressSetUserType.class)
+    @Column(columnDefinition = "text[]")
     Set<InetAddress> addresses;
 
     private InetAddressSetTestEntity() {}

@@ -18,11 +18,14 @@ import google.registry.model.ImmutableObject;
 import google.registry.model.UnsafeSerializable;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingRecurrence;
+import google.registry.model.billing.VKeyConverter_BillingEvent;
+import google.registry.model.billing.VKeyConverter_BillingRecurrence;
 import google.registry.model.domain.rgp.GracePeriodStatus;
 import google.registry.persistence.VKey;
 import jakarta.persistence.Access;
 import jakarta.persistence.AccessType;
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.MappedSuperclass;
@@ -62,6 +65,7 @@ public class GracePeriodBase extends ImmutableObject implements UnsafeSerializab
   // NB: Would @IgnoreSave(IfNull.class), but not allowed for @Embed collections.
   @Access(AccessType.FIELD)
   @Column(name = "billing_event_id")
+  @Convert(converter = VKeyConverter_BillingEvent.class)
   VKey<BillingEvent> billingEvent = null;
 
   /**
@@ -71,6 +75,7 @@ public class GracePeriodBase extends ImmutableObject implements UnsafeSerializab
   // NB: Would @IgnoreSave(IfNull.class), but not allowed for @Embed collections.
   @Access(AccessType.FIELD)
   @Column(name = "billing_recurrence_id")
+  @Convert(converter = VKeyConverter_BillingRecurrence.class)
   VKey<BillingRecurrence> billingRecurrence = null;
 
   public long getGracePeriodId() {

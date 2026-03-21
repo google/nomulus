@@ -17,20 +17,27 @@ package google.registry.persistence;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 
 import com.google.common.collect.ImmutableList;
-import java.util.Properties;
+import java.net.URL;
+import java.util.List;
 import org.hibernate.jpa.boot.internal.ParsedPersistenceXmlDescriptor;
-import org.hibernate.jpa.boot.internal.PersistenceXmlParser;
+import org.hibernate.jpa.boot.spi.PersistenceUnitDescriptor;
+import org.hibernate.jpa.boot.spi.PersistenceXmlParser;
 
 /** Utility class that provides methods to manipulate persistence.xml file. */
 public class PersistenceXmlUtility {
+
+  private static final String PERSISTENCE_XML_FILE_PATH = "META-INF/persistence.xml";
+
   private PersistenceXmlUtility() {}
 
-  /**
-   * Returns the {@link ParsedPersistenceXmlDescriptor} instance constructed from persistence.xml.
-   */
+  /** Returns the {@link PersistenceUnitDescriptor} instance constructed from persistence.xml. */
   public static ParsedPersistenceXmlDescriptor getParsedPersistenceXmlDescriptor() {
-    return PersistenceXmlParser.locatePersistenceUnits(new Properties()).stream()
+    PersistenceXmlParser parser = PersistenceXmlParser.create();
+    List<URL> persistenceXmlUrls =
+        parser.getClassLoaderService().locateResources(PERSISTENCE_XML_FILE_PATH);
+    return parser.parse(persistenceXmlUrls).values().stream()
         .filter(unit -> PersistenceModule.PERSISTENCE_UNIT_NAME.equals(unit.getName()))
+        .map(ParsedPersistenceXmlDescriptor.class::cast)
         .findFirst()
         .orElseThrow(
             () ->

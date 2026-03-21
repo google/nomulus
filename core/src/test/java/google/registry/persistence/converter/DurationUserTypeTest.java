@@ -21,8 +21,10 @@ import static google.registry.testing.DatabaseHelper.persistResource;
 import google.registry.model.ImmutableObject;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaUnitTestExtension;
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
+import org.hibernate.annotations.Type;
 import org.joda.time.Duration;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -101,6 +103,8 @@ public class DurationUserTypeTest {
 
     @Id String name = "id";
 
+    @Column(columnDefinition = "interval")
+    @Type(DurationUserType.class)
     Duration duration;
 
     public DurationTestEntity() {}

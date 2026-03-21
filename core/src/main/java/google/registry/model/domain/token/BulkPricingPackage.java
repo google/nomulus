@@ -25,6 +25,7 @@ import google.registry.model.domain.token.AllocationToken.TokenType;
 import google.registry.persistence.VKey;
 import jakarta.persistence.AttributeOverride;
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -51,6 +52,7 @@ public class BulkPricingPackage extends ImmutableObject implements Buildable {
 
   /** The allocation token string for the bulk pricing package. */
   @Column(nullable = false)
+  @Convert(converter = VKeyConverter_AllocationToken.class)
   VKey<AllocationToken> token;
 
   /** The maximum number of active domains the bulk pricing package allows at any given time. */

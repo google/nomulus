@@ -44,16 +44,20 @@ import com.google.gson.annotations.Expose;
 import google.registry.flows.ResourceFlowUtils;
 import google.registry.model.EppResource;
 import google.registry.model.billing.BillingRecurrence;
+import google.registry.model.billing.VKeyConverter_BillingRecurrence;
 import google.registry.model.domain.launch.LaunchNotice;
 import google.registry.model.domain.rgp.GracePeriodStatus;
 import google.registry.model.domain.secdns.DomainDsData;
 import google.registry.model.domain.token.AllocationToken;
 import google.registry.model.domain.token.AllocationToken.TokenType;
+import google.registry.model.domain.token.VKeyConverter_AllocationToken;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.host.Host;
 import google.registry.model.poll.PollMessage;
 import google.registry.model.poll.PollMessage.Autorenew;
 import google.registry.model.poll.PollMessage.OneTime;
+import google.registry.model.poll.VKeyConverter_Autorenew;
+import google.registry.model.poll.VKeyConverter_OneTime;
 import google.registry.model.tld.Tld;
 import google.registry.model.transfer.DomainTransferData;
 import google.registry.model.transfer.TransferStatus;
@@ -68,7 +72,7 @@ import jakarta.persistence.AccessType;
 import jakarta.persistence.AttributeOverride;
 import jakarta.persistence.AttributeOverrides;
 import jakarta.persistence.Column;
-import jakarta.persistence.Embeddable;
+import jakarta.persistence.Convert;
 import jakarta.persistence.Embedded;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -93,7 +97,6 @@ import org.joda.time.Interval;
  * @see <a href="https://tools.ietf.org/html/rfc5731">RFC 5731</a>
  */
 @MappedSuperclass
-@Embeddable
 @Access(AccessType.FIELD)
 public class DomainBase extends EppResource {
 
@@ -185,6 +188,7 @@ public class DomainBase extends EppResource {
    * restored, the message should be deleted.
    */
   @Column(name = "deletion_poll_message_id")
+  @Convert(converter = VKeyConverter_OneTime.class)
   VKey<OneTime> deletePollMessage;
 
   /**
@@ -196,6 +200,7 @@ public class DomainBase extends EppResource {
    * should be created, and this field should be updated to point to the new one.
    */
   @Column(name = "billing_recurrence_id")
+  @Convert(converter = VKeyConverter_BillingRecurrence.class)
   VKey<BillingRecurrence> autorenewBillingEvent;
 
   /**
@@ -207,6 +212,7 @@ public class DomainBase extends EppResource {
    * should be created, and this field should be updated to point to the new one.
    */
   @Column(name = "autorenew_poll_message_id")
+  @Convert(converter = VKeyConverter_Autorenew.class)
   VKey<Autorenew> autorenewPollMessage;
 
   /** The unexpired grace periods for this domain (some of which may not be active yet). */
@@ -268,6 +274,7 @@ public class DomainBase extends EppResource {
    */
   @Nullable
   @Column(name = "current_package_token")
+  @Convert(converter = VKeyConverter_AllocationToken.class)
   VKey<AllocationToken> currentBulkToken;
 
   public LordnPhase getLordnPhase() {
@@ -806,6 +813,36 @@ public class DomainBase extends EppResource {
           "The currentBulkToken must have a BULK_PRICING TokenType");
       getInstance().currentBulkToken = currentBulkToken;
       return thisCastToDerived();
+    }
+
+    public B copyFrom(DomainBase domainBase) {
+      getInstance().copyUpdateTimestamp(domainBase);
+      return setAuthInfo(domainBase.getAuthInfo())
+          .setAutorenewPollMessage(domainBase.getAutorenewPollMessage())
+          .setAutorenewBillingEvent(domainBase.getAutorenewBillingEvent())
+          .setAutorenewEndTime(domainBase.getAutorenewEndTime())
+          .setCreationRegistrarId(domainBase.getCreationRegistrarId())
+          .setCreationTime(domainBase.getCreationTime())
+          .setDomainName(domainBase.getDomainName())
+          .setDeletePollMessage(domainBase.getDeletePollMessage())
+          .setDsData(domainBase.getDsData())
+          .setDeletionTime(domainBase.getDeletionTime())
+          .setGracePeriods(domainBase.getGracePeriods())
+          .setIdnTableName(domainBase.getIdnTableName())
+          .setLastTransferTime(domainBase.getLastTransferTime())
+          .setLaunchNotice(domainBase.getLaunchNotice())
+          .setLastEppUpdateRegistrarId(domainBase.getLastEppUpdateRegistrarId())
+          .setLastEppUpdateTime(domainBase.getLastEppUpdateTime())
+          .setNameservers(domainBase.getNameservers())
+          .setPersistedCurrentSponsorRegistrarId(domainBase.getPersistedCurrentSponsorRegistrarId())
+          .setRegistrationExpirationTime(domainBase.getRegistrationExpirationTime())
+          .setRepoId(domainBase.getRepoId())
+          .setSmdId(domainBase.getSmdId())
+          .setSubordinateHosts(domainBase.getSubordinateHosts())
+          .setStatusValues(domainBase.getStatusValues())
+          .setTransferData(domainBase.getTransferData())
+          .setLordnPhase(domainBase.getLordnPhase())
+          .setCurrentBulkToken(domainBase.getCurrentBulkToken().orElse(null));
     }
   }
 }

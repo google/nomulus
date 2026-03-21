@@ -24,6 +24,7 @@ import com.google.common.collect.ImmutableList;
 import google.registry.model.ImmutableObject;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaUnitTestExtension;
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.NoResultException;
@@ -146,6 +147,7 @@ public class StringCollectionUserTypeTest {
     @Id String name = "id";
 
     @Type(TestListUserType.class)
+    @Column(columnDefinition = "text[]")
     List<ListElement> value;
 
     private TestEntity() {}

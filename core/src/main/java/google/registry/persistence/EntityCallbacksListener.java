@@ -26,6 +26,10 @@ import jakarta.persistence.PreRemove;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Transient;
 import java.lang.annotation.Annotation;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -35,62 +39,88 @@ import java.util.Objects;
 import java.util.stream.Stream;
 
 /**
- * A listener class to invoke entity callbacks in cases where Hibernate doesn't invoke the callback
- * as expected.
+ * A listener class to invoke entity callbacks.
  *
  * <p>JPA defines a few annotations, e.g. {@link PostLoad}, that we can use for the application to
- * react to certain events that occur inside the persistence mechanism. However, Hibernate only
- * supports a few basic use cases, e.g. defining a {@link PostLoad} method directly in an {@link
- * jakarta.persistence.Entity} class or in an {@link Embeddable} class. If the annotated method is
- * defined in an {@link Embeddable} class that is a property of another {@link Embeddable} class, or
- * it is defined in a parent class of the {@link Embeddable} class, Hibernate doesn't invoke it.
+ * react to certain events that occur inside the persistence mechanism. However, Hibernate will not
+ * (or at least, is not guaranteed to) call these methods in embedded fields. Because we still want
+ * to invoke these event-based methods on embedded objects, we inspect the type tree for all {@link
+ * Embeddable} classes or {@link Embedded} objects.
  *
  * <p>This listener is added in core/src/main/resources/META-INF/orm.xml as a default entity
  * listener whose annotated methods will be invoked by Hibernate when corresponding events happen.
  * For example, {@link EntityCallbacksListener#prePersist} will be invoked before the entity is
- * persisted to the database, then it will recursively invoke any other {@link PrePersist} method
- * that should be invoked but not handled by Hibernate due to the bug.
+ * persisted to the database, then it will recursively invoke any other {@link RecursivePrePersist}
+ * method that we want to invoke, but that Hibernate does not support.
  *
  * @see <a
  *     href="https://docs.jboss.org/hibernate/orm/current/userguide/html_single/Hibernate_User_Guide.html#events-jpa-callbacks">JPA
  *     Callbacks</a>
- * @see <a href="https://hibernate.atlassian.net/browse/HHH-13316">HHH-13316</a>
+ * @see <a href="https://hibernate.atlassian.net/browse/HHH-12326">HHH-12326</a>
  */
 public class EntityCallbacksListener {
 
+  @Target(ElementType.METHOD)
+  @Retention(RetentionPolicy.RUNTIME)
+  public @interface RecursivePrePersist {}
+
+  @Target(ElementType.METHOD)
+  @Retention(RetentionPolicy.RUNTIME)
+  public @interface RecursivePreRemove {}
+
+  @Target(ElementType.METHOD)
+  @Retention(RetentionPolicy.RUNTIME)
+  public @interface RecursivePostPersist {}
+
+  @Target(ElementType.METHOD)
+  @Retention(RetentionPolicy.RUNTIME)
+  public @interface RecursivePostRemove {}
+
+  @Target(ElementType.METHOD)
+  @Retention(RetentionPolicy.RUNTIME)
+  public @interface RecursivePreUpdate {}
+
+  @Target(ElementType.METHOD)
+  @Retention(RetentionPolicy.RUNTIME)
+  public @interface RecursivePostUpdate {}
+
+  @Target(ElementType.METHOD)
+  @Retention(RetentionPolicy.RUNTIME)
+  public @interface RecursivePostLoad {}
+
   @PrePersist
   void prePersist(Object entity) {
-    EntityCallbackExecutor.create(PrePersist.class).execute(entity, entity.getClass());
+    EntityCallbackExecutor.create(RecursivePrePersist.class).execute(entity, entity.getClass());
   }
 
   @PreRemove
   void preRemove(Object entity) {
-    EntityCallbackExecutor.create(PreRemove.class).execute(entity, entity.getClass());
+    EntityCallbackExecutor.create(RecursivePreRemove.class).execute(entity, entity.getClass());
   }
 
   @PostPersist
   void postPersist(Object entity) {
-    EntityCallbackExecutor.create(PostPersist.class).execute(entity, entity.getClass());
+    EntityCallbackExecutor.create(RecursivePostPersist.class).execute(entity, entity.getClass());
   }
 
   @PostRemove
   void postRemove(Object entity) {
-    EntityCallbackExecutor.create(PostRemove.class).execute(entity, entity.getClass());
+    EntityCallbackExecutor.create(RecursivePostRemove.class).execute(entity, entity.getClass());
   }
 
   @PreUpdate
   void preUpdate(Object entity) {
-    EntityCallbackExecutor.create(PreUpdate.class).execute(entity, entity.getClass());
+    EntityCallbackExecutor.create(RecursivePreUpdate.class).execute(entity, entity.getClass());
   }
 
   @PostUpdate
   void postUpdate(Object entity) {
-    EntityCallbackExecutor.create(PostUpdate.class).execute(entity, entity.getClass());
+    EntityCallbackExecutor.create(RecursivePostUpdate.class).execute(entity, entity.getClass());
   }
 
   @PostLoad
   void postLoad(Object entity) {
-    EntityCallbackExecutor.create(PostLoad.class).execute(entity, entity.getClass());
+    EntityCallbackExecutor.create(RecursivePostLoad.class).execute(entity, entity.getClass());
   }
 
   private static class EntityCallbackExecutor {
@@ -107,68 +137,29 @@ public class EntityCallbacksListener {
     /**
      * Executes eligible callbacks in {@link Embedded} properties recursively.
      *
+     * <p>We pass the class that we're currently inspecting because embedded properties or relevant
+     * methods can be defined on a possible superclass of the root entity class.
+     *
      * @param entity the Java object of the entity class
-     * @param entityType either the type of the entity or an ancestor type
      */
-    private void execute(Object entity, Class<?> entityType) {
-      Class<?> parentType = entityType.getSuperclass();
-      if (parentType != null && parentType.isAnnotationPresent(MappedSuperclass.class)) {
-        execute(entity, parentType);
+    private void execute(Object entity, Class<?> currentClass) {
+      Class<?> superclass = currentClass.getSuperclass();
+      if (superclass != null && superclass.isAnnotationPresent(MappedSuperclass.class)) {
+        execute(entity, superclass);
       }
 
-      findEmbeddedProperties(entity, entityType)
-          .forEach(
-              normalEmbedded -> {
-                // For each normal embedded property, we don't execute its callback method because
-                // it is handled by Hibernate. However, for the embedded property defined in the
-                // entity's parent class, we need to treat it as a nested embedded property and
-                // invoke its callback function.
-                if (entity.getClass().equals(entityType)) {
-                  executeCallbackForNormalEmbeddedProperty(
-                      normalEmbedded, normalEmbedded.getClass());
-                } else {
-                  executeCallbackForNestedEmbeddedProperty(
-                      normalEmbedded, normalEmbedded.getClass());
-                }
-              });
-    }
+      findEmbeddedProperties(entity, currentClass)
+          .forEach(embeddedProperty -> execute(embeddedProperty, embeddedProperty.getClass()));
 
-    private void executeCallbackForNestedEmbeddedProperty(
-        Object nestedEmbeddedObject, Class<?> nestedEmbeddedType) {
-      Class<?> parentType = nestedEmbeddedType.getSuperclass();
-      if (parentType != null && parentType.isAnnotationPresent(MappedSuperclass.class)) {
-        executeCallbackForNestedEmbeddedProperty(nestedEmbeddedObject, parentType);
-      }
-
-      findEmbeddedProperties(nestedEmbeddedObject, nestedEmbeddedType)
-          .forEach(
-              embeddedProperty ->
-                  executeCallbackForNestedEmbeddedProperty(
-                      embeddedProperty, embeddedProperty.getClass()));
-
-      for (Method method : nestedEmbeddedType.getDeclaredMethods()) {
+      for (Method method : currentClass.getDeclaredMethods()) {
         if (method.isAnnotationPresent(callbackType)) {
-          invokeMethod(method, nestedEmbeddedObject);
+          invokeMethod(method, entity);
         }
       }
     }
 
-    private void executeCallbackForNormalEmbeddedProperty(
-        Object normalEmbeddedObject, Class<?> normalEmbeddedType) {
-      Class<?> parentType = normalEmbeddedType.getSuperclass();
-      if (parentType != null && parentType.isAnnotationPresent(MappedSuperclass.class)) {
-        executeCallbackForNormalEmbeddedProperty(normalEmbeddedObject, parentType);
-      }
-
-      findEmbeddedProperties(normalEmbeddedObject, normalEmbeddedType)
-          .forEach(
-              embeddedProperty ->
-                  executeCallbackForNestedEmbeddedProperty(
-                      embeddedProperty, embeddedProperty.getClass()));
-    }
-
-    private Stream<Object> findEmbeddedProperties(Object object, Class<?> clazz) {
-      return Arrays.stream(clazz.getDeclaredFields())
+    private Stream<Object> findEmbeddedProperties(Object object, Class<?> currentClass) {
+      return Arrays.stream(currentClass.getDeclaredFields())
           .filter(field -> !field.isAnnotationPresent(Transient.class))
           .filter(
               field ->

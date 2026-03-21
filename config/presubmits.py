@@ -180,6 +180,14 @@ PRESUBMITS = {
         {"/node_modules/"},
     ):
         "Do not use javax.inject.* Use jakarta.inject.* instead.",
+    PresubmitCheck(
+        r".*import jakarta.persistence.(Pre|Post)(Persist|Load|Remove|Update);",
+        "java",
+        {"EntityCallbacksListener.java"},
+    ):
+        "Hibernate lifecycle events aren't called for embedded entities, so it's "
+        "usually best to avoid them. Instead, use the annotations defined in "
+        "EntityCallbacksListener.java"
 }
 
 # Note that this regex only works for one kind of Flyway file.  If we want to
@@ -274,7 +282,6 @@ def get_files():
 
 
 if __name__ == "__main__":
-  print('python version is %s' % sys.version)
   failed = False
   for file in get_files():
     error_messages = []

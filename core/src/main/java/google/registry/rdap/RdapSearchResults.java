@@ -141,7 +141,7 @@ abstract class RdapSearchResults {
   }
 
   @AutoValue
-  abstract static class NameserverSearchResponse extends BaseSearchResponse {
+  public abstract static class NameserverSearchResponse extends BaseSearchResponse {
 
     @JsonableElement public abstract ImmutableList<RdapNameserver> nameserverSearchResults();
 

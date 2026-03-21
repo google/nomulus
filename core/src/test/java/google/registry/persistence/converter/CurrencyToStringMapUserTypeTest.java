@@ -22,6 +22,7 @@ import com.google.common.collect.ImmutableMap;
 import google.registry.model.ImmutableObject;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaUnitTestExtension;
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import java.util.Map;
@@ -56,6 +57,7 @@ public class CurrencyToStringMapUserTypeTest {
     @Id String name = "id";
 
     @Type(CurrencyToStringMapUserType.class)
+    @Column(columnDefinition = "hstore")
     Map<CurrencyUnit, String> currencyToBilling;
 
     private TestEntity() {}

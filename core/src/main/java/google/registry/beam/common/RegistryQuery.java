@@ -19,10 +19,10 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import google.registry.persistence.transaction.JpaTransactionManager;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.Query;
-import jakarta.persistence.TemporalType;
 import jakarta.persistence.TypedQuery;
 import jakarta.persistence.criteria.CriteriaQuery;
 import java.io.Serializable;
+import java.time.Instant;
 import java.util.Map;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
@@ -61,8 +61,8 @@ public interface RegistryQuery<T> extends Serializable {
       if (parameters != null) {
         parameters.forEach(
             (key, value) -> {
-              if (value instanceof DateTime) {
-                query.setParameter(key, ((DateTime) value).toDate(), TemporalType.TIMESTAMP);
+              if (value instanceof DateTime dt) {
+                query.setParameter(key, Instant.ofEpochMilli(dt.getMillis()));
               } else {
                 query.setParameter(key, value);
               }

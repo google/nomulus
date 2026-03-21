@@ -285,6 +285,7 @@ public class Registrar extends UpdateAutoTimestampEntity implements Buildable, J
 
   /** An allow list of netmasks (in CIDR notation) which the client is allowed to connect from. */
   @org.hibernate.annotations.Type(CidrBlockListUserType.class)
+  @Column(columnDefinition = "text[]")
   @Expose
   List<CidrAddressBlock> ipAddressAllowList;
 
@@ -378,6 +379,7 @@ public class Registrar extends UpdateAutoTimestampEntity implements Buildable, J
   @Expose
   @Nullable
   @org.hibernate.annotations.Type(CurrencyToStringMapUserType.class)
+  @Column(columnDefinition = "hstore")
   Map<CurrencyUnit, String> billingAccountMap;
 
   /** URL of registrar's website. */

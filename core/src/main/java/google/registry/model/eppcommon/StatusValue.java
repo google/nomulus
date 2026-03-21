@@ -24,6 +24,8 @@ import google.registry.model.adapters.EnumToAttributeAdapter.EppEnum;
 import google.registry.model.adapters.StatusValueAdapter;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.EmbeddedDomainBase;
+import google.registry.model.host.EmbeddedHostBase;
 import google.registry.model.host.Host;
 import google.registry.model.host.HostBase;
 import jakarta.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
@@ -130,10 +132,12 @@ public enum StatusValue implements EppEnum {
     ALL(
         Domain.class,
         DomainBase.class,
+        EmbeddedDomainBase.class,
         Host.class,
-        HostBase.class),
+        HostBase.class,
+        EmbeddedHostBase.class),
     NONE,
-    DOMAINS(DomainBase.class, Domain.class);
+    DOMAINS(DomainBase.class, Domain.class, EmbeddedDomainBase.class);
 
     private final ImmutableSet<Class<? extends EppResource>> classes;
 

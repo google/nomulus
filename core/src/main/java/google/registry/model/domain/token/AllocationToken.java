@@ -275,6 +275,7 @@ public class AllocationToken extends UpdateAutoTimestampEntity implements Builda
    * ENDED at the end. If manually cancelled, we will add a CANCELLED status.
    */
   @Type(AllocationTokenStatusTransitionUserType.class)
+  @Column(columnDefinition = "hstore")
   TimedTransitionProperty<TokenStatus> tokenStatusTransitions =
       TimedTransitionProperty.withInitialValue(NOT_STARTED);
 
