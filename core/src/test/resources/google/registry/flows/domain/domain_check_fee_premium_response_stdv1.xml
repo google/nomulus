@@ -39,6 +39,7 @@
         </fee:cd>
         <fee:cd>
           <fee:objID>rich.example</fee:objID>
+          <fee:class>standard</fee:class>
           <fee:command name="restore">
             <fee:period unit="y">1</fee:period>
             <fee:fee description="restore">17.00</fee:fee>
@@ -46,6 +47,7 @@
         </fee:cd>
         <fee:cd>
           <fee:objID>rich.example</fee:objID>
+          <fee:class>standard</fee:class>
           <fee:command name="update">
             <fee:period unit="y">1</fee:period>
             <fee:fee description="update">0.00</fee:fee>

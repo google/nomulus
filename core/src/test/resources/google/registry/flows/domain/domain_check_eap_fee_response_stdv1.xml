@@ -22,6 +22,7 @@
         <fee:currency>USD</fee:currency>
         <fee:cd>
           <fee:objID>example1.tld</fee:objID>
+          <fee:class>standard</fee:class>
           <fee:command name="create">
             <fee:period unit="y">1</fee:period>
             <fee:fee description="create">13.00</fee:fee>
@@ -30,6 +31,7 @@
         </fee:cd>
         <fee:cd>
           <fee:objID>example2.tld</fee:objID>
+          <fee:class>standard</fee:class>
           <fee:command name="create">
             <fee:period unit="y">1</fee:period>
             <fee:fee description="create">13.00</fee:fee>
@@ -38,6 +40,7 @@
         </fee:cd>
         <fee:cd>
           <fee:objID>example3.tld</fee:objID>
+          <fee:class>standard</fee:class>
           <fee:command name="create">
             <fee:period unit="y">1</fee:period>
             <fee:fee description="create">13.00</fee:fee>

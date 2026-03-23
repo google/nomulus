@@ -32,6 +32,7 @@
         </fee:cd>
         <fee:cd>
           <fee:objID>reserved.tld</fee:objID>
+          <fee:class>standard</fee:class>
           <fee:command name="renew">
             <fee:period unit="y">1</fee:period>
             <fee:fee description="renew">11.00</fee:fee>
@@ -39,6 +40,7 @@
         </fee:cd>
         <fee:cd>
           <fee:objID>reserved.tld</fee:objID>
+          <fee:class>standard</fee:class>
           <fee:command name="transfer">
             <fee:period unit="y">1</fee:period>
             <fee:fee description="renew">11.00</fee:fee>
@@ -46,6 +48,7 @@
         </fee:cd>
         <fee:cd>
           <fee:objID>reserved.tld</fee:objID>
+          <fee:class>standard</fee:class>
           <fee:command name="restore">
             <fee:period unit="y">1</fee:period>
             <fee:fee description="restore">17.00</fee:fee>
@@ -53,6 +56,7 @@
         </fee:cd>
         <fee:cd>
           <fee:objID>allowedinsunrise.tld</fee:objID>
+          <fee:class>standard</fee:class>
           <fee:command name="create">
             <fee:period unit="y">1</fee:period>
             <fee:fee description="create">11.05</fee:fee>
@@ -60,6 +64,7 @@
         </fee:cd>
         <fee:cd>
           <fee:objID>allowedinsunrise.tld</fee:objID>
+          <fee:class>standard</fee:class>
           <fee:command name="renew">
             <fee:period unit="y">1</fee:period>
             <fee:fee description="renew">11.00</fee:fee>
@@ -67,6 +72,7 @@
         </fee:cd>
         <fee:cd>
           <fee:objID>allowedinsunrise.tld</fee:objID>
+          <fee:class>standard</fee:class>
           <fee:command name="transfer">
             <fee:period unit="y">1</fee:period>
             <fee:fee description="renew">11.00</fee:fee>
@@ -74,6 +80,7 @@
         </fee:cd>
         <fee:cd>
           <fee:objID>allowedinsunrise.tld</fee:objID>
+          <fee:class>standard</fee:class>
           <fee:command name="restore">
             <fee:period unit="y">1</fee:period>
             <fee:fee description="restore">17.00</fee:fee>
@@ -81,7 +88,7 @@
         </fee:cd>
         <fee:cd>
           <fee:objID>collision.tld</fee:objID>
-          <fee:class>collision</fee:class>
+          <fee:class>standard-collision</fee:class>
           <fee:command name="create">
             <fee:period unit="y">1</fee:period>
             <fee:fee description="create">11.05</fee:fee>
@@ -89,7 +96,7 @@
         </fee:cd>
         <fee:cd>
           <fee:objID>collision.tld</fee:objID>
-          <fee:class>collision</fee:class>
+          <fee:class>standard-collision</fee:class>
           <fee:command name="renew">
             <fee:period unit="y">1</fee:period>
             <fee:fee description="renew">11.00</fee:fee>
@@ -97,7 +104,7 @@
         </fee:cd>
         <fee:cd>
           <fee:objID>collision.tld</fee:objID>
-          <fee:class>collision</fee:class>
+          <fee:class>standard-collision</fee:class>
           <fee:command name="transfer">
             <fee:period unit="y">1</fee:period>
             <fee:fee description="renew">11.00</fee:fee>
@@ -105,7 +112,7 @@
         </fee:cd>
         <fee:cd>
           <fee:objID>collision.tld</fee:objID>
-          <fee:class>collision</fee:class>
+          <fee:class>standard-collision</fee:class>
           <fee:command name="restore">
             <fee:period unit="y">1</fee:period>
             <fee:fee description="restore">17.00</fee:fee>
@@ -137,7 +144,7 @@
         </fee:cd>
         <fee:cd>
           <fee:objID>premiumcollision.tld</fee:objID>
-          <fee:class>collision</fee:class>
+          <fee:class>standard-collision</fee:class>
           <fee:command name="restore">
             <fee:period unit="y">1</fee:period>
             <fee:fee description="restore">17.00</fee:fee>

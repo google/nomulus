@@ -16,6 +16,7 @@
         <fee:currency>USD</fee:currency>
         <fee:cd>
           <fee:objID>rich.example</fee:objID>
+          <fee:class>standard</fee:class>
           <fee:command name="renew">
             <fee:period unit="y">1</fee:period>
             <fee:fee description="renew">%RENEWPRICE%</fee:fee>

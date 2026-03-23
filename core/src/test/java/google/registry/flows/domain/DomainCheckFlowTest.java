@@ -536,7 +536,7 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
                 .put("COST_1YR", "7.23")
                 .put("COST_2YR", "13.34")
                 .put("COST_5YR", "46.34")
-                .put("FEE_CLASS", "")
+                .put("FEE_CLASS", "<fee:class>standard</fee:class>")
                 .build()));
   }
 

@@ -88,6 +88,7 @@ import google.registry.model.domain.fee.FeeQueryCommandExtensionItem;
 import google.registry.model.domain.fee.FeeQueryResponseExtensionItem;
 import google.registry.model.domain.fee.FeeTransformCommandExtension;
 import google.registry.model.domain.fee.FeeTransformResponseExtension;
+import google.registry.model.domain.feestdv1.FeeCheckResponseExtensionItemStdV1;
 import google.registry.model.domain.launch.LaunchCreateExtension;
 import google.registry.model.domain.launch.LaunchExtension;
 import google.registry.model.domain.launch.LaunchNotice;
@@ -683,12 +684,15 @@ public class DomainFlowUtils {
           tld.getTldState(now).equals(START_DATE_SUNRISE)
               && getReservationTypes(domainName).contains(NAME_COLLISION);
       boolean isPremium = fees.stream().anyMatch(BaseFee::isPremium);
+      boolean isFeeStdV1 = builder instanceof FeeCheckResponseExtensionItemStdV1.Builder;
+      String standardFee = isFeeStdV1 ? "standard" : null;
       feeClass =
           emptyToNull(
               Joiner.on('-')
                   .skipNulls()
                   .join(
-                      isPremium ? "premium" : null, isNameCollisionInSunrise ? "collision" : null));
+                      isPremium ? "premium" : standardFee,
+                      isNameCollisionInSunrise ? "collision" : null));
     }
     builder.setClass(feeClass);
 

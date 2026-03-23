@@ -48,6 +48,7 @@
         </fee:cd>
         <fee:cd>
           <fee:objID>specificuse.tld</fee:objID>
+          <fee:class>standard</fee:class>
           <fee:command name="create">
             <fee:period unit="y">1</fee:period>
             <fee:fee description="create">13.00</fee:fee>

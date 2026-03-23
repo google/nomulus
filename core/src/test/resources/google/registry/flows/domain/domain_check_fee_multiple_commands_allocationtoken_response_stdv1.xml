@@ -15,6 +15,7 @@
         <fee:currency>USD</fee:currency>
         <fee:cd>
           <fee:objID>example1.tld</fee:objID>
+          <fee:class>standard</fee:class>
           <fee:command name="create">
             <fee:period unit="y">1</fee:period>
             <fee:fee description="create">11.70</fee:fee>
@@ -22,6 +23,7 @@
         </fee:cd>
         <fee:cd>
           <fee:objID>example1.tld</fee:objID>
+          <fee:class>standard</fee:class>
           <fee:command name="renew">
             <fee:period unit="y">1</fee:period>
             <fee:fee description="renew">11.00</fee:fee>
@@ -29,6 +31,7 @@
         </fee:cd>
         <fee:cd>
           <fee:objID>example1.tld</fee:objID>
+          <fee:class>standard</fee:class>
           <fee:command name="transfer">
             <fee:period unit="y">1</fee:period>
             <fee:fee description="renew">11.00</fee:fee>
@@ -36,6 +39,7 @@
         </fee:cd>
         <fee:cd>
           <fee:objID>example1.tld</fee:objID>
+          <fee:class>standard</fee:class>
           <fee:command name="restore">
             <fee:period unit="y">1</fee:period>
             <fee:fee description="restore">17.00</fee:fee>
@@ -43,6 +47,7 @@
         </fee:cd>
         <fee:cd>
           <fee:objID>example1.tld</fee:objID>
+          <fee:class>standard</fee:class>
           <fee:command name="update">
             <fee:period unit="y">1</fee:period>
             <fee:fee description="update">0.00</fee:fee>
