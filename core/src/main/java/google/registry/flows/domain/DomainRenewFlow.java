@@ -169,6 +169,8 @@ public final class DomainRenewFlow implements MutatingFlow {
     Domain existingDomain = loadAndVerifyExistence(Domain.class, targetId, now);
     String tldStr = existingDomain.getTld();
     Tld tld = Tld.get(tldStr);
+    int years = command.getPeriod().getValue();
+
     Optional<AllocationToken> allocationToken =
         AllocationTokenFlowUtils.loadTokenFromExtensionOrGetDefault(
             registrarId,
@@ -176,7 +178,9 @@ public final class DomainRenewFlow implements MutatingFlow {
             eppInput.getSingleExtension(AllocationTokenExtension.class),
             tld,
             existingDomain.getDomainName(),
-            CommandName.RENEW);
+            CommandName.RENEW,
+            Optional.of(years),
+            pricingLogic);
     boolean defaultTokenUsed =
         allocationToken
             .map(t -> t.getTokenType().equals(AllocationToken.TokenType.DEFAULT_PROMO))
@@ -186,7 +190,6 @@ public final class DomainRenewFlow implements MutatingFlow {
     // If client passed an applicable static token this updates the domain
     existingDomain = maybeApplyBulkPricingRemovalToken(existingDomain, allocationToken);
 
-    int years = command.getPeriod().getValue();
     DateTime newExpirationTime =
         leapSafeAddYears(existingDomain.getRegistrationExpirationTime(), years);  // Uncapped
     validateRegistrationPeriod(now, newExpirationTime);

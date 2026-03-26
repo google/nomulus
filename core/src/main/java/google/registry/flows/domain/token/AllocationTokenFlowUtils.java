@@ -15,7 +15,6 @@
 package google.registry.flows.domain.token;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.pricing.PricingEngineProxy.isDomainPremium;
@@ -24,21 +23,25 @@ import static google.registry.util.CollectionUtils.isNullOrEmpty;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.net.InternetDomainName;
 import google.registry.flows.EppException;
 import google.registry.flows.EppException.AssociationProhibitsOperationException;
 import google.registry.flows.EppException.AuthorizationErrorException;
 import google.registry.flows.EppException.StatusProhibitsOperationException;
-import google.registry.model.billing.BillingBase;
+import google.registry.flows.domain.DomainPricingLogic;
+import google.registry.model.billing.BillingBase.RenewalPriceBehavior;
 import google.registry.model.billing.BillingRecurrence;
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.fee.FeeQueryCommandExtensionItem.CommandName;
 import google.registry.model.domain.token.AllocationToken;
 import google.registry.model.domain.token.AllocationToken.TokenBehavior;
+import google.registry.model.domain.token.AllocationToken.TokenStatus;
 import google.registry.model.domain.token.AllocationTokenExtension;
 import google.registry.model.reporting.HistoryEntry.HistoryEntryId;
 import google.registry.model.tld.Tld;
 import google.registry.persistence.VKey;
+import java.math.BigDecimal;
 import java.util.Map;
 import java.util.Optional;
 import org.joda.time.DateTime;
@@ -91,8 +94,10 @@ public class AllocationTokenFlowUtils {
       Optional<AllocationTokenExtension> extension,
       Tld tld,
       String domainName,
-      CommandName commandName)
-      throws NonexistentAllocationTokenException, AllocationTokenInvalidException {
+      CommandName commandName,
+      Optional<Integer> years,
+      DomainPricingLogic pricingLogic)
+      throws EppException {
     Optional<AllocationToken> fromExtension =
         loadAllocationTokenFromExtension(registrarId, domainName, now, extension);
     if (fromExtension.isPresent()
@@ -100,7 +105,8 @@ public class AllocationTokenFlowUtils {
             InternetDomainName.from(domainName), fromExtension.get(), commandName, now)) {
       return fromExtension;
     }
-    return checkForDefaultToken(tld, domainName, commandName, registrarId, now);
+    return checkForDefaultToken(
+        tld, domainName, commandName, registrarId, now, years, pricingLogic);
   }
 
   /** Verifies that the given domain can have a bulk pricing token removed from it. */
@@ -133,7 +139,7 @@ public class AllocationTokenFlowUtils {
     BillingRecurrence newBillingRecurrence =
         tm().loadByKey(domain.getAutorenewBillingEvent())
             .asBuilder()
-            .setRenewalPriceBehavior(BillingBase.RenewalPriceBehavior.DEFAULT)
+            .setRenewalPriceBehavior(RenewalPriceBehavior.DEFAULT)
             .setRenewalPrice(null)
             .build();
 
@@ -182,37 +188,70 @@ public class AllocationTokenFlowUtils {
    * token found on the TLD's default token list will be returned.
    */
   private static Optional<AllocationToken> checkForDefaultToken(
-      Tld tld, String domainName, CommandName commandName, String registrarId, DateTime now) {
+      Tld tld,
+      String domainName,
+      CommandName commandName,
+      String registrarId,
+      DateTime now,
+      Optional<Integer> years,
+      DomainPricingLogic pricingLogic)
+      throws EppException {
     ImmutableList<VKey<AllocationToken>> tokensFromTld = tld.getDefaultPromoTokens();
     if (isNullOrEmpty(tokensFromTld)) {
       return Optional.empty();
     }
-    Map<VKey<AllocationToken>, Optional<AllocationToken>> tokens =
-        AllocationToken.getAll(tokensFromTld);
-    checkState(
-        !isNullOrEmpty(tokens), "Failure while loading default TLD tokens from the database");
-    // Iterate over the list to maintain token ordering (since we return the first valid token)
     ImmutableList<AllocationToken> tokenList =
-        tokensFromTld.stream()
-            .map(tokens::get)
-            .filter(Optional::isPresent)
-            .map(Optional::get)
+        AllocationToken.getAll(tokensFromTld).values().stream()
+            .flatMap(Optional::stream)
+            // Filter to tokens that are 1. valid in general 2. valid for this particular request
+            .filter(
+                token -> {
+                  try {
+                    validateTokenEntity(token, registrarId, domainName, now);
+                  } catch (AllocationTokenInvalidException e) {
+                    return false;
+                  }
+                  return tokenIsValidAgainstDomain(
+                      InternetDomainName.from(domainName), token, commandName, now);
+                })
             .collect(toImmutableList());
-
-    // Check if any of the tokens are valid for this domain registration
+    // We can't compute the costs directly in the stream due to the checked EppException
+    ImmutableMap.Builder<AllocationToken, BigDecimal> tokenCosts = new ImmutableMap.Builder<>();
     for (AllocationToken token : tokenList) {
-      try {
-        validateTokenEntity(token, registrarId, domainName, now);
-      } catch (AllocationTokenInvalidException e) {
-        // Token is not valid for this registrar, etc. -- continue trying tokens
-        continue;
-      }
-      if (tokenIsValidAgainstDomain(InternetDomainName.from(domainName), token, commandName, now)) {
-        return Optional.of(token);
-      }
+      tokenCosts.put(
+          token,
+          getSampleCostWithToken(tld, domainName, token, commandName, now, years, pricingLogic));
     }
-    // No valid default token found
-    return Optional.empty();
+    return tokenCosts.build().entrySet().stream()
+        .min(Map.Entry.comparingByValue())
+        .map(Map.Entry::getKey);
+  }
+
+  private static BigDecimal getSampleCostWithToken(
+      Tld tld,
+      String domainName,
+      AllocationToken token,
+      CommandName commandName,
+      DateTime now,
+      Optional<Integer> years,
+      DomainPricingLogic pricingLogic)
+      throws EppException {
+    int yearsForAction = years.orElse(1);
+    // We only support token discounts on creates or renews
+    return switch (commandName) {
+      case CREATE ->
+          pricingLogic
+              .getCreatePrice(
+                  tld, domainName, now, yearsForAction, false, false, Optional.of(token))
+              .getTotalCost()
+              .getAmount();
+      case RENEW ->
+          pricingLogic
+              .getRenewPrice(tld, domainName, now, yearsForAction, null, Optional.of(token))
+              .getTotalCost()
+              .getAmount();
+      default -> BigDecimal.ZERO;
+    };
   }
 
   /** Loads a given token and validates it against the registrar, time, etc */
@@ -253,8 +292,7 @@ public class AllocationTokenFlowUtils {
     // Tokens without status transitions will just have a single-entry NOT_STARTED map, so only
     // check the status transitions map if it's non-trivial.
     if (token.getTokenStatusTransitions().size() > 1
-        && !AllocationToken.TokenStatus.VALID.equals(
-            token.getTokenStatusTransitions().getValueAtTime(now))) {
+        && !TokenStatus.VALID.equals(token.getTokenStatusTransitions().getValueAtTime(now))) {
       throw new AllocationTokenNotInPromotionException();
     }
 
@@ -303,7 +341,7 @@ public class AllocationTokenFlowUtils {
     AllocationTokenNotValidForDomainException() {
       super("Alloc token invalid for domain");
     }
-    }
+  }
 
   /** The allocation token is invalid. */
   public static class NonexistentAllocationTokenException extends AuthorizationErrorException {

@@ -579,8 +579,7 @@ public class RdapJsonFormatter {
       ImmutableList<RdapRegistrarPocEntity> registrarPocs =
           registrar.getPocsFromReplica().stream()
               .map(RdapJsonFormatter::makeRdapJsonForRegistrarPoc)
-              .filter(Optional::isPresent)
-              .map(Optional::get)
+              .flatMap(Optional::stream)
               .filter(
                   poc ->
                       outputDataType == OutputDataType.FULL

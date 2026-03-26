@@ -52,8 +52,7 @@ public final class ListReservedListsAction extends ListObjectsAction<ReservedLis
                 tm().loadAllOf(ReservedList.class).stream()
                     .map(ReservedList::getName)
                     .map(ReservedListDao::getLatestRevision)
-                    .filter(Optional::isPresent)
-                    .map(Optional::get)
+                    .flatMap(Optional::stream)
                     .collect(toImmutableSortedSet(Comparator.comparing(ReservedList::getName))));
   }
 }

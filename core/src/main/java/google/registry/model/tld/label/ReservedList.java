@@ -261,8 +261,7 @@ public final class ReservedList
   public static ImmutableSet<ReservedList> loadReservedLists(
       ImmutableSet<String> reservedListNames) {
     return cache.getAll(reservedListNames).values().stream()
-        .filter(Optional::isPresent)
-        .map(Optional::get)
+        .flatMap(Optional::stream)
         .collect(toImmutableSet());
   }
 

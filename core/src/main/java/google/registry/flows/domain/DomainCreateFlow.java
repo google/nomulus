@@ -264,7 +264,9 @@ public final class DomainCreateFlow implements MutatingFlow {
             eppInput.getSingleExtension(AllocationTokenExtension.class),
             tld,
             command.getDomainName(),
-            CommandName.CREATE);
+            CommandName.CREATE,
+            Optional.of(years),
+            pricingLogic);
     boolean defaultTokenUsed =
         allocationToken.map(t -> t.getTokenType().equals(TokenType.DEFAULT_PROMO)).orElse(false);
     boolean isAnchorTenant =

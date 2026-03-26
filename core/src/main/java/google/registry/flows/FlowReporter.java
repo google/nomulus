@@ -100,8 +100,7 @@ public class FlowReporter {
   public static ImmutableSet<String> extractTlds(Iterable<String> domainNames) {
     return Streams.stream(domainNames)
         .map(FlowReporter::extractTld)
-        .filter(Optional::isPresent)
-        .map(Optional::get)
+        .flatMap(Optional::stream)
         .collect(toImmutableSet());
   }
 

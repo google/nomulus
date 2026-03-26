@@ -1577,7 +1577,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     persistHosts();
     setupDefaultToken("aaaaa", 0, "TheRegistrar");
     setupDefaultTokenWithDiscount();
-    runTest_defaultToken("aaaaa");
+    runTest_defaultToken("bbbbb");
   }
 
   @Test

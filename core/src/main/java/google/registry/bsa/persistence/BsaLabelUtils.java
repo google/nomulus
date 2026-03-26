@@ -100,8 +100,7 @@ public final class BsaLabelUtils {
     ImmutableList<VKey<BsaLabel>> queriedLabels =
         domainLabels.stream().map(BsaLabel::vKey).collect(toImmutableList());
     return cacheBsaLabels.getAll(queriedLabels).values().stream()
-        .filter(Optional::isPresent)
-        .map(Optional::get)
+        .flatMap(Optional::stream)
         .map(BsaLabel::getLabel)
         .collect(toImmutableSet());
   }

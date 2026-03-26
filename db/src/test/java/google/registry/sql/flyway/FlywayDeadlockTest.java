@@ -178,8 +178,7 @@ public class FlywayDeadlockTest {
                   .filter(line -> !line.isBlank())
                   .collect(joining(" ")))
           .map(FlywayDeadlockTest::getDdlLockedElementName)
-          .filter(Optional::isPresent)
-          .map(Optional::get)
+          .flatMap(Optional::stream)
           .collect(toImmutableSet());
     } catch (IOException e) {
       throw new RuntimeException(e);

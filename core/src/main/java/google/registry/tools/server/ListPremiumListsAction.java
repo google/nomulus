@@ -54,8 +54,7 @@ public final class ListPremiumListsAction extends ListObjectsAction<PremiumList>
                 tm().loadAllOf(PremiumList.class).stream()
                     .map(PremiumList::getName)
                     .map(PremiumListDao::getLatestRevision)
-                    .filter(Optional::isPresent)
-                    .map(Optional::get)
+                    .flatMap(Optional::stream)
                     .collect(toImmutableSortedSet(Comparator.comparing(PremiumList::getName))));
   }
 }

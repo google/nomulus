@@ -35,6 +35,8 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.net.InternetDomainName;
 import google.registry.flows.EppException;
+import google.registry.flows.custom.DomainPricingCustomLogic;
+import google.registry.flows.domain.DomainPricingLogic;
 import google.registry.flows.domain.token.AllocationTokenFlowUtils.AllocationTokenNotInPromotionException;
 import google.registry.flows.domain.token.AllocationTokenFlowUtils.AllocationTokenNotValidForRegistrarException;
 import google.registry.flows.domain.token.AllocationTokenFlowUtils.NonexistentAllocationTokenException;
@@ -64,6 +66,9 @@ class AllocationTokenFlowUtilsTest {
 
   private final AllocationTokenExtension allocationTokenExtension =
       mock(AllocationTokenExtension.class);
+
+  private final DomainPricingLogic domainPricingLogic =
+      new DomainPricingLogic(new DomainPricingCustomLogic(null, null, null));
 
   private Tld tld;
 
@@ -140,7 +145,9 @@ class AllocationTokenFlowUtilsTest {
                 Optional.of(allocationTokenExtension),
                 tld,
                 "example.tld",
-                CommandName.CREATE))
+                CommandName.CREATE,
+                Optional.of(1),
+                domainPricingLogic))
         .hasValue(token);
   }
 
@@ -154,7 +161,9 @@ class AllocationTokenFlowUtilsTest {
                 Optional.empty(),
                 tld,
                 "example.tld",
-                CommandName.CREATE))
+                CommandName.CREATE,
+                Optional.of(1),
+                domainPricingLogic))
         .hasValue(defaultToken);
   }
 
@@ -176,7 +185,9 @@ class AllocationTokenFlowUtilsTest {
                 Optional.of(allocationTokenExtension),
                 tld,
                 "example.tld",
-                CommandName.CREATE))
+                CommandName.CREATE,
+                Optional.of(1),
+                domainPricingLogic))
         .hasValue(defaultToken);
   }
 
@@ -299,7 +310,9 @@ class AllocationTokenFlowUtilsTest {
                 Optional.of(allocationTokenExtension),
                 tld,
                 "example.tld",
-                CommandName.CREATE));
+                CommandName.CREATE,
+                Optional.of(1),
+                domainPricingLogic));
   }
 
   @Test
@@ -311,7 +324,9 @@ class AllocationTokenFlowUtilsTest {
                 Optional.empty(),
                 tld,
                 "example.tld",
-                CommandName.CREATE))
+                CommandName.CREATE,
+                Optional.of(1),
+                domainPricingLogic))
         .isEmpty();
   }
 
@@ -329,7 +344,93 @@ class AllocationTokenFlowUtilsTest {
                 Optional.of(allocationTokenExtension),
                 tld,
                 "example.tld",
-                CommandName.CREATE));
+                CommandName.CREATE,
+                Optional.of(1),
+                domainPricingLogic));
+  }
+
+  @Test
+  void testSuccess_default_cheaperTokenUsed() throws Exception {
+    AllocationToken cheaperToken =
+        persistResource(
+            new AllocationToken.Builder()
+                .setToken("cheaperToken")
+                .setDiscountFraction(0.5)
+                .setAllowedTlds(ImmutableSet.of("tld"))
+                .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
+                .setTokenType(DEFAULT_PROMO)
+                .build());
+    AllocationToken moreExpensiveToken =
+        persistResource(
+            new AllocationToken.Builder()
+                .setToken("moreExpensiveToken")
+                .setDiscountFraction(0.1)
+                .setAllowedTlds(ImmutableSet.of("tld"))
+                .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
+                .setTokenType(DEFAULT_PROMO)
+                .build());
+    // List the more expensive token first to ensure that we don't just pick the first valid one
+    tld =
+        persistResource(
+            tld.asBuilder()
+                .setDefaultPromoTokens(
+                    ImmutableList.of(moreExpensiveToken.createVKey(), cheaperToken.createVKey()))
+                .build());
+
+    assertThat(
+            AllocationTokenFlowUtils.loadTokenFromExtensionOrGetDefault(
+                "TheRegistrar",
+                clock.nowUtc(),
+                Optional.empty(),
+                tld,
+                "example.tld",
+                CommandName.CREATE,
+                Optional.of(1),
+                domainPricingLogic))
+        .hasValue(cheaperToken);
+  }
+
+  @Test
+  void testSuccess_default_twoYearsIsCheaper() throws Exception {
+    AllocationToken longerToken =
+        persistResource(
+            new AllocationToken.Builder()
+                .setToken("longerToken")
+                .setDiscountFraction(0.4)
+                .setDiscountYears(2)
+                .setAllowedTlds(ImmutableSet.of("tld"))
+                .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
+                .setTokenType(DEFAULT_PROMO)
+                .build());
+    AllocationToken shorterToken =
+        persistResource(
+            new AllocationToken.Builder()
+                .setToken("shorterToken")
+                .setDiscountFraction(0.5)
+                .setDiscountYears(1)
+                .setAllowedTlds(ImmutableSet.of("tld"))
+                .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar"))
+                .setTokenType(DEFAULT_PROMO)
+                .build());
+    tld =
+        persistResource(
+            tld.asBuilder()
+                .setDefaultPromoTokens(
+                    ImmutableList.of(shorterToken.createVKey(), longerToken.createVKey()))
+                .build());
+
+    // The token with the smaller discount fraction should be chosen because it runs for 2 years
+    assertThat(
+            AllocationTokenFlowUtils.loadTokenFromExtensionOrGetDefault(
+                "TheRegistrar",
+                clock.nowUtc(),
+                Optional.empty(),
+                tld,
+                "example.tld",
+                CommandName.CREATE,
+                Optional.of(2),
+                domainPricingLogic))
+        .hasValue(longerToken);
   }
 
   private AllocationToken persistDefaultToken() {

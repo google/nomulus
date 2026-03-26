@@ -67,7 +67,7 @@ public final class DomainPricingLogic {
    * <p>If {@code allocationToken} is present and the domain is non-premium, that discount will be
    * applied to the first year.
    */
-  FeesAndCredits getCreatePrice(
+  public FeesAndCredits getCreatePrice(
       Tld tld,
       String domainName,
       DateTime dateTime,
@@ -193,8 +193,8 @@ public final class DomainPricingLogic {
   }
 
   /** Returns a new restore price for the pricer. */
-  FeesAndCredits getRestorePrice(Tld tld, String domainName, DateTime dateTime, boolean isExpired)
-      throws EppException {
+  public FeesAndCredits getRestorePrice(
+      Tld tld, String domainName, DateTime dateTime, boolean isExpired) throws EppException {
     DomainPrices domainPrices = getPricesForDomainName(domainName, dateTime);
     FeesAndCredits.Builder feesAndCredits =
         new FeesAndCredits.Builder()
@@ -216,7 +216,7 @@ public final class DomainPricingLogic {
   }
 
   /** Returns a new transfer price for the pricer. */
-  FeesAndCredits getTransferPrice(
+  public FeesAndCredits getTransferPrice(
       Tld tld, String domainName, DateTime dateTime, @Nullable BillingRecurrence billingRecurrence)
       throws EppException {
     FeesAndCredits renewPrice =
@@ -239,7 +239,8 @@ public final class DomainPricingLogic {
   }
 
   /** Returns a new update price for the pricer. */
-  FeesAndCredits getUpdatePrice(Tld tld, String domainName, DateTime dateTime) throws EppException {
+  public FeesAndCredits getUpdatePrice(Tld tld, String domainName, DateTime dateTime)
+      throws EppException {
     CurrencyUnit currency = tld.getCurrency();
     BaseFee feeOrCredit = Fee.create(zeroInCurrency(currency), FeeType.UPDATE, false);
     return customLogic.customizeUpdatePrice(

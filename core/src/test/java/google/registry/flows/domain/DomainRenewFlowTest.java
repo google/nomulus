@@ -1243,7 +1243,7 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
             new AllocationToken.Builder()
                 .setToken("aaaaa")
                 .setTokenType(DEFAULT_PROMO)
-                .setDiscountFraction(0.5)
+                .setDiscountFraction(0.9)
                 .setDiscountYears(1)
                 .setAllowedTlds(ImmutableSet.of("tld"))
                 .build());
@@ -1271,8 +1271,8 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
     assertThat(billingEvent.getTargetId()).isEqualTo("example.tld");
     assertThat(billingEvent.getAllocationToken().get().getKey())
         .isEqualTo(defaultToken1.getToken());
-    // Price is 50% off the first year only. Non-discounted price is $11.
-    assertThat(billingEvent.getCost()).isEqualTo(Money.of(USD, 16.5));
+    // Price is 90% off the first year only. Non-discounted price is $11.
+    assertThat(billingEvent.getCost()).isEqualTo(Money.of(USD, 12.10));
   }
 
   @Test
@@ -1412,7 +1412,7 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
   }
 
   @Test
-  void testSuccess_onlyUsesFirstValidToken() throws Exception {
+  void testSuccess_usesCheapestValidToken() throws Exception {
     setEppInput("domain_renew.xml", ImmutableMap.of("DOMAIN", "example.tld", "YEARS", "2"));
     persistDomain();
     AllocationToken defaultToken1 =
@@ -1459,10 +1459,9 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
     BillingEvent billingEvent =
         Iterables.getOnlyElement(DatabaseHelper.loadAllOf(BillingEvent.class));
     assertThat(billingEvent.getTargetId()).isEqualTo("example.tld");
-    assertThat(billingEvent.getAllocationToken().get().getKey())
-        .isEqualTo(defaultToken2.getToken());
-    // Price is 50% off the first year only. Non-discounted price is $11.
-    assertThat(billingEvent.getCost()).isEqualTo(Money.of(USD, 16.5));
+    assertThat(billingEvent.getAllocationToken().get().getKey()).isEqualTo("ccccc");
+    // Price is 75% off the first year only. Non-discounted price is $11.
+    assertThat(billingEvent.getCost()).isEqualTo(Money.of(USD, 13.75));
   }
 
   @Test

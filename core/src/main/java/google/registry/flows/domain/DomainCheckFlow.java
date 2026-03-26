@@ -225,7 +225,8 @@ public final class DomainCheckFlow implements TransactionalFlow {
       ImmutableSet<InternetDomainName> bsaBlockedDomainNames,
       ImmutableMap<String, TldState> tldStates,
       ImmutableMap<String, InternetDomainName> parsedDomains,
-      DateTime now) {
+      DateTime now)
+      throws EppException {
     InternetDomainName idn = parsedDomains.get(domainName);
     Optional<AllocationToken> token;
     try {
@@ -238,7 +239,9 @@ public final class DomainCheckFlow implements TransactionalFlow {
               eppInput.getSingleExtension(AllocationTokenExtension.class),
               Tld.get(idn.parent().toString()),
               domainName,
-              FeeQueryCommandExtensionItem.CommandName.CREATE);
+              FeeQueryCommandExtensionItem.CommandName.CREATE,
+              Optional.empty(),
+              pricingLogic);
     } catch (AllocationTokenFlowUtils.NonexistentAllocationTokenException
         | AllocationTokenFlowUtils.AllocationTokenInvalidException e) {
       // The provided token was catastrophically invalid in some way
@@ -317,7 +320,9 @@ public final class DomainCheckFlow implements TransactionalFlow {
                   eppInput.getSingleExtension(AllocationTokenExtension.class),
                   tld,
                   domainName,
-                  feeCheckItem.getCommandName());
+                  feeCheckItem.getCommandName(),
+                  Optional.empty(),
+                  pricingLogic);
         } catch (AllocationTokenFlowUtils.NonexistentAllocationTokenException
             | AllocationTokenFlowUtils.AllocationTokenInvalidException e) {
           // The provided token was catastrophically invalid in some way
