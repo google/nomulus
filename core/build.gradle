@@ -17,7 +17,7 @@ import java.util.Optional
 
 plugins {
   id 'java-library'
-  id "org.flywaydb.flyway" version "11.0.1"
+  id "org.flywaydb.flyway" version "12.2.0"
   id 'maven-publish'
 }
 
@@ -300,9 +300,6 @@ dependencies {
 
   // Dependency needed for soy to java compilation.
   soy deps['com.google.template:soy']
-
-  // Tool dependencies.  used for doc generation.
-  implementation files("${System.properties['java.home']}/../lib/tools.jar")
 
   // Flyway classes needed to generate the golden file.
   implementation deps['org.flywaydb:flyway-core']

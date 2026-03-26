@@ -245,6 +245,12 @@
       "moduleLicense": "The JSON License"
     },
     {
+      "moduleLicense": "LGPL-2.1-or-later"
+    },
+    {
+      "moduleLicense": "Apache License version 2.0"
+    },
+    {
       "moduleLicense": "LGPL-2.1+"
     },
     {

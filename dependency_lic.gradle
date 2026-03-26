@@ -28,6 +28,12 @@ buildscript {
 }
 apply plugin: com.github.jk1.license.LicenseReportPlugin
 
+tasks.named('generateLicenseReport') {
+  // Try to force it to run at the end of the build to avoid parallel resolution conflicts.
+  mustRunAfter(allprojects.collect { it.tasks.withType(Test) }.flatten())
+  mustRunAfter(allprojects.collect { it.tasks.withType(Jar) }.flatten())
+}
+
 // Configures the checkLicense task.
 //
 // This task discovers license information for each dependency including a
