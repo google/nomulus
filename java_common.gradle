@@ -52,21 +52,21 @@ tasks.test.finalizedBy jacocoTestReport
 configurations {
   deploy_jar.extendsFrom runtimeClasspath
 
-  all.findAll {
+  matching {
     it.name in ['runtimeClasspath', 'compileClasspath']
-  }.each {
+  }.all {
     // JUnit is from org.apache.beam:beam-runners-google-cloud-dataflow-java,
     // and json-simple.
-    it.exclude group: 'junit'
+    exclude group: 'junit'
     // Mockito is from org.apache.beam:beam-runners-google-cloud-dataflow-java
     // See https://issues.apache.org/jira/browse/BEAM-8862
-    it.exclude group: 'org.mockito', module: 'mockito-core'
+    exclude group: 'org.mockito', module: 'mockito-core'
   }
-  all.each {
+  all {
     // log4j has high-profile security vulnerabilities. It's a transitive
     // dependency used by some Apache Beam packages. Excluding it does not
     // impact our troubleshooting needs.
-    it.exclude group: 'org.apache.logging.log4j'
+    exclude group: 'org.apache.logging.log4j'
   }
 }
 
@@ -153,7 +153,7 @@ spotless {
     target '**/*.gradle'
     targetExclude '**/cloudbuild-caches/**'
     trimTrailingWhitespace()
-    indentWithSpaces(2)
+    leadingTabsToSpaces(2)
     endWithNewline()
   }
 }

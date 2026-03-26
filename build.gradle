@@ -11,7 +11,6 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 import org.gradle.api.tasks.testing.logging.TestLogEvent
 
@@ -28,8 +27,9 @@ buildscript {
   }
 
   dependencies {
-    classpath 'com.google.cloud.tools:appengine-gradle-plugin:2.4.1'
-    classpath 'net.ltgt.gradle:gradle-errorprone-plugin:3.1.0'
+    classpath 'com.google.cloud.tools:appengine-gradle-plugin:2.5.0'
+    classpath 'net.ltgt.gradle:gradle-errorprone-plugin:5.1.0'
+    classpath 'com.gradleup.shadow:com.gradleup.shadow.gradle.plugin:9.4.0'
     classpath 'org.sonatype.aether:aether-api:1.13.1'
     classpath 'org.sonatype.aether:aether-impl:1.13.1'
   }
@@ -40,15 +40,15 @@ plugins {
 
   // Re-enable when compatible with Gradle 8
   // id 'nebula.lint' version '16.0.2'
-  id 'net.ltgt.errorprone' version '3.1.0'
+  id 'net.ltgt.errorprone' version '5.1.0'
   id 'checkstyle'
-  id 'com.github.johnrengelman.shadow' version '8.1.1'
+  id 'com.gradleup.shadow' version '9.4.0' apply false
 
   // NodeJs plugin
-  id "com.github.node-gradle.node" version "3.0.1"
+  id "com.github.node-gradle.node" version "7.1.0"
 
   id 'idea'
-  id 'com.diffplug.spotless' version '6.20.0'
+  id 'com.diffplug.spotless' version '8.4.0'
 
   id 'jacoco'
   id 'com.dorongold.task-tree' version '2.1.0'
@@ -73,7 +73,15 @@ apply from: 'dependency_lic.gradle'
 
 apply from: 'utils.gradle'
 
-tasks.build.dependsOn(tasks.checkLicense)
+// The license-report plugin must run with --no-parallel due to
+// complex cross-subject references. The `mutex` pattern does not
+// help because a mutex does not enforce task execution order.
+// For now we separate checkLicense from build so that the latter may
+// still take advantage of parallelism, which cuts down the build time
+// by about 20%. The presubmit and release procedures that want to check
+// licenses must invoke checkLicense explicitly with the `--no-parallel`
+// flag.
+// tasks.build.dependsOn(tasks.checkLicense)
 
 // Provide defaults for all of the project properties.
 
@@ -255,6 +263,14 @@ subprojects {
   // Skip no-op project
   if (project.name == 'services') return
 
+  apply plugin: 'com.gradleup.shadow'
+
+  tasks.configureEach {
+    if (it.class.name.contains('ShadowJar')) {
+      it.zip64 = true
+    }
+  }
+
   ext.createUberJar = {
       taskName,
       binaryName,
@@ -263,7 +279,8 @@ subprojects {
       List<SourceSetOutput> srcOutput = [project.sourceSets.main.output],
       List<String> excludes = [] ->
     project.tasks.create(
-        taskName, com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar) {
+        taskName, project.tasks.shadowJar.class) {
+      zip64 = true
       mergeServiceFiles()
       archiveBaseName = binaryName
       if (mainClass != '') {
@@ -321,9 +338,8 @@ subprojects {
       // To selectively activate dependency locking without hardcoding them
       // in the 'configurations' block, the following code must run after
       // project evaluation, when all configurations have been created.
-      configurations.each {
-        if (!it.name.contains('detachedConfiguration')
-            && it.name != 'integration') {
+      configurations.all {
+        if (!it.name.contains('detachedConfiguration')) {
           it.resolutionStrategy.activateDependencyLocking()
         }
       }
@@ -537,6 +553,14 @@ task coreDev {
   dependsOn 'checkLicense'
   dependsOn ':core:check'
   dependsOn 'assemble'
+
+  if (gradle.startParameter.parallelProjectExecutionEnabled
+      && gradle.startParameter.taskNames.contains("coreDev")) {
+    throw new GradleException(
+        "ERROR: 'coreDev' cannot run with --parallel due to checkLicense constraints.\n"
+            + "Please run: ./gradlew coreDev --no-parallel"
+    )
+  }
 }
 
 javadocDependentTasks.each { tasks.javadoc.dependsOn(it) }

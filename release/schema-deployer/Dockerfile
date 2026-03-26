@@ -29,14 +29,15 @@ FROM gcr.io/${PROJECT_ID}/builder:${TAG_NAME}
 
 COPY deploy_sql_schema.sh /usr/local/bin/
 RUN \
-  FLYWAY_MAVEN=https://repo1.maven.org/maven2/org/flywaydb/flyway-commandline \
-  && FLYWAY_VERSION="9.22.3" \
+  FLYWAY_URL=https://download.red-gate.com/maven/release/com/redgate/flyway/flyway-commandline \
+  && FLYWAY_VERSION="12.2.0" \
   && echo "Downloading Flyway-commandline-${FLYWAY_VERSION}" \
   && mkdir -p /flyway \
-  && curl -L ${FLYWAY_MAVEN}/${FLYWAY_VERSION}/flyway-commandline-${FLYWAY_VERSION}.tar.gz \
-     -o flyway-commandline-${FLYWAY_VERSION}.tar.gz \
+  && curl -L \
+      ${FLYWAY_URL}/${FLYWAY_VERSION}/flyway-commandline-${FLYWAY_VERSION}-linux-x64.tar.gz \
+      -o flyway-commandline-${FLYWAY_VERSION}.tar.gz \
   && tar -xzf flyway-commandline-${FLYWAY_VERSION}.tar.gz --strip-components=1 \
-       -C /flyway \
+      -C /flyway \
   && rm flyway-commandline-${FLYWAY_VERSION}.tar.gz
 
 ENTRYPOINT [ "deploy_sql_schema.sh" ]

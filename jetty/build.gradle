@@ -32,6 +32,15 @@ tasks.named('compileTestJava') {
     dependsOn(tasks.named('copyJettyBase'))
 }
 
+jar {
+    dependsOn(tasks.named('copyJettyBase'))
+    from(project(':core').tasks.named('jar'))
+}
+
+tasks.withType(tasks.shadowJar.class).configureEach {
+    dependsOn(tasks.named('copyJettyBase'))
+}
+
 dependencies {
     implementation project(':core')
 }
