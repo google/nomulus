@@ -20,6 +20,7 @@ import com.google.common.collect.ImmutableMap;
 import google.registry.model.ImmutableObject;
 import google.registry.persistence.PersistenceModule.TransactionIsolationLevel;
 import google.registry.persistence.VKey;
+import java.time.Instant;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.concurrent.Callable;
@@ -129,7 +130,11 @@ public interface TransactionManager {
   void reTransact(ThrowingRunnable work);
 
   /** Returns the time associated with the start of this particular transaction attempt. */
+  @Deprecated
   DateTime getTransactionTime();
+
+  /** Returns the Instant associated with the start of this particular transaction attempt. */
+  Instant getTxTime();
 
   /** Persists a new entity in the database, throws exception if the entity already exists. */
   void insert(Object entity);

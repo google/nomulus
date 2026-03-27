@@ -32,9 +32,14 @@ import static google.registry.util.DateTimeUtils.END_OF_TIME;
 import static google.registry.util.DateTimeUtils.earliestOf;
 import static google.registry.util.DateTimeUtils.isBeforeOrAt;
 import static google.registry.util.DateTimeUtils.leapSafeAddYears;
+import static google.registry.util.DateTimeUtils.plusYears;
+import static google.registry.util.DateTimeUtils.toDateTime;
+import static google.registry.util.DateTimeUtils.toInstant;
 import static google.registry.util.DomainNameUtils.canonicalizeHostname;
 import static google.registry.util.DomainNameUtils.getTldFromDomainName;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
+import static java.time.ZoneOffset.UTC;
+import static java.time.temporal.ChronoUnit.YEARS;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedSet;
@@ -79,13 +84,13 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.MappedSuperclass;
 import jakarta.persistence.Transient;
+import java.time.Instant;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
 import javax.annotation.Nullable;
 import org.hibernate.collection.spi.PersistentSet;
 import org.joda.time.DateTime;
-import org.joda.time.Interval;
 
 /**
  * A persistable domain resource including mutable and non-mutable fields.
@@ -285,8 +290,13 @@ public class DomainBase extends EppResource {
     return nullToEmptyImmutableCopy(subordinateHosts);
   }
 
-  public DateTime getRegistrationExpirationTime() {
+  @Deprecated
+  public DateTime getRegistrationExpirationDateTime() {
     return registrationExpirationTime;
+  }
+
+  public Instant getRegistrationExpirationTime() {
+    return toInstant(registrationExpirationTime);
   }
 
   public VKey<OneTime> getDeletePollMessage() {
@@ -436,6 +446,11 @@ public class DomainBase extends EppResource {
 
   @Override
   public DomainBase cloneProjectedAtTime(final DateTime now) {
+    return cloneDomainProjectedAtTime(this, toInstant(now));
+  }
+
+  @Override
+  public DomainBase cloneProjectedAtInstant(final Instant now) {
     return cloneDomainProjectedAtTime(this, now);
   }
 
@@ -444,9 +459,9 @@ public class DomainBase extends EppResource {
    * parallels the logic in {@code DomainTransferApproveFlow} which handles explicit client
    * approvals.
    */
-  static <T extends DomainBase> T cloneDomainProjectedAtTime(T domain, DateTime now) {
+  static <T extends DomainBase> T cloneDomainProjectedAtTime(T domain, Instant now) {
     DomainTransferData transferData = domain.getTransferData();
-    DateTime transferExpirationTime = transferData.getPendingTransferExpirationTime();
+    Instant transferExpirationTime = transferData.getPendingTransferExpirationTime();
 
     // If there's a pending transfer that has expired, handle it.
     if (TransferStatus.PENDING.equals(transferData.getTransferStatus())
@@ -459,7 +474,7 @@ public class DomainBase extends EppResource {
       T domainAtTransferTime =
           cloneDomainProjectedAtTime(domain, transferExpirationTime.minusMillis(1));
 
-      DateTime expirationDate = transferData.getTransferredRegistrationExpirationTime();
+      Instant expirationDate = transferData.getTransferredRegistrationExpirationTime();
       if (expirationDate == null) {
         // Extend the registration by the correct number of years from the expiration time
         // that was current on the domain right before the transfer, capped at 10 years from
@@ -478,7 +493,7 @@ public class DomainBase extends EppResource {
       Builder builder =
           domainAtTransferTime
               .asBuilder()
-              .setRegistrationExpirationTime(expirationDate)
+              .setRegistrationExpirationTime(toDateTime(expirationDate))
               // Set the speculatively-written new autorenew events as the domain's autorenew
               // events.
               .setAutorenewBillingEvent(transferData.getServerApproveAutorenewEvent())
@@ -492,8 +507,8 @@ public class DomainBase extends EppResource {
                 GracePeriod.create(
                     GracePeriodStatus.TRANSFER,
                     domain.getRepoId(),
-                    transferExpirationTime.plus(
-                        Tld.get(domain.getTld()).getTransferGracePeriodLength()),
+                    toDateTime(transferExpirationTime)
+                        .plus(Tld.get(domain.getTld()).getTransferGracePeriodLength()),
                     transferData.getGainingRegistrarId(),
                     transferData.getServerApproveBillingEvent())));
       } else {
@@ -503,32 +518,33 @@ public class DomainBase extends EppResource {
       // Set all remaining transfer properties.
       setAutomaticTransferSuccessProperties(builder, transferData);
       builder
-          .setLastEppUpdateTime(transferExpirationTime)
+          .setLastEppUpdateTime(toDateTime(transferExpirationTime))
           .setLastEppUpdateRegistrarId(transferData.getGainingRegistrarId());
       // Finish projecting to now.
-      return (T) builder.build().cloneProjectedAtTime(now);
+      return (T) builder.build().cloneProjectedAtInstant(now);
     }
 
-    Optional<DateTime> newLastEppUpdateTime = Optional.empty();
+    Optional<Instant> newLastEppUpdateTime = Optional.empty();
 
     // There is no transfer. Do any necessary autorenews for active domains.
 
     Builder builder = domain.asBuilder();
     if (isBeforeOrAt(domain.getRegistrationExpirationTime(), now)
-        && END_OF_TIME.equals(domain.getDeletionTime())) {
+        && END_OF_TIME.equals(domain.getDeletionDateTime())) {
       // Autorenew by the number of years between the old expiration time and now.
-      DateTime lastAutorenewTime =
+      Instant lastAutorenewTime =
           leapSafeAddYears(
               domain.getRegistrationExpirationTime(),
-              new Interval(domain.getRegistrationExpirationTime(), now).toPeriod().getYears());
-      DateTime newExpirationTime = lastAutorenewTime.plusYears(1);
+              YEARS.between(domain.getRegistrationExpirationTime().atZone(UTC), now.atZone(UTC)));
+      Instant newExpirationTime = plusYears(lastAutorenewTime, 1);
       builder
-          .setRegistrationExpirationTime(newExpirationTime)
+          .setRegistrationExpirationTime(toDateTime(newExpirationTime))
           .addGracePeriod(
               GracePeriod.createForRecurrence(
                   GracePeriodStatus.AUTO_RENEW,
                   domain.getRepoId(),
-                  lastAutorenewTime.plus(Tld.get(domain.getTld()).getAutoRenewGracePeriodLength()),
+                  toDateTime(lastAutorenewTime)
+                      .plus(Tld.get(domain.getTld()).getAutoRenewGracePeriodLength()),
                   domain.getCurrentSponsorRegistrarId(),
                   domain.getAutorenewBillingEvent()));
       newLastEppUpdateTime = Optional.of(lastAutorenewTime);
@@ -551,10 +567,10 @@ public class DomainBase extends EppResource {
     // id, so we have to do the comparison instead of having one variable just storing the most
     // recent time.
     if (newLastEppUpdateTime.isPresent()) {
-      if (domain.getLastEppUpdateTime() == null
+      if (domain.getLastEppUpdateDateTime() == null
           || newLastEppUpdateTime.get().isAfter(domain.getLastEppUpdateTime())) {
         builder
-            .setLastEppUpdateTime(newLastEppUpdateTime.get())
+            .setLastEppUpdateTime(toDateTime(newLastEppUpdateTime.get()))
             .setLastEppUpdateRegistrarId(domain.getCurrentSponsorRegistrarId());
       }
     }
@@ -567,8 +583,8 @@ public class DomainBase extends EppResource {
   }
 
   /** Return what the expiration time would be if the given number of years were added to it. */
-  public static DateTime extendRegistrationWithCap(
-      DateTime now, DateTime currentExpirationTime, @Nullable Integer extendedRegistrationYears) {
+  public static Instant extendRegistrationWithCap(
+      Instant now, Instant currentExpirationTime, @Nullable Integer extendedRegistrationYears) {
     // We must cap registration at the max years (aka 10), even if that truncates the last year.
     return earliestOf(
         leapSafeAddYears(
@@ -826,16 +842,16 @@ public class DomainBase extends EppResource {
           .setDomainName(domainBase.getDomainName())
           .setDeletePollMessage(domainBase.getDeletePollMessage())
           .setDsData(domainBase.getDsData())
-          .setDeletionTime(domainBase.getDeletionTime())
+          .setDeletionTime(domainBase.getDeletionDateTime())
           .setGracePeriods(domainBase.getGracePeriods())
           .setIdnTableName(domainBase.getIdnTableName())
           .setLastTransferTime(domainBase.getLastTransferTime())
           .setLaunchNotice(domainBase.getLaunchNotice())
           .setLastEppUpdateRegistrarId(domainBase.getLastEppUpdateRegistrarId())
-          .setLastEppUpdateTime(domainBase.getLastEppUpdateTime())
+          .setLastEppUpdateTime(domainBase.getLastEppUpdateDateTime())
           .setNameservers(domainBase.getNameservers())
           .setPersistedCurrentSponsorRegistrarId(domainBase.getPersistedCurrentSponsorRegistrarId())
-          .setRegistrationExpirationTime(domainBase.getRegistrationExpirationTime())
+          .setRegistrationExpirationTime(domainBase.getRegistrationExpirationDateTime())
           .setRepoId(domainBase.getRepoId())
           .setSmdId(domainBase.getSmdId())
           .setSubordinateHosts(domainBase.getSubordinateHosts())

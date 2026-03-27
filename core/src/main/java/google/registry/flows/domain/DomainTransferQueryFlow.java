@@ -15,15 +15,17 @@
 package google.registry.flows.domain;
 
 import static google.registry.flows.FlowUtils.validateRegistrarIsLoggedIn;
+import static google.registry.flows.ResourceFlowUtils.computeExDateForApprovalTime;
 import static google.registry.flows.ResourceFlowUtils.loadAndVerifyExistence;
 import static google.registry.flows.ResourceFlowUtils.verifyOptionalAuthInfo;
 import static google.registry.flows.domain.DomainTransferUtils.createTransferResponse;
+import static google.registry.util.DateTimeUtils.toDateTime;
+import static google.registry.util.DateTimeUtils.toInstant;
 
 import google.registry.flows.EppException;
 import google.registry.flows.ExtensionManager;
 import google.registry.flows.FlowModule.RegistrarId;
 import google.registry.flows.FlowModule.TargetId;
-import google.registry.flows.ResourceFlowUtils;
 import google.registry.flows.TransactionalFlow;
 import google.registry.flows.annotations.ReportingSpec;
 import google.registry.flows.exceptions.NoTransferHistoryToQueryException;
@@ -88,11 +90,12 @@ public final class DomainTransferQueryFlow implements TransactionalFlow {
     }
     DateTime newExpirationTime = null;
     if (transferData.getTransferStatus().isApproved()) {
-      newExpirationTime = transferData.getTransferredRegistrationExpirationTime();
+      newExpirationTime = transferData.getTransferredRegistrationExpirationDateTime();
     } else if (transferData.getTransferStatus().equals(TransferStatus.PENDING)) {
       newExpirationTime =
-          ResourceFlowUtils.computeExDateForApprovalTime(
-              domain, now, domain.getTransferData().getTransferPeriod());
+          toDateTime(
+              computeExDateForApprovalTime(
+                  domain, toInstant(now), domain.getTransferData().getTransferPeriod()));
     }
     return responseBuilder
         .setResData(createTransferResponse(targetId, transferData, newExpirationTime))

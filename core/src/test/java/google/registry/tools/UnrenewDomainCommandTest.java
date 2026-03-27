@@ -78,12 +78,12 @@ public class UnrenewDomainCommandTest extends CommandTestCase<UnrenewDomainComma
     assertThat(
             ForeignKeyUtils.loadResource(Domain.class, "foo.tld", fakeClock.nowUtc())
                 .get()
-                .getRegistrationExpirationTime())
+                .getRegistrationExpirationDateTime())
         .isEqualTo(DateTime.parse("2019-12-06T13:55:01.001Z"));
     assertThat(
             ForeignKeyUtils.loadResource(Domain.class, "bar.tld", fakeClock.nowUtc())
                 .get()
-                .getRegistrationExpirationTime())
+                .getRegistrationExpirationDateTime())
         .isEqualTo(DateTime.parse("2018-12-06T13:55:01.002Z"));
     assertInStdout("Successfully unrenewed all domains.");
   }
@@ -149,8 +149,8 @@ public class UnrenewDomainCommandTest extends CommandTestCase<UnrenewDomainComma
                 .build()));
 
     // Check that fields on domain were updated correctly.
-    assertThat(domain.getRegistrationExpirationTime()).isEqualTo(newExpirationTime);
-    assertThat(domain.getLastEppUpdateTime()).isEqualTo(unrenewTime);
+    assertThat(domain.getRegistrationExpirationDateTime()).isEqualTo(newExpirationTime);
+    assertThat(domain.getLastEppUpdateDateTime()).isEqualTo(unrenewTime);
     assertThat(domain.getLastEppUpdateRegistrarId()).isEqualTo("TheRegistrar");
   }
 

@@ -236,7 +236,7 @@ public final class DomainDeleteFlow implements MutatingFlow, SqlStatementLogging
     }
 
     // Cancel any grace periods that were still active, and set the expiration time accordingly.
-    DateTime newExpirationTime = existingDomain.getRegistrationExpirationTime();
+    DateTime newExpirationTime = existingDomain.getRegistrationExpirationDateTime();
     for (GracePeriod gracePeriod : existingDomain.getGracePeriods()) {
       // No cancellation is written if the grace period was not for a billable event.
       if (gracePeriod.hasBillingEvent()) {
@@ -289,7 +289,7 @@ public final class DomainDeleteFlow implements MutatingFlow, SqlStatementLogging
         flowCustomLogic.beforeResponse(
             BeforeResponseParameters.newBuilder()
                 .setResultCode(
-                    newDomain.getDeletionTime().isAfter(now)
+                    newDomain.getDeletionDateTime().isAfter(now)
                         ? SUCCESS_WITH_ACTION_PENDING
                         : SUCCESS)
                 .setResponseExtensions(

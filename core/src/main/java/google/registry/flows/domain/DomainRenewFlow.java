@@ -191,7 +191,7 @@ public final class DomainRenewFlow implements MutatingFlow {
     existingDomain = maybeApplyBulkPricingRemovalToken(existingDomain, allocationToken);
 
     DateTime newExpirationTime =
-        leapSafeAddYears(existingDomain.getRegistrationExpirationTime(), years);  // Uncapped
+        leapSafeAddYears(existingDomain.getRegistrationExpirationDateTime(), years); // Uncapped
     validateRegistrationPeriod(now, newExpirationTime);
     Optional<FeeRenewCommandExtension> feeRenew =
         eppInput.getSingleExtension(FeeRenewCommandExtension.class);
@@ -328,8 +328,9 @@ public final class DomainRenewFlow implements MutatingFlow {
     // We only allow __REMOVE_BULK_PRICING__ token on bulk pricing domains for now
     verifyBulkTokenAllowedOnDomain(existingDomain, allocationToken);
     // If the date they specify doesn't match the expiration, fail. (This is an idempotence check).
-    if (!command.getCurrentExpirationDate().equals(
-        existingDomain.getRegistrationExpirationTime().toLocalDate())) {
+    if (!command
+        .getCurrentExpirationDate()
+        .equals(existingDomain.getRegistrationExpirationDateTime().toLocalDate())) {
       throw new IncorrectCurrentExpirationDateException();
     }
   }

@@ -256,7 +256,7 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, Host> {
         .and()
         .hasPersistedCurrentSponsorRegistrarId("NewRegistrar")
         .and()
-        .hasLastTransferTime(domain.getTransferData().getPendingTransferExpirationTime())
+        .hasLastTransferTime(domain.getTransferData().getPendingTransferExpirationDateTime())
         .and()
         .hasOnlyOneHistoryEntryWhich()
         .hasType(HistoryEntry.Type.HOST_UPDATE);

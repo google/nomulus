@@ -163,7 +163,7 @@ final class UniformRapidSuspensionCommand extends MutatingEppToolCommand {
               domain.getDomainName(),
               "expirationDate",
               domain
-                  .getRegistrationExpirationTime()
+                  .getRegistrationExpirationDateTime()
                   .toString(DateTimeFormat.forPattern("YYYY-MM-dd")),
               // period is the number of years to renew the registration for
               "period",

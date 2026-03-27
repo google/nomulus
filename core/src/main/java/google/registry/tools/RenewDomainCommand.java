@@ -81,7 +81,7 @@ final class RenewDomainCommand extends MutatingEppToolCommand {
       SoyMapData soyMapData =
           new SoyMapData(
               "domainName", domain.getDomainName(),
-              "expirationDate", domain.getRegistrationExpirationTime().toString(DATE_FORMATTER),
+              "expirationDate", domain.getRegistrationExpirationDateTime().toString(DATE_FORMATTER),
               "period", String.valueOf(period));
 
       if (requestedByRegistrar != null) {

@@ -318,7 +318,7 @@ public class RdapJsonFormatter {
                 .build(),
             Event.builder()
                 .setEventAction(EventAction.EXPIRATION)
-                .setEventDate(domain.getRegistrationExpirationTime())
+                .setEventDate(domain.getRegistrationExpirationDateTime())
                 .build(),
             // RDAP response profile section 1.5:
             // The topmost object in the RDAP response MUST contain an event of "eventAction" type
@@ -361,7 +361,7 @@ public class RdapJsonFormatter {
         makeStatusValueList(
             allStatusValues,
             false, // isRedacted
-            domain.getDeletionTime().isBefore(getRequestTime()));
+            domain.getDeletionDateTime().isBefore(getRequestTime()));
     builder.statusBuilder().addAll(status);
     if (status.isEmpty()) {
       logger.atWarning().log(
@@ -447,7 +447,7 @@ public class RdapJsonFormatter {
               makeStatusValueList(
                   statuses.build(),
                   false, // isRedacted
-                  host.getDeletionTime().isBefore(getRequestTime())));
+                  host.getDeletionDateTime().isBefore(getRequestTime())));
     }
 
     // For query responses - we MUST have all the ip addresses: RDAP Response Profile 4.2.
@@ -761,7 +761,9 @@ public class RdapJsonFormatter {
     ImmutableList.Builder<Event> eventsBuilder = new ImmutableList.Builder<>();
     DateTime creationTime = resource.getCreationTime();
     DateTime lastChangeTime =
-        resource.getLastEppUpdateTime() == null ? creationTime : resource.getLastEppUpdateTime();
+        resource.getLastEppUpdateDateTime() == null
+            ? creationTime
+            : resource.getLastEppUpdateDateTime();
     // The order of the elements is stable - it's the order in which the enum elements are defined
     // in EventAction
     for (EventAction rdapEventAction : EventAction.values()) {

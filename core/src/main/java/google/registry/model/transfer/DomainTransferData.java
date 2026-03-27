@@ -18,6 +18,7 @@ import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static google.registry.util.CollectionUtils.isNullOrEmpty;
 import static google.registry.util.CollectionUtils.nullToEmpty;
+import static google.registry.util.DateTimeUtils.toInstant;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -41,6 +42,7 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Convert;
 import jakarta.persistence.Embeddable;
 import jakarta.persistence.Embedded;
+import java.time.Instant;
 import java.util.Set;
 import javax.annotation.Nullable;
 import org.joda.time.DateTime;
@@ -168,8 +170,14 @@ public class DomainTransferData extends BaseTransferObject implements Buildable 
   }
 
   @Nullable
-  public DateTime getTransferredRegistrationExpirationTime() {
+  @Deprecated
+  public DateTime getTransferredRegistrationExpirationDateTime() {
     return transferredRegistrationExpirationTime;
+  }
+
+  @Nullable
+  public Instant getTransferredRegistrationExpirationTime() {
+    return toInstant(transferredRegistrationExpirationTime);
   }
 
   @Nullable
