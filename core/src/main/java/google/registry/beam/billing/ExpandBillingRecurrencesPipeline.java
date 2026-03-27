@@ -24,6 +24,7 @@ import static google.registry.util.CollectionUtils.union;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static google.registry.util.DateTimeUtils.earliestOf;
 import static google.registry.util.DateTimeUtils.latestOf;
+import static google.registry.util.DateTimeUtils.toInstant;
 import static org.apache.beam.sdk.values.TypeDescriptors.voids;
 
 import com.google.common.collect.ImmutableMap;
@@ -372,7 +373,7 @@ public class ExpandBillingRecurrencesPipeline implements Serializable {
                   // during ARGP).
                   //
                   // See: DomainFlowUtils#createCancellingRecords
-                  domain.getDeletionTime().isBefore(billingTime)
+                  domain.getDeletionTime().isBefore(toInstant(billingTime))
                       ? ImmutableSet.of()
                       : ImmutableSet.of(
                           DomainTransactionRecord.create(

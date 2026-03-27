@@ -17,6 +17,7 @@ package google.registry.util;
 import static org.joda.time.DateTimeZone.UTC;
 
 import jakarta.inject.Inject;
+import java.time.Instant;
 import javax.annotation.concurrent.ThreadSafe;
 import org.joda.time.DateTime;
 
@@ -33,5 +34,10 @@ public class SystemClock implements Clock {
   @Override
   public DateTime nowUtc() {
     return DateTime.now(UTC);
+  }
+
+  @Override
+  public Instant now() {
+    return Instant.now();
   }
 }

@@ -503,7 +503,7 @@ public class DomainFlowUtils {
         .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
         .setTargetId(domain.getDomainName())
         .setRegistrarId(domain.getCurrentSponsorRegistrarId())
-        .setEventTime(domain.getRegistrationExpirationTime());
+        .setEventTime(domain.getRegistrationExpirationDateTime());
   }
 
   /**
@@ -514,7 +514,7 @@ public class DomainFlowUtils {
     return new Autorenew.Builder()
         .setTargetId(domain.getDomainName())
         .setRegistrarId(domain.getCurrentSponsorRegistrarId())
-        .setEventTime(domain.getRegistrationExpirationTime())
+        .setEventTime(domain.getRegistrationExpirationDateTime())
         .setMsg("Domain was auto-renewed.");
   }
 
@@ -658,7 +658,7 @@ public class DomainFlowUtils {
         // process, don't count as expired for the purposes of requiring an added year of renewal on
         // restore because they can't be restored in the first place.
         boolean isExpired =
-            domain.isPresent() && domain.get().getRegistrationExpirationTime().isBefore(now);
+            domain.isPresent() && domain.get().getRegistrationExpirationDateTime().isBefore(now);
         fees = pricingLogic.getRestorePrice(tld, domainNameString, now, isExpired).getFees();
       }
       case TRANSFER -> {

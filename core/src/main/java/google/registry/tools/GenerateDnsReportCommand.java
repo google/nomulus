@@ -81,7 +81,7 @@ final class GenerateDnsReportCommand implements Command {
                           .list());
       for (Domain domain : domains) {
         // Skip deleted domains and domains that don't get published to DNS.
-        if (isBeforeOrAt(domain.getDeletionTime(), now) || !domain.shouldPublishToDns()) {
+        if (isBeforeOrAt(domain.getDeletionDateTime(), now) || !domain.shouldPublishToDns()) {
           continue;
         }
         write(domain);
@@ -90,7 +90,7 @@ final class GenerateDnsReportCommand implements Command {
       Iterable<Host> nameservers = tm().transact(() -> tm().loadAllOf(Host.class));
       for (Host nameserver : nameservers) {
         // Skip deleted hosts and external hosts.
-        if (isBeforeOrAt(nameserver.getDeletionTime(), now)
+        if (isBeforeOrAt(nameserver.getDeletionDateTime(), now)
             || nameserver.getInetAddresses().isEmpty()) {
           continue;
         }

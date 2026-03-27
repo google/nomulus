@@ -24,6 +24,7 @@ import static google.registry.testing.DatabaseHelper.loadByEntity;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
+import static google.registry.util.DateTimeUtils.plusDays;
 
 import com.google.common.collect.ImmutableSet;
 import google.registry.flows.DaggerEppTestComponent;
@@ -117,7 +118,7 @@ class DeleteExpiredDomainsActionTest {
     assertThat(loadByEntity(notYetExpiredDomain)).isEqualTo(notYetExpiredDomain);
     Domain reloadedExpiredDomain = loadByEntity(pendingExpirationDomain);
     assertThat(reloadedExpiredDomain.getStatusValues()).contains(PENDING_DELETE);
-    assertThat(reloadedExpiredDomain.getDeletionTime()).isEqualTo(clock.nowUtc().plusDays(35));
+    assertThat(reloadedExpiredDomain.getDeletionTime()).isEqualTo(plusDays(clock.now(), 35));
   }
 
   @Test

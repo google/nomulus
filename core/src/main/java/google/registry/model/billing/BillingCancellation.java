@@ -104,7 +104,7 @@ public class BillingCancellation extends BillingBase {
             .setRegistrarId(gracePeriod.getRegistrarId())
             .setEventTime(eventTime)
             // The charge being cancelled will take place at the grace period's expiration time.
-            .setBillingTime(gracePeriod.getExpirationTime())
+            .setBillingTime(gracePeriod.getExpirationDateTime())
             .setDomainHistoryId(domainHistoryId);
     // Set the grace period's billing event using the appropriate Cancellation builder method.
     if (gracePeriod.getBillingEvent() != null) {

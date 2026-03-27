@@ -34,6 +34,7 @@ import google.registry.model.transfer.DomainTransferData;
 import google.registry.model.transfer.TransferStatus;
 import google.registry.persistence.VKey;
 import jakarta.persistence.Query;
+import java.time.Instant;
 import java.util.Comparator;
 import java.util.function.Function;
 import javax.annotation.Nullable;
@@ -83,7 +84,7 @@ public final class EppResourceUtils {
    * exclusive, which happily maps to the behavior of Interval.
    */
   private static Interval getLifetime(EppResource resource) {
-    return new Interval(resource.getCreationTime(), resource.getDeletionTime());
+    return new Interval(resource.getCreationTime(), resource.getDeletionDateTime());
   }
 
   public static boolean isActive(EppResource resource, DateTime time) {
@@ -108,7 +109,7 @@ public final class EppResourceUtils {
     builder
         .removeStatusValue(StatusValue.PENDING_TRANSFER)
         .setTransferData(transferDataBuilder.build())
-        .setLastTransferTime(transferData.getPendingTransferExpirationTime())
+        .setLastTransferTime(transferData.getPendingTransferExpirationDateTime())
         .setPersistedCurrentSponsorRegistrarId(transferData.getGainingRegistrarId());
   }
 
@@ -120,10 +121,10 @@ public final class EppResourceUtils {
    * </ul>
    */
   public static void projectResourceOntoBuilderAtTime(
-      DomainBase domain, DomainBase.Builder<?, ?> builder, DateTime now) {
+      DomainBase domain, DomainBase.Builder<?, ?> builder, Instant now) {
     DomainTransferData transferData = domain.getTransferData();
     // If there's a pending transfer that has expired, process it.
-    DateTime expirationTime = transferData.getPendingTransferExpirationTime();
+    Instant expirationTime = transferData.getPendingTransferExpirationTime();
     if (TransferStatus.PENDING.equals(transferData.getTransferStatus())
         && isBeforeOrAt(expirationTime, now)) {
       setAutomaticTransferSuccessProperties(builder, transferData);

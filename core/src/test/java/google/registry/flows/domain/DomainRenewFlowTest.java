@@ -247,7 +247,7 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
       @Nullable Money renewalPrice)
       throws Exception {
     assertMutatingFlow(true);
-    DateTime currentExpiration = reloadResourceByForeignKey().getRegistrationExpirationTime();
+    DateTime currentExpiration = reloadResourceByForeignKey().getRegistrationExpirationDateTime();
     DateTime newExpiration = currentExpiration.plusYears(renewalYears);
     runFlowAssertResponse(
         CommitMode.LIVE, userPrivileges, loadFile(responseFilename, substitutions));
@@ -303,7 +303,7 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
             .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
             .setTargetId(getUniqueIdFromCommand())
             .setRegistrarId("TheRegistrar")
-            .setEventTime(domain.getRegistrationExpirationTime())
+            .setEventTime(domain.getRegistrationExpirationDateTime())
             .setRecurrenceEndTime(END_OF_TIME)
             .setDomainHistory(historyEntryDomainRenew)
             .build());
@@ -313,7 +313,7 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
         new PollMessage.Autorenew.Builder()
             .setTargetId(getUniqueIdFromCommand())
             .setRegistrarId("TheRegistrar")
-            .setEventTime(domain.getRegistrationExpirationTime())
+            .setEventTime(domain.getRegistrationExpirationDateTime())
             .setAutorenewEndTime(END_OF_TIME)
             .setMsg("Domain was auto-renewed.")
             .setHistoryEntry(historyEntryDomainRenew)
@@ -817,7 +817,7 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, Domain> 
         new PollMessage.Autorenew.Builder()
             .setTargetId(getUniqueIdFromCommand())
             .setRegistrarId("TheRegistrar")
-            .setEventTime(reloadResourceByForeignKey().getRegistrationExpirationTime())
+            .setEventTime(reloadResourceByForeignKey().getRegistrationExpirationDateTime())
             .setAutorenewEndTime(END_OF_TIME)
             .setMsg("Domain was auto-renewed.")
             .setHistoryEntry(historyEntryDomainRenew)

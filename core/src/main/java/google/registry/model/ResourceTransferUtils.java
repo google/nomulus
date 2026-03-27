@@ -50,11 +50,11 @@ public final class ResourceTransferUtils {
         .setDomainName(domain.getForeignKey())
         .setExtendedRegistrationExpirationTime(
             ADD_EXDATE_STATUSES.contains(transferData.getTransferStatus())
-                ? transferData.getTransferredRegistrationExpirationTime()
+                ? transferData.getTransferredRegistrationExpirationDateTime()
                 : null)
         .setGainingRegistrarId(transferData.getGainingRegistrarId())
         .setLosingRegistrarId(transferData.getLosingRegistrarId())
-        .setPendingTransferExpirationTime(transferData.getPendingTransferExpirationTime())
+        .setPendingTransferExpirationTime(transferData.getPendingTransferExpirationDateTime())
         .setTransferRequestTime(transferData.getTransferRequestTime())
         .setTransferStatus(transferData.getTransferStatus())
         .build();

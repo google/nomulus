@@ -188,7 +188,7 @@ public class RelockDomainAction implements Runnable {
         "Domain %s has a pending delete.",
         domainName);
     checkArgument(
-        !DateTimeUtils.isAtOrAfter(tm().getTransactionTime(), domain.getDeletionTime()),
+        !DateTimeUtils.isAtOrAfter(tm().getTxTime(), domain.getDeletionTime()),
         "Domain %s has been deleted.",
         domainName);
     checkArgument(

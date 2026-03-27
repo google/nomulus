@@ -15,6 +15,7 @@
 package google.registry.util;
 
 import java.io.Serializable;
+import java.time.Instant;
 import javax.annotation.concurrent.ThreadSafe;
 import org.joda.time.DateTime;
 
@@ -30,5 +31,9 @@ import org.joda.time.DateTime;
 public interface Clock extends Serializable {
 
   /** Returns current time in UTC timezone. */
+  @Deprecated
   DateTime nowUtc();
+
+  /** Returns current Instant (which is always in UTC). */
+  Instant now();
 }

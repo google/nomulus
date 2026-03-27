@@ -26,7 +26,7 @@ import static google.registry.testing.DatabaseHelper.persistActiveHost;
 import static google.registry.testing.DatabaseHelper.persistDeletedDomain;
 import static google.registry.testing.DatabaseHelper.persistDomainAsDeleted;
 import static google.registry.testing.DatabaseHelper.persistResource;
-import static google.registry.util.DateTimeUtils.END_OF_TIME;
+import static google.registry.util.DateTimeUtils.END_INSTANT;
 import static org.joda.time.DateTimeZone.UTC;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -47,6 +47,7 @@ import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationT
 import google.registry.testing.DatabaseHelper;
 import google.registry.testing.SystemPropertyExtension;
 import google.registry.util.RegistryEnvironment;
+import java.time.Instant;
 import java.util.Optional;
 import java.util.Set;
 import org.joda.money.Money;
@@ -201,7 +202,7 @@ class DeleteProberDataActionTest {
                 .setCreationTimeForTest(DateTime.now(UTC).minusYears(1))
                 .build());
     action.run();
-    DateTime timeAfterDeletion = DateTime.now(UTC);
+    Instant timeAfterDeletion = Instant.now();
     assertThat(ForeignKeyUtils.loadResource(Domain.class, "blah.ib-any.test", timeAfterDeletion))
         .isEmpty();
     assertThat(loadByEntity(domain).getDeletionTime()).isLessThan(timeAfterDeletion);
@@ -217,7 +218,7 @@ class DeleteProberDataActionTest {
                 .setCreationTimeForTest(DateTime.now(UTC).minusYears(1))
                 .build());
     action.run();
-    DateTime timeAfterDeletion = DateTime.now(UTC);
+    Instant timeAfterDeletion = Instant.now();
     resetAction();
     action.run();
     assertThat(ForeignKeyUtils.loadResource(Domain.class, "blah.ib-any.test", timeAfterDeletion))
@@ -237,7 +238,7 @@ class DeleteProberDataActionTest {
     Optional<Domain> domain =
         ForeignKeyUtils.loadResource(Domain.class, "blah.ib-any.test", DateTime.now(UTC));
     assertThat(domain).isPresent();
-    assertThat(domain.get().getDeletionTime()).isEqualTo(END_OF_TIME);
+    assertThat(domain.get().getDeletionTime()).isEqualTo(END_INSTANT);
   }
 
   @Test
@@ -250,7 +251,7 @@ class DeleteProberDataActionTest {
                 .build());
     action.isDryRun = true;
     action.run();
-    assertThat(loadByEntity(domain).getDeletionTime()).isEqualTo(END_OF_TIME);
+    assertThat(loadByEntity(domain).getDeletionTime()).isEqualTo(END_INSTANT);
   }
 
   @Test

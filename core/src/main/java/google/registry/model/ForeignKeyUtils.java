@@ -35,6 +35,7 @@ import google.registry.persistence.VKey;
 import google.registry.persistence.transaction.JpaTransactionManager;
 import google.registry.util.NonFinalForTesting;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -81,8 +82,22 @@ public final class ForeignKeyUtils {
    * <p>Returns null if no resource with this foreign key was ever created or if the most recently
    * created resource was deleted before time "now".
    */
+  @Deprecated
   public static <E extends EppResource> Optional<E> loadResource(
       Class<E> clazz, String foreignKey, DateTime now) {
+    // Note: no need to project to "now" because loadResources already does
+    return Optional.ofNullable(
+        loadResources(clazz, ImmutableList.of(foreignKey), now).get(foreignKey));
+  }
+
+  /**
+   * Loads an {@link EppResource} from the database by foreign key.
+   *
+   * <p>Returns null if no resource with this foreign key was ever created or if the most recently
+   * created resource was deleted before time "now".
+   */
+  public static <E extends EppResource> Optional<E> loadResource(
+      Class<E> clazz, String foreignKey, Instant now) {
     // Note: no need to project to "now" because loadResources already does
     return Optional.ofNullable(
         loadResources(clazz, ImmutableList.of(foreignKey), now).get(foreignKey));
@@ -110,11 +125,27 @@ public final class ForeignKeyUtils {
    * or has been soft-deleted.
    */
   @SuppressWarnings("unchecked")
+  @Deprecated
   public static <E extends EppResource> ImmutableMap<String, E> loadResources(
       Class<E> clazz, Collection<String> foreignKeys, DateTime now) {
     return loadMostRecentResourceObjects(clazz, foreignKeys, false).entrySet().stream()
-        .filter(e -> now.isBefore(e.getValue().getDeletionTime()))
+        .filter(e -> now.isBefore(e.getValue().getDeletionDateTime()))
         .collect(toImmutableMap(Entry::getKey, e -> (E) e.getValue().cloneProjectedAtTime(now)));
+  }
+
+  /**
+   * Load a map of {@link String} foreign keys to the {@link EppResource} that are active at or
+   * after the specified moment in time.
+   *
+   * <p>The returned map will omit any foreign keys for which the {@link EppResource} doesn't exist
+   * or has been soft-deleted.
+   */
+  @SuppressWarnings("unchecked")
+  public static <E extends EppResource> ImmutableMap<String, E> loadResources(
+      Class<E> clazz, Collection<String> foreignKeys, Instant now) {
+    return loadMostRecentResourceObjects(clazz, foreignKeys, false).entrySet().stream()
+        .filter(e -> now.isBefore(e.getValue().getDeletionTime()))
+        .collect(toImmutableMap(Entry::getKey, e -> (E) e.getValue().cloneProjectedAtInstant(now)));
   }
 
   /**
@@ -397,7 +428,7 @@ public final class ForeignKeyUtils {
     return (Optional<E>)
         foreignKeyToResourceCache
             .get(VKey.create(clazz, foreignKey))
-            .filter(e -> now.isBefore(e.getDeletionTime()))
+            .filter(e -> now.isBefore(e.getDeletionDateTime()))
             .map(e -> e.cloneProjectedAtTime(now));
   }
 }

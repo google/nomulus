@@ -68,7 +68,7 @@ public class GracePeriodTest {
     assertThat(gracePeriod.getBillingEvent()).isEqualTo(onetime.createVKey());
     assertThat(gracePeriod.getBillingRecurrence()).isNull();
     assertThat(gracePeriod.getRegistrarId()).isEqualTo("TheRegistrar");
-    assertThat(gracePeriod.getExpirationTime()).isEqualTo(now.plusDays(1));
+    assertThat(gracePeriod.getExpirationDateTime()).isEqualTo(now.plusDays(1));
     assertThat(gracePeriod.hasBillingEvent()).isTrue();
   }
 
@@ -82,7 +82,7 @@ public class GracePeriodTest {
     assertThat(gracePeriod.getBillingEvent()).isNull();
     assertThat(gracePeriod.getBillingRecurrence()).isEqualTo(recurrenceKey);
     assertThat(gracePeriod.getRegistrarId()).isEqualTo("TheRegistrar");
-    assertThat(gracePeriod.getExpirationTime()).isEqualTo(now.plusDays(1));
+    assertThat(gracePeriod.getExpirationDateTime()).isEqualTo(now.plusDays(1));
     assertThat(gracePeriod.hasBillingEvent()).isTrue();
   }
 
@@ -96,7 +96,7 @@ public class GracePeriodTest {
     assertThat(gracePeriod.getBillingEvent()).isNull();
     assertThat(gracePeriod.getBillingRecurrence()).isNull();
     assertThat(gracePeriod.getRegistrarId()).isEqualTo("TheRegistrar");
-    assertThat(gracePeriod.getExpirationTime()).isEqualTo(now);
+    assertThat(gracePeriod.getExpirationDateTime()).isEqualTo(now);
     assertThat(gracePeriod.hasBillingEvent()).isFalse();
   }
 

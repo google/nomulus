@@ -19,6 +19,7 @@ import static google.registry.testing.DatabaseHelper.loadByEntity;
 import static google.registry.testing.DatabaseHelper.loadSingleton;
 import static google.registry.testing.DatabaseHelper.persistDomainWithDependentResources;
 import static google.registry.testing.DatabaseHelper.persistResource;
+import static google.registry.util.DateTimeUtils.plusDays;
 import static jakarta.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static jakarta.servlet.http.HttpServletResponse.SC_FORBIDDEN;
 import static jakarta.servlet.http.HttpServletResponse.SC_OK;
@@ -92,7 +93,7 @@ public class ConsoleBulkDomainActionTest extends ConsoleActionBaseTestCase {
 {"example.tld":{"message":"Command completed successfully; action pending",\
 "responseCode":1001}}\
 """);
-    assertThat(loadByEntity(domain).getDeletionTime()).isEqualTo(clock.nowUtc().plusDays(35));
+    assertThat(loadByEntity(domain).getDeletionTime()).isEqualTo(plusDays(clock.now(), 35));
     ConsoleUpdateHistory history = loadSingleton(ConsoleUpdateHistory.class).get();
     assertThat(history.getType()).isEqualTo(ConsoleUpdateHistory.Type.DOMAIN_DELETE);
     assertThat(history.getDescription()).hasValue("example.tld");
@@ -162,7 +163,7 @@ public class ConsoleBulkDomainActionTest extends ConsoleActionBaseTestCase {
 "nonexistent.tld":{"message":"The domain with given ID (nonexistent.tld) doesn\\u0027t exist.",\
 "responseCode":2303}}\
 """);
-    assertThat(loadByEntity(domain).getDeletionTime()).isEqualTo(clock.nowUtc().plusDays(35));
+    assertThat(loadByEntity(domain).getDeletionTime()).isEqualTo(plusDays(clock.now(), 35));
     ConsoleUpdateHistory history = loadSingleton(ConsoleUpdateHistory.class).get();
     assertThat(history.getType()).isEqualTo(ConsoleUpdateHistory.Type.DOMAIN_DELETE);
     assertThat(history.getDescription()).hasValue("example.tld");

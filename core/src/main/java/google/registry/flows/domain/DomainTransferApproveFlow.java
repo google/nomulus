@@ -33,6 +33,8 @@ import static google.registry.model.reporting.HistoryEntry.Type.DOMAIN_TRANSFER_
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.CollectionUtils.union;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
+import static google.registry.util.DateTimeUtils.toDateTime;
+import static google.registry.util.DateTimeUtils.toInstant;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -193,7 +195,9 @@ public final class DomainTransferApproveFlow implements MutatingFlow {
     updateAutorenewRecurrenceEndTime(
         existingDomain, existingBillingRecurrence, now, domainHistoryId);
     DateTime newExpirationTime =
-        computeExDateForApprovalTime(existingDomain, now, transferData.getTransferPeriod());
+        toDateTime(
+            computeExDateForApprovalTime(
+                existingDomain, toInstant(now), transferData.getTransferPeriod()));
     // Create a new autorenew event starting at the expiration time.
     BillingRecurrence autorenewEvent =
         new BillingRecurrence.Builder()
@@ -268,8 +272,11 @@ public final class DomainTransferApproveFlow implements MutatingFlow {
     // been implicitly server approved.
     tm().delete(existingDomain.getTransferData().getServerApproveEntities());
     return responseBuilder
-        .setResData(createTransferResponse(
-            targetId, newDomain.getTransferData(), newDomain.getRegistrationExpirationTime()))
+        .setResData(
+            createTransferResponse(
+                targetId,
+                newDomain.getTransferData(),
+                newDomain.getRegistrationExpirationDateTime()))
         .build();
   }
 
