@@ -16,7 +16,9 @@ package google.registry.tools;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+import static google.registry.util.DateTimeUtils.END_INSTANT;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
+import static google.registry.util.DateTimeUtils.toDateTime;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
@@ -31,6 +33,7 @@ import google.registry.model.domain.DomainHistory;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.reporting.HistoryEntry.HistoryEntryId;
 import google.registry.model.transfer.TransferStatus;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import javax.annotation.Nullable;
@@ -161,7 +164,7 @@ public class UpdateRecurrenceCommand extends ConfirmingCommand {
 
   private ImmutableMap<Domain, BillingRecurrence> loadDomainsAndRecurrences() {
     ImmutableMap.Builder<Domain, BillingRecurrence> result = new ImmutableMap.Builder<>();
-    DateTime now = tm().getTransactionTime();
+    Instant now = tm().getTxTime();
     for (String domainName : mainParameters) {
       Domain domain =
           ForeignKeyUtils.loadResource(Domain.class, domainName, now)
@@ -171,7 +174,7 @@ public class UpdateRecurrenceCommand extends ConfirmingCommand {
                           String.format(
                               "Domain %s does not exist or has been deleted", domainName)));
       checkArgument(
-          domain.getDeletionTime().equals(END_OF_TIME),
+          domain.getDeletionTime().equals(END_INSTANT),
           "Domain %s has already had a deletion time set",
           domainName);
       checkArgument(
@@ -184,7 +187,7 @@ public class UpdateRecurrenceCommand extends ConfirmingCommand {
       domainAutorenewEndTime.ifPresent(
           endTime ->
               checkArgument(
-                  endTime.isAfter(now),
+                  endTime.isAfter(toDateTime(now)),
                   "Domain %s autorenew ended prior to now at %s",
                   domainName,
                   endTime));

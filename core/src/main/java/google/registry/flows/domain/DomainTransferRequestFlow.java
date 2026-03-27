@@ -35,6 +35,8 @@ import static google.registry.flows.domain.DomainTransferUtils.createTransferSer
 import static google.registry.model.eppoutput.Result.Code.SUCCESS_WITH_ACTION_PENDING;
 import static google.registry.model.reporting.HistoryEntry.Type.DOMAIN_TRANSFER_REQUEST;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+import static google.registry.util.DateTimeUtils.toDateTime;
+import static google.registry.util.DateTimeUtils.toInstant;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -80,6 +82,7 @@ import google.registry.model.transfer.DomainTransferData.TransferServerApproveEn
 import google.registry.model.transfer.TransferResponse.DomainTransferResponse;
 import google.registry.model.transfer.TransferStatus;
 import jakarta.inject.Inject;
+import java.time.Instant;
 import java.util.Optional;
 import org.joda.time.DateTime;
 
@@ -230,7 +233,9 @@ public final class DomainTransferRequestFlow implements MutatingFlow {
     Domain domainAtTransferTime = existingDomain.cloneProjectedAtTime(automaticTransferTime);
     // The new expiration time if there is a server approval.
     DateTime serverApproveNewExpirationTime =
-        computeExDateForApprovalTime(domainAtTransferTime, automaticTransferTime, period);
+        toDateTime(
+            computeExDateForApprovalTime(
+                domainAtTransferTime, toInstant(automaticTransferTime), period));
     // Create speculative entities in anticipation of an automatic server approval.
     ImmutableSet<TransferServerApproveEntity> serverApproveEntities =
         createTransferServerApproveEntities(
@@ -287,7 +292,7 @@ public final class DomainTransferRequestFlow implements MutatingFlow {
     tm().insertAll(domainHistory, requestPollMessage);
     return responseBuilder
         .setResultFromCode(SUCCESS_WITH_ACTION_PENDING)
-        .setResData(createResponse(period, existingDomain, newDomain, now))
+        .setResData(createResponse(period, existingDomain, newDomain, toInstant(now)))
         .setExtensions(createResponseExtensions(feesAndCredits, feeTransfer))
         .build();
   }
@@ -375,14 +380,14 @@ public final class DomainTransferRequestFlow implements MutatingFlow {
   }
 
   private DomainTransferResponse createResponse(
-      Period period, Domain existingDomain, Domain newDomain, DateTime now) {
+      Period period, Domain existingDomain, Domain newDomain, Instant now) {
     // If the registration were approved this instant, this is what the new expiration would be,
     // because we cap at 10 years from the moment of approval. This is different from the server
     // approval new expiration time, which is capped at 10 years from the server approve time.
-    DateTime approveNowExtendedRegistrationTime =
+    Instant approveNowExtendedRegistrationTime =
         computeExDateForApprovalTime(existingDomain, now, period);
     return createTransferResponse(
-        targetId, newDomain.getTransferData(), approveNowExtendedRegistrationTime);
+        targetId, newDomain.getTransferData(), toDateTime(approveNowExtendedRegistrationTime));
   }
 
   private static ImmutableList<FeeTransformResponseExtension> createResponseExtensions(

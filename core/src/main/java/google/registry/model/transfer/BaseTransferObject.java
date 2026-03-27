@@ -14,6 +14,8 @@
 
 package google.registry.model.transfer;
 
+import static google.registry.util.DateTimeUtils.toInstant;
+
 import google.registry.model.Buildable.GenericBuilder;
 import google.registry.model.ImmutableObject;
 import google.registry.model.UnsafeSerializable;
@@ -23,6 +25,7 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.MappedSuperclass;
 import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlTransient;
+import java.time.Instant;
 import org.joda.time.DateTime;
 
 /** Fields common to {@link DomainTransferData} and {@link TransferResponse}. */
@@ -73,8 +76,13 @@ public abstract class BaseTransferObject extends ImmutableObject implements Unsa
     return losingClientId;
   }
 
-  public DateTime getPendingTransferExpirationTime() {
+  @Deprecated
+  public DateTime getPendingTransferExpirationDateTime() {
     return pendingTransferExpirationTime;
+  }
+
+  public Instant getPendingTransferExpirationTime() {
+    return toInstant(pendingTransferExpirationTime);
   }
 
   /** Base class for builders of {@link BaseTransferObject} subclasses. */

@@ -184,7 +184,7 @@ public final class DomainTransferUtils {
       HistoryEntryId domainHistoryId) {
     return new PollMessage.OneTime.Builder()
         .setRegistrarId(transferData.getGainingRegistrarId())
-        .setEventTime(transferData.getPendingTransferExpirationTime())
+        .setEventTime(transferData.getPendingTransferExpirationDateTime())
         .setMsg(transferData.getTransferStatus().getMessage())
         .setResponseData(
             ImmutableList.of(
@@ -206,7 +206,7 @@ public final class DomainTransferUtils {
       HistoryEntryId domainHistoryId) {
     return new PollMessage.OneTime.Builder()
         .setRegistrarId(transferData.getLosingRegistrarId())
-        .setEventTime(transferData.getPendingTransferExpirationTime())
+        .setEventTime(transferData.getPendingTransferExpirationDateTime())
         .setMsg(transferData.getTransferStatus().getMessage())
         .setResponseData(
             ImmutableList.of(
@@ -224,7 +224,7 @@ public final class DomainTransferUtils {
         .setDomainName(targetId)
         .setGainingRegistrarId(transferData.getGainingRegistrarId())
         .setLosingRegistrarId(transferData.getLosingRegistrarId())
-        .setPendingTransferExpirationTime(transferData.getPendingTransferExpirationTime())
+        .setPendingTransferExpirationTime(transferData.getPendingTransferExpirationDateTime())
         .setTransferRequestTime(transferData.getTransferRequestTime())
         .setTransferStatus(transferData.getTransferStatus())
         .setExtendedRegistrationExpirationTime(extendedRegistrationExpirationTime)

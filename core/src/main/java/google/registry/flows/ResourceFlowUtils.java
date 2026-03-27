@@ -16,6 +16,7 @@ package google.registry.flows;
 
 import static com.google.common.collect.Sets.intersection;
 import static google.registry.model.EppResourceUtils.isLinked;
+import static google.registry.util.DateTimeUtils.toInstant;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
@@ -44,6 +45,7 @@ import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.host.Host;
 import google.registry.model.transfer.TransferStatus;
 import google.registry.persistence.VKey;
+import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -89,6 +91,11 @@ public final class ResourceFlowUtils {
 
   public static <R extends EppResource & ForeignKeyedEppResource> R loadAndVerifyExistence(
       Class<R> clazz, String targetId, DateTime now) throws ResourceDoesNotExistException {
+    return loadAndVerifyExistence(clazz, targetId, toInstant(now));
+  }
+
+  public static <R extends EppResource & ForeignKeyedEppResource> R loadAndVerifyExistence(
+      Class<R> clazz, String targetId, Instant now) throws ResourceDoesNotExistException {
     return verifyExistence(clazz, targetId, ForeignKeyUtils.loadResource(clazz, targetId, now));
   }
 
@@ -197,8 +204,8 @@ public final class ResourceFlowUtils {
    *
    * @param domain is the domain already projected at approvalTime
    */
-  public static DateTime computeExDateForApprovalTime(
-      DomainBase domain, DateTime approvalTime, Period period) {
+  public static Instant computeExDateForApprovalTime(
+      DomainBase domain, Instant approvalTime, Period period) {
     boolean inAutoRenew = domain.getGracePeriodStatuses().contains(GracePeriodStatus.AUTO_RENEW);
     // inAutoRenew is set to false if the period is zero because a zero-period transfer should not
     // subsume an autorenew.

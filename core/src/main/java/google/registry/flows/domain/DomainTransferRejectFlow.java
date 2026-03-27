@@ -32,6 +32,7 @@ import static google.registry.model.reporting.HistoryEntry.Type.DOMAIN_TRANSFER_
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.CollectionUtils.union;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
+import static google.registry.util.DateTimeUtils.toDateTime;
 
 import com.google.common.collect.ImmutableSet;
 import google.registry.flows.EppException;
@@ -53,6 +54,7 @@ import google.registry.model.reporting.IcannReportingTypes.ActivityReportField;
 import google.registry.model.tld.Tld;
 import google.registry.model.transfer.TransferStatus;
 import jakarta.inject.Inject;
+import java.time.Instant;
 import java.util.Optional;
 import org.joda.time.DateTime;
 
@@ -92,7 +94,7 @@ public final class DomainTransferRejectFlow implements MutatingFlow {
     extensionManager.register(MetadataExtension.class);
     validateRegistrarIsLoggedIn(registrarId);
     extensionManager.validate();
-    DateTime now = tm().getTransactionTime();
+    Instant now = tm().getTxTime();
     Domain existingDomain = loadAndVerifyExistence(Domain.class, targetId, now);
     Tld tld = Tld.get(existingDomain.getTld());
     HistoryEntryId domainHistoryId = createHistoryEntryId(existingDomain);
@@ -107,13 +109,14 @@ public final class DomainTransferRejectFlow implements MutatingFlow {
       checkAllowedAccessToTld(registrarId, existingDomain.getTld());
     }
     Domain newDomain =
-        denyPendingTransfer(existingDomain, TransferStatus.CLIENT_REJECTED, now, registrarId);
-    DomainHistory domainHistory = buildDomainHistory(newDomain, tld, now);
+        denyPendingTransfer(
+            existingDomain, TransferStatus.CLIENT_REJECTED, toDateTime(now), registrarId);
+    DomainHistory domainHistory = buildDomainHistory(newDomain, tld, toDateTime(now));
     tm().update(newDomain);
     tm().insertAll(
             domainHistory,
             createGainingTransferPollMessage(
-                targetId, newDomain.getTransferData(), null, now, domainHistoryId));
+                targetId, newDomain.getTransferData(), null, toDateTime(now), domainHistoryId));
     // Reopen the autorenew event and poll message that we closed for the implicit transfer. This
     // may end up recreating the poll message if it was deleted upon the transfer request.
     BillingRecurrence existingBillingRecurrence =

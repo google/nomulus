@@ -281,7 +281,7 @@ public final class DomainUpdateFlow implements MutatingFlow {
       if (superuserExt.get().getAutorenews().isPresent()) {
         boolean autorenews = superuserExt.get().getAutorenews().get();
         domainBuilder.setAutorenewEndTime(
-            Optional.ofNullable(autorenews ? null : domain.getRegistrationExpirationTime()));
+            Optional.ofNullable(autorenews ? null : domain.getRegistrationExpirationDateTime()));
       }
     }
     return domainBuilder.build();

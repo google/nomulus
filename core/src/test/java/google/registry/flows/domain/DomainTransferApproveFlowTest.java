@@ -148,7 +148,8 @@ class DomainTransferApproveFlowTest
                 .copyConstantFieldsToBuilder()
                 .setTransferStatus(TransferStatus.CLIENT_APPROVED)
                 .setPendingTransferExpirationTime(clock.nowUtc())
-                .setTransferredRegistrationExpirationTime(domain.getRegistrationExpirationTime())
+                .setTransferredRegistrationExpirationTime(
+                    domain.getRegistrationExpirationDateTime())
                 .build());
   }
 
@@ -216,7 +217,7 @@ class DomainTransferApproveFlowTest
     // should be one at the current time to the gaining registrar, as well as one at the domain's
     // autorenew time.
     assertThat(getPollMessages(domain, "NewRegistrar", clock.nowUtc().plusMonths(1))).hasSize(1);
-    assertThat(getPollMessages(domain, "NewRegistrar", domain.getRegistrationExpirationTime()))
+    assertThat(getPollMessages(domain, "NewRegistrar", domain.getRegistrationExpirationDateTime()))
         .hasSize(2);
 
     PollMessage gainingTransferPollMessage =
@@ -225,11 +226,11 @@ class DomainTransferApproveFlowTest
         getOnlyPollMessage(
             domain,
             "NewRegistrar",
-            domain.getRegistrationExpirationTime(),
+            domain.getRegistrationExpirationDateTime(),
             PollMessage.Autorenew.class);
     assertThat(gainingTransferPollMessage.getEventTime()).isEqualTo(clock.nowUtc());
     assertThat(gainingAutorenewPollMessage.getEventTime())
-        .isEqualTo(domain.getRegistrationExpirationTime());
+        .isEqualTo(domain.getRegistrationExpirationDateTime());
     DomainTransferResponse transferResponse =
         gainingTransferPollMessage
             .getResponseData()
@@ -239,7 +240,7 @@ class DomainTransferApproveFlowTest
             .collect(onlyElement());
     assertThat(transferResponse.getTransferStatus()).isEqualTo(TransferStatus.CLIENT_APPROVED);
     assertThat(transferResponse.getExtendedRegistrationExpirationTime())
-        .isEqualTo(domain.getRegistrationExpirationTime());
+        .isEqualTo(domain.getRegistrationExpirationDateTime());
     PendingActionNotificationResponse panData =
         gainingTransferPollMessage
             .getResponseData()
@@ -294,9 +295,9 @@ class DomainTransferApproveFlowTest
                         .build(),
                     getGainingClientAutorenewEvent()
                         .asBuilder()
-                        .setEventTime(domain.getRegistrationExpirationTime())
+                        .setEventTime(domain.getRegistrationExpirationDateTime())
                         .setRecurrenceLastExpansion(
-                            domain.getRegistrationExpirationTime().minusYears(1))
+                            domain.getRegistrationExpirationDateTime().minusYears(1))
                         .setDomainHistory(historyEntryTransferApproved)
                         .build()))
             .toArray(BillingBase[]::new));
@@ -332,9 +333,9 @@ class DomainTransferApproveFlowTest
                         .build(),
                     getGainingClientAutorenewEvent()
                         .asBuilder()
-                        .setEventTime(domain.getRegistrationExpirationTime())
+                        .setEventTime(domain.getRegistrationExpirationDateTime())
                         .setRecurrenceLastExpansion(
-                            domain.getRegistrationExpirationTime().minusYears(1))
+                            domain.getRegistrationExpirationDateTime().minusYears(1))
                         .setDomainHistory(historyEntryTransferApproved)
                         .build()))
             .toArray(BillingBase[]::new));
@@ -349,7 +350,7 @@ class DomainTransferApproveFlowTest
         tld,
         commandFilename,
         expectedXmlFilename,
-        domain.getRegistrationExpirationTime().plusYears(1),
+        domain.getRegistrationExpirationDateTime().plusYears(1),
         1);
   }
 
@@ -821,7 +822,7 @@ class DomainTransferApproveFlowTest
         "tld",
         "domain_transfer_approve.xml",
         "domain_transfer_approve_response_zero_period.xml",
-        domain.getRegistrationExpirationTime());
+        domain.getRegistrationExpirationDateTime());
     assertHistoryEntriesDoNotContainTransferBillingEventsOrGracePeriods();
   }
 
@@ -854,7 +855,7 @@ class DomainTransferApproveFlowTest
         "tld",
         "domain_transfer_approve.xml",
         "domain_transfer_approve_response_zero_period_autorenew_grace.xml",
-        domain.getRegistrationExpirationTime());
+        domain.getRegistrationExpirationDateTime());
     assertHistoryEntriesDoNotContainTransferBillingEventsOrGracePeriods();
   }
 

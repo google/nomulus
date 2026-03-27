@@ -19,6 +19,7 @@ import static org.joda.time.DateTimeZone.UTC;
 import static org.joda.time.Duration.millis;
 
 import google.registry.util.Clock;
+import java.time.Instant;
 import java.util.concurrent.atomic.AtomicLong;
 import javax.annotation.concurrent.ThreadSafe;
 import org.joda.time.DateTime;
@@ -52,6 +53,11 @@ public final class FakeClock implements Clock {
   @Override
   public DateTime nowUtc() {
     return new DateTime(currentTimeMillis.addAndGet(autoIncrementStepMs), UTC);
+  }
+
+  @Override
+  public Instant now() {
+    return Instant.ofEpochMilli(currentTimeMillis.addAndGet(autoIncrementStepMs));
   }
 
   /**
