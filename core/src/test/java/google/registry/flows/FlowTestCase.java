@@ -182,7 +182,7 @@ public abstract class FlowTestCase<F extends Flow> {
           GracePeriod.create(
               entry.getKey().getType(),
               entry.getKey().getDomainRepoId(),
-              entry.getKey().getExpirationTime(),
+              entry.getKey().getExpirationDateTime(),
               entry.getKey().getRegistrarId(),
               null,
               1L),

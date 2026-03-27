@@ -88,7 +88,7 @@ class DomainTransferRejectFlowTest
     assertThat(getPollMessages("TheRegistrar", clock.nowUtc().plusMonths(1))).hasSize(1);
     // Setup done; run the test.
     assertMutatingFlow(true);
-    DateTime originalExpirationTime = domain.getRegistrationExpirationTime();
+    DateTime originalExpirationTime = domain.getRegistrationExpirationDateTime();
     ImmutableSet<GracePeriod> originalGracePeriods = domain.getGracePeriods();
     DomainTransferData originalTransferData = domain.getTransferData();
     runFlowAssertResponse(loadFile(expectedXmlFilename));

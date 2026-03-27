@@ -17,6 +17,7 @@ package google.registry.batch;
 import static com.google.common.net.MediaType.PLAIN_TEXT_UTF_8;
 import static google.registry.flows.FlowUtils.marshalWithLenientRetry;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+import static google.registry.util.DateTimeUtils.END_INSTANT;
 import static jakarta.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 import static jakarta.servlet.http.HttpServletResponse.SC_NO_CONTENT;
 import static jakarta.servlet.http.HttpServletResponse.SC_OK;
@@ -39,7 +40,6 @@ import google.registry.request.Parameter;
 import google.registry.request.Response;
 import google.registry.request.auth.Auth;
 import google.registry.request.lock.LockHandler;
-import google.registry.util.DateTimeUtils;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import java.util.Optional;
@@ -212,7 +212,7 @@ public class BulkDomainTransferAction implements Runnable {
 
   private boolean shouldSkipDomain(String domainName) {
     Optional<Domain> maybeDomain =
-        ForeignKeyUtils.loadResource(Domain.class, domainName, tm().getTransactionTime());
+        ForeignKeyUtils.loadResource(Domain.class, domainName, tm().getTxTime());
     if (maybeDomain.isEmpty()) {
       logger.atWarning().log("Domain '%s' was already deleted", domainName);
       missingDomains++;
@@ -232,7 +232,7 @@ public class BulkDomainTransferAction implements Runnable {
       return true;
     }
     if (domain.getStatusValues().contains(StatusValue.PENDING_DELETE)
-        || !domain.getDeletionTime().equals(DateTimeUtils.END_OF_TIME)) {
+        || !domain.getDeletionTime().equals(END_INSTANT)) {
       logger.atWarning().log("Domain '%s' is in PENDING_DELETE", domainName);
       pendingDelete++;
       return true;

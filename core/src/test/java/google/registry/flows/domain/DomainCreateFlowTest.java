@@ -361,7 +361,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
             .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
             .setTargetId(getUniqueIdFromCommand())
             .setRegistrarId("TheRegistrar")
-            .setEventTime(domain.getRegistrationExpirationTime())
+            .setEventTime(domain.getRegistrationExpirationDateTime())
             .setRecurrenceEndTime(END_OF_TIME)
             .setDomainHistory(historyEntry)
             .setRenewalPriceBehavior(expectedRenewalPriceBehavior)
@@ -397,7 +397,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
         new PollMessage.Autorenew.Builder()
             .setTargetId(domain.getDomainName())
             .setRegistrarId("TheRegistrar")
-            .setEventTime(domain.getRegistrationExpirationTime())
+            .setEventTime(domain.getRegistrationExpirationDateTime())
             .setMsg("Domain was auto-renewed.")
             .setHistoryEntry(historyEntry)
             .build());
@@ -1720,7 +1720,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
         new PollMessage.Autorenew.Builder()
             .setTargetId(domain.getDomainName())
             .setRegistrarId("TheRegistrar")
-            .setEventTime(domain.getRegistrationExpirationTime())
+            .setEventTime(domain.getRegistrationExpirationDateTime())
             .setMsg("Domain was auto-renewed.")
             .setHistoryEntry(historyEntry)
             .build(),
@@ -1853,7 +1853,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
         new PollMessage.Autorenew.Builder()
             .setTargetId(domain.getDomainName())
             .setRegistrarId("TheRegistrar")
-            .setEventTime(domain.getRegistrationExpirationTime())
+            .setEventTime(domain.getRegistrationExpirationDateTime())
             .setMsg("Domain was auto-renewed.")
             .setHistoryEntry(historyEntry)
             .build(),

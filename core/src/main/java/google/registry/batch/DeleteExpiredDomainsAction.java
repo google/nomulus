@@ -18,6 +18,7 @@ import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.net.MediaType.PLAIN_TEXT_UTF_8;
 import static google.registry.flows.FlowUtils.marshalWithLenientRetry;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+import static google.registry.util.DateTimeUtils.END_INSTANT;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
 import static google.registry.util.ResourceUtils.readResourceUtf8;
 import static jakarta.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
@@ -177,7 +178,7 @@ public class DeleteExpiredDomainsAction implements Runnable {
                         "Failed to delete domain %s because of its autorenew end time: %s.",
                         transDomain.getDomainName(), transDomain.getAutorenewEndTime());
                     return Optional.empty();
-                  } else if (domain.getDeletionTime().isBefore(END_OF_TIME)) {
+                  } else if (domain.getDeletionTime().isBefore(END_INSTANT)) {
                     logger.atSevere().log(
                         "Failed to delete domain %s because it was already deleted on %s.",
                         transDomain.getDomainName(), transDomain.getDeletionTime());

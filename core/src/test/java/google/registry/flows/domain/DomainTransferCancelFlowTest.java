@@ -114,7 +114,7 @@ class DomainTransferCancelFlowTest
 
     // Setup done; run the test.
     assertMutatingFlow(true);
-    DateTime originalExpirationTime = domain.getRegistrationExpirationTime();
+    DateTime originalExpirationTime = domain.getRegistrationExpirationDateTime();
     ImmutableSet<GracePeriod> originalGracePeriods = domain.getGracePeriods();
     DomainTransferData originalTransferData = domain.getTransferData();
     runFlowAssertResponse(loadFile("domain_transfer_cancel_response.xml"));

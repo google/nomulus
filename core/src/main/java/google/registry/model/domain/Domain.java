@@ -14,6 +14,8 @@
 
 package google.registry.model.domain;
 
+import static google.registry.util.DateTimeUtils.toInstant;
+
 import google.registry.model.EppResource;
 import google.registry.model.EppResource.ForeignKeyedEppResource;
 import google.registry.model.annotations.ExternalMessagingName;
@@ -37,6 +39,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.JoinTable;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import java.time.Instant;
 import java.util.Set;
 import org.hibernate.Hibernate;
 import org.joda.time.DateTime;
@@ -153,6 +156,11 @@ public class Domain extends DomainBase implements ForeignKeyedEppResource {
 
   @Override
   public Domain cloneProjectedAtTime(final DateTime now) {
+    return cloneDomainProjectedAtTime(this, toInstant(now));
+  }
+
+  @Override
+  public Domain cloneProjectedAtInstant(final Instant now) {
     return cloneDomainProjectedAtTime(this, now);
   }
 

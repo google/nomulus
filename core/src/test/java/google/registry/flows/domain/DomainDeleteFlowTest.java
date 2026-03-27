@@ -376,7 +376,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
     runFlowAssertResponse(loadFile("domain_delete_response_pending.xml"));
 
     Domain domain = reloadResourceByForeignKey();
-    DateTime redemptionEndTime = domain.getLastEppUpdateTime().plusDays(3);
+    DateTime redemptionEndTime = domain.getLastEppUpdateDateTime().plusDays(3);
     Domain domainAtRedemptionTime = domain.cloneProjectedAtTime(redemptionEndTime);
     assertAboutDomains()
         .that(domainAtRedemptionTime)
@@ -418,7 +418,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
             null));
     // We should see exactly one poll message, which is for the autorenew 1 month in the future.
     assertPollMessages(createAutorenewPollMessage("TheRegistrar").build());
-    DateTime expectedExpirationTime = domain.getRegistrationExpirationTime().minusYears(2);
+    DateTime expectedExpirationTime = domain.getRegistrationExpirationDateTime().minusYears(2);
     clock.advanceOneMilli();
     runFlowAssertResponse(loadFile(responseFilename, substitutions));
     Domain resource = reloadResourceByForeignKey();
@@ -462,7 +462,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
     // There should be a future poll message at the deletion time. The previous autorenew poll
     // message should now be deleted.
     assertAboutDomains().that(domain).hasDeletePollMessage();
-    DateTime deletionTime = domain.getDeletionTime();
+    DateTime deletionTime = domain.getDeletionDateTime();
     assertThat(getPollMessages("TheRegistrar", deletionTime.minusMinutes(1))).isEmpty();
     assertThat(getPollMessages("TheRegistrar", deletionTime)).hasSize(1);
     assertThat(domain.getDeletePollMessage())
@@ -496,7 +496,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
     runFlowAssertResponse(loadFile("domain_delete_response_pending.xml"));
     // There should now be two poll messages; one for the delete of the domain (in the future), and
     // another for the unacked autorenew messages.
-    DateTime deletionTime = reloadResourceByForeignKey().getDeletionTime();
+    DateTime deletionTime = reloadResourceByForeignKey().getDeletionDateTime();
     assertThat(getPollMessages("TheRegistrar", deletionTime.minusMinutes(1))).hasSize(1);
     assertThat(getPollMessages("TheRegistrar", deletionTime)).hasSize(2);
   }
@@ -613,7 +613,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
         .isEqualTo(Trid.create("transferClient-trid", "transferServer-trid"));
     assertThat(panData.getActionResult()).isFalse();
     // There should be a future poll message to the losing registrar at the deletion time.
-    DateTime deletionTime = domain.getDeletionTime();
+    DateTime deletionTime = domain.getDeletionDateTime();
     assertThat(getPollMessages("TheRegistrar", deletionTime.minusMinutes(1))).isEmpty();
     assertThat(getPollMessages("TheRegistrar", deletionTime)).hasSize(1);
     assertOnlyBillingEventIsClosedAutorenew("TheRegistrar");
