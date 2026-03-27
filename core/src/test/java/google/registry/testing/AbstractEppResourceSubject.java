@@ -148,15 +148,15 @@ abstract class AbstractEppResourceSubject<
   }
 
   public And<S> hasDeletionTime(DateTime deletionTime) {
-    return hasValue(deletionTime, actual.getDeletionTime(), "getDeletionTime()");
+    return hasValue(deletionTime, actual.getDeletionDateTime(), "getDeletionTime()");
   }
 
   public And<S> hasLastEppUpdateTime(DateTime lastUpdateTime) {
-    return hasValue(lastUpdateTime, actual.getLastEppUpdateTime(), "has lastEppUpdateTime");
+    return hasValue(lastUpdateTime, actual.getLastEppUpdateDateTime(), "has lastEppUpdateTime");
   }
 
   public And<S> hasLastEppUpdateTimeAtLeast(DateTime before) {
-    DateTime lastEppUpdateTime = actual.getLastEppUpdateTime();
+    DateTime lastEppUpdateTime = actual.getLastEppUpdateDateTime();
     check("getLastEppUpdateTime()").that(lastEppUpdateTime).isAtLeast(before);
     return andChainer();
   }

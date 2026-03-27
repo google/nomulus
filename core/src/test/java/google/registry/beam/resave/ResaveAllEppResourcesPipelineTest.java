@@ -25,6 +25,8 @@ import static google.registry.testing.DatabaseHelper.persistActiveHost;
 import static google.registry.testing.DatabaseHelper.persistDomainWithDependentResources;
 import static google.registry.testing.DatabaseHelper.persistDomainWithPendingTransfer;
 import static google.registry.testing.DatabaseHelper.persistNewRegistrars;
+import static google.registry.util.DateTimeUtils.plusYears;
+import static google.registry.util.DateTimeUtils.toInstant;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -113,11 +115,12 @@ public class ResaveAllEppResourcesPipelineTest {
     DateTime now = fakeClock.nowUtc();
     Domain domain =
         persistDomainWithDependentResources("domain", "tld", now, now, now.plusYears(1));
-    assertThat(domain.getRegistrationExpirationTime()).isEqualTo(now.plusYears(1));
+    assertThat(domain.getRegistrationExpirationTime()).isEqualTo(plusYears(toInstant(now), 1));
     fakeClock.advanceBy(Duration.standardDays(500));
     runPipeline();
     Domain postPipeline = loadByEntity(domain);
-    assertThat(postPipeline.getRegistrationExpirationTime()).isEqualTo(now.plusYears(2));
+    assertThat(postPipeline.getRegistrationExpirationTime())
+        .isEqualTo(plusYears(toInstant(now), 2));
   }
 
   @Test

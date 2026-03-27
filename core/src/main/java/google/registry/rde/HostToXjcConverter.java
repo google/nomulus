@@ -70,7 +70,7 @@ final class HostToXjcConverter {
     bean.setName(model.getHostName());
     bean.setRoid(model.getRepoId());
     bean.setCrDate(model.getCreationTime());
-    bean.setUpDate(model.getLastEppUpdateTime());
+    bean.setUpDate(model.getLastEppUpdateDateTime());
     bean.setCrRr(RdeAdapter.convertRr(model.getCreationRegistrarId(), null));
     bean.setUpRr(RdeAdapter.convertRr(model.getLastEppUpdateRegistrarId(), null));
     bean.setCrRr(RdeAdapter.convertRr(model.getCreationRegistrarId(), null));

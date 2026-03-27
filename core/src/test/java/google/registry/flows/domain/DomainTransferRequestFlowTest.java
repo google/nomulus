@@ -244,7 +244,8 @@ class DomainTransferRequestFlowTest
                 .setTransferPeriod(expectedPeriod)
                 .setTransferStatus(TransferStatus.SERVER_APPROVED)
                 .setPendingTransferExpirationTime(automaticTransferTime)
-                .setTransferredRegistrationExpirationTime(domain.getRegistrationExpirationTime())
+                .setTransferredRegistrationExpirationTime(
+                    domain.getRegistrationExpirationDateTime())
                 // Server-approve entity fields should all be nulled out.
                 .build());
   }
@@ -542,7 +543,7 @@ class DomainTransferRequestFlowTest
     doSuccessfulTest(
         commandFilename,
         expectedXmlFilename,
-        domain.getRegistrationExpirationTime().plusYears(1),
+        domain.getRegistrationExpirationDateTime().plusYears(1),
         substitutions,
         Optional.empty());
   }
@@ -551,7 +552,9 @@ class DomainTransferRequestFlowTest
       throws Exception {
     clock.advanceOneMilli();
     doSuccessfulTest(
-        commandFilename, expectedXmlFilename, domain.getRegistrationExpirationTime().plusYears(1));
+        commandFilename,
+        expectedXmlFilename,
+        domain.getRegistrationExpirationDateTime().plusYears(1));
   }
 
   private void doSuccessfulSuperuserExtensionTest(
@@ -812,7 +815,7 @@ class DomainTransferRequestFlowTest
     doSuccessfulSuperuserExtensionTest(
         "domain_transfer_request_superuser_extension.xml",
         "domain_transfer_request_response_su_ext_zero_period_nonzero_transfer_length.xml",
-        domain.getRegistrationExpirationTime().plusYears(0),
+        domain.getRegistrationExpirationDateTime().plusYears(0),
         ImmutableMap.of("PERIOD", "0", "AUTOMATIC_TRANSFER_LENGTH", "5"),
         Optional.empty(),
         Period.create(0, Unit.YEARS),
@@ -826,7 +829,7 @@ class DomainTransferRequestFlowTest
     doSuccessfulSuperuserExtensionTest(
         "domain_transfer_request_superuser_extension.xml",
         "domain_transfer_request_response_su_ext_zero_period_zero_transfer_length.xml",
-        domain.getRegistrationExpirationTime().plusYears(0),
+        domain.getRegistrationExpirationDateTime().plusYears(0),
         ImmutableMap.of("PERIOD", "0", "AUTOMATIC_TRANSFER_LENGTH", "0"),
         Optional.empty(),
         Period.create(0, Unit.YEARS),
@@ -841,7 +844,7 @@ class DomainTransferRequestFlowTest
     doSuccessfulSuperuserExtensionTest(
         "domain_transfer_request_superuser_extension.xml",
         "domain_transfer_request_response_su_ext_one_year_period_nonzero_transfer_length.xml",
-        domain.getRegistrationExpirationTime().plusYears(1),
+        domain.getRegistrationExpirationDateTime().plusYears(1),
         ImmutableMap.of("PERIOD", "1", "AUTOMATIC_TRANSFER_LENGTH", "5"),
         Optional.empty(),
         Period.create(1, Unit.YEARS),
@@ -873,7 +876,7 @@ class DomainTransferRequestFlowTest
     doSuccessfulSuperuserExtensionTest(
         "domain_transfer_request_superuser_extension.xml",
         "domain_transfer_request_response_su_ext_zero_period_autorenew_grace.xml",
-        domain.getRegistrationExpirationTime(),
+        domain.getRegistrationExpirationDateTime(),
         ImmutableMap.of("PERIOD", "0", "AUTOMATIC_TRANSFER_LENGTH", "0"),
         Optional.empty(),
         Period.create(0, Unit.YEARS),
@@ -922,7 +925,7 @@ class DomainTransferRequestFlowTest
     doSuccessfulSuperuserExtensionTest(
         "domain_transfer_request_superuser_extension.xml",
         "domain_transfer_request_response_su_ext_zero_period_zero_transfer_length.xml",
-        domain.getRegistrationExpirationTime().plusYears(0),
+        domain.getRegistrationExpirationDateTime().plusYears(0),
         ImmutableMap.of("PERIOD", "0", "AUTOMATIC_TRANSFER_LENGTH", "0"),
         Optional.empty(),
         Period.create(0, Unit.YEARS),
@@ -939,7 +942,7 @@ class DomainTransferRequestFlowTest
     doSuccessfulSuperuserExtensionTest(
         "domain_transfer_request_superuser_extension.xml",
         "domain_transfer_request_response_su_ext_zero_period_zero_transfer_length.xml",
-        domain.getRegistrationExpirationTime().plusYears(0),
+        domain.getRegistrationExpirationDateTime().plusYears(0),
         ImmutableMap.of("PERIOD", "0", "AUTOMATIC_TRANSFER_LENGTH", "0"),
         Optional.empty(),
         Period.create(0, Unit.YEARS),
@@ -977,7 +980,7 @@ class DomainTransferRequestFlowTest
     doSuccessfulTest(
         "domain_transfer_request_separate_fees.xml",
         "domain_transfer_request_response_fees.xml",
-        domain.getRegistrationExpirationTime().plusYears(1),
+        domain.getRegistrationExpirationDateTime().plusYears(1),
         new ImmutableMap.Builder<String, String>()
             .put("DOMAIN", "expensive-domain.foo")
             .put("YEARS", "1")
@@ -1409,7 +1412,7 @@ class DomainTransferRequestFlowTest
     doSuccessfulSuperuserExtensionTest(
         "domain_transfer_request_superuser_extension.xml",
         "domain_transfer_request_response_su_ext_zero_period_zero_transfer_length.xml",
-        domain.getRegistrationExpirationTime().plusYears(0),
+        domain.getRegistrationExpirationDateTime().plusYears(0),
         ImmutableMap.of("PERIOD", "0", "AUTOMATIC_TRANSFER_LENGTH", "0"),
         Optional.empty(),
         Period.create(0, Unit.YEARS),
@@ -2024,7 +2027,7 @@ class DomainTransferRequestFlowTest
     doSuccessfulTest(
         "domain_transfer_request_separate_fees.xml",
         "domain_transfer_request_response_fees.xml",
-        domain.getRegistrationExpirationTime().plusYears(1),
+        domain.getRegistrationExpirationDateTime().plusYears(1),
         new ImmutableMap.Builder<String, String>()
             .put("DOMAIN", "expensive-domain.foo")
             .put("YEARS", "1")

@@ -33,6 +33,7 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Convert;
 import jakarta.persistence.MappedSuperclass;
 import java.net.InetAddress;
+import java.time.Instant;
 import java.util.Optional;
 import java.util.Set;
 import javax.annotation.Nullable;
@@ -129,6 +130,11 @@ public class HostBase extends EppResource {
   @Override
   @SuppressWarnings("InlineMeSuggester")
   public HostBase cloneProjectedAtTime(DateTime now) {
+    return this;
+  }
+
+  @Override
+  public EppResource cloneProjectedAtInstant(Instant now) {
     return this;
   }
 
@@ -232,13 +238,13 @@ public class HostBase extends EppResource {
     public B copyFrom(HostBase hostBase) {
       return setCreationRegistrarId(hostBase.getCreationRegistrarId())
           .setCreationTime(hostBase.getCreationTime())
-          .setDeletionTime(hostBase.getDeletionTime())
+          .setDeletionTime(hostBase.getDeletionDateTime())
           .setHostName(hostBase.getHostName())
           .setInetAddresses(hostBase.getInetAddresses())
           .setLastTransferTime(hostBase.getLastTransferTime())
           .setLastSuperordinateChange(hostBase.getLastSuperordinateChange())
           .setLastEppUpdateRegistrarId(hostBase.getLastEppUpdateRegistrarId())
-          .setLastEppUpdateTime(hostBase.getLastEppUpdateTime())
+          .setLastEppUpdateTime(hostBase.getLastEppUpdateDateTime())
           .setPersistedCurrentSponsorRegistrarId(hostBase.getPersistedCurrentSponsorRegistrarId())
           .setRepoId(hostBase.getRepoId())
           .setSuperordinateDomain(hostBase.getSuperordinateDomain())

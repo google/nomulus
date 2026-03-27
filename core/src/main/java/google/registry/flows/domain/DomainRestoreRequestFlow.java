@@ -138,7 +138,7 @@ public final class DomainRestoreRequestFlow implements MutatingFlow {
     Update command = (Update) resourceCommand;
     DateTime now = tm().getTransactionTime();
     Domain existingDomain = loadAndVerifyExistence(Domain.class, targetId, now);
-    boolean isExpired = existingDomain.getRegistrationExpirationTime().isBefore(now);
+    boolean isExpired = existingDomain.getRegistrationExpirationDateTime().isBefore(now);
     FeesAndCredits feesAndCredits =
         pricingLogic.getRestorePrice(Tld.get(existingDomain.getTld()), targetId, now, isExpired);
     Optional<FeeUpdateCommandExtension> feeUpdate =
@@ -149,7 +149,7 @@ public final class DomainRestoreRequestFlow implements MutatingFlow {
     ImmutableSet.Builder<ImmutableObject> entitiesToInsert = new ImmutableSet.Builder<>();
 
     DateTime newExpirationTime =
-        existingDomain.getRegistrationExpirationTime().plusYears(isExpired ? 1 : 0);
+        existingDomain.getRegistrationExpirationDateTime().plusYears(isExpired ? 1 : 0);
     // Restore the expiration time on the deleted domain, except if that's already passed, then add
     // a year and bill for it immediately, with no grace period.
     if (isExpired) {

@@ -78,7 +78,7 @@ public final class DomainSubject extends AbstractEppResourceSubject<Domain, Doma
 
   public And<DomainSubject> hasRegistrationExpirationTime(DateTime expiration) {
     return hasValue(
-        expiration, actual.getRegistrationExpirationTime(), "getRegistrationExpirationTime()");
+        expiration, actual.getRegistrationExpirationDateTime(), "getRegistrationExpirationTime()");
   }
 
   public And<DomainSubject> hasLastTransferTime(DateTime lastTransferTime) {

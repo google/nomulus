@@ -14,6 +14,8 @@
 
 package google.registry.model.domain;
 
+import static google.registry.util.DateTimeUtils.toInstant;
+
 import google.registry.model.ImmutableObject;
 import google.registry.model.UnsafeSerializable;
 import google.registry.model.billing.BillingEvent;
@@ -30,6 +32,7 @@ import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.MappedSuperclass;
 import jakarta.persistence.Transient;
+import java.time.Instant;
 import org.joda.time.DateTime;
 
 /** Base class containing common fields and methods for {@link GracePeriod}. */
@@ -90,8 +93,13 @@ public class GracePeriodBase extends ImmutableObject implements UnsafeSerializab
     return domainRepoId;
   }
 
-  public DateTime getExpirationTime() {
+  @Deprecated
+  public DateTime getExpirationDateTime() {
     return expirationTime;
+  }
+
+  public Instant getExpirationTime() {
+    return toInstant(expirationTime);
   }
 
   public String getRegistrarId() {

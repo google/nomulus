@@ -99,7 +99,7 @@ public final class HostInfoFlow implements TransactionalFlow {
                 .setCreationRegistrarId(host.getCreationRegistrarId())
                 .setCreationTime(host.getCreationTime())
                 .setLastEppUpdateRegistrarId(host.getLastEppUpdateRegistrarId())
-                .setLastEppUpdateTime(host.getLastEppUpdateTime())
+                .setLastEppUpdateTime(host.getLastEppUpdateDateTime())
                 .build())
         .build();
   }

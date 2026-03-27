@@ -99,8 +99,9 @@ class UnrenewDomainCommand extends ConfirmingCommand {
       domainsWithDisallowedStatusesBuilder.putAll(
           domainName, Sets.intersection(domain.get().getStatusValues(), DISALLOWED_STATUSES));
       if (isBeforeOrAt(
-          leapSafeSubtractYears(domain.get().getRegistrationExpirationTime(), period), now)) {
-        domainsExpiringTooSoonBuilder.put(domainName, domain.get().getRegistrationExpirationTime());
+          leapSafeSubtractYears(domain.get().getRegistrationExpirationDateTime(), period), now)) {
+        domainsExpiringTooSoonBuilder.put(
+            domainName, domain.get().getRegistrationExpirationDateTime());
       }
     }
 
@@ -143,7 +144,7 @@ class UnrenewDomainCommand extends ConfirmingCommand {
     DateTime now = clock.nowUtc();
     for (String domainName : mainParameters) {
       Domain domain = ForeignKeyUtils.loadResource(Domain.class, domainName, now).get();
-      DateTime previousTime = domain.getRegistrationExpirationTime();
+      DateTime previousTime = domain.getRegistrationExpirationDateTime();
       DateTime newTime = leapSafeSubtractYears(previousTime, period);
       resultBuilder.append(
           String.format(
@@ -179,12 +180,12 @@ class UnrenewDomainCommand extends ConfirmingCommand {
         "Domain %s has prohibited status values",
         domainName);
     checkState(
-        leapSafeSubtractYears(domain.getRegistrationExpirationTime(), period).isAfter(now),
+        leapSafeSubtractYears(domain.getRegistrationExpirationDateTime(), period).isAfter(now),
         "Domain %s expires too soon",
         domainName);
 
     DateTime newExpirationTime =
-        leapSafeSubtractYears(domain.getRegistrationExpirationTime(), period);
+        leapSafeSubtractYears(domain.getRegistrationExpirationDateTime(), period);
     DomainHistory domainHistory =
         new DomainHistory.Builder()
             .setDomain(domain)

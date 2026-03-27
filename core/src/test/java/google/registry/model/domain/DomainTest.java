@@ -31,6 +31,10 @@ import static google.registry.testing.DomainSubject.assertAboutDomains;
 import static google.registry.testing.SqlHelper.saveRegistrar;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
+import static google.registry.util.DateTimeUtils.minusDays;
+import static google.registry.util.DateTimeUtils.plusDays;
+import static google.registry.util.DateTimeUtils.plusYears;
+import static google.registry.util.DateTimeUtils.toDateTime;
 import static org.joda.money.CurrencyUnit.USD;
 import static org.joda.time.DateTimeZone.UTC;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -67,6 +71,8 @@ import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationWithCoverageExtension;
 import google.registry.testing.DatabaseHelper;
 import google.registry.testing.FakeClock;
+import java.time.Instant;
+import java.time.ZoneOffset;
 import java.util.Optional;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
@@ -386,7 +392,7 @@ public class DomainTest {
         .isEqualTo(TransferStatus.SERVER_APPROVED);
     assertThat(domain.getCurrentSponsorRegistrarId()).isEqualTo("TheRegistrar");
     assertThat(domain.getLastTransferTime()).isEqualTo(fakeClock.nowUtc().plusDays(1));
-    assertThat(domain.getRegistrationExpirationTime()).isEqualTo(newExpirationTime);
+    assertThat(domain.getRegistrationExpirationDateTime()).isEqualTo(newExpirationTime);
     assertThat(domain.getAutorenewBillingEvent()).isEqualTo(newAutorenewEvent);
   }
 
@@ -479,56 +485,57 @@ public class DomainTest {
   }
 
   private void setupPendingTransferDomain(
-      DateTime oldExpirationTime, DateTime transferRequestTime, DateTime transferSuccessTime) {
+      Instant oldExpirationTime, Instant transferRequestTime, Instant transferSuccessTime) {
     domain =
         domain
             .asBuilder()
-            .setRegistrationExpirationTime(oldExpirationTime)
+            .setRegistrationExpirationTime(toDateTime(oldExpirationTime))
             .setTransferData(
                 domain
                     .getTransferData()
                     .asBuilder()
                     .setTransferStatus(TransferStatus.PENDING)
-                    .setTransferRequestTime(transferRequestTime)
-                    .setPendingTransferExpirationTime(transferSuccessTime)
+                    .setTransferRequestTime(toDateTime(transferRequestTime))
+                    .setPendingTransferExpirationTime(toDateTime(transferSuccessTime))
                     .build())
-            .setLastEppUpdateTime(transferRequestTime)
+            .setLastEppUpdateTime(toDateTime(transferRequestTime))
             .setLastEppUpdateRegistrarId(domain.getTransferData().getGainingRegistrarId())
             .build();
   }
 
   @Test
   void testEppLastUpdateTimeAndClientId_autoRenewBeforeTransferSuccess() {
-    DateTime now = fakeClock.nowUtc();
-    DateTime transferRequestDateTime = now.plusDays(1);
-    DateTime autorenewDateTime = now.plusDays(3);
-    DateTime transferSuccessDateTime = now.plusDays(5);
+    Instant now = fakeClock.now();
+    Instant transferRequestDateTime = plusDays(now, 1);
+    Instant autorenewDateTime = plusDays(now, 3);
+    Instant transferSuccessDateTime = plusDays(now, 5);
     setupPendingTransferDomain(autorenewDateTime, transferRequestDateTime, transferSuccessDateTime);
 
-    Domain beforeAutoRenew = domain.cloneProjectedAtTime(autorenewDateTime.minusDays(1));
+    Domain beforeAutoRenew = domain.cloneProjectedAtInstant(minusDays(autorenewDateTime, 1));
     assertThat(beforeAutoRenew.getLastEppUpdateTime()).isEqualTo(transferRequestDateTime);
     assertThat(beforeAutoRenew.getLastEppUpdateRegistrarId()).isEqualTo("TheRegistrar");
 
     // If autorenew happens before transfer succeeds(before transfer grace period starts as well),
     // lastEppUpdateRegistrarId should still be the current sponsor client id
-    Domain afterAutoRenew = domain.cloneProjectedAtTime(autorenewDateTime.plusDays(1));
+    Domain afterAutoRenew = domain.cloneProjectedAtInstant(plusDays(autorenewDateTime, 1));
     assertThat(afterAutoRenew.getLastEppUpdateTime()).isEqualTo(autorenewDateTime);
     assertThat(afterAutoRenew.getLastEppUpdateRegistrarId()).isEqualTo("NewRegistrar");
   }
 
   @Test
   void testEppLastUpdateTimeAndClientId_autoRenewAfterTransferSuccess() {
-    DateTime now = fakeClock.nowUtc();
-    DateTime transferRequestDateTime = now.plusDays(1);
-    DateTime autorenewDateTime = now.plusDays(3);
-    DateTime transferSuccessDateTime = now.plusDays(5);
+    Instant now = fakeClock.now();
+    Instant transferRequestDateTime = plusDays(now, 1);
+    Instant autorenewDateTime = plusDays(now, 3);
+    Instant transferSuccessDateTime = plusDays(now, 5);
     setupPendingTransferDomain(autorenewDateTime, transferRequestDateTime, transferSuccessDateTime);
 
-    Domain beforeAutoRenew = domain.cloneProjectedAtTime(autorenewDateTime.minusDays(1));
+    Domain beforeAutoRenew = domain.cloneProjectedAtInstant(minusDays(autorenewDateTime, 1));
     assertThat(beforeAutoRenew.getLastEppUpdateTime()).isEqualTo(transferRequestDateTime);
     assertThat(beforeAutoRenew.getLastEppUpdateRegistrarId()).isEqualTo("TheRegistrar");
 
-    Domain afterTransferSuccess = domain.cloneProjectedAtTime(transferSuccessDateTime.plusDays(1));
+    Domain afterTransferSuccess =
+        domain.cloneProjectedAtInstant(plusDays(transferSuccessDateTime, 1));
     assertThat(afterTransferSuccess.getLastEppUpdateTime()).isEqualTo(transferSuccessDateTime);
     assertThat(afterTransferSuccess.getLastEppUpdateRegistrarId()).isEqualTo("TheRegistrar");
   }
@@ -552,11 +559,11 @@ public class DomainTest {
     setupUnmodifiedDomain(autorenewDateTime);
 
     Domain beforeAutoRenew = domain.cloneProjectedAtTime(autorenewDateTime.minusDays(1));
-    assertThat(beforeAutoRenew.getLastEppUpdateTime()).isEqualTo(null);
+    assertThat(beforeAutoRenew.getLastEppUpdateDateTime()).isEqualTo(null);
     assertThat(beforeAutoRenew.getLastEppUpdateRegistrarId()).isEqualTo(null);
 
     Domain afterAutoRenew = domain.cloneProjectedAtTime(autorenewDateTime.plusDays(1));
-    assertThat(afterAutoRenew.getLastEppUpdateTime()).isEqualTo(autorenewDateTime);
+    assertThat(afterAutoRenew.getLastEppUpdateDateTime()).isEqualTo(autorenewDateTime);
     assertThat(afterAutoRenew.getLastEppUpdateRegistrarId()).isEqualTo("NewRegistrar");
   }
 
@@ -633,9 +640,9 @@ public class DomainTest {
 
   @Test
   void testRenewalsHappenAtExpiration() {
-    Domain renewed = domain.cloneProjectedAtTime(domain.getRegistrationExpirationTime());
+    Domain renewed = domain.cloneProjectedAtInstant(domain.getRegistrationExpirationTime());
     assertThat(renewed.getRegistrationExpirationTime())
-        .isEqualTo(domain.getRegistrationExpirationTime().plusYears(1));
+        .isEqualTo(plusYears(domain.getRegistrationExpirationTime(), 1));
     assertThat(renewed.getLastEppUpdateTime()).isEqualTo(domain.getRegistrationExpirationTime());
     assertThat(getOnlyElement(renewed.getGracePeriods()).getType())
         .isEqualTo(GracePeriodStatus.AUTO_RENEW);
@@ -656,15 +663,16 @@ public class DomainTest {
             .setRegistrationExpirationTime(DateTime.parse("2004-02-29T22:00:00.0Z"))
             .build();
     Domain renewed =
-        domain.cloneProjectedAtTime(domain.getRegistrationExpirationTime().plusYears(4));
-    assertThat(renewed.getRegistrationExpirationTime().getDayOfMonth()).isEqualTo(28);
+        domain.cloneProjectedAtInstant(plusYears(domain.getRegistrationExpirationTime(), 4));
+    assertThat(renewed.getRegistrationExpirationTime().atZone(ZoneOffset.UTC).getDayOfMonth())
+        .isEqualTo(28);
   }
 
   @Test
   void testMultipleAutoRenews() {
     // Change the registry so that renewal costs change every year to make sure we are using the
     // autorenew time as the lookup time for the cost.
-    DateTime oldExpirationTime = domain.getRegistrationExpirationTime();
+    DateTime oldExpirationTime = domain.getRegistrationExpirationDateTime();
     persistResource(
         Tld.get("com")
             .asBuilder()
@@ -680,9 +688,10 @@ public class DomainTest {
                     .build())
             .build());
     Domain renewedThreeTimes = domain.cloneProjectedAtTime(oldExpirationTime.plusYears(2));
-    assertThat(renewedThreeTimes.getRegistrationExpirationTime())
+    assertThat(renewedThreeTimes.getRegistrationExpirationDateTime())
         .isEqualTo(oldExpirationTime.plusYears(3));
-    assertThat(renewedThreeTimes.getLastEppUpdateTime()).isEqualTo(oldExpirationTime.plusYears(2));
+    assertThat(renewedThreeTimes.getLastEppUpdateDateTime())
+        .isEqualTo(oldExpirationTime.plusYears(2));
     assertThat(renewedThreeTimes.getGracePeriods())
         .containsExactly(
             GracePeriod.createForRecurrence(
@@ -730,7 +739,7 @@ public class DomainTest {
                 .setDeletionTime(now.minusDays(10))
                 .setStatusValues(ImmutableSet.of(StatusValue.PENDING_DELETE, StatusValue.INACTIVE))
                 .build());
-    assertThat(domain.cloneProjectedAtTime(now).getRegistrationExpirationTime())
+    assertThat(domain.cloneProjectedAtTime(now).getRegistrationExpirationDateTime())
         .isEqualTo(now.minusDays(1));
   }
 
@@ -746,7 +755,7 @@ public class DomainTest {
                 .setDeletionTime(now.plusDays(20))
                 .setStatusValues(ImmutableSet.of(StatusValue.PENDING_DELETE, StatusValue.INACTIVE))
                 .build());
-    assertThat(domain.cloneProjectedAtTime(now).getRegistrationExpirationTime())
+    assertThat(domain.cloneProjectedAtTime(now).getRegistrationExpirationDateTime())
         .isEqualTo(now.plusDays(1));
   }
 
@@ -773,7 +782,7 @@ public class DomainTest {
                 .setTransferData(transferData)
                 .build());
 
-    assertThat(domain.cloneProjectedAtTime(now).getRegistrationExpirationTime())
+    assertThat(domain.cloneProjectedAtTime(now).getRegistrationExpirationDateTime())
         .isEqualTo(newExpiration);
   }
 
@@ -801,7 +810,7 @@ public class DomainTest {
                 .setTransferData(transferData)
                 .build());
 
-    assertThat(domain.cloneProjectedAtTime(now).getRegistrationExpirationTime())
+    assertThat(domain.cloneProjectedAtTime(now).getRegistrationExpirationDateTime())
         .isEqualTo(newExpiration);
   }
 
@@ -843,7 +852,7 @@ public class DomainTest {
 
     assertThat(domain.getCurrentBulkToken()).isPresent();
     Domain clonedDomain = domain.cloneProjectedAtTime(now);
-    assertThat(clonedDomain.getRegistrationExpirationTime()).isEqualTo(newExpiration);
+    assertThat(clonedDomain.getRegistrationExpirationDateTime()).isEqualTo(newExpiration);
     assertThat(clonedDomain.getCurrentBulkToken()).isEmpty();
   }
 
@@ -868,7 +877,7 @@ public class DomainTest {
                 .setTransferData(transferData)
                 .build());
 
-    assertThat(domain.cloneProjectedAtTime(now).getRegistrationExpirationTime())
+    assertThat(domain.cloneProjectedAtTime(now).getRegistrationExpirationDateTime())
         .isEqualTo(previousExpiration);
   }
 
@@ -906,7 +915,7 @@ public class DomainTest {
                 .build());
 
     Domain clonedDomain = domain.cloneProjectedAtTime(now);
-    assertThat(clonedDomain.getRegistrationExpirationTime()).isEqualTo(previousExpiration);
+    assertThat(clonedDomain.getRegistrationExpirationDateTime()).isEqualTo(previousExpiration);
     assertThat(clonedDomain.getCurrentBulkToken().get()).isEqualTo(allocationToken.createVKey());
   }
 
@@ -943,8 +952,8 @@ public class DomainTest {
                 .setAutorenewBillingEvent(recurrenceBillKey)
                 .build());
     Domain clone = domain.cloneProjectedAtTime(now);
-    assertThat(clone.getRegistrationExpirationTime())
-        .isEqualTo(domain.getRegistrationExpirationTime().plusYears(1));
+    assertThat(clone.getRegistrationExpirationDateTime())
+        .isEqualTo(domain.getRegistrationExpirationDateTime().plusYears(1));
     // Transferring removes the AUTORENEW grace period and adds a TRANSFER grace period
     assertThat(getOnlyElement(clone.getGracePeriods()).getType())
         .isEqualTo(GracePeriodStatus.TRANSFER);

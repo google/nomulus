@@ -25,6 +25,7 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import static google.registry.util.CollectionUtils.nullToEmpty;
 import static google.registry.util.CollectionUtils.nullToEmptyImmutableCopy;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
+import static google.registry.util.DateTimeUtils.toInstant;
 
 import com.github.benmanes.caffeine.cache.CacheLoader;
 import com.github.benmanes.caffeine.cache.LoadingCache;
@@ -45,6 +46,7 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.MappedSuperclass;
 import jakarta.persistence.Transient;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -163,8 +165,13 @@ public abstract class EppResource extends UpdateAutoTimestampEntity implements B
     return creationRegistrarId;
   }
 
-  public DateTime getLastEppUpdateTime() {
+  @Deprecated
+  public DateTime getLastEppUpdateDateTime() {
     return lastEppUpdateTime;
+  }
+
+  public Instant getLastEppUpdateTime() {
+    return toInstant(lastEppUpdateTime);
   }
 
   public String getLastEppUpdateRegistrarId() {
@@ -185,12 +192,21 @@ public abstract class EppResource extends UpdateAutoTimestampEntity implements B
     return nullToEmptyImmutableCopy(statuses);
   }
 
-  public DateTime getDeletionTime() {
+  @Deprecated
+  public DateTime getDeletionDateTime() {
     return deletionTime;
   }
 
+  public Instant getDeletionTime() {
+    return toInstant(deletionTime);
+  }
+
   /** Return a clone of the resource with timed status values modified using the given time. */
+  @Deprecated
   public abstract EppResource cloneProjectedAtTime(DateTime now);
+
+  /** Return a clone of the resource with timed status values modified using the given time. */
+  public abstract EppResource cloneProjectedAtInstant(Instant now);
 
   /** Get the foreign key string for this resource. */
   public abstract String getForeignKey();

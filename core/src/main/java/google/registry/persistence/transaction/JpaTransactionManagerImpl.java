@@ -21,6 +21,7 @@ import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static google.registry.config.RegistryConfig.getHibernateAllowNestedTransactions;
 import static google.registry.persistence.transaction.DatabaseException.throwIfSqlException;
+import static google.registry.util.DateTimeUtils.toDateTime;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 import static java.util.AbstractMap.SimpleEntry;
 import static java.util.stream.Collectors.joining;
@@ -61,6 +62,7 @@ import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.time.Instant;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
@@ -340,6 +342,11 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
 
   @Override
   public DateTime getTransactionTime() {
+    return toDateTime(getTxTime());
+  }
+
+  @Override
+  public Instant getTxTime() {
     assertInTransaction();
     TransactionInfo txnInfo = transactionInfo.get();
     if (txnInfo.transactionTime == null) {
@@ -746,7 +753,7 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
   private static class TransactionInfo {
     EntityManager entityManager;
     boolean inTransaction = false;
-    DateTime transactionTime;
+    Instant transactionTime;
     Supplier<Long> idProvider;
 
     // The set of entity objects that have been either persisted (via insert()) or merged (via
@@ -759,7 +766,7 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
     private void start(Clock clock, Supplier<Long> idProvider) {
       checkArgumentNotNull(clock);
       inTransaction = true;
-      transactionTime = clock.nowUtc();
+      transactionTime = clock.now();
       this.idProvider = idProvider;
     }
 
