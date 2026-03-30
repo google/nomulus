@@ -47,6 +47,7 @@ import google.registry.model.registrar.RegistrarAddress;
 import google.registry.model.registrar.RegistrarPoc;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.reporting.HistoryEntryDao;
+import google.registry.persistence.VKey;
 import google.registry.rdap.RdapDataStructures.Event;
 import google.registry.rdap.RdapDataStructures.EventAction;
 import google.registry.rdap.RdapDataStructures.Link;
@@ -352,6 +353,8 @@ public class RdapJsonFormatter {
     }
     // RDAP Response Profile 2.6.1: must have at least one status member
     // makeStatusValueList should in theory always contain one of either "active" or "inactive".
+    // RDAP Response Profile 2.6.3, must have a notice about statuses. That is in {@link
+    // RdapIcannStandardInformation#domainBoilerplateNotices}, not here.
     Set<EppEnum> allStatusValues =
         Sets.union(domain.getStatusValues(), domain.getGracePeriodStatuses());
     ImmutableSet<RdapStatus> status =
@@ -365,14 +368,21 @@ public class RdapJsonFormatter {
           "Domain %s (ROID %s) doesn't have any status.",
           domain.getDomainName(), domain.getRepoId());
     }
-    // RDAP Response Profile 2.6.3, must have a notice about statuses. That is in {@link
-    // RdapIcannStandardInformation#domainBoilerplateNotices}
 
+    // We're just trying to load the hosts by cache here, but the generics and casting require
+    // a lot of boilerplate to make the compiler happy
+    Iterable<VKey<? extends EppResource>> nameservers =
+        ImmutableSet.copyOf(domain.getNameservers());
     ImmutableSet<Host> loadedHosts =
         replicaTm()
             .transact(
-                () ->
-                    ImmutableSet.copyOf(replicaTm().loadByKeys(domain.getNameservers()).values()));
+                () -> {
+                  ImmutableSet.Builder<Host> hostBuilder = new ImmutableSet.Builder<>();
+                  for (EppResource host : EppResource.loadByCacheIfEnabled(nameservers).values()) {
+                    hostBuilder.add((Host) host);
+                  }
+                  return hostBuilder.build();
+                });
 
     // Add the nameservers to the data; the load was kicked off above for efficiency.
     // RDAP Response Profile 2.8: we MUST have the nameservers
@@ -425,8 +435,7 @@ public class RdapJsonFormatter {
           && replicaTm()
               .transact(
                   () ->
-                      replicaTm()
-                          .loadByKey(host.getSuperordinateDomain())
+                      EppResource.loadByCache(host.getSuperordinateDomain())
                           .cloneProjectedAtTime(getRequestTime())
                           .getStatusValues()
                           .contains(StatusValue.PENDING_TRANSFER))) {
