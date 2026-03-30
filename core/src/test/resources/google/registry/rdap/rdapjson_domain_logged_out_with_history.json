@@ -1,26 +1,26 @@
 {
-  "objectClassName" : "domain",
-  "handle" : "F-Q9JYB4C",
-  "ldhName" : "cat.xn--q9jyb4c",
-  "unicodeName" : "cat.みんな",
-  "status" :
+  "objectClassName": "domain",
+  "handle": "F-Q9JYB4C",
+  "ldhName": "cat.xn--q9jyb4c",
+  "unicodeName": "cat.みんな",
+  "status":
     [
       "client delete prohibited",
       "client renew prohibited",
       "client transfer prohibited",
       "server update prohibited"
     ],
-  "links" :
+  "links":
   [
     {
-      "rel" : "self",
-      "href" : "https://example.tld/rdap/domain/cat.xn--q9jyb4c",
-      "type" : "application/rdap+json"
+      "rel": "self",
+      "href": "https://example.tld/rdap/domain/cat.xn--q9jyb4c",
+      "type": "application/rdap+json"
     },
     {
-      "rel" : "related",
-      "href" : "https://rdap.example.com/withSlash/domain/cat.xn--q9jyb4c",
-      "type" : "application/rdap+json"
+      "href": "https://rdap.example.com/withSlash/domain/cat.xn--q9jyb4c",
+      "type": "application/rdap+json",
+      "rel": "related"
     }
   ],
   "events": [
@@ -40,20 +40,24 @@
     {
       "eventAction": "last changed",
       "eventDate": "1999-12-01T00:00:00.000Z"
+    },
+    {
+      "eventAction": "transfer",
+      "eventActor": "unicoderegistrar",
+      "eventDate": "1999-12-01T00:00:00.000Z"
     }
   ],
-  "nameservers" :
-  [
+  "nameservers": [
     {
-      "objectClassName" : "nameserver",
-      "handle" : "2-ROID",
-      "ldhName" : "ns1.cat.xn--q9jyb4c",
-      "unicodeName" : "ns1.cat.みんな",
-      "links" : [
+      "objectClassName": "nameserver",
+      "handle": "2-ROID",
+      "ldhName": "ns1.cat.xn--q9jyb4c",
+      "unicodeName": "ns1.cat.みんな",
+      "links": [
         {
-          "rel" : "self",
-          "href" : "https://example.tld/rdap/nameserver/ns1.cat.xn--q9jyb4c",
-          "type" : "application/rdap+json"
+          "rel": "self",
+          "href": "https://example.tld/rdap/nameserver/ns1.cat.xn--q9jyb4c",
+          "type": "application/rdap+json"
         }
       ],
       "remarks": [
@@ -65,15 +69,15 @@
       ]
     },
     {
-      "objectClassName" : "nameserver",
-      "handle" : "4-ROID",
-      "ldhName" : "ns2.cat.xn--q9jyb4c",
-      "unicodeName" : "ns2.cat.みんな",
-      "links" : [
+      "objectClassName": "nameserver",
+      "handle": "4-ROID",
+      "ldhName": "ns2.cat.xn--q9jyb4c",
+      "unicodeName": "ns2.cat.みんな",
+      "links": [
         {
-          "rel" : "self",
-          "href" : "https://example.tld/rdap/nameserver/ns2.cat.xn--q9jyb4c",
-          "type" : "application/rdap+json"
+          "rel": "self",
+          "href": "https://example.tld/rdap/nameserver/ns2.cat.xn--q9jyb4c",
+          "type": "application/rdap+json"
         }
       ],
       "remarks": [
@@ -87,21 +91,19 @@
   ],
   "secureDNS": {
     "delegationSigned": true,
-    "zoneSigned": true,
-    "dsData": [{"algorithm":2,"digest":"DEADFACE","digestType":3,"keyTag":1}]
+    "dsData": [{"algorithm":2,"digest":"DEADFACE","digestType":3,"keyTag":1}],
+    "zoneSigned": true
   },
-  "entities" :
-  [
+  "entities": [
     {
-      "objectClassName" : "entity",
-      "handle" : "1",
-      "roles" : ["registrar"],
-      "links" :
-      [
+      "objectClassName": "entity",
+      "handle": "1",
+      "roles": ["registrar"],
+      "links": [
         {
-          "rel" : "self",
-          "href" : "https://example.tld/rdap/entity/1",
-          "type" : "application/rdap+json"
+          "rel": "self",
+          "href": "https://example.tld/rdap/entity/1",
+          "type": "application/rdap+json"
         },
         {
           "rel": "about",
@@ -110,14 +112,13 @@
           "value": "https://rdap.example.com/withSlash/"
         }
       ],
-      "publicIds" :
-      [
+      "publicIds": [
         {
-          "type" : "IANA Registrar ID",
-          "identifier" : "1"
+          "type": "IANA Registrar ID",
+          "identifier": "1"
         }
       ],
-      "vcardArray" :
+      "vcardArray":
       [
         "vcard",
         [

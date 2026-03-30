@@ -143,7 +143,7 @@ class RdapJsonFormatterTest {
             makeDomain("cat.みんな", hostIpv4, hostIpv6, registrar)
                 .asBuilder()
                 .setCreationTimeForTest(clock.nowUtc().minusMonths(4))
-                .setLastEppUpdateTime(clock.nowUtc().minusMonths(3))
+                .setLastEppUpdateTime(clock.nowUtc().minusMonths(1))
                 .build());
     domainNoNameserversNoTransfers =
         persistResource(
@@ -308,6 +308,14 @@ class RdapJsonFormatterTest {
   }
 
   @Test
+  void testDomain_full_withHistory() {
+    rdapJsonFormatter.rdapIncludeOptionalHistoryResults = true;
+    assertAboutJson()
+        .that(rdapJsonFormatter.createRdapDomain(domainFull, OutputDataType.FULL).toJson())
+        .isEqualTo(loadJson("rdapjson_domain_full_with_history.json"));
+  }
+
+  @Test
   void testDomain_summary() {
     assertAboutJson()
         .that(rdapJsonFormatter.createRdapDomain(domainFull, OutputDataType.SUMMARY).toJson())
@@ -331,6 +339,15 @@ class RdapJsonFormatterTest {
     assertAboutJson()
         .that(rdapJsonFormatter.createRdapDomain(domainFull, OutputDataType.FULL).toJson())
         .isEqualTo(loadJson("rdapjson_domain_logged_out.json"));
+  }
+
+  @Test
+  void testDomain_logged_out_withHistory() {
+    rdapJsonFormatter.rdapAuthorization = RdapAuthorization.PUBLIC_AUTHORIZATION;
+    rdapJsonFormatter.rdapIncludeOptionalHistoryResults = true;
+    assertAboutJson()
+        .that(rdapJsonFormatter.createRdapDomain(domainFull, OutputDataType.FULL).toJson())
+        .isEqualTo(loadJson("rdapjson_domain_logged_out_with_history.json"));
   }
 
   @Test

@@ -40,6 +40,11 @@
     {
       "eventAction": "last changed",
       "eventDate": "1999-12-01T00:00:00.000Z"
+    },
+    {
+      "eventAction": "transfer",
+      "eventActor": "unicoderegistrar",
+      "eventDate": "1999-12-01T00:00:00.000Z"
     }
   ],
   "nameservers" :

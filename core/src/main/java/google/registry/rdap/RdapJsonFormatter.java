@@ -20,6 +20,8 @@ import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static google.registry.model.EppResourceUtils.isLinked;
 import static google.registry.persistence.transaction.TransactionManagerFactory.replicaTm;
+import static google.registry.util.DateTimeUtils.toDateTime;
+import static google.registry.util.DateTimeUtils.toInstant;
 
 import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.google.common.annotations.VisibleForTesting;
@@ -113,6 +115,10 @@ public class RdapJsonFormatter {
   @Config("rdapTosStaticUrl")
   @Nullable
   String rdapTosStaticUrl;
+
+  @Inject
+  @Config("rdapIncludeOptionalHistoryResults")
+  boolean rdapIncludeOptionalHistoryResults;
 
   @Inject @RequestServerName String serverName;
   @Inject RdapAuthorization rdapAuthorization;
@@ -328,9 +334,27 @@ public class RdapJsonFormatter {
                 .setEventAction(EventAction.LAST_UPDATE_OF_RDAP_DATABASE)
                 .setEventDate(getRequestTime())
                 .build());
+    // RDAP Response Profile section 2.3.2.2:
+    // "The event of eventAction type last changed MUST be omitted if the domain has not been
+    // updated since it was created." While it is possible for the domain to be changed out of band
+    // (i.e. without updating lastEppUpdateTime), that can only happen for domains that have already
+    // been modified in some way. As a result, we can ignore those cases here.
+    if (domain.getLastEppUpdateTime() != null
+        && domain.getLastEppUpdateTime().isAfter(toInstant(domain.getCreationTime()))) {
+      // Creates an RDAP event object as defined by RFC 9083
+      builder
+          .eventsBuilder()
+          .add(
+              Event.builder()
+                  .setEventAction(EventAction.LAST_CHANGED)
+                  .setEventDate(toDateTime(domain.getLastEppUpdateTime()))
+                  .build());
+    }
     // RDAP Response Profile section 2.3.2 discusses optional events. We add some of those
     // here. We also add a few others we find interesting.
-    builder.eventsBuilder().addAll(makeOptionalEvents(domain));
+    if (rdapIncludeOptionalHistoryResults) {
+      builder.eventsBuilder().addAll(makeOptionalEvents(domain));
+    }
     // RDAP Response Profile section 2.4.1:
     // The domain object in the RDAP response MUST contain an entity with the Registrar role.
     //
@@ -756,14 +780,9 @@ public class RdapJsonFormatter {
    * that we don't need to load HistoryEntries for "summary" responses).
    */
   private ImmutableList<Event> makeOptionalEvents(EppResource resource) {
+    ImmutableList.Builder<Event> eventsBuilder = new ImmutableList.Builder<>();
     ImmutableMap<EventAction, HistoryTimeAndRegistrar> lastHistoryOfType =
         getLastHistoryByType(resource);
-    ImmutableList.Builder<Event> eventsBuilder = new ImmutableList.Builder<>();
-    DateTime creationTime = resource.getCreationTime();
-    DateTime lastChangeTime =
-        resource.getLastEppUpdateDateTime() == null
-            ? creationTime
-            : resource.getLastEppUpdateDateTime();
     // The order of the elements is stable - it's the order in which the enum elements are defined
     // in EventAction
     for (EventAction rdapEventAction : EventAction.values()) {
@@ -772,34 +791,11 @@ public class RdapJsonFormatter {
       if (historyTimeAndRegistrar == null) {
         continue;
       }
-      DateTime modificationTime = historyTimeAndRegistrar.modificationTime();
-      // We will ignore all events that happened before the "creation time", since these events are
-      // from a "previous incarnation of the domain" (for a domain that was owned by someone,
-      // deleted, and then bought by someone else)
-      if (modificationTime.isBefore(creationTime)) {
-        continue;
-      }
       eventsBuilder.add(
           Event.builder()
               .setEventAction(rdapEventAction)
               .setEventActor(historyTimeAndRegistrar.registrarId())
-              .setEventDate(modificationTime)
-              .build());
-      // The last change time might not be the lastEppUpdateTime, since some changes happen without
-      // any EPP update (for example, by the passage of time).
-      if (modificationTime.isAfter(lastChangeTime) && modificationTime.isBefore(getRequestTime())) {
-        lastChangeTime = modificationTime;
-      }
-    }
-    // RDAP Response Profile section 2.3.2.2:
-    // The event of eventAction type last changed MUST be omitted if the domain name has not been
-    // updated since it was created
-    if (lastChangeTime.isAfter(creationTime)) {
-      // Creates an RDAP event object as defined by RFC 9083
-      eventsBuilder.add(
-          Event.builder()
-              .setEventAction(EventAction.LAST_CHANGED)
-              .setEventDate(lastChangeTime)
+              .setEventDate(historyTimeAndRegistrar.modificationTime())
               .build());
     }
     return eventsBuilder.build();

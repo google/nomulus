@@ -989,6 +989,19 @@ public final class RegistryConfig {
     }
 
     /**
+     * Whether to include optional RDAP history results in domain responses.
+     *
+     * <p>The RDAP Response Profile (Feb 2024) section 2.3 specifies that while registration and
+     * expiration events are required, other types are optional. In an effort to reduce database
+     * load, we (by default) omit the optional events.
+     */
+    @Provides
+    @Config("rdapIncludeOptionalHistoryResults")
+    public static boolean provideRdapIncludeOptionalHistoryResults() {
+      return false;
+    }
+
+    /**
      * Maximum QPS for the Google Cloud Monitoring V3 (aka Stackdriver) API. The QPS limit can be
      * adjusted by contacting Cloud Support.
      *
