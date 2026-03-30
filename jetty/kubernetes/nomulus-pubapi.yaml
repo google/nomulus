@@ -35,13 +35,13 @@ spec:
             # class from performance, which has implicit pod-slots 1
             cloud.google.com/pod-slots: 0
             cpu: "500m"
-            memory: "1Gi"
+            memory: "2Gi"
           limits:
             # explicit pod-slots 0 is required in order to downgrade node 
             # class from performance, which has implicit pod-slots 1
             cloud.google.com/pod-slots: 0
             cpu: "1000m"
-            memory: "2Gi"
+            memory: "4Gi"
         args: [ENVIRONMENT]
         env:
         - name: POD_ID
@@ -68,8 +68,8 @@ spec:
     apiVersion: apps/v1
     kind: Deployment
     name: pubapi
-  minReplicas: 5
-  maxReplicas: 15
+  minReplicas: 10
+  maxReplicas: 20
   metrics:
   - type: Resource
     resource:
