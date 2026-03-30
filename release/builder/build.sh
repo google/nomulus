@@ -38,6 +38,9 @@ apt-get update -y
 # Install GPG2 (in case it was not included)
 apt-get install gnupg2 -y
 
+# Install the graphviz package for the SQL diagram
+apt-get install graphviz -y
+
 # Install Java
 apt-get install openjdk-21-jdk-headless -y
 
