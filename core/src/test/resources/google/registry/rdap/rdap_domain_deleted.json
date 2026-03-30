@@ -43,11 +43,6 @@
       "eventDate": "2000-01-01T00:00:00.000Z"
     },
     {
-      "eventAction": "deletion",
-      "eventActor": "evilregistrar",
-      "eventDate": "1999-07-01T00:00:00.000Z"
-    },
-    {
       "eventAction": "last changed",
       "eventDate": "2009-05-29T20:13:00.000Z"
     }
