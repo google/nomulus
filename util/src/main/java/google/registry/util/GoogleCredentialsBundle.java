@@ -53,8 +53,8 @@ public class GoogleCredentialsBundle implements Serializable {
    * possible.
    */
   public String serviceAccount() {
-    if (googleCredentials instanceof ServiceAccountSigner) {
-      return ((ServiceAccountSigner) googleCredentials).getAccount();
+    if (googleCredentials instanceof ServiceAccountSigner signer) {
+      return signer.getAccount();
     } else {
       throw new RuntimeException(
           String.format(
