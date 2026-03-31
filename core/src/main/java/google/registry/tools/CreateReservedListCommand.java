@@ -18,7 +18,6 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static google.registry.model.tld.Tlds.assertTldExists;
 import static google.registry.util.ListNamingUtils.convertFilePathToName;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.joda.time.DateTimeZone.UTC;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
@@ -26,6 +25,8 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
 import google.registry.model.tld.label.ReservedList;
+import google.registry.util.Clock;
+import jakarta.inject.Inject;
 import java.nio.file.Files;
 import java.util.List;
 import org.joda.time.DateTime;
@@ -33,6 +34,8 @@ import org.joda.time.DateTime;
 /** Command to create a {@link ReservedList}. */
 @Parameters(separators = " =", commandDescription = "Create a ReservedList.")
 final class CreateReservedListCommand extends CreateOrUpdateReservedListCommand {
+
+  @Inject Clock clock;
 
   @VisibleForTesting
   static final String INVALID_FORMAT_ERROR_MESSAGE =
@@ -51,7 +54,7 @@ final class CreateReservedListCommand extends CreateOrUpdateReservedListCommand 
     if (!override) {
       validateListName(name);
     }
-    DateTime now = DateTime.now(UTC);
+    DateTime now = clock.nowUtc();
     List<String> allLines = Files.readAllLines(input, UTF_8);
     reservedList =
         new ReservedList.Builder()

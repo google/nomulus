@@ -162,7 +162,6 @@ class CreateReservedListCommandTest
 
   @Test
   void testStageEntityChange_succeeds() throws Exception {
-    CreateReservedListCommand command = new CreateReservedListCommand();
     // file content is populated in @BeforeEach of CreateOrUpdateReservedListCommandTestCase.java
     command.input = Paths.get(reservedTermsPath);
     command.init();
@@ -176,7 +175,6 @@ class CreateReservedListCommandTest
   void testStageEntityChange_succeedsWithEmptyFile() throws Exception {
     Path tmpPath = tmpDir.resolve("xn--q9jyb4c_common-tmp.txt");
     Files.write(new byte[0], tmpPath.toFile());
-    CreateReservedListCommand command = new CreateReservedListCommand();
     command.input = tmpPath;
     command.init();
     assertThat(command.prompt()).contains("reservedListMap=[]");
