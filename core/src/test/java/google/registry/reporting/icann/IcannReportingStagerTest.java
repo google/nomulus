@@ -16,6 +16,7 @@ package google.registry.reporting.icann;
 
 import static com.google.common.truth.Truth.assertThat;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.joda.time.DateTimeZone.UTC;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -31,15 +32,18 @@ import google.registry.bigquery.BigqueryConnection.DestinationTable;
 import google.registry.bigquery.BigqueryUtils.TableType;
 import google.registry.gcs.GcsUtils;
 import google.registry.reporting.icann.IcannReportingModule.ReportType;
+import google.registry.testing.FakeClock;
 import google.registry.testing.FakeResponse;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
+import org.joda.time.DateTime;
 import org.joda.time.YearMonth;
 import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link google.registry.reporting.icann.IcannReportingStager}. */
 class IcannReportingStagerTest {
 
+  private final FakeClock clock = new FakeClock(DateTime.now(UTC));
   private BigqueryConnection bigquery = mock(BigqueryConnection.class);
   FakeResponse response = new FakeResponse();
   private YearMonth yearMonth = new YearMonth(2017, 6);
@@ -63,7 +67,7 @@ class IcannReportingStagerTest {
     when(bigquery.startQuery(any(String.class), any(DestinationTable.class)))
         .thenReturn(fakeFuture());
     DestinationTable.Builder tableBuilder =
-        new DestinationTable.Builder()
+        new DestinationTable.Builder(clock)
             .datasetId("testdataset")
             .type(TableType.TABLE)
             .name("tablename")

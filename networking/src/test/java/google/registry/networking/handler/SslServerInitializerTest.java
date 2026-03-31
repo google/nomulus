@@ -24,6 +24,7 @@ import static org.joda.time.DateTimeZone.UTC;
 
 import com.google.common.base.Suppliers;
 import com.google.common.collect.ImmutableList;
+import google.registry.testing.FakeClock;
 import google.registry.util.SelfSignedCaCertificate;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelInitializer;
@@ -148,7 +149,7 @@ class SslServerInitializerTest {
   @ParameterizedTest
   @MethodSource("provideTestCombinations")
   void testSuccess_swappedInitializerWithSslHandler(SslProvider sslProvider) throws Exception {
-    SelfSignedCaCertificate ssc = SelfSignedCaCertificate.create(SSL_HOST);
+    SelfSignedCaCertificate ssc = SelfSignedCaCertificate.create(SSL_HOST, new FakeClock());
     SslServerInitializer<EmbeddedChannel> sslServerInitializer =
         new SslServerInitializer<>(
             true,
@@ -169,13 +170,13 @@ class SslServerInitializerTest {
   @ParameterizedTest
   @MethodSource("provideTestCombinations")
   void testSuccess_trustAnyClientCert(SslProvider sslProvider) throws Exception {
-    SelfSignedCaCertificate serverSsc = SelfSignedCaCertificate.create(SSL_HOST);
+    SelfSignedCaCertificate serverSsc = SelfSignedCaCertificate.create(SSL_HOST, new FakeClock());
     LocalAddress localAddress = new LocalAddress("TRUST_ANY_CLIENT_CERT_" + sslProvider);
 
     nettyExtension.setUpServer(
         localAddress,
         getServerHandler(true, false, sslProvider, serverSsc.key(), serverSsc.cert()));
-    SelfSignedCaCertificate clientSsc = SelfSignedCaCertificate.create();
+    SelfSignedCaCertificate clientSsc = SelfSignedCaCertificate.create(new FakeClock());
     nettyExtension.setUpClient(
         localAddress,
         getClientHandler(sslProvider, serverSsc.cert(), clientSsc.key(), clientSsc.cert()));
@@ -193,7 +194,7 @@ class SslServerInitializerTest {
   @ParameterizedTest
   @MethodSource("provideTestCombinations")
   void testFailure_cipherNotAccepted(SslProvider sslProvider) throws Exception {
-    SelfSignedCaCertificate serverSsc = SelfSignedCaCertificate.create(SSL_HOST);
+    SelfSignedCaCertificate serverSsc = SelfSignedCaCertificate.create(SSL_HOST, new FakeClock());
     LocalAddress localAddress = new LocalAddress("CIPHER_NOT_ACCEPTED_" + sslProvider);
 
     nettyExtension.setUpServer(
@@ -220,7 +221,7 @@ class SslServerInitializerTest {
   @ParameterizedTest
   @MethodSource("provideTestCombinations")
   void testSuccess_someCiphersNotAccepted(SslProvider sslProvider) throws Exception {
-    SelfSignedCaCertificate serverSsc = SelfSignedCaCertificate.create(SSL_HOST);
+    SelfSignedCaCertificate serverSsc = SelfSignedCaCertificate.create(SSL_HOST, new FakeClock());
     LocalAddress localAddress = new LocalAddress("SOME_CIPHERS_NOT_ACCEPTED_" + sslProvider);
 
     nettyExtension.setUpServer(
@@ -258,7 +259,7 @@ class SslServerInitializerTest {
   @ParameterizedTest
   @MethodSource("provideTestCombinations")
   void testFailure_protocolNotAccepted(SslProvider sslProvider) throws Exception {
-    SelfSignedCaCertificate serverSsc = SelfSignedCaCertificate.create(SSL_HOST);
+    SelfSignedCaCertificate serverSsc = SelfSignedCaCertificate.create(SSL_HOST, new FakeClock());
     LocalAddress localAddress = new LocalAddress("PROTOCOL_NOT_ACCEPTED_" + sslProvider);
 
     nettyExtension.setUpServer(
@@ -288,7 +289,7 @@ class SslServerInitializerTest {
   @ParameterizedTest
   @MethodSource("provideTestCombinations")
   void testFailure_clientCertExpired(SslProvider sslProvider) throws Exception {
-    SelfSignedCaCertificate serverSsc = SelfSignedCaCertificate.create(SSL_HOST);
+    SelfSignedCaCertificate serverSsc = SelfSignedCaCertificate.create(SSL_HOST, new FakeClock());
     LocalAddress localAddress = new LocalAddress("CLIENT_CERT_EXPIRED_" + sslProvider);
 
     nettyExtension.setUpServer(
@@ -309,7 +310,7 @@ class SslServerInitializerTest {
   @ParameterizedTest
   @MethodSource("provideTestCombinations")
   void testFailure_clientCertNotYetValid(SslProvider sslProvider) throws Exception {
-    SelfSignedCaCertificate serverSsc = SelfSignedCaCertificate.create(SSL_HOST);
+    SelfSignedCaCertificate serverSsc = SelfSignedCaCertificate.create(SSL_HOST, new FakeClock());
     LocalAddress localAddress = new LocalAddress("CLIENT_CERT_EXPIRED_" + sslProvider);
 
     nettyExtension.setUpServer(
@@ -330,7 +331,7 @@ class SslServerInitializerTest {
   @ParameterizedTest
   @MethodSource("provideTestCombinations")
   void testSuccess_doesNotRequireClientCert(SslProvider sslProvider) throws Exception {
-    SelfSignedCaCertificate serverSsc = SelfSignedCaCertificate.create(SSL_HOST);
+    SelfSignedCaCertificate serverSsc = SelfSignedCaCertificate.create(SSL_HOST, new FakeClock());
     LocalAddress localAddress = new LocalAddress("DOES_NOT_REQUIRE_CLIENT_CERT_" + sslProvider);
 
     nettyExtension.setUpServer(
@@ -353,7 +354,7 @@ class SslServerInitializerTest {
   @MethodSource("provideTestCombinations")
   void testSuccess_CertSignedByOtherCa(SslProvider sslProvider) throws Exception {
     // The self-signed cert of the CA.
-    SelfSignedCaCertificate caSsc = SelfSignedCaCertificate.create();
+    SelfSignedCaCertificate caSsc = SelfSignedCaCertificate.create(new FakeClock());
     KeyPair keyPair = getKeyPair();
     X509Certificate serverCert = signKeyPair(caSsc, keyPair, SSL_HOST);
     LocalAddress localAddress = new LocalAddress("CERT_SIGNED_BY_OTHER_CA_" + sslProvider);
@@ -368,7 +369,7 @@ class SslServerInitializerTest {
             // Serving both the server cert, and the CA cert
             serverCert,
             caSsc.cert()));
-    SelfSignedCaCertificate clientSsc = SelfSignedCaCertificate.create();
+    SelfSignedCaCertificate clientSsc = SelfSignedCaCertificate.create(new FakeClock());
     nettyExtension.setUpClient(
         localAddress,
         getClientHandler(
@@ -392,7 +393,7 @@ class SslServerInitializerTest {
   @ParameterizedTest
   @MethodSource("provideTestCombinations")
   void testFailure_requireClientCertificate(SslProvider sslProvider) throws Exception {
-    SelfSignedCaCertificate serverSsc = SelfSignedCaCertificate.create(SSL_HOST);
+    SelfSignedCaCertificate serverSsc = SelfSignedCaCertificate.create(SSL_HOST, new FakeClock());
     LocalAddress localAddress = new LocalAddress("REQUIRE_CLIENT_CERT_" + sslProvider);
 
     nettyExtension.setUpServer(
@@ -417,13 +418,14 @@ class SslServerInitializerTest {
   @ParameterizedTest
   @MethodSource("provideTestCombinations")
   void testFailure_wrongHostnameInCertificate(SslProvider sslProvider) throws Exception {
-    SelfSignedCaCertificate serverSsc = SelfSignedCaCertificate.create("wrong.com");
+    SelfSignedCaCertificate serverSsc =
+        SelfSignedCaCertificate.create("wrong.com", new FakeClock());
     LocalAddress localAddress = new LocalAddress("WRONG_HOSTNAME_" + sslProvider);
 
     nettyExtension.setUpServer(
         localAddress,
         getServerHandler(true, false, sslProvider, serverSsc.key(), serverSsc.cert()));
-    SelfSignedCaCertificate clientSsc = SelfSignedCaCertificate.create();
+    SelfSignedCaCertificate clientSsc = SelfSignedCaCertificate.create(new FakeClock());
     nettyExtension.setUpClient(
         localAddress,
         getClientHandler(sslProvider, serverSsc.cert(), clientSsc.key(), clientSsc.cert()));
