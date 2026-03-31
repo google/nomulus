@@ -33,6 +33,7 @@ public abstract class EppToolCommandTestCase<C extends EppToolCommand> extends C
 
   @BeforeEach
   public void beforeEachEppToolCommandTestCase() {
+    command.clock = fakeClock;
     // Create two TLDs for commands that allow multiple TLDs at once.
     createTlds("tld", "tld2");
     eppVerifier = EppToolVerifier.create(command).expectRegistrarId("NewRegistrar");

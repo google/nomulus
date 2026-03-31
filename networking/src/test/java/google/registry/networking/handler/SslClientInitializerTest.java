@@ -22,6 +22,7 @@ import static google.registry.networking.handler.SslInitializerTestUtils.verifyS
 import static org.joda.time.DateTimeZone.UTC;
 
 import com.google.common.collect.ImmutableList;
+import google.registry.testing.FakeClock;
 import google.registry.util.SelfSignedCaCertificate;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandler;
@@ -173,7 +174,7 @@ class SslClientInitializerTest {
   @MethodSource("provideTestCombinations")
   void testFailure_defaultTrustManager_rejectSelfSignedCert(SslProvider sslProvider)
       throws Exception {
-    SelfSignedCaCertificate ssc = SelfSignedCaCertificate.create(SSL_HOST);
+    SelfSignedCaCertificate ssc = SelfSignedCaCertificate.create(SSL_HOST, new FakeClock());
     LocalAddress localAddress =
         new LocalAddress("DEFAULT_TRUST_MANAGER_REJECT_SELF_SIGNED_CERT_" + sslProvider);
     nettyExtension.setUpServer(localAddress, getServerHandler(false, ssc.key(), ssc.cert()));
@@ -204,7 +205,7 @@ class SslClientInitializerTest {
     KeyPair keyPair = getKeyPair();
 
     // Generate a self-signed certificate, and use it to sign the key pair.
-    SelfSignedCaCertificate ssc = SelfSignedCaCertificate.create();
+    SelfSignedCaCertificate ssc = SelfSignedCaCertificate.create(new FakeClock());
     X509Certificate cert = signKeyPair(ssc, keyPair, SSL_HOST);
 
     // Set up the server to use the signed cert and private key to perform handshake;
@@ -239,7 +240,7 @@ class SslClientInitializerTest {
     KeyPair keyPair = getKeyPair();
 
     // Generate a self-signed certificate, and use it to sign the key pair.
-    SelfSignedCaCertificate ssc = SelfSignedCaCertificate.create();
+    SelfSignedCaCertificate ssc = SelfSignedCaCertificate.create(new FakeClock());
     X509Certificate cert =
         signKeyPair(
             ssc, keyPair, SSL_HOST, DateTime.now(UTC).minusDays(2), DateTime.now(UTC).minusDays(1));
@@ -276,7 +277,7 @@ class SslClientInitializerTest {
     KeyPair keyPair = getKeyPair();
 
     // Generate a self-signed certificate, and use it to sign the key pair.
-    SelfSignedCaCertificate ssc = SelfSignedCaCertificate.create();
+    SelfSignedCaCertificate ssc = SelfSignedCaCertificate.create(new FakeClock());
     X509Certificate cert =
         signKeyPair(
             ssc, keyPair, SSL_HOST, DateTime.now(UTC).plusDays(1), DateTime.now(UTC).plusDays(2));
@@ -310,8 +311,8 @@ class SslClientInitializerTest {
         new LocalAddress(
             "CUSTOM_TRUST_MANAGER_ACCEPT_SELF_SIGNED_CERT_CLIENT_CERT_REQUIRED_" + sslProvider);
 
-    SelfSignedCaCertificate serverSsc = SelfSignedCaCertificate.create(SSL_HOST);
-    SelfSignedCaCertificate clientSsc = SelfSignedCaCertificate.create();
+    SelfSignedCaCertificate serverSsc = SelfSignedCaCertificate.create(SSL_HOST, new FakeClock());
+    SelfSignedCaCertificate clientSsc = SelfSignedCaCertificate.create(new FakeClock());
 
     // Set up the server to require client certificate.
     nettyExtension.setUpServer(
@@ -352,7 +353,7 @@ class SslClientInitializerTest {
     KeyPair keyPair = getKeyPair();
 
     // Generate a self-signed certificate, and use it to sign the key pair.
-    SelfSignedCaCertificate ssc = SelfSignedCaCertificate.create();
+    SelfSignedCaCertificate ssc = SelfSignedCaCertificate.create(new FakeClock());
     X509Certificate cert = signKeyPair(ssc, keyPair, "wrong.com");
 
     // Set up the server to use the signed cert and private key to perform handshake;

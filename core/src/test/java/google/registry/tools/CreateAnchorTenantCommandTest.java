@@ -31,6 +31,7 @@ class CreateAnchorTenantCommandTest extends EppToolCommandTestCase<CreateAnchorT
 
   @BeforeEach
   void beforeEach() {
+    command.clock = fakeClock;
     command.passwordGenerator = new DeterministicStringGenerator("abcdefghijklmnopqrstuvwxyz");
   }
 

@@ -50,6 +50,7 @@ class ValidateLoginCredentialsCommandTest extends CommandTestCase<ValidateLoginC
 
   @BeforeEach
   void beforeEach() {
+    command.clock = fakeClock;
     createTld("tld");
     persistResource(
         loadRegistrar("NewRegistrar")

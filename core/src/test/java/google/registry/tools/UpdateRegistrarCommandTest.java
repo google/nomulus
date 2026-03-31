@@ -53,6 +53,7 @@ class UpdateRegistrarCommandTest extends CommandTestCase<UpdateRegistrarCommand>
 
   @BeforeEach
   void beforeEach() {
+    command.clock = fakeClock;
     command.certificateChecker =
         new CertificateChecker(
             ImmutableSortedMap.of(START_OF_TIME, 825, DateTime.parse("2020-09-01T00:00:00Z"), 398),

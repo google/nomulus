@@ -24,6 +24,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.base.Throwables;
 import google.registry.proxy.handler.HttpsRelayServiceHandler.NonOkHttpResponseException;
+import google.registry.testing.FakeClock;
 import google.registry.util.SelfSignedCaCertificate;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -49,11 +50,11 @@ class EppProtocolModuleTest extends ProtocolModuleTest {
 
   private static final byte[] HELLO_BYTES =
       """
-          <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-          <epp xmlns="urn:ietf:params:xml:ns:epp-1.0">
-            <hello/>
-          </epp>
-          """
+      <?xml version="1.0" encoding="UTF-8" standalone="no"?>
+      <epp xmlns="urn:ietf:params:xml:ns:epp-1.0">
+        <hello/>
+      </epp>
+      """
           .getBytes(UTF_8);
 
   private X509Certificate certificate;
@@ -122,7 +123,7 @@ class EppProtocolModuleTest extends ProtocolModuleTest {
   @Override
   void beforeEach() throws Exception {
     testComponent = makeTestComponent();
-    certificate = SelfSignedCaCertificate.create().cert();
+    certificate = SelfSignedCaCertificate.create(new FakeClock()).cert();
     initializeChannel(
         ch -> {
           ch.attr(REMOTE_ADDRESS_KEY).set(CLIENT_ADDRESS);
