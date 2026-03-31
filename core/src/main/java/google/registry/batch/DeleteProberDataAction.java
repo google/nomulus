@@ -28,7 +28,6 @@ import static google.registry.request.RequestParameters.PARAM_BATCH_SIZE;
 import static google.registry.request.RequestParameters.PARAM_DRY_RUN;
 import static google.registry.request.RequestParameters.PARAM_TLDS;
 import static google.registry.util.RegistryEnvironment.PRODUCTION;
-import static org.joda.time.DateTimeZone.UTC;
 
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
@@ -44,6 +43,7 @@ import google.registry.model.tld.Tld.TldType;
 import google.registry.request.Action;
 import google.registry.request.Parameter;
 import google.registry.request.auth.Auth;
+import google.registry.util.Clock;
 import google.registry.util.RegistryEnvironment;
 import jakarta.inject.Inject;
 import jakarta.persistence.TypedQuery;
@@ -111,16 +111,20 @@ public class DeleteProberDataAction implements Runnable {
 
   String registryAdminRegistrarId;
 
+  private final Clock clock;
+
   @Inject
   DeleteProberDataAction(
       @Parameter(PARAM_DRY_RUN) boolean isDryRun,
       @Parameter(PARAM_TLDS) ImmutableSet<String> tlds,
       @Parameter(PARAM_BATCH_SIZE) Optional<Integer> batchSize,
-      @Config("registryAdminClientId") String registryAdminRegistrarId) {
+      @Config("registryAdminClientId") String registryAdminRegistrarId,
+      Clock clock) {
     this.isDryRun = isDryRun;
     this.tlds = tlds;
     this.batchSize = batchSize.orElse(DEFAULT_BATCH_SIZE);
     this.registryAdminRegistrarId = registryAdminRegistrarId;
+    this.clock = clock;
   }
 
   @Override
@@ -145,7 +149,7 @@ public class DeleteProberDataAction implements Runnable {
     AtomicInteger softDeletedDomains = new AtomicInteger();
     AtomicInteger hardDeletedDomains = new AtomicInteger();
     AtomicReference<ImmutableList<Domain>> domainsBatch = new AtomicReference<>();
-    DateTime startTime = DateTime.now(UTC);
+    DateTime startTime = clock.nowUtc();
     do {
       tm().transact(
               TRANSACTION_REPEATABLE_READ,
@@ -164,7 +168,7 @@ public class DeleteProberDataAction implements Runnable {
           hardDeletedDomains.get(), batchSize);
 
       // Automatically kill the job if it is running for over 20 hours
-    } while (DateTime.now(UTC).isBefore(startTime.plusHours(20))
+    } while (clock.nowUtc().isBefore(startTime.plusHours(20))
         && domainsBatch.get().size() == batchSize);
     logger.atInfo().log(
         "%s %d domains.",

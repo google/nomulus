@@ -37,6 +37,7 @@ class CreateDomainCommandTest extends EppToolCommandTestCase<CreateDomainCommand
 
   @BeforeEach
   void beforeEach() {
+    command.clock = fakeClock;
     command.passwordGenerator = new DeterministicStringGenerator("abcdefghijklmnopqrstuvwxyz");
     command.printStream = System.out;
   }
