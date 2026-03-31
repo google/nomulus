@@ -58,6 +58,7 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
 
   @BeforeEach
   void beforeEach() {
+    command.clock = fakeClock;
     command.setConnection(connection);
     command.certificateChecker =
         new CertificateChecker(

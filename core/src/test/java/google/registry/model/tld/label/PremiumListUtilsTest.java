@@ -21,16 +21,22 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableList;
 import java.math.BigDecimal;
+import org.joda.time.DateTime;
 import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link PremiumListUtils}. */
 class PremiumListUtilsTest {
 
+  private static final DateTime SAMPLE_TIME = DateTime.parse("2026-01-26T21:06:12.284Z");
+
   @Test
   void parseInputToPremiumList_works() {
     PremiumList premiumList =
         parseToPremiumList(
-            "testlist", USD, ImmutableList.of("foo,USD 99.50", "bar,USD 30", "baz,USD 10"));
+            "testlist",
+            USD,
+            ImmutableList.of("foo,USD 99.50", "bar,USD 30", "baz,USD 10"),
+            SAMPLE_TIME);
     assertThat(premiumList.getName()).isEqualTo("testlist");
     assertThat(premiumList.getLabelsToPrices())
         .containsExactly("foo", twoDigits(99.50), "bar", twoDigits(30), "baz", twoDigits(10));
@@ -45,7 +51,8 @@ class PremiumListUtilsTest {
                 parseToPremiumList(
                     "testlist",
                     USD,
-                    ImmutableList.of("foo,USD 99.50", "bar,USD 30", "baz,JPY 990")));
+                    ImmutableList.of("foo,USD 99.50", "bar,USD 30", "baz,JPY 990"),
+                    SAMPLE_TIME));
     assertThat(thrown).hasMessageThat().isEqualTo("The currency unit must be USD");
   }
 

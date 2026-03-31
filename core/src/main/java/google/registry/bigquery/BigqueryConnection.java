@@ -24,7 +24,6 @@ import static com.google.common.util.concurrent.Futures.transformAsync;
 import static com.google.common.util.concurrent.MoreExecutors.directExecutor;
 import static google.registry.bigquery.BigqueryUtils.toJobReferenceString;
 import static google.registry.config.RegistryConfig.getProjectId;
-import static org.joda.time.DateTimeZone.UTC;
 
 import com.google.api.client.googleapis.json.GoogleJsonResponseException;
 import com.google.api.client.http.AbstractInputStreamContent;
@@ -58,6 +57,7 @@ import com.google.common.util.concurrent.MoreExecutors;
 import google.registry.bigquery.BigqueryUtils.DestinationFormat;
 import google.registry.bigquery.BigqueryUtils.TableType;
 import google.registry.bigquery.BigqueryUtils.WriteDisposition;
+import google.registry.util.Clock;
 import google.registry.util.NonFinalForTesting;
 import google.registry.util.Sleeper;
 import google.registry.util.SqlTemplate;
@@ -69,7 +69,6 @@ import java.util.List;
 import java.util.Random;
 import java.util.concurrent.ExecutorService;
 import javax.annotation.Nullable;
-import org.joda.time.DateTime;
 import org.joda.time.Duration;
 
 /** Class encapsulating parameters and state for accessing the Bigquery API. */
@@ -94,6 +93,9 @@ public class BigqueryConnection implements AutoCloseable {
   /** Bigquery client instance wrapped by this class. */
   private final Bigquery bigquery;
 
+  /** Clock instance for this connection. */
+  private final Clock clock;
+
   /** Executor service for bigquery jobs. */
   private ListeningExecutorService service;
 
@@ -109,8 +111,9 @@ public class BigqueryConnection implements AutoCloseable {
   /** Duration to wait between polls for job status. */
   private Duration pollInterval = Duration.millis(1000);
 
-  BigqueryConnection(Bigquery bigquery) {
+  BigqueryConnection(Bigquery bigquery, Clock clock) {
     this.bigquery = bigquery;
+    this.clock = clock;
   }
 
   /** Builder for a {@link BigqueryConnection}, since the latter is immutable once created. */
@@ -118,8 +121,8 @@ public class BigqueryConnection implements AutoCloseable {
     private BigqueryConnection instance;
 
     @Inject
-    Builder(Bigquery bigquery) {
-      instance = new BigqueryConnection(bigquery);
+    Builder(Bigquery bigquery, Clock clock) {
+      instance = new BigqueryConnection(bigquery, clock);
     }
 
     /**
@@ -195,6 +198,11 @@ public class BigqueryConnection implements AutoCloseable {
       private final TableReference tableRef = new TableReference();
       private TableType type = TableType.TABLE;
       private WriteDisposition writeDisposition = WriteDisposition.WRITE_EMPTY;
+      private final Clock clock;
+
+      public Builder(Clock clock) {
+        this.clock = clock;
+      }
 
       public Builder datasetId(String datasetId) {
         tableRef.setDatasetId(datasetId);
@@ -217,7 +225,7 @@ public class BigqueryConnection implements AutoCloseable {
       }
 
       public Builder timeToLive(Duration duration) {
-        this.table.setExpirationTime(DateTime.now(UTC).plus(duration).getMillis());
+        this.table.setExpirationTime(clock.nowUtc().plus(duration).getMillis());
         return this;
       }
 
@@ -302,7 +310,7 @@ public class BigqueryConnection implements AutoCloseable {
 
   /** Returns a partially built DestinationTable with the default dataset and overwrite behavior. */
   public DestinationTable.Builder buildDestinationTable(String tableName) {
-    return new DestinationTable.Builder()
+    return new DestinationTable.Builder(clock)
         .datasetId(datasetId)
         .type(TableType.TABLE)
         .name(tableName)
@@ -314,7 +322,7 @@ public class BigqueryConnection implements AutoCloseable {
    * temporary table dataset, with the default TTL and overwrite behavior.
    */
   public DestinationTable.Builder buildTemporaryTable() {
-    return new DestinationTable.Builder()
+    return new DestinationTable.Builder(clock)
         .datasetId(TEMP_DATASET_NAME)
         .type(TableType.TABLE)
         .name(getRandomTableName())

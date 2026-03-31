@@ -19,7 +19,6 @@ import static com.google.common.base.Strings.isNullOrEmpty;
 import static google.registry.model.tld.Tlds.findTldForNameOrThrow;
 import static google.registry.pricing.PricingEngineProxy.getDomainCreateCost;
 import static google.registry.util.StringGenerator.DEFAULT_PASSWORD_LENGTH;
-import static org.joda.time.DateTimeZone.UTC;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
@@ -30,7 +29,6 @@ import google.registry.util.StringGenerator;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import org.joda.money.Money;
-import org.joda.time.DateTime;
 
 /** A command to create a new anchor tenant domain. */
 @Parameters(separators = " =", commandDescription = "Provision a domain for an anchor tenant.")
@@ -86,7 +84,7 @@ final class CreateAnchorTenantCommand extends MutatingEppToolCommand {
 
     Money cost = null;
     if (fee) {
-      cost = getDomainCreateCost(domainName, DateTime.now(UTC), DEFAULT_ANCHOR_TENANT_PERIOD_YEARS);
+      cost = getDomainCreateCost(domainName, clock.nowUtc(), DEFAULT_ANCHOR_TENANT_PERIOD_YEARS);
     }
 
     setSoyTemplate(CreateAnchorTenantSoyInfo.getInstance(),

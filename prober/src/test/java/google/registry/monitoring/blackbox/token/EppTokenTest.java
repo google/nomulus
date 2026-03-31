@@ -19,6 +19,7 @@ import static com.google.common.truth.Truth.assertThat;
 import google.registry.monitoring.blackbox.exception.UndeterminedStateException;
 import google.registry.monitoring.blackbox.message.EppRequestMessage;
 import google.registry.monitoring.blackbox.util.EppUtils;
+import google.registry.testing.FakeClock;
 import io.netty.channel.Channel;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -28,9 +29,10 @@ class EppTokenTest {
 
   private static String TEST_HOST = "host";
   private static String TEST_TLD = "tld";
+  private final FakeClock fakeClock = new FakeClock();
 
-  private EppToken persistentEppToken = new EppToken.Persistent(TEST_TLD, TEST_HOST);
-  private EppToken transientEppToken = new EppToken.Transient(TEST_TLD, TEST_HOST);
+  private EppToken persistentEppToken = new EppToken.Persistent(TEST_TLD, TEST_HOST, fakeClock);
+  private EppToken transientEppToken = new EppToken.Transient(TEST_TLD, TEST_HOST, fakeClock);
 
   @Test
   void testMessageModificationSuccess_PersistentToken() throws UndeterminedStateException {

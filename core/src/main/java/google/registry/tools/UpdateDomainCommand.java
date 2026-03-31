@@ -33,8 +33,6 @@ import google.registry.model.domain.GracePeriodBase;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.tools.params.NameserversParameter;
 import google.registry.tools.soy.DomainUpdateSoyInfo;
-import google.registry.util.Clock;
-import jakarta.inject.Inject;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -48,8 +46,6 @@ import org.joda.time.DateTime;
 final class UpdateDomainCommand extends CreateOrUpdateDomainCommand {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
-
-  @Inject Clock clock;
 
   @Parameter(names = "--statuses", description = "Comma-separated list of statuses to set.")
   private List<String> statuses = new ArrayList<>();

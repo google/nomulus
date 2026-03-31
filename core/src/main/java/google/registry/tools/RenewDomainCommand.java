@@ -26,8 +26,6 @@ import com.google.template.soy.data.SoyMapData;
 import google.registry.flows.ResourceFlowUtils;
 import google.registry.model.domain.Domain;
 import google.registry.tools.soy.DomainRenewSoyInfo;
-import google.registry.util.Clock;
-import jakarta.inject.Inject;
 import java.util.List;
 import org.joda.time.DateTime;
 import org.joda.time.format.DateTimeFormat;
@@ -62,9 +60,6 @@ final class RenewDomainCommand extends MutatingEppToolCommand {
       description = "Whether the change was requested by a registrar.",
       arity = 1)
   Boolean requestedByRegistrar;
-
-  @Inject
-  Clock clock;
 
   private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormat.forPattern("YYYY-MM-dd");
 

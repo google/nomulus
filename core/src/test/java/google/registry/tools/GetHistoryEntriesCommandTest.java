@@ -22,7 +22,6 @@ import static google.registry.testing.FullFieldsTestEntityHelper.makeHistoryEntr
 import google.registry.model.domain.Domain;
 import google.registry.model.domain.Period;
 import google.registry.model.reporting.HistoryEntry;
-import google.registry.testing.FakeClock;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -30,12 +29,12 @@ import org.junit.jupiter.api.Test;
 /** Unit tests for {@link GetClaimsListCommand}. */
 class GetHistoryEntriesCommandTest extends CommandTestCase<GetHistoryEntriesCommand> {
 
-  private final FakeClock clock = new FakeClock(DateTime.parse("2000-01-01T00:00:00Z"));
-
   private Domain domain;
 
   @BeforeEach
   void beforeEach() {
+    fakeClock.setTo(DateTime.parse("2000-01-01T00:00:00Z"));
+    command.clock = fakeClock;
     createTld("tld");
     domain = persistActiveDomain("example.tld");
   }
@@ -48,18 +47,18 @@ class GetHistoryEntriesCommandTest extends CommandTestCase<GetHistoryEntriesComm
             HistoryEntry.Type.DOMAIN_CREATE,
             Period.create(1, Period.Unit.YEARS),
             "created",
-            clock.nowUtc()));
+            fakeClock.nowUtc()));
     runCommand("--id=example.tld", "--type=DOMAIN");
     assertStdoutIs(
         """
-            Client: TheRegistrar
-            Time: 2000-01-01T00:00:00.000Z
-            Client TRID: ABC-123
-            Server TRID: server-trid
-            <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-            <xml/>
+        Client: TheRegistrar
+        Time: 2000-01-01T00:00:00.000Z
+        Client TRID: ABC-123
+        Server TRID: server-trid
+        <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+        <xml/>
 
-            """);
+        """);
   }
 
   @Test
@@ -70,8 +69,8 @@ class GetHistoryEntriesCommandTest extends CommandTestCase<GetHistoryEntriesComm
             HistoryEntry.Type.DOMAIN_CREATE,
             Period.create(1, Period.Unit.YEARS),
             "created",
-            clock.nowUtc()));
-    runCommand("--before", clock.nowUtc().minusMinutes(1).toString());
+            fakeClock.nowUtc()));
+    runCommand("--before", fakeClock.nowUtc().minusMinutes(1).toString());
     assertStdoutIs("");
   }
 
@@ -83,8 +82,8 @@ class GetHistoryEntriesCommandTest extends CommandTestCase<GetHistoryEntriesComm
             HistoryEntry.Type.DOMAIN_CREATE,
             Period.create(1, Period.Unit.YEARS),
             "created",
-            clock.nowUtc()));
-    runCommand("--after", clock.nowUtc().plusMinutes(1).toString());
+            fakeClock.nowUtc()));
+    runCommand("--after", fakeClock.nowUtc().plusMinutes(1).toString());
     assertStdoutIs("");
   }
 
@@ -96,22 +95,22 @@ class GetHistoryEntriesCommandTest extends CommandTestCase<GetHistoryEntriesComm
             HistoryEntry.Type.DOMAIN_CREATE,
             Period.create(1, Period.Unit.YEARS),
             "created",
-            clock.nowUtc()));
+            fakeClock.nowUtc()));
     runCommand(
         "--after",
-        clock.nowUtc().minusMinutes(1).toString(),
+        fakeClock.nowUtc().minusMinutes(1).toString(),
         "--before",
-        clock.nowUtc().plusMinutes(1).toString());
+        fakeClock.nowUtc().plusMinutes(1).toString());
     assertStdoutIs(
         """
-            Client: TheRegistrar
-            Time: 2000-01-01T00:00:00.000Z
-            Client TRID: ABC-123
-            Server TRID: server-trid
-            <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-            <xml/>
+        Client: TheRegistrar
+        Time: 2000-01-01T00:00:00.000Z
+        Client TRID: ABC-123
+        Server TRID: server-trid
+        <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+        <xml/>
 
-            """);
+        """);
   }
 
   @Test
@@ -122,20 +121,20 @@ class GetHistoryEntriesCommandTest extends CommandTestCase<GetHistoryEntriesComm
                 HistoryEntry.Type.DOMAIN_CREATE,
                 Period.create(1, Period.Unit.YEARS),
                 "created",
-                clock.nowUtc())
+                fakeClock.nowUtc())
             .asBuilder()
             .setTrid(null)
             .build());
     runCommand("--id=example.tld", "--type=DOMAIN");
     assertStdoutIs(
         """
-            Client: TheRegistrar
-            Time: 2000-01-01T00:00:00.000Z
-            Client TRID: null
-            Server TRID: null
-            <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-            <xml/>
+        Client: TheRegistrar
+        Time: 2000-01-01T00:00:00.000Z
+        Client TRID: null
+        Server TRID: null
+        <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+        <xml/>
 
-            """);
+        """);
   }
 }

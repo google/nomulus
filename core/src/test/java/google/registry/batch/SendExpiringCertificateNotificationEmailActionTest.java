@@ -97,7 +97,8 @@ class SendExpiringCertificateNotificationEmailActionTest {
             EXPIRATION_WARNING_EMAIL_SUBJECT_TEXT,
             sendEmailService,
             certificateChecker,
-            response);
+            response,
+            clock);
 
     sampleRegistrar =
         persistResource(createRegistrar("clientId", "sampleRegistrar", null, null).build());

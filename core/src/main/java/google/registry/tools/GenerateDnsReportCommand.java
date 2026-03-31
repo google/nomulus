@@ -56,8 +56,7 @@ final class GenerateDnsReportCommand implements Command {
       validateWith = PathParameter.OutputFile.class)
   private Path output = Paths.get("/dev/stdout");
 
-  @Inject
-  Clock clock;
+  @Inject Clock clock;
 
   @Override
   public void run() throws Exception {

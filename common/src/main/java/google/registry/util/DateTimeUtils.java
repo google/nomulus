@@ -170,6 +170,12 @@ public abstract class DateTimeUtils {
     return (instant == null) ? null : new DateTime(instant.toEpochMilli(), DateTimeZone.UTC);
   }
 
+  /** Convert a java.time {@link java.time.Instant} to a joda {@link org.joda.time.Instant}. */
+  @Nullable
+  public static org.joda.time.Instant toJodaInstant(@Nullable java.time.Instant instant) {
+    return (instant == null) ? null : org.joda.time.Instant.ofEpochMilli(instant.toEpochMilli());
+  }
+
   public static Instant plusYears(Instant instant, int years) {
     return instant.atZone(ZoneOffset.UTC).plusYears(years).toInstant();
   }
