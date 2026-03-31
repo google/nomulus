@@ -54,7 +54,6 @@ class CreatePremiumListCommandTest<C extends CreatePremiumListCommand>
   // since the old entity is always null and file cannot be empty, the prompt will NOT be "No entity
   // changes to apply."
   void commandPrompt_successStageNewEntity() throws Exception {
-    CreatePremiumListCommand command = new CreatePremiumListCommand();
     command.inputFile = Paths.get(premiumTermsPath);
     command.currencyUnit = "USD";
     command.prompt();
@@ -63,7 +62,6 @@ class CreatePremiumListCommandTest<C extends CreatePremiumListCommand>
 
   @Test
   void commandPrompt_successStageNewEntityWithOverride() throws Exception {
-    CreatePremiumListCommand command = new CreatePremiumListCommand();
     String alterTld = "override";
     command.inputFile = Paths.get(premiumTermsPath);
     command.override = true;
@@ -75,7 +73,6 @@ class CreatePremiumListCommandTest<C extends CreatePremiumListCommand>
 
   @Test
   void commandPrompt_failureNoInputFile() {
-    CreatePremiumListCommand command = new CreatePremiumListCommand();
     assertThrows(NullPointerException.class, command::prompt);
   }
 
@@ -83,7 +80,6 @@ class CreatePremiumListCommandTest<C extends CreatePremiumListCommand>
   void commandPrompt_failurePremiumListAlreadyExists() {
     String randomStr = "random";
     DatabaseHelper.createTld(randomStr);
-    CreatePremiumListCommand command = new CreatePremiumListCommand();
     command.name = randomStr;
     command.currencyUnit = "USD";
     IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class, command::prompt);
@@ -92,7 +88,6 @@ class CreatePremiumListCommandTest<C extends CreatePremiumListCommand>
 
   @Test
   void commandPrompt_failureMismatchedTldFileName_noOverride() throws Exception {
-    CreatePremiumListCommand command = new CreatePremiumListCommand();
     String fileName = "random";
     Path tmpPath = tmpDir.resolve(String.format("%s.txt", fileName));
     Files.write(new byte[0], tmpPath.toFile());
@@ -111,7 +106,6 @@ class CreatePremiumListCommandTest<C extends CreatePremiumListCommand>
 
   @Test
   void commandPrompt_failureMismatchedTldName_noOverride() {
-    CreatePremiumListCommand command = new CreatePremiumListCommand();
     String fileName = "random";
     command.name = fileName;
     command.currencyUnit = "USD";

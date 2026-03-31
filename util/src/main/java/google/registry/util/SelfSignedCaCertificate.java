@@ -15,7 +15,6 @@
 package google.registry.util;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static org.joda.time.DateTimeZone.UTC;
 
 import com.google.common.collect.ImmutableMap;
 import java.math.BigInteger;
@@ -42,8 +41,6 @@ import org.joda.time.DateTime;
 public class SelfSignedCaCertificate {
 
   private static final String DEFAULT_ISSUER_FQDN = "registry-test";
-  private static final DateTime DEFAULT_NOT_BEFORE = DateTime.now(UTC).minusHours(1);
-  private static final DateTime DEFAULT_NOT_AFTER = DateTime.now(UTC).plusDays(1);
 
   private static final Random RANDOM = new Random();
   private static final BouncyCastleProvider PROVIDER = new BouncyCastleProvider();
@@ -68,13 +65,16 @@ public class SelfSignedCaCertificate {
     return cert;
   }
 
-  public static SelfSignedCaCertificate create() throws Exception {
+  public static SelfSignedCaCertificate create(Clock clock) throws Exception {
     return create(
-        keyGen.generateKeyPair(), DEFAULT_ISSUER_FQDN, DEFAULT_NOT_BEFORE, DEFAULT_NOT_AFTER);
+        keyGen.generateKeyPair(),
+        DEFAULT_ISSUER_FQDN,
+        clock.nowUtc().minusHours(1),
+        clock.nowUtc().plusDays(1));
   }
 
-  public static SelfSignedCaCertificate create(String fqdn) throws Exception {
-    return create(fqdn, DEFAULT_NOT_BEFORE, DEFAULT_NOT_AFTER);
+  public static SelfSignedCaCertificate create(String fqdn, Clock clock) throws Exception {
+    return create(fqdn, clock.nowUtc().minusHours(1), clock.nowUtc().plusDays(1));
   }
 
   public static SelfSignedCaCertificate create(String fqdn, DateTime from, DateTime to)

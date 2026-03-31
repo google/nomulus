@@ -17,7 +17,6 @@ package google.registry.tools;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static google.registry.pricing.PricingEngineProxy.getPricesForDomainName;
-import static org.joda.time.DateTimeZone.UTC;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
@@ -28,7 +27,6 @@ import google.registry.util.StringGenerator;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import org.joda.money.Money;
-import org.joda.time.DateTime;
 
 /** A command to create a new domain via EPP. */
 @Parameters(separators = " =", commandDescription = "Create a new domain via EPP.")
@@ -64,7 +62,7 @@ final class CreateDomainCommand extends CreateOrUpdateDomainCommand {
     for (String domain : domains) {
       String currency = null;
       String cost = null;
-      DomainPrices prices = getPricesForDomainName(domain, DateTime.now(UTC));
+      DomainPrices prices = getPricesForDomainName(domain, clock.nowUtc());
 
       // Check if the domain is premium and set the fee on the create command if so.
       if (prices.isPremium()) {

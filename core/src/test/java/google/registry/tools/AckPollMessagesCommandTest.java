@@ -30,7 +30,6 @@ import google.registry.model.poll.PollMessage.OneTime;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.persistence.VKey;
 import google.registry.testing.DatabaseHelper;
-import google.registry.testing.FakeClock;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -38,13 +37,12 @@ import org.junit.jupiter.api.Test;
 /** Unit tests for {@link AckPollMessagesCommand}. */
 public class AckPollMessagesCommandTest extends CommandTestCase<AckPollMessagesCommand> {
 
-  private final FakeClock clock = new FakeClock(DateTime.parse("2015-02-04T08:16:32.064Z"));
-
   private DomainHistory domainHistory;
 
   @BeforeEach
   final void beforeEach() {
-    command.clock = clock;
+    command.clock = fakeClock;
+    fakeClock.setTo(DateTime.parse("2015-02-04T08:16:32.064Z"));
     createTld("tld");
     Domain domain =
         DatabaseHelper.newDomain("example.tld").asBuilder().setRepoId("FSDGS-TLD").build();
@@ -52,12 +50,12 @@ public class AckPollMessagesCommandTest extends CommandTestCase<AckPollMessagesC
     domainHistory =
         persistResource(
             new DomainHistory.Builder()
-                .setModificationTime(clock.nowUtc())
+                .setModificationTime(fakeClock.nowUtc())
                 .setDomain(domain)
                 .setRegistrarId(domain.getCreationRegistrarId())
                 .setType(HistoryEntry.Type.DOMAIN_CREATE)
                 .build());
-    clock.advanceOneMilli();
+    fakeClock.advanceOneMilli();
   }
 
   @Test
