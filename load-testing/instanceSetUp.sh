@@ -30,7 +30,7 @@ for host in $HOSTS;
       if ssh $host 'sudo apt-get -y update &&
                     sudo apt-get -y upgrade &&
                     sudo apt-get -y install rsync &&
-                    sudo apt-get -y install openjdk-21-jdk'; then
+                    sudo apt-get -y install openjdk-25-jdk'; then
         break
       else
         sleep 5

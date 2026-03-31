@@ -34,7 +34,6 @@ import java.util.Set;
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.RoundEnvironment;
 import javax.annotation.processing.SupportedAnnotationTypes;
-import javax.annotation.processing.SupportedSourceVersion;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.AnnotationValue;
@@ -50,12 +49,19 @@ import javax.lang.model.util.Types;
 
 /** Processor to generate {@link AttributeConverter} for {@code VKey} type. */
 @SupportedAnnotationTypes("google.registry.persistence.WithVKey")
-@SupportedSourceVersion(SourceVersion.RELEASE_21)
 public class VKeyProcessor extends AbstractProcessor {
 
   private static final String CONVERTER_CLASS_NAME_TEMP = "VKeyConverter_%s";
 
   private static final String VKEY_TYPE_METHOD_NAME = "value";
+
+  @Override
+  public SourceVersion getSupportedSourceVersion() {
+    // Do not hardcode version. If JDK is not the same version, a warning is generated
+    // and breaks the build if `-Werror` is set. This is Safe because this class is a
+    // code generator, and can only cause build errors.
+    return SourceVersion.latestSupported();
+  }
 
   @Override
   public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {

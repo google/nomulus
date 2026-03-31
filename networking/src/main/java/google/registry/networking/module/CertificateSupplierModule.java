@@ -276,7 +276,7 @@ public final class CertificateSupplierModule {
   static Supplier<PrivateKey> providePemPrivateKeySupplier(
       @PemFile Provider<PrivateKey> privateKeyProvider,
       @Named("remoteCertCachingDuration") Duration cachingDuration) {
-    return memoizeWithExpiration(privateKeyProvider::get, cachingDuration.getSeconds(), SECONDS);
+    return memoizeWithExpiration(privateKeyProvider::get, cachingDuration.toSeconds(), SECONDS);
   }
 
   @Singleton
@@ -285,7 +285,7 @@ public final class CertificateSupplierModule {
   static Supplier<ImmutableList<X509Certificate>> providePemCertificatesSupplier(
       @PemFile Provider<ImmutableList<X509Certificate>> certificatesProvider,
       @Named("remoteCertCachingDuration") Duration cachingDuration) {
-    return memoizeWithExpiration(certificatesProvider::get, cachingDuration.getSeconds(), SECONDS);
+    return memoizeWithExpiration(certificatesProvider::get, cachingDuration.toSeconds(), SECONDS);
   }
 
   // TODO(jianglai): Implement P12 supplier or convert the file to PEM format.

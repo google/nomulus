@@ -42,7 +42,7 @@ apt-get install gnupg2 -y
 apt-get install graphviz -y
 
 # Install Java
-apt-get install openjdk-21-jdk-headless -y
+apt-get install openjdk-25-jdk-headless -y
 
 # Install Python
 apt-get install python3 -y

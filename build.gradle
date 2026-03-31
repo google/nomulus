@@ -359,6 +359,8 @@ subprojects {
   // There are at least two instances, one in core/build.gradle, one in
   // release/stage_beam_pipeline.sh
   java {
+    // TODO(b/457758757): change to V_25 once Java in all environments are
+    // upgraded.
     sourceCompatibility = JavaVersion.VERSION_21
     targetCompatibility = JavaVersion.VERSION_21
   }
@@ -533,7 +535,10 @@ task javadoc(type: Javadoc) {
   // In a lot of places we don't write @return so suppress warnings about that.
   // We don't report HTML lint errors because XJB-generated POJO files have
   // incorrect tags (like dangling </p> without the corresponding open tag.
-  options.addBooleanOption('Xdoclint:all,-missing,-html', true)
+  // Starting in Java 25, references to primitives and arrays are forbidden.
+  // The JAXB-generated classes have array references, and we suppress the
+  // error with '-reference'.
+  options.addBooleanOption('Xdoclint:all,-missing,-html,-reference', true)
   options.addBooleanOption("-allow-script-in-comments",true)
   options.tags = ["type:a:Generic Type",
                   "error:a:Expected Error",
