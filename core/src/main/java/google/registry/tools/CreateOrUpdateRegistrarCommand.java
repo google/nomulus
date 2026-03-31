@@ -21,7 +21,6 @@ import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static google.registry.util.RegistrarUtils.normalizeRegistrarName;
 import static java.nio.charset.StandardCharsets.US_ASCII;
-import static org.joda.time.DateTimeZone.UTC;
 
 import com.beust.jcommander.Parameter;
 import com.google.common.base.Ascii;
@@ -37,6 +36,7 @@ import google.registry.tools.params.OptionalStringParameter;
 import google.registry.tools.params.PathParameter.InputFile;
 import google.registry.tools.params.StringListParameter;
 import google.registry.util.CidrAddressBlock;
+import google.registry.util.Clock;
 import jakarta.inject.Inject;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -55,6 +55,8 @@ import org.joda.time.DateTime;
 abstract class CreateOrUpdateRegistrarCommand extends MutatingCommand {
 
   @Inject CertificateChecker certificateChecker;
+
+  @Inject Clock clock;
 
   @Parameter(description = "Client identifier of the registrar account", required = true)
   List<String> mainParameters;
@@ -272,7 +274,7 @@ abstract class CreateOrUpdateRegistrarCommand extends MutatingCommand {
   @Override
   protected final void init() throws Exception {
     initRegistrarCommand();
-    DateTime now = DateTime.now(UTC);
+    DateTime now = clock.nowUtc();
     for (String clientId : mainParameters) {
       Registrar oldRegistrar = getOldRegistrar(clientId);
       Registrar.Builder builder =

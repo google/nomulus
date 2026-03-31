@@ -187,7 +187,8 @@ class Spec11PipelineTest {
     EvaluateSafeBrowsingFn safeBrowsingFn =
         new EvaluateSafeBrowsingFn(
             SAFE_BROWSING_API_KEY,
-            new Retrier(new FakeSleeper(new FakeClock()), 1),
+            new Retrier(new FakeSleeper(fakeClock), 1),
+            fakeClock,
             Suppliers.ofInstance(mockHttpClient));
     when(mockHttpClient.execute(any(HttpPost.class))).thenAnswer(new HttpResponder());
     Spec11Pipeline spec11Pipeline = new Spec11Pipeline(options, safeBrowsingFn);

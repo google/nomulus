@@ -22,7 +22,6 @@ import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistActiveHost;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.joda.time.DateTimeZone.UTC;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.beust.jcommander.ParameterException;
@@ -36,13 +35,11 @@ import google.registry.model.domain.secdns.DomainDsData;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.host.Host;
 import google.registry.testing.DatabaseHelper;
-import google.registry.testing.FakeClock;
 import java.io.IOException;
 import java.io.Reader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
-import org.joda.time.DateTime;
 import org.json.simple.JSONValue;
 import org.json.simple.parser.ParseException;
 import org.junit.jupiter.api.BeforeEach;
@@ -51,8 +48,6 @@ import org.junit.jupiter.api.Test;
 /** Unit tests for {@link GenerateDnsReportCommand}. */
 class GenerateDnsReportCommandTest extends CommandTestCase<GenerateDnsReportCommand> {
 
-  private final DateTime now = DateTime.now(UTC);
-  private final FakeClock clock = new FakeClock();
   private Path output;
 
   private Object getOutputAsJson() throws IOException, ParseException {
@@ -117,8 +112,7 @@ class GenerateDnsReportCommandTest extends CommandTestCase<GenerateDnsReportComm
   @BeforeEach
   void beforeEach() {
     output = tmpDir.resolve("out.dat");
-    command.clock = clock;
-    clock.setTo(now);
+    command.clock = fakeClock;
 
     createTlds("xn--q9jyb4c", "example");
     nameserver1 =
@@ -170,7 +164,7 @@ class GenerateDnsReportCommandTest extends CommandTestCase<GenerateDnsReportComm
 
   @Test
   void testSuccess_skipDeletedDomain() throws Exception {
-    persistResource(domain1.asBuilder().setDeletionTime(now).build());
+    persistResource(domain1.asBuilder().setDeletionTime(fakeClock.nowUtc()).build());
     runCommand("--output=" + output, "--tld=xn--q9jyb4c");
     assertThat((Iterable<?>) getOutputAsJson())
         .containsExactly(DOMAIN2_OUTPUT, NAMESERVER1_OUTPUT, NAMESERVER2_OUTPUT);
@@ -178,7 +172,7 @@ class GenerateDnsReportCommandTest extends CommandTestCase<GenerateDnsReportComm
 
   @Test
   void testSuccess_skipDeletedNameserver() throws Exception {
-    persistResource(nameserver1.asBuilder().setDeletionTime(now).build());
+    persistResource(nameserver1.asBuilder().setDeletionTime(fakeClock.nowUtc()).build());
     runCommand("--output=" + output, "--tld=xn--q9jyb4c");
     Iterable<?> output = (Iterable<?>) getOutputAsJson();
     assertThat(output).containsAnyOf(DOMAIN1_OUTPUT, DOMAIN1_OUTPUT_ALT);
@@ -207,7 +201,7 @@ class GenerateDnsReportCommandTest extends CommandTestCase<GenerateDnsReportComm
         domain1
             .asBuilder()
             .addStatusValue(StatusValue.PENDING_DELETE)
-            .setDeletionTime(now.plusDays(30))
+            .setDeletionTime(fakeClock.nowUtc().plusDays(30))
             .build());
     runCommand("--output=" + output, "--tld=xn--q9jyb4c");
     assertThat((Iterable<?>) getOutputAsJson())

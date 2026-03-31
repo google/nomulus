@@ -85,10 +85,13 @@ class SafeBrowsingTransformsTest {
   private final CloseableHttpClient mockHttpClient =
       mock(CloseableHttpClient.class, withSettings().serializable());
 
+  private final FakeClock clock = new FakeClock();
+
   private final EvaluateSafeBrowsingFn safeBrowsingFn =
       new EvaluateSafeBrowsingFn(
           "API_KEY",
-          new Retrier(new FakeSleeper(new FakeClock()), 1),
+          new Retrier(new FakeSleeper(clock), 1),
+          clock,
           Suppliers.ofInstance(mockHttpClient));
 
   @RegisterExtension

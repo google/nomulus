@@ -19,7 +19,6 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 import static org.apache.http.HttpStatus.SC_INTERNAL_SERVER_ERROR;
 import static org.apache.http.HttpStatus.SC_OK;
-import static org.joda.time.DateTimeZone.UTC;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
@@ -37,6 +36,7 @@ import google.registry.model.registrar.RegistrarPoc.Type;
 import google.registry.request.Action;
 import google.registry.request.Response;
 import google.registry.request.auth.Auth;
+import google.registry.util.Clock;
 import google.registry.util.EmailMessage;
 import jakarta.inject.Inject;
 import jakarta.mail.internet.AddressException;
@@ -73,6 +73,7 @@ public class SendExpiringCertificateNotificationEmailAction implements Runnable 
   private final GmailClient gmailClient;
   private final String expirationWarningEmailSubjectText;
   private final Response response;
+  private final Clock clock;
 
   @Inject
   public SendExpiringCertificateNotificationEmailAction(
@@ -80,12 +81,14 @@ public class SendExpiringCertificateNotificationEmailAction implements Runnable 
       @Config("expirationWarningEmailSubjectText") String expirationWarningEmailSubjectText,
       GmailClient gmailClient,
       CertificateChecker certificateChecker,
-      Response response) {
+      Response response,
+      Clock clock) {
     this.certificateChecker = certificateChecker;
     this.expirationWarningEmailSubjectText = expirationWarningEmailSubjectText;
     this.gmailClient = gmailClient;
     this.expirationWarningEmailBodyText = expirationWarningEmailBodyText;
     this.response = response;
+    this.clock = clock;
   }
 
   @Override
@@ -186,7 +189,7 @@ public class SendExpiringCertificateNotificationEmailAction implements Runnable 
        */
       updateLastNotificationSentDate(
           registrar,
-          DateTime.now(UTC).minusMinutes((int) UPDATE_TIME_OFFSET.getStandardMinutes()),
+          clock.nowUtc().minusMinutes((int) UPDATE_TIME_OFFSET.getStandardMinutes()),
           certificateType);
       return true;
     } catch (Exception e) {

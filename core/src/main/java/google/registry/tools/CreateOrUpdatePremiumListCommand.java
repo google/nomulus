@@ -18,6 +18,8 @@ import com.beust.jcommander.Parameter;
 import com.google.common.flogger.FluentLogger;
 import google.registry.model.tld.label.PremiumListDao;
 import google.registry.tools.params.PathParameter;
+import google.registry.util.Clock;
+import jakarta.inject.Inject;
 import java.nio.file.Path;
 import java.util.List;
 import javax.annotation.Nullable;
@@ -28,6 +30,8 @@ import org.joda.money.CurrencyUnit;
  * lists.
  */
 abstract class CreateOrUpdatePremiumListCommand extends ConfirmingCommand {
+
+  @Inject Clock clock;
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
   protected List<String> inputData;

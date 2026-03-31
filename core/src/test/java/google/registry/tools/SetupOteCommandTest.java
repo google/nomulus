@@ -47,7 +47,6 @@ import google.registry.model.tld.Tld.TldState;
 import google.registry.testing.CloudTasksHelper;
 import google.registry.testing.CloudTasksHelper.TaskMatcher;
 import google.registry.testing.DeterministicStringGenerator;
-import google.registry.testing.FakeClock;
 import google.registry.util.CidrAddressBlock;
 import java.security.cert.CertificateParsingException;
 import java.util.Optional;
@@ -70,8 +69,9 @@ class SetupOteCommandTest extends CommandTestCase<SetupOteCommand> {
 
   @BeforeEach
   void beforeEach() {
+    fakeClock.setTo(DateTime.parse("2018-07-07TZ"));
+    command.clock = fakeClock;
     command.passwordGenerator = passwordGenerator;
-    command.clock = new FakeClock(DateTime.parse("2018-07-07TZ"));
     command.maybeGroupEmailAddress = Optional.of("group@example.com");
     command.cloudTasksUtils = cloudTasksHelper.getTestCloudTasksUtils();
     command.iamClient = iamClient;

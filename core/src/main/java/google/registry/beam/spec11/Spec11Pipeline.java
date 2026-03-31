@@ -30,6 +30,7 @@ import google.registry.model.reporting.Spec11ThreatMatch;
 import google.registry.model.reporting.Spec11ThreatMatch.ThreatType;
 import google.registry.persistence.PersistenceModule.TransactionIsolationLevel;
 import google.registry.persistence.VKey;
+import google.registry.util.Clock;
 import google.registry.util.Retrier;
 import google.registry.util.UtilsModule;
 import jakarta.inject.Singleton;
@@ -263,8 +264,9 @@ public class Spec11Pipeline implements Serializable {
     }
 
     @Provides
-    EvaluateSafeBrowsingFn provideSafeBrowsingFn(Spec11PipelineOptions options, Retrier retrier) {
-      return new EvaluateSafeBrowsingFn(options.getSafeBrowsingApiKey(), retrier);
+    EvaluateSafeBrowsingFn provideSafeBrowsingFn(
+        Spec11PipelineOptions options, Retrier retrier, Clock clock) {
+      return new EvaluateSafeBrowsingFn(options.getSafeBrowsingApiKey(), retrier, clock);
     }
 
     @Provides

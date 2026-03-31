@@ -16,6 +16,8 @@ package google.registry.util;
 
 import java.io.Serializable;
 import java.time.Instant;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 import javax.annotation.concurrent.ThreadSafe;
 import org.joda.time.DateTime;
 
@@ -36,4 +38,9 @@ public interface Clock extends Serializable {
 
   /** Returns current Instant (which is always in UTC). */
   Instant now();
+
+  /** Returns the current time as a {@link ZonedDateTime} in UTC. */
+  default ZonedDateTime nowDate() {
+    return ZonedDateTime.ofInstant(now(), ZoneOffset.UTC);
+  }
 }

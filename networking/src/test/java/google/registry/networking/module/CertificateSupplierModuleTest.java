@@ -26,6 +26,8 @@ import dagger.Component;
 import dagger.Module;
 import dagger.Provides;
 import google.registry.networking.module.CertificateSupplierModule.Mode;
+import google.registry.testing.FakeClock;
+import google.registry.util.Clock;
 import google.registry.util.SelfSignedCaCertificate;
 import jakarta.inject.Named;
 import jakarta.inject.Singleton;
@@ -59,7 +61,7 @@ class CertificateSupplierModuleTest {
 
   @BeforeEach
   void beforeEach() throws Exception {
-    ssc = SelfSignedCaCertificate.create();
+    ssc = SelfSignedCaCertificate.create(new FakeClock());
     KeyPair keyPair = getKeyPair();
     key = keyPair.getPrivate();
     cert = signKeyPair(ssc, keyPair, "example.tld");
@@ -146,6 +148,11 @@ class CertificateSupplierModuleTest {
     Duration provideCachingDuration() {
       // Make the supplier always return the save value for test to save time.
       return Duration.ofDays(1);
+    }
+
+    @Provides
+    Clock provideClock() {
+      return new FakeClock();
     }
   }
 
