@@ -80,6 +80,18 @@ public abstract class CommandTestCase<C extends Command> {
     RegistryToolEnvironment.UNITTEST.setup(systemPropertyExtension);
     command = newCommandInstance();
 
+    // Inject the fake clock into the command if it has a clock field.
+    for (Class<?> c = command.getClass(); c != null; c = c.getSuperclass()) {
+      try {
+        java.lang.reflect.Field clockField = c.getDeclaredField("clock");
+        clockField.setAccessible(true);
+        clockField.set(command, fakeClock);
+        break;
+      } catch (NoSuchFieldException e) {
+        // Fall through.
+      }
+    }
+
     // Capture standard output/error. Use a single-byte encoding to emulate platforms where default
     // charset is not UTF_8.
     oldStdout = System.out;

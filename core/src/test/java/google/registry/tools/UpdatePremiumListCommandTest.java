@@ -60,7 +60,6 @@ class UpdatePremiumListCommandTest<C extends UpdatePremiumListCommand>
     File tmpFile = tmpDir.resolve(String.format("%s.txt", TLD_TEST)).toFile();
     String newPremiumListData = "omg,USD 1234";
     Files.asCharSink(tmpFile, UTF_8).write(newPremiumListData);
-    UpdatePremiumListCommand command = new UpdatePremiumListCommand();
     command.inputFile = Paths.get(tmpFile.getPath());
     command.name = TLD_TEST;
     assertThat(command.prompt()).contains("Update premium list for prime?");
@@ -69,7 +68,6 @@ class UpdatePremiumListCommandTest<C extends UpdatePremiumListCommand>
   @Test
   void commandPrompt_successStageNoChange() throws Exception {
     File tmpFile = tmpDir.resolve(String.format("%s.txt", TLD_TEST)).toFile();
-    UpdatePremiumListCommand command = new UpdatePremiumListCommand();
     command.inputFile = Paths.get(tmpFile.getPath());
     command.name = TLD_TEST;
     assertThat(command.prompt())
@@ -82,7 +80,6 @@ class UpdatePremiumListCommandTest<C extends UpdatePremiumListCommand>
     String newPremiumListData = "eth,USD 9999";
     Files.asCharSink(tmpFile, UTF_8).write(newPremiumListData);
 
-    UpdatePremiumListCommand command = new UpdatePremiumListCommand();
     // data come from @beforeEach of CreateOrUpdatePremiumListCommandTestCase.java
     command.inputFile = Paths.get(tmpFile.getPath());
     runCommandForced("--name=" + TLD_TEST, "--input=" + command.inputFile);
@@ -96,7 +93,6 @@ class UpdatePremiumListCommandTest<C extends UpdatePremiumListCommand>
   void commandRun_successNoChange() throws Exception {
     File tmpFile = tmpDir.resolve(String.format("%s.txt", TLD_TEST)).toFile();
 
-    UpdatePremiumListCommand command = new UpdatePremiumListCommand();
     command.inputFile = Paths.get(tmpFile.getPath());
     runCommandForced("--name=" + TLD_TEST, "--input=" + command.inputFile);
 
@@ -113,7 +109,6 @@ class UpdatePremiumListCommandTest<C extends UpdatePremiumListCommand>
     String newPremiumListData = "eth,USD 9999";
     Files.asCharSink(newPremiumFile, UTF_8).write(newPremiumListData);
 
-    UpdatePremiumListCommand command = new UpdatePremiumListCommand();
     // data come from @beforeEach of CreateOrUpdatePremiumListCommandTestCase.java
     command.inputFile = Paths.get(newPremiumFile.getPath());
     runCommandForced("--name=" + TLD_TEST, "--input=" + command.inputFile);
@@ -129,7 +124,6 @@ class UpdatePremiumListCommandTest<C extends UpdatePremiumListCommand>
     String premiumTerms = "foo,USD 9000\ndoge,USD 100\nelon,USD 2021";
     Files.asCharSink(tmpFile, UTF_8).write(premiumTerms);
 
-    UpdatePremiumListCommand command = new UpdatePremiumListCommand();
     command.inputFile = Paths.get(tmpFile.getPath());
     runCommandForced("--name=" + TLD_TEST, "--input=" + command.inputFile);
 
@@ -146,7 +140,6 @@ class UpdatePremiumListCommandTest<C extends UpdatePremiumListCommand>
     Path tmpPath = tmpDir.resolve(String.format("%s.txt", TLD_TEST));
     Files.write(new byte[0], tmpPath.toFile());
 
-    UpdatePremiumListCommand command = new UpdatePremiumListCommand();
     command.inputFile = tmpPath;
     command.name = TLD_TEST;
     IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class, command::prompt);
@@ -156,7 +149,6 @@ class UpdatePremiumListCommandTest<C extends UpdatePremiumListCommand>
   @Test
   void commandPrompt_failureNoPreviousVersion() {
     registry = createTld("random", null, null);
-    UpdatePremiumListCommand command = new UpdatePremiumListCommand();
     command.name = "random";
     IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class, command::prompt);
     assertThat(thrown)
@@ -166,13 +158,11 @@ class UpdatePremiumListCommandTest<C extends UpdatePremiumListCommand>
 
   @Test
   void commandPrompt_failureNoInputFile() {
-    UpdatePremiumListCommand command = new UpdatePremiumListCommand();
     assertThrows(NullPointerException.class, command::prompt);
   }
 
   @Test
   void commandPrompt_failureTldFromNameDoesNotExist() {
-    UpdatePremiumListCommand command = new UpdatePremiumListCommand();
     command.name = "random2";
     IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class, command::prompt);
     assertThat(thrown)
@@ -182,7 +172,6 @@ class UpdatePremiumListCommandTest<C extends UpdatePremiumListCommand>
 
   @Test
   void commandPrompt_failureTldFromInputFileDoesNotExist() {
-    UpdatePremiumListCommand command = new UpdatePremiumListCommand();
     // using tld extracted from file name but this tld is not part of the registry
     command.inputFile = Paths.get(tmpDir.resolve("random3.txt").toFile().getPath());
     IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class, command::prompt);
@@ -197,7 +186,6 @@ class UpdatePremiumListCommandTest<C extends UpdatePremiumListCommand>
     String newPremiumListData = "eth,USD 9999";
     Files.asCharSink(tmpFile, UTF_8).write(newPremiumListData);
 
-    UpdatePremiumListCommand command = new UpdatePremiumListCommand();
     command.inputFile = Paths.get(tmpFile.getPath());
     runCommandForced("--name=" + TLD_TEST, "--input=" + command.inputFile, "--dry_run");
 

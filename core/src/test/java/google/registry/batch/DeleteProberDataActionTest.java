@@ -45,6 +45,7 @@ import google.registry.model.tld.Tld.TldType;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.testing.DatabaseHelper;
+import google.registry.testing.FakeClock;
 import google.registry.testing.SystemPropertyExtension;
 import google.registry.util.RegistryEnvironment;
 import java.time.Instant;
@@ -62,9 +63,11 @@ class DeleteProberDataActionTest {
 
   private static final DateTime DELETION_TIME = DateTime.parse("2010-01-01T00:00:00.000Z");
 
+  private final FakeClock clock = new FakeClock(DateTime.now(UTC));
+
   @RegisterExtension
   final JpaIntegrationTestExtension jpa =
-      new JpaTestExtensions.Builder().buildIntegrationTestExtension();
+      new JpaTestExtensions.Builder().withClock(clock).buildIntegrationTestExtension();
 
   @RegisterExtension
   final SystemPropertyExtension systemPropertyExtension = new SystemPropertyExtension();
@@ -94,7 +97,9 @@ class DeleteProberDataActionTest {
   }
 
   private void resetAction() {
-    action = new DeleteProberDataAction(false, ImmutableSet.of(), Optional.empty(), "TheRegistrar");
+    action =
+        new DeleteProberDataAction(
+            false, ImmutableSet.of(), Optional.empty(), "TheRegistrar", clock);
   }
 
   @AfterEach
@@ -124,7 +129,8 @@ class DeleteProberDataActionTest {
     Set<ImmutableObject> oaEntities = persistLotsOfDomains("oa-canary.test");
     // Create action with batch size of 3
     DeleteProberDataAction batchedAction =
-        new DeleteProberDataAction(false, ImmutableSet.of(), Optional.of(3), "TheRegistrar");
+        new DeleteProberDataAction(
+            false, ImmutableSet.of(), Optional.of(3), "TheRegistrar", clock);
     batchedAction.run();
     assertAllAbsent(ibEntities);
     assertAllAbsent(oaEntities);

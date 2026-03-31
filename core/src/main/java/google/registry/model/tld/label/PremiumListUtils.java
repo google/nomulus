@@ -14,8 +14,6 @@
 
 package google.registry.model.tld.label;
 
-import static org.joda.time.DateTimeZone.UTC;
-
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 import google.registry.model.tld.label.PremiumList.PremiumEntry;
@@ -29,12 +27,12 @@ import org.joda.time.DateTime;
 public class PremiumListUtils {
 
   public static PremiumList parseToPremiumList(
-      String name, CurrencyUnit currencyUnit, List<String> inputData) {
+      String name, CurrencyUnit currencyUnit, List<String> inputData, DateTime creationTime) {
     PremiumList partialPremiumList =
         new PremiumList.Builder()
             .setName(name)
             .setCurrency(currencyUnit)
-            .setCreationTimestamp(DateTime.now(UTC))
+            .setCreationTimestamp(creationTime)
             .build();
     ImmutableMap<String, PremiumEntry> prices = partialPremiumList.parse(inputData);
     Map<String, BigDecimal> priceAmounts = Maps.transformValues(prices, PremiumEntry::getValue);

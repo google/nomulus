@@ -24,11 +24,15 @@ import com.google.common.base.Strings;
 import google.registry.model.tld.label.PremiumList;
 import google.registry.model.tld.label.PremiumListDao;
 import google.registry.model.tld.label.PremiumListUtils;
+import google.registry.util.Clock;
+import jakarta.inject.Inject;
 import java.nio.file.Files;
 
 /** Command to safely update {@link PremiumList} in Database for a given TLD. */
 @Parameters(separators = " =", commandDescription = "Update a PremiumList in Database.")
 class UpdatePremiumListCommand extends CreateOrUpdatePremiumListCommand {
+
+  @Inject Clock clock;
 
   @Parameter(
       names = {"-d", "--dry_run"},
@@ -62,7 +66,8 @@ class UpdatePremiumListCommand extends CreateOrUpdatePremiumListCommand {
     inputData = Files.readAllLines(inputFile, UTF_8);
     checkArgument(!inputData.isEmpty(), "New premium list data cannot be empty");
     currency = existingList.getCurrency();
-    PremiumList updatedPremiumList = PremiumListUtils.parseToPremiumList(name, currency, inputData);
+    PremiumList updatedPremiumList =
+        PremiumListUtils.parseToPremiumList(name, currency, inputData, clock.nowUtc());
     if (!existingList
         .getLabelsToPrices()
         .entrySet()
